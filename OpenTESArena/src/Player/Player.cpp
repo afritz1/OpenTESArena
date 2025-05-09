@@ -170,7 +170,7 @@ Player::Player()
 {
 	this->physicsCharacter = nullptr;
 	this->physicsCharacterVirtual = nullptr;
-	this->setCameraFrame(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
+	this->setCameraFrameFromDirection(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
 	this->movementType = PlayerMovementType::Default;
 	this->movementSoundProgress = 0.0;
 	this->male = false;
@@ -235,7 +235,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->setPhysicsVelocity(Double3::Zero);
 
 	const Double3 cameraDirection(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
-	this->setCameraFrame(cameraDirection);
+	this->setCameraFrameFromDirection(cameraDirection);
 	this->movementType = PlayerMovementType::Default;
 	this->movementSoundProgress = 0.0;
 }
@@ -302,12 +302,67 @@ void Player::clearKeyInventory()
 	std::fill(std::begin(this->keyInventory), std::end(this->keyInventory), ArenaItemUtils::InvalidDoorKeyID);
 }
 
-void Player::setCameraFrame(const Double3 &forward)
+void Player::setCameraFrameFromAngles(Degrees yaw, Degrees pitch)
+{
+	this->angleX = yaw;
+	this->angleY = pitch;
+	MathUtils::populateCoordinateFrameFromAngles(yaw, pitch, &this->forward, &this->right, &this->up);
+}
+
+void Player::setCameraFrameFromDirection(const Double3 &forward)
 {
 	DebugAssert(forward.isNormalized());
-	this->forward = forward;
-	this->right = this->forward.cross(Double3::UnitY).normalized();
-	this->up = this->right.cross(this->forward).normalized();
+
+	Radians newAngleXRadians = std::atan2(forward.x, forward.z);
+	if (newAngleXRadians < 0.0)
+	{
+		newAngleXRadians += Constants::TwoPi;
+	}
+
+	const Radians newAngleYRadians = std::asin(-forward.y);
+
+	const Degrees newAngleXDegrees = MathUtils::radToDeg(newAngleXRadians);
+	const Degrees newAngleYDegrees = MathUtils::radToDeg(newAngleYRadians);
+	this->setCameraFrameFromAngles(newAngleXDegrees, newAngleYDegrees);
+}
+
+void Player::rotateX(Degrees deltaX)
+{
+	const Degrees oldAngleX = this->angleX;
+	Degrees newAngleX = std::fmod(oldAngleX + deltaX, 360.0);
+	if (newAngleX < 0.0)
+	{
+		newAngleX += 360.0;
+	}
+
+	if (newAngleX != oldAngleX)
+	{
+		this->setCameraFrameFromAngles(newAngleX, this->angleY);
+	}
+}
+
+void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
+{
+	DebugAssert(pitchLimit >= 0.0);
+	DebugAssert(pitchLimit <= 90.0);
+
+	const Degrees oldAngleY = this->angleY;
+	const Degrees newAngleY = std::clamp(oldAngleY + deltaY, -pitchLimit, pitchLimit);
+	if (newAngleY != oldAngleY)
+	{
+		this->setCameraFrameFromAngles(this->angleX, newAngleY);
+	}
+}
+
+void Player::lookAt(const WorldDouble3 &targetPosition)
+{
+	const Double3 newForward = (targetPosition - this->getEyePosition()).normalized();
+	this->setCameraFrameFromDirection(newForward);
+}
+
+void Player::setDirectionToHorizon()
+{
+	this->setCameraFrameFromAngles(this->angleX, 0.0);
 }
 
 bool Player::isPhysicsInited() const
@@ -405,12 +460,16 @@ WorldDouble3 Player::getFeetPosition() const
 
 Double3 Player::getGroundDirection() const
 {
-	return Double3(this->forward.x, 0.0, this->forward.z).normalized();
+	const Radians angleXRadians = MathUtils::degToRad(this->angleX);
+	const double sineYaw = std::sin(angleXRadians);
+	const double cosineYaw = std::cos(angleXRadians);
+	return Double3(sineYaw, 0.0, cosineYaw).normalized();
 }
 
 Double2 Player::getGroundDirectionXZ() const
 {
-	return Double2(this->forward.x, this->forward.z).normalized();
+	const Double3 groundDir = this->getGroundDirection();
+	return groundDir.getXZ();
 }
 
 double Player::getJumpMagnitude() const
@@ -427,47 +486,6 @@ bool Player::isMoving() const
 {
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 	return physicsVelocity.LengthSq() >= ConstantsF::Epsilon;
-}
-
-void Player::rotateX(Degrees deltaX)
-{
-	DebugAssert(std::isfinite(this->forward.length()));
-	const Radians deltaAsRadians = MathUtils::safeDegToRad(deltaX);
-	const Quaternion quat = Quaternion::fromAxisAngle(-Double3::UnitY, deltaAsRadians) * Quaternion(this->forward, 0.0);	
-	const Double3 newForward = Double3(quat.x, quat.y, quat.z).normalized();
-	this->setCameraFrame(newForward);
-}
-
-void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
-{
-	DebugAssert(std::isfinite(this->forward.length()));
-	DebugAssert(pitchLimit >= 0.0);
-	DebugAssert(pitchLimit < 90.0);
-
-	const Radians deltaAsRadians = MathUtils::safeDegToRad(deltaY);
-	const Radians currentAngle = std::acos(this->forward.normalized().y);
-	const Radians requestedAngle = currentAngle - deltaAsRadians;
-
-	// Clamp to avoid breaking cross product.
-	const Radians maxAngle = MathUtils::degToRad(90.0 - pitchLimit);
-	const Radians minAngle = MathUtils::degToRad(90.0 + pitchLimit);
-	const Radians actualDeltaAngle = (requestedAngle > minAngle) ? (currentAngle - minAngle) : ((requestedAngle < maxAngle) ? (currentAngle - maxAngle) : deltaAsRadians);
-
-	const Quaternion quat = Quaternion::fromAxisAngle(this->right, actualDeltaAngle) * Quaternion(this->forward, 0.0);
-	const Double3 newForward = Double3(quat.x, quat.y, quat.z).normalized();
-	this->setCameraFrame(newForward);
-}
-
-void Player::lookAt(const WorldDouble3 &targetPosition)
-{
-	const Double3 newForward = (targetPosition - this->getEyePosition()).normalized();
-	this->setCameraFrame(newForward);
-}
-
-void Player::setDirectionToHorizon()
-{
-	const Double3 groundDirection = this->getGroundDirection();
-	this->setCameraFrame(groundDirection);
 }
 
 void Player::accelerate(const Double3 &direction, double magnitude, double dt)

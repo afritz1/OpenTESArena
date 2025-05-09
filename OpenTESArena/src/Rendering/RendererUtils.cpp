@@ -13,12 +13,12 @@
 
 #include "components/debug/Debug.h"
 
-RenderCamera RendererUtils::makeCamera(const WorldDouble3 &worldPoint, const Double3 &direction, Degrees fovY, double aspectRatio, bool tallPixelCorrection)
+RenderCamera RendererUtils::makeCamera(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, bool tallPixelCorrection)
 {
 	const double tallPixelRatio = tallPixelCorrection ? ArenaRenderUtils::TALL_PIXEL_RATIO : 1.0;
 
 	RenderCamera camera;
-	camera.init(worldPoint, direction, fovY, aspectRatio, tallPixelRatio);
+	camera.init(worldPoint, yaw, pitch, fovY, aspectRatio, tallPixelRatio);
 
 	return camera;
 }

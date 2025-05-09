@@ -666,18 +666,18 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 				return std::isfinite(percent) ? percent : 0.0;
 			}();
 
-			return Double2((dx * turningScale) * dt, 0.0);
+			return Double2((-dx * turningScale) * dt, 0.0);
 		}
 		else if (!lCtrl)
 		{
 			// Turn with keyboard.
 			if (left)
 			{
-				return Double2(-turningScale * dt, 0.0);
+				return Double2(turningScale * dt, 0.0);
 			}
 			else if (right)
 			{
-				return Double2(turningScale * dt, 0.0);
+				return Double2(-turningScale * dt, 0.0);
 			}
 		}
 	}
@@ -707,7 +707,7 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 			const double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
 
 			// Pitch and/or yaw the camera.
-			return Double2(dxx, -dyy);
+			return Double2(-dxx, -dyy);
 		}
 	}
 

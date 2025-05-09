@@ -78,10 +78,14 @@ struct Player
 	JPH::Character *physicsCharacter;
 	JPH::CharacterVirtual *physicsCharacterVirtual;
 	JPH::CharacterVsCharacterCollisionSimple physicsCharVsCharCollision;
-	Double3 forward; // Camera direction
+
+	// Camera direction
+	Double3 forward;
 	Double3 right;
 	Double3 up;
-	// @todo: polar coordinates (XYZ angles)
+	Degrees angleX; // Horizontal angle (0-360)
+	Degrees angleY; // Vertical angle (-90 to 90)
+
 	PlayerMovementType movementType;
 	PlayerGroundState groundState, prevGroundState;
 	PlayerClimbingState climbingState;
@@ -123,7 +127,19 @@ struct Player
 	bool isIdInKeyInventory(int keyID) const;
 	void clearKeyInventory();
 
-	void setCameraFrame(const Double3 &forward);
+	void setCameraFrameFromAngles(Degrees yaw, Degrees pitch);
+	void setCameraFrameFromDirection(const Double3 &forward);
+
+	// Pitches and yaws relative to global up vector.
+	void rotateX(Degrees deltaX);
+	void rotateY(Degrees deltaY, Degrees pitchLimit);
+
+	// Recalculates the player's view so they look at a point. The global up vector is used when generating the new 3D frame,
+	// so don't give a point directly above or below the camera.
+	void lookAt(const WorldDouble3 &targetPosition);
+
+	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
+	void setDirectionToHorizon();
 
 	bool isPhysicsInited() const;
 	WorldDouble3 getPhysicsPosition() const; // Center of the character collider (halfway between eyes and feet).
@@ -145,17 +161,6 @@ struct Player
 
 	double getMaxMoveSpeed() const;
 	bool isMoving() const;
-
-	// Pitches and yaws relative to global up vector.
-	void rotateX(Degrees deltaX);
-	void rotateY(Degrees deltaY, Degrees pitchLimit);
-
-	// Recalculates the player's view so they look at a point. The global up vector is used when generating the new 3D frame,
-	// so don't give a point directly above or below the camera.
-	void lookAt(const WorldDouble3 &targetPosition);
-
-	// Flattens direction vector to the horizon (used when switching classic/modern camera mode).
-	void setDirectionToHorizon();
 
 	// Changes the velocity (as a force) given a normalized direction, magnitude, and delta time.
 	void accelerate(const Double3 &direction, double magnitude, double dt); // @todo: this will give CharacterVirtual a force probably?

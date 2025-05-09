@@ -523,7 +523,7 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
 		const WorldDouble3 playerPosition = this->player.getEyePosition();
-		const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.forward,
+		const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY,
 			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
@@ -903,14 +903,16 @@ void Game::loop()
 				}
 
 				const WorldDouble3 newPlayerPosition = this->player.getEyePosition();
-				const Double3 newPlayerDirection = this->player.forward;
-				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerPosition, newPlayerDirection, this->options.getGraphics_VerticalFOV(),
+				const Degrees newPlayerYaw = this->player.angleX;
+				const Degrees newPlayerPitch = this->player.angleY;
+				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(),
 					this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(renderCamera, *this);
 
 				// Update audio listener orientation.
+				const Double3 newPlayerDirection = this->player.forward;
 				const AudioListenerData listenerData(newPlayerPosition, newPlayerDirection);
 				this->audioManager.updateListener(listenerData);
 			}

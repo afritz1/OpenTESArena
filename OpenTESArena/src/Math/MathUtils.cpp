@@ -69,6 +69,19 @@ Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 	return MathUtils::radToDeg(2.0 * std::atan(halfDim));
 }
 
+void MathUtils::populateCoordinateFrameFromAngles(Degrees yaw, Degrees pitch, Double3 *outForward, Double3 *outRight, Double3 *outUp)
+{
+	const Radians angleXRadians = MathUtils::degToRad(yaw);
+	const Radians angleYRadians = MathUtils::degToRad(pitch);
+	const double sinePitch = std::sin(angleYRadians);
+	const double cosinePitch = std::cos(angleYRadians);
+	const double sineYaw = std::sin(angleXRadians);
+	const double cosineYaw = std::cos(angleXRadians);
+	*outForward = Double3(cosinePitch * sineYaw, sinePitch, cosinePitch * cosineYaw).normalized();
+	*outRight = Double3(-cosineYaw, 0.0, sineYaw).normalized();
+	*outUp = outRight->cross(*outForward).normalized();
+}
+
 bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &planePoint, const Double2 &planeNormal)
 {
 	return (point - planePoint).dot(planeNormal) >= 0.0;
