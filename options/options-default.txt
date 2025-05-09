@@ -70,9 +70,9 @@ Is3DAudio=true
 HorizontalSensitivity=3.0
 VerticalSensitivity=3.0
 
-# The camera pitch limit determines in degrees how high or low the camera
-# can look relative to the horizon in modern mode. Must be less than 90.
-CameraPitchLimit=85.0
+# Pitch limit determines in degrees how high or low the camera can look relative
+# to the horizon in modern mode.
+CameraPitchLimit=90.0
 
 [Misc]
 # Comma-separated paths the engine will use to search your computer for ACD.EXE
