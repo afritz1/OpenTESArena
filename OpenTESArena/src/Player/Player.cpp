@@ -170,7 +170,7 @@ Player::Player()
 {
 	this->physicsCharacter = nullptr;
 	this->physicsCharacterVirtual = nullptr;
-	this->setCameraFrame(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
+	this->setCameraFrameFromDirection(-Double3::UnitX); // Avoids audio listener issues w/ uninitialized player.
 	this->movementType = PlayerMovementType::Default;
 	this->movementSoundProgress = 0.0;
 	this->male = false;
@@ -235,7 +235,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->setPhysicsVelocity(Double3::Zero);
 
 	const Double3 cameraDirection(CardinalDirection::North.x, 0.0, CardinalDirection::North.y);
-	this->setCameraFrame(cameraDirection);
+	this->setCameraFrameFromDirection(cameraDirection);
 	this->movementType = PlayerMovementType::Default;
 	this->movementSoundProgress = 0.0;
 }
@@ -302,7 +302,23 @@ void Player::clearKeyInventory()
 	std::fill(std::begin(this->keyInventory), std::end(this->keyInventory), ArenaItemUtils::InvalidDoorKeyID);
 }
 
-void Player::setCameraFrame(const Double3 &forward)
+void Player::setCameraFrameFromAngles(Degrees yaw, Degrees pitch)
+{
+	this->angleX = yaw;
+	this->angleY = pitch;
+
+	const Radians angleXRadians = MathUtils::degToRad(yaw);
+	const Radians angleYRadians = MathUtils::degToRad(pitch);
+	const double sinePitch = std::sin(angleYRadians);
+	const double cosinePitch = std::cos(angleYRadians);
+	const double sineYaw = std::sin(angleXRadians);
+	const double cosineYaw = std::cos(angleXRadians);
+	this->forward = Double3(cosinePitch * sineYaw, sinePitch, cosinePitch * cosineYaw).normalized();
+	this->right = Double3(-cosineYaw, 0.0, sineYaw).normalized();
+	this->up = this->right.cross(this->forward).normalized();
+}
+
+void Player::setCameraFrameFromDirection(const Double3 &forward)
 {
 	DebugAssert(forward.isNormalized());
 
@@ -314,14 +330,48 @@ void Player::setCameraFrame(const Double3 &forward)
 
 	const Radians newAngleYRadians = std::asin(-forward.y);
 
-	this->angleX = MathUtils::radToDeg(newAngleXRadians);
-	this->angleY = MathUtils::radToDeg(newAngleYRadians);
+	const Degrees newAngleXDegrees = MathUtils::radToDeg(newAngleXRadians);
+	const Degrees newAngleYDegrees = MathUtils::radToDeg(newAngleYRadians);
+	this->setCameraFrameFromAngles(newAngleXDegrees, newAngleYDegrees);
+}
 
-	const double sineYaw = std::sin(newAngleXRadians);
-	const double cosineYaw = std::cos(newAngleXRadians);
-	this->forward = forward;
-	this->right = Double3(cosineYaw, 0.0, -sineYaw).normalized();
-	this->up = this->right.cross(this->forward).normalized();
+void Player::rotateX(Degrees deltaX)
+{
+	const Degrees oldAngleX = this->angleX;
+	Degrees newAngleX = std::fmod(oldAngleX + deltaX, 360.0);
+	if (newAngleX < 0.0)
+	{
+		newAngleX += 360.0;
+	}
+
+	if (newAngleX != oldAngleX)
+	{
+		this->setCameraFrameFromAngles(newAngleX, this->angleY);
+	}
+}
+
+void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
+{
+	DebugAssert(pitchLimit >= 0.0);
+	DebugAssert(pitchLimit <= 90.0);
+
+	const Degrees oldAngleY = this->angleY;
+	const Degrees newAngleY = std::clamp(oldAngleY + deltaY, -pitchLimit, pitchLimit);
+	if (oldAngleY != newAngleY)
+	{
+		this->setCameraFrameFromAngles(this->angleX, newAngleY);
+	}
+}
+
+void Player::lookAt(const WorldDouble3 &targetPosition)
+{
+	const Double3 newForward = (targetPosition - this->getEyePosition()).normalized();
+	this->setCameraFrameFromDirection(newForward);
+}
+
+void Player::setDirectionToHorizon()
+{
+	this->setCameraFrameFromAngles(this->angleX, 0.0);
 }
 
 bool Player::isPhysicsInited() const
@@ -445,78 +495,6 @@ bool Player::isMoving() const
 {
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 	return physicsVelocity.LengthSq() >= ConstantsF::Epsilon;
-}
-
-void Player::rotateX(Degrees deltaX)
-{
-	const Degrees oldAngleX = this->angleX;
-	Degrees newAngleX = std::fmod(oldAngleX + deltaX, 360.0);	
-	if (newAngleX < 0.0)
-	{
-		newAngleX += 360.0;
-	}
-
-	if (newAngleX != oldAngleX)
-	{
-		this->angleX = newAngleX;
-
-		const Radians angleXRad = MathUtils::degToRad(this->angleX);
-		const Radians angleYRad = MathUtils::degToRad(this->angleY);
-
-		// @todo this should call setCameraFrame() or at least reuse some "CreateCameraFrameFromAngles()"
-
-		// isn't right vector just angleX + 90?
-
-		const double sinePitch = std::sin(angleYRad);
-		const double cosinePitch = std::cos(angleYRad);
-		const double sineYaw = std::sin(angleXRad);
-		const double cosineYaw = std::cos(angleXRad);
-		this->forward = Double3(cosinePitch * sineYaw, sinePitch, cosinePitch * cosineYaw).normalized();
-		this->right = Double3(cosineYaw, 0.0, -sineYaw).normalized();
-		this->up = this->right.cross(this->forward).normalized();
-	}
-}
-
-void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
-{
-	DebugAssert(pitchLimit >= 0.0);
-	DebugAssert(pitchLimit < 90.0);
-
-	const Degrees oldAngleY = this->angleY;
-	const Degrees newAngleY = std::clamp(oldAngleY + deltaY, -pitchLimit, pitchLimit);
-
-	if (oldAngleY != newAngleY)
-	{
-		this->angleY = newAngleY;
-
-		const Radians angleXRad = MathUtils::degToRad(this->angleX);
-		const Radians angleYRad = MathUtils::degToRad(this->angleY);
-
-		// @todo this should call setCameraFrame() or at least reuse some "CreateCameraFrameFromAngles()"
-
-		const double sinePitch = std::sin(angleYRad);
-		const double cosinePitch = std::cos(angleYRad);
-		const double sineYaw = std::sin(angleXRad);
-		const double cosineYaw = std::cos(angleXRad);
-		this->forward = Double3(cosinePitch * sineYaw, sinePitch, cosinePitch * cosineYaw).normalized();
-		this->right = Double3(cosineYaw, 0.0, -sineYaw).normalized();
-		this->up = this->right.cross(this->forward).normalized();
-	}
-}
-
-void Player::lookAt(const WorldDouble3 &targetPosition)
-{
-	const Double3 newForward = (targetPosition - this->getEyePosition()).normalized();
-	this->setCameraFrame(newForward);
-}
-
-void Player::setDirectionToHorizon()
-{
-	// @todo just set angleY to 0
-	//this->angleY = 0.0;
-
-	const Double3 groundDirection = this->getGroundDirection();
-	this->setCameraFrame(groundDirection);
 }
 
 void Player::accelerate(const Double3 &direction, double magnitude, double dt)
