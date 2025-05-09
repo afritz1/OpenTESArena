@@ -306,16 +306,7 @@ void Player::setCameraFrameFromAngles(Degrees yaw, Degrees pitch)
 {
 	this->angleX = yaw;
 	this->angleY = pitch;
-
-	const Radians angleXRadians = MathUtils::degToRad(yaw);
-	const Radians angleYRadians = MathUtils::degToRad(pitch);
-	const double sinePitch = std::sin(angleYRadians);
-	const double cosinePitch = std::cos(angleYRadians);
-	const double sineYaw = std::sin(angleXRadians);
-	const double cosineYaw = std::cos(angleXRadians);
-	this->forward = Double3(cosinePitch * sineYaw, sinePitch, cosinePitch * cosineYaw).normalized();
-	this->right = Double3(-cosineYaw, 0.0, sineYaw).normalized();
-	this->up = this->right.cross(this->forward).normalized();
+	MathUtils::populateCoordinateFrameFromAngles(yaw, pitch, &this->forward, &this->right, &this->up);
 }
 
 void Player::setCameraFrameFromDirection(const Double3 &forward)
@@ -357,7 +348,7 @@ void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
 
 	const Degrees oldAngleY = this->angleY;
 	const Degrees newAngleY = std::clamp(oldAngleY + deltaY, -pitchLimit, pitchLimit);
-	if (oldAngleY != newAngleY)
+	if (newAngleY != oldAngleY)
 	{
 		this->setCameraFrameFromAngles(this->angleX, newAngleY);
 	}

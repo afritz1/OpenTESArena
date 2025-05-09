@@ -244,7 +244,7 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 	const auto &renderer = game.renderer;
 	const Player &player = game.player;
 	const WorldDouble3 playerPosition = player.getEyePosition();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.forward,
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY,
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.

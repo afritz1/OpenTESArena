@@ -1027,11 +1027,10 @@ bool GameWorldPanel::renderScene(Game &game)
 
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-	const auto &player = game.player;
+	const Player &player = game.player;
 	const WorldDouble3 playerPosition = player.getEyePosition();
-	const VoxelDouble3 &playerDir = player.forward;
 
-	auto &gameState = game.gameState;
+	GameState &gameState = game.gameState;
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
@@ -1061,7 +1060,7 @@ bool GameWorldPanel::renderScene(Game &game)
 	const auto &options = game.options;
 	const Degrees fovY = options.getGraphics_VerticalFOV();
 	const double viewAspectRatio = renderer.getViewAspect();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
 	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
 	
 	const bool isInterior = gameState.getActiveMapType() == MapType::Interior;

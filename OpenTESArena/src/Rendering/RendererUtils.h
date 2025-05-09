@@ -17,7 +17,7 @@ namespace RendererUtils
 	constexpr double NEAR_PLANE = 0.02;
 	constexpr double FAR_PLANE = 1500.0;
 
-	RenderCamera makeCamera(const WorldDouble3 &worldPoint, const Double3 &direction, Degrees fovY, double aspectRatio, bool tallPixelCorrection);
+	RenderCamera makeCamera(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, bool tallPixelCorrection);
 
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);

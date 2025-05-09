@@ -77,7 +77,7 @@ public:
 	static constexpr double MIN_VERTICAL_SENSITIVITY = 0.50;
 	static constexpr double MAX_VERTICAL_SENSITIVITY = 50.0;
 	static constexpr double MIN_CAMERA_PITCH_LIMIT = 0.0;
-	static constexpr double MAX_CAMERA_PITCH_LIMIT = 85.0;
+	static constexpr double MAX_CAMERA_PITCH_LIMIT = 90.0;
 	static constexpr double MIN_VOLUME = 0.0;
 	static constexpr double MAX_VOLUME = 1.0;
 	static constexpr int MIN_SOUND_CHANNELS = 1;

@@ -129,6 +129,9 @@ namespace MathUtils
 	// Converts vertical field of view to horizontal field of view.
 	Degrees verticalFovToHorizontalFov(Degrees fovY, double aspectRatio);
 
+	// Converts yaw (0 - 360) and pitch (-90 - 90) to a 3D coordinate frame.
+	void populateCoordinateFrameFromAngles(Degrees yaw, Degrees pitch, Double3 *outForward, Double3 *outRight, Double3 *outUp);
+
 	// Returns whether the given point lies in the half space divided at the given divider point.
 	bool isPointInHalfSpace(const Double2 &point, const Double2 &planePoint, const Double2 &planeNormal);
 	bool isPointInHalfSpace(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal);

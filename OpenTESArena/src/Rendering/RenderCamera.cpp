@@ -1,7 +1,10 @@
 #include "RenderCamera.h"
 #include "RendererUtils.h"
+#include "../Math/MathUtils.h"
 
-void RenderCamera::init(const WorldDouble3 &worldPoint, const Double3 &direction, Degrees fovY, double aspectRatio, double tallPixelRatio)
+#include "components/debug/Debug.h"
+
+void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, double tallPixelRatio)
 {
 	this->worldPoint = worldPoint;
 
@@ -9,16 +12,13 @@ void RenderCamera::init(const WorldDouble3 &worldPoint, const Double3 &direction
 	this->chunk = coord.chunk;
 	this->chunkPoint = coord.point;
 
-	this->forward = direction.normalized();
+	MathUtils::populateCoordinateFrameFromAngles(yaw, pitch, &this->forward, &this->right, &this->up);
 	this->zoom = MathUtils::verticalFovToZoom(fovY);
 	this->forwardScaled = this->forward * this->zoom;
 
-	const Double3 &globalUp = Double3::UnitY;
-	this->right = this->forward.cross(globalUp).normalized();
 	this->aspectRatio = aspectRatio;
-	this->rightScaled = this->right * this->aspectRatio;
+	this->rightScaled = this->right * aspectRatio;
 
-	this->up = this->right.cross(this->forward).normalized();
 	this->upScaled = this->up * tallPixelRatio;
 	this->upScaledRecip = this->up / tallPixelRatio;
 
@@ -39,7 +39,7 @@ void RenderCamera::init(const WorldDouble3 &worldPoint, const Double3 &direction
 	this->topFrustumNormal = this->topFrustumDir.cross(this->right).normalized();
 
 	this->horizonDir = Double3(this->forward.x, 0.0, this->forward.z).normalized();
-	this->horizonNormal = globalUp;
+	this->horizonNormal = Double3::UnitY;
 
 	// @todo: this doesn't support roll. will need something like a vector projection later.
 	this->horizonWorldPoint = this->worldPoint + this->horizonDir;
