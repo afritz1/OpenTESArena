@@ -36,17 +36,22 @@ if not exist "%vs_path%" (
         exit /b 1
     )
     
-    echo Instalando Visual Studio 2019 con componentes necesarios...
-    start /wait vs_community.exe --add Microsoft.VisualStudio.Workload.NativeGame --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --includeRecommended --wait --passive
-    
-    if %errorlevel% neq 0 (
-        echo Error al instalar Visual Studio 2019.
-        echo Verifica el log de errores en: %temp%\dd_vs_community_*.log
-        pause
-        exit /b 1
-    )
-    
-    del vs_community.exe
+    echo.
+    echo ====================================================
+    echo IMPORTANTE: Instalación de Visual Studio 2019
+    echo ====================================================
+    echo El instalador de Visual Studio 2019 ha sido descargado como 'vs_community.exe'.
+    echo.
+    echo Por favor, ejecuta el instalador manualmente y selecciona:
+    echo - Workload "Desarrollo de juegos con C++" (Game development with C++)
+    echo - Componente "VC++ 2019 v142 tools" (Herramientas VC++ 2019 v142)
+    echo.
+    echo Una vez instalado Visual Studio 2019, vuelve a ejecutar este script.
+    echo ====================================================
+    echo.
+    pause
+    start "" vs_community.exe
+    exit /b 0
 ) else (
     echo Visual Studio 2019 Community ya esta instalado.
 )
@@ -56,13 +61,31 @@ where cmake >nul 2>&1
 if %errorlevel% neq 0 (
     echo CMake no esta instalado. Instalando...
     
-    echo Descargando el instalador de CMake...
-    powershell -Command "& {Invoke-WebRequest -Uri 'https://github.com/Kitware/CMake/releases/download/v3.24.0/cmake-3.24.0-windows-x86_64.msi' -OutFile 'cmake.msi'}"
+    echo Descargando el instalador de CMake desde la web oficial...
+    set "CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-windows-x86_64.msi"
+    echo URL de descarga: !CMAKE_URL!
     
-    if %errorlevel% neq 0 (
-        echo Error al descargar CMake.
-        pause
-        exit /b 1
+    if not exist "logs" mkdir logs
+    powershell -Command "& {try { $ProgressPreference = 'Continue'; Invoke-WebRequest -Uri '!CMAKE_URL!' -OutFile 'cmake.msi'; if($?) {Write-Host 'Descarga exitosa!'} else {Write-Host 'Error en la descarga'} } catch { Write-Host 'Error de excepción: ' + $_.Exception.Message } }" > logs\cmake_download.log 2>&1
+    
+    if not exist "cmake.msi" (
+        echo Error al descargar CMake. Revisando log...
+        type logs\cmake_download.log
+        echo.
+        echo Intentando URL alternativa...
+        set "CMAKE_URL_ALT=https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-windows-x86_64.msi"
+        echo URL alternativa: !CMAKE_URL_ALT!
+        
+        powershell -Command "& {try { $ProgressPreference = 'Continue'; Invoke-WebRequest -Uri '!CMAKE_URL_ALT!' -OutFile 'cmake.msi'; if($?) {Write-Host 'Descarga alternativa exitosa!'} else {Write-Host 'Error en la descarga alternativa'} } catch { Write-Host 'Error de excepción: ' + $_.Exception.Message } }" > logs\cmake_download_alt.log 2>&1
+        
+        if not exist "cmake.msi" (
+            echo Error al descargar CMake con ambas URLs.
+            echo Por favor, descarga manualmente CMake desde https://cmake.org/download/
+            echo e instálalo antes de ejecutar este script nuevamente.
+            type logs\cmake_download_alt.log
+            pause
+            exit /b 1
+        )
     )
     
     echo Instalando CMake...
