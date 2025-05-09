@@ -306,19 +306,21 @@ void Player::setCameraFrame(const Double3 &forward)
 {
 	DebugAssert(forward.isNormalized());
 
-	const Double3 normalizedForward = forward.normalized();
+	Radians newAngleXRadians = std::atan2(forward.x, forward.z);
+	if (newAngleXRadians < 0.0)
+	{
+		newAngleXRadians += Constants::TwoPi;
+	}
 
-	this->angleY = MathUtils::radToDeg(std::asin(-normalizedForward.y));
+	const Radians newAngleYRadians = std::asin(-forward.y);
 
-	this->angleX = MathUtils::radToDeg(std::atan2(normalizedForward.x, normalizedForward.z));
-	if (this->angleX < 0.0) this->angleX += 360.0;
+	this->angleX = MathUtils::radToDeg(newAngleXRadians);
+	this->angleY = MathUtils::radToDeg(newAngleYRadians);
 
-	this->forward = normalizedForward;
-	this->right = Double3(
-		std::cos(MathUtils::degToRad(this->angleX)),
-		0.0,
-		-std::sin(MathUtils::degToRad(this->angleX))
-	).normalized();
+	const double sineYaw = std::sin(newAngleXRadians);
+	const double cosineYaw = std::cos(newAngleXRadians);
+	this->forward = forward;
+	this->right = Double3(cosineYaw, 0.0, -sineYaw).normalized();
 	this->up = this->right.cross(this->forward).normalized();
 }
 
@@ -417,17 +419,16 @@ WorldDouble3 Player::getFeetPosition() const
 
 Double3 Player::getGroundDirection() const
 {
-	const Radians angleXRad = MathUtils::degToRad(this->angleX);
-	return Double3(
-		std::sin(angleXRad),
-		0.0,
-		std::cos(angleXRad)
-	).normalized();
+	const Radians angleXRadians = MathUtils::degToRad(this->angleX);
+	const double sineYaw = std::sin(angleXRadians);
+	const double cosineYaw = std::cos(angleXRadians);
+	return Double3(sineYaw, 0.0, cosineYaw).normalized();
 }
 
 Double2 Player::getGroundDirectionXZ() const
 {
-	return Double2(this->forward.x, this->forward.z).normalized();
+	const Double3 groundDir = this->getGroundDirection();
+	return groundDir.getXZ();
 }
 
 double Player::getJumpMagnitude() const
@@ -449,26 +450,29 @@ bool Player::isMoving() const
 void Player::rotateX(Degrees deltaX)
 {
 	const Degrees oldAngleX = this->angleX;
-	this->angleX = std::fmod(this->angleX + deltaX, 360.0);
-	if (this->angleX < 0.0) this->angleX += 360.0;
-
-	if (oldAngleX != this->angleX)
+	Degrees newAngleX = std::fmod(oldAngleX + deltaX, 360.0);	
+	if (newAngleX < 0.0)
 	{
+		newAngleX += 360.0;
+	}
+
+	if (newAngleX != oldAngleX)
+	{
+		this->angleX = newAngleX;
+
 		const Radians angleXRad = MathUtils::degToRad(this->angleX);
 		const Radians angleYRad = MathUtils::degToRad(this->angleY);
 
-		this->forward = Double3(
-			std::cos(angleYRad) * std::sin(angleXRad),
-			-std::sin(angleYRad),
-			std::cos(angleYRad) * std::cos(angleXRad)
-		).normalized();
+		// @todo this should call setCameraFrame() or at least reuse some "CreateCameraFrameFromAngles()"
 
-		this->right = Double3(
-			std::cos(angleXRad),
-			0.0,
-			-std::sin(angleXRad)
-		).normalized();
+		// isn't right vector just angleX + 90?
 
+		const double sinePitch = std::sin(angleYRad);
+		const double cosinePitch = std::cos(angleYRad);
+		const double sineYaw = std::sin(angleXRad);
+		const double cosineYaw = std::cos(angleXRad);
+		this->forward = Double3(cosinePitch * sineYaw, sinePitch, cosinePitch * cosineYaw).normalized();
+		this->right = Double3(cosineYaw, 0.0, -sineYaw).normalized();
 		this->up = this->right.cross(this->forward).normalized();
 	}
 }
@@ -479,25 +483,23 @@ void Player::rotateY(Degrees deltaY, Degrees pitchLimit)
 	DebugAssert(pitchLimit < 90.0);
 
 	const Degrees oldAngleY = this->angleY;
-	this->angleY = std::clamp(this->angleY + deltaY, -90.0 + pitchLimit, 90.0 - pitchLimit);
+	const Degrees newAngleY = std::clamp(oldAngleY + deltaY, -pitchLimit, pitchLimit);
 
-	if (oldAngleY != this->angleY)
+	if (oldAngleY != newAngleY)
 	{
+		this->angleY = newAngleY;
+
 		const Radians angleXRad = MathUtils::degToRad(this->angleX);
 		const Radians angleYRad = MathUtils::degToRad(this->angleY);
 
-		this->forward = Double3(
-			std::cos(angleYRad) * std::sin(angleXRad),
-			-std::sin(angleYRad),
-			std::cos(angleYRad) * std::cos(angleXRad)
-		).normalized();
+		// @todo this should call setCameraFrame() or at least reuse some "CreateCameraFrameFromAngles()"
 
-		this->right = Double3(
-			std::cos(angleXRad),
-			0.0,
-			-std::sin(angleXRad)
-		).normalized();
-
+		const double sinePitch = std::sin(angleYRad);
+		const double cosinePitch = std::cos(angleYRad);
+		const double sineYaw = std::sin(angleXRad);
+		const double cosineYaw = std::cos(angleXRad);
+		this->forward = Double3(cosinePitch * sineYaw, sinePitch, cosinePitch * cosineYaw).normalized();
+		this->right = Double3(cosineYaw, 0.0, -sineYaw).normalized();
 		this->up = this->right.cross(this->forward).normalized();
 	}
 }
@@ -510,6 +512,9 @@ void Player::lookAt(const WorldDouble3 &targetPosition)
 
 void Player::setDirectionToHorizon()
 {
+	// @todo just set angleY to 0
+	//this->angleY = 0.0;
+
 	const Double3 groundDirection = this->getGroundDirection();
 	this->setCameraFrame(groundDirection);
 }

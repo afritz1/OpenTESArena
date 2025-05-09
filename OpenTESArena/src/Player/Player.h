@@ -75,12 +75,14 @@ struct Player
 	JPH::Character *physicsCharacter;
 	JPH::CharacterVirtual *physicsCharacterVirtual;
 	JPH::CharacterVsCharacterCollisionSimple physicsCharVsCharCollision;
-	Double3 forward; // Camera direction
+
+	// Camera direction
+	Double3 forward;
 	Double3 right;
 	Double3 up;
 	Degrees angleX; // Horizontal angle (0-360)
 	Degrees angleY; // Vertical angle (-90 to 90)
-	// @todo: polar coordinates (XYZ angles)
+
 	PlayerMovementType movementType;
 	PlayerGroundState groundState, prevGroundState;
 	PlayerClimbingState climbingState;
