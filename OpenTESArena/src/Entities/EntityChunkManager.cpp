@@ -1190,12 +1190,14 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk)
 {
 	const ChunkInt2 *chunkToNotify = nullptr;
+	
+	ChunkInt2 chunkPos;
 	if (notifyChunk)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-		const ChunkInt2 entityChunkPos = VoxelUtils::worldPointToChunk(entityPosition);
-		chunkToNotify = &entityChunkPos;
+		chunkPos = VoxelUtils::worldPointToChunk(entityPosition);
+		chunkToNotify = &chunkPos;
 	}
 	
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
