@@ -21,140 +21,95 @@ set "SCRIPT_DIR=%~dp0"
 :: Crear directorio para logs
 if not exist "logs" mkdir logs
 
-:: Verificar Visual Studio
+:: Verificar Visual Studio 2019
 echo Verificando instalacion de Visual Studio 2019...
 set "vs_path=%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe"
 if not exist "%vs_path%" (
     echo Visual Studio 2019 Community no esta instalado.
-    
-    echo Descargando el instalador de Visual Studio 2019...
+
+    echo Descargando instalador...
     powershell -Command "& {Invoke-WebRequest -Uri 'https://aka.ms/vs/16/release/vs_community.exe' -OutFile 'vs_community.exe'}"
-    
-    if %errorlevel% neq 0 (
-        echo Error al descargar Visual Studio 2019.
+
+    if exist "vs_community.exe" (
+        echo ====================================================
+        echo Visual Studio 2019 no se instala automaticamente.
+        echo El instalador ha sido guardado como 'vs_community.exe'.
+        echo Por favor, ejecútalo manualmente y selecciona:
+        echo - Workload: Desarrollo de juegos con C++
+        echo - Herramientas VC++ v142
+        echo Luego vuelve a ejecutar este script.
+        echo ====================================================
+        start "" vs_community.exe
+    ) else (
+        echo ERROR: No se pudo descargar el instalador de Visual Studio.
         pause
         exit /b 1
     )
-    
-    echo.
-    echo ====================================================
-    echo IMPORTANTE: Instalación de Visual Studio 2019
-    echo ====================================================
-    echo El instalador de Visual Studio 2019 ha sido descargado como 'vs_community.exe'.
-    echo.
-    echo Por favor, ejecuta el instalador manualmente y selecciona:
-    echo - Workload "Desarrollo de juegos con C++" (Game development with C++)
-    echo - Componente "VC++ 2019 v142 tools" (Herramientas VC++ 2019 v142)
-    echo.
-    echo Una vez instalado Visual Studio 2019, vuelve a ejecutar este script.
-    echo ====================================================
-    echo.
     pause
-    start "" vs_community.exe
-    exit /b 0
+    exit /b 1
 ) else (
     echo Visual Studio 2019 Community ya esta instalado.
 )
 
 :: Verificar CMake
+echo Verificando CMake...
 where cmake >nul 2>&1
 if %errorlevel% neq 0 (
-    echo CMake no esta instalado. Instalando...
-    
-    echo Descargando el instalador de CMake desde la web oficial...
+    echo CMake no esta instalado.
+
+    echo Descargando instalador de CMake...
     set "CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-windows-x86_64.msi"
-    echo URL de descarga: !CMAKE_URL!
-    
-    if not exist "logs" mkdir logs
-    powershell -Command "& {try { $ProgressPreference = 'Continue'; Invoke-WebRequest -Uri '!CMAKE_URL!' -OutFile 'cmake.msi'; if($?) {Write-Host 'Descarga exitosa!'} else {Write-Host 'Error en la descarga'} } catch { Write-Host 'Error de excepción: ' + $_.Exception.Message } }" > logs\cmake_download.log 2>&1
-    
-    if not exist "cmake.msi" (
-        echo Error al descargar CMake. Revisando log...
-        type logs\cmake_download.log
-        echo.
-        echo Intentando URL alternativa...
-        set "CMAKE_URL_ALT=https://github.com/Kitware/CMake/releases/download/v3.28.3/cmake-3.28.3-windows-x86_64.msi"
-        echo URL alternativa: !CMAKE_URL_ALT!
-        
-        powershell -Command "& {try { $ProgressPreference = 'Continue'; Invoke-WebRequest -Uri '!CMAKE_URL_ALT!' -OutFile 'cmake.msi'; if($?) {Write-Host 'Descarga alternativa exitosa!'} else {Write-Host 'Error en la descarga alternativa'} } catch { Write-Host 'Error de excepción: ' + $_.Exception.Message } }" > logs\cmake_download_alt.log 2>&1
-        
-        if not exist "cmake.msi" (
-            echo Error al descargar CMake con ambas URLs.
-            echo Por favor, descarga manualmente CMake desde https://cmake.org/download/
-            echo e instálalo antes de ejecutar este script nuevamente.
-            type logs\cmake_download_alt.log
-            pause
-            exit /b 1
-        )
-    )
-    
-    echo Instalando CMake...
-    start /wait msiexec /i cmake.msi /quiet /qn /norestart
-    
-    if %errorlevel% neq 0 (
-        echo Error al instalar CMake.
+    powershell -Command "& {Invoke-WebRequest -Uri '%CMAKE_URL%' -OutFile 'cmake.msi'}"
+
+    if exist "cmake.msi" (
+        echo ====================================================
+        echo CMake no se instala automaticamente.
+        echo El instalador ha sido guardado como 'cmake.msi'.
+        echo Por favor, ejecútalo manualmente para instalar CMake.
+        echo Luego vuelve a ejecutar este script.
+        echo ====================================================
+        start "" cmake.msi
+    ) else (
+        echo ERROR: No se pudo descargar el instalador de CMake.
         pause
         exit /b 1
     )
-    
-    setx PATH "%PATH%;C:\Program Files\CMake\bin" /M
-    set "PATH=%PATH%;C:\Program Files\CMake\bin"
-    
-    del cmake.msi
+    pause
+    exit /b 1
 ) else (
     echo CMake ya esta instalado.
 )
 
 :: Verificar Git
-set "GIT_INSTALLED=0"
+echo Verificando Git...
 where git >nul 2>&1
 if %errorlevel% neq 0 (
-    echo Git no esta instalado. Instalando...
-    
-    echo Descargando el instalador de Git...
+    echo Git no esta instalado.
+
+    echo Descargando instalador de Git...
     powershell -Command "& {Invoke-WebRequest -Uri 'https://github.com/git-for-windows/git/releases/download/v2.37.0.windows.1/Git-2.37.0-64-bit.exe' -OutFile 'git.exe'}"
-    
-    if %errorlevel% neq 0 (
-        echo Error al descargar Git.
+
+    if not exist "git.exe" (
+        echo ERROR: No se pudo descargar Git.
         pause
         exit /b 1
     )
-    
+
     echo Instalando Git...
     start /wait git.exe /VERYSILENT /NORESTART
-    
+
     if %errorlevel% neq 0 (
-        echo Error al instalar Git.
+        echo ERROR: Falló la instalación de Git.
         pause
         exit /b 1
     )
-    
+
     setx PATH "%PATH%;C:\Program Files\Git\cmd" /M
     set "PATH=%PATH%;C:\Program Files\Git\cmd"
-    set "GIT_INSTALLED=1"
-    
     del git.exe
+    echo Git instalado correctamente.
 ) else (
     echo Git ya esta instalado.
-)
-
-:: Refrescar PATH desde el registro
-for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v PATH') do set "PATH=%%b"
-
-:: Verificar que Git funciona correctamente
-echo Verificando que Git esté correctamente configurado...
-git --version >nul 2>&1
-
-if %errorlevel% neq 0 (
-    echo ERROR: Git no está disponible en el PATH.
-    echo Por favor:
-    echo 1. Cierra y vuelve a abrir la ventana de comandos
-    echo 2. Ejecuta este script nuevamente
-    echo O alternativamente:
-    echo 1. Reinicia tu computadora
-    echo 2. Ejecuta este script como administrador nuevamente
-    pause
-    exit /b 1
 )
 
 :: Configurar vcpkg
