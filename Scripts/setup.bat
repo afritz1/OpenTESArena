@@ -21,106 +21,64 @@ set "SCRIPT_DIR=%~dp0"
 :: Crear directorio para logs
 if not exist "logs" mkdir logs
 
-:: Verificar Visual Studio 2019
+:: ----------------------------------------
+:: Visual Studio 2019
+:: ----------------------------------------
 echo Verificando instalacion de Visual Studio 2019...
 set "vs_path=%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe"
 if not exist "%vs_path%" (
-    echo Visual Studio 2019 Community no esta instalado.
+    echo Visual Studio 2019 no esta instalado.
 
-    echo Descargando instalador...
-    powershell -Command "& {Invoke-WebRequest -Uri 'https://aka.ms/vs/16/release/vs_community.exe' -OutFile 'vs_community.exe'}"
+    echo Descargando instalador de Visual Studio 2019...
+    curl -L -o vs_buildtools.exe https://aka.ms/vs/16/release/vs_buildtools.exe
 
-    if exist "vs_community.exe" (
-        echo ====================================================
-        echo Visual Studio 2019 no se instala automaticamente.
-        echo El instalador ha sido guardado como 'vs_community.exe'.
-        echo Por favor, ejecútalo manualmente y selecciona:
-        echo - Workload: Desarrollo de juegos con C++
-        echo - Herramientas VC++ v142
-        echo Luego vuelve a ejecutar este script.
-        echo ====================================================
-        start "" vs_community.exe
-    ) else (
-        echo ERROR: No se pudo descargar el instalador de Visual Studio.
-        pause
-        exit /b 1
-    )
-    pause
-    exit /b 1
+    echo Ejecutando instalador de VS Build Tools...
+    start "" vs_buildtools.exe --installPath "%SCRIPT_DIR%BuildTools2019"
 ) else (
-    echo Visual Studio 2019 Community ya esta instalado.
+    echo Visual Studio 2019 ya esta instalado.
 )
 
+:: ----------------------------------------
 :: Verificar CMake
+:: ----------------------------------------
 echo Verificando CMake...
 where cmake >nul 2>&1
 if %errorlevel% neq 0 (
     echo CMake no esta instalado.
 
     echo Descargando instalador de CMake...
-    set "CMAKE_URL=https://github.com/Kitware/CMake/releases/download/v3.31.7/cmake-3.31.7-windows-x86_64.msi"
-    powershell -Command "& {Invoke-WebRequest -Uri '%CMAKE_URL%' -OutFile 'cmake.msi'}"
+    curl -L -o cmake.msi https://github.com/Kitware/CMake/releases/download/v3.29.2/cmake-3.29.2-windows-x86_64.msi
 
-    if exist "cmake.msi" (
-        echo ====================================================
-        echo CMake no se instala automaticamente.
-        echo El instalador ha sido guardado como 'cmake.msi'.
-        echo Por favor, ejecútalo manualmente para instalar CMake.
-        echo Luego vuelve a ejecutar este script.
-        echo ====================================================
-        start "" cmake.msi
-    ) else (
-        echo ERROR: No se pudo descargar el instalador de CMake.
-        pause
-        exit /b 1
-    )
-    pause
-    exit /b 1
+    echo Ejecutando instalador de CMake...
+    start "" cmake.msi
 ) else (
     echo CMake ya esta instalado.
 )
 
+:: ----------------------------------------
 :: Verificar Git
+:: ----------------------------------------
 echo Verificando Git...
 where git >nul 2>&1
 if %errorlevel% neq 0 (
     echo Git no esta instalado.
 
     echo Descargando instalador de Git...
-    powershell -Command "& {Invoke-WebRequest -Uri 'https://github.com/git-for-windows/git/releases/download/v2.37.0.windows.1/Git-2.37.0-64-bit.exe' -OutFile 'git.exe'}"
+    curl -L -o git.exe https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/Git-2.44.0-64-bit.exe
 
-    if not exist "git.exe" (
-        echo ERROR: No se pudo descargar Git.
-        pause
-        exit /b 1
-    )
-
-    echo Instalando Git...
-    start /wait git.exe /VERYSILENT /NORESTART
-
-    if %errorlevel% neq 0 (
-        echo ERROR: Falló la instalación de Git.
-        pause
-        exit /b 1
-    )
-
-    setx PATH "%PATH%;C:\Program Files\Git\cmd" /M
-    set "PATH=%PATH%;C:\Program Files\Git\cmd"
-    del git.exe
-    echo Git instalado correctamente.
+    echo Ejecutando instalador de Git...
+    start "" git.exe
 ) else (
     echo Git ya esta instalado.
 )
 
-:: Configurar vcpkg
-echo Configurando vcpkg en C:\Tools\vcpkg...
-
-if not exist "C:\Tools" mkdir "C:\Tools"
-cd "C:\Tools"
-
+:: Verificar vcpkg
+echo Verificando vcpkg...
 if not exist "C:\Tools\vcpkg" (
+    echo vcpkg no esta instalado.
+
     echo Clonando repositorio de vcpkg...
-    git clone https://github.com/Microsoft/vcpkg.git vcpkg
+    git clone https://github.com/Microsoft/vcpkg.git C:\Tools\vcpkg
     
     if %errorlevel% neq 0 (
         echo Error al clonar el repositorio de vcpkg.
@@ -129,25 +87,18 @@ if not exist "C:\Tools\vcpkg" (
         exit /b 1
     )
     
-    cd vcpkg
-    
+    cd C:\Tools\vcpkg
     echo Ejecutando bootstrap-vcpkg.bat...
     call bootstrap-vcpkg.bat
-    
-    if %errorlevel% neq 0 (
-        echo Error al ejecutar bootstrap-vcpkg.bat.
-        cd /d "%SCRIPT_DIR%"
-        pause
-        exit /b 1
-    )
 ) else (
     echo vcpkg ya esta instalado, actualizando...
-    cd vcpkg
+    cd C:\Tools\vcpkg
     git pull
 )
 
+:: Instalar dependencias con vcpkg
 echo Instalando dependencias con vcpkg...
-call vcpkg install sdl2 openal-soft wildmidi --triplet x64-windows > "%SCRIPT_DIR%logs\vcpkg_install.log" 2>&1
+call C:\Tools\vcpkg\vcpkg install sdl2 openal-soft wildmidi --triplet x64-windows > "%SCRIPT_DIR%logs\vcpkg_install.log" 2>&1
 
 if %errorlevel% neq 0 (
     echo Error al instalar las dependencias con vcpkg.
@@ -159,7 +110,7 @@ if %errorlevel% neq 0 (
 )
 
 echo Integrando vcpkg con Visual Studio...
-call vcpkg integrate install
+call C:\Tools\vcpkg\vcpkg integrate install
 
 if %errorlevel% neq 0 (
     echo Error al integrar vcpkg con Visual Studio.
@@ -170,7 +121,6 @@ if %errorlevel% neq 0 (
 
 :: Volver a la carpeta donde se ejecutó el script
 cd /d "%SCRIPT_DIR%"
-
 
 echo.
 echo ====================================================
@@ -183,6 +133,7 @@ echo 3. Configura el proyecto para usar vcpkg
 echo 4. Compila la solución
 echo ====================================================
 echo.
+
 
 echo ¿Deseas clonar el repositorio de OpenTESArena ahora? (S/N)
 set /p clonar=
