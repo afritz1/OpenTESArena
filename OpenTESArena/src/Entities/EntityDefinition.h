@@ -49,7 +49,7 @@ struct EnemyEntityDefinition
 		int scale;
 		int yOffset;
 		bool hasNoCorpse;
-		int bloodIndex;
+		int bloodIndex; // @todo this should be an EntityDefID to the vfx in EntityDefinitionLibrary, or -1
 		int diseaseChances;
 		int attributes[8];
 		bool ghost;

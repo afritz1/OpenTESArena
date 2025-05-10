@@ -2,6 +2,7 @@
 
 #include "CombatLogic.h"
 #include "../Entities/EntityChunkManager.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Math/BoundingBox.h"
 #include "../Voxels/VoxelChunkManager.h"
 
@@ -97,4 +98,34 @@ void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double sea
 			}
 		}
 	}
+}
+
+void CombatLogic::spawnHitVfx(const EntityDefinition &hitEntityDef, const WorldDouble3 &position, EntityChunkManager &entityChunkManager,
+	Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+{
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+
+	constexpr int FirstBloodIndex = 24; // Based on original game VFX array, blood is indices 24-26.
+	EntityDefinitionKey key;
+	int bloodIndex = FirstBloodIndex;
+	if (hitEntityDef.type == EntityDefinitionType::Enemy && hitEntityDef.enemy.type == EnemyEntityDefinitionType::Creature)
+	{
+		bloodIndex = hitEntityDef.enemy.creature.bloodIndex;
+	}
+
+	bloodIndex -= FirstBloodIndex;
+	key.initVfx(VfxEntityAnimationType::MeleeStrike, bloodIndex);
+
+	EntityDefID hitEntityVfxEntityDefID;
+	if (!entityDefLibrary.tryGetDefinitionID(key, &hitEntityVfxEntityDefID))
+	{
+		DebugCrash("Couldn't get hit entity VFX definition ID from library.");
+	}
+
+	EntityInitInfo initInfo;
+	initInfo.defID = hitEntityVfxEntityDefID;
+	initInfo.feetPosition = position;
+	initInfo.initialAnimStateIndex = 0; // Assuming VFX only have one state.
+	initInfo.isSensorCollider = true;
+	entityChunkManager.createEntity(initInfo, random, physicsSystem, renderer);
 }

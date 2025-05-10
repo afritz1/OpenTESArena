@@ -988,7 +988,44 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 	}
 }
 
-void EntityChunkManager::updateEnemyDeathStates(double dt, EntityChunk &entityChunk)
+void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem)
+{
+	for (const VoxelFadeAnimationInstance &fadeAnimInst : voxelChunk.getFadeAnimInsts())
+	{
+		if (fadeAnimInst.isDoneFading())
+		{
+			for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
+			{
+				const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
+				const EntityInstance &entityInst = this->entities.get(entityInstID);
+				WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+				WorldInt3 entityWorldVoxel = VoxelUtils::pointToVoxel(entityPosition, ceilingScale);
+				const CoordInt3 entityVoxelCoord = VoxelUtils::worldVoxelToCoord(entityWorldVoxel);
+				const VoxelInt3 entityVoxel = entityVoxelCoord.voxel;
+				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.y == fadeAnimInst.y) && (entityVoxel.z == fadeAnimInst.z);
+
+				// @todo: we don't know if this was a raised platform because the voxel shape has already changed this frame, so just assume yes for "can be elevated" entities
+				if (matchesFadedVoxel && entityInst.canUseElevatedPlatforms())
+				{
+					JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+					const JPH::BodyID entityPhysicsBodyID = entityInst.physicsBodyID;
+					const JPH::RVec3 oldEntityPhysicsPosition = bodyInterface.GetPosition(entityPhysicsBodyID);
+					const JPH::ShapeRefC entityPhysicsShape = bodyInterface.GetShape(entityPhysicsBodyID);
+					const JPH::AABox entityColliderBBox = entityPhysicsShape->GetLocalBounds();
+					const float entityColliderHeight = entityColliderBBox.GetSize().GetY();
+					const double newEntityFeetY = ceilingScale;
+					entityPosition.y = newEntityFeetY; // Probably don't need entity def Y offset
+
+					const double newEntityPhysicsCenterY = newEntityFeetY + (entityColliderHeight * 0.50);
+					const JPH::RVec3 newEntityPhysicsPosition(oldEntityPhysicsPosition.GetX(), static_cast<float>(newEntityPhysicsCenterY), oldEntityPhysicsPosition.GetZ());
+					bodyInterface.SetPosition(entityPhysicsBodyID, newEntityPhysicsPosition, JPH::EActivation::Activate);
+				}
+			}
+		}
+	}
+}
+
+void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk)
 {
 	// @todo: just check an EntityChunkManager::dyingEntities list instead, added to when player swing kills them
 
@@ -1021,39 +1058,23 @@ void EntityChunkManager::updateEnemyDeathStates(double dt, EntityChunk &entityCh
 	}
 }
 
-void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem)
+void EntityChunkManager::updateVfx(EntityChunk &entityChunk)
 {
-	for (const VoxelFadeAnimationInstance &fadeAnimInst : voxelChunk.getFadeAnimInsts())
+	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 	{
-		if (fadeAnimInst.isDoneFading())
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityDefinitionType entityDefType = entityDef.type;
+		if (entityDefType != EntityDefinitionType::Vfx)
 		{
-			for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
-			{
-				const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
-				const EntityInstance &entityInst = this->entities.get(entityInstID);
-				WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
-				WorldInt3 entityWorldVoxel = VoxelUtils::pointToVoxel(entityPosition, ceilingScale);
-				const CoordInt3 entityVoxelCoord = VoxelUtils::worldVoxelToCoord(entityWorldVoxel);
-				const VoxelInt3 entityVoxel = entityVoxelCoord.voxel;
-				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.y == fadeAnimInst.y) && (entityVoxel.z == fadeAnimInst.z);
-				
-				// @todo: we don't know if this was a raised platform because the voxel shape has already changed this frame, so just assume yes for "can be elevated" entities
-				if (matchesFadedVoxel && entityInst.canUseElevatedPlatforms())
-				{
-					JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
-					const JPH::BodyID entityPhysicsBodyID = entityInst.physicsBodyID;
-					const JPH::RVec3 oldEntityPhysicsPosition = bodyInterface.GetPosition(entityPhysicsBodyID);
-					const JPH::ShapeRefC entityPhysicsShape = bodyInterface.GetShape(entityPhysicsBodyID);
-					const JPH::AABox entityColliderBBox = entityPhysicsShape->GetLocalBounds();
-					const float entityColliderHeight = entityColliderBBox.GetSize().GetY();
-					const double newEntityFeetY = ceilingScale;
-					entityPosition.y = newEntityFeetY; // Probably don't need entity def Y offset
+			continue;
+		}
 
-					const double newEntityPhysicsCenterY = newEntityFeetY + (entityColliderHeight * 0.50);
-					const JPH::RVec3 newEntityPhysicsPosition(oldEntityPhysicsPosition.GetX(), static_cast<float>(newEntityPhysicsCenterY), oldEntityPhysicsPosition.GetZ());
-					bodyInterface.SetPosition(entityPhysicsBodyID, newEntityPhysicsPosition, JPH::EActivation::Activate);
-				}
-			}
+		const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		const bool isVfxAnimComplete = animInst.progressPercent == 1.0;
+		if (isVfxAnimComplete)
+		{
+			this->queueEntityDestroy(entityInstID, true); // @todo shouldn't need to notify chunk, it should just be a loose entity in entitychunkmanager
 		}
 	}
 }
@@ -1165,7 +1186,8 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 
 		this->updateCreatureSounds(dt, entityChunk, playerPosition, random, audioManager);
 		this->updateFadedElevatedPlatforms(entityChunk, voxelChunk, ceilingScale, physicsSystem);
-		this->updateEnemyDeathStates(dt, entityChunk);
+		this->updateEnemyDeathStates(entityChunk);
+		this->updateVfx(entityChunk);
 	}
 }
 

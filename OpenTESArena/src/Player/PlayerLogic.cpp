@@ -761,6 +761,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 	AudioManager &audioManager = game.audioManager;
+	Renderer &renderer = game.renderer;
 	Random &random = game.random;
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
@@ -775,7 +776,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
 	{
 		// Get smaller screen dimension so mouse delta is relative to a square.
-		const Int2 dimensions = game.renderer.getWindowDimensions();
+		const Int2 dimensions = renderer.getWindowDimensions();
 		const int minDimension = std::min(dimensions.x, dimensions.y);
 
 		const double mouseDeltaXPercent = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
@@ -857,7 +858,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
 				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
-				const int hitEntityAnimInstCurrentStateIndex = hitEntityAnimInst.currentStateIndex;				
+				const int hitEntityAnimInstCurrentStateIndex = hitEntityAnimInst.currentStateIndex;
 				const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityDef.animDef);
 				const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
 				const bool isHitEntityInDeathAnim = hitEntityHasDeathAnim && hitEntityAnimInstCurrentStateIndex == *hitEntityDeathAnimStateIndex;
@@ -883,16 +884,15 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						{
 							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
 						}
-						
-						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
 
-						// @todo spawn blood vfx at hit position
+						CombatLogic::spawnHitVfx(hitEntityDef, hitEntityMiddlePosition, entityChunkManager, random, game.physicsSystem, renderer);
+						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
 					}
 					else
 					{
 						audioManager.playSound(ArenaSoundName::Clank, hitEntityMiddlePosition);
 					}
-				}				
+				}
 			}
 		}
 	}
@@ -906,8 +906,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 		else
 		{
 			// Cursor must be above game world interface. In the original game, it has to be an "X", but relaxing that here.
-			auto &textureManager = game.textureManager;
-			auto &renderer = game.renderer;
+			TextureManager &textureManager = game.textureManager;
 			const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
 			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
 			if (!metadataID.has_value())
