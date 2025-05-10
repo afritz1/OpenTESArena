@@ -17,6 +17,7 @@ if %errorlevel% neq 0 (
 
 :: Guardar la ruta de ejecución del script
 set "SCRIPT_DIR=%~dp0"
+set "PROJECT_DIR=%~dp0..\"
 
 :: Crear directorio para logs
 if not exist "logs" mkdir logs
@@ -120,112 +121,9 @@ if %errorlevel% neq 0 (
 )
 
 :: Volver a la carpeta donde se ejecutó el script
-cd /d "%SCRIPT_DIR%"
 
-echo.
-echo ====================================================
-echo Configuración completada exitosamente!
-echo.
-echo Instrucciones para compilar OpenTESArena:
-echo 1. Clona el repositorio: git clone https://github.com/afritz1/OpenTESArena.git
-echo 2. Abre el proyecto en Visual Studio 2019
-echo 3. Configura el proyecto para usar vcpkg
-echo 4. Compila la solución
-echo ====================================================
-echo.
+cd /d "%PROJECT_DIR%"
 
-
-echo ¿Deseas clonar el repositorio de OpenTESArena ahora? (S/N)
-set /p clonar=
-
-if /i "%clonar%"=="S" (
-    echo Verificando nuevamente que Git está disponible...
-    git --version >nul 2>&1
-    if %errorlevel% neq 0 (
-        echo ERROR: Git sigue sin estar disponible en el PATH.
-        echo Por favor reinicia tu computadora y ejecuta este script nuevamente.
-        pause
-        exit /b 1
-    )
-
-    if exist "OpenTESArena" (
-        echo Ya existe una carpeta OpenTESArena. ¿Deseas eliminarla y clonar de nuevo? (S/N)
-        set /p eliminar=
-        
-        if /i "!eliminar!"=="S" (
-            echo Eliminando carpeta existente...
-            rmdir /s /q OpenTESArena
-            
-            if %errorlevel% neq 0 (
-                echo Error al eliminar la carpeta existente.
-                pause
-                exit /b 1
-            )
-        ) else (
-            echo No se clonará el repositorio.
-            goto fin
-        )
-    )
-    
-    echo Clonando repositorio OpenTESArena...
-    git clone https://github.com/afritz1/OpenTESArena.git
-    
-    if %errorlevel% neq 0 (
-        echo Error al clonar el repositorio con Git.
-        echo Intentando método alternativo con PowerShell...
-        
-        powershell -Command "Start-Process -Wait -NoNewWindow git -ArgumentList 'clone', 'https://github.com/afritz1/OpenTESArena.git'"
-        
-        if %errorlevel% neq 0 (
-            echo Error persistente al clonar el repositorio.
-            echo Intentando descarga directa del ZIP...
-            
-            echo Descargando archivo ZIP del repositorio...
-            powershell -Command "& { $ProgressPreference = 'Continue'; try { Invoke-WebRequest -Uri 'https://github.com/afritz1/OpenTESArena/archive/refs/heads/main.zip' -OutFile 'OpenTESArena.zip'; if ($?) { Write-Host 'Descarga exitosa del ZIP!' } else { Write-Host 'Error al descargar el ZIP.' } } catch { Write-Host 'Excepción en descarga: ' + $_.Exception.Message } }"
-            
-            if exist "OpenTESArena.zip" (
-                echo Descomprimiendo el archivo ZIP...
-                powershell -Command "& { Add-Type -AssemblyName System.IO.Compression.FileSystem; [System.IO.Compression.ZipFile]::ExtractToDirectory('OpenTESArena.zip', '.'); }"
-                
-                if exist "OpenTESArena-main" (
-                    echo Renombrando la carpeta...
-                    ren "OpenTESArena-main" "OpenTESArena"
-                    del OpenTESArena.zip
-                    echo Repositorio descargado y descomprimido exitosamente.
-                ) else (
-                    echo Error al descomprimir el archivo ZIP.
-                    cd /d "%SCRIPT_DIR%"
-                    pause
-                    exit /b 1
-                )
-            ) else (
-                echo Error al descargar el archivo ZIP. 
-                echo Por favor, intenta descargar manualmente el repositorio desde:
-                echo https://github.com/afritz1/OpenTESArena/archive/refs/heads/main.zip
-                cd /d "%SCRIPT_DIR%"
-                pause
-                exit /b 1
-            )
-        )
-    )
-    
-    echo.
-    echo Repositorio obtenido exitosamente en la carpeta actual: %SCRIPT_DIR%OpenTESArena
-    
-    echo.
-    echo ====================================================
-    echo Compilando OpenTESArena
-    echo ====================================================
-    
-    :: Verificar que tenemos el repositorio
-    cd /d "%SCRIPT_DIR%"
-    if not exist "OpenTESArena" (
-        echo Error: La carpeta OpenTESArena no existe. No se puede continuar con la compilación.
-        pause
-        exit /b 1
-    )
-    
-    cd OpenTESArena
     
     :: Crear directorio de compilación
     echo Creando directorio de compilación...
@@ -369,39 +267,39 @@ if /i "%clonar%"=="S" (
         )
     )
     
-    :: Copiar archivos necesarios para la ejecución
-    echo ¿Deseas copiar los archivos de datos y opciones necesarios para ejecutar el juego? (S/N)
-    set /p copiardatos=
+:: Copiar archivos necesarios para la ejecución
+echo ¿Deseas copiar los archivos de datos y opciones necesarios para ejecutar el juego? (S/N)
+set /p copiardatos=
+
+if /i "!copiardatos!"=="S" (
+    echo Copiando archivos necesarios...
     
-    if /i "!copiardatos!"=="S" (
-        echo Copiando archivos necesarios...
-        
-        :: Determinar la ubicación del ejecutable según el tipo de compilación
-        set "EXECUTABLE_DIR=%SCRIPT_DIR%OpenTESArena\build\bin\!BUILD_TYPE!"
+    :: Determinar la ubicación del ejecutable según el tipo de compilación
+    set "EXECUTABLE_DIR=%PROJECT_DIR%build\bin\!BUILD_TYPE!"
+    if not exist "!EXECUTABLE_DIR!" (
+        set "EXECUTABLE_DIR=%PROJECT_DIR%build\!BUILD_TYPE!"
         if not exist "!EXECUTABLE_DIR!" (
-            set "EXECUTABLE_DIR=%SCRIPT_DIR%OpenTESArena\build\!BUILD_TYPE!"
-            if not exist "!EXECUTABLE_DIR!" (
-                echo No se pudo encontrar la carpeta del ejecutable.
-                echo Busca manualmente el archivo ejecutable y copia las carpetas 'data' y 'options' a ese directorio.
-            ) else (
-                if not exist "!EXECUTABLE_DIR!\data" mkdir "!EXECUTABLE_DIR!\data"
-                if not exist "!EXECUTABLE_DIR!\options" mkdir "!EXECUTABLE_DIR!\options"
-                
-                xcopy /E /Y /I "%SCRIPT_DIR%OpenTESArena\data" "!EXECUTABLE_DIR!\data"
-                xcopy /E /Y /I "%SCRIPT_DIR%OpenTESArena\options" "!EXECUTABLE_DIR!\options"
-                
-                echo Archivos copiados exitosamente a !EXECUTABLE_DIR!
-            )
+            echo No se pudo encontrar la carpeta del ejecutable.
+            echo Busca manualmente el archivo ejecutable y copia las carpetas 'data' y 'options' a ese directorio.
         ) else (
             if not exist "!EXECUTABLE_DIR!\data" mkdir "!EXECUTABLE_DIR!\data"
             if not exist "!EXECUTABLE_DIR!\options" mkdir "!EXECUTABLE_DIR!\options"
             
-            xcopy /E /Y /I "%SCRIPT_DIR%OpenTESArena\data" "!EXECUTABLE_DIR!\data"
-            xcopy /E /Y /I "%SCRIPT_DIR%OpenTESArena\options" "!EXECUTABLE_DIR!\options"
+            xcopy /E /Y /I "%PROJECT_DIR%data" "!EXECUTABLE_DIR!\data"
+            xcopy /E /Y /I "%PROJECT_DIR%options" "!EXECUTABLE_DIR!\options"
             
             echo Archivos copiados exitosamente a !EXECUTABLE_DIR!
         )
+    ) else (
+        if not exist "!EXECUTABLE_DIR!\data" mkdir "!EXECUTABLE_DIR!\data"
+        if not exist "!EXECUTABLE_DIR!\options" mkdir "!EXECUTABLE_DIR!\options"
+        
+        xcopy /E /Y /I "%PROJECT_DIR%data" "!EXECUTABLE_DIR!\data"
+        xcopy /E /Y /I "%PROJECT_DIR%options" "!EXECUTABLE_DIR!\options"
+        
+        echo Archivos copiados exitosamente a !EXECUTABLE_DIR!
     )
+)
     
     cd /d "%SCRIPT_DIR%"
     
