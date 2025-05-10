@@ -279,11 +279,27 @@ if /i "%clonar%"=="S" (
         echo Opción no válida. Usando ReleaseGeneric por defecto.
     )
     
+    :: Preguntar si se desean desactivar las especificaciones del CPU
+	echo.
+	echo ¿Deseas desactivar optimizaciones específicas del CPU? (AVX2, AVX512, FMA) (S/N)
+	set /p desactivarCPU=
+
+	set "CPU_FLAGS="
+	if /i "!desactivarCPU!"=="S" (
+    		set "CPU_FLAGS=-DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_FMADD=OFF"
+    		echo Se desactivarán optimizaciones del CPU: AVX2, AVX512, FMA.
+	) else (
+    		echo Se mantendrán las optimizaciones del CPU activas.
+	)
+    
     :: Generar archivos de proyecto con CMake
     echo Generando archivos de proyecto con CMake...
-    echo Usando: cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=!BUILD_TYPE! ..
+    echo Usando: cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=!BUILD_TYPE! !CPU_FLAGS! ..
+
     
-    cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=!BUILD_TYPE! ..
+
+    cmake -DCMAKE_TOOLCHAIN_FILE=C:/Tools/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_BUILD_TYPE=!BUILD_TYPE! !CPU_FLAGS! ..
+
     
     if %errorlevel% neq 0 (
         echo Error al generar los archivos de proyecto con CMake.
