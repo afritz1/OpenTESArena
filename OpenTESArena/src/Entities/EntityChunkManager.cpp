@@ -33,30 +33,6 @@
 
 namespace
 {
-	struct EntityInitInfo
-	{
-		EntityDefID defID;
-		WorldDouble3 feetPosition;
-		char initialAnimStateIndex;
-		bool isSensorCollider;
-		std::optional<Double2> direction;
-		std::optional<int8_t> citizenDirectionIndex;
-		std::optional<EntityCitizenName> citizenName;
-		std::optional<uint16_t> citizenColorSeed;
-		std::optional<int> raceID;
-		bool hasInventory;
-		bool hasCreatureSound;
-
-		EntityInitInfo()
-		{
-			this->defID = -1;
-			this->initialAnimStateIndex = -1;
-			this->isSensorCollider = false;
-			this->hasInventory = false;
-			this->hasCreatureSound = false;
-		}
-	};
-
 	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
@@ -156,6 +132,15 @@ EntityCitizenName::EntityCitizenName()
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
 }
 
+EntityInitInfo::EntityInitInfo()
+{
+	this->defID = -1;
+	this->initialAnimStateIndex = -1;
+	this->isSensorCollider = false;
+	this->hasInventory = false;
+	this->hasCreatureSound = false;
+}
+
 EntityTransferResult::EntityTransferResult()
 {
 	this->id = -1;
@@ -198,139 +183,140 @@ EntityDefID EntityChunkManager::getOrAddEntityDefID(const EntityDefinition &def,
 	return this->addEntityDef(EntityDefinition(def), defLibrary);
 }
 
+void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
+	const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+{
+	EntityPositionID positionID;
+	if (!this->positions.tryAlloc(&positionID))
+	{
+		DebugLogError("Couldn't allocate EntityPositionID.");
+	}
+
+	EntityBoundingBoxID bboxID;
+	if (!this->boundingBoxes.tryAlloc(&bboxID))
+	{
+		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
+	}
+
+	UniformBufferID renderTransformBufferID;
+	if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &renderTransformBufferID))
+	{
+		DebugLogError("Couldn't create uniform buffer for entity transform.");
+	}
+
+	const EntityDefID defID = initInfo.defID;
+	entityInst.init(instID, defID, positionID, bboxID, renderTransformBufferID);
+
+	WorldDouble3 &entityPosition = this->positions.get(positionID);
+	entityPosition = initInfo.feetPosition;
+
+	// Worst case 3D dimensions.
+	double animMaxWidth, animMaxHeight;
+	EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
+	const double halfAnimMaxWidth = animMaxWidth * 0.50;
+
+	// Center bbox in model space.
+	const WorldDouble3 entityBBoxMin(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
+	const WorldDouble3 entityBBoxMax(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
+	BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
+	entityBBox.init(entityBBoxMin, entityBBoxMax);
+
+	if (!this->animInsts.tryAlloc(&entityInst.animInstID))
+	{
+		DebugLogError("Couldn't allocate EntityAnimationInstanceID.");
+	}
+
+	EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+	for (int animDefStateIndex = 0; animDefStateIndex < animDef.stateCount; animDefStateIndex++)
+	{
+		const EntityAnimationDefinitionState &animDefState = animDef.states[animDefStateIndex];
+		animInst.addState(animDefState.seconds, animDefState.isLooping);
+	}
+
+	animInst.setStateIndex(initInfo.initialAnimStateIndex);
+
+	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+	{
+		DebugLogError("Couldn't allocate entity Jolt physics body.");
+	}
+
+	if (initInfo.direction.has_value())
+	{
+		if (!this->directions.tryAlloc(&entityInst.directionID))
+		{
+			DebugLogError("Couldn't allocate EntityDirectionID.");
+		}
+
+		const Double2 &direction = *initInfo.direction;
+		this->directions.get(entityInst.directionID) = direction;
+	}
+
+	if (initInfo.citizenDirectionIndex.has_value())
+	{
+		if (!this->citizenDirectionIndices.tryAlloc(&entityInst.citizenDirectionIndexID))
+		{
+			DebugLogError("Couldn't allocate EntityCitizenDirectionIndexID.");
+		}
+
+		const uint8_t citizenDirectionIndex = *initInfo.citizenDirectionIndex;
+		this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID) = citizenDirectionIndex;
+	}
+
+	if (initInfo.citizenName.has_value())
+	{
+		if (!this->citizenNames.tryAlloc(&entityInst.citizenNameID))
+		{
+			DebugLogError("Couldn't allocate EntityCitizenNameID.");
+		}
+
+		const EntityCitizenName &citizenName = *initInfo.citizenName;
+		this->citizenNames.get(entityInst.citizenNameID) = citizenName;
+	}
+
+	if (initInfo.citizenColorSeed.has_value())
+	{
+		if (!this->paletteIndices.tryAlloc(&entityInst.paletteIndicesInstID))
+		{
+			DebugLogError("Couldn't allocate EntityPaletteIndicesInstanceID.");
+		}
+
+		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+
+		DebugAssert(initInfo.raceID.has_value());
+		const uint16_t citizenColorSeed = *initInfo.citizenColorSeed;
+		PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
+		paletteIndices = ArenaAnimUtils::transformCitizenColors(*initInfo.raceID, citizenColorSeed, binaryAssetLibrary.getExeData());
+	}
+
+	if (initInfo.hasInventory)
+	{
+		if (!this->itemInventories.tryAlloc(&entityInst.itemInventoryInstID))
+		{
+			DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
+		}
+	}
+
+	if (initInfo.hasCreatureSound)
+	{
+		if (!this->creatureSoundInsts.tryAlloc(&entityInst.creatureSoundInstID))
+		{
+			DebugCrash("Couldn't allocate EntityCreatureSoundInstanceID.");
+		}
+
+		double &secondsTillNextCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
+		secondsTillNextCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
+	}
+}
+
 void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDefinition, const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
+	Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = voxelChunk.getPosition();
 	const double ceilingScale = levelInfoDefinition.getCeilingScale();
-	ArenaRandom arenaRandom(random.next()); // Don't need the one from Game, this is only a cosmetic random
-
-	auto initializeEntity = [this, &random, &binaryAssetLibrary, &physicsSystem, &renderer, ceilingScale](
-		EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
-		const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo)
-	{
-		EntityPositionID positionID;
-		if (!this->positions.tryAlloc(&positionID))
-		{
-			DebugLogError("Couldn't allocate EntityPositionID.");
-		}
-
-		EntityBoundingBoxID bboxID;
-		if (!this->boundingBoxes.tryAlloc(&bboxID))
-		{
-			DebugLogError("Couldn't allocate EntityBoundingBoxID.");
-		}
-
-		UniformBufferID renderTransformBufferID;
-		if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &renderTransformBufferID))
-		{
-			DebugLogError("Couldn't create uniform buffer for entity transform.");
-		}
-
-		const EntityDefID defID = initInfo.defID;
-		entityInst.init(instID, defID, positionID, bboxID, renderTransformBufferID);
-
-		WorldDouble3 &entityPosition = this->positions.get(positionID);
-		entityPosition = initInfo.feetPosition;
-
-		// Worst case 3D dimensions.
-		double animMaxWidth, animMaxHeight;
-		EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
-		const double halfAnimMaxWidth = animMaxWidth * 0.50;
-
-		// Center bbox in model space.
-		const WorldDouble3 entityBBoxMin(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
-		const WorldDouble3 entityBBoxMax(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
-		BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
-		entityBBox.init(entityBBoxMin, entityBBoxMax);
-
-		if (!this->animInsts.tryAlloc(&entityInst.animInstID))
-		{
-			DebugLogError("Couldn't allocate EntityAnimationInstanceID.");
-		}
-
-		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		for (int animDefStateIndex = 0; animDefStateIndex < animDef.stateCount; animDefStateIndex++)
-		{
-			const EntityAnimationDefinitionState &animDefState = animDef.states[animDefStateIndex];
-			animInst.addState(animDefState.seconds, animDefState.isLooping);
-		}
-		
-		animInst.setStateIndex(initInfo.initialAnimStateIndex);
-
-		if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
-		{
-			DebugLogError("Couldn't allocate entity Jolt physics body.");
-		}
-
-		if (initInfo.direction.has_value())
-		{
-			if (!this->directions.tryAlloc(&entityInst.directionID))
-			{
-				DebugLogError("Couldn't allocate EntityDirectionID.");
-			}
-
-			const Double2 &direction = *initInfo.direction;
-			this->directions.get(entityInst.directionID) = direction;
-		}
-
-		if (initInfo.citizenDirectionIndex.has_value())
-		{
-			if (!this->citizenDirectionIndices.tryAlloc(&entityInst.citizenDirectionIndexID))
-			{
-				DebugLogError("Couldn't allocate EntityCitizenDirectionIndexID.");
-			}
-
-			const uint8_t citizenDirectionIndex = *initInfo.citizenDirectionIndex;
-			this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID) = citizenDirectionIndex;
-		}
-
-		if (initInfo.citizenName.has_value())
-		{
-			if (!this->citizenNames.tryAlloc(&entityInst.citizenNameID))
-			{
-				DebugLogError("Couldn't allocate EntityCitizenNameID.");
-			}
-
-			const EntityCitizenName &citizenName = *initInfo.citizenName;
-			this->citizenNames.get(entityInst.citizenNameID) = citizenName;
-		}
-
-		if (initInfo.citizenColorSeed.has_value())
-		{
-			if (!this->paletteIndices.tryAlloc(&entityInst.paletteIndicesInstID))
-			{
-				DebugLogError("Couldn't allocate EntityPaletteIndicesInstanceID.");
-			}
-
-			DebugAssert(initInfo.raceID.has_value());
-			const uint16_t citizenColorSeed = *initInfo.citizenColorSeed;
-			PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
-			paletteIndices = ArenaAnimUtils::transformCitizenColors(*initInfo.raceID, citizenColorSeed, binaryAssetLibrary.getExeData());
-		}
-
-		if (initInfo.hasInventory)
-		{
-			if (!this->itemInventories.tryAlloc(&entityInst.itemInventoryInstID))
-			{
-				DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
-			}
-		}
-
-		if (initInfo.hasCreatureSound)
-		{
-			if (!this->creatureSoundInsts.tryAlloc(&entityInst.creatureSoundInstID))
-			{
-				DebugCrash("Couldn't allocate EntityCreatureSoundInstanceID.");
-			}
-
-			double &secondsTillNextCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
-			secondsTillNextCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
-		}
-	};
+	ArenaRandom arenaRandom(random.next()); // Don't need the one from Game, this is only a cosmetic random	
 
 	SNInt startX, endX;
 	int startY, endY;
@@ -398,12 +384,12 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			EntityInstanceID entityInstID;
 			if (!this->entities.tryAlloc(&entityInstID))
 			{
-				DebugLogError("Couldn't allocate level placement EntityInstanceID.");
+				DebugLogError("Couldn't allocate level EntityInstanceID.");
 				continue;
 			}
 
 			EntityInstance &entityInst = this->entities.get(entityInstID);
-			initializeEntity(entityInst, entityInstID, entityDef, animDef, initInfo);
+			this->initializeEntity(entityInst, entityInstID, entityDef, animDef, initInfo, random, physicsSystem, renderer);
 			entityChunk.entityIDs.emplace_back(entityInstID);
 		}
 	}
@@ -488,7 +474,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				}
 
 				EntityInstance &entityInst = this->entities.get(entityInstID);
-				initializeEntity(entityInst, entityInstID, citizenDef, citizenAnimDef, citizenInitInfo);
+				this->initializeEntity(entityInst, entityInstID, citizenDef, citizenAnimDef, citizenInitInfo, random, physicsSystem, renderer);
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
 		}
@@ -498,8 +484,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, 
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 &chunkPos = entityChunk.getPosition();
 	const SNInt levelWidth = levelDef.getWidth();
@@ -516,7 +502,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 			// Populate chunk from the part of the level it overlaps.
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
+				citizenGenInfo, random, entityDefLibrary, physicsSystem, textureManager, renderer);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -528,7 +514,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 			// Populate chunk from the part of the level it overlaps.
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
+				citizenGenInfo, random, entityDefLibrary, physicsSystem, textureManager, renderer);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -540,7 +526,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 		// Copy level definition directly into chunk.
 		const WorldInt2 levelOffset = WorldInt2::Zero;
 		this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-			citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
+			citizenGenInfo, random, entityDefLibrary, physicsSystem, textureManager, renderer);
 	}
 }
 
@@ -1072,6 +1058,32 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 	}
 }
 
+EntityInstanceID EntityChunkManager::createEntity(const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+{
+	EntityInstanceID entityInstID;
+	if (!this->entities.tryAlloc(&entityInstID))
+	{
+		DebugLogError("Couldn't allocate EntityInstanceID.");
+		return -1;
+	}
+
+	EntityInstance &entityInst = this->entities.get(entityInstID);
+	
+	// Register with chunk if possible.
+	// @todo: not all entities should need registering, like vfx
+	const ChunkInt2 chunkPos = VoxelUtils::worldPointToChunk(initInfo.feetPosition);
+	EntityChunk *entityChunk = this->tryGetChunkAtPosition(chunkPos);
+	if (entityChunk != nullptr)
+	{
+		entityChunk->entityIDs.emplace_back(entityInstID);
+	}
+
+	const EntityDefinition &entityDef = this->getEntityDef(initInfo.defID);
+	this->initializeEntity(entityInst, entityInstID, entityDef, entityDef.animDef, initInfo, random, physicsSystem, renderer);
+	
+	return entityInstID;
+}
+
 void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
 	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
@@ -1082,7 +1094,6 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
 {
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{
@@ -1118,7 +1129,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		}
 
 		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef, entityGenInfo, citizenGenInfo,
-			ceilingScale, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
+			ceilingScale, random, entityDefLibrary, physicsSystem, textureManager, renderer);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
@@ -1134,6 +1145,9 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
 	const bool isPlayerWeaponSheathed = WeaponAnimationUtils::isSheathed(weaponAnimDefState);
+
+	// @todo: this could support entities not registered to a chunk if we iterate over categories of entityInstIDs instead (all citizens, then all creatures, etc)
+	// - at some point may want to store an EntityInstance bool like "isArbitrarySpawn" or something that says "I don't despawn with a chunk" for vfx and temporaries
 
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{

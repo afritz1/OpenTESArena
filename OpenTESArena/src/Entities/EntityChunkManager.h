@@ -41,6 +41,23 @@ struct EntityCitizenName
 	EntityCitizenName();
 };
 
+struct EntityInitInfo
+{
+	EntityDefID defID;
+	WorldDouble3 feetPosition;
+	char initialAnimStateIndex;
+	bool isSensorCollider;
+	std::optional<Double2> direction;
+	std::optional<int8_t> citizenDirectionIndex;
+	std::optional<EntityCitizenName> citizenName;
+	std::optional<uint16_t> citizenColorSeed;
+	std::optional<int> raceID;
+	bool hasInventory;
+	bool hasCreatureSound;
+
+	EntityInitInfo();
+};
+
 // Generated when an entity moves between chunks so systems can update resource ownership.
 struct EntityTransferResult
 {
@@ -96,16 +113,20 @@ private:
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
 	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);
 
+	void initializeEntity(EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
+		const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem,
+		Renderer &renderer);
+
 	void populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &chunk, const LevelDefinition &levelDefinition,
 		const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+		Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
+		TextureManager &textureManager, Renderer &renderer);
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const LevelDefinition &levelDef,
 		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
-		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+		Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
+		TextureManager &textureManager, Renderer &renderer);
 
 	void updateCitizenStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving,
 		bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
@@ -143,6 +164,9 @@ public:
 
 	// Gets the entity visibility state necessary for rendering and ray cast selection.
 	void getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const;
+
+	// Creates a fully-initialized entity in the scene that is immediately ready to simulate.
+	EntityInstanceID createEntity(const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 
 	void update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
 		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
