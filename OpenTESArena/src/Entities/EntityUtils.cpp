@@ -190,6 +190,7 @@ bool EntityUtils::canDie(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Container:
 	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Vfx:
 	case EntityDefinitionType::Transition:
 	case EntityDefinitionType::Decoration:
 		return false;
