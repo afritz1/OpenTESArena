@@ -286,21 +286,12 @@ void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, 
 {
 	double maxAnimWidth = 0.0;
 	double maxAnimHeight = 0.0;
-	for (int i = 0; i < animDef.stateCount; i++)
+
+	for (int i = 0; i < animDef.keyframeCount; i++)
 	{
-		const EntityAnimationDefinitionState &state = animDef.states[i];
-		for (int j = 0; j < state.keyframeListCount; j++)
-		{
-			const int keyframeListIndex = state.keyframeListsIndex + j;
-			const EntityAnimationDefinitionKeyframeList &keyframeList = animDef.keyframeLists[keyframeListIndex];
-			for (int k = 0; k < keyframeList.keyframeCount; k++)
-			{
-				const int keyframeIndex = keyframeList.keyframesIndex + k;
-				const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[keyframeIndex];
-				maxAnimWidth = std::max(maxAnimWidth, keyframe.width);
-				maxAnimHeight = std::max(maxAnimHeight, keyframe.height);
-			}
-		}
+		const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[i];
+		maxAnimWidth = std::max(maxAnimWidth, keyframe.width);
+		maxAnimHeight = std::max(maxAnimHeight, keyframe.height);
 	}
 
 	*outMaxWidth = maxAnimWidth;
