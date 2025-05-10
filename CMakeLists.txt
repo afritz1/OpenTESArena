@@ -63,11 +63,11 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
     SET(CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO "-g -O3")
 
     # Optimized release build, works with CPUs of the same arch (e.g. x86-64).
-    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "${CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO} -flto")
+    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "${CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO} -flto=auto")
 
     # Max performance build only for the computer compiling it.
     # Jolt Physics is sensitive to -ffast-math so be selective instead.
-    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "-g -O3 -flto -march=native")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "-g -O3 -flto=auto -march=native")
     SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-math-errno")
     SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-trapping-math")
     SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-signed-zeros")
