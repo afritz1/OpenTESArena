@@ -129,7 +129,6 @@ cd /d "%PROJECT_DIR%"
     echo Creating build directory...
     if exist "build" (
         echo Build directory already exists. Do you want to delete it and create a new one? (Y/N)
-        set /p eliminarbuild=
         
         if /i "!eliminarbuild!"=="Y" (
             echo Deleting existing build directory...
