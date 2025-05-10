@@ -37,8 +37,6 @@ namespace
 	{
 		EntityDefID defID;
 		WorldDouble3 feetPosition;
-		WorldDouble3 bboxMin, bboxMax; // Centered on the entity in model space
-		double animMaxHeight;
 		char initialAnimStateIndex;
 		bool isSensorCollider;
 		std::optional<Double2> direction;
@@ -52,7 +50,6 @@ namespace
 		EntityInitInfo()
 		{
 			this->defID = -1;
-			this->animMaxHeight = 0.0;
 			this->initialAnimStateIndex = -1;
 			this->isSensorCollider = false;
 			this->hasInventory = false;
@@ -201,17 +198,6 @@ EntityDefID EntityChunkManager::getOrAddEntityDefID(const EntityDefinition &def,
 	return this->addEntityDef(EntityDefinition(def), defLibrary);
 }
 
-EntityInstanceID EntityChunkManager::spawnEntity()
-{
-	EntityInstanceID instID;
-	if (!this->entities.tryAlloc(&instID))
-	{
-		DebugCrash("Couldn't allocate EntityInstanceID.");
-	}
-
-	return instID;
-}
-
 void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDefinition, const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
@@ -223,7 +209,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 	ArenaRandom arenaRandom(random.next()); // Don't need the one from Game, this is only a cosmetic random
 
 	auto initializeEntity = [this, &random, &binaryAssetLibrary, &physicsSystem, &renderer, ceilingScale](
-		EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef, const EntityInitInfo &initInfo)
+		EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
+		const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo)
 	{
 		EntityPositionID positionID;
 		if (!this->positions.tryAlloc(&positionID))
@@ -249,15 +236,22 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		WorldDouble3 &entityPosition = this->positions.get(positionID);
 		entityPosition = initInfo.feetPosition;
 
+		// Worst case 3D dimensions.
+		double animMaxWidth, animMaxHeight;
+		EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
+		const double halfAnimMaxWidth = animMaxWidth * 0.50;
+
+		// Center bbox in model space.
+		const WorldDouble3 entityBBoxMin(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
+		const WorldDouble3 entityBBoxMax(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
 		BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
-		entityBBox.init(initInfo.bboxMin, initInfo.bboxMax);
+		entityBBox.init(entityBBoxMin, entityBBoxMax);
 
 		if (!this->animInsts.tryAlloc(&entityInst.animInstID))
 		{
 			DebugLogError("Couldn't allocate EntityAnimationInstanceID.");
 		}
 
-		const EntityAnimationDefinition &animDef = entityDef.animDef;
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 		for (int animDefStateIndex = 0; animDefStateIndex < animDef.stateCount; animDefStateIndex++)
 		{
@@ -267,7 +261,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		
 		animInst.setStateIndex(initInfo.initialAnimStateIndex);
 
-		if (!TryCreatePhysicsCollider(entityPosition, initInfo.animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+		if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 		{
 			DebugLogError("Couldn't allocate entity Jolt physics body.");
 		}
@@ -383,25 +377,14 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			const CoordDouble2 coordXZ(chunkPos, ChunkUtils::MakeChunkPointFromLevel(worldPosition, startX, startZ));
 			const WorldDouble2 worldPositionXZ = VoxelUtils::coordToWorldPoint(coordXZ);
-
 			const VoxelInt3 voxel = VoxelUtils::worldVoxelToCoord(worldVoxel).voxel;
 			const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 			const double feetY = ceilingScale + entityDefYOffset + GetElevatedPlatformHeight(voxelShapeDef, ceilingScale);
 
-			double animMaxWidth, animMaxHeight;
-			EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
-			const double halfAnimMaxWidth = animMaxWidth * 0.50;
-
 			EntityInitInfo initInfo;
 			initInfo.defID = *entityDefID;
 			initInfo.feetPosition = WorldDouble3(worldPositionXZ.x, feetY, worldPositionXZ.y);
-
-			// Bounding box is centered on the entity in model space.
-			initInfo.bboxMin = WorldDouble3(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
-			initInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
-
-			initInfo.animMaxHeight = animMaxHeight;
 			initInfo.initialAnimStateIndex = *initialAnimStateIndex;
 			initInfo.isSensorCollider = !EntityUtils::hasCollision(entityDef);
 
@@ -412,9 +395,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				initInfo.hasCreatureSound = (entityDefType == EntityDefinitionType::Enemy) && (entityDef.enemy.type == EnemyEntityDefinitionType::Creature);
 			}
 
-			EntityInstanceID entityInstID = this->spawnEntity();
+			EntityInstanceID entityInstID;
+			if (!this->entities.tryAlloc(&entityInstID))
+			{
+				DebugLogError("Couldn't allocate level placement EntityInstanceID.");
+				continue;
+			}
+
 			EntityInstance &entityInst = this->entities.get(entityInstID);
-			initializeEntity(entityInst, entityInstID, entityDef, initInfo);
+			initializeEntity(entityInst, entityInstID, entityDef, animDef, initInfo);
 			entityChunk.entityIDs.emplace_back(entityInstID);
 		}
 	}
@@ -478,16 +467,6 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				EntityInitInfo citizenInitInfo;
 				citizenInitInfo.defID = citizenEntityDefID;
 				citizenInitInfo.feetPosition = WorldDouble3(worldPositionXZ.x, ceilingScale, worldPositionXZ.y);
-
-				double animMaxWidth, animMaxHeight;
-				EntityUtils::getAnimationMaxDims(citizenDef.animDef, &animMaxWidth, &animMaxHeight);
-				const double halfAnimMaxWidth = animMaxWidth * 0.50;
-
-				// Bounding box is centered on the entity in model space.
-				citizenInitInfo.bboxMin = WorldDouble3(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
-				citizenInitInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
-
-				citizenInitInfo.animMaxHeight = animMaxHeight;
 				citizenInitInfo.initialAnimStateIndex = *initialCitizenAnimStateIndex;
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
@@ -501,9 +480,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.hasInventory = false;
 				citizenInitInfo.hasCreatureSound = false;
 
-				EntityInstanceID entityInstID = this->spawnEntity();
+				EntityInstanceID entityInstID;
+				if (!this->entities.tryAlloc(&entityInstID))
+				{
+					DebugLogError("Couldn't allocate citizen EntityInstanceID.");
+					continue;
+				}
+
 				EntityInstance &entityInst = this->entities.get(entityInstID);
-				initializeEntity(entityInst, entityInstID, citizenDef, citizenInitInfo);
+				initializeEntity(entityInst, entityInstID, citizenDef, citizenAnimDef, citizenInitInfo);
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
 		}
