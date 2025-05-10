@@ -8,6 +8,7 @@
 #include "RenderTransform.h"
 #include "../Assets/TextureManager.h"
 #include "../Entities/EntityChunkManager.h"
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/EntityObservedResult.h"
 #include "../Entities/EntityVisibilityChunkManager.h"
 #include "../Voxels/DoorUtils.h"
@@ -232,7 +233,7 @@ ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityIn
 	return textureRefs.get(linearizedKeyframeIndex).get();
 }
 
-void RenderEntityChunkManager::loadTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
+void RenderEntityChunkManager::loadTexturesForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
@@ -372,6 +373,27 @@ void RenderEntityChunkManager::rebuildDrawCallsList()
 	}
 }
 
+void RenderEntityChunkManager::loadTexturesForEntity(EntityDefID entityDefID, TextureManager &textureManager, Renderer &renderer)
+{
+	const auto animIter = std::find_if(this->anims.begin(), this->anims.end(),
+		[entityDefID](const LoadedAnimation &loadedAnim)
+	{
+		return loadedAnim.defID == entityDefID;
+	});
+
+	if (animIter == this->anims.end())
+	{
+		const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+		Buffer<ScopedObjectTextureRef> textureRefs = MakeEntityAnimationTextures(animDef, textureManager, renderer);
+
+		LoadedAnimation loadedEntityAnim;
+		loadedEntityAnim.init(entityDefID, std::move(textureRefs));
+		this->anims.emplace_back(std::move(loadedEntityAnim));
+	}
+}
+
 void RenderEntityChunkManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
 {
 	// Need to have barriers around puddle draw calls to avoid artifacts with reflected entities.
@@ -403,6 +425,22 @@ void RenderEntityChunkManager::populateCommandBuffer(RenderCommandBuffer &comman
 	{
 		// Add one last draw call range.
 		commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
+	}
+}
+
+void RenderEntityChunkManager::loadScene(TextureManager &textureManager, Renderer &renderer)
+{
+	// Load global VFX textures.
+	// @todo load these one time in SceneManager::init() and use some sort of ResourceLifetimeType to prevent them from unloading in here
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	for (int i = 0; i < entityDefLibrary.getDefinitionCount(); i++)
+	{
+		const EntityDefID entityDefID = static_cast<EntityDefID>(i);
+		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
+		if (!EntityUtils::isSceneManagedResource(entityDef.type))
+		{
+			this->loadTexturesForEntity(entityDefID, textureManager, renderer);
+		}
 	}
 }
 
@@ -452,7 +490,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 	{
 		RenderEntityChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		this->loadTextures(entityChunk, entityChunkManager, textureManager, renderer);
+		this->loadTexturesForChunkEntities(entityChunk, entityChunkManager, textureManager, renderer);
 	}
 
 	// The rotation all entities share for facing the camera.

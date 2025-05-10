@@ -704,6 +704,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	const SkyInfoDefinition &activeSkyInfoDef = this->activeMapDef.getSkyInfoForSky(activeSkyIndex);
 
 	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager);
+	sceneManager.renderEntityChunkManager.loadScene(textureManager, renderer);
 	sceneManager.renderLightChunkManager.loadScene();
 	sceneManager.renderSkyManager.loadScene(sceneManager.skyInstance, activeSkyInfoDef, textureManager, renderer);
 	sceneManager.renderWeatherManager.loadScene();

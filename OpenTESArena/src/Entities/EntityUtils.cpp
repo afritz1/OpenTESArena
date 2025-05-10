@@ -24,6 +24,7 @@ bool EntityUtils::isDynamicEntity(EntityDefinitionType defType)
 	case EntityDefinitionType::Enemy:
 	case EntityDefinitionType::Citizen:
 	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Vfx:
 		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(defType)));
@@ -115,6 +116,26 @@ bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
 
 	const DecorationEntityDefinition &decoration = entityDef.decoration;
 	return decoration.puddle;
+}
+
+bool EntityUtils::isSceneManagedResource(EntityDefinitionType entityDefType)
+{
+	switch (entityDefType)
+	{
+	case EntityDefinitionType::Enemy:
+	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Decoration:
+		return true;
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Vfx:
+		return false;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityDefType)));
+	}
 }
 
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)

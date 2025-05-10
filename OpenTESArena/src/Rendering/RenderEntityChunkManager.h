@@ -52,7 +52,7 @@ private:
 
 	ObjectTextureID getTextureID(EntityInstanceID entityInstID, const WorldDouble3 &cameraPosition, const EntityChunkManager &entityChunkManager) const;
 
-	void loadTextures(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
+	void loadTexturesForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	void addDrawCall(UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
 		const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
@@ -67,7 +67,12 @@ public:
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
+	// For entities not from the level itself (i.e. VFX).
+	void loadTexturesForEntity(EntityDefID entityDefID, TextureManager &textureManager, Renderer &renderer);
+
 	void populateCommandBuffer(RenderCommandBuffer &commandBuffer) const;
+
+	void loadScene(TextureManager &textureManager, Renderer &renderer);
 
 	// Chunk allocating/freeing update function, called before entity resources are updated.
 	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
