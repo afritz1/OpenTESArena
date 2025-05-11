@@ -118,9 +118,9 @@ struct Player
 
 	Player();
 	~Player();
-	int getMaxStamina(const PrimaryAttributes &primaryAttributes) const;
-	int getMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const;
-	int getMaxHealthPoints(const PrimaryAttributes& primaryAttributes) const;
+	int calculateMaxSpellPoints(const PrimaryAttributes &primaryAttributes) const;
+	int calculateMaxHealthPoints(const PrimaryAttributes& primaryAttributes) const;
+	int calculateMaxStamina(const PrimaryAttributes &primaryAttributes) const;
 	int rollHealthDice(int healthDie) const;
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
 		int portraitID, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);

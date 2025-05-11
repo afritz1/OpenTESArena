@@ -207,12 +207,11 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->maxHealth = getMaxHealthPoints(primaryAttributes);
-	// @todo
+	this->maxHealth = calculateMaxHealthPoints(primaryAttributes);
 	this->currentHealth = this->maxHealth;
-	this->maxStamina = getMaxStamina(primaryAttributes);
+	this->maxStamina = calculateMaxStamina(primaryAttributes);
 	this->currentStamina = this->maxStamina;
-	this->maxSpellPoints = getMaxSpellPoints(primaryAttributes);
+	this->maxSpellPoints = calculateMaxSpellPoints(primaryAttributes);
 	this->currentSpellPoints = this->maxSpellPoints;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
@@ -244,8 +243,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->movementSoundProgress = 0.0;
 }
 
-//my code
-int Player::getMaxStamina(const PrimaryAttributes &primaryAttributes) const
+int Player::calculateMaxStamina(const PrimaryAttributes &primaryAttributes) const
 {
 	int maxStamina = primaryAttributes.strength.maxValue + primaryAttributes.endurance.maxValue;
 	DebugLog("Fuerza y Resistencia total: " + std::to_string(maxStamina) +
@@ -253,7 +251,8 @@ int Player::getMaxStamina(const PrimaryAttributes &primaryAttributes) const
 		", Resistencia: " + std::to_string(primaryAttributes.endurance.maxValue) + ")");
 	return maxStamina;
 }
-int Player::getMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const
+
+int Player::calculateMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const
 {
 	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition& characterClassDefinition = charClassLibrary.getDefinition(this->charClassDefID);
@@ -281,14 +280,15 @@ int Player::getMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const
 		" (Inteligencia: " + std::to_string(primaryAttributes.intelligence.maxValue) + ")");
 	return maxSpellPoints;
 }
-int Player::getMaxHealthPoints(const PrimaryAttributes& primaryAttributes) const
+
+int Player::calculateMaxHealthPoints(const PrimaryAttributes& primaryAttributes) const
 {
 	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
-	const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
+	const CharacterClassDefinition& characterClassDefinition = charClassLibrary.getDefinition(this->charClassDefID);
 	const int baseHealth = 25;
-	const int diceRoll = rollHealthDice(charClassDef.healthDie);
+	const int diceRoll = this->rollHealthDice(characterClassDefinition.healthDie);
 	const int maxHealthPoints = baseHealth + diceRoll;
-	DebugLog("Clase del jugador: " + std::string(charClassDef.name) +
+	DebugLog("Clase del jugador: " + std::string(characterClassDefinition.name) +
 		" (ID: " + std::to_string(this->charClassDefID) + ")");
 	DebugLog("Puntos de vida máximos: " + std::to_string(maxHealthPoints) +
 		" (Base: " + std::to_string(baseHealth) +
@@ -302,8 +302,6 @@ int Player::rollHealthDice(int healthDie) const {
 	std::uniform_int_distribution<int> distribucion(1, healthDie);
 	return distribucion(gen); 
 }
-//..............
-
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
 {
