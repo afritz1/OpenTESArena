@@ -246,9 +246,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 int Player::calculateMaxStamina(const PrimaryAttributes &primaryAttributes) const
 {
 	int maxStamina = primaryAttributes.strength.maxValue + primaryAttributes.endurance.maxValue;
-	DebugLog("Fuerza y Resistencia total: " + std::to_string(maxStamina) +
-		" (Fuerza: " + std::to_string(primaryAttributes.strength.maxValue) +
-		", Resistencia: " + std::to_string(primaryAttributes.endurance.maxValue) + ")");
 	return maxStamina;
 }
 
@@ -274,26 +271,17 @@ int Player::calculateMaxSpellPoints(const PrimaryAttributes& primaryAttributes) 
 		const double intelligenceMultiplier = classMultiplierIterator->second;
 		maxSpellPoints = intelligenceMultiplier * primaryAttributes.intelligence.maxValue;
 	}
-	DebugLog("Clase del jugador: " + std::string(characterClassDefinition.name) +
-		" (ID: " + std::to_string(this->charClassDefID) + ")");
-	DebugLog("Puntos de magia maximos: " + std::to_string(maxSpellPoints) +
-		" (Inteligencia: " + std::to_string(primaryAttributes.intelligence.maxValue) + ")");
 	return maxSpellPoints;
 }
 
 int Player::calculateMaxHealthPoints(const PrimaryAttributes& primaryAttributes) const
 {
-	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
-	const CharacterClassDefinition& characterClassDefinition = charClassLibrary.getDefinition(this->charClassDefID);
-	const int baseHealth = 25;
-	const int diceRoll = this->rollHealthDice(characterClassDefinition.healthDie);
-	const int maxHealthPoints = baseHealth + diceRoll;
-	DebugLog("Clase del jugador: " + std::string(characterClassDefinition.name) +
-		" (ID: " + std::to_string(this->charClassDefID) + ")");
-	DebugLog("Puntos de vida máximos: " + std::to_string(maxHealthPoints) +
-		" (Base: " + std::to_string(baseHealth) +
-		", Tirada: " + std::to_string(diceRoll) + ")");
-	return maxHealthPoints;
+	const CharacterClassLibrary& characterClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition& characterClassDefinition = characterClassLibrary.getDefinition(this->charClassDefID);
+	const int baseHealthPoints = 25;
+	const int classHitDieRoll = this->rollHealthDice(characterClassDefinition.healthDie);
+	const int totalHealthPoints = baseHealthPoints + classHitDieRoll;
+	return totalHealthPoints;
 }
 
 int Player::rollHealthDice(int healthDie) const {
