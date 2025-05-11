@@ -1025,13 +1025,15 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 	}
 }
 
-void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk)
+void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem)
 {
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
 	// @todo: just check an EntityChunkManager::dyingEntities list instead, added to when player swing kills them
 
 	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		EntityInstance &entityInst = this->entities.get(entityInstID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityDefinitionType entityDefType = entityDef.type;
 		if (!EntityUtils::canDie(entityDef))
@@ -1049,11 +1051,29 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk)
 
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
-		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
-		if (isInDeathAnimState && isDeathAnimComplete && !EntityUtils::leavesCorpse(entityDef))
+		if (!isInDeathAnimState)
 		{
-			this->queueEntityDestroy(entityInstID, true);
-			// @todo remove from dyingEntities list once that is a thing
+			continue;
+		}
+
+		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
+		if (isDeathAnimComplete)
+		{
+			if (EntityUtils::leavesCorpse(entityDef))
+			{
+				JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+				if (!physicsBodyID.IsInvalid())
+				{
+					bodyInterface.RemoveBody(physicsBodyID);
+					bodyInterface.DestroyBody(physicsBodyID);
+					physicsBodyID = Physics::INVALID_BODY_ID;
+				}
+			}
+			else
+			{
+				this->queueEntityDestroy(entityInstID, true);
+				// @todo remove from dyingEntities list once that is a thing
+			}
 		}
 	}
 }
@@ -1186,7 +1206,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 
 		this->updateCreatureSounds(dt, entityChunk, playerPosition, random, audioManager);
 		this->updateFadedElevatedPlatforms(entityChunk, voxelChunk, ceilingScale, physicsSystem);
-		this->updateEnemyDeathStates(entityChunk);
+		this->updateEnemyDeathStates(entityChunk, physicsSystem);
 		this->updateVfx(entityChunk);
 	}
 }
