@@ -744,6 +744,33 @@ PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, BufferView
 	return inputAcceleration;
 }
 
+CardinalDirectionName PlayerLogic::getRandomMeleeSwingDirection(Random &random)
+{
+	constexpr int directionCount = static_cast<int>(std::size(CardinalDirection::DisplayNames));
+	const int randomValue = random.next(directionCount);
+	return static_cast<CardinalDirectionName>(randomValue);
+}
+
+bool PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta, const Int2 &windowDims, CardinalDirectionName *outDirectionName)
+{
+	// Get smaller screen dimension so mouse delta is relative to a square.
+	const int minDimension = std::min(windowDims.x, windowDims.y);
+	constexpr double requiredDistancePercent = 0.060; // Arbitrary
+
+	const double mouseDeltaXPercent = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
+	const double mouseDeltaYPercent = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
+	const double mouseDistancePercent = std::sqrt((mouseDeltaXPercent * mouseDeltaXPercent) + (mouseDeltaYPercent * mouseDeltaYPercent));
+	const bool isMouseDeltaFastEnough = mouseDistancePercent >= requiredDistancePercent;
+	if (!isMouseDeltaFastEnough)
+	{
+		return false;
+	}
+
+	const Double2 mouseDirection = Double2(mouseDeltaXPercent, -mouseDeltaYPercent).normalized();
+	*outDirectionName = CardinalDirection::getDirectionName(Double2(-mouseDirection.y, -mouseDirection.x));
+	return true;
+}
+
 void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 {
 	Player &player = game.player;
@@ -775,21 +802,12 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
 	{
-		// Get smaller screen dimension so mouse delta is relative to a square.
-		const Int2 dimensions = renderer.getWindowDimensions();
-		const int minDimension = std::min(dimensions.x, dimensions.y);
+		const Int2 windowDims = renderer.getWindowDimensions();
 
-		const double mouseDeltaXPercent = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
-		const double mouseDeltaYPercent = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
-		const double mouseDistancePercent = std::sqrt((mouseDeltaXPercent * mouseDeltaXPercent) + (mouseDeltaYPercent * mouseDeltaYPercent));
-		constexpr double requiredDistancePercent = 0.060;
-		const bool isMouseDeltaFastEnough = mouseDistancePercent >= requiredDistancePercent;
-		if (isAttackMouseButtonDown && isMouseDeltaFastEnough)
+		CardinalDirectionName meleeSwingDirection;
+		if (isAttackMouseButtonDown && PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(mouseDelta, windowDims, &meleeSwingDirection))
 		{
-			const Double2 mouseDirection = Double2(mouseDeltaXPercent, -mouseDeltaYPercent).normalized();
-			CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(Double2(-mouseDirection.y, -mouseDirection.x));
-
-			newStateIndex = PlayerLogic::getMeleeAnimDirectionStateIndex(weaponAnimDef, cardinalDirection);
+			newStateIndex = PlayerLogic::getMeleeAnimDirectionStateIndex(weaponAnimDef, meleeSwingDirection);
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::Swish;
 
