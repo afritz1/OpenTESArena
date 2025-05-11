@@ -211,7 +211,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->maxStamina = getMaxStamina(primaryAttributes);
 	//100.0; // @todo
 	this->currentStamina = this->maxStamina;
-	this->maxSpellPoints = 100.0; // @todo
+	this->maxSpellPoints = getMaxSpellPoints(primaryAttributes);
+	//100.0; // @todo
 	this->currentSpellPoints = this->maxSpellPoints;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
@@ -246,13 +247,28 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 //my code
 int Player::getMaxStamina(const PrimaryAttributes &primaryAttributes) const
 {
-	const int maxStamina = primaryAttributes.strength.maxValue + primaryAttributes.endurance.maxValue;
+	int maxStamina = primaryAttributes.strength.maxValue + primaryAttributes.endurance.maxValue;
 	DebugLog("Fuerza y Resistencia total: " + std::to_string(maxStamina) +
 		" (Fuerza: " + std::to_string(primaryAttributes.strength.maxValue) +
 		", Resistencia: " + std::to_string(primaryAttributes.endurance.maxValue) + ")");
 	return maxStamina;
 }
+int Player::getMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const
+{
+	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
+	int maxSpellPoints = 0.0;
+	if (!charClassDef.castsMagic) {
+		return maxSpellPoints;
+	}
+	maxSpellPoints = 100.0;
+	DebugLog("Clase del jugador: " + std::string(charClassDef.name) +
+		" (ID: " + std::to_string(this->charClassDefID) + ")");
+	return maxSpellPoints;
+
+}
 //..............
+
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
 {
