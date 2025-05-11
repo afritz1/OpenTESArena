@@ -108,6 +108,7 @@ struct Player
 	// Player always has a weapon animation even if it's just fists
 	int weaponAnimDefID;
 	WeaponAnimationInstance weaponAnimInst;
+	int queuedMeleeSwingDirection; // Non-negative if player is attempting attack this frame.
 
 	int level;
 	int experience;

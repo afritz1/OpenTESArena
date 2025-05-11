@@ -683,19 +683,11 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 	}
 	else
 	{
-		// Modern interface. Make the camera look around if the player's weapon is not in use.
 		const int dx = mouseDelta.x;
 		const int dy = mouseDelta.y;
-		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+		const bool isTurning = (dx != 0) || (dy != 0);
 
-		const Player &player = game.player;
-		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
-		const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
-		const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
-		const bool turning = ((dx != 0) || (dy != 0)) && (WeaponAnimationUtils::isSheathed(weaponAnimDefState) || !rightClick);
-
-		if (turning)
+		if (isTurning)
 		{
 			const Int2 dimensions = game.renderer.getWindowDimensions();
 
@@ -703,11 +695,10 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 			// to a square instead of a rectangle. This keeps the camera look independent
 			// of the aspect ratio.
 			const int minDimension = std::min(dimensions.x, dimensions.y);
-			const double dxx = static_cast<double>(dx) / static_cast<double>(minDimension);
-			const double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
+			const double dxPercent = static_cast<double>(dx) / static_cast<double>(minDimension);
+			const double dyPercent = static_cast<double>(dy) / static_cast<double>(minDimension);
 
-			// Pitch and/or yaw the camera.
-			return Double2(-dxx, -dyy);
+			return Double2(-dxPercent, -dyPercent);
 		}
 	}
 
@@ -784,6 +775,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	}
 
 	const Options &options = game.options;
+	const bool isModernInterface = options.getGraphics_ModernInterface();
 	const InputManager &inputManager = game.inputManager;
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
@@ -804,8 +796,22 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	{
 		const Int2 windowDims = renderer.getWindowDimensions();
 
-		CardinalDirectionName meleeSwingDirection;
-		if (isAttackMouseButtonDown && PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(mouseDelta, windowDims, &meleeSwingDirection))
+		CardinalDirectionName meleeSwingDirection = static_cast<CardinalDirectionName>(-1);
+		bool hasSelectedMeleeSwingDirection = false;
+		if (isModernInterface)
+		{
+			if (player.queuedMeleeSwingDirection >= 0)
+			{
+				meleeSwingDirection = static_cast<CardinalDirectionName>(player.queuedMeleeSwingDirection);
+				hasSelectedMeleeSwingDirection = true;
+			}			
+		}
+		else
+		{
+			hasSelectedMeleeSwingDirection = PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(mouseDelta, windowDims, &meleeSwingDirection);
+		}
+
+		if (isAttackMouseButtonDown && hasSelectedMeleeSwingDirection)
 		{
 			newStateIndex = PlayerLogic::getMeleeAnimDirectionStateIndex(weaponAnimDef, meleeSwingDirection);
 			nextStateIndex = weaponAnimIdleStateIndex;
@@ -917,7 +923,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	else
 	{
 		bool isAttack = false;
-		if (options.getGraphics_ModernInterface())
+		if (isModernInterface)
 		{
 			isAttack = isAttackMouseButtonDown;
 		}

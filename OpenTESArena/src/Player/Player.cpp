@@ -184,6 +184,7 @@ Player::Player()
 	this->maxSpellPoints = 0.0;
 	this->currentSpellPoints = 0.0;
 	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
+	this->queuedMeleeSwingDirection = -1;
 	this->level = 0;
 	this->experience = 0;
 	this->clearKeyInventory();
@@ -213,6 +214,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->currentSpellPoints = this->maxSpellPoints;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
+	this->queuedMeleeSwingDirection = -1;
 	this->level = 1;
 	this->experience = 0;
 	this->primaryAttributes = primaryAttributes;

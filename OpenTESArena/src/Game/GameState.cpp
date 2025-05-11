@@ -947,6 +947,8 @@ void GameState::tickPlayerAttack(double dt, Game &game)
 	const Int2 combatMouseDelta = mousePosition - previousCombatMousePosition;
 
 	PlayerLogic::handleAttack(game, combatMouseDelta);
+
+	player.queuedMeleeSwingDirection = -1;
 }
 
 void GameState::tickVoxels(double dt, Game &game)
