@@ -960,7 +960,17 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 		EntityInstance &entityInst = this->entities.get(instID);
 		if (entityInst.creatureSoundInstID >= 0)
 		{
-			// @todo: don't play if is dead. EntityCombatState::isDead?
+			const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+			const EntityAnimationDefinition &animDef = entityDef.animDef;
+			const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+			const int currentAnimInstStateIndex = animInst.currentStateIndex;
+
+			const std::optional<int> deathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(animDef);
+			const bool isEntityDead = deathAnimStateIndex.has_value() && *deathAnimStateIndex == currentAnimInstStateIndex; // @todo check combat state instead
+			if (isEntityDead)
+			{
+				continue;
+			}
 
 			double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
 			secondsTillCreatureSound -= dt;
