@@ -874,6 +874,42 @@ void GameState::tickUiMessages(double dt)
 	}
 }
 
+void GameState::tickPlayerHealth(double dt, Game &game)
+{
+	constexpr double LAVA_HEALTH_LOSS_PER_SECOND = 10.0;
+
+	Player &player = game.player;
+	double healthChange = 0.0;
+
+	if (player.groundState.isSwimming)
+	{
+		const double ceilingScale = this->getActiveCeilingScale();
+		const WorldDouble3 feetPosition = player.getFeetPosition();
+		const CoordDouble3 feetCoord = VoxelUtils::worldPointToCoord(feetPosition);
+		const CoordInt3 feetVoxelCoord = feetCoord.toVoxelScaled(ceilingScale);
+		const VoxelInt3 feetVoxel = feetVoxelCoord.voxel;
+		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(feetVoxelCoord.chunk);
+		
+		VoxelChasmDefID chasmDefID;
+		if (voxelChunk.tryGetChasmDefID(feetVoxel.x, feetVoxel.y, feetVoxel.z, &chasmDefID))
+		{
+			const VoxelChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
+			if (chasmDef.isDamaging)
+			{
+				healthChange += LAVA_HEALTH_LOSS_PER_SECOND * dt;
+			}
+		}
+	}
+
+	player.currentHealth = std::max(player.currentHealth - healthChange, 0.0);
+
+	if (player.currentHealth == 0.0)
+	{
+		GameWorldUiController::onHealthDepleted(game);
+	}
+}
+
 void GameState::tickPlayerStamina(double dt, Game &game)
 {
 	constexpr double AWAKE_STAMINA_LOSS_PER_SECOND = 0.10;

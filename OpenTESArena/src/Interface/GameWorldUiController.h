@@ -48,6 +48,8 @@ namespace GameWorldUiController
 
 	void onCitizenInteracted(Game &game, const EntityInstance &entityInst);
 
+	void onShowPlayerDeathCinematic(Game &game);
+	void onHealthDepleted(Game &game);
 	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);
 }
 

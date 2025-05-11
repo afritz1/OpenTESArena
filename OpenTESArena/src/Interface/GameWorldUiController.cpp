@@ -336,6 +336,62 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
 }
 
+void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
+{
+	// Death cinematic then main menu.
+	const CinematicLibrary &cinematicLibrary = CinematicLibrary::getInstance();
+
+	int textCinematicDefIndex;
+	const TextCinematicDefinition *defPtr = nullptr;
+	const bool success = cinematicLibrary.findTextDefinitionIndexIf(
+		[&defPtr](const TextCinematicDefinition &def)
+	{
+		if (def.type == TextCinematicDefinitionType::Death)
+		{
+			const DeathTextCinematicDefinition &deathTextCinematicDef = def.death;
+			if (deathTextCinematicDef.type == DeathTextCinematicType::Good)
+			{
+				defPtr = &def;
+				return true;
+			}
+		}
+
+		return false;
+	}, &textCinematicDefIndex);
+
+	if (!success)
+	{
+		DebugCrash("Couldn't find death text cinematic definition.");
+	}
+
+	TextureManager &textureManager = game.textureManager;
+	const std::string &cinematicFilename = defPtr->animFilename;
+	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
+	if (!metadataID.has_value())
+	{
+		DebugLogError("Couldn't get texture file metadata for death cinematic \"" + cinematicFilename + "\".");
+		return;
+	}
+
+	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+	const double secondsPerFrame = metadata.getSecondsPerFrame();
+	game.setPanel<TextCinematicPanel>(textCinematicDefIndex, secondsPerFrame, PauseMenuUiController::onNewGameButtonSelected);
+
+	const MusicDefinition *musicDef = MusicUtils::getMainQuestCinematicGoodMusicDefinition(game.random);
+	if (musicDef == nullptr)
+	{
+		DebugLogWarning("Missing death cinematic music.");
+	}
+
+	AudioManager &audioManager = game.audioManager;
+	audioManager.setMusic(musicDef);
+}
+
+void GameWorldUiController::onHealthDepleted(Game &game)
+{
+	GameWorldUiController::onShowPlayerDeathCinematic(game);
+}
+
 void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight)
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
@@ -354,53 +410,7 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 		const bool isPlayerDying = isSwimming || (!isInterior && isNight);
 		if (isPlayerDying)
 		{
-			// Death cinematic then main menu.
-			const CinematicLibrary &cinematicLibrary = CinematicLibrary::getInstance();
-
-			int textCinematicDefIndex;
-			const TextCinematicDefinition *defPtr = nullptr;
-			const bool success = cinematicLibrary.findTextDefinitionIndexIf(
-				[&defPtr](const TextCinematicDefinition &def)
-			{
-				if (def.type == TextCinematicDefinitionType::Death)
-				{
-					const DeathTextCinematicDefinition &deathTextCinematicDef = def.death;
-					if (deathTextCinematicDef.type == DeathTextCinematicType::Good)
-					{
-						defPtr = &def;
-						return true;
-					}
-				}
-
-				return false;
-			}, &textCinematicDefIndex);
-
-			if (!success)
-			{
-				DebugCrash("Couldn't find death text cinematic definition.");
-			}
-
-			TextureManager &textureManager = game.textureManager;
-			const std::string &cinematicFilename = defPtr->animFilename;
-			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
-			if (!metadataID.has_value())
-			{
-				DebugLogError("Couldn't get texture file metadata for death cinematic \"" + cinematicFilename + "\".");
-				return;
-			}
-
-			const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
-			const double secondsPerFrame = metadata.getSecondsPerFrame();
-			game.setPanel<TextCinematicPanel>(textCinematicDefIndex, secondsPerFrame, PauseMenuUiController::onNewGameButtonSelected);
-
-			const MusicDefinition *musicDef = MusicUtils::getMainQuestCinematicGoodMusicDefinition(game.random);
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing death cinematic music.");
-			}
-
-			AudioManager &audioManager = game.audioManager;
-			audioManager.setMusic(musicDef);
+			GameWorldUiController::onShowPlayerDeathCinematic(game);
 		}
 		else
 		{
