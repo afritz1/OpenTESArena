@@ -209,10 +209,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->maxHealth = 100.0; // @todo
 	this->currentHealth = this->maxHealth;
 	this->maxStamina = getMaxStamina(primaryAttributes);
-	//100.0; // @todo
 	this->currentStamina = this->maxStamina;
 	this->maxSpellPoints = getMaxSpellPoints(primaryAttributes);
-	//100.0; // @todo
 	this->currentSpellPoints = this->maxSpellPoints;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
@@ -261,11 +259,45 @@ int Player::getMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const
 	if (!charClassDef.castsMagic) {
 		return maxSpellPoints;
 	}
-	maxSpellPoints = 100.0;
+	switch (charClassDefID)
+	{
+	 // Mage
+	case 0:
+		maxSpellPoints = 2 * primaryAttributes.intelligence.maxValue;
+		break;
+	// Spellsword
+	case 1:
+		maxSpellPoints = 1.5 * primaryAttributes.intelligence.maxValue;
+		break;
+	// Battlemage
+	case 2: 
+		maxSpellPoints = 1.75 * primaryAttributes.intelligence.maxValue;
+		break;
+	// Sorcerer
+	case 3:
+		maxSpellPoints = 3 * primaryAttributes.intelligence.maxValue;
+		break;
+	 // Healer
+	case 4:
+		maxSpellPoints = 2 * primaryAttributes.intelligence.maxValue;
+		break;
+	// Nightblade
+	case 5:
+		maxSpellPoints = 1.5 * primaryAttributes.intelligence.maxValue;
+		break;
+	 // bard
+	case 6:
+		maxSpellPoints = primaryAttributes.intelligence.maxValue;
+		break;
+	default:
+		break;
+	}		
 	DebugLog("Clase del jugador: " + std::string(charClassDef.name) +
 		" (ID: " + std::to_string(this->charClassDefID) + ")");
+	
+	DebugLog("Puntos de magia maximos: " + std::to_string(maxSpellPoints) +
+		" (Inteligencia: " + std::to_string(primaryAttributes.intelligence.maxValue) + ")");
 	return maxSpellPoints;
-
 }
 //..............
 
