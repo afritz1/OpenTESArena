@@ -206,7 +206,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->maxHealth = 100.0; // @todo
+	this->maxHealth = getMaxHealthPoints(primaryAttributes);
+	// @todo
 	this->currentHealth = this->maxHealth;
 	this->maxStamina = getMaxStamina(primaryAttributes);
 	this->currentStamina = this->maxStamina;
@@ -298,6 +299,17 @@ int Player::getMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const
 	DebugLog("Puntos de magia maximos: " + std::to_string(maxSpellPoints) +
 		" (Inteligencia: " + std::to_string(primaryAttributes.intelligence.maxValue) + ")");
 	return maxSpellPoints;
+}
+int Player::getMaxHealthPoints(const PrimaryAttributes& primaryAttributes) const
+{
+	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
+	int diceHit = charClassDef.healthDie;
+	int maxHealthPoints = 25;
+	DebugLog("Clase del jugador: " + std::string(charClassDef.name) +
+		" (ID: " + std::to_string(this->charClassDefID) + ")");
+	DebugLog("Puntos de vida maximos: " + std::to_string(maxHealthPoints));
+	return maxHealthPoints;
 }
 //..............
 
