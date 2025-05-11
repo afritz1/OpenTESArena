@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <unordered_map>
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
@@ -255,47 +256,27 @@ int Player::getMaxStamina(const PrimaryAttributes &primaryAttributes) const
 int Player::getMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const
 {
 	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
-	const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
+	const CharacterClassDefinition& characterClassDefinition = charClassLibrary.getDefinition(this->charClassDefID);
 	int maxSpellPoints = 0.0;
-	if (!charClassDef.castsMagic) {
+	if (!characterClassDefinition.castsMagic) {
 		return maxSpellPoints;
 	}
-	switch (charClassDefID)
-	{
-	 // Mage
-	case 0:
-		maxSpellPoints = 2 * primaryAttributes.intelligence.maxValue;
-		break;
-	// Spellsword
-	case 1:
-		maxSpellPoints = 1.5 * primaryAttributes.intelligence.maxValue;
-		break;
-	// Battlemage
-	case 2: 
-		maxSpellPoints = 1.75 * primaryAttributes.intelligence.maxValue;
-		break;
-	// Sorcerer
-	case 3:
-		maxSpellPoints = 3 * primaryAttributes.intelligence.maxValue;
-		break;
-	 // Healer
-	case 4:
-		maxSpellPoints = 2 * primaryAttributes.intelligence.maxValue;
-		break;
-	// Nightblade
-	case 5:
-		maxSpellPoints = 1.5 * primaryAttributes.intelligence.maxValue;
-		break;
-	 // bard
-	case 6:
-		maxSpellPoints = primaryAttributes.intelligence.maxValue;
-		break;
-	default:
-		break;
-	}		
-	DebugLog("Clase del jugador: " + std::string(charClassDef.name) +
+	static const std::unordered_map<std::string, double> magicClassIntelligenceMultipliers = {
+		{"Mage", 2.0},
+		{"Spellsword", 1.5},
+		{"Battlemage", 1.75},
+		{"Sorceror", 3.0},
+		{"Healer", 2.0},
+		{"Nightblade", 1.5},
+		{"Bard", 1.0}
+	};
+	auto classMultiplierIterator = magicClassIntelligenceMultipliers.find(characterClassDefinition.name);
+	if (classMultiplierIterator != magicClassIntelligenceMultipliers.end()) {
+		const double intelligenceMultiplier = classMultiplierIterator->second;
+		maxSpellPoints = intelligenceMultiplier * primaryAttributes.intelligence.maxValue;
+	}
+	DebugLog("Clase del jugador: " + std::string(characterClassDefinition.name) +
 		" (ID: " + std::to_string(this->charClassDefID) + ")");
-	
 	DebugLog("Puntos de magia maximos: " + std::to_string(maxSpellPoints) +
 		" (Inteligencia: " + std::to_string(primaryAttributes.intelligence.maxValue) + ")");
 	return maxSpellPoints;
