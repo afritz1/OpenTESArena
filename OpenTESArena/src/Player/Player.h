@@ -118,7 +118,7 @@ struct Player
 
 	Player();
 	~Player();
-
+	int getMaxStamina(const PrimaryAttributes &primaryAttributes) const;
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
 		int portraitID, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
@@ -162,7 +162,6 @@ struct Player
 
 	double getMaxMoveSpeed() const;
 	bool isMoving() const;
-
 	// Changes the velocity (as a force) given a normalized direction, magnitude, and delta time.
 	void accelerate(const Double3 &direction, double magnitude, double dt); // @todo: this will give CharacterVirtual a force probably?
 

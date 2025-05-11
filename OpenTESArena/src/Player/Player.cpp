@@ -208,7 +208,8 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->portraitID = portraitID;
 	this->maxHealth = 100.0; // @todo
 	this->currentHealth = this->maxHealth;
-	this->maxStamina = 100.0; // @todo
+	this->maxStamina = getMaxStamina(primaryAttributes);
+	//100.0; // @todo
 	this->currentStamina = this->maxStamina;
 	this->maxSpellPoints = 100.0; // @todo
 	this->currentSpellPoints = this->maxSpellPoints;
@@ -241,6 +242,17 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->movementType = PlayerMovementType::Default;
 	this->movementSoundProgress = 0.0;
 }
+
+//my code
+int Player::getMaxStamina(const PrimaryAttributes &primaryAttributes) const
+{
+	const int maxStamina = primaryAttributes.strength.maxValue + primaryAttributes.endurance.maxValue;
+	DebugLog("Fuerza y Resistencia total: " + std::to_string(maxStamina) +
+		" (Fuerza: " + std::to_string(primaryAttributes.strength.maxValue) +
+		", Resistencia: " + std::to_string(primaryAttributes.endurance.maxValue) + ")");
+	return maxStamina;
+}
+//..............
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
 {
