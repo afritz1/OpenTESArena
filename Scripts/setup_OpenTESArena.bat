@@ -206,49 +206,8 @@ cd /d "%PROJECT_DIR%"
     )
     
     echo Project files generated successfully.
-    
-    :: Ask if you want to open in Visual Studio or build directly
-    echo Do you want to open the project in Visual Studio now? (Y/N)
-    echo Note: If you choose "Y", the script will set "otesa" as the startup project and open Visual Studio.
-    set /p abrirVS=
-    
-    if /i "!abrirVS!"=="Y" (
-        :: Create StartUp Project configuration file for Visual Studio
-        echo Setting 'otesa' as startup project...
-        
-        if not exist ".vs" mkdir ".vs"
-        if not exist ".vs\OpenTESArena" mkdir ".vs\OpenTESArena"
-        if not exist ".vs\OpenTESArena\v16" mkdir ".vs\OpenTESArena\v16"
-        
-        :: Create .suo file for Visual Studio 2019 (v16)
-        echo ^<?xml version="1.0" encoding="utf-8"?^> > .vs\OpenTESArena\v16\startup.vs.xml
-        echo ^<StartUpProject xmlns="http://schemas.microsoft.com/developer/msbuild/2003"^> >> .vs\OpenTESArena\v16\startup.vs.xml
-        echo   ^<Project Name="otesa" /^> >> .vs\OpenTESArena\v16\startup.vs.xml
-        echo ^</StartUpProject^> >> .vs\OpenTESArena\v16\startup.vs.xml
-        
-        :: Also create a backup binary .suo file with PowerShell
-        powershell -Command "& { try { $bytes = [byte[]]@(0xEF, 0xBB, 0xBF, 0x0D, 0x0A, 0x3C, 0x53, 0x74, 0x61, 0x72, 0x74, 0x55, 0x70, 0x50, 0x72, 0x6F, 0x6A, 0x65, 0x63, 0x74, 0x3E, 0x0D, 0x0A, 0x20, 0x20, 0x3C, 0x50, 0x72, 0x6F, 0x6A, 0x65, 0x63, 0x74, 0x20, 0x4E, 0x61, 0x6D, 0x65, 0x3D, 0x22, 0x6F, 0x74, 0x65, 0x73, 0x61, 0x22, 0x20, 0x2F, 0x3E, 0x0D, 0x0A, 0x3C, 0x2F, 0x53, 0x74, 0x61, 0x72, 0x74, 0x55, 0x70, 0x50, 0x72, 0x6F, 0x6A, 0x65, 0x63, 0x74, 0x3E); [System.IO.File]::WriteAllBytes('.vs\OpenTESArena\v16\OpenTESArena.suo', $bytes) } catch { Write-Host 'Error creating .suo file' } }"
-        
-        echo Do you want Visual Studio to automatically build the project when opening? (Y/N)
-        set /p autocompile=
-        
-        if /i "!autocompile!"=="Y" (
-            :: Open Visual Studio and automatically run the build
-            echo Opening Visual Studio and building automatically...
-            start "" "%vs_path%" OpenTESArena.sln /Build "!BUILD_TYPE!|x64"
-        ) else (
-            :: Just open Visual Studio with the configured project
-            echo Opening Visual Studio with 'otesa' set as startup project...
-            start "" OpenTESArena.sln
-        )
-        
-        echo.
-        echo IMPORTANT: Visual Studio Configuration
-        echo - 'otesa' has been automatically set as the startup project
-        echo - To build manually: Select Build -^> Build Solution
-        echo - Wait for the 'Build: succeeded' message to appear
-    ) else (
-        echo Do you want to build the project from the command line? (Y/N)
+
+ echo Do you want to build the project from the command line? (Y/N)
         set /p compilarCMD=
         
         if /i "!compilarCMD!"=="Y" (
@@ -263,8 +222,6 @@ cd /d "%PROJECT_DIR%"
             )
             
             echo Build completed successfully.
-        )
-    )
     
 :: Copy files needed for execution
 echo Do you want to copy the data and options files needed to run the game? (Y/N)
