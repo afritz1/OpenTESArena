@@ -909,7 +909,12 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
 						}
 
-						CombatLogic::spawnHitVfx(hitEntityDef, hitEntityMiddlePosition, entityChunkManager, random, game.physicsSystem, renderer);
+						const WorldDouble3 hitVfxPosition(
+							hitEntityPosition.x,
+							hitEntityPosition.y + std::min(PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.60, hitEntityBBox.halfHeight), // Arbitrary
+							hitEntityPosition.z);
+						CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, renderer);
+
 						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
 					}
 					else
