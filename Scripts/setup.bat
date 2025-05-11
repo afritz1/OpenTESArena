@@ -299,6 +299,17 @@ if /i "!copiardatos!"=="Y" (
         echo Files successfully copied to !EXECUTABLE_DIR!
     )
 )
+    :: Ask for Arena installation path
+        echo.
+        echo Please enter the path to your The Elder Scrolls: Arena installation:
+        echo Example: C:\Program Files (x86)\Steam\steamapps\common\The Elder Scrolls Arena\ARENA
+        set /p arena_path=
+        
+        :: Update options-default.txt with the correct paths
+        echo Updating options-default.txt with correct paths...
+        powershell -Command "(Get-Content '!EXECUTABLE_DIR!\options\options-default.txt') -replace 'ArenaPaths=.*', 'ArenaPaths=!arena_path!' -replace 'MidiConfig=.*', 'MidiConfig=data/eawpats/timidity.cfg' | Set-Content '!EXECUTABLE_DIR!\options\options-default.txt'"
+        
+        echo Options file updated successfully with your Arena path.
     
     cd /d "%SCRIPT_DIR%"
     
