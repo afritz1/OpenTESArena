@@ -304,12 +304,22 @@ int Player::getMaxHealthPoints(const PrimaryAttributes& primaryAttributes) const
 {
 	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
-	int diceHit = charClassDef.healthDie;
-	int maxHealthPoints = 25;
+	const int baseHealth = 25;
+	const int diceRoll = rollHealthDice(charClassDef.healthDie);
+	const int maxHealthPoints = baseHealth + diceRoll;
 	DebugLog("Clase del jugador: " + std::string(charClassDef.name) +
 		" (ID: " + std::to_string(this->charClassDefID) + ")");
-	DebugLog("Puntos de vida maximos: " + std::to_string(maxHealthPoints));
+	DebugLog("Puntos de vida máximos: " + std::to_string(maxHealthPoints) +
+		" (Base: " + std::to_string(baseHealth) +
+		", Tirada: " + std::to_string(diceRoll) + ")");
 	return maxHealthPoints;
+}
+
+int Player::rollHealthDice(int healthDie) const {
+	static std::random_device rd;
+	static std::mt19937 gen(rd());
+	std::uniform_int_distribution<int> distribucion(1, healthDie);
+	return distribucion(gen); 
 }
 //..............
 
