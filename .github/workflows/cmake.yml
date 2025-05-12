@@ -51,12 +51,25 @@ jobs:
     - name: Configure CMake (Linux)
       if: matrix.os == 'ubuntu-latest'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      
     - name: Configure CMake (macOS)
       if: matrix.os == 'macos-latest'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      
     - name: Configure CMake - MSYS2 (Windows)
       if: matrix.os == 'windows-latest'
       shell: msys2 {0}
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "MinGW Makefiles"
-    - name: Build
+      
+    - name: Build (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Build (macOS)
+      if: matrix.os == 'macos-latest'
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+      
+    - name: Build - MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
