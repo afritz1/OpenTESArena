@@ -137,8 +137,15 @@ EntityInitInfo::EntityInitInfo()
 	this->defID = -1;
 	this->initialAnimStateIndex = -1;
 	this->isSensorCollider = false;
+	this->canBeKilled = false;
 	this->hasInventory = false;
 	this->hasCreatureSound = false;
+}
+
+EntityCombatState::EntityCombatState()
+{
+	this->isDying = false;
+	this->isDead = false;
 }
 
 EntityTransferResult::EntityTransferResult()
@@ -238,6 +245,18 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 	{
 		DebugLogError("Couldn't allocate entity Jolt physics body.");
+	}
+
+	if (initInfo.canBeKilled)
+	{
+		if (!this->combatStates.tryAlloc(&entityInst.combatStateID))
+		{
+			DebugLogError("Couldn't allocate EntityCombatStateID.");
+		}
+
+		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		combatState.isDying = false;
+		combatState.isDead = false;
 	}
 
 	if (initInfo.direction.has_value())
@@ -377,6 +396,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			if (isDynamicEntity)
 			{
 				initInfo.direction = CardinalDirection::North;
+				initInfo.canBeKilled = entityDefType == EntityDefinitionType::Enemy;
 				initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
 				initInfo.hasCreatureSound = (entityDefType == EntityDefinitionType::Enemy) && (entityDef.enemy.type == EnemyEntityDefinitionType::Creature);
 			}
@@ -463,6 +483,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);
 				citizenInitInfo.citizenColorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
 				citizenInitInfo.raceID = citizenRaceID;
+				citizenInitInfo.canBeKilled = true;
 				citizenInitInfo.hasInventory = false;
 				citizenInitInfo.hasCreatureSound = false;
 
@@ -768,6 +789,16 @@ EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(EntityAn
 const EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(EntityAnimationInstanceID id) const
 {
 	return this->animInsts.get(id);
+}
+
+EntityCombatState &EntityChunkManager::getEntityCombatState(EntityCombatStateID id)
+{
+	return this->combatStates.get(id);
+}
+
+const EntityCombatState &EntityChunkManager::getEntityCombatState(EntityCombatStateID id) const
+{
+	return this->combatStates.get(id);
 }
 
 int8_t EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const
@@ -1280,6 +1311,11 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &re
 		if (entityInst.animInstID >= 0)
 		{
 			this->animInsts.free(entityInst.animInstID);
+		}
+
+		if (entityInst.combatStateID >= 0)
+		{
+			this->combatStates.free(entityInst.combatStateID);
 		}
 
 		if (entityInst.creatureSoundInstID >= 0)

@@ -47,6 +47,7 @@ struct EntityInitInfo
 	WorldDouble3 feetPosition;
 	char initialAnimStateIndex;
 	bool isSensorCollider;
+	bool canBeKilled;
 	std::optional<Double2> direction;
 	std::optional<int8_t> citizenDirectionIndex;
 	std::optional<EntityCitizenName> citizenName;
@@ -56,6 +57,14 @@ struct EntityInitInfo
 	bool hasCreatureSound;
 
 	EntityInitInfo();
+};
+
+struct EntityCombatState
+{
+	bool isDying;
+	bool isDead;
+
+	EntityCombatState();
 };
 
 // Generated when an entity moves between chunks so systems can update resource ownership.
@@ -76,6 +85,7 @@ private:
 	using EntityBoundingBoxPool = RecyclablePool<BoundingBox3D, EntityBoundingBoxID>;
 	using EntityDirectionPool = RecyclablePool<Double2, EntityDirectionID>;
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
+	using EntityCombatStatePool = RecyclablePool<EntityCombatState, EntityCombatStateID>;
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
 	using EntityCitizenDirectionIndexPool = RecyclablePool<int8_t, EntityCitizenDirectionIndexID>;
 	using EntityCitizenNamePool = RecyclablePool<EntityCitizenName, EntityCitizenNameID>;
@@ -87,6 +97,7 @@ private:
 	EntityBoundingBoxPool boundingBoxes;
 	EntityDirectionPool directions;
 	EntityAnimationInstancePool animInsts;
+	EntityCombatStatePool combatStates;
 	EntityCreatureSoundPool creatureSoundInsts;
 	EntityCitizenDirectionIndexPool citizenDirectionIndices;
 	EntityCitizenNamePool citizenNames;
@@ -144,6 +155,8 @@ public:
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
 	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
+	EntityCombatState &getEntityCombatState(EntityCombatStateID id);
+	const EntityCombatState &getEntityCombatState(EntityCombatStateID id) const;
 	int8_t getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
 	const EntityCitizenName &getEntityCitizenName(EntityCitizenNameID id) const;
 	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;

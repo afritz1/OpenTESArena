@@ -76,9 +76,13 @@ void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double sea
 				for (const EntityInstanceID entityInstID : entityChunk->entityIDs)
 				{
 					const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+					if (!entityInst.canBeKilledInCombat())
+					{
+						continue;
+					}
+
 					const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
 					const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-
 					const WorldDouble3 entityWorldBBoxMin = entityPosition + entityBBox.min;
 					const WorldDouble3 entityWorldBBoxMax = entityPosition + entityBBox.max;
 					BoundingBox3D entityWorldBBox;
