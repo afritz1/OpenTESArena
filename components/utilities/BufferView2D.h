@@ -203,8 +203,8 @@ public:
 		this->viewY = 0;
 		this->viewWidth = 0;
 		this->viewHeight = 0;
-		this->contiguous = false;
-		this->sliced = false;
+		this->isContiguous = false;
+		this->isSliced = false;
 	}
 };
 
