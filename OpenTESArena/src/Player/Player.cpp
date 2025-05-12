@@ -1,13 +1,12 @@
 #include <algorithm>
 #include <cmath>
-#include <vector>
-#include <unordered_map>
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
+#include "ArenaPlayerUtils.h"
 #include "Player.h"
 #include "WeaponAnimationLibrary.h"
 #include "../Assets/ArenaSoundName.h"
@@ -197,9 +196,8 @@ Player::~Player()
 	DebugAssert(this->physicsCharacterVirtual == nullptr);
 }
 
-void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	const PrimaryAttributes &primaryAttributes, int portraitID, int weaponID, const ExeData &exeData,
-	JPH::PhysicsSystem &physicsSystem)
+void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
+	int portraitID, int weaponID, const ExeData &exeData, Random &random, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
@@ -207,11 +205,11 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->maxHealth = calculateMaxHealthPoints(primaryAttributes);
+	this->maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charClassDefID, random);
 	this->currentHealth = this->maxHealth;
-	this->maxStamina = calculateMaxStamina(primaryAttributes);
+	this->maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
 	this->currentStamina = this->maxStamina;
-	this->maxSpellPoints = calculateMaxSpellPoints(primaryAttributes);
+	this->maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charClassDefID, primaryAttributes.intelligence.maxValue);
 	this->currentSpellPoints = this->maxSpellPoints;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
@@ -241,54 +239,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->setCameraFrameFromDirection(cameraDirection);
 	this->movementType = PlayerMovementType::Default;
 	this->movementSoundProgress = 0.0;
-}
-
-int Player::calculateMaxStamina(const PrimaryAttributes &primaryAttributes) const
-{
-	int maxStamina = primaryAttributes.strength.maxValue + primaryAttributes.endurance.maxValue;
-	return maxStamina;
-}
-
-int Player::calculateMaxSpellPoints(const PrimaryAttributes& primaryAttributes) const
-{
-	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
-	const CharacterClassDefinition& characterClassDefinition = charClassLibrary.getDefinition(this->charClassDefID);
-	int maxSpellPoints = 0.0;
-	if (!characterClassDefinition.castsMagic) {
-		return maxSpellPoints;
-	}
-	static const std::unordered_map<std::string, double> magicClassIntelligenceMultipliers = {
-		{"Mage", 2.0},
-		{"Spellsword", 1.5},
-		{"Battlemage", 1.75},
-		{"Sorceror", 3.0},
-		{"Healer", 2.0},
-		{"Nightblade", 1.5},
-		{"Bard", 1.0}
-	};
-	auto classMultiplierIterator = magicClassIntelligenceMultipliers.find(characterClassDefinition.name);
-	if (classMultiplierIterator != magicClassIntelligenceMultipliers.end()) {
-		const double intelligenceMultiplier = classMultiplierIterator->second;
-		maxSpellPoints = intelligenceMultiplier * primaryAttributes.intelligence.maxValue;
-	}
-	return maxSpellPoints;
-}
-
-int Player::calculateMaxHealthPoints(const PrimaryAttributes& primaryAttributes) const
-{
-	const CharacterClassLibrary& characterClassLibrary = CharacterClassLibrary::getInstance();
-	const CharacterClassDefinition& characterClassDefinition = characterClassLibrary.getDefinition(this->charClassDefID);
-	const int baseHealthPoints = 25;
-	const int classHitDieRoll = this->rollHealthDice(characterClassDefinition.healthDie);
-	const int totalHealthPoints = baseHealthPoints + classHitDieRoll;
-	return totalHealthPoints;
-}
-
-int Player::rollHealthDice(int healthDie) const {
-	static std::random_device rd;
-	static std::mt19937 gen(rd());
-	std::uniform_int_distribution<int> distribucion(1, healthDie);
-	return distribucion(gen); 
 }
 
 void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)

@@ -565,7 +565,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const int weaponID = charClassDef.getAllowedWeapon(game.random.next(allowedWeaponCount));
 
 		Player &player = game.player;
-		player.init(std::string(name), male, raceIndex, charClassDefID, attributes, portraitIndex, weaponID, exeData, game.physicsSystem);
+		player.init(std::string(name), male, raceIndex, charClassDefID, attributes, portraitIndex, weaponID, exeData, game.random, game.physicsSystem);
 	};
 
 	gameStateFunction(game);

@@ -1,6 +1,8 @@
 #ifndef ARENA_PLAYER_UTILS_H
 #define ARENA_PLAYER_UTILS_H
 
+class Random;
+
 namespace ArenaPlayerUtils
 {
 	int getBaseSpeed(int speedAttribute, int encumbranceMod);
@@ -28,6 +30,11 @@ namespace ArenaPlayerUtils
 	constexpr int JumpDisallowedCameraHeightUnits = 60; // Or in voxel column with any chasm.
 	constexpr int StandingJumpForwardUnits = 30; // (dist*pc.attr[STRENGTH])/128
 	int getJumpUnitsPerFrame(int frame);
+
+	int rollHealthDice(int healthDie, Random &random);
+	int calculateMaxHealthPoints(int charClassDefID, Random &random);
+	int calculateMaxStamina(int strength, int endurance);
+	int calculateMaxSpellPoints(int charClassDefID, int intelligence);
 
 }
 
