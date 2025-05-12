@@ -56,35 +56,6 @@ int ArenaPlayerUtils::calculateMaxSpellPoints(int charClassDefID, int intelligen
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	if (!charClassDef.castsMagic)
-	{
-		return 0;
-	}
-
-	// @todo: exeData lookup for SpellPointModifiers in Player stats wiki. sorceror is special case
-	constexpr std::pair<const char*, double> MagicClassIntelligenceMultipliers[] =
-	{
-		{ "Mage", 2.0 },
-		{ "Spellsword", 1.5 },
-		{ "Battlemage", 1.75 },
-		{ "Sorceror", 3.0 },
-		{ "Healer", 2.0 },
-		{ "Nightblade", 1.5 },
-		{ "Bard", 1.0 }
-	};
-
-	const auto iter = std::find_if(std::begin(MagicClassIntelligenceMultipliers), std::end(MagicClassIntelligenceMultipliers),
-		[&charClassDef](const std::pair<const char*, double> &pair)
-	{
-		return StringView::equals(pair.first, charClassDef.name);
-	});
-
-	if (iter == std::end(MagicClassIntelligenceMultipliers))
-	{
-		return intelligence;
-	}
-
-	const double multiplier = iter->second;
-	const int maxSpellPoints = static_cast<int>(std::floor(static_cast<double>(intelligence) * multiplier));
+	const int maxSpellPoints = static_cast<int>(static_cast<double>(intelligence) * charClassDef.spellPointsMultiplier);
 	return maxSpellPoints;
 }

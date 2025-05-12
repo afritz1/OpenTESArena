@@ -17,6 +17,7 @@ struct CharacterClassDefinition
 	std::vector<int> allowedWeapons; // 0 = staff, 1 = sword, etc..
 	bool castsMagic;
 	int healthDie; // d8, d20, etc..
+	double spellPointsMultiplier;
 	int initialExpCap;
 	double lockpickPercent; // Lockpick effectiveness percent.
 	bool criticalHit;
@@ -26,7 +27,8 @@ struct CharacterClassDefinition
 
 	void init(const char *name, CharacterClassCategoryID categoryID, const char *preferredAttributes,
 		BufferView<const int> allowedArmors, BufferView<const int> allowedShields, BufferView<const int> allowedWeapons,
-		bool castsMagic, int healthDie, int initialExpCap, double lockpickPercent, bool criticalHit, int originalClassIndex);
+		bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, double lockpickPercent,
+		bool criticalHit, int originalClassIndex);
 
 	int getAllowedArmorCount() const;
 	int getAllowedShieldCount() const;
