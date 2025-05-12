@@ -181,7 +181,8 @@ cd OpenTESArena
 - Run the `otesa` binary
   - On Windows you may need to copy the .dlls that came with SDL2, OpenAL Soft, and WildMIDI to this directory. OpenAL Soft's `soft_oal.dll` must be renamed to `OpenAL32.dll`. A post-build command will fix this eventually
 
-Other guides:
+Other options:
+- [Automated install & build using Visual Studio/CMake/Git/vcpkg (Windows)](windows/setup_OpenTESArena.bat)
 - [Building with Visual Studio (Windows)](docs/setup_windows.md)
 - [Building with MSYS2 (Windows)](docs/setup_windows_msys2.md)
 
