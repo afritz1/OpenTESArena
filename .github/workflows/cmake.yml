@@ -41,6 +41,7 @@ jobs:
         update: true
     - name: Install WildMIDI - MSYS2 (Windows)
       if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
       run: |
         curl -L -o wildmidi.zip https://github.com/Mindwerks/wildmidi/releases/download/wildmidi-0.4.6/wildmidi-0.4.6-win64.zip
         unzip wildmidi.zip
