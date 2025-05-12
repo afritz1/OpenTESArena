@@ -175,12 +175,14 @@ cd OpenTESArena
     -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
     ```
 
-### Running OpenTESArena
-- Copy the `data` and `options` folders from the project's root folder to the same directory as the game executable (this should be fixed in the future with a post-build command)
-- Make sure that `MidiConfig` and `ArenaPaths` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively)
+### Run OpenTESArena
+- Navigate to the directory where the executable was built. When using an IDE like Visual Studio, this is a folder in your build directory named after your `CMAKE_BUILD_TYPE`
+- Make sure that `MidiConfig` and `ArenaPaths` in `options/options-default.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively)
+- Run the `otesa` binary
+  - On Windows you may need to copy the .dlls that came with SDL2, OpenAL Soft, and WildMIDI to this directory. OpenAL Soft's `soft_oal.dll` must be renamed to `OpenAL32.dll`. A post-build command will fix this eventually
 
 Other guides:
-- [Building with Visual Studio (Windows)](docs/setup_windows.md)  
+- [Building with Visual Studio (Windows)](docs/setup_windows.md)
 - [Building with MSYS2 (Windows)](docs/setup_windows_msys2.md)
 
 ## Contributing
