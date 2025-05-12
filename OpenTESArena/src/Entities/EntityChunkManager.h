@@ -65,6 +65,8 @@ struct EntityCombatState
 	bool isDead;
 
 	EntityCombatState();
+
+	bool isInDeathState() const;
 };
 
 // Generated when an entity moves between chunks so systems can update resource ownership.

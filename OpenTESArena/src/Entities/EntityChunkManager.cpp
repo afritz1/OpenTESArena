@@ -148,6 +148,11 @@ EntityCombatState::EntityCombatState()
 	this->isDead = false;
 }
 
+bool EntityCombatState::isInDeathState() const
+{
+	return this->isDying || this->isDead;
+}
+
 EntityTransferResult::EntityTransferResult()
 {
 	this->id = -1;
@@ -991,14 +996,8 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 		EntityInstance &entityInst = this->entities.get(instID);
 		if (entityInst.creatureSoundInstID >= 0)
 		{
-			const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-			const EntityAnimationDefinition &animDef = entityDef.animDef;
-			const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-			const int currentAnimInstStateIndex = animInst.currentStateIndex;
-
-			const std::optional<int> deathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(animDef);
-			const bool isEntityDead = deathAnimStateIndex.has_value() && *deathAnimStateIndex == currentAnimInstStateIndex; // @todo check combat state instead
-			if (isEntityDead)
+			const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+			if (combatState.isInDeathState())
 			{
 				continue;
 			}
@@ -1077,7 +1076,7 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 		EntityInstance &entityInst = this->entities.get(entityInstID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityDefinitionType entityDefType = entityDef.type;
-		if (!EntityUtils::canDie(entityDef))
+		if (!entityInst.canBeKilledInCombat())
 		{
 			continue;
 		}
@@ -1088,8 +1087,6 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 			continue;
 		}
 
-		// @todo: eventually set EntityCombatState::isDead and isDying, these are separate things
-
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
 		if (!isInDeathAnimState)
@@ -1097,9 +1094,13 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 			continue;
 		}
 
+		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
 		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
 		if (isDeathAnimComplete)
 		{
+			combatState.isDying = false;
+			combatState.isDead = true;
+
 			if (EntityUtils::leavesCorpse(entityDef))
 			{
 				JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
@@ -1115,6 +1116,10 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 				this->queueEntityDestroy(entityInstID, true);
 				// @todo remove from dyingEntities list once that is a thing
 			}
+		}
+		else
+		{
+			combatState.isDying = true;
 		}
 	}
 }

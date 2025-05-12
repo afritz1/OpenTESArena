@@ -882,15 +882,10 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
 				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
-				const int hitEntityAnimInstCurrentStateIndex = hitEntityAnimInst.currentStateIndex;
 				const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityDef.animDef);
 				const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
-				const bool isHitEntityInDeathAnim = hitEntityHasDeathAnim && hitEntityAnimInstCurrentStateIndex == *hitEntityDeathAnimStateIndex;
-				const double hitEntityAnimInstProgressPercent = hitEntityAnimInst.progressPercent;
-				const bool isHitEntityAnimStateFinished = hitEntityAnimInstProgressPercent == 1.0;
-				const bool isHitEntityDying = isHitEntityInDeathAnim && !isHitEntityAnimStateFinished;
-				const bool isHitEntityDead = isHitEntityInDeathAnim && isHitEntityAnimStateFinished && EntityUtils::leavesCorpse(hitEntityDef);
-				const bool canHitEntityBeKilled = !isHitEntityDying && !isHitEntityDead && EntityUtils::canDie(hitEntityDef);
+				const EntityCombatState &hitEntityCombatState = entityChunkManager.getEntityCombatState(hitEntityInst.combatStateID);
+				const bool canHitEntityBeKilled = !hitEntityCombatState.isInDeathState() && hitEntityInst.canBeKilledInCombat();
 
 				if (canHitEntityBeKilled)
 				{
