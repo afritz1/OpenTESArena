@@ -173,7 +173,8 @@ cd OpenTESArena
 - Copy the `data` and `options` folders from the project's root folder to the same directory as the game executable (this should be fixed in the future with a post-build command)
 - Make sure that `MidiConfig` and `ArenaPaths` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively)
 
-Other guides:
+Other options:
+- [Automated install & build using Visual Studio/CMake/Git/vcpkg (Windows)](windows/setup_OpenTESArena.bat)
 - [Building with Visual Studio (Windows)](docs/setup_windows.md)  
 - [Building with MSYS2 (Windows)](docs/setup_windows_msys2.md)
 
