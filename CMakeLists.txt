@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.18.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.21.0 FATAL_ERROR)
 
 IF (COMMAND cmake_policy)
     cmake_policy(SET CMP0003 NEW) # Relative linker paths for more portability
