@@ -130,7 +130,7 @@ echo Creating build directory...
 if exist "build" (
     echo Build directory already exists. Do you want to delete it and create a new one? (Y/N)
     
-    if /i "!eliminarbuild!"=="Y" (
+    if /i "!deletebuild!"=="Y" (
         echo Deleting existing build directory...
         rmdir /s /q build
         
@@ -159,19 +159,19 @@ echo 2. ReleaseGenericNoLTO - Release build without Link Time Optimization
 echo 3. ReleaseGeneric - Generic optimized build (recommended for maximum compatibility)
 echo 4. ReleaseNative - Optimized for your specific CPU (maximum speed, less compatibility)
 echo.
-set /p tipo_compilacion=Enter your choice (1-4): 
+set /p compilation_type=Enter your choice (1-4): 
 
 set "BUILD_TYPE=ReleaseGeneric"
-if "!tipo_compilacion!"=="1" (
+if "!compilation_type!"=="1" (
     set "BUILD_TYPE=Debug"
     echo You selected: Debug
-) else if "!tipo_compilacion!"=="2" (
+) else if "!compilation_type!"=="2" (
     set "BUILD_TYPE=ReleaseGenericNoLTO"
     echo You selected: ReleaseGenericNoLTO
-) else if "!tipo_compilacion!"=="3" (
+) else if "!compilation_type!"=="3" (
     set "BUILD_TYPE=ReleaseGeneric"
     echo You selected: ReleaseGeneric
-) else if "!tipo_compilacion!"=="4" (
+) else if "!compilation_type!"=="4" (
     set "BUILD_TYPE=ReleaseNative"
     echo You selected: ReleaseNative
 ) else (
@@ -183,10 +183,10 @@ if "!tipo_compilacion!"=="1" (
 :: ==========================================
 echo.
 echo Do you want to disable CPU-specific optimizations? (AVX2, AVX512, FMA) (Y/N)
-set /p desactivarCPU=
+set /p disableCPU=
 
 set "CPU_FLAGS="
-if /i "!desactivarCPU!"=="Y" (
+if /i "!disableCPU!"=="Y" (
     set "CPU_FLAGS=-DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_FMADD=OFF"
     echo CPU optimizations will be disabled: AVX2, AVX512, FMA.
 ) else (
@@ -214,9 +214,9 @@ echo Project files generated successfully.
 :: Build Process
 :: ==========================================
 echo Do you want to build the project from the command line? (Y/N)
-set /p compilarCMD=
+set /p compileCMD=
 
-if /i "!compilarCMD!"=="Y" (
+if /i "!compileCMD!"=="Y" (
     echo Building with CMake...
     cmake --build . --config !BUILD_TYPE!
     
@@ -228,42 +228,6 @@ if /i "!compilarCMD!"=="Y" (
     )
     
     echo Build completed successfully.
-)
-
-:: ==========================================
-:: Copy Data and options for Otesa.exe
-:: ==========================================
-echo Do you want to copy the data and options files needed to run the game? (Y/N)
-set /p copiardatos=
-
-if /i "!copiardatos!"=="Y" (
-    echo Copying necessary files...
-    
-    :: Determine the location of the executable based on the build type
-    set "EXECUTABLE_DIR=%PROJECT_DIR%build\bin\!BUILD_TYPE!"
-    if not exist "!EXECUTABLE_DIR!" (
-        set "EXECUTABLE_DIR=%PROJECT_DIR%build\!BUILD_TYPE!"
-        if not exist "!EXECUTABLE_DIR!" (
-            echo Could not find the executable folder.
-            echo Manually search for the executable file and copy the 'data' and 'options' folders to that directory.
-        ) else (
-            if not exist "!EXECUTABLE_DIR!\data" mkdir "!EXECUTABLE_DIR!\data"
-            if not exist "!EXECUTABLE_DIR!\options" mkdir "!EXECUTABLE_DIR!\options"
-            
-            xcopy /E /Y /I "%PROJECT_DIR%data" "!EXECUTABLE_DIR!\data"
-            xcopy /E /Y /I "%PROJECT_DIR%options" "!EXECUTABLE_DIR!\options"
-            
-            echo Files successfully copied to !EXECUTABLE_DIR!
-        )
-    ) else (
-        if not exist "!EXECUTABLE_DIR!\data" mkdir "!EXECUTABLE_DIR!\data"
-        if not exist "!EXECUTABLE_DIR!\options" mkdir "!EXECUTABLE_DIR!\options"
-        
-        xcopy /E /Y /I "%PROJECT_DIR%data" "!EXECUTABLE_DIR!\data"
-        xcopy /E /Y /I "%PROJECT_DIR%options" "!EXECUTABLE_DIR!\options"
-        
-        echo Files successfully copied to !EXECUTABLE_DIR!
-    )
 )
 
 :: ==========================================
