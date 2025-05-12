@@ -38,7 +38,8 @@ CharacterClassDefinition::CharacterClassDefinition()
 
 void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID categoryID, const char *preferredAttributes,
 	BufferView<const int> allowedArmors, BufferView<const int> allowedShields, BufferView<const int> allowedWeapons,
-	bool castsMagic, int healthDie, int initialExpCap, double lockpickPercent, bool criticalHit, int originalClassIndex)
+	bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, double lockpickPercent, bool criticalHit,
+	int originalClassIndex)
 {
 	std::snprintf(this->name, std::size(this->name), "%s", name);
 	this->categoryID = categoryID;
@@ -53,6 +54,7 @@ void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID c
 
 	this->castsMagic = castsMagic;
 	this->healthDie = healthDie;
+	this->spellPointsMultiplier = spellPointsMultiplier;
 	this->initialExpCap = initialExpCap;
 	this->lockpickPercent = lockpickPercent;
 	this->criticalHit = criticalHit;

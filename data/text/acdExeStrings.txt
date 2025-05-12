@@ -22,6 +22,7 @@ HealthDice=0x3E5D5
 InitialExperienceCaps=0x36F0E
 LockpickingDivisors=0x3E43E
 PreferredAttributes=0x36034
+MagicClassIntelligenceMultipliers=0x388B0
 
 [CharacterCreation]
 ChooseClassCreation=0x35C80,37

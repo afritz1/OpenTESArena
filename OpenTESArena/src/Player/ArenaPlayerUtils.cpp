@@ -1,6 +1,11 @@
+#include <algorithm>
 #include <cmath>
 
 #include "ArenaPlayerUtils.h"
+#include "../Math/Random.h"
+#include "../Stats/CharacterClassLibrary.h"
+
+#include "components/utilities/StringView.h"
 
 int ArenaPlayerUtils::getBaseSpeed(int speedAttribute, int encumbranceMod)
 {
@@ -25,4 +30,32 @@ int ArenaPlayerUtils::getChasmFallSpeed(int frame)
 int ArenaPlayerUtils::getJumpUnitsPerFrame(int frame)
 {
 	return 10 - (2 * frame);
+}
+
+int ArenaPlayerUtils::rollHealthDice(int healthDie, Random &random)
+{
+	return 1 + random.next(healthDie);
+}
+
+int ArenaPlayerUtils::calculateMaxHealthPoints(int charClassDefID, Random &random)
+{
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+	constexpr int baseHealthPoints = 25;
+	const int classHitDieRoll = ArenaPlayerUtils::rollHealthDice(charClassDef.healthDie, random);
+	const int totalHealthPoints = baseHealthPoints + classHitDieRoll;
+	return totalHealthPoints;
+}
+
+int ArenaPlayerUtils::calculateMaxStamina(int strength, int endurance)
+{
+	return strength + endurance;
+}
+
+int ArenaPlayerUtils::calculateMaxSpellPoints(int charClassDefID, int intelligence)
+{
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+	const int maxSpellPoints = static_cast<int>(static_cast<double>(intelligence) * charClassDef.spellPointsMultiplier);
+	return maxSpellPoints;
 }

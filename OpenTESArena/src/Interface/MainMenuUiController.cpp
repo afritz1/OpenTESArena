@@ -159,7 +159,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 	Player &player = game.player;
 	player.init(testPlayerName, testIsMale, testRaceID, testCharClassDefID, testPrimaryAttributes, testPortraitID,
-		testWeaponID, exeData, game.physicsSystem);
+		testWeaponID, exeData, random, game.physicsSystem);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;

@@ -223,6 +223,7 @@ bool ExeData::CharacterClasses::init(const char *data, const KeyValueFile &keyVa
 	const int initialExpCapsOffset = ExeData::get(*section, "InitialExperienceCaps");
 	const int lockpickingDivisorsOffset = ExeData::get(*section, "LockpickingDivisors");
 	const int preferredAttributesOffset = ExeData::get(*section, "PreferredAttributes");
+	const int magicClassIntelligenceMultipliersOffset = ExeData::get(*section, "MagicClassIntelligenceMultipliers");
 
 	initInt8Array(this->allowedArmors, data + allowedArmorsOffset);
 	initInt16Array(this->allowedShields, data + allowedShieldsOffset);
@@ -243,6 +244,7 @@ bool ExeData::CharacterClasses::init(const char *data, const KeyValueFile &keyVa
 	initInt16Array(this->initialExperienceCaps, data + initialExpCapsOffset);
 	initInt8Array(this->lockpickingDivisors, data + lockpickingDivisorsOffset);
 	initStringArray(this->preferredAttributes, data + preferredAttributesOffset);
+	initInt8Array(this->magicClassIntelligenceMultipliers, data + magicClassIntelligenceMultipliersOffset);
 
 	return true;
 }
