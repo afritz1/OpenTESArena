@@ -34,11 +34,19 @@ jobs:
         msystem: mingw64
         install: |
           mingw-w64-x86_64-toolchain
+          wget
+          unzip
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-SDL2
           mingw-w64-x86_64-openal
-          mingw-w64-x86_64-wildmidi
         update: true
+    - name: Install WildMIDI - MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        wget https://github.com/Mindwerks/wildmidi/releases/download/wildmidi-0.4.6/wildmidi-0.4.6-win64.zip
+        unzip wildmidi-0.4.6-win64.zip
+        cp wildmidi-0.4.6-win64/mingw/*.h /mingw64/include/
+        cp wildmidi-0.4.6-win64/mingw/*.a /mingw64/lib/
         
     - name: Configure CMake (Linux)
       if: matrix.os == 'ubuntu-latest'
