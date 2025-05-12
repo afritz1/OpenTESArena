@@ -7,9 +7,12 @@
 #include "components/utilities/BufferView.h"
 
 class Game;
+class Random;
 class TextBox;
 
 struct Rect;
+
+enum class CardinalDirectionName;
 
 struct PlayerInputAcceleration
 {
@@ -31,8 +34,10 @@ namespace PlayerLogic
 	// Gets movement values based on player input.
 	PlayerInputAcceleration getInputAcceleration(Game &game, BufferView<const Rect> nativeCursorRegions);
 
-	// @todo: change this to be framed like a physics ray cast: it generates a result of what was tested against,
-	// then afterwards we decide to play a hit sound or miss sound, etc.
+	CardinalDirectionName getRandomMeleeSwingDirection(Random &random);
+
+	// Can fail if mouse moves too slowly.
+	bool tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta, const Int2 &windowDims, CardinalDirectionName *outDirectionName);
 
 	// Handles input for the player's attack. Takes the change in mouse position since the previous frame.
 	void handleAttack(Game &game, const Int2 &mouseDelta);

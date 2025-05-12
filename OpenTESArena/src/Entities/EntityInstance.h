@@ -12,6 +12,7 @@ using EntityPositionID = int;
 using EntityBoundingBoxID = int;
 using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
+using EntityCombatStateID = int;
 using EntityCreatureSoundInstanceID = int;
 using EntityCitizenDirectionIndexID = int;
 using EntityCitizenNameID = int;
@@ -26,6 +27,7 @@ struct EntityInstance
 	EntityBoundingBoxID bboxID;
 	EntityDirectionID directionID;
 	EntityAnimationInstanceID animInstID;
+	EntityCombatStateID combatStateID;
 	EntityCreatureSoundInstanceID creatureSoundInstID;
 	EntityCitizenDirectionIndexID citizenDirectionIndexID;
 	EntityCitizenNameID citizenNameID;
@@ -41,6 +43,8 @@ struct EntityInstance
 
 	// Whether the entity is capable of moving + looking.
 	bool isDynamic() const;
+
+	bool canBeKilledInCombat() const;
 
 	// Whether the entity can be placed on raised platforms.
 	bool canUseElevatedPlatforms() const;

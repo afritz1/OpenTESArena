@@ -32,6 +32,10 @@ namespace EntityUtils
 	bool isGhost(const EntityDefinition &entityDef);
 	bool isPuddle(const EntityDefinition &entityDef);
 
+	// Whether system resources (a.k.a. textures) for this entity type are loaded/unloaded per scene.
+	// Should be false for entities that are often in every scene (e.g. VFX).
+	bool isSceneManagedResource(EntityDefinitionType entityDefType);
+
 	int getYOffset(const EntityDefinition &entityDef);
 
 	bool hasCollision(const EntityDefinition &entityDef);

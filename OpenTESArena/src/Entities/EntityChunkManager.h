@@ -41,6 +41,34 @@ struct EntityCitizenName
 	EntityCitizenName();
 };
 
+struct EntityInitInfo
+{
+	EntityDefID defID;
+	WorldDouble3 feetPosition;
+	char initialAnimStateIndex;
+	bool isSensorCollider;
+	bool canBeKilled;
+	std::optional<Double2> direction;
+	std::optional<int8_t> citizenDirectionIndex;
+	std::optional<EntityCitizenName> citizenName;
+	std::optional<uint16_t> citizenColorSeed;
+	std::optional<int> raceID;
+	bool hasInventory;
+	bool hasCreatureSound;
+
+	EntityInitInfo();
+};
+
+struct EntityCombatState
+{
+	bool isDying;
+	bool isDead;
+
+	EntityCombatState();
+
+	bool isInDeathState() const;
+};
+
 // Generated when an entity moves between chunks so systems can update resource ownership.
 struct EntityTransferResult
 {
@@ -59,6 +87,7 @@ private:
 	using EntityBoundingBoxPool = RecyclablePool<BoundingBox3D, EntityBoundingBoxID>;
 	using EntityDirectionPool = RecyclablePool<Double2, EntityDirectionID>;
 	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
+	using EntityCombatStatePool = RecyclablePool<EntityCombatState, EntityCombatStateID>;
 	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
 	using EntityCitizenDirectionIndexPool = RecyclablePool<int8_t, EntityCitizenDirectionIndexID>;
 	using EntityCitizenNamePool = RecyclablePool<EntityCitizenName, EntityCitizenNameID>;
@@ -70,6 +99,7 @@ private:
 	EntityBoundingBoxPool boundingBoxes;
 	EntityDirectionPool directions;
 	EntityAnimationInstancePool animInsts;
+	EntityCombatStatePool combatStates;
 	EntityCreatureSoundPool creatureSoundInsts;
 	EntityCitizenDirectionIndexPool citizenDirectionIndices;
 	EntityCitizenNamePool citizenNames;
@@ -96,18 +126,20 @@ private:
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
 	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);
 
-	EntityInstanceID spawnEntity();
+	void initializeEntity(EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
+		const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem,
+		Renderer &renderer);
 
 	void populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &chunk, const LevelDefinition &levelDefinition,
 		const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+		Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
+		TextureManager &textureManager, Renderer &renderer);
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const LevelDefinition &levelDef,
 		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGeneration::EntityGenInfo &entityGenInfo,
 		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
-		Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+		Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
+		TextureManager &textureManager, Renderer &renderer);
 
 	void updateCitizenStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving,
 		bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
@@ -115,7 +147,8 @@ private:
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
-	void updateEnemyDeathStates(double dt, EntityChunk &entityChunk);
+	void updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem);
+	void updateVfx(EntityChunk &entityChunk);
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	const EntityInstance &getEntity(EntityInstanceID id) const;
@@ -124,6 +157,8 @@ public:
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
 	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
+	EntityCombatState &getEntityCombatState(EntityCombatStateID id);
+	const EntityCombatState &getEntityCombatState(EntityCombatStateID id) const;
 	int8_t getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
 	const EntityCitizenName &getEntityCitizenName(EntityCitizenNameID id) const;
 	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;
@@ -145,6 +180,9 @@ public:
 
 	// Gets the entity visibility state necessary for rendering and ray cast selection.
 	void getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const;
+
+	// Creates a fully-initialized entity in the scene that is immediately ready to simulate.
+	EntityInstanceID createEntity(const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 
 	void update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
 		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

@@ -26,6 +26,11 @@ bool EntityInstance::isDynamic() const
 	return this->directionID >= 0;
 }
 
+bool EntityInstance::canBeKilledInCombat() const
+{
+	return this->combatStateID >= 0;
+}
+
 bool EntityInstance::canUseElevatedPlatforms() const
 {
 	return !this->isDynamic();
@@ -49,6 +54,7 @@ void EntityInstance::clear()
 	this->bboxID = -1;
 	this->directionID = -1;
 	this->animInstID = -1;
+	this->combatStateID = -1;
 	this->creatureSoundInstID = -1;
 	this->citizenDirectionIndexID = -1;
 	this->citizenNameID = -1;

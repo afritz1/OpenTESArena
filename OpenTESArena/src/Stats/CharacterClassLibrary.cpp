@@ -19,6 +19,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 	const auto &classNumbersToIDsValues = exeData.charClasses.classNumbersToIDs;
 	const auto &initialExpCapValues = exeData.charClasses.initialExperienceCaps;
 	const auto &healthDiceValues = exeData.charClasses.healthDice;
+	const auto &spellPointMultiplierValues = exeData.charClasses.magicClassIntelligenceMultipliers;
 	const auto &lockpickingDivisorValues = exeData.charClasses.lockpickingDivisors;
 
 	// Classes in original game.
@@ -136,9 +137,39 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 		const bool thief = (classNumberToID & CharacterClassGeneration::THIEF_MASK) != 0;
 		const bool criticalHit = (classNumberToID & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
 
+		double spellPointsMultiplier = 0.0;
+		if (mage)
+		{
+			spellPointsMultiplier = 1.0;
+
+			if (classNumberToID != 0xE6)
+			{
+				double spellPointsMultiplierBonus = 1.0;
+
+				DebugAssertIndex(spellPointMultiplierValues, classIndex);
+				const uint8_t spellPointModifier = spellPointMultiplierValues[classIndex];
+
+				if (classNumberToID == 0x23)
+				{
+					spellPointsMultiplierBonus = 2.0;
+				}
+				else if (spellPointModifier != 2)
+				{
+					if (spellPointModifier != 0)
+					{
+						spellPointsMultiplier += 0.25;
+					}
+
+					spellPointsMultiplierBonus = 0.50;
+				}
+
+				spellPointsMultiplier += spellPointsMultiplierBonus;
+			}
+		}
+
 		CharacterClassDefinition def;
 		def.init(name.c_str(), category, preferredAttributes.c_str(), allowedArmors, allowedShields, allowedWeapons,
-			mage, healthDie, initialExperienceCap, lockpickPercent, criticalHit, classIndex);
+			mage, healthDie, spellPointsMultiplier, initialExperienceCap, lockpickPercent, criticalHit, classIndex);
 
 		this->defs.emplace_back(std::move(def));
 	}

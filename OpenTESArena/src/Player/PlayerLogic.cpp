@@ -683,19 +683,11 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 	}
 	else
 	{
-		// Modern interface. Make the camera look around if the player's weapon is not in use.
 		const int dx = mouseDelta.x;
 		const int dy = mouseDelta.y;
-		const bool rightClick = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
+		const bool isTurning = (dx != 0) || (dy != 0);
 
-		const Player &player = game.player;
-		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
-		const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
-		const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
-		const bool turning = ((dx != 0) || (dy != 0)) && (WeaponAnimationUtils::isSheathed(weaponAnimDefState) || !rightClick);
-
-		if (turning)
+		if (isTurning)
 		{
 			const Int2 dimensions = game.renderer.getWindowDimensions();
 
@@ -703,11 +695,10 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 			// to a square instead of a rectangle. This keeps the camera look independent
 			// of the aspect ratio.
 			const int minDimension = std::min(dimensions.x, dimensions.y);
-			const double dxx = static_cast<double>(dx) / static_cast<double>(minDimension);
-			const double dyy = static_cast<double>(dy) / static_cast<double>(minDimension);
+			const double dxPercent = static_cast<double>(dx) / static_cast<double>(minDimension);
+			const double dyPercent = static_cast<double>(dy) / static_cast<double>(minDimension);
 
-			// Pitch and/or yaw the camera.
-			return Double2(-dxx, -dyy);
+			return Double2(-dxPercent, -dyPercent);
 		}
 	}
 
@@ -744,6 +735,33 @@ PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, BufferView
 	return inputAcceleration;
 }
 
+CardinalDirectionName PlayerLogic::getRandomMeleeSwingDirection(Random &random)
+{
+	constexpr int directionCount = static_cast<int>(std::size(CardinalDirection::DisplayNames));
+	const int randomValue = random.next(directionCount);
+	return static_cast<CardinalDirectionName>(randomValue);
+}
+
+bool PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta, const Int2 &windowDims, CardinalDirectionName *outDirectionName)
+{
+	// Get smaller screen dimension so mouse delta is relative to a square.
+	const int minDimension = std::min(windowDims.x, windowDims.y);
+	constexpr double requiredDistancePercent = 0.060; // Arbitrary
+
+	const double mouseDeltaXPercent = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
+	const double mouseDeltaYPercent = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
+	const double mouseDistancePercent = std::sqrt((mouseDeltaXPercent * mouseDeltaXPercent) + (mouseDeltaYPercent * mouseDeltaYPercent));
+	const bool isMouseDeltaFastEnough = mouseDistancePercent >= requiredDistancePercent;
+	if (!isMouseDeltaFastEnough)
+	{
+		return false;
+	}
+
+	const Double2 mouseDirection = Double2(mouseDeltaXPercent, -mouseDeltaYPercent).normalized();
+	*outDirectionName = CardinalDirection::getDirectionName(Double2(-mouseDirection.y, -mouseDirection.x));
+	return true;
+}
+
 void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 {
 	Player &player = game.player;
@@ -757,10 +775,12 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	}
 
 	const Options &options = game.options;
+	const bool isModernInterface = options.getGraphics_ModernInterface();
 	const InputManager &inputManager = game.inputManager;
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 	AudioManager &audioManager = game.audioManager;
+	Renderer &renderer = game.renderer;
 	Random &random = game.random;
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
@@ -774,21 +794,26 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
 	{
-		// Get smaller screen dimension so mouse delta is relative to a square.
-		const Int2 dimensions = game.renderer.getWindowDimensions();
-		const int minDimension = std::min(dimensions.x, dimensions.y);
+		const Int2 windowDims = renderer.getWindowDimensions();
 
-		const double mouseDeltaXPercent = static_cast<double>(mouseDelta.x) / static_cast<double>(minDimension);
-		const double mouseDeltaYPercent = static_cast<double>(mouseDelta.y) / static_cast<double>(minDimension);
-		const double mouseDistancePercent = std::sqrt((mouseDeltaXPercent * mouseDeltaXPercent) + (mouseDeltaYPercent * mouseDeltaYPercent));
-		constexpr double requiredDistancePercent = 0.060;
-		const bool isMouseDeltaFastEnough = mouseDistancePercent >= requiredDistancePercent;
-		if (isAttackMouseButtonDown && isMouseDeltaFastEnough)
+		CardinalDirectionName meleeSwingDirection = static_cast<CardinalDirectionName>(-1);
+		bool hasSelectedMeleeSwingDirection = false;
+		if (isModernInterface)
 		{
-			const Double2 mouseDirection = Double2(mouseDeltaXPercent, -mouseDeltaYPercent).normalized();
-			CardinalDirectionName cardinalDirection = CardinalDirection::getDirectionName(Double2(-mouseDirection.y, -mouseDirection.x));
+			if (player.queuedMeleeSwingDirection >= 0)
+			{
+				meleeSwingDirection = static_cast<CardinalDirectionName>(player.queuedMeleeSwingDirection);
+				hasSelectedMeleeSwingDirection = true;
+			}			
+		}
+		else
+		{
+			hasSelectedMeleeSwingDirection = PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(mouseDelta, windowDims, &meleeSwingDirection);
+		}
 
-			newStateIndex = PlayerLogic::getMeleeAnimDirectionStateIndex(weaponAnimDef, cardinalDirection);
+		if (isAttackMouseButtonDown && hasSelectedMeleeSwingDirection)
+		{
+			newStateIndex = PlayerLogic::getMeleeAnimDirectionStateIndex(weaponAnimDef, meleeSwingDirection);
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::Swish;
 
@@ -857,15 +882,10 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
 				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
-				const int hitEntityAnimInstCurrentStateIndex = hitEntityAnimInst.currentStateIndex;				
 				const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityDef.animDef);
 				const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
-				const bool isHitEntityInDeathAnim = hitEntityHasDeathAnim && hitEntityAnimInstCurrentStateIndex == *hitEntityDeathAnimStateIndex;
-				const double hitEntityAnimInstProgressPercent = hitEntityAnimInst.progressPercent;
-				const bool isHitEntityAnimStateFinished = hitEntityAnimInstProgressPercent == 1.0;
-				const bool isHitEntityDying = isHitEntityInDeathAnim && !isHitEntityAnimStateFinished;
-				const bool isHitEntityDead = isHitEntityInDeathAnim && isHitEntityAnimStateFinished && EntityUtils::leavesCorpse(hitEntityDef);
-				const bool canHitEntityBeKilled = !isHitEntityDying && !isHitEntityDead && EntityUtils::canDie(hitEntityDef);
+				const EntityCombatState &hitEntityCombatState = entityChunkManager.getEntityCombatState(hitEntityInst.combatStateID);
+				const bool canHitEntityBeKilled = !hitEntityCombatState.isInDeathState() && hitEntityInst.canBeKilledInCombat();
 
 				if (canHitEntityBeKilled)
 				{
@@ -883,31 +903,34 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						{
 							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
 						}
-						
-						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
 
-						// @todo spawn blood vfx at hit position
+						const WorldDouble3 hitVfxPosition(
+							hitEntityPosition.x,
+							hitEntityPosition.y + std::min(PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.60, hitEntityBBox.halfHeight), // Arbitrary
+							hitEntityPosition.z);
+						CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, renderer);
+
+						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
 					}
 					else
 					{
 						audioManager.playSound(ArenaSoundName::Clank, hitEntityMiddlePosition);
 					}
-				}				
+				}
 			}
 		}
 	}
 	else
 	{
 		bool isAttack = false;
-		if (options.getGraphics_ModernInterface())
+		if (isModernInterface)
 		{
 			isAttack = isAttackMouseButtonDown;
 		}
 		else
 		{
 			// Cursor must be above game world interface. In the original game, it has to be an "X", but relaxing that here.
-			auto &textureManager = game.textureManager;
-			auto &renderer = game.renderer;
+			TextureManager &textureManager = game.textureManager;
 			const TextureAsset gameWorldInterfaceTextureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
 			const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(gameWorldInterfaceTextureAsset.filename.c_str());
 			if (!metadataID.has_value())

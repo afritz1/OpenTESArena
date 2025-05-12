@@ -98,16 +98,17 @@ struct Player
 	int charClassDefID;
 	int portraitID;
 
-	double maxHealth; // @todo calculate from primary attributes
+	double maxHealth;
 	double currentHealth;
-	double maxStamina; // @todo calculate from primary attributes
+	double maxStamina;
 	double currentStamina;
-	double maxSpellPoints; // @todo calculate from primary attributes
+	double maxSpellPoints;
 	double currentSpellPoints;
 
 	// Player always has a weapon animation even if it's just fists
 	int weaponAnimDefID;
 	WeaponAnimationInstance weaponAnimInst;
+	int queuedMeleeSwingDirection; // Non-negative if player is attempting attack this frame.
 
 	int level;
 	int experience;
@@ -119,7 +120,7 @@ struct Player
 	~Player();
 
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
-		int portraitID, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
+		int portraitID, int weaponID, const ExeData &exeData, Random &random, JPH::PhysicsSystem &physicsSystem);
 
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 
@@ -161,7 +162,6 @@ struct Player
 
 	double getMaxMoveSpeed() const;
 	bool isMoving() const;
-
 	// Changes the velocity (as a force) given a normalized direction, magnitude, and delta time.
 	void accelerate(const Double3 &direction, double magnitude, double dt); // @todo: this will give CharacterVirtual a force probably?
 

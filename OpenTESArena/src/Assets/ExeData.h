@@ -59,6 +59,7 @@ public:
 		std::array<uint16_t, 18> initialExperienceCaps;
 		std::array<uint8_t, 18> lockpickingDivisors;
 		std::array<std::string, 18> preferredAttributes;
+		std::array<uint8_t, 7> magicClassIntelligenceMultipliers;
 
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};

@@ -14,28 +14,62 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v3
     
     - name: Install Dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get install libsdl2-dev libopenal-dev libwildmidi-dev
-
+      run: sudo apt-get install libsdl2-dev libopenal-dev libwildmidi-dev
+      
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
+      run: brew install sdl2 openal-soft wildmidi
+      
+    - name: Install Dependencies - MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: mingw64
+        install: |
+          mingw-w64-x86_64-toolchain
+          unzip
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-SDL2
+          mingw-w64-x86_64-openal
+        update: true
+    - name: Install WildMIDI - MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
       run: |
-        brew install sdl2 openal-soft wildmidi
-
-    - name: Configure CMake
+        curl -L -o wildmidi.zip https://github.com/Mindwerks/wildmidi/releases/download/wildmidi-0.4.6/wildmidi-0.4.6-win64.zip
+        unzip wildmidi.zip
+        cp wildmidi-0.4.6-win64/*.h /mingw64/include/
+        cp wildmidi-0.4.6-win64/*.a /mingw64/lib/
+        
+    - name: Configure CMake (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
-    - name: Build
+      
+    - name: Configure CMake (macOS)
+      if: matrix.os == 'macos-latest'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+      
+    - name: Configure CMake - MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "MinGW Makefiles"
+      
+    - name: Build (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: ctest -C ${{env.BUILD_TYPE}}
+    - name: Build (macOS)
+      if: matrix.os == 'macos-latest'
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
       
+    - name: Build - MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      shell: msys2 {0}
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}

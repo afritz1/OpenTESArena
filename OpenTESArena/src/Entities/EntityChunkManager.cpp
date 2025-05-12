@@ -33,33 +33,6 @@
 
 namespace
 {
-	struct EntityInitInfo
-	{
-		EntityDefID defID;
-		WorldDouble3 feetPosition;
-		WorldDouble3 bboxMin, bboxMax; // Centered on the entity in model space
-		double animMaxHeight;
-		char initialAnimStateIndex;
-		bool isSensorCollider;
-		std::optional<Double2> direction;
-		std::optional<int8_t> citizenDirectionIndex;
-		std::optional<EntityCitizenName> citizenName;
-		std::optional<uint16_t> citizenColorSeed;
-		std::optional<int> raceID;
-		bool hasInventory;
-		bool hasCreatureSound;
-
-		EntityInitInfo()
-		{
-			this->defID = -1;
-			this->animMaxHeight = 0.0;
-			this->initialAnimStateIndex = -1;
-			this->isSensorCollider = false;
-			this->hasInventory = false;
-			this->hasCreatureSound = false;
-		}
-	};
-
 	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
@@ -159,6 +132,27 @@ EntityCitizenName::EntityCitizenName()
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
 }
 
+EntityInitInfo::EntityInitInfo()
+{
+	this->defID = -1;
+	this->initialAnimStateIndex = -1;
+	this->isSensorCollider = false;
+	this->canBeKilled = false;
+	this->hasInventory = false;
+	this->hasCreatureSound = false;
+}
+
+EntityCombatState::EntityCombatState()
+{
+	this->isDying = false;
+	this->isDead = false;
+}
+
+bool EntityCombatState::isInDeathState() const
+{
+	return this->isDying || this->isDead;
+}
+
 EntityTransferResult::EntityTransferResult()
 {
 	this->id = -1;
@@ -201,142 +195,152 @@ EntityDefID EntityChunkManager::getOrAddEntityDefID(const EntityDefinition &def,
 	return this->addEntityDef(EntityDefinition(def), defLibrary);
 }
 
-EntityInstanceID EntityChunkManager::spawnEntity()
+void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
+	const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
-	EntityInstanceID instID;
-	if (!this->entities.tryAlloc(&instID))
+	EntityPositionID positionID;
+	if (!this->positions.tryAlloc(&positionID))
 	{
-		DebugCrash("Couldn't allocate EntityInstanceID.");
+		DebugLogError("Couldn't allocate EntityPositionID.");
 	}
 
-	return instID;
+	EntityBoundingBoxID bboxID;
+	if (!this->boundingBoxes.tryAlloc(&bboxID))
+	{
+		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
+	}
+
+	UniformBufferID renderTransformBufferID;
+	if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &renderTransformBufferID))
+	{
+		DebugLogError("Couldn't create uniform buffer for entity transform.");
+	}
+
+	const EntityDefID defID = initInfo.defID;
+	entityInst.init(instID, defID, positionID, bboxID, renderTransformBufferID);
+
+	WorldDouble3 &entityPosition = this->positions.get(positionID);
+	entityPosition = initInfo.feetPosition;
+
+	// Worst case 3D dimensions.
+	double animMaxWidth, animMaxHeight;
+	EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
+	const double halfAnimMaxWidth = animMaxWidth * 0.50;
+
+	// Center bbox in model space.
+	const WorldDouble3 entityBBoxMin(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
+	const WorldDouble3 entityBBoxMax(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
+	BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
+	entityBBox.init(entityBBoxMin, entityBBoxMax);
+
+	if (!this->animInsts.tryAlloc(&entityInst.animInstID))
+	{
+		DebugLogError("Couldn't allocate EntityAnimationInstanceID.");
+	}
+
+	EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+	for (int animDefStateIndex = 0; animDefStateIndex < animDef.stateCount; animDefStateIndex++)
+	{
+		const EntityAnimationDefinitionState &animDefState = animDef.states[animDefStateIndex];
+		animInst.addState(animDefState.seconds, animDefState.isLooping);
+	}
+
+	animInst.setStateIndex(initInfo.initialAnimStateIndex);
+
+	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+	{
+		DebugLogError("Couldn't allocate entity Jolt physics body.");
+	}
+
+	if (initInfo.canBeKilled)
+	{
+		if (!this->combatStates.tryAlloc(&entityInst.combatStateID))
+		{
+			DebugLogError("Couldn't allocate EntityCombatStateID.");
+		}
+
+		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		combatState.isDying = false;
+		combatState.isDead = false;
+	}
+
+	if (initInfo.direction.has_value())
+	{
+		if (!this->directions.tryAlloc(&entityInst.directionID))
+		{
+			DebugLogError("Couldn't allocate EntityDirectionID.");
+		}
+
+		const Double2 &direction = *initInfo.direction;
+		this->directions.get(entityInst.directionID) = direction;
+	}
+
+	if (initInfo.citizenDirectionIndex.has_value())
+	{
+		if (!this->citizenDirectionIndices.tryAlloc(&entityInst.citizenDirectionIndexID))
+		{
+			DebugLogError("Couldn't allocate EntityCitizenDirectionIndexID.");
+		}
+
+		const uint8_t citizenDirectionIndex = *initInfo.citizenDirectionIndex;
+		this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID) = citizenDirectionIndex;
+	}
+
+	if (initInfo.citizenName.has_value())
+	{
+		if (!this->citizenNames.tryAlloc(&entityInst.citizenNameID))
+		{
+			DebugLogError("Couldn't allocate EntityCitizenNameID.");
+		}
+
+		const EntityCitizenName &citizenName = *initInfo.citizenName;
+		this->citizenNames.get(entityInst.citizenNameID) = citizenName;
+	}
+
+	if (initInfo.citizenColorSeed.has_value())
+	{
+		if (!this->paletteIndices.tryAlloc(&entityInst.paletteIndicesInstID))
+		{
+			DebugLogError("Couldn't allocate EntityPaletteIndicesInstanceID.");
+		}
+
+		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+
+		DebugAssert(initInfo.raceID.has_value());
+		const uint16_t citizenColorSeed = *initInfo.citizenColorSeed;
+		PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
+		paletteIndices = ArenaAnimUtils::transformCitizenColors(*initInfo.raceID, citizenColorSeed, binaryAssetLibrary.getExeData());
+	}
+
+	if (initInfo.hasInventory)
+	{
+		if (!this->itemInventories.tryAlloc(&entityInst.itemInventoryInstID))
+		{
+			DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
+		}
+	}
+
+	if (initInfo.hasCreatureSound)
+	{
+		if (!this->creatureSoundInsts.tryAlloc(&entityInst.creatureSoundInstID))
+		{
+			DebugCrash("Couldn't allocate EntityCreatureSoundInstanceID.");
+		}
+
+		double &secondsTillNextCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
+		secondsTillNextCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
+	}
 }
 
 void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDefinition, const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
+	Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = voxelChunk.getPosition();
 	const double ceilingScale = levelInfoDefinition.getCeilingScale();
-	ArenaRandom arenaRandom(random.next()); // Don't need the one from Game, this is only a cosmetic random
-
-	auto initializeEntity = [this, &random, &binaryAssetLibrary, &physicsSystem, &renderer, ceilingScale](
-		EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef, const EntityInitInfo &initInfo)
-	{
-		EntityPositionID positionID;
-		if (!this->positions.tryAlloc(&positionID))
-		{
-			DebugLogError("Couldn't allocate EntityPositionID.");
-		}
-
-		EntityBoundingBoxID bboxID;
-		if (!this->boundingBoxes.tryAlloc(&bboxID))
-		{
-			DebugLogError("Couldn't allocate EntityBoundingBoxID.");
-		}
-
-		UniformBufferID renderTransformBufferID;
-		if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &renderTransformBufferID))
-		{
-			DebugLogError("Couldn't create uniform buffer for entity transform.");
-		}
-
-		const EntityDefID defID = initInfo.defID;
-		entityInst.init(instID, defID, positionID, bboxID, renderTransformBufferID);
-
-		WorldDouble3 &entityPosition = this->positions.get(positionID);
-		entityPosition = initInfo.feetPosition;
-
-		BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
-		entityBBox.init(initInfo.bboxMin, initInfo.bboxMax);
-
-		if (!this->animInsts.tryAlloc(&entityInst.animInstID))
-		{
-			DebugLogError("Couldn't allocate EntityAnimationInstanceID.");
-		}
-
-		const EntityAnimationDefinition &animDef = entityDef.animDef;
-		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		for (int animDefStateIndex = 0; animDefStateIndex < animDef.stateCount; animDefStateIndex++)
-		{
-			const EntityAnimationDefinitionState &animDefState = animDef.states[animDefStateIndex];
-			animInst.addState(animDefState.seconds, animDefState.isLooping);
-		}
-		
-		animInst.setStateIndex(initInfo.initialAnimStateIndex);
-
-		if (!TryCreatePhysicsCollider(entityPosition, initInfo.animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
-		{
-			DebugLogError("Couldn't allocate entity Jolt physics body.");
-		}
-
-		if (initInfo.direction.has_value())
-		{
-			if (!this->directions.tryAlloc(&entityInst.directionID))
-			{
-				DebugLogError("Couldn't allocate EntityDirectionID.");
-			}
-
-			const Double2 &direction = *initInfo.direction;
-			this->directions.get(entityInst.directionID) = direction;
-		}
-
-		if (initInfo.citizenDirectionIndex.has_value())
-		{
-			if (!this->citizenDirectionIndices.tryAlloc(&entityInst.citizenDirectionIndexID))
-			{
-				DebugLogError("Couldn't allocate EntityCitizenDirectionIndexID.");
-			}
-
-			const uint8_t citizenDirectionIndex = *initInfo.citizenDirectionIndex;
-			this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID) = citizenDirectionIndex;
-		}
-
-		if (initInfo.citizenName.has_value())
-		{
-			if (!this->citizenNames.tryAlloc(&entityInst.citizenNameID))
-			{
-				DebugLogError("Couldn't allocate EntityCitizenNameID.");
-			}
-
-			const EntityCitizenName &citizenName = *initInfo.citizenName;
-			this->citizenNames.get(entityInst.citizenNameID) = citizenName;
-		}
-
-		if (initInfo.citizenColorSeed.has_value())
-		{
-			if (!this->paletteIndices.tryAlloc(&entityInst.paletteIndicesInstID))
-			{
-				DebugLogError("Couldn't allocate EntityPaletteIndicesInstanceID.");
-			}
-
-			DebugAssert(initInfo.raceID.has_value());
-			const uint16_t citizenColorSeed = *initInfo.citizenColorSeed;
-			PaletteIndices &paletteIndices = this->paletteIndices.get(entityInst.paletteIndicesInstID);
-			paletteIndices = ArenaAnimUtils::transformCitizenColors(*initInfo.raceID, citizenColorSeed, binaryAssetLibrary.getExeData());
-		}
-
-		if (initInfo.hasInventory)
-		{
-			if (!this->itemInventories.tryAlloc(&entityInst.itemInventoryInstID))
-			{
-				DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
-			}
-		}
-
-		if (initInfo.hasCreatureSound)
-		{
-			if (!this->creatureSoundInsts.tryAlloc(&entityInst.creatureSoundInstID))
-			{
-				DebugCrash("Couldn't allocate EntityCreatureSoundInstanceID.");
-			}
-
-			double &secondsTillNextCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
-			secondsTillNextCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
-		}
-	};
+	ArenaRandom arenaRandom(random.next()); // Don't need the one from Game, this is only a cosmetic random	
 
 	SNInt startX, endX;
 	int startY, endY;
@@ -383,38 +387,34 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 			const CoordDouble2 coordXZ(chunkPos, ChunkUtils::MakeChunkPointFromLevel(worldPosition, startX, startZ));
 			const WorldDouble2 worldPositionXZ = VoxelUtils::coordToWorldPoint(coordXZ);
-
 			const VoxelInt3 voxel = VoxelUtils::worldVoxelToCoord(worldVoxel).voxel;
 			const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 			const double feetY = ceilingScale + entityDefYOffset + GetElevatedPlatformHeight(voxelShapeDef, ceilingScale);
 
-			double animMaxWidth, animMaxHeight;
-			EntityUtils::getAnimationMaxDims(animDef, &animMaxWidth, &animMaxHeight);
-			const double halfAnimMaxWidth = animMaxWidth * 0.50;
-
 			EntityInitInfo initInfo;
 			initInfo.defID = *entityDefID;
 			initInfo.feetPosition = WorldDouble3(worldPositionXZ.x, feetY, worldPositionXZ.y);
-
-			// Bounding box is centered on the entity in model space.
-			initInfo.bboxMin = WorldDouble3(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
-			initInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
-
-			initInfo.animMaxHeight = animMaxHeight;
 			initInfo.initialAnimStateIndex = *initialAnimStateIndex;
 			initInfo.isSensorCollider = !EntityUtils::hasCollision(entityDef);
 
 			if (isDynamicEntity)
 			{
 				initInfo.direction = CardinalDirection::North;
+				initInfo.canBeKilled = entityDefType == EntityDefinitionType::Enemy;
 				initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
 				initInfo.hasCreatureSound = (entityDefType == EntityDefinitionType::Enemy) && (entityDef.enemy.type == EnemyEntityDefinitionType::Creature);
 			}
 
-			EntityInstanceID entityInstID = this->spawnEntity();
+			EntityInstanceID entityInstID;
+			if (!this->entities.tryAlloc(&entityInstID))
+			{
+				DebugLogError("Couldn't allocate level EntityInstanceID.");
+				continue;
+			}
+
 			EntityInstance &entityInst = this->entities.get(entityInstID);
-			initializeEntity(entityInst, entityInstID, entityDef, initInfo);
+			this->initializeEntity(entityInst, entityInstID, entityDef, animDef, initInfo, random, physicsSystem, renderer);
 			entityChunk.entityIDs.emplace_back(entityInstID);
 		}
 	}
@@ -478,16 +478,6 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				EntityInitInfo citizenInitInfo;
 				citizenInitInfo.defID = citizenEntityDefID;
 				citizenInitInfo.feetPosition = WorldDouble3(worldPositionXZ.x, ceilingScale, worldPositionXZ.y);
-
-				double animMaxWidth, animMaxHeight;
-				EntityUtils::getAnimationMaxDims(citizenDef.animDef, &animMaxWidth, &animMaxHeight);
-				const double halfAnimMaxWidth = animMaxWidth * 0.50;
-
-				// Bounding box is centered on the entity in model space.
-				citizenInitInfo.bboxMin = WorldDouble3(-halfAnimMaxWidth, 0.0, -halfAnimMaxWidth);
-				citizenInitInfo.bboxMax = WorldDouble3(halfAnimMaxWidth, animMaxHeight, halfAnimMaxWidth);
-
-				citizenInitInfo.animMaxHeight = animMaxHeight;
 				citizenInitInfo.initialAnimStateIndex = *initialCitizenAnimStateIndex;
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
@@ -498,12 +488,19 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);
 				citizenInitInfo.citizenColorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
 				citizenInitInfo.raceID = citizenRaceID;
+				citizenInitInfo.canBeKilled = true;
 				citizenInitInfo.hasInventory = false;
 				citizenInitInfo.hasCreatureSound = false;
 
-				EntityInstanceID entityInstID = this->spawnEntity();
+				EntityInstanceID entityInstID;
+				if (!this->entities.tryAlloc(&entityInstID))
+				{
+					DebugLogError("Couldn't allocate citizen EntityInstanceID.");
+					continue;
+				}
+
 				EntityInstance &entityInst = this->entities.get(entityInstID);
-				initializeEntity(entityInst, entityInstID, citizenDef, citizenInitInfo);
+				this->initializeEntity(entityInst, entityInstID, citizenDef, citizenAnimDef, citizenInitInfo, random, physicsSystem, renderer);
 				entityChunk.entityIDs.emplace_back(entityInstID);
 			}
 		}
@@ -513,8 +510,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
 	const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, 
 	const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
+	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const ChunkInt2 &chunkPos = entityChunk.getPosition();
 	const SNInt levelWidth = levelDef.getWidth();
@@ -531,7 +528,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 			// Populate chunk from the part of the level it overlaps.
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
+				citizenGenInfo, random, entityDefLibrary, physicsSystem, textureManager, renderer);
 		}
 	}
 	else if (mapType == MapType::City)
@@ -543,7 +540,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 			// Populate chunk from the part of the level it overlaps.
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-				citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
+				citizenGenInfo, random, entityDefLibrary, physicsSystem, textureManager, renderer);
 		}
 	}
 	else if (mapType == MapType::Wilderness)
@@ -555,7 +552,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 		// Copy level definition directly into chunk.
 		const WorldInt2 levelOffset = WorldInt2::Zero;
 		this->populateChunkEntities(entityChunk, voxelChunk, levelDef, levelInfoDef, levelOffset, entityGenInfo,
-			citizenGenInfo, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
+			citizenGenInfo, random, entityDefLibrary, physicsSystem, textureManager, renderer);
 	}
 }
 
@@ -799,6 +796,16 @@ const EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(En
 	return this->animInsts.get(id);
 }
 
+EntityCombatState &EntityChunkManager::getEntityCombatState(EntityCombatStateID id)
+{
+	return this->combatStates.get(id);
+}
+
+const EntityCombatState &EntityChunkManager::getEntityCombatState(EntityCombatStateID id) const
+{
+	return this->combatStates.get(id);
+}
+
 int8_t EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const
 {
 	return this->citizenDirectionIndices.get(id);
@@ -989,7 +996,11 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 		EntityInstance &entityInst = this->entities.get(instID);
 		if (entityInst.creatureSoundInstID >= 0)
 		{
-			// @todo: don't play if is dead. EntityCombatState::isDead?
+			const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+			if (combatState.isInDeathState())
+			{
+				continue;
+			}
 
 			double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
 			secondsTillCreatureSound -= dt;
@@ -1017,39 +1028,6 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 	}
 }
 
-void EntityChunkManager::updateEnemyDeathStates(double dt, EntityChunk &entityChunk)
-{
-	// @todo: just check an EntityChunkManager::dyingEntities list instead, added to when player swing kills them
-
-	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
-	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityDefinitionType entityDefType = entityDef.type;
-		if (!EntityUtils::canDie(entityDef))
-		{
-			continue;
-		}
-
-		const std::optional<int> deathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(entityDef.animDef);
-		if (!deathAnimStateIndex.has_value())
-		{
-			continue;
-		}
-
-		// @todo: eventually set EntityCombatState::isDead and isDying, these are separate things
-
-		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
-		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
-		if (isInDeathAnimState && isDeathAnimComplete && !EntityUtils::leavesCorpse(entityDef))
-		{
-			this->queueEntityDestroy(entityInstID, true);
-			// @todo remove from dyingEntities list once that is a thing
-		}
-	}
-}
-
 void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem)
 {
 	for (const VoxelFadeAnimationInstance &fadeAnimInst : voxelChunk.getFadeAnimInsts())
@@ -1065,7 +1043,7 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 				const CoordInt3 entityVoxelCoord = VoxelUtils::worldVoxelToCoord(entityWorldVoxel);
 				const VoxelInt3 entityVoxel = entityVoxelCoord.voxel;
 				const bool matchesFadedVoxel = (entityVoxel.x == fadeAnimInst.x) && (entityVoxel.y == fadeAnimInst.y) && (entityVoxel.z == fadeAnimInst.z);
-				
+
 				// @todo: we don't know if this was a raised platform because the voxel shape has already changed this frame, so just assume yes for "can be elevated" entities
 				if (matchesFadedVoxel && entityInst.canUseElevatedPlatforms())
 				{
@@ -1087,6 +1065,112 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 	}
 }
 
+void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
+	// @todo: just check an EntityChunkManager::dyingEntities list instead, added to when player swing kills them
+
+	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	{
+		EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityDefinitionType entityDefType = entityDef.type;
+		if (!entityInst.canBeKilledInCombat())
+		{
+			continue;
+		}
+
+		const std::optional<int> deathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(entityDef.animDef);
+		if (!deathAnimStateIndex.has_value())
+		{
+			continue;
+		}
+
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
+		if (!isInDeathAnimState)
+		{
+			continue;
+		}
+
+		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
+		if (isDeathAnimComplete)
+		{
+			combatState.isDying = false;
+			combatState.isDead = true;
+
+			if (EntityUtils::leavesCorpse(entityDef))
+			{
+				JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+				if (!physicsBodyID.IsInvalid())
+				{
+					bodyInterface.RemoveBody(physicsBodyID);
+					bodyInterface.DestroyBody(physicsBodyID);
+					physicsBodyID = Physics::INVALID_BODY_ID;
+				}
+			}
+			else
+			{
+				this->queueEntityDestroy(entityInstID, true);
+				// @todo remove from dyingEntities list once that is a thing
+			}
+		}
+		else
+		{
+			combatState.isDying = true;
+		}
+	}
+}
+
+void EntityChunkManager::updateVfx(EntityChunk &entityChunk)
+{
+	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityDefinitionType entityDefType = entityDef.type;
+		if (entityDefType != EntityDefinitionType::Vfx)
+		{
+			continue;
+		}
+
+		const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		const bool isVfxAnimComplete = animInst.progressPercent == 1.0;
+		if (isVfxAnimComplete)
+		{
+			this->queueEntityDestroy(entityInstID, true); // @todo shouldn't need to notify chunk, it should just be a loose entity in entitychunkmanager
+		}
+	}
+}
+
+EntityInstanceID EntityChunkManager::createEntity(const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+{
+	EntityInstanceID entityInstID;
+	if (!this->entities.tryAlloc(&entityInstID))
+	{
+		DebugLogError("Couldn't allocate EntityInstanceID.");
+		return -1;
+	}
+
+	EntityInstance &entityInst = this->entities.get(entityInstID);
+	
+	// Register with chunk if possible.
+	// @todo: not all entities should need registering, like vfx
+	const ChunkInt2 chunkPos = VoxelUtils::worldPointToChunk(initInfo.feetPosition);
+	EntityChunk *entityChunk = this->tryGetChunkAtPosition(chunkPos);
+	if (entityChunk != nullptr)
+	{
+		entityChunk->entityIDs.emplace_back(entityInstID);
+	}
+
+	const EntityDefinition &entityDef = this->getEntityDef(initInfo.defID);
+	this->initializeEntity(entityInst, entityInstID, entityDef, entityDef.animDef, initInfo, random, physicsSystem, renderer);
+	
+	return entityInstID;
+}
+
 void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
 	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
@@ -1097,7 +1181,6 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
 {
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	for (const ChunkInt2 &chunkPos : freedChunkPositions)
 	{
@@ -1133,7 +1216,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		}
 
 		this->populateChunk(entityChunk, voxelChunk, *levelDefPtr, *levelInfoDefPtr, mapSubDef, entityGenInfo, citizenGenInfo,
-			ceilingScale, random, entityDefLibrary, binaryAssetLibrary, physicsSystem, textureManager, renderer);
+			ceilingScale, random, entityDefLibrary, physicsSystem, textureManager, renderer);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
@@ -1149,6 +1232,9 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
 	const bool isPlayerWeaponSheathed = WeaponAnimationUtils::isSheathed(weaponAnimDefState);
+
+	// @todo: this could support entities not registered to a chunk if we iterate over categories of entityInstIDs instead (all citizens, then all creatures, etc)
+	// - at some point may want to store an EntityInstance bool like "isArbitrarySpawn" or something that says "I don't despawn with a chunk" for vfx and temporaries
 
 	for (const ChunkInt2 &chunkPos : activeChunkPositions)
 	{
@@ -1166,7 +1252,8 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 
 		this->updateCreatureSounds(dt, entityChunk, playerPosition, random, audioManager);
 		this->updateFadedElevatedPlatforms(entityChunk, voxelChunk, ceilingScale, physicsSystem);
-		this->updateEnemyDeathStates(dt, entityChunk);
+		this->updateEnemyDeathStates(entityChunk, physicsSystem);
+		this->updateVfx(entityChunk);
 	}
 }
 
@@ -1190,12 +1277,14 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk)
 {
 	const ChunkInt2 *chunkToNotify = nullptr;
+	
+	ChunkInt2 chunkPos;
 	if (notifyChunk)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-		const ChunkInt2 entityChunkPos = VoxelUtils::worldPointToChunk(entityPosition);
-		chunkToNotify = &entityChunkPos;
+		chunkPos = VoxelUtils::worldPointToChunk(entityPosition);
+		chunkToNotify = &chunkPos;
 	}
 	
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
@@ -1227,6 +1316,11 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &re
 		if (entityInst.animInstID >= 0)
 		{
 			this->animInsts.free(entityInst.animInstID);
+		}
+
+		if (entityInst.combatStateID >= 0)
+		{
+			this->combatStates.free(entityInst.combatStateID);
 		}
 
 		if (entityInst.creatureSoundInstID >= 0)

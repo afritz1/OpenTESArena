@@ -52,7 +52,7 @@ Controls:
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip)
 1. Extract the `.zip`
-1. Move the extracted `eawpats` folder inside the OpenTESArena `data` folder
+1. Copy the extracted `eawpats` folder inside the OpenTESArena `data` folder
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
   
 #### Run `otesa.exe`
@@ -95,7 +95,7 @@ rar x Arena106.exe
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
 1. Extract the `.tar.gz`
-1. Move the extracted `eawpats` folder inside the OpenTESArena `data` folder
+1. Copy the extracted `eawpats` folder inside the OpenTESArena `data` folder
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
 
 #### Run OpenTESArena
@@ -119,6 +119,12 @@ cd ..
 1. Open the `.dmg` and copy `otesa.app` to the `Applications` folder or another location you prefer
 1. Right-click on the .app and choose "Show Package Contents"
 1. Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier
+
+#### Music (optional)
+1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
+1. Extract the `.tar.gz`
+1. Copy the extracted `eawpats` folder inside the same `Contents/Resources/data` folder in `otesa.app`
+   - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
 
 #### Run OpenTESArena
 1. Return to the `Applications` folder or wherever you have the app installed and open `otesa.app`. If you have Gatekeeper turned on (the default for macOS), you will need to do the following:
@@ -169,13 +175,15 @@ cd OpenTESArena
     -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
     ```
 
-### Running OpenTESArena
-- Copy the `data` and `options` folders from the project's root folder to the same directory as the game executable (this should be fixed in the future with a post-build command)
-- Make sure that `MidiConfig` and `ArenaPaths` in the options file point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively)
+### Run OpenTESArena
+- Navigate to the directory where the executable was built. When using an IDE like Visual Studio, this is a folder in your build directory named after your `CMAKE_BUILD_TYPE`
+- Make sure that `MidiConfig` and `ArenaPaths` in `options/options-default.txt` point to valid locations on your computer (i.e., `data/eawpats/timidity.cfg` and `data/ARENA` respectively)
+- Run the `otesa` binary
+  - On Windows you may need to copy the .dlls that came with SDL2, OpenAL Soft, and WildMIDI to this directory. OpenAL Soft's `soft_oal.dll` must be renamed to `OpenAL32.dll`. A post-build command will fix this eventually
 
 Other options:
 - [Automated install & build using Visual Studio/CMake/Git/vcpkg (Windows)](windows/setup_OpenTESArena.bat)
-- [Building with Visual Studio (Windows)](docs/setup_windows.md)  
+- [Building with Visual Studio (Windows)](docs/setup_windows.md)
 - [Building with MSYS2 (Windows)](docs/setup_windows_msys2.md)
 
 ## Contributing

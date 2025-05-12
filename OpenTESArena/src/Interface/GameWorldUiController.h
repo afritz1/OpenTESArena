@@ -23,10 +23,8 @@ namespace GameWorldUiController
 	void onActivateInputAction(const InputActionCallbackValues &values, TextBox &actionText);
 	void onInspect(Game &game, const Int2 &screenPoint, TextBox &actionText);
 	void onInspectInputAction(const InputActionCallbackValues &values, TextBox &actionText);
-	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed,
-		const Rect &centerCursorRegion, TextBox &actionText);
-	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt,
-		const Rect &centerCursorRegion);
+	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed, const Rect &centerCursorRegion, TextBox &actionText);
+	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt, const Rect &centerCursorRegion);
 	void onCharacterSheetButtonSelected(Game &game);
 	void onWeaponButtonSelected(Player &player);
 	void onStealButtonSelected();
@@ -48,6 +46,8 @@ namespace GameWorldUiController
 
 	void onCitizenInteracted(Game &game, const EntityInstance &entityInst);
 
+	void onShowPlayerDeathCinematic(Game &game);
+	void onHealthDepleted(Game &game);
 	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);
 }
 

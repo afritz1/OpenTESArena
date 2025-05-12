@@ -64,3 +64,6 @@ cmake_install.cmake
 
 # VS Code Workspace Settings folder
 .vscode/
+
+# macOS Finder
+.DS_STORE

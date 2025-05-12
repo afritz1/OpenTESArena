@@ -1,12 +1,12 @@
 #include <algorithm>
 #include <cmath>
-#include <vector>
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
+#include "ArenaPlayerUtils.h"
 #include "Player.h"
 #include "WeaponAnimationLibrary.h"
 #include "../Assets/ArenaSoundName.h"
@@ -184,6 +184,7 @@ Player::Player()
 	this->maxSpellPoints = 0.0;
 	this->currentSpellPoints = 0.0;
 	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
+	this->queuedMeleeSwingDirection = -1;
 	this->level = 0;
 	this->experience = 0;
 	this->clearKeyInventory();
@@ -195,9 +196,8 @@ Player::~Player()
 	DebugAssert(this->physicsCharacterVirtual == nullptr);
 }
 
-void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID,
-	const PrimaryAttributes &primaryAttributes, int portraitID, int weaponID, const ExeData &exeData,
-	JPH::PhysicsSystem &physicsSystem)
+void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
+	int portraitID, int weaponID, const ExeData &exeData, Random &random, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
@@ -205,14 +205,15 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->maxHealth = 100.0; // @todo
+	this->maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charClassDefID, random);
 	this->currentHealth = this->maxHealth;
-	this->maxStamina = 100.0; // @todo
+	this->maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
 	this->currentStamina = this->maxStamina;
-	this->maxSpellPoints = 100.0; // @todo
+	this->maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charClassDefID, primaryAttributes.intelligence.maxValue);
 	this->currentSpellPoints = this->maxSpellPoints;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
+	this->queuedMeleeSwingDirection = -1;
 	this->level = 1;
 	this->experience = 0;
 	this->primaryAttributes = primaryAttributes;
