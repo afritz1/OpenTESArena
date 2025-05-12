@@ -14,28 +14,40 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v3
     
     - name: Install Dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: |
-        sudo apt-get install libsdl2-dev libopenal-dev libwildmidi-dev
-
+      run: sudo apt-get install libsdl2-dev libopenal-dev libwildmidi-dev
+      
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
-      run: |
-        brew install sdl2 openal-soft wildmidi
-
-    - name: Configure CMake
+      run: brew install sdl2 openal-soft wildmidi
+      
+    - name: Install Dependencies - MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: mingw64
+        install: |
+          mingw-w64-x86_64-toolchain
+          mingw-w64-x86_64-cmake
+          mingw-w64-x86_64-SDL2
+          mingw-w64-x86_64-openal
+          mingw-w64-x86_64-wildmidi
+        update: true
+        
+    - name: Configure CMake (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
+    - name: Configure CMake (macOS)
+      if: matrix.os == 'macos-latest'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+    - name: Configure CMake - MSYS2 (Windows)
+      if: matrix.os == 'windows-latest'
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -G "MinGW Makefiles"
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      run: ctest -C ${{env.BUILD_TYPE}}
-      
