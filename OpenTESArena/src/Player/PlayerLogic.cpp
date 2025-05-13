@@ -445,96 +445,94 @@ namespace PlayerLogic
 
 		if (isPrimaryInteraction)
 		{
-			// @todo: max selection distance matters when talking to NPCs and selecting corpses.
-			// - need to research a bit since I think it switches between select and inspect
-			//   depending on distance and entity state.
-			// - Also need the "too far away..." text?
-			/*const double maxSelectionDist = 1.50;
-			if (hit.t <= maxSelectionDist)
-			{
+			// @todo: "too far away..." text for certain things (research)
 
-			}*/
-
-			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
 			const EntityInstanceID entityInstID = entityHit.id;
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			const EntityDefinitionType entityType = entityDef.type;
-			const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 
-			std::string entityName;
-			std::string text;
-			if (entityInst.isCitizen())
+			switch (entityType)
 			{
-				GameWorldUiController::onCitizenInteracted(game, entityInst);
-			}
-			else if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
+			case EntityDefinitionType::Enemy:
 			{
-				text = exeData.ui.inspectedEntityName;
-
-				// Replace format specifier with entity name.
-				text = String::replace(text, "%s", entityName);
-			}
-			else
-			{
-				switch (entityType)
+				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+				const EntityCombatState &combatState = entityChunkManager.getEntityCombatState(entityInst.combatStateID);
+				if (combatState.isDead)
 				{
-				case EntityDefinitionType::Item:
+					ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+					GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory);
+				}
+				else if (!combatState.isDying)
 				{
-					const ItemEntityDefinition &itemDef = entityDef.item;
-					const ItemEntityDefinitionType itemDefType = itemDef.type;
+					const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 
-					// Attempt to pick up item.
-					if (itemDefType == ItemEntityDefinitionType::Key)
+					std::string entityName;
+					if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
 					{
-						VoxelTriggerDefID triggerDefID;
-						if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
+						std::string text = exeData.ui.inspectedEntityName;
+						text = String::replace(text, "%s", entityName);
+						actionTextBox.setText(text);
+						gameState.setActionTextDuration(text);
+					}
+				}
+
+				break;
+			}
+			case EntityDefinitionType::Citizen:
+				GameWorldUiController::onCitizenInteracted(game, entityInst);
+				break;
+			case EntityDefinitionType::Item:
+			{
+				const ItemEntityDefinition &itemDef = entityDef.item;
+				const ItemEntityDefinitionType itemDefType = itemDef.type;
+
+				if (itemDefType == ItemEntityDefinitionType::Key)
+				{
+					VoxelTriggerDefID triggerDefID;
+					if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
+					{
+						const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
+						if (triggerDef.hasKeyDef())
 						{
-							const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
-							if (triggerDef.hasKeyDef())
+							const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
+							const int keyID = triggerKeyDef.keyID;
+							player.addToKeyInventory(keyID);
+
+							// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityChunkManager draw calls due to skipping scene simulation.
+							const auto callback = [&entityChunkManager, chunkPos, entityInstID]()
 							{
-								const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
-								const int keyID = triggerKeyDef.keyID;
-								player.addToKeyInventory(keyID);
+								entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+							};
 
-								// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityChunkManager draw calls due to skipping scene simulation.
-								const auto callback = [&entityChunkManager, chunkPos, entityInstID]()
-								{
-									entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
-								};
-
-								GameWorldUiController::onKeyPickedUp(game, keyID, exeData, callback);
-							}
+							GameWorldUiController::onKeyPickedUp(game, keyID, exeData, callback);
 						}
 					}
-					else if (itemDefType == ItemEntityDefinitionType::QuestItem)
-					{
-						AudioManager &audioManager = game.audioManager;
-						audioManager.playSound(ArenaSoundName::Fanfare2);
-						DebugLog("Picked up quest item.");
-						entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
-					}
-
-					break;
 				}
-				case EntityDefinitionType::Container:
+				else if (itemDefType == ItemEntityDefinitionType::QuestItem)
 				{
-					const ContainerEntityDefinition &containerDef = entityDef.container;
-					if (containerDef.type == ContainerEntityDefinitionType::Pile)
-					{
-						ItemInventory &containerItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
-						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory);
-					}
-
-					break;
-				}					
-				default:
-					break;
+					AudioManager &audioManager = game.audioManager;
+					audioManager.playSound(ArenaSoundName::Fanfare2);
+					DebugLogFormat("Picked up quest item (entity %d).", entityInstID);
+					entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
 				}
-			}
 
-			actionTextBox.setText(text);
-			gameState.setActionTextDuration(text);
+				break;
+			}
+			case EntityDefinitionType::Container:
+			{
+				const ContainerEntityDefinition &containerDef = entityDef.container;
+				if (containerDef.type == ContainerEntityDefinitionType::Pile)
+				{
+					ItemInventory &containerItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+					GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory);
+				}
+
+				break;
+			}
+			default:
+				break;
+			}			
 		}
 	}
 
