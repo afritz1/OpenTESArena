@@ -371,64 +371,37 @@ namespace PlayerLogic
 					if (isDoorClosed)
 					{
 						bool canDoorBeOpened = true;
-						bool isUsingDoorKey = false;
+						bool isApplyingDoorKeyToLock = false;
 						int requiredDoorKeyID = -1;
 
-						VoxelLockDefID lockDefID;
-						if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
+						int triggerInstIndex;
+						const bool hasDoorBeenUnlocked = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
+						if (!hasDoorBeenUnlocked)
 						{
-							const LockDefinition &lockDef = voxelChunk.getLockDef(lockDefID);
-							requiredDoorKeyID = lockDef.keyID;
-
-							if (requiredDoorKeyID >= 0)
+							VoxelLockDefID lockDefID;
+							if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
 							{
-								if (player.isIdInKeyInventory(requiredDoorKeyID))
+								const LockDefinition &lockDef = voxelChunk.getLockDef(lockDefID);
+								requiredDoorKeyID = lockDef.keyID;
+
+								if (requiredDoorKeyID >= 0)
 								{
-									int triggerInstIndex;
-									const bool isDoorKeyAlreadyUsed = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
-									if (!isDoorKeyAlreadyUsed)
+									if (player.isIdInKeyInventory(requiredDoorKeyID))
 									{
-										isUsingDoorKey = true;
+										isApplyingDoorKeyToLock = true;
 									}
-								}
-								else
-								{
-									canDoorBeOpened = false || debugDestroyVoxel; // Can't open unless using debug input
+									else
+									{
+										canDoorBeOpened = false || debugDestroyVoxel; // Can't open unless using debug input
+									}
 								}
 							}
 						}
 
 						if (canDoorBeOpened)
 						{
-							VoxelDoorAnimationInstance newDoorAnimInst;
-							newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-							voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
-
-							VoxelDoorDefID doorDefID;
-							if (!voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
-							{
-								DebugCrash("Expected door def ID to exist.");
-							}
-
-							const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
-							const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
-							const std::string &soundFilename = openSoundDef.soundFilename;
-							const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
-							const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
-
-							if (isUsingDoorKey)
-							{
-								GameWorldUiController::onDoorUnlockedWithKey(game, requiredDoorKeyID, soundFilename, soundPosition, exeData);
-
-								VoxelTriggerInstance newTriggerInst;
-								newTriggerInst.init(voxel.x, voxel.y, voxel.z);
-								voxelChunk.addTriggerInst(std::move(newTriggerInst));
-							}
-							else
-							{
-								AudioManager &audioManager = game.audioManager;
-								audioManager.playSound(soundFilename.c_str(), soundPosition);
-							}
+							constexpr bool isWeaponBashing = false;
+							MapLogic::handleDoorOpen(game, voxelChunk, voxel, ceilingScale, isApplyingDoorKeyToLock, requiredDoorKeyID, isWeaponBashing);
 						}
 						else
 						{
@@ -870,14 +843,12 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
 					audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
 
-					DebugLog("Door bashing not implemented.");
 					if (random.nextBool())
 					{
-						/*VoxelTriggerInstance newTriggerInst;
-						newTriggerInst.init(hitVoxel.x, hitVoxel.y, hitVoxel.z);
-						hitVoxelChunk.addTriggerInst(std::move(newTriggerInst));*/
-
-						// @todo open door, add door anim, play open sound. maybe could be commonized in a MapLogic
+						constexpr bool isApplyingDoorKeyToLock = false;
+						constexpr int doorKeyID = -1;
+						constexpr bool isWeaponBashing = true;
+						MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isWeaponBashing);
 					}
 				}
 			}

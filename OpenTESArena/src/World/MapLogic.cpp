@@ -7,11 +7,13 @@
 #include "../Collision/RayCastTypes.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
+#include "../Interface/GameWorldUiController.h"
 #include "../Interface/WorldMapPanel.h"
 #include "../Sky/SkyUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../UI/TextBox.h"
+#include "../Voxels/ArenaVoxelUtils.h"
 #include "../Voxels/VoxelFacing3D.h"
 
 void MapLogic::handleNightLightChange(Game &game, bool active)
@@ -103,6 +105,59 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 				chunk.addTriggerInst(std::move(newTriggerInst));
 			}
 		}
+	}
+}
+
+void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt3 &voxel, double ceilingScale, bool isApplyingDoorKeyToLock, int doorKeyID, bool isWeaponBashing)
+{
+	VoxelDoorDefID doorDefID;
+	if (!voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
+	{
+		DebugLogErrorFormat("Expected door def ID to exist at (%s).", voxel.toString().c_str());
+		return;
+	}
+
+	const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+	const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
+	const std::string &soundFilename = openSoundDef.soundFilename;
+	const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+	const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
+
+	VoxelDoorAnimationInstance newDoorAnimInst;
+	newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
+	voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
+
+	bool isDoorBecomingUnlocked = false;
+
+	int triggerInstIndex;
+	const bool hasDoorBeenUnlocked = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
+	if (!hasDoorBeenUnlocked)
+	{
+		VoxelLockDefID lockDefID;
+		if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
+		{
+			isDoorBecomingUnlocked = isApplyingDoorKeyToLock || isWeaponBashing;
+		}
+	}
+
+	if (isDoorBecomingUnlocked)
+	{
+		VoxelTriggerInstance newTriggerInst;
+		newTriggerInst.init(voxel.x, voxel.y, voxel.z);
+		voxelChunk.addTriggerInst(std::move(newTriggerInst));
+	}
+
+	const bool isDoorKeyUseValid = isApplyingDoorKeyToLock && isDoorBecomingUnlocked;
+	if (isDoorKeyUseValid)
+	{
+		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+		const ExeData &exeData = binaryAssetLibrary.getExeData();
+		GameWorldUiController::onDoorUnlockedWithKey(game, doorKeyID, soundFilename, soundPosition, exeData);
+	}
+	else
+	{
+		AudioManager &audioManager = game.audioManager;
+		audioManager.playSound(soundFilename.c_str(), soundPosition);
 	}
 }
 
