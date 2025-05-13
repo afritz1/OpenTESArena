@@ -382,9 +382,9 @@ Rect ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(const std::string_view
 		textureGenInfo.height);
 }
 
-MessageBoxSubPanel::BackgroundProperties ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties()
+MessageBoxBackgroundProperties ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties()
 {
-	return MessageBoxSubPanel::BackgroundProperties(
+	return MessageBoxBackgroundProperties(
 		ChooseRaceUiView::ProvinceConfirmTitleTexturePatternType,
 		22,
 		0,
@@ -393,8 +393,7 @@ MessageBoxSubPanel::BackgroundProperties ChooseRaceUiView::getProvinceConfirmMes
 		40);
 }
 
-MessageBoxSubPanel::TitleProperties ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(
-	const std::string_view text, const FontLibrary &fontLibrary)
+MessageBoxTitleProperties ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmTitleFontName;
 	int fontDefIndex;
@@ -406,15 +405,14 @@ MessageBoxSubPanel::TitleProperties ChooseRaceUiView::getProvinceConfirmMessageB
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
 		text, fontDef, std::nullopt, ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
-	return MessageBoxSubPanel::TitleProperties(
+	return MessageBoxTitleProperties(
 		fontName,
 		textureGenInfo,
 		ChooseRaceUiView::ProvinceConfirmTitleTextColor,
 		ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
 }
 
-MessageBoxSubPanel::ItemsProperties ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(
-	const FontLibrary &fontLibrary)
+MessageBoxItemsProperties ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(5, TextRenderUtils::LARGEST_CHAR);
 	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmItemFontName;
@@ -428,7 +426,7 @@ MessageBoxSubPanel::ItemsProperties ChooseRaceUiView::getProvinceConfirmMessageB
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	constexpr int itemCount = 2;
-	return MessageBoxSubPanel::ItemsProperties(
+	return MessageBoxItemsProperties(
 		itemCount,
 		fontName,
 		textureGenInfo,
@@ -606,9 +604,9 @@ Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_vie
 		textureGenInfo.height);
 }
 
-MessageBoxSubPanel::BackgroundProperties ChooseAttributesUiView::getMessageBoxBackgroundProperties()
+MessageBoxBackgroundProperties ChooseAttributesUiView::getMessageBoxBackgroundProperties()
 {
-	return MessageBoxSubPanel::BackgroundProperties(
+	return MessageBoxBackgroundProperties(
 		ChooseAttributesUiView::MessageBoxPatternType,
 		12,
 		0,
@@ -617,8 +615,7 @@ MessageBoxSubPanel::BackgroundProperties ChooseAttributesUiView::getMessageBoxBa
 		24);
 }
 
-MessageBoxSubPanel::TitleProperties ChooseAttributesUiView::getMessageBoxTitleProperties(const std::string_view text,
-	const FontLibrary &fontLibrary)
+MessageBoxTitleProperties ChooseAttributesUiView::getMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseAttributesUiView::MessageBoxTitleFontName;
 	int fontDefIndex;
@@ -629,10 +626,10 @@ MessageBoxSubPanel::TitleProperties ChooseAttributesUiView::getMessageBoxTitlePr
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
-	return MessageBoxSubPanel::TitleProperties(fontName, textureGenInfo, ChooseAttributesUiView::MessageBoxTitleColor);
+	return MessageBoxTitleProperties(fontName, textureGenInfo, ChooseAttributesUiView::MessageBoxTitleColor);
 }
 
-MessageBoxSubPanel::ItemsProperties ChooseAttributesUiView::getMessageBoxItemsProperties(const FontLibrary &fontLibrary)
+MessageBoxItemsProperties ChooseAttributesUiView::getMessageBoxItemsProperties(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(10, TextRenderUtils::LARGEST_CHAR);
 	const std::string &fontName = ChooseAttributesUiView::MessageBoxItemFontName;
@@ -646,7 +643,7 @@ MessageBoxSubPanel::ItemsProperties ChooseAttributesUiView::getMessageBoxItemsPr
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	constexpr int itemCount = 2;
-	return MessageBoxSubPanel::ItemsProperties(
+	return MessageBoxItemsProperties(
 		itemCount,
 		fontName,
 		textureGenInfo,

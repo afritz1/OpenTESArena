@@ -12,7 +12,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 
-MessageBoxSubPanel::BackgroundProperties::BackgroundProperties(TextureUtils::PatternType patternType,
+MessageBoxBackgroundProperties::MessageBoxBackgroundProperties(TextureUtils::PatternType patternType,
 	int extraTitleWidth, int extraTitleHeight, const std::optional<int> &widthOverride,
 	const std::optional<int> &heightOverride, int itemTextureHeight)
 	: widthOverride(widthOverride), heightOverride(heightOverride)
@@ -23,26 +23,26 @@ MessageBoxSubPanel::BackgroundProperties::BackgroundProperties(TextureUtils::Pat
 	this->itemTextureHeight = itemTextureHeight;
 }
 
-MessageBoxSubPanel::TitleProperties::TitleProperties(const std::string &fontName,
+MessageBoxTitleProperties::MessageBoxTitleProperties(const std::string &fontName,
 	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor, int lineSpacing)
 	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
 {
 	this->lineSpacing = lineSpacing;
 }
 
-MessageBoxSubPanel::ItemsProperties::ItemsProperties(int count, const std::string &fontName,
+MessageBoxItemsProperties::MessageBoxItemsProperties(int count, const std::string &fontName,
 	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor)
 	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
 {
 	this->count = count;
 }
 
-MessageBoxSubPanel::Item::Item()
+MessageBoxItem::MessageBoxItem()
 {
 	this->isCancelButton = false;
 }
 
-void MessageBoxSubPanel::Item::init(const Rect &backgroundTextureRect, ScopedUiTextureRef &&backgroundTextureRef, TextBox &&textBox)
+void MessageBoxItem::init(const Rect &backgroundTextureRect, ScopedUiTextureRef &&backgroundTextureRef, TextBox &&textBox)
 {
 	this->backgroundTextureRect = backgroundTextureRect;
 	this->backgroundTextureRef = std::move(backgroundTextureRef);
@@ -60,9 +60,9 @@ MessageBoxSubPanel::~MessageBoxSubPanel()
 	}
 }
 
-bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, const Rect &titleRect,
-	const TitleProperties &titleProperties, const ItemsProperties &itemsProperties,
-	const OnClosedFunction &onClosed)
+bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundProperties, const Rect &titleRect,
+	const MessageBoxTitleProperties &titleProperties, const MessageBoxItemsProperties &itemsProperties,
+	const MessageBoxOnClosedFunction &onClosed)
 {
 	auto &game = this->getGame();
 	auto &textureManager = game.textureManager;
@@ -148,13 +148,13 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 			return false;
 		}
 
-		MessageBoxSubPanel::Item &item = this->items.get(i);
+		MessageBoxItem &item = this->items.get(i);
 		item.init(itemBackgroundRect, std::move(itemBackgroundTextureRef), std::move(itemTextBox));
 
 		this->addButtonProxy(MouseButtonType::Left, itemBackgroundRect,
 			[this, i]()
 		{
-			MessageBoxSubPanel::Item &item = this->items.get(i);
+			MessageBoxItem &item = this->items.get(i);
 			DebugAssert(item.callback);
 			item.callback();
 		});
@@ -168,7 +168,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 			// Try to close the message box as if a cancel button had been clicked.
 			for (int i = 0; i < this->items.getCount(); i++)
 			{
-				const MessageBoxSubPanel::Item &item = this->items.get(i);
+				const MessageBoxItem &item = this->items.get(i);
 				if (item.isCancelButton)
 				{
 					item.callback();
@@ -184,7 +184,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		this->titleBackgroundRect.getSize(),
 		PivotType::Middle);
 
-	for (const MessageBoxSubPanel::Item &item : this->items)
+	for (const MessageBoxItem &item : this->items)
 	{
 		this->addDrawCall(
 			item.backgroundTextureRef.get(),
@@ -223,20 +223,20 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	{
 		UiDrawCall::TextureFunc itemTextBoxTextureFunc = [this, i]()
 		{
-			MessageBoxSubPanel::Item &item = this->items.get(i);
+			MessageBoxItem &item = this->items.get(i);
 			return item.textBox.getTextureID();
 		};
 
 		UiDrawCall::PositionFunc itemTextBoxPositionFunc = [this, i]()
 		{
-			MessageBoxSubPanel::Item &item = this->items.get(i);
+			MessageBoxItem &item = this->items.get(i);
 			const Rect &itemRect = item.textBox.getRect();
 			return itemRect.getCenter();
 		};
 
 		UiDrawCall::SizeFunc itemTextBoxSizeFunc = [this, i]()
 		{
-			MessageBoxSubPanel::Item &item = this->items.get(i);
+			MessageBoxItem &item = this->items.get(i);
 			const Rect &itemRect = item.textBox.getRect();
 			return itemRect.getSize();
 		};
@@ -265,13 +265,13 @@ void MessageBoxSubPanel::setTitleText(const std::string_view text)
 
 void MessageBoxSubPanel::setItemText(int itemIndex, const std::string_view text)
 {
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 	item.textBox.setText(text);
 }
 
-void MessageBoxSubPanel::setItemCallback(int itemIndex, const ItemCallback &callback, bool isCancelButton)
+void MessageBoxSubPanel::setItemCallback(int itemIndex, const MessageBoxItemCallback &callback, bool isCancelButton)
 {
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 	item.callback = callback;
 	item.isCancelButton = isCancelButton;
 }
@@ -280,7 +280,7 @@ void MessageBoxSubPanel::setItemInputAction(int itemIndex, const std::string &in
 {
 	DebugAssert(!inputActionName.empty());
 
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 
 	// Only support setting the hotkey once due to the complication of finding and removing old input actions.
 	DebugAssert(item.inputActionName.empty());
@@ -289,7 +289,7 @@ void MessageBoxSubPanel::setItemInputAction(int itemIndex, const std::string &in
 	this->addInputActionListener(inputActionName,
 		[this, itemIndex](const InputActionCallbackValues &values)
 	{
-		MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+		MessageBoxItem &item = this->items.get(itemIndex);
 		DebugAssert(item.callback);
 		item.callback();
 	});
@@ -297,12 +297,12 @@ void MessageBoxSubPanel::setItemInputAction(int itemIndex, const std::string &in
 
 void MessageBoxSubPanel::addOverrideColor(int itemIndex, int charIndex, const Color &overrideColor)
 {
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 	item.textBox.addOverrideColor(charIndex, overrideColor);
 }
 
 void MessageBoxSubPanel::clearOverrideColors(int itemIndex)
 {
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 	item.textBox.clearOverrideColors();
 }

@@ -226,10 +226,9 @@ namespace ChooseRaceUiView
 
 	Rect getProvinceConfirmTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary);
 
-	MessageBoxSubPanel::BackgroundProperties getProvinceConfirmMessageBoxBackgroundProperties();
-	MessageBoxSubPanel::TitleProperties getProvinceConfirmMessageBoxTitleProperties(const std::string_view text,
-		const FontLibrary &fontLibrary);
-	MessageBoxSubPanel::ItemsProperties getProvinceConfirmMessageBoxItemsProperties(const FontLibrary &fontLibrary);
+	MessageBoxBackgroundProperties getProvinceConfirmMessageBoxBackgroundProperties();
+	MessageBoxTitleProperties getProvinceConfirmMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary);
+	MessageBoxItemsProperties getProvinceConfirmMessageBoxItemsProperties(const FontLibrary &fontLibrary);
 
 	Rect getProvinceConfirmedFirstTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedSecondTextureRect(int textWidth, int textHeight);
@@ -296,10 +295,9 @@ namespace ChooseAttributesUiView
 
 	Rect getMessageBoxTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary);
 
-	MessageBoxSubPanel::BackgroundProperties getMessageBoxBackgroundProperties();
-	MessageBoxSubPanel::TitleProperties getMessageBoxTitleProperties(const std::string_view text,
-		const FontLibrary &fontLibrary);
-	MessageBoxSubPanel::ItemsProperties getMessageBoxItemsProperties(const FontLibrary &fontLibrary);
+	MessageBoxBackgroundProperties getMessageBoxBackgroundProperties();
+	MessageBoxTitleProperties getMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary);
+	MessageBoxItemsProperties getMessageBoxItemsProperties(const FontLibrary &fontLibrary);
 
 	int getDistributePointsTextBoxTextureWidth(int textWidth);
 	int getDistributePointsTextBoxTextureHeight(int textHeight);

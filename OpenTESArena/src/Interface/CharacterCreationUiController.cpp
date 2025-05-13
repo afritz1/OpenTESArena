@@ -210,15 +210,12 @@ void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Populate and display province confirm message box.
-	const MessageBoxSubPanel::BackgroundProperties backgroundProperties =
-		ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties();
+	const MessageBoxBackgroundProperties backgroundProperties = ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties();
 
 	const std::string titleText = ChooseRaceUiModel::getProvinceConfirmTitleText(game);
 	const Rect titleRect = ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(titleText, fontLibrary);
-	const MessageBoxSubPanel::TitleProperties titleProperties =
-		ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(titleText, fontLibrary);
-	const MessageBoxSubPanel::ItemsProperties itemsProperties =
-		ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(fontLibrary);
+	const MessageBoxTitleProperties titleProperties = ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(titleText, fontLibrary);
+	const MessageBoxItemsProperties itemsProperties = ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(fontLibrary);
 	
 	std::unique_ptr<MessageBoxSubPanel> panel = std::make_unique<MessageBoxSubPanel>(game);
 	if (!panel->init(backgroundProperties, titleRect, titleProperties, itemsProperties))
@@ -421,15 +418,12 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, int b
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
-	const MessageBoxSubPanel::BackgroundProperties backgroundProperties =
-		ChooseAttributesUiView::getMessageBoxBackgroundProperties();
+	const MessageBoxBackgroundProperties backgroundProperties = ChooseAttributesUiView::getMessageBoxBackgroundProperties();
 
 	const std::string titleText = ChooseAttributesUiModel::getMessageBoxTitleText(game);
 	const Rect titleRect = ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(titleText, fontLibrary);
-	const MessageBoxSubPanel::TitleProperties titleProperties =
-		ChooseAttributesUiView::getMessageBoxTitleProperties(titleText, fontLibrary);
-	const MessageBoxSubPanel::ItemsProperties itemsProperties =
-		ChooseAttributesUiView::getMessageBoxItemsProperties(fontLibrary);
+	const MessageBoxTitleProperties titleProperties = ChooseAttributesUiView::getMessageBoxTitleProperties(titleText, fontLibrary);
+	const MessageBoxItemsProperties itemsProperties = ChooseAttributesUiView::getMessageBoxItemsProperties(fontLibrary);
 
 	auto onClosed = [&game]()
 	{
