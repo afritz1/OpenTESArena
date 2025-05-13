@@ -26,6 +26,11 @@ bool EntityInstance::isDynamic() const
 	return this->directionID >= 0;
 }
 
+bool EntityInstance::canAcceptCombatHits() const
+{
+	return this->canBeKilledInCombat() || this->canBeLocked();
+}
+
 bool EntityInstance::canBeKilledInCombat() const
 {
 	return this->combatStateID >= 0;
@@ -46,6 +51,11 @@ bool EntityInstance::hasInventory() const
 	return this->itemInventoryInstID >= 0;
 }
 
+bool EntityInstance::canBeLocked() const
+{
+	return this->lockStateID >= 0;
+}
+
 void EntityInstance::clear()
 {
 	this->instanceID = -1;
@@ -60,6 +70,7 @@ void EntityInstance::clear()
 	this->citizenNameID = -1;
 	this->paletteIndicesInstID = -1;
 	this->itemInventoryInstID = -1;
+	this->lockStateID = -1;
 	this->physicsBodyID = JPH::BodyID();
 	this->renderTransformBufferID = -1;
 }

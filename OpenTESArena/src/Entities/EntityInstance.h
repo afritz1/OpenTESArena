@@ -18,6 +18,7 @@ using EntityCitizenDirectionIndexID = int;
 using EntityCitizenNameID = int;
 using EntityPaletteIndicesInstanceID = int;
 using EntityItemInventoryInstanceID = int;
+using EntityLockStateID = int;
 
 struct EntityInstance
 {
@@ -33,6 +34,7 @@ struct EntityInstance
 	EntityCitizenNameID citizenNameID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;
+	EntityLockStateID lockStateID;
 	JPH::BodyID physicsBodyID;
 	UniformBufferID renderTransformBufferID;
 
@@ -44,6 +46,7 @@ struct EntityInstance
 	// Whether the entity is capable of moving + looking.
 	bool isDynamic() const;
 
+	bool canAcceptCombatHits() const;
 	bool canBeKilledInCombat() const;
 
 	// Whether the entity can be placed on raised platforms.
@@ -52,6 +55,8 @@ struct EntityInstance
 	bool isCitizen() const;
 
 	bool hasInventory() const;
+
+	bool canBeLocked() const;
 
 	void clear();
 };

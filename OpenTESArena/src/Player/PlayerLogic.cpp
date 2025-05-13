@@ -524,16 +524,11 @@ namespace PlayerLogic
 				const ContainerEntityDefinition &containerDef = entityDef.container;
 				const ContainerEntityDefinitionType containerDefType = containerDef.type;
 
-				bool isContainerInventoryAccessible = false;
-				if (containerDefType == ContainerEntityDefinitionType::Pile)
+				bool isContainerInventoryAccessible = true;
+				if (entityInst.canBeLocked())
 				{
-					isContainerInventoryAccessible = true;
-				}
-				else if (containerDefType == ContainerEntityDefinitionType::Holder)
-				{
-					// @todo: improve via EntityLockState w/ "isLocked", default false
-					const ContainerEntityDefinition::HolderDefinition &holderDef = containerDef.holder;
-					isContainerInventoryAccessible = !holderDef.locked;
+					const EntityLockState &lockState = entityChunkManager.getEntityLockState(entityInst.lockStateID);
+					isContainerInventoryAccessible = !lockState.isLocked;
 				}
 
 				if (isContainerInventoryAccessible)
@@ -546,7 +541,7 @@ namespace PlayerLogic
 			}
 			default:
 				break;
-			}			
+			}
 		}
 	}
 
@@ -798,7 +793,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			{
 				meleeSwingDirection = static_cast<CardinalDirectionName>(player.queuedMeleeSwingDirection);
 				hasSelectedMeleeSwingDirection = true;
-			}			
+			}
 		}
 		else
 		{
@@ -873,11 +868,24 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 				const WorldDouble3 hitEntityMiddlePosition(hitEntityPosition.x, hitEntityPosition.y + hitEntityBBox.halfHeight, hitEntityPosition.z);
 
 				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
-				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
-				const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityDef.animDef);
-				const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
-				const EntityCombatState &hitEntityCombatState = entityChunkManager.getEntityCombatState(hitEntityInst.combatStateID);
-				const bool canHitEntityBeKilled = !hitEntityCombatState.isInDeathState() && hitEntityInst.canBeKilledInCombat();
+				const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
+				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);				
+
+				const EntityCombatState *hitEntityCombatState = nullptr;
+				bool canHitEntityBeKilled = false;
+				if (hitEntityInst.canBeKilledInCombat())
+				{
+					hitEntityCombatState = &entityChunkManager.getEntityCombatState(hitEntityInst.combatStateID);
+					canHitEntityBeKilled = !hitEntityCombatState->isInDeathState();
+				}
+
+				EntityLockState *hitEntityLockState = nullptr;
+				bool canHitEntityLockBeBroken = false;
+				if (hitEntityInst.canBeLocked())
+				{
+					hitEntityLockState = &entityChunkManager.getEntityLockState(hitEntityInst.lockStateID);
+					canHitEntityLockBeBroken = hitEntityLockState->isLocked;
+				}
 
 				if (canHitEntityBeKilled)
 				{
@@ -887,6 +895,9 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 					if (isHitEntityHpAtZero)
 					{
+						const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityAnimDef);
+						const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
+
 						if (hitEntityHasDeathAnim)
 						{
 							hitEntityAnimInst.setStateIndex(*hitEntityDeathAnimStateIndex);
@@ -908,6 +919,18 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					{
 						audioManager.playSound(ArenaSoundName::Clank, hitEntityMiddlePosition);
 					}
+				}
+				else if (canHitEntityLockBeBroken)
+				{
+					const bool isLockBashSuccessful = random.nextBool(); // @todo actual lock bash calculation
+
+					if (isLockBashSuccessful)
+					{
+						hitEntityLockState->isLocked = false;
+						// @todo set hitEntityAnimInst state index to unlocked
+					}
+
+					audioManager.playSound(ArenaSoundName::Bash, hitEntityMiddlePosition);
 				}
 			}
 		}

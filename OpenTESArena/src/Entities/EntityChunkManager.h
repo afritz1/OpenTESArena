@@ -55,6 +55,7 @@ struct EntityInitInfo
 	std::optional<int> raceID;
 	bool hasInventory;
 	bool hasCreatureSound;
+	std::optional<bool> isLocked;
 
 	EntityInitInfo();
 };
@@ -67,6 +68,13 @@ struct EntityCombatState
 	EntityCombatState();
 
 	bool isInDeathState() const;
+};
+
+struct EntityLockState
+{
+	bool isLocked;
+
+	EntityLockState();
 };
 
 // Generated when an entity moves between chunks so systems can update resource ownership.
@@ -93,6 +101,7 @@ private:
 	using EntityCitizenNamePool = RecyclablePool<EntityCitizenName, EntityCitizenNameID>;
 	using EntityPaletteIndicesInstancePool = RecyclablePool<PaletteIndices, EntityPaletteIndicesInstanceID>;
 	using EntityItemInventoryInstancePool = RecyclablePool<ItemInventory, EntityItemInventoryInstanceID>;
+	using EntityLockStatePool = RecyclablePool<EntityLockState, EntityLockStateID>;
 
 	EntityPool entities;
 	EntityPositionPool positions;
@@ -110,6 +119,7 @@ private:
 	EntityPaletteIndicesInstancePool paletteIndices;
 
 	EntityItemInventoryInstancePool itemInventories;
+	EntityLockStatePool lockStates;
 
 	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
@@ -163,6 +173,8 @@ public:
 	const EntityCitizenName &getEntityCitizenName(EntityCitizenNameID id) const;
 	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;
 	ItemInventory &getEntityItemInventory(EntityItemInventoryInstanceID id);
+	EntityLockState &getEntityLockState(EntityLockStateID id);
+	const EntityLockState &getEntityLockState(EntityLockStateID id) const;
 
 	EntityInstanceID getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const;
 

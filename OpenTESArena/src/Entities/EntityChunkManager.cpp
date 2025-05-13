@@ -153,6 +153,11 @@ bool EntityCombatState::isInDeathState() const
 	return this->isDying || this->isDead;
 }
 
+EntityLockState::EntityLockState()
+{
+	this->isLocked = false;
+}
+
 EntityTransferResult::EntityTransferResult()
 {
 	this->id = -1;
@@ -330,6 +335,17 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		double &secondsTillNextCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
 		secondsTillNextCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
 	}
+
+	if (initInfo.isLocked.has_value())
+	{
+		if (!this->lockStates.tryAlloc(&entityInst.lockStateID))
+		{
+			DebugCrash("Couldn't allocate EntityLockStateID.");
+		}
+
+		EntityLockState &lockState = this->lockStates.get(entityInst.lockStateID);
+		lockState.isLocked = *initInfo.isLocked;
+	}
 }
 
 void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
@@ -406,6 +422,15 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			}
 
 			initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
+
+			if (entityDefType == EntityDefinitionType::Container)
+			{
+				const ContainerEntityDefinition &containerDef = entityDef.container;
+				if (containerDef.type == ContainerEntityDefinitionType::Holder)
+				{
+					initInfo.isLocked = containerDef.holder.locked;
+				}
+			}
 
 			EntityInstanceID entityInstID;
 			if (!this->entities.tryAlloc(&entityInstID))
@@ -825,6 +850,16 @@ const PaletteIndices &EntityChunkManager::getEntityPaletteIndices(EntityPaletteI
 ItemInventory &EntityChunkManager::getEntityItemInventory(EntityItemInventoryInstanceID id)
 {
 	return this->itemInventories.get(id);
+}
+
+EntityLockState &EntityChunkManager::getEntityLockState(EntityLockStateID id)
+{
+	return this->lockStates.get(id);
+}
+
+const EntityLockState &EntityChunkManager::getEntityLockState(EntityLockStateID id) const
+{
+	return this->lockStates.get(id);
 }
 
 EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const
@@ -1347,6 +1382,11 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &re
 		if (entityInst.itemInventoryInstID >= 0)
 		{
 			this->itemInventories.free(entityInst.itemInventoryInstID);
+		}
+
+		if (entityInst.lockStateID >= 0)
+		{
+			this->lockStates.free(entityInst.lockStateID);
 		}
 
 		const JPH::BodyID physicsBodyID = entityInst.physicsBodyID;

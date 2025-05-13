@@ -76,7 +76,7 @@ void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double sea
 				for (const EntityInstanceID entityInstID : entityChunk->entityIDs)
 				{
 					const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-					if (!entityInst.canBeKilledInCombat())
+					if (!entityInst.canAcceptCombatHits())
 					{
 						continue;
 					}
