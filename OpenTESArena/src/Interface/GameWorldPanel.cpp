@@ -562,7 +562,7 @@ void GameWorldPanel::initUiDrawCalls()
 		};
 
 		UiDrawCall::PivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
-		UiDrawCall::ActiveFunc statusBarActiveFunc = []() { return true; };
+		UiDrawCall::ActiveFunc statusBarActiveFunc = [this]() { return !this->isPaused(); };
 
 		this->addDrawCall(
 			healthBarTextureFunc,
