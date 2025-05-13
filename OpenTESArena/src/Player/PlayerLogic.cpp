@@ -522,7 +522,21 @@ namespace PlayerLogic
 			case EntityDefinitionType::Container:
 			{
 				const ContainerEntityDefinition &containerDef = entityDef.container;
-				if (containerDef.type == ContainerEntityDefinitionType::Pile)
+				const ContainerEntityDefinitionType containerDefType = containerDef.type;
+
+				bool isContainerInventoryAccessible = false;
+				if (containerDefType == ContainerEntityDefinitionType::Pile)
+				{
+					isContainerInventoryAccessible = true;
+				}
+				else if (containerDefType == ContainerEntityDefinitionType::Holder)
+				{
+					// @todo: improve via EntityLockState w/ "isLocked", default false
+					const ContainerEntityDefinition::HolderDefinition &holderDef = containerDef.holder;
+					isContainerInventoryAccessible = !holderDef.locked;
+				}
+
+				if (isContainerInventoryAccessible)
 				{
 					ItemInventory &containerItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
 					GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory);
