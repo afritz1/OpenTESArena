@@ -3,11 +3,13 @@
 
 #include <functional>
 
+#include "../Entities/EntityInstance.h"
 #include "../Math/Vector2.h"
 
 class ExeData;
 class Game;
 class GameWorldPanel;
+class ItemInventory;
 class TextBox;
 
 enum class MouseButtonType;
@@ -40,6 +42,9 @@ namespace GameWorldUiController
 	void onToggleCompassInputAction(const InputActionCallbackValues &values);
 	void onPlayerPositionInputAction(const InputActionCallbackValues &values, TextBox &actionText);
 	void onPauseInputAction(const InputActionCallbackValues &values);
+
+	// @todo: need popup for dead enemies that can give gold
+	void onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory);
 
 	void onKeyPickedUp(Game &game, int keyID, const ExeData &exeData, const std::function<void()> postStatusPopUpCallback);
 	void onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData);

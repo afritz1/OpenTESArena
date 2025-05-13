@@ -307,6 +307,19 @@ void GameWorldUiController::onPauseInputAction(const InputActionCallbackValues &
 	}
 }
 
+void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory)
+{
+	const std::string text = std::to_string(itemInventory.getOccupiedSlotCount()) + " items\n(interaction not implemented)";
+
+	Int2 center;
+	TextBox::InitInfo textBoxInitInfo;
+	UiTextureID textureID;
+	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
+
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
+}
+
 void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &exeData, const std::function<void()> postStatusPopUpCallback)
 {
 	const std::string text = GameWorldUiModel::getKeyPickUpMessage(keyID, exeData);

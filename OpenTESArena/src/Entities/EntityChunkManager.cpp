@@ -402,9 +402,10 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			{
 				initInfo.direction = CardinalDirection::North;
 				initInfo.canBeKilled = entityDefType == EntityDefinitionType::Enemy;
-				initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
 				initInfo.hasCreatureSound = (entityDefType == EntityDefinitionType::Enemy) && (entityDef.enemy.type == EnemyEntityDefinitionType::Creature);
 			}
+
+			initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
 
 			EntityInstanceID entityInstID;
 			if (!this->entities.tryAlloc(&entityInstID))

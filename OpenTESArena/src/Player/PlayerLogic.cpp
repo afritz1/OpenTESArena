@@ -544,9 +544,18 @@ namespace PlayerLogic
 
 					break;
 				}
+				case EntityDefinitionType::Container:
+				{
+					const ContainerEntityDefinition &containerDef = entityDef.container;
+					if (containerDef.type == ContainerEntityDefinitionType::Pile)
+					{
+						ItemInventory &containerItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory);
+					}
+
+					break;
+				}					
 				default:
-					// Placeholder text for testing.
-					text = "Entity " + std::to_string(entityInstID) + " (" + EntityUtils::defTypeToString(entityDef) + ")";
 					break;
 				}
 			}
