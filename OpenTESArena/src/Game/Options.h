@@ -1,6 +1,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <limits>
 #include <string>
 #include <unordered_map>
 
@@ -33,6 +34,9 @@ private:
 
 	// Opens the given file and reads its key-value pairs into the given maps.
 	static void load(const char *filename, std::unordered_map<std::string, Options::MapGroup> &maps);
+
+	int clampInt(int value, int minValue, int maxValue, const char *name) const;
+	double clampDouble(double value, double minValue, double maxValue, const char *name) const;
 
 	bool getBool(const std::string &section, const std::string &key) const;
 	int getInt(const std::string &section, const std::string &key) const;
@@ -101,10 +105,13 @@ void set##section##_##name(bool value) \
 	this->setBool(#section, #name, value); \
 }
 
-#define OPTION_INT(section, name) \
+#define OPTION_INT(section, name, minValue, maxValue) \
 static constexpr const char Key_##section##_##name[] = #name; \
 static constexpr OptionType OptionType_##section##_##name = OptionType::Int; \
-int clamp##section##_##name(int value) const; \
+int clamp##section##_##name(int value) const \
+{ \
+	return this->clampInt(value, minValue, maxValue, #name); \
+} \
 int get##section##_##name() const \
 { \
 	const int value = this->getInt(#section, #name); \
@@ -112,14 +119,17 @@ int get##section##_##name() const \
 } \
 void set##section##_##name(int value) \
 { \
-	const int clampedValue = this->clamp##section##_##name(value); \
+	const int clampedValue = this->clampInt(value, minValue, maxValue, #name); \
 	this->setInt(#section, #name, clampedValue); \
 }
 
-#define OPTION_DOUBLE(section, name) \
+#define OPTION_DOUBLE(section, name, minValue, maxValue) \
 static constexpr const char Key_##section##_##name[] = #name; \
 static constexpr OptionType OptionType_##section##_##name = OptionType::Double; \
-double clamp##section##_##name(double value) const; \
+double clamp##section##_##name(double value) const \
+{ \
+	return this->clampDouble(value, minValue, maxValue, #name); \
+} \
 double get##section##_##name() const \
 { \
 	const double value = this->getDouble(#section, #name); \
@@ -144,38 +154,38 @@ void set##section##_##name(const std::string &value) \
 }
 
 	// Getter, setter, and optional checker methods.
-	OPTION_INT(Graphics, ScreenWidth)
-	OPTION_INT(Graphics, ScreenHeight)
-	OPTION_INT(Graphics, WindowMode)
-	OPTION_INT(Graphics, TargetFPS)
-	OPTION_DOUBLE(Graphics, ResolutionScale)
-	OPTION_DOUBLE(Graphics, VerticalFOV)
-	OPTION_INT(Graphics, LetterboxMode)
-	OPTION_DOUBLE(Graphics, CursorScale)
+	OPTION_INT(Graphics, ScreenWidth, 1, std::numeric_limits<int>::max())
+	OPTION_INT(Graphics, ScreenHeight, 1, std::numeric_limits<int>::max())
+	OPTION_INT(Graphics, WindowMode, MIN_WINDOW_MODE, MAX_WINDOW_MODE)
+	OPTION_INT(Graphics, TargetFPS, MIN_FPS, std::numeric_limits<int>::max())
+	OPTION_DOUBLE(Graphics, ResolutionScale, MIN_RESOLUTION_SCALE, MAX_RESOLUTION_SCALE)
+	OPTION_DOUBLE(Graphics, VerticalFOV, MIN_VERTICAL_FOV, MAX_VERTICAL_FOV)
+	OPTION_INT(Graphics, LetterboxMode, MIN_LETTERBOX_MODE, MAX_LETTERBOX_MODE)
+	OPTION_DOUBLE(Graphics, CursorScale, MIN_CURSOR_SCALE, MAX_CURSOR_SCALE)
 	OPTION_BOOL(Graphics, ModernInterface)
 	OPTION_BOOL(Graphics, TallPixelCorrection)
-	OPTION_INT(Graphics, RenderThreadsMode)
-	OPTION_INT(Graphics, DitheringMode)
+	OPTION_INT(Graphics, RenderThreadsMode, MIN_RENDER_THREADS_MODE, MAX_RENDER_THREADS_MODE)
+	OPTION_INT(Graphics, DitheringMode, MIN_DITHERING_MODE, MAX_DITHERING_MODE)
 
-	OPTION_DOUBLE(Audio, MusicVolume)
-	OPTION_DOUBLE(Audio, SoundVolume)
+	OPTION_DOUBLE(Audio, MusicVolume, MIN_VOLUME, MAX_VOLUME)
+	OPTION_DOUBLE(Audio, SoundVolume, MIN_VOLUME, MAX_VOLUME)
 	OPTION_STRING(Audio, MidiConfig)
-	OPTION_INT(Audio, SoundChannels)
-	OPTION_INT(Audio, SoundResampling)
+	OPTION_INT(Audio, SoundChannels, MIN_SOUND_CHANNELS, std::numeric_limits<int>::max())
+	OPTION_INT(Audio, SoundResampling, MIN_RESAMPLING_MODE, MAX_RESAMPLING_MODE)
 	OPTION_BOOL(Audio, Is3DAudio)
 
-	OPTION_DOUBLE(Input, HorizontalSensitivity)
-	OPTION_DOUBLE(Input, VerticalSensitivity)
-	OPTION_DOUBLE(Input, CameraPitchLimit)
+	OPTION_DOUBLE(Input, HorizontalSensitivity, MIN_HORIZONTAL_SENSITIVITY, MAX_HORIZONTAL_SENSITIVITY)
+	OPTION_DOUBLE(Input, VerticalSensitivity, MIN_VERTICAL_SENSITIVITY, MAX_VERTICAL_SENSITIVITY)
+	OPTION_DOUBLE(Input, CameraPitchLimit, MIN_CAMERA_PITCH_LIMIT, MAX_CAMERA_PITCH_LIMIT)
 
 	OPTION_STRING(Misc, ArenaPaths)
 	OPTION_STRING(Misc, ArenaSavesPath)
 	OPTION_BOOL(Misc, GhostMode)
-	OPTION_INT(Misc, ProfilerLevel)
+	OPTION_INT(Misc, ProfilerLevel, MIN_PROFILER_LEVEL, MAX_PROFILER_LEVEL)
 	OPTION_BOOL(Misc, ShowIntro)
 	OPTION_BOOL(Misc, ShowCompass)
-	OPTION_INT(Misc, ChunkDistance)
-	OPTION_INT(Misc, StarDensity)
+	OPTION_INT(Misc, ChunkDistance, MIN_CHUNK_DISTANCE, std::numeric_limits<int>::max())
+	OPTION_INT(Misc, StarDensity, MIN_STAR_DENSITY_MODE, MAX_STAR_DENSITY_MODE)
 	OPTION_BOOL(Misc, PlayerHasLight)
 
 	// Reads all the key-values pairs from the given absolute path into the default members.
