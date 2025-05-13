@@ -550,6 +550,10 @@ std::string ChooseAttributesUiModel::getInitialText(Game &game)
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.distributeClassPoints;
 	text = String::replace(text, '\r', '\n');
+
+	// @temp show not implemented for attributes
+	text += "\n\n(gameplay functionality not implemented)";
+
 	return text;
 }
 

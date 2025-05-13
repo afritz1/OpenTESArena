@@ -589,16 +589,6 @@ UiTextureID ChooseRaceUiView::allocInitialPopUpTexture(TextureManager &textureMa
 	return textureID;
 }
 
-int ChooseAttributesUiView::getInitialTextureWidth()
-{
-	return 183;
-}
-
-int ChooseAttributesUiView::getInitialTextureHeight()
-{
-	return 42;
-}
-
 Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseAttributesUiView::MessageBoxTitleFontName;
@@ -661,6 +651,16 @@ MessageBoxSubPanel::ItemsProperties ChooseAttributesUiView::getMessageBoxItemsPr
 		fontName,
 		textureGenInfo,
 		ChooseAttributesUiView::MessageBoxItemTextColor);
+}
+
+int ChooseAttributesUiView::getDistributePointsTextBoxTextureWidth(int textWidth)
+{
+	return textWidth + 12;
+}
+
+int ChooseAttributesUiView::getDistributePointsTextBoxTextureHeight(int textHeight)
+{
+	return textHeight + 12;
 }
 
 int ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(int textWidth)

@@ -426,9 +426,9 @@ bool ChooseAttributesPanel::init()
 
 	const Surface initialPopUpSurface = TextureUtils::generate(
 		ChooseAttributesUiView::InitialTextPatternType,
-		ChooseAttributesUiView::getInitialTextureWidth(),
-		ChooseAttributesUiView::getInitialTextureHeight(),
-		game.textureManager,
+		ChooseAttributesUiView::getDistributePointsTextBoxTextureWidth(initialPopUpTextBoxInitInfo.rect.width),
+		ChooseAttributesUiView::getDistributePointsTextBoxTextureHeight(initialPopUpTextBoxInitInfo.rect.height),
+		textureManager,
 		renderer);
 
 	UiTextureID initialPopUpTextureID;

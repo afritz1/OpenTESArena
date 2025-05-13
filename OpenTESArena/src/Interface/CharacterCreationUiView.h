@@ -294,9 +294,6 @@ namespace ChooseAttributesUiView
 	const std::string BonusPointsFontName = ArenaFontName::Arena;
 	constexpr Color BonusPointsTextColor(199, 199, 199);
 
-	int getInitialTextureWidth();
-	int getInitialTextureHeight();
-
 	Rect getMessageBoxTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary);
 
 	MessageBoxSubPanel::BackgroundProperties getMessageBoxBackgroundProperties();
@@ -304,6 +301,8 @@ namespace ChooseAttributesUiView
 		const FontLibrary &fontLibrary);
 	MessageBoxSubPanel::ItemsProperties getMessageBoxItemsProperties(const FontLibrary &fontLibrary);
 
+	int getDistributePointsTextBoxTextureWidth(int textWidth);
+	int getDistributePointsTextBoxTextureHeight(int textHeight);
 	int getAppearanceTextBoxTextureWidth(int textWidth);
 	int getAppearanceTextBoxTextureHeight(int textHeight);
 
