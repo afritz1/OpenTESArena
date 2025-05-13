@@ -205,13 +205,13 @@ int Options::clampInt(int value, int minValue, int maxValue, const char *name) c
 {
 	if (value < minValue)
 	{
-		value = minValue;
 		DebugLogWarningFormat("%s (%d) must be at least %d.", name, value, minValue);
+		value = minValue;
 	}
 	else if (value > maxValue)
 	{
+		DebugLogWarningFormat("%s (%d) must be less than or equal to %d.", name, value, maxValue);
 		value = maxValue;
-		DebugLogWarningFormat("%s (%d) must be less than %d.", name, value, maxValue);
 	}
 
 	return value;
@@ -221,13 +221,13 @@ double Options::clampDouble(double value, double minValue, double maxValue, cons
 {
 	if (value < minValue)
 	{
-		value = minValue;
 		DebugLogWarningFormat("%s (%.2f) must be at least %.2f.", name, value, minValue);
+		value = minValue;
 	}
 	else if (value > maxValue)
 	{
+		DebugLogWarningFormat("%s (%.2f) must be less than or equal to %.2f.", name, value, maxValue);
 		value = maxValue;
-		DebugLogWarningFormat("%s (%.2f) must be less than %.2f.", name, value, maxValue);
 	}
 
 	return value;
