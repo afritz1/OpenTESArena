@@ -357,8 +357,8 @@ public:
 	}
 };
 
-AudioListenerData::AudioListenerData(const Double3 &position, const Double3 &direction)
-	: position(position), direction(direction) { }
+AudioListenerState::AudioListenerState(const Double3 &position, const Double3 &forward, const Double3 &up)
+	: position(position), forward(forward), up(up) { }
 
 VocRepairSpan::VocRepairSpan()
 {
@@ -479,7 +479,7 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
 	this->setListenerPosition(Double3::Zero);
-	this->setListenerOrientation(Double3::UnitX);
+	this->setListenerOrientation(Double3::UnitX, Double3::UnitY);
 
 	// Load single-instance sounds file, a new feature with this engine since the one-sound-at-a-time limit
 	// no longer exists.
@@ -617,24 +617,22 @@ void AudioManager::setListenerPosition(const Double3 &position)
 	alListener3f(AL_POSITION, posX, posY, posZ);
 }
 
-void AudioManager::setListenerOrientation(const Double3 &direction)
+void AudioManager::setListenerOrientation(const Double3 &forward, const Double3 &up)
 {
-	DebugAssert(direction.isNormalized());
-	const Double4 right = Matrix4d::yRotation(Constants::HalfPi) *
-		Double4(direction.x, direction.y, direction.z, 1.0);
-	const Double3 up = Double3(right.x, right.y, right.z).cross(direction).normalized();
+	DebugAssert(forward.isNormalized());
+	DebugAssert(up.isNormalized());
 
-	const std::array<ALfloat, 6> orientation =
+	const ALfloat orientation[] =
 	{
-		static_cast<ALfloat>(direction.x),
-		static_cast<ALfloat>(direction.y),
-		static_cast<ALfloat>(direction.z),
+		static_cast<ALfloat>(forward.x),
+		static_cast<ALfloat>(forward.y),
+		static_cast<ALfloat>(forward.z),
 		static_cast<ALfloat>(up.x),
 		static_cast<ALfloat>(up.y),
 		static_cast<ALfloat>(up.z)
 	};
 
-	alListenerfv(AL_ORIENTATION, orientation.data());
+	alListenerfv(AL_ORIENTATION, orientation);
 }
 
 void AudioManager::playSound(const char *filename, const std::optional<Double3> &position)
@@ -922,8 +920,8 @@ void AudioManager::updateSources()
 	}
 }
 
-void AudioManager::updateListener(const AudioListenerData &listenerData)
+void AudioManager::updateListener(const AudioListenerState &listenerState)
 {
-	this->setListenerPosition(listenerData.position);
-	this->setListenerOrientation(listenerData.direction);
+	this->setListenerPosition(listenerState.position);
+	this->setListenerOrientation(listenerState.forward, listenerState.up);
 }

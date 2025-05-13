@@ -916,9 +916,8 @@ void Game::loop()
 				this->gameState.tickRendering(renderCamera, *this);
 
 				// Update audio listener orientation.
-				const Double3 newPlayerDirection = this->player.forward;
-				const AudioListenerData listenerData(newPlayerPosition, newPlayerDirection);
-				this->audioManager.updateListener(listenerData);
+				const AudioListenerState listenerState(newPlayerPosition, this->player.forward, this->player.up);
+				this->audioManager.updateListener(listenerState);
 			}
 
 			this->audioManager.updateSources();

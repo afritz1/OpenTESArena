@@ -20,12 +20,13 @@ class Options;
 struct MusicDefinition;
 
 // Contains data for defining the state of an audio listener.
-struct AudioListenerData
+struct AudioListenerState
 {
 	Double3 position;
-	Double3 direction;
+	Double3 forward;
+	Double3 up;
 
-	AudioListenerData(const Double3 &position, const Double3 &direction);
+	AudioListenerState(const Double3 &position, const Double3 &forward, const Double3 &up);
 };
 
 struct VocRepairSpan
@@ -95,7 +96,7 @@ private:
 	bool hasNextMusic() const;
 
 	void setListenerPosition(const Double3 &position);
-	void setListenerOrientation(const Double3 &direction);
+	void setListenerOrientation(const Double3 &forward, const Double3 &up);
 
 	void playMusic(const std::string &filename, bool loop);
 public:
@@ -153,7 +154,7 @@ public:
 	void updateSources();
 
 	// Updates the position of the 3D listener.
-	void updateListener(const AudioListenerData &listenerData);
+	void updateListener(const AudioListenerState &listenerState);
 };
 
 #endif
