@@ -88,8 +88,11 @@ namespace ArenaAnimUtils
 	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
 	bool isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex);
 
+	constexpr ArenaTypes::ItemIndex LockedChestItemIndex = 7;
+	constexpr ArenaTypes::ItemIndex UnlockedChestItemIndex = 8;
 	bool isLockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex);
 	bool isUnlockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex);
+	bool isLockableContainerFlatIndex(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
 	bool isTreasurePileContainerIndex(ArenaTypes::ItemIndex itemIndex);
 	bool isContainerIndex(ArenaTypes::ItemIndex itemIndex);
 

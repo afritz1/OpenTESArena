@@ -927,7 +927,10 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					if (isLockBashSuccessful)
 					{
 						hitEntityLockState->isLocked = false;
-						// @todo set hitEntityAnimInst state index to unlocked
+
+						const std::optional<int> unlockedAnimDefStateIndex = hitEntityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_UNLOCKED.c_str());
+						DebugAssert(unlockedAnimDefStateIndex.has_value());
+						hitEntityAnimInst.setStateIndex(*unlockedAnimDefStateIndex);
 					}
 
 					audioManager.playSound(ArenaSoundName::Bash, hitEntityMiddlePosition);

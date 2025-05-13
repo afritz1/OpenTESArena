@@ -645,12 +645,24 @@ bool ArenaAnimUtils::isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex)
 
 bool ArenaAnimUtils::isLockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex)
 {
-	return itemIndex == 7;
+	return itemIndex == ArenaAnimUtils::LockedChestItemIndex;
 }
 
 bool ArenaAnimUtils::isUnlockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex)
 {
-	return itemIndex == 8;
+	return itemIndex == ArenaAnimUtils::UnlockedChestItemIndex;
+}
+
+bool ArenaAnimUtils::isLockableContainerFlatIndex(ArenaTypes::FlatIndex flatIndex, const INFFile &inf)
+{
+	const INFFlat &flat = inf.getFlat(flatIndex);
+	const std::optional<int> &itemIndex = flat.itemIndex;
+	if (!itemIndex.has_value())
+	{
+		return false;
+	}
+
+	return ArenaAnimUtils::isLockedHolderContainerIndex(*itemIndex) || ArenaAnimUtils::isUnlockedHolderContainerIndex(*itemIndex);
 }
 
 bool ArenaAnimUtils::isTreasurePileContainerIndex(ArenaTypes::ItemIndex itemIndex)
@@ -909,31 +921,34 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 	const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	DebugAssert(outAnimDef != nullptr);
-	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 
 	// Generate animation states based on what the entity needs. The animations to load depend on
 	// the flat index. The wilderness does not have any streetlights (there is no ID for them).
-	// @todo: see how treasure chests fit into this. Their flat indices seem to be variable.
 	const bool isRuler = interiorType.has_value() && ArenaAnimUtils::isRulerFlatIndex(flatIndex, *interiorType);
 	const bool isStreetlight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, mapType);
+	const bool isLockableChest = ArenaAnimUtils::isLockableContainerFlatIndex(flatIndex, inf);
 	if (isRuler)
 	{
 		DebugAssert(rulerIsMale.has_value());
+		outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
+
 		const ArenaTypes::FlatIndex rulerFlatIndex = *rulerIsMale ? ArenaAnimUtils::RulerKingIndex : ArenaAnimUtils::RulerQueenIndex;
 		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(rulerFlatIndex, EntityAnimationUtils::STATE_IDLE.c_str(),
 			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
 		{
-			DebugLogWarning("Couldn't add ruler idle anim state for ID \"" + std::to_string(flatIndex) + "\".");
+			DebugLogWarningFormat("Couldn't add ruler idle anim state for ID \"%d\".", flatIndex);
 			return false;
 		}
 	}
 	else if (isStreetlight)
 	{
+		outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
+
 		const ArenaTypes::FlatIndex idleFlatIndex = ArenaAnimUtils::StreetLightInactiveIndex;
 		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(idleFlatIndex, EntityAnimationUtils::STATE_IDLE.c_str(),
 			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
 		{
-			DebugLogWarning("Couldn't add streetlight idle anim state for ID \"" + std::to_string(idleFlatIndex) + "\".");
+			DebugLogWarningFormat("Couldn't add streetlight idle anim state for ID \"%d\".", idleFlatIndex);
 			return false;
 		}
 
@@ -941,17 +956,40 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(activeFlatIndex, EntityAnimationUtils::STATE_ACTIVATED.c_str(),
 			StaticActivatedSecondsPerFrame, StaticActivatedLoop, inf, textureManager, outAnimDef))
 		{
-			DebugLogWarning("Couldn't add streetlight active anim state for ID \"" + std::to_string(activeFlatIndex) + "\".");
+			DebugLogWarningFormat("Couldn't add streetlight active anim state for ID \"%d\".", activeFlatIndex);
+			return false;
+		}
+	}
+	else if (isLockableChest)
+	{
+		outAnimDef->init(EntityAnimationUtils::STATE_UNLOCKED.c_str());
+
+		const ArenaTypes::FlatIndex lockedFlatIndex = inf.findFlatIndexWithItemIndex(ArenaAnimUtils::LockedChestItemIndex);
+		const ArenaTypes::FlatIndex unlockedFlatIndex = inf.findFlatIndexWithItemIndex(ArenaAnimUtils::UnlockedChestItemIndex);
+
+		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(lockedFlatIndex, EntityAnimationUtils::STATE_LOCKED.c_str(),
+			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
+		{
+			DebugLogWarningFormat("Couldn't add locked anim state for ID \"%d\".", lockedFlatIndex);
+			return false;
+		}
+
+		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(unlockedFlatIndex, EntityAnimationUtils::STATE_UNLOCKED.c_str(),
+			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
+		{
+			DebugLogWarningFormat("Couldn't add unlocked anim state for ID \"%d\".", unlockedFlatIndex);
 			return false;
 		}
 	}
 	else
 	{
 		// General static entity animation.
+		outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
+
 		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(flatIndex, EntityAnimationUtils::STATE_IDLE.c_str(),
 			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
 		{
-			DebugLogWarning("Couldn't add idle anim state for ID \"" + std::to_string(flatIndex) + "\".");
+			DebugLogWarningFormat("Couldn't add idle anim state for ID \"%d\".", flatIndex);
 			return false;
 		}
 	}

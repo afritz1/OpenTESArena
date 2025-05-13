@@ -155,8 +155,8 @@ public:
 	const std::optional<int> &getBoxSide(int index) const;
 	const std::optional<int> &getMenu(int index) const;
 	std::optional<int> getMenuIndex(int textureID) const; // Temporary hack?
-	const INFFlat &getFlat(int index) const;
-	const INFFlat *getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) const;
+	const INFFlat &getFlat(ArenaTypes::FlatIndex flatIndex) const;
+	ArenaTypes::FlatIndex findFlatIndexWithItemIndex(ArenaTypes::ItemIndex itemIndex) const;
 	const char *getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;

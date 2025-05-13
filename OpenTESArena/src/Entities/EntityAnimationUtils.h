@@ -11,6 +11,8 @@ namespace EntityAnimationUtils
 	const std::string STATE_ATTACK = "Attack";
 	const std::string STATE_DEATH = "Death";
 	const std::string STATE_ACTIVATED = "Activated";
+	const std::string STATE_LOCKED = "Locked";
+	const std::string STATE_UNLOCKED = "Unlocked";
 
 	// Max length of animation state name.
 	constexpr int NAME_LENGTH = 32;

@@ -345,6 +345,13 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 		EntityLockState &lockState = this->lockStates.get(entityInst.lockStateID);
 		lockState.isLocked = *initInfo.isLocked;
+
+		const std::optional<int> lockedAnimDefStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_LOCKED.c_str());
+		const std::optional<int> unlockedAnimDefStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_UNLOCKED.c_str());
+		DebugAssert(lockedAnimDefStateIndex.has_value());
+		DebugAssert(unlockedAnimDefStateIndex.has_value());
+		const int activeAnimDefStateIndex = *initInfo.isLocked ? *lockedAnimDefStateIndex : *unlockedAnimDefStateIndex;
+		animInst.setStateIndex(activeAnimDefStateIndex);
 	}
 }
 
