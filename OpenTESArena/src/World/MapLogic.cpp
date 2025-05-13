@@ -33,7 +33,7 @@ void MapLogic::handleNightLightChange(Game &game, bool active)
 			if (EntityUtils::isStreetlight(entityDef))
 			{
 				const EntityAnimationDefinition &entityAnimDef = entityDef.animDef;
-				const std::optional<int> newAnimStateIndex = entityAnimDef.tryGetStateIndex(newStreetlightAnimStateName.c_str());
+				const std::optional<int> newAnimStateIndex = entityAnimDef.findStateIndex(newStreetlightAnimStateName.c_str());
 				if (!newAnimStateIndex.has_value())
 				{
 					DebugLogError("Couldn't find \"" + newStreetlightAnimStateName + "\" animation state for streetlight entity \"" + std::to_string(entityInstID) + "\".");

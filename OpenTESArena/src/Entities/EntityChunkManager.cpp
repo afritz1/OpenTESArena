@@ -346,8 +346,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		EntityLockState &lockState = this->lockStates.get(entityInst.lockStateID);
 		lockState.isLocked = *initInfo.isLocked;
 
-		const std::optional<int> lockedAnimDefStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_LOCKED.c_str());
-		const std::optional<int> unlockedAnimDefStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_UNLOCKED.c_str());
+		const std::optional<int> lockedAnimDefStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_LOCKED.c_str());
+		const std::optional<int> unlockedAnimDefStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_UNLOCKED.c_str());
 		DebugAssert(lockedAnimDefStateIndex.has_value());
 		DebugAssert(unlockedAnimDefStateIndex.has_value());
 		const int activeAnimDefStateIndex = *initInfo.isLocked ? *lockedAnimDefStateIndex : *unlockedAnimDefStateIndex;
@@ -390,7 +390,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			initialAnimStateName = EntityAnimationUtils::STATE_ACTIVATED.c_str();
 		}
 		
-		const std::optional<int> initialAnimStateIndex = animDef.tryGetStateIndex(initialAnimStateName);
+		const std::optional<int> initialAnimStateIndex = animDef.findStateIndex(initialAnimStateName);
 		DebugAssert(initialAnimStateIndex.has_value());
 
 		std::optional<EntityDefID> entityDefID; // Global entity def ID (shared across all active chunks).
@@ -494,7 +494,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			const EntityDefinition &citizenDef = *citizenDefs[citizenGenderIndex];			
 			const EntityAnimationDefinition &citizenAnimDef = citizenDef.animDef;
 
-			const std::optional<int> initialCitizenAnimStateIndex = citizenAnimDef.tryGetStateIndex(citizenAnimDef.initialStateName);
+			const std::optional<int> initialCitizenAnimStateIndex = citizenAnimDef.findStateIndex(citizenAnimDef.initialStateName);
 			DebugAssert(initialCitizenAnimStateIndex.has_value());
 
 			for (int i = 0; i < citizensToSpawn; i++)
@@ -613,13 +613,13 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
 
-		const std::optional<int> idleStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+		const std::optional<int> idleStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 		if (!idleStateIndex.has_value())
 		{
 			DebugCrash("Couldn't get citizen idle state index.");
 		}
 
-		const std::optional<int> walkStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+		const std::optional<int> walkStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
 		if (!walkStateIndex.has_value())
 		{
 			DebugCrash("Couldn't get citizen walk state index.");

@@ -62,7 +62,7 @@ struct EntityAnimationDefinition
 	bool operator==(const EntityAnimationDefinition &other) const;
 	bool operator!=(const EntityAnimationDefinition &other) const;
 
-	std::optional<int> tryGetStateIndex(const char *name) const;
+	std::optional<int> findStateIndex(const char *name) const;
 	int getLinearizedKeyframeIndex(int stateIndex, int keyframeListIndex, int keyframeIndex) const;
 
 	int addState(const char *name, double seconds, bool isLooping);

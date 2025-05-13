@@ -928,7 +928,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					{
 						hitEntityLockState->isLocked = false;
 
-						const std::optional<int> unlockedAnimDefStateIndex = hitEntityAnimDef.tryGetStateIndex(EntityAnimationUtils::STATE_UNLOCKED.c_str());
+						const std::optional<int> unlockedAnimDefStateIndex = hitEntityAnimDef.findStateIndex(EntityAnimationUtils::STATE_UNLOCKED.c_str());
 						DebugAssert(unlockedAnimDefStateIndex.has_value());
 						hitEntityAnimInst.setStateIndex(*unlockedAnimDefStateIndex);
 					}

@@ -222,7 +222,7 @@ bool EntityUtils::canDie(const EntityDefinition &entityDef)
 
 std::optional<int> EntityUtils::tryGetDeathAnimStateIndex(const EntityAnimationDefinition &animDef)
 {
-	const std::optional<int> deathStateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
+	const std::optional<int> deathStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
 	return deathStateIndex;
 }
 

@@ -186,7 +186,7 @@ bool EntityAnimationDefinition::operator!=(const EntityAnimationDefinition &othe
 	return !(*this == other);
 }
 
-std::optional<int> EntityAnimationDefinition::tryGetStateIndex(const char *name) const
+std::optional<int> EntityAnimationDefinition::findStateIndex(const char *name) const
 {
 	if (String::isNullOrEmpty(name))
 	{
