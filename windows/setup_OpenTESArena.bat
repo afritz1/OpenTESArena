@@ -187,7 +187,7 @@ set /p disableCPU=
 
 set "CPU_FLAGS="
 if /i "!disableCPU!"=="Y" (
-    set "CPU_FLAGS=-DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_FMADD=OFF"
+    set "CPU_FLAGS=-DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF"
     echo CPU optimizations will be disabled: AVX2, AVX512, FMA.
 ) else (
     echo CPU optimizations will remain active.
