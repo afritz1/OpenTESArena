@@ -17,38 +17,40 @@ namespace
 	static constexpr char PAIR_SEPARATOR = ',';
 
 	template<typename T, size_t Length>
-	void initInt8Array(T (&arr)[Length], const std::byte *data)
+	void initInt8Array(T (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 1);
 
 		for (size_t i = 0; i < std::size(arr); i++)
 		{
-			arr[i] = static_cast<T>(*(data + i));
+			arr[i] = static_cast<T>(exeBytes[exeAddress + i]);
 		}
 	}
 
 	template<typename T, size_t Length>
-	void initInt8PairArray(std::pair<T, T> (&arr)[Length], const std::byte *data)
+	void initInt8PairArray(std::pair<T, T> (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 1);
 
 		for (size_t i = 0; i < std::size(arr); i++)
 		{
+			const size_t index = i * 2;
+
 			std::pair<T, T> &pair = arr[i];
-			pair.first = static_cast<T>(*(data + (i * 2)));
-			pair.second = static_cast<T>(*(data + ((i * 2) + 1)));
+			pair.first = static_cast<T>(exeBytes[exeAddress + index]);
+			pair.second = static_cast<T>(exeBytes[exeAddress + index + 1]);
 		}
 	}
 
 	template<typename T, size_t Length>
-	void initJaggedInt8Array(std::vector<T> (&arr)[Length], T terminator, const std::byte *data)
+	void initJaggedInt8Array(std::vector<T> (&arr)[Length], T terminator, BufferView<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 1);
 
 		size_t offset = 0;
 		for (std::vector<T> &vec : arr)
 		{
-			const char *innerData = reinterpret_cast<const char*>(data) + offset;
+			const char *innerData = reinterpret_cast<const char*>(exeBytes.begin()) + exeAddress + offset;
 			size_t innerOffset = 0;
 
 			while (true)
@@ -72,32 +74,38 @@ namespace
 	}
 
 	template<typename T, size_t Rows, size_t Columns>
-	void init2DInt8Array(T (&arrs)[Columns][Rows], const std::byte *data)
+	void init2DInt8Array(T (&arrs)[Columns][Rows], BufferView<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 1);
 
 		for (size_t i = 0; i < std::size(arrs); i++)
 		{
-			initInt8Array(arrs[i], data + (i * Rows));
+			T (&arr)[Rows] = arrs[i];
+
+			for (size_t j = 0; j < std::size(arr); j++)
+			{
+				arr[j] = static_cast<T>(exeBytes[exeAddress + (i * Rows) + j]);
+			}
 		}
 	}
 
 	template<typename T, size_t Length>
-	void initInt16Array(T (&arr)[Length], const std::byte *data)
+	void initInt16Array(T (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 2);
+		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(exeBytes.begin()) + exeAddress;
 
 		for (size_t i = 0; i < std::size(arr); i++)
 		{
-			arr[i] = static_cast<T>(Bytes::getLE16(reinterpret_cast<const uint8_t*>(data + (i * 2))));
+			arr[i] = static_cast<T>(Bytes::getLE16(ptr + (i * 2)));
 		}
 	}
 
 	template<typename T, size_t Length>
-	void initInt16PairArray(std::pair<T, T> (&arr)[Length], const std::byte *data)
+	void initInt16PairArray(std::pair<T, T> (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 2);
-		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(data);
+		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(exeBytes.begin()) + exeAddress;
 
 		for (size_t i = 0; i < std::size(arr); i++)
 		{
@@ -108,13 +116,14 @@ namespace
 	}
 
 	template<typename T, size_t Length>
-	void initInt32Array(T (&arr)[Length], const std::byte *data)
+	void initInt32Array(T (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 4);
+		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(exeBytes.begin()) + exeAddress;
 
 		for (size_t i = 0; i < std::size(arr); i++)
 		{
-			arr[i] = static_cast<T>(Bytes::getLE32(reinterpret_cast<const uint8_t*>(data + (i * 4))));
+			arr[i] = static_cast<T>(Bytes::getLE32(reinterpret_cast<const uint8_t*>(ptr + (i * 4))));
 		}
 	}
 
@@ -147,12 +156,12 @@ namespace
 	}
 
 	template<size_t T>
-	void initStringArrayNullTerminated(std::string (&arr)[T], const std::byte *data)
+	void initStringArrayNullTerminated(std::string (&arr)[T], BufferView<const std::byte> exeBytes, int exeAddress)
 	{
 		size_t offset = 0;
 		for (std::string &str : arr)
 		{
-			str = std::string(reinterpret_cast<const char*>(data) + offset);
+			str = std::string(reinterpret_cast<const char*>(exeBytes.begin()) + exeAddress + offset);
 			offset += str.size() + 1;
 		}
 	}
@@ -208,20 +217,24 @@ namespace
 		return std::make_pair(offset, length);
 	}
 
-	std::string GetExeStringNullTerminated(const std::byte *data)
+	std::string GetExeStringNullTerminated(BufferView<const std::byte> exeBytes, int exeAddress)
 	{
-		return std::string(reinterpret_cast<const char*>(data));
+		const char *strBegin = reinterpret_cast<const char*>(exeBytes.begin()) + exeAddress;
+		const int length = static_cast<int>(std::strlen(strBegin));
+		DebugAssert(exeBytes.isValidRange(exeAddress, length));
+		return std::string(strBegin, length);
 	}
 
-	std::string GetExeStringFixedLength(const std::byte *data, const std::pair<int, int> &pair)
+	std::string GetExeStringFixedLength(BufferView<const std::byte> exeBytes, const std::pair<int, int> &offsetAndLength)
 	{
-		const int offset = pair.first;
-		const int length = pair.second;
-		return std::string(reinterpret_cast<const char*>(data) + offset, length);
+		const int exeAddress = offsetAndLength.first;
+		const int length = offsetAndLength.second;
+		DebugAssert(exeBytes.isValidRange(exeAddress, length));
+		return std::string(reinterpret_cast<const char*>(exeBytes.begin()) + exeAddress, length);
 	}
 }
 
-bool ExeDataCalendar::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataCalendar::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Calendar";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -237,16 +250,16 @@ bool ExeDataCalendar::init(const std::byte *data, const KeyValueFile &keyValueFi
 	const int holidayNamesOffset = GetExeAddress(*section, "HolidayNames");
 	const int holidayDatesOffset = GetExeAddress(*section, "HolidayDates");
 
-	initStringArrayNullTerminated(this->monthNames, data + monthNamesOffset);
-	initStringArrayNullTerminated(this->timesOfDay, data + timesOfDayOffset);
-	initStringArrayNullTerminated(this->weekdayNames, data + weekdayNamesOffset);
-	initStringArrayNullTerminated(this->holidayNames, data + holidayNamesOffset);
-	initInt16Array(this->holidayDates, data + holidayDatesOffset);
+	initStringArrayNullTerminated(this->monthNames, exeBytes, monthNamesOffset);
+	initStringArrayNullTerminated(this->timesOfDay, exeBytes, timesOfDayOffset);
+	initStringArrayNullTerminated(this->weekdayNames, exeBytes, weekdayNamesOffset);
+	initStringArrayNullTerminated(this->holidayNames, exeBytes, holidayNamesOffset);
+	initInt16Array(this->holidayDates, exeBytes, holidayDatesOffset);
 
 	return true;
 }
 
-bool ExeDataCharacterClasses::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataCharacterClasses::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterClasses";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -269,31 +282,31 @@ bool ExeDataCharacterClasses::init(const std::byte *data, const KeyValueFile &ke
 	const int preferredAttributesOffset = GetExeAddress(*section, "PreferredAttributes");
 	const int magicClassIntelligenceMultipliersOffset = GetExeAddress(*section, "MagicClassIntelligenceMultipliers");
 
-	initInt8Array(this->allowedArmors, data + allowedArmorsOffset);
-	initInt16Array(this->allowedShields, data + allowedShieldsOffset);
+	initInt8Array(this->allowedArmors, exeBytes, allowedArmorsOffset);
+	initInt16Array(this->allowedShields, exeBytes, allowedShieldsOffset);
 
 	const uint8_t shieldTerminator = 0xFF;
-	initJaggedInt8Array(this->allowedShieldsLists, shieldTerminator, data + allowedShieldsListsOffset);
+	initJaggedInt8Array(this->allowedShieldsLists, shieldTerminator, exeBytes, allowedShieldsListsOffset);
 
-	initInt16Array(this->allowedWeapons, data + allowedWeaponsOffset);
+	initInt16Array(this->allowedWeapons, exeBytes, allowedWeaponsOffset);
 
 	const uint8_t weaponTerminator = 0xFF;
-	initJaggedInt8Array(this->allowedWeaponsLists, weaponTerminator, data + allowedWeaponsListsOffset);
+	initJaggedInt8Array(this->allowedWeaponsLists, weaponTerminator, exeBytes, allowedWeaponsListsOffset);
 
 	initIndexArray(this->allowedShieldsIndices, this->allowedShields);
 	initIndexArray(this->allowedWeaponsIndices, this->allowedWeapons);
-	initStringArrayNullTerminated(this->classNames, data + classNamesOffset);
-	initInt8Array(this->classNumbersToIDs, data + classNumbersToIDsOffset);
-	initInt8Array(this->healthDice, data + healthDiceOffset);
-	initInt16Array(this->initialExperienceCaps, data + initialExpCapsOffset);
-	initInt8Array(this->lockpickingDivisors, data + lockpickingDivisorsOffset);
-	initStringArrayNullTerminated(this->preferredAttributes, data + preferredAttributesOffset);
-	initInt8Array(this->magicClassIntelligenceMultipliers, data + magicClassIntelligenceMultipliersOffset);
+	initStringArrayNullTerminated(this->classNames, exeBytes, classNamesOffset);
+	initInt8Array(this->classNumbersToIDs, exeBytes, classNumbersToIDsOffset);
+	initInt8Array(this->healthDice, exeBytes, healthDiceOffset);
+	initInt16Array(this->initialExperienceCaps, exeBytes, initialExpCapsOffset);
+	initInt8Array(this->lockpickingDivisors, exeBytes, lockpickingDivisorsOffset);
+	initStringArrayNullTerminated(this->preferredAttributes, exeBytes, preferredAttributesOffset);
+	initInt8Array(this->magicClassIntelligenceMultipliers, exeBytes, magicClassIntelligenceMultipliersOffset);
 
 	return true;
 }
 
-bool ExeDataCharacterCreation::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataCharacterCreation::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterCreation";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -326,33 +339,33 @@ bool ExeDataCharacterCreation::init(const std::byte *data, const KeyValueFile &k
 	const auto chooseAttributesBonusPointsRemainingOffset = GetExeAddress(*section, "ChooseAttributesBonusPointsRemaining");
 	const auto chooseAppearancePair = GetExeAddressAndLength(*section, "ChooseAppearance");
 
-	this->chooseClassCreation = GetExeStringFixedLength(data, chooseClassCreationPair);
-	this->chooseClassCreationGenerate = GetExeStringFixedLength(data, chooseClassCreationGeneratePair);
-	this->chooseClassCreationSelect = GetExeStringFixedLength(data, chooseClassCreationSelectPair);
-	this->classQuestionsIntro = GetExeStringFixedLength(data, classQuestionsIntroPair);
-	this->suggestedClass = GetExeStringFixedLength(data, suggestedClassPair);
-	this->chooseClassList = GetExeStringFixedLength(data, chooseClassListPair);
-	this->chooseName = GetExeStringFixedLength(data, chooseNamePair);
-	this->chooseGender = GetExeStringFixedLength(data, chooseGenderPair);
-	this->chooseGenderMale = GetExeStringFixedLength(data, chooseGenderMalePair);
-	this->chooseGenderFemale = GetExeStringFixedLength(data, chooseGenderFemalePair);
-	this->chooseRace = GetExeStringFixedLength(data, chooseRacePair);
-	this->confirmRace = GetExeStringFixedLength(data, confirmRacePair);
-	this->confirmedRace1 = GetExeStringFixedLength(data, confirmedRace1Pair);
-	this->confirmedRace2 = GetExeStringFixedLength(data, confirmedRace2Pair);
-	this->confirmedRace3 = GetExeStringFixedLength(data, confirmedRace3Pair);
-	this->confirmedRace4 = GetExeStringFixedLength(data, confirmedRace4Pair);
-	this->distributeClassPoints = GetExeStringFixedLength(data, distributeClassPointsPair);
-	this->chooseAttributes = GetExeStringFixedLength(data, chooseAttributesPair);
-	this->chooseAttributesSave = GetExeStringFixedLength(data, chooseAttributesSavePair);
-	this->chooseAttributesReroll = GetExeStringFixedLength(data, chooseAttributesRerollPair);
-	this->chooseAttributesBonusPointsRemaining = GetExeStringNullTerminated(data + chooseAttributesBonusPointsRemainingOffset);
-	this->chooseAppearance = GetExeStringFixedLength(data, chooseAppearancePair);
+	this->chooseClassCreation = GetExeStringFixedLength(exeBytes, chooseClassCreationPair);
+	this->chooseClassCreationGenerate = GetExeStringFixedLength(exeBytes, chooseClassCreationGeneratePair);
+	this->chooseClassCreationSelect = GetExeStringFixedLength(exeBytes, chooseClassCreationSelectPair);
+	this->classQuestionsIntro = GetExeStringFixedLength(exeBytes, classQuestionsIntroPair);
+	this->suggestedClass = GetExeStringFixedLength(exeBytes, suggestedClassPair);
+	this->chooseClassList = GetExeStringFixedLength(exeBytes, chooseClassListPair);
+	this->chooseName = GetExeStringFixedLength(exeBytes, chooseNamePair);
+	this->chooseGender = GetExeStringFixedLength(exeBytes, chooseGenderPair);
+	this->chooseGenderMale = GetExeStringFixedLength(exeBytes, chooseGenderMalePair);
+	this->chooseGenderFemale = GetExeStringFixedLength(exeBytes, chooseGenderFemalePair);
+	this->chooseRace = GetExeStringFixedLength(exeBytes, chooseRacePair);
+	this->confirmRace = GetExeStringFixedLength(exeBytes, confirmRacePair);
+	this->confirmedRace1 = GetExeStringFixedLength(exeBytes, confirmedRace1Pair);
+	this->confirmedRace2 = GetExeStringFixedLength(exeBytes, confirmedRace2Pair);
+	this->confirmedRace3 = GetExeStringFixedLength(exeBytes, confirmedRace3Pair);
+	this->confirmedRace4 = GetExeStringFixedLength(exeBytes, confirmedRace4Pair);
+	this->distributeClassPoints = GetExeStringFixedLength(exeBytes, distributeClassPointsPair);
+	this->chooseAttributes = GetExeStringFixedLength(exeBytes, chooseAttributesPair);
+	this->chooseAttributesSave = GetExeStringFixedLength(exeBytes, chooseAttributesSavePair);
+	this->chooseAttributesReroll = GetExeStringFixedLength(exeBytes, chooseAttributesRerollPair);
+	this->chooseAttributesBonusPointsRemaining = GetExeStringNullTerminated(exeBytes, chooseAttributesBonusPointsRemainingOffset);
+	this->chooseAppearance = GetExeStringFixedLength(exeBytes, chooseAppearancePair);
 
 	return true;
 }
 
-bool ExeDataCityGeneration::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataCityGeneration::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CityGeneration";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -377,28 +390,28 @@ bool ExeDataCityGeneration::init(const std::byte *data, const KeyValueFile &keyV
 	const int equipmentSuffixesOffset = GetExeAddress(*section, "EquipmentSuffixes");
 	const int magesGuildMenuNameOffset = GetExeAddress(*section, "MagesGuildMenuName");
 
-	initInt8Array(this->coastalCityList, data + coastalCityListOffset);
-	initStringArrayNullTerminated(this->templateFilenames, data + cityTemplateFilenamesOffset);
-	initInt8PairArray(this->startingPositions, data + startingPositionsOffset);
+	initInt8Array(this->coastalCityList, exeBytes, coastalCityListOffset);
+	initStringArrayNullTerminated(this->templateFilenames, exeBytes, cityTemplateFilenamesOffset);
+	initInt8PairArray(this->startingPositions, exeBytes, startingPositionsOffset);
 
 	const uint8_t blockTerminator = 0;
-	initJaggedInt8Array(this->reservedBlockLists, blockTerminator, data + reservedBlockListsOffset);
+	initJaggedInt8Array(this->reservedBlockLists, blockTerminator, exeBytes, reservedBlockListsOffset);
 
-	initStringArrayNullTerminated(this->tavernPrefixes, data + tavernPrefixesOffset);
-	initStringArrayNullTerminated(this->tavernMarineSuffixes, data + tavernMarineSuffixesOffset);
-	initStringArrayNullTerminated(this->tavernSuffixes, data + tavernSuffixesOffset);
-	initStringArrayNullTerminated(this->templePrefixes, data + templePrefixesOffset);
-	initStringArrayNullTerminated(this->temple1Suffixes, data + temple1SuffixesOffset);
-	initStringArrayNullTerminated(this->temple2Suffixes, data + temple2SuffixesOffset);
-	initStringArrayNullTerminated(this->temple3Suffixes, data + temple3SuffixesOffset);
-	initStringArrayNullTerminated(this->equipmentPrefixes, data + equipmentPrefixesOffset);
-	initStringArrayNullTerminated(this->equipmentSuffixes, data + equipmentSuffixesOffset);
-	this->magesGuildMenuName = GetExeStringNullTerminated(data + magesGuildMenuNameOffset);
+	initStringArrayNullTerminated(this->tavernPrefixes, exeBytes, tavernPrefixesOffset);
+	initStringArrayNullTerminated(this->tavernMarineSuffixes, exeBytes, tavernMarineSuffixesOffset);
+	initStringArrayNullTerminated(this->tavernSuffixes, exeBytes, tavernSuffixesOffset);
+	initStringArrayNullTerminated(this->templePrefixes, exeBytes, templePrefixesOffset);
+	initStringArrayNullTerminated(this->temple1Suffixes, exeBytes, temple1SuffixesOffset);
+	initStringArrayNullTerminated(this->temple2Suffixes, exeBytes, temple2SuffixesOffset);
+	initStringArrayNullTerminated(this->temple3Suffixes, exeBytes, temple3SuffixesOffset);
+	initStringArrayNullTerminated(this->equipmentPrefixes, exeBytes, equipmentPrefixesOffset);
+	initStringArrayNullTerminated(this->equipmentSuffixes, exeBytes, equipmentSuffixesOffset);
+	this->magesGuildMenuName = GetExeStringNullTerminated(exeBytes, magesGuildMenuNameOffset);
 
 	return true;
 }
 
-bool ExeDataEntities::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataEntities::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Entities";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -438,40 +451,40 @@ bool ExeDataEntities::init(const std::byte *data, const KeyValueFile &keyValueFi
 	const int citizenColorBaseOffset = GetExeAddress(*section, "CitizenColorBase");
 	const int citizenSkinColorsOffset = GetExeAddress(*section, "CitizenSkinColors");
 
-	initStringArrayNullTerminated(this->attributeNames, data + attributeNamesOffset);
-	initStringArrayNullTerminated(this->creatureNames, data + creatureNamesOffset);
-	initInt8Array(this->creatureLevels, data + creatureLevelsOffset);
-	initInt16PairArray(this->creatureHitPoints, data + creatureHitPointsOffset);
-	initInt32Array(this->creatureBaseExps, data + creatureBaseExpsOffset);
-	initInt8Array(this->creatureExpMultipliers, data + creatureExpMultipliersOffset);
-	initInt8Array(this->creatureSounds, data + creatureSoundsOffset);
-	initStringArrayNullTerminated(this->creatureSoundNames, data + creatureSoundNamesOffset);
-	initInt8PairArray(this->creatureDamages, data + creatureDamagesOffset);
-	initInt16Array(this->creatureMagicEffects, data + creatureMagicEffectsOffset);
-	initInt16Array(this->creatureScales, data + creatureScalesOffset);
-	initInt8Array(this->creatureYOffsets, data + creatureYOffsetsOffset);
-	initInt8Array(this->creatureHasNoCorpse, data + creatureHasNoCorpseOffset);
-	initInt8Array(this->creatureBlood, data + creatureBloodOffset);
-	initInt8Array(this->creatureDiseaseChances, data + creatureDiseaseChancesOffset);
-	init2DInt8Array(this->creatureAttributes, data + creatureAttributesOffset);
-	initStringArrayNullTerminated(this->creatureAnimationFilenames, data + creatureAnimFilenamesOffset);
-	this->finalBossName = GetExeStringNullTerminated(data + finalBossNameOffset);
-	init2DInt8Array(this->raceAttributes, data + raceAttributesOffset);
-	init2DInt8Array(this->guardAttributes, data + guardAttributesOffset);
-	initStringArrayNullTerminated(this->maleCitizenAnimationFilenames, data + maleCitizenAnimFilenamesOffset);
-	initStringArrayNullTerminated(this->femaleCitizenAnimationFilenames, data + femaleCitizenAnimFilenamesOffset);
-	initStringArrayNullTerminated(this->humanFilenameTypes, data + humanFilenameTypesOffset);
-	initStringArrayNullTerminated(this->humanFilenameTemplates, data + humanFilenameTemplatesOffset);
-	initStringArrayNullTerminated(this->cfaHumansWithWeaponAnimations, data + cfaHumansWithWeaponAnimsOffset);
-	initStringArrayNullTerminated(this->cfaWeaponAnimations, data + cfaWeaponAnimationsOffset);
-	initStringArrayNullTerminated(this->effectAnimations, data + effectAnimsOffset);
-	initInt8Array(this->citizenColorBase, data + citizenColorBaseOffset);
-	initInt8Array(this->citizenSkinColors, data + citizenSkinColorsOffset);
+	initStringArrayNullTerminated(this->attributeNames, exeBytes, attributeNamesOffset);
+	initStringArrayNullTerminated(this->creatureNames, exeBytes, creatureNamesOffset);
+	initInt8Array(this->creatureLevels, exeBytes, creatureLevelsOffset);
+	initInt16PairArray(this->creatureHitPoints, exeBytes, creatureHitPointsOffset);
+	initInt32Array(this->creatureBaseExps, exeBytes, creatureBaseExpsOffset);
+	initInt8Array(this->creatureExpMultipliers, exeBytes, creatureExpMultipliersOffset);
+	initInt8Array(this->creatureSounds, exeBytes, creatureSoundsOffset);
+	initStringArrayNullTerminated(this->creatureSoundNames, exeBytes, creatureSoundNamesOffset);
+	initInt8PairArray(this->creatureDamages, exeBytes, creatureDamagesOffset);
+	initInt16Array(this->creatureMagicEffects, exeBytes, creatureMagicEffectsOffset);
+	initInt16Array(this->creatureScales, exeBytes, creatureScalesOffset);
+	initInt8Array(this->creatureYOffsets, exeBytes, creatureYOffsetsOffset);
+	initInt8Array(this->creatureHasNoCorpse, exeBytes, creatureHasNoCorpseOffset);
+	initInt8Array(this->creatureBlood, exeBytes, creatureBloodOffset);
+	initInt8Array(this->creatureDiseaseChances, exeBytes, creatureDiseaseChancesOffset);
+	init2DInt8Array(this->creatureAttributes, exeBytes, creatureAttributesOffset);
+	initStringArrayNullTerminated(this->creatureAnimationFilenames, exeBytes, creatureAnimFilenamesOffset);
+	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
+	init2DInt8Array(this->raceAttributes, exeBytes, raceAttributesOffset);
+	init2DInt8Array(this->guardAttributes, exeBytes, guardAttributesOffset);
+	initStringArrayNullTerminated(this->maleCitizenAnimationFilenames, exeBytes, maleCitizenAnimFilenamesOffset);
+	initStringArrayNullTerminated(this->femaleCitizenAnimationFilenames, exeBytes, femaleCitizenAnimFilenamesOffset);
+	initStringArrayNullTerminated(this->humanFilenameTypes, exeBytes, humanFilenameTypesOffset);
+	initStringArrayNullTerminated(this->humanFilenameTemplates, exeBytes, humanFilenameTemplatesOffset);
+	initStringArrayNullTerminated(this->cfaHumansWithWeaponAnimations, exeBytes, cfaHumansWithWeaponAnimsOffset);
+	initStringArrayNullTerminated(this->cfaWeaponAnimations, exeBytes, cfaWeaponAnimationsOffset);
+	initStringArrayNullTerminated(this->effectAnimations, exeBytes, effectAnimsOffset);
+	initInt8Array(this->citizenColorBase, exeBytes, citizenColorBaseOffset);
+	initInt8Array(this->citizenSkinColors, exeBytes, citizenSkinColorsOffset);
 
 	return true;
 }
 
-bool ExeDataEquipment::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataEquipment::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Equipment";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -539,68 +552,68 @@ bool ExeDataEquipment::init(const std::byte *data, const KeyValueFile &keyValueF
 	const int bodyPartNamesOffset = GetExeAddress(*section, "BodyPartNames");
 	const int weaponAnimFilenamesOffset = GetExeAddress(*section, "WeaponAnimationFilenames");
 
-	initInt8Array(this->enchantmentChances, data + enchantmentChancesOffset);
-	initStringArrayNullTerminated(this->materialNames, data + materialNamesOffset);
-	initInt8Array(this->materialBonuses, data + materialBonusesOffset);
-	initInt8Array(this->materialChances, data + materialChancesOffset);
-	initInt16Array(this->materialPriceMultipliers, data + materialPriceMultipliersOffset);
-	initStringArrayNullTerminated(this->itemConditionNames, data + itemConditionNamesOffset);
-	initStringArrayNullTerminated(this->armorNames, data + armorNamesOffset);
-	initStringArrayNullTerminated(this->plateArmorNames, data + plateArmorNamesOffset);
-	initInt8Array(this->plateArmorQualities, data + plateArmorQualitiesOffset);
-	initInt8Array(this->plateArmorBasePrices, data + plateArmorBasePricesOffset);
-	initInt16Array(this->plateArmorWeights, data + plateArmorWeightsOffset);
-	initStringArrayNullTerminated(this->chainArmorNames, data + chainArmorNamesOffset);
-	initInt8Array(this->chainArmorQualities, data + chainArmorQualitiesOffset);
-	initInt8Array(this->chainArmorBasePrices, data + chainArmorBasePricesOffset);
-	initInt16Array(this->chainArmorWeights, data + chainArmorWeightsOffset);
-	initStringArrayNullTerminated(this->leatherArmorNames, data + leatherArmorNamesOffset);
-	initInt8Array(this->leatherArmorQualities, data + leatherArmorQualitiesOffset);
-	initInt8Array(this->leatherArmorBasePrices, data + leatherArmorBasePricesOffset);
-	initInt16Array(this->leatherArmorWeights, data + leatherArmorWeightsOffset);
-	initInt8Array(this->shieldArmorClasses, data + shieldArmorClassesOffset);
-	initStringArrayNullTerminated(this->armorEnchantmentNames, data + armorEnchantmentNamesOffset);
-	initInt8Array(this->armorEnchantmentQualities, data + armorEnchantmentQualitiesOffset);
-	initInt8Array(this->armorEnchantmentSpells, data + armorEnchantmentSpellsOffset);
-	initInt16Array(this->armorEnchantmentBonusPrices, data + armorEnchantmentBonusPricesOffset);
-	initStringArrayNullTerminated(this->weaponNames, data + weaponNamesOffset);
-	initInt8Array(this->weaponQualities, data + weaponQualitiesOffset);
-	initInt8Array(this->weaponBasePrices, data + weaponBasePricesOffset);
-	initInt16Array(this->weaponWeights, data + weaponWeightsOffset);
-	initInt8PairArray(this->weaponDamages, data + weaponDamagesOffset);
-	initInt8Array(this->weaponHandednesses, data + weaponHandednessesOffset);
-	initStringArrayNullTerminated(this->weaponEnchantmentNames, data + weaponEnchantmentNamesOffset);
-	initInt8Array(this->weaponEnchantmentQualities, data + weaponEnchantmentQualitiesOffset);
-	initInt8Array(this->weaponEnchantmentSpells, data + weaponEnchantmentSpellsOffset);
-	initInt16Array(this->weaponEnchantmentBonusPrices, data + weaponEnchantmentBonusPricesOffset);
-	initStringArrayNullTerminated(this->spellcastingItemNames, data + spellcastingItemNamesOffset);
-	initInt8Array(this->spellcastingItemCumulativeChances, data + spellcastingItemCumulativeChancesOffset);
-	initInt16Array(this->spellcastingItemBasePrices, data + spellcastingItemBasePricesOffset);
-	initInt8PairArray(this->spellcastingItemChargeRanges, data + spellcastingItemChargeRangesOffset);
-	initStringArrayNullTerminated(this->spellcastingItemAttackSpellNames, data + spellcastingItemAttackSpellNamesOffset);
-	initInt8Array(this->spellcastingItemAttackSpellQualities, data + spellcastingItemAttackSpellQualitiesOffset);
-	initInt8Array(this->spellcastingItemAttackSpellSpells, data + spellcastingItemAttackSpellSpellsOffset);
-	initInt16Array(this->spellcastingItemAttackSpellPricesPerCharge, data + spellcastingItemAttackSpellPricesPerChargeOffset);
-	initStringArrayNullTerminated(this->spellcastingItemDefensiveSpellNames, data + spellcastingItemDefensiveSpellNamesOffset);
-	initInt8Array(this->spellcastingItemDefensiveSpellQualities, data + spellcastingItemDefensiveSpellQualitiesOffset);
-	initInt8Array(this->spellcastingItemDefensiveSpellSpells, data + spellcastingItemDefensiveSpellSpellsOffset);
-	initInt16Array(this->spellcastingItemDefensiveSpellPricesPerCharge, data + spellcastingItemDefensiveSpellPricesPerChargeOffset);
-	initStringArrayNullTerminated(this->spellcastingItemMiscSpellNames, data + spellcastingItemMiscSpellNamesOffset);
-	initInt8Array(this->spellcastingItemMiscSpellQualities, data + spellcastingItemMiscSpellQualitiesOffset);
-	initInt8Array(this->spellcastingItemMiscSpellSpells, data + spellcastingItemMiscSpellSpellsOffset);
-	initInt16Array(this->spellcastingItemMiscSpellPricesPerCharge, data + spellcastingItemMiscSpellPricesPerChargeOffset);
-	initStringArrayNullTerminated(this->enhancementItemNames, data + enhancementItemNamesOffset);
-	initInt8Array(this->enhancementItemCumulativeChances, data + enhancementItemCumulativeChancesOffset);
-	initInt16Array(this->enhancementItemBasePrices, data + enhancementItemBasePricesOffset);
-	initStringArrayNullTerminated(this->potionNames, data + potionNamesOffset);
-	this->unidentifiedPotionName = GetExeStringNullTerminated(data + unidentifiedPotionNameOffset);
-	initStringArrayNullTerminated(this->bodyPartNames, data + bodyPartNamesOffset);
-	initStringArrayNullTerminated(this->weaponAnimationFilenames, data + weaponAnimFilenamesOffset);
+	initInt8Array(this->enchantmentChances, exeBytes, enchantmentChancesOffset);
+	initStringArrayNullTerminated(this->materialNames, exeBytes, materialNamesOffset);
+	initInt8Array(this->materialBonuses, exeBytes, materialBonusesOffset);
+	initInt8Array(this->materialChances, exeBytes, materialChancesOffset);
+	initInt16Array(this->materialPriceMultipliers, exeBytes, materialPriceMultipliersOffset);
+	initStringArrayNullTerminated(this->itemConditionNames, exeBytes, itemConditionNamesOffset);
+	initStringArrayNullTerminated(this->armorNames, exeBytes, armorNamesOffset);
+	initStringArrayNullTerminated(this->plateArmorNames, exeBytes, plateArmorNamesOffset);
+	initInt8Array(this->plateArmorQualities, exeBytes, plateArmorQualitiesOffset);
+	initInt8Array(this->plateArmorBasePrices, exeBytes, plateArmorBasePricesOffset);
+	initInt16Array(this->plateArmorWeights, exeBytes, plateArmorWeightsOffset);
+	initStringArrayNullTerminated(this->chainArmorNames, exeBytes, chainArmorNamesOffset);
+	initInt8Array(this->chainArmorQualities, exeBytes, chainArmorQualitiesOffset);
+	initInt8Array(this->chainArmorBasePrices, exeBytes, chainArmorBasePricesOffset);
+	initInt16Array(this->chainArmorWeights, exeBytes, chainArmorWeightsOffset);
+	initStringArrayNullTerminated(this->leatherArmorNames, exeBytes, leatherArmorNamesOffset);
+	initInt8Array(this->leatherArmorQualities, exeBytes, leatherArmorQualitiesOffset);
+	initInt8Array(this->leatherArmorBasePrices, exeBytes, leatherArmorBasePricesOffset);
+	initInt16Array(this->leatherArmorWeights, exeBytes, leatherArmorWeightsOffset);
+	initInt8Array(this->shieldArmorClasses, exeBytes, shieldArmorClassesOffset);
+	initStringArrayNullTerminated(this->armorEnchantmentNames, exeBytes, armorEnchantmentNamesOffset);
+	initInt8Array(this->armorEnchantmentQualities, exeBytes, armorEnchantmentQualitiesOffset);
+	initInt8Array(this->armorEnchantmentSpells, exeBytes, armorEnchantmentSpellsOffset);
+	initInt16Array(this->armorEnchantmentBonusPrices, exeBytes, armorEnchantmentBonusPricesOffset);
+	initStringArrayNullTerminated(this->weaponNames, exeBytes, weaponNamesOffset);
+	initInt8Array(this->weaponQualities, exeBytes, weaponQualitiesOffset);
+	initInt8Array(this->weaponBasePrices, exeBytes, weaponBasePricesOffset);
+	initInt16Array(this->weaponWeights, exeBytes, weaponWeightsOffset);
+	initInt8PairArray(this->weaponDamages, exeBytes, weaponDamagesOffset);
+	initInt8Array(this->weaponHandednesses, exeBytes, weaponHandednessesOffset);
+	initStringArrayNullTerminated(this->weaponEnchantmentNames, exeBytes, weaponEnchantmentNamesOffset);
+	initInt8Array(this->weaponEnchantmentQualities, exeBytes, weaponEnchantmentQualitiesOffset);
+	initInt8Array(this->weaponEnchantmentSpells, exeBytes, weaponEnchantmentSpellsOffset);
+	initInt16Array(this->weaponEnchantmentBonusPrices, exeBytes, weaponEnchantmentBonusPricesOffset);
+	initStringArrayNullTerminated(this->spellcastingItemNames, exeBytes, spellcastingItemNamesOffset);
+	initInt8Array(this->spellcastingItemCumulativeChances, exeBytes, spellcastingItemCumulativeChancesOffset);
+	initInt16Array(this->spellcastingItemBasePrices, exeBytes, spellcastingItemBasePricesOffset);
+	initInt8PairArray(this->spellcastingItemChargeRanges, exeBytes, spellcastingItemChargeRangesOffset);
+	initStringArrayNullTerminated(this->spellcastingItemAttackSpellNames, exeBytes, spellcastingItemAttackSpellNamesOffset);
+	initInt8Array(this->spellcastingItemAttackSpellQualities, exeBytes, spellcastingItemAttackSpellQualitiesOffset);
+	initInt8Array(this->spellcastingItemAttackSpellSpells, exeBytes, spellcastingItemAttackSpellSpellsOffset);
+	initInt16Array(this->spellcastingItemAttackSpellPricesPerCharge, exeBytes, spellcastingItemAttackSpellPricesPerChargeOffset);
+	initStringArrayNullTerminated(this->spellcastingItemDefensiveSpellNames, exeBytes, spellcastingItemDefensiveSpellNamesOffset);
+	initInt8Array(this->spellcastingItemDefensiveSpellQualities, exeBytes, spellcastingItemDefensiveSpellQualitiesOffset);
+	initInt8Array(this->spellcastingItemDefensiveSpellSpells, exeBytes, spellcastingItemDefensiveSpellSpellsOffset);
+	initInt16Array(this->spellcastingItemDefensiveSpellPricesPerCharge, exeBytes, spellcastingItemDefensiveSpellPricesPerChargeOffset);
+	initStringArrayNullTerminated(this->spellcastingItemMiscSpellNames, exeBytes, spellcastingItemMiscSpellNamesOffset);
+	initInt8Array(this->spellcastingItemMiscSpellQualities, exeBytes, spellcastingItemMiscSpellQualitiesOffset);
+	initInt8Array(this->spellcastingItemMiscSpellSpells, exeBytes, spellcastingItemMiscSpellSpellsOffset);
+	initInt16Array(this->spellcastingItemMiscSpellPricesPerCharge, exeBytes, spellcastingItemMiscSpellPricesPerChargeOffset);
+	initStringArrayNullTerminated(this->enhancementItemNames, exeBytes, enhancementItemNamesOffset);
+	initInt8Array(this->enhancementItemCumulativeChances, exeBytes, enhancementItemCumulativeChancesOffset);
+	initInt16Array(this->enhancementItemBasePrices, exeBytes, enhancementItemBasePricesOffset);
+	initStringArrayNullTerminated(this->potionNames, exeBytes, potionNamesOffset);
+	this->unidentifiedPotionName = GetExeStringNullTerminated(exeBytes, unidentifiedPotionNameOffset);
+	initStringArrayNullTerminated(this->bodyPartNames, exeBytes, bodyPartNamesOffset);
+	initStringArrayNullTerminated(this->weaponAnimationFilenames, exeBytes, weaponAnimFilenamesOffset);
 
 	return true;
 }
 
-bool ExeDataItems::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataItems::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Items";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -613,13 +626,13 @@ bool ExeDataItems::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const int goldPieceOffset = GetExeAddress(*section, "GoldPiece");
 	const int bagOfGoldPiecesOffset = GetExeAddress(*section, "BagOfGoldPieces");
 
-	this->goldPiece = GetExeStringNullTerminated(data + goldPieceOffset);
-	this->bagOfGoldPieces = GetExeStringNullTerminated(data + bagOfGoldPiecesOffset);
+	this->goldPiece = GetExeStringNullTerminated(exeBytes, goldPieceOffset);
+	this->bagOfGoldPieces = GetExeStringNullTerminated(exeBytes, bagOfGoldPiecesOffset);
 
 	return true;
 }
 
-bool ExeDataLight::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataLight::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Light";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -632,13 +645,13 @@ bool ExeDataLight::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const int windowTwilightColorsOffset = GetExeAddress(*section, "WindowTwilightColors");
 	const int waterTwilightLightLevelsOffset = GetExeAddress(*section, "WaterTwilightLightLevels");
 
-	initInt8Array(this->windowTwilightColors, data + windowTwilightColorsOffset);
-	initInt16Array(this->waterTwilightLightLevels, data + waterTwilightLightLevelsOffset);
+	initInt8Array(this->windowTwilightColors, exeBytes, windowTwilightColorsOffset);
+	initInt16Array(this->waterTwilightLightLevels, exeBytes, waterTwilightLightLevelsOffset);
 
 	return true;
 }
 
-bool ExeDataLocations::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataLocations::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Locations";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -673,34 +686,34 @@ bool ExeDataLocations::init(const std::byte *data, const KeyValueFile &keyValueF
 	// Each province name is null-terminated and 98 bytes apart.
 	for (size_t i = 0; i < std::size(this->provinceNames); i++)
 	{
-		this->provinceNames[i] = GetExeStringNullTerminated(data + provinceNamesOffset + (i * 98));
+		this->provinceNames[i] = GetExeStringNullTerminated(exeBytes, provinceNamesOffset + (i * 98));
 	}
 
-	initStringArrayNullTerminated(this->charCreationProvinceNames, data + charCreationProvinceNamesOffset);
-	initStringArrayNullTerminated(this->provinceImgFilenames, data + provinceImgFilenamesOffset);
-	initStringArrayNullTerminated(this->locationTypes, data + locationTypesOffset);
-	initStringArrayNullTerminated(this->menuMifPrefixes, data + menuMifPrefixesOffset);
-	this->centerProvinceCityMifName = GetExeStringNullTerminated(data + centerProvinceCityMifNameOffset);
-	this->startDungeonName = GetExeStringNullTerminated(data + startDungeonNameOffset);
-	this->startDungeonMifName = GetExeStringNullTerminated(data + startDungeonMifNameOffset);
-	this->finalDungeonMifName = GetExeStringNullTerminated(data + finalDungeonMifNameOffset);
-	initInt8Array(this->staffProvinces, data + staffProvincesOffset);
-	initInt8Array(this->climates, data + climatesOffset);
-	initInt8Array(this->weatherTable, data + weatherTableOffset);
-	init2DInt8Array(this->climateSpeedTables, data + climateSpeedTablesOffset);
-	init2DInt8Array(this->weatherSpeedTables, data + weatherSpeedTablesOffset);
-	initStringArrayNullTerminated(this->rulerTitles, data + rulerTitlesOffset);
-	initStringArrayNullTerminated(this->distantMountainFilenames, data + distantMountainFilenamesOffset);
-	initStringArrayNullTerminated(this->animDistantMountainFilenames, data + animDistantMountainFilenamesOffset);
-	this->cloudFilename = GetExeStringNullTerminated(data + cloudFilenameOffset);
-	this->sunFilename = GetExeStringNullTerminated(data + sunFilenameOffset);
-	initStringArrayNullTerminated(this->moonFilenames, data + moonFilenamesOffset);
-	this->starFilename = GetExeStringNullTerminated(data + starFilenameOffset);
+	initStringArrayNullTerminated(this->charCreationProvinceNames, exeBytes, charCreationProvinceNamesOffset);
+	initStringArrayNullTerminated(this->provinceImgFilenames, exeBytes, provinceImgFilenamesOffset);
+	initStringArrayNullTerminated(this->locationTypes, exeBytes, locationTypesOffset);
+	initStringArrayNullTerminated(this->menuMifPrefixes, exeBytes, menuMifPrefixesOffset);
+	this->centerProvinceCityMifName = GetExeStringNullTerminated(exeBytes, centerProvinceCityMifNameOffset);
+	this->startDungeonName = GetExeStringNullTerminated(exeBytes, startDungeonNameOffset);
+	this->startDungeonMifName = GetExeStringNullTerminated(exeBytes, startDungeonMifNameOffset);
+	this->finalDungeonMifName = GetExeStringNullTerminated(exeBytes, finalDungeonMifNameOffset);
+	initInt8Array(this->staffProvinces, exeBytes, staffProvincesOffset);
+	initInt8Array(this->climates, exeBytes, climatesOffset);
+	initInt8Array(this->weatherTable, exeBytes, weatherTableOffset);
+	init2DInt8Array(this->climateSpeedTables, exeBytes, climateSpeedTablesOffset);
+	init2DInt8Array(this->weatherSpeedTables, exeBytes, weatherSpeedTablesOffset);
+	initStringArrayNullTerminated(this->rulerTitles, exeBytes, rulerTitlesOffset);
+	initStringArrayNullTerminated(this->distantMountainFilenames, exeBytes, distantMountainFilenamesOffset);
+	initStringArrayNullTerminated(this->animDistantMountainFilenames, exeBytes, animDistantMountainFilenamesOffset);
+	this->cloudFilename = GetExeStringNullTerminated(exeBytes, cloudFilenameOffset);
+	this->sunFilename = GetExeStringNullTerminated(exeBytes, sunFilenameOffset);
+	initStringArrayNullTerminated(this->moonFilenames, exeBytes, moonFilenamesOffset);
+	this->starFilename = GetExeStringNullTerminated(exeBytes, starFilenameOffset);
 
 	return true;
 }
 
-bool ExeDataLogbook::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataLogbook::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Logbook";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -712,12 +725,12 @@ bool ExeDataLogbook::init(const std::byte *data, const KeyValueFile &keyValueFil
 
 	const int isEmptyOffset = GetExeAddress(*section, "IsEmpty");
 
-	this->isEmpty = GetExeStringNullTerminated(data + isEmptyOffset);
+	this->isEmpty = GetExeStringNullTerminated(exeBytes, isEmptyOffset);
 
 	return true;
 }
 
-bool ExeDataMeta::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataMeta::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Meta";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -732,7 +745,7 @@ bool ExeDataMeta::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataQuests::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataQuests::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Quests";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -745,13 +758,13 @@ bool ExeDataQuests::init(const std::byte *data, const KeyValueFile &keyValueFile
 	const int mainQuestItemNamesOffset = GetExeAddress(*section, "MainQuestItemNames");
 	const int staffPiecesOffset = GetExeAddress(*section, "StaffPieces");
 
-	initStringArrayNullTerminated(this->mainQuestItemNames, data + mainQuestItemNamesOffset);
-	this->staffPieces = GetExeStringNullTerminated(data + staffPiecesOffset);
+	initStringArrayNullTerminated(this->mainQuestItemNames, exeBytes, mainQuestItemNamesOffset);
+	this->staffPieces = GetExeStringNullTerminated(exeBytes, staffPiecesOffset);
 
 	return true;
 }
 
-bool ExeDataRaces::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataRaces::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Races";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -764,13 +777,13 @@ bool ExeDataRaces::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const int singularNamesOffset = GetExeAddress(*section, "SingularNames");
 	const int pluralNamesOffset = GetExeAddress(*section, "PluralNames");
 
-	initStringArrayNullTerminated(this->singularNames, data + singularNamesOffset);
-	initStringArrayNullTerminated(this->pluralNames, data + pluralNamesOffset);
+	initStringArrayNullTerminated(this->singularNames, exeBytes, singularNamesOffset);
+	initStringArrayNullTerminated(this->pluralNames, exeBytes, pluralNamesOffset);
 
 	return true;
 }
 
-bool ExeDataRaisedPlatforms::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataRaisedPlatforms::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "RaisedPlatforms";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -786,11 +799,11 @@ bool ExeDataRaisedPlatforms::init(const std::byte *data, const KeyValueFile &key
 	const int box3bOffset = GetExeAddress(*section, "Box3B");
 	const int box4Offset = GetExeAddress(*section, "Box4");
 
-	initInt16Array(this->boxArrays, data + boxArraysOffset);
-	initInt16Array(this->boxArraysCopy, data + boxArraysCopyOffset);
-	initInt16Array(this->box3a, data + box3aOffset);
-	initInt16Array(this->box3b, data + box3bOffset);
-	initInt16Array(this->box4, data + box4Offset);
+	initInt16Array(this->boxArrays, exeBytes, boxArraysOffset);
+	initInt16Array(this->boxArraysCopy, exeBytes, boxArraysCopyOffset);
+	initInt16Array(this->box3a, exeBytes, box3aOffset);
+	initInt16Array(this->box3b, exeBytes, box3bOffset);
+	initInt16Array(this->box4, exeBytes, box4Offset);
 
 	this->heightsInterior.init(this->boxArrays, 8);
 	this->heightsCity.init(this->boxArrays + 8, 8);
@@ -829,7 +842,7 @@ int ExeDataRaisedPlatforms::getTextureMappingValueB(int thicknessIndex, int text
 	return maxTextureHeight - this->box4[thicknessIndex] - textureMappingValueA;
 }
 
-bool ExeDataStatus::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataStatus::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Status";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -855,26 +868,26 @@ bool ExeDataStatus::init(const std::byte *data, const KeyValueFile &keyValueFile
 	const int enemyCorpseEmptyInventoryOffset = GetExeAddress(*section, "EnemyCorpseEmptyInventory");
 	const int enemyCorpseGoldOffset = GetExeAddress(*section, "EnemyCorpseGold");
 
-	this->popUp = GetExeStringNullTerminated(data + popUpOffset);
-	this->date = GetExeStringNullTerminated(data + dateOffset);
-	this->fortify = GetExeStringNullTerminated(data + fortifyOffset);
-	this->disease = GetExeStringNullTerminated(data + diseaseOffset);
-	this->effect = GetExeStringNullTerminated(data + effectOffset);
-	initStringArrayNullTerminated(this->effectsList, data + effectsListOffset);
-	initStringArrayNullTerminated(this->keyNames, data + keyNamesOffset);
-	this->keyPickedUp = GetExeStringNullTerminated(data + keyPickedUpOffset);
-	this->doorUnlockedWithKey = GetExeStringNullTerminated(data + doorUnlockedWithKeyOffset);
-	initStringArrayNullTerminated(this->lockDifficultyMessages, data + lockDifficultyMessagesOffset);
-	this->staminaExhaustedRecover = GetExeStringNullTerminated(data + staminaExhaustedRecoverOffset);
-	this->staminaExhaustedDeath = GetExeStringNullTerminated(data + staminaExhaustedDeathOffset);
-	this->staminaDrowning = GetExeStringNullTerminated(data + staminaDrowningOffset);
-	this->enemyCorpseEmptyInventory = GetExeStringNullTerminated(data + enemyCorpseEmptyInventoryOffset);
-	this->enemyCorpseGold = GetExeStringNullTerminated(data + enemyCorpseGoldOffset);
+	this->popUp = GetExeStringNullTerminated(exeBytes, popUpOffset);
+	this->date = GetExeStringNullTerminated(exeBytes, dateOffset);
+	this->fortify = GetExeStringNullTerminated(exeBytes, fortifyOffset);
+	this->disease = GetExeStringNullTerminated(exeBytes, diseaseOffset);
+	this->effect = GetExeStringNullTerminated(exeBytes, effectOffset);
+	initStringArrayNullTerminated(this->effectsList, exeBytes, effectsListOffset);
+	initStringArrayNullTerminated(this->keyNames, exeBytes, keyNamesOffset);
+	this->keyPickedUp = GetExeStringNullTerminated(exeBytes, keyPickedUpOffset);
+	this->doorUnlockedWithKey = GetExeStringNullTerminated(exeBytes, doorUnlockedWithKeyOffset);
+	initStringArrayNullTerminated(this->lockDifficultyMessages, exeBytes, lockDifficultyMessagesOffset);
+	this->staminaExhaustedRecover = GetExeStringNullTerminated(exeBytes, staminaExhaustedRecoverOffset);
+	this->staminaExhaustedDeath = GetExeStringNullTerminated(exeBytes, staminaExhaustedDeathOffset);
+	this->staminaDrowning = GetExeStringNullTerminated(exeBytes, staminaDrowningOffset);
+	this->enemyCorpseEmptyInventory = GetExeStringNullTerminated(exeBytes, enemyCorpseEmptyInventoryOffset);
+	this->enemyCorpseGold = GetExeStringNullTerminated(exeBytes, enemyCorpseGoldOffset);
 
 	return true;
 }
 
-bool ExeDataTravel::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataTravel::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Travel";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -898,24 +911,24 @@ bool ExeDataTravel::init(const std::byte *data, const KeyValueFile &keyValueFile
 	const int staffDungeonSplashesOffset = GetExeAddress(*section, "StaffDungeonSplashes");
 	const int staffDungeonSplashIndicesOffset = GetExeAddress(*section, "StaffDungeonSplashIndices");
 
-	initStringArrayNullTerminated(this->locationFormatTexts, data + locationFormatTextsOffset);
-	initStringArrayNullTerminated(this->dayPrediction, data + dayPredictionOffset);
-	this->distancePrediction = GetExeStringNullTerminated(data + distancePredictionOffset);
-	this->arrivalDatePrediction = GetExeStringNullTerminated(data + arrivalDatePredictionOffset);
-	this->alreadyAtDestination = GetExeStringNullTerminated(data + alreadyAtDestinationOffset);
-	this->noDestination = GetExeStringNullTerminated(data + noDestinationOffset);
-	this->arrivalPopUpLocation = GetExeStringNullTerminated(data + arrivalPopUpLocationOffset);
-	this->arrivalPopUpDate = GetExeStringNullTerminated(data + arrivalPopUpDateOffset);
-	this->arrivalPopUpDays = GetExeStringNullTerminated(data + arrivalPopUpDaysOffset);
-	this->arrivalCenterProvinceLocation = GetExeStringNullTerminated(data + arrivalCenterProvinceLocationOffset);
-	this->searchTitleText = GetExeStringNullTerminated(data + searchTitleTextOffset);
-	initStringArrayNullTerminated(this->staffDungeonSplashes, data + staffDungeonSplashesOffset);
-	initInt8Array(this->staffDungeonSplashIndices, data + staffDungeonSplashIndicesOffset);
+	initStringArrayNullTerminated(this->locationFormatTexts, exeBytes, locationFormatTextsOffset);
+	initStringArrayNullTerminated(this->dayPrediction, exeBytes, dayPredictionOffset);
+	this->distancePrediction = GetExeStringNullTerminated(exeBytes, distancePredictionOffset);
+	this->arrivalDatePrediction = GetExeStringNullTerminated(exeBytes, arrivalDatePredictionOffset);
+	this->alreadyAtDestination = GetExeStringNullTerminated(exeBytes, alreadyAtDestinationOffset);
+	this->noDestination = GetExeStringNullTerminated(exeBytes, noDestinationOffset);
+	this->arrivalPopUpLocation = GetExeStringNullTerminated(exeBytes, arrivalPopUpLocationOffset);
+	this->arrivalPopUpDate = GetExeStringNullTerminated(exeBytes, arrivalPopUpDateOffset);
+	this->arrivalPopUpDays = GetExeStringNullTerminated(exeBytes, arrivalPopUpDaysOffset);
+	this->arrivalCenterProvinceLocation = GetExeStringNullTerminated(exeBytes, arrivalCenterProvinceLocationOffset);
+	this->searchTitleText = GetExeStringNullTerminated(exeBytes, searchTitleTextOffset);
+	initStringArrayNullTerminated(this->staffDungeonSplashes, exeBytes, staffDungeonSplashesOffset);
+	initInt8Array(this->staffDungeonSplashIndices, exeBytes, staffDungeonSplashIndicesOffset);
 
 	return true;
 }
 
-bool ExeDataUI::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataUI::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "UI";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -947,32 +960,32 @@ bool ExeDataUI::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const int currentWorldPositionOffset = GetExeAddress(*section, "CurrentWorldPosition");
 	const int inspectedEntityNameOffset = GetExeAddress(*section, "InspectedEntityName");
 
-	this->chooseClassList.init(data + chooseClassListOffset);
-	this->buyingWeapons.init(data + buyingWeaponsOffset);
-	this->buyingArmor.init(data + buyingArmorOffset);
-	this->spellmaker.init(data + spellmakerOffset);
-	this->popUp5.init(data + popUp5Offset);
-	this->loadSave.init(data + loadSaveOffset);
-	this->charClassSelection.init(data + charClassSelectionOffset);
-	this->buyingMagicItems.init(data + buyingMagicItemsOffset);
-	this->travelCitySelection.init(data + travelCitySelectionOffset);
-	this->dialogue.init(data + dialogueOffset);
-	this->roomSelectionAndCures.init(data + roomSelectionAndCuresOffset);
-	this->generalLootAndSelling.init(data + generalLootAndSellingOffset);
-	initInt16Array(this->followerPortraitPositions, data + followerPortraitPositionsOffset);
-	initInt16Array(this->maleArmorClassPositions, data + maleArmorClassPositionsOffset);
-	initInt16Array(this->femaleArmorClassPositions, data + femaleArmorClassPositionsOffset);
-	initInt8Array(this->helmetPaletteIndices, data + helmetPaletteIndicesOffset);
-	initInt8Array(this->race1HelmetPaletteValues, data + race1HelmetPaletteValuesOffset);
-	initInt8Array(this->race3HelmetPaletteValues, data + race3HelmetPaletteValuesOffset);
-	initInt8Array(this->race4HelmetPaletteValues, data + race4HelmetPaletteValuesOffset);
-	this->currentWorldPosition = GetExeStringNullTerminated(data + currentWorldPositionOffset);
-	this->inspectedEntityName = GetExeStringNullTerminated(data + inspectedEntityNameOffset);
+	this->chooseClassList.init(exeBytes, chooseClassListOffset);
+	this->buyingWeapons.init(exeBytes, buyingWeaponsOffset);
+	this->buyingArmor.init(exeBytes, buyingArmorOffset);
+	this->spellmaker.init(exeBytes, spellmakerOffset);
+	this->popUp5.init(exeBytes, popUp5Offset);
+	this->loadSave.init(exeBytes, loadSaveOffset);
+	this->charClassSelection.init(exeBytes, charClassSelectionOffset);
+	this->buyingMagicItems.init(exeBytes, buyingMagicItemsOffset);
+	this->travelCitySelection.init(exeBytes, travelCitySelectionOffset);
+	this->dialogue.init(exeBytes, dialogueOffset);
+	this->roomSelectionAndCures.init(exeBytes, roomSelectionAndCuresOffset);
+	this->generalLootAndSelling.init(exeBytes, generalLootAndSellingOffset);
+	initInt16Array(this->followerPortraitPositions, exeBytes, followerPortraitPositionsOffset);
+	initInt16Array(this->maleArmorClassPositions, exeBytes, maleArmorClassPositionsOffset);
+	initInt16Array(this->femaleArmorClassPositions, exeBytes, femaleArmorClassPositionsOffset);
+	initInt8Array(this->helmetPaletteIndices, exeBytes, helmetPaletteIndicesOffset);
+	initInt8Array(this->race1HelmetPaletteValues, exeBytes, race1HelmetPaletteValuesOffset);
+	initInt8Array(this->race3HelmetPaletteValues, exeBytes, race3HelmetPaletteValuesOffset);
+	initInt8Array(this->race4HelmetPaletteValues, exeBytes, race4HelmetPaletteValuesOffset);
+	this->currentWorldPosition = GetExeStringNullTerminated(exeBytes, currentWorldPositionOffset);
+	this->inspectedEntityName = GetExeStringNullTerminated(exeBytes, inspectedEntityNameOffset);
 
 	return true;
 }
 
-bool ExeDataWeather::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataWeather::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Weather";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -984,12 +997,12 @@ bool ExeDataWeather::init(const std::byte *data, const KeyValueFile &keyValueFil
 
 	const int thunderstormFlashColorsOffset = GetExeAddress(*section, "ThunderstormFlashColors");
 	
-	initInt8Array(this->thunderstormFlashColors, data + thunderstormFlashColorsOffset);
+	initInt8Array(this->thunderstormFlashColors, exeBytes, thunderstormFlashColorsOffset);
 
 	return true;
 }
 
-bool ExeDataWilderness::init(const std::byte *data, const KeyValueFile &keyValueFile)
+bool ExeDataWilderness::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Wilderness";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -999,27 +1012,30 @@ bool ExeDataWilderness::init(const std::byte *data, const KeyValueFile &keyValue
 		return false;
 	}
 
+	auto initWildBlockList = [](Buffer<uint8_t> &buffer, BufferView<const std::byte> exeBytes, int exeAddress)
+	{
+		// Each wilderness block list starts with the list size.
+		const uint8_t listSize = static_cast<uint8_t>(exeBytes[exeAddress]);
+		DebugAssert(exeBytes.isValidRange(exeAddress, listSize + 1));
+
+		buffer.init(listSize);
+
+		const uint8_t *listStart = reinterpret_cast<const uint8_t*>(exeBytes.begin()) + exeAddress + 1;
+		const uint8_t *listEnd = listStart + listSize;
+		std::copy(listStart, listEnd, buffer.begin());
+	};
+
 	const int normalBlocksOffset = GetExeAddress(*section, "NormalBlocks");
 	const int villageBlocksOffset = GetExeAddress(*section, "VillageBlocks");
 	const int dungeonBlocksOffset = GetExeAddress(*section, "DungeonBlocks");
 	const int tavernBlocksOffset = GetExeAddress(*section, "TavernBlocks");
 	const int templeBlocksOffset = GetExeAddress(*section, "TempleBlocks");
 
-	auto initWildBlockList = [](std::vector<uint8_t> &vec, const std::byte *data)
-	{
-		// Each wilderness block list starts with the list size.
-		vec.resize(static_cast<uint8_t>(*data));
-
-		const uint8_t *listStart = reinterpret_cast<const uint8_t*>(data + 1);
-		const uint8_t *listEnd = listStart + vec.size();
-		std::copy(listStart, listEnd, vec.data());
-	};
-
-	initWildBlockList(this->normalBlocks, data + normalBlocksOffset);
-	initWildBlockList(this->villageBlocks, data + villageBlocksOffset);
-	initWildBlockList(this->dungeonBlocks, data + dungeonBlocksOffset);
-	initWildBlockList(this->tavernBlocks, data + tavernBlocksOffset);
-	initWildBlockList(this->templeBlocks, data + templeBlocksOffset);
+	initWildBlockList(this->normalBlocks, exeBytes, normalBlocksOffset);
+	initWildBlockList(this->villageBlocks, exeBytes, villageBlocksOffset);
+	initWildBlockList(this->dungeonBlocks, exeBytes, dungeonBlocksOffset);
+	initWildBlockList(this->tavernBlocks, exeBytes, tavernBlocksOffset);
+	initWildBlockList(this->templeBlocks, exeBytes, templeBlocksOffset);
 
 	return true;
 }
@@ -1044,7 +1060,7 @@ bool ExeData::init(bool floppyVersion)
 		return false;
 	}
 
-	const std::byte *dataPtr = reinterpret_cast<const std::byte*>(exe.getData().begin());
+	const BufferView<const std::byte> exeBytes(reinterpret_cast<const std::byte*>(exe.getData().begin()), exe.getData().getCount());
 
 	const std::string &mapFilename = floppyVersion ? ExeData::FLOPPY_VERSION_MAP_FILENAME : ExeData::CD_VERSION_MAP_FILENAME;
 	KeyValueFile keyValueFile;
@@ -1054,25 +1070,25 @@ bool ExeData::init(bool floppyVersion)
 		return false;
 	}
 
-	bool success = this->calendar.init(dataPtr, keyValueFile);
-	success &= this->charClasses.init(dataPtr, keyValueFile);
-	success &= this->charCreation.init(dataPtr, keyValueFile);
-	success &= this->cityGen.init(dataPtr, keyValueFile);
-	success &= this->entities.init(dataPtr, keyValueFile);
-	success &= this->equipment.init(dataPtr, keyValueFile);
-	success &= this->items.init(dataPtr, keyValueFile);
-	success &= this->light.init(dataPtr, keyValueFile);
-	success &= this->locations.init(dataPtr, keyValueFile);
-	success &= this->logbook.init(dataPtr, keyValueFile);
-	success &= this->meta.init(dataPtr, keyValueFile);
-	success &= this->quests.init(dataPtr, keyValueFile);
-	success &= this->races.init(dataPtr, keyValueFile);
-	success &= this->status.init(dataPtr, keyValueFile);
-	success &= this->travel.init(dataPtr, keyValueFile);
-	success &= this->ui.init(dataPtr, keyValueFile);
-	success &= this->raisedPlatforms.init(dataPtr, keyValueFile);
-	success &= this->weather.init(dataPtr, keyValueFile);
-	success &= this->wild.init(dataPtr, keyValueFile);
+	bool success = this->calendar.init(exeBytes, keyValueFile);
+	success &= this->charClasses.init(exeBytes, keyValueFile);
+	success &= this->charCreation.init(exeBytes, keyValueFile);
+	success &= this->cityGen.init(exeBytes, keyValueFile);
+	success &= this->entities.init(exeBytes, keyValueFile);
+	success &= this->equipment.init(exeBytes, keyValueFile);
+	success &= this->items.init(exeBytes, keyValueFile);
+	success &= this->light.init(exeBytes, keyValueFile);
+	success &= this->locations.init(exeBytes, keyValueFile);
+	success &= this->logbook.init(exeBytes, keyValueFile);
+	success &= this->meta.init(exeBytes, keyValueFile);
+	success &= this->quests.init(exeBytes, keyValueFile);
+	success &= this->races.init(exeBytes, keyValueFile);
+	success &= this->status.init(exeBytes, keyValueFile);
+	success &= this->travel.init(exeBytes, keyValueFile);
+	success &= this->ui.init(exeBytes, keyValueFile);
+	success &= this->raisedPlatforms.init(exeBytes, keyValueFile);
+	success &= this->weather.init(exeBytes, keyValueFile);
+	success &= this->wild.init(exeBytes, keyValueFile);
 
 	if (!success)
 	{

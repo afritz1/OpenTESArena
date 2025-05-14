@@ -202,6 +202,24 @@ public:
 		return this->count;
 	}
 
+	bool isValidRange(int startIndex, int length) const
+	{
+		if (!this->isValid())
+		{
+			return false;
+		}
+
+		if (length < 0)
+		{
+			return false;
+		}
+
+		const int exclusiveEndIndex = startIndex + length;
+		const bool isStartValid = (startIndex >= 0) && (startIndex <= this->count);
+		const bool isEndValid = (exclusiveEndIndex >= startIndex) && (exclusiveEndIndex <= this->count);
+		return isStartValid && isEndValid;
+	}
+
 	void set(int index, const T &value)
 	{
 		DebugAssert(this->isValid());
