@@ -15,10 +15,11 @@ class ArenaRandom;
 class BinaryAssetLibrary;
 class CFAFile;
 class CharacterClassLibrary;
-class ExeData;
 class TextureManager;
 
 enum class MapType;
+
+struct ExeData;
 
 // Helper values for working with the original animations. These may or may not be directly
 // referencing original values and may only exist for convenience in the new engine.

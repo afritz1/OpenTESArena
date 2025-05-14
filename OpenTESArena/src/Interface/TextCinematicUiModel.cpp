@@ -62,7 +62,7 @@ bool TextCinematicUiModel::shouldPlaySpeech(Game &game)
 {
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
-	return !exeData.isFloppyVersion();
+	return !exeData.isFloppyVersion;
 }
 
 std::string TextCinematicUiModel::getSubtitleText(Game &game, const TextCinematicDefinition &textCinematicDef)

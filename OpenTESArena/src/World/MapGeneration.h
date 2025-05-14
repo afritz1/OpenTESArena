@@ -24,7 +24,6 @@ class ArenaRandom;
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
 class EntityDefinitionLibrary;
-class ExeData;
 class LevelDefinition;
 class LevelInfoDefinition;
 class LocationDefinition;
@@ -32,6 +31,8 @@ class TextAssetLibrary;
 class TextureManager;
 
 enum class MapType;
+
+struct ExeData;
 
 namespace MapGeneration
 {

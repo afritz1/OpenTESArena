@@ -4,7 +4,8 @@
 #include <string>
 
 class Date;
-class ExeData;
+
+struct ExeData;
 
 namespace ArenaDateUtils
 {

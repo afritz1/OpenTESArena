@@ -6,7 +6,6 @@
 #include "RenderTextureUtils.h"
 #include "../Assets/TextureAsset.h"
 
-class ExeData;
 class Renderer;
 class SkyInfoDefinition;
 class SkyInstance;
@@ -16,6 +15,7 @@ class WeatherInstance;
 
 enum class WeatherType;
 
+struct ExeData;
 struct RenderCommandBuffer;
 
 class RenderSkyManager

@@ -8,7 +8,7 @@
 
 #include "ItemDefinition.h"
 
-class ExeData;
+struct ExeData;
 
 using ItemLibraryPredicate = std::function<bool(const ItemDefinition &itemDef)>;
 

@@ -74,8 +74,7 @@ uint32_t ArenaWildUtils::makeWildChunkSeed(int wildX, int wildY)
 	return (wildY << 16) + wildX;
 }
 
-Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed,
-	const ExeData::Wilderness &wildData)
+Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData)
 {
 	Buffer2D<ArenaWildUtils::WildBlockID> indices(ArenaWildUtils::WILD_WIDTH, ArenaWildUtils::WILD_HEIGHT);
 	ArenaRandom random(wildSeed);

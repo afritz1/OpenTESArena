@@ -9,9 +9,9 @@
 
 #include "components/utilities/BufferView.h"
 
-class ExeData;
 class Game;
 
+struct ExeData;
 struct Rect;
 
 namespace GameWorldUiModel

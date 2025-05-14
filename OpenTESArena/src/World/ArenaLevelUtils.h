@@ -15,11 +15,12 @@
 #include "components/utilities/BufferView2D.h"
 
 class ArenaRandom;
-class ExeData;
 class Renderer;
 class TextureManager;
 
 enum class MapType;
+
+struct ExeData;
 
 // Various functions for working with Arena level data, shared between world types.
 namespace ArenaLevelUtils

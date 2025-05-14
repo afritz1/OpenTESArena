@@ -9,7 +9,7 @@
 
 #include "components/utilities/Singleton.h"
 
-class ExeData;
+struct ExeData;
 
 class CharacterClassLibrary : public Singleton<CharacterClassLibrary>
 {

@@ -9,10 +9,10 @@
 #include "components/utilities/Buffer.h"
 
 class AudioManager;
-class ExeData;
 class Random;
 
 struct Clock;
+struct ExeData;
 struct WeatherDefinition;
 
 struct WeatherParticle

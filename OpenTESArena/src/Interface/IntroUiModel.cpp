@@ -22,7 +22,7 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 	}
 
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const bool isFloppyVersion = exeData.isFloppyVersion();
+	const bool isFloppyVersion = exeData.isFloppyVersion;
 	if (isFloppyVersion)
 	{
 		const TextureAsset paletteTextureAsset = IntroUiView::getIntroTitlePaletteTextureAsset();

@@ -14,9 +14,9 @@
 
 #include "components/utilities/Buffer.h"
 
-class ExeData;
 class Game;
 
+struct ExeData;
 struct Rect;
 
 namespace CharacterCreationUiView

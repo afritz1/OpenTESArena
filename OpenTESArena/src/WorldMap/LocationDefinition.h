@@ -9,7 +9,8 @@
 #include "../Voxels/VoxelUtils.h"
 
 class BinaryAssetLibrary;
-class ExeData;
+
+struct ExeData;
 
 enum class LocationDefinitionType
 {

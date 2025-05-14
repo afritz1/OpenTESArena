@@ -10,10 +10,10 @@
 #include "../UI/ListBox.h"
 #include "../UI/TextBox.h"
 
-class ExeData;
 class Renderer;
 class Surface;
 
+struct ExeData;
 struct Rect;
 
 // The original class list design in Arena is pretty bad. It's an alphabetical list that says nothing

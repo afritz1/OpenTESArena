@@ -12,8 +12,9 @@
 
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
-class ExeData;
 class TextureManager;
+
+struct ExeData;
 
 struct CreatureEntityAnimationKey
 {

@@ -43,8 +43,7 @@ namespace ArenaWildUtils
 	uint32_t makeWildChunkSeed(int wildX, int wildY);
 
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
-	Buffer2D<WildBlockID> generateWildernessIndices(uint32_t wildSeed,
-		const ExeData::Wilderness &wildData);
+	Buffer2D<WildBlockID> generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData);
 
 	// Returns whether the given WILD{...}.MIF block ID is for a city block.
 	bool isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID);

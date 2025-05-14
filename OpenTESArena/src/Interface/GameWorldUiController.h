@@ -6,7 +6,6 @@
 #include "../Entities/EntityInstance.h"
 #include "../Math/Vector2.h"
 
-class ExeData;
 class Game;
 class GameWorldPanel;
 class ItemInventory;
@@ -15,6 +14,7 @@ class TextBox;
 enum class MouseButtonType;
 
 struct EntityInstance;
+struct ExeData;
 struct InputActionCallbackValues;
 struct Player;
 struct Rect;

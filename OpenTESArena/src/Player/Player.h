@@ -16,12 +16,13 @@
 
 class CharacterClassLibrary;
 class CollisionChunkManager;
-class ExeData;
 class Game;
 class LevelDefinition;
 class LevelInfoDefinition;
 class Random;
 class VoxelChunkManager;
+
+struct ExeData;
 
 namespace PlayerConstants
 {

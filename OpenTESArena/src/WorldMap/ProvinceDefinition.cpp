@@ -63,7 +63,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 	};
 
 	const bool isCenterProvince = provinceID == ArenaLocationUtils::CENTER_PROVINCE_ID;
-	const ExeData::CityGeneration &cityGen = binaryAssetLibrary.getExeData().cityGen;
+	const ExeDataCityGeneration &cityGen = binaryAssetLibrary.getExeData().cityGen;
 
 	auto tryAddCities = [provinceID, &cityGen, &tryAddCity, isCenterProvince](
 		const auto &locations, ArenaTypes::CityType type, int startID)

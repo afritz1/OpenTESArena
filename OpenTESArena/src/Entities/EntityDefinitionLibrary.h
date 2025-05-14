@@ -10,8 +10,9 @@
 #include "components/utilities/Singleton.h"
 
 class EntityAnimationLibrary;
-class ExeData;
 class TextureManager;
+
+struct ExeData;
 
 enum class EntityDefinitionKeyType
 {

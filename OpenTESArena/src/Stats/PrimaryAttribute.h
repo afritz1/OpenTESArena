@@ -3,7 +3,7 @@
 
 #include "components/utilities/BufferView.h"
 
-class ExeData;
+struct ExeData;
 
 struct PrimaryAttribute
 {

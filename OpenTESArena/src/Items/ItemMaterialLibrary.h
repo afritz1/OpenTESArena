@@ -8,7 +8,7 @@
 
 #include "components/utilities/Singleton.h"
 
-class ExeData;
+struct ExeData;
 
 using ItemMaterialLibraryPredicate = std::function<bool(const ItemMaterialDefinition &materialDef)>;
 

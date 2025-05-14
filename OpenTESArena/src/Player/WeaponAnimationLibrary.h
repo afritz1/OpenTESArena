@@ -7,8 +7,9 @@
 
 #include "WeaponAnimation.h"
 
-class ExeData;
 class TextureManager;
+
+struct ExeData;
 
 class WeaponAnimationLibrary : public Singleton<WeaponAnimationLibrary>
 {
