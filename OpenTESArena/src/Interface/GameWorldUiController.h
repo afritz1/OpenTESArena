@@ -44,7 +44,9 @@ namespace GameWorldUiController
 	void onPauseInputAction(const InputActionCallbackValues &values);
 
 	// @todo: need popup for dead enemies that can give gold
+	void onEnemyAliveInspected(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef, TextBox &actionTextBox);
 	void onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory);
+	void onEnemyCorpseEmptyInventoryOpened(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef);
 
 	void onKeyPickedUp(Game &game, int keyID, const ExeData &exeData, const std::function<void()> postStatusPopUpCallback);
 	void onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData);

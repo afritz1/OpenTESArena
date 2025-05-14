@@ -16,6 +16,7 @@
 #include "../Player/Player.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ArenaDateUtils.h"
 #include "../UI/FontLibrary.h"
@@ -307,9 +308,53 @@ void GameWorldUiController::onPauseInputAction(const InputActionCallbackValues &
 	}
 }
 
+void GameWorldUiController::onEnemyAliveInspected(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef, TextBox &actionTextBox)
+{
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+
+	std::string entityName;
+	if (!EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
+	{
+		DebugLogErrorFormat("Expected enemy entity %d to have display name.", entityInstID);
+		return;
+	}
+
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const std::string text = GameWorldUiModel::getEnemyInspectedMessage(entityName, exeData);
+	actionTextBox.setText(text);
+
+	GameState &gameState = game.gameState;
+	gameState.setActionTextDuration(text);
+}
+
 void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory)
 {
 	const std::string text = std::to_string(itemInventory.getOccupiedSlotCount()) + " items\n(interaction not implemented)";
+
+	Int2 center;
+	TextBox::InitInfo textBoxInitInfo;
+	UiTextureID textureID;
+	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
+
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
+}
+
+void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
+{
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+
+	std::string entityName;
+	if (!EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
+	{
+		DebugLogErrorFormat("Expected enemy entity %d to have display name.", entityInstID);
+		return;
+	}
+
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const std::string text = GameWorldUiModel::getEnemyCorpseEmptyInventoryMessage(entityName, exeData);
 
 	Int2 center;
 	TextBox::InitInfo textBoxInitInfo;

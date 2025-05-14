@@ -272,6 +272,20 @@ void GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect> nativeCursorRe
 	}
 }
 
+std::string GameWorldUiModel::getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData)
+{
+	std::string text = exeData.ui.inspectedEntityName;
+	text.replace(text.find("%s"), 2, entityName);
+	return text;
+}
+
+std::string GameWorldUiModel::getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData)
+{
+	std::string text = exeData.status.enemyCorpseEmptyInventory;
+	text.replace(text.find("%s"), 2, entityName);
+	return text;
+}
+
 std::string GameWorldUiModel::getLockDifficultyMessage(int lockLevel, const ExeData &exeData)
 {
 	DebugAssertIndex(exeData.status.lockDifficultyMessages, lockLevel);

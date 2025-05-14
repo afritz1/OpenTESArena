@@ -460,21 +460,20 @@ namespace PlayerLogic
 				const EntityCombatState &combatState = entityChunkManager.getEntityCombatState(entityInst.combatStateID);
 				if (combatState.isDead)
 				{
+					// @todo might need an int corpseGoldCount in EntityCombatState which is set 0 after 1st open
 					ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
-					GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory);
+					if (enemyItemInventory.getOccupiedSlotCount() > 0)
+					{
+						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory);
+					}
+					else
+					{
+						GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(game, entityInstID, entityDef);
+					}
 				}
 				else if (!combatState.isDying)
 				{
-					const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-
-					std::string entityName;
-					if (EntityUtils::tryGetDisplayName(entityDef, charClassLibrary, &entityName))
-					{
-						std::string text = exeData.ui.inspectedEntityName;
-						text = String::replace(text, "%s", entityName);
-						actionTextBox.setText(text);
-						gameState.setActionTextDuration(text);
-					}
+					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef, actionTextBox);
 				}
 
 				break;
@@ -869,7 +868,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
 				const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
-				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);				
+				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
 
 				const EntityCombatState *hitEntityCombatState = nullptr;
 				bool canHitEntityBeKilled = false;

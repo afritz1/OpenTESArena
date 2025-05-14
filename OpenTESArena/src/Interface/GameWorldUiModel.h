@@ -50,6 +50,9 @@ namespace GameWorldUiModel
 	// the current window correctly represent regions for different arrow cursors.
 	void updateNativeCursorRegions(BufferView<Rect> nativeCursorRegions, int width, int height);
 
+	std::string getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData);
+	std::string getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData);
+
 	std::string getLockDifficultyMessage(int lockLevel, const ExeData &exeData);
 	std::string getKeyPickUpMessage(int keyID, const ExeData &exeData);
 	std::string getDoorUnlockWithKeyMessage(int keyID, const ExeData &exeData);
