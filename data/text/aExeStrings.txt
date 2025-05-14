@@ -154,6 +154,10 @@ UnidentifiedPotionName=0x4148C
 BodyPartNames=0x3DB8D
 WeaponAnimationFilenames=0x41DAC
 
+[Items]
+GoldPiece=0x403FC
+BagOfGoldPieces=0x4040A
+
 [Light]
 WindowTwilightColors=0x3F42A
 WaterTwilightLightLevels=0x3F40A
@@ -216,6 +220,8 @@ LockDifficultyMessages=0x375D4
 StaminaExhaustedRecover=0x43136
 StaminaExhaustedDeath=0x431C0
 StaminaDrowning=0x43185
+EnemyCorpseEmptyInventory=0x40336
+EnemyCorpseGold=0x403C0
 
 [Travel]
 LocationFormatTexts=0x374AD

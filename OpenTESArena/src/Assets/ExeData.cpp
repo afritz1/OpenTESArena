@@ -556,6 +556,25 @@ bool ExeData::Equipment::init(const char *data, const KeyValueFile &keyValueFile
 	return true;
 }
 
+bool ExeData::Items::init(const char *data, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Items";
+	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		return false;
+	}
+
+	const int goldPieceOffset = ExeData::get(*section, "GoldPiece");
+	const int bagOfGoldPiecesOffset = ExeData::get(*section, "BagOfGoldPieces");
+
+	this->goldPiece = ExeData::readString(data + goldPieceOffset);
+	this->bagOfGoldPieces = ExeData::readString(data + bagOfGoldPiecesOffset);
+
+	return true;
+}
+
 bool ExeData::Light::init(const char *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Light";
@@ -789,6 +808,8 @@ bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 	const int staminaExhaustedRecoverOffset = ExeData::get(*section, "StaminaExhaustedRecover");
 	const int staminaExhaustedDeathOffset = ExeData::get(*section, "StaminaExhaustedDeath");
 	const int staminaDrowningOffset = ExeData::get(*section, "StaminaDrowning");
+	const int enemyCorpseEmptyInventoryOffset = ExeData::get(*section, "EnemyCorpseEmptyInventory");
+	const int enemyCorpseGoldOffset = ExeData::get(*section, "EnemyCorpseGold");
 
 	this->popUp = ExeData::readString(data + popUpOffset);
 	this->date = ExeData::readString(data + dateOffset);
@@ -803,6 +824,8 @@ bool ExeData::Status::init(const char *data, const KeyValueFile &keyValueFile)
 	this->staminaExhaustedRecover = ExeData::readString(data + staminaExhaustedRecoverOffset);
 	this->staminaExhaustedDeath = ExeData::readString(data + staminaExhaustedDeathOffset);
 	this->staminaDrowning = ExeData::readString(data + staminaDrowningOffset);
+	this->enemyCorpseEmptyInventory = ExeData::readString(data + enemyCorpseEmptyInventoryOffset);
+	this->enemyCorpseGold = ExeData::readString(data + enemyCorpseGoldOffset);
 
 	return true;
 }
@@ -1079,6 +1102,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->cityGen.init(dataPtr, keyValueFile);
 	success &= this->entities.init(dataPtr, keyValueFile);
 	success &= this->equipment.init(dataPtr, keyValueFile);
+	success &= this->items.init(dataPtr, keyValueFile);
 	success &= this->light.init(dataPtr, keyValueFile);
 	success &= this->locations.init(dataPtr, keyValueFile);
 	success &= this->logbook.init(dataPtr, keyValueFile);

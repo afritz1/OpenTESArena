@@ -294,6 +294,15 @@ public:
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
+	struct Items
+	{
+		// In container inventory.
+		std::string goldPiece;
+		std::string bagOfGoldPieces;
+
+		bool init(const char *data, const KeyValueFile &keyValueFile);
+	};
+
 	struct Light
 	{
 		std::array<uint8_t, 48> windowTwilightColors; // VGA (6-bit, 63 = 255) RGB triplets for window color transition.
@@ -465,6 +474,9 @@ public:
 		std::string staminaExhaustedDeath;
 		std::string staminaDrowning;
 
+		std::string enemyCorpseEmptyInventory;
+		std::string enemyCorpseGold;
+
 		bool init(const char *data, const KeyValueFile &keyValueFile);
 	};
 
@@ -595,6 +607,7 @@ public:
 	CityGeneration cityGen;
 	Entities entities;
 	Equipment equipment;
+	Items items;
 	Light light;
 	Locations locations;
 	Logbook logbook;
