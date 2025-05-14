@@ -598,6 +598,8 @@ struct ExeData
 	ExeDataWeather weather;
 	ExeDataWilderness wild;
 
+	ExeData();
+
 	bool init(bool floppyVersion);
 };
 

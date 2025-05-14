@@ -162,12 +162,12 @@ namespace
 		std::string_view valueStr;
 		if (!section.tryGetString(key, valueStr))
 		{
-			DebugLogError("Couldn't get \"" + key + "\" (section \"" + section.getName() + "\").");
+			DebugLogErrorFormat("Couldn't get \"%s\" (section \"%s\").", key.c_str(), section.getName().c_str());
 			return 0;
 		}
 
 		// Make sure the value only has an offset and isn't an offset + length pair.
-		DebugAssertMsg(valueStr.find(PAIR_SEPARATOR) == std::string_view::npos, "\"" + key + "\" (section \"" + section.getName() + "\") should only have an offset.");
+		DebugAssertMsgFormat(valueStr.find(PAIR_SEPARATOR) == std::string_view::npos, "\"%s\" (section \"%s\") should only have an offset.", key.c_str(), section.getName().c_str());
 
 		int offset;
 
@@ -182,7 +182,7 @@ namespace
 		std::string_view valueStr;
 		if (!section.tryGetString(key, valueStr))
 		{
-			DebugLogError("Couldn't get \"" + key + "\" (section \"" + section.getName() + "\").");
+			DebugLogErrorFormat("Couldn't get \"%s\" (section \"%s\").", key.c_str(), section.getName().c_str());
 			return std::make_pair(0, 0);
 		}
 
@@ -190,7 +190,7 @@ namespace
 		std::array<std::string_view, 2> tokens;
 		if (!StringView::splitExpected<2>(valueStr, PAIR_SEPARATOR, tokens))
 		{
-			DebugCrash("Invalid offset + length pair \"" + key + "\" (section \"" + section.getName() + "\").");
+			DebugCrashFormat("Invalid offset + length pair \"%s\" (section \"%s\").", key.c_str(), section.getName().c_str());
 		}
 
 		const std::string_view offsetStr = tokens[0];
@@ -227,7 +227,7 @@ bool ExeDataCalendar::init(const std::byte *data, const KeyValueFile &keyValueFi
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -252,7 +252,7 @@ bool ExeDataCharacterClasses::init(const std::byte *data, const KeyValueFile &ke
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -299,7 +299,7 @@ bool ExeDataCharacterCreation::init(const std::byte *data, const KeyValueFile &k
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -358,7 +358,7 @@ bool ExeDataCityGeneration::init(const std::byte *data, const KeyValueFile &keyV
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -404,7 +404,7 @@ bool ExeDataEntities::init(const std::byte *data, const KeyValueFile &keyValueFi
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -477,7 +477,7 @@ bool ExeDataEquipment::init(const std::byte *data, const KeyValueFile &keyValueF
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -606,7 +606,7 @@ bool ExeDataItems::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -625,7 +625,7 @@ bool ExeDataLight::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -644,7 +644,7 @@ bool ExeDataLocations::init(const std::byte *data, const KeyValueFile &keyValueF
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -706,7 +706,7 @@ bool ExeDataLogbook::init(const std::byte *data, const KeyValueFile &keyValueFil
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -723,7 +723,7 @@ bool ExeDataMeta::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -738,7 +738,7 @@ bool ExeDataQuests::init(const std::byte *data, const KeyValueFile &keyValueFile
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -757,7 +757,7 @@ bool ExeDataRaces::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -776,7 +776,7 @@ bool ExeDataRaisedPlatforms::init(const std::byte *data, const KeyValueFile &key
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -835,7 +835,7 @@ bool ExeDataStatus::init(const std::byte *data, const KeyValueFile &keyValueFile
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -880,7 +880,7 @@ bool ExeDataTravel::init(const std::byte *data, const KeyValueFile &keyValueFile
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -921,7 +921,7 @@ bool ExeDataUI::init(const std::byte *data, const KeyValueFile &keyValueFile)
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -978,7 +978,7 @@ bool ExeDataWeather::init(const std::byte *data, const KeyValueFile &keyValueFil
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -995,7 +995,7 @@ bool ExeDataWilderness::init(const std::byte *data, const KeyValueFile &keyValue
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
-		DebugLogWarning("Couldn't find \"" + sectionName + "\" section in .exe strings file.");
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
 		return false;
 	}
 
@@ -1029,13 +1029,18 @@ const std::string ExeData::FLOPPY_VERSION_MAP_FILENAME = "data/text/aExeStrings.
 const std::string ExeData::CD_VERSION_EXE_FILENAME = "ACD.EXE";
 const std::string ExeData::CD_VERSION_MAP_FILENAME = "data/text/acdExeStrings.txt";
 
+ExeData::ExeData()
+{
+	this->isFloppyVersion = false;
+}
+
 bool ExeData::init(bool floppyVersion)
 {
 	const std::string &exeFilename = floppyVersion ? ExeData::FLOPPY_VERSION_EXE_FILENAME : ExeData::CD_VERSION_EXE_FILENAME;
 	ExeUnpacker exe;
 	if (!exe.init(exeFilename.c_str()))
 	{
-		DebugLogError("Couldn't init .EXE unpacker for \"" + exeFilename + "\".");
+		DebugLogErrorFormat("Couldn't init .EXE unpacker for \"%s\".", exeFilename.c_str());
 		return false;
 	}
 
@@ -1045,7 +1050,7 @@ bool ExeData::init(bool floppyVersion)
 	KeyValueFile keyValueFile;
 	if (!keyValueFile.init((Platform::getBasePath() + mapFilename).c_str()))
 	{
-		DebugLogError("Couldn't init KeyValueFile for \"" + exeFilename + "\".");
+		DebugLogErrorFormat("Couldn't init KeyValueFile for \"%s\".", exeFilename.c_str());
 		return false;
 	}
 
