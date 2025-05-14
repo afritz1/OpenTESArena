@@ -121,36 +121,26 @@ namespace
 	template<typename T, size_t Length>
 	void initIndexArray(int (&indexArr)[Length], const T (&arr)[Length])
 	{
-		// Construct an array of unique, sorted offsets based on the const array.
-		// Remove zeroes because they do not count as offsets (they represent "null").
+		// Construct an array of unique, sorted offsets based on the input array.
 		T uniqueArr[Length];
 		const auto uniqueBegin = std::begin(uniqueArr);
-		const auto uniqueEnd = [&arr, uniqueBegin]()
-		{
-			const auto iter = std::remove_copy(std::begin(arr), std::end(arr), uniqueBegin, 0);
-			std::sort(uniqueBegin, iter);
-			return std::unique(uniqueBegin, iter);
-		}();
 
-		// For each offset, if it is non-zero, its position in the uniques array is
-		// the index to put into the index array.
+		// Ignore zeroes because they count as null instead.
+		const auto removeIter = std::remove_copy(std::begin(arr), std::end(arr), uniqueBegin, 0);
+		std::sort(uniqueBegin, removeIter);
+		const auto uniqueEnd = std::unique(uniqueBegin, removeIter);
+
 		for (size_t i = 0; i < std::size(arr); i++)
 		{
 			const T offset = arr[i];
-			const int index = [uniqueBegin, uniqueEnd, offset]()
+
+			int index = -1; // No restrictions by default
+			if (offset != 0)
 			{
-				// If the offset is "null", return -1 (indicates no restrictions).
-				if (offset == 0)
-				{
-					return -1;
-				}
-				else
-				{
-					// Find the position of the offset in the unique offsets array.
-					const auto offsetIter = std::find(uniqueBegin, uniqueEnd, offset);
-					return static_cast<int>(std::distance(uniqueBegin, offsetIter));
-				}
-			}();
+				// Find the position of the offset in the unique offsets array.
+				const auto offsetIter = std::find(uniqueBegin, uniqueEnd, offset);
+				index = static_cast<int>(std::distance(uniqueBegin, offsetIter));
+			}
 
 			indexArr[i] = index;
 		}
