@@ -315,7 +315,7 @@ const KeyValueFileSection &KeyValueFile::getSection(int index) const
 	return this->sections[index];
 }
 
-const KeyValueFileSection *KeyValueFile::getSectionByName(const std::string &name) const
+const KeyValueFileSection *KeyValueFile::findSection(const std::string &name) const
 {
 	const auto iter = std::lower_bound(this->sections.begin(), this->sections.end(), name,
 		[](const KeyValueFileSection &section, const std::string &str)

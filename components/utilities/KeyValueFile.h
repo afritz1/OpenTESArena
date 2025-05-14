@@ -46,7 +46,7 @@ public:
 
 	int getSectionCount() const;
 	const KeyValueFileSection &getSection(int index) const;
-	const KeyValueFileSection *getSectionByName(const std::string &name) const;
+	const KeyValueFileSection *findSection(const std::string &name) const;
 };
 
 #endif
