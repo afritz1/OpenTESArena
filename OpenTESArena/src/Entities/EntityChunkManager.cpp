@@ -7,6 +7,7 @@
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityObservedResult.h"
+#include "../Assets/ArenaSoundName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextAssetLibrary.h"
@@ -1108,7 +1109,7 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 	}
 }
 
-void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem)
+void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -1141,28 +1142,40 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
 		if (isDeathAnimComplete)
 		{
-			combatState.isDying = false;
-			combatState.isDead = true;
+			if (!combatState.isDead)
+			{
+				combatState.isDying = false;
+				combatState.isDead = true;
 
-			if (EntityUtils::leavesCorpse(entityDef))
-			{
-				JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
-				if (!physicsBodyID.IsInvalid())
+				if (EntityUtils::leavesCorpse(entityDef))
 				{
-					bodyInterface.RemoveBody(physicsBodyID);
-					bodyInterface.DestroyBody(physicsBodyID);
-					physicsBodyID = Physics::INVALID_BODY_ID;
+					JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+					if (!physicsBodyID.IsInvalid())
+					{
+						bodyInterface.RemoveBody(physicsBodyID);
+						bodyInterface.DestroyBody(physicsBodyID);
+						physicsBodyID = Physics::INVALID_BODY_ID;
+					}
 				}
-			}
-			else
-			{
-				this->queueEntityDestroy(entityInstID, true);
-				// @todo remove from dyingEntities list once that is a thing
+				else
+				{
+					this->queueEntityDestroy(entityInstID, true);
+					// @todo remove from dyingEntities list once that is a thing
+				}
 			}
 		}
 		else
 		{
-			combatState.isDying = true;
+			if (!combatState.isDying)
+			{
+				combatState.isDying = true;
+				
+				if (EntityUtils::leavesCorpse(entityDef))
+				{
+					const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+					audioManager.playSound(ArenaSoundName::BodyFall, entityPosition);
+				}
+			}			
 		}
 	}
 }
@@ -1295,7 +1308,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 
 		this->updateCreatureSounds(dt, entityChunk, playerPosition, random, audioManager);
 		this->updateFadedElevatedPlatforms(entityChunk, voxelChunk, ceilingScale, physicsSystem);
-		this->updateEnemyDeathStates(entityChunk, physicsSystem);
+		this->updateEnemyDeathStates(entityChunk, physicsSystem, audioManager);
 		this->updateVfx(entityChunk);
 	}
 }

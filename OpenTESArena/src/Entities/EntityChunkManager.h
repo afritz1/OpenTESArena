@@ -157,7 +157,7 @@ private:
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
-	void updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem);
+	void updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
 	void updateVfx(EntityChunk &entityChunk);
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
