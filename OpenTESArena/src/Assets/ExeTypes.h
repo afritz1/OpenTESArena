@@ -13,7 +13,7 @@ namespace ExeTypes
 
 		int16_t x, y, w, h;
 
-		void init(const char *data);
+		void init(const std::byte *data);
 	};
 
 	// List box definition with buttons, scroll bar, and flags for alignment.
@@ -27,7 +27,7 @@ namespace ExeTypes
 		Rect16 buttonUp, buttonDown, scrollBar, area;
 		uint16_t flags;
 
-		void init(const char *data);
+		void init(const std::byte *data);
 	};
 }
 

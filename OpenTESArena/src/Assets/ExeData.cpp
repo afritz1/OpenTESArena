@@ -16,8 +16,8 @@ namespace
 {
 	static constexpr char PAIR_SEPARATOR = ',';
 
-	template<typename T, size_t U>
-	void initInt8Array(T (&arr)[U], const char *data)
+	template<typename T, size_t Length>
+	void initInt8Array(T (&arr)[Length], const std::byte *data)
 	{
 		static_assert(sizeof(T) == 1);
 
@@ -27,8 +27,8 @@ namespace
 		}
 	}
 
-	template<typename T, size_t U>
-	void initInt8PairArray(std::pair<T, T> (&arr)[U], const char *data)
+	template<typename T, size_t Length>
+	void initInt8PairArray(std::pair<T, T> (&arr)[Length], const std::byte *data)
 	{
 		static_assert(sizeof(T) == 1);
 
@@ -40,15 +40,15 @@ namespace
 		}
 	}
 
-	template<typename T, size_t U>
-	void initJaggedInt8Array(std::vector<T> (&arr)[U], T terminator, const char *data)
+	template<typename T, size_t Length>
+	void initJaggedInt8Array(std::vector<T> (&arr)[Length], T terminator, const std::byte *data)
 	{
 		static_assert(sizeof(T) == 1);
 
 		size_t offset = 0;
 		for (std::vector<T> &vec : arr)
 		{
-			const char *innerData = data + offset;
+			const char *innerData = reinterpret_cast<const char*>(data) + offset;
 			size_t innerOffset = 0;
 
 			while (true)
@@ -71,19 +71,19 @@ namespace
 		}
 	}
 
-	template<typename T, size_t U, size_t V>
-	void init2DInt8Array(T (&arrs)[V][U], const char *data)
+	template<typename T, size_t Rows, size_t Columns>
+	void init2DInt8Array(T (&arrs)[Columns][Rows], const std::byte *data)
 	{
 		static_assert(sizeof(T) == 1);
 
 		for (size_t i = 0; i < std::size(arrs); i++)
 		{
-			initInt8Array(arrs[i], data + (i * U));
+			initInt8Array(arrs[i], data + (i * Rows));
 		}
 	}
 
-	template<typename T, size_t U>
-	void initInt16Array(T (&arr)[U], const char *data)
+	template<typename T, size_t Length>
+	void initInt16Array(T (&arr)[Length], const std::byte *data)
 	{
 		static_assert(sizeof(T) == 2);
 
@@ -93,8 +93,8 @@ namespace
 		}
 	}
 
-	template<typename T, size_t U>
-	void initInt16PairArray(std::pair<T, T> (&arr)[U], const char *data)
+	template<typename T, size_t Length>
+	void initInt16PairArray(std::pair<T, T> (&arr)[Length], const std::byte *data)
 	{
 		static_assert(sizeof(T) == 2);
 		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(data);
@@ -107,8 +107,8 @@ namespace
 		}
 	}
 
-	template<typename T, size_t U>
-	void initInt32Array(T (&arr)[U], const char *data)
+	template<typename T, size_t Length>
+	void initInt32Array(T (&arr)[Length], const std::byte *data)
 	{
 		static_assert(sizeof(T) == 4);
 
@@ -118,12 +118,12 @@ namespace
 		}
 	}
 
-	template<typename T, size_t U>
-	void initIndexArray(int (&indexArr)[U], const T (&arr)[U])
+	template<typename T, size_t Length>
+	void initIndexArray(int (&indexArr)[Length], const T (&arr)[Length])
 	{
 		// Construct an array of unique, sorted offsets based on the const array.
 		// Remove zeroes because they do not count as offsets (they represent "null").
-		T uniqueArr[U];
+		T uniqueArr[Length];
 		const auto uniqueBegin = std::begin(uniqueArr);
 		const auto uniqueEnd = [&arr, uniqueBegin]()
 		{
@@ -157,12 +157,12 @@ namespace
 	}
 
 	template<size_t T>
-	void initStringArrayNullTerminated(std::string (&arr)[T], const char *data)
+	void initStringArrayNullTerminated(std::string (&arr)[T], const std::byte *data)
 	{
 		size_t offset = 0;
 		for (std::string &str : arr)
 		{
-			str = std::string(data + offset);
+			str = std::string(reinterpret_cast<const char*>(data) + offset);
 			offset += str.size() + 1;
 		}
 	}
@@ -218,18 +218,20 @@ namespace
 		return std::make_pair(offset, length);
 	}
 
-	std::string GetExeStringNullTerminated(const char *data)
+	std::string GetExeStringNullTerminated(const std::byte *data)
 	{
-		return std::string(data);
+		return std::string(reinterpret_cast<const char*>(data));
 	}
 
-	std::string GetExeStringFixedLength(const char *data, const std::pair<int, int> &pair)
+	std::string GetExeStringFixedLength(const std::byte *data, const std::pair<int, int> &pair)
 	{
-		return std::string(data + pair.first, pair.second);
+		const int offset = pair.first;
+		const int length = pair.second;
+		return std::string(reinterpret_cast<const char*>(data) + offset, length);
 	}
 }
 
-bool ExeDataCalendar::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataCalendar::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Calendar";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -254,7 +256,7 @@ bool ExeDataCalendar::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataCharacterClasses::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataCharacterClasses::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterClasses";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -301,7 +303,7 @@ bool ExeDataCharacterClasses::init(const char *data, const KeyValueFile &keyValu
 	return true;
 }
 
-bool ExeDataCharacterCreation::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataCharacterCreation::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterCreation";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -360,7 +362,7 @@ bool ExeDataCharacterCreation::init(const char *data, const KeyValueFile &keyVal
 	return true;
 }
 
-bool ExeDataCityGeneration::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataCityGeneration::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CityGeneration";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -406,7 +408,7 @@ bool ExeDataCityGeneration::init(const char *data, const KeyValueFile &keyValueF
 	return true;
 }
 
-bool ExeDataEntities::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataEntities::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Entities";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -479,7 +481,7 @@ bool ExeDataEntities::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataEquipment::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataEquipment::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Equipment";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -608,7 +610,7 @@ bool ExeDataEquipment::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataItems::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataItems::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Items";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -627,7 +629,7 @@ bool ExeDataItems::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataLight::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataLight::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Light";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -646,7 +648,7 @@ bool ExeDataLight::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataLocations::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataLocations::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Locations";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -708,7 +710,7 @@ bool ExeDataLocations::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataLogbook::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataLogbook::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Logbook";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -725,7 +727,7 @@ bool ExeDataLogbook::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataMeta::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataMeta::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Meta";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -740,7 +742,7 @@ bool ExeDataMeta::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataQuests::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataQuests::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Quests";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -759,7 +761,7 @@ bool ExeDataQuests::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataRaces::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataRaces::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Races";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -778,7 +780,7 @@ bool ExeDataRaces::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataRaisedPlatforms::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataRaisedPlatforms::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "RaisedPlatforms";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -837,7 +839,7 @@ int ExeDataRaisedPlatforms::getTextureMappingValueB(int thicknessIndex, int text
 	return maxTextureHeight - this->box4[thicknessIndex] - textureMappingValueA;
 }
 
-bool ExeDataStatus::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataStatus::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Status";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -882,7 +884,7 @@ bool ExeDataStatus::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataTravel::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataTravel::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Travel";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -923,7 +925,7 @@ bool ExeDataTravel::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataUI::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataUI::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "UI";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -980,7 +982,7 @@ bool ExeDataUI::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataWeather::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataWeather::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Weather";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -997,7 +999,7 @@ bool ExeDataWeather::init(const char *data, const KeyValueFile &keyValueFile)
 	return true;
 }
 
-bool ExeDataWilderness::init(const char *data, const KeyValueFile &keyValueFile)
+bool ExeDataWilderness::init(const std::byte *data, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Wilderness";
 	const KeyValueFileSection *section = keyValueFile.getSectionByName(sectionName);
@@ -1013,7 +1015,7 @@ bool ExeDataWilderness::init(const char *data, const KeyValueFile &keyValueFile)
 	const int tavernBlocksOffset = GetExeAddress(*section, "TavernBlocks");
 	const int templeBlocksOffset = GetExeAddress(*section, "TempleBlocks");
 
-	auto initWildBlockList = [](std::vector<uint8_t> &vec, const char *data)
+	auto initWildBlockList = [](std::vector<uint8_t> &vec, const std::byte *data)
 	{
 		// Each wilderness block list starts with the list size.
 		vec.resize(static_cast<uint8_t>(*data));
@@ -1047,7 +1049,7 @@ bool ExeData::init(bool floppyVersion)
 		return false;
 	}
 
-	const char *dataPtr = reinterpret_cast<const char*>(exe.getData().begin());
+	const std::byte *dataPtr = reinterpret_cast<const std::byte*>(exe.getData().begin());
 
 	const std::string &mapFilename = floppyVersion ? ExeData::FLOPPY_VERSION_MAP_FILENAME : ExeData::CD_VERSION_MAP_FILENAME;
 	KeyValueFile keyValueFile;

@@ -2,7 +2,7 @@
 
 #include "components/utilities/Bytes.h"
 
-void ExeTypes::Rect16::init(const char *data)
+void ExeTypes::Rect16::init(const std::byte *data)
 {
 	const uint8_t *ptr = reinterpret_cast<const uint8_t*>(data);
 	this->x = Bytes::getLE16(ptr);
@@ -11,7 +11,7 @@ void ExeTypes::Rect16::init(const char *data)
 	this->h = Bytes::getLE16(ptr + (sizeof(int16_t) * 3));
 }
 
-void ExeTypes::List::init(const char *data)
+void ExeTypes::List::init(const std::byte *data)
 {
 	this->buttonUp.init(data);
 	this->buttonDown.init(data + ExeTypes::Rect16::SIZE);
