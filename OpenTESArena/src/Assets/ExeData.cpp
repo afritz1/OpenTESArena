@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstring>
 #include <sstream>
 
 #include "ExeData.h"
@@ -123,7 +124,7 @@ namespace
 
 		for (size_t i = 0; i < std::size(arr); i++)
 		{
-			arr[i] = static_cast<T>(Bytes::getLE32(reinterpret_cast<const uint8_t*>(ptr + (i * 4))));
+			arr[i] = static_cast<T>(Bytes::getLE32(ptr + (i * 4)));
 		}
 	}
 
@@ -158,11 +159,14 @@ namespace
 	template<size_t T>
 	void initStringArrayNullTerminated(std::string (&arr)[T], BufferView<const std::byte> exeBytes, int exeAddress)
 	{
-		size_t offset = 0;
+		size_t currentStrOffset = 0;
 		for (std::string &str : arr)
 		{
-			str = std::string(reinterpret_cast<const char*>(exeBytes.begin()) + exeAddress + offset);
-			offset += str.size() + 1;
+			const char *currentStrStart = reinterpret_cast<const char*>(exeBytes.begin()) + exeAddress + currentStrOffset;
+			const int currentStrLength = static_cast<int>(std::strlen(currentStrStart));
+			DebugAssert(exeBytes.isValidRange(exeAddress + currentStrOffset, currentStrLength));
+			str = std::string(currentStrStart, currentStrLength);
+			currentStrOffset += str.size() + 1;
 		}
 	}
 
