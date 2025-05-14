@@ -119,7 +119,7 @@ int get##section##_##name() const \
 } \
 void set##section##_##name(int value) \
 { \
-	const int clampedValue = this->clampInt(value, minValue, maxValue, #name); \
+	const int clampedValue = this->clamp##section##_##name(value); \
 	this->setInt(#section, #name, clampedValue); \
 }
 
