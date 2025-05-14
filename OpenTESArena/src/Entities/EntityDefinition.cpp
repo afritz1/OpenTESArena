@@ -31,7 +31,7 @@ void EnemyEntityDefinition::CreatureDefinition::init(int creatureIndex, bool isF
 	this->diseaseChances = entities.creatureDiseaseChances[creatureIndex];
 
 	const auto &srcAttributes = entities.creatureAttributes[creatureIndex];
-	std::copy(srcAttributes.begin(), srcAttributes.end(), std::begin(this->attributes));
+	std::copy(std::begin(srcAttributes), std::end(srcAttributes), std::begin(this->attributes));
 
 	this->ghost = ArenaAnimUtils::isGhost(creatureIndex);
 }

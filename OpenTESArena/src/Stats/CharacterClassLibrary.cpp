@@ -22,19 +22,22 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 	const auto &spellPointMultiplierValues = exeData.charClasses.magicClassIntelligenceMultipliers;
 	const auto &lockpickingDivisorValues = exeData.charClasses.lockpickingDivisors;
 
-	// Classes in original game.
-	constexpr int classCount = 18;
+	constexpr int originalClassCount = 18;
 
-	for (int i = 0; i < classCount; i++)
+	for (int i = 0; i < originalClassCount; i++)
 	{
-		std::string name = classNameStrs.at(i);
+		DebugAssertIndex(classNameStrs, i);
+		std::string name = classNameStrs[i];
 		const int category = i / 6;
-		std::string preferredAttributes = preferredAttributesStrs.at(i);
+
+		DebugAssertIndex(preferredAttributesStrs, i);
+		std::string preferredAttributes = preferredAttributesStrs[i];
 
 		const std::vector<int> allowedArmors = [&allowedArmorsValues, i]()
 		{
 			// Determine which armors are allowed based on a one-digit value.
-			const uint8_t value = allowedArmorsValues.at(i);
+			DebugAssertIndex(allowedArmorsValues, i);
+			const uint8_t value = allowedArmorsValues[i];
 
 			if (value == 0)
 			{
@@ -61,7 +64,8 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 		const std::vector<int> allowedShields = [&allowedShieldsLists, &allowedShieldsIndices, i]()
 		{
 			// Get the pre-calculated shield index.
-			const int shieldIndex = allowedShieldsIndices.at(i);
+			DebugAssertIndex(allowedShieldsIndices, i);
+			const int shieldIndex = allowedShieldsIndices[i];
 			constexpr int NO_INDEX = -1;
 
 			// If the index is "null" (-1), that means all shields are allowed for this class.
@@ -75,14 +79,17 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 				// minus 7 because shields and armors are treated as the same type in Arena,
 				// so they're in the same array, but we separate them here because that seems 
 				// more object-oriented.
-				constexpr std::array<int, 4> ShieldIDMappings = { 0, 1, 2, 3 };
+				constexpr int ShieldIDMappings[] = { 0, 1, 2, 3 };
 
-				const std::vector<uint8_t> &shieldsList = allowedShieldsLists.at(shieldIndex);
+				DebugAssertIndex(allowedShieldsLists, shieldIndex);
+				const BufferView<const uint8_t> shieldsList = allowedShieldsLists[shieldIndex];
+
 				std::vector<int> shields;
-
 				for (const uint8_t shield : shieldsList)
 				{
-					shields.emplace_back(ShieldIDMappings.at(static_cast<int>(shield) - 7));
+					const int shieldIdMappingsIndex = static_cast<int>(shield) - 7;
+					DebugAssertIndex(ShieldIDMappings, shieldIdMappingsIndex);
+					shields.emplace_back(ShieldIDMappings[shieldIdMappingsIndex]);
 				}
 
 				return shields;
@@ -92,7 +99,8 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 		const std::vector<int> allowedWeapons = [&allowedWeaponsLists, &allowedWeaponsIndices, i]()
 		{
 			// Get the pre-calculated weapon index.
-			const int weaponIndex = allowedWeaponsIndices.at(i);
+			DebugAssertIndex(allowedWeaponsIndices, i);
+			const int weaponIndex = allowedWeaponsIndices[i];
 			constexpr int NO_INDEX = -1;
 
 			// Weapon IDs as they are shown in the executable (staff, sword, ..., long bow).
@@ -110,27 +118,32 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 			}
 			else
 			{
-				const std::vector<uint8_t> &weaponsList = allowedWeaponsLists.at(weaponIndex);
+				DebugAssertIndex(allowedWeaponsLists, weaponIndex);
+				const BufferView<const uint8_t> weaponsList = allowedWeaponsLists[weaponIndex];
+				
 				std::vector<int> weapons;
-
 				for (const uint8_t weapon : weaponsList)
 				{
-					weapons.emplace_back(WeaponIDs.at(weapon));
+					DebugAssertIndex(WeaponIDs, weapon);
+					weapons.emplace_back(WeaponIDs[weapon]);
 				}
 
 				return weapons;
 			}
 		}();
 
-		const double lockpickPercent = [&lockpickingDivisorValues, i]()
-		{
-			const uint8_t divisor = lockpickingDivisorValues.at(i);
-			return static_cast<double>(200 / divisor) / 100.0;
-		}();
+		DebugAssertIndex(lockpickingDivisorValues, i);
+		const uint8_t lockpickingDivisor = lockpickingDivisorValues[i];		
+		const double lockpickPercent = static_cast<double>(200 / lockpickingDivisor) / 100.0;
 
-		const int healthDie = healthDiceValues.at(i);
-		const int initialExperienceCap = initialExpCapValues.at(i);
-		const int classNumberToID = classNumbersToIDsValues.at(i);
+		DebugAssertIndex(healthDiceValues, i);
+		const int healthDie = healthDiceValues[i];
+
+		DebugAssertIndex(initialExpCapValues, i);
+		const int initialExperienceCap = initialExpCapValues[i];
+
+		DebugAssertIndex(classNumbersToIDsValues, i);
+		const int classNumberToID = classNumbersToIDsValues[i];
 
 		const int classIndex = classNumberToID & CharacterClassGeneration::ID_MASK;
 		const bool mage = (classNumberToID & CharacterClassGeneration::SPELLCASTER_MASK) != 0;

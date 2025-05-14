@@ -17,22 +17,22 @@ namespace
 	static constexpr char PAIR_SEPARATOR = ',';
 
 	template<typename T, size_t U>
-	void initInt8Array(std::array<T, U> &arr, const char *data)
+	void initInt8Array(T (&arr)[U], const char *data)
 	{
 		static_assert(sizeof(T) == 1);
 
-		for (size_t i = 0; i < arr.size(); i++)
+		for (size_t i = 0; i < std::size(arr); i++)
 		{
 			arr[i] = static_cast<T>(*(data + i));
 		}
 	}
 
 	template<typename T, size_t U>
-	void initInt8PairArray(std::array<std::pair<T, T>, U> &arr, const char *data)
+	void initInt8PairArray(std::pair<T, T> (&arr)[U], const char *data)
 	{
 		static_assert(sizeof(T) == 1);
 
-		for (size_t i = 0; i < arr.size(); i++)
+		for (size_t i = 0; i < std::size(arr); i++)
 		{
 			std::pair<T, T> &pair = arr[i];
 			pair.first = static_cast<T>(*(data + (i * 2)));
@@ -41,7 +41,7 @@ namespace
 	}
 
 	template<typename T, size_t U>
-	void initJaggedInt8Array(std::array<std::vector<T>, U> &arr, T terminator, const char *data)
+	void initJaggedInt8Array(std::vector<T> (&arr)[U], T terminator, const char *data)
 	{
 		static_assert(sizeof(T) == 1);
 
@@ -72,35 +72,34 @@ namespace
 	}
 
 	template<typename T, size_t U, size_t V>
-	void init2DInt8Array(std::array<std::array<T, U>, V> &arrs, const char *data)
+	void init2DInt8Array(T (&arrs)[V][U], const char *data)
 	{
 		static_assert(sizeof(T) == 1);
 
-		for (size_t i = 0; i < arrs.size(); i++)
+		for (size_t i = 0; i < std::size(arrs); i++)
 		{
 			initInt8Array(arrs[i], data + (i * U));
 		}
 	}
 
 	template<typename T, size_t U>
-	void initInt16Array(std::array<T, U> &arr, const char *data)
+	void initInt16Array(T (&arr)[U], const char *data)
 	{
 		static_assert(sizeof(T) == 2);
 
-		for (size_t i = 0; i < arr.size(); i++)
+		for (size_t i = 0; i < std::size(arr); i++)
 		{
-			arr[i] = static_cast<T>(
-				Bytes::getLE16(reinterpret_cast<const uint8_t*>(data + (i * 2))));
+			arr[i] = static_cast<T>(Bytes::getLE16(reinterpret_cast<const uint8_t*>(data + (i * 2))));
 		}
 	}
 
 	template<typename T, size_t U>
-	void initInt16PairArray(std::array<std::pair<T, T>, U> &arr, const char *data)
+	void initInt16PairArray(std::pair<T, T> (&arr)[U], const char *data)
 	{
 		static_assert(sizeof(T) == 2);
 		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(data);
 
-		for (size_t i = 0; i < arr.size(); i++)
+		for (size_t i = 0; i < std::size(arr); i++)
 		{
 			std::pair<T, T> &pair = arr[i];
 			pair.first = static_cast<T>(Bytes::getLE16(ptr + (i * 4)));
@@ -109,34 +108,33 @@ namespace
 	}
 
 	template<typename T, size_t U>
-	void initInt32Array(std::array<T, U> &arr, const char *data)
+	void initInt32Array(T (&arr)[U], const char *data)
 	{
 		static_assert(sizeof(T) == 4);
 
-		for (size_t i = 0; i < arr.size(); i++)
+		for (size_t i = 0; i < std::size(arr); i++)
 		{
-			arr[i] = static_cast<T>(
-				Bytes::getLE32(reinterpret_cast<const uint8_t*>(data + (i * 4))));
+			arr[i] = static_cast<T>(Bytes::getLE32(reinterpret_cast<const uint8_t*>(data + (i * 4))));
 		}
 	}
 
 	template<typename T, size_t U>
-	void initIndexArray(std::array<int, U> &indexArr, const std::array<T, U> &arr)
+	void initIndexArray(int (&indexArr)[U], const T (&arr)[U])
 	{
 		// Construct an array of unique, sorted offsets based on the const array.
 		// Remove zeroes because they do not count as offsets (they represent "null").
-		std::array<T, U> uniqueArr;
-		const auto uniqueBegin = uniqueArr.begin();
+		T uniqueArr[U];
+		const auto uniqueBegin = std::begin(uniqueArr);
 		const auto uniqueEnd = [&arr, uniqueBegin]()
 		{
-			const auto iter = std::remove_copy(arr.begin(), arr.end(), uniqueBegin, 0);
+			const auto iter = std::remove_copy(std::begin(arr), std::end(arr), uniqueBegin, 0);
 			std::sort(uniqueBegin, iter);
 			return std::unique(uniqueBegin, iter);
 		}();
 
 		// For each offset, if it is non-zero, its position in the uniques array is
 		// the index to put into the index array.
-		for (size_t i = 0; i < arr.size(); i++)
+		for (size_t i = 0; i < std::size(arr); i++)
 		{
 			const T offset = arr[i];
 			const int index = [uniqueBegin, uniqueEnd, offset]()
@@ -159,7 +157,7 @@ namespace
 	}
 
 	template<size_t T>
-	void initStringArrayNullTerminated(std::array<std::string, T> &arr, const char *data)
+	void initStringArrayNullTerminated(std::string (&arr)[T], const char *data)
 	{
 		size_t offset = 0;
 		for (std::string &str : arr)
@@ -681,7 +679,7 @@ bool ExeDataLocations::init(const char *data, const KeyValueFile &keyValueFile)
 	const int starFilenameOffset = GetExeAddress(*section, "StarFilename");
 
 	// Each province name is null-terminated and 98 bytes apart.
-	for (size_t i = 0; i < this->provinceNames.size(); i++)
+	for (size_t i = 0; i < std::size(this->provinceNames); i++)
 	{
 		this->provinceNames[i] = GetExeStringNullTerminated(data + provinceNamesOffset + (i * 98));
 	}
@@ -802,11 +800,11 @@ bool ExeDataRaisedPlatforms::init(const char *data, const KeyValueFile &keyValue
 	initInt16Array(this->box3b, data + box3bOffset);
 	initInt16Array(this->box4, data + box4Offset);
 
-	this->heightsInterior.init(this->boxArrays.data(), 8);
-	this->heightsCity.init(this->boxArrays.data() + 8, 8);
-	this->heightsWild.init(this->boxArrays.data() + 16, 8);
-	this->thicknessesInterior.init(this->boxArrays.data() + 24, 16);
-	this->thicknessesCity.init(this->boxArrays.data() + 40, 16); // Box2B is for city and wilderness.
+	this->heightsInterior.init(this->boxArrays, 8);
+	this->heightsCity.init(this->boxArrays + 8, 8);
+	this->heightsWild.init(this->boxArrays + 16, 8);
+	this->thicknessesInterior.init(this->boxArrays + 24, 16);
+	this->thicknessesCity.init(this->boxArrays + 40, 16); // Box2B is for city and wilderness.
 	this->thicknessesWild = this->thicknessesCity;
 	this->texMappingInterior.init(this->box3a);
 	this->texMappingCity.init(this->box3b);

@@ -19,12 +19,12 @@ void ItemLibrary::init(const ExeData &exeData)
 
 	constexpr double kgDivisor = ArenaItemUtils::KilogramsDivisor;
 	constexpr int armorCount = 7; // Ignores shields at end.
-	const BufferView<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames.data(), armorCount);
-	const BufferView<const std::string> chainArmorNames(exeData.equipment.chainArmorNames.data(), armorCount);
-	const BufferView<const std::string> armorNames(exeData.equipment.armorNames.data(), armorCount); // Requires an associated material.
-	const BufferView<const uint16_t> leatherArmorWeights(exeData.equipment.leatherArmorWeights.data(), armorCount);
-	const BufferView<const uint16_t> chainArmorWeights(exeData.equipment.chainArmorWeights.data(), armorCount);
-	const BufferView<const uint16_t> plateArmorWeights(exeData.equipment.plateArmorWeights.data(), armorCount);
+	const BufferView<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames, armorCount);
+	const BufferView<const std::string> chainArmorNames(exeData.equipment.chainArmorNames, armorCount);
+	const BufferView<const std::string> armorNames(exeData.equipment.armorNames, armorCount); // Requires an associated material.
+	const BufferView<const uint16_t> leatherArmorWeights(exeData.equipment.leatherArmorWeights, armorCount);
+	const BufferView<const uint16_t> chainArmorWeights(exeData.equipment.chainArmorWeights, armorCount);
+	const BufferView<const uint16_t> plateArmorWeights(exeData.equipment.plateArmorWeights, armorCount);
 	//const BufferView<const std::string> plateArmorNames = exeData.equipment.plateArmorNames; // Not sure 'ordinary' plate exists in-game
 	for (int i = 0; i < leatherArmorNames.getCount(); i++)
 	{
@@ -79,8 +79,8 @@ void ItemLibrary::init(const ExeData &exeData)
 	}
 	
 	constexpr int shieldCount = 4;
-	const BufferView<const std::string> shieldNames(exeData.equipment.armorNames.data() + armorCount, shieldCount);
-	const BufferView<const uint16_t> shieldWeights(exeData.equipment.plateArmorWeights.data() + armorCount, shieldCount);
+	const BufferView<const std::string> shieldNames(exeData.equipment.armorNames + armorCount, shieldCount);
+	const BufferView<const uint16_t> shieldWeights(exeData.equipment.plateArmorWeights + armorCount, shieldCount);
 	for (int i = 0; i < shieldNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;

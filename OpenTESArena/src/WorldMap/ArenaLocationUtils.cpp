@@ -212,12 +212,19 @@ int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &
 		// Calculate the travel speed based on climate and weather.
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		const auto &climateSpeedTables = exeData.locations.climateSpeedTables;
+		DebugAssertIndex(climateSpeedTables, terrainIndex);
+		const auto &climateSpeedTable = climateSpeedTables[terrainIndex];
+		DebugAssertIndex(climateSpeedTable, monthIndex);
+		const int climateSpeed = climateSpeedTable[monthIndex];
+
 		const auto &weatherSpeedTables = exeData.locations.weatherSpeedTables;
-		const int climateSpeed = climateSpeedTables.at(terrainIndex).at(monthIndex);
 		const int weatherMod = [terrainIndex, weatherIndex, &weatherSpeedTables]()
 		{
-			const int weatherSpeed = weatherSpeedTables.at(terrainIndex).at(weatherIndex);
-
+			DebugAssertIndex(weatherSpeedTables, terrainIndex);
+			const auto &weatherSpeedTable = weatherSpeedTables[terrainIndex];
+			DebugAssertIndex(weatherSpeedTable, weatherIndex);
+			const int weatherSpeed = weatherSpeedTable[weatherIndex];
+			
 			// Special case: 0 equals 100.
 			return (weatherSpeed == 0) ? 100 : weatherSpeed;
 		}();

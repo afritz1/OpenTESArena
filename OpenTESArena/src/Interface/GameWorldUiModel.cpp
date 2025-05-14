@@ -48,7 +48,8 @@ namespace
 		DebugAssertMsg(pairIter != std::rend(TimeOfDayIndices), "No valid time of day.");
 		const int timeOfDayIndex = pairIter->second;
 
-		const std::string &timeOfDayString = exeData.calendar.timesOfDay.at(timeOfDayIndex);
+		DebugAssertIndex(exeData.calendar.timesOfDay, timeOfDayIndex);
+		const std::string &timeOfDayString = exeData.calendar.timesOfDay[timeOfDayIndex];
 		return clockTimeString + ' ' + timeOfDayString;
 	}
 
@@ -59,7 +60,7 @@ namespace
 		text = String::replace(text, '\r', '\n');
 
 		// Replace %s with placeholder.
-		const std::string &effectStr = exeData.status.effectsList.front();
+		const std::string &effectStr = exeData.status.effectsList[0];
 		size_t index = text.find("%s");
 		text.replace(index, 2, effectStr);
 

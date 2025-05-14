@@ -529,7 +529,7 @@ void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 
 	const size_t weatherCount = std::size(this->worldMapWeathers);
 	const auto &climates = exeData.locations.climates;
-	DebugAssert(climates.size() == weatherCount);
+	DebugAssert(std::size(climates) == weatherCount);
 
 	for (size_t i = 0; i < weatherCount; i++)
 	{

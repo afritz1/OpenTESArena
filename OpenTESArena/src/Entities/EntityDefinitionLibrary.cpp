@@ -222,7 +222,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 	};
 
 	// Iterate all creatures + final boss.
-	const int creatureCount = static_cast<int>(exeData.entities.creatureNames.size());
+	const int creatureCount = static_cast<int>(std::size(exeData.entities.creatureNames));
 	for (int i = 0; i < creatureCount; i++)
 	{
 		const ArenaTypes::ItemIndex itemIndex = ArenaAnimUtils::FirstCreatureItemIndex + i;

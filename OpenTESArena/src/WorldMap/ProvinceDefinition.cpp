@@ -71,8 +71,7 @@ void ProvinceDefinition::init(int provinceID, const BinaryAssetLibrary &binaryAs
 		auto isCoastal = [provinceID, &cityGen](int localCityID)
 		{
 			const int globalCityID = ArenaLocationUtils::getGlobalCityID(localCityID, provinceID);
-			return std::find(cityGen.coastalCityList.begin(),
-				cityGen.coastalCityList.end(), globalCityID) != cityGen.coastalCityList.end();
+			return std::find(std::begin(cityGen.coastalCityList), std::end(cityGen.coastalCityList), globalCityID) != std::end(cityGen.coastalCityList);
 		};
 
 		for (size_t i = 0; i < std::size(locations); i++)

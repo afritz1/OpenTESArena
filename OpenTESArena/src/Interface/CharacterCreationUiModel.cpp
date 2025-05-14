@@ -150,7 +150,7 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinition &charClassDef)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const BufferView<const std::string> shieldStrings(exeData.equipment.armorNames.data() + 7, 4);
+	const BufferView<const std::string> shieldStrings(exeData.equipment.armorNames + 7, 4);
 
 	std::vector<int> allowedShields(charClassDef.getAllowedShieldCount());
 	for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
@@ -212,8 +212,10 @@ std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinit
 	std::sort(allowedWeapons.begin(), allowedWeapons.end(),
 		[&weaponStrings](int a, int b)
 	{
-		const std::string &aStr = weaponStrings.at(a);
-		const std::string &bStr = weaponStrings.at(b);
+		DebugAssertIndex(weaponStrings, a);
+		DebugAssertIndex(weaponStrings, b);
+		const std::string &aStr = weaponStrings[a];
+		const std::string &bStr = weaponStrings[b];
 		return aStr.compare(bStr) < 0;
 	});
 
@@ -233,7 +235,8 @@ std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinit
 		for (int i = 0; i < static_cast<int>(allowedWeapons.size()); i++)
 		{
 			const int weaponID = allowedWeapons.at(i);
-			const std::string &weaponName = weaponStrings.at(weaponID);
+			DebugAssertIndex(weaponStrings, weaponID);
+			const std::string &weaponName = weaponStrings[weaponID];
 			lengthCounter += static_cast<int>(weaponName.size());
 			weaponsString.append(weaponName);
 

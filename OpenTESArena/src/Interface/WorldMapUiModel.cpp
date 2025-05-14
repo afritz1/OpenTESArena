@@ -117,24 +117,27 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 			// Replace first %s with location type.
 			const std::string &locationTypeName = [&exeData, localCityID]()
 			{
+				int locationTypeIndex = -1;
 				if (localCityID < 8)
 				{
 					// City.
-					return exeData.locations.locationTypes.front();
+					locationTypeIndex = 0;
 				}
 				else if (localCityID < 16)
 				{
 					// Town.
-					return exeData.locations.locationTypes.at(1);
+					locationTypeIndex = 1;
 				}
 				else
 				{
 					// Village.
-					return exeData.locations.locationTypes.at(2);
+					locationTypeIndex = 2;
 				}
+
+				return exeData.locations.locationTypes[locationTypeIndex];
 			}();
 
-			std::string text = exeData.travel.locationFormatTexts.at(2);
+			std::string text = exeData.travel.locationFormatTexts[2];
 
 			// Replace first %s with location type name.
 			size_t index = text.find("%s");

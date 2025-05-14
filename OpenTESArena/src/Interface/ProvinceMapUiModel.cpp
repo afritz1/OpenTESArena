@@ -222,8 +222,9 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 		text.pop_back();
 
 		// Replace first %s with weekday.
-		const std::string &weekdayString =
-			exeData.calendar.weekdayNames.at(date.getWeekday());
+		const int weekday = date.getWeekday();
+		DebugAssertIndex(exeData.calendar.weekdayNames, weekday);
+		const std::string &weekdayString = exeData.calendar.weekdayNames[weekday];
 		size_t index = text.find("%s");
 		text.replace(index, 2, weekdayString);
 
@@ -233,8 +234,9 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 		text.replace(index, 4, dayString);
 
 		// Replace third %s with month.
-		const std::string &monthString =
-			exeData.calendar.monthNames.at(date.getMonth());
+		const int month = date.getMonth();
+		DebugAssertIndex(exeData.calendar.monthNames, month);
+		const std::string &monthString = exeData.calendar.monthNames[month];
 		index = text.find("%s");
 		text.replace(index, 2, monthString);
 
@@ -256,10 +258,12 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 
 	const std::string dayString = [&exeData, &travelData]()
 	{
-		const std::string &dayStringPrefix = exeData.travel.dayPrediction.front();
+		const std::string &dayStringPrefix = exeData.travel.dayPrediction[0];
 		const std::string dayStringBody = [&exeData, &travelData]()
 		{
-			std::string text = exeData.travel.dayPrediction.back();
+			const int dayPredictionIndex = std::size(exeData.travel.dayPrediction) - 1;
+			DebugAssertIndex(exeData.travel.dayPrediction, dayPredictionIndex);
+			std::string text = exeData.travel.dayPrediction[dayPredictionIndex];
 
 			// Replace %d with travel days.
 			const size_t index = text.find("%d");
