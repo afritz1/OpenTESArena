@@ -377,6 +377,37 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
+	// my code
+	this->bonusToHitTextBox.setText("prueba");
+
+	const Int2 bonusToHitTextBoxTopLeftPosition(
+		bonusPointsTextBoxTopLeftPosition.x,
+		bonusPointsTextBoxTopLeftPosition.y + 20);
+	const TextBox::InitInfo bonusToHitTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
+		bonusToHitTextBoxTopLeftPosition.x,
+		bonusToHitTextBoxTopLeftPosition.y,
+		ChooseAttributesUiView::BonusPointsFontName,
+		ChooseAttributesUiView::BonusPointsTextColor,
+		TextAlignment::TopLeft,
+		std::nullopt,
+		1,
+		fontLibrary);
+
+	if (!this->bonusToHitTextBox.init(bonusToHitTextBoxInitInfo, "5", renderer))
+	{
+		DebugLogError("Couldn't init bonus to hit text box.");
+		return false;
+	}
+
+	const Rect &bonusToHitTextBoxRect = this->bonusToHitTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->bonusToHitTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(bonusToHitTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(bonusToHitTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+	//My code
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
 		UiDrawCall::TextureFunc attributeTextBoxTextureFunc = [this, attributeIndex]()

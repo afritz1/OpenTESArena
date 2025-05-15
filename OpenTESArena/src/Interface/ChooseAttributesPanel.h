@@ -23,6 +23,10 @@ private:
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
 	TextBox experienceTextBox, levelTextBox;
 	TextBox bonusPointsTextBox;
+	//Todo
+	TextBox bonusToHitTextBox;
+	//bonusToDamage,magicDefense,bonusHealth,charisma,healModificator,bonusToDefend,maxkilos;
+	//
 	Button<Game&, int, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;
