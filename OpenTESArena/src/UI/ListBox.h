@@ -83,7 +83,10 @@ public:
 	void insert(int index, std::string &&text);
 	void add(std::string &&text);
 
-	// Sets an item's override color (or resets it).
+	// Sets an item's text, intended for overwriting existing. Does not resize the list box texture.
+	void setText(int index, const std::string &text);
+
+	// Sets an item's override color or resets it.
 	void setOverrideColor(int index, const std::optional<Color> &overrideColor);
 
 	// Sets an item's callback function.

@@ -133,6 +133,13 @@ void ListBox::add(std::string &&text)
 	this->insert(static_cast<int>(this->items.size()), std::move(text));
 }
 
+void ListBox::setText(int index, const std::string &text)
+{
+	DebugAssertIndex(this->items, index);
+	this->items[index].text = text;
+	this->dirty = true;
+}
+
 void ListBox::setOverrideColor(int index, const std::optional<Color> &overrideColor)
 {
 	DebugAssertIndex(this->items, index);
