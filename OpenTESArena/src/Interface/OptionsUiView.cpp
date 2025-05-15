@@ -39,7 +39,7 @@ const Int2 OptionsUiView::getDescriptionXY()
 
 Color OptionsUiView::getBackButtonTextColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
 TextBox::InitInfo OptionsUiView::getBackButtonTextBoxInitInfo(const std::string_view text,
@@ -61,17 +61,17 @@ Rect OptionsUiView::getBackButtonRect()
 
 Color OptionsUiView::getTabTextColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
 Color OptionsUiView::getOptionTextBoxColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
 Color OptionsUiView::getDescriptionTextColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
 TextBox::InitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::string_view text,

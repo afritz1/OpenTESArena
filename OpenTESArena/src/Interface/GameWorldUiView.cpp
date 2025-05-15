@@ -743,7 +743,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 				{
 				case RayCastHitType::Voxel:
 				{
-					const Color colors[] = { Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow };
+					constexpr Color colors[] = { Colors::Red, Colors::Green, Colors::Blue, Colors::Cyan, Colors::Yellow };
 					const VoxelInt3 &voxel = hit.voxelHit.voxel;
 					const int colorsIndex = std::clamp<int>(voxel.y, 0, std::size(colors) - 1);
 					DebugAssertIndex(colors, colorsIndex);
@@ -752,7 +752,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 				}
 				case RayCastHitType::Entity:
 				{
-					color = Color::Yellow;
+					color = Colors::Yellow;
 					break;
 				}
 				}
@@ -853,7 +853,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		0,
 		0,
 		ArenaFontName::Arena,
-		Color::White,
+		Colors::White,
 		TextAlignment::TopLeft,
 		FontLibrary::getInstance());
 

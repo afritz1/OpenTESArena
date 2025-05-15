@@ -6,7 +6,7 @@
 
 Color LoadSaveUiView::getEntryTextColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
 Int2 LoadSaveUiView::getEntryCenterPoint(int index)

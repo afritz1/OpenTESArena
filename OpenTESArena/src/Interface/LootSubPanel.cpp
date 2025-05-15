@@ -180,7 +180,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		containerInventoryTextureTopLeft.x + (this->textureRef.getWidth() / 2),
 		containerInventoryTextureTopLeft.y + this->textureRef.getHeight(),
 		ArenaFontName::Teeny,
-		Color::White,
+		Colors::White,
 		TextAlignment::TopCenter,
 		FontLibrary::getInstance());	
 	if (!this->tempTextBox.init(tempTextBoxInitInfo, tempTextBoxText, renderer))

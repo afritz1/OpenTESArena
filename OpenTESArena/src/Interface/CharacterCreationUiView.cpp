@@ -202,13 +202,13 @@ TextBox::InitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const Fo
 	}
 
 	TextRenderUtils::TextShadowInfo shadowInfo;
-	shadowInfo.init(1, 0, Color::Black);
+	shadowInfo.init(1, 0, Colors::Black);
 
 	return TextBox::InitInfo::makeWithCenter(
 		dummyText,
 		Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT - 32),
 		ArenaFontName::D,
-		Color::White,
+		Colors::White,
 		TextAlignment::TopCenter,
 		shadowInfo,
 		0,
