@@ -6,6 +6,7 @@
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
 #include "LogbookPanel.h"
+#include "LootSubPanel.h"
 #include "PauseMenuPanel.h"
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
@@ -330,15 +331,8 @@ void GameWorldUiController::onEnemyAliveInspected(Game &game, EntityInstanceID e
 
 void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory)
 {
-	const std::string text = std::to_string(itemInventory.getOccupiedSlotCount()) + " items\n(interaction not implemented)";
-
-	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
-	UiTextureID textureID;
-	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
-
-	ScopedUiTextureRef textureRef(textureID, game.renderer);
-	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
+	// @todo: need to queue entity destroy if container is empty
+	game.pushSubPanel<LootSubPanel>(itemInventory, GameWorldUiController::onStatusPopUpSelected);
 }
 
 void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)

@@ -10,6 +10,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/ListBox.h"
 #include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -158,6 +159,8 @@ namespace GameWorldUiView
 	TextBox::InitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
 	TextBox::InitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
 
+	ListBox::Properties getLootListBoxProperties();
+
 	Int2 getTooltipPosition(Game &game);
 
 	Rect getCompassClipRect();
@@ -184,6 +187,7 @@ namespace GameWorldUiView
 	TextureAsset getCompassSliderTextureAsset();
 	TextureAsset getArrowCursorTextureAsset(int cursorIndex);
 	TextureAsset getKeyTextureAsset(int keyIndex);
+	TextureAsset getContainerInventoryTextureAsset();
 
 	UiTextureID allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocHealthBarTexture(TextureManager &textureManager, Renderer &renderer);
@@ -199,6 +203,7 @@ namespace GameWorldUiView
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocModernModeReticleTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocKeyTexture(int keyIndex, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocContainerInventoryTexture(TextureManager &textureManager, Renderer &renderer);
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);

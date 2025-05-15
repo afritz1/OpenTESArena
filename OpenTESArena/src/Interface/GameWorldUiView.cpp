@@ -3,6 +3,7 @@
 #include "GameWorldPanel.h"
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
+#include "InventoryUiView.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
@@ -302,6 +303,38 @@ TextBox::InitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &f
 	return TextBox::InitInfo();
 }
 
+ListBox::Properties GameWorldUiView::getLootListBoxProperties()
+{
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+
+	constexpr const char *fontName = ArenaFontName::Teeny;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
+	{
+		DebugCrash("Couldn't get loot list box font \"" + std::string(fontName) + "\".");
+	}
+
+	constexpr int maxDisplayedItemCount = 7;
+	std::string dummyText;
+	for (int i = 0; i < maxDisplayedItemCount; i++)
+	{
+		if (i > 0)
+		{
+			dummyText += '\n';
+		}
+
+		std::string dummyLine(24, TextRenderUtils::LARGEST_CHAR); // Arbitrary worst-case line size.
+		dummyText += dummyLine;
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+
+	const Color itemColor = InventoryUiView::PlayerInventoryEquipmentColor;
+	constexpr double scrollScale = 1.0;
+	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
+}
+
 Int2 GameWorldUiView::getTooltipPosition(Game &game)
 {
 	DebugAssert(!game.options.getGraphics_ModernInterface());
@@ -436,6 +469,11 @@ TextureAsset GameWorldUiView::getArrowCursorTextureAsset(int cursorIndex)
 TextureAsset GameWorldUiView::getKeyTextureAsset(int keyIndex)
 {
 	return TextureAsset(std::string(ArenaTextureName::DoorKeys), keyIndex);
+}
+
+TextureAsset GameWorldUiView::getContainerInventoryTextureAsset()
+{
+	return TextureAsset(std::string(ArenaTextureName::ContainerInventory));
 }
 
 UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer)
@@ -637,6 +675,20 @@ UiTextureID GameWorldUiView::allocKeyTexture(int keyIndex, TextureManager &textu
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
 		DebugCrashFormat("Couldn't create UI texture for key %d.", keyIndex);
+	}
+
+	return textureID;
+}
+
+UiTextureID GameWorldUiView::allocContainerInventoryTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAsset textureAsset = GameWorldUiView::getContainerInventoryTextureAsset();
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for container inventory.");
 	}
 
 	return textureID;
