@@ -332,6 +332,7 @@ void GameWorldUiController::onEnemyAliveInspected(Game &game, EntityInstanceID e
 void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory)
 {
 	// @todo: need to queue entity destroy if container is empty
+	// @todo: if closing and container is not empty, then inventory.compact(). Don't compact while removing items since that would invalidate mappings
 	game.pushSubPanel<LootSubPanel>(itemInventory, GameWorldUiController::onStatusPopUpSelected);
 }
 

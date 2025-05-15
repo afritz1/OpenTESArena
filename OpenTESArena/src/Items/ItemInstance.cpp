@@ -16,3 +16,9 @@ bool ItemInstance::isValid() const
 {
 	return this->defID >= 0;
 }
+
+void ItemInstance::clear()
+{
+	this->defID = -1;
+	this->isEquipped = false;
+}

@@ -14,6 +14,8 @@ struct ItemInstance
 	void init(ItemDefinitionID defID);
 
 	bool isValid() const;
+
+	void clear();
 };
 
 #endif

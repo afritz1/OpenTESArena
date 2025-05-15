@@ -3,11 +3,6 @@
 
 #include "components/debug/Debug.h"
 
-void ItemInventory::clear()
-{
-	this->items.clear();
-}
-
 int ItemInventory::getTotalSlotCount() const
 {
 	return static_cast<int>(this->items.size());
@@ -121,4 +116,28 @@ void ItemInventory::insert(ItemDefinitionID defID)
 
 	ItemInstance &itemInst = this->getSlot(insertIndex);
 	itemInst.init(defID);
+}
+
+void ItemInventory::compact()
+{
+	for (int i = 0; i < this->getTotalSlotCount(); i++)
+	{
+		ItemInstance &itemInst = this->getSlot(i);
+		if (itemInst.isValid())
+		{
+			int emptyIndex;
+			if (this->findFirstEmptySlot(&emptyIndex) && (emptyIndex < i))
+			{
+				ItemInstance &destinationItemInst = this->getSlot(emptyIndex);
+				destinationItemInst.defID = itemInst.defID;
+				destinationItemInst.isEquipped = itemInst.isEquipped;
+				itemInst.clear();
+			}
+		}
+	}
+}
+
+void ItemInventory::clear()
+{
+	this->items.clear();
 }
