@@ -5,6 +5,7 @@
 
 #include "Panel.h"
 #include "../UI/ListBox.h"
+#include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
 class ItemInventory;
@@ -23,6 +24,7 @@ public:
 	using OnClosedFunction = std::function<void(Game&)>; // In case entity inventory becomes empty.
 private:
 	ListBox listBox;
+	TextBox tempTextBox; // For testing
 	Button<Game&> closeButton;
 	ScopedUiTextureRef textureRef, cursorTextureRef;
 	std::vector<LootUiItemMapping> itemMappings;

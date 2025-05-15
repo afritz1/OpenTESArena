@@ -174,6 +174,27 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
+	const std::string tempTextBoxText = "(item tables not implemented)";
+	TextBox::InitInfo tempTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		tempTextBoxText,
+		containerInventoryTextureTopLeft.x + (this->textureRef.getWidth() / 2),
+		containerInventoryTextureTopLeft.y + this->textureRef.getHeight(),
+		ArenaFontName::Teeny,
+		Color::White,
+		TextAlignment::TopCenter,
+		FontLibrary::getInstance());	
+	if (!this->tempTextBox.init(tempTextBoxInitInfo, tempTextBoxText, renderer))
+	{
+		DebugLogError("Couldn't init placeholder loot text box.");
+	}
+
+	this->addDrawCall(
+		UiDrawCall::makeTextureFunc(this->tempTextBox.getTextureID()),
+		UiDrawCall::makePositionFunc(this->tempTextBox.getRect().getTopLeft()),
+		UiDrawCall::makeSizeFunc(this->tempTextBox.getRect().getSize()),
+		UiDrawCall::makePivotFunc(PivotType::Top),
+		UiDrawCall::defaultActiveFunc);
+
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
 	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
