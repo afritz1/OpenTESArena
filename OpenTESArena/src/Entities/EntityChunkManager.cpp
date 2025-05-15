@@ -14,6 +14,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Collision/PhysicsLayer.h"
+#include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/RandomUtils.h"
 #include "../Math/Random.h"
@@ -323,6 +324,26 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		if (!this->itemInventories.tryAlloc(&entityInst.itemInventoryInstID))
 		{
 			DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
+		}
+
+		const int testItemCount = random.next(4); // Can be empty.
+		if (testItemCount > 0)
+		{
+			// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
+			const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+			const std::vector<ItemDefinitionID> testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
+				[](const ItemDefinition &itemDef)
+			{
+				return itemDef.type != ItemType::Misc; // Don't want quest items.
+			});
+
+			ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+			for (int i = 0; i < testItemCount; i++)
+			{
+				const int randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
+				const ItemDefinitionID testItemDefID = testItemDefIDs[randomItemIndex];
+				itemInventory.insert(testItemDefID);
+			}
 		}
 	}
 
