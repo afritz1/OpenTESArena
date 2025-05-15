@@ -329,11 +329,23 @@ void GameWorldUiController::onEnemyAliveInspected(Game &game, EntityInstanceID e
 	gameState.setActionTextDuration(text);
 }
 
-void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory)
+void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory, bool destroyEntityIfEmpty)
 {
 	// @todo: need to queue entity destroy if container is empty
 	// @todo: if closing and container is not empty, then inventory.compact(). Don't compact while removing items since that would invalidate mappings
-	game.pushSubPanel<LootSubPanel>(itemInventory, GameWorldUiController::onStatusPopUpSelected);
+
+	auto callback = [entityInstID, &itemInventory, destroyEntityIfEmpty](Game &game)
+	{
+		if (destroyEntityIfEmpty && (itemInventory.getOccupiedSlotCount() == 0))
+		{
+			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+			entityChunkManager.queueEntityDestroy(entityInstID, true);
+		}
+
+		GameWorldUiController::onStatusPopUpSelected(game);
+	};
+
+	game.pushSubPanel<LootSubPanel>(itemInventory, callback);
 }
 
 void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)

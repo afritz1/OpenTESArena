@@ -464,7 +464,8 @@ namespace PlayerLogic
 					ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
 					if (enemyItemInventory.getOccupiedSlotCount() > 0)
 					{
-						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory);
+						constexpr bool destroyEntityIfEmpty = false; // Do not remove empty corpses.
+						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory, destroyEntityIfEmpty);
 					}
 					else
 					{
@@ -533,7 +534,8 @@ namespace PlayerLogic
 				if (isContainerInventoryAccessible)
 				{
 					ItemInventory &containerItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
-					GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory);
+					constexpr bool destroyEntityIfEmpty = true; // Always for piles/chests.
+					GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory, destroyEntityIfEmpty);
 				}
 
 				break;
