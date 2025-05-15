@@ -20,7 +20,6 @@
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Items/ArenaItemUtils.h"
-#include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
@@ -219,13 +218,6 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
 	this->clearKeyInventory();
-
-	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-	for (int i = 0; i < itemLibrary.getCount(); i++)
-	{
-		const ItemDefinitionID itemDefID = static_cast<ItemDefinitionID>(i);
-		this->inventory.insert(itemDefID);
-	}
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
