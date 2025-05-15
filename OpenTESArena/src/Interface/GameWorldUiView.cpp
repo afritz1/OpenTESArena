@@ -914,10 +914,11 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 		return;
 	}
 
-	const uint32_t visibleColor = Color::Green.toARGB();
-	const uint32_t partiallyVisibleColor = Color::Yellow.toARGB();
-	const uint32_t invisibleColor = Color::Red.toARGB();
-	const uint32_t playerColor = Color::White.toARGB();
+	constexpr uint8_t alpha = 192;
+	const uint32_t visibleColor = Color(0, 255, 0, alpha).toARGB();
+	const uint32_t partiallyVisibleColor = Color(255, 255, 0, alpha).toARGB();
+	const uint32_t invisibleColor = Color(255, 0, 0, alpha).toARGB();
+	const uint32_t playerColor = Color(255, 255, 255, alpha).toARGB();
 
 	for (int treeLevelIndex = 0; treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
 	{
