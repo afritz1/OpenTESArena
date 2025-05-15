@@ -60,31 +60,75 @@ protected:
 		std::optional<int> *outWestChunkIndex, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
 		VoxelIdType *outWestID)
 	{
-		auto getIdOrDefault = [this, &voxelIdFunc, defaultID](const std::optional<int> &chunkIndex, const VoxelInt3 &voxel)
+		const CoordInt3 adjacentCoords[] =
 		{
-			if (chunkIndex.has_value())
+			VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::North),
+			VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::East),
+			VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::South),
+			VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::West)
+		};
+
+		std::optional<int> *outAdjacentChunkIndices[] =
+		{
+			outNorthChunkIndex,
+			outEastChunkIndex,
+			outSouthChunkIndex,
+			outWestChunkIndex
+		};
+
+		VoxelIdType *outAdjacentVoxelIDs[] =
+		{
+			outNorthID,
+			outEastID,
+			outSouthID,
+			outWestID
+		};
+
+		ChunkInt2 cachedChunkPositions[4];
+		int cachedChunkIndices[4];
+		int cachedChunkPositionCount = 0;
+
+		// Reuse chunk index lookups as they get expensive with large view distance.
+		for (int i = 0; i < static_cast<int>(std::size(adjacentCoords)); i++)
+		{
+			const CoordInt3 adjacentCoord = adjacentCoords[i];
+			const ChunkInt2 adjacentChunkPos = adjacentCoord.chunk;
+			std::optional<int> &adjacentChunkIndex = *outAdjacentChunkIndices[i];
+
+			bool foundExistingChunkIndex = false;
+			for (int cacheIndex = 0; cacheIndex < cachedChunkPositionCount; cacheIndex++)
 			{
-				const ChunkType &chunk = this->getChunkAtIndex(*chunkIndex);
-				return voxelIdFunc(chunk, voxel);
+				if (adjacentChunkPos == cachedChunkPositions[cacheIndex])
+				{
+					adjacentChunkIndex = cachedChunkIndices[cacheIndex];
+					foundExistingChunkIndex = true;
+					break;
+				}
+			}
+
+			if (!foundExistingChunkIndex)
+			{
+				adjacentChunkIndex = this->tryGetChunkIndex(adjacentChunkPos);
+				if (adjacentChunkIndex.has_value())
+				{
+					DebugAssertIndex(cachedChunkPositions, cachedChunkPositionCount);
+					cachedChunkPositions[cachedChunkPositionCount] = adjacentChunkPos;
+					cachedChunkIndices[cachedChunkPositionCount] = *adjacentChunkIndex;
+					cachedChunkPositionCount++;
+				}
+			}
+
+			if (adjacentChunkIndex.has_value())
+			{
+				const ChunkType &adjacentChunk = this->getChunkAtIndex(*adjacentChunkIndex);
+				const VoxelInt3 adjacentVoxel = adjacentCoord.voxel;
+				*outAdjacentVoxelIDs[i] = voxelIdFunc(adjacentChunk, adjacentVoxel);
 			}
 			else
 			{
-				return defaultID;
+				*outAdjacentVoxelIDs[i] = defaultID;
 			}
-		};
-
-		const CoordInt3 northCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::North);
-		const CoordInt3 eastCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::East);
-		const CoordInt3 southCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::South);
-		const CoordInt3 westCoord = VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::West);
-		*outNorthChunkIndex = this->tryGetChunkIndex(northCoord.chunk);
-		*outEastChunkIndex = this->tryGetChunkIndex(eastCoord.chunk);
-		*outSouthChunkIndex = this->tryGetChunkIndex(southCoord.chunk);
-		*outWestChunkIndex = this->tryGetChunkIndex(westCoord.chunk);
-		*outNorthID = getIdOrDefault(*outNorthChunkIndex, northCoord.voxel);
-		*outEastID = getIdOrDefault(*outEastChunkIndex, eastCoord.voxel);
-		*outSouthID = getIdOrDefault(*outSouthChunkIndex, southCoord.voxel);
-		*outWestID = getIdOrDefault(*outWestChunkIndex, westCoord.voxel);
+		}
 	}
 
 	// Takes a chunk from the chunk pool, moves it to the active chunks, and returns its index.
