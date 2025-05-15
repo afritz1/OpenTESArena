@@ -80,6 +80,8 @@ struct VoxelVisibilityChunk final : public Chunk
 
 	void init(const ChunkInt2 &position, int height, double ceilingScale);
 
+	bool anyVisibleLeafNodes() const;
+
 	void update(const RenderCamera &camera);
 	void clear();
 };

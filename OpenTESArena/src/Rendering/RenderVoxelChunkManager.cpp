@@ -1260,6 +1260,10 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkMan
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
 		const RenderVoxelChunk &renderChunk = *chunkPtr;
 		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtIndex(i);
+		if (!voxelVisChunk.anyVisibleLeafNodes())
+		{
+			continue;
+		}
 
 		BufferView3D<const RenderVoxelDrawCallRangeID> rangeIDs = renderChunk.drawCallRangeIDs;
 		for (WEInt z = 0; z < rangeIDs.getDepth(); z++)
