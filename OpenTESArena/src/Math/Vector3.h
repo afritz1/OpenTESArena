@@ -11,10 +11,9 @@
 
 class Random;
 
-template <typename T>
-class Vector3i
+template<typename T>
+struct Vector3i
 {
-public:
 	static_assert(std::is_integral<T>::value);
 
 	T x, y, z;
@@ -45,7 +44,7 @@ public:
 	Vector3i<T> operator+(const Vector3i<T> &v) const;
 
 	// Only signed integers can use negation.
-	template <typename C = T>
+	template<typename C = T>
 	typename std::enable_if_t<std::is_signed<C>::value, Vector3i<T>> operator-() const
 	{
 		return Vector3i<T>(-this->x, -this->y, -this->z);
@@ -64,10 +63,9 @@ public:
 	std::string toString() const;
 };
 
-template <typename T>
-class Vector3f
+template<typename T>
+struct Vector3f
 {
-public:
 	static_assert(std::is_floating_point<T>::value);
 
 	T x, y, z;
@@ -93,8 +91,7 @@ public:
 
 	static Vector3f<T> randomDirection(Random &random);
 	static Vector3f<T> randomPointInSphere(const Vector3f<T> &center, T radius, Random &random);
-	static Vector3f<T> randomPointInCuboid(const Vector3f<T> &center, T width, T height,
-		T depth, Random &random);
+	static Vector3f<T> randomPointInCuboid(const Vector3f<T> &center, T width, T height, T depth, Random &random);
 	static Vector3f<T> fromRGB(uint32_t rgb);
 
 	T &operator[](size_t index);
@@ -165,7 +162,7 @@ using Double3 = Vector3f<double>;
 // Hash definition for unordered_map<Int3, ...>.
 namespace std
 {
-	template <>
+	template<>
 	struct hash<Int3>
 	{
 		size_t operator()(const Int3 &v) const

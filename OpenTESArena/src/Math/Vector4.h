@@ -8,10 +8,9 @@
 
 #include "Vector3.h"
 
-template <typename T>
-class Vector4i
+template<typename T>
+struct Vector4i
 {
-public:
 	static_assert(std::is_integral<T>::value);
 
 	T x, y, z, w;
@@ -45,7 +44,7 @@ public:
 	Vector4i<T> operator+(const Vector4i<T> &v) const;
 
 	// Only signed integers can use negation.
-	template <typename C = T>
+	template<typename C = T>
 	typename std::enable_if_t<std::is_signed<C>::value, Vector4i<T>> operator-() const
 	{
 		return Vector4i<T>(-this->x, -this->y, -this->z, -this->w);
@@ -60,10 +59,9 @@ public:
 	std::string toString() const;
 };
 
-template <typename T>
-class Vector4f
+template<typename T>
+struct Vector4f
 {
-public:
 	static_assert(std::is_floating_point<T>::value);
 
 	T x, y, z, w;
