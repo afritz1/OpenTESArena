@@ -380,9 +380,10 @@ bool ChooseAttributesPanel::init()
 	// my code
 	this->bonusToHitTextBox.setText("prueba");
 
+	const Rect& lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
 	const Int2 bonusToHitTextBoxTopLeftPosition(
-		bonusPointsTextBoxTopLeftPosition.x,
-		bonusPointsTextBoxTopLeftPosition.y + 20);
+		lastAttributeTextBoxRect.getLeft() + 60,
+		lastAttributeTextBoxRect.getTop() - 10);
 	const TextBox::InitInfo bonusToHitTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		bonusToHitTextBoxTopLeftPosition.x,
