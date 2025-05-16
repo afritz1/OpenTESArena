@@ -59,3 +59,8 @@ int ArenaPlayerUtils::calculateMaxSpellPoints(int charClassDefID, int intelligen
 	const int maxSpellPoints = static_cast<int>(static_cast<double>(intelligence) * charClassDef.spellPointsMultiplier);
 	return maxSpellPoints;
 }
+
+int ArenaPlayerUtils::calculateBonusToHit(int intelligence)
+{
+	return 555;
+}

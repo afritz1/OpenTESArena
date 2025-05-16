@@ -17,6 +17,7 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextRenderUtils.h"
 #include "../UI/ArenaFontName.h"
+#include <OpenTESArena/src/Player/ArenaPlayerUtils.h>
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game)
@@ -315,7 +316,10 @@ bool ChooseAttributesPanel::init()
 			BufferView<PrimaryAttribute> attributesView = attributes.getAttributes();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue += 1;
-
+			if (attribute.name == "Agility") {
+				const int bonusToHit = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
+				this->bonusToHitTextBox.setText(std::to_string(bonusToHit));
+			 }
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
