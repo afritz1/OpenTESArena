@@ -27,9 +27,9 @@ namespace ProvinceMapUiView
 		TravelDestination
 	};
 
-	const Rect SearchButtonRect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
-	const Rect TravelButtonRect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
-	const Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
+	constexpr Rect SearchButtonRect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
+	constexpr Rect TravelButtonRect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
+	constexpr Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 
 	Int2 getLocationCenterPoint(Game &game, int provinceID, int locationID);
 	const std::string LocationFontName = ArenaFontName::Arena;
@@ -129,7 +129,7 @@ namespace ProvinceSearchUiView
 	constexpr int ListTextureX = 57;
 	constexpr int ListTextureY = 11;
 
-	const Rect ListBoxRect(85, 34, 147, 54);
+	constexpr Rect ListBoxRect(85, 34, 147, 54);
 	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAsset getListTextureAsset();

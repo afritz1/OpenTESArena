@@ -41,13 +41,13 @@ namespace AutomapUiView
 	constexpr double ScrollSpeed = 100.0;
 
 	// Click areas for compass directions.
-	const Rect CompassUpRegion(264, 23, 14, 14);
-	const Rect CompassDownRegion(264, 60, 14, 14);
-	const Rect CompassLeftRegion(245, 41, 14, 14);
-	const Rect CompassRightRegion(284, 41, 14, 14);
+	constexpr Rect CompassUpRegion(264, 23, 14, 14);
+	constexpr Rect CompassDownRegion(264, 60, 14, 14);
+	constexpr Rect CompassLeftRegion(245, 41, 14, 14);
+	constexpr Rect CompassRightRegion(284, 41, 14, 14);
 
 	// The "canvas" area for drawing automap content.
-	const Rect DrawingArea(25, 40, 179, 125);
+	constexpr Rect DrawingArea(25, 40, 179, 125);
 
 	// Colors for automap pixels. Ground pixels (y == 0) are transparent.
 	const Color ColorPlayer(247, 255, 0);

@@ -285,7 +285,7 @@ namespace ChooseAttributesUiView
 	constexpr int PortraitButtonWidth = 60;
 	constexpr int PortraitButtonHeight = 42;
 
-	const Rect AttributeButtonFirstRect(10, 52, 26, 8);
+	constexpr Rect AttributeButtonFirstRect(10, 52, 26, 8);
 	constexpr Int2 UpDownButtonFirstTopLeftPosition(38, 48);
 
 	constexpr Int2 BonusPointsTextureTopLeftPosition(45, 109);

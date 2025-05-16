@@ -220,7 +220,7 @@ bool BinaryAssetLibrary::initWorldMapMasks()
 	constexpr int startOffset = 0x87D5;
 
 	// Each province's mask rectangle is a set of bits packed together with others.
-	const std::array<Rect, 10> MaskRects =
+	constexpr Rect MaskRects[10] =
 	{
 		Rect(37, 32, 86, 57),
 		Rect(47, 53, 90, 62),

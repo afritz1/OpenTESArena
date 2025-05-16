@@ -105,7 +105,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
 		const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
 		
-		const Rect &drawingArea = AutomapUiView::DrawingArea;
+		constexpr Rect drawingArea = AutomapUiView::DrawingArea;
 		const int mapX = (drawingArea.getLeft() + (drawingArea.width / 2)) + offsetX;
 		const int mapY = (drawingArea.getTop() + (drawingArea.height / 2)) + offsetY;
 		return Int2(mapX, mapY);

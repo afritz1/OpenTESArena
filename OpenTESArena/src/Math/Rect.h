@@ -1,7 +1,9 @@
-#ifndef RECTANGLE_H
-#define RECTANGLE_H
+#ifndef RECT_H
+#define RECT_H
 
 #include "../Math/Vector2.h"
+
+#include "components/debug/Debug.h"
 
 struct SDL_Rect;
 
@@ -9,10 +11,21 @@ struct Rect
 {
 	int x, y, width, height;
 
-	Rect(int x, int y, int width, int height);
-	Rect(const Int2 &center, int width, int height);
-	Rect(int width, int height);
-	Rect();
+	constexpr Rect(int x, int y, int width, int height)
+	{
+		DebugAssert(width >= 0);
+		DebugAssert(height >= 0);
+		this->x = x;
+		this->y = y;
+		this->width = width;
+		this->height = height;
+	}
+
+	constexpr Rect(const Int2 &center, int width, int height)
+		: Rect(center.x - (width / 2), center.y - (height / 2), width, height) { }
+
+	constexpr Rect()
+		: Rect(0, 0, 0, 0) { }
 
 	bool isEmpty() const;
 	int getLeft() const;

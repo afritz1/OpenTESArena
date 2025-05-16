@@ -53,7 +53,7 @@ namespace GameWorldUiView
 	Rect scaleClassicCursorRectToNative(int rectIndex, double xScale, double yScale);
 
 	// Game world interface UI area.
-	const Rect UiBottomRegion(0, 147, 320, 53);
+	constexpr Rect UiBottomRegion(0, 147, 320, 53);
 
 	// Arrow cursor pivots. These offset the drawn cursor relative to the mouse position so the cursor's
 	// click area is closer to the tip of each arrow.
@@ -110,11 +110,11 @@ namespace GameWorldUiView
 
 	Int2 getGameWorldInterfacePosition();
 
-	const Rect HealthBarRect(57, 168, 4, 26);
+	constexpr Rect HealthBarRect(57, 168, 4, 26);
 	constexpr Color HealthBarColor(0, 182, 0);
-	const Rect StaminaBarRect(67, 168, 4, 26);
+	constexpr Rect StaminaBarRect(67, 168, 4, 26);
 	constexpr Color StaminaBarColor(195, 0, 0);
-	const Rect SpellPointsBarRect(77, 168, 4, 26);
+	constexpr Rect SpellPointsBarRect(77, 168, 4, 26);
 	constexpr Color SpellPointsBarColor(0, 0, 203);
 	constexpr PivotType StatusBarPivotType = PivotType::BottomLeft;
 
