@@ -316,10 +316,10 @@ bool ChooseAttributesPanel::init()
 			BufferView<PrimaryAttribute> attributesView = attributes.getAttributes();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue += 1;
-			if (attribute.name == "Agility") {
+			if (strcmp(attribute.name, "Agility") == 0) {
 				const int bonusToHit = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
 				this->bonusToHitTextBox.setText(std::to_string(bonusToHit));
-			 }
+			}			
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
