@@ -1260,7 +1260,9 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkMan
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
 		const RenderVoxelChunk &renderChunk = *chunkPtr;
 		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtIndex(i);
-		if (!voxelVisChunk.anyVisibleLeafNodes())
+		const VisibilityType rootVisibilityType = voxelVisChunk.getRootVisibilityType();
+		const bool anyVisibleLeafNodes = rootVisibilityType != VisibilityType::Outside;
+		if (!anyVisibleLeafNodes)
 		{
 			continue;
 		}

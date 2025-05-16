@@ -214,10 +214,10 @@ void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ce
 	std::fill(std::begin(this->leafNodeFrustumTests), std::end(this->leafNodeFrustumTests), false);
 }
 
-bool VoxelVisibilityChunk::anyVisibleLeafNodes() const
+VisibilityType VoxelVisibilityChunk::getRootVisibilityType() const
 {
 	constexpr int rootNodeIndex = 0;
-	return this->internalNodeVisibilityTypes[rootNodeIndex] != VisibilityType::Outside;
+	return this->internalNodeVisibilityTypes[rootNodeIndex];
 }
 
 void VoxelVisibilityChunk::update(const RenderCamera &camera)

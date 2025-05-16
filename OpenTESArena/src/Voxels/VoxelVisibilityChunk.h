@@ -80,7 +80,9 @@ struct VoxelVisibilityChunk final : public Chunk
 
 	void init(const ChunkInt2 &position, int height, double ceilingScale);
 
-	bool anyVisibleLeafNodes() const;
+	// Visibility of this chunk's fully-enclosing bounding box based on most recent frustum test.
+	// If result is fully inside or outside, then all child nodes match that.
+	VisibilityType getRootVisibilityType() const;
 
 	void update(const RenderCamera &camera);
 	void clear();
