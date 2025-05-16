@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 
 #include "GameWorldPanel.h"
 #include "GameWorldUiModel.h"
@@ -177,7 +178,8 @@ Int2 GameWorldUiView::getGameWorldInterfacePosition()
 int GameWorldUiView::getStatusBarCurrentHeight(int maxHeight, double currentValue, double maxValue)
 {
 	const double percent = currentValue / maxValue;
-	return static_cast<int>(static_cast<double>(maxHeight) * percent);
+	const double currentHeightReal = std::round(static_cast<double>(maxHeight) * percent);
+	return std::clamp(static_cast<int>(currentHeightReal), 0, maxHeight);
 }
 
 Int2 GameWorldUiView::getNoMagicTexturePosition()
