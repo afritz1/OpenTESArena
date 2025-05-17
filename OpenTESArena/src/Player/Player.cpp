@@ -67,19 +67,15 @@ namespace
 			return false;
 		}
 
-		constexpr float collisionTolerance = 0.03f;
+		constexpr float mass = 1.0f;
 		constexpr float maxSlopeAngle = MathUtilsF::degToRad(45.0f); // Game world doesn't have slopes so this is unimportant
-		constexpr float maxStrength = 1.0f;
-		constexpr float characterPadding = 0.02f;
-		constexpr float penetrationRecoverySpeed = 1.0f;
-		constexpr float predictiveContactDistance = 0.05f;
 		const JPH::Plane supportingVolume(JPH::Vec3::sAxisY(), -1.0e10f); // Half space of the character that accepts collisions, we want 100% of them
 
 		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
 		// I just need a capsule that runs into things, jumps, and steps on stairs.
 		JPH::CharacterSettings characterSettings;
 		characterSettings.SetEmbedded();
-		characterSettings.mMass = 1.0f;
+		characterSettings.mMass = mass;
 		characterSettings.mFriction = static_cast<float>(PlayerConstants::FRICTION);
 		characterSettings.mGravityFactor = 0.0f; // Do gravity manually when paired w/ CharacterVirtual.
 		characterSettings.mShape = capsuleShapeResult.Get();
@@ -89,14 +85,15 @@ namespace
 
 		JPH::CharacterVirtualSettings characterVirtualSettings;
 		characterVirtualSettings.SetEmbedded();
-		characterVirtualSettings.mMass = 1.0f;
+		characterVirtualSettings.mMass = mass;
 		characterVirtualSettings.mMaxSlopeAngle = maxSlopeAngle;
-		characterVirtualSettings.mMaxStrength = maxStrength;
+		characterVirtualSettings.mMaxStrength = 1.0f;
 		characterVirtualSettings.mShape = capsuleShapeResult.Get();
 		characterVirtualSettings.mBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces;
-		characterVirtualSettings.mCharacterPadding = characterPadding;
-		characterVirtualSettings.mPenetrationRecoverySpeed = penetrationRecoverySpeed;
-		characterVirtualSettings.mPredictiveContactDistance = predictiveContactDistance;
+		characterVirtualSettings.mCollisionTolerance = 0.001f;
+		characterVirtualSettings.mCharacterPadding = 0.025f;
+		characterVirtualSettings.mPenetrationRecoverySpeed = 1.0f; // All in one update.
+		characterVirtualSettings.mPredictiveContactDistance = 0.035f;
 		characterVirtualSettings.mSupportingVolume = supportingVolume;
 		characterVirtualSettings.mEnhancedInternalEdgeRemoval = false;
 		characterVirtualSettings.mInnerBodyShape = nullptr;
