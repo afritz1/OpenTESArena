@@ -70,6 +70,12 @@ int ArenaPlayerUtils::calculateBonusToHit(int Agility)
 		case 60: lastValidBonus = +2; break;
 		case 65: lastValidBonus = +3; break;
 		case 70: lastValidBonus = +4; break;
+		case 75: lastValidBonus = +5; break;
+		case 80: lastValidBonus = +6; break;
+		case 85: lastValidBonus = +7; break;
+		case 90: lastValidBonus = +8; break;
+		case 95: lastValidBonus = +9; break;
+		case 100: lastValidBonus = +10; break;
 	}
 	return lastValidBonus;
 }
