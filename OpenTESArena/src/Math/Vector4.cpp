@@ -20,22 +20,19 @@ const T &Vector4i<T>::operator[](size_t index) const
 template<typename T>
 bool Vector4i<T>::operator==(const Vector4i<T> &v) const
 {
-	return (this->x == v.x) && (this->y == v.y) && (this->z == v.z) &&
-		(this->w == v.w);
+	return (this->x == v.x) && (this->y == v.y) && (this->z == v.z) && (this->w == v.w);
 }
 
 template<typename T>
 bool Vector4i<T>::operator!=(const Vector4i<T> &v) const
 {
-	return (this->x != v.x) || (this->y != v.y) || (this->z != v.z) ||
-		(this->w != v.w);
+	return (this->x != v.x) || (this->y != v.y) || (this->z != v.z) || (this->w != v.w);
 }
 
 template<typename T>
 Vector4i<T> Vector4i<T>::operator+(const Vector4i<T> &v) const
 {
-	return Vector4i<T>(this->x + v.x, this->y + v.y, this->z + v.z,
-		this->w + v.w);
+	return Vector4i<T>(this->x + v.x, this->y + v.y, this->z + v.z, this->w + v.w);
 }
 
 // operator-() is in the header.
@@ -43,8 +40,7 @@ Vector4i<T> Vector4i<T>::operator+(const Vector4i<T> &v) const
 template<typename T>
 Vector4i<T> Vector4i<T>::operator-(const Vector4i<T> &v) const
 {
-	return Vector4i<T>(this->x - v.x, this->y - v.y, this->z - v.z,
-		this->w - v.w);
+	return Vector4i<T>(this->x - v.x, this->y - v.y, this->z - v.z, this->w - v.w);
 }
 
 template<typename T>
@@ -56,8 +52,7 @@ Vector4i<T> Vector4i<T>::operator*(T m) const
 template<typename T>
 Vector4i<T> Vector4i<T>::operator*(const Vector4i<T> &v) const
 {
-	return Vector4i<T>(this->x * v.x, this->y * v.y, this->z * v.z,
-		this->w * v.w);
+	return Vector4i<T>(this->x * v.x, this->y * v.y, this->z * v.z, this->w * v.w);
 }
 
 template<typename T>
@@ -69,8 +64,7 @@ Vector4i<T> Vector4i<T>::operator/(T m) const
 template<typename T>
 Vector4i<T> Vector4i<T>::operator/(const Vector4i<T> &v) const
 {
-	return Vector4i<T>(this->x / v.x, this->y / v.y, this->z / v.z,
-		this->w / v.w);
+	return Vector4i<T>(this->x / v.x, this->y / v.y, this->z / v.z, this->w / v.w);
 }
 
 template<typename T>
@@ -86,21 +80,29 @@ std::string Vector4i<T>::toString() const
 template<typename T>
 Vector4f<T> Vector4f<T>::fromARGB(uint32_t argb)
 {
+	const uint8_t r = static_cast<uint8_t>(argb >> 16);
+	const uint8_t g = static_cast<uint8_t>(argb >> 8);
+	const uint8_t b = static_cast<uint8_t>(argb);
+	const uint8_t a = static_cast<uint8_t>(argb >> 24);
 	return Vector4f<T>(
-		static_cast<T>(static_cast<uint8_t>(argb >> 16) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(argb >> 8) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(argb) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(argb >> 24) / 255.0));
+		static_cast<T>(r / 255.0),
+		static_cast<T>(g / 255.0),
+		static_cast<T>(b / 255.0),
+		static_cast<T>(a / 255.0));
 }
 
 template<typename T>
 Vector4f<T> Vector4f<T>::fromRGBA(uint32_t rgba)
 {
+	const uint8_t r = static_cast<uint8_t>(rgba >> 24);
+	const uint8_t g = static_cast<uint8_t>(rgba >> 16);
+	const uint8_t b = static_cast<uint8_t>(rgba >> 8);
+	const uint8_t a = static_cast<uint8_t>(rgba);
 	return Vector4f<T>(
-		static_cast<T>(static_cast<uint8_t>(rgba >> 24) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(rgba >> 16) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(rgba >> 8) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(rgba) / 255.0));
+		static_cast<T>(r / 255.0),
+		static_cast<T>(g / 255.0),
+		static_cast<T>(b / 255.0),
+		static_cast<T>(a / 255.0));
 }
 
 template<typename T>
@@ -118,22 +120,19 @@ const T &Vector4f<T>::operator[](size_t index) const
 template<typename T>
 bool Vector4f<T>::operator==(const Vector4f<T> &v) const
 {
-	return (this->x == v.x) && (this->y == v.y) && (this->z == v.z) &&
-		(this->w == v.w);
+	return (this->x == v.x) && (this->y == v.y) && (this->z == v.z) && (this->w == v.w);
 }
 
 template<typename T>
 bool Vector4f<T>::operator!=(const Vector4f<T> &v) const
 {
-	return (this->x != v.x) || (this->y != v.y) || (this->z != v.z) ||
-		(this->w != v.w);
+	return (this->x != v.x) || (this->y != v.y) || (this->z != v.z) || (this->w != v.w);
 }
 
 template<typename T>
 Vector4f<T> Vector4f<T>::operator+(const Vector4f<T> &v) const
 {
-	return Vector4f<T>(this->x + v.x, this->y + v.y, this->z + v.z,
-		this->w + v.w);
+	return Vector4f<T>(this->x + v.x, this->y + v.y, this->z + v.z, this->w + v.w);
 }
 
 template<typename T>
@@ -145,8 +144,7 @@ Vector4f<T> Vector4f<T>::operator-() const
 template<typename T>
 Vector4f<T> Vector4f<T>::operator-(const Vector4f<T> &v) const
 {
-	return Vector4f<T>(this->x - v.x, this->y - v.y, this->z - v.z,
-		this->w - v.w);
+	return Vector4f<T>(this->x - v.x, this->y - v.y, this->z - v.z, this->w - v.w);
 }
 
 template<typename T>
@@ -158,8 +156,7 @@ Vector4f<T> Vector4f<T>::operator*(T m) const
 template<typename T>
 Vector4f<T> Vector4f<T>::operator*(const Vector4f<T> &v) const
 {
-	return Vector4f<T>(this->x * v.x, this->y * v.y, this->z * v.z,
-		this->w * v.w);
+	return Vector4f<T>(this->x * v.x, this->y * v.y, this->z * v.z, this->w * v.w);
 }
 
 template<typename T>
@@ -171,8 +168,7 @@ Vector4f<T> Vector4f<T>::operator/(T m) const
 template<typename T>
 Vector4f<T> Vector4f<T>::operator/(const Vector4f<T> &v) const
 {
-	return Vector4f<T>(this->x / v.x, this->y / v.y, this->z / v.z,
-		this->w / v.w);
+	return Vector4f<T>(this->x / v.x, this->y / v.y, this->z / v.z, this->w / v.w);
 }
 
 template<typename T>
@@ -186,28 +182,27 @@ std::string Vector4f<T>::toString() const
 template<typename T>
 uint32_t Vector4f<T>::toARGB() const
 {
-	return static_cast<uint32_t>(
-		((static_cast<uint8_t>(this->x * 255.0)) << 16) |
-		((static_cast<uint8_t>(this->y * 255.0)) << 8) |
-		((static_cast<uint8_t>(this->z * 255.0))) |
-		((static_cast<uint8_t>(this->w * 255.0)) << 24));
+	const uint8_t r = static_cast<uint8_t>(this->x * 255.0);
+	const uint8_t g = static_cast<uint8_t>(this->y * 255.0);
+	const uint8_t b = static_cast<uint8_t>(this->z * 255.0);
+	const uint8_t a = static_cast<uint8_t>(this->w * 255.0);
+	return static_cast<uint32_t>((r << 16) | (g << 8) | b | (a << 24));
 }
 
 template<typename T>
 uint32_t Vector4f<T>::toRGBA() const
 {
-	return static_cast<uint32_t>(
-		((static_cast<uint8_t>(this->x * 255.0)) << 24) |
-		((static_cast<uint8_t>(this->y * 255.0)) << 16) |
-		((static_cast<uint8_t>(this->z * 255.0)) << 8) |
-		((static_cast<uint8_t>(this->w * 255.0))));
+	const uint8_t r = static_cast<uint8_t>(this->x * 255.0);
+	const uint8_t g = static_cast<uint8_t>(this->y * 255.0);
+	const uint8_t b = static_cast<uint8_t>(this->z * 255.0);
+	const uint8_t a = static_cast<uint8_t>(this->w * 255.0);
+	return static_cast<uint32_t>((r << 24) | (g << 16) | (b << 8) | a);
 }
 
 template<typename T>
 T Vector4f<T>::lengthSquared() const
 {
-	return (this->x * this->x) + (this->y * this->y) + (this->z * this->z) +
-		(this->w * this->w);
+	return (this->x * this->x) + (this->y * this->y) + (this->z * this->z) + (this->w * this->w);
 }
 
 template<typename T>
@@ -239,18 +234,18 @@ Vector4f<T> Vector4f<T>::clamped(T low, T high) const
 template<typename T>
 Vector4f<T> Vector4f<T>::clamped() const
 {
-	const T low = static_cast<T>(0.0);
-	const T high = static_cast<T>(1.0);
+	constexpr T low = static_cast<T>(0.0);
+	constexpr T high = static_cast<T>(1.0);
 	return this->clamped(low, high);
 }
 
 // Template instantiations.
-template class Vector4i<char>;
-template class Vector4i<unsigned char>;
-template class Vector4i<short>;
-template class Vector4i<unsigned short>;
-template class Vector4i<int>;
-template class Vector4i<unsigned int>;
+template struct Vector4i<char>;
+template struct Vector4i<unsigned char>;
+template struct Vector4i<short>;
+template struct Vector4i<unsigned short>;
+template struct Vector4i<int>;
+template struct Vector4i<unsigned int>;
 
-template class Vector4f<float>;
-template class Vector4f<double>;
+template struct Vector4f<float>;
+template struct Vector4f<double>;

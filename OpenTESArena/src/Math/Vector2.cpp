@@ -82,8 +82,8 @@ std::string Vector2i<T>::toString() const
 template<typename T>
 Vector2f<T> Vector2f<T>::randomDirection(Random &random)
 {
-	T x = static_cast<T>((2.0 * random.nextReal()) - 1.0);
-	T y = static_cast<T>((2.0 * random.nextReal()) - 1.0);
+	const T x = static_cast<T>((2.0 * random.nextReal()) - 1.0);
+	const T y = static_cast<T>((2.0 * random.nextReal()) - 1.0);
 	return Vector2f<T>(x, y).normalized();
 }
 
@@ -91,8 +91,7 @@ template<typename T>
 Vector2f<T> Vector2f<T>::randomPointInCircle(const Vector2f<T> &center,
 	T radius, Random &random)
 {
-	Vector2f<T> randPoint = Vector2f<T>::randomDirection(random) *
-		(radius * static_cast<T>(random.nextReal()));
+	const Vector2f<T> randPoint = Vector2f<T>::randomDirection(random) * (radius * static_cast<T>(random.nextReal()));
 	return Vector2f<T>(center.x + randPoint.x, center.y + randPoint.y);
 }
 
@@ -194,15 +193,14 @@ T Vector2f<T>::length() const
 template<typename T>
 Vector2f<T> Vector2f<T>::normalized() const
 {
-	T lenRecip = static_cast<T>(1.0) / this->length();
+	const T lenRecip = static_cast<T>(1.0) / this->length();
 	return Vector2f<T>(this->x * lenRecip, this->y * lenRecip);
 }
 
 template<typename T>
 bool Vector2f<T>::isNormalized() const
 {
-	return std::fabs(static_cast<T>(1.0) - this->length()) <
-		static_cast<T>(Constants::Epsilon);
+	return std::fabs(static_cast<T>(1.0) - this->length()) < static_cast<T>(Constants::Epsilon);
 }
 
 template<typename T>
@@ -228,10 +226,10 @@ Vector2f<T> Vector2f<T>::lerp(const Vector2f<T> &end, T percent) const
 template<typename T>
 Vector2f<T> Vector2f<T>::slerp(const Vector2f<T> &end, T percent) const
 {
-	T theta = static_cast<T>(std::acos(this->dot(end) / (this->length() * end.length())));
-	T sinThetaRecip = static_cast<T>(1.0 / std::sin(theta));
-	T beginScale = static_cast<T>(std::sin((1.0 - percent) * theta) * sinThetaRecip);
-	T endScale = std::sin(percent * theta) * sinThetaRecip;
+	const T theta = static_cast<T>(std::acos(this->dot(end) / (this->length() * end.length())));
+	const T sinThetaRecip = static_cast<T>(1.0 / std::sin(theta));
+	const T beginScale = static_cast<T>(std::sin((1.0 - percent) * theta) * sinThetaRecip);
+	const T endScale = std::sin(percent * theta) * sinThetaRecip;
 	return ((*this) * beginScale) + (end * endScale);
 }
 
@@ -248,12 +246,12 @@ Vector2f<T> Vector2f<T>::rightPerp() const
 }
 
 // Template instantiations.
-template class Vector2i<char>;
-template class Vector2i<unsigned char>;
-template class Vector2i<short>;
-template class Vector2i<unsigned short>;
-template class Vector2i<int>;
-template class Vector2i<unsigned int>;
+template struct Vector2i<char>;
+template struct Vector2i<unsigned char>;
+template struct Vector2i<short>;
+template struct Vector2i<unsigned short>;
+template struct Vector2i<int>;
+template struct Vector2i<unsigned int>;
 
-template class Vector2f<float>;
-template class Vector2f<double>;
+template struct Vector2f<float>;
+template struct Vector2f<double>;

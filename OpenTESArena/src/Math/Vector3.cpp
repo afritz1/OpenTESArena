@@ -109,11 +109,8 @@ Vector3f<T> Vector3f<T>::randomDirection(Random &random)
 template<typename T>
 Vector3f<T> Vector3f<T>::randomPointInSphere(const Vector3f<T> &center, T radius, Random &random)
 {
-	Vector3f<T> randPoint = Vector3f<T>::randomDirection(random) * (radius * static_cast<T>(random.nextReal()));
-	return Vector3f<T>(
-		center.x + randPoint.x,
-		center.y + randPoint.y,
-		center.z + randPoint.z);
+	const Vector3f<T> randPoint = Vector3f<T>::randomDirection(random) * (radius * static_cast<T>(random.nextReal()));
+	return Vector3f<T>(center.x + randPoint.x, center.y + randPoint.y, center.z + randPoint.z);
 }
 
 template<typename T>
@@ -229,10 +226,10 @@ std::string Vector3f<T>::toString() const
 template<typename T>
 uint32_t Vector3f<T>::toRGB() const
 {
-	return static_cast<uint32_t>(
-		((static_cast<uint8_t>(this->x * 255.0)) << 16) |
-		((static_cast<uint8_t>(this->y * 255.0)) << 8) |
-		((static_cast<uint8_t>(this->z * 255.0))));
+	const uint8_t r = static_cast<uint8_t>(this->x * 255.0);
+	const uint8_t g = static_cast<uint8_t>(this->y * 255.0);
+	const uint8_t b = static_cast<uint8_t>(this->z * 255.0);
+	return static_cast<uint32_t>((r << 16) | (g << 8) | b);
 }
 
 template<typename T>
@@ -362,12 +359,12 @@ Vector3f<T> Vector3f<T>::componentMax(const Vector3f<T> &v) const
 }
 
 // Template instantiations.
-template class Vector3i<char>;
-template class Vector3i<unsigned char>;
-template class Vector3i<short>;
-template class Vector3i<unsigned short>;
-template class Vector3i<int>;
-template class Vector3i<unsigned int>;
+template struct Vector3i<char>;
+template struct Vector3i<unsigned char>;
+template struct Vector3i<short>;
+template struct Vector3i<unsigned short>;
+template struct Vector3i<int>;
+template struct Vector3i<unsigned int>;
 
-template class Vector3f<float>;
-template class Vector3f<double>;
+template struct Vector3f<float>;
+template struct Vector3f<double>;
