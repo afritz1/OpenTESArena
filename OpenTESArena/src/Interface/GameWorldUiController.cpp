@@ -11,6 +11,7 @@
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
 #include "../Audio/MusicUtils.h"
+#include "../Entities/ArenaCitizenUtils.h"
 #include "../Game/Game.h"
 #include "../Interface/PauseMenuUiController.h"
 #include "../Interface/TextCinematicPanel.h"
@@ -426,6 +427,24 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 
 	ScopedUiTextureRef textureRef(textureID, game.renderer);
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
+}
+
+void GameWorldUiController::onCitizenKilled(Game &game)
+{
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+
+	TextBox &actionTextBox = *game.getActionTextBox();
+
+	// Randomly give player some gold.
+	Player &player = game.player;
+	Random &random = game.random;
+	const int citizenCorpseGold = ArenaCitizenUtils::DEATH_MIN_GOLD_PIECES + random.next(ArenaCitizenUtils::DEATH_MAX_GOLD_PIECES);
+	// @todo give to player
+
+	const std::string text = GameWorldUiModel::getCitizenKillGoldMessage(citizenCorpseGold, exeData);
+	actionTextBox.setText(text);
+	game.gameState.setActionTextDuration(text);
 }
 
 void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)

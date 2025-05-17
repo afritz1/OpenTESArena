@@ -286,6 +286,13 @@ std::string GameWorldUiModel::getEnemyCorpseEmptyInventoryMessage(const std::str
 	return text;
 }
 
+std::string GameWorldUiModel::getCitizenKillGoldMessage(int goldCount, const ExeData &exeData)
+{
+	std::string text = exeData.status.citizenCorpseGold;
+	text.replace(text.find("%d"), 2, std::to_string(goldCount));
+	return text;
+}
+
 std::string GameWorldUiModel::getLockDifficultyMessage(int lockLevel, const ExeData &exeData)
 {
 	DebugAssertIndex(exeData.status.lockDifficultyMessages, lockLevel);

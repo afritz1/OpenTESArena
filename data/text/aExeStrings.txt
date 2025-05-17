@@ -222,6 +222,7 @@ StaminaExhaustedDeath=0x431C0
 StaminaDrowning=0x43185
 EnemyCorpseEmptyInventory=0x40336
 EnemyCorpseGold=0x403C0
+CitizenCorpseGold=0x41D86
 
 [Travel]
 LocationFormatTexts=0x374AD

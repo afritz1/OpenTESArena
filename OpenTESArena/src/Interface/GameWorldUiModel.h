@@ -52,6 +52,7 @@ namespace GameWorldUiModel
 
 	std::string getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData);
 	std::string getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData);
+	std::string getCitizenKillGoldMessage(int goldCount, const ExeData &exeData);
 
 	std::string getLockDifficultyMessage(int lockLevel, const ExeData &exeData);
 	std::string getKeyPickUpMessage(int keyID, const ExeData &exeData);

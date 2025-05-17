@@ -124,6 +124,7 @@ public:
 
 	// @todo: find a cleaner way to do this via listener callbacks or something.
 	TextBox *getTriggerTextBox();
+	TextBox *getActionTextBox();
 
 	// Sets the panel after the current SDL event has been processed (to avoid 
 	// interfering with the current panel). This uses template parameters for

@@ -52,6 +52,7 @@ namespace GameWorldUiController
 	void onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData);
 
 	void onCitizenInteracted(Game &game, const EntityInstance &entityInst);
+	void onCitizenKilled(Game &game);
 
 	void onShowPlayerDeathCinematic(Game &game);
 	void onHealthDepleted(Game &game);

@@ -465,6 +465,22 @@ TextBox *Game::getTriggerTextBox()
 	return &gameWorldPanel->getTriggerTextBox();
 }
 
+TextBox *Game::getActionTextBox()
+{
+	DebugAssert(this->shouldSimulateScene);
+	DebugAssert(this->gameState.isActiveMapValid());
+
+	Panel *panel = this->getActivePanel();
+	if (panel == nullptr)
+	{
+		DebugLogError("No active panel for trigger text box getter.");
+		return nullptr;
+	}
+
+	GameWorldPanel *gameWorldPanel = static_cast<GameWorldPanel*>(panel); // @todo: can't use dynamic_cast anymore, this isn't safe.
+	return &gameWorldPanel->getActionTextBox();
+}
+
 void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
 {
 	this->nextSubPanel = std::move(nextSubPanel);

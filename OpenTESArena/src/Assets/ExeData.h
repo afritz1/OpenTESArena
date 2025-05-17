@@ -471,6 +471,7 @@ struct ExeDataStatus
 
 	std::string enemyCorpseEmptyInventory;
 	std::string enemyCorpseGold;
+	std::string citizenCorpseGold;
 
 	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };

@@ -1020,6 +1020,11 @@ TextBox &GameWorldPanel::getTriggerTextBox()
 	return this->triggerText;
 }
 
+TextBox &GameWorldPanel::getActionTextBox()
+{
+	return this->actionText;
+}
+
 bool GameWorldPanel::renderScene(Game &game)
 {
 	static RenderCommandBuffer commandBuffer;

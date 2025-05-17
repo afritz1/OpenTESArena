@@ -37,6 +37,7 @@ public:
 
 	// @temp workaround until there are listener callbacks or something for updating text boxes from game logic
 	TextBox &getTriggerTextBox();
+	TextBox &getActionTextBox();
 
 	// Called by game loop for rendering the 3D scene.
 	static bool renderScene(Game &game);

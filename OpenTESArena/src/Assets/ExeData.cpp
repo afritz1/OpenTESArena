@@ -871,6 +871,7 @@ bool ExeDataStatus::init(BufferView<const std::byte> exeBytes, const KeyValueFil
 	const int staminaDrowningOffset = GetExeAddress(*section, "StaminaDrowning");
 	const int enemyCorpseEmptyInventoryOffset = GetExeAddress(*section, "EnemyCorpseEmptyInventory");
 	const int enemyCorpseGoldOffset = GetExeAddress(*section, "EnemyCorpseGold");
+	const int citizenCorpseGoldOffset = GetExeAddress(*section, "CitizenCorpseGold");
 
 	this->popUp = GetExeStringNullTerminated(exeBytes, popUpOffset);
 	this->date = GetExeStringNullTerminated(exeBytes, dateOffset);
@@ -887,6 +888,7 @@ bool ExeDataStatus::init(BufferView<const std::byte> exeBytes, const KeyValueFil
 	this->staminaDrowning = GetExeStringNullTerminated(exeBytes, staminaDrowningOffset);
 	this->enemyCorpseEmptyInventory = GetExeStringNullTerminated(exeBytes, enemyCorpseEmptyInventoryOffset);
 	this->enemyCorpseGold = GetExeStringNullTerminated(exeBytes, enemyCorpseGoldOffset);
+	this->citizenCorpseGold = GetExeStringNullTerminated(exeBytes, citizenCorpseGoldOffset);
 
 	return true;
 }

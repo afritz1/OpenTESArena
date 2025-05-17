@@ -919,6 +919,11 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
 						}
 
+						if (hitEntityInst.isCitizen())
+						{
+							GameWorldUiController::onCitizenKilled(game);
+						}
+
 						const WorldDouble3 hitVfxPosition(
 							hitEntityPosition.x,
 							hitEntityPosition.y + std::min(PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.60, hitEntityBBox.halfHeight), // Arbitrary
