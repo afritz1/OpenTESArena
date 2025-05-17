@@ -441,6 +441,7 @@ bool ExeDataEntities::init(BufferView<const std::byte> exeBytes, const KeyValueF
 	const int creatureBloodOffset = GetExeAddress(*section, "CreatureBlood");
 	const int creatureDiseaseChancesOffset = GetExeAddress(*section, "CreatureDiseaseChances");
 	const int creatureAttributesOffset = GetExeAddress(*section, "CreatureAttributes");
+	const int creatureLootChancesOffset = GetExeAddress(*section, "CreatureLootChances");
 	const int creatureAnimFilenamesOffset = GetExeAddress(*section, "CreatureAnimationFilenames");
 	const int finalBossNameOffset = GetExeAddress(*section, "FinalBossName");
 	const int raceAttributesOffset = GetExeAddress(*section, "RaceAttributes");
@@ -471,6 +472,7 @@ bool ExeDataEntities::init(BufferView<const std::byte> exeBytes, const KeyValueF
 	initInt8Array(this->creatureBlood, exeBytes, creatureBloodOffset);
 	initInt8Array(this->creatureDiseaseChances, exeBytes, creatureDiseaseChancesOffset);
 	init2DInt8Array(this->creatureAttributes, exeBytes, creatureAttributesOffset);
+	initInt16Array(this->creatureLootChances, exeBytes, creatureLootChancesOffset);
 	initStringArrayNullTerminated(this->creatureAnimationFilenames, exeBytes, creatureAnimFilenamesOffset);
 	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
 	init2DInt8Array(this->raceAttributes, exeBytes, raceAttributesOffset);

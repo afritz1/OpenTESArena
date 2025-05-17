@@ -81,6 +81,7 @@ CreatureHasNoCorpse=0x3E31E
 CreatureBlood=0x438FF
 CreatureDiseaseChances=0x3E4E2
 CreatureAttributes=0x3608B
+CreatureLootChances=0x37405
 CreatureAnimationFilenames=0x3E4FB
 FinalBossName=0x36D03
 RaceAttributes=0x35FC3
