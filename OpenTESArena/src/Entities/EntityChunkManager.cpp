@@ -148,6 +148,7 @@ EntityCombatState::EntityCombatState()
 {
 	this->isDying = false;
 	this->isDead = false;
+	this->hasBeenLootedBefore = false;
 }
 
 bool EntityCombatState::isInDeathState() const

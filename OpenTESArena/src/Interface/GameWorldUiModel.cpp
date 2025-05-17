@@ -279,6 +279,13 @@ std::string GameWorldUiModel::getEnemyInspectedMessage(const std::string &entity
 	return text;
 }
 
+std::string GameWorldUiModel::getEnemyCorpseGoldMessage(int goldCount, const ExeData &exeData)
+{
+	std::string text = exeData.status.enemyCorpseGold;
+	text.replace(text.find("%u"), 2, std::to_string(goldCount));
+	return text;
+}
+
 std::string GameWorldUiModel::getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData)
 {
 	std::string text = exeData.status.enemyCorpseEmptyInventory;

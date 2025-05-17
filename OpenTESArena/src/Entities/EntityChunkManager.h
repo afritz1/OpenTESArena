@@ -64,6 +64,7 @@ struct EntityCombatState
 {
 	bool isDying;
 	bool isDead;
+	bool hasBeenLootedBefore; // For awarding gold from creature corpse.
 
 	EntityCombatState();
 

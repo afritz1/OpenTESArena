@@ -455,7 +455,7 @@ namespace PlayerLogic
 			case EntityDefinitionType::Enemy:
 			{
 				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-				const EntityCombatState &combatState = entityChunkManager.getEntityCombatState(entityInst.combatStateID);
+				EntityCombatState &combatState = entityChunkManager.getEntityCombatState(entityInst.combatStateID);
 				if (!combatState.isDying)
 				{
 					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef, actionTextBox);
@@ -465,16 +465,14 @@ namespace PlayerLogic
 				{
 					if (combatState.isDead)
 					{
-						// @todo might need an int corpseGoldCount in EntityCombatState which is set 0 after 1st open
-						ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
-						if (enemyItemInventory.getOccupiedSlotCount() > 0)
+						if (!combatState.hasBeenLootedBefore)
 						{
-							constexpr bool destroyEntityIfEmpty = false; // Do not remove empty corpses.
-							GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory, destroyEntityIfEmpty);
+							combatState.hasBeenLootedBefore = true;
+							GameWorldUiController::onEnemyCorpseInteractedFirstTime(game, entityInstID, entityDef);
 						}
 						else
 						{
-							GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(game, entityInstID, entityDef);
+							GameWorldUiController::onEnemyCorpseInteracted(game, entityInstID, entityDef);
 						}
 					}
 				}

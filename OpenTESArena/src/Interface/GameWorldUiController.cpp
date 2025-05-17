@@ -12,6 +12,7 @@
 #include "WorldMapPanel.h"
 #include "../Audio/MusicUtils.h"
 #include "../Entities/ArenaCitizenUtils.h"
+#include "../Entities/ArenaEntityUtils.h"
 #include "../Game/Game.h"
 #include "../Interface/PauseMenuUiController.h"
 #include "../Interface/TextCinematicPanel.h"
@@ -347,6 +348,79 @@ void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanc
 	};
 
 	game.pushSubPanel<LootSubPanel>(itemInventory, callback);
+}
+
+void GameWorldUiController::onEnemyCorpseInteracted(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
+{
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+	ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+
+	if (enemyItemInventory.getOccupiedSlotCount() > 0)
+	{
+		constexpr bool destroyEntityIfEmpty = false; // Don't remove empty corpses.
+		GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory, destroyEntityIfEmpty);
+	}
+	else
+	{
+		GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(game, entityInstID, entityDef);
+	}
+}
+
+void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
+{
+	bool isCorpseAwardingGold = true;
+
+	int creatureLevel = 1;
+	if (entityDef.type == EntityDefinitionType::Enemy)
+	{
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+		if (enemyDef.type == EnemyEntityDefinitionType::Creature)
+		{
+			creatureLevel = enemyDef.creature.level;
+		}		
+	}
+
+	Random &random = game.random;
+	isCorpseAwardingGold &= random.nextBool(); // @todo figure out actual chances per enemy
+
+	if (!isCorpseAwardingGold)
+	{
+		GameWorldUiController::onEnemyCorpseInteracted(game, entityInstID, entityDef);
+		return;
+	}
+
+	const int corpseGoldCount = ArenaEntityUtils::getCreatureCorpseGold(creatureLevel, random);
+
+	Player &player = game.player;
+	player.gold += corpseGoldCount;
+
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const std::string text = GameWorldUiModel::getEnemyCorpseGoldMessage(corpseGoldCount, exeData);
+
+	Int2 center;
+	TextBox::InitInfo textBoxInitInfo;
+	UiTextureID textureID;
+	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
+
+	auto callback = [entityInstID, entityDef](Game &game)
+	{
+		GameWorldUiController::onStatusPopUpSelected(game);
+
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+		ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+
+		if (enemyItemInventory.getOccupiedSlotCount() > 0)
+		{
+			constexpr bool destroyEntityIfEmpty = false; // Don't remove empty corpses.
+			GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory, destroyEntityIfEmpty);
+		}
+	};
+
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, callback, std::move(textureRef), center);
 }
 
 void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
