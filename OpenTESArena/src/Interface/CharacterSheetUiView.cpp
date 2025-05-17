@@ -97,6 +97,42 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(const std:
 		fontLibrary);
 }
 
+TextBox::InitInfo CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerHealthTextBoxX,
+		CharacterSheetUiView::PlayerHealthTextBoxY,
+		CharacterSheetUiView::PlayerHealthTextBoxFontName,
+		CharacterSheetUiView::PlayerHealthTextBoxColor,
+		CharacterSheetUiView::PlayerHealthTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerStaminaTextBoxX,
+		CharacterSheetUiView::PlayerStaminaTextBoxY,
+		CharacterSheetUiView::PlayerStaminaTextBoxFontName,
+		CharacterSheetUiView::PlayerStaminaTextBoxColor,
+		CharacterSheetUiView::PlayerStaminaTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBox::InitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerSpellPointsTextBoxX,
+		CharacterSheetUiView::PlayerSpellPointsTextBoxY,
+		CharacterSheetUiView::PlayerSpellPointsTextBoxFontName,
+		CharacterSheetUiView::PlayerSpellPointsTextBoxColor,
+		CharacterSheetUiView::PlayerSpellPointsTextBoxAlignment,
+		fontLibrary);
+}
+
 Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 {
 	const TextureAsset textureAsset = CharacterSheetUiView::getBodyTextureAsset(game);

@@ -86,6 +86,30 @@ bool CharacterPanel::init()
 		return false;
 	}
 
+	const std::string playerHealthText = CharacterSheetUiModel::getPlayerHealth(game);
+	const TextBox::InitInfo playerHealthTextBoxInitInfo = CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(playerHealthText, fontLibrary);
+	if (!this->healthTextBox.init(playerHealthTextBoxInitInfo, playerHealthText, renderer))
+	{
+		DebugLogError("Couldn't init player health text box.");
+		return false;
+	}
+
+	const std::string playerStaminaText = CharacterSheetUiModel::getPlayerStamina(game);
+	const TextBox::InitInfo playerStaminaTextBoxInitInfo = CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(playerStaminaText, fontLibrary);
+	if (!this->staminaTextBox.init(playerStaminaTextBoxInitInfo, playerStaminaText, renderer))
+	{
+		DebugLogError("Couldn't init player stamina text box.");
+		return false;
+	}
+
+	const std::string playerSpellPointsText = CharacterSheetUiModel::getPlayerSpellPoints(game);
+	const TextBox::InitInfo playerSpellPointsTextBoxInitInfo = CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(playerSpellPointsText, fontLibrary);
+	if (!this->spellPointsTextBox.init(playerSpellPointsTextBoxInitInfo, playerSpellPointsText, renderer))
+	{
+		DebugLogError("Couldn't init player spell points text box.");
+		return false;
+	}
+
 	this->doneButton = Button<Game&>(
 		CharacterSheetUiView::DoneButtonCenterPoint,
 		CharacterSheetUiView::DoneButtonWidth,
@@ -205,6 +229,27 @@ bool CharacterPanel::init()
 		this->levelTextBox.getTextureID(),
 		playerLevelTextBoxRect.getTopLeft(),
 		playerLevelTextBoxRect.getSize(),
+		PivotType::TopLeft);
+
+	const Rect &playerHealthTextBoxRect = this->healthTextBox.getRect();
+	this->addDrawCall(
+		this->healthTextBox.getTextureID(),
+		playerHealthTextBoxRect.getTopLeft(),
+		playerHealthTextBoxRect.getSize(),
+		PivotType::TopLeft);
+
+	const Rect &playerStaminaTextBoxRect = this->staminaTextBox.getRect();
+	this->addDrawCall(
+		this->staminaTextBox.getTextureID(),
+		playerStaminaTextBoxRect.getTopLeft(),
+		playerStaminaTextBoxRect.getSize(),
+		PivotType::TopLeft);
+
+	const Rect &playerSpellPointsTextBoxRect = this->spellPointsTextBox.getRect();
+	this->addDrawCall(
+		this->spellPointsTextBox.getTextureID(),
+		playerSpellPointsTextBoxRect.getTopLeft(),
+		playerSpellPointsTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

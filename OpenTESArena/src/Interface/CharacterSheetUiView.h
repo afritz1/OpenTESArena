@@ -58,12 +58,33 @@ namespace CharacterSheetUiView
 	const Color PlayerLevelTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerLevelTextBoxAlignment = TextAlignment::TopLeft;
 
+	constexpr int PlayerHealthTextBoxX = 45;
+	constexpr int PlayerHealthTextBoxY = 127;
+	const std::string PlayerHealthTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerHealthTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerHealthTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerStaminaTextBoxX = 45;
+	constexpr int PlayerStaminaTextBoxY = 135;
+	const std::string PlayerStaminaTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerStaminaTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerStaminaTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerSpellPointsTextBoxX = 86;
+	constexpr int PlayerSpellPointsTextBoxY = 60;
+	const std::string PlayerSpellPointsTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerSpellPointsTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerSpellPointsTextBoxAlignment = TextAlignment::TopLeft;
+
 	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	std::vector<TextBox::InitInfo> getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

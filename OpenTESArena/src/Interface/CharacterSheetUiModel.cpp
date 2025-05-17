@@ -1,3 +1,5 @@
+#include <cmath>
+#include <cstring>
 #include <vector>
 
 #include "CharacterSheetUiModel.h"
@@ -8,6 +10,19 @@
 #include "../Stats/PrimaryAttribute.h"
 
 #include "components/debug/Debug.h"
+
+namespace
+{
+	std::string GetPlayerCurrentMaxStatusString(double currentValue, double maxValue)
+	{
+		const int currentInt = static_cast<int>(std::round(currentValue));
+		const int maxInt = static_cast<int>(std::round(maxValue));
+
+		char buffer[64];
+		std::snprintf(buffer, sizeof(buffer), "%d/%d", currentInt, maxInt);
+		return std::string(buffer);
+	}
+}
 
 std::string CharacterSheetUiModel::getPlayerName(Game &game)
 {
@@ -47,4 +62,22 @@ std::string CharacterSheetUiModel::getPlayerLevel(Game &game)
 {
 	const Player &player = game.player;
 	return std::to_string(player.level);
+}
+
+std::string CharacterSheetUiModel::getPlayerHealth(Game &game)
+{
+	const Player &player = game.player;
+	return GetPlayerCurrentMaxStatusString(player.currentHealth, player.maxHealth);
+}
+
+std::string CharacterSheetUiModel::getPlayerStamina(Game &game)
+{
+	const Player &player = game.player;
+	return GetPlayerCurrentMaxStatusString(player.currentStamina, player.maxStamina);
+}
+
+std::string CharacterSheetUiModel::getPlayerSpellPoints(Game &game)
+{
+	const Player &player = game.player;
+	return GetPlayerCurrentMaxStatusString(player.currentSpellPoints, player.maxSpellPoints);
 }
