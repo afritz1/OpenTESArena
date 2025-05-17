@@ -62,20 +62,7 @@ int ArenaPlayerUtils::calculateMaxSpellPoints(int charClassDefID, int intelligen
 
 int ArenaPlayerUtils::calculateBonusToHit(int Agility)
 {
-	static int lastValidBonus = 0;
-	switch (Agility) {
-		case 45: lastValidBonus = -1; break;
-		case 46: lastValidBonus = 0; break;
-		case 55: lastValidBonus = +1; break;
-		case 60: lastValidBonus = +2; break;
-		case 65: lastValidBonus = +3; break;
-		case 70: lastValidBonus = +4; break;
-		case 75: lastValidBonus = +5; break;
-		case 80: lastValidBonus = +6; break;
-		case 85: lastValidBonus = +7; break;
-		case 90: lastValidBonus = +8; break;
-		case 95: lastValidBonus = +9; break;
-		case 100: lastValidBonus = +10; break;
-	}
-	return lastValidBonus;
+	if (Agility <= 45) return -1;
+	if (Agility <= 46) return 0;
+	return (Agility - 50) / 5;
 }

@@ -342,6 +342,11 @@ bool ChooseAttributesPanel::init()
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue -= 1;
 
+			if (strcmp(attribute.name, "Agility") == 0) {
+				this->bonusToHitValue = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
+				this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
+			}
+
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -399,7 +404,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusToHitTextBox.init(bonusToHitTextBoxInitInfo, "5", renderer))
+	if (!this->bonusToHitTextBox.init(bonusToHitTextBoxInitInfo, "0", renderer))
 	{
 		DebugLogError("Couldn't init bonus to hit text box.");
 		return false;
