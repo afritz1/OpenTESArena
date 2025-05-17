@@ -568,13 +568,13 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 		}
 	}
 
+	const double ceilingScale = game.gameState.getActiveCeilingScale();
 	const WorldDouble3 playerFeetPosition = this->getFeetPosition();
 	const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
-	const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point));
+	const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point, ceilingScale));
 	const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 
-	const double ceilingScale = game.gameState.getActiveCeilingScale();
 	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 	const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(playerFeetVoxelCoord.chunk);
 	if (voxelChunk != nullptr)
