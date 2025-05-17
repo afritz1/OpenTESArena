@@ -133,6 +133,18 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(cons
 		fontLibrary);
 }
 
+TextBox::InitInfo CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+{
+	return TextBox::InitInfo::makeWithXY(
+		text,
+		CharacterSheetUiView::PlayerGoldTextBoxX,
+		CharacterSheetUiView::PlayerGoldTextBoxY,
+		CharacterSheetUiView::PlayerGoldTextBoxFontName,
+		CharacterSheetUiView::PlayerGoldTextBoxColor,
+		CharacterSheetUiView::PlayerGoldTextBoxAlignment,
+		fontLibrary);
+}
+
 Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 {
 	const TextureAsset textureAsset = CharacterSheetUiView::getBodyTextureAsset(game);

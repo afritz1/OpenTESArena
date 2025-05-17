@@ -110,6 +110,14 @@ bool CharacterPanel::init()
 		return false;
 	}
 
+	const std::string playerGoldText = CharacterSheetUiModel::getPlayerGold(game);
+	const TextBox::InitInfo playerGoldTextBoxInitInfo = CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(playerGoldText, fontLibrary);
+	if (!this->goldTextBox.init(playerGoldTextBoxInitInfo, playerGoldText, renderer))
+	{
+		DebugLogError("Couldn't init player gold text box.");
+		return false;
+	}
+
 	this->doneButton = Button<Game&>(
 		CharacterSheetUiView::DoneButtonCenterPoint,
 		CharacterSheetUiView::DoneButtonWidth,
@@ -250,6 +258,13 @@ bool CharacterPanel::init()
 		this->spellPointsTextBox.getTextureID(),
 		playerSpellPointsTextBoxRect.getTopLeft(),
 		playerSpellPointsTextBoxRect.getSize(),
+		PivotType::TopLeft);
+
+	const Rect &playerGoldTextBoxRect = this->goldTextBox.getRect();
+	this->addDrawCall(
+		this->goldTextBox.getTextureID(),
+		playerGoldTextBoxRect.getTopLeft(),
+		playerGoldTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

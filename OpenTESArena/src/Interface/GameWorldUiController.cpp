@@ -431,18 +431,18 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 
 void GameWorldUiController::onCitizenKilled(Game &game)
 {
-	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const ExeData &exeData = binaryAssetLibrary.getExeData();
-
-	TextBox &actionTextBox = *game.getActionTextBox();
-
 	// Randomly give player some gold.
-	Player &player = game.player;
 	Random &random = game.random;
 	const int citizenCorpseGold = ArenaCitizenUtils::DEATH_MIN_GOLD_PIECES + random.next(ArenaCitizenUtils::DEATH_MAX_GOLD_PIECES);
-	// @todo give to player
 
+	Player &player = game.player;
+	player.gold += citizenCorpseGold;
+
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const std::string text = GameWorldUiModel::getCitizenKillGoldMessage(citizenCorpseGold, exeData);
+
+	TextBox &actionTextBox = *game.getActionTextBox();
 	actionTextBox.setText(text);
 	game.gameState.setActionTextDuration(text);
 }

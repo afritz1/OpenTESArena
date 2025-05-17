@@ -76,6 +76,12 @@ namespace CharacterSheetUiView
 	const Color PlayerSpellPointsTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerSpellPointsTextBoxAlignment = TextAlignment::TopLeft;
 
+	constexpr int PlayerGoldTextBoxX = 45;
+	constexpr int PlayerGoldTextBoxY = 143;
+	const std::string PlayerGoldTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerGoldTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerGoldTextBoxAlignment = TextAlignment::TopLeft;
+
 	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
@@ -85,6 +91,7 @@ namespace CharacterSheetUiView
 	TextBox::InitInfo getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBox::InitInfo getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBox::InitInfo getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

@@ -81,3 +81,9 @@ std::string CharacterSheetUiModel::getPlayerSpellPoints(Game &game)
 	const Player &player = game.player;
 	return GetPlayerCurrentMaxStatusString(player.currentSpellPoints, player.maxSpellPoints);
 }
+
+std::string CharacterSheetUiModel::getPlayerGold(Game &game)
+{
+	const Player &player = game.player;
+	return std::to_string(player.gold);
+}

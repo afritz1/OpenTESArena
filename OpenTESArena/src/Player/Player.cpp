@@ -183,6 +183,7 @@ Player::Player()
 	this->queuedMeleeSwingDirection = -1;
 	this->level = 0;
 	this->experience = 0;
+	this->gold = 0;
 	this->clearKeyInventory();
 }
 
@@ -214,6 +215,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->experience = 0;
 	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
+	this->gold = 0;
 	this->clearKeyInventory();
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))

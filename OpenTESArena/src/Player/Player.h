@@ -115,6 +115,7 @@ struct Player
 	int experience;
 	PrimaryAttributes primaryAttributes;
 	ItemInventory inventory;
+	int gold;
 	int keyInventory[ArenaItemUtils::DoorKeyCount];
 
 	Player();
