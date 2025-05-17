@@ -749,7 +749,8 @@ void Player::postPhysicsStep(double dt, Game &game)
 		this->movementSoundProgress = 0.0;
 	}
 
-	const CoordDouble3 feetCoord = VoxelUtils::worldPointToCoord(this->getFeetPosition());
+	const WorldDouble3 feetPosition = this->getFeetPosition();
+	const CoordDouble3 feetCoord = VoxelUtils::worldPointToCoord(feetPosition);
 	if (this->movementType == PlayerMovementType::Default)
 	{
 		const double isSlowEnoughToStartClimbing = physicsVelocity.length() < 0.01;
@@ -792,13 +793,13 @@ void Player::postPhysicsStep(double dt, Game &game)
 			const Double3 groundDirection = this->getGroundDirection();
 			double climbingFeetTargetY = ceilingScale;
 
-			// If there's a raised platform close by, set its top as the target.
+			// If there's a raised platform close by, set its top as the target. Assume they only exist in Y=1.
 			constexpr double raisedPlatformGatherDistance = PlayerConstants::CLIMBING_RAISED_PLATFORM_GATHER_DISTANCE;
 			constexpr Double3 raisedPlatformGatherDistanceVector(raisedPlatformGatherDistance, 0.0, raisedPlatformGatherDistance);
-			const WorldDouble3 raisedPlatformGatherMin = VoxelUtils::coordToWorldPoint(feetCoord) - raisedPlatformGatherDistanceVector;
+			const WorldDouble3 raisedPlatformGatherMin = feetPosition - raisedPlatformGatherDistanceVector;
 			const WorldDouble3 raisedPlatformGatherMax = raisedPlatformGatherMin + (raisedPlatformGatherDistanceVector * 2.0);
-			const WorldInt3 raisedPlatformGatherWorldVoxelMin = VoxelUtils::pointToVoxel(raisedPlatformGatherMin);
-			const WorldInt3 raisedPlatformGatherWorldVoxelMax = VoxelUtils::pointToVoxel(raisedPlatformGatherMax);
+			const WorldInt3 raisedPlatformGatherWorldVoxelMin = VoxelUtils::pointToVoxel(raisedPlatformGatherMin, ceilingScale);
+			const WorldInt3 raisedPlatformGatherWorldVoxelMax = VoxelUtils::pointToVoxel(raisedPlatformGatherMax, ceilingScale);
 			for (WEInt gatherWorldVoxelZ = raisedPlatformGatherWorldVoxelMin.z; gatherWorldVoxelZ <= raisedPlatformGatherWorldVoxelMax.z; gatherWorldVoxelZ++)
 			{
 				for (SNInt gatherWorldVoxelX = raisedPlatformGatherWorldVoxelMin.x; gatherWorldVoxelX <= raisedPlatformGatherWorldVoxelMax.x; gatherWorldVoxelX++)

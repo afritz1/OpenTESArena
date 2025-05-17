@@ -908,7 +908,7 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 	const SceneManager &sceneManager = game.sceneManager;
 	const Player &player = game.player;
 	const CoordDouble3 playerCoord = player.getEyeCoord();
-	const CoordInt3 playerVoxelCoord(playerCoord.chunk, VoxelUtils::pointToVoxel(playerCoord.point));
+	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
 	const VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
 	const VoxelVisibilityChunk *playerVoxelVisChunk = voxelVisChunkManager.tryGetChunkAtPosition(playerCoord.chunk);
 	if (playerVoxelVisChunk == nullptr)
@@ -953,7 +953,7 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 				const int dstIndex = ((quadtreeTextureDims.x - 1) - x) + (y * quadtreeTextureDims.x);
 				uint32_t color = 0;
 
-				const bool inPlayerVoxel = isLeaf && (y == playerVoxelCoord.voxel.x) && (x == playerVoxelCoord.voxel.z);
+				const bool inPlayerVoxel = isLeaf && (y == playerVoxelXZ.x) && (x == playerVoxelXZ.y);
 				if (inPlayerVoxel)
 				{
 					color = playerColor;

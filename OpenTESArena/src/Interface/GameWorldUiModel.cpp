@@ -126,9 +126,8 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	const OriginalInt2 displayedCoords = [&player, mapType]()
 	{
 		const WorldDouble3 absolutePlayerPosition = player.getEyePosition();
-		const WorldInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
-		const WorldInt2 playerVoxelXZ = absolutePlayerVoxel.getXZ();
-		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(playerVoxelXZ);
+		const WorldInt2 absolutePlayerVoxelXZ = VoxelUtils::pointToVoxel(absolutePlayerPosition.getXZ());
+		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(absolutePlayerVoxelXZ);
 
 		// The displayed coordinates in the wilderness behave differently in the original
 		// game due to how the 128x128 grid shifts to keep the player roughly centered.

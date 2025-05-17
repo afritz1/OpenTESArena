@@ -77,14 +77,16 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		AutomapUiController::onMouseButtonHeld(game, buttonType, position, dt, &this->automapOffset);
 	});
 
-	auto &renderer = game.renderer;
-	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
-	const CoordInt2 playerCoordXZ(playerCoord.chunk, playerVoxel.getXZ());
-	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(
-		game.gameState, playerCoordXZ, playerDirection, voxelChunkManager, renderer);
+	const GameState &gameState = game.gameState;
+	const double ceilingScale = gameState.getActiveCeilingScale();
+	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
+	const CoordInt2 playerCoordXZ(playerCoord.chunk, playerVoxelXZ);
+	
+	Renderer &renderer = game.renderer;
+	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(gameState, playerCoordXZ, playerDirection, voxelChunkManager, renderer);
 	this->mapTextureRef.init(mapTextureID, renderer);
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = AutomapUiView::allocBgTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 
