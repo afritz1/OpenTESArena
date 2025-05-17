@@ -317,9 +317,9 @@ bool ChooseAttributesPanel::init()
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue += 1;
 			if (strcmp(attribute.name, "Agility") == 0) {
-				const int bonusToHit = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
-				this->bonusToHitTextBox.setText(std::to_string(bonusToHit));
-			}			
+				this->bonusToHitValue = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
+				this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
+			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -382,7 +382,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::defaultActiveFunc);
 
 	// my code
-	this->bonusToHitTextBox.setText("prueba");
+	
 
 	const Rect& lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
 	const Int2 bonusToHitTextBoxTopLeftPosition(
