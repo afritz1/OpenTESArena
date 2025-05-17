@@ -65,6 +65,13 @@ struct ConsumableItemDefinition
 	void init(const char *name, const char *unidentifiedName);
 };
 
+struct GoldItemDefinition
+{
+	char name[64]; // Bag of ... gold (used with loot containers).
+
+	void init(const char *name);
+};
+
 struct MiscItemDefinition
 {
 	char name[64]; // Book, key, staff piece, etc.
@@ -118,6 +125,7 @@ enum class ItemType
 	Accessory,
 	Armor,
 	Consumable,
+	Gold,
 	Misc,
 	Shield,
 	Trinket,
@@ -135,6 +143,7 @@ struct ItemDefinition
 		AccessoryItemDefinition accessory;
 		ArmorItemDefinition armor;
 		ConsumableItemDefinition consumable;
+		GoldItemDefinition gold;
 		MiscItemDefinition misc;
 		ShieldItemDefinition shield;
 		TrinketItemDefinition trinket;

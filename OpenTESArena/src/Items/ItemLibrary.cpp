@@ -135,6 +135,12 @@ void ItemLibrary::init(const ExeData &exeData)
 		
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
+
+	// Used with loot containers. Player's gold is just a character sheet value.
+	ItemDefinition goldItemDef;
+	goldItemDef.init(ItemType::Gold);
+	goldItemDef.gold.init(exeData.items.bagOfGoldPieces.c_str());
+	this->itemDefs.emplace_back(std::move(goldItemDef));
 }
 
 int ItemLibrary::getCount() const
@@ -160,4 +166,21 @@ std::vector<int> ItemLibrary::getDefinitionIndicesIf(const ItemLibraryPredicate 
 	}
 
 	return indices;
+}
+
+const ItemDefinition &ItemLibrary::getGoldDefinition() const
+{
+	const ItemDefinition *itemDef = nullptr;
+	for (int i = 0; i < this->getCount(); i++)
+	{
+		const ItemDefinition &curItemDef = this->itemDefs[i];
+		if (curItemDef.type == ItemType::Gold)
+		{
+			itemDef = &curItemDef;
+			break;
+		}
+	}
+
+	DebugAssertMsg(itemDef != nullptr, "Couldn't find gold item definition.");
+	return *itemDef;
 }

@@ -23,6 +23,9 @@ public:
 	int getCount() const;
 	const ItemDefinition &getDefinition(int index) const;
 	std::vector<int> getDefinitionIndicesIf(const ItemLibraryPredicate &predicate) const;
+
+	// For loot containers only.
+	const ItemDefinition &getGoldDefinition() const;
 };
 
 #endif

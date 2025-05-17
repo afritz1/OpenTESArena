@@ -443,8 +443,6 @@ namespace PlayerLogic
 
 		if (isPrimaryInteraction)
 		{
-			// @todo: "too far away..." text for certain things (research)
-
 			const EntityInstanceID entityInstID = entityHit.id;
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
