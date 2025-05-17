@@ -23,8 +23,8 @@ private:
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
 	TextBox experienceTextBox, levelTextBox;
 	TextBox bonusPointsTextBox;
-	//Todo
 	TextBox bonusToHitTextBox;
+	TextBox bonusToDefendTextBox;
 	int bonusToHitValue;
 	//bonusToDamage,magicDefense,bonusHealth,charisma,healModificator,bonusToDefend,maxkilos;
 	//

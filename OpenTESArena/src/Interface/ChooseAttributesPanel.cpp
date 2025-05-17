@@ -319,6 +319,7 @@ bool ChooseAttributesPanel::init()
 			if (strcmp(attribute.name, "Agility") == 0) {
 				this->bonusToHitValue = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
 				this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
+				this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
 			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -345,6 +346,7 @@ bool ChooseAttributesPanel::init()
 			if (strcmp(attribute.name, "Agility") == 0) {
 				this->bonusToHitValue = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
 				this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
+				this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
 			}
 
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
@@ -386,7 +388,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// my code
+	// my code bonus atribute stat.............................................................................
 	
 
 	const Rect& lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
@@ -417,6 +419,35 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makeSizeFunc(bonusToHitTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
+
+	// codigo de inicializacion de bonusToDefendTextBox
+	const Int2 bonusToDefendTextBoxTopLeftPosition(
+		lastAttributeTextBoxRect.getLeft() + 120,
+		lastAttributeTextBoxRect.getTop() + 8);
+	const TextBox::InitInfo bonusToDefendTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
+		bonusToDefendTextBoxTopLeftPosition.x,
+		bonusToDefendTextBoxTopLeftPosition.y,
+		ChooseAttributesUiView::BonusPointsFontName,
+		ChooseAttributesUiView::BonusPointsTextColor,
+		TextAlignment::TopLeft,
+		std::nullopt,
+		1,
+		fontLibrary);
+	if (!this->bonusToDefendTextBox.init(bonusToDefendTextBoxInitInfo, "0", renderer))
+	{
+		DebugLogError("Couldn't init bonus to defend text box.");
+		return false;
+	}
+
+	const Rect &bonusToDefendTextBoxRect = this->bonusToDefendTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->bonusToDefendTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(bonusToDefendTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(bonusToDefendTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+	//.........................................................................................................
 	//My code
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
