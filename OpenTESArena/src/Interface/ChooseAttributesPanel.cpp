@@ -35,7 +35,7 @@ void ChooseAttributesPanel::populateBaseAttributesRandomly(CharacterCreationStat
 	{
 		PrimaryAttribute &attribute = attributes[i];
 		const int addedValue = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::PrimaryAttributeRandomMax, random);
-		attribute.maxValue += addedValue;
+		attribute.maxValue += addedValue;	
 	}
 }
 
@@ -52,6 +52,16 @@ bool ChooseAttributesPanel::init()
 	ArenaRandom &arenaRandom = game.arenaRandom;
 	this->populateBaseAttributesRandomly(charCreationState, arenaRandom);
 	this->bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
+
+	BufferView<PrimaryAttribute> attributes = charCreationState.attributes.getAttributes();
+	for (int i = 0; i < PrimaryAttributes::COUNT; i++)
+	{
+		const PrimaryAttribute &attribute = attributes[i];
+		if (strcmp(attribute.name, "Agility") == 0) {
+			this->bonusToHitValue = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
+			break;
+		}
+	}
 
 	this->selectedAttributeIndex = 0;
 	this->attributesAreSaved = false;
@@ -406,7 +416,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusToHitTextBox.init(bonusToHitTextBoxInitInfo, "0", renderer))
+	if (!this->bonusToHitTextBox.init(bonusToHitTextBoxInitInfo,std::to_string(this->bonusToHitValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus to hit text box.");
 		return false;
@@ -434,7 +444,7 @@ bool ChooseAttributesPanel::init()
 		std::nullopt,
 		1,
 		fontLibrary);
-	if (!this->bonusToDefendTextBox.init(bonusToDefendTextBoxInitInfo, "0", renderer))
+	if (!this->bonusToDefendTextBox.init(bonusToDefendTextBoxInitInfo, std::to_string(this->bonusToHitValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus to defend text box.");
 		return false;
