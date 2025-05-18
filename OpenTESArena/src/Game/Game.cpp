@@ -918,7 +918,7 @@ void Game::loop()
 
 				if (this->gameState.hasPendingLevelTransitionCalculation())
 				{
-					MapLogic::handleLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());
+					MapLogic::handleInteriorLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());
 					this->gameState.clearLevelTransitionCalculation();
 				}
 

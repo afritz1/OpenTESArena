@@ -74,7 +74,7 @@ private:
 	VoxelInt2 nextMapLevelTransitionVoxel; // Used with interior level changes.
 	std::optional<WorldMapLocationIDs> nextMapDefLocationIDs;
 	std::optional<WeatherDefinition> nextMapDefWeatherDef; // Used with fast travel, etc..
-	bool nextMapClearsPrevious; // Clears any previously-loaded map defs (such as when fast travelling).
+	bool nextMapClearsPrevious; // Clears any previously-loaded map defs (such as when fast travelling or leaving wild dungeon).
 	int nextLevelIndex;
 	SceneChangeMusicFunc nextMusicFunc, nextJingleMusicFunc; // Music changes after a map change.
 

@@ -30,7 +30,7 @@ namespace MapLogic
 
 	// Checks the given transition voxel to see if it's a level transition (i.e., level up/down), and changes
 	// the current level if it is.
-	void handleLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord);
+	void handleInteriorLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord);
 }
 
 #endif

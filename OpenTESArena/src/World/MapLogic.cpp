@@ -392,11 +392,18 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				return musicDef;
 			};
 
+			VoxelInt2 playerStartOffset = VoxelInt2::Zero;
+			if (interiorGenInfo.type == MapGeneration::InteriorGenType::Dungeon)
+			{
+				// @temp hack, assume entering a wild dungeon, need to push player south by one due to original map bug.
+				playerStartOffset = VoxelUtils::South;
+			}
+
 			// Always use clear weather in interiors.
 			WeatherDefinition overrideWeather;
 			overrideWeather.initClear();
 
-			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord, VoxelInt2::Zero, std::nullopt, false, overrideWeather);
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord, playerStartOffset, std::nullopt, false, overrideWeather);
 			gameState.queueMusicOnSceneChange(musicFunc);
 		}
 		else if (transitionType == TransitionType::CityGate)
@@ -580,7 +587,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 	}
 }
 
-void MapLogic::handleLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord)
+void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord)
 {
 	GameState &gameState = game.gameState;
 
@@ -701,6 +708,16 @@ void MapLogic::handleLevelTransition(Game &game, const CoordInt3 &playerCoord, c
 			}
 		}
 
+		bool isCityWildernessDungeon = false;
+		if (currentLocationDef.getType() == LocationDefinitionType::City)
+		{
+			if (gameState.isActiveMapNested())
+			{
+				// Can assume that only wild dungeons have *LEVELUP voxels on top floor in a city location.
+				isCityWildernessDungeon = true;
+			}
+		}
+
 		if (activeLevelIndex > 0)
 		{
 			// Decrement the world's level index and activate the new level.
@@ -709,6 +726,10 @@ void MapLogic::handleLevelTransition(Game &game, const CoordInt3 &playerCoord, c
 		else if (isStartDungeon)
 		{
 			MapLogic::handleStartDungeonLevelUpVoxelEnter(game);
+		}
+		else if (isCityWildernessDungeon)
+		{
+			gameState.queueMapDefPop();
 		}
 		else
 		{
