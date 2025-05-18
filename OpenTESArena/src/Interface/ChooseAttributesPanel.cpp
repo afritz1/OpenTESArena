@@ -54,13 +54,24 @@ bool ChooseAttributesPanel::init()
 	this->bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
 
 	BufferView<PrimaryAttribute> attributes = charCreationState.attributes.getAttributes();
+	
+	this->bonusToHitValue = 0;
+	this->bonusToCharismaValue = 0;
+	this->bonusToHealthValue = 0;
+	this->bonusDamageValue = 0;
+	this->maxKilosValue = 0;
+	this->magicDefValue = 0;
+
 	for (int i = 0; i < PrimaryAttributes::COUNT; i++)
 	{
 		const PrimaryAttribute &attribute = attributes[i];
-		if (strcmp(attribute.name, "Agility") == 0) {
-			this->bonusToHitValue = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
-			break;
-		}
+		auto bonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
+		this->bonusToHitValue += bonusValues.bonusToHit;
+		this->bonusToCharismaValue += bonusValues.bonusToCharisma;
+		this->bonusToHealthValue += bonusValues.bonusToHealth;
+		this->bonusDamageValue += bonusValues.bonusDamage;
+		this->maxKilosValue += bonusValues.maxKilos;
+		this->magicDefValue += bonusValues.magicDef;
 	}
 
 	this->selectedAttributeIndex = 0;
@@ -326,15 +337,15 @@ bool ChooseAttributesPanel::init()
 			BufferView<PrimaryAttribute> attributesView = attributes.getAttributes();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue += 1;
-
-			auto bonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
 			
-			this->bonusToHitValue = bonusValues.bonusToHit;
-			this->bonusToCharismaValue = bonusValues.bonusToCharisma;
-			this->bonusToHealthValue = bonusValues.bonusToHealth;
-			this->bonusDamageValue = bonusValues.bonusDamage;
-			this->maxKilosValue = bonusValues.maxKilos;
-			this->magicDefValue = bonusValues.magicDef;
+			auto newBonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
+			
+			this->bonusToHitValue = newBonusValues.bonusToHit;
+			this->bonusToCharismaValue = newBonusValues.bonusToCharisma;
+			this->bonusToHealthValue =  newBonusValues.bonusToHealth;
+			this->bonusDamageValue =  newBonusValues.bonusDamage;
+			this->maxKilosValue =  newBonusValues.maxKilos;
+			this->magicDefValue =  newBonusValues.magicDef;
 
 			this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
 			this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
@@ -366,15 +377,15 @@ bool ChooseAttributesPanel::init()
 			BufferView<PrimaryAttribute> attributesView = attributes.getAttributes();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue -= 1;
-
-			auto bonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
 			
-			this->bonusToHitValue = bonusValues.bonusToHit;
-			this->bonusToCharismaValue = bonusValues.bonusToCharisma;
-			this->bonusToHealthValue = bonusValues.bonusToHealth;
-			this->bonusDamageValue = bonusValues.bonusDamage;
-			this->maxKilosValue = bonusValues.maxKilos;
-			this->magicDefValue = bonusValues.magicDef;
+			auto newBonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
+			
+			this->bonusToHitValue = newBonusValues.bonusToHit;
+			this->bonusToCharismaValue = newBonusValues.bonusToCharisma;
+			this->bonusToHealthValue = newBonusValues.bonusToHealth;
+			this->bonusDamageValue = newBonusValues.bonusDamage;
+			this->maxKilosValue = newBonusValues.maxKilos;
+			this->magicDefValue = newBonusValues.magicDef;
 
 			this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
 			this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
@@ -499,7 +510,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusToCharismaTextBox.init(bonusToCharismaTextBoxInitInfo, "400", renderer))
+	if (!this->bonusToCharismaTextBox.init(bonusToCharismaTextBoxInitInfo, std::to_string(this->bonusToCharismaValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus to charisma text box.");
 		return false;
@@ -529,7 +540,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusToHealthTextBox.init(bonusToHealthTextBoxInitInfo, "5", renderer))
+	if (!this->bonusToHealthTextBox.init(bonusToHealthTextBoxInitInfo, std::to_string(this->bonusToHealthValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus to health text box.");
 		return false;
@@ -558,7 +569,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->healModTextBox.init(healModTextBoxInitInfo, "0", renderer))
+	if (!this->healModTextBox.init(healModTextBoxInitInfo, std::to_string(this->bonusToHealthValue), renderer))
 	{
 		DebugLogError("Couldn't init heal mod text box.");
 		return false;
@@ -588,7 +599,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusDamageTextBox.init(bonusDamageTextBoxInitInfo, "fuerza", renderer))
+	if (!this->bonusDamageTextBox.init(bonusDamageTextBoxInitInfo, std::to_string(this->bonusDamageValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus damage text box.");
 		return false;
@@ -617,7 +628,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->maxKilosTextBox.init(maxKilosTextBoxInitInfo, "kilo", renderer))
+	if (!this->maxKilosTextBox.init(maxKilosTextBoxInitInfo, std::to_string(this->maxKilosValue), renderer))
 	{
 		DebugLogError("Couldn't init max kilos text box.");
 		return false;
@@ -647,7 +658,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->magicDefTextBox.init(magicDefTextBoxInitInfo, "magic", renderer))
+	if (!this->magicDefTextBox.init(magicDefTextBoxInitInfo, std::to_string(this->magicDefValue), renderer))
 	{
 		DebugLogError("Couldn't init magic defense text box.");
 		return false;

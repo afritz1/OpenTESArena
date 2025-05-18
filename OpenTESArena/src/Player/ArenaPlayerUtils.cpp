@@ -68,12 +68,6 @@ int ArenaPlayerUtils::calculateBonusToHit(int Agility)
 }
 
 
-int ArenaPlayerUtils::calculateBonusToCharisma(int charisma)
-{
-	if (charisma <= 45) return -1;
-	if (charisma <= 46) return 0;
-	return (charisma - 50) / 5;
-}
 
 int ArenaPlayerUtils::calculateBonusToHealth(int endurance)
 {
