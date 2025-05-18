@@ -346,6 +346,10 @@ bool ChooseAttributesPanel::init()
 				this->maxKilosValue = attribute.maxValue * 2;
 				this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
 			}
+			if (strcmp(attribute.name, "Willpower") == 0) {
+				this->magicDefValue = ArenaPlayerUtils::calculateMagicDefenseBonus(attribute.maxValue);
+				this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
+			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -388,6 +392,10 @@ bool ChooseAttributesPanel::init()
 				this->maxKilosValue = attribute.maxValue * 2;
 				this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
 			}
+			if (strcmp(attribute.name, "Willpower") == 0) {
+				this->magicDefValue = ArenaPlayerUtils::calculateMagicDefenseBonus(attribute.maxValue);
+				this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
+			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -429,7 +437,7 @@ bool ChooseAttributesPanel::init()
 
 	// my code bonus atribute stat.............................................................................
 	
-
+	//bonus to hit
 	const Rect& lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
 	const Int2 bonusToHitTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 60,
@@ -459,7 +467,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// codigo de inicializacion de bonusToDefendTextBox
+	// textBox bonusToDefend
 	const Int2 bonusToDefendTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 120,
 		lastAttributeTextBoxRect.getTop() + 8);
@@ -487,7 +495,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	//  TextBox de Carisma
+	//  TextBox charisma
 	const Int2 bonusToCharismaTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 60,
 		lastAttributeTextBoxRect.getTop() + 32);
@@ -516,7 +524,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox de Health
+	// TextBox Health
 	const Rect& positionAttributeEndureceTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 3].getRect();
 	const Int2 bonusToHealthTextBoxTopLeftPosition(
 		positionAttributeEndureceTextBoxRect.getLeft() + 60,
@@ -546,7 +554,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox de Heal Mod
+	// TextBox Heal Mod
 	const Int2 healModTextBoxTopLeftPosition(
 		positionAttributeEndureceTextBoxRect.getLeft() + 120,
 		positionAttributeEndureceTextBoxRect.getTop());
@@ -575,7 +583,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox de Bonus Damage
+	// TextBox Bonus Damage
 	const Rect& positionAttributeStrengthTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 8].getRect();
 	const Int2 bonusDamageTextBoxTopLeftPosition(
 		positionAttributeStrengthTextBoxRect.getLeft() + 60,
@@ -605,7 +613,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox de Max Kilos
+	// TextBox Max Kilos
 	const Int2 maxKilosTextBoxTopLeftPosition(
 		positionAttributeStrengthTextBoxRect.getLeft() + 120,
 		positionAttributeStrengthTextBoxRect.getTop());
@@ -631,6 +639,36 @@ bool ChooseAttributesPanel::init()
 		[this]() { return this->maxKilosTextBox.getTextureID(); },
 		UiDrawCall::makePositionFunc(maxKilosTextBoxRect.getTopLeft()),
 		UiDrawCall::makeSizeFunc(maxKilosTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
+	// TextBox Magic Defense
+	const Rect& positionAttributeWillpowerTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
+	const Int2 magicDefTextBoxTopLeftPosition(
+		positionAttributeWillpowerTextBoxRect.getLeft() + 60,
+		positionAttributeWillpowerTextBoxRect.getTop());
+	const TextBox::InitInfo magicDefTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
+		magicDefTextBoxTopLeftPosition.x,
+		magicDefTextBoxTopLeftPosition.y,
+		ChooseAttributesUiView::BonusPointsFontName,
+		ChooseAttributesUiView::BonusPointsTextColor,
+		TextAlignment::TopLeft,
+		std::nullopt,
+		1,
+		fontLibrary);
+
+	if (!this->magicDefTextBox.init(magicDefTextBoxInitInfo, "magic", renderer))
+	{
+		DebugLogError("Couldn't init magic defense text box.");
+		return false;
+	}
+
+	const Rect &magicDefTextBoxRect = this->magicDefTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->magicDefTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(magicDefTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(magicDefTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 

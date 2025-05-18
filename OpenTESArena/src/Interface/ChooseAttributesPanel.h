@@ -30,12 +30,14 @@ private:
 	TextBox healModTextBox;
 	TextBox bonusDamageTextBox;
 	TextBox maxKilosTextBox;
+	TextBox magicDefTextBox;
 
 	int bonusToHitValue;
 	int bonusToCharismaValue;
 	int bonusToHealthValue;
 	int bonusDamageValue;
 	int maxKilosValue;
+	int magicDefValue;
 	//bonusToDamage,magicDefense,bonusHealth,charisma,healModificator,bonusToDefend,maxkilos;
 	//
 	Button<Game&, int, bool*> doneButton;

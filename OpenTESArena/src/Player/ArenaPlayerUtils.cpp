@@ -88,4 +88,10 @@ int ArenaPlayerUtils::calculateDamageBonus(int strength)
 	if (strength <= 43) return 0;
 	return (strength - 48) / 5;
 }
+int ArenaPlayerUtils::calculateMagicDefenseBonus(int Will) {
+	if (Will <= 38) return -2;
+	if (Will <= 41) return -1;
+	if (Will <= 46) return 0;
+	return (Will - 46) / 9; 
+}
 

@@ -39,6 +39,7 @@ namespace ArenaPlayerUtils
 	int calculateBonusToCharisma(int charisma);
 	int calculateBonusToHealth(int endurance);
 	int calculateDamageBonus(int strength);
+	int calculateMagicDefenseBonus(int will);
 }
 
 #endif
