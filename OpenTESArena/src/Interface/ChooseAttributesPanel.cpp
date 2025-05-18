@@ -457,7 +457,36 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makeSizeFunc(bonusToDefendTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
-	//.........................................................................................................
+
+	//  TextBox de Carisma
+	const Int2 bonusToCharismaTextBoxTopLeftPosition(
+		lastAttributeTextBoxRect.getLeft() + 60,
+		lastAttributeTextBoxRect.getTop() + 32);
+	const TextBox::InitInfo bonusToCharismaTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
+		bonusToCharismaTextBoxTopLeftPosition.x,
+		bonusToCharismaTextBoxTopLeftPosition.y,
+		ChooseAttributesUiView::BonusPointsFontName,
+		ChooseAttributesUiView::BonusPointsTextColor,
+		TextAlignment::TopLeft,
+		std::nullopt,
+		1,
+		fontLibrary);
+
+	if (!this->bonusToCharismaTextBox.init(bonusToCharismaTextBoxInitInfo, "400", renderer))
+	{
+		DebugLogError("Couldn't init bonus to charisma text box.");
+		return false;
+	}
+
+	const Rect &bonusToCharismaTextBoxRect = this->bonusToCharismaTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->bonusToCharismaTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(bonusToCharismaTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(bonusToCharismaTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+	/............................................................................................................................................
 	//My code
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{

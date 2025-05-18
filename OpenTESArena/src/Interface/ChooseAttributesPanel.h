@@ -25,7 +25,10 @@ private:
 	TextBox bonusPointsTextBox;
 	TextBox bonusToHitTextBox;
 	TextBox bonusToDefendTextBox;
+	TextBox bonusToCharismaTextBox;
+
 	int bonusToHitValue;
+	int bonusToCharismaValue;
 	//bonusToDamage,magicDefense,bonusHealth,charisma,healModificator,bonusToDefend,maxkilos;
 	//
 	Button<Game&, int, bool*> doneButton;
