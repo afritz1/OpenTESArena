@@ -1,7 +1,6 @@
 #ifndef GAME_STATE_H
 #define GAME_STATE_H
 
-#include <functional>
 #include <memory>
 #include <optional>
 #include <stack>
@@ -102,10 +101,6 @@ private:
 	static constexpr int WORLD_MAP_WEATHER_QUADRANT_COUNT = 36;
 	ArenaTypes::WeatherType worldMapWeathers[WORLD_MAP_WEATHER_QUADRANT_COUNT];
 
-	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
-	// behavior is to decrement the world's level index.
-	std::function<void(Game&)> onLevelUpVoxelEnter;
-
 	Date date;
 	Clock clock;
 	double chasmAnimSeconds;
@@ -173,9 +168,6 @@ public:
 
 	// Refers to fog in outdoor dungeons and daytime fog, not the heavy fog screen effect.
 	bool isFogActive() const;
-
-	// Gets the custom function for the *LEVELUP voxel enter event.
-	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
 
 	// On-screen text is visible if it has remaining duration.
 	bool triggerTextIsVisible() const;
