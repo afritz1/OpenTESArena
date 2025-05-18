@@ -55,7 +55,7 @@ bool GameWorldPanel::init()
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
-	const TextBox::InitInfo playerNameTextBoxInitInfo =
+	const TextBoxInitInfo playerNameTextBoxInitInfo =
 		GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
 	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
@@ -63,14 +63,14 @@ bool GameWorldPanel::init()
 		return false;
 	}
 
-	const TextBox::InitInfo triggerTextBoxInitInfo = GameWorldUiView::getTriggerTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo triggerTextBoxInitInfo = GameWorldUiView::getTriggerTextBoxInitInfo(fontLibrary);
 	if (!this->triggerText.init(triggerTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init trigger text box.");
 		return false;
 	}
 
-	const TextBox::InitInfo actionTextBoxInitInfo = GameWorldUiView::getActionTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo actionTextBoxInitInfo = GameWorldUiView::getActionTextBoxInitInfo(fontLibrary);
 	if (!this->actionText.init(actionTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init action text box.");

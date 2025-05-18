@@ -96,7 +96,7 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 	}
 
 	constexpr TextAlignment titleAlignment = TextAlignment::MiddleCenter;
-	const TextBox::Properties titleTextBoxProperties(titleFontDefIndex, &fontLibrary, titleProperties.textureGenInfo,
+	const TextBoxProperties titleTextBoxProperties(titleFontDefIndex, &fontLibrary, titleProperties.textureGenInfo,
 		titleProperties.textColor, titleAlignment, std::nullopt, titleProperties.lineSpacing);
 	if (!this->titleTextBox.init(titleRect, titleTextBoxProperties, renderer))
 	{
@@ -112,7 +112,7 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 	}
 
 	constexpr TextAlignment itemAlignment = titleAlignment;
-	const TextBox::Properties itemTextBoxProperties(itemFontDefIndex, &fontLibrary, itemsProperties.textureGenInfo,
+	const TextBoxProperties itemTextBoxProperties(itemFontDefIndex, &fontLibrary, itemsProperties.textureGenInfo,
 		itemsProperties.textColor, itemAlignment);
 
 	this->items.init(itemsProperties.count);

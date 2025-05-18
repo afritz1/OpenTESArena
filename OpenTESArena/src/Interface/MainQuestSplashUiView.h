@@ -21,7 +21,7 @@ namespace MainQuestSplashUiView
 	int getDescriptionTextBoxX(int textWidth);
 	int getDescriptionTextBoxY();
 
-	TextBox::InitInfo getDescriptionTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getDescriptionTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	constexpr int ExitButtonX = 272;
 	constexpr int ExitButtonY = 183;

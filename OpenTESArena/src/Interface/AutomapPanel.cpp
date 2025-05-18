@@ -46,7 +46,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	auto &game = this->getGame();
 	
 	const auto &fontLibrary = FontLibrary::getInstance();
-	const TextBox::InitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
+	const TextBoxInitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
 	if (!this->locationTextBox.init(locationTextBoxInitInfo, game.renderer))
 	{
 		DebugLogError("Couldn't init location text box.");

@@ -19,14 +19,14 @@
 
 #include "components/debug/Debug.h"
 
-TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const TextRenderUtils::TextShadowInfo shadowInfo(
 		AutomapUiView::LocationTextBoxShadowOffsetX,
 		AutomapUiView::LocationTextBoxShadowOffsetY,
 		AutomapUiView::LocationTextBoxShadowColor);
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		AutomapUiView::LocationTextBoxCenterPoint,
 		AutomapUiView::LocationTextBoxFontName,

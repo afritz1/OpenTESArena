@@ -19,7 +19,7 @@ bool MainQuestSplashPanel::init(int provinceID)
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string descriptionText = MainQuestSplashUiModel::getDungeonText(game, provinceID);
-	const TextBox::InitInfo descriptionTextBoxInitInfo =
+	const TextBoxInitInfo descriptionTextBoxInitInfo =
 		MainQuestSplashUiView::getDescriptionTextBoxInitInfo(descriptionText, fontLibrary);
 	if (!this->textBox.init(descriptionTextBoxInitInfo, descriptionText, renderer))
 	{

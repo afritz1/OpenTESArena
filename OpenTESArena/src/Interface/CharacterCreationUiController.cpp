@@ -247,7 +247,7 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedFirstText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextFontName,
@@ -290,7 +290,7 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedSecondText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextFontName,
@@ -324,7 +324,7 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedThirdText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextFontName,
@@ -358,7 +358,7 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedFourthText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextFontName,
@@ -630,7 +630,7 @@ void ChooseAttributesUiController::onSaveButtonSelectedWithNoBonusPoints(Game &g
 	game.popSubPanel();
 
 	const std::string text = ChooseAttributesUiModel::getAppearanceText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseAttributesUiView::AppearanceTextCenterPoint,
 		ChooseAttributesUiView::AppearanceTextFontName,
@@ -669,7 +669,7 @@ void ChooseAttributesUiController::onSaveButtonSelectedWithBonusPoints(Game &gam
 	game.popSubPanel();
 
 	const std::string text = ChooseAttributesUiModel::getBonusPointsRemainingText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseAttributesUiView::AppearanceTextCenterPoint,
 		ChooseAttributesUiView::AppearanceTextFontName,

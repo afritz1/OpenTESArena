@@ -40,7 +40,7 @@ namespace ProvinceMapUiView
 	constexpr int LocationTextShadowOffsetY = 0;
 	Int2 getLocationTextClampedCenter(const Rect &unclampedRect);
 
-	TextBox::InitInfo getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
 	const std::string TextPopUpFontName = ArenaFontName::Arena;
@@ -106,13 +106,13 @@ namespace ProvinceSearchUiView
 	const Color TitleColor(52, 24, 8);
 	constexpr TextAlignment TitleTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const std::string TextEntryFontName = ArenaFontName::Arena;
 	const Color TextEntryColor(52, 24, 8);
 	constexpr TextAlignment TextEntryTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	constexpr int TextureWidth = 280;
 	constexpr int TextureHeight = 40;

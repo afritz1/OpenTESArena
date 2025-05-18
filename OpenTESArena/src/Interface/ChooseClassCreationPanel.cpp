@@ -34,7 +34,7 @@ bool ChooseClassCreationPanel::init()
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseClassCreationUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo =
+	const TextBoxInitInfo titleTextBoxInitInfo =
 		ChooseClassCreationUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
@@ -43,7 +43,7 @@ bool ChooseClassCreationPanel::init()
 	}
 
 	const std::string generateText = ChooseClassCreationUiModel::getGenerateButtonText(game);
-	const TextBox::InitInfo generateTextBoxInitInfo =
+	const TextBoxInitInfo generateTextBoxInitInfo =
 		ChooseClassCreationUiView::getGenerateTextBoxInitInfo(generateText, fontLibrary);
 	if (!this->generateTextBox.init(generateTextBoxInitInfo, generateText, renderer))
 	{
@@ -52,7 +52,7 @@ bool ChooseClassCreationPanel::init()
 	}
 
 	const std::string selectText = ChooseClassCreationUiModel::getSelectButtonText(game);
-	const TextBox::InitInfo selectTextBoxInitInfo =
+	const TextBoxInitInfo selectTextBoxInitInfo =
 		ChooseClassCreationUiView::getSelectTextBoxInitInfo(selectText, fontLibrary);
 	if (!this->selectTextBox.init(selectTextBoxInitInfo, selectText, renderer))
 	{

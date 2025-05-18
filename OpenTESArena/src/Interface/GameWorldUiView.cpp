@@ -55,10 +55,10 @@ Rect GameWorldUiView::scaleClassicCursorRectToNative(int rectIndex, double xScal
 		static_cast<int>(std::ceil(static_cast<double>(classicRect.height) * yScale)));
 }
 
-TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		GameWorldUiView::PlayerNameTextBoxX,
 		GameWorldUiView::PlayerNameTextBoxY,
@@ -247,7 +247,7 @@ double GameWorldUiView::getEffectTextSeconds(const std::string_view text)
 	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
 }
 
-TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	constexpr int maxNewLines = 6;
 
@@ -263,7 +263,7 @@ TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &
 		GameWorldUiView::TriggerTextShadowOffsetY,
 		GameWorldUiView::TriggerTextShadowColor);
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		Int2::Zero, // @todo: needs to be a variable due to classic/modern mode. Maybe make two text boxes?
 		GameWorldUiView::TriggerTextFontName,
@@ -274,7 +274,7 @@ TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &
 		fontLibrary);
 }
 
-TextBox::InitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	std::string dummyText;
 	for (int i = 0; i < 2; i++)
@@ -288,7 +288,7 @@ TextBox::InitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &f
 		GameWorldUiView::ActionTextShadowOffsetY,
 		GameWorldUiView::ActionTextShadowColor);
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		Int2::Zero, // @todo: needs to be a variable due to classic/modern mode. Maybe make two text boxes?
 		GameWorldUiView::ActionTextFontName,
@@ -299,10 +299,10 @@ TextBox::InitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &f
 		fontLibrary);
 }
 
-TextBox::InitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	DebugNotImplemented();
-	return TextBox::InitInfo();
+	return TextBoxInitInfo();
 }
 
 ListBox::Properties GameWorldUiView::getLootListBoxProperties()
@@ -850,7 +850,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		text = "No hit";
 	}
 
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		text,
 		0,
 		0,

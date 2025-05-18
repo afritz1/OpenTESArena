@@ -206,7 +206,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		UiDrawCall::defaultActiveFunc);
 
 	const std::string tempTextBoxText = "(item tables not implemented)";
-	TextBox::InitInfo tempTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	TextBoxInitInfo tempTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		tempTextBoxText,
 		containerInventoryTextureTopLeft.x + (this->textureRef.getWidth() / 2),
 		containerInventoryTextureTopLeft.y + this->textureRef.getHeight(),

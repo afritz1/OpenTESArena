@@ -36,7 +36,7 @@ bool ProvinceMapPanel::init(int provinceID)
 	auto &game = this->getGame();
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
-	const TextBox::InitInfo hoveredLocationTextBoxInitInfo = ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo hoveredLocationTextBoxInitInfo = ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(fontLibrary);
 	if (!this->hoveredLocationTextBox.init(hoveredLocationTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init hovered location text box.");

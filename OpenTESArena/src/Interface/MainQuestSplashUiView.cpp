@@ -15,7 +15,7 @@ int MainQuestSplashUiView::getDescriptionTextBoxY()
 	return 133;
 }
 
-TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainQuestSplashUiView::DescriptionFontName;
 	int fontDefIndex;
@@ -26,7 +26,7 @@ TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		MainQuestSplashUiView::getDescriptionTextBoxX(textureGenInfo.width),
 		MainQuestSplashUiView::getDescriptionTextBoxY(),

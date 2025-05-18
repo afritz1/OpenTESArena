@@ -47,10 +47,10 @@ Int2 ChooseClassCreationUiView::getSelectTextureCenter()
 	return ChooseClassCreationUiView::getGenerateTextureCenter() + Int2(0, 40);
 }
 
-TextBox::InitInfo ChooseClassCreationUiView::getTitleTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ChooseClassCreationUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseClassCreationUiView::TitleCenter,
 		ChooseClassCreationUiView::TitleFontName,
@@ -61,10 +61,10 @@ TextBox::InitInfo ChooseClassCreationUiView::getTitleTextBoxInitInfo(const std::
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseClassCreationUiView::getGenerateTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ChooseClassCreationUiView::getGenerateTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseClassCreationUiView::GenerateTextCenterPoint,
 		ChooseClassCreationUiView::GenerateTextFontName,
@@ -73,10 +73,10 @@ TextBox::InitInfo ChooseClassCreationUiView::getGenerateTextBoxInitInfo(const st
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseClassCreationUiView::getSelectTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ChooseClassCreationUiView::getSelectTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseClassCreationUiView::SelectTextCenterPoint,
 		ChooseClassCreationUiView::SelectTextFontName,
@@ -175,10 +175,10 @@ TextureAsset ChooseClassUiView::getListBoxTextureAsset()
 	return TextureAsset(std::string(ArenaTextureName::PopUp2));
 }
 
-TextBox::InitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		ChooseClassUiView::TitleX,
 		ChooseClassUiView::TitleY,
@@ -188,7 +188,7 @@ TextBox::InitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_v
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	std::string dummyText;
 	for (int i = 0; i < 10; i++)
@@ -204,7 +204,7 @@ TextBox::InitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const Fo
 	TextRenderUtils::TextShadowInfo shadowInfo;
 	shadowInfo.init(1, 0, Colors::Black);
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT - 32),
 		ArenaFontName::D,
@@ -244,10 +244,10 @@ Int2 ChooseGenderUiView::getFemaleTextureCenter()
 	return ChooseGenderUiView::getMaleTextureCenter() + Int2(0, 40);
 }
 
-TextBox::InitInfo ChooseGenderUiView::getTitleTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ChooseGenderUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseGenderUiView::TitleCenterPoint,
 		ChooseGenderUiView::TitleFontName,
@@ -256,10 +256,10 @@ TextBox::InitInfo ChooseGenderUiView::getTitleTextBoxInitInfo(const std::string_
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseGenderUiView::getMaleTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ChooseGenderUiView::getMaleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseGenderUiView::MaleTextBoxCenter,
 		ChooseGenderUiView::MaleFontName,
@@ -268,10 +268,10 @@ TextBox::InitInfo ChooseGenderUiView::getMaleTextBoxInitInfo(const std::string_v
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseGenderUiView::getFemaleTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ChooseGenderUiView::getFemaleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseGenderUiView::FemaleTextBoxCenter,
 		ChooseGenderUiView::FemaleFontName,
@@ -301,10 +301,10 @@ Int2 ChooseNameUiView::getTitleTextureCenter()
 	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
 }
 
-TextBox::InitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		ChooseNameUiView::TitleTextBoxX,
 		ChooseNameUiView::TitleTextBoxY,
@@ -314,11 +314,11 @@ TextBox::InitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_vi
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseNameUiView::getEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo ChooseNameUiView::getEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(CharacterCreationState::MAX_NAME_LENGTH, TextRenderUtils::LARGEST_CHAR);
 
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		ChooseNameUiView::EntryTextBoxX,
 		ChooseNameUiView::EntryTextBoxY,
@@ -477,9 +477,9 @@ Rect ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(int textWidth, int 
 		std::max(textHeight + 8, 40));
 }
 
-TextBox::InitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::string_view text, Game &game)
+TextBoxInitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::string_view text, Game &game)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::InitialPopUpTextCenterPoint,
 		ChooseRaceUiView::InitialPopUpFontName,
@@ -490,10 +490,10 @@ TextBox::InitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::st
 		FontLibrary::getInstance());
 }
 
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
+TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
 	const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextFontName,
@@ -504,10 +504,10 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedSecondTextBoxInitInfo(
+TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedSecondTextBoxInitInfo(
 	const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextFontName,
@@ -518,10 +518,10 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedSecondTextBoxInitInfo(
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedThirdTextBoxInitInfo(
+TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedThirdTextBoxInitInfo(
 	const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextFontName,
@@ -532,10 +532,10 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedThirdTextBoxInitInfo(
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
+TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
 	const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextFontName,

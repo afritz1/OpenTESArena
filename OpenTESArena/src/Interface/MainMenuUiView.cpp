@@ -33,11 +33,11 @@ Color MainMenuUiView::getTestButtonTextColor()
 	return Colors::White;
 }
 
-TextBox::InitInfo MainMenuUiView::getTestButtonTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo MainMenuUiView::getTestButtonTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	const Rect rect = MainMenuUiView::getTestButtonRect();
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		rect.getCenter(),
 		MainMenuUiView::TestButtonFontName,
@@ -46,7 +46,7 @@ TextBox::InitInfo MainMenuUiView::getTestButtonTextBoxInitInfo(const std::string
 		fontLibrary);
 }
 
-TextBox::InitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainMenuUiView::TestButtonFontName;
 	int fontIndex;
@@ -60,7 +60,7 @@ TextBox::InitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestTypeUpButtonRect();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		buttonRect.getLeft() - 2 - textureGenInfo.width,
 		buttonRect.getBottom(),
@@ -70,7 +70,7 @@ TextBox::InitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &
 		fontLibrary);
 }
 
-TextBox::InitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainMenuUiView::TestButtonFontName;
 	int fontIndex;
@@ -84,7 +84,7 @@ TextBox::InitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestIndexUpButtonRect();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		buttonRect.getLeft() - 2 - textureGenInfo.width,
 		buttonRect.getBottom(),
@@ -94,7 +94,7 @@ TextBox::InitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &
 		fontLibrary);
 }
 
-TextBox::InitInfo MainMenuUiView::getTestWeatherTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo MainMenuUiView::getTestWeatherTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainMenuUiView::TestButtonFontName;
 	int fontIndex;
@@ -108,7 +108,7 @@ TextBox::InitInfo MainMenuUiView::getTestWeatherTextBoxInitInfo(const FontLibrar
 	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestWeatherUpButtonRect();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		buttonRect.getLeft() - 2 - textureGenInfo.width,
 		buttonRect.getBottom(),

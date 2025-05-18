@@ -11,10 +11,10 @@
 #include "../Stats/CharacterRaceLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerNameTextBoxX,
 		CharacterSheetUiView::PlayerNameTextBoxY,
@@ -24,10 +24,10 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerRaceTextBoxX,
 		CharacterSheetUiView::PlayerRaceTextBoxY,
@@ -37,10 +37,10 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerClassTextBoxX,
 		CharacterSheetUiView::PlayerClassTextBoxY,
@@ -50,15 +50,15 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std:
 		fontLibrary);
 }
 
-std::vector<TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary)
+std::vector<TextBoxInitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary)
 {
-	std::vector<TextBox::InitInfo> textBoxInitInfos;
+	std::vector<TextBoxInitInfo> textBoxInitInfos;
 	
 	for (int i = 0; i < attributes.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = attributes[i];
 		const std::string worstCaseStr(3, TextRenderUtils::LARGEST_CHAR);
-		TextBox::InitInfo initInfo = TextBox::InitInfo::makeWithXY(
+		TextBoxInitInfo initInfo = TextBoxInitInfo::makeWithXY(
 			worstCaseStr,
 			CharacterSheetUiView::PlayerAttributeTextBoxX,
 			CharacterSheetUiView::PlayerAttributeTextBoxesY + i * CharacterSheetUiView::PlayerAttributeTextBoxHeight,
@@ -73,9 +73,9 @@ std::vector<TextBox::InitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxIn
 	return textBoxInitInfos;
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerExperienceTextBoxX,
 		CharacterSheetUiView::PlayerExperienceTextBoxY,
@@ -85,9 +85,9 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(const
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerLevelTextBoxX,
 		CharacterSheetUiView::PlayerLevelTextBoxY,
@@ -97,9 +97,9 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(const std:
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerHealthTextBoxX,
 		CharacterSheetUiView::PlayerHealthTextBoxY,
@@ -109,9 +109,9 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(const std
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerStaminaTextBoxX,
 		CharacterSheetUiView::PlayerStaminaTextBoxY,
@@ -121,9 +121,9 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(const st
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerSpellPointsTextBoxX,
 		CharacterSheetUiView::PlayerSpellPointsTextBoxY,
@@ -133,9 +133,9 @@ TextBox::InitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(cons
 		fontLibrary);
 }
 
-TextBox::InitInfo CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		CharacterSheetUiView::PlayerGoldTextBoxX,
 		CharacterSheetUiView::PlayerGoldTextBoxY,

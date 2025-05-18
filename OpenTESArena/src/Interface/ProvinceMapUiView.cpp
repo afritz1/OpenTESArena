@@ -29,7 +29,7 @@ Int2 ProvinceMapUiView::getLocationTextClampedCenter(const Rect &unclampedRect)
 	return clampedTopLeft + Int2(unclampedRect.width / 2, unclampedRect.height / 2);
 }
 
-TextBox::InitInfo ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(24, TextRenderUtils::LARGEST_CHAR);
 
@@ -38,7 +38,7 @@ TextBox::InitInfo ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(const Fon
 		ProvinceMapUiView::LocationTextShadowColor);
 	constexpr int lineSpacing = 0;
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		Int2::Zero,
 		ProvinceMapUiView::LocationFontName,
@@ -314,10 +314,10 @@ UiTextureID ProvinceMapUiView::allocTextPopUpTexture(int textWidth, int textHeig
 	return textureID;
 }
 
-TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		ProvinceSearchUiView::TitleTextBoxX,
 		ProvinceSearchUiView::TitleTextBoxY,
@@ -327,11 +327,11 @@ TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::strin
 		fontLibrary);
 }
 
-TextBox::InitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(ProvinceSearchUiModel::MaxNameLength, TextRenderUtils::LARGEST_CHAR);
 	const Int2 &origin = ProvinceSearchUiView::DefaultTextCursorPosition;
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		origin.x,
 		origin.y,

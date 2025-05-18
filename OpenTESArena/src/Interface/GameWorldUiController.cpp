@@ -32,10 +32,10 @@
 
 namespace
 {
-	void GetDefaultStatusPopUpInitValues(Game &game, const std::string &text, Int2 *outCenter, TextBox::InitInfo *outTextBoxInitInfo, UiTextureID *outTextureID)
+	void GetDefaultStatusPopUpInitValues(Game &game, const std::string &text, Int2 *outCenter, TextBoxInitInfo *outTextBoxInitInfo, UiTextureID *outTextureID)
 	{
 		*outCenter = GameWorldUiView::getStatusPopUpTextCenterPoint(game);
-		*outTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		*outTextBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 			text,
 			*outCenter,
 			GameWorldUiView::StatusPopUpFontName,
@@ -203,7 +203,7 @@ void GameWorldUiController::onStatusButtonSelected(Game &game)
 	const std::string text = GameWorldUiModel::getStatusButtonText(game);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -400,7 +400,7 @@ void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityI
 	const std::string text = GameWorldUiModel::getEnemyCorpseGoldMessage(corpseGoldCount, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -439,7 +439,7 @@ void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, Entity
 	const std::string text = GameWorldUiModel::getEnemyCorpseEmptyInventoryMessage(entityName, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -452,7 +452,7 @@ void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &
 	const std::string text = GameWorldUiModel::getKeyPickUpMessage(keyID, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -471,7 +471,7 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 	const std::string text = GameWorldUiModel::getDoorUnlockWithKeyMessage(keyID, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -495,7 +495,7 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 	const std::string text = citizenNameStr + "\n(dialogue not implemented)";
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -584,7 +584,7 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 	const std::string text = GameWorldUiModel::getStaminaExhaustedMessage(isSwimming, isInterior, isNight, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 

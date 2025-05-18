@@ -42,10 +42,10 @@ Color OptionsUiView::getBackButtonTextColor()
 	return Colors::White;
 }
 
-TextBox::InitInfo OptionsUiView::getBackButtonTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo OptionsUiView::getBackButtonTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		OptionsUiView::BackButtonTextBoxCenterPoint,
 		OptionsUiView::BackButtonFontName,
@@ -74,11 +74,11 @@ Color OptionsUiView::getDescriptionTextColor()
 	return Colors::White;
 }
 
-TextBox::InitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::string_view text,
+TextBoxInitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	const Rect tabRect = OptionsUiView::getTabRect(index);
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		tabRect.getCenter(),
 		OptionsUiView::TabFontName,
@@ -87,7 +87,7 @@ TextBox::InitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::str
 		fontLibrary);
 }
 
-TextBox::InitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontLibrary &fontLibrary)
+TextBoxInitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(28, TextRenderUtils::LARGEST_CHAR);
 
@@ -105,7 +105,7 @@ TextBox::InitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontL
 		listRect.getTop() + (fontDef.getCharacterHeight() * index),
 		listRect.width,
 		listRect.height);
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		rect.getLeft(),
 		rect.getTop(),
@@ -115,7 +115,7 @@ TextBox::InitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontL
 		fontLibrary);
 }
 
-TextBox::InitInfo OptionsUiView::getDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo OptionsUiView::getDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	std::string dummyText(36, TextRenderUtils::LARGEST_CHAR);
 	for (int i = 0; i < 8; i++)
@@ -124,7 +124,7 @@ TextBox::InitInfo OptionsUiView::getDescriptionTextBoxInitInfo(const FontLibrary
 	}
 
 	const Int2 origin = OptionsUiView::getDescriptionXY();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		origin.x,
 		origin.y,

@@ -17,7 +17,7 @@ bool ChooseGenderPanel::init()
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseGenderUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo = ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBoxInitInfo titleTextBoxInitInfo = ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
@@ -25,7 +25,7 @@ bool ChooseGenderPanel::init()
 	}
 
 	const std::string maleText = ChooseGenderUiModel::getMaleText(game);
-	const TextBox::InitInfo maleTextBoxInitInfo = ChooseGenderUiView::getMaleTextBoxInitInfo(maleText, fontLibrary);
+	const TextBoxInitInfo maleTextBoxInitInfo = ChooseGenderUiView::getMaleTextBoxInitInfo(maleText, fontLibrary);
 	if (!this->maleTextBox.init(maleTextBoxInitInfo, maleText, renderer))
 	{
 		DebugLogError("Couldn't init male text box.");
@@ -33,7 +33,7 @@ bool ChooseGenderPanel::init()
 	}
 
 	const std::string femaleText = ChooseGenderUiModel::getFemaleText(game);
-	const TextBox::InitInfo femaleTextBoxInitInfo = ChooseGenderUiView::getFemaleTextBoxInitInfo(femaleText, fontLibrary);
+	const TextBoxInitInfo femaleTextBoxInitInfo = ChooseGenderUiView::getFemaleTextBoxInitInfo(femaleText, fontLibrary);
 	if (!this->femaleTextBox.init(femaleTextBoxInitInfo, femaleText, renderer))
 	{
 		DebugLogError("Couldn't init female text box.");

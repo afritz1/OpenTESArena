@@ -68,7 +68,7 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 	constexpr int lineSpacing = ProvinceMapUiView::TextPopUpLineSpacing;
 	const TextRenderUtils::TextureGenInfo textBoxTextureGenInfo =
 		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ProvinceMapUiView::TextPopUpCenterPoint,
 		fontName,

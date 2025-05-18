@@ -40,7 +40,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const TextCinematicDefinition &textCinematicDef = cinematicLibrary.getTextDefinition(textCinematicDefIndex);
-	const TextBox::InitInfo subtitlesTextBoxInitInfo = TextCinematicUiView::getSubtitlesTextBoxInitInfo(textCinematicDef.fontColor, fontLibrary);
+	const TextBoxInitInfo subtitlesTextBoxInitInfo = TextCinematicUiView::getSubtitlesTextBoxInitInfo(textCinematicDef.fontColor, fontLibrary);
 	if (!this->textBox.init(subtitlesTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init subtitles text box.");

@@ -17,14 +17,14 @@ bool ChooseNamePanel::init()
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseNameUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo = ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBoxInitInfo titleTextBoxInitInfo = ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	const TextBox::InitInfo entryTextBoxInitInfo = ChooseNameUiView::getEntryTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo entryTextBoxInitInfo = ChooseNameUiView::getEntryTextBoxInitInfo(fontLibrary);
 	if (!this->entryTextBox.init(entryTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init entry text box.");

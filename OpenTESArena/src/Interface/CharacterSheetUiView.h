@@ -82,16 +82,16 @@ namespace CharacterSheetUiView
 	const Color PlayerGoldTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerGoldTextBoxAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	std::vector<TextBox::InitInfo> getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerRaceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerClassTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	std::vector<TextBoxInitInfo> getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

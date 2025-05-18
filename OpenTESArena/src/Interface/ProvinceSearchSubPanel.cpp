@@ -35,7 +35,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
 	const std::string textTitleText = ProvinceSearchUiModel::getTitleText(game);
-	const TextBox::InitInfo textTitleTextBoxInitInfo =
+	const TextBoxInitInfo textTitleTextBoxInitInfo =
 		ProvinceSearchUiView::getTitleTextBoxInitInfo(textTitleText, fontLibrary);
 	if (!this->textTitleTextBox.init(textTitleTextBoxInitInfo, textTitleText, renderer))
 	{
@@ -43,7 +43,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		return false;
 	}
 
-	const TextBox::InitInfo textEntryTextBoxInitInfo = ProvinceSearchUiView::getTextEntryTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo textEntryTextBoxInitInfo = ProvinceSearchUiView::getTextEntryTextBoxInitInfo(fontLibrary);
 	if (!this->textEntryTextBox.init(textEntryTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init text entry text box.");

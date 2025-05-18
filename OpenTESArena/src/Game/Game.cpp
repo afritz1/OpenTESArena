@@ -812,7 +812,7 @@ void Game::loop()
 
 	this->audioManager.setMusic(mainMenuMusicDef);
 
-	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
+	const TextBoxInitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
 	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
 	{
 		DebugCrash("Couldn't init debug info text box.");
