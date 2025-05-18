@@ -58,8 +58,8 @@ Controls:
 #### Run `otesa.exe`
 
 #### Common issues
-- Missing MSVCP141.dll error
-  - Download and run latest X64 [vc_redist.x64.exe](https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads) from Microsoft
+- Sudden exit on startup / Missing MSVCP141.dll error
+  - Download and run latest Visual C++ Redistributable with "X64" Architecture [vc_redist.x64.exe](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist#latest-microsoft-visual-c-redistributable-version)
 - No sound, `alcOpenDevice()` warnings
   - Download [OpenAL 1.1 Windows Installer (zip)](https://www.openal.org/downloads/) and run `oalinst.exe`
 
