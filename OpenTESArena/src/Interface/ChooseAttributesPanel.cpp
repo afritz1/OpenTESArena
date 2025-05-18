@@ -331,6 +331,10 @@ bool ChooseAttributesPanel::init()
 				this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
 				this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
 			}
+			if (strcmp(attribute.name, "Personality") == 0) {
+				this->bonusToCharismaValue = ArenaPlayerUtils::calculateBonusToCharisma(attribute.maxValue);
+				this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
+			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -358,7 +362,10 @@ bool ChooseAttributesPanel::init()
 				this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
 				this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
 			}
-
+			if (strcmp(attribute.name, "Personality") == 0) {
+				this->bonusToCharismaValue = ArenaPlayerUtils::calculateBonusToCharisma(attribute.maxValue);
+				this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
+			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -486,7 +493,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makeSizeFunc(bonusToCharismaTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
-	/............................................................................................................................................
+	//............................................................................................................................................
 	//My code
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
