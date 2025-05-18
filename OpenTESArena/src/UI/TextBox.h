@@ -19,14 +19,14 @@ enum class TextAlignment;
 struct TextBoxProperties
 {
 	int fontDefIndex; // Index in font library.
-	TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
+	TextRenderTextureGenInfo textureGenInfo; // Texture dimensions, etc..
 	Color defaultColor; // Color of text unless overridden.
 	TextAlignment alignment;
-	std::optional<TextRenderUtils::TextShadowInfo> shadowInfo;
+	std::optional<TextRenderShadowInfo> shadowInfo;
 	int lineSpacing; // Pixels between each line of text.
 
-	TextBoxProperties(int fontDefIndex, const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &defaultColor,
-		TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo = std::nullopt, int lineSpacing = 0);
+	TextBoxProperties(int fontDefIndex, const TextRenderTextureGenInfo &textureGenInfo, const Color &defaultColor,
+		TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo = std::nullopt, int lineSpacing = 0);
 	TextBoxProperties();
 };
 
@@ -42,12 +42,12 @@ struct TextBoxInitInfo
 	void init(const Rect &rect, TextBoxProperties &&properties);
 
 	static TextBoxInitInfo makeWithCenter(const std::string_view text, const Int2 &center, const std::string &fontName,
-		const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
+		const Color &textColor, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadow,
 		int lineSpacing, const FontLibrary &fontLibrary);
 	static TextBoxInitInfo makeWithCenter(const std::string_view text, const Int2 &center, const std::string &fontName,
 		const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary);
 	static TextBoxInitInfo makeWithXY(const std::string_view text, int x, int y, const std::string &fontName,
-		const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
+		const Color &textColor, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadow,
 		int lineSpacing, const FontLibrary &fontLibrary);
 	static TextBoxInitInfo makeWithXY(const std::string_view text, int x, int y, const std::string &fontName,
 		const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary);
@@ -59,7 +59,7 @@ private:
 	Rect rect; // Screen position and render dimensions (NOT texture dimensions).
 	TextBoxProperties properties;
 	std::string text;
-	TextRenderUtils::ColorOverrideInfo colorOverrideInfo;
+	TextRenderColorOverrideInfo colorOverrideInfo;
 	ScopedUiTextureRef textureRef; // Output texture for rendering.
 	bool dirty;
 

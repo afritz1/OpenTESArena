@@ -24,14 +24,14 @@ MessageBoxBackgroundProperties::MessageBoxBackgroundProperties(TextureUtils::Pat
 }
 
 MessageBoxTitleProperties::MessageBoxTitleProperties(const std::string &fontName,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor, int lineSpacing)
+	const TextRenderTextureGenInfo &textureGenInfo, const Color &textColor, int lineSpacing)
 	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
 {
 	this->lineSpacing = lineSpacing;
 }
 
 MessageBoxItemsProperties::MessageBoxItemsProperties(int count, const std::string &fontName,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor)
+	const TextRenderTextureGenInfo &textureGenInfo, const Color &textColor)
 	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
 {
 	this->count = count;

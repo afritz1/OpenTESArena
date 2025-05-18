@@ -246,7 +246,7 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	constexpr int lineSpacing = 1;
-	TextRenderUtils::TextureGenInfo textureGenInfo =
+	TextRenderTextureGenInfo textureGenInfo =
 		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
 	constexpr int padding = 4;
 

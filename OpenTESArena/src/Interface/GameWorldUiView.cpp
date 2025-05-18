@@ -258,7 +258,7 @@ TextBoxInitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &fo
 		dummyText += dummyLine + '\n';
 	}
 
-	const TextRenderUtils::TextShadowInfo shadow(
+	const TextRenderShadowInfo shadow(
 		GameWorldUiView::TriggerTextShadowOffsetX,
 		GameWorldUiView::TriggerTextShadowOffsetY,
 		GameWorldUiView::TriggerTextShadowColor);
@@ -283,7 +283,7 @@ TextBoxInitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &fon
 		dummyText += dummyLine + '\n';
 	}
 
-	const TextRenderUtils::TextShadowInfo shadow(
+	const TextRenderShadowInfo shadow(
 		GameWorldUiView::ActionTextShadowOffsetX,
 		GameWorldUiView::ActionTextShadowOffsetY,
 		GameWorldUiView::ActionTextShadowColor);
@@ -330,7 +330,7 @@ ListBox::Properties GameWorldUiView::getLootListBoxProperties()
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Color itemColor = InventoryUiView::PlayerInventoryEquipmentColor;
 	constexpr double scrollScale = 1.0;

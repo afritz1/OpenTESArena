@@ -57,7 +57,7 @@ TextBoxInitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &fo
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
 	const std::string dummyText(15, TextRenderUtils::LARGEST_CHAR);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestTypeUpButtonRect();
 	return TextBoxInitInfo::makeWithXY(
@@ -81,7 +81,7 @@ TextBoxInitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &fo
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
 	const std::string dummyText(15, TextRenderUtils::LARGEST_CHAR);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestIndexUpButtonRect();
 	return TextBoxInitInfo::makeWithXY(
@@ -105,7 +105,7 @@ TextBoxInitInfo MainMenuUiView::getTestWeatherTextBoxInitInfo(const FontLibrary 
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
 	const std::string dummyText(16, TextRenderUtils::LARGEST_CHAR);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestWeatherUpButtonRect();
 	return TextBoxInitInfo::makeWithXY(

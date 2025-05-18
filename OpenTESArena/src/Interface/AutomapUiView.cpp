@@ -21,7 +21,7 @@
 
 TextBoxInitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	const TextRenderUtils::TextShadowInfo shadowInfo(
+	const TextRenderShadowInfo shadowInfo(
 		AutomapUiView::LocationTextBoxShadowOffsetX,
 		AutomapUiView::LocationTextBoxShadowOffsetY,
 		AutomapUiView::LocationTextBoxShadowColor);

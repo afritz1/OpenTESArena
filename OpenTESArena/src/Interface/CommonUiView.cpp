@@ -44,7 +44,7 @@ TextBoxInitInfo CommonUiView::getDebugInfoTextBoxInitInfo(const FontLibrary &fon
 		dummyText += std::string(30, TextRenderUtils::LARGEST_CHAR);
 	}
 
-	const TextRenderUtils::TextShadowInfo shadowInfo(1, 1, Colors::Black);
+	const TextRenderShadowInfo shadowInfo(1, 1, Colors::Black);
 
 	const Rect rect = CommonUiView::getDebugInfoTextBoxRect();
 	return TextBoxInitInfo::makeWithXY(

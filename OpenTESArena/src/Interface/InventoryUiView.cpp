@@ -28,7 +28,7 @@ ListBox::Properties InventoryUiView::makePlayerInventoryListBoxProperties(const 
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	constexpr int rowSpacing = 3;
-	const TextRenderUtils::TextureGenInfo textureGenInfo =
+	const TextRenderTextureGenInfo textureGenInfo =
 		TextRenderUtils::makeTextureGenInfo(dummyText, fontDef, std::nullopt, rowSpacing);
 
 	constexpr double scrollScale = 1.0;

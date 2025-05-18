@@ -32,11 +32,11 @@ struct MessageBoxBackgroundProperties
 struct MessageBoxTitleProperties
 {
 	std::string fontName;
-	TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
+	TextRenderTextureGenInfo textureGenInfo; // Texture dimensions, etc..
 	Color textColor;
 	int lineSpacing;
 
-	MessageBoxTitleProperties(const std::string &fontName, const TextRenderUtils::TextureGenInfo &textureGenInfo,
+	MessageBoxTitleProperties(const std::string &fontName, const TextRenderTextureGenInfo &textureGenInfo,
 		const Color &textColor, int lineSpacing = 0);
 };
 
@@ -44,10 +44,10 @@ struct MessageBoxItemsProperties
 {
 	int count;
 	std::string fontName;
-	TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
+	TextRenderTextureGenInfo textureGenInfo; // Texture dimensions, etc..
 	Color textColor;
 
-	MessageBoxItemsProperties(int count, const std::string &fontName, const TextRenderUtils::TextureGenInfo &textureGenInfo,
+	MessageBoxItemsProperties(int count, const std::string &fontName, const TextRenderTextureGenInfo &textureGenInfo,
 		const Color &textColor);
 };
 

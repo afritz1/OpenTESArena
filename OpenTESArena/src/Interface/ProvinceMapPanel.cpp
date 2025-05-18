@@ -162,10 +162,10 @@ bool ProvinceMapPanel::init(int provinceID)
 		const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 
 		const std::string locationName = ProvinceMapUiModel::getLocationName(game, this->provinceID, this->hoveredLocationID);
-		TextRenderUtils::TextShadowInfo shadowInfo;
+		TextRenderShadowInfo shadowInfo;
 		shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY,
 			ProvinceMapUiView::LocationTextShadowColor);
-		const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
+		const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
 
 		// Clamp to screen edges, with some extra space on the left and right (note this clamped position
 		// is for the TopLeft pivot type).

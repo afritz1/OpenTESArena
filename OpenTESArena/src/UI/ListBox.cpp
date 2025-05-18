@@ -11,7 +11,7 @@
 #include "components/debug/Debug.h"
 
 ListBox::Properties::Properties(int fontDefIndex, const FontLibrary *fontLibrary,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, int itemHeight, const Color &defaultColor,
+	const TextRenderTextureGenInfo &textureGenInfo, int itemHeight, const Color &defaultColor,
 	double scrollScale, int itemSpacing)
 	: textureGenInfo(textureGenInfo), defaultColor(defaultColor)
 {
@@ -23,7 +23,7 @@ ListBox::Properties::Properties(int fontDefIndex, const FontLibrary *fontLibrary
 }
 
 ListBox::Properties::Properties()
-	: Properties(-1, nullptr, TextRenderUtils::TextureGenInfo(), 0, Color(), 0.0, 0) { }
+	: Properties(-1, nullptr, TextRenderTextureGenInfo(), 0, Color(), 0.0, 0) { }
 
 void ListBox::Item::init(std::string &&text, const std::optional<Color> &overrideColor, const ItemCallback &callback)
 {
@@ -220,8 +220,8 @@ void ListBox::updateTexture()
 		const ListBox::Item &item = this->items[i];
 		const Rect itemRect = this->getItemLocalRect(i);
 		const Color &itemColor = item.overrideColor.has_value() ? *item.overrideColor : this->properties.defaultColor;
-		constexpr TextRenderUtils::ColorOverrideInfo *colorOverrideInfo = nullptr;
-		constexpr TextRenderUtils::TextShadowInfo *shadowInfo = nullptr;
+		constexpr TextRenderColorOverrideInfo *colorOverrideInfo = nullptr;
+		constexpr TextRenderShadowInfo *shadowInfo = nullptr;
 		TextRenderUtils::drawTextLine(item.text, fontDef, itemRect.getLeft(), itemRect.getTop(),
 			itemColor, colorOverrideInfo, shadowInfo, textureView);
 	}

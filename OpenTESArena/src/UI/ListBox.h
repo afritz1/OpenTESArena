@@ -22,13 +22,13 @@ public:
 	{
 		int fontDefIndex; // Index in font library.
 		const FontLibrary *fontLibrary; // Stored for ease of redrawing texture.
-		TextRenderUtils::TextureGenInfo textureGenInfo; // Texture dimensions, etc..
+		TextRenderTextureGenInfo textureGenInfo; // Texture dimensions, etc..
 		int itemHeight; // Pixel height of each item.
 		Color defaultColor; // Color of text unless overridden.
 		double scrollScale; // Percent of item size that one scroll delta moves by.
 		int itemSpacing; // Pixels between each item.
 
-		Properties(int fontDefIndex, const FontLibrary *fontLibrary, const TextRenderUtils::TextureGenInfo &textureGenInfo,
+		Properties(int fontDefIndex, const FontLibrary *fontLibrary, const TextRenderTextureGenInfo &textureGenInfo,
 			int itemHeight, const Color &defaultColor, double scrollScale, int itemSpacing = 0);
 		Properties();
 	};

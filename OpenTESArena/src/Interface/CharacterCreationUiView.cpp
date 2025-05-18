@@ -162,7 +162,7 @@ ListBox::Properties ChooseClassUiView::makeListBoxProperties(const FontLibrary &
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Color itemColor(85, 44, 20);
 	constexpr double scrollScale = 1.0;
@@ -201,7 +201,7 @@ TextBoxInitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const Font
 		dummyText += std::string(52, TextRenderUtils::LARGEST_CHAR);
 	}
 
-	TextRenderUtils::TextShadowInfo shadowInfo;
+	TextRenderShadowInfo shadowInfo;
 	shadowInfo.init(1, 0, Colors::Black);
 
 	return TextBoxInitInfo::makeWithCenter(
@@ -374,7 +374,7 @@ Rect ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(const std::string_view
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
 		text, fontDef, std::nullopt, ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
 	return Rect(
 		ChooseRaceUiView::ProvinceConfirmTitleCenterPoint,
@@ -403,7 +403,7 @@ MessageBoxTitleProperties ChooseRaceUiView::getProvinceConfirmMessageBoxTitlePro
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
 		text, fontDef, std::nullopt, ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
 	return MessageBoxTitleProperties(
 		fontName,
@@ -423,7 +423,7 @@ MessageBoxItemsProperties ChooseRaceUiView::getProvinceConfirmMessageBoxItemsPro
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	constexpr int itemCount = 2;
 	return MessageBoxItemsProperties(
@@ -597,7 +597,7 @@ Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_vie
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
 	return Rect(
 		ChooseAttributesUiView::MessageBoxTitleCenterPoint,
 		textureGenInfo.width,
@@ -625,7 +625,7 @@ MessageBoxTitleProperties ChooseAttributesUiView::getMessageBoxTitleProperties(c
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
 	return MessageBoxTitleProperties(fontName, textureGenInfo, ChooseAttributesUiView::MessageBoxTitleColor);
 }
 
@@ -640,7 +640,7 @@ MessageBoxItemsProperties ChooseAttributesUiView::getMessageBoxItemsProperties(c
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	constexpr int itemCount = 2;
 	return MessageBoxItemsProperties(

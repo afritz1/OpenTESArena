@@ -33,7 +33,7 @@ TextBoxInitInfo ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(const FontL
 {
 	const std::string dummyText(24, TextRenderUtils::LARGEST_CHAR);
 
-	TextRenderUtils::TextShadowInfo shadowInfo;
+	TextRenderShadowInfo shadowInfo;
 	shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY,
 		ProvinceMapUiView::LocationTextShadowColor);
 	constexpr int lineSpacing = 0;
@@ -364,7 +364,7 @@ ListBox::Properties ProvinceSearchUiView::makeListBoxProperties(const FontLibrar
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Color itemColor(52, 24, 8);
 	constexpr double scrollScale = 1.0;

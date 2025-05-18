@@ -35,7 +35,7 @@ TextBoxInitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &font
 
 TextBoxInitInfo PauseMenuUiView::getOptionsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	const TextRenderUtils::TextShadowInfo shadow(
+	const TextRenderShadowInfo shadow(
 		PauseMenuUiView::OptionsButtonTextShadowOffsetX,
 		PauseMenuUiView::OptionsButtonTextShadowOffsetY,
 		PauseMenuUiView::OptionsButtonTextShadowColor);

@@ -25,7 +25,7 @@ TextBoxInitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std::
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
 	return TextBoxInitInfo::makeWithXY(
 		text,
 		MainQuestSplashUiView::getDescriptionTextBoxX(textureGenInfo.width),

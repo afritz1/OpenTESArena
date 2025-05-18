@@ -454,9 +454,9 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, int b
 		}
 	}, false);
 
-	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> saveTextColorOverrides =
+	const std::vector<TextRenderColorOverrideInfoEntry> saveTextColorOverrides =
 		ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(game);
-	for (const TextRenderUtils::ColorOverrideInfo::Entry &entry : saveTextColorOverrides)
+	for (const TextRenderColorOverrideInfoEntry &entry : saveTextColorOverrides)
 	{
 		panel->addOverrideColor(0, entry.charIndex, entry.color);
 	}
@@ -470,9 +470,9 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, int b
 		ChooseAttributesUiController::onRerollButtonSelected(game);
 	}, true);
 
-	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> rerollTextColorOverrides =
+	const std::vector<TextRenderColorOverrideInfoEntry> rerollTextColorOverrides =
 		ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(game);
-	for (const TextRenderUtils::ColorOverrideInfo::Entry &entry : rerollTextColorOverrides)
+	for (const TextRenderColorOverrideInfoEntry &entry : rerollTextColorOverrides)
 	{
 		panel->addOverrideColor(1, entry.charIndex, entry.color);
 	}
