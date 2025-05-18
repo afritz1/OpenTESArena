@@ -103,7 +103,8 @@ ArenaPlayerUtils::AttributeBonusValues ArenaPlayerUtils::calculateAttributeBonus
 		values.bonusToDefend = values.bonusToHit;
 	}
 	else if (strcmp(attributeName, "Personality") == 0) {
-		values.bonusToCharisma = calculateBonusToCharisma(attributeValue);
+		//Personality and agility have the same bonus progression.
+		values.bonusToCharisma = calculateBonusToHit(attributeValue);
 	}
 	else if (strcmp(attributeName, "Endurance") == 0) {
 		values.bonusToHealth = calculateBonusToHealth(attributeValue);
