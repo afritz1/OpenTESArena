@@ -1,4 +1,4 @@
-#include <algorithm>
+﻿#include <algorithm>
 #include <cmath>
 
 #include "ArenaPlayerUtils.h"
@@ -73,4 +73,12 @@ int ArenaPlayerUtils::calculateBonusToCharisma(int charisma)
 	if (charisma <= 45) return -1;
 	if (charisma <= 46) return 0;
 	return (charisma - 50) / 5;
+}
+
+int ArenaPlayerUtils::calculateBonusToHealth(int endurance)
+{
+	if (endurance <= 34) return -1;
+	if (endurance <= 54) return 0;
+	int bonus = (endurance - 55) / 10 + 1;
+	return std::min(bonus, 5);
 }
