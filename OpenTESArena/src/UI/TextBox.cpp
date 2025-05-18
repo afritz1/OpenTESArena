@@ -11,19 +11,17 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/StringView.h"
 
-TextBoxProperties::TextBoxProperties(int fontDefIndex, const FontLibrary *fontLibrary,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &defaultColor, TextAlignment alignment,
-	const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo, int lineSpacing)
+TextBoxProperties::TextBoxProperties(int fontDefIndex, const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &defaultColor,
+	TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo, int lineSpacing)
 	: textureGenInfo(textureGenInfo), defaultColor(defaultColor), shadowInfo(shadowInfo)
 {
 	this->fontDefIndex = fontDefIndex;
-	this->fontLibrary = fontLibrary;
 	this->alignment = alignment;
 	this->lineSpacing = lineSpacing;
 }
 
 TextBoxProperties::TextBoxProperties()
-	: TextBoxProperties(-1, nullptr, TextRenderUtils::TextureGenInfo(), Color(), static_cast<TextAlignment>(-1), std::nullopt, 0) { }
+	: TextBoxProperties(-1, TextRenderUtils::TextureGenInfo(), Color(), static_cast<TextAlignment>(-1), std::nullopt, 0) { }
 
 void TextBoxInitInfo::init(const Rect &rect, TextBoxProperties &&properties)
 {
@@ -46,8 +44,7 @@ TextBoxInitInfo TextBoxInitInfo::makeWithCenter(const std::string_view text, con
 		TextRenderUtils::makeTextureGenInfo(text, fontDef, shadow, lineSpacing);
 
 	const Rect rect(center, textureGenInfo.width, textureGenInfo.height);
-	TextBoxProperties properties(fontDefIndex, &fontLibrary, textureGenInfo, textColor, alignment,
-		shadow, lineSpacing);
+	TextBoxProperties properties(fontDefIndex, textureGenInfo, textColor, alignment, shadow, lineSpacing);
 
 	TextBoxInitInfo initInfo;
 	initInfo.init(rect, std::move(properties));
@@ -77,8 +74,7 @@ TextBoxInitInfo TextBoxInitInfo::makeWithXY(const std::string_view text, int x, 
 		TextRenderUtils::makeTextureGenInfo(text, fontDef, shadow, lineSpacing);
 
 	const Rect rect(x, y, textureGenInfo.width, textureGenInfo.height);
-	TextBoxProperties properties(fontDefIndex, &fontLibrary, textureGenInfo, textColor, alignment,
-		shadow, lineSpacing);
+	TextBoxProperties properties(fontDefIndex, textureGenInfo, textColor, alignment, shadow, lineSpacing);
 
 	TextBoxInitInfo initInfo;
 	initInfo.init(rect, std::move(properties));
@@ -197,12 +193,8 @@ void TextBox::updateTexture()
 		return;
 	}
 
-	// Stored for convenience of redrawing the texture. Couldn't immediately find a better way to do this.
-	// - Maybe try a FontDefinitionRef in the future.
-	const FontLibrary *fontLibrary = this->properties.fontLibrary;
-	DebugAssert(fontLibrary != nullptr);
-
-	const FontDefinition &fontDef = fontLibrary->getDefinition(this->properties.fontDefIndex);
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
 
 	const int width = this->textureRef.getWidth();
 	const int height = this->textureRef.getHeight();

@@ -96,8 +96,8 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 	}
 
 	constexpr TextAlignment titleAlignment = TextAlignment::MiddleCenter;
-	const TextBoxProperties titleTextBoxProperties(titleFontDefIndex, &fontLibrary, titleProperties.textureGenInfo,
-		titleProperties.textColor, titleAlignment, std::nullopt, titleProperties.lineSpacing);
+	const TextBoxProperties titleTextBoxProperties(titleFontDefIndex, titleProperties.textureGenInfo, titleProperties.textColor,
+		titleAlignment, std::nullopt, titleProperties.lineSpacing);
 	if (!this->titleTextBox.init(titleRect, titleTextBoxProperties, renderer))
 	{
 		DebugLogError("Couldn't init message box title text box.");
@@ -112,8 +112,7 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 	}
 
 	constexpr TextAlignment itemAlignment = titleAlignment;
-	const TextBoxProperties itemTextBoxProperties(itemFontDefIndex, &fontLibrary, itemsProperties.textureGenInfo,
-		itemsProperties.textColor, itemAlignment);
+	const TextBoxProperties itemTextBoxProperties(itemFontDefIndex, itemsProperties.textureGenInfo, itemsProperties.textColor, itemAlignment);
 
 	this->items.init(itemsProperties.count);
 	for (int i = 0; i < this->items.getCount(); i++)
