@@ -40,6 +40,18 @@ namespace ArenaPlayerUtils
 	int calculateBonusToHealth(int endurance);
 	int calculateDamageBonus(int strength);
 	int calculateMagicDefenseBonus(int will);
+
+	struct AttributeBonusValues {
+		int bonusToHit;
+		int bonusToDefend;
+		int bonusToCharisma;
+		int bonusToHealth;
+		int healMod;
+		int bonusDamage;
+		int maxKilos;
+		int magicDef;
+	};
+	AttributeBonusValues calculateAttributeBonus(const char* attributeName, int attributeValue);
 }
 
 #endif

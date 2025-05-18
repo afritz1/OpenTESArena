@@ -35,7 +35,7 @@ void ChooseAttributesPanel::populateBaseAttributesRandomly(CharacterCreationStat
 	{
 		PrimaryAttribute &attribute = attributes[i];
 		const int addedValue = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::PrimaryAttributeRandomMax, random);
-		attribute.maxValue += addedValue;	
+		attribute.maxValue += addedValue;
 	}
 }
 
@@ -326,30 +326,25 @@ bool ChooseAttributesPanel::init()
 			BufferView<PrimaryAttribute> attributesView = attributes.getAttributes();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue += 1;
-			if (strcmp(attribute.name, "Agility") == 0) {
-				this->bonusToHitValue = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
-				this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
-				this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
-			}
-			if (strcmp(attribute.name, "Personality") == 0) {
-				this->bonusToCharismaValue = ArenaPlayerUtils::calculateBonusToCharisma(attribute.maxValue);
-				this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
-			}
-			if (strcmp(attribute.name, "Endurance") == 0) {
-				this->bonusToHealthValue = ArenaPlayerUtils::calculateBonusToHealth(attribute.maxValue);
-				this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
-				this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
-			}
-			if (strcmp(attribute.name, "Strength") == 0) {
-				this->bonusDamageValue = ArenaPlayerUtils::calculateDamageBonus(attribute.maxValue);
-				this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
-				this->maxKilosValue = attribute.maxValue * 2;
-				this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
-			}
-			if (strcmp(attribute.name, "Willpower") == 0) {
-				this->magicDefValue = ArenaPlayerUtils::calculateMagicDefenseBonus(attribute.maxValue);
-				this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
-			}
+
+			auto bonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
+			
+			this->bonusToHitValue = bonusValues.bonusToHit;
+			this->bonusToCharismaValue = bonusValues.bonusToCharisma;
+			this->bonusToHealthValue = bonusValues.bonusToHealth;
+			this->bonusDamageValue = bonusValues.bonusDamage;
+			this->maxKilosValue = bonusValues.maxKilos;
+			this->magicDefValue = bonusValues.magicDef;
+
+			this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
+			this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
+			this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
+			this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
+			this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
+			this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
+			this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
+			this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
+
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -372,30 +367,24 @@ bool ChooseAttributesPanel::init()
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue -= 1;
 
-			if (strcmp(attribute.name, "Agility") == 0) {
-				this->bonusToHitValue = ArenaPlayerUtils::calculateBonusToHit(attribute.maxValue);
-				this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
-				this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
-			}
-			if (strcmp(attribute.name, "Personality") == 0) {
-				this->bonusToCharismaValue = ArenaPlayerUtils::calculateBonusToCharisma(attribute.maxValue);
-				this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
-			}
-			if (strcmp(attribute.name, "Endurance") == 0) {
-				this->bonusToHealthValue = ArenaPlayerUtils::calculateBonusToHealth(attribute.maxValue);
-				this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
-				this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
-			}
-			if (strcmp(attribute.name, "Strength") == 0) {
-				this->bonusDamageValue = ArenaPlayerUtils::calculateDamageBonus(attribute.maxValue);
-				this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
-				this->maxKilosValue = attribute.maxValue * 2;
-				this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
-			}
-			if (strcmp(attribute.name, "Willpower") == 0) {
-				this->magicDefValue = ArenaPlayerUtils::calculateMagicDefenseBonus(attribute.maxValue);
-				this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
-			}
+			auto bonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
+			
+			this->bonusToHitValue = bonusValues.bonusToHit;
+			this->bonusToCharismaValue = bonusValues.bonusToCharisma;
+			this->bonusToHealthValue = bonusValues.bonusToHealth;
+			this->bonusDamageValue = bonusValues.bonusDamage;
+			this->maxKilosValue = bonusValues.maxKilos;
+			this->magicDefValue = bonusValues.magicDef;
+
+			this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
+			this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
+			this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
+			this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
+			this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
+			this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
+			this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
+			this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
+
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));

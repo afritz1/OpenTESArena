@@ -95,3 +95,26 @@ int ArenaPlayerUtils::calculateMagicDefenseBonus(int Will) {
 	return (Will - 46) / 9; 
 }
 
+ArenaPlayerUtils::AttributeBonusValues ArenaPlayerUtils::calculateAttributeBonus(const char* attributeName, int attributeValue) {
+	AttributeBonusValues values = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+	if (strcmp(attributeName, "Agility") == 0) {
+		values.bonusToHit = calculateBonusToHit(attributeValue);
+		values.bonusToDefend = values.bonusToHit;
+	}
+	else if (strcmp(attributeName, "Personality") == 0) {
+		values.bonusToCharisma = calculateBonusToCharisma(attributeValue);
+	}
+	else if (strcmp(attributeName, "Endurance") == 0) {
+		values.bonusToHealth = calculateBonusToHealth(attributeValue);
+		values.healMod = values.bonusToHealth;
+	}
+	else if (strcmp(attributeName, "Strength") == 0) {
+		values.bonusDamage = calculateDamageBonus(attributeValue);
+		values.maxKilos = attributeValue * 2;
+	}
+	else if (strcmp(attributeName, "Willpower") == 0) {
+		values.magicDef = calculateMagicDefenseBonus(attributeValue);
+	}
+	return values;
+}
