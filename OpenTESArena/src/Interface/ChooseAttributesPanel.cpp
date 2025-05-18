@@ -338,6 +338,7 @@ bool ChooseAttributesPanel::init()
 			if (strcmp(attribute.name, "Endurance") == 0) {
 				this->bonusToHealthValue = ArenaPlayerUtils::calculateBonusToHealth(attribute.maxValue);
 				this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
+				this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
 			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -373,6 +374,7 @@ bool ChooseAttributesPanel::init()
 			if (strcmp(attribute.name, "Endurance") == 0) {
 				this->bonusToHealthValue = ArenaPlayerUtils::calculateBonusToHealth(attribute.maxValue);
 				this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
+				this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
 			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -529,6 +531,35 @@ bool ChooseAttributesPanel::init()
 		[this]() { return this->bonusToHealthTextBox.getTextureID(); },
 		UiDrawCall::makePositionFunc(bonusToHealthTextBoxRect.getTopLeft()),
 		UiDrawCall::makeSizeFunc(bonusToHealthTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
+	// TextBox de Heal Mod
+	const Int2 healModTextBoxTopLeftPosition(
+		positionAttributeEndureceTextBoxRect.getLeft() + 120,
+		positionAttributeEndureceTextBoxRect.getTop());
+	const TextBox::InitInfo healModTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
+		healModTextBoxTopLeftPosition.x,
+		healModTextBoxTopLeftPosition.y,
+		ChooseAttributesUiView::BonusPointsFontName,
+		ChooseAttributesUiView::BonusPointsTextColor,
+		TextAlignment::TopLeft,
+		std::nullopt,
+		1,
+		fontLibrary);
+
+	if (!this->healModTextBox.init(healModTextBoxInitInfo, "0", renderer))
+	{
+		DebugLogError("Couldn't init heal mod text box.");
+		return false;
+	}
+
+	const Rect &healModTextBoxRect = this->healModTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->healModTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(healModTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(healModTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 

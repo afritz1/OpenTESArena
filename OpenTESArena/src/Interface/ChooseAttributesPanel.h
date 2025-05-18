@@ -27,6 +27,7 @@ private:
 	TextBox bonusToDefendTextBox;
 	TextBox bonusToCharismaTextBox;
 	TextBox bonusToHealthTextBox;
+	TextBox healModTextBox;
 
 	int bonusToHitValue;
 	int bonusToCharismaValue;
