@@ -985,7 +985,7 @@ const std::optional<int> &INFFile::getBoxSide(int index) const
 	}
 	else
 	{
-		DebugLogWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
+		DebugLogWarningFormat("Invalid *BOXSIDE index \"%d\", defaulting to value in entry 0.", index);
 		DebugAssert(this->boxSides.size() > 0);
 		return this->boxSides[0];
 	}

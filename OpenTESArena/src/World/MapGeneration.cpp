@@ -486,9 +486,9 @@ namespace MapGeneration
 
 				const int textureIndex = mostSigByte - 1;
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
-				*outTextureAsset0 = TextureAsset(
-					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
-					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				std::string voxelTextureFilename = ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf);
+				const std::optional<int> voxelTextureSetIndex = ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf);
+				*outTextureAsset0 = TextureAsset(std::move(voxelTextureFilename), voxelTextureSetIndex);
 				*outTextureAsset1 = *outTextureAsset0;
 				*outTextureAsset2 = *outTextureAsset0;
 			}
