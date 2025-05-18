@@ -335,6 +335,10 @@ bool ChooseAttributesPanel::init()
 				this->bonusToCharismaValue = ArenaPlayerUtils::calculateBonusToCharisma(attribute.maxValue);
 				this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
 			}
+			if (strcmp(attribute.name, "Endurance") == 0) {
+				this->bonusToHealthValue = ArenaPlayerUtils::calculateBonusToHealth(attribute.maxValue);
+				this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
+			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -365,6 +369,10 @@ bool ChooseAttributesPanel::init()
 			if (strcmp(attribute.name, "Personality") == 0) {
 				this->bonusToCharismaValue = ArenaPlayerUtils::calculateBonusToCharisma(attribute.maxValue);
 				this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
+			}
+			if (strcmp(attribute.name, "Endurance") == 0) {
+				this->bonusToHealthValue = ArenaPlayerUtils::calculateBonusToHealth(attribute.maxValue);
+				this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
 			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -493,6 +501,37 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makeSizeFunc(bonusToCharismaTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
+
+	// TextBox de Health
+	const Rect& positionAttributeEndureceTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 3].getRect();
+	const Int2 bonusToHealthTextBoxTopLeftPosition(
+		positionAttributeEndureceTextBoxRect.getLeft() + 60,
+		positionAttributeEndureceTextBoxRect.getTop());
+	const TextBox::InitInfo bonusToHealthTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
+		bonusToHealthTextBoxTopLeftPosition.x,
+		bonusToHealthTextBoxTopLeftPosition.y,
+		ChooseAttributesUiView::BonusPointsFontName,
+		ChooseAttributesUiView::BonusPointsTextColor,
+		TextAlignment::TopLeft,
+		std::nullopt,
+		1,
+		fontLibrary);
+
+	if (!this->bonusToHealthTextBox.init(bonusToHealthTextBoxInitInfo, "5", renderer))
+	{
+		DebugLogError("Couldn't init bonus to health text box.");
+		return false;
+	}
+
+	const Rect &bonusToHealthTextBoxRect = this->bonusToHealthTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->bonusToHealthTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(bonusToHealthTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(bonusToHealthTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
 	//............................................................................................................................................
 	//My code
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
