@@ -340,6 +340,12 @@ bool ChooseAttributesPanel::init()
 				this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
 				this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
 			}
+			if (strcmp(attribute.name, "Strength") == 0) {
+				this->bonusDamageValue = ArenaPlayerUtils::calculateDamageBonus(attribute.maxValue);
+				this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
+				this->maxKilosValue = attribute.maxValue * 2;
+				this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
+			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
 			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
@@ -375,6 +381,12 @@ bool ChooseAttributesPanel::init()
 				this->bonusToHealthValue = ArenaPlayerUtils::calculateBonusToHealth(attribute.maxValue);
 				this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
 				this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
+			}
+			if (strcmp(attribute.name, "Strength") == 0) {
+				this->bonusDamageValue = ArenaPlayerUtils::calculateDamageBonus(attribute.maxValue);
+				this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
+				this->maxKilosValue = attribute.maxValue * 2;
+				this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
 			}
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -560,6 +572,65 @@ bool ChooseAttributesPanel::init()
 		[this]() { return this->healModTextBox.getTextureID(); },
 		UiDrawCall::makePositionFunc(healModTextBoxRect.getTopLeft()),
 		UiDrawCall::makeSizeFunc(healModTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
+	// TextBox de Bonus Damage
+	const Rect& positionAttributeStrengthTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 8].getRect();
+	const Int2 bonusDamageTextBoxTopLeftPosition(
+		positionAttributeStrengthTextBoxRect.getLeft() + 60,
+		positionAttributeStrengthTextBoxRect.getTop());
+	const TextBox::InitInfo bonusDamageTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
+		bonusDamageTextBoxTopLeftPosition.x,
+		bonusDamageTextBoxTopLeftPosition.y,
+		ChooseAttributesUiView::BonusPointsFontName,
+		ChooseAttributesUiView::BonusPointsTextColor,
+		TextAlignment::TopLeft,
+		std::nullopt,
+		1,
+		fontLibrary);
+
+	if (!this->bonusDamageTextBox.init(bonusDamageTextBoxInitInfo, "fuerza", renderer))
+	{
+		DebugLogError("Couldn't init bonus damage text box.");
+		return false;
+	}
+
+	const Rect &bonusDamageTextBoxRect = this->bonusDamageTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->bonusDamageTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(bonusDamageTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(bonusDamageTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
+	// TextBox de Max Kilos
+	const Int2 maxKilosTextBoxTopLeftPosition(
+		positionAttributeStrengthTextBoxRect.getLeft() + 120,
+		positionAttributeStrengthTextBoxRect.getTop());
+	const TextBox::InitInfo maxKilosTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+		std::string(3, TextRenderUtils::LARGEST_CHAR),
+		maxKilosTextBoxTopLeftPosition.x,
+		maxKilosTextBoxTopLeftPosition.y,
+		ChooseAttributesUiView::BonusPointsFontName,
+		ChooseAttributesUiView::BonusPointsTextColor,
+		TextAlignment::TopLeft,
+		std::nullopt,
+		1,
+		fontLibrary);
+
+	if (!this->maxKilosTextBox.init(maxKilosTextBoxInitInfo, "kilo", renderer))
+	{
+		DebugLogError("Couldn't init max kilos text box.");
+		return false;
+	}
+
+	const Rect &maxKilosTextBoxRect = this->maxKilosTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->maxKilosTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(maxKilosTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(maxKilosTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 

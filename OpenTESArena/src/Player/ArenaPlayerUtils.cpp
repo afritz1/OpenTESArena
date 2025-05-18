@@ -82,3 +82,10 @@ int ArenaPlayerUtils::calculateBonusToHealth(int endurance)
 	int bonus = (endurance - 55) / 10 + 1;
 	return std::min(bonus, 5);
 }
+
+int ArenaPlayerUtils::calculateDamageBonus(int strength)
+{
+	if (strength <= 43) return 0;
+	return (strength - 48) / 5;
+}
+
