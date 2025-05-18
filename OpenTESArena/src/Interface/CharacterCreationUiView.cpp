@@ -139,7 +139,7 @@ Rect ChooseClassUiView::getDownButtonRect(Game &game)
 		chooseClassListUI.buttonDown.h);
 }
 
-ListBox::Properties ChooseClassUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
+ListBoxProperties ChooseClassUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::A;
 	int fontDefIndex;
@@ -166,8 +166,7 @@ ListBox::Properties ChooseClassUiView::makeListBoxProperties(const FontLibrary &
 
 	const Color itemColor(85, 44, 20);
 	constexpr double scrollScale = 1.0;
-	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
-		itemColor, scrollScale);
+	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
 }
 
 TextureAsset ChooseClassUiView::getListBoxTextureAsset()

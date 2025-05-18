@@ -84,7 +84,7 @@ namespace ChooseClassUiView
 	Rect getUpButtonRect(Game &game);
 	Rect getDownButtonRect(Game &game);
 
-	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
+	ListBoxProperties makeListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAsset getListBoxTextureAsset();
 

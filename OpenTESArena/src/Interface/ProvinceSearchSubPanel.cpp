@@ -278,7 +278,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 
 		auto callback = [this, i]()
 		{
-			const ListBox::ItemCallback &itemCallback = this->locationsListBox.getCallback(i);
+			const ListBoxItemCallback &itemCallback = this->locationsListBox.getCallback(i);
 			itemCallback();
 		};
 

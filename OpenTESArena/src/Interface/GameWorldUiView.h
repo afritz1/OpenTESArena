@@ -159,7 +159,7 @@ namespace GameWorldUiView
 	TextBoxInitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
 	TextBoxInitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
 
-	ListBox::Properties getLootListBoxProperties();
+	ListBoxProperties getLootListBoxProperties();
 
 	Int2 getTooltipPosition(Game &game);
 

@@ -130,7 +130,7 @@ namespace ProvinceSearchUiView
 	constexpr int ListTextureY = 11;
 
 	constexpr Rect ListBoxRect(85, 34, 147, 54);
-	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
+	ListBoxProperties makeListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAsset getListTextureAsset();
 	TextureAsset getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID);

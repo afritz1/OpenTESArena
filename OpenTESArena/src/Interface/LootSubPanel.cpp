@@ -92,7 +92,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		PivotType::TopLeft);
 
 	constexpr Int2 listBoxTopLeft(85, 34);
-	ListBox::Properties listBoxProperties = GameWorldUiView::getLootListBoxProperties();
+	ListBoxProperties listBoxProperties = GameWorldUiView::getLootListBoxProperties();
 	const Rect listBoxRect(listBoxTopLeft.x, listBoxTopLeft.y, listBoxProperties.textureGenInfo.width, listBoxProperties.textureGenInfo.height);
 	if (!this->listBox.init(listBoxRect, listBoxProperties, renderer))
 	{

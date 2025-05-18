@@ -305,7 +305,7 @@ TextBoxInitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &fon
 	return TextBoxInitInfo();
 }
 
-ListBox::Properties GameWorldUiView::getLootListBoxProperties()
+ListBoxProperties GameWorldUiView::getLootListBoxProperties()
 {
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 
@@ -334,7 +334,7 @@ ListBox::Properties GameWorldUiView::getLootListBoxProperties()
 
 	const Color itemColor = InventoryUiView::PlayerInventoryEquipmentColor;
 	constexpr double scrollScale = 1.0;
-	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
+	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
 }
 
 Int2 GameWorldUiView::getTooltipPosition(Game &game)

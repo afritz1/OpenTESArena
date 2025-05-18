@@ -341,7 +341,7 @@ TextBoxInitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLibr
 		fontLibrary);
 }
 
-ListBox::Properties ProvinceSearchUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
+ListBoxProperties ProvinceSearchUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::Arena;
 	int fontDefIndex;
@@ -368,8 +368,7 @@ ListBox::Properties ProvinceSearchUiView::makeListBoxProperties(const FontLibrar
 
 	const Color itemColor(52, 24, 8);
 	constexpr double scrollScale = 1.0;
-	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
-		itemColor, scrollScale);
+	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
 }
 
 TextureAsset ProvinceSearchUiView::getListTextureAsset()

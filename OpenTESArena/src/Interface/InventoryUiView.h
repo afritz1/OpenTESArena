@@ -19,7 +19,7 @@ namespace InventoryUiView
 	const Color PlayerInventoryMagicItemEquippedColor(138, 255, 255);
 	const Color PlayerInventoryUnequipableColor(199, 32, 0);
 
-	ListBox::Properties makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary);
+	ListBoxProperties makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary);
 
 	const Color &getItemDisplayColor(const ItemInstance &itemInst);
 }
