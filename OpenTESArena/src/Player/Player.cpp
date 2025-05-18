@@ -623,7 +623,9 @@ void Player::prePhysicsStep(double dt, Game &game)
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 	}
 
-	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+	// @todo: disabling ExtendedUpdate() fixes the "drift" on level start, not sure if we'll ever need
+	// CharacterVirtual. Keeping around until stairstepping is figured out.
+	/*const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	const JPH::Vec3Arg physicsGravity = -this->physicsCharacter->GetUp() * physicsSystem.GetGravity().Length();
 	JPH::CharacterVirtual::ExtendedUpdateSettings extendedUpdateSettings; // @todo: for stepping up/down stairs
 	const JPH::BroadPhaseLayerFilter &broadPhaseLayerFilter = physicsSystem.GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING);
@@ -641,7 +643,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 		objectLayerFilter,
 		bodyFilter,
 		shapeFilter,
-		*game.physicsTempAllocator);
+		*game.physicsTempAllocator);*/
 }
 
 void Player::postPhysicsStep(double dt, Game &game)
