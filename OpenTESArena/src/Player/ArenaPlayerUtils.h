@@ -38,6 +38,7 @@ namespace ArenaPlayerUtils
 	int calculateMaxHealthPoints(int charClassDefID, Random &random);
 	int calculateMaxStamina(int strength, int endurance);
 	int calculateMaxSpellPoints(int charClassDefID, int intelligence);
+	int calculateMaxWeight(int strength);
 	int calculateBonusToHit(int agility);
 	int calculateBonusToHealth(int endurance);
 	int calculateDamageBonus(int strength);

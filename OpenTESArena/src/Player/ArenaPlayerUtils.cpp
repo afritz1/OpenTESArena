@@ -61,6 +61,11 @@ int ArenaPlayerUtils::calculateMaxSpellPoints(int charClassDefID, int intelligen
 	return maxSpellPoints;
 }
 
+int ArenaPlayerUtils::calculateMaxWeight(int strength)
+{
+	return strength * 2;
+}
+
 int ArenaPlayerUtils::calculateBonusToHit(int agility)
 {
 	if (agility <= 45)
@@ -121,8 +126,8 @@ int ArenaPlayerUtils::calculateMagicDefenseBonus(int willpower)
 DerivedAttributes ArenaPlayerUtils::calculateStrengthDerivedBonuses(int strength)
 {
 	DerivedAttributes values;
-	values.bonusDamage = calculateDamageBonus(strength);
-	values.maxKilos = strength * 2;
+	values.bonusDamage = ArenaPlayerUtils::calculateDamageBonus(strength);
+	values.maxKilos = ArenaPlayerUtils::calculateMaxWeight(strength);
 	return values;
 }
 
@@ -137,14 +142,14 @@ DerivedAttributes ArenaPlayerUtils::calculateAgilityDerivedBonuses(int agility)
 DerivedAttributes ArenaPlayerUtils::calculateWillpowerDerivedBonuses(int willpower)
 {
 	DerivedAttributes values;
-	values.magicDef = calculateMagicDefenseBonus(willpower);
+	values.magicDef = ArenaPlayerUtils::calculateMagicDefenseBonus(willpower);
 	return values;
 }
 
 DerivedAttributes ArenaPlayerUtils::calculateEnduranceDerivedBonuses(int endurance)
 {
 	DerivedAttributes values;
-	values.bonusToHealth = calculateBonusToHealth(endurance);
+	values.bonusToHealth = ArenaPlayerUtils::calculateBonusToHealth(endurance);
 	values.healMod = values.bonusToHealth;
 	return values;
 }
@@ -153,7 +158,7 @@ DerivedAttributes ArenaPlayerUtils::calculatePersonalityDerivedBonuses(int perso
 {
 	// Personality and agility have the same bonus progression.
 	DerivedAttributes values;
-	values.bonusToCharisma = calculateBonusToHit(personality);
+	values.bonusToCharisma = ArenaPlayerUtils::calculateBonusToHit(personality);
 	return values;
 }
 
