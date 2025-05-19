@@ -30,4 +30,20 @@ struct PrimaryAttributes
 	void clear();
 };
 
+struct DerivedAttributes
+{
+	int bonusToHit;
+	int bonusToDefend;
+	int bonusToCharisma;
+	int bonusToHealth;
+	int healMod;
+	int bonusDamage;
+	int maxKilos;
+	int magicDef;
+
+	DerivedAttributes();
+
+	void clear();
+};
+
 #endif

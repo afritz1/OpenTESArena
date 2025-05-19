@@ -30,7 +30,6 @@ private:
 	Button<> increasePointButtons[PrimaryAttributes::COUNT];
 	Button<> decreasePointButtons[PrimaryAttributes::COUNT];
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
-	int bonusPoints;
 	int selectedAttributeIndex;
 
 	void updateBonusAttributeValues();

@@ -4,20 +4,7 @@
 class Random;
 
 struct PrimaryAttributes;
-
-struct DerivedAttributes
-{
-	int bonusToHit;
-	int bonusToDefend;
-	int bonusToCharisma;
-	int bonusToHealth;
-	int healMod;
-	int bonusDamage;
-	int maxKilos;
-	int magicDef;
-
-	DerivedAttributes();
-};
+struct DerivedAttributes;
 
 namespace ArenaPlayerUtils
 {

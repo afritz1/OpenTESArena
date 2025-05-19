@@ -1,5 +1,6 @@
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
+#include "CharacterSheetUiModel.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
@@ -546,6 +547,60 @@ int ChooseAttributesUiModel::rollClassic(int n, ArenaRandom &random)
 	} while (value > n);
 
 	return value;
+}
+
+std::string ChooseAttributesUiModel::getPlayerDamage(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusDamage);
+}
+
+std::string ChooseAttributesUiModel::getPlayerMagicDefense(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.magicDef);
+}
+
+std::string ChooseAttributesUiModel::getPlayerBonusToHit(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusToHit);
+}
+
+std::string ChooseAttributesUiModel::getPlayerBonusToDefend(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusToDefend);
+}
+
+std::string ChooseAttributesUiModel::getPlayerBonusToHealth(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusToHealth);
+}
+
+std::string ChooseAttributesUiModel::getPlayerCharisma(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusToCharisma);
+}
+
+std::string ChooseAttributesUiModel::getPlayerHealMod(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.healMod);
+}
+
+std::string ChooseAttributesUiModel::getPlayerMaxWeight(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return std::to_string(charCreationState.derivedAttributes.maxKilos);
+}
+
+std::string ChooseAttributesUiModel::getPlayerGold(Game &game)
+{
+	// @todo give player some gold first
+	return std::to_string(0);
 }
 
 std::string ChooseAttributesUiModel::getInitialText(Game &game)

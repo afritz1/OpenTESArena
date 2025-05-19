@@ -24,6 +24,19 @@ namespace
 	}
 }
 
+std::string CharacterSheetUiModel::getDerivedAttributeDisplayString(int value)
+{
+	const char *signString = "";
+	if (value >= 0)
+	{
+		signString = "+";
+	}
+
+	char buffer[64];
+	std::snprintf(buffer, sizeof(buffer), "%s%d", signString, value);
+	return buffer;
+}
+
 std::string CharacterSheetUiModel::getPlayerName(Game &game)
 {
 	const Player &player = game.player;
@@ -80,6 +93,46 @@ std::string CharacterSheetUiModel::getPlayerSpellPoints(Game &game)
 {
 	const Player &player = game.player;
 	return GetPlayerCurrentMaxStatusString(player.currentSpellPoints, player.maxSpellPoints);
+}
+
+std::string CharacterSheetUiModel::getPlayerDamage(Game &game)
+{
+	return "?";
+}
+
+std::string CharacterSheetUiModel::getPlayerMagicDefense(Game &game)
+{
+	return "?";
+}
+
+std::string CharacterSheetUiModel::getPlayerBonusToHit(Game &game)
+{
+	return "?";
+}
+
+std::string CharacterSheetUiModel::getPlayerBonusToDefend(Game &game)
+{
+	return "?";
+}
+
+std::string CharacterSheetUiModel::getPlayerBonusToHealth(Game &game)
+{
+	return "?";
+}
+
+std::string CharacterSheetUiModel::getPlayerCharisma(Game &game)
+{
+	return "?";
+}
+
+std::string CharacterSheetUiModel::getPlayerHealMod(Game &game)
+{
+	return "?";
+}
+
+std::string CharacterSheetUiModel::getPlayerMaxWeight(Game &game)
+{
+	return "?";
 }
 
 std::string CharacterSheetUiModel::getPlayerGold(Game &game)

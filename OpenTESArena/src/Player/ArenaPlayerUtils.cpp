@@ -8,18 +8,6 @@
 
 #include "components/utilities/StringView.h"
 
-DerivedAttributes::DerivedAttributes()
-{
-	this->bonusToHit = 0;
-	this->bonusToDefend = 0;
-	this->bonusToCharisma = 0;
-	this->bonusToHealth = 0;
-	this->healMod = 0;
-	this->bonusDamage = 0;
-	this->maxKilos = 0;
-	this->magicDef = 0;
-}
-
 int ArenaPlayerUtils::getBaseSpeed(int speedAttribute, int encumbranceMod)
 {
 	return ((((speedAttribute * 20) / 256) * (256 - encumbranceMod)) / 256) + 20;

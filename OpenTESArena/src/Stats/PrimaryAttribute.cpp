@@ -65,3 +65,20 @@ void PrimaryAttributes::clear()
 		attribute.clear();
 	}
 }
+
+DerivedAttributes::DerivedAttributes()
+{
+	this->clear();
+}
+
+void DerivedAttributes::clear()
+{
+	this->bonusToHit = 0;
+	this->bonusToDefend = 0;
+	this->bonusToCharisma = 0;
+	this->bonusToHealth = 0;
+	this->healMod = 0;
+	this->bonusDamage = 0;
+	this->maxKilos = 0;
+	this->magicDef = 0;
+}

@@ -10,6 +10,8 @@ class Game;
 
 namespace CharacterSheetUiModel
 {
+	std::string getDerivedAttributeDisplayString(int value);
+
 	std::string getPlayerName(Game &game);
 	std::string getPlayerRaceName(Game &game);
 	std::string getPlayerClassName(Game &game);
@@ -19,6 +21,14 @@ namespace CharacterSheetUiModel
 	std::string getPlayerHealth(Game &game);
 	std::string getPlayerStamina(Game &game);
 	std::string getPlayerSpellPoints(Game &game);
+	std::string getPlayerDamage(Game &game);
+	std::string getPlayerMagicDefense(Game &game);
+	std::string getPlayerBonusToHit(Game &game);
+	std::string getPlayerBonusToDefend(Game &game);
+	std::string getPlayerBonusToHealth(Game &game);
+	std::string getPlayerCharisma(Game &game);
+	std::string getPlayerHealMod(Game &game);
+	std::string getPlayerMaxWeight(Game &game);
 	std::string getPlayerGold(Game &game);
 }
 
