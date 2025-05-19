@@ -35,12 +35,13 @@ namespace ArenaPlayerUtils
 	int calculateMaxHealthPoints(int charClassDefID, Random &random);
 	int calculateMaxStamina(int strength, int endurance);
 	int calculateMaxSpellPoints(int charClassDefID, int intelligence);
-	int calculateBonusToHit(int Agility);
+	int calculateBonusToHit(int agility);
 	int calculateBonusToHealth(int endurance);
 	int calculateDamageBonus(int strength);
-	int calculateMagicDefenseBonus(int will);
+	int calculateMagicDefenseBonus(int willpower);
 
-	struct AttributeBonusValues {
+	struct AttributeBonusValues
+	{
 		int bonusToHit;
 		int bonusToDefend;
 		int bonusToCharisma;
@@ -50,7 +51,8 @@ namespace ArenaPlayerUtils
 		int maxKilos;
 		int magicDef;
 	};
-	AttributeBonusValues calculateAttributeBonus(const char* attributeName, int attributeValue);
+
+	AttributeBonusValues calculateAttributeBonus(const char *attributeName, int attributeValue);
 }
 
 #endif

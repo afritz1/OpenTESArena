@@ -60,55 +60,88 @@ int ArenaPlayerUtils::calculateMaxSpellPoints(int charClassDefID, int intelligen
 	return maxSpellPoints;
 }
 
-int ArenaPlayerUtils::calculateBonusToHit(int Agility)
+int ArenaPlayerUtils::calculateBonusToHit(int agility)
 {
-	if (Agility <= 45) return -1;
-	if (Agility <= 46) return 0;
-	return (Agility - 50) / 5;
+	if (agility <= 45)
+	{
+		return -1;
+	}
+	else if (agility <= 46)
+	{
+		return 0;
+	}
+
+	return (agility - 50) / 5;
 }
-
-
 
 int ArenaPlayerUtils::calculateBonusToHealth(int endurance)
 {
-	if (endurance <= 34) return -1;
-	if (endurance <= 54) return 0;
-	int bonus = (endurance - 55) / 10 + 1;
+	if (endurance <= 34)
+	{
+		return -1;
+	}
+	else if (endurance <= 54)
+	{
+		return 0;
+	}
+
+	const int bonus = ((endurance - 55) / 10) + 1;
 	return std::min(bonus, 5);
 }
 
 int ArenaPlayerUtils::calculateDamageBonus(int strength)
 {
-	if (strength <= 43) return 0;
+	if (strength <= 43)
+	{
+		return 0;
+	}
+
 	return (strength - 48) / 5;
 }
-int ArenaPlayerUtils::calculateMagicDefenseBonus(int Will) {
-	if (Will <= 38) return -2;
-	if (Will <= 41) return -1;
-	if (Will <= 46) return 0;
-	return (Will - 46) / 9; 
+int ArenaPlayerUtils::calculateMagicDefenseBonus(int willpower)
+{
+	if (willpower <= 38)
+	{
+		return -2;
+	}
+	else if (willpower <= 41)
+	{
+		return -1;
+	}
+	else if (willpower <= 46)
+	{
+		return 0;
+	}
+
+	return (willpower - 46) / 9;
 }
 
-ArenaPlayerUtils::AttributeBonusValues ArenaPlayerUtils::calculateAttributeBonus(const char* attributeName, int attributeValue) {
+ArenaPlayerUtils::AttributeBonusValues ArenaPlayerUtils::calculateAttributeBonus(const char *attributeName, int attributeValue)
+{
 	AttributeBonusValues values = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-	if (strcmp(attributeName, "Agility") == 0) {
+	if (strcmp(attributeName, "Agility") == 0)
+	{
 		values.bonusToHit = calculateBonusToHit(attributeValue);
 		values.bonusToDefend = values.bonusToHit;
 	}
-	else if (strcmp(attributeName, "Personality") == 0) {
+	else if (strcmp(attributeName, "Personality") == 0)
+	{
 		//Personality and agility have the same bonus progression.
 		values.bonusToCharisma = calculateBonusToHit(attributeValue);
 	}
-	else if (strcmp(attributeName, "Endurance") == 0) {
+	else if (strcmp(attributeName, "Endurance") == 0)
+	{
 		values.bonusToHealth = calculateBonusToHealth(attributeValue);
 		values.healMod = values.bonusToHealth;
 	}
-	else if (strcmp(attributeName, "Strength") == 0) {
+	else if (strcmp(attributeName, "Strength") == 0)
+	{
 		values.bonusDamage = calculateDamageBonus(attributeValue);
 		values.maxKilos = attributeValue * 2;
 	}
-	else if (strcmp(attributeName, "Willpower") == 0) {
+	else if (strcmp(attributeName, "Willpower") == 0)
+	{
 		values.magicDef = calculateMagicDefenseBonus(attributeValue);
 	}
 	return values;
