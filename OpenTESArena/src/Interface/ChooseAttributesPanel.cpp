@@ -710,12 +710,28 @@ bool ChooseAttributesPanel::init()
 
 void ChooseAttributesPanel::updateBonusAttributeValues(const ArenaPlayerUtils::AttributeBonusValues& bonusValues)
 {
-	this->bonusToHitValue = bonusValues.bonusToHit;
-	this->bonusToCharismaValue = bonusValues.bonusToCharisma;
-	this->bonusToHealthValue = bonusValues.bonusToHealth;
-	this->bonusDamageValue = bonusValues.bonusDamage;
-	this->maxKilosValue = bonusValues.maxKilos;
-	this->magicDefValue = bonusValues.magicDef;
+	Game& game = this->getGame();
+	CharacterCreationState& charCreationState = game.getCharacterCreationState();
+	BufferView<PrimaryAttribute> attributes = charCreationState.attributes.getAttributes();
+
+	this->bonusToHitValue = 0;
+	this->bonusToCharismaValue = 0;
+	this->bonusToHealthValue = 0;
+	this->bonusDamageValue = 0;
+	this->maxKilosValue = 0;
+	this->magicDefValue = 0;
+
+	for (int i = 0; i < PrimaryAttributes::COUNT; i++)
+	{
+		const PrimaryAttribute& attribute = attributes[i];
+		auto bonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
+		this->bonusToHitValue += bonusValues.bonusToHit;
+		this->bonusToCharismaValue += bonusValues.bonusToCharisma;
+		this->bonusToHealthValue += bonusValues.bonusToHealth;
+		this->bonusDamageValue += bonusValues.bonusDamage;
+		this->maxKilosValue += bonusValues.maxKilos;
+		this->magicDefValue += bonusValues.magicDef;
+	}
 
 	this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
 	this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
