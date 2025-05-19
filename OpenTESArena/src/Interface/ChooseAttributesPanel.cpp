@@ -411,7 +411,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 bonusToHitTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 60,
 		lastAttributeTextBoxRect.getTop() + 8);
-	const TextBox::InitInfo bonusToHitTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo bonusToHitTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		bonusToHitTextBoxTopLeftPosition.x,
 		bonusToHitTextBoxTopLeftPosition.y,
@@ -440,7 +440,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 bonusToDefendTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 120,
 		lastAttributeTextBoxRect.getTop() + 8);
-	const TextBox::InitInfo bonusToDefendTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo bonusToDefendTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		bonusToDefendTextBoxTopLeftPosition.x,
 		bonusToDefendTextBoxTopLeftPosition.y,
@@ -468,7 +468,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 bonusToCharismaTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 60,
 		lastAttributeTextBoxRect.getTop() + 32);
-	const TextBox::InitInfo bonusToCharismaTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo bonusToCharismaTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		bonusToCharismaTextBoxTopLeftPosition.x,
 		bonusToCharismaTextBoxTopLeftPosition.y,
@@ -498,7 +498,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 bonusToHealthTextBoxTopLeftPosition(
 		positionAttributeEndureceTextBoxRect.getLeft() + 60,
 		positionAttributeEndureceTextBoxRect.getTop());
-	const TextBox::InitInfo bonusToHealthTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo bonusToHealthTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		bonusToHealthTextBoxTopLeftPosition.x,
 		bonusToHealthTextBoxTopLeftPosition.y,
@@ -527,7 +527,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 healModTextBoxTopLeftPosition(
 		positionAttributeEndureceTextBoxRect.getLeft() + 120,
 		positionAttributeEndureceTextBoxRect.getTop());
-	const TextBox::InitInfo healModTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo healModTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		healModTextBoxTopLeftPosition.x,
 		healModTextBoxTopLeftPosition.y,
@@ -557,7 +557,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 bonusDamageTextBoxTopLeftPosition(
 		positionAttributeStrengthTextBoxRect.getLeft() + 60,
 		positionAttributeStrengthTextBoxRect.getTop());
-	const TextBox::InitInfo bonusDamageTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo bonusDamageTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		bonusDamageTextBoxTopLeftPosition.x,
 		bonusDamageTextBoxTopLeftPosition.y,
@@ -586,7 +586,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 maxKilosTextBoxTopLeftPosition(
 		positionAttributeStrengthTextBoxRect.getLeft() + 120,
 		positionAttributeStrengthTextBoxRect.getTop());
-	const TextBox::InitInfo maxKilosTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo maxKilosTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		maxKilosTextBoxTopLeftPosition.x,
 		maxKilosTextBoxTopLeftPosition.y,
@@ -616,7 +616,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 magicDefTextBoxTopLeftPosition(
 		positionAttributeWillpowerTextBoxRect.getLeft() + 60,
 		positionAttributeWillpowerTextBoxRect.getTop());
-	const TextBox::InitInfo magicDefTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo magicDefTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		std::string(3, TextRenderUtils::LARGEST_CHAR),
 		magicDefTextBoxTopLeftPosition.x,
 		magicDefTextBoxTopLeftPosition.y,
