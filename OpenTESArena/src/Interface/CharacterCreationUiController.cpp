@@ -247,7 +247,7 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedFirstText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextFontName,
@@ -290,7 +290,7 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedSecondText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextFontName,
@@ -324,7 +324,7 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedThirdText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextFontName,
@@ -358,7 +358,7 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedFourthText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextFontName,
@@ -454,9 +454,9 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, int b
 		}
 	}, false);
 
-	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> saveTextColorOverrides =
+	const std::vector<TextRenderColorOverrideInfoEntry> saveTextColorOverrides =
 		ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(game);
-	for (const TextRenderUtils::ColorOverrideInfo::Entry &entry : saveTextColorOverrides)
+	for (const TextRenderColorOverrideInfoEntry &entry : saveTextColorOverrides)
 	{
 		panel->addOverrideColor(0, entry.charIndex, entry.color);
 	}
@@ -470,9 +470,9 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, int b
 		ChooseAttributesUiController::onRerollButtonSelected(game);
 	}, true);
 
-	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> rerollTextColorOverrides =
+	const std::vector<TextRenderColorOverrideInfoEntry> rerollTextColorOverrides =
 		ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(game);
-	for (const TextRenderUtils::ColorOverrideInfo::Entry &entry : rerollTextColorOverrides)
+	for (const TextRenderColorOverrideInfoEntry &entry : rerollTextColorOverrides)
 	{
 		panel->addOverrideColor(1, entry.charIndex, entry.color);
 	}
@@ -630,7 +630,7 @@ void ChooseAttributesUiController::onSaveButtonSelectedWithNoBonusPoints(Game &g
 	game.popSubPanel();
 
 	const std::string text = ChooseAttributesUiModel::getAppearanceText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseAttributesUiView::AppearanceTextCenterPoint,
 		ChooseAttributesUiView::AppearanceTextFontName,
@@ -669,7 +669,7 @@ void ChooseAttributesUiController::onSaveButtonSelectedWithBonusPoints(Game &gam
 	game.popSubPanel();
 
 	const std::string text = ChooseAttributesUiModel::getBonusPointsRemainingText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseAttributesUiView::AppearanceTextCenterPoint,
 		ChooseAttributesUiView::AppearanceTextFontName,
@@ -744,100 +744,6 @@ void ChooseAttributesUiController::onDoneButtonSelected(Game &game, int bonusPoi
 
 void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game &game)
 {
-	// Create the function that will be called when the player leaves the starting dungeon.
-	// @todo: this should be in a game logic controller namespace, not UI controller.
-	auto onLevelUpVoxelEnter = [](Game &game)
-	{
-		// Teleport the player to a random location based on their race.
-		auto &player = game.player;
-		player.setPhysicsVelocity(Double3::Zero);
-		player.clearKeyInventory();
-
-		auto &gameState = game.gameState;
-		const int provinceID = player.raceID; // @todo: this should be more like a WorldMapDefinition::getProvinceIdForRaceId() that searches provinces
-		const int locationID = game.random.next(32); // @todo: this should not assume 32 locations per province
-
-		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
-
-		const ArenaTypes::WeatherType weatherType = gameState.getWeatherForLocation(provinceID, locationID);
-
-		const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
-		auto &renderer = game.renderer;
-
-		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-		Buffer<uint8_t> reservedBlocks = [&cityDef]()
-		{
-			const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
-			DebugAssert(cityReservedBlocks != nullptr);
-			Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-			std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
-			return buffer;
-		}();
-
-		const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
-		{
-			if (cityDef.hasMainQuestTempleOverride)
-			{
-				return cityDef.mainQuestTempleOverride;
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}();
-
-		MapGeneration::CityGenInfo cityGenInfo;
-		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-			cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
-			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
-			mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
-
-		const int currentDay = gameState.getDate().getDay();
-		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
-		{
-			WeatherDefinition weatherDef;
-			weatherDef.initFromClassic(weatherType, currentDay, game.random);
-			return weatherDef;
-		}();
-
-		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
-		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
-
-		MapDefinition mapDefinition;
-		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.textureManager))
-		{
-			DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
-			return;
-		}
-
-		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
-		{
-			// Set music based on weather and time.
-			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			GameState &gameState = game.gameState;
-			const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing exterior music.");
-			}
-
-			return musicDef;
-		};
-
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
-		gameState.queueMusicOnSceneChange(musicFunc);
-	};
-
-	// Set the *LEVELUP voxel enter event.
-	auto &gameState = game.gameState;
-	gameState.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
-
 	// Initialize the game world panel.
 	game.setPanel<GameWorldPanel>();
 

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 
 #include "GameWorldPanel.h"
 #include "GameWorldUiModel.h"
@@ -54,10 +55,10 @@ Rect GameWorldUiView::scaleClassicCursorRectToNative(int rectIndex, double xScal
 		static_cast<int>(std::ceil(static_cast<double>(classicRect.height) * yScale)));
 }
 
-TextBox::InitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		GameWorldUiView::PlayerNameTextBoxX,
 		GameWorldUiView::PlayerNameTextBoxY,
@@ -177,7 +178,8 @@ Int2 GameWorldUiView::getGameWorldInterfacePosition()
 int GameWorldUiView::getStatusBarCurrentHeight(int maxHeight, double currentValue, double maxValue)
 {
 	const double percent = currentValue / maxValue;
-	return static_cast<int>(static_cast<double>(maxHeight) * percent);
+	const double currentHeightReal = std::round(static_cast<double>(maxHeight) * percent);
+	return std::clamp(static_cast<int>(currentHeightReal), 0, maxHeight);
 }
 
 Int2 GameWorldUiView::getNoMagicTexturePosition()
@@ -245,7 +247,7 @@ double GameWorldUiView::getEffectTextSeconds(const std::string_view text)
 	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
 }
 
-TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	constexpr int maxNewLines = 6;
 
@@ -256,12 +258,12 @@ TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &
 		dummyText += dummyLine + '\n';
 	}
 
-	const TextRenderUtils::TextShadowInfo shadow(
+	const TextRenderShadowInfo shadow(
 		GameWorldUiView::TriggerTextShadowOffsetX,
 		GameWorldUiView::TriggerTextShadowOffsetY,
 		GameWorldUiView::TriggerTextShadowColor);
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		Int2::Zero, // @todo: needs to be a variable due to classic/modern mode. Maybe make two text boxes?
 		GameWorldUiView::TriggerTextFontName,
@@ -272,7 +274,7 @@ TextBox::InitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &
 		fontLibrary);
 }
 
-TextBox::InitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	std::string dummyText;
 	for (int i = 0; i < 2; i++)
@@ -281,12 +283,12 @@ TextBox::InitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &f
 		dummyText += dummyLine + '\n';
 	}
 
-	const TextRenderUtils::TextShadowInfo shadow(
+	const TextRenderShadowInfo shadow(
 		GameWorldUiView::ActionTextShadowOffsetX,
 		GameWorldUiView::ActionTextShadowOffsetY,
 		GameWorldUiView::ActionTextShadowColor);
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		Int2::Zero, // @todo: needs to be a variable due to classic/modern mode. Maybe make two text boxes?
 		GameWorldUiView::ActionTextFontName,
@@ -297,13 +299,13 @@ TextBox::InitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &f
 		fontLibrary);
 }
 
-TextBox::InitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	DebugNotImplemented();
-	return TextBox::InitInfo();
+	return TextBoxInitInfo();
 }
 
-ListBox::Properties GameWorldUiView::getLootListBoxProperties()
+ListBoxProperties GameWorldUiView::getLootListBoxProperties()
 {
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 
@@ -328,11 +330,11 @@ ListBox::Properties GameWorldUiView::getLootListBoxProperties()
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Color itemColor = InventoryUiView::PlayerInventoryEquipmentColor;
 	constexpr double scrollScale = 1.0;
-	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
+	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
 }
 
 Int2 GameWorldUiView::getTooltipPosition(Game &game)
@@ -642,7 +644,7 @@ UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textu
 	constexpr Color cursorBgColor(0, 0, 0, 0);
 	const uint32_t cursorBgARGB = cursorBgColor.toARGB();
 	texelsView.fill(cursorBgARGB);
-	
+
 	constexpr Color cursorColor(255, 255, 255, 160);
 	const uint32_t cursorColorARGB = cursorColor.toARGB();
 
@@ -743,7 +745,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 				{
 				case RayCastHitType::Voxel:
 				{
-					const Color colors[] = { Color::Red, Color::Green, Color::Blue, Color::Cyan, Color::Yellow };
+					constexpr Color colors[] = { Colors::Red, Colors::Green, Colors::Blue, Colors::Cyan, Colors::Yellow };
 					const VoxelInt3 &voxel = hit.voxelHit.voxel;
 					const int colorsIndex = std::clamp<int>(voxel.y, 0, std::size(colors) - 1);
 					DebugAssertIndex(colors, colorsIndex);
@@ -752,7 +754,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 				}
 				case RayCastHitType::Entity:
 				{
-					color = Color::Yellow;
+					color = Colors::Yellow;
 					break;
 				}
 				}
@@ -848,12 +850,12 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		text = "No hit";
 	}
 
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		text,
 		0,
 		0,
 		ArenaFontName::Arena,
-		Color::White,
+		Colors::White,
 		TextAlignment::TopLeft,
 		FontLibrary::getInstance());
 
@@ -872,29 +874,59 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 {
 	Renderer &renderer = game.renderer;
-	constexpr int quadtreeTextureDim = ChunkUtils::CHUNK_DIM;
-	UiTextureID quadtreeTextureID;
-	if (!renderer.tryCreateUiTexture(quadtreeTextureDim, quadtreeTextureDim, &quadtreeTextureID))
+	UiTextureID quadtreeTextureIdList[VoxelVisibilityChunk::TREE_LEVEL_COUNT];
+	ScopedUiTextureRef quadtreeTextureRefList[VoxelVisibilityChunk::TREE_LEVEL_COUNT];
+	Int2 quadtreeTextureDimsList[VoxelVisibilityChunk::TREE_LEVEL_COUNT];
+	for (int treeLevelIndex = 0; treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
 	{
-		DebugLogError("Couldn't allocate voxel visibility quadtree debug texture.");
-		return;
+		DebugAssertIndex(VoxelVisibilityChunk::NODES_PER_SIDE, treeLevelIndex);
+		const int quadtreeTextureDim = VoxelVisibilityChunk::NODES_PER_SIDE[treeLevelIndex];
+		if (!renderer.tryCreateUiTexture(quadtreeTextureDim, quadtreeTextureDim, &quadtreeTextureIdList[treeLevelIndex]))
+		{
+			DebugLogErrorFormat("Couldn't allocate voxel visibility quadtree debug texture %d.", treeLevelIndex);
+			continue;
+		}
+
+		quadtreeTextureRefList[treeLevelIndex].init(quadtreeTextureIdList[treeLevelIndex], renderer);
+		quadtreeTextureDimsList[treeLevelIndex] = Int2(quadtreeTextureRefList[treeLevelIndex].getWidth(), quadtreeTextureRefList[treeLevelIndex].getHeight());
 	}
 
-	ScopedUiTextureRef quadtreeTextureRef(quadtreeTextureID, renderer);
-	const Int2 quadtreeTextureDims(quadtreeTextureRef.getWidth(), quadtreeTextureRef.getHeight());
+	int quadtreeDrawPositionYs[VoxelVisibilityChunk::TREE_LEVEL_COUNT];
+	for (int treeLevelIndex = 0; treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
+	{
+		int quadtreeDrawPositionY = 0;
+		for (int i = treeLevelIndex; i < VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF; i++)
+		{
+			const int yDimIndex = VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF - (i - treeLevelIndex);
+			DebugAssertIndex(quadtreeTextureDimsList, yDimIndex);
+			quadtreeDrawPositionY += quadtreeTextureDimsList[yDimIndex].y;
+		}
+
+		quadtreeDrawPositionYs[treeLevelIndex] = quadtreeDrawPositionY;
+	}
 
 	const SceneManager &sceneManager = game.sceneManager;
 	const Player &player = game.player;
 	const CoordDouble3 playerCoord = player.getEyeCoord();
-	const CoordInt3 playerVoxelCoord(playerCoord.chunk, VoxelUtils::pointToVoxel(playerCoord.point));
+	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
 	const VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
 	const VoxelVisibilityChunk *playerVoxelVisChunk = voxelVisChunkManager.tryGetChunkAtPosition(playerCoord.chunk);
-	if (playerVoxelVisChunk != nullptr)
+	if (playerVoxelVisChunk == nullptr)
 	{
-		const uint32_t visibleColor = Color::Green.toARGB();
-		const uint32_t partialColor = Color::Yellow.toARGB();
-		const uint32_t invisibleColor = Color::Red.toARGB();
-		const uint32_t playerColor = Color::Magenta.toARGB();
+		return;
+	}
+
+	constexpr uint8_t alpha = 192;
+	const uint32_t visibleColor = Color(0, 255, 0, alpha).toARGB();
+	const uint32_t partiallyVisibleColor = Color(255, 255, 0, alpha).toARGB();
+	const uint32_t invisibleColor = Color(255, 0, 0, alpha).toARGB();
+	const uint32_t playerColor = Color(255, 255, 255, alpha).toARGB();
+
+	for (int treeLevelIndex = 0; treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
+	{
+		ScopedUiTextureRef &quadtreeTextureRef = quadtreeTextureRefList[treeLevelIndex];
+		const Int2 &quadtreeTextureDims = quadtreeTextureDimsList[treeLevelIndex];
+		const int quadtreeSideLength = VoxelVisibilityChunk::NODES_PER_SIDE[treeLevelIndex];
 
 		uint32_t *quadtreeTexels = quadtreeTextureRef.lockTexels();
 
@@ -902,17 +934,26 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 		{
 			for (int x = 0; x < quadtreeTextureDims.x; x++)
 			{
-				const int treeLevelSideLength = VoxelVisibilityChunk::NODES_PER_SIDE[VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF];
-				const SNInt internalX = (y * treeLevelSideLength) / ChunkUtils::CHUNK_DIM;
-				const WEInt internalZ = (x * treeLevelSideLength) / ChunkUtils::CHUNK_DIM;
-				const int internalIndex = internalX + (internalZ * treeLevelSideLength);
-				DebugAssertIndex(playerVoxelVisChunk->leafNodeFrustumTests, internalIndex);
-				VisibilityType visibilityType = playerVoxelVisChunk->leafNodeFrustumTests[internalIndex] ? VisibilityType::Inside : VisibilityType::Outside;
+				VisibilityType visibilityType = VisibilityType::Outside;
+				const bool isLeaf = treeLevelIndex == VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF;
+				if (isLeaf)
+				{
+					const int leafNodeIndex = y + (x * quadtreeTextureDims.y);
+					DebugAssertIndex(playerVoxelVisChunk->leafNodeFrustumTests, leafNodeIndex);
+					visibilityType = playerVoxelVisChunk->leafNodeFrustumTests[leafNodeIndex] ? VisibilityType::Inside : VisibilityType::Outside;
+				}
+				else
+				{
+					const int globalNodeOffset = VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS[treeLevelIndex];
+					const int internalNodeIndex = globalNodeOffset + (y + (x * quadtreeTextureDims.y));
+					DebugAssertIndex(playerVoxelVisChunk->internalNodeVisibilityTypes, internalNodeIndex);
+					visibilityType = playerVoxelVisChunk->internalNodeVisibilityTypes[internalNodeIndex];
+				}
 
 				const int dstIndex = ((quadtreeTextureDims.x - 1) - x) + (y * quadtreeTextureDims.x);
 				uint32_t color = 0;
 
-				const bool inPlayerVoxel = (y == playerVoxelCoord.voxel.x) && (x == playerVoxelCoord.voxel.z);
+				const bool inPlayerVoxel = isLeaf && (y == playerVoxelXZ.x) && (x == playerVoxelXZ.y);
 				if (inPlayerVoxel)
 				{
 					color = playerColor;
@@ -925,7 +966,7 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 						color = invisibleColor;
 						break;
 					case VisibilityType::Partial:
-						color = partialColor;
+						color = partiallyVisibleColor;
 						break;
 					case VisibilityType::Inside:
 						color = visibleColor;
@@ -938,18 +979,19 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 		}
 
 		quadtreeTextureRef.unlockTexels();
+
+		const int positionY = quadtreeDrawPositionYs[treeLevelIndex];
+		const Int2 position(ArenaRenderUtils::SCREEN_WIDTH, positionY);
+		const Int2 size = quadtreeTextureDims;
+		const Int2 windowDims = renderer.getWindowDimensions();
+		constexpr PivotType pivotType = PivotType::TopRight;
+		constexpr RenderSpace renderSpace = RenderSpace::Classic;
+
+		double xPercent, yPercent, wPercent, hPercent;
+		GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+			renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
+
+		const RendererSystem2D::RenderElement renderElement(quadtreeTextureRef.get(), xPercent, yPercent, wPercent, hPercent);
+		renderer.draw(&renderElement, 1, renderSpace);
 	}
-
-	const Int2 position(ArenaRenderUtils::SCREEN_WIDTH, 0);
-	const Int2 size = quadtreeTextureDims;
-	const Int2 windowDims = renderer.getWindowDimensions();
-	constexpr PivotType pivotType = PivotType::TopRight;
-	constexpr RenderSpace renderSpace = RenderSpace::Classic;
-
-	double xPercent, yPercent, wPercent, hPercent;
-	GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-		renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-	const RendererSystem2D::RenderElement renderElement(quadtreeTextureID, xPercent, yPercent, wPercent, hPercent);
-	renderer.draw(&renderElement, 1, renderSpace);
 }

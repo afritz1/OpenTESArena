@@ -67,19 +67,15 @@ namespace
 			return false;
 		}
 
-		constexpr float collisionTolerance = 0.03f;
+		constexpr float mass = 1.0f;
 		constexpr float maxSlopeAngle = MathUtilsF::degToRad(45.0f); // Game world doesn't have slopes so this is unimportant
-		constexpr float maxStrength = 1.0f;
-		constexpr float characterPadding = 0.02f;
-		constexpr float penetrationRecoverySpeed = 1.0f;
-		constexpr float predictiveContactDistance = 0.05f;
 		const JPH::Plane supportingVolume(JPH::Vec3::sAxisY(), -1.0e10f); // Half space of the character that accepts collisions, we want 100% of them
 
 		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
 		// I just need a capsule that runs into things, jumps, and steps on stairs.
 		JPH::CharacterSettings characterSettings;
 		characterSettings.SetEmbedded();
-		characterSettings.mMass = 1.0f;
+		characterSettings.mMass = mass;
 		characterSettings.mFriction = static_cast<float>(PlayerConstants::FRICTION);
 		characterSettings.mGravityFactor = 0.0f; // Do gravity manually when paired w/ CharacterVirtual.
 		characterSettings.mShape = capsuleShapeResult.Get();
@@ -89,14 +85,15 @@ namespace
 
 		JPH::CharacterVirtualSettings characterVirtualSettings;
 		characterVirtualSettings.SetEmbedded();
-		characterVirtualSettings.mMass = 1.0f;
+		characterVirtualSettings.mMass = mass;
 		characterVirtualSettings.mMaxSlopeAngle = maxSlopeAngle;
-		characterVirtualSettings.mMaxStrength = maxStrength;
+		characterVirtualSettings.mMaxStrength = 1.0f;
 		characterVirtualSettings.mShape = capsuleShapeResult.Get();
 		characterVirtualSettings.mBackFaceMode = JPH::EBackFaceMode::CollideWithBackFaces;
-		characterVirtualSettings.mCharacterPadding = characterPadding;
-		characterVirtualSettings.mPenetrationRecoverySpeed = penetrationRecoverySpeed;
-		characterVirtualSettings.mPredictiveContactDistance = predictiveContactDistance;
+		characterVirtualSettings.mCollisionTolerance = 0.001f;
+		characterVirtualSettings.mCharacterPadding = 0.025f;
+		characterVirtualSettings.mPenetrationRecoverySpeed = 1.0f; // All in one update.
+		characterVirtualSettings.mPredictiveContactDistance = 0.035f;
 		characterVirtualSettings.mSupportingVolume = supportingVolume;
 		characterVirtualSettings.mEnhancedInternalEdgeRemoval = false;
 		characterVirtualSettings.mInnerBodyShape = nullptr;
@@ -186,6 +183,7 @@ Player::Player()
 	this->queuedMeleeSwingDirection = -1;
 	this->level = 0;
 	this->experience = 0;
+	this->gold = 0;
 	this->clearKeyInventory();
 }
 
@@ -217,6 +215,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->experience = 0;
 	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
+	this->gold = 0;
 	this->clearKeyInventory();
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
@@ -571,13 +570,13 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 		}
 	}
 
+	const double ceilingScale = game.gameState.getActiveCeilingScale();
 	const WorldDouble3 playerFeetPosition = this->getFeetPosition();
 	const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
-	const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point));
+	const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point, ceilingScale));
 	const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 
-	const double ceilingScale = game.gameState.getActiveCeilingScale();
 	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 	const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(playerFeetVoxelCoord.chunk);
 	if (voxelChunk != nullptr)
@@ -624,7 +623,9 @@ void Player::prePhysicsStep(double dt, Game &game)
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 	}
 
-	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+	// @todo: disabling ExtendedUpdate() fixes the "drift" on level start, not sure if we'll ever need
+	// CharacterVirtual. Keeping around until stairstepping is figured out.
+	/*const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
 	const JPH::Vec3Arg physicsGravity = -this->physicsCharacter->GetUp() * physicsSystem.GetGravity().Length();
 	JPH::CharacterVirtual::ExtendedUpdateSettings extendedUpdateSettings; // @todo: for stepping up/down stairs
 	const JPH::BroadPhaseLayerFilter &broadPhaseLayerFilter = physicsSystem.GetDefaultBroadPhaseLayerFilter(PhysicsLayers::MOVING);
@@ -642,7 +643,7 @@ void Player::prePhysicsStep(double dt, Game &game)
 		objectLayerFilter,
 		bodyFilter,
 		shapeFilter,
-		*game.physicsTempAllocator);
+		*game.physicsTempAllocator);*/
 }
 
 void Player::postPhysicsStep(double dt, Game &game)
@@ -752,7 +753,8 @@ void Player::postPhysicsStep(double dt, Game &game)
 		this->movementSoundProgress = 0.0;
 	}
 
-	const CoordDouble3 feetCoord = VoxelUtils::worldPointToCoord(this->getFeetPosition());
+	const WorldDouble3 feetPosition = this->getFeetPosition();
+	const CoordDouble3 feetCoord = VoxelUtils::worldPointToCoord(feetPosition);
 	if (this->movementType == PlayerMovementType::Default)
 	{
 		const double isSlowEnoughToStartClimbing = physicsVelocity.length() < 0.01;
@@ -795,13 +797,13 @@ void Player::postPhysicsStep(double dt, Game &game)
 			const Double3 groundDirection = this->getGroundDirection();
 			double climbingFeetTargetY = ceilingScale;
 
-			// If there's a raised platform close by, set its top as the target.
+			// If there's a raised platform close by, set its top as the target. Assume they only exist in Y=1.
 			constexpr double raisedPlatformGatherDistance = PlayerConstants::CLIMBING_RAISED_PLATFORM_GATHER_DISTANCE;
 			constexpr Double3 raisedPlatformGatherDistanceVector(raisedPlatformGatherDistance, 0.0, raisedPlatformGatherDistance);
-			const WorldDouble3 raisedPlatformGatherMin = VoxelUtils::coordToWorldPoint(feetCoord) - raisedPlatformGatherDistanceVector;
+			const WorldDouble3 raisedPlatformGatherMin = feetPosition - raisedPlatformGatherDistanceVector;
 			const WorldDouble3 raisedPlatformGatherMax = raisedPlatformGatherMin + (raisedPlatformGatherDistanceVector * 2.0);
-			const WorldInt3 raisedPlatformGatherWorldVoxelMin = VoxelUtils::pointToVoxel(raisedPlatformGatherMin);
-			const WorldInt3 raisedPlatformGatherWorldVoxelMax = VoxelUtils::pointToVoxel(raisedPlatformGatherMax);
+			const WorldInt3 raisedPlatformGatherWorldVoxelMin = VoxelUtils::pointToVoxel(raisedPlatformGatherMin, ceilingScale);
+			const WorldInt3 raisedPlatformGatherWorldVoxelMax = VoxelUtils::pointToVoxel(raisedPlatformGatherMax, ceilingScale);
 			for (WEInt gatherWorldVoxelZ = raisedPlatformGatherWorldVoxelMin.z; gatherWorldVoxelZ <= raisedPlatformGatherWorldVoxelMax.z; gatherWorldVoxelZ++)
 			{
 				for (SNInt gatherWorldVoxelX = raisedPlatformGatherWorldVoxelMin.x; gatherWorldVoxelX <= raisedPlatformGatherWorldVoxelMax.x; gatherWorldVoxelX++)

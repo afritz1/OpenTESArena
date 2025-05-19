@@ -40,14 +40,14 @@ bool ChooseClassPanel::init()
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseClassUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo = ChooseClassUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBoxInitInfo titleTextBoxInitInfo = ChooseClassUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	const TextBox::InitInfo classDescriptionTextBoxInitInfo = ChooseClassUiView::getClassDescriptionTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo classDescriptionTextBoxInitInfo = ChooseClassUiView::getClassDescriptionTextBoxInitInfo(fontLibrary);
 	if (!this->classDescriptionTextBox.init(classDescriptionTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init class description text box.");

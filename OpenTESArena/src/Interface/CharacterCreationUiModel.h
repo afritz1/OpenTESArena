@@ -80,8 +80,8 @@ namespace ChooseAttributesUiModel
 	std::string getMessageBoxTitleText(Game &game);
 	std::string getMessageBoxSaveText(Game &game);
 	std::string getMessageBoxRerollText(Game &game);
-	std::vector<TextRenderUtils::ColorOverrideInfo::Entry> getMessageBoxSaveColorOverrides(Game &game);
-	std::vector<TextRenderUtils::ColorOverrideInfo::Entry> getMessageBoxRerollColorOverrides(Game &game);
+	std::vector<TextRenderColorOverrideInfoEntry> getMessageBoxSaveColorOverrides(Game &game);
+	std::vector<TextRenderColorOverrideInfoEntry> getMessageBoxRerollColorOverrides(Game &game);
 
 	std::string getBonusPointsRemainingText(Game &game);
 	std::string getAppearanceText(Game &game);

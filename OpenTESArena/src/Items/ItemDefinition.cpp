@@ -73,6 +73,11 @@ void ConsumableItemDefinition::init(const char *name, const char *unidentifiedNa
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 }
 
+void GoldItemDefinition::init(const char *name)
+{
+	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+}
+
 void MiscItemDefinition::init(const char *name)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
@@ -154,6 +159,8 @@ std::string ItemDefinition::getDisplayName() const
 		return this->armor.name;
 	case ItemType::Consumable:
 		return this->consumable.name;
+	case ItemType::Gold:
+		return this->gold.name;
 	case ItemType::Misc:
 		return this->misc.name;
 	case ItemType::Shield:
@@ -176,6 +183,8 @@ double ItemDefinition::getWeight() const
 	case ItemType::Armor:
 		return this->armor.weight;
 	case ItemType::Consumable:
+		return 0.0;
+	case ItemType::Gold:
 		return 0.0;
 	case ItemType::Misc:
 		return 0.0;

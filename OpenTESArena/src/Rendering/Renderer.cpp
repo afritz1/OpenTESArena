@@ -949,7 +949,7 @@ void Renderer::clear(const Color &color)
 
 void Renderer::clear()
 {
-	this->clear(Color::Black);
+	this->clear(Colors::Black);
 }
 
 void Renderer::clearOriginal(const Color &color)
@@ -963,7 +963,7 @@ void Renderer::clearOriginal(const Color &color)
 
 void Renderer::clearOriginal()
 {
-	this->clearOriginal(Color::Black);
+	this->clearOriginal(Colors::Black);
 }
 
 void Renderer::drawPixel(const Color &color, int x, int y)

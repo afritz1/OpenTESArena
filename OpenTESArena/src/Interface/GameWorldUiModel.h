@@ -51,7 +51,9 @@ namespace GameWorldUiModel
 	void updateNativeCursorRegions(BufferView<Rect> nativeCursorRegions, int width, int height);
 
 	std::string getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData);
+	std::string getEnemyCorpseGoldMessage(int goldCount, const ExeData &exeData);
 	std::string getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData);
+	std::string getCitizenKillGoldMessage(int goldCount, const ExeData &exeData);
 
 	std::string getLockDifficultyMessage(int lockLevel, const ExeData &exeData);
 	std::string getKeyPickUpMessage(int keyID, const ExeData &exeData);

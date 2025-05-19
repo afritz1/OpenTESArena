@@ -22,7 +22,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 	{
 		const LoadSaveUiModel::Entry &entry = entries[i];
 		const std::string &text = entry.displayText;
-		const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 			text,
 			LoadSaveUiView::getEntryCenterPoint(i),
 			LoadSaveUiView::EntryFontName,

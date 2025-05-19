@@ -37,6 +37,9 @@ namespace ArenaCitizenUtils
 		DIRECTION_SOUTH,
 		DIRECTION_WEST
 	};
+
+	constexpr int DEATH_MIN_GOLD_PIECES = 1;
+	constexpr int DEATH_MAX_GOLD_PIECES = 4;
 }
 
 #endif

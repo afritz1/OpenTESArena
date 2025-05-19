@@ -441,6 +441,7 @@ bool ExeDataEntities::init(BufferView<const std::byte> exeBytes, const KeyValueF
 	const int creatureBloodOffset = GetExeAddress(*section, "CreatureBlood");
 	const int creatureDiseaseChancesOffset = GetExeAddress(*section, "CreatureDiseaseChances");
 	const int creatureAttributesOffset = GetExeAddress(*section, "CreatureAttributes");
+	const int creatureLootChancesOffset = GetExeAddress(*section, "CreatureLootChances");
 	const int creatureAnimFilenamesOffset = GetExeAddress(*section, "CreatureAnimationFilenames");
 	const int finalBossNameOffset = GetExeAddress(*section, "FinalBossName");
 	const int raceAttributesOffset = GetExeAddress(*section, "RaceAttributes");
@@ -471,6 +472,7 @@ bool ExeDataEntities::init(BufferView<const std::byte> exeBytes, const KeyValueF
 	initInt8Array(this->creatureBlood, exeBytes, creatureBloodOffset);
 	initInt8Array(this->creatureDiseaseChances, exeBytes, creatureDiseaseChancesOffset);
 	init2DInt8Array(this->creatureAttributes, exeBytes, creatureAttributesOffset);
+	initInt16Array(this->creatureLootChances, exeBytes, creatureLootChancesOffset);
 	initStringArrayNullTerminated(this->creatureAnimationFilenames, exeBytes, creatureAnimFilenamesOffset);
 	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
 	init2DInt8Array(this->raceAttributes, exeBytes, raceAttributesOffset);
@@ -871,6 +873,7 @@ bool ExeDataStatus::init(BufferView<const std::byte> exeBytes, const KeyValueFil
 	const int staminaDrowningOffset = GetExeAddress(*section, "StaminaDrowning");
 	const int enemyCorpseEmptyInventoryOffset = GetExeAddress(*section, "EnemyCorpseEmptyInventory");
 	const int enemyCorpseGoldOffset = GetExeAddress(*section, "EnemyCorpseGold");
+	const int citizenCorpseGoldOffset = GetExeAddress(*section, "CitizenCorpseGold");
 
 	this->popUp = GetExeStringNullTerminated(exeBytes, popUpOffset);
 	this->date = GetExeStringNullTerminated(exeBytes, dateOffset);
@@ -887,6 +890,7 @@ bool ExeDataStatus::init(BufferView<const std::byte> exeBytes, const KeyValueFil
 	this->staminaDrowning = GetExeStringNullTerminated(exeBytes, staminaDrowningOffset);
 	this->enemyCorpseEmptyInventory = GetExeStringNullTerminated(exeBytes, enemyCorpseEmptyInventoryOffset);
 	this->enemyCorpseGold = GetExeStringNullTerminated(exeBytes, enemyCorpseGoldOffset);
+	this->citizenCorpseGold = GetExeStringNullTerminated(exeBytes, citizenCorpseGoldOffset);
 
 	return true;
 }

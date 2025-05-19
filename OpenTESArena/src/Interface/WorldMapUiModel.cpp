@@ -306,7 +306,7 @@ std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int t
 	int targetLocationID, int travelDays)
 {
 	const std::string text = FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		FastTravelUiView::getCityArrivalPopUpTextCenterPoint(game),
 		FastTravelUiView::CityArrivalFontName,

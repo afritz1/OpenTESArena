@@ -23,7 +23,7 @@ bool PauseMenuPanel::init()
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
-	const TextBox::InitInfo playerNameTextBoxInitInfo =
+	const TextBoxInitInfo playerNameTextBoxInitInfo =
 		GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
 	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
@@ -32,7 +32,7 @@ bool PauseMenuPanel::init()
 	}
 
 	const std::string musicText = PauseMenuUiModel::getMusicVolumeText(game);
-	const TextBox::InitInfo musicTextBoxInitInfo = PauseMenuUiView::getMusicTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo musicTextBoxInitInfo = PauseMenuUiView::getMusicTextBoxInitInfo(fontLibrary);
 	if (!this->musicTextBox.init(musicTextBoxInitInfo, musicText, renderer))
 	{
 		DebugLogError("Couldn't init music volume text box.");
@@ -40,7 +40,7 @@ bool PauseMenuPanel::init()
 	}
 
 	const std::string soundText = PauseMenuUiModel::getSoundVolumeText(game);
-	const TextBox::InitInfo soundTextBoxInitInfo = PauseMenuUiView::getSoundTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo soundTextBoxInitInfo = PauseMenuUiView::getSoundTextBoxInitInfo(fontLibrary);
 	if (!this->soundTextBox.init(soundTextBoxInitInfo, soundText, renderer))
 	{
 		DebugLogError("Couldn't init sound volume text box.");
@@ -48,7 +48,7 @@ bool PauseMenuPanel::init()
 	}
 
 	const std::string optionsText = PauseMenuUiModel::getOptionsButtonText(game);
-	const TextBox::InitInfo optionsTextBoxInitInfo = PauseMenuUiView::getOptionsTextBoxInitInfo(optionsText, fontLibrary);
+	const TextBoxInitInfo optionsTextBoxInitInfo = PauseMenuUiView::getOptionsTextBoxInitInfo(optionsText, fontLibrary);
 	if (!this->optionsTextBox.init(optionsTextBoxInitInfo, optionsText, renderer))
 	{
 		DebugLogError("Couldn't init options button text box.");

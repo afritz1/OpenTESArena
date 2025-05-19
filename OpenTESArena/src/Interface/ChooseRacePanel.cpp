@@ -52,7 +52,7 @@ bool ChooseRacePanel::init()
 std::unique_ptr<Panel> ChooseRacePanel::getInitialSubPanel(Game &game)
 {
 	const std::string text = ChooseRaceUiModel::getTitleText(game);
-	const TextBox::InitInfo textBoxInitInfo = ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(text, game);
+	const TextBoxInitInfo textBoxInitInfo = ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(text, game);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;	

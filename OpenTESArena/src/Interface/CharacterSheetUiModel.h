@@ -16,6 +16,10 @@ namespace CharacterSheetUiModel
 	const PrimaryAttributes &getPlayerAttributes(Game &game);
 	std::string getPlayerExperience(Game &game);
 	std::string getPlayerLevel(Game &game);
+	std::string getPlayerHealth(Game &game);
+	std::string getPlayerStamina(Game &game);
+	std::string getPlayerSpellPoints(Game &game);
+	std::string getPlayerGold(Game &game);
 }
 
 #endif

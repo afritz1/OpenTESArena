@@ -46,7 +46,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	auto &game = this->getGame();
 	
 	const auto &fontLibrary = FontLibrary::getInstance();
-	const TextBox::InitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
+	const TextBoxInitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
 	if (!this->locationTextBox.init(locationTextBoxInitInfo, game.renderer))
 	{
 		DebugLogError("Couldn't init location text box.");
@@ -77,14 +77,16 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		AutomapUiController::onMouseButtonHeld(game, buttonType, position, dt, &this->automapOffset);
 	});
 
-	auto &renderer = game.renderer;
-	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
-	const CoordInt2 playerCoordXZ(playerCoord.chunk, playerVoxel.getXZ());
-	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(
-		game.gameState, playerCoordXZ, playerDirection, voxelChunkManager, renderer);
+	const GameState &gameState = game.gameState;
+	const double ceilingScale = gameState.getActiveCeilingScale();
+	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
+	const CoordInt2 playerCoordXZ(playerCoord.chunk, playerVoxelXZ);
+	
+	Renderer &renderer = game.renderer;
+	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(gameState, playerCoordXZ, playerDirection, voxelChunkManager, renderer);
 	this->mapTextureRef.init(mapTextureID, renderer);
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = AutomapUiView::allocBgTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 
@@ -105,7 +107,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
 		const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
 		
-		const Rect &drawingArea = AutomapUiView::DrawingArea;
+		constexpr Rect drawingArea = AutomapUiView::DrawingArea;
 		const int mapX = (drawingArea.getLeft() + (drawingArea.width / 2)) + offsetX;
 		const int mapY = (drawingArea.getTop() + (drawingArea.height / 2)) + offsetY;
 		return Int2(mapX, mapY);

@@ -2,31 +2,54 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
 
+#include "components/utilities/BufferView.h"
+
 namespace
 {
 	// Child node indices for each internal node (root owns 4 indices, etc.) using breadth-first traversal.
 	int CHILD_INDICES[VoxelVisibilityChunk::TOTAL_CHILD_COUNT];
 
 	// XY point for each tree level node index.
-	Int2 Z_ORDER_CURVE_POINTS[VoxelVisibilityChunk::LEAF_NODE_COUNT];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL0[VoxelVisibilityChunk::NODE_COUNT_LEVEL0];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL1[VoxelVisibilityChunk::NODE_COUNT_LEVEL1];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL2[VoxelVisibilityChunk::NODE_COUNT_LEVEL2];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL3[VoxelVisibilityChunk::NODE_COUNT_LEVEL3];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL4[VoxelVisibilityChunk::NODE_COUNT_LEVEL4];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL5[VoxelVisibilityChunk::NODE_COUNT_LEVEL5];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL6[VoxelVisibilityChunk::NODE_COUNT_LEVEL6];
+	BufferView<Int2> Z_ORDER_CURVE_POINT_ARRAYS[] =
+	{
+		Z_ORDER_CURVE_POINTS_LEVEL0,
+		Z_ORDER_CURVE_POINTS_LEVEL1,
+		Z_ORDER_CURVE_POINTS_LEVEL2,
+		Z_ORDER_CURVE_POINTS_LEVEL3,
+		Z_ORDER_CURVE_POINTS_LEVEL4,
+		Z_ORDER_CURVE_POINTS_LEVEL5,
+		Z_ORDER_CURVE_POINTS_LEVEL6
+	};
 
 	bool s_areGlobalVariablesInited = false;
 
 	void InitChildIndexArray()
 	{
 		DebugAssert(!s_areGlobalVariablesInited);
+
 		for (int i = 0; i < static_cast<int>(std::size(CHILD_INDICES)); i++)
 		{
 			CHILD_INDICES[i] = i + 1;
 		}
 	}
 
-	void InitZOrderCurvePointsArray()
+	void InitZOrderCurvePointsArrays()
 	{
 		DebugAssert(!s_areGlobalVariablesInited);
-		for (int i = 0; i < static_cast<int>(std::size(Z_ORDER_CURVE_POINTS)); i++)
+
+		for (BufferView<Int2> dstArray : Z_ORDER_CURVE_POINT_ARRAYS)
 		{
-			Z_ORDER_CURVE_POINTS[i] = MathUtils::getZOrderCurvePoint(i);
+			for (int i = 0; i < dstArray.getCount(); i++)
+			{
+				dstArray[i] = MathUtils::getZOrderCurvePoint(i);
+			}
 		}
 	}
 
@@ -51,15 +74,16 @@ namespace
 		}
 	};
 
-	// Converts a tree level index and tree level node index to a Z-order curve quadkey, where at its most basic is
-	// four adjacent nodes in memory arranged in a 2x2 pattern in space.
+	// Converts a tree level index and tree level node index to a Z-order curve quadkey.
+	// Each Z is four sequential node indices.
 	int GetZOrderCurveNodeIndex(int treeLevelIndex, int treeLevelNodeIndex)
 	{
+		DebugAssertIndex(Z_ORDER_CURVE_POINT_ARRAYS, treeLevelIndex);
+		const BufferView<Int2> zOrderCurvePoints = Z_ORDER_CURVE_POINT_ARRAYS[treeLevelIndex];
+		const Int2 point = zOrderCurvePoints[treeLevelNodeIndex];
+
 		DebugAssertIndex(VoxelVisibilityChunk::NODES_PER_SIDE, treeLevelIndex);
 		const int nodesPerSide = VoxelVisibilityChunk::NODES_PER_SIDE[treeLevelIndex];
-
-		DebugAssertIndex(Z_ORDER_CURVE_POINTS, treeLevelNodeIndex);
-		const Int2 point = Z_ORDER_CURVE_POINTS[treeLevelNodeIndex];
 		return point.x + (point.y * nodesPerSide);
 	}
 
@@ -102,11 +126,15 @@ namespace
 		const bool childrenTreeLevelHasChildNodes = childrenTreeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF;
 		if (childrenTreeLevelHasChildNodes)
 		{
+			DebugAssertIndex(VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS, childrenTreeLevelIndex);
+			const int globalNodeOffset = VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS[childrenTreeLevelIndex];
+
 			for (const int childTreeLevelNodeIndex : childrenTreeLevelNodeIndices)
 			{
 				const int zOrderCurveNodeIndex = GetZOrderCurveNodeIndex(childrenTreeLevelIndex, childTreeLevelNodeIndex);
-				DebugAssertIndex(chunk.internalNodeVisibilityTypes, zOrderCurveNodeIndex);
-				chunk.internalNodeVisibilityTypes[zOrderCurveNodeIndex] = visibilityType;
+				const int globalNodeIndex = globalNodeOffset + zOrderCurveNodeIndex;
+				DebugAssertIndex(chunk.internalNodeVisibilityTypes, globalNodeIndex);
+				chunk.internalNodeVisibilityTypes[globalNodeIndex] = visibilityType;
 			}
 
 			// @optimization: do this an iterative way instead
@@ -132,7 +160,7 @@ VoxelVisibilityChunk::VoxelVisibilityChunk()
 	if (!s_areGlobalVariablesInited)
 	{
 		InitChildIndexArray();
-		InitZOrderCurvePointsArray();
+		InitZOrderCurvePointsArrays();
 		s_areGlobalVariablesInited = true;
 	}
 
@@ -164,10 +192,10 @@ void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ce
 		{
 			for (SNInt x = 0; x < levelNodesPerSide; x++)
 			{
-				const int bboxIndex = globalNodeOffset + (x + (z * levelNodesPerSide));
-				DebugAssert(bboxIndex < (globalNodeOffset + levelNodeCount));
-				DebugAssertIndex(this->nodeBBoxes, bboxIndex);
-				BoundingBox3D &bbox = this->nodeBBoxes[bboxIndex];
+				const int globalNodeIndex = globalNodeOffset + (x + (z * levelNodesPerSide));
+				DebugAssert(globalNodeIndex < (globalNodeOffset + levelNodeCount));
+				DebugAssertIndex(this->nodeBBoxes, globalNodeIndex);
+				BoundingBox3D &bbox = this->nodeBBoxes[globalNodeIndex];
 
 				const SNDouble bboxMinX = static_cast<SNDouble>(x * xDistPerNode);
 				const SNDouble bboxMaxX = static_cast<SNDouble>((x + 1) * xDistPerNode);
@@ -186,6 +214,12 @@ void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ce
 	std::fill(std::begin(this->leafNodeFrustumTests), std::end(this->leafNodeFrustumTests), false);
 }
 
+VisibilityType VoxelVisibilityChunk::getRootVisibilityType() const
+{
+	constexpr int rootNodeIndex = 0;
+	return this->internalNodeVisibilityTypes[rootNodeIndex];
+}
+
 void VoxelVisibilityChunk::update(const RenderCamera &camera)
 {
 	int currentTreeLevelIndex = 0; // Starts at root, ends at leaves.
@@ -195,13 +229,14 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 
 	do
 	{
-		const int zOrderCurveNodeIndex = GetZOrderCurveNodeIndex(currentTreeLevelIndex, currentTreeLevelNodeIndex);
-
 		DebugAssertIndex(GLOBAL_NODE_OFFSETS, currentTreeLevelIndex);
-		const int bboxIndex = GLOBAL_NODE_OFFSETS[currentTreeLevelIndex] + zOrderCurveNodeIndex;
+		const int globalNodeOffset = GLOBAL_NODE_OFFSETS[currentTreeLevelIndex];
+		
+		const int zOrderCurveNodeIndex = GetZOrderCurveNodeIndex(currentTreeLevelIndex, currentTreeLevelNodeIndex);
+		const int globalNodeIndex = globalNodeOffset + zOrderCurveNodeIndex;
 
-		DebugAssertIndex(this->nodeBBoxes, bboxIndex);
-		const BoundingBox3D &bbox = this->nodeBBoxes[bboxIndex];
+		DebugAssertIndex(this->nodeBBoxes, globalNodeIndex);
+		const BoundingBox3D &bbox = this->nodeBBoxes[globalNodeIndex];
 
 		bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
 		RendererUtils::getBBoxVisibilityInFrustum(bbox, camera, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
@@ -223,9 +258,8 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 				visibilityType = VisibilityType::Partial;
 			}
 
-			const int internalNodeVisIndex = bboxIndex;
-			DebugAssertIndex(this->internalNodeVisibilityTypes, internalNodeVisIndex);
-			this->internalNodeVisibilityTypes[internalNodeVisIndex] = visibilityType;
+			DebugAssertIndex(this->internalNodeVisibilityTypes, globalNodeIndex);
+			this->internalNodeVisibilityTypes[globalNodeIndex] = visibilityType;
 
 			if (visibilityType == VisibilityType::Partial)
 			{

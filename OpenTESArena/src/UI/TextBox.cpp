@@ -11,29 +11,27 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/StringView.h"
 
-TextBox::Properties::Properties(int fontDefIndex, const FontLibrary *fontLibrary,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &defaultColor, TextAlignment alignment,
-	const std::optional<TextRenderUtils::TextShadowInfo> &shadowInfo, int lineSpacing)
+TextBoxProperties::TextBoxProperties(int fontDefIndex, const TextRenderTextureGenInfo &textureGenInfo, const Color &defaultColor,
+	TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing)
 	: textureGenInfo(textureGenInfo), defaultColor(defaultColor), shadowInfo(shadowInfo)
 {
 	this->fontDefIndex = fontDefIndex;
-	this->fontLibrary = fontLibrary;
 	this->alignment = alignment;
 	this->lineSpacing = lineSpacing;
 }
 
-TextBox::Properties::Properties()
-	: Properties(-1, nullptr, TextRenderUtils::TextureGenInfo(), Color(), static_cast<TextAlignment>(-1), std::nullopt, 0) { }
+TextBoxProperties::TextBoxProperties()
+	: TextBoxProperties(-1, TextRenderTextureGenInfo(), Color(), static_cast<TextAlignment>(-1), std::nullopt, 0) { }
 
-void TextBox::InitInfo::init(const Rect &rect, Properties &&properties)
+void TextBoxInitInfo::init(const Rect &rect, TextBoxProperties &&properties)
 {
 	this->rect = rect;
 	this->properties = std::move(properties);
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view text, const Int2 &center,
+TextBoxInitInfo TextBoxInitInfo::makeWithCenter(const std::string_view text, const Int2 &center,
 	const std::string &fontName, const Color &textColor, TextAlignment alignment,
-	const std::optional<TextRenderUtils::TextShadowInfo> &shadow, int lineSpacing, const FontLibrary &fontLibrary)
+	const std::optional<TextRenderShadowInfo> &shadow, int lineSpacing, const FontLibrary &fontLibrary)
 {
 	int fontDefIndex;
 	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
@@ -42,28 +40,27 @@ TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view text,
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo =
+	const TextRenderTextureGenInfo textureGenInfo =
 		TextRenderUtils::makeTextureGenInfo(text, fontDef, shadow, lineSpacing);
 
 	const Rect rect(center, textureGenInfo.width, textureGenInfo.height);
-	TextBox::Properties properties(fontDefIndex, &fontLibrary, textureGenInfo, textColor, alignment,
-		shadow, lineSpacing);
+	TextBoxProperties properties(fontDefIndex, textureGenInfo, textColor, alignment, shadow, lineSpacing);
 
-	TextBox::InitInfo initInfo;
+	TextBoxInitInfo initInfo;
 	initInfo.init(rect, std::move(properties));
 	return initInfo;
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithCenter(const std::string_view text, const Int2 &center,
+TextBoxInitInfo TextBoxInitInfo::makeWithCenter(const std::string_view text, const Int2 &center,
 	const std::string &fontName, const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
 {
-	const std::optional<TextRenderUtils::TextShadowInfo> shadow;
+	const std::optional<TextRenderShadowInfo> shadow;
 	constexpr int lineSpacing = 0;
-	return InitInfo::makeWithCenter(text, center, fontName, textColor, alignment, shadow, lineSpacing, fontLibrary);
+	return TextBoxInitInfo::makeWithCenter(text, center, fontName, textColor, alignment, shadow, lineSpacing, fontLibrary);
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view text, int x, int y, const std::string &fontName,
-	const Color &textColor, TextAlignment alignment, const std::optional<TextRenderUtils::TextShadowInfo> &shadow,
+TextBoxInitInfo TextBoxInitInfo::makeWithXY(const std::string_view text, int x, int y, const std::string &fontName,
+	const Color &textColor, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadow,
 	int lineSpacing, const FontLibrary &fontLibrary)
 {
 	int fontDefIndex;
@@ -73,24 +70,23 @@ TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view text, int
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo =
+	const TextRenderTextureGenInfo textureGenInfo =
 		TextRenderUtils::makeTextureGenInfo(text, fontDef, shadow, lineSpacing);
 
 	const Rect rect(x, y, textureGenInfo.width, textureGenInfo.height);
-	TextBox::Properties properties(fontDefIndex, &fontLibrary, textureGenInfo, textColor, alignment,
-		shadow, lineSpacing);
+	TextBoxProperties properties(fontDefIndex, textureGenInfo, textColor, alignment, shadow, lineSpacing);
 
-	TextBox::InitInfo initInfo;
+	TextBoxInitInfo initInfo;
 	initInfo.init(rect, std::move(properties));
 	return initInfo;
 }
 
-TextBox::InitInfo TextBox::InitInfo::makeWithXY(const std::string_view text, int x, int y,
+TextBoxInitInfo TextBoxInitInfo::makeWithXY(const std::string_view text, int x, int y,
 	const std::string &fontName, const Color &textColor, TextAlignment alignment, const FontLibrary &fontLibrary)
 {
-	const std::optional<TextRenderUtils::TextShadowInfo> shadow;
+	const std::optional<TextRenderShadowInfo> shadow;
 	constexpr int lineSpacing = 0;
-	return InitInfo::makeWithXY(text, x, y, fontName, textColor, alignment, shadow, lineSpacing, fontLibrary);
+	return TextBoxInitInfo::makeWithXY(text, x, y, fontName, textColor, alignment, shadow, lineSpacing, fontLibrary);
 }
 
 TextBox::TextBox()
@@ -98,7 +94,7 @@ TextBox::TextBox()
 	this->dirty = false;
 }
 
-bool TextBox::init(const Rect &rect, const Properties &properties, Renderer &renderer)
+bool TextBox::init(const Rect &rect, const TextBoxProperties &properties, Renderer &renderer)
 {
 	this->rect = rect;
 	this->properties = properties;
@@ -118,12 +114,12 @@ bool TextBox::init(const Rect &rect, const Properties &properties, Renderer &ren
 	return true;
 }
 
-bool TextBox::init(const InitInfo &initInfo, Renderer &renderer)
+bool TextBox::init(const TextBoxInitInfo &initInfo, Renderer &renderer)
 {
 	return this->init(initInfo.rect, initInfo.properties, renderer);
 }
 
-bool TextBox::init(const InitInfo &initInfo, const std::string_view text, Renderer &renderer)
+bool TextBox::init(const TextBoxInitInfo &initInfo, const std::string_view text, Renderer &renderer)
 {
 	if (!this->init(initInfo.rect, initInfo.properties, renderer))
 	{
@@ -197,12 +193,8 @@ void TextBox::updateTexture()
 		return;
 	}
 
-	// Stored for convenience of redrawing the texture. Couldn't immediately find a better way to do this.
-	// - Maybe try a FontDefinitionRef in the future.
-	const FontLibrary *fontLibrary = this->properties.fontLibrary;
-	DebugAssert(fontLibrary != nullptr);
-
-	const FontDefinition &fontDef = fontLibrary->getDefinition(this->properties.fontDefIndex);
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
 
 	const int width = this->textureRef.getWidth();
 	const int height = this->textureRef.getHeight();
@@ -214,8 +206,8 @@ void TextBox::updateTexture()
 	if (!this->text.empty())
 	{
 		const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(this->text);
-		const TextRenderUtils::ColorOverrideInfo *colorOverrideInfoPtr = (this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
-		const TextRenderUtils::TextShadowInfo *shadowInfoPtr = this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
+		const TextRenderColorOverrideInfo *colorOverrideInfoPtr = (this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
+		const TextRenderShadowInfo *shadowInfoPtr = this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
 		TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, this->properties.defaultColor, this->properties.alignment,
 			this->properties.lineSpacing, colorOverrideInfoPtr, shadowInfoPtr, textureView);
 	}

@@ -124,8 +124,6 @@ void GameState::clearSession()
 
 	this->travelData = std::nullopt;
 	this->clearMaps();
-	
-	this->onLevelUpVoxelEnter = std::function<void(Game&)>();
 
 	this->weatherDef.initClear();
 }
@@ -444,11 +442,6 @@ bool GameState::isFogActive() const
 		const WeatherType activeWeatherType = this->getWeatherDefinition().type;
 		return canDaytimeFogBeActive && ((activeWeatherType == WeatherType::Overcast) || (activeWeatherType == WeatherType::Snow));
 	}
-}
-
-std::function<void(Game&)> &GameState::getOnLevelUpVoxelEnter()
-{
-	return this->onLevelUpVoxelEnter;
 }
 
 bool GameState::triggerTextIsVisible() const

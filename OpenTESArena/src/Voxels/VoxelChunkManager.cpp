@@ -660,21 +660,20 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 
 void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const CoordDouble3 &playerCoord)
 {
-	const ChunkInt2 &chunkPos = chunk.getPosition();
-	const CoordInt3 playerCoordInt(playerCoord.chunk, VoxelUtils::pointToVoxel(playerCoord.point));
+	const ChunkInt2 chunkPos = chunk.getPosition();
+	const ChunkInt2 playerChunkPos = playerCoord.chunk;
+	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
 
 	for (VoxelDoorVisibilityInstance &visInst : chunk.getDoorVisibilityInsts())
 	{
-		const CoordInt3 doorCoord(chunkPos, VoxelInt3(visInst.x, visInst.y, visInst.z));
+		const VoxelInt3 doorVoxel(visInst.x, visInst.y, visInst.z);
+		const bool isCameraNorthInclusive = (playerChunkPos.x < chunkPos.x) || ((playerChunkPos.x == chunkPos.x) && (playerVoxelXZ.x <= doorVoxel.x));
+		const bool isCameraEastInclusive = (playerChunkPos.y < chunkPos.y) || ((playerChunkPos.y == chunkPos.y) && (playerVoxelXZ.y <= doorVoxel.z));
 
-		const bool isCameraNorthInclusive = (playerCoordInt.chunk.x < doorCoord.chunk.x) ||
-			((playerCoordInt.chunk.x == doorCoord.chunk.x) && (playerCoordInt.voxel.x <= doorCoord.voxel.x));
-		const bool isCameraEastInclusive = (playerCoordInt.chunk.y < doorCoord.chunk.y) ||
-			((playerCoordInt.chunk.y == doorCoord.chunk.y) && (playerCoordInt.voxel.z <= doorCoord.voxel.z));
-
+		const CoordInt3 doorVoxelCoord(chunkPos, doorVoxel);
 		std::optional<int> northChunkIndex, eastChunkIndex, southChunkIndex, westChunkIndex;
 		VoxelShapeDefID northVoxelShapeDefID, eastVoxelShapeDefID, southVoxelShapeDefID, westVoxelShapeDefID;
-		this->getAdjacentVoxelShapeDefIDs(doorCoord, &northChunkIndex, &eastChunkIndex, &southChunkIndex, &westChunkIndex,
+		this->getAdjacentVoxelShapeDefIDs(doorVoxelCoord, &northChunkIndex, &eastChunkIndex, &southChunkIndex, &westChunkIndex,
 			&northVoxelShapeDefID, &eastVoxelShapeDefID, &southVoxelShapeDefID, &westVoxelShapeDefID);
 
 		auto isVoxelValidForDoorFace = [this](const std::optional<int> &chunkIndex, VoxelShapeDefID shapeDefID)
@@ -696,7 +695,7 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 		const bool isWestValid = isVoxelValidForDoorFace(westChunkIndex, westVoxelShapeDefID);
 
 		visInst.update(isCameraNorthInclusive, isCameraEastInclusive, isNorthValid, isEastValid, isSouthValid, isWestValid);
-		chunk.addDirtyDoorVisInstPosition(doorCoord.voxel);
+		chunk.addDirtyDoorVisInstPosition(doorVoxel); // @todo why is this dirtying every frame?
 	}
 }
 

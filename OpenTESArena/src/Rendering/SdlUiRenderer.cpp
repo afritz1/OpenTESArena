@@ -87,8 +87,7 @@ bool SdlUiRenderer::tryCreateUiTexture(int width, int height, UiTextureID *outID
 {
 	TexelsInitFunc initFunc = [](BufferView2D<uint32_t> dstTexels)
 	{
-		const Color &debugColor = Color::Magenta;
-		dstTexels.fill(debugColor.toARGB());
+		dstTexels.fill(Colors::MagentaARGB);
 	};
 
 	return this->tryCreateUiTextureInternal(width, height, initFunc, outID);

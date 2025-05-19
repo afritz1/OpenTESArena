@@ -24,14 +24,14 @@ MessageBoxBackgroundProperties::MessageBoxBackgroundProperties(TextureUtils::Pat
 }
 
 MessageBoxTitleProperties::MessageBoxTitleProperties(const std::string &fontName,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor, int lineSpacing)
+	const TextRenderTextureGenInfo &textureGenInfo, const Color &textColor, int lineSpacing)
 	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
 {
 	this->lineSpacing = lineSpacing;
 }
 
 MessageBoxItemsProperties::MessageBoxItemsProperties(int count, const std::string &fontName,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor)
+	const TextRenderTextureGenInfo &textureGenInfo, const Color &textColor)
 	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
 {
 	this->count = count;
@@ -96,8 +96,8 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 	}
 
 	constexpr TextAlignment titleAlignment = TextAlignment::MiddleCenter;
-	const TextBox::Properties titleTextBoxProperties(titleFontDefIndex, &fontLibrary, titleProperties.textureGenInfo,
-		titleProperties.textColor, titleAlignment, std::nullopt, titleProperties.lineSpacing);
+	const TextBoxProperties titleTextBoxProperties(titleFontDefIndex, titleProperties.textureGenInfo, titleProperties.textColor,
+		titleAlignment, std::nullopt, titleProperties.lineSpacing);
 	if (!this->titleTextBox.init(titleRect, titleTextBoxProperties, renderer))
 	{
 		DebugLogError("Couldn't init message box title text box.");
@@ -112,8 +112,7 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 	}
 
 	constexpr TextAlignment itemAlignment = titleAlignment;
-	const TextBox::Properties itemTextBoxProperties(itemFontDefIndex, &fontLibrary, itemsProperties.textureGenInfo,
-		itemsProperties.textColor, itemAlignment);
+	const TextBoxProperties itemTextBoxProperties(itemFontDefIndex, itemsProperties.textureGenInfo, itemsProperties.textColor, itemAlignment);
 
 	this->items.init(itemsProperties.count);
 	for (int i = 0; i < this->items.getCount(); i++)

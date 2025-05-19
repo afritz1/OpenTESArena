@@ -27,7 +27,7 @@ bool LogbookPanel::init()
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string titleText = LogbookUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo = LogbookUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBoxInitInfo titleTextBoxInitInfo = LogbookUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");

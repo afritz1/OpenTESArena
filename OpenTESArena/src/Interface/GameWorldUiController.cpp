@@ -11,6 +11,8 @@
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
 #include "../Audio/MusicUtils.h"
+#include "../Entities/ArenaCitizenUtils.h"
+#include "../Entities/ArenaEntityUtils.h"
 #include "../Game/Game.h"
 #include "../Interface/PauseMenuUiController.h"
 #include "../Interface/TextCinematicPanel.h"
@@ -30,10 +32,10 @@
 
 namespace
 {
-	void GetDefaultStatusPopUpInitValues(Game &game, const std::string &text, Int2 *outCenter, TextBox::InitInfo *outTextBoxInitInfo, UiTextureID *outTextureID)
+	void GetDefaultStatusPopUpInitValues(Game &game, const std::string &text, Int2 *outCenter, TextBoxInitInfo *outTextBoxInitInfo, UiTextureID *outTextureID)
 	{
 		*outCenter = GameWorldUiView::getStatusPopUpTextCenterPoint(game);
-		*outTextBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		*outTextBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 			text,
 			*outCenter,
 			GameWorldUiView::StatusPopUpFontName,
@@ -201,7 +203,7 @@ void GameWorldUiController::onStatusButtonSelected(Game &game)
 	const std::string text = GameWorldUiModel::getStatusButtonText(game);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -348,6 +350,79 @@ void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanc
 	game.pushSubPanel<LootSubPanel>(itemInventory, callback);
 }
 
+void GameWorldUiController::onEnemyCorpseInteracted(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
+{
+	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+	ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+
+	if (enemyItemInventory.getOccupiedSlotCount() > 0)
+	{
+		constexpr bool destroyEntityIfEmpty = false; // Don't remove empty corpses.
+		GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory, destroyEntityIfEmpty);
+	}
+	else
+	{
+		GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(game, entityInstID, entityDef);
+	}
+}
+
+void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
+{
+	bool isCorpseAwardingGold = true;
+
+	int creatureLevel = 1;
+	if (entityDef.type == EntityDefinitionType::Enemy)
+	{
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+		if (enemyDef.type == EnemyEntityDefinitionType::Creature)
+		{
+			creatureLevel = enemyDef.creature.level;
+		}		
+	}
+
+	Random &random = game.random;
+	isCorpseAwardingGold &= random.nextBool(); // @todo figure out actual chances per enemy
+
+	if (!isCorpseAwardingGold)
+	{
+		GameWorldUiController::onEnemyCorpseInteracted(game, entityInstID, entityDef);
+		return;
+	}
+
+	const int corpseGoldCount = ArenaEntityUtils::getCreatureCorpseGold(creatureLevel, random);
+
+	Player &player = game.player;
+	player.gold += corpseGoldCount;
+
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const std::string text = GameWorldUiModel::getEnemyCorpseGoldMessage(corpseGoldCount, exeData);
+
+	Int2 center;
+	TextBoxInitInfo textBoxInitInfo;
+	UiTextureID textureID;
+	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
+
+	auto callback = [entityInstID, entityDef](Game &game)
+	{
+		GameWorldUiController::onStatusPopUpSelected(game);
+
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+		ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+
+		if (enemyItemInventory.getOccupiedSlotCount() > 0)
+		{
+			constexpr bool destroyEntityIfEmpty = false; // Don't remove empty corpses.
+			GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory, destroyEntityIfEmpty);
+		}
+	};
+
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, callback, std::move(textureRef), center);
+}
+
 void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
@@ -364,7 +439,7 @@ void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, Entity
 	const std::string text = GameWorldUiModel::getEnemyCorpseEmptyInventoryMessage(entityName, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -377,7 +452,7 @@ void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &
 	const std::string text = GameWorldUiModel::getKeyPickUpMessage(keyID, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -396,7 +471,7 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 	const std::string text = GameWorldUiModel::getDoorUnlockWithKeyMessage(keyID, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
@@ -420,12 +495,30 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 	const std::string text = citizenNameStr + "\n(dialogue not implemented)";
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 
 	ScopedUiTextureRef textureRef(textureID, game.renderer);
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
+}
+
+void GameWorldUiController::onCitizenKilled(Game &game)
+{
+	// Randomly give player some gold.
+	Random &random = game.random;
+	const int citizenCorpseGold = ArenaCitizenUtils::DEATH_MIN_GOLD_PIECES + random.next(ArenaCitizenUtils::DEATH_MAX_GOLD_PIECES);
+
+	Player &player = game.player;
+	player.gold += citizenCorpseGold;
+
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const std::string text = GameWorldUiModel::getCitizenKillGoldMessage(citizenCorpseGold, exeData);
+
+	TextBox &actionTextBox = *game.getActionTextBox();
+	actionTextBox.setText(text);
+	game.gameState.setActionTextDuration(text);
 }
 
 void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
@@ -491,7 +584,7 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 	const std::string text = GameWorldUiModel::getStaminaExhaustedMessage(isSwimming, isInterior, isNight, exeData);
 
 	Int2 center;
-	TextBox::InitInfo textBoxInitInfo;
+	TextBoxInitInfo textBoxInitInfo;
 	UiTextureID textureID;
 	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
 

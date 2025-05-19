@@ -10,22 +10,20 @@
 
 #include "components/debug/Debug.h"
 
-ListBox::Properties::Properties(int fontDefIndex, const FontLibrary *fontLibrary,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, int itemHeight, const Color &defaultColor,
-	double scrollScale, int itemSpacing)
+ListBoxProperties::ListBoxProperties(int fontDefIndex, const TextRenderTextureGenInfo &textureGenInfo, int itemHeight,
+	const Color &defaultColor, double scrollScale, int itemSpacing)
 	: textureGenInfo(textureGenInfo), defaultColor(defaultColor)
 {
 	this->fontDefIndex = fontDefIndex;
-	this->fontLibrary = fontLibrary;
 	this->itemHeight = itemHeight;
 	this->scrollScale = scrollScale;
 	this->itemSpacing = itemSpacing;
 }
 
-ListBox::Properties::Properties()
-	: Properties(-1, nullptr, TextRenderUtils::TextureGenInfo(), 0, Color(), 0.0, 0) { }
+ListBoxProperties::ListBoxProperties()
+	: ListBoxProperties(-1, TextRenderTextureGenInfo(), 0, Color(), 0.0, 0) { }
 
-void ListBox::Item::init(std::string &&text, const std::optional<Color> &overrideColor, const ItemCallback &callback)
+void ListBoxItem::init(std::string &&text, const std::optional<Color> &overrideColor, const ListBoxItemCallback &callback)
 {
 	this->text = std::move(text);
 	this->overrideColor = overrideColor;
@@ -38,7 +36,7 @@ ListBox::ListBox()
 	this->dirty = false;
 }
 
-bool ListBox::init(const Rect &rect, const Properties &properties, Renderer &renderer)
+bool ListBox::init(const Rect &rect, const ListBoxProperties &properties, Renderer &renderer)
 {
 	this->rect = rect;
 	this->properties = properties;
@@ -48,8 +46,7 @@ bool ListBox::init(const Rect &rect, const Properties &properties, Renderer &ren
 	UiTextureID textureID;
 	if (!renderer.tryCreateUiTexture(textureWidth, textureHeight, &textureID))
 	{
-		DebugLogError("Couldn't create UI texture for list box (dims: " + std::to_string(textureWidth) + "x" +
-			std::to_string(textureHeight) + ").");
+		DebugLogError("Couldn't create UI texture for list box (dims: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + ").");
 		return false;
 	}
 
@@ -89,7 +86,7 @@ int ListBox::getCount() const
 	return static_cast<int>(this->items.size());
 }
 
-const ListBox::ItemCallback &ListBox::getCallback(int index) const
+const ListBoxItemCallback &ListBox::getCallback(int index) const
 {
 	DebugAssertIndex(this->items, index);
 	return this->items[index].callback;
@@ -113,8 +110,7 @@ UiTextureID ListBox::getTextureID()
 
 double ListBox::getScrollDeltaPixels() const
 {
-	return static_cast<double>(this->properties.itemHeight + this->properties.itemSpacing) *
-		this->properties.scrollScale;
+	return static_cast<double>(this->properties.itemHeight + this->properties.itemSpacing) * this->properties.scrollScale;
 }
 
 void ListBox::insert(int index, std::string &&text)
@@ -122,7 +118,7 @@ void ListBox::insert(int index, std::string &&text)
 	DebugAssert(index >= 0);
 	DebugAssert(index <= static_cast<int>(this->items.size())); // One past end is okay.
 
-	ListBox::Item item;
+	ListBoxItem item;
 	item.init(std::move(text), std::nullopt, []() { });
 	this->items.insert(this->items.begin() + index, std::move(item));
 	this->dirty = true;
@@ -147,7 +143,7 @@ void ListBox::setOverrideColor(int index, const std::optional<Color> &overrideCo
 	this->dirty = true;
 }
 
-void ListBox::setCallback(int index, const ItemCallback &callback)
+void ListBox::setCallback(int index, const ListBoxItemCallback &callback)
 {
 	DebugAssertIndex(this->items, index);
 	this->items[index].callback = callback;
@@ -200,12 +196,8 @@ void ListBox::updateTexture()
 		return;
 	}
 
-	// Stored for convenience of redrawing the texture. Couldn't immediately find a better way to do this.
-	// - Maybe try a FontDefinitionRef in the future.
-	const FontLibrary *fontLibrary = this->properties.fontLibrary;
-	DebugAssert(fontLibrary != nullptr);
-
-	const FontDefinition &fontDef = fontLibrary->getDefinition(this->properties.fontDefIndex);
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
 
 	const int width = this->textureRef.getWidth();
 	const int height = this->textureRef.getHeight();
@@ -217,11 +209,11 @@ void ListBox::updateTexture()
 	// Re-draw list box items relative to where they should be with the current scroll value.
 	for (int i = 0; i < static_cast<int>(this->items.size()); i++)
 	{
-		const ListBox::Item &item = this->items[i];
+		const ListBoxItem &item = this->items[i];
 		const Rect itemRect = this->getItemLocalRect(i);
 		const Color &itemColor = item.overrideColor.has_value() ? *item.overrideColor : this->properties.defaultColor;
-		constexpr TextRenderUtils::ColorOverrideInfo *colorOverrideInfo = nullptr;
-		constexpr TextRenderUtils::TextShadowInfo *shadowInfo = nullptr;
+		constexpr TextRenderColorOverrideInfo *colorOverrideInfo = nullptr;
+		constexpr TextRenderShadowInfo *shadowInfo = nullptr;
 		TextRenderUtils::drawTextLine(item.text, fontDef, itemRect.getLeft(), itemRect.getTop(),
 			itemColor, colorOverrideInfo, shadowInfo, textureView);
 	}

@@ -30,7 +30,7 @@ namespace PlayerConstants
 	constexpr double TOP_OF_HEAD_HEIGHT = EYE_HEIGHT + (1.0 / MIFUtils::ARENA_UNITS);
 	constexpr double EYE_TO_TOP_OF_HEAD_DISTANCE = TOP_OF_HEAD_HEIGHT - EYE_HEIGHT;
 	constexpr double STEPPING_HEIGHT = 0.25; // Stairsteps delta (used by Jolt CharacterVirtual::ExtendedUpdate()).
-	constexpr double COLLIDER_RADIUS = 0.15; // Radius around the player they will collide at.
+	constexpr double COLLIDER_RADIUS = 0.20; // Radius around the player they will collide at.
 	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (TOP_OF_HEAD_HEIGHT / 2.0) - COLLIDER_RADIUS;
 
 	constexpr double MOVE_SPEED = 15.0;
@@ -115,6 +115,7 @@ struct Player
 	int experience;
 	PrimaryAttributes primaryAttributes;
 	ItemInventory inventory;
+	int gold;
 	int keyInventory[ArenaItemUtils::DoorKeyCount];
 
 	Player();

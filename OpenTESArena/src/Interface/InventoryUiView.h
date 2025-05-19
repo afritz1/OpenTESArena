@@ -11,7 +11,7 @@ struct ItemInstance;
 
 namespace InventoryUiView
 {
-	const Rect PlayerInventoryRect(14, 50, 150, 75);
+	constexpr Rect PlayerInventoryRect(14, 50, 150, 75);
 
 	const Color PlayerInventoryEquipmentColor(211, 142, 0);
 	const Color PlayerInventoryEquipmentEquippedColor(235, 199, 52);
@@ -19,7 +19,7 @@ namespace InventoryUiView
 	const Color PlayerInventoryMagicItemEquippedColor(138, 255, 255);
 	const Color PlayerInventoryUnequipableColor(199, 32, 0);
 
-	ListBox::Properties makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary);
+	ListBoxProperties makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary);
 
 	const Color &getItemDisplayColor(const ItemInstance &itemInst);
 }

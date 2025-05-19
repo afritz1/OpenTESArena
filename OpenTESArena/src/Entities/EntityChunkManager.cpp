@@ -148,6 +148,7 @@ EntityCombatState::EntityCombatState()
 {
 	this->isDying = false;
 	this->isDead = false;
+	this->hasBeenLootedBefore = false;
 }
 
 bool EntityCombatState::isInDeathState() const
@@ -626,7 +627,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		}
 
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
-		const WorldDouble2 entityPositionXZ(entityPosition.x, entityPosition.z);
+		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
 		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
 		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
 		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
@@ -997,9 +998,9 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 	const EntityAnimationDefinition &animDef = entityDef.animDef;
 	const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 
-	const WorldDouble2 eyePositionXZ(eyePosition.x, eyePosition.z);
+	const WorldDouble2 eyePositionXZ = eyePosition.getXZ();
 	const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-	const WorldDouble2 entityPositionXZ(entityPosition.x, entityPosition.z);
+	const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
 
 	const int stateIndex = animInst.currentStateIndex;
 	DebugAssert(stateIndex >= 0);
@@ -1301,7 +1302,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	this->chunkPool.clear();
 
 	const WorldDouble3 playerPosition = player.getEyePosition();
-	const WorldDouble2 playerPositionXZ(playerPosition.x, playerPosition.z);
+	const WorldDouble2 playerPositionXZ = playerPosition.getXZ();
 	const bool isPlayerMoving = player.isMoving();
 
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();

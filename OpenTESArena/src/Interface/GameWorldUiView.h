@@ -53,7 +53,7 @@ namespace GameWorldUiView
 	Rect scaleClassicCursorRectToNative(int rectIndex, double xScale, double yScale);
 
 	// Game world interface UI area.
-	const Rect UiBottomRegion(0, 147, 320, 53);
+	constexpr Rect UiBottomRegion(0, 147, 320, 53);
 
 	// Arrow cursor pivots. These offset the drawn cursor relative to the mouse position so the cursor's
 	// click area is closer to the tip of each arrow.
@@ -81,7 +81,7 @@ namespace GameWorldUiView
 	const Color PlayerNameTextColor(215, 121, 8);
 	constexpr TextAlignment PlayerNameTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	Rect getCharacterSheetButtonRect();
 	Rect getPlayerPortraitRect();
@@ -110,11 +110,11 @@ namespace GameWorldUiView
 
 	Int2 getGameWorldInterfacePosition();
 
-	const Rect HealthBarRect(57, 168, 4, 26);
+	constexpr Rect HealthBarRect(57, 168, 4, 26);
 	constexpr Color HealthBarColor(0, 182, 0);
-	const Rect StaminaBarRect(67, 168, 4, 26);
+	constexpr Rect StaminaBarRect(67, 168, 4, 26);
 	constexpr Color StaminaBarColor(195, 0, 0);
-	const Rect SpellPointsBarRect(77, 168, 4, 26);
+	constexpr Rect SpellPointsBarRect(77, 168, 4, 26);
 	constexpr Color SpellPointsBarColor(0, 0, 203);
 	constexpr PivotType StatusBarPivotType = PivotType::BottomLeft;
 
@@ -155,11 +155,11 @@ namespace GameWorldUiView
 	double getActionTextSeconds(const std::string_view text);
 	double getEffectTextSeconds(const std::string_view text);
 
-	TextBox::InitInfo getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBox::InitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBox::InitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
 
-	ListBox::Properties getLootListBoxProperties();
+	ListBoxProperties getLootListBoxProperties();
 
 	Int2 getTooltipPosition(Game &game);
 

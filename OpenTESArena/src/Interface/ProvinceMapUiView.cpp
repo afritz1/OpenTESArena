@@ -29,16 +29,16 @@ Int2 ProvinceMapUiView::getLocationTextClampedCenter(const Rect &unclampedRect)
 	return clampedTopLeft + Int2(unclampedRect.width / 2, unclampedRect.height / 2);
 }
 
-TextBox::InitInfo ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(24, TextRenderUtils::LARGEST_CHAR);
 
-	TextRenderUtils::TextShadowInfo shadowInfo;
+	TextRenderShadowInfo shadowInfo;
 	shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY,
 		ProvinceMapUiView::LocationTextShadowColor);
 	constexpr int lineSpacing = 0;
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		Int2::Zero,
 		ProvinceMapUiView::LocationFontName,
@@ -314,10 +314,10 @@ UiTextureID ProvinceMapUiView::allocTextPopUpTexture(int textWidth, int textHeig
 	return textureID;
 }
 
-TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view text,
+TextBoxInitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		ProvinceSearchUiView::TitleTextBoxX,
 		ProvinceSearchUiView::TitleTextBoxY,
@@ -327,11 +327,11 @@ TextBox::InitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::strin
 		fontLibrary);
 }
 
-TextBox::InitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(ProvinceSearchUiModel::MaxNameLength, TextRenderUtils::LARGEST_CHAR);
 	const Int2 &origin = ProvinceSearchUiView::DefaultTextCursorPosition;
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		origin.x,
 		origin.y,
@@ -341,7 +341,7 @@ TextBox::InitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLi
 		fontLibrary);
 }
 
-ListBox::Properties ProvinceSearchUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
+ListBoxProperties ProvinceSearchUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::Arena;
 	int fontDefIndex;
@@ -364,12 +364,11 @@ ListBox::Properties ProvinceSearchUiView::makeListBoxProperties(const FontLibrar
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Color itemColor(52, 24, 8);
 	constexpr double scrollScale = 1.0;
-	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
-		itemColor, scrollScale);
+	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
 }
 
 TextureAsset ProvinceSearchUiView::getListTextureAsset()

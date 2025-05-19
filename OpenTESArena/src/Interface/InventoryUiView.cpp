@@ -4,7 +4,7 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/TextRenderUtils.h"
 
-ListBox::Properties InventoryUiView::makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary)
+ListBoxProperties InventoryUiView::makePlayerInventoryListBoxProperties(const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::Teeny;
 	int fontDefIndex;
@@ -28,11 +28,11 @@ ListBox::Properties InventoryUiView::makePlayerInventoryListBoxProperties(const 
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	constexpr int rowSpacing = 3;
-	const TextRenderUtils::TextureGenInfo textureGenInfo =
+	const TextRenderTextureGenInfo textureGenInfo =
 		TextRenderUtils::makeTextureGenInfo(dummyText, fontDef, std::nullopt, rowSpacing);
 
 	constexpr double scrollScale = 1.0;
-	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
+	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(),
 		InventoryUiView::PlayerInventoryEquipmentColor, scrollScale, rowSpacing);
 }
 

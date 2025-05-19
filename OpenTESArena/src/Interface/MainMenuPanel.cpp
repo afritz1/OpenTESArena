@@ -330,7 +330,7 @@ void MainMenuPanel::initTestUI()
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string testButtonText = MainMenuUiModel::getTestButtonText();
-	const TextBox::InitInfo testButtonInitInfo = MainMenuUiView::getTestButtonTextBoxInitInfo(testButtonText, fontLibrary);
+	const TextBoxInitInfo testButtonInitInfo = MainMenuUiView::getTestButtonTextBoxInitInfo(testButtonText, fontLibrary);
 	if (!this->testButtonTextBox.init(testButtonInitInfo, testButtonText, renderer))
 	{
 		DebugCrash("Couldn't init test button text box.");
@@ -344,7 +344,7 @@ void MainMenuPanel::initTestUI()
 		PivotType::Middle);
 
 	const std::string testTypeText = "Test type: " + MainMenuUiModel::getTestTypeName(this->testType);
-	const TextBox::InitInfo testTypeInitInfo = MainMenuUiView::getTestTypeTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo testTypeInitInfo = MainMenuUiView::getTestTypeTextBoxInitInfo(fontLibrary);
 	if (!this->testTypeTextBox.init(testTypeInitInfo, testTypeText, renderer))
 	{
 		DebugCrash("Couldn't init test type text box.");
@@ -359,7 +359,7 @@ void MainMenuPanel::initTestUI()
 
 	const std::string testNameText = "Test location: " +
 		MainMenuUiModel::getSelectedTestName(game, this->testType, this->testIndex, this->testIndex2);
-	const TextBox::InitInfo testNameInitInfo = MainMenuUiView::getTestNameTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo testNameInitInfo = MainMenuUiView::getTestNameTextBoxInitInfo(fontLibrary);
 	if (!this->testNameTextBox.init(testNameInitInfo, testNameText, renderer))
 	{
 		DebugCrash("Couldn't init test name text box.");
@@ -374,7 +374,7 @@ void MainMenuPanel::initTestUI()
 
 	const ArenaTypes::WeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
 	const std::string testWeatherText = "Test weather: " + MainMenuUiModel::WeatherTypeNames.at(testWeatherType);
-	const TextBox::InitInfo testWeatherInitInfo = MainMenuUiView::getTestWeatherTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo testWeatherInitInfo = MainMenuUiView::getTestWeatherTextBoxInitInfo(fontLibrary);
 	if (!this->testWeatherTextBox.init(testWeatherInitInfo, testWeatherText, renderer))
 	{
 		DebugCrash("Couldn't init test weather text box.");

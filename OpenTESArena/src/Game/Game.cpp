@@ -465,6 +465,22 @@ TextBox *Game::getTriggerTextBox()
 	return &gameWorldPanel->getTriggerTextBox();
 }
 
+TextBox *Game::getActionTextBox()
+{
+	DebugAssert(this->shouldSimulateScene);
+	DebugAssert(this->gameState.isActiveMapValid());
+
+	Panel *panel = this->getActivePanel();
+	if (panel == nullptr)
+	{
+		DebugLogError("No active panel for trigger text box getter.");
+		return nullptr;
+	}
+
+	GameWorldPanel *gameWorldPanel = static_cast<GameWorldPanel*>(panel); // @todo: can't use dynamic_cast anymore, this isn't safe.
+	return &gameWorldPanel->getActionTextBox();
+}
+
 void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
 {
 	this->nextSubPanel = std::move(nextSubPanel);
@@ -796,7 +812,7 @@ void Game::loop()
 
 	this->audioManager.setMusic(mainMenuMusicDef);
 
-	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
+	const TextBoxInitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
 	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
 	{
 		DebugCrash("Couldn't init debug info text box.");
@@ -902,7 +918,7 @@ void Game::loop()
 
 				if (this->gameState.hasPendingLevelTransitionCalculation())
 				{
-					MapLogic::handleLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());
+					MapLogic::handleInteriorLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());
 					this->gameState.clearLevelTransitionCalculation();
 				}
 

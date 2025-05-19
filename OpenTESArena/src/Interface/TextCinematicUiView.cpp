@@ -8,7 +8,7 @@ std::string TextCinematicUiView::getSubtitleTextBoxFontName()
 	return ArenaFontName::Arena;
 }
 
-TextBox::InitInfo TextCinematicUiView::getSubtitlesTextBoxInitInfo(const Color &fontColor, const FontLibrary &fontLibrary)
+TextBoxInitInfo TextCinematicUiView::getSubtitlesTextBoxInitInfo(const Color &fontColor, const FontLibrary &fontLibrary)
 {
 	std::string dummyText;
 	for (int i = 0; i < 3; i++)
@@ -21,7 +21,7 @@ TextBox::InitInfo TextCinematicUiView::getSubtitlesTextBoxInitInfo(const Color &
 		dummyText += std::string(36, TextRenderUtils::LARGEST_CHAR);
 	}
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		TextCinematicUiView::SubtitleTextBoxCenterPoint,
 		TextCinematicUiView::getSubtitleTextBoxFontName(),

@@ -2,28 +2,6 @@
 
 #include "Rect.h"
 
-#include "components/debug/Debug.h"
-
-Rect::Rect(int x, int y, int width, int height)
-{
-	DebugAssert(width >= 0);
-	DebugAssert(height >= 0);
-
-	this->x = x;
-	this->y = y;
-	this->width = width;
-	this->height = height;
-}
-
-Rect::Rect(const Int2 &center, int width, int height)
-	: Rect(center.x - (width / 2), center.y - (height / 2), width, height) { }
-
-Rect::Rect(int width, int height)
-	: Rect(0, 0, width, height) { }
-
-Rect::Rect()
-	: Rect(0, 0, 0, 0) { }
-
 bool Rect::isEmpty() const
 {
 	return (this->width == 0) || (this->height == 0);

@@ -161,6 +161,93 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 	}
 }
 
+void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
+{
+	auto &player = game.player;
+	player.setPhysicsVelocity(Double3::Zero);
+	player.clearKeyInventory();
+
+	auto &gameState = game.gameState;
+	const int provinceID = player.raceID; // @todo: this should be more like a WorldMapDefinition::getProvinceIdForRaceId() that searches provinces
+	const int locationID = game.random.next(32); // @todo: this should not assume 32 locations per province
+
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
+
+	const ArenaTypes::WeatherType weatherType = gameState.getWeatherForLocation(provinceID, locationID);
+
+	const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
+	auto &renderer = game.renderer;
+
+	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+	Buffer<uint8_t> reservedBlocks = [&cityDef]()
+	{
+		const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
+		DebugAssert(cityReservedBlocks != nullptr);
+		Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
+		std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
+		return buffer;
+	}();
+
+	const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
+		[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+	{
+		if (cityDef.hasMainQuestTempleOverride)
+		{
+			return cityDef.mainQuestTempleOverride;
+		}
+		else
+		{
+			return std::nullopt;
+		}
+	}();
+
+	MapGeneration::CityGenInfo cityGenInfo;
+	cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
+		cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
+		cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
+		mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
+
+	const int currentDay = gameState.getDate().getDay();
+	const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+	{
+		WeatherDefinition weatherDef;
+		weatherDef.initFromClassic(weatherType, currentDay, game.random);
+		return weatherDef;
+	}();
+
+	SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+	skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
+		cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
+
+	const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
+
+	MapDefinition mapDefinition;
+	if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.textureManager))
+	{
+		DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
+		return;
+	}
+
+	GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
+	{
+		// Set music based on weather and time.
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+		GameState &gameState = game.gameState;
+		const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing exterior music.");
+		}
+
+		return musicDef;
+	};
+
+	gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
+	gameState.queueMusicOnSceneChange(musicFunc);
+}
+
 void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const TransitionDefinition &transitionDef)
 {
 	const TransitionType transitionType = transitionDef.type;
@@ -305,11 +392,18 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				return musicDef;
 			};
 
+			VoxelInt2 playerStartOffset = VoxelInt2::Zero;
+			if (interiorGenInfo.type == MapGeneration::InteriorGenType::Dungeon)
+			{
+				// @temp hack, assume entering a wild dungeon, need to push player south by one due to original map bug.
+				playerStartOffset = VoxelUtils::South;
+			}
+
 			// Always use clear weather in interiors.
 			WeatherDefinition overrideWeather;
 			overrideWeather.initClear();
 
-			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord, VoxelInt2::Zero, std::nullopt, false, overrideWeather);
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, returnCoord, playerStartOffset, std::nullopt, false, overrideWeather);
 			gameState.queueMusicOnSceneChange(musicFunc);
 		}
 		else if (transitionType == TransitionType::CityGate)
@@ -493,7 +587,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 	}
 }
 
-void MapLogic::handleLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord)
+void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord)
 {
 	GameState &gameState = game.gameState;
 
@@ -603,19 +697,39 @@ void MapLogic::handleLevelTransition(Game &game, const CoordInt3 &playerCoord, c
 	const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef.interiorLevelChange;
 	if (levelChangeDef.isLevelUp)
 	{
-		// Level up transition. If the custom function has a target, call it and reset it (necessary
-		// for main quest start dungeon).
-		auto &onLevelUpVoxelEnter = gameState.getOnLevelUpVoxelEnter();
-
-		if (onLevelUpVoxelEnter)
+		bool isStartDungeon = false;
+		const LocationDefinition &currentLocationDef = gameState.getLocationDefinition();
+		if (currentLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
 		{
-			onLevelUpVoxelEnter(game);
-			onLevelUpVoxelEnter = std::function<void(Game&)>();
+			const LocationMainQuestDungeonDefinition &locationMainQuestDungeonDef = currentLocationDef.getMainQuestDungeonDefinition();
+			if (locationMainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
+			{
+				isStartDungeon = true;
+			}
 		}
-		else if (activeLevelIndex > 0)
+
+		bool isCityWildernessDungeon = false;
+		if (currentLocationDef.getType() == LocationDefinitionType::City)
+		{
+			if (gameState.isActiveMapNested())
+			{
+				// Can assume that only wild dungeons have *LEVELUP voxels on top floor in a city location.
+				isCityWildernessDungeon = true;
+			}
+		}
+
+		if (activeLevelIndex > 0)
 		{
 			// Decrement the world's level index and activate the new level.
 			gameState.queueLevelIndexChange(activeLevelIndex - 1, transitionVoxelXZ, dirToWorldVoxelXZ);
+		}
+		else if (isStartDungeon)
+		{
+			MapLogic::handleStartDungeonLevelUpVoxelEnter(game);
+		}
+		else if (isCityWildernessDungeon)
+		{
+			gameState.queueMapDefPop();
 		}
 		else
 		{

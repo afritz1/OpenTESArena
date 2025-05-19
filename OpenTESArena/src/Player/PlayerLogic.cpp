@@ -325,8 +325,6 @@ namespace PlayerLogic
 
 		if (isPrimaryInteraction)
 		{
-			// Arbitrary max distance for selection.
-			// @todo: move to some ArenaPlayerUtils maybe
 			if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
 			{
 				if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
@@ -445,8 +443,6 @@ namespace PlayerLogic
 
 		if (isPrimaryInteraction)
 		{
-			// @todo: "too far away..." text for certain things (research)
-
 			const EntityInstanceID entityInstID = entityHit.id;
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
@@ -457,85 +453,96 @@ namespace PlayerLogic
 			case EntityDefinitionType::Enemy:
 			{
 				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-				const EntityCombatState &combatState = entityChunkManager.getEntityCombatState(entityInst.combatStateID);
-				if (combatState.isDead)
-				{
-					// @todo might need an int corpseGoldCount in EntityCombatState which is set 0 after 1st open
-					ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
-					if (enemyItemInventory.getOccupiedSlotCount() > 0)
-					{
-						constexpr bool destroyEntityIfEmpty = false; // Do not remove empty corpses.
-						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, enemyItemInventory, destroyEntityIfEmpty);
-					}
-					else
-					{
-						GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(game, entityInstID, entityDef);
-					}
-				}
-				else if (!combatState.isDying)
+				EntityCombatState &combatState = entityChunkManager.getEntityCombatState(entityInst.combatStateID);
+				if (!combatState.isDying)
 				{
 					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef, actionTextBox);
+				}
+
+				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
+				{
+					if (combatState.isDead)
+					{
+						if (!combatState.hasBeenLootedBefore)
+						{
+							combatState.hasBeenLootedBefore = true;
+							GameWorldUiController::onEnemyCorpseInteractedFirstTime(game, entityInstID, entityDef);
+						}
+						else
+						{
+							GameWorldUiController::onEnemyCorpseInteracted(game, entityInstID, entityDef);
+						}
+					}
 				}
 
 				break;
 			}
 			case EntityDefinitionType::Citizen:
-				GameWorldUiController::onCitizenInteracted(game, entityInst);
+				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
+				{
+					GameWorldUiController::onCitizenInteracted(game, entityInst);
+				}
 				break;
 			case EntityDefinitionType::Item:
 			{
-				const ItemEntityDefinition &itemDef = entityDef.item;
-				const ItemEntityDefinitionType itemDefType = itemDef.type;
-
-				if (itemDefType == ItemEntityDefinitionType::Key)
+				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
 				{
-					VoxelTriggerDefID triggerDefID;
-					if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
+					const ItemEntityDefinition &itemDef = entityDef.item;
+					const ItemEntityDefinitionType itemDefType = itemDef.type;
+
+					if (itemDefType == ItemEntityDefinitionType::Key)
 					{
-						const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
-						if (triggerDef.hasKeyDef())
+						VoxelTriggerDefID triggerDefID;
+						if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
 						{
-							const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
-							const int keyID = triggerKeyDef.keyID;
-							player.addToKeyInventory(keyID);
-
-							// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityChunkManager draw calls due to skipping scene simulation.
-							const auto callback = [&entityChunkManager, chunkPos, entityInstID]()
+							const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
+							if (triggerDef.hasKeyDef())
 							{
-								entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
-							};
+								const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
+								const int keyID = triggerKeyDef.keyID;
+								player.addToKeyInventory(keyID);
 
-							GameWorldUiController::onKeyPickedUp(game, keyID, exeData, callback);
+								// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityChunkManager draw calls due to skipping scene simulation.
+								const auto callback = [&entityChunkManager, chunkPos, entityInstID]()
+								{
+									entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+								};
+
+								GameWorldUiController::onKeyPickedUp(game, keyID, exeData, callback);
+							}
 						}
 					}
-				}
-				else if (itemDefType == ItemEntityDefinitionType::QuestItem)
-				{
-					AudioManager &audioManager = game.audioManager;
-					audioManager.playSound(ArenaSoundName::Fanfare2);
-					DebugLogFormat("Picked up quest item (entity %d).", entityInstID);
-					entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+					else if (itemDefType == ItemEntityDefinitionType::QuestItem)
+					{
+						AudioManager &audioManager = game.audioManager;
+						audioManager.playSound(ArenaSoundName::Fanfare2);
+						DebugLogFormat("Picked up quest item (entity %d).", entityInstID);
+						entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+					}
 				}
 
 				break;
 			}
 			case EntityDefinitionType::Container:
 			{
-				const ContainerEntityDefinition &containerDef = entityDef.container;
-				const ContainerEntityDefinitionType containerDefType = containerDef.type;
-
-				bool isContainerInventoryAccessible = true;
-				if (entityInst.canBeLocked())
+				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
 				{
-					const EntityLockState &lockState = entityChunkManager.getEntityLockState(entityInst.lockStateID);
-					isContainerInventoryAccessible = !lockState.isLocked;
-				}
+					const ContainerEntityDefinition &containerDef = entityDef.container;
+					const ContainerEntityDefinitionType containerDefType = containerDef.type;
 
-				if (isContainerInventoryAccessible)
-				{
-					ItemInventory &containerItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
-					constexpr bool destroyEntityIfEmpty = true; // Always for piles/chests.
-					GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory, destroyEntityIfEmpty);
+					bool isContainerInventoryAccessible = true;
+					if (entityInst.canBeLocked())
+					{
+						const EntityLockState &lockState = entityChunkManager.getEntityLockState(entityInst.lockStateID);
+						isContainerInventoryAccessible = !lockState.isLocked;
+					}
+
+					if (isContainerInventoryAccessible)
+					{
+						ItemInventory &containerItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+						constexpr bool destroyEntityIfEmpty = true; // Always for piles/chests.
+						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory, destroyEntityIfEmpty);
+					}
 				}
 
 				break;
@@ -906,6 +913,11 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						else
 						{
 							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
+						}
+
+						if (hitEntityInst.isCitizen())
+						{
+							GameWorldUiController::onCitizenKilled(game);
 						}
 
 						const WorldDouble3 hitVfxPosition(

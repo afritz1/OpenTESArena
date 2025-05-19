@@ -30,12 +30,6 @@ VoxelInt3 VoxelUtils::pointToVoxel(const VoxelDouble3 &point, double ceilingScal
 		static_cast<WEInt>(std::floor(point.z)));
 }
 
-VoxelInt3 VoxelUtils::pointToVoxel(const VoxelDouble3 &point)
-{
-	constexpr double ceilingScale = 1.0;
-	return VoxelUtils::pointToVoxel(point, ceilingScale);
-}
-
 VoxelInt2 VoxelUtils::pointToVoxel(const VoxelDouble2 &point)
 {
 	return VoxelInt2(

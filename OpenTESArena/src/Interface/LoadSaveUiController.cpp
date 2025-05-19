@@ -18,7 +18,7 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 		ArenaRenderUtils::SCREEN_WIDTH / 2,
 		ArenaRenderUtils::SCREEN_HEIGHT / 2);
 
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		center,
 		ArenaFontName::Arena,

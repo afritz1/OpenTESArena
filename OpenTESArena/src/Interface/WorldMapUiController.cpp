@@ -49,11 +49,6 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	// Clear the lore text (action text and effect text are unchanged).
 	gameState.resetTriggerTextDuration();
 
-	// Clear any on-voxel-enter event to avoid things like fast travelling out of the
-	// starting dungeon then being teleported to a random city when going through any
-	// subsequent LEVELUP voxel.
-	gameState.getOnLevelUpVoxelEnter() = std::function<void(Game&)>();
-
 	// Clear keys inventory in case we're leaving a main quest dungeon.
 	Player &player = game.player;
 	player.clearKeyInventory();

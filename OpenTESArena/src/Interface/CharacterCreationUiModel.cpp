@@ -592,7 +592,7 @@ std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 	return text;
 }
 
-std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(Game &game)
+std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
@@ -606,10 +606,10 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	return TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(text, palette);
+	return TextRenderColorOverrideInfo::makeEntriesFromText(text, palette);
 }
 
-std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(Game &game)
+std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
@@ -623,7 +623,7 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	return TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(text, palette);
+	return TextRenderColorOverrideInfo::makeEntriesFromText(text, palette);
 }
 
 std::string ChooseAttributesUiModel::getBonusPointsRemainingText(Game &game)

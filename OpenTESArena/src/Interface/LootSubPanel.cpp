@@ -14,6 +14,24 @@
 #include "../UI/CursorAlignment.h"
 #include "../UI/FontLibrary.h"
 
+namespace
+{
+	std::string GetItemDisplayNameWithQty(const ItemDefinition &itemDef, int stackAmount)
+	{
+		std::string displayName = itemDef.getDisplayName();
+		if (itemDef.type == ItemType::Gold)
+		{
+			size_t goldCountIndex = displayName.find("%u");
+			if (goldCountIndex != std::string::npos)
+			{
+				displayName.replace(goldCountIndex, 2, std::to_string(stackAmount));
+			}
+		}
+
+		return displayName;
+	}
+}
+
 LootSubPanel::LootSubPanel(Game &game)
 	: Panel(game)
 {
@@ -74,7 +92,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		PivotType::TopLeft);
 
 	constexpr Int2 listBoxTopLeft(85, 34);
-	ListBox::Properties listBoxProperties = GameWorldUiView::getLootListBoxProperties();
+	ListBoxProperties listBoxProperties = GameWorldUiView::getLootListBoxProperties();
 	const Rect listBoxRect(listBoxTopLeft.x, listBoxTopLeft.y, listBoxProperties.textureGenInfo.width, listBoxProperties.textureGenInfo.height);
 	if (!this->listBox.init(listBoxRect, listBoxProperties, renderer))
 	{
@@ -90,7 +108,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		}
 
 		const int listBoxItemIndex = this->listBox.getCount();
-		
+
 		LootUiItemMapping itemMapping;
 		itemMapping.inventoryItemIndex = i;
 		itemMapping.listBoxItemIndex = listBoxItemIndex;
@@ -98,7 +116,9 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-		this->listBox.add(itemDef.getDisplayName());		
+		std::string itemDisplayName = GetItemDisplayNameWithQty(itemDef, 1); // @todo implement stacking
+
+		this->listBox.add(std::move(itemDisplayName));
 
 		this->listBox.setCallback(listBoxItemIndex,
 			[this, &game, &itemInventory, &itemLibrary, listBoxItemIndex]()
@@ -124,11 +144,22 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 
 			ItemInstance &selectedItemInst = itemInventory.getSlot(mappedInventoryItemIndex);
 			const ItemDefinitionID selectedItemDefID = selectedItemInst.defID;
-			ItemInventory &playerInventory = game.player.inventory;
 			DebugAssert(selectedItemDefID >= 0);
-			playerInventory.insert(selectedItemDefID);
+			const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(selectedItemDefID);
+
+			Player &player = game.player;
+			if (selectedItemDef.type == ItemType::Gold)
+			{
+				player.gold += 1; // @todo implement stacking
+			}
+			else
+			{
+				ItemInventory &playerInventory = player.inventory;
+				playerInventory.insert(selectedItemDefID);
+			}
+
 			selectedItemInst.defID = -1;
-			
+
 			if (itemInventory.getOccupiedSlotCount() == 0)
 			{
 				this->closeButton.click(game);
@@ -155,7 +186,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 				{
 					const ItemInstance &curItemInst = itemInventory.getSlot(curItemMapping.inventoryItemIndex);
 					const ItemDefinition &curItemDef = itemLibrary.getDefinition(curItemInst.defID);
-					newListBoxItemText = curItemDef.getDisplayName();
+					newListBoxItemText = GetItemDisplayNameWithQty(curItemDef, 1); // @todo implement stacking
 				}
 
 				this->listBox.setText(curItemMapping.listBoxItemIndex, newListBoxItemText);
@@ -175,14 +206,14 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		UiDrawCall::defaultActiveFunc);
 
 	const std::string tempTextBoxText = "(item tables not implemented)";
-	TextBox::InitInfo tempTextBoxInitInfo = TextBox::InitInfo::makeWithXY(
+	TextBoxInitInfo tempTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		tempTextBoxText,
 		containerInventoryTextureTopLeft.x + (this->textureRef.getWidth() / 2),
 		containerInventoryTextureTopLeft.y + this->textureRef.getHeight(),
 		ArenaFontName::Teeny,
-		Color::White,
+		Colors::White,
 		TextAlignment::TopCenter,
-		FontLibrary::getInstance());	
+		FontLibrary::getInstance());
 	if (!this->tempTextBox.init(tempTextBoxInitInfo, tempTextBoxText, renderer))
 	{
 		DebugLogError("Couldn't init placeholder loot text box.");

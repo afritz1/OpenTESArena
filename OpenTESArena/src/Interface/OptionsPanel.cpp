@@ -19,7 +19,7 @@ bool OptionsPanel::init()
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
-	const TextBox::InitInfo descTextBoxInitInfo = OptionsUiView::getDescriptionTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo descTextBoxInitInfo = OptionsUiView::getDescriptionTextBoxInitInfo(fontLibrary);
 	if (!this->descriptionTextBox.init(descTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init description text box.");
@@ -27,7 +27,7 @@ bool OptionsPanel::init()
 	}
 
 	const std::string backButtonText = OptionsUiModel::BackButtonText;
-	const TextBox::InitInfo backButtonTextBoxInitInfo = OptionsUiView::getBackButtonTextBoxInitInfo(backButtonText, fontLibrary);
+	const TextBoxInitInfo backButtonTextBoxInitInfo = OptionsUiView::getBackButtonTextBoxInitInfo(backButtonText, fontLibrary);
 	if (!this->backButtonTextBox.init(backButtonTextBoxInitInfo, backButtonText, renderer))
 	{
 		DebugLogError("Couldn't init back button text box.");
@@ -37,7 +37,7 @@ bool OptionsPanel::init()
 	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)
 	{
 		const std::string &tabName = OptionsUiModel::TAB_NAMES[i];
-		const TextBox::InitInfo tabInitInfo = OptionsUiView::getTabTextBoxInitInfo(i, tabName, fontLibrary);
+		const TextBoxInitInfo tabInitInfo = OptionsUiView::getTabTextBoxInitInfo(i, tabName, fontLibrary);
 		TextBox tabTextBox;
 		if (!tabTextBox.init(tabInitInfo, tabName, renderer))
 		{
@@ -51,7 +51,7 @@ bool OptionsPanel::init()
 	for (int i = 0; i < OptionsUiModel::OPTION_COUNT; i++)
 	{
 		// Initialize to blank -- the text box will be populated later by the current tab.
-		const TextBox::InitInfo initInfo = OptionsUiView::getOptionTextBoxInitInfo(i, fontLibrary);
+		const TextBoxInitInfo initInfo = OptionsUiView::getOptionTextBoxInitInfo(i, fontLibrary);
 		TextBox textBox;
 		if (!textBox.init(initInfo, renderer))
 		{

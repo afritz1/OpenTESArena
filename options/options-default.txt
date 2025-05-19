@@ -66,9 +66,9 @@ SoundResampling=0
 Is3DAudio=true
 
 [Input]
-# Look sensitivity is normally between 2.0 and 6.0.
-HorizontalSensitivity=3.0
-VerticalSensitivity=3.0
+# Look sensitivity is normally between 1.0 and 5.0.
+HorizontalSensitivity=2.5
+VerticalSensitivity=2.5
 
 # Pitch limit determines in degrees how high or low the camera can look relative
 # to the horizon in modern mode.

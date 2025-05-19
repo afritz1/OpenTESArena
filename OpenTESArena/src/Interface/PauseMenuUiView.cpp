@@ -11,9 +11,9 @@ namespace
 	const std::string DummyVolumeText = "100"; // Worst-case text size for sound/music volume.
 }
 
-TextBox::InitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		DummyVolumeText,
 		PauseMenuUiView::SoundTextBoxCenterPoint,
 		PauseMenuUiView::VolumeFontName,
@@ -22,9 +22,9 @@ TextBox::InitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const FontLibrary &fo
 		fontLibrary);
 }
 
-TextBox::InitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		DummyVolumeText,
 		PauseMenuUiView::MusicTextBoxCenterPoint,
 		PauseMenuUiView::VolumeFontName,
@@ -33,13 +33,13 @@ TextBox::InitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &fo
 		fontLibrary);
 }
 
-TextBox::InitInfo PauseMenuUiView::getOptionsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo PauseMenuUiView::getOptionsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	const TextRenderUtils::TextShadowInfo shadow(
+	const TextRenderShadowInfo shadow(
 		PauseMenuUiView::OptionsButtonTextShadowOffsetX,
 		PauseMenuUiView::OptionsButtonTextShadowOffsetY,
 		PauseMenuUiView::OptionsButtonTextShadowColor);
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		PauseMenuUiView::OptionsTextBoxCenterPoint,
 		PauseMenuUiView::OptionsButtonFontName,
