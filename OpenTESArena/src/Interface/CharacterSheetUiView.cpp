@@ -1,4 +1,3 @@
-#include <map>
 #include <optional>
 
 #include "CharacterSheetUiView.h"
@@ -526,4 +525,16 @@ UiTextureID CharacterSheetUiView::allocNextPageTexture(TextureManager &textureMa
 	}
 
 	return textureID;
+}
+
+TextBoxInitInfo CharacterEquipmentUiView::getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(6, TextRenderUtils::LARGEST_CHAR),
+		CharacterEquipmentUiView::PlayerLevelTextBoxX,
+		CharacterEquipmentUiView::PlayerLevelTextBoxY,
+		CharacterEquipmentUiView::PlayerLevelTextBoxFontName,
+		CharacterEquipmentUiView::PlayerLevelTextBoxColor,
+		CharacterEquipmentUiView::PlayerLevelTextBoxAlignment,
+		fontLibrary);
 }

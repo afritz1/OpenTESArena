@@ -12,6 +12,7 @@ class CharacterEquipmentPanel : public Panel
 {
 private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
+	TextBox levelTextBox;
 	ListBox inventoryListBox;
 	Button<Game&> backToStatsButton, spellbookButton;
 	Button<Game&, int> dropButton;

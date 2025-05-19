@@ -1,8 +1,6 @@
 #ifndef CHARACTER_SHEET_UI_VIEW_H
 #define CHARACTER_SHEET_UI_VIEW_H
 
-#include <map>
-
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureUtils.h"
 #include "../Math/Rect.h"
@@ -207,6 +205,17 @@ namespace CharacterSheetUiView
 	UiTextureID allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocNextPageTexture(TextureManager &textureManager, Renderer &renderer);
+}
+
+namespace CharacterEquipmentUiView
+{
+	constexpr int PlayerLevelTextBoxX = 128;
+	constexpr int PlayerLevelTextBoxY = 23;
+	const std::string PlayerLevelTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerLevelTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerLevelTextBoxAlignment = TextAlignment::TopLeft;
+
+	TextBoxInitInfo getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary);
 }
 
 #endif

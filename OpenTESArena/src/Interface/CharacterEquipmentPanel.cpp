@@ -51,6 +51,14 @@ bool CharacterEquipmentPanel::init()
 		return false;
 	}
 
+	const TextBoxInitInfo playerLevelTextBoxInitInfo = CharacterEquipmentUiView::getPlayerLevelTextBoxInitInfo(fontLibrary);
+	const std::string playerLevelText = CharacterSheetUiModel::getPlayerLevel(game);
+	if (!this->levelTextBox.init(playerLevelTextBoxInitInfo, playerLevelText, renderer))
+	{
+		DebugLogError("Couldn't init player level text box.");
+		return false;
+	}
+
 	Buffer<InventoryUiModel::ItemUiDefinition> itemUiDefs = InventoryUiModel::getPlayerInventoryItems(game);
 	std::vector<std::pair<std::string, Color>> elements;
 	for (InventoryUiModel::ItemUiDefinition &itemUiDef : itemUiDefs)
@@ -214,6 +222,13 @@ bool CharacterEquipmentPanel::init()
 		this->classTextBox.getTextureID(),
 		playerClassTextBoxRect.getTopLeft(),
 		playerClassTextBoxRect.getSize(),
+		PivotType::TopLeft);
+
+	const Rect &playerLevelTextBoxRect = this->levelTextBox.getRect();
+	this->addDrawCall(
+		this->levelTextBox.getTextureID(),
+		playerLevelTextBoxRect.getTopLeft(),
+		playerLevelTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
 	// Need a texture func for the list box due to the non-constness of the getter.
