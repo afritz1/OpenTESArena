@@ -549,10 +549,16 @@ int ChooseAttributesUiModel::rollClassic(int n, ArenaRandom &random)
 	return value;
 }
 
-std::string ChooseAttributesUiModel::getPlayerDamage(Game &game)
+std::string ChooseAttributesUiModel::getPlayerBonusDamage(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusDamage);
+}
+
+std::string ChooseAttributesUiModel::getPlayerMaxWeight(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return std::to_string(charCreationState.derivedAttributes.maxKilos);
 }
 
 std::string ChooseAttributesUiModel::getPlayerMagicDefense(Game &game)
@@ -579,22 +585,16 @@ std::string ChooseAttributesUiModel::getPlayerBonusToHealth(Game &game)
 	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusToHealth);
 }
 
-std::string ChooseAttributesUiModel::getPlayerCharisma(Game &game)
-{
-	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusToCharisma);
-}
-
 std::string ChooseAttributesUiModel::getPlayerHealMod(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.healMod);
 }
 
-std::string ChooseAttributesUiModel::getPlayerMaxWeight(Game &game)
+std::string ChooseAttributesUiModel::getPlayerCharisma(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	return std::to_string(charCreationState.derivedAttributes.maxKilos);
+	return CharacterSheetUiModel::getDerivedAttributeDisplayString(charCreationState.derivedAttributes.bonusToCharisma);
 }
 
 std::string ChooseAttributesUiModel::getPlayerGold(Game &game)

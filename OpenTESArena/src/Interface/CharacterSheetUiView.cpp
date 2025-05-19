@@ -11,11 +11,10 @@
 #include "../Stats/CharacterRaceLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
-	const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(30, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerNameTextBoxX,
 		CharacterSheetUiView::PlayerNameTextBoxY,
 		CharacterSheetUiView::PlayerNameTextBoxFontName,
@@ -24,11 +23,10 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerNameTextBoxInitInfo(const std::st
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::string_view text,
-	const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(20, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerRaceTextBoxX,
 		CharacterSheetUiView::PlayerRaceTextBoxY,
 		CharacterSheetUiView::PlayerRaceTextBoxFontName,
@@ -37,11 +35,10 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(const std::st
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std::string_view text,
-	const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(24, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerClassTextBoxX,
 		CharacterSheetUiView::PlayerClassTextBoxY,
 		CharacterSheetUiView::PlayerClassTextBoxFontName,
@@ -50,13 +47,12 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerClassTextBoxInitInfo(const std::s
 		fontLibrary);
 }
 
-std::vector<TextBoxInitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary)
+Buffer<TextBoxInitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(const FontLibrary &fontLibrary)
 {
-	std::vector<TextBoxInitInfo> textBoxInitInfos;
+	Buffer<TextBoxInitInfo> textBoxInitInfos(PrimaryAttributes::COUNT);
 	
-	for (int i = 0; i < attributes.getCount(); i++)
+	for (int i = 0; i < textBoxInitInfos.getCount(); i++)
 	{
-		const PrimaryAttribute &attribute = attributes[i];
 		const std::string worstCaseStr(3, TextRenderUtils::LARGEST_CHAR);
 		TextBoxInitInfo initInfo = TextBoxInitInfo::makeWithXY(
 			worstCaseStr,
@@ -67,16 +63,30 @@ std::vector<TextBoxInitInfo> CharacterSheetUiView::getPlayerAttributeTextBoxInit
 			CharacterSheetUiView::PlayerAttributeTextBoxAlignment,
 			fontLibrary);
 
-		textBoxInitInfos.emplace_back(std::move(initInfo));
+		textBoxInitInfos[i] = std::move(initInfo);
 	}
 
 	return textBoxInitInfos;
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+Buffer<TextBoxInitInfo> CharacterSheetUiView::getPlayerDerivedAttributeTextBoxInitInfos(const FontLibrary &fontLibrary)
+{
+	Buffer<TextBoxInitInfo> textBoxInitInfos(DerivedAttributes::COUNT);
+	textBoxInitInfos[0] = CharacterSheetUiView::getPlayerBonusDamageTextBoxInitInfo(fontLibrary);
+	textBoxInitInfos[1] = CharacterSheetUiView::getPlayerMaxWeightTextBoxInitInfo(fontLibrary);
+	textBoxInitInfos[2] = CharacterSheetUiView::getPlayerMagicDefenseTextBoxInitInfo(fontLibrary);
+	textBoxInitInfos[3] = CharacterSheetUiView::getPlayerBonusToHitTextBoxInitInfo(fontLibrary);
+	textBoxInitInfos[4] = CharacterSheetUiView::getPlayerBonusToDefendTextBoxInitInfo(fontLibrary);
+	textBoxInitInfos[5] = CharacterSheetUiView::getPlayerBonusToHealthTextBoxInitInfo(fontLibrary);
+	textBoxInitInfos[6] = CharacterSheetUiView::getPlayerHealModTextBoxInitInfo(fontLibrary);
+	textBoxInitInfos[7] = CharacterSheetUiView::getPlayerCharismaTextBoxInitInfo(fontLibrary);
+	return textBoxInitInfos;
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(10, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerExperienceTextBoxX,
 		CharacterSheetUiView::PlayerExperienceTextBoxY,
 		CharacterSheetUiView::PlayerExperienceTextBoxFontName,
@@ -85,10 +95,10 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(const s
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(6, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerLevelTextBoxX,
 		CharacterSheetUiView::PlayerLevelTextBoxY,
 		CharacterSheetUiView::PlayerLevelTextBoxFontName,
@@ -97,10 +107,10 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(const std::s
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(16, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerHealthTextBoxX,
 		CharacterSheetUiView::PlayerHealthTextBoxY,
 		CharacterSheetUiView::PlayerHealthTextBoxFontName,
@@ -109,10 +119,10 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(const std::
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(16, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerStaminaTextBoxX,
 		CharacterSheetUiView::PlayerStaminaTextBoxY,
 		CharacterSheetUiView::PlayerStaminaTextBoxFontName,
@@ -121,10 +131,10 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(const std:
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(16, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerSpellPointsTextBoxX,
 		CharacterSheetUiView::PlayerSpellPointsTextBoxY,
 		CharacterSheetUiView::PlayerSpellPointsTextBoxFontName,
@@ -133,7 +143,7 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(const 
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerDamageTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerBonusDamageTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
 		std::string(5, TextRenderUtils::LARGEST_CHAR),
@@ -142,6 +152,18 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerDamageTextBoxInitInfo(const FontL
 		CharacterSheetUiView::PlayerDamageTextBoxFontName,
 		CharacterSheetUiView::PlayerDamageTextBoxColor,
 		CharacterSheetUiView::PlayerDamageTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerMaxWeightTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(6, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerMaxWeightTextBoxX,
+		CharacterSheetUiView::PlayerMaxWeightTextBoxY,
+		CharacterSheetUiView::PlayerMaxWeightTextBoxFontName,
+		CharacterSheetUiView::PlayerMaxWeightTextBoxColor,
+		CharacterSheetUiView::PlayerMaxWeightTextBoxAlignment,
 		fontLibrary);
 }
 
@@ -193,18 +215,6 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerBonusToHealthTextBoxInitInfo(cons
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerCharismaTextBoxInitInfo(const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithXY(
-		std::string(5, TextRenderUtils::LARGEST_CHAR),
-		CharacterSheetUiView::PlayerCharismaTextBoxX,
-		CharacterSheetUiView::PlayerCharismaTextBoxY,
-		CharacterSheetUiView::PlayerCharismaTextBoxFontName,
-		CharacterSheetUiView::PlayerCharismaTextBoxColor,
-		CharacterSheetUiView::PlayerCharismaTextBoxAlignment,
-		fontLibrary);
-}
-
 TextBoxInitInfo CharacterSheetUiView::getPlayerHealModTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
@@ -217,22 +227,22 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerHealModTextBoxInitInfo(const Font
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerMaxWeightTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerCharismaTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		std::string(6, TextRenderUtils::LARGEST_CHAR),
-		CharacterSheetUiView::PlayerMaxWeightTextBoxX,
-		CharacterSheetUiView::PlayerMaxWeightTextBoxY,
-		CharacterSheetUiView::PlayerMaxWeightTextBoxFontName,
-		CharacterSheetUiView::PlayerMaxWeightTextBoxColor,
-		CharacterSheetUiView::PlayerMaxWeightTextBoxAlignment,
+		std::string(5, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerCharismaTextBoxX,
+		CharacterSheetUiView::PlayerCharismaTextBoxY,
+		CharacterSheetUiView::PlayerCharismaTextBoxFontName,
+		CharacterSheetUiView::PlayerCharismaTextBoxColor,
+		CharacterSheetUiView::PlayerCharismaTextBoxAlignment,
 		fontLibrary);
 }
 
-TextBoxInitInfo CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+TextBoxInitInfo CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
-		text,
+		std::string(10, TextRenderUtils::LARGEST_CHAR),
 		CharacterSheetUiView::PlayerGoldTextBoxX,
 		CharacterSheetUiView::PlayerGoldTextBoxY,
 		CharacterSheetUiView::PlayerGoldTextBoxFontName,

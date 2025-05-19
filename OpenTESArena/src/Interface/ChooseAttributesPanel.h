@@ -21,8 +21,9 @@ class ChooseAttributesPanel : public Panel
 private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
+	TextBox derivedAttributeTextBoxes[DerivedAttributes::COUNT];
 	TextBox experienceTextBox, levelTextBox;
-	TextBox bonusPointsTextBox, bonusToHitTextBox, bonusToDefendTextBox, bonusToCharismaTextBox, bonusToHealthTextBox, healModTextBox, bonusDamageTextBox, maxKilosTextBox, magicDefTextBox;
+	TextBox bonusPointsTextBox;
 	Button<Game&, int, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;

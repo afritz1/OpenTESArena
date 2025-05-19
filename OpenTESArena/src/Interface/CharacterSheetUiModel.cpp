@@ -95,7 +95,12 @@ std::string CharacterSheetUiModel::getPlayerSpellPoints(Game &game)
 	return GetPlayerCurrentMaxStatusString(player.currentSpellPoints, player.maxSpellPoints);
 }
 
-std::string CharacterSheetUiModel::getPlayerDamage(Game &game)
+std::string CharacterSheetUiModel::getPlayerBonusDamage(Game &game)
+{
+	return "?";
+}
+
+std::string CharacterSheetUiModel::getPlayerMaxWeight(Game &game)
 {
 	return "?";
 }
@@ -120,17 +125,12 @@ std::string CharacterSheetUiModel::getPlayerBonusToHealth(Game &game)
 	return "?";
 }
 
-std::string CharacterSheetUiModel::getPlayerCharisma(Game &game)
-{
-	return "?";
-}
-
 std::string CharacterSheetUiModel::getPlayerHealMod(Game &game)
 {
 	return "?";
 }
 
-std::string CharacterSheetUiModel::getPlayerMaxWeight(Game &game)
+std::string CharacterSheetUiModel::getPlayerCharisma(Game &game)
 {
 	return "?";
 }
