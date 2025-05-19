@@ -22,24 +22,7 @@ private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
 	TextBox experienceTextBox, levelTextBox;
-	TextBox bonusPointsTextBox;
-	TextBox bonusToHitTextBox;
-	TextBox bonusToDefendTextBox;
-	TextBox bonusToCharismaTextBox;
-	TextBox bonusToHealthTextBox;
-	TextBox healModTextBox;
-	TextBox bonusDamageTextBox;
-	TextBox maxKilosTextBox;
-	TextBox magicDefTextBox;
-
-	int bonusToHitValue;
-	int bonusToCharismaValue;
-	int bonusToHealthValue;
-	int bonusDamageValue;
-	int maxKilosValue;
-	int magicDefValue;
-	//bonusToDamage,magicDefense,bonusHealth,charisma,healModificator,bonusToDefend,maxkilos;
-	//
+	TextBox bonusPointsTextBox, bonusToHitTextBox, bonusToDefendTextBox, bonusToCharismaTextBox, bonusToHealthTextBox, healModTextBox, bonusDamageTextBox, maxKilosTextBox, magicDefTextBox;
 	Button<Game&, int, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;
@@ -49,6 +32,7 @@ private:
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 	int bonusPoints;
 	int selectedAttributeIndex;
+	int bonusToHitValue, bonusToCharismaValue, bonusToHealthValue, bonusDamageValue, maxKilosValue, magicDefValue;
 public:
 	ChooseAttributesPanel(Game &game);
 	~ChooseAttributesPanel() override = default;

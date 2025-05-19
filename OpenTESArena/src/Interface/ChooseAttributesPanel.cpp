@@ -435,9 +435,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// my code bonus atribute stat.............................................................................
-	
-	//bonus to hit
+	//textBox bonus to hit
 	const Rect& lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
 	const Int2 bonusToHitTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 60,
@@ -467,7 +465,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// textBox bonusToDefend
+	// textBox bonus ToDefend
 	const Int2 bonusToDefendTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 120,
 		lastAttributeTextBoxRect.getTop() + 8);
@@ -495,7 +493,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	//  TextBox charisma
+	//	TextBox bonus charisma
 	const Int2 bonusToCharismaTextBoxTopLeftPosition(
 		lastAttributeTextBoxRect.getLeft() + 60,
 		lastAttributeTextBoxRect.getTop() + 32);
@@ -524,7 +522,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox Health
+	// TextBox bonus Health
 	const Rect& positionAttributeEndureceTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 3].getRect();
 	const Int2 bonusToHealthTextBoxTopLeftPosition(
 		positionAttributeEndureceTextBoxRect.getLeft() + 60,
@@ -554,7 +552,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox Heal Mod
+	// TextBox bonus Heal Mod
 	const Int2 healModTextBoxTopLeftPosition(
 		positionAttributeEndureceTextBoxRect.getLeft() + 120,
 		positionAttributeEndureceTextBoxRect.getTop());
@@ -642,7 +640,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox Magic Defense
+	// TextBox bonus Magic Defense
 	const Rect& positionAttributeWillpowerTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
 	const Int2 magicDefTextBoxTopLeftPosition(
 		positionAttributeWillpowerTextBoxRect.getLeft() + 60,
@@ -672,8 +670,6 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	//............................................................................................................................................
-	//My code
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
 		UiDrawCall::TextureFunc attributeTextBoxTextureFunc = [this, attributeIndex]()
