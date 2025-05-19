@@ -3,6 +3,22 @@
 
 class Random;
 
+struct PrimaryAttributes;
+
+struct DerivedAttributes
+{
+	int bonusToHit;
+	int bonusToDefend;
+	int bonusToCharisma;
+	int bonusToHealth;
+	int healMod;
+	int bonusDamage;
+	int maxKilos;
+	int magicDef;
+
+	DerivedAttributes();
+};
+
 namespace ArenaPlayerUtils
 {
 	int getBaseSpeed(int speedAttribute, int encumbranceMod);
@@ -40,19 +56,12 @@ namespace ArenaPlayerUtils
 	int calculateDamageBonus(int strength);
 	int calculateMagicDefenseBonus(int willpower);
 
-	struct AttributeBonusValues
-	{
-		int bonusToHit;
-		int bonusToDefend;
-		int bonusToCharisma;
-		int bonusToHealth;
-		int healMod;
-		int bonusDamage;
-		int maxKilos;
-		int magicDef;
-	};
-
-	AttributeBonusValues calculateAttributeBonus(const char *attributeName, int attributeValue);
+	DerivedAttributes calculateStrengthDerivedBonuses(int strength);
+	DerivedAttributes calculateAgilityDerivedBonuses(int agility);
+	DerivedAttributes calculateWillpowerDerivedBonuses(int willpower);
+	DerivedAttributes calculateEnduranceDerivedBonuses(int endurance);
+	DerivedAttributes calculatePersonalityDerivedBonuses(int personality);
+	DerivedAttributes calculateTotalDerivedBonuses(const PrimaryAttributes &attributes);
 }
 
 #endif

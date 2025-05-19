@@ -4,8 +4,21 @@
 #include "ArenaPlayerUtils.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
+#include "../Stats/PrimaryAttribute.h"
 
 #include "components/utilities/StringView.h"
+
+DerivedAttributes::DerivedAttributes()
+{
+	this->bonusToHit = 0;
+	this->bonusToDefend = 0;
+	this->bonusToCharisma = 0;
+	this->bonusToHealth = 0;
+	this->healMod = 0;
+	this->bonusDamage = 0;
+	this->maxKilos = 0;
+	this->magicDef = 0;
+}
 
 int ArenaPlayerUtils::getBaseSpeed(int speedAttribute, int encumbranceMod)
 {
@@ -98,6 +111,7 @@ int ArenaPlayerUtils::calculateDamageBonus(int strength)
 
 	return (strength - 48) / 5;
 }
+
 int ArenaPlayerUtils::calculateMagicDefenseBonus(int willpower)
 {
 	if (willpower <= 38)
@@ -116,33 +130,66 @@ int ArenaPlayerUtils::calculateMagicDefenseBonus(int willpower)
 	return (willpower - 46) / 9;
 }
 
-ArenaPlayerUtils::AttributeBonusValues ArenaPlayerUtils::calculateAttributeBonus(const char *attributeName, int attributeValue)
+DerivedAttributes ArenaPlayerUtils::calculateStrengthDerivedBonuses(int strength)
 {
-	AttributeBonusValues values = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
-	if (strcmp(attributeName, "Agility") == 0)
-	{
-		values.bonusToHit = calculateBonusToHit(attributeValue);
-		values.bonusToDefend = values.bonusToHit;
-	}
-	else if (strcmp(attributeName, "Personality") == 0)
-	{
-		//Personality and agility have the same bonus progression.
-		values.bonusToCharisma = calculateBonusToHit(attributeValue);
-	}
-	else if (strcmp(attributeName, "Endurance") == 0)
-	{
-		values.bonusToHealth = calculateBonusToHealth(attributeValue);
-		values.healMod = values.bonusToHealth;
-	}
-	else if (strcmp(attributeName, "Strength") == 0)
-	{
-		values.bonusDamage = calculateDamageBonus(attributeValue);
-		values.maxKilos = attributeValue * 2;
-	}
-	else if (strcmp(attributeName, "Willpower") == 0)
-	{
-		values.magicDef = calculateMagicDefenseBonus(attributeValue);
-	}
+	DerivedAttributes values;
+	values.bonusDamage = calculateDamageBonus(strength);
+	values.maxKilos = strength * 2;
 	return values;
+}
+
+DerivedAttributes ArenaPlayerUtils::calculateAgilityDerivedBonuses(int agility)
+{
+	DerivedAttributes values;
+	values.bonusToHit = ArenaPlayerUtils::calculateBonusToHit(agility);
+	values.bonusToDefend = values.bonusToHit;
+	return values;
+}
+
+DerivedAttributes ArenaPlayerUtils::calculateWillpowerDerivedBonuses(int willpower)
+{
+	DerivedAttributes values;
+	values.magicDef = calculateMagicDefenseBonus(willpower);
+	return values;
+}
+
+DerivedAttributes ArenaPlayerUtils::calculateEnduranceDerivedBonuses(int endurance)
+{
+	DerivedAttributes values;
+	values.bonusToHealth = calculateBonusToHealth(endurance);
+	values.healMod = values.bonusToHealth;
+	return values;
+}
+
+DerivedAttributes ArenaPlayerUtils::calculatePersonalityDerivedBonuses(int personality)
+{
+	// Personality and agility have the same bonus progression.
+	DerivedAttributes values;
+	values.bonusToCharisma = calculateBonusToHit(personality);
+	return values;
+}
+
+DerivedAttributes ArenaPlayerUtils::calculateTotalDerivedBonuses(const PrimaryAttributes &attributes)
+{
+	DerivedAttributes totalDerivedAttributes;
+
+	auto addToTotalDerivedAttributes = [&totalDerivedAttributes](const DerivedAttributes &derived)
+	{
+		totalDerivedAttributes.bonusToHit += derived.bonusToHit;
+		totalDerivedAttributes.bonusToDefend += derived.bonusToDefend;
+		totalDerivedAttributes.bonusToCharisma += derived.bonusToCharisma;
+		totalDerivedAttributes.bonusToHealth += derived.bonusToHealth;
+		totalDerivedAttributes.healMod += derived.healMod;
+		totalDerivedAttributes.bonusDamage += derived.bonusDamage;
+		totalDerivedAttributes.maxKilos += derived.maxKilos;
+		totalDerivedAttributes.magicDef += derived.magicDef;
+	};
+
+	addToTotalDerivedAttributes(ArenaPlayerUtils::calculateStrengthDerivedBonuses(attributes.strength.maxValue));
+	addToTotalDerivedAttributes(ArenaPlayerUtils::calculateAgilityDerivedBonuses(attributes.agility.maxValue));
+	addToTotalDerivedAttributes(ArenaPlayerUtils::calculateWillpowerDerivedBonuses(attributes.willpower.maxValue));
+	addToTotalDerivedAttributes(ArenaPlayerUtils::calculateEnduranceDerivedBonuses(attributes.endurance.maxValue));
+	addToTotalDerivedAttributes(ArenaPlayerUtils::calculatePersonalityDerivedBonuses(attributes.personality.maxValue));
+
+	return totalDerivedAttributes;
 }

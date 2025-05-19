@@ -32,7 +32,6 @@ private:
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 	int bonusPoints;
 	int selectedAttributeIndex;
-	int bonusToHitValue, bonusToCharismaValue, bonusToHealthValue, bonusDamageValue, maxKilosValue, magicDefValue;
 
 	void updateBonusAttributeValues();
 public:
