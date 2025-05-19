@@ -25,7 +25,7 @@ namespace
 	std::string GetDerivedAttributeDisplayString(int value)
 	{
 		const char *signString = "";
-		if (value > 0)
+		if (value >= 0)
 		{
 			signString = "+";
 		}
