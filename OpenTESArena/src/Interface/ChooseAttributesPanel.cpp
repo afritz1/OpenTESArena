@@ -54,7 +54,12 @@ bool ChooseAttributesPanel::init()
 
 	ArenaRandom &arenaRandom = game.arenaRandom;
 	this->populateBaseAttributesRandomly(charCreationState, arenaRandom);
-	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(charCreationState.attributes);
+
+	const PrimaryAttributes &primaryAttributes = charCreationState.attributes;
+	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(primaryAttributes);
+	charCreationState.maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charCreationState.classDefID, game.random);
+	charCreationState.maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
+	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, primaryAttributes.intelligence.maxValue);
 	charCreationState.bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
 
 	this->selectedAttributeIndex = 0;
@@ -84,9 +89,8 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 
-	const PrimaryAttributes &playerAttributes = CharacterCreationUiModel::getPlayerAttributes(game);
 	const Buffer<TextBoxInitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(fontLibrary);
-	const BufferView<const PrimaryAttribute> playerAttributesView = playerAttributes.getView();
+	const BufferView<const PrimaryAttribute> playerAttributesView = primaryAttributes.getView();
 	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = playerAttributesView.get(i);

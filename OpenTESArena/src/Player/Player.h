@@ -122,7 +122,7 @@ struct Player
 	~Player();
 
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
-		int portraitID, int weaponID, const ExeData &exeData, Random &random, JPH::PhysicsSystem &physicsSystem);
+		int maxHealth, int maxStamina, int maxSpellPoints, int portraitID, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 

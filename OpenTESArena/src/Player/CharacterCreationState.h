@@ -15,6 +15,7 @@ struct CharacterCreationState
 	bool male;
 	PrimaryAttributes attributes;
 	DerivedAttributes derivedAttributes;
+	int maxHealth, maxStamina, maxSpellPoints;
 	int bonusPoints;
 	int changedPoints[8]; // For primary attributes
 

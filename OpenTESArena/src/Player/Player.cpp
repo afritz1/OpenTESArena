@@ -6,7 +6,6 @@
 #include "Jolt/Physics/Body/BodyCreationSettings.h"
 #include "Jolt/Physics/Collision/Shape/CapsuleShape.h"
 
-#include "ArenaPlayerUtils.h"
 #include "Player.h"
 #include "WeaponAnimationLibrary.h"
 #include "../Assets/ArenaSoundName.h"
@@ -194,7 +193,7 @@ Player::~Player()
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
-	int portraitID, int weaponID, const ExeData &exeData, Random &random, JPH::PhysicsSystem &physicsSystem)
+	int maxHealth, int maxStamina, int maxSpellPoints, int portraitID, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
@@ -202,12 +201,12 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->raceID = raceID;
 	this->charClassDefID = charClassDefID;
 	this->portraitID = portraitID;
-	this->maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charClassDefID, random);
-	this->currentHealth = this->maxHealth;
-	this->maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
-	this->currentStamina = this->maxStamina;
-	this->maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charClassDefID, primaryAttributes.intelligence.maxValue);
-	this->currentSpellPoints = this->maxSpellPoints;
+	this->maxHealth = maxHealth;
+	this->currentHealth = maxHealth;
+	this->maxStamina = maxStamina;
+	this->currentStamina = maxStamina;
+	this->maxSpellPoints = maxSpellPoints;
+	this->currentSpellPoints = maxSpellPoints;
 	this->weaponAnimDefID = weaponID;
 	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
 	this->queuedMeleeSwingDirection = -1;

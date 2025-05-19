@@ -539,7 +539,7 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		// Initialize player.
-		const auto &charCreationState = game.getCharacterCreationState();
+		const CharacterCreationState &charCreationState = game.getCharacterCreationState();
 		const std::string_view name = charCreationState.name;
 		const bool male = charCreationState.male;
 		const int raceIndex = charCreationState.raceIndex;
@@ -551,6 +551,10 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const int charClassDefID = charCreationState.classDefID;
 		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
+		const int maxHealth = charCreationState.maxHealth;
+		const int maxStamina = charCreationState.maxStamina;
+		const int maxSpellPoints = charCreationState.maxSpellPoints;
+
 		const PrimaryAttributes &attributes = charCreationState.attributes;
 
 		const int portraitIndex = charCreationState.portraitIndex;
@@ -559,7 +563,8 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const int weaponID = charClassDef.getAllowedWeapon(game.random.next(allowedWeaponCount));
 
 		Player &player = game.player;
-		player.init(std::string(name), male, raceIndex, charClassDefID, attributes, portraitIndex, weaponID, exeData, game.random, game.physicsSystem);
+		player.init(std::string(name), male, raceIndex, charClassDefID, attributes, maxHealth, maxStamina, maxSpellPoints,
+			portraitIndex, weaponID, exeData, game.physicsSystem);
 	};
 
 	gameStateFunction(game);
