@@ -8,7 +8,6 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
-#include "../Player/ArenaPlayerUtils.h"
 
 class ArenaRandom;
 
@@ -35,7 +34,7 @@ private:
 	int selectedAttributeIndex;
 	int bonusToHitValue, bonusToCharismaValue, bonusToHealthValue, bonusDamageValue, maxKilosValue, magicDefValue;
 
-	void updateBonusAttributeValues(const ArenaPlayerUtils::AttributeBonusValues& bonusValues);
+	void updateBonusAttributeValues();
 public:
 	ChooseAttributesPanel(Game &game);
 	~ChooseAttributesPanel() override = default;

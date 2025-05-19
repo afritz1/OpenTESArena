@@ -339,7 +339,7 @@ bool ChooseAttributesPanel::init()
 			attribute.maxValue += 1;
 			
 			auto newBonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
-			this->updateBonusAttributeValues(newBonusValues);
+			this->updateBonusAttributeValues();
 
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -364,7 +364,7 @@ bool ChooseAttributesPanel::init()
 			attribute.maxValue -= 1;
 
 			auto newBonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
-			this->updateBonusAttributeValues(newBonusValues);
+			this->updateBonusAttributeValues();
 
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -708,7 +708,7 @@ bool ChooseAttributesPanel::init()
 	return true;
 }
 
-void ChooseAttributesPanel::updateBonusAttributeValues(const ArenaPlayerUtils::AttributeBonusValues& bonusValues)
+void ChooseAttributesPanel::updateBonusAttributeValues()
 {
 	Game& game = this->getGame();
 	CharacterCreationState& charCreationState = game.getCharacterCreationState();
