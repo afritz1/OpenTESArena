@@ -69,6 +69,22 @@ bool CharacterPanel::init()
 		}
 	}
 
+	const DerivedAttributes playerDerivedAttributes = CharacterSheetUiModel::getPlayerDerivedAttributes(game);
+	const Buffer<TextBoxInitInfo> playerDerivedAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerDerivedAttributeTextBoxInitInfos(fontLibrary);
+	BufferView<const int> playerDerivedAttributesView = playerDerivedAttributes.getView();
+	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
+	{
+		const int derivedAttributeValue = playerDerivedAttributesView.get(i);
+		const std::string derivedAttributeValueText = DerivedAttributes::isModifier(i) ?
+			CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
+		const TextBoxInitInfo &derivedAttributeTextBoxInitInfo = playerDerivedAttributesTextBoxInitInfos[i];
+		if (!this->derivedAttributeTextBoxes[i].init(derivedAttributeTextBoxInitInfo, derivedAttributeValueText, renderer))
+		{
+			DebugLogErrorFormat("Couldn't init derived player attribute %d text box.", i);
+			return false;
+		}
+	}
+
 	const TextBoxInitInfo playerExperienceTextBoxInitInfo = CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(fontLibrary);
 	const std::string playerExperienceText = CharacterSheetUiModel::getPlayerExperience(game);
 	if (!this->experienceTextBox.init(playerExperienceTextBoxInitInfo, playerExperienceText, renderer))
@@ -214,13 +230,23 @@ bool CharacterPanel::init()
 		playerClassTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
-	for (TextBox &playerAttributeTextBox : this->attributeTextBoxes)
+	for (TextBox &primaryAttributeTextBox : this->attributeTextBoxes)
 	{
-		const Rect &playerAttributeTextBoxRect = playerAttributeTextBox.getRect();
+		const Rect &primaryAttributeTextBoxRect = primaryAttributeTextBox.getRect();
 		this->addDrawCall(
-			playerAttributeTextBox.getTextureID(),
-			playerAttributeTextBoxRect.getTopLeft(),
-			playerAttributeTextBoxRect.getSize(),
+			primaryAttributeTextBox.getTextureID(),
+			primaryAttributeTextBoxRect.getTopLeft(),
+			primaryAttributeTextBoxRect.getSize(),
+			PivotType::TopLeft);
+	}
+
+	for (TextBox &derivedAttributeTextBox : this->derivedAttributeTextBoxes)
+	{
+		const Rect &derivedAttributeTextBoxRect = derivedAttributeTextBox.getRect();
+		this->addDrawCall(
+			derivedAttributeTextBox.getTextureID(),
+			derivedAttributeTextBoxRect.getTopLeft(),
+			derivedAttributeTextBoxRect.getSize(),
 			PivotType::TopLeft);
 	}
 

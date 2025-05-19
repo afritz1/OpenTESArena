@@ -15,6 +15,7 @@ class CharacterPanel : public Panel
 private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
+	TextBox derivedAttributeTextBoxes[DerivedAttributes::COUNT];
 	TextBox experienceTextBox, levelTextBox;
 	TextBox healthTextBox, staminaTextBox, spellPointsTextBox;
 	TextBox goldTextBox;

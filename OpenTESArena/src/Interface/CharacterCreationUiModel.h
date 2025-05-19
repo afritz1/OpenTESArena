@@ -75,14 +75,6 @@ namespace ChooseAttributesUiModel
 
 	int rollClassic(int n, ArenaRandom &random);
 
-	std::string getPlayerBonusDamage(Game &game);
-	std::string getPlayerMaxWeight(Game &game);
-	std::string getPlayerMagicDefense(Game &game);
-	std::string getPlayerBonusToHit(Game &game);
-	std::string getPlayerBonusToDefend(Game &game);
-	std::string getPlayerBonusToHealth(Game &game);
-	std::string getPlayerHealMod(Game &game);
-	std::string getPlayerCharisma(Game &game);
 	std::string getPlayerGold(Game &game);
 
 	std::string getInitialText(Game &game);

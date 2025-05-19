@@ -4,6 +4,7 @@
 
 #include "CharacterSheetUiModel.h"
 #include "../Game/Game.h"
+#include "../Player/ArenaPlayerUtils.h"
 #include "../Player/Player.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/CharacterRaceLibrary.h"
@@ -65,6 +66,11 @@ const PrimaryAttributes &CharacterSheetUiModel::getPlayerAttributes(Game &game)
 	return game.player.primaryAttributes;
 }
 
+DerivedAttributes CharacterSheetUiModel::getPlayerDerivedAttributes(Game &game)
+{
+	return ArenaPlayerUtils::calculateTotalDerivedBonuses(game.player.primaryAttributes);
+}
+
 std::string CharacterSheetUiModel::getPlayerExperience(Game &game)
 {
 	const Player &player = game.player;
@@ -93,46 +99,6 @@ std::string CharacterSheetUiModel::getPlayerSpellPoints(Game &game)
 {
 	const Player &player = game.player;
 	return GetPlayerCurrentMaxStatusString(player.currentSpellPoints, player.maxSpellPoints);
-}
-
-std::string CharacterSheetUiModel::getPlayerBonusDamage(Game &game)
-{
-	return "?";
-}
-
-std::string CharacterSheetUiModel::getPlayerMaxWeight(Game &game)
-{
-	return "?";
-}
-
-std::string CharacterSheetUiModel::getPlayerMagicDefense(Game &game)
-{
-	return "?";
-}
-
-std::string CharacterSheetUiModel::getPlayerBonusToHit(Game &game)
-{
-	return "?";
-}
-
-std::string CharacterSheetUiModel::getPlayerBonusToDefend(Game &game)
-{
-	return "?";
-}
-
-std::string CharacterSheetUiModel::getPlayerBonusToHealth(Game &game)
-{
-	return "?";
-}
-
-std::string CharacterSheetUiModel::getPlayerHealMod(Game &game)
-{
-	return "?";
-}
-
-std::string CharacterSheetUiModel::getPlayerCharisma(Game &game)
-{
-	return "?";
 }
 
 std::string CharacterSheetUiModel::getPlayerGold(Game &game)

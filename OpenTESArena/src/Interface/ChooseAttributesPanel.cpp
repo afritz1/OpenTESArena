@@ -105,7 +105,7 @@ bool ChooseAttributesPanel::init()
 	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
 	{
 		const int derivedAttributeValue = playerDerivedAttributesView.get(i);
-		const std::string derivedAttributeValueText = charCreationState.derivedAttributes.isModifier(i) ?
+		const std::string derivedAttributeValueText = DerivedAttributes::isModifier(i) ?
 			CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
 		const TextBoxInitInfo &derivedAttributeTextBoxInitInfo = playerDerivedAttributesTextBoxInitInfos[i];
 		if (!this->derivedAttributeTextBoxes[i].init(derivedAttributeTextBoxInitInfo, derivedAttributeValueText, renderer))
