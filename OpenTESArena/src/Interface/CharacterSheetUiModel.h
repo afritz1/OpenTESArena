@@ -10,10 +10,14 @@ class Game;
 
 namespace CharacterSheetUiModel
 {
+	std::string getStatusValueCurrentAndMaxString(double currentValue, double maxValue);
+	std::string getDerivedAttributeDisplayString(int value);
+
 	std::string getPlayerName(Game &game);
 	std::string getPlayerRaceName(Game &game);
 	std::string getPlayerClassName(Game &game);
 	const PrimaryAttributes &getPlayerAttributes(Game &game);
+	DerivedAttributes getPlayerDerivedAttributes(Game &game);
 	std::string getPlayerExperience(Game &game);
 	std::string getPlayerLevel(Game &game);
 	std::string getPlayerHealth(Game &game);

@@ -24,8 +24,30 @@ struct PrimaryAttributes
 
 	void init(int raceID, bool isMale, const ExeData &exeData);
 
-	BufferView<PrimaryAttribute> getAttributes();
-	BufferView<const PrimaryAttribute> getAttributes() const;
+	BufferView<PrimaryAttribute> getView();
+	BufferView<const PrimaryAttribute> getView() const;
+
+	void clear();
+};
+
+struct DerivedAttributes
+{
+	static constexpr int COUNT = 8;
+
+	int bonusDamage;
+	int maxKilos;
+	int magicDef;
+	int bonusToHit;
+	int bonusToDefend;
+	int bonusToHealth;
+	int healMod;
+	int bonusToCharisma;
+
+	DerivedAttributes();
+
+	static bool isModifier(int index);
+
+	BufferView<const int> getView() const;
 
 	void clear();
 };

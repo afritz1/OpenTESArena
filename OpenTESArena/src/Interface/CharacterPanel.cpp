@@ -29,24 +29,24 @@ bool CharacterPanel::init()
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
+	const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(fontLibrary);
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
-	const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
 	if (!this->nameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
 		DebugLogError("Couldn't init player name text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerRaceTextBoxInitInfo = CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(fontLibrary);
 	const std::string playerRaceText = CharacterSheetUiModel::getPlayerRaceName(game);
-	const TextBoxInitInfo playerRaceTextBoxInitInfo = CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
 	if (!this->raceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
 	{
 		DebugLogError("Couldn't init player race text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerClassTextBoxInitInfo = CharacterSheetUiView::getPlayerClassTextBoxInitInfo(fontLibrary);
 	const std::string playerClassText = CharacterSheetUiModel::getPlayerClassName(game);
-	const TextBoxInitInfo playerClassTextBoxInitInfo = CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
 	if (!this->classTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
 	{
 		DebugLogError("Couldn't init player class text box.");
@@ -54,14 +54,13 @@ bool CharacterPanel::init()
 	}
 
 	const PrimaryAttributes &playerAttributes = CharacterSheetUiModel::getPlayerAttributes(game);
-	const BufferView<const PrimaryAttribute> playerAttributesView = playerAttributes.getAttributes();
-	const std::vector<TextBoxInitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(playerAttributesView, fontLibrary);
+	const Buffer<TextBoxInitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(fontLibrary);
+	const BufferView<const PrimaryAttribute> playerAttributesView = playerAttributes.getView();
 	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = playerAttributesView.get(i);
 		const int attributeValue = attribute.maxValue;
 		const std::string attributeValueText = std::to_string(attributeValue);
-		DebugAssertIndex(playerAttributesTextBoxInitInfos, i);
 		const TextBoxInitInfo &attributeTextBoxInitInfo = playerAttributesTextBoxInitInfos[i];
 		if (!this->attributeTextBoxes[i].init(attributeTextBoxInitInfo, attributeValueText, renderer))
 		{
@@ -70,48 +69,64 @@ bool CharacterPanel::init()
 		}
 	}
 
+	const DerivedAttributes playerDerivedAttributes = CharacterSheetUiModel::getPlayerDerivedAttributes(game);
+	const Buffer<TextBoxInitInfo> playerDerivedAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerDerivedAttributeTextBoxInitInfos(fontLibrary);
+	BufferView<const int> playerDerivedAttributesView = playerDerivedAttributes.getView();
+	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
+	{
+		const int derivedAttributeValue = playerDerivedAttributesView.get(i);
+		const std::string derivedAttributeValueText = DerivedAttributes::isModifier(i) ?
+			CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
+		const TextBoxInitInfo &derivedAttributeTextBoxInitInfo = playerDerivedAttributesTextBoxInitInfos[i];
+		if (!this->derivedAttributeTextBoxes[i].init(derivedAttributeTextBoxInitInfo, derivedAttributeValueText, renderer))
+		{
+			DebugLogErrorFormat("Couldn't init derived player attribute %d text box.", i);
+			return false;
+		}
+	}
+
+	const TextBoxInitInfo playerExperienceTextBoxInitInfo = CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(fontLibrary);
 	const std::string playerExperienceText = CharacterSheetUiModel::getPlayerExperience(game);
-	const TextBoxInitInfo playerExperienceTextBoxInitInfo = CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(playerExperienceText, fontLibrary);
 	if (!this->experienceTextBox.init(playerExperienceTextBoxInitInfo, playerExperienceText, renderer))
 	{
 		DebugLogError("Couldn't init player experience text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerLevelTextBoxInitInfo = CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(fontLibrary);
 	const std::string playerLevelText = CharacterSheetUiModel::getPlayerLevel(game);
-	const TextBoxInitInfo playerLevelTextBoxInitInfo = CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(playerLevelText, fontLibrary);
 	if (!this->levelTextBox.init(playerLevelTextBoxInitInfo, playerLevelText, renderer))
 	{
 		DebugLogError("Couldn't init player level text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerHealthTextBoxInitInfo = CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(fontLibrary);
 	const std::string playerHealthText = CharacterSheetUiModel::getPlayerHealth(game);
-	const TextBoxInitInfo playerHealthTextBoxInitInfo = CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(playerHealthText, fontLibrary);
 	if (!this->healthTextBox.init(playerHealthTextBoxInitInfo, playerHealthText, renderer))
 	{
 		DebugLogError("Couldn't init player health text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerStaminaTextBoxInitInfo = CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(fontLibrary);
 	const std::string playerStaminaText = CharacterSheetUiModel::getPlayerStamina(game);
-	const TextBoxInitInfo playerStaminaTextBoxInitInfo = CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(playerStaminaText, fontLibrary);
 	if (!this->staminaTextBox.init(playerStaminaTextBoxInitInfo, playerStaminaText, renderer))
 	{
 		DebugLogError("Couldn't init player stamina text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerSpellPointsTextBoxInitInfo = CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(fontLibrary);
 	const std::string playerSpellPointsText = CharacterSheetUiModel::getPlayerSpellPoints(game);
-	const TextBoxInitInfo playerSpellPointsTextBoxInitInfo = CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(playerSpellPointsText, fontLibrary);
 	if (!this->spellPointsTextBox.init(playerSpellPointsTextBoxInitInfo, playerSpellPointsText, renderer))
 	{
 		DebugLogError("Couldn't init player spell points text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerGoldTextBoxInitInfo = CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(fontLibrary);
 	const std::string playerGoldText = CharacterSheetUiModel::getPlayerGold(game);
-	const TextBoxInitInfo playerGoldTextBoxInitInfo = CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(playerGoldText, fontLibrary);
 	if (!this->goldTextBox.init(playerGoldTextBoxInitInfo, playerGoldText, renderer))
 	{
 		DebugLogError("Couldn't init player gold text box.");
@@ -215,13 +230,23 @@ bool CharacterPanel::init()
 		playerClassTextBoxRect.getSize(),
 		PivotType::TopLeft);
 
-	for (TextBox &playerAttributeTextBox : this->attributeTextBoxes)
+	for (TextBox &primaryAttributeTextBox : this->attributeTextBoxes)
 	{
-		const Rect &playerAttributeTextBoxRect = playerAttributeTextBox.getRect();
+		const Rect &primaryAttributeTextBoxRect = primaryAttributeTextBox.getRect();
 		this->addDrawCall(
-			playerAttributeTextBox.getTextureID(),
-			playerAttributeTextBoxRect.getTopLeft(),
-			playerAttributeTextBoxRect.getSize(),
+			primaryAttributeTextBox.getTextureID(),
+			primaryAttributeTextBoxRect.getTopLeft(),
+			primaryAttributeTextBoxRect.getSize(),
+			PivotType::TopLeft);
+	}
+
+	for (TextBox &derivedAttributeTextBox : this->derivedAttributeTextBoxes)
+	{
+		const Rect &derivedAttributeTextBoxRect = derivedAttributeTextBox.getRect();
+		this->addDrawCall(
+			derivedAttributeTextBox.getTextureID(),
+			derivedAttributeTextBoxRect.getTopLeft(),
+			derivedAttributeTextBoxRect.getSize(),
 			PivotType::TopLeft);
 	}
 

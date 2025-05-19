@@ -14,7 +14,11 @@ struct CharacterCreationState
 	int portraitIndex;
 	bool male;
 	PrimaryAttributes attributes;
-	int changedPoints[8]; // For attributes
+	DerivedAttributes derivedAttributes;
+	int maxHealth, maxStamina, maxSpellPoints;
+	int gold;
+	int bonusPoints;
+	int changedPoints[8]; // For primary attributes
 
 	CharacterCreationState();
 

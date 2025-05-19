@@ -1,5 +1,6 @@
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
+#include "CharacterSheetUiModel.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
@@ -548,6 +549,33 @@ int ChooseAttributesUiModel::rollClassic(int n, ArenaRandom &random)
 	return value;
 }
 
+std::string ChooseAttributesUiModel::getPlayerHealth(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	const double maxHealth = static_cast<double>(charCreationState.maxHealth);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(maxHealth, maxHealth);
+}
+
+std::string ChooseAttributesUiModel::getPlayerStamina(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	const double maxStamina = static_cast<double>(charCreationState.maxStamina);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(maxStamina, maxStamina);
+}
+
+std::string ChooseAttributesUiModel::getPlayerSpellPoints(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	const double maxSpellPoints = static_cast<double>(charCreationState.maxSpellPoints);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(maxSpellPoints, maxSpellPoints);
+}
+
+std::string ChooseAttributesUiModel::getPlayerGold(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return std::to_string(charCreationState.gold);
+}
+
 std::string ChooseAttributesUiModel::getInitialText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
@@ -613,7 +641,7 @@ std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessag
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
-	
+
 	auto &textureManager = game.textureManager;
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());

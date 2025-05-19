@@ -76,22 +76,79 @@ namespace CharacterSheetUiView
 	const Color PlayerSpellPointsTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerSpellPointsTextBoxAlignment = TextAlignment::TopLeft;
 
+	constexpr int PlayerDamageTextBoxX = 86;
+	constexpr int PlayerDamageTextBoxY = 52;
+	const std::string PlayerDamageTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerDamageTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerDamageTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerMagicDefenseTextBoxX = 86;
+	constexpr int PlayerMagicDefenseTextBoxY = 68;
+	const std::string PlayerMagicDefenseTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerMagicDefenseTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerMagicDefenseTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerBonusToHitTextBoxX = 86;
+	constexpr int PlayerBonusToHitTextBoxY = 76;
+	const std::string PlayerBonusToHitTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerBonusToHitTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerBonusToHitTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerBonusToDefendTextBoxX = 145;
+	constexpr int PlayerBonusToDefendTextBoxY = 76;
+	const std::string PlayerBonusToDefendTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerBonusToDefendTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerBonusToDefendTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerBonusToHealthTextBoxX = 86;
+	constexpr int PlayerBonusToHealthTextBoxY = 92;
+	const std::string PlayerBonusToHealthTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerBonusToHealthTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerBonusToHealthTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerCharismaTextBoxX = 86;
+	constexpr int PlayerCharismaTextBoxY = 100;
+	const std::string PlayerCharismaTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerCharismaTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerCharismaTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerHealModTextBoxX = 145;
+	constexpr int PlayerHealModTextBoxY = 92;
+	const std::string PlayerHealModTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerHealModTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerHealModTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerMaxWeightTextBoxX = 145;
+	constexpr int PlayerMaxWeightTextBoxY = 52;
+	const std::string PlayerMaxWeightTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerMaxWeightTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerMaxWeightTextBoxAlignment = TextAlignment::TopLeft;
+
 	constexpr int PlayerGoldTextBoxX = 45;
 	constexpr int PlayerGoldTextBoxY = 143;
 	const std::string PlayerGoldTextBoxFontName = ArenaFontName::Arena;
 	const Color PlayerGoldTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerGoldTextBoxAlignment = TextAlignment::TopLeft;
 
-	TextBoxInitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getPlayerRaceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getPlayerClassTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	std::vector<TextBoxInitInfo> getPlayerAttributeTextBoxInitInfos(BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getPlayerExperienceTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getPlayerLevelTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getPlayerHealthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getPlayerStaminaTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getPlayerSpellPointsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerNameTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerRaceTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerClassTextBoxInitInfo(const FontLibrary &fontLibrary);
+	Buffer<TextBoxInitInfo> getPlayerAttributeTextBoxInitInfos(const FontLibrary &fontLibrary);
+	Buffer<TextBoxInitInfo> getPlayerDerivedAttributeTextBoxInitInfos(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerExperienceTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerHealthTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerStaminaTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerSpellPointsTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerBonusDamageTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerMaxWeightTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerMagicDefenseTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerBonusToHitTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerBonusToDefendTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerBonusToHealthTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerHealModTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerCharismaTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerGoldTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;

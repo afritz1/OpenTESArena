@@ -4,6 +4,7 @@
 #include "GameWorldUiView.h"
 #include "../Assets/RMDFile.h"
 #include "../Game/Game.h"
+#include "../Player/ArenaPlayerUtils.h"
 #include "../Player/Player.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
@@ -106,7 +107,8 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 	index = baseText.find("%d", index);
 	baseText.replace(index, 2, std::to_string(currentWeight));
 
-	const int weightCapacity = 0; // @todo player strength attribute
+	const PrimaryAttributes &primaryAttributes = player.primaryAttributes;
+	const int weightCapacity = ArenaPlayerUtils::calculateMaxWeight(primaryAttributes.strength.maxValue); // @todo use current value instead
 	index = baseText.find("%d", index);
 	baseText.replace(index, 2, std::to_string(weightCapacity));
 

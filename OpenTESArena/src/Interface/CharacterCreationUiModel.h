@@ -75,6 +75,11 @@ namespace ChooseAttributesUiModel
 
 	int rollClassic(int n, ArenaRandom &random);
 
+	std::string getPlayerHealth(Game &game);
+	std::string getPlayerStamina(Game &game);
+	std::string getPlayerSpellPoints(Game &game);
+	std::string getPlayerGold(Game &game);
+
 	std::string getInitialText(Game &game);
 
 	std::string getMessageBoxTitleText(Game &game);

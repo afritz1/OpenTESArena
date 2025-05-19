@@ -35,5 +35,11 @@ void CharacterCreationState::clear()
 	this->portraitIndex = CharacterCreationState::NO_INDEX;
 	this->male = false;
 	this->attributes.clear();
+	this->derivedAttributes.clear();
+	this->maxHealth = 0;
+	this->maxStamina = 0;
+	this->maxSpellPoints = 0;
+	this->gold = 0;
+	this->bonusPoints = 0;
 	this->clearChangedPoints();
 }

@@ -1,9 +1,11 @@
 #include <algorithm>
+#include <cstring>
 
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "CharacterSheetUiController.h"
+#include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "ChooseAttributesPanel.h"
 #include "CommonUiView.h"
@@ -12,16 +14,18 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../Math/Random.h"
+#include "../Player/ArenaPlayerUtils.h"
+#include "../UI/ArenaFontName.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextRenderUtils.h"
-#include "../UI/ArenaFontName.h"
+
+#include "components/utilities/BufferView.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game)
 {
-	this->bonusPoints = 0;
 	this->selectedAttributeIndex = 0;
 }
 
@@ -29,7 +33,7 @@ void ChooseAttributesPanel::populateBaseAttributesRandomly(CharacterCreationStat
 {
 	charCreationState.populateBaseAttributes();
 
-	BufferView<PrimaryAttribute> attributes = charCreationState.attributes.getAttributes();
+	BufferView<PrimaryAttribute> attributes = charCreationState.attributes.getView();
 	for (int i = 0; i < PrimaryAttributes::COUNT; i++)
 	{
 		PrimaryAttribute &attribute = attributes[i];
@@ -50,44 +54,50 @@ bool ChooseAttributesPanel::init()
 
 	ArenaRandom &arenaRandom = game.arenaRandom;
 	this->populateBaseAttributesRandomly(charCreationState, arenaRandom);
-	this->bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
+
+	Random &random = game.random;
+	const PrimaryAttributes &primaryAttributes = charCreationState.attributes;
+	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(primaryAttributes);
+	charCreationState.maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charCreationState.classDefID, random);
+	charCreationState.maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
+	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, primaryAttributes.intelligence.maxValue);
+	charCreationState.gold = ArenaPlayerUtils::calculateStartingGold(random);
+	charCreationState.bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
 
 	this->selectedAttributeIndex = 0;
 	this->attributesAreSaved = false;
 
+	const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(fontLibrary);
 	const std::string playerNameText = CharacterCreationUiModel::getPlayerName(game);
-	const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
 	if (!this->nameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
 		DebugLogError("Couldn't init player name text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerRaceTextBoxInitInfo = CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(fontLibrary);
 	const std::string playerRaceText = CharacterCreationUiModel::getPlayerRaceName(game);
-	const TextBoxInitInfo playerRaceTextBoxInitInfo = CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
 	if (!this->raceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
 	{
 		DebugLogError("Couldn't init player race text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerClassTextBoxInitInfo = CharacterSheetUiView::getPlayerClassTextBoxInitInfo(fontLibrary);
 	const std::string playerClassText = CharacterCreationUiModel::getPlayerClassName(game);
-	const TextBoxInitInfo playerClassTextBoxInitInfo = CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
 	if (!this->classTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
 	{
 		DebugLogError("Couldn't init player class text box.");
 		return false;
 	}
 
-	const PrimaryAttributes &playerAttributes = CharacterCreationUiModel::getPlayerAttributes(game);
-	const BufferView<const PrimaryAttribute> playerAttributesView = playerAttributes.getAttributes();
-	const std::vector<TextBoxInitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(playerAttributesView, fontLibrary);
+	const Buffer<TextBoxInitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(fontLibrary);
+	const BufferView<const PrimaryAttribute> playerAttributesView = primaryAttributes.getView();
 	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = playerAttributesView.get(i);
 		const int attributeValue = attribute.maxValue;
 		const std::string attributeValueText = std::to_string(attributeValue);
-		DebugAssertIndex(playerAttributesTextBoxInitInfos, i);
 		const TextBoxInitInfo &attributeTextBoxInitInfo = playerAttributesTextBoxInitInfos[i];
 		if (!this->attributeTextBoxes[i].init(attributeTextBoxInitInfo, attributeValueText, renderer))
 		{
@@ -96,19 +106,66 @@ bool ChooseAttributesPanel::init()
 		}
 	}
 
+	const Buffer<TextBoxInitInfo> playerDerivedAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerDerivedAttributeTextBoxInitInfos(fontLibrary);
+	BufferView<const int> playerDerivedAttributesView = charCreationState.derivedAttributes.getView();
+	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
+	{
+		const int derivedAttributeValue = playerDerivedAttributesView.get(i);
+		const std::string derivedAttributeValueText = DerivedAttributes::isModifier(i) ?
+			CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
+		const TextBoxInitInfo &derivedAttributeTextBoxInitInfo = playerDerivedAttributesTextBoxInitInfos[i];
+		if (!this->derivedAttributeTextBoxes[i].init(derivedAttributeTextBoxInitInfo, derivedAttributeValueText, renderer))
+		{
+			DebugLogErrorFormat("Couldn't init derived player attribute %d text box.", i);
+			return false;
+		}
+	}
+
+	const TextBoxInitInfo playerExperienceTextBoxInitInfo = CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(fontLibrary);
 	const std::string playerExperienceText = CharacterCreationUiModel::getPlayerExperience(game);
-	const TextBoxInitInfo playerExperienceTextBoxInitInfo = CharacterSheetUiView::getPlayerExperienceTextBoxInitInfo(playerExperienceText, fontLibrary);
 	if (!this->experienceTextBox.init(playerExperienceTextBoxInitInfo, playerExperienceText, renderer))
 	{
 		DebugLogError("Couldn't init player experience text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerLevelTextBoxInitInfo = CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(fontLibrary);
 	const std::string playerLevelText = CharacterCreationUiModel::getPlayerLevel(game);
-	const TextBoxInitInfo playerLevelTextBoxInitInfo = CharacterSheetUiView::getPlayerLevelTextBoxInitInfo(playerLevelText, fontLibrary);
 	if (!this->levelTextBox.init(playerLevelTextBoxInitInfo, playerLevelText, renderer))
 	{
 		DebugLogError("Couldn't init player level text box.");
+		return false;
+	}
+
+	const TextBoxInitInfo playerHealthTextBoxInitInfo = CharacterSheetUiView::getPlayerHealthTextBoxInitInfo(fontLibrary);
+	const std::string playerHealthText = ChooseAttributesUiModel::getPlayerHealth(game);
+	if (!this->healthTextBox.init(playerHealthTextBoxInitInfo, playerHealthText, renderer))
+	{
+		DebugLogError("Couldn't init player health text box.");
+		return false;
+	}
+
+	const TextBoxInitInfo playerStaminaTextBoxInitInfo = CharacterSheetUiView::getPlayerStaminaTextBoxInitInfo(fontLibrary);
+	const std::string playerStaminaText = ChooseAttributesUiModel::getPlayerStamina(game);
+	if (!this->staminaTextBox.init(playerStaminaTextBoxInitInfo, playerStaminaText, renderer))
+	{
+		DebugLogError("Couldn't init player stamina text box.");
+		return false;
+	}
+
+	const TextBoxInitInfo playerSpellPointsTextBoxInitInfo = CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(fontLibrary);
+	const std::string playerSpellPointsText = ChooseAttributesUiModel::getPlayerSpellPoints(game);
+	if (!this->spellPointsTextBox.init(playerSpellPointsTextBoxInitInfo, playerSpellPointsText, renderer))
+	{
+		DebugLogError("Couldn't init player spell points text box.");
+		return false;
+	}
+
+	const TextBoxInitInfo playerGoldTextBoxInitInfo = CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(fontLibrary);
+	const std::string playerGoldText = ChooseAttributesUiModel::getPlayerGold(game);
+	if (!this->goldTextBox.init(playerGoldTextBoxInitInfo, playerGoldText, renderer))
+	{
+		DebugLogError("Couldn't init player gold text box.");
 		return false;
 	}
 
@@ -124,7 +181,12 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiController::onPortraitButtonSelected);
 
 	this->addButtonProxy(MouseButtonType::Left, this->doneButton.getRect(),
-		[this, &game]() { this->doneButton.click(game, this->bonusPoints, &this->attributesAreSaved); });
+		[this, &game]()
+	{
+		const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+		this->doneButton.click(game, charCreationState.bonusPoints, &this->attributesAreSaved);
+	});
+
 	this->addButtonProxy(MouseButtonType::Left, this->portraitButton.getRect(),
 		[this, &game]()
 	{
@@ -307,21 +369,27 @@ bool ChooseAttributesPanel::init()
 		{
 			Game &game = this->getGame();
 			CharacterCreationState &charCreationState = game.getCharacterCreationState();
-			int *changedPoints = std::begin(charCreationState.changedPoints);
+			BufferView<int> changedPoints = charCreationState.changedPoints;
 			changedPoints[attributeIndex]++;
-			this->bonusPoints--;
+			charCreationState.bonusPoints--;
 
 			PrimaryAttributes &attributes = charCreationState.attributes;
-			BufferView<PrimaryAttribute> attributesView = attributes.getAttributes();
+			BufferView<PrimaryAttribute> attributesView = attributes.getView();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue += 1;
 
+			this->updateDerivedAttributeValues();
+
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
-			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
+			this->bonusPointsTextBox.setText(std::to_string(charCreationState.bonusPoints));
 		},
 			Rect(),
-			[this, attributeIndex]() { return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && this->bonusPoints > 0; });
+			[this, &game, attributeIndex]()
+		{
+			const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+			return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && charCreationState.bonusPoints > 0;
+		});
 
 		// Click handler for down arrow
 		this->addButtonProxy(MouseButtonType::Left, downButton.getRect(),
@@ -331,23 +399,25 @@ bool ChooseAttributesPanel::init()
 			CharacterCreationState &charCreationState = game.getCharacterCreationState();
 			int *changedPoints = std::begin(charCreationState.changedPoints);
 			changedPoints[attributeIndex]--;
-			this->bonusPoints++;
+			charCreationState.bonusPoints++;
 
 			PrimaryAttributes &attributes = charCreationState.attributes;
-			BufferView<PrimaryAttribute> attributesView = attributes.getAttributes();
+			BufferView<PrimaryAttribute> attributesView = attributes.getView();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue -= 1;
 
+			this->updateDerivedAttributeValues();
+
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
-			this->bonusPointsTextBox.setText(std::to_string(this->bonusPoints));
+			this->bonusPointsTextBox.setText(std::to_string(charCreationState.bonusPoints));
 		},
 			Rect(),
 			[this, attributeIndex]()
 		{
 			Game &game = this->getGame();
 			CharacterCreationState &charCreationState = game.getCharacterCreationState();
-			const int *changedPoints = std::begin(charCreationState.changedPoints);
+			BufferView<const int> changedPoints = charCreationState.changedPoints;
 			return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && changedPoints[attributeIndex] > 0;
 		});
 	}
@@ -363,7 +433,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusPointsTextBox.init(bonusPointsTextBoxInitInfo, std::to_string(bonusPoints), renderer))
+	if (!this->bonusPointsTextBox.init(bonusPointsTextBoxInitInfo, std::to_string(charCreationState.bonusPoints), renderer))
 	{
 		DebugLogError("Couldn't init bonus points text box.");
 		return false;
@@ -394,6 +464,23 @@ bool ChooseAttributesPanel::init()
 			UiDrawCall::defaultActiveFunc);
 	}
 
+	for (int derivedAttributeIndex = 0; derivedAttributeIndex < DerivedAttributes::COUNT; derivedAttributeIndex++)
+	{
+		UiDrawCall::TextureFunc derivedAttributeTextBoxTextureFunc = [this, derivedAttributeIndex]()
+		{
+			TextBox &derivedAttributeTextBox = this->derivedAttributeTextBoxes[derivedAttributeIndex];
+			return derivedAttributeTextBox.getTextureID();
+		};
+
+		const Rect &derivedAttributeTextBoxRect = this->derivedAttributeTextBoxes[derivedAttributeIndex].getRect();
+		this->addDrawCall(
+			derivedAttributeTextBoxTextureFunc,
+			UiDrawCall::makePositionFunc(derivedAttributeTextBoxRect.getTopLeft()),
+			UiDrawCall::makeSizeFunc(derivedAttributeTextBoxRect.getSize()),
+			UiDrawCall::makePivotFunc(PivotType::TopLeft),
+			UiDrawCall::defaultActiveFunc);
+	}
+
 	const Rect &playerExperienceTextBoxRect = this->experienceTextBox.getRect();
 	this->addDrawCall(
 		this->experienceTextBox.getTextureID(),
@@ -407,6 +494,38 @@ bool ChooseAttributesPanel::init()
 		playerLevelTextBoxRect.getTopLeft(),
 		playerLevelTextBoxRect.getSize(),
 		PivotType::TopLeft);
+
+	const Rect &playerHealthTextBoxRect = this->healthTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->healthTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(playerHealthTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(playerHealthTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
+	const Rect &playerStaminaTextBoxRect = this->staminaTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->staminaTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(playerStaminaTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(playerStaminaTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
+	const Rect &playerSpellPointsTextBoxRect = this->spellPointsTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->spellPointsTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(playerSpellPointsTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(playerSpellPointsTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
+	const Rect &playerGoldTextBoxRect = this->goldTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->goldTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(playerGoldTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(playerGoldTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
@@ -443,4 +562,24 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiView::InitialTextureCenterPoint);
 
 	return true;
+}
+
+void ChooseAttributesPanel::updateDerivedAttributeValues()
+{
+	Game &game = this->getGame();
+	CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(charCreationState.attributes);
+
+	const BufferView<const int> derivedAttributesView = charCreationState.derivedAttributes.getView();
+	for (int i = 0; i < DerivedAttributes::COUNT; i++)
+	{
+		const int derivedAttributeValue = derivedAttributesView[i];
+		const std::string derivedAttributeDisplayString = DerivedAttributes::isModifier(i) ?
+			CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
+		this->derivedAttributeTextBoxes[i].setText(derivedAttributeDisplayString);
+	}
+
+	this->healthTextBox.setText(ChooseAttributesUiModel::getPlayerHealth(game));
+	this->staminaTextBox.setText(ChooseAttributesUiModel::getPlayerStamina(game));
+	this->spellPointsTextBox.setText(ChooseAttributesUiModel::getPlayerSpellPoints(game));
 }

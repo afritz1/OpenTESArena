@@ -32,7 +32,7 @@ void PrimaryAttribute::clear()
 
 void PrimaryAttributes::init(int raceID, bool isMale, const ExeData &exeData)
 {
-	BufferView<PrimaryAttribute> attributes = this->getAttributes();
+	BufferView<PrimaryAttribute> attributes = this->getView();
 	for (int i = 0; i < COUNT; i++)
 	{
 		DebugAssertIndex(exeData.entities.attributeNames, i);
@@ -48,20 +48,47 @@ void PrimaryAttributes::init(int raceID, bool isMale, const ExeData &exeData)
 	}
 }
 
-BufferView<PrimaryAttribute> PrimaryAttributes::getAttributes()
+BufferView<PrimaryAttribute> PrimaryAttributes::getView()
 {
 	return BufferView<PrimaryAttribute>(&this->strength, COUNT);
 }
 
-BufferView<const PrimaryAttribute> PrimaryAttributes::getAttributes() const
+BufferView<const PrimaryAttribute> PrimaryAttributes::getView() const
 {
 	return BufferView<const PrimaryAttribute>(&this->strength, COUNT);
 }
 
 void PrimaryAttributes::clear()
 {
-	for (PrimaryAttribute &attribute : this->getAttributes())
+	for (PrimaryAttribute &attribute : this->getView())
 	{
 		attribute.clear();
 	}
+}
+
+DerivedAttributes::DerivedAttributes()
+{
+	this->clear();
+}
+
+void DerivedAttributes::clear()
+{
+	this->bonusDamage = 0;
+	this->maxKilos = 0;
+	this->magicDef = 0;
+	this->bonusToHit = 0;
+	this->bonusToDefend = 0;
+	this->bonusToHealth = 0;
+	this->healMod = 0;
+	this->bonusToCharisma = 0;
+}
+
+bool DerivedAttributes::isModifier(int index)
+{
+	return index != 1;
+}
+
+BufferView<const int> DerivedAttributes::getView() const
+{
+	return BufferView<const int>(&this->bonusDamage, COUNT);
 }
