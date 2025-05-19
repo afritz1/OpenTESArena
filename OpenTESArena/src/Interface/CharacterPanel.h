@@ -16,8 +16,8 @@ private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
 	TextBox derivedAttributeTextBoxes[DerivedAttributes::COUNT];
-	TextBox experienceTextBox, levelTextBox;
 	TextBox healthTextBox, staminaTextBox, spellPointsTextBox;
+	TextBox experienceTextBox, levelTextBox;
 	TextBox goldTextBox;
 	Button<Game&> doneButton, nextPageButton;
 	ScopedUiTextureRef bodyTextureRef, headTextureRef, shirtTextureRef, pantsTextureRef,

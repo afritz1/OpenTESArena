@@ -12,17 +12,14 @@
 
 #include "components/debug/Debug.h"
 
-namespace
+std::string CharacterSheetUiModel::getStatusValueCurrentAndMaxString(double currentValue, double maxValue)
 {
-	std::string GetPlayerCurrentMaxStatusString(double currentValue, double maxValue)
-	{
-		const int currentInt = static_cast<int>(std::round(currentValue));
-		const int maxInt = static_cast<int>(std::round(maxValue));
+	const int currentInt = static_cast<int>(std::round(currentValue));
+	const int maxInt = static_cast<int>(std::round(maxValue));
 
-		char buffer[64];
-		std::snprintf(buffer, sizeof(buffer), "%d/%d", currentInt, maxInt);
-		return std::string(buffer);
-	}
+	char buffer[64];
+	std::snprintf(buffer, sizeof(buffer), "%d/%d", currentInt, maxInt);
+	return std::string(buffer);
 }
 
 std::string CharacterSheetUiModel::getDerivedAttributeDisplayString(int value)

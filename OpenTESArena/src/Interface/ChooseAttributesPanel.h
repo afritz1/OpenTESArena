@@ -22,8 +22,9 @@ private:
 	TextBox nameTextBox, raceTextBox, classTextBox;
 	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
 	TextBox derivedAttributeTextBoxes[DerivedAttributes::COUNT];
-	TextBox experienceTextBox, levelTextBox;
-	TextBox bonusPointsTextBox;
+	TextBox healthTextBox, staminaTextBox, spellPointsTextBox;
+	TextBox experienceTextBox, levelTextBox, bonusPointsTextBox;
+	TextBox goldTextBox;
 	Button<Game&, int, bool*> doneButton;
 	Button<Game&, bool> portraitButton;
 	Buffer<ScopedUiTextureRef> headTextureRefs;
@@ -33,7 +34,7 @@ private:
 	bool attributesAreSaved; // Whether attributes have been saved and the player portrait can now be changed.
 	int selectedAttributeIndex;
 
-	void updateBonusAttributeValues();
+	void updateDerivedAttributeValues();
 public:
 	ChooseAttributesPanel(Game &game);
 	~ChooseAttributesPanel() override = default;
