@@ -133,6 +133,102 @@ TextBoxInitInfo CharacterSheetUiView::getPlayerSpellPointsTextBoxInitInfo(const 
 		fontLibrary);
 }
 
+TextBoxInitInfo CharacterSheetUiView::getPlayerDamageTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(5, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerDamageTextBoxX,
+		CharacterSheetUiView::PlayerDamageTextBoxY,
+		CharacterSheetUiView::PlayerDamageTextBoxFontName,
+		CharacterSheetUiView::PlayerDamageTextBoxColor,
+		CharacterSheetUiView::PlayerDamageTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerMagicDefenseTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(5, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerMagicDefenseTextBoxX,
+		CharacterSheetUiView::PlayerMagicDefenseTextBoxY,
+		CharacterSheetUiView::PlayerMagicDefenseTextBoxFontName,
+		CharacterSheetUiView::PlayerMagicDefenseTextBoxColor,
+		CharacterSheetUiView::PlayerMagicDefenseTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerBonusToHitTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(5, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerBonusToHitTextBoxX,
+		CharacterSheetUiView::PlayerBonusToHitTextBoxY,
+		CharacterSheetUiView::PlayerBonusToHitTextBoxFontName,
+		CharacterSheetUiView::PlayerBonusToHitTextBoxColor,
+		CharacterSheetUiView::PlayerBonusToHitTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerBonusToDefendTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(5, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerBonusToDefendTextBoxX,
+		CharacterSheetUiView::PlayerBonusToDefendTextBoxY,
+		CharacterSheetUiView::PlayerBonusToDefendTextBoxFontName,
+		CharacterSheetUiView::PlayerBonusToDefendTextBoxColor,
+		CharacterSheetUiView::PlayerBonusToDefendTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerBonusToHealthTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(5, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerBonusToHealthTextBoxX,
+		CharacterSheetUiView::PlayerBonusToHealthTextBoxY,
+		CharacterSheetUiView::PlayerBonusToHealthTextBoxFontName,
+		CharacterSheetUiView::PlayerBonusToHealthTextBoxColor,
+		CharacterSheetUiView::PlayerBonusToHealthTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerCharismaTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(5, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerCharismaTextBoxX,
+		CharacterSheetUiView::PlayerCharismaTextBoxY,
+		CharacterSheetUiView::PlayerCharismaTextBoxFontName,
+		CharacterSheetUiView::PlayerCharismaTextBoxColor,
+		CharacterSheetUiView::PlayerCharismaTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerHealModTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(5, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerHealModTextBoxX,
+		CharacterSheetUiView::PlayerHealModTextBoxY,
+		CharacterSheetUiView::PlayerHealModTextBoxFontName,
+		CharacterSheetUiView::PlayerHealModTextBoxColor,
+		CharacterSheetUiView::PlayerHealModTextBoxAlignment,
+		fontLibrary);
+}
+
+TextBoxInitInfo CharacterSheetUiView::getPlayerMaxWeightTextBoxInitInfo(const FontLibrary &fontLibrary)
+{
+	return TextBoxInitInfo::makeWithXY(
+		std::string(6, TextRenderUtils::LARGEST_CHAR),
+		CharacterSheetUiView::PlayerMaxWeightTextBoxX,
+		CharacterSheetUiView::PlayerMaxWeightTextBoxY,
+		CharacterSheetUiView::PlayerMaxWeightTextBoxFontName,
+		CharacterSheetUiView::PlayerMaxWeightTextBoxColor,
+		CharacterSheetUiView::PlayerMaxWeightTextBoxAlignment,
+		fontLibrary);
+}
+
 TextBoxInitInfo CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(

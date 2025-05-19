@@ -400,22 +400,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	//textBox bonus to hit
-	const Rect &lastAttributeTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
-	const Int2 bonusToHitTextBoxTopLeftPosition(
-		lastAttributeTextBoxRect.getLeft() + 60,
-		lastAttributeTextBoxRect.getTop() + 8);
-	const TextBoxInitInfo bonusToHitTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
-		std::string(3, TextRenderUtils::LARGEST_CHAR),
-		bonusToHitTextBoxTopLeftPosition.x,
-		bonusToHitTextBoxTopLeftPosition.y,
-		ChooseAttributesUiView::BonusPointsFontName,
-		ChooseAttributesUiView::BonusPointsTextColor,
-		TextAlignment::TopLeft,
-		std::nullopt,
-		1,
-		fontLibrary);
-
+	const TextBoxInitInfo bonusToHitTextBoxInitInfo = CharacterSheetUiView::getPlayerBonusToHitTextBoxInitInfo(fontLibrary);
 	if (!this->bonusToHitTextBox.init(bonusToHitTextBoxInitInfo, GetDerivedAttributeDisplayString(derivedAttributes.bonusToHit), renderer))
 	{
 		DebugLogError("Couldn't init bonus to hit text box.");
@@ -430,20 +415,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// textBox bonus ToDefend
-	const Int2 bonusToDefendTextBoxTopLeftPosition(
-		lastAttributeTextBoxRect.getLeft() + 120,
-		lastAttributeTextBoxRect.getTop() + 8);
-	const TextBoxInitInfo bonusToDefendTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
-		std::string(3, TextRenderUtils::LARGEST_CHAR),
-		bonusToDefendTextBoxTopLeftPosition.x,
-		bonusToDefendTextBoxTopLeftPosition.y,
-		ChooseAttributesUiView::BonusPointsFontName,
-		ChooseAttributesUiView::BonusPointsTextColor,
-		TextAlignment::TopLeft,
-		std::nullopt,
-		1,
-		fontLibrary);
+	const TextBoxInitInfo bonusToDefendTextBoxInitInfo = CharacterSheetUiView::getPlayerBonusToDefendTextBoxInitInfo(fontLibrary);
 	if (!this->bonusToDefendTextBox.init(bonusToDefendTextBoxInitInfo, GetDerivedAttributeDisplayString(derivedAttributes.bonusToDefend), renderer))
 	{
 		DebugLogError("Couldn't init bonus to defend text box.");
@@ -458,21 +430,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	//	TextBox bonus charisma
-	const Int2 bonusToCharismaTextBoxTopLeftPosition(
-		lastAttributeTextBoxRect.getLeft() + 60,
-		lastAttributeTextBoxRect.getTop() + 32);
-	const TextBoxInitInfo bonusToCharismaTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
-		std::string(3, TextRenderUtils::LARGEST_CHAR),
-		bonusToCharismaTextBoxTopLeftPosition.x,
-		bonusToCharismaTextBoxTopLeftPosition.y,
-		ChooseAttributesUiView::BonusPointsFontName,
-		ChooseAttributesUiView::BonusPointsTextColor,
-		TextAlignment::TopLeft,
-		std::nullopt,
-		1,
-		fontLibrary);
-
+	const TextBoxInitInfo bonusToCharismaTextBoxInitInfo = CharacterSheetUiView::getPlayerCharismaTextBoxInitInfo(fontLibrary);
 	if (!this->bonusToCharismaTextBox.init(bonusToCharismaTextBoxInitInfo, GetDerivedAttributeDisplayString(derivedAttributes.bonusToCharisma), renderer))
 	{
 		DebugLogError("Couldn't init bonus to charisma text box.");
@@ -487,22 +445,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox bonus Health
-	const Rect &positionAttributeEndureceTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 3].getRect();
-	const Int2 bonusToHealthTextBoxTopLeftPosition(
-		positionAttributeEndureceTextBoxRect.getLeft() + 60,
-		positionAttributeEndureceTextBoxRect.getTop());
-	const TextBoxInitInfo bonusToHealthTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
-		std::string(3, TextRenderUtils::LARGEST_CHAR),
-		bonusToHealthTextBoxTopLeftPosition.x,
-		bonusToHealthTextBoxTopLeftPosition.y,
-		ChooseAttributesUiView::BonusPointsFontName,
-		ChooseAttributesUiView::BonusPointsTextColor,
-		TextAlignment::TopLeft,
-		std::nullopt,
-		1,
-		fontLibrary);
-
+	const TextBoxInitInfo bonusToHealthTextBoxInitInfo = CharacterSheetUiView::getPlayerBonusToHealthTextBoxInitInfo(fontLibrary);
 	if (!this->bonusToHealthTextBox.init(bonusToHealthTextBoxInitInfo, GetDerivedAttributeDisplayString(derivedAttributes.bonusToHealth), renderer))
 	{
 		DebugLogError("Couldn't init bonus to health text box.");
@@ -517,21 +460,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox bonus Heal Mod
-	const Int2 healModTextBoxTopLeftPosition(
-		positionAttributeEndureceTextBoxRect.getLeft() + 120,
-		positionAttributeEndureceTextBoxRect.getTop());
-	const TextBoxInitInfo healModTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
-		std::string(3, TextRenderUtils::LARGEST_CHAR),
-		healModTextBoxTopLeftPosition.x,
-		healModTextBoxTopLeftPosition.y,
-		ChooseAttributesUiView::BonusPointsFontName,
-		ChooseAttributesUiView::BonusPointsTextColor,
-		TextAlignment::TopLeft,
-		std::nullopt,
-		1,
-		fontLibrary);
-
+	const TextBoxInitInfo healModTextBoxInitInfo = CharacterSheetUiView::getPlayerHealModTextBoxInitInfo(fontLibrary);
 	if (!this->healModTextBox.init(healModTextBoxInitInfo, GetDerivedAttributeDisplayString(derivedAttributes.healMod), renderer))
 	{
 		DebugLogError("Couldn't init heal mod text box.");
@@ -546,22 +475,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox Bonus Damage
-	const Rect &positionAttributeStrengthTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 8].getRect();
-	const Int2 bonusDamageTextBoxTopLeftPosition(
-		positionAttributeStrengthTextBoxRect.getLeft() + 60,
-		positionAttributeStrengthTextBoxRect.getTop());
-	const TextBoxInitInfo bonusDamageTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
-		std::string(3, TextRenderUtils::LARGEST_CHAR),
-		bonusDamageTextBoxTopLeftPosition.x,
-		bonusDamageTextBoxTopLeftPosition.y,
-		ChooseAttributesUiView::BonusPointsFontName,
-		ChooseAttributesUiView::BonusPointsTextColor,
-		TextAlignment::TopLeft,
-		std::nullopt,
-		1,
-		fontLibrary);
-
+	const TextBoxInitInfo bonusDamageTextBoxInitInfo = CharacterSheetUiView::getPlayerDamageTextBoxInitInfo(fontLibrary);
 	if (!this->bonusDamageTextBox.init(bonusDamageTextBoxInitInfo, GetDerivedAttributeDisplayString(derivedAttributes.bonusDamage), renderer))
 	{
 		DebugLogError("Couldn't init bonus damage text box.");
@@ -576,21 +490,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox Max Kilos
-	const Int2 maxKilosTextBoxTopLeftPosition(
-		positionAttributeStrengthTextBoxRect.getLeft() + 120,
-		positionAttributeStrengthTextBoxRect.getTop());
-	const TextBoxInitInfo maxKilosTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
-		std::string(3, TextRenderUtils::LARGEST_CHAR),
-		maxKilosTextBoxTopLeftPosition.x,
-		maxKilosTextBoxTopLeftPosition.y,
-		ChooseAttributesUiView::BonusPointsFontName,
-		ChooseAttributesUiView::BonusPointsTextColor,
-		TextAlignment::TopLeft,
-		std::nullopt,
-		1,
-		fontLibrary);
-
+	const TextBoxInitInfo maxKilosTextBoxInitInfo = CharacterSheetUiView::getPlayerMaxWeightTextBoxInitInfo(fontLibrary);
 	if (!this->maxKilosTextBox.init(maxKilosTextBoxInitInfo, std::to_string(derivedAttributes.maxKilos), renderer))
 	{
 		DebugLogError("Couldn't init max kilos text box.");
@@ -605,22 +505,7 @@ bool ChooseAttributesPanel::init()
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 
-	// TextBox bonus Magic Defense
-	const Rect &positionAttributeWillpowerTextBoxRect = this->attributeTextBoxes[PrimaryAttributes::COUNT - 6].getRect();
-	const Int2 magicDefTextBoxTopLeftPosition(
-		positionAttributeWillpowerTextBoxRect.getLeft() + 60,
-		positionAttributeWillpowerTextBoxRect.getTop());
-	const TextBoxInitInfo magicDefTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
-		std::string(3, TextRenderUtils::LARGEST_CHAR),
-		magicDefTextBoxTopLeftPosition.x,
-		magicDefTextBoxTopLeftPosition.y,
-		ChooseAttributesUiView::BonusPointsFontName,
-		ChooseAttributesUiView::BonusPointsTextColor,
-		TextAlignment::TopLeft,
-		std::nullopt,
-		1,
-		fontLibrary);
-
+	const TextBoxInitInfo magicDefTextBoxInitInfo = CharacterSheetUiView::getPlayerMagicDefenseTextBoxInitInfo(fontLibrary);
 	if (!this->magicDefTextBox.init(magicDefTextBoxInitInfo, GetDerivedAttributeDisplayString(derivedAttributes.magicDef), renderer))
 	{
 		DebugLogError("Couldn't init magic defense text box.");
