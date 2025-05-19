@@ -339,22 +339,7 @@ bool ChooseAttributesPanel::init()
 			attribute.maxValue += 1;
 			
 			auto newBonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
-			
-			this->bonusToHitValue = newBonusValues.bonusToHit;
-			this->bonusToCharismaValue = newBonusValues.bonusToCharisma;
-			this->bonusToHealthValue =  newBonusValues.bonusToHealth;
-			this->bonusDamageValue =  newBonusValues.bonusDamage;
-			this->maxKilosValue =  newBonusValues.maxKilos;
-			this->magicDefValue =  newBonusValues.magicDef;
-
-			this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
-			this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
-			this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
-			this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
-			this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
-			this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
-			this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
-			this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
+			this->updateBonusAttributeValues(newBonusValues);
 
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -377,24 +362,9 @@ bool ChooseAttributesPanel::init()
 			BufferView<PrimaryAttribute> attributesView = attributes.getAttributes();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue -= 1;
-			
-			auto newBonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
-			
-			this->bonusToHitValue = newBonusValues.bonusToHit;
-			this->bonusToCharismaValue = newBonusValues.bonusToCharisma;
-			this->bonusToHealthValue = newBonusValues.bonusToHealth;
-			this->bonusDamageValue = newBonusValues.bonusDamage;
-			this->maxKilosValue = newBonusValues.maxKilos;
-			this->magicDefValue = newBonusValues.magicDef;
 
-			this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
-			this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
-			this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
-			this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
-			this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
-			this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
-			this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
-			this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
+			auto newBonusValues = ArenaPlayerUtils::calculateAttributeBonus(attribute.name, attribute.maxValue);
+			this->updateBonusAttributeValues(newBonusValues);
 
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			attributeTextBox.setText(std::to_string(attribute.maxValue));
@@ -736,4 +706,23 @@ bool ChooseAttributesPanel::init()
 		ChooseAttributesUiView::InitialTextureCenterPoint);
 
 	return true;
+}
+
+void ChooseAttributesPanel::updateBonusAttributeValues(const ArenaPlayerUtils::AttributeBonusValues& bonusValues)
+{
+	this->bonusToHitValue = bonusValues.bonusToHit;
+	this->bonusToCharismaValue = bonusValues.bonusToCharisma;
+	this->bonusToHealthValue = bonusValues.bonusToHealth;
+	this->bonusDamageValue = bonusValues.bonusDamage;
+	this->maxKilosValue = bonusValues.maxKilos;
+	this->magicDefValue = bonusValues.magicDef;
+
+	this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
+	this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
+	this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
+	this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
+	this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
+	this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
+	this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
+	this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
 }
