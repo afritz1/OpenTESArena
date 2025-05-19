@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstring>
 
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
@@ -18,6 +19,22 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextRenderUtils.h"
+
+namespace
+{
+	std::string GetDerivedAttributeDisplayString(int value)
+	{
+		const char *signString = "";
+		if (value > 0)
+		{
+			signString = "+";
+		}
+
+		char buffer[64];
+		std::snprintf(buffer, sizeof(buffer), "%s%d", signString, value);
+		return buffer;
+	}
+}
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game)
@@ -421,7 +438,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusToHitTextBox.init(bonusToHitTextBoxInitInfo,std::to_string(this->bonusToHitValue), renderer))
+	if (!this->bonusToHitTextBox.init(bonusToHitTextBoxInitInfo, GetDerivedAttributeDisplayString(this->bonusToHitValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus to hit text box.");
 		return false;
@@ -449,7 +466,7 @@ bool ChooseAttributesPanel::init()
 		std::nullopt,
 		1,
 		fontLibrary);
-	if (!this->bonusToDefendTextBox.init(bonusToDefendTextBoxInitInfo, std::to_string(this->bonusToHitValue), renderer))
+	if (!this->bonusToDefendTextBox.init(bonusToDefendTextBoxInitInfo, GetDerivedAttributeDisplayString(this->bonusToHitValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus to defend text box.");
 		return false;
@@ -478,7 +495,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusToCharismaTextBox.init(bonusToCharismaTextBoxInitInfo, std::to_string(this->bonusToCharismaValue), renderer))
+	if (!this->bonusToCharismaTextBox.init(bonusToCharismaTextBoxInitInfo, GetDerivedAttributeDisplayString(this->bonusToCharismaValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus to charisma text box.");
 		return false;
@@ -508,7 +525,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusToHealthTextBox.init(bonusToHealthTextBoxInitInfo, std::to_string(this->bonusToHealthValue), renderer))
+	if (!this->bonusToHealthTextBox.init(bonusToHealthTextBoxInitInfo, GetDerivedAttributeDisplayString(this->bonusToHealthValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus to health text box.");
 		return false;
@@ -537,7 +554,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->healModTextBox.init(healModTextBoxInitInfo, std::to_string(this->bonusToHealthValue), renderer))
+	if (!this->healModTextBox.init(healModTextBoxInitInfo, GetDerivedAttributeDisplayString(this->bonusToHealthValue), renderer))
 	{
 		DebugLogError("Couldn't init heal mod text box.");
 		return false;
@@ -567,7 +584,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->bonusDamageTextBox.init(bonusDamageTextBoxInitInfo, std::to_string(this->bonusDamageValue), renderer))
+	if (!this->bonusDamageTextBox.init(bonusDamageTextBoxInitInfo, GetDerivedAttributeDisplayString(this->bonusDamageValue), renderer))
 	{
 		DebugLogError("Couldn't init bonus damage text box.");
 		return false;
@@ -626,7 +643,7 @@ bool ChooseAttributesPanel::init()
 		1,
 		fontLibrary);
 
-	if (!this->magicDefTextBox.init(magicDefTextBoxInitInfo, std::to_string(this->magicDefValue), renderer))
+	if (!this->magicDefTextBox.init(magicDefTextBoxInitInfo, GetDerivedAttributeDisplayString(this->magicDefValue), renderer))
 	{
 		DebugLogError("Couldn't init magic defense text box.");
 		return false;
@@ -733,12 +750,12 @@ void ChooseAttributesPanel::updateBonusAttributeValues()
 		this->magicDefValue += bonusValues.magicDef;
 	}
 
-	this->bonusToHitTextBox.setText(std::to_string(this->bonusToHitValue));
-	this->bonusToDefendTextBox.setText(std::to_string(this->bonusToHitValue));
-	this->bonusToCharismaTextBox.setText(std::to_string(this->bonusToCharismaValue));
-	this->bonusToHealthTextBox.setText(std::to_string(this->bonusToHealthValue));
-	this->healModTextBox.setText(std::to_string(this->bonusToHealthValue));
-	this->bonusDamageTextBox.setText(std::to_string(this->bonusDamageValue));
+	this->bonusToHitTextBox.setText(GetDerivedAttributeDisplayString(this->bonusToHitValue));
+	this->bonusToDefendTextBox.setText(GetDerivedAttributeDisplayString(this->bonusToHitValue));
+	this->bonusToCharismaTextBox.setText(GetDerivedAttributeDisplayString(this->bonusToCharismaValue));
+	this->bonusToHealthTextBox.setText(GetDerivedAttributeDisplayString(this->bonusToHealthValue));
+	this->healModTextBox.setText(GetDerivedAttributeDisplayString(this->bonusToHealthValue));
+	this->bonusDamageTextBox.setText(GetDerivedAttributeDisplayString(this->bonusDamageValue));
 	this->maxKilosTextBox.setText(std::to_string(this->maxKilosValue));
-	this->magicDefTextBox.setText(std::to_string(this->magicDefValue));
+	this->magicDefTextBox.setText(GetDerivedAttributeDisplayString(this->magicDefValue));
 }
