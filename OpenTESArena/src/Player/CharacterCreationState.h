@@ -16,6 +16,7 @@ struct CharacterCreationState
 	PrimaryAttributes attributes;
 	DerivedAttributes derivedAttributes;
 	int maxHealth, maxStamina, maxSpellPoints;
+	int gold;
 	int bonusPoints;
 	int changedPoints[8]; // For primary attributes
 

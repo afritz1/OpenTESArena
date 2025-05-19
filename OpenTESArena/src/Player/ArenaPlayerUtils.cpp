@@ -61,9 +61,37 @@ int ArenaPlayerUtils::calculateMaxSpellPoints(int charClassDefID, int intelligen
 	return maxSpellPoints;
 }
 
+int ArenaPlayerUtils::calculateDamageBonus(int strength)
+{
+	if (strength <= 43)
+	{
+		return 0;
+	}
+
+	return (strength - 48) / 5;
+}
+
 int ArenaPlayerUtils::calculateMaxWeight(int strength)
 {
 	return strength * 2;
+}
+
+int ArenaPlayerUtils::calculateMagicDefenseBonus(int willpower)
+{
+	if (willpower <= 38)
+	{
+		return -2;
+	}
+	else if (willpower <= 41)
+	{
+		return -1;
+	}
+	else if (willpower <= 46)
+	{
+		return 0;
+	}
+
+	return (willpower - 46) / 9;
 }
 
 int ArenaPlayerUtils::calculateBonusToHit(int agility)
@@ -95,32 +123,9 @@ int ArenaPlayerUtils::calculateBonusToHealth(int endurance)
 	return std::min(bonus, 5);
 }
 
-int ArenaPlayerUtils::calculateDamageBonus(int strength)
+int ArenaPlayerUtils::calculateStartingGold(Random &random)
 {
-	if (strength <= 43)
-	{
-		return 0;
-	}
-
-	return (strength - 48) / 5;
-}
-
-int ArenaPlayerUtils::calculateMagicDefenseBonus(int willpower)
-{
-	if (willpower <= 38)
-	{
-		return -2;
-	}
-	else if (willpower <= 41)
-	{
-		return -1;
-	}
-	else if (willpower <= 46)
-	{
-		return 0;
-	}
-
-	return (willpower - 46) / 9;
+	return 50 + random.next(150);
 }
 
 DerivedAttributes ArenaPlayerUtils::calculateStrengthDerivedBonuses(int strength)
@@ -131,18 +136,18 @@ DerivedAttributes ArenaPlayerUtils::calculateStrengthDerivedBonuses(int strength
 	return values;
 }
 
+DerivedAttributes ArenaPlayerUtils::calculateWillpowerDerivedBonuses(int willpower)
+{
+	DerivedAttributes values;
+	values.magicDef = ArenaPlayerUtils::calculateMagicDefenseBonus(willpower);
+	return values;
+}
+
 DerivedAttributes ArenaPlayerUtils::calculateAgilityDerivedBonuses(int agility)
 {
 	DerivedAttributes values;
 	values.bonusToHit = ArenaPlayerUtils::calculateBonusToHit(agility);
 	values.bonusToDefend = values.bonusToHit;
-	return values;
-}
-
-DerivedAttributes ArenaPlayerUtils::calculateWillpowerDerivedBonuses(int willpower)
-{
-	DerivedAttributes values;
-	values.magicDef = ArenaPlayerUtils::calculateMagicDefenseBonus(willpower);
 	return values;
 }
 

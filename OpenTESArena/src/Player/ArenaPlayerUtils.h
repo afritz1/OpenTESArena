@@ -38,15 +38,16 @@ namespace ArenaPlayerUtils
 	int calculateMaxHealthPoints(int charClassDefID, Random &random);
 	int calculateMaxStamina(int strength, int endurance);
 	int calculateMaxSpellPoints(int charClassDefID, int intelligence);
+	int calculateDamageBonus(int strength);
 	int calculateMaxWeight(int strength);
+	int calculateMagicDefenseBonus(int willpower);
 	int calculateBonusToHit(int agility);
 	int calculateBonusToHealth(int endurance);
-	int calculateDamageBonus(int strength);
-	int calculateMagicDefenseBonus(int willpower);
+	int calculateStartingGold(Random &random);
 
 	DerivedAttributes calculateStrengthDerivedBonuses(int strength);
-	DerivedAttributes calculateAgilityDerivedBonuses(int agility);
 	DerivedAttributes calculateWillpowerDerivedBonuses(int willpower);
+	DerivedAttributes calculateAgilityDerivedBonuses(int agility);
 	DerivedAttributes calculateEnduranceDerivedBonuses(int endurance);
 	DerivedAttributes calculatePersonalityDerivedBonuses(int personality);
 	DerivedAttributes calculateTotalDerivedBonuses(const PrimaryAttributes &attributes);

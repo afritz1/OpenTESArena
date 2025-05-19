@@ -55,11 +55,13 @@ bool ChooseAttributesPanel::init()
 	ArenaRandom &arenaRandom = game.arenaRandom;
 	this->populateBaseAttributesRandomly(charCreationState, arenaRandom);
 
+	Random &random = game.random;
 	const PrimaryAttributes &primaryAttributes = charCreationState.attributes;
 	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(primaryAttributes);
-	charCreationState.maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charCreationState.classDefID, game.random);
+	charCreationState.maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charCreationState.classDefID, random);
 	charCreationState.maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
 	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, primaryAttributes.intelligence.maxValue);
+	charCreationState.gold = ArenaPlayerUtils::calculateStartingGold(random);
 	charCreationState.bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
 
 	this->selectedAttributeIndex = 0;
@@ -156,6 +158,14 @@ bool ChooseAttributesPanel::init()
 	if (!this->spellPointsTextBox.init(playerSpellPointsTextBoxInitInfo, playerSpellPointsText, renderer))
 	{
 		DebugLogError("Couldn't init player spell points text box.");
+		return false;
+	}
+
+	const TextBoxInitInfo playerGoldTextBoxInitInfo = CharacterSheetUiView::getPlayerGoldTextBoxInitInfo(fontLibrary);
+	const std::string playerGoldText = ChooseAttributesUiModel::getPlayerGold(game);
+	if (!this->goldTextBox.init(playerGoldTextBoxInitInfo, playerGoldText, renderer))
+	{
+		DebugLogError("Couldn't init player gold text box.");
 		return false;
 	}
 
@@ -506,6 +516,14 @@ bool ChooseAttributesPanel::init()
 		[this]() { return this->spellPointsTextBox.getTextureID(); },
 		UiDrawCall::makePositionFunc(playerSpellPointsTextBoxRect.getTopLeft()),
 		UiDrawCall::makeSizeFunc(playerSpellPointsTextBoxRect.getSize()),
+		UiDrawCall::makePivotFunc(PivotType::TopLeft),
+		UiDrawCall::defaultActiveFunc);
+
+	const Rect &playerGoldTextBoxRect = this->goldTextBox.getRect();
+	this->addDrawCall(
+		[this]() { return this->goldTextBox.getTextureID(); },
+		UiDrawCall::makePositionFunc(playerGoldTextBoxRect.getTopLeft()),
+		UiDrawCall::makeSizeFunc(playerGoldTextBoxRect.getSize()),
 		UiDrawCall::makePivotFunc(PivotType::TopLeft),
 		UiDrawCall::defaultActiveFunc);
 

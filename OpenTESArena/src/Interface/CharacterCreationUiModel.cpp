@@ -572,8 +572,8 @@ std::string ChooseAttributesUiModel::getPlayerSpellPoints(Game &game)
 
 std::string ChooseAttributesUiModel::getPlayerGold(Game &game)
 {
-	// @todo give player some gold first
-	return std::to_string(0);
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return std::to_string(charCreationState.gold);
 }
 
 std::string ChooseAttributesUiModel::getInitialText(Game &game)

@@ -39,6 +39,7 @@ void CharacterCreationState::clear()
 	this->maxHealth = 0;
 	this->maxStamina = 0;
 	this->maxSpellPoints = 0;
+	this->gold = 0;
 	this->bonusPoints = 0;
 	this->clearChangedPoints();
 }

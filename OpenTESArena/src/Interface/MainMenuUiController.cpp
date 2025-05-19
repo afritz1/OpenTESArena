@@ -153,17 +153,18 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	const bool testIsMale = random.nextBool();
 	const int testRaceID = random.next(8);
 	const int testCharClassDefID = random.next(charClassLibrary.getDefinitionCount());
+	const int testPortraitID = random.next(10);
 	PrimaryAttributes testPrimaryAttributes;
 	testPrimaryAttributes.init(testRaceID, testIsMale, exeData);
 	const int testMaxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(testCharClassDefID, random);
 	const int testMaxStamina = ArenaPlayerUtils::calculateMaxStamina(testPrimaryAttributes.strength.maxValue, testPrimaryAttributes.endurance.maxValue);
 	const int testMaxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(testCharClassDefID, testPrimaryAttributes.intelligence.maxValue);
-	const int testPortraitID = random.next(10);
+	const int testGold = ArenaPlayerUtils::calculateStartingGold(random);
 	const int testWeaponID = GetRandomWeaponIdForClass(charClassLibrary.getDefinition(testCharClassDefID), random);
 
 	Player &player = game.player;
-	player.init(testPlayerName, testIsMale, testRaceID, testCharClassDefID, testPrimaryAttributes,
-		testMaxHealth, testMaxStamina, testMaxSpellPoints, testPortraitID, testWeaponID, exeData, game.physicsSystem);
+	player.init(testPlayerName, testIsMale, testRaceID, testCharClassDefID, testPortraitID, testPrimaryAttributes,
+		testMaxHealth, testMaxStamina, testMaxSpellPoints, testGold, testWeaponID, exeData, game.physicsSystem);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;

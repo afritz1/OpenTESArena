@@ -83,19 +83,19 @@ std::string CharacterSheetUiModel::getPlayerLevel(Game &game)
 std::string CharacterSheetUiModel::getPlayerHealth(Game &game)
 {
 	const Player &player = game.player;
-	return GetPlayerCurrentMaxStatusString(player.currentHealth, player.maxHealth);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(player.currentHealth, player.maxHealth);
 }
 
 std::string CharacterSheetUiModel::getPlayerStamina(Game &game)
 {
 	const Player &player = game.player;
-	return GetPlayerCurrentMaxStatusString(player.currentStamina, player.maxStamina);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(player.currentStamina, player.maxStamina);
 }
 
 std::string CharacterSheetUiModel::getPlayerSpellPoints(Game &game)
 {
 	const Player &player = game.player;
-	return GetPlayerCurrentMaxStatusString(player.currentSpellPoints, player.maxSpellPoints);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(player.currentSpellPoints, player.maxSpellPoints);
 }
 
 std::string CharacterSheetUiModel::getPlayerGold(Game &game)

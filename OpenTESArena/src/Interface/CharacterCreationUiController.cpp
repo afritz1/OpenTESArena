@@ -550,21 +550,20 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 		const int charClassDefID = charCreationState.classDefID;
 		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+		const int portraitIndex = charCreationState.portraitIndex;
 
+		const PrimaryAttributes &attributes = charCreationState.attributes;
 		const int maxHealth = charCreationState.maxHealth;
 		const int maxStamina = charCreationState.maxStamina;
 		const int maxSpellPoints = charCreationState.maxSpellPoints;
-
-		const PrimaryAttributes &attributes = charCreationState.attributes;
-
-		const int portraitIndex = charCreationState.portraitIndex;
+		const int gold = charCreationState.gold;
 
 		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
 		const int weaponID = charClassDef.getAllowedWeapon(game.random.next(allowedWeaponCount));
 
 		Player &player = game.player;
-		player.init(std::string(name), male, raceIndex, charClassDefID, attributes, maxHealth, maxStamina, maxSpellPoints,
-			portraitIndex, weaponID, exeData, game.physicsSystem);
+		player.init(std::string(name), male, raceIndex, charClassDefID, portraitIndex, attributes, maxHealth, maxStamina, maxSpellPoints,
+			gold, weaponID, exeData, game.physicsSystem);
 	};
 
 	gameStateFunction(game);

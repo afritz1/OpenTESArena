@@ -192,8 +192,8 @@ Player::~Player()
 	DebugAssert(this->physicsCharacterVirtual == nullptr);
 }
 
-void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, const PrimaryAttributes &primaryAttributes,
-	int maxHealth, int maxStamina, int maxSpellPoints, int portraitID, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
+void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID, const PrimaryAttributes &primaryAttributes,
+	int maxHealth, int maxStamina, int maxSpellPoints, int gold, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
@@ -214,7 +214,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->experience = 0;
 	this->primaryAttributes = primaryAttributes;
 	this->inventory.clear();
-	this->gold = 0;
+	this->gold = gold;
 	this->clearKeyInventory();
 	
 	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
