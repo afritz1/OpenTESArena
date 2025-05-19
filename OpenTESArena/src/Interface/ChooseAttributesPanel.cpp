@@ -17,6 +17,7 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextRenderUtils.h"
 #include "../UI/ArenaFontName.h"
+#include "../UI/TextBox.h"
 #include <OpenTESArena/src/Player/ArenaPlayerUtils.h>
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
