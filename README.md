@@ -15,20 +15,20 @@ This is an in-progress modern open-source engine for the 1994 DOS game [*The Eld
 
 ## Current status
 
-No actual gameplay yet, but all locations and interiors can be accessed. Citizens wander around but can't be interacted with. Collision detection is barebones and needs work. Character creation works but class questions and player attributes are not implemented.
+Player movement is nearly feature-complete - currently you can jump, climb out of chasms, and swim, but stairsteps are unsolved. Enemies can be killed but their AI is not yet implemented. Items in containers can be picked up and found in the player's inventory but cannot be equipped yet. All world map locations are implemented and the player can fast travel to them. Citizens wander around and have their names generated but conversations are not yet implemented. Character creation is mostly implemented except for class generation questions.
 
 Controls:
 - WASD - move and turn. Hold LCtrl to strafe.
 - Esc - pause menu
 - Tab - character sheet
 - F - draw/sheathe weapon
-- G - hold and click voxel to destroy
+- G - hold and click voxel to destroy or open locked door
 - L - logbook
 - M - world map
 - N - automap
 - V - status
 - F2 - player position
-- F4 - debug profiler
+- F4 - debug display
 - PrintScreen - screenshot
 
 ## Playing OpenTESArena
