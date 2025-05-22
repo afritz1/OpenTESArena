@@ -17,19 +17,34 @@ This is an in-progress modern open-source engine for the 1994 DOS game [*The Eld
 
 Player movement is nearly feature-complete - currently you can jump, climb out of chasms, and swim, but stairsteps are unsolved. Enemies can be killed but their AI is not yet implemented. Items in containers can be picked up and found in the player's inventory but cannot be equipped yet. All world map locations are implemented and the player can fast travel to them. Citizens wander around and have their names generated but conversations are not yet implemented. Character creation is mostly implemented except for class generation questions.
 
-Controls:
-- WASD - move and turn. Hold LCtrl to strafe.
+### Controls
+- Move
+  - Modern mode - W/A/S/D
+  - Classic mode - W/S. Hold LCtrl for A/D
+- Turn
+  - Modern mode - mouselook
+  - Classic mode - A/D
+- Jump - spacebar
+- Activate
+  - Modern mode - E
+  - Classic mode - left mouse button
+- Draw weapon - F
+- Attack
+  - Modern mode - right mouse button
+  - Classic mode - hold right mouse button and move mouse in a direction
+- Inspect
+  - Modern mode - left mouse button
+  - Classic mode - right mouse button
 - Esc - pause menu
 - Tab - character sheet
-- F - draw/sheathe weapon
-- G - hold and click voxel to destroy or open locked door
-- L - logbook
+- V - character status
 - M - world map
-- N - automap
-- V - status
+- N - local map
+- L - logbook
 - F2 - player position
 - F4 - debug display
 - PrintScreen - screenshot
+- (debug) Force open locked door / destroy voxel: hold G then Activate
 
 ## Playing OpenTESArena
 
