@@ -830,11 +830,10 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+
 		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
-
-		const EntityAnimationDefinition &animDef = entityDef.animDef;
 
 		const std::optional<int> idleStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
 		const std::optional<int> walkStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
@@ -845,14 +844,16 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 		}
 
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		
+
 		if (entityInst.directionID >= 0)
 		{
 			VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
 			
-			constexpr double chaseDistanceSqr = 15.0 * 15.0;
+			constexpr double chaseDistanceSqr = 10.0 * 10.0;
+			constexpr double stopDistanceSqr = 0.5 * 0.5;
+			constexpr double moveSpeed = 1.0;
 			
-			if (distToPlayerSqr <= chaseDistanceSqr)
+			if (distToPlayerSqr <= chaseDistanceSqr && distToPlayerSqr > stopDistanceSqr)
 			{
 				if (animInst.currentStateIndex != *walkStateIndex)
 				{
@@ -861,17 +862,64 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 				
 				entityDir = dirToPlayer.normalized();
 				
-				constexpr double moveSpeed = 3.0;  // Velocidad más lenta que el jugador
 				const WorldDouble2 movement = entityDir * moveSpeed * dt;
 				
-				entityPosition.x += movement.x;
-				entityPosition.z += movement.y;
+				WorldDouble3 newPosition = entityPosition;
+				newPosition.x += movement.x;
+				newPosition.z += movement.y;
 				
-				const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
-				if (!physicsBodyID.IsInvalid())
+				const WorldInt2 targetVoxel = VoxelUtils::pointToVoxel(WorldDouble2(newPosition.x, newPosition.z));
+				const CoordInt2 targetCoord = VoxelUtils::worldVoxelToCoord(targetVoxel);
+				bool canMove = true;
+				
+				const VoxelChunk *targetChunk = voxelChunkManager.tryGetChunkAtPosition(targetCoord.chunk);
+				if (targetChunk != nullptr)
 				{
-					const JPH::RVec3 newPhysicsPosition(entityPosition.x, entityPosition.y, entityPosition.z);
-					bodyInterface.SetPosition(physicsBodyID, newPhysicsPosition, JPH::EActivation::DontActivate);
+					const VoxelInt3 mainVoxel(targetCoord.voxel.x, 1, targetCoord.voxel.y);
+					const VoxelTraitsDefID mainTraitsID = targetChunk->getTraitsDefID(mainVoxel.x, mainVoxel.y, mainVoxel.z);
+					const VoxelTraitsDefinition &mainTraits = targetChunk->getTraitsDef(mainTraitsID);
+					
+					if (mainTraits.type != ArenaTypes::VoxelType::None)
+					{
+						canMove = false;
+					}
+					
+					const VoxelInt3 floorVoxel(targetCoord.voxel.x, 0, targetCoord.voxel.y);
+					const VoxelTraitsDefID floorTraitsID = targetChunk->getTraitsDefID(floorVoxel.x, floorVoxel.y, floorVoxel.z);
+					const VoxelTraitsDefinition &floorTraits = targetChunk->getTraitsDef(floorTraitsID);
+					
+					if (floorTraits.type != ArenaTypes::VoxelType::Floor)
+					{
+						canMove = false;
+					}
+				}
+				else
+				{
+					canMove = false; 
+				}
+				
+				
+				if (canMove)
+				{
+					entityPosition = newPosition;
+					
+					if (!entityInst.physicsBodyID.IsInvalid())
+					{
+						const JPH::RVec3 oldPos = bodyInterface.GetPosition(entityInst.physicsBodyID);
+						const JPH::RVec3 newPos(
+							static_cast<float>(newPosition.x),
+							static_cast<float>(oldPos.GetY()), 
+							static_cast<float>(newPosition.z));
+						
+						bodyInterface.SetPosition(entityInst.physicsBodyID, newPos, JPH::EActivation::Activate);
+						bodyInterface.ActivateBody(entityInst.physicsBodyID);
+					}
+				}
+				else
+				{
+					const double angle = std::atan2(entityDir.y, entityDir.x) + (M_PI / 6.0); // Girar 30 grados
+					entityDir.x = std::cos(angle);
+					entityDir.y = std::sin(angle);
 				}
 			}
 			else
@@ -880,6 +928,8 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 				{
 					animInst.setStateIndex(*idleStateIndex);
 				}
+				
+				entityDir = dirToPlayer.normalized();
 			}
 		}
 	}
