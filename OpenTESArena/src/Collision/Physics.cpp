@@ -339,10 +339,11 @@ namespace Physics
 			worldVoxelReal.x + 0.50,
 			worldVoxelReal.y + MeshUtils::getScaledVertexY(collisionBoxShapeDef.yOffset + (collisionBoxShapeDef.height * 0.50), scaleType, ceilingScale),
 			worldVoxelReal.z + 0.50);
+		const double collisionBoxShapeScaledHeight = collisionBoxShapeDef.height * ceilingScale;
 		const WorldDouble3 worldRayStart = VoxelUtils::coordToWorldPoint(rayCoord);
 
 		double hitT;
-		if (MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeDef.height,
+		if (MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeScaledHeight,
 			collisionBoxShapeDef.depth, collisionBoxShapeDef.yRotation, &hitT))
 		{
 			const WorldDouble3 hitPoint = worldRayStart + (rayDirection * hitT);
