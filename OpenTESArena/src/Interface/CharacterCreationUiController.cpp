@@ -564,6 +564,9 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		Player &player = game.player;
 		player.init(std::string(name), male, raceIndex, charClassDefID, portraitIndex, attributes, maxHealth, maxStamina, maxSpellPoints,
 			gold, weaponID, exeData, game.physicsSystem);
+
+		// Face west so we don't start looking at a wall.
+		player.setCameraFrameFromAngles(CardinalDirection::DegreesWest, 0.0);
 	};
 
 	gameStateFunction(game);

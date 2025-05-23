@@ -3,6 +3,7 @@
 
 #include "CardinalDirectionName.h"
 #include "Coord.h"
+#include "../Math/MathUtils.h"
 #include "../Math/Vector2.h"
 
 // North, northeast, southwest, etc..
@@ -14,6 +15,11 @@ namespace CardinalDirection
 	constexpr WorldDouble2 South(1.0, 0.0);
 	constexpr WorldDouble2 East(0.0, -1.0);
 	constexpr WorldDouble2 West(0.0, 1.0);
+
+	constexpr Degrees DegreesNorth = 270.0;
+	constexpr Degrees DegreesSouth = 90.0;
+	constexpr Degrees DegreesEast = 180.0;
+	constexpr Degrees DegreesWest = 0.0;
 
 	constexpr std::pair<CardinalDirectionName, const char*> DisplayNames[] =
 	{

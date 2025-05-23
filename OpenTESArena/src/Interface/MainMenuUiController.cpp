@@ -21,6 +21,7 @@
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
+#include "../World/CardinalDirection.h"
 #include "../World/MapType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
@@ -165,6 +166,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	Player &player = game.player;
 	player.init(testPlayerName, testIsMale, testRaceID, testCharClassDefID, testPortraitID, testPrimaryAttributes,
 		testMaxHealth, testMaxStamina, testMaxSpellPoints, testGold, testWeaponID, exeData, game.physicsSystem);
+
+	// Face west so we don't start looking at a wall.
+	player.setCameraFrameFromAngles(CardinalDirection::DegreesWest, 0.0);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
