@@ -917,7 +917,16 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 						if (hitEntityHasDeathAnim)
 						{
+							EntityCombatState &combatState = entityChunkManager.getEntityCombatState(hitEntityInst.combatStateID);
+							combatState.isDying = true;
+							
 							hitEntityAnimInst.setStateIndex(*hitEntityDeathAnimStateIndex);
+							
+							if (!hitEntityInst.physicsBodyID.IsInvalid())
+							{
+								JPH::BodyInterface &bodyInterface = game.physicsSystem.GetBodyInterface();
+								bodyInterface.ActivateBody(hitEntityInst.physicsBodyID);
+							}
 						}
 						else
 						{

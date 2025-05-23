@@ -166,6 +166,7 @@ private:
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	const EntityInstance &getEntity(EntityInstanceID id) const;
+	EntityInstance &getEntity(EntityInstanceID id);
 	const WorldDouble3 &getEntityPosition(EntityPositionID id) const;
 	const BoundingBox3D &getEntityBoundingBox(EntityBoundingBoxID id) const;
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;

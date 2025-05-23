@@ -20,8 +20,9 @@ using EntityPaletteIndicesInstanceID = int;
 using EntityItemInventoryInstanceID = int;
 using EntityLockStateID = int;
 
-struct EntityInstance
+class EntityInstance
 {
+public:
 	EntityInstanceID instanceID;
 	EntityDefID defID;
 	EntityPositionID positionID;

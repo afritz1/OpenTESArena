@@ -451,6 +451,12 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				initInfo.hasCreatureSound = (entityDefType == EntityDefinitionType::Enemy) && (entityDef.enemy.type == EnemyEntityDefinitionType::Creature);
 			}
 
+			if (entityDefType == EntityDefinitionType::Enemy)
+			{
+				initInfo.canBeKilled = true;
+				initInfo.isSensorCollider = true;
+			}
+
 			initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
 
 			if (entityDefType == EntityDefinitionType::Container)
@@ -811,7 +817,7 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 	for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
 	{
 		const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		EntityInstance &entityInst = this->entities.get(entityInstID);
 		
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		if (entityDef.type != EntityDefinitionType::Enemy)
@@ -821,15 +827,22 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 
 		if (entityInst.combatStateID >= 0)
 		{
-			const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+			EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
 			if (combatState.isInDeathState())
 			{
 				continue;
 			}
 		}
+		else
+		{
+			continue;
+		}
 
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
+		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
+		ChunkInt2 curEntityChunkPos = prevEntityChunkPos;
+		
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
 
 		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
@@ -898,10 +911,10 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 					canMove = false; 
 				}
 				
-				
 				if (canMove)
 				{
 					entityPosition = newPosition;
+					curEntityChunkPos = VoxelUtils::worldPointToChunk(WorldDouble2(newPosition.x, newPosition.z));
 					
 					if (!entityInst.physicsBodyID.IsInvalid())
 					{
@@ -912,7 +925,6 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 							static_cast<float>(newPosition.z));
 						
 						bodyInterface.SetPosition(entityInst.physicsBodyID, newPos, JPH::EActivation::Activate);
-						bodyInterface.ActivateBody(entityInst.physicsBodyID);
 					}
 				}
 				else
@@ -929,7 +941,21 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 					animInst.setStateIndex(*idleStateIndex);
 				}
 				
-				entityDir = dirToPlayer.normalized();
+				if (distToPlayerSqr <= chaseDistanceSqr) {
+					entityDir = dirToPlayer.normalized();
+				}
+			}	
+			if (curEntityChunkPos != prevEntityChunkPos)
+			{
+				EntityChunk &curEntityChunk = this->getChunkAtPosition(curEntityChunkPos);
+				entityChunk.entityIDs.erase(entityChunk.entityIDs.begin() + i);
+				curEntityChunk.entityIDs.emplace_back(entityInstID);
+
+				EntityTransferResult transferResult;
+				transferResult.id = entityInstID;
+				transferResult.oldChunkPos = prevEntityChunkPos;
+				transferResult.newChunkPos = curEntityChunkPos;
+				this->transferResults.emplace_back(std::move(transferResult));
 			}
 		}
 	}
@@ -955,6 +981,11 @@ std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID
 }
 
 const EntityInstance &EntityChunkManager::getEntity(EntityInstanceID id) const
+{
+	return this->entities.get(id);
+}
+
+EntityInstance &EntityChunkManager::getEntity(EntityInstanceID id)
 {
 	return this->entities.get(id);
 }
@@ -1273,7 +1304,7 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 	{
 		EntityInstance &entityInst = this->entities.get(entityInstID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityDefinitionType entityDefType = entityDef.type;
+		const EntityDefinitionType entityDefType = entityDef.type;	
 		if (!entityInst.canBeKilledInCombat())
 		{
 			continue;
@@ -1286,13 +1317,25 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 		}
 
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		
+		if (combatState.isDying && animInst.currentStateIndex != *deathAnimStateIndex)
+		{
+			animInst.setStateIndex(*deathAnimStateIndex);
+			
+			JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+			if (!physicsBodyID.IsInvalid())
+			{
+				bodyInterface.DeactivateBody(physicsBodyID);
+			}
+		}
+		
 		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
 		if (!isInDeathAnimState)
 		{
 			continue;
 		}
 
-		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
 		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
 		if (isDeathAnimComplete)
 		{
@@ -1314,7 +1357,6 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 				else
 				{
 					this->queueEntityDestroy(entityInstID, true);
-					// @todo remove from dyingEntities list once that is a thing
 				}
 			}
 		}
@@ -1507,7 +1549,7 @@ void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &re
 
 	for (const EntityInstanceID entityInstID : this->destroyedEntityIDs)
 	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		EntityInstance &entityInst = this->entities.get(entityInstID);
 		
 		if (entityInst.positionID >= 0)
 		{
