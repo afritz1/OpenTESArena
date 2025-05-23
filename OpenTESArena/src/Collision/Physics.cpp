@@ -443,14 +443,26 @@ namespace Physics
 
 		// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
 		// This is affected by grid properties like tall voxels.
-		const VoxelDouble3 deltaDist(
+		Double3 deltaDist(
 			(NonNegativeDirX ? axisLen.x : -axisLen.x) / rayDirection.x,
 			(NonNegativeDirY ? axisLen.y : -axisLen.y) / rayDirection.y,
 			(NonNegativeDirZ ? axisLen.z : -axisLen.z) / rayDirection.z);
 
-		DebugAssert(deltaDist.x >= 0.0);
-		DebugAssert(deltaDist.y >= 0.0);
-		DebugAssert(deltaDist.z >= 0.0);
+		// Filter bad ray directions like direction.y == 0 (at horizon) so that axis isn't selected during stepping.
+		if (deltaDist.x < 0.0)
+		{
+			deltaDist.x = std::numeric_limits<double>::infinity();
+		}
+
+		if (deltaDist.y < 0.0)
+		{
+			deltaDist.y = std::numeric_limits<double>::infinity();
+		}
+
+		if (deltaDist.z < 0.0)
+		{
+			deltaDist.z = std::numeric_limits<double>::infinity();
+		}
 
 		// Step is the voxel delta per step (always +/- 1), also usable when updating the chunk coordinate.
 		// The initial delta distances are percentages of the delta distances, dependent on the ray start
