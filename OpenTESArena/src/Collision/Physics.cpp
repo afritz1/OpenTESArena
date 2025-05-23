@@ -192,39 +192,40 @@ namespace Physics
 
 	bool getEntityRayIntersection(const EntityObservedResult &observedResult, const CoordDouble3 &entityCoord, const EntityDefinition &entityDef,
 		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp, double entityWidth, double entityHeight,
-		const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection, CoordDouble3 *outHitPoint)
+		const WorldDouble3 &rayWorldPoint, const VoxelDouble3 &rayDirection, WorldDouble3 *outHitPoint)
 	{
-		// Do a ray test to see if the ray intersects.
-		const WorldDouble3 absoluteRayPoint = VoxelUtils::coordToWorldPoint(rayPoint);
 		const WorldDouble3 absoluteFlatPosition = VoxelUtils::coordToWorldPoint(entityCoord);
+
 		double hitT;
-		if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition, entityForward, &hitT))
-		{
-			const WorldDouble3 absoluteHitPoint = absoluteRayPoint + (rayDirection * hitT);
-			const WorldDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
-
-			// Get the texture coordinates. It's okay if they are outside the entity.
-			const Double2 uv(
-				0.5 - (diff.dot(entityRight) / entityWidth),
-				1.0 - (diff.dot(entityUp) / entityHeight));
-
-			const EntityAnimationDefinition &animDef = entityDef.animDef;
-			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
-			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
-			const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
-			const TextureAsset &textureAsset = animKeyframe.textureAsset;
-
-			// The entity's projected rectangle is hit if the texture coordinates are valid.
-			const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
-
-			*outHitPoint = VoxelUtils::worldPointToCoord(absoluteHitPoint);
-			return withinEntity;
-		}
-		else
+		if (!MathUtils::rayPlaneIntersection(rayWorldPoint, rayDirection, absoluteFlatPosition, entityForward, &hitT))
 		{
 			// Did not intersect the entity's plane.
 			return false;
 		}
+
+		const WorldDouble3 absoluteHitPoint = rayWorldPoint + (rayDirection * hitT);
+		const WorldDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
+
+		// Get the texture coordinates. It's okay if they are outside the entity.
+		const Double2 uv(
+			0.5 - (diff.dot(entityRight) / entityWidth),
+			1.0 - (diff.dot(entityUp) / entityHeight));
+
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+		const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+		DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
+		const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
+		const TextureAsset &textureAsset = animKeyframe.textureAsset;
+
+		// The entity's projected rectangle is hit if the texture coordinates are valid.
+		const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
+		if (!withinEntity)
+		{
+			return false;
+		}
+
+		*outHitPoint = absoluteHitPoint;
+		return true;
 	}
 
 	// @todo: use Jolt instead
@@ -274,21 +275,20 @@ namespace Physics
 			worldVoxelReal.x + 0.50,
 			worldVoxelReal.y + MeshUtils::getScaledVertexY(collisionBoxShapeDef.yOffset + (collisionBoxShapeDef.height * 0.50), scaleType, ceilingScale),
 			worldVoxelReal.z + 0.50);
+		const double collisionBoxShapeScaledHeight = collisionBoxShapeDef.height * ceilingScale;
 		const WorldDouble3 worldRayStart = VoxelUtils::coordToWorldPoint(rayCoord);
 
 		double hitT;
-		if (MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeDef.height,
+		if (!MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeScaledHeight,
 			collisionBoxShapeDef.depth, collisionBoxShapeDef.yRotation, &hitT))
-		{
-			const WorldDouble3 hitPoint = worldRayStart + (rayDirection * hitT);
-			const CoordDouble3 hitCoord = VoxelUtils::worldPointToCoord(hitPoint);
-			hit.initVoxel(hitT, hitCoord, voxel, farFacing);
-			return true;
-		}
-		else
 		{
 			return false;
 		}
+
+		const WorldDouble3 hitWorldPoint = worldRayStart + (rayDirection * hitT);
+		const CoordInt3 voxelCoord(chunkPos, voxel);
+		hit.initVoxel(hitT, hitWorldPoint, voxelCoord, farFacing);
+		return true;
 	}
 
 	// @todo: use Jolt instead
@@ -343,18 +343,15 @@ namespace Physics
 		const WorldDouble3 worldRayStart = VoxelUtils::coordToWorldPoint(rayCoord);
 
 		double hitT;
-		if (MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeScaledHeight,
+		if (!MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeScaledHeight,
 			collisionBoxShapeDef.depth, collisionBoxShapeDef.yRotation, &hitT))
-		{
-			const WorldDouble3 hitPoint = worldRayStart + (rayDirection * hitT);
-			const CoordDouble3 hitCoord = VoxelUtils::worldPointToCoord(hitPoint);
-			hit.initVoxel(hitT, hitCoord, voxel, nearFacing);
-			return true;
-		}
-		else
 		{
 			return false;
 		}
+
+		const WorldDouble3 hitWorldPoint = worldRayStart + (rayDirection * hitT);
+		hit.initVoxel(hitT, hitWorldPoint, voxelCoord, nearFacing);
+		return true;
 	}
 
 	// Helper function for testing which entities in a voxel are intersected by a ray.
@@ -363,6 +360,8 @@ namespace Physics
 		const VoxelInt3 &voxel, const ChunkEntityMap &chunkEntityMap, const EntityChunkManager &entityChunkManager,
 		const EntityDefinitionLibrary &entityDefLibrary, RayCastHit &hit)
 	{
+		const WorldDouble3 rayWorldPoint = VoxelUtils::coordToWorldPoint(rayCoord); // @todo just use WorldDouble3 everywhere?
+
 		// Use a separate hit variable so we can determine whether an entity was closer.
 		RayCastHit entityHit;
 		entityHit.t = RayCastHit::NO_HIT_DISTANCE;
@@ -387,14 +386,14 @@ namespace Physics
 				const double flatWidth = animKeyframe.width;
 				const double flatHeight = animKeyframe.height;
 
-				CoordDouble3 hitCoord;
+				WorldDouble3 hitWorldPoint;
 				if (Physics::getEntityRayIntersection(observedResult, entry.coord, entityDef, flatForward, flatRight, flatUp,
-					flatWidth, flatHeight, rayCoord, rayDirection, &hitCoord))
+					flatWidth, flatHeight, rayWorldPoint, rayDirection, &hitWorldPoint))
 				{
-					const double distance = (hitCoord - rayCoord).length();
+					const double distance = (hitWorldPoint - rayWorldPoint).length();
 					if (distance < entityHit.t)
 					{
-						entityHit.initEntity(distance, hitCoord, entityInstID);
+						entityHit.initEntity(distance, hitWorldPoint, entityInstID);
 					}
 				}
 			}

@@ -309,13 +309,17 @@ namespace PlayerLogic
 		return inputAcceleration;
 	}
 
-	void handleRayCastHitVoxel(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, bool debugDestroyVoxel, double ceilingScale, VoxelChunk &voxelChunk, TextBox &actionTextBox)
+	void handleRayCastHitVoxel(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, bool debugDestroyVoxel, double ceilingScale,
+		VoxelChunkManager &voxelChunkManager, TextBox &actionTextBox)
 	{
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
 
 		const RayCastVoxelHit &voxelHit = hit.voxelHit;
-		const VoxelInt3 &voxel = voxelHit.voxel;
+		const ChunkInt2 chunkPos = voxelHit.voxelCoord.chunk;
+		const VoxelInt3 voxel = voxelHit.voxelCoord.voxel;
+
+		VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
@@ -428,23 +432,26 @@ namespace PlayerLogic
 		}
 	}
 
-	void handleRayCastHitEntity(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, double ceilingScale, VoxelChunk &voxelChunk, TextBox &actionTextBox)
+	void handleRayCastHitEntity(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		EntityChunkManager &entityChunkManager, TextBox &actionTextBox)
 	{
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
 
-		const ChunkInt2 chunkPos = hit.coord.chunk;
 		const RayCastEntityHit &entityHit = hit.entityHit;
-		const VoxelInt3 voxel = VoxelUtils::pointToVoxel(hit.coord.point, ceilingScale);
 
 		GameState &gameState = game.gameState;
 		Player &player = game.player;
-		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 
 		if (isPrimaryInteraction)
 		{
 			const EntityInstanceID entityInstID = entityHit.id;
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
+			const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
+			const ChunkInt2 entityChunkPos = entityCoord.chunk;
+			const VoxelInt3 entityVoxel = VoxelUtils::pointToVoxel(entityCoord.point, ceilingScale);
+
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			const EntityDefinitionType entityType = entityDef.type;
 
@@ -492,8 +499,10 @@ namespace PlayerLogic
 
 					if (itemDefType == ItemEntityDefinitionType::Key)
 					{
+						const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(entityChunkPos);
+
 						VoxelTriggerDefID triggerDefID;
-						if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
+						if (voxelChunk.tryGetTriggerDefID(entityVoxel.x, entityVoxel.y, entityVoxel.z, &triggerDefID))
 						{
 							const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
 							if (triggerDef.hasKeyDef())
@@ -503,9 +512,9 @@ namespace PlayerLogic
 								player.addToKeyInventory(keyID);
 
 								// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityChunkManager draw calls due to skipping scene simulation.
-								const auto callback = [&entityChunkManager, chunkPos, entityInstID]()
+								const auto callback = [&entityChunkManager, entityChunkPos, entityInstID]()
 								{
-									entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+									entityChunkManager.queueEntityDestroy(entityInstID, &entityChunkPos);
 								};
 
 								GameWorldUiController::onKeyPickedUp(game, keyID, exeData, callback);
@@ -517,7 +526,7 @@ namespace PlayerLogic
 						AudioManager &audioManager = game.audioManager;
 						audioManager.playSound(ArenaSoundName::Fanfare2);
 						DebugLogFormat("Picked up quest item (entity %d).", entityInstID);
-						entityChunkManager.queueEntityDestroy(entityInstID, &chunkPos);
+						entityChunkManager.queueEntityDestroy(entityInstID, &entityChunkPos);
 					}
 				}
 
@@ -1000,7 +1009,7 @@ void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativeP
 {
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
@@ -1018,15 +1027,13 @@ void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativeP
 
 	if (success)
 	{
-		VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(hit.coord.chunk);
-
 		if (hit.type == RayCastHitType::Voxel)
 		{
-			handleRayCastHitVoxel(game, hit, isPrimaryInteraction, debugFadeVoxel, ceilingScale, voxelChunk, actionTextBox);
+			handleRayCastHitVoxel(game, hit, isPrimaryInteraction, debugFadeVoxel, ceilingScale, voxelChunkManager, actionTextBox);
 		}
 		else if (hit.type == RayCastHitType::Entity)
 		{
-			handleRayCastHitEntity(game, hit, isPrimaryInteraction, ceilingScale, voxelChunk, actionTextBox);
+			handleRayCastHitEntity(game, hit, isPrimaryInteraction, ceilingScale, voxelChunkManager, entityChunkManager, actionTextBox);
 		}
 		else
 		{

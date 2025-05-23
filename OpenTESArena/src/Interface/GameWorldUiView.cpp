@@ -746,7 +746,8 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 				case RayCastHitType::Voxel:
 				{
 					constexpr Color colors[] = { Colors::Red, Colors::Green, Colors::Blue, Colors::Cyan, Colors::Yellow };
-					const VoxelInt3 &voxel = hit.voxelHit.voxel;
+					const RayCastVoxelHit &voxelHit = hit.voxelHit;
+					const VoxelInt3 voxel = voxelHit.voxelCoord.voxel;
 					const int colorsIndex = std::clamp<int>(voxel.y, 0, std::size(colors) - 1);
 					DebugAssertIndex(colors, colorsIndex);
 					color = colors[colorsIndex];
@@ -805,13 +806,13 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 		{
 		case RayCastHitType::Voxel:
 		{
-			const ChunkInt2 chunkPos = hit.coord.chunk;
-			const VoxelChunk &chunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-
 			const RayCastVoxelHit &voxelHit = hit.voxelHit;
-			const VoxelInt3 &voxel = voxelHit.voxel;
-			const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+			const ChunkInt2 chunkPos = voxelHit.voxelCoord.chunk;
+			const VoxelInt3 voxel = voxelHit.voxelCoord.voxel;
+
+			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+			const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 
 			text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelTraitsDef.type)) + ' ' + std::to_string(hit.t);
 			break;

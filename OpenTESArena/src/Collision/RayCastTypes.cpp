@@ -16,20 +16,20 @@ RayCastEntityHit::RayCastEntityHit()
 	this->id = -1;
 }
 
-void RayCastHit::initVoxel(double t, const CoordDouble3 &coord, const VoxelInt3 &voxel, VoxelFacing3D facing)
+void RayCastHit::initVoxel(double t, const WorldDouble3 &worldPoint, const CoordInt3 &voxelCoord, VoxelFacing3D facing)
 {
 	this->t = t;
-	this->coord = coord;
+	this->worldPoint = worldPoint;
 
 	this->type = RayCastHitType::Voxel;
-	this->voxelHit.voxel = voxel;
+	this->voxelHit.voxelCoord = voxelCoord;
 	this->voxelHit.facing = facing;
 }
 
-void RayCastHit::initEntity(double t, const CoordDouble3 &coord, EntityInstanceID id)
+void RayCastHit::initEntity(double t, const WorldDouble3 &worldPoint, EntityInstanceID id)
 {
 	this->t = t;
-	this->coord = coord;
+	this->worldPoint = worldPoint;
 
 	this->type = RayCastHitType::Entity;
 	this->entityHit.id = id;

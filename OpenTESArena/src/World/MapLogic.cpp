@@ -255,7 +255,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 
 	DebugAssert(hit.type == RayCastHitType::Voxel);
 	const RayCastVoxelHit &voxelHit = hit.voxelHit;
-	const CoordInt3 hitCoord(hit.coord.chunk, voxelHit.voxel);
+	const CoordInt3 hitVoxelCoord = voxelHit.voxelCoord;
 
 	auto &gameState = game.gameState;
 	auto &textureManager = game.textureManager;
@@ -324,9 +324,9 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 		// toggle between city and wilderness.
 		if (transitionType == TransitionType::EnterInterior)
 		{
-			const CoordInt3 returnCoord = [&voxelHit, &hitCoord]()
+			const CoordInt3 returnCoord = [&voxelHit, &hitVoxelCoord]()
 			{
-				const VoxelInt3 delta = [&voxelHit, &hitCoord]()
+				const VoxelInt3 delta = [&voxelHit, &hitVoxelCoord]()
 				{
 					// Assuming this is a wall voxel.
 					const VoxelFacing3D facing = voxelHit.facing;
@@ -354,7 +354,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					}
 				}();
 
-				return hitCoord + delta;
+				return hitVoxelCoord + delta;
 			}();
 
 			const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
@@ -460,7 +460,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
 				// Calculate wilderness position based on the gate's voxel in the city.
-				const CoordInt2 startCoord = [&hitCoord, &transitionDir]()
+				const CoordInt2 startCoord = [&hitVoxelCoord, &transitionDir]()
 				{
 					// Origin of the city in the wilderness.
 					const ChunkInt2 wildCityChunk(ArenaWildUtils::CITY_ORIGIN_CHUNK_X, ArenaWildUtils::CITY_ORIGIN_CHUNK_Z);
@@ -468,7 +468,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					// Player position bias based on selected gate face.
 					const VoxelInt2 offset(transitionDir.x, transitionDir.y);
 
-					return CoordInt2(wildCityChunk + hitCoord.chunk, VoxelInt2(hitCoord.voxel.x, hitCoord.voxel.z) + offset);
+					return CoordInt2(wildCityChunk + hitVoxelCoord.chunk, VoxelInt2(hitVoxelCoord.voxel.x, hitVoxelCoord.voxel.z) + offset);
 				}();
 
 				// No need to change world map location here.

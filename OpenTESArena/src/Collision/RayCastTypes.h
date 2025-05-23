@@ -15,7 +15,7 @@ enum class RayCastHitType
 
 struct RayCastVoxelHit
 {
-	VoxelInt3 voxel;
+	CoordInt3 voxelCoord;
 	VoxelFacing3D facing;
 
 	RayCastVoxelHit();
@@ -34,7 +34,7 @@ struct RayCastHit
 	static constexpr double NO_HIT_DISTANCE = std::numeric_limits<double>::infinity();
 
 	double t; // Distance from ray start.
-	CoordDouble3 coord; // Hit point in the scene.
+	WorldDouble3 worldPoint; // Hit point in the scene. Don't use this to determine the hit voxel since the collision mesh might z-fight with the boundaries of its voxel.
 	
 	RayCastHitType type;
 	RayCastVoxelHit voxelHit;
@@ -42,8 +42,8 @@ struct RayCastHit
 
 	RayCastHit();
 
-	void initVoxel(double t, const CoordDouble3 &coord, const VoxelInt3 &voxel, VoxelFacing3D facing);
-	void initEntity(double t, const CoordDouble3 &coord, EntityInstanceID id);
+	void initVoxel(double t, const WorldDouble3 &worldPoint, const CoordInt3 &voxelCoord, VoxelFacing3D facing);
+	void initEntity(double t, const WorldDouble3 &worldPoint, EntityInstanceID id);
 };
 
 #endif
