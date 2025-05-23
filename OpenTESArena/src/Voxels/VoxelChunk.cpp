@@ -21,6 +21,7 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely point to it.
 	this->shapeDefs.emplace_back(VoxelShapeDefinition());
 	this->textureDefs.emplace_back(VoxelTextureDefinition());
+	this->shadingDefs.emplace_back(VoxelShadingDefinition());
 	this->traitsDefs.emplace_back(VoxelTraitsDefinition());
 
 	// Set all voxels to air.
@@ -29,6 +30,9 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 
 	this->textureDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->textureDefIDs.fill(VoxelChunk::AIR_TEXTURE_DEF_ID);
+
+	this->shadingDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->shadingDefIDs.fill(VoxelChunk::AIR_SHADING_DEF_ID);
 
 	this->traitsDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->traitsDefIDs.fill(VoxelChunk::AIR_TRAITS_DEF_ID);
@@ -50,6 +54,12 @@ void VoxelChunk::getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDe
 	this->getAdjacentIDsInternal(voxel, this->textureDefIDs, VoxelChunk::AIR_TEXTURE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
+void VoxelChunk::getAdjacentShadingDefIDs(const VoxelInt3 &voxel, VoxelShadingDefID *outNorthID, VoxelShadingDefID *outEastID,
+	VoxelShadingDefID *outSouthID, VoxelShadingDefID *outWestID)
+{
+	this->getAdjacentIDsInternal(voxel, this->shadingDefIDs, VoxelChunk::AIR_SHADING_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+}
+
 void VoxelChunk::getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID,
 	VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID)
 {
@@ -64,6 +74,11 @@ int VoxelChunk::getShapeDefCount() const
 int VoxelChunk::getTextureDefCount() const
 {
 	return static_cast<int>(this->textureDefs.size());
+}
+
+int VoxelChunk::getShadingDefCount() const
+{
+	return static_cast<int>(this->shadingDefs.size());
 }
 
 int VoxelChunk::getTraitsDefCount() const
@@ -111,6 +126,12 @@ const VoxelTextureDefinition &VoxelChunk::getTextureDef(VoxelTextureDefID id) co
 {
 	DebugAssertIndex(this->textureDefs, id);
 	return this->textureDefs[id];
+}
+
+const VoxelShadingDefinition &VoxelChunk::getShadingDef(VoxelShadingDefID id) const
+{
+	DebugAssertIndex(this->shadingDefs, id);
+	return this->shadingDefs[id];
 }
 
 const VoxelTraitsDefinition &VoxelChunk::getTraitsDef(VoxelTraitsDefID id) const
@@ -163,6 +184,11 @@ VoxelShapeDefID VoxelChunk::getShapeDefID(SNInt x, int y, WEInt z) const
 VoxelTextureDefID VoxelChunk::getTextureDefID(SNInt x, int y, WEInt z) const
 {
 	return this->textureDefIDs.get(x, y, z);
+}
+
+VoxelShadingDefID VoxelChunk::getShadingDefID(SNInt x, int y, WEInt z) const
+{
+	return this->shadingDefIDs.get(x, y, z);
 }
 
 VoxelTraitsDefID VoxelChunk::getTraitsDefID(SNInt x, int y, WEInt z) const
@@ -428,6 +454,11 @@ void VoxelChunk::setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
 	this->textureDefIDs.set(x, y, z, id);
 }
 
+void VoxelChunk::setShadingDefID(SNInt x, int y, WEInt z, VoxelShadingDefID id)
+{
+	this->shadingDefIDs.set(x, y, z, id);
+}
+
 void VoxelChunk::setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 {
 	this->traitsDefIDs.set(x, y, z, id);
@@ -441,6 +472,11 @@ void VoxelChunk::setFloorReplacementShapeDefID(VoxelShapeDefID id)
 void VoxelChunk::setFloorReplacementTextureDefID(VoxelTextureDefID id)
 {
 	this->floorReplacementTextureDefID = id;
+}
+
+void VoxelChunk::setFloorReplacementShadingDefID(VoxelShadingDefID id)
+{
+	this->floorReplacementShadingDefID = id;
 }
 
 void VoxelChunk::setFloorReplacementTraitsDefID(VoxelTraitsDefID id)
@@ -464,6 +500,13 @@ VoxelTextureDefID VoxelChunk::addTextureDef(VoxelTextureDefinition &&voxelTextur
 {
 	const VoxelTextureDefID id = static_cast<VoxelTextureDefID>(this->textureDefs.size());
 	this->textureDefs.emplace_back(std::move(voxelTextureDef));
+	return id;
+}
+
+VoxelShadingDefID VoxelChunk::addShadingDef(VoxelShadingDefinition &&voxelShadingDef)
+{
+	const VoxelShadingDefID id = static_cast<VoxelShadingDefID>(this->shadingDefs.size());
+	this->shadingDefs.emplace_back(std::move(voxelShadingDef));
 	return id;
 }
 
@@ -727,6 +770,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				// Change to water chasm.
 				this->setShapeDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementShapeDefID);
 				this->setTextureDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTextureDefID);
+				this->setShadingDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementShadingDefID);
 				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTraitsDefID);
 				this->chasmDefIndices.emplace(voxel, this->floorReplacementChasmDefID);
 				this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
@@ -736,6 +780,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				// Air voxel.
 				this->setShapeDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_SHAPE_DEF_ID);
 				this->setTextureDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TEXTURE_DEF_ID);
+				this->setShadingDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_SHADING_DEF_ID);
 				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TRAITS_DEF_ID);
 
 				auto tryEraseVoxelMapEntry = [&voxel](auto &map)
@@ -807,6 +852,7 @@ void VoxelChunk::clear()
 	Chunk::clear();
 	this->shapeDefs.clear();
 	this->textureDefs.clear();
+	this->shadingDefs.clear();
 	this->traitsDefs.clear();
 	this->transitionDefs.clear();
 	this->triggerDefs.clear();
@@ -816,6 +862,7 @@ void VoxelChunk::clear()
 	this->chasmDefs.clear();
 	this->shapeDefIDs.clear();
 	this->textureDefIDs.clear();
+	this->shadingDefIDs.clear();
 	this->traitsDefIDs.clear();
 	this->dirtyVoxelTypes.clear();
 	this->dirtyShapeDefPositions.clear();

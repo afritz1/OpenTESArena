@@ -12,6 +12,7 @@
 #include "../Entities/EntityDefinition.h"
 #include "../Voxels/VoxelChasmDefinition.h"
 #include "../Voxels/VoxelDoorDefinition.h"
+#include "../Voxels/VoxelShadingDefinition.h"
 #include "../Voxels/VoxelShapeDefinition.h"
 #include "../Voxels/VoxelTextureDefinition.h"
 #include "../Voxels/VoxelTraitsDefinition.h"
@@ -28,6 +29,7 @@ private:
 	// (meaning that they could theoretically work with a standalone editor).
 	std::vector<VoxelShapeDefinition> voxelShapeDefs;
 	std::vector<VoxelTextureDefinition> voxelTextureDefs;
+	std::vector<VoxelShadingDefinition> voxelShadingDefs;
 	std::vector<VoxelTraitsDefinition> voxelTraitsDefs;
 	std::vector<EntityDefinition> entityDefs;
 	std::vector<LockDefinition> lockDefs;
@@ -48,6 +50,7 @@ public:
 
 	int getVoxelShapeDefCount() const;
 	int getVoxelTextureDefCount() const;
+	int getVoxelShadingDefCount() const;
 	int getVoxelTraitsDefCount() const;
 	int getEntityDefCount() const;
 	int getLockDefCount() const;
@@ -59,6 +62,7 @@ public:
 
 	const VoxelShapeDefinition &getVoxelShapeDef(LevelVoxelShapeDefID id) const;
 	const VoxelTextureDefinition &getVoxelTextureDef(LevelVoxelTextureDefID id) const;
+	const VoxelShadingDefinition &getVoxelShadingDef(LevelVoxelShadingDefID id) const;
 	const VoxelTraitsDefinition &getVoxelTraitsDef(LevelVoxelTraitsDefID id) const;
 	const EntityDefinition &getEntityDef(LevelVoxelEntityDefID id) const;
 	const LockDefinition &getLockDef(LevelVoxelLockDefID id) const;
@@ -71,6 +75,7 @@ public:
 
 	LevelVoxelShapeDefID addVoxelShapeDef(VoxelShapeDefinition &&def);
 	LevelVoxelTextureDefID addVoxelTextureDef(VoxelTextureDefinition &&def);
+	LevelVoxelShadingDefID addVoxelShadingDef(VoxelShadingDefinition &&def);
 	LevelVoxelTraitsDefID addVoxelTraitsDef(VoxelTraitsDefinition &&def);
 	LevelVoxelEntityDefID addEntityDef(EntityDefinition &&def);
 	LevelVoxelLockDefID addLockDef(LockDefinition &&def);

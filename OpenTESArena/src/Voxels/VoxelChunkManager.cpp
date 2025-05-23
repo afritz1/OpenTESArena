@@ -24,6 +24,12 @@ namespace
 		return static_cast<VoxelTextureDefID>(levelVoxelDefID + 1);
 	}
 
+	VoxelTextureDefID LevelVoxelShadingDefIdToChunkVoxelShadingDefID(LevelVoxelShadingDefID levelVoxelDefID)
+	{
+		// Chunks have an air definition at ID 0.
+		return static_cast<VoxelShadingDefID>(levelVoxelDefID + 1);
+	}
+
 	VoxelTraitsDefID LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(LevelVoxelTraitsDefID levelVoxelDefID)
 	{
 		// Chunks have an air definition at ID 0.
@@ -59,6 +65,19 @@ void VoxelChunkManager::getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, st
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
+void VoxelChunkManager::getAdjacentVoxelShadingDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
+	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
+	VoxelShadingDefID *outNorthID, VoxelShadingDefID *outEastID, VoxelShadingDefID *outSouthID, VoxelShadingDefID *outWestID)
+{
+	auto voxelIdFunc = [](const VoxelChunk &chunk, const VoxelInt3 &voxel)
+	{
+		return chunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
+	};
+
+	this->getAdjacentVoxelIDsInternal<VoxelShadingDefID>(coord, voxelIdFunc, VoxelChunk::AIR_SHADING_DEF_ID,
+		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
+}
+
 void VoxelChunkManager::getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
 	VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID,
@@ -90,6 +109,12 @@ void VoxelChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelDef
 		chunk.addTextureDef(std::move(voxelTextureDef));
 	}
 
+	for (int i = 0; i < levelInfoDefinition.getVoxelShadingDefCount(); i++)
+	{
+		VoxelShadingDefinition voxelShadingDef = levelInfoDefinition.getVoxelShadingDef(i);
+		chunk.addShadingDef(std::move(voxelShadingDef));
+	}
+
 	for (int i = 0; i < levelInfoDefinition.getVoxelTraitsDefCount(); i++)
 	{
 		VoxelTraitsDefinition voxelTraitsDef = levelInfoDefinition.getVoxelTraitsDef(i);
@@ -99,18 +124,22 @@ void VoxelChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelDef
 	// Add floor replacement definitions and IDs.
 	const LevelVoxelShapeDefID levelFloorReplacementVoxelShapeDefID = levelDefinition.getFloorReplacementShapeDefID();
 	const LevelVoxelTextureDefID levelFloorReplacementVoxelTextureDefID = levelDefinition.getFloorReplacementTextureDefID();
+	const LevelVoxelShadingDefID levelFloorReplacementVoxelShadingDefID = levelDefinition.getFloorReplacementShadingDefID();
 	const LevelVoxelTraitsDefID levelFloorReplacementVoxelTraitsDefID = levelDefinition.getFloorReplacementTraitsDefID();
 	const LevelVoxelChasmDefID levelFloorReplacementChasmDefID = levelDefinition.getFloorReplacementChasmDefID();
 	VoxelShapeDefinition floorReplacementShapeDef = levelInfoDefinition.getVoxelShapeDef(levelFloorReplacementVoxelShapeDefID);
 	VoxelTextureDefinition floorReplacementTextureDef = levelInfoDefinition.getVoxelTextureDef(levelFloorReplacementVoxelTextureDefID);
+	VoxelShadingDefinition floorReplacementShadingDef = levelInfoDefinition.getVoxelShadingDef(levelFloorReplacementVoxelShadingDefID);
 	VoxelTraitsDefinition floorReplacementTraitsDef = levelInfoDefinition.getVoxelTraitsDef(levelFloorReplacementVoxelTraitsDefID);
 	VoxelChasmDefinition floorReplacementChasmDef = levelInfoDefinition.getChasmDef(levelFloorReplacementChasmDefID);
 	const VoxelShapeDefID floorReplacementVoxelShapeDefID = chunk.addShapeDef(std::move(floorReplacementShapeDef));
 	const VoxelTextureDefID floorReplacementVoxelTextureDefID = chunk.addTextureDef(std::move(floorReplacementTextureDef));
+	const VoxelShadingDefID floorReplacementVoxelShadingDefID = chunk.addShadingDef(std::move(floorReplacementShadingDef));
 	const VoxelTraitsDefID floorReplacementVoxelTraitsDefID = chunk.addTraitsDef(std::move(floorReplacementTraitsDef));
 	const VoxelChasmDefID floorReplacementChasmDefID = chunk.addChasmDef(std::move(floorReplacementChasmDef));
 	chunk.setFloorReplacementShapeDefID(floorReplacementVoxelShapeDefID);
 	chunk.setFloorReplacementTextureDefID(floorReplacementVoxelTextureDefID);
+	chunk.setFloorReplacementShadingDefID(floorReplacementVoxelShadingDefID);
 	chunk.setFloorReplacementTraitsDefID(floorReplacementVoxelTraitsDefID);
 	chunk.setFloorReplacementChasmDefID(floorReplacementChasmDefID);
 }
@@ -124,7 +153,6 @@ void VoxelChunkManager::populateChunkVoxels(VoxelChunk &chunk, const LevelDefini
 	ChunkUtils::GetWritingRanges(levelOffset, levelDefinition.getWidth(), levelDefinition.getHeight(),
 		levelDefinition.getDepth(), &startX, &startY, &startZ, &endX, &endY, &endZ);
 
-	// Set voxels.
 	for (WEInt z = startZ; z < endZ; z++)
 	{
 		for (int y = startY; y < endY; y++)
@@ -134,12 +162,15 @@ void VoxelChunkManager::populateChunkVoxels(VoxelChunk &chunk, const LevelDefini
 				const VoxelInt3 chunkVoxel(x - startX, y - startY, z - startZ);
 				const LevelVoxelShapeDefID levelVoxelShapeDefID = levelDefinition.getVoxelShapeID(x, y, z);
 				const LevelVoxelTextureDefID levelVoxelTextureDefID = levelDefinition.getVoxelTextureID(x, y, z);
+				const LevelVoxelShadingDefID levelVoxelShadingDefID = levelDefinition.getVoxelShadingID(x, y, z);
 				const LevelVoxelTraitsDefID levelVoxelTraitsDefID = levelDefinition.getVoxelTraitsID(x, y, z);
 				const VoxelShapeDefID voxelShapeDefID = LevelVoxelShapeDefIdToChunkVoxelShapeDefID(levelVoxelShapeDefID);
 				const VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
+				const VoxelShadingDefID voxelShadingDefID = LevelVoxelShadingDefIdToChunkVoxelShadingDefID(levelVoxelShadingDefID);
 				const VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
 				chunk.setShapeDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelShapeDefID);
 				chunk.setTextureDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelTextureDefID);
+				chunk.setShadingDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelShadingDefID);
 				chunk.setTraitsDefID(chunkVoxel.x, chunkVoxel.y, chunkVoxel.z, voxelTraitsDefID);
 			}
 		}
@@ -462,6 +493,9 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		constexpr VoxelTextureDefID floorVoxelTextureDefID = floorVoxelShapeDefID; // @todo: this is probably brittle; can't assume shape def ID -> texture def ID mapping.
 		const VoxelTextureDefID ceilingVoxelTextureDefID = ceilingVoxelShapeDefID; // @todo: this is probably brittle; can't assume shape def ID -> texture def ID mapping.
 
+		constexpr VoxelShadingDefID floorVoxelShadingDefID = floorVoxelShapeDefID; // @todo: this is probably brittle; can't assume shape def ID -> shading def ID mapping.
+		const VoxelShadingDefID ceilingVoxelShadingDefID = ceilingVoxelShapeDefID; // @todo: this is probably brittle; can't assume shape def ID -> shading def ID mapping.
+
 		constexpr VoxelTraitsDefID floorVoxelTraitsDefID = floorVoxelShapeDefID; // @todo: this is probably brittle; can't assume shape def ID -> traits def ID mapping.
 		const VoxelTraitsDefID ceilingVoxelTraitsDefID = ceilingVoxelShapeDefID; // @todo: this is probably brittle; can't assume shape def ID -> traits def ID mapping.
 
@@ -472,12 +506,14 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 			{
 				chunk.setShapeDefID(x, 0, z, floorVoxelShapeDefID);
 				chunk.setTextureDefID(x, 0, z, floorVoxelTextureDefID);
+				chunk.setShadingDefID(x, 0, z, floorVoxelShadingDefID);
 				chunk.setTraitsDefID(x, 0, z, floorVoxelTraitsDefID);
 
 				if (chunkHeight > 2)
 				{
 					chunk.setShapeDefID(x, 2, z, ceilingVoxelShapeDefID);
 					chunk.setTextureDefID(x, 2, z, ceilingVoxelTextureDefID);
+					chunk.setShadingDefID(x, 2, z, ceilingVoxelShadingDefID);
 					chunk.setTraitsDefID(x, 2, z, ceilingVoxelTraitsDefID);
 				}
 			}
@@ -523,12 +559,15 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 
 				const LevelVoxelShapeDefID levelVoxelShapeDefID = levelDef.getVoxelShapeID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
 				const LevelVoxelTextureDefID levelVoxelTextureDefID = levelDef.getVoxelTextureID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
+				const LevelVoxelShadingDefID levelVoxelShadingDefID = levelDef.getVoxelShadingID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
 				const LevelVoxelTraitsDefID levelVoxelTraitsDefID = levelDef.getVoxelTraitsID(wrappedLevelVoxel.x, 0, wrappedLevelVoxel.y);
 				const VoxelShapeDefID voxelShapeDefID = LevelVoxelShapeDefIdToChunkVoxelShapeDefID(levelVoxelShapeDefID);
 				const VoxelTextureDefID voxelTextureDefID = LevelVoxelTextureDefIdToChunkVoxelTextureDefID(levelVoxelTextureDefID);
+				const VoxelShadingDefID voxelShadingDefID = LevelVoxelShadingDefIdToChunkVoxelShadingDefID(levelVoxelShadingDefID);
 				const VoxelTraitsDefID voxelTraitsDefID = LevelVoxelTraitsDefIdToChunkVoxelTraitsDefID(levelVoxelTraitsDefID);
 				chunk.setShapeDefID(x, 0, z, voxelShapeDefID);
 				chunk.setTextureDefID(x, 0, z, voxelTextureDefID);
+				chunk.setShadingDefID(x, 0, z, voxelShadingDefID);
 				chunk.setTraitsDefID(x, 0, z, voxelTraitsDefID);
 			}
 		}

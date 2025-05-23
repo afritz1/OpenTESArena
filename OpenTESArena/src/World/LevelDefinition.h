@@ -13,6 +13,7 @@
 // Points to various definitions in a level info definition.
 using LevelVoxelShapeDefID = int;
 using LevelVoxelTextureDefID = int;
+using LevelVoxelShadingDefID = int;
 using LevelVoxelTraitsDefID = int;
 using LevelVoxelEntityDefID = int;
 using LevelVoxelLockDefID = int;
@@ -85,9 +86,11 @@ class LevelDefinition
 private:
 	Buffer3D<LevelVoxelShapeDefID> voxelShapeIDs;
 	Buffer3D<LevelVoxelTextureDefID> voxelTextureIDs;
+	Buffer3D<LevelVoxelShadingDefID> voxelShadingIDs;
 	Buffer3D<LevelVoxelTraitsDefID> voxelTraitsIDs;
 	LevelVoxelShapeDefID floorReplacementShapeDefID;
 	LevelVoxelTextureDefID floorReplacementTextureDefID;
+	LevelVoxelShadingDefID floorReplacementShadingDefID;
 	LevelVoxelTraitsDefID floorReplacementTraitsDefID;
 	LevelVoxelChasmDefID floorReplacementChasmDefID;
 	std::vector<LevelEntityPlacementDefinition> entityPlacementDefs;
@@ -108,17 +111,21 @@ public:
 
 	LevelVoxelShapeDefID getVoxelShapeID(SNInt x, int y, WEInt z) const;
 	LevelVoxelTextureDefID getVoxelTextureID(SNInt x, int y, WEInt z) const;
+	LevelVoxelShadingDefID getVoxelShadingID(SNInt x, int y, WEInt z) const;
 	LevelVoxelTraitsDefID getVoxelTraitsID(SNInt x, int y, WEInt z) const;
 	void setVoxelShapeID(SNInt x, int y, WEInt z, LevelVoxelShapeDefID id);
 	void setVoxelTextureID(SNInt x, int y, WEInt z, LevelVoxelTextureDefID id);
+	void setVoxelShadingID(SNInt x, int y, WEInt z, LevelVoxelShadingDefID id);
 	void setVoxelTraitsID(SNInt x, int y, WEInt z, LevelVoxelTraitsDefID id);
 
 	LevelVoxelShapeDefID getFloorReplacementShapeDefID() const;
 	LevelVoxelTextureDefID getFloorReplacementTextureDefID() const;
+	LevelVoxelShadingDefID getFloorReplacementShadingDefID() const;
 	LevelVoxelTraitsDefID getFloorReplacementTraitsDefID() const;
 	LevelVoxelChasmDefID getFloorReplacementChasmDefID() const;
 	void setFloorReplacementShapeDefID(LevelVoxelShapeDefID id);
 	void setFloorReplacementTextureDefID(LevelVoxelTextureDefID id);
+	void setFloorReplacementShadingDefID(LevelVoxelShadingDefID id);
 	void setFloorReplacementTraitsDefID(LevelVoxelTraitsDefID id);
 	void setFloorReplacementChasmDefID(LevelVoxelChasmDefID id);
 

@@ -1,10 +1,8 @@
 #ifndef VOXEL_CHUNK_H
 #define VOXEL_CHUNK_H
 
-#include <array>
 #include <climits>
 #include <cstdint>
-#include <limits>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -16,6 +14,7 @@
 #include "VoxelDoorDefinition.h"
 #include "VoxelDoorVisibilityInstance.h"
 #include "VoxelFadeAnimationInstance.h"
+#include "VoxelShadingDefinition.h"
 #include "VoxelShapeDefinition.h"
 #include "VoxelTextureDefinition.h"
 #include "VoxelTraitsDefinition.h"
@@ -35,6 +34,7 @@ class AudioManager;
 
 using VoxelShapeDefID = int;
 using VoxelTextureDefID = int;
+using VoxelShadingDefID = int;
 using VoxelTraitsDefID = int;
 using VoxelTransitionDefID = int;
 using VoxelTriggerDefID = int;
@@ -50,6 +50,7 @@ private:
 	// Definitions pointed to by voxel IDs.
 	std::vector<VoxelShapeDefinition> shapeDefs;
 	std::vector<VoxelTextureDefinition> textureDefs;
+	std::vector<VoxelShadingDefinition> shadingDefs;
 	std::vector<VoxelTraitsDefinition> traitsDefs;
 	std::vector<TransitionDefinition> transitionDefs;
 	std::vector<VoxelTriggerDefinition> triggerDefs;
@@ -61,9 +62,11 @@ private:
 	// Indices into definitions for actual voxels in-game.
 	Buffer3D<VoxelShapeDefID> shapeDefIDs;
 	Buffer3D<VoxelTextureDefID> textureDefIDs;
+	Buffer3D<VoxelShadingDefID> shadingDefIDs;
 	Buffer3D<VoxelTraitsDefID> traitsDefIDs;
 	VoxelShapeDefID floorReplacementShapeDefID;
 	VoxelTextureDefID floorReplacementTextureDefID;
+	VoxelShadingDefID floorReplacementShadingDefID;
 	VoxelTraitsDefID floorReplacementTraitsDefID;
 	VoxelChasmDefID floorReplacementChasmDefID;
 
@@ -104,6 +107,8 @@ private:
 		VoxelShapeDefID *outEastID, VoxelShapeDefID *outSouthID, VoxelShapeDefID *outWestID);
 	void getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID,
 		VoxelTextureDefID *outEastID, VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID);
+	void getAdjacentShadingDefIDs(const VoxelInt3 &voxel, VoxelShadingDefID *outNorthID,
+		VoxelShadingDefID *outEastID, VoxelShadingDefID *outSouthID, VoxelShadingDefID *outWestID);
 	void getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID,
 		VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID);
 
@@ -117,6 +122,7 @@ private:
 public:
 	static constexpr VoxelShapeDefID AIR_SHAPE_DEF_ID = 0;
 	static constexpr VoxelTextureDefID AIR_TEXTURE_DEF_ID = 0;
+	static constexpr VoxelShadingDefID AIR_SHADING_DEF_ID = 0;
 	static constexpr VoxelTraitsDefID AIR_TRAITS_DEF_ID = 0;
 
 	VoxelChunk();
@@ -125,6 +131,7 @@ public:
 
 	int getShapeDefCount() const;
 	int getTextureDefCount() const;
+	int getShadingDefCount() const;
 	int getTraitsDefCount() const;
 	int getTransitionDefCount() const;
 	int getTriggerDefCount() const;
@@ -136,6 +143,7 @@ public:
 	// Gets the definition associated with a voxel def ID (can iterate with an index too).
 	const VoxelShapeDefinition &getShapeDef(VoxelShapeDefID id) const;
 	const VoxelTextureDefinition &getTextureDef(VoxelTextureDefID id) const;
+	const VoxelShadingDefinition &getShadingDef(VoxelShadingDefID id) const;
 	const VoxelTraitsDefinition &getTraitsDef(VoxelTraitsDefID id) const;
 	const TransitionDefinition &getTransitionDef(VoxelTransitionDefID id) const;
 	const VoxelTriggerDefinition &getTriggerDef(VoxelTriggerDefID id) const;
@@ -146,6 +154,7 @@ public:
 
 	VoxelShapeDefID getShapeDefID(SNInt x, int y, WEInt z) const;
 	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
+	VoxelShadingDefID getShadingDefID(SNInt x, int y, WEInt z) const;
 	VoxelTraitsDefID getTraitsDefID(SNInt x, int y, WEInt z) const;
 
 	BufferView<const VoxelInt3> getDirtyShapeDefPositions() const;
@@ -178,15 +187,18 @@ public:
 
 	void setShapeDefID(SNInt x, int y, WEInt z, VoxelShapeDefID id);
 	void setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
+	void setShadingDefID(SNInt x, int y, WEInt z, VoxelShadingDefID id);
 	void setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
 	
 	void setFloorReplacementShapeDefID(VoxelShapeDefID id);
 	void setFloorReplacementTextureDefID(VoxelTextureDefID id);
+	void setFloorReplacementShadingDefID(VoxelShadingDefID id);
 	void setFloorReplacementTraitsDefID(VoxelTraitsDefID id);
 	void setFloorReplacementChasmDefID(VoxelChasmDefID id);
 
 	VoxelShapeDefID addShapeDef(VoxelShapeDefinition &&shapeDef);
 	VoxelTextureDefID addTextureDef(VoxelTextureDefinition &&textureDef);
+	VoxelShadingDefID addShadingDef(VoxelShadingDefinition &&shadingDef);
 	VoxelTraitsDefID addTraitsDef(VoxelTraitsDefinition &&traitsDef);
 	VoxelTransitionDefID addTransitionDef(TransitionDefinition &&transition);
 	VoxelTriggerDefID addTriggerDef(VoxelTriggerDefinition &&trigger);

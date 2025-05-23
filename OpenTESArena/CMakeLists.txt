@@ -585,6 +585,8 @@ SET(TES_VOXELS
     "${SRC_ROOT}/Voxels/VoxelFacing3D.h"
     "${SRC_ROOT}/Voxels/VoxelFadeAnimationInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelFadeAnimationInstance.h"
+    "${SRC_ROOT}/Voxels/VoxelShadingDefinition.cpp"
+    "${SRC_ROOT}/Voxels/VoxelShadingDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelShapeDefinition.cpp"
     "${SRC_ROOT}/Voxels/VoxelShapeDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelTextureDefinition.cpp"
