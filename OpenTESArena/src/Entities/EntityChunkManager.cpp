@@ -803,6 +803,88 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 	}
 }
 
+void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ,
+	JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
+{
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
+	for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
+	{
+		const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		if (entityDef.type != EntityDefinitionType::Enemy)
+		{
+			continue;
+		}
+
+		if (entityInst.combatStateID >= 0)
+		{
+			const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+			if (combatState.isInDeathState())
+			{
+				continue;
+			}
+		}
+
+		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
+		
+		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
+		const double distToPlayerSqr = dirToPlayer.lengthSquared();
+
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+
+		const std::optional<int> idleStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+		const std::optional<int> walkStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+		
+		if (!idleStateIndex.has_value() || !walkStateIndex.has_value())
+		{
+			continue;
+		}
+
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		
+		if (entityInst.directionID >= 0)
+		{
+			VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
+			
+			constexpr double chaseDistanceSqr = 15.0 * 15.0;
+			
+			if (distToPlayerSqr <= chaseDistanceSqr)
+			{
+				if (animInst.currentStateIndex != *walkStateIndex)
+				{
+					animInst.setStateIndex(*walkStateIndex);
+				}
+				
+				entityDir = dirToPlayer.normalized();
+				
+				constexpr double moveSpeed = 3.0;  // Velocidad más lenta que el jugador
+				const WorldDouble2 movement = entityDir * moveSpeed * dt;
+				
+				entityPosition.x += movement.x;
+				entityPosition.z += movement.y;
+				
+				const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+				if (!physicsBodyID.IsInvalid())
+				{
+					const JPH::RVec3 newPhysicsPosition(entityPosition.x, entityPosition.y, entityPosition.z);
+					bodyInterface.SetPosition(physicsBodyID, newPhysicsPosition, JPH::EActivation::DontActivate);
+				}
+			}
+			else
+			{
+				if (animInst.currentStateIndex != *idleStateIndex)
+				{
+					animInst.setStateIndex(*idleStateIndex);
+				}
+			}
+		}
+	}
+}
+
 std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID) const
 {
 	const EntityDefinition &entityDef = this->getEntityDef(defID);
@@ -1320,6 +1402,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		this->updateCitizenStates(dt, entityChunk, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
+		this->updateEnemyStates(dt, entityChunk, playerPositionXZ, physicsSystem, voxelChunkManager);
 
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
