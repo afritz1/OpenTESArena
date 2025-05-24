@@ -1072,6 +1072,12 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 
 			drawCallCount = static_cast<int>(std::count(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), true));
 			DebugAssert(drawCallCount <= VoxelDoorVisibilityInstance::MAX_FACE_COUNT);
+
+			// Handle "closets" with three walled sides, causing zero visible faces when camera is on one side
+			// (happens on second level of northeasternmost province's map dungeon).
+			if (drawCallCount == 0)
+			{
+				continue;
 		}
 		else if (isChasm)
 		{
