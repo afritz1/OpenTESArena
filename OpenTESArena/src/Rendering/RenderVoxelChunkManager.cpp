@@ -1078,6 +1078,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			if (drawCallCount == 0)
 			{
 				continue;
+			}
 		}
 		else if (isChasm)
 		{
