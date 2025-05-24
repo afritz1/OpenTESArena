@@ -497,8 +497,7 @@ void ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(double yOffset, double y
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
-	BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices)
+void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Raised;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 2);
@@ -534,9 +533,9 @@ void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outAlph
 		14, 15, 12
 	};
 
-	std::copy(sideIndices.begin(), sideIndices.end(), outAlphaTestedSideIndices.begin());
-	std::copy(bottomIndices.begin(), bottomIndices.end(), outOpaqueBottomIndices.begin());
-	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.begin());
+	std::copy(sideIndices.begin(), sideIndices.end(), outSideIndices.begin());
+	std::copy(bottomIndices.begin(), bottomIndices.end(), outBottomIndices.begin());
+	std::copy(topIndices.begin(), topIndices.end(), outTopIndices.begin());
 }
 
 void ArenaMeshUtils::WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals)

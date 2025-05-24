@@ -18,9 +18,6 @@
 
 namespace
 {
-	constexpr int DefaultVoxelTextureInitInfoIndices[] = { 0, 1, 2, 3 };
-	constexpr int RaisedVoxelTextureInitInfoIndices[] = { 1, 2, 0, -1 };
-
 	int GetVoxelRenderTransformIndex(SNInt x, int y, WEInt z, int chunkHeight)
 	{
 		return x + (y * Chunk::WIDTH) + (z * Chunk::WIDTH * chunkHeight);
@@ -553,49 +550,28 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 
 			// Generate mesh geometry and indices for this voxel definition.
 			voxelMeshDef.writeRendererGeometryBuffers(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.verticesView, shapeInitCache.normalsView, shapeInitCache.texCoordsView);
-			voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.opaqueIndices0View, shapeInitCache.opaqueIndices1View,
-				shapeInitCache.opaqueIndices2View, shapeInitCache.alphaTestedIndices0View);
+			voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.indices0View, shapeInitCache.indices1View, shapeInitCache.indices2View);
 
-			renderer.populateVertexBuffer(renderVoxelMeshInst.vertexBufferID,
-				BufferView<const double>(shapeInitCache.vertices.data(), vertexCount * positionComponentsPerVertex));
-			renderer.populateAttributeBuffer(renderVoxelMeshInst.normalBufferID,
-				BufferView<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
-			renderer.populateAttributeBuffer(renderVoxelMeshInst.texCoordBufferID,
-				BufferView<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
+			renderer.populateVertexBuffer(renderVoxelMeshInst.vertexBufferID, BufferView<const double>(shapeInitCache.vertices.data(), vertexCount * positionComponentsPerVertex));
+			renderer.populateAttributeBuffer(renderVoxelMeshInst.normalBufferID, BufferView<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
+			renderer.populateAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, BufferView<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
 
-			const int opaqueIndexBufferCount = voxelMeshDef.opaqueIndicesListCount;
-			for (int bufferIndex = 0; bufferIndex < opaqueIndexBufferCount; bufferIndex++)
+			const int indexBufferCount = voxelMeshDef.indicesListCount;
+			for (int bufferIndex = 0; bufferIndex < indexBufferCount; bufferIndex++)
 			{
-				const int opaqueIndexCount = voxelMeshDef.getOpaqueIndicesList(bufferIndex).getCount();
-				IndexBufferID &opaqueIndexBufferID = renderVoxelMeshInst.opaqueIndexBufferIDs[bufferIndex];
-				if (!renderer.tryCreateIndexBuffer(opaqueIndexCount, &opaqueIndexBufferID))
+				const int indexCount = voxelMeshDef.getIndicesList(bufferIndex).getCount();
+				IndexBufferID &indexBufferID = renderVoxelMeshInst.indexBufferIDs[bufferIndex];
+				if (!renderer.tryCreateIndexBuffer(indexCount, &indexBufferID))
 				{
-					DebugLogError("Couldn't create opaque index buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
-						" in chunk (" + voxelChunk.getPosition().toString() + ").");
+					DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.getPosition().toString());
 					renderVoxelMeshInst.freeBuffers(renderer);
 					continue;
 				}
 
-				renderVoxelMeshInst.opaqueIndexBufferIdCount++;
+				renderVoxelMeshInst.indexBufferIdCount++;
 
-				const auto &indices = *shapeInitCache.opaqueIndicesPtrs[bufferIndex];
-				renderer.populateIndexBuffer(opaqueIndexBufferID, BufferView<const int32_t>(indices.data(), opaqueIndexCount));
-			}
-
-			const bool hasAlphaTestedIndexBuffer = voxelMeshDef.alphaTestedIndicesListCount > 0;
-			if (hasAlphaTestedIndexBuffer)
-			{
-				const int alphaTestedIndexCount = static_cast<int>(voxelMeshDef.alphaTestedIndices.size());
-				if (!renderer.tryCreateIndexBuffer(alphaTestedIndexCount, &renderVoxelMeshInst.alphaTestedIndexBufferID))
-				{
-					DebugLogError("Couldn't create alpha-tested index buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
-						" in chunk (" + voxelChunk.getPosition().toString() + ").");
-					renderVoxelMeshInst.freeBuffers(renderer);
-					continue;
-				}
-
-				renderer.populateIndexBuffer(renderVoxelMeshInst.alphaTestedIndexBufferID,
-					BufferView<const int32_t>(shapeInitCache.alphaTestedIndices0.data(), alphaTestedIndexCount));
+				const auto &indices = *shapeInitCache.indicesPtrs[bufferIndex];
+				renderer.populateIndexBuffer(indexBufferID, BufferView<const int32_t>(indices.data(), indexCount));
 			}
 		}
 
@@ -744,10 +720,9 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		}
 
 		const VoxelTextureDefID voxelTextureDefID = voxelChunk.getTextureDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShadingDefID voxelShadingDefID = voxelChunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelTextureDefinition &voxelTextureDef = voxelChunk.getTextureDef(voxelTextureDefID);
-		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
+		const VoxelShadingDefinition &voxelShadingDef = voxelChunk.getShadingDef(voxelShadingDefID);
 
 		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelShapeDefID);
 		DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
@@ -807,7 +782,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		const RenderLightIdList &voxelLightIdList = renderLightChunk.lightIdLists.get(voxel.x, voxel.y, voxel.z);
 
 		constexpr int maxTransformsPerVoxel = DoorUtils::FACE_COUNT;
-		constexpr int maxDrawCallsPerVoxel = RenderVoxelMeshInstance::MAX_TEXTURES + 1; // Sum of all index buffers.
+		constexpr int maxDrawCallsPerVoxel = RenderVoxelMeshInstance::MAX_DRAW_CALLS;
 
 		struct DrawCallTransformInitInfo
 		{
@@ -883,7 +858,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			doorMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
 			doorMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
 			doorMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
-			doorMeshInitInfo.indexBufferID = renderMeshInst.alphaTestedIndexBufferID;
+			doorMeshInitInfo.indexBufferID = renderMeshInst.indexBufferIDs[0];
 			meshInitInfoCount = 1;
 		}
 		else if (isChasm)
@@ -892,7 +867,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			chasmFloorMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
 			chasmFloorMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
 			chasmFloorMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
-			chasmFloorMeshInitInfo.indexBufferID = renderMeshInst.opaqueIndexBufferIDs[0];
+			chasmFloorMeshInitInfo.indexBufferID = renderMeshInst.indexBufferIDs[0];
 			meshInitInfoCount = 1;
 
 			if (hasChasmWall)
@@ -907,30 +882,20 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		}
 		else
 		{
-			for (int i = 0; i < renderMeshInst.opaqueIndexBufferIdCount; i++)
+			for (int i = 0; i < renderMeshInst.indexBufferIdCount; i++)
 			{
-				DrawCallMeshInitInfo &opaqueMeshInitInfo = meshInitInfos[i];
-				opaqueMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
-				opaqueMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
-				opaqueMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
-				opaqueMeshInitInfo.indexBufferID = renderMeshInst.opaqueIndexBufferIDs[i];
+				DebugAssertIndex(meshInitInfos, i);
+				DrawCallMeshInitInfo &meshInitInfo = meshInitInfos[i];
+				meshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+				meshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
+				meshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
+				meshInitInfo.indexBufferID = renderMeshInst.indexBufferIDs[i];
 			}
 
-			meshInitInfoCount = renderMeshInst.opaqueIndexBufferIdCount;
-
-			if (renderMeshInst.alphaTestedIndexBufferID >= 0)
-			{
-				DrawCallMeshInitInfo &alphaTestedMeshInitInfo = meshInitInfos[renderMeshInst.opaqueIndexBufferIdCount];
-				alphaTestedMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
-				alphaTestedMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
-				alphaTestedMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
-				alphaTestedMeshInitInfo.indexBufferID = renderMeshInst.alphaTestedIndexBufferID;
-				meshInitInfoCount++;
-			}
+			meshInitInfoCount = renderMeshInst.indexBufferIdCount;
 		}
 
 		DrawCallTextureInitInfo textureInitInfos[maxDrawCallsPerVoxel];
-		BufferView<const int> textureInitInfoIndices = DefaultVoxelTextureInitInfoIndices;
 		int textureInitInfoCount = 0;
 		if (isDoor)
 		{
@@ -977,6 +942,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			{
 				const TextureAsset &textureAsset = voxelTextureDef.getTextureAsset(i);
 
+				DebugAssertIndex(textureInitInfos, i);
 				DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[i];
 				textureInitInfo.id0 = this->getTextureID(textureAsset);
 				textureInitInfo.id1 = -1;
@@ -986,11 +952,6 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				textureInitInfo.samplingType1 = TextureSamplingType::Default;
 			}
 
-			if (voxelType == ArenaTypes::VoxelType::Raised)
-			{
-				textureInitInfoIndices = RaisedVoxelTextureInitInfoIndices;
-			}
-
 			textureInitInfoCount = voxelTextureDef.textureCount;
 		}
 
@@ -998,29 +959,25 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		int shadingInitInfoCount = 0;
 		if (isDoor)
 		{
+			DebugAssert(voxelShadingDef.pixelShaderCount == 1);
+
 			DrawCallShadingInitInfo &doorShadingInitInfo = shadingInitInfos[0];
+			doorShadingInitInfo.vertexShaderType = voxelShadingDef.vertexShaderType;
+			doorShadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[0];
 
 			const ArenaTypes::DoorType doorType = doorDef->type;
 			switch (doorType)
 			{
 			case ArenaTypes::DoorType::Swinging:
-				doorShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
-				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTested;
 				doorShadingInitInfo.pixelShaderParam0 = 0.0;
 				break;
 			case ArenaTypes::DoorType::Sliding:
-				doorShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
-				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin;
 				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
 			case ArenaTypes::DoorType::Raising:
-				doorShadingInitInfo.vertexShaderType = VertexShaderType::RaisingDoor;
-				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
 				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
 			case ArenaTypes::DoorType::Splitting:
-				doorShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
-				doorShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin; // @todo: some "half and half" pixel shader
 				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
 			default:
@@ -1032,37 +989,34 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		}
 		else if (isChasm)
 		{
+			DebugAssert(voxelShadingDef.pixelShaderCount == 2);
+
 			DrawCallShadingInitInfo &chasmFloorShadingInitInfo = shadingInitInfos[0];
-			chasmFloorShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
-			chasmFloorShadingInitInfo.pixelShaderType = PixelShaderType::Opaque;
+			chasmFloorShadingInitInfo.vertexShaderType = voxelShadingDef.vertexShaderType;
+			chasmFloorShadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[0];
 			chasmFloorShadingInitInfo.pixelShaderParam0 = 0.0;
 
 			DrawCallShadingInitInfo &chasmWallShadingInitInfo = shadingInitInfos[1];
-			chasmWallShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
-			chasmWallShadingInitInfo.pixelShaderType = PixelShaderType::OpaqueWithAlphaTestLayer;
+			chasmWallShadingInitInfo.vertexShaderType = voxelShadingDef.vertexShaderType;
+			chasmWallShadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[1];
 			chasmWallShadingInitInfo.pixelShaderParam0 = 0.0;
 
 			shadingInitInfoCount = 2;
 		}
 		else
 		{
-			for (int i = 0; i < renderMeshInst.opaqueIndexBufferIdCount; i++)
+			DebugAssert(voxelShadingDef.pixelShaderCount >= renderMeshInst.indexBufferIdCount); // @todo this should be == but needs outside-city-bounds chasmDefIDs to be inited properly so that isChasm succeeds in here
+
+			for (int i = 0; i < renderMeshInst.indexBufferIdCount; i++)
 			{
-				DrawCallShadingInitInfo &opaqueShadingInitInfo = shadingInitInfos[i];
-				opaqueShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
-				opaqueShadingInitInfo.pixelShaderType = PixelShaderType::Opaque;
-				opaqueShadingInitInfo.pixelShaderParam0 = 0.0;
+				DebugAssertIndex(shadingInitInfos, i);
+				DrawCallShadingInitInfo &shadingInitInfo = shadingInitInfos[i];
+				shadingInitInfo.vertexShaderType = voxelShadingDef.vertexShaderType;
+				shadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[i];
+				shadingInitInfo.pixelShaderParam0 = 0.0;
 			}
 
-			shadingInitInfoCount = renderMeshInst.opaqueIndexBufferIdCount;
-
-			if (renderMeshInst.alphaTestedIndexBufferID >= 0)
-			{
-				DrawCallShadingInitInfo &alphaTestedShadingInitInfo = shadingInitInfos[renderMeshInst.opaqueIndexBufferIdCount];
-				alphaTestedShadingInitInfo.vertexShaderType = VertexShaderType::Basic;
-				alphaTestedShadingInitInfo.pixelShaderType = PixelShaderType::AlphaTested;
-				alphaTestedShadingInitInfo.pixelShaderParam0 = 0.0;
-			}
+			shadingInitInfoCount = renderMeshInst.indexBufferIdCount;
 		}
 
 		DrawCallLightingInitInfo lightingInitInfo;
@@ -1218,8 +1172,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			for (int i = 0; i < drawCallCount; i++)
 			{
 				const DrawCallMeshInitInfo &meshInitInfo = meshInitInfos[i];
-				const int textureInitInfoIndex = textureInitInfoIndices[i];
-				const DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[textureInitInfoIndex];
+				const DrawCallTextureInitInfo &textureInitInfo = textureInitInfos[i];
 				const DrawCallShadingInitInfo &shadingInitInfo = shadingInitInfos[i];
 
 				RenderDrawCall &drawCall = drawCalls[i];

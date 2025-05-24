@@ -304,7 +304,8 @@ namespace MapGeneration
 
 	void writeVoxelInfoForFLOR(ArenaTypes::VoxelID florVoxel, MapType mapType, const INFFile &inf, ArenaTypes::VoxelType *outVoxelType,
 		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset, VertexShaderType *outVertexShaderType,
-		PixelShaderType *outPixelShaderType, bool *outIsChasm, bool *outIsWildWallColored, ArenaTypes::ChasmType *outChasmType)
+		BufferView<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsChasm, bool *outIsWildWallColored,
+		ArenaTypes::ChasmType *outChasmType)
 	{
 		const int textureID = (florVoxel & 0xFF00) >> 8;
 		*outIsChasm = MIFUtils::isChasm(textureID);
@@ -316,14 +317,15 @@ namespace MapGeneration
 
 			outShapeInitCache->initDefaultBoxValues();
 			ArenaMeshUtils::WriteFloorRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-			ArenaMeshUtils::WriteFloorRendererIndexBuffers(outShapeInitCache->opaqueIndices0View);
+			ArenaMeshUtils::WriteFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureID);
 			*outTextureAsset = TextureAsset(
 				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			*outVertexShaderType = VertexShaderType::Basic;
-			*outPixelShaderType = PixelShaderType::Opaque;
+			outPixelShaderTypes[0] = PixelShaderType::Opaque;
+			*outPixelShaderCount = 1;
 			*outIsWildWallColored = ArenaVoxelUtils::isFloorWildWallColored(textureID, mapType);
 			*outChasmType = static_cast<ArenaTypes::ChasmType>(-1);
 		}
@@ -385,14 +387,16 @@ namespace MapGeneration
 			const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(*outChasmType);
 			outShapeInitCache->initChasmBoxValues(isDryChasm);
 			ArenaMeshUtils::WriteChasmRendererGeometryBuffers(*outChasmType, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-			ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outShapeInitCache->opaqueIndices0View);
+			ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(chasmID);
 			*outTextureAsset = TextureAsset(
 				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			*outVertexShaderType = VertexShaderType::Basic;
-			*outPixelShaderType = PixelShaderType::Opaque;
+			outPixelShaderTypes[0] = PixelShaderType::Opaque;
+			outPixelShaderTypes[1] = PixelShaderType::OpaqueWithAlphaTestLayer;
+			*outPixelShaderCount = 2;
 			*outIsWildWallColored = false;
 		}
 	}
@@ -404,11 +408,13 @@ namespace MapGeneration
 		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
 		VertexShaderType vertexShaderType;
-		PixelShaderType pixelShaderType;
+		PixelShaderType pixelShaderTypes[VoxelShadingDefinition::MAX_PIXEL_SHADERS];
+		int pixelShaderCount;
 		bool isChasm;
 		bool isWildWallColored;
 		ArenaTypes::ChasmType chasmType;
-		MapGeneration::writeVoxelInfoForFLOR(florVoxel, mapType, inf, &voxelType, &shapeInitCache, &textureAsset, &vertexShaderType, &pixelShaderType, &isChasm, &isWildWallColored, &chasmType);
+		MapGeneration::writeVoxelInfoForFLOR(florVoxel, mapType, inf, &voxelType, &shapeInitCache, &textureAsset, &vertexShaderType, pixelShaderTypes, &pixelShaderCount,
+			&isChasm, &isWildWallColored, &chasmType);
 
 		VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
 		if (isChasm && (chasmType != ArenaTypes::ChasmType::Dry))
@@ -418,7 +424,12 @@ namespace MapGeneration
 
 		outShapeDef->initBoxFromClassic(voxelType, scaleType, shapeInitCache);
 		outTextureDef->addTextureAsset(std::move(textureAsset));
-		outShadingDef->init(vertexShaderType, pixelShaderType);
+		
+		outShadingDef->init(vertexShaderType);
+		for (int i = 0; i < pixelShaderCount; i++)
+		{
+			outShadingDef->addPixelShaderType(pixelShaderTypes[i]);
+		}
 
 		switch (voxelType)
 		{
@@ -439,7 +450,7 @@ namespace MapGeneration
 		const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(chasmType);
 		outShapeInitCache->initChasmBoxValues(isDryChasm);
 		ArenaMeshUtils::WriteChasmRendererGeometryBuffers(chasmType, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-		ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outShapeInitCache->opaqueIndices0View);
+		ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 		std::optional<int> textureIndex = inf.getWetChasmIndex();
 		if (!textureIndex.has_value())
@@ -467,7 +478,11 @@ namespace MapGeneration
 		constexpr VoxelShapeScaleType scaleType = VoxelShapeScaleType::UnscaledFromMax;
 		outShapeDef->initBoxFromClassic(voxelType, scaleType, shapeInitCache);
 		outTextureDef->addTextureAsset(TextureAsset(textureAsset));
-		outShadingDef->init(VertexShaderType::Basic, PixelShaderType::Opaque);
+		
+		outShadingDef->init(VertexShaderType::Basic);
+		outShadingDef->addPixelShaderType(PixelShaderType::Opaque);
+		outShadingDef->addPixelShaderType(PixelShaderType::OpaqueWithAlphaTestLayer);
+
 		outTraitsDef->initChasm(chasmType);
 		outChasmDef->initClassic(chasmType, textureAsset, textureManager);
 	}
@@ -492,7 +507,7 @@ namespace MapGeneration
 				*outVoxelType = ArenaTypes::VoxelType::Wall;
 				outShapeInitCache->initDefaultBoxValues();
 				ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-				ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->opaqueIndices0View, outShapeInitCache->opaqueIndices1View, outShapeInitCache->opaqueIndices2View);
+				ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 				const int textureIndex = mostSigByte - 1;
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -503,7 +518,9 @@ namespace MapGeneration
 				*outTextureAsset2 = *outTextureAsset0;
 				*outVertexShaderType = VertexShaderType::Basic;
 				outPixelShaderTypes[0] = PixelShaderType::Opaque;
-				*outPixelShaderCount = 1;
+				outPixelShaderTypes[1] = PixelShaderType::Opaque;
+				outPixelShaderTypes[2] = PixelShaderType::Opaque;
+				*outPixelShaderCount = 3;
 			}
 			else
 			{
@@ -598,7 +615,7 @@ namespace MapGeneration
 
 				outShapeInitCache->initRaisedBoxValues(ySize, yOffset);
 				ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(yOffset, ySize, vBottom, vTop, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-				ArenaMeshUtils::WriteRaisedRendererIndexBuffers(outShapeInitCache->alphaTestedIndices0View, outShapeInitCache->opaqueIndices0View, outShapeInitCache->opaqueIndices1View);
+				ArenaMeshUtils::WriteRaisedRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 				const int clampedSideID = ArenaVoxelUtils::clampVoxelTextureID(sideID);
 				const int clampedFloorID = ArenaVoxelUtils::clampVoxelTextureID(floorID);
@@ -629,7 +646,7 @@ namespace MapGeneration
 
 				outShapeInitCache->initDefaultBoxValues();
 				ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-				ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(outShapeInitCache->alphaTestedIndices0View);
+				ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -697,7 +714,7 @@ namespace MapGeneration
 
 				outShapeInitCache->initDefaultBoxValues();
 				ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(facing, yOffset, flipped, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-				ArenaMeshUtils::WriteEdgeRendererIndexBuffers(outShapeInitCache->alphaTestedIndices0View);
+				ArenaMeshUtils::WriteEdgeRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
 				*outTextureAsset0 = TextureAsset(
@@ -749,7 +766,7 @@ namespace MapGeneration
 
 				outShapeInitCache->initDefaultBoxValues();
 				ArenaMeshUtils::WriteDoorRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-				ArenaMeshUtils::WriteDoorRendererIndexBuffers(outShapeInitCache->alphaTestedIndices0View);
+				ArenaMeshUtils::WriteDoorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
 				*outTextureAsset0 = TextureAsset(
@@ -773,7 +790,7 @@ namespace MapGeneration
 				const bool isRightDiag = (map1Voxel & 0x0100) == 0;
 				outShapeInitCache->initDiagonalBoxValues(isRightDiag);
 				ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(isRightDiag, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-				ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(outShapeInitCache->opaqueIndices0View);
+				ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -850,7 +867,7 @@ namespace MapGeneration
 		*outVoxelType = ArenaTypes::VoxelType::Wall;
 		outShapeInitCache->initDefaultBoxValues();
 		ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-		ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->opaqueIndices0View, outShapeInitCache->opaqueIndices1View, outShapeInitCache->opaqueIndices2View);
+		ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
 		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -874,7 +891,13 @@ namespace MapGeneration
 		outTextureDef->addTextureAsset(std::move(textureAsset0));
 		outTextureDef->addTextureAsset(std::move(textureAsset1));
 		outTextureDef->addTextureAsset(std::move(textureAsset2));
-		outShadingDef->init(VertexShaderType::Basic, PixelShaderType::Opaque);
+		
+		outShadingDef->init(VertexShaderType::Basic);
+		for (int i = 0; i < 3; i++)
+		{
+			outShadingDef->addPixelShaderType(PixelShaderType::Opaque);
+		}
+
 		outTraitsDef->initGeneral(voxelType);
 	}
 
@@ -884,7 +907,7 @@ namespace MapGeneration
 		*outVoxelType = ArenaTypes::VoxelType::Ceiling;
 		outShapeInitCache->initDefaultBoxValues();
 		ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-		ArenaMeshUtils::WriteCeilingRendererIndexBuffers(outShapeInitCache->opaqueIndices0View);
+		ArenaMeshUtils::WriteCeilingRendererIndexBuffers(outShapeInitCache->indices0View);
 
 		// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe hardcoding index 1 is enough?
 		const INFCeiling &ceiling = inf.getCeiling();

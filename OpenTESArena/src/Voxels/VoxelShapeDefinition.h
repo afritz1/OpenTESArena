@@ -35,23 +35,22 @@ struct VoxelBoxShapeDefinition
 struct VoxelMeshDefinition
 {
 	std::vector<double> rendererVertices, rendererNormals, rendererTexCoords;
-	std::vector<int32_t> opaqueIndices0, opaqueIndices1, opaqueIndices2, alphaTestedIndices;
+	std::vector<int32_t> indices0, indices1, indices2; // Up to 3 draw calls.
 	int uniqueVertexCount; // Ideal number of vertices to represent the mesh.
 	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
-	int opaqueIndicesListCount, alphaTestedIndicesListCount;
+	int indicesListCount;
 
 	VoxelMeshDefinition();
 
 	void initClassic(ArenaTypes::VoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache);
 
 	bool isEmpty() const;
-	std::vector<int32_t> &getOpaqueIndicesList(int index);
-	BufferView<const int32_t> getOpaqueIndicesList(int index) const;
+	std::vector<int32_t> &getIndicesList(int index);
+	BufferView<const int32_t> getIndicesList(int index) const;
 
 	void writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outVertices,
 		BufferView<double> outNormals, BufferView<double> outTexCoords) const;
-	void writeRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices0, BufferView<int32_t> outOpaqueIndices1,
-		BufferView<int32_t> outOpaqueIndices2, BufferView<int32_t> outAlphaTestedIndices) const;
+	void writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1, BufferView<int32_t> outIndices2) const;
 };
 
 // Provides geometry for physics and rendering.

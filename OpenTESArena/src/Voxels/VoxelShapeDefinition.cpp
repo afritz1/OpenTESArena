@@ -23,8 +23,7 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 	// Default to air voxel.
 	this->uniqueVertexCount = 0;
 	this->rendererVertexCount = 0;
-	this->opaqueIndicesListCount = 0;
-	this->alphaTestedIndicesListCount = 0;
+	this->indicesListCount = 0;
 }
 
 void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelShapeScaleType scaleType,
@@ -32,8 +31,7 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelShap
 {
 	this->uniqueVertexCount = ArenaMeshUtils::GetUniqueVertexCount(voxelType);
 	this->rendererVertexCount = ArenaMeshUtils::GetRendererVertexCount(voxelType);
-	this->opaqueIndicesListCount = ArenaMeshUtils::GetOpaqueIndexBufferCount(voxelType);
-	this->alphaTestedIndicesListCount = ArenaMeshUtils::GetAlphaTestedIndexBufferCount(voxelType);
+	this->indicesListCount = ArenaMeshUtils::GetIndexBufferCount(voxelType);
 
 	if (voxelType != ArenaTypes::VoxelType::None)
 	{
@@ -49,21 +47,32 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelShap
 		this->rendererTexCoords.resize(rendererVertexTexCoordComponentCount);
 		std::copy(shapeInitCache.texCoords.begin(), shapeInitCache.texCoords.begin() + rendererVertexTexCoordComponentCount, this->rendererTexCoords.data());
 
-		for (int i = 0; i < this->opaqueIndicesListCount; i++)
+		for (int i = 0; i < this->indicesListCount; i++)
 		{
-			std::vector<int32_t> &dstBuffer = this->getOpaqueIndicesList(i);
-			const int opaqueIndexCount = ArenaMeshUtils::GetOpaqueIndexCount(voxelType, i);
-			dstBuffer.resize(opaqueIndexCount);
-			const BufferView<int32_t> &srcBuffer = (i == 0) ? shapeInitCache.opaqueIndices0View :
-				((i == 1) ? shapeInitCache.opaqueIndices1View : shapeInitCache.opaqueIndices2View);
-			std::copy(srcBuffer.begin(), srcBuffer.begin() + opaqueIndexCount, dstBuffer.data());
-		}
+			std::vector<int32_t> &dstBuffer = this->getIndicesList(i);
 
-		if (this->alphaTestedIndicesListCount > 0)
-		{
-			const int alphaTestedIndexCount = ArenaMeshUtils::GetAlphaTestedIndexCount(voxelType, 0);
-			this->alphaTestedIndices.resize(alphaTestedIndexCount);
-			std::copy(shapeInitCache.alphaTestedIndices0.begin(), shapeInitCache.alphaTestedIndices0.begin() + alphaTestedIndexCount, this->alphaTestedIndices.data());
+			const int indexCount = ArenaMeshUtils::GetIndexBufferIndexCount(voxelType, i);
+			dstBuffer.resize(indexCount);
+
+			const BufferView<int32_t> *srcBuffer = nullptr;
+			if (i == 0)
+			{
+				srcBuffer = &shapeInitCache.indices0View;
+			}
+			else if (i == 1)
+			{
+				srcBuffer = &shapeInitCache.indices1View;
+			}
+			else if (i == 2)
+			{
+				srcBuffer = &shapeInitCache.indices2View;
+			}
+			else
+			{
+				DebugNotImplementedMsg(std::to_string(i));
+			}
+
+			std::copy(srcBuffer->begin(), srcBuffer->begin() + indexCount, dstBuffer.data());
 		}
 	}
 }
@@ -73,16 +82,16 @@ bool VoxelMeshDefinition::isEmpty() const
 	return this->uniqueVertexCount == 0;
 }
 
-std::vector<int32_t> &VoxelMeshDefinition::getOpaqueIndicesList(int index)
+std::vector<int32_t> &VoxelMeshDefinition::getIndicesList(int index)
 {
-	const std::array<std::vector<int32_t>*, 3> ptrs = { &this->opaqueIndices0, &this->opaqueIndices1, &this->opaqueIndices2 };
+	std::vector<int32_t> *ptrs[] = { &this->indices0, &this->indices1, &this->indices2 };
 	DebugAssertIndex(ptrs, index);
 	return *ptrs[index];
 }
 
-BufferView<const int32_t> VoxelMeshDefinition::getOpaqueIndicesList(int index) const
+BufferView<const int32_t> VoxelMeshDefinition::getIndicesList(int index) const
 {
-	const std::array<const std::vector<int32_t>*, 3> ptrs = { &this->opaqueIndices0, &this->opaqueIndices1, &this->opaqueIndices2 };
+	const std::vector<int32_t> *ptrs[] = { &this->indices0, &this->indices1, &this->indices2 };
 	DebugAssertIndex(ptrs, index);
 	return *ptrs[index];
 }
@@ -115,28 +124,22 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(VoxelShapeScaleType scale
 	std::copy(this->rendererTexCoords.begin(), this->rendererTexCoords.end(), outTexCoords.begin());
 }
 
-void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices0,
-	BufferView<int32_t> outOpaqueIndices1, BufferView<int32_t> outOpaqueIndices2,
-	BufferView<int32_t> outAlphaTestedIndices) const
+void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1,
+	BufferView<int32_t> outIndices2) const
 {
-	if (!this->opaqueIndices0.empty())
+	if (!this->indices0.empty())
 	{
-		std::copy(this->opaqueIndices0.begin(), this->opaqueIndices0.end(), outOpaqueIndices0.begin());
+		std::copy(this->indices0.begin(), this->indices0.end(), outIndices0.begin());
 	}
 
-	if (!this->opaqueIndices1.empty())
+	if (!this->indices1.empty())
 	{
-		std::copy(this->opaqueIndices1.begin(), this->opaqueIndices1.end(), outOpaqueIndices1.begin());
+		std::copy(this->indices1.begin(), this->indices1.end(), outIndices1.begin());
 	}
 
-	if (!this->opaqueIndices2.empty())
+	if (!this->indices2.empty())
 	{
-		std::copy(this->opaqueIndices2.begin(), this->opaqueIndices2.end(), outOpaqueIndices2.begin());
-	}
-
-	if (!this->alphaTestedIndices.empty())
-	{
-		std::copy(this->alphaTestedIndices.begin(), this->alphaTestedIndices.end(), outAlphaTestedIndices.begin());
+		std::copy(this->indices2.begin(), this->indices2.end(), outIndices2.begin());
 	}
 }
 

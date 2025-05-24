@@ -9,13 +9,12 @@ using RenderVoxelMeshInstID = int;
 
 struct RenderVoxelMeshInstance
 {
-	static constexpr int MAX_TEXTURES = 3; // Based on VoxelDefinition subtypes (wall and raised).
+	static constexpr int MAX_DRAW_CALLS = 3; // Based on VoxelDefinition subtypes (wall or raised).
 
 	VertexBufferID vertexBufferID;
 	AttributeBufferID normalBufferID, texCoordBufferID;
-	IndexBufferID opaqueIndexBufferIDs[MAX_TEXTURES];
-	int opaqueIndexBufferIdCount;
-	IndexBufferID alphaTestedIndexBufferID;
+	IndexBufferID indexBufferIDs[MAX_DRAW_CALLS];
+	int indexBufferIdCount;
 
 	RenderVoxelMeshInstance();
 

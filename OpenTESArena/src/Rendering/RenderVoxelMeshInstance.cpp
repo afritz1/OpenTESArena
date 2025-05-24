@@ -8,20 +8,13 @@ RenderVoxelMeshInstance::RenderVoxelMeshInstance()
 	this->vertexBufferID = -1;
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
-	std::fill(std::begin(this->opaqueIndexBufferIDs), std::end(this->opaqueIndexBufferIDs), -1);
-	this->opaqueIndexBufferIdCount = 0;
-	this->alphaTestedIndexBufferID = -1;
+	std::fill(std::begin(this->indexBufferIDs), std::end(this->indexBufferIDs), -1);
+	this->indexBufferIdCount = 0;
 }
 
 int RenderVoxelMeshInstance::getUniqueDrawCallCount() const
 {
-	int count = this->opaqueIndexBufferIdCount;
-	if (this->alphaTestedIndexBufferID >= 0)
-	{
-		count++;
-	}
-
-	return count;
+	return this->indexBufferIdCount;
 }
 
 void RenderVoxelMeshInstance::freeBuffers(Renderer &renderer)
@@ -44,20 +37,11 @@ void RenderVoxelMeshInstance::freeBuffers(Renderer &renderer)
 		this->texCoordBufferID = -1;
 	}
 
-	if (this->opaqueIndexBufferIdCount > 0)
+	for (int i = 0; i < this->indexBufferIdCount; i++)
 	{
-		for (int i = 0; i < this->opaqueIndexBufferIdCount; i++)
-		{
-			renderer.freeIndexBuffer(this->opaqueIndexBufferIDs[i]);
-		}
-
-		std::fill(std::begin(this->opaqueIndexBufferIDs), std::end(this->opaqueIndexBufferIDs), -1);
-		this->opaqueIndexBufferIdCount = 0;
+		renderer.freeIndexBuffer(this->indexBufferIDs[i]);
 	}
 
-	if (this->alphaTestedIndexBufferID >= 0)
-	{
-		renderer.freeIndexBuffer(this->alphaTestedIndexBufferID);
-		this->alphaTestedIndexBufferID = -1;
-	}
+	std::fill(std::begin(this->indexBufferIDs), std::end(this->indexBufferIDs), -1);
+	this->indexBufferIdCount = 0;
 }

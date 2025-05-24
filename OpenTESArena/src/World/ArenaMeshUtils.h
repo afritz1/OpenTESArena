@@ -44,12 +44,11 @@ namespace ArenaMeshUtils
 		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> vertices;
 		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals;
 		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords;
-		std::array<int32_t, MAX_RENDERER_INDICES> opaqueIndices0, opaqueIndices1, opaqueIndices2;
-		std::array<int32_t, MAX_RENDERER_INDICES> alphaTestedIndices0;
-		std::array<const decltype(opaqueIndices0)*, 3> opaqueIndicesPtrs;
+		std::array<int32_t, MAX_RENDERER_INDICES> indices0, indices1, indices2;
+		std::array<const decltype(indices0)*, 3> indicesPtrs;
 
 		BufferView<double> verticesView, normalsView, texCoordsView;
-		BufferView<int32_t> opaqueIndices0View, opaqueIndices1View, opaqueIndices2View, alphaTestedIndices0View;
+		BufferView<int32_t> indices0View, indices1View, indices2View;
 
 		ShapeInitCache()
 		{
@@ -62,19 +61,17 @@ namespace ArenaMeshUtils
 			this->vertices.fill(0.0);
 			this->normals.fill(0.0);
 			this->texCoords.fill(0.0);
-			this->opaqueIndices0.fill(-1);
-			this->opaqueIndices1.fill(-1);
-			this->opaqueIndices2.fill(-1);
-			this->alphaTestedIndices0.fill(-1);
-			this->opaqueIndicesPtrs = { &this->opaqueIndices0, &this->opaqueIndices1, &this->opaqueIndices2 };
+			this->indices0.fill(-1);
+			this->indices1.fill(-1);
+			this->indices2.fill(-1);
+			this->indicesPtrs = { &this->indices0, &this->indices1, &this->indices2 };
 
 			this->verticesView.init(this->vertices);
 			this->normalsView.init(this->normals);
 			this->texCoordsView.init(this->texCoords);
-			this->opaqueIndices0View.init(this->opaqueIndices0);
-			this->opaqueIndices1View.init(this->opaqueIndices1);
-			this->opaqueIndices2View.init(this->opaqueIndices2);
-			this->alphaTestedIndices0View.init(this->alphaTestedIndices0);
+			this->indices0View.init(this->indices0);
+			this->indices1View.init(this->indices1);
+			this->indices2View.init(this->indices2);
 		}
 
 		void initDefaultBoxValues()
@@ -393,6 +390,88 @@ namespace ArenaMeshUtils
 		return triangleCount * MeshUtils::INDICES_PER_TRIANGLE;
 	}
 
+	constexpr int GetIndexBufferCount(ArenaTypes::VoxelType voxelType)
+	{
+		return GetOpaqueIndexBufferCount(voxelType) + GetAlphaTestedIndexBufferCount(voxelType);
+	}
+
+	constexpr int GetIndexBufferIndexCount(ArenaTypes::VoxelType voxelType, int indexBufferIndex)
+	{
+		constexpr std::pair<ArenaTypes::VoxelType, int> IndexBuffer0FaceCounts[] =
+		{
+			{ ArenaTypes::VoxelType::None, 0 },
+			{ ArenaTypes::VoxelType::Wall, 4 },
+			{ ArenaTypes::VoxelType::Floor, 1 },
+			{ ArenaTypes::VoxelType::Ceiling, 1 },
+			{ ArenaTypes::VoxelType::Raised, 4 },
+			{ ArenaTypes::VoxelType::Diagonal, 2 },
+			{ ArenaTypes::VoxelType::TransparentWall, 4 },
+			{ ArenaTypes::VoxelType::Edge, 2 },
+			{ ArenaTypes::VoxelType::Chasm, 1 },
+			{ ArenaTypes::VoxelType::Door, 4 }
+		};
+
+		constexpr std::pair<ArenaTypes::VoxelType, int> IndexBuffer1FaceCounts[] =
+		{
+			{ ArenaTypes::VoxelType::None, 0 },
+			{ ArenaTypes::VoxelType::Wall, 1 },
+			{ ArenaTypes::VoxelType::Floor, 0 },
+			{ ArenaTypes::VoxelType::Ceiling, 0 },
+			{ ArenaTypes::VoxelType::Raised, 1 },
+			{ ArenaTypes::VoxelType::Diagonal, 0 },
+			{ ArenaTypes::VoxelType::TransparentWall, 0 },
+			{ ArenaTypes::VoxelType::Edge, 0 },
+			{ ArenaTypes::VoxelType::Chasm, 0 },
+			{ ArenaTypes::VoxelType::Door, 0 }
+		};
+
+		constexpr std::pair<ArenaTypes::VoxelType, int> IndexBuffer2FaceCounts[] =
+		{
+			{ ArenaTypes::VoxelType::None, 0 },
+			{ ArenaTypes::VoxelType::Wall, 1 },
+			{ ArenaTypes::VoxelType::Floor, 0 },
+			{ ArenaTypes::VoxelType::Ceiling, 0 },
+			{ ArenaTypes::VoxelType::Raised, 1 },
+			{ ArenaTypes::VoxelType::Diagonal, 0 },
+			{ ArenaTypes::VoxelType::TransparentWall, 0 },
+			{ ArenaTypes::VoxelType::Edge, 0 },
+			{ ArenaTypes::VoxelType::Chasm, 0 },
+			{ ArenaTypes::VoxelType::Door, 0 }
+		};
+
+		const std::pair<ArenaTypes::VoxelType, int> *indexBufferFaceCounts = nullptr;
+		switch (indexBufferIndex)
+		{
+		case 0:
+			indexBufferFaceCounts = IndexBuffer0FaceCounts;
+			break;
+		case 1:
+			indexBufferFaceCounts = IndexBuffer1FaceCounts;
+			break;
+		case 2:
+			indexBufferFaceCounts = IndexBuffer2FaceCounts;
+			break;
+		default:
+			DebugNotImplemented();
+			break;
+		}
+
+		constexpr int voxelTypeCount = static_cast<int>(std::size(IndexBuffer0FaceCounts));
+
+		int faceCount = 0;
+		for (int i = 0; i < voxelTypeCount; i++)
+		{
+			const std::pair<ArenaTypes::VoxelType, int> &pair = indexBufferFaceCounts[i];
+			if (pair.first == voxelType)
+			{
+				faceCount = pair.second;
+				break;
+			}
+		}
+
+		return faceCount * MeshUtils::INDICES_PER_FACE;
+	}
+
 	constexpr int GetChasmWallIndex(bool north, bool east, bool south, bool west)
 	{
 		const int index = (north ? CHASM_WALL_NORTH : 0) | (east ? CHASM_WALL_EAST : 0) | (south ? CHASM_WALL_SOUTH : 0) | (west ? CHASM_WALL_WEST : 0);
@@ -516,7 +595,7 @@ namespace ArenaMeshUtils
 	void WriteCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
 	void WriteRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outVertices, BufferView<double> outNormals);
 	void WriteRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteRaisedRendererIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+	void WriteRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices);
 	void WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals);
 	void WriteDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
