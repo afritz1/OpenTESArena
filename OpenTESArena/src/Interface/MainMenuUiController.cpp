@@ -167,9 +167,6 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	player.init(testPlayerName, testIsMale, testRaceID, testCharClassDefID, testPortraitID, testPrimaryAttributes,
 		testMaxHealth, testMaxStamina, testMaxSpellPoints, testGold, testWeaponID, exeData, game.physicsSystem);
 
-	// Face west so we don't start looking at a wall.
-	player.setCameraFrameFromAngles(CardinalDirection::DegreesWest, 0.0);
-
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
 	const auto &options = game.options;
