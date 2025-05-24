@@ -571,6 +571,7 @@ void ChooseAttributesPanel::updateDerivedAttributeValues()
 	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(charCreationState.attributes);
 
 	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, charCreationState.attributes.intelligence.maxValue);
+	charCreationState.maxStamina = ArenaPlayerUtils::calculateMaxStamina(charCreationState.attributes.strength.maxValue, charCreationState.attributes.endurance.maxValue);
 
 	const BufferView<const int> derivedAttributesView = charCreationState.derivedAttributes.getView();
 	for (int i = 0; i < DerivedAttributes::COUNT; i++)
