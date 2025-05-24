@@ -563,7 +563,7 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 				IndexBufferID &indexBufferID = renderVoxelMeshInst.indexBufferIDs[bufferIndex];
 				if (!renderer.tryCreateIndexBuffer(indexCount, &indexBufferID))
 				{
-					DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.getPosition().toString());
+					DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.getPosition().toString().c_str());
 					renderVoxelMeshInst.freeBuffers(renderer);
 					continue;
 				}
