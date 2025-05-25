@@ -893,18 +893,26 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 		constexpr double stopDistanceSqr = 0.5 * 0.5;
 		constexpr double attackDistanceSqr = 1.0 * 1.0;
 		constexpr double moveSpeed = 1.0;
+		constexpr double attackCooldown = 1.1;
+		
+		if (entityInst.lastAttackTime == 0.0)
+		{
+			entityInst.lastAttackTime = -attackCooldown;
+		}
 		
 		if (distToPlayerSqr <= chaseDistanceSqr && distToPlayerSqr > stopDistanceSqr)
 		{
 			if (distToPlayerSqr <= attackDistanceSqr)
 			{
-				const std::optional<int> attackStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_ATTACK.c_str());
-				if (attackStateIndex.has_value())
+				const double currentTime = static_cast<double>(SDL_GetTicks()) / 1000.0;
+				if (currentTime - entityInst.lastAttackTime >= attackCooldown)
 				{
-					if (animInst.currentStateIndex != *attackStateIndex)
+					const std::optional<int> attackStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_ATTACK.c_str());
+					if (attackStateIndex.has_value())
 					{
 						animInst.setStateIndex(*attackStateIndex);
 						DebugLog("Enemy attacked you");
+						entityInst.lastAttackTime = currentTime;
 					}
 				}
 			}
