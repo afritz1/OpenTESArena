@@ -507,15 +507,46 @@ namespace MapGeneration
 				*outVoxelType = ArenaTypes::VoxelType::Wall;
 				outShapeInitCache->initDefaultBoxValues();
 				ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
-				ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
+				ArenaMeshUtils::WriteWallRendererIndexBuffers(
+					outShapeInitCache->indices0View,
+					outShapeInitCache->indices1View,
+					outShapeInitCache->indices2View
+				);
 
 				const int textureIndex = mostSigByte - 1;
-				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
+				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);		
 				std::string voxelTextureFilename = ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf);
 				const std::optional<int> voxelTextureSetIndex = ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf);
 				*outTextureAsset0 = TextureAsset(std::move(voxelTextureFilename), voxelTextureSetIndex);
-				*outTextureAsset1 = *outTextureAsset0;
-				*outTextureAsset2 = *outTextureAsset0;
+
+				// Texture for the lower part (BOXCAP)
+				const std::optional<int> &boxCapID = inf.getBoxCap(8);
+				if (boxCapID.has_value())
+				{
+					const int boxCapTextureID = *boxCapID;
+					const int clampedBoxCapTextureID = ArenaVoxelUtils::clampVoxelTextureID(boxCapTextureID);
+					*outTextureAsset1 = TextureAsset(
+						ArenaVoxelUtils::getVoxelTextureFilename(clampedBoxCapTextureID, inf),
+						ArenaVoxelUtils::getVoxelTextureSetIndex(clampedBoxCapTextureID, inf));
+				}
+				else
+				{
+					*outTextureAsset1 = *outTextureAsset0;
+				}
+				//Texture for the upper part(use the texture of the ceiling)
+				const auto &ceiling = inf.getCeiling();
+				if (ceiling.textureIndex.has_value())
+				{
+					const int ceilingTextureID = *ceiling.textureIndex;
+					const int clampedCeilingTextureID = ArenaVoxelUtils::clampVoxelTextureID(ceilingTextureID);
+					*outTextureAsset2 = TextureAsset(
+						ArenaVoxelUtils::getVoxelTextureFilename(clampedCeilingTextureID, inf),
+						ArenaVoxelUtils::getVoxelTextureSetIndex(clampedCeilingTextureID, inf));
+				}
+				else
+				{
+					*outTextureAsset2 = *outTextureAsset0;
+				}
 				*outVertexShaderType = VertexShaderType::Basic;
 				outPixelShaderTypes[0] = PixelShaderType::Opaque;
 				outPixelShaderTypes[1] = PixelShaderType::Opaque;
