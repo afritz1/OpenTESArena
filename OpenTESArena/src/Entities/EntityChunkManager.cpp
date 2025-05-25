@@ -891,75 +891,91 @@ void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, 
 		
 		constexpr double chaseDistanceSqr = 10.0 * 10.0;
 		constexpr double stopDistanceSqr = 0.5 * 0.5;
+		constexpr double attackDistanceSqr = 1.0 * 1.0;
 		constexpr double moveSpeed = 1.0;
 		
 		if (distToPlayerSqr <= chaseDistanceSqr && distToPlayerSqr > stopDistanceSqr)
 		{
-			if (animInst.currentStateIndex != *walkStateIndex)
+			if (distToPlayerSqr <= attackDistanceSqr)
 			{
-				animInst.setStateIndex(*walkStateIndex);
-			}
-			
-			entityDir = dirToPlayer.normalized();
-			
-			const WorldDouble2 movement = entityDir * moveSpeed * dt;
-			
-			WorldDouble3 newPosition = entityPosition;
-			newPosition.x += movement.x;
-			newPosition.z += movement.y;
-			
-			const WorldInt2 targetVoxel = VoxelUtils::pointToVoxel(WorldDouble2(newPosition.x, newPosition.z));
-			const CoordInt2 targetCoord = VoxelUtils::worldVoxelToCoord(targetVoxel);
-			bool canMove = true;
-			
-			const VoxelChunk *targetChunk = voxelChunkManager.tryGetChunkAtPosition(targetCoord.chunk);
-			if (targetChunk != nullptr)
-			{
-				const VoxelInt3 mainVoxel(targetCoord.voxel.x, 1, targetCoord.voxel.y);
-				const VoxelTraitsDefID mainTraitsID = targetChunk->getTraitsDefID(mainVoxel.x, mainVoxel.y, mainVoxel.z);
-				const VoxelTraitsDefinition &mainTraits = targetChunk->getTraitsDef(mainTraitsID);
-				
-				if (mainTraits.type != ArenaTypes::VoxelType::None)
+				const std::optional<int> attackStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_ATTACK.c_str());
+				if (attackStateIndex.has_value())
 				{
-					canMove = false;
-				}
-				
-				const VoxelInt3 floorVoxel(targetCoord.voxel.x, 0, targetCoord.voxel.y);
-				const VoxelTraitsDefID floorTraitsID = targetChunk->getTraitsDefID(floorVoxel.x, floorVoxel.y, floorVoxel.z);
-				const VoxelTraitsDefinition &floorTraits = targetChunk->getTraitsDef(floorTraitsID);
-				
-				if (floorTraits.type != ArenaTypes::VoxelType::Floor)
-				{
-					canMove = false;
+					if (animInst.currentStateIndex != *attackStateIndex)
+					{
+						animInst.setStateIndex(*attackStateIndex);
+						DebugLog("Enemy attacked you");
+					}
 				}
 			}
 			else
 			{
-				canMove = false; 
-			}
-			
-			if (canMove)
-			{
-				entityPosition = newPosition;
-				curEntityChunkPos = VoxelUtils::worldPointToChunk(WorldDouble2(newPosition.x, newPosition.z));
-				
-				if (!entityInst.physicsBodyID.IsInvalid())
+				if (animInst.currentStateIndex != *walkStateIndex)
 				{
-					const JPH::RVec3 oldPos = bodyInterface.GetPosition(entityInst.physicsBodyID);
-					const JPH::RVec3 newPos(
-						static_cast<float>(newPosition.x),
-						static_cast<float>(oldPos.GetY()), 
-						static_cast<float>(newPosition.z));
+					animInst.setStateIndex(*walkStateIndex);
+				}
+				
+				entityDir = dirToPlayer.normalized();
+				
+				const WorldDouble2 movement = entityDir * moveSpeed * dt;
+				
+				WorldDouble3 newPosition = entityPosition;
+				newPosition.x += movement.x;
+				newPosition.z += movement.y;
+				
+				const WorldInt2 targetVoxel = VoxelUtils::pointToVoxel(WorldDouble2(newPosition.x, newPosition.z));
+				const CoordInt2 targetCoord = VoxelUtils::worldVoxelToCoord(targetVoxel);
+				bool canMove = true;
+				
+				const VoxelChunk *targetChunk = voxelChunkManager.tryGetChunkAtPosition(targetCoord.chunk);
+				if (targetChunk != nullptr)
+				{
+					const VoxelInt3 mainVoxel(targetCoord.voxel.x, 1, targetCoord.voxel.y);
+					const VoxelTraitsDefID mainTraitsID = targetChunk->getTraitsDefID(mainVoxel.x, mainVoxel.y, mainVoxel.z);
+					const VoxelTraitsDefinition &mainTraits = targetChunk->getTraitsDef(mainTraitsID);
 					
-					bodyInterface.SetPosition(entityInst.physicsBodyID, newPos, JPH::EActivation::Activate);
-					bodyInterface.ActivateBody(entityInst.physicsBodyID);
+					if (mainTraits.type != ArenaTypes::VoxelType::None)
+					{
+						canMove = false;
+					}
+					
+					const VoxelInt3 floorVoxel(targetCoord.voxel.x, 0, targetCoord.voxel.y);
+					const VoxelTraitsDefID floorTraitsID = targetChunk->getTraitsDefID(floorVoxel.x, floorVoxel.y, floorVoxel.z);
+					const VoxelTraitsDefinition &floorTraits = targetChunk->getTraitsDef(floorTraitsID);
+					
+					if (floorTraits.type != ArenaTypes::VoxelType::Floor)
+					{
+						canMove = false;
+					}
 				}
-			}
-			else
-			{
-				const double angle = std::atan2(entityDir.y, entityDir.x) + (M_PI / 4.0);
-				entityDir.x = std::cos(angle);
-				entityDir.y = std::sin(angle);
+				else
+				{
+					canMove = false; 
+				}
+				
+				if (canMove)
+				{
+					entityPosition = newPosition;
+					curEntityChunkPos = VoxelUtils::worldPointToChunk(WorldDouble2(newPosition.x, newPosition.z));
+					
+					if (!entityInst.physicsBodyID.IsInvalid())
+					{
+						const JPH::RVec3 oldPos = bodyInterface.GetPosition(entityInst.physicsBodyID);
+						const JPH::RVec3 newPos(
+							static_cast<float>(newPosition.x),
+							static_cast<float>(oldPos.GetY()), 
+							static_cast<float>(newPosition.z));
+						
+						bodyInterface.SetPosition(entityInst.physicsBodyID, newPos, JPH::EActivation::Activate);
+						bodyInterface.ActivateBody(entityInst.physicsBodyID);
+					}
+				}
+				else
+				{
+					const double angle = std::atan2(entityDir.y, entityDir.x) + (M_PI / 4.0);
+					entityDir.x = std::cos(angle);
+					entityDir.y = std::sin(angle);
+				}
 			}
 		}
 		else
