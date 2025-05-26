@@ -1352,7 +1352,7 @@ namespace MapGeneration
 				const VoxelTraitsDefinition &traitsDef = outLevelInfoDef->getVoxelTraitsDef(voxelTraitsDefID);
 				if (traitsDef.type == ArenaTypes::VoxelType::Chasm)
 				{
-					const VoxelTraitsDefinition::Chasm &chasm = traitsDef.chasm;
+					const VoxelTraitsChasmDefinition &chasm = traitsDef.chasm;
 
 					LevelVoxelChasmDefID chasmDefID;
 					const auto chasmIter = chasmCache->find(florVoxel);

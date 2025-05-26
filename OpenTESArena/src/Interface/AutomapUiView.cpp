@@ -139,7 +139,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 		else if (wallType == ArenaTypes::VoxelType::TransparentWall)
 		{
 			// Transparent walls with collision (hedges) are shown, while ones without collision (archways) are not.
-			const VoxelTraitsDefinition::TransparentWall &transparentWall = wallDef.transparentWall;
+			const VoxelTraitsTransparentWallDefinition &transparentWall = wallDef.transparentWall;
 			return transparentWall.collider ? AutomapUiView::ColorWall : AutomapUiView::ColorFloor;
 		}
 		else if (wallType == ArenaTypes::VoxelType::Edge)
@@ -199,7 +199,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 		if (wallType == ArenaTypes::VoxelType::None)
 		{
 			// Regular ground is transparent; all other grounds are wall color.
-			const VoxelTraitsDefinition::Floor &floor = floorDef.floor;
+			const VoxelTraitsFloorDefinition &floor = floorDef.floor;
 			const bool isRegularGround = !floor.isWildWallColored;
 
 			if (isRegularGround)
@@ -260,7 +260,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 		}
 		else if (wallType == ArenaTypes::VoxelType::Edge)
 		{
-			const VoxelTraitsDefinition::Edge &edge = wallDef.edge;
+			const VoxelTraitsEdgeDefinition &edge = wallDef.edge;
 
 			// For some reason, most edges are hidden.
 			const bool isHiddenEdge = (edge.facing == VoxelFacing2D::PositiveX) ||
