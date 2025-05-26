@@ -1106,8 +1106,8 @@ void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, J
 }
 
 void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
-	ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode,
-	DitheringMode ditheringMode)
+	double screenSpaceAnimPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID,
+	int renderThreadsMode, DitheringMode ditheringMode)
 {
 	DebugAssert(this->renderer3D->isInited());
 
@@ -1116,8 +1116,8 @@ void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer
 	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
 
 	RenderFrameSettings renderFrameSettings;
-	renderFrameSettings.init(ambientPercent, paletteTextureID, lightTableTextureID, skyBgTextureID, renderDims.x, renderDims.y,
-		renderThreadsMode, ditheringMode);
+	renderFrameSettings.init(ambientPercent, screenSpaceAnimPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
+		renderDims.x, renderDims.y, renderThreadsMode, ditheringMode);
 
 	uint32_t *outputBuffer;
 	int gameWorldPitch;

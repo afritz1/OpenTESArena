@@ -3,6 +3,7 @@
 RenderFrameSettings::RenderFrameSettings()
 {
 	this->ambientPercent = 0.0;
+	this->screenSpaceAnimPercent = 0.0;
 	this->paletteTextureID = -1;
 	this->lightTableTextureID = -1;
 	this->skyBgTextureID = -1;
@@ -12,10 +13,12 @@ RenderFrameSettings::RenderFrameSettings()
 	this->ditheringMode = static_cast<DitheringMode>(-1);
 }
 
-void RenderFrameSettings::init(double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-	ObjectTextureID skyBgTextureID, int renderWidth, int renderHeight, int renderThreadsMode, DitheringMode ditheringMode)
+void RenderFrameSettings::init(double ambientPercent, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
+	ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderWidth, int renderHeight, int renderThreadsMode,
+	DitheringMode ditheringMode)
 {
 	this->ambientPercent = ambientPercent;
+	this->screenSpaceAnimPercent = screenSpaceAnimPercent;
 	this->paletteTextureID = paletteTextureID;
 	this->lightTableTextureID = lightTableTextureID;
 	this->skyBgTextureID = skyBgTextureID;

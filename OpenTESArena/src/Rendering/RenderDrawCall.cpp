@@ -15,16 +15,6 @@ RenderDrawCall::RenderDrawCall()
 		textureID = -1;
 	}
 
-	for (auto &ptr : this->varyingTextures)
-	{
-		ptr = nullptr;
-	}
-
-	for (TextureSamplingType &samplingType : this->textureSamplingTypes)
-	{
-		samplingType = static_cast<TextureSamplingType>(-1);
-	}
-
 	this->lightingType = static_cast<RenderLightingType>(-1);
 	for (RenderLightID &lightID : this->lightIDs)
 	{
@@ -53,16 +43,6 @@ void RenderDrawCall::clear()
 	for (ObjectTextureID &textureID : this->textureIDs)
 	{
 		textureID = -1;
-	}
-
-	for (auto &ptr : this->varyingTextures)
-	{
-		ptr = nullptr;
-	}
-
-	for (TextureSamplingType &samplingType : this->textureSamplingTypes)
-	{
-		samplingType = static_cast<TextureSamplingType>(-1);
 	}
 	
 	this->lightingType = static_cast<RenderLightingType>(-1);

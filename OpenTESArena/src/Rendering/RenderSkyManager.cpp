@@ -285,8 +285,6 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.indexBufferID = this->bgIndexBufferID;
 	this->bgDrawCall.textureIDs[0] = this->skyGradientAMTextureRef.get(); // ID is updated depending on weather.
 	this->bgDrawCall.textureIDs[1] = -1;
-	this->bgDrawCall.textureSamplingTypes[0] = TextureSamplingType::Default;
-	this->bgDrawCall.textureSamplingTypes[1] = TextureSamplingType::Default;
 	this->bgDrawCall.lightingType = RenderLightingType::PerMesh;
 	this->bgDrawCall.lightPercent = 1.0;
 	this->bgDrawCall.lightIdCount = 0;
@@ -727,8 +725,6 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.indexBufferID = this->objectIndexBufferID;
 		drawCall.textureIDs[0] = textureID;
 		drawCall.textureIDs[1] = -1;
-		drawCall.textureSamplingTypes[0] = TextureSamplingType::Default;
-		drawCall.textureSamplingTypes[1] = TextureSamplingType::Default;
 		drawCall.lightingType = RenderLightingType::PerMesh;
 		drawCall.lightPercent = meshLightPercent;
 		drawCall.lightIdCount = 0;

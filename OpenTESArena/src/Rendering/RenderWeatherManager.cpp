@@ -591,8 +591,6 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.indexBufferID = this->particleIndexBufferID;
 		drawCall.textureIDs[0] = textureID;
 		drawCall.textureIDs[1] = -1;
-		drawCall.textureSamplingTypes[0] = TextureSamplingType::Default;
-		drawCall.textureSamplingTypes[1] = TextureSamplingType::Default;
 		drawCall.lightingType = RenderLightingType::PerMesh;
 		drawCall.lightPercent = 1.0;
 		drawCall.lightIdCount = 0;
@@ -716,8 +714,6 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.indexBufferID = this->fogIndexBufferID;
 		this->fogDrawCall.textureIDs[0] = this->fogTextureID;
 		this->fogDrawCall.textureIDs[1] = -1;
-		this->fogDrawCall.textureSamplingTypes[0] = TextureSamplingType::Default;
-		this->fogDrawCall.textureSamplingTypes[1] = TextureSamplingType::Default;
 		this->fogDrawCall.lightingType = RenderLightingType::PerMesh;
 		this->fogDrawCall.lightPercent = 1.0;
 		this->fogDrawCall.lightIdCount = 0;

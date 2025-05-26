@@ -38,21 +38,19 @@ public:
 
 	// Chasm walls are multi-textured. They use the chasm animation and a separate wall texture.
 	// The draw call and pixel shader need two textures in order to support chasm wall rendering.
-	struct LoadedChasmFloorTextureList
+	struct LoadedChasmFloorTexture
 	{
 		VoxelChasmAnimationType animType;
 
 		uint8_t paletteIndex;
-		std::vector<TextureAsset> textureAssets;
+		std::vector<TextureAsset> textureAssets; // All frames packed vertically into object texture ref.
 
-		std::vector<ScopedObjectTextureRef> objectTextureRefs; // If textured, then accessed via chasm anim percent.
+		ScopedObjectTextureRef objectTextureRef;
 
-		LoadedChasmFloorTextureList();
+		LoadedChasmFloorTexture();
 
 		void initColor(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
-		void initTextured(std::vector<TextureAsset> &&textureAssets, std::vector<ScopedObjectTextureRef> &&objectTextureRefs);
-
-		int getTextureIndex(double chasmAnimPercent) const;
+		void initTextured(std::vector<TextureAsset> &&textureAssets, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
 	struct LoadedChasmTextureKey
@@ -73,14 +71,14 @@ private:
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
 
 	std::vector<LoadedTexture> textures; // Includes chasm walls.
-	std::vector<LoadedChasmFloorTextureList> chasmFloorTextureLists;
+	std::vector<LoadedChasmFloorTexture> chasmFloorTextures;
 	std::vector<LoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
 
 	ObjectTextureID getTextureID(const TextureAsset &textureAsset) const;
-	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID, double chasmAnimPercent) const;
+	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID) const;
 	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID) const;
 
 	void loadTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer);

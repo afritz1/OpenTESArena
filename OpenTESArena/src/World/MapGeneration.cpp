@@ -394,8 +394,8 @@ namespace MapGeneration
 				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			*outVertexShaderType = VertexShaderType::Basic;
-			outPixelShaderTypes[0] = PixelShaderType::Opaque;
-			outPixelShaderTypes[1] = PixelShaderType::OpaqueWithAlphaTestLayer;
+			outPixelShaderTypes[0] = PixelShaderType::OpaqueScreenSpaceAnimation;
+			outPixelShaderTypes[1] = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			*outPixelShaderCount = 2;
 			*outIsWildWallColored = false;
 		}
@@ -480,8 +480,8 @@ namespace MapGeneration
 		outTextureDef->addTextureAsset(TextureAsset(textureAsset));
 		
 		outShadingDef->init(VertexShaderType::Basic);
-		outShadingDef->addPixelShaderType(PixelShaderType::Opaque);
-		outShadingDef->addPixelShaderType(PixelShaderType::OpaqueWithAlphaTestLayer);
+		outShadingDef->addPixelShaderType(PixelShaderType::OpaqueScreenSpaceAnimation);
+		outShadingDef->addPixelShaderType(PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 
 		outTraitsDef->initChasm(chasmType);
 		outChasmDef->initClassic(chasmType, textureAsset, textureManager);

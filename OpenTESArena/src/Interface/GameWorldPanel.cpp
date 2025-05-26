@@ -1055,11 +1055,7 @@ bool GameWorldPanel::renderScene(Game &game)
 
 	const MapType activeMapType = activeMapDef.getMapType();
 	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType, isFoggy);
-	const double latitude = [&gameState]()
-	{
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		return locationDef.getLatitude();
-	}();
+	const double chasmAnimPercent = gameState.getChasmAnimPercent();
 
 	auto &renderer = game.renderer;
 	const auto &options = game.options;
@@ -1084,8 +1080,8 @@ bool GameWorldPanel::renderScene(Game &game)
 	}
 
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(options.getGraphics_DitheringMode());
-	renderer.submitFrame(renderCamera, commandBuffer, ambientPercent, paletteTextureID, lightTableTextureID, renderSkyManager.getBgTextureID(),
-		options.getGraphics_RenderThreadsMode(), ditheringMode);
+	renderer.submitFrame(renderCamera, commandBuffer, ambientPercent, chasmAnimPercent, paletteTextureID, lightTableTextureID,
+		renderSkyManager.getBgTextureID(), options.getGraphics_RenderThreadsMode(), ditheringMode);
 
 	return true;
 }

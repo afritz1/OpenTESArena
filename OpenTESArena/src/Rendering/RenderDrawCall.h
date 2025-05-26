@@ -23,8 +23,6 @@ struct RenderDrawCall
 	AttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
 	ObjectTextureID textureIDs[MAX_TEXTURE_COUNT];
-	const ObjectTextureID *varyingTextures[MAX_TEXTURE_COUNT]; // Overrides texture IDs when set. Meant for frequently-updating textures like chasms.
-	TextureSamplingType textureSamplingTypes[MAX_TEXTURE_COUNT];
 	
 	RenderLightingType lightingType;
 	double lightPercent; // For per-mesh lighting.

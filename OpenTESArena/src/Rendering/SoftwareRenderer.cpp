@@ -743,8 +743,6 @@ namespace
 		const SoftwareRenderer::IndexBuffer *indexBuffer;
 		ObjectTextureID textureID0;
 		ObjectTextureID textureID1;
-		TextureSamplingType textureSamplingType0;
-		TextureSamplingType textureSamplingType1;
 		RenderLightingType lightingType;
 		double meshLightPercent;
 		const SoftwareRenderer::Light *lightPtrArray[RenderLightIdList::MAX_LIGHTS];
@@ -1435,7 +1433,6 @@ namespace
 		int width, height;
 		int widthMinusOne, heightMinusOne;
 		double widthReal, heightReal;
-		TextureSamplingType samplingType;
 
 		PixelShaderTexture()
 		{
@@ -1446,10 +1443,9 @@ namespace
 			this->heightMinusOne = 0;
 			this->widthReal = 0.0;
 			this->heightReal = 0.0;
-			this->samplingType = static_cast<TextureSamplingType>(-1);
 		}
 
-		void init(const uint8_t *texels, int width, int height, TextureSamplingType samplingType)
+		void init(const uint8_t *texels, int width, int height)
 		{
 			this->texels = texels;
 			this->width = width;
@@ -1458,7 +1454,6 @@ namespace
 			this->heightMinusOne = height - 1;
 			this->widthReal = static_cast<double>(width);
 			this->heightReal = static_cast<double>(height);
-			this->samplingType = samplingType;
 		}
 	};
 
@@ -1514,6 +1509,16 @@ namespace
 		}
 	};
 
+	struct PixelShaderUniforms
+	{
+		double screenSpaceAnimPercent;
+
+		PixelShaderUniforms()
+		{
+			screenSpaceAnimPercent = 0.0;
+		}
+	};
+
 	struct PixelShaderFrameBuffer
 	{
 		PixelShaderPalette palette;
@@ -1529,14 +1534,16 @@ namespace
 	};
 
 	double g_ambientPercent;
+	double g_screenSpaceAnimPercent;
 	const SoftwareRenderer::ObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
 	const SoftwareRenderer::ObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
 	const SoftwareRenderer::ObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
-	void PopulatePixelShaderGlobals(double ambientPercent, const SoftwareRenderer::ObjectTexture &paletteTexture,
+	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const SoftwareRenderer::ObjectTexture &paletteTexture,
 		const SoftwareRenderer::ObjectTexture &lightTableTexture, const SoftwareRenderer::ObjectTexture &skyBgTexture)
 	{
 		g_ambientPercent = ambientPercent;
+		g_screenSpaceAnimPercent = screenSpaceAnimPercent;
 		g_paletteTexture = &paletteTexture;
 		g_lightTableTexture = &lightTableTexture;
 		g_skyBgTexture = &skyBgTexture;
@@ -1546,23 +1553,8 @@ namespace
 	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		int texelX = -1;
-		int texelY = -1;
-		if (texture.samplingType == TextureSamplingType::Default)
-		{
-			texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
-			texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
-		}
-		else if (texture.samplingType == TextureSamplingType::ScreenSpaceRepeatY)
-		{
-			// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.
-			texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * texture.widthReal), 0, texture.widthMinusOne);
-
-			const double v = frameBuffer.yPercent * 2.0;
-			const double actualV = v >= 1.0 ? (v - 1.0) : v;
-			texelY = std::clamp(static_cast<int>(actualV * texture.heightReal), 0, texture.heightMinusOne);
-		}
-
+		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
+		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -1576,9 +1568,33 @@ namespace
 		}
 	}
 
+	constexpr int SCREEN_SPACE_ANIM_HEIGHT = 100; // @todo dehardcode w/ another parameter
+	void PixelShader_OpaqueScreenSpaceAnimation(const PixelShaderTexture &texture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
+	{
+		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.		
+		const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * texture.widthReal), 0, texture.widthMinusOne);
+
+		constexpr int frameHeight = SCREEN_SPACE_ANIM_HEIGHT;
+		const int frameCount = texture.height / frameHeight;
+		const double animPercent = uniforms.screenSpaceAnimPercent;
+		const int currentFrameIndex = std::clamp(static_cast<int>(static_cast<double>(frameCount) * animPercent), 0, frameCount - 1);
+
+		const double frameBufferV = frameBuffer.yPercent * 2.0;
+		const double normalizedV = frameBufferV >= 1.0 ? (frameBufferV - 1.0) : frameBufferV;
+		const double sampleV = (normalizedV / static_cast<double>(frameCount)) + (static_cast<double>(currentFrameIndex) / static_cast<double>(frameCount));
+		const int texelY = std::clamp(static_cast<int>(sampleV * texture.heightReal), 0, texture.heightMinusOne);
+
+		const int texelIndex = texelX + (texelY * texture.width);
+		const uint8_t texel = texture.texels[texelIndex];
+
+		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+	}
+
 	template<bool enableDepthWrite>
-	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
-		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	void PixelShader_OpaqueScreenSpaceAnimationWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
+		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercentX * alphaTestTexture.widthReal), 0, alphaTestTexture.widthMinusOne);
 		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercentY * alphaTestTexture.heightReal), 0, alphaTestTexture.heightMinusOne);
@@ -1590,9 +1606,15 @@ namespace
 		{
 			const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * opaqueTexture.widthReal), 0, opaqueTexture.widthMinusOne);
 
-			const double v = frameBuffer.yPercent * 2.0;
-			const double actualV = v >= 1.0 ? (v - 1.0) : v;
-			const int texelY = std::clamp(static_cast<int>(actualV * opaqueTexture.heightReal), 0, opaqueTexture.heightMinusOne);
+			constexpr int frameHeight = SCREEN_SPACE_ANIM_HEIGHT;
+			const int frameCount = opaqueTexture.height / frameHeight;
+			const double animPercent = uniforms.screenSpaceAnimPercent;
+			const int currentFrameIndex = std::clamp(static_cast<int>(static_cast<double>(frameCount) * animPercent), 0, frameCount - 1);
+
+			const double frameBufferV = frameBuffer.yPercent * 2.0;
+			const double normalizedV = frameBufferV >= 1.0 ? (frameBufferV - 1.0) : frameBufferV;
+			const double sampleV = (normalizedV / static_cast<double>(frameCount)) + (static_cast<double>(currentFrameIndex) / static_cast<double>(frameCount));
+			const int texelY = std::clamp(static_cast<int>(sampleV * opaqueTexture.heightReal), 0, opaqueTexture.heightMinusOne);
 
 			const int texelIndex = texelX + (texelY * opaqueTexture.width);
 			texel = opaqueTexture.texels[texelIndex];
@@ -2978,14 +3000,12 @@ namespace
 	void RasterizeMeshInternal(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
-		const TextureSamplingType textureSamplingType0 = drawCallCache.textureSamplingType0;
-		const TextureSamplingType textureSamplingType1 = drawCallCache.textureSamplingType1;
 		const double meshLightPercent = drawCallCache.meshLightPercent;
 		const auto &lights = drawCallCache.lightPtrArray;
 		const int lightCount = drawCallCache.lightCount;
 		const double pixelShaderParam0 = drawCallCache.pixelShaderParam0;
 
-		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
+		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
 		constexpr bool requiresHorizonMirror = pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
 		constexpr bool requiresPerPixelLightIntensity = lightingType == RenderLightingType::PerPixel;
 		constexpr bool requiresPerMeshLightIntensity = lightingType == RenderLightingType::PerMesh;
@@ -3018,14 +3038,17 @@ namespace
 
 		const SoftwareRenderer::ObjectTexture &texture0 = g_objectTextures->get(textureID0);
 		PixelShaderTexture shaderTexture0;
-		shaderTexture0.init(texture0.texels8Bit, texture0.width, texture0.height, textureSamplingType0);
+		shaderTexture0.init(texture0.texels8Bit, texture0.width, texture0.height);
 
 		PixelShaderTexture shaderTexture1;
 		if constexpr (requiresTwoTextures)
 		{
 			const SoftwareRenderer::ObjectTexture &texture1 = g_objectTextures->get(textureID1);
-			shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height, textureSamplingType1);
+			shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height);
 		}
+
+		PixelShaderUniforms shaderUniforms;
+		shaderUniforms.screenSpaceAnimPercent = g_screenSpaceAnimPercent;
 
 		// Local variables added to a global afterwards to avoid fighting with threads.
 		int totalCoverageTests = 0;
@@ -3271,9 +3294,13 @@ namespace
 					{
 						PixelShader_Opaque<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 					}
-					else if (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer)
+					else if (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimation)
 					{
-						PixelShader_OpaqueWithAlphaTestLayer<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
+						PixelShader_OpaqueScreenSpaceAnimation(shaderTexture0, shaderLighting, shaderUniforms, shaderFrameBuffer);
+					}
+					else if (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer)
+					{
+						PixelShader_OpaqueScreenSpaceAnimationWithAlphaTestLayer<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderUniforms, shaderFrameBuffer);
 					}
 					else if (pixelShaderType == PixelShaderType::AlphaTested)
 					{
@@ -3382,8 +3409,11 @@ namespace
 		case PixelShaderType::Opaque:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::OpaqueWithAlphaTestLayer:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case PixelShaderType::OpaqueScreenSpaceAnimation:
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueScreenSpaceAnimation>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			break;
+		case PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer:
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTested:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
@@ -4097,7 +4127,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	PopulateDrawCallGlobals(totalDrawCallCount);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
-	PopulatePixelShaderGlobals(settings.ambientPercent, paletteTexture, lightTableTexture, skyBgTexture);
+	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
 	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);
@@ -4158,8 +4188,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					auto &drawCallCacheIndexBuffer = workerDrawCallCache.indexBuffer;
 					auto &drawCallCacheTextureID0 = workerDrawCallCache.textureID0;
 					auto &drawCallCacheTextureID1 = workerDrawCallCache.textureID1;
-					auto &drawCallCacheTextureSamplingType0 = workerDrawCallCache.textureSamplingType0;
-					auto &drawCallCacheTextureSamplingType1 = workerDrawCallCache.textureSamplingType1;
 					auto &drawCallCacheLightingType = workerDrawCallCache.lightingType;
 					auto &drawCallCacheMeshLightPercent = workerDrawCallCache.meshLightPercent;
 					auto &drawCallCacheLightPtrArray = workerDrawCallCache.lightPtrArray;
@@ -4189,13 +4217,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					drawCallCacheVertexBuffer = &this->vertexBuffers.get(drawCall.vertexBufferID);
 					drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
 					drawCallCacheIndexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
-
-					const ObjectTextureID *varyingTexture0 = drawCall.varyingTextures[0];
-					const ObjectTextureID *varyingTexture1 = drawCall.varyingTextures[1];
-					drawCallCacheTextureID0 = (varyingTexture0 != nullptr) ? *varyingTexture0 : drawCall.textureIDs[0];
-					drawCallCacheTextureID1 = (varyingTexture1 != nullptr) ? *varyingTexture1 : drawCall.textureIDs[1];
-					drawCallCacheTextureSamplingType0 = drawCall.textureSamplingTypes[0];
-					drawCallCacheTextureSamplingType1 = drawCall.textureSamplingTypes[1];
+					drawCallCacheTextureID0 = drawCall.textureIDs[0];
+					drawCallCacheTextureID1 = drawCall.textureIDs[1];
 					drawCallCacheLightingType = drawCall.lightingType;
 					drawCallCacheMeshLightPercent = drawCall.lightPercent;
 

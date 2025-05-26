@@ -10,13 +10,14 @@
 struct RenderFrameSettings
 {
 	double ambientPercent;
+	double screenSpaceAnimPercent;
 	ObjectTextureID paletteTextureID, lightTableTextureID, skyBgTextureID;
 	int renderWidth, renderHeight, renderThreadsMode;
 	DitheringMode ditheringMode;
 
 	RenderFrameSettings();
 
-	void init(double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+	void init(double ambientPercent, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
 		ObjectTextureID skyBgTextureID, int renderWidth, int renderHeight, int renderThreadsMode, DitheringMode ditheringMode);
 };
 
