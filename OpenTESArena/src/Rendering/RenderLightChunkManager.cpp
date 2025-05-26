@@ -430,7 +430,7 @@ void RenderLightChunkManager::setNightLightsActive(bool enabled, double ceilingS
 	// Update streetlight enabled states.
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
-		const ChunkInt2 &chunkPos = chunkPtr->getPosition();
+		const ChunkInt2 chunkPos = chunkPtr->getPosition();
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{

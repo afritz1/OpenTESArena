@@ -569,7 +569,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const ChunkInt2 &chunkPos = entityChunk.getPosition();
+	const ChunkInt2 chunkPos = entityChunk.getPosition();
 	const SNInt levelWidth = levelDef.getWidth();
 	const WEInt levelDepth = levelDef.getDepth();
 

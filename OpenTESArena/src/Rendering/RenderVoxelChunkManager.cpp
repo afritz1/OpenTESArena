@@ -503,7 +503,7 @@ void RenderVoxelChunkManager::loadChunkTextures(const VoxelChunk &voxelChunk, co
 
 void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
 {
-	const ChunkInt2 &chunkPos = voxelChunk.getPosition();
+	const ChunkInt2 chunkPos = voxelChunk.getPosition();
 
 	// Add render chunk voxel mesh instances and create mappings to them.
 	for (int shapeDefIndex = 0; shapeDefIndex < voxelChunk.getShapeDefCount(); shapeDefIndex++)

@@ -416,7 +416,7 @@ void VoxelChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 {
 	// @todo: only iterate over chunk writing ranges
 
-	const ChunkInt2 &chunkPos = chunk.getPosition();
+	const ChunkInt2 chunkPos = chunk.getPosition();
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
@@ -476,7 +476,7 @@ void VoxelChunkManager::populateChunkDoorVisibilityInsts(VoxelChunk &chunk)
 {
 	DebugAssert(chunk.getDoorVisibilityInsts().getCount() == 0);
 
-	const ChunkInt2 &chunkPos = chunk.getPosition();
+	const ChunkInt2 chunkPos = chunk.getPosition();
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
 		for (int y = 0; y < chunk.getHeight(); y++)
