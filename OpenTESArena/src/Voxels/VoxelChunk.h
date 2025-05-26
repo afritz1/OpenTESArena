@@ -228,7 +228,8 @@ public:
 	// Simulates the chunk's voxels by delta time.
 	// @todo: evaluate just letting the chunk manager do all the updating for the chunk, due to the complexity
 	// of chunk perimeters, etc. and the amount of almost-identical problem solving between the two classes.
-	void update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager);
+	void updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager);
+	void updateFadeAnimInsts(double dt);
 
 	// End-of-frame clean-up.
 	void cleanUp();

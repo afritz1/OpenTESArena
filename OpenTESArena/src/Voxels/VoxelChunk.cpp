@@ -691,11 +691,10 @@ void VoxelChunk::setChasmWallInstDirty(SNInt x, int y, WEInt z)
 	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyChasmWallInstPositions, VoxelDirtyType::ChasmWall);
 }
 
-void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
+void VoxelChunk::updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
 {
-	const ChunkInt2 &chunkPos = this->getPosition();
+	const ChunkInt2 chunkPos = this->getPosition();
 
-	// Update doors.
 	for (int i = static_cast<int>(this->doorAnimInsts.size()) - 1; i >= 0; i--)
 	{
 		VoxelDoorAnimationInstance &animInst = this->doorAnimInsts[i];
@@ -706,8 +705,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 		{
 			if (animInst.stateType != VoxelDoorAnimationInstance::StateType::Closing)
 			{
-				// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
-				// the voxel if it is defined for the door.
+				// If the player is far enough away, set the door to closing.
 				const CoordDouble3 voxelCoord(chunkPos, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 				const VoxelDouble3 diff = playerCoord - voxelCoord;
 
@@ -718,7 +716,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				{
 					animInst.setStateType(VoxelDoorAnimationInstance::StateType::Closing);
 
-					// Play closing sound if it is defined for the door.
+					// Play closing sound if it's defined for the door.
 					VoxelDoorDefID doorDefID;
 					if (!this->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
 					{
@@ -737,7 +735,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 		}
 		else
 		{
-			// Play closed sound if it is defined for the door.
+			// Play closed sound if it's defined for the door.
 			VoxelDoorDefID doorDefID;
 			if (!this->tryGetDoorDefID(animInst.x, animInst.y, animInst.z, &doorDefID))
 			{
@@ -758,8 +756,10 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 
 		this->setDoorAnimInstDirty(voxel.x, voxel.y, voxel.z);
 	}
+}
 
-	// Update fading voxels.
+void VoxelChunk::updateFadeAnimInsts(double dt)
+{
 	for (int i = static_cast<int>(this->fadeAnimInsts.size()) - 1; i >= 0; i--)
 	{
 		VoxelFadeAnimationInstance &animInst = this->fadeAnimInsts[i];
@@ -770,8 +770,8 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 		{
 			const VoxelTraitsDefID voxelTraitsDefID = this->getTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = this->getTraitsDef(voxelTraitsDefID);
-			const bool willBecomeChasm = voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
-			if (willBecomeChasm)
+			const bool shouldConvertToChasm = voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
+			if (shouldConvertToChasm)
 			{
 				// Change to water chasm.
 				this->setShapeDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementShapeDefID);

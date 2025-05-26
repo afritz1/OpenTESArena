@@ -833,7 +833,8 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 	for (int i = 0; i < activeChunkCount; i++)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
-		chunkPtr->update(dt, playerCoord, ceilingScale, audioManager);
+		chunkPtr->updateDoorAnimInsts(dt, playerCoord, ceilingScale, audioManager);
+		chunkPtr->updateFadeAnimInsts(dt);
 	}
 
 	// Check if new chasms caused surrounding chasms to become dirty.
