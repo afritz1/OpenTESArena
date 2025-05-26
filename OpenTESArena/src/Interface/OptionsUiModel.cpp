@@ -495,6 +495,19 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeVerticalSensit
 	});
 }
 
+std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeInvertVerticalAxisOption(Game &game)
+{
+	const auto &options = game.options;
+	return std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::INVERT_VERTICAL_AXIS_NAME,
+		options.getInput_InvertVerticalAxis(),
+		[&game](bool value)
+	{
+		auto &options = game.options;
+		options.setInput_InvertVerticalAxis(value);
+	});
+}
+
 std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCameraPitchLimitOption(Game &game)
 {
 	const auto &options = game.options;
@@ -522,6 +535,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 	OptionGroup group;
 	group.emplace_back(OptionsUiModel::makeHorizontalSensitivityOption(game));
 	group.emplace_back(OptionsUiModel::makeVerticalSensitivityOption(game));
+	group.emplace_back(OptionsUiModel::makeInvertVerticalAxisOption(game));
 	group.emplace_back(OptionsUiModel::makeCameraPitchLimitOption(game));
 	return group;
 }

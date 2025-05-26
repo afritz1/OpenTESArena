@@ -44,6 +44,7 @@ namespace OptionsUiModel
 	// Input.
 	const std::string HORIZONTAL_SENSITIVITY_NAME = "Horizontal Sensitivity";
 	const std::string VERTICAL_SENSITIVITY_NAME = "Vertical Sensitivity";
+	const std::string INVERT_VERTICAL_AXIS_NAME = "Invert Vertical Axis";
 	const std::string CAMERA_PITCH_LIMIT_NAME = "Camera Pitch Limit";
 
 	// Misc.
@@ -186,6 +187,7 @@ namespace OptionsUiModel
 	// Input options.
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeHorizontalSensitivityOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeVerticalSensitivityOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makeInvertVerticalAxisOption(Game &game);
 	std::unique_ptr<OptionsUiModel::DoubleOption> makeCameraPitchLimitOption(Game &game);
 	OptionGroup makeInputOptionGroup(Game &game);
 

@@ -176,6 +176,7 @@ void set##section##_##name(const std::string &value) \
 
 	OPTION_DOUBLE(Input, HorizontalSensitivity, MIN_HORIZONTAL_SENSITIVITY, MAX_HORIZONTAL_SENSITIVITY)
 	OPTION_DOUBLE(Input, VerticalSensitivity, MIN_VERTICAL_SENSITIVITY, MAX_VERTICAL_SENSITIVITY)
+	OPTION_BOOL(Input, InvertVerticalAxis)
 	OPTION_DOUBLE(Input, CameraPitchLimit, MIN_CAMERA_PITCH_LIMIT, MAX_CAMERA_PITCH_LIMIT)
 
 	OPTION_STRING(Misc, ArenaPaths)

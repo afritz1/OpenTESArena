@@ -45,6 +45,7 @@ namespace
 	{
 		{ Options::Key_Input_HorizontalSensitivity, Options::OptionType_Input_HorizontalSensitivity },
 		{ Options::Key_Input_VerticalSensitivity, Options::OptionType_Input_VerticalSensitivity },
+		{ Options::Key_Input_InvertVerticalAxis, Options::OptionType_Input_InvertVerticalAxis },
 		{ Options::Key_Input_CameraPitchLimit, Options::OptionType_Input_CameraPitchLimit }
 	};
 

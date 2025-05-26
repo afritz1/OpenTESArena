@@ -850,9 +850,11 @@ void Game::loop()
 				// Multiply by 100 so the values in options are more convenient.
 				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());
 				const Degrees deltaDegreesY = playerTurnAngleDeltas.y * (100.0 * this->options.getInput_VerticalSensitivity());
+				const bool invertVerticalAxis = this->options.getInput_InvertVerticalAxis();
+				const double verticalAxisSign = invertVerticalAxis ? -1.0 : 1.0;
 				const Degrees pitchLimit = this->options.getInput_CameraPitchLimit();
 				this->player.rotateX(deltaDegreesX);
-				this->player.rotateY(deltaDegreesY, pitchLimit);
+				this->player.rotateY(deltaDegreesY * verticalAxisSign, pitchLimit);
 				
 				if (this->player.movementType == PlayerMovementType::Climbing)
 				{
