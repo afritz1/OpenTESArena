@@ -824,10 +824,10 @@ void VoxelChunk::cleanUp()
 	this->dirtyFadeAnimInstPositions.clear();
 	this->dirtyChasmWallInstPositions.clear();
 
-	for (const VoxelInt3 &position : this->destroyedDoorAnimInsts)
+	for (const VoxelInt3 position : this->destroyedDoorAnimInsts)
 	{
 		const auto iter = std::find_if(this->doorAnimInsts.begin(), this->doorAnimInsts.end(),
-			[&position](const VoxelDoorAnimationInstance &animInst)
+			[position](const VoxelDoorAnimationInstance &animInst)
 		{
 			return (animInst.x == position.x) && (animInst.y == position.y) && (animInst.z == position.z);
 		});
@@ -838,10 +838,10 @@ void VoxelChunk::cleanUp()
 
 	this->destroyedDoorAnimInsts.clear();
 
-	for (const VoxelInt3 &position : this->destroyedFadeAnimInsts)
+	for (const VoxelInt3 position : this->destroyedFadeAnimInsts)
 	{
 		const auto iter = std::find_if(this->fadeAnimInsts.begin(), this->fadeAnimInsts.end(),
-			[&position](const VoxelFadeAnimationInstance &animInst)
+			[position](const VoxelFadeAnimationInstance &animInst)
 		{
 			return (animInst.x == position.x) && (animInst.y == position.y) && (animInst.z == position.z);
 		});

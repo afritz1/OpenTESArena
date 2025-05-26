@@ -232,7 +232,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const TransitionDefinition &transitionDef = levelInfoDefinition.getTransitionDef(placementDef.id);
 
 		std::optional<VoxelTransitionDefID> transitionDefID;
-		for (const WorldInt3 &position : placementDef.positions)
+		for (const WorldInt3 position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -254,7 +254,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const VoxelTriggerDefinition &triggerDef = levelInfoDefinition.getTriggerDef(placementDef.id);
 
 		std::optional<VoxelTriggerDefID> triggerDefID;
-		for (const WorldInt3 &position : placementDef.positions)
+		for (const WorldInt3 position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -276,7 +276,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const LockDefinition &lockDef = levelInfoDefinition.getLockDef(placementDef.id);
 
 		std::optional<VoxelLockDefID> lockDefID;
-		for (const WorldInt3 &position : placementDef.positions)
+		for (const WorldInt3 position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -299,7 +299,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const std::string &buildingName = levelInfoDefinition.getBuildingName(placementDef.id);
 
 		std::optional<VoxelBuildingNameID> buildingNameID;
-		for (const WorldInt3 &position : placementDef.positions)
+		for (const WorldInt3 position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -321,7 +321,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 		const VoxelDoorDefinition &doorDef = levelInfoDefinition.getDoorDef(placementDef.id);
 
 		std::optional<VoxelDoorDefID> doorDefID;
-		for (const WorldInt3 &position : placementDef.positions)
+		for (const WorldInt3 position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -348,7 +348,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 			chasmDefID = this->addChasmDef(VoxelChasmDefinition(chasmDef));
 		}
 
-		for (const WorldInt3 &position : placementDef.positions)
+		for (const WorldInt3 position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
@@ -851,7 +851,7 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 		Buffer<VoxelInt3> cachedDirtyChasmWallPositions(oldDirtyChasmWallPositions.getCount());
 		std::copy(oldDirtyChasmWallPositions.begin(), oldDirtyChasmWallPositions.end(), cachedDirtyChasmWallPositions.begin());
 
-		for (const VoxelInt3 &dirtyChasmWallPos : cachedDirtyChasmWallPositions)
+		for (const VoxelInt3 dirtyChasmWallPos : cachedDirtyChasmWallPositions)
 		{
 			const CoordInt3 coord(chunkPtr->getPosition(), dirtyChasmWallPos);
 			const CoordInt3 adjacentCoords[] =
@@ -862,13 +862,13 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::West)
 			};
 
-			for (const CoordInt3 &adjacentCoord : adjacentCoords)
+			for (const CoordInt3 adjacentCoord : adjacentCoords)
 			{
 				const std::optional<int> adjacentChunkIndex = this->tryGetChunkIndex(adjacentCoord.chunk);
 				if (adjacentChunkIndex.has_value())
 				{
 					VoxelChunk &adjacentChunk = this->getChunkAtIndex(*adjacentChunkIndex);
-					const VoxelInt3 &adjacentVoxel = adjacentCoord.voxel;
+					const VoxelInt3 adjacentVoxel = adjacentCoord.voxel;
 					int dummyChasmWallInstIndex;
 					if (adjacentChunk.tryGetChasmWallInstIndex(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z, &dummyChasmWallInstIndex))
 					{
@@ -886,7 +886,7 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		VoxelChunk &chunk = *chunkPtr;
 
-		for (const VoxelInt3 &chasmWallPos : chunk.getDirtyChasmWallInstPositions())
+		for (const VoxelInt3 chasmWallPos : chunk.getDirtyChasmWallInstPositions())
 		{
 			this->updateChasmWallInst(chunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
 		}

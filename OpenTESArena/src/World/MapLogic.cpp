@@ -64,7 +64,7 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 	}
 
 	VoxelChunk &chunk = *chunkPtr;
-	const VoxelInt3 &voxel = coord.voxel;
+	const VoxelInt3 voxel = coord.voxel;
 	VoxelTriggerDefID triggerDefID;
 	if (!chunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
 	{
@@ -83,7 +83,6 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 	if (triggerDef.hasLoreTextDef())
 	{
 		const VoxelTriggerLoreTextDefinition &textDef = triggerDef.loreText;
-		const VoxelInt3 &voxel = coord.voxel;
 
 		int triggerInstIndex;
 		const bool hasBeenTriggered = chunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
@@ -605,7 +604,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 	}
 
 	const VoxelChunk &chunk = *chunkPtr;
-	const VoxelInt3 &transitionVoxel = transitionCoord.voxel;
+	const VoxelInt3 transitionVoxel = transitionCoord.voxel;
 	if (!chunk.isValidVoxel(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z))
 	{
 		return;

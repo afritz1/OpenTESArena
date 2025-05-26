@@ -298,7 +298,7 @@ namespace Physics
 		VoxelFacing3D nearFacing, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
-		const ChunkInt2 &chunkPos = voxelCoord.chunk;
+		const ChunkInt2 chunkPos = voxelCoord.chunk;
 		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(chunkPos);
 		if (voxelChunk == nullptr)
 		{
@@ -306,7 +306,7 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelInt3 &voxel = voxelCoord.voxel;
+		const VoxelInt3 voxel = voxelCoord.voxel;
 		if (!voxelChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
 		{
 			// Not in the chunk.

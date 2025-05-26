@@ -91,7 +91,7 @@ void RenderLightChunkManager::Light::update(const WorldDouble3 &point, double st
 	this->removedVoxels.clear();
 
 	// Add no-longer-touched voxels.
-	for (const VoxelInt3 &voxel : this->voxels)
+	for (const VoxelInt3 voxel : this->voxels)
 	{
 		const bool shouldRemoveX = (voxel.x < clampedMinVoxel.x) || (voxel.x > clampedMaxVoxel.x);
 		const bool shouldRemoveY = (voxel.y < clampedMinVoxel.y) || (voxel.y > clampedMaxVoxel.y);
@@ -193,13 +193,13 @@ void RenderLightChunkManager::shutdown(Renderer &renderer)
 
 void RenderLightChunkManager::registerLightToVoxels(const Light &light, BufferView<const WorldInt3> voxels, double ceilingScale)
 {
-	for (const WorldInt3 &voxel : voxels)
+	for (const WorldInt3 voxel : voxels)
 	{
 		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(voxel);
 		RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
 		if (renderChunkPtr != nullptr)
 		{
-			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
+			const VoxelInt3 curLightVoxel = curLightCoord.voxel;
 
 			// Calculate distance to voxel center for sorting.
 			const WorldDouble3 voxelCenter = VoxelUtils::getVoxelCenter(voxel, ceilingScale);
@@ -217,7 +217,7 @@ void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, Buff
 {
 	RenderLightChunk *renderChunkPtr = nullptr; // Cache for performance in big scenes
 
-	for (const WorldInt3 &voxel : voxels)
+	for (const WorldInt3 voxel : voxels)
 	{
 		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(voxel);
 		if (renderChunkPtr == nullptr || renderChunkPtr->getPosition() != curLightCoord.chunk)
@@ -227,7 +227,7 @@ void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, Buff
 
 		if (renderChunkPtr != nullptr)
 		{
-			const VoxelInt3 &curLightVoxel = curLightCoord.voxel;
+			const VoxelInt3 curLightVoxel = curLightCoord.voxel;
 
 			// @todo: this check is currently needed for scene transitions when chunk heights between scenes differ
 			if (renderChunkPtr->isValidVoxel(curLightVoxel.x, curLightVoxel.y, curLightVoxel.z))

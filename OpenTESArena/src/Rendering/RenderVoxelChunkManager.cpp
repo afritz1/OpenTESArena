@@ -260,7 +260,7 @@ namespace
 	RenderTransform MakeDoorFaceRenderTransform(ArenaTypes::DoorType doorType, int doorFaceIndex, const WorldDouble3 &worldPosition, double animPercent)
 	{
 		const Radians faceBaseRadians = DoorUtils::BaseAngles[doorFaceIndex];
-		const Double3 &hingeOffset = DoorUtils::SwingingHingeOffsets[doorFaceIndex];
+		const Double3 hingeOffset = DoorUtils::SwingingHingeOffsets[doorFaceIndex];
 		const Double3 hingePosition = worldPosition + hingeOffset;
 
 		RenderTransform renderTransform;
@@ -706,7 +706,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
 	// Regenerate all draw calls in the given dirty voxels.
-	for (const VoxelInt3 &voxel : dirtyVoxelPositions)
+	for (const VoxelInt3 voxel : dirtyVoxelPositions)
 	{
 		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
 
@@ -1274,14 +1274,14 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 
 		BufferView<const VoxelInt3> dirtyChasmWallInstVoxels = voxelChunk.getDirtyChasmWallInstPositions();
-		for (const VoxelInt3 &chasmWallPos : dirtyChasmWallInstVoxels)
+		for (const VoxelInt3 chasmWallPos : dirtyChasmWallInstVoxels)
 		{
 			this->loadChasmWall(renderChunk, voxelChunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
 		}
 
 		// Update door render transforms (rotation angle, etc.).
 		BufferView<const VoxelInt3> dirtyDoorAnimInstVoxels = voxelChunk.getDirtyDoorAnimInstPositions();
-		for (const VoxelInt3 &doorVoxel : dirtyDoorAnimInstVoxels)
+		for (const VoxelInt3 doorVoxel : dirtyDoorAnimInstVoxels)
 		{
 			VoxelDoorDefID doorDefID;
 			if (!voxelChunk.tryGetDoorDefID(doorVoxel.x, doorVoxel.y, doorVoxel.z, &doorDefID))

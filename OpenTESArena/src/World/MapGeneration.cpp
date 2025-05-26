@@ -1876,7 +1876,7 @@ namespace MapGeneration
 				for (int i = 0; i < outLevelDef->getTransitionPlacementDefCount(); i++)
 				{
 					const auto &placementDef = outLevelDef->getTransitionPlacementDef(i);
-					for (const WorldInt3 &position : placementDef.positions)
+					for (const WorldInt3 position : placementDef.positions)
 					{
 						if (position == voxel)
 						{
