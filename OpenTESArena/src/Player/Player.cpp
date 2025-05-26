@@ -583,7 +583,7 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 		VoxelChasmDefID chasmDefID;
 		if (voxelChunk->tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
 		{
-			const VoxelChasmDefinition &chasmDef = voxelChunk->getChasmDef(chasmDefID);
+			const VoxelChasmDefinition &chasmDef = voxelChunkManager.getChasmDef(chasmDefID);
 			const VoxelShapeDefID chasmFloorShapeDefID = voxelChunk->getShapeDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z);
 			const VoxelShapeDefinition &chasmFloorShapeDef = voxelChunk->getShapeDef(chasmFloorShapeDefID);
 			DebugAssert(chasmFloorShapeDef.type == VoxelShapeType::Box);

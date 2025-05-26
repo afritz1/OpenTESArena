@@ -22,12 +22,16 @@ struct VoxelChasmSolidColor
 
 	VoxelChasmSolidColor();
 
+	bool operator==(const VoxelChasmSolidColor &other) const;
+
 	void init(uint8_t paletteIndex);
 };
 
 struct VoxelChasmAnimated
 {
 	Buffer<TextureAsset> textureAssets; // Texture for each animation frame.
+
+	bool operator==(const VoxelChasmAnimated &other) const;
 
 	void init(Buffer<TextureAsset> &&textureAssets);
 };
@@ -45,6 +49,8 @@ struct VoxelChasmDefinition
 
 	VoxelChasmDefinition();
 	VoxelChasmDefinition(const VoxelChasmDefinition &other);
+
+	bool operator==(const VoxelChasmDefinition &other) const;
 
 	void initClassic(ArenaTypes::ChasmType chasmType, const TextureAsset &wallTextureAsset, TextureManager &textureManager);
 };

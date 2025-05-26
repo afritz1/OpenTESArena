@@ -677,7 +677,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	chunkManager.clear();
 	chunkManager.update(playerChunk, options.getMisc_ChunkDistance());
 
-	sceneManager.voxelChunkManager.recycleAllChunks();
+	sceneManager.voxelChunkManager.clear();
 	sceneManager.entityChunkManager.clear(physicsSystem, renderer);
 	sceneManager.collisionChunkManager.clear(physicsSystem);
 	sceneManager.voxelVisChunkManager.recycleAllChunks();
@@ -887,7 +887,7 @@ void GameState::tickPlayerHealth(double dt, Game &game)
 		VoxelChasmDefID chasmDefID;
 		if (voxelChunk.tryGetChasmDefID(feetVoxel.x, feetVoxel.y, feetVoxel.z, &chasmDefID))
 		{
-			const VoxelChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
+			const VoxelChasmDefinition &chasmDef = voxelChunkManager.getChasmDef(chasmDefID);
 			if (chasmDef.isDamaging)
 			{
 				healthChange += LAVA_HEALTH_LOSS_PER_SECOND * dt;

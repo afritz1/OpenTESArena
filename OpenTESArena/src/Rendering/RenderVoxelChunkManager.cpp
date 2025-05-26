@@ -98,20 +98,19 @@ namespace
 		}
 	}
 
-	void LoadChasmDefTextures(VoxelChasmDefID chasmDefID, const VoxelChunk &voxelChunk,
+	void LoadChasmDefTextures(VoxelChasmDefID chasmDefID, const VoxelChunkManager &voxelChunkManager,
 		BufferView<const RenderVoxelChunkManager::LoadedTexture> textures,
 		std::vector<RenderVoxelChunkManager::LoadedChasmFloorTexture> &chasmFloorTextures,
 		std::vector<RenderVoxelChunkManager::LoadedChasmTextureKey> &chasmTextureKeys,
 		TextureManager &textureManager, Renderer &renderer)
 	{
-		const ChunkInt2 chunkPos = voxelChunk.getPosition();
-		const VoxelChasmDefinition &chasmDef = voxelChunk.getChasmDef(chasmDefID);
+		const VoxelChasmDefinition &chasmDef = voxelChunkManager.getChasmDef(chasmDefID);
 
 		// Check if this chasm already has a mapping (i.e. have we seen this chunk before?).
 		const auto keyIter = std::find_if(chasmTextureKeys.begin(), chasmTextureKeys.end(),
-			[chasmDefID, &chunkPos](const RenderVoxelChunkManager::LoadedChasmTextureKey &loadedKey)
+			[chasmDefID](const RenderVoxelChunkManager::LoadedChasmTextureKey &loadedKey)
 		{
-			return (loadedKey.chasmDefID == chasmDefID) && (loadedKey.chunkPos == chunkPos);
+			return loadedKey.chasmDefID == chasmDefID;
 		});
 
 		if (keyIter != chasmTextureKeys.end())
@@ -245,7 +244,7 @@ namespace
 		DebugAssert(chasmWallIndex >= 0);
 
 		RenderVoxelChunkManager::LoadedChasmTextureKey key;
-		key.init(chunkPos, chasmDefID, chasmFloorListIndex, chasmWallIndex);
+		key.init(chasmDefID, chasmFloorListIndex, chasmWallIndex);
 		chasmTextureKeys.emplace_back(std::move(key));
 	}
 
@@ -333,10 +332,8 @@ void RenderVoxelChunkManager::LoadedChasmFloorTexture::initTextured(std::vector<
 	this->objectTextureRef = std::move(objectTextureRef);
 }
 
-void RenderVoxelChunkManager::LoadedChasmTextureKey::init(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID,
-	int chasmFloorListIndex, int chasmWallIndex)
+void RenderVoxelChunkManager::LoadedChasmTextureKey::init(VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex)
 {
-	this->chunkPos = chunkPos;
 	this->chasmDefID = chasmDefID;
 	this->chasmFloorListIndex = chasmFloorListIndex;
 	this->chasmWallIndex = chasmWallIndex;
@@ -456,15 +453,15 @@ ObjectTextureID RenderVoxelChunkManager::getTextureID(const TextureAsset &textur
 	return objectTextureRef.get();
 }
 
-ObjectTextureID RenderVoxelChunkManager::getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID) const
+ObjectTextureID RenderVoxelChunkManager::getChasmFloorTextureID(VoxelChasmDefID chasmDefID) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
-		[&chunkPos, chasmDefID](const LoadedChasmTextureKey &key)
+		[chasmDefID](const LoadedChasmTextureKey &key)
 	{
-		return (key.chunkPos == chunkPos) && (key.chasmDefID == chasmDefID);
+		return key.chasmDefID == chasmDefID;
 	});
 
-	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm def ID \"" + std::to_string(chasmDefID) + "\" in chunk (" + chunkPos.toString() + ").");
+	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm def ID \"" + std::to_string(chasmDefID) + "\".");
 
 	const int floorListIndex = keyIter->chasmFloorListIndex;
 	DebugAssertIndex(this->chasmFloorTextures, floorListIndex);
@@ -473,16 +470,15 @@ ObjectTextureID RenderVoxelChunkManager::getChasmFloorTextureID(const ChunkInt2 
 	return objectTextureRef.get();
 }
 
-ObjectTextureID RenderVoxelChunkManager::getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID) const
+ObjectTextureID RenderVoxelChunkManager::getChasmWallTextureID(VoxelChasmDefID chasmDefID) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
-		[&chunkPos, chasmDefID](const LoadedChasmTextureKey &key)
+		[chasmDefID](const LoadedChasmTextureKey &key)
 	{
-		return (key.chunkPos == chunkPos) && (key.chasmDefID == chasmDefID);
+		return key.chasmDefID == chasmDefID;
 	});
 
-	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm def ID \"" +
-		std::to_string(chasmDefID) + "\" in chunk (" + chunkPos.toString() + ").");
+	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm def ID \"" + std::to_string(chasmDefID) + "\".");
 
 	const int wallIndex = keyIter->chasmWallIndex;
 	const LoadedTexture &voxelTexture = this->textures[wallIndex];
@@ -490,7 +486,7 @@ ObjectTextureID RenderVoxelChunkManager::getChasmWallTextureID(const ChunkInt2 &
 	return objectTextureRef.get();
 }
 
-void RenderVoxelChunkManager::loadTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer)
+void RenderVoxelChunkManager::loadChunkTextures(const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	for (int i = 0; i < voxelChunk.getTextureDefCount(); i++)
 	{
@@ -498,10 +494,10 @@ void RenderVoxelChunkManager::loadTextures(const VoxelChunk &voxelChunk, Texture
 		LoadVoxelDefTextures(voxelTextureDef, this->textures, textureManager, renderer);
 	}
 
-	for (int i = 0; i < voxelChunk.getChasmDefCount(); i++)
+	for (int i = 0; i < voxelChunkManager.getChasmDefCount(); i++)
 	{
 		const VoxelChasmDefID chasmDefID = static_cast<VoxelChasmDefID>(i);
-		LoadChasmDefTextures(chasmDefID, voxelChunk, this->textures, this->chasmFloorTextures, this->chasmTextureKeys, textureManager, renderer);
+		LoadChasmDefTextures(chasmDefID, voxelChunkManager, this->textures, this->chasmFloorTextures, this->chasmTextureKeys, textureManager, renderer);
 	}
 }
 
@@ -703,9 +699,10 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 }
 
 void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions,
-	const VoxelChunk &voxelChunk, const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent)
+	const VoxelChunk &voxelChunk, const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager,
+	double ceilingScale, double chasmAnimPercent)
 {
-	const ChunkInt2 &chunkPos = renderChunk.getPosition();
+	const ChunkInt2 chunkPos = renderChunk.getPosition();
 	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
 	// Regenerate all draw calls in the given dirty voxels.
@@ -759,7 +756,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		IndexBufferID chasmWallIndexBufferID = -1;
 		if (isChasm)
 		{
-			chasmDef = &voxelChunk.getChasmDef(chasmDefID);
+			chasmDef = &voxelChunkManager.getChasmDef(chasmDefID);
 			isAnimatingChasm = chasmDef->animType == VoxelChasmAnimationType::Animated;
 			isEmissiveChasm = chasmDef->isEmissive;
 
@@ -906,8 +903,8 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		}
 		else if (isChasm)
 		{
-			const ObjectTextureID chasmFloorTextureID = this->getChasmFloorTextureID(chunkPos, chasmDefID);
-			const ObjectTextureID chasmWallTextureID = this->getChasmWallTextureID(chunkPos, chasmDefID);
+			const ObjectTextureID chasmFloorTextureID = this->getChasmFloorTextureID(chasmDefID);
+			const ObjectTextureID chasmWallTextureID = this->getChasmWallTextureID(chasmDefID);
 
 			DrawCallTextureInitInfo &chasmFloorTextureInitInfo = textureInitInfos[0];
 			chasmFloorTextureInitInfo.id0 = chasmFloorTextureID;
@@ -1264,7 +1261,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtPosition(chunkPos);
 		this->loadMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
-		this->loadTextures(voxelChunk, textureManager, renderer);
+		this->loadChunkTextures(voxelChunk, voxelChunkManager, textureManager, renderer);
 		this->loadChasmWalls(renderChunk, voxelChunk);
 		this->loadTransforms(renderChunk, voxelChunk, ceilingScale, renderer);
 	}
@@ -1315,12 +1312,12 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		BufferView<const VoxelInt3> dirtyDoorVisInstVoxels = voxelChunk.getDirtyDoorVisInstPositions();
 		BufferView<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
 		BufferView<const VoxelInt3> dirtyLightVoxels = renderLightChunk.dirtyVoxelPositions;
-		this->updateChunkDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
-		this->updateChunkDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
-		this->updateChunkDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
-		this->updateChunkDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
-		this->updateChunkDrawCalls(renderChunk, dirtyChasmWallInstVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
-		this->updateChunkDrawCalls(renderChunk, dirtyLightVoxels, voxelChunk, renderLightChunk, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyChasmWallInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkDrawCalls(renderChunk, dirtyLightVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
 	}
 
 	this->rebuildDrawCallsList(voxelVisChunkManager);

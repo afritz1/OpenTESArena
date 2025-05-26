@@ -9,9 +9,47 @@ VoxelChasmSolidColor::VoxelChasmSolidColor()
 	this->paletteIndex = 0;
 }
 
+bool VoxelChasmSolidColor::operator==(const VoxelChasmSolidColor &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->paletteIndex != other.paletteIndex)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 void VoxelChasmSolidColor::init(uint8_t paletteIndex)
 {
 	this->paletteIndex = paletteIndex;
+}
+
+bool VoxelChasmAnimated::operator==(const VoxelChasmAnimated &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->textureAssets.getCount() != other.textureAssets.getCount())
+	{
+		return false;
+	}
+
+	for (int i = 0; i < this->textureAssets.getCount(); i++)
+	{
+		if (this->textureAssets[i] != other.textureAssets[i])
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void VoxelChasmAnimated::init(Buffer<TextureAsset> &&textureAssets)
@@ -49,6 +87,49 @@ VoxelChasmDefinition::VoxelChasmDefinition(const VoxelChasmDefinition &other)
 	else
 	{
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(this->animType)));
+	}
+}
+
+bool VoxelChasmDefinition::operator==(const VoxelChasmDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->allowsSwimming != other.allowsSwimming)
+	{
+		return false;
+	}
+
+	if (this->isDamaging != other.isDamaging)
+	{
+		return false;
+	}
+
+	if (this->isEmissive != other.isEmissive)
+	{
+		return false;
+	}
+
+	if (this->wallTextureAsset != other.wallTextureAsset)
+	{
+		return false;
+	}
+
+	if (this->animType != other.animType)
+	{
+		return false;
+	}
+
+	switch (this->animType)
+	{
+	case VoxelChasmAnimationType::SolidColor:
+		return this->solidColor == other.solidColor;
+	case VoxelChasmAnimationType::Animated:
+		return this->animated == other.animated;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->animType)));
 	}
 }
 

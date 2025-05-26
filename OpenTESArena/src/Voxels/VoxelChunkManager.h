@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+#include "VoxelChasmDefinition.h"
 #include "VoxelChunk.h"
 #include "../World/Coord.h"
 #include "../World/SpecializedChunkManager.h"
@@ -17,6 +18,8 @@ struct MapSubDefinition;
 class VoxelChunkManager final : public SpecializedChunkManager<VoxelChunk>
 {
 private:
+	std::vector<VoxelChasmDefinition> chasmDefs;
+
 	void getAdjacentVoxelShapeDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 		std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
 		VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID, VoxelShapeDefID *outSouthID,
@@ -68,6 +71,11 @@ private:
 	// Updates door visibilities for a chunk; some of which might be on the chunk's perimeter that are affected by adjacent chunks.
 	void updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const CoordDouble3 &playerCoord);
 public:
+	int getChasmDefCount() const;
+	const VoxelChasmDefinition &getChasmDef(VoxelChasmDefID id) const;
+	VoxelChasmDefID findChasmDef(const VoxelChasmDefinition &def);
+	VoxelChasmDefID addChasmDef(VoxelChasmDefinition &&def);
+
 	void update(double dt, BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 		const CoordDouble3 &playerCoord, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
@@ -76,6 +84,8 @@ public:
 
 	// Run at the end of a frame to reset certain frame data like dirty voxels.
 	void cleanUp();
+
+	void clear();
 };
 
 #endif

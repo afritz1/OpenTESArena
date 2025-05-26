@@ -111,11 +111,6 @@ int VoxelChunk::getDoorDefCount() const
 	return static_cast<int>(this->doorDefs.size());
 }
 
-int VoxelChunk::getChasmDefCount() const
-{
-	return static_cast<int>(this->chasmDefs.size());
-}
-
 const VoxelShapeDefinition &VoxelChunk::getShapeDef(VoxelShapeDefID id) const
 {
 	DebugAssertIndex(this->shapeDefs, id);
@@ -168,12 +163,6 @@ const VoxelDoorDefinition &VoxelChunk::getDoorDef(VoxelDoorDefID id) const
 {
 	DebugAssertIndex(this->doorDefs, id);
 	return this->doorDefs[id];
-}
-
-const VoxelChasmDefinition &VoxelChunk::getChasmDef(VoxelChasmDefID id) const
-{
-	DebugAssertIndex(this->chasmDefs, id);
-	return this->chasmDefs[id];
 }
 
 VoxelShapeDefID VoxelChunk::getShapeDefID(SNInt x, int y, WEInt z) const
@@ -332,7 +321,6 @@ bool VoxelChunk::tryGetChasmDefID(SNInt x, int y, WEInt z, VoxelChasmDefID *outI
 	if (iter != this->chasmDefIndices.end())
 	{
 		const VoxelChasmDefID id = iter->second;
-		DebugAssertIndex(this->chasmDefs, id);
 		*outID = id;
 		return true;
 	}
@@ -574,13 +562,6 @@ VoxelDoorDefID VoxelChunk::addDoorDef(VoxelDoorDefinition &&door)
 {
 	const VoxelDoorDefID id = static_cast<int>(this->doorDefs.size());
 	this->doorDefs.emplace_back(std::move(door));
-	return id;
-}
-
-VoxelChasmDefID VoxelChunk::addChasmDef(VoxelChasmDefinition &&chasm)
-{
-	const VoxelChasmDefID id = static_cast<int>(this->chasmDefs.size());
-	this->chasmDefs.emplace_back(std::move(chasm));
 	return id;
 }
 
@@ -884,7 +865,6 @@ void VoxelChunk::clear()
 	this->lockDefs.clear();
 	this->buildingNames.clear();
 	this->doorDefs.clear();
-	this->chasmDefs.clear();
 	this->shapeDefIDs.clear();
 	this->textureDefIDs.clear();
 	this->shadingDefIDs.clear();

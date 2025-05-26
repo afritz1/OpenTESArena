@@ -37,6 +37,38 @@ namespace
 	}
 }
 
+int VoxelChunkManager::getChasmDefCount() const
+{
+	return static_cast<int>(this->chasmDefs.size());
+}
+
+const VoxelChasmDefinition &VoxelChunkManager::getChasmDef(VoxelChasmDefID id) const
+{
+	DebugAssertIndex(this->chasmDefs, id);
+	return this->chasmDefs[id];
+}
+
+VoxelChasmDefID VoxelChunkManager::findChasmDef(const VoxelChasmDefinition &def)
+{
+	for (int i = 0; i < static_cast<int>(this->chasmDefs.size()); i++)
+	{
+		const VoxelChasmDefinition &currentDef = this->chasmDefs[i];
+		if (currentDef == def)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+VoxelChasmDefID VoxelChunkManager::addChasmDef(VoxelChasmDefinition &&def)
+{
+	const VoxelChasmDefID id = static_cast<int>(this->chasmDefs.size());
+	this->chasmDefs.emplace_back(std::move(def));
+	return id;
+}
+
 void VoxelChunkManager::getAdjacentVoxelShapeDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
 	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
 	VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID, VoxelShapeDefID *outSouthID,
@@ -126,21 +158,28 @@ void VoxelChunkManager::populateChunkVoxelDefs(VoxelChunk &chunk, const LevelDef
 	const LevelVoxelTextureDefID levelFloorReplacementVoxelTextureDefID = levelDefinition.getFloorReplacementTextureDefID();
 	const LevelVoxelShadingDefID levelFloorReplacementVoxelShadingDefID = levelDefinition.getFloorReplacementShadingDefID();
 	const LevelVoxelTraitsDefID levelFloorReplacementVoxelTraitsDefID = levelDefinition.getFloorReplacementTraitsDefID();
-	const LevelVoxelChasmDefID levelFloorReplacementChasmDefID = levelDefinition.getFloorReplacementChasmDefID();
 	VoxelShapeDefinition floorReplacementShapeDef = levelInfoDefinition.getVoxelShapeDef(levelFloorReplacementVoxelShapeDefID);
 	VoxelTextureDefinition floorReplacementTextureDef = levelInfoDefinition.getVoxelTextureDef(levelFloorReplacementVoxelTextureDefID);
 	VoxelShadingDefinition floorReplacementShadingDef = levelInfoDefinition.getVoxelShadingDef(levelFloorReplacementVoxelShadingDefID);
 	VoxelTraitsDefinition floorReplacementTraitsDef = levelInfoDefinition.getVoxelTraitsDef(levelFloorReplacementVoxelTraitsDefID);
-	VoxelChasmDefinition floorReplacementChasmDef = levelInfoDefinition.getChasmDef(levelFloorReplacementChasmDefID);
 	const VoxelShapeDefID floorReplacementVoxelShapeDefID = chunk.addShapeDef(std::move(floorReplacementShapeDef));
 	const VoxelTextureDefID floorReplacementVoxelTextureDefID = chunk.addTextureDef(std::move(floorReplacementTextureDef));
 	const VoxelShadingDefID floorReplacementVoxelShadingDefID = chunk.addShadingDef(std::move(floorReplacementShadingDef));
 	const VoxelTraitsDefID floorReplacementVoxelTraitsDefID = chunk.addTraitsDef(std::move(floorReplacementTraitsDef));
-	const VoxelChasmDefID floorReplacementChasmDefID = chunk.addChasmDef(std::move(floorReplacementChasmDef));
 	chunk.setFloorReplacementShapeDefID(floorReplacementVoxelShapeDefID);
 	chunk.setFloorReplacementTextureDefID(floorReplacementVoxelTextureDefID);
 	chunk.setFloorReplacementShadingDefID(floorReplacementVoxelShadingDefID);
 	chunk.setFloorReplacementTraitsDefID(floorReplacementVoxelTraitsDefID);
+
+	// Reuse chasm definitions across all chunks.
+	const LevelVoxelChasmDefID levelFloorReplacementChasmDefID = levelDefinition.getFloorReplacementChasmDefID();
+	VoxelChasmDefinition floorReplacementChasmDef = levelInfoDefinition.getChasmDef(levelFloorReplacementChasmDefID);	
+	VoxelChasmDefID floorReplacementChasmDefID = this->findChasmDef(floorReplacementChasmDef);
+	if (floorReplacementChasmDefID < 0)
+	{
+		floorReplacementChasmDefID = this->addChasmDef(std::move(floorReplacementChasmDef));
+	}
+
 	chunk.setFloorReplacementChasmDefID(floorReplacementChasmDefID);
 }
 
@@ -302,19 +341,19 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 	{
 		const LevelChasmPlacementDefinition &placementDef = levelDefinition.getChasmPlacementDef(i);
 		const VoxelChasmDefinition &chasmDef = levelInfoDefinition.getChasmDef(placementDef.id);
+		
+		VoxelChasmDefID chasmDefID = this->findChasmDef(chasmDef);
+		if (chasmDefID < 0)
+		{
+			chasmDefID = this->addChasmDef(VoxelChasmDefinition(chasmDef));
+		}
 
-		std::optional<VoxelChasmDefID> chasmDefID;
 		for (const WorldInt3 &position : placementDef.positions)
 		{
 			if (ChunkUtils::IsInWritingRange(position, startX, endX, startY, endY, startZ, endZ))
 			{
-				if (!chasmDefID.has_value())
-				{
-					chasmDefID = chunk.addChasmDef(VoxelChasmDefinition(chasmDef));
-				}
-
 				const VoxelInt3 voxel = ChunkUtils::MakeChunkVoxelFromLevel(position, startX, startY, startZ);
-				chunk.addChasmDefPosition(*chasmDefID, voxel);
+				chunk.addChasmDefPosition(chasmDefID, voxel);
 			}
 		}
 	}
@@ -893,4 +932,10 @@ void VoxelChunkManager::cleanUp()
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		chunkPtr->cleanUp();
 	}
+}
+
+void VoxelChunkManager::clear()
+{
+	this->chasmDefs.clear();
+	this->recycleAllChunks();
 }

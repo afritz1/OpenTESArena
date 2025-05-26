@@ -9,6 +9,7 @@
 #include "RenderShaderUtils.h"
 #include "RenderTransform.h"
 #include "RenderVoxelChunk.h"
+#include "../Voxels/VoxelChasmDefinition.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
@@ -55,12 +56,11 @@ public:
 
 	struct LoadedChasmTextureKey
 	{
-		ChunkInt2 chunkPos;
 		VoxelChasmDefID chasmDefID;
 		int chasmFloorListIndex;
 		int chasmWallIndex; // Points into voxel textures.
 
-		void init(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
+		void init(VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 	};
 private:
 	// Buffer for all raising doors' translation to push/pop during vertex shading so they scale towards the ceiling.
@@ -78,17 +78,17 @@ private:
 	std::vector<RenderDrawCall> drawCallsCache;
 
 	ObjectTextureID getTextureID(const TextureAsset &textureAsset) const;
-	ObjectTextureID getChasmFloorTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID) const;
-	ObjectTextureID getChasmWallTextureID(const ChunkInt2 &chunkPos, VoxelChasmDefID chasmDefID) const;
+	ObjectTextureID getChasmFloorTextureID(VoxelChasmDefID chasmDefID) const;
+	ObjectTextureID getChasmWallTextureID(VoxelChasmDefID chasmDefID) const;
 
-	void loadTextures(const VoxelChunk &voxelChunk, TextureManager &textureManager, Renderer &renderer);
+	void loadChunkTextures(const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer);
 	void loadMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 	void loadChasmWall(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, SNInt x, int y, WEInt z);
 	void loadChasmWalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk);
 	void loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
 	void updateChunkDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const RenderLightChunk &renderLightChunk, double ceilingScale, double chasmAnimPercent);
+		const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent);
 
 	void rebuildDrawCallsList(const VoxelVisibilityChunkManager &voxelVisChunkManager);
 public:
