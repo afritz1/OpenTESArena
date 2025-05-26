@@ -1568,8 +1568,37 @@ namespace
 		}
 	}
 
+	template<bool enableDepthWrite>
+	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
+		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercentX * alphaTestTexture.widthReal), 0, alphaTestTexture.widthMinusOne);
+		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercentY * alphaTestTexture.heightReal), 0, alphaTestTexture.heightMinusOne);
+		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
+		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * opaqueTexture.widthReal), 0, opaqueTexture.widthMinusOne);
+			const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * opaqueTexture.heightReal), 0, opaqueTexture.heightMinusOne);
+			const int texelIndex = texelX + (texelY * opaqueTexture.width);
+			texel = opaqueTexture.texels[texelIndex];
+		}
+
+		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
 	constexpr int SCREEN_SPACE_ANIM_HEIGHT = 100; // @todo dehardcode w/ another parameter
-	void PixelShader_OpaqueScreenSpaceAnimation(const PixelShaderTexture &texture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
+	template<bool enableDepthWrite>
+	void PixelShader_OpaqueScreenSpaceAnimation(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
 	{
 		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.		
 		const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * texture.widthReal), 0, texture.widthMinusOne);
@@ -1590,6 +1619,11 @@ namespace
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
 	}
 
 	template<bool enableDepthWrite>
@@ -3005,7 +3039,7 @@ namespace
 		const int lightCount = drawCallCache.lightCount;
 		const double pixelShaderParam0 = drawCallCache.pixelShaderParam0;
 
-		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
+		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
 		constexpr bool requiresHorizonMirror = pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
 		constexpr bool requiresPerPixelLightIntensity = lightingType == RenderLightingType::PerPixel;
 		constexpr bool requiresPerMeshLightIntensity = lightingType == RenderLightingType::PerMesh;
@@ -3294,9 +3328,13 @@ namespace
 					{
 						PixelShader_Opaque<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderFrameBuffer);
 					}
+					else if (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer)
+					{
+						PixelShader_OpaqueWithAlphaTestLayer<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderTexture1, shaderLighting, shaderFrameBuffer);
+					}
 					else if (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimation)
 					{
-						PixelShader_OpaqueScreenSpaceAnimation(shaderTexture0, shaderLighting, shaderUniforms, shaderFrameBuffer);
+						PixelShader_OpaqueScreenSpaceAnimation<enableDepthWrite>(shaderPerspective, shaderTexture0, shaderLighting, shaderUniforms, shaderFrameBuffer);
 					}
 					else if (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer)
 					{
@@ -3408,6 +3446,9 @@ namespace
 		{
 		case PixelShaderType::Opaque:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			break;
+		case PixelShaderType::OpaqueWithAlphaTestLayer:
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		case PixelShaderType::OpaqueScreenSpaceAnimation:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueScreenSpaceAnimation>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);

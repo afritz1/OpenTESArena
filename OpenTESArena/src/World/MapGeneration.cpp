@@ -334,6 +334,8 @@ namespace MapGeneration
 			*outVoxelType = ArenaTypes::VoxelType::Chasm;
 
 			int chasmID;
+			PixelShaderType chasmFloorPixelShaderType;
+			PixelShaderType chasmWallPixelShaderType;
 			if (textureID == MIFUtils::DRY_CHASM)
 			{
 				const std::optional<int> &dryChasmIndex = inf.getDryChasmIndex();
@@ -348,6 +350,8 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaTypes::ChasmType::Dry;
+				chasmFloorPixelShaderType = PixelShaderType::Opaque;
+				chasmWallPixelShaderType = PixelShaderType::OpaqueWithAlphaTestLayer;
 			}
 			else if (textureID == MIFUtils::LAVA_CHASM)
 			{
@@ -363,6 +367,8 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaTypes::ChasmType::Lava;
+				chasmFloorPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimation;
+				chasmWallPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			}
 			else if (textureID == MIFUtils::WET_CHASM)
 			{
@@ -378,6 +384,8 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaTypes::ChasmType::Wet;
+				chasmFloorPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimation;
+				chasmWallPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			}
 			else
 			{
@@ -394,8 +402,8 @@ namespace MapGeneration
 				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			*outVertexShaderType = VertexShaderType::Basic;
-			outPixelShaderTypes[0] = PixelShaderType::OpaqueScreenSpaceAnimation;
-			outPixelShaderTypes[1] = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
+			outPixelShaderTypes[0] = chasmFloorPixelShaderType;
+			outPixelShaderTypes[1] = chasmWallPixelShaderType;
 			*outPixelShaderCount = 2;
 			*outIsWildWallColored = false;
 		}

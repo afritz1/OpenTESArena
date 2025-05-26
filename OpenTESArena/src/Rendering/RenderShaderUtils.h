@@ -11,8 +11,9 @@ enum class VertexShaderType
 enum class PixelShaderType
 {
 	Opaque,
-	OpaqueScreenSpaceAnimation, // Chasm floors.
-	OpaqueScreenSpaceAnimationWithAlphaTestLayer, // Chasm walls.
+	OpaqueWithAlphaTestLayer, // Dry chasm walls.
+	OpaqueScreenSpaceAnimation, // Water/lava chasm floors.
+	OpaqueScreenSpaceAnimationWithAlphaTestLayer, // Water/lava chasm walls.
 	AlphaTested,
 	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
 	AlphaTestedWithVariableTexCoordVMin, // Raising doors.
