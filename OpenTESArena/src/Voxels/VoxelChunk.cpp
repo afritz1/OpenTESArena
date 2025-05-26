@@ -196,6 +196,31 @@ VoxelTraitsDefID VoxelChunk::getTraitsDefID(SNInt x, int y, WEInt z) const
 	return this->traitsDefIDs.get(x, y, z);
 }
 
+VoxelShapeDefID VoxelChunk::getFloorReplacementShapeDefID() const
+{
+	return this->floorReplacementShapeDefID;
+}
+
+VoxelTextureDefID VoxelChunk::getFloorReplacementTextureDefID() const
+{
+	return this->floorReplacementTextureDefID;
+}
+
+VoxelShadingDefID VoxelChunk::getFloorReplacementShadingDefID() const
+{
+	return this->floorReplacementShadingDefID;
+}
+
+VoxelTraitsDefID VoxelChunk::getFloorReplacementTraitsDefID() const
+{
+	return this->floorReplacementTraitsDefID;
+}
+
+VoxelChasmDefID VoxelChunk::getFloorReplacementChasmDefID() const
+{
+	return this->floorReplacementChasmDefID;
+}
+
 BufferView<const VoxelInt3> VoxelChunk::getDirtyShapeDefPositions() const
 {
 	return this->dirtyShapeDefPositions;

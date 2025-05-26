@@ -156,6 +156,11 @@ public:
 	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
 	VoxelShadingDefID getShadingDefID(SNInt x, int y, WEInt z) const;
 	VoxelTraitsDefID getTraitsDefID(SNInt x, int y, WEInt z) const;
+	VoxelShapeDefID getFloorReplacementShapeDefID() const;
+	VoxelTextureDefID getFloorReplacementTextureDefID() const;
+	VoxelShadingDefID getFloorReplacementShadingDefID() const;
+	VoxelTraitsDefID getFloorReplacementTraitsDefID() const;
+	VoxelChasmDefID getFloorReplacementChasmDefID() const;
 
 	BufferView<const VoxelInt3> getDirtyShapeDefPositions() const;
 	BufferView<const VoxelInt3> getDirtyDoorAnimInstPositions() const; // Either animating or just closed this frame.

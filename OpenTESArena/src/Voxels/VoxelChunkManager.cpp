@@ -578,9 +578,30 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 			const WorldInt2 levelOffset = chunkPos * ChunkUtils::CHUNK_DIM;
 			this->populateChunkVoxels(chunk, levelDef, levelOffset);
 			this->populateChunkDecorators(chunk, levelDef, levelInfoDef, levelOffset);
-			this->populateChunkChasmInsts(chunk);
 			this->populateChunkDoorVisibilityInsts(chunk);
 		}
+
+		// Need out-of-city-bounds chasms to be defined as well.
+		// @todo organize the decorator loops better so the tryGetChasmDefID() check here isn't needed and we don't try to double-add chasm def positions
+		for (WEInt z = 0; z < Chunk::DEPTH; z++)
+		{
+			for (SNInt x = 0; x < Chunk::WIDTH; x++)
+			{
+				const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(x, 0, z);
+				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+				if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
+				{
+					VoxelChasmDefID dummyChasmDefID;
+					if (!chunk.tryGetChasmDefID(x, 0, z, &dummyChasmDefID))
+					{
+						const VoxelChasmDefID chasmDefID = chunk.getFloorReplacementChasmDefID();
+						chunk.addChasmDefPosition(chasmDefID, VoxelInt3(x, 0, z));
+					}					
+				}
+			}
+		}
+
+		this->populateChunkChasmInsts(chunk);
 	}
 	else if (mapType == MapType::Wilderness)
 	{
