@@ -464,13 +464,13 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 	const int levelHeight = levelDef.getHeight();
 	const WEInt levelDepth = levelDef.getDepth();
 
+	chunk.init(chunkPos, levelHeight);
+	this->populateChunkVoxelDefs(chunk, levelDef, levelInfoDef);
+
 	// Populate all or part of the chunk from a level definition depending on the world type.
 	const MapType mapType = mapSubDef.type;
 	if (mapType == MapType::Interior)
 	{
-		chunk.init(chunkPos, levelHeight);
-		this->populateChunkVoxelDefs(chunk, levelDef, levelInfoDef);
-
 		// @todo: populate chunk entirely from default empty chunk (fast copy).
 		// - probably get from MapDefinitionInterior eventually.
 		constexpr VoxelShapeDefID floorVoxelShapeDefID = 2;
@@ -531,9 +531,6 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 	}
 	else if (mapType == MapType::City)
 	{
-		chunk.init(chunkPos, levelHeight);
-		this->populateChunkVoxelDefs(chunk, levelDef, levelInfoDef);
-
 		// Chunks outside the level are wrapped but only have floor voxels.		
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
@@ -605,9 +602,6 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 	}
 	else if (mapType == MapType::Wilderness)
 	{
-		chunk.init(chunkPos, levelHeight);
-		this->populateChunkVoxelDefs(chunk, levelDef, levelInfoDef);
-
 		// Copy level definition directly into chunk.
 		DebugAssert(levelWidth == Chunk::WIDTH);
 		DebugAssert(levelDepth == Chunk::DEPTH);
