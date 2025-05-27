@@ -200,7 +200,7 @@ bool ChooseClassPanel::init()
 		titleTextBoxRect.getSize(),
 		PivotType::Middle);
 
-	UiDrawCall::TextureFunc classDescTextureFunc = [this]()
+	UiDrawCallTextureFunc classDescTextureFunc = [this]()
 	{
 		return this->classDescriptionTextBox.getTextureID();
 	};
@@ -212,7 +212,7 @@ bool ChooseClassPanel::init()
 		classDescTextBoxRect.getSize(),
 		PivotType::Middle);
 
-	UiDrawCall::TextureFunc listBoxTextureFunc = [this]()
+	UiDrawCallTextureFunc listBoxTextureFunc = [this]()
 	{
 		return this->classesListBox.getTextureID();
 	};

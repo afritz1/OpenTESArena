@@ -80,7 +80,7 @@ bool ImageSequencePanel::init(BufferView<const std::string> paletteNames,
 		this->textureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
 	}
 
-	UiDrawCall::TextureFunc textureFunc = [this]()
+	UiDrawCallTextureFunc textureFunc = [this]()
 	{
 		const ScopedUiTextureRef &textureRef = this->textureRefs.get(this->imageIndex);
 		return textureRef.get();

@@ -55,7 +55,7 @@ bool FastTravelSubPanel::init()
 		this->animTextureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
 	}
 
-	UiDrawCall::TextureFunc animTextureFunc = [this]()
+	UiDrawCallTextureFunc animTextureFunc = [this]()
 	{
 		const ScopedUiTextureRef &textureRef = this->animTextureRefs.get(this->frameIndex);
 		return textureRef.get();

@@ -358,7 +358,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return keyID;
 		};
 
-		UiDrawCall::TextureFunc keyTextureFunc = [this, &game, i, getKeyIdAtIndex]()
+		UiDrawCallTextureFunc keyTextureFunc = [this, &game, i, getKeyIdAtIndex]()
 		{
 			const int keyID = getKeyIdAtIndex(i);
 			DebugAssert(keyID != ArenaItemUtils::InvalidDoorKeyID);
@@ -366,21 +366,21 @@ void GameWorldPanel::initUiDrawCalls()
 			return textureRef.get();
 		};
 
-		UiDrawCall::PositionFunc keyPositionFunc = [i]()
+		UiDrawCallPositionFunc keyPositionFunc = [i]()
 		{
 			return GameWorldUiView::getKeyPosition(i);
 		};
 
-		UiDrawCall::SizeFunc keySizeFunc = [this, i, getKeyIdAtIndex]()
+		UiDrawCallSizeFunc keySizeFunc = [this, i, getKeyIdAtIndex]()
 		{
 			const int keyID = getKeyIdAtIndex(i);
 			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(keyID);
 			return Int2(textureRef.getWidth(), textureRef.getHeight());
 		};
 
-		UiDrawCall::PivotFunc keyPivotFunc = []() { return PivotType::TopLeft; };
+		UiDrawCallPivotFunc keyPivotFunc = []() { return PivotType::TopLeft; };
 
-		UiDrawCall::ActiveFunc keyActiveFunc = [this, &game, i, getKeyIdAtIndex]()
+		UiDrawCallActiveFunc keyActiveFunc = [this, &game, i, getKeyIdAtIndex]()
 		{
 			const int keyID = getKeyIdAtIndex(i);
 			return !this->isPaused() && (keyID != ArenaItemUtils::InvalidDoorKeyID);
@@ -396,7 +396,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 	if (modernInterface)
 	{
-		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
+		UiDrawCallTextureFunc weaponAnimTextureFunc = [this, &player]()
 		{
 			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
@@ -406,7 +406,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return textureRef.get();
 		};
 
-		UiDrawCall::PositionFunc weaponAnimPositionFunc = [this, &game, &player]()
+		UiDrawCallPositionFunc weaponAnimPositionFunc = [this, &game, &player]()
 		{
 			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
@@ -429,7 +429,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return nativePosition;
 		};
 
-		UiDrawCall::SizeFunc weaponAnimSizeFunc = [this, &game, &player]()
+		UiDrawCallSizeFunc weaponAnimSizeFunc = [this, &game, &player]()
 		{
 			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
@@ -451,9 +451,9 @@ void GameWorldPanel::initUiDrawCalls()
 			return nativeTextureDims;
 		};
 
-		UiDrawCall::PivotFunc weaponAnimPivotFunc = []() { return PivotType::TopLeft; };
+		UiDrawCallPivotFunc weaponAnimPivotFunc = []() { return PivotType::TopLeft; };
 
-		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
+		UiDrawCallActiveFunc weaponAnimActiveFunc = [this, &player]()
 		{
 			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
@@ -471,14 +471,14 @@ void GameWorldPanel::initUiDrawCalls()
 			std::nullopt,
 			RenderSpace::Native);
 
-		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
+		UiDrawCallPositionFunc compassSliderPositionFunc = [this, &game, &player]()
 		{
 			const Double2 playerDirection = player.getGroundDirectionXZ();
 			const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
 			return sliderPosition;
 		};
 
-		UiDrawCall::ActiveFunc compassActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc compassActiveFunc = [this, &game]()
 		{
 			const auto &options = game.options;
 			return !this->isPaused() && options.getMisc_ShowCompass();
@@ -498,9 +498,9 @@ void GameWorldPanel::initUiDrawCalls()
 			[]() { return PivotType::Top; },
 			compassActiveFunc);
 
-		UiDrawCall::TextureFunc healthBarTextureFunc = [this]() { return this->healthBarTextureRef.get(); };
-		UiDrawCall::TextureFunc staminaBarTextureFunc = [this]() { return this->staminaBarTextureRef.get(); };
-		UiDrawCall::TextureFunc spellPointsBarTextureFunc = [this]() { return this->spellPointsBarTextureRef.get(); };
+		UiDrawCallTextureFunc healthBarTextureFunc = [this]() { return this->healthBarTextureRef.get(); };
+		UiDrawCallTextureFunc staminaBarTextureFunc = [this]() { return this->staminaBarTextureRef.get(); };
+		UiDrawCallTextureFunc spellPointsBarTextureFunc = [this]() { return this->spellPointsBarTextureRef.get(); };
 
 		auto getStatusBarsModernModeOrigin = [&renderer]()
 		{
@@ -519,50 +519,50 @@ void GameWorldPanel::initUiDrawCalls()
 			return static_cast<int>(std::round(static_cast<double>(originalXDelta) * (scaleXRatio * aspectRatioMultiplier)));
 		};
 
-		UiDrawCall::PositionFunc healthBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin]()
+		UiDrawCallPositionFunc healthBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin]()
 		{			
 			const Int2 windowDims = renderer.getWindowDimensions();
 			const Int2 nativePoint = getStatusBarsModernModeOrigin();
 			return renderer.nativeToOriginal(nativePoint);
 		};
 
-		UiDrawCall::PositionFunc staminaBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
+		UiDrawCallPositionFunc staminaBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
 		{
 			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::StaminaBarRect);
 			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
 			return renderer.nativeToOriginal(nativePoint);
 		};
 
-		UiDrawCall::PositionFunc spellPointsBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
+		UiDrawCallPositionFunc spellPointsBarPositionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
 		{
 			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::SpellPointsBarRect);
 			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
 			return renderer.nativeToOriginal(nativePoint);
 		};
 
-		UiDrawCall::SizeFunc healthBarSizeFunc = [&game]()
+		UiDrawCallSizeFunc healthBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::HealthBarRect;
 			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
 		};
 
-		UiDrawCall::SizeFunc staminaBarSizeFunc = [&game]()
+		UiDrawCallSizeFunc staminaBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::StaminaBarRect;
 			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
 		};
 
-		UiDrawCall::SizeFunc spellPointsBarSizeFunc = [&game]()
+		UiDrawCallSizeFunc spellPointsBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
 			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
 		};
 
-		UiDrawCall::PivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
-		UiDrawCall::ActiveFunc statusBarActiveFunc = [this]() { return !this->isPaused(); };
+		UiDrawCallPivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
+		UiDrawCallActiveFunc statusBarActiveFunc = [this]() { return !this->isPaused(); };
 
 		this->addDrawCall(
 			healthBarTextureFunc,
@@ -583,34 +583,34 @@ void GameWorldPanel::initUiDrawCalls()
 			statusBarPivotFunc,
 			statusBarActiveFunc);
 
-		UiDrawCall::TextureFunc triggerTextTextureFunc = [this]()
+		UiDrawCallTextureFunc triggerTextTextureFunc = [this]()
 		{
 			return this->triggerText.getTextureID();
 		};
 
-		UiDrawCall::TextureFunc actionTextTextureFunc = [this]()
+		UiDrawCallTextureFunc actionTextTextureFunc = [this]()
 		{
 			return this->actionText.getTextureID();
 		};
 
-		UiDrawCall::TextureFunc effectTextTextureFunc = [this]()
+		UiDrawCallTextureFunc effectTextTextureFunc = [this]()
 		{
 			return this->effectText.getTextureID();
 		};
 
-		UiDrawCall::ActiveFunc triggerTextActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc triggerTextActiveFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.triggerTextIsVisible();
 		};
 
-		UiDrawCall::ActiveFunc actionTextActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc actionTextActiveFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.actionTextIsVisible();
 		};
 
-		UiDrawCall::ActiveFunc effectTextActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc effectTextActiveFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.effectTextIsVisible();
@@ -648,7 +648,7 @@ void GameWorldPanel::initUiDrawCalls()
 	}
 	else
 	{
-		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
+		UiDrawCallTextureFunc weaponAnimTextureFunc = [this, &player]()
 		{
 			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
@@ -658,7 +658,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return textureRef.get();
 		};
 
-		UiDrawCall::PositionFunc weaponAnimPositionFunc = [this, &game, &player]()
+		UiDrawCallPositionFunc weaponAnimPositionFunc = [this, &game, &player]()
 		{
 			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
@@ -668,7 +668,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return Int2(weaponAnimFrame.xOffset, weaponAnimFrame.yOffset);
 		};
 
-		UiDrawCall::SizeFunc weaponAnimSizeFunc = [this, &player]()
+		UiDrawCallSizeFunc weaponAnimSizeFunc = [this, &player]()
 		{
 			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
@@ -678,9 +678,9 @@ void GameWorldPanel::initUiDrawCalls()
 			return Int2(textureRef.getWidth(), textureRef.getHeight());
 		};
 
-		UiDrawCall::PivotFunc weaponAnimPivotFunc = []() { return PivotType::TopLeft; };
+		UiDrawCallPivotFunc weaponAnimPivotFunc = []() { return PivotType::TopLeft; };
 
-		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
+		UiDrawCallActiveFunc weaponAnimActiveFunc = [this, &player]()
 		{
 			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
@@ -714,36 +714,36 @@ void GameWorldPanel::initUiDrawCalls()
 			Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight()),
 			PivotType::TopLeft);
 
-		UiDrawCall::TextureFunc healthBarTextureFunc = [this]() { return this->healthBarTextureRef.get(); };
-		UiDrawCall::TextureFunc staminaBarTextureFunc = [this]() { return this->staminaBarTextureRef.get(); };
-		UiDrawCall::TextureFunc spellPointsBarTextureFunc = [this]() { return this->spellPointsBarTextureRef.get(); };
-		UiDrawCall::PositionFunc healthBarPositionFunc = []() { return GameWorldUiView::HealthBarRect.getBottomLeft(); };
-		UiDrawCall::PositionFunc staminaBarPositionFunc = []() { return GameWorldUiView::StaminaBarRect.getBottomLeft(); };
-		UiDrawCall::PositionFunc spellPointsBarPositionFunc = []() { return GameWorldUiView::SpellPointsBarRect.getBottomLeft(); };
+		UiDrawCallTextureFunc healthBarTextureFunc = [this]() { return this->healthBarTextureRef.get(); };
+		UiDrawCallTextureFunc staminaBarTextureFunc = [this]() { return this->staminaBarTextureRef.get(); };
+		UiDrawCallTextureFunc spellPointsBarTextureFunc = [this]() { return this->spellPointsBarTextureRef.get(); };
+		UiDrawCallPositionFunc healthBarPositionFunc = []() { return GameWorldUiView::HealthBarRect.getBottomLeft(); };
+		UiDrawCallPositionFunc staminaBarPositionFunc = []() { return GameWorldUiView::StaminaBarRect.getBottomLeft(); };
+		UiDrawCallPositionFunc spellPointsBarPositionFunc = []() { return GameWorldUiView::SpellPointsBarRect.getBottomLeft(); };
 
-		UiDrawCall::SizeFunc healthBarSizeFunc = [&game]()
+		UiDrawCallSizeFunc healthBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::HealthBarRect;
 			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
 		};
 
-		UiDrawCall::SizeFunc staminaBarSizeFunc = [&game]()
+		UiDrawCallSizeFunc staminaBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::StaminaBarRect;
 			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
 		};
 
-		UiDrawCall::SizeFunc spellPointsBarSizeFunc = [&game]()
+		UiDrawCallSizeFunc spellPointsBarSizeFunc = [&game]()
 		{
 			const Player &player = game.player;
 			const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
 			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
 		};
 
-		UiDrawCall::PivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
-		UiDrawCall::ActiveFunc statusBarActiveFunc = []() { return true; };
+		UiDrawCallPivotFunc statusBarPivotFunc = []() { return GameWorldUiView::StatusBarPivotType; };
+		UiDrawCallActiveFunc statusBarActiveFunc = []() { return true; };
 
 		this->addDrawCall(
 			healthBarTextureFunc,
@@ -782,14 +782,14 @@ void GameWorldPanel::initUiDrawCalls()
 			playerNameTextBoxRect.getSize(),
 			PivotType::TopLeft);
 
-		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
+		UiDrawCallPositionFunc compassSliderPositionFunc = [this, &game, &player]()
 		{
 			const Double2 playerDirection = player.getGroundDirectionXZ();
 			const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
 			return sliderPosition;
 		};
 
-		UiDrawCall::ActiveFunc compassActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc compassActiveFunc = [this, &game]()
 		{
 			const auto &options = game.options;
 			return !this->isPaused() && options.getMisc_ShowCompass();
@@ -809,34 +809,34 @@ void GameWorldPanel::initUiDrawCalls()
 			[]() { return PivotType::Top; },
 			compassActiveFunc);
 
-		UiDrawCall::TextureFunc triggerTextTextureFunc = [this]()
+		UiDrawCallTextureFunc triggerTextTextureFunc = [this]()
 		{
 			return this->triggerText.getTextureID();
 		};
 
-		UiDrawCall::TextureFunc actionTextTextureFunc = [this]()
+		UiDrawCallTextureFunc actionTextTextureFunc = [this]()
 		{
 			return this->actionText.getTextureID();
 		};
 
-		UiDrawCall::TextureFunc effectTextTextureFunc = [this]()
+		UiDrawCallTextureFunc effectTextTextureFunc = [this]()
 		{
 			return this->effectText.getTextureID();
 		};
 
-		UiDrawCall::ActiveFunc triggerTextActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc triggerTextActiveFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.triggerTextIsVisible();
 		};
 
-		UiDrawCall::ActiveFunc actionTextActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc actionTextActiveFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.actionTextIsVisible();
 		};
 
-		UiDrawCall::ActiveFunc effectTextActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc effectTextActiveFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.effectTextIsVisible();
@@ -875,7 +875,7 @@ void GameWorldPanel::initUiDrawCalls()
 			this->tooltipTextureRefs.set(i, ScopedUiTextureRef(tooltipTextureID, renderer));
 		}
 
-		UiDrawCall::TextureFunc tooltipTextureFunc = [this, &game]()
+		UiDrawCallTextureFunc tooltipTextureFunc = [this, &game]()
 		{
 			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
 			if (!buttonType.has_value())
@@ -888,12 +888,12 @@ void GameWorldPanel::initUiDrawCalls()
 			return tooltipTextureRef.get();
 		};
 
-		UiDrawCall::PositionFunc tooltipPositionFunc = [&game]()
+		UiDrawCallPositionFunc tooltipPositionFunc = [&game]()
 		{
 			return GameWorldUiView::getTooltipPosition(game);
 		};
 
-		UiDrawCall::SizeFunc tooltipSizeFunc = [this, &game]()
+		UiDrawCallSizeFunc tooltipSizeFunc = [this, &game]()
 		{
 			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
 			if (!buttonType.has_value())
@@ -906,12 +906,12 @@ void GameWorldPanel::initUiDrawCalls()
 			return Int2(tooltipTextureRef.getWidth(), tooltipTextureRef.getHeight());
 		};
 
-		UiDrawCall::PivotFunc tooltipPivotFunc = []()
+		UiDrawCallPivotFunc tooltipPivotFunc = []()
 		{
 			return PivotType::BottomLeft;
 		};
 
-		UiDrawCall::ActiveFunc tooltipActiveFunc = [this, &game]()
+		UiDrawCallActiveFunc tooltipActiveFunc = [this, &game]()
 		{
 			if (this->isPaused())
 			{
@@ -929,7 +929,7 @@ void GameWorldPanel::initUiDrawCalls()
 			tooltipPivotFunc,
 			tooltipActiveFunc);
 
-		UiDrawCall::PositionFunc cursorPositionFunc = [&game]()
+		UiDrawCallPositionFunc cursorPositionFunc = [&game]()
 		{
 			const auto &inputManager = game.inputManager;
 			return inputManager.getMousePosition();
@@ -953,7 +953,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return std::nullopt;
 		};
 
-		UiDrawCall::TextureFunc cursorTextureFunc = [this, &game, getCursorRegionIndex]()
+		UiDrawCallTextureFunc cursorTextureFunc = [this, &game, getCursorRegionIndex]()
 		{
 			const std::optional<int> index = getCursorRegionIndex();
 			if (!index.has_value())
@@ -965,7 +965,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return arrowCursorTextureRef.get();
 		};
 
-		UiDrawCall::SizeFunc cursorSizeFunc = [this, &game, getCursorRegionIndex]()
+		UiDrawCallSizeFunc cursorSizeFunc = [this, &game, getCursorRegionIndex]()
 		{
 			const std::optional<int> index = getCursorRegionIndex();
 			const Int2 textureDims = [this, &index]()
@@ -986,7 +986,7 @@ void GameWorldPanel::initUiDrawCalls()
 				static_cast<int>(static_cast<double>(textureDims.y) * cursorScale));
 		};
 
-		UiDrawCall::PivotFunc cursorPivotFunc = [this, getCursorRegionIndex]()
+		UiDrawCallPivotFunc cursorPivotFunc = [this, getCursorRegionIndex]()
 		{
 			const std::optional<int> index = getCursorRegionIndex();
 			if (!index.has_value())
@@ -999,7 +999,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return arrowCursorPivotTypes[*index];
 		};
 
-		UiDrawCall::ActiveFunc cursorActiveFunc = [this]()
+		UiDrawCallActiveFunc cursorActiveFunc = [this]()
 		{
 			return !this->isPaused();
 		};

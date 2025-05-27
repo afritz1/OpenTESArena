@@ -96,12 +96,12 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
 		PivotType::TopLeft);
 
-	UiDrawCall::TextureFunc automapTextureFunc = [this]()
+	UiDrawCallTextureFunc automapTextureFunc = [this]()
 	{
 		return this->mapTextureRef.get();
 	};
 
-	UiDrawCall::PositionFunc automapPositionFunc = [this, &game]()
+	UiDrawCallPositionFunc automapPositionFunc = [this, &game]()
 	{
 		constexpr double pixelSizeReal = static_cast<double>(AutomapUiView::PixelSize);
 		const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
@@ -113,7 +113,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		return Int2(mapX, mapY);
 	};
 
-	UiDrawCall::SizeFunc automapSizeFunc = [this, &game]()
+	UiDrawCallSizeFunc automapSizeFunc = [this, &game]()
 	{
 		auto &renderer = game.renderer;
 		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(this->mapTextureRef.get());
@@ -125,7 +125,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		return *dims;
 	};
 
-	UiDrawCall::PivotFunc automapPivotFunc = []()
+	UiDrawCallPivotFunc automapPivotFunc = []()
 	{
 		return PivotType::TopLeft;
 	};

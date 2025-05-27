@@ -104,7 +104,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		this->animTextureRefs.emplace_back(std::move(animTextureRef));
 	}
 
-	UiDrawCall::TextureFunc animTextureFunc = [this]()
+	UiDrawCallTextureFunc animTextureFunc = [this]()
 	{
 		DebugAssertIndex(this->animTextureRefs, this->animImageIndex);
 		return this->animTextureRefs[this->animImageIndex].get();

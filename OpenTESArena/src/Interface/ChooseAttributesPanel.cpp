@@ -239,7 +239,7 @@ bool ChooseAttributesPanel::init()
 	const Int2 shirtTextureDims = *renderer.tryGetUiTextureDims(shirtTextureID);
 	const Int2 statsBgTextureDims = *renderer.tryGetUiTextureDims(statsBgTextureID);
 
-	UiDrawCall::TextureFunc headTextureFunc = [this, &game]()
+	UiDrawCallTextureFunc headTextureFunc = [this, &game]()
 	{
 		const auto &charCreationState = game.getCharacterCreationState();
 		const int portraitIndex = charCreationState.portraitIndex;
@@ -247,12 +247,12 @@ bool ChooseAttributesPanel::init()
 		return headTextureRef.get();
 	};
 
-	UiDrawCall::PositionFunc headPositionFunc = [&game]()
+	UiDrawCallPositionFunc headPositionFunc = [&game]()
 	{
 		return ChooseAttributesUiView::getHeadOffset(game);
 	};
 
-	UiDrawCall::SizeFunc headSizeFunc = [this, &game]()
+	UiDrawCallSizeFunc headSizeFunc = [this, &game]()
 	{
 		const auto &charCreationState = game.getCharacterCreationState();
 		const int portraitIndex = charCreationState.portraitIndex;
@@ -295,7 +295,7 @@ bool ChooseAttributesPanel::init()
 		bonusPointsTextureDims,
 		PivotType::TopLeft);
 
-	UiDrawCall::PositionFunc upDownArrowPositionFunc = [this]()
+	UiDrawCallPositionFunc upDownArrowPositionFunc = [this]()
 	{
 		const Rect &selectedAttributeTextBoxRect = this->attributeTextBoxes[this->selectedAttributeIndex].getRect();
 		return Int2(
@@ -449,7 +449,7 @@ bool ChooseAttributesPanel::init()
 
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
-		UiDrawCall::TextureFunc attributeTextBoxTextureFunc = [this, attributeIndex]()
+		UiDrawCallTextureFunc attributeTextBoxTextureFunc = [this, attributeIndex]()
 		{
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			return attributeTextBox.getTextureID();
@@ -466,7 +466,7 @@ bool ChooseAttributesPanel::init()
 
 	for (int derivedAttributeIndex = 0; derivedAttributeIndex < DerivedAttributes::COUNT; derivedAttributeIndex++)
 	{
-		UiDrawCall::TextureFunc derivedAttributeTextBoxTextureFunc = [this, derivedAttributeIndex]()
+		UiDrawCallTextureFunc derivedAttributeTextBoxTextureFunc = [this, derivedAttributeIndex]()
 		{
 			TextBox &derivedAttributeTextBox = this->derivedAttributeTextBoxes[derivedAttributeIndex];
 			return derivedAttributeTextBox.getTextureID();

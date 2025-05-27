@@ -61,7 +61,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 
 	for (int i = 0; i < static_cast<int>(this->saveTextBoxes.size()); i++)
 	{
-		UiDrawCall::TextureFunc textBoxTextureFunc = [this, i]()
+		UiDrawCallTextureFunc textBoxTextureFunc = [this, i]()
 		{
 			DebugAssertIndex(this->saveTextBoxes, i);
 			TextBox &textBox = this->saveTextBoxes[i];

@@ -247,47 +247,47 @@ void MainMenuPanel::initTestUI()
 	const Rect testIndex2UpRect = MainMenuUiView::getTestIndex2UpButtonRect();
 	const Rect testWeatherUpRect = MainMenuUiView::getTestWeatherUpButtonRect();
 
-	UiDrawCall::TextureFunc testArrowTextureFunc = [this]()
+	UiDrawCallTextureFunc testArrowTextureFunc = [this]()
 	{
 		return this->testArrowsTextureRef.get();
 	};
 
-	UiDrawCall::SizeFunc testArrowSizeFunc = [this]()
+	UiDrawCallSizeFunc testArrowSizeFunc = [this]()
 	{
 		return Int2(this->testArrowsTextureRef.getWidth(), this->testArrowsTextureRef.getHeight());
 	};
 
-	UiDrawCall::PivotFunc testArrowPivotFunc = []()
+	UiDrawCallPivotFunc testArrowPivotFunc = []()
 	{
 		return PivotType::TopLeft;
 	};
 
-	UiDrawCall::PositionFunc testTypePositionFunc = [testTypeUpRect]()
+	UiDrawCallPositionFunc testTypePositionFunc = [testTypeUpRect]()
 	{
 		return testTypeUpRect.getTopLeft();
 	};
 
-	UiDrawCall::PositionFunc testIndexPositionFunc = [testIndexUpRect]()
+	UiDrawCallPositionFunc testIndexPositionFunc = [testIndexUpRect]()
 	{
 		return testIndexUpRect.getTopLeft();
 	};
 
-	UiDrawCall::PositionFunc testIndex2PositionFunc = [testIndex2UpRect]()
+	UiDrawCallPositionFunc testIndex2PositionFunc = [testIndex2UpRect]()
 	{
 		return testIndex2UpRect.getTopLeft();
 	};
 
-	UiDrawCall::PositionFunc testWeatherPositionFunc = [testWeatherUpRect]()
+	UiDrawCallPositionFunc testWeatherPositionFunc = [testWeatherUpRect]()
 	{
 		return testWeatherUpRect.getTopLeft();
 	};
 
-	UiDrawCall::ActiveFunc testIndex2ActiveFunc = [this]()
+	UiDrawCallActiveFunc testIndex2ActiveFunc = [this]()
 	{
 		return this->testType == MainMenuUiModel::TestType_Interior;
 	};
 
-	UiDrawCall::ActiveFunc testWeatherActiveFunc = [this]()
+	UiDrawCallActiveFunc testWeatherActiveFunc = [this]()
 	{
 		return (this->testType == MainMenuUiModel::TestType_City) ||
 			(this->testType == MainMenuUiModel::TestType_Wilderness);

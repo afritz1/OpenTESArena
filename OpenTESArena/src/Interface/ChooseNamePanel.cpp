@@ -89,7 +89,7 @@ bool ChooseNamePanel::init()
 		PivotType::Middle);
 
 	// Need a texture func for the name text box due to the non-constness of the getter.
-	UiDrawCall::TextureFunc entryTextureFunc = [this]()
+	UiDrawCallTextureFunc entryTextureFunc = [this]()
 	{
 		return this->entryTextBox.getTextureID();
 	};

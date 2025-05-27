@@ -135,12 +135,12 @@ bool ProvinceMapPanel::init(int provinceID)
 
 	initLocationIconUI(provinceID);
 
-	UiDrawCall::TextureFunc hoveredLocationTextureFunc = [this]()
+	UiDrawCallTextureFunc hoveredLocationTextureFunc = [this]()
 	{
 		return this->hoveredLocationTextBox.getTextureID();
 	};
 
-	UiDrawCall::PositionFunc hoveredLocationPositionFunc = [this, &game]()
+	UiDrawCallPositionFunc hoveredLocationPositionFunc = [this, &game]()
 	{
 		auto &gameState = game.gameState;
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
@@ -174,18 +174,18 @@ bool ProvinceMapPanel::init(int provinceID)
 		return clampedCenter;
 	};
 
-	UiDrawCall::SizeFunc hoveredLocationSizeFunc = [this]()
+	UiDrawCallSizeFunc hoveredLocationSizeFunc = [this]()
 	{
 		const Rect &hoveredLocationTextBoxRect = this->hoveredLocationTextBox.getRect();
 		return hoveredLocationTextBoxRect.getSize();
 	};
 
-	UiDrawCall::PivotFunc hoveredLocationPivotFunc = []()
+	UiDrawCallPivotFunc hoveredLocationPivotFunc = []()
 	{
 		return PivotType::Middle;
 	};
 
-	UiDrawCall::ActiveFunc hoveredLocationActiveFunc = [this]()
+	UiDrawCallActiveFunc hoveredLocationActiveFunc = [this]()
 	{
 		return !this->isPaused();
 	};
@@ -265,7 +265,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 		if (locationInst.isVisible())
 		{
 			const int locationDefIndex = locationInst.getLocationDefIndex();
-			UiDrawCall::TextureFunc baseTextureFunc = [this, &provinceDef, locationDefIndex]()
+			UiDrawCallTextureFunc baseTextureFunc = [this, &provinceDef, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const LocationTextureRefGroup *textureRefGroupPtr = [this, &locationDef]() -> const LocationTextureRefGroup*
@@ -319,7 +319,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				return textureRefGroupPtr->textureRef.get();
 			};
 
-			UiDrawCall::TextureFunc highlightTextureFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
+			UiDrawCallTextureFunc highlightTextureFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const ProvinceMapUiView::HighlightType highlightType = [this, provinceID, &gameState, &provinceDef, &playerProvinceDef, i, &locationDef]()
@@ -426,7 +426,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				*baseTextureDims,
 				pivotType);
 
-			UiDrawCall::ActiveFunc highlightActiveFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
+			UiDrawCallActiveFunc highlightActiveFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
@@ -457,7 +457,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				return false;
 			};
 
-			UiDrawCall::SizeFunc highlightSizeFunc = [&renderer, highlightTextureFunc]()
+			UiDrawCallSizeFunc highlightSizeFunc = [&renderer, highlightTextureFunc]()
 			{
 				const std::optional<Int2> highlightTextureDims = renderer.tryGetUiTextureDims(highlightTextureFunc());
 				DebugAssert(highlightTextureDims.has_value());

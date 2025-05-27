@@ -232,7 +232,7 @@ bool CharacterEquipmentPanel::init()
 		PivotType::TopLeft);
 
 	// Need a texture func for the list box due to the non-constness of the getter.
-	UiDrawCall::TextureFunc inventoryListBoxTextureFunc = [this]()
+	UiDrawCallTextureFunc inventoryListBoxTextureFunc = [this]()
 	{
 		return this->inventoryListBox.getTextureID();
 	};

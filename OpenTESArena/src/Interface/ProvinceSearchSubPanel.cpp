@@ -143,7 +143,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	const UiTextureID parchmentTextureID = ProvinceSearchUiView::allocParchmentTexture(textureManager, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-	UiDrawCall::ActiveFunc textEntryActiveFunc = [this]()
+	UiDrawCallActiveFunc textEntryActiveFunc = [this]()
 	{
 		return this->mode == ProvinceSearchUiModel::Mode::TextEntry;
 	};
@@ -178,7 +178,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		provinceID, binaryAssetLibrary, textureManager, renderer);
 	listBackgroundTextureRef.init(listBackgroundTextureID, renderer);
 
-	UiDrawCall::ActiveFunc listActiveFunc = [this]()
+	UiDrawCallActiveFunc listActiveFunc = [this]()
 	{
 		return this->mode == ProvinceSearchUiModel::Mode::List;
 	};
@@ -190,13 +190,13 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		[]() { return PivotType::TopLeft; },
 		listActiveFunc);
 
-	UiDrawCall::PositionFunc listBoxPositionFunc = [this]()
+	UiDrawCallPositionFunc listBoxPositionFunc = [this]()
 	{
 		const Rect &locationsListBoxRect = this->locationsListBox.getRect();
 		return locationsListBoxRect.getTopLeft();
 	};
 
-	UiDrawCall::SizeFunc listBoxSizeFunc = [this]()
+	UiDrawCallSizeFunc listBoxSizeFunc = [this]()
 	{
 		// Have to get the size dynamically due to the list not being initialized or populated yet.
 		const Rect &locationsListBoxRect = this->locationsListBox.getRect();

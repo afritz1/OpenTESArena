@@ -143,7 +143,7 @@ bool OptionsPanel::init()
 	this->highlightTextureRef.init(highlightTextureID, renderer);
 	for (int i = 0; i < OptionsUiModel::OPTION_COUNT; i++)
 	{
-		UiDrawCall::ActiveFunc highlightActiveFunc = [this, i]()
+		UiDrawCallActiveFunc highlightActiveFunc = [this, i]()
 		{
 			const auto &visibleOptions = this->getVisibleOptions();
 			if (i >= static_cast<int>(visibleOptions.size()))
@@ -186,7 +186,7 @@ bool OptionsPanel::init()
 
 	for (int i = 0; i < static_cast<int>(this->optionTextBoxes.size()); i++)
 	{
-		UiDrawCall::TextureFunc textureFunc = [this, i]()
+		UiDrawCallTextureFunc textureFunc = [this, i]()
 		{
 			DebugAssertIndex(this->optionTextBoxes, i);
 			TextBox &optionTextBox = this->optionTextBoxes[i];
@@ -202,7 +202,7 @@ bool OptionsPanel::init()
 			PivotType::TopLeft);
 	}
 
-	UiDrawCall::TextureFunc descTextureFunc = [this]()
+	UiDrawCallTextureFunc descTextureFunc = [this]()
 	{
 		return this->descriptionTextBox.getTextureID();
 	};

@@ -2,9 +2,8 @@
 
 #include "components/debug/Debug.h"
 
-UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const PositionFunc &positionFunc, const SizeFunc &sizeFunc,
-	const PivotFunc &pivotFunc, const ActiveFunc &activeFunc, const std::optional<Rect> &clipRect,
-	RenderSpace renderSpace)
+UiDrawCall::UiDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc, const UiDrawCallSizeFunc &sizeFunc,
+	const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect, RenderSpace renderSpace)
 	: textureFunc(textureFunc), positionFunc(positionFunc), sizeFunc(sizeFunc), pivotFunc(pivotFunc),
 	activeFunc(activeFunc), clipRect(clipRect)
 {
@@ -16,22 +15,22 @@ UiDrawCall::UiDrawCall(const TextureFunc &textureFunc, const PositionFunc &posit
 	this->renderSpace = renderSpace;
 }
 
-UiDrawCall::TextureFunc UiDrawCall::makeTextureFunc(UiTextureID id)
+UiDrawCallTextureFunc UiDrawCall::makeTextureFunc(UiTextureID id)
 {
 	return [id]() { return id; };
 }
 
-UiDrawCall::PositionFunc UiDrawCall::makePositionFunc(const Int2 &position)
+UiDrawCallPositionFunc UiDrawCall::makePositionFunc(const Int2 &position)
 {
 	return [position]() { return position; };
 }
 
-UiDrawCall::SizeFunc UiDrawCall::makeSizeFunc(const Int2 &size)
+UiDrawCallSizeFunc UiDrawCall::makeSizeFunc(const Int2 &size)
 {
 	return [size]() { return size; };
 }
 
-UiDrawCall::PivotFunc UiDrawCall::makePivotFunc(PivotType pivotType)
+UiDrawCallPivotFunc UiDrawCall::makePivotFunc(PivotType pivotType)
 {
 	return [pivotType]() { return pivotType; };
 }

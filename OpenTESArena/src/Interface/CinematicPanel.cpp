@@ -62,7 +62,7 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 		this->textureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
 	}
 
-	UiDrawCall::TextureFunc textureFunc = [this]()
+	UiDrawCallTextureFunc textureFunc = [this]()
 	{
 		const ScopedUiTextureRef &textureRef = this->textureRefs.get(this->imageIndex);
 		return textureRef.get();
