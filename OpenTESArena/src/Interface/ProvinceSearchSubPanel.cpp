@@ -190,16 +190,12 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	listBgDrawCallInitInfo.activeFunc = listActiveFunc;
 	this->addDrawCall(listBgDrawCallInitInfo);
 
-	const Rect locationsListBoxRect = this->locationsListBox.getRect();
 	UiDrawCallInitInfo locationsListDrawCallInitInfo;
 	locationsListDrawCallInitInfo.textureFunc = [this]() { return this->locationsListBox.getTextureID(); };
-	locationsListDrawCallInitInfo.position = locationsListBoxRect.getTopLeft();
-	locationsListDrawCallInitInfo.sizeFunc = [this]()
-	{
-		// Have to get the size dynamically due to the list not being initialized or populated yet.
-		const Rect locationsListBoxRect = this->locationsListBox.getRect();
-		return locationsListBoxRect.getSize();
-	};
+
+	// Have to get position and size dynamically since the list only gets initialized after finishing searching.
+	locationsListDrawCallInitInfo.positionFunc = [this]() { return this->locationsListBox.getRect().getTopLeft(); };
+	locationsListDrawCallInitInfo.sizeFunc = [this]() { return this->locationsListBox.getRect().getSize(); };
 
 	locationsListDrawCallInitInfo.activeFunc = listActiveFunc;
 	this->addDrawCall(locationsListDrawCallInitInfo);

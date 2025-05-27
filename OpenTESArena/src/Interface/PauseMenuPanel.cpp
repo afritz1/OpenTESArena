@@ -188,6 +188,9 @@ bool PauseMenuPanel::init()
 	spellPointsBarDrawCallInitInfo.pivotType = statusBarPivotType;
 	this->addDrawCall(spellPointsBarDrawCallInitInfo);
 
+	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
+	this->noMagicTextureRef.init(noMagicTextureID, renderer);
+
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
 	if (!charClassDef.castsMagic)

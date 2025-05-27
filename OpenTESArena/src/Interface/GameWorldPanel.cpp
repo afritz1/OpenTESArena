@@ -588,7 +588,8 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(actionTextDrawCallInitInfo);
 
 		const Rect effectTextBoxRect = this->effectText.getRect();
-		UiDrawCallInitInfo effectTextDrawCallInitInfo;
+		// @todo initialize effect text
+		/*UiDrawCallInitInfo effectTextDrawCallInitInfo;
 		effectTextDrawCallInitInfo.textureFunc = [this]() { return this->effectText.getTextureID(); };
 		effectTextDrawCallInitInfo.position = Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.width / 2), effectTextBoxRect.getTop());
 		effectTextDrawCallInitInfo.size = effectTextBoxRect.getSize();
@@ -599,7 +600,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return !this->isPaused() && gameState.effectTextIsVisible();
 		};
 
-		this->addDrawCall(effectTextDrawCallInitInfo);
+		this->addDrawCall(effectTextDrawCallInitInfo);*/
 
 		UiDrawCallInitInfo reticleDrawCallInitInfo;
 		reticleDrawCallInitInfo.textureID = this->modernModeReticleTextureRef.get();
@@ -785,7 +786,8 @@ void GameWorldPanel::initUiDrawCalls()
 		this->addDrawCall(actionTextDrawCallInitInfo);
 
 		const Rect effectTextBoxRect = this->effectText.getRect();
-		UiDrawCallInitInfo effectTextDrawCallInitInfo;
+		// @todo initialize effect text
+		/*UiDrawCallInitInfo effectTextDrawCallInitInfo;
 		effectTextDrawCallInitInfo.textureFunc = [this]() { return this->effectText.getTextureID(); };
 		effectTextDrawCallInitInfo.position = Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.width / 2), effectTextBoxRect.getTop());
 		effectTextDrawCallInitInfo.size = effectTextBoxRect.getSize();
@@ -796,7 +798,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return !this->isPaused() && gameState.effectTextIsVisible();
 		};
 
-		this->addDrawCall(effectTextDrawCallInitInfo);
+		this->addDrawCall(effectTextDrawCallInitInfo);*/
 
 		const FontLibrary &fontLibrary = FontLibrary::getInstance();
 		this->tooltipTextureRefs.init(GameWorldUiModel::BUTTON_COUNT);
