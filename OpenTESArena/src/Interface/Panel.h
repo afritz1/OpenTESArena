@@ -74,15 +74,7 @@ protected:
 
 	void clearButtonProxies();
 
-	// Helper functions for registering UI draw calls.
-	void addDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc,
-		const UiDrawCallSizeFunc &sizeFunc, const UiDrawCallPivotFunc &pivotFunc,
-		const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt,
-		RenderSpace renderSpace = RenderSpace::Classic);
-	void addDrawCall(const UiDrawCallTextureFunc &textureFunc, const Int2 &position, const Int2 &size,
-		PivotType pivotType, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
-		const std::optional<Rect> &clipRect = std::nullopt);
+	void addDrawCall(const UiDrawCallInitInfo &initInfo);
 	void addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCallActiveFunc &activeFunc);
 	void addCursorDrawCall(UiTextureID textureID, PivotType pivotType);
 

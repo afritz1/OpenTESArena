@@ -166,35 +166,9 @@ void Panel::clearButtonProxies()
 	this->buttonProxies.clear();
 }
 
-void Panel::addDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc,
-	const UiDrawCallSizeFunc &sizeFunc, const UiDrawCallPivotFunc &pivotFunc,
-	const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect, RenderSpace renderSpace)
+void Panel::addDrawCall(const UiDrawCallInitInfo &initInfo)
 {
-	this->drawCalls.emplace_back(textureFunc, positionFunc, sizeFunc, pivotFunc, activeFunc, clipRect, renderSpace);
-}
-
-void Panel::addDrawCall(const UiDrawCallTextureFunc &textureFunc, const Int2 &position, const Int2 &size,
-	PivotType pivotType, const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(
-		textureFunc,
-		UiDrawCall::makePositionFunc(position),
-		UiDrawCall::makeSizeFunc(size),
-		UiDrawCall::makePivotFunc(pivotType),
-		UiDrawCall::defaultActiveFunc,
-		clipRect);
-}
-
-void Panel::addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
-	const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(
-		UiDrawCall::makeTextureFunc(textureID),
-		UiDrawCall::makePositionFunc(position),
-		UiDrawCall::makeSizeFunc(size),
-		UiDrawCall::makePivotFunc(pivotType),
-		UiDrawCall::defaultActiveFunc,
-		clipRect);
+	this->drawCalls.emplace_back(initInfo);
 }
 
 void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCallActiveFunc &activeFunc)
