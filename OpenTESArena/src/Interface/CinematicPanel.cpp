@@ -62,17 +62,15 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 		this->textureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
 	}
 
-	UiDrawCallTextureFunc textureFunc = [this]()
+	UiDrawCallInitInfo drawCallInitInfo;
+	drawCallInitInfo.textureFunc = [this]()
 	{
 		const ScopedUiTextureRef &textureRef = this->textureRefs.get(this->imageIndex);
 		return textureRef.get();
 	};
 
-	this->addDrawCall(
-		textureFunc,
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	drawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(drawCallInitInfo);
 	
 	this->secondsPerImage = secondsPerImage;
 	this->currentSeconds = 0.0;

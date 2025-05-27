@@ -177,75 +177,56 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 		}
 	});
 
-	this->addDrawCall(
-		this->titleBackgroundTextureRef.get(),
-		this->titleBackgroundRect.getCenter(),
-		this->titleBackgroundRect.getSize(),
-		PivotType::Middle);
+	UiDrawCallInitInfo titleBgDrawCallInitInfo;
+	titleBgDrawCallInitInfo.textureID = this->titleBackgroundTextureRef.get();
+	titleBgDrawCallInitInfo.position = this->titleBackgroundRect.getCenter();
+	titleBgDrawCallInitInfo.size = this->titleBackgroundRect.getSize();
+	titleBgDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleBgDrawCallInitInfo);
 
 	for (const MessageBoxItem &item : this->items)
 	{
-		this->addDrawCall(
-			item.backgroundTextureRef.get(),
-			item.backgroundTextureRect.getCenter(),
-			item.backgroundTextureRect.getSize(),
-			PivotType::Middle);
+		UiDrawCallInitInfo itemBgDrawCallInitInfo;
+		itemBgDrawCallInitInfo.textureID = item.backgroundTextureRef.get();
+		itemBgDrawCallInitInfo.position = item.backgroundTextureRect.getCenter();
+		itemBgDrawCallInitInfo.size = item.backgroundTextureRect.getSize();
+		itemBgDrawCallInitInfo.pivotType = PivotType::Middle;
+		this->addDrawCall(itemBgDrawCallInitInfo);
 	}
 
-	UiDrawCallTextureFunc titleTextBoxTextureFunc = [this]()
-	{
-		return this->titleTextBox.getTextureID();
-	};
-
-	UiDrawCallPositionFunc titleTextBoxPositionFunc = [this]()
-	{
-		const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-		return titleTextBoxRect.getCenter();
-	};
-
-	UiDrawCallSizeFunc titleTextBoxSizeFunc = [this]()
-	{
-		const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-		return titleTextBoxRect.getSize();
-	};
-
-	UiDrawCallPivotFunc textBoxPivotFunc = []() { return PivotType::Middle; };
-
-	this->addDrawCall(
-		titleTextBoxTextureFunc,
-		titleTextBoxPositionFunc,
-		titleTextBoxSizeFunc,
-		textBoxPivotFunc,
-		UiDrawCall::defaultActiveFunc);
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleTextDrawCallInitInfo;
+	titleTextDrawCallInitInfo.textureFunc = [this]() { return this->titleTextBox.getTextureID(); };
+	titleTextDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleTextDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleTextDrawCallInitInfo);
 
 	for (int i = 0; i < this->items.getCount(); i++)
 	{
-		UiDrawCallTextureFunc itemTextBoxTextureFunc = [this, i]()
+		UiDrawCallInitInfo itemTextDrawCallInitInfo;
+		itemTextDrawCallInitInfo.textureFunc = [this, i]()
 		{
 			MessageBoxItem &item = this->items.get(i);
 			return item.textBox.getTextureID();
 		};
 
-		UiDrawCallPositionFunc itemTextBoxPositionFunc = [this, i]()
+		itemTextDrawCallInitInfo.positionFunc = [this, i]()
 		{
 			MessageBoxItem &item = this->items.get(i);
 			const Rect &itemRect = item.textBox.getRect();
 			return itemRect.getCenter();
 		};
 
-		UiDrawCallSizeFunc itemTextBoxSizeFunc = [this, i]()
+		itemTextDrawCallInitInfo.sizeFunc = [this, i]()
 		{
 			MessageBoxItem &item = this->items.get(i);
 			const Rect &itemRect = item.textBox.getRect();
 			return itemRect.getSize();
 		};
 
-		this->addDrawCall(
-			itemTextBoxTextureFunc,
-			itemTextBoxPositionFunc,
-			itemTextBoxSizeFunc,
-			textBoxPivotFunc,
-			UiDrawCall::defaultActiveFunc);
+		itemTextDrawCallInitInfo.pivotType = PivotType::Middle;
+		this->addDrawCall(itemTextDrawCallInitInfo);
 	}
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

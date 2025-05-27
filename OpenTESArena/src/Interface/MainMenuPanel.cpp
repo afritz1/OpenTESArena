@@ -213,11 +213,11 @@ bool MainMenuPanel::init()
 	auto &renderer = game.renderer;
 	const UiTextureID backgroundTextureID = MainMenuUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 	
 	this->initTestUI();
 	
@@ -247,88 +247,46 @@ void MainMenuPanel::initTestUI()
 	const Rect testIndex2UpRect = MainMenuUiView::getTestIndex2UpButtonRect();
 	const Rect testWeatherUpRect = MainMenuUiView::getTestWeatherUpButtonRect();
 
-	UiDrawCallTextureFunc testArrowTextureFunc = [this]()
-	{
-		return this->testArrowsTextureRef.get();
-	};
+	const UiTextureID testArrowTextureID = this->testArrowsTextureRef.get();
+	const Int2 testArrowSize(this->testArrowsTextureRef.getWidth(), this->testArrowsTextureRef.getHeight());
 
-	UiDrawCallSizeFunc testArrowSizeFunc = [this]()
-	{
-		return Int2(this->testArrowsTextureRef.getWidth(), this->testArrowsTextureRef.getHeight());
-	};
+	UiDrawCallInitInfo testTypeArrowDrawCallInitInfo;
+	testTypeArrowDrawCallInitInfo.textureID = testArrowTextureID;
+	testTypeArrowDrawCallInitInfo.position = testTypeUpRect.getTopLeft();
+	testTypeArrowDrawCallInitInfo.size = testArrowSize;
+	this->addDrawCall(testTypeArrowDrawCallInitInfo);
 
-	UiDrawCallPivotFunc testArrowPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
+	UiDrawCallInitInfo testIndexArrowDrawCallInitInfo;
+	testIndexArrowDrawCallInitInfo.textureID = testArrowTextureID;
+	testIndexArrowDrawCallInitInfo.position = testIndexUpRect.getTopLeft();
+	testIndexArrowDrawCallInitInfo.size = testArrowSize;
+	this->addDrawCall(testIndexArrowDrawCallInitInfo);
 
-	UiDrawCallPositionFunc testTypePositionFunc = [testTypeUpRect]()
-	{
-		return testTypeUpRect.getTopLeft();
-	};
+	UiDrawCallInitInfo testIndex2ArrowDrawCallInitInfo;
+	testIndex2ArrowDrawCallInitInfo.textureID = testArrowTextureID;
+	testIndex2ArrowDrawCallInitInfo.position = testIndex2UpRect.getTopLeft();
+	testIndex2ArrowDrawCallInitInfo.size = testArrowSize;
+	testIndex2ArrowDrawCallInitInfo.activeFunc = [this]() { return this->testType == MainMenuUiModel::TestType_Interior; };
+	this->addDrawCall(testIndex2ArrowDrawCallInitInfo);
 
-	UiDrawCallPositionFunc testIndexPositionFunc = [testIndexUpRect]()
-	{
-		return testIndexUpRect.getTopLeft();
-	};
-
-	UiDrawCallPositionFunc testIndex2PositionFunc = [testIndex2UpRect]()
-	{
-		return testIndex2UpRect.getTopLeft();
-	};
-
-	UiDrawCallPositionFunc testWeatherPositionFunc = [testWeatherUpRect]()
-	{
-		return testWeatherUpRect.getTopLeft();
-	};
-
-	UiDrawCallActiveFunc testIndex2ActiveFunc = [this]()
-	{
-		return this->testType == MainMenuUiModel::TestType_Interior;
-	};
-
-	UiDrawCallActiveFunc testWeatherActiveFunc = [this]()
-	{
-		return (this->testType == MainMenuUiModel::TestType_City) ||
-			(this->testType == MainMenuUiModel::TestType_Wilderness);
-	};
-
-	this->addDrawCall(
-		testArrowTextureFunc,
-		testTypePositionFunc,
-		testArrowSizeFunc,
-		testArrowPivotFunc,
-		UiDrawCall::defaultActiveFunc);
-	this->addDrawCall(
-		testArrowTextureFunc,
-		testIndexPositionFunc,
-		testArrowSizeFunc,
-		testArrowPivotFunc,
-		UiDrawCall::defaultActiveFunc);
-	this->addDrawCall(
-		testArrowTextureFunc,
-		testIndex2PositionFunc,
-		testArrowSizeFunc,
-		testArrowPivotFunc,
-		testIndex2ActiveFunc);
-	this->addDrawCall(
-		testArrowTextureFunc,
-		testWeatherPositionFunc,
-		testArrowSizeFunc,
-		testArrowPivotFunc,
-		testWeatherActiveFunc);
+	UiDrawCallInitInfo testWeatherArrowDrawCallInitInfo;
+	testWeatherArrowDrawCallInitInfo.textureID = testArrowTextureID;
+	testWeatherArrowDrawCallInitInfo.position = testWeatherUpRect.getTopLeft();
+	testWeatherArrowDrawCallInitInfo.size = testArrowSize;
+	testWeatherArrowDrawCallInitInfo.activeFunc = [this]() { return (this->testType == MainMenuUiModel::TestType_City) || (this->testType == MainMenuUiModel::TestType_Wilderness); };
+	this->addDrawCall(testWeatherArrowDrawCallInitInfo);
 
 	const UiTextureID testButtonTextureID = MainMenuUiView::allocTestButtonTexture(textureManager, renderer);
 	this->testButtonTextureRef.init(testButtonTextureID, renderer);
 
 	const Rect testButtonRect = MainMenuUiView::getTestButtonRect();
-	this->addDrawCall(
-		this->testButtonTextureRef.get(),
-		testButtonRect.getTopLeft(),
-		testButtonRect.getSize(),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo testButtonTextureDrawCallInitInfo;
+	testButtonTextureDrawCallInitInfo.textureID = this->testButtonTextureRef.get();
+	testButtonTextureDrawCallInitInfo.position = testButtonRect.getTopLeft();
+	testButtonTextureDrawCallInitInfo.size = testButtonRect.getSize();
+	this->addDrawCall(testButtonTextureDrawCallInitInfo);
 
-	const auto &fontLibrary = FontLibrary::getInstance();
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 	const std::string testButtonText = MainMenuUiModel::getTestButtonText();
 	const TextBoxInitInfo testButtonInitInfo = MainMenuUiView::getTestButtonTextBoxInitInfo(testButtonText, fontLibrary);
 	if (!this->testButtonTextBox.init(testButtonInitInfo, testButtonText, renderer))
@@ -336,12 +294,13 @@ void MainMenuPanel::initTestUI()
 		DebugCrash("Couldn't init test button text box.");
 	}
 
-	const Rect &testButtonTextBoxRect = this->testButtonTextBox.getRect();
-	this->addDrawCall(
-		this->testButtonTextBox.getTextureID(),
-		testButtonTextBoxRect.getCenter(),
-		testButtonTextBoxRect.getSize(),
-		PivotType::Middle);
+	const Rect testButtonTextBoxRect = this->testButtonTextBox.getRect();
+	UiDrawCallInitInfo testButtonTextDrawCallInitInfo;
+	testButtonTextDrawCallInitInfo.textureID = this->testButtonTextBox.getTextureID();
+	testButtonTextDrawCallInitInfo.position = testButtonTextBoxRect.getCenter();
+	testButtonTextDrawCallInitInfo.size = testButtonTextBoxRect.getSize();
+	testButtonTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(testButtonTextDrawCallInitInfo);
 
 	const std::string testTypeText = "Test type: " + MainMenuUiModel::getTestTypeName(this->testType);
 	const TextBoxInitInfo testTypeInitInfo = MainMenuUiView::getTestTypeTextBoxInitInfo(fontLibrary);
@@ -350,27 +309,28 @@ void MainMenuPanel::initTestUI()
 		DebugCrash("Couldn't init test type text box.");
 	}
 
-	const Rect &testTypeTextBoxRect = this->testTypeTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->testTypeTextBox.getTextureID(); },
-		Int2(testTypeTextBoxRect.getRight(), testTypeTextBoxRect.getTop()),
-		testTypeTextBoxRect.getSize(),
-		PivotType::MiddleRight);
+	const Rect testTypeTextBoxRect = this->testTypeTextBox.getRect();
+	UiDrawCallInitInfo testTypeTextDrawCallInitInfo;
+	testTypeTextDrawCallInitInfo.textureFunc = [this]() { return this->testTypeTextBox.getTextureID(); };
+	testTypeTextDrawCallInitInfo.position = Int2(testTypeTextBoxRect.getRight(), testTypeTextBoxRect.getTop());
+	testTypeTextDrawCallInitInfo.size = testTypeTextBoxRect.getSize();
+	testTypeTextDrawCallInitInfo.pivotType = PivotType::MiddleRight;
+	this->addDrawCall(testTypeTextDrawCallInitInfo);
 
-	const std::string testNameText = "Test location: " +
-		MainMenuUiModel::getSelectedTestName(game, this->testType, this->testIndex, this->testIndex2);
+	const std::string testNameText = "Test location: " + MainMenuUiModel::getSelectedTestName(game, this->testType, this->testIndex, this->testIndex2);
 	const TextBoxInitInfo testNameInitInfo = MainMenuUiView::getTestNameTextBoxInitInfo(fontLibrary);
 	if (!this->testNameTextBox.init(testNameInitInfo, testNameText, renderer))
 	{
 		DebugCrash("Couldn't init test name text box.");
 	}
 
-	const Rect &testNameTextBoxRect = this->testNameTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->testNameTextBox.getTextureID(); },
-		Int2(testNameTextBoxRect.getRight(), testNameTextBoxRect.getTop()),
-		testNameTextBoxRect.getSize(),
-		PivotType::MiddleRight);
+	const Rect testNameTextBoxRect = this->testNameTextBox.getRect();
+	UiDrawCallInitInfo testNameTextDrawCallInitInfo;
+	testNameTextDrawCallInitInfo.textureFunc = [this]() { return this->testNameTextBox.getTextureID(); };
+	testNameTextDrawCallInitInfo.position = Int2(testNameTextBoxRect.getRight(), testNameTextBoxRect.getTop());
+	testNameTextDrawCallInitInfo.size = testNameTextBoxRect.getSize();
+	testNameTextDrawCallInitInfo.pivotType = PivotType::MiddleRight;
+	this->addDrawCall(testNameTextDrawCallInitInfo);
 
 	const ArenaTypes::WeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
 	const std::string testWeatherText = "Test weather: " + MainMenuUiModel::WeatherTypeNames.at(testWeatherType);
@@ -380,11 +340,12 @@ void MainMenuPanel::initTestUI()
 		DebugCrash("Couldn't init test weather text box.");
 	}
 
-	const Rect &testWeatherTextBoxRect = this->testWeatherTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->testWeatherTextBox.getTextureID(); },
-		[testWeatherTextBoxRect]() { return Int2(testWeatherTextBoxRect.getRight(), testWeatherTextBoxRect.getTop()); },
-		[testWeatherTextBoxRect]() { return testWeatherTextBoxRect.getSize(); },
-		[]() { return PivotType::MiddleRight; },
-		testWeatherActiveFunc);
+	const Rect testWeatherTextBoxRect = this->testWeatherTextBox.getRect();
+	UiDrawCallInitInfo testWeatherTextDrawCallInitInfo;
+	testWeatherTextDrawCallInitInfo.textureFunc = [this]() { return this->testWeatherTextBox.getTextureID(); };
+	testWeatherTextDrawCallInitInfo.position = Int2(testWeatherTextBoxRect.getRight(), testWeatherTextBoxRect.getTop());
+	testWeatherTextDrawCallInitInfo.size = testWeatherTextBoxRect.getSize();
+	testWeatherTextDrawCallInitInfo.pivotType = PivotType::MiddleRight;
+	testWeatherTextDrawCallInitInfo.activeFunc = testWeatherArrowDrawCallInitInfo.activeFunc;
+	this->addDrawCall(testWeatherTextDrawCallInitInfo);
 }

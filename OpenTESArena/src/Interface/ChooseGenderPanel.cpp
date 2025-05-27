@@ -64,49 +64,51 @@ bool ChooseGenderPanel::init()
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-	this->addDrawCall(
-		this->nightSkyTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo nightSkyDrawCallInitInfo;
+	nightSkyDrawCallInitInfo.textureID = this->nightSkyTextureRef.get();
+	nightSkyDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(nightSkyDrawCallInitInfo);
 
-	const Int2 parchmentSize(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight());
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseGenderUiView::getTitleTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseGenderUiView::getMaleTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseGenderUiView::getFemaleTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
+	UiDrawCallInitInfo parchmentDrawCallInitInfo;
+	parchmentDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
+	parchmentDrawCallInitInfo.size = Int2(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight());
+	parchmentDrawCallInitInfo.pivotType = PivotType::Middle;
 
-	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	this->addDrawCall(
-		this->titleTextBox.getTextureID(),
-		titleTextBoxRect.getCenter(),
-		titleTextBoxRect.getSize(),
-		PivotType::Middle);
+	UiDrawCallInitInfo titleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	titleParchmentDrawCallInitInfo.position = ChooseGenderUiView::getTitleTextureCenter();
+	this->addDrawCall(titleParchmentDrawCallInitInfo);
 
-	const Rect &maleTextBoxRect = this->maleTextBox.getRect();
-	this->addDrawCall(
-		this->maleTextBox.getTextureID(),
-		maleTextBoxRect.getCenter(),
-		maleTextBoxRect.getSize(),
-		PivotType::Middle);
+	UiDrawCallInitInfo maleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	maleParchmentDrawCallInitInfo.position = ChooseGenderUiView::getMaleTextureCenter();
+	this->addDrawCall(maleParchmentDrawCallInitInfo);
 
-	const Rect &femaleTextBoxRect = this->femaleTextBox.getRect();
-	this->addDrawCall(
-		this->femaleTextBox.getTextureID(),
-		femaleTextBoxRect.getCenter(),
-		femaleTextBoxRect.getSize(),
-		PivotType::Middle);
+	UiDrawCallInitInfo femaleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	femaleParchmentDrawCallInitInfo.position = ChooseGenderUiView::getFemaleTextureCenter();
+	this->addDrawCall(femaleParchmentDrawCallInitInfo);
+
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleDrawCallInitInfo;
+	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
+	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleDrawCallInitInfo);
+
+	const Rect maleTextBoxRect = this->maleTextBox.getRect();
+	UiDrawCallInitInfo maleTextDrawCallInitInfo;
+	maleTextDrawCallInitInfo.textureID = this->maleTextBox.getTextureID();
+	maleTextDrawCallInitInfo.position = maleTextBoxRect.getCenter();
+	maleTextDrawCallInitInfo.size = maleTextBoxRect.getSize();
+	maleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(maleTextDrawCallInitInfo);
+
+	const Rect femaleTextBoxRect = this->femaleTextBox.getRect();
+	UiDrawCallInitInfo femaleTextDrawCallInitInfo;
+	femaleTextDrawCallInitInfo.textureID = this->femaleTextBox.getTextureID();
+	femaleTextDrawCallInitInfo.position = femaleTextBoxRect.getCenter();
+	femaleTextDrawCallInitInfo.size = femaleTextBoxRect.getSize();
+	femaleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(femaleTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

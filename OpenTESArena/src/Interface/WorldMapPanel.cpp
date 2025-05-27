@@ -82,11 +82,10 @@ bool WorldMapPanel::init()
 	const UiTextureID backgroundTextureID = WorldMapUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 
 	const auto &gameState = game.gameState;
 	const int provinceID = gameState.getProvinceDefinition().getRaceID();
@@ -94,11 +93,11 @@ bool WorldMapPanel::init()
 	const UiTextureID highlightedTextTextureID = WorldMapUiView::allocHighlightedTextTexture(provinceID, textureManager, renderer);
 	this->highlightedTextTextureRef.init(highlightedTextTextureID, renderer);
 
-	this->addDrawCall(
-		this->highlightedTextTextureRef.get(),
-		provinceNameOffset,
-		Int2(this->highlightedTextTextureRef.getWidth(), this->highlightedTextTextureRef.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo highlightedTextDrawCallInitInfo;
+	highlightedTextDrawCallInitInfo.textureID = this->highlightedTextTextureRef.get();
+	highlightedTextDrawCallInitInfo.position = provinceNameOffset;
+	highlightedTextDrawCallInitInfo.size = Int2(this->highlightedTextTextureRef.getWidth(), this->highlightedTextTextureRef.getHeight());
+	this->addDrawCall(highlightedTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

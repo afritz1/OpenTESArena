@@ -25,24 +25,24 @@ bool ChooseRacePanel::init()
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 	this->noExitTextureRef.init(noExitTextureID, renderer);
 
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
-	this->addDrawCall(
-		this->noExitTextureRef.get(),
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		Int2(this->noExitTextureRef.getWidth(), this->noExitTextureRef.getHeight()),
-		PivotType::BottomRight);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
+
+	UiDrawCallInitInfo noExitDrawCallInitInfo;
+	noExitDrawCallInitInfo.textureID = this->noExitTextureRef.get();
+	noExitDrawCallInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	noExitDrawCallInitInfo.size = Int2(this->noExitTextureRef.getWidth(), this->noExitTextureRef.getHeight());
+	noExitDrawCallInitInfo.pivotType = PivotType::BottomRight;
+	this->addDrawCall(noExitDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
 	this->addCursorDrawCall(this->cursorTextureRef.get(), CommonUiView::DefaultCursorPivotType);
 
 	// Push the initial text sub-panel.
-	// @todo: allocate std::function for unravelling the map with "push initial parchment sub-panel" on finished,
-	// setting the std::function to empty at that time?
+	// @todo: scroll unravel animation
 	std::unique_ptr<Panel> textSubPanel = ChooseRacePanel::getInitialSubPanel(game);
 	game.pushSubPanel(std::move(textSubPanel));
 

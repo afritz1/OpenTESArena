@@ -55,17 +55,17 @@ bool FastTravelSubPanel::init()
 		this->animTextureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
 	}
 
-	UiDrawCallTextureFunc animTextureFunc = [this]()
+	UiDrawCallInitInfo drawCallInitInfo;
+	drawCallInitInfo.textureFunc = [this]()
 	{
 		const ScopedUiTextureRef &textureRef = this->animTextureRefs.get(this->frameIndex);
 		return textureRef.get();
 	};
 
-	this->addDrawCall(
-		animTextureFunc,
-		FastTravelUiView::getAnimationTextureCenter(),
-		Int2(textureFileMetadata.getWidth(0), textureFileMetadata.getHeight(0)),
-		PivotType::Middle);
+	drawCallInitInfo.position = FastTravelUiView::getAnimationTextureCenter();
+	drawCallInitInfo.size = Int2(textureFileMetadata.getWidth(0), textureFileMetadata.getHeight(0));
+	drawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(drawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

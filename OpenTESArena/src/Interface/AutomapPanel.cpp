@@ -90,18 +90,14 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	const UiTextureID backgroundTextureID = AutomapUiView::allocBgTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 
-	UiDrawCallTextureFunc automapTextureFunc = [this]()
-	{
-		return this->mapTextureRef.get();
-	};
-
-	UiDrawCallPositionFunc automapPositionFunc = [this, &game]()
+	UiDrawCallInitInfo automapDrawCallInitInfo;
+	automapDrawCallInitInfo.textureID = this->mapTextureRef.get();
+	automapDrawCallInitInfo.positionFunc = [this, &game]()
 	{
 		constexpr double pixelSizeReal = static_cast<double>(AutomapUiView::PixelSize);
 		const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
@@ -113,7 +109,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		return Int2(mapX, mapY);
 	};
 
-	UiDrawCallSizeFunc automapSizeFunc = [this, &game]()
+	automapDrawCallInitInfo.sizeFunc = [this, &game]()
 	{
 		auto &renderer = game.renderer;
 		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(this->mapTextureRef.get());
@@ -125,27 +121,15 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		return *dims;
 	};
 
-	UiDrawCallPivotFunc automapPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
+	automapDrawCallInitInfo.clipRect = AutomapUiView::DrawingArea;
+	this->addDrawCall(automapDrawCallInitInfo);
 
-	const std::optional<Rect> automapClipRect = AutomapUiView::DrawingArea;
-
-	this->addDrawCall(
-		automapTextureFunc,
-		automapPositionFunc,
-		automapSizeFunc,
-		automapPivotFunc,
-		UiDrawCall::defaultActiveFunc,
-		automapClipRect);
-
-	const Rect &locationTextBoxRect = this->locationTextBox.getRect();
-	this->addDrawCall(
-		this->locationTextBox.getTextureID(),
-		locationTextBoxRect.getTopLeft(),
-		locationTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect locationTextBoxRect = this->locationTextBox.getRect();
+	UiDrawCallInitInfo locationTextDrawCallInitInfo;
+	locationTextDrawCallInitInfo.textureID = this->locationTextBox.getTextureID();
+	locationTextDrawCallInitInfo.position = locationTextBoxRect.getTopLeft();
+	locationTextDrawCallInitInfo.size = locationTextBoxRect.getSize();
+	this->addDrawCall(locationTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

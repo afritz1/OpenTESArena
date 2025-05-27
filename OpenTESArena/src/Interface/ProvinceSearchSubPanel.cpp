@@ -139,7 +139,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		}
 	});
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID parchmentTextureID = ProvinceSearchUiView::allocParchmentTexture(textureManager, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
@@ -148,34 +148,34 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		return this->mode == ProvinceSearchUiModel::Mode::TextEntry;
 	};
 
-	this->addDrawCall(
-		[this]() { return this->parchmentTextureRef.get(); },
-		[]() { return Int2((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1); },
-		[]() { return Int2(ProvinceSearchUiView::TextureWidth, ProvinceSearchUiView::TextureHeight); },
-		[]() { return PivotType::Middle; },
-		textEntryActiveFunc);
+	UiDrawCallInitInfo parchmentTextureDrawCallInitInfo;
+	parchmentTextureDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
+	parchmentTextureDrawCallInitInfo.position = Int2((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	parchmentTextureDrawCallInitInfo.size = Int2(ProvinceSearchUiView::TextureWidth, ProvinceSearchUiView::TextureHeight);
+	parchmentTextureDrawCallInitInfo.pivotType = PivotType::Middle;
+	parchmentTextureDrawCallInitInfo.activeFunc = textEntryActiveFunc;
+	this->addDrawCall(parchmentTextureDrawCallInitInfo);
 
-	const Rect &textTitleTextBoxRect = this->textTitleTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->textTitleTextBox.getTextureID(); },
-		[textTitleTextBoxRect]() { return textTitleTextBoxRect.getTopLeft(); },
-		[textTitleTextBoxRect]() { return textTitleTextBoxRect.getSize(); },
-		[]() { return PivotType::TopLeft; },
-		textEntryActiveFunc);
+	const Rect textTitleTextBoxRect = this->textTitleTextBox.getRect();
+	UiDrawCallInitInfo titleDrawCallInitInfo;
+	titleDrawCallInitInfo.textureID = this->textTitleTextBox.getTextureID();
+	titleDrawCallInitInfo.position = textTitleTextBoxRect.getTopLeft();
+	titleDrawCallInitInfo.size = textTitleTextBoxRect.getSize();
+	titleDrawCallInitInfo.activeFunc = textEntryActiveFunc;
+	this->addDrawCall(titleDrawCallInitInfo);
 
-	const Rect &textEntryTextBoxRect = this->textEntryTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->textEntryTextBox.getTextureID(); },
-		[textEntryTextBoxRect]() { return textEntryTextBoxRect.getTopLeft(); },
-		[textEntryTextBoxRect]() { return textEntryTextBoxRect.getSize(); },
-		[]() { return PivotType::TopLeft; },
-		textEntryActiveFunc);
+	const Rect textEntryTextBoxRect = this->textEntryTextBox.getRect();
+	UiDrawCallInitInfo textEntryDrawCallInitInfo;
+	textEntryDrawCallInitInfo.textureFunc = [this]() { return this->textEntryTextBox.getTextureID(); };
+	textEntryDrawCallInitInfo.position = textEntryTextBoxRect.getTopLeft();
+	textEntryDrawCallInitInfo.size = textEntryTextBoxRect.getSize();
+	textEntryDrawCallInitInfo.activeFunc = textEntryActiveFunc;
+	this->addDrawCall(textEntryDrawCallInitInfo);
 
 	// @todo: draw blinking cursor for text entry
 
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const UiTextureID listBackgroundTextureID = ProvinceSearchUiView::allocListBackgroundTexture(
-		provinceID, binaryAssetLibrary, textureManager, renderer);
+	const UiTextureID listBackgroundTextureID = ProvinceSearchUiView::allocListBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
 	listBackgroundTextureRef.init(listBackgroundTextureID, renderer);
 
 	UiDrawCallActiveFunc listActiveFunc = [this]()
@@ -183,32 +183,26 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		return this->mode == ProvinceSearchUiModel::Mode::List;
 	};
 
-	this->addDrawCall(
-		[this]() { return this->listBackgroundTextureRef.get(); },
-		[]() { return Int2(ProvinceSearchUiView::ListTextureX, ProvinceSearchUiView::ListTextureY); },
-		[this]() { return Int2(this->listBackgroundTextureRef.getWidth(), this->listBackgroundTextureRef.getHeight()); },
-		[]() { return PivotType::TopLeft; },
-		listActiveFunc);
+	UiDrawCallInitInfo listBgDrawCallInitInfo;
+	listBgDrawCallInitInfo.textureID = this->listBackgroundTextureRef.get();
+	listBgDrawCallInitInfo.position = Int2(ProvinceSearchUiView::ListTextureX, ProvinceSearchUiView::ListTextureY);
+	listBgDrawCallInitInfo.size = Int2(this->listBackgroundTextureRef.getWidth(), this->listBackgroundTextureRef.getHeight());
+	listBgDrawCallInitInfo.activeFunc = listActiveFunc;
+	this->addDrawCall(listBgDrawCallInitInfo);
 
-	UiDrawCallPositionFunc listBoxPositionFunc = [this]()
-	{
-		const Rect &locationsListBoxRect = this->locationsListBox.getRect();
-		return locationsListBoxRect.getTopLeft();
-	};
-
-	UiDrawCallSizeFunc listBoxSizeFunc = [this]()
+	const Rect locationsListBoxRect = this->locationsListBox.getRect();
+	UiDrawCallInitInfo locationsListDrawCallInitInfo;
+	locationsListDrawCallInitInfo.textureFunc = [this]() { return this->locationsListBox.getTextureID(); };
+	locationsListDrawCallInitInfo.position = locationsListBoxRect.getTopLeft();
+	locationsListDrawCallInitInfo.sizeFunc = [this]()
 	{
 		// Have to get the size dynamically due to the list not being initialized or populated yet.
-		const Rect &locationsListBoxRect = this->locationsListBox.getRect();
+		const Rect locationsListBoxRect = this->locationsListBox.getRect();
 		return locationsListBoxRect.getSize();
 	};
 
-	this->addDrawCall(
-		[this]() { return this->locationsListBox.getTextureID(); },
-		listBoxPositionFunc,
-		listBoxSizeFunc,
-		[]() { return PivotType::TopLeft; },
-		listActiveFunc);
+	locationsListDrawCallInitInfo.activeFunc = listActiveFunc;
+	this->addDrawCall(locationsListDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

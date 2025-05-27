@@ -176,53 +176,46 @@ bool ChooseClassPanel::init()
 		updateHoveredClassIndex();
 	});
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID popUpTextureID = ChooseClassUiView::allocPopUpTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
 	this->popUpTextureRef.init(popUpTextureID, renderer);
 
-	this->addDrawCall(
-		this->nightSkyTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
-	this->addDrawCall(
-		this->popUpTextureRef.get(),
-		Int2(ChooseClassUiView::ListTextureX, ChooseClassUiView::ListTextureY),
-		Int2(this->popUpTextureRef.getWidth(), this->popUpTextureRef.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo nightSkyDrawCallInitInfo;
+	nightSkyDrawCallInitInfo.textureID = this->nightSkyTextureRef.get();
+	nightSkyDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(nightSkyDrawCallInitInfo);
 
-	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	this->addDrawCall(
-		this->titleTextBox.getTextureID(),
-		titleTextBoxRect.getCenter(),
-		titleTextBoxRect.getSize(),
-		PivotType::Middle);
+	UiDrawCallInitInfo popUpTextureDrawCallInitInfo;
+	popUpTextureDrawCallInitInfo.textureID = this->popUpTextureRef.get();
+	popUpTextureDrawCallInitInfo.position = Int2(ChooseClassUiView::ListTextureX, ChooseClassUiView::ListTextureY);
+	popUpTextureDrawCallInitInfo.size = Int2(this->popUpTextureRef.getWidth(), this->popUpTextureRef.getHeight());
+	this->addDrawCall(popUpTextureDrawCallInitInfo);
 
-	UiDrawCallTextureFunc classDescTextureFunc = [this]()
-	{
-		return this->classDescriptionTextBox.getTextureID();
-	};
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleDrawCallInitInfo;
+	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
+	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleDrawCallInitInfo);
 
-	const Rect &classDescTextBoxRect = this->classDescriptionTextBox.getRect();
-	this->addDrawCall(
-		classDescTextureFunc,
-		classDescTextBoxRect.getCenter(),
-		classDescTextBoxRect.getSize(),
-		PivotType::Middle);
+	const Rect classDescTextBoxRect = this->classDescriptionTextBox.getRect();
+	UiDrawCallInitInfo classDescriptionDrawCallInitInfo;
+	classDescriptionDrawCallInitInfo.textureFunc = [this]() { return this->classDescriptionTextBox.getTextureID(); };
+	classDescriptionDrawCallInitInfo.position = classDescTextBoxRect.getCenter();
+	classDescriptionDrawCallInitInfo.size = classDescTextBoxRect.getSize();
+	classDescriptionDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(classDescriptionDrawCallInitInfo);
 
-	UiDrawCallTextureFunc listBoxTextureFunc = [this]()
-	{
-		return this->classesListBox.getTextureID();
-	};
-
-	const Rect &listBoxRect = this->classesListBox.getRect();
-	this->addDrawCall(
-		listBoxTextureFunc,
-		listBoxRect.getCenter(),
-		listBoxRect.getSize(),
-		PivotType::Middle);
+	const Rect listBoxRect = this->classesListBox.getRect();
+	UiDrawCallInitInfo listBoxDrawCallInitInfo;
+	listBoxDrawCallInitInfo.textureFunc = [this]() { return this->classesListBox.getTextureID(); };
+	listBoxDrawCallInitInfo.position = listBoxRect.getCenter();
+	listBoxDrawCallInitInfo.size = listBoxRect.getSize();
+	listBoxDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(listBoxDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

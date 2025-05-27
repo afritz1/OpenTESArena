@@ -102,50 +102,58 @@ bool OptionsPanel::init()
 		updateHoveredOptionIndex();
 	});
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = OptionsUiView::allocBackgroundTexture(renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 
 	const UiTextureID tabTextureID = OptionsUiView::allocTabTexture(textureManager, renderer);
 	this->tabButtonTextureRef.init(tabTextureID, renderer);
 	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)
 	{
 		const Rect tabRect = OptionsUiView::getTabRect(i);
-		this->addDrawCall(
-			this->tabButtonTextureRef.get(),
-			tabRect.getTopLeft(),
-			tabRect.getSize(),
-			PivotType::TopLeft);
+		UiDrawCallInitInfo tabTextureDrawCallInitInfo;
+		tabTextureDrawCallInitInfo.textureID = this->tabButtonTextureRef.get();
+		tabTextureDrawCallInitInfo.position = tabRect.getTopLeft();
+		tabTextureDrawCallInitInfo.size = tabRect.getSize();
+		this->addDrawCall(tabTextureDrawCallInitInfo);
 	}
 
 	const UiTextureID backButtonTextureID = OptionsUiView::allocBackButtonTexture(textureManager, renderer);
 	this->backButtonTextureRef.init(backButtonTextureID, renderer);
 	const Rect backButtonRect = OptionsUiView::getBackButtonRect();
-	this->addDrawCall(
-		this->backButtonTextureRef.get(),
-		backButtonRect.getTopLeft(),
-		backButtonRect.getSize(),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo backTextureDrawCallInitInfo;
+	backTextureDrawCallInitInfo.textureID = this->backButtonTextureRef.get();
+	backTextureDrawCallInitInfo.position = backButtonRect.getTopLeft();
+	backTextureDrawCallInitInfo.size = backButtonRect.getSize();
+	this->addDrawCall(backTextureDrawCallInitInfo);
 
-	const Rect &backButtonTextBoxRect = this->backButtonTextBox.getRect();
-	this->addDrawCall(
-		backButtonTextBox.getTextureID(),
-		backButtonTextBoxRect.getTopLeft(),
-		backButtonTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect backButtonTextBoxRect = this->backButtonTextBox.getRect();
+	UiDrawCallInitInfo backTextDrawCallInitInfo;
+	backTextDrawCallInitInfo.textureID = backButtonTextBox.getTextureID();
+	backTextDrawCallInitInfo.position = backButtonTextBoxRect.getTopLeft();
+	backTextDrawCallInitInfo.size = backButtonTextBoxRect.getSize();
+	this->addDrawCall(backTextDrawCallInitInfo);
 
 	const UiTextureID highlightTextureID = OptionsUiView::allocHighlightTexture(renderer);
 	this->highlightTextureRef.init(highlightTextureID, renderer);
 	for (int i = 0; i < OptionsUiModel::OPTION_COUNT; i++)
 	{
-		UiDrawCallActiveFunc highlightActiveFunc = [this, i]()
+		DebugAssertIndex(this->optionTextBoxes, i);
+		const TextBox &textBox = this->optionTextBoxes[i];
+		const Rect textBoxRect = textBox.getRect();
+
+		UiDrawCallInitInfo highlightDrawCallInitInfo;
+		highlightDrawCallInitInfo.textureID = this->highlightTextureRef.get();
+		highlightDrawCallInitInfo.position = textBoxRect.getTopLeft();
+		highlightDrawCallInitInfo.size = textBoxRect.getSize();
+		highlightDrawCallInitInfo.activeFunc = [this, i]()
 		{
-			const auto &visibleOptions = this->getVisibleOptions();
+			const OptionsUiModel::OptionGroup &visibleOptions = this->getVisibleOptions();
 			if (i >= static_cast<int>(visibleOptions.size()))
 			{
 				return false;
@@ -162,57 +170,44 @@ bool OptionsPanel::init()
 			const Rect &textBoxRect = textBox.getRect();
 			return textBoxRect.contains(originalPoint);
 		};
-
-		DebugAssertIndex(this->optionTextBoxes, i);
-		const TextBox &textBox = this->optionTextBoxes[i];
-		const Rect &textBoxRect = textBox.getRect();
-		this->addDrawCall(
-			[this]() { return this->highlightTextureRef.get(); },
-			[textBoxRect]() { return textBoxRect.getTopLeft(); },
-			[textBoxRect]() { return textBoxRect.getSize(); },
-			[]() { return PivotType::TopLeft; },
-			highlightActiveFunc);
+		
+		this->addDrawCall(highlightDrawCallInitInfo);
 	}
 
 	for (TextBox &tabTextBox : this->tabTextBoxes)
 	{
-		const Rect &tabTextBoxRect = tabTextBox.getRect();
-		this->addDrawCall(
-			tabTextBox.getTextureID(),
-			tabTextBoxRect.getTopLeft(),
-			tabTextBoxRect.getSize(),
-			PivotType::TopLeft);
+		const Rect tabTextBoxRect = tabTextBox.getRect();
+		UiDrawCallInitInfo tabTextDrawCallInitInfo;
+		tabTextDrawCallInitInfo.textureID = tabTextBox.getTextureID();
+		tabTextDrawCallInitInfo.position = tabTextBoxRect.getTopLeft();
+		tabTextDrawCallInitInfo.size = tabTextBoxRect.getSize();
+		this->addDrawCall(tabTextDrawCallInitInfo);
 	}
 
 	for (int i = 0; i < static_cast<int>(this->optionTextBoxes.size()); i++)
 	{
-		UiDrawCallTextureFunc textureFunc = [this, i]()
+		const TextBox &optionTextBox = this->optionTextBoxes[i];
+		const Rect optionTextBoxRect = optionTextBox.getRect();
+
+		UiDrawCallInitInfo optionTextDrawCallInitInfo;
+		optionTextDrawCallInitInfo.textureFunc = [this, i]()
 		{
 			DebugAssertIndex(this->optionTextBoxes, i);
 			TextBox &optionTextBox = this->optionTextBoxes[i];
 			return optionTextBox.getTextureID();
 		};
 
-		const TextBox &optionTextBox = this->optionTextBoxes[i];
-		const Rect &optionTextBoxRect = optionTextBox.getRect();
-		this->addDrawCall(
-			textureFunc,
-			optionTextBoxRect.getTopLeft(),
-			optionTextBoxRect.getSize(),
-			PivotType::TopLeft);
+		optionTextDrawCallInitInfo.position = optionTextBoxRect.getTopLeft();
+		optionTextDrawCallInitInfo.size = optionTextBoxRect.getSize();		
+		this->addDrawCall(optionTextDrawCallInitInfo);
 	}
 
-	UiDrawCallTextureFunc descTextureFunc = [this]()
-	{
-		return this->descriptionTextBox.getTextureID();
-	};
-
-	const Rect &descTextBoxRect = this->descriptionTextBox.getRect();
-	this->addDrawCall(
-		descTextureFunc,
-		descTextBoxRect.getTopLeft(),
-		descTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect descTextBoxRect = this->descriptionTextBox.getRect();
+	UiDrawCallInitInfo descriptionTextDrawCallInitInfo;
+	descriptionTextDrawCallInitInfo.textureFunc = [this]() { return this->descriptionTextBox.getTextureID(); };
+	descriptionTextDrawCallInitInfo.position = descTextBoxRect.getTopLeft();
+	descriptionTextDrawCallInitInfo.size = descTextBoxRect.getSize();
+	this->addDrawCall(descriptionTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

@@ -159,7 +159,7 @@ bool CharacterEquipmentPanel::init()
 		}
 	});
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID bodyTextureID = CharacterSheetUiView::allocBodyTexture(game);
 	const UiTextureID pantsTextureID = CharacterSheetUiView::allocPantsTexture(game);
 	const UiTextureID headTextureID = CharacterSheetUiView::allocHeadTexture(game);
@@ -171,78 +171,69 @@ bool CharacterEquipmentPanel::init()
 	this->shirtTextureRef.init(shirtTextureID, renderer);
 	this->equipmentBgTextureRef.init(equipmentBgTextureID, renderer);
 
-	const Int2 bodyTextureDims = *renderer.tryGetUiTextureDims(bodyTextureID);
-	const Int2 pantsTextureDims = *renderer.tryGetUiTextureDims(pantsTextureID);
-	const Int2 headTextureDims = *renderer.tryGetUiTextureDims(headTextureID);
-	const Int2 shirtTextureDims = *renderer.tryGetUiTextureDims(shirtTextureID);
-	const Int2 equipmentBgTextureDims = *renderer.tryGetUiTextureDims(equipmentBgTextureID);
+	UiDrawCallInitInfo bodyDrawCallInitInfo;
+	bodyDrawCallInitInfo.textureID = bodyTextureID;
+	bodyDrawCallInitInfo.position = CharacterSheetUiView::getBodyOffset(game);
+	bodyDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(bodyTextureID);
+	this->addDrawCall(bodyDrawCallInitInfo);
 
-	this->addDrawCall(
-		bodyTextureID,
-		CharacterSheetUiView::getBodyOffset(game),
-		bodyTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		pantsTextureID,
-		CharacterSheetUiView::getPantsOffset(game),
-		pantsTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		headTextureID,
-		CharacterSheetUiView::getHeadOffset(game),
-		headTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		shirtTextureID,
-		CharacterSheetUiView::getShirtOffset(game),
-		shirtTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		equipmentBgTextureID,
-		Int2::Zero,
-		equipmentBgTextureDims,
-		PivotType::TopLeft);
+	UiDrawCallInitInfo pantsDrawCallInitInfo;
+	pantsDrawCallInitInfo.textureID = pantsTextureID;
+	pantsDrawCallInitInfo.position = CharacterSheetUiView::getPantsOffset(game);
+	pantsDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(pantsTextureID);
+	this->addDrawCall(pantsDrawCallInitInfo);
 
-	const Rect &playerNameTextBoxRect = this->nameTextBox.getRect();
-	this->addDrawCall(
-		this->nameTextBox.getTextureID(),
-		playerNameTextBoxRect.getTopLeft(),
-		playerNameTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo headDrawCallInitInfo;
+	headDrawCallInitInfo.textureID = headTextureID;
+	headDrawCallInitInfo.position = CharacterSheetUiView::getHeadOffset(game);
+	headDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(headTextureID);
+	this->addDrawCall(headDrawCallInitInfo);
 
-	const Rect &playerRaceTextBoxRect = this->raceTextBox.getRect();
-	this->addDrawCall(
-		this->raceTextBox.getTextureID(),
-		playerRaceTextBoxRect.getTopLeft(),
-		playerRaceTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo shirtDrawCallInitInfo;
+	shirtDrawCallInitInfo.textureID = shirtTextureID;
+	shirtDrawCallInitInfo.position = CharacterSheetUiView::getShirtOffset(game);
+	shirtDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(shirtTextureID);
+	this->addDrawCall(shirtDrawCallInitInfo);
 
-	const Rect &playerClassTextBoxRect = this->classTextBox.getRect();
-	this->addDrawCall(
-		this->classTextBox.getTextureID(),
-		playerClassTextBoxRect.getTopLeft(),
-		playerClassTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo equipmentBgDrawCallInitInfo;
+	equipmentBgDrawCallInitInfo.textureID = equipmentBgTextureID;
+	equipmentBgDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(equipmentBgTextureID);
+	this->addDrawCall(equipmentBgDrawCallInitInfo);
 
-	const Rect &playerLevelTextBoxRect = this->levelTextBox.getRect();
-	this->addDrawCall(
-		this->levelTextBox.getTextureID(),
-		playerLevelTextBoxRect.getTopLeft(),
-		playerLevelTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect playerNameTextBoxRect = this->nameTextBox.getRect();
+	UiDrawCallInitInfo playerNameDrawCallInitInfo;
+	playerNameDrawCallInitInfo.textureID = this->nameTextBox.getTextureID();
+	playerNameDrawCallInitInfo.position = playerNameTextBoxRect.getTopLeft();
+	playerNameDrawCallInitInfo.size = playerNameTextBoxRect.getSize();
+	this->addDrawCall(playerNameDrawCallInitInfo);
 
-	// Need a texture func for the list box due to the non-constness of the getter.
-	UiDrawCallTextureFunc inventoryListBoxTextureFunc = [this]()
-	{
-		return this->inventoryListBox.getTextureID();
-	};
+	const Rect playerRaceTextBoxRect = this->raceTextBox.getRect();
+	UiDrawCallInitInfo playerRaceDrawCallInitInfo;
+	playerRaceDrawCallInitInfo.textureID = this->raceTextBox.getTextureID();
+	playerRaceDrawCallInitInfo.position = playerRaceTextBoxRect.getTopLeft();
+	playerRaceDrawCallInitInfo.size = playerRaceTextBoxRect.getSize();
+	this->addDrawCall(playerRaceDrawCallInitInfo);
 
-	const Rect &inventoryListBoxRect = this->inventoryListBox.getRect();
-	this->addDrawCall(
-		inventoryListBoxTextureFunc,
-		inventoryListBoxRect.getTopLeft(),
-		inventoryListBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect playerClassTextBoxRect = this->classTextBox.getRect();
+	UiDrawCallInitInfo playerClassDrawCallInitInfo;
+	playerClassDrawCallInitInfo.textureID = this->classTextBox.getTextureID();
+	playerClassDrawCallInitInfo.position = playerClassTextBoxRect.getTopLeft();
+	playerClassDrawCallInitInfo.size = playerClassTextBoxRect.getSize();
+	this->addDrawCall(playerClassDrawCallInitInfo);
+
+	const Rect playerLevelTextBoxRect = this->levelTextBox.getRect();
+	UiDrawCallInitInfo playerLevelDrawCallInitInfo;
+	playerLevelDrawCallInitInfo.textureID = this->levelTextBox.getTextureID();
+	playerLevelDrawCallInitInfo.position = playerLevelTextBoxRect.getTopLeft();
+	playerLevelDrawCallInitInfo.size = playerLevelTextBoxRect.getSize();
+	this->addDrawCall(playerLevelDrawCallInitInfo);
+
+	const Rect inventoryListBoxRect = this->inventoryListBox.getRect();
+	UiDrawCallInitInfo inventoryDrawCallInitInfo;
+	inventoryDrawCallInitInfo.textureFunc = [this]() { return this->inventoryListBox.getTextureID(); };
+	inventoryDrawCallInitInfo.position = inventoryListBoxRect.getTopLeft();
+	inventoryDrawCallInitInfo.size = inventoryListBoxRect.getSize();
+	this->addDrawCall(inventoryDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

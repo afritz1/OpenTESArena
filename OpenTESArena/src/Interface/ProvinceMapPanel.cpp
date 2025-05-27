@@ -123,24 +123,21 @@ bool ProvinceMapPanel::init(int provinceID)
 		this->updateHoveredLocationID(originalPosition);
 	});
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const UiTextureID backgroundTextureID = ProvinceMapUiView::allocBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
 
-	initLocationIconUI(provinceID);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 
-	UiDrawCallTextureFunc hoveredLocationTextureFunc = [this]()
-	{
-		return this->hoveredLocationTextBox.getTextureID();
-	};
+	this->initLocationIconUI(provinceID);
 
-	UiDrawCallPositionFunc hoveredLocationPositionFunc = [this, &game]()
+	UiDrawCallInitInfo hoveredLocationTextDrawCallInitInfo;
+	hoveredLocationTextDrawCallInitInfo.textureFunc = [this]() { return this->hoveredLocationTextBox.getTextureID(); };
+	hoveredLocationTextDrawCallInitInfo.positionFunc = [this, &game]()
 	{
 		auto &gameState = game.gameState;
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
@@ -151,7 +148,7 @@ bool ProvinceMapPanel::init(int provinceID)
 		const Int2 textBoxCenter = locationCenter - Int2(0, 10);
 
 		// Can't use the text box dimensions with clamping since it's allocated for worst-case location name now.
-		const auto &fontLibrary = FontLibrary::getInstance();
+		const FontLibrary &fontLibrary = FontLibrary::getInstance();
 		const std::string &fontName = ProvinceMapUiView::LocationFontName;
 		int fontDefIndex;
 		if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
@@ -163,8 +160,7 @@ bool ProvinceMapPanel::init(int provinceID)
 
 		const std::string locationName = ProvinceMapUiModel::getLocationName(game, this->provinceID, this->hoveredLocationID);
 		TextRenderShadowInfo shadowInfo;
-		shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY,
-			ProvinceMapUiView::LocationTextShadowColor);
+		shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY, ProvinceMapUiView::LocationTextShadowColor);
 		const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
 
 		// Clamp to screen edges, with some extra space on the left and right (note this clamped position
@@ -174,32 +170,14 @@ bool ProvinceMapPanel::init(int provinceID)
 		return clampedCenter;
 	};
 
-	UiDrawCallSizeFunc hoveredLocationSizeFunc = [this]()
-	{
-		const Rect &hoveredLocationTextBoxRect = this->hoveredLocationTextBox.getRect();
-		return hoveredLocationTextBoxRect.getSize();
-	};
-
-	UiDrawCallPivotFunc hoveredLocationPivotFunc = []()
-	{
-		return PivotType::Middle;
-	};
-
-	UiDrawCallActiveFunc hoveredLocationActiveFunc = [this]()
-	{
-		return !this->isPaused();
-	};
-
-	this->addDrawCall(
-		hoveredLocationTextureFunc,
-		hoveredLocationPositionFunc,
-		hoveredLocationSizeFunc,
-		hoveredLocationPivotFunc,
-		hoveredLocationActiveFunc);
+	hoveredLocationTextDrawCallInitInfo.size = this->hoveredLocationTextBox.getRect().getSize();
+	hoveredLocationTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	hoveredLocationTextDrawCallInitInfo.activeFunc = [this]() { return !this->isPaused(); };
+	this->addDrawCall(hoveredLocationTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, hoveredLocationActiveFunc);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, hoveredLocationTextDrawCallInitInfo.activeFunc);
 
 	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
 	this->provinceID = provinceID;
@@ -265,7 +243,10 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 		if (locationInst.isVisible())
 		{
 			const int locationDefIndex = locationInst.getLocationDefIndex();
-			UiDrawCallTextureFunc baseTextureFunc = [this, &provinceDef, locationDefIndex]()
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+
+			UiDrawCallInitInfo locationIconDrawCallInitInfo;
+			locationIconDrawCallInitInfo.textureFunc = [this, &provinceDef, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const LocationTextureRefGroup *textureRefGroupPtr = [this, &locationDef]() -> const LocationTextureRefGroup*
@@ -319,7 +300,12 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				return textureRefGroupPtr->textureRef.get();
 			};
 
-			UiDrawCallTextureFunc highlightTextureFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
+			locationIconDrawCallInitInfo.position = Int2(locationDef.getScreenX(), locationDef.getScreenY());
+			locationIconDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(locationIconDrawCallInitInfo.textureFunc());
+			locationIconDrawCallInitInfo.pivotType = PivotType::Middle;
+			this->addDrawCall(locationIconDrawCallInitInfo);
+
+			UiDrawCallTextureFunc highlightIconTextureFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const ProvinceMapUiView::HighlightType highlightType = [this, provinceID, &gameState, &provinceDef, &playerProvinceDef, i, &locationDef]()
@@ -414,19 +400,12 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				}
 			};
 
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-			const std::optional<Int2> baseTextureDims = renderer.tryGetUiTextureDims(baseTextureFunc());
-			DebugAssert(baseTextureDims.has_value());
-
-			const Int2 iconCenter(locationDef.getScreenX(), locationDef.getScreenY());
-			constexpr PivotType pivotType = PivotType::Middle;
-			this->addDrawCall(
-				baseTextureFunc,
-				iconCenter,
-				*baseTextureDims,
-				pivotType);
-
-			UiDrawCallActiveFunc highlightActiveFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
+			UiDrawCallInitInfo highlightIconDrawCallInitInfo;
+			highlightIconDrawCallInitInfo.textureFunc = highlightIconTextureFunc;
+			highlightIconDrawCallInitInfo.position = locationIconDrawCallInitInfo.position;
+			highlightIconDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(highlightIconTextureFunc());
+			highlightIconDrawCallInitInfo.pivotType = PivotType::Middle;
+			highlightIconDrawCallInitInfo.activeFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
@@ -457,19 +436,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				return false;
 			};
 
-			UiDrawCallSizeFunc highlightSizeFunc = [&renderer, highlightTextureFunc]()
-			{
-				const std::optional<Int2> highlightTextureDims = renderer.tryGetUiTextureDims(highlightTextureFunc());
-				DebugAssert(highlightTextureDims.has_value());
-				return *highlightTextureDims;
-			};
-
-			this->addDrawCall(
-				highlightTextureFunc,
-				[iconCenter]() { return iconCenter; },
-				highlightSizeFunc,
-				[pivotType]() { return pivotType; },
-				highlightActiveFunc);
+			this->addDrawCall(highlightIconDrawCallInitInfo);
 		}
 	}
 }

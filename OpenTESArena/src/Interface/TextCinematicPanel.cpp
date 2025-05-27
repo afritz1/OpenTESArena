@@ -104,26 +104,23 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		this->animTextureRefs.emplace_back(std::move(animTextureRef));
 	}
 
-	UiDrawCallTextureFunc animTextureFunc = [this]()
+	UiDrawCallInitInfo animDrawCallInitInfo;
+	animDrawCallInitInfo.textureFunc = [this]()
 	{
 		DebugAssertIndex(this->animTextureRefs, this->animImageIndex);
 		return this->animTextureRefs[this->animImageIndex].get();
 	};
 
-	const std::optional<Int2> animTextureDims = renderer.tryGetUiTextureDims(animTextureIDs[0]);
-	DebugAssert(animTextureDims.has_value());
-	this->addDrawCall(
-		animTextureFunc,
-		Int2::Zero,
-		*animTextureDims,
-		PivotType::TopLeft);
+	animDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(animTextureIDs[0]);
+	this->addDrawCall(animDrawCallInitInfo);
 
-	const Rect &textBoxRect = this->textBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->textBox.getTextureID(); },
-		textBoxRect.getCenter(),
-		textBoxRect.getSize(),
-		PivotType::Middle);
+	const Rect textBoxRect = this->textBox.getRect();
+	UiDrawCallInitInfo textDrawCallInitInfo;
+	textDrawCallInitInfo.textureFunc = [this]() { return this->textBox.getTextureID(); };
+	textDrawCallInitInfo.position = textBoxRect.getCenter();
+	textDrawCallInitInfo.size = textBoxRect.getSize();
+	textDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(textDrawCallInitInfo);
 
 	// Optionally initialize speech state if speech is available.
 	if (TextCinematicUiModel::shouldPlaySpeech(game))

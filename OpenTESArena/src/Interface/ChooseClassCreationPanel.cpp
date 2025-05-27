@@ -1,5 +1,3 @@
-#include "SDL.h"
-
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
@@ -7,8 +5,6 @@
 #include "ChooseClassPanel.h"
 #include "CommonUiView.h"
 #include "MainMenuPanel.h"
-#include "../Assets/ArenaTextureName.h"
-#include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
@@ -84,51 +80,51 @@ bool ChooseClassCreationPanel::init()
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-	this->addDrawCall(
-		this->nightSkyTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo nightSkyDrawCallInitInfo;
+	nightSkyDrawCallInitInfo.textureID = this->nightSkyTextureRef.get();
+	nightSkyDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(nightSkyDrawCallInitInfo);
 
-	const Int2 parchmentSize(
-		this->parchmentTextureRef.getWidth(),
-		this->parchmentTextureRef.getHeight());
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseClassCreationUiView::getTitleTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseClassCreationUiView::getGenerateTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseClassCreationUiView::getSelectTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
+	UiDrawCallInitInfo parchmentDrawCallInitInfo;
+	parchmentDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
+	parchmentDrawCallInitInfo.size = Int2(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight());
+	parchmentDrawCallInitInfo.pivotType = PivotType::Middle;
 
-	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	this->addDrawCall(
-		this->titleTextBox.getTextureID(),
-		titleTextBoxRect.getCenter(),
-		titleTextBoxRect.getSize(),
-		PivotType::Middle);
+	UiDrawCallInitInfo titleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	titleParchmentDrawCallInitInfo.position = ChooseClassCreationUiView::getTitleTextureCenter();
+	this->addDrawCall(titleParchmentDrawCallInitInfo);
 
-	const Rect &generateTextBoxRect = this->generateTextBox.getRect();
-	this->addDrawCall(
-		this->generateTextBox.getTextureID(),
-		generateTextBoxRect.getCenter(),
-		generateTextBoxRect.getSize(),
-		PivotType::Middle);
+	UiDrawCallInitInfo generateParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	generateParchmentDrawCallInitInfo.position = ChooseClassCreationUiView::getGenerateTextureCenter();
+	this->addDrawCall(generateParchmentDrawCallInitInfo);
 
-	const Rect &selectTextBoxRect = this->selectTextBox.getRect();
-	this->addDrawCall(
-		this->selectTextBox.getTextureID(),
-		selectTextBoxRect.getCenter(),
-		selectTextBoxRect.getSize(),
-		PivotType::Middle);
+	UiDrawCallInitInfo selectParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	selectParchmentDrawCallInitInfo.position = ChooseClassCreationUiView::getSelectTextureCenter();
+	this->addDrawCall(selectParchmentDrawCallInitInfo);
+
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleTextDrawCallInitInfo;
+	titleTextDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
+	titleTextDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleTextDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleTextDrawCallInitInfo);
+
+	const Rect generateTextBoxRect = this->generateTextBox.getRect();
+	UiDrawCallInitInfo generateTextDrawCallInitInfo;
+	generateTextDrawCallInitInfo.textureID = this->generateTextBox.getTextureID();
+	generateTextDrawCallInitInfo.position = generateTextBoxRect.getCenter();
+	generateTextDrawCallInitInfo.size = generateTextBoxRect.getSize();
+	generateTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(generateTextDrawCallInitInfo);
+
+	const Rect selectTextBoxRect = this->selectTextBox.getRect();
+	UiDrawCallInitInfo selectTextDrawCallInitInfo;
+	selectTextDrawCallInitInfo.textureID = this->selectTextBox.getTextureID();
+	selectTextDrawCallInitInfo.position = selectTextBoxRect.getCenter();
+	selectTextDrawCallInitInfo.size = selectTextBoxRect.getSize();
+	selectTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(selectTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

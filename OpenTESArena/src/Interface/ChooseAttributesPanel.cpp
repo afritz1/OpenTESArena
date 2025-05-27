@@ -27,6 +27,7 @@ ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game)
 {
 	this->selectedAttributeIndex = 0;
+	this->attributesAreSaved = false;
 }
 
 void ChooseAttributesPanel::populateBaseAttributesRandomly(CharacterCreationState &charCreationState, ArenaRandom &random)
@@ -209,7 +210,7 @@ bool ChooseAttributesPanel::init()
 
 	this->addInputActionListener(InputActionName::Back, ChooseAttributesUiController::onBackToRaceSelectionInputAction);
 
-	auto &textureManager = game.textureManager;
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID bodyTextureID = ChooseAttributesUiView::allocBodyTexture(game);
 	const UiTextureID pantsTextureID = ChooseAttributesUiView::allocPantsTexture(game);
 	const UiTextureID shirtTextureID = ChooseAttributesUiView::allocShirtTexture(game);
@@ -234,12 +235,20 @@ bool ChooseAttributesPanel::init()
 		this->headTextureRefs.set(i, ScopedUiTextureRef(headTextureID, renderer));
 	}
 
-	const Int2 bodyTextureDims = *renderer.tryGetUiTextureDims(bodyTextureID);
-	const Int2 pantsTextureDims = *renderer.tryGetUiTextureDims(pantsTextureID);
-	const Int2 shirtTextureDims = *renderer.tryGetUiTextureDims(shirtTextureID);
-	const Int2 statsBgTextureDims = *renderer.tryGetUiTextureDims(statsBgTextureID);
+	UiDrawCallInitInfo bodyDrawCallInitInfo;
+	bodyDrawCallInitInfo.textureID = bodyTextureID;
+	bodyDrawCallInitInfo.position = ChooseAttributesUiView::getBodyOffset(game);
+	bodyDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(bodyTextureID);
+	this->addDrawCall(bodyDrawCallInitInfo);
 
-	UiDrawCallTextureFunc headTextureFunc = [this, &game]()
+	UiDrawCallInitInfo pantsDrawCallInitInfo;
+	pantsDrawCallInitInfo.textureID = pantsTextureID;
+	pantsDrawCallInitInfo.position = ChooseAttributesUiView::getPantsOffset(game);
+	pantsDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(pantsTextureID);
+	this->addDrawCall(pantsDrawCallInitInfo);
+
+	UiDrawCallInitInfo headDrawCallInitInfo;
+	headDrawCallInitInfo.textureFunc = [this, &game]()
 	{
 		const auto &charCreationState = game.getCharacterCreationState();
 		const int portraitIndex = charCreationState.portraitIndex;
@@ -247,12 +256,8 @@ bool ChooseAttributesPanel::init()
 		return headTextureRef.get();
 	};
 
-	UiDrawCallPositionFunc headPositionFunc = [&game]()
-	{
-		return ChooseAttributesUiView::getHeadOffset(game);
-	};
-
-	UiDrawCallSizeFunc headSizeFunc = [this, &game]()
+	headDrawCallInitInfo.positionFunc = [&game]() { return ChooseAttributesUiView::getHeadOffset(game); };
+	headDrawCallInitInfo.sizeFunc = [this, &game]()
 	{
 		const auto &charCreationState = game.getCharacterCreationState();
 		const int portraitIndex = charCreationState.portraitIndex;
@@ -260,78 +265,60 @@ bool ChooseAttributesPanel::init()
 		return Int2(headTextureRef.getWidth(), headTextureRef.getHeight());
 	};
 
-	this->addDrawCall(
-		bodyTextureID,
-		ChooseAttributesUiView::getBodyOffset(game),
-		bodyTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		pantsTextureID,
-		ChooseAttributesUiView::getPantsOffset(game),
-		pantsTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		headTextureFunc,
-		headPositionFunc,
-		headSizeFunc,
-		UiDrawCall::makePivotFunc(PivotType::TopLeft),
-		UiDrawCall::defaultActiveFunc);
-	this->addDrawCall(
-		shirtTextureID,
-		ChooseAttributesUiView::getShirtOffset(game),
-		shirtTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		statsBgTextureID,
-		Int2::Zero,
-		statsBgTextureDims,
-		PivotType::TopLeft);
+	this->addDrawCall(headDrawCallInitInfo);
 
-	const Int2 bonusPointsTextureTopLeftPosition = ChooseAttributesUiView::BonusPointsTextureTopLeftPosition;
-	const Int2 bonusPointsTextureDims = *renderer.tryGetUiTextureDims(bonusPointsTextureID);
-	this->addDrawCall(
-		bonusPointsTextureID,
-		bonusPointsTextureTopLeftPosition,
-		bonusPointsTextureDims,
-		PivotType::TopLeft);
+	UiDrawCallInitInfo shirtDrawCallInitInfo;
+	shirtDrawCallInitInfo.textureID = shirtTextureID;
+	shirtDrawCallInitInfo.position = ChooseAttributesUiView::getShirtOffset(game);
+	shirtDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(shirtTextureID);
+	this->addDrawCall(shirtDrawCallInitInfo);
 
-	UiDrawCallPositionFunc upDownArrowPositionFunc = [this]()
+	UiDrawCallInitInfo statsBgDrawCallInitInfo;
+	statsBgDrawCallInitInfo.textureID = statsBgTextureID;
+	statsBgDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(statsBgTextureID);
+	this->addDrawCall(statsBgDrawCallInitInfo);
+
+	UiDrawCallInitInfo bonusPointsTextureDrawCallInitInfo;
+	bonusPointsTextureDrawCallInitInfo.textureID = bonusPointsTextureID;
+	bonusPointsTextureDrawCallInitInfo.position = ChooseAttributesUiView::BonusPointsTextureTopLeftPosition;
+	bonusPointsTextureDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(bonusPointsTextureID);
+	this->addDrawCall(bonusPointsTextureDrawCallInitInfo);
+
+	UiDrawCallInitInfo upDownArrowDrawCallInitInfo;
+	upDownArrowDrawCallInitInfo.textureID = this->upDownTextureRef.get();
+	upDownArrowDrawCallInitInfo.positionFunc = [this]()
 	{
-		const Rect &selectedAttributeTextBoxRect = this->attributeTextBoxes[this->selectedAttributeIndex].getRect();
-		return Int2(
-			ChooseAttributesUiView::UpDownButtonFirstTopLeftPosition.x + (this->upDownTextureRef.getWidth() / 2),
-			selectedAttributeTextBoxRect.getCenter().y);
+		const Rect selectedAttributeTextBoxRect = this->attributeTextBoxes[this->selectedAttributeIndex].getRect();
+		const int centerX = ChooseAttributesUiView::UpDownButtonFirstTopLeftPosition.x + (this->upDownTextureRef.getWidth() / 2);
+		const int centerY = selectedAttributeTextBoxRect.getCenter().y;
+		return Int2(centerX, centerY);
 	};
 
-	this->addDrawCall(
-		UiDrawCall::makeTextureFunc(this->upDownTextureRef.get()),
-		upDownArrowPositionFunc,
-		UiDrawCall::makeSizeFunc(*renderer.tryGetUiTextureDims(this->upDownTextureRef.get())),
-		UiDrawCall::makePivotFunc(PivotType::Middle),
-		UiDrawCall::defaultActiveFunc);
+	upDownArrowDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(this->upDownTextureRef.get());
+	upDownArrowDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(upDownArrowDrawCallInitInfo);
 
-	const Rect &nameTextBoxRect = this->nameTextBox.getRect();
-	this->addDrawCall(
-		this->nameTextBox.getTextureID(),
-		nameTextBoxRect.getTopLeft(),
-		nameTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect playerNameTextBoxRect = this->nameTextBox.getRect();
+	UiDrawCallInitInfo playerNameDrawCallInitInfo;
+	playerNameDrawCallInitInfo.textureID = this->nameTextBox.getTextureID();
+	playerNameDrawCallInitInfo.position = playerNameTextBoxRect.getTopLeft();
+	playerNameDrawCallInitInfo.size = playerNameTextBoxRect.getSize();
+	this->addDrawCall(playerNameDrawCallInitInfo);
 
-	const Rect &raceTextBoxRect = this->raceTextBox.getRect();
-	this->addDrawCall(
-		this->raceTextBox.getTextureID(),
-		raceTextBoxRect.getTopLeft(),
-		raceTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect playerRaceTextBoxRect = this->raceTextBox.getRect();
+	UiDrawCallInitInfo playerRaceDrawCallInitInfo;
+	playerRaceDrawCallInitInfo.textureID = this->raceTextBox.getTextureID();
+	playerRaceDrawCallInitInfo.position = playerRaceTextBoxRect.getTopLeft();
+	playerRaceDrawCallInitInfo.size = playerRaceTextBoxRect.getSize();
+	this->addDrawCall(playerRaceDrawCallInitInfo);
 
-	const Rect &classTextBoxRect = this->classTextBox.getRect();
-	this->addDrawCall(
-		this->classTextBox.getTextureID(),
-		classTextBoxRect.getTopLeft(),
-		classTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect playerClassTextBoxRect = this->classTextBox.getRect();
+	UiDrawCallInitInfo playerClassDrawCallInitInfo;
+	playerClassDrawCallInitInfo.textureID = this->classTextBox.getTextureID();
+	playerClassDrawCallInitInfo.position = playerClassTextBoxRect.getTopLeft();
+	playerClassDrawCallInitInfo.size = playerClassTextBoxRect.getSize();
+	this->addDrawCall(playerClassDrawCallInitInfo);
 
-	// code arrow
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
 		const Rect attributeFirstButtonRect = ChooseAttributesUiView::AttributeButtonFirstRect;
@@ -439,93 +426,86 @@ bool ChooseAttributesPanel::init()
 		return false;
 	}
 
-	const Rect &bonusPointsTextBoxRect = this->bonusPointsTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->bonusPointsTextBox.getTextureID(); },
-		UiDrawCall::makePositionFunc(bonusPointsTextBoxRect.getTopLeft()),
-		UiDrawCall::makeSizeFunc(bonusPointsTextBoxRect.getSize()),
-		UiDrawCall::makePivotFunc(PivotType::TopLeft),
-		UiDrawCall::defaultActiveFunc);
+	const Rect bonusPointsTextBoxRect = this->bonusPointsTextBox.getRect();
+	UiDrawCallInitInfo bonusPointsTextDrawCallInitInfo;
+	bonusPointsTextDrawCallInitInfo.textureFunc = [this]() { return this->bonusPointsTextBox.getTextureID(); };
+	bonusPointsTextDrawCallInitInfo.position = bonusPointsTextBoxRect.getTopLeft();
+	bonusPointsTextDrawCallInitInfo.size = bonusPointsTextBoxRect.getSize();
+	this->addDrawCall(bonusPointsTextDrawCallInitInfo);
 
 	for (int attributeIndex = 0; attributeIndex < PrimaryAttributes::COUNT; attributeIndex++)
 	{
-		UiDrawCallTextureFunc attributeTextBoxTextureFunc = [this, attributeIndex]()
+		const Rect attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
+
+		UiDrawCallInitInfo primaryAttributeDrawCallInitInfo;
+		primaryAttributeDrawCallInitInfo.textureFunc = [this, attributeIndex]()
 		{
 			TextBox &attributeTextBox = this->attributeTextBoxes[attributeIndex];
 			return attributeTextBox.getTextureID();
 		};
 
-		const Rect &attributeTextBoxRect = this->attributeTextBoxes[attributeIndex].getRect();
-		this->addDrawCall(
-			attributeTextBoxTextureFunc,
-			UiDrawCall::makePositionFunc(attributeTextBoxRect.getTopLeft()),
-			UiDrawCall::makeSizeFunc(attributeTextBoxRect.getSize()),
-			UiDrawCall::makePivotFunc(PivotType::TopLeft),
-			UiDrawCall::defaultActiveFunc);
+		primaryAttributeDrawCallInitInfo.position = attributeTextBoxRect.getTopLeft();
+		primaryAttributeDrawCallInitInfo.size = attributeTextBoxRect.getSize();
+		this->addDrawCall(primaryAttributeDrawCallInitInfo);
 	}
 
 	for (int derivedAttributeIndex = 0; derivedAttributeIndex < DerivedAttributes::COUNT; derivedAttributeIndex++)
 	{
-		UiDrawCallTextureFunc derivedAttributeTextBoxTextureFunc = [this, derivedAttributeIndex]()
+		const Rect derivedAttributeTextBoxRect = this->derivedAttributeTextBoxes[derivedAttributeIndex].getRect();
+
+		UiDrawCallInitInfo derivedAttributeDrawCallInitInfo;
+		derivedAttributeDrawCallInitInfo.textureFunc = [this, derivedAttributeIndex]()
 		{
 			TextBox &derivedAttributeTextBox = this->derivedAttributeTextBoxes[derivedAttributeIndex];
 			return derivedAttributeTextBox.getTextureID();
 		};
 
-		const Rect &derivedAttributeTextBoxRect = this->derivedAttributeTextBoxes[derivedAttributeIndex].getRect();
-		this->addDrawCall(
-			derivedAttributeTextBoxTextureFunc,
-			UiDrawCall::makePositionFunc(derivedAttributeTextBoxRect.getTopLeft()),
-			UiDrawCall::makeSizeFunc(derivedAttributeTextBoxRect.getSize()),
-			UiDrawCall::makePivotFunc(PivotType::TopLeft),
-			UiDrawCall::defaultActiveFunc);
+		derivedAttributeDrawCallInitInfo.position = derivedAttributeTextBoxRect.getTopLeft();
+		derivedAttributeDrawCallInitInfo.size = derivedAttributeTextBoxRect.getSize();
+		this->addDrawCall(derivedAttributeDrawCallInitInfo);
 	}
 
-	const Rect &playerExperienceTextBoxRect = this->experienceTextBox.getRect();
-	this->addDrawCall(
-		this->experienceTextBox.getTextureID(),
-		playerExperienceTextBoxRect.getTopLeft(),
-		playerExperienceTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect playerExperienceTextBoxRect = this->experienceTextBox.getRect();
+	UiDrawCallInitInfo experienceDrawCallInitInfo;
+	experienceDrawCallInitInfo.textureFunc = [this]() { return this->experienceTextBox.getTextureID(); };
+	experienceDrawCallInitInfo.position = playerExperienceTextBoxRect.getTopLeft();
+	experienceDrawCallInitInfo.size = playerExperienceTextBoxRect.getSize();
+	this->addDrawCall(experienceDrawCallInitInfo);
 
-	const Rect &playerLevelTextBoxRect = this->levelTextBox.getRect();
-	this->addDrawCall(
-		this->levelTextBox.getTextureID(),
-		playerLevelTextBoxRect.getTopLeft(),
-		playerLevelTextBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect playerLevelTextBoxRect = this->levelTextBox.getRect();
+	UiDrawCallInitInfo levelDrawCallInitInfo;
+	levelDrawCallInitInfo.textureID = this->levelTextBox.getTextureID();
+	levelDrawCallInitInfo.position = playerLevelTextBoxRect.getTopLeft();
+	levelDrawCallInitInfo.size = playerLevelTextBoxRect.getSize();
+	this->addDrawCall(levelDrawCallInitInfo);
 
-	const Rect &playerHealthTextBoxRect = this->healthTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->healthTextBox.getTextureID(); },
-		UiDrawCall::makePositionFunc(playerHealthTextBoxRect.getTopLeft()),
-		UiDrawCall::makeSizeFunc(playerHealthTextBoxRect.getSize()),
-		UiDrawCall::makePivotFunc(PivotType::TopLeft),
-		UiDrawCall::defaultActiveFunc);
+	const Rect playerHealthTextBoxRect = this->healthTextBox.getRect();
+	UiDrawCallInitInfo playerHealthDrawCallInitInfo;
+	playerHealthDrawCallInitInfo.textureFunc = [this]() { return this->healthTextBox.getTextureID(); };
+	playerHealthDrawCallInitInfo.position = playerHealthTextBoxRect.getTopLeft();
+	playerHealthDrawCallInitInfo.size = playerHealthTextBoxRect.getSize();
+	this->addDrawCall(playerHealthDrawCallInitInfo);
 
-	const Rect &playerStaminaTextBoxRect = this->staminaTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->staminaTextBox.getTextureID(); },
-		UiDrawCall::makePositionFunc(playerStaminaTextBoxRect.getTopLeft()),
-		UiDrawCall::makeSizeFunc(playerStaminaTextBoxRect.getSize()),
-		UiDrawCall::makePivotFunc(PivotType::TopLeft),
-		UiDrawCall::defaultActiveFunc);
+	const Rect playerStaminaTextBoxRect = this->staminaTextBox.getRect();
+	UiDrawCallInitInfo playerStaminaDrawCallInitInfo;
+	playerStaminaDrawCallInitInfo.textureFunc = [this]() { return this->staminaTextBox.getTextureID(); };
+	playerStaminaDrawCallInitInfo.position = playerStaminaTextBoxRect.getTopLeft();
+	playerStaminaDrawCallInitInfo.size = playerStaminaTextBoxRect.getSize();
+	this->addDrawCall(playerStaminaDrawCallInitInfo);
 
-	const Rect &playerSpellPointsTextBoxRect = this->spellPointsTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->spellPointsTextBox.getTextureID(); },
-		UiDrawCall::makePositionFunc(playerSpellPointsTextBoxRect.getTopLeft()),
-		UiDrawCall::makeSizeFunc(playerSpellPointsTextBoxRect.getSize()),
-		UiDrawCall::makePivotFunc(PivotType::TopLeft),
-		UiDrawCall::defaultActiveFunc);
+	const Rect playerSpellPointsTextBoxRect = this->spellPointsTextBox.getRect();
+	UiDrawCallInitInfo playerSpellPointsDrawCallInitInfo;
+	playerSpellPointsDrawCallInitInfo.textureFunc = [this]() { return this->spellPointsTextBox.getTextureID(); };
+	playerSpellPointsDrawCallInitInfo.position = playerSpellPointsTextBoxRect.getTopLeft();
+	playerSpellPointsDrawCallInitInfo.size = playerSpellPointsTextBoxRect.getSize();
+	this->addDrawCall(playerSpellPointsDrawCallInitInfo);
 
-	const Rect &playerGoldTextBoxRect = this->goldTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->goldTextBox.getTextureID(); },
-		UiDrawCall::makePositionFunc(playerGoldTextBoxRect.getTopLeft()),
-		UiDrawCall::makeSizeFunc(playerGoldTextBoxRect.getSize()),
-		UiDrawCall::makePivotFunc(PivotType::TopLeft),
-		UiDrawCall::defaultActiveFunc);
+	const Rect playerGoldTextBoxRect = this->goldTextBox.getRect();
+	UiDrawCallInitInfo playerGoldDrawCallInitInfo;
+	playerGoldDrawCallInitInfo.textureFunc = [this]() { return this->goldTextBox.getTextureID(); };
+	playerGoldDrawCallInitInfo.position = playerGoldTextBoxRect.getTopLeft();
+	playerGoldDrawCallInitInfo.size = playerGoldTextBoxRect.getSize();
+	this->addDrawCall(playerGoldDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

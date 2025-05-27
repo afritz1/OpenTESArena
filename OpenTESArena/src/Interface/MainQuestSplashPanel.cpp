@@ -50,18 +50,17 @@ bool MainQuestSplashPanel::init(int provinceID)
 	UiTextureID splashTextureID = MainQuestSplashUiView::allocSplashTextureID(game, provinceID);
 	this->splashTextureRef.init(splashTextureID, renderer);
 
-	this->addDrawCall(
-		this->splashTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo splashDrawCallInitInfo;
+	splashDrawCallInitInfo.textureID = this->splashTextureRef.get();
+	splashDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(splashDrawCallInitInfo);
 
-	const Rect &textBoxRect = this->textBox.getRect();
-	this->addDrawCall(
-		textBox.getTextureID(),
-		textBoxRect.getTopLeft(),
-		textBoxRect.getSize(),
-		PivotType::TopLeft);
+	const Rect textBoxRect = this->textBox.getRect();
+	UiDrawCallInitInfo textDrawCallInitInfo;
+	textDrawCallInitInfo.textureID = this->textBox.getTextureID();
+	textDrawCallInitInfo.position = textBoxRect.getTopLeft();
+	textDrawCallInitInfo.size = textBoxRect.getSize();
+	this->addDrawCall(textDrawCallInitInfo);
 
 	UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

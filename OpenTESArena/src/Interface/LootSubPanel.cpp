@@ -84,12 +84,11 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 	UiTextureID containerInventoryTextureID = GameWorldUiView::allocContainerInventoryTexture(textureManager, renderer);
 	this->textureRef.init(containerInventoryTextureID, renderer);
 
-	constexpr Int2 containerInventoryTextureTopLeft(56, 10);
-	this->addDrawCall(
-		this->textureRef.get(),
-		containerInventoryTextureTopLeft,
-		Int2(this->textureRef.getWidth(), this->textureRef.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo containerTextureDrawCallInitInfo;
+	containerTextureDrawCallInitInfo.textureID = this->textureRef.get();
+	containerTextureDrawCallInitInfo.position = Int2(56, 10);
+	containerTextureDrawCallInitInfo.size = Int2(this->textureRef.getWidth(), this->textureRef.getHeight());
+	this->addDrawCall(containerTextureDrawCallInitInfo);
 
 	constexpr Int2 listBoxTopLeft(85, 34);
 	ListBoxProperties listBoxProperties = GameWorldUiView::getLootListBoxProperties();
@@ -198,18 +197,17 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		this->addButtonProxy(MouseButtonType::Left, itemRectFunc, itemCallback, this->listBox.getRect());
 	}
 
-	this->addDrawCall(
-		[this]() { return this->listBox.getTextureID(); },
-		UiDrawCall::makePositionFunc(listBoxTopLeft),
-		UiDrawCall::makeSizeFunc(listBoxRect.getSize()),
-		UiDrawCall::makePivotFunc(PivotType::TopLeft),
-		UiDrawCall::defaultActiveFunc);
+	UiDrawCallInitInfo listBoxDrawCallInitInfo;
+	listBoxDrawCallInitInfo.textureFunc = [this]() { return this->listBox.getTextureID(); };
+	listBoxDrawCallInitInfo.position = listBoxTopLeft;
+	listBoxDrawCallInitInfo.size = listBoxRect.getSize();
+	this->addDrawCall(listBoxDrawCallInitInfo);
 
 	const std::string tempTextBoxText = "(item tables not implemented)";
 	TextBoxInitInfo tempTextBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		tempTextBoxText,
-		containerInventoryTextureTopLeft.x + (this->textureRef.getWidth() / 2),
-		containerInventoryTextureTopLeft.y + this->textureRef.getHeight(),
+		containerTextureDrawCallInitInfo.position.x + (this->textureRef.getWidth() / 2),
+		containerTextureDrawCallInitInfo.position.y + this->textureRef.getHeight(),
 		ArenaFontName::Teeny,
 		Colors::White,
 		TextAlignment::TopCenter,
@@ -219,12 +217,13 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 		DebugLogError("Couldn't init placeholder loot text box.");
 	}
 
-	this->addDrawCall(
-		UiDrawCall::makeTextureFunc(this->tempTextBox.getTextureID()),
-		UiDrawCall::makePositionFunc(this->tempTextBox.getRect().getTopLeft()),
-		UiDrawCall::makeSizeFunc(this->tempTextBox.getRect().getSize()),
-		UiDrawCall::makePivotFunc(PivotType::Top),
-		UiDrawCall::defaultActiveFunc);
+	const Rect tempTextBoxRect = this->tempTextBox.getRect();
+	UiDrawCallInitInfo tempTextDrawCallInitInfo;
+	tempTextDrawCallInitInfo.textureID = this->tempTextBox.getTextureID();
+	tempTextDrawCallInitInfo.position = tempTextBoxRect.getTopLeft();
+	tempTextDrawCallInitInfo.size = tempTextBoxRect.getSize();
+	tempTextDrawCallInitInfo.pivotType = PivotType::Top;
+	this->addDrawCall(tempTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
