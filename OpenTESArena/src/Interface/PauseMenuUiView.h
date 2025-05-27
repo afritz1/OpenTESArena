@@ -19,8 +19,8 @@ namespace PauseMenuUiView
 	const Int2 SoundTextBoxCenterPoint(54, 96);
 	const Int2 MusicTextBoxCenterPoint(127, 96);
 
-	TextBox::InitInfo getSoundTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBox::InitInfo getMusicTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getSoundTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getMusicTextBoxInitInfo(const FontLibrary &fontLibrary);
 	
 	const Int2 OptionsTextBoxCenterPoint(235, 96);
 	const std::string OptionsButtonFontName = ArenaFontName::Arena;
@@ -31,7 +31,7 @@ namespace PauseMenuUiView
 	constexpr int OptionsButtonTextShadowOffsetX = -1;
 	constexpr int OptionsButtonTextShadowOffsetY = 1;
 
-	TextBox::InitInfo getOptionsTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getOptionsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	Rect getNewGameButtonRect();
 	Rect getLoadButtonRect();

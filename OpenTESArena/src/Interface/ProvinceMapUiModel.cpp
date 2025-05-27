@@ -40,7 +40,7 @@ std::string ProvinceMapUiModel::makeAlreadyAtLocationText(Game &game, const std:
 
 std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int locationID)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
@@ -54,7 +54,7 @@ std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int 
 
 std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::string &text)
 {
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string &fontName = ProvinceMapUiView::TextPopUpFontName;
@@ -66,9 +66,9 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	constexpr int lineSpacing = ProvinceMapUiView::TextPopUpLineSpacing;
-	const TextRenderUtils::TextureGenInfo textBoxTextureGenInfo =
+	const TextRenderTextureGenInfo textBoxTextureGenInfo =
 		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ProvinceMapUiView::TextPopUpCenterPoint,
 		fontName,
@@ -78,7 +78,7 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 		lineSpacing,
 		fontLibrary);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID textureID = ProvinceMapUiView::allocTextPopUpTexture(
 		textBoxTextureGenInfo.width, textBoxTextureGenInfo.height, textureManager, renderer);
 	ScopedUiTextureRef textureRef(textureID, renderer);
@@ -96,7 +96,7 @@ std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::
 std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex, const LocationDefinition &srcLocationDef,
 	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
@@ -222,8 +222,9 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 		text.pop_back();
 
 		// Replace first %s with weekday.
-		const std::string &weekdayString =
-			exeData.calendar.weekdayNames.at(date.getWeekday());
+		const int weekday = date.getWeekday();
+		DebugAssertIndex(exeData.calendar.weekdayNames, weekday);
+		const std::string &weekdayString = exeData.calendar.weekdayNames[weekday];
 		size_t index = text.find("%s");
 		text.replace(index, 2, weekdayString);
 
@@ -233,8 +234,9 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 		text.replace(index, 4, dayString);
 
 		// Replace third %s with month.
-		const std::string &monthString =
-			exeData.calendar.monthNames.at(date.getMonth());
+		const int month = date.getMonth();
+		DebugAssertIndex(exeData.calendar.monthNames, month);
+		const std::string &monthString = exeData.calendar.monthNames[month];
 		index = text.find("%s");
 		text.replace(index, 2, monthString);
 
@@ -256,10 +258,12 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 
 	const std::string dayString = [&exeData, &travelData]()
 	{
-		const std::string &dayStringPrefix = exeData.travel.dayPrediction.front();
+		const std::string &dayStringPrefix = exeData.travel.dayPrediction[0];
 		const std::string dayStringBody = [&exeData, &travelData]()
 		{
-			std::string text = exeData.travel.dayPrediction.back();
+			const int dayPredictionIndex = std::size(exeData.travel.dayPrediction) - 1;
+			DebugAssertIndex(exeData.travel.dayPrediction, dayPredictionIndex);
+			std::string text = exeData.travel.dayPrediction[dayPredictionIndex];
 
 			// Replace %d with travel days.
 			const size_t index = text.find("%d");
@@ -321,7 +325,7 @@ std::string ProvinceSearchUiModel::getTitleText(Game &game)
 std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const std::string &locationName,
 	int provinceIndex, const int **exactLocationIndex)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 

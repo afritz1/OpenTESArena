@@ -57,7 +57,7 @@ int ArenaLevelUtils::getMap2Height(BufferView2D<const ArenaTypes::VoxelID> map2)
 	{
 		for (WEInt x = 0; x < map2.getWidth(); x++)
 		{
-			const uint16_t map2Voxel = map2.get(x, z);
+			const ArenaTypes::VoxelID map2Voxel = map2.get(x, z);
 			const int map2Height = ArenaLevelUtils::getMap2VoxelHeight(map2Voxel);
 			currentMap2Height = std::max(currentMap2Height, map2Height);
 		}

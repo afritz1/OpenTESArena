@@ -3,7 +3,7 @@
 
 #include "../debug/Debug.h"
 
-template <typename ContainerT, typename T>
+template<typename ContainerT, typename T>
 class BufferRef
 {
 private:

@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "../Assets/TextureAsset.h"
-#include "../Game/CardinalDirectionName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -15,6 +14,7 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../Utilities/Color.h"
+#include "../World/CardinalDirectionName.h"
 #include "../World/Coord.h"
 
 #include "components/utilities/Buffer2D.h"
@@ -22,11 +22,11 @@
 class GameState;
 class Renderer;
 class Texture;
-class TransitionDefinition;
 class VoxelChunkManager;
 
 enum class CardinalDirectionName;
 
+struct TransitionDefinition;
 struct VoxelTraitsDefinition;
 
 namespace AutomapUiView
@@ -41,13 +41,13 @@ namespace AutomapUiView
 	constexpr double ScrollSpeed = 100.0;
 
 	// Click areas for compass directions.
-	const Rect CompassUpRegion(264, 23, 14, 14);
-	const Rect CompassDownRegion(264, 60, 14, 14);
-	const Rect CompassLeftRegion(245, 41, 14, 14);
-	const Rect CompassRightRegion(284, 41, 14, 14);
+	constexpr Rect CompassUpRegion(264, 23, 14, 14);
+	constexpr Rect CompassDownRegion(264, 60, 14, 14);
+	constexpr Rect CompassLeftRegion(245, 41, 14, 14);
+	constexpr Rect CompassRightRegion(284, 41, 14, 14);
 
 	// The "canvas" area for drawing automap content.
-	const Rect DrawingArea(25, 40, 179, 125);
+	constexpr Rect DrawingArea(25, 40, 179, 125);
 
 	// Colors for automap pixels. Ground pixels (y == 0) are transparent.
 	const Color ColorPlayer(247, 255, 0);
@@ -74,7 +74,7 @@ namespace AutomapUiView
 	constexpr int LocationTextBoxShadowOffsetX = 2;
 	constexpr int LocationTextBoxShadowOffsetY = 2;
 
-	TextBox::InitInfo getLocationTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getLocationTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const Int2 BackToGameButtonCenterPoint(ArenaRenderUtils::SCREEN_WIDTH - 57, ArenaRenderUtils::SCREEN_HEIGHT - 29);
 	constexpr int BackToGameButtonWidth = 38;

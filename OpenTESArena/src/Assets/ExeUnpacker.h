@@ -7,7 +7,6 @@
 #include "components/utilities/BufferView.h"
 
 // For decompressing DOS executables compressed with PKLITE.
-
 class ExeUnpacker
 {
 private:

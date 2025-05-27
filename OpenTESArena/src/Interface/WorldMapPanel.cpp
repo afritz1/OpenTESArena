@@ -7,7 +7,6 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/CursorData.h"
 
 #include "components/debug/Debug.h"
 
@@ -16,14 +15,14 @@ WorldMapPanel::WorldMapPanel(Game &game)
 
 WorldMapPanel::~WorldMapPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &inputManager = this->getGame().inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::WorldMap, false);
 }
 
 bool WorldMapPanel::init()
 {
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::WorldMap, true);
 
 	const Rect fullscreenRect(
@@ -37,9 +36,9 @@ bool WorldMapPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, fullscreenRect,
 		[this, &game, backToGameFunc]()
 	{
-		const auto &inputManager = game.getInputManager();
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+		const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
 
 		for (int i = 0; i < WorldMapUiModel::MASK_COUNT; i++)
 		{
@@ -77,29 +76,28 @@ bool WorldMapPanel::init()
 	this->addInputActionListener(InputActionName::Back, backToGameInputActionFunc);
 	this->addInputActionListener(InputActionName::WorldMap, backToGameInputActionFunc);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const UiTextureID backgroundTextureID = WorldMapUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 
-	const auto &gameState = game.getGameState();
+	const auto &gameState = game.gameState;
 	const int provinceID = gameState.getProvinceDefinition().getRaceID();
 	const Int2 provinceNameOffset = WorldMapUiView::getProvinceNameOffset(provinceID, textureManager);
 	const UiTextureID highlightedTextTextureID = WorldMapUiView::allocHighlightedTextTexture(provinceID, textureManager, renderer);
 	this->highlightedTextTextureRef.init(highlightedTextTextureID, renderer);
 
-	this->addDrawCall(
-		this->highlightedTextTextureRef.get(),
-		provinceNameOffset,
-		Int2(this->highlightedTextTextureRef.getWidth(), this->highlightedTextTextureRef.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo highlightedTextDrawCallInitInfo;
+	highlightedTextDrawCallInitInfo.textureID = this->highlightedTextTextureRef.get();
+	highlightedTextDrawCallInitInfo.position = provinceNameOffset;
+	highlightedTextDrawCallInitInfo.size = Int2(this->highlightedTextTextureRef.getWidth(), this->highlightedTextTextureRef.getHeight());
+	this->addDrawCall(highlightedTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

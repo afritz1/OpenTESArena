@@ -27,9 +27,9 @@ namespace ProvinceMapUiView
 		TravelDestination
 	};
 
-	const Rect SearchButtonRect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
-	const Rect TravelButtonRect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
-	const Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
+	constexpr Rect SearchButtonRect(34, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
+	constexpr Rect TravelButtonRect(53, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
+	constexpr Rect BackToWorldMapRect(72, ArenaRenderUtils::SCREEN_HEIGHT - 32, 18, 27);
 
 	Int2 getLocationCenterPoint(Game &game, int provinceID, int locationID);
 	const std::string LocationFontName = ArenaFontName::Arena;
@@ -40,7 +40,7 @@ namespace ProvinceMapUiView
 	constexpr int LocationTextShadowOffsetY = 0;
 	Int2 getLocationTextClampedCenter(const Rect &unclampedRect);
 
-	TextBox::InitInfo getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
 	const std::string TextPopUpFontName = ArenaFontName::Arena;
@@ -106,13 +106,13 @@ namespace ProvinceSearchUiView
 	const Color TitleColor(52, 24, 8);
 	constexpr TextAlignment TitleTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const std::string TextEntryFontName = ArenaFontName::Arena;
 	const Color TextEntryColor(52, 24, 8);
 	constexpr TextAlignment TextEntryTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	constexpr int TextureWidth = 280;
 	constexpr int TextureHeight = 40;
@@ -129,8 +129,8 @@ namespace ProvinceSearchUiView
 	constexpr int ListTextureX = 57;
 	constexpr int ListTextureY = 11;
 
-	const Rect ListBoxRect(85, 34, 147, 54);
-	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
+	constexpr Rect ListBoxRect(85, 34, 147, 54);
+	ListBoxProperties makeListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAsset getListTextureAsset();
 	TextureAsset getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID);

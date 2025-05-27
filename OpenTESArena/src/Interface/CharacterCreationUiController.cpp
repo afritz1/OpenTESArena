@@ -20,18 +20,19 @@
 #include "WorldMapUiModel.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
-#include "../Entities/CharacterClassLibrary.h"
+#include "../Audio/MusicUtils.h"
 #include "../Entities/EntityDefinitionLibrary.h"
-#include "../Game/ArenaClockUtils.h"
-#include "../Game/CardinalDirection.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Sky/SkyUtils.h"
+#include "../Stats/CharacterClassLibrary.h"
+#include "../Time/ArenaClockUtils.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
+#include "../World/CardinalDirection.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"
@@ -46,14 +47,14 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-			MusicDefinition::Type::MainMenu, game.getRandom());
+			MusicType::MainMenu, game.random);
 
 		if (musicDef == nullptr)
 		{
 			DebugLogWarning("Missing main menu music.");
 		}
 
-		AudioManager &audioManager = game.getAudioManager();
+		AudioManager &audioManager = game.audioManager;
 		audioManager.setMusic(musicDef);
 	}
 }
@@ -90,7 +91,7 @@ void ChooseClassUiController::onDownButtonSelected(ListBox &listBox)
 void ChooseClassUiController::onItemButtonSelected(Game &game, int charClassDefID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setClassDefID(charClassDefID);
+	charCreationState.classDefID = charClassDefID;
 
 	game.setPanel<ChooseNamePanel>();
 }
@@ -106,18 +107,16 @@ void ChooseGenderUiController::onBackToChooseNameInputAction(const InputActionCa
 
 void ChooseGenderUiController::onMaleButtonSelected(Game &game)
 {
-	constexpr bool male = true;
 	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setGender(male);
+	charCreationState.male = true;
 
 	game.setPanel<ChooseRacePanel>();
 }
 
 void ChooseGenderUiController::onFemaleButtonSelected(Game &game)
 {
-	constexpr bool male = false;
 	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setGender(male);
+	charCreationState.male = false;
 
 	game.setPanel<ChooseRacePanel>();
 }
@@ -127,7 +126,7 @@ void ChooseNameUiController::onBackToChooseClassInputAction(const InputActionCal
 	if (values.performed)
 	{
 		auto &game = values.game;
-		auto &inputManager = game.getInputManager();
+		auto &inputManager = game.inputManager;
 		inputManager.setTextInputMode(false);
 
 		auto &charCreationState = game.getCharacterCreationState();
@@ -137,7 +136,7 @@ void ChooseNameUiController::onBackToChooseClassInputAction(const InputActionCal
 	}
 }
 
-void ChooseNameUiController::onTextInput(const std::string_view &text, std::string &name, bool *outDirty)
+void ChooseNameUiController::onTextInput(const std::string_view text, std::string &name, bool *outDirty)
 {
 	DebugAssert(outDirty != nullptr);
 
@@ -162,7 +161,7 @@ void ChooseNameUiController::onAcceptInputAction(const InputActionCallbackValues
 		if (name.size() > 0)
 		{
 			auto &game = values.game;
-			auto &inputManager = game.getInputManager();
+			auto &inputManager = game.inputManager;
 			inputManager.setTextInputMode(false);
 
 			auto &charCreationState = game.getCharacterCreationState();
@@ -204,23 +203,19 @@ void ChooseRaceUiController::onMouseButtonChanged(Game &game, MouseButtonType bu
 void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
-	charCreationState.setRaceIndex(raceID);
-	charCreationState.rollAttributes(game.getRandom());
+	charCreationState.raceIndex = raceID;
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Populate and display province confirm message box.
-	const MessageBoxSubPanel::BackgroundProperties backgroundProperties =
-		ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties();
+	const MessageBoxBackgroundProperties backgroundProperties = ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties();
 
 	const std::string titleText = ChooseRaceUiModel::getProvinceConfirmTitleText(game);
 	const Rect titleRect = ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(titleText, fontLibrary);
-	const MessageBoxSubPanel::TitleProperties titleProperties =
-		ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(titleText, fontLibrary);
-	const MessageBoxSubPanel::ItemsProperties itemsProperties =
-		ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(fontLibrary);
+	const MessageBoxTitleProperties titleProperties = ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(titleText, fontLibrary);
+	const MessageBoxItemsProperties itemsProperties = ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(fontLibrary);
 	
 	std::unique_ptr<MessageBoxSubPanel> panel = std::make_unique<MessageBoxSubPanel>(game);
 	if (!panel->init(backgroundProperties, titleRect, titleProperties, itemsProperties))
@@ -252,7 +247,7 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedFirstText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextFontName,
@@ -263,12 +258,12 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFirstTextureRect(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedFirstTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
+		textureRect.width, textureRect.height, game.textureManager, renderer);
 	
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
@@ -295,7 +290,7 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedSecondText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextFontName,
@@ -306,12 +301,12 @@ void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)
 		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedSecondTextureRect(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedSecondTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
+		textureRect.width, textureRect.height, game.textureManager, renderer);
 	
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
@@ -329,7 +324,7 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedThirdText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextFontName,
@@ -340,12 +335,12 @@ void ChooseRaceUiController::onProvinceConfirmedSecondButtonSelected(Game &game)
 		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedThirdTextureRect(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(ChooseRaceUiView::ProvinceConfirmedThirdTextPatternType,
-		textureRect.getWidth(), textureRect.getHeight(), game.getTextureManager(), renderer);
+		textureRect.width, textureRect.height, game.textureManager, renderer);
 	
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
@@ -363,7 +358,7 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 	game.popSubPanel();
 
 	const std::string text = ChooseRaceUiModel::getProvinceConfirmedFourthText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextFontName,
@@ -374,15 +369,15 @@ void ChooseRaceUiController::onProvinceConfirmedThirdButtonSelected(Game &game)
 		FontLibrary::getInstance());
 
 	const Rect textureRect = ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight());
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	Surface surface = TextureUtils::generate(
 		ChooseRaceUiView::ProvinceConfirmedFourthTextPatternType,
-		textureRect.getWidth(),
-		textureRect.getHeight(),
-		game.getTextureManager(),
+		textureRect.width,
+		textureRect.height,
+		game.textureManager,
 		renderer);
 	
 	UiTextureID textureID;
@@ -416,26 +411,23 @@ void ChooseAttributesUiController::onInitialPopUpSelected(Game &game)
 	game.popSubPanel();
 }
 
-void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved)
 {
 	// Show message box to save or reroll.
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
-	const MessageBoxSubPanel::BackgroundProperties backgroundProperties =
-		ChooseAttributesUiView::getMessageBoxBackgroundProperties();
+	const MessageBoxBackgroundProperties backgroundProperties = ChooseAttributesUiView::getMessageBoxBackgroundProperties();
 
 	const std::string titleText = ChooseAttributesUiModel::getMessageBoxTitleText(game);
 	const Rect titleRect = ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(titleText, fontLibrary);
-	const MessageBoxSubPanel::TitleProperties titleProperties =
-		ChooseAttributesUiView::getMessageBoxTitleProperties(titleText, fontLibrary);
-	const MessageBoxSubPanel::ItemsProperties itemsProperties =
-		ChooseAttributesUiView::getMessageBoxItemsProperties(fontLibrary);
+	const MessageBoxTitleProperties titleProperties = ChooseAttributesUiView::getMessageBoxTitleProperties(titleText, fontLibrary);
+	const MessageBoxItemsProperties itemsProperties = ChooseAttributesUiView::getMessageBoxItemsProperties(fontLibrary);
 
 	auto onClosed = [&game]()
 	{
-		auto &inputManager = game.getInputManager();
+		auto &inputManager = game.inputManager;
 		inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
 	};
 
@@ -449,14 +441,22 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 
 	const std::string saveText = ChooseAttributesUiModel::getMessageBoxSaveText(game);
 	panel->setItemText(0, saveText);
-	panel->setItemCallback(0, [&game, attributesAreSaved]()
+	panel->setItemCallback(0, [&game, bonusPointsRemaining, attributesAreSaved]()
 	{
-		ChooseAttributesUiController::onSaveButtonSelected(game, attributesAreSaved);
+		if (bonusPointsRemaining == 0)
+		{
+			*attributesAreSaved = true;
+			ChooseAttributesUiController::onSaveButtonSelectedWithNoBonusPoints(game);
+		}
+		else
+		{
+			ChooseAttributesUiController::onSaveButtonSelectedWithBonusPoints(game);
+		}
 	}, false);
 
-	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> saveTextColorOverrides =
+	const std::vector<TextRenderColorOverrideInfoEntry> saveTextColorOverrides =
 		ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(game);
-	for (const TextRenderUtils::ColorOverrideInfo::Entry &entry : saveTextColorOverrides)
+	for (const TextRenderColorOverrideInfoEntry &entry : saveTextColorOverrides)
 	{
 		panel->addOverrideColor(0, entry.charIndex, entry.color);
 	}
@@ -470,16 +470,16 @@ void ChooseAttributesUiController::onUnsavedDoneButtonSelected(Game &game, bool 
 		ChooseAttributesUiController::onRerollButtonSelected(game);
 	}, true);
 
-	const std::vector<TextRenderUtils::ColorOverrideInfo::Entry> rerollTextColorOverrides =
+	const std::vector<TextRenderColorOverrideInfoEntry> rerollTextColorOverrides =
 		ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(game);
-	for (const TextRenderUtils::ColorOverrideInfo::Entry &entry : rerollTextColorOverrides)
+	for (const TextRenderColorOverrideInfoEntry &entry : rerollTextColorOverrides)
 	{
 		panel->addOverrideColor(1, entry.charIndex, entry.color);
 	}
 
 	panel->setItemInputAction(1, InputActionName::RerollAttributes);
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, true);
 
 	game.pushSubPanel(std::move(panel));
@@ -489,8 +489,8 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 {
 	auto gameStateFunction = [](Game &game)
 	{
-		GameState &gameState = game.getGameState();
-		gameState.init(game.getArenaRandom());
+		GameState &gameState = game.gameState;
+		gameState.init(game.arenaRandom);
 
 		// Find starting dungeon location definition.
 		constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
@@ -525,12 +525,12 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(std::string(mifName), ArenaTypes::InteriorType::Dungeon, rulerIsMale);
+		interiorGenInfo.initPrefab(mifName, ArenaTypes::InteriorType::Dungeon, rulerIsMale);
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 
 		MapDefinition mapDefinition;
-		if (!mapDefinition.initInterior(interiorGenInfo, game.getTextureManager()))
+		if (!mapDefinition.initInterior(interiorGenInfo, game.textureManager))
 		{
 			DebugLogError("Couldn't init MapDefinition for start dungeon \"" + mifName + "\".");
 			return;
@@ -539,35 +539,34 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
 
 		// Initialize player.
-		const CoordDouble3 dummyPosition(ChunkInt2::Zero, VoxelDouble3::Zero);
-		const Double3 direction(
-			CardinalDirection::North.x,
-			0.0,
-			CardinalDirection::North.y);
-		const Double3 velocity = Double3::Zero;
-
-		const auto &charCreationState = game.getCharacterCreationState();
-		const std::string_view name = charCreationState.getName();
-		const bool male = charCreationState.isMale();
-		const int raceIndex = charCreationState.getRaceIndex();
+		const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+		const std::string_view name = charCreationState.name;
+		const bool male = charCreationState.male;
+		const int raceIndex = charCreationState.raceIndex;
 
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const auto &exeData = binaryAssetLibrary.getExeData();
 
-		const int charClassDefID = charCreationState.getClassDefID();
+		const int charClassDefID = charCreationState.classDefID;
 		const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+		const int portraitIndex = charCreationState.portraitIndex;
 
-		PrimaryAttributeSet attributes = charCreationState.getAttributes();
-
-		const int portraitIndex = charCreationState.getPortraitIndex();
+		const PrimaryAttributes &attributes = charCreationState.attributes;
+		const int maxHealth = charCreationState.maxHealth;
+		const int maxStamina = charCreationState.maxStamina;
+		const int maxSpellPoints = charCreationState.maxSpellPoints;
+		const int gold = charCreationState.gold;
 
 		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
-		const int weaponID = charClassDef.getAllowedWeapon(game.getRandom().next(allowedWeaponCount));
+		const int weaponID = charClassDef.getAllowedWeapon(game.random.next(allowedWeaponCount));
 
-		Player &player = game.getPlayer();
-		player.init(std::string(name), male, raceIndex, charClassDefID, std::move(attributes), portraitIndex,
-			dummyPosition, direction, velocity, Player::DEFAULT_WALK_SPEED, weaponID, exeData);
+		Player &player = game.player;
+		player.init(std::string(name), male, raceIndex, charClassDefID, portraitIndex, attributes, maxHealth, maxStamina, maxSpellPoints,
+			gold, weaponID, exeData, game.physicsSystem);
+
+		// Face west so we don't start looking at a wall.
+		player.setCameraFrameFromAngles(CardinalDirection::DegreesWest, 0.0);
 	};
 
 	gameStateFunction(game);
@@ -578,9 +577,9 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	const bool success = cinematicLibrary.findTextDefinitionIndexIf(
 		[&defPtr](const TextCinematicDefinition &def)
 	{
-		if (def.getType() == TextCinematicDefinition::Type::MainQuest)
+		if (def.type == TextCinematicDefinitionType::MainQuest)
 		{
-			const auto &mainQuestCinematicDef = def.getMainQuestDefinition();
+			const MainQuestTextCinematicDefinition &mainQuestCinematicDef = def.mainQuest;
 			const bool isMainQuestStartCinematic = mainQuestCinematicDef.progress == 0;
 			if (isMainQuestStartCinematic)
 			{
@@ -599,8 +598,8 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 
 	game.setCharacterCreationState(nullptr);
 
-	TextureManager &textureManager = game.getTextureManager();
-	const std::string &cinematicFilename = defPtr->getAnimationFilename();
+	TextureManager &textureManager = game.textureManager;
+	const std::string &cinematicFilename = defPtr->animFilename;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
 	if (!metadataID.has_value())
 	{
@@ -615,11 +614,11 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 	// Play dream music.
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicDefinition::Type::Cinematic, game.getRandom(), [](const MusicDefinition &def)
+		MusicType::Cinematic, game.random, [](const MusicDefinition &def)
 	{
-		DebugAssert(def.getType() == MusicDefinition::Type::Cinematic);
-		const auto &cinematicMusicDef = def.getCinematicMusicDefinition();
-		return cinematicMusicDef.type == MusicDefinition::CinematicMusicDefinition::Type::DreamGood;
+		DebugAssert(def.type == MusicType::Cinematic);
+		const CinematicMusicDefinition &cinematicMusicDef = def.cinematic;
+		return cinematicMusicDef.type == CinematicMusicType::DreamGood;
 	});
 
 	if (musicDef == nullptr)
@@ -627,18 +626,18 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		DebugLogWarning("Missing vision music.");
 	}
 
-	AudioManager &audioManager = game.getAudioManager();
+	AudioManager &audioManager = game.audioManager;
 	audioManager.setMusic(musicDef);
 }
 
-void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onSaveButtonSelectedWithNoBonusPoints(Game &game)
 {
 	// Confirming the chosen stats will bring up a text sub-panel, and the next time the done button is clicked,
 	// it starts the game.
 	game.popSubPanel();
 
 	const std::string text = ChooseAttributesUiModel::getAppearanceText(game);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseAttributesUiView::AppearanceTextCenterPoint,
 		ChooseAttributesUiView::AppearanceTextFontName,
@@ -648,13 +647,13 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 		ChooseAttributesUiView::AppearanceTextLineSpacing,
 		FontLibrary::getInstance());
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const Surface surface = TextureUtils::generate(
 		ChooseAttributesUiView::AppearanceTextPatternType,
-		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.getWidth()),
-		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.getHeight()),
-		game.getTextureManager(),
+		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.width),
+		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.height),
+		textureManager,
 		renderer);
 	
 	UiTextureID textureID;
@@ -669,15 +668,53 @@ void ChooseAttributesUiController::onSaveButtonSelected(Game &game, bool *attrib
 	// opening cinematic.
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseAttributesUiController::onAppearanceTextBoxSelected,
 		std::move(textureRef), ChooseAttributesUiView::AppearanceTextCenterPoint);
+}
 
-	*attributesAreSaved = true;
+void ChooseAttributesUiController::onSaveButtonSelectedWithBonusPoints(Game &game)
+{
+	// Pop the save/reroll sub-panel and tell the player to spend remaining points.
+	game.popSubPanel();
+
+	const std::string text = ChooseAttributesUiModel::getBonusPointsRemainingText(game);
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
+		text,
+		ChooseAttributesUiView::AppearanceTextCenterPoint,
+		ChooseAttributesUiView::AppearanceTextFontName,
+		ChooseAttributesUiView::AppearanceTextColor,
+		ChooseAttributesUiView::AppearanceTextAlignment,
+		std::nullopt,
+		ChooseAttributesUiView::AppearanceTextLineSpacing,
+		FontLibrary::getInstance());
+
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
+	const Surface surface = TextureUtils::generate(
+		ChooseAttributesUiView::AppearanceTextPatternType,
+		ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(textBoxInitInfo.rect.width),
+		ChooseAttributesUiView::getAppearanceTextBoxTextureHeight(textBoxInitInfo.rect.height),
+		textureManager,
+		renderer);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create bonus points remaining pop-up texture.");
+	}
+
+	ScopedUiTextureRef textureRef(textureID, renderer);
+
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, ChooseAttributesUiController::onBonusPointsRemainingTextBoxSelected,
+		std::move(textureRef), ChooseAttributesUiView::AppearanceTextCenterPoint);
 }
 
 void ChooseAttributesUiController::onRerollButtonSelected(Game &game)
+{	
+	game.popSubPanel();
+	game.setPanel<ChooseAttributesPanel>();
+}
+
+void ChooseAttributesUiController::onBonusPointsRemainingTextBoxSelected(Game &game)
 {
-	auto& charCreationState = game.getCharacterCreationState();
-	charCreationState.rollAttributes(game.getRandom());
-	
 	game.popSubPanel();
 }
 
@@ -692,15 +729,15 @@ void ChooseAttributesUiController::onPortraitButtonSelected(Game &game, bool inc
 	constexpr int maxID = 9;
 
 	auto &charCreationState = game.getCharacterCreationState();
-	const int oldPortraitIndex = charCreationState.getPortraitIndex();
+	const int oldPortraitIndex = charCreationState.portraitIndex;
 	const int newPortraitIndex = incrementIndex ?
 		((oldPortraitIndex == maxID) ? minID : (oldPortraitIndex + 1)) :
 		((oldPortraitIndex == minID) ? maxID : (oldPortraitIndex - 1));
 
-	charCreationState.setPortraitIndex(newPortraitIndex);
+	charCreationState.portraitIndex = newPortraitIndex;
 }
 
-void ChooseAttributesUiController::onDoneButtonSelected(Game &game, bool *attributesAreSaved)
+void ChooseAttributesUiController::onDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved)
 {
 	if (*attributesAreSaved)
 	{
@@ -708,139 +745,21 @@ void ChooseAttributesUiController::onDoneButtonSelected(Game &game, bool *attrib
 	}
 	else
 	{
-		ChooseAttributesUiController::onUnsavedDoneButtonSelected(game, attributesAreSaved);
+		ChooseAttributesUiController::onUnsavedDoneButtonSelected(game, bonusPointsRemaining, attributesAreSaved);
 	}
 }
 
 void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game &game)
 {
-	// Create the function that will be called when the player leaves the starting dungeon.
-	// @todo: this should be in a game logic controller namespace, not UI controller.
-	auto onLevelUpVoxelEnter = [](Game &game)
-	{
-		// Teleport the player to a random location based on their race.
-		auto &player = game.getPlayer();
-		player.setVelocityToZero();
-
-		auto &gameState = game.getGameState();
-		const int provinceID = player.getRaceID();
-		const int locationID = game.getRandom().next(32);
-
-		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
-		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
-
-		const ArenaTypes::WeatherType weatherType = gameState.getWeatherForLocation(provinceID, locationID);
-
-		const int starCount = SkyUtils::getStarCountFromDensity(game.getOptions().getMisc_StarDensity());
-		auto &renderer = game.getRenderer();
-
-		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-		Buffer<uint8_t> reservedBlocks = [&cityDef]()
-		{
-			const std::vector<uint8_t> *cityReservedBlocks = cityDef.reservedBlocks;
-			DebugAssert(cityReservedBlocks != nullptr);
-			Buffer<uint8_t> buffer(static_cast<int>(cityReservedBlocks->size()));
-			std::copy(cityReservedBlocks->begin(), cityReservedBlocks->end(), buffer.begin());
-			return buffer;
-		}();
-
-		const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
-		{
-			if (cityDef.hasMainQuestTempleOverride)
-			{
-				return cityDef.mainQuestTempleOverride;
-			}
-			else
-			{
-				return std::nullopt;
-			}
-		}();
-
-		MapGeneration::CityGenInfo cityGenInfo;
-		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
-			cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
-			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
-			mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
-
-		const int currentDay = gameState.getDate().getDay();
-		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
-		{
-			WeatherDefinition weatherDef;
-			weatherDef.initFromClassic(weatherType, currentDay, game.getRandom());
-			return weatherDef;
-		}();
-
-		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
-		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
-			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
-
-		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceID, locationID);
-
-		MapDefinition mapDefinition;
-		if (!mapDefinition.initCity(cityGenInfo, skyGenInfo, game.getTextureManager()))
-		{
-			DebugLogError("Couldn't init MapDefinition for city \"" + locationDef.getName() + "\".");
-			return;
-		}
-
-		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
-		{
-			// Set music based on weather and time.
-			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			GameState &gameState = game.getGameState();
-			const MusicDefinition *musicDef = nullptr;
-			if (!ArenaClockUtils::nightMusicIsActive(gameState.getClock()))
-			{
-				const WeatherDefinition &weatherDef = gameState.getWeatherDefinition();
-				musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicDefinition::Type::Weather,
-					game.getRandom(), [&weatherDef](const MusicDefinition &def)
-				{
-					DebugAssert(def.getType() == MusicDefinition::Type::Weather);
-					const auto &weatherMusicDef = def.getWeatherMusicDefinition();
-					return weatherMusicDef.weatherDef == weatherDef;
-				});
-			}
-			else
-			{
-				musicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::Night, game.getRandom());
-			}
-
-			if (musicDef == nullptr)
-			{
-				DebugLogWarning("Missing exterior music.");
-			}
-
-			return musicDef;
-		};
-
-		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
-		gameState.queueMusicOnSceneChange(musicFunc);
-	};
-
-	// Set the *LEVELUP voxel enter event.
-	auto &gameState = game.getGameState();
-	gameState.getOnLevelUpVoxelEnter() = std::move(onLevelUpVoxelEnter);
-
 	// Initialize the game world panel.
 	game.setPanel<GameWorldPanel>();
 
-	// Choose random dungeon music.
-	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-		MusicDefinition::Type::Interior, game.getRandom(), [](const MusicDefinition &def)
-	{
-		DebugAssert(def.getType() == MusicDefinition::Type::Interior);
-		const auto &interiorMusicDef = def.getInteriorMusicDefinition();
-		return interiorMusicDef.type == MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
-	});
-
+	const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(game.random);
 	if (musicDef == nullptr)
 	{
 		DebugLogWarning("Missing dungeon music.");
 	}
 
-	AudioManager &audioManager = game.getAudioManager();
+	AudioManager &audioManager = game.audioManager;
 	audioManager.setMusic(musicDef);
 }

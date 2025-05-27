@@ -3,18 +3,22 @@
 
 #include <cstdint>
 
+#include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
 
 // 3D renderer variables that can change each frame.
-
 struct RenderFrameSettings
 {
 	double ambientPercent;
-	ObjectTextureID paletteTextureID, lightTableTextureID;
+	double screenSpaceAnimPercent;
+	ObjectTextureID paletteTextureID, lightTableTextureID, skyBgTextureID;
 	int renderWidth, renderHeight, renderThreadsMode;
+	DitheringMode ditheringMode;
 
-	void init(double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		int renderWidth, int renderHeight, int renderThreadsMode);
+	RenderFrameSettings();
+
+	void init(double ambientPercent, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+		ObjectTextureID skyBgTextureID, int renderWidth, int renderHeight, int renderThreadsMode, DitheringMode ditheringMode);
 };
 
 #endif

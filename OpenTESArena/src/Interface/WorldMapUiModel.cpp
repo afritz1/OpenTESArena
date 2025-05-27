@@ -6,9 +6,9 @@
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
 #include "../Assets/TextAssetLibrary.h"
-#include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
 #include "../Math/Random.h"
+#include "../Time/ArenaDateUtils.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextBox.h"
@@ -34,7 +34,7 @@ const WorldMapMask &WorldMapUiModel::getMask(const Game &game, int maskID)
 std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosition, bool ignoreCenterProvince,
 	bool ignoreExitButton)
 {
-	const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+	const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
 	const auto &worldMapMasks = BinaryAssetLibrary::getInstance().getWorldMapMasks();
 	const int maskCount = static_cast<int>(worldMapMasks.size());
 	for (int maskID = 0; maskID < maskCount; maskID++)
@@ -69,25 +69,24 @@ std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosit
 
 void FastTravelUiModel::tickTravelTime(Game &game, int travelDays)
 {
-	auto &gameState = game.getGameState();
-	auto &random = game.getRandom();
+	DebugAssert(travelDays >= 0);
 
-	// Tick the game date by the number of travel days.
-	auto &date = gameState.getDate();
+	auto &gameState = game.gameState;
+	Random &random = game.random;
+
+	Date &date = gameState.getDate();
 	for (int i = 0; i < travelDays; i++)
 	{
 		date.incrementDay();
 	}
 
-	// Add between 0 and 22 random hours to the clock time.
-	auto &clock = gameState.getClock();
+	Clock &clock = gameState.getClock();
 	const int randomHours = random.next(23);
 	for (int i = 0; i < randomHours; i++)
 	{
 		clock.incrementHour();
 
-		// Increment day if the clock loops around.
-		if (clock.getHours24() == 0)
+		if (clock.hours == 0)
 		{
 			date.incrementDay();
 		}
@@ -97,7 +96,7 @@ void FastTravelUiModel::tickTravelTime(Game &game, int travelDays)
 std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvinceID,
 	int targetLocationID, int travelDays)
 {
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 
@@ -118,24 +117,27 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 			// Replace first %s with location type.
 			const std::string &locationTypeName = [&exeData, localCityID]()
 			{
+				int locationTypeIndex = -1;
 				if (localCityID < 8)
 				{
 					// City.
-					return exeData.locations.locationTypes.front();
+					locationTypeIndex = 0;
 				}
 				else if (localCityID < 16)
 				{
 					// Town.
-					return exeData.locations.locationTypes.at(1);
+					locationTypeIndex = 1;
 				}
 				else
 				{
 					// Village.
-					return exeData.locations.locationTypes.at(2);
+					locationTypeIndex = 2;
 				}
+
+				return exeData.locations.locationTypes[locationTypeIndex];
 			}();
 
-			std::string text = exeData.travel.locationFormatTexts.at(2);
+			std::string text = exeData.travel.locationFormatTexts[2];
 
 			// Replace first %s with location type name.
 			size_t index = text.find("%s");
@@ -180,51 +182,45 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 		// Get the description for the local location. If it's a town or village, choose
 		// one of the three substrings randomly. Otherwise, get the city description text
 		// directly.
-		const std::string description = [&game, &binaryAssetLibrary, &exeData, provinceID, localCityID,
-			&locationDef, locationType]()
+		const std::string description = [&game, &binaryAssetLibrary, &exeData, provinceID, localCityID, &locationDef, locationType]()
 		{
 			// City descriptions start at #0600. The three town descriptions are at #1422,
 			// and the three village descriptions are at #1423.
-			const std::vector<std::string> &templateDatTexts = [&binaryAssetLibrary, provinceID, localCityID, locationType]()
+			const int templateDatEntryKey = [provinceID, localCityID, locationType]()
 			{
-				// Get the key that maps into TEMPLATE.DAT.
-				const int key = [provinceID, localCityID, locationType]()
+				if (locationType == ArenaTypes::LocationType::CityState)
 				{
-					if (locationType == ArenaTypes::LocationType::CityState)
-					{
-						return 600 + localCityID + (8 * provinceID);
-					}
-					else if (locationType == ArenaTypes::LocationType::Town)
-					{
-						return 1422;
-					}
-					else if (locationType == ArenaTypes::LocationType::Village)
-					{
-						return 1423;
-					}
-					else
-					{
-						DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
-					}
-				}();
-
-				const auto &textAssetLibrary = TextAssetLibrary::getInstance();
-				const auto &templateDat = textAssetLibrary.getTemplateDat();
-				const auto &entry = templateDat.getEntry(key);
-				return entry.values;
+					return 600 + localCityID + (8 * provinceID);
+				}
+				else if (locationType == ArenaTypes::LocationType::Town)
+				{
+					return 1422;
+				}
+				else if (locationType == ArenaTypes::LocationType::Village)
+				{
+					return 1423;
+				}
+				else
+				{
+					DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(locationType)));
+				}
 			}();
+
+			const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+			const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
+			const ArenaTemplateDatEntry &entry = templateDat.getEntry(templateDatEntryKey);
+			const BufferView<const std::string> templateDatTexts = entry.values;
 
 			if (locationType == ArenaTypes::LocationType::CityState)
 			{
-				return templateDatTexts.front();
+				return templateDatTexts[0];
 			}
 			else
 			{
-				ArenaRandom &random = game.getArenaRandom();
+				ArenaRandom &random = game.arenaRandom;
 				std::string description = [&random, &templateDatTexts]()
 				{
-					const int templateDatTextIndex = random.next() % templateDatTexts.size();
-					DebugAssertIndex(templateDatTexts, templateDatTextIndex);
+					const int templateDatTextIndex = random.next() % templateDatTexts.getCount();
 					return templateDatTexts[templateDatTextIndex];
 				}();
 
@@ -248,8 +244,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 				index = description.find("%t");
 				if (index != std::string::npos)
 				{
-					const std::string &rulerTitle = binaryAssetLibrary.getRulerTitle(
-						provinceID, locationType, isMale, random);
+					const std::string &rulerTitle = binaryAssetLibrary.getRulerTitle(provinceID, locationType, isMale, random);
 					description.replace(index, 2, rulerTitle);
 				}
 
@@ -311,7 +306,7 @@ std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int t
 	int targetLocationID, int travelDays)
 {
 	const std::string text = FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
-	const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 		text,
 		FastTravelUiView::getCityArrivalPopUpTextCenterPoint(game),
 		FastTravelUiView::CityArrivalFontName,
@@ -321,10 +316,10 @@ std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int t
 		FastTravelUiView::CityArrivalLineSpacing,
 		FontLibrary::getInstance());
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const UiTextureID textureID = FastTravelUiView::allocCityArrivalPopUpTexture(
-		textBoxInitInfo.rect.getWidth(), textBoxInitInfo.rect.getHeight(), textureManager, renderer);
+		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height, textureManager, renderer);
 	ScopedUiTextureRef textureRef(textureID, renderer);
 
 	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);

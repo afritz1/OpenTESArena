@@ -16,18 +16,10 @@ OptionsPanel::OptionsPanel(Game &game)
 bool OptionsPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
-	const std::string titleText = OptionsUiModel::TitleText;
-	const TextBox::InitInfo titleTextBoxInitInfo = OptionsUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
-	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
-	{
-		DebugLogError("Couldn't init title text box.");
-		return false;
-	}
-
-	const TextBox::InitInfo descTextBoxInitInfo = OptionsUiView::getDescriptionTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo descTextBoxInitInfo = OptionsUiView::getDescriptionTextBoxInitInfo(fontLibrary);
 	if (!this->descriptionTextBox.init(descTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init description text box.");
@@ -35,7 +27,7 @@ bool OptionsPanel::init()
 	}
 
 	const std::string backButtonText = OptionsUiModel::BackButtonText;
-	const TextBox::InitInfo backButtonTextBoxInitInfo = OptionsUiView::getBackButtonTextBoxInitInfo(backButtonText, fontLibrary);
+	const TextBoxInitInfo backButtonTextBoxInitInfo = OptionsUiView::getBackButtonTextBoxInitInfo(backButtonText, fontLibrary);
 	if (!this->backButtonTextBox.init(backButtonTextBoxInitInfo, backButtonText, renderer))
 	{
 		DebugLogError("Couldn't init back button text box.");
@@ -45,7 +37,7 @@ bool OptionsPanel::init()
 	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)
 	{
 		const std::string &tabName = OptionsUiModel::TAB_NAMES[i];
-		const TextBox::InitInfo tabInitInfo = OptionsUiView::getTabTextBoxInitInfo(i, tabName, fontLibrary);
+		const TextBoxInitInfo tabInitInfo = OptionsUiView::getTabTextBoxInitInfo(i, tabName, fontLibrary);
 		TextBox tabTextBox;
 		if (!tabTextBox.init(tabInitInfo, tabName, renderer))
 		{
@@ -59,7 +51,7 @@ bool OptionsPanel::init()
 	for (int i = 0; i < OptionsUiModel::OPTION_COUNT; i++)
 	{
 		// Initialize to blank -- the text box will be populated later by the current tab.
-		const TextBox::InitInfo initInfo = OptionsUiView::getOptionTextBoxInitInfo(i, fontLibrary);
+		const TextBoxInitInfo initInfo = OptionsUiView::getOptionTextBoxInitInfo(i, fontLibrary);
 		TextBox textBox;
 		if (!textBox.init(initInfo, renderer))
 		{
@@ -95,7 +87,7 @@ bool OptionsPanel::init()
 			if (hoveredIndex.has_value() && (*hoveredIndex < static_cast<int>(visibleOptions.size())))
 			{
 				const auto &option = visibleOptions[*hoveredIndex];
-				const std::string &descText = option->getTooltip();
+				const std::string &descText = option->tooltip;
 				this->descriptionTextBox.setText(descText);
 			}
 			else
@@ -110,65 +102,66 @@ bool OptionsPanel::init()
 		updateHoveredOptionIndex();
 	});
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = OptionsUiView::allocBackgroundTexture(renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 
 	const UiTextureID tabTextureID = OptionsUiView::allocTabTexture(textureManager, renderer);
 	this->tabButtonTextureRef.init(tabTextureID, renderer);
 	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)
 	{
 		const Rect tabRect = OptionsUiView::getTabRect(i);
-		this->addDrawCall(
-			this->tabButtonTextureRef.get(),
-			tabRect.getTopLeft(),
-			Int2(tabRect.getWidth(), tabRect.getHeight()),
-			PivotType::TopLeft);
+		UiDrawCallInitInfo tabTextureDrawCallInitInfo;
+		tabTextureDrawCallInitInfo.textureID = this->tabButtonTextureRef.get();
+		tabTextureDrawCallInitInfo.position = tabRect.getTopLeft();
+		tabTextureDrawCallInitInfo.size = tabRect.getSize();
+		this->addDrawCall(tabTextureDrawCallInitInfo);
 	}
 
 	const UiTextureID backButtonTextureID = OptionsUiView::allocBackButtonTexture(textureManager, renderer);
 	this->backButtonTextureRef.init(backButtonTextureID, renderer);
 	const Rect backButtonRect = OptionsUiView::getBackButtonRect();
-	this->addDrawCall(
-		this->backButtonTextureRef.get(),
-		backButtonRect.getTopLeft(),
-		Int2(backButtonRect.getWidth(), backButtonRect.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo backTextureDrawCallInitInfo;
+	backTextureDrawCallInitInfo.textureID = this->backButtonTextureRef.get();
+	backTextureDrawCallInitInfo.position = backButtonRect.getTopLeft();
+	backTextureDrawCallInitInfo.size = backButtonRect.getSize();
+	this->addDrawCall(backTextureDrawCallInitInfo);
 
-	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	this->addDrawCall(
-		titleTextBox.getTextureID(),
-		titleTextBoxRect.getTopLeft(),
-		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
-		PivotType::TopLeft);
-
-	const Rect &backButtonTextBoxRect = this->backButtonTextBox.getRect();
-	this->addDrawCall(
-		backButtonTextBox.getTextureID(),
-		backButtonTextBoxRect.getTopLeft(),
-		Int2(backButtonTextBoxRect.getWidth(), backButtonTextBoxRect.getHeight()),
-		PivotType::TopLeft);
+	const Rect backButtonTextBoxRect = this->backButtonTextBox.getRect();
+	UiDrawCallInitInfo backTextDrawCallInitInfo;
+	backTextDrawCallInitInfo.textureID = backButtonTextBox.getTextureID();
+	backTextDrawCallInitInfo.position = backButtonTextBoxRect.getTopLeft();
+	backTextDrawCallInitInfo.size = backButtonTextBoxRect.getSize();
+	this->addDrawCall(backTextDrawCallInitInfo);
 
 	const UiTextureID highlightTextureID = OptionsUiView::allocHighlightTexture(renderer);
 	this->highlightTextureRef.init(highlightTextureID, renderer);
 	for (int i = 0; i < OptionsUiModel::OPTION_COUNT; i++)
 	{
-		UiDrawCall::ActiveFunc highlightActiveFunc = [this, i]()
+		DebugAssertIndex(this->optionTextBoxes, i);
+		const TextBox &textBox = this->optionTextBoxes[i];
+		const Rect textBoxRect = textBox.getRect();
+
+		UiDrawCallInitInfo highlightDrawCallInitInfo;
+		highlightDrawCallInitInfo.textureID = this->highlightTextureRef.get();
+		highlightDrawCallInitInfo.position = textBoxRect.getTopLeft();
+		highlightDrawCallInitInfo.size = textBoxRect.getSize();
+		highlightDrawCallInitInfo.activeFunc = [this, i]()
 		{
-			const auto &visibleOptions = this->getVisibleOptions();
+			const OptionsUiModel::OptionGroup &visibleOptions = this->getVisibleOptions();
 			if (i >= static_cast<int>(visibleOptions.size()))
 			{
 				return false;
 			}
 
 			auto &game = this->getGame();
-			auto &renderer = game.getRenderer();
-			const auto &inputManager = game.getInputManager();
+			auto &renderer = game.renderer;
+			const auto &inputManager = game.inputManager;
 			const Int2 mousePosition = inputManager.getMousePosition();
 			const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
@@ -177,57 +170,44 @@ bool OptionsPanel::init()
 			const Rect &textBoxRect = textBox.getRect();
 			return textBoxRect.contains(originalPoint);
 		};
-
-		DebugAssertIndex(this->optionTextBoxes, i);
-		const TextBox &textBox = this->optionTextBoxes[i];
-		const Rect &textBoxRect = textBox.getRect();
-		this->addDrawCall(
-			[this]() { return this->highlightTextureRef.get(); },
-			[textBoxRect]() { return textBoxRect.getTopLeft(); },
-			[textBoxRect]() { return Int2(textBoxRect.getWidth(), textBoxRect.getHeight()); },
-			[]() { return PivotType::TopLeft; },
-			highlightActiveFunc);
+		
+		this->addDrawCall(highlightDrawCallInitInfo);
 	}
 
 	for (TextBox &tabTextBox : this->tabTextBoxes)
 	{
-		const Rect &tabTextBoxRect = tabTextBox.getRect();
-		this->addDrawCall(
-			tabTextBox.getTextureID(),
-			tabTextBoxRect.getTopLeft(),
-			Int2(tabTextBoxRect.getWidth(), tabTextBoxRect.getHeight()),
-			PivotType::TopLeft);
+		const Rect tabTextBoxRect = tabTextBox.getRect();
+		UiDrawCallInitInfo tabTextDrawCallInitInfo;
+		tabTextDrawCallInitInfo.textureID = tabTextBox.getTextureID();
+		tabTextDrawCallInitInfo.position = tabTextBoxRect.getTopLeft();
+		tabTextDrawCallInitInfo.size = tabTextBoxRect.getSize();
+		this->addDrawCall(tabTextDrawCallInitInfo);
 	}
 
 	for (int i = 0; i < static_cast<int>(this->optionTextBoxes.size()); i++)
 	{
-		UiDrawCall::TextureFunc textureFunc = [this, i]()
+		const TextBox &optionTextBox = this->optionTextBoxes[i];
+		const Rect optionTextBoxRect = optionTextBox.getRect();
+
+		UiDrawCallInitInfo optionTextDrawCallInitInfo;
+		optionTextDrawCallInitInfo.textureFunc = [this, i]()
 		{
 			DebugAssertIndex(this->optionTextBoxes, i);
 			TextBox &optionTextBox = this->optionTextBoxes[i];
 			return optionTextBox.getTextureID();
 		};
 
-		const TextBox &optionTextBox = this->optionTextBoxes[i];
-		const Rect &optionTextBoxRect = optionTextBox.getRect();
-		this->addDrawCall(
-			textureFunc,
-			optionTextBoxRect.getTopLeft(),
-			Int2(optionTextBoxRect.getWidth(), optionTextBoxRect.getHeight()),
-			PivotType::TopLeft);
+		optionTextDrawCallInitInfo.position = optionTextBoxRect.getTopLeft();
+		optionTextDrawCallInitInfo.size = optionTextBoxRect.getSize();		
+		this->addDrawCall(optionTextDrawCallInitInfo);
 	}
 
-	UiDrawCall::TextureFunc descTextureFunc = [this]()
-	{
-		return this->descriptionTextBox.getTextureID();
-	};
-
-	const Rect &descTextBoxRect = this->descriptionTextBox.getRect();
-	this->addDrawCall(
-		descTextureFunc,
-		descTextBoxRect.getTopLeft(),
-		Int2(descTextBoxRect.getWidth(), descTextBoxRect.getHeight()),
-		PivotType::TopLeft);
+	const Rect descTextBoxRect = this->descriptionTextBox.getRect();
+	UiDrawCallInitInfo descriptionTextDrawCallInitInfo;
+	descriptionTextDrawCallInitInfo.textureFunc = [this]() { return this->descriptionTextBox.getTextureID(); };
+	descriptionTextDrawCallInitInfo.position = descTextBoxRect.getTopLeft();
+	descriptionTextDrawCallInitInfo.size = descTextBoxRect.getSize();
+	this->addDrawCall(descriptionTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
@@ -259,8 +239,8 @@ OptionsUiModel::OptionGroup &OptionsPanel::getVisibleOptions()
 std::optional<int> OptionsPanel::getHoveredOptionIndex() const
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	const auto &inputManager = game.getInputManager();
+	auto &renderer = game.renderer;
+	const auto &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
@@ -283,7 +263,7 @@ void OptionsPanel::updateOptionText(int index)
 	const auto &visibleOptions = this->getVisibleOptions();
 	DebugAssertIndex(visibleOptions, index);
 	const auto &visibleOption = visibleOptions[index];
-	const std::string text = visibleOption->getName() + ": " + visibleOption->getDisplayedValue();
+	const std::string text = visibleOption->name + ": " + visibleOption->getDisplayedValue();
 
 	DebugAssertIndex(this->optionTextBoxes, index);
 	TextBox &textBox = this->optionTextBoxes[index];

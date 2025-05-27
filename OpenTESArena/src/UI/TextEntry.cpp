@@ -38,7 +38,7 @@ bool TextEntry::updateText(std::string &text, const SDL_Event &e, bool backspace
 	return false;
 }
 
-bool TextEntry::append(std::string &text, const std::string_view &inputText, bool(*isCharAllowed)(char), size_t maxLength)
+bool TextEntry::append(std::string &text, const std::string_view inputText, bool(*isCharAllowed)(char), size_t maxLength)
 {
 	bool dirty = false;
 	for (const char c : inputText)

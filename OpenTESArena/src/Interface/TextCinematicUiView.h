@@ -21,7 +21,7 @@ namespace TextCinematicUiView
 	constexpr TextAlignment SubtitleTextBoxTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int SubtitleTextBoxLineSpacing = 1;
 
-	TextBox::InitInfo getSubtitlesTextBoxInitInfo(const Color &fontColor, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getSubtitlesTextBoxInitInfo(const Color &fontColor, const FontLibrary &fontLibrary);
 
 	Buffer<UiTextureID> allocAnimationTextures(const std::string &animFilename,
 		TextureManager &textureManager, Renderer &renderer);

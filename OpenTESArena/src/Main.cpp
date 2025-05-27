@@ -3,6 +3,9 @@
 #include <stdexcept>
 #include <string>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Core/Factory.h"
+#include "Jolt/RegisterTypes.h"
 #include "SDL.h"
 
 #include "Game/Game.h"
@@ -22,6 +25,11 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+	// Jolt Physics init.
+	JPH::RegisterDefaultAllocator();
+	JPH::Factory::sInstance = new JPH::Factory();
+	JPH::RegisterTypes();
+
 	try
 	{
 		// Allocated on the heap to avoid stack overflow warning.
@@ -36,6 +44,13 @@ int main(int argc, char *argv[])
 	catch (const std::exception &e)
 	{
 		DebugCrash("Exception: " + std::string(e.what()));
+	}
+	
+	JPH::UnregisterTypes();
+	if (JPH::Factory::sInstance != nullptr)
+	{
+		delete JPH::Factory::sInstance;
+		JPH::Factory::sInstance = nullptr;
 	}
 
 	Debug::shutdown();

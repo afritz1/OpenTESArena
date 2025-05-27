@@ -2,68 +2,20 @@
 
 #include "components/debug/Debug.h"
 
-void LockDefinition::LeveledLockDef::init(int lockLevel)
+LockDefinition::LockDefinition()
 {
-	this->lockLevel = lockLevel;
+	this->x = 0;
+	this->y = 0;
+	this->z = 0;
+	this->lockLevel = -1;
+	this->keyID = -1;
 }
 
-void LockDefinition::KeyLockDef::init()
-{
-	// Do nothing.
-}
-
-void LockDefinition::init(SNInt x, int y, WEInt z, Type type)
+void LockDefinition::init(SNInt x, int y, WEInt z, int lockLevel)
 {
 	this->x = x;
 	this->y = y;
 	this->z = z;
-	this->type = type;
-}
-
-LockDefinition LockDefinition::makeLeveledLock(SNInt x, int y, WEInt z, int lockLevel)
-{
-	LockDefinition lockDef;
-	lockDef.init(x, y, z, Type::LeveledLock);
-	lockDef.leveledLock.init(lockLevel);
-	return lockDef;
-}
-
-LockDefinition LockDefinition::makeKeyLock(SNInt x, int y, WEInt z)
-{
-	LockDefinition lockDef;
-	lockDef.init(x, y, z, Type::KeyLock);
-	lockDef.keyLock.init();
-	return lockDef;
-}
-
-SNInt LockDefinition::getX() const
-{
-	return this->x;
-}
-
-int LockDefinition::getY() const
-{
-	return this->y;
-}
-
-WEInt LockDefinition::getZ() const
-{
-	return this->z;
-}
-
-LockDefinition::Type LockDefinition::getType() const
-{
-	return this->type;
-}
-
-const LockDefinition::LeveledLockDef &LockDefinition::getLeveledLockDef() const
-{
-	DebugAssert(this->type == Type::LeveledLock);
-	return this->leveledLock;
-}
-
-const LockDefinition::KeyLockDef &LockDefinition::getKeyLockDef() const
-{
-	DebugAssert(this->type == Type::KeyLock);
-	return this->keyLock;
+	this->lockLevel = lockLevel;
+	this->keyID = (lockLevel - 1) % 12;
 }

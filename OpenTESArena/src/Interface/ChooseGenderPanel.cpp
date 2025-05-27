@@ -13,11 +13,11 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 bool ChooseGenderPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseGenderUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo = ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBoxInitInfo titleTextBoxInitInfo = ChooseGenderUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
@@ -25,7 +25,7 @@ bool ChooseGenderPanel::init()
 	}
 
 	const std::string maleText = ChooseGenderUiModel::getMaleText(game);
-	const TextBox::InitInfo maleTextBoxInitInfo = ChooseGenderUiView::getMaleTextBoxInitInfo(maleText, fontLibrary);
+	const TextBoxInitInfo maleTextBoxInitInfo = ChooseGenderUiView::getMaleTextBoxInitInfo(maleText, fontLibrary);
 	if (!this->maleTextBox.init(maleTextBoxInitInfo, maleText, renderer))
 	{
 		DebugLogError("Couldn't init male text box.");
@@ -33,7 +33,7 @@ bool ChooseGenderPanel::init()
 	}
 
 	const std::string femaleText = ChooseGenderUiModel::getFemaleText(game);
-	const TextBox::InitInfo femaleTextBoxInitInfo = ChooseGenderUiView::getFemaleTextBoxInitInfo(femaleText, fontLibrary);
+	const TextBoxInitInfo femaleTextBoxInitInfo = ChooseGenderUiView::getFemaleTextBoxInitInfo(femaleText, fontLibrary);
 	if (!this->femaleTextBox.init(femaleTextBoxInitInfo, femaleText, renderer))
 	{
 		DebugLogError("Couldn't init female text box.");
@@ -58,55 +58,57 @@ bool ChooseGenderPanel::init()
 
 	this->addInputActionListener(InputActionName::Back, ChooseGenderUiController::onBackToChooseNameInputAction);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID parchmentTextureID = ChooseGenderUiView::allocParchmentTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-	this->addDrawCall(
-		this->nightSkyTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo nightSkyDrawCallInitInfo;
+	nightSkyDrawCallInitInfo.textureID = this->nightSkyTextureRef.get();
+	nightSkyDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(nightSkyDrawCallInitInfo);
 
-	const Int2 parchmentSize(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight());
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseGenderUiView::getTitleTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseGenderUiView::getMaleTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseGenderUiView::getFemaleTextureCenter(),
-		parchmentSize,
-		PivotType::Middle);
+	UiDrawCallInitInfo parchmentDrawCallInitInfo;
+	parchmentDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
+	parchmentDrawCallInitInfo.size = Int2(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight());
+	parchmentDrawCallInitInfo.pivotType = PivotType::Middle;
 
-	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	this->addDrawCall(
-		this->titleTextBox.getTextureID(),
-		titleTextBoxRect.getCenter(),
-		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo titleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	titleParchmentDrawCallInitInfo.position = ChooseGenderUiView::getTitleTextureCenter();
+	this->addDrawCall(titleParchmentDrawCallInitInfo);
 
-	const Rect &maleTextBoxRect = this->maleTextBox.getRect();
-	this->addDrawCall(
-		this->maleTextBox.getTextureID(),
-		maleTextBoxRect.getCenter(),
-		Int2(maleTextBoxRect.getWidth(), maleTextBoxRect.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo maleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	maleParchmentDrawCallInitInfo.position = ChooseGenderUiView::getMaleTextureCenter();
+	this->addDrawCall(maleParchmentDrawCallInitInfo);
 
-	const Rect &femaleTextBoxRect = this->femaleTextBox.getRect();
-	this->addDrawCall(
-		this->femaleTextBox.getTextureID(),
-		femaleTextBoxRect.getCenter(),
-		Int2(femaleTextBoxRect.getWidth(), femaleTextBoxRect.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo femaleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
+	femaleParchmentDrawCallInitInfo.position = ChooseGenderUiView::getFemaleTextureCenter();
+	this->addDrawCall(femaleParchmentDrawCallInitInfo);
+
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleDrawCallInitInfo;
+	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
+	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleDrawCallInitInfo);
+
+	const Rect maleTextBoxRect = this->maleTextBox.getRect();
+	UiDrawCallInitInfo maleTextDrawCallInitInfo;
+	maleTextDrawCallInitInfo.textureID = this->maleTextBox.getTextureID();
+	maleTextDrawCallInitInfo.position = maleTextBoxRect.getCenter();
+	maleTextDrawCallInitInfo.size = maleTextBoxRect.getSize();
+	maleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(maleTextDrawCallInitInfo);
+
+	const Rect femaleTextBoxRect = this->femaleTextBox.getRect();
+	UiDrawCallInitInfo femaleTextDrawCallInitInfo;
+	femaleTextDrawCallInitInfo.textureID = this->femaleTextBox.getTextureID();
+	femaleTextDrawCallInitInfo.position = femaleTextBoxRect.getCenter();
+	femaleTextDrawCallInitInfo.size = femaleTextBoxRect.getSize();
+	femaleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(femaleTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

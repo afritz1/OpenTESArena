@@ -51,6 +51,38 @@ namespace
 		{ Tag_MAP1, MIFLevel::loadMAP1 },
 		{ Tag_MAP2, MIFLevel::loadMAP2 }
 	};
+
+	uint16_t DecodeMifLayer(const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth, Buffer2D<ArenaTypes::VoxelID> &outLayer)
+	{
+		// Compressed size is in chunks and contains a 2 byte decompressed length after it, which
+		// should not be included when determining the end of the compressed range.
+		const uint16_t compressedSize = Bytes::getLE16(tagStart + 4);
+		const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
+
+		// Allocate space for this floor, using 2 bytes per voxel. Note: this seems to be more
+		// space than the level can fit.
+		std::vector<uint8_t> decomp(uncompressedSize, 0);
+
+		// Decode the data with type 8 decompression.
+		const uint8_t *tagDataStart = tagStart + 8;
+		const uint8_t *tagDataEnd = tagStart + 6 + compressedSize;
+		Compression::decodeType08(tagDataStart, tagDataEnd, decomp);
+
+		// Write into 16-bit map voxels in little-endian.
+		outLayer.init(levelWidth, levelDepth);
+		for (SNInt z = 0; z < levelDepth; z++)
+		{
+			for (WEInt x = 0; x < levelWidth; x++)
+			{
+				const int srcIndex = (x + (z * levelWidth)) * sizeof(ArenaTypes::VoxelID);
+				DebugAssertIndex(decomp, srcIndex);
+				const ArenaTypes::VoxelID srcValue = Bytes::getLE16(decomp.data() + srcIndex);
+				outLayer.set(x, z, srcValue);
+			}
+		}
+
+		return compressedSize + 6;
+	}
 }
 
 MIFLevel::MIFLevel()
@@ -120,94 +152,17 @@ int MIFLevel::loadFLAT(MIFLevel &level, const uint8_t *tagStart)
 
 int MIFLevel::loadFLOR(MIFLevel &level, const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth)
 {
-	// Compressed size is in chunks and contains a 2 byte decompressed length after it, which
-	// should not be included when determining the end of the compressed range.
-	const uint16_t compressedSize = Bytes::getLE16(tagStart + 4);
-	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
-
-	// Allocate space for this floor, using 2 bytes per voxel. Note: this seems to be more
-	// space than the level can fit.
-	std::vector<uint8_t> decomp(uncompressedSize, 0);
-
-	// Decode the data with type 8 decompression.
-	const uint8_t *tagDataStart = tagStart + 8;
-	const uint8_t *tagDataEnd = tagStart + 6 + compressedSize;
-	Compression::decodeType08(tagDataStart, tagDataEnd, decomp);
-
-	// Write into 16-bit map voxels in little-endian.
-	level.flor.init(levelWidth, levelDepth);
-	for (SNInt z = 0; z < levelDepth; z++)
-	{
-		for (WEInt x = 0; x < levelWidth; x++)
-		{
-			const int srcIndex = (x + (z * levelWidth)) * sizeof(ArenaTypes::VoxelID);
-			DebugAssertIndex(decomp, srcIndex);
-			const ArenaTypes::VoxelID srcValue = Bytes::getLE16(decomp.data() + srcIndex);
-			level.flor.set(x, z, srcValue);
-		}
-	}
-
-	return compressedSize + 6;
+	return DecodeMifLayer(tagStart, levelWidth, levelDepth, level.flor);
 }
 
 int MIFLevel::loadMAP1(MIFLevel &level, const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth)
 {
-	const uint16_t compressedSize = Bytes::getLE16(tagStart + 4);
-	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
-
-	// Allocate space for this floor, using 2 bytes per voxel. Note: this seems to be more
-	// space than the level can fit.
-	std::vector<uint8_t> decomp(uncompressedSize, 0);
-
-	// Decode the data with type 8 decompression.
-	const uint8_t *tagDataStart = tagStart + 8;
-	const uint8_t *tagDataEnd = tagStart + 6 + compressedSize;
-	Compression::decodeType08(tagDataStart, tagDataEnd, decomp);
-
-	// Write into 16-bit map voxels in little-endian.
-	level.map1.init(levelWidth, levelDepth);
-	for (SNInt z = 0; z < levelDepth; z++)
-	{
-		for (WEInt x = 0; x < levelWidth; x++)
-		{
-			const int srcIndex = (x + (z * levelWidth)) * sizeof(ArenaTypes::VoxelID);
-			DebugAssertIndex(decomp, srcIndex);
-			const ArenaTypes::VoxelID srcValue = Bytes::getLE16(decomp.data() + srcIndex);
-			level.map1.set(x, z, srcValue);
-		}
-	}
-
-	return compressedSize + 6;
+	return DecodeMifLayer(tagStart, levelWidth, levelDepth, level.map1);
 }
 
 int MIFLevel::loadMAP2(MIFLevel &level, const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth)
 {
-	const uint16_t compressedSize = Bytes::getLE16(tagStart + 4);
-	const uint16_t uncompressedSize = Bytes::getLE16(tagStart + 6);
-
-	// Allocate space for this floor, using 2 bytes per voxel. Note: this seems to be more
-	// space than the level can fit.
-	std::vector<uint8_t> decomp(uncompressedSize, 0);
-
-	// Decode the data with type 8 decompression.
-	const uint8_t *tagDataStart = tagStart + 8;
-	const uint8_t *tagDataEnd = tagStart + 6 + compressedSize;
-	Compression::decodeType08(tagDataStart, tagDataEnd, decomp);
-
-	// Write into 16-bit map voxels in little-endian.
-	level.map2.init(levelWidth, levelDepth);
-	for (SNInt z = 0; z < levelDepth; z++)
-	{
-		for (WEInt x = 0; x < levelWidth; x++)
-		{
-			const int srcIndex = (x + (z * levelWidth)) * sizeof(ArenaTypes::VoxelID);
-			DebugAssertIndex(decomp, srcIndex);
-			const ArenaTypes::VoxelID srcValue = Bytes::getLE16(decomp.data() + srcIndex);
-			level.map2.set(x, z, srcValue);
-		}
-	}
-
-	return compressedSize + 6;
+	return DecodeMifLayer(tagStart, levelWidth, levelDepth, level.map2);
 }
 
 int MIFLevel::loadINFO(MIFLevel &level, const uint8_t *tagStart)
@@ -428,11 +383,7 @@ bool MIFFile::init(const char *filename)
 	// Load start locations from the header. Not all are set (i.e., some are (0, 0)).
 	for (size_t i = 0; i < this->startPoints.size(); i++)
 	{
-		static_assert(std::tuple_size<decltype(mifHeader.startX)>::value ==
-			std::tuple_size<decltype(this->startPoints)>::value);
-		static_assert(std::tuple_size<decltype(mifHeader.startY)>::value ==
-			std::tuple_size<decltype(this->startPoints)>::value);
-
+		static_assert(std::tuple_size<decltype(this->startPoints)>::value == ArenaTypes::MIFHeader::START_POINT_COUNT);
 		const uint16_t mifX = mifHeader.startX[i];
 		const uint16_t mifY = mifHeader.startY[i];
 		this->startPoints[i] = OriginalInt2(mifX, mifY);

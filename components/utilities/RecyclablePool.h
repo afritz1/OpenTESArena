@@ -10,7 +10,6 @@
 
 // Contiguous pool that allows elements to be freed and their position reused by future elements
 // without affecting other elements.
-
 template<typename ElementT, typename IdT>
 class RecyclablePool
 {

@@ -1,66 +1,73 @@
 #include <algorithm>
 #include <fstream>
 #include <sstream>
+#include <unordered_set>
 
 #include "Options.h"
 #include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/BufferView.h"
 #include "components/utilities/Directory.h"
 #include "components/utilities/KeyValueFile.h"
 #include "components/utilities/String.h"
 
 namespace
 {
-	// Supported value types by the parser.
-	enum class OptionType { Bool, Int, Double, String };
-
-	// Mappings of key names to their associated type for each section. These use vectors
-	// of pairs instead of hash tables to maintain ordering.
-	const std::vector<std::pair<std::string, OptionType>> GraphicsMappings =
+	// Key and parsing type pairs. These use arrays of pairs instead of hash tables to maintain ordering.
+	constexpr std::pair<const char*, OptionType> GraphicsMappings[] =
 	{
-		{ "ScreenWidth", OptionType::Int },
-		{ "ScreenHeight", OptionType::Int },
-		{ "WindowMode", OptionType::Int },
-		{ "TargetFPS", OptionType::Int },
-		{ "ResolutionScale", OptionType::Double },
-		{ "VerticalFOV", OptionType::Double },
-		{ "LetterboxMode", OptionType::Int },
-		{ "CursorScale", OptionType::Double },
-		{ "ModernInterface", OptionType::Bool },
-		{ "TallPixelCorrection", OptionType::Bool },
-		{ "RenderThreadsMode", OptionType::Int }
+		{ Options::Key_Graphics_ScreenWidth, Options::OptionType_Graphics_ScreenWidth },
+		{ Options::Key_Graphics_ScreenHeight, Options::OptionType_Graphics_ScreenHeight },
+		{ Options::Key_Graphics_WindowMode, Options::OptionType_Graphics_WindowMode },
+		{ Options::Key_Graphics_TargetFPS, Options::OptionType_Graphics_TargetFPS },
+		{ Options::Key_Graphics_ResolutionScale, Options::OptionType_Graphics_ResolutionScale },
+		{ Options::Key_Graphics_VerticalFOV, Options::OptionType_Graphics_VerticalFOV },
+		{ Options::Key_Graphics_LetterboxMode, Options::OptionType_Graphics_LetterboxMode },
+		{ Options::Key_Graphics_CursorScale, Options::OptionType_Graphics_CursorScale },
+		{ Options::Key_Graphics_ModernInterface, Options::OptionType_Graphics_ModernInterface },
+		{ Options::Key_Graphics_TallPixelCorrection, Options::OptionType_Graphics_TallPixelCorrection },
+		{ Options::Key_Graphics_RenderThreadsMode, Options::OptionType_Graphics_RenderThreadsMode },
+		{ Options::Key_Graphics_DitheringMode, Options::OptionType_Graphics_DitheringMode }
 	};
 
-	const std::vector<std::pair<std::string, OptionType>> AudioMappings =
+	constexpr std::pair<const char*, OptionType> AudioMappings[] =
 	{
-		{ "MusicVolume", OptionType::Double },
-		{ "SoundVolume", OptionType::Double },
-		{ "MidiConfig", OptionType::String },
-		{ "SoundChannels", OptionType::Int },
-		{ "SoundResampling", OptionType::Int },
-		{ "Is3DAudio", OptionType::Bool }
+		{ Options::Key_Audio_MusicVolume, Options::OptionType_Audio_MusicVolume },
+		{ Options::Key_Audio_SoundVolume, Options::OptionType_Audio_SoundVolume },
+		{ Options::Key_Audio_MidiConfig, Options::OptionType_Audio_MidiConfig },
+		{ Options::Key_Audio_SoundChannels, Options::OptionType_Audio_SoundChannels },
+		{ Options::Key_Audio_SoundResampling, Options::OptionType_Audio_SoundResampling },
+		{ Options::Key_Audio_Is3DAudio, Options::OptionType_Audio_Is3DAudio }
 	};
 
-	const std::vector<std::pair<std::string, OptionType>> InputMappings =
+	constexpr std::pair<const char*, OptionType> InputMappings[] =
 	{
-		{ "HorizontalSensitivity", OptionType::Double },
-		{ "VerticalSensitivity", OptionType::Double },
-		{ "CameraPitchLimit", OptionType::Double }
+		{ Options::Key_Input_HorizontalSensitivity, Options::OptionType_Input_HorizontalSensitivity },
+		{ Options::Key_Input_VerticalSensitivity, Options::OptionType_Input_VerticalSensitivity },
+		{ Options::Key_Input_InvertVerticalAxis, Options::OptionType_Input_InvertVerticalAxis },
+		{ Options::Key_Input_CameraPitchLimit, Options::OptionType_Input_CameraPitchLimit }
 	};
 
-	const std::vector<std::pair<std::string, OptionType>> MiscMappings =
+	constexpr std::pair<const char*, OptionType> MiscMappings[] =
 	{
-		{ "ArenaPath", OptionType::String },
-		{ "ArenaSavesPath", OptionType::String },
-		{ "GhostMode", OptionType::Bool },
-		{ "ProfilerLevel", OptionType::Int },
-		{ "ShowIntro", OptionType::Bool },
-		{ "ShowCompass", OptionType::Bool },
-		{ "ChunkDistance", OptionType::Int },
-		{ "StarDensity", OptionType::Int },
-		{ "PlayerHasLight", OptionType::Bool }
+		{ Options::Key_Misc_ArenaPaths, Options::OptionType_Misc_ArenaPaths },
+		{ Options::Key_Misc_ArenaSavesPath, Options::OptionType_Misc_ArenaSavesPath },
+		{ Options::Key_Misc_GhostMode, Options::OptionType_Misc_GhostMode },
+		{ Options::Key_Misc_ProfilerLevel, Options::OptionType_Misc_ProfilerLevel },
+		{ Options::Key_Misc_ShowIntro, Options::OptionType_Misc_ShowIntro },
+		{ Options::Key_Misc_ShowCompass, Options::OptionType_Misc_ShowCompass },
+		{ Options::Key_Misc_ChunkDistance, Options::OptionType_Misc_ChunkDistance },
+		{ Options::Key_Misc_StarDensity, Options::OptionType_Misc_StarDensity },
+		{ Options::Key_Misc_PlayerHasLight, Options::OptionType_Misc_PlayerHasLight }
 	};
+
+	std::unordered_set<std::string> s_loggedMissingOptions; // Reduces log spam.
+
+	std::string MakeLoggingKey(const std::string &section, const std::string &key)
+	{
+		return section + "_" + key;
+	}
 }
 
 // The "default" options file is shipped with releases, and it resides in the options 
@@ -75,8 +82,7 @@ const std::string Options::SECTION_INPUT = "Input";
 const std::string Options::SECTION_AUDIO = "Audio";
 const std::string Options::SECTION_MISC = "Misc";
 
-void Options::load(const char *filename,
-	std::unordered_map<std::string, Options::MapGroup> &maps)
+void Options::load(const char *filename, std::unordered_map<std::string, Options::MapGroup> &maps)
 {
 	// Read the key-value pairs from each section in the given options file.
 	KeyValueFile keyValueFile;
@@ -88,33 +94,39 @@ void Options::load(const char *filename,
 
 	for (int sectionIndex = 0; sectionIndex < keyValueFile.getSectionCount(); sectionIndex++)
 	{
-		const KeyValueFile::Section &section = keyValueFile.getSection(sectionIndex);
+		const KeyValueFileSection &section = keyValueFile.getSection(sectionIndex);
 		const std::string &sectionName = section.getName();
 
 		// Get the list of key-type pairs to pull from.
-		const auto &keyList = [&filename, &sectionName]()
+		const std::pair<const char*, OptionType> *mappingsListPtr = nullptr;
+		size_t mappingsListLength = 0;
+		if (sectionName == Options::SECTION_GRAPHICS)
 		{
-			if (sectionName == Options::SECTION_GRAPHICS)
-			{
-				return GraphicsMappings;
-			}
-			else if (sectionName == Options::SECTION_INPUT)
-			{
-				return InputMappings;
-			}
-			else if (sectionName == Options::SECTION_AUDIO)
-			{
-				return AudioMappings;
-			}
-			else if (sectionName == Options::SECTION_MISC)
-			{
-				return MiscMappings;
-			}
-			else
-			{
-				throw DebugException("Unrecognized section \"" + sectionName + "\" in " + filename + ".");
-			}
-		}();
+			mappingsListPtr = GraphicsMappings;
+			mappingsListLength = std::size(GraphicsMappings);
+		}
+		else if (sectionName == Options::SECTION_INPUT)
+		{
+			mappingsListPtr = InputMappings;
+			mappingsListLength = std::size(InputMappings);
+		}
+		else if (sectionName == Options::SECTION_AUDIO)
+		{
+			mappingsListPtr = AudioMappings;
+			mappingsListLength = std::size(AudioMappings);
+		}
+		else if (sectionName == Options::SECTION_MISC)
+		{
+			mappingsListPtr = MiscMappings;
+			mappingsListLength = std::size(MiscMappings);
+		}
+		else
+		{
+			DebugLogError("Unrecognized section \"" + sectionName + "\" in " + filename + ".");
+			continue;
+		}
+
+		const std::pair<const char*, OptionType> *mappingsListEnd = mappingsListPtr + mappingsListLength;
 
 		for (int pairIndex = 0; pairIndex < section.getPairCount(); pairIndex++)
 		{
@@ -123,13 +135,13 @@ void Options::load(const char *filename,
 			// See if the key is recognized, and if so, see what type the value should be, 
 			// convert it, and place it in the changed map.
 			const std::string &key = pair.first;
-			const auto keyListIter = std::find_if(keyList.begin(), keyList.end(),
-				[&key](const std::pair<std::string, OptionType> &keyTypePair)
+			const auto keyListIter = std::find_if(mappingsListPtr, mappingsListEnd,
+				[&key](const std::pair<const char*, OptionType> &keyTypePair)
 			{
 				return keyTypePair.first == key;
 			});
 
-			if (keyListIter != keyList.end())
+			if (keyListIter != mappingsListEnd)
 			{
 				const OptionType type = keyListIter->second;
 				auto groupIter = maps.find(sectionName);
@@ -190,6 +202,38 @@ void Options::load(const char *filename,
 	}
 }
 
+int Options::clampInt(int value, int minValue, int maxValue, const char *name) const
+{
+	if (value < minValue)
+	{
+		DebugLogWarningFormat("%s (%d) must be at least %d.", name, value, minValue);
+		value = minValue;
+	}
+	else if (value > maxValue)
+	{
+		DebugLogWarningFormat("%s (%d) must be less than or equal to %d.", name, value, maxValue);
+		value = maxValue;
+	}
+
+	return value;
+}
+
+double Options::clampDouble(double value, double minValue, double maxValue, const char *name) const
+{
+	if (value < minValue)
+	{
+		DebugLogWarningFormat("%s (%.2f) must be at least %.2f.", name, value, minValue);
+		value = minValue;
+	}
+	else if (value > maxValue)
+	{
+		DebugLogWarningFormat("%s (%.2f) must be less than or equal to %.2f.", name, value, maxValue);
+		value = maxValue;
+	}
+
+	return value;
+}
+
 bool Options::getBool(const std::string &section, const std::string &key) const
 {
 	auto getValuePtr = [](const std::string &section, const std::string &key,
@@ -225,7 +269,13 @@ bool Options::getBool(const std::string &section, const std::string &key) const
 		}
 		else
 		{
-			DebugLogWarning("Boolean \"" + key + "\" (section \"" + section + "\") not in options, defaulting to false.");
+			std::string loggingKey = MakeLoggingKey(section, key);
+			if (!s_loggedMissingOptions.contains(loggingKey))
+			{
+				s_loggedMissingOptions.emplace(loggingKey);
+				DebugLogWarning("Expected \"" + key + "\" boolean under [" + section + "] in defaults or changes, defaulting to false and silencing warning.");
+			}
+			
 			return false;
 		}
 	}
@@ -266,7 +316,13 @@ int Options::getInt(const std::string &section, const std::string &key) const
 		}
 		else
 		{
-			DebugLogWarning("Integer \"" + key + "\" (section \"" + section + "\") not in options, defaulting to 0.");
+			std::string loggingKey = MakeLoggingKey(section, key);
+			if (!s_loggedMissingOptions.contains(loggingKey))
+			{
+				s_loggedMissingOptions.emplace(loggingKey);
+				DebugLogWarning("Expected \"" + key + "\" integer under [" + section + "] in defaults or changes, defaulting to 0 and silencing warning.");
+			}
+
 			return 0;
 		}
 	}
@@ -307,7 +363,13 @@ double Options::getDouble(const std::string &section, const std::string &key) co
 		}
 		else
 		{
-			DebugLogWarning("Double \"" + key + "\" (section \"" + section + "\") not in options, defaulting to 0.");
+			std::string loggingKey = MakeLoggingKey(section, key);
+			if (!s_loggedMissingOptions.contains(loggingKey))
+			{
+				s_loggedMissingOptions.emplace(loggingKey);
+				DebugLogWarning("Expected \"" + key + "\" decimal value under [" + section + "] in defaults or changes, defaulting to 0 and silencing warning.");
+			}
+
 			return 0.0;
 		}
 	}
@@ -348,7 +410,13 @@ const std::string &Options::getString(const std::string &section, const std::str
 		}
 		else
 		{
-			DebugLogWarning("String \"" + key + "\" (section \"" + section + "\") not in options, defaulting to \"\".");
+			std::string loggingKey = MakeLoggingKey(section, key);
+			if (!s_loggedMissingOptions.contains(loggingKey))
+			{
+				s_loggedMissingOptions.emplace(loggingKey);
+				DebugLogWarning("Expected \"" + key + "\" string under [" + section + "] in defaults or changes, defaulting to \"\" and silencing warning.");
+			}
+
 			static const std::string fallbackString;
 			return fallbackString;
 		}
@@ -440,159 +508,6 @@ void Options::setString(const std::string &section, const std::string &key,
 	iter->second = value;
 }
 
-void Options::checkGraphics_ScreenWidth(int value) const
-{
-	DebugAssertMsg(value > 0, "Screen width must be positive.");
-}
-
-void Options::checkGraphics_ScreenHeight(int value) const
-{
-	DebugAssertMsg(value > 0, "Screen height must be positive.");
-}
-
-void Options::checkGraphics_WindowMode(int value) const
-{
-	DebugAssertMsg(value >= Options::MIN_WINDOW_MODE, "Window mode cannot be less than " +
-		std::to_string(Options::MIN_WINDOW_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_WINDOW_MODE, "Window mode cannot be greater than " +
-		std::to_string(Options::MAX_WINDOW_MODE) + ".");
-}
-
-void Options::checkGraphics_TargetFPS(int value) const
-{
-	DebugAssertMsg(value >= Options::MIN_FPS, "Target FPS cannot be less than " +
-		std::to_string(Options::MIN_FPS) + ".");
-}
-
-void Options::checkGraphics_ResolutionScale(double value) const
-{
-	DebugAssertMsg(value > 0.0, "Resolution scale must be positive.");
-	DebugAssertMsg(value <= Options::MAX_RESOLUTION_SCALE,
-		"Resolution scale cannot be greater than " +
-		String::fixedPrecision(Options::MAX_RESOLUTION_SCALE, 2) + ".");
-}
-
-void Options::checkGraphics_VerticalFOV(double value) const
-{
-	DebugAssertMsg(value >= Options::MIN_VERTICAL_FOV, "Vertical FOV cannot be less than " +
-		String::fixedPrecision(Options::MIN_VERTICAL_FOV, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_VERTICAL_FOV, "Vertical FOV cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VERTICAL_FOV, 1) + ".");
-}
-
-void Options::checkGraphics_LetterboxMode(int value) const
-{
-	DebugAssertMsg(value >= Options::MIN_LETTERBOX_MODE, "Letterbox mode cannot be less than " +
-		std::to_string(Options::MIN_LETTERBOX_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_LETTERBOX_MODE, "Letterbox mode cannot be greater than " +
-		std::to_string(Options::MAX_LETTERBOX_MODE) + ".");
-}
-
-void Options::checkGraphics_CursorScale(double value) const
-{
-	DebugAssertMsg(value >= Options::MIN_CURSOR_SCALE,
-		"Cursor scale cannot be less than " +
-		String::fixedPrecision(Options::MIN_CURSOR_SCALE, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_CURSOR_SCALE,
-		"Cursor scale cannot be greater than " +
-		String::fixedPrecision(Options::MAX_CURSOR_SCALE, 1) + ".");
-}
-
-void Options::checkGraphics_RenderThreadsMode(int value) const
-{
-	DebugAssertMsg(value >= Options::MIN_RENDER_THREADS_MODE,
-		"Render threads mode cannot be less than " +
-		std::to_string(Options::MIN_RENDER_THREADS_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_RENDER_THREADS_MODE,
-		"Render threads mode cannot be greater than " +
-		std::to_string(Options::MAX_RENDER_THREADS_MODE) + ".");
-}
-
-void Options::checkAudio_MusicVolume(double value) const
-{
-	DebugAssertMsg(value >= Options::MIN_VOLUME, "Music volume cannot be negative.");
-	DebugAssertMsg(value <= Options::MAX_VOLUME, "Music volume cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
-}
-
-void Options::checkAudio_SoundVolume(double value) const
-{
-	DebugAssertMsg(value >= Options::MIN_VOLUME, "Sound volume cannot be negative.");
-	DebugAssertMsg(value <= Options::MAX_VOLUME, "Sound volume cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VOLUME, 1) + ".");
-}
-
-void Options::checkAudio_SoundChannels(int value) const
-{
-	DebugAssertMsg(value >= Options::MIN_SOUND_CHANNELS, "Sound channel count cannot be less than " +
-		std::to_string(Options::MIN_SOUND_CHANNELS) + ".");
-}
-
-void Options::checkAudio_SoundResampling(int value) const
-{
-	DebugAssertMsg(value >= 0, "Sound resampling value cannot be negative.");
-	DebugAssertMsg(value < Options::RESAMPLING_OPTION_COUNT,
-		"Sound resampling value cannot be greater than " +
-		std::to_string(Options::RESAMPLING_OPTION_COUNT - 1) + ".");
-}
-
-void Options::checkInput_HorizontalSensitivity(double value) const
-{
-	DebugAssertMsg(value >= Options::MIN_HORIZONTAL_SENSITIVITY,
-		"Horizontal sensitivity cannot be less than " +
-		String::fixedPrecision(Options::MIN_HORIZONTAL_SENSITIVITY, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_HORIZONTAL_SENSITIVITY,
-		"Horizontal sensitivity cannot be greater than " +
-		String::fixedPrecision(Options::MAX_HORIZONTAL_SENSITIVITY, 1) + ".");
-}
-
-void Options::checkInput_VerticalSensitivity(double value) const
-{
-	DebugAssertMsg(value >= Options::MIN_VERTICAL_SENSITIVITY,
-		"Vertical sensitivity cannot be less than " +
-		String::fixedPrecision(Options::MIN_VERTICAL_SENSITIVITY, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_VERTICAL_SENSITIVITY,
-		"Vertical sensitivity cannot be greater than " +
-		String::fixedPrecision(Options::MAX_VERTICAL_SENSITIVITY, 1) + ".");
-}
-
-void Options::checkInput_CameraPitchLimit(double value) const
-{
-	DebugAssertMsg(value >= Options::MIN_CAMERA_PITCH_LIMIT,
-		"Camera pitch limit cannot be less than " +
-		String::fixedPrecision(Options::MIN_CAMERA_PITCH_LIMIT, 1) + ".");
-	DebugAssertMsg(value <= Options::MAX_CAMERA_PITCH_LIMIT,
-		"Camera pitch limit cannot be greater than " +
-		String::fixedPrecision(Options::MAX_CAMERA_PITCH_LIMIT, 1) + ".");
-}
-
-void Options::checkMisc_ChunkDistance(int value) const
-{
-	DebugAssertMsg(value >= Options::MIN_CHUNK_DISTANCE,
-		"Chunk distance cannot be less than " +
-		std::to_string(Options::MIN_CHUNK_DISTANCE) + ".");
-}
-
-void Options::checkMisc_StarDensity(int value) const
-{
-	DebugAssertMsg(value >= Options::MIN_STAR_DENSITY_MODE,
-		"Star density cannot be less than " +
-		std::to_string(Options::MIN_STAR_DENSITY_MODE) + ".");
-	DebugAssertMsg(value <= Options::MAX_STAR_DENSITY_MODE,
-		"Star density cannot be greater than " +
-		std::to_string(Options::MAX_STAR_DENSITY_MODE) + ".");
-}
-
-void Options::checkMisc_ProfilerLevel(int value) const
-{
-	DebugAssertMsg(value >= Options::MIN_PROFILER_LEVEL,
-		"Profiler level cannot be less than " +
-		std::to_string(Options::MIN_PROFILER_LEVEL) + ".");
-	DebugAssertMsg(value <= Options::MAX_PROFILER_LEVEL,
-		"Profiler level cannot be greater than " +
-		std::to_string(Options::MAX_PROFILER_LEVEL) + ".");
-}
-
 void Options::loadDefaults(const std::string &filename)
 {
 	DebugLog("Reading defaults \"" + filename + "\".");
@@ -618,98 +533,92 @@ void Options::saveChanges()
 
 	const std::string filename(optionsPath + Options::CHANGES_FILENAME);
 	std::ofstream ofs(filename);
-
-	if (ofs.is_open())
-	{
-		// Writes out all key-value pairs in a section if it exists.
-		auto tryWriteSection = [this, &ofs](const std::string &section,
-			const std::vector<std::pair<std::string, OptionType>> &keyList)
-		{
-			const auto sectionIter = this->changedMaps.find(section);
-			if (sectionIter != this->changedMaps.end())
-			{
-				const auto &mapGroup = sectionIter->second;
-
-				// Print section line.
-				ofs << KeyValueFile::SECTION_FRONT << section << KeyValueFile::SECTION_BACK << '\n';
-
-				// Write all pairs present in the current section.
-				for (const auto &pair : keyList)
-				{
-					const std::string &key = pair.first;
-					const OptionType type = pair.second;
-
-					auto writePair = [&ofs, &key](const std::string &value)
-					{
-						ofs << key << KeyValueFile::PAIR_SEPARATOR << value << '\n';
-					};
-
-					// If the associated changed map has the key, print the key-value pair.
-					if (type == OptionType::Bool)
-					{
-						const auto iter = mapGroup.bools.find(key);
-						if (iter != mapGroup.bools.end())
-						{
-							const bool value = iter->second;
-							writePair(value ? "true" : "false");
-						}
-					}
-					else if (type == OptionType::Int)
-					{
-						const auto iter = mapGroup.integers.find(key);
-						if (iter != mapGroup.integers.end())
-						{
-							const int value = iter->second;
-							writePair(std::to_string(value));
-						}
-					}
-					else if (type == OptionType::Double)
-					{
-						const auto iter = mapGroup.doubles.find(key);
-						if (iter != mapGroup.doubles.end())
-						{
-							const double value = iter->second;
-							std::stringstream ss;
-							ss << value;
-							writePair(ss.str());
-						}
-					}
-					else if (type == OptionType::String)
-					{
-						const auto iter = mapGroup.strings.find(key);
-						if (iter != mapGroup.strings.end())
-						{
-							const std::string &value = iter->second;
-							writePair(value);
-						}
-					}
-					else
-					{
-						throw DebugException("Bad option type \"" +
-							std::to_string(static_cast<int>(type)) + "\".");
-					}
-				}
-
-				ofs << '\n';
-			}
-		};
-
-		ofs << "# Changed options file for OpenTESArena. This is where the program" << '\n' <<
-			"# saves options that differ from the defaults." << '\n';
-
-		ofs << '\n';
-
-		// Write out each section in a strict order.
-		tryWriteSection(Options::SECTION_GRAPHICS, GraphicsMappings);
-		tryWriteSection(Options::SECTION_AUDIO, AudioMappings);
-		tryWriteSection(Options::SECTION_INPUT, InputMappings);
-		tryWriteSection(Options::SECTION_MISC, MiscMappings);
-
-		DebugLog("Saved settings in \"" + filename + "\".");
-	}
-	else
+	if (!ofs.is_open())
 	{
 		// @todo: doesn't need to be an exception -- can be a warning/error instead.
-		throw DebugException("Could not save to \"" + filename + "\".");
+		DebugLogError("Could not save to \"" + filename + "\".");
+		return;
 	}
+
+	// Writes out all key-value pairs in a section if it exists.
+	auto tryWriteSection = [this, &ofs](const std::string &section, BufferView<const std::pair<const char*, OptionType>> keyList)
+	{
+		const auto sectionIter = this->changedMaps.find(section);
+		if (sectionIter != this->changedMaps.end())
+		{
+			const auto &mapGroup = sectionIter->second;
+
+			// Print section line.
+			ofs << KeyValueFile::SECTION_FRONT << section << KeyValueFile::SECTION_BACK << '\n';
+
+			// Write all pairs present in the current section.
+			for (const auto &pair : keyList)
+			{
+				const char *key = pair.first;
+				const OptionType type = pair.second;
+
+				auto writePair = [&ofs, &key](const std::string &value)
+				{
+					ofs << key << KeyValueFile::PAIR_SEPARATOR << value << '\n';
+				};
+
+				// If the associated changed map has the key, print the key-value pair.
+				if (type == OptionType::Bool)
+				{
+					const auto iter = mapGroup.bools.find(key);
+					if (iter != mapGroup.bools.end())
+					{
+						const bool value = iter->second;
+						writePair(value ? "true" : "false");
+					}
+				}
+				else if (type == OptionType::Int)
+				{
+					const auto iter = mapGroup.integers.find(key);
+					if (iter != mapGroup.integers.end())
+					{
+						const int value = iter->second;
+						writePair(std::to_string(value));
+					}
+				}
+				else if (type == OptionType::Double)
+				{
+					const auto iter = mapGroup.doubles.find(key);
+					if (iter != mapGroup.doubles.end())
+					{
+						const double value = iter->second;
+						std::stringstream ss;
+						ss << value;
+						writePair(ss.str());
+					}
+				}
+				else if (type == OptionType::String)
+				{
+					const auto iter = mapGroup.strings.find(key);
+					if (iter != mapGroup.strings.end())
+					{
+						const std::string &value = iter->second;
+						writePair(value);
+					}
+				}
+				else
+				{
+					throw DebugException("Unrecognized option type \"" + std::to_string(static_cast<int>(type)) + "\".");
+				}
+			}
+
+			ofs << '\n';
+		}
+	};
+
+	ofs << "# The engine saves options here that differ from the defaults." << '\n';
+	ofs << '\n';
+
+	// Write out each section in a strict order.
+	tryWriteSection(Options::SECTION_GRAPHICS, GraphicsMappings);
+	tryWriteSection(Options::SECTION_AUDIO, AudioMappings);
+	tryWriteSection(Options::SECTION_INPUT, InputMappings);
+	tryWriteSection(Options::SECTION_MISC, MiscMappings);
+
+	DebugLog("Saved settings in \"" + filename + "\".");
 }

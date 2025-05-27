@@ -35,7 +35,7 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceName.c_str());
 	if (!metadataID.has_value())
 	{
@@ -46,7 +46,7 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
 	const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	this->textureRefs.init(textureFileMetadata.getTextureCount());
 	for (int i = 0; i < textureFileMetadata.getTextureCount(); i++)
 	{
@@ -62,17 +62,15 @@ bool CinematicPanel::init(const std::string &paletteName, const std::string &seq
 		this->textureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
 	}
 
-	UiDrawCall::TextureFunc textureFunc = [this]()
+	UiDrawCallInitInfo drawCallInitInfo;
+	drawCallInitInfo.textureFunc = [this]()
 	{
 		const ScopedUiTextureRef &textureRef = this->textureRefs.get(this->imageIndex);
 		return textureRef.get();
 	};
 
-	this->addDrawCall(
-		textureFunc,
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	drawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(drawCallInitInfo);
 	
 	this->secondsPerImage = secondsPerImage;
 	this->currentSeconds = 0.0;

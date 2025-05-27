@@ -18,13 +18,13 @@ void ArenaTypes::MIFHeader::init(const uint8_t *data)
 	this->unknown1 = *data;
 	this->entryCount = *(data + 1);
 
-	const uint16_t *startXStart = reinterpret_cast<const uint16_t*>(data + 2);
-	const uint16_t *startXEnd = startXStart + this->startX.size();
-	std::copy(startXStart, startXEnd, this->startX.begin());
-
-	const uint16_t *startYStart = startXEnd;
-	const uint16_t *startYEnd = startYStart + this->startY.size();
-	std::copy(startYStart, startYEnd, this->startY.begin());
+	const uint8_t *startXStart = data + 2;
+	const uint8_t *startYStart = data + 10;
+	for (int i = 0; i < MIFHeader::START_POINT_COUNT; i++)
+	{
+		this->startX[i] = Bytes::getLE16(startXStart + (i * 2));
+		this->startY[i] = Bytes::getLE16(startYStart + (i * 2));
+	}
 
 	this->startingLevelIndex = *(data + 18);
 	this->levelCount = *(data + 19);
@@ -33,8 +33,8 @@ void ArenaTypes::MIFHeader::init(const uint8_t *data)
 	this->mapHeight = Bytes::getLE16(data + 23);
 
 	const uint8_t *unknown3Start = data + 25;
-	const uint8_t *unknown3End = unknown3Start + this->unknown3.size();
-	std::copy(unknown3Start, unknown3End, this->unknown3.begin());
+	const uint8_t *unknown3End = unknown3Start + std::size(this->unknown3);
+	std::copy(unknown3Start, unknown3End, std::begin(this->unknown3));
 }
 
 void ArenaTypes::MIFLock::init(const uint8_t *data)
@@ -82,9 +82,11 @@ void ArenaTypes::SaveGame::init(const uint8_t *data)
 	const uint8_t *gameStateEnd = gameStateStart + GameState::SIZE;
 	this->gameState.init(gameStateStart);
 
-	const uint16_t *gameLevelStart = reinterpret_cast<const uint16_t*>(gameStateEnd);
-	const uint16_t *gameLevelEnd = gameLevelStart + this->gameLevel.size();
-	std::copy(gameLevelStart, gameLevelEnd, this->gameLevel.begin());
+	const uint8_t *gameLevelStart = gameStateEnd;
+	for (int i = 0; i < static_cast<int>(this->gameLevel.size()); i++)
+	{
+		this->gameLevel[i] = Bytes::getLE16(gameLevelStart + (i * 2));
+	}
 }
 
 void ArenaTypes::InventoryItem::init(const uint8_t *data)

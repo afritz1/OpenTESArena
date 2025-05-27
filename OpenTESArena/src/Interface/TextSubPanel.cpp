@@ -8,19 +8,18 @@
 #include "../Math/Rect.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/TextBox.h"
 
 TextSubPanel::TextSubPanel(Game &game)
 	: Panel(game) { }
 
-bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::string_view &text,
+bool TextSubPanel::init(const TextBoxInitInfo &textBoxInitInfo, const std::string_view text,
 	const OnClosedFunction &onClosed, ScopedUiTextureRef &&textureRef, const Int2 &textureCenter)
 {
 	auto &game = this->getGame();
 
-	if (!this->textBox.init(textBoxInitInfo, text, game.getRenderer()))
+	if (!this->textBox.init(textBoxInitInfo, text, game.renderer))
 	{
 		DebugLogError("Couldn't init sub-panel text box.");
 		return false;
@@ -49,21 +48,23 @@ bool TextSubPanel::init(const TextBox::InitInfo &textBoxInitInfo, const std::str
 	
 	this->textureRef = std::move(textureRef);
 
-	this->addDrawCall(
-		this->textureRef.get(),
-		textureCenter,
-		Int2(this->textureRef.getWidth(), this->textureRef.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo textureDrawCallInitInfo;
+	textureDrawCallInitInfo.textureID = this->textureRef.get();
+	textureDrawCallInitInfo.position = textureCenter;
+	textureDrawCallInitInfo.size = Int2(this->textureRef.getWidth(), this->textureRef.getHeight());
+	textureDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(textureDrawCallInitInfo);
 
-	const Rect &textBoxRect = this->textBox.getRect();
-	this->addDrawCall(
-		this->textBox.getTextureID(),
-		textBoxRect.getCenter(),
-		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
-		PivotType::Middle);
+	const Rect textBoxRect = this->textBox.getRect();
+	UiDrawCallInitInfo textDrawCallInitInfo;
+	textDrawCallInitInfo.textureID = this->textBox.getTextureID();
+	textDrawCallInitInfo.position = textBoxRect.getCenter();
+	textDrawCallInitInfo.size = textBoxRect.getSize();
+	textDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(textDrawCallInitInfo);
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
 	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);

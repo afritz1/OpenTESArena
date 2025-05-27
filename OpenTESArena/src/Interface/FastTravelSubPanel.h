@@ -6,7 +6,6 @@
 #include "components/utilities/Buffer.h"
 
 // The glue between the province map's travel button and the game world.
-
 class FastTravelSubPanel : public Panel
 {
 private:

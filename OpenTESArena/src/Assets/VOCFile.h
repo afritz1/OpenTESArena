@@ -6,11 +6,7 @@
 
 #include "components/utilities/BufferView.h"
 
-// A .VOC file contains audio data in the Creative Voice format. It's used with any 
-// sounds in Arena, and in the CD version it's also used with voices in cinematics.
-
-// All of Arena's .VOC files are mono 8-bit unsigned PCM.
-
+// Creative Voice audio file. All sounds and voices in Arena are mono 8-bit unsigned PCM.
 class VOCFile
 {
 private:
@@ -19,10 +15,11 @@ private:
 public:
 	bool init(const char *filename);
 
-	// Gets the sample rate of the .VOC file (usually between 4000 and 11111).
+	// Usually between 4000 and 11111.
 	int getSampleRate() const;
 
-	// Gets the 8-bit unsigned PCM audio data.
+	// Gets the 8-bit unsigned PCM samples.
+	BufferView<uint8_t> getAudioData();
 	BufferView<const uint8_t> getAudioData() const;
 };
 

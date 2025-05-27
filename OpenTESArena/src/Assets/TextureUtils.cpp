@@ -15,63 +15,6 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 
-Surface TextureUtils::makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette)
-{
-	Surface surface = Surface::createWithFormat(width, height, Renderer::DEFAULT_BPP,
-		Renderer::DEFAULT_PIXELFORMAT);
-	uint32_t *dstPixels = static_cast<uint32_t*>(surface.getPixels());
-	const int pixelCount = width * height;
-
-	for (int i = 0; i < pixelCount; i++)
-	{
-		const uint8_t srcPixel = pixels[i];
-		const Color dstColor = palette[srcPixel];
-		dstPixels[i] = dstColor.toARGB();
-	}
-
-	return surface;
-}
-
-Texture TextureUtils::makeTextureFrom8Bit(int width, int height, const uint8_t *pixels,
-	const Palette &palette, Renderer &renderer)
-{
-	Texture texture = renderer.createTexture(Renderer::DEFAULT_PIXELFORMAT,
-		SDL_TEXTUREACCESS_STREAMING, width, height);
-	if (texture.get() == nullptr)
-	{
-		DebugLogError("Couldn't create texture (dims: " +
-			std::to_string(width) + "x" + std::to_string(height) + ").");
-		return texture;
-	}
-
-	uint32_t *dstPixels;
-	int pitch;
-	if (SDL_LockTexture(texture.get(), nullptr, reinterpret_cast<void**>(&dstPixels), &pitch) != 0)
-	{
-		DebugLogError("Couldn't lock SDL texture (dims: " +
-			std::to_string(width) + "x" + std::to_string(height) + ").");
-		return texture;
-	}
-
-	const int pixelCount = width * height;
-	for (int i = 0; i < pixelCount; i++)
-	{
-		const uint8_t srcPixel = pixels[i];
-		const Color dstColor = palette[srcPixel];
-		dstPixels[i] = dstColor.toARGB();
-	}
-
-	SDL_UnlockTexture(texture.get());
-
-	// Set alpha transparency on.
-	if (SDL_SetTextureBlendMode(texture.get(), SDL_BLENDMODE_BLEND) != 0)
-	{
-		DebugLogError("Couldn't set SDL texture alpha blending.");
-	}
-
-	return texture;
-}
-
 Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
 	Renderer &renderer)
 {
@@ -112,8 +55,8 @@ Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 			// Parchment tiles should all be 8-bit for now.
-			DebugAssert(textureBuilder.getType() == TextureBuilderType::Paletted);
-			const TextureBuilder::PalettedTexture &srcTexture = textureBuilder.getPaletted();
+			DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
+			const TextureBuilderPalettedTexture &srcTexture = textureBuilder.paletteTexture;
 			const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
 
 			uint32_t *dstPixels = static_cast<uint32_t*>(surface.getPixels());
@@ -303,7 +246,7 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	constexpr int lineSpacing = 1;
-	TextRenderUtils::TextureGenInfo textureGenInfo =
+	TextRenderTextureGenInfo textureGenInfo =
 		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
 	constexpr int padding = 4;
 

@@ -1,29 +1,30 @@
 #include <algorithm>
 
-#include "CharacterClassDefinition.h"
-#include "CharacterClassLibrary.h"
 #include "EntityDefinition.h"
 #include "EntityDefinitionLibrary.h"
 #include "EntityUtils.h"
 #include "../Math/Random.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Stats/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../World/ChunkUtils.h"
 
 #include "components/debug/Debug.h"
 
-bool EntityUtils::isDynamicEntity(EntityDefinition::Type defType)
+bool EntityUtils::isDynamicEntity(EntityDefinitionType defType)
 {
 	switch (defType)
 	{
-	case EntityDefinition::Type::StaticNPC:
-	case EntityDefinition::Type::Item:
-	case EntityDefinition::Type::Container:
-	case EntityDefinition::Type::Transition:
-	case EntityDefinition::Type::Doodad:
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Decoration:
 		return false;
-	case EntityDefinition::Type::Enemy:
-	case EntityDefinition::Type::Citizen:
-	case EntityDefinition::Type::Projectile:
+	case EntityDefinitionType::Enemy:
+	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Vfx:
 		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(defType)));
@@ -32,25 +33,47 @@ bool EntityUtils::isDynamicEntity(EntityDefinition::Type defType)
 
 std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 {
-	const EntityDefinition::Type type = entityDef.getType();
+	const EntityDefinitionType type = entityDef.type;
 
 	switch (type)
 	{
-	case EntityDefinition::Type::Citizen:
+	case EntityDefinitionType::Citizen:
 		return "Citizen";
-	case EntityDefinition::Type::Container:
-		return "Container";
-	case EntityDefinition::Type::Doodad:
-		return "Doodad";
-	case EntityDefinition::Type::Enemy:
+	case EntityDefinitionType::Container:		
+	{
+		const ContainerEntityDefinitionType containerType = entityDef.container.type;
+		switch (containerType)
+		{
+		case ContainerEntityDefinitionType::Holder:
+			return std::string("Holder") + (entityDef.container.holder.locked ? " Locked" : " Unlocked");
+		case ContainerEntityDefinitionType::Pile:
+			return "Pile";
+		default:
+			DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(containerType)));
+		}
+	}
+	case EntityDefinitionType::Decoration:
+		return "Decoration";
+	case EntityDefinitionType::Enemy:
 		return "Enemy";
-	case EntityDefinition::Type::Item:
-		return "Item";
-	case EntityDefinition::Type::Projectile:
+	case EntityDefinitionType::Item:
+	{
+		const ItemEntityDefinitionType itemType = entityDef.item.type;
+		switch (itemType)
+		{
+		case ItemEntityDefinitionType::Key:
+			return "Key";
+		case ItemEntityDefinitionType::QuestItem:
+			return "Quest Item";
+		default:
+			DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(itemType)));
+		}
+	}
+	case EntityDefinitionType::Projectile:
 		return "Projectile";
-	case EntityDefinition::Type::StaticNPC:
+	case EntityDefinitionType::StaticNPC:
 		return "StaticNPC";
-	case EntityDefinition::Type::Transition:
+	case EntityDefinitionType::Transition:
 		return "Transition";
 	default:
 		DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(type)));
@@ -65,122 +88,259 @@ bool EntityUtils::isLevelDependentDef(EntityDefID defID,
 
 bool EntityUtils::isStreetlight(const EntityDefinition &entityDef)
 {
-	return (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().streetlight;
+	return (entityDef.type == EntityDefinitionType::Decoration) && entityDef.decoration.streetlight;
 }
 
 bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 {
-	if (entityDef.getType() != EntityDefinition::Type::Enemy)
-	{
-		return false;
-	}
-	
-	const EntityDefinition::EnemyDefinition &enemyDef = entityDef.getEnemy();
-	if (enemyDef.getType() != EntityDefinition::EnemyDefinition::Type::Creature)
+	if (entityDef.type != EntityDefinitionType::Enemy)
 	{
 		return false;
 	}
 
-	return enemyDef.getCreature().ghost;
+	const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+	if (enemyDef.type != EnemyEntityDefinitionType::Creature)
+	{
+		return false;
+	}
+
+	return enemyDef.creature.ghost;
+}
+
+bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
+{
+	if (entityDef.type != EntityDefinitionType::Decoration)
+	{
+		return false;
+	}
+
+	const DecorationEntityDefinition &decoration = entityDef.decoration;
+	return decoration.puddle;
+}
+
+bool EntityUtils::isSceneManagedResource(EntityDefinitionType entityDefType)
+{
+	switch (entityDefType)
+	{
+	case EntityDefinitionType::Enemy:
+	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Decoration:
+		return true;
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Vfx:
+		return false;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityDefType)));
+	}
 }
 
 int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 {
-	const EntityDefinition::Type type = entityDef.getType();
-	const bool isEnemy = type == EntityDefinition::Type::Enemy;
-	const bool isDoodad = type == EntityDefinition::Type::Doodad;
-	if (!isEnemy && !isDoodad)
+	const EntityDefinitionType type = entityDef.type;
+	const bool isEnemy = type == EntityDefinitionType::Enemy;
+	const bool isItem = type == EntityDefinitionType::Item;
+	const bool isDecoration = type == EntityDefinitionType::Decoration;
+	if (!isEnemy && !isItem && !isDecoration)
 	{
 		return 0;
 	}
 
 	if (isEnemy)
 	{
-		const auto &enemyDef = entityDef.getEnemy();
-		if (enemyDef.getType() != EntityDefinition::EnemyDefinition::Type::Creature)
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+		if (enemyDef.type != EnemyEntityDefinitionType::Creature)
 		{
 			return 0;
 		}
 
-		const auto &creatureDef = enemyDef.getCreature();
+		const EnemyEntityDefinition::CreatureDefinition &creatureDef = enemyDef.creature;
 		return creatureDef.yOffset;
+	}
+	else if (isItem)
+	{
+		const ItemEntityDefinition &itemDef = entityDef.item;
+		if (itemDef.type == ItemEntityDefinitionType::Key)
+		{
+			return 0;
+		}
+
+		const ItemEntityDefinition::QuestItemDefinition &questItemDef = itemDef.questItem;
+		return questItemDef.yOffset;
 	}
 	else
 	{
-		const auto &doodadDef = entityDef.getDoodad();
-		return doodadDef.yOffset;
+		const DecorationEntityDefinition &decorationDef = entityDef.decoration;
+		return decorationDef.yOffset;
+	}
+}
+
+bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
+{
+	const EntityDefinitionType entityType = entityDef.type;
+	switch (entityType)
+	{
+	case EntityDefinitionType::Enemy:
+	case EntityDefinitionType::StaticNPC:
+		return true;
+	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Transition:
+		return false;
+	case EntityDefinitionType::Decoration:
+		return entityDef.decoration.collider;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
+	}
+}
+
+bool EntityUtils::canDie(const EntityDefinition &entityDef)
+{
+	const EntityDefinitionType entityType = entityDef.type;
+	switch (entityType)
+	{
+	case EntityDefinitionType::Enemy:
+	case EntityDefinitionType::Citizen:
+		return true;
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Vfx:
+	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Decoration:
+		return false;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
+	}
+}
+
+std::optional<int> EntityUtils::tryGetDeathAnimStateIndex(const EntityAnimationDefinition &animDef)
+{
+	const std::optional<int> deathStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
+	return deathStateIndex;
+}
+
+bool EntityUtils::leavesCorpse(const EntityDefinition &entityDef)
+{
+	const EntityDefinitionType entityType = entityDef.type;
+	switch (entityType)
+	{
+	case EntityDefinitionType::Enemy:
+	{
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+		const EnemyEntityDefinitionType enemyDefType = enemyDef.type;
+		if (enemyDefType == EnemyEntityDefinitionType::Human)
+		{
+			return true;
+		}
+		else if (enemyDefType == EnemyEntityDefinitionType::Creature)
+		{
+			return !enemyDef.creature.hasNoCorpse;
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(enemyDefType)));
+		}
+	}		
+	case EntityDefinitionType::Citizen:
+	case EntityDefinitionType::StaticNPC:
+	case EntityDefinitionType::Item:
+	case EntityDefinitionType::Container:
+	case EntityDefinitionType::Projectile:
+	case EntityDefinitionType::Transition:
+	case EntityDefinitionType::Decoration:
+		return false;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(entityType)));
 	}
 }
 
 std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &entityDef)
 {
-	if (entityDef.getType() != EntityDefinition::Type::Doodad)
+	constexpr double lightUnitsRatio = MIFUtils::ARENA_UNITS / 100.0;
+
+	const EntityDefinitionType entityDefType = entityDef.type;
+	switch (entityDefType)
 	{
+	case EntityDefinitionType::Item:
+	{
+		const ItemEntityDefinition &itemDef = entityDef.item;
+		if (itemDef.type == ItemEntityDefinitionType::QuestItem)
+		{
+			const ItemEntityDefinition::QuestItemDefinition &questItemDef = itemDef.questItem;
+			const bool isStaffPiece = questItemDef.yOffset != 0; // @todo: maybe ask "is main quest item"?
+			if (isStaffPiece)
+			{
+				return 2.0 * lightUnitsRatio; // @todo this should take the .INF value properly
+			}			
+		}
+
+		break;
+	}		
+	case EntityDefinitionType::Decoration:
+	{
+		const DecorationEntityDefinition &decorationDef = entityDef.decoration;
+		if (decorationDef.streetlight)
+		{
+			return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
+		}
+		else if (decorationDef.lightIntensity > 0)
+		{
+			return static_cast<double>(decorationDef.lightIntensity) * lightUnitsRatio;
+		}
+
+		break;
+	}
+	default:
 		return std::nullopt;
 	}
 
-	const EntityDefinition::DoodadDefinition &doodadDef = entityDef.getDoodad();
-	if (doodadDef.streetlight)
-	{
-		return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
-	}
-	else if (doodadDef.lightIntensity > 0)
-	{
-		return static_cast<double>(doodadDef.lightIntensity);
-	}
-	else
-	{
-		return std::nullopt;
-	}
+	return std::nullopt;
 }
 
 void EntityUtils::getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight)
 {
 	double maxAnimWidth = 0.0;
 	double maxAnimHeight = 0.0;
-	for (int i = 0; i < animDef.stateCount; i++)
+
+	for (int i = 0; i < animDef.keyframeCount; i++)
 	{
-		const EntityAnimationDefinitionState &state = animDef.states[i];
-		for (int j = 0; j < state.keyframeListCount; j++)
-		{
-			const int keyframeListIndex = state.keyframeListsIndex + j;
-			const EntityAnimationDefinitionKeyframeList &keyframeList = animDef.keyframeLists[keyframeListIndex];
-			for (int k = 0; k < keyframeList.keyframeCount; k++)
-			{
-				const int keyframeIndex = keyframeList.keyframesIndex + k;
-				const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[keyframeIndex];
-				maxAnimWidth = std::max(maxAnimWidth, keyframe.width);
-				maxAnimHeight = std::max(maxAnimHeight, keyframe.height);
-			}
-		}
+		const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[i];
+		maxAnimWidth = std::max(maxAnimWidth, keyframe.width);
+		maxAnimHeight = std::max(maxAnimHeight, keyframe.height);
 	}
 
 	*outMaxWidth = maxAnimWidth;
 	*outMaxHeight = maxAnimHeight;
 }
 
-bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
-	const CharacterClassLibrary &charClassLibrary, std::string *outName)
+bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const CharacterClassLibrary &charClassLibrary, std::string *outName)
 {
-	const EntityDefinition::Type type = entityDef.getType();
-	const bool isEnemy = type == EntityDefinition::Type::Enemy;
+	const EntityDefinitionType type = entityDef.type;
+	const bool isEnemy = type == EntityDefinitionType::Enemy;
 	if (!isEnemy)
 	{
 		return false;
 	}
 
-	const auto &enemyDef = entityDef.getEnemy();
-	const auto enemyType = enemyDef.getType();
-	if (enemyType == EntityDefinition::EnemyDefinition::Type::Creature)
+	const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+	const EnemyEntityDefinitionType enemyType = enemyDef.type;
+	if (enemyType == EnemyEntityDefinitionType::Creature)
 	{
-		const auto &creatureDef = enemyDef.getCreature();
+		const auto &creatureDef = enemyDef.creature;
 		*outName = creatureDef.name;
 	}
-	else if (enemyType == EntityDefinition::EnemyDefinition::Type::Human)
+	else if (enemyType == EnemyEntityDefinitionType::Human)
 	{
-		const auto &humanDef = enemyDef.getHuman();
+		const auto &humanDef = enemyDef.human;
 		const auto &charClass = charClassLibrary.getDefinition(humanDef.charClassID);
-		*outName = charClass.getName();
+		*outName = charClass.name;
 	}
 	else
 	{
@@ -190,17 +350,14 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef,
 	return true;
 }
 
-bool EntityUtils::withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale)
+bool EntityUtils::withinHearingDistance(const WorldDouble3 &listenerPosition, const WorldDouble3 &soundPosition)
 {
-	const CoordDouble3 soundCoord3D(
-		soundCoord.chunk,
-		VoxelDouble3(soundCoord.point.x, ceilingScale * 1.50, soundCoord.point.y));
-	const VoxelDouble3 diff = soundCoord3D - listenerCoord;
+	const Double3 diff = soundPosition - listenerPosition;
 	constexpr double hearingDistanceSqr = EntityUtils::HearingDistance * EntityUtils::HearingDistance;
 	return diff.lengthSquared() < hearingDistanceSqr;
 }
 
-double EntityUtils::nextCreatureSoundWaitTime(Random &random)
+double EntityUtils::nextCreatureSoundWaitSeconds(Random &random)
 {
 	// Arbitrary amount of time.
 	return 2.75 + (random.nextReal() * 4.50);

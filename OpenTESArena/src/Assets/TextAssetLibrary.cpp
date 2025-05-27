@@ -9,283 +9,290 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/Buffer.h"
+#include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
 namespace
 {
-	// Discriminated union for name composition rules used with NAMECHNK.DAT.
-	// Each rule is either:
+	enum class NameRuleType
+	{
+		Index, // Points into chunk lists.
+		String, // Pre-defined string.
+		IndexChance, // Points into chunk lists, with a chance to not be used.
+		IndexStringChance, // Points into chunk lists, w/ string and chance.
+	};
+
+	// Name composition rules used with NAMECHNK.DAT. Each rule is either:
 	// - Index
 	// - Pre-defined string
 	// - Index with chance
 	// - Index and string with chance
 	struct NameRule
 	{
-		enum class Type
-		{
-			Index, // Points into chunk lists.
-			String, // Pre-defined string.
-			IndexChance, // Points into chunk lists, with a chance to not be used.
-			IndexStringChance, // Points into chunk lists, w/ string and chance.
-		};
+		NameRuleType type;
+		int index;
+		const char *str;
+		int chance;
 
-		struct IndexChance
+		constexpr NameRule(int index)
 		{
-			int index, chance;
-		};
-
-		struct IndexStringChance
-		{
-			int index;
-			std::array<char, 4> str;
-			int chance;
-		};
-
-		NameRule::Type type;
-
-		union
-		{
-			int index;
-			std::array<char, 4> str;
-			IndexChance indexChance;
-			IndexStringChance indexStringChance;
-		};
-
-		NameRule(int index)
-		{
-			this->type = Type::Index;
+			this->type = NameRuleType::Index;
 			this->index = index;
+			this->str = nullptr;
+			this->chance = -1;
 		}
 
-		NameRule(const std::string &str)
+		constexpr NameRule(const char *str)
 		{
-			this->type = Type::String;
-			this->str.fill('\0');
-			const size_t charCount = std::min(str.size(), this->str.size());
-			std::copy(str.begin(), str.begin() + charCount, this->str.begin());
+			this->type = NameRuleType::String;
+			this->index = -1;
+			this->str = str;
+			this->chance = -1;
 		}
 
-		NameRule(int index, int chance)
+		constexpr NameRule(int index, int chance)
 		{
-			this->type = Type::IndexChance;
-			this->indexChance.index = index;
-			this->indexChance.chance = chance;
+			this->type = NameRuleType::IndexChance;
+			this->index = index;
+			this->str = nullptr;
+			this->chance = chance;
 		}
 
-		NameRule(int index, const std::string &str, int chance)
+		constexpr NameRule(int index, const char *str, int chance)
 		{
-			this->type = Type::IndexStringChance;
-			this->indexStringChance.index = index;
-
-			this->indexStringChance.str.fill('\0');
-			const size_t charCount = std::min(str.size(), this->indexStringChance.str.size());
-			std::copy(str.begin(), str.begin() + charCount, this->indexStringChance.str.begin());
-
-			this->indexStringChance.chance = chance;
+			this->type = NameRuleType::IndexStringChance;
+			this->index = index;
+			this->str = str;
+			this->chance = chance;
 		}
 	};
 
-	// Rules for how to access NAMECHNK.DAT lists for name creation (with associated
-	// chances, if any).
-	const std::array<std::vector<NameRule>, 48> NameRules =
+	using GenderNameRules = BufferView<const NameRule>;
+
+	constexpr NameRule NameRules_Race0_Male[] = { { 0 }, { 1 }, { " " }, { 4 }, { 5 } };
+	constexpr NameRule NameRules_Race0_Female[] = { { 2 }, { 3 }, { " " }, { 4 }, { 5 } };
+	const GenderNameRules NameRules_Race0[] = { NameRules_Race0_Male, NameRules_Race0_Female };
+
+	constexpr NameRule NameRules_Race1_Male[] = { { 6 }, { 7 }, { 8 }, { 9, 75 } };
+	constexpr NameRule NameRules_Race1_Female[] = { { 6 }, { 7 }, { 8 }, { 9, 75 }, { 10 } };
+	const GenderNameRules NameRules_Race1[] = { NameRules_Race1_Male, NameRules_Race1_Female };
+
+	constexpr NameRule NameRules_Race2_Male[] = { { 11 }, { 12 }, { " " }, { 15 }, { 16 }, { "sen" } };
+	constexpr NameRule NameRules_Race2_Female[] = { { 13 }, { 14 }, { " " }, { 15 }, { 16 }, { "sen" } };
+	const GenderNameRules NameRules_Race2[] = { NameRules_Race2_Male, NameRules_Race2_Female };
+
+	constexpr NameRule NameRules_Race3_Male[] = { { 17 }, { 18 }, { " " }, { 21 }, { 22 } };
+	constexpr NameRule NameRules_Race3_Female[] = { { 19 }, { 20 }, { " " }, { 21 }, { 22 } };
+	const GenderNameRules NameRules_Race3[] = { NameRules_Race3_Male, NameRules_Race3_Female };
+
+	constexpr NameRule NameRules_Race4_Male[] = { { 23 }, { 24 }, { " " }, { 27 }, { 28 } };
+	constexpr NameRule NameRules_Race4_Female[] = { { 25 }, { 26 }, { " " }, { 27 }, { 28 } };
+	const GenderNameRules NameRules_Race4[] = { NameRules_Race4_Male, NameRules_Race4_Female };
+
+	constexpr NameRule NameRules_Race5_Male[] = { { 29 }, { 30 }, { " " }, { 33 }, { 34 } };
+	constexpr NameRule NameRules_Race5_Female[] = { { 31 }, { 32 }, { " " }, { 33 }, { 34 } };
+	const GenderNameRules NameRules_Race5[] = { NameRules_Race5_Male, NameRules_Race5_Female };
+
+	constexpr NameRule NameRules_Race6_Male[] = { { 35 }, { 36 }, { " " }, { 39 }, { 40 } };
+	constexpr NameRule NameRules_Race6_Female[] = { { 37 }, { 38 }, { " " }, { 39 }, { 40 } };
+	const GenderNameRules NameRules_Race6[] = { NameRules_Race6_Male, NameRules_Race6_Female };
+
+	constexpr NameRule NameRules_Race7_Male[] = { { 41 }, { 42 }, { " " }, { 45 }, { 46 } };
+	constexpr NameRule NameRules_Race7_Female[] = { { 43 }, { 44 }, { " " }, { 45 }, { 46 } };
+	const GenderNameRules NameRules_Race7[] = { NameRules_Race7_Male, NameRules_Race7_Female };
+
+	constexpr NameRule NameRules_Race8_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race8_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race8[] = { NameRules_Race8_Male, NameRules_Race8_Female };
+
+	constexpr NameRule NameRules_Race9_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race9_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race9[] = { NameRules_Race9_Male, NameRules_Race9_Female };
+
+	constexpr NameRule NameRules_Race10_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race10_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race10[] = { NameRules_Race10_Male, NameRules_Race10_Female };
+
+	constexpr NameRule NameRules_Race11_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race11_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race11[] = { NameRules_Race11_Male, NameRules_Race11_Female };
+
+	constexpr NameRule NameRules_Race12_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race12_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race12[] = { NameRules_Race12_Male, NameRules_Race12_Female };
+
+	constexpr NameRule NameRules_Race13_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race13_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race13[] = { NameRules_Race13_Male, NameRules_Race13_Female };
+
+	constexpr NameRule NameRules_Race14_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race14_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race14[] = { NameRules_Race14_Male, NameRules_Race14_Female };
+
+	constexpr NameRule NameRules_Race15_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race15_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race15[] = { NameRules_Race15_Male, NameRules_Race15_Female };
+
+	constexpr NameRule NameRules_Race16_Male[] = { { 47 }, { 48, 75 }, { 49 } };
+	constexpr NameRule NameRules_Race16_Female[] = { { 47 }, { 48, 75 }, { 49 } };
+	const GenderNameRules NameRules_Race16[] = { NameRules_Race16_Male, NameRules_Race16_Female };
+
+	constexpr NameRule NameRules_Race17_Male[] = { { 50 }, { 51, 75 }, { 52 } };
+	constexpr NameRule NameRules_Race17_Female[] = { { 50 }, { 51, 75 }, { 52 } };
+	const GenderNameRules NameRules_Race17[] = { NameRules_Race17_Male, NameRules_Race17_Female };
+
+	constexpr NameRule NameRules_Race18_Male[] = { { 50 }, { 51, 75 }, { 52 } };
+	constexpr NameRule NameRules_Race18_Female[] = { { 50 }, { 51, 75 }, { 52 } };
+	const GenderNameRules NameRules_Race18[] = { NameRules_Race18_Male, NameRules_Race18_Female };
+
+	constexpr NameRule NameRules_Race19_Male[] = { { 50 }, { 51, 75 }, { 52 } };
+	constexpr NameRule NameRules_Race19_Female[] = { { 50 }, { 51, 75 }, { 52 } };
+	const GenderNameRules NameRules_Race19[] = { NameRules_Race19_Male, NameRules_Race19_Female };
+
+	constexpr NameRule NameRules_Race20_Male[] = { { 50 }, { 51, 75 }, { 52 } };
+	constexpr NameRule NameRules_Race20_Female[] = { { 50 }, { 51, 75 }, { 52 } };
+	const GenderNameRules NameRules_Race20[] = { NameRules_Race20_Male, NameRules_Race20_Female };
+
+	constexpr NameRule NameRules_Race21_Male[] = { { 50 }, { 52 }, { 53 } };
+	constexpr NameRule NameRules_Race21_Female[] = { { 50 }, { 52 }, { 53 } };
+	const GenderNameRules NameRules_Race21[] = { NameRules_Race21_Male, NameRules_Race21_Female };
+
+	constexpr NameRule NameRules_Race22_Male[] = { { 54, " ", 25 }, { 55 }, { 56 }, { 57 } };
+	constexpr NameRule NameRules_Race22_Female[] = { { 54, " ", 25 }, { 55 }, { 56 }, { 57 } };
+	const GenderNameRules NameRules_Race22[] = { NameRules_Race22_Male, NameRules_Race22_Female };
+
+	constexpr NameRule NameRules_Race23_Male[] = { { 55 }, { 56 }, { 57 } };
+	constexpr NameRule NameRules_Race23_Female[] = { { 55 }, { 56 }, { 57 } };
+	const GenderNameRules NameRules_Race23[] = { NameRules_Race23_Male, NameRules_Race23_Female };
+
+	using RaceNameRules = BufferView<const GenderNameRules>;
+
+	// Rules for accessing NAMECHNK.DAT lists for name generation, with associated chances if any.
+	const RaceNameRules NameRules[] =
 	{
-		{
-			// Race 0.
-			{ { 0 }, { 1 }, { " " }, { 4 }, { 5 } },
-			{ { 2 }, { 3 }, { " " }, { 4 }, { 5 } },
-
-			// Race 1.
-			{ { 6 }, { 7 }, { 8 }, { 9, 75 } },
-			{ { 6 }, { 7 }, { 8 }, { 9, 75 }, { 10 } },
-
-			// Race 2.
-			{ { 11 }, { 12 }, { " " }, { 15 }, { 16 }, { "sen" } },
-			{ { 13 }, { 14 }, { " " }, { 15 }, { 16 }, { "sen" } },
-
-			// Race 3.
-			{ { 17 }, { 18 }, { " " }, { 21 }, { 22 } },
-			{ { 19 }, { 20 }, { " " }, { 21 }, { 22 } },
-
-			// Race 4.
-			{ { 23 }, { 24 }, { " " }, { 27 }, { 28 } },
-			{ { 25 }, { 26 }, { " " }, { 27 }, { 28 } },
-
-			// Race 5.
-			{ { 29 }, { 30 }, { " " }, { 33 }, { 34 } },
-			{ { 31 }, { 32 }, { " " }, { 33 }, { 34 } },
-
-			// Race 6.
-			{ { 35 }, { 36 }, { " " }, { 39 }, { 40 } },
-			{ { 37 }, { 38 }, { " " }, { 39 }, { 40 } },
-
-			// Race 7.
-			{ { 41 }, { 42 }, { " " }, { 45 }, { 46 } },
-			{ { 43 }, { 44 }, { " " }, { 45 }, { 46 } },
-
-			// Race 8.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 9.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 10.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 11.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 12.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 13.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 14.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 15.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 16.
-			{ { 47 }, { 48, 75 }, { 49 } },
-			{ { 47 }, { 48, 75 }, { 49 } },
-
-			// Race 17.
-			{ { 50 }, { 51, 75 }, { 52 } },
-			{ { 50 }, { 51, 75 }, { 52 } },
-
-			// Race 18.
-			{ { 50 }, { 51, 75 }, { 52 } },
-			{ { 50 }, { 51, 75 }, { 52 } },
-
-			// Race 19.
-			{ { 50 }, { 51, 75 }, { 52 } },
-			{ { 50 }, { 51, 75 }, { 52 } },
-
-			// Race 20.
-			{ { 50 }, { 51, 75 }, { 52 } },
-			{ { 50 }, { 51, 75 }, { 52 } },
-
-			// Race 21.
-			{ { 50 }, { 52 }, { 53 } },
-			{ { 50 }, { 52 }, { 53 } },
-
-			// Race 22.
-			{ { 54, " ", 25 }, { 55 }, { 56 }, { 57 } },
-			{ { 54, " ", 25 }, { 55 }, { 56 }, { 57 } },
-
-			// Race 23.
-			{ { 55 }, { 56 }, { 57 } },
-			{ { 55 }, { 56 }, { 57 } }
-		}
+		NameRules_Race0,
+		NameRules_Race1,
+		NameRules_Race2,
+		NameRules_Race3,
+		NameRules_Race4,
+		NameRules_Race5,
+		NameRules_Race6,
+		NameRules_Race7,
+		NameRules_Race8,
+		NameRules_Race9,
+		NameRules_Race10,
+		NameRules_Race11,
+		NameRules_Race12,
+		NameRules_Race13,
+		NameRules_Race14,
+		NameRules_Race15,
+		NameRules_Race16,
+		NameRules_Race17,
+		NameRules_Race18,
+		NameRules_Race19,
+		NameRules_Race20,
+		NameRules_Race21,
+		NameRules_Race22,
+		NameRules_Race23
 	};
 }
 
-const TextAssetLibrary::TemplateDat::Entry &TextAssetLibrary::TemplateDat::getEntry(int key) const
+const ArenaTemplateDatEntry &ArenaTemplateDat::getEntry(int key) const
 {
 	// Use first vector for non-tileset entry requests.
-	const auto &entryList = this->entryLists.at(0);
+	DebugAssertMsg(!this->entryLists.empty(), "Missing TEMPLATE.DAT entry lists.");
+	const BufferView<const ArenaTemplateDatEntry> entryList = this->entryLists[0];
 
 	const auto iter = std::lower_bound(entryList.begin(), entryList.end(), key,
-		[](const Entry &a, int key)
+		[](const ArenaTemplateDatEntry &a, int key)
 	{
 		return a.key < key;
 	});
 
 	if (iter == entryList.end())
 	{
-		DebugCrash("No TEMPLATE.DAT entry for \"" + std::to_string(key) + "\".");
+		DebugCrashFormat("No TEMPLATE.DAT entry for \"%d\".", key);
 	}
 
 	return *iter;
 }
 
-const TextAssetLibrary::TemplateDat::Entry &TextAssetLibrary::TemplateDat::getEntry(
-	int key, char letter) const
+const ArenaTemplateDatEntry &ArenaTemplateDat::getEntry(int key, char letter) const
 {
 	// Use first vector for non-tileset entry requests.
-	const auto &entryList = this->entryLists.at(0);
+	DebugAssertMsg(!this->entryLists.empty(), "Missing TEMPLATE.DAT entry lists.");
+	const BufferView<const ArenaTemplateDatEntry> entryList = this->entryLists[0];
 
 	// The requested entry has a letter in its key, so need to find the range of
 	// equal values for 'key' via binary search.
 	const auto lowerIter = std::lower_bound(entryList.begin(), entryList.end(), key,
-		[](const Entry &a, int key)
+		[](const ArenaTemplateDatEntry &a, int key)
 	{
 		return a.key < key;
 	});
 
 	const auto upperIter = std::upper_bound(lowerIter, entryList.end(), key,
-		[](int key, const Entry &b)
+		[](int key, const ArenaTemplateDatEntry &b)
 	{
 		return key < b.key;
 	});
 
 	// Find 'letter' in the range of equal key values.
-	const auto iter = std::lower_bound(lowerIter, upperIter, letter,
-		[](const Entry &a, char letter)
+	const auto letterIter = std::lower_bound(lowerIter, upperIter, letter,
+		[](const ArenaTemplateDatEntry &a, char letter)
 	{
 		return a.letter < letter;
 	});
 
-	if (iter == upperIter)
+	if (letterIter == upperIter)
 	{
-		DebugCrash("No TEMPLATE.DAT entry for \"" + std::to_string(key) + ", " +
-			std::to_string(static_cast<int>(letter)) + "\".");
+		DebugCrashFormat("No TEMPLATE.DAT entry for \"%d, %d\".", key, letter);
 	}
 
-	return *iter;
+	return *letterIter;
 }
 
-const TextAssetLibrary::TemplateDat::Entry &TextAssetLibrary::TemplateDat::getTilesetEntry(
-	int tileset, int key, char letter) const
+const ArenaTemplateDatEntry &ArenaTemplateDat::getTilesetEntry(int tileset, int key, char letter) const
 {
-	const auto &entryList = this->entryLists.at(tileset);
+	DebugAssertIndex(this->entryLists, tileset);
+	const BufferView<const ArenaTemplateDatEntry> entryList = this->entryLists[tileset];
 
 	// Do binary search in the tileset vector to find the equal range for 'key'.
 	const auto lowerIter = std::lower_bound(entryList.begin(), entryList.end(), key,
-		[](const Entry &a, int key)
+		[](const ArenaTemplateDatEntry &a, int key)
 	{
 		return a.key < key;
 	});
 
 	const auto upperIter = std::upper_bound(lowerIter, entryList.end(), key,
-		[](int key, const Entry &b)
+		[](int key, const ArenaTemplateDatEntry &b)
 	{
 		return key < b.key;
 	});
 
 	// Find 'letter' in the range of equal key values.
-	const auto iter = std::lower_bound(lowerIter, upperIter, letter,
-		[](const Entry &a, char letter)
+	const auto letterIter = std::lower_bound(lowerIter, upperIter, letter,
+		[](const ArenaTemplateDatEntry &a, char letter)
 	{
 		return a.letter < letter;
 	});
 
-	if (iter == upperIter)
+	if (letterIter == upperIter)
 	{
-		DebugCrash("No TEMPLATE.DAT entry for \"" + std::to_string(tileset) + ", " +
-			std::to_string(key) + ", " + std::to_string(static_cast<int>(letter)) + "\".");
+		DebugCrashFormat("No TEMPLATE.DAT entry for \"%d, %d, %d\".", tileset, key, letter);
 	}
 
-	return *iter;
+	return *letterIter;
 }
 
-bool TextAssetLibrary::TemplateDat::init()
+bool ArenaTemplateDat::init()
 {
 	const char *filename = "TEMPLATE.DAT";
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	if (stream == nullptr)
 	{
-		DebugLogError("Could not open \"" + std::string(filename) + "\".");
+		DebugLogErrorFormat("Could not open \"%s\".", filename);
 		return false;
 	}
 
@@ -298,8 +305,8 @@ bool TextAssetLibrary::TemplateDat::init()
 	// Step line by line through the text, inserting keys and values into the proper lists.
 	std::istringstream iss(srcText);
 	std::string line, value;
-	int key = Entry::NO_KEY;
-	char letter = Entry::NO_LETTER;
+	int key = ArenaTemplateDatEntry::NO_KEY;
+	char letter = ArenaTemplateDatEntry::NO_LETTER;
 
 	enum class Mode { None, Key, Section };
 	Mode mode = Mode::None;
@@ -343,7 +350,8 @@ bool TextAssetLibrary::TemplateDat::init()
 		if (hasLetter)
 		{
 			const int letterIndex = 5;
-			letter = line.at(letterIndex);
+			DebugAssertIndex(line, letterIndex);
+			letter = line[letterIndex];
 		}
 	};
 
@@ -352,23 +360,23 @@ bool TextAssetLibrary::TemplateDat::init()
 		// If no entries yet, create a new vector.
 		if (this->entryLists.size() == 0)
 		{
-			this->entryLists.emplace_back(std::vector<Entry>());
+			this->entryLists.emplace_back(std::vector<ArenaTemplateDatEntry>());
 		}
 
 		// While the current vector contains the given key and optional letter pair, add
 		// a new vector to keep tileset-specific strings separate.
 		auto containsEntry = [this, key, letter](int i)
 		{
-			const auto &entryList = this->entryLists.at(i);
+			DebugAssertIndex(this->entryLists, i);
+			const BufferView<const ArenaTemplateDatEntry> entryList = this->entryLists[i];
 
 			// The entry list might be big (>500 entries) but a linear search shouldn't be
 			// very slow when comparing integers. Keeping it sorted during initialization
 			// would be too expensive for a std::vector.
 			const auto iter = std::find_if(entryList.begin(), entryList.end(),
-				[key, letter](const Entry &entry)
+				[key, letter](const ArenaTemplateDatEntry &entry)
 			{
-				return (entry.key == key) &&
-					((letter == Entry::NO_LETTER) || entry.letter == letter);
+				return (entry.key == key) && ((letter == ArenaTemplateDatEntry::NO_LETTER) || entry.letter == letter);
 			});
 
 			return iter != entryList.end();
@@ -382,7 +390,7 @@ bool TextAssetLibrary::TemplateDat::init()
 			// Create a new vector if necessary.
 			if (this->entryLists.size() == index)
 			{
-				this->entryLists.emplace_back(std::vector<Entry>());
+				this->entryLists.emplace_back(std::vector<ArenaTemplateDatEntry>());
 			}
 		}
 
@@ -413,7 +421,7 @@ bool TextAssetLibrary::TemplateDat::init()
 		String::trimFrontInPlace(trimmedValue);
 		String::trimBackInPlace(trimmedValue);
 
-		Entry entry;
+		ArenaTemplateDatEntry entry;
 		entry.key = key;
 		entry.letter = letter;
 
@@ -425,11 +433,13 @@ bool TextAssetLibrary::TemplateDat::init()
 		entry.values.pop_back();
 
 		// Add entry to the entry list.
-		this->entryLists.at(index).emplace_back(std::move(entry));
+		DebugAssertIndex(this->entryLists, index);
+		std::vector<ArenaTemplateDatEntry> &outputEntryList = this->entryLists[index];
+		outputEntryList.emplace_back(std::move(entry));
 
 		// Reset key, letter, and value string.
-		key = Entry::NO_KEY;
-		letter = Entry::NO_LETTER;
+		key = ArenaTemplateDatEntry::NO_KEY;
+		letter = ArenaTemplateDatEntry::NO_LETTER;
 		value.clear();
 	};
 
@@ -437,14 +447,15 @@ bool TextAssetLibrary::TemplateDat::init()
 	{
 		// Skip empty lines (only for cases where TEMPLATE.DAT is modified to not have '\r'
 		// characters, like on Unix, perhaps?).
-		if (line.size() == 0)
+		if (line.empty())
 		{
 			continue;
 		}
 
 		// See if the line is a key for a section, or if it's a comment.
-		const bool isKeyLine = line.at(0) == '#';
-		const bool isComment = line.at(0) == ';';
+		const char firstChar = line[0];
+		const bool isKeyLine = firstChar == '#';
+		const bool isComment = firstChar == ';';
 
 		if (isKeyLine)
 		{
@@ -480,10 +491,10 @@ bool TextAssetLibrary::TemplateDat::init()
 
 	// Now that all entry lists have been constructed, sort each one by key, then sort each
 	// equal-key sub-group by letter.
-	for (auto &entryList : this->entryLists)
+	for (BufferView<ArenaTemplateDatEntry> entryList : this->entryLists)
 	{
 		std::sort(entryList.begin(), entryList.end(),
-			[](const Entry &a, const Entry &b)
+			[](const ArenaTemplateDatEntry &a, const ArenaTemplateDatEntry &b)
 		{
 			return a.key < b.key;
 		});
@@ -494,13 +505,13 @@ bool TextAssetLibrary::TemplateDat::init()
 		while (beginIter != entryList.end())
 		{
 			const auto endIter = std::find_if_not(beginIter, entryList.end(),
-				[beginIter](const Entry &entry)
+				[beginIter](const ArenaTemplateDatEntry &entry)
 			{
 				return entry.key == beginIter->key;
 			});
 
 			std::sort(beginIter, endIter,
-				[](const Entry &a, const Entry &b)
+				[](const ArenaTemplateDatEntry &a, const ArenaTemplateDatEntry &b)
 			{
 				return a.letter < b.letter;
 			});
@@ -514,34 +525,32 @@ bool TextAssetLibrary::TemplateDat::init()
 
 bool TextAssetLibrary::initArtifactText()
 {
-	auto loadArtifactText = [](const char *filename,
-		TextAssetLibrary::ArtifactTavernTextArray &artifactTavernTextArray)
+	auto loadArtifactText = [](const char *filename, ArenaArtifactTavernTextArray &artifactTavernTextArray)
 	{
 		Buffer<std::byte> src;
 		if (!VFS::Manager::get().read(filename, &src))
 		{
-			DebugLogError("Could not read \"" + std::string(filename) + "\".");
+			DebugLogErrorFormat("Could not read \"%s\".", filename);
 			return false;
 		}
 
-		// Write the null-terminated strings to the output array.
 		const char *stringPtr = reinterpret_cast<const char*>(src.begin());
-		for (auto &block : artifactTavernTextArray)
+		auto writeNextStrings = [&stringPtr](BufferView<std::string> outStrings)
 		{
-			auto initStringArray = [&stringPtr](std::array<std::string, 3> &arr)
+			for (std::string &str : outStrings)
 			{
-				for (std::string &str : arr)
-				{
-					str = std::string(stringPtr);
-					stringPtr += str.size() + 1;
-				}
-			};
+				str = std::string(stringPtr);
+				stringPtr += str.size() + 1;
+			}
+		};
 
-			initStringArray(block.greetingStrs);
-			initStringArray(block.barterSuccessStrs);
-			initStringArray(block.offerRefusedStrs);
-			initStringArray(block.barterFailureStrs);
-			initStringArray(block.counterOfferStrs);
+		for (ArenaArtifactTavernText &textBlock : artifactTavernTextArray)
+		{
+			writeNextStrings(textBlock.greetingStrs);
+			writeNextStrings(textBlock.barterSuccessStrs);
+			writeNextStrings(textBlock.offerRefusedStrs);
+			writeNextStrings(textBlock.barterFailureStrs);
+			writeNextStrings(textBlock.counterOfferStrs);
 		}
 
 		return true;
@@ -558,7 +567,7 @@ bool TextAssetLibrary::initDungeonTxt()
 	Buffer<std::byte> src;
 	if (!VFS::Manager::get().read(filename, &src))
 	{
-		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		DebugLogErrorFormat("Could not read \"%s\".", filename);
 		return false;
 	}
 
@@ -571,7 +580,10 @@ bool TextAssetLibrary::initDungeonTxt()
 	while (std::getline(iss, line))
 	{
 		const char poundSign = '#';
-		if (line.at(0) == poundSign)
+
+		DebugAssert(!line.empty());
+		const char firstChar = line[0];
+		if (firstChar == poundSign)
 		{
 			// Remove the newline from the end of the description.
 			if (description.back() == '\n')
@@ -620,7 +632,7 @@ bool TextAssetLibrary::initNameChunks()
 	Buffer<std::byte> src;
 	if (!VFS::Manager::get().read(filename, &src))
 	{
-		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		DebugLogErrorFormat("Could not read \"%s\".", filename);
 		return false;
 	}
 
@@ -629,7 +641,6 @@ bool TextAssetLibrary::initNameChunks()
 	size_t offset = 0;
 	while (offset < src.getCount())
 	{
-		// Get information for the current chunk.
 		const uint8_t *chunkPtr = srcPtr + offset;
 		const uint16_t chunkLength = Bytes::getLE16(chunkPtr);
 		const uint8_t stringCount = *(chunkPtr + 2);
@@ -657,50 +668,64 @@ bool TextAssetLibrary::initQuestionTxt()
 	Buffer<std::byte> src;
 	if (!VFS::Manager::get().read(filename, &src))
 	{
-		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		DebugLogErrorFormat("Could not read \"%s\".", filename);
 		return false;
 	}
 
 	const uint8_t *srcPtr = reinterpret_cast<const uint8_t*>(src.begin());
-
-	// Read QUESTION.TXT into a string.
 	const std::string text(reinterpret_cast<const char*>(srcPtr), src.getCount());
 
 	// Lambda for adding a new question to the questions list.
-	auto addQuestion = [this](const std::string &description,
-		const std::string &a, const std::string &b, const std::string &c)
+	auto addQuestion = [this](const std::string &description, const std::string &a, const std::string &b, const std::string &c)
 	{
 		// Lambda for determining which choices point to which class categories.
-		auto getCategory = [](const std::string &choice) -> CharacterClassDefinition::CategoryID
+		auto getCategory = [](const std::string &choice) -> CharacterClassCategoryID
 		{
-			const char mageChar = 'l'; // Logical?
-			const char thiefChar = 'c'; // Clever?
-			const char warriorChar = 'v'; // Violent?
-			const char categoryChar = choice.at(choice.find("(5") + 2);
+			const size_t categoryCharBeginIndex = choice.find("(5");
+			if (categoryCharBeginIndex == std::string::npos)
+			{
+				DebugLogErrorFormat("Couldn't find category char begin index in \"%s\".", choice.c_str());
+				return -1;
+			}
 
-			if (categoryChar == mageChar)
+			// l: Logical (mage)
+			// c: Clever (thief)
+			// v: Violent (warrior)
+			constexpr char mageLetter = 'l';
+			constexpr char thiefLetter = 'c';
+			constexpr char warriorLetter = 'v';
+			constexpr char categoryChars[3] = { mageLetter, thiefLetter, warriorLetter };
+
+			const size_t categoryCharIndex = choice.find_first_of(categoryChars, categoryCharBeginIndex + 2);
+			if (categoryCharIndex == std::string::npos)
 			{
-				return 0;
+				DebugLogErrorFormat("Couldn't find category char index in \"%s\".", choice.c_str());
+				return -1;
 			}
-			else if (categoryChar == thiefChar)
+
+			const char categoryChar = choice[categoryCharIndex];
+			for (int i = 0; i < static_cast<int>(std::size(categoryChars)); i++)
 			{
-				return 1;
+				if (categoryChar == categoryChars[i])
+				{
+					return i;
+				}
 			}
-			else if (categoryChar == warriorChar)
-			{
-				return 2;
-			}
-			else
-			{
-				// @todo: redesign error-handling via bools so we don't need exceptions
-				// for file correctness.
-				throw DebugException("Bad QUESTION.TXT class category.");
-			}
+
+			DebugLogErrorFormat("Couldn't find matching category ID for char \"%c\".", categoryChar);
+			return -1;
 		};
 
-		this->questionTxt.emplace_back(CharacterQuestion(std::string(description),
-			std::make_pair(a, getCategory(a)), std::make_pair(b, getCategory(b)),
-			std::make_pair(c, getCategory(c))));
+		CharacterQuestionChoice questionChoiceA;
+		CharacterQuestionChoice questionChoiceB;
+		CharacterQuestionChoice questionChoiceC;
+		questionChoiceA.init(a.c_str(), getCategory(a));
+		questionChoiceB.init(b.c_str(), getCategory(b));
+		questionChoiceC.init(c.c_str(), getCategory(c));
+
+		CharacterQuestion question;
+		question.init(description.c_str(), questionChoiceA, questionChoiceB, questionChoiceC);
+		this->questionTxt.emplace_back(std::move(question));
 	};
 
 	// Step line by line through the text, creating question objects.
@@ -712,25 +737,26 @@ bool TextAssetLibrary::initQuestionTxt()
 
 	while (std::getline(iss, line))
 	{
-		const unsigned char ch = static_cast<unsigned char>(line.at(0));
+		DebugAssert(!line.empty());
+		const unsigned char firstChar = static_cast<unsigned char>(line[0]);
 
-		if (std::isalpha(ch))
+		if (std::isalpha(firstChar))
 		{
 			// See if it's 'a', 'b', or 'c', and switch to that mode.
-			if (ch == 'a')
+			if (firstChar == 'a')
 			{
 				mode = Mode::A;
 			}
-			else if (ch == 'b')
+			else if (firstChar == 'b')
 			{
 				mode = Mode::B;
 			}
-			else if (ch == 'c')
+			else if (firstChar == 'c')
 			{
 				mode = Mode::C;
 			}
 		}
-		else if (std::isdigit(ch))
+		else if (std::isdigit(firstChar))
 		{
 			// If previous data was read, push it onto the questions list.
 			if (mode != Mode::Description)
@@ -781,7 +807,7 @@ bool TextAssetLibrary::initSpellMakerDescriptions()
 	Buffer<std::byte> src;
 	if (!VFS::Manager::get().read(filename, &src))
 	{
-		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		DebugLogErrorFormat("Could not read \"%s\".", filename);
 		return false;
 	}
 
@@ -814,7 +840,8 @@ bool TextAssetLibrary::initSpellMakerDescriptions()
 				// Flush any existing state.
 				if (state.get() != nullptr)
 				{
-					this->spellMakerDescriptions.at(state->index) = std::move(state->str);
+					DebugAssertIndex(this->spellMakerDescriptions, state->index);
+					this->spellMakerDescriptions[state->index] = std::move(state->str);
 					state = nullptr;
 				}
 
@@ -848,21 +875,21 @@ bool TextAssetLibrary::initTemplateDat()
 
 bool TextAssetLibrary::initTradeText()
 {
-	auto loadTradeText = [](const char *filename,
-		TextAssetLibrary::TradeText::FunctionArray &functionArr)
+	auto loadTradeText = [](const char *filename, ArenaTradeText::FunctionArray &functionArr)
 	{
 		Buffer<std::byte> src;
 		if (!VFS::Manager::get().read(filename, &src))
 		{
-			DebugLogError("Could not read \"" + std::string(filename) + "\".");
+			DebugLogErrorFormat("Could not read \"%s\".", filename);
 			return false;
 		}
 
-		// Write the null-terminated strings to the output array.
 		const char *stringPtr = reinterpret_cast<const char*>(src.begin());
-		for (TextAssetLibrary::TradeText::PersonalityArray &personalityArr : functionArr)
+
+		// Write the null-terminated strings to the output array.
+		for (ArenaTradeText::PersonalityArray &personalityArr : functionArr)
 		{
-			for (TextAssetLibrary::TradeText::RandomArray &randomArr : personalityArr)
+			for (ArenaTradeText::RandomArray &randomArr : personalityArr)
 			{
 				for (std::string &str : randomArr)
 				{
@@ -895,83 +922,44 @@ bool TextAssetLibrary::init()
 	return success;
 }
 
-const TextAssetLibrary::ArtifactTavernTextArray &TextAssetLibrary::getArtifactTavernText1() const
-{
-	return this->artifactTavernText1;
-}
-
-const TextAssetLibrary::ArtifactTavernTextArray &TextAssetLibrary::getArtifactTavernText2() const
-{
-	return this->artifactTavernText2;
-}
-
-BufferView<const TextAssetLibrary::DungeonTxtEntry> TextAssetLibrary::getDungeonTxtDungeons() const
-{
-	return this->dungeonTxt;
-}
-
-BufferView<const CharacterQuestion> TextAssetLibrary::getQuestionTxtQuestions() const
-{
-	return this->questionTxt;
-}
-
-const TextAssetLibrary::SpellMakerDescriptionArray &TextAssetLibrary::getSpellMakerDescriptions() const
-{
-	return this->spellMakerDescriptions;
-}
-
-const TextAssetLibrary::TemplateDat &TextAssetLibrary::getTemplateDat() const
-{
-	return this->templateDat;
-}
-
-const TextAssetLibrary::TradeText &TextAssetLibrary::getTradeText() const
-{
-	return this->tradeText;
-}
-
 std::string TextAssetLibrary::generateNpcName(int raceID, bool isMale, ArenaRandom &random) const
 {
-	// Get the rules associated with the race and gender.
-	const int nameRuleIndex = DebugMakeIndex(NameRules, (raceID * 2) + (isMale ? 0 : 1));
-	const std::vector<NameRule> &chunkRules = NameRules[nameRuleIndex];
+	const RaceNameRules selectedRaceNameRules = NameRules[raceID];
+	const GenderNameRules selectedGenderNameRules = selectedRaceNameRules[isMale ? 0 : 1];
 
 	// Construct the name from each part of the rule.
 	std::string name;
-	for (const NameRule &rule : chunkRules)
+	for (const NameRule &rule : selectedGenderNameRules)
 	{
-		if (rule.type == NameRule::Type::Index)
+		if (rule.type == NameRuleType::Index)
 		{
 			DebugAssertIndex(this->nameChunks, rule.index);
-			const NameChunkEntry &chunkList = this->nameChunks[rule.index];
-			const int chunkListIndex = DebugMakeIndex(
-				chunkList, random.next() % static_cast<int>(chunkList.size()));
+			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.index];
+			const int chunkListIndex = DebugMakeIndex(chunkList, random.next() % static_cast<int>(chunkList.size()));
 			name += chunkList[chunkListIndex];
 		}
-		else if (rule.type == NameRule::Type::String)
+		else if (rule.type == NameRuleType::String)
 		{
-			name += std::string(rule.str.data());
+			name += std::string(rule.str);
 		}
-		else if (rule.type == NameRule::Type::IndexChance)
+		else if (rule.type == NameRuleType::IndexChance)
 		{
-			DebugAssertIndex(this->nameChunks, rule.indexChance.index);
-			const NameChunkEntry &chunkList = this->nameChunks[rule.indexChance.index];
-			if ((random.next() % 100) <= rule.indexChance.chance)
+			DebugAssertIndex(this->nameChunks, rule.index);
+			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.index];
+			if ((random.next() % 100) <= rule.chance)
 			{
-				const int chunkListIndex = DebugMakeIndex(
-					chunkList, random.next() % static_cast<int>(chunkList.size()));
+				const int chunkListIndex = DebugMakeIndex(chunkList, random.next() % static_cast<int>(chunkList.size()));
 				name += chunkList[chunkListIndex];
 			}
 		}
-		else if (rule.type == NameRule::Type::IndexStringChance)
+		else if (rule.type == NameRuleType::IndexStringChance)
 		{
-			DebugAssertIndex(this->nameChunks, rule.indexStringChance.index);
-			const NameChunkEntry &chunkList = this->nameChunks[rule.indexStringChance.index];
-			if ((random.next() % 100) <= rule.indexStringChance.chance)
+			DebugAssertIndex(this->nameChunks, rule.index);
+			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.index];
+			if ((random.next() % 100) <= rule.chance)
 			{
-				const int chunkListIndex = DebugMakeIndex(
-					chunkList, random.next() % static_cast<int>(chunkList.size()));
-				name += chunkList[chunkListIndex] + std::string(rule.indexStringChance.str.data());
+				const int chunkListIndex = DebugMakeIndex(chunkList, random.next() % static_cast<int>(chunkList.size()));
+				name += chunkList[chunkListIndex] + std::string(rule.str);
 			}
 		}
 		else

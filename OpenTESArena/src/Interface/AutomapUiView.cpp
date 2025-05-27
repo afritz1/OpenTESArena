@@ -2,7 +2,6 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/TextureManager.h"
-#include "../Game/CardinalDirection.h"
 #include "../Game/GameState.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/FontLibrary.h"
@@ -11,6 +10,7 @@
 #include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelFacing2D.h"
 #include "../Voxels/VoxelTraitsDefinition.h"
+#include "../World/CardinalDirection.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MapType.h"
@@ -19,14 +19,14 @@
 
 #include "components/debug/Debug.h"
 
-TextBox::InitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+TextBoxInitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	const TextRenderUtils::TextShadowInfo shadowInfo(
+	const TextRenderShadowInfo shadowInfo(
 		AutomapUiView::LocationTextBoxShadowOffsetX,
 		AutomapUiView::LocationTextBoxShadowOffsetY,
 		AutomapUiView::LocationTextBoxShadowColor);
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		AutomapUiView::LocationTextBoxCenterPoint,
 		AutomapUiView::LocationTextBoxFontName,
@@ -105,16 +105,16 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 			}
 			else
 			{
-				const TransitionType transitionType = transitionDef->getType();
+				const TransitionType transitionType = transitionDef->type;
 				if ((transitionType == TransitionType::CityGate) ||
 					(transitionType == TransitionType::EnterInterior) ||
 					(transitionType == TransitionType::ExitInterior))
 				{
 					return AutomapUiView::ColorDoor;
 				}
-				else if (transitionType == TransitionType::LevelChange)
+				else if (transitionType == TransitionType::InteriorLevelChange)
 				{
-					const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
+					const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef->interiorLevelChange;
 					return levelChangeDef.isLevelUp ? AutomapUiView::ColorLevelUp : AutomapUiView::ColorLevelDown;
 				}
 				else
@@ -139,7 +139,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 		else if (wallType == ArenaTypes::VoxelType::TransparentWall)
 		{
 			// Transparent walls with collision (hedges) are shown, while ones without collision (archways) are not.
-			const VoxelTraitsDefinition::TransparentWall &transparentWall = wallDef.transparentWall;
+			const VoxelTraitsTransparentWallDefinition &transparentWall = wallDef.transparentWall;
 			return transparentWall.collider ? AutomapUiView::ColorWall : AutomapUiView::ColorFloor;
 		}
 		else if (wallType == ArenaTypes::VoxelType::Edge)
@@ -199,7 +199,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 		if (wallType == ArenaTypes::VoxelType::None)
 		{
 			// Regular ground is transparent; all other grounds are wall color.
-			const VoxelTraitsDefinition::Floor &floor = floorDef.floor;
+			const VoxelTraitsFloorDefinition &floor = floorDef.floor;
 			const bool isRegularGround = !floor.isWildWallColored;
 
 			if (isRegularGround)
@@ -219,7 +219,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 			}
 			else
 			{
-				const TransitionType transitionType = transitionDef->getType();
+				const TransitionType transitionType = transitionDef->type;
 				if ((transitionType == TransitionType::CityGate) ||
 					(transitionType == TransitionType::EnterInterior) ||
 					(transitionType == TransitionType::ExitInterior))
@@ -230,9 +230,9 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 					const bool isHidden = false; // @todo
 					return isHidden ? AutomapUiView::ColorWildWall : AutomapUiView::ColorWildDoor;
 				}
-				else if (transitionType == TransitionType::LevelChange)
+				else if (transitionType == TransitionType::InteriorLevelChange)
 				{
-					const TransitionDefinition::LevelChangeDef &levelChangeDef = transitionDef->getLevelChange();
+					const InteriorLevelChangeTransitionDefinition &levelChangeDef = transitionDef->interiorLevelChange;
 					return levelChangeDef.isLevelUp ? AutomapUiView::ColorLevelUp : AutomapUiView::ColorLevelDown;
 				}
 				else
@@ -260,7 +260,7 @@ const Color &AutomapUiView::getWildPixelColor(const VoxelTraitsDefinition &floor
 		}
 		else if (wallType == ArenaTypes::VoxelType::Edge)
 		{
-			const VoxelTraitsDefinition::Edge &edge = wallDef.edge;
+			const VoxelTraitsEdgeDefinition &edge = wallDef.edge;
 
 			// For some reason, most edges are hidden.
 			const bool isHiddenEdge = (edge.facing == VoxelFacing2D::PositiveX) ||
@@ -347,12 +347,12 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 			{
 				for (WEInt z = 0; z < ChunkUtils::CHUNK_DIM; z++)
 				{
-					const VoxelChunk::VoxelTraitsDefID floorVoxelTraitsDefID = chunk.getTraitsDefID(x, 0, z);
-					const VoxelChunk::VoxelTraitsDefID wallVoxelTraitsDefID = chunk.getTraitsDefID(x, 1, z);
+					const VoxelTraitsDefID floorVoxelTraitsDefID = chunk.getTraitsDefID(x, 0, z);
+					const VoxelTraitsDefID wallVoxelTraitsDefID = chunk.getTraitsDefID(x, 1, z);
 					const VoxelTraitsDefinition &floorVoxelTraitsDef = chunk.getTraitsDef(floorVoxelTraitsDefID);
 					const VoxelTraitsDefinition &wallVoxelTraitsDef = chunk.getTraitsDef(wallVoxelTraitsDefID);
 					
-					VoxelChunk::TransitionDefID transitionDefID;
+					VoxelTransitionDefID transitionDefID;
 					const TransitionDefinition *transitionDef = nullptr;
 					if (chunk.tryGetTransitionDefID(x, 1, z, &transitionDefID))
 					{

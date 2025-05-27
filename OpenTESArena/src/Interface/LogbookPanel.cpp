@@ -16,25 +16,25 @@ LogbookPanel::LogbookPanel(Game &game)
 
 LogbookPanel::~LogbookPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &inputManager = this->getGame().inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::Logbook, false);
 }
 
 bool LogbookPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const std::string titleText = LogbookUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo = LogbookUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBoxInitInfo titleTextBoxInitInfo = LogbookUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::Logbook, true);
 
 	this->backButton = Button<Game&>(
@@ -57,21 +57,22 @@ bool LogbookPanel::init()
 	this->addInputActionListener(InputActionName::Back, backInputActionFunc);
 	this->addInputActionListener(InputActionName::Logbook, backInputActionFunc);
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = LogbookUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
 
-	const Rect &titleTextBox = this->titleTextBox.getRect();
-	this->addDrawCall(
-		this->titleTextBox.getTextureID(),
-		titleTextBox.getCenter(),
-		Int2(titleTextBox.getWidth(), titleTextBox.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
+
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleDrawCallInitInfo;
+	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
+	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

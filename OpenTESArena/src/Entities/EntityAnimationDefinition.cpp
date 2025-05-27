@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -64,7 +65,7 @@ bool EntityAnimationDefinitionKeyframeList::operator==(const EntityAnimationDefi
 		return false;
 	}
 
-	if (this->isFlipped != other.isFlipped)
+	if (this->isMirrored != other.isMirrored)
 	{
 		return false;
 	}
@@ -112,6 +113,12 @@ EntityAnimationDefinition::EntityAnimationDefinition()
 	this->stateCount = 0;
 	this->keyframeListCount = 0;
 	this->keyframeCount = 0;
+	std::fill(std::begin(this->initialStateName), std::end(this->initialStateName), '\0');
+}
+
+void EntityAnimationDefinition::init(const char *initialStateName)
+{
+	std::snprintf(this->initialStateName, std::size(this->initialStateName), "%s", initialStateName);
 }
 
 bool EntityAnimationDefinition::operator==(const EntityAnimationDefinition &other) const
@@ -166,6 +173,11 @@ bool EntityAnimationDefinition::operator==(const EntityAnimationDefinition &othe
 		}
 	}
 
+	if (!StringView::equals(this->initialStateName, other.initialStateName))
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -174,7 +186,7 @@ bool EntityAnimationDefinition::operator!=(const EntityAnimationDefinition &othe
 	return !(*this == other);
 }
 
-std::optional<int> EntityAnimationDefinition::tryGetStateIndex(const char *name) const
+std::optional<int> EntityAnimationDefinition::findStateIndex(const char *name) const
 {
 	if (String::isNullOrEmpty(name))
 	{
@@ -197,49 +209,23 @@ std::optional<int> EntityAnimationDefinition::tryGetStateIndex(const char *name)
 int EntityAnimationDefinition::getLinearizedKeyframeIndex(int stateIndex, int keyframeListIndex, int keyframeIndex) const
 {
 	DebugAssert(stateIndex >= 0);
-	DebugAssert(keyframeListIndex >= 0);
-	DebugAssert(keyframeIndex >= 0);
+	DebugAssert(stateIndex < this->stateCount);
+	const EntityAnimationDefinitionState &state = this->states[stateIndex];
 
-	int index = 0;
-	for (int i = 0; i < this->stateCount; i++)
-	{
-		const EntityAnimationDefinitionState &state = this->states[i];
-		if (i < stateIndex)
-		{
-			for (int j = 0; j < state.keyframeListCount; j++)
-			{
-				const int curKeyframeListIndex = state.keyframeListsIndex + j;
-				DebugAssert(curKeyframeListIndex < this->keyframeListCount);
-				const EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[curKeyframeListIndex];
-				index += keyframeList.keyframeCount;
-			}
-		}
-		else if (i == stateIndex)
-		{
-			for (int j = 0; j < state.keyframeListCount; j++)
-			{
-				const int curKeyframeListIndex = state.keyframeListsIndex + j;
-				DebugAssert(curKeyframeListIndex < this->keyframeListCount);
-				const EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[curKeyframeListIndex];
-				if (j < keyframeListIndex)
-				{
-					index += keyframeList.keyframeCount;
-				}
-				else if (j == keyframeListIndex)
-				{
-					for (int k = 0; k < keyframeList.keyframeCount; k++)
-					{
-						if (k < keyframeIndex)
-						{
-							index++;
-						}
-					}
-				}
-			}
-		}
-	}
+	const int absoluteKeyframeListsIndex = state.keyframeListsIndex + keyframeListIndex;
+	DebugAssert(absoluteKeyframeListsIndex >= 0);
+	DebugAssert(absoluteKeyframeListsIndex < this->keyframeListCount);
+	DebugAssert(keyframeListIndex < state.keyframeListCount);
+	const EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[absoluteKeyframeListsIndex];
 
-	return index;
+	const int absoluteKeyframeIndex = keyframeList.keyframesIndex + keyframeIndex;
+	DebugAssert(absoluteKeyframeIndex >= 0);
+	DebugAssert(absoluteKeyframeIndex < this->keyframeCount);
+	DebugAssert(keyframeIndex < keyframeList.keyframeCount);
+	const EntityAnimationDefinitionKeyframe &keyframe = this->keyframes[absoluteKeyframeIndex];
+
+	DebugAssert(keyframe.linearizedIndex >= 0);
+	return keyframe.linearizedIndex;
 }
 
 int EntityAnimationDefinition::addState(const char *name, double seconds, bool isLooping)
@@ -274,7 +260,7 @@ int EntityAnimationDefinition::addState(const char *name, double seconds, bool i
 	return stateIndex;
 }
 
-int EntityAnimationDefinition::addKeyframeList(int stateIndex, bool isFlipped)
+int EntityAnimationDefinition::addKeyframeList(int stateIndex, bool isMirrored)
 {
 	if ((stateIndex < 0) || (stateIndex >= this->stateCount))
 	{
@@ -294,7 +280,7 @@ int EntityAnimationDefinition::addKeyframeList(int stateIndex, bool isFlipped)
 	EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[this->keyframeListCount];
 	keyframeList.keyframesIndex = this->keyframeCount;
 	keyframeList.keyframeCount = 0;
-	keyframeList.isFlipped = isFlipped;
+	keyframeList.isMirrored = isMirrored;
 
 	const int keyframeListIndex = this->keyframeListCount;
 	this->keyframeListCount++;
@@ -322,8 +308,28 @@ int EntityAnimationDefinition::addKeyframe(int keyframeListIndex, TextureAsset &
 	keyframe.textureAsset = std::move(textureAsset);
 	keyframe.width = width;
 	keyframe.height = height;
+	keyframe.linearizedIndex = -1;
 
 	const int keyframeIndex = this->keyframeCount;
 	this->keyframeCount++;
 	return keyframeIndex;
+}
+
+void EntityAnimationDefinition::populateLinearizedIndices()
+{
+	int currentLinearizedIndex = 0;
+	for (int stateIndex = 0; stateIndex < this->stateCount; stateIndex++)
+	{
+		const EntityAnimationDefinitionState &state = this->states[stateIndex];
+		for (int keyframeListIndex = 0; keyframeListIndex < state.keyframeListCount; keyframeListIndex++)
+		{
+			const EntityAnimationDefinitionKeyframeList &keyframeList = this->keyframeLists[state.keyframeListsIndex + keyframeListIndex];
+			for (int keyframeIndex = 0; keyframeIndex < keyframeList.keyframeCount; keyframeIndex++)
+			{
+				EntityAnimationDefinitionKeyframe &keyframe = this->keyframes[keyframeList.keyframesIndex + keyframeIndex];
+				keyframe.linearizedIndex = currentLinearizedIndex;
+				currentLinearizedIndex++;
+			}
+		}
+	}
 }

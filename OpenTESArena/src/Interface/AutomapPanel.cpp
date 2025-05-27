@@ -10,8 +10,6 @@
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/TextureManager.h"
-#include "../Game/CardinalDirection.h"
-#include "../Game/CardinalDirectionName.h"
 #include "../Game/Game.h"
 #include "../Game/Options.h"
 #include "../Input/InputActionMapName.h"
@@ -20,7 +18,6 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
@@ -39,7 +36,7 @@ AutomapPanel::AutomapPanel(Game &game)
 AutomapPanel::~AutomapPanel()
 {
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, false);
 }
 
@@ -49,8 +46,8 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	auto &game = this->getGame();
 	
 	const auto &fontLibrary = FontLibrary::getInstance();
-	const TextBox::InitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
-	if (!this->locationTextBox.init(locationTextBoxInitInfo, game.getRenderer()))
+	const TextBoxInitInfo locationTextBoxInitInfo = AutomapUiView::getLocationTextBoxInitInfo(locationName, fontLibrary);
+	if (!this->locationTextBox.init(locationTextBoxInitInfo, game.renderer))
 	{
 		DebugLogError("Couldn't init location text box.");
 		return false;
@@ -67,7 +64,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 	this->addButtonProxy(MouseButtonType::Left, this->backToGameButton.getRect(),
 		[&game]() { AutomapUiController::onBackToGameButtonSelected(game); });
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, true);
 
 	auto backToGameInputActionFunc = AutomapUiController::onBackToGameInputAction;
@@ -80,43 +77,41 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		AutomapUiController::onMouseButtonHeld(game, buttonType, position, dt, &this->automapOffset);
 	});
 
-	auto &renderer = game.getRenderer();
-	const VoxelInt3 playerVoxel = VoxelUtils::pointToVoxel(playerCoord.point);
-	const CoordInt2 playerCoordXZ(playerCoord.chunk, VoxelInt2(playerVoxel.x, playerVoxel.z));
-	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(
-		game.getGameState(), playerCoordXZ, playerDirection, voxelChunkManager, renderer);
+	const GameState &gameState = game.gameState;
+	const double ceilingScale = gameState.getActiveCeilingScale();
+	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
+	const CoordInt2 playerCoordXZ(playerCoord.chunk, playerVoxelXZ);
+	
+	Renderer &renderer = game.renderer;
+	const UiTextureID mapTextureID = AutomapUiView::allocMapTexture(gameState, playerCoordXZ, playerDirection, voxelChunkManager, renderer);
 	this->mapTextureRef.init(mapTextureID, renderer);
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = AutomapUiView::allocBgTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
 
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 
-	UiDrawCall::TextureFunc automapTextureFunc = [this]()
-	{
-		return this->mapTextureRef.get();
-	};
-
-	UiDrawCall::PositionFunc automapPositionFunc = [this, &game]()
+	UiDrawCallInitInfo automapDrawCallInitInfo;
+	automapDrawCallInitInfo.textureID = this->mapTextureRef.get();
+	automapDrawCallInitInfo.positionFunc = [this, &game]()
 	{
 		constexpr double pixelSizeReal = static_cast<double>(AutomapUiView::PixelSize);
 		const int offsetX = static_cast<int>(std::floor(this->automapOffset.x * pixelSizeReal));
 		const int offsetY = static_cast<int>(std::floor(this->automapOffset.y * pixelSizeReal));
 		
-		const Rect &drawingArea = AutomapUiView::DrawingArea;
-		const int mapX = (drawingArea.getLeft() + (drawingArea.getWidth() / 2)) + offsetX;
-		const int mapY = (drawingArea.getTop() + (drawingArea.getHeight() / 2)) + offsetY;
+		constexpr Rect drawingArea = AutomapUiView::DrawingArea;
+		const int mapX = (drawingArea.getLeft() + (drawingArea.width / 2)) + offsetX;
+		const int mapY = (drawingArea.getTop() + (drawingArea.height / 2)) + offsetY;
 		return Int2(mapX, mapY);
 	};
 
-	UiDrawCall::SizeFunc automapSizeFunc = [this, &game]()
+	automapDrawCallInitInfo.sizeFunc = [this, &game]()
 	{
-		auto &renderer = game.getRenderer();
+		auto &renderer = game.renderer;
 		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(this->mapTextureRef.get());
 		if (!dims.has_value())
 		{
@@ -126,27 +121,15 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 		return *dims;
 	};
 
-	UiDrawCall::PivotFunc automapPivotFunc = []()
-	{
-		return PivotType::TopLeft;
-	};
+	automapDrawCallInitInfo.clipRect = AutomapUiView::DrawingArea;
+	this->addDrawCall(automapDrawCallInitInfo);
 
-	const std::optional<Rect> automapClipRect = AutomapUiView::DrawingArea;
-
-	this->addDrawCall(
-		automapTextureFunc,
-		automapPositionFunc,
-		automapSizeFunc,
-		automapPivotFunc,
-		UiDrawCall::defaultActiveFunc,
-		automapClipRect);
-
-	const Rect &locationTextBoxRect = this->locationTextBox.getRect();
-	this->addDrawCall(
-		this->locationTextBox.getTextureID(),
-		locationTextBoxRect.getTopLeft(),
-		Int2(locationTextBoxRect.getWidth(), locationTextBoxRect.getHeight()),
-		PivotType::TopLeft);
+	const Rect locationTextBoxRect = this->locationTextBox.getRect();
+	UiDrawCallInitInfo locationTextDrawCallInitInfo;
+	locationTextDrawCallInitInfo.textureID = this->locationTextBox.getTextureID();
+	locationTextDrawCallInitInfo.position = locationTextBoxRect.getTopLeft();
+	locationTextDrawCallInitInfo.size = locationTextBoxRect.getSize();
+	this->addDrawCall(locationTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

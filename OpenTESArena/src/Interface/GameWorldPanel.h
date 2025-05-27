@@ -3,22 +3,17 @@
 
 #include "Panel.h"
 #include "../Assets/TextureUtils.h"
-#include "../Collision/Physics.h"
 #include "../Math/Rect.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 #include "../Voxels/VoxelUtils.h"
 
-// When the GameWorldPanel is active, the game world is ticking.
+struct Player;
 
+// When the GameWorldPanel is active, the game world is ticking.
 // There are two desired kinds of interfaces:
 // - The original: compass, portrait, stat bars, and buttons with original mouse.
 // - A modern version: only compass and stat bars with free-look mouse.
-
-class Player;
-class Renderer;
-class TextureManager;
-
 class GameWorldPanel : public Panel
 {
 private:
@@ -28,14 +23,12 @@ private:
 	Button<> stealButton, magicButton, useItemButton, campButton;
 	Button<GameWorldPanel&> scrollUpButton, scrollDownButton;
 	Button<Game&, bool> mapButton;
-	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, tooltipTextureRefs;
-	ScopedUiTextureRef gameWorldInterfaceTextureRef, statusGradientTextureRef, playerPortraitTextureRef,
-		noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef, defaultCursorTextureRef;
+	Buffer<ScopedUiTextureRef> arrowCursorTextureRefs, weaponAnimTextureRefs, keyTextureRefs, tooltipTextureRefs;
+	ScopedUiTextureRef gameWorldInterfaceTextureRef, healthBarTextureRef, staminaBarTextureRef, spellPointsBarTextureRef,
+		statusGradientTextureRef, playerPortraitTextureRef, noMagicTextureRef, compassFrameTextureRef, compassSliderTextureRef,
+		defaultCursorTextureRef, modernModeReticleTextureRef;
 
 	void initUiDrawCalls();
-
-	// Called by game loop for rendering the 3D scene.
-	static bool gameWorldRenderCallback(Game &game);
 public:
 	GameWorldPanel(Game &game);
 	~GameWorldPanel() override;
@@ -44,6 +37,10 @@ public:
 
 	// @temp workaround until there are listener callbacks or something for updating text boxes from game logic
 	TextBox &getTriggerTextBox();
+	TextBox &getActionTextBox();
+
+	// Called by game loop for rendering the 3D scene.
+	static bool renderScene(Game &game);
 
 	virtual void onPauseChanged(bool paused) override;
 };

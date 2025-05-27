@@ -23,7 +23,7 @@ UiTextureID CommonUiView::allocDefaultCursorTexture(TextureManager &textureManag
 
 Color CommonUiView::getDebugInfoTextBoxColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
 Rect CommonUiView::getDebugInfoTextBoxRect()
@@ -31,10 +31,10 @@ Rect CommonUiView::getDebugInfoTextBoxRect()
 	return Rect(2, 2, 200, 150);
 }
 
-TextBox::InitInfo CommonUiView::getDebugInfoTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo CommonUiView::getDebugInfoTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	std::string dummyText;
-	for (int i = 0; i < 12; i++)
+	for (int i = 0; i < 18; i++)
 	{
 		if (dummyText.length() > 0)
 		{
@@ -44,10 +44,10 @@ TextBox::InitInfo CommonUiView::getDebugInfoTextBoxInitInfo(const FontLibrary &f
 		dummyText += std::string(30, TextRenderUtils::LARGEST_CHAR);
 	}
 
-	const TextRenderUtils::TextShadowInfo shadowInfo(1, 1, Color::Black);
+	const TextRenderShadowInfo shadowInfo(1, 1, Colors::Black);
 
 	const Rect rect = CommonUiView::getDebugInfoTextBoxRect();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		rect.getLeft(),
 		rect.getTop(),

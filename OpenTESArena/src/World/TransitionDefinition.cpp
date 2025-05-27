@@ -2,12 +2,12 @@
 
 #include "components/debug/Debug.h"
 
-void TransitionDefinition::InteriorEntranceDef::init(MapGeneration::InteriorGenInfo &&interiorGenInfo)
+void InteriorEntranceTransitionDefinition::init(MapGeneration::InteriorGenInfo &&interiorGenInfo)
 {
 	this->interiorGenInfo = std::move(interiorGenInfo);
 }
 
-void TransitionDefinition::LevelChangeDef::init(bool isLevelUp)
+void InteriorLevelChangeTransitionDefinition::init(bool isLevelUp)
 {
 	this->isLevelUp = isLevelUp;
 }
@@ -17,46 +17,24 @@ TransitionDefinition::TransitionDefinition()
 	this->type = static_cast<TransitionType>(-1);
 }
 
-void TransitionDefinition::init(TransitionType type)
-{
-	this->type = type;
-}
-
 void TransitionDefinition::initCityGate()
 {
-	this->init(TransitionType::CityGate);
+	this->type = TransitionType::CityGate;
 }
 
 void TransitionDefinition::initInteriorEntrance(MapGeneration::InteriorGenInfo &&interiorGenInfo)
 {
-	this->init(TransitionType::EnterInterior);
+	this->type = TransitionType::EnterInterior;
 	this->interiorEntrance.init(std::move(interiorGenInfo));
 }
 
 void TransitionDefinition::initInteriorExit()
 {
-	this->init(TransitionType::ExitInterior);
+	this->type = TransitionType::ExitInterior;
 }
 
-void TransitionDefinition::initLevelChange(bool isLevelUp)
+void TransitionDefinition::initInteriorLevelChange(bool isLevelUp)
 {
-	this->init(TransitionType::LevelChange);
-	this->levelChange.init(isLevelUp);
-}
-
-TransitionType TransitionDefinition::getType() const
-{
-	return this->type;
-}
-
-const TransitionDefinition::InteriorEntranceDef &TransitionDefinition::getInteriorEntrance() const
-{
-	DebugAssert(this->type == TransitionType::EnterInterior);
-	return this->interiorEntrance;
-}
-
-const TransitionDefinition::LevelChangeDef &TransitionDefinition::getLevelChange() const
-{
-	DebugAssert(this->type == TransitionType::LevelChange);
-	return this->levelChange;
+	this->type = TransitionType::InteriorLevelChange;
+	this->interiorLevelChange.init(isLevelUp);
 }

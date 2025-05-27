@@ -7,7 +7,7 @@ void CommonUiController::onDebugInputAction(const InputActionCallbackValues &val
 	if (values.performed)
 	{
 		auto &game = values.game;
-		auto &options = game.getOptions();
+		auto &options = game.options;
 
 		// Increment or wrap profiler level.
 		const int oldProfilerLevel = options.getMisc_ProfilerLevel();

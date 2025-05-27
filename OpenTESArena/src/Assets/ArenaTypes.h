@@ -9,7 +9,6 @@
 
 // Various types used with Arena's binary data files. Struct sizes are hardcoded to show
 // intent and to avoid issues with padding since they map directly to Arena's data.
-
 namespace ArenaTypes
 {
 	// For .MIF and .RMD FLOR/MAP1/MAP2 voxels.
@@ -144,11 +143,13 @@ namespace ArenaTypes
 
 	struct MIFHeader
 	{
+		static constexpr int START_POINT_COUNT = 4;
+
 		uint8_t unknown1, entryCount;
-		std::array<uint16_t, 4> startX, startY;
+		uint16_t startX[START_POINT_COUNT], startY[START_POINT_COUNT];
 		uint8_t startingLevelIndex, levelCount, unknown2;
 		uint16_t mapWidth, mapHeight;
-		std::array<uint8_t, 34> unknown3;
+		uint8_t unknown3[34];
 
 		void init(const uint8_t *data);
 	};
@@ -177,9 +178,11 @@ namespace ArenaTypes
 
 		uint8_t x, y;
 
-		// Some text and sound indices are negative (which means they're unused), 
-		// so they need to be signed.
-		int8_t textIndex, soundIndex;
+		// *TEXT field which is 1) lore text, 2) riddle, or 3) door key ID if non-negative.
+		int8_t textIndex;
+
+		// @SOUND field if non-negative.
+		int8_t soundIndex;
 
 		void init(const uint8_t *data);
 	};

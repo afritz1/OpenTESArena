@@ -1,23 +1,33 @@
-#ifndef RECTANGLE_H
-#define RECTANGLE_H
+#ifndef RECT_H
+#define RECT_H
 
 #include "../Math/Vector2.h"
 
+#include "components/debug/Debug.h"
+
 struct SDL_Rect;
 
-class Rect
+struct Rect
 {
-private:
-	int x, y, w, h;
-public:
-	Rect(int x, int y, int width, int height);
-	Rect(const Int2 &center, int width, int height);
-	Rect(int width, int height);
-	Rect();
-	Rect(const Rect &rect);
+	int x, y, width, height;
 
-	int getWidth() const;
-	int getHeight() const;
+	constexpr Rect(int x, int y, int width, int height)
+	{
+		DebugAssert(width >= 0);
+		DebugAssert(height >= 0);
+		this->x = x;
+		this->y = y;
+		this->width = width;
+		this->height = height;
+	}
+
+	constexpr Rect(const Int2 &center, int width, int height)
+		: Rect(center.x - (width / 2), center.y - (height / 2), width, height) { }
+
+	constexpr Rect()
+		: Rect(0, 0, 0, 0) { }
+
+	bool isEmpty() const;
 	int getLeft() const;
 	int getRight() const;
 	int getTop() const;
@@ -27,12 +37,8 @@ public:
 	Int2 getBottomLeft() const;
 	Int2 getBottomRight() const;
 	Int2 getCenter() const;
+	Int2 getSize() const;
 	SDL_Rect getSdlRect() const;
-
-	void setX(int x);
-	void setY(int y);
-	void setWidth(int width);
-	void setHeight(int height);
 
 	bool contains(const Int2 &point) const;
 	bool contains(const Rect &rectangle) const;

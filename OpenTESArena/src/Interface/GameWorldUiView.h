@@ -10,6 +10,7 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/ListBox.h"
 #include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -52,7 +53,7 @@ namespace GameWorldUiView
 	Rect scaleClassicCursorRectToNative(int rectIndex, double xScale, double yScale);
 
 	// Game world interface UI area.
-	const Rect UiBottomRegion(0, 147, 320, 53);
+	constexpr Rect UiBottomRegion(0, 147, 320, 53);
 
 	// Arrow cursor pivots. These offset the drawn cursor relative to the mouse position so the cursor's
 	// click area is closer to the tip of each arrow.
@@ -80,7 +81,7 @@ namespace GameWorldUiView
 	const Color PlayerNameTextColor(215, 121, 8);
 	constexpr TextAlignment PlayerNameTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	Rect getCharacterSheetButtonRect();
 	Rect getPlayerPortraitRect();
@@ -109,7 +110,24 @@ namespace GameWorldUiView
 
 	Int2 getGameWorldInterfacePosition();
 
+	constexpr Rect HealthBarRect(57, 168, 4, 26);
+	constexpr Color HealthBarColor(0, 182, 0);
+	constexpr Rect StaminaBarRect(67, 168, 4, 26);
+	constexpr Color StaminaBarColor(195, 0, 0);
+	constexpr Rect SpellPointsBarRect(77, 168, 4, 26);
+	constexpr Color SpellPointsBarColor(0, 0, 203);
+	constexpr PivotType StatusBarPivotType = PivotType::BottomLeft;
+
+	// Offsets from native window bottom left corner.
+	constexpr int StatusBarModernModeXOffset = 48;
+	constexpr int StatusBarModernModeYOffset = 32;
+
+	int getStatusBarCurrentHeight(int maxHeight, double currentValue, double maxValue);
+
 	Int2 getNoMagicTexturePosition();
+
+	int getKeyTextureCount(TextureManager &textureManager);
+	Int2 getKeyPosition(int keyIndex);
 
 	const std::string TriggerTextFontName = ArenaFontName::Arena;
 	const Color TriggerTextColor(215, 121, 8);
@@ -133,13 +151,15 @@ namespace GameWorldUiView
 	Int2 getActionTextPosition();
 	Int2 getEffectTextPosition();
 
-	double getTriggerTextSeconds(const std::string_view &text);
-	double getActionTextSeconds(const std::string_view &text);
-	double getEffectTextSeconds(const std::string_view &text);
+	double getTriggerTextSeconds(const std::string_view text);
+	double getActionTextSeconds(const std::string_view text);
+	double getEffectTextSeconds(const std::string_view text);
 
-	TextBox::InitInfo getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBox::InitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBox::InitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
+
+	ListBoxProperties getLootListBoxProperties();
 
 	Int2 getTooltipPosition(Game &game);
 
@@ -166,8 +186,13 @@ namespace GameWorldUiView
 	TextureAsset getCompassFrameTextureAsset();
 	TextureAsset getCompassSliderTextureAsset();
 	TextureAsset getArrowCursorTextureAsset(int cursorIndex);
+	TextureAsset getKeyTextureAsset(int keyIndex);
+	TextureAsset getContainerInventoryTextureAsset();
 
 	UiTextureID allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocHealthBarTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocStaminaBarTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocSpellPointsBarTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocStatusGradientTexture(StatusGradientType gradientType, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocNoMagicTexture(TextureManager &textureManager, Renderer &renderer);
@@ -176,9 +201,13 @@ namespace GameWorldUiView
 	UiTextureID allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, const FontLibrary &fontLibrary, Renderer &renderer);
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocModernModeReticleTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocKeyTexture(int keyIndex, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocContainerInventoryTexture(TextureManager &textureManager, Renderer &renderer);
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);
+	void DEBUG_DrawVoxelVisibilityQuadtree(Game &game);
 }
 
 #endif

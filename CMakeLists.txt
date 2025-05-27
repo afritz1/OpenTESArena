@@ -1,10 +1,12 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.16.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.21.0 FATAL_ERROR)
 
 IF (COMMAND cmake_policy)
-    cmake_policy(SET CMP0003 NEW)
+    cmake_policy(SET CMP0003 NEW) # Relative linker paths for more portability
 ENDIF (COMMAND cmake_policy)
 
 PROJECT(OpenTESArena)
+
+include(FetchContent)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 
@@ -27,8 +29,14 @@ SET(CMAKE_EXE_LINKER_FLAGS_RELEASENATIVE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 
 # Compiler settings (optimizations, debugging, etc.)
 IF (MSVC)
+    # Statically link runtime lib via /MT or /MTd.
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
     # Multi-processor compilation.
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+
+    # Disable runtime type info.
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /GR-")
 
     # Add various optimizations to release builds.
     SET(CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO "/O2 /Ob2 /Oi /Ot /Oy /fp:fast /Zi")
@@ -45,23 +53,45 @@ ELSEIF (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang") # GCC
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lpthread -pthread")
     ENDIF ()
 
-    # Debug builds.
+    # Disable runtime type info (avoids linker error w/ Jolt DebugRendererSimple).
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
+
+    # Debug build.
     SET(CMAKE_CXX_FLAGS_DEBUG "-g")
 
-    # Generic release build (works with a variety of CPUs).
+    # Optimized development build with fast compilation.
     SET(CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO "-g -O3")
-    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "${CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO} -flto")
 
-    # Native release build for the computer compiling it.
-    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "-g -Ofast -flto -march=native")
-    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -mavx")
-    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -mfpu=neon")
+    # Optimized release build, works with CPUs of the same arch (e.g. x86-64).
+    SET(CMAKE_CXX_FLAGS_RELEASEGENERIC "${CMAKE_CXX_FLAGS_RELEASEGENERICNOLTO} -flto=auto")
+
+    # Max performance build only for the computer compiling it.
+    # Jolt Physics is sensitive to -ffast-math so be selective instead.
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "-g -O3 -flto=auto -march=native")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-math-errno")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-trapping-math")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fno-signed-zeros")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -ffp-contract=on")
+    SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -ffinite-math-only")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -freciprocal-math")
+    #SET(CMAKE_CXX_FLAGS_RELEASENATIVE "${CMAKE_CXX_FLAGS_RELEASENATIVE} -fassociative-math")
 
     # Sanitizers (can affect performance).
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread")
     #SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
 ENDIF ()
+
+ADD_COMPILE_DEFINITIONS(JPH_NO_FORCE_INLINE) # Fix __forceinline compile error in LTO builds.
+ADD_COMPILE_DEFINITIONS(JPH_DEBUG_RENDERER) # Enable Jolt Physics debug rendering in all builds.
+
+# Include Jolt
+FetchContent_Declare(
+    JoltPhysics
+    GIT_REPOSITORY "https://github.com/jrouwe/JoltPhysics"
+    GIT_TAG 0373ec0dd762e4bc2f6acdb08371ee84fa23c6db # 5.3.0
+    SOURCE_SUBDIR "Build")
+FetchContent_MakeAvailable(JoltPhysics)
 
 ADD_SUBDIRECTORY(components)
 ADD_SUBDIRECTORY(OpenTESArena)

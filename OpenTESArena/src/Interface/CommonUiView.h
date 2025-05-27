@@ -25,7 +25,7 @@ namespace CommonUiView
 	constexpr TextAlignment DebugInfoTextAlignment = TextAlignment::TopLeft;
 	Rect getDebugInfoTextBoxRect();
 
-	TextBox::InitInfo getDebugInfoTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getDebugInfoTextBoxInitInfo(const FontLibrary &fontLibrary);
 }
 
 #endif

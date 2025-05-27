@@ -1,17 +1,17 @@
 #include <algorithm>
 
+#include "ArenaAnimUtils.h"
 #include "CitizenUtils.h"
 #include "EntityChunkManager.h"
 #include "EntityDefinitionLibrary.h"
-#include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextureManager.h"
-#include "../Game/CardinalDirection.h"
-#include "../Game/CardinalDirectionName.h"
 #include "../Math/Random.h"
 #include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
+#include "../World/CardinalDirection.h"
+#include "../World/CardinalDirectionName.h"
 #include "../World/MapType.h"
 #include "../WorldMap/ProvinceDefinition.h"
 
@@ -32,15 +32,12 @@ namespace
 }
 
 void CitizenUtils::CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID,
-	const EntityDefinition *maleEntityDef, const EntityDefinition *femaleEntityDef,
-	EntityAnimationInstance &&maleAnimInst, EntityAnimationInstance &&femaleAnimInst, int raceID)
+	const EntityDefinition *maleEntityDef, const EntityDefinition *femaleEntityDef, int raceID)
 {
 	this->maleEntityDefID = maleEntityDefID;
 	this->femaleEntityDefID = femaleEntityDefID;
 	this->maleEntityDef = maleEntityDef;
 	this->femaleEntityDef = femaleEntityDef;
-	this->maleAnimInst = std::move(maleAnimInst);
-	this->femaleAnimInst = std::move(femaleAnimInst);
 	this->raceID = raceID;
 }
 
@@ -52,10 +49,10 @@ bool CitizenUtils::canMapTypeSpawnCitizens(MapType mapType)
 CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType)
 {
 	// Citizen entity definitions are level-independent and stored in a library beforehand.
-	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinition::Type::Citizen));
+	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinitionType::Citizen));
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
-	EntityDefinitionLibrary::Key maleEntityDefKey, femaleEntityDefKey;
+	EntityDefinitionKey maleEntityDefKey, femaleEntityDefKey;
 	maleEntityDefKey.initCitizen(true, climateType);
 	femaleEntityDefKey.initCitizen(false, climateType);
 
@@ -66,36 +63,12 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaT
 		DebugCrash("Couldn't get citizen entity def ID from library.");
 	}
 
-	// Only two citizen entity definitions for a given climate, based on the gender.
+	// Two citizen entity definitions per climate.
 	const EntityDefinition &maleEntityDef = entityDefLibrary.getDefinition(maleEntityDefID);
 	const EntityDefinition &femaleEntityDef = entityDefLibrary.getDefinition(femaleEntityDefID);
 
-	auto initAnimInst = [](EntityAnimationInstance &animInst, const EntityAnimationDefinition &animDef)
-	{
-		for (int i = 0; i < animDef.stateCount; i++)
-		{
-			const EntityAnimationDefinitionState &animDefState = animDef.states[i];
-			animInst.addState(animDefState.seconds, animDefState.isLooping);
-		}
-		
-		// Idle animation by default.
-		const std::optional<int> stateIndex = animDef.tryGetStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
-		if (!stateIndex.has_value())
-		{
-			DebugLogError("Couldn't get idle state index for citizen.");
-			return;
-		}
-
-		animInst.setStateIndex(*stateIndex);
-	};
-
-	EntityAnimationInstance maleAnimInst, femaleAnimInst;
-	initAnimInst(maleAnimInst, maleEntityDef.getAnimDef());
-	initAnimInst(femaleAnimInst, femaleEntityDef.getAnimDef());
-
 	CitizenGenInfo citizenGenInfo;
-	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef,
-		std::move(maleAnimInst), std::move(femaleAnimInst), raceID);
+	citizenGenInfo.init(maleEntityDefID, femaleEntityDefID, &maleEntityDef, &femaleEntityDef, raceID);
 	return citizenGenInfo;
 }
 

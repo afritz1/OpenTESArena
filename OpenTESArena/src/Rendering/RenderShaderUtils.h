@@ -3,40 +3,39 @@
 
 enum class VertexShaderType
 {
-	Voxel,
-	SwingingDoor,
-	SlidingDoor,
+	Basic,
 	RaisingDoor,
-	SplittingDoor,
 	Entity
 };
 
 enum class PixelShaderType
 {
 	Opaque,
-	OpaqueWithAlphaTestLayer, // Chasm walls.
+	OpaqueWithAlphaTestLayer, // Dry chasm walls.
+	OpaqueScreenSpaceAnimation, // Water/lava chasm floors.
+	OpaqueScreenSpaceAnimationWithAlphaTestLayer, // Water/lava chasm walls.
 	AlphaTested,
 	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
 	AlphaTestedWithVariableTexCoordVMin, // Raising doors.
 	AlphaTestedWithPaletteIndexLookup, // Citizens.
 	AlphaTestedWithLightLevelColor, // Clouds, distant moons.
 	AlphaTestedWithLightLevelOpacity, // Ghosts, screen-space fog.
-	AlphaTestedWithPreviousBrightnessLimit // Stars.
+	AlphaTestedWithPreviousBrightnessLimit, // Stars.
+	AlphaTestedWithHorizonMirror // Puddles.
 };
 
-enum class TextureSamplingType
+static constexpr PixelShaderType PIXEL_SHADER_TYPE_MAX = PixelShaderType::AlphaTestedWithHorizonMirror;
+static constexpr int PIXEL_SHADER_TYPE_COUNT = static_cast<int>(PIXEL_SHADER_TYPE_MAX) + 1;
+
+enum class DitheringMode
 {
-	Default,
-	ScreenSpaceRepeatY // Chasms.
+	None,
+	Classic,
+	Modern
 };
 
-// Unique ID for a light allocated in the renderer's internal format.
-using RenderLightID = int;
+static constexpr int DITHERING_MODERN_MASK_COUNT = 4;
 
-enum class RenderLightingType
-{
-	PerMesh, // Mesh is uniformly shaded by a single draw call value.
-	PerPixel // Mesh is shaded by lights in the scene.
-};
+using UniformBufferID = int;
 
 #endif

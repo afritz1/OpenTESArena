@@ -6,11 +6,12 @@
 #include "WeatherInstance.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Audio/AudioManager.h"
-#include "../Game/ArenaClockUtils.h"
-#include "../Game/Clock.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Time/ArenaClockUtils.h"
+#include "../Time/Clock.h"
+#include "../Time/ClockLibrary.h"
 
 #include "components/debug/Debug.h"
 
@@ -18,10 +19,14 @@ namespace
 {
 	bool IsDuringThunderstorm(const Clock &clock)
 	{
+		const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+		const Clock &thunderstormStartClock = clockLibrary.getClock(ArenaClockUtils::ThunderstormStart);
+		const Clock &thunderstormEndClock = clockLibrary.getClock(ArenaClockUtils::ThunderstormEnd);
+
 		// Starts in the evening, ends in the morning.
-		const double seconds = clock.getPreciseTotalSeconds();
-		const double startSeconds = ArenaClockUtils::ThunderstormStart.getPreciseTotalSeconds();
-		const double endSeconds = ArenaClockUtils::ThunderstormEnd.getPreciseTotalSeconds();
+		const double seconds = clock.getTotalSeconds();
+		const double startSeconds = thunderstormStartClock.getTotalSeconds();
+		const double endSeconds = thunderstormEndClock.getTotalSeconds();
 		return (seconds >= startSeconds) || (seconds < endSeconds);
 	}
 
@@ -112,8 +117,7 @@ void WeatherRainInstance::Thunderstorm::update(double dt, const Clock &clock,
 			this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 			this->lightningBoltAngle = MakeLightningBoltAngle(random);
 
-			const std::string &soundFilename = ArenaSoundName::Thunder;
-			audioManager.playSound(soundFilename);
+			audioManager.playSound(ArenaSoundName::Thunder);
 		}
 	}
 }

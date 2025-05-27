@@ -58,8 +58,8 @@ bool ImageSequencePanel::init(BufferView<const std::string> paletteNames,
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const int textureCount = textureNames.getCount();
 	this->textureRefs.init(textureCount);
 	for (int i = 0; i < textureCount; i++)
@@ -80,17 +80,17 @@ bool ImageSequencePanel::init(BufferView<const std::string> paletteNames,
 		this->textureRefs.set(i, ScopedUiTextureRef(textureID, renderer));
 	}
 
-	UiDrawCall::TextureFunc textureFunc = [this]()
+	UiDrawCallInitInfo drawCallInitInfo;
+	drawCallInitInfo.textureFunc = [this]()
 	{
 		const ScopedUiTextureRef &textureRef = this->textureRefs.get(this->imageIndex);
 		return textureRef.get();
 	};
 
-	this->addDrawCall(
-		textureFunc,
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+	drawCallInitInfo.position = Int2::Zero;
+	drawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	drawCallInitInfo.pivotType = PivotType::TopLeft;
+	this->addDrawCall(drawCallInitInfo);
 
 	this->onFinished = onFinished;
 	

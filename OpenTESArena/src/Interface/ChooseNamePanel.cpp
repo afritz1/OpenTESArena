@@ -13,18 +13,18 @@ ChooseNamePanel::ChooseNamePanel(Game &game)
 bool ChooseNamePanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseNameUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo = ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBoxInitInfo titleTextBoxInitInfo = ChooseNameUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	const TextBox::InitInfo entryTextBoxInitInfo = ChooseNameUiView::getEntryTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo entryTextBoxInitInfo = ChooseNameUiView::getEntryTextBoxInitInfo(fontLibrary);
 	if (!this->entryTextBox.init(entryTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init entry text box.");
@@ -50,7 +50,7 @@ bool ChooseNamePanel::init()
 		}
 	});
 
-	this->addTextInputListener([this](const std::string_view &text)
+	this->addTextInputListener([this](const std::string_view text)
 	{
 		bool dirty;
 		ChooseNameUiController::onTextInput(text, this->name, &dirty);
@@ -61,45 +61,42 @@ bool ChooseNamePanel::init()
 		}
 	});
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setTextInputMode(true);
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID parchmentTextureID = ChooseNameUiView::allocParchmentTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-	this->addDrawCall(
-		this->nightSkyTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
-	this->addDrawCall(
-		this->parchmentTextureRef.get(),
-		ChooseNameUiView::getTitleTextureCenter(),
-		Int2(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo nightSkyDrawCallInitInfo;
+	nightSkyDrawCallInitInfo.textureID = this->nightSkyTextureRef.get();
+	nightSkyDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(nightSkyDrawCallInitInfo);
 
-	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	this->addDrawCall(
-		this->titleTextBox.getTextureID(),
-		titleTextBoxRect.getCenter(),
-		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo parchmentDrawCallInitInfo;
+	parchmentDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
+	parchmentDrawCallInitInfo.position = ChooseNameUiView::getTitleTextureCenter();
+	parchmentDrawCallInitInfo.size = Int2(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight());
+	parchmentDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(parchmentDrawCallInitInfo);
 
-	// Need a texture func for the name text box due to the non-constness of the getter.
-	UiDrawCall::TextureFunc entryTextureFunc = [this]()
-	{
-		return this->entryTextBox.getTextureID();
-	};
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleDrawCallInitInfo;
+	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
+	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleDrawCallInitInfo);
 
-	const Rect &entryTextBoxRect = this->entryTextBox.getRect();
-	this->addDrawCall(
-		entryTextureFunc,
-		entryTextBoxRect.getCenter(),
-		Int2(entryTextBoxRect.getWidth(), entryTextBoxRect.getHeight()),
-		PivotType::Middle);
+	const Rect entryTextBoxRect = this->entryTextBox.getRect();
+	UiDrawCallInitInfo nameEntryDrawCallInitInfo;
+	nameEntryDrawCallInitInfo.textureFunc = [this]() { return this->entryTextBox.getTextureID(); };
+	nameEntryDrawCallInitInfo.position = entryTextBoxRect.getCenter();
+	nameEntryDrawCallInitInfo.size = entryTextBoxRect.getSize();
+	nameEntryDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(nameEntryDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

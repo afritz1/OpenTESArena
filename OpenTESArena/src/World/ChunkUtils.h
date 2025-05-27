@@ -55,7 +55,8 @@ namespace ChunkUtils
 		WEInt startZ, WEInt endZ);
 
 	VoxelInt3 MakeChunkVoxelFromLevel(const WorldInt3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ);
-	VoxelDouble3 MakeChunkPointFromLevel(const WorldDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ);
+	VoxelInt2 MakeChunkVoxelFromLevel(const WorldInt2 &levelPosition, SNInt chunkStartX, WEInt chunkStartZ);
+	VoxelDouble2 MakeChunkPointFromLevel(const WorldDouble2 &levelPosition, SNInt chunkStartX, WEInt chunkStartZ);
 }
 
 #endif

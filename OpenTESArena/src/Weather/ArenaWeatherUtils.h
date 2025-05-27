@@ -6,17 +6,18 @@
 
 #include "components/utilities/Buffer.h"
 
-class Color;
-class ExeData;
 class Random;
 class TextureManager;
 
+struct Color;
+struct ExeData;
 struct TextureAsset;
 
 // Various functions for working with the original game's weather.
-
 namespace ArenaWeatherUtils
 {
+	constexpr int RAINDROP_TYPE_COUNT = 3;
+
 	constexpr int RAINDROP_FAST_COUNT = 20;
 	constexpr int RAINDROP_MEDIUM_COUNT = 20;
 	constexpr int RAINDROP_SLOW_COUNT = 20;
@@ -32,6 +33,8 @@ namespace ArenaWeatherUtils
 
 	constexpr double THUNDERSTORM_SKY_FLASH_SECONDS = 0.35;
 	constexpr double THUNDERSTORM_BOLT_SECONDS = 0.20;
+
+	constexpr int SNOWFLAKE_TYPE_COUNT = 3;
 
 	constexpr int SNOWFLAKE_FAST_COUNT = 20;
 	constexpr int SNOWFLAKE_MEDIUM_COUNT = 30;

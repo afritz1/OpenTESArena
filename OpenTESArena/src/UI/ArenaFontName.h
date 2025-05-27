@@ -1,8 +1,6 @@
 #ifndef ARENA_FONT_NAME_H
 #define ARENA_FONT_NAME_H
 
-#include <array>
-
 namespace ArenaFontName
 {
 	// Can't be std::string due to global initialization order issues.
@@ -16,7 +14,7 @@ namespace ArenaFontName
 	constexpr const char *S = "FONT_S.DAT";
 	constexpr const char *Teeny = "TEENYFNT.DAT";
 
-	constexpr std::array<const char*, 9> FontPtrs =
+	constexpr const char *FontPtrs[] =
 	{
 		ArenaFontName::A,
 		ArenaFontName::Arena,

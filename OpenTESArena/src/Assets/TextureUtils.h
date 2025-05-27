@@ -10,11 +10,6 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
 
-// Various texture handles for use with texture manager.
-using PaletteID = int; // 32-bit software surface (generally 256 texels)
-using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
-using TextureFileMetadataID = int; // Metadata for a texture file (texture count, dimensions, etc.).
-
 class FontLibrary;
 class Renderer;
 class Surface;
@@ -22,6 +17,11 @@ class Texture;
 class TextureManager;
 
 struct TextureAsset;
+
+// Various texture handles for use with texture manager.
+using PaletteID = int; // 32-bit software surface (generally 256 texels)
+using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
+using TextureFileMetadataID = int; // Metadata for a texture file (texture count, dimensions, etc.).
 
 namespace TextureUtils
 {
@@ -64,11 +64,6 @@ namespace TextureUtils
 			return this->startID + index;
 		}
 	};
-
-	// 32-bit texture creation convenience functions.
-	Surface makeSurfaceFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette);
-	Texture makeTextureFrom8Bit(int width, int height, const uint8_t *pixels, const Palette &palette,
-		Renderer &renderer);
 
 	// Generates a new texture from a pattern.
 	Surface generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,

@@ -8,12 +8,12 @@
 
 FPSCounter::FPSCounter()
 {
-	this->frameTimes.fill(0.0);
+	std::fill(std::begin(this->frameTimes), std::end(this->frameTimes), 0.0);
 }
 
 int FPSCounter::getFrameCount() const
 {
-	return static_cast<int>(this->frameTimes.size());
+	return static_cast<int>(std::size(this->frameTimes));
 }
 
 double FPSCounter::getFrameTime(int index) const
@@ -25,10 +25,11 @@ double FPSCounter::getFrameTime(int index) const
 double FPSCounter::getAverageFrameTime() const
 {
 	// Only need a few frame times to get a decent approximation.
-	constexpr size_t count = 20;
-	static_assert(std::tuple_size<decltype(this->frameTimes)>::value >= count);
+	const size_t count = std::size(this->frameTimes) / 2;
 
-	const double sum = std::accumulate(this->frameTimes.begin(), this->frameTimes.begin() + count, 0.0);
+	const auto beginIter = std::begin(this->frameTimes);
+	const auto endIter = beginIter + count;
+	const double sum = std::accumulate(beginIter, endIter, 0.0);
 	return sum / static_cast<double>(count);
 }
 
@@ -39,8 +40,10 @@ double FPSCounter::getAverageFPS() const
 
 double FPSCounter::getHighestFPS() const
 {
-	const auto iter = std::min_element(this->frameTimes.begin(), this->frameTimes.end());
-	if (iter == this->frameTimes.end())
+	const auto beginIter = std::begin(this->frameTimes);
+	const auto endIter = std::end(this->frameTimes);
+	const auto iter = std::min_element(beginIter, endIter);
+	if (iter == endIter)
 	{
 		return 0.0;
 	}
@@ -50,8 +53,10 @@ double FPSCounter::getHighestFPS() const
 
 double FPSCounter::getLowestFPS() const
 {
-	const auto iter = std::max_element(this->frameTimes.begin(), this->frameTimes.end());
-	if (iter == this->frameTimes.end())
+	const auto beginIter = std::begin(this->frameTimes);
+	const auto endIter = std::end(this->frameTimes);
+	const auto iter = std::max_element(beginIter, endIter);
+	if (iter == endIter)
 	{
 		return 0.0;
 	}
@@ -61,9 +66,10 @@ double FPSCounter::getLowestFPS() const
 
 void FPSCounter::updateFrameTime(double dt)
 {
-	// Rotate the array right by one index (this puts the last value at the front).
-	std::rotate(this->frameTimes.rbegin(),
-		this->frameTimes.rbegin() + 1, this->frameTimes.rend());
+	// Rotate right by one index so the last value becomes first, then overwrite it.
+	const auto rbeginIter = std::rbegin(this->frameTimes);
+	const auto rendIter = std::rend(this->frameTimes);
+	std::rotate(rbeginIter, rbeginIter + 1, rendIter);
 
-	this->frameTimes.front() = dt;
+	this->frameTimes[0] = dt;
 }

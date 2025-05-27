@@ -1,4 +1,8 @@
+#include "Jolt/Jolt.h"
+
 #include "CollisionChunk.h"
+#include "Physics.h"
+#include "../Voxels/ArenaChasmUtils.h"
 
 #include "components/debug/Debug.h"
 
@@ -7,65 +11,103 @@ void CollisionChunk::init(const ChunkInt2 &position, int height)
 	Chunk::init(position, height);
 
 	// Let the first definition (air) be usable immediately. All default IDs can safely point to it.
-	this->meshDefs.emplace_back(CollisionMeshDefinition());
-	this->meshMappings.emplace(VoxelChunk::AIR_MESH_DEF_ID, CollisionChunk::AIR_COLLISION_MESH_DEF_ID);
+	this->shapeDefs.emplace_back(CollisionShapeDefinition());
+	this->shapeMappings.emplace(VoxelChunk::AIR_TRAITS_DEF_ID, CollisionChunk::AIR_COLLISION_SHAPE_DEF_ID);
 
-	this->meshDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->meshDefIDs.fill(CollisionChunk::AIR_COLLISION_MESH_DEF_ID);
+	this->shapeDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->shapeDefIDs.fill(CollisionChunk::AIR_COLLISION_SHAPE_DEF_ID);
 
 	this->enabledColliders.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->enabledColliders.fill(false);
+
+	this->wallCompoundBodyID = Physics::INVALID_BODY_ID;
+	this->doorCompoundBodyID = Physics::INVALID_BODY_ID;
+	this->sensorCompoundBodyID = Physics::INVALID_BODY_ID;
+}
+
+void CollisionChunk::freePhysicsCompoundBodies(JPH::BodyInterface &bodyInterface)
+{
+	if (!this->wallCompoundBodyID.IsInvalid())
+	{
+		bodyInterface.RemoveBody(this->wallCompoundBodyID);
+		bodyInterface.DestroyBody(this->wallCompoundBodyID);
+		this->wallCompoundBodyID = Physics::INVALID_BODY_ID;
+	}
+
+	if (!this->doorCompoundBodyID.IsInvalid())
+	{
+		bodyInterface.RemoveBody(this->doorCompoundBodyID);
+		bodyInterface.DestroyBody(this->doorCompoundBodyID);
+		this->doorCompoundBodyID = Physics::INVALID_BODY_ID;
+	}
+
+	if (!this->sensorCompoundBodyID.IsInvalid())
+	{
+		bodyInterface.RemoveBody(this->sensorCompoundBodyID);
+		bodyInterface.DestroyBody(this->sensorCompoundBodyID);
+		this->sensorCompoundBodyID = Physics::INVALID_BODY_ID;
+	}
 }
 
 void CollisionChunk::clear()
 {
 	Chunk::clear();
-	this->meshDefs.clear();
-	this->meshMappings.clear();
-	this->meshDefIDs.clear();
+	this->shapeDefs.clear();
+	this->shapeMappings.clear();
+	this->shapeDefIDs.clear();
 	this->enabledColliders.clear();
+	DebugAssert(this->wallCompoundBodyID == Physics::INVALID_BODY_ID);
+	DebugAssert(this->doorCompoundBodyID == Physics::INVALID_BODY_ID);
+	DebugAssert(this->sensorCompoundBodyID == Physics::INVALID_BODY_ID);
 }
 
-int CollisionChunk::getCollisionMeshDefCount() const
+int CollisionChunk::getCollisionShapeDefCount() const
 {
-	return static_cast<int>(this->meshDefs.size());
+	return static_cast<int>(this->shapeDefs.size());
 }
 
-const CollisionMeshDefinition &CollisionChunk::getCollisionMeshDef(CollisionMeshDefID id) const
+const CollisionShapeDefinition &CollisionChunk::getCollisionShapeDef(CollisionShapeDefID id) const
 {
-	DebugAssertIndex(this->meshDefs, id);
-	return this->meshDefs[id];
+	DebugAssertIndex(this->shapeDefs, id);
+	return this->shapeDefs[id];
 }
 
-CollisionChunk::CollisionMeshDefID CollisionChunk::addCollisionMeshDef(CollisionMeshDefinition &&meshDef)
+CollisionShapeDefID CollisionChunk::findShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID) const
 {
-	const CollisionMeshDefID id = static_cast<CollisionMeshDefID>(this->meshDefs.size());
-	this->meshDefs.emplace_back(std::move(meshDef));
-	return id;
-}
-
-CollisionChunk::CollisionMeshDefID CollisionChunk::getOrAddMeshDefIdMapping(const VoxelChunk &voxelChunk,
-	VoxelChunk::VoxelMeshDefID voxelMeshDefID)
-{
-	CollisionChunk::CollisionMeshDefID collisionMeshDefID = -1;
-
-	const auto iter = this->meshMappings.find(voxelMeshDefID);
-	if (iter != this->meshMappings.end())
+	const auto iter = this->shapeMappings.find(voxelShapeDefID);
+	if (iter == this->shapeMappings.end())
 	{
-		collisionMeshDefID = iter->second;
+		return -1;
+	}
+
+	return iter->second;
+}
+
+CollisionShapeDefID CollisionChunk::addShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID)
+{
+	const auto iter = this->shapeMappings.find(voxelShapeDefID);
+	if (iter != this->shapeMappings.end())
+	{
+		DebugLogError("CollisionShapeDefID mapping already exists for chunk (" + this->getPosition().toString() + ").");
+		return iter->second;
+	}
+
+	const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+
+	CollisionShapeDefinition collisionShapeDef;
+	if (voxelShapeDef.type == VoxelShapeType::Box)
+	{
+		const VoxelBoxShapeDefinition &voxelBoxShapeDef = voxelShapeDef.box;
+		collisionShapeDef.initBox(voxelBoxShapeDef.width, voxelBoxShapeDef.height, voxelBoxShapeDef.depth, voxelBoxShapeDef.yOffset, voxelBoxShapeDef.yRotation);
 	}
 	else
 	{
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk.getMeshDef(voxelMeshDefID);
-		const BufferView<const double> verticesView(voxelMeshDef.collisionVertices);
-		const BufferView<const double> normalsView(voxelMeshDef.collisionNormals);
-		const BufferView<const int> indicesView(voxelMeshDef.collisionIndices);
-
-		CollisionMeshDefinition collisionMeshDef;
-		collisionMeshDef.init(verticesView, normalsView, indicesView);
-		collisionMeshDefID = this->addCollisionMeshDef(std::move(collisionMeshDef));
-		this->meshMappings.emplace(voxelMeshDefID, collisionMeshDefID);
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelShapeDef.type)));
 	}
 
-	return collisionMeshDefID;
+	CollisionShapeDefID collisionShapeDefID = static_cast<CollisionShapeDefID>(this->shapeDefs.size());
+	this->shapeDefs.emplace_back(std::move(collisionShapeDef));
+	this->shapeMappings.emplace(voxelShapeDefID, collisionShapeDefID);
+
+	return collisionShapeDefID;
 }

@@ -1,13 +1,13 @@
 PROJECT(otesa CXX)
 
-SET(OpenTESArena_VERSION "0.14.0")
+SET(OpenTESArena_VERSION "0.16.0")
 
 FIND_PACKAGE(SDL2 REQUIRED)
 FIND_PACKAGE(OpenAL REQUIRED)
 FIND_PACKAGE(WildMidi)
 
 SET(EXTERNAL_LIBS ${OPENAL_LIBRARY} ${SDL2_LIBRARY})
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}" ${SDL2_INCLUDE_DIR} ${OPENAL_INCLUDE_DIR})
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}" ${SDL2_INCLUDE_DIR} ${OPENAL_INCLUDE_DIR} ${JOLT_INCLUDE_DIR})
 IF(WILDMIDI_FOUND)
     SET(EXTERNAL_LIBS ${EXTERNAL_LIBS} ${WILDMIDI_LIBRARIES})
     INCLUDE_DIRECTORIES(${WILDMIDI_INCLUDE_DIRS})
@@ -19,8 +19,6 @@ ENDIF(WILDMIDI_FOUND)
 SET(SRC_ROOT ${otesa_SOURCE_DIR}/src)
 
 SET(TES_ASSETS
-    "${SRC_ROOT}/Assets/ArenaAnimUtils.cpp"
-    "${SRC_ROOT}/Assets/ArenaAnimUtils.h"
     "${SRC_ROOT}/Assets/ArenaAssetUtils.h"
     "${SRC_ROOT}/Assets/ArenaLevelLibrary.cpp"
     "${SRC_ROOT}/Assets/ArenaLevelLibrary.h"
@@ -105,6 +103,8 @@ SET(TES_AUDIO
     "${SRC_ROOT}/Audio/MusicLibrary.h"
     "${SRC_ROOT}/Audio/MusicUtils.cpp"
     "${SRC_ROOT}/Audio/MusicUtils.h"
+    "${SRC_ROOT}/Audio/SoundLibrary.cpp"
+    "${SRC_ROOT}/Audio/SoundLibrary.h"
     "${SRC_ROOT}/Audio/WildMidi.cpp"
     "${SRC_ROOT}/Audio/WildMidi.h")
 
@@ -115,36 +115,38 @@ SET(TES_COLLISION
     "${SRC_ROOT}/Collision/CollisionChunk.h"
     "${SRC_ROOT}/Collision/CollisionChunkManager.cpp"
     "${SRC_ROOT}/Collision/CollisionChunkManager.h"
-    "${SRC_ROOT}/Collision/CollisionMeshDefinition.cpp"
-    "${SRC_ROOT}/Collision/CollisionMeshDefinition.h"
+    "${SRC_ROOT}/Collision/CollisionShapeDefinition.cpp"
+    "${SRC_ROOT}/Collision/CollisionShapeDefinition.h"
     "${SRC_ROOT}/Collision/Physics.cpp"
     "${SRC_ROOT}/Collision/Physics.h"
+    "${SRC_ROOT}/Collision/PhysicsBodyActivationListener.cpp"
+    "${SRC_ROOT}/Collision/PhysicsBodyActivationListener.h"
+    "${SRC_ROOT}/Collision/PhysicsContactListener.cpp"
+    "${SRC_ROOT}/Collision/PhysicsContactListener.h"
+    "${SRC_ROOT}/Collision/PhysicsLayer.cpp"
+    "${SRC_ROOT}/Collision/PhysicsLayer.h"
+    "${SRC_ROOT}/Collision/RayCastTypes.cpp"
+    "${SRC_ROOT}/Collision/RayCastTypes.h"
     "${SRC_ROOT}/Collision/SelectionUtils.h")
 
+SET(TES_COMBAT
+    "${SRC_ROOT}/Combat/CombatLogic.cpp"
+    "${SRC_ROOT}/Combat/CombatLogic.h")
+
 SET(TES_ENTITIES
-    "${SRC_ROOT}/Entities/AttributeModifier.cpp"
-    "${SRC_ROOT}/Entities/AttributeModifier.h"
-    "${SRC_ROOT}/Entities/AttributeModifierName.h"
-    "${SRC_ROOT}/Entities/BodyPart.cpp"
-    "${SRC_ROOT}/Entities/BodyPart.h"
-    "${SRC_ROOT}/Entities/BodyPartName.h"
-    "${SRC_ROOT}/Entities/Camera3D.cpp"
-    "${SRC_ROOT}/Entities/Camera3D.h"
-    "${SRC_ROOT}/Entities/CharacterClassDefinition.cpp"
-    "${SRC_ROOT}/Entities/CharacterClassDefinition.h"
-    "${SRC_ROOT}/Entities/CharacterClassLibrary.cpp"
-    "${SRC_ROOT}/Entities/CharacterClassLibrary.h"
-    "${SRC_ROOT}/Entities/CharacterEquipment.cpp"
-    "${SRC_ROOT}/Entities/CharacterEquipment.h"
+    "${SRC_ROOT}/Entities/ArenaAnimUtils.cpp"
+    "${SRC_ROOT}/Entities/ArenaAnimUtils.h"
+    "${SRC_ROOT}/Entities/ArenaCitizenUtils.h"
+    "${SRC_ROOT}/Entities/ArenaEntityUtils.cpp"
+    "${SRC_ROOT}/Entities/ArenaEntityUtils.h"
     "${SRC_ROOT}/Entities/CitizenUtils.cpp"
     "${SRC_ROOT}/Entities/CitizenUtils.h"
-    "${SRC_ROOT}/Entities/DerivedAttribute.cpp"
-    "${SRC_ROOT}/Entities/DerivedAttribute.h"
-    "${SRC_ROOT}/Entities/DerivedAttributeName.h"
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.cpp"
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.h"
     "${SRC_ROOT}/Entities/EntityAnimationInstance.cpp"
     "${SRC_ROOT}/Entities/EntityAnimationInstance.h"
+    "${SRC_ROOT}/Entities/EntityAnimationLibrary.cpp"
+    "${SRC_ROOT}/Entities/EntityAnimationLibrary.h"
     "${SRC_ROOT}/Entities/EntityAnimationUtils.h"
     "${SRC_ROOT}/Entities/EntityChunk.cpp"
     "${SRC_ROOT}/Entities/EntityChunk.h"
@@ -158,51 +160,22 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/EntityGeneration.h"
     "${SRC_ROOT}/Entities/EntityInstance.cpp"
     "${SRC_ROOT}/Entities/EntityInstance.h"
+    "${SRC_ROOT}/Entities/EntityObservedResult.cpp"
+    "${SRC_ROOT}/Entities/EntityObservedResult.h"
     "${SRC_ROOT}/Entities/EntityUtils.cpp"
     "${SRC_ROOT}/Entities/EntityUtils.h"
-    "${SRC_ROOT}/Entities/EntityVisibilityState.cpp"
-    "${SRC_ROOT}/Entities/EntityVisibilityState.h"
-    "${SRC_ROOT}/Entities/Player.cpp"
-    "${SRC_ROOT}/Entities/Player.h"
-    "${SRC_ROOT}/Entities/PrimaryAttribute.cpp"
-    "${SRC_ROOT}/Entities/PrimaryAttribute.h"
-    "${SRC_ROOT}/Entities/PrimaryAttributeName.h"
-    "${SRC_ROOT}/Entities/PrimaryAttributeSet.cpp"
-    "${SRC_ROOT}/Entities/PrimaryAttributeSet.h"
-    "${SRC_ROOT}/Entities/WeaponAnimation.cpp"
-    "${SRC_ROOT}/Entities/WeaponAnimation.h")
+    "${SRC_ROOT}/Entities/EntityVisibilityChunk.cpp"
+    "${SRC_ROOT}/Entities/EntityVisibilityChunk.h"
+    "${SRC_ROOT}/Entities/EntityVisibilityChunkManager.cpp"
+    "${SRC_ROOT}/Entities/EntityVisibilityChunkManager.h")
 
 SET(TES_GAME
-    "${SRC_ROOT}/Game/ArenaClockUtils.cpp"
-    "${SRC_ROOT}/Game/ArenaClockUtils.h"
-    "${SRC_ROOT}/Game/ArenaDateUtils.cpp"
-    "${SRC_ROOT}/Game/ArenaDateUtils.h"
-    "${SRC_ROOT}/Game/CardinalDirection.cpp"
-    "${SRC_ROOT}/Game/CardinalDirection.h"
-    "${SRC_ROOT}/Game/CardinalDirectionName.h"
-    "${SRC_ROOT}/Game/CharacterClassGeneration.cpp"
-    "${SRC_ROOT}/Game/CharacterClassGeneration.h"
-    "${SRC_ROOT}/Game/CharacterCreationState.cpp"
-    "${SRC_ROOT}/Game/CharacterCreationState.h"
-    "${SRC_ROOT}/Game/CharacterQuestion.cpp"
-    "${SRC_ROOT}/Game/CharacterQuestion.h"
-    "${SRC_ROOT}/Game/Clock.cpp"
-    "${SRC_ROOT}/Game/Clock.h"
-    "${SRC_ROOT}/Game/Date.cpp"
-    "${SRC_ROOT}/Game/Date.h"
     "${SRC_ROOT}/Game/Game.cpp"
     "${SRC_ROOT}/Game/Game.h"
     "${SRC_ROOT}/Game/GameState.cpp"
     "${SRC_ROOT}/Game/GameState.h"
     "${SRC_ROOT}/Game/Options.cpp"
-    "${SRC_ROOT}/Game/Options.h"
-    "${SRC_ROOT}/Game/PlayerInterface.h")
-
-SET(TES_GAME_LOGIC
-    "${SRC_ROOT}/GameLogic/MapLogicController.cpp"
-    "${SRC_ROOT}/GameLogic/MapLogicController.h"
-    "${SRC_ROOT}/GameLogic/PlayerLogicController.cpp"
-    "${SRC_ROOT}/GameLogic/PlayerLogicController.h")
+    "${SRC_ROOT}/Game/Options.h")
 
 SET(TES_INPUT
     "${SRC_ROOT}/Input/ApplicationEvents.h"
@@ -307,6 +280,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/LogbookUiModel.h"
     "${SRC_ROOT}/Interface/LogbookUiView.cpp"
     "${SRC_ROOT}/Interface/LogbookUiView.h"
+    "${SRC_ROOT}/Interface/LootSubPanel.cpp"
+    "${SRC_ROOT}/Interface/LootSubPanel.h"
     "${SRC_ROOT}/Interface/MainMenuPanel.cpp"
     "${SRC_ROOT}/Interface/MainMenuPanel.h"
     "${SRC_ROOT}/Interface/MainMenuUiController.cpp"
@@ -373,66 +348,20 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/WorldMapUiView.h")
 
 SET(TES_ITEMS
-    "${SRC_ROOT}/Items/Accessory.cpp"
-    "${SRC_ROOT}/Items/Accessory.h"
-    "${SRC_ROOT}/Items/AccessoryArtifactData.cpp"
-    "${SRC_ROOT}/Items/AccessoryArtifactData.h"
-    "${SRC_ROOT}/Items/AccessoryType.h"
-    "${SRC_ROOT}/Items/Armor.cpp"
-    "${SRC_ROOT}/Items/Armor.h"
-    "${SRC_ROOT}/Items/ArmorArtifactData.cpp"
-    "${SRC_ROOT}/Items/ArmorArtifactData.h"
-    "${SRC_ROOT}/Items/ArmorMaterial.cpp"
-    "${SRC_ROOT}/Items/ArmorMaterial.h"
-    "${SRC_ROOT}/Items/ArmorMaterialType.h"
-    "${SRC_ROOT}/Items/ArmorType.h"
-    "${SRC_ROOT}/Items/ArtifactData.cpp"
-    "${SRC_ROOT}/Items/ArtifactData.h"
-    "${SRC_ROOT}/Items/BodyArmor.cpp"
-    "${SRC_ROOT}/Items/BodyArmor.h"
-    "${SRC_ROOT}/Items/BodyArmorArtifactData.cpp"
-    "${SRC_ROOT}/Items/BodyArmorArtifactData.h"
-    "${SRC_ROOT}/Items/Consumable.cpp"
-    "${SRC_ROOT}/Items/Consumable.h"
-    "${SRC_ROOT}/Items/ConsumableType.h"
-    "${SRC_ROOT}/Items/HeavyArmorMaterial.cpp"
-    "${SRC_ROOT}/Items/HeavyArmorMaterial.h"
-    "${SRC_ROOT}/Items/Item.cpp"
-    "${SRC_ROOT}/Items/Item.h"
-    "${SRC_ROOT}/Items/ItemCondition.cpp"
-    "${SRC_ROOT}/Items/ItemCondition.h"
-    "${SRC_ROOT}/Items/ItemConditionName.h"
-    "${SRC_ROOT}/Items/ItemType.h"
-    "${SRC_ROOT}/Items/LightArmorMaterial.cpp"
-    "${SRC_ROOT}/Items/LightArmorMaterial.h"
-    "${SRC_ROOT}/Items/MediumArmorMaterial.cpp"
-    "${SRC_ROOT}/Items/MediumArmorMaterial.h"
-    "${SRC_ROOT}/Items/Metal.cpp"
-    "${SRC_ROOT}/Items/Metal.h"
-    "${SRC_ROOT}/Items/Metallic.cpp"
-    "${SRC_ROOT}/Items/Metallic.h"
-    "${SRC_ROOT}/Items/MetalType.h"
-    "${SRC_ROOT}/Items/MiscellaneousArtifactData.cpp"
-    "${SRC_ROOT}/Items/MiscellaneousArtifactData.h"
-    "${SRC_ROOT}/Items/MiscellaneousItem.cpp"
-    "${SRC_ROOT}/Items/MiscellaneousItem.h"
-    "${SRC_ROOT}/Items/MiscellaneousItemType.h"
-    "${SRC_ROOT}/Items/Potion.cpp"
-    "${SRC_ROOT}/Items/Potion.h"
-    "${SRC_ROOT}/Items/Shield.cpp"
-    "${SRC_ROOT}/Items/Shield.h"
-    "${SRC_ROOT}/Items/ShieldArtifactData.cpp"
-    "${SRC_ROOT}/Items/ShieldArtifactData.h"
-    "${SRC_ROOT}/Items/ShieldType.h"
-    "${SRC_ROOT}/Items/Trinket.cpp"
-    "${SRC_ROOT}/Items/Trinket.h"
-    "${SRC_ROOT}/Items/TrinketType.h"
-    "${SRC_ROOT}/Items/Weapon.cpp"
-    "${SRC_ROOT}/Items/Weapon.h"
-    "${SRC_ROOT}/Items/WeaponArtifactData.cpp"
-    "${SRC_ROOT}/Items/WeaponArtifactData.h"
-    "${SRC_ROOT}/Items/WeaponHandCount.h"
-    "${SRC_ROOT}/Items/WeaponRangeType.h")
+    "${SRC_ROOT}/Items/ArenaItemUtils.cpp"
+    "${SRC_ROOT}/Items/ArenaItemUtils.h"
+    "${SRC_ROOT}/Items/ItemConditionLibrary.cpp"
+    "${SRC_ROOT}/Items/ItemConditionLibrary.h"
+    "${SRC_ROOT}/Items/ItemDefinition.cpp"
+    "${SRC_ROOT}/Items/ItemDefinition.h"
+    "${SRC_ROOT}/Items/ItemInstance.cpp"
+    "${SRC_ROOT}/Items/ItemInstance.h"
+    "${SRC_ROOT}/Items/ItemInventory.cpp"
+    "${SRC_ROOT}/Items/ItemInventory.h"
+    "${SRC_ROOT}/Items/ItemLibrary.cpp"
+    "${SRC_ROOT}/Items/ItemLibrary.h"
+    "${SRC_ROOT}/Items/ItemMaterialLibrary.cpp"
+    "${SRC_ROOT}/Items/ItemMaterialLibrary.h")
 
 SET(TES_MATH
     "${SRC_ROOT}/Math/BoundingBox.cpp"
@@ -456,21 +385,43 @@ SET(TES_MATH
     "${SRC_ROOT}/Math/Vector4.cpp"
     "${SRC_ROOT}/Math/Vector4.h")
 
+SET(TES_PLAYER
+    "${SRC_ROOT}/Player/ArenaPlayerUtils.cpp"
+    "${SRC_ROOT}/Player/ArenaPlayerUtils.h"
+    "${SRC_ROOT}/Player/ArenaWeaponUtils.h"
+    "${SRC_ROOT}/Player/CharacterClassGeneration.cpp"
+    "${SRC_ROOT}/Player/CharacterClassGeneration.h"
+    "${SRC_ROOT}/Player/CharacterCreationState.cpp"
+    "${SRC_ROOT}/Player/CharacterCreationState.h"
+    "${SRC_ROOT}/Player/CharacterQuestion.cpp"
+    "${SRC_ROOT}/Player/CharacterQuestion.h"
+    "${SRC_ROOT}/Player/Player.cpp"
+    "${SRC_ROOT}/Player/Player.h"
+    "${SRC_ROOT}/Player/PlayerInterface.h"
+    "${SRC_ROOT}/Player/PlayerLogic.cpp"
+    "${SRC_ROOT}/Player/PlayerLogic.h"
+    "${SRC_ROOT}/Player/WeaponAnimation.cpp"
+    "${SRC_ROOT}/Player/WeaponAnimation.h"
+    "${SRC_ROOT}/Player/WeaponAnimationLibrary.cpp"
+    "${SRC_ROOT}/Player/WeaponAnimationLibrary.h"
+    "${SRC_ROOT}/Player/WeaponAnimationUtils.cpp"
+    "${SRC_ROOT}/Player/WeaponAnimationUtils.h")
+
 SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.cpp"
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.h"
-    "${SRC_ROOT}/Rendering/LegacyRendererUtils.cpp"
-    "${SRC_ROOT}/Rendering/LegacyRendererUtils.h"
     "${SRC_ROOT}/Rendering/RenderCamera.cpp"
     "${SRC_ROOT}/Rendering/RenderCamera.h"
-    "${SRC_ROOT}/Rendering/RenderChunk.cpp"
-    "${SRC_ROOT}/Rendering/RenderChunk.h"
-    "${SRC_ROOT}/Rendering/RenderChunkManager.cpp"
-    "${SRC_ROOT}/Rendering/RenderChunkManager.h"
+    "${SRC_ROOT}/Rendering/RenderCommandBuffer.cpp"
+    "${SRC_ROOT}/Rendering/RenderCommandBuffer.h"
     "${SRC_ROOT}/Rendering/RenderDrawCall.cpp"
     "${SRC_ROOT}/Rendering/RenderDrawCall.h"
-    "${SRC_ROOT}/Rendering/RenderEntityMeshDefinition.cpp"
-    "${SRC_ROOT}/Rendering/RenderEntityMeshDefinition.h"
+    "${SRC_ROOT}/Rendering/RenderEntityChunk.cpp"
+    "${SRC_ROOT}/Rendering/RenderEntityChunk.h"
+    "${SRC_ROOT}/Rendering/RenderEntityChunkManager.cpp"
+    "${SRC_ROOT}/Rendering/RenderEntityChunkManager.h"
+    "${SRC_ROOT}/Rendering/RenderEntityMeshInstance.cpp"
+    "${SRC_ROOT}/Rendering/RenderEntityMeshInstance.h"
     "${SRC_ROOT}/Rendering/Renderer.cpp"
     "${SRC_ROOT}/Rendering/Renderer.h"
     "${SRC_ROOT}/Rendering/RendererSystem2D.cpp"
@@ -485,13 +436,25 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderGeometryUtils.h"
     "${SRC_ROOT}/Rendering/RenderInitSettings.cpp"
     "${SRC_ROOT}/Rendering/RenderInitSettings.h"
+    "${SRC_ROOT}/Rendering/RenderLightChunk.cpp"
+    "${SRC_ROOT}/Rendering/RenderLightChunk.h"
+    "${SRC_ROOT}/Rendering/RenderLightChunkManager.cpp"
+    "${SRC_ROOT}/Rendering/RenderLightChunkManager.h"
+    "${SRC_ROOT}/Rendering/RenderLightUtils.cpp"
+    "${SRC_ROOT}/Rendering/RenderLightUtils.h"
     "${SRC_ROOT}/Rendering/RenderShaderUtils.h"
     "${SRC_ROOT}/Rendering/RenderSkyManager.h"
     "${SRC_ROOT}/Rendering/RenderSkyManager.cpp"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.h"
-    "${SRC_ROOT}/Rendering/RenderVoxelMeshDefinition.cpp"
-    "${SRC_ROOT}/Rendering/RenderVoxelMeshDefinition.h"
+    "${SRC_ROOT}/Rendering/RenderTransform.cpp"
+    "${SRC_ROOT}/Rendering/RenderTransform.h"
+    "${SRC_ROOT}/Rendering/RenderVoxelChunk.cpp"
+    "${SRC_ROOT}/Rendering/RenderVoxelChunk.h"
+    "${SRC_ROOT}/Rendering/RenderVoxelChunkManager.cpp"
+    "${SRC_ROOT}/Rendering/RenderVoxelChunkManager.h"
+    "${SRC_ROOT}/Rendering/RenderVoxelMeshInstance.cpp"
+    "${SRC_ROOT}/Rendering/RenderVoxelMeshInstance.h"
     "${SRC_ROOT}/Rendering/RenderWeatherManager.h"
     "${SRC_ROOT}/Rendering/RenderWeatherManager.cpp"
     "${SRC_ROOT}/Rendering/SdlUiRenderer.cpp"
@@ -524,7 +487,33 @@ SET(TES_SKY
     "${SRC_ROOT}/Sky/SkySunDefinition.cpp"
     "${SRC_ROOT}/Sky/SkySunDefinition.h"
     "${SRC_ROOT}/Sky/SkyUtils.cpp"
-    "${SRC_ROOT}/Sky/SkyUtils.h")
+    "${SRC_ROOT}/Sky/SkyUtils.h"
+    "${SRC_ROOT}/Sky/SkyVisibilityManager.cpp"
+    "${SRC_ROOT}/Sky/SkyVisibilityManager.h")
+
+SET(TES_STATS
+    "${SRC_ROOT}/Stats/CharacterClassDefinition.cpp"
+    "${SRC_ROOT}/Stats/CharacterClassDefinition.h"
+    "${SRC_ROOT}/Stats/CharacterClassLibrary.cpp"
+    "${SRC_ROOT}/Stats/CharacterClassLibrary.h"
+    "${SRC_ROOT}/Stats/CharacterRaceDefinition.cpp"
+    "${SRC_ROOT}/Stats/CharacterRaceDefinition.h"
+    "${SRC_ROOT}/Stats/CharacterRaceLibrary.cpp"
+    "${SRC_ROOT}/Stats/CharacterRaceLibrary.h"
+    "${SRC_ROOT}/Stats/PrimaryAttribute.cpp"
+    "${SRC_ROOT}/Stats/PrimaryAttribute.h")
+
+SET(TES_TIME
+    "${SRC_ROOT}/Time/ArenaClockUtils.cpp"
+    "${SRC_ROOT}/Time/ArenaClockUtils.h"
+    "${SRC_ROOT}/Time/ArenaDateUtils.cpp"
+    "${SRC_ROOT}/Time/ArenaDateUtils.h"
+    "${SRC_ROOT}/Time/Clock.cpp"
+    "${SRC_ROOT}/Time/Clock.h"
+    "${SRC_ROOT}/Time/ClockLibrary.cpp"
+    "${SRC_ROOT}/Time/ClockLibrary.h"
+    "${SRC_ROOT}/Time/Date.cpp"
+    "${SRC_ROOT}/Time/Date.h")
 
 SET(TES_UI
     "${SRC_ROOT}/UI/AnimationState.cpp"
@@ -533,8 +522,6 @@ SET(TES_UI
     "${SRC_ROOT}/UI/Button.cpp"
     "${SRC_ROOT}/UI/Button.h"
     "${SRC_ROOT}/UI/CursorAlignment.h"
-    "${SRC_ROOT}/UI/CursorData.cpp"
-    "${SRC_ROOT}/UI/CursorData.h"
     "${SRC_ROOT}/UI/FontDefinition.cpp"
     "${SRC_ROOT}/UI/FontDefinition.h"
     "${SRC_ROOT}/UI/FontLibrary.cpp"
@@ -577,11 +564,10 @@ SET(TES_VOXELS
     "${SRC_ROOT}/Voxels/ArenaChasmUtils.h"
     "${SRC_ROOT}/Voxels/ArenaVoxelUtils.cpp"
     "${SRC_ROOT}/Voxels/ArenaVoxelUtils.h"
-    "${SRC_ROOT}/Voxels/ChasmDefinition.cpp"
-    "${SRC_ROOT}/Voxels/ChasmDefinition.h"
-    "${SRC_ROOT}/Voxels/DoorDefinition.cpp"
-    "${SRC_ROOT}/Voxels/DoorDefinition.h"
+    "${SRC_ROOT}/Voxels/DoorUtils.cpp"
     "${SRC_ROOT}/Voxels/DoorUtils.h"
+    "${SRC_ROOT}/Voxels/VoxelChasmDefinition.cpp"
+    "${SRC_ROOT}/Voxels/VoxelChasmDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelChasmWallInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelChasmWallInstance.h"
     "${SRC_ROOT}/Voxels/VoxelChunk.cpp"
@@ -591,14 +577,18 @@ SET(TES_VOXELS
     "${SRC_ROOT}/Voxels/VoxelDirtyType.h"
     "${SRC_ROOT}/Voxels/VoxelDoorAnimationInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelDoorAnimationInstance.h"
+    "${SRC_ROOT}/Voxels/VoxelDoorDefinition.cpp"
+    "${SRC_ROOT}/Voxels/VoxelDoorDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelDoorVisibilityInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelDoorVisibilityInstance.h"
     "${SRC_ROOT}/Voxels/VoxelFacing2D.h"
     "${SRC_ROOT}/Voxels/VoxelFacing3D.h"
     "${SRC_ROOT}/Voxels/VoxelFadeAnimationInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelFadeAnimationInstance.h"
-    "${SRC_ROOT}/Voxels/VoxelMeshDefinition.cpp"
-    "${SRC_ROOT}/Voxels/VoxelMeshDefinition.h"
+    "${SRC_ROOT}/Voxels/VoxelShadingDefinition.cpp"
+    "${SRC_ROOT}/Voxels/VoxelShadingDefinition.h"
+    "${SRC_ROOT}/Voxels/VoxelShapeDefinition.cpp"
+    "${SRC_ROOT}/Voxels/VoxelShapeDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelTextureDefinition.cpp"
     "${SRC_ROOT}/Voxels/VoxelTextureDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelTraitsDefinition.cpp"
@@ -637,6 +627,9 @@ SET(TES_WORLD
     "${SRC_ROOT}/World/ArenaMeshUtils.h"
     "${SRC_ROOT}/World/ArenaWildUtils.cpp"
     "${SRC_ROOT}/World/ArenaWildUtils.h"
+    "${SRC_ROOT}/World/CardinalDirection.cpp"
+    "${SRC_ROOT}/World/CardinalDirection.h"
+    "${SRC_ROOT}/World/CardinalDirectionName.h"
     "${SRC_ROOT}/World/Chunk.cpp"
     "${SRC_ROOT}/World/Chunk.h"
     "${SRC_ROOT}/World/ChunkManager.cpp"
@@ -655,6 +648,8 @@ SET(TES_WORLD
     "${SRC_ROOT}/World/MapDefinition.h"
     "${SRC_ROOT}/World/MapGeneration.cpp"
     "${SRC_ROOT}/World/MapGeneration.h"
+    "${SRC_ROOT}/World/MapLogic.cpp"
+    "${SRC_ROOT}/World/MapLogic.h"
     "${SRC_ROOT}/World/MapType.h"
     "${SRC_ROOT}/World/MeshUtils.cpp"
     "${SRC_ROOT}/World/MeshUtils.h"
@@ -687,15 +682,18 @@ SET(TES_SOURCES
     ${TES_ASSETS}
     ${TES_AUDIO}
     ${TES_COLLISION}
+    ${TES_COMBAT}
     ${TES_ENTITIES}
     ${TES_GAME}
-    ${TES_GAME_LOGIC}
     ${TES_INPUT}
     ${TES_INTERFACE}
     ${TES_ITEMS}
     ${TES_MATH}
+    ${TES_PLAYER}
     ${TES_RENDERING}
     ${TES_SKY}
+    ${TES_STATS}
+    ${TES_TIME}
     ${TES_UI}
     ${TES_UTILITIES}
     ${TES_VOXELS}
@@ -713,47 +711,54 @@ SET(TES_DATA_FOLDER ${CMAKE_SOURCE_DIR}/data)
 SET(TES_OPTIONS_FOLDER ${CMAKE_SOURCE_DIR}/options)
 
 IF (NOT APPLE)
-    # Copy over required files
-    FILE(COPY ${TES_DATA_FOLDER} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-    FILE(COPY ${TES_OPTIONS_FOLDER} DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-    # @todo: probably need to add some post-build command here for data/options folders for
-    # the folder the executable goes into. This is necessary on MSVC and Linux/Raspberry Pi.
-    # The destination is probably ${OpenTESArena_BINARY_DIR}.
-
-    # Add the rest
     ADD_EXECUTABLE(otesa ${TES_SOURCES} ${TES_WIN32_RESOURCES})
-ELSE (APPLE)
-    # Info.plist properties
+    SET(TES_EXECUTABLE_RESOURCES_FOLDER $<TARGET_FILE_DIR:otesa>)
+ELSEIF (APPLE)
     SET(MACOSX_BUNDLE_LONG_VERSION_STRING ${OpenTESArena_VERSION})
     SET(MACOSX_BUNDLE_SHORT_VERSION_STRING ${OpenTESArena_VERSION})
 
-    # Icon
-    ## Find the file in source code
     SET(TES_MAC_ICON ${CMAKE_SOURCE_DIR}/macOS/OpenTESArena.icns)
-    ## Set the destination location to the standard .app location
     SET_SOURCE_FILES_PROPERTIES(${TES_MAC_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
-    ## Write the filename to the Info.plist file
     SET(MACOSX_BUNDLE_ICON_FILE OpenTESArena.icns)
-
-    # Copy over required files
-    # Using direct copy workaround because SET_SOURCE_FILES_PROPERTIES doesn't work recursively due to bug in CMake.
-    # See https://gitlab.kitware.com/cmake/cmake/issues/16886
-    FILE(COPY ${TES_DATA_FOLDER} DESTINATION ../otesa.app/Contents/Resources)
-    FILE(COPY ${TES_OPTIONS_FOLDER} DESTINATION ../otesa.app/Contents/Resources)
-
-    # Add the rest
+    
     ADD_EXECUTABLE(otesa MACOSX_BUNDLE ${TES_SOURCES} ${TES_MAC_ICON})
+    SET(TES_EXECUTABLE_RESOURCES_FOLDER $<TARGET_BUNDLE_CONTENT_DIR:otesa>/Resources)
 ENDIF()
 
-TARGET_LINK_LIBRARIES(otesa components ${EXTERNAL_LIBS})
+TARGET_INCLUDE_DIRECTORIES(otesa PUBLIC "${JoltPhysics_SOURCE_DIR}/..")
+TARGET_LINK_LIBRARIES(otesa Jolt components ${EXTERNAL_LIBS})
 SET_TARGET_PROPERTIES(otesa PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OpenTESArena_BINARY_DIR})
+
+ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${TES_DATA_FOLDER} ${TES_EXECUTABLE_RESOURCES_FOLDER}/data
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${TES_OPTIONS_FOLDER} ${TES_EXECUTABLE_RESOURCES_FOLDER}/options)
+
+IF (WIN32)
+    # @todo this doesn't seem to work because SDL2/OpenAL Soft/WildMIDI are not 'imported' libraries with a defined .dll
+    #ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+    #    COMMAND ${CMAKE_COMMAND} -E copy -t ${TES_EXECUTABLE_RESOURCES_FOLDER} $<TARGET_RUNTIME_DLLS:otesa>
+    #    COMMAND_EXPAND_LISTS)
+ELSEIF (APPLE)
+    SET(TES_DYLIB_DESTINATION_FOLDER $<TARGET_BUNDLE_CONTENT_DIR:otesa>/Frameworks)
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${TES_DYLIB_DESTINATION_FOLDER})
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy /opt/homebrew/opt/sdl2/lib/libSDL2.dylib ${TES_DYLIB_DESTINATION_FOLDER})
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy /opt/homebrew/opt/openal-soft/lib/libopenal.dylib ${TES_DYLIB_DESTINATION_FOLDER})
+    IF (WILDMIDI_FOUND)
+        ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy /opt/homebrew/opt/wildmidi/lib/libWildMidi.dylib ${TES_DYLIB_DESTINATION_FOLDER})
+    ENDIF()
+	
+    ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E env TES_APP_BUNDLE_PATH="$<TARGET_BUNDLE_DIR:otesa>" bash ${CMAKE_SOURCE_DIR}/macOS/fix_dylibs.sh)
+ENDIF()
 
 # Visual Studio filters.
 SOURCE_GROUP(TREE ${CMAKE_SOURCE_DIR}/OpenTESArena FILES ${TES_SOURCES})
 
-# DPI-awareness for Visual Studio project (no manifest required).
-# Note this is a CMake 3.16 feature.
 IF (MSVC)
-	SET_TARGET_PROPERTIES(otesa PROPERTIES VS_DPI_AWARE "PerMonitor")
+	SET_TARGET_PROPERTIES(otesa PROPERTIES VS_DPI_AWARE "PerMonitor") # DPI awareness
+    SET_PROPERTY(DIRECTORY PROPERTY VS_STARTUP_PROJECT "otesa") # Default startup project
 ENDIF()

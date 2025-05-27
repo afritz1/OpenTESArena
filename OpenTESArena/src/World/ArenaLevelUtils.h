@@ -15,14 +15,14 @@
 #include "components/utilities/BufferView2D.h"
 
 class ArenaRandom;
-class ExeData;
 class Renderer;
 class TextureManager;
 
 enum class MapType;
 
-// Various functions for working with Arena level data, shared between world types.
+struct ExeData;
 
+// Various functions for working with Arena level data, shared between world types.
 namespace ArenaLevelUtils
 {
 	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));

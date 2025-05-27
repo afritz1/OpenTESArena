@@ -10,7 +10,6 @@
 // This class loads a .DAT file containing font information. Each character is put
 // into its own black and white image. White pixels are part of a character, while
 // black pixels are part of the background (transparent).
-
 class FontFile
 {
 public:

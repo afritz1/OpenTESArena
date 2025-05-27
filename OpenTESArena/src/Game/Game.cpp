@@ -7,64 +7,180 @@
 #include <string>
 #include <thread>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Core/JobSystemThreadPool.h"
+#include "Jolt/Core/TempAllocator.h"
+#include "Jolt/Physics/PhysicsSystem.h"
 #include "SDL.h"
 
 #include "Game.h"
 #include "Options.h"
-#include "PlayerInterface.h"
 #include "../Assets/ArenaLevelLibrary.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
-#include "../Entities/CharacterClassLibrary.h"
+#include "../Audio/SoundLibrary.h"
+#include "../Collision/Physics.h"
+#include "../Collision/PhysicsBodyActivationListener.h"
+#include "../Collision/PhysicsContactListener.h"
+#include "../Collision/PhysicsLayer.h"
+#include "../Entities/EntityAnimationLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
-#include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CinematicLibrary.h"
 #include "../Interface/CommonUiController.h"
 #include "../Interface/CommonUiView.h"
 #include "../Interface/GameWorldPanel.h"
 #include "../Interface/GameWorldUiModel.h"
+#include "../Interface/GameWorldUiView.h"
 #include "../Interface/IntroUiModel.h"
 #include "../Interface/Panel.h"
+#include "../Items/ItemConditionLibrary.h"
+#include "../Items/ItemLibrary.h"
+#include "../Items/ItemMaterialLibrary.h"
+#include "../Player/PlayerInterface.h"
+#include "../Player/PlayerLogic.h"
+#include "../Player/WeaponAnimationLibrary.h"
+#include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/CursorData.h"
+#include "../Rendering/RendererUtils.h"
+#include "../Stats/CharacterClassLibrary.h"
+#include "../Stats/CharacterRaceLibrary.h"
+#include "../Time/ClockLibrary.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
+#include "../World/MapLogic.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
 #include "components/utilities/File.h"
 #include "components/utilities/Path.h"
+#include "components/utilities/Profiler.h"
 #include "components/utilities/String.h"
 #include "components/utilities/TextLinesFile.h"
 #include "components/vfs/manager.hpp"
 
 namespace
 {
-	bool TryMakeValidArenaExePath(const std::string &vfsFolderPath, std::string *outExePath, bool *outIsFloppyDiskVersion)
+	struct FrameTimer
 	{
-		// Check for CD version first.
-		const std::string &cdExeName = ExeData::CD_VERSION_EXE_FILENAME;
-		std::string cdExePath = vfsFolderPath + cdExeName;
-		if (File::exists(cdExePath.c_str()))
+		std::chrono::nanoseconds maximumTime; // Longest allowed frame time before engine will run in slow motion.
+		std::chrono::nanoseconds minimumTime; // Shortest allowed frame time if not enough work is happening.
+		std::chrono::time_point<std::chrono::high_resolution_clock> previousTime, currentTime;
+		std::chrono::nanoseconds sleepBias; // Thread sleeping takes longer than it should on some platforms.
+		double deltaTime; // Difference between frame times in seconds.
+		double clampedDeltaTime; // For game logic calculations that become imprecise or break at low FPS.
+		int physicsSteps; // 1 unless the engine has to do more steps this frame to keep numeric accuracy.
+
+		FrameTimer()
 		{
-			DebugLog("CD executable \"" + cdExeName + "\" found in \"" + vfsFolderPath + "\".");
-			*outExePath = std::move(cdExePath);
+			this->maximumTime = std::chrono::nanoseconds(0);
+			this->minimumTime = std::chrono::nanoseconds(0);
+			this->sleepBias = std::chrono::nanoseconds(0);
+			this->deltaTime = 0.0;
+			this->clampedDeltaTime = 0.0;
+			this->physicsSteps = 0;
+		}
+
+		void init()
+		{
+			this->maximumTime = std::chrono::nanoseconds(std::nano::den / Options::MIN_FPS);
+			this->currentTime = std::chrono::high_resolution_clock::now();
+			this->sleepBias = std::chrono::nanoseconds::zero();
+		}
+
+		void startFrame(int targetFPS)
+		{
+			DebugAssert(targetFPS > 0);
+			this->minimumTime = std::chrono::nanoseconds(std::nano::den / targetFPS);
+			this->previousTime = this->currentTime;
+			this->currentTime = std::chrono::high_resolution_clock::now();
+
+			auto previousFrameDuration = this->currentTime - this->previousTime;
+			if (previousFrameDuration < this->minimumTime)
+			{
+				const auto sleepDuration = this->minimumTime - previousFrameDuration + this->sleepBias;
+				std::this_thread::sleep_for(sleepDuration);
+
+				const auto currentTimeAfterSleeping = std::chrono::high_resolution_clock::now();
+				const auto sleptDuration = currentTimeAfterSleeping - this->currentTime;
+				const auto oversleptDuration = sleptDuration - sleepDuration;
+
+				this->sleepBias = -oversleptDuration;
+				this->currentTime = currentTimeAfterSleeping;
+				previousFrameDuration = this->currentTime - this->previousTime;
+			}
+
+			constexpr double timeUnitsReal = static_cast<double>(std::nano::den);
+			this->deltaTime = static_cast<double>(previousFrameDuration.count()) / timeUnitsReal;
+			this->clampedDeltaTime = std::fmin(previousFrameDuration.count(), this->maximumTime.count()) / timeUnitsReal;
+			this->physicsSteps = static_cast<int>(std::ceil(this->clampedDeltaTime / Physics::DeltaTime));
+		}
+	};
+
+	bool TryGetArenaAssetsDirectory(BufferView<const std::string> arenaPaths, const std::string &basePath, std::string *outDirectory, bool *outIsFloppyDiskVersion)
+	{
+		std::vector<std::string> validArenaPaths;
+		for (std::string path : arenaPaths)
+		{
+			if (path.empty())
+			{
+				continue;
+			}
+
+			if (Path::isRelative(path.c_str()))
+			{
+				path = basePath + path;
+			}
+
+			validArenaPaths.emplace_back(std::move(path));
+		}
+
+		// Check for CD version first.
+		for (const std::string &path : validArenaPaths)
+		{
+			const std::filesystem::path fsPath(path);
+			std::error_code dummy;
+			if (!std::filesystem::exists(fsPath, dummy) || !std::filesystem::is_directory(fsPath, dummy))
+			{
+				continue;
+			}
+
+			const std::string &cdExeName = ExeData::CD_VERSION_EXE_FILENAME;
+			const std::filesystem::path cdExePath = fsPath / cdExeName;
+			if (!std::filesystem::exists(cdExePath, dummy) || !std::filesystem::is_regular_file(cdExePath, dummy))
+			{
+				continue;
+			}
+
+			DebugLog("CD version assets found in \"" + path + "\".");
+			*outDirectory = path;
 			*outIsFloppyDiskVersion = false;
 			return true;
 		}
 
-		const std::string &floppyDiskExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
-		std::string floppyDiskExePath = vfsFolderPath + floppyDiskExeName;
-		if (File::exists(floppyDiskExePath.c_str()))
+		for (const std::string &path : validArenaPaths)
 		{
-			DebugLog("Floppy disk executable \"" + floppyDiskExeName + "\" found in \"" + vfsFolderPath + "\".");
-			*outExePath = std::move(floppyDiskExePath);
+			const std::filesystem::path fsPath(path);
+			std::error_code dummy;
+			if (!std::filesystem::exists(fsPath, dummy) || !std::filesystem::is_directory(fsPath, dummy))
+			{
+				continue;
+			}
+
+			const std::string &floppyDiskExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
+			const std::filesystem::path floppyDiskExePath = fsPath / floppyDiskExeName;
+			if (!std::filesystem::exists(floppyDiskExePath, dummy) || !std::filesystem::is_regular_file(floppyDiskExePath, dummy))
+			{
+				continue;
+			}
+
+			DebugLog("Floppy disk version assets found in \"" + path + "\".");
+			*outDirectory = path;
 			*outIsFloppyDiskVersion = true;
 			return true;
 		}
@@ -76,11 +192,14 @@ namespace
 
 Game::Game()
 {
+	this->physicsTempAllocator = nullptr;
+
 	// Keeps us from deleting a sub-panel the same frame it's in use. The pop is delayed until the
 	// beginning of the next frame.
 	this->requestedSubPanelPop = false;
 
 	this->shouldSimulateScene = false;
+	this->shouldRenderScene = false;
 	this->running = true;
 }
 
@@ -96,6 +215,11 @@ Game::~Game()
 		this->inputManager.removeListener(*this->windowResizedListenerID);
 	}
 
+	if (this->renderTargetsResetListenerID.has_value())
+	{
+		this->inputManager.removeListener(*this->renderTargetsResetListenerID);
+	}
+
 	if (this->takeScreenshotListenerID.has_value())
 	{
 		this->inputManager.removeListener(*this->takeScreenshotListenerID);
@@ -106,14 +230,11 @@ Game::~Game()
 		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
 
-	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
-	renderChunkManager.shutdown(this->renderer);
-
-	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-	renderSkyManager.shutdown(this->renderer);
-
-	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
-	renderWeatherManager.shutdown(this->renderer);
+	this->sceneManager.renderVoxelChunkManager.shutdown(this->renderer);
+	this->sceneManager.renderEntityChunkManager.shutdown(this->renderer);
+	this->sceneManager.renderLightChunkManager.shutdown(this->renderer);
+	this->sceneManager.renderSkyManager.shutdown(this->renderer);
+	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -130,28 +251,18 @@ bool Game::init()
 	const std::string optionsPath = Platform::getOptionsPath();
 	this->initOptions(basePath, optionsPath);
 
-	const std::string &arenaPath = this->options.getMisc_ArenaPath();
-	DebugLog("Using ArenaPath \"" + arenaPath + "\".");
-
-	// Initialize virtual file system using the Arena path in the options file.
-	const bool arenaPathIsRelative = Path::isRelative(arenaPath.c_str());
-	const std::string vfsFolderPath = String::addTrailingSlashIfMissing((arenaPathIsRelative ? basePath : "") + arenaPath);
-	if (!Directory::exists(vfsFolderPath.c_str()))
-	{
-		DebugLogError("Data files directory \"" + vfsFolderPath + "\" not found. Is your ArenaPath correct?");
-		return false;
-	}
-
-	VFS::Manager::get().initialize(std::string(vfsFolderPath));
-
-	// Determine which game version the data path is pointing to.
-	std::string arenaExePath;
+	// Search ArenaPaths directories for a valid Arena install.
+	const std::string &arenaPathsString = this->options.getMisc_ArenaPaths();
+	const Buffer<std::string> arenaPaths = String::split(arenaPathsString, ',');
+	std::string arenaPath;
 	bool isFloppyDiskVersion;
-	if (!TryMakeValidArenaExePath(vfsFolderPath, &arenaExePath, &isFloppyDiskVersion))
+	if (!TryGetArenaAssetsDirectory(arenaPaths, basePath, &arenaPath, &isFloppyDiskVersion))
 	{
-		DebugLogError("\"" + vfsFolderPath + "\" does not contain an Arena executable.");
+		DebugLogError("Couldn't find Arena executable in these directories: " + arenaPathsString);
 		return false;
 	}
+
+	VFS::Manager::get().initialize(std::string(arenaPath));
 
 	// Initialize audio manager.
 	const bool midiPathIsRelative = Path::isRelative(this->options.getAudio_MidiConfig().c_str());
@@ -164,16 +275,16 @@ bool Game::init()
 	// Initialize the renderer and window with the given settings.
 	auto resolutionScaleFunc = [this]()
 	{
-		const auto &options = this->getOptions();
-		return options.getGraphics_ResolutionScale();
+		return this->options.getGraphics_ResolutionScale();
 	};
 
 	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
 	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
+	const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
 	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
-		static_cast<Renderer::WindowMode>(this->options.getGraphics_WindowMode()),
-		this->options.getGraphics_LetterboxMode(), this->options.getGraphics_ModernInterface(),
-		resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D, this->options.getGraphics_RenderThreadsMode()))
+		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
+		this->options.getGraphics_ModernInterface(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D,
+		this->options.getGraphics_RenderThreadsMode(), ditheringMode))
 	{
 		DebugLogError("Couldn't init renderer (2D: " + std::to_string(static_cast<int>(rendererSystemType2D)) +
 			", 3D: " + std::to_string(static_cast<int>(rendererSystemType3D)) + ").");
@@ -195,14 +306,18 @@ bool Game::init()
 		this->handleWindowResized(width, height);
 	});
 
+	this->renderTargetsResetListenerID = this->inputManager.addRenderTargetsResetListener(
+		[this]()
+	{
+		this->renderer.handleRenderTargetsReset();
+	});
+
 	this->takeScreenshotListenerID = this->inputManager.addInputActionListener(InputActionName::Screenshot,
 		[this](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
-			// Save a screenshot to the local folder.
-			const auto &renderer = this->getRenderer();
-			const Surface screenshot = renderer.getScreenshot();
+			const Surface screenshot = this->renderer.getScreenshot();
 			this->saveScreenshot(screenshot);
 		}
 	});
@@ -236,6 +351,15 @@ bool Game::init()
 		return false;
 	}
 
+	const std::string clockLibraryPath = dataFolderPath + "Clocks.txt";
+	if (!ClockLibrary::getInstance().init(clockLibraryPath.c_str()))
+	{
+		DebugLogError("Couldn't init clock library with path \"" + clockLibraryPath + "\".");
+		return false;
+	}
+
+	SoundLibrary::getInstance().init();
+
 	const std::string musicLibraryPath = audioDataPath + "MusicDefinitions.txt";
 	if (!MusicLibrary::getInstance().init(musicLibraryPath.c_str()))
 	{
@@ -246,19 +370,26 @@ bool Game::init()
 	CinematicLibrary::getInstance().init();
 
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
-	CharacterClassLibrary::getInstance().init(exeData);
-	EntityDefinitionLibrary::getInstance().init(exeData, this->textureManager);
+	ItemConditionLibrary::getInstance().init(exeData);
+	ItemMaterialLibrary::getInstance().init(exeData);
+	ItemLibrary::getInstance().init(exeData);
+	WeaponAnimationLibrary::getInstance().init(exeData, this->textureManager);
+
+	CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	charClassLibrary.init(exeData);
+	CharacterRaceLibrary::getInstance().init(exeData);
+
+	EntityAnimationLibrary &entityAnimLibrary = EntityAnimationLibrary::getInstance();
+	entityAnimLibrary.init(binaryAssetLibrary, charClassLibrary, this->textureManager);
+	EntityDefinitionLibrary::getInstance().init(exeData, charClassLibrary, entityAnimLibrary);
 
 	this->sceneManager.init(this->textureManager, this->renderer);
+	this->sceneManager.renderVoxelChunkManager.init(this->renderer);
+	this->sceneManager.renderEntityChunkManager.init(this->renderer);
+	this->sceneManager.renderLightChunkManager.init(this->renderer);
+	this->sceneManager.renderSkyManager.init(exeData, this->textureManager, this->renderer);
 
-	RenderChunkManager &renderChunkManager = this->sceneManager.renderChunkManager;
-	renderChunkManager.init(this->renderer);
-
-	RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-	renderSkyManager.init(exeData, this->textureManager, this->renderer);
-
-	RenderWeatherManager &renderWeatherManager = this->sceneManager.renderWeatherManager;
-	if (!renderWeatherManager.init(this->renderer))
+	if (!this->sceneManager.renderWeatherManager.init(this->renderer))
 	{
 		DebugLogError("Couldn't init render weather manager.");
 		return false;
@@ -301,41 +432,6 @@ Panel *Game::getActivePanel() const
 	return (this->subPanels.size() > 0) ? this->subPanels.back().get() : this->panel.get();
 }
 
-AudioManager &Game::getAudioManager()
-{
-	return this->audioManager;
-}
-
-InputManager &Game::getInputManager()
-{
-	return this->inputManager;
-}
-
-GameState &Game::getGameState()
-{
-	return this->gameState;
-}
-
-Player &Game::getPlayer()
-{
-	return this->player;
-}
-
-SceneManager &Game::getSceneManager()
-{
-	return this->sceneManager;
-}
-
-bool Game::isSimulatingScene() const
-{
-	return this->shouldSimulateScene;
-}
-
-void Game::setIsSimulatingScene(bool active)
-{
-	this->shouldSimulateScene = active;
-}
-
 bool Game::characterCreationIsActive() const
 {
 	return this->charCreationState.get() != nullptr;
@@ -347,41 +443,6 @@ CharacterCreationState &Game::getCharacterCreationState() const
 	return *this->charCreationState.get();
 }
 
-Options &Game::getOptions()
-{
-	return this->options;
-}
-
-Renderer &Game::getRenderer()
-{
-	return this->renderer;
-}
-
-TextureManager &Game::getTextureManager()
-{
-	return this->textureManager;
-}
-
-Random &Game::getRandom()
-{
-	return this->random;
-}
-
-ArenaRandom &Game::getArenaRandom()
-{
-	return this->arenaRandom;
-}
-
-Profiler &Game::getProfiler()
-{
-	return this->profiler;
-}
-
-const FPSCounter &Game::getFPSCounter() const
-{
-	return this->fpsCounter;
-}
-
 const Rect &Game::getNativeCursorRegion(int index) const
 {
 	DebugAssertIndex(this->nativeCursorRegions, index);
@@ -390,6 +451,9 @@ const Rect &Game::getNativeCursorRegion(int index) const
 
 TextBox *Game::getTriggerTextBox()
 {
+	DebugAssert(this->shouldSimulateScene);
+	DebugAssert(this->gameState.isActiveMapValid());
+
 	Panel *panel = this->getActivePanel();
 	if (panel == nullptr)
 	{
@@ -397,14 +461,24 @@ TextBox *Game::getTriggerTextBox()
 		return nullptr;
 	}
 
-	GameWorldPanel *gameWorldPanel = dynamic_cast<GameWorldPanel*>(panel);
-	if (gameWorldPanel == nullptr)
+	GameWorldPanel *gameWorldPanel = static_cast<GameWorldPanel*>(panel); // @todo: can't use dynamic_cast anymore, this isn't safe.
+	return &gameWorldPanel->getTriggerTextBox();
+}
+
+TextBox *Game::getActionTextBox()
+{
+	DebugAssert(this->shouldSimulateScene);
+	DebugAssert(this->gameState.isActiveMapValid());
+
+	Panel *panel = this->getActivePanel();
+	if (panel == nullptr)
 	{
-		DebugLogError("Active panel is not game world panel for trigger text box getter.");
+		DebugLogError("No active panel for trigger text box getter.");
 		return nullptr;
 	}
 
-	return &gameWorldPanel->getTriggerTextBox();
+	GameWorldPanel *gameWorldPanel = static_cast<GameWorldPanel*>(panel); // @todo: can't use dynamic_cast anymore, this isn't safe.
+	return &gameWorldPanel->getActionTextBox();
 }
 
 void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
@@ -428,11 +502,6 @@ void Game::popSubPanel()
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
 {
 	this->charCreationState = std::move(charCreationState);
-}
-
-void Game::setGameWorldRenderCallback(const GameWorldRenderCallback &callback)
-{
-	this->gameWorldRenderCallback = callback;
 }
 
 void Game::initOptions(const std::string &basePath, const std::string &optionsPath)
@@ -461,11 +530,20 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 {
 	// Resize the window, and the 3D renderer if initialized.
 	const bool fullGameWindow = this->options.getGraphics_ModernInterface();
-	this->renderer.resize(windowWidth, windowHeight,
-		this->options.getGraphics_ResolutionScale(), fullGameWindow);
+	this->renderer.resize(windowWidth, windowHeight, this->options.getGraphics_ResolutionScale(), fullGameWindow);
 
 	// Update where the mouse can click for player movement in the classic interface.
 	this->updateNativeCursorRegions(windowWidth, windowHeight);
+
+	if (this->gameState.isActiveMapValid())
+	{
+		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
+		const WorldDouble3 playerPosition = this->player.getEyePosition();
+		const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY,
+			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
+		this->gameState.tickVisibility(renderCamera, *this);
+		this->gameState.tickRendering(renderCamera, *this);
+	}
 }
 
 void Game::saveScreenshot(const Surface &surface)
@@ -585,7 +663,7 @@ void Game::handleWindowResized(int width, int height)
 void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
 {
 	// Update screen regions for classic interface player movement.
-	GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect>(this->nativeCursorRegions), windowWidth, windowHeight);
+	GameWorldUiModel::updateNativeCursorRegions(this->nativeCursorRegions, windowWidth, windowHeight);
 }
 
 void Game::renderDebugInfo()
@@ -622,7 +700,7 @@ void Game::renderDebugInfo()
 		const std::string windowHeight = std::to_string(windowDims.y);
 		debugText.append("\nScreen: " + windowWidth + "x" + windowHeight);
 
-		const Renderer::ProfilerData &profilerData = this->renderer.getProfilerData();
+		const RendererProfilerData &profilerData = this->renderer.getProfilerData();
 		const Int2 renderDims(profilerData.width, profilerData.height);
 		const bool profilerDataIsValid = (renderDims.x > 0) && (renderDims.y > 0);
 		if (profilerDataIsValid)
@@ -632,16 +710,24 @@ void Game::renderDebugInfo()
 			const std::string renderHeight = std::to_string(renderDims.y);
 			const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
 			const std::string renderThreadCount = std::to_string(profilerData.threadCount);
-			const std::string renderTime = String::fixedPrecision(profilerData.frameTime * 1000.0, 2);
+			const std::string renderTime = String::fixedPrecision(profilerData.renderTime * 1000.0, 2);
+			const std::string presentTime = String::fixedPrecision(profilerData.presentTime * 1000.0, 2);
 			const std::string renderDrawCallCount = std::to_string(profilerData.drawCallCount);
+			const std::string renderCoverageTestRatio = String::fixedPrecision(static_cast<double>(profilerData.totalCoverageTests) / static_cast<double>(profilerData.pixelCount), 2);
+			const std::string renderDepthTestRatio = String::fixedPrecision(static_cast<double>(profilerData.totalDepthTests) / static_cast<double>(profilerData.pixelCount), 2);
+			const std::string renderColorOverdrawRatio = String::fixedPrecision(static_cast<double>(profilerData.totalColorWrites) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string objectTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.objectTextureByteCount) / (1024.0 * 1024.0), 2);
 			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
 				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
 				"3D render: " + renderTime + "ms" + '\n' +
+				"Present: " + presentTime + "ms" + '\n' +
 				"Textures: " + std::to_string(profilerData.objectTextureCount) + " (" + objectTextureMbCount + "MB)" + '\n' +
 				"Draw calls: " + renderDrawCallCount + '\n' +
-				"Triangles: " + std::to_string(profilerData.visTriangleCount) + " / " + std::to_string(profilerData.sceneTriangleCount) + '\n' +
-				"Lights: " + std::to_string(profilerData.totalLightCount));
+				"Rendered Tris: " + std::to_string(profilerData.presentedTriangleCount) + '\n' +
+				"Lights: " + std::to_string(profilerData.totalLightCount) + '\n' +
+				"Coverage tests: " + renderCoverageTestRatio + "x" + '\n' +
+				"Depth tests: " + renderDepthTestRatio + "x" + '\n' +
+				"Overdraw: " + renderColorOverdrawRatio + "x");
 		}
 		else
 		{
@@ -652,13 +738,13 @@ void Game::renderDebugInfo()
 	if (profilerLevel >= 3)
 	{
 		// Player position, direction, etc.
-		const CoordDouble3 &playerPosition = this->player.getPosition();
-		const Double3 &direction = this->player.getDirection();
+		const CoordDouble3 playerCoord = this->player.getEyeCoord();
+		const Double3 &direction = this->player.forward;
 
-		const std::string chunkStr = playerPosition.chunk.toString();
-		const std::string chunkPosX = String::fixedPrecision(playerPosition.point.x, 2);
-		const std::string chunkPosY = String::fixedPrecision(playerPosition.point.y, 2);
-		const std::string chunkPosZ = String::fixedPrecision(playerPosition.point.z, 2);
+		const std::string chunkStr = playerCoord.chunk.toString();
+		const std::string chunkPosX = String::fixedPrecision(playerCoord.point.x, 2);
+		const std::string chunkPosY = String::fixedPrecision(playerCoord.point.y, 2);
+		const std::string chunkPosZ = String::fixedPrecision(playerCoord.point.z, 2);
 		const std::string dirX = String::fixedPrecision(direction.x, 2);
 		const std::string dirY = String::fixedPrecision(direction.y, 2);
 		const std::string dirZ = String::fixedPrecision(direction.z, 2);
@@ -666,6 +752,18 @@ void Game::renderDebugInfo()
 		debugText.append("\nChunk: " + chunkStr + '\n' +
 			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
 			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
+
+		if (this->shouldRenderScene)
+		{
+			// Set Jolt Physics camera position for LOD.
+			const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerCoord);
+			this->renderer.SetCameraPos(JPH::RVec3Arg(static_cast<float>(playerWorldPos.x), static_cast<float>(playerWorldPos.y), static_cast<float>(playerWorldPos.z)));
+
+			JPH::BodyManager::DrawSettings drawSettings;
+			this->physicsSystem.DrawBodies(drawSettings, &this->renderer);
+		}		
+
+		GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(*this);
 	}
 
 	this->debugInfoTextBox.setText(debugText);
@@ -673,7 +771,7 @@ void Game::renderDebugInfo()
 	const UiTextureID textureID = this->debugInfoTextBox.getTextureID();
 	const Rect &debugInfoRect = this->debugInfoTextBox.getRect();
 	const Int2 position = debugInfoRect.getTopLeft();
-	const Int2 size(debugInfoRect.getWidth(), debugInfoRect.getHeight());
+	const Int2 size = debugInfoRect.getSize();
 	constexpr PivotType pivotType = PivotType::TopLeft;
 	constexpr RenderSpace renderSpace = RenderSpace::Classic;
 
@@ -687,11 +785,26 @@ void Game::renderDebugInfo()
 
 void Game::loop()
 {
+	// Set up physics system values.
+	JPH::TempAllocatorImpl physicsAllocator(Physics::TempAllocatorByteCount);
+	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
+	PhysicsBroadPhaseLayerInterface physicsBroadPhaseLayerInterface;
+	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
+	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
+	
+	this->physicsTempAllocator = &physicsAllocator;
+	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
+
+	PhysicsBodyActivationListener physicsBodyActivationListener;
+	PhysicsContactListener physicsContactListener(*this);
+	this->physicsSystem.SetBodyActivationListener(&physicsBodyActivationListener);
+	this->physicsSystem.SetContactListener(&physicsContactListener);
+
 	// Initialize panel and music to default (bootstrapping the first game frame).
 	this->panel = IntroUiModel::makeStartupPanel(*this);
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicDefinition::Type::MainMenu, this->random);
+	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::MainMenu, this->random);
 	if (mainMenuMusicDef == nullptr)
 	{
 		DebugLogWarning("Missing main menu music.");
@@ -699,69 +812,25 @@ void Game::loop()
 
 	this->audioManager.setMusic(mainMenuMusicDef);
 
-	const TextBox::InitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
+	const TextBoxInitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
 	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
 	{
 		DebugCrash("Couldn't init debug info text box.");
 	}
 
-	// Nanoseconds per second. Only using this much precision because it's what
-	// high_resolution_clock gives back. Microseconds would be fine too.
-	constexpr int64_t timeUnits = 1000000000;
-
-	// Longest allowed frame time.
-	const std::chrono::duration<int64_t, std::nano> maxFrameTime(timeUnits / Options::MIN_FPS);
-
-	// On some platforms, thread sleeping takes longer than it should, so include a value to
-	// help compensate.
-	std::chrono::nanoseconds sleepBias(0);
-
-	auto thisTime = std::chrono::high_resolution_clock::now();
+	FrameTimer frameTimer;
+	frameTimer.init();
 
 	// Primary game loop.
 	while (this->running)
 	{
-		const auto lastTime = thisTime;
-		thisTime = std::chrono::high_resolution_clock::now();
+		frameTimer.startFrame(this->options.getGraphics_TargetFPS());
+		const double deltaTime = frameTimer.deltaTime;
+		const double clampedDeltaTime = frameTimer.clampedDeltaTime;
 
-		// Shortest allowed frame time.
-		const std::chrono::duration<int64_t, std::nano> minFrameTime(
-			timeUnits / this->options.getGraphics_TargetFPS());
+		Profiler::startFrame();
 
-		// Time since the last frame started.
-		const auto frameTime = [minFrameTime, &sleepBias, &thisTime, lastTime]()
-		{
-			// Delay the current frame if the previous one was too fast.
-			auto diff = thisTime - lastTime;
-			if (diff < minFrameTime)
-			{
-				const auto sleepTime = minFrameTime - diff + sleepBias;
-				std::this_thread::sleep_for(sleepTime);
-
-				// Compensate for sleeping too long. Thread sleeping has questionable accuracy.
-				const auto tempTime = std::chrono::high_resolution_clock::now();
-				const auto unnecessarySleepTime = [thisTime, sleepTime, tempTime]()
-				{
-					const auto tempFrameTime = tempTime - thisTime;
-					return tempFrameTime - sleepTime;
-				}();
-
-				sleepBias = -unnecessarySleepTime;
-				thisTime = tempTime;
-				diff = thisTime - lastTime;
-			}
-
-			return diff;
-		}();
-
-		// Two delta times: actual and clamped. Use the clamped delta time for game calculations
-		// so things don't break at low frame rates.
-		constexpr double timeUnitsReal = static_cast<double>(timeUnits);
-		const double dt = static_cast<double>(frameTime.count()) / timeUnitsReal;
-		const double clampedDt = std::fmin(frameTime.count(), maxFrameTime.count()) / timeUnitsReal;
-
-		// Update FPS counter.
-		this->fpsCounter.updateFrameTime(dt);
+		this->fpsCounter.updateFrameTime(deltaTime);
 
 		// User input.
 		try
@@ -769,19 +838,50 @@ void Game::loop()
 			const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
 			auto onFinishedProcessingEventFunc = [this]()
 			{
-				// See if the event requested any changes in active panels.
 				this->handlePanelChanges();
 			};
 
-			this->inputManager.update(*this, dt, buttonProxies, onFinishedProcessingEventFunc);
+			this->inputManager.update(*this, deltaTime, buttonProxies, onFinishedProcessingEventFunc);
 
-			if (this->isSimulatingScene())
+			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				// Handle input for player motion.
-				const BufferView<const Rect> nativeCursorRegionsView(this->nativeCursorRegions);
-				const Double2 playerTurnDeltaXY = PlayerLogicController::makeTurningAngularValues(*this, clampedDt, nativeCursorRegionsView);
-				PlayerLogicController::turnPlayer(*this, playerTurnDeltaXY.x, playerTurnDeltaXY.y);
-				PlayerLogicController::handlePlayerMovement(*this, clampedDt, nativeCursorRegionsView);
+				const Double2 playerTurnAngleDeltas = PlayerLogic::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), this->nativeCursorRegions);
+
+				// Multiply by 100 so the values in options are more convenient.
+				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());
+				const Degrees deltaDegreesY = playerTurnAngleDeltas.y * (100.0 * this->options.getInput_VerticalSensitivity());
+				const bool invertVerticalAxis = this->options.getInput_InvertVerticalAxis();
+				const double verticalAxisSign = invertVerticalAxis ? -1.0 : 1.0;
+				const Degrees pitchLimit = this->options.getInput_CameraPitchLimit();
+				this->player.rotateX(deltaDegreesX);
+				this->player.rotateY(deltaDegreesY * verticalAxisSign, pitchLimit);
+				
+				if (this->player.movementType == PlayerMovementType::Climbing)
+				{
+					// Have to keep pushing every frame to keep from falling.
+					this->player.climbingState.isAccelerationValidForClimbing = false;
+				}
+				
+				const PlayerInputAcceleration inputAcceleration = PlayerLogic::getInputAcceleration(*this, this->nativeCursorRegions);
+				if (inputAcceleration.shouldResetVelocity)
+				{
+					this->player.setPhysicsVelocity(Double3::Zero);
+				}
+
+				if (inputAcceleration.isGhostMode)
+				{
+					const WorldDouble3 oldPlayerFeetPosition = this->player.getFeetPosition();
+					const WorldDouble3 newPlayerFeetPosition = oldPlayerFeetPosition + (inputAcceleration.direction * (inputAcceleration.magnitude * clampedDeltaTime));
+					this->player.setPhysicsPositionRelativeToFeet(newPlayerFeetPosition);
+				}
+				else if (inputAcceleration.isInstantJump)
+				{
+					this->player.setPhysicsVelocityY(inputAcceleration.magnitude);
+				}
+				else if (inputAcceleration.direction.isNormalized())
+				{
+					this->player.accelerate(inputAcceleration.direction, inputAcceleration.magnitude, clampedDeltaTime);
+				}
 			}
 		}
 		catch (const std::exception &e)
@@ -789,44 +889,53 @@ void Game::loop()
 			DebugCrash("User input exception: " + std::string(e.what()));
 		}
 
-		// Tick.
+		// Tick game state.
 		try
 		{
-			// Animate the current UI panel by delta time.
-			this->getActivePanel()->tick(clampedDt);
-
-			// See if the panel tick requested any changes in active panels.
+			this->getActivePanel()->tick(clampedDeltaTime);
 			this->handlePanelChanges();
 
-			if (this->isSimulatingScene() && this->gameState.isActiveMapValid())
+			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				// Recalculate the active chunks.
-				const CoordDouble3 playerCoord = this->player.getPosition();
+				const CoordDouble3 oldPlayerCoord = this->player.getEyeCoord();
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
-				chunkManager.update(playerCoord.chunk, chunkDistance);
+				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
 
-				// @todo: we should be able to get the voxel/entity/collision/etc. managers right here.
-				// It shouldn't be abstracted into a game state.
-				// - it should be like "do we need to clear the scene? yes/no. update the scene immediately? yes/no"
+				this->gameState.tickGameClock(clampedDeltaTime, *this);
+				this->gameState.tickChasmAnimation(clampedDeltaTime);
+				this->gameState.tickSky(clampedDeltaTime, *this);
+				this->gameState.tickWeather(clampedDeltaTime, *this);
+				this->gameState.tickUiMessages(clampedDeltaTime);
+				this->gameState.tickPlayerHealth(clampedDeltaTime, *this);
+				this->gameState.tickPlayerStamina(clampedDeltaTime, *this);
+				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);				
+				this->gameState.tickVoxels(clampedDeltaTime, *this);
+				this->gameState.tickEntities(clampedDeltaTime, *this);
+				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);
 
-				// Tick the various pieces of game world state.
-				this->gameState.tickGameClock(clampedDt, *this);
-				this->gameState.tickChasmAnimation(clampedDt);
-				this->gameState.tickSky(clampedDt, *this);
-				this->gameState.tickWeather(clampedDt, *this);
-				this->gameState.tickUiMessages(clampedDt);
-				this->gameState.tickPlayer(clampedDt, *this);
-				this->gameState.tickVoxels(clampedDt, *this);
-				this->gameState.tickEntities(clampedDt, *this);
-				this->gameState.tickCollision(clampedDt, *this);
-				this->gameState.tickRendering(*this);
+				this->player.prePhysicsStep(clampedDeltaTime, *this);
+				this->physicsSystem.Update(static_cast<float>(clampedDeltaTime), frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
+				this->player.postPhysicsStep(clampedDeltaTime, *this);
+
+				if (this->gameState.hasPendingLevelTransitionCalculation())
+				{
+					MapLogic::handleInteriorLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());
+					this->gameState.clearLevelTransitionCalculation();
+				}
+
+				const WorldDouble3 newPlayerPosition = this->player.getEyePosition();
+				const Degrees newPlayerYaw = this->player.angleX;
+				const Degrees newPlayerPitch = this->player.angleY;
+				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(),
+					this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
+
+				this->gameState.tickVisibility(renderCamera, *this);
+				this->gameState.tickRendering(renderCamera, *this);
 
 				// Update audio listener orientation.
-				const WorldDouble3 absolutePosition = VoxelUtils::coordToWorldPoint(playerCoord);
-				const WorldDouble3 &direction = this->player.getDirection();
-				const AudioManager::ListenerData listenerData(absolutePosition, direction);
-				this->audioManager.updateListener(listenerData);
+				const AudioListenerState listenerState(newPlayerPosition, this->player.forward, this->player.up);
+				this->audioManager.updateListener(listenerState);
 			}
 
 			this->audioManager.updateSources();
@@ -842,7 +951,7 @@ void Game::loop()
 		{
 			if (this->gameState.hasPendingSceneChange())
 			{
-				this->gameState.applyPendingSceneChange(*this, clampedDt);
+				this->gameState.applyPendingSceneChange(*this, this->physicsSystem, clampedDeltaTime);
 			}
 		}
 		catch (const std::exception &e)
@@ -863,9 +972,9 @@ void Game::loop()
 
 			this->renderer.clear();
 
-			if (this->gameWorldRenderCallback)
+			if (this->shouldRenderScene)
 			{
-				if (!this->gameWorldRenderCallback(*this))
+				if (!GameWorldPanel::renderScene(*this))
 				{
 					DebugLogError("Couldn't render game world.");
 				}
@@ -878,23 +987,23 @@ void Game::loop()
 				const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
 				for (const UiDrawCall &drawCall : drawCallsView)
 				{
-					if (!drawCall.isActive())
+					if (!drawCall.activeFunc())
 					{
 						continue;
 					}
 
-					const std::optional<Rect> &optClipRect = drawCall.getClipRect();
+					const std::optional<Rect> &optClipRect = drawCall.clipRect;
 					if (optClipRect.has_value())
 					{
 						const SDL_Rect clipRect = optClipRect->getSdlRect();
 						this->renderer.setClipRect(&clipRect);
 					}
 
-					const UiTextureID textureID = drawCall.getTextureID();
-					const Int2 position = drawCall.getPosition();
-					const Int2 size = drawCall.getSize();
-					const PivotType pivotType = drawCall.getPivotType();
-					const RenderSpace renderSpace = drawCall.getRenderSpace();
+					const UiTextureID textureID = drawCall.textureFunc();
+					const Int2 position = drawCall.positionFunc();
+					const Int2 size = drawCall.sizeFunc();
+					const PivotType pivotType = drawCall.pivotFunc();
+					const RenderSpace renderSpace = drawCall.renderSpace;
 
 					double xPercent, yPercent, wPercent, hPercent;
 					GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
@@ -921,7 +1030,7 @@ void Game::loop()
 		// End-of-frame clean up.
 		try
 		{
-			this->sceneManager.cleanUp();
+			this->sceneManager.cleanUp(this->physicsSystem, this->renderer);
 		}
 		catch (const std::exception &e)
 		{
@@ -930,5 +1039,8 @@ void Game::loop()
 	}
 
 	// At this point, the engine has received an exit signal and is now quitting peacefully.
+	this->player.freePhysicsBody(this->physicsSystem);
+	this->sceneManager.collisionChunkManager.clear(this->physicsSystem);
+
 	this->options.saveChanges();
 }

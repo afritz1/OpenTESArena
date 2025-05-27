@@ -12,7 +12,6 @@
 #include "WorldMapPanel.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
@@ -35,9 +34,9 @@ ProvinceMapPanel::ProvinceMapPanel(Game &game)
 bool ProvinceMapPanel::init(int provinceID)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
-	const TextBox::InitInfo hoveredLocationTextBoxInitInfo = ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo hoveredLocationTextBoxInitInfo = ProvinceMapUiView::getHoveredLocationTextBoxInitInfo(fontLibrary);
 	if (!this->hoveredLocationTextBox.init(hoveredLocationTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init hovered location text box.");
@@ -50,8 +49,8 @@ bool ProvinceMapPanel::init(int provinceID)
 		return Button<Game&, ProvinceMapPanel&, int>(
 			clickArea.getLeft(),
 			clickArea.getTop(),
-			clickArea.getWidth(),
-			clickArea.getHeight(),
+			clickArea.width,
+			clickArea.height,
 			ProvinceMapUiController::onSearchButtonSelected);
 	}();
 
@@ -61,8 +60,8 @@ bool ProvinceMapPanel::init(int provinceID)
 		return Button<Game&, ProvinceMapPanel&>(
 			clickArea.getLeft(),
 			clickArea.getTop(),
-			clickArea.getWidth(),
-			clickArea.getHeight(),
+			clickArea.width,
+			clickArea.height,
 			ProvinceMapUiController::onTravelButtonSelected);
 	}();
 
@@ -72,8 +71,8 @@ bool ProvinceMapPanel::init(int provinceID)
 		return Button<Game&>(
 			clickArea.getLeft(),
 			clickArea.getTop(),
-			clickArea.getWidth(),
-			clickArea.getHeight(),
+			clickArea.width,
+			clickArea.height,
 			ProvinceMapUiController::onBackToWorldMapButtonSelected);
 	}();
 
@@ -82,9 +81,9 @@ bool ProvinceMapPanel::init(int provinceID)
 		Rect(0, 0, ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
 		[this, &game]()
 	{
-		const auto &inputManager = game.getInputManager();
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
+		const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
 
 		if (this->searchButton.contains(classicPosition))
 		{
@@ -117,33 +116,30 @@ bool ProvinceMapPanel::init(int provinceID)
 
 	this->addMouseMotionListener([this](Game &game, int dx, int dy)
 	{
-		const auto &renderer = game.getRenderer();
-		const auto &inputManager = game.getInputManager();
+		const auto &renderer = game.renderer;
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 		this->updateHoveredLocationID(originalPosition);
 	});
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const UiTextureID backgroundTextureID = ProvinceMapUiView::allocBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
 
-	initLocationIconUI(provinceID);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(bgDrawCallInitInfo);
 
-	UiDrawCall::TextureFunc hoveredLocationTextureFunc = [this]()
+	this->initLocationIconUI(provinceID);
+
+	UiDrawCallInitInfo hoveredLocationTextDrawCallInitInfo;
+	hoveredLocationTextDrawCallInitInfo.textureFunc = [this]() { return this->hoveredLocationTextBox.getTextureID(); };
+	hoveredLocationTextDrawCallInitInfo.positionFunc = [this, &game]()
 	{
-		return this->hoveredLocationTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc hoveredLocationPositionFunc = [this, &game]()
-	{
-		auto &gameState = game.getGameState();
+		auto &gameState = game.gameState;
 		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(this->provinceID);
 		const LocationDefinition &locationDef = provinceDef.getLocationDef(this->hoveredLocationID);
@@ -152,7 +148,7 @@ bool ProvinceMapPanel::init(int provinceID)
 		const Int2 textBoxCenter = locationCenter - Int2(0, 10);
 
 		// Can't use the text box dimensions with clamping since it's allocated for worst-case location name now.
-		const auto &fontLibrary = FontLibrary::getInstance();
+		const FontLibrary &fontLibrary = FontLibrary::getInstance();
 		const std::string &fontName = ProvinceMapUiView::LocationFontName;
 		int fontDefIndex;
 		if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
@@ -163,10 +159,9 @@ bool ProvinceMapPanel::init(int provinceID)
 		const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 
 		const std::string locationName = ProvinceMapUiModel::getLocationName(game, this->provinceID, this->hoveredLocationID);
-		TextRenderUtils::TextShadowInfo shadowInfo;
-		shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY,
-			ProvinceMapUiView::LocationTextShadowColor);
-		const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
+		TextRenderShadowInfo shadowInfo;
+		shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY, ProvinceMapUiView::LocationTextShadowColor);
+		const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
 
 		// Clamp to screen edges, with some extra space on the left and right (note this clamped position
 		// is for the TopLeft pivot type).
@@ -175,38 +170,20 @@ bool ProvinceMapPanel::init(int provinceID)
 		return clampedCenter;
 	};
 
-	UiDrawCall::SizeFunc hoveredLocationSizeFunc = [this]()
-	{
-		const Rect &hoveredLocationTextBoxRect = this->hoveredLocationTextBox.getRect();
-		return Int2(hoveredLocationTextBoxRect.getWidth(), hoveredLocationTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc hoveredLocationPivotFunc = []()
-	{
-		return PivotType::Middle;
-	};
-
-	UiDrawCall::ActiveFunc hoveredLocationActiveFunc = [this]()
-	{
-		return !this->isPaused();
-	};
-
-	this->addDrawCall(
-		hoveredLocationTextureFunc,
-		hoveredLocationPositionFunc,
-		hoveredLocationSizeFunc,
-		hoveredLocationPivotFunc,
-		hoveredLocationActiveFunc);
+	hoveredLocationTextDrawCallInitInfo.size = this->hoveredLocationTextBox.getRect().getSize();
+	hoveredLocationTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	hoveredLocationTextDrawCallInitInfo.activeFunc = [this]() { return !this->isPaused(); };
+	this->addDrawCall(hoveredLocationTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, hoveredLocationActiveFunc);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, hoveredLocationTextDrawCallInitInfo.activeFunc);
 
 	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
 	this->provinceID = provinceID;
 	this->hoveredLocationID = -1;
 
-	const auto &inputManager = game.getInputManager();
+	const auto &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 	this->updateHoveredLocationID(originalPosition);
@@ -217,8 +194,8 @@ bool ProvinceMapPanel::init(int provinceID)
 void ProvinceMapPanel::initLocationIconUI(int provinceID)
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	// Location icon textures.
@@ -253,7 +230,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 			renderer);
 	}
 
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
@@ -266,7 +243,10 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 		if (locationInst.isVisible())
 		{
 			const int locationDefIndex = locationInst.getLocationDefIndex();
-			UiDrawCall::TextureFunc baseTextureFunc = [this, &provinceDef, locationDefIndex]()
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+
+			UiDrawCallInitInfo locationIconDrawCallInitInfo;
+			locationIconDrawCallInitInfo.textureFunc = [this, &provinceDef, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const LocationTextureRefGroup *textureRefGroupPtr = [this, &locationDef]() -> const LocationTextureRefGroup*
@@ -320,7 +300,12 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				return textureRefGroupPtr->textureRef.get();
 			};
 
-			UiDrawCall::TextureFunc highlightTextureFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
+			locationIconDrawCallInitInfo.position = Int2(locationDef.getScreenX(), locationDef.getScreenY());
+			locationIconDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(locationIconDrawCallInitInfo.textureFunc());
+			locationIconDrawCallInitInfo.pivotType = PivotType::Middle;
+			this->addDrawCall(locationIconDrawCallInitInfo);
+
+			UiDrawCallTextureFunc highlightIconTextureFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const ProvinceMapUiView::HighlightType highlightType = [this, provinceID, &gameState, &provinceDef, &playerProvinceDef, i, &locationDef]()
@@ -415,19 +400,12 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				}
 			};
 
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-			const std::optional<Int2> baseTextureDims = renderer.tryGetUiTextureDims(baseTextureFunc());
-			DebugAssert(baseTextureDims.has_value());
-
-			const Int2 iconCenter(locationDef.getScreenX(), locationDef.getScreenY());
-			constexpr PivotType pivotType = PivotType::Middle;
-			this->addDrawCall(
-				baseTextureFunc,
-				iconCenter,
-				*baseTextureDims,
-				pivotType);
-
-			UiDrawCall::ActiveFunc highlightActiveFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
+			UiDrawCallInitInfo highlightIconDrawCallInitInfo;
+			highlightIconDrawCallInitInfo.textureFunc = highlightIconTextureFunc;
+			highlightIconDrawCallInitInfo.position = locationIconDrawCallInitInfo.position;
+			highlightIconDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(highlightIconTextureFunc());
+			highlightIconDrawCallInitInfo.pivotType = PivotType::Middle;
+			highlightIconDrawCallInitInfo.activeFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 				const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
@@ -458,19 +436,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 				return false;
 			};
 
-			UiDrawCall::SizeFunc highlightSizeFunc = [&renderer, highlightTextureFunc]()
-			{
-				const std::optional<Int2> highlightTextureDims = renderer.tryGetUiTextureDims(highlightTextureFunc());
-				DebugAssert(highlightTextureDims.has_value());
-				return *highlightTextureDims;
-			};
-
-			this->addDrawCall(
-				highlightTextureFunc,
-				[iconCenter]() { return iconCenter; },
-				highlightSizeFunc,
-				[pivotType]() { return pivotType; },
-				highlightActiveFunc);
+			this->addDrawCall(highlightIconDrawCallInitInfo);
 		}
 	}
 }
@@ -478,7 +444,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 {
 	auto &game = this->getGame();
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
@@ -499,7 +465,7 @@ void ProvinceMapPanel::trySelectLocation(int selectedLocationID)
 
 		// Use a copy of the RNG so displaying the travel pop-up multiple times doesn't
 		// cause different day amounts.
-		ArenaRandom tempRandom = game.getArenaRandom();
+		ArenaRandom tempRandom = game.arenaRandom;
 
 		auto makeGlobalPoint = [](const LocationDefinition &locationDef, const ProvinceDefinition &provinceDef)
 		{
@@ -561,7 +527,7 @@ void ProvinceMapPanel::updateHoveredLocationID(const Int2 &originalPosition)
 	// Look through all visible locations to find the one closest to the mouse.
 	std::optional<int> closestIndex;
 	auto &game = this->getGame();
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
@@ -607,8 +573,8 @@ void ProvinceMapPanel::onPauseChanged(bool paused)
 		// Make sure the hovered location matches where the pointer is now since mouse motion events
 		// aren't processed while this panel is paused.
 		auto &game = this->getGame();
-		const auto &renderer = game.getRenderer();
-		const auto &inputManager = game.getInputManager();
+		const auto &renderer = game.renderer;
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
 		this->updateHoveredLocationID(originalPosition);
@@ -617,7 +583,7 @@ void ProvinceMapPanel::onPauseChanged(bool paused)
 
 void ProvinceMapPanel::tick(double dt)
 {
-	const auto &gameState = this->getGame().getGameState();
+	const auto &gameState = this->getGame().gameState;
 	if (gameState.getTravelData() != nullptr)
 	{
 		this->blinkState.update(dt);

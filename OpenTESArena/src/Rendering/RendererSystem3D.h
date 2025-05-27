@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "RenderGeometryUtils.h"
+#include "RenderLightUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Math/MathUtils.h"
@@ -12,34 +13,37 @@
 
 #include "components/utilities/BufferView.h"
 
-// Abstract base class for 3D renderer.
-
 class Random;
-class TextureBuilder;
 
 struct RenderCamera;
+struct RenderCommandBuffer;
 struct RenderDrawCall;
 struct RenderFrameSettings;
 struct RenderInitSettings;
+struct TextureBuilder;
 
+// Profiling info gathered from internal renderer state.
+struct Renderer3DProfilerData
+{
+	int width, height;
+	int threadCount;
+	int drawCallCount;
+	int presentedTriangleCount;
+	int textureCount;
+	int64_t textureByteCount;
+	int totalLightCount;
+	int totalCoverageTests;
+	int totalDepthTests;
+	int totalColorWrites;
+
+	Renderer3DProfilerData(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
+		int textureCount, int64_t textureByteCount, int totalLightCount, int totalCoverageTests, int totalDepthTests, int totalColorWrites);
+};
+
+// Abstract base class for 3D renderer.
 class RendererSystem3D
 {
 public:
-	// Profiling info gathered from internal renderer state.
-	struct ProfilerData
-	{
-		int width, height;
-		int threadCount;
-		int drawCallCount;
-		int sceneTriangleCount, visTriangleCount;
-		int textureCount;
-		int64_t textureByteCount;
-		int totalLightCount;
-
-		ProfilerData(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount,
-			int visTriangleCount, int textureCount, int64_t textureByteCount, int totalLightCount);
-	};
-
 	virtual ~RendererSystem3D();
 
 	virtual void init(const RenderInitSettings &settings) = 0;
@@ -68,9 +72,11 @@ public:
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
 
 	// Shading management functions.
+	virtual bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID) = 0;
+	virtual void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) = 0;
+	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) = 0;
+	virtual void freeUniformBuffer(UniformBufferID id) = 0;
 	virtual bool tryCreateLight(RenderLightID *outID) = 0;
-	virtual const Double3 &getLightPosition(RenderLightID id) = 0;
-	virtual void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius) = 0;
 	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
 	virtual void setLightRadius(RenderLightID id, double startRadius, double endRadius) = 0;
 	virtual void freeLight(RenderLightID id) = 0;
@@ -79,12 +85,12 @@ public:
 	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
 
 	// Gets various profiler information about internal renderer state.
-	virtual ProfilerData getProfilerData() const = 0;
+	virtual Renderer3DProfilerData getProfilerData() const = 0;
 	
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.
-	virtual void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> drawCalls,
-		const RenderFrameSettings &settings, uint32_t *outputBuffer) = 0;
+	virtual void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
+		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) = 0;
 
 	// Presents the finished frame to the screen. This may just be a copy to the screen frame buffer that
 	// is then taken care of by the top-level rendering manager, since UI must be drawn afterwards.

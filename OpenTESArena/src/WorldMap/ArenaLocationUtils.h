@@ -13,10 +13,10 @@
 
 class ArenaRandom;
 class BinaryAssetLibrary;
-class Rect;
+
+struct Rect;
 
 // Various functions for working with original game values like location IDs.
-
 namespace ArenaLocationUtils
 {
 	// Required for handling the original game's special case with the center province's
@@ -78,10 +78,10 @@ namespace ArenaLocationUtils
 		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the 32-bit seed for a city in the given province.
-	uint32_t getCitySeed(int localCityID, const CityDataFile::ProvinceData &province);
+	uint32_t getCitySeed(int localCityID, const ArenaProvinceData &province);
 
 	// Gets the 32-bit seed for a city's wilderness in the given province.
-	uint32_t getWildernessSeed(int localCityID, const CityDataFile::ProvinceData &province);
+	uint32_t getWildernessSeed(int localCityID, const ArenaProvinceData &province);
 
 	// Gets the 32-bit seed for a city's ruler in the given province's map. This doesn't
 	// require actual location data -- it can just be a place on the map.
@@ -91,19 +91,17 @@ namespace ArenaLocationUtils
 	uint32_t getSkySeed(const Int2 &localPoint, int provinceID, const Rect &provinceRect);
 
 	// Gets the 32-bit seed for a dungeon, given a dungeon ID and province ID.
-	uint32_t getDungeonSeed(int localDungeonID, int provinceID,
-		const CityDataFile::ProvinceData &province);
+	uint32_t getDungeonSeed(int localDungeonID, int provinceID, const ArenaProvinceData &province);
 
 	// Gets the 32-bit seed for a province. Used with wilderness dungeons.
-	uint32_t getProvinceSeed(int provinceID, const CityDataFile::ProvinceData &province);
+	uint32_t getProvinceSeed(int provinceID, const ArenaProvinceData &province);
 
 	// Gets the 32-bit seed for a wilderness dungeon, given a province ID and X and Y
 	// wilderness block coordinates.
-	uint32_t getWildernessDungeonSeed(int provinceID,
-		const CityDataFile::ProvinceData &province, int wildBlockX, int wildBlockY);
+	uint32_t getWildernessDungeonSeed(int provinceID, const ArenaProvinceData &province, int wildBlockX, int wildBlockY);
 
 	// Gets whether the ruler of a city in the given province should be male.
-	bool isRulerMale(int localCityID, const CityDataFile::ProvinceData &province);
+	bool isRulerMale(int localCityID, const ArenaProvinceData &province);
 
 	// Gets the number of .MIF templates to choose from for a city.
 	int getCityTemplateCount(bool isCoastal, bool isCityState);

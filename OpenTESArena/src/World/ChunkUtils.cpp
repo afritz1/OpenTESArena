@@ -140,10 +140,16 @@ VoxelInt3 ChunkUtils::MakeChunkVoxelFromLevel(const WorldInt3 &levelPosition, SN
 		levelPosition.z - chunkStartZ);
 }
 
-VoxelDouble3 ChunkUtils::MakeChunkPointFromLevel(const WorldDouble3 &levelPosition, SNInt chunkStartX, int chunkStartY, WEInt chunkStartZ)
+VoxelInt2 ChunkUtils::MakeChunkVoxelFromLevel(const WorldInt2 &levelPosition, SNInt chunkStartX, WEInt chunkStartZ)
 {
-	return VoxelDouble3(
+	return VoxelInt2(
+		levelPosition.x - chunkStartX,
+		levelPosition.y - chunkStartZ);
+}
+
+VoxelDouble2 ChunkUtils::MakeChunkPointFromLevel(const WorldDouble2 &levelPosition, SNInt chunkStartX, WEInt chunkStartZ)
+{
+	return VoxelDouble2(
 		levelPosition.x - static_cast<SNDouble>(chunkStartX),
-		levelPosition.y - static_cast<double>(chunkStartY),
-		levelPosition.z - static_cast<WEDouble>(chunkStartZ));
+		levelPosition.y - static_cast<WEDouble>(chunkStartZ));
 }

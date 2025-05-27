@@ -28,19 +28,19 @@ TextCinematicPanel::~TextCinematicPanel()
 {
 	// Stop voice if it is still playing.
 	auto &game = this->getGame();
-	auto &audioManager = game.getAudioManager();
+	auto &audioManager = game.audioManager;
 	audioManager.stopSound();
 }
 
 bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage, const OnFinishedFunction &onFinished)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &cinematicLibrary = CinematicLibrary::getInstance();
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	const TextCinematicDefinition &textCinematicDef = cinematicLibrary.getTextDefinition(textCinematicDefIndex);
-	const TextBox::InitInfo subtitlesTextBoxInitInfo = TextCinematicUiView::getSubtitlesTextBoxInitInfo(textCinematicDef.getFontColor(), fontLibrary);
+	const TextBoxInitInfo subtitlesTextBoxInitInfo = TextCinematicUiView::getSubtitlesTextBoxInitInfo(textCinematicDef.fontColor, fontLibrary);
 	if (!this->textBox.init(subtitlesTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init subtitles text box.");
@@ -88,8 +88,8 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	const std::string subtitleText = TextCinematicUiModel::getSubtitleText(game, textCinematicDef);
 	this->textPages = TextCinematicUiModel::getSubtitleTextPages(subtitleText);
 
-	auto &textureManager = game.getTextureManager();
-	const std::string &animFilename = textCinematicDef.getAnimationFilename();
+	auto &textureManager = game.textureManager;
+	const std::string &animFilename = textCinematicDef.animFilename;
 	const Buffer<UiTextureID> animTextureIDs = TextCinematicUiView::allocAnimationTextures(animFilename, textureManager, renderer);
 	if (animTextureIDs.getCount() == 0)
 	{
@@ -104,31 +104,28 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 		this->animTextureRefs.emplace_back(std::move(animTextureRef));
 	}
 
-	UiDrawCall::TextureFunc animTextureFunc = [this]()
+	UiDrawCallInitInfo animDrawCallInitInfo;
+	animDrawCallInitInfo.textureFunc = [this]()
 	{
 		DebugAssertIndex(this->animTextureRefs, this->animImageIndex);
 		return this->animTextureRefs[this->animImageIndex].get();
 	};
 
-	const std::optional<Int2> animTextureDims = renderer.tryGetUiTextureDims(animTextureIDs[0]);
-	DebugAssert(animTextureDims.has_value());
-	this->addDrawCall(
-		animTextureFunc,
-		Int2::Zero,
-		*animTextureDims,
-		PivotType::TopLeft);
+	animDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(animTextureIDs[0]);
+	this->addDrawCall(animDrawCallInitInfo);
 
-	const Rect &textBoxRect = this->textBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->textBox.getTextureID(); },
-		textBoxRect.getCenter(),
-		Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
-		PivotType::Middle);
+	const Rect textBoxRect = this->textBox.getRect();
+	UiDrawCallInitInfo textDrawCallInitInfo;
+	textDrawCallInitInfo.textureFunc = [this]() { return this->textBox.getTextureID(); };
+	textDrawCallInitInfo.position = textBoxRect.getCenter();
+	textDrawCallInitInfo.size = textBoxRect.getSize();
+	textDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(textDrawCallInitInfo);
 
 	// Optionally initialize speech state if speech is available.
 	if (TextCinematicUiModel::shouldPlaySpeech(game))
 	{
-		this->speechState.init(textCinematicDef.getTemplateDatKey());
+		this->speechState.init(textCinematicDef.templateDatKey);
 	}
 
 	this->onFinished = onFinished;
@@ -174,13 +171,13 @@ void TextCinematicPanel::tick(double dt)
 	if (TextCinematicUiModel::shouldPlaySpeech(game))
 	{
 		// Update speech state, optionally ending the cinematic if done with last speech.
-		auto &audioManager = game.getAudioManager();
+		auto &audioManager = game.audioManager;
 
 		const bool playedFirstVoice = !TextCinematicUiModel::SpeechState::isFirstVoice(this->speechState.getNextVoiceIndex());
 		if (!playedFirstVoice)
 		{
 			const std::string voiceFilename = this->speechState.getVoiceFilename(this->speechState.getNextVoiceIndex());
-			audioManager.playSound(voiceFilename);
+			audioManager.playSound(voiceFilename.c_str());
 			this->speechState.incrementVoiceIndex();
 		}
 		else
@@ -196,7 +193,7 @@ void TextCinematicPanel::tick(double dt)
 
 				if (audioManager.soundExists(nextVoiceFilename))
 				{
-					audioManager.playSound(nextVoiceFilename);
+					audioManager.playSound(nextVoiceFilename.c_str());
 					this->speechState.incrementVoiceIndex();
 
 					if (TextCinematicUiModel::SpeechState::isBeginningOfNewPage(nextVoiceIndex))

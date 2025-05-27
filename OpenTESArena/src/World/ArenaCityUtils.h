@@ -20,7 +20,6 @@ class ProvinceDefinition;
 class TextAssetLibrary;
 
 // @todo: these should probably all be BufferView2D instead of Buffer2D
-
 namespace ArenaCityUtils
 {
 	// Max height of .MIF with highest MAP2 extension.

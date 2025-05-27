@@ -2,13 +2,13 @@
 
 #include "TextureBuilder.h"
 
-void TextureBuilder::PalettedTexture::init(int width, int height, const uint8_t *texels)
+void TextureBuilderPalettedTexture::init(int width, int height, const uint8_t *texels)
 {
 	this->texels.init(width, height);
 	std::copy(texels, texels + (width * height), this->texels.begin());
 }
 
-void TextureBuilder::TrueColorTexture::init(int width, int height, const uint32_t *texels)
+void TextureBuilderTrueColorTexture::init(int width, int height, const uint32_t *texels)
 {
 	this->texels.init(width, height);
 	std::copy(texels, texels + (width * height), this->texels.begin());
@@ -77,21 +77,4 @@ int TextureBuilder::getBytesPerTexel() const
 	{
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
 	}
-}
-
-TextureBuilderType TextureBuilder::getType() const
-{
-	return this->type;
-}
-
-const TextureBuilder::PalettedTexture &TextureBuilder::getPaletted() const
-{
-	DebugAssert(this->type == TextureBuilderType::Paletted);
-	return this->paletteTexture;
-}
-
-const TextureBuilder::TrueColorTexture &TextureBuilder::getTrueColor() const
-{
-	DebugAssert(this->type == TextureBuilderType::TrueColor);
-	return this->trueColorTexture;
 }

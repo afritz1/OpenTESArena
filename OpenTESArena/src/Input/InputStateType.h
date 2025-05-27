@@ -1,9 +1,8 @@
 #ifndef INPUT_STATE_TYPE_H
 #define INPUT_STATE_TYPE_H
 
-// State types for non-mono-state inputs like button presses. Mono-state inputs like mouse wheel scrolls do
-// not have a state type.
-
+// State types for non-mono-state inputs like button presses. Mono-state inputs like mouse wheel scrolls
+// do not have a state type.
 enum class InputStateType
 {
 	BeginPerform, // The instant the physical input starts.

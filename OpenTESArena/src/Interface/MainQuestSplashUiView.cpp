@@ -15,7 +15,7 @@ int MainQuestSplashUiView::getDescriptionTextBoxY()
 	return 133;
 }
 
-TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+TextBoxInitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainQuestSplashUiView::DescriptionFontName;
 	int fontDefIndex;
@@ -25,8 +25,8 @@ TextBox::InitInfo MainQuestSplashUiView::getDescriptionTextBoxInitInfo(const std
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
-	return TextBox::InitInfo::makeWithXY(
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		MainQuestSplashUiView::getDescriptionTextBoxX(textureGenInfo.width),
 		MainQuestSplashUiView::getDescriptionTextBoxY(),
@@ -52,8 +52,8 @@ TextureAsset MainQuestSplashUiView::getSplashTextureAsset(Game &game, int provin
 
 UiTextureID MainQuestSplashUiView::allocSplashTextureID(Game &game, int provinceID)
 {
-	TextureManager &textureManager = game.getTextureManager();
-	Renderer &renderer = game.getRenderer();
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
 	const TextureAsset textureAsset = MainQuestSplashUiView::getSplashTextureAsset(game, provinceID);
 	const TextureAsset paletteTextureAsset = textureAsset;
 

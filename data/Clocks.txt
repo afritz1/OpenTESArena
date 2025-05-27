@@ -1,0 +1,25 @@
+# In-game clocks in 24-hour format (hours, minutes, seconds).
+
+[Clocks]
+Midnight=0,0,0
+Night1=0,1,0
+EarlyMorning=3,0,0
+Morning=6,0,0
+Noon=12,0,0
+Afternoon=12,1,0
+Evening=18,0,0
+Night2=21,0,0
+
+AmbientBrighteningStart=6,0,0
+AmbientBrighteningEnd=6,15,0
+AmbientDimmingStart=17,45,0
+AmbientDimmingEnd=18,0,0
+
+LamppostActivate=17,45,0
+LamppostDeactivate=6,15,0
+
+MusicSwitchToDay=6,19,0
+MusicSwitchToNight=17,45,0
+
+ThunderstormStart=18,1,0
+ThunderstormEnd=6,0,0

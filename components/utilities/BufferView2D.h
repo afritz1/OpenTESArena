@@ -7,20 +7,18 @@
 #include "../debug/Debug.h"
 
 // Non-owning view over a 2D range of data stored in memory as a 1D array. More complex than 1D buffer
-// view due to the look-up requirements of a 2D array.
-
-// Data can be null. Only need assertions on things that reach into the buffer itself.
-
+// view due to the look-up requirements of a 2D array. Data can be null. Only need assertions on things
+// that reach into the buffer itself.
 template<typename T>
 class BufferView2D
 {
 private:
 	T *data; // Start of original 2D array.
 	int width, height; // Dimensions of original 2D array.
-	int viewX, viewY; // View coordinates.
-	int viewWidth, viewHeight; // View dimensions.
+	int viewX, viewY; // Start of 2D array slice.
+	int viewWidth, viewHeight; // Dimensions of 2D array slice.
 	bool isContiguous; // Whether all bytes are contiguous in memory, allowing for faster operations.
-	bool isSliced; // Whether the view is a smaller area within its buffer, causing it to potentially not be contiguous.
+	bool isSliced; // Whether the view is a smaller area within the original buffer, causing it to potentially not be contiguous.
 
 	int getIndex(int x, int y) const
 	{
@@ -205,8 +203,8 @@ public:
 		this->viewY = 0;
 		this->viewWidth = 0;
 		this->viewHeight = 0;
-		this->contiguous = false;
-		this->sliced = false;
+		this->isContiguous = false;
+		this->isSliced = false;
 	}
 };
 

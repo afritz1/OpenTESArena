@@ -8,7 +8,6 @@
 
 // A .SET file is packed with some uncompressed 64x64 wall .IMGs. Its size should
 // be a multiple of 4096 bytes.
-
 class SETFile
 {
 public:

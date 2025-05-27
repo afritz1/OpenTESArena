@@ -1,10 +1,9 @@
 #ifndef TEXTURE_H
 #define TEXTURE_H
 
-// A thin SDL_Texture wrapper.
-
 struct SDL_Texture;
 
+// A thin SDL_Texture wrapper.
 class Texture
 {
 private:
@@ -26,7 +25,7 @@ public:
 	// Most code shouldn't touch a native texture directly.
 	void init(SDL_Texture *texture);
 
-	void clear();
+	void destroy();
 };
 
 #endif

@@ -87,8 +87,7 @@ bool SdlUiRenderer::tryCreateUiTexture(int width, int height, UiTextureID *outID
 {
 	TexelsInitFunc initFunc = [](BufferView2D<uint32_t> dstTexels)
 	{
-		const Color &debugColor = Color::Magenta;
-		dstTexels.fill(debugColor.toARGB());
+		dstTexels.fill(Colors::MagentaARGB);
 	};
 
 	return this->tryCreateUiTextureInternal(width, height, initFunc, outID);
@@ -122,10 +121,10 @@ bool SdlUiRenderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, Palett
 	const TextureManager &textureManager, UiTextureID *outID)
 {
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-	const TextureBuilderType type = textureBuilder.getType();
+	const TextureBuilderType type = textureBuilder.type;
 	if (type == TextureBuilderType::Paletted)
 	{
-		const TextureBuilder::PalettedTexture &palettedTexture = textureBuilder.getPaletted();
+		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
 		const Buffer2D<uint8_t> &texels = palettedTexture.texels;
 		const BufferView2D<const uint8_t> texelsView(texels);
 		const Palette &palette = textureManager.getPaletteHandle(paletteID);
@@ -133,7 +132,7 @@ bool SdlUiRenderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, Palett
 	}
 	else if (type == TextureBuilderType::TrueColor)
 	{
-		const TextureBuilder::TrueColorTexture &trueColorTexture = textureBuilder.getTrueColor();
+		const TextureBuilderTrueColorTexture &trueColorTexture = textureBuilder.trueColorTexture;
 		const Buffer2D<uint32_t> &texels = trueColorTexture.texels;
 		const BufferView2D<const uint32_t> texelsView(texels);
 		return this->tryCreateUiTexture(texelsView, outID);
@@ -155,7 +154,12 @@ uint32_t *SdlUiRenderer::lockUiTexture(UiTextureID textureID)
 
 	SDL_Texture *texture = iter->second;
 	int width, height;
-	SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+	if (SDL_QueryTexture(texture, nullptr, nullptr, &width, &height) != 0)
+	{
+		DebugLogError("Couldn't query SDL_Texture dimensions for ID " + std::to_string(textureID) +
+			" (" + std::string(SDL_GetError()) + ").");
+		return nullptr;
+	}
 
 	uint32_t *dstTexels;
 	int pitch;
@@ -226,8 +230,8 @@ void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace r
 		const double originalYPercent = static_cast<double>(point.y) /
 			ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
-		const double letterboxWidthReal = static_cast<double>(letterboxRect.getWidth());
-		const double letterboxHeightReal = static_cast<double>(letterboxRect.getHeight());
+		const double letterboxWidthReal = static_cast<double>(letterboxRect.width);
+		const double letterboxHeightReal = static_cast<double>(letterboxRect.height);
 		const Int2 letterboxPoint(
 			static_cast<int>(std::round(letterboxWidthReal * originalXPercent)),
 			static_cast<int>(std::round(letterboxHeightReal * originalYPercent)));

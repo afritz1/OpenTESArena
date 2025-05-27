@@ -8,11 +8,12 @@
 
 #include "../Assets/ArenaTypes.h"
 
-class ExeData;
 class Game;
 class ProvinceDefinition;
 
 enum class MapType;
+
+struct ExeData;
 
 namespace MainMenuUiModel
 {

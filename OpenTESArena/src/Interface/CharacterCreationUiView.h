@@ -14,9 +14,10 @@
 
 #include "components/utilities/Buffer.h"
 
-class ExeData;
 class Game;
-class Rect;
+
+struct ExeData;
+struct Rect;
 
 namespace CharacterCreationUiView
 {
@@ -59,9 +60,9 @@ namespace ChooseClassCreationUiView
 	Int2 getGenerateTextureCenter();
 	Int2 getSelectTextureCenter();
 
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getGenerateTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getSelectTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getGenerateTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getSelectTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
@@ -83,12 +84,12 @@ namespace ChooseClassUiView
 	Rect getUpButtonRect(Game &game);
 	Rect getDownButtonRect(Game &game);
 
-	ListBox::Properties makeListBoxProperties(const FontLibrary &fontLibrary);
+	ListBoxProperties makeListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAsset getListBoxTextureAsset();
 
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
 	
 	UiTextureID allocPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
@@ -126,9 +127,9 @@ namespace ChooseGenderUiView
 	Int2 getMaleTextureCenter();
 	Int2 getFemaleTextureCenter();
 
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getMaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getFemaleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getMaleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getFemaleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
@@ -153,8 +154,8 @@ namespace ChooseNameUiView
 
 	Int2 getTitleTextureCenter();
 
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
@@ -223,24 +224,23 @@ namespace ChooseRaceUiView
 	int getNoExitTextureX(int textureWidth);
 	int getNoExitTextureY(int textureHeight);
 
-	Rect getProvinceConfirmTitleTextBoxRect(const std::string_view &text, const FontLibrary &fontLibrary);
+	Rect getProvinceConfirmTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary);
 
-	MessageBoxSubPanel::BackgroundProperties getProvinceConfirmMessageBoxBackgroundProperties();
-	MessageBoxSubPanel::TitleProperties getProvinceConfirmMessageBoxTitleProperties(const std::string_view &text,
-		const FontLibrary &fontLibrary);
-	MessageBoxSubPanel::ItemsProperties getProvinceConfirmMessageBoxItemsProperties(const FontLibrary &fontLibrary);
+	MessageBoxBackgroundProperties getProvinceConfirmMessageBoxBackgroundProperties();
+	MessageBoxTitleProperties getProvinceConfirmMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary);
+	MessageBoxItemsProperties getProvinceConfirmMessageBoxItemsProperties(const FontLibrary &fontLibrary);
 
 	Rect getProvinceConfirmedFirstTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedSecondTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedThirdTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedFourthTextureRect(int textWidth, int textHeight);
 
-	TextBox::InitInfo getInitialPopUpTextBoxInitInfo(const std::string_view &text, Game &game);
+	TextBoxInitInfo getInitialPopUpTextBoxInitInfo(const std::string_view text, Game &game);
 
-	TextBox::InitInfo getProvinceConfirmedFirstTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getProvinceConfirmedSecondTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getProvinceConfirmedThirdTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getProvinceConfirmedFourthTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getProvinceConfirmedFirstTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getProvinceConfirmedSecondTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getProvinceConfirmedThirdTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getProvinceConfirmedFourthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocNoExitTexture(TextureManager &textureManager, Renderer &renderer);
@@ -285,16 +285,22 @@ namespace ChooseAttributesUiView
 	constexpr int PortraitButtonWidth = 60;
 	constexpr int PortraitButtonHeight = 42;
 
-	int getInitialTextureWidth();
-	int getInitialTextureHeight();
+	constexpr Rect AttributeButtonFirstRect(10, 52, 26, 8);
+	constexpr Int2 UpDownButtonFirstTopLeftPosition(38, 48);
 
-	Rect getMessageBoxTitleTextBoxRect(const std::string_view &text, const FontLibrary &fontLibrary);
+	constexpr Int2 BonusPointsTextureTopLeftPosition(45, 109);
+	constexpr Int2 BonusPointsTextBoxTopLeftPosition(92, 113);
+	const std::string BonusPointsFontName = ArenaFontName::Arena;
+	constexpr Color BonusPointsTextColor(199, 199, 199);
 
-	MessageBoxSubPanel::BackgroundProperties getMessageBoxBackgroundProperties();
-	MessageBoxSubPanel::TitleProperties getMessageBoxTitleProperties(const std::string_view &text,
-		const FontLibrary &fontLibrary);
-	MessageBoxSubPanel::ItemsProperties getMessageBoxItemsProperties(const FontLibrary &fontLibrary);
+	Rect getMessageBoxTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary);
 
+	MessageBoxBackgroundProperties getMessageBoxBackgroundProperties();
+	MessageBoxTitleProperties getMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary);
+	MessageBoxItemsProperties getMessageBoxItemsProperties(const FontLibrary &fontLibrary);
+
+	int getDistributePointsTextBoxTextureWidth(int textWidth);
+	int getDistributePointsTextBoxTextureHeight(int textHeight);
 	int getAppearanceTextBoxTextureWidth(int textWidth);
 	int getAppearanceTextBoxTextureHeight(int textHeight);
 
@@ -311,9 +317,11 @@ namespace ChooseAttributesUiView
 	UiTextureID allocBodyTexture(Game &game);
 	UiTextureID allocShirtTexture(Game &game);
 	UiTextureID allocPantsTexture(Game &game);
-	UiTextureID allocHeadTexture(const TextureAsset &textureAsset,
-		TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocHeadTexture(const TextureAsset &textureAsset, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
+
+	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

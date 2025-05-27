@@ -2,7 +2,6 @@
 #define INPUT_ACTION_NAME_H
 
 // Pre-defined names for hotkeys that can be performed without clicking a UI button.
-
 namespace InputActionName
 {
 	// Common.

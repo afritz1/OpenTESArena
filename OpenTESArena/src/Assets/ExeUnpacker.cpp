@@ -6,6 +6,8 @@
 #include "ExeUnpacker.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Buffer.h"
+#include "components/utilities/BufferView.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
@@ -47,12 +49,12 @@ namespace
 		BitTree::Node root;
 	public:
 		// Inserts a node into the tree, overwriting any existing entry.
-		void insert(const std::vector<bool> &bits, int value)
+		void insert(BufferView<const bool> bits, int value)
 		{
 			BitTree::Node *node = &this->root;
 
 			// Walk the tree, creating new nodes as necessary. Internal nodes have null values.
-			for (size_t i = 0; i < bits.size(); i++)
+			for (int i = 0; i < bits.getCount(); i++)
 			{
 				const bool bit = bits[i];
 
@@ -81,7 +83,7 @@ namespace
 				}
 				
 				// Set the node's value if it's the desired leaf.
-				if (i == (bits.size() - 1))
+				if (i == (bits.getCount() - 1))
 				{
 					node->value = std::make_unique<int>(value);
 				}
@@ -138,70 +140,128 @@ namespace
 	// Bit table from pklite_specification.md, section 4.3.1 "Number of bytes".
 	// The decoded value for a given vector is (index + 2) before index 11, and
 	// (index + 1) after index 11.
-	const std::vector<std::vector<bool>> Duplication1 =
+	constexpr bool Duplication1_2[] = { true, false };
+	constexpr bool Duplication1_3[] = { true, true };
+	constexpr bool Duplication1_4[] = { false, false, false };
+	constexpr bool Duplication1_5[] = { false, false, true, false };
+	constexpr bool Duplication1_6[] = { false, false, true, true };
+	constexpr bool Duplication1_7[] = { false, true, false, false };
+	constexpr bool Duplication1_8[] = { false, true, false, true, false };
+	constexpr bool Duplication1_9[] = { false, true, false, true, true };
+	constexpr bool Duplication1_10[] = { false, true, true, false, false };
+	constexpr bool Duplication1_11[] = { false, true, true, false, true, false };
+	constexpr bool Duplication1_12[] = { false, true, true, false, true, true };
+	constexpr bool Duplication1_SpecialCase[] = { false, true, true, true, false, false };
+	constexpr bool Duplication1_13[] = { false, true, true, true, false, true, false };
+	constexpr bool Duplication1_14[] = { false, true, true, true, false, true, true };
+	constexpr bool Duplication1_15[] = { false, true, true, true, true, false, false };
+	constexpr bool Duplication1_16[] = { false, true, true, true, true, false, true, false };
+	constexpr bool Duplication1_17[] = { false, true, true, true, true, false, true, true };
+	constexpr bool Duplication1_18[] = { false, true, true, true, true, true, false, false };
+	constexpr bool Duplication1_19[] = { false, true, true, true, true, true, false, true, false };
+	constexpr bool Duplication1_20[] = { false, true, true, true, true, true, false, true, true };
+	constexpr bool Duplication1_21[] = { false, true, true, true, true, true, true, false, false };
+	constexpr bool Duplication1_22[] = { false, true, true, true, true, true, true, false, true };
+	constexpr bool Duplication1_23[] = { false, true, true, true, true, true, true, true, false };
+	constexpr bool Duplication1_24[] = { false, true, true, true, true, true, true, true, true };
+
+	const BufferView<const bool> Duplication1[] =
 	{
-		{ true, false }, // 2
-		{ true, true }, // 3
-		{ false, false, false }, // 4
-		{ false, false, true, false }, // 5
-		{ false, false, true, true }, // 6
-		{ false, true, false, false }, // 7
-		{ false, true, false, true, false }, // 8
-		{ false, true, false, true, true }, // 9
-		{ false, true, true, false, false }, // 10
-		{ false, true, true, false, true, false }, // 11
-		{ false, true, true, false, true, true }, // 12
-		{ false, true, true, true, false, false }, // Special case
-		{ false, true, true, true, false, true, false }, // 13
-		{ false, true, true, true, false, true, true }, // 14
-		{ false, true, true, true, true, false, false }, // 15
-		{ false, true, true, true, true, false, true, false }, // 16
-		{ false, true, true, true, true, false, true, true }, // 17
-		{ false, true, true, true, true, true, false, false }, // 18
-		{ false, true, true, true, true, true, false, true, false }, // 19
-		{ false, true, true, true, true, true, false, true, true }, // 20
-		{ false, true, true, true, true, true, true, false, false }, // 21
-		{ false, true, true, true, true, true, true, false, true }, // 22
-		{ false, true, true, true, true, true, true, true, false }, // 23
-		{ false, true, true, true, true, true, true, true, true } // 24
+		Duplication1_2,
+		Duplication1_3,
+		Duplication1_4,
+		Duplication1_5,
+		Duplication1_6,
+		Duplication1_7,
+		Duplication1_8,
+		Duplication1_9,
+		Duplication1_10,
+		Duplication1_11,
+		Duplication1_12,
+		Duplication1_SpecialCase,
+		Duplication1_13,
+		Duplication1_14,
+		Duplication1_15,
+		Duplication1_16,
+		Duplication1_17,
+		Duplication1_18,
+		Duplication1_19,
+		Duplication1_20,
+		Duplication1_21,
+		Duplication1_22,
+		Duplication1_23,
+		Duplication1_24
 	};
 
 	// Bit table from pklite_specification.md, section 4.3.2 "Offset".
 	// The decoded value for a given vector is simply its index.
-	const std::vector<std::vector<bool>> Duplication2 =
+	constexpr bool Duplication2_0[] = { true };
+	constexpr bool Duplication2_1[] = { false, false, false, false };
+	constexpr bool Duplication2_2[] = { false, false, false, true };
+	constexpr bool Duplication2_3[] = { false, false, true, false, false };
+	constexpr bool Duplication2_4[] = { false, false, true, false, true };
+	constexpr bool Duplication2_5[] = { false, false, true, true, false };
+	constexpr bool Duplication2_6[] = { false, false, true, true, true };
+	constexpr bool Duplication2_7[] = { false, true, false, false, false, false };
+	constexpr bool Duplication2_8[] = { false, true, false, false, false, true };
+	constexpr bool Duplication2_9[] = { false, true, false, false, true, false };
+	constexpr bool Duplication2_10[] = { false, true, false, false, true, true };
+	constexpr bool Duplication2_11[] = { false, true, false, true, false, false };
+	constexpr bool Duplication2_12[] = { false, true, false, true, false, true };
+	constexpr bool Duplication2_13[] = { false, true, false, true, true, false };
+	constexpr bool Duplication2_14[] = { false, true, false, true, true, true, false };
+	constexpr bool Duplication2_15[] = { false, true, false, true, true, true, true };
+	constexpr bool Duplication2_16[] = { false, true, true, false, false, false, false };
+	constexpr bool Duplication2_17[] = { false, true, true, false, false, false, true };
+	constexpr bool Duplication2_18[] = { false, true, true, false, false, true, false };
+	constexpr bool Duplication2_19[] = { false, true, true, false, false, true, true };
+	constexpr bool Duplication2_20[] = { false, true, true, false, true, false, false };
+	constexpr bool Duplication2_21[] = { false, true, true, false, true, false, true };
+	constexpr bool Duplication2_22[] = { false, true, true, false, true, true, false };
+	constexpr bool Duplication2_23[] = { false, true, true, false, true, true, true };
+	constexpr bool Duplication2_24[] = { false, true, true, true, false, false, false };
+	constexpr bool Duplication2_25[] = { false, true, true, true, false, false, true };
+	constexpr bool Duplication2_26[] = { false, true, true, true, false, true, false };
+	constexpr bool Duplication2_27[] = { false, true, true, true, false, true, true };
+	constexpr bool Duplication2_28[] = { false, true, true, true, true, false, false };
+	constexpr bool Duplication2_29[] = { false, true, true, true, true, false, true };
+	constexpr bool Duplication2_30[] = { false, true, true, true, true, true, false };
+	constexpr bool Duplication2_31[] = { false, true, true, true, true, true, true };
+
+	const BufferView<const bool> Duplication2[] =
 	{
-		{ true }, // 0
-		{ false, false, false, false }, // 1
-		{ false, false, false, true }, // 2
-		{ false, false, true, false, false }, // 3
-		{ false, false, true, false, true }, // 4
-		{ false, false, true, true, false }, // 5
-		{ false, false, true, true, true }, // 6
-		{ false, true, false, false, false, false }, // 7
-		{ false, true, false, false, false, true }, // 8
-		{ false, true, false, false, true, false }, // 9
-		{ false, true, false, false, true, true }, // 10
-		{ false, true, false, true, false, false }, // 11
-		{ false, true, false, true, false, true }, // 12
-		{ false, true, false, true, true, false }, // 13
-		{ false, true, false, true, true, true, false }, // 14
-		{ false, true, false, true, true, true, true }, // 15
-		{ false, true, true, false, false, false, false }, // 16
-		{ false, true, true, false, false, false, true }, // 17
-		{ false, true, true, false, false, true, false }, // 18
-		{ false, true, true, false, false, true, true }, // 19
-		{ false, true, true, false, true, false, false }, // 20
-		{ false, true, true, false, true, false, true }, // 21
-		{ false, true, true, false, true, true, false }, // 22
-		{ false, true, true, false, true, true, true }, // 23
-		{ false, true, true, true, false, false, false }, // 24
-		{ false, true, true, true, false, false, true }, // 25
-		{ false, true, true, true, false, true, false }, // 26
-		{ false, true, true, true, false, true, true }, // 27
-		{ false, true, true, true, true, false, false }, // 28
-		{ false, true, true, true, true, false, true }, // 29
-		{ false, true, true, true, true, true, false }, // 30
-		{ false, true, true, true, true, true, true } // 31
+		Duplication2_0,
+		Duplication2_1,
+		Duplication2_2,
+		Duplication2_3,
+		Duplication2_4,
+		Duplication2_5,
+		Duplication2_6,
+		Duplication2_7,
+		Duplication2_8,
+		Duplication2_9,
+		Duplication2_10,
+		Duplication2_11,
+		Duplication2_12,
+		Duplication2_13,
+		Duplication2_14,
+		Duplication2_15,
+		Duplication2_16,
+		Duplication2_17,
+		Duplication2_18,
+		Duplication2_19,
+		Duplication2_20,
+		Duplication2_21,
+		Duplication2_22,
+		Duplication2_23,
+		Duplication2_24,
+		Duplication2_25,
+		Duplication2_26,
+		Duplication2_27,
+		Duplication2_28,
+		Duplication2_29,
+		Duplication2_30,
+		Duplication2_31
 	};
 }
 
@@ -227,12 +287,12 @@ bool ExeUnpacker::init(const char *filename)
 
 	bitTree1.insert(Duplication1[11], 13);
 
-	for (int i = 12; i < Duplication1.size(); i++)
+	for (int i = 12; i < static_cast<int>(std::size(Duplication1)); i++)
 	{
 		bitTree1.insert(Duplication1[i], i + 1);
 	}
 
-	for (int i = 0; i < Duplication2.size(); i++)
+	for (int i = 0; i < static_cast<int>(std::size(Duplication2)); i++)
 	{
 		bitTree2.insert(Duplication2[i], i);
 	}
@@ -329,8 +389,8 @@ bool ExeUnpacker::init(const char *filename)
 			// Lambda for comparing a bit vector's equality with the special case.
 			auto matchesSpecialCase = [](const BitVector &bitVector)
 			{
-				const std::vector<bool> &specialCase = Duplication1.at(11);
-				const bool equalSize = bitVector.count == static_cast<int>(specialCase.size());
+				const BufferView<const bool> specialCase = Duplication1[11];
+				const bool equalSize = bitVector.count == specialCase.getCount();
 
 				if (!equalSize)
 				{
@@ -340,7 +400,7 @@ bool ExeUnpacker::init(const char *filename)
 				{
 					for (int i = 0; i < bitVector.count; i++)
 					{
-						if (bitVector.bits.at(i) != specialCase.at(i))
+						if (bitVector.bits.at(i) != specialCase[i])
 						{
 							return false;
 						}

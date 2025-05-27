@@ -30,14 +30,14 @@ Rect MainMenuUiView::getTestButtonRect()
 
 Color MainMenuUiView::getTestButtonTextColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
-TextBox::InitInfo MainMenuUiView::getTestButtonTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo MainMenuUiView::getTestButtonTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	const Rect rect = MainMenuUiView::getTestButtonRect();
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		rect.getCenter(),
 		MainMenuUiView::TestButtonFontName,
@@ -46,7 +46,7 @@ TextBox::InitInfo MainMenuUiView::getTestButtonTextBoxInitInfo(const std::string
 		fontLibrary);
 }
 
-TextBox::InitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainMenuUiView::TestButtonFontName;
 	int fontIndex;
@@ -57,10 +57,10 @@ TextBox::InitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
 	const std::string dummyText(15, TextRenderUtils::LARGEST_CHAR);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestTypeUpButtonRect();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		buttonRect.getLeft() - 2 - textureGenInfo.width,
 		buttonRect.getBottom(),
@@ -70,7 +70,7 @@ TextBox::InitInfo MainMenuUiView::getTestTypeTextBoxInitInfo(const FontLibrary &
 		fontLibrary);
 }
 
-TextBox::InitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainMenuUiView::TestButtonFontName;
 	int fontIndex;
@@ -81,10 +81,10 @@ TextBox::InitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
 	const std::string dummyText(15, TextRenderUtils::LARGEST_CHAR);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestIndexUpButtonRect();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		buttonRect.getLeft() - 2 - textureGenInfo.width,
 		buttonRect.getBottom(),
@@ -94,7 +94,7 @@ TextBox::InitInfo MainMenuUiView::getTestNameTextBoxInitInfo(const FontLibrary &
 		fontLibrary);
 }
 
-TextBox::InitInfo MainMenuUiView::getTestWeatherTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo MainMenuUiView::getTestWeatherTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = MainMenuUiView::TestButtonFontName;
 	int fontIndex;
@@ -105,10 +105,10 @@ TextBox::InitInfo MainMenuUiView::getTestWeatherTextBoxInitInfo(const FontLibrar
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontIndex);
 	const std::string dummyText(16, TextRenderUtils::LARGEST_CHAR);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Rect buttonRect = MainMenuUiView::getTestWeatherUpButtonRect();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		buttonRect.getLeft() - 2 - textureGenInfo.width,
 		buttonRect.getBottom(),
@@ -132,10 +132,10 @@ Rect MainMenuUiView::getTestIndexUpButtonRect()
 {
 	const Rect baseRect = MainMenuUiView::getTestTypeUpButtonRect();
 	return Rect(
-		baseRect.getLeft() - baseRect.getWidth() - 2,
-		baseRect.getTop() + (baseRect.getHeight() * 2) + 2,
-		baseRect.getWidth(),
-		baseRect.getHeight());
+		baseRect.getLeft() - baseRect.width - 2,
+		baseRect.getTop() + (baseRect.height * 2) + 2,
+		baseRect.width,
+		baseRect.height);
 }
 
 Rect MainMenuUiView::getTestIndexDownButtonRect()
@@ -144,8 +144,8 @@ Rect MainMenuUiView::getTestIndexDownButtonRect()
 	return Rect(
 		baseRect.getLeft(),
 		baseRect.getBottom(),
-		baseRect.getWidth(),
-		baseRect.getHeight());
+		baseRect.width,
+		baseRect.height);
 }
 
 Rect MainMenuUiView::getTestIndex2UpButtonRect()
@@ -154,8 +154,8 @@ Rect MainMenuUiView::getTestIndex2UpButtonRect()
 	return Rect(
 		baseRect.getLeft() + 10,
 		baseRect.getTop(),
-		baseRect.getWidth(),
-		baseRect.getHeight());
+		baseRect.width,
+		baseRect.height);
 }
 
 Rect MainMenuUiView::getTestIndex2DownButtonRect()
@@ -164,8 +164,8 @@ Rect MainMenuUiView::getTestIndex2DownButtonRect()
 	return Rect(
 		baseRect.getLeft(),
 		baseRect.getBottom(),
-		baseRect.getWidth(),
-		baseRect.getHeight());
+		baseRect.width,
+		baseRect.height);
 }
 
 Rect MainMenuUiView::getTestWeatherUpButtonRect()
@@ -173,9 +173,9 @@ Rect MainMenuUiView::getTestWeatherUpButtonRect()
 	const Rect baseRect = MainMenuUiView::getTestTypeUpButtonRect();
 	return Rect(
 		baseRect.getLeft(),
-		baseRect.getTop() - 2 - (2 * baseRect.getHeight()),
-		baseRect.getWidth(),
-		baseRect.getHeight());
+		baseRect.getTop() - 2 - (2 * baseRect.height),
+		baseRect.width,
+		baseRect.height);
 }
 
 Rect MainMenuUiView::getTestWeatherDownButtonRect()
@@ -184,8 +184,8 @@ Rect MainMenuUiView::getTestWeatherDownButtonRect()
 	return Rect(
 		baseRect.getLeft(),
 		baseRect.getBottom(),
-		baseRect.getWidth(),
-		baseRect.getHeight());
+		baseRect.width,
+		baseRect.height);
 }
 
 TextureAsset MainMenuUiView::getBackgroundTextureAsset()
@@ -240,7 +240,7 @@ UiTextureID MainMenuUiView::allocTestButtonTexture(TextureManager &textureManage
 {
 	const Rect rect = MainMenuUiView::getTestButtonRect();
 	const Surface surface = TextureUtils::generate(MainMenuUiView::TestButtonPatternType,
-		rect.getWidth(), rect.getHeight(), textureManager, renderer);
+		rect.width, rect.height, textureManager, renderer);
 	const BufferView2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
 		surface.getWidth(), surface.getHeight());
 

@@ -6,7 +6,7 @@
 
 const Rect OptionsUiView::getTabRect(int index)
 {
-	const Int2 tabsOrigin(3, 38);
+	const Int2 tabsOrigin(3, 6);
 	const Int2 tabsDimensions(54, 16);
 	return Rect(
 		tabsOrigin.x,
@@ -23,7 +23,7 @@ const Rect OptionsUiView::getListRect()
 		firstTabRect.getTop());
 	const Int2 listDimensions(
 		254,
-		firstTabRect.getHeight() * 5);
+		firstTabRect.height * 5);
 
 	return Rect(
 		listOrigin.x,
@@ -37,31 +37,15 @@ const Int2 OptionsUiView::getDescriptionXY()
 	return Int2(5, 122);
 }
 
-Color OptionsUiView::getTitleTextColor()
-{
-	return Color::White;
-}
-
-TextBox::InitInfo OptionsUiView::getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
-{
-	return TextBox::InitInfo::makeWithCenter(
-		text,
-		OptionsUiView::TitleTextBoxCenterPoint,
-		OptionsUiView::TitleFontName,
-		OptionsUiView::getTitleTextColor(),
-		OptionsUiView::TitleTextAlignment,
-		fontLibrary);
-}
-
 Color OptionsUiView::getBackButtonTextColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
-TextBox::InitInfo OptionsUiView::getBackButtonTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo OptionsUiView::getBackButtonTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		OptionsUiView::BackButtonTextBoxCenterPoint,
 		OptionsUiView::BackButtonFontName,
@@ -77,24 +61,24 @@ Rect OptionsUiView::getBackButtonRect()
 
 Color OptionsUiView::getTabTextColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
 Color OptionsUiView::getOptionTextBoxColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
 Color OptionsUiView::getDescriptionTextColor()
 {
-	return Color::White;
+	return Colors::White;
 }
 
-TextBox::InitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::string_view &text,
+TextBoxInitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
 	const Rect tabRect = OptionsUiView::getTabRect(index);
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		tabRect.getCenter(),
 		OptionsUiView::TabFontName,
@@ -103,7 +87,7 @@ TextBox::InitInfo OptionsUiView::getTabTextBoxInitInfo(int index, const std::str
 		fontLibrary);
 }
 
-TextBox::InitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontLibrary &fontLibrary)
+TextBoxInitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(28, TextRenderUtils::LARGEST_CHAR);
 
@@ -119,9 +103,9 @@ TextBox::InitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontL
 	const Rect rect(
 		listRect.getLeft(),
 		listRect.getTop() + (fontDef.getCharacterHeight() * index),
-		listRect.getWidth(),
-		listRect.getHeight());
-	return TextBox::InitInfo::makeWithXY(
+		listRect.width,
+		listRect.height);
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		rect.getLeft(),
 		rect.getTop(),
@@ -131,7 +115,7 @@ TextBox::InitInfo OptionsUiView::getOptionTextBoxInitInfo(int index, const FontL
 		fontLibrary);
 }
 
-TextBox::InitInfo OptionsUiView::getDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo OptionsUiView::getDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	std::string dummyText(36, TextRenderUtils::LARGEST_CHAR);
 	for (int i = 0; i < 8; i++)
@@ -140,7 +124,7 @@ TextBox::InitInfo OptionsUiView::getDescriptionTextBoxInitInfo(const FontLibrary
 	}
 
 	const Int2 origin = OptionsUiView::getDescriptionXY();
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		origin.x,
 		origin.y,
@@ -179,8 +163,8 @@ UiTextureID OptionsUiView::allocTabTexture(TextureManager &textureManager, Rende
 	const Rect firstTabRect = OptionsUiView::getTabRect(0);
 	Surface surface = TextureUtils::generate(
 		OptionsUiView::TabBackgroundPatternType,
-		firstTabRect.getWidth(),
-		firstTabRect.getHeight(),
+		firstTabRect.width,
+		firstTabRect.height,
 		textureManager,
 		renderer);
 
@@ -210,7 +194,7 @@ UiTextureID OptionsUiView::allocTabTexture(TextureManager &textureManager, Rende
 UiTextureID OptionsUiView::allocHighlightTexture(Renderer &renderer)
 {
 	const Rect listRect = OptionsUiView::getListRect();
-	const int width = listRect.getWidth();
+	const int width = listRect.width;
 	const int height = 9;
 	UiTextureID textureID;
 	if (!renderer.tryCreateUiTexture(width, height, &textureID))
@@ -237,8 +221,8 @@ UiTextureID OptionsUiView::allocBackButtonTexture(TextureManager &textureManager
 	const Rect backButtonRect = OptionsUiView::getBackButtonRect();
 	Surface surface = TextureUtils::generate(
 		OptionsUiView::TabBackgroundPatternType,
-		backButtonRect.getWidth(),
-		backButtonRect.getHeight(),
+		backButtonRect.width,
+		backButtonRect.height,
 		textureManager,
 		renderer);
 

@@ -7,7 +7,7 @@
 
 #include "components/utilities/Buffer3D.h"
 
-// Base chunk for all other chunk types in the game world.
+// Base type for all chunks in the game world occupying 64x64 voxels.
 class Chunk
 {
 private:

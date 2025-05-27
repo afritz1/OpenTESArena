@@ -2,39 +2,9 @@
 
 #include "Rect.h"
 
-#include "components/debug/Debug.h"
-
-Rect::Rect(int x, int y, int width, int height)
+bool Rect::isEmpty() const
 {
-	DebugAssert(width >= 0);
-	DebugAssert(height >= 0);
-
-	this->x = x;
-	this->y = y;
-	this->w = width;
-	this->h = height;
-}
-
-Rect::Rect(const Int2 &center, int width, int height)
-	: Rect(center.x - (width / 2), center.y - (height / 2), width, height) { }
-
-Rect::Rect(int width, int height)
-	: Rect(0, 0, width, height) { }
-
-Rect::Rect()
-	: Rect(0, 0, 0, 0) { }
-
-Rect::Rect(const Rect &rect)
-	: Rect(rect.x, rect.y, rect.w, rect.h) { }
-
-int Rect::getWidth() const
-{
-	return this->w;
-}
-
-int Rect::getHeight() const
-{
-	return this->h;
+	return (this->width == 0) || (this->height == 0);
 }
 
 int Rect::getLeft() const
@@ -44,7 +14,7 @@ int Rect::getLeft() const
 
 int Rect::getRight() const
 {
-	return this->getLeft() + this->getWidth();
+	return this->getLeft() + this->width;
 }
 
 int Rect::getTop() const
@@ -54,7 +24,7 @@ int Rect::getTop() const
 
 int Rect::getBottom() const
 {
-	return this->getTop() + this->getHeight();
+	return this->getTop() + this->height;
 }
 
 Int2 Rect::getTopLeft() const
@@ -79,7 +49,12 @@ Int2 Rect::getBottomRight() const
 
 Int2 Rect::getCenter() const
 {
-	return Int2(this->getLeft() + (this->getWidth() / 2), (this->getTop() + (this->getHeight() / 2)));
+	return Int2(this->x + (this->width / 2), (this->y + (this->height / 2)));
+}
+
+Int2 Rect::getSize() const
+{
+	return Int2(this->width, this->height);
 }
 
 SDL_Rect Rect::getSdlRect() const
@@ -87,29 +62,9 @@ SDL_Rect Rect::getSdlRect() const
 	SDL_Rect rect;
 	rect.x = this->x;
 	rect.y = this->y;
-	rect.w = this->w;
-	rect.h = this->h;
+	rect.w = this->width;
+	rect.h = this->height;
 	return rect;
-}
-
-void Rect::setX(int x)
-{
-	this->x = x;
-}
-
-void Rect::setY(int y)
-{
-	this->y = y;
-}
-
-void Rect::setWidth(int width)
-{
-	this->w = width;
-}
-
-void Rect::setHeight(int height)
-{
-	this->h = height;
 }
 
 bool Rect::contains(const Int2 &point) const

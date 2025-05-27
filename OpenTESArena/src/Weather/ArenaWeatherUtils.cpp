@@ -106,8 +106,8 @@ Buffer<Color> ArenaWeatherUtils::makeSkyColors(ArenaTypes::WeatherType weatherTy
 Buffer<uint8_t> ArenaWeatherUtils::makeThunderstormColors(const ExeData &exeData)
 {
 	const auto &srcColors = exeData.weather.thunderstormFlashColors;
-	Buffer<uint8_t> colors(static_cast<int>(srcColors.size()));
-	std::copy(srcColors.begin(), srcColors.end(), colors.begin());
+	Buffer<uint8_t> colors(static_cast<int>(std::size(srcColors)));
+	std::copy(std::begin(srcColors), std::end(srcColors), colors.begin());
 	return colors;
 }
 
@@ -121,8 +121,7 @@ Buffer<Buffer<TextureAsset>> ArenaWeatherUtils::makeLightningBoltTextureAssets(T
 		DOSUtils::FilenameBuffer filename;
 		std::snprintf(filename.data(), filename.size(), "LGLIT0%d.CFA", i + 1);
 
-		Buffer<TextureAsset> textureAssets = TextureUtils::makeTextureAssets(
-			std::string(filename.data()), textureManager);
+		Buffer<TextureAsset> textureAssets = TextureUtils::makeTextureAssets(std::string(filename.data()), textureManager);
 		textureAssetBuffers.set(i, std::move(textureAssets));
 	}
 

@@ -10,22 +10,19 @@
 
 #include "components/utilities/Buffer2D.h"
 
-// An .FLC file is a video file. .CEL files are nearly identical to .FLCs, though with 
-// an extra chunk of header data (which can probably be skipped).
-
-// I'm fairly certain now after looking into it, that the Arena developers used
-// Autodesk Animator to make these .FLC and .CEL animations.
-
+// An .FLC file is a video file. .CEL files are nearly identical to .FLCs, though with an extra chunk
+// of header data which can probably be skipped. I'm fairly certain now after looking into it, that
+// the Arena developers used Autodesk Animator to make these .FLC and .CEL animations.
+//
 // Some interesting trivia I found in some .FLC files:
 // - END02.FLC was initially created on Friday, Oct. 15th, 1993, and last updated
 //   on the Wednesday after that.
 // - KING.FLC was initially created on Tuesday, Oct. 19th, 1993.
 // - VISION.FLC was initially created a month before that, on Monday, Sept. 13th 1993.
-
+//
 // These websites have some information on the FLIC format:
 // - http://www.compuphase.com/flic.htm
 // - http://www.fileformat.info/format/fli/egff.htm
-
 class FLCFile
 {
 private:

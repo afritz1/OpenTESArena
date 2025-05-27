@@ -33,8 +33,8 @@ bool ImagePanel::init(const std::string &paletteName, const std::string &texture
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const TextureAsset textureAsset = TextureAsset(std::string(textureName));
 	const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
 
@@ -46,11 +46,11 @@ bool ImagePanel::init(const std::string &paletteName, const std::string &texture
 	}
 
 	this->textureRef.init(textureID, renderer);
-	this->addDrawCall(
-		this->textureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
+
+	UiDrawCallInitInfo drawCallInitInfo;
+	drawCallInitInfo.textureID = this->textureRef.get();
+	drawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(drawCallInitInfo);
 
 	this->secondsToDisplay = secondsToDisplay;
 	this->currentSeconds = 0.0;

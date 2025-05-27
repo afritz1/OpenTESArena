@@ -8,12 +8,11 @@
 #include "../Math/Rect.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 
-MessageBoxSubPanel::BackgroundProperties::BackgroundProperties(TextureUtils::PatternType patternType,
+MessageBoxBackgroundProperties::MessageBoxBackgroundProperties(TextureUtils::PatternType patternType,
 	int extraTitleWidth, int extraTitleHeight, const std::optional<int> &widthOverride,
 	const std::optional<int> &heightOverride, int itemTextureHeight)
 	: widthOverride(widthOverride), heightOverride(heightOverride)
@@ -24,26 +23,26 @@ MessageBoxSubPanel::BackgroundProperties::BackgroundProperties(TextureUtils::Pat
 	this->itemTextureHeight = itemTextureHeight;
 }
 
-MessageBoxSubPanel::TitleProperties::TitleProperties(const std::string &fontName,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor, int lineSpacing)
+MessageBoxTitleProperties::MessageBoxTitleProperties(const std::string &fontName,
+	const TextRenderTextureGenInfo &textureGenInfo, const Color &textColor, int lineSpacing)
 	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
 {
 	this->lineSpacing = lineSpacing;
 }
 
-MessageBoxSubPanel::ItemsProperties::ItemsProperties(int count, const std::string &fontName,
-	const TextRenderUtils::TextureGenInfo &textureGenInfo, const Color &textColor)
+MessageBoxItemsProperties::MessageBoxItemsProperties(int count, const std::string &fontName,
+	const TextRenderTextureGenInfo &textureGenInfo, const Color &textColor)
 	: fontName(fontName), textureGenInfo(textureGenInfo), textColor(textColor)
 {
 	this->count = count;
 }
 
-MessageBoxSubPanel::Item::Item()
+MessageBoxItem::MessageBoxItem()
 {
 	this->isCancelButton = false;
 }
 
-void MessageBoxSubPanel::Item::init(const Rect &backgroundTextureRect, ScopedUiTextureRef &&backgroundTextureRef, TextBox &&textBox)
+void MessageBoxItem::init(const Rect &backgroundTextureRect, ScopedUiTextureRef &&backgroundTextureRef, TextBox &&textBox)
 {
 	this->backgroundTextureRect = backgroundTextureRect;
 	this->backgroundTextureRef = std::move(backgroundTextureRef);
@@ -61,24 +60,24 @@ MessageBoxSubPanel::~MessageBoxSubPanel()
 	}
 }
 
-bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, const Rect &titleRect,
-	const TitleProperties &titleProperties, const ItemsProperties &itemsProperties,
-	const OnClosedFunction &onClosed)
+bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundProperties, const Rect &titleRect,
+	const MessageBoxTitleProperties &titleProperties, const MessageBoxItemsProperties &itemsProperties,
+	const MessageBoxOnClosedFunction &onClosed)
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 
 	// The background expands to fit the text, unless overridden.
 	const int titleBackgroundWidth = backgroundProperties.widthOverride.has_value() ?
-		*backgroundProperties.widthOverride : (titleRect.getWidth() + backgroundProperties.extraTitleWidth);
+		*backgroundProperties.widthOverride : (titleRect.width + backgroundProperties.extraTitleWidth);
 	const int titleBackgroundHeight = backgroundProperties.heightOverride.has_value() ?
-		*backgroundProperties.heightOverride : (titleRect.getHeight() + backgroundProperties.extraTitleHeight);
+		*backgroundProperties.heightOverride : (titleRect.height + backgroundProperties.extraTitleHeight);
 	this->titleBackgroundRect = Rect(titleRect.getCenter(), titleBackgroundWidth, titleBackgroundHeight);
 
 	const Surface titleBackgroundSurface = TextureUtils::generate(backgroundProperties.patternType,
-		this->titleBackgroundRect.getWidth(), this->titleBackgroundRect.getHeight(), textureManager, renderer);
+		this->titleBackgroundRect.width, this->titleBackgroundRect.height, textureManager, renderer);
 
 	UiTextureID titleBackgroundTextureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(titleBackgroundSurface, textureManager, renderer, &titleBackgroundTextureID))
@@ -97,8 +96,8 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	}
 
 	constexpr TextAlignment titleAlignment = TextAlignment::MiddleCenter;
-	const TextBox::Properties titleTextBoxProperties(titleFontDefIndex, &fontLibrary, titleProperties.textureGenInfo,
-		titleProperties.textColor, titleAlignment, std::nullopt, titleProperties.lineSpacing);
+	const TextBoxProperties titleTextBoxProperties(titleFontDefIndex, titleProperties.textureGenInfo, titleProperties.textColor,
+		titleAlignment, std::nullopt, titleProperties.lineSpacing);
 	if (!this->titleTextBox.init(titleRect, titleTextBoxProperties, renderer))
 	{
 		DebugLogError("Couldn't init message box title text box.");
@@ -113,8 +112,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	}
 
 	constexpr TextAlignment itemAlignment = titleAlignment;
-	const TextBox::Properties itemTextBoxProperties(itemFontDefIndex, &fontLibrary, itemsProperties.textureGenInfo,
-		itemsProperties.textColor, itemAlignment);
+	const TextBoxProperties itemTextBoxProperties(itemFontDefIndex, itemsProperties.textureGenInfo, itemsProperties.textColor, itemAlignment);
 
 	this->items.init(itemsProperties.count);
 	for (int i = 0; i < this->items.getCount(); i++)
@@ -122,11 +120,11 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		const Rect itemBackgroundRect(
 			titleBackgroundRect.getLeft(),
 			titleBackgroundRect.getBottom() + (i * backgroundProperties.itemTextureHeight),
-			titleBackgroundRect.getWidth(),
+			titleBackgroundRect.width,
 			backgroundProperties.itemTextureHeight);
 
 		const Surface itemBackgroundSurface = TextureUtils::generate(backgroundProperties.patternType,
-			itemBackgroundRect.getWidth(), itemBackgroundRect.getHeight(), textureManager, renderer);
+			itemBackgroundRect.width, itemBackgroundRect.height, textureManager, renderer);
 		
 		UiTextureID itemBackgroundTextureID;
 		if (!TextureUtils::tryAllocUiTextureFromSurface(itemBackgroundSurface, textureManager, renderer, &itemBackgroundTextureID))
@@ -149,13 +147,13 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 			return false;
 		}
 
-		MessageBoxSubPanel::Item &item = this->items.get(i);
+		MessageBoxItem &item = this->items.get(i);
 		item.init(itemBackgroundRect, std::move(itemBackgroundTextureRef), std::move(itemTextBox));
 
 		this->addButtonProxy(MouseButtonType::Left, itemBackgroundRect,
 			[this, i]()
 		{
-			MessageBoxSubPanel::Item &item = this->items.get(i);
+			MessageBoxItem &item = this->items.get(i);
 			DebugAssert(item.callback);
 			item.callback();
 		});
@@ -169,7 +167,7 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 			// Try to close the message box as if a cancel button had been clicked.
 			for (int i = 0; i < this->items.getCount(); i++)
 			{
-				const MessageBoxSubPanel::Item &item = this->items.get(i);
+				const MessageBoxItem &item = this->items.get(i);
 				if (item.isCancelButton)
 				{
 					item.callback();
@@ -179,75 +177,56 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 		}
 	});
 
-	this->addDrawCall(
-		this->titleBackgroundTextureRef.get(),
-		this->titleBackgroundRect.getCenter(),
-		Int2(this->titleBackgroundRect.getWidth(), this->titleBackgroundRect.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo titleBgDrawCallInitInfo;
+	titleBgDrawCallInitInfo.textureID = this->titleBackgroundTextureRef.get();
+	titleBgDrawCallInitInfo.position = this->titleBackgroundRect.getCenter();
+	titleBgDrawCallInitInfo.size = this->titleBackgroundRect.getSize();
+	titleBgDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleBgDrawCallInitInfo);
 
-	for (const MessageBoxSubPanel::Item &item : this->items)
+	for (const MessageBoxItem &item : this->items)
 	{
-		this->addDrawCall(
-			item.backgroundTextureRef.get(),
-			item.backgroundTextureRect.getCenter(),
-			Int2(item.backgroundTextureRect.getWidth(), item.backgroundTextureRect.getHeight()),
-			PivotType::Middle);
+		UiDrawCallInitInfo itemBgDrawCallInitInfo;
+		itemBgDrawCallInitInfo.textureID = item.backgroundTextureRef.get();
+		itemBgDrawCallInitInfo.position = item.backgroundTextureRect.getCenter();
+		itemBgDrawCallInitInfo.size = item.backgroundTextureRect.getSize();
+		itemBgDrawCallInitInfo.pivotType = PivotType::Middle;
+		this->addDrawCall(itemBgDrawCallInitInfo);
 	}
 
-	UiDrawCall::TextureFunc titleTextBoxTextureFunc = [this]()
-	{
-		return this->titleTextBox.getTextureID();
-	};
-
-	UiDrawCall::PositionFunc titleTextBoxPositionFunc = [this]()
-	{
-		const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-		return titleTextBoxRect.getCenter();
-	};
-
-	UiDrawCall::SizeFunc titleTextBoxSizeFunc = [this]()
-	{
-		const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-		return Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight());
-	};
-
-	UiDrawCall::PivotFunc textBoxPivotFunc = []() { return PivotType::Middle; };
-
-	this->addDrawCall(
-		titleTextBoxTextureFunc,
-		titleTextBoxPositionFunc,
-		titleTextBoxSizeFunc,
-		textBoxPivotFunc,
-		UiDrawCall::defaultActiveFunc);
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleTextDrawCallInitInfo;
+	titleTextDrawCallInitInfo.textureFunc = [this]() { return this->titleTextBox.getTextureID(); };
+	titleTextDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleTextDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleTextDrawCallInitInfo);
 
 	for (int i = 0; i < this->items.getCount(); i++)
 	{
-		UiDrawCall::TextureFunc itemTextBoxTextureFunc = [this, i]()
+		UiDrawCallInitInfo itemTextDrawCallInitInfo;
+		itemTextDrawCallInitInfo.textureFunc = [this, i]()
 		{
-			MessageBoxSubPanel::Item &item = this->items.get(i);
+			MessageBoxItem &item = this->items.get(i);
 			return item.textBox.getTextureID();
 		};
 
-		UiDrawCall::PositionFunc itemTextBoxPositionFunc = [this, i]()
+		itemTextDrawCallInitInfo.positionFunc = [this, i]()
 		{
-			MessageBoxSubPanel::Item &item = this->items.get(i);
+			MessageBoxItem &item = this->items.get(i);
 			const Rect &itemRect = item.textBox.getRect();
 			return itemRect.getCenter();
 		};
 
-		UiDrawCall::SizeFunc itemTextBoxSizeFunc = [this, i]()
+		itemTextDrawCallInitInfo.sizeFunc = [this, i]()
 		{
-			MessageBoxSubPanel::Item &item = this->items.get(i);
+			MessageBoxItem &item = this->items.get(i);
 			const Rect &itemRect = item.textBox.getRect();
-			return Int2(itemRect.getWidth(), itemRect.getHeight());
+			return itemRect.getSize();
 		};
 
-		this->addDrawCall(
-			itemTextBoxTextureFunc,
-			itemTextBoxPositionFunc,
-			itemTextBoxSizeFunc,
-			textBoxPivotFunc,
-			UiDrawCall::defaultActiveFunc);
+		itemTextDrawCallInitInfo.pivotType = PivotType::Middle;
+		this->addDrawCall(itemTextDrawCallInitInfo);
 	}
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
@@ -259,20 +238,20 @@ bool MessageBoxSubPanel::init(const BackgroundProperties &backgroundProperties, 
 	return true;
 }
 
-void MessageBoxSubPanel::setTitleText(const std::string_view &text)
+void MessageBoxSubPanel::setTitleText(const std::string_view text)
 {
 	this->titleTextBox.setText(text);
 }
 
-void MessageBoxSubPanel::setItemText(int itemIndex, const std::string_view &text)
+void MessageBoxSubPanel::setItemText(int itemIndex, const std::string_view text)
 {
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 	item.textBox.setText(text);
 }
 
-void MessageBoxSubPanel::setItemCallback(int itemIndex, const ItemCallback &callback, bool isCancelButton)
+void MessageBoxSubPanel::setItemCallback(int itemIndex, const MessageBoxItemCallback &callback, bool isCancelButton)
 {
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 	item.callback = callback;
 	item.isCancelButton = isCancelButton;
 }
@@ -281,7 +260,7 @@ void MessageBoxSubPanel::setItemInputAction(int itemIndex, const std::string &in
 {
 	DebugAssert(!inputActionName.empty());
 
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 
 	// Only support setting the hotkey once due to the complication of finding and removing old input actions.
 	DebugAssert(item.inputActionName.empty());
@@ -290,7 +269,7 @@ void MessageBoxSubPanel::setItemInputAction(int itemIndex, const std::string &in
 	this->addInputActionListener(inputActionName,
 		[this, itemIndex](const InputActionCallbackValues &values)
 	{
-		MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+		MessageBoxItem &item = this->items.get(itemIndex);
 		DebugAssert(item.callback);
 		item.callback();
 	});
@@ -298,12 +277,12 @@ void MessageBoxSubPanel::setItemInputAction(int itemIndex, const std::string &in
 
 void MessageBoxSubPanel::addOverrideColor(int itemIndex, int charIndex, const Color &overrideColor)
 {
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 	item.textBox.addOverrideColor(charIndex, overrideColor);
 }
 
 void MessageBoxSubPanel::clearOverrideColors(int itemIndex)
 {
-	MessageBoxSubPanel::Item &item = this->items.get(itemIndex);
+	MessageBoxItem &item = this->items.get(itemIndex);
 	item.textBox.clearOverrideColors();
 }

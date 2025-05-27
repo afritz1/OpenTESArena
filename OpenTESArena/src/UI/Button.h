@@ -9,7 +9,6 @@
 
 // A button encapsulates some callback functionality. It usually modifies the
 // game state in some way, but could also modify something in a panel instead.
-
 template <class... Args>
 class Button
 {
@@ -55,12 +54,12 @@ public:
 
 	int getWidth() const
 	{
-		return this->rect.getWidth();
+		return this->rect.width;
 	}
 
 	int getHeight() const
 	{
-		return this->rect.getHeight();
+		return this->rect.height;
 	}
 
 	// Returns whether the button's area contains the given point.
@@ -71,22 +70,22 @@ public:
 
 	void setX(int x)
 	{
-		this->rect.setX(x);
+		this->rect.x = x;
 	}
 
 	void setY(int y)
 	{
-		this->rect.setY(y);
+		this->rect.y = y;
 	}
 
 	void setWidth(int width)
 	{
-		this->rect.setWidth(width);
+		this->rect.width = width;
 	}
 
 	void setHeight(int height)
 	{
-		this->rect.setHeight(height);
+		this->rect.height = height;
 	}
 
 	// Sets the button's callback to the given function.
@@ -111,12 +110,13 @@ struct ButtonProxy
 	using ActiveFunction = std::function<bool()>;
 
 	MouseButtonType buttonType; // Which mouse button triggers a click.
-	RectFunction rectFunc; // Position + size in classic UI space. Uses a function for dynamic buttons (ListBox, etc.).
+	RectFunction rectFunc; // Classic UI space rect for clickable button. Might move around due to being e.g. a ListBox item.
+	Rect parentRect; // Classic UI space rect that mouse clicks have to be within.
 	Callback callback; // Called if the button is clicked.
 	ActiveFunction isActiveFunc; // Contains a callable function if it can be inactive.
 
-	ButtonProxy(MouseButtonType buttonType, const RectFunction &rectFunc,
-		const Callback &callback, const ActiveFunction &isActiveFunc = ActiveFunction());
+	ButtonProxy(MouseButtonType buttonType, const RectFunction &rectFunc, const Callback &callback,
+		const Rect &parentRect = Rect(), const ActiveFunction &isActiveFunc = ActiveFunction());
 	ButtonProxy();
 };
 

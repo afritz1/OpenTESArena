@@ -112,7 +112,7 @@ public:
 	// Whether the lightning bolt is currently visible due to thunderstorm state.
 	bool isLightningVisible(int objectIndex) const;
 
-	void update(double dt, double latitude, double daytimePercent, const WeatherInstance &weatherInst, Random &random);
+	void update(double dt, double latitude, double dayPercent, const WeatherInstance &weatherInst, Random &random);
 
 	void clear();
 };

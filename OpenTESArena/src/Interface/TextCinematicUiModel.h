@@ -5,7 +5,8 @@
 #include <vector>
 
 class Game;
-class TextCinematicDefinition;
+
+struct TextCinematicDefinition;
 
 namespace TextCinematicUiModel
 {

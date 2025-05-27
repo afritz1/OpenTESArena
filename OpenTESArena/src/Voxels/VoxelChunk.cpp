@@ -8,7 +8,7 @@
 
 VoxelChunk::VoxelChunk()
 {
-	this->floorReplacementMeshDefID = -1;
+	this->floorReplacementShapeDefID = -1;
 	this->floorReplacementTextureDefID = -1;
 	this->floorReplacementTraitsDefID = -1;
 	this->floorReplacementChasmDefID = -1;
@@ -19,29 +19,33 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 	Chunk::init(position, height);
 
 	// Let the first voxel definition (air) be usable immediately. All default voxel IDs can safely point to it.
-	this->meshDefs.emplace_back(VoxelMeshDefinition());
+	this->shapeDefs.emplace_back(VoxelShapeDefinition());
 	this->textureDefs.emplace_back(VoxelTextureDefinition());
+	this->shadingDefs.emplace_back(VoxelShadingDefinition());
 	this->traitsDefs.emplace_back(VoxelTraitsDefinition());
 
 	// Set all voxels to air.
-	this->meshDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
-	this->meshDefIDs.fill(VoxelChunk::AIR_MESH_DEF_ID);
+	this->shapeDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->shapeDefIDs.fill(VoxelChunk::AIR_SHAPE_DEF_ID);
 
 	this->textureDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->textureDefIDs.fill(VoxelChunk::AIR_TEXTURE_DEF_ID);
+
+	this->shadingDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->shadingDefIDs.fill(VoxelChunk::AIR_SHADING_DEF_ID);
 
 	this->traitsDefIDs.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->traitsDefIDs.fill(VoxelChunk::AIR_TRAITS_DEF_ID);
 
 	this->dirtyVoxelTypes.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
-	this->dirtyMeshDefPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
+	this->dirtyShapeDefPositions.reserve(Chunk::WIDTH * height * Chunk::DEPTH);
 }
 
-void VoxelChunk::getAdjacentMeshDefIDs(const VoxelInt3 &voxel, VoxelMeshDefID *outNorthID, VoxelMeshDefID *outEastID,
-	VoxelMeshDefID *outSouthID, VoxelMeshDefID *outWestID)
+void VoxelChunk::getAdjacentShapeDefIDs(const VoxelInt3 &voxel, VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID,
+	VoxelShapeDefID *outSouthID, VoxelShapeDefID *outWestID)
 {
-	this->getAdjacentIDsInternal(voxel, this->meshDefIDs, VoxelChunk::AIR_MESH_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal(voxel, this->shapeDefIDs, VoxelChunk::AIR_SHAPE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 void VoxelChunk::getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID,
@@ -50,20 +54,31 @@ void VoxelChunk::getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDe
 	this->getAdjacentIDsInternal(voxel, this->textureDefIDs, VoxelChunk::AIR_TEXTURE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
+void VoxelChunk::getAdjacentShadingDefIDs(const VoxelInt3 &voxel, VoxelShadingDefID *outNorthID, VoxelShadingDefID *outEastID,
+	VoxelShadingDefID *outSouthID, VoxelShadingDefID *outWestID)
+{
+	this->getAdjacentIDsInternal(voxel, this->shadingDefIDs, VoxelChunk::AIR_SHADING_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+}
+
 void VoxelChunk::getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID,
 	VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID)
 {
 	this->getAdjacentIDsInternal(voxel, this->traitsDefIDs, VoxelChunk::AIR_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-int VoxelChunk::getMeshDefCount() const
+int VoxelChunk::getShapeDefCount() const
 {
-	return static_cast<int>(this->meshDefs.size());
+	return static_cast<int>(this->shapeDefs.size());
 }
 
 int VoxelChunk::getTextureDefCount() const
 {
 	return static_cast<int>(this->textureDefs.size());
+}
+
+int VoxelChunk::getShadingDefCount() const
+{
+	return static_cast<int>(this->shadingDefs.size());
 }
 
 int VoxelChunk::getTraitsDefCount() const
@@ -96,15 +111,10 @@ int VoxelChunk::getDoorDefCount() const
 	return static_cast<int>(this->doorDefs.size());
 }
 
-int VoxelChunk::getChasmDefCount() const
+const VoxelShapeDefinition &VoxelChunk::getShapeDef(VoxelShapeDefID id) const
 {
-	return static_cast<int>(this->chasmDefs.size());
-}
-
-const VoxelMeshDefinition &VoxelChunk::getMeshDef(VoxelMeshDefID id) const
-{
-	DebugAssertIndex(this->meshDefs, id);
-	return this->meshDefs[id];
+	DebugAssertIndex(this->shapeDefs, id);
+	return this->shapeDefs[id];
 }
 
 const VoxelTextureDefinition &VoxelChunk::getTextureDef(VoxelTextureDefID id) const
@@ -113,66 +123,96 @@ const VoxelTextureDefinition &VoxelChunk::getTextureDef(VoxelTextureDefID id) co
 	return this->textureDefs[id];
 }
 
+const VoxelShadingDefinition &VoxelChunk::getShadingDef(VoxelShadingDefID id) const
+{
+	DebugAssertIndex(this->shadingDefs, id);
+	return this->shadingDefs[id];
+}
+
 const VoxelTraitsDefinition &VoxelChunk::getTraitsDef(VoxelTraitsDefID id) const
 {
 	DebugAssertIndex(this->traitsDefs, id);
 	return this->traitsDefs[id];
 }
 
-const TransitionDefinition &VoxelChunk::getTransitionDef(TransitionDefID id) const
+const TransitionDefinition &VoxelChunk::getTransitionDef(VoxelTransitionDefID id) const
 {
 	DebugAssertIndex(this->transitionDefs, id);
 	return this->transitionDefs[id];
 }
 
-const VoxelTriggerDefinition &VoxelChunk::getTriggerDef(TriggerDefID id) const
+const VoxelTriggerDefinition &VoxelChunk::getTriggerDef(VoxelTriggerDefID id) const
 {
 	DebugAssertIndex(this->triggerDefs, id);
 	return this->triggerDefs[id];
 }
 
-const LockDefinition &VoxelChunk::getLockDef(LockDefID id) const
+const LockDefinition &VoxelChunk::getLockDef(VoxelLockDefID id) const
 {
 	DebugAssertIndex(this->lockDefs, id);
 	return this->lockDefs[id];
 }
 
-const std::string &VoxelChunk::getBuildingName(BuildingNameID id) const
+const std::string &VoxelChunk::getBuildingName(VoxelBuildingNameID id) const
 {
 	DebugAssertIndex(this->buildingNames, id);
 	return this->buildingNames[id];
 }
 
-const DoorDefinition &VoxelChunk::getDoorDef(DoorDefID id) const
+const VoxelDoorDefinition &VoxelChunk::getDoorDef(VoxelDoorDefID id) const
 {
 	DebugAssertIndex(this->doorDefs, id);
 	return this->doorDefs[id];
 }
 
-const ChasmDefinition &VoxelChunk::getChasmDef(ChasmDefID id) const
+VoxelShapeDefID VoxelChunk::getShapeDefID(SNInt x, int y, WEInt z) const
 {
-	DebugAssertIndex(this->chasmDefs, id);
-	return this->chasmDefs[id];
+	return this->shapeDefIDs.get(x, y, z);
 }
 
-VoxelChunk::VoxelMeshDefID VoxelChunk::getMeshDefID(SNInt x, int y, WEInt z) const
-{
-	return this->meshDefIDs.get(x, y, z);
-}
-
-VoxelChunk::VoxelTextureDefID VoxelChunk::getTextureDefID(SNInt x, int y, WEInt z) const
+VoxelTextureDefID VoxelChunk::getTextureDefID(SNInt x, int y, WEInt z) const
 {
 	return this->textureDefIDs.get(x, y, z);
 }
 
-VoxelChunk::VoxelTraitsDefID VoxelChunk::getTraitsDefID(SNInt x, int y, WEInt z) const
+VoxelShadingDefID VoxelChunk::getShadingDefID(SNInt x, int y, WEInt z) const
+{
+	return this->shadingDefIDs.get(x, y, z);
+}
+
+VoxelTraitsDefID VoxelChunk::getTraitsDefID(SNInt x, int y, WEInt z) const
 {
 	return this->traitsDefIDs.get(x, y, z);
 }
 
-BufferView<const VoxelInt3> VoxelChunk::getDirtyMeshDefPositions() const
+VoxelShapeDefID VoxelChunk::getFloorReplacementShapeDefID() const
 {
-	return this->dirtyMeshDefPositions;
+	return this->floorReplacementShapeDefID;
+}
+
+VoxelTextureDefID VoxelChunk::getFloorReplacementTextureDefID() const
+{
+	return this->floorReplacementTextureDefID;
+}
+
+VoxelShadingDefID VoxelChunk::getFloorReplacementShadingDefID() const
+{
+	return this->floorReplacementShadingDefID;
+}
+
+VoxelTraitsDefID VoxelChunk::getFloorReplacementTraitsDefID() const
+{
+	return this->floorReplacementTraitsDefID;
+}
+
+VoxelChasmDefID VoxelChunk::getFloorReplacementChasmDefID() const
+{
+	return this->floorReplacementChasmDefID;
+}
+
+BufferView<const VoxelInt3> VoxelChunk::getDirtyShapeDefPositions() const
+{
+	return this->dirtyShapeDefPositions;
 }
 
 BufferView<const VoxelInt3> VoxelChunk::getDirtyDoorAnimInstPositions() const
@@ -195,12 +235,12 @@ BufferView<const VoxelInt3> VoxelChunk::getDirtyChasmWallInstPositions() const
 	return this->dirtyChasmWallInstPositions;
 }
 
-bool VoxelChunk::tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID *outID) const
+bool VoxelChunk::tryGetTransitionDefID(SNInt x, int y, WEInt z, VoxelTransitionDefID *outID) const
 {
 	const auto iter = this->transitionDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->transitionDefIndices.end())
 	{
-		const TransitionDefID id = iter->second;
+		const VoxelTransitionDefID id = iter->second;
 		DebugAssertIndex(this->transitionDefs, id);
 		*outID = id;
 		return true;
@@ -211,12 +251,12 @@ bool VoxelChunk::tryGetTransitionDefID(SNInt x, int y, WEInt z, TransitionDefID 
 	}
 }
 
-bool VoxelChunk::tryGetTriggerDefID(SNInt x, int y, WEInt z, TriggerDefID *outID) const
+bool VoxelChunk::tryGetTriggerDefID(SNInt x, int y, WEInt z, VoxelTriggerDefID *outID) const
 {
 	const auto iter = this->triggerDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->triggerDefIndices.end())
 	{
-		const TriggerDefID id = iter->second;
+		const VoxelTriggerDefID id = iter->second;
 		DebugAssertIndex(this->triggerDefs, id);
 		*outID = id;
 		return true;
@@ -227,12 +267,12 @@ bool VoxelChunk::tryGetTriggerDefID(SNInt x, int y, WEInt z, TriggerDefID *outID
 	}
 }
 
-bool VoxelChunk::tryGetLockDefID(SNInt x, int y, WEInt z, LockDefID *outID) const
+bool VoxelChunk::tryGetLockDefID(SNInt x, int y, WEInt z, VoxelLockDefID *outID) const
 {
 	const auto iter = this->lockDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->lockDefIndices.end())
 	{
-		const LockDefID id = iter->second;
+		const VoxelLockDefID id = iter->second;
 		DebugAssertIndex(this->lockDefs, id);
 		*outID = id;
 		return true;
@@ -243,12 +283,12 @@ bool VoxelChunk::tryGetLockDefID(SNInt x, int y, WEInt z, LockDefID *outID) cons
 	}
 }
 
-bool VoxelChunk::tryGetBuildingNameID(SNInt x, int y, WEInt z, BuildingNameID *outID) const
+bool VoxelChunk::tryGetBuildingNameID(SNInt x, int y, WEInt z, VoxelBuildingNameID *outID) const
 {
 	const auto iter = this->buildingNameIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->buildingNameIndices.end())
 	{
-		const BuildingNameID id = iter->second;
+		const VoxelBuildingNameID id = iter->second;
 		DebugAssertIndex(this->buildingNames, id);
 		*outID = id;
 		return true;
@@ -259,12 +299,12 @@ bool VoxelChunk::tryGetBuildingNameID(SNInt x, int y, WEInt z, BuildingNameID *o
 	}
 }
 
-bool VoxelChunk::tryGetDoorDefID(SNInt x, int y, WEInt z, DoorDefID *outID) const
+bool VoxelChunk::tryGetDoorDefID(SNInt x, int y, WEInt z, VoxelDoorDefID *outID) const
 {
 	const auto iter = this->doorDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->doorDefIndices.end())
 	{
-		const DoorDefID id = iter->second;
+		const VoxelDoorDefID id = iter->second;
 		DebugAssertIndex(this->doorDefs, id);
 		*outID = id;
 		return true;
@@ -275,13 +315,12 @@ bool VoxelChunk::tryGetDoorDefID(SNInt x, int y, WEInt z, DoorDefID *outID) cons
 	}
 }
 
-bool VoxelChunk::tryGetChasmDefID(SNInt x, int y, WEInt z, ChasmDefID *outID) const
+bool VoxelChunk::tryGetChasmDefID(SNInt x, int y, WEInt z, VoxelChasmDefID *outID) const
 {
 	const auto iter = this->chasmDefIndices.find(VoxelInt3(x, y, z));
 	if (iter != this->chasmDefIndices.end())
 	{
-		const ChasmDefID id = iter->second;
-		DebugAssertIndex(this->chasmDefs, id);
+		const VoxelChasmDefID id = iter->second;
 		*outID = id;
 		return true;
 	}
@@ -417,10 +456,10 @@ bool VoxelChunk::tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) 
 	}
 }
 
-void VoxelChunk::setMeshDefID(SNInt x, int y, WEInt z, VoxelMeshDefID id)
+void VoxelChunk::setShapeDefID(SNInt x, int y, WEInt z, VoxelShapeDefID id)
 {
-	this->meshDefIDs.set(x, y, z, id);
-	this->setMeshDefDirty(x, y, z);
+	this->shapeDefIDs.set(x, y, z, id);
+	this->setShapeDefDirty(x, y, z);
 }
 
 void VoxelChunk::setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
@@ -428,14 +467,19 @@ void VoxelChunk::setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id)
 	this->textureDefIDs.set(x, y, z, id);
 }
 
+void VoxelChunk::setShadingDefID(SNInt x, int y, WEInt z, VoxelShadingDefID id)
+{
+	this->shadingDefIDs.set(x, y, z, id);
+}
+
 void VoxelChunk::setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 {
 	this->traitsDefIDs.set(x, y, z, id);
 }
 
-void VoxelChunk::setFloorReplacementMeshDefID(VoxelMeshDefID id)
+void VoxelChunk::setFloorReplacementShapeDefID(VoxelShapeDefID id)
 {
-	this->floorReplacementMeshDefID = id;
+	this->floorReplacementShapeDefID = id;
 }
 
 void VoxelChunk::setFloorReplacementTextureDefID(VoxelTextureDefID id)
@@ -443,110 +487,115 @@ void VoxelChunk::setFloorReplacementTextureDefID(VoxelTextureDefID id)
 	this->floorReplacementTextureDefID = id;
 }
 
+void VoxelChunk::setFloorReplacementShadingDefID(VoxelShadingDefID id)
+{
+	this->floorReplacementShadingDefID = id;
+}
+
 void VoxelChunk::setFloorReplacementTraitsDefID(VoxelTraitsDefID id)
 {
 	this->floorReplacementTraitsDefID = id;
 }
 
-void VoxelChunk::setFloorReplacementChasmDefID(ChasmDefID id)
+void VoxelChunk::setFloorReplacementChasmDefID(VoxelChasmDefID id)
 {
 	this->floorReplacementChasmDefID = id;
 }
 
-VoxelChunk::VoxelMeshDefID VoxelChunk::addMeshDef(VoxelMeshDefinition &&voxelMeshDef)
+VoxelShapeDefID VoxelChunk::addShapeDef(VoxelShapeDefinition &&voxelShapeDef)
 {
-	const VoxelMeshDefID id = static_cast<VoxelMeshDefID>(this->meshDefs.size());
-	this->meshDefs.emplace_back(std::move(voxelMeshDef));
+	const VoxelShapeDefID id = static_cast<VoxelShapeDefID>(this->shapeDefs.size());
+	this->shapeDefs.emplace_back(std::move(voxelShapeDef));
 	return id;
 }
 
-VoxelChunk::VoxelTextureDefID VoxelChunk::addTextureDef(VoxelTextureDefinition &&voxelTextureDef)
+VoxelTextureDefID VoxelChunk::addTextureDef(VoxelTextureDefinition &&voxelTextureDef)
 {
 	const VoxelTextureDefID id = static_cast<VoxelTextureDefID>(this->textureDefs.size());
 	this->textureDefs.emplace_back(std::move(voxelTextureDef));
 	return id;
 }
 
-VoxelChunk::VoxelTraitsDefID VoxelChunk::addTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef)
+VoxelShadingDefID VoxelChunk::addShadingDef(VoxelShadingDefinition &&voxelShadingDef)
+{
+	const VoxelShadingDefID id = static_cast<VoxelShadingDefID>(this->shadingDefs.size());
+	this->shadingDefs.emplace_back(std::move(voxelShadingDef));
+	return id;
+}
+
+VoxelTraitsDefID VoxelChunk::addTraitsDef(VoxelTraitsDefinition &&voxelTraitsDef)
 {
 	const VoxelTraitsDefID id = static_cast<VoxelTraitsDefID>(this->traitsDefs.size());
 	this->traitsDefs.emplace_back(std::move(voxelTraitsDef));
 	return id;
 }
 
-VoxelChunk::TransitionDefID VoxelChunk::addTransitionDef(TransitionDefinition &&transition)
+VoxelTransitionDefID VoxelChunk::addTransitionDef(TransitionDefinition &&transition)
 {
-	const TransitionDefID id = static_cast<int>(this->transitionDefs.size());
+	const VoxelTransitionDefID id = static_cast<int>(this->transitionDefs.size());
 	this->transitionDefs.emplace_back(std::move(transition));
 	return id;
 }
 
-VoxelChunk::TriggerDefID VoxelChunk::addTriggerDef(VoxelTriggerDefinition &&trigger)
+VoxelTriggerDefID VoxelChunk::addTriggerDef(VoxelTriggerDefinition &&trigger)
 {
-	const TriggerDefID id = static_cast<int>(this->triggerDefs.size());
+	const VoxelTriggerDefID id = static_cast<int>(this->triggerDefs.size());
 	this->triggerDefs.emplace_back(std::move(trigger));
 	return id;
 }
 
-VoxelChunk::LockDefID VoxelChunk::addLockDef(LockDefinition &&lock)
+VoxelLockDefID VoxelChunk::addLockDef(LockDefinition &&lock)
 {
-	const LockDefID id = static_cast<int>(this->lockDefs.size());
+	const VoxelLockDefID id = static_cast<int>(this->lockDefs.size());
 	this->lockDefs.emplace_back(std::move(lock));
 	return id;
 }
 
-VoxelChunk::BuildingNameID VoxelChunk::addBuildingName(std::string &&buildingName)
+VoxelBuildingNameID VoxelChunk::addBuildingName(std::string &&buildingName)
 {
-	const BuildingNameID id = static_cast<int>(this->buildingNames.size());
+	const VoxelBuildingNameID id = static_cast<int>(this->buildingNames.size());
 	this->buildingNames.emplace_back(std::move(buildingName));
 	return id;
 }
 
-VoxelChunk::DoorDefID VoxelChunk::addDoorDef(DoorDefinition &&door)
+VoxelDoorDefID VoxelChunk::addDoorDef(VoxelDoorDefinition &&door)
 {
-	const DoorDefID id = static_cast<int>(this->doorDefs.size());
+	const VoxelDoorDefID id = static_cast<int>(this->doorDefs.size());
 	this->doorDefs.emplace_back(std::move(door));
 	return id;
 }
 
-VoxelChunk::ChasmDefID VoxelChunk::addChasmDef(ChasmDefinition &&chasm)
-{
-	const ChasmDefID id = static_cast<int>(this->chasmDefs.size());
-	this->chasmDefs.emplace_back(std::move(chasm));
-	return id;
-}
-
-void VoxelChunk::addTransitionDefPosition(VoxelChunk::TransitionDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addTransitionDefPosition(VoxelTransitionDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->transitionDefIndices.find(voxel) == this->transitionDefIndices.end());
 	this->transitionDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addTriggerDefPosition(VoxelChunk::TriggerDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addTriggerDefPosition(VoxelTriggerDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->triggerDefIndices.find(voxel) == this->triggerDefIndices.end());
 	this->triggerDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addLockDefPosition(VoxelChunk::LockDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addLockDefPosition(VoxelLockDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->lockDefIndices.find(voxel) == this->lockDefIndices.end());
 	this->lockDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addBuildingNamePosition(VoxelChunk::BuildingNameID id, const VoxelInt3 &voxel)
+void VoxelChunk::addBuildingNamePosition(VoxelBuildingNameID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->buildingNameIndices.find(voxel) == this->buildingNameIndices.end());
 	this->buildingNameIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addDoorDefPosition(DoorDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addDoorDefPosition(VoxelDoorDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->doorDefIndices.find(voxel) == this->doorDefIndices.end());
 	this->doorDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addChasmDefPosition(ChasmDefID id, const VoxelInt3 &voxel)
+void VoxelChunk::addChasmDefPosition(VoxelChasmDefID id, const VoxelInt3 &voxel)
 {
 	DebugAssert(this->chasmDefIndices.find(voxel) == this->chasmDefIndices.end());
 	this->chasmDefIndices.emplace(voxel, id);
@@ -554,11 +603,12 @@ void VoxelChunk::addChasmDefPosition(ChasmDefID id, const VoxelInt3 &voxel)
 
 void VoxelChunk::addDirtyChasmWallInstPosition(const VoxelInt3 &voxel)
 {
-	const auto iter = std::find(this->dirtyChasmWallInstPositions.begin(), this->dirtyChasmWallInstPositions.end(), voxel);
-	if (iter == this->dirtyChasmWallInstPositions.end())
-	{
-		this->dirtyChasmWallInstPositions.emplace_back(voxel);
-	}
+	this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
+}
+
+void VoxelChunk::addDirtyDoorVisInstPosition(const VoxelInt3 &voxel)
+{
+	this->setDoorVisInstDirty(voxel.x, voxel.y, voxel.z);
 }
 
 void VoxelChunk::addDoorAnimInst(VoxelDoorAnimationInstance &&animInst)
@@ -616,9 +666,9 @@ void VoxelChunk::trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<V
 	}
 }
 
-void VoxelChunk::setMeshDefDirty(SNInt x, int y, WEInt z)
+void VoxelChunk::setShapeDefDirty(SNInt x, int y, WEInt z)
 {
-	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyMeshDefPositions, VoxelDirtyType::MeshDefinition);
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyShapeDefPositions, VoxelDirtyType::ShapeDefinition);
 }
 
 void VoxelChunk::setDoorAnimInstDirty(SNInt x, int y, WEInt z)
@@ -641,55 +691,10 @@ void VoxelChunk::setChasmWallInstDirty(SNInt x, int y, WEInt z)
 	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyChasmWallInstPositions, VoxelDirtyType::ChasmWall);
 }
 
-void VoxelChunk::clear()
+void VoxelChunk::updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
 {
-	Chunk::clear();
-	this->meshDefs.clear();
-	this->textureDefs.clear();
-	this->traitsDefs.clear();
-	this->transitionDefs.clear();
-	this->triggerDefs.clear();
-	this->lockDefs.clear();
-	this->buildingNames.clear();
-	this->doorDefs.clear();
-	this->chasmDefs.clear();
-	this->meshDefIDs.clear();
-	this->textureDefIDs.clear();
-	this->traitsDefIDs.clear();
-	this->dirtyVoxelTypes.clear();
-	this->dirtyMeshDefPositions.clear();
-	this->dirtyDoorAnimInstPositions.clear();
-	this->dirtyDoorVisInstPositions.clear();
-	this->dirtyFadeAnimInstPositions.clear();
-	this->dirtyChasmWallInstPositions.clear();
-	this->transitionDefIndices.clear();
-	this->triggerDefIndices.clear();
-	this->lockDefIndices.clear();
-	this->buildingNameIndices.clear();
-	this->doorDefIndices.clear();
-	this->chasmDefIndices.clear();
-	this->doorAnimInsts.clear();
-	this->fadeAnimInsts.clear();
-	this->chasmWallInsts.clear();
-	this->doorVisInsts.clear();
-	this->triggerInsts.clear();
-}
+	const ChunkInt2 chunkPos = this->getPosition();
 
-void VoxelChunk::clearDirtyVoxels()
-{
-	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
-	this->dirtyMeshDefPositions.clear();
-	this->dirtyDoorAnimInstPositions.clear();
-	this->dirtyDoorVisInstPositions.clear();
-	this->dirtyFadeAnimInstPositions.clear();
-	this->dirtyChasmWallInstPositions.clear();
-}
-
-void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
-{
-	const ChunkInt2 &chunkPos = this->getPosition();
-
-	// Update doors.
 	for (int i = static_cast<int>(this->doorAnimInsts.size()) - 1; i >= 0; i--)
 	{
 		VoxelDoorAnimationInstance &animInst = this->doorAnimInsts[i];
@@ -700,8 +705,7 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 		{
 			if (animInst.stateType != VoxelDoorAnimationInstance::StateType::Closing)
 			{
-				// If the player is far enough away, set the door to closing and play the on-closing sound at the center of
-				// the voxel if it is defined for the door.
+				// If the player is far enough away, set the door to closing.
 				const CoordDouble3 voxelCoord(chunkPos, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 				const VoxelDouble3 diff = playerCoord - voxelCoord;
 
@@ -712,48 +716,50 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				{
 					animInst.setStateType(VoxelDoorAnimationInstance::StateType::Closing);
 
-					// Play closing sound if it is defined for the door.
-					VoxelChunk::DoorDefID doorDefID;
+					// Play closing sound if it's defined for the door.
+					VoxelDoorDefID doorDefID;
 					if (!this->tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
 					{
 						DebugCrash("Expected door def ID to exist.");
 					}
 
-					const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
-					const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
-					if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosing)
+					const VoxelDoorDefinition &doorDef = this->getDoorDef(doorDefID);
+					const VoxelDoorCloseSoundDefinition &closeSoundDef = doorDef.closeSoundDef;
+					if (closeSoundDef.closeType == VoxelDoorCloseType::OnClosing)
 					{
 						const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(voxelCoord);
-						audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
+						audioManager.playSound(closeSoundDef.soundFilename.c_str(), absoluteSoundPosition);
 					}
 				}
 			}
 		}
 		else
 		{
-			// Play closed sound if it is defined for the door.
-			VoxelChunk::DoorDefID doorDefID;
+			// Play closed sound if it's defined for the door.
+			VoxelDoorDefID doorDefID;
 			if (!this->tryGetDoorDefID(animInst.x, animInst.y, animInst.z, &doorDefID))
 			{
 				DebugCrash("Expected door def ID to exist.");
 			}
 
-			const DoorDefinition &doorDef = this->getDoorDef(doorDefID);
-			const DoorDefinition::CloseSoundDef &closeSoundDef = doorDef.getCloseSound();
-			if (closeSoundDef.closeType == DoorDefinition::CloseType::OnClosed)
+			const VoxelDoorDefinition &doorDef = this->getDoorDef(doorDefID);
+			const VoxelDoorCloseSoundDefinition &closeSoundDef = doorDef.closeSoundDef;
+			if (closeSoundDef.closeType == VoxelDoorCloseType::OnClosed)
 			{
 				const CoordDouble3 soundCoord(chunkPos, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 				const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
-				audioManager.playSound(closeSoundDef.soundFilename, absoluteSoundPosition);
+				audioManager.playSound(closeSoundDef.soundFilename.c_str(), absoluteSoundPosition);
 			}
 
-			this->doorAnimInsts.erase(this->doorAnimInsts.begin() + i);
+			this->destroyedDoorAnimInsts.emplace_back(voxel);
 		}
 
 		this->setDoorAnimInstDirty(voxel.x, voxel.y, voxel.z);
 	}
+}
 
-	// Update fading voxels.
+void VoxelChunk::updateFadeAnimInsts(double dt)
+{
 	for (int i = static_cast<int>(this->fadeAnimInsts.size()) - 1; i >= 0; i--)
 	{
 		VoxelFadeAnimationInstance &animInst = this->fadeAnimInsts[i];
@@ -764,12 +770,13 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 		{
 			const VoxelTraitsDefID voxelTraitsDefID = this->getTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = this->getTraitsDef(voxelTraitsDefID);
-			const bool willBecomeChasm = voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
-			if (willBecomeChasm)
+			const bool shouldConvertToChasm = voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
+			if (shouldConvertToChasm)
 			{
 				// Change to water chasm.
-				this->setMeshDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementMeshDefID);
+				this->setShapeDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementShapeDefID);
 				this->setTextureDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTextureDefID);
+				this->setShadingDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementShadingDefID);
 				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTraitsDefID);
 				this->chasmDefIndices.emplace(voxel, this->floorReplacementChasmDefID);
 				this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
@@ -777,8 +784,9 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 			else
 			{
 				// Air voxel.
-				this->setMeshDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_MESH_DEF_ID);
+				this->setShapeDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_SHAPE_DEF_ID);
 				this->setTextureDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TEXTURE_DEF_ID);
+				this->setShadingDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_SHADING_DEF_ID);
 				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, VoxelChunk::AIR_TRAITS_DEF_ID);
 
 				auto tryEraseVoxelMapEntry = [&voxel](auto &map)
@@ -798,11 +806,86 @@ void VoxelChunk::update(double dt, const CoordDouble3 &playerCoord, double ceili
 				tryEraseVoxelMapEntry(this->chasmDefIndices);
 			}
 
-			this->fadeAnimInsts.erase(this->fadeAnimInsts.begin() + i);
+			this->destroyedFadeAnimInsts.emplace_back(voxel);
 		}
 		else
 		{
 			this->setFadeAnimInstDirty(voxel.x, voxel.y, voxel.z);
 		}
 	}
+}
+
+void VoxelChunk::cleanUp()
+{
+	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
+	this->dirtyShapeDefPositions.clear();
+	this->dirtyDoorAnimInstPositions.clear();
+	this->dirtyDoorVisInstPositions.clear();
+	this->dirtyFadeAnimInstPositions.clear();
+	this->dirtyChasmWallInstPositions.clear();
+
+	for (const VoxelInt3 position : this->destroyedDoorAnimInsts)
+	{
+		const auto iter = std::find_if(this->doorAnimInsts.begin(), this->doorAnimInsts.end(),
+			[position](const VoxelDoorAnimationInstance &animInst)
+		{
+			return (animInst.x == position.x) && (animInst.y == position.y) && (animInst.z == position.z);
+		});
+
+		DebugAssert(iter != this->doorAnimInsts.end());
+		this->doorAnimInsts.erase(iter);
+	}
+
+	this->destroyedDoorAnimInsts.clear();
+
+	for (const VoxelInt3 position : this->destroyedFadeAnimInsts)
+	{
+		const auto iter = std::find_if(this->fadeAnimInsts.begin(), this->fadeAnimInsts.end(),
+			[position](const VoxelFadeAnimationInstance &animInst)
+		{
+			return (animInst.x == position.x) && (animInst.y == position.y) && (animInst.z == position.z);
+		});
+
+		DebugAssert(iter != this->fadeAnimInsts.end());
+		this->fadeAnimInsts.erase(iter);
+	}
+
+	this->destroyedFadeAnimInsts.clear();
+}
+
+void VoxelChunk::clear()
+{
+	Chunk::clear();
+	this->shapeDefs.clear();
+	this->textureDefs.clear();
+	this->shadingDefs.clear();
+	this->traitsDefs.clear();
+	this->transitionDefs.clear();
+	this->triggerDefs.clear();
+	this->lockDefs.clear();
+	this->buildingNames.clear();
+	this->doorDefs.clear();
+	this->shapeDefIDs.clear();
+	this->textureDefIDs.clear();
+	this->shadingDefIDs.clear();
+	this->traitsDefIDs.clear();
+	this->dirtyVoxelTypes.clear();
+	this->dirtyShapeDefPositions.clear();
+	this->dirtyDoorAnimInstPositions.clear();
+	this->dirtyDoorVisInstPositions.clear();
+	this->dirtyFadeAnimInstPositions.clear();
+	this->dirtyChasmWallInstPositions.clear();
+	this->transitionDefIndices.clear();
+	this->triggerDefIndices.clear();
+	this->lockDefIndices.clear();
+	this->buildingNameIndices.clear();
+	this->doorDefIndices.clear();
+	this->chasmDefIndices.clear();
+	this->doorAnimInsts.clear();
+	this->fadeAnimInsts.clear();
+	this->chasmWallInsts.clear();
+	this->doorVisInsts.clear();
+	this->triggerInsts.clear();
+	this->destroyedDoorAnimInsts.clear();
+	this->destroyedFadeAnimInsts.clear();
 }

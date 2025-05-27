@@ -10,7 +10,9 @@
 #include "components/utilities/BufferView.h"
 
 class Game;
-class Rect;
+
+struct ExeData;
+struct Rect;
 
 namespace GameWorldUiModel
 {
@@ -47,6 +49,17 @@ namespace GameWorldUiModel
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.
 	void updateNativeCursorRegions(BufferView<Rect> nativeCursorRegions, int width, int height);
+
+	std::string getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData);
+	std::string getEnemyCorpseGoldMessage(int goldCount, const ExeData &exeData);
+	std::string getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData);
+	std::string getCitizenKillGoldMessage(int goldCount, const ExeData &exeData);
+
+	std::string getLockDifficultyMessage(int lockLevel, const ExeData &exeData);
+	std::string getKeyPickUpMessage(int keyID, const ExeData &exeData);
+	std::string getDoorUnlockWithKeyMessage(int keyID, const ExeData &exeData);
+
+	std::string getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData);
 }
 
 #endif

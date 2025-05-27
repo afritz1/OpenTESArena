@@ -1,33 +1,27 @@
 #ifndef GAME_STATE_H
 #define GAME_STATE_H
 
-#include <functional>
 #include <memory>
 #include <optional>
 #include <stack>
 #include <string>
 #include <vector>
 
-#include "Clock.h"
-#include "Date.h"
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
-#include "../Entities/Player.h"
 #include "../Interface/ProvinceMapUiModel.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
+#include "../Player/Player.h"
+#include "../Time/Clock.h"
+#include "../Time/Date.h"
 #include "../Weather/WeatherDefinition.h"
 #include "../Weather/WeatherInstance.h"
 #include "../World/MapDefinition.h"
 #include "../WorldMap/WorldMapInstance.h"
-
-// Intended to be a container for the player and world data that is currently active 
-// while a player is loaded (i.e., not in the main menu).
-
-// The GameState object will be initialized only upon loading of the player, and 
-// will be uninitialized when the player goes to the main menu (thus unloading
-// the character resources). Whichever entry points into the "game" there are, they
-// need to load data into the game state object.
 
 class BinaryAssetLibrary;
 class CharacterClassLibrary;
@@ -38,7 +32,6 @@ class INFFile;
 class LocationDefinition;
 class LocationInstance;
 class MIFFile;
-class MusicDefinition;
 class ProvinceDefinition;
 class Renderer;
 class TextAssetLibrary;
@@ -47,6 +40,10 @@ class TextureManager;
 
 enum class MapType;
 
+struct MusicDefinition;
+struct RenderCamera;
+
+// Container for currently loaded game/world data.
 class GameState
 {
 public:
@@ -60,11 +57,11 @@ public:
 
 		WorldMapLocationIDs(int provinceID, int locationID);
 	};
-private:
+
 	// Determines length of a real-time second in-game. For the original game, one real second is
 	// twenty in-game seconds.
 	static constexpr double GAME_TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 4320.0;
-
+private:
 	MapDefinition activeMapDef;
 	int activeLevelIndex;
 	MapDefinition prevMapDef; // Stored map definition when in an interior.
@@ -73,12 +70,18 @@ private:
 	// Scene transition request variables.
 	MapDefinition nextMapDef;
 	std::optional<CoordInt2> nextMapStartCoord; // Overrides map definition start points; used with city -> wilderness transition.
-	VoxelInt2 nextMapPlayerStartOffset; // Used with interior level changes and random dungeons.
+	VoxelInt2 nextMapPlayerStartOffset; // Used with exterior scene transitions and random dungeons.
+	VoxelInt2 nextMapLevelTransitionVoxel; // Used with interior level changes.
 	std::optional<WorldMapLocationIDs> nextMapDefLocationIDs;
 	std::optional<WeatherDefinition> nextMapDefWeatherDef; // Used with fast travel, etc..
-	bool nextMapClearsPrevious; // Clears any previously-loaded map defs (such as when fast travelling).
+	bool nextMapClearsPrevious; // Clears any previously-loaded map defs (such as when fast travelling or leaving wild dungeon).
 	int nextLevelIndex;
 	SceneChangeMusicFunc nextMusicFunc, nextJingleMusicFunc; // Music changes after a map change.
+
+	// Level transition calculation, stored during physics contact w/ transition voxel and applied afterwards to avoid player physics deadlock.
+	CoordInt3 levelTransitionCalculationPlayerCoord;
+	CoordInt3 levelTransitionCalculationTransitionCoord;
+	bool isLevelTransitionCalculationPending;
 	
 	// Player's current world map location data.
 	WorldMapDefinition worldMapDef;
@@ -97,10 +100,6 @@ private:
 	// One weather for each of the 36 province quadrants (updated hourly).
 	static constexpr int WORLD_MAP_WEATHER_QUADRANT_COUNT = 36;
 	ArenaTypes::WeatherType worldMapWeathers[WORLD_MAP_WEATHER_QUADRANT_COUNT];
-
-	// Custom function for *LEVELUP voxel enter events. If no function is set, the default
-	// behavior is to decrement the world's level index.
-	std::function<void(Game&)> onLevelUpVoxelEnter;
 
 	Date date;
 	Clock clock;
@@ -125,13 +124,19 @@ public:
 	bool hasPendingMapDefChange() const;
 	bool hasPendingSceneChange() const;
 
-	void queueLevelIndexChange(int newLevelIndex, const VoxelInt2 &playerStartOffset);
+	void queueLevelIndexChange(int newLevelIndex, const VoxelInt2 &transitionVoxel, const VoxelInt2 &playerStartOffset);
 	void queueMapDefChange(MapDefinition &&newMapDef, const std::optional<CoordInt2> &startCoord = std::nullopt,
 		const std::optional<CoordInt3> &returnCoord = std::nullopt, const VoxelInt2 &playerStartOffset = VoxelInt2::Zero,
 		const std::optional<WorldMapLocationIDs> &worldMapLocationIDs = std::nullopt,
 		bool clearPreviousMap = false, const std::optional<WeatherDefinition> &weatherDef = std::nullopt);
 	void queueMapDefPop();
 	void queueMusicOnSceneChange(const SceneChangeMusicFunc &musicFunc, const SceneChangeMusicFunc &jingleMusicFunc = SceneChangeMusicFunc());
+
+	bool hasPendingLevelTransitionCalculation() const;
+	const CoordInt3 &getLevelTransitionCalculationPlayerCoord() const;
+	const CoordInt3 &getLevelTransitionCalculationTransitionCoord() const;
+	void queueLevelTransitionCalculation(const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord);
+	void clearLevelTransitionCalculation();
 
 	MapType getActiveMapType() const;
 	bool isActiveMapValid() const; // Basically "is there something we can populate the scene with?".
@@ -151,9 +156,8 @@ public:
 	ArenaTypes::WeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
 	Date &getDate();
 	Clock &getClock();
-
-	// Gets a percentage representing how far along the current day is. 0.0 is 12:00am and 0.50 is noon.
-	double getDaytimePercent() const;
+	const Clock &getClock() const;
+	double getDayPercent() const;
 
 	// Gets a percentage representing the current progress through the looping chasm animation.
 	double getChasmAnimPercent() const;
@@ -164,9 +168,6 @@ public:
 
 	// Refers to fog in outdoor dungeons and daytime fog, not the heavy fog screen effect.
 	bool isFogActive() const;
-
-	// Gets the custom function for the *LEVELUP voxel enter event.
-	std::function<void(Game&)> &getOnLevelUpVoxelEnter();
 
 	// On-screen text is visible if it has remaining duration.
 	bool triggerTextIsVisible() const;
@@ -180,9 +181,9 @@ public:
 	void setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData);
 
 	// Sets on-screen text duration for various types of in-game messages.
-	void setTriggerTextDuration(const std::string_view &text);
-	void setActionTextDuration(const std::string_view &text);
-	void setEffectTextDuration(const std::string_view &text);
+	void setTriggerTextDuration(const std::string_view text);
+	void setActionTextDuration(const std::string_view text);
+	void setEffectTextDuration(const std::string_view text);
 
 	// Resets on-screen text boxes to empty and hidden.
 	void resetTriggerTextDuration();
@@ -193,19 +194,21 @@ public:
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
-	void applyPendingSceneChange(Game &game, double dt);
+	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);
 
-	// Ticks the game clock (for the current time of day and date).
 	void tickGameClock(double dt, Game &game);
 	void tickChasmAnimation(double dt);
 	void tickSky(double dt, Game &game);
 	void tickWeather(double dt, Game &game);
 	void tickUiMessages(double dt);
-	void tickPlayer(double dt, Game &game);
+	void tickPlayerHealth(double dt, Game &game);
+	void tickPlayerStamina(double dt, Game &game);
+	void tickPlayerAttack(double dt, Game &game);
 	void tickVoxels(double dt, Game &game);
 	void tickEntities(double dt, Game &game);
-	void tickCollision(double dt, Game &game);
-	void tickRendering(Game &game);
+	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
+	void tickVisibility(const RenderCamera &renderCamera, Game &game);
+	void tickRendering(const RenderCamera &renderCamera, Game &game);
 };
 
 #endif

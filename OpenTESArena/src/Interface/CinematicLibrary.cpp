@@ -16,17 +16,15 @@ void CinematicLibrary::init()
 
 	// Main quest intro.
 	TextCinematicDefinition textCinematicDef;
-	textCinematicDef.initMainQuest(1400, std::string(animFilenameDreamGood), ColorGood, 0);
+	textCinematicDef.initMainQuest(1400, animFilenameDreamGood, ColorGood, 0);
 	this->textDefs.emplace_back(std::move(textCinematicDef));
 
 	// Death (good).
-	textCinematicDef.initDeath(1402, std::string(animFilenameDreamGood), ColorGood,
-		TextCinematicDefinition::DeathDefinition::Type::Good);
+	textCinematicDef.initDeath(1402, animFilenameDreamGood, ColorGood, DeathTextCinematicType::Good);
 	this->textDefs.emplace_back(std::move(textCinematicDef));
 
 	// Death (bad).
-	textCinematicDef.initDeath(1403, std::string(animFilenameDreamBad), ColorBad,
-		TextCinematicDefinition::DeathDefinition::Type::Bad);
+	textCinematicDef.initDeath(1403, animFilenameDreamBad, ColorBad, DeathTextCinematicType::Bad);
 	this->textDefs.emplace_back(std::move(textCinematicDef));
 }
 

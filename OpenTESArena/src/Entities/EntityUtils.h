@@ -16,7 +16,7 @@ class Random;
 
 namespace EntityUtils
 {
-	bool isDynamicEntity(EntityDefinition::Type defType);
+	bool isDynamicEntity(EntityDefinitionType defType);
 
 	// Gets the display name of the entity definition type for debugging.
 	std::string defTypeToString(const EntityDefinition &entityDef);
@@ -30,8 +30,18 @@ namespace EntityUtils
 	bool isStreetlight(const EntityDefinition &entityDef);
 
 	bool isGhost(const EntityDefinition &entityDef);
+	bool isPuddle(const EntityDefinition &entityDef);
+
+	// Whether system resources (a.k.a. textures) for this entity type are loaded/unloaded per scene.
+	// Should be false for entities that are often in every scene (e.g. VFX).
+	bool isSceneManagedResource(EntityDefinitionType entityDefType);
 
 	int getYOffset(const EntityDefinition &entityDef);
+
+	bool hasCollision(const EntityDefinition &entityDef);
+	bool canDie(const EntityDefinition &entityDef);
+	std::optional<int> tryGetDeathAnimStateIndex(const EntityAnimationDefinition &animDef);
+	bool leavesCorpse(const EntityDefinition &entityDef);
 
 	// Returns the entity definition's light radius, if any.
 	std::optional<double> tryGetLightRadius(const EntityDefinition &entityDef);
@@ -47,9 +57,9 @@ namespace EntityUtils
 	// @todo: make this be part of the player, not creatures.
 	constexpr double HearingDistance = 6.0;
 
-	bool withinHearingDistance(const CoordDouble3 &listenerCoord, const CoordDouble2 &soundCoord, double ceilingScale);
+	bool withinHearingDistance(const WorldDouble3 &listenerPosition, const WorldDouble3 &soundPosition);
 
-	double nextCreatureSoundWaitTime(Random &random);
+	double nextCreatureSoundWaitSeconds(Random &random);
 }
 
 #endif

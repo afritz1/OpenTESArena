@@ -3,10 +3,10 @@
 
 enum class TransitionType
 {
-	CityGate, // Swaps to city or wilderness, whichever is inactive.
+	CityGate, // Swaps between city/wilderness.
 	EnterInterior,
 	ExitInterior,
-	LevelChange
+	InteriorLevelChange
 };
 
 #endif

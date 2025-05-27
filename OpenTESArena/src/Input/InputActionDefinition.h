@@ -12,60 +12,58 @@ enum class InputStateType;
 enum class MouseButtonType;
 enum class MouseWheelScrollType;
 
-class InputActionDefinition
+// Treated like a key; doesn't involve mouse position.
+struct InputActionMouseButtonDefinition
 {
-public:
-	// Treated like a key; doesn't involve mouse position.
-	struct MouseButtonDefinition
-	{
-		MouseButtonType type;
+	MouseButtonType type;
 
-		MouseButtonDefinition();
+	InputActionMouseButtonDefinition();
 
-		void init(MouseButtonType type);
-	};
+	void init(MouseButtonType type);
+};
 
-	struct MouseScrollDefinition
-	{
-		MouseWheelScrollType type;
+struct InputActionMouseScrollDefinition
+{
+	MouseWheelScrollType type;
 
-		MouseScrollDefinition();
+	InputActionMouseScrollDefinition();
 
-		void init(MouseWheelScrollType type);
-	};
+	void init(MouseWheelScrollType type);
+};
 
-	struct KeyDefinition
-	{
-		// Union of one or more keys (Ctrl, Ctrl + Alt, etc.). All must be pressed when matching key definitions.
-		using Keymod = decltype(SDL_Keysym::mod);
+// Union of one or more keys (Ctrl, Ctrl + Alt, etc.). All must be pressed when matching key definitions.
+using KeyDefinitionKeymod = decltype(SDL_Keysym::mod);
 
-		SDL_Keycode keycode;
-		Keymod keymod;
+struct InputActionKeyDefinition
+{
+	SDL_Keycode keycode;
+	KeyDefinitionKeymod keymod;
 
-		KeyDefinition();
+	InputActionKeyDefinition();
 
-		void init(SDL_Keycode keycode, Keymod keymod);
-	};
+	void init(SDL_Keycode keycode, KeyDefinitionKeymod keymod);
+};
 
+struct InputActionDefinition
+{
 	std::string name;
 	InputActionType type;
 	std::optional<InputStateType> stateType; // Optional since some actions like scroll wheel are mono-state inputs.
 
 	union
 	{
-		MouseButtonDefinition mouseButtonDef;
-		MouseScrollDefinition mouseScrollDef;
-		KeyDefinition keyDef;
+		InputActionMouseButtonDefinition mouseButtonDef;
+		InputActionMouseScrollDefinition mouseScrollDef;
+		InputActionKeyDefinition keyDef;
 	};
-private:
-	void init(std::string &&name, InputActionType type, const std::optional<InputStateType> &stateType);
-public:
+
 	InputActionDefinition();
 
+	void init(const std::string &name, InputActionType type, const std::optional<InputStateType> &stateType);
 	void initMouseButtonDef(const std::string &name, InputStateType stateType, MouseButtonType buttonType);
 	void initMouseScrollDef(const std::string &name, MouseWheelScrollType scrollType);
 	void initKeyDef(const std::string &name, InputStateType stateType, SDL_Keycode keycode,
-		const std::optional<KeyDefinition::Keymod> &keymod = std::nullopt);
+		const std::optional<KeyDefinitionKeymod> &keymod = std::nullopt);
 };
 
 #endif

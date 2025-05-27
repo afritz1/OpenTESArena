@@ -20,6 +20,8 @@ TargetFPS=60
 # Resolution scale is the percent of the screen resolution used to
 # render the game world. Accepted values are between 0.10 and 1.0.
 ResolutionScale=0.50
+
+# Player field of view in degrees.
 VerticalFOV=60.0
 
 # Each letterbox mode defines a particular aspect ratio for the game UI.
@@ -42,6 +44,10 @@ TallPixelCorrection=true
 # 0: very low, 1: low, 2: medium, 3: high, 4: very high, 5: max
 RenderThreadsMode=4
 
+# Dithering uses a pattern to make gradients look more visually pleasing.
+# 0: none, 1: classic, 2: modern
+DitheringMode=1
+
 [Audio]
 MusicVolume=1.0
 SoundVolume=1.0
@@ -51,7 +57,7 @@ MidiConfig=data/eawpats/timidity.cfg
 
 SoundChannels=32
 
-# Sound resampling. Results may vary.
+# Sound resampling. Results vary based on your audio driver.
 # 0: default, 1: fastest, 2: medium, 3: best.
 SoundResampling=0
 
@@ -60,26 +66,28 @@ SoundResampling=0
 Is3DAudio=true
 
 [Input]
-# Look sensitivity is normally between 3.0 and 10.0.
-HorizontalSensitivity=5.0
-VerticalSensitivity=5.0
+# Look sensitivity is normally between 1.0 and 5.0.
+HorizontalSensitivity=2.5
+VerticalSensitivity=2.5
 
-# The camera pitch limit determines in degrees how high or low the camera
-# can look relative to the horizon in modern mode. Must be less than 90.
-CameraPitchLimit=85.0
+InvertVerticalAxis=false
+
+# Pitch limit determines in degrees how high or low the camera can look relative
+# to the horizon in modern mode.
+CameraPitchLimit=90.0
 
 [Misc]
-# Change "ArenaPath" to your desired path. In the future, this should be
-# set by a wizard instead.
-ArenaPath=data/ARENA/
+# Comma-separated paths the engine will use to search your computer for ACD.EXE
+# and A.EXE, preferring the CD version.
+ArenaPaths=data/ARENACD,data/ARENA,C:/Program Files (x86)/Steam/steamapps/common/The Elder Scrolls Arena/ARENA,D:/SteamLibrary/steamapps/common/The Elder Scrolls Arena/ARENA
 
 # Change "ArenaSavesPath" to your classic saves folder (if any).
-ArenaSavesPath=data/ArenaSaves/
+ArenaSavesPath=data/ArenaSaves
 
 # Determines whether the player ignores collision and can fly around.
 GhostMode=false
 
-# Shows the opening cinematic on program start.
+# Shows the opening cinematic on engine start.
 ShowIntro=true
 
 # Draws various profiler info in the game world. Higher profiler levels

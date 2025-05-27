@@ -7,20 +7,18 @@
 #include "../debug/Debug.h"
 
 // Non-owning view over a 3D range of data stored in memory as a 1D array. More complex than 2D buffer
-// view due to the look-up requirements of a 3D array.
-
-// Data can be null. Only need assertions on things that reach into the buffer itself.
-
+// view due to the look-up requirements of a 3D array. Data can be null. Only need assertions on things
+// that reach into the buffer itself.
 template<typename T>
 class BufferView3D
 {
 private:
 	T *data; // Start of original 3D array.
 	int width, height, depth; // Dimensions of original 3D array.
-	int viewX, viewY, viewZ; // View coordinates.
-	int viewWidth, viewHeight, viewDepth; // View dimensions.
+	int viewX, viewY, viewZ; // Start of 3D array slice.
+	int viewWidth, viewHeight, viewDepth; // Dimensions of 3D array slice.
 	bool isContiguous; // Whether all bytes are contiguous in memory, allowing for faster operations.
-	bool isSliced; // Whether the view is a smaller area within its buffer, causing it to potentially not be contiguous.
+	bool isSliced; // Whether the view is a smaller area within the original buffer, causing it to potentially not be contiguous.
 
 	int getIndex(int x, int y, int z) const
 	{

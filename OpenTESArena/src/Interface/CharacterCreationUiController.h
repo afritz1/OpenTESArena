@@ -38,7 +38,7 @@ namespace ChooseGenderUiController
 namespace ChooseNameUiController
 {
 	void onBackToChooseClassInputAction(const InputActionCallbackValues &values);
-	void onTextInput(const std::string_view &text, std::string &name, bool *outDirty);
+	void onTextInput(const std::string_view text, std::string &name, bool *outDirty);
 	void onBackspaceInputAction(const InputActionCallbackValues &values, std::string &name, bool *outDirty);
 	void onAcceptInputAction(const InputActionCallbackValues &values, const std::string &name);
 }
@@ -62,12 +62,14 @@ namespace ChooseAttributesUiController
 	void onBackToRaceSelectionInputAction(const InputActionCallbackValues &values);
 
 	void onInitialPopUpSelected(Game &game);
-	void onSaveButtonSelected(Game &game, bool *attributesAreSaved);
+	void onSaveButtonSelectedWithNoBonusPoints(Game &game);
+	void onSaveButtonSelectedWithBonusPoints(Game &game);
 	void onRerollButtonSelected(Game &game);
+	void onBonusPointsRemainingTextBoxSelected(Game &game);
 	void onAppearanceTextBoxSelected(Game &game);
 	void onPortraitButtonSelected(Game &game, bool incrementIndex);
-	void onDoneButtonSelected(Game &game, bool *attributesAreSaved);
-	void onUnsavedDoneButtonSelected(Game &game, bool *attributesAreSaved);
+	void onDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved);
+	void onUnsavedDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved);
 	void onSavedDoneButtonSelected(Game &game);
 
 	// -- Cinematic after character creation --

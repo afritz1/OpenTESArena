@@ -13,10 +13,6 @@
 #include "components/dos/DOSUtils.h"
 #include "components/utilities/BufferView.h"
 
-// An .INF file contains definitions of what the IDs in a .MIF file point to. These 
-// are mostly texture IDs, but also text IDs and sound IDs telling which voxels have 
-// which kinds of triggers, etc..
-
 struct INFVoxelTexture
 {
 	std::string filename;
@@ -94,6 +90,7 @@ struct INFFlat
 struct INFKey
 {
 	int id; // Key ID (starts with '+').
+	int revisedID; // ID to use with texture lookup
 
 	INFKey(int id);
 };
@@ -107,14 +104,17 @@ struct INFRiddle
 	INFRiddle(int firstNumber, int secondNumber);
 };
 
-struct INFText
+struct INFLoreText
 {
 	std::string text; // Stores display text for a text trigger.
-	bool displayedOnce; // Whether the text is only displayed once (starts with '~').
+	bool isDisplayedOnce; // Whether the text is only displayed once (starts with '~').
 
-	INFText(bool displayedOnce);
+	INFLoreText(bool isDisplayedOnce);
 };
 
+// An .INF file contains definitions of what the IDs in a .MIF file point to. These 
+// are mostly texture IDs, but also text IDs and sound IDs telling which voxels have 
+// which kinds of triggers, etc..
 class INFFile
 {
 private:
@@ -134,14 +134,10 @@ private:
 	// .VOC files for each sound ID.
 	std::unordered_map<int, std::string> sounds;
 
-	// Key info for *TEXT IDs.
+	// A *TEXT field can be one of 1) lore text, 2) riddle, or 3) door key ID, accessed by its *TEXT #.
 	std::unordered_map<int, INFKey> keys;
-
-	// Riddle info for *TEXT IDs.
 	std::unordered_map<int, INFRiddle> riddles;
-
-	// Text pop-ups for *TEXT IDs. Some places have several dozen *TEXT definitions.
-	std::unordered_map<int, INFText> texts;
+	std::unordered_map<int, INFLoreText> loreTexts;
 
 	std::string name;
 
@@ -159,15 +155,15 @@ public:
 	const std::optional<int> &getBoxSide(int index) const;
 	const std::optional<int> &getMenu(int index) const;
 	std::optional<int> getMenuIndex(int textureID) const; // Temporary hack?
-	const INFFlat &getFlat(int index) const;
-	const INFFlat *getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) const;
+	const INFFlat &getFlat(ArenaTypes::FlatIndex flatIndex) const;
+	ArenaTypes::FlatIndex findFlatIndexWithItemIndex(ArenaTypes::ItemIndex itemIndex) const;
 	const char *getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;
-	bool hasTextIndex(int index) const;
+	bool hasLoreTextIndex(int index) const;
 	const INFKey &getKey(int index) const;
 	const INFRiddle &getRiddle(int index) const;
-	const INFText &getText(int index) const;
+	const INFLoreText &getLoreText(int index) const;
 	const char *getName() const;
 	const std::optional<int> &getDryChasmIndex() const;
 	const std::optional<int> &getLavaChasmIndex() const;

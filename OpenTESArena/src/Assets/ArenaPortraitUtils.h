@@ -6,7 +6,6 @@
 #include "../Math/Vector2.h"
 
 // Gets the filenames for images relevant to character portraits.
-
 namespace ArenaPortraitUtils
 {
 	// Gets the heads filename for a given gender, race, and whether the heads

@@ -9,10 +9,7 @@
 #include "../debug/Debug.h"
 
 // Simple non-owning view over a 1D range of data. Useful when separating a container from the usage
-// of its data.
-
-// Data can be null. Only need assertions on things that reach into the buffer itself.
-
+// of its data. Data can be null. Only need assertions on things that reach into the buffer itself.
 template<typename T>
 class BufferView
 {
@@ -203,6 +200,24 @@ public:
 	int getCount() const
 	{
 		return this->count;
+	}
+
+	bool isValidRange(int startIndex, int length) const
+	{
+		if (!this->isValid())
+		{
+			return false;
+		}
+
+		if (length < 0)
+		{
+			return false;
+		}
+
+		const int exclusiveEndIndex = startIndex + length;
+		const bool isStartValid = (startIndex >= 0) && (startIndex <= this->count);
+		const bool isEndValid = (exclusiveEndIndex >= startIndex) && (exclusiveEndIndex <= this->count);
+		return isStartValid && isEndValid;
 	}
 
 	void set(int index, const T &value)

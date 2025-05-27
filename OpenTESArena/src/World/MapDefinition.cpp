@@ -14,10 +14,10 @@
 #include "../Assets/MIFUtils.h"
 #include "../Assets/RMDFile.h"
 #include "../Assets/TextAssetLibrary.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Math/Random.h"
 #include "../Sky/SkyGeneration.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Weather/WeatherUtils.h"
 
 #include "components/debug/Debug.h"
@@ -280,7 +280,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX,
 	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-	const std::string_view &cityTypeName, ArenaTypes::CityType cityType,
+	const std::string_view cityTypeName, ArenaTypes::CityType cityType,
 	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
@@ -431,10 +431,10 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 
 	this->init(MapType::Interior);
 
-	const MapGeneration::InteriorGenInfo::Type interiorType = generationInfo.getType();
-	if (interiorType == MapGeneration::InteriorGenInfo::Type::Prefab)
+	const MapGeneration::InteriorGenType interiorType = generationInfo.type;
+	if (interiorType == MapGeneration::InteriorGenType::Prefab)
 	{
-		const MapGeneration::InteriorGenInfo::Prefab &prefabGenInfo = generationInfo.getPrefab();
+		const MapGeneration::InteriorPrefabGenInfo &prefabGenInfo = generationInfo.prefab;
 		MIFFile mif;
 		if (!mif.init(prefabGenInfo.mifName.c_str()))
 		{
@@ -448,9 +448,9 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 		this->initStartPoints(mif);
 		this->startLevelIndex = mif.getStartingLevelIndex();
 	}
-	else if (interiorType == MapGeneration::InteriorGenInfo::Type::Dungeon)
+	else if (interiorType == MapGeneration::InteriorGenType::Dungeon)
 	{
-		const MapGeneration::InteriorGenInfo::Dungeon &dungeonGenInfo = generationInfo.getDungeon();
+		const MapGeneration::InteriorDungeonGenInfo &dungeonGenInfo = generationInfo.dungeon;
 
 		// Dungeon .MIF file with chunks for random generation.
 		const std::string &mifName = ArenaInteriorUtils::DUNGEON_MIF_NAME;

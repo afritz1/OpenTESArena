@@ -1,24 +1,24 @@
 #ifndef CHARACTER_PANEL_H
 #define CHARACTER_PANEL_H
 
-#include <vector>
-
 #include "Panel.h"
+#include "../Stats/PrimaryAttribute.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
 
-// Maybe rename this to "CharacterStatsPanel"?
-
-// This is the character portrait panel that shows the player's attributes and derived stats.
-
 class Renderer;
-class TextBox;
 
+// The character portrait panel that shows the player's attributes and derived stats.
+// @todo Maybe rename this to "CharacterStatsPanel"?
 class CharacterPanel : public Panel
 {
 private:
-	TextBox playerNameTextBox, playerRaceTextBox, playerClassTextBox;
-	std::vector<TextBox> playerAttributeTextBoxes;
+	TextBox nameTextBox, raceTextBox, classTextBox;
+	TextBox attributeTextBoxes[PrimaryAttributes::COUNT];
+	TextBox derivedAttributeTextBoxes[DerivedAttributes::COUNT];
+	TextBox healthTextBox, staminaTextBox, spellPointsTextBox;
+	TextBox experienceTextBox, levelTextBox;
+	TextBox goldTextBox;
 	Button<Game&> doneButton, nextPageButton;
 	ScopedUiTextureRef bodyTextureRef, headTextureRef, shirtTextureRef, pantsTextureRef,
 		statsBgTextureRef, nextPageTextureRef, cursorTextureRef;

@@ -22,6 +22,7 @@ HealthDice=0x3E5D5
 InitialExperienceCaps=0x36F0E
 LockpickingDivisors=0x3E43E
 PreferredAttributes=0x36034
+MagicClassIntelligenceMultipliers=0x388B0
 
 [CharacterCreation]
 ChooseClassCreation=0x35C80,37
@@ -44,6 +45,7 @@ DistributeClassPoints=0x35F25,93
 ChooseAttributes=0x361A3,23
 ChooseAttributesSave=0x3F9A5,14
 ChooseAttributesReroll=0x3F9B5,16
+ChooseAttributesBonusPointsRemaining=0x3F817
 ChooseAppearance=0x35F84,174
 
 [CityGeneration]
@@ -63,6 +65,7 @@ EquipmentSuffixes=0x3679E
 MagesGuildMenuName=0x42911
 
 [Entities]
+AttributeNames=0x3E500
 CreatureNames=0x36DBE
 CreatureLevels=0x3E669
 CreatureHitPoints=0x3E6B2
@@ -78,6 +81,7 @@ CreatureHasNoCorpse=0x3E622
 CreatureBlood=0x43CA3
 CreatureDiseaseChances=0x3E7E6
 CreatureAttributes=0x3628B
+CreatureLootChances=0x37605
 CreatureAnimationFilenames=0x3E7FF
 FinalBossName=0x36F03
 RaceAttributes=0x361C3
@@ -98,6 +102,7 @@ MaterialNames=0x3E03F
 MaterialBonuses=0x3E078
 MaterialChances=0x3E080
 MaterialPriceMultipliers=0x3E282
+ItemConditionNames=0x417F1
 ArmorNames=0x3DE24
 PlateArmorNames=0x3E08E
 PlateArmorQualities=0x3E125
@@ -120,7 +125,7 @@ WeaponNames=0x3DC04
 WeaponQualities=0x3DCE6
 WeaponBasePrices=0x3DCD4
 WeaponWeights=0x3DCB0
-WeaponDamages=0x3DCF4
+WeaponDamages=0x3DCFB
 WeaponHandednesses=0x3DC9E
 WeaponEnchantmentNames=0x3DD1F
 WeaponEnchantmentQualities=0x3DDE9
@@ -133,7 +138,7 @@ SpellcastingItemChargeRanges=0x3D7FB
 SpellcastingItemAttackSpellNames=0x3D803
 SpellcastingItemAttackSpellQualities=0x3D8DD
 SpellcastingItemAttackSpellSpells=0x3D8CE
-SpellcastingItemAttackSpellPricesPerCharge=0x3D8E6
+SpellcastingItemAttackSpellPricesPerCharge=0x3D8EC
 SpellcastingItemDefensiveSpellNames=0x3D90A
 SpellcastingItemDefensiveSpellQualities=0x3D984
 SpellcastingItemDefensiveSpellSpells=0x3D97B
@@ -141,16 +146,22 @@ SpellcastingItemDefensiveSpellPricesPerCharge=0x3D98D
 SpellcastingItemMiscSpellNames=0x3D99F
 SpellcastingItemMiscSpellQualities=0x3DA10
 SpellcastingItemMiscSpellSpells=0x3DA08
-SpellcastingItemMiscSpellPricesPerCharge=0x3DA20
+SpellcastingItemMiscSpellPricesPerCharge=0x3DA18
 EnhancementItemNames=0x3DA28
 EnhancementItemCumulativeChances=0x3DA42
 EnhancementItemBasePrices=0x3DA4A
+PotionNames=0x3E2CD
+UnidentifiedPotionName=0x41830
 BodyPartNames=0x3DE91
 WeaponAnimationFilenames=0x4214E
 
+[Items]
+GoldPiece=0x40736
+BagOfGoldPieces=0x40744
+
 [Light]
 WindowTwilightColors=0x3F766
-WaterTwilightLightLevels=0x3F747
+WaterTwilightLightLevels=0x3F746
 
 [Locations]
 ProvinceNames=0x394F8
@@ -184,13 +195,17 @@ DataSegmentOffset=0x3276A
 [Quests]
 MainQuestItemNames=0x40612
 StaffPieces=0x40692
-KeyNames=0x3EE2B
-KeyPickedUp=0x406A5
-DoorUnlockedWithKey=0x406BC
 
 [Races]
 SingularNames=0x3E594
 PluralNames=0x3E549
+
+[RaisedPlatforms]
+BoxArrays=0x48594
+BoxArraysCopy=0x48604
+Box3A=0x48654
+Box3B=0x48664
+Box4=0x48674
 
 [Status]
 PopUp=0x4157B
@@ -199,6 +214,16 @@ Fortify=0x42230
 Disease=0x42247
 Effect=0x42255
 EffectsList=0x42262
+KeyNames=0x3EE2B
+KeyPickedUp=0x406A5
+DoorUnlockedWithKey=0x406BC
+LockDifficultyMessages=0x377D4
+StaminaExhaustedRecover=0x434E0
+StaminaExhaustedDeath=0x4356A
+StaminaDrowning=0x4352F
+EnemyCorpseEmptyInventory=0x40670
+EnemyCorpseGold=0x406FA
+CitizenCorpseGold=0x42128
 
 [Travel]
 LocationFormatTexts=0x376AD
@@ -237,16 +262,6 @@ Race3HelmetPaletteValues=0x37EFC
 Race4HelmetPaletteValues=0x37F1A
 CurrentWorldPosition=0x44103
 InspectedEntityName=0x43ED4
-
-[WallHeightTables]
-Box1A=0x48594
-Box1B=0x485A4
-Box1C=0x485B4
-Box2A=0x485C4
-Box2B=0x485E4
-Box3A=0x48654
-Box3B=0x48664
-Box4=0x48674
 
 [Weather]
 ThunderstormFlashColors=0x3FC0C

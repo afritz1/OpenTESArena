@@ -4,30 +4,30 @@
 
 #include "components/debug/Debug.h"
 
-void VoxelTriggerDefinition::SoundDef::init(std::string &&filename)
+void VoxelTriggerSoundDefinition::init(const std::string &filename)
 {
-	this->filename = std::move(filename);
+	this->filename = filename;
 }
 
-const std::string &VoxelTriggerDefinition::SoundDef::getFilename() const
+VoxelTriggerLoreTextDefinition::VoxelTriggerLoreTextDefinition()
 {
-	return this->filename;
+	this->isDisplayedOnce = false;
 }
 
-void VoxelTriggerDefinition::TextDef::init(std::string &&text, bool displayedOnce)
+void VoxelTriggerLoreTextDefinition::init(const std::string &text, bool isDisplayedOnce)
 {
-	this->text = std::move(text);
-	this->displayedOnce = displayedOnce;
+	this->text = text;
+	this->isDisplayedOnce = isDisplayedOnce;
 }
 
-const std::string &VoxelTriggerDefinition::TextDef::getText() const
+VoxelTriggerKeyDefinition::VoxelTriggerKeyDefinition()
 {
-	return this->text;
+	this->keyID = -1;
 }
 
-bool VoxelTriggerDefinition::TextDef::isDisplayedOnce() const
+void VoxelTriggerKeyDefinition::init(int keyID)
 {
-	return this->displayedOnce;
+	this->keyID = keyID;
 }
 
 VoxelTriggerDefinition::VoxelTriggerDefinition()
@@ -44,47 +44,22 @@ void VoxelTriggerDefinition::init(SNInt x, int y, WEInt z)
 	this->z = z;
 }
 
-SNInt VoxelTriggerDefinition::getX() const
-{
-	return this->x;
-}
-
-int VoxelTriggerDefinition::getY() const
-{
-	return this->y;
-}
-
-WEInt VoxelTriggerDefinition::getZ() const
-{
-	return this->z;
-}
-
 bool VoxelTriggerDefinition::hasSoundDef() const
 {
-	return this->sound.getFilename().size() > 0;
+	return !this->sound.filename.empty();
 }
 
-bool VoxelTriggerDefinition::hasTextDef() const
+bool VoxelTriggerDefinition::hasLoreTextDef() const
 {
-	return this->text.getText().size() > 0;
+	return !this->loreText.text.empty();
 }
 
-const VoxelTriggerDefinition::SoundDef &VoxelTriggerDefinition::getSoundDef() const
+bool VoxelTriggerDefinition::hasKeyDef() const
 {
-	return this->sound;
+	return this->key.keyID >= 0;
 }
 
-const VoxelTriggerDefinition::TextDef &VoxelTriggerDefinition::getTextDef() const
+bool VoxelTriggerDefinition::hasValidDefForPhysics() const
 {
-	return this->text;
-}
-
-void VoxelTriggerDefinition::setSoundDef(std::string &&filename)
-{
-	this->sound.init(std::move(filename));
-}
-
-void VoxelTriggerDefinition::setTextDef(std::string &&text, bool displayedOnce)
-{
-	this->text.init(std::move(text), displayedOnce);
+	return this->hasSoundDef() || this->hasLoreTextDef();
 }

@@ -3,117 +3,65 @@
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
 #include "../Assets/RMDFile.h"
-#include "../Entities/CharacterClassLibrary.h"
-#include "../Entities/Player.h"
-#include "../Game/ArenaClockUtils.h"
-#include "../Game/ArenaDateUtils.h"
 #include "../Game/Game.h"
+#include "../Player/ArenaPlayerUtils.h"
+#include "../Player/Player.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Stats/CharacterClassLibrary.h"
+#include "../Time/ArenaClockUtils.h"
+#include "../Time/ArenaDateUtils.h"
+#include "../Time/ClockLibrary.h"
 #include "../World/MapType.h"
 
 #include "components/utilities/String.h"
 
-std::string GameWorldUiModel::getPlayerNameText(Game &game)
+namespace
 {
-	const Player &player = game.getPlayer();
-	return player.getFirstName();
-}
-
-std::string GameWorldUiModel::getStatusButtonText(Game &game)
-{
-	auto &gameState = game.getGameState();
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
-	const LocationDefinition &locationDef = gameState.getLocationDefinition();
-	const LocationInstance &locationInst = gameState.getLocationInstance();
-	const std::string &locationName = locationInst.getName(locationDef);
-
-	const std::string timeString = [&game, &gameState, &exeData]()
+	// Original game has eight time ranges for each time of day. They aren't uniformly distributed -- midnight and noon are only one minute.
+	constexpr std::pair<const char*, int> TimeOfDayIndices[] =
 	{
-		const Clock &clock = gameState.getClock();
-		const int hours = clock.getHours12();
-		const int minutes = clock.getMinutes();
-		const std::string clockTimeString = std::to_string(hours) + ":" +
-			((minutes < 10) ? "0" : "") + std::to_string(minutes);
+		std::make_pair(ArenaClockUtils::Midnight, 6),
+		std::make_pair(ArenaClockUtils::Night1, 5),
+		std::make_pair(ArenaClockUtils::EarlyMorning, 0),
+		std::make_pair(ArenaClockUtils::Morning, 1),
+		std::make_pair(ArenaClockUtils::Noon, 2),
+		std::make_pair(ArenaClockUtils::Afternoon, 3),
+		std::make_pair(ArenaClockUtils::Evening, 4),
+		std::make_pair(ArenaClockUtils::Night2, 5)
+	};
 
-		const int timeOfDayIndex = [&gameState]()
+	std::string GetStatusTimeString(const Clock &clock, const ExeData &exeData)
+	{
+		const int hours12 = clock.getHours12();
+		const int minutes = clock.minutes;
+		const std::string clockTimeString = std::to_string(hours12) + ":" + ((minutes < 10) ? "0" : "") + std::to_string(minutes);
+
+		// Reverse iterate, checking which range the active clock is in.
+		const auto pairIter = std::find_if(std::rbegin(TimeOfDayIndices), std::rend(TimeOfDayIndices),
+			[&clock](const std::pair<const char*, int> &pair)
 		{
-			// Arena has eight time ranges for each time of day. They aren't
-			// uniformly distributed -- midnight and noon are only one minute.
-			const std::array<std::pair<Clock, int>, 8> clocksAndIndices =
-			{
-				std::make_pair(ArenaClockUtils::Midnight, 6),
-				std::make_pair(ArenaClockUtils::Night1, 5),
-				std::make_pair(ArenaClockUtils::EarlyMorning, 0),
-				std::make_pair(ArenaClockUtils::Morning, 1),
-				std::make_pair(ArenaClockUtils::Noon, 2),
-				std::make_pair(ArenaClockUtils::Afternoon, 3),
-				std::make_pair(ArenaClockUtils::Evening, 4),
-				std::make_pair(ArenaClockUtils::Night2, 5)
-			};
+			const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
+			const Clock &currentClock = clockLibrary.getClock(pair.first);
+			return clock.getTotalSeconds() >= currentClock.getTotalSeconds();
+		});
 
-			const Clock &presentClock = gameState.getClock();
+		DebugAssertMsg(pairIter != std::rend(TimeOfDayIndices), "No valid time of day.");
+		const int timeOfDayIndex = pairIter->second;
 
-			// Reverse iterate, checking which range the active clock is in.
-			const auto pairIter = std::find_if(
-				clocksAndIndices.rbegin(), clocksAndIndices.rend(),
-				[&presentClock](const std::pair<Clock, int> &pair)
-			{
-				const Clock &clock = pair.first;
-				return presentClock.getTotalSeconds() >= clock.getTotalSeconds();
-			});
-
-			DebugAssertMsg(pairIter != clocksAndIndices.rend(), "No valid time of day.");
-			return pairIter->second;
-		}();
-
-		const std::string &timeOfDayString =
-			exeData.calendar.timesOfDay.at(timeOfDayIndex);
-
+		DebugAssertIndex(exeData.calendar.timesOfDay, timeOfDayIndex);
+		const std::string &timeOfDayString = exeData.calendar.timesOfDay[timeOfDayIndex];
 		return clockTimeString + ' ' + timeOfDayString;
-	}();
+	}
 
-	// Get the base status text.
-	std::string baseText = exeData.status.popUp;
-
-	// Replace carriage returns with newlines.
-	baseText = String::replace(baseText, '\r', '\n');
-
-	// Replace first %s with location name.
-	size_t index = baseText.find("%s");
-	baseText.replace(index, 2, locationName);
-
-	// Replace second %s with time string.
-	index = baseText.find("%s", index);
-	baseText.replace(index, 2, timeString);
-
-	// Replace third %s with date string, filled in with each value.
-	std::string dateString = ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
-	dateString.back() = '\n'; // Replace \r with \n.
-
-	index = baseText.find("%s", index);
-	baseText.replace(index, 2, dateString);
-
-	// Replace %d's with current and total weight.
-	const int currentWeight = 0;
-	index = baseText.find("%d", index);
-	baseText.replace(index, 2, std::to_string(currentWeight));
-
-	const int weightCapacity = 0;
-	index = baseText.find("%d", index);
-	baseText.replace(index, 2, std::to_string(weightCapacity));
-
-	// Append the list of effects at the bottom (healthy/diseased...).
-	const std::string effectText = [&exeData]()
+	// Healthy/diseased/etc.
+	std::string GetStatusEffectString(const ExeData &exeData)
 	{
 		std::string text = exeData.status.effect;
-
-		// Replace carriage returns with newlines.
 		text = String::replace(text, '\r', '\n');
 
 		// Replace %s with placeholder.
-		const std::string &effectStr = exeData.status.effectsList.front();
+		const std::string &effectStr = exeData.status.effectsList[0];
 		size_t index = text.find("%s");
 		text.replace(index, 2, effectStr);
 
@@ -121,7 +69,50 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 		text.pop_back();
 
 		return text;
-	}();
+	}
+}
+
+std::string GameWorldUiModel::getPlayerNameText(Game &game)
+{
+	return game.player.firstName;
+}
+
+std::string GameWorldUiModel::getStatusButtonText(Game &game)
+{
+	auto &gameState = game.gameState;
+	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const auto &exeData = binaryAssetLibrary.getExeData();
+	const LocationDefinition &locationDef = gameState.getLocationDefinition();
+	const LocationInstance &locationInst = gameState.getLocationInstance();
+	const std::string &locationName = locationInst.getName(locationDef);
+	const Player &player = game.player;
+	const std::string timeString = GetStatusTimeString(gameState.getClock(), exeData);
+
+	std::string baseText = exeData.status.popUp;
+	baseText = String::replace(baseText, '\r', '\n');
+
+	size_t index = baseText.find("%s");
+	baseText.replace(index, 2, locationName);
+
+	index = baseText.find("%s", index);
+	baseText.replace(index, 2, timeString);
+
+	std::string dateString = ArenaDateUtils::makeDateString(gameState.getDate(), exeData);
+	dateString.back() = '\n'; // Replace \r with \n.
+
+	index = baseText.find("%s", index);
+	baseText.replace(index, 2, dateString);
+
+	const int currentWeight = static_cast<int>(player.inventory.getWeight());
+	index = baseText.find("%d", index);
+	baseText.replace(index, 2, std::to_string(currentWeight));
+
+	const PrimaryAttributes &primaryAttributes = player.primaryAttributes;
+	const int weightCapacity = ArenaPlayerUtils::calculateMaxWeight(primaryAttributes.strength.maxValue); // @todo use current value instead
+	index = baseText.find("%d", index);
+	baseText.replace(index, 2, std::to_string(weightCapacity));
+
+	const std::string effectText = GetStatusEffectString(exeData);
 
 	return baseText + effectText;
 }
@@ -129,17 +120,16 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	GameState &gameState = game.getGameState();
+	GameState &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const Player &player = game.getPlayer();
+	const Player &player = game.player;
 
 	const MapType mapType = mapDef.getMapType();
 	const OriginalInt2 displayedCoords = [&player, mapType]()
 	{
-		const WorldDouble3 absolutePlayerPosition = VoxelUtils::coordToWorldPoint(player.getPosition());
-		const WorldInt3 absolutePlayerVoxel = VoxelUtils::pointToVoxel(absolutePlayerPosition);
-		const WorldInt2 playerVoxelXZ(absolutePlayerVoxel.x, absolutePlayerVoxel.z);
-		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(playerVoxelXZ);
+		const WorldDouble3 absolutePlayerPosition = player.getEyePosition();
+		const WorldInt2 absolutePlayerVoxelXZ = VoxelUtils::pointToVoxel(absolutePlayerPosition.getXZ());
+		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(absolutePlayerVoxelXZ);
 
 		// The displayed coordinates in the wilderness behave differently in the original
 		// game due to how the 128x128 grid shifts to keep the player roughly centered.
@@ -171,15 +161,15 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 
 std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonType(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (modernInterface)
 	{
 		return std::nullopt;
 	}
 
-	const auto &renderer = game.getRenderer();
-	const auto &inputManager = game.getInputManager();
+	const auto &renderer = game.renderer;
+	const auto &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 classicPosition = renderer.nativeToOriginal(mousePosition);
 	for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
@@ -199,11 +189,11 @@ bool GameWorldUiModel::isButtonTooltipAllowed(ButtonType buttonType, Game &game)
 {
 	if (buttonType == ButtonType::Magic)
 	{
-		const Player &player = game.getPlayer();
+		const Player &player = game.player;
 		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-		const int charClassDefID = player.getCharacterClassDefID();
+		const int charClassDefID = player.charClassDefID;
 		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-		return charClassDef.canCastMagic();
+		return charClassDef.castsMagic;
 	}
 	else
 	{
@@ -242,21 +232,21 @@ void GameWorldUiModel::setFreeLookActive(Game &game, bool active)
 {
 	// Set relative mouse mode. When enabled, this freezes the hardware cursor in place but relative motion
 	// events are still recorded.
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setRelativeMouseMode(active);
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const Int2 windowDims = renderer.getWindowDimensions();
 	renderer.warpMouse(windowDims.x / 2, windowDims.y / 2);
 }
 
 VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 &windowPoint)
 {
-	const auto &options = game.getOptions();
-	const auto &renderer = game.getRenderer();
-	const Player &player = game.getPlayer();
-	const CoordDouble3 &playerCoord = player.getPosition();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerCoord.chunk, playerCoord.point, player.getDirection(),
+	const auto &options = game.options;
+	const auto &renderer = game.renderer;
+	const Player &player = game.player;
+	const WorldDouble3 playerPosition = player.getEyePosition();
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY,
 		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.
@@ -282,4 +272,83 @@ void GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect> nativeCursorRe
 	{
 		nativeCursorRegions.set(i, GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale));
 	}
+}
+
+std::string GameWorldUiModel::getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData)
+{
+	std::string text = exeData.ui.inspectedEntityName;
+	text.replace(text.find("%s"), 2, entityName);
+	return text;
+}
+
+std::string GameWorldUiModel::getEnemyCorpseGoldMessage(int goldCount, const ExeData &exeData)
+{
+	std::string text = exeData.status.enemyCorpseGold;
+	text.replace(text.find("%u"), 2, std::to_string(goldCount));
+	return text;
+}
+
+std::string GameWorldUiModel::getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData)
+{
+	std::string text = exeData.status.enemyCorpseEmptyInventory;
+	text.replace(text.find("%s"), 2, entityName);
+	return text;
+}
+
+std::string GameWorldUiModel::getCitizenKillGoldMessage(int goldCount, const ExeData &exeData)
+{
+	std::string text = exeData.status.citizenCorpseGold;
+	text.replace(text.find("%d"), 2, std::to_string(goldCount));
+	return text;
+}
+
+std::string GameWorldUiModel::getLockDifficultyMessage(int lockLevel, const ExeData &exeData)
+{
+	DebugAssertIndex(exeData.status.lockDifficultyMessages, lockLevel);
+	return exeData.status.lockDifficultyMessages[lockLevel];
+}
+
+std::string GameWorldUiModel::getKeyPickUpMessage(int keyID, const ExeData &exeData)
+{
+	DebugAssertIndex(exeData.status.keyNames, keyID);
+	const std::string &keyName = exeData.status.keyNames[keyID];
+
+	std::string keyPickupMessage = exeData.status.keyPickedUp;
+	size_t replaceIndex = keyPickupMessage.find("%s");
+	keyPickupMessage.replace(replaceIndex, 2, keyName);
+	return keyPickupMessage;
+}
+
+std::string GameWorldUiModel::getDoorUnlockWithKeyMessage(int keyID, const ExeData &exeData)
+{
+	DebugAssertIndex(exeData.status.keyNames, keyID);
+	const std::string &keyName = exeData.status.keyNames[keyID];
+
+	std::string doorUnlockMessage = exeData.status.doorUnlockedWithKey;
+	size_t replaceIndex = doorUnlockMessage.find("%s");
+	doorUnlockMessage.replace(replaceIndex, 2, keyName);
+	return doorUnlockMessage;
+}
+
+std::string GameWorldUiModel::getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData)
+{
+	std::string text;
+
+	if (isSwimming)
+	{
+		text = exeData.status.staminaDrowning;
+	}
+	else if (!isInterior && isNight)
+	{
+		text = exeData.status.staminaExhaustedDeath;
+	}
+	else
+	{
+		text = exeData.status.staminaExhaustedRecover;
+	}
+
+	text = String::replace(text, '\r', '\n');
+	text.erase(text.find_last_of('\n'));
+
+	return text;
 }

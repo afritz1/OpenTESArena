@@ -62,22 +62,22 @@ bool TextCinematicUiModel::shouldPlaySpeech(Game &game)
 {
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
-	return !exeData.isFloppyVersion();
+	return !exeData.isFloppyVersion;
 }
 
 std::string TextCinematicUiModel::getSubtitleText(Game &game, const TextCinematicDefinition &textCinematicDef)
 {
-	const auto &textAssetLibrary = TextAssetLibrary::getInstance();
-	const auto &templateDat = textAssetLibrary.getTemplateDat();
-	const auto &templateDatEntry = templateDat.getEntry(textCinematicDef.getTemplateDatKey());
+	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+	const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
+	const ArenaTemplateDatEntry &templateDatEntry = templateDat.getEntry(textCinematicDef.templateDatKey);
 	std::string cinematicText = templateDatEntry.values.front();
 	cinematicText.push_back('\n');
 
 	// Replace substitution tokens. The original game wraps text onto the next screen if the
 	// player's name is too long, which may push the text for every subsequent screen forward
 	// by a little bit.
-	const auto &player = game.getPlayer();
-	const std::string playerFirstName = player.getFirstName();
+	const auto &player = game.player;
+	const std::string &playerFirstName = player.firstName;
 	cinematicText = String::replace(cinematicText, "%pcf", playerFirstName);
 
 	// Re-distribute newlines.

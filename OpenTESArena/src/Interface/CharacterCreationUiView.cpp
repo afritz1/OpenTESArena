@@ -6,8 +6,8 @@
 #include "CharacterSheetUiView.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
@@ -47,10 +47,10 @@ Int2 ChooseClassCreationUiView::getSelectTextureCenter()
 	return ChooseClassCreationUiView::getGenerateTextureCenter() + Int2(0, 40);
 }
 
-TextBox::InitInfo ChooseClassCreationUiView::getTitleTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo ChooseClassCreationUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseClassCreationUiView::TitleCenter,
 		ChooseClassCreationUiView::TitleFontName,
@@ -61,10 +61,10 @@ TextBox::InitInfo ChooseClassCreationUiView::getTitleTextBoxInitInfo(const std::
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseClassCreationUiView::getGenerateTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo ChooseClassCreationUiView::getGenerateTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseClassCreationUiView::GenerateTextCenterPoint,
 		ChooseClassCreationUiView::GenerateTextFontName,
@@ -73,10 +73,10 @@ TextBox::InitInfo ChooseClassCreationUiView::getGenerateTextBoxInitInfo(const st
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseClassCreationUiView::getSelectTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo ChooseClassCreationUiView::getSelectTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseClassCreationUiView::SelectTextCenterPoint,
 		ChooseClassCreationUiView::SelectTextFontName,
@@ -139,7 +139,7 @@ Rect ChooseClassUiView::getDownButtonRect(Game &game)
 		chooseClassListUI.buttonDown.h);
 }
 
-ListBox::Properties ChooseClassUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
+ListBoxProperties ChooseClassUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::A;
 	int fontDefIndex;
@@ -162,12 +162,11 @@ ListBox::Properties ChooseClassUiView::makeListBoxProperties(const FontLibrary &
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	const Color itemColor(85, 44, 20);
 	constexpr double scrollScale = 1.0;
-	return ListBox::Properties(fontDefIndex, &fontLibrary, textureGenInfo, fontDef.getCharacterHeight(),
-		itemColor, scrollScale);
+	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
 }
 
 TextureAsset ChooseClassUiView::getListBoxTextureAsset()
@@ -175,10 +174,10 @@ TextureAsset ChooseClassUiView::getListBoxTextureAsset()
 	return TextureAsset(std::string(ArenaTextureName::PopUp2));
 }
 
-TextBox::InitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		ChooseClassUiView::TitleX,
 		ChooseClassUiView::TitleY,
@@ -188,7 +187,7 @@ TextBox::InitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_v
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	std::string dummyText;
 	for (int i = 0; i < 10; i++)
@@ -201,14 +200,14 @@ TextBox::InitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const Fo
 		dummyText += std::string(52, TextRenderUtils::LARGEST_CHAR);
 	}
 
-	TextRenderUtils::TextShadowInfo shadowInfo;
-	shadowInfo.init(1, 0, Color::Black);
+	TextRenderShadowInfo shadowInfo;
+	shadowInfo.init(1, 0, Colors::Black);
 
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		dummyText,
 		Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT - 32),
 		ArenaFontName::D,
-		Color::White,
+		Colors::White,
 		TextAlignment::TopCenter,
 		shadowInfo,
 		0,
@@ -244,10 +243,10 @@ Int2 ChooseGenderUiView::getFemaleTextureCenter()
 	return ChooseGenderUiView::getMaleTextureCenter() + Int2(0, 40);
 }
 
-TextBox::InitInfo ChooseGenderUiView::getTitleTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo ChooseGenderUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseGenderUiView::TitleCenterPoint,
 		ChooseGenderUiView::TitleFontName,
@@ -256,10 +255,10 @@ TextBox::InitInfo ChooseGenderUiView::getTitleTextBoxInitInfo(const std::string_
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseGenderUiView::getMaleTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo ChooseGenderUiView::getMaleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseGenderUiView::MaleTextBoxCenter,
 		ChooseGenderUiView::MaleFontName,
@@ -268,10 +267,10 @@ TextBox::InitInfo ChooseGenderUiView::getMaleTextBoxInitInfo(const std::string_v
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseGenderUiView::getFemaleTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo ChooseGenderUiView::getFemaleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseGenderUiView::FemaleTextBoxCenter,
 		ChooseGenderUiView::FemaleFontName,
@@ -301,10 +300,10 @@ Int2 ChooseNameUiView::getTitleTextureCenter()
 	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
 }
 
-TextBox::InitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_view &text,
+TextBoxInitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_view text,
 	const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		text,
 		ChooseNameUiView::TitleTextBoxX,
 		ChooseNameUiView::TitleTextBoxY,
@@ -314,11 +313,11 @@ TextBox::InitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_vi
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseNameUiView::getEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo ChooseNameUiView::getEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(CharacterCreationState::MAX_NAME_LENGTH, TextRenderUtils::LARGEST_CHAR);
 
-	return TextBox::InitInfo::makeWithXY(
+	return TextBoxInitInfo::makeWithXY(
 		dummyText,
 		ChooseNameUiView::EntryTextBoxX,
 		ChooseNameUiView::EntryTextBoxY,
@@ -364,7 +363,7 @@ int ChooseRaceUiView::getNoExitTextureY(int textureHeight)
 	return ArenaRenderUtils::SCREEN_HEIGHT - textureHeight;
 }
 
-Rect ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(const std::string_view &text, const FontLibrary &fontLibrary)
+Rect ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmTitleFontName;
 	int fontDefIndex;
@@ -374,7 +373,7 @@ Rect ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(const std::string_view
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
 		text, fontDef, std::nullopt, ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
 	return Rect(
 		ChooseRaceUiView::ProvinceConfirmTitleCenterPoint,
@@ -382,9 +381,9 @@ Rect ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(const std::string_view
 		textureGenInfo.height);
 }
 
-MessageBoxSubPanel::BackgroundProperties ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties()
+MessageBoxBackgroundProperties ChooseRaceUiView::getProvinceConfirmMessageBoxBackgroundProperties()
 {
-	return MessageBoxSubPanel::BackgroundProperties(
+	return MessageBoxBackgroundProperties(
 		ChooseRaceUiView::ProvinceConfirmTitleTexturePatternType,
 		22,
 		0,
@@ -393,8 +392,7 @@ MessageBoxSubPanel::BackgroundProperties ChooseRaceUiView::getProvinceConfirmMes
 		40);
 }
 
-MessageBoxSubPanel::TitleProperties ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(
-	const std::string_view &text, const FontLibrary &fontLibrary)
+MessageBoxTitleProperties ChooseRaceUiView::getProvinceConfirmMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmTitleFontName;
 	int fontDefIndex;
@@ -404,17 +402,16 @@ MessageBoxSubPanel::TitleProperties ChooseRaceUiView::getProvinceConfirmMessageB
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(
 		text, fontDef, std::nullopt, ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
-	return MessageBoxSubPanel::TitleProperties(
+	return MessageBoxTitleProperties(
 		fontName,
 		textureGenInfo,
 		ChooseRaceUiView::ProvinceConfirmTitleTextColor,
 		ChooseRaceUiView::ProvinceConfirmTitleLineSpacing);
 }
 
-MessageBoxSubPanel::ItemsProperties ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(
-	const FontLibrary &fontLibrary)
+MessageBoxItemsProperties ChooseRaceUiView::getProvinceConfirmMessageBoxItemsProperties(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(5, TextRenderUtils::LARGEST_CHAR);
 	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmItemFontName;
@@ -425,10 +422,10 @@ MessageBoxSubPanel::ItemsProperties ChooseRaceUiView::getProvinceConfirmMessageB
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	constexpr int itemCount = 2;
-	return MessageBoxSubPanel::ItemsProperties(
+	return MessageBoxItemsProperties(
 		itemCount,
 		fontName,
 		textureGenInfo,
@@ -479,9 +476,9 @@ Rect ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(int textWidth, int 
 		std::max(textHeight + 8, 40));
 }
 
-TextBox::InitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::string_view &text, Game &game)
+TextBoxInitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::string_view text, Game &game)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::InitialPopUpTextCenterPoint,
 		ChooseRaceUiView::InitialPopUpFontName,
@@ -492,10 +489,10 @@ TextBox::InitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::st
 		FontLibrary::getInstance());
 }
 
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
-	const std::string_view &text, const FontLibrary &fontLibrary)
+TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
+	const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFirstTextFontName,
@@ -506,10 +503,10 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedSecondTextBoxInitInfo(
-	const std::string_view &text, const FontLibrary &fontLibrary)
+TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedSecondTextBoxInitInfo(
+	const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedSecondTextFontName,
@@ -520,10 +517,10 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedSecondTextBoxInitInfo(
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedThirdTextBoxInitInfo(
-	const std::string_view &text, const FontLibrary &fontLibrary)
+TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedThirdTextBoxInitInfo(
+	const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedThirdTextFontName,
@@ -534,10 +531,10 @@ TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedThirdTextBoxInitInfo(
 		fontLibrary);
 }
 
-TextBox::InitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
-	const std::string_view &text, const FontLibrary &fontLibrary)
+TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
+	const std::string_view text, const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextCenterPoint,
 		ChooseRaceUiView::ProvinceConfirmedFourthTextFontName,
@@ -589,17 +586,7 @@ UiTextureID ChooseRaceUiView::allocInitialPopUpTexture(TextureManager &textureMa
 	return textureID;
 }
 
-int ChooseAttributesUiView::getInitialTextureWidth()
-{
-	return 183;
-}
-
-int ChooseAttributesUiView::getInitialTextureHeight()
-{
-	return 42;
-}
-
-Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_view &text, const FontLibrary &fontLibrary)
+Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseAttributesUiView::MessageBoxTitleFontName;
 	int fontDefIndex;
@@ -609,16 +596,16 @@ Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_vie
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
 	return Rect(
 		ChooseAttributesUiView::MessageBoxTitleCenterPoint,
 		textureGenInfo.width,
 		textureGenInfo.height);
 }
 
-MessageBoxSubPanel::BackgroundProperties ChooseAttributesUiView::getMessageBoxBackgroundProperties()
+MessageBoxBackgroundProperties ChooseAttributesUiView::getMessageBoxBackgroundProperties()
 {
-	return MessageBoxSubPanel::BackgroundProperties(
+	return MessageBoxBackgroundProperties(
 		ChooseAttributesUiView::MessageBoxPatternType,
 		12,
 		0,
@@ -627,8 +614,7 @@ MessageBoxSubPanel::BackgroundProperties ChooseAttributesUiView::getMessageBoxBa
 		24);
 }
 
-MessageBoxSubPanel::TitleProperties ChooseAttributesUiView::getMessageBoxTitleProperties(const std::string_view &text,
-	const FontLibrary &fontLibrary)
+MessageBoxTitleProperties ChooseAttributesUiView::getMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseAttributesUiView::MessageBoxTitleFontName;
 	int fontDefIndex;
@@ -638,11 +624,11 @@ MessageBoxSubPanel::TitleProperties ChooseAttributesUiView::getMessageBoxTitlePr
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
-	return MessageBoxSubPanel::TitleProperties(fontName, textureGenInfo, ChooseAttributesUiView::MessageBoxTitleColor);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef);
+	return MessageBoxTitleProperties(fontName, textureGenInfo, ChooseAttributesUiView::MessageBoxTitleColor);
 }
 
-MessageBoxSubPanel::ItemsProperties ChooseAttributesUiView::getMessageBoxItemsProperties(const FontLibrary &fontLibrary)
+MessageBoxItemsProperties ChooseAttributesUiView::getMessageBoxItemsProperties(const FontLibrary &fontLibrary)
 {
 	const std::string dummyText(10, TextRenderUtils::LARGEST_CHAR);
 	const std::string &fontName = ChooseAttributesUiView::MessageBoxItemFontName;
@@ -653,14 +639,24 @@ MessageBoxSubPanel::ItemsProperties ChooseAttributesUiView::getMessageBoxItemsPr
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderUtils::TextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
 	constexpr int itemCount = 2;
-	return MessageBoxSubPanel::ItemsProperties(
+	return MessageBoxItemsProperties(
 		itemCount,
 		fontName,
 		textureGenInfo,
 		ChooseAttributesUiView::MessageBoxItemTextColor);
+}
+
+int ChooseAttributesUiView::getDistributePointsTextBoxTextureWidth(int textWidth)
+{
+	return textWidth + 12;
+}
+
+int ChooseAttributesUiView::getDistributePointsTextBoxTextureHeight(int textHeight)
+{
+	return textHeight + 12;
 }
 
 int ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(int textWidth)
@@ -677,7 +673,7 @@ Int2 ChooseAttributesUiView::getBodyOffset(Game &game)
 {
 	const TextureAsset textureAsset = ChooseAttributesUiView::getBodyTextureAsset(game);
 
-	TextureManager &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
@@ -691,13 +687,13 @@ Int2 ChooseAttributesUiView::getBodyOffset(Game &game)
 Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
-	const int raceID = charCreationState.getRaceIndex();
+	const bool isMale = charCreationState.male;
+	const int raceID = charCreationState.raceIndex;
 
 	constexpr bool trimmed = false;
 	const std::string &headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(headsFilename.c_str());
 	if (!metadataID.has_value())
 	{
@@ -705,19 +701,19 @@ Int2 ChooseAttributesUiView::getHeadOffset(Game &game)
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-	const int headOffsetIndex = charCreationState.getPortraitIndex();
+	const int headOffsetIndex = charCreationState.portraitIndex;
 	return textureFileMetadata.getOffset(headOffsetIndex);
 }
 
 Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
+	const bool isMale = charCreationState.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.getClassDefID();
+	const int charClassDefID = charCreationState.classDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	const bool isMagic = charClassDef.canCastMagic();
+	const bool isMagic = charClassDef.castsMagic;
 
 	return ArenaPortraitUtils::getShirtOffset(isMale, isMagic);
 }
@@ -725,15 +721,15 @@ Int2 ChooseAttributesUiView::getShirtOffset(Game &game)
 Int2 ChooseAttributesUiView::getPantsOffset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
+	const bool isMale = charCreationState.male;
 	return ArenaPortraitUtils::getPantsOffset(isMale);
 }
 
 TextureAsset ChooseAttributesUiView::getBodyTextureAsset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
-	const int raceID = charCreationState.getRaceIndex();
+	const bool isMale = charCreationState.male;
+	const int raceID = charCreationState.raceIndex;
 
 	std::string bodyFilename = ArenaPortraitUtils::getBody(isMale, raceID);
 	return TextureAsset(std::move(bodyFilename));
@@ -742,25 +738,25 @@ TextureAsset ChooseAttributesUiView::getBodyTextureAsset(Game &game)
 Buffer<TextureAsset> ChooseAttributesUiView::getHeadTextureAssets(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
-	const int raceID = charCreationState.getRaceIndex();
+	const bool isMale = charCreationState.male;
+	const int raceID = charCreationState.raceIndex;
 
 	constexpr bool trimmed = false;
 	std::string headsFilename = ArenaPortraitUtils::getHeads(isMale, raceID, trimmed);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	return TextureUtils::makeTextureAssets(headsFilename, textureManager);
 }
 
 TextureAsset ChooseAttributesUiView::getShirtTextureAsset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
+	const bool isMale = charCreationState.male;
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.getClassDefID();
+	const int charClassDefID = charCreationState.classDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	const bool isMagic = charClassDef.canCastMagic();
+	const bool isMagic = charClassDef.castsMagic;
 
 	std::string shirtFilename = ArenaPortraitUtils::getShirt(isMale, isMagic);
 	return TextureAsset(std::move(shirtFilename));
@@ -769,7 +765,7 @@ TextureAsset ChooseAttributesUiView::getShirtTextureAsset(Game &game)
 TextureAsset ChooseAttributesUiView::getPantsTextureAsset(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const bool isMale = charCreationState.isMale();
+	const bool isMale = charCreationState.male;
 
 	std::string pantsFilename = ArenaPortraitUtils::getPants(isMale);
 	return TextureAsset(std::move(pantsFilename));
@@ -777,8 +773,8 @@ TextureAsset ChooseAttributesUiView::getPantsTextureAsset(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getBodyTextureAsset(game);
@@ -794,8 +790,8 @@ UiTextureID ChooseAttributesUiView::allocBodyTexture(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getShirtTextureAsset(game);
@@ -811,8 +807,8 @@ UiTextureID ChooseAttributesUiView::allocShirtTexture(Game &game)
 
 UiTextureID ChooseAttributesUiView::allocPantsTexture(Game &game)
 {
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 	const TextureAsset textureAsset = ChooseAttributesUiView::getPantsTextureAsset(game);
@@ -843,4 +839,14 @@ UiTextureID ChooseAttributesUiView::allocHeadTexture(const TextureAsset &texture
 UiTextureID ChooseAttributesUiView::allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	return CharacterSheetUiView::allocStatsBgTexture(textureManager, renderer);
+}
+
+UiTextureID ChooseAttributesUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocUpDownButtonTexture(textureManager, renderer);
+}
+
+UiTextureID ChooseAttributesUiView::allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	return CharacterSheetUiView::allocBonusPointsTexture(textureManager, renderer);
 }

@@ -12,23 +12,7 @@ OptionsUiModel::Option::Option(const std::string &name, std::string &&tooltip, O
 OptionsUiModel::Option::Option(const std::string &name, OptionType type)
 	: Option(name, std::string(), type) { }
 
-const std::string &OptionsUiModel::Option::getName() const
-{
-	return this->name;
-}
-
-const std::string &OptionsUiModel::Option::getTooltip() const
-{
-	return this->tooltip;
-}
-
-OptionsUiModel::OptionType OptionsUiModel::Option::getType() const
-{
-	return this->type;
-}
-
-OptionsUiModel::BoolOption::BoolOption(const std::string &name, std::string &&tooltip,
-	bool value, Callback &&callback)
+OptionsUiModel::BoolOption::BoolOption(const std::string &name, std::string &&tooltip, bool value, Callback &&callback)
 	: Option(name, std::move(tooltip), OptionType::Bool), callback(std::move(callback))
 {
 	this->value = value;
@@ -58,10 +42,9 @@ void OptionsUiModel::BoolOption::toggle()
 	this->callback(this->value);
 }
 
-OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min,
-	int max, std::vector<std::string> &&displayOverrides, Callback &&callback)
-	: Option(name, std::move(tooltip), OptionType::Int), displayOverrides(std::move(displayOverrides)),
-	callback(std::move(callback))
+OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max,
+	std::vector<std::string> &&displayOverrides, Callback &&callback)
+	: Option(name, std::move(tooltip), OptionType::Int), displayOverrides(std::move(displayOverrides)), callback(std::move(callback))
 {
 	this->value = value;
 	this->delta = delta;
@@ -73,12 +56,10 @@ OptionsUiModel::IntOption::IntOption(const std::string &name, int value, int del
 	std::vector<std::string> &&displayOverrides, Callback &&callback)
 	: IntOption(name, std::string(), value, delta, min, max, std::move(displayOverrides), std::move(callback)) { }
 
-OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta,
-	int min, int max, Callback &&callback)
+OptionsUiModel::IntOption::IntOption(const std::string &name, std::string &&tooltip, int value, int delta, int min, int max, Callback &&callback)
 	: IntOption(name, std::move(tooltip), value, delta, min, max, std::vector<std::string>(), std::move(callback)) { }
 
-OptionsUiModel::IntOption::IntOption(const std::string &name, int value, int delta, int min, int max,
-	Callback &&callback)
+OptionsUiModel::IntOption::IntOption(const std::string &name, int value, int delta, int min, int max, Callback &&callback)
 	: IntOption(name, std::string(), value, delta, min, max, std::move(callback)) { }
 
 int OptionsUiModel::IntOption::getNext() const
@@ -93,8 +74,7 @@ int OptionsUiModel::IntOption::getPrev() const
 
 std::string OptionsUiModel::IntOption::getDisplayedValue() const
 {
-	return (this->displayOverrides.size() > 0) ?
-		this->displayOverrides.at(this->value) : std::to_string(this->value);
+	return (this->displayOverrides.size() > 0) ? this->displayOverrides.at(this->value) : std::to_string(this->value);
 }
 
 void OptionsUiModel::IntOption::tryIncrement()
@@ -113,8 +93,8 @@ void OptionsUiModel::IntOption::set(int value)
 	this->callback(this->value);
 }
 
-OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, std::string &&tooltip,
-	double value, double delta, double min, double max, int precision, Callback &&callback)
+OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, std::string &&tooltip, double value, double delta,
+	double min, double max, int precision, Callback &&callback)
 	: Option(name, std::move(tooltip), OptionType::Double), callback(std::move(callback))
 {
 	this->value = value;
@@ -124,8 +104,8 @@ OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, std::string 
 	this->precision = precision;
 }
 
-OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, double value, double delta,
-	double min, double max, int precision, Callback &&callback)
+OptionsUiModel::DoubleOption::DoubleOption(const std::string &name, double value, double delta, double min, double max,
+	int precision, Callback &&callback)
 	: DoubleOption(name, std::string(), value, delta, min, max, precision, std::move(callback)) { }
 
 double OptionsUiModel::DoubleOption::getNext() const
@@ -159,13 +139,10 @@ void OptionsUiModel::DoubleOption::set(double value)
 	this->callback(this->value);
 }
 
-OptionsUiModel::StringOption::StringOption(const std::string &name, std::string &&tooltip,
-	std::string &&value, Callback &&callback)
-	: Option(name, std::move(tooltip), OptionType::String), value(std::move(value)),
-	callback(std::move(callback)) { }
+OptionsUiModel::StringOption::StringOption(const std::string &name, std::string &&tooltip, std::string &&value, Callback &&callback)
+	: Option(name, std::move(tooltip), OptionType::String), value(std::move(value)), callback(std::move(callback)) { }
 
-OptionsUiModel::StringOption::StringOption(const std::string &name, std::string &&value,
-	Callback &&callback)
+OptionsUiModel::StringOption::StringOption(const std::string &name, std::string &&value, Callback &&callback)
 	: StringOption(name, std::string(), std::move(value), std::move(callback)) { }
 
 std::string OptionsUiModel::StringOption::getDisplayedValue() const
@@ -191,7 +168,7 @@ void OptionsUiModel::StringOption::set(std::string &&value)
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeWindowModeOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::WINDOW_MODE_NAME,
 		"Determines the game window mode for the display device.\n\nWindow\nBorderless Fullscreen\nExclusive Fullscreen",
@@ -202,22 +179,22 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeWindowModeOption(
 		std::vector<std::string> { "Window", "Borderless Fullscreen", "Exclusive Fullscreen" },
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
-		auto &renderer = game.getRenderer();
+		auto &options = game.options;
+		auto &renderer = game.renderer;
 		options.setGraphics_WindowMode(value);
 
-		const Renderer::WindowMode mode = [value]()
+		const RenderWindowMode mode = [value]()
 		{
 			switch (value)
 			{
 			case 0:
-				return Renderer::WindowMode::Window;
+				return RenderWindowMode::Window;
 			case 1:
-				return Renderer::WindowMode::BorderlessFullscreen;
+				return RenderWindowMode::BorderlessFullscreen;
 			case 2:
-				return Renderer::WindowMode::ExclusiveFullscreen;
+				return RenderWindowMode::ExclusiveFullscreen;
 			default:
-				DebugUnhandledReturnMsg(Renderer::WindowMode, std::to_string(value));
+				DebugUnhandledReturnMsg(RenderWindowMode, std::to_string(value));
 			}
 		}();
 
@@ -227,7 +204,7 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeWindowModeOption(
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeFpsLimitOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::FPS_LIMIT_NAME,
 		options.getGraphics_TargetFPS(),
@@ -236,14 +213,14 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeFpsLimitOption(Ga
 		std::numeric_limits<int>::max(),
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setGraphics_TargetFPS(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeResolutionScaleOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::RESOLUTION_SCALE_NAME,
 		"Percent of the window resolution to use for game world rendering.\nThis has a significant impact on performance.",
@@ -254,11 +231,11 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeResolutionScal
 		2,
 		[&game](double value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setGraphics_ResolutionScale(value);
 
 		// Resize the game world rendering.
-		auto &renderer = game.getRenderer();
+		auto &renderer = game.renderer;
 		const Int2 windowDimensions = renderer.getWindowDimensions();
 		const bool fullGameWindow = options.getGraphics_ModernInterface();
 		renderer.resize(windowDimensions.x, windowDimensions.y, value, fullGameWindow);
@@ -267,7 +244,7 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeResolutionScal
 
 std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeVerticalFovOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::VERTICAL_FOV_NAME,
 		"Recommended 60.0 for classic mode.",
@@ -278,14 +255,14 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeVerticalFovOpt
 		1,
 		[&game](double value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setGraphics_VerticalFOV(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeLetterboxModeOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::LETTERBOX_MODE_NAME,
 		"Determines the aspect ratio of the game UI. The weapon animation\nin modern mode is unaffected by this.",
@@ -296,8 +273,8 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeLetterboxModeOpti
 		std::vector<std::string> { "16:10", "4:3", "Stretch" },
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
-		auto &renderer = game.getRenderer();
+		auto &options = game.options;
+		auto &renderer = game.renderer;
 		options.setGraphics_LetterboxMode(value);
 		renderer.setLetterboxMode(value);
 	});
@@ -305,7 +282,7 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeLetterboxModeOpti
 
 std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCursorScaleOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::CURSOR_SCALE_NAME,
 		options.getGraphics_CursorScale(),
@@ -315,21 +292,21 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCursorScaleOpt
 		1,
 		[&game](double value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setGraphics_CursorScale(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeModernInterfaceOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::MODERN_INTERFACE_NAME,
 		"Modern mode uses a minimal interface with free-look.",
 		options.getGraphics_ModernInterface(),
 		[&game](bool value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setGraphics_ModernInterface(value);
 
 		// If classic mode, make sure the player is looking straight forward.
@@ -337,12 +314,12 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeModernInterfaceO
 		const bool isModernMode = value;
 		if (!isModernMode)
 		{
-			auto &player = game.getPlayer();
+			auto &player = game.player;
 			player.setDirectionToHorizon();
 		}
 
 		// Resize the game world rendering.
-		auto &renderer = game.getRenderer();
+		auto &renderer = game.renderer;
 		const Int2 windowDims = renderer.getWindowDimensions();
 		const bool fullGameWindow = isModernMode;
 		renderer.resize(windowDims.x, windowDims.y, options.getGraphics_ResolutionScale(), fullGameWindow);
@@ -351,21 +328,21 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeModernInterfaceO
 
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeTallPixelCorrectionOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::TALL_PIXEL_CORRECTION_NAME,
 		"Adjusts the view projection to match the scaling of the original\ngame on a 4:3 monitor.",
 		options.getGraphics_TallPixelCorrection(),
 		[&game](bool value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setGraphics_TallPixelCorrection(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsModeOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::RENDER_THREADS_MODE_NAME,
 		"Determines the number of CPU threads to use for game world\nrendering. This has a significant impact on performance. Max is not\nrecommended as it can cause a less responsive operating system\nin some cases.\n\nVery Low: one, Low: 1/4, Medium: 1/2, High: 3/4,\nVery High: all but one, Max: all",
@@ -376,10 +353,26 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeRenderThreadsMode
 		std::vector<std::string> { "Very Low", "Low", "Medium", "High", "Very High", "Max" },
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
-		auto &renderer = game.getRenderer();
+		auto &options = game.options;
 		options.setGraphics_RenderThreadsMode(value);
-		renderer.setRenderThreadsMode(value);
+	});
+}
+
+std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeDitheringOption(Game &game)
+{
+	const auto &options = game.options;
+	return std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::DITHERING_NAME,
+		"Selects the dither pattern for gradients. This makes a bigger\ndifference at low resolutions.\n\nNone\nClassic\nModern",
+		options.getGraphics_DitheringMode(),
+		1,
+		Options::MIN_DITHERING_MODE,
+		Options::MAX_DITHERING_MODE,
+		std::vector<std::string> { "None", "Classic", "Modern" },
+		[&game](int value)
+	{
+		auto &options = game.options;
+		options.setGraphics_DitheringMode(value);
 	});
 }
 
@@ -395,12 +388,13 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 	group.emplace_back(OptionsUiModel::makeModernInterfaceOption(game));
 	group.emplace_back(OptionsUiModel::makeTallPixelCorrectionOption(game));
 	group.emplace_back(OptionsUiModel::makeRenderThreadsModeOption(game));
+	group.emplace_back(OptionsUiModel::makeDitheringOption(game));
 	return group;
 }
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeSoundChannelsOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::SOUND_CHANNELS_NAME,
 		"Determines max number of concurrent sounds (including music).\nChanges are applied on next program start.",
@@ -410,29 +404,29 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeSoundChannelsOpti
 		std::numeric_limits<int>::max(),
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setAudio_SoundChannels(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeSoundResamplingOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::SOUND_RESAMPLING_NAME,
 		"Affects quality of sounds. Results may vary depending on OpenAL\nversion.",
 		options.getAudio_SoundResampling(),
 		1,
-		0,
-		Options::RESAMPLING_OPTION_COUNT - 1,
+		Options::MIN_RESAMPLING_MODE,
+		Options::MAX_RESAMPLING_MODE,
 		std::vector<std::string> { "Default", "Fastest", "Medium", "Best" },
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setAudio_SoundResampling(value);
 
 		// If the sound resampling extension is supported, update the audio manager sources.
-		auto &audioManager = game.getAudioManager();
+		auto &audioManager = game.audioManager;
 		if (audioManager.hasResamplerExtension())
 		{
 			audioManager.setResamplingOption(value);
@@ -442,17 +436,17 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeSoundResamplingOp
 
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeIs3dAudioOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::IS_3D_AUDIO_NAME,
 		"Determines whether sounds in the game world have a 3D position.\nSet to false for classic behavior.",
 		options.getAudio_Is3DAudio(),
 		[&game](bool value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setAudio_Is3DAudio(value);
 
-		auto &audioManager = game.getAudioManager();
+		auto &audioManager = game.audioManager;
 		audioManager.set3D(value);
 	});
 }
@@ -468,7 +462,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeAudioOptionGroup(Game &game)
 
 std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeHorizontalSensitivityOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::HORIZONTAL_SENSITIVITY_NAME,
 		options.getInput_HorizontalSensitivity(),
@@ -478,14 +472,14 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeHorizontalSens
 		1,
 		[&game](double value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setInput_HorizontalSensitivity(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeVerticalSensitivityOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::VERTICAL_SENSITIVITY_NAME,
 		"Only affects camera look in modern mode.",
@@ -496,14 +490,27 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeVerticalSensit
 		1,
 		[&game](double value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setInput_VerticalSensitivity(value);
+	});
+}
+
+std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeInvertVerticalAxisOption(Game &game)
+{
+	const auto &options = game.options;
+	return std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::INVERT_VERTICAL_AXIS_NAME,
+		options.getInput_InvertVerticalAxis(),
+		[&game](bool value)
+	{
+		auto &options = game.options;
+		options.setInput_InvertVerticalAxis(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCameraPitchLimitOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::CAMERA_PITCH_LIMIT_NAME,
 		"Determines how far above or below the horizon the camera can\nlook in modern mode.",
@@ -514,11 +521,11 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeCameraPitchLim
 		1,
 		[&game](double value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setInput_CameraPitchLimit(value);
 
 		// Reset player view to forward.
-		auto &player = game.getPlayer();
+		auto &player = game.player;
 		player.setDirectionToHorizon();
 	});
 }
@@ -528,40 +535,41 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 	OptionGroup group;
 	group.emplace_back(OptionsUiModel::makeHorizontalSensitivityOption(game));
 	group.emplace_back(OptionsUiModel::makeVerticalSensitivityOption(game));
+	group.emplace_back(OptionsUiModel::makeInvertVerticalAxisOption(game));
 	group.emplace_back(OptionsUiModel::makeCameraPitchLimitOption(game));
 	return group;
 }
 
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeShowCompassOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::SHOW_COMPASS_NAME,
 		options.getMisc_ShowCompass(),
 		[&game](bool value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setMisc_ShowCompass(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeShowIntroOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::SHOW_INTRO_NAME,
 		"Shows startup logo and related screens.",
 		options.getMisc_ShowIntro(),
 		[&game](bool value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setMisc_ShowIntro(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeChunkDistanceOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::CHUNK_DISTANCE_NAME,
 		"Affects how many chunks away from the player chunks are\nsimulated and rendered.",
@@ -571,14 +579,14 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeChunkDistanceOpti
 		std::numeric_limits<int>::max(),
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setMisc_ChunkDistance(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeStarDensityOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::STAR_DENSITY_NAME,
 		"Determines number of stars in the sky. Changes take effect the next\ntime stars are generated.",
@@ -589,21 +597,21 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeStarDensityOption
 		std::vector<std::string> { "Classic", "Moderate", "High" },
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setMisc_StarDensity(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makePlayerHasLightOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::PLAYER_HAS_LIGHT_NAME,
 		"Whether the player has a light attached like in the original game.",
 		options.getMisc_PlayerHasLight(),
 		[&game](bool value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setMisc_PlayerHasLight(value);
 	});
 }
@@ -621,21 +629,21 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 
 std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeGhostModeOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::BoolOption>(
 		OptionsUiModel::GHOST_MODE_NAME,
 		"Disables player collision and allows flying.",
 		options.getMisc_GhostMode(),
 		[&game](bool value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setMisc_GhostMode(value);
 	});
 }
 
 std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeProfilerLevelOption(Game &game)
 {
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	return std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::PROFILER_LEVEL_NAME,
 		"Displays varying levels of profiler information in the game world.",
@@ -645,7 +653,7 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeProfilerLevelOpti
 		Options::MAX_PROFILER_LEVEL,
 		[&game](int value)
 	{
-		auto &options = game.getOptions();
+		auto &options = game.options;
 		options.setMisc_ProfilerLevel(value);
 	});
 }

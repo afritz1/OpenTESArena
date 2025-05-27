@@ -1,40 +1,40 @@
-#include <array>
+#include <cstdio>
 
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
+#include "../Game/Game.h"
+#include "../Items/ItemLibrary.h"
+#include "../Player/Player.h"
 
-void InventoryUiModel::ItemUiDefinition::init(std::string &&text, const Color &color)
+void InventoryUiModel::ItemUiDefinition::init(const std::string &text, const Color &color)
 {
-	this->text = std::move(text);
+	this->text = text;
 	this->color = color;
 }
 
 Buffer<InventoryUiModel::ItemUiDefinition> InventoryUiModel::getPlayerInventoryItems(Game &game)
 {
-	const std::array<std::pair<std::string, Color>, 10> elements =
+	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+	const Player &player = game.player;
+	const ItemInventory &playerInventory = player.inventory;
+	const int itemCount = playerInventory.getTotalSlotCount();
+	Buffer<ItemUiDefinition> buffer(itemCount);
+	for (int i = 0; i < itemCount; i++)
 	{
+		const ItemInstance &itemInst = playerInventory.getSlot(i);
+		if (!itemInst.isValid())
 		{
-			{ "Test slot 1", InventoryUiView::PlayerInventoryEquipmentColor },
-			{ "Test slot 2", InventoryUiView::PlayerInventoryEquipmentEquippedColor },
-			{ "Test slot 3", InventoryUiView::PlayerInventoryMagicItemColor },
-			{ "Test slot 4", InventoryUiView::PlayerInventoryMagicItemEquippedColor },
-			{ "Test slot 5", InventoryUiView::PlayerInventoryUnequipableColor },
-			{ "Test slot 6", InventoryUiView::PlayerInventoryUnequipableColor },
-			{ "Test slot 7", InventoryUiView::PlayerInventoryEquipmentColor },
-			{ "Test slot 8", InventoryUiView::PlayerInventoryEquipmentColor },
-			{ "Test slot 9", InventoryUiView::PlayerInventoryMagicItemColor },
-			{ "Test slot 10", InventoryUiView::PlayerInventoryMagicItemEquippedColor }
+			continue;
 		}
-	};
 
-	const int elementCount = static_cast<int>(elements.size());
-	Buffer<ItemUiDefinition> buffer(elementCount);
-	for (int i = 0; i < elementCount; i++)
-	{
-		const auto &pair = elements[i];
+		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
+
+		char itemDisplayName[64];
+		std::snprintf(std::begin(itemDisplayName), std::size(itemDisplayName), "%s (%.1fkg)", itemDef.getDisplayName().c_str(), itemDef.getWeight());
+		const Color &itemTextColor = InventoryUiView::getItemDisplayColor(itemInst);
 
 		ItemUiDefinition itemUiDef;
-		itemUiDef.init(std::string(pair.first), pair.second);
+		itemUiDef.init(itemDisplayName, itemTextColor);
 
 		buffer.set(i, std::move(itemUiDef));
 	}

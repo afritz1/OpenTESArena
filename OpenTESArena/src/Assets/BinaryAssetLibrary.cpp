@@ -6,7 +6,7 @@
 #include "components/utilities/Buffer.h"
 #include "components/vfs/manager.hpp"
 
-ArenaTypes::ClimateType BinaryAssetLibrary::WorldMapTerrain::toClimateType(uint8_t index)
+ArenaTypes::ClimateType WorldMapTerrain::toClimateType(uint8_t index)
 {
 	if ((index == WorldMapTerrain::TEMPERATE1) ||
 		(index == WorldMapTerrain::TEMPERATE2))
@@ -29,18 +29,18 @@ ArenaTypes::ClimateType BinaryAssetLibrary::WorldMapTerrain::toClimateType(uint8
 	}
 }
 
-uint8_t BinaryAssetLibrary::WorldMapTerrain::getNormalizedIndex(uint8_t index)
+uint8_t WorldMapTerrain::getNormalizedIndex(uint8_t index)
 {
 	return index - WorldMapTerrain::SEA;
 }
 
-uint8_t BinaryAssetLibrary::WorldMapTerrain::getAt(int x, int y) const
+uint8_t WorldMapTerrain::getAt(int x, int y) const
 {
 	const int index = DebugMakeIndex(this->indices, x + (y * WorldMapTerrain::WIDTH));
 	return this->indices[index];
 }
 
-uint8_t BinaryAssetLibrary::WorldMapTerrain::getFailSafeAt(int x, int y) const
+uint8_t WorldMapTerrain::getFailSafeAt(int x, int y) const
 {
 	// Lambda for obtaining a terrain pixel at some XY coordinate.
 	auto getTerrainAt = [this](int x, int y)
@@ -104,7 +104,7 @@ uint8_t BinaryAssetLibrary::WorldMapTerrain::getFailSafeAt(int x, int y) const
 	}
 }
 
-bool BinaryAssetLibrary::WorldMapTerrain::init(const char *filename)
+bool WorldMapTerrain::init(const char *filename)
 {
 	VFS::IStreamPtr stream = VFS::Manager::get().open(filename);
 	if (stream == nullptr)
@@ -123,8 +123,7 @@ bool BinaryAssetLibrary::initExecutableData(bool floppyVersion)
 {
 	if (!this->exeData.init(floppyVersion))
 	{
-		DebugLogError("Could not init .EXE data; is floppy version: " +
-			std::to_string(floppyVersion) + ".");
+		DebugLogError("Could not init .EXE data; is floppy version: " + std::to_string(floppyVersion) + ".");
 		return false;
 	}
 
@@ -148,26 +147,26 @@ bool BinaryAssetLibrary::initClasses(const ExeData &exeData)
 	auto &choices = this->classesDat.choices;
 
 	// The class IDs take up the first 18 bytes.
-	for (size_t i = 0; i < classes.size(); i++)
+	for (size_t i = 0; i < std::size(classes); i++)
 	{
 		const uint8_t value = *(srcPtr + i);
 
-		CharacterClassGeneration::ClassData &classData = classes[i];
-		classData.id = value & CharacterClassGeneration::ID_MASK;
-		classData.isSpellcaster = (value & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
-		classData.hasCriticalHit = (value & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
-		classData.isThief = (value & CharacterClassGeneration::THIEF_MASK) != 0;
+		CharacterClassGenerationClass &genClass = classes[i];
+		genClass.id = value & CharacterClassGeneration::ID_MASK;
+		genClass.isSpellcaster = (value & CharacterClassGeneration::SPELLCASTER_MASK) != 0;
+		genClass.hasCriticalHit = (value & CharacterClassGeneration::CRITICAL_HIT_MASK) != 0;
+		genClass.isThief = (value & CharacterClassGeneration::THIEF_MASK) != 0;
 	}
 
 	// After the class IDs are 66 groups of "A, B, C" choices. They account for all 
 	// the combinations of answers to character questions. When the user is done
 	// answering questions, their A/B/C counts map to some index in the Choices array.
-	for (size_t i = 0; i < choices.size(); i++)
+	for (size_t i = 0; i < std::size(choices); i++)
 	{
 		const int choiceSize = 3;
-		const size_t offset = classes.size() + (choiceSize * i);
+		const size_t offset = std::size(classes) + (choiceSize * i);
 
-		CharacterClassGeneration::ChoiceData &choice = choices[i];
+		CharacterClassGenerationChoice &choice = choices[i];
 		choice.a = *(srcPtr + offset);
 		choice.b = *(srcPtr + offset + 1);
 		choice.c = *(srcPtr + offset + 2);
@@ -221,7 +220,7 @@ bool BinaryAssetLibrary::initWorldMapMasks()
 	constexpr int startOffset = 0x87D5;
 
 	// Each province's mask rectangle is a set of bits packed together with others.
-	const std::array<Rect, 10> MaskRects =
+	constexpr Rect MaskRects[10] =
 	{
 		Rect(37, 32, 86, 57),
 		Rect(47, 53, 90, 62),
@@ -244,7 +243,7 @@ bool BinaryAssetLibrary::initWorldMapMasks()
 		const Rect &rect = MaskRects[i];
 
 		// The number of bytes in the mask rect.
-		const int byteCount = WorldMapMask::getAdjustedWidth(rect.getWidth()) * rect.getHeight();
+		const int byteCount = WorldMapMask::getAdjustedWidth(rect.width) * rect.height;
 
 		// Copy the segment of mask bytes to a new vector.
 		const uint8_t *maskStart = srcPtr + startOffset + offset;
@@ -305,12 +304,12 @@ const ArenaTypes::Spellsg &BinaryAssetLibrary::getStandardSpells() const
 	return this->standardSpells;
 }
 
-const BinaryAssetLibrary::WorldMapMasks &BinaryAssetLibrary::getWorldMapMasks() const
+const WorldMapMasks &BinaryAssetLibrary::getWorldMapMasks() const
 {
 	return this->worldMapMasks;
 }
 
-const BinaryAssetLibrary::WorldMapTerrain &BinaryAssetLibrary::getWorldMapTerrain() const
+const WorldMapTerrain &BinaryAssetLibrary::getWorldMapTerrain() const
 {
 	return this->worldMapTerrain;
 }

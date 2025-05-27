@@ -30,6 +30,9 @@ public:
 	// Includes 0 to (exclusiveMax - 1).
 	int next(int exclusiveMax);
 
+	// Randomly returns true or false.
+	bool nextBool();
+
 	// Includes [0.0, 1.0).
 	double nextReal();
 };

@@ -7,20 +7,23 @@
 #include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
-// Data block types. Arena's .VOC files only use 0, 1, 6, and 7.
-enum class BlockType : uint8_t
+namespace
 {
-	Terminator = 0x00,
-	SoundData = 0x01,
-	SoundDataContinuation = 0x02,
-	Silence = 0x03,
-	Marker = 0x04,
-	Text = 0x05,
-	RepeatStart = 0x06,
-	RepeatEnd = 0x07,
-	ExtraInfo = 0x08,
-	NewSoundData = 0x09
-};
+	// Data block types. Arena's .VOC files only use 0, 1, 6, and 7.
+	enum class BlockType : uint8_t
+	{
+		Terminator = 0x00,
+		SoundData = 0x01,
+		SoundDataContinuation = 0x02,
+		Silence = 0x03,
+		Marker = 0x04,
+		Text = 0x05,
+		RepeatStart = 0x06,
+		RepeatEnd = 0x07,
+		ExtraInfo = 0x08,
+		NewSoundData = 0x09
+	};
+}
 
 bool VOCFile::init(const char *filename)
 {
@@ -65,12 +68,10 @@ bool VOCFile::init(const char *filename)
 	int offset = headerSize;
 	while (offset < src.getCount())
 	{
-		const int blockHeaderSize = 4;
+		constexpr int blockHeaderSize = 4;
 
-		// One byte for the block type (0-9). Don't read any further if it's a 
-		// terminator block.
+		// One byte for the block type (0-9). Don't read any further if it's a terminator block.
 		const BlockType blockType = static_cast<BlockType>(*(srcPtr + offset));
-
 		if (blockType == BlockType::Terminator)
 		{
 			// End of file.
@@ -83,12 +84,6 @@ bool VOCFile::init(const char *filename)
 		// Pointer to the beginning of the block's data (after the common header).
 		const uint8_t *blockData = srcPtr + offset + blockHeaderSize;
 
-		// Regarding this #define: the repeating drums are working just fine now, but they
-		// can get a little annoying after a while, so only define this name when repeating
-		// drums are desired (like in later builds, so we don't get sick of it now).
-#define DRUMS_REPEAT
-
-		// Decide how to use the data block.
 		if (blockType == BlockType::SoundData)
 		{
 			// Read 8-bit unsigned PCM data.
@@ -98,10 +93,9 @@ bool VOCFile::init(const char *filename)
 			const uint8_t *audioEnd = blockData + blockSize;
 			const int sampleRate = 1000000 / (256 - frequencyDivisor);
 
-			// The codec must be 0 (8-bit unsigned PCM).
-			DebugAssert(pcmCodec == 0);
+			constexpr int unsigned8BitPcmCodec = 0;
+			DebugAssert(pcmCodec == unsigned8BitPcmCodec);
 
-			// Assign the sample rate if it hasn't been assigned yet.
 			if (this->sampleRate == 0)
 			{
 				this->sampleRate = sampleRate;
@@ -111,9 +105,7 @@ bool VOCFile::init(const char *filename)
 				// Any subsequent sample rates must match.
 				DebugAssert(this->sampleRate == sampleRate);
 			}
-			
-			// Append the PCM data to the target vector depending on whether it's in
-			// repeating mode or not.
+
 			if (repeating)
 			{
 				repeatData.insert(repeatData.end(), audioBegin, audioEnd);
@@ -125,7 +117,6 @@ bool VOCFile::init(const char *filename)
 		}
 		else if (blockType == BlockType::RepeatStart)
 		{
-#ifdef DRUMS_REPEAT
 			// Only used with DRUMS.VOC.
 			// The sound blocks following this block should be repeated some number of times.
 			repeatCount = Bytes::getLE16(blockData) + 1;
@@ -133,29 +124,24 @@ bool VOCFile::init(const char *filename)
 
 			// Don't handle the 0xFFFF special case (no .VOC repeats indefinitely in Arena).
 			DebugAssert(repeatCount != 0xFFFF);
-#endif
 		}
 		else if (blockType == BlockType::RepeatEnd)
 		{
-#ifdef DRUMS_REPEAT
 			// Only used with DRUMS.VOC.
 			// An empty block like the terminator, tells when to stop repeating data blocks.
 			// Take the repeat vector and append it onto the audio vector "repeatCount" times.
 			for (int i = 0; i < repeatCount; i++)
 			{
-				this->audioData.insert(this->audioData.end(),
-					repeatData.begin(), repeatData.end());
+				this->audioData.insert(this->audioData.end(), repeatData.begin(), repeatData.end());
 			}
 
 			repeatData.clear();
 			repeatCount = 0;
 			repeating = false;
-#endif
 		}
 		else
 		{
-			DebugCrash("Block type \"" + 
-				std::to_string(static_cast<int>(blockType)) + "\" not implemented.");
+			DebugCrashFormat("Block type \"%d\" not implemented.", blockType);
 		}
 
 		offset += blockHeaderSize + blockSize;
@@ -167,6 +153,11 @@ bool VOCFile::init(const char *filename)
 int VOCFile::getSampleRate() const
 {
 	return this->sampleRate;
+}
+
+BufferView<uint8_t> VOCFile::getAudioData()
+{
+	return this->audioData;
 }
 
 BufferView<const uint8_t> VOCFile::getAudioData() const

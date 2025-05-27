@@ -30,12 +30,6 @@ VoxelInt3 VoxelUtils::pointToVoxel(const VoxelDouble3 &point, double ceilingScal
 		static_cast<WEInt>(std::floor(point.z)));
 }
 
-VoxelInt3 VoxelUtils::pointToVoxel(const VoxelDouble3 &point)
-{
-	constexpr double ceilingScale = 1.0;
-	return VoxelUtils::pointToVoxel(point, ceilingScale);
-}
-
 VoxelInt2 VoxelUtils::pointToVoxel(const VoxelDouble2 &point)
 {
 	return VoxelInt2(
@@ -92,16 +86,30 @@ WorldInt2 VoxelUtils::chunkVoxelToWorldVoxel(const ChunkInt2 &chunk, const Voxel
 	return (chunk * ChunkUtils::CHUNK_DIM) + voxel;
 }
 
+ChunkInt2 VoxelUtils::worldPointToChunk(const WorldDouble3 &point)
+{
+	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
+	return ChunkInt2(
+		((point.x >= 0.0) ? static_cast<SNInt>(point.x) : (static_cast<SNInt>(std::floor(point.x)) - (chunkDim - 1))) / chunkDim,
+		((point.z >= 0.0) ? static_cast<WEInt>(point.z) : (static_cast<WEInt>(std::floor(point.z)) - (chunkDim - 1))) / chunkDim);
+}
+
+ChunkInt2 VoxelUtils::worldPointToChunk(const WorldDouble2 &point)
+{
+	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
+	return ChunkInt2(
+		((point.x >= 0.0) ? static_cast<SNInt>(point.x) : (static_cast<SNInt>(std::floor(point.x)) - (chunkDim - 1))) / chunkDim,
+		((point.y >= 0.0) ? static_cast<WEInt>(point.y) : (static_cast<WEInt>(std::floor(point.y)) - (chunkDim - 1))) / chunkDim);
+}
+
 CoordDouble3 VoxelUtils::worldPointToCoord(const WorldDouble3 &point)
 {
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
 	constexpr double chunkDimReal = static_cast<double>(chunkDim);
-	const ChunkInt2 chunk(
-		((point.x >= 0.0) ? static_cast<SNInt>(point.x) : (static_cast<SNInt>(std::floor(point.x)) - (chunkDim - 1))) / chunkDim,
-		((point.z >= 0.0) ? static_cast<WEInt>(point.z) : (static_cast<WEInt>(std::floor(point.z)) - (chunkDim - 1))) / chunkDim);
+	const ChunkInt2 chunk = VoxelUtils::worldPointToChunk(point);
 	const VoxelDouble3 newPoint(
 		(point.x >= 0) ? std::fmod(point.x, chunkDimReal) : (chunkDimReal - std::fmod(-point.x, chunkDimReal)),
-		(point.y >= 0) ? std::fmod(point.y, chunkDimReal) : (chunkDimReal - std::fmod(-point.y, chunkDimReal)),
+		point.y,
 		(point.z >= 0) ? std::fmod(point.z, chunkDimReal) : (chunkDimReal - std::fmod(-point.z, chunkDimReal)));
 	return CoordDouble3(chunk, newPoint);
 }
@@ -110,37 +118,47 @@ CoordDouble2 VoxelUtils::worldPointToCoord(const WorldDouble2 &point)
 {
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
 	constexpr double chunkDimReal = static_cast<double>(chunkDim);
-	const ChunkInt2 chunk(
-		((point.x >= 0.0) ? static_cast<SNInt>(point.x) : (static_cast<SNInt>(std::floor(point.x)) - (chunkDim - 1))) / chunkDim,
-		((point.y >= 0.0) ? static_cast<WEInt>(point.y) : (static_cast<WEInt>(std::floor(point.y)) - (chunkDim - 1))) / chunkDim);
+	const ChunkInt2 chunk = VoxelUtils::worldPointToChunk(point);
 	const VoxelDouble2 newPoint(
 		(point.x >= 0) ? std::fmod(point.x, chunkDimReal) : (chunkDimReal - std::fmod(-point.x, chunkDimReal)),
 		(point.y >= 0) ? std::fmod(point.y, chunkDimReal) : (chunkDimReal - std::fmod(-point.y, chunkDimReal)));
 	return CoordDouble2(chunk, newPoint);
 }
 
+ChunkInt2 VoxelUtils::worldVoxelToChunk(const WorldInt3 &voxel)
+{
+	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
+	return ChunkInt2(
+		((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim,
+		((voxel.z >= 0) ? voxel.z : (voxel.z - (chunkDim - 1))) / chunkDim);
+}
+
+ChunkInt2 VoxelUtils::worldVoxelToChunk(const WorldInt2 &voxel)
+{
+	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
+	return ChunkInt2(
+		((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim,
+		((voxel.y >= 0) ? voxel.y : (voxel.y - (chunkDim - 1))) / chunkDim);
+}
+
 CoordInt3 VoxelUtils::worldVoxelToCoord(const WorldInt3 &voxel)
 {
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
-	const ChunkInt2 chunk(
-		((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim,
-		((voxel.z >= 0) ? voxel.z : (voxel.z - (chunkDim - 1))) / chunkDim);
+	const ChunkInt2 chunk = VoxelUtils::worldVoxelToChunk(voxel);
 	const VoxelInt3 newVoxel(
-		(voxel.x >= 0) ? (voxel.x % chunkDim) : (chunkDim - (-voxel.x % chunkDim)),
-		(voxel.y >= 0) ? (voxel.y % chunkDim) : (chunkDim - (-voxel.y % chunkDim)),
-		(voxel.z >= 0) ? (voxel.z % chunkDim) : (chunkDim - (-voxel.z % chunkDim)));
+		(voxel.x >= 0) ? (voxel.x % chunkDim) : ((chunkDim - (-voxel.x % chunkDim)) % chunkDim),
+		voxel.y,
+		(voxel.z >= 0) ? (voxel.z % chunkDim) : ((chunkDim - (-voxel.z % chunkDim)) % chunkDim));
 	return CoordInt3(chunk, newVoxel);
 }
 
 CoordInt2 VoxelUtils::worldVoxelToCoord(const WorldInt2 &voxel)
 {
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
-	const ChunkInt2 chunk(
-		((voxel.x >= 0) ? voxel.x : (voxel.x - (chunkDim - 1))) / chunkDim,
-		((voxel.y >= 0) ? voxel.y : (voxel.y - (chunkDim - 1))) / chunkDim);
+	const ChunkInt2 chunk = VoxelUtils::worldVoxelToChunk(voxel);
 	const VoxelInt2 newVoxel(
-		(voxel.x >= 0) ? (voxel.x % chunkDim) : (chunkDim - (-voxel.x % chunkDim)),
-		(voxel.y >= 0) ? (voxel.y % chunkDim) : (chunkDim - (-voxel.y % chunkDim)));
+		(voxel.x >= 0) ? (voxel.x % chunkDim) : ((chunkDim - (-voxel.x % chunkDim)) % chunkDim),
+		(voxel.y >= 0) ? (voxel.y % chunkDim) : ((chunkDim - (-voxel.y % chunkDim)) % chunkDim));
 	return CoordInt2(chunk, newVoxel);
 }
 
@@ -148,12 +166,6 @@ CoordInt2 VoxelUtils::levelVoxelToCoord(const WorldInt2 &voxel)
 {
 	// @todo: make sure it handles negative coordinates.
 	return VoxelUtils::worldVoxelToCoord(voxel);
-}
-
-ChunkInt2 VoxelUtils::worldVoxelToChunk(const WorldInt2 &voxel)
-{
-	const CoordInt2 chunkCoord = VoxelUtils::worldVoxelToCoord(voxel);
-	return chunkCoord.chunk;
 }
 
 VoxelInt3 VoxelUtils::getAdjacentVoxelXZ(const VoxelInt3 &voxel, const VoxelInt2 &direction)

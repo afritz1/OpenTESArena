@@ -1,16 +1,18 @@
 #include <algorithm>
+#include <cstring>
 
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
 #include "ChooseClassPanel.h"
 #include "CommonUiView.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/StringView.h"
 
 ChooseClassPanel::ChooseClassPanel(Game &game)
 	: Panel(game) { }
@@ -32,22 +34,20 @@ bool ChooseClassPanel::init()
 	std::sort(this->charClasses.begin(), this->charClasses.end(),
 		[](const CharacterClassDefinition &a, const CharacterClassDefinition &b) // @todo: move this lambda to UiModel/UiView
 	{
-		const std::string &aName = a.getName();
-		const std::string &bName = b.getName();
-		return aName.compare(bName) < 0;
+		return StringView::compare(a.name, b.name) < 0;
 	});
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string titleText = ChooseClassUiModel::getTitleText(game);
-	const TextBox::InitInfo titleTextBoxInitInfo = ChooseClassUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
+	const TextBoxInitInfo titleTextBoxInitInfo = ChooseClassUiView::getTitleTextBoxInitInfo(titleText, fontLibrary);
 	if (!this->titleTextBox.init(titleTextBoxInitInfo, titleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
 		return false;
 	}
 
-	const TextBox::InitInfo classDescriptionTextBoxInitInfo = ChooseClassUiView::getClassDescriptionTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo classDescriptionTextBoxInitInfo = ChooseClassUiView::getClassDescriptionTextBoxInitInfo(fontLibrary);
 	if (!this->classDescriptionTextBox.init(classDescriptionTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init class description text box.");
@@ -55,19 +55,19 @@ bool ChooseClassPanel::init()
 	}
 
 	this->classesListBox.init(ChooseClassUiView::getListRect(game),
-		ChooseClassUiView::makeListBoxProperties(FontLibrary::getInstance()), game.getRenderer());
+		ChooseClassUiView::makeListBoxProperties(FontLibrary::getInstance()), game.renderer);
 
 	for (int i = 0; i < static_cast<int>(this->charClasses.size()); i++)
 	{
 		const CharacterClassDefinition &charClass = this->charClasses[i];
-		this->classesListBox.add(std::string(charClass.getName()));
+		this->classesListBox.add(std::string(charClass.name));
 		this->classesListBox.setCallback(i, [&game, &charClass]()
 		{
 			const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 			int charClassDefID;
 			if (!charClassLibrary.tryGetDefinitionIndex(charClass, &charClassDefID))
 			{
-				DebugLogError("Couldn't get index of character class definition \"" + charClass.getName() + "\".");
+				DebugLogErrorFormat("Couldn't get index of character class definition \"%s\".", charClass.name);
 				return;
 			}
 
@@ -81,8 +81,8 @@ bool ChooseClassPanel::init()
 		return Button<ListBox&>(
 			rect.getLeft(),
 			rect.getTop(),
-			rect.getWidth(),
-			rect.getHeight(),
+			rect.width,
+			rect.height,
 			ChooseClassUiController::onUpButtonSelected);
 	}();
 
@@ -92,8 +92,8 @@ bool ChooseClassPanel::init()
 		return Button<ListBox&>(
 			rect.getLeft(),
 			rect.getTop(),
-			rect.getWidth(),
-			rect.getHeight(),
+			rect.width,
+			rect.height,
 			ChooseClassUiController::onDownButtonSelected);
 	}();
 
@@ -112,16 +112,7 @@ bool ChooseClassPanel::init()
 
 		auto callback = this->classesListBox.getCallback(i);
 
-		auto isActiveFunc = [&game]()
-		{
-			const auto &inputManager = game.getInputManager();
-			const Int2 mousePosition = inputManager.getMousePosition();
-			const Int2 classicPosition = game.getRenderer().nativeToOriginal(mousePosition);
-			const Rect classListRect = ChooseClassUiView::getListRect(game);
-			return classListRect.contains(classicPosition);
-		};
-
-		this->addButtonProxy(MouseButtonType::Left, rectFunc, callback, isActiveFunc);
+		this->addButtonProxy(MouseButtonType::Left, rectFunc, callback, this->classesListBox.getRect());
 	}
 
 	this->addInputActionListener(InputActionName::Back, ChooseClassUiController::onBackToChooseClassCreationInputAction);
@@ -129,8 +120,8 @@ bool ChooseClassPanel::init()
 	auto updateHoveredClassIndex = [this, &game]()
 	{
 		// Draw tooltip if over a valid element in the list box.
-		auto &renderer = game.getRenderer();
-		const auto &inputManager = game.getInputManager();
+		auto &renderer = game.renderer;
+		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
 
@@ -163,7 +154,7 @@ bool ChooseClassPanel::init()
 
 	this->addMouseScrollChangedListener([this, updateHoveredClassIndex](Game &game, MouseWheelScrollType type, const Int2 &position)
 	{
-		const Int2 classicPoint = game.getRenderer().nativeToOriginal(position);
+		const Int2 classicPoint = game.renderer.nativeToOriginal(position);
 		const Rect classListRect = ChooseClassUiView::getListRect(game);
 		if (classListRect.contains(classicPoint))
 		{
@@ -185,53 +176,46 @@ bool ChooseClassPanel::init()
 		updateHoveredClassIndex();
 	});
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID nightSkyTextureID = CharacterCreationUiView::allocNightSkyTexture(textureManager, renderer);
 	const UiTextureID popUpTextureID = ChooseClassUiView::allocPopUpTexture(textureManager, renderer);
 	this->nightSkyTextureRef.init(nightSkyTextureID, renderer);
 	this->popUpTextureRef.init(popUpTextureID, renderer);
 
-	this->addDrawCall(
-		this->nightSkyTextureRef.get(),
-		Int2::Zero,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT),
-		PivotType::TopLeft);
-	this->addDrawCall(
-		this->popUpTextureRef.get(),
-		Int2(ChooseClassUiView::ListTextureX, ChooseClassUiView::ListTextureY),
-		Int2(this->popUpTextureRef.getWidth(), this->popUpTextureRef.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo nightSkyDrawCallInitInfo;
+	nightSkyDrawCallInitInfo.textureID = this->nightSkyTextureRef.get();
+	nightSkyDrawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	this->addDrawCall(nightSkyDrawCallInitInfo);
 
-	const Rect &titleTextBoxRect = this->titleTextBox.getRect();
-	this->addDrawCall(
-		this->titleTextBox.getTextureID(),
-		titleTextBoxRect.getCenter(),
-		Int2(titleTextBoxRect.getWidth(), titleTextBoxRect.getHeight()),
-		PivotType::Middle);
+	UiDrawCallInitInfo popUpTextureDrawCallInitInfo;
+	popUpTextureDrawCallInitInfo.textureID = this->popUpTextureRef.get();
+	popUpTextureDrawCallInitInfo.position = Int2(ChooseClassUiView::ListTextureX, ChooseClassUiView::ListTextureY);
+	popUpTextureDrawCallInitInfo.size = Int2(this->popUpTextureRef.getWidth(), this->popUpTextureRef.getHeight());
+	this->addDrawCall(popUpTextureDrawCallInitInfo);
 
-	UiDrawCall::TextureFunc classDescTextureFunc = [this]()
-	{
-		return this->classDescriptionTextBox.getTextureID();
-	};
+	const Rect titleTextBoxRect = this->titleTextBox.getRect();
+	UiDrawCallInitInfo titleDrawCallInitInfo;
+	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
+	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
+	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
+	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(titleDrawCallInitInfo);
 
-	const Rect &classDescTextBoxRect = this->classDescriptionTextBox.getRect();
-	this->addDrawCall(
-		classDescTextureFunc,
-		classDescTextBoxRect.getCenter(),
-		Int2(classDescTextBoxRect.getWidth(), classDescTextBoxRect.getHeight()),
-		PivotType::Middle);
+	const Rect classDescTextBoxRect = this->classDescriptionTextBox.getRect();
+	UiDrawCallInitInfo classDescriptionDrawCallInitInfo;
+	classDescriptionDrawCallInitInfo.textureFunc = [this]() { return this->classDescriptionTextBox.getTextureID(); };
+	classDescriptionDrawCallInitInfo.position = classDescTextBoxRect.getCenter();
+	classDescriptionDrawCallInitInfo.size = classDescTextBoxRect.getSize();
+	classDescriptionDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(classDescriptionDrawCallInitInfo);
 
-	UiDrawCall::TextureFunc listBoxTextureFunc = [this]()
-	{
-		return this->classesListBox.getTextureID();
-	};
-
-	const Rect &listBoxRect = this->classesListBox.getRect();
-	this->addDrawCall(
-		listBoxTextureFunc,
-		listBoxRect.getCenter(),
-		Int2(listBoxRect.getWidth(), listBoxRect.getHeight()),
-		PivotType::Middle);
+	const Rect listBoxRect = this->classesListBox.getRect();
+	UiDrawCallInitInfo listBoxDrawCallInitInfo;
+	listBoxDrawCallInitInfo.textureFunc = [this]() { return this->classesListBox.getTextureID(); };
+	listBoxDrawCallInitInfo.position = listBoxRect.getCenter();
+	listBoxDrawCallInitInfo.size = listBoxRect.getSize();
+	listBoxDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(listBoxDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

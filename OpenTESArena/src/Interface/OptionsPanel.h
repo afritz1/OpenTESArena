@@ -12,15 +12,16 @@
 
 class AudioManager;
 class Options;
-class Player;
 class Renderer;
 
 enum class PlayerInterface;
 
+struct Player;
+
 class OptionsPanel : public Panel
 {
 private:
-	TextBox titleTextBox, descriptionTextBox, backButtonTextBox;
+	TextBox descriptionTextBox, backButtonTextBox;
 	std::vector<TextBox> tabTextBoxes;
 	std::vector<TextBox> optionTextBoxes;
 	Button<Game&> backButton;

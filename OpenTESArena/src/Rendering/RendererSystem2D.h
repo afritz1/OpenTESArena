@@ -11,25 +11,24 @@
 
 #include "components/utilities/BufferView2D.h"
 
-// Abstract base class for UI renderer.
+class TextureManager;
 
+enum class RenderSpace;
+
+struct Rect;
+struct SDL_Window;
+
+// Abstract base class for UI renderer.
+//
 // @todo: finish designing Renderer/RendererSystem2D/RendererSystem3D interconnect.
 // - Renderer has "the screen frame buffer" via SDL_Window probably.
 // - RendererSystem3D has a "game world frame buffer" that's copied to "the screen" when done.
 // - RendererSystem2D draws to "the screen frame buffer" after RendererSystem3D.
 // - Move most of Renderer SDL drawing code to SdlRenderer2D and call renderer2D->draw(...) in Renderer functions.
 // - Renderer::renderer could probably be moved to SdlRenderer2D. Renderer probably just needs the SDL_Window.
-
+//
 // @todo: might eventually need some "shared" struct for resources to talk between 2D and 3D renderer
 // if it's the same backend.
-
-class Rect;
-class TextureManager;
-
-enum class RenderSpace;
-
-struct SDL_Window;
-
 class RendererSystem2D
 {
 public:

@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <charconv>
 #include <cstdint>
 #include <functional>
 #include <optional>
@@ -24,8 +25,51 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView.h"
 #include "components/utilities/String.h"
+#include "components/utilities/StringView.h"
 #include "components/utilities/TextLinesFile.h"
 #include "components/vfs/manager.hpp"
+
+namespace
+{
+	bool ProcessVocRepairLine(const std::string_view text, std::string *outFilename, VocRepairSpan *outSpan)
+	{
+		constexpr int expectedTokenCount = 4;
+		std::string_view tokens[expectedTokenCount];
+		if (!StringView::splitExpected<expectedTokenCount>(text, ',', tokens))
+		{
+			DebugLogErrorFormat("Invalid .VOC repair format, skipping: \"%s\"", text);
+			return false;
+		}
+
+		*outFilename = tokens[0];
+
+		const std::string_view startIndexView = tokens[1];
+		std::from_chars_result result = std::from_chars(startIndexView.data(), startIndexView.data() + startIndexView.size(), outSpan->startIndex);
+		if (result.ec != std::errc())
+		{
+			DebugLogError("Couldn't parse .VOC repair startIndex \"" + std::string(startIndexView) + "\".");
+			return false;
+		}
+
+		const std::string_view countView = tokens[2];
+		result = std::from_chars(countView.data(), countView.data() + countView.size(), outSpan->count);
+		if (result.ec != std::errc())
+		{
+			DebugLogError("Couldn't parse .VOC repair count \"" + std::string(countView) + "\".");
+			return false;
+		}
+
+		const std::string_view replacementByteView = tokens[3];
+		result = std::from_chars(replacementByteView.data(), replacementByteView.data() + replacementByteView.size(), outSpan->replacementSample);
+		if (result.ec != std::errc())
+		{
+			DebugLogError("Couldn't parse .VOC repair replacementByte \"" + std::string(replacementByteView) + "\".");
+			return false;
+		}
+
+		return true;
+	}
+}
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
 
@@ -313,17 +357,14 @@ public:
 	}
 };
 
-AudioManager::ListenerData::ListenerData(const Double3 &position, const Double3 &direction)
-	: position(position), direction(direction) { }
+AudioListenerState::AudioListenerState(const Double3 &position, const Double3 &forward, const Double3 &up)
+	: position(position), forward(forward), up(up) { }
 
-const Double3 &AudioManager::ListenerData::getPosition() const
+VocRepairSpan::VocRepairSpan()
 {
-	return this->position;
-}
-
-const Double3 &AudioManager::ListenerData::getDirection() const
-{
-	return this->direction;
+	this->startIndex = -1;
+	this->count = 0;
+	this->replacementSample = 0;
 }
 
 AudioManager::AudioManager()
@@ -438,24 +479,60 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	this->setMusicVolume(musicVolume);
 	this->setSoundVolume(soundVolume);
 	this->setListenerPosition(Double3::Zero);
-	this->setListenerOrientation(Double3::UnitX);
+	this->setListenerOrientation(Double3::UnitX, Double3::UnitY);
 
 	// Load single-instance sounds file, a new feature with this engine since the one-sound-at-a-time limit
 	// no longer exists.
 	TextLinesFile singleInstanceSoundsFile;
-	const std::string singleInstanceSoundsPath = audioDataPath + "SingleInstanceSounds.txt";
-	if (singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
+	const std::string singleInstanceSoundsFilename = "SingleInstanceSounds.txt";
+	const std::string singleInstanceSoundsPath = audioDataPath + singleInstanceSoundsFilename;
+	if (!singleInstanceSoundsFile.init(singleInstanceSoundsPath.c_str()))
 	{
-		for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
+		DebugLogWarningFormat("Missing %s in \"%s\".", singleInstanceSoundsFilename.c_str(), audioDataPath.c_str());
+	}
+
+	for (int i = 0; i < singleInstanceSoundsFile.getLineCount(); i++)
+	{
+		std::string soundFilename = singleInstanceSoundsFile.getLine(i);
+		mSingleInstanceSounds.emplace_back(std::move(soundFilename));
+	}
+
+	// Load .VOC repair file, a temporary fix for annoying pops until a proper mod is available.
+	TextLinesFile vocRepairFile;
+	const std::string vocRepairFilename = "VocRepair.txt";
+	const std::string vocRepairPath = audioDataPath + vocRepairFilename;
+	if (!vocRepairFile.init(vocRepairPath.c_str()))
+	{
+		DebugLogWarningFormat("Missing %s in \"%s\".", vocRepairFilename.c_str(), audioDataPath.c_str());
+	}
+
+	for (int i = 0; i < vocRepairFile.getLineCount(); i++)
+	{
+		const std::string &entry = vocRepairFile.getLine(i);
+
+		std::string vocFilename;
+		VocRepairSpan vocRepairSpan;
+		if (ProcessVocRepairLine(entry, &vocFilename, &vocRepairSpan))
 		{
-			std::string soundFilename = singleInstanceSoundsFile.getLine(i);
-			mSingleInstanceSounds.emplace_back(std::move(soundFilename));
+			const auto existingIter = std::find_if(this->mVocRepairEntries.begin(), this->mVocRepairEntries.end(),
+				[&vocFilename](const VocRepairEntry &entry)
+			{
+				return entry.filename == vocFilename;
+			});
+
+			if (existingIter == this->mVocRepairEntries.end())
+			{
+				VocRepairEntry newEntry;
+				newEntry.filename = vocFilename;
+				newEntry.spans.emplace_back(vocRepairSpan);
+				this->mVocRepairEntries.emplace_back(std::move(newEntry));
+			}
+			else
+			{
+				existingIter->spans.emplace_back(vocRepairSpan);
+			}
 		}
-	}
-	else
-	{
-		DebugLogWarning("Missing single instance sounds file at \"" + singleInstanceSoundsPath + "\".");
-	}
+	}	
 }
 
 double AudioManager::getMusicVolume() const
@@ -540,47 +617,42 @@ void AudioManager::setListenerPosition(const Double3 &position)
 	alListener3f(AL_POSITION, posX, posY, posZ);
 }
 
-void AudioManager::setListenerOrientation(const Double3 &direction)
+void AudioManager::setListenerOrientation(const Double3 &forward, const Double3 &up)
 {
-	DebugAssert(direction.isNormalized());
-	const Double4 right = Matrix4d::yRotation(Constants::HalfPi) *
-		Double4(direction.x, direction.y, direction.z, 1.0);
-	const Double3 up = Double3(right.x, right.y, right.z).cross(direction).normalized();
+	DebugAssert(forward.isNormalized());
+	DebugAssert(up.isNormalized());
 
-	const std::array<ALfloat, 6> orientation =
+	const ALfloat orientation[] =
 	{
-		static_cast<ALfloat>(direction.x),
-		static_cast<ALfloat>(direction.y),
-		static_cast<ALfloat>(direction.z),
+		static_cast<ALfloat>(forward.x),
+		static_cast<ALfloat>(forward.y),
+		static_cast<ALfloat>(forward.z),
 		static_cast<ALfloat>(up.x),
 		static_cast<ALfloat>(up.y),
 		static_cast<ALfloat>(up.z)
 	};
 
-	alListenerfv(AL_ORIENTATION, orientation.data());
+	alListenerfv(AL_ORIENTATION, orientation);
 }
 
-void AudioManager::playSound(const std::string &filename, const std::optional<Double3> &position)
+void AudioManager::playSound(const char *filename, const std::optional<Double3> &position)
 {
 	// Certain sounds should only have one live instance at a time. This is purely an arbitrary
-	// rule to avoid having long sounds overlap each other which would be very annoying and/or
+	// rule to avoid having long sounds overlap each other which would be very annoying or
 	// distracting for the player.
-	const bool isSingleInstance = std::find(mSingleInstanceSounds.begin(),
-		mSingleInstanceSounds.end(), filename) != mSingleInstanceSounds.end();
-	const bool allowedToPlay = !isSingleInstance ||
-		(isSingleInstance && !this->isPlayingSound(filename));
+	const bool isSingleInstance = std::find(mSingleInstanceSounds.begin(), mSingleInstanceSounds.end(), std::string(filename)) != mSingleInstanceSounds.end();
+	const bool allowedToPlay = !isSingleInstance || (isSingleInstance && !this->isPlayingSound(filename));
 
 	if (!mFreeSources.empty() && allowedToPlay)
 	{
 		auto vocIter = mSoundBuffers.find(filename);
-
 		if (vocIter == mSoundBuffers.end())
 		{
 			// Load the .VOC file and give its PCM data to a new OpenAL buffer.
 			VOCFile voc;
-			if (!voc.init(filename.c_str()))
+			if (!voc.init(filename))
 			{
-				DebugCrash("Could not init .VOC file \"" + filename + "\".");
+				DebugCrash("Could not init .VOC file \"" + std::string(filename) + "\".");
 			}
 
 			// Clear OpenAL error.
@@ -595,7 +667,26 @@ void AudioManager::playSound(const std::string &filename, const std::optional<Do
 				DebugLogWarning("alGenBuffers() error 0x" + String::toHexString(status));
 			}
 
-			const BufferView<const uint8_t> audioData = voc.getAudioData();
+			BufferView<uint8_t> audioData = voc.getAudioData();
+
+			// Find and repair any bad samples we know of. A mod should eventually do this.
+			const auto repairIter = std::find_if(this->mVocRepairEntries.begin(), this->mVocRepairEntries.end(),
+				[filename](const VocRepairEntry &entry)
+			{
+				return StringView::equals(entry.filename, filename);
+			});
+
+			if (repairIter != this->mVocRepairEntries.end())
+			{
+				const BufferView<const VocRepairSpan> repairSpans = repairIter->spans;
+				for (const VocRepairSpan span : repairSpans)
+				{
+					const auto spanBegin = audioData.begin() + span.startIndex;
+					const auto spanEnd = spanBegin + span.count;
+					DebugAssert(spanEnd <= audioData.end());
+					std::fill(spanBegin, spanEnd, span.replacementSample);
+				}
+			}
 
 			alBufferData(bufferID, AL_FORMAT_MONO8,
 				static_cast<const ALvoid*>(audioData.begin()),
@@ -632,7 +723,6 @@ void AudioManager::playSound(const std::string &filename, const std::optional<Do
 			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
 		}
 
-		// Play the sound.
 		alSourcePlay(source);
 
 		mUsedSources.push_front(std::make_pair(filename, source));
@@ -642,28 +732,37 @@ void AudioManager::playSound(const std::string &filename, const std::optional<Do
 
 void AudioManager::playMusic(const std::string &filename, bool loop)
 {
+	if (mCurrentSong == filename)
+	{
+		return;
+	}
+
 	stopMusic();
 
 	if (!mFreeSources.empty())
 	{
 		if (MidiDevice::isInited())
-			mCurrentSong = MidiDevice::get().open(filename);
-		if (!mCurrentSong)
 		{
-			DebugLogWarning("Failed to play " + filename + ".");
+			mCurrentMidiSong = MidiDevice::get().open(filename);
+		}
+
+		if (!mCurrentMidiSong)
+		{
+			DebugLogWarning("Failed to play music " + filename + ".");
 			return;
 		}
 
-		mSongStream = std::make_unique<OpenALStream>(&mFreeSources, mCurrentSong.get());
+		mSongStream = std::make_unique<OpenALStream>(&mFreeSources, mCurrentMidiSong.get());
 		if (mSongStream->init(mFreeSources.front(), mMusicVolume, loop))
 		{
 			mFreeSources.pop_front();
 			mSongStream->play();
+			mCurrentSong = filename;
 			DebugLog("Playing music " + filename + ".");
 		}
 		else
 		{
-			DebugLogWarning("Failed to init " + filename + " stream.");
+			DebugLogWarning("Failed to init music stream " + filename + ".");
 		}
 	}
 }
@@ -673,17 +772,17 @@ void AudioManager::setMusic(const MusicDefinition *musicDef, const MusicDefiniti
 	if (optMusicDef != nullptr)
 	{
 		// Play optional music first and set the main music as the next music.
-		const std::string &optFilename = optMusicDef->getFilename();
+		const std::string &optFilename = optMusicDef->filename;
 		const bool loop = false;
 		this->playMusic(optFilename, loop);
 
 		DebugAssert(musicDef != nullptr);
-		mNextSong = musicDef->getFilename();
+		mNextSong = musicDef->filename;
 	}
 	else if (musicDef != nullptr)
 	{
 		// Play main music immediately.
-		const std::string &filename = musicDef->getFilename();
+		const std::string &filename = musicDef->filename;
 		const bool loop = true;
 		this->playMusic(filename, loop);
 	}
@@ -701,8 +800,8 @@ void AudioManager::stopMusic()
 		mSongStream->stop();
 	}
 
+	mCurrentMidiSong = nullptr;
 	mSongStream = nullptr;
-	mCurrentSong = nullptr;
 }
 
 void AudioManager::stopSound()
@@ -821,8 +920,8 @@ void AudioManager::updateSources()
 	}
 }
 
-void AudioManager::updateListener(const ListenerData &listenerData)
+void AudioManager::updateListener(const AudioListenerState &listenerState)
 {
-	this->setListenerPosition(listenerData.getPosition());
-	this->setListenerOrientation(listenerData.getDirection());
+	this->setListenerPosition(listenerState.position);
+	this->setListenerOrientation(listenerState.forward, listenerState.up);
 }

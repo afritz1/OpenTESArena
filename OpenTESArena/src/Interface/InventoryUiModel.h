@@ -18,7 +18,7 @@ namespace InventoryUiModel
 		std::string text;
 		Color color;
 
-		void init(std::string &&text, const Color &color);
+		void init(const std::string &text, const Color &color);
 	};
 
 	Buffer<ItemUiDefinition> getPlayerInventoryItems(Game &game);

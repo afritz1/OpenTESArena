@@ -15,36 +15,34 @@
 
 #include "components/utilities/BufferView.h"
 
-// Each panel interprets user input and draws to the screen. There is only one panel active at
-// a time, and it is owned by the Game, although there can be any number of sub-panels.
-
-class Color;
-class CursorData;
 class FontLibrary;
 class Game;
-class Rect;
 class Renderer;
 class Texture;
 
 enum class CursorAlignment;
 enum class MouseButtonType;
 
+struct Color;
+struct Rect;
 struct SDL_Texture;
 
 union SDL_Event;
 
+// Each panel interprets user input and draws to the screen. There is only one panel active at
+// a time, and it is owned by Game, although there can be any number of sub-panels.
 class Panel
 {
 private:
 	Game &game;
 
 	// Allocated input listener IDs that must be freed when the panel is done with them.
-	std::vector<InputManager::ListenerID> inputActionListenerIDs;
-	std::vector<InputManager::ListenerID> mouseButtonChangedListenerIDs;
-	std::vector<InputManager::ListenerID> mouseButtonHeldListenerIDs;
-	std::vector<InputManager::ListenerID> mouseScrollChangedListenerIDs;
-	std::vector<InputManager::ListenerID> mouseMotionListenerIDs;
-	std::vector<InputManager::ListenerID> textInputListenerIDs;
+	std::vector<InputListenerID> inputActionListenerIDs;
+	std::vector<InputListenerID> mouseButtonChangedListenerIDs;
+	std::vector<InputListenerID> mouseButtonHeldListenerIDs;
+	std::vector<InputListenerID> mouseScrollChangedListenerIDs;
+	std::vector<InputListenerID> mouseMotionListenerIDs;
+	std::vector<InputListenerID> textInputListenerIDs;
 
 	std::vector<ButtonProxy> buttonProxies;
 
@@ -58,10 +56,7 @@ protected:
 
 	bool isPaused() const;
 
-	// Default cursor used by most panels.
-	CursorData getDefaultCursor() const;
-
-	void addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback);
+	void addInputActionListener(const std::string_view actionName, const InputActionCallback &callback);
 	void addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
 	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
 	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
@@ -70,24 +65,17 @@ protected:
 
 	// Adds a button proxy for a dynamic button (i.e. ListBox items).
 	void addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,
-		const ButtonProxy::Callback &callback, const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
+		const ButtonProxy::Callback &callback, const Rect &parentRect = Rect(),
+		const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
 
 	// Adds a button proxy for a static button.
 	void addButtonProxy(MouseButtonType buttonType, const Rect &rect, const ButtonProxy::Callback &callback,
-		const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
+		const Rect &parentRect = Rect(), const ButtonProxy::ActiveFunction &isActiveFunc = ButtonProxy::ActiveFunction());
 
 	void clearButtonProxies();
 
-	// Helper functions for registering UI draw calls.
-	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::PositionFunc &positionFunc,
-		const UiDrawCall::SizeFunc &sizeFunc, const UiDrawCall::PivotFunc &pivotFunc,
-		const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt,
-		RenderSpace renderSpace = RenderSpace::Classic);
-	void addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Int2 &position, const Int2 &size,
-		PivotType pivotType, const std::optional<Rect> &clipRect = std::nullopt);
-	void addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
-		const std::optional<Rect> &clipRect = std::nullopt);
-	void addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCall::ActiveFunc &activeFunc);
+	void addDrawCall(const UiDrawCallInitInfo &initInfo);
+	void addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCallActiveFunc &activeFunc);
 	void addCursorDrawCall(UiTextureID textureID, PivotType pivotType);
 
 	void clearDrawCalls();

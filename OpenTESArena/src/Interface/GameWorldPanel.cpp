@@ -11,16 +11,16 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
-#include "../Entities/CharacterClassLibrary.h"
-#include "../Game/ArenaClockUtils.h"
 #include "../Game/Game.h"
-#include "../GameLogic/MapLogicController.h"
-#include "../GameLogic/PlayerLogicController.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../Items/ArenaItemUtils.h"
+#include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderCamera.h"
+#include "../Rendering/RenderCommandBuffer.h"
 #include "../Rendering/RendererUtils.h"
-#include "../UI/CursorData.h"
+#include "../Stats/CharacterClassLibrary.h"
+#include "../Time/ArenaClockUtils.h"
 #include "../UI/FontLibrary.h"
 #include "../World/MapType.h"
 
@@ -32,11 +32,11 @@ GameWorldPanel::GameWorldPanel(Game &game)
 GameWorldPanel::~GameWorldPanel()
 {
 	auto &game = this->getGame();
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, false);
 
 	// If in modern mode, disable free-look.
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	if (modernInterface)
@@ -44,18 +44,18 @@ GameWorldPanel::~GameWorldPanel()
 		GameWorldUiModel::setFreeLookActive(game, false);
 	}
 
-	game.setIsSimulatingScene(false);
-	game.setGameWorldRenderCallback([](Game&) { return true; });
+	game.shouldSimulateScene = false;
+	game.shouldRenderScene = false;
 }
 
 bool GameWorldPanel::init()
 {
 	auto &game = this->getGame();
 
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
-	const TextBox::InitInfo playerNameTextBoxInitInfo =
+	const TextBoxInitInfo playerNameTextBoxInitInfo =
 		GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
 	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
@@ -63,14 +63,14 @@ bool GameWorldPanel::init()
 		return false;
 	}
 
-	const TextBox::InitInfo triggerTextBoxInitInfo = GameWorldUiView::getTriggerTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo triggerTextBoxInitInfo = GameWorldUiView::getTriggerTextBoxInitInfo(fontLibrary);
 	if (!this->triggerText.init(triggerTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init trigger text box.");
 		return false;
 	}
 
-	const TextBox::InitInfo actionTextBoxInitInfo = GameWorldUiView::getActionTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo actionTextBoxInitInfo = GameWorldUiView::getActionTextBoxInitInfo(fontLibrary);
 	if (!this->actionText.init(actionTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init action text box.");
@@ -102,8 +102,8 @@ bool GameWorldPanel::init()
 	this->mapButton = Button<Game&, bool>(
 		GameWorldUiView::getMapButtonRect(), GameWorldUiController::onMapButtonSelected);
 
-	auto &player = game.getPlayer();
-	const auto &options = game.getOptions();
+	auto &player = game.player;
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
@@ -134,7 +134,7 @@ bool GameWorldPanel::init()
 			[this, &game]() { this->mapButton.click(game, false); });
 	}
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, true);
 
 	this->addInputActionListener(InputActionName::Activate,
@@ -216,7 +216,7 @@ bool GameWorldPanel::init()
 		[this](const InputActionCallbackValues &values)
 	{
 		Game &game = values.game;
-		GameState &gameState = game.getGameState();
+		GameState &gameState = game.gameState;
 
 		// @todo: make this click the button eventually when not needed for testing.
 		gameState.setIsCamping(values.performed);
@@ -270,8 +270,8 @@ bool GameWorldPanel::init()
 		GameWorldUiModel::setFreeLookActive(game, true);
 	}
 
-	game.setGameWorldRenderCallback(GameWorldPanel::gameWorldRenderCallback);
-	game.setIsSimulatingScene(true);
+	game.shouldSimulateScene = true;
+	game.shouldRenderScene = true;
 
 	return true;
 }
@@ -279,45 +279,55 @@ bool GameWorldPanel::init()
 void GameWorldPanel::initUiDrawCalls()
 {
 	auto &game = this->getGame();
-	auto &textureManager = game.getTextureManager();
-	auto &renderer = game.getRenderer();
+	auto &textureManager = game.textureManager;
+	auto &renderer = game.renderer;
 
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
-	const UiTextureID gameWorldInterfaceTextureID =
-		GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
+	const UiTextureID gameWorldInterfaceTextureID = GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
 	this->gameWorldInterfaceTextureRef.init(gameWorldInterfaceTextureID, renderer);
 
+	const UiTextureID healthTextureID = GameWorldUiView::allocHealthBarTexture(textureManager, renderer);
+	this->healthBarTextureRef.init(healthTextureID, renderer);
+	const UiTextureID staminaTextureID = GameWorldUiView::allocStaminaBarTexture(textureManager, renderer);
+	this->staminaBarTextureRef.init(staminaTextureID, renderer);	
+	const UiTextureID spellPointsTextureID = GameWorldUiView::allocSpellPointsBarTexture(textureManager, renderer);
+	this->spellPointsBarTextureRef.init(spellPointsTextureID, renderer);
+
 	constexpr GameWorldUiView::StatusGradientType gradientType = GameWorldUiView::StatusGradientType::Default;
-	const UiTextureID statusGradientTextureID =
-		GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
+	const UiTextureID statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
 	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
 
-	const auto &player = game.getPlayer();
-	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
-		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
+	const auto &player = game.player;
+	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
 
 	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
 	this->noMagicTextureRef.init(noMagicTextureID, renderer);
 
-	const auto &weaponAnimation = player.getWeaponAnimation();
-	const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-	const std::optional<TextureFileMetadataID> weaponAnimMetadataID = textureManager.tryGetMetadataID(weaponFilename.c_str());
-	if (!weaponAnimMetadataID.has_value())
+	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+	this->weaponAnimTextureRefs.init(weaponAnimDef.frameCount);
+	for (int i = 0; i < weaponAnimDef.frameCount; i++)
 	{
-		DebugCrash("Couldn't get texture file metadata ID for weapon animation \"" + weaponFilename + "\".");
-	}
-
-	const TextureFileMetadata &weaponAnimMetadata = textureManager.getMetadataHandle(*weaponAnimMetadataID);
-	this->weaponAnimTextureRefs.init(weaponAnimMetadata.getTextureCount());
-	for (int i = 0; i < weaponAnimMetadata.getTextureCount(); i++)
-	{
-		const UiTextureID weaponTextureID =
-			GameWorldUiView::allocWeaponAnimTexture(weaponFilename, i, textureManager, renderer);
+		const WeaponAnimationDefinitionFrame &weaponAnimDefFrame = weaponAnimDef.frames[i];
+		const TextureAsset &weaponAnimDefFrameTextureAsset = weaponAnimDefFrame.textureAsset;
+		const std::string &weaponAnimDefFrameTextureFilename = weaponAnimDefFrameTextureAsset.filename;
+		DebugAssert(weaponAnimDefFrameTextureAsset.index.has_value());
+		const int weaponAnimDefFrameTextureIndex = *weaponAnimDefFrameTextureAsset.index;
+		// @todo: some WeaponAnimationDefinitionFrames are duplicates, this can cause duplicate UiTextureID allocations, maybe map TextureAsset to UiTextureID to avoid it
+		const UiTextureID weaponTextureID = GameWorldUiView::allocWeaponAnimTexture(weaponAnimDefFrameTextureFilename, weaponAnimDefFrameTextureIndex, textureManager, renderer);
 		this->weaponAnimTextureRefs.set(i, ScopedUiTextureRef(weaponTextureID, renderer));
 	}
+
+	const int keyTextureCount = GameWorldUiView::getKeyTextureCount(textureManager);
+	this->keyTextureRefs.init(keyTextureCount);
+	for (int i = 0; i < keyTextureCount; i++)
+	{
+		const UiTextureID keyTextureID = GameWorldUiView::allocKeyTexture(i, textureManager, renderer);
+		this->keyTextureRefs.set(i, ScopedUiTextureRef(keyTextureID, renderer));
+	}	
 
 	const UiTextureID compassFrameTextureID = GameWorldUiView::allocCompassFrameTexture(textureManager, renderer);
 	const UiTextureID compassSliderTextureID = GameWorldUiView::allocCompassSliderTexture(textureManager, renderer);
@@ -327,6 +337,9 @@ void GameWorldPanel::initUiDrawCalls()
 	const UiTextureID defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->defaultCursorTextureRef.init(defaultCursorTextureID, renderer);
 
+	const UiTextureID modernModeCursorTextureID = GameWorldUiView::allocModernModeReticleTexture(textureManager, renderer);
+	this->modernModeReticleTextureRef.init(modernModeCursorTextureID, renderer);
+
 	this->arrowCursorTextureRefs.init(GameWorldUiView::ArrowCursorRegionCount);
 	for (int i = 0; i < GameWorldUiView::ArrowCursorRegionCount; i++)
 	{
@@ -334,30 +347,72 @@ void GameWorldPanel::initUiDrawCalls()
 		this->arrowCursorTextureRefs.set(i, ScopedUiTextureRef(arrowTextureID, renderer));
 	}
 
-	if (modernInterface)
+	for (int i = 0; i < this->keyTextureRefs.getCount(); i++)
 	{
-		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
+		auto getKeyIdAtIndex = [&game](int keyIndex)
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
-			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const Player &player = game.player;
+			const auto &keyInventory = player.keyInventory;
+			DebugAssertIndex(keyInventory, keyIndex);
+			const int keyID = keyInventory[keyIndex];
+			return keyID;
+		};
+
+		UiDrawCallInitInfo keyDrawCallInitInfo;
+		keyDrawCallInitInfo.textureFunc = [this, &game, i, getKeyIdAtIndex]()
+		{
+			const int keyID = getKeyIdAtIndex(i);
+			DebugAssert(keyID != ArenaItemUtils::InvalidDoorKeyID);
+			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(keyID);
 			return textureRef.get();
 		};
 
-		UiDrawCall::PositionFunc weaponAnimPositionFunc = [this, &game, &player]()
+		keyDrawCallInitInfo.position = GameWorldUiView::getKeyPosition(i);
+		keyDrawCallInitInfo.sizeFunc = [this, i, getKeyIdAtIndex]()
+		{
+			const int keyID = getKeyIdAtIndex(i);
+			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(keyID);
+			return Int2(textureRef.getWidth(), textureRef.getHeight());
+		};
+
+		keyDrawCallInitInfo.activeFunc = [this, &game, i, getKeyIdAtIndex]()
+		{
+			const int keyID = getKeyIdAtIndex(i);
+			return !this->isPaused() && (keyID != ArenaItemUtils::InvalidDoorKeyID);
+		};
+
+		this->addDrawCall(keyDrawCallInitInfo);
+	}
+
+	if (modernInterface)
+	{
+		UiDrawCallInitInfo weaponDrawCallInitInfo;
+		weaponDrawCallInitInfo.textureFunc = [this, &player]()
+		{
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
+			return textureRef.get();
+		};
+
+		weaponDrawCallInitInfo.positionFunc = [this, &game, &player]()
 		{
 			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
-			const auto &weaponAnimation = player.getWeaponAnimation();
-			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const WeaponAnimationDefinitionFrame &weaponAnimFrame = weaponAnimDef.frames[weaponAnimFrameIndex];
 
-			auto &textureManager = game.getTextureManager();
-			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
+			auto &textureManager = game.textureManager;
 			const Double2 offsetPercents(
-				static_cast<double>(offset.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
-				static_cast<double>(offset.y) / static_cast<double>(classicViewHeight));
+				static_cast<double>(weaponAnimFrame.xOffset) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
+				static_cast<double>(weaponAnimFrame.yOffset) / static_cast<double>(classicViewHeight));
 
-			const auto &renderer = game.getRenderer();
+			const auto &renderer = game.renderer;
 			const Int2 windowDims = renderer.getWindowDimensions();
 			const Int2 nativePosition(
 				static_cast<int>(std::round(offsetPercents.x * static_cast<double>(windowDims.x))),
@@ -365,18 +420,21 @@ void GameWorldPanel::initUiDrawCalls()
 			return nativePosition;
 		};
 
-		UiDrawCall::SizeFunc weaponAnimSizeFunc = [this, &game, &player]()
+		weaponDrawCallInitInfo.sizeFunc = [this, &game, &player]()
 		{
 			const int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - this->gameWorldInterfaceTextureRef.getHeight();
 
-			const auto &weaponAnimation = player.getWeaponAnimation();
-			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
 			const Int2 textureDims(textureRef.getWidth(), textureRef.getHeight());
 			const Double2 texturePercents(
 				static_cast<double>(textureDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(textureDims.y) / static_cast<double>(classicViewHeight));
 
-			const auto &renderer = game.getRenderer();
+			const auto &renderer = game.renderer;
 			const Int2 windowDims = renderer.getWindowDimensions();
 			const Int2 nativeTextureDims(
 				static_cast<int>(std::round(texturePercents.x * static_cast<double>(windowDims.x))),
@@ -384,270 +442,366 @@ void GameWorldPanel::initUiDrawCalls()
 			return nativeTextureDims;
 		};
 
-		UiDrawCall::PivotFunc weaponAnimPivotFunc = []() { return PivotType::TopLeft; };
-
-		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
+		weaponDrawCallInitInfo.activeFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
-			return !this->isPaused() && !weaponAnimation.isSheathed();
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+			return !this->isPaused() && !WeaponAnimationUtils::isSheathed(weaponAnimDefState);
 		};
 
-		this->addDrawCall(
-			weaponAnimTextureFunc,
-			weaponAnimPositionFunc,
-			weaponAnimSizeFunc,
-			weaponAnimPivotFunc,
-			weaponAnimActiveFunc,
-			std::nullopt,
-			RenderSpace::Native);
+		weaponDrawCallInitInfo.renderSpace = RenderSpace::Native;
+		this->addDrawCall(weaponDrawCallInitInfo);
 
-		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
+		UiDrawCallInitInfo compassSliderDrawCallInitInfo;
+		compassSliderDrawCallInitInfo.textureID = this->compassSliderTextureRef.get();
+		compassSliderDrawCallInitInfo.positionFunc = [this, &game, &player]()
 		{
-			const VoxelDouble2 &playerDirection = player.getGroundDirection();
+			const Double2 playerDirection = player.getGroundDirectionXZ();
 			const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
 			return sliderPosition;
 		};
 
-		UiDrawCall::ActiveFunc compassActiveFunc = [this, &game]()
+		compassSliderDrawCallInitInfo.size = Int2(this->compassSliderTextureRef.getWidth(), this->compassSliderTextureRef.getHeight());
+		compassSliderDrawCallInitInfo.activeFunc = [this, &game]()
 		{
-			const auto &options = game.getOptions();
+			const auto &options = game.options;
 			return !this->isPaused() && options.getMisc_ShowCompass();
 		};
 
-		this->addDrawCall(
-			[this]() { return this->compassSliderTextureRef.get(); },
-			compassSliderPositionFunc,
-			[this]() { return Int2(this->compassSliderTextureRef.getWidth(), this->compassSliderTextureRef.getHeight()); },
-			[]() { return PivotType::TopLeft; },
-			compassActiveFunc,
-			GameWorldUiView::getCompassClipRect());
-		this->addDrawCall(
-			[this]() { return this->compassFrameTextureRef.get(); },
-			[]() { return GameWorldUiView::getCompassFramePosition(); },
-			[this]() { return Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight()); },
-			[]() { return PivotType::Top; },
-			compassActiveFunc);
+		compassSliderDrawCallInitInfo.clipRect = GameWorldUiView::getCompassClipRect();
+		this->addDrawCall(compassSliderDrawCallInitInfo);
 
-		UiDrawCall::TextureFunc triggerTextTextureFunc = [this]()
+		UiDrawCallInitInfo compassFrameDrawCallInitInfo;
+		compassFrameDrawCallInitInfo.textureID = this->compassFrameTextureRef.get();
+		compassFrameDrawCallInitInfo.position = GameWorldUiView::getCompassFramePosition();
+		compassFrameDrawCallInitInfo.size = Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight());
+		compassFrameDrawCallInitInfo.pivotType = PivotType::Top;
+		compassFrameDrawCallInitInfo.activeFunc = compassSliderDrawCallInitInfo.activeFunc;
+		this->addDrawCall(compassFrameDrawCallInitInfo);
+
+		auto getStatusBarsModernModeOrigin = [&renderer]()
 		{
-			return this->triggerText.getTextureID();
+			const Int2 windowDims = renderer.getWindowDimensions();
+			return Int2(GameWorldUiView::StatusBarModernModeXOffset, windowDims.y - GameWorldUiView::StatusBarModernModeYOffset);
 		};
 
-		UiDrawCall::TextureFunc actionTextTextureFunc = [this]()
+		auto getStatusBarScaledXDelta = [&renderer](const Rect &statusBarRect)
 		{
-			return this->actionText.getTextureID();
+			const int originalXDelta = statusBarRect.getLeft() - GameWorldUiView::HealthBarRect.getLeft();
+			const double originalXPercentDelta = static_cast<double>(originalXDelta) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
+
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const double scaleXRatio = static_cast<double>(windowDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
+			const double aspectRatioMultiplier = ArenaRenderUtils::ASPECT_RATIO / renderer.getWindowAspect();
+			return static_cast<int>(std::round(static_cast<double>(originalXDelta) * (scaleXRatio * aspectRatioMultiplier)));
 		};
 
-		UiDrawCall::TextureFunc effectTextTextureFunc = [this]()
-		{
-			return this->effectText.getTextureID();
+		constexpr PivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
+		const UiDrawCallActiveFunc statusBarActiveFunc = [this]() { return !this->isPaused(); };
+
+		UiDrawCallInitInfo healthBarDrawCallInitInfo;
+		healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
+		healthBarDrawCallInitInfo.positionFunc = [&renderer, getStatusBarsModernModeOrigin]()
+		{			
+			const Int2 windowDims = renderer.getWindowDimensions();
+			const Int2 nativePoint = getStatusBarsModernModeOrigin();
+			return renderer.nativeToOriginal(nativePoint);
 		};
 
-		UiDrawCall::ActiveFunc triggerTextActiveFunc = [this, &game]()
+		healthBarDrawCallInitInfo.sizeFunc = [&game]()
 		{
-			const auto &gameState = game.getGameState();
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::HealthBarRect;
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
+		};
+
+		healthBarDrawCallInitInfo.pivotType = statusBarPivotType;
+		healthBarDrawCallInitInfo.activeFunc = statusBarActiveFunc;
+		this->addDrawCall(healthBarDrawCallInitInfo);
+
+		UiDrawCallInitInfo staminaBarDrawCallInitInfo;
+		staminaBarDrawCallInitInfo.textureID = this->staminaBarTextureRef.get();
+		staminaBarDrawCallInitInfo.positionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
+		{
+			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::StaminaBarRect);
+			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
+			return renderer.nativeToOriginal(nativePoint);
+		};
+
+		staminaBarDrawCallInitInfo.sizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::StaminaBarRect;
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
+		};
+
+		staminaBarDrawCallInitInfo.pivotType = statusBarPivotType;
+		staminaBarDrawCallInitInfo.activeFunc = statusBarActiveFunc;
+		this->addDrawCall(staminaBarDrawCallInitInfo);
+
+		UiDrawCallInitInfo spellPointsBarDrawCallInitInfo;
+		spellPointsBarDrawCallInitInfo.textureID = this->spellPointsBarTextureRef.get();
+		spellPointsBarDrawCallInitInfo.positionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
+		{
+			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::SpellPointsBarRect);
+			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
+			return renderer.nativeToOriginal(nativePoint);
+		};
+
+		spellPointsBarDrawCallInitInfo.sizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
+		};
+
+		spellPointsBarDrawCallInitInfo.pivotType = statusBarPivotType;
+		spellPointsBarDrawCallInitInfo.activeFunc = statusBarActiveFunc;		
+		this->addDrawCall(spellPointsBarDrawCallInitInfo);
+
+		UiDrawCallInitInfo triggerTextDrawCallInitInfo;
+		triggerTextDrawCallInitInfo.textureFunc = [this]() { return this->triggerText.getTextureID(); };
+		triggerTextDrawCallInitInfo.position = GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight());
+		triggerTextDrawCallInitInfo.size = this->triggerText.getRect().getSize();
+		triggerTextDrawCallInitInfo.pivotType = PivotType::Bottom;
+		triggerTextDrawCallInitInfo.activeFunc = [this, &game]()
+		{
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.triggerTextIsVisible();
 		};
 
-		UiDrawCall::ActiveFunc actionTextActiveFunc = [this, &game]()
+		this->addDrawCall(triggerTextDrawCallInitInfo);
+
+		UiDrawCallInitInfo actionTextDrawCallInitInfo;
+		actionTextDrawCallInitInfo.textureFunc = [this]() { return this->actionText.getTextureID(); };
+		actionTextDrawCallInitInfo.position = GameWorldUiView::getActionTextPosition();
+		actionTextDrawCallInitInfo.size = this->actionText.getRect().getSize();
+		actionTextDrawCallInitInfo.pivotType = PivotType::Top;
+		actionTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.actionTextIsVisible();
 		};
 
-		UiDrawCall::ActiveFunc effectTextActiveFunc = [this, &game]()
+		this->addDrawCall(actionTextDrawCallInitInfo);
+
+		const Rect effectTextBoxRect = this->effectText.getRect();
+		// @todo initialize effect text
+		/*UiDrawCallInitInfo effectTextDrawCallInitInfo;
+		effectTextDrawCallInitInfo.textureFunc = [this]() { return this->effectText.getTextureID(); };
+		effectTextDrawCallInitInfo.position = Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.width / 2), effectTextBoxRect.getTop());
+		effectTextDrawCallInitInfo.size = effectTextBoxRect.getSize();
+		effectTextDrawCallInitInfo.pivotType = PivotType::Bottom;
+		effectTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.effectTextIsVisible();
 		};
 
-		const Rect &triggerTextBoxRect = this->triggerText.getRect(); // Position is not usable due to classic/modern mode differences.
-		this->addDrawCall(
-			triggerTextTextureFunc,
-			[this, &game]() { return GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight()); },
-			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.getWidth(), triggerTextBoxRect.getHeight()); },
-			[]() { return PivotType::Bottom; },
-			triggerTextActiveFunc);
+		this->addDrawCall(effectTextDrawCallInitInfo);*/
 
-		const Rect &actionTextBoxRect = this->actionText.getRect(); // Position is not usable due to classic/modern mode differences.
-		this->addDrawCall(
-			actionTextTextureFunc,
-			[]() { return GameWorldUiView::getActionTextPosition(); },
-			[actionTextBoxRect]() { return Int2(actionTextBoxRect.getWidth(), actionTextBoxRect.getHeight()); },
-			[]() { return PivotType::Top; },
-			actionTextActiveFunc);
-
-		const Rect &effectTextBoxRect = this->effectText.getRect();
-		this->addDrawCall(
-			effectTextTextureFunc,
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.getWidth() / 2), effectTextBoxRect.getTop()); },
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getWidth(), effectTextBoxRect.getHeight()); },
-			[]() { return PivotType::Bottom; },
-			effectTextActiveFunc);
+		UiDrawCallInitInfo reticleDrawCallInitInfo;
+		reticleDrawCallInitInfo.textureID = this->modernModeReticleTextureRef.get();
+		reticleDrawCallInitInfo.position = GameWorldUiView::getInterfaceCenter(game);
+		reticleDrawCallInitInfo.size = Int2(this->modernModeReticleTextureRef.getWidth(), this->modernModeReticleTextureRef.getHeight());
+		reticleDrawCallInitInfo.pivotType = PivotType::Middle;
+		this->addDrawCall(reticleDrawCallInitInfo);
 	}
 	else
 	{
-		UiDrawCall::TextureFunc weaponAnimTextureFunc = [this, &player]()
+		UiDrawCallInitInfo weaponDrawCallInitInfo;
+		weaponDrawCallInitInfo.textureFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
-			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
 			return textureRef.get();
 		};
 
-		UiDrawCall::PositionFunc weaponAnimPositionFunc = [this, &game, &player]()
+		weaponDrawCallInitInfo.positionFunc = [this, &game, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
-			const std::string &weaponFilename = weaponAnimation.getAnimationFilename();
-			const int weaponAnimIndex = weaponAnimation.getFrameIndex();
-
-			auto &textureManager = game.getTextureManager();
-			const Int2 offset = GameWorldUiView::getWeaponAnimationOffset(weaponFilename, weaponAnimIndex, textureManager);
-			return offset;
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const WeaponAnimationDefinitionFrame &weaponAnimFrame = weaponAnimDef.frames[weaponAnimFrameIndex];
+			return Int2(weaponAnimFrame.xOffset, weaponAnimFrame.yOffset);
 		};
 
-		UiDrawCall::SizeFunc weaponAnimSizeFunc = [this, &player]()
+		weaponDrawCallInitInfo.sizeFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
-			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimation.getFrameIndex());
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
+			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
 			return Int2(textureRef.getWidth(), textureRef.getHeight());
 		};
 
-		UiDrawCall::PivotFunc weaponAnimPivotFunc = []() { return PivotType::TopLeft; };
-
-		UiDrawCall::ActiveFunc weaponAnimActiveFunc = [this, &player]()
+		weaponDrawCallInitInfo.activeFunc = [this, &player]()
 		{
-			const auto &weaponAnimation = player.getWeaponAnimation();
-			return !this->isPaused() && !weaponAnimation.isSheathed();
+			const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+			const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+			const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+			return !this->isPaused() && !WeaponAnimationUtils::isSheathed(weaponAnimDefState);
 		};
 
-		this->addDrawCall(
-			weaponAnimTextureFunc,
-			weaponAnimPositionFunc,
-			weaponAnimSizeFunc,
-			weaponAnimPivotFunc,
-			weaponAnimActiveFunc);
+		this->addDrawCall(weaponDrawCallInitInfo);
 
-		this->addDrawCall(
-			this->gameWorldInterfaceTextureRef.get(),
-			GameWorldUiView::getGameWorldInterfacePosition(),
-			Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight()),
-			PivotType::Bottom);
+		UiDrawCallInitInfo gameWorldInterfaceDrawCallInitInfo;
+		gameWorldInterfaceDrawCallInitInfo.textureID = this->gameWorldInterfaceTextureRef.get();
+		gameWorldInterfaceDrawCallInitInfo.position = GameWorldUiView::getGameWorldInterfacePosition();
+		gameWorldInterfaceDrawCallInitInfo.size = Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight());
+		gameWorldInterfaceDrawCallInitInfo.pivotType = PivotType::Bottom;
+		this->addDrawCall(gameWorldInterfaceDrawCallInitInfo);
 
 		const Rect portraitRect = GameWorldUiView::getPlayerPortraitRect();
-		this->addDrawCall(
-			this->statusGradientTextureRef.get(),
-			portraitRect.getTopLeft(),
-			Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight()),
-			PivotType::TopLeft);
-		this->addDrawCall(
-			this->playerPortraitTextureRef.get(),
-			portraitRect.getTopLeft(),
-			Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight()),
-			PivotType::TopLeft);
 
-		const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-		const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
-		if (!charClassDef.canCastMagic())
+		UiDrawCallInitInfo statusGradientDrawCallInitInfo;
+		statusGradientDrawCallInitInfo.textureID = this->statusGradientTextureRef.get();
+		statusGradientDrawCallInitInfo.position = portraitRect.getTopLeft();
+		statusGradientDrawCallInitInfo.size = Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight());
+		this->addDrawCall(statusGradientDrawCallInitInfo);
+
+		UiDrawCallInitInfo playerPortraitDrawCallInitInfo;
+		playerPortraitDrawCallInitInfo.textureID = this->playerPortraitTextureRef.get();
+		playerPortraitDrawCallInitInfo.position = portraitRect.getTopLeft();
+		playerPortraitDrawCallInitInfo.size = Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight());
+		this->addDrawCall(playerPortraitDrawCallInitInfo);
+
+		constexpr PivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
+
+		UiDrawCallInitInfo healthBarDrawCallInitInfo;
+		healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
+		healthBarDrawCallInitInfo.position = GameWorldUiView::HealthBarRect.getBottomLeft();
+		healthBarDrawCallInitInfo.sizeFunc = [&game]()
 		{
-			this->addDrawCall(
-				this->noMagicTextureRef.get(),
-				GameWorldUiView::getNoMagicTexturePosition(),
-				Int2(this->noMagicTextureRef.getWidth(), this->noMagicTextureRef.getHeight()),
-				PivotType::TopLeft);
+			const Player &player = game.player;
+			const Rect barRect = GameWorldUiView::HealthBarRect;
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
+		};
+
+		healthBarDrawCallInitInfo.pivotType = statusBarPivotType;
+		this->addDrawCall(healthBarDrawCallInitInfo);
+
+		UiDrawCallInitInfo staminaBarDrawCallInitInfo;
+		staminaBarDrawCallInitInfo.textureID = this->staminaBarTextureRef.get();
+		staminaBarDrawCallInitInfo.position = GameWorldUiView::StaminaBarRect.getBottomLeft();
+		staminaBarDrawCallInitInfo.sizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect barRect = GameWorldUiView::StaminaBarRect;
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
+		};
+
+		staminaBarDrawCallInitInfo.pivotType = statusBarPivotType;
+		this->addDrawCall(staminaBarDrawCallInitInfo);
+		
+		UiDrawCallInitInfo spellPointsBarDrawCallInitInfo;
+		spellPointsBarDrawCallInitInfo.textureID = this->spellPointsBarTextureRef.get();
+		spellPointsBarDrawCallInitInfo.position = GameWorldUiView::SpellPointsBarRect.getBottomLeft();
+		spellPointsBarDrawCallInitInfo.sizeFunc = [&game]()
+		{
+			const Player &player = game.player;
+			const Rect barRect = GameWorldUiView::SpellPointsBarRect;
+			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
+		};
+
+		spellPointsBarDrawCallInitInfo.pivotType = statusBarPivotType;
+		this->addDrawCall(spellPointsBarDrawCallInitInfo);
+
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
+		if (!charClassDef.castsMagic)
+		{
+			UiDrawCallInitInfo noMagicDrawCallInitInfo;
+			noMagicDrawCallInitInfo.textureID = this->noMagicTextureRef.get();
+			noMagicDrawCallInitInfo.position = GameWorldUiView::getNoMagicTexturePosition();
+			noMagicDrawCallInitInfo.size = Int2(this->noMagicTextureRef.getWidth(), this->noMagicTextureRef.getHeight());
+			this->addDrawCall(noMagicDrawCallInitInfo);
 		}
 
-		const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
-		this->addDrawCall(
-			this->playerNameTextBox.getTextureID(),
-			playerNameTextBoxRect.getTopLeft(),
-			Int2(playerNameTextBoxRect.getWidth(), playerNameTextBoxRect.getHeight()),
-			PivotType::TopLeft);
+		const Rect playerNameTextBoxRect = this->playerNameTextBox.getRect();
+		UiDrawCallInitInfo playerNameDrawCallInitInfo;
+		playerNameDrawCallInitInfo.textureID = this->playerNameTextBox.getTextureID();
+		playerNameDrawCallInitInfo.position = playerNameTextBoxRect.getTopLeft();
+		playerNameDrawCallInitInfo.size = playerNameTextBoxRect.getSize();
+		this->addDrawCall(playerNameDrawCallInitInfo);
 
-		UiDrawCall::PositionFunc compassSliderPositionFunc = [this, &game, &player]()
+		UiDrawCallInitInfo compassSliderDrawCallInitInfo;
+		compassSliderDrawCallInitInfo.textureID = this->compassSliderTextureRef.get();
+		compassSliderDrawCallInitInfo.positionFunc = [this, &game, &player]()
 		{
-			const VoxelDouble2 &playerDirection = player.getGroundDirection();
+			const Double2 playerDirection = player.getGroundDirectionXZ();
 			const Int2 sliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
 			return sliderPosition;
 		};
 
-		UiDrawCall::ActiveFunc compassActiveFunc = [this, &game]()
+		compassSliderDrawCallInitInfo.size = Int2(this->compassSliderTextureRef.getWidth(), this->compassSliderTextureRef.getHeight());
+		compassSliderDrawCallInitInfo.activeFunc = [this, &game]()
 		{
-			const auto &options = game.getOptions();
+			const auto &options = game.options;
 			return !this->isPaused() && options.getMisc_ShowCompass();
 		};
 
-		this->addDrawCall(
-			[this]() { return this->compassSliderTextureRef.get(); },
-			compassSliderPositionFunc,
-			[this]() { return Int2(this->compassSliderTextureRef.getWidth(), this->compassSliderTextureRef.getHeight()); },
-			[]() { return PivotType::TopLeft; },
-			compassActiveFunc,
-			GameWorldUiView::getCompassClipRect());
-		this->addDrawCall(
-			[this]() { return this->compassFrameTextureRef.get(); },
-			[]() { return GameWorldUiView::getCompassFramePosition(); },
-			[this]() { return Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight()); },
-			[]() { return PivotType::Top; },
-			compassActiveFunc);
+		compassSliderDrawCallInitInfo.clipRect = GameWorldUiView::getCompassClipRect();
+		this->addDrawCall(compassSliderDrawCallInitInfo);
 
-		UiDrawCall::TextureFunc triggerTextTextureFunc = [this]()
-		{
-			return this->triggerText.getTextureID();
-		};
+		UiDrawCallInitInfo compassFrameDrawCallInitInfo;
+		compassFrameDrawCallInitInfo.textureID = this->compassFrameTextureRef.get();
+		compassFrameDrawCallInitInfo.position = GameWorldUiView::getCompassFramePosition();
+		compassFrameDrawCallInitInfo.size = Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight());
+		compassFrameDrawCallInitInfo.pivotType = PivotType::Top;
+		compassFrameDrawCallInitInfo.activeFunc = compassSliderDrawCallInitInfo.activeFunc;
+		this->addDrawCall(compassFrameDrawCallInitInfo);
 
-		UiDrawCall::TextureFunc actionTextTextureFunc = [this]()
+		UiDrawCallInitInfo triggerTextDrawCallInitInfo;
+		triggerTextDrawCallInitInfo.textureFunc = [this]() { return this->triggerText.getTextureID(); };
+		triggerTextDrawCallInitInfo.position = GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight());
+		triggerTextDrawCallInitInfo.size = this->triggerText.getRect().getSize();
+		triggerTextDrawCallInitInfo.pivotType = PivotType::Bottom;
+		triggerTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
-			return this->actionText.getTextureID();
-		};
-
-		UiDrawCall::TextureFunc effectTextTextureFunc = [this]()
-		{
-			return this->effectText.getTextureID();
-		};
-
-		UiDrawCall::ActiveFunc triggerTextActiveFunc = [this, &game]()
-		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.triggerTextIsVisible();
 		};
 
-		UiDrawCall::ActiveFunc actionTextActiveFunc = [this, &game]()
+		this->addDrawCall(triggerTextDrawCallInitInfo);
+
+		UiDrawCallInitInfo actionTextDrawCallInitInfo;
+		actionTextDrawCallInitInfo.textureFunc = [this]() { return this->actionText.getTextureID(); };
+		actionTextDrawCallInitInfo.position = GameWorldUiView::getActionTextPosition();
+		actionTextDrawCallInitInfo.size = this->actionText.getRect().getSize();
+		actionTextDrawCallInitInfo.pivotType = PivotType::Top;
+		actionTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.actionTextIsVisible();
 		};
 
-		UiDrawCall::ActiveFunc effectTextActiveFunc = [this, &game]()
+		this->addDrawCall(actionTextDrawCallInitInfo);
+
+		const Rect effectTextBoxRect = this->effectText.getRect();
+		// @todo initialize effect text
+		/*UiDrawCallInitInfo effectTextDrawCallInitInfo;
+		effectTextDrawCallInitInfo.textureFunc = [this]() { return this->effectText.getTextureID(); };
+		effectTextDrawCallInitInfo.position = Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.width / 2), effectTextBoxRect.getTop());
+		effectTextDrawCallInitInfo.size = effectTextBoxRect.getSize();
+		effectTextDrawCallInitInfo.pivotType = PivotType::Bottom;
+		effectTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
-			const auto &gameState = game.getGameState();
+			const auto &gameState = game.gameState;
 			return !this->isPaused() && gameState.effectTextIsVisible();
 		};
 
-		const Rect &triggerTextBoxRect = this->triggerText.getRect(); // Position is not usable due to classic/modern mode differences.
-		this->addDrawCall(
-			triggerTextTextureFunc,
-			[this, &game]() { return GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight()); },
-			[triggerTextBoxRect]() { return Int2(triggerTextBoxRect.getWidth(), triggerTextBoxRect.getHeight()); },
-			[]() { return PivotType::Bottom; },
-			triggerTextActiveFunc);
+		this->addDrawCall(effectTextDrawCallInitInfo);*/
 
-		const Rect &actionTextBoxRect = this->actionText.getRect(); // Position is not usable due to classic/modern mode differences.
-		this->addDrawCall(
-			actionTextTextureFunc,
-			[]() { return GameWorldUiView::getActionTextPosition(); },
-			[actionTextBoxRect]() { return Int2(actionTextBoxRect.getWidth(), actionTextBoxRect.getHeight()); },
-			[]() { return PivotType::Top; },
-			actionTextActiveFunc);
-
-		const Rect &effectTextBoxRect = this->effectText.getRect();
-		this->addDrawCall(
-			effectTextTextureFunc,
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getLeft() + (effectTextBoxRect.getWidth() / 2), effectTextBoxRect.getTop()); },
-			[effectTextBoxRect]() { return Int2(effectTextBoxRect.getWidth(), effectTextBoxRect.getHeight()); },
-			[]() { return PivotType::Bottom; },
-			effectTextActiveFunc);
-
-		const auto &fontLibrary = FontLibrary::getInstance();
+		const FontLibrary &fontLibrary = FontLibrary::getInstance();
 		this->tooltipTextureRefs.init(GameWorldUiModel::BUTTON_COUNT);
 		for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
 		{
@@ -656,7 +810,8 @@ void GameWorldPanel::initUiDrawCalls()
 			this->tooltipTextureRefs.set(i, ScopedUiTextureRef(tooltipTextureID, renderer));
 		}
 
-		UiDrawCall::TextureFunc tooltipTextureFunc = [this, &game]()
+		UiDrawCallInitInfo tooltipDrawCallInitInfo;
+		tooltipDrawCallInitInfo.textureFunc = [this, &game]()
 		{
 			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
 			if (!buttonType.has_value())
@@ -669,12 +824,8 @@ void GameWorldPanel::initUiDrawCalls()
 			return tooltipTextureRef.get();
 		};
 
-		UiDrawCall::PositionFunc tooltipPositionFunc = [&game]()
-		{
-			return GameWorldUiView::getTooltipPosition(game);
-		};
-
-		UiDrawCall::SizeFunc tooltipSizeFunc = [this, &game]()
+		tooltipDrawCallInitInfo.position = GameWorldUiView::getTooltipPosition(game);
+		tooltipDrawCallInitInfo.sizeFunc = [this, &game]()
 		{
 			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
 			if (!buttonType.has_value())
@@ -687,12 +838,8 @@ void GameWorldPanel::initUiDrawCalls()
 			return Int2(tooltipTextureRef.getWidth(), tooltipTextureRef.getHeight());
 		};
 
-		UiDrawCall::PivotFunc tooltipPivotFunc = []()
-		{
-			return PivotType::BottomLeft;
-		};
-
-		UiDrawCall::ActiveFunc tooltipActiveFunc = [this, &game]()
+		tooltipDrawCallInitInfo.pivotType = PivotType::BottomLeft;
+		tooltipDrawCallInitInfo.activeFunc = [this, &game]()
 		{
 			if (this->isPaused())
 			{
@@ -703,20 +850,15 @@ void GameWorldPanel::initUiDrawCalls()
 			return buttonType.has_value() && GameWorldUiModel::isButtonTooltipAllowed(*buttonType, game);
 		};
 
-		this->addDrawCall(
-			tooltipTextureFunc,
-			tooltipPositionFunc,
-			tooltipSizeFunc,
-			tooltipPivotFunc,
-			tooltipActiveFunc);
+		this->addDrawCall(tooltipDrawCallInitInfo);
 
-		UiDrawCall::PositionFunc cursorPositionFunc = [&game]()
+		UiDrawCallPositionFunc cursorPositionFunc = [&game]()
 		{
-			const auto &inputManager = game.getInputManager();
+			const auto &inputManager = game.inputManager;
 			return inputManager.getMousePosition();
 		};
 
-		auto getCursorRegionIndex = [this, &game, cursorPositionFunc]() -> std::optional<int>
+		auto getCursorRegionIndex = [&game, cursorPositionFunc]() -> std::optional<int>
 		{
 			const Int2 cursorPosition = cursorPositionFunc();
 
@@ -734,7 +876,8 @@ void GameWorldPanel::initUiDrawCalls()
 			return std::nullopt;
 		};
 
-		UiDrawCall::TextureFunc cursorTextureFunc = [this, &game, getCursorRegionIndex]()
+		UiDrawCallInitInfo cursorDrawCallInitInfo;
+		cursorDrawCallInitInfo.textureFunc = [this, &game, getCursorRegionIndex]()
 		{
 			const std::optional<int> index = getCursorRegionIndex();
 			if (!index.has_value())
@@ -746,7 +889,8 @@ void GameWorldPanel::initUiDrawCalls()
 			return arrowCursorTextureRef.get();
 		};
 
-		UiDrawCall::SizeFunc cursorSizeFunc = [this, &game, getCursorRegionIndex]()
+		cursorDrawCallInitInfo.positionFunc = cursorPositionFunc;
+		cursorDrawCallInitInfo.sizeFunc = [this, &game, getCursorRegionIndex]()
 		{
 			const std::optional<int> index = getCursorRegionIndex();
 			const Int2 textureDims = [this, &index]()
@@ -760,14 +904,14 @@ void GameWorldPanel::initUiDrawCalls()
 				return Int2(arrowCursorTextureRef.getWidth(), arrowCursorTextureRef.getHeight());
 			}();
 
-			const auto &options = game.getOptions();
+			const auto &options = game.options;
 			const double cursorScale = options.getGraphics_CursorScale();
 			return Int2(
 				static_cast<int>(static_cast<double>(textureDims.x) * cursorScale),
 				static_cast<int>(static_cast<double>(textureDims.y) * cursorScale));
 		};
 
-		UiDrawCall::PivotFunc cursorPivotFunc = [this, getCursorRegionIndex]()
+		cursorDrawCallInitInfo.pivotFunc = [this, getCursorRegionIndex]()
 		{
 			const std::optional<int> index = getCursorRegionIndex();
 			if (!index.has_value())
@@ -775,92 +919,69 @@ void GameWorldPanel::initUiDrawCalls()
 				return PivotType::TopLeft;
 			}
 
-			constexpr auto &arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
-			DebugAssertIndex(arrowCursorPivotTypes, *index);
+			BufferView<const PivotType> arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
 			return arrowCursorPivotTypes[*index];
 		};
 
-		UiDrawCall::ActiveFunc cursorActiveFunc = [this]()
-		{
-			return !this->isPaused();
-		};
-
-		this->addDrawCall(
-			cursorTextureFunc,
-			cursorPositionFunc,
-			cursorSizeFunc,
-			cursorPivotFunc,
-			cursorActiveFunc,
-			std::nullopt,
-			RenderSpace::Native);
+		cursorDrawCallInitInfo.activeFunc = [this]() { return !this->isPaused(); };
+		cursorDrawCallInitInfo.renderSpace = RenderSpace::Native;
+		this->addDrawCall(cursorDrawCallInitInfo);
 	}
 }
 
-bool GameWorldPanel::gameWorldRenderCallback(Game &game)
+TextBox &GameWorldPanel::getTriggerTextBox()
 {
-	static std::vector<RenderDrawCall> drawCalls; // Preserved between frames for less fragmentation.
-	drawCalls.clear();
+	return this->triggerText;
+}
+
+TextBox &GameWorldPanel::getActionTextBox()
+{
+	return this->actionText;
+}
+
+bool GameWorldPanel::renderScene(Game &game)
+{
+	static RenderCommandBuffer commandBuffer;
+	commandBuffer.clear();
 
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-	const auto &player = game.getPlayer();
-	const CoordDouble3 &playerPos = player.getPosition();
-	const VoxelDouble3 &playerDir = player.getDirection();
+	const Player &player = game.player;
+	const WorldDouble3 playerPosition = player.getEyePosition();
 
-	auto &gameState = game.getGameState();
+	GameState &gameState = game.gameState;
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
 
-	const SceneManager &sceneManager = game.getSceneManager();
-	const RenderChunkManager &renderChunkManager = sceneManager.renderChunkManager;
-	const BufferView<const RenderDrawCall> voxelDrawCalls = renderChunkManager.getVoxelDrawCalls();
-	const BufferView<const RenderDrawCall> entityDrawCalls = renderChunkManager.getEntityDrawCalls();
-	drawCalls.insert(drawCalls.end(), voxelDrawCalls.begin(), voxelDrawCalls.end());
-	drawCalls.insert(drawCalls.end(), entityDrawCalls.begin(), entityDrawCalls.end());
-
+	const SceneManager &sceneManager = game.sceneManager;
 	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	const BufferView<const RenderDrawCall> skyObjectDrawCalls = renderSkyManager.getObjectDrawCalls();
-	drawCalls.emplace_back(renderSkyManager.getBgDrawCall());
-	drawCalls.insert(drawCalls.end(), skyObjectDrawCalls.begin(), skyObjectDrawCalls.end());
+	renderSkyManager.populateCommandBuffer(commandBuffer);
+
+	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
+	renderVoxelChunkManager.populateCommandBuffer(commandBuffer);
+
+	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
+	renderEntityChunkManager.populateCommandBuffer(commandBuffer);
 
 	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
-	if (activeWeatherInst.hasRain())
-	{
-		const BufferView<const RenderDrawCall> rainDrawCalls = renderWeatherManager.getRainDrawCalls();
-		drawCalls.insert(drawCalls.end(), rainDrawCalls.begin(), rainDrawCalls.end());
-	}
-
-	if (activeWeatherInst.hasSnow())
-	{
-		const BufferView<const RenderDrawCall> snowDrawCalls = renderWeatherManager.getSnowDrawCalls();
-		drawCalls.insert(drawCalls.end(), snowDrawCalls.begin(), snowDrawCalls.end());
-	}
-
-	if (activeWeatherInst.hasFog())
-	{
-		drawCalls.emplace_back(renderWeatherManager.getFogDrawCall());
-	}
+	const bool isFoggy = gameState.isFogActive();
+	renderWeatherManager.populateCommandBuffer(commandBuffer, activeWeatherInst, isFoggy);
 
 	const MapType activeMapType = activeMapDef.getMapType();
-	const bool isFoggy = gameState.isFogActive();
 	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType, isFoggy);
-	const double latitude = [&gameState]()
-	{
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		return locationDef.getLatitude();
-	}();
+	const double chasmAnimPercent = gameState.getChasmAnimPercent();
 
-	auto &renderer = game.getRenderer();
-	const auto &options = game.getOptions();
+	auto &renderer = game.renderer;
+	const auto &options = game.options;
 	const Degrees fovY = options.getGraphics_VerticalFOV();
 	const double viewAspectRatio = renderer.getViewAspect();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPos.chunk, playerPos.point, playerDir, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
+	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
 	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
 	
 	const bool isInterior = gameState.getActiveMapType() == MapType::Interior;
-	const double daytimePercent = gameState.getDaytimePercent();
-	const bool isBefore6AM = daytimePercent < 0.25;
-	const bool isAfter6PM = daytimePercent > 0.75;
+	const double dayPercent = gameState.getDayPercent();
+	const bool isBefore6AM = dayPercent < 0.25;
+	const bool isAfter6PM = dayPercent > 0.75;
 
 	ObjectTextureID lightTableTextureID = sceneManager.normalLightTableDaytimeTextureRef.get();
 	if (isFoggy)
@@ -872,14 +993,11 @@ bool GameWorldPanel::gameWorldRenderCallback(Game &game)
 		lightTableTextureID = sceneManager.normalLightTableNightTextureRef.get();
 	}
 
-	renderer.submitFrame(renderCamera, drawCalls, ambientPercent, paletteTextureID, lightTableTextureID, options.getGraphics_RenderThreadsMode());
+	const DitheringMode ditheringMode = static_cast<DitheringMode>(options.getGraphics_DitheringMode());
+	renderer.submitFrame(renderCamera, commandBuffer, ambientPercent, chasmAnimPercent, paletteTextureID, lightTableTextureID,
+		renderSkyManager.getBgTextureID(), options.getGraphics_RenderThreadsMode(), ditheringMode);
 
 	return true;
-}
-
-TextBox &GameWorldPanel::getTriggerTextBox()
-{
-	return this->triggerText;
 }
 
 void GameWorldPanel::onPauseChanged(bool paused)
@@ -889,7 +1007,7 @@ void GameWorldPanel::onPauseChanged(bool paused)
 	auto &game = this->getGame();
 
 	// If in modern mode, set free-look to the given value.
-	const auto &options = game.getOptions();
+	const auto &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	if (modernInterface)
@@ -897,5 +1015,5 @@ void GameWorldPanel::onPauseChanged(bool paused)
 		GameWorldUiModel::setFreeLookActive(game, !paused);
 	}
 
-	game.setIsSimulatingScene(!paused);
+	game.shouldSimulateScene = !paused;
 }

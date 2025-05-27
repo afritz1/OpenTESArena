@@ -5,94 +5,100 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string_view>
 #include <vector>
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Renderer/DebugRendererSimple.h"
 #include "SDL.h"
 
 #include "RendererSystem2D.h"
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
+#include "RenderLightUtils.h"
 #include "../Assets/TextureUtils.h"
 #include "../UI/Texture.h"
 
 #include "components/utilities/BufferView.h"
 
-class Color;
-class Rect;
 class Surface;
 class TextureManager;
 
 enum class CursorAlignment;
 
+struct Color;
+struct Rect;
 struct SDL_Rect;
 struct SDL_Renderer;
 struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 
-// Manages the active window and 2D and 3D rendering operations.
-class Renderer
+struct RenderDisplayMode
 {
-public:
-	struct DisplayMode
-	{
-		int width, height, refreshRate;
+	int width, height, refreshRate;
 
-		DisplayMode(int width, int height, int refreshRate);
-	};
+	RenderDisplayMode(int width, int height, int refreshRate);
+};
 
-	enum class WindowMode
-	{
-		Window,
-		BorderlessFullscreen,
-		ExclusiveFullscreen
-	};
+enum class RenderWindowMode
+{
+	Window,
+	BorderlessFullscreen,
+	ExclusiveFullscreen
+};
 
-	// Profiler information from the most recently rendered frame.
-	struct ProfilerData
-	{
-		// Internal renderer resolution.
-		int width, height;
+// Profiler information from the most recently rendered frame.
+struct RendererProfilerData
+{
+	// Internal renderer resolution.
+	int width, height;
+	int pixelCount;
 
-		int threadCount;
-		int drawCallCount;
+	int threadCount;
+	int drawCallCount;
 
-		// Geometry.
-		int sceneTriangleCount, visTriangleCount;
+	// Geometry.
+	int presentedTriangleCount; // After clipping, only screen-space triangles with onscreen area.
 
-		// Textures.
-		int objectTextureCount;
-		int64_t objectTextureByteCount;
-		
-		// Lights.
-		int totalLightCount;
+	// Textures.
+	int objectTextureCount;
+	int64_t objectTextureByteCount;
 
-		double frameTime;
+	// Lights.
+	int totalLightCount;
 
-		ProfilerData();
+	// Pixel writes/overdraw.
+	int totalCoverageTests;
+	int totalDepthTests;
+	int totalColorWrites;
 
-		void init(int width, int height, int threadCount, int drawCallCount, int sceneTriangleCount, int visTriangleCount,
-			int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, double frameTime);
-	};
+	double renderTime;
+	double presentTime;
 
-	using ResolutionScaleFunc = std::function<double()>;
+	RendererProfilerData();
+
+	void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
+		int64_t objectTextureByteCount, int totalLightCount, int totalCoverageTests, int totalDepthTests, int totalColorWrites,
+		double renderTime, double presentTime);
+};
+
+using RenderResolutionScaleFunc = std::function<double()>;
+
+// Manages the active window and 2D and 3D rendering operations.
+class Renderer : public JPH::DebugRendererSimple
+{
 private:
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	std::vector<DisplayMode> displayModes;	
+	std::vector<RenderDisplayMode> displayModes;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	Texture nativeTexture, gameWorldTexture; // Frame buffers.
-	ProfilerData profilerData;
-	ResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
+	RendererProfilerData profilerData;
+	RenderResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
-
-	// Helper method for making a renderer context.
-	static SDL_Renderer *createRenderer(SDL_Window *window);
-
-	// Generates a renderer dimension while avoiding pitfalls of numeric imprecision.
-	static int makeRendererDimension(int value, double resolutionScale);
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();
@@ -114,7 +120,7 @@ public:
 	double getWindowAspect() const;
 
 	// Gets a list of supported fullscreen display modes.
-	BufferView<const DisplayMode> getDisplayModes() const;
+	BufferView<const RenderDisplayMode> getDisplayModes() const;
 
 	// Gets the active window's pixels-per-inch scale divided by platform DPI.
 	double getDpiScale() const;
@@ -133,7 +139,7 @@ public:
 	Surface getScreenshot() const;
 
 	// Gets profiler data (timings, renderer properties, etc.).
-	const ProfilerData &getProfilerData() const;
+	const RendererProfilerData &getProfilerData() const;
 
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
 	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
@@ -151,18 +157,21 @@ public:
 	// Wrapper methods for SDL_CreateTexture.
 	Texture createTexture(uint32_t format, int access, int w, int h);
 
-	bool init(int width, int height, WindowMode windowMode, int letterboxMode, bool fullGameWindow,
-		const ResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
-		RendererSystemType3D systemType3D, int renderThreadsMode);
+	bool init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
+		const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
+		RendererSystemType3D systemType3D, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
+
+	// Handles resetting render target textures when switching in and out of exclusive fullscreen.
+	void handleRenderTargetsReset();
 
 	// Sets the letterbox mode.
 	void setLetterboxMode(int letterboxMode);
 
 	// Sets whether the program is windowed, fullscreen, etc..
-	void setWindowMode(WindowMode mode);
+	void setWindowMode(RenderWindowMode mode);
 
 	// Sets the window icon to be the given surface.
 	void setWindowIcon(const Surface &icon);
@@ -176,9 +185,6 @@ public:
 	// Sets the clip rectangle of the renderer so that pixels outside the specified area
 	// will not be rendered. If rect is null, then clipping is disabled.
 	void setClipRect(const SDL_Rect *rect);
-
-	// Sets which mode to use for software render threads (low, medium, high, etc.).
-	void setRenderThreadsMode(int mode);
 
 	// Geometry management functions.
 	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID);
@@ -214,9 +220,27 @@ public:
 	void freeUiTexture(UiTextureID id);
 
 	// Shading management functions.
+	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID);
+	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data);
+
+	template<typename T>
+	void populateUniformBuffer(UniformBufferID id, const T &value)
+	{
+		BufferView<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
+		this->populateUniformBuffer(id, valueAsBytes);
+	}
+
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData);
+
+	template<typename T>
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, const T &value)
+	{
+		BufferView<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
+		this->populateUniformAtIndex(id, uniformIndex, valueAsBytes);
+	}
+
+	void freeUniformBuffer(UniformBufferID id);
 	bool tryCreateLight(RenderLightID *outID);
-	const Double3 &getLightPosition(RenderLightID id);
-	void getLightRadii(RenderLightID id, double *outStartRadius, double *outEndRadius);
 	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
 	void freeLight(RenderLightID id);
@@ -236,10 +260,15 @@ public:
 	void fillRect(const Color &color, int x, int y, int w, int h);
 	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
 
+	// Jolt Physics debugging.
+	void DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color) override;
+	void DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3, JPH::ColorArg color, ECastShadow castShadow) override;
+	void DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height) override;
+
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	void submitFrame(const RenderCamera &camera, BufferView<const RenderDrawCall> voxelDrawCalls,
-		double ambientPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		int renderThreadsMode);
+	void submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
+		double screenSpaceAnimPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
+		ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

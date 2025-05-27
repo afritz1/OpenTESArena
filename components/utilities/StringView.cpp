@@ -2,12 +2,12 @@
 
 #include "StringView.h"
 
-bool StringView::equals(const std::string_view &a, const std::string_view &b)
+bool StringView::equals(std::string_view a, std::string_view b)
 {
 	return a == b;
 }
 
-bool StringView::caseInsensitiveEquals(const std::string_view &a, const std::string_view &b)
+bool StringView::caseInsensitiveEquals(std::string_view a, std::string_view b)
 {
 	if (a.size() != b.size())
 	{
@@ -25,12 +25,17 @@ bool StringView::caseInsensitiveEquals(const std::string_view &a, const std::str
 	return true;
 }
 
-std::string_view StringView::substr(const std::string_view &str, size_t offset, size_t count)
+int StringView::compare(std::string_view a, std::string_view b)
+{
+	return a.compare(b);
+}
+
+std::string_view StringView::substr(std::string_view str, size_t offset, size_t count)
 {
 	return str.substr(offset, count);
 }
 
-Buffer<std::string_view> StringView::split(const std::string_view &str, char separator)
+Buffer<std::string_view> StringView::split(std::string_view str, char separator)
 {
 	// Always have at least one view.
 	const int viewCount = 1 + static_cast<int>(std::count(str.begin(), str.end(), separator));
@@ -58,12 +63,12 @@ Buffer<std::string_view> StringView::split(const std::string_view &str, char sep
 	return buffer;
 }
 
-Buffer<std::string_view> StringView::split(const std::string_view &str)
+Buffer<std::string_view> StringView::split(std::string_view str)
 {
 	return StringView::split(str, String::SPACE);
 }
 
-std::string_view StringView::trimFront(const std::string_view &str)
+std::string_view StringView::trimFront(std::string_view str)
 {
 	std::string_view trimmed(str);
 	while ((trimmed.size() > 0) && std::isspace(trimmed.front()))
@@ -74,7 +79,7 @@ std::string_view StringView::trimFront(const std::string_view &str)
 	return trimmed;
 }
 
-std::string_view StringView::trimBack(const std::string_view &str)
+std::string_view StringView::trimBack(std::string_view str)
 {
 	std::string_view trimmed(str);
 	while ((trimmed.size() > 0) && std::isspace(trimmed.back()))
@@ -85,7 +90,7 @@ std::string_view StringView::trimBack(const std::string_view &str)
 	return trimmed;
 }
 
-std::string_view StringView::getExtension(const std::string_view &str)
+std::string_view StringView::getExtension(std::string_view str)
 {
 	const size_t dotPos = str.rfind(String::FILE_EXTENSION_SEPARATOR);
 	const bool hasDot = (dotPos < str.size()) && (dotPos != std::string_view::npos);

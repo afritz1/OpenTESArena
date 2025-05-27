@@ -18,21 +18,19 @@ class MusicLibrary : public Singleton<MusicLibrary>
 public:
 	using Predicate = std::function<bool(const MusicDefinition&)>;
 private:
-	std::unordered_map<MusicDefinition::Type, std::vector<MusicDefinition>> definitions;
+	std::unordered_map<MusicType, std::vector<MusicDefinition>> definitions;
 
-	static bool tryParseType(const std::string_view &typeStr, MusicDefinition::Type *outType);
-	static bool tryParseValue(const std::string_view &valueStr, MusicDefinition::Type type,
-		MusicDefinition *outDefinition);
+	static bool tryParseType(const std::string_view typeStr, MusicType *outType);
+	static bool tryParseValue(const std::string_view valueStr, MusicType type, MusicDefinition *outDefinition);
 public:
 	// Parses music definition file.
 	bool init(const char *filename);
 
-	int getMusicDefinitionCount(MusicDefinition::Type type) const;
-	const MusicDefinition *getMusicDefinition(MusicDefinition::Type type, int index) const;
-	const MusicDefinition *getFirstMusicDefinition(MusicDefinition::Type type) const;
-	const MusicDefinition *getRandomMusicDefinition(MusicDefinition::Type type, Random &random) const;
-	const MusicDefinition *getRandomMusicDefinitionIf(MusicDefinition::Type type, Random &random,
-		const Predicate &predicate) const;
+	int getMusicDefinitionCount(MusicType type) const;
+	const MusicDefinition *getMusicDefinition(MusicType type, int index) const;
+	const MusicDefinition *getFirstMusicDefinition(MusicType type) const;
+	const MusicDefinition *getRandomMusicDefinition(MusicType type, Random &random) const;
+	const MusicDefinition *getRandomMusicDefinitionIf(MusicType type, Random &random, const Predicate &predicate) const;
 };
 
 #endif

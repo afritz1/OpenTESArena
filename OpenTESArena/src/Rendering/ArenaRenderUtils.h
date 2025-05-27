@@ -7,11 +7,12 @@
 
 #include "../Assets/MIFUtils.h"
 
-class Clock;
 class Random;
 class TextureManager;
 
 enum class MapType;
+
+struct Clock;
 
 namespace ArenaRenderUtils
 {
@@ -37,6 +38,7 @@ namespace ArenaRenderUtils
 	constexpr double DOOR_MIN_VISIBLE = 0.10;
 
 	// Hardcoded palette indices with special behavior in the original game's renderer.
+	constexpr uint8_t PALETTE_INDEX_TRANSPARENT = 0;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_LOWEST = 1;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_HIGHEST = 13;
 	constexpr uint8_t PALETTE_INDEX_LIGHT_LEVEL_DIVISOR = 14;
@@ -117,7 +119,7 @@ namespace ArenaRenderUtils
 	constexpr double PLAYER_LIGHT_END_RADIUS = 275.0 / MIFUtils::ARENA_UNITS;
 	constexpr double PLAYER_FOG_LIGHT_START_RADIUS = 250.0 / MIFUtils::ARENA_UNITS;
 	constexpr double PLAYER_FOG_LIGHT_END_RADIUS = 575.0 / MIFUtils::ARENA_UNITS;
-	constexpr double STREETLIGHT_LIGHT_RADIUS = 2.0;
+	constexpr double STREETLIGHT_LIGHT_RADIUS = 3.0 * (MIFUtils::ARENA_UNITS / 100.0);
 
 	const std::string CHASM_WATER_FILENAME = "WATERANI.RCI";
 	const std::string CHASM_LAVA_FILENAME = "LAVAANI.RCI";

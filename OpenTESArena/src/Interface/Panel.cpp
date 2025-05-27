@@ -13,7 +13,6 @@
 #include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
@@ -30,35 +29,35 @@ Panel::Panel(Game &game)
 
 Panel::~Panel()
 {
-	InputManager &inputManager = this->game.getInputManager();
+	InputManager &inputManager = this->game.inputManager;
 
 	// Free all the input listener IDs.
-	for (const InputManager::ListenerID listenerID : this->inputActionListenerIDs)
+	for (const InputListenerID listenerID : this->inputActionListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->mouseButtonChangedListenerIDs)
+	for (const InputListenerID listenerID : this->mouseButtonChangedListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->mouseButtonHeldListenerIDs)
+	for (const InputListenerID listenerID : this->mouseButtonHeldListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->mouseScrollChangedListenerIDs)
+	for (const InputListenerID listenerID : this->mouseScrollChangedListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->mouseMotionListenerIDs)
+	for (const InputListenerID listenerID : this->mouseMotionListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
-	for (const InputManager::ListenerID listenerID : this->textInputListenerIDs)
+	for (const InputListenerID listenerID : this->textInputListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
@@ -78,10 +77,10 @@ void Panel::onPauseChanged(bool paused)
 {
 	this->paused = paused;
 
-	InputManager &inputManager = this->game.getInputManager();
-	auto setListenersEnabled = [paused, &inputManager](std::vector<InputManager::ListenerID> &listenerIDs)
+	InputManager &inputManager = this->game.inputManager;
+	auto setListenersEnabled = [paused, &inputManager](std::vector<InputListenerID> &listenerIDs)
 	{
-		for (const InputManager::ListenerID listenerID : listenerIDs)
+		for (const InputListenerID listenerID : listenerIDs)
 		{
 			inputManager.setListenerEnabled(listenerID, !paused);
 		}
@@ -113,77 +112,53 @@ bool Panel::isPaused() const
 	return this->paused;
 }
 
-CursorData Panel::getDefaultCursor() const
+void Panel::addInputActionListener(const std::string_view actionName, const InputActionCallback &callback)
 {
-	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	auto &textureManager = game.getTextureManager();
-
-	const std::string &paletteFilename = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteFilename.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteFilename + "\".");
-	}
-
-	const std::string &textureFilename = ArenaTextureName::SwordCursor;
-	const std::optional<TextureBuilderID> textureBuilderID =
-		textureManager.tryGetTextureBuilderID(textureFilename.c_str());
-	if (!textureBuilderID.has_value())
-	{
-		DebugCrash("Couldn't get texture builder ID for \"" + textureFilename + "\".");
-	}
-
-	return CursorData(*textureBuilderID, *paletteID, CursorAlignment::TopLeft);
-}
-
-void Panel::addInputActionListener(const std::string_view &actionName, const InputActionCallback &callback)
-{
-	auto &inputManager = this->game.getInputManager();
+	auto &inputManager = this->game.inputManager;
 	this->inputActionListenerIDs.emplace_back(inputManager.addInputActionListener(actionName, callback));
 }
 
 void Panel::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
 {
-	auto &inputManager = this->game.getInputManager();
+	auto &inputManager = this->game.inputManager;
 	this->mouseButtonChangedListenerIDs.emplace_back(inputManager.addMouseButtonChangedListener(callback));
 }
 
 void Panel::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
 {
-	auto &inputManager = this->game.getInputManager();
+	auto &inputManager = this->game.inputManager;
 	this->mouseButtonHeldListenerIDs.emplace_back(inputManager.addMouseButtonHeldListener(callback));
 }
 
 void Panel::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
 {
-	auto &inputManager = this->game.getInputManager();
+	auto &inputManager = this->game.inputManager;
 	this->mouseScrollChangedListenerIDs.emplace_back(inputManager.addMouseScrollChangedListener(callback));
 }
 
 void Panel::addMouseMotionListener(const MouseMotionCallback &callback)
 {
-	auto &inputManager = this->game.getInputManager();
+	auto &inputManager = this->game.inputManager;
 	this->mouseMotionListenerIDs.emplace_back(inputManager.addMouseMotionListener(callback));
 }
 
 void Panel::addTextInputListener(const TextInputCallback &callback)
 {
-	auto &inputManager = this->game.getInputManager();
+	auto &inputManager = this->game.inputManager;
 	this->textInputListenerIDs.emplace_back(inputManager.addTextInputListener(callback));
 }
 
 void Panel::addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,
-	const ButtonProxy::Callback &callback, const ButtonProxy::ActiveFunction &isActiveFunc)
+	const ButtonProxy::Callback &callback, const Rect &parentRect, const ButtonProxy::ActiveFunction &isActiveFunc)
 {
-	this->buttonProxies.emplace_back(buttonType, rectFunc, callback, isActiveFunc);
+	this->buttonProxies.emplace_back(buttonType, rectFunc, callback, parentRect, isActiveFunc);
 }
 
 void Panel::addButtonProxy(MouseButtonType buttonType, const Rect &rect, const ButtonProxy::Callback &callback,
-	const ButtonProxy::ActiveFunction &isActiveFunc)
+	const Rect &parentRect, const ButtonProxy::ActiveFunction &isActiveFunc)
 {
 	auto rectFunc = [rect]() { return rect; };
-	this->addButtonProxy(buttonType, rectFunc, callback, isActiveFunc);
+	this->addButtonProxy(buttonType, rectFunc, callback, parentRect, isActiveFunc);
 }
 
 void Panel::clearButtonProxies()
@@ -191,62 +166,33 @@ void Panel::clearButtonProxies()
 	this->buttonProxies.clear();
 }
 
-void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const UiDrawCall::PositionFunc &positionFunc,
-	const UiDrawCall::SizeFunc &sizeFunc, const UiDrawCall::PivotFunc &pivotFunc,
-	const UiDrawCall::ActiveFunc &activeFunc, const std::optional<Rect> &clipRect, RenderSpace renderSpace)
+void Panel::addDrawCall(const UiDrawCallInitInfo &initInfo)
 {
-	this->drawCalls.emplace_back(textureFunc, positionFunc, sizeFunc, pivotFunc, activeFunc, clipRect, renderSpace);
+	this->drawCalls.emplace_back(initInfo);
 }
 
-void Panel::addDrawCall(const UiDrawCall::TextureFunc &textureFunc, const Int2 &position, const Int2 &size,
-	PivotType pivotType, const std::optional<Rect> &clipRect)
+void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCallActiveFunc &activeFunc)
 {
-	this->drawCalls.emplace_back(
-		textureFunc,
-		UiDrawCall::makePositionFunc(position),
-		UiDrawCall::makeSizeFunc(size),
-		UiDrawCall::makePivotFunc(pivotType),
-		UiDrawCall::defaultActiveFunc,
-		clipRect);
-}
+	UiDrawCallTextureFunc textureFunc = UiDrawCall::makeTextureFunc(textureID);
 
-void Panel::addDrawCall(UiTextureID textureID, const Int2 &position, const Int2 &size, PivotType pivotType,
-	const std::optional<Rect> &clipRect)
-{
-	this->drawCalls.emplace_back(
-		UiDrawCall::makeTextureFunc(textureID),
-		UiDrawCall::makePositionFunc(position),
-		UiDrawCall::makeSizeFunc(size),
-		UiDrawCall::makePivotFunc(pivotType),
-		UiDrawCall::defaultActiveFunc,
-		clipRect);
-}
-
-void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCall::ActiveFunc &activeFunc)
-{
-	UiDrawCall::TextureFunc textureFunc = [textureID]()
-	{
-		return textureID;
-	};
-
-	UiDrawCall::PositionFunc positionFunc = [this]()
+	UiDrawCallPositionFunc positionFunc = [this]()
 	{
 		auto &game = this->getGame();
-		const auto &inputManager = game.getInputManager();
+		const auto &inputManager = game.inputManager;
 		return inputManager.getMousePosition();
 	};
 
-	UiDrawCall::SizeFunc sizeFunc = [this, textureID]()
+	UiDrawCallSizeFunc sizeFunc = [this, textureID]()
 	{
 		auto &game = this->getGame();
-		auto &renderer = game.getRenderer();
+		auto &renderer = game.renderer;
 		const std::optional<Int2> dims = renderer.tryGetUiTextureDims(textureID);
 		if (!dims.has_value())
 		{
 			DebugCrash("Couldn't get cursor texture dimensions for UI draw call.");
 		}
 
-		const auto &options = game.getOptions();
+		const auto &options = game.options;
 		const double scale = options.getGraphics_CursorScale();
 		const Int2 scaledDims(
 			static_cast<int>(static_cast<double>(dims->x) * scale),
@@ -254,11 +200,7 @@ void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const 
 		return scaledDims;
 	};
 
-	UiDrawCall::PivotFunc pivotFunc = [pivotType]()
-	{
-		return pivotType;
-	};
-
+	UiDrawCallPivotFunc pivotFunc = UiDrawCall::makePivotFunc(pivotType);
 	const std::optional<Rect> clipRect = std::nullopt;
 	constexpr RenderSpace renderSpace = RenderSpace::Native;
 

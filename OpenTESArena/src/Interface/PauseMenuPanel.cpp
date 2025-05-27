@@ -6,10 +6,9 @@
 #include "PauseMenuUiController.h"
 #include "PauseMenuUiModel.h"
 #include "PauseMenuUiView.h"
-#include "../Entities/CharacterClassLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../UI/CursorData.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextRenderUtils.h"
@@ -20,11 +19,11 @@ PauseMenuPanel::PauseMenuPanel(Game &game)
 bool PauseMenuPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
-	const auto &fontLibrary = FontLibrary::getInstance();
+	auto &renderer = game.renderer;
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
-	const TextBox::InitInfo playerNameTextBoxInitInfo =
+	const TextBoxInitInfo playerNameTextBoxInitInfo =
 		GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
 	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
@@ -33,7 +32,7 @@ bool PauseMenuPanel::init()
 	}
 
 	const std::string musicText = PauseMenuUiModel::getMusicVolumeText(game);
-	const TextBox::InitInfo musicTextBoxInitInfo = PauseMenuUiView::getMusicTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo musicTextBoxInitInfo = PauseMenuUiView::getMusicTextBoxInitInfo(fontLibrary);
 	if (!this->musicTextBox.init(musicTextBoxInitInfo, musicText, renderer))
 	{
 		DebugLogError("Couldn't init music volume text box.");
@@ -41,7 +40,7 @@ bool PauseMenuPanel::init()
 	}
 
 	const std::string soundText = PauseMenuUiModel::getSoundVolumeText(game);
-	const TextBox::InitInfo soundTextBoxInitInfo = PauseMenuUiView::getSoundTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo soundTextBoxInitInfo = PauseMenuUiView::getSoundTextBoxInitInfo(fontLibrary);
 	if (!this->soundTextBox.init(soundTextBoxInitInfo, soundText, renderer))
 	{
 		DebugLogError("Couldn't init sound volume text box.");
@@ -49,7 +48,7 @@ bool PauseMenuPanel::init()
 	}
 
 	const std::string optionsText = PauseMenuUiModel::getOptionsButtonText(game);
-	const TextBox::InitInfo optionsTextBoxInitInfo = PauseMenuUiView::getOptionsTextBoxInitInfo(optionsText, fontLibrary);
+	const TextBoxInitInfo optionsTextBoxInitInfo = PauseMenuUiView::getOptionsTextBoxInitInfo(optionsText, fontLibrary);
 	if (!this->optionsTextBox.init(optionsTextBoxInitInfo, optionsText, renderer))
 	{
 		DebugLogError("Couldn't init options button text box.");
@@ -101,99 +100,148 @@ bool PauseMenuPanel::init()
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID backgroundTextureID = PauseMenuUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(this->backgroundTextureRef.getWidth(), this->backgroundTextureRef.getHeight()),
-		PivotType::TopLeft);
 
-	const UiTextureID gameWorldInterfaceTextureID =
-		GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(this->backgroundTextureRef.getWidth(), this->backgroundTextureRef.getHeight());
+	this->addDrawCall(bgDrawCallInitInfo);
+
+	const UiTextureID gameWorldInterfaceTextureID = GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
 	this->gameWorldInterfaceTextureRef.init(gameWorldInterfaceTextureID, renderer);
 
-	this->addDrawCall(
-		this->gameWorldInterfaceTextureRef.get(),
-		GameWorldUiView::getGameWorldInterfacePosition(),
-		Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight()),
-		PivotType::Bottom);
+	UiDrawCallInitInfo gameWorldInterfaceDrawCallInitInfo;
+	gameWorldInterfaceDrawCallInitInfo.textureID = this->gameWorldInterfaceTextureRef.get();
+	gameWorldInterfaceDrawCallInitInfo.position = GameWorldUiView::getGameWorldInterfacePosition();
+	gameWorldInterfaceDrawCallInitInfo.size = Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight());
+	gameWorldInterfaceDrawCallInitInfo.pivotType = PivotType::Bottom;
+	this->addDrawCall(gameWorldInterfaceDrawCallInitInfo);
 
 	constexpr GameWorldUiView::StatusGradientType gradientType = GameWorldUiView::StatusGradientType::Default;
-	const UiTextureID statusGradientTextureID =
-		GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
+	const UiTextureID statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
 	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
 
 	const Rect portraitRect = GameWorldUiView::getPlayerPortraitRect();
-	this->addDrawCall(
-		this->statusGradientTextureRef.get(),
-		portraitRect.getTopLeft(),
-		Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo statusGradientDrawCallInitInfo;
+	statusGradientDrawCallInitInfo.textureID = this->statusGradientTextureRef.get();
+	statusGradientDrawCallInitInfo.position = portraitRect.getTopLeft();
+	statusGradientDrawCallInitInfo.size = Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight());
+	this->addDrawCall(statusGradientDrawCallInitInfo);
 
-	const auto &player = game.getPlayer();
-	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(
-		player.isMale(), player.getRaceID(), player.getPortraitID(), textureManager, renderer);
+	const Player &player = game.player;
+	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
-	this->addDrawCall(
-		this->playerPortraitTextureRef.get(),
-		portraitRect.getTopLeft(),
-		Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight()),
-		PivotType::TopLeft);
+
+	UiDrawCallInitInfo playerPortraitDrawCallInitInfo;
+	playerPortraitDrawCallInitInfo.textureID = this->playerPortraitTextureRef.get();
+	playerPortraitDrawCallInitInfo.position = portraitRect.getTopLeft();
+	playerPortraitDrawCallInitInfo.size = Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight());
+	this->addDrawCall(playerPortraitDrawCallInitInfo);
+
+	const UiTextureID healthTextureID = GameWorldUiView::allocHealthBarTexture(textureManager, renderer);
+	const UiTextureID staminaTextureID = GameWorldUiView::allocStaminaBarTexture(textureManager, renderer);
+	const UiTextureID spellPointsTextureID = GameWorldUiView::allocSpellPointsBarTexture(textureManager, renderer);
+	this->healthBarTextureRef.init(healthTextureID, renderer);
+	this->staminaBarTextureRef.init(staminaTextureID, renderer);
+	this->spellPointsBarTextureRef.init(spellPointsTextureID, renderer);
+
+	constexpr PivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
+
+	UiDrawCallInitInfo healthBarDrawCallInitInfo;
+	healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
+	healthBarDrawCallInitInfo.position = GameWorldUiView::HealthBarRect.getBottomLeft();
+	healthBarDrawCallInitInfo.sizeFunc = [&game]()
+	{
+		const Player &player = game.player;
+		const Rect barRect = GameWorldUiView::HealthBarRect;
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
+	};
+
+	healthBarDrawCallInitInfo.pivotType = statusBarPivotType;
+	this->addDrawCall(healthBarDrawCallInitInfo);
+
+	UiDrawCallInitInfo staminaBarDrawCallInitInfo;
+	staminaBarDrawCallInitInfo.textureID = this->staminaBarTextureRef.get();
+	staminaBarDrawCallInitInfo.position = GameWorldUiView::StaminaBarRect.getBottomLeft();
+	staminaBarDrawCallInitInfo.sizeFunc = [&game]()
+	{
+		const Player &player = game.player;
+		const Rect barRect = GameWorldUiView::StaminaBarRect;
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
+	};
+
+	staminaBarDrawCallInitInfo.pivotType = statusBarPivotType;
+	this->addDrawCall(staminaBarDrawCallInitInfo);
+
+	UiDrawCallInitInfo spellPointsBarDrawCallInitInfo;
+	spellPointsBarDrawCallInitInfo.textureID = this->spellPointsBarTextureRef.get();
+	spellPointsBarDrawCallInitInfo.position = GameWorldUiView::SpellPointsBarRect.getBottomLeft();
+	spellPointsBarDrawCallInitInfo.sizeFunc = [&game]()
+	{
+		const Player &player = game.player;
+		const Rect barRect = GameWorldUiView::SpellPointsBarRect;
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
+	};
+
+	spellPointsBarDrawCallInitInfo.pivotType = statusBarPivotType;
+	this->addDrawCall(spellPointsBarDrawCallInitInfo);
 
 	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
 	this->noMagicTextureRef.init(noMagicTextureID, renderer);
 
-	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const auto &charClassDef = charClassLibrary.getDefinition(player.getCharacterClassDefID());
-	if (!charClassDef.canCastMagic())
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
+	if (!charClassDef.castsMagic)
 	{
-		this->addDrawCall(
-			this->noMagicTextureRef.get(),
-			GameWorldUiView::getNoMagicTexturePosition(),
-			Int2(this->noMagicTextureRef.getWidth(), this->noMagicTextureRef.getHeight()),
-			PivotType::TopLeft);
+		UiDrawCallInitInfo noMagicDrawCallInitInfo;
+		noMagicDrawCallInitInfo.textureID = this->noMagicTextureRef.get();
+		noMagicDrawCallInitInfo.position = GameWorldUiView::getNoMagicTexturePosition();
+		noMagicDrawCallInitInfo.size = Int2(this->noMagicTextureRef.getWidth(), this->noMagicTextureRef.getHeight());
+		this->addDrawCall(noMagicDrawCallInitInfo);
 	}
+
+	const Rect playerNameTextBoxRect = this->playerNameTextBox.getRect();
+	UiDrawCallInitInfo playerNameDrawCallInitInfo;
+	playerNameDrawCallInitInfo.textureID = this->playerNameTextBox.getTextureID();
+	playerNameDrawCallInitInfo.position = playerNameTextBoxRect.getTopLeft();
+	playerNameDrawCallInitInfo.size = playerNameTextBoxRect.getSize();
+	this->addDrawCall(playerNameDrawCallInitInfo);
 
 	// Cover up the detail slider with a new options background.
 	const UiTextureID optionsButtonTextureID = PauseMenuUiView::allocOptionsButtonTexture(textureManager, renderer);
 	this->optionsButtonTextureRef.init(optionsButtonTextureID, renderer);
 
-	const Rect &optionsButtonRect = this->optionsButton.getRect();
-	this->addDrawCall(
-		this->optionsButtonTextureRef.get(),
-		optionsButtonRect.getTopLeft(),
-		Int2(optionsButtonRect.getWidth(), optionsButtonRect.getHeight()),
-		PivotType::TopLeft);
+	const Rect optionsButtonRect = this->optionsButton.getRect();
+	UiDrawCallInitInfo optionsButtonDrawCallInitInfo;
+	optionsButtonDrawCallInitInfo.textureID = this->optionsButtonTextureRef.get();
+	optionsButtonDrawCallInitInfo.position = optionsButtonRect.getTopLeft();
+	optionsButtonDrawCallInitInfo.size = optionsButtonRect.getSize();
+	this->addDrawCall(optionsButtonDrawCallInitInfo);
 
-	const Rect &playerNameRect = this->playerNameTextBox.getRect();
-	this->addDrawCall(
-		this->playerNameTextBox.getTextureID(),
-		playerNameRect.getTopLeft(),
-		Int2(playerNameRect.getWidth(), playerNameRect.getHeight()),
-		PivotType::TopLeft);
+	const Rect musicVolumeRect = this->musicTextBox.getRect();
+	UiDrawCallInitInfo musicVolumeTextDrawCallInitInfo;
+	musicVolumeTextDrawCallInitInfo.textureFunc = [this]() { return this->musicTextBox.getTextureID(); };
+	musicVolumeTextDrawCallInitInfo.position = musicVolumeRect.getCenter();
+	musicVolumeTextDrawCallInitInfo.size = musicVolumeRect.getSize();
+	musicVolumeTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(musicVolumeTextDrawCallInitInfo);
 
-	const Rect &musicVolumeRect = this->musicTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->musicTextBox.getTextureID(); },
-		musicVolumeRect.getCenter(),
-		Int2(musicVolumeRect.getWidth(), musicVolumeRect.getHeight()),
-		PivotType::Middle);
+	const Rect soundVolumeRect = this->soundTextBox.getRect();
+	UiDrawCallInitInfo soundVolumeTextDrawCallInitInfo;
+	soundVolumeTextDrawCallInitInfo.textureFunc = [this]() { return this->soundTextBox.getTextureID(); };
+	soundVolumeTextDrawCallInitInfo.position = soundVolumeRect.getCenter();
+	soundVolumeTextDrawCallInitInfo.size = soundVolumeRect.getSize();
+	soundVolumeTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	this->addDrawCall(soundVolumeTextDrawCallInitInfo);
 
-	const Rect &soundVolumeRect = this->soundTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->soundTextBox.getTextureID(); },
-		soundVolumeRect.getCenter(),
-		Int2(soundVolumeRect.getWidth(), soundVolumeRect.getHeight()),
-		PivotType::Middle);
-
-	const Rect &optionsTextRect = this->optionsTextBox.getRect();
-	this->addDrawCall(
-		this->optionsTextBox.getTextureID(),
-		optionsTextRect.getTopLeft(),
-		Int2(optionsTextRect.getWidth(), optionsTextRect.getHeight()),
-		PivotType::TopLeft);
+	const Rect optionsTextRect = this->optionsTextBox.getRect();
+	UiDrawCallInitInfo optionsTextDrawCallInitInfo;
+	optionsTextDrawCallInitInfo.textureID = this->optionsTextBox.getTextureID();
+	optionsTextDrawCallInitInfo.position = optionsTextRect.getTopLeft();
+	optionsTextDrawCallInitInfo.size = optionsTextRect.getSize();
+	this->addDrawCall(optionsTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

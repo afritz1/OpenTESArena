@@ -8,7 +8,6 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 
 #include "components/debug/Debug.h"
@@ -18,40 +17,45 @@ CharacterEquipmentPanel::CharacterEquipmentPanel(Game &game)
 
 CharacterEquipmentPanel::~CharacterEquipmentPanel()
 {
-	auto &inputManager = this->getGame().getInputManager();
+	auto &inputManager = this->getGame().inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterEquipment, false);
 }
 
 bool CharacterEquipmentPanel::init()
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
+	const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(fontLibrary);
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
-	const TextBox::InitInfo playerNameTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
-	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
+	if (!this->nameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
 		DebugLogError("Couldn't init player name text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerRaceTextBoxInitInfo = CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(fontLibrary);
 	const std::string playerRaceText = CharacterSheetUiModel::getPlayerRaceName(game);
-	const TextBox::InitInfo playerRaceTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerRaceTextBoxInitInfo(playerRaceText, fontLibrary);
-	if (!this->playerRaceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
+	if (!this->raceTextBox.init(playerRaceTextBoxInitInfo, playerRaceText, renderer))
 	{
 		DebugLogError("Couldn't init player race text box.");
 		return false;
 	}
 
+	const TextBoxInitInfo playerClassTextBoxInitInfo = CharacterSheetUiView::getPlayerClassTextBoxInitInfo(fontLibrary);
 	const std::string playerClassText = CharacterSheetUiModel::getPlayerClassName(game);
-	const TextBox::InitInfo playerClassTextBoxInitInfo =
-		CharacterSheetUiView::getPlayerClassTextBoxInitInfo(playerClassText, fontLibrary);
-	if (!this->playerClassTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
+	if (!this->classTextBox.init(playerClassTextBoxInitInfo, playerClassText, renderer))
 	{
 		DebugLogError("Couldn't init player class text box.");
+		return false;
+	}
+
+	const TextBoxInitInfo playerLevelTextBoxInitInfo = CharacterEquipmentUiView::getPlayerLevelTextBoxInitInfo(fontLibrary);
+	const std::string playerLevelText = CharacterSheetUiModel::getPlayerLevel(game);
+	if (!this->levelTextBox.init(playerLevelTextBoxInitInfo, playerLevelText, renderer))
+	{
+		DebugLogError("Couldn't init player level text box.");
 		return false;
 	}
 
@@ -63,12 +67,31 @@ bool CharacterEquipmentPanel::init()
 	}
 
 	this->inventoryListBox.init(InventoryUiView::PlayerInventoryRect,
-		InventoryUiView::makePlayerInventoryListBoxProperties(fontLibrary), game.getRenderer());
+		InventoryUiView::makePlayerInventoryListBoxProperties(fontLibrary), game.renderer);
 	for (int i = 0; i < static_cast<int>(elements.size()); i++)
 	{
 		auto &pair = elements[i];
 		this->inventoryListBox.add(std::move(pair.first));
 		this->inventoryListBox.setOverrideColor(i, pair.second);
+		this->inventoryListBox.setCallback(i,
+			[this, &game, i]()
+		{
+			ItemInventory &playerInventory = game.player.inventory;
+			ItemInstance &itemInst = playerInventory.getSlot(i);
+			itemInst.isEquipped = !itemInst.isEquipped;
+
+			const Color &equipColor = InventoryUiView::getItemDisplayColor(itemInst);
+			this->inventoryListBox.setOverrideColor(i, equipColor);
+		});
+
+		ButtonProxy::RectFunction itemRectFunc = [this, i]()
+		{
+			return this->inventoryListBox.getItemGlobalRect(i);
+		};
+
+		ButtonProxy::Callback itemCallback = this->inventoryListBox.getCallback(i);
+
+		this->addButtonProxy(MouseButtonType::Left, itemRectFunc, itemCallback, this->inventoryListBox.getRect());
 	}
 
 	this->backToStatsButton = Button<Game&>(
@@ -107,7 +130,7 @@ bool CharacterEquipmentPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, this->dropButton.getRect(),
 		[this, &game]()
 	{
-		// @todo: give the index of the clicked item instead.
+		// @todo: give the index of the currently selected item instead.
 		const int itemIndex = 0;
 		this->dropButton.click(game, itemIndex);
 	});
@@ -117,7 +140,7 @@ bool CharacterEquipmentPanel::init()
 	this->addButtonProxy(MouseButtonType::Left, this->scrollUpButton.getRect(),
 		[this, &game]() { this->scrollUpButton.click(this->inventoryListBox); });
 
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterEquipment, true);
 
 	auto backToStatsInputActionFunc = CharacterSheetUiController::onBackToStatsInputAction;
@@ -136,7 +159,7 @@ bool CharacterEquipmentPanel::init()
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID bodyTextureID = CharacterSheetUiView::allocBodyTexture(game);
 	const UiTextureID pantsTextureID = CharacterSheetUiView::allocPantsTexture(game);
 	const UiTextureID headTextureID = CharacterSheetUiView::allocHeadTexture(game);
@@ -148,71 +171,69 @@ bool CharacterEquipmentPanel::init()
 	this->shirtTextureRef.init(shirtTextureID, renderer);
 	this->equipmentBgTextureRef.init(equipmentBgTextureID, renderer);
 
-	const Int2 bodyTextureDims = *renderer.tryGetUiTextureDims(bodyTextureID);
-	const Int2 pantsTextureDims = *renderer.tryGetUiTextureDims(pantsTextureID);
-	const Int2 headTextureDims = *renderer.tryGetUiTextureDims(headTextureID);
-	const Int2 shirtTextureDims = *renderer.tryGetUiTextureDims(shirtTextureID);
-	const Int2 equipmentBgTextureDims = *renderer.tryGetUiTextureDims(equipmentBgTextureID);
+	UiDrawCallInitInfo bodyDrawCallInitInfo;
+	bodyDrawCallInitInfo.textureID = bodyTextureID;
+	bodyDrawCallInitInfo.position = CharacterSheetUiView::getBodyOffset(game);
+	bodyDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(bodyTextureID);
+	this->addDrawCall(bodyDrawCallInitInfo);
 
-	this->addDrawCall(
-		bodyTextureID,
-		CharacterSheetUiView::getBodyOffset(game),
-		bodyTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		pantsTextureID,
-		CharacterSheetUiView::getPantsOffset(game),
-		pantsTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		headTextureID,
-		CharacterSheetUiView::getHeadOffset(game),
-		headTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		shirtTextureID,
-		CharacterSheetUiView::getShirtOffset(game),
-		shirtTextureDims,
-		PivotType::TopLeft);
-	this->addDrawCall(
-		equipmentBgTextureID,
-		Int2::Zero,
-		equipmentBgTextureDims,
-		PivotType::TopLeft);
+	UiDrawCallInitInfo pantsDrawCallInitInfo;
+	pantsDrawCallInitInfo.textureID = pantsTextureID;
+	pantsDrawCallInitInfo.position = CharacterSheetUiView::getPantsOffset(game);
+	pantsDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(pantsTextureID);
+	this->addDrawCall(pantsDrawCallInitInfo);
 
-	const Rect &playerNameTextBoxRect = this->playerNameTextBox.getRect();
-	this->addDrawCall(
-		this->playerNameTextBox.getTextureID(),
-		playerNameTextBoxRect.getTopLeft(),
-		Int2(playerNameTextBoxRect.getWidth(), playerNameTextBoxRect.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo headDrawCallInitInfo;
+	headDrawCallInitInfo.textureID = headTextureID;
+	headDrawCallInitInfo.position = CharacterSheetUiView::getHeadOffset(game);
+	headDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(headTextureID);
+	this->addDrawCall(headDrawCallInitInfo);
 
-	const Rect &playerRaceTextBoxRect = this->playerRaceTextBox.getRect();
-	this->addDrawCall(
-		this->playerRaceTextBox.getTextureID(),
-		playerRaceTextBoxRect.getTopLeft(),
-		Int2(playerRaceTextBoxRect.getWidth(), playerRaceTextBoxRect.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo shirtDrawCallInitInfo;
+	shirtDrawCallInitInfo.textureID = shirtTextureID;
+	shirtDrawCallInitInfo.position = CharacterSheetUiView::getShirtOffset(game);
+	shirtDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(shirtTextureID);
+	this->addDrawCall(shirtDrawCallInitInfo);
 
-	const Rect &playerClassTextBoxRect = this->playerClassTextBox.getRect();
-	this->addDrawCall(
-		this->playerClassTextBox.getTextureID(),
-		playerClassTextBoxRect.getTopLeft(),
-		Int2(playerClassTextBoxRect.getWidth(), playerClassTextBoxRect.getHeight()),
-		PivotType::TopLeft);
+	UiDrawCallInitInfo equipmentBgDrawCallInitInfo;
+	equipmentBgDrawCallInitInfo.textureID = equipmentBgTextureID;
+	equipmentBgDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(equipmentBgTextureID);
+	this->addDrawCall(equipmentBgDrawCallInitInfo);
 
-	// Need a texture func for the list box due to the non-constness of the getter.
-	UiDrawCall::TextureFunc inventoryListBoxTextureFunc = [this]()
-	{
-		return this->inventoryListBox.getTextureID();
-	};
+	const Rect playerNameTextBoxRect = this->nameTextBox.getRect();
+	UiDrawCallInitInfo playerNameDrawCallInitInfo;
+	playerNameDrawCallInitInfo.textureID = this->nameTextBox.getTextureID();
+	playerNameDrawCallInitInfo.position = playerNameTextBoxRect.getTopLeft();
+	playerNameDrawCallInitInfo.size = playerNameTextBoxRect.getSize();
+	this->addDrawCall(playerNameDrawCallInitInfo);
 
-	const Rect &inventoryListBoxRect = this->inventoryListBox.getRect();
-	this->addDrawCall(
-		inventoryListBoxTextureFunc,
-		inventoryListBoxRect.getTopLeft(),
-		Int2(inventoryListBoxRect.getWidth(), inventoryListBoxRect.getHeight()),
-		PivotType::TopLeft);
+	const Rect playerRaceTextBoxRect = this->raceTextBox.getRect();
+	UiDrawCallInitInfo playerRaceDrawCallInitInfo;
+	playerRaceDrawCallInitInfo.textureID = this->raceTextBox.getTextureID();
+	playerRaceDrawCallInitInfo.position = playerRaceTextBoxRect.getTopLeft();
+	playerRaceDrawCallInitInfo.size = playerRaceTextBoxRect.getSize();
+	this->addDrawCall(playerRaceDrawCallInitInfo);
+
+	const Rect playerClassTextBoxRect = this->classTextBox.getRect();
+	UiDrawCallInitInfo playerClassDrawCallInitInfo;
+	playerClassDrawCallInitInfo.textureID = this->classTextBox.getTextureID();
+	playerClassDrawCallInitInfo.position = playerClassTextBoxRect.getTopLeft();
+	playerClassDrawCallInitInfo.size = playerClassTextBoxRect.getSize();
+	this->addDrawCall(playerClassDrawCallInitInfo);
+
+	const Rect playerLevelTextBoxRect = this->levelTextBox.getRect();
+	UiDrawCallInitInfo playerLevelDrawCallInitInfo;
+	playerLevelDrawCallInitInfo.textureID = this->levelTextBox.getTextureID();
+	playerLevelDrawCallInitInfo.position = playerLevelTextBoxRect.getTopLeft();
+	playerLevelDrawCallInitInfo.size = playerLevelTextBoxRect.getSize();
+	this->addDrawCall(playerLevelDrawCallInitInfo);
+
+	const Rect inventoryListBoxRect = this->inventoryListBox.getRect();
+	UiDrawCallInitInfo inventoryDrawCallInitInfo;
+	inventoryDrawCallInitInfo.textureFunc = [this]() { return this->inventoryListBox.getTextureID(); };
+	inventoryDrawCallInitInfo.position = inventoryListBoxRect.getTopLeft();
+	inventoryDrawCallInitInfo.size = inventoryListBoxRect.getSize();
+	this->addDrawCall(inventoryDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);

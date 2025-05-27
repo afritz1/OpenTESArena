@@ -14,11 +14,11 @@
 #include "components/utilities/KeyValueFile.h"
 #include "components/utilities/StringView.h"
 
-#define MAKE_MUSIC_DEFINITION_PAIR(name) { #name, MusicDefinition::Type::name }
+#define MAKE_MUSIC_DEFINITION_PAIR(name) { #name, MusicType::name }
 
 namespace
 {
-	const std::array<std::pair<std::string, MusicDefinition::Type>, 9> MusicDefinitionTypes =
+	const std::array<std::pair<std::string, MusicType>, 9> MusicDefinitionTypes =
 	{
 		{
 			MAKE_MUSIC_DEFINITION_PAIR(CharacterCreation),
@@ -33,7 +33,7 @@ namespace
 	};
 }
 
-bool MusicLibrary::tryParseType(const std::string_view &typeStr, MusicDefinition::Type *outType)
+bool MusicLibrary::tryParseType(const std::string_view typeStr, MusicType *outType)
 {
 	const auto iter = std::find_if(MusicDefinitionTypes.begin(), MusicDefinitionTypes.end(),
 		[&typeStr](const auto &pair)
@@ -52,27 +52,25 @@ bool MusicLibrary::tryParseType(const std::string_view &typeStr, MusicDefinition
 	}
 }
 
-bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefinition::Type type,
-	MusicDefinition *outDefinition)
+bool MusicLibrary::tryParseValue(const std::string_view valueStr, MusicType type, MusicDefinition *outDefinition)
 {
-	auto tryParseCinematicType = [](const std::string_view &str,
-		MusicDefinition::CinematicMusicDefinition::Type *outCinematicType)
+	auto tryParseCinematicType = [](const std::string_view str, CinematicMusicType *outCinematicType)
 	{
 		if (str == "Intro")
 		{
-			*outCinematicType = MusicDefinition::CinematicMusicDefinition::Type::Intro;
+			*outCinematicType = CinematicMusicType::Intro;
 		}
 		else if (str == "DreamGood")
 		{
-			*outCinematicType = MusicDefinition::CinematicMusicDefinition::Type::DreamGood;
+			*outCinematicType = CinematicMusicType::DreamGood;
 		}
 		else if (str == "DreamBad")
 		{
-			*outCinematicType = MusicDefinition::CinematicMusicDefinition::Type::DreamBad;
+			*outCinematicType = CinematicMusicType::DreamBad;
 		}
 		else if (str == "Ending")
 		{
-			*outCinematicType = MusicDefinition::CinematicMusicDefinition::Type::Ending;
+			*outCinematicType = CinematicMusicType::Ending;
 		}
 		else
 		{
@@ -83,36 +81,35 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseInteriorType = [](const std::string_view &str,
-		MusicDefinition::InteriorMusicDefinition::Type *outInteriorType)
+	auto tryParseInteriorType = [](const std::string_view str, InteriorMusicType *outInteriorType)
 	{
 		if (str == "Dungeon")
 		{
-			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::Dungeon;
+			*outInteriorType = InteriorMusicType::Dungeon;
 		}
 		else if (str == "Equipment")
 		{
-			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::Equipment;
+			*outInteriorType = InteriorMusicType::Equipment;
 		}
 		else if (str == "House")
 		{
-			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::House;
+			*outInteriorType = InteriorMusicType::House;
 		}
 		else if (str == "MagesGuild")
 		{
-			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::MagesGuild;
+			*outInteriorType = InteriorMusicType::MagesGuild;
 		}
 		else if (str == "Palace")
 		{
-			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::Palace;
+			*outInteriorType = InteriorMusicType::Palace;
 		}
 		else if (str == "Tavern")
 		{
-			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::Tavern;
+			*outInteriorType = InteriorMusicType::Tavern;
 		}
 		else if (str == "Temple")
 		{
-			*outInteriorType = MusicDefinition::InteriorMusicDefinition::Type::Temple;
+			*outInteriorType = InteriorMusicType::Temple;
 		}
 		else
 		{
@@ -123,7 +120,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseJingleCityType = [](const std::string_view &str, ArenaTypes::CityType *outCityType)
+	auto tryParseJingleCityType = [](const std::string_view str, ArenaTypes::CityType *outCityType)
 	{
 		if (str == "CityState")
 		{
@@ -146,7 +143,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseJingleClimateType = [](const std::string_view &str, ArenaTypes::ClimateType *outClimateType)
+	auto tryParseJingleClimateType = [](const std::string_view str, ArenaTypes::ClimateType *outClimateType)
 	{
 		if (str == "Temperate")
 		{
@@ -169,7 +166,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 		return true;
 	};
 
-	auto tryParseWeatherType = [](const std::string_view &str, WeatherType *outWeatherType)
+	auto tryParseWeatherType = [](const std::string_view str, WeatherType *outWeatherType)
 	{
 		if (str == "Clear")
 		{
@@ -197,7 +194,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 	};
 
 	// All weather arguments (heavy fog, etc.) are bools.
-	auto tryParseWeatherBoolArg = [](const std::string_view &str, bool *outValue)
+	auto tryParseWeatherBoolArg = [](const std::string_view str, bool *outValue)
 	{
 		if (StringView::caseInsensitiveEquals(str, "True"))
 		{
@@ -226,38 +223,38 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 
 	std::string musicFilename(strs[0]);
 
-	if (type == MusicDefinition::Type::CharacterCreation)
+	if (type == MusicType::CharacterCreation)
 	{
 		DebugAssert(strs.getCount() == 1);
-		outDefinition->initCharacterCreation(std::move(musicFilename));
+		outDefinition->initCharacterCreation(musicFilename);
 	}
-	else if (type == MusicDefinition::Type::Cinematic)
+	else if (type == MusicType::Cinematic)
 	{
 		DebugAssert(strs.getCount() == 2);
 
-		MusicDefinition::CinematicMusicDefinition::Type cinematicType;
+		CinematicMusicType cinematicType;
 		if (!tryParseCinematicType(strs[1], &cinematicType))
 		{
 			DebugLogWarning("Couldn't parse type in cinematic music definition \"" + std::string(valueStr) + "\".");
 			return false;
 		}
 
-		outDefinition->initCinematic(std::move(musicFilename), cinematicType);
+		outDefinition->initCinematic(musicFilename, cinematicType);
 	}
-	else if (type == MusicDefinition::Type::Interior)
+	else if (type == MusicType::Interior)
 	{
 		DebugAssert(strs.getCount() == 2);
 
-		MusicDefinition::InteriorMusicDefinition::Type interiorType;
+		InteriorMusicType interiorType;
 		if (!tryParseInteriorType(strs[1], &interiorType))
 		{
 			DebugLogWarning("Couldn't parse type in interior music definition \"" + std::string(valueStr) + "\".");
 			return false;
 		}
 
-		outDefinition->initInterior(std::move(musicFilename), interiorType);
+		outDefinition->initInterior(musicFilename, interiorType);
 	}
-	else if (type == MusicDefinition::Type::Jingle)
+	else if (type == MusicType::Jingle)
 	{
 		DebugAssert(strs.getCount() == 3);
 
@@ -275,24 +272,24 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 			return false;
 		}
 
-		outDefinition->initJingle(std::move(musicFilename), cityType, climateType);
+		outDefinition->initJingle(musicFilename, cityType, climateType);
 	}
-	else if (type == MusicDefinition::Type::MainMenu)
+	else if (type == MusicType::MainMenu)
 	{
 		DebugAssert(strs.getCount() == 1);
-		outDefinition->initMainMenu(std::move(musicFilename));
+		outDefinition->initMainMenu(musicFilename);
 	}
-	else if (type == MusicDefinition::Type::Night)
+	else if (type == MusicType::Night)
 	{
 		DebugAssert(strs.getCount() == 1);
-		outDefinition->initNight(std::move(musicFilename));
+		outDefinition->initNight(musicFilename);
 	}
-	else if (type == MusicDefinition::Type::Swimming)
+	else if (type == MusicType::Swimming)
 	{
 		DebugAssert(strs.getCount() == 1);
-		outDefinition->initSwimming(std::move(musicFilename));
+		outDefinition->initSwimming(musicFilename);
 	}
-	else if (type == MusicDefinition::Type::Weather)
+	else if (type == MusicType::Weather)
 	{
 		// Variable arguments depending on the weather type.
 		DebugAssert(strs.getCount() >= 2);
@@ -378,7 +375,7 @@ bool MusicLibrary::tryParseValue(const std::string_view &valueStr, MusicDefiniti
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(weatherType)));
 		}
 
-		outDefinition->initWeather(std::move(musicFilename), std::move(weatherDef));
+		outDefinition->initWeather(musicFilename, weatherDef);
 	}
 	else
 	{
@@ -400,9 +397,9 @@ bool MusicLibrary::init(const char *filename)
 
 	for (int i = 0; i < keyValueFile.getSectionCount(); i++)
 	{
-		const KeyValueFile::Section &section = keyValueFile.getSection(i);
+		const KeyValueFileSection &section = keyValueFile.getSection(i);
 
-		MusicDefinition::Type sectionType;
+		MusicType sectionType;
 		if (!MusicLibrary::tryParseType(section.getName(), &sectionType))
 		{
 			DebugLogWarning("Couldn't parse section type \"" + section.getName() + "\".");
@@ -434,13 +431,13 @@ bool MusicLibrary::init(const char *filename)
 	return true;
 }
 
-int MusicLibrary::getMusicDefinitionCount(MusicDefinition::Type type) const
+int MusicLibrary::getMusicDefinitionCount(MusicType type) const
 {
 	const auto iter = this->definitions.find(type);
 	return (iter != this->definitions.end()) ? static_cast<int>(iter->second.size()) : 0;
 }
 
-const MusicDefinition *MusicLibrary::getMusicDefinition(MusicDefinition::Type type, int index) const
+const MusicDefinition *MusicLibrary::getMusicDefinition(MusicType type, int index) const
 {
 	const auto iter = this->definitions.find(type);
 	if (iter != this->definitions.end())
@@ -455,12 +452,12 @@ const MusicDefinition *MusicLibrary::getMusicDefinition(MusicDefinition::Type ty
 	}
 }
 
-const MusicDefinition *MusicLibrary::getFirstMusicDefinition(MusicDefinition::Type type) const
+const MusicDefinition *MusicLibrary::getFirstMusicDefinition(MusicType type) const
 {
 	return (this->getMusicDefinitionCount(type) > 0) ? this->getMusicDefinition(type, 0) : nullptr;
 }
 
-const MusicDefinition *MusicLibrary::getRandomMusicDefinition(MusicDefinition::Type type, Random &random) const
+const MusicDefinition *MusicLibrary::getRandomMusicDefinition(MusicType type, Random &random) const
 {
 	const int count = this->getMusicDefinitionCount(type);
 	if (count > 0)
@@ -474,7 +471,7 @@ const MusicDefinition *MusicLibrary::getRandomMusicDefinition(MusicDefinition::T
 	}
 }
 
-const MusicDefinition *MusicLibrary::getRandomMusicDefinitionIf(MusicDefinition::Type type,
+const MusicDefinition *MusicLibrary::getRandomMusicDefinitionIf(MusicType type,
 	Random &random, const Predicate &predicate) const
 {
 	Buffer<int> musicDefIndices(this->getMusicDefinitionCount(type));

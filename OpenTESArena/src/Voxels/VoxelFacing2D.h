@@ -3,7 +3,6 @@
 
 // Directions facing outward from a voxel. This is specialized for calculations done from a
 // top-down perspective.
-
 enum class VoxelFacing2D
 {
 	PositiveX,

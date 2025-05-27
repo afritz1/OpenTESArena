@@ -14,15 +14,16 @@
 #include "MapGeneration.h"
 #include "MapType.h"
 #include "TransitionDefinition.h"
-#include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaLevelLibrary.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextAssetLibrary.h"
+#include "../Entities/ArenaAnimUtils.h"
 #include "../Entities/EntityDefinition.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Math/Random.h"
+#include "../Voxels/ArenaChasmUtils.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Voxels/VoxelFacing2D.h"
 #include "../Voxels/VoxelTriggerDefinition.h"
@@ -34,38 +35,51 @@
 
 namespace MapGeneration
 {
-	// Each 2-byte Arena voxel maps to a mesh + texture + traits tuple.
+	// Each 2-byte Arena voxel maps to a tuple of definition IDs.
 	struct ArenaVoxelMappingEntry
 	{
-		LevelDefinition::VoxelMeshDefID meshDefID;
-		LevelDefinition::VoxelTextureDefID textureDefID;
-		LevelDefinition::VoxelTraitsDefID traitsDefID;
+		LevelVoxelShapeDefID shapeDefID;
+		LevelVoxelTextureDefID textureDefID;
+		LevelVoxelShadingDefID shadingDefID;
+		LevelVoxelTraitsDefID traitsDefID;
 
 		ArenaVoxelMappingEntry()
 		{
-			this->meshDefID = -1;
+			this->shapeDefID = -1;
 			this->textureDefID = -1;
+			this->shadingDefID = -1;
 			this->traitsDefID = -1;
 		}
 
-		void init(LevelDefinition::VoxelMeshDefID meshDefID, LevelDefinition::VoxelTextureDefID textureDefID,
-			LevelDefinition::VoxelTraitsDefID traitsDefID)
+		void init(LevelVoxelShapeDefID shapeDefID, LevelVoxelTextureDefID textureDefID, LevelVoxelShadingDefID shadingDefID, LevelVoxelTraitsDefID traitsDefID)
 		{
-			this->meshDefID = meshDefID;
+			this->shapeDefID = shapeDefID;
 			this->textureDefID = textureDefID;
+			this->shadingDefID = shadingDefID;
 			this->traitsDefID = traitsDefID;
+		}
+	};
+
+	struct TransitionMappingKey
+	{
+		ArenaTypes::VoxelID voxelID;
+		WorldInt2 levelXZ; // .MIF name generation depends on XY coordinate.
+
+		TransitionMappingKey()
+		{
+			this->voxelID = 0;
 		}
 	};
 
 	// Mapping caches of .MIF/.RMD voxels, etc. to modern level info entries.
 	using ArenaVoxelMappingCache = std::unordered_map<ArenaTypes::VoxelID, ArenaVoxelMappingEntry>;
-	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::EntityDefID>;
-	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelDefinition::LockDefID>>;
-	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID>>;
-	using ArenaTransitionMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::TransitionDefID>;
-	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelDefinition::BuildingNameID>;
-	using ArenaDoorMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::DoorDefID>;
-	using ArenaChasmMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelDefinition::ChasmDefID>;
+	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelEntityDefID>;
+	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelVoxelLockDefID>>;
+	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelVoxelTriggerDefID>>;
+	using ArenaTransitionMappingCache = std::vector<std::pair<TransitionMappingKey, LevelVoxelTransitionDefID>>;
+	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelVoxelBuildingNameID>;
+	using ArenaDoorMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelDoorDefID>;
+	using ArenaChasmMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelChasmDefID>;
 
 	// Converts the given Arena *MENU ID to a modern interior type, if any.
 	std::optional<ArenaTypes::InteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, MapType mapType)
@@ -77,19 +91,19 @@ namespace MapGeneration
 			{
 				{
 					{ 0, ArenaTypes::InteriorType::Equipment },
-				{ 1, ArenaTypes::InteriorType::Tavern },
-				{ 2, ArenaTypes::InteriorType::MagesGuild },
-				{ 3, ArenaTypes::InteriorType::Temple },
-				{ 4, ArenaTypes::InteriorType::House },
-				{ 5, ArenaTypes::InteriorType::House },
-				{ 6, ArenaTypes::InteriorType::House },
-				// 7 - city gate
-				// 8 - city gate
-				{ 9, ArenaTypes::InteriorType::Noble },
-				// 10 - none
-				{ 11, ArenaTypes::InteriorType::Palace },
-				{ 12, ArenaTypes::InteriorType::Palace },
-				{ 13, ArenaTypes::InteriorType::Palace }
+					{ 1, ArenaTypes::InteriorType::Tavern },
+					{ 2, ArenaTypes::InteriorType::MagesGuild },
+					{ 3, ArenaTypes::InteriorType::Temple },
+					{ 4, ArenaTypes::InteriorType::House },
+					{ 5, ArenaTypes::InteriorType::House },
+					{ 6, ArenaTypes::InteriorType::House },
+					// 7 - city gate
+					// 8 - city gate
+					{ 9, ArenaTypes::InteriorType::Noble },
+					// 10 - none
+					{ 11, ArenaTypes::InteriorType::Palace },
+					{ 12, ArenaTypes::InteriorType::Palace },
+					{ 13, ArenaTypes::InteriorType::Palace }
 				}
 			};
 
@@ -116,14 +130,14 @@ namespace MapGeneration
 				{
 					// 0 - none
 					{ 1, ArenaTypes::InteriorType::Crypt },
-				{ 2, ArenaTypes::InteriorType::House },
-				{ 3, ArenaTypes::InteriorType::Tavern },
-				{ 4, ArenaTypes::InteriorType::Temple },
-				{ 5, ArenaTypes::InteriorType::Tower },
-				// 6 - city gate
-				// 7 - city gate
-				{ 8, ArenaTypes::InteriorType::Dungeon },
-				{ 9, ArenaTypes::InteriorType::Dungeon }
+					{ 2, ArenaTypes::InteriorType::House },
+					{ 3, ArenaTypes::InteriorType::Tavern },
+					{ 4, ArenaTypes::InteriorType::Temple },
+					{ 5, ArenaTypes::InteriorType::Tower },
+					// 6 - city gate
+					// 7 - city gate
+					{ 8, ArenaTypes::InteriorType::Dungeon },
+					{ 9, ArenaTypes::InteriorType::Dungeon }
 				}
 			};
 
@@ -161,7 +175,7 @@ namespace MapGeneration
 			ArenaTypes::InteriorType::Dungeon : interiorType;
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(std::move(mifName), revisedInteriorType, rulerIsMale);
+		interiorGenInfo.initPrefab(mifName, revisedInteriorType, rulerIsMale);
 		return interiorGenInfo;
 	}
 
@@ -186,32 +200,33 @@ namespace MapGeneration
 		const bool isDynamicEntity = ArenaAnimUtils::isDynamicEntity(flatIndex, inf);
 		const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
 
-		bool isFinalBoss;
-		const bool isCreature = optItemIndex.has_value() &&
-			ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isFinalBoss);
-		const bool isHumanEnemy = optItemIndex.has_value() &&
-			ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
+		bool isCreature = false;
+		bool isCreatureFinalBoss = false;
+		bool isHumanEnemy = false;
+		bool isPileContainer = false;
+		bool isLockedHolderContainer = false;
+		bool isUnlockedHolderContainer = false;
+		bool isKey = false;
+		bool isQuestItem = false;
+		if (optItemIndex.has_value())
+		{
+			isCreature = ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isCreatureFinalBoss);
+			isHumanEnemy = ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
+			isPileContainer = ArenaAnimUtils::isTreasurePileContainerIndex(*optItemIndex);
+			isLockedHolderContainer = ArenaAnimUtils::isLockedHolderContainerIndex(*optItemIndex);
+			isUnlockedHolderContainer = ArenaAnimUtils::isUnlockedHolderContainerIndex(*optItemIndex);
+			isKey = *optItemIndex == ArenaAnimUtils::KeyItemIndex;
+			isQuestItem = *optItemIndex == ArenaAnimUtils::QuestItemIndex;
+		}
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
 		EntityAnimationDefinition entityAnimDef;
 		if (!isDynamicEntity)
 		{
-			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType,
-				rulerIsMale, inf, textureManager, &entityAnimDef))
+			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType, rulerIsMale, inf, textureManager, &entityAnimDef))
 			{
-				DebugLogWarning("Couldn't make static entity anims for flat \"" +
-					std::to_string(flatIndex) + "\".");
-				return false;
-			}
-
-			// The entity can only be instantiated if there is at least an idle animation.
-			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(
-				EntityAnimationUtils::STATE_IDLE.c_str());
-			if (!idleStateIndex.has_value())
-			{
-				DebugLogWarning("Missing static entity idle anim state for flat \"" +
-					std::to_string(flatIndex) + "\".");
+				DebugLogWarning("Couldn't make static entity anims for flat \"" + std::to_string(flatIndex) + "\".");
 				return false;
 			}
 		}
@@ -219,44 +234,30 @@ namespace MapGeneration
 		{
 			// Assume that human enemies in level data are male.
 			const std::optional<bool> isMale = true;
-
-			if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, inf, charClassLibrary,
-				binaryAssetLibrary, textureManager, &entityAnimDef))
+			if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, inf, charClassLibrary, binaryAssetLibrary, textureManager, &entityAnimDef))
 			{
-				DebugLogWarning("Couldn't make dynamic entity anims for flat \"" +
-					std::to_string(flatIndex) + "\".");
-				return false;
-			}
-
-			// Must have at least an idle animation.
-			const std::optional<int> idleStateIndex = entityAnimDef.tryGetStateIndex(
-				EntityAnimationUtils::STATE_IDLE.c_str());
-			if (!idleStateIndex.has_value())
-			{
-				DebugLogWarning("Missing dynamic entity idle anim state for flat \"" +
-					std::to_string(flatIndex) + "\".");
+				DebugLogWarning("Couldn't make dynamic entity anims for flat \"" + std::to_string(flatIndex) + "\".");
 				return false;
 			}
 		}
 
-		// @todo: replace isCreature/etc. with some flatIndex -> EntityDefinition::Type function.
-		// - Most likely also need location/interior type, etc. because flatIndex is level-dependent.
+		DebugAssert(!String::isNullOrEmpty(entityAnimDef.initialStateName));
+
 		if (isCreature)
 		{
 			const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
-			const int creatureID = isFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
-			const int creatureIndex = creatureID - 1;
+			const int creatureID = isCreatureFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
+			const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 
 			// @todo: read from EntityDefinitionLibrary instead, and don't make anim def above.
 			// Currently these are just going to be duplicates of defs in the library.
-			EntityDefinitionLibrary::Key entityDefKey;
-			entityDefKey.initCreature(creatureIndex, isFinalBoss);
+			EntityDefinitionKey entityDefKey;
+			entityDefKey.initCreature(creatureIndex, isCreatureFinalBoss);
 
 			EntityDefID entityDefID;
 			if (!entityDefLibrary.tryGetDefinitionID(entityDefKey, &entityDefID))
 			{
-				DebugLogWarning("Couldn't get creature definition " +
-					std::to_string(creatureIndex) + " from library.");
+				DebugLogWarning("Couldn't get creature definition " + std::to_string(creatureIndex) + " from library.");
 				return false;
 			}
 
@@ -268,9 +269,25 @@ namespace MapGeneration
 			const int charClassID = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
 			outDef->initEnemyHuman(male, charClassID, std::move(entityAnimDef));
 		}
-		else // @todo: handle other entity definition types.
+		else if (isPileContainer)
 		{
-			// Doodad.
+			outDef->initContainerPile(std::move(entityAnimDef));
+		}
+		else if (isLockedHolderContainer || isUnlockedHolderContainer)
+		{
+			outDef->initContainerHolder(isLockedHolderContainer,  std::move(entityAnimDef));
+		}
+		else if (isKey)
+		{
+			outDef->initItemKey(std::move(entityAnimDef));
+		}
+		else if (isQuestItem)
+		{
+			outDef->initItemQuestItem(flatData.yOffset, std::move(entityAnimDef));
+		}
+		else
+		{
+			// Decoration.
 			const bool streetLight = ArenaAnimUtils::isStreetLightFlatIndex(flatIndex, mapType);
 			const double scale = ArenaAnimUtils::getDimensionModifier(flatData);
 			const int lightIntensity = flatData.lightIntensity.has_value() ? *flatData.lightIntensity : 0;
@@ -278,18 +295,17 @@ namespace MapGeneration
 			// @todo: TransitionDefID from flatIndex -- use MapGeneration::isMap1TransitionEntity().
 			// @todo: support wild den transitions here. Might need to pass the transition cache here.
 
-			outDef->initDoodad(flatData.yOffset, scale, flatData.collider,
-				flatData.transparent, flatData.ceiling, streetLight, flatData.puddle,
-				lightIntensity, std::move(entityAnimDef));
+			outDef->initDecoration(flatData.yOffset, scale, flatData.collider, flatData.transparent, flatData.ceiling, streetLight,
+				flatData.puddle, lightIntensity, std::move(entityAnimDef));
 		}
 
 		return true;
 	}
 
-	void writeVoxelInfoForFLOR(ArenaTypes::VoxelID florVoxel, MapType mapType, const INFFile &inf,
-		ArenaTypes::VoxelType *outVoxelType, ArenaMeshUtils::RenderMeshInitCache *outRenderMeshInitCache,
-		ArenaMeshUtils::CollisionMeshInitCache *outCollisionMeshInitCache, TextureAsset *outTextureAsset,
-		bool *outIsChasm, bool *outIsWildWallColored, ArenaTypes::ChasmType *outChasmType)
+	void writeVoxelInfoForFLOR(ArenaTypes::VoxelID florVoxel, MapType mapType, const INFFile &inf, ArenaTypes::VoxelType *outVoxelType,
+		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset, VertexShaderType *outVertexShaderType,
+		BufferView<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsChasm, bool *outIsWildWallColored,
+		ArenaTypes::ChasmType *outChasmType)
 	{
 		const int textureID = (florVoxel & 0xFF00) >> 8;
 		*outIsChasm = MIFUtils::isChasm(textureID);
@@ -299,15 +315,17 @@ namespace MapGeneration
 		{
 			*outVoxelType = ArenaTypes::VoxelType::Floor;
 
-			ArenaMeshUtils::WriteFloorRendererGeometryBuffers(outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-			ArenaMeshUtils::WriteFloorRendererIndexBuffers(outRenderMeshInitCache->opaqueIndices0View);
-			ArenaMeshUtils::WriteFloorCollisionGeometryBuffers(outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-			ArenaMeshUtils::WriteFloorCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+			outShapeInitCache->initDefaultBoxValues();
+			ArenaMeshUtils::WriteFloorRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+			ArenaMeshUtils::WriteFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureID);
 			*outTextureAsset = TextureAsset(
 				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+			*outVertexShaderType = VertexShaderType::Basic;
+			outPixelShaderTypes[0] = PixelShaderType::Opaque;
+			*outPixelShaderCount = 1;
 			*outIsWildWallColored = ArenaVoxelUtils::isFloorWildWallColored(textureID, mapType);
 			*outChasmType = static_cast<ArenaTypes::ChasmType>(-1);
 		}
@@ -316,6 +334,8 @@ namespace MapGeneration
 			*outVoxelType = ArenaTypes::VoxelType::Chasm;
 
 			int chasmID;
+			PixelShaderType chasmFloorPixelShaderType;
+			PixelShaderType chasmWallPixelShaderType;
 			if (textureID == MIFUtils::DRY_CHASM)
 			{
 				const std::optional<int> &dryChasmIndex = inf.getDryChasmIndex();
@@ -330,6 +350,8 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaTypes::ChasmType::Dry;
+				chasmFloorPixelShaderType = PixelShaderType::Opaque;
+				chasmWallPixelShaderType = PixelShaderType::OpaqueWithAlphaTestLayer;
 			}
 			else if (textureID == MIFUtils::LAVA_CHASM)
 			{
@@ -345,6 +367,8 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaTypes::ChasmType::Lava;
+				chasmFloorPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimation;
+				chasmWallPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			}
 			else if (textureID == MIFUtils::WET_CHASM)
 			{
@@ -360,46 +384,60 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaTypes::ChasmType::Wet;
+				chasmFloorPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimation;
+				chasmWallPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			}
 			else
 			{
 				DebugCrash("Unsupported chasm type \"" + std::to_string(textureID) + "\".");
 			}
 
-			ArenaMeshUtils::WriteChasmRendererGeometryBuffers(*outChasmType, outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-			ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outRenderMeshInitCache->opaqueIndices0View);
-			ArenaMeshUtils::WriteChasmCollisionGeometryBuffers(*outChasmType, outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-			ArenaMeshUtils::WriteChasmFloorCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+			const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(*outChasmType);
+			outShapeInitCache->initChasmBoxValues(isDryChasm);
+			ArenaMeshUtils::WriteChasmRendererGeometryBuffers(*outChasmType, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+			ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(chasmID);
 			*outTextureAsset = TextureAsset(
 				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+			*outVertexShaderType = VertexShaderType::Basic;
+			outPixelShaderTypes[0] = chasmFloorPixelShaderType;
+			outPixelShaderTypes[1] = chasmWallPixelShaderType;
+			*outPixelShaderCount = 2;
 			*outIsWildWallColored = false;
 		}
 	}
 
-	void writeDefsForFLOR(ArenaTypes::VoxelID florVoxel, MapType mapType, const INFFile &inf,
-		VoxelMeshDefinition *outMeshDef, VoxelTextureDefinition *outTextureDef, VoxelTraitsDefinition *outTraitsDef)
+	void writeDefsForFLOR(ArenaTypes::VoxelID florVoxel, MapType mapType, const INFFile &inf, VoxelShapeDefinition *outShapeDef,
+		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
 		ArenaTypes::VoxelType voxelType;
-		ArenaMeshUtils::RenderMeshInitCache renderMeshInitCache;
-		ArenaMeshUtils::CollisionMeshInitCache collisionMeshInitCache;
+		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
+		VertexShaderType vertexShaderType;
+		PixelShaderType pixelShaderTypes[VoxelShadingDefinition::MAX_PIXEL_SHADERS];
+		int pixelShaderCount;
 		bool isChasm;
 		bool isWildWallColored;
 		ArenaTypes::ChasmType chasmType;
-		MapGeneration::writeVoxelInfoForFLOR(florVoxel, mapType, inf, &voxelType, &renderMeshInitCache,
-			&collisionMeshInitCache, &textureAsset, &isChasm, &isWildWallColored, &chasmType);
+		MapGeneration::writeVoxelInfoForFLOR(florVoxel, mapType, inf, &voxelType, &shapeInitCache, &textureAsset, &vertexShaderType, pixelShaderTypes, &pixelShaderCount,
+			&isChasm, &isWildWallColored, &chasmType);
 
-		VoxelMeshScaleType scaleType = VoxelMeshScaleType::ScaledFromMin;
+		VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
 		if (isChasm && (chasmType != ArenaTypes::ChasmType::Dry))
 		{
-			scaleType = VoxelMeshScaleType::UnscaledFromMax;
+			scaleType = VoxelShapeScaleType::UnscaledFromMax;
 		}
 
-		outMeshDef->initClassic(voxelType, scaleType, renderMeshInitCache, collisionMeshInitCache);
+		outShapeDef->initBoxFromClassic(voxelType, scaleType, shapeInitCache);
 		outTextureDef->addTextureAsset(std::move(textureAsset));
+		
+		outShadingDef->init(vertexShaderType);
+		for (int i = 0; i < pixelShaderCount; i++)
+		{
+			outShadingDef->addPixelShaderType(pixelShaderTypes[i]);
+		}
 
 		switch (voxelType)
 		{
@@ -415,13 +453,12 @@ namespace MapGeneration
 	}
 
 	void writeVoxelInfoForFloorReplacement(const INFFile &inf, ArenaTypes::ChasmType chasmType,
-		ArenaMeshUtils::RenderMeshInitCache *outRenderMeshInitCache, ArenaMeshUtils::CollisionMeshInitCache *outCollisionMeshInitCache,
-		TextureAsset *outTextureAsset)
+		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
 	{
-		ArenaMeshUtils::WriteChasmRendererGeometryBuffers(chasmType, outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-		ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outRenderMeshInitCache->opaqueIndices0View);
-		ArenaMeshUtils::WriteChasmCollisionGeometryBuffers(chasmType, outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-		ArenaMeshUtils::WriteChasmFloorCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+		const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(chasmType);
+		outShapeInitCache->initChasmBoxValues(isDryChasm);
+		ArenaMeshUtils::WriteChasmRendererGeometryBuffers(chasmType, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+		ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 		std::optional<int> textureIndex = inf.getWetChasmIndex();
 		if (!textureIndex.has_value())
@@ -436,29 +473,32 @@ namespace MapGeneration
 			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 	}
 
-	void writeDefsForFloorReplacement(const INFFile &inf, TextureManager &textureManager, VoxelMeshDefinition *outMeshDef,
-		VoxelTextureDefinition *outTextureDef, VoxelTraitsDefinition *outTraitsDef, ChasmDefinition *outChasmDef)
+	void writeDefsForFloorReplacement(const INFFile &inf, TextureManager &textureManager, VoxelShapeDefinition *outShapeDef,
+		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef, VoxelChasmDefinition *outChasmDef)
 	{
 		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Chasm;
 		constexpr ArenaTypes::ChasmType chasmType = ArenaTypes::ChasmType::Wet;
 
-		ArenaMeshUtils::RenderMeshInitCache renderMeshInitCache;
-		ArenaMeshUtils::CollisionMeshInitCache collisionMeshInitCache;
+		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
-		MapGeneration::writeVoxelInfoForFloorReplacement(inf, chasmType, &renderMeshInitCache, &collisionMeshInitCache, &textureAsset);
+		MapGeneration::writeVoxelInfoForFloorReplacement(inf, chasmType, &shapeInitCache, &textureAsset);
 
-		constexpr VoxelMeshScaleType scaleType = VoxelMeshScaleType::UnscaledFromMax;
-		outMeshDef->initClassic(voxelType, scaleType, renderMeshInitCache, collisionMeshInitCache);
+		constexpr VoxelShapeScaleType scaleType = VoxelShapeScaleType::UnscaledFromMax;
+		outShapeDef->initBoxFromClassic(voxelType, scaleType, shapeInitCache);
 		outTextureDef->addTextureAsset(TextureAsset(textureAsset));
+		
+		outShadingDef->init(VertexShaderType::Basic);
+		outShadingDef->addPixelShaderType(PixelShaderType::OpaqueScreenSpaceAnimation);
+		outShadingDef->addPixelShaderType(PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
+
 		outTraitsDef->initChasm(chasmType);
 		outChasmDef->initClassic(chasmType, textureAsset, textureManager);
 	}
 
-	void writeVoxelInfoForMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType,
-		const INFFile &inf, const ExeData &exeData, ArenaTypes::VoxelType *outVoxelType,
-		ArenaMeshUtils::RenderMeshInitCache *outRenderMeshInitCache, ArenaMeshUtils::CollisionMeshInitCache *outCollisionMeshInitCache,
-		TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1, TextureAsset *outTextureAsset2, double *outYOffset,
-		double *outYSize, bool *outIsCollider, VoxelFacing2D *outFacing)
+	void writeVoxelInfoForMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf,
+		const ExeData &exeData, ArenaTypes::VoxelType *outVoxelType, ArenaMeshUtils::ShapeInitCache *outShapeInitCache,
+		TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1, TextureAsset *outTextureAsset2, VertexShaderType *outVertexShaderType,
+		BufferView<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsCollider, VoxelFacing2D *outFacing)
 	{
 		DebugAssert(map1Voxel != 0);
 		DebugAssert(mostSigNibble != 0x8);
@@ -473,18 +513,22 @@ namespace MapGeneration
 			{
 				// Regular solid wall.
 				*outVoxelType = ArenaTypes::VoxelType::Wall;
-				ArenaMeshUtils::WriteWallRendererGeometryBuffers(outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-				ArenaMeshUtils::WriteWallRendererIndexBuffers(outRenderMeshInitCache->opaqueIndices0View, outRenderMeshInitCache->opaqueIndices1View, outRenderMeshInitCache->opaqueIndices2View);
-				ArenaMeshUtils::WriteWallCollisionGeometryBuffers(outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-				ArenaMeshUtils::WriteWallCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+				outShapeInitCache->initDefaultBoxValues();
+				ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 				const int textureIndex = mostSigByte - 1;
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
-				*outTextureAsset0 = TextureAsset(
-					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
-					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				std::string voxelTextureFilename = ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf);
+				const std::optional<int> voxelTextureSetIndex = ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf);
+				*outTextureAsset0 = TextureAsset(std::move(voxelTextureFilename), voxelTextureSetIndex);
 				*outTextureAsset1 = *outTextureAsset0;
 				*outTextureAsset2 = *outTextureAsset0;
+				*outVertexShaderType = VertexShaderType::Basic;
+				outPixelShaderTypes[0] = PixelShaderType::Opaque;
+				outPixelShaderTypes[1] = PixelShaderType::Opaque;
+				outPixelShaderTypes[2] = PixelShaderType::Opaque;
+				*outPixelShaderCount = 3;
 			}
 			else
 			{
@@ -503,8 +547,7 @@ namespace MapGeneration
 					}
 					else
 					{
-						DebugLogWarning("Missing *BOXSIDE ID \"" + std::to_string(wallTextureID) +
-							"\" for raised platform side.");
+						DebugLogWarning("Missing *BOXSIDE ID \"" + std::to_string(wallTextureID) + "\" for raised platform side.");
 						return 0;
 					}
 				}();
@@ -532,34 +575,32 @@ namespace MapGeneration
 					}
 					else
 					{
-						DebugLogWarning("Missing *BOXCAP ID \"" + std::to_string(capTextureID) +
-							"\" for raised platform ceiling.");
+						DebugLogWarning("Missing *BOXCAP ID \"" + std::to_string(capTextureID) + "\" for raised platform ceiling.");
 						return 0;
 					}
 				}();
 
-				const auto &wallHeightTables = exeData.wallHeightTables;
+				const auto &raisedPlatforms = exeData.raisedPlatforms;
 				const int heightIndex = mostSigByte & 0x07;
 				const int thicknessIndex = (mostSigByte & 0x78) >> 3;
 
 				int baseOffset, baseSize;
 				if (mapType == MapType::Interior)
 				{
-					baseOffset = wallHeightTables.box1a.at(heightIndex);
+					baseOffset = raisedPlatforms.heightsInterior.get(heightIndex);
 
-					const int boxSize = wallHeightTables.box2a.at(thicknessIndex);
+					const int boxSize = raisedPlatforms.thicknessesInterior.get(thicknessIndex);
 					const auto &boxScale = inf.getCeiling().boxScale;
-					baseSize = boxScale.has_value() ?
-						((boxSize * (*boxScale)) / 256) : boxSize;
+					baseSize = boxScale.has_value() ? ((boxSize * (*boxScale)) / 256) : boxSize;
 				}
 				else if (mapType == MapType::City)
 				{
-					baseOffset = wallHeightTables.box1b.at(heightIndex);
-					baseSize = wallHeightTables.box2b.at(thicknessIndex);
+					baseOffset = raisedPlatforms.heightsCity.get(heightIndex);
+					baseSize = raisedPlatforms.thicknessesCity.get(thicknessIndex);
 				}
 				else if (mapType == MapType::Wilderness)
 				{
-					baseOffset = wallHeightTables.box1c.at(heightIndex);
+					baseOffset = raisedPlatforms.heightsWild.get(heightIndex);
 
 					constexpr int boxSize = 32;
 					const auto &boxScale = inf.getCeiling().boxScale;
@@ -580,10 +621,9 @@ namespace MapGeneration
 				const double vTop = std::max(0.0, 1.0 - yOffsetNormalized - ySizeNormalized);
 				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
-				ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(yOffset, ySize, vBottom, vTop, outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-				ArenaMeshUtils::WriteRaisedRendererIndexBuffers(outRenderMeshInitCache->alphaTestedIndices0View, outRenderMeshInitCache->opaqueIndices0View, outRenderMeshInitCache->opaqueIndices1View);
-				ArenaMeshUtils::WriteRaisedCollisionGeometryBuffers(yOffset, ySize, outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-				ArenaMeshUtils::WriteRaisedCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+				outShapeInitCache->initRaisedBoxValues(ySize, yOffset);
+				ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(yOffset, ySize, vBottom, vTop, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteRaisedRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 				const int clampedSideID = ArenaVoxelUtils::clampVoxelTextureID(sideID);
 				const int clampedFloorID = ArenaVoxelUtils::clampVoxelTextureID(floorID);
@@ -597,9 +637,11 @@ namespace MapGeneration
 				*outTextureAsset2 = TextureAsset(
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedCeilingID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedCeilingID, inf));
-
-				*outYOffset = yOffset;
-				*outYSize = ySize;
+				*outVertexShaderType = VertexShaderType::Basic;
+				outPixelShaderTypes[0] = PixelShaderType::AlphaTested;
+				outPixelShaderTypes[1] = PixelShaderType::Opaque;
+				outPixelShaderTypes[2] = PixelShaderType::Opaque;
+				*outPixelShaderCount = 3;
 			}
 		}
 		else
@@ -610,16 +652,18 @@ namespace MapGeneration
 				// These do not have back-faces (especially when standing in the voxel itself).
 				*outVoxelType = ArenaTypes::VoxelType::TransparentWall;
 
-				ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-				ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(outRenderMeshInitCache->alphaTestedIndices0View);
-				ArenaMeshUtils::WriteTransparentWallCollisionGeometryBuffers(outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-				ArenaMeshUtils::WriteTransparentWallCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+				outShapeInitCache->initDefaultBoxValues();
+				ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
 				*outTextureAsset0 = TextureAsset(
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				*outVertexShaderType = VertexShaderType::Basic;
+				outPixelShaderTypes[0] = PixelShaderType::AlphaTested;
+				*outPixelShaderCount = 1;
 				*outIsCollider = (map1Voxel & 0x0100) == 0;
 			}
 			else if (mostSigNibble == 0xA)
@@ -632,8 +676,7 @@ namespace MapGeneration
 				int textureIndex = (map1Voxel & 0x003F) - 1;
 				if (textureIndex < 0)
 				{
-					DebugLogWarning("Invalid texture index \"" + std::to_string(textureIndex) +
-						"\" for type 0xA voxel; defaulting to 0.");
+					DebugLogWarning("Invalid texture index \"" + std::to_string(textureIndex) + "\" for type 0xA voxel; defaulting to 0.");
 					textureIndex = 0;
 				}
 
@@ -677,15 +720,17 @@ namespace MapGeneration
 					}
 				}();
 
-				ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(facing, yOffset, flipped, outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-				ArenaMeshUtils::WriteEdgeRendererIndexBuffers(outRenderMeshInitCache->alphaTestedIndices0View);
-				ArenaMeshUtils::WriteEdgeCollisionGeometryBuffers(facing, yOffset, outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-				ArenaMeshUtils::WriteEdgeCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+				outShapeInitCache->initDefaultBoxValues();
+				ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(facing, yOffset, flipped, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteEdgeRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
 				*outTextureAsset0 = TextureAsset(
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				*outVertexShaderType = VertexShaderType::Basic;
+				outPixelShaderTypes[0] = PixelShaderType::AlphaTested;
+				*outPixelShaderCount = 1;
 				*outIsCollider = collider;
 				*outFacing = facing;
 			}
@@ -695,39 +740,49 @@ namespace MapGeneration
 				*outVoxelType = ArenaTypes::VoxelType::Door;
 
 				const int textureIndex = (map1Voxel & 0x003F) - 1;
-				const ArenaTypes::DoorType doorType = [map1Voxel]()
-				{
-					const int type = (map1Voxel & 0x00C0) >> 4;
-					if (type == 0x0)
-					{
-						return ArenaTypes::DoorType::Swinging;
-					}
-					else if (type == 0x4)
-					{
-						return ArenaTypes::DoorType::Sliding;
-					}
-					else if (type == 0x8)
-					{
-						return ArenaTypes::DoorType::Raising;
-					}
-					else
-					{
-						// Arena doesn't seem to have splitting doors, but they are supported.
-						DebugLogWarning("Unrecognized door type \"" + std::to_string(type) +
-							"\", treating as splitting.");
-						return ArenaTypes::DoorType::Splitting;
-					}
-				}();
 
-				ArenaMeshUtils::WriteDoorRendererGeometryBuffers(outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-				ArenaMeshUtils::WriteDoorRendererIndexBuffers(outRenderMeshInitCache->alphaTestedIndices0View);
-				ArenaMeshUtils::WriteDoorCollisionGeometryBuffers(outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-				ArenaMeshUtils::WriteDoorCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+				ArenaTypes::DoorType doorType;
+				VertexShaderType doorVertexShaderType;
+				PixelShaderType doorPixelShaderType;
+				const int type = (map1Voxel & 0x00C0) >> 4;
+				if (type == 0x0)
+				{
+					doorType = ArenaTypes::DoorType::Swinging;
+					doorVertexShaderType = VertexShaderType::Basic;
+					doorPixelShaderType = PixelShaderType::AlphaTested;
+				}
+				else if (type == 0x4)
+				{
+					doorType = ArenaTypes::DoorType::Sliding;
+					doorVertexShaderType = VertexShaderType::Basic;
+					doorPixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin;
+				}
+				else if (type == 0x8)
+				{
+					doorType = ArenaTypes::DoorType::Raising;
+					doorVertexShaderType = VertexShaderType::RaisingDoor;
+					doorPixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
+				}
+				else
+				{
+					// Arena doesn't seem to have splitting doors, but they are supported.
+					DebugLogWarningFormat("Unrecognized door type \"%d\", treating as splitting.", type);
+					doorType = ArenaTypes::DoorType::Splitting;
+					doorVertexShaderType = VertexShaderType::Basic;
+					doorPixelShaderType = PixelShaderType::AlphaTested;
+				}
+
+				outShapeInitCache->initDefaultBoxValues();
+				ArenaMeshUtils::WriteDoorRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteDoorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
 				*outTextureAsset0 = TextureAsset(
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				*outVertexShaderType = doorVertexShaderType;
+				outPixelShaderTypes[0] = doorPixelShaderType;
+				*outPixelShaderCount = 1;
 			}
 			else if (mostSigNibble == 0xC)
 			{
@@ -741,16 +796,18 @@ namespace MapGeneration
 				*outVoxelType = ArenaTypes::VoxelType::Diagonal;
 
 				const bool isRightDiag = (map1Voxel & 0x0100) == 0;
-				ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(isRightDiag, outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-				ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(outRenderMeshInitCache->opaqueIndices0View);
-				ArenaMeshUtils::WriteDiagonalCollisionGeometryBuffers(isRightDiag, outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-				ArenaMeshUtils::WriteDiagonalCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+				outShapeInitCache->initDiagonalBoxValues(isRightDiag);
+				ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(isRightDiag, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
 				*outTextureAsset0 = TextureAsset(
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
+				*outVertexShaderType = VertexShaderType::Basic;
+				outPixelShaderTypes[0] = PixelShaderType::Opaque;
+				*outPixelShaderCount = 1;
 			}
 			else
 			{
@@ -759,30 +816,30 @@ namespace MapGeneration
 		}
 	}
 
-	void writeDefsForMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble,
-		MapType mapType, const INFFile &inf, const ExeData &exeData, VoxelMeshDefinition *outMeshDef,
-		VoxelTextureDefinition *outTextureDef, VoxelTraitsDefinition *outTraitsDef)
+	void writeDefsForMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf, const ExeData &exeData,
+		VoxelShapeDefinition *outShapeDef, VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
 		ArenaTypes::VoxelType voxelType;
-		ArenaMeshUtils::RenderMeshInitCache renderMeshInitCache;
-		ArenaMeshUtils::CollisionMeshInitCache collisionMeshInitCache;
+		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
-		double yOffset, ySize;
+		VertexShaderType vertexShaderType;
+		PixelShaderType pixelShaderTypes[VoxelShadingDefinition::MAX_PIXEL_SHADERS];
+		int pixelShaderCount;
 		bool isCollider;
 		VoxelFacing2D facing;
-		MapGeneration::writeVoxelInfoForMAP1(map1Voxel, mostSigNibble, mapType, inf, exeData, &voxelType,
-			&renderMeshInitCache, &collisionMeshInitCache, &textureAsset0, &textureAsset1, &textureAsset2,
-			&yOffset, &ySize, &isCollider, &facing);
+		MapGeneration::writeVoxelInfoForMAP1(map1Voxel, mostSigNibble, mapType, inf, exeData, &voxelType, &shapeInitCache,
+			&textureAsset0, &textureAsset1, &textureAsset2, &vertexShaderType, pixelShaderTypes, &pixelShaderCount,
+			&isCollider, &facing);
 
-		VoxelMeshScaleType scaleType = VoxelMeshScaleType::ScaledFromMin;
+		VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
 		if (voxelType == ArenaTypes::VoxelType::Raised)
 		{
-			scaleType = VoxelMeshScaleType::UnscaledFromMin;
+			scaleType = VoxelShapeScaleType::UnscaledFromMin;
 		}
 
-		outMeshDef->initClassic(voxelType, scaleType, renderMeshInitCache, collisionMeshInitCache);
+		outShapeDef->initBoxFromClassic(voxelType, scaleType, shapeInitCache);
 
-		const std::array<const TextureAsset*, 3> textureAssetPtrs = { &textureAsset0, &textureAsset1, &textureAsset2 };
+		const TextureAsset *textureAssetPtrs[] = { &textureAsset0, &textureAsset1, &textureAsset2 };
 		for (const TextureAsset *textureAsset : textureAssetPtrs)
 		{
 			if (!textureAsset->filename.empty())
@@ -791,11 +848,14 @@ namespace MapGeneration
 			}
 		}
 
+		outShadingDef->init(vertexShaderType);
+		for (int i = 0; i < pixelShaderCount; i++)
+		{
+			outShadingDef->addPixelShaderType(pixelShaderTypes[i]);
+		}
+
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::Raised:
-			outTraitsDef->initRaised(yOffset, ySize);
-			break;
 		case ArenaTypes::VoxelType::TransparentWall:
 			outTraitsDef->initTransparentWall(isCollider);
 			break;
@@ -809,14 +869,13 @@ namespace MapGeneration
 	}
 
 	void writeVoxelInfoForMAP2(ArenaTypes::VoxelID map2Voxel, const INFFile &inf, ArenaTypes::VoxelType *outVoxelType,
-		ArenaMeshUtils::RenderMeshInitCache *outRenderMeshInitCache, ArenaMeshUtils::CollisionMeshInitCache *outCollisionMeshInitCache,
-		TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1, TextureAsset *outTextureAsset2)
+		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1,
+		TextureAsset *outTextureAsset2)
 	{
 		*outVoxelType = ArenaTypes::VoxelType::Wall;
-		ArenaMeshUtils::WriteWallRendererGeometryBuffers(outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-		ArenaMeshUtils::WriteWallRendererIndexBuffers(outRenderMeshInitCache->opaqueIndices0View, outRenderMeshInitCache->opaqueIndices1View, outRenderMeshInitCache->opaqueIndices2View);
-		ArenaMeshUtils::WriteWallCollisionGeometryBuffers(outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-		ArenaMeshUtils::WriteWallCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+		outShapeInitCache->initDefaultBoxValues();
+		ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+		ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
 		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -827,33 +886,36 @@ namespace MapGeneration
 		*outTextureAsset2 = *outTextureAsset0;
 	}
 
-	void writeDefsForMAP2(ArenaTypes::VoxelID map2Voxel, const INFFile &inf, VoxelMeshDefinition *outMeshDef,
-		VoxelTextureDefinition *outTextureDef, VoxelTraitsDefinition *outTraitsDef)
+	void writeDefsForMAP2(ArenaTypes::VoxelID map2Voxel, const INFFile &inf, VoxelShapeDefinition *outShapeDef,
+		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
 		ArenaTypes::VoxelType voxelType;
-		ArenaMeshUtils::RenderMeshInitCache renderMeshInitCache;
-		ArenaMeshUtils::CollisionMeshInitCache collisionMeshInitCache;
+		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
-		MapGeneration::writeVoxelInfoForMAP2(map2Voxel, inf, &voxelType, &renderMeshInitCache, &collisionMeshInitCache,
-			&textureAsset0, &textureAsset1, &textureAsset2);
+		MapGeneration::writeVoxelInfoForMAP2(map2Voxel, inf, &voxelType, &shapeInitCache, &textureAsset0, &textureAsset1, &textureAsset2);
 
-		constexpr VoxelMeshScaleType scaleType = VoxelMeshScaleType::ScaledFromMin;
-		outMeshDef->initClassic(voxelType, scaleType, renderMeshInitCache, collisionMeshInitCache);
+		constexpr VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
+		outShapeDef->initBoxFromClassic(voxelType, scaleType, shapeInitCache);
 		outTextureDef->addTextureAsset(std::move(textureAsset0));
 		outTextureDef->addTextureAsset(std::move(textureAsset1));
 		outTextureDef->addTextureAsset(std::move(textureAsset2));
+		
+		outShadingDef->init(VertexShaderType::Basic);
+		for (int i = 0; i < 3; i++)
+		{
+			outShadingDef->addPixelShaderType(PixelShaderType::Opaque);
+		}
+
 		outTraitsDef->initGeneral(voxelType);
 	}
 
 	void writeVoxelInfoForCeiling(const INFFile &inf, ArenaTypes::VoxelType *outVoxelType,
-		ArenaMeshUtils::RenderMeshInitCache *outRenderMeshInitCache, ArenaMeshUtils::CollisionMeshInitCache *outCollisionMeshInitCache,
-		TextureAsset *outTextureAsset)
+		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
 	{
 		*outVoxelType = ArenaTypes::VoxelType::Ceiling;
-		ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(outRenderMeshInitCache->verticesView, outRenderMeshInitCache->normalsView, outRenderMeshInitCache->texCoordsView);
-		ArenaMeshUtils::WriteCeilingRendererIndexBuffers(outRenderMeshInitCache->opaqueIndices0View);
-		ArenaMeshUtils::WriteCeilingCollisionGeometryBuffers(outCollisionMeshInitCache->verticesView, outCollisionMeshInitCache->normalsView);
-		ArenaMeshUtils::WriteCeilingCollisionIndexBuffers(outCollisionMeshInitCache->indicesView);
+		outShapeInitCache->initDefaultBoxValues();
+		ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+		ArenaMeshUtils::WriteCeilingRendererIndexBuffers(outShapeInitCache->indices0View);
 
 		// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe hardcoding index 1 is enough?
 		const INFCeiling &ceiling = inf.getCeiling();
@@ -865,18 +927,18 @@ namespace MapGeneration
 			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 	}
 
-	void writeDefsForCeiling(const INFFile &inf, VoxelMeshDefinition *outMeshDef,
-		VoxelTextureDefinition *outTextureDef, VoxelTraitsDefinition *outTraitsDef)
+	void writeDefsForCeiling(const INFFile &inf, VoxelShapeDefinition *outShapeDef, VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef,
+		VoxelTraitsDefinition *outTraitsDef)
 	{
 		ArenaTypes::VoxelType voxelType;
-		ArenaMeshUtils::RenderMeshInitCache renderMeshInitCache;
-		ArenaMeshUtils::CollisionMeshInitCache collisionMeshInitCache;
+		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
-		MapGeneration::writeVoxelInfoForCeiling(inf, &voxelType, &renderMeshInitCache, &collisionMeshInitCache, &textureAsset);
+		MapGeneration::writeVoxelInfoForCeiling(inf, &voxelType, &shapeInitCache, &textureAsset);
 
-		constexpr VoxelMeshScaleType scaleType = VoxelMeshScaleType::ScaledFromMin;
-		outMeshDef->initClassic(voxelType, scaleType, renderMeshInitCache, collisionMeshInitCache);
+		constexpr VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
+		outShapeDef->initBoxFromClassic(voxelType, scaleType, shapeInitCache);
 		outTextureDef->addTextureAsset(std::move(textureAsset));
+		outShadingDef->init(VertexShaderType::Basic, PixelShaderType::Opaque);
 		outTraitsDef->initGeneral(voxelType);
 	}
 
@@ -884,11 +946,12 @@ namespace MapGeneration
 	{
 		const OriginalInt2 lockPos(lock.x, lock.y);
 		const WorldInt2 newLockPos = VoxelUtils::originalVoxelToWorldVoxel(lockPos);
-		return LockDefinition::makeLeveledLock(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
+		LockDefinition lockDef;
+		lockDef.init(newLockPos.x, 1, newLockPos.y, lock.lockLevel);
+		return lockDef;
 	}
 
-	VoxelTriggerDefinition makeTriggerDefFromArenaTrigger(const ArenaTypes::MIFTrigger &trigger,
-		const INFFile &inf)
+	VoxelTriggerDefinition makeTriggerDefFromArenaTrigger(const ArenaTypes::MIFTrigger &trigger, const INFFile &inf)
 	{
 		const OriginalInt2 triggerPos(trigger.x, trigger.y);
 		const WorldInt2 newTriggerPos = VoxelUtils::originalVoxelToWorldVoxel(triggerPos);
@@ -896,21 +959,34 @@ namespace MapGeneration
 		VoxelTriggerDefinition triggerDef;
 		triggerDef.init(newTriggerPos.x, 1, newTriggerPos.y);
 
-		// There can be a text trigger and sound trigger in the same voxel.
-		const bool isTextTrigger = trigger.textIndex != -1;
-		const bool isSoundTrigger = trigger.soundIndex != -1;
+		// There can be a *TEXT trigger and @SOUND trigger in the same voxel.
+		const bool isValidTextTrigger = trigger.textIndex != -1;
+		const bool isValidSoundTrigger = trigger.soundIndex != -1;
 
-		// Make sure the text index points to a text value (i.e., not a key or riddle).
-		if (isTextTrigger && inf.hasTextIndex(trigger.textIndex))
+		if (isValidTextTrigger)
 		{
-			const INFText &textData = inf.getText(trigger.textIndex);
-			triggerDef.setTextDef(std::string(textData.text), textData.displayedOnce);
+			if (inf.hasLoreTextIndex(trigger.textIndex))
+			{
+				const INFLoreText &loreTextData = inf.getLoreText(trigger.textIndex);
+				triggerDef.loreText.init(loreTextData.text, loreTextData.isDisplayedOnce);
+			}
+			else if (inf.hasRiddleIndex(trigger.textIndex))
+			{
+				const INFRiddle &riddleData = inf.getRiddle(trigger.textIndex);
+				DebugLogWarningFormat("Riddles not implemented, trigger (%d, %d).", newTriggerPos.x, newTriggerPos.y);
+				// @todo
+			}
+			else if (inf.hasKeyIndex(trigger.textIndex))
+			{
+				const INFKey &keyData = inf.getKey(trigger.textIndex);
+				triggerDef.key.init(keyData.revisedID);
+			}
 		}
 
-		if (isSoundTrigger)
+		if (isValidSoundTrigger)
 		{
 			const char *soundName = inf.getSound(trigger.soundIndex);
-			triggerDef.setSoundDef(String::toUppercase(soundName));
+			triggerDef.sound.init(String::toUppercase(soundName));
 		}
 
 		return triggerDef;
@@ -942,14 +1018,13 @@ namespace MapGeneration
 
 			if (isValid)
 			{
-				const bool isLevelChange = matchesLevelUp || matchesLevelDown;
-				const TransitionType transitionType = isLevelChange ?
-					TransitionType::LevelChange : TransitionType::ExitInterior;
+				const bool isInteriorLevelChange = matchesLevelUp || matchesLevelDown;
+				const TransitionType transitionType = isInteriorLevelChange ? TransitionType::InteriorLevelChange : TransitionType::ExitInterior;
 
 				constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Can't have interiors in interiors.
-				const std::optional<bool> isLevelUp = [matchesLevelUp, isLevelChange]() -> std::optional<bool>
+				const std::optional<bool> isInteriorLevelUp = [matchesLevelUp, isInteriorLevelChange]() -> std::optional<bool>
 				{
-					if (isLevelChange)
+					if (isInteriorLevelChange)
 					{
 						return matchesLevelUp;
 					}
@@ -960,7 +1035,7 @@ namespace MapGeneration
 				}();
 
 				MapGeneration::TransitionDefGenInfo transitionDefGenInfo;
-				transitionDefGenInfo.init(transitionType, interiorType, menuIndex, isLevelUp);
+				transitionDefGenInfo.init(transitionType, interiorType, menuIndex, isInteriorLevelUp);
 				return transitionDefGenInfo;
 			}
 			else
@@ -1095,10 +1170,10 @@ namespace MapGeneration
 		{
 			transitionDef.initInteriorExit();
 		}
-		else if (transitionDefGenInfo.transitionType == TransitionType::LevelChange)
+		else if (transitionDefGenInfo.transitionType == TransitionType::InteriorLevelChange)
 		{
 			DebugAssert(transitionDefGenInfo.isLevelUp.has_value());
-			transitionDef.initLevelChange(*transitionDefGenInfo.isLevelUp);
+			transitionDef.initInteriorLevelChange(*transitionDefGenInfo.isLevelUp);
 		}
 		else
 		{
@@ -1135,8 +1210,7 @@ namespace MapGeneration
 			else
 			{
 				// Arena doesn't seem to have splitting doors, but they are supported.
-				DebugLogWarning("Unrecognized door type \"" + std::to_string(type) +
-					"\", treating as splitting.");
+				DebugLogWarning("Unrecognized door type \"" + std::to_string(type) + "\", treating as splitting.");
 				return ArenaTypes::DoorType::Splitting;
 			}
 		}();
@@ -1144,29 +1218,26 @@ namespace MapGeneration
 		const std::optional<int> openSoundIndex = ArenaVoxelUtils::tryGetOpenSoundIndex(doorType);
 		if (!openSoundIndex.has_value())
 		{
-			DebugLogWarning("Couldn't get open sound index for door type \"" +
-				std::to_string(static_cast<int>(doorType)) + "\".");
+			DebugLogWarning("Couldn't get open sound index for door type \"" + std::to_string(static_cast<int>(doorType)) + "\".");
 			return std::nullopt;
 		}
 
 		const std::optional<int> closeSoundIndex = ArenaVoxelUtils::tryGetCloseSoundIndex(doorType);
 		if (!closeSoundIndex.has_value())
 		{
-			DebugLogWarning("Couldn't get close sound index for door type \"" +
-				std::to_string(static_cast<int>(doorType)) + "\".");
+			DebugLogWarning("Couldn't get close sound index for door type \"" + std::to_string(static_cast<int>(doorType)) + "\".");
 			return std::nullopt;
 		}
 
-		const std::optional<DoorDefinition::CloseType> closeType = [doorType]()
-			-> std::optional<DoorDefinition::CloseType>
+		const std::optional<VoxelDoorCloseType> closeType = [doorType]() -> std::optional<VoxelDoorCloseType>
 		{
 			if (ArenaVoxelUtils::doorHasSoundOnClosed(doorType))
 			{
-				return DoorDefinition::CloseType::OnClosed;
+				return VoxelDoorCloseType::OnClosed;
 			}
 			else if (ArenaVoxelUtils::doorHasSoundOnClosing(doorType))
 			{
-				return DoorDefinition::CloseType::OnClosing;
+				return VoxelDoorCloseType::OnClosing;
 			}
 			else
 			{
@@ -1176,8 +1247,7 @@ namespace MapGeneration
 
 		if (!closeType.has_value())
 		{
-			DebugLogWarning("Can't determine close sound type for door type \"" +
-				std::to_string(static_cast<int>(doorType)) + "\".");
+			DebugLogWarning("Can't determine close sound type for door type \"" + std::to_string(static_cast<int>(doorType)) + "\".");
 			return std::nullopt;
 		}
 
@@ -1186,14 +1256,13 @@ namespace MapGeneration
 		return doorDefGenInfo;
 	}
 
-	DoorDefinition makeDoorDef(const MapGeneration::DoorDefGenInfo &doorDefGenInfo, const INFFile &inf)
+	VoxelDoorDefinition makeDoorDef(const MapGeneration::DoorDefGenInfo &doorDefGenInfo, const INFFile &inf)
 	{
 		std::string openSoundFilename = inf.getSound(doorDefGenInfo.openSoundIndex);
 		std::string closeSoundFilename = inf.getSound(doorDefGenInfo.closeSoundIndex);
 
-		DoorDefinition doorDef;
-		doorDef.init(doorDefGenInfo.doorType, std::move(openSoundFilename), doorDefGenInfo.closeType,
-			std::move(closeSoundFilename));
+		VoxelDoorDefinition doorDef;
+		doorDef.init(doorDefGenInfo.doorType, openSoundFilename, doorDefGenInfo.closeType, closeSoundFilename);
 		return doorDef;
 	}
 
@@ -1213,37 +1282,42 @@ namespace MapGeneration
 				const ArenaTypes::VoxelID florVoxel = flor.get(florX, florZ);
 
 				// Get voxel def IDs from cache or create a new entry.
-				LevelDefinition::VoxelMeshDefID voxelMeshDefID;
-				LevelDefinition::VoxelTextureDefID voxelTextureDefID;
-				LevelDefinition::VoxelTraitsDefID voxelTraitsDefID;
+				LevelVoxelShapeDefID voxelShapeDefID;
+				LevelVoxelTextureDefID voxelTextureDefID;
+				LevelVoxelShadingDefID voxelShadingDefID;
+				LevelVoxelTraitsDefID voxelTraitsDefID;
 				const auto defIter = voxelCache->find(florVoxel);
 				if (defIter != voxelCache->end())
 				{
 					const ArenaVoxelMappingEntry &entry = defIter->second;
-					voxelMeshDefID = entry.meshDefID;
+					voxelShapeDefID = entry.shapeDefID;
 					voxelTextureDefID = entry.textureDefID;
+					voxelShadingDefID = entry.shadingDefID;
 					voxelTraitsDefID = entry.traitsDefID;
 				}
 				else
 				{
-					VoxelMeshDefinition voxelMeshDef;
+					VoxelShapeDefinition voxelShapeDef;
 					VoxelTextureDefinition voxelTextureDef;
+					VoxelShadingDefinition voxelShadingDef;
 					VoxelTraitsDefinition voxelTraitsDef;
-					MapGeneration::writeDefsForFLOR(florVoxel, mapType, inf, &voxelMeshDef, &voxelTextureDef, &voxelTraitsDef);
-					voxelMeshDefID = outLevelInfoDef->addVoxelMeshDef(std::move(voxelMeshDef));
+					MapGeneration::writeDefsForFLOR(florVoxel, mapType, inf, &voxelShapeDef, &voxelTextureDef, &voxelShadingDef, &voxelTraitsDef);
+					voxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(voxelShapeDef));
 					voxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(voxelTextureDef));
+					voxelShadingDefID = outLevelInfoDef->addVoxelShadingDef(std::move(voxelShadingDef));
 					voxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(voxelTraitsDef));
 
 					ArenaVoxelMappingEntry newEntry;
-					newEntry.init(voxelMeshDefID, voxelTextureDefID, voxelTraitsDefID);
+					newEntry.init(voxelShapeDefID, voxelTextureDefID, voxelShadingDefID, voxelTraitsDefID);
 					voxelCache->emplace(florVoxel, newEntry);
 				}
 
 				const SNInt levelX = florZ;
 				const int levelY = 0;
 				const WEInt levelZ = florX;
-				outLevelDef->setVoxelMeshID(levelX, levelY, levelZ, voxelMeshDefID);
+				outLevelDef->setVoxelShapeID(levelX, levelY, levelZ, voxelShapeDefID);
 				outLevelDef->setVoxelTextureID(levelX, levelY, levelZ, voxelTextureDefID);
+				outLevelDef->setVoxelShadingID(levelX, levelY, levelZ, voxelShadingDefID);
 				outLevelDef->setVoxelTraitsID(levelX, levelY, levelZ, voxelTraitsDefID);
 
 				// Floor voxels can also contain data for raised platform flats.
@@ -1251,7 +1325,7 @@ namespace MapGeneration
 				if (floorFlatID > 0)
 				{
 					// Get entity def ID from cache or create a new one.
-					LevelDefinition::EntityDefID entityDefID;
+					LevelVoxelEntityDefID entityDefID;
 					const auto iter = entityCache->find(florVoxel);
 					if (iter != entityCache->end())
 					{
@@ -1274,22 +1348,21 @@ namespace MapGeneration
 						entityCache->emplace(florVoxel, entityDefID);
 					}
 
-					const WorldDouble3 entityPos(
+					const WorldDouble2 entityPos(
 						static_cast<SNDouble>(levelX) + 0.50,
-						1.0, // Will probably be ignored in favor of raised platform top face.
 						static_cast<WEDouble>(levelZ) + 0.50);
 					outLevelDef->addEntity(entityDefID, entityPos);
 				}
 
 				// Add chasm definition if any.
 				// @todo: the traits def look-up should be replaced by just getting an isChasm from the florVoxel decoding function,
-				// because all users of chasm look-ups in the engine should go through ChasmDefinition, not VoxelTraitsDefinition.
+				// because all users of chasm look-ups in the engine should go through VoxelChasmDefinition, not VoxelTraitsDefinition.
 				const VoxelTraitsDefinition &traitsDef = outLevelInfoDef->getVoxelTraitsDef(voxelTraitsDefID);
 				if (traitsDef.type == ArenaTypes::VoxelType::Chasm)
 				{
-					const VoxelTraitsDefinition::Chasm &chasm = traitsDef.chasm;
+					const VoxelTraitsChasmDefinition &chasm = traitsDef.chasm;
 
-					LevelDefinition::ChasmDefID chasmDefID;
+					LevelVoxelChasmDefID chasmDefID;
 					const auto chasmIter = chasmCache->find(florVoxel);
 					if (chasmIter != chasmCache->end())
 					{
@@ -1300,7 +1373,7 @@ namespace MapGeneration
 						const VoxelTextureDefinition &voxelTextureDef = outLevelInfoDef->getVoxelTextureDef(voxelTextureDefID);
 						const TextureAsset &chasmWallTextureAsset = voxelTextureDef.getTextureAsset(0);
 
-						ChasmDefinition chasmDef;
+						VoxelChasmDefinition chasmDef;
 						chasmDef.initClassic(chasm.type, chasmWallTextureAsset, textureManager);
 
 						chasmDefID = outLevelInfoDef->addChasmDef(std::move(chasmDef));
@@ -1314,19 +1387,22 @@ namespace MapGeneration
 
 		// Add floor replacement defs. They are not necessarily associated with an existing XYZ coordinate, and might
 		// not even be in the original data.
-		VoxelMeshDefinition floorReplacementMeshDef;
+		VoxelShapeDefinition floorReplacementShapeDef;
 		VoxelTextureDefinition floorReplacementTextureDef;
+		VoxelShadingDefinition floorReplacementShadingDef;
 		VoxelTraitsDefinition floorReplacementTraitsDef;
-		ChasmDefinition floorReplacementChasmDef;
-		MapGeneration::writeDefsForFloorReplacement(inf, textureManager, &floorReplacementMeshDef, &floorReplacementTextureDef,
+		VoxelChasmDefinition floorReplacementChasmDef;
+		MapGeneration::writeDefsForFloorReplacement(inf, textureManager, &floorReplacementShapeDef, &floorReplacementTextureDef, &floorReplacementShadingDef,
 			&floorReplacementTraitsDef, &floorReplacementChasmDef);
 
-		const LevelDefinition::VoxelMeshDefID floorReplacementVoxelMeshDefID = outLevelInfoDef->addVoxelMeshDef(std::move(floorReplacementMeshDef));
-		const LevelDefinition::VoxelTextureDefID floorReplacementVoxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(floorReplacementTextureDef));
-		const LevelDefinition::VoxelTraitsDefID floorReplacementVoxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(floorReplacementTraitsDef));
-		const LevelDefinition::ChasmDefID floorReplacementChasmDefID = outLevelInfoDef->addChasmDef(std::move(floorReplacementChasmDef));
-		outLevelDef->setFloorReplacementMeshDefID(floorReplacementVoxelMeshDefID);
+		const LevelVoxelShapeDefID floorReplacementVoxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(floorReplacementShapeDef));
+		const LevelVoxelTextureDefID floorReplacementVoxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(floorReplacementTextureDef));
+		const LevelVoxelShadingDefID floorReplacementVoxelShadingDefID = outLevelInfoDef->addVoxelShadingDef(std::move(floorReplacementShadingDef));
+		const LevelVoxelTraitsDefID floorReplacementVoxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(floorReplacementTraitsDef));
+		const LevelVoxelChasmDefID floorReplacementChasmDefID = outLevelInfoDef->addChasmDef(std::move(floorReplacementChasmDef));
+		outLevelDef->setFloorReplacementShapeDefID(floorReplacementVoxelShapeDefID);
 		outLevelDef->setFloorReplacementTextureDefID(floorReplacementVoxelTextureDefID);
+		outLevelDef->setFloorReplacementShadingDefID(floorReplacementVoxelShadingDefID);
 		outLevelDef->setFloorReplacementTraitsDefID(floorReplacementVoxelTraitsDefID);
 		outLevelDef->setFloorReplacementChasmDefID(floorReplacementChasmDefID);
 	}
@@ -1366,40 +1442,45 @@ namespace MapGeneration
 				if (isVoxel)
 				{
 					// Get voxel def IDs from cache or create a new entry.
-					LevelDefinition::VoxelMeshDefID voxelMeshDefID;
-					LevelDefinition::VoxelTextureDefID voxelTextureDefID;
-					LevelDefinition::VoxelTraitsDefID voxelTraitsDefID;
+					LevelVoxelShapeDefID voxelShapeDefID;
+					LevelVoxelTextureDefID voxelTextureDefID;
+					LevelVoxelShadingDefID voxelShadingDefID;
+					LevelVoxelTraitsDefID voxelTraitsDefID;
 					const auto defIter = voxelCache->find(map1Voxel);
 					if (defIter != voxelCache->end())
 					{
 						const ArenaVoxelMappingEntry &entry = defIter->second;
-						voxelMeshDefID = entry.meshDefID;
+						voxelShapeDefID = entry.shapeDefID;
 						voxelTextureDefID = entry.textureDefID;
+						voxelShadingDefID = entry.shadingDefID;
 						voxelTraitsDefID = entry.traitsDefID;
 					}
 					else
 					{
 						const ExeData &exeData = binaryAssetLibrary.getExeData();
 
-						VoxelMeshDefinition voxelMeshDef;
+						VoxelShapeDefinition voxelShapeDef;
 						VoxelTextureDefinition voxelTextureDef;
+						VoxelShadingDefinition voxelShadingDef;
 						VoxelTraitsDefinition voxelTraitsDef;
-						MapGeneration::writeDefsForMAP1(map1Voxel, mostSigNibble, mapType, inf, exeData,
-							&voxelMeshDef, &voxelTextureDef, &voxelTraitsDef);
-						voxelMeshDefID = outLevelInfoDef->addVoxelMeshDef(std::move(voxelMeshDef));
+						MapGeneration::writeDefsForMAP1(map1Voxel, mostSigNibble, mapType, inf, exeData, &voxelShapeDef, &voxelTextureDef, &voxelShadingDef, &voxelTraitsDef);
+						voxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(voxelShapeDef));
 						voxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(voxelTextureDef));
+						voxelShadingDefID = outLevelInfoDef->addVoxelShadingDef(std::move(voxelShadingDef));
 						voxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(voxelTraitsDef));
 
 						ArenaVoxelMappingEntry newEntry;
-						newEntry.init(voxelMeshDefID, voxelTextureDefID, voxelTraitsDefID);
+						newEntry.init(voxelShapeDefID, voxelTextureDefID, voxelShadingDefID, voxelTraitsDefID);
 						voxelCache->emplace(map1Voxel, newEntry);
 					}
 
-					outLevelDef->setVoxelMeshID(levelX, levelY, levelZ, voxelMeshDefID);
+					outLevelDef->setVoxelShapeID(levelX, levelY, levelZ, voxelShapeDefID);
 					outLevelDef->setVoxelTextureID(levelX, levelY, levelZ, voxelTextureDefID);
+					outLevelDef->setVoxelShadingID(levelX, levelY, levelZ, voxelShadingDefID);
 					outLevelDef->setVoxelTraitsID(levelX, levelY, levelZ, voxelTraitsDefID);
 
 					const WorldInt3 levelPosition(levelX, levelY, levelZ);
+					const WorldInt2 levelPositionXZ(levelX, levelZ);
 
 					// Try to make transition info if this MAP1 voxel is a transition.
 					const std::optional<MapGeneration::TransitionDefGenInfo> transitionDefGenInfo =
@@ -1407,9 +1488,16 @@ namespace MapGeneration
 
 					if (transitionDefGenInfo.has_value())
 					{
-						// Get transition def ID from cache or create a new one.
-						LevelDefinition::TransitionDefID transitionDefID;
-						const auto iter = transitionCache->find(map1Voxel);
+						// Get transition def ID from cache or create a new one. These rely on XY coordinates
+						// for interior .MIF name generation so can't really reuse them.
+						LevelVoxelTransitionDefID transitionDefID;
+						const auto iter = std::find_if(transitionCache->begin(), transitionCache->end(),
+							[map1Voxel, levelPositionXZ](const std::pair<TransitionMappingKey, LevelVoxelTransitionDefID> &pair)
+						{
+							const TransitionMappingKey &key = pair.first;
+							return (key.voxelID == map1Voxel) && (key.levelXZ == levelPositionXZ);
+						});
+
 						if (iter != transitionCache->end())
 						{
 							transitionDefID = iter->second;
@@ -1421,7 +1509,11 @@ namespace MapGeneration
 								rulerIsMale, palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon,
 								mapType, binaryAssetLibrary.getExeData());
 							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
-							transitionCache->emplace(map1Voxel, transitionDefID);
+
+							TransitionMappingKey transitionMappingKey;
+							transitionMappingKey.voxelID = map1Voxel;
+							transitionMappingKey.levelXZ = levelPositionXZ;
+							transitionCache->emplace_back(transitionMappingKey, transitionDefID);
 						}
 
 						outLevelDef->addTransition(transitionDefID, levelPosition);
@@ -1434,7 +1526,7 @@ namespace MapGeneration
 					if (doorDefGenInfo.has_value())
 					{
 						// Get door def ID from cache or create a new one.
-						LevelDefinition::DoorDefID doorDefID;
+						LevelVoxelDoorDefID doorDefID;
 						const auto iter = doorCache->find(map1Voxel);
 						if (iter != doorCache->end())
 						{
@@ -1442,7 +1534,7 @@ namespace MapGeneration
 						}
 						else
 						{
-							DoorDefinition doorDef = MapGeneration::makeDoorDef(*doorDefGenInfo, inf);
+							VoxelDoorDefinition doorDef = MapGeneration::makeDoorDef(*doorDefGenInfo, inf);
 							doorDefID = outLevelInfoDef->addDoorDef(std::move(doorDef));
 							doorCache->emplace(map1Voxel, doorDefID);
 						}
@@ -1453,7 +1545,7 @@ namespace MapGeneration
 				else
 				{
 					// Get entity def ID from cache or create a new one.
-					LevelDefinition::EntityDefID entityDefID;
+					LevelVoxelEntityDefID entityDefID;
 					const auto iter = entityCache->find(map1Voxel);
 					if (iter != entityCache->end())
 					{
@@ -1476,9 +1568,8 @@ namespace MapGeneration
 						entityCache->emplace(map1Voxel, entityDefID);
 					}
 
-					const WorldDouble3 entityPos(
+					const WorldDouble2 entityPos(
 						static_cast<SNDouble>(levelX) + 0.50,
-						1.0,
 						static_cast<WEDouble>(levelZ) + 0.50);
 					outLevelDef->addEntity(entityDefID, entityPos);
 				}
@@ -1503,29 +1594,33 @@ namespace MapGeneration
 				}
 
 				// Get voxel def ID from cache or create a new one.
-				LevelDefinition::VoxelMeshDefID voxelMeshDefID;
-				LevelDefinition::VoxelTextureDefID voxelTextureDefID;
-				LevelDefinition::VoxelTraitsDefID voxelTraitsDefID;
+				LevelVoxelShapeDefID voxelShapeDefID;
+				LevelVoxelTextureDefID voxelTextureDefID;
+				LevelVoxelShadingDefID voxelShadingDefID;
+				LevelVoxelTraitsDefID voxelTraitsDefID;
 				const auto defIter = voxelCache->find(map2Voxel);
 				if (defIter != voxelCache->end())
 				{
 					const ArenaVoxelMappingEntry &entry = defIter->second;
-					voxelMeshDefID = entry.meshDefID;
+					voxelShapeDefID = entry.shapeDefID;
 					voxelTextureDefID = entry.textureDefID;
+					voxelShadingDefID = entry.shadingDefID;
 					voxelTraitsDefID = entry.traitsDefID;
 				}
 				else
 				{
-					VoxelMeshDefinition voxelMeshDef;
+					VoxelShapeDefinition voxelShapeDef;
 					VoxelTextureDefinition voxelTextureDef;
+					VoxelShadingDefinition voxelShadingDef;
 					VoxelTraitsDefinition voxelTraitsDef;
-					MapGeneration::writeDefsForMAP2(map2Voxel, inf, &voxelMeshDef, &voxelTextureDef, &voxelTraitsDef);
-					voxelMeshDefID = outLevelInfoDef->addVoxelMeshDef(std::move(voxelMeshDef));
+					MapGeneration::writeDefsForMAP2(map2Voxel, inf, &voxelShapeDef, &voxelTextureDef, &voxelShadingDef, &voxelTraitsDef);
+					voxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(voxelShapeDef));
 					voxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(voxelTextureDef));
+					voxelShadingDefID = outLevelInfoDef->addVoxelShadingDef(std::move(voxelShadingDef));
 					voxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(voxelTraitsDef));
 
 					ArenaVoxelMappingEntry newEntry;
-					newEntry.init(voxelMeshDefID, voxelTextureDefID, voxelTraitsDefID);
+					newEntry.init(voxelShapeDefID, voxelTextureDefID, voxelShadingDefID, voxelTraitsDefID);
 					voxelCache->emplace(map2Voxel, newEntry);
 				}
 
@@ -1536,8 +1631,9 @@ namespace MapGeneration
 				{
 					const SNInt levelX = map2Z;
 					const WEInt levelZ = map2X;
-					outLevelDef->setVoxelMeshID(levelX, y, levelZ, voxelMeshDefID);
+					outLevelDef->setVoxelShapeID(levelX, y, levelZ, voxelShapeDefID);
 					outLevelDef->setVoxelTextureID(levelX, y, levelZ, voxelTextureDefID);
+					outLevelDef->setVoxelShadingID(levelX, y, levelZ, voxelShadingDefID);
 					outLevelDef->setVoxelTraitsID(levelX, y, levelZ, voxelTraitsDefID);
 				}
 			}
@@ -1548,21 +1644,24 @@ namespace MapGeneration
 	// without MAP2 data.
 	void readArenaCeiling(const INFFile &inf, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)
 	{
-		VoxelMeshDefinition voxelMeshDef;
+		VoxelShapeDefinition voxelShapeDef;
 		VoxelTextureDefinition voxelTextureDef;
+		VoxelShadingDefinition voxelShadingDef;
 		VoxelTraitsDefinition voxelTraitsDef;
-		MapGeneration::writeDefsForCeiling(inf, &voxelMeshDef, &voxelTextureDef, &voxelTraitsDef);
-		const LevelDefinition::VoxelMeshDefID voxelMeshDefID = outLevelInfoDef->addVoxelMeshDef(std::move(voxelMeshDef));
-		const LevelDefinition::VoxelTextureDefID voxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(voxelTextureDef));
-		const LevelDefinition::VoxelTraitsDefID voxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(voxelTraitsDef));
+		MapGeneration::writeDefsForCeiling(inf, &voxelShapeDef, &voxelTextureDef, &voxelShadingDef, &voxelTraitsDef);
+		const LevelVoxelShapeDefID voxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(voxelShapeDef));
+		const LevelVoxelTextureDefID voxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(voxelTextureDef));
+		const LevelVoxelShadingDefID voxelShadingDefID = outLevelInfoDef->addVoxelShadingDef(std::move(voxelShadingDef));
+		const LevelVoxelTraitsDefID voxelTraitsDefID = outLevelInfoDef->addVoxelTraitsDef(std::move(voxelTraitsDef));
 
 		for (SNInt levelX = 0; levelX < outLevelDef->getWidth(); levelX++)
 		{
 			for (WEInt levelZ = 0; levelZ < outLevelDef->getDepth(); levelZ++)
 			{
 				constexpr int y = 2;
-				outLevelDef->setVoxelMeshID(levelX, y, levelZ, voxelMeshDefID);
+				outLevelDef->setVoxelShapeID(levelX, y, levelZ, voxelShapeDefID);
 				outLevelDef->setVoxelTextureID(levelX, y, levelZ, voxelTextureDefID);
+				outLevelDef->setVoxelShadingID(levelX, y, levelZ, voxelShadingDefID);
 				outLevelDef->setVoxelTraitsID(levelX, y, levelZ, voxelTraitsDefID);
 			}
 		}
@@ -1571,12 +1670,10 @@ namespace MapGeneration
 	void readArenaLock(const ArenaTypes::MIFLock &lock, const INFFile &inf, LevelDefinition *outLevelDef,
 		LevelInfoDefinition *outLevelInfoDef, ArenaLockMappingCache *lockMappings)
 	{
-		// @todo: see if .INF file key data is relevant here.
-
 		// Get lock def ID from cache or create a new one.
-		LevelDefinition::LockDefID lockDefID;
+		LevelVoxelLockDefID lockDefID;
 		const auto iter = std::find_if(lockMappings->begin(), lockMappings->end(),
-			[&lock](const std::pair<ArenaTypes::MIFLock, LevelDefinition::LockDefID> &pair)
+			[&lock](const std::pair<ArenaTypes::MIFLock, LevelVoxelLockDefID> &pair)
 		{
 			const ArenaTypes::MIFLock &mifLock = pair.first;
 			return (mifLock.x == lock.x) && (mifLock.y == lock.y) && (mifLock.lockLevel == lock.lockLevel);
@@ -1594,9 +1691,9 @@ namespace MapGeneration
 		}
 
 		const LockDefinition &lockDef = outLevelInfoDef->getLockDef(lockDefID);
-		const SNInt x = lockDef.getX();
-		const int y = lockDef.getY();
-		const WEInt z = lockDef.getZ();
+		const SNInt x = lockDef.x;
+		const int y = lockDef.y;
+		const WEInt z = lockDef.z;
 		outLevelDef->addLock(lockDefID, WorldInt3(x, y, z));
 	}
 
@@ -1607,7 +1704,7 @@ namespace MapGeneration
 		// See if the trigger has already been added. Prevent duplicate triggers since they exist in at least
 		// one of the original game's main quest dungeons.
 		const auto iter = std::find_if(triggerMappings->begin(), triggerMappings->end(),
-			[&trigger](const std::pair<ArenaTypes::MIFTrigger, LevelDefinition::TriggerDefID> &pair)
+			[&trigger](const std::pair<ArenaTypes::MIFTrigger, LevelVoxelTriggerDefID> &pair)
 		{
 			const ArenaTypes::MIFTrigger &mifTrigger = pair.first;
 			return (mifTrigger.x == trigger.x) && (mifTrigger.y == trigger.y) &&
@@ -1616,14 +1713,14 @@ namespace MapGeneration
 
 		if (iter == triggerMappings->end())
 		{
-			const LevelDefinition::TriggerDefID triggerDefID = outLevelInfoDef->addTriggerDef(
+			const LevelVoxelTriggerDefID triggerDefID = outLevelInfoDef->addTriggerDef(
 				MapGeneration::makeTriggerDefFromArenaTrigger(trigger, inf));
 			triggerMappings->emplace_back(std::make_pair(trigger, triggerDefID));
 
 			const VoxelTriggerDefinition &triggerDef = outLevelInfoDef->getTriggerDef(triggerDefID);
-			const SNInt x = triggerDef.getX();
-			const int y = triggerDef.getY();
-			const WEInt z = triggerDef.getZ();
+			const SNInt x = triggerDef.x;
+			const int y = triggerDef.y;
+			const WEInt z = triggerDef.z;
 			outLevelDef->addTrigger(triggerDefID, WorldInt3(x, y, z));
 		}
 	}
@@ -1759,7 +1856,7 @@ namespace MapGeneration
 	}
 
 	void generateArenaCityBuildingNames(uint32_t citySeed, int raceID, bool coastal,
-		const std::string_view &cityTypeName,
+		const std::string_view cityTypeName,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
@@ -1772,14 +1869,14 @@ namespace MapGeneration
 			-> std::optional<ArenaTypes::InteriorType>
 		{
 			auto tryGetTransitionDefID = [outLevelDef](SNInt x, WEInt z)
-				-> std::optional<LevelDefinition::TransitionDefID>
+				-> std::optional<LevelVoxelTransitionDefID>
 			{
 				// Find the associated transition for this voxel (if any).
 				const WorldInt3 voxel(x, 1, z);
 				for (int i = 0; i < outLevelDef->getTransitionPlacementDefCount(); i++)
 				{
 					const auto &placementDef = outLevelDef->getTransitionPlacementDef(i);
-					for (const WorldInt3 &position : placementDef.positions)
+					for (const WorldInt3 position : placementDef.positions)
 					{
 						if (position == voxel)
 						{
@@ -1791,7 +1888,7 @@ namespace MapGeneration
 				return std::nullopt;
 			};
 
-			const std::optional<LevelDefinition::TransitionDefID> transitionDefID = tryGetTransitionDefID(x, z);
+			const std::optional<LevelVoxelTransitionDefID> transitionDefID = tryGetTransitionDefID(x, z);
 			if (!transitionDefID.has_value())
 			{
 				// No transition at this voxel.
@@ -1799,16 +1896,16 @@ namespace MapGeneration
 			}
 
 			const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(*transitionDefID);
-			const TransitionType transitionType = transitionDef.getType();
+			const TransitionType transitionType = transitionDef.type;
 			if (transitionType != TransitionType::EnterInterior)
 			{
 				// Not a transition to an interior.
 				return std::nullopt;
 			}
 
-			const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
+			const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
 			const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-			return interiorGenInfo.getInteriorType();
+			return interiorGenInfo.interiorType;
 		};
 
 		// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
@@ -1981,7 +2078,7 @@ namespace MapGeneration
 						name = createTempleName(model, suffixIndex);
 					}
 
-					const LevelDefinition::BuildingNameID buildingNameID =
+					const LevelVoxelBuildingNameID buildingNameID =
 						outLevelInfoDef->addBuildingName(std::move(name));
 					outLevelDef->addBuildingName(buildingNameID, WorldInt3(x, 1, z));
 					seen.emplace_back(hash);
@@ -2005,7 +2102,7 @@ namespace MapGeneration
 
 				// Added an index variable in this solution since the original game seems to store
 				// its building names in a way other than with a vector.
-				const LevelDefinition::BuildingNameID buildingNameID =
+				const LevelVoxelBuildingNameID buildingNameID =
 					mainQuestTempleOverride->menuNamesIndex;
 
 				std::string buildingName = createTempleName(modelIndex, suffixIndex);
@@ -2018,7 +2115,7 @@ namespace MapGeneration
 		generateNames(ArenaTypes::InteriorType::Temple);
 
 		// Add names for any mage's guild entrances.
-		std::optional<LevelDefinition::BuildingNameID> magesGuildBuildingNameID;
+		std::optional<LevelVoxelBuildingNameID> magesGuildBuildingNameID;
 		for (WEInt z = 0; z < outLevelDef->getDepth(); z++)
 		{
 			for (SNInt x = 0; x < outLevelDef->getWidth(); x++)
@@ -2096,18 +2193,18 @@ namespace MapGeneration
 			// the name has been found.
 			for (int i = 0; i < levelDef.getTransitionPlacementDefCount(); i++)
 			{
-				const LevelDefinition::TransitionPlacementDef &placementDef = levelDef.getTransitionPlacementDef(i);
+				const LevelTransitionPlacementDefinition &placementDef = levelDef.getTransitionPlacementDef(i);
 				const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(placementDef.id);
-				const TransitionType transitionType = transitionDef.getType();
+				const TransitionType transitionType = transitionDef.type;
 				if (transitionType != TransitionType::EnterInterior)
 				{
 					// Not a transition to an interior.
 					continue;
 				}
 
-				const auto &interiorEntranceDef = transitionDef.getInteriorEntrance();
+				const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
 				const InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-				if (interiorGenInfo.getInteriorType() != interiorType)
+				if (interiorGenInfo.interiorType != interiorType)
 				{
 					// Not the interior we're generating a name for.
 					continue;
@@ -2147,7 +2244,7 @@ namespace MapGeneration
 				}
 				else
 				{
-					const LevelDefinition::BuildingNameID buildingNameID = outLevelInfoDef->addBuildingName(std::string(buildingName));
+					const LevelVoxelBuildingNameID buildingNameID = outLevelInfoDef->addBuildingName(std::string(buildingName));
 					outBuildingNameInfo->setBuildingNameID(interiorType, buildingNameID);
 					buildingNameMappings->emplace(std::move(buildingName), buildingNameID);
 				}
@@ -2161,16 +2258,14 @@ namespace MapGeneration
 	}
 }
 
-void MapGeneration::InteriorGenInfo::Prefab::init(std::string &&mifName, ArenaTypes::InteriorType interiorType,
-	const std::optional<bool> &rulerIsMale)
+void MapGeneration::InteriorPrefabGenInfo::init(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale)
 {
-	this->mifName = std::move(mifName);
+	this->mifName = mifName;
 	this->interiorType = interiorType;
 	this->rulerIsMale = rulerIsMale;
 }
 
-void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDungeonDefinition &dungeonDef,
-	bool isArtifactDungeon)
+void MapGeneration::InteriorDungeonGenInfo::init(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
 {
 	this->dungeonDef = dungeonDef;
 	this->isArtifactDungeon = isArtifactDungeon;
@@ -2178,59 +2273,21 @@ void MapGeneration::InteriorGenInfo::Dungeon::init(const LocationDungeonDefiniti
 
 MapGeneration::InteriorGenInfo::InteriorGenInfo()
 {
-	this->type = static_cast<InteriorGenInfo::Type>(-1);
+	this->type = static_cast<InteriorGenType>(-1);
 }
 
-void MapGeneration::InteriorGenInfo::init(InteriorGenInfo::Type type)
+void MapGeneration::InteriorGenInfo::initPrefab(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale)
 {
-	this->type = type;
+	this->type = InteriorGenType::Prefab;
+	this->interiorType = interiorType;
+	this->prefab.init(mifName, interiorType, rulerIsMale);
 }
 
-void MapGeneration::InteriorGenInfo::initPrefab(std::string &&mifName, ArenaTypes::InteriorType interiorType,
-	const std::optional<bool> &rulerIsMale)
+void MapGeneration::InteriorGenInfo::initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
 {
-	this->init(InteriorGenInfo::Type::Prefab);
-	this->prefab.init(std::move(mifName), interiorType, rulerIsMale);
-}
-
-void MapGeneration::InteriorGenInfo::initDungeon(const LocationDungeonDefinition &dungeonDef,
-	bool isArtifactDungeon)
-{
-	this->init(InteriorGenInfo::Type::Dungeon);
+	this->type = InteriorGenType::Dungeon;
+	this->interiorType = ArenaTypes::InteriorType::Dungeon;
 	this->dungeon.init(dungeonDef, isArtifactDungeon);
-}
-
-MapGeneration::InteriorGenInfo::Type MapGeneration::InteriorGenInfo::getType() const
-{
-	return this->type;
-}
-
-const MapGeneration::InteriorGenInfo::Prefab &MapGeneration::InteriorGenInfo::getPrefab() const
-{
-	DebugAssert(this->type == InteriorGenInfo::Type::Prefab);
-	return this->prefab;
-}
-
-const MapGeneration::InteriorGenInfo::Dungeon &MapGeneration::InteriorGenInfo::getDungeon() const
-{
-	DebugAssert(this->type == InteriorGenInfo::Type::Dungeon);
-	return this->dungeon;
-}
-
-ArenaTypes::InteriorType MapGeneration::InteriorGenInfo::getInteriorType() const
-{
-	if (this->type == InteriorGenInfo::Type::Prefab)
-	{
-		return this->prefab.interiorType;
-	}
-	else if (this->type == InteriorGenInfo::Type::Dungeon)
-	{
-		return ArenaTypes::InteriorType::Dungeon;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(ArenaTypes::InteriorType, std::to_string(static_cast<int>(this->type)));
-	}
 }
 
 void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType,
@@ -2280,7 +2337,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::hasBuildingNames() const
 }
 
 bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
-	ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID *outID) const
+	ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID *outID) const
 {
 	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
@@ -2295,7 +2352,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
 }
 
 void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
-	ArenaTypes::InteriorType interiorType, LevelDefinition::BuildingNameID id)
+	ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID id)
 {
 	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
@@ -2318,8 +2375,7 @@ void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 	this->isLevelUp = isLevelUp;
 }
 
-void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex,
-	DoorDefinition::CloseType closeType)
+void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex, VoxelDoorCloseType closeType)
 {
 	this->doorType = doorType;
 	this->openSoundIndex = openSoundIndex;
@@ -2461,7 +2517,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon, BufferView<const uint8_t> reservedBlocks,
-	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view &cityTypeName,
+	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName,
 	ArenaTypes::CityType cityType, const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
@@ -2611,7 +2667,7 @@ void MapGeneration::generateRmdWilderness(BufferView<const ArenaWildUtils::WildB
 			const int levelDefIndex = levelDefIndices.get(x, z);
 			const LevelDefinition &levelDef = outLevelDefs.get(levelDefIndex);
 			const ChunkInt2 chunk(x, z);
-			const uint32_t chunkSeed = ArenaWildUtils::makeWildChunkSeed(chunk.x, chunk.y);
+			const uint32_t chunkSeed = ArenaWildUtils::makeWildChunkSeed(chunk.y, chunk.x);
 			MapGeneration::WildChunkBuildingNameInfo buildingNameInfo;
 			buildingNameInfo.init(chunk);
 

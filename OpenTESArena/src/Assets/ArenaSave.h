@@ -7,7 +7,6 @@
 #include "ArenaTypes.h"
 
 // Loads various files saved by the original game.
-
 namespace ArenaSave
 {
 	// Using heap-allocated pointers to avoid stack overflow warnings.

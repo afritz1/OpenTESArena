@@ -5,19 +5,23 @@
 #include <string>
 #include <vector>
 
-#include "../Entities/PrimaryAttribute.h"
 #include "../Math/Vector2.h"
+#include "../Stats/PrimaryAttribute.h"
 #include "../UI/TextRenderUtils.h"
 
-class CharacterClassDefinition;
+class ArenaRandom;
 class Game;
+
+struct CharacterClassDefinition;
 
 namespace CharacterCreationUiModel
 {
 	std::string getPlayerName(Game &game);
 	std::string getPlayerRaceName(Game &game);
 	std::string getPlayerClassName(Game &game);
-	std::vector<PrimaryAttribute> getPlayerAttributes(Game &game);
+	const PrimaryAttributes &getPlayerAttributes(Game &game);
+	std::string getPlayerLevel(Game &game);
+	std::string getPlayerExperience(Game &game);
 }
 
 namespace ChooseClassCreationUiModel
@@ -57,7 +61,6 @@ namespace ChooseRaceUiModel
 	std::string getProvinceConfirmTitleText(Game &game);
 	std::string getProvinceConfirmYesText(Game &game);
 	std::string getProvinceConfirmNoText(Game &game);
-	std::string getProvinceTooltipText(Game &game, int provinceID);
 	std::string getProvinceConfirmedFirstText(Game &game);
 	std::string getProvinceConfirmedSecondText(Game &game);
 	std::string getProvinceConfirmedThirdText(Game &game);
@@ -66,14 +69,26 @@ namespace ChooseRaceUiModel
 
 namespace ChooseAttributesUiModel
 {
+	// Based on reversed wiki values
+	constexpr int PrimaryAttributeRandomMax = 20;
+	constexpr int BonusPointsRandomMax = 25;
+
+	int rollClassic(int n, ArenaRandom &random);
+
+	std::string getPlayerHealth(Game &game);
+	std::string getPlayerStamina(Game &game);
+	std::string getPlayerSpellPoints(Game &game);
+	std::string getPlayerGold(Game &game);
+
 	std::string getInitialText(Game &game);
 
 	std::string getMessageBoxTitleText(Game &game);
 	std::string getMessageBoxSaveText(Game &game);
 	std::string getMessageBoxRerollText(Game &game);
-	std::vector<TextRenderUtils::ColorOverrideInfo::Entry> getMessageBoxSaveColorOverrides(Game &game);
-	std::vector<TextRenderUtils::ColorOverrideInfo::Entry> getMessageBoxRerollColorOverrides(Game &game);
+	std::vector<TextRenderColorOverrideInfoEntry> getMessageBoxSaveColorOverrides(Game &game);
+	std::vector<TextRenderColorOverrideInfoEntry> getMessageBoxRerollColorOverrides(Game &game);
 
+	std::string getBonusPointsRemainingText(Game &game);
 	std::string getAppearanceText(Game &game);
 }
 

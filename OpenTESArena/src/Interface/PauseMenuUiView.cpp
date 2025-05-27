@@ -11,9 +11,9 @@ namespace
 	const std::string DummyVolumeText = "100"; // Worst-case text size for sound/music volume.
 }
 
-TextBox::InitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		DummyVolumeText,
 		PauseMenuUiView::SoundTextBoxCenterPoint,
 		PauseMenuUiView::VolumeFontName,
@@ -22,9 +22,9 @@ TextBox::InitInfo PauseMenuUiView::getSoundTextBoxInitInfo(const FontLibrary &fo
 		fontLibrary);
 }
 
-TextBox::InitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &fontLibrary)
+TextBoxInitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		DummyVolumeText,
 		PauseMenuUiView::MusicTextBoxCenterPoint,
 		PauseMenuUiView::VolumeFontName,
@@ -33,13 +33,13 @@ TextBox::InitInfo PauseMenuUiView::getMusicTextBoxInitInfo(const FontLibrary &fo
 		fontLibrary);
 }
 
-TextBox::InitInfo PauseMenuUiView::getOptionsTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary)
+TextBoxInitInfo PauseMenuUiView::getOptionsTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
 {
-	const TextRenderUtils::TextShadowInfo shadow(
+	const TextRenderShadowInfo shadow(
 		PauseMenuUiView::OptionsButtonTextShadowOffsetX,
 		PauseMenuUiView::OptionsButtonTextShadowOffsetY,
 		PauseMenuUiView::OptionsButtonTextShadowColor);
-	return TextBox::InitInfo::makeWithCenter(
+	return TextBoxInitInfo::makeWithCenter(
 		text,
 		PauseMenuUiView::OptionsTextBoxCenterPoint,
 		PauseMenuUiView::OptionsButtonFontName,
@@ -127,7 +127,7 @@ UiTextureID PauseMenuUiView::allocOptionsButtonTexture(TextureManager &textureMa
 {
 	const Rect buttonRect = PauseMenuUiView::getOptionsButtonRect();
 	const Surface surface = TextureUtils::generate(PauseMenuUiView::OptionsButtonPatternType,
-		buttonRect.getWidth(), buttonRect.getHeight(), textureManager, renderer);
+		buttonRect.width, buttonRect.height, textureManager, renderer);
 	const BufferView2D<const uint32_t> surfaceTexelsView(
 		static_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
 

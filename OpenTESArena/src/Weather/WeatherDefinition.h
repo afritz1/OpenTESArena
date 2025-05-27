@@ -5,7 +5,6 @@
 
 #include "components/utilities/Buffer.h"
 
-class Color;
 class Random;
 
 enum class WeatherType

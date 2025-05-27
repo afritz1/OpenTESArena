@@ -2,11 +2,12 @@
 #include <cmath>
 
 #include "Physics.h"
+#include "RayCastTypes.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFFile.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
-#include "../Entities/EntityVisibilityState.h"
+#include "../Entities/EntityObservedResult.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -20,28 +21,40 @@
 
 namespace Physics
 {
+	struct EntityEntry
+	{
+		CoordDouble3 coord;
+		EntityObservedResult observedResult;
+
+		void init(const CoordDouble3 &coord, const EntityObservedResult &observedResult)
+		{
+			this->coord = coord;
+			this->observedResult = observedResult;
+		}
+	};
+
 	// Container of the voxels each entity is touching per chunk. Each chunk needs to look at adjacent chunk
 	// entities in case some of them overlap the chunk edge.
 	struct ChunkEntityMap
 	{
 		ChunkInt2 chunk;
-		std::unordered_map<VoxelInt3, std::vector<EntityVisibilityState3D>> mappings;
+		std::unordered_map<VoxelInt3, std::vector<EntityEntry>> mappings;
 
 		void init(const ChunkInt2 &chunk)
 		{
 			this->chunk = chunk;
 		}
 
-		void add(const VoxelInt3 &voxel, const EntityVisibilityState3D &visState)
+		void add(const VoxelInt3 &voxel, const EntityEntry &entry)
 		{
 			auto iter = this->mappings.find(voxel);
 			if (iter == this->mappings.end())
 			{
-				iter = this->mappings.emplace(voxel, std::vector<EntityVisibilityState3D>()).first;
+				iter = this->mappings.emplace(voxel, std::vector<EntityEntry>()).first;
 			}
 
-			std::vector<EntityVisibilityState3D> &visStateList = iter->second;
-			visStateList.emplace_back(visState);
+			std::vector<EntityEntry> &entryList = iter->second;
+			entryList.emplace_back(entry);
 		}
 	};
 
@@ -112,6 +125,8 @@ namespace Physics
 			}
 		}
 
+		const WorldDouble3 viewPosition = VoxelUtils::coordToWorldPoint(viewCoord);
+
 		ChunkEntityMap chunkEntityMap;
 		chunkEntityMap.init(chunk);
 
@@ -119,37 +134,34 @@ namespace Physics
 		for (const EntityInstanceID entityInstID : entityInstIDs)
 		{
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-			const CoordDouble2 viewCoordXZ(viewCoord.chunk, VoxelDouble2(viewCoord.point.x, viewCoord.point.z));
-			EntityVisibilityState3D visState;
-			entityChunkManager.getEntityVisibilityState3D(entityInstID, viewCoordXZ, ceilingScale, voxelChunkManager, visState);
 
-			// Get the entity's view-independent bounding box to help determine which voxels they are in.
-			const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-			const CoordDouble3 minCoord = ChunkUtils::recalculateCoord(visState.flatPosition.chunk, visState.flatPosition.point - Double3(entityBBox.halfWidth, 0.0, entityBBox.halfDepth));
-			const CoordDouble3 maxCoord = ChunkUtils::recalculateCoord(visState.flatPosition.chunk, visState.flatPosition.point + Double3(entityBBox.halfWidth, entityBBox.height, entityBBox.halfDepth));
-
-			// Get min and max coordinates in chunk space and get the difference for iteration.
-			const CoordInt3 minVoxelCoord(minCoord.chunk, VoxelUtils::pointToVoxel(minCoord.point, ceilingScale));
-			const CoordInt3 maxVoxelCoord(maxCoord.chunk, VoxelUtils::pointToVoxel(maxCoord.point, ceilingScale));
-			const VoxelInt3 voxelCoordDiff = maxVoxelCoord - minVoxelCoord;
+			EntityObservedResult observedResult;
+			entityChunkManager.getEntityObservedResult(entityInstID, viewPosition, observedResult);
 
 			// Iterate over the voxels the entity's bounding box touches.
+			const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
+			const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
+			const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+			const WorldDouble3 entityMinWorldPoint = entityPosition - Double3(entityBBox.halfWidth, 0.0, entityBBox.halfDepth);
+			const WorldDouble3 entityMaxWorldPoint = entityPosition + Double3(entityBBox.halfWidth, entityBBox.height, entityBBox.halfDepth);
+			const WorldInt3 entityMinWorldVoxel = VoxelUtils::pointToVoxel(entityMinWorldPoint, ceilingScale);
+			const WorldInt3 entityMaxWorldVoxel = VoxelUtils::pointToVoxel(entityMaxWorldPoint, ceilingScale);
+			const WorldInt3 voxelCoordDiff = entityMaxWorldVoxel - entityMinWorldVoxel;
+
 			for (WEInt z = 0; z <= voxelCoordDiff.z; z++)
 			{
 				for (int y = 0; y <= voxelCoordDiff.y; y++)
 				{
 					for (SNInt x = 0; x <= voxelCoordDiff.x; x++)
 					{
-						const VoxelInt3 curVoxel(
-							minVoxelCoord.voxel.x + x,
-							minVoxelCoord.voxel.y + y,
-							minVoxelCoord.voxel.z + z);
-						const CoordInt3 curCoord = ChunkUtils::recalculateCoord(minVoxelCoord.chunk, curVoxel);
+						const WorldInt3 curWorldVoxel(entityMinWorldVoxel.x + x, entityMinWorldVoxel.y + y, entityMinWorldVoxel.z + z);
+						const CoordInt3 curCoord = VoxelUtils::worldVoxelToCoord(curWorldVoxel);
 
-						// If it's in the center chunk, add a mapping.
 						if (curCoord.chunk == chunk)
 						{
-							chunkEntityMap.add(curCoord.voxel, visState);
+							EntityEntry entry;
+							entry.init(entityCoord, observedResult);
+							chunkEntityMap.add(curCoord.voxel, entry);
 						}
 					}
 				}
@@ -178,69 +190,58 @@ namespace Physics
 		return chunkEntityMaps.back();
 	}
 
-	bool getEntityRayIntersection(const EntityVisibilityState3D &visState, const EntityDefinition &entityDef,
-		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp,
-		double entityWidth, double entityHeight, const CoordDouble3 &rayPoint, const VoxelDouble3 &rayDirection,
-		CoordDouble3 *outHitPoint)
+	bool getEntityRayIntersection(const EntityObservedResult &observedResult, const CoordDouble3 &entityCoord, const EntityDefinition &entityDef,
+		const VoxelDouble3 &entityForward, const VoxelDouble3 &entityRight, const VoxelDouble3 &entityUp, double entityWidth, double entityHeight,
+		const WorldDouble3 &rayWorldPoint, const VoxelDouble3 &rayDirection, WorldDouble3 *outHitPoint)
 	{
-		// Do a ray test to see if the ray intersects.
-		const WorldDouble3 absoluteRayPoint = VoxelUtils::coordToWorldPoint(rayPoint);
-		const WorldDouble3 absoluteFlatPosition = VoxelUtils::coordToWorldPoint(visState.flatPosition);
-		WorldDouble3 absoluteHitPoint;
-		if (MathUtils::rayPlaneIntersection(absoluteRayPoint, rayDirection, absoluteFlatPosition,
-			entityForward, &absoluteHitPoint))
-		{
-			const WorldDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
+		const WorldDouble3 absoluteFlatPosition = VoxelUtils::coordToWorldPoint(entityCoord);
 
-			// Get the texture coordinates. It's okay if they are outside the entity.
-			const Double2 uv(
-				0.5 - (diff.dot(entityRight) / entityWidth),
-				1.0 - (diff.dot(entityUp) / entityHeight));
-
-			const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-			const EntityAnimationDefinitionState &animState = animDef.states[visState.stateIndex];
-
-			const int keyframeListIndex = animState.keyframeListsIndex + visState.angleIndex;
-			DebugAssert(keyframeListIndex >= 0);
-			DebugAssert(keyframeListIndex < animDef.keyframeListCount);
-			const EntityAnimationDefinitionKeyframeList &animKeyframeList = animDef.keyframeLists[keyframeListIndex];
-
-			const int keyframeIndex = animKeyframeList.keyframesIndex + visState.keyframeIndex;
-			DebugAssert(keyframeIndex >= 0);
-			DebugAssert(keyframeIndex < animDef.keyframeCount);
-			const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[keyframeIndex];
-			const TextureAsset &textureAsset = animKeyframe.textureAsset;
-
-			const bool reflective = (entityDef.getType() == EntityDefinition::Type::Doodad) && entityDef.getDoodad().puddle;
-
-			// The entity's projected rectangle is hit if the texture coordinates are valid.
-			const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
-
-			*outHitPoint = VoxelUtils::worldPointToCoord(absoluteHitPoint);
-			return withinEntity;
-		}
-		else
+		double hitT;
+		if (!MathUtils::rayPlaneIntersection(rayWorldPoint, rayDirection, absoluteFlatPosition, entityForward, &hitT))
 		{
 			// Did not intersect the entity's plane.
 			return false;
 		}
+
+		const WorldDouble3 absoluteHitPoint = rayWorldPoint + (rayDirection * hitT);
+		const WorldDouble3 diff = absoluteHitPoint - absoluteFlatPosition;
+
+		// Get the texture coordinates. It's okay if they are outside the entity.
+		const Double2 uv(
+			0.5 - (diff.dot(entityRight) / entityWidth),
+			1.0 - (diff.dot(entityUp) / entityHeight));
+
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+		const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+		DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
+		const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
+		const TextureAsset &textureAsset = animKeyframe.textureAsset;
+
+		// The entity's projected rectangle is hit if the texture coordinates are valid.
+		const bool withinEntity = (uv.x >= 0.0) && (uv.x <= 1.0) && (uv.y >= 0.0) && (uv.y <= 1.0);
+		if (!withinEntity)
+		{
+			return false;
+		}
+
+		*outHitPoint = absoluteHitPoint;
+		return true;
 	}
 
+	// @todo: use Jolt instead
 	// Checks an initial voxel for ray hits and writes them into the output parameter.
 	// Returns true if the ray hit something.
 	bool testInitialVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelInt3 &voxel,
 		VoxelFacing3D farFacing, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		const CollisionChunkManager &collisionChunkManager, Physics::Hit &hit)
+		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
-		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		const ChunkInt2 &chunkPos = rayCoord.chunk;
+		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(chunkPos);
 		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
-
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
-		DebugAssert(collisionChunk != nullptr);
 
 		if (!voxelChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
 		{
@@ -248,232 +249,157 @@ namespace Physics
 			return false;
 		}
 
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(chunkPos);
+		DebugAssert(collisionChunk != nullptr);
 		if (!collisionChunk->enabledColliders.get(voxel.x, voxel.y, voxel.z))
 		{
 			// Collider is not turned on.
 			return false;
 		}
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
-		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
+		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
-		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
-		const BufferView<const double> verticesView(collisionMeshDef.vertices);
-		const BufferView<const double> normalsView(collisionMeshDef.normals);
-		const BufferView<const int> indicesView(collisionMeshDef.indices);
+		const CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const CollisionShapeDefinition &collisionShapeDef = collisionChunk->getCollisionShapeDef(collisionShapeDefID);
+		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
+		const CollisionBoxShapeDefinition &collisionBoxShapeDef = collisionShapeDef.box;
 
-		// Each collision triangle is formed by 6 indices.
-		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
+		const WorldInt3 worldVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, voxel);
+		const WorldDouble3 worldVoxelReal(
+			static_cast<SNDouble>(worldVoxel.x),
+			static_cast<double>(worldVoxel.y) * ceilingScale,
+			static_cast<WEDouble>(worldVoxel.z));
+		const WorldDouble3 collisionBoxShapeCenter(
+			worldVoxelReal.x + 0.50,
+			worldVoxelReal.y + MeshUtils::getScaledVertexY(collisionBoxShapeDef.yOffset + (collisionBoxShapeDef.height * 0.50), scaleType, ceilingScale),
+			worldVoxelReal.z + 0.50);
+		const double collisionBoxShapeScaledHeight = collisionBoxShapeDef.height * ceilingScale;
+		const WorldDouble3 worldRayStart = VoxelUtils::coordToWorldPoint(rayCoord);
 
-		const VoxelDouble3 voxelReal(
-			static_cast<SNDouble>(voxel.x),
-			static_cast<double>(voxel.y) * ceilingScale,
-			static_cast<WEDouble>(voxel.z));
-		bool success = false;
-		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
+		double hitT;
+		if (!MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeScaledHeight,
+			collisionBoxShapeDef.depth, collisionBoxShapeDef.yRotation, &hitT))
 		{
-			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
-			const int vertexIndex0 = indicesView.get(indicesIndex) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			const int vertexIndex1 = indicesView.get(indicesIndex + 2) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			const int vertexIndex2 = indicesView.get(indicesIndex + 4) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			//const int normalIndex0 = indicesView.get(indicesIndex + 1) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			//const int normalIndex1 = indicesView.get(indicesIndex + 3) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			//const int normalIndex2 = indicesView.get(indicesIndex + 5) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-
-			const double vertex0X = verticesView.get(vertexIndex0);
-			const double vertex0Y = verticesView.get(vertexIndex0 + 1);
-			const double vertex0Z = verticesView.get(vertexIndex0 + 2);
-			const double vertex1X = verticesView.get(vertexIndex1);
-			const double vertex1Y = verticesView.get(vertexIndex1 + 1);
-			const double vertex1Z = verticesView.get(vertexIndex1 + 2);
-			const double vertex2X = verticesView.get(vertexIndex2);
-			const double vertex2Y = verticesView.get(vertexIndex2 + 1);
-			const double vertex2Z = verticesView.get(vertexIndex2 + 2);
-
-			// Normals are the same per face.
-			//const double normal0X = normalsView.get(normalIndex0);
-			//const double normal0Y = normalsView.get(normalIndex0 + 1);
-			//const double normal0Z = normalsView.get(normalIndex0 + 2);
-
-			const Double3 v0(vertex0X, vertex0Y, vertex0Z);
-			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
-			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
-
-			const Double3 v0Actual(
-				v0.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v0.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v0.z + voxelReal.z);
-			const Double3 v1Actual(
-				v1.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v1.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v1.z + voxelReal.z);
-			const Double3 v2Actual(
-				v2.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v2.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v2.z + voxelReal.z);
-
-			double t;
-			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
-			if (success)
-			{
-				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
-				hit.initVoxel(t, hitCoord, voxel, &farFacing);
-				break;
-			}
+			return false;
 		}
 
-		return success;
+		const WorldDouble3 hitWorldPoint = worldRayStart + (rayDirection * hitT);
+		const CoordInt3 voxelCoord(chunkPos, voxel);
+		hit.initVoxel(hitT, hitWorldPoint, voxelCoord, farFacing);
+		return true;
 	}
 
+	// @todo: use Jolt instead
 	// Checks a voxel for ray hits and writes them into the output parameter. The near point and far point
 	// are in the voxel coord's chunk, not necessarily the ray's. Returns true if the ray hit something.
 	bool testVoxelRay(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const CoordInt3 &voxelCoord,
-		VoxelFacing3D nearFacing, const CoordDouble3 &nearCoord, const CoordDouble3 &farCoord,
-		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const CollisionChunkManager &collisionChunkManager,
-		Physics::Hit &hit)
+		VoxelFacing3D nearFacing, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
+		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
-		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
+		const ChunkInt2 chunkPos = voxelCoord.chunk;
+		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(chunkPos);
 		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
 			return false;
 		}
 
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(rayCoord.chunk);
-		DebugAssert(collisionChunk != nullptr);
-
-		const VoxelInt3 &voxel = voxelCoord.voxel;
-		if (!collisionChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
+		const VoxelInt3 voxel = voxelCoord.voxel;
+		if (!voxelChunk->isValidVoxel(voxel.x, voxel.y, voxel.z))
 		{
 			// Not in the chunk.
 			return false;
 		}
 
+		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(chunkPos);
+		DebugAssert(collisionChunk != nullptr);
 		if (!collisionChunk->enabledColliders.get(voxel.x, voxel.y, voxel.z))
 		{
 			// Collider is not turned on.
 			return false;
 		}
 
-		const VoxelChunk::VoxelMeshDefID voxelMeshDefID = voxelChunk->getMeshDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelMeshDefinition &voxelMeshDef = voxelChunk->getMeshDef(voxelMeshDefID);
-		const VoxelMeshScaleType voxelMeshScaleType = voxelMeshDef.scaleType;
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
+		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
-		const CollisionChunk::CollisionMeshDefID collisionMeshDefID = collisionChunk->meshDefIDs.get(voxel.x, voxel.y, voxel.z);
-		const CollisionMeshDefinition &collisionMeshDef = collisionChunk->getCollisionMeshDef(collisionMeshDefID);
-		const BufferView<const double> verticesView(collisionMeshDef.vertices);
-		const BufferView<const double> normalsView(collisionMeshDef.normals);
-		const BufferView<const int> indicesView(collisionMeshDef.indices);
+		const CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const CollisionShapeDefinition &collisionShapeDef = collisionChunk->getCollisionShapeDef(collisionShapeDefID);
+		DebugAssert(collisionShapeDef.type == CollisionShapeType::Box);
+		const CollisionBoxShapeDefinition &collisionBoxShapeDef = collisionShapeDef.box;
 
-		// Each collision triangle is formed by 6 indices.
-		static_assert(CollisionMeshDefinition::INDICES_PER_TRIANGLE == 6);
+		const WorldInt3 worldVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, voxel);
+		const WorldDouble3 worldVoxelReal(
+			static_cast<SNDouble>(worldVoxel.x),
+			static_cast<double>(worldVoxel.y) * ceilingScale,
+			static_cast<WEDouble>(worldVoxel.z));
+		const WorldDouble3 collisionBoxShapeCenter(
+			worldVoxelReal.x + 0.50,
+			worldVoxelReal.y + MeshUtils::getScaledVertexY(collisionBoxShapeDef.yOffset + (collisionBoxShapeDef.height * 0.50), scaleType, ceilingScale),
+			worldVoxelReal.z + 0.50);
+		const double collisionBoxShapeScaledHeight = collisionBoxShapeDef.height * ceilingScale;
+		const WorldDouble3 worldRayStart = VoxelUtils::coordToWorldPoint(rayCoord);
 
-		const VoxelDouble3 voxelReal(
-			static_cast<SNDouble>(voxel.x),
-			static_cast<double>(voxel.y) * ceilingScale,
-			static_cast<WEDouble>(voxel.z));
-		bool success = false;
-		for (int i = 0; i < collisionMeshDef.triangleCount; i++)
+		double hitT;
+		if (!MathUtils::rayBoxIntersection(worldRayStart, rayDirection, collisionBoxShapeCenter, collisionBoxShapeDef.width, collisionBoxShapeScaledHeight,
+			collisionBoxShapeDef.depth, collisionBoxShapeDef.yRotation, &hitT))
 		{
-			const int indicesIndex = i * CollisionMeshDefinition::INDICES_PER_TRIANGLE;
-			const int vertexIndex0 = indicesView.get(indicesIndex) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			const int vertexIndex1 = indicesView.get(indicesIndex + 2) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			const int vertexIndex2 = indicesView.get(indicesIndex + 4) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			//const int normalIndex0 = indicesView.get(indicesIndex + 1) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			//const int normalIndex1 = indicesView.get(indicesIndex + 3) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			//const int normalIndex2 = indicesView.get(indicesIndex + 5) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-
-			const double vertex0X = verticesView.get(vertexIndex0);
-			const double vertex0Y = verticesView.get(vertexIndex0 + 1);
-			const double vertex0Z = verticesView.get(vertexIndex0 + 2);
-			const double vertex1X = verticesView.get(vertexIndex1);
-			const double vertex1Y = verticesView.get(vertexIndex1 + 1);
-			const double vertex1Z = verticesView.get(vertexIndex1 + 2);
-			const double vertex2X = verticesView.get(vertexIndex2);
-			const double vertex2Y = verticesView.get(vertexIndex2 + 1);
-			const double vertex2Z = verticesView.get(vertexIndex2 + 2);
-
-			// Normals are the same per face.
-			//const double normal0X = normalsView.get(normalIndex0);
-			//const double normal0Y = normalsView.get(normalIndex0 + 1);
-			//const double normal0Z = normalsView.get(normalIndex0 + 2);
-
-			const Double3 v0(vertex0X, vertex0Y, vertex0Z);
-			const Double3 v1(vertex1X, vertex1Y, vertex1Z);
-			const Double3 v2(vertex2X, vertex2Y, vertex2Z);
-
-			const Double3 v0Actual(
-				v0.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v0.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v0.z + voxelReal.z);
-			const Double3 v1Actual(
-				v1.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v1.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v1.z + voxelReal.z);
-			const Double3 v2Actual(
-				v2.x + voxelReal.x,
-				MeshUtils::getScaledVertexY(v2.y, voxelMeshScaleType, ceilingScale) + voxelReal.y,
-				v2.z + voxelReal.z);
-
-			double t;
-			success = MathUtils::rayTriangleIntersection(rayCoord.point, rayDirection, v0Actual, v1Actual, v2Actual, &t);
-			if (success)
-			{
-				const CoordDouble3 hitCoord(rayCoord.chunk, rayCoord.point + (rayDirection * t));
-				const VoxelFacing3D facing = nearFacing; // @todo: probably needs to take hit normal into account
-				hit.initVoxel(t, hitCoord, voxel, &facing);
-				break;
-			}
+			return false;
 		}
 
-		return success;
+		const WorldDouble3 hitWorldPoint = worldRayStart + (rayDirection * hitT);
+		hit.initVoxel(hitT, hitWorldPoint, voxelCoord, nearFacing);
+		return true;
 	}
 
 	// Helper function for testing which entities in a voxel are intersected by a ray.
 	bool testEntitiesInVoxel(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection,
 		const VoxelDouble3 &flatForward, const VoxelDouble3 &flatRight, const VoxelDouble3 &flatUp,
 		const VoxelInt3 &voxel, const ChunkEntityMap &chunkEntityMap, const EntityChunkManager &entityChunkManager,
-		const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
+		const EntityDefinitionLibrary &entityDefLibrary, RayCastHit &hit)
 	{
+		const WorldDouble3 rayWorldPoint = VoxelUtils::coordToWorldPoint(rayCoord); // @todo just use WorldDouble3 everywhere?
+
 		// Use a separate hit variable so we can determine whether an entity was closer.
-		Physics::Hit entityHit;
-		entityHit.setT(Hit::MAX_T);
+		RayCastHit entityHit;
+		entityHit.t = RayCastHit::NO_HIT_DISTANCE;
 
 		const auto &entityMappings = chunkEntityMap.mappings;
 		const auto iter = entityMappings.find(voxel);
 		if (iter != entityMappings.end())
 		{
-			// Iterate over all the entities that cross this voxel and ray test them.
-			const std::vector<EntityVisibilityState3D> &entityVisStateList = iter->second;
-			for (const EntityVisibilityState3D &visState : entityVisStateList)
+			// Iterate over all entities that cross this voxel and ray test them.
+			BufferView<const EntityEntry> entityEntryList = iter->second;
+			for (const EntityEntry &entry : entityEntryList)
 			{
-				const EntityInstanceID entityInstID = visState.entityInstID;
+				const EntityObservedResult &observedResult = entry.observedResult;
+				const EntityInstanceID entityInstID = observedResult.entityInstID;
+				const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+
 				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-				const EntityAnimationDefinition &animDef = entityDef.getAnimDef();
-				const int linearizedKeyframeIndex = animDef.getLinearizedKeyframeIndex(visState.stateIndex, visState.angleIndex, visState.keyframeIndex);
-
+				const EntityAnimationDefinition &animDef = entityDef.animDef;
 				DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
 				const EntityAnimationDefinitionKeyframe &animKeyframe = animDef.keyframes[linearizedKeyframeIndex];
 				const double flatWidth = animKeyframe.width;
 				const double flatHeight = animKeyframe.height;
 
-				CoordDouble3 hitCoord;
-				if (Physics::getEntityRayIntersection(visState, entityDef, flatForward, flatRight, flatUp,
-					flatWidth, flatHeight, rayCoord, rayDirection, &hitCoord))
+				WorldDouble3 hitWorldPoint;
+				if (Physics::getEntityRayIntersection(observedResult, entry.coord, entityDef, flatForward, flatRight, flatUp,
+					flatWidth, flatHeight, rayWorldPoint, rayDirection, &hitWorldPoint))
 				{
-					const double distance = (hitCoord - rayCoord).length();
-					if (distance < entityHit.getT())
+					const double distance = (hitWorldPoint - rayWorldPoint).length();
+					if (distance < entityHit.t)
 					{
-						entityHit.initEntity(distance, hitCoord, entityInstID);
+						entityHit.initEntity(distance, hitWorldPoint, entityInstID);
 					}
 				}
 			}
 		}
 
-		const bool entityIsCloser = entityHit.getT() < hit.getT();
+		const bool entityIsCloser = entityHit.t < hit.t;
 		if (entityIsCloser)
 		{
 			hit = entityHit;
@@ -491,7 +417,7 @@ namespace Physics
 	void rayCastInternal(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelDouble3 &cameraForward,
 		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 		const CollisionChunkManager &collisionChunkManager, bool includeEntities, const EntityDefinitionLibrary &entityDefLibrary,
-		const Renderer &renderer, std::vector<ChunkEntityMap> &chunkEntityMaps, Physics::Hit &hit)
+		std::vector<ChunkEntityMap> &chunkEntityMaps, RayCastHit &hit)
 	{
 		// Each flat shares the same axes. Their forward direction always faces opposite to the camera direction.
 		const VoxelDouble3 flatForward = VoxelDouble3(-cameraForward.x, 0.0, -cameraForward.z).normalized();
@@ -516,14 +442,26 @@ namespace Physics
 
 		// Delta distance is how far the ray has to go to step one voxel's worth along a certain axis.
 		// This is affected by grid properties like tall voxels.
-		const VoxelDouble3 deltaDist(
+		Double3 deltaDist(
 			(NonNegativeDirX ? axisLen.x : -axisLen.x) / rayDirection.x,
 			(NonNegativeDirY ? axisLen.y : -axisLen.y) / rayDirection.y,
 			(NonNegativeDirZ ? axisLen.z : -axisLen.z) / rayDirection.z);
 
-		DebugAssert(deltaDist.x >= 0.0);
-		DebugAssert(deltaDist.y >= 0.0);
-		DebugAssert(deltaDist.z >= 0.0);
+		// Filter bad ray directions like direction.y == 0 (at horizon) so that axis isn't selected during stepping.
+		if (deltaDist.x < 0.0)
+		{
+			deltaDist.x = std::numeric_limits<double>::infinity();
+		}
+
+		if (deltaDist.y < 0.0)
+		{
+			deltaDist.y = std::numeric_limits<double>::infinity();
+		}
+
+		if (deltaDist.z < 0.0)
+		{
+			deltaDist.z = std::numeric_limits<double>::infinity();
+		}
 
 		// Step is the voxel delta per step (always +/- 1), also usable when updating the chunk coordinate.
 		// The initial delta distances are percentages of the delta distances, dependent on the ray start
@@ -607,7 +545,7 @@ namespace Physics
 				const ChunkEntityMap &chunkEntityMap = Physics::getOrAddChunkEntityMap(currentChunk, rayCoord,
 					ceilingScale, voxelChunkManager, entityChunkManager, entityDefLibrary, chunkEntityMaps);
 				success |= Physics::testEntitiesInVoxel(rayCoord, rayDirection, flatForward, flatRight, flatUp,
-					rayVoxel, chunkEntityMap, entityChunkManager, entityDefLibrary, renderer, hit);
+					rayVoxel, chunkEntityMap, entityChunkManager, entityDefLibrary, hit);
 			}
 
 			if (success)
@@ -629,7 +567,7 @@ namespace Physics
 		// We do need an exit condition in case Y stepping would result in never being in the chunk, since it doesn't
 		// follow the same wrapping rule as X and Z. Doing this instead of "is voxel Y valid?" lets the player be
 		// above or below the chunk and still select things.
-		bool canDoYStep = (currentChunkPtr != nullptr) && 
+		bool canDoYStep = (currentChunkPtr != nullptr) &&
 			(NonNegativeDirY ? (currentVoxel.y < currentChunkPtr->getHeight()) : (currentVoxel.y >= 0));
 
 		// Helper values for ray distance calculation.
@@ -734,14 +672,12 @@ namespace Physics
 
 			// Near and far points in the voxel. The near point is where the voxel was hit before, and the far
 			// point is where the voxel was just hit on the far side.
-			const CoordDouble3 nearCoord = ChunkUtils::recalculateCoord(
-				rayCoord.chunk, rayCoord.point + (rayDirection * savedDistance));
-			const CoordDouble3 farCoord = ChunkUtils::recalculateCoord(
-				rayCoord.chunk, rayCoord.point + (rayDirection * rayDistance));
+			//const CoordDouble3 nearCoord = ChunkUtils::recalculateCoord(rayCoord.chunk, rayCoord.point + (rayDirection * savedDistance));
+			//const CoordDouble3 farCoord = ChunkUtils::recalculateCoord(rayCoord.chunk, rayCoord.point + (rayDirection * rayDistance));
 
 			// Test the current voxel's geometry for ray intersections.
-			bool success = Physics::testVoxelRay(rayCoord, rayDirection, savedVoxelCoord, savedFacing,
-				nearCoord, farCoord, ceilingScale, voxelChunkManager, collisionChunkManager, hit);
+			bool success = Physics::testVoxelRay(rayCoord, rayDirection, savedVoxelCoord, savedFacing, ceilingScale,
+				voxelChunkManager, collisionChunkManager, hit);
 
 			if (includeEntities)
 			{
@@ -749,7 +685,7 @@ namespace Physics
 				const ChunkEntityMap &chunkEntityMap = Physics::getOrAddChunkEntityMap(savedVoxelCoord.chunk, rayCoord,
 					ceilingScale, voxelChunkManager, entityChunkManager, entityDefLibrary, chunkEntityMaps);
 				success |= Physics::testEntitiesInVoxel(rayCoord, rayDirection, flatForward, flatRight, flatUp,
-					savedVoxelCoord.voxel, chunkEntityMap, entityChunkManager, entityDefLibrary, renderer, hit);
+					savedVoxelCoord.voxel, chunkEntityMap, entityChunkManager, entityDefLibrary, hit);
 			}
 
 			if (success)
@@ -761,76 +697,14 @@ namespace Physics
 	}
 }
 
-void Physics::Hit::initVoxel(double t, const CoordDouble3 &coord, const VoxelInt3 &voxel, const VoxelFacing3D *facing)
-{
-	this->t = t;
-	this->coord = coord;
-	this->type = HitType::Voxel;
-	this->voxelHit.voxel = voxel;
-
-	if (facing != nullptr)
-	{
-		this->voxelHit.facing = *facing;
-	}
-	else
-	{
-		this->voxelHit.facing = std::nullopt;
-	}
-}
-
-void Physics::Hit::initEntity(double t, const CoordDouble3 &coord, EntityInstanceID id)
-{
-	this->t = t;
-	this->coord = coord;
-	this->type = HitType::Entity;
-	this->entityHit.id = id;
-}
-
-double Physics::Hit::getT() const
-{
-	return this->t;
-}
-
-double Physics::Hit::getTSqr() const
-{
-	return this->t * this->t;
-}
-
-const CoordDouble3 &Physics::Hit::getCoord() const
-{
-	return this->coord;
-}
-
-Physics::HitType Physics::Hit::getType() const
-{
-	return this->type;
-}
-
-const Physics::Hit::VoxelHit &Physics::Hit::getVoxelHit() const
-{
-	DebugAssert(this->getType() == HitType::Voxel);
-	return this->voxelHit;
-}
-
-const Physics::Hit::EntityHit &Physics::Hit::getEntityHit() const
-{
-	DebugAssert(this->getType() == HitType::Entity);
-	return this->entityHit;
-}
-
-void Physics::Hit::setT(double t)
-{
-	this->t = t;
-}
-
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection, double ceilingScale,
 	const VoxelDouble3 &cameraForward, bool includeEntities, const VoxelChunkManager &voxelChunkManager,
 	const EntityChunkManager &entityChunkManager, const CollisionChunkManager &collisionChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
+	const EntityDefinitionLibrary &entityDefLibrary, RayCastHit &hit)
 {
 	// Set the hit distance to max. This will ensure that if we don't hit a voxel but do hit an
 	// entity, the distance can still be used.
-	hit.setT(Hit::MAX_T);
+	hit.t = RayCastHit::NO_HIT_DISTANCE;
 
 	// Voxel->entity mappings for each chunk touched by the ray casting loop.
 	std::vector<ChunkEntityMap> chunkEntityMaps;
@@ -849,13 +723,13 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			{
 				Physics::rayCastInternal<true, true, true>(rayStart, rayDirection, cameraForward, ceilingScale,
 					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
-					renderer, chunkEntityMaps, hit);
+					chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, true, false>(rayStart, rayDirection, cameraForward, ceilingScale,
 					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
-					renderer, chunkEntityMaps, hit);
+					chunkEntityMaps, hit);
 			}
 		}
 		else
@@ -864,13 +738,13 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			{
 				Physics::rayCastInternal<true, false, true>(rayStart, rayDirection, cameraForward, ceilingScale,
 					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
-					renderer, chunkEntityMaps, hit);
+					chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<true, false, false>(rayStart, rayDirection, cameraForward, ceilingScale,
 					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
-					renderer, chunkEntityMaps, hit);
+					chunkEntityMaps, hit);
 			}
 		}
 	}
@@ -882,13 +756,13 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			{
 				Physics::rayCastInternal<false, true, true>(rayStart, rayDirection, cameraForward, ceilingScale,
 					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
-					renderer, chunkEntityMaps, hit);
+					chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, true, false>(rayStart, rayDirection, cameraForward, ceilingScale,
 					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
-					renderer, chunkEntityMaps, hit);
+					chunkEntityMaps, hit);
 			}
 		}
 		else
@@ -897,27 +771,69 @@ bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirec
 			{
 				Physics::rayCastInternal<false, false, true>(rayStart, rayDirection, cameraForward, ceilingScale,
 					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
-					renderer, chunkEntityMaps, hit);
+					chunkEntityMaps, hit);
 			}
 			else
 			{
 				Physics::rayCastInternal<false, false, false>(rayStart, rayDirection, cameraForward, ceilingScale,
 					voxelChunkManager, entityChunkManager, collisionChunkManager, includeEntities, entityDefLibrary,
-					renderer, chunkEntityMaps, hit);
+					chunkEntityMaps, hit);
 			}
 		}
 	}
 
 	// Return whether the ray hit something.
-	return hit.getT() < Hit::MAX_T;
+	return hit.t < RayCastHit::NO_HIT_DISTANCE;
 }
 
 bool Physics::rayCast(const CoordDouble3 &rayStart, const VoxelDouble3 &rayDirection,
 	const VoxelDouble3 &cameraForward, bool includeEntities, const VoxelChunkManager &voxelChunkManager,
 	const EntityChunkManager &entityChunkManager, const CollisionChunkManager &collisionChunkManager,
-	const EntityDefinitionLibrary &entityDefLibrary, const Renderer &renderer, Physics::Hit &hit)
+	const EntityDefinitionLibrary &entityDefLibrary, RayCastHit &hit)
 {
 	constexpr double ceilingScale = 1.0;
 	return Physics::rayCast(rayStart, rayDirection, ceilingScale, cameraForward, includeEntities, voxelChunkManager,
-		entityChunkManager, collisionChunkManager, entityDefLibrary, renderer, hit);
+		entityChunkManager, collisionChunkManager, entityDefLibrary, hit);
+}
+
+JPH::CompoundShape *Physics::getCompoundShapeFromBody(const JPH::Body &body, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::Shape *baseShape = const_cast<JPH::Shape*>(body.GetShape());
+	DebugAssert(baseShape->GetType() == JPH::EShapeType::Compound);
+	JPH::CompoundShape *derivedShape = static_cast<JPH::CompoundShape*>(baseShape);
+	return derivedShape;
+}
+
+JPH::CompoundShape *Physics::getCompoundShapeFromBodyID(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
+{
+	if (bodyID.IsInvalid())
+	{
+		return nullptr;
+	}
+
+	JPH::BodyLockWrite lock(physicsSystem.GetBodyLockInterface(), bodyID);
+	if (!lock.Succeeded())
+	{
+		return nullptr;
+	}
+
+	JPH::Body &physicsCompoundBody = lock.GetBody();
+	return Physics::getCompoundShapeFromBody(physicsCompoundBody, physicsSystem);
+}
+
+JPH::StaticCompoundShape *Physics::getStaticCompoundShapeFromBody(const JPH::Body &body, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::CompoundShape *baseShape = Physics::getCompoundShapeFromBody(body, physicsSystem);
+	DebugAssert(baseShape->GetSubType() == JPH::EShapeSubType::StaticCompound);
+	JPH::StaticCompoundShape *derivedShape = static_cast<JPH::StaticCompoundShape*>(baseShape);
+	return derivedShape;
+}
+
+JPH::StaticCompoundShape *Physics::getStaticCompoundShapeFromBodyID(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::CompoundShape *baseShape = Physics::getCompoundShapeFromBodyID(bodyID, physicsSystem);
+	DebugAssert(baseShape != nullptr);
+	DebugAssert(baseShape->GetSubType() == JPH::EShapeSubType::StaticCompound);
+	JPH::StaticCompoundShape *derivedShape = static_cast<JPH::StaticCompoundShape*>(baseShape);
+	return derivedShape;
 }

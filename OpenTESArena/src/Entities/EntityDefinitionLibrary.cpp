@@ -1,68 +1,84 @@
+#include "ArenaAnimUtils.h"
+#include "EntityAnimationLibrary.h"
 #include "EntityDefinitionLibrary.h"
-#include "../Assets/ArenaAnimUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../World/ArenaClimateUtils.h"
 
 #include "components/debug/Debug.h"
 
-bool EntityDefinitionLibrary::Key::CreatureKey::operator==(const CreatureKey &other) const
+bool CreatureEntityDefinitionKey::operator==(const CreatureEntityDefinitionKey &other) const
 {
-	return (this->creatureIndex == other.creatureIndex) &&
-		(this->isFinalBoss == other.isFinalBoss);
+	return (this->creatureIndex == other.creatureIndex) && (this->isFinalBoss == other.isFinalBoss);
 }
 
-void EntityDefinitionLibrary::Key::CreatureKey::init(int creatureIndex, bool isFinalBoss)
+void CreatureEntityDefinitionKey::init(int creatureIndex, bool isFinalBoss)
 {
 	this->creatureIndex = creatureIndex;
 	this->isFinalBoss = isFinalBoss;
 }
 
-/*bool EntityDefinitionLibrary::Key::HumanEnemyKey::operator==(const HumanEnemyKey &other) const
+bool HumanEnemyEntityDefinitionKey::operator==(const HumanEnemyEntityDefinitionKey &other) const
 {
 	return (this->male == other.male) && (this->charClassID == other.charClassID);
 }
 
-void EntityDefinitionLibrary::Key::HumanEnemyKey::init(bool male, int charClassID)
+void HumanEnemyEntityDefinitionKey::init(bool male, int charClassID)
 {
 	this->male = male;
 	this->charClassID = charClassID;
-}*/
+}
 
-bool EntityDefinitionLibrary::Key::CitizenKey::operator==(const CitizenKey &other) const
+bool CitizenEntityDefinitionKey::operator==(const CitizenEntityDefinitionKey &other) const
 {
 	return (this->male == other.male) && (this->climateType == other.climateType);
 }
 
-void EntityDefinitionLibrary::Key::CitizenKey::init(bool male, ArenaTypes::ClimateType climateType)
+void CitizenEntityDefinitionKey::init(bool male, ArenaTypes::ClimateType climateType)
 {
 	this->male = male;
 	this->climateType = climateType;
 }
 
-EntityDefinitionLibrary::Key::Key()
+bool VfxEntityDefinitionKey::operator==(const VfxEntityDefinitionKey &other) const
 {
-	this->type = static_cast<Key::Type>(-1);
+	return (this->type == other.type) && (this->index == other.index);
 }
 
-bool EntityDefinitionLibrary::Key::operator==(const Key &other) const
+void VfxEntityDefinitionKey::init(VfxEntityAnimationType type, int index)
+{
+	this->type = type;
+	this->index = index;
+}
+
+EntityDefinitionKey::EntityDefinitionKey()
+{
+	this->type = static_cast<EntityDefinitionKeyType>(-1);
+}
+
+bool EntityDefinitionKey::operator==(const EntityDefinitionKey &other) const
 {
 	if (this->type != other.type)
 	{
 		return false;
 	}
 
-	if (this->type == Key::Type::Creature)
+	if (this->type == EntityDefinitionKeyType::Creature)
 	{
 		return this->creature == other.creature;
 	}
-	/*else if (this->type == Key::Type::HumanEnemy)
+	else if (this->type == EntityDefinitionKeyType::HumanEnemy)
 	{
 		return this->humanEnemy == other.humanEnemy;
-	}*/
-	else if (this->type == Key::Type::Citizen)
+	}
+	else if (this->type == EntityDefinitionKeyType::Citizen)
 	{
 		return this->citizen == other.citizen;
+	}
+	else if (this->type == EntityDefinitionKeyType::Vfx)
+	{
+		return this->vfx == other.vfx;
 	}
 	else
 	{
@@ -70,56 +86,39 @@ bool EntityDefinitionLibrary::Key::operator==(const Key &other) const
 	}
 }
 
-void EntityDefinitionLibrary::Key::init(Type type)
+void EntityDefinitionKey::init(EntityDefinitionKeyType type)
 {
 	this->type = type;
 }
 
-EntityDefinitionLibrary::Key::Type EntityDefinitionLibrary::Key::getType() const
+void EntityDefinitionKey::initCreature(int creatureIndex, bool isFinalBoss)
 {
-	return this->type;
-}
-
-const EntityDefinitionLibrary::Key::CreatureKey &EntityDefinitionLibrary::Key::getCreature() const
-{
-	DebugAssert(this->type == Key::Type::Creature);
-	return this->creature;
-}
-
-/*const EntityDefinitionLibrary::Key::HumanEnemyKey &EntityDefinitionLibrary::Key::getHumanEnemy() const
-{
-	DebugAssert(this->type == Key::Type::HumanEnemy);
-	return this->humanEnemy;
-}*/
-
-const EntityDefinitionLibrary::Key::CitizenKey &EntityDefinitionLibrary::Key::getCitizen() const
-{
-	DebugAssert(this->type == Key::Type::Citizen);
-	return this->citizen;
-}
-
-void EntityDefinitionLibrary::Key::initCreature(int creatureIndex, bool isFinalBoss)
-{
-	this->init(Key::Type::Creature);
+	this->init(EntityDefinitionKeyType::Creature);
 	this->creature.init(creatureIndex, isFinalBoss);
 }
 
-/*void EntityDefinitionLibrary::Key::initHumanEnemy(bool male, int charClassID)
+void EntityDefinitionKey::initHumanEnemy(bool male, int charClassID)
 {
-	this->init(Key::Type::HumanEnemy);
+	this->init(EntityDefinitionKeyType::HumanEnemy);
 	this->humanEnemy.init(male, charClassID);
-}*/
+}
 
-void EntityDefinitionLibrary::Key::initCitizen(bool male, ArenaTypes::ClimateType climateType)
+void EntityDefinitionKey::initCitizen(bool male, ArenaTypes::ClimateType climateType)
 {
-	this->init(Key::Type::Citizen);
+	this->init(EntityDefinitionKeyType::Citizen);
 	this->citizen.init(male, climateType);
 }
 
-EntityDefinitionLibrary::Entry::Entry(Key &&key, EntityDefinition &&def)
+void EntityDefinitionKey::initVfx(VfxEntityAnimationType type, int index)
+{
+	this->init(EntityDefinitionKeyType::Vfx);
+	this->vfx.init(type, index);
+}
+
+EntityDefinitionLibrary::Entry::Entry(EntityDefinitionKey &&key, EntityDefinition &&def)
 	: key(std::move(key)), def(std::move(def)) { }
 
-int EntityDefinitionLibrary::findDefIndex(const Key &key) const
+int EntityDefinitionLibrary::findDefIndex(const EntityDefinitionKey &key) const
 {
 	for (int i = 0; i < static_cast<int>(this->entries.size()); i++)
 	{
@@ -133,80 +132,141 @@ int EntityDefinitionLibrary::findDefIndex(const Key &key) const
 	return NO_INDEX;
 }
 
-void EntityDefinitionLibrary::init(const ExeData &exeData, TextureManager &textureManager)
+void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassLibrary &charClassLibrary, const EntityAnimationLibrary &entityAnimLibrary)
 {
 	// This init method assumes that all creatures, human enemies, and citizens are known
 	// in advance of loading any levels, and any code that relies on those definitions can
 	// assume that no others are added by a level.
 
-	auto addCreatureDefs = [this, &exeData, &textureManager]()
+	auto addCreatureDef = [this, &exeData, &entityAnimLibrary](int creatureID, bool isFinalBoss)
 	{
-		auto addCreatureDef = [this, &exeData, &textureManager](int creatureID, bool isFinalBoss)
-		{
-			EntityAnimationDefinition animDef;
-			if (!ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(creatureID, exeData, textureManager, &animDef))
-			{
-				DebugLogWarning("Couldn't make creature anims for creature ID \"" +
-					std::to_string(creatureID) + "\".");
-				return;
-			}
+		CreatureEntityAnimationKey animKey;
+		animKey.init(creatureID);
 
-			const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
+		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getCreatureAnimDefID(animKey);
+		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
+		const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 
-			Key key;
-			key.initCreature(creatureIndex, isFinalBoss);
+		EntityDefinitionKey key;
+		key.initCreature(creatureIndex, isFinalBoss);
 
-			EntityDefinition entityDef;
-			entityDef.initEnemyCreature(creatureIndex, isFinalBoss, exeData, std::move(animDef));
+		EntityDefinition entityDef;
+		entityDef.initEnemyCreature(creatureIndex, isFinalBoss, exeData, std::move(animDef));
 
-			this->addDefinition(std::move(key), std::move(entityDef));
-		};
-
-		// Iterate all creatures + final boss.
-		const int creatureCount = static_cast<int>(exeData.entities.creatureNames.size());
-		for (int i = 0; i < creatureCount; i++)
-		{
-			const ArenaTypes::ItemIndex itemIndex = ArenaAnimUtils::FirstCreatureItemIndex + i;
-			const int creatureID = ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
-			addCreatureDef(creatureID, false);
-		}
-
-		const int finalBossID = ArenaAnimUtils::FinalBossCreatureID;
-		addCreatureDef(finalBossID, true);
+		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
-	auto addCitizenDefs = [this, &exeData, &textureManager]()
+	auto addHumanEnemyDef = [this, &exeData, &entityAnimLibrary](bool male, int charClassID)
 	{
-		auto addCitizenDef = [this, &exeData, &textureManager](ArenaTypes::ClimateType climateType, bool male)
-		{
-			EntityAnimationDefinition animDef;
-			if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, male, exeData, textureManager, &animDef))
-			{
-				DebugLogWarning("Couldn't make citizen anims for citizen \"" +
-					std::to_string(static_cast<int>(climateType)) + "\".");
-				return;
-			}
+		HumanEnemyEntityAnimationKey animKey;
+		animKey.init(male, charClassID);
 
-			Key key;
-			key.initCitizen(male, climateType);
+		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getHumanEnemyAnimDefID(animKey);
+		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
 
-			EntityDefinition entityDef;
-			entityDef.initCitizen(male, climateType, std::move(animDef));
+		EntityDefinitionKey key;
+		key.initHumanEnemy(male, charClassID);
 
-			this->addDefinition(std::move(key), std::move(entityDef));
-		};
+		EntityDefinition entityDef;
+		entityDef.initEnemyHuman(male, charClassID, std::move(animDef));
 
-		// Iterate all climate type + gender combinations.
-		for (int i = 0; i < ArenaClimateUtils::getClimateTypeCount(); i++)
-		{
-			const ArenaTypes::ClimateType climateType = ArenaClimateUtils::getClimateType(i);
-			addCitizenDef(climateType, true);
-			addCitizenDef(climateType, false);
-		}
+		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
-	addCreatureDefs();
-	addCitizenDefs();
+	auto addCitizenDef = [this, &exeData, &entityAnimLibrary](ArenaTypes::ClimateType climateType, bool male)
+	{
+		CitizenEntityAnimationKey animKey;
+		animKey.init(male, climateType);
+
+		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getCitizenAnimDefID(animKey);
+		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
+
+		EntityDefinitionKey key;
+		key.initCitizen(male, climateType);
+
+		EntityDefinition entityDef;
+		entityDef.initCitizen(male, climateType, std::move(animDef));
+
+		this->addDefinition(std::move(key), std::move(entityDef));
+	};
+
+	auto addVfxDef = [this, &exeData, &entityAnimLibrary](VfxEntityAnimationType type, int index)
+	{
+		VfxEntityAnimationKey animKey;
+		switch (type)
+		{
+		case VfxEntityAnimationType::SpellProjectile:
+			animKey.initSpellProjectile(index);
+			break;
+		case VfxEntityAnimationType::SpellExplosion:
+			animKey.initSpellExplosion(index);
+			break;
+		case VfxEntityAnimationType::MeleeStrike:
+			animKey.initMeleeStrike(index);
+			break;
+		default:
+			DebugNotImplemented();
+			break;
+		}
+
+		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getVfxAnimDefID(animKey);
+		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
+
+		EntityDefinitionKey key;
+		key.initVfx(type, index);
+
+		EntityDefinition entityDef;
+		entityDef.initVfx(type, index, std::move(animDef));
+
+		this->addDefinition(std::move(key), std::move(entityDef));
+	};
+
+	// Iterate all creatures + final boss.
+	const int creatureCount = static_cast<int>(std::size(exeData.entities.creatureNames));
+	for (int i = 0; i < creatureCount; i++)
+	{
+		const ArenaTypes::ItemIndex itemIndex = ArenaAnimUtils::FirstCreatureItemIndex + i;
+		const int creatureID = ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
+		addCreatureDef(creatureID, false);
+	}
+
+	const int finalBossID = ArenaAnimUtils::FinalBossCreatureID;
+	addCreatureDef(finalBossID, true);
+
+	// Iterate all human enemies.
+	const int charClassCount = charClassLibrary.getDefinitionCount();
+	for (int i = 0; i < charClassCount; i++)
+	{
+		const int charClassID = i;
+		addHumanEnemyDef(true, charClassID);
+		addHumanEnemyDef(false, charClassID);
+	}
+
+	// Iterate all climate type + gender combinations for citizens.
+	for (int i = 0; i < ArenaClimateUtils::getClimateTypeCount(); i++)
+	{
+		const ArenaTypes::ClimateType climateType = ArenaClimateUtils::getClimateType(i);
+		addCitizenDef(climateType, true);
+		addCitizenDef(climateType, false);
+	}
+
+	// Iterate all spell effects and melee effects.
+	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;
+	const int meleeVfxCount = EntityAnimationUtils::MELEE_VFX_COUNT;
+	for (int i = 0; i < spellTypeCount; i++)
+	{
+		addVfxDef(VfxEntityAnimationType::SpellProjectile, i);
+	}
+
+	for (int i = 0; i < spellTypeCount; i++)
+	{
+		addVfxDef(VfxEntityAnimationType::SpellExplosion, i);
+	}
+
+	for (int i = 0; i < meleeVfxCount; i++)
+	{
+		addVfxDef(VfxEntityAnimationType::MeleeStrike, i);
+	}
 }
 
 int EntityDefinitionLibrary::getDefinitionCount() const
@@ -220,7 +280,7 @@ const EntityDefinition &EntityDefinitionLibrary::getDefinition(EntityDefID defID
 	return this->entries[defID].def;
 }
 
-bool EntityDefinitionLibrary::tryGetDefinitionID(const Key &key, EntityDefID *outDefID) const
+bool EntityDefinitionLibrary::tryGetDefinitionID(const EntityDefinitionKey &key, EntityDefID *outDefID) const
 {
 	const int index = this->findDefIndex(key);
 	if (index != NO_INDEX)
@@ -234,7 +294,7 @@ bool EntityDefinitionLibrary::tryGetDefinitionID(const Key &key, EntityDefID *ou
 	}
 }
 
-EntityDefID EntityDefinitionLibrary::addDefinition(Key &&key, EntityDefinition &&def)
+EntityDefID EntityDefinitionLibrary::addDefinition(EntityDefinitionKey &&key, EntityDefinition &&def)
 {
 	EntityDefID existingDefID;
 	if (this->tryGetDefinitionID(key, &existingDefID))

@@ -11,6 +11,11 @@ bool CoordInt2::operator!=(const CoordInt2 &other) const
 	return (this->chunk != other.chunk) || (this->voxel != other.voxel);
 }
 
+CoordDouble2 CoordInt2::toVoxelCenter() const
+{
+	return CoordDouble2(this->chunk, VoxelUtils::getVoxelCenter(this->voxel));
+}
+
 CoordDouble2 CoordDouble2::operator+(const VoxelDouble2 &other) const
 {
 	return ChunkUtils::recalculateCoord(this->chunk, this->point + other);
@@ -37,6 +42,11 @@ VoxelDouble2 CoordDouble2::operator-(const CoordDouble2 &other) const
 	const VoxelDouble2 originToPoint = this->point;
 
 	return otherPointToOtherOrigin + otherOriginToOrigin + originToPoint;
+}
+
+CoordInt2 CoordDouble2::toVoxel() const
+{
+	return CoordInt2(this->chunk, VoxelUtils::pointToVoxel(this->point));
 }
 
 bool CoordInt3::operator==(const CoordInt3 &other) const
@@ -73,6 +83,16 @@ VoxelInt3 CoordInt3::operator-(const CoordInt3 &other) const
 	return otherPointToOtherOrigin + otherOriginToOrigin + originToPoint;
 }
 
+CoordDouble3 CoordInt3::toVoxelCenterScaled(double ceilingScale) const
+{
+	return CoordDouble3(this->chunk, VoxelUtils::getVoxelCenter(this->voxel, ceilingScale));
+}
+
+CoordDouble3 CoordInt3::toVoxelCenter() const
+{
+	return this->toVoxelCenterScaled(1.0);
+}
+
 CoordDouble3 CoordDouble3::operator+(const VoxelDouble3 &other) const
 {
 	return ChunkUtils::recalculateCoord(this->chunk, this->point + other);
@@ -95,4 +115,14 @@ VoxelDouble3 CoordDouble3::operator-(const CoordDouble3 &other) const
 	const VoxelDouble3 originToPoint = this->point;
 
 	return otherPointToOtherOrigin + otherOriginToOrigin + originToPoint;
+}
+
+CoordInt3 CoordDouble3::toVoxelScaled(double ceilingScale) const
+{
+	return CoordInt3(this->chunk, VoxelUtils::pointToVoxel(this->point, ceilingScale));
+}
+
+CoordInt3 CoordDouble3::toVoxel() const
+{
+	return this->toVoxelScaled(1.0);
 }

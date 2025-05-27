@@ -113,7 +113,7 @@ namespace
 
 		std::optional<INFKey> keyData;
 		std::optional<RiddleState> riddleState;
-		std::optional<INFText> textData;
+		std::optional<INFLoreText> textData;
 		TextState::Mode mode; // Determines which data is in use.
 		int id; // *TEXT ID.
 
@@ -166,6 +166,7 @@ INFFlat::INFFlat()
 INFKey::INFKey(int id)
 {
 	this->id = id;
+	this->revisedID = (id - 1) % 12;
 }
 
 INFRiddle::INFRiddle(int firstNumber, int secondNumber)
@@ -174,9 +175,9 @@ INFRiddle::INFRiddle(int firstNumber, int secondNumber)
 	this->secondNumber = secondNumber;
 }
 
-INFText::INFText(bool displayedOnce)
+INFLoreText::INFLoreText(bool isDisplayedOnce)
 {
-	this->displayedOnce = displayedOnce;
+	this->isDisplayedOnce = isDisplayedOnce;
 }
 
 bool INFFile::init(const char *filename)
@@ -255,7 +256,7 @@ bool INFFile::init(const char *filename)
 		}
 		else if (textState.mode == TextState::Mode::Text)
 		{
-			this->texts.emplace(textState.id, textState.textData.value());
+			this->loreTexts.emplace(textState.id, textState.textData.value());
 		}
 	};
 
@@ -785,8 +786,8 @@ bool INFFile::init(const char *filename)
 		{
 			textState.mode = TextState::Mode::Text;
 
-			const bool displayedOnce = true;
-			textState.textData = INFText(displayedOnce);
+			const bool isDisplayedOnce = true;
+			textState.textData = INFLoreText(isDisplayedOnce);
 
 			// Append the rest of the line to the text data.
 			textState.textData->text += line.substr(1, line.size() - 1) + '\n';
@@ -854,8 +855,8 @@ bool INFFile::init(const char *filename)
 
 				textState.mode = TextState::Mode::Text;
 
-				const bool displayedOnce = false;
-				textState.textData = INFText(displayedOnce);
+				const bool isDisplayedOnce = false;
+				textState.textData = INFLoreText(isDisplayedOnce);
 			}
 
 			// Read the line into the text data.
@@ -984,7 +985,7 @@ const std::optional<int> &INFFile::getBoxSide(int index) const
 	}
 	else
 	{
-		DebugLogWarning("Invalid *BOXSIDE index \"" + std::to_string(index) + "\".");
+		DebugLogWarningFormat("Invalid *BOXSIDE index \"%d\", defaulting to value in entry 0.", index);
 		DebugAssert(this->boxSides.size() > 0);
 		return this->boxSides[0];
 	}
@@ -1009,13 +1010,13 @@ std::optional<int> INFFile::getMenuIndex(int textureID) const
 	}
 }
 
-const INFFlat &INFFile::getFlat(int index) const
+const INFFlat &INFFile::getFlat(ArenaTypes::FlatIndex flatIndex) const
 {
-	DebugAssertIndex(this->flats, index);
-	return this->flats[index];
+	DebugAssertIndex(this->flats, flatIndex);
+	return this->flats[flatIndex];
 }
 
-const INFFlat *INFFile::getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) const
+ArenaTypes::FlatIndex INFFile::findFlatIndexWithItemIndex(ArenaTypes::ItemIndex itemIndex) const
 {
 	const auto iter = std::find_if(this->flats.begin(), this->flats.end(),
 		[itemIndex](const INFFlat &flat)
@@ -1023,7 +1024,12 @@ const INFFlat *INFFile::getFlatWithItemIndex(ArenaTypes::ItemIndex itemIndex) co
 		return flat.itemIndex.has_value() && (*flat.itemIndex == itemIndex);
 	});
 
-	return (iter != this->flats.end()) ? &(*iter) : nullptr;
+	if (iter == this->flats.end())
+	{
+		return -1;
+	}
+
+	return static_cast<ArenaTypes::FlatIndex>(std::distance(this->flats.begin(), iter));
 }
 
 const char *INFFile::getSound(int index) const
@@ -1054,9 +1060,9 @@ bool INFFile::hasRiddleIndex(int index) const
 	return this->riddles.find(index) != this->riddles.end();
 }
 
-bool INFFile::hasTextIndex(int index) const
+bool INFFile::hasLoreTextIndex(int index) const
 {
-	return this->texts.find(index) != this->texts.end();
+	return this->loreTexts.find(index) != this->loreTexts.end();
 }
 
 const INFKey &INFFile::getKey(int index) const
@@ -1069,9 +1075,9 @@ const INFRiddle &INFFile::getRiddle(int index) const
 	return this->riddles.at(index);
 }
 
-const INFText &INFFile::getText(int index) const
+const INFLoreText &INFFile::getLoreText(int index) const
 {
-	return this->texts.at(index);
+	return this->loreTexts.at(index);
 }
 
 const char *INFFile::getName() const

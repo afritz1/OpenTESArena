@@ -36,6 +36,8 @@ namespace ArenaTextureName
 	const std::string CharacterStats = "CHARSTAT.IMG";
 	const std::string CompassFrame = "COMPASS.IMG";
 	const std::string CompassSlider = "SLIDER.IMG";
+	const std::string ContainerInventory = "NEWPOP.IMG";
+	const std::string DoorKeys = "KEYS.CIF";
 	const std::string FastTravel = "HORSE.DFA";
 	const std::string GameWorldInterface = "P1.IMG";
 	const std::string IntroTitle = "TITLE.IMG";

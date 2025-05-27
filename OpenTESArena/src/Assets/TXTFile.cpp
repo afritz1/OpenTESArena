@@ -3,6 +3,7 @@
 #include "TXTFile.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/Bytes.h"
 #include "components/vfs/manager.hpp"
 
 bool TXTFile::init(const char *filename)
@@ -22,10 +23,14 @@ bool TXTFile::init(const char *filename)
         return false;
     }
 
-    const uint16_t *srcPixels = reinterpret_cast<const uint16_t*>(src.begin());
+    const uint8_t *srcPixels = reinterpret_cast<const uint8_t*>(src.begin());
 
     this->pixels.init(TXTFile::WIDTH, TXTFile::HEIGHT);
-    std::copy(srcPixels, srcPixels + srcPixelCount, this->pixels.begin());
+    uint16_t *dstPixels = this->pixels.begin();
+    for (int i = 0; i < srcPixelCount; i++)
+    {
+        dstPixels[i] = Bytes::getLE16(srcPixels + (i * 2));
+    }
 
     return true;
 }

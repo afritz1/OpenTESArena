@@ -5,53 +5,54 @@
 
 #include "VoxelUtils.h"
 
-// Can have a sound and/or text definition.
-
-class VoxelTriggerDefinition
+struct VoxelTriggerSoundDefinition
 {
-public:
-	class SoundDef
-	{
-	private:
-		std::string filename;
-	public:
-		void init(std::string &&filename);
+	std::string filename;
 
-		const std::string &getFilename() const;
-	};
+	void init(const std::string &filename);
+};
 
-	class TextDef
-	{
-	private:
-		std::string text;
-		bool displayedOnce;
-	public:
-		void init(std::string &&text, bool displayedOnce);
+struct VoxelTriggerLoreTextDefinition
+{
+	std::string text;
+	bool isDisplayedOnce;
 
-		const std::string &getText() const;
-		bool isDisplayedOnce() const;
-	};
-private:
-	SoundDef sound;
-	TextDef text;
+	VoxelTriggerLoreTextDefinition();
+
+	void init(const std::string &text, bool isDisplayedOnce);
+};
+
+struct VoxelTriggerKeyDefinition
+{
+	int keyID; // For texture lookup
+
+	VoxelTriggerKeyDefinition();
+
+	void init(int keyID);
+};
+
+// @todo: use all these separately actually and just keep XYZ in each of them since keys aren't a physics zone like the other two
+
+// Can have a sound and/or text definition.
+struct VoxelTriggerDefinition
+{
 	SNInt x;
 	int y;
 	WEInt z;
-public:
+	VoxelTriggerSoundDefinition sound;
+	VoxelTriggerLoreTextDefinition loreText;
+	VoxelTriggerKeyDefinition key;
+	// @todo riddle def
+
 	VoxelTriggerDefinition();
 
 	void init(SNInt x, int y, WEInt z);
 
-	SNInt getX() const;
-	int getY() const;
-	WEInt getZ() const;
 	bool hasSoundDef() const;
-	bool hasTextDef() const;
-	const SoundDef &getSoundDef() const;
-	const TextDef &getTextDef() const;
-
-	void setSoundDef(std::string &&filename);
-	void setTextDef(std::string &&text, bool displayedOnce);
+	bool hasLoreTextDef() const;
+	bool hasKeyDef() const;
+	// @todo hasRiddleDef()
+	bool hasValidDefForPhysics() const;
 };
 
 #endif

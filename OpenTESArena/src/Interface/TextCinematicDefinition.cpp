@@ -2,67 +2,30 @@
 
 #include "components/debug/Debug.h"
 
-void TextCinematicDefinition::DeathDefinition::init(DeathDefinition::Type type)
+void DeathTextCinematicDefinition::init(DeathTextCinematicType type)
 {
 	this->type = type;
 }
 
-void TextCinematicDefinition::MainQuestDefinition::init(int progress)
+void MainQuestTextCinematicDefinition::init(int progress)
 {
 	this->progress = progress;
 }
 
-void TextCinematicDefinition::init(Type type, int templateDatKey, std::string &&animFilename,
-	const Color &fontColor)
+void TextCinematicDefinition::initDeath(int templateDatKey, const std::string &animFilename, const Color &fontColor, DeathTextCinematicType type)
 {
-	this->type = type;
+	this->type = TextCinematicDefinitionType::Death;
 	this->templateDatKey = templateDatKey;
-	this->animFilename = std::move(animFilename);
+	this->animFilename = animFilename;
 	this->fontColor = fontColor;
-}
-
-void TextCinematicDefinition::initDeath(int templateDatKey, std::string &&animFilename,
-	const Color &fontColor, DeathDefinition::Type type)
-{
-	this->init(Type::Death, templateDatKey, std::move(animFilename), fontColor);
 	this->death.init(type);
 }
 
-void TextCinematicDefinition::initMainQuest(int templateDatKey, std::string &&animFilename,
-	const Color &fontColor, int progress)
+void TextCinematicDefinition::initMainQuest(int templateDatKey, const std::string &animFilename, const Color &fontColor, int progress)
 {
-	this->init(Type::MainQuest, templateDatKey, std::move(animFilename), fontColor);
+	this->type = TextCinematicDefinitionType::MainQuest;
+	this->templateDatKey = templateDatKey;
+	this->animFilename = animFilename;
+	this->fontColor = fontColor;
 	this->mainQuest.init(progress);
-}
-
-TextCinematicDefinition::Type TextCinematicDefinition::getType() const
-{
-	return this->type;
-}
-
-int TextCinematicDefinition::getTemplateDatKey() const
-{
-	return this->templateDatKey;
-}
-
-const std::string &TextCinematicDefinition::getAnimationFilename() const
-{
-	return this->animFilename;
-}
-
-const Color &TextCinematicDefinition::getFontColor() const
-{
-	return this->fontColor;
-}
-
-const TextCinematicDefinition::DeathDefinition &TextCinematicDefinition::getDeathDefinition() const
-{
-	DebugAssert(this->type == Type::Death);
-	return this->death;
-}
-
-const TextCinematicDefinition::MainQuestDefinition &TextCinematicDefinition::getMainQuestDefinition() const
-{
-	DebugAssert(this->type == Type::MainQuest);
-	return this->mainQuest;
 }

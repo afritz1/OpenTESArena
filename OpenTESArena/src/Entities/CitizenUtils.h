@@ -9,15 +9,14 @@
 #include "../Assets/TextureUtils.h"
 #include "../World/Coord.h"
 
-class BinaryAssetLibrary;
 class EntityChunkManager;
-class EntityDefinition;
 class LocationDefinition;
 class Random;
-class VoxelChunk;
 
 enum class CardinalDirectionName;
 enum class MapType;
+
+struct EntityDefinition;
 
 namespace CitizenUtils
 {
@@ -25,29 +24,16 @@ namespace CitizenUtils
 	constexpr int CITIZENS_PER_CHUNK = 30;
 	constexpr int MAX_ACTIVE_CITIZENS = CITIZENS_PER_CHUNK * 9;
 
-	// How far away a citizen will consider idling around the player.
-	constexpr double IDLE_DISTANCE = 1.25;
-	constexpr double IDLE_DISTANCE_SQR = IDLE_DISTANCE * IDLE_DISTANCE;
-
-	// Walking speed of citizens.
-	constexpr double SPEED = 2.25;
-
-	// North/east/south/west.
-	constexpr int8_t DIRECTION_INDICES[] = { 0, 1, 2, 3 };
-
 	struct CitizenGenInfo
 	{
 		EntityDefID maleEntityDefID;
 		EntityDefID femaleEntityDefID;
 		const EntityDefinition *maleEntityDef;
 		const EntityDefinition *femaleEntityDef;
-		EntityAnimationInstance maleAnimInst;
-		EntityAnimationInstance femaleAnimInst;
 		int raceID;
 
 		void init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID, const EntityDefinition *maleEntityDef,
-			const EntityDefinition *femaleEntityDef, EntityAnimationInstance &&maleAnimInst,
-			EntityAnimationInstance &&femaleAnimInst, int raceID);
+			const EntityDefinition *femaleEntityDef, int raceID);
 	};
 
 	bool canMapTypeSpawnCitizens(MapType mapType);

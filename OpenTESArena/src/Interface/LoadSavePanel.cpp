@@ -5,7 +5,6 @@
 #include "LoadSaveUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 
 LoadSavePanel::LoadSavePanel(Game &game)
@@ -14,7 +13,7 @@ LoadSavePanel::LoadSavePanel(Game &game)
 bool LoadSavePanel::init(LoadSavePanel::Type type)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Populate save slots.
@@ -23,7 +22,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 	{
 		const LoadSaveUiModel::Entry &entry = entries[i];
 		const std::string &text = entry.displayText;
-		const TextBox::InitInfo textBoxInitInfo = TextBox::InitInfo::makeWithCenter(
+		const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
 			text,
 			LoadSaveUiView::getEntryCenterPoint(i),
 			LoadSaveUiView::EntryFontName,
@@ -51,31 +50,31 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 
 	this->addInputActionListener(InputActionName::Back, LoadSaveUiController::onBackInputAction);
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	UiTextureID backgroundTextureID = LoadSaveUiView::allocBackgroundTexture(textureManager, renderer);
 	this->backgroundTextureRef.init(backgroundTextureID, renderer);
-	this->addDrawCall(
-		this->backgroundTextureRef.get(),
-		Int2::Zero,
-		Int2(this->backgroundTextureRef.getWidth(), this->backgroundTextureRef.getHeight()),
-		PivotType::TopLeft);
+
+	UiDrawCallInitInfo bgDrawCallInitInfo;
+	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
+	bgDrawCallInitInfo.size = Int2(this->backgroundTextureRef.getWidth(), this->backgroundTextureRef.getHeight());
+	this->addDrawCall(bgDrawCallInitInfo);
 
 	for (int i = 0; i < static_cast<int>(this->saveTextBoxes.size()); i++)
 	{
-		UiDrawCall::TextureFunc textBoxTextureFunc = [this, i]()
+		const TextBox &textBox = this->saveTextBoxes[i];
+		const Rect textBoxRect = textBox.getRect();
+		UiDrawCallInitInfo saveTextDrawCallInitInfo;
+		saveTextDrawCallInitInfo.textureFunc = [this, i]()
 		{
 			DebugAssertIndex(this->saveTextBoxes, i);
 			TextBox &textBox = this->saveTextBoxes[i];
 			return textBox.getTextureID();
 		};
 
-		const TextBox &textBox = this->saveTextBoxes[i];
-		const Rect &textBoxRect = textBox.getRect();
-		this->addDrawCall(
-			textBoxTextureFunc,
-			textBoxRect.getCenter(),
-			Int2(textBoxRect.getWidth(), textBoxRect.getHeight()),
-			PivotType::Middle);
+		saveTextDrawCallInitInfo.position = textBoxRect.getCenter();
+		saveTextDrawCallInitInfo.size = textBoxRect.getSize();
+		saveTextDrawCallInitInfo.pivotType = PivotType::Middle;
+		this->addDrawCall(saveTextDrawCallInitInfo);
 	}
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

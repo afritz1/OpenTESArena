@@ -19,13 +19,6 @@ namespace OptionsUiView
 	const Rect getListRect();
 	const Int2 getDescriptionXY();
 
-	const Int2 TitleTextBoxCenterPoint(160, 24);
-	const std::string TitleFontName = ArenaFontName::A;
-	Color getTitleTextColor();  // Global initialization order workaround.
-	constexpr TextAlignment TitleTextAlignment = TextAlignment::MiddleCenter;
-
-	TextBox::InitInfo getTitleTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-
 	const Int2 BackButtonTextBoxCenterPoint(
 		ArenaRenderUtils::SCREEN_WIDTH - 30,
 		ArenaRenderUtils::SCREEN_HEIGHT - 15);
@@ -33,7 +26,7 @@ namespace OptionsUiView
 	Color getBackButtonTextColor();
 	constexpr TextAlignment BackButtonTextAlignment = TextAlignment::MiddleCenter;
 
-	TextBox::InitInfo getBackButtonTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getBackButtonTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	Rect getBackButtonRect();
 
@@ -50,9 +43,9 @@ namespace OptionsUiView
 	Color getDescriptionTextColor();
 	constexpr TextAlignment DescriptionTextAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getTabTextBoxInitInfo(int index, const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getOptionTextBoxInitInfo(int index, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getTabTextBoxInitInfo(int index, const std::string_view text, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getOptionTextBoxInitInfo(int index, const FontLibrary &fontLibrary);
+	TextBoxInitInfo getDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	UiTextureID allocBackgroundTexture(Renderer &renderer);
 	UiTextureID allocTabTexture(TextureManager &textureManager, Renderer &renderer);

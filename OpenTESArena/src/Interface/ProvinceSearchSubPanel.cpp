@@ -15,7 +15,6 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
-#include "../UI/CursorData.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
@@ -30,13 +29,13 @@ ProvinceSearchSubPanel::ProvinceSearchSubPanel(Game &game)
 bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provinceID)
 {
 	auto &game = this->getGame();
-	auto &renderer = game.getRenderer();
+	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
 	const std::string textTitleText = ProvinceSearchUiModel::getTitleText(game);
-	const TextBox::InitInfo textTitleTextBoxInitInfo =
+	const TextBoxInitInfo textTitleTextBoxInitInfo =
 		ProvinceSearchUiView::getTitleTextBoxInitInfo(textTitleText, fontLibrary);
 	if (!this->textTitleTextBox.init(textTitleTextBoxInitInfo, textTitleText, renderer))
 	{
@@ -44,7 +43,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		return false;
 	}
 
-	const TextBox::InitInfo textEntryTextBoxInitInfo = ProvinceSearchUiView::getTextEntryTextBoxInitInfo(fontLibrary);
+	const TextBoxInitInfo textEntryTextBoxInitInfo = ProvinceSearchUiView::getTextEntryTextBoxInitInfo(fontLibrary);
 	if (!this->textEntryTextBox.init(textEntryTextBoxInitInfo, renderer))
 	{
 		DebugLogError("Couldn't init text entry text box.");
@@ -82,7 +81,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	{
 		if (values.performed)
 		{
-			auto &inputManager = game.getInputManager();
+			auto &inputManager = game.inputManager;
 			inputManager.setTextInputMode(false);
 
 			// Return to the province map panel.
@@ -111,7 +110,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		if (this->mode == ProvinceSearchUiModel::Mode::List)
 		{
 			const Rect &listBoxRect = this->locationsListBox.getRect();
-			const Int2 classicPosition = game.getRenderer().nativeToOriginal(position);
+			const Int2 classicPosition = game.renderer.nativeToOriginal(position);
 			if (listBoxRect.contains(classicPosition))
 			{
 				if (type == MouseWheelScrollType::Up)
@@ -126,7 +125,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		}
 	});
 
-	this->addTextInputListener([this](const std::string_view &text)
+	this->addTextInputListener([this](const std::string_view text)
 	{
 		if (this->mode == ProvinceSearchUiModel::Mode::TextEntry)
 		{
@@ -140,76 +139,66 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		}
 	});
 
-	auto &textureManager = game.getTextureManager();
+	TextureManager &textureManager = game.textureManager;
 	const UiTextureID parchmentTextureID = ProvinceSearchUiView::allocParchmentTexture(textureManager, renderer);
 	this->parchmentTextureRef.init(parchmentTextureID, renderer);
 
-	UiDrawCall::ActiveFunc textEntryActiveFunc = [this]()
+	UiDrawCallActiveFunc textEntryActiveFunc = [this]()
 	{
 		return this->mode == ProvinceSearchUiModel::Mode::TextEntry;
 	};
 
-	this->addDrawCall(
-		[this]() { return this->parchmentTextureRef.get(); },
-		[]() { return Int2((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1); },
-		[]() { return Int2(ProvinceSearchUiView::TextureWidth, ProvinceSearchUiView::TextureHeight); },
-		[]() { return PivotType::Middle; },
-		textEntryActiveFunc);
+	UiDrawCallInitInfo parchmentTextureDrawCallInitInfo;
+	parchmentTextureDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
+	parchmentTextureDrawCallInitInfo.position = Int2((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	parchmentTextureDrawCallInitInfo.size = Int2(ProvinceSearchUiView::TextureWidth, ProvinceSearchUiView::TextureHeight);
+	parchmentTextureDrawCallInitInfo.pivotType = PivotType::Middle;
+	parchmentTextureDrawCallInitInfo.activeFunc = textEntryActiveFunc;
+	this->addDrawCall(parchmentTextureDrawCallInitInfo);
 
-	const Rect &textTitleTextBoxRect = this->textTitleTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->textTitleTextBox.getTextureID(); },
-		[textTitleTextBoxRect]() { return textTitleTextBoxRect.getTopLeft(); },
-		[textTitleTextBoxRect]() { return Int2(textTitleTextBoxRect.getWidth(), textTitleTextBoxRect.getHeight()); },
-		[]() { return PivotType::TopLeft; },
-		textEntryActiveFunc);
+	const Rect textTitleTextBoxRect = this->textTitleTextBox.getRect();
+	UiDrawCallInitInfo titleDrawCallInitInfo;
+	titleDrawCallInitInfo.textureID = this->textTitleTextBox.getTextureID();
+	titleDrawCallInitInfo.position = textTitleTextBoxRect.getTopLeft();
+	titleDrawCallInitInfo.size = textTitleTextBoxRect.getSize();
+	titleDrawCallInitInfo.activeFunc = textEntryActiveFunc;
+	this->addDrawCall(titleDrawCallInitInfo);
 
-	const Rect &textEntryTextBoxRect = this->textEntryTextBox.getRect();
-	this->addDrawCall(
-		[this]() { return this->textEntryTextBox.getTextureID(); },
-		[textEntryTextBoxRect]() { return textEntryTextBoxRect.getTopLeft(); },
-		[textEntryTextBoxRect]() { return Int2(textEntryTextBoxRect.getWidth(), textEntryTextBoxRect.getHeight()); },
-		[]() { return PivotType::TopLeft; },
-		textEntryActiveFunc);
+	const Rect textEntryTextBoxRect = this->textEntryTextBox.getRect();
+	UiDrawCallInitInfo textEntryDrawCallInitInfo;
+	textEntryDrawCallInitInfo.textureFunc = [this]() { return this->textEntryTextBox.getTextureID(); };
+	textEntryDrawCallInitInfo.position = textEntryTextBoxRect.getTopLeft();
+	textEntryDrawCallInitInfo.size = textEntryTextBoxRect.getSize();
+	textEntryDrawCallInitInfo.activeFunc = textEntryActiveFunc;
+	this->addDrawCall(textEntryDrawCallInitInfo);
 
 	// @todo: draw blinking cursor for text entry
 
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const UiTextureID listBackgroundTextureID = ProvinceSearchUiView::allocListBackgroundTexture(
-		provinceID, binaryAssetLibrary, textureManager, renderer);
+	const UiTextureID listBackgroundTextureID = ProvinceSearchUiView::allocListBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
 	listBackgroundTextureRef.init(listBackgroundTextureID, renderer);
 
-	UiDrawCall::ActiveFunc listActiveFunc = [this]()
+	UiDrawCallActiveFunc listActiveFunc = [this]()
 	{
 		return this->mode == ProvinceSearchUiModel::Mode::List;
 	};
 
-	this->addDrawCall(
-		[this]() { return this->listBackgroundTextureRef.get(); },
-		[]() { return Int2(ProvinceSearchUiView::ListTextureX, ProvinceSearchUiView::ListTextureY); },
-		[this]() { return Int2(this->listBackgroundTextureRef.getWidth(), this->listBackgroundTextureRef.getHeight()); },
-		[]() { return PivotType::TopLeft; },
-		listActiveFunc);
+	UiDrawCallInitInfo listBgDrawCallInitInfo;
+	listBgDrawCallInitInfo.textureID = this->listBackgroundTextureRef.get();
+	listBgDrawCallInitInfo.position = Int2(ProvinceSearchUiView::ListTextureX, ProvinceSearchUiView::ListTextureY);
+	listBgDrawCallInitInfo.size = Int2(this->listBackgroundTextureRef.getWidth(), this->listBackgroundTextureRef.getHeight());
+	listBgDrawCallInitInfo.activeFunc = listActiveFunc;
+	this->addDrawCall(listBgDrawCallInitInfo);
 
-	UiDrawCall::PositionFunc listBoxPositionFunc = [this]()
-	{
-		const Rect &locationsListBoxRect = this->locationsListBox.getRect();
-		return locationsListBoxRect.getTopLeft();
-	};
+	UiDrawCallInitInfo locationsListDrawCallInitInfo;
+	locationsListDrawCallInitInfo.textureFunc = [this]() { return this->locationsListBox.getTextureID(); };
 
-	UiDrawCall::SizeFunc listBoxSizeFunc = [this]()
-	{
-		// Have to get the size dynamically due to the list not being initialized or populated yet.
-		const Rect &locationsListBoxRect = this->locationsListBox.getRect();
-		return Int2(locationsListBoxRect.getWidth(), locationsListBoxRect.getHeight());
-	};
+	// Have to get position and size dynamically since the list only gets initialized after finishing searching.
+	locationsListDrawCallInitInfo.positionFunc = [this]() { return this->locationsListBox.getRect().getTopLeft(); };
+	locationsListDrawCallInitInfo.sizeFunc = [this]() { return this->locationsListBox.getRect().getSize(); };
 
-	this->addDrawCall(
-		[this]() { return this->locationsListBox.getTextureID(); },
-		listBoxPositionFunc,
-		listBoxSizeFunc,
-		[]() { return PivotType::TopLeft; },
-		listActiveFunc);
+	locationsListDrawCallInitInfo.activeFunc = listActiveFunc;
+	this->addDrawCall(locationsListDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
@@ -220,7 +209,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	this->provinceID = provinceID;
 
 	// Start with text input enabled.
-	auto &inputManager = game.getInputManager();
+	auto &inputManager = game.inputManager;
 	inputManager.setTextInputMode(true);
 
 	return true;
@@ -230,7 +219,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 {
 	// @todo: move the locationNames into UiModel
 	auto &game = this->getGame();
-	auto &gameState = game.getGameState();
+	auto &gameState = game.gameState;
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(this->provinceID);
@@ -238,7 +227,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
 	this->locationsListBox.init(ProvinceSearchUiView::ListBoxRect,
-		ProvinceSearchUiView::makeListBoxProperties(FontLibrary::getInstance()), game.getRenderer());
+		ProvinceSearchUiView::makeListBoxProperties(FontLibrary::getInstance()), game.renderer);
 
 	this->clearButtonProxies();
 
@@ -279,7 +268,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 
 		auto callback = [this, i]()
 		{
-			const ListBox::ItemCallback &itemCallback = this->locationsListBox.getCallback(i);
+			const ListBoxItemCallback &itemCallback = this->locationsListBox.getCallback(i);
 			itemCallback();
 		};
 

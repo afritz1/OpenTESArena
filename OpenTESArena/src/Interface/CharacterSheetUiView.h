@@ -1,16 +1,13 @@
 #ifndef CHARACTER_SHEET_UI_VIEW_H
 #define CHARACTER_SHEET_UI_VIEW_H
 
-#include <map>
-
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureUtils.h"
-#include "../Entities/PrimaryAttribute.h"
-#include "../Entities/PrimaryAttributeName.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/RenderTextureUtils.h"
+#include "../Stats/PrimaryAttribute.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
@@ -47,11 +44,109 @@ namespace CharacterSheetUiView
 	const Color PlayerAttributeTextBoxColor(199, 199, 199);
 	constexpr TextAlignment PlayerAttributeTextBoxAlignment = TextAlignment::TopLeft;
 
-	TextBox::InitInfo getPlayerNameTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerRaceTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	TextBox::InitInfo getPlayerClassTextBoxInitInfo(const std::string_view &text, const FontLibrary &fontLibrary);
-	std::map<PrimaryAttributeName, TextBox::InitInfo> getPlayerAttributeTextBoxInitInfoMap(
-		BufferView<const PrimaryAttribute> attributes, const FontLibrary &fontLibrary);
+	constexpr int PlayerExperienceTextBoxX = 45;
+	constexpr int PlayerExperienceTextBoxY = 158;
+	const std::string PlayerExperienceTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerExperienceTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerExperienceTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerLevelTextBoxX = 45;
+	constexpr int PlayerLevelTextBoxY = 167;
+	const std::string PlayerLevelTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerLevelTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerLevelTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerHealthTextBoxX = 45;
+	constexpr int PlayerHealthTextBoxY = 127;
+	const std::string PlayerHealthTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerHealthTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerHealthTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerStaminaTextBoxX = 45;
+	constexpr int PlayerStaminaTextBoxY = 135;
+	const std::string PlayerStaminaTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerStaminaTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerStaminaTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerSpellPointsTextBoxX = 86;
+	constexpr int PlayerSpellPointsTextBoxY = 60;
+	const std::string PlayerSpellPointsTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerSpellPointsTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerSpellPointsTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerDamageTextBoxX = 86;
+	constexpr int PlayerDamageTextBoxY = 52;
+	const std::string PlayerDamageTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerDamageTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerDamageTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerMagicDefenseTextBoxX = 86;
+	constexpr int PlayerMagicDefenseTextBoxY = 68;
+	const std::string PlayerMagicDefenseTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerMagicDefenseTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerMagicDefenseTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerBonusToHitTextBoxX = 86;
+	constexpr int PlayerBonusToHitTextBoxY = 76;
+	const std::string PlayerBonusToHitTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerBonusToHitTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerBonusToHitTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerBonusToDefendTextBoxX = 145;
+	constexpr int PlayerBonusToDefendTextBoxY = 76;
+	const std::string PlayerBonusToDefendTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerBonusToDefendTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerBonusToDefendTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerBonusToHealthTextBoxX = 86;
+	constexpr int PlayerBonusToHealthTextBoxY = 92;
+	const std::string PlayerBonusToHealthTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerBonusToHealthTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerBonusToHealthTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerCharismaTextBoxX = 86;
+	constexpr int PlayerCharismaTextBoxY = 100;
+	const std::string PlayerCharismaTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerCharismaTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerCharismaTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerHealModTextBoxX = 145;
+	constexpr int PlayerHealModTextBoxY = 92;
+	const std::string PlayerHealModTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerHealModTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerHealModTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerMaxWeightTextBoxX = 145;
+	constexpr int PlayerMaxWeightTextBoxY = 52;
+	const std::string PlayerMaxWeightTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerMaxWeightTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerMaxWeightTextBoxAlignment = TextAlignment::TopLeft;
+
+	constexpr int PlayerGoldTextBoxX = 45;
+	constexpr int PlayerGoldTextBoxY = 143;
+	const std::string PlayerGoldTextBoxFontName = ArenaFontName::Arena;
+	const Color PlayerGoldTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerGoldTextBoxAlignment = TextAlignment::TopLeft;
+
+	TextBoxInitInfo getPlayerNameTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerRaceTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerClassTextBoxInitInfo(const FontLibrary &fontLibrary);
+	Buffer<TextBoxInitInfo> getPlayerAttributeTextBoxInitInfos(const FontLibrary &fontLibrary);
+	Buffer<TextBoxInitInfo> getPlayerDerivedAttributeTextBoxInitInfos(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerExperienceTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerHealthTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerStaminaTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerSpellPointsTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerBonusDamageTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerMaxWeightTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerMagicDefenseTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerBonusToHitTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerBonusToDefendTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerBonusToHealthTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerHealModTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerCharismaTextBoxInitInfo(const FontLibrary &fontLibrary);
+	TextBoxInitInfo getPlayerGoldTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
 	constexpr int DoneButtonWidth = 21;
@@ -106,8 +201,21 @@ namespace CharacterSheetUiView
 	UiTextureID allocPantsTexture(Game &game);
 	UiTextureID allocHeadTexture(Game &game);
 	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocNextPageTexture(TextureManager &textureManager, Renderer &renderer);
+}
+
+namespace CharacterEquipmentUiView
+{
+	constexpr int PlayerLevelTextBoxX = 128;
+	constexpr int PlayerLevelTextBoxY = 23;
+	const std::string PlayerLevelTextBoxFontName = ArenaFontName::Arena;
+	constexpr Color PlayerLevelTextBoxColor(199, 199, 199);
+	constexpr TextAlignment PlayerLevelTextBoxAlignment = TextAlignment::TopLeft;
+
+	TextBoxInitInfo getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary);
 }
 
 #endif

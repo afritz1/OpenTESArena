@@ -11,11 +11,10 @@
 #include "../UI/TextBox.h"
 #include "../UI/Texture.h"
 
-// The province search sub-panel lets the player enter a location name and travel to it
-// as a convenience.
-
 class ProvinceMapPanel;
 
+// The province search sub-panel lets the player enter a location name and travel to it
+// as a convenience.
 class ProvinceSearchSubPanel : public Panel
 {
 private:

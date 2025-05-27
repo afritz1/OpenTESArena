@@ -14,27 +14,40 @@
 
 #include "../Math/Vector3.h"
 
-// This class manages what sounds and music are played by OpenAL Soft.
-
-class MusicDefinition;
 class OpenALStream;
 class Options;
 
+struct MusicDefinition;
+
+// Contains data for defining the state of an audio listener.
+struct AudioListenerState
+{
+	Double3 position;
+	Double3 forward;
+	Double3 up;
+
+	AudioListenerState(const Double3 &position, const Double3 &forward, const Double3 &up);
+};
+
+struct VocRepairSpan
+{
+	int startIndex;
+	int count;
+	uint8_t replacementSample;
+
+	VocRepairSpan();
+};
+
+// For spot-fixing bad samples in .VOC files, eventually to be done by a mod.
+struct VocRepairEntry
+{
+	std::string filename;
+	std::vector<VocRepairSpan> spans;
+};
+
+// Manages what sounds and music are played by OpenAL Soft.
 class AudioManager
 {
-public:
-	// Contains data for defining the state of an audio listener.
-	class ListenerData
-	{
-	private:
-		Double3 position;
-		Double3 direction;
-	public:
-		ListenerData(const Double3 &position, const Double3 &direction);
-
-		const Double3 &getPosition() const;
-		const Double3 &getDirection() const;
-	};
 private:
 	static constexpr ALint UNSUPPORTED_EXTENSION = -1;
 
@@ -44,15 +57,18 @@ private:
 
 	ALint mResampler;
 	bool mIs3D;
-	std::string mNextSong;
+	std::string mCurrentSong, mNextSong;
 
 	// Sounds which are allowed only one active instance at a time, otherwise they would
 	// sound a bit obnoxious. This functionality is added here because the original game
 	// can only play one sound at a time, so it doesn't have this problem.
 	std::vector<std::string> mSingleInstanceSounds;
 
+	// The engine can overwrite .VOC file sample data with revised data to fix annoying pops.
+	std::vector<VocRepairEntry> mVocRepairEntries;
+
 	// Currently active song and playback stream.
-	MidiSongPtr mCurrentSong;
+	MidiSongPtr mCurrentMidiSong;
 	std::unique_ptr<OpenALStream> mSongStream;
 
 	// Loaded sound buffers from .VOC files.
@@ -80,7 +96,7 @@ private:
 	bool hasNextMusic() const;
 
 	void setListenerPosition(const Double3 &position);
-	void setListenerOrientation(const Double3 &direction);
+	void setListenerOrientation(const Double3 &forward, const Double3 &up);
 
 	void playMusic(const std::string &filename, bool loop);
 public:
@@ -107,8 +123,7 @@ public:
 
 	// Plays a sound file. All sounds should play once. If 'position' is empty then the sound
 	// is played globally.
-	void playSound(const std::string &filename,
-		const std::optional<Double3> &position = std::nullopt);
+	void playSound(const char *filename, const std::optional<Double3> &position = std::nullopt);
 
 	// Sets the music to the given music definition, with an optional music to play first as a
 	// lead-in to the actual music. If no music definition is given, the current music is stopped.
@@ -139,7 +154,7 @@ public:
 	void updateSources();
 
 	// Updates the position of the 3D listener.
-	void updateListener(const ListenerData &listenerData);
+	void updateListener(const AudioListenerState &listenerState);
 };
 
 #endif

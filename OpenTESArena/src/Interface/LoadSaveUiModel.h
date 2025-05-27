@@ -8,7 +8,8 @@
 #include "../Math/Vector2.h"
 
 class Game;
-class Rect;
+
+struct Rect;
 
 namespace LoadSaveUiModel
 {

@@ -1,10 +1,12 @@
 #ifndef MATH_UTILS_H
 #define MATH_UTILS_H
 
+#include <bit>
 #include <cmath>
 #include <type_traits>
 #include <vector>
 
+#include "Constants.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../Voxels/VoxelUtils.h"
@@ -12,31 +14,103 @@
 #include "components/utilities/Bytes.h"
 
 using Radians = double;
+using RadiansF = float;
 using Degrees = double;
+using DegreesF = float;
 
 namespace MathUtils
 {
 	// Returns whether the given value is within epsilon of zero.
-	double almostZero(double value);
+	constexpr double almostZero(double value)
+	{
+		return value <= Constants::Epsilon && value >= -Constants::Epsilon;
+	}
 
 	// Returns whether the two values are within epsilon of each other.
-	double almostEqual(double a, double b);
+	constexpr double almostEqual(double a, double b)
+	{
+		return MathUtils::almostZero(a - b);
+	}
 
 	// Returns whether the given value represents a number on the number line, including infinity.
-	template <typename T>
+	template<typename T>
 	bool isValidFloatingPoint(T value)
 	{
 		static_assert(std::is_floating_point_v<T>);
 		return !std::isnan(value);
 	}
 
-	// Returns whether the given integer is a power of 2.
-	template <typename T>
+	template<typename T>
 	constexpr bool isPowerOf2(T value)
 	{
-		static_assert(std::is_integral_v<T>);
-		return Bytes::getSetBitCount(value) == 1;
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::has_single_bit(value);
+		}
+		else
+		{
+			if (value < 0)
+			{
+				value = -value;
+			}
+
+			return std::has_single_bit<std::make_unsigned_t<T>>(value);
+		}
 	}
+
+	// Rounds towards +inf for positive and -inf for negative.
+	template<typename T>
+	constexpr T roundToGreaterPowerOf2(T value)
+	{
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::bit_ceil(value);
+		}
+		else
+		{
+			if (value >= 0)
+			{
+				return std::bit_ceil<std::make_unsigned_t<T>>(value);
+			}
+			else
+			{
+				return -static_cast<T>(std::bit_ceil<std::make_unsigned_t<T>>(-value));
+			}
+		}
+	}
+
+	// Rounds towards zero for positive and negative.
+	template<typename T>
+	constexpr T roundToLesserPowerOf2(T value)
+	{
+		if constexpr (std::is_unsigned_v<T>)
+		{
+			return std::bit_floor(value);
+		}
+		else
+		{
+			if (value >= 0)
+			{
+				return std::bit_floor<std::make_unsigned_t<T>>(value);
+			}
+			else
+			{
+				return -static_cast<T>(std::bit_floor<std::make_unsigned_t<T>>(-value));
+			}
+		}
+	}
+
+	constexpr Radians degToRad(Degrees degrees)
+	{
+		return degrees * (Constants::Pi / 180.0);
+	}
+
+	constexpr Degrees radToDeg(Radians radians)
+	{
+		return radians * (180.0 / Constants::Pi);
+	}
+
+	Radians safeDegToRad(Degrees degrees);
 
 	// Gets a real (not integer) index in an array from the given percent.
 	double getRealIndex(int bufferSize, double percent);
@@ -55,8 +129,12 @@ namespace MathUtils
 	// Converts vertical field of view to horizontal field of view.
 	Degrees verticalFovToHorizontalFov(Degrees fovY, double aspectRatio);
 
+	// Converts yaw (0 - 360) and pitch (-90 - 90) to a 3D coordinate frame.
+	void populateCoordinateFrameFromAngles(Degrees yaw, Degrees pitch, Double3 *outForward, Double3 *outRight, Double3 *outUp);
+
 	// Returns whether the given point lies in the half space divided at the given divider point.
-	bool isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint, const Double2 &normal);
+	bool isPointInHalfSpace(const Double2 &point, const Double2 &planePoint, const Double2 &planeNormal);
+	bool isPointInHalfSpace(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal);
 
 	// Returns whether the two line segments intersect.
 	bool lineSegmentIntersection(const Double2 &a0, const Double2 &a1, const Double2 &b0, const Double2 &b1);
@@ -73,7 +151,7 @@ namespace MathUtils
 
 	// Finds the intersection of a ray on the given plane. Returns success.
 	bool rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint);
+		const Double3 &planeOrigin, const Double3 &planeNormal, double *outT);
 
 	// Finds the intersection of a ray with the given triangle. Returns success.
 	bool rayTriangleIntersection(const Double3 &rayStart, const Double3 &rayDirection,
@@ -82,7 +160,11 @@ namespace MathUtils
 	// Finds the intersection of a ray and a quad defined by three vertices. The vertex order
 	// must go around the quad (i.e. v0 = top left, v1 = bottom left, v2 = bottom right).
 	bool rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-		const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint);
+		const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT);
+
+	// Finds the intersection of a ray and a box.
+	bool rayBoxIntersection(const Double3 &rayStart, const Double3 &rayDirection, const Double3 &boxCenter,
+		double width, double height, double depth, Radians yRotation, double *outT);
 
 	// Returns the signed distance of the point to the plane (can be negative).
 	double distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal);
@@ -97,6 +179,22 @@ namespace MathUtils
 	// Generates a list of points along a Bresenham line. Only signed integers can be
 	// used in a Bresenham's line due to the error calculation.
 	std::vector<Int2> bresenhamLine(const Int2 &p1, const Int2 &p2);
+
+	// Gets the X and Y coordinates from a Z value in a Z-order curve. Used with quadtree node look-up.
+	Int2 getZOrderCurvePoint(int index);
+}
+
+namespace MathUtilsF
+{
+	constexpr RadiansF degToRad(DegreesF degrees)
+	{
+		return degrees * (ConstantsF::Pi / 180.0f);
+	}
+
+	constexpr DegreesF radToDeg(RadiansF radians)
+	{
+		return radians * (180.0f / ConstantsF::Pi);
+	}
 }
 
 #endif

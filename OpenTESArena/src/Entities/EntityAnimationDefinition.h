@@ -22,7 +22,7 @@ struct EntityAnimationDefinitionKeyframeList
 {
 	int keyframesIndex;
 	int keyframeCount;
-	bool isFlipped;
+	bool isMirrored;
 
 	bool operator==(const EntityAnimationDefinitionKeyframeList &other) const;
 	bool operator!=(const EntityAnimationDefinitionKeyframeList &other) const;
@@ -32,6 +32,7 @@ struct EntityAnimationDefinitionKeyframe
 {
 	TextureAsset textureAsset;
 	double width, height;
+	int linearizedIndex;
 
 	bool operator==(const EntityAnimationDefinitionKeyframe &other) const;
 	bool operator!=(const EntityAnimationDefinitionKeyframe &other) const;
@@ -52,17 +53,22 @@ struct EntityAnimationDefinition
 	EntityAnimationDefinitionKeyframe keyframes[MAX_KEYFRAMES];
 	int keyframeCount;
 
+	char initialStateName[EntityAnimationUtils::NAME_LENGTH];
+
 	EntityAnimationDefinition();
+
+	void init(const char *initialStateName);
 
 	bool operator==(const EntityAnimationDefinition &other) const;
 	bool operator!=(const EntityAnimationDefinition &other) const;
 
-	std::optional<int> tryGetStateIndex(const char *name) const;
+	std::optional<int> findStateIndex(const char *name) const;
 	int getLinearizedKeyframeIndex(int stateIndex, int keyframeListIndex, int keyframeIndex) const;
 
 	int addState(const char *name, double seconds, bool isLooping);
-	int addKeyframeList(int stateIndex, bool isFlipped);
+	int addKeyframeList(int stateIndex, bool isMirrored);
 	int addKeyframe(int keyframeListIndex, TextureAsset &&textureAsset, double width, double height);
+	void populateLinearizedIndices();
 };
 
 #endif

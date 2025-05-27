@@ -12,19 +12,25 @@ void LevelInfoDefinition::init(double ceilingScale)
 	this->ceilingScale = ceilingScale;
 	
 	// Add air voxel by default.
-	this->addVoxelMeshDef(VoxelMeshDefinition());
+	this->addVoxelShapeDef(VoxelShapeDefinition());
 	this->addVoxelTextureDef(VoxelTextureDefinition());
+	this->addVoxelShadingDef(VoxelShadingDefinition());
 	this->addVoxelTraitsDef(VoxelTraitsDefinition());
 }
 
-int LevelInfoDefinition::getVoxelMeshDefCount() const
+int LevelInfoDefinition::getVoxelShapeDefCount() const
 {
-	return static_cast<int>(this->voxelMeshDefs.size());
+	return static_cast<int>(this->voxelShapeDefs.size());
 }
 
 int LevelInfoDefinition::getVoxelTextureDefCount() const
 {
 	return static_cast<int>(this->voxelTextureDefs.size());
+}
+
+int LevelInfoDefinition::getVoxelShadingDefCount() const
+{
+	return static_cast<int>(this->voxelShadingDefs.size());
 }
 
 int LevelInfoDefinition::getVoxelTraitsDefCount() const
@@ -67,49 +73,55 @@ int LevelInfoDefinition::getChasmDefCount() const
 	return static_cast<int>(this->chasmDefs.size());
 }
 
-const VoxelMeshDefinition &LevelInfoDefinition::getVoxelMeshDef(LevelDefinition::VoxelMeshDefID id) const
+const VoxelShapeDefinition &LevelInfoDefinition::getVoxelShapeDef(LevelVoxelShapeDefID id) const
 {
-	DebugAssertIndex(this->voxelMeshDefs, id);
-	return this->voxelMeshDefs[id];
+	DebugAssertIndex(this->voxelShapeDefs, id);
+	return this->voxelShapeDefs[id];
 }
 
-const VoxelTextureDefinition &LevelInfoDefinition::getVoxelTextureDef(LevelDefinition::VoxelTextureDefID id) const
+const VoxelTextureDefinition &LevelInfoDefinition::getVoxelTextureDef(LevelVoxelTextureDefID id) const
 {
 	DebugAssertIndex(this->voxelTextureDefs, id);
 	return this->voxelTextureDefs[id];
 }
 
-const VoxelTraitsDefinition &LevelInfoDefinition::getVoxelTraitsDef(LevelDefinition::VoxelTraitsDefID id) const
+const VoxelShadingDefinition &LevelInfoDefinition::getVoxelShadingDef(LevelVoxelShadingDefID id) const
+{
+	DebugAssertIndex(this->voxelShadingDefs, id);
+	return this->voxelShadingDefs[id];
+}
+
+const VoxelTraitsDefinition &LevelInfoDefinition::getVoxelTraitsDef(LevelVoxelTraitsDefID id) const
 {
 	DebugAssertIndex(this->voxelTraitsDefs, id);
 	return this->voxelTraitsDefs[id];
 }
 
-const EntityDefinition &LevelInfoDefinition::getEntityDef(LevelDefinition::EntityDefID id) const
+const EntityDefinition &LevelInfoDefinition::getEntityDef(LevelVoxelEntityDefID id) const
 {
 	DebugAssertIndex(this->entityDefs, id);
 	return this->entityDefs[id];
 }
 
-const LockDefinition &LevelInfoDefinition::getLockDef(LevelDefinition::LockDefID id) const
+const LockDefinition &LevelInfoDefinition::getLockDef(LevelVoxelLockDefID id) const
 {
 	DebugAssertIndex(this->lockDefs, id);
 	return this->lockDefs[id];
 }
 
-const VoxelTriggerDefinition &LevelInfoDefinition::getTriggerDef(LevelDefinition::TriggerDefID id) const
+const VoxelTriggerDefinition &LevelInfoDefinition::getTriggerDef(LevelVoxelTriggerDefID id) const
 {
 	DebugAssertIndex(this->triggerDefs, id);
 	return this->triggerDefs[id];
 }
 
-const TransitionDefinition &LevelInfoDefinition::getTransitionDef(LevelDefinition::TransitionDefID id) const
+const TransitionDefinition &LevelInfoDefinition::getTransitionDef(LevelVoxelTransitionDefID id) const
 {
 	DebugAssertIndex(this->transitionDefs, id);
 	return this->transitionDefs[id];
 }
 
-const std::string &LevelInfoDefinition::getBuildingName(LevelDefinition::BuildingNameID id) const
+const std::string &LevelInfoDefinition::getBuildingName(LevelVoxelBuildingNameID id) const
 {
 	const auto iter = this->buildingNameOverrides.find(id);
 	if (iter != this->buildingNameOverrides.end())
@@ -123,13 +135,13 @@ const std::string &LevelInfoDefinition::getBuildingName(LevelDefinition::Buildin
 	}
 }
 
-const DoorDefinition &LevelInfoDefinition::getDoorDef(LevelDefinition::DoorDefID id) const
+const VoxelDoorDefinition &LevelInfoDefinition::getDoorDef(LevelVoxelDoorDefID id) const
 {
 	DebugAssertIndex(this->doorDefs, id);
 	return this->doorDefs[id];
 }
 
-const ChasmDefinition &LevelInfoDefinition::getChasmDef(LevelDefinition::ChasmDefID id) const
+const VoxelChasmDefinition &LevelInfoDefinition::getChasmDef(LevelVoxelChasmDefID id) const
 {
 	DebugAssertIndex(this->chasmDefs, id);
 	return this->chasmDefs[id];
@@ -140,77 +152,84 @@ double LevelInfoDefinition::getCeilingScale() const
 	return this->ceilingScale;
 }
 
-LevelDefinition::VoxelMeshDefID LevelInfoDefinition::addVoxelMeshDef(VoxelMeshDefinition &&def)
+LevelVoxelShapeDefID LevelInfoDefinition::addVoxelShapeDef(VoxelShapeDefinition &&def)
 {
-	const LevelDefinition::VoxelMeshDefID id = static_cast<LevelDefinition::VoxelMeshDefID>(this->voxelMeshDefs.size());
-	this->voxelMeshDefs.emplace_back(std::move(def));
+	const LevelVoxelShapeDefID id = static_cast<LevelVoxelShapeDefID>(this->voxelShapeDefs.size());
+	this->voxelShapeDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::VoxelTextureDefID LevelInfoDefinition::addVoxelTextureDef(VoxelTextureDefinition &&def)
+LevelVoxelTextureDefID LevelInfoDefinition::addVoxelTextureDef(VoxelTextureDefinition &&def)
 {
-	const LevelDefinition::VoxelTextureDefID id = static_cast<LevelDefinition::VoxelTextureDefID>(this->voxelTextureDefs.size());
+	const LevelVoxelTextureDefID id = static_cast<LevelVoxelTextureDefID>(this->voxelTextureDefs.size());
 	this->voxelTextureDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::VoxelTraitsDefID LevelInfoDefinition::addVoxelTraitsDef(VoxelTraitsDefinition &&def)
+LevelVoxelShadingDefID LevelInfoDefinition::addVoxelShadingDef(VoxelShadingDefinition &&def)
 {
-	const LevelDefinition::VoxelTraitsDefID id = static_cast<LevelDefinition::VoxelTraitsDefID>(this->voxelTraitsDefs.size());
+	const LevelVoxelShadingDefID id = static_cast<LevelVoxelShadingDefID>(this->voxelShadingDefs.size());
+	this->voxelShadingDefs.emplace_back(std::move(def));
+	return id;
+}
+
+LevelVoxelTraitsDefID LevelInfoDefinition::addVoxelTraitsDef(VoxelTraitsDefinition &&def)
+{
+	const LevelVoxelTraitsDefID id = static_cast<LevelVoxelTraitsDefID>(this->voxelTraitsDefs.size());
 	this->voxelTraitsDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::EntityDefID LevelInfoDefinition::addEntityDef(EntityDefinition &&def)
+LevelVoxelEntityDefID LevelInfoDefinition::addEntityDef(EntityDefinition &&def)
 {
-	const LevelDefinition::EntityDefID id = static_cast<LevelDefinition::EntityDefID>(this->entityDefs.size());
+	const LevelVoxelEntityDefID id = static_cast<LevelVoxelEntityDefID>(this->entityDefs.size());
 	this->entityDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::LockDefID LevelInfoDefinition::addLockDef(LockDefinition &&def)
+LevelVoxelLockDefID LevelInfoDefinition::addLockDef(LockDefinition &&def)
 {
-	const LevelDefinition::LockDefID id = static_cast<LevelDefinition::LockDefID>(this->lockDefs.size());
+	const LevelVoxelLockDefID id = static_cast<LevelVoxelLockDefID>(this->lockDefs.size());
 	this->lockDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::TriggerDefID LevelInfoDefinition::addTriggerDef(VoxelTriggerDefinition &&def)
+LevelVoxelTriggerDefID LevelInfoDefinition::addTriggerDef(VoxelTriggerDefinition &&def)
 {
-	const LevelDefinition::TriggerDefID id = static_cast<LevelDefinition::TriggerDefID>(this->triggerDefs.size());
+	const LevelVoxelTriggerDefID id = static_cast<LevelVoxelTriggerDefID>(this->triggerDefs.size());
 	this->triggerDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::TransitionDefID LevelInfoDefinition::addTransitionDef(TransitionDefinition &&def)
+LevelVoxelTransitionDefID LevelInfoDefinition::addTransitionDef(TransitionDefinition &&def)
 {
-	const LevelDefinition::TransitionDefID id = static_cast<LevelDefinition::TransitionDefID>(this->transitionDefs.size());
+	const LevelVoxelTransitionDefID id = static_cast<LevelVoxelTransitionDefID>(this->transitionDefs.size());
 	this->transitionDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::BuildingNameID LevelInfoDefinition::addBuildingName(std::string &&name)
+LevelVoxelBuildingNameID LevelInfoDefinition::addBuildingName(std::string &&name)
 {
-	const LevelDefinition::BuildingNameID id = static_cast<LevelDefinition::BuildingNameID>(this->buildingNames.size());
+	const LevelVoxelBuildingNameID id = static_cast<LevelVoxelBuildingNameID>(this->buildingNames.size());
 	this->buildingNames.emplace_back(std::move(name));
 	return id;
 }
 
-LevelDefinition::DoorDefID LevelInfoDefinition::addDoorDef(DoorDefinition &&def)
+LevelVoxelDoorDefID LevelInfoDefinition::addDoorDef(VoxelDoorDefinition &&def)
 {
-	const LevelDefinition::DoorDefID id = static_cast<LevelDefinition::DoorDefID>(this->doorDefs.size());
+	const LevelVoxelDoorDefID id = static_cast<LevelVoxelDoorDefID>(this->doorDefs.size());
 	this->doorDefs.emplace_back(std::move(def));
 	return id;
 }
 
-LevelDefinition::ChasmDefID LevelInfoDefinition::addChasmDef(ChasmDefinition &&def)
+LevelVoxelChasmDefID LevelInfoDefinition::addChasmDef(VoxelChasmDefinition &&def)
 {
-	const LevelDefinition::ChasmDefID id = static_cast<LevelDefinition::ChasmDefID>(this->chasmDefs.size());
+	const LevelVoxelChasmDefID id = static_cast<LevelVoxelChasmDefID>(this->chasmDefs.size());
 	this->chasmDefs.emplace_back(std::move(def));
 	return id;
 }
 
-void LevelInfoDefinition::setBuildingNameOverride(LevelDefinition::BuildingNameID id, std::string &&name)
+void LevelInfoDefinition::setBuildingNameOverride(LevelVoxelBuildingNameID id, std::string &&name)
 {
 	const auto iter = this->buildingNameOverrides.find(id);
 	if (iter != this->buildingNameOverrides.end())

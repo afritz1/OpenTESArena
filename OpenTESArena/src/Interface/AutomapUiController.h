@@ -6,11 +6,11 @@
 #include "../Math/Vector2.h"
 
 class Game;
-class Rect;
-
-struct InputActionCallbackValues;
 
 enum class MouseButtonType;
+
+struct InputActionCallbackValues;
+struct Rect;
 
 namespace AutomapUiController
 {

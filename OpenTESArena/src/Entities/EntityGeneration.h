@@ -20,8 +20,6 @@ namespace EntityGeneration
 
 		void init(bool nightLightsAreActive);
 	};
-
-	const std::string &getDefaultAnimationStateName(const EntityDefinition &entityDef, const EntityGenInfo &genInfo);
 }
 
 #endif

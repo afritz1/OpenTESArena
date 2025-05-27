@@ -16,6 +16,7 @@ struct BoundingBox3D
 
 	bool contains(const Double3 &point) const;
 	bool contains(const BoundingBox3D &bbox) const;
+	bool intersects(const BoundingBox3D &bbox) const;
 	
 	void expandToInclude(const Double3 &point);
 	void expandToInclude(const BoundingBox3D &bbox);

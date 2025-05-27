@@ -38,6 +38,11 @@ int Random::next(int exclusiveMax)
 	return this->next() % exclusiveMax;
 }
 
+bool Random::nextBool()
+{
+	return (this->next() % 2) == 0;
+}
+
 double Random::nextReal()
 {
 	return this->realDistribution(this->generator);

@@ -24,9 +24,8 @@ namespace VoxelUtils
 	OriginalInt2 worldVoxelToOriginalVoxel(const WorldInt2 &voxel);
 	Double2 getTransformedVoxel(const Double2 &voxel);
 
-	// Gets the voxel a point is in.
+	// Gets the voxel a point is in. Requires wall height if including Y.
 	VoxelInt3 pointToVoxel(const VoxelDouble3 &point, double ceilingScale);
-	VoxelInt3 pointToVoxel(const VoxelDouble3 &point);
 	VoxelInt2 pointToVoxel(const VoxelDouble2 &point);
 
 	// Converts a voxel from chunk space to new voxel grid space.
@@ -39,17 +38,18 @@ namespace VoxelUtils
 	WorldInt2 coordToWorldVoxel(const CoordInt2 &coord);
 	WorldInt2 chunkVoxelToWorldVoxel(const ChunkInt2 &chunk, const VoxelInt2 &voxel);
 
-	// Converts a voxel from new voxel grid space to chunk voxel space.
+	// Converts from world space to chunk space.
+	ChunkInt2 worldPointToChunk(const WorldDouble3 &point);
+	ChunkInt2 worldPointToChunk(const WorldDouble2 &point);
 	CoordDouble3 worldPointToCoord(const WorldDouble3 &point);
 	CoordDouble2 worldPointToCoord(const WorldDouble2 &point);
+	ChunkInt2 worldVoxelToChunk(const WorldInt3 &voxel);
+	ChunkInt2 worldVoxelToChunk(const WorldInt2 &voxel);
 	CoordInt3 worldVoxelToCoord(const WorldInt3 &voxel);
 	CoordInt2 worldVoxelToCoord(const WorldInt2 &voxel);
 
 	// Converts a voxel from level definition space to chunk voxel space.
 	CoordInt2 levelVoxelToCoord(const WorldInt2 &voxel);
-
-	// Gets the chunk that a new voxel would be in.
-	ChunkInt2 worldVoxelToChunk(const WorldInt2 &voxel);
 
 	// Gets the coordinate of an adjacent voxel.
 	VoxelInt3 getAdjacentVoxelXZ(const VoxelInt3 &voxel, const VoxelInt2 &direction);

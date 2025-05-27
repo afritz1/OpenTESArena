@@ -1,19 +1,18 @@
 #include <algorithm>
-#include <cmath>
 
-#include "Constants.h"
 #include "MathUtils.h"
 
 #include "components/debug/Debug.h"
 
-double MathUtils::almostZero(double value)
+Radians MathUtils::safeDegToRad(Degrees degrees)
 {
-	return std::abs(value) < Constants::Epsilon;
-}
+	const Radians radians = degToRad(degrees);
+	if (!std::isfinite(radians))
+	{
+		return 0.0;
+	}
 
-double MathUtils::almostEqual(double a, double b)
-{
-	return MathUtils::almostZero(a - b);
+	return radians;
 }
 
 double MathUtils::getRealIndex(int bufferSize, double percent)
@@ -57,7 +56,7 @@ Radians MathUtils::fullAtan2(const WorldDouble2 &v)
 
 double MathUtils::verticalFovToZoom(Degrees fovY)
 {
-	return 1.0 / std::tan((fovY * 0.5) * Constants::DegToRad);
+	return 1.0 / std::tan(MathUtils::degToRad(fovY * 0.5));
 }
 
 Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
@@ -66,14 +65,31 @@ Degrees MathUtils::verticalFovToHorizontalFov(Degrees fovY, double aspectRatio)
 	DebugAssert(fovY < 180.0);
 	DebugAssert(aspectRatio > 0.0);
 
-	const double halfDim = aspectRatio * std::tan((fovY * 0.50) * Constants::DegToRad);
-	return (2.0 * std::atan(halfDim)) * Constants::RadToDeg;
+	const double halfDim = aspectRatio * std::tan(MathUtils::degToRad(fovY * 0.50));
+	return MathUtils::radToDeg(2.0 * std::atan(halfDim));
 }
 
-bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &dividerPoint,
-	const Double2 &normal)
+void MathUtils::populateCoordinateFrameFromAngles(Degrees yaw, Degrees pitch, Double3 *outForward, Double3 *outRight, Double3 *outUp)
 {
-	return (point - dividerPoint).dot(normal) >= 0.0;
+	const Radians angleXRadians = MathUtils::degToRad(yaw);
+	const Radians angleYRadians = MathUtils::degToRad(pitch);
+	const double sinePitch = std::sin(angleYRadians);
+	const double cosinePitch = std::cos(angleYRadians);
+	const double sineYaw = std::sin(angleXRadians);
+	const double cosineYaw = std::cos(angleXRadians);
+	*outForward = Double3(cosinePitch * sineYaw, sinePitch, cosinePitch * cosineYaw).normalized();
+	*outRight = Double3(-cosineYaw, 0.0, sineYaw).normalized();
+	*outUp = outRight->cross(*outForward).normalized();
+}
+
+bool MathUtils::isPointInHalfSpace(const Double2 &point, const Double2 &planePoint, const Double2 &planeNormal)
+{
+	return (point - planePoint).dot(planeNormal) >= 0.0;
+}
+
+bool MathUtils::isPointInHalfSpace(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal)
+{
+	return (point - planePoint).dot(planeNormal) >= 0.0;
 }
 
 bool MathUtils::lineSegmentIntersection(const Double2 &a0, const Double2 &a1, const Double2 &b0, const Double2 &b1)
@@ -249,7 +265,7 @@ bool MathUtils::triangleRectangleIntersection(const Double2 &triangleP0, const D
 }
 
 bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-	const Double3 &planeOrigin, const Double3 &planeNormal, Double3 *outPoint)
+	const Double3 &planeOrigin, const Double3 &planeNormal, double *outT)
 {
 	DebugAssert(rayDirection.isNormalized());
 	DebugAssert(planeNormal.isNormalized());
@@ -261,8 +277,7 @@ bool MathUtils::rayPlaneIntersection(const Double3 &rayStart, const Double3 &ray
 		const double t = projection.dot(planeNormal) / denominator;
 		if (t >= 0.0)
 		{
-			// An intersection exists. Find it.
-			*outPoint = rayStart + (rayDirection * t);
+			*outT = t;
 			return true;
 		}
 	}
@@ -286,7 +301,7 @@ bool MathUtils::rayTriangleIntersection(const Double3 &rayStart, const Double3 &
 
 	const double invDot = 1.0 / v0v1CrossDot;
 	const Double3 startV0Diff = rayStart - v0;
-	
+
 	// First barycentric coordinate.
 	const double u = invDot * startV0Diff.dot(dirV0V2Cross);
 	if ((u < 0.0) || (u > 1.0))
@@ -296,7 +311,7 @@ bool MathUtils::rayTriangleIntersection(const Double3 &rayStart, const Double3 &
 	}
 
 	const Double3 diffV0V1Cross = startV0Diff.cross(v0v1);
-	
+
 	// Second barycentric coordinate.
 	const double v = invDot * rayDirection.dot(diffV0V1Cross);
 	if ((v < 0.0) || ((u + v) > 1.0))
@@ -317,36 +332,103 @@ bool MathUtils::rayTriangleIntersection(const Double3 &rayStart, const Double3 &
 }
 
 bool MathUtils::rayQuadIntersection(const Double3 &rayStart, const Double3 &rayDirection,
-	const Double3 &v0, const Double3 &v1, const Double3 &v2, Double3 *outPoint)
+	const Double3 &v0, const Double3 &v1, const Double3 &v2, double *outT)
 {
 	const Double3 v3 = v0 + (v2 - v1);
+	const Double3 quadNormal = (v2 - v0).cross(v1 - v0).normalized();
 
-	// Calculate the normal of the plane which contains the quad.
-	const Double3 normal = (v2 - v0).cross(v1 - v0).normalized();
-
-	// Get the intersection of the ray and the plane that contains the quad.
-	Double3 hitPoint;
-	if (MathUtils::rayPlaneIntersection(rayStart, rayDirection, v0, normal, &hitPoint))
+	double hitT;
+	if (!MathUtils::rayPlaneIntersection(rayStart, rayDirection, v0, quadNormal, &hitT))
 	{
-		// The plane intersection is a point co-planar with the quad. Check if the point is
-		// within the bounds of the quad.
-		const Double3 a = (v1 - v0).cross(hitPoint - v0);
-		const Double3 b = (v2 - v1).cross(hitPoint - v1);
-		const Double3 c = (v3 - v2).cross(hitPoint - v2);
-		const Double3 d = (v0 - v3).cross(hitPoint - v3);
+		return false;
+	}
 
-		const double ab = a.dot(b);
-		const double bc = b.dot(c);
-		const double cd = c.dot(d);
+	// The plane intersection is a point co-planar with the quad. Check if the point is
+	// within the bounds of the quad.
+	const Double3 hitPoint = rayStart + (rayDirection * hitT);
+	const Double3 a = (v1 - v0).cross(hitPoint - v0);
+	const Double3 b = (v2 - v1).cross(hitPoint - v1);
+	const Double3 c = (v3 - v2).cross(hitPoint - v2);
+	const Double3 d = (v0 - v3).cross(hitPoint - v3);
+	const double ab = a.dot(b);
+	const double bc = b.dot(c);
+	const double cd = c.dot(d);	
+	if (((ab * bc) >= 0.0) && ((bc * cd) >= 0.0))
+	{
+		*outT = hitT;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
 
-		if (((ab * bc) >= 0.0) && ((bc * cd) >= 0.0))
+bool MathUtils::rayBoxIntersection(const Double3 &rayStart, const Double3 &rayDirection, const Double3 &boxCenter,
+	double width, double height, double depth, Radians yRotation, double *outT)
+{
+	const double halfWidth = width * 0.50;
+	const double halfHeight = height * 0.50;
+	const double halfDepth = depth * 0.50;
+
+	auto makeModelSpaceVertex = [yRotation](double x, double y, double z)
+	{
+		return Double3(
+			(x * std::cos(yRotation)) - (z * std::sin(yRotation)),
+			y,
+			(x * std::sin(yRotation)) + (z * std::cos(yRotation)));
+	};
+	
+	const Double3 modelVertices[] =
+	{
+		makeModelSpaceVertex(-halfWidth, -halfHeight, -halfDepth), // 0 0 0
+		makeModelSpaceVertex(halfWidth, -halfHeight, -halfDepth), // 1 0 0
+		makeModelSpaceVertex(-halfWidth, halfHeight, -halfDepth), // 0 1 0
+		makeModelSpaceVertex(halfWidth, halfHeight, -halfDepth), // 1 1 0
+		makeModelSpaceVertex(-halfWidth, -halfHeight, halfDepth), // 0 0 1
+		makeModelSpaceVertex(halfWidth, -halfHeight, halfDepth), // 1 0 1
+		makeModelSpaceVertex(-halfWidth, halfHeight, halfDepth), // 0 1 1
+		makeModelSpaceVertex(halfWidth, halfHeight, halfDepth) // 1 1 1
+	};
+
+	constexpr int modelIndices[][3] =
+	{
+		{ 2, 0, 4 }, // -X
+		{ 7, 5, 1 }, // +X
+		{ 0, 1, 5 }, // -Y
+		{ 3, 2, 6 }, // +Y
+		{ 3, 1, 0 }, // -Z
+		{ 6, 4, 5 }  // +Z
+	};
+
+	bool anyHit = false;
+	double maxT = std::numeric_limits<double>::infinity();
+	for (const auto &faceIndices : modelIndices)
+	{
+		const Double3 v0 = boxCenter + modelVertices[faceIndices[0]];
+		const Double3 v1 = boxCenter + modelVertices[faceIndices[1]];
+		const Double3 v2 = boxCenter + modelVertices[faceIndices[2]];
+
+		double currentT;
+		if (MathUtils::rayQuadIntersection(rayStart, rayDirection, v0, v1, v2, &currentT))
 		{
-			*outPoint = hitPoint;
-			return true;
+			if (currentT < maxT)
+			{
+				anyHit = true;
+				maxT = currentT;
+			}
 		}
 	}
 
-	return false;
+	if (anyHit)
+	{
+		*outT = maxT;
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 double MathUtils::distanceToPlane(const Double3 &point, const Double3 &planePoint, const Double3 &planeNormal)
@@ -430,4 +512,28 @@ std::vector<Int2> MathUtils::bresenhamLine(const Int2 &p1, const Int2 &p2)
 	}
 
 	return points;
+}
+
+Int2 MathUtils::getZOrderCurvePoint(int index)
+{
+	DebugAssert(index >= 0);
+	const int relevantBitCount = Bytes::findHighestSetBitIndex(index) + 1;
+	int x = 0;
+	int y = 0;
+	for (int i = 0; i < relevantBitCount; i++)
+	{
+		const int dstBitIndex = i / 2;
+		const bool bit = ((index >> i) & 1) != 0;
+		const int bitValue = bit ? (1 << dstBitIndex) : 0;
+		if ((i & 1) == 0)
+		{
+			x |= bitValue;
+		}
+		else
+		{
+			y |= bitValue;
+		}
+	}
+
+	return Int2(x, y);
 }

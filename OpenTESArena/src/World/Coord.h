@@ -20,6 +20,9 @@ using VoxelInt3 = Int3; // +X south, +Y up, +Z west, used with chunk voxels, [0,
 using WorldDouble3 = Double3; // +X south, +Y up, +Z west, relative to world origin, independent of chunks.
 using VoxelDouble3 = Double3; // +X south, +Y up, +Z west, used with chunk voxels, [0, CHUNK_DIM-1].
 
+struct CoordDouble2;
+struct CoordDouble3;
+
 // Various coordinate structs for representing a unique voxel or point in the game world.
 struct CoordInt2
 {
@@ -32,6 +35,8 @@ struct CoordInt2
 
 	bool operator==(const CoordInt2 &other) const;
 	bool operator!=(const CoordInt2 &other) const;
+
+	CoordDouble2 toVoxelCenter() const;
 };
 
 struct CoordDouble2
@@ -46,6 +51,8 @@ struct CoordDouble2
 	CoordDouble2 operator+(const VoxelDouble2 &other) const;
 	CoordDouble2 operator-(const VoxelDouble2 &other) const;
 	VoxelDouble2 operator-(const CoordDouble2 &other) const;
+
+	CoordInt2 toVoxel() const;
 };
 
 struct CoordInt3
@@ -61,6 +68,9 @@ struct CoordInt3
 	bool operator!=(const CoordInt3 &other) const;
 	CoordInt3 operator+(const VoxelInt3 &other) const;
 	VoxelInt3 operator-(const CoordInt3 &other) const;
+
+	CoordDouble3 toVoxelCenterScaled(double ceilingScale) const;
+	CoordDouble3 toVoxelCenter() const;
 };
 
 struct CoordDouble3
@@ -74,6 +84,9 @@ struct CoordDouble3
 
 	CoordDouble3 operator+(const VoxelDouble3 &other) const;
 	VoxelDouble3 operator-(const CoordDouble3 &other) const;
+
+	CoordInt3 toVoxelScaled(double ceilingScale) const;
+	CoordInt3 toVoxel() const;
 };
 
 // These are here out of desperation after many months of confusing myself.

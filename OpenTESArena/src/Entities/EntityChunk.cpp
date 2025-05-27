@@ -9,6 +9,4 @@ void EntityChunk::clear()
 {
 	Chunk::clear();
 	this->entityIDs.clear();
-	this->addedEntityIDs.clear();
-	this->removedEntityIDs.clear();
 }

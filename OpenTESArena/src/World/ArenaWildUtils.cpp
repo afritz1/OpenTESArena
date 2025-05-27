@@ -74,8 +74,7 @@ uint32_t ArenaWildUtils::makeWildChunkSeed(int wildX, int wildY)
 	return (wildY << 16) + wildX;
 }
 
-Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed,
-	const ExeData::Wilderness &wildData)
+Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData)
 {
 	Buffer2D<ArenaWildUtils::WildBlockID> indices(ArenaWildUtils::WILD_WIDTH, ArenaWildUtils::WILD_HEIGHT);
 	ArenaRandom random(wildSeed);
@@ -85,7 +84,7 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 		[&wildData, &random]()
 	{
 		// Determine the wilderness block list to draw from.
-		const auto &blockList = [&wildData, &random]() -> const std::vector<WildBlockID>&
+		const BufferView<const WildBlockID> blockList = [&wildData, &random]() -> BufferView<const uint8_t>
 		{
 			constexpr uint16_t normalVal = 0x6666;
 			constexpr uint16_t villageVal = 0x4000;
@@ -127,7 +126,7 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 			}
 		}();
 
-		const int blockListIndex = (random.next() & 0xFF) % blockList.size();
+		const int blockListIndex = (random.next() & 0xFF) % blockList.getCount();
 		return blockList[blockListIndex];
 	});
 

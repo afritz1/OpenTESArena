@@ -5,11 +5,8 @@
 
 // This only exists because dangling pointers are bad and classes like the texture manager
 // shouldn't return raw texture references when it knows that the reference could become
-// invalidated by a call to one of the manager's other functions.
-
-// Intended for 2D image-like buffers.
-
-template <typename ContainerT, typename T>
+// invalidated by a call to one of the manager's other functions. Intended for 2D image-like buffers.
+template<typename ContainerT, typename T>
 class BufferRef2D
 {
 private:

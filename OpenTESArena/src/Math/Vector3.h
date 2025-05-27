@@ -7,23 +7,35 @@
 #include <type_traits>
 #include <unordered_map>
 
+#include "Vector2.h"
+
 class Random;
 
-template <typename T>
-class Vector3i
+template<typename T>
+struct Vector3i
 {
-public:
 	static_assert(std::is_integral<T>::value);
+
+	T x, y, z;
+	
+	constexpr Vector3i(T x, T y, T z)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
+
+	constexpr Vector3i()
+	{
+		this->x = static_cast<T>(0);
+		this->y = static_cast<T>(0);
+		this->z = static_cast<T>(0);
+	}
 
 	static const Vector3i<T> Zero;
 	static const Vector3i<T> UnitX;
 	static const Vector3i<T> UnitY;
 	static const Vector3i<T> UnitZ;
-
-	T x, y, z;
-
-	Vector3i(T x, T y, T z);
-	Vector3i();
 
 	T &operator[](size_t index);
 	const T &operator[](size_t index) const;
@@ -32,7 +44,7 @@ public:
 	Vector3i<T> operator+(const Vector3i<T> &v) const;
 
 	// Only signed integers can use negation.
-	template <typename C = T>
+	template<typename C = T>
 	typename std::enable_if_t<std::is_signed<C>::value, Vector3i<T>> operator-() const
 	{
 		return Vector3i<T>(-this->x, -this->y, -this->z);
@@ -44,29 +56,42 @@ public:
 	Vector3i<T> operator/(T m) const;
 	Vector3i<T> operator/(const Vector3i<T> &v) const;
 
+	Vector2i<T> getXY() const;
+	Vector2i<T> getXZ() const;
+	Vector2i<T> getYZ() const;
+
 	std::string toString() const;
 };
 
-template <typename T>
-class Vector3f
+template<typename T>
+struct Vector3f
 {
-public:
 	static_assert(std::is_floating_point<T>::value);
+
+	T x, y, z;
+
+	constexpr Vector3f(T x, T y, T z)
+	{
+		this->x = x;
+		this->y = y;
+		this->z = z;
+	}
+
+	constexpr Vector3f()
+	{
+		this->x = static_cast<T>(0.0);
+		this->y = static_cast<T>(0.0);
+		this->z = static_cast<T>(0.0);
+	}
 
 	static const Vector3f<T> Zero;
 	static const Vector3f<T> UnitX;
 	static const Vector3f<T> UnitY;
 	static const Vector3f<T> UnitZ;
 
-	T x, y, z;
-
-	Vector3f(T x, T y, T z);
-	Vector3f();
-
 	static Vector3f<T> randomDirection(Random &random);
 	static Vector3f<T> randomPointInSphere(const Vector3f<T> &center, T radius, Random &random);
-	static Vector3f<T> randomPointInCuboid(const Vector3f<T> &center, T width, T height,
-		T depth, Random &random);
+	static Vector3f<T> randomPointInCuboid(const Vector3f<T> &center, T width, T height, T depth, Random &random);
 	static Vector3f<T> fromRGB(uint32_t rgb);
 
 	T &operator[](size_t index);
@@ -80,6 +105,10 @@ public:
 	Vector3f<T> operator*(const Vector3f<T> &v) const;
 	Vector3f<T> operator/(T m) const;
 	Vector3f<T> operator/(const Vector3f<T> &v) const;
+
+	Vector2f<T> getXY() const;
+	Vector2f<T> getXZ() const;
+	Vector2f<T> getYZ() const;
 
 	std::string toString() const;
 	uint32_t toRGB() const;
@@ -133,7 +162,7 @@ using Double3 = Vector3f<double>;
 // Hash definition for unordered_map<Int3, ...>.
 namespace std
 {
-	template <>
+	template<>
 	struct hash<Int3>
 	{
 		size_t operator()(const Int3 &v) const

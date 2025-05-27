@@ -1,15 +1,13 @@
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
+#include "CharacterSheetUiModel.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/TextAssetLibrary.h"
-#include "../Entities/CharacterClassLibrary.h"
-#include "../Entities/PrimaryAttribute.h"
 #include "../Game/Game.h"
-#include "../Items/ArmorMaterial.h"
-#include "../Items/ArmorMaterialType.h"
-#include "../Items/MetalType.h"
-#include "../Items/Shield.h"
-#include "../Items/ShieldType.h"
+#include "../Player/CharacterCreationState.h"
+#include "../Stats/CharacterClassLibrary.h"
+#include "../Stats/CharacterRaceLibrary.h"
+#include "../Stats/PrimaryAttribute.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -17,34 +15,42 @@
 std::string CharacterCreationUiModel::getPlayerName(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	return std::string(charCreationState.getName());
+	return std::string(charCreationState.name);
 }
 
 std::string CharacterCreationUiModel::getPlayerRaceName(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-	const auto &singularRaceNames = exeData.races.singularNames;
-	const int raceNameIndex = charCreationState.getRaceIndex();
-	DebugAssertIndex(singularRaceNames, raceNameIndex);
-	return singularRaceNames[raceNameIndex];
+	const int raceIndex = charCreationState.raceIndex;
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(raceIndex);
+	return std::string(characterRaceDefinition.singularName);
 }
 
 std::string CharacterCreationUiModel::getPlayerClassName(Game &game)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const int defID = charCreationState.getClassDefID();
+	const int defID = charCreationState.classDefID;
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(defID);
-	return charClassDef.getName();
+	return charClassDef.name;
 }
 
-std::vector<PrimaryAttribute> CharacterCreationUiModel::getPlayerAttributes(Game &game)
+const PrimaryAttributes &CharacterCreationUiModel::getPlayerAttributes(Game &game)
 {
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	const PrimaryAttributeSet &attributeSet = charCreationState.getAttributes();
-	return attributeSet.getAll();
+	const PrimaryAttributes &attributes = charCreationState.attributes;
+	return attributes;
+}
+
+std::string CharacterCreationUiModel::getPlayerLevel(Game &game)
+{
+	return std::to_string(1);
+}
+
+std::string CharacterCreationUiModel::getPlayerExperience(Game &game)
+{
+	return std::to_string(0);
 }
 
 std::string ChooseClassCreationUiModel::getTitleText(Game &game)
@@ -85,6 +91,16 @@ std::string ChooseClassUiModel::getTitleText(Game &game)
 
 std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefinition &charClassDef)
 {
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	// The original game doesn't list the armor materials by themselves... have to make up something.
+	const std::string armorMaterialStrings[] =
+	{
+		exeData.equipment.leatherArmorNames[0].substr(0, 7),
+		exeData.equipment.chainArmorNames[0].substr(0, 5),
+		exeData.equipment.plateArmorNames[0].substr(0, 5)
+	};
+
 	std::vector<int> allowedArmors(charClassDef.getAllowedArmorCount());
 	for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 	{
@@ -108,8 +124,8 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 		for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 		{
 			const int materialType = allowedArmors[i];
-			auto materialString = ArmorMaterial::typeToString(
-				static_cast<ArmorMaterialType>(materialType));
+			DebugAssertIndex(armorMaterialStrings, materialType);
+			const std::string &materialString = armorMaterialStrings[materialType];
 			lengthCounter += static_cast<int>(materialString.size());
 			armorString.append(materialString);
 
@@ -134,6 +150,9 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 
 std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinition &charClassDef)
 {
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const BufferView<const std::string> shieldStrings(exeData.equipment.armorNames + 7, 4);
+
 	std::vector<int> allowedShields(charClassDef.getAllowedShieldCount());
 	for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 	{
@@ -157,8 +176,7 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 		for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 		{
 			const int shieldType = allowedShields[i];
-			MetalType dummyMetal = MetalType::Iron;
-			auto typeString = Shield(static_cast<ShieldType>(shieldType), dummyMetal).typeToString();
+			const std::string &typeString = shieldStrings[shieldType];
 			lengthCounter += static_cast<int>(typeString.size());
 			shieldsString.append(typeString);
 
@@ -183,7 +201,6 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 
 std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game)
 {
-	// Get weapon names from the executable.
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const auto &weaponStrings = exeData.equipment.weaponNames;
 
@@ -196,8 +213,10 @@ std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinit
 	std::sort(allowedWeapons.begin(), allowedWeapons.end(),
 		[&weaponStrings](int a, int b)
 	{
-		const std::string &aStr = weaponStrings.at(a);
-		const std::string &bStr = weaponStrings.at(b);
+		DebugAssertIndex(weaponStrings, a);
+		DebugAssertIndex(weaponStrings, b);
+		const std::string &aStr = weaponStrings[a];
+		const std::string &bStr = weaponStrings[b];
 		return aStr.compare(bStr) < 0;
 	});
 
@@ -217,7 +236,8 @@ std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinit
 		for (int i = 0; i < static_cast<int>(allowedWeapons.size()); i++)
 		{
 			const int weaponID = allowedWeapons.at(i);
-			const std::string &weaponName = weaponStrings.at(weaponID);
+			DebugAssertIndex(weaponStrings, weaponID);
+			const std::string &weaponName = weaponStrings[weaponID];
 			lengthCounter += static_cast<int>(weaponName.size());
 			weaponsString.append(weaponName);
 
@@ -249,12 +269,12 @@ std::string ChooseClassUiModel::getFullTooltipText(const CharacterClassDefinitio
 		"Mage", "Thief", "Warrior"
 	};
 
-	const int categoryIndex = charClassDef.getCategoryID();
+	const int categoryIndex = charClassDef.categoryID;
 	DebugAssertIndex(ClassCategoryNames, categoryIndex);
 	const std::string categoryName = ClassCategoryNames[categoryIndex];
-	const std::string text = charClassDef.getName() + " (" + categoryName + " class)" + "\n\n" +
-		(charClassDef.canCastMagic() ? "Can" : "Cannot") + " cast magic" + "\n" +
-		"Health die: " + "d" + std::to_string(charClassDef.getHealthDie()) + "\n" +
+	const std::string text = std::string(charClassDef.name) + " (" + categoryName + " class)" + "\n\n" +
+		(charClassDef.castsMagic ? "Can" : "Cannot") + " cast magic" + "\n" +
+		"Health die: " + "d" + std::to_string(charClassDef.healthDie) + "\n" +
 		"Armors: " + ChooseClassUiModel::getArmorTooltipText(charClassDef) + "\n" +
 		"Shields: " + ChooseClassUiModel::getShieldTooltipText(charClassDef) + "\n" +
 		"Weapons: " + ChooseClassUiModel::getWeaponTooltipText(charClassDef, game);
@@ -284,12 +304,12 @@ std::string ChooseNameUiModel::getTitleText(Game &game)
 {
 	const auto &charCreationState = game.getCharacterCreationState();
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.getClassDefID();
+	const int charClassDefID = charCreationState.classDefID;
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseName;
-	text = String::replace(text, "%s", charClassDef.getName());
+	text = String::replace(text, "%s", charClassDef.name);
 	return text;
 }
 
@@ -308,16 +328,16 @@ std::string ChooseRaceUiModel::getTitleText(Game &game)
 
 	const auto &charCreationState = game.getCharacterCreationState();
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.getClassDefID();
+	const int charClassDefID = charCreationState.classDefID;
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 	// Replace first "%s" with player name.
 	size_t index = text.find("%s");
-	text.replace(index, 2, charCreationState.getName());
+	text.replace(index, 2, charCreationState.name);
 
 	// Replace second "%s" with character class.
 	index = text.find("%s");
-	text.replace(index, 2, charClassDef.getName());
+	text.replace(index, 2, charClassDef.name);
 
 	return text;
 }
@@ -329,15 +349,15 @@ std::string ChooseRaceUiModel::getProvinceConfirmTitleText(Game &game)
 	text = String::replace(text, '\r', '\n');
 
 	const auto &charCreationState = game.getCharacterCreationState();
-	const int raceIndex = charCreationState.getRaceIndex();
+	const int raceIndex = charCreationState.raceIndex;
 
 	const auto &charCreationProvinceNames = exeData.locations.charCreationProvinceNames;
 	DebugAssertIndex(charCreationProvinceNames, raceIndex);
 	const std::string &provinceName = charCreationProvinceNames[raceIndex];
 
-	const auto &pluralRaceNames = exeData.races.pluralNames;
-	DebugAssertIndex(pluralRaceNames, raceIndex);
-	const std::string &pluralRaceName = pluralRaceNames[raceIndex];
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(raceIndex);
+	const std::string pluralRaceName = characterRaceDefinition.pluralName;
 
 	// Replace first %s with province name.
 	size_t index = text.find("%s");
@@ -360,16 +380,6 @@ std::string ChooseRaceUiModel::getProvinceConfirmNoText(Game &game)
 	return "No"; // @todo: get from ExeData
 }
 
-std::string ChooseRaceUiModel::getProvinceTooltipText(Game &game, int provinceID)
-{
-	// Get the race name associated with the province.
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const auto &pluralNames = exeData.races.pluralNames;
-	DebugAssertIndex(pluralNames, provinceID);
-	const std::string &raceName = pluralNames[provinceID];
-	return "Land of the " + raceName;
-}
-
 std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 {
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
@@ -378,27 +388,27 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 	segment = String::replace(segment, '\r', '\n');
 
 	const auto &charCreationState = game.getCharacterCreationState();
-	const int raceIndex = charCreationState.getRaceIndex();
+	const int raceIndex = charCreationState.raceIndex;
 
 	const auto &charCreationProvinceNames = exeData.locations.charCreationProvinceNames;
 	DebugAssertIndex(charCreationProvinceNames, raceIndex);
 	const std::string &provinceName = charCreationProvinceNames[raceIndex];
 
-	const auto &pluralRaceNames = exeData.races.pluralNames;
-	DebugAssertIndex(pluralRaceNames, raceIndex);
-	const std::string &pluralRaceName = pluralRaceNames[raceIndex];
+	const CharacterRaceLibrary &characterRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &characterRaceDefinition = characterRaceLibrary.getDefinition(raceIndex);
+	const std::string pluralRaceName = characterRaceDefinition.pluralName;
 
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.getClassDefID();
+	const int charClassDefID = charCreationState.classDefID;
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 	// Replace first %s with player class.
 	size_t index = segment.find("%s");
-	segment.replace(index, 2, charClassDef.getName());
+	segment.replace(index, 2, charClassDef.name);
 
 	// Replace second %s with player name.
 	index = segment.find("%s");
-	segment.replace(index, 2, charCreationState.getName());
+	segment.replace(index, 2, charCreationState.name);
 
 	// Replace third %s with province name.
 	index = segment.find("%s");
@@ -409,7 +419,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFirstText(Game &game)
 	segment.replace(index, 2, pluralRaceName);
 
 	// If player is female, replace "his" with "her".
-	if (!charCreationState.isMale())
+	if (!charCreationState.male)
 	{
 		index = segment.rfind("his");
 		segment.replace(index, 3, "her");
@@ -425,11 +435,11 @@ std::string ChooseRaceUiModel::getProvinceConfirmedSecondText(Game &game)
 	segment = String::replace(segment, '\r', '\n');
 
 	const auto &charCreationState = game.getCharacterCreationState();
-	const int raceIndex = charCreationState.getRaceIndex();
+	const int raceIndex = charCreationState.raceIndex;
 
 	// Get race description from TEMPLATE.DAT.
-	const auto &templateDat = TextAssetLibrary::getInstance().getTemplateDat();
-	constexpr std::array<int, 8> raceTemplateIDs =
+	const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;
+	constexpr int raceTemplateIDs[] =
 	{
 		1409, 1410, 1411, 1412, 1413, 1414, 1415, 1416
 	};
@@ -456,7 +466,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 
 	const auto &charCreationState = game.getCharacterCreationState();
 	const auto &charClassLibrary = CharacterClassLibrary::getInstance();
-	const int charClassDefID = charCreationState.getClassDefID();
+	const int charClassDefID = charCreationState.classDefID;
 	const auto &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 
 	const auto &preferredAttributes = exeData.charClasses.preferredAttributes;
@@ -469,7 +479,7 @@ std::string ChooseRaceUiModel::getProvinceConfirmedThirdText(Game &game)
 
 	// Replace second %s with class name.
 	index = segment.find("%s");
-	segment.replace(index, 2, charClassDef.getName());
+	segment.replace(index, 2, charClassDef.name);
 
 	return segment;
 }
@@ -483,11 +493,98 @@ std::string ChooseRaceUiModel::getProvinceConfirmedFourthText(Game &game)
 	return segment;
 }
 
+int ChooseAttributesUiModel::rollClassic(int n, ArenaRandom &random)
+{
+	auto throwXdY = [&random](int x, int y)
+	{
+		int total = 0;
+		for (int i = 0; i < x; i++)
+		{
+			total += 1 + (random.next() % y);
+		}
+
+		return total;
+	};
+
+	if (n <= 8)
+	{
+		return random.next() % n;
+	}
+
+	// Not fully understood but probably a normal distribution.
+	int test = n;
+	int x = 0, y = 0;
+	while (true)
+	{
+		if (test % 6 == 0)
+		{
+			x = test / 6;
+			y = 6;
+			break;
+		}
+		else if (test % 5 == 0)
+		{
+			x = test / 5;
+			y = 5;
+			break;
+		}
+		else if (test % 4 == 0)
+		{
+			x = test / 4;
+			y = 4;
+			break;
+		}
+		else
+		{
+			test++;
+		}
+	}
+
+	int value = 0;
+	do
+	{
+		value = throwXdY(x, y);
+	} while (value > n);
+
+	return value;
+}
+
+std::string ChooseAttributesUiModel::getPlayerHealth(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	const double maxHealth = static_cast<double>(charCreationState.maxHealth);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(maxHealth, maxHealth);
+}
+
+std::string ChooseAttributesUiModel::getPlayerStamina(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	const double maxStamina = static_cast<double>(charCreationState.maxStamina);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(maxStamina, maxStamina);
+}
+
+std::string ChooseAttributesUiModel::getPlayerSpellPoints(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	const double maxSpellPoints = static_cast<double>(charCreationState.maxSpellPoints);
+	return CharacterSheetUiModel::getStatusValueCurrentAndMaxString(maxSpellPoints, maxSpellPoints);
+}
+
+std::string ChooseAttributesUiModel::getPlayerGold(Game &game)
+{
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	return std::to_string(charCreationState.gold);
+}
+
 std::string ChooseAttributesUiModel::getInitialText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.distributeClassPoints;
 	text = String::replace(text, '\r', '\n');
+
+	// @temp show not implemented for attributes
+	text += "\n\n(gameplay functionality not implemented)";
+
 	return text;
 }
 
@@ -523,12 +620,12 @@ std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 	return text;
 }
 
-std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(Game &game)
+std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
 
-	auto &textureManager = game.getTextureManager();
+	auto &textureManager = game.textureManager;
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
@@ -537,15 +634,15 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	return TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(text, palette);
+	return TextRenderColorOverrideInfo::makeEntriesFromText(text, palette);
 }
 
-std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(Game &game)
+std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
-	
-	auto &textureManager = game.getTextureManager();
+
+	auto &textureManager = game.textureManager;
 	const std::string &paletteName = ArenaPaletteName::Default;
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
@@ -554,7 +651,14 @@ std::vector<TextRenderUtils::ColorOverrideInfo::Entry> ChooseAttributesUiModel::
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	return TextRenderUtils::ColorOverrideInfo::makeEntriesFromText(text, palette);
+	return TextRenderColorOverrideInfo::makeEntriesFromText(text, palette);
+}
+
+std::string ChooseAttributesUiModel::getBonusPointsRemainingText(Game &game)
+{
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string text = exeData.charCreation.chooseAttributesBonusPointsRemaining;
+	return text;
 }
 
 std::string ChooseAttributesUiModel::getAppearanceText(Game &game)

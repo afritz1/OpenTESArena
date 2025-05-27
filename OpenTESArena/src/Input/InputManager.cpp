@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <optional>
 #include <type_traits>
 
@@ -60,7 +61,7 @@ void InputManager::ListenerLookupEntry::init(ListenerType type, int index)
 	this->index = index;
 }
 
-void InputManager::InputActionListenerEntry::init(const std::string_view &actionName, const InputActionCallback &callback)
+void InputManager::InputActionListenerEntry::init(const std::string_view actionName, const InputActionCallback &callback)
 {
 	this->actionName = std::string(actionName);
 	this->callback = callback;
@@ -146,6 +147,18 @@ void InputManager::WindowResizedListenerEntry::reset()
 	this->enabled = false;
 }
 
+void InputManager::RenderTargetsResetListenerEntry::init(const RenderTargetsResetCallback &callback)
+{
+	this->callback = callback;
+	this->enabled = true;
+}
+
+void InputManager::RenderTargetsResetListenerEntry::reset()
+{
+	this->callback = []() { };
+	this->enabled = false;
+}
+
 void InputManager::TextInputListenerEntry::init(const TextInputCallback &callback)
 {
 	this->callback = callback;
@@ -162,6 +175,7 @@ InputManager::InputManager()
 	: mouseDelta(0, 0)
 {
 	this->nextListenerID = 0;
+	this->secondsSincePreviousCombatMousePosition = 0.0;
 }
 
 void InputManager::init()
@@ -256,7 +270,17 @@ bool InputManager::applicationExit(const SDL_Event &e) const
 
 bool InputManager::windowResized(const SDL_Event &e) const
 {
-	return (e.type == SDL_WINDOWEVENT) && (e.window.event == SDL_WINDOWEVENT_RESIZED);
+	return (e.type == SDL_WINDOWEVENT) && ((e.window.event == SDL_WINDOWEVENT_RESIZED) || (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED));
+}
+
+bool InputManager::renderTargetsReset(const SDL_Event &e) const
+{
+	return e.type == SDL_RENDER_TARGETS_RESET;
+}
+
+bool InputManager::renderDeviceReset(const SDL_Event &e) const
+{
+	return e.type == SDL_RENDER_DEVICE_RESET;
 }
 
 bool InputManager::isTextInput(const SDL_Event &e) const
@@ -264,9 +288,9 @@ bool InputManager::isTextInput(const SDL_Event &e) const
 	return e.type == SDL_TEXTINPUT;
 }
 
-InputManager::ListenerID InputManager::getNextListenerID()
+InputListenerID InputManager::getNextListenerID()
 {
-	ListenerID listenerID;
+	InputListenerID listenerID;
 	if (!this->freedListenerIDs.empty())
 	{
 		listenerID = this->freedListenerIDs.back();
@@ -293,6 +317,11 @@ Int2 InputManager::getMouseDelta() const
 	return this->mouseDelta;
 }
 
+Int2 InputManager::getPreviousCombatMousePosition() const
+{
+	return this->previousCombatMousePosition;
+}
+
 bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 {
 	const auto iter = std::find_if(this->inputActionMaps.begin(), this->inputActionMaps.end(),
@@ -314,8 +343,8 @@ bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 	}
 }
 
-template <typename EntryType, typename CallbackType>
-InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callback, ListenerType listenerType,
+template<typename EntryType, typename CallbackType>
+InputListenerID InputManager::addListenerInternal(CallbackType &&callback, ListenerType listenerType,
 	std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices)
 {
 	int insertIndex;
@@ -334,7 +363,7 @@ InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callba
 	EntryType &listenerEntry = listeners[insertIndex];
 	listenerEntry.init(callback);
 
-	const ListenerID listenerID = this->getNextListenerID();
+	const InputListenerID listenerID = this->getNextListenerID();
 
 	ListenerLookupEntry lookupEntry;
 	lookupEntry.init(listenerType, insertIndex);
@@ -343,8 +372,7 @@ InputManager::ListenerID InputManager::addListenerInternal(CallbackType &&callba
 	return listenerID;
 }
 
-InputManager::ListenerID InputManager::addInputActionListener(const std::string_view &actionName,
-	const InputActionCallback &callback)
+InputListenerID InputManager::addInputActionListener(const std::string_view actionName, const InputActionCallback &callback)
 {
 	int insertIndex;
 	if (!this->freedInputActionListenerIndices.empty())
@@ -362,7 +390,7 @@ InputManager::ListenerID InputManager::addInputActionListener(const std::string_
 	InputActionListenerEntry &listenerEntry = this->inputActionListeners[insertIndex];
 	listenerEntry.init(actionName, callback);
 
-	const ListenerID listenerID = this->getNextListenerID();
+	const InputListenerID listenerID = this->getNextListenerID();
 
 	ListenerLookupEntry lookupEntry;
 	lookupEntry.init(ListenerType::InputAction, insertIndex);
@@ -371,40 +399,52 @@ InputManager::ListenerID InputManager::addInputActionListener(const std::string_
 	return listenerID;
 }
 
-InputManager::ListenerID InputManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
+InputListenerID InputManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::MouseButtonChanged,
 		this->mouseButtonChangedListeners, this->freedMouseButtonChangedListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
+InputListenerID InputManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::MouseButtonHeld,
 		this->mouseButtonHeldListeners, this->freedMouseButtonHeldListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
+InputListenerID InputManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::MouseScrollChanged,
 		this->mouseScrollChangedListeners, this->freedMouseScrollChangedListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addMouseMotionListener(const MouseMotionCallback &callback)
+InputListenerID InputManager::addMouseMotionListener(const MouseMotionCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::MouseMotion,
 		this->mouseMotionListeners, this->freedMouseMotionListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addApplicationExitListener(const ApplicationExitCallback &callback)
+InputListenerID InputManager::addApplicationExitListener(const ApplicationExitCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::ApplicationExit,
 		this->applicationExitListeners, this->freedApplicationExitListenerIndices);
 }
 
-InputManager::ListenerID InputManager::addWindowResizedListener(const WindowResizedCallback &callback)
+InputListenerID InputManager::addWindowResizedListener(const WindowResizedCallback &callback)
 {
 	return this->addListenerInternal(callback, ListenerType::WindowResized,
 		this->windowResizedListeners, this->freedWindowResizedListenerIndices);
+}
+
+InputListenerID InputManager::addRenderTargetsResetListener(const RenderTargetsResetCallback &callback)
+{
+	return this->addListenerInternal(callback, ListenerType::RenderTargetsReset,
+		this->renderTargetsResetListeners, this->freedRenderTargetsResetListenerIndices);
+}
+
+InputListenerID InputManager::addTextInputListener(const TextInputCallback &callback)
+{
+	return this->addListenerInternal(callback, ListenerType::TextInput,
+		this->textInputListeners, this->freedTextInputListenerIndices);
 }
 
 void InputManager::setTextInputMode(bool active)
@@ -419,13 +459,7 @@ void InputManager::setTextInputMode(bool active)
 	}
 }
 
-InputManager::ListenerID InputManager::addTextInputListener(const TextInputCallback &callback)
-{
-	return this->addListenerInternal(callback, ListenerType::TextInput,
-		this->textInputListeners, this->freedTextInputListenerIndices);
-}
-
-void InputManager::removeListener(ListenerID id)
+void InputManager::removeListener(InputListenerID id)
 {
 	auto resetListenerEntry = [](auto &listeners, auto &freedIndices, int removeIndex)
 	{
@@ -472,6 +506,10 @@ void InputManager::removeListener(ListenerID id)
 		{
 			resetListenerEntry(this->windowResizedListeners, this->freedWindowResizedListenerIndices, index);
 		}
+		else if (listenerType == ListenerType::RenderTargetsReset)
+		{
+			resetListenerEntry(this->renderTargetsResetListeners, this->freedRenderTargetsResetListenerIndices, index);
+		}
 		else if (listenerType == ListenerType::TextInput)
 		{
 			resetListenerEntry(this->textInputListeners, this->freedTextInputListenerIndices, index);
@@ -492,7 +530,7 @@ void InputManager::removeListener(ListenerID id)
 	}
 }
 
-void InputManager::setListenerEnabled(ListenerID id, bool enabled)
+void InputManager::setListenerEnabled(InputListenerID id, bool enabled)
 {
 	const auto iter = this->listenerLookupEntries.find(id);
 	if (iter == this->listenerLookupEntries.end())
@@ -598,12 +636,12 @@ void InputManager::handleHeldInputs(Game &game, BufferView<const InputActionMap*
 				{
 					if (def.type == InputActionType::MouseButton)
 					{
-						const InputActionDefinition::MouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
+						const InputActionMouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
 						handleHeldMouseButton(mouseButtonDef.type);
 					}
 					else if (def.type == InputActionType::Key)
 					{
-						const InputActionDefinition::KeyDefinition &keyDef = def.keyDef;
+						const InputActionKeyDefinition &keyDef = def.keyDef;
 						const SDL_Scancode scancode = SDL_GetScancodeFromKey(keyDef.keycode);
 						const bool isKeyHeld = (keyboardState[scancode] != 0) && (keyDef.keymod == keyboardMod);
 						if (isKeyHeld)
@@ -627,8 +665,15 @@ void InputManager::handleHeldInputs(Game &game, BufferView<const InputActionMap*
 void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> buttonProxies,
 	const std::function<void()> &onFinishedProcessingEvent)
 {
-	// @todo: don't save mouse delta as member, just keep local variable here once we can.
 	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
+
+	constexpr double targetSecondsSincePreviousMousePosition = 1.0 / 30.0; // 30 fps weapon swing snapshots
+	this->secondsSincePreviousCombatMousePosition += dt;
+	if (this->secondsSincePreviousCombatMousePosition >= targetSecondsSincePreviousMousePosition)
+	{
+		SDL_GetMouseState(&this->previousCombatMousePosition.x, &this->previousCombatMousePosition.y);
+		this->secondsSincePreviousCombatMousePosition = std::fmod(this->secondsSincePreviousCombatMousePosition, targetSecondsSincePreviousMousePosition);
+	}
 
 	// Cache active maps and listeners before looping over them since callbacks can change which ones are active.
 	std::vector<const InputActionMap*> activeMaps;
@@ -694,6 +739,15 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 		}
 	}
 
+	std::vector<const RenderTargetsResetListenerEntry*> enabledRenderTargetsResetListeners;
+	for (const RenderTargetsResetListenerEntry &entry : this->renderTargetsResetListeners)
+	{
+		if (entry.enabled)
+		{
+			enabledRenderTargetsResetListeners.emplace_back(&entry);
+		}
+	}
+
 	std::vector<const TextInputListenerEntry*> enabledTextInputListeners;
 	for (const TextInputListenerEntry &entry : this->textInputListeners)
 	{
@@ -718,10 +772,10 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 	{
 		if (this->isKeyEvent(e))
 		{
-			static_assert(std::is_same_v<InputActionDefinition::KeyDefinition::Keymod, decltype(e.key.keysym.mod)>);
+			static_assert(std::is_same_v<KeyDefinitionKeymod, decltype(e.key.keysym.mod)>);
 
 			const SDL_Keycode keycode = e.key.keysym.sym;
-			const InputActionDefinition::KeyDefinition::Keymod keymod = GetFilteredSdlKeymod(e.key.keysym.mod);
+			const KeyDefinitionKeymod keymod = GetFilteredSdlKeymod(e.key.keysym.mod);
 			const bool isKeyDown = e.type == SDL_KEYDOWN;
 			const bool isKeyUp = e.type == SDL_KEYUP;
 
@@ -736,7 +790,7 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 
 						if ((def.type == InputActionType::Key) && matchesStateType)
 						{
-							const InputActionDefinition::KeyDefinition &keyDef = def.keyDef;
+							const InputActionKeyDefinition &keyDef = def.keyDef;
 
 							// Handle the keymod as an exact comparison; if the definition specifies LCtrl and RCtrl,
 							// both must be held, so combinations like Ctrl + Alt + Delete are possible.
@@ -775,11 +829,12 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 						const bool isButtonActive = !buttonProxy.isActiveFunc || buttonProxy.isActiveFunc();
 						if (isButtonActive)
 						{
-							const Int2 classicMousePos = game.getRenderer().nativeToOriginal(mousePosition);
+							const Int2 classicMousePos = game.renderer.nativeToOriginal(mousePosition);
 
 							DebugAssert(buttonProxy.rectFunc);
 							const Rect buttonRect = buttonProxy.rectFunc();
-							const bool isValidMouseSelection = buttonRect.contains(classicMousePos);
+							const Rect buttonParentRect = buttonProxy.parentRect;
+							const bool isValidMouseSelection = buttonRect.contains(classicMousePos) && (buttonParentRect.isEmpty() || buttonParentRect.contains(classicMousePos));
 							const bool matchesButtonType = *buttonType == buttonProxy.buttonType;
 							if (isValidMouseSelection && matchesButtonType)
 							{
@@ -804,7 +859,7 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 
 						if ((def.type == InputActionType::MouseButton) && matchesStateType)
 						{
-							const InputActionDefinition::MouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
+							const InputActionMouseButtonDefinition &mouseButtonDef = def.mouseButtonDef;
 							if (mouseButtonDef.type == *buttonType)
 							{
 								for (const InputActionListenerEntry *entry : enabledInputActionListeners)
@@ -854,7 +909,7 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 
 						if ((def.type == InputActionType::MouseWheel) && matchesStateType)
 						{
-							const InputActionDefinition::MouseScrollDefinition &mouseScrollDef = def.mouseScrollDef;
+							const InputActionMouseScrollDefinition &mouseScrollDef = def.mouseScrollDef;
 							if (mouseScrollDef.type == *scrollType)
 							{
 								for (const InputActionListenerEntry *entry : enabledInputActionListeners)
@@ -893,6 +948,17 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 			{
 				entry->callback(width, height);
 			}
+		}
+		else if (this->renderTargetsReset(e))
+		{
+			for (const RenderTargetsResetListenerEntry *entry : enabledRenderTargetsResetListeners)
+			{
+				entry->callback();
+			}
+		}
+		else if (this->renderDeviceReset(e))
+		{
+			DebugLogError("Render device reset not implemented.");
 		}
 		else if (this->isTextInput(e))
 		{

@@ -197,65 +197,6 @@ void ArenaMeshUtils::WriteWallRendererIndexBuffers(BufferView<int32_t> outOpaque
 	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.begin());
 }
 
-void ArenaMeshUtils::WriteWallCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteWallUniqueGeometryBuffers(outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteWallCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Wall;
-
-	// In index tuple format (position XYZ, normal XYZ, position XYZ, ...).
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// X=0
-		2, 0,
-		0, 0,
-		4, 0,
-		4, 0,
-		6, 0,
-		2, 0,
-		// X=1
-		7, 1,
-		5, 1,
-		1, 1,
-		1, 1,
-		3, 1,
-		7, 1,
-		// Y=0
-		3, 2,
-		7, 2,
-		6, 2,
-		6, 2,
-		2, 2,
-		3, 2,
-		// Y=1
-		4, 3,
-		0, 3,
-		1, 3,
-		1, 3,
-		5, 3,
-		4, 3,
-		// Z=0
-		2, 4,
-		0, 4,
-		1, 4,
-		1, 4,
-		3, 4,
-		2, 4,
-		// Z=1
-		7, 5,
-		5, 5,
-		4, 5,
-		4, 5,
-		6, 5,
-		7, 5
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
-}
-
 void ArenaMeshUtils::WriteFloorUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Floor;
@@ -329,30 +270,6 @@ void ArenaMeshUtils::WriteFloorRendererIndexBuffers(BufferView<int32_t> outOpaqu
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
-void ArenaMeshUtils::WriteFloorCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteFloorUniqueGeometryBuffers(outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteFloorCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Floor;
-
-	// In index tuple format (position XYZ, normal XYZ, position XYZ, ...).
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// Y=1
-		2, 0,
-		3, 0,
-		1, 0,
-		1, 0,
-		0, 0,
-		2, 0
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
-}
-
 void ArenaMeshUtils::WriteCeilingUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Ceiling;
@@ -424,30 +341,6 @@ void ArenaMeshUtils::WriteCeilingRendererIndexBuffers(BufferView<int32_t> outOpa
 	};
 
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
-}
-
-void ArenaMeshUtils::WriteCeilingCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteCeilingUniqueGeometryBuffers(outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteCeilingCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Ceiling;
-
-	// In index tuple format (position XYZ, normal XYZ, position XYZ, ...).
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// Y=1
-		0, 0,
-		1, 0,
-		3, 0,
-		3, 0,
-		2, 0,
-		0, 0
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outVertices,
@@ -604,8 +497,7 @@ void ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(double yOffset, double y
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outAlphaTestedSideIndices,
-	BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices)
+void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Raised;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 2);
@@ -641,69 +533,9 @@ void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outAlph
 		14, 15, 12
 	};
 
-	std::copy(sideIndices.begin(), sideIndices.end(), outAlphaTestedSideIndices.begin());
-	std::copy(bottomIndices.begin(), bottomIndices.end(), outOpaqueBottomIndices.begin());
-	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.begin());
-}
-
-void ArenaMeshUtils::WriteRaisedCollisionGeometryBuffers(double yOffset, double ySize, BufferView<double> outVertices,
-	BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteRaisedUniqueGeometryBuffers(yOffset, ySize, outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteRaisedCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Raised;
-
-	// In index tuple format (position XYZ, normal XYZ, position XYZ, ...).
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// X=0
-		2, 0,
-		0, 0,
-		4, 0,
-		4, 0,
-		6, 0,
-		2, 0,
-		// X=1
-		7, 1,
-		5, 1,
-		1, 1,
-		1, 1,
-		3, 1,
-		7, 1,
-		// Y=0
-		3, 2,
-		7, 2,
-		6, 2,
-		6, 2,
-		2, 2,
-		3, 2,
-		// Y=1
-		4, 3,
-		0, 3,
-		1, 3,
-		1, 3,
-		5, 3,
-		4, 3,
-		// Z=0
-		2, 4,
-		0, 4,
-		1, 4,
-		1, 4,
-		3, 4,
-		2, 4,
-		// Z=1
-		7, 5,
-		5, 5,
-		4, 5,
-		4, 5,
-		6, 5,
-		7, 5
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
+	std::copy(sideIndices.begin(), sideIndices.end(), outSideIndices.begin());
+	std::copy(bottomIndices.begin(), bottomIndices.end(), outBottomIndices.begin());
+	std::copy(topIndices.begin(), topIndices.end(), outTopIndices.begin());
 }
 
 void ArenaMeshUtils::WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals)
@@ -861,36 +693,6 @@ void ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(BufferView<int32_t> outOp
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
-void ArenaMeshUtils::WriteDiagonalCollisionGeometryBuffers(bool type1, BufferView<double> outVertices, BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteDiagonalUniqueGeometryBuffers(type1, outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteDiagonalCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Diagonal;
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// Front
-		0, 0,
-		1, 0,
-		2, 0,
-		2, 0,
-		3, 0,
-		0, 0,
-
-		// Back (same as front due to there only being four vertices per diagonal variant)
-		0, 1,
-		1, 1,
-		2, 1,
-		2, 1,
-		3, 1,
-		0, 1
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
-}
-
 void ArenaMeshUtils::WriteTransparentWallUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::TransparentWall;
@@ -1028,51 +830,6 @@ void ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(BufferView<int32_t
 	};
 
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
-}
-
-void ArenaMeshUtils::WriteTransparentWallCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteTransparentWallUniqueGeometryBuffers(outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteTransparentWallCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::TransparentWall;
-
-	// In index tuple format (position XYZ, normal XYZ, position XYZ, ...).
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// X=0
-		2, 0,
-		0, 0,
-		4, 0,
-		4, 0,
-		6, 0,
-		2, 0,
-		// X=1
-		7, 1,
-		5, 1,
-		1, 1,
-		1, 1,
-		3, 1,
-		7, 1,
-		// Z=0
-		3, 2,
-		7, 2,
-		6, 2,
-		6, 2,
-		2, 2,
-		3, 2,
-		// Z=1
-		4, 3,
-		0, 3,
-		1, 3,
-		1, 3,
-		5, 3,
-		4, 3
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
 void ArenaMeshUtils::WriteEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outVertices,
@@ -1403,37 +1160,6 @@ void ArenaMeshUtils::WriteEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaT
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
 }
 
-void ArenaMeshUtils::WriteEdgeCollisionGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outVertices,
-	BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteEdgeUniqueGeometryBuffers(facing, yOffset, outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteEdgeCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Edge;
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// Front
-		0, 0,
-		1, 0,
-		2, 0,
-		2, 0,
-		3, 0,
-		0, 0,
-
-		// Back
-		3, 1,
-		2, 1,
-		1, 1,
-		1, 1,
-		0, 1,
-		3, 1
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
-}
-
 void ArenaMeshUtils::WriteChasmUniqueGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices,
 	BufferView<double> outNormals)
 {
@@ -1631,74 +1357,6 @@ void ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(ChasmWallIndexBuffer *ou
 	}
 }
 
-void ArenaMeshUtils::WriteChasmCollisionGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outVertices, BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteChasmUniqueGeometryBuffers(chasmType, outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteChasmFloorCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Chasm;
-
-	// In index tuple format (position XYZ, normal XYZ, position XYZ, ...).
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// Y=0
-		3, 2,
-		7, 2,
-		6, 2,
-		6, 2,
-		2, 2,
-		3, 2
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
-}
-
-void ArenaMeshUtils::WriteChasmWallCollisionIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
-	ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices)
-{
-	if (outNorthIndices != nullptr) // X=0
-	{
-		(*outNorthIndices)[0] = 4;
-		(*outNorthIndices)[1] = 5;
-		(*outNorthIndices)[2] = 6;
-		(*outNorthIndices)[3] = 6;
-		(*outNorthIndices)[4] = 7;
-		(*outNorthIndices)[5] = 4;
-	}
-
-	if (outEastIndices != nullptr) // Z=0
-	{
-		(*outEastIndices)[0] = 12;
-		(*outEastIndices)[1] = 13;
-		(*outEastIndices)[2] = 14;
-		(*outEastIndices)[3] = 14;
-		(*outEastIndices)[4] = 15;
-		(*outEastIndices)[5] = 12;
-	}
-
-	if (outSouthIndices != nullptr) // X=1
-	{
-		(*outSouthIndices)[0] = 8;
-		(*outSouthIndices)[1] = 9;
-		(*outSouthIndices)[2] = 10;
-		(*outSouthIndices)[3] = 10;
-		(*outSouthIndices)[4] = 11;
-		(*outSouthIndices)[5] = 8;
-	}
-
-	if (outWestIndices != nullptr) // Z=1
-	{
-		(*outWestIndices)[0] = 16;
-		(*outWestIndices)[1] = 17;
-		(*outWestIndices)[2] = 18;
-		(*outWestIndices)[3] = 18;
-		(*outWestIndices)[4] = 19;
-		(*outWestIndices)[5] = 16;
-	}
-}
-
 void ArenaMeshUtils::WriteDoorUniqueGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
 {
 	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Door;
@@ -1784,49 +1442,4 @@ void ArenaMeshUtils::WriteDoorRendererIndexBuffers(BufferView<int32_t> outAlphaT
 	};
 
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
-}
-
-void ArenaMeshUtils::WriteDoorCollisionGeometryBuffers(BufferView<double> outVertices, BufferView<double> outNormals)
-{
-	ArenaMeshUtils::WriteDoorUniqueGeometryBuffers(outVertices, outNormals);
-}
-
-void ArenaMeshUtils::WriteDoorCollisionIndexBuffers(BufferView<int32_t> outIndices)
-{
-	constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Door;
-
-	// In index tuple format (position XYZ, normal XYZ, position XYZ, ...).
-	constexpr std::array<int32_t, GetCollisionIndexCount(voxelType)> indices =
-	{
-		// X=0
-		2, 0,
-		0, 0,
-		4, 0,
-		4, 0,
-		6, 0,
-		2, 0,
-		// X=1
-		7, 1,
-		5, 1,
-		1, 1,
-		1, 1,
-		3, 1,
-		7, 1,
-		// Z=0
-		3, 2,
-		1, 2,
-		0, 2,
-		0, 2,
-		2, 2,
-		3, 2,
-		// Z=1
-		6, 3,
-		4, 3,
-		5, 3,
-		5, 3,
-		7, 3,
-		6, 3
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }

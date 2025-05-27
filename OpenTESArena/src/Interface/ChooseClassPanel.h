@@ -5,20 +5,19 @@
 #include <vector>
 
 #include "Panel.h"
-#include "../Entities/CharacterClassDefinition.h"
+#include "../Stats/CharacterClassDefinition.h"
 #include "../UI/Button.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextBox.h"
 
-// The original class list design in Arena is pretty bad. It's an alphabetical 
-// list that says nothing about the classes (thus requiring the manual for 
-// information). I think it's better to have tooltips.
-
-class ExeData;
-class Rect;
 class Renderer;
 class Surface;
 
+struct ExeData;
+struct Rect;
+
+// The original class list design in Arena is pretty bad. It's an alphabetical list that says nothing
+// about the classes (thus requiring the manual for information). I think it's better to have tooltips.
 class ChooseClassPanel : public Panel
 {
 private:

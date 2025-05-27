@@ -3,16 +3,14 @@
 
 #include <cstdint>
 
-// A thin SDL_Surface wrapper.
-
-// The usage of SDL_Surfaces in the program is falling in favor of SDL_Textures.
-// SDL_Surfaces are really just being used as scratch images which are then converted 
-// to a hardware texture for rendering.
-
-class Rect;
-
+struct Rect;
 struct SDL_Surface;
 
+// A thin SDL_Surface wrapper.
+//
+// The usage of SDL_Surfaces in the engine is falling in favor of SDL_Textures.
+// SDL_Surfaces are really just being used as scratch images which are then converted 
+// to a hardware texture for rendering.
 class Surface
 {
 private:

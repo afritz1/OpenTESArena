@@ -10,94 +10,96 @@
 
 #include "components/utilities/Buffer3D.h"
 
+// Points to various definitions in a level info definition.
+using LevelVoxelShapeDefID = int;
+using LevelVoxelTextureDefID = int;
+using LevelVoxelShadingDefID = int;
+using LevelVoxelTraitsDefID = int;
+using LevelVoxelEntityDefID = int;
+using LevelVoxelLockDefID = int;
+using LevelVoxelTriggerDefID = int;
+using LevelVoxelBuildingNameID = int;
+using LevelVoxelTransitionDefID = int;
+using LevelVoxelDoorDefID = int;
+using LevelVoxelChasmDefID = int;
+
+struct LevelEntityPlacementDefinition
+{
+	LevelVoxelEntityDefID id;
+	std::vector<WorldDouble2> positions;
+
+	LevelEntityPlacementDefinition(LevelVoxelEntityDefID id, std::vector<WorldDouble2> &&positions);
+};
+
+struct LevelLockPlacementDefinition
+{
+	LevelVoxelLockDefID id;
+	std::vector<WorldInt3> positions;
+
+	LevelLockPlacementDefinition(LevelVoxelLockDefID id, std::vector<WorldInt3> &&positions);
+};
+
+struct LevelTriggerPlacementDefinition
+{
+	LevelVoxelTriggerDefID id;
+	std::vector<WorldInt3> positions;
+
+	LevelTriggerPlacementDefinition(LevelVoxelTriggerDefID id, std::vector<WorldInt3> &&positions);
+};
+
+struct LevelTransitionPlacementDefinition
+{
+	LevelVoxelTransitionDefID id;
+	std::vector<WorldInt3> positions; // Can also be in EntityDefinitions.
+
+	LevelTransitionPlacementDefinition(LevelVoxelTransitionDefID id, std::vector<WorldInt3> &&positions);
+};
+
+struct LevelBuildingNamePlacementDefinition
+{
+	LevelVoxelBuildingNameID id;
+	std::vector<WorldInt3> positions;
+
+	LevelBuildingNamePlacementDefinition(LevelVoxelBuildingNameID id, std::vector<WorldInt3> &&positions);
+};
+
+struct LevelDoorPlacementDefinition
+{
+	LevelVoxelDoorDefID id;
+	std::vector<WorldInt3> positions;
+
+	LevelDoorPlacementDefinition(LevelVoxelDoorDefID id, std::vector<WorldInt3> &&positions);
+};
+
+struct LevelChasmPlacementDefinition
+{
+	LevelVoxelChasmDefID id;
+	std::vector<WorldInt3> positions;
+
+	LevelChasmPlacementDefinition(LevelVoxelChasmDefID id, std::vector<WorldInt3> &&positions);
+};
+
 // A single unbaked level of a map with IDs pointing to voxels, entities, etc. defined in a level
 // info definition. This can be for an interior level, whole city, or wilderness block.
-
 class LevelDefinition
 {
-public:
-	// Points to various definitions in a level info definition.
-	using VoxelMeshDefID = int;
-	using VoxelTextureDefID = int;
-	using VoxelTraitsDefID = int;
-	using EntityDefID = int;
-	using LockDefID = int;
-	using TriggerDefID = int;
-	using BuildingNameID = int;
-	using TransitionDefID = int;
-	using DoorDefID = int;
-	using ChasmDefID = int;
-
-	struct EntityPlacementDef
-	{
-		EntityDefID id;
-		std::vector<WorldDouble3> positions;
-
-		EntityPlacementDef(EntityDefID id, std::vector<WorldDouble3> &&positions);
-	};
-
-	struct LockPlacementDef
-	{
-		LockDefID id;
-		std::vector<WorldInt3> positions;
-
-		LockPlacementDef(LockDefID id, std::vector<WorldInt3> &&positions);
-	};
-
-	struct TriggerPlacementDef
-	{
-		TriggerDefID id;
-		std::vector<WorldInt3> positions;
-
-		TriggerPlacementDef(TriggerDefID id, std::vector<WorldInt3> &&positions);
-	};
-
-	struct TransitionPlacementDef
-	{
-		TransitionDefID id;
-		std::vector<WorldInt3> positions; // Can also be in EntityDefinitions.
-
-		TransitionPlacementDef(TransitionDefID id, std::vector<WorldInt3> &&positions);
-	};
-
-	struct BuildingNamePlacementDef
-	{
-		BuildingNameID id;
-		std::vector<WorldInt3> positions;
-
-		BuildingNamePlacementDef(BuildingNameID id, std::vector<WorldInt3> &&positions);
-	};
-
-	struct DoorPlacementDef
-	{
-		DoorDefID id;
-		std::vector<WorldInt3> positions;
-
-		DoorPlacementDef(DoorDefID id, std::vector<WorldInt3> &&positions);
-	};
-
-	struct ChasmPlacementDef
-	{
-		ChasmDefID id;
-		std::vector<WorldInt3> positions;
-
-		ChasmPlacementDef(ChasmDefID id, std::vector<WorldInt3> &&positions);
-	};
 private:
-	Buffer3D<VoxelMeshDefID> voxelMeshIDs;
-	Buffer3D<VoxelTextureDefID> voxelTextureIDs;
-	Buffer3D<VoxelTraitsDefID> voxelTraitsIDs;
-	VoxelMeshDefID floorReplacementMeshDefID;
-	VoxelTextureDefID floorReplacementTextureDefID;
-	VoxelTraitsDefID floorReplacementTraitsDefID;
-	ChasmDefID floorReplacementChasmDefID;
-	std::vector<EntityPlacementDef> entityPlacementDefs;
-	std::vector<LockPlacementDef> lockPlacementDefs;
-	std::vector<TriggerPlacementDef> triggerPlacementDefs;
-	std::vector<TransitionPlacementDef> transitionPlacementDefs;
-	std::vector<BuildingNamePlacementDef> buildingNamePlacementDefs;
-	std::vector<DoorPlacementDef> doorPlacementDefs;
-	std::vector<ChasmPlacementDef> chasmPlacementDefs;
+	Buffer3D<LevelVoxelShapeDefID> voxelShapeIDs;
+	Buffer3D<LevelVoxelTextureDefID> voxelTextureIDs;
+	Buffer3D<LevelVoxelShadingDefID> voxelShadingIDs;
+	Buffer3D<LevelVoxelTraitsDefID> voxelTraitsIDs;
+	LevelVoxelShapeDefID floorReplacementShapeDefID;
+	LevelVoxelTextureDefID floorReplacementTextureDefID;
+	LevelVoxelShadingDefID floorReplacementShadingDefID;
+	LevelVoxelTraitsDefID floorReplacementTraitsDefID;
+	LevelVoxelChasmDefID floorReplacementChasmDefID;
+	std::vector<LevelEntityPlacementDefinition> entityPlacementDefs;
+	std::vector<LevelLockPlacementDefinition> lockPlacementDefs;
+	std::vector<LevelTriggerPlacementDefinition> triggerPlacementDefs;
+	std::vector<LevelTransitionPlacementDefinition> transitionPlacementDefs;
+	std::vector<LevelBuildingNamePlacementDefinition> buildingNamePlacementDefs;
+	std::vector<LevelDoorPlacementDefinition> doorPlacementDefs;
+	std::vector<LevelChasmPlacementDefinition> chasmPlacementDefs;
 public:
 	LevelDefinition();
 
@@ -107,44 +109,48 @@ public:
 	int getHeight() const;
 	WEInt getDepth() const;
 
-	VoxelMeshDefID getVoxelMeshID(SNInt x, int y, WEInt z) const;
-	VoxelTextureDefID getVoxelTextureID(SNInt x, int y, WEInt z) const;
-	VoxelTraitsDefID getVoxelTraitsID(SNInt x, int y, WEInt z) const;
-	void setVoxelMeshID(SNInt x, int y, WEInt z, VoxelMeshDefID id);
-	void setVoxelTextureID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
-	void setVoxelTraitsID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
+	LevelVoxelShapeDefID getVoxelShapeID(SNInt x, int y, WEInt z) const;
+	LevelVoxelTextureDefID getVoxelTextureID(SNInt x, int y, WEInt z) const;
+	LevelVoxelShadingDefID getVoxelShadingID(SNInt x, int y, WEInt z) const;
+	LevelVoxelTraitsDefID getVoxelTraitsID(SNInt x, int y, WEInt z) const;
+	void setVoxelShapeID(SNInt x, int y, WEInt z, LevelVoxelShapeDefID id);
+	void setVoxelTextureID(SNInt x, int y, WEInt z, LevelVoxelTextureDefID id);
+	void setVoxelShadingID(SNInt x, int y, WEInt z, LevelVoxelShadingDefID id);
+	void setVoxelTraitsID(SNInt x, int y, WEInt z, LevelVoxelTraitsDefID id);
 
-	VoxelMeshDefID getFloorReplacementMeshDefID() const;
-	VoxelTextureDefID getFloorReplacementTextureDefID() const;
-	VoxelTraitsDefID getFloorReplacementTraitsDefID() const;
-	ChasmDefID getFloorReplacementChasmDefID() const;
-	void setFloorReplacementMeshDefID(VoxelMeshDefID id);
-	void setFloorReplacementTextureDefID(VoxelTextureDefID id);
-	void setFloorReplacementTraitsDefID(VoxelTraitsDefID id);
-	void setFloorReplacementChasmDefID(ChasmDefID id);
+	LevelVoxelShapeDefID getFloorReplacementShapeDefID() const;
+	LevelVoxelTextureDefID getFloorReplacementTextureDefID() const;
+	LevelVoxelShadingDefID getFloorReplacementShadingDefID() const;
+	LevelVoxelTraitsDefID getFloorReplacementTraitsDefID() const;
+	LevelVoxelChasmDefID getFloorReplacementChasmDefID() const;
+	void setFloorReplacementShapeDefID(LevelVoxelShapeDefID id);
+	void setFloorReplacementTextureDefID(LevelVoxelTextureDefID id);
+	void setFloorReplacementShadingDefID(LevelVoxelShadingDefID id);
+	void setFloorReplacementTraitsDefID(LevelVoxelTraitsDefID id);
+	void setFloorReplacementChasmDefID(LevelVoxelChasmDefID id);
 
 	int getEntityPlacementDefCount() const;
-	const EntityPlacementDef &getEntityPlacementDef(int index) const;
+	const LevelEntityPlacementDefinition &getEntityPlacementDef(int index) const;
 	int getLockPlacementDefCount() const;
-	const LockPlacementDef &getLockPlacementDef(int index) const;
+	const LevelLockPlacementDefinition &getLockPlacementDef(int index) const;
 	int getTriggerPlacementDefCount() const;
-	const TriggerPlacementDef &getTriggerPlacementDef(int index) const;
+	const LevelTriggerPlacementDefinition &getTriggerPlacementDef(int index) const;
 	int getTransitionPlacementDefCount() const;
-	const TransitionPlacementDef &getTransitionPlacementDef(int index) const;
+	const LevelTransitionPlacementDefinition &getTransitionPlacementDef(int index) const;
 	int getBuildingNamePlacementDefCount() const;
-	const BuildingNamePlacementDef &getBuildingNamePlacementDef(int index) const;
+	const LevelBuildingNamePlacementDefinition &getBuildingNamePlacementDef(int index) const;
 	int getDoorPlacementDefCount() const;
-	const DoorPlacementDef &getDoorPlacementDef(int index) const;
+	const LevelDoorPlacementDefinition &getDoorPlacementDef(int index) const;
 	int getChasmPlacementDefCount() const;
-	const ChasmPlacementDef &getChasmPlacementDef(int index) const;
+	const LevelChasmPlacementDefinition &getChasmPlacementDef(int index) const;
 
-	void addEntity(EntityDefID id, const WorldDouble3 &position);
-	void addLock(LockDefID id, const WorldInt3 &position);
-	void addTrigger(TriggerDefID id, const WorldInt3 &position);
-	void addTransition(TransitionDefID id, const WorldInt3 &position);
-	void addBuildingName(BuildingNameID id, const WorldInt3 &position);
-	void addDoor(DoorDefID id, const WorldInt3 &position);
-	void addChasm(ChasmDefID id, const WorldInt3 &position);
+	void addEntity(LevelVoxelEntityDefID id, const WorldDouble2 &position);
+	void addLock(LevelVoxelLockDefID id, const WorldInt3 &position);
+	void addTrigger(LevelVoxelTriggerDefID id, const WorldInt3 &position);
+	void addTransition(LevelVoxelTransitionDefID id, const WorldInt3 &position);
+	void addBuildingName(LevelVoxelBuildingNameID id, const WorldInt3 &position);
+	void addDoor(LevelVoxelDoorDefID id, const WorldInt3 &position);
+	void addChasm(LevelVoxelChasmDefID id, const WorldInt3 &position);
 };
 
 #endif

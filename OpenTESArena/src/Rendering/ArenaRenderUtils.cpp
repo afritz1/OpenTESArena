@@ -4,10 +4,11 @@
 #include "ArenaRenderUtils.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
-#include "../Game/ArenaClockUtils.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Math/Vector4.h"
+#include "../Time/ArenaClockUtils.h"
+#include "../Time/ClockLibrary.h"
 #include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
@@ -26,33 +27,39 @@ double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType, 
 			return 0.0; // This assumes it is during the daytime.
 		}
 
-		const double clockPreciseSeconds = clock.getPreciseTotalSeconds();
+		const ClockLibrary &clockLibrary = ClockLibrary::getInstance();
 
 		// Time ranges where the ambient light changes. The start times are inclusive, and the end times are exclusive.
-		const double startBrighteningTime = ArenaClockUtils::AmbientStartBrightening.getPreciseTotalSeconds();
-		const double endBrighteningTime = ArenaClockUtils::AmbientEndBrightening.getPreciseTotalSeconds();
-		const double startDimmingTime = ArenaClockUtils::AmbientStartDimming.getPreciseTotalSeconds();
-		const double endDimmingTime = ArenaClockUtils::AmbientEndDimming.getPreciseTotalSeconds();
+		const Clock &startBrighteningClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningStart);
+		const Clock &endBrighteningClock = clockLibrary.getClock(ArenaClockUtils::AmbientBrighteningEnd);
+		const Clock &startDimmingClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingStart);
+		const Clock &endDimmingClock = clockLibrary.getClock(ArenaClockUtils::AmbientDimmingEnd);
+		const double startBrighteningTime = startBrighteningClock.getTotalSeconds();
+		const double endBrighteningTime = endBrighteningClock.getTotalSeconds();
+		const double startDimmingTime = startDimmingClock.getTotalSeconds();
+		const double endDimmingTime = endDimmingClock.getTotalSeconds();
+
+		const double clockTime = clock.getTotalSeconds();
 
 		constexpr double minAmbient = 0.0;
 		constexpr double maxAmbient = 1.0;
 
 		double ambient;
-		if ((clockPreciseSeconds >= endBrighteningTime) && (clockPreciseSeconds < startDimmingTime))
+		if ((clockTime >= endBrighteningTime) && (clockTime < startDimmingTime))
 		{
 			// Daytime ambient.
 			ambient = maxAmbient;
 		}
-		else if ((clockPreciseSeconds >= startBrighteningTime) && (clockPreciseSeconds < endBrighteningTime))
+		else if ((clockTime >= startBrighteningTime) && (clockTime < endBrighteningTime))
 		{
 			// Interpolate brightening light (in the morning).
-			const double timePercent = (clockPreciseSeconds - startBrighteningTime) / (endBrighteningTime - startBrighteningTime);
+			const double timePercent = (clockTime - startBrighteningTime) / (endBrighteningTime - startBrighteningTime);
 			ambient = minAmbient + ((maxAmbient - minAmbient) * timePercent);
 		}
-		else if ((clockPreciseSeconds >= startDimmingTime) && (clockPreciseSeconds < endDimmingTime))
+		else if ((clockTime >= startDimmingTime) && (clockTime < endDimmingTime))
 		{
 			// Interpolate dimming light (in the evening).
-			const double timePercent = (clockPreciseSeconds - startDimmingTime) / (endDimmingTime - startDimmingTime);
+			const double timePercent = (clockTime - startDimmingTime) / (endDimmingTime - startDimmingTime);
 			ambient = maxAmbient + ((minAmbient - maxAmbient) * timePercent);
 		}
 		else
@@ -108,7 +115,7 @@ bool ArenaRenderUtils::tryMakeFogMatrix(int zeroedRow, Random &random, TextureMa
 	// The fog texture is 16 bits per pixel but it's expanded to 32-bit so the engine doesn't have to support
 	// another texture builder format only used here.
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	const TextureBuilder::TrueColorTexture &texture = textureBuilder.getTrueColor();
+	const TextureBuilderTrueColorTexture &texture = textureBuilder.trueColorTexture;
 	const Buffer2D<uint32_t> &texels = texture.texels;
 	const uint32_t *pixelMaxPtr = std::max_element(texels.begin(), texels.end());
 	const uint8_t pixelMax = static_cast<uint8_t>((*pixelMaxPtr) >> 8);

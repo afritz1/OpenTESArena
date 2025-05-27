@@ -1,14 +1,21 @@
 #ifndef SCENE_MANAGER_H
 #define SCENE_MANAGER_H
 
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
+
 #include "ChunkManager.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
-#include "../Rendering/RenderChunkManager.h"
+#include "../Entities/EntityVisibilityChunkManager.h"
+#include "../Rendering/RenderEntityChunkManager.h"
+#include "../Rendering/RenderLightChunkManager.h"
 #include "../Rendering/RenderSkyManager.h"
 #include "../Rendering/RenderTextureUtils.h"
+#include "../Rendering/RenderVoxelChunkManager.h"
 #include "../Rendering/RenderWeatherManager.h"
 #include "../Sky/SkyInstance.h"
+#include "../Sky/SkyVisibilityManager.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelVisibilityChunkManager.h"
 
@@ -25,10 +32,14 @@ struct SceneManager
 	EntityChunkManager entityChunkManager;
 	CollisionChunkManager collisionChunkManager;
 	VoxelVisibilityChunkManager voxelVisChunkManager;
-	RenderChunkManager renderChunkManager;
+	EntityVisibilityChunkManager entityVisChunkManager;
+	RenderVoxelChunkManager renderVoxelChunkManager;
+	RenderEntityChunkManager renderEntityChunkManager;
+	RenderLightChunkManager renderLightChunkManager;
 
 	// Game world systems not tied to chunks.
 	SkyInstance skyInstance;
+	SkyVisibilityManager skyVisManager;
 	RenderSkyManager renderSkyManager;
 	RenderWeatherManager renderWeatherManager;
 
@@ -42,28 +53,8 @@ struct SceneManager
 	SceneManager();
 
 	void init(TextureManager &textureManager, Renderer &renderer);
-	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double daytimePercent, TextureManager &textureManager);
-	void cleanUp();
+	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double dayPercent, TextureManager &textureManager);
+	void cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 };
-
-struct SceneTransitionState
-{
-	MapType mapType;
-	int levelIndex;
-	int skyIndex;
-};
-
-struct SceneInteriorSavedState
-{
-	// Don't need to store levelIndex or skyIndex since the LEVELUP/DOWN voxel lets us infer it
-};
-
-struct SceneCitySavedState
-{
-	int weatherIndex;
-	CoordInt3 returnCoord;
-};
-
-using SceneWildSavedState = SceneCitySavedState;
 
 #endif
