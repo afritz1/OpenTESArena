@@ -22,7 +22,7 @@ namespace MainMenuUiView
 	
 	// Test values.
 	Rect getTestButtonRect();
-	constexpr TextureUtils::PatternType TestButtonPatternType = TextureUtils::PatternType::Custom1;
+	constexpr UiTexturePatternType TestButtonPatternType = UiTexturePatternType::Custom1;
 	const std::string TestButtonFontName = ArenaFontName::Arena;
 	constexpr TextAlignment TestButtonTextAlignment = TextAlignment::MiddleCenter;
 

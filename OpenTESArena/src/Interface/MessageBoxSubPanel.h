@@ -20,12 +20,12 @@ struct Rect;
 
 struct MessageBoxBackgroundProperties
 {
-	TextureUtils::PatternType patternType;
+	UiTexturePatternType patternType;
 	int extraTitleWidth, extraTitleHeight;
 	std::optional<int> widthOverride, heightOverride; // In case the texture is independent of the title text.
 	int itemTextureHeight; // Width is driven by title background texture.
 
-	MessageBoxBackgroundProperties(TextureUtils::PatternType patternType, int extraTitleWidth, int extraTitleHeight,
+	MessageBoxBackgroundProperties(UiTexturePatternType patternType, int extraTitleWidth, int extraTitleHeight,
 		const std::optional<int> &widthOverride, const std::optional<int> &heightOverride, int itemTextureHeight);
 };
 

@@ -54,7 +54,7 @@ namespace ProvinceMapUiView
 	int getTextPopUpTextureWidth(int textWidth); // @todo: these should be merged into a plain old allocPopUpTexture()
 	int getTextPopUpTextureHeight(int textHeight);
 
-	constexpr TextureUtils::PatternType TextPopUpTexturePatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType TextPopUpTexturePatternType = UiTexturePatternType::Parchment;
 
 	constexpr double BlinkPeriodSeconds = 1.0 / 5.0; // Duration of entire blink period in seconds.
 	constexpr double BlinkPeriodPercentOn = 0.75; // Percentage of each period spent "on".
@@ -116,7 +116,7 @@ namespace ProvinceSearchUiView
 
 	constexpr int TextureWidth = 280;
 	constexpr int TextureHeight = 40;
-	constexpr TextureUtils::PatternType TexturePattern = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType TexturePattern = UiTexturePatternType::Parchment;
 
 	const Int2 ListUpButtonCenterPoint(70, 24);
 	constexpr int ListUpButtonWidth = 8;

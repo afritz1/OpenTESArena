@@ -33,7 +33,7 @@ namespace OptionsUiView
 	const std::string TabFontName = ArenaFontName::Arena;
 	Color getTabTextColor();
 	constexpr TextAlignment TabTextAlignment = TextAlignment::MiddleCenter;
-	constexpr TextureUtils::PatternType TabBackgroundPatternType = TextureUtils::PatternType::Custom1;
+	constexpr UiTexturePatternType TabBackgroundPatternType = UiTexturePatternType::Custom1;
 
 	const std::string OptionTextBoxFontName = ArenaFontName::Arena;
 	Color getOptionTextBoxColor();

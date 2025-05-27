@@ -102,7 +102,7 @@ namespace GameWorldUiView
 	constexpr TextAlignment StatusPopUpTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int StatusPopUpTextLineSpacing = 1;
 
-	constexpr TextureUtils::PatternType StatusPopUpTexturePatternType = TextureUtils::PatternType::Dark;
+	constexpr UiTexturePatternType StatusPopUpTexturePatternType = UiTexturePatternType::Dark;
 
 	Int2 getStatusPopUpTextCenterPoint(Game &game);
 	int getStatusPopUpTextureWidth(int textWidth);

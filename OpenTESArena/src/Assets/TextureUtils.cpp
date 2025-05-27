@@ -15,7 +15,7 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 
-Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
+Surface TextureUtils::generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager,
 	Renderer &renderer)
 {
 	// Initialize the scratch surface to transparent.
@@ -23,7 +23,7 @@ Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 	const uint32_t clearColor = surface.mapRGBA(0, 0, 0, 0);
 	surface.fill(clearColor);
 
-	if (type == TextureUtils::PatternType::Parchment)
+	if (type == UiTexturePatternType::Parchment)
 	{
 		// Minimum dimensions of parchment pop-up.
 		DebugAssert(width >= 40);
@@ -151,7 +151,7 @@ Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 		bottomLeft.blit(surface, bottomLeftRect);
 		bottomRight.blit(surface, bottomRightRect);
 	}
-	else if (type == TextureUtils::PatternType::Dark)
+	else if (type == UiTexturePatternType::Dark)
 	{
 		// Minimum dimensions of dark pop-up.
 		DebugAssert(width >= 4);
@@ -196,7 +196,7 @@ Surface TextureUtils::generate(TextureUtils::PatternType type, int width, int he
 		pixels[(surface.getWidth() - 2) + ((surface.getHeight() - 1) * surface.getWidth())] = bottomColor;
 		pixels[(surface.getWidth() - 1) + ((surface.getHeight() - 1) * surface.getWidth())] = bottomRightColor;
 	}
-	else if (type == TextureUtils::PatternType::Custom1)
+	else if (type == UiTexturePatternType::Custom1)
 	{
 		// Minimum dimensions of light-gray pattern.
 		DebugAssert(width >= 3);

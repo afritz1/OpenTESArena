@@ -30,7 +30,7 @@ namespace ChooseClassCreationUiView
 {
 	constexpr int PopUpTextureWidth = 180;
 	constexpr int PopUpTextureHeight = 40;
-	constexpr TextureUtils::PatternType PopUpPatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType PopUpPatternType = UiTexturePatternType::Parchment;
 
 	const Int2 TitleCenter((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 80);
 	const std::string TitleFontName = ArenaFontName::A;
@@ -98,7 +98,7 @@ namespace ChooseGenderUiView
 {
 	constexpr int TextureWidth = 180;
 	constexpr int TextureHeight = 40;
-	constexpr TextureUtils::PatternType TexturePatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType TexturePatternType = UiTexturePatternType::Parchment;
 
 	const Int2 TitleCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
 	const std::string TitleFontName = ArenaFontName::A;
@@ -138,7 +138,7 @@ namespace ChooseNameUiView
 {
 	constexpr int TextureWidth = 300;
 	constexpr int TextureHeight = 60;
-	constexpr TextureUtils::PatternType TexturePatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType TexturePatternType = UiTexturePatternType::Parchment;
 
 	constexpr int TitleTextBoxX = 26;
 	constexpr int TitleTextBoxY = 82;
@@ -167,7 +167,7 @@ namespace ChooseRaceUiView
 	const Color InitialPopUpColor(48, 12, 12);
 	constexpr TextAlignment InitialPopUpAlignment = TextAlignment::MiddleCenter;
 	constexpr int InitialPopUpLineSpacing = 1;
-	constexpr TextureUtils::PatternType InitialPopUpPatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType InitialPopUpPatternType = UiTexturePatternType::Parchment;
 
 	constexpr int InitialPopUpTextureWidth = 240;
 	constexpr int InitialPopUpTextureHeight = 60;
@@ -181,7 +181,7 @@ namespace ChooseRaceUiView
 	const std::string ProvinceConfirmTitleFontName = ArenaFontName::A;
 	const Color ProvinceConfirmTitleTextColor(52, 24, 8);
 	constexpr int ProvinceConfirmTitleLineSpacing = 1;
-	constexpr TextureUtils::PatternType ProvinceConfirmTitleTexturePatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType ProvinceConfirmTitleTexturePatternType = UiTexturePatternType::Parchment;
 
 	const std::string ProvinceConfirmItemFontName = ProvinceConfirmTitleFontName;
 	const Color ProvinceConfirmItemTextColor = ProvinceConfirmTitleTextColor;
@@ -192,7 +192,7 @@ namespace ChooseRaceUiView
 	const Color ProvinceConfirmedFirstTextColor(48, 12, 12);
 	constexpr TextAlignment ProvinceConfirmedFirstTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmedFirstTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ProvinceConfirmedFirstTextPatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType ProvinceConfirmedFirstTextPatternType = UiTexturePatternType::Parchment;
 
 	const Int2 ProvinceConfirmedSecondTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
@@ -200,7 +200,7 @@ namespace ChooseRaceUiView
 	const Color ProvinceConfirmedSecondTextColor(48, 12, 12);
 	constexpr TextAlignment ProvinceConfirmedSecondTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmedSecondTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ProvinceConfirmedSecondTextPatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType ProvinceConfirmedSecondTextPatternType = UiTexturePatternType::Parchment;
 
 	const Int2 ProvinceConfirmedThirdTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
@@ -208,7 +208,7 @@ namespace ChooseRaceUiView
 	const Color ProvinceConfirmedThirdTextColor(48, 12, 12);
 	constexpr TextAlignment ProvinceConfirmedThirdTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmedThirdTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ProvinceConfirmedThirdTextPatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType ProvinceConfirmedThirdTextPatternType = UiTexturePatternType::Parchment;
 
 	const Int2 ProvinceConfirmedFourthTextCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
@@ -216,7 +216,7 @@ namespace ChooseRaceUiView
 	const Color ProvinceConfirmedFourthTextColor(48, 12, 12);
 	constexpr TextAlignment ProvinceConfirmedFourthTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmedFourthTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType ProvinceConfirmedFourthTextPatternType = TextureUtils::PatternType::Parchment;
+	constexpr UiTexturePatternType ProvinceConfirmedFourthTextPatternType = UiTexturePatternType::Parchment;
 
 	TextureAsset getBackgroundTextureAsset();
 	TextureAsset getNoExitTextureAsset(); // Covers up the exit button since character creation doesn't use it.
@@ -256,7 +256,7 @@ namespace ChooseAttributesUiView
 	const Color InitialTextColor(199, 199, 199);
 	constexpr TextAlignment InitialTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int InitialTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType InitialTextPatternType = TextureUtils::PatternType::Dark;
+	constexpr UiTexturePatternType InitialTextPatternType = UiTexturePatternType::Dark;
 
 	const Int2 InitialTextureCenterPoint(
 		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
@@ -267,7 +267,7 @@ namespace ChooseAttributesUiView
 		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
 	const std::string MessageBoxTitleFontName = ArenaFontName::A;
 	const Color MessageBoxTitleColor(199, 199, 199);
-	constexpr TextureUtils::PatternType MessageBoxPatternType = TextureUtils::PatternType::Dark;
+	constexpr UiTexturePatternType MessageBoxPatternType = UiTexturePatternType::Dark;
 
 	const std::string MessageBoxItemFontName = ArenaFontName::A;
 	const Color MessageBoxItemTextColor(190, 113, 0);
@@ -279,7 +279,7 @@ namespace ChooseAttributesUiView
 	const Color AppearanceTextColor(199, 199, 199);
 	constexpr TextAlignment AppearanceTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int AppearanceTextLineSpacing = 1;
-	constexpr TextureUtils::PatternType AppearanceTextPatternType = TextureUtils::PatternType::Dark;
+	constexpr UiTexturePatternType AppearanceTextPatternType = UiTexturePatternType::Dark;
 
 	const Int2 PortraitButtonCenterPoint(ArenaRenderUtils::SCREEN_WIDTH - 72, 25);
 	constexpr int PortraitButtonWidth = 60;

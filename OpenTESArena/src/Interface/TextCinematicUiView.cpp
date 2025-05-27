@@ -47,7 +47,7 @@ Buffer<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::strin
 		DebugCrash("Couldn't get texture builder IDs for \"" + animFilename + "\".");
 	}
 
-	const int textureCount = textureBuilderIDs->getCount();
+	const int textureCount = textureBuilderIDs->count;
 	Buffer<UiTextureID> textureIDs(textureCount);
 	for (int i = 0; i < textureCount; i++)
 	{

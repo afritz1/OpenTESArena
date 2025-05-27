@@ -43,7 +43,7 @@ namespace FastTravelUiView
 	const Color CityArrivalTextColor(251, 239, 77);
 	constexpr TextAlignment CityArrivalTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int CityArrivalLineSpacing = 1;
-	constexpr TextureUtils::PatternType CityArrivalTexturePatternType = TextureUtils::PatternType::Dark;
+	constexpr UiTexturePatternType CityArrivalTexturePatternType = UiTexturePatternType::Dark;
 	Int2 getCityArrivalPopUpTextCenterPoint(Game &game);
 	Int2 getCityArrivalPopUpTextureCenterPoint(Game &game);
 	int getCityArrivalPopUpTextureWidth(int textWidth);

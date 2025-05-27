@@ -12,7 +12,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 
-MessageBoxBackgroundProperties::MessageBoxBackgroundProperties(TextureUtils::PatternType patternType,
+MessageBoxBackgroundProperties::MessageBoxBackgroundProperties(UiTexturePatternType patternType,
 	int extraTitleWidth, int extraTitleHeight, const std::optional<int> &widthOverride,
 	const std::optional<int> &heightOverride, int itemTextureHeight)
 	: widthOverride(widthOverride), heightOverride(heightOverride)

@@ -35,7 +35,7 @@ void LoadSaveUiController::onEntryButtonSelected(Game &game, int index)
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
-	const Surface surface = TextureUtils::generate(TextureUtils::PatternType::Dark,
+	const Surface surface = TextureUtils::generate(UiTexturePatternType::Dark,
 		textBoxInitInfo.rect.width + 10, textBoxInitInfo.rect.height + 10,
 		game.textureManager, renderer);
 

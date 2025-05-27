@@ -26,7 +26,7 @@ namespace PauseMenuUiView
 	const std::string OptionsButtonFontName = ArenaFontName::Arena;
 	const Color OptionsButtonTextColor(215, 158, 4);
 	constexpr TextAlignment OptionsButtonTextAlignment = TextAlignment::MiddleCenter;
-	constexpr TextureUtils::PatternType OptionsButtonPatternType = TextureUtils::PatternType::Custom1;
+	constexpr UiTexturePatternType OptionsButtonPatternType = UiTexturePatternType::Custom1;
 	const Color OptionsButtonTextShadowColor(101, 77, 24);
 	constexpr int OptionsButtonTextShadowOffsetX = -1;
 	constexpr int OptionsButtonTextShadowOffsetY = 1;

@@ -23,50 +23,45 @@ using PaletteID = int; // 32-bit software surface (generally 256 texels)
 using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
 using TextureFileMetadataID = int; // Metadata for a texture file (texture count, dimensions, etc.).
 
+// Generated texture types. These refer to patterns used with pop-ups and buttons.
+enum class UiTexturePatternType
+{
+	Parchment,
+	Dark,
+	Custom1 // Light gray with borders.
+};
+
+// Defines a contiguous group of IDs for referencing textures.
+template<typename T>
+struct TextureIdSequence
+{
+private:
+	static_assert(std::is_integral_v<T>);
+
+	T startID;
+public:
+	int count;
+
+	TextureIdSequence(T startID, int count)
+	{
+		this->startID = startID;
+		this->count = count;
+	}
+
+	TextureIdSequence() : TextureIdSequence(-1, -1) { }
+
+	T getID(int index) const
+	{
+		DebugAssert(index >= 0);
+		DebugAssert(index < count);
+		return this->startID + index;
+	}
+};
+
 namespace TextureUtils
 {
-	// Generated texture types. These refer to patterns used with pop-ups and buttons.
-	// @todo: move these to an Arena namespace eventually
-	enum class PatternType
-	{
-		Parchment,
-		Dark,
-		Custom1 // Light gray with borders.
-	};
-
-	// Defines a contiguous group of IDs for referencing textures.
-	template <typename T>
-	struct IdGroup
-	{
-	private:
-		static_assert(std::is_integral_v<T>);
-
-		T startID;
-		int count;
-	public:
-		IdGroup(T startID, int count)
-		{
-			this->startID = startID;
-			this->count = count;
-		}
-
-		IdGroup() : IdGroup(-1, -1) { }
-
-		int getCount() const
-		{
-			return this->count;
-		}
-
-		T getID(int index) const
-		{
-			DebugAssert(index >= 0);
-			DebugAssert(index < count);
-			return this->startID + index;
-		}
-	};
-
 	// Generates a new texture from a pattern.
-	Surface generate(TextureUtils::PatternType type, int width, int height, TextureManager &textureManager,
+	Surface generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager,
 		Renderer &renderer);
 
 	// Generates a tooltip texture with pre-defined font/color/background.
@@ -87,7 +82,7 @@ namespace TextureUtils
 		UiTextureID *outID);
 }
 
-using PaletteIdGroup = TextureUtils::IdGroup<PaletteID>;
-using TextureBuilderIdGroup = TextureUtils::IdGroup<TextureBuilderID>;
+using PaletteIdGroup = TextureIdSequence<PaletteID>;
+using TextureBuilderIdGroup = TextureIdSequence<TextureBuilderID>;
 
 #endif
