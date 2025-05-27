@@ -6,9 +6,8 @@
 #include "Vector3.h"
 #include "Vector4.h"
 
-class Quaternion
+struct Quaternion
 {
-public:
 	double x, y, z, w;
 
 	Quaternion(double x, double y, double z, double w);

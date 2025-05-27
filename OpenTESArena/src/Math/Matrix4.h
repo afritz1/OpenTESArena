@@ -8,9 +8,8 @@
 #include "Vector4.h"
 
 template<typename T>
-class Matrix4
+struct Matrix4
 {
-public:
 	static_assert(std::is_floating_point<T>::value);
 
 	// Column vectors.
@@ -19,8 +18,7 @@ public:
 	Vector4f<T> z;
 	Vector4f<T> w;
 
-	Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z,
-		const Vector4f<T> &w);
+	Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z, const Vector4f<T> &w);
 	Matrix4() = default;
 
 	static Matrix4<T> identity();
