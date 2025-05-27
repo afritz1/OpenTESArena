@@ -16,6 +16,29 @@ using UiDrawCallSizeFunc = std::function<Int2()>;
 using UiDrawCallPivotFunc = std::function<PivotType()>;
 using UiDrawCallActiveFunc = std::function<bool()>;
 
+struct UiDrawCallInitInfo
+{
+	UiDrawCallTextureFunc textureFunc;
+	UiTextureID textureID;
+
+	UiDrawCallPositionFunc positionFunc;
+	Int2 position;
+
+	UiDrawCallSizeFunc sizeFunc;
+	Int2 size;
+
+	UiDrawCallPivotFunc pivotFunc;
+	PivotType pivotType;
+
+	UiDrawCallActiveFunc activeFunc;
+
+	std::optional<Rect> clipRect;
+
+	RenderSpace renderSpace;
+
+	UiDrawCallInitInfo();
+};
+
 struct UiDrawCall
 {
 	UiDrawCallTextureFunc textureFunc; // UI texture to render with.
@@ -29,6 +52,7 @@ struct UiDrawCall
 	UiDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc, const UiDrawCallSizeFunc &sizeFunc,
 		const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt,
 		RenderSpace renderSpace = RenderSpace::Classic);
+	UiDrawCall(const UiDrawCallInitInfo &initInfo);
 
 	static UiDrawCallTextureFunc makeTextureFunc(UiTextureID id);
 	static UiDrawCallPositionFunc makePositionFunc(const Int2 &position);
