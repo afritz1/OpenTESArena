@@ -756,6 +756,7 @@ void GameWorldPanel::initUiDrawCalls()
 		compassFrameDrawCallInitInfo.textureID = this->compassFrameTextureRef.get();
 		compassFrameDrawCallInitInfo.position = GameWorldUiView::getCompassFramePosition();
 		compassFrameDrawCallInitInfo.size = Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight());
+		compassFrameDrawCallInitInfo.pivotType = PivotType::Top;
 		compassFrameDrawCallInitInfo.activeFunc = compassSliderDrawCallInitInfo.activeFunc;
 		this->addDrawCall(compassFrameDrawCallInitInfo);
 
