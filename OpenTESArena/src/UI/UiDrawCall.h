@@ -16,9 +16,8 @@ using UiDrawCallSizeFunc = std::function<Int2()>;
 using UiDrawCallPivotFunc = std::function<PivotType()>;
 using UiDrawCallActiveFunc = std::function<bool()>;
 
-class UiDrawCall
+struct UiDrawCall
 {
-private:
 	UiDrawCallTextureFunc textureFunc; // UI texture to render with.
 	UiDrawCallPositionFunc positionFunc; // On-screen position.
 	UiDrawCallSizeFunc sizeFunc; // Width + height in pixels.
@@ -26,7 +25,7 @@ private:
 	UiDrawCallActiveFunc activeFunc; // Whether to attempt to draw.
 	std::optional<Rect> clipRect; // For drawing within a clipped area in the selected render space.
 	RenderSpace renderSpace; // Relative positioning and sizing in the application window.
-public:
+
 	UiDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc, const UiDrawCallSizeFunc &sizeFunc,
 		const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt,
 		RenderSpace renderSpace = RenderSpace::Classic);
@@ -36,14 +35,6 @@ public:
 	static UiDrawCallSizeFunc makeSizeFunc(const Int2 &size);
 	static UiDrawCallPivotFunc makePivotFunc(PivotType pivotType);
 	static bool defaultActiveFunc();
-
-	UiTextureID getTextureID() const;
-	Int2 getPosition() const;
-	Int2 getSize() const;
-	PivotType getPivotType() const;
-	bool isActive() const;
-	const std::optional<Rect> &getClipRect() const;
-	RenderSpace getRenderSpace() const;
 };
 
 #endif

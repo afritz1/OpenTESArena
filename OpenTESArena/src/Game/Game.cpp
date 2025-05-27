@@ -987,23 +987,23 @@ void Game::loop()
 				const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
 				for (const UiDrawCall &drawCall : drawCallsView)
 				{
-					if (!drawCall.isActive())
+					if (!drawCall.activeFunc())
 					{
 						continue;
 					}
 
-					const std::optional<Rect> &optClipRect = drawCall.getClipRect();
+					const std::optional<Rect> &optClipRect = drawCall.clipRect;
 					if (optClipRect.has_value())
 					{
 						const SDL_Rect clipRect = optClipRect->getSdlRect();
 						this->renderer.setClipRect(&clipRect);
 					}
 
-					const UiTextureID textureID = drawCall.getTextureID();
-					const Int2 position = drawCall.getPosition();
-					const Int2 size = drawCall.getSize();
-					const PivotType pivotType = drawCall.getPivotType();
-					const RenderSpace renderSpace = drawCall.getRenderSpace();
+					const UiTextureID textureID = drawCall.textureFunc();
+					const Int2 position = drawCall.positionFunc();
+					const Int2 size = drawCall.sizeFunc();
+					const PivotType pivotType = drawCall.pivotFunc();
+					const RenderSpace renderSpace = drawCall.renderSpace;
 
 					double xPercent, yPercent, wPercent, hPercent;
 					GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,

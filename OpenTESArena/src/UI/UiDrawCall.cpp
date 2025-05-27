@@ -4,8 +4,7 @@
 
 UiDrawCall::UiDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc, const UiDrawCallSizeFunc &sizeFunc,
 	const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect, RenderSpace renderSpace)
-	: textureFunc(textureFunc), positionFunc(positionFunc), sizeFunc(sizeFunc), pivotFunc(pivotFunc),
-	activeFunc(activeFunc), clipRect(clipRect)
+	: textureFunc(textureFunc), positionFunc(positionFunc), sizeFunc(sizeFunc), pivotFunc(pivotFunc), activeFunc(activeFunc), clipRect(clipRect)
 {
 	DebugAssert(this->textureFunc);
 	DebugAssert(this->positionFunc);
@@ -38,45 +37,4 @@ UiDrawCallPivotFunc UiDrawCall::makePivotFunc(PivotType pivotType)
 bool UiDrawCall::defaultActiveFunc()
 {
 	return true;
-}
-
-UiTextureID UiDrawCall::getTextureID() const
-{
-	DebugAssert(this->isActive());
-	return this->textureFunc();
-}
-
-Int2 UiDrawCall::getPosition() const
-{
-	DebugAssert(this->isActive());
-	return this->positionFunc();
-}
-
-Int2 UiDrawCall::getSize() const
-{
-	DebugAssert(this->isActive());
-	return this->sizeFunc();
-}
-
-PivotType UiDrawCall::getPivotType() const
-{
-	DebugAssert(this->isActive());
-	return this->pivotFunc();
-}
-
-bool UiDrawCall::isActive() const
-{
-	return this->activeFunc();
-}
-
-const std::optional<Rect> &UiDrawCall::getClipRect() const
-{
-	DebugAssert(this->isActive());
-	return this->clipRect;
-}
-
-RenderSpace UiDrawCall::getRenderSpace() const
-{
-	DebugAssert(this->isActive());
-	return this->renderSpace;
 }
