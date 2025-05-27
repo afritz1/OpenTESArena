@@ -42,7 +42,7 @@ namespace
 	}
 
 	// Convenience function for loading a binary save file and returning the initialized record.
-	template <typename T>
+	template<typename T>
 	std::unique_ptr<T> loadBinary(const std::string &filename)
 	{
 		std::ifstream ifs(filename, std::ios::binary);

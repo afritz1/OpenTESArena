@@ -413,7 +413,7 @@ namespace Physics
 
 	// Internal ray casting loop for stepping through individual voxels and checking ray intersections
 	// against voxels and entities.
-	template <bool NonNegativeDirX, bool NonNegativeDirY, bool NonNegativeDirZ>
+	template<bool NonNegativeDirX, bool NonNegativeDirY, bool NonNegativeDirZ>
 	void rayCastInternal(const CoordDouble3 &rayCoord, const VoxelDouble3 &rayDirection, const VoxelDouble3 &cameraForward,
 		double ceilingScale, const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager,
 		const CollisionChunkManager &collisionChunkManager, bool includeEntities, const EntityDefinitionLibrary &entityDefLibrary,

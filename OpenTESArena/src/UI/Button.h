@@ -9,7 +9,7 @@
 
 // A button encapsulates some callback functionality. It usually modifies the
 // game state in some way, but could also modify something in a panel instead.
-template <class... Args>
+template<class... Args>
 class Button
 {
 private:

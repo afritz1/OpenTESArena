@@ -171,7 +171,7 @@ private:
 
 	bool isInTextEntryMode() const;
 
-	template <typename EntryType, typename CallbackType>
+	template<typename EntryType, typename CallbackType>
 	InputListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
 		std::vector<int> &freedListenerIndices);
 	

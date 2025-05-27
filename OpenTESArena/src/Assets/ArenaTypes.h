@@ -520,7 +520,7 @@ namespace ArenaTypes
 
 		void init(const uint8_t *data);
 
-		template <size_t T>
+		template<size_t T>
 		static void initArray(std::array<SpellData, T> &arr, const uint8_t *data)
 		{
 			for (size_t i = 0; i < arr.size(); i++)

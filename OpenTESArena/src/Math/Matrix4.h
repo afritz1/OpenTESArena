@@ -7,7 +7,7 @@
 #include "Vector3.h"
 #include "Vector4.h"
 
-template <typename T>
+template<typename T>
 class Matrix4
 {
 public:

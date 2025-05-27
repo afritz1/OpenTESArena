@@ -129,7 +129,7 @@ public:
 	// Sets the panel after the current SDL event has been processed (to avoid 
 	// interfering with the current panel). This uses template parameters for
 	// convenience (to avoid writing a unique_ptr at each callsite).
-	template <class T, typename... Args>
+	template<class T, typename... Args>
 	void setPanel(Args&&... args)
 	{
 		std::unique_ptr<T> derivedPanel = std::make_unique<T>(*this);
@@ -144,7 +144,7 @@ public:
 	// Adds a new sub-panel after the current SDL event has been processed (to avoid
 	// adding multiple pop-ups from the same panel or sub-panel). This uses template 
 	// parameters for convenience (to avoid writing a unique_ptr at each callsite).
-	template <class T, typename... Args>
+	template<class T, typename... Args>
 	void pushSubPanel(Args&&... args)
 	{
 		std::unique_ptr<T> derivedSubPanel = std::make_unique<T>(*this);

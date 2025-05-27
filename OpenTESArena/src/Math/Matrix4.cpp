@@ -5,12 +5,12 @@
 #include "MathUtils.h"
 #include "Matrix4.h"
 
-template <typename T>
+template<typename T>
 Matrix4<T>::Matrix4(const Vector4f<T> &x, const Vector4f<T> &y, const Vector4f<T> &z,
 	const Vector4f<T> &w)
 	: x(x), y(y), z(z), w(w) { }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::identity()
 {
 	Matrix4<T> m;
@@ -21,7 +21,7 @@ Matrix4<T> Matrix4<T>::identity()
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::translation(T x, T y, T z)
 {
 	Matrix4<T> m = Matrix4<T>::identity();
@@ -31,7 +31,7 @@ Matrix4<T> Matrix4<T>::translation(T x, T y, T z)
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::scale(T x, T y, T z)
 {
 	Matrix4<T> m = Matrix4<T>::identity();
@@ -41,7 +41,7 @@ Matrix4<T> Matrix4<T>::scale(T x, T y, T z)
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::xRotation(T radians)
 {
 	Matrix4<T> m = Matrix4<T>::identity();
@@ -54,7 +54,7 @@ Matrix4<T> Matrix4<T>::xRotation(T radians)
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::yRotation(T radians)
 {
 	Matrix4<T> m = Matrix4<T>::identity();
@@ -67,7 +67,7 @@ Matrix4<T> Matrix4<T>::yRotation(T radians)
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::zRotation(T radians)
 {
 	Matrix4<T> m = Matrix4<T>::identity();
@@ -80,7 +80,7 @@ Matrix4<T> Matrix4<T>::zRotation(T radians)
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::transpose(const Matrix4<T> &m)
 {
 	// Flip across diagonal.
@@ -123,7 +123,7 @@ Matrix4<T> Matrix4<T>::inverse(const Matrix4<T> &m)
 		Vector4f<T>(wxDet * detRecip, wyDet * detRecip, wzDet * detRecip, wwDet * detRecip));
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::inverseTranslation(const Matrix4<T> &t)
 {
 	// Undo translation.
@@ -134,7 +134,7 @@ Matrix4<T> Matrix4<T>::inverseTranslation(const Matrix4<T> &t)
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::inverseRotation(const Matrix4<T> &r)
 {
 	// Undo rotation. Mathematically equivalent to transpose, but only need 3x3 here.
@@ -145,7 +145,7 @@ Matrix4<T> Matrix4<T>::inverseRotation(const Matrix4<T> &r)
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 	const Vector3f<T> &right, const Vector3f<T> &up)
 {
@@ -165,7 +165,7 @@ Matrix4<T> Matrix4<T>::view(const Vector3f<T> &eye, const Vector3f<T> &forward,
 	return invRotationMat * invTranslationMat;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 {
 	// Differs slightly from other perspective matrices so Z in NDC space is between 0 and 1.
@@ -183,7 +183,7 @@ Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 	return m;
 }
 
-template <typename T>
+template<typename T>
 Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 {
 	Matrix4<T> p;
@@ -215,7 +215,7 @@ Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 	return p;
 }
 
-template <typename T>
+template<typename T>
 Vector4f<T> Matrix4<T>::operator*(const Vector4f<T> &v) const
 {
 	const T newX = (this->x.x * v.x) + (this->y.x * v.y) + (this->z.x * v.z) + (this->w.x * v.w);
