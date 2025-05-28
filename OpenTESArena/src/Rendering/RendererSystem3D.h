@@ -71,11 +71,13 @@ public:
 	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
 
-	// Shading management functions.
+	// Uniform management functions.
 	virtual bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID) = 0;
 	virtual void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) = 0;
 	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) = 0;
 	virtual void freeUniformBuffer(UniformBufferID id) = 0;
+
+	// Light management functions.
 	virtual bool tryCreateLight(RenderLightID *outID) = 0;
 	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
 	virtual void setLightRadius(RenderLightID id, double startRadius, double endRadius) = 0;

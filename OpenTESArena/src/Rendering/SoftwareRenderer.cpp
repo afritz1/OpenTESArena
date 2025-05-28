@@ -739,14 +739,14 @@ namespace
 {
 	struct DrawCallCache
 	{
-		const SoftwareRenderer::VertexBuffer *vertexBuffer;
-		const SoftwareRenderer::AttributeBuffer *texCoordBuffer;
-		const SoftwareRenderer::IndexBuffer *indexBuffer;
+		const SoftwareVertexBuffer *vertexBuffer;
+		const SoftwareAttributeBuffer *texCoordBuffer;
+		const SoftwareIndexBuffer *indexBuffer;
 		ObjectTextureID textureID0;
 		ObjectTextureID textureID1;
 		RenderLightingType lightingType;
 		double meshLightPercent;
-		const SoftwareRenderer::Light *lightPtrArray[RenderLightIdList::MAX_LIGHTS];
+		const SoftwareLight *lightPtrArray[RenderLightIdList::MAX_LIGHTS];
 		int lightCount;
 		VertexShaderType vertexShaderType;
 		PixelShaderType pixelShaderType;
@@ -1039,11 +1039,11 @@ namespace
 	double *g_depthBuffer;
 	const bool *g_ditherBuffer;
 	uint32_t *g_colorBuffer;
-	SoftwareRenderer::ObjectTexturePool *g_objectTextures;
+	SoftwareObjectTexturePool *g_objectTextures;
 
 	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
 		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, uint32_t *colorBuffer,
-		SoftwareRenderer::ObjectTexturePool *objectTextures)
+		SoftwareObjectTexturePool *objectTextures)
 	{
 		g_frameBufferWidth = frameBufferWidth;
 		g_frameBufferHeight = frameBufferHeight;
@@ -1532,12 +1532,12 @@ namespace
 
 	double g_ambientPercent;
 	double g_screenSpaceAnimPercent;
-	const SoftwareRenderer::ObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
-	const SoftwareRenderer::ObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
-	const SoftwareRenderer::ObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
+	const SoftwareObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
+	const SoftwareObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
+	const SoftwareObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
-	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const SoftwareRenderer::ObjectTexture &paletteTexture,
-		const SoftwareRenderer::ObjectTexture &lightTableTexture, const SoftwareRenderer::ObjectTexture &skyBgTexture)
+	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const SoftwareObjectTexture &paletteTexture,
+		const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
 	{
 		g_ambientPercent = ambientPercent;
 		g_screenSpaceAnimPercent = screenSpaceAnimPercent;
@@ -2004,7 +2004,7 @@ namespace
 		// so this makes the total triangle loop longer for ease of number crunching.
 		const double *verticesPtr = drawCallCache.vertexBuffer->vertices.begin();
 		const double *texCoordsPtr = drawCallCache.texCoordBuffer->attributes.begin();
-		const SoftwareRenderer::IndexBuffer &indexBuffer = *drawCallCache.indexBuffer;
+		const SoftwareIndexBuffer &indexBuffer = *drawCallCache.indexBuffer;
 		const int32_t *indicesPtr = indexBuffer.indices.begin();
 		const int meshTriangleCount = indexBuffer.triangleCount;
 		DebugAssert(meshTriangleCount <= MAX_DRAW_CALL_MESH_TRIANGLES);
@@ -2971,7 +2971,7 @@ namespace
 		}
 	}
 
-	void GetWorldSpaceLightIntensityValue(double pointX, double pointY, double pointZ, const SoftwareRenderer::Light &__restrict light,
+	void GetWorldSpaceLightIntensityValue(double pointX, double pointY, double pointZ, const SoftwareLight &__restrict light,
 		double *__restrict outLightIntensity)
 	{
 		const double lightPointDiffX = light.worldPointX - pointX;
@@ -3067,14 +3067,14 @@ namespace
 		const ObjectTextureID textureID0 = drawCallCache.textureID0;
 		const ObjectTextureID textureID1 = drawCallCache.textureID1;
 
-		const SoftwareRenderer::ObjectTexture &texture0 = g_objectTextures->get(textureID0);
+		const SoftwareObjectTexture &texture0 = g_objectTextures->get(textureID0);
 		PixelShaderTexture shaderTexture0;
 		shaderTexture0.init(texture0.texels8Bit, texture0.width, texture0.height);
 
 		PixelShaderTexture shaderTexture1;
 		if constexpr (requiresTwoTextures)
 		{
-			const SoftwareRenderer::ObjectTexture &texture1 = g_objectTextures->get(textureID1);
+			const SoftwareObjectTexture &texture1 = g_objectTextures->get(textureID1);
 			shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height);
 		}
 
@@ -3276,7 +3276,7 @@ namespace
 						lightIntensitySum = g_ambientPercent;
 						for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
 						{
-							const SoftwareRenderer::Light &light = *lights[lightIndex];
+							const SoftwareLight &light = *lights[lightIndex];
 							double lightIntensity;
 							GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
 							lightIntensitySum += lightIntensity;
@@ -3701,7 +3701,7 @@ namespace
 	}
 }
 
-SoftwareRenderer::ObjectTexture::ObjectTexture()
+SoftwareObjectTexture::SoftwareObjectTexture()
 {
 	this->texels8Bit = nullptr;
 	this->texels32Bit = nullptr;
@@ -3713,7 +3713,7 @@ SoftwareRenderer::ObjectTexture::ObjectTexture()
 	this->bytesPerTexel = 0;
 }
 
-void SoftwareRenderer::ObjectTexture::init(int width, int height, int bytesPerTexel)
+void SoftwareObjectTexture::init(int width, int height, int bytesPerTexel)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -3743,31 +3743,31 @@ void SoftwareRenderer::ObjectTexture::init(int width, int height, int bytesPerTe
 	this->bytesPerTexel = bytesPerTexel;
 }
 
-void SoftwareRenderer::ObjectTexture::clear()
+void SoftwareObjectTexture::clear()
 {
 	this->texels.clear();
 }
 
-void SoftwareRenderer::VertexBuffer::init(int vertexCount, int componentsPerVertex)
+void SoftwareVertexBuffer::init(int vertexCount, int componentsPerVertex)
 {
 	const int valueCount = vertexCount * componentsPerVertex;
 	this->vertices.init(valueCount);
 }
 
-void SoftwareRenderer::AttributeBuffer::init(int vertexCount, int componentsPerVertex)
+void SoftwareAttributeBuffer::init(int vertexCount, int componentsPerVertex)
 {
 	const int valueCount = vertexCount * componentsPerVertex;
 	this->attributes.init(valueCount);
 }
 
-void SoftwareRenderer::IndexBuffer::init(int indexCount)
+void SoftwareIndexBuffer::init(int indexCount)
 {
 	DebugAssertMsg((indexCount % 3) == 0, "Expected index buffer to have multiple of 3 indices (has " + std::to_string(indexCount) + ").");
 	this->indices.init(indexCount);
 	this->triangleCount = indexCount / 3;
 }
 
-SoftwareRenderer::Light::Light()
+SoftwareLight::SoftwareLight()
 {
 	this->worldPointX = 0.0;
 	this->worldPointY = 0.0;
@@ -3780,7 +3780,7 @@ SoftwareRenderer::Light::Light()
 	this->startEndRadiusDiffRecip = 0.0;
 }
 
-void SoftwareRenderer::Light::init(const Double3 &worldPoint, double startRadius, double endRadius)
+void SoftwareLight::init(const Double3 &worldPoint, double startRadius, double endRadius)
 {
 	this->worldPointX = worldPoint.x;
 	this->worldPointY = worldPoint.y;
@@ -3864,7 +3864,7 @@ bool SoftwareRenderer::tryCreateVertexBuffer(int vertexCount, int componentsPerV
 		return false;
 	}
 
-	VertexBuffer &buffer = this->vertexBuffers.get(*outID);
+	SoftwareVertexBuffer &buffer = this->vertexBuffers.get(*outID);
 	buffer.init(vertexCount, componentsPerVertex);
 	return true;
 }
@@ -3880,7 +3880,7 @@ bool SoftwareRenderer::tryCreateAttributeBuffer(int vertexCount, int componentsP
 		return false;
 	}
 
-	AttributeBuffer &buffer = this->attributeBuffers.get(*outID);
+	SoftwareAttributeBuffer &buffer = this->attributeBuffers.get(*outID);
 	buffer.init(vertexCount, componentsPerVertex);
 	return true;
 }
@@ -3896,14 +3896,14 @@ bool SoftwareRenderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID
 		return false;
 	}
 
-	IndexBuffer &buffer = this->indexBuffers.get(*outID);
+	SoftwareIndexBuffer &buffer = this->indexBuffers.get(*outID);
 	buffer.init(indexCount);
 	return true;
 }
 
 void SoftwareRenderer::populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices)
 {
-	VertexBuffer &buffer = this->vertexBuffers.get(id);
+	SoftwareVertexBuffer &buffer = this->vertexBuffers.get(id);
 	const int srcCount = vertices.getCount();
 	const int dstCount = buffer.vertices.getCount();
 	if (srcCount != dstCount)
@@ -3920,7 +3920,7 @@ void SoftwareRenderer::populateVertexBuffer(VertexBufferID id, BufferView<const 
 
 void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes)
 {
-	AttributeBuffer &buffer = this->attributeBuffers.get(id);
+	SoftwareAttributeBuffer &buffer = this->attributeBuffers.get(id);
 	const int srcCount = attributes.getCount();
 	const int dstCount = buffer.attributes.getCount();
 	if (srcCount != dstCount)
@@ -3937,7 +3937,7 @@ void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, BufferView<
 
 void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices)
 {
-	IndexBuffer &buffer = this->indexBuffers.get(id);
+	SoftwareIndexBuffer &buffer = this->indexBuffers.get(id);
 	const int srcCount = indices.getCount();
 	const int dstCount = buffer.indices.getCount();
 	if (srcCount != dstCount)
@@ -3975,7 +3975,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, int bytesPe
 		return false;
 	}
 
-	ObjectTexture &texture = this->objectTextures.get(*outID);
+	SoftwareObjectTexture &texture = this->objectTextures.get(*outID);
 	texture.init(width, height, bytesPerTexel);
 	return true;
 }
@@ -3992,7 +3992,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 	}
 
 	const TextureBuilderType textureBuilderType = textureBuilder.type;
-	ObjectTexture &texture = this->objectTextures.get(*outID);
+	SoftwareObjectTexture &texture = this->objectTextures.get(*outID);
 	if (textureBuilderType == TextureBuilderType::Paletted)
 	{
 		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
@@ -4017,7 +4017,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 
 LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
 {
-	ObjectTexture &texture = this->objectTextures.get(id);
+	SoftwareObjectTexture &texture = this->objectTextures.get(id);
 	return LockedTexture(texture.texels.begin(), texture.bytesPerTexel);
 }
 
@@ -4034,7 +4034,7 @@ void SoftwareRenderer::freeObjectTexture(ObjectTextureID id)
 
 std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
 {
-	const ObjectTexture &texture = this->objectTextures.get(id);
+	const SoftwareObjectTexture &texture = this->objectTextures.get(id);
 	return Int2(texture.width, texture.height);
 }
 
@@ -4050,14 +4050,14 @@ bool SoftwareRenderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfEle
 		return false;
 	}
 
-	UniformBuffer &buffer = this->uniformBuffers.get(*outID);
+	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(*outID);
 	buffer.init(elementCount, sizeOfElement, alignmentOfElement);
 	return true;
 }
 
 void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data)
 {
-	UniformBuffer &buffer = this->uniformBuffers.get(id);
+	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
 	const int srcCount = data.getCount();
 	const int dstCount = buffer.getValidByteCount();
 	if (srcCount != dstCount)
@@ -4074,7 +4074,7 @@ void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<cons
 
 void SoftwareRenderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData)
 {
-	UniformBuffer &buffer = this->uniformBuffers.get(id);
+	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
 	const int srcByteCount = uniformData.getCount();
 	const int dstByteCount = static_cast<int>(buffer.sizeOfElement);
 	if (srcByteCount != dstByteCount)
@@ -4108,7 +4108,7 @@ bool SoftwareRenderer::tryCreateLight(RenderLightID *outID)
 
 void SoftwareRenderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
 {
-	Light &light = this->lights.get(id);
+	SoftwareLight &light = this->lights.get(id);
 	light.worldPointX = worldPoint.x;
 	light.worldPointY = worldPoint.y;
 	light.worldPointZ = worldPoint.z;
@@ -4118,7 +4118,7 @@ void SoftwareRenderer::setLightRadius(RenderLightID id, double startRadius, doub
 {
 	DebugAssert(startRadius >= 0.0);
 	DebugAssert(endRadius >= startRadius);
-	Light &light = this->lights.get(id);
+	SoftwareLight &light = this->lights.get(id);
 	light.startRadius = startRadius;
 	light.startRadiusSqr = startRadius * startRadius;
 	light.endRadius = endRadius;
@@ -4145,7 +4145,7 @@ Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
 	for (int i = 0; i < this->objectTextures.getTotalCount(); i++)
 	{
 		const ObjectTextureID id = static_cast<ObjectTextureID>(i);
-		const ObjectTexture *texturePtr = this->objectTextures.tryGet(id);
+		const SoftwareObjectTexture *texturePtr = this->objectTextures.tryGet(id);
 		if (texturePtr != nullptr)
 		{
 			textureByteCount += texturePtr->texels.getCount();
@@ -4174,9 +4174,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 		CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
 	}
 
-	const ObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
-	const ObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
-	const ObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
+	const SoftwareObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
+	const SoftwareObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
+	const SoftwareObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
 	PopulateCameraGlobals(camera);
 	PopulateDrawCallGlobals(totalDrawCallCount);
@@ -4255,7 +4255,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					auto &drawCallCacheEnableDepthRead = workerDrawCallCache.enableDepthRead;
 					auto &drawCallCacheEnableDepthWrite = workerDrawCallCache.enableDepthWrite;
 
-					const UniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
+					const SoftwareUniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
 					const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
 					PopulateMeshTransform(workerTransformCache, transform);
 
@@ -4264,7 +4264,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					transformCachePreScaleTranslationZ = 0.0;
 					if (drawCall.preScaleTranslationBufferID >= 0)
 					{
-						const UniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
+						const SoftwareUniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
 						const Double3 &preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
 						transformCachePreScaleTranslationX = preScaleTranslation.x;
 						transformCachePreScaleTranslationY = preScaleTranslation.y;
