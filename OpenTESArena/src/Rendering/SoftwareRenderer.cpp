@@ -3767,6 +3767,79 @@ void SoftwareIndexBuffer::init(int indexCount)
 	this->triangleCount = indexCount / 3;
 }
 
+SoftwareUniformBuffer::SoftwareUniformBuffer()
+{
+	this->elementCount = 0;
+	this->sizeOfElement = 0;
+	this->alignmentOfElement = 0;
+}
+
+void SoftwareUniformBuffer::init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
+{
+	DebugAssert(elementCount >= 0);
+	DebugAssert(sizeOfElement > 0);
+	DebugAssert(alignmentOfElement > 0);
+
+	this->elementCount = elementCount;
+	this->sizeOfElement = sizeOfElement;
+	this->alignmentOfElement = alignmentOfElement;
+
+	const size_t padding = this->alignmentOfElement - 1; // Add padding in case of alignment.
+	const size_t byteCount = (elementCount * this->sizeOfElement) + padding;
+	this->bytes.init(static_cast<int>(byteCount));
+}
+
+std::byte *SoftwareUniformBuffer::begin()
+{
+	const uintptr_t unalignedAddress = reinterpret_cast<uintptr_t>(this->bytes.begin());
+	if (unalignedAddress == 0)
+	{
+		return nullptr;
+	}
+
+	const uintptr_t alignedAddress = Bytes::getAlignedAddress(unalignedAddress, this->alignmentOfElement);
+	return reinterpret_cast<std::byte*>(alignedAddress);
+}
+
+const std::byte *SoftwareUniformBuffer::begin() const
+{
+	const uintptr_t unalignedAddress = reinterpret_cast<uintptr_t>(this->bytes.begin());
+	if (unalignedAddress == 0)
+	{
+		return nullptr;
+	}
+
+	const uintptr_t alignedAddress = Bytes::getAlignedAddress(unalignedAddress, this->alignmentOfElement);
+	return reinterpret_cast<const std::byte*>(alignedAddress);
+}
+
+std::byte *SoftwareUniformBuffer::end()
+{
+	std::byte *beginPtr = this->begin();
+	if (beginPtr == nullptr)
+	{
+		return nullptr;
+	}
+
+	return beginPtr + (this->elementCount * this->sizeOfElement);
+}
+
+const std::byte *SoftwareUniformBuffer::end() const
+{
+	const std::byte *beginPtr = this->begin();
+	if (beginPtr == nullptr)
+	{
+		return nullptr;
+	}
+
+	return beginPtr + (this->elementCount * this->sizeOfElement);
+}
+
+int SoftwareUniformBuffer::getValidByteCount() const
+{
+	return static_cast<int>(this->end() - this->begin());
+}
+
 SoftwareLight::SoftwareLight()
 {
 	this->worldPointX = 0.0;

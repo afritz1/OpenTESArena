@@ -67,73 +67,14 @@ struct SoftwareUniformBuffer
 	size_t sizeOfElement;
 	size_t alignmentOfElement;
 
-	SoftwareUniformBuffer()
-	{
-		this->elementCount = 0;
-		this->sizeOfElement = 0;
-		this->alignmentOfElement = 0;
-	}
+	SoftwareUniformBuffer();
 
-	void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
-	{
-		DebugAssert(elementCount >= 0);
-		DebugAssert(sizeOfElement > 0);
-		DebugAssert(alignmentOfElement > 0);
+	void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
 
-		this->elementCount = elementCount;
-		this->sizeOfElement = sizeOfElement;
-		this->alignmentOfElement = alignmentOfElement;
-
-		const size_t padding = this->alignmentOfElement - 1; // Add padding in case of alignment.
-		const size_t byteCount = (elementCount * this->sizeOfElement) + padding;
-		this->bytes.init(static_cast<int>(byteCount));
-	}
-
-	std::byte *begin()
-	{
-		const uintptr_t unalignedAddress = reinterpret_cast<uintptr_t>(this->bytes.begin());
-		if (unalignedAddress == 0)
-		{
-			return nullptr;
-		}
-
-		const uintptr_t alignedAddress = Bytes::getAlignedAddress(unalignedAddress, this->alignmentOfElement);
-		return reinterpret_cast<std::byte*>(alignedAddress);
-	}
-
-	const std::byte *begin() const
-	{
-		const uintptr_t unalignedAddress = reinterpret_cast<uintptr_t>(this->bytes.begin());
-		if (unalignedAddress == 0)
-		{
-			return nullptr;
-		}
-
-		const uintptr_t alignedAddress = Bytes::getAlignedAddress(unalignedAddress, this->alignmentOfElement);
-		return reinterpret_cast<const std::byte*>(alignedAddress);
-	}
-
-	std::byte *end()
-	{
-		std::byte *beginPtr = this->begin();
-		if (beginPtr == nullptr)
-		{
-			return nullptr;
-		}
-
-		return beginPtr + (this->elementCount * this->sizeOfElement);
-	}
-
-	const std::byte *end() const
-	{
-		const std::byte *beginPtr = this->begin();
-		if (beginPtr == nullptr)
-		{
-			return nullptr;
-		}
-
-		return beginPtr + (this->elementCount * this->sizeOfElement);
-	}
+	std::byte *begin();
+	const std::byte *begin() const;
+	std::byte *end();
+	const std::byte *end() const;
 
 	template<typename T>
 	T &get(int index)
@@ -158,10 +99,7 @@ struct SoftwareUniformBuffer
 	}
 
 	// Potentially a subset of the bytes range due to padding/alignment.
-	int getValidByteCount() const
-	{
-		return static_cast<int>(this->end() - this->begin());
-	}
+	int getValidByteCount() const;
 };
 
 struct SoftwareLight
