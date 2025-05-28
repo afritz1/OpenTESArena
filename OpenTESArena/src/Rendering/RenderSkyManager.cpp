@@ -55,14 +55,14 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	std::vector<double> bgTexCoords;
 	std::vector<int32_t> bgIndices;
 
-	constexpr double pointDistance = 1.0; // Arbitrary distance from camera, depth should not be checked.
+	constexpr double pointDistance = 1.0; // Arbitrary distance from camera. Depth should not be checked in shader.
 	constexpr Radians angleAboveHorizon = MathUtils::degToRad(25.0);
 	const double aboveHorizonPointHeight = pointDistance * std::tan(angleAboveHorizon);
 
-	constexpr int zenithVertexIndex = 0;
-	constexpr int nadirVertexIndex = 1;
-	const Double3 zenithPoint(0.0, 1.0 * pointDistance, 0.0);
-	const Double3 nadirPoint(0.0, -1.0 * pointDistance, 0.0);
+	constexpr int zenithIndex = 0;
+	constexpr int nadirIndex = 1;
+	constexpr Double3 zenithPoint(0.0, pointDistance, 0.0); // Top of sky
+	constexpr Double3 nadirPoint(0.0, -pointDistance, 0.0); // Bottom of sky
 	bgVertices.emplace_back(zenithPoint.x);
 	bgVertices.emplace_back(zenithPoint.y);
 	bgVertices.emplace_back(zenithPoint.z);
@@ -79,15 +79,18 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	bgNormals.emplace_back(nadirNormal.y);
 	bgNormals.emplace_back(nadirNormal.z);
 
-	const Double2 zenithTexCoord(0.50, 0.0);
-	const Double2 nadirTexCoord(0.50, 0.0);
+	constexpr Double2 zenithTexCoord(0.50, 0.0);
+	constexpr Double2 nadirTexCoord(0.50, 0.0);
 	bgTexCoords.emplace_back(zenithTexCoord.x);
 	bgTexCoords.emplace_back(zenithTexCoord.y);
 	bgTexCoords.emplace_back(nadirTexCoord.x);
 	bgTexCoords.emplace_back(nadirTexCoord.y);
 
-	constexpr int textureTileCount = 150; // # of times the sky gradient texture tiles around the horizon.
-	constexpr int bgHorizonEdgeCount = 150; // # of hemisphere edges on the horizon, determines # of triangles and smoothness of cone shape.
+	constexpr int bgTextureTileCount = 150; // # of times the sky gradient texture tiles around the horizon.
+	constexpr int bgHorizonEdgeCount = 150; // # of hemisphere edges on the horizon, determines total # of triangles and smoothness of horizon.
+	constexpr int horizonEdgesPerTextureTile = bgHorizonEdgeCount / bgTextureTileCount;
+	constexpr double horizonEdgesPerTextureTileReal = static_cast<double>(horizonEdgesPerTextureTile);
+
 	for (int i = 0; i < bgHorizonEdgeCount; i++)
 	{
 		// Each horizon edge has a quad above it, and a triangle above that. Generate above and below horizon.
@@ -114,61 +117,64 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		bgVertices.emplace_back(nextAboveHorizonPoint.z);
 
 		// Normals point toward the player.
-		const Double3 normal = -horizonPoint.normalized();
-		const Double3 nextNormal = -nextHorizonPoint.normalized();
-		const Double3 aboveNormal = -aboveHorizonPoint.normalized();
-		const Double3 nextAboveNormal = -nextAboveHorizonPoint.normalized();
-		bgNormals.emplace_back(normal.x);
-		bgNormals.emplace_back(normal.y);
-		bgNormals.emplace_back(normal.z);
-		bgNormals.emplace_back(nextNormal.x);
-		bgNormals.emplace_back(nextNormal.y);
-		bgNormals.emplace_back(nextNormal.z);
-		bgNormals.emplace_back(aboveNormal.x);
-		bgNormals.emplace_back(aboveNormal.y);
-		bgNormals.emplace_back(aboveNormal.z);
-		bgNormals.emplace_back(nextAboveNormal.x);
-		bgNormals.emplace_back(nextAboveNormal.y);
-		bgNormals.emplace_back(nextAboveNormal.z);
+		const Double3 horizonNormal = -horizonPoint.normalized();
+		const Double3 nextHorizonNormal = -nextHorizonPoint.normalized();
+		const Double3 aboveHorizonNormal = -aboveHorizonPoint.normalized();
+		const Double3 nextAboveHorizonNormal = -nextAboveHorizonPoint.normalized();
+		bgNormals.emplace_back(horizonNormal.x);
+		bgNormals.emplace_back(horizonNormal.y);
+		bgNormals.emplace_back(horizonNormal.z);
+		bgNormals.emplace_back(nextHorizonNormal.x);
+		bgNormals.emplace_back(nextHorizonNormal.y);
+		bgNormals.emplace_back(nextHorizonNormal.z);
+		bgNormals.emplace_back(aboveHorizonNormal.x);
+		bgNormals.emplace_back(aboveHorizonNormal.y);
+		bgNormals.emplace_back(aboveHorizonNormal.z);
+		bgNormals.emplace_back(nextAboveHorizonNormal.x);
+		bgNormals.emplace_back(nextAboveHorizonNormal.y);
+		bgNormals.emplace_back(nextAboveHorizonNormal.z);
 
-		const double coordXStart = static_cast<double>(i % (bgHorizonEdgeCount / textureTileCount)) / static_cast<double>(bgHorizonEdgeCount / textureTileCount);
-		const double coordXEnd = coordXStart + (1.0 / static_cast<double>(bgHorizonEdgeCount / textureTileCount));
-		const double coordYStart = 0.0;
-		const double coordYEnd = 1.0;
-		const Double2 texCoord(coordXStart, coordYEnd);
-		const Double2 nextTexCoord(coordXEnd, coordYEnd);
-		const Double2 aboveTexCoord(coordXStart, coordYStart);
-		const Double2 nextAboveTexCoord(coordXEnd, coordYStart);
-		bgTexCoords.emplace_back(texCoord.x);
-		bgTexCoords.emplace_back(texCoord.y);
-		bgTexCoords.emplace_back(nextTexCoord.x);
-		bgTexCoords.emplace_back(nextTexCoord.y);
-		bgTexCoords.emplace_back(aboveTexCoord.x);
-		bgTexCoords.emplace_back(aboveTexCoord.y);
-		bgTexCoords.emplace_back(nextAboveTexCoord.x);
-		bgTexCoords.emplace_back(nextAboveTexCoord.y);
+		// Texture coordinates for this horizon quad and triangle above.
+		const double texCoordUStart = static_cast<double>(i % horizonEdgesPerTextureTile) / horizonEdgesPerTextureTileReal;
+		const double texCoordUEnd = texCoordUStart + (1.0 / horizonEdgesPerTextureTileReal);
+		const double texCoordVStart = 0.0;
+		const double texCoordVEnd = 1.0;
+		const Double2 horizonTexCoord(texCoordUStart, texCoordVEnd);
+		const Double2 nextHorizonTexCoord(texCoordUEnd, texCoordVEnd);
+		const Double2 aboveHorizonTexCoord(texCoordUStart, texCoordVStart);
+		const Double2 nextAboveHorizonTexCoord(texCoordUEnd, texCoordVStart);
+		bgTexCoords.emplace_back(horizonTexCoord.x);
+		bgTexCoords.emplace_back(horizonTexCoord.y);
+		bgTexCoords.emplace_back(nextHorizonTexCoord.x);
+		bgTexCoords.emplace_back(nextHorizonTexCoord.y);
+		bgTexCoords.emplace_back(aboveHorizonTexCoord.x);
+		bgTexCoords.emplace_back(aboveHorizonTexCoord.y);
+		bgTexCoords.emplace_back(nextAboveHorizonTexCoord.x);
+		bgTexCoords.emplace_back(nextAboveHorizonTexCoord.y);
 
-		// Above-horizon
-		const int32_t vertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 4);
-		const int32_t nextVertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 3);
-		const int32_t aboveVertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 2);
-		const int32_t nextAboveVertexIndex = static_cast<int32_t>((bgVertices.size() / 3) - 1);
-		bgIndices.emplace_back(aboveVertexIndex);
-		bgIndices.emplace_back(vertexIndex);
-		bgIndices.emplace_back(nextVertexIndex);
+		// Horizon quad
+		const int currentVertexCount = static_cast<int>(bgVertices.size()) / 3;
+		const int32_t horizonIndex = static_cast<int32_t>(currentVertexCount - 4);
+		const int32_t nextHorizonIndex = static_cast<int32_t>(currentVertexCount - 3);
+		const int32_t aboveHorizonIndex = static_cast<int32_t>(currentVertexCount - 2);
+		const int32_t nextAboveHorizonIndex = static_cast<int32_t>(currentVertexCount - 1);
+		bgIndices.emplace_back(aboveHorizonIndex);
+		bgIndices.emplace_back(horizonIndex);
+		bgIndices.emplace_back(nextHorizonIndex);
 		
-		bgIndices.emplace_back(nextVertexIndex);
-		bgIndices.emplace_back(nextAboveVertexIndex);
-		bgIndices.emplace_back(aboveVertexIndex);
+		bgIndices.emplace_back(nextHorizonIndex);
+		bgIndices.emplace_back(nextAboveHorizonIndex);
+		bgIndices.emplace_back(aboveHorizonIndex);
 
-		bgIndices.emplace_back(zenithVertexIndex);
-		bgIndices.emplace_back(aboveVertexIndex);
-		bgIndices.emplace_back(nextAboveVertexIndex);
+		// Triangle above horizon quad
+		bgIndices.emplace_back(zenithIndex);
+		bgIndices.emplace_back(aboveHorizonIndex);
+		bgIndices.emplace_back(nextAboveHorizonIndex);
 
-		// Below-horizon
-		bgIndices.emplace_back(nadirVertexIndex);
-		bgIndices.emplace_back(nextVertexIndex);
-		bgIndices.emplace_back(vertexIndex);
+		// Triangle below horizon
+		bgIndices.emplace_back(nadirIndex);
+		bgIndices.emplace_back(nextHorizonIndex);
+		bgIndices.emplace_back(horizonIndex);
 	}
 
 	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
