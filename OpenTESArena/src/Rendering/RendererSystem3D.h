@@ -3,8 +3,8 @@
 
 #include <cstdint>
 
-#include "RenderGeometryUtils.h"
 #include "RenderLightUtils.h"
+#include "RenderMeshUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Math/MathUtils.h"

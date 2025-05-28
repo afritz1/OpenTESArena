@@ -1,5 +1,5 @@
-#ifndef RENDER_GEOMETRY_UTILS_H
-#define RENDER_GEOMETRY_UTILS_H
+#ifndef RENDER_MESH_UTILS_H
+#define RENDER_MESH_UTILS_H
 
 // Unique ID for a mesh allocated in the renderer's internal format.
 using VertexBufferID = int;

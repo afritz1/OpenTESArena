@@ -2,7 +2,7 @@
 #define RENDER_SKY_MANAGER_H
 
 #include "RenderDrawCall.h"
-#include "RenderGeometryUtils.h"
+#include "RenderMeshUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Assets/TextureAsset.h"
 

@@ -1,7 +1,7 @@
 #ifndef RENDER_VOXEL_MESH_INSTANCE_H
 #define RENDER_VOXEL_MESH_INSTANCE_H
 
-#include "RenderGeometryUtils.h"
+#include "RenderMeshUtils.h"
 
 class Renderer;
 
