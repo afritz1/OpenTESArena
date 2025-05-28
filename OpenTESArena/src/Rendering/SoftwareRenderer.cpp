@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <condition_variable>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <deque>
 #include <limits>
@@ -1065,12 +1066,8 @@ namespace
 	std::atomic<int> g_totalDepthTests = 0;
 	std::atomic<int> g_totalColorWrites = 0;
 
-	void ClearFrameBuffers()
+	void ClearFrameBufferOperationCounts()
 	{
-		// Don't need to clear color buffers as long as there's always a sky mesh.
-		//std::fill(g_paletteIndexBuffer, g_paletteIndexBuffer + g_frameBufferPixelCount, 0);
-		std::fill(g_depthBuffer, g_depthBuffer + g_frameBufferPixelCount, std::numeric_limits<double>::infinity());
-		//std::fill(g_colorBuffer, g_colorBuffer + g_frameBufferPixelCount, 0);
 		g_totalCoverageTests = 0;
 		g_totalDepthTests = 0;
 		g_totalColorWrites = 0;
@@ -3518,7 +3515,7 @@ namespace
 		ClippingOutputCache clippingOutputCache;
 		RasterizerInputCache rasterizerInputCache;
 		std::vector<RasterizerWorkItem> rasterizerWorkItems;
-		bool isReadyToStartFrame, shouldExit, shouldWorkOnDrawCalls, isFinishedWithDrawCalls, shouldWorkOnRasterizing, isFinishedRasterizing;
+		bool isReadyToStartWork, shouldExit, shouldWorkOnDrawCalls, shouldClearFrameBuffer, isFinishedWithDrawCalls, shouldWorkOnRasterizing, isFinishedRasterizing;
 	};
 
 	Buffer<Worker> g_workers;
@@ -3532,7 +3529,7 @@ namespace
 
 		while (true)
 		{
-			worker.isReadyToStartFrame = true;
+			worker.isReadyToStartWork = true;
 			g_directorCondVar.notify_one();
 			g_workerCondVar.wait(workerLock, [&worker]() { return worker.shouldExit || worker.shouldWorkOnDrawCalls; });
 			workerLock.unlock();
@@ -3557,6 +3554,22 @@ namespace
 				ProcessVertexShaders(drawCallCache.vertexShaderType, transformCache, vertexShaderInputCache, vertexShaderOutputCache);
 				ProcessClipping(drawCallCache, vertexShaderOutputCache, clippingOutputCache);
 				ProcessClipSpaceTrianglesForBinning(drawCallIndex, clippingOutputCache, rasterizerInputCache);
+			}
+
+			// Clear screen before rasterization sync as frame buffer rows are faster than bin rows.
+			if (worker.shouldClearFrameBuffer)
+			{
+				// Determine rows to clear.
+				const std::div_t frameBufferClearRowsDiv = std::div(g_frameBufferHeight, g_workers.getCount());
+				const int frameBufferClearRowsPerWorker = frameBufferClearRowsDiv.quot;
+				const int frameBufferClearRowsRemainder = frameBufferClearRowsDiv.rem;
+				const int frameBufferClearStartY = (workerIndex * frameBufferClearRowsPerWorker) + std::min(workerIndex, frameBufferClearRowsRemainder);
+				const int frameBufferClearRowCount = frameBufferClearRowsPerWorker + (workerIndex < frameBufferClearRowsRemainder ? 1 : 0);
+
+				// Don't have to clear color buffer since there's always a sky mesh.
+				double *depthBufferClearStart = g_depthBuffer + (frameBufferClearStartY * g_frameBufferWidth);
+				double *depthBufferClearEnd = depthBufferClearStart + (frameBufferClearRowCount * g_frameBufferWidth);
+				std::fill(depthBufferClearStart, depthBufferClearEnd, std::numeric_limits<double>::infinity());
 			}
 
 			workerLock.lock();
@@ -3624,9 +3637,10 @@ namespace
 				worker.drawCallStartIndex = -1;
 				worker.drawCallCount = 0;
 				worker.rasterizerInputCache.createBins(frameBufferWidth, frameBufferHeight);
-				worker.isReadyToStartFrame = false;
+				worker.isReadyToStartWork = false;
 				worker.shouldExit = false;
 				worker.shouldWorkOnDrawCalls = false;
+				worker.shouldClearFrameBuffer = false;
 				worker.isFinishedWithDrawCalls = false;
 				worker.shouldWorkOnRasterizing = false;
 				worker.isFinishedRasterizing = false;
@@ -4174,8 +4188,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);
 
 	ClearTriangleTotalCounts();
-	ClearFrameBuffers();
+	ClearFrameBufferOperationCounts();
 
+	bool shouldWorkersClearFrameBuffer = true; // Once per frame.
 	std::unique_lock<std::mutex> lock(g_mutex);
 
 	for (int commandIndex = 0; commandIndex < commandBuffer.entryCount; commandIndex++)
@@ -4191,17 +4206,18 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 			// Wait for all workers to be ready to process this set of draw calls.
 			g_directorCondVar.wait(lock, []()
 			{
-				return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStartFrame; });
+				return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isReadyToStartWork; });
 			});
 
 			for (Worker &worker : g_workers)
 			{
 				DebugAssert(!worker.shouldExit);
 				DebugAssert(!worker.shouldWorkOnDrawCalls);
+				DebugAssert(!worker.shouldClearFrameBuffer);
 				DebugAssert(!worker.isFinishedWithDrawCalls);
 				DebugAssert(!worker.shouldWorkOnRasterizing);
 				DebugAssert(!worker.isFinishedRasterizing);
-				worker.isReadyToStartFrame = false;
+				worker.isReadyToStartWork = false;
 				worker.rasterizerInputCache.clearTriangles();
 				worker.rasterizerInputCache.emptyBins();
 			}
@@ -4283,6 +4299,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 			{
 				DebugAssert(!worker.shouldWorkOnDrawCalls);
 				worker.shouldWorkOnDrawCalls = true;
+				worker.shouldClearFrameBuffer = shouldWorkersClearFrameBuffer;
 			}
 
 			g_workerCondVar.notify_all();
@@ -4291,12 +4308,15 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 				return std::all_of(g_workers.begin(), g_workers.end(), [](const Worker &worker) { return worker.isFinishedWithDrawCalls; });
 			});
 
+			shouldWorkersClearFrameBuffer = false;
+			
 			for (Worker &worker : g_workers)
 			{
 				DebugAssert(worker.shouldWorkOnDrawCalls);
 				DebugAssert(!worker.shouldWorkOnRasterizing);
 				DebugAssert(!worker.isFinishedRasterizing);
 				worker.shouldWorkOnDrawCalls = false;
+				worker.shouldClearFrameBuffer = false;
 				worker.shouldWorkOnRasterizing = true;
 				g_totalPresentedTriangleCount += worker.rasterizerInputCache.triangleCount;
 			}
