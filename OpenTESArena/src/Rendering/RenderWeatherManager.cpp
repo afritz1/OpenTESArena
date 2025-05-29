@@ -87,7 +87,7 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 {
 	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
+	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 
 	constexpr int particleMeshVertexCount = 4;
 	constexpr int particleMeshIndexCount = 6;

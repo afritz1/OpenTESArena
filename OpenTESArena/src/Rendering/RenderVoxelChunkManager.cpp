@@ -520,7 +520,7 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 		{
 			constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 			constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
+			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
 			renderVoxelMeshInst.positionBufferID = renderer.createVertexPositionBuffer(vertexCount, positionComponentsPerVertex);

@@ -129,7 +129,7 @@ void RenderEntityChunkManager::init(Renderer &renderer)
 	// Populate entity mesh buffers. All entities share the same buffers, and the normals buffer is updated every frame.
 	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
+	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 	constexpr int entityMeshVertexCount = 4;
 	constexpr int entityMeshIndexCount = 6;
 

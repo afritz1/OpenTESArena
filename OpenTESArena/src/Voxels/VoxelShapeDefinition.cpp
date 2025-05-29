@@ -101,7 +101,7 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(VoxelShapeScaleType scale
 {
 	static_assert(MeshUtils::POSITION_COMPONENTS_PER_VERTEX == 3);
 	static_assert(MeshUtils::NORMAL_COMPONENTS_PER_VERTEX == 3);
-	static_assert(MeshUtils::TEX_COORDS_PER_VERTEX == 2);
+	static_assert(MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX == 2);
 	DebugAssert(outPositions.getCount() >= this->rendererPositions.size());
 	DebugAssert(outNormals.getCount() >= this->rendererNormals.size());
 	DebugAssert(outTexCoords.getCount() >= this->rendererTexCoords.size());

@@ -43,7 +43,7 @@ namespace ArenaMeshUtils
 		// Per-vertex data (duplicated to some extent, compared to the minimum-required).
 		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> positions;
 		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals;
-		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::TEX_COORDS_PER_VERTEX> texCoords;
+		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX> texCoords;
 		std::array<int32_t, MAX_RENDERER_INDICES> indices0, indices1, indices2;
 		std::array<const decltype(indices0)*, 3> indicesPtrs;
 
@@ -218,7 +218,7 @@ namespace ArenaMeshUtils
 
 	constexpr int GetRendererVertexTexCoordComponentCount(ArenaTypes::VoxelType voxelType)
 	{
-		return GetRendererVertexCount(voxelType) * MeshUtils::TEX_COORDS_PER_VERTEX;
+		return GetRendererVertexCount(voxelType) * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 	}
 
 	constexpr int GetOpaqueIndexBufferCount(ArenaTypes::VoxelType voxelType)

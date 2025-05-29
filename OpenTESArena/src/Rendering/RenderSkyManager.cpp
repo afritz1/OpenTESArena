@@ -179,7 +179,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 
 	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
+	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 
 	const int bgVertexCount = static_cast<int>(bgPositions.size()) / 3;
 	this->bgPositionBufferID = renderer.createVertexPositionBuffer(bgVertexCount, positionComponentsPerVertex);
