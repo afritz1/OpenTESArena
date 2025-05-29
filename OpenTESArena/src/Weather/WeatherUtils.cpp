@@ -2,10 +2,10 @@
 #include "WeatherUtils.h"
 
 WeatherDefinition WeatherUtils::getFilteredWeather(const WeatherDefinition &weatherDef,
-	ArenaTypes::ClimateType climateType)
+	ArenaClimateType climateType)
 {
 	// Snow in deserts is replaced by rain.
-	if ((weatherDef.type == WeatherType::Snow) && (climateType == ArenaTypes::ClimateType::Desert))
+	if ((weatherDef.type == WeatherType::Snow) && (climateType == ArenaClimateType::Desert))
 	{
 		constexpr bool thunderstorm = false;
 		WeatherDefinition filteredWeatherDef;

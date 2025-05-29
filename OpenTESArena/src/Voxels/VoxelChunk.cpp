@@ -770,7 +770,7 @@ void VoxelChunk::updateFadeAnimInsts(double dt)
 		{
 			const VoxelTraitsDefID voxelTraitsDefID = this->getTraitsDefID(voxel.x, voxel.y, voxel.z);
 			const VoxelTraitsDefinition &voxelTraitsDef = this->getTraitsDef(voxelTraitsDefID);
-			const bool shouldConvertToChasm = voxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
+			const bool shouldConvertToChasm = voxelTraitsDef.type == ArenaVoxelType::Floor;
 			if (shouldConvertToChasm)
 			{
 				// Change to water chasm.

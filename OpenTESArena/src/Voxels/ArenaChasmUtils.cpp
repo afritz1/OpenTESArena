@@ -4,49 +4,49 @@
 
 #include "components/debug/Debug.h"
 
-bool ArenaChasmUtils::isTextured(ArenaTypes::ChasmType chasmType)
+bool ArenaChasmUtils::isTextured(ArenaChasmType chasmType)
 {
 	switch (chasmType)
 	{
-	case ArenaTypes::ChasmType::Dry:
+	case ArenaChasmType::Dry:
 		return false;
-	case ArenaTypes::ChasmType::Wet:
-	case ArenaTypes::ChasmType::Lava:
+	case ArenaChasmType::Wet:
+	case ArenaChasmType::Lava:
 		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(chasmType)));
 	}
 }
 
-bool ArenaChasmUtils::allowsSwimming(ArenaTypes::ChasmType chasmType)
+bool ArenaChasmUtils::allowsSwimming(ArenaChasmType chasmType)
 {
 	switch (chasmType)
 	{
-	case ArenaTypes::ChasmType::Dry:
+	case ArenaChasmType::Dry:
 		return false;
-	case ArenaTypes::ChasmType::Wet:
-	case ArenaTypes::ChasmType::Lava:
+	case ArenaChasmType::Wet:
+	case ArenaChasmType::Lava:
 		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(chasmType)));
 	}
 }
 
-bool ArenaChasmUtils::isDamaging(ArenaTypes::ChasmType chasmType)
+bool ArenaChasmUtils::isDamaging(ArenaChasmType chasmType)
 {
 	switch (chasmType)
 	{
-	case ArenaTypes::ChasmType::Dry:
-	case ArenaTypes::ChasmType::Wet:
+	case ArenaChasmType::Dry:
+	case ArenaChasmType::Wet:
 		return false;
-	case ArenaTypes::ChasmType::Lava:
+	case ArenaChasmType::Lava:
 		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(chasmType)));
 	}
 }
 
-Buffer<TextureAsset> ArenaChasmUtils::getTextureAssets(ArenaTypes::ChasmType chasmType, TextureManager &textureManager)
+Buffer<TextureAsset> ArenaChasmUtils::getTextureAssets(ArenaChasmType chasmType, TextureManager &textureManager)
 {
 	if (!ArenaChasmUtils::isTextured(chasmType))
 	{
@@ -57,9 +57,9 @@ Buffer<TextureAsset> ArenaChasmUtils::getTextureAssets(ArenaTypes::ChasmType cha
 	{
 		switch (chasmType)
 		{
-		case ArenaTypes::ChasmType::Wet:
+		case ArenaChasmType::Wet:
 			return ArenaRenderUtils::CHASM_WATER_FILENAME;
-		case ArenaTypes::ChasmType::Lava:
+		case ArenaChasmType::Lava:
 			return ArenaRenderUtils::CHASM_LAVA_FILENAME;
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(chasmType)));

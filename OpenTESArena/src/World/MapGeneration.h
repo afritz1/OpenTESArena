@@ -43,10 +43,10 @@ namespace MapGeneration
 	struct InteriorPrefabGenInfo
 	{
 		std::string mifName;
-		ArenaTypes::InteriorType interiorType;
+		ArenaInteriorType interiorType;
 		std::optional<bool> rulerIsMale;
 
-		void init(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale);
+		void init(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale);
 	};
 
 	// Input: RANDOM1.MIF + RD1.INF (loaded internally) + seed + chunk dimensions
@@ -63,13 +63,13 @@ namespace MapGeneration
 	struct InteriorGenInfo
 	{
 		InteriorGenType type;
-		ArenaTypes::InteriorType interiorType;
+		ArenaInteriorType interiorType;
 		InteriorPrefabGenInfo prefab;
 		InteriorDungeonGenInfo dungeon;
 
 		InteriorGenInfo();
 
-		void initPrefab(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale);
+		void initPrefab(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale);
 		void initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon);
 	};
 
@@ -79,7 +79,7 @@ namespace MapGeneration
 	{
 		std::string mifName;
 		std::string cityTypeName;
-		ArenaTypes::CityType cityType;
+		ArenaCityType cityType;
 		uint32_t citySeed;
 		uint32_t rulerSeed;
 		int raceID;
@@ -99,7 +99,7 @@ namespace MapGeneration
 
 		int cityBlocksPerSide;
 
-		void init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType, uint32_t citySeed,
+		void init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType, uint32_t citySeed,
 			uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale,
 			bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
 			const std::optional<LocationCityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
@@ -122,32 +122,32 @@ namespace MapGeneration
 	{
 	private:
 		ChunkInt2 chunk;
-		std::unordered_map<ArenaTypes::InteriorType, LevelVoxelBuildingNameID> ids;
+		std::unordered_map<ArenaInteriorType, LevelVoxelBuildingNameID> ids;
 	public:
 		void init(const ChunkInt2 &chunk);
 
 		const ChunkInt2 &getChunk() const;
 		bool hasBuildingNames() const;
-		bool tryGetBuildingNameID(ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID *outID) const;
-		void setBuildingNameID(ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID id);
+		bool tryGetBuildingNameID(ArenaInteriorType interiorType, LevelVoxelBuildingNameID *outID) const;
+		void setBuildingNameID(ArenaInteriorType interiorType, LevelVoxelBuildingNameID id);
 	};
 
 	// Data that can be used when creating an actual transition definition.
 	struct TransitionDefGenInfo
 	{
 		TransitionType transitionType;
-		std::optional<ArenaTypes::InteriorType> interiorType;
+		std::optional<ArenaInteriorType> interiorType;
 		std::optional<int> menuID; // Arena *MENU ID for transitions.
 		std::optional<bool> isLevelUp; // Stairs direction for interior level changes.
 
-		void init(TransitionType transitionType, const std::optional<ArenaTypes::InteriorType> &interiorType,
+		void init(TransitionType transitionType, const std::optional<ArenaInteriorType> &interiorType,
 			const std::optional<int> &menuID, const std::optional<bool> &isLevelUp);
 	};
 
 	// Data that can be used when making an actual door definition.
 	struct DoorDefGenInfo
 	{
-		ArenaTypes::DoorType doorType;
+		ArenaDoorType doorType;
 
 		// Indices into .INF sounds.
 		int openSoundIndex;
@@ -155,14 +155,14 @@ namespace MapGeneration
 
 		VoxelDoorCloseType closeType;
 
-		void init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex, VoxelDoorCloseType closeType);
+		void init(ArenaDoorType doorType, int openSoundIndex, int closeSoundIndex, VoxelDoorCloseType closeType);
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
 	void readMifVoxels(BufferView<const MIFLevel> levels, MapType mapType,
-		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
+		const std::optional<ArenaInteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<ArenaTypes::CityType> &cityType, const LocationDungeonDefinition *dungeonDef,
+		const std::optional<ArenaCityType> &cityType, const LocationDungeonDefinition *dungeonDef,
 		const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
@@ -172,7 +172,7 @@ namespace MapGeneration
 	// Also writes out the player start voxel.
 	void generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
 		SNInt depthChunks, const INFFile &inf, ArenaRandom &random, MapType mapType,
-		ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale,
+		ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale,
 		const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
@@ -183,7 +183,7 @@ namespace MapGeneration
 	void generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 		BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-		int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName, ArenaTypes::CityType cityType,
+		int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName, ArenaCityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,

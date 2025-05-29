@@ -24,7 +24,7 @@ namespace SkyGeneration
 
 	struct ExteriorSkyGenInfo
 	{
-		ArenaTypes::ClimateType climateType; // Only cities have climate.
+		ArenaClimateType climateType; // Only cities have climate.
 		WeatherDefinition weatherDef;
 		int currentDay;
 		int starCount;
@@ -32,7 +32,7 @@ namespace SkyGeneration
 		uint32_t skySeed;
 		bool provinceHasAnimatedLand;
 
-		void init(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef, int currentDay,
+		void init(ArenaClimateType climateType, const WeatherDefinition &weatherDef, int currentDay,
 			int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand);
 	};
 

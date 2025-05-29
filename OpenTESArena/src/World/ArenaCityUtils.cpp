@@ -17,19 +17,19 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType, WeatherType weatherType)
+std::string ArenaCityUtils::generateInfName(ArenaClimateType climateType, WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
-		if (climateType == ArenaTypes::ClimateType::Temperate)
+		if (climateType == ArenaClimateType::Temperate)
 		{
 			return 'T';
 		}
-		else if (climateType == ArenaTypes::ClimateType::Desert)
+		else if (climateType == ArenaClimateType::Desert)
 		{
 			return 'D';
 		}
-		else if (climateType == ArenaTypes::ClimateType::Mountain)
+		else if (climateType == ArenaClimateType::Mountain)
 		{
 			return 'M';
 		}
@@ -59,7 +59,7 @@ std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType,
 		else if (weatherType == WeatherType::Snow)
 		{
 			// Deserts can't have snow.
-			if (climateType != ArenaTypes::ClimateType::Desert)
+			if (climateType != ArenaClimateType::Desert)
 			{
 				return 'S';
 			}
@@ -79,12 +79,12 @@ std::string ArenaCityUtils::generateInfName(ArenaTypes::ClimateType climateType,
 }
 
 void ArenaCityUtils::writeSkeleton(const MIFLevel &level,
-	BufferView2D<ArenaTypes::VoxelID> &dstFlor, BufferView2D<ArenaTypes::VoxelID> &dstMap1,
-	BufferView2D<ArenaTypes::VoxelID> &dstMap2)
+	BufferView2D<ArenaVoxelID> &dstFlor, BufferView2D<ArenaVoxelID> &dstMap1,
+	BufferView2D<ArenaVoxelID> &dstMap2)
 {
-	const BufferView2D<const ArenaTypes::VoxelID> levelFLOR = level.getFLOR();
-	const BufferView2D<const ArenaTypes::VoxelID> levelMAP1 = level.getMAP1();
-	const BufferView2D<const ArenaTypes::VoxelID> levelMAP2 = level.getMAP2();
+	const BufferView2D<const ArenaVoxelID> levelFLOR = level.getFLOR();
+	const BufferView2D<const ArenaVoxelID> levelMAP1 = level.getMAP1();
+	const BufferView2D<const ArenaVoxelID> levelMAP2 = level.getMAP2();
 	const WEInt levelWidth = levelFLOR.getWidth();
 	const SNInt levelDepth = levelFLOR.getHeight();
 
@@ -92,9 +92,9 @@ void ArenaCityUtils::writeSkeleton(const MIFLevel &level,
 	{
 		for (SNInt z = 0; z < levelDepth; z++)
 		{
-			const ArenaTypes::VoxelID srcFlorVoxel = levelFLOR.get(x, z);
-			const ArenaTypes::VoxelID srcMap1Voxel = levelMAP1.get(x, z);
-			const ArenaTypes::VoxelID srcMap2Voxel = levelMAP2.get(x, z);
+			const ArenaVoxelID srcFlorVoxel = levelFLOR.get(x, z);
+			const ArenaVoxelID srcMap1Voxel = levelMAP1.get(x, z);
+			const ArenaVoxelID srcMap2Voxel = levelMAP2.get(x, z);
 			dstFlor.set(x, z, srcFlorVoxel);
 			dstMap1.set(x, z, srcMap1Voxel);
 			dstMap2.set(x, z, srcMap2Voxel);
@@ -104,7 +104,7 @@ void ArenaCityUtils::writeSkeleton(const MIFLevel &level,
 
 void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth, BufferView<const uint8_t> reservedBlocks,
 	const OriginalInt2 &startPosition, ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
-	Buffer2D<ArenaTypes::VoxelID> &dstFlor, Buffer2D<ArenaTypes::VoxelID> &dstMap1, Buffer2D<ArenaTypes::VoxelID> &dstMap2)
+	Buffer2D<ArenaVoxelID> &dstFlor, Buffer2D<ArenaVoxelID> &dstMap1, Buffer2D<ArenaVoxelID> &dstMap2)
 {
 	// Get the city's local X and Y, to be used later for building name generation.
 	const Int2 localCityPoint = ArenaLocationUtils::getLocalCityPoint(citySeed);
@@ -179,9 +179,9 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			const WEInt blockWidth = blockMif.getWidth();
 			const SNInt blockDepth = blockMif.getDepth();
 			const auto &blockLevel = blockMif.getLevel(0);
-			const BufferView2D<const ArenaTypes::VoxelID> blockFLOR = blockLevel.getFLOR();
-			const BufferView2D<const ArenaTypes::VoxelID> blockMAP1 = blockLevel.getMAP1();
-			const BufferView2D<const ArenaTypes::VoxelID> blockMAP2 = blockLevel.getMAP2();
+			const BufferView2D<const ArenaVoxelID> blockFLOR = blockLevel.getFLOR();
+			const BufferView2D<const ArenaVoxelID> blockMAP1 = blockLevel.getMAP1();
+			const BufferView2D<const ArenaVoxelID> blockMAP2 = blockLevel.getMAP2();
 
 			// Offset of the block in the voxel grid.
 			const WEInt xOffset = startPosition.x + (xDim * 20);
@@ -192,9 +192,9 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			{
 				for (WEInt x = 0; x < blockWidth; x++)
 				{
-					const ArenaTypes::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
-					const ArenaTypes::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
-					const ArenaTypes::VoxelID srcMap2Voxel = blockMAP2.get(x, z);
+					const ArenaVoxelID srcFlorVoxel = blockFLOR.get(x, z);
+					const ArenaVoxelID srcMap1Voxel = blockMAP1.get(x, z);
+					const ArenaVoxelID srcMap2Voxel = blockMAP2.get(x, z);
 					const WEInt dstX = xOffset + x;
 					const SNInt dstZ = zOffset + z;
 					dstFlor.set(dstX, dstZ, srcFlorVoxel);
@@ -215,7 +215,7 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 	}
 }
 
-void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
+void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 	SNInt gridWidth, WEInt gridDepth)
 {
 	// @todo: this should be in Arena coordinates, don't use gridWidth/Depth.
@@ -223,11 +223,11 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 	// Lambda for obtaining a two-byte MAP1 voxel.
 	auto getMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z)
 	{
-		const ArenaTypes::VoxelID voxel = map1.get(z, x);
+		const ArenaVoxelID voxel = map1.get(z, x);
 		return voxel;
 	};
 
-	auto setMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z, ArenaTypes::VoxelID voxel)
+	auto setMap1Voxel = [&map1, gridWidth, gridDepth](SNInt x, WEInt z, ArenaVoxelID voxel)
 	{
 		map1.set(z, x, voxel);
 	};
@@ -254,7 +254,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 	{
 		auto isPalaceBlock = [&getMap1Voxel](SNInt x, WEInt z)
 		{
-			const ArenaTypes::VoxelID voxel = getMap1Voxel(x, z);
+			const ArenaVoxelID voxel = getMap1Voxel(x, z);
 			const uint8_t mostSigNibble = (voxel & 0xF000) >> 12;
 			return mostSigNibble == 0x9;
 		};
@@ -307,7 +307,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 		{
 			auto isGateBlock = [&getMap1Voxel](SNInt x, WEInt z)
 			{
-				const ArenaTypes::VoxelID voxel = getMap1Voxel(x, z);
+				const ArenaVoxelID voxel = getMap1Voxel(x, z);
 				const uint8_t mostSigNibble = (voxel & 0xF000) >> 12;
 				return mostSigNibble == 0xA;
 			};
@@ -329,7 +329,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaTypes::VoxelID> &map1,
 
 		// Set the positions of the two palace voxels and the two gate voxels.
 		WorldInt2 firstPalaceVoxel, secondPalaceVoxel, firstGateVoxel, secondGateVoxel;
-		ArenaTypes::VoxelID firstPalaceVoxelID, secondPalaceVoxelID, gateVoxelID;
+		ArenaVoxelID firstPalaceVoxelID, secondPalaceVoxelID, gateVoxelID;
 		int gateDist;
 		if (result.side == SearchResult::Side::North)
 		{

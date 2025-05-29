@@ -13,7 +13,7 @@ struct WeatherDefinition;
 namespace MusicUtils
 {
 	// Gets the music type associated with an interior.
-	InteriorMusicType getInteriorMusicType(ArenaTypes::InteriorType interiorType);
+	InteriorMusicType getInteriorMusicType(ArenaInteriorType interiorType);
 
 	const MusicDefinition *getExteriorMusicDefinition(const WeatherDefinition &weatherDef, const Clock &clock, Random &random);
 	const MusicDefinition *getRandomDungeonMusicDefinition(Random &random);

@@ -133,7 +133,7 @@ bool VoxelChasmDefinition::operator==(const VoxelChasmDefinition &other) const
 	}
 }
 
-void VoxelChasmDefinition::initClassic(ArenaTypes::ChasmType chasmType, const TextureAsset &wallTextureAsset,
+void VoxelChasmDefinition::initClassic(ArenaChasmType chasmType, const TextureAsset &wallTextureAsset,
 	TextureManager &textureManager)
 {
 	this->allowsSwimming = ArenaChasmUtils::allowsSwimming(chasmType);
@@ -141,12 +141,12 @@ void VoxelChasmDefinition::initClassic(ArenaTypes::ChasmType chasmType, const Te
 	this->isEmissive = this->isDamaging;
 	this->wallTextureAsset = wallTextureAsset;
 
-	if (chasmType == ArenaTypes::ChasmType::Dry)
+	if (chasmType == ArenaChasmType::Dry)
 	{
 		this->animType = VoxelChasmAnimationType::SolidColor;
 		this->solidColor.init(ArenaRenderUtils::PALETTE_INDEX_DRY_CHASM_COLOR);
 	}
-	else if ((chasmType == ArenaTypes::ChasmType::Wet) || (chasmType == ArenaTypes::ChasmType::Lava))
+	else if ((chasmType == ArenaChasmType::Wet) || (chasmType == ArenaChasmType::Lava))
 	{
 		this->animType = VoxelChasmAnimationType::Animated;
 		this->animated.init(ArenaChasmUtils::getTextureAssets(chasmType, textureManager));

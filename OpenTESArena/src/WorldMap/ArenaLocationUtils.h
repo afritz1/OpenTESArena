@@ -39,13 +39,13 @@ namespace ArenaLocationUtils
 	std::pair<int, int> getLocalCityAndProvinceID(int globalCityID);
 
 	// Functions for obtaining the local location type from a local city/dungeon ID.
-	ArenaTypes::LocationType getCityType(int localCityID);
-	ArenaTypes::LocationType getDungeonType(int localDungeonID);
+	ArenaLocationType getCityType(int localCityID);
+	ArenaLocationType getDungeonType(int localDungeonID);
 
 	// Functions for getting the climate type of a location.
-	ArenaTypes::ClimateType getCityClimateType(int localCityID, int provinceID,
+	ArenaClimateType getCityClimateType(int localCityID, int provinceID,
 		const BinaryAssetLibrary &binaryAssetLibrary);
-	ArenaTypes::ClimateType getDungeonClimateType(int localDungeonID, int provinceID,
+	ArenaClimateType getDungeonClimateType(int localDungeonID, int provinceID,
 		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
@@ -74,7 +74,7 @@ namespace ArenaLocationUtils
 
 	// Gets the number of days required to travel from one province's local point to another.
 	int getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-		int month, BufferView<const ArenaTypes::WeatherType> worldMapWeathers, ArenaRandom &random,
+		int month, BufferView<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random,
 		const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the 32-bit seed for a city in the given province.
@@ -107,11 +107,11 @@ namespace ArenaLocationUtils
 	int getCityTemplateCount(bool isCoastal, bool isCityState);
 
 	// Gets an index into the template name array (town%d.mif, ..., cityw%d.mif).
-	int getCityTemplateNameIndex(ArenaTypes::LocationType locationType, bool isCoastal);
+	int getCityTemplateNameIndex(ArenaLocationType locationType, bool isCoastal);
 
 	// Gets an index into the city starting positions list. This determines how city blocks
 	// are offset within the city skeleton.
-	int getCityStartingPositionIndex(ArenaTypes::LocationType locationType, bool isCoastal, int templateID);
+	int getCityStartingPositionIndex(ArenaLocationType locationType, bool isCoastal, int templateID);
 
 	// Gets an index into the city reserved block list.
 	int getCityReservedBlockListIndex(bool isCoastal, int templateID);

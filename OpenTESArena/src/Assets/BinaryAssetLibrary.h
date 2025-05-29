@@ -33,7 +33,7 @@ private:
 	std::array<uint8_t, WorldMapTerrain::WIDTH * WorldMapTerrain::HEIGHT> indices;
 public:
 	// Converts a terrain index to a climate type. The given index must be for a land pixel.
-	static ArenaTypes::ClimateType toClimateType(uint8_t index);
+	static ArenaClimateType toClimateType(uint8_t index);
 
 	// Converts a terrain index to a normalized index (such that sea = 0).
 	static uint8_t getNormalizedIndex(uint8_t index);
@@ -103,7 +103,7 @@ public:
 	const WorldMapTerrain &getWorldMapTerrain() const;
 
 	// Gets the ruler title associated with the given parameters.
-	const std::string &getRulerTitle(int provinceID, ArenaTypes::LocationType locationType,
+	const std::string &getRulerTitle(int provinceID, ArenaLocationType locationType,
 		bool isMale, ArenaRandom &random) const;
 };
 

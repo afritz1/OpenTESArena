@@ -6,7 +6,7 @@
 namespace ArenaClimateUtils
 {
 	int getClimateTypeCount();
-	ArenaTypes::ClimateType getClimateType(int index);
+	ArenaClimateType getClimateType(int index);
 }
 
 #endif

@@ -13,7 +13,7 @@ class VoxelChunk;
 
 namespace DoorUtils
 {
-	static constexpr int FACE_COUNT = ArenaMeshUtils::GetUniqueFaceCount(ArenaTypes::VoxelType::Door);
+	static constexpr int FACE_COUNT = ArenaMeshUtils::GetUniqueFaceCount(ArenaVoxelType::Door);
 
 	constexpr std::array<VoxelFacing2D, FACE_COUNT> Facings =
 	{

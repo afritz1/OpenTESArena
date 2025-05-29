@@ -4,36 +4,36 @@
 
 #include "components/debug/Debug.h"
 
-InteriorMusicType MusicUtils::getInteriorMusicType(ArenaTypes::InteriorType interiorType)
+InteriorMusicType MusicUtils::getInteriorMusicType(ArenaInteriorType interiorType)
 {
-	if ((interiorType == ArenaTypes::InteriorType::Crypt) ||
-		(interiorType == ArenaTypes::InteriorType::Dungeon) ||
-		(interiorType == ArenaTypes::InteriorType::Tower))
+	if ((interiorType == ArenaInteriorType::Crypt) ||
+		(interiorType == ArenaInteriorType::Dungeon) ||
+		(interiorType == ArenaInteriorType::Tower))
 	{
 		return InteriorMusicType::Dungeon;
 	}
-	else if (interiorType == ArenaTypes::InteriorType::Equipment)
+	else if (interiorType == ArenaInteriorType::Equipment)
 	{
 		return InteriorMusicType::Equipment;
 	}
-	else if ((interiorType == ArenaTypes::InteriorType::House) ||
-		(interiorType == ArenaTypes::InteriorType::Noble))
+	else if ((interiorType == ArenaInteriorType::House) ||
+		(interiorType == ArenaInteriorType::Noble))
 	{
 		return InteriorMusicType::House;
 	}
-	else if (interiorType == ArenaTypes::InteriorType::MagesGuild)
+	else if (interiorType == ArenaInteriorType::MagesGuild)
 	{
 		return InteriorMusicType::MagesGuild;
 	}
-	else if (interiorType == ArenaTypes::InteriorType::Palace)
+	else if (interiorType == ArenaInteriorType::Palace)
 	{
 		return InteriorMusicType::Palace;
 	}
-	else if (interiorType == ArenaTypes::InteriorType::Tavern)
+	else if (interiorType == ArenaInteriorType::Tavern)
 	{
 		return InteriorMusicType::Tavern;
 	}
-	else if (interiorType == ArenaTypes::InteriorType::Temple)
+	else if (interiorType == ArenaInteriorType::Temple)
 	{
 		return InteriorMusicType::Temple;
 	}

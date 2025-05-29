@@ -1010,13 +1010,13 @@ std::optional<int> INFFile::getMenuIndex(int textureID) const
 	}
 }
 
-const INFFlat &INFFile::getFlat(ArenaTypes::FlatIndex flatIndex) const
+const INFFlat &INFFile::getFlat(ArenaFlatIndex flatIndex) const
 {
 	DebugAssertIndex(this->flats, flatIndex);
 	return this->flats[flatIndex];
 }
 
-ArenaTypes::FlatIndex INFFile::findFlatIndexWithItemIndex(ArenaTypes::ItemIndex itemIndex) const
+ArenaFlatIndex INFFile::findFlatIndexWithItemIndex(ArenaItemIndex itemIndex) const
 {
 	const auto iter = std::find_if(this->flats.begin(), this->flats.end(),
 		[itemIndex](const INFFlat &flat)
@@ -1029,7 +1029,7 @@ ArenaTypes::FlatIndex INFFile::findFlatIndexWithItemIndex(ArenaTypes::ItemIndex 
 		return -1;
 	}
 
-	return static_cast<ArenaTypes::FlatIndex>(std::distance(this->flats.begin(), iter));
+	return static_cast<ArenaFlatIndex>(std::distance(this->flats.begin(), iter));
 }
 
 const char *INFFile::getSound(int index) const

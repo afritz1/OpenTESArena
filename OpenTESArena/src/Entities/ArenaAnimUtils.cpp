@@ -81,17 +81,17 @@ namespace ArenaAnimUtils
 		MakeHumanKeyframeDimensions(width, height, outWidth, outHeight);
 	}
 
-	int GetCitizenAnimationFilenameIndex(bool isMale, ArenaTypes::ClimateType climateType)
+	int GetCitizenAnimationFilenameIndex(bool isMale, ArenaClimateType climateType)
 	{
 		if (isMale)
 		{
 			switch (climateType)
 			{
-			case ArenaTypes::ClimateType::Temperate:
+			case ArenaClimateType::Temperate:
 				return 2;
-			case ArenaTypes::ClimateType::Desert:
+			case ArenaClimateType::Desert:
 				return 1;
-			case ArenaTypes::ClimateType::Mountain:
+			case ArenaClimateType::Mountain:
 				return 0;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(climateType)));
@@ -101,11 +101,11 @@ namespace ArenaAnimUtils
 		{
 			switch (climateType)
 			{
-			case ArenaTypes::ClimateType::Temperate:
+			case ArenaClimateType::Temperate:
 				return 0;
-			case ArenaTypes::ClimateType::Desert:
+			case ArenaClimateType::Desert:
 				return 1;
-			case ArenaTypes::ClimateType::Mountain:
+			case ArenaClimateType::Mountain:
 				return 2;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(climateType)));
@@ -113,7 +113,7 @@ namespace ArenaAnimUtils
 		}
 	}
 
-	bool tryAddStaticEntityAnimState(ArenaTypes::FlatIndex flatIndex, const char *stateName, double secondsPerFrame,
+	bool tryAddStaticEntityAnimState(ArenaFlatIndex flatIndex, const char *stateName, double secondsPerFrame,
 		bool isLooping, const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
 		const INFFlat &flatData = inf.getFlat(flatIndex);
@@ -626,34 +626,34 @@ namespace ArenaAnimUtils
 	}
 }
 
-bool ArenaAnimUtils::isFinalBossIndex(ArenaTypes::ItemIndex itemIndex)
+bool ArenaAnimUtils::isFinalBossIndex(ArenaItemIndex itemIndex)
 {
 	return itemIndex == 73;
 }
 
-bool ArenaAnimUtils::isCreatureIndex(ArenaTypes::ItemIndex itemIndex, bool *outIsFinalBoss)
+bool ArenaAnimUtils::isCreatureIndex(ArenaItemIndex itemIndex, bool *outIsFinalBoss)
 {
 	const bool isFinalBoss = ArenaAnimUtils::isFinalBossIndex(itemIndex);
 	*outIsFinalBoss = isFinalBoss;
 	return (itemIndex >= 32 && itemIndex <= 54) || isFinalBoss;
 }
 
-bool ArenaAnimUtils::isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex)
+bool ArenaAnimUtils::isHumanEnemyIndex(ArenaItemIndex itemIndex)
 {
 	return itemIndex >= 55 && itemIndex <= 72;
 }
 
-bool ArenaAnimUtils::isLockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex)
+bool ArenaAnimUtils::isLockedHolderContainerIndex(ArenaItemIndex itemIndex)
 {
 	return itemIndex == ArenaAnimUtils::LockedChestItemIndex;
 }
 
-bool ArenaAnimUtils::isUnlockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex)
+bool ArenaAnimUtils::isUnlockedHolderContainerIndex(ArenaItemIndex itemIndex)
 {
 	return itemIndex == ArenaAnimUtils::UnlockedChestItemIndex;
 }
 
-bool ArenaAnimUtils::isLockableContainerFlatIndex(ArenaTypes::FlatIndex flatIndex, const INFFile &inf)
+bool ArenaAnimUtils::isLockableContainerFlatIndex(ArenaFlatIndex flatIndex, const INFFile &inf)
 {
 	const INFFlat &flat = inf.getFlat(flatIndex);
 	const std::optional<int> &itemIndex = flat.itemIndex;
@@ -665,27 +665,27 @@ bool ArenaAnimUtils::isLockableContainerFlatIndex(ArenaTypes::FlatIndex flatInde
 	return ArenaAnimUtils::isLockedHolderContainerIndex(*itemIndex) || ArenaAnimUtils::isUnlockedHolderContainerIndex(*itemIndex);
 }
 
-bool ArenaAnimUtils::isTreasurePileContainerIndex(ArenaTypes::ItemIndex itemIndex)
+bool ArenaAnimUtils::isTreasurePileContainerIndex(ArenaItemIndex itemIndex)
 {
 	return itemIndex >= 2 && itemIndex <= 6;
 }
 
-bool ArenaAnimUtils::isContainerIndex(ArenaTypes::ItemIndex itemIndex)
+bool ArenaAnimUtils::isContainerIndex(ArenaItemIndex itemIndex)
 {
 	const bool isHolder = ArenaAnimUtils::isLockedHolderContainerIndex(itemIndex) || ArenaAnimUtils::isUnlockedHolderContainerIndex(itemIndex);
 	return isHolder || ArenaAnimUtils::isTreasurePileContainerIndex(itemIndex);
 }
 
-bool ArenaAnimUtils::isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFFile &inf)
+bool ArenaAnimUtils::isDynamicEntity(ArenaFlatIndex flatIndex, const INFFile &inf)
 {
 	const auto &flatData = inf.getFlat(flatIndex);
-	const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
+	const std::optional<ArenaItemIndex> &optItemIndex = flatData.itemIndex;
 	if (!optItemIndex.has_value())
 	{
 		return false;
 	}
 	
-	const ArenaTypes::ItemIndex itemIndex = optItemIndex.value();
+	const ArenaItemIndex itemIndex = optItemIndex.value();
 
 	// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
 	// are higher.
@@ -698,7 +698,7 @@ bool ArenaAnimUtils::isGhost(int creatureIndex)
 	return (creatureIndex == 11) || (creatureIndex == 14);
 }
 
-int ArenaAnimUtils::getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex)
+int ArenaAnimUtils::getCreatureIDFromItemIndex(ArenaItemIndex itemIndex)
 {
 	return ArenaAnimUtils::isFinalBossIndex(itemIndex) ? ArenaAnimUtils::FinalBossCreatureID : (itemIndex - 31);
 }
@@ -708,12 +708,12 @@ int ArenaAnimUtils::getCreatureIndexFromID(int creatureID)
 	return creatureID - 1;
 }
 
-int ArenaAnimUtils::getCharacterClassIndexFromItemIndex(ArenaTypes::ItemIndex itemIndex)
+int ArenaAnimUtils::getCharacterClassIndexFromItemIndex(ArenaItemIndex itemIndex)
 {
 	return itemIndex - 55;
 }
 
-bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, MapType mapType)
+bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaFlatIndex flatIndex, MapType mapType)
 {
 	// Wilderness and interiors do not manage streetlights. There are animating streetlights
 	// in the wilderness (sharing the exact same texture as city ones) but their activated state
@@ -726,9 +726,9 @@ bool ArenaAnimUtils::isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, Map
 	return (flatIndex == ArenaAnimUtils::StreetLightActiveIndex) || (flatIndex == ArenaAnimUtils::StreetLightInactiveIndex);
 }
 
-bool ArenaAnimUtils::isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, ArenaTypes::InteriorType interiorType)
+bool ArenaAnimUtils::isRulerFlatIndex(ArenaFlatIndex flatIndex, ArenaInteriorType interiorType)
 {
-	if (interiorType != ArenaTypes::InteriorType::Palace)
+	if (interiorType != ArenaInteriorType::Palace)
 	{
 		return false;
 	}
@@ -916,8 +916,8 @@ bool ArenaAnimUtils::trySetHumanFilenameType(std::string &filename, const std::s
 	}
 }
 
-bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, MapType mapType,
-	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaFlatIndex flatIndex, MapType mapType,
+	const std::optional<ArenaInteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 	const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	DebugAssert(outAnimDef != nullptr);
@@ -932,7 +932,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 		DebugAssert(rulerIsMale.has_value());
 		outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 
-		const ArenaTypes::FlatIndex rulerFlatIndex = *rulerIsMale ? ArenaAnimUtils::RulerKingIndex : ArenaAnimUtils::RulerQueenIndex;
+		const ArenaFlatIndex rulerFlatIndex = *rulerIsMale ? ArenaAnimUtils::RulerKingIndex : ArenaAnimUtils::RulerQueenIndex;
 		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(rulerFlatIndex, EntityAnimationUtils::STATE_IDLE.c_str(),
 			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
 		{
@@ -944,7 +944,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 	{
 		outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());
 
-		const ArenaTypes::FlatIndex idleFlatIndex = ArenaAnimUtils::StreetLightInactiveIndex;
+		const ArenaFlatIndex idleFlatIndex = ArenaAnimUtils::StreetLightInactiveIndex;
 		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(idleFlatIndex, EntityAnimationUtils::STATE_IDLE.c_str(),
 			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
 		{
@@ -952,7 +952,7 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 			return false;
 		}
 
-		const ArenaTypes::FlatIndex activeFlatIndex = ArenaAnimUtils::StreetLightActiveIndex;
+		const ArenaFlatIndex activeFlatIndex = ArenaAnimUtils::StreetLightActiveIndex;
 		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(activeFlatIndex, EntityAnimationUtils::STATE_ACTIVATED.c_str(),
 			StaticActivatedSecondsPerFrame, StaticActivatedLoop, inf, textureManager, outAnimDef))
 		{
@@ -964,8 +964,8 @@ bool ArenaAnimUtils::tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, M
 	{
 		outAnimDef->init(EntityAnimationUtils::STATE_UNLOCKED.c_str());
 
-		const ArenaTypes::FlatIndex lockedFlatIndex = inf.findFlatIndexWithItemIndex(ArenaAnimUtils::LockedChestItemIndex);
-		const ArenaTypes::FlatIndex unlockedFlatIndex = inf.findFlatIndexWithItemIndex(ArenaAnimUtils::UnlockedChestItemIndex);
+		const ArenaFlatIndex lockedFlatIndex = inf.findFlatIndexWithItemIndex(ArenaAnimUtils::LockedChestItemIndex);
+		const ArenaFlatIndex unlockedFlatIndex = inf.findFlatIndexWithItemIndex(ArenaAnimUtils::UnlockedChestItemIndex);
 
 		if (!ArenaAnimUtils::tryAddStaticEntityAnimState(lockedFlatIndex, EntityAnimationUtils::STATE_LOCKED.c_str(),
 			StaticIdleSecondsPerFrame, StaticIdleLoop, inf, textureManager, outAnimDef))
@@ -1082,7 +1082,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isM
 	return true;
 }
 
-bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, const std::optional<bool> &isMale,
+bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaFlatIndex flatIndex, const std::optional<bool> &isMale,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
@@ -1090,14 +1090,14 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, 
 
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const INFFlat &flatData = inf.getFlat(flatIndex);
-	const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
+	const std::optional<ArenaItemIndex> &optItemIndex = flatData.itemIndex;
 	if (!optItemIndex.has_value())
 	{
 		DebugLogWarning("Can't make dynamic entity anim states for flat \"" + std::to_string(flatIndex) + "\" without *ITEM index.");
 		return false;
 	}
 
-	const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
+	const ArenaItemIndex itemIndex = *optItemIndex;
 
 	bool isFinalBoss;
 	const bool isCreature = ArenaAnimUtils::isCreatureIndex(itemIndex, &isFinalBoss);
@@ -1125,7 +1125,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, 
 	return success;
 }
 
-bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bool isMale, const ExeData &exeData,
+bool ArenaAnimUtils::tryMakeCitizenAnims(ArenaClimateType climateType, bool isMale, const ExeData &exeData,
 	TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());

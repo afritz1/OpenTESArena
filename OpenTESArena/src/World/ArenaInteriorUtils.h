@@ -37,10 +37,10 @@ namespace ArenaInteriorUtils
 	// Determines how many levels a dungeon has.
 	int generateDungeonLevelCount(bool isArtifactDungeon, ArenaRandom &random);
 
-	std::optional<ArenaTypes::InteriorType> menuTypeToInteriorType(ArenaTypes::MenuType menuType);
+	std::optional<ArenaInteriorType> menuTypeToInteriorType(ArenaMenuType menuType);
 
-	bool isPrefabInterior(ArenaTypes::InteriorType interiorType);
-	bool isProceduralInterior(ArenaTypes::InteriorType interiorType);
+	bool isPrefabInterior(ArenaInteriorType interiorType);
+	bool isProceduralInterior(ArenaInteriorType interiorType);
 }
 
 #endif

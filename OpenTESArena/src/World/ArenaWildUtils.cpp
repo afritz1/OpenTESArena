@@ -12,19 +12,19 @@
 
 #include "components/debug/Debug.h"
 
-std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType, WeatherType weatherType)
+std::string ArenaWildUtils::generateInfName(ArenaClimateType climateType, WeatherType weatherType)
 {
 	const char climateLetter = [climateType]()
 	{
-		if (climateType == ArenaTypes::ClimateType::Temperate)
+		if (climateType == ArenaClimateType::Temperate)
 		{
 			return 'T';
 		}
-		else if (climateType == ArenaTypes::ClimateType::Desert)
+		else if (climateType == ArenaClimateType::Desert)
 		{
 			return 'D';
 		}
-		else if (climateType == ArenaTypes::ClimateType::Mountain)
+		else if (climateType == ArenaClimateType::Mountain)
 		{
 			return 'M';
 		}
@@ -50,7 +50,7 @@ std::string ArenaWildUtils::generateInfName(ArenaTypes::ClimateType climateType,
 		else if (weatherType == WeatherType::Snow)
 		{
 			// Deserts can't have snow.
-			if (climateType != ArenaTypes::ClimateType::Desert)
+			if (climateType != ArenaClimateType::Desert)
 			{
 				return 'S';
 			}
@@ -149,8 +149,8 @@ bool ArenaWildUtils::isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID)
 }
 
 void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID,
-	BufferView2D<ArenaTypes::VoxelID> &flor, BufferView2D<ArenaTypes::VoxelID> &map1,
-	BufferView2D<ArenaTypes::VoxelID> &map2, const LocationCityDefinition &cityDef,
+	BufferView2D<ArenaVoxelID> &flor, BufferView2D<ArenaVoxelID> &map1,
+	BufferView2D<ArenaVoxelID> &map2, const LocationCityDefinition &cityDef,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	DebugAssert(ArenaWildUtils::isWildCityBlock(wildBlockID));
@@ -167,12 +167,12 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 	const MIFLevel &level = mif.getLevel(0);
 
 	// Buffers for the city data. Copy the .MIF data into them.
-	Buffer2D<ArenaTypes::VoxelID> cityFlor(mif.getWidth(), mif.getDepth());
-	Buffer2D<ArenaTypes::VoxelID> cityMap1(mif.getWidth(), mif.getDepth());
-	Buffer2D<ArenaTypes::VoxelID> cityMap2(mif.getWidth(), mif.getDepth());
-	BufferView2D<ArenaTypes::VoxelID> cityFlorView(cityFlor);
-	BufferView2D<ArenaTypes::VoxelID> cityMap1View(cityMap1);
-	BufferView2D<ArenaTypes::VoxelID> cityMap2View(cityMap2);
+	Buffer2D<ArenaVoxelID> cityFlor(mif.getWidth(), mif.getDepth());
+	Buffer2D<ArenaVoxelID> cityMap1(mif.getWidth(), mif.getDepth());
+	Buffer2D<ArenaVoxelID> cityMap2(mif.getWidth(), mif.getDepth());
+	BufferView2D<ArenaVoxelID> cityFlorView(cityFlor);
+	BufferView2D<ArenaVoxelID> cityMap1View(cityMap1);
+	BufferView2D<ArenaVoxelID> cityMap2View(cityMap2);
 	ArenaCityUtils::writeSkeleton(level, cityFlorView, cityMap1View, cityMap2View);
 
 	// Run city generation if it's not a premade city. The center province's city does not have
@@ -260,9 +260,9 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 		{
 			const WEInt chunkVoxelX = cityX - cityStartX;
 			const SNInt chunkVoxelZ = cityZ - cityStartZ;
-			const ArenaTypes::VoxelID cityFlorVoxel = cityFlor.get(cityX, cityZ);
-			const ArenaTypes::VoxelID cityMap1Voxel = cityMap1.get(cityX, cityZ);
-			const ArenaTypes::VoxelID cityMap2Voxel = cityMap2.get(cityX, cityZ);
+			const ArenaVoxelID cityFlorVoxel = cityFlor.get(cityX, cityZ);
+			const ArenaVoxelID cityMap1Voxel = cityMap1.get(cityX, cityZ);
+			const ArenaVoxelID cityMap2Voxel = cityMap2.get(cityX, cityZ);
 			flor.set(chunkVoxelX, chunkVoxelZ, cityFlorVoxel);
 			map1.set(chunkVoxelX, chunkVoxelZ, cityMap1Voxel);
 			map2.set(chunkVoxelX, chunkVoxelZ, cityMap2Voxel);

@@ -6,26 +6,26 @@
 #include "components/utilities/Buffer.h"
 #include "components/vfs/manager.hpp"
 
-ArenaTypes::ClimateType WorldMapTerrain::toClimateType(uint8_t index)
+ArenaClimateType WorldMapTerrain::toClimateType(uint8_t index)
 {
 	if ((index == WorldMapTerrain::TEMPERATE1) ||
 		(index == WorldMapTerrain::TEMPERATE2))
 	{
-		return ArenaTypes::ClimateType::Temperate;
+		return ArenaClimateType::Temperate;
 	}
 	else if ((index == WorldMapTerrain::MOUNTAIN1) ||
 		(index == WorldMapTerrain::MOUNTAIN2))
 	{
-		return ArenaTypes::ClimateType::Mountain;
+		return ArenaClimateType::Mountain;
 	}
 	else if ((index == WorldMapTerrain::DESERT1) ||
 		(index == WorldMapTerrain::DESERT2))
 	{
-		return ArenaTypes::ClimateType::Desert;
+		return ArenaClimateType::Desert;
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(ArenaTypes::ClimateType, std::to_string(static_cast<int>(index)));
+		DebugUnhandledReturnMsg(ArenaClimateType, std::to_string(static_cast<int>(index)));
 	}
 }
 
@@ -315,7 +315,7 @@ const WorldMapTerrain &BinaryAssetLibrary::getWorldMapTerrain() const
 }
 
 const std::string &BinaryAssetLibrary::getRulerTitle(int provinceID,
-	ArenaTypes::LocationType locationType, bool isMale, ArenaRandom &random) const
+	ArenaLocationType locationType, bool isMale, ArenaRandom &random) const
 {
 	// Get the index into the titles list.
 	const int titleIndex = [this, provinceID, locationType, &random, isMale]()
@@ -324,11 +324,11 @@ const std::string &BinaryAssetLibrary::getRulerTitle(int provinceID,
 		{
 			return isMale ? 6 : 13;
 		}
-		else if (locationType == ArenaTypes::LocationType::CityState)
+		else if (locationType == ArenaLocationType::CityState)
 		{
 			return isMale ? 5 : 12;
 		}
-		else if (locationType == ArenaTypes::LocationType::Village)
+		else if (locationType == ArenaLocationType::Village)
 		{
 			return isMale ? 0 : 7;
 		}

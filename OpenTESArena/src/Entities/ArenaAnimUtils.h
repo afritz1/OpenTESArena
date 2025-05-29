@@ -81,55 +81,55 @@ namespace ArenaAnimUtils
 
 	// The final boss is sort of a special case. Their *ITEM index is at the very end of 
 	// human enemies, but they are treated like a creature.
-	bool isFinalBossIndex(ArenaTypes::ItemIndex itemIndex);
+	bool isFinalBossIndex(ArenaItemIndex itemIndex);
 
 	// *ITEM 32 to 54 are creatures (rat, goblin, etc.). The final boss is a special case.
-	bool isCreatureIndex(ArenaTypes::ItemIndex itemIndex, bool *outIsFinalBoss);
+	bool isCreatureIndex(ArenaItemIndex itemIndex, bool *outIsFinalBoss);
 
 	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
-	bool isHumanEnemyIndex(ArenaTypes::ItemIndex itemIndex);
+	bool isHumanEnemyIndex(ArenaItemIndex itemIndex);
 
-	constexpr ArenaTypes::ItemIndex LockedChestItemIndex = 7;
-	constexpr ArenaTypes::ItemIndex UnlockedChestItemIndex = 8;
-	bool isLockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex);
-	bool isUnlockedHolderContainerIndex(ArenaTypes::ItemIndex itemIndex);
-	bool isLockableContainerFlatIndex(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
-	bool isTreasurePileContainerIndex(ArenaTypes::ItemIndex itemIndex);
-	bool isContainerIndex(ArenaTypes::ItemIndex itemIndex);
+	constexpr ArenaItemIndex LockedChestItemIndex = 7;
+	constexpr ArenaItemIndex UnlockedChestItemIndex = 8;
+	bool isLockedHolderContainerIndex(ArenaItemIndex itemIndex);
+	bool isUnlockedHolderContainerIndex(ArenaItemIndex itemIndex);
+	bool isLockableContainerFlatIndex(ArenaFlatIndex flatIndex, const INFFile &inf);
+	bool isTreasurePileContainerIndex(ArenaItemIndex itemIndex);
+	bool isContainerIndex(ArenaItemIndex itemIndex);
 
 	// Returns whether the given flat index is for a static or dynamic entity.
-	bool isDynamicEntity(ArenaTypes::FlatIndex flatIndex, const INFFile &inf);
+	bool isDynamicEntity(ArenaFlatIndex flatIndex, const INFFile &inf);
 
 	bool isGhost(int creatureIndex);
 
 	// The first creature's *ITEM index (rat).
-	constexpr ArenaTypes::ItemIndex FirstCreatureItemIndex = 32;
+	constexpr ArenaItemIndex FirstCreatureItemIndex = 32;
 
-	constexpr ArenaTypes::ItemIndex KeyItemIndex = 1;
-	constexpr ArenaTypes::ItemIndex QuestItemIndex = 13;
+	constexpr ArenaItemIndex KeyItemIndex = 1;
+	constexpr ArenaItemIndex QuestItemIndex = 13;
 
 	// The final boss is a special case, essentially hardcoded at the end of the creatures.
 	constexpr int FinalBossCreatureID = 24;
 
 	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
-	int getCreatureIDFromItemIndex(ArenaTypes::ItemIndex itemIndex);
+	int getCreatureIDFromItemIndex(ArenaItemIndex itemIndex);
 
 	// Converts the 1-based creature ID to an index usable with .exe data arrays.
 	int getCreatureIndexFromID(int creatureID);
 
 	// Character classes (mage, warrior, etc.) used by human enemies.
-	int getCharacterClassIndexFromItemIndex(ArenaTypes::ItemIndex itemIndex);
+	int getCharacterClassIndexFromItemIndex(ArenaItemIndex itemIndex);
 
 	// Streetlights are hardcoded in the original game to flat index 29. This lets the
 	// game give them a light source and toggle them between on and off states.
-	constexpr ArenaTypes::FlatIndex StreetLightActiveIndex = 29;
-	constexpr ArenaTypes::FlatIndex StreetLightInactiveIndex = 30;
-	bool isStreetLightFlatIndex(ArenaTypes::FlatIndex flatIndex, MapType mapType);
+	constexpr ArenaFlatIndex StreetLightActiveIndex = 29;
+	constexpr ArenaFlatIndex StreetLightInactiveIndex = 30;
+	bool isStreetLightFlatIndex(ArenaFlatIndex flatIndex, MapType mapType);
 
 	// Ruler flats are either a king or queen.
-	constexpr ArenaTypes::FlatIndex RulerKingIndex = 0;
-	constexpr ArenaTypes::FlatIndex RulerQueenIndex = 1;
-	bool isRulerFlatIndex(ArenaTypes::FlatIndex flatIndex, ArenaTypes::InteriorType interiorType);
+	constexpr ArenaFlatIndex RulerKingIndex = 0;
+	constexpr ArenaFlatIndex RulerQueenIndex = 1;
+	bool isRulerFlatIndex(ArenaFlatIndex flatIndex, ArenaInteriorType interiorType);
 
 	// Original sprite scaling function. Takes sprite texture dimensions and scaling
 	// value and outputs dimensions for the final displayed entity.
@@ -162,8 +162,8 @@ namespace ArenaAnimUtils
 	bool trySetHumanFilenameType(std::string &filename, const std::string_view type);
 
 	// Writes out static entity animation data to animation states.
-	bool tryMakeStaticEntityAnims(ArenaTypes::FlatIndex flatIndex, MapType mapType,
-		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+	bool tryMakeStaticEntityAnims(ArenaFlatIndex flatIndex, MapType mapType,
+		const std::optional<ArenaInteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out creature animation data to animation states.
@@ -176,13 +176,13 @@ namespace ArenaAnimUtils
 
 	// Writes out dynamic entity animation data to animation states. Use this when the dynamic
 	// entity type (creature, human, etc.) is unknown.
-	bool tryMakeDynamicEntityAnims(ArenaTypes::FlatIndex flatIndex, const std::optional<bool> &isMale,
+	bool tryMakeDynamicEntityAnims(ArenaFlatIndex flatIndex, const std::optional<bool> &isMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef);
 
 	// Writes out citizen animation data to animation states.
-	bool tryMakeCitizenAnims(ArenaTypes::ClimateType climateType, bool isMale, const ExeData &exeData,
+	bool tryMakeCitizenAnims(ArenaClimateType climateType, bool isMale, const ExeData &exeData,
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef);
 
 	// Writes out animation for spell projectile, explosion, or melee VFX.

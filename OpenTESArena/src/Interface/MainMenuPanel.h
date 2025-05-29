@@ -23,7 +23,7 @@ private:
 	// Test.
 	TextBox testButtonTextBox, testTypeTextBox, testNameTextBox, testWeatherTextBox;
 	Button<Game&, int, int, const std::string&,
-		const std::optional<ArenaTypes::InteriorType>&, ArenaTypes::WeatherType, MapType> quickStartButton;
+		const std::optional<ArenaInteriorType>&, ArenaWeatherType, MapType> quickStartButton;
 	Button<int*, int*, int*, int*> testTypeUpButton, testTypeDownButton;
 	Button<int*, int*, int*> testIndexUpButton, testIndexDownButton;
 	Button<int, int, int*> testIndex2UpButton, testIndex2DownButton;

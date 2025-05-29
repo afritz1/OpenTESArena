@@ -6,10 +6,10 @@
 namespace ArenaSelectionUtils
 {
 	// Can the given voxel type be selected with a left click?
-	bool isVoxelSelectableAsPrimary(ArenaTypes::VoxelType voxelType);
+	bool isVoxelSelectableAsPrimary(ArenaVoxelType voxelType);
 
 	// Can the given voxel type be selected with a right click?
-	bool isVoxelSelectableAsSecondary(ArenaTypes::VoxelType voxelType);
+	bool isVoxelSelectableAsSecondary(ArenaVoxelType voxelType);
 }
 
 #endif

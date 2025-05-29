@@ -41,10 +41,10 @@ struct InteriorMusicDefinition
 
 struct JingleMusicDefinition
 {
-	ArenaTypes::CityType cityType;
-	ArenaTypes::ClimateType climateType;
+	ArenaCityType cityType;
+	ArenaClimateType climateType;
 
-	void init(ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType);
+	void init(ArenaCityType cityType, ArenaClimateType climateType);
 };
 
 struct WeatherMusicDefinition
@@ -80,7 +80,7 @@ struct MusicDefinition
 	void initCharacterCreation(const std::string &filename);
 	void initCinematic(const std::string &filename, CinematicMusicType type);
 	void initInterior(const std::string &filename, InteriorMusicType type);
-	void initJingle(const std::string &filename, ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType);
+	void initJingle(const std::string &filename, ArenaCityType cityType, ArenaClimateType climateType);
 	void initMainMenu(const std::string &filename);
 	void initNight(const std::string &filename);
 	void initSwimming(const std::string &filename);

@@ -52,7 +52,7 @@ namespace
 		{ Tag_MAP2, MIFLevel::loadMAP2 }
 	};
 
-	uint16_t DecodeMifLayer(const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth, Buffer2D<ArenaTypes::VoxelID> &outLayer)
+	uint16_t DecodeMifLayer(const uint8_t *tagStart, WEInt levelWidth, SNInt levelDepth, Buffer2D<ArenaVoxelID> &outLayer)
 	{
 		// Compressed size is in chunks and contains a 2 byte decompressed length after it, which
 		// should not be included when determining the end of the compressed range.
@@ -74,9 +74,9 @@ namespace
 		{
 			for (WEInt x = 0; x < levelWidth; x++)
 			{
-				const int srcIndex = (x + (z * levelWidth)) * sizeof(ArenaTypes::VoxelID);
+				const int srcIndex = (x + (z * levelWidth)) * sizeof(ArenaVoxelID);
 				DebugAssertIndex(decomp, srcIndex);
-				const ArenaTypes::VoxelID srcValue = Bytes::getLE16(decomp.data() + srcIndex);
+				const ArenaVoxelID srcValue = Bytes::getLE16(decomp.data() + srcIndex);
 				outLayer.set(x, z, srcValue);
 			}
 		}
@@ -312,19 +312,19 @@ int MIFLevel::getNumf() const
 	return this->numf;
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFLevel::getFLOR() const
+BufferView2D<const ArenaVoxelID> MIFLevel::getFLOR() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(this->flor);
+	return BufferView2D<const ArenaVoxelID>(this->flor);
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFLevel::getMAP1() const
+BufferView2D<const ArenaVoxelID> MIFLevel::getMAP1() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(this->map1);
+	return BufferView2D<const ArenaVoxelID>(this->map1);
 }
 
-BufferView2D<const ArenaTypes::VoxelID> MIFLevel::getMAP2() const
+BufferView2D<const ArenaVoxelID> MIFLevel::getMAP2() const
 {
-	return BufferView2D<const ArenaTypes::VoxelID>(this->map2);
+	return BufferView2D<const ArenaVoxelID>(this->map2);
 }
 
 BufferView<const uint8_t> MIFLevel::getFLAT() const

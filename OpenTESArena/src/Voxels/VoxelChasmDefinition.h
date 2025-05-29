@@ -52,7 +52,7 @@ struct VoxelChasmDefinition
 
 	bool operator==(const VoxelChasmDefinition &other) const;
 
-	void initClassic(ArenaTypes::ChasmType chasmType, const TextureAsset &wallTextureAsset, TextureManager &textureManager);
+	void initClassic(ArenaChasmType chasmType, const TextureAsset &wallTextureAsset, TextureManager &textureManager);
 };
 
 #endif

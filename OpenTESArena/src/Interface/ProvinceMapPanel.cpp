@@ -255,14 +255,14 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 					if (locationDefType == LocationDefinitionType::City)
 					{
 						const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-						const ArenaTypes::CityType cityType = cityDef.type;
+						const ArenaCityType cityType = cityDef.type;
 						switch (cityType)
 						{
-						case ArenaTypes::CityType::CityState:
+						case ArenaCityType::CityState:
 							return &this->cityStateTextureRefs;
-						case ArenaTypes::CityType::Town:
+						case ArenaCityType::Town:
 							return &this->townTextureRefs;
-						case ArenaTypes::CityType::Village:
+						case ArenaCityType::Village:
 							return &this->villageTextureRefs;
 						default:
 							DebugCrash("Unhandled city type \"" + std::to_string(static_cast<int>(cityType)) + "\".");
@@ -344,14 +344,14 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 					if (locationDefType == LocationDefinitionType::City)
 					{
 						const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-						const ArenaTypes::CityType cityType = cityDef.type;
+						const ArenaCityType cityType = cityDef.type;
 						switch (cityType)
 						{
-						case ArenaTypes::CityType::CityState:
+						case ArenaCityType::CityState:
 							return &this->cityStateTextureRefs;
-						case ArenaTypes::CityType::Town:
+						case ArenaCityType::Town:
 							return &this->townTextureRefs;
-						case ArenaTypes::CityType::Village:
+						case ArenaCityType::Village:
 							return &this->villageTextureRefs;
 						default:
 							DebugCrash("Unhandled city type \"" + std::to_string(static_cast<int>(cityType)) + "\".");

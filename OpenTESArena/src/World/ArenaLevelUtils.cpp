@@ -13,12 +13,12 @@
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 
-uint8_t ArenaLevelUtils::getVoxelMostSigByte(ArenaTypes::VoxelID voxelID)
+uint8_t ArenaLevelUtils::getVoxelMostSigByte(ArenaVoxelID voxelID)
 {
 	return (voxelID & 0x7F00) >> 8;
 }
 
-uint8_t ArenaLevelUtils::getVoxelLeastSigByte(ArenaTypes::VoxelID voxelID)
+uint8_t ArenaLevelUtils::getVoxelLeastSigByte(ArenaVoxelID voxelID)
 {
 	return voxelID & 0x007F;
 }
@@ -28,7 +28,7 @@ double ArenaLevelUtils::convertCeilingHeightToScale(int ceilingHeight)
 	return static_cast<double>(ceilingHeight) / MIFUtils::ARENA_UNITS;
 }
 
-int ArenaLevelUtils::getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel)
+int ArenaLevelUtils::getMap2VoxelHeight(ArenaVoxelID map2Voxel)
 {
 	if ((map2Voxel & 0x80) == 0x80)
 	{
@@ -48,7 +48,7 @@ int ArenaLevelUtils::getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel)
 	}
 }
 
-int ArenaLevelUtils::getMap2Height(BufferView2D<const ArenaTypes::VoxelID> map2)
+int ArenaLevelUtils::getMap2Height(BufferView2D<const ArenaVoxelID> map2)
 {
 	DebugAssert(map2.isValid());
 
@@ -57,7 +57,7 @@ int ArenaLevelUtils::getMap2Height(BufferView2D<const ArenaTypes::VoxelID> map2)
 	{
 		for (WEInt x = 0; x < map2.getWidth(); x++)
 		{
-			const ArenaTypes::VoxelID map2Voxel = map2.get(x, z);
+			const ArenaVoxelID map2Voxel = map2.get(x, z);
 			const int map2Height = ArenaLevelUtils::getMap2VoxelHeight(map2Voxel);
 			currentMap2Height = std::max(currentMap2Height, map2Height);
 		}
@@ -68,7 +68,7 @@ int ArenaLevelUtils::getMap2Height(BufferView2D<const ArenaTypes::VoxelID> map2)
 
 int ArenaLevelUtils::getMifLevelHeight(const MIFLevel &level, const INFCeiling *ceiling)
 {
-	const BufferView2D<const ArenaTypes::VoxelID> map2 = level.getMAP2();
+	const BufferView2D<const ArenaVoxelID> map2 = level.getMAP2();
 
 	if (map2.isValid())
 	{
@@ -87,15 +87,15 @@ uint16_t ArenaLevelUtils::getDoorVoxelOffset(WEInt x, SNInt y)
 }
 
 std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
-	bool palaceIsMainQuestDungeon, ArenaTypes::CityType cityType, MapType mapType, const ExeData &exeData)
+	bool palaceIsMainQuestDungeon, ArenaCityType cityType, MapType mapType, const ExeData &exeData)
 {
 	// Get the menu type associated with the *MENU ID.
-	const ArenaTypes::MenuType menuType = ArenaVoxelUtils::getMenuType(menuID, mapType);
+	const ArenaMenuType menuType = ArenaVoxelUtils::getMenuType(menuID, mapType);
 
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.
 	const bool isFinalDungeonEntrance = palaceIsMainQuestDungeon &&
-		(menuType == ArenaTypes::MenuType::Palace);
+		(menuType == ArenaMenuType::Palace);
 
 	if (isFinalDungeonEntrance)
 	{
@@ -111,27 +111,27 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 			// filename mapping are considered special cases. TOWNPAL and VILPAL are not used
 			// since the palace type can be deduced from the current city type.
 			constexpr int NO_INDEX = -1;
-			constexpr std::array<std::pair<ArenaTypes::MenuType, int>, 12> MenuMifMappings =
+			constexpr std::array<std::pair<ArenaMenuType, int>, 12> MenuMifMappings =
 			{
 				{
-					{ ArenaTypes::MenuType::CityGates, NO_INDEX },
-					{ ArenaTypes::MenuType::Crypt, 7 },
-					{ ArenaTypes::MenuType::Dungeon, NO_INDEX },
-					{ ArenaTypes::MenuType::Equipment, 5 },
-					{ ArenaTypes::MenuType::House, 1 },
-					{ ArenaTypes::MenuType::MagesGuild, 6 },
-					{ ArenaTypes::MenuType::Noble, 2 },
-					{ ArenaTypes::MenuType::None, NO_INDEX },
-					{ ArenaTypes::MenuType::Palace, 0 },
-					{ ArenaTypes::MenuType::Tavern, 3 },
-					{ ArenaTypes::MenuType::Temple, 4 },
-					{ ArenaTypes::MenuType::Tower, 10 }
+					{ ArenaMenuType::CityGates, NO_INDEX },
+					{ ArenaMenuType::Crypt, 7 },
+					{ ArenaMenuType::Dungeon, NO_INDEX },
+					{ ArenaMenuType::Equipment, 5 },
+					{ ArenaMenuType::House, 1 },
+					{ ArenaMenuType::MagesGuild, 6 },
+					{ ArenaMenuType::Noble, 2 },
+					{ ArenaMenuType::None, NO_INDEX },
+					{ ArenaMenuType::Palace, 0 },
+					{ ArenaMenuType::Tavern, 3 },
+					{ ArenaMenuType::Temple, 4 },
+					{ ArenaMenuType::Tower, 10 }
 				}
 			};
 
 			// See if the given menu type has a .MIF prefix mapping.
 			const auto iter = std::find_if(MenuMifMappings.begin(), MenuMifMappings.end(),
-				[menuType](const std::pair<ArenaTypes::MenuType, int> &pair)
+				[menuType](const std::pair<ArenaMenuType, int> &pair)
 			{
 				return pair.first == menuType;
 			});
@@ -146,17 +146,17 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 					// prefix to use based on the location type.
 					const int menuMifIndex = [cityType, menuType, index]()
 					{
-						if (menuType == ArenaTypes::MenuType::Palace)
+						if (menuType == ArenaMenuType::Palace)
 						{
-							if (cityType == ArenaTypes::CityType::CityState)
+							if (cityType == ArenaCityType::CityState)
 							{
 								return 0;
 							}
-							else if (cityType == ArenaTypes::CityType::Town)
+							else if (cityType == ArenaCityType::Town)
 							{
 								return 8;
 							}
-							else if (cityType == ArenaTypes::CityType::Village)
+							else if (cityType == ArenaCityType::Village)
 							{
 								return 9;
 							}
@@ -210,7 +210,7 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 			// Palaces have fewer .MIF files to choose from, and their variant depends
 			// on the ruler seed. Although there are five city-state palace .MIF files,
 			// only three of them are used.
-			const bool isPalace = menuType == ArenaTypes::MenuType::Palace;
+			const bool isPalace = menuType == ArenaMenuType::Palace;
 			const int palaceCount = 3;
 			return isPalace ? (((rulerSeed >> 8) & 0xFFFF) % palaceCount) :
 				((Bytes::ror(offset, 4) ^ offset) % 8);

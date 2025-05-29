@@ -29,13 +29,13 @@ struct VoxelDoorCloseSoundDefinition
 
 struct VoxelDoorDefinition
 {
-	ArenaTypes::DoorType type;
+	ArenaDoorType type;
 	VoxelDoorOpenSoundDefinition openSoundDef;
 	VoxelDoorCloseSoundDefinition closeSoundDef;
 
 	VoxelDoorDefinition();
 
-	void init(ArenaTypes::DoorType type, const std::string &openSoundFilename, VoxelDoorCloseType closeType, const std::string &closeSoundFilename);
+	void init(ArenaDoorType type, const std::string &openSoundFilename, VoxelDoorCloseType closeType, const std::string &closeSoundFilename);
 };
 
 #endif

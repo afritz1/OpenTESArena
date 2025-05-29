@@ -123,47 +123,47 @@ namespace ArenaMeshUtils
 	};
 
 	// The "ideal" vertices per voxel (no duplication).
-	constexpr int GetUniqueVertexCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetUniqueVertexCount(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
+		case ArenaVoxelType::None:
 			return 0;
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Chasm:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Chasm:
+		case ArenaVoxelType::Door:
 			return 8;
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Edge:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Edge:
 			return 4;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
-	constexpr int GetUniqueFaceCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetUniqueFaceCount(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
+		case ArenaVoxelType::None:
 			return 0;
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Raised:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Raised:
 			return 6;
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::Chasm:
 			return 5;
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Door:
 			return 4;
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
 			return 1;
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Edge:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Edge:
 			return 2;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
@@ -171,92 +171,92 @@ namespace ArenaMeshUtils
 	}
 
 	// The actual vertices per voxel used by the renderer due to how vertex attributes work.
-	constexpr int GetRendererVertexCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetRendererVertexCount(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
+		case ArenaVoxelType::None:
 			return 0;
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Raised:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Raised:
 			return 24;
-		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaVoxelType::TransparentWall:
 			return 16;
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::Chasm:
 			return 20;
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Door:
 			return 4;
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Edge:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Edge:
 			return 8;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
-	constexpr int GetUniqueVertexPositionComponentCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetUniqueVertexPositionComponentCount(ArenaVoxelType voxelType)
 	{
 		return GetUniqueVertexCount(voxelType) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	}
 
-	constexpr int GetUniqueFaceNormalComponentCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetUniqueFaceNormalComponentCount(ArenaVoxelType voxelType)
 	{
 		return GetUniqueFaceCount(voxelType) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	}
 
-	constexpr int GetRendererVertexPositionComponentCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetRendererVertexPositionComponentCount(ArenaVoxelType voxelType)
 	{
 		return GetRendererVertexCount(voxelType) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	}
 
-	constexpr int GetRendererVertexNormalComponentCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetRendererVertexNormalComponentCount(ArenaVoxelType voxelType)
 	{
 		return GetRendererVertexCount(voxelType) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	}
 
-	constexpr int GetRendererVertexTexCoordComponentCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetRendererVertexTexCoordComponentCount(ArenaVoxelType voxelType)
 	{
 		return GetRendererVertexCount(voxelType) * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 	}
 
-	constexpr int GetOpaqueIndexBufferCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetOpaqueIndexBufferCount(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::Wall:
+		case ArenaVoxelType::Wall:
 			return 3;
-		case ArenaTypes::VoxelType::Raised:
+		case ArenaVoxelType::Raised:
 			return 2;
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Chasm:
 			return 1;
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Door:
 			return 0;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
-	constexpr int GetOpaqueIndexCount(ArenaTypes::VoxelType voxelType, int bufferIndex)
+	constexpr int GetOpaqueIndexCount(ArenaVoxelType voxelType, int bufferIndex)
 	{
 		int triangleCount = -1;
 
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
-		case ArenaTypes::VoxelType::Edge:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Door:
+		case ArenaVoxelType::Edge:
 			// @todo: should this static_assert false instead?
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-		case ArenaTypes::VoxelType::Wall:
+		case ArenaVoxelType::Wall:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 8;
@@ -270,7 +270,7 @@ namespace ArenaMeshUtils
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
 			}
 			break;
-		case ArenaTypes::VoxelType::Raised:
+		case ArenaVoxelType::Raised:
 			if ((bufferIndex == 0) || (bufferIndex == 1))
 			{
 				triangleCount = 4;
@@ -280,9 +280,9 @@ namespace ArenaMeshUtils
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
 			}
 			break;
-		case ArenaTypes::VoxelType::Chasm:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
+		case ArenaVoxelType::Chasm:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 2;
@@ -292,7 +292,7 @@ namespace ArenaMeshUtils
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
 			}
 			break;
-		case ArenaTypes::VoxelType::Diagonal:
+		case ArenaVoxelType::Diagonal:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 4;
@@ -309,41 +309,41 @@ namespace ArenaMeshUtils
 		return triangleCount * MeshUtils::INDICES_PER_TRIANGLE;
 	}
 
-	constexpr int GetAlphaTestedIndexBufferCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetAlphaTestedIndexBufferCount(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Chasm:
 			return 0;
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Door:
 			return 1;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
-	constexpr int GetAlphaTestedIndexCount(ArenaTypes::VoxelType voxelType, int bufferIndex)
+	constexpr int GetAlphaTestedIndexCount(ArenaVoxelType voxelType, int bufferIndex)
 	{
 		int triangleCount = -1;
 
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Chasm:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-		case ArenaTypes::VoxelType::Raised:
+		case ArenaVoxelType::Raised:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 12;
@@ -353,7 +353,7 @@ namespace ArenaMeshUtils
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
 			}
 			break;
-		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaVoxelType::TransparentWall:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 8;
@@ -363,7 +363,7 @@ namespace ArenaMeshUtils
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
 			}
 			break;
-		case ArenaTypes::VoxelType::Edge:
+		case ArenaVoxelType::Edge:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 4;
@@ -373,7 +373,7 @@ namespace ArenaMeshUtils
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
 			}
 			break;
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::Door:
 			if (bufferIndex == 0)
 			{
 				triangleCount = 2;
@@ -390,56 +390,56 @@ namespace ArenaMeshUtils
 		return triangleCount * MeshUtils::INDICES_PER_TRIANGLE;
 	}
 
-	constexpr int GetIndexBufferCount(ArenaTypes::VoxelType voxelType)
+	constexpr int GetIndexBufferCount(ArenaVoxelType voxelType)
 	{
 		return GetOpaqueIndexBufferCount(voxelType) + GetAlphaTestedIndexBufferCount(voxelType);
 	}
 
-	constexpr int GetIndexBufferIndexCount(ArenaTypes::VoxelType voxelType, int indexBufferIndex)
+	constexpr int GetIndexBufferIndexCount(ArenaVoxelType voxelType, int indexBufferIndex)
 	{
-		constexpr std::pair<ArenaTypes::VoxelType, int> IndexBuffer0FaceCounts[] =
+		constexpr std::pair<ArenaVoxelType, int> IndexBuffer0FaceCounts[] =
 		{
-			{ ArenaTypes::VoxelType::None, 0 },
-			{ ArenaTypes::VoxelType::Wall, 4 },
-			{ ArenaTypes::VoxelType::Floor, 1 },
-			{ ArenaTypes::VoxelType::Ceiling, 1 },
-			{ ArenaTypes::VoxelType::Raised, 4 },
-			{ ArenaTypes::VoxelType::Diagonal, 2 },
-			{ ArenaTypes::VoxelType::TransparentWall, 4 },
-			{ ArenaTypes::VoxelType::Edge, 2 },
-			{ ArenaTypes::VoxelType::Chasm, 1 },
-			{ ArenaTypes::VoxelType::Door, 4 }
+			{ ArenaVoxelType::None, 0 },
+			{ ArenaVoxelType::Wall, 4 },
+			{ ArenaVoxelType::Floor, 1 },
+			{ ArenaVoxelType::Ceiling, 1 },
+			{ ArenaVoxelType::Raised, 4 },
+			{ ArenaVoxelType::Diagonal, 2 },
+			{ ArenaVoxelType::TransparentWall, 4 },
+			{ ArenaVoxelType::Edge, 2 },
+			{ ArenaVoxelType::Chasm, 1 },
+			{ ArenaVoxelType::Door, 4 }
 		};
 
-		constexpr std::pair<ArenaTypes::VoxelType, int> IndexBuffer1FaceCounts[] =
+		constexpr std::pair<ArenaVoxelType, int> IndexBuffer1FaceCounts[] =
 		{
-			{ ArenaTypes::VoxelType::None, 0 },
-			{ ArenaTypes::VoxelType::Wall, 1 },
-			{ ArenaTypes::VoxelType::Floor, 0 },
-			{ ArenaTypes::VoxelType::Ceiling, 0 },
-			{ ArenaTypes::VoxelType::Raised, 1 },
-			{ ArenaTypes::VoxelType::Diagonal, 0 },
-			{ ArenaTypes::VoxelType::TransparentWall, 0 },
-			{ ArenaTypes::VoxelType::Edge, 0 },
-			{ ArenaTypes::VoxelType::Chasm, 0 },
-			{ ArenaTypes::VoxelType::Door, 0 }
+			{ ArenaVoxelType::None, 0 },
+			{ ArenaVoxelType::Wall, 1 },
+			{ ArenaVoxelType::Floor, 0 },
+			{ ArenaVoxelType::Ceiling, 0 },
+			{ ArenaVoxelType::Raised, 1 },
+			{ ArenaVoxelType::Diagonal, 0 },
+			{ ArenaVoxelType::TransparentWall, 0 },
+			{ ArenaVoxelType::Edge, 0 },
+			{ ArenaVoxelType::Chasm, 0 },
+			{ ArenaVoxelType::Door, 0 }
 		};
 
-		constexpr std::pair<ArenaTypes::VoxelType, int> IndexBuffer2FaceCounts[] =
+		constexpr std::pair<ArenaVoxelType, int> IndexBuffer2FaceCounts[] =
 		{
-			{ ArenaTypes::VoxelType::None, 0 },
-			{ ArenaTypes::VoxelType::Wall, 1 },
-			{ ArenaTypes::VoxelType::Floor, 0 },
-			{ ArenaTypes::VoxelType::Ceiling, 0 },
-			{ ArenaTypes::VoxelType::Raised, 1 },
-			{ ArenaTypes::VoxelType::Diagonal, 0 },
-			{ ArenaTypes::VoxelType::TransparentWall, 0 },
-			{ ArenaTypes::VoxelType::Edge, 0 },
-			{ ArenaTypes::VoxelType::Chasm, 0 },
-			{ ArenaTypes::VoxelType::Door, 0 }
+			{ ArenaVoxelType::None, 0 },
+			{ ArenaVoxelType::Wall, 1 },
+			{ ArenaVoxelType::Floor, 0 },
+			{ ArenaVoxelType::Ceiling, 0 },
+			{ ArenaVoxelType::Raised, 1 },
+			{ ArenaVoxelType::Diagonal, 0 },
+			{ ArenaVoxelType::TransparentWall, 0 },
+			{ ArenaVoxelType::Edge, 0 },
+			{ ArenaVoxelType::Chasm, 0 },
+			{ ArenaVoxelType::Door, 0 }
 		};
 
-		const std::pair<ArenaTypes::VoxelType, int> *indexBufferFaceCounts = nullptr;
+		const std::pair<ArenaVoxelType, int> *indexBufferFaceCounts = nullptr;
 		switch (indexBufferIndex)
 		{
 		case 0:
@@ -461,7 +461,7 @@ namespace ArenaMeshUtils
 		int faceCount = 0;
 		for (int i = 0; i < voxelTypeCount; i++)
 		{
-			const std::pair<ArenaTypes::VoxelType, int> &pair = indexBufferFaceCounts[i];
+			const std::pair<ArenaVoxelType, int> &pair = indexBufferFaceCounts[i];
 			if (pair.first == voxelType)
 			{
 				faceCount = pair.second;
@@ -478,105 +478,105 @@ namespace ArenaMeshUtils
 		return index - 1;
 	}
 
-	constexpr bool AllowsBackFacingGeometry(ArenaTypes::VoxelType voxelType)
+	constexpr bool AllowsBackFacingGeometry(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Door:
 			return false;
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Chasm:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
-	constexpr bool AllowsAdjacentDoorFaces(ArenaTypes::VoxelType voxelType)
+	constexpr bool AllowsAdjacentDoorFaces(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Chasm:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Chasm:
+		case ArenaVoxelType::Door:
 			return false;
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::Edge:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::Edge:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
-	constexpr bool EnablesNeighborVoxelGeometry(ArenaTypes::VoxelType voxelType)
+	constexpr bool EnablesNeighborVoxelGeometry(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Chasm:
 			return false;
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Door:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
-	constexpr bool HasContextSensitiveGeometry(ArenaTypes::VoxelType voxelType)
+	constexpr bool HasContextSensitiveGeometry(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Raised:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Door:
 			return false;
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::Chasm:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
 		}
 	}
 
-	constexpr bool IsElevatedPlatform(ArenaTypes::VoxelType voxelType)
+	constexpr bool IsElevatedPlatform(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::None:
-		case ArenaTypes::VoxelType::Wall:
-		case ArenaTypes::VoxelType::Floor:
-		case ArenaTypes::VoxelType::Ceiling:
-		case ArenaTypes::VoxelType::Diagonal:
-		case ArenaTypes::VoxelType::TransparentWall:
-		case ArenaTypes::VoxelType::Edge:
-		case ArenaTypes::VoxelType::Chasm:
-		case ArenaTypes::VoxelType::Door:
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Chasm:
+		case ArenaVoxelType::Door:
 			return false;
-		case ArenaTypes::VoxelType::Raised:
+		case ArenaVoxelType::Raised:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
@@ -605,8 +605,8 @@ namespace ArenaMeshUtils
 	void WriteEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outPositions, BufferView<double> outNormals);
 	void WriteEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteChasmUniqueGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteChasmRendererGeometryBuffers(ArenaTypes::ChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void WriteChasmUniqueGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals);
+	void WriteChasmRendererGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
 	void WriteChasmWallRendererIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices, ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
 	void WriteDoorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);

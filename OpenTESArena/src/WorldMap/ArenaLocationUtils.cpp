@@ -13,7 +13,7 @@
 namespace ArenaLocationUtils
 {
 	// Parent function for getting the climate type of a location.
-	ArenaTypes::ClimateType getClimateType(int locationID, int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
+	ArenaClimateType getClimateType(int locationID, int provinceID, const BinaryAssetLibrary &binaryAssetLibrary)
 	{
 		const auto &cityData = binaryAssetLibrary.getCityDataFile();
 		const auto &province = cityData.getProvinceData(provinceID);
@@ -46,50 +46,50 @@ std::pair<int, int> ArenaLocationUtils::getLocalCityAndProvinceID(int globalCity
 	return std::make_pair(globalCityID & 0x1F, globalCityID >> 5);
 }
 
-ArenaTypes::LocationType ArenaLocationUtils::getCityType(int localCityID)
+ArenaLocationType ArenaLocationUtils::getCityType(int localCityID)
 {
 	if (localCityID < 8)
 	{
-		return ArenaTypes::LocationType::CityState;
+		return ArenaLocationType::CityState;
 	}
 	else if (localCityID < 16)
 	{
-		return ArenaTypes::LocationType::Town;
+		return ArenaLocationType::Town;
 	}
 	else if (localCityID < 32)
 	{
-		return ArenaTypes::LocationType::Village;
+		return ArenaLocationType::Village;
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(ArenaTypes::LocationType, std::to_string(localCityID));
+		DebugUnhandledReturnMsg(ArenaLocationType, std::to_string(localCityID));
 	}
 }
 
-ArenaTypes::LocationType ArenaLocationUtils::getDungeonType(int localDungeonID)
+ArenaLocationType ArenaLocationUtils::getDungeonType(int localDungeonID)
 {
 	if (localDungeonID == 0)
 	{
-		return ArenaTypes::LocationType::StaffDungeon;
+		return ArenaLocationType::StaffDungeon;
 	}
 	else if (localDungeonID == 1)
 	{
-		return ArenaTypes::LocationType::StaffMapDungeon;
+		return ArenaLocationType::StaffMapDungeon;
 	}
 	else
 	{
-		return ArenaTypes::LocationType::NamedDungeon;
+		return ArenaLocationType::NamedDungeon;
 	}
 }
 
-ArenaTypes::ClimateType ArenaLocationUtils::getCityClimateType(int localCityID, int provinceID,
+ArenaClimateType ArenaLocationUtils::getCityClimateType(int localCityID, int provinceID,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const int locationID = ArenaLocationUtils::cityToLocationID(localCityID);
 	return ArenaLocationUtils::getClimateType(locationID, provinceID, binaryAssetLibrary);
 }
 
-ArenaTypes::ClimateType ArenaLocationUtils::getDungeonClimateType(int localDungeonID, int provinceID,
+ArenaClimateType ArenaLocationUtils::getDungeonClimateType(int localDungeonID, int provinceID,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const int locationID = ArenaLocationUtils::dungeonToLocationID(localDungeonID);
@@ -183,7 +183,7 @@ int ArenaLocationUtils::getMapDistance(const Int2 &globalSrc, const Int2 &global
 }
 
 int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-	int month, BufferView<const ArenaTypes::WeatherType> worldMapWeathers, ArenaRandom &random,
+	int month, BufferView<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();
@@ -341,17 +341,17 @@ int ArenaLocationUtils::getCityTemplateCount(bool isCoastal, bool isCityState)
 	return isCoastal ? (isCityState ? 3 : 2) : 5;
 }
 
-int ArenaLocationUtils::getCityTemplateNameIndex(ArenaTypes::LocationType locationType, bool isCoastal)
+int ArenaLocationUtils::getCityTemplateNameIndex(ArenaLocationType locationType, bool isCoastal)
 {
-	if (locationType == ArenaTypes::LocationType::CityState)
+	if (locationType == ArenaLocationType::CityState)
 	{
 		return isCoastal ? 5 : 4;
 	}
-	else if (locationType == ArenaTypes::LocationType::Town)
+	else if (locationType == ArenaLocationType::Town)
 	{
 		return isCoastal ? 1 : 0;
 	}
-	else if (locationType == ArenaTypes::LocationType::Village)
+	else if (locationType == ArenaLocationType::Village)
 	{
 		return isCoastal ? 3 : 2;
 	}
@@ -361,18 +361,18 @@ int ArenaLocationUtils::getCityTemplateNameIndex(ArenaTypes::LocationType locati
 	}
 }
 
-int ArenaLocationUtils::getCityStartingPositionIndex(ArenaTypes::LocationType locationType,
+int ArenaLocationUtils::getCityStartingPositionIndex(ArenaLocationType locationType,
 	bool isCoastal, int templateID)
 {
-	if (locationType == ArenaTypes::LocationType::CityState)
+	if (locationType == ArenaLocationType::CityState)
 	{
 		return isCoastal ? (19 + templateID) : (14 + templateID);
 	}
-	else if (locationType == ArenaTypes::LocationType::Town)
+	else if (locationType == ArenaLocationType::Town)
 	{
 		return isCoastal ? (5 + templateID) : templateID;
 	}
-	else if (locationType == ArenaTypes::LocationType::Village)
+	else if (locationType == ArenaLocationType::Village)
 	{
 		return isCoastal ? (12 + templateID) : (7 + templateID);
 	}

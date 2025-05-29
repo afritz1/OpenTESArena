@@ -385,7 +385,7 @@ void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
 
 				const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
 				const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
-				const ArenaTypes::InteriorType interiorType = interiorGenInfo.interiorType;
+				const ArenaInteriorType interiorType = interiorGenInfo.interiorType;
 
 				LevelVoxelBuildingNameID buildingNameID;
 				if (!buildingNameInfo.tryGetBuildingNameID(interiorType, &buildingNameID))
@@ -519,7 +519,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 			{
 				// @todo: from the looks of this, the engine needs to care about the concept of a "ceiling"?
 				const VoxelTraitsDefinition &voxelTraitsDef = levelInfoDef.getVoxelTraitsDef(i);
-				if (voxelTraitsDef.type == ArenaTypes::VoxelType::Ceiling)
+				if (voxelTraitsDef.type == ArenaVoxelType::Ceiling)
 				{
 					return LevelVoxelShapeDefIdToChunkVoxelShapeDefID(i); // @todo: this is probably brittle; can't assume shape def ID -> traits def ID mapping.
 				}
@@ -625,7 +625,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 			{
 				const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(x, 0, z);
 				const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
-				if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
+				if (voxelTraitsDef.type == ArenaVoxelType::Chasm)
 				{
 					VoxelChasmDefID dummyChasmDefID;
 					if (!chunk.tryGetChasmDefID(x, 0, z, &dummyChasmDefID))
@@ -699,7 +699,7 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 
 	const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(x, y, z);
 	const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
-	if (voxelTraitsDef.type == ArenaTypes::VoxelType::Chasm)
+	if (voxelTraitsDef.type == ArenaVoxelType::Chasm)
 	{
 		int chasmInstIndex;
 		if (chunk.tryGetChasmWallInstIndex(x, y, z, &chasmInstIndex))

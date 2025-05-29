@@ -30,13 +30,13 @@ enum class MapType;
 
 struct MapDefinitionInterior
 {
-	ArenaTypes::InteriorType interiorType;
+	ArenaInteriorType interiorType;
 	// - InteriorDefinition?
 	// - probably store the music filename here, or make it retrievable by the interior type
 
 	MapDefinitionInterior();
 
-	void init(ArenaTypes::InteriorType interiorType);
+	void init(ArenaInteriorType interiorType);
 
 	void clear();
 };
@@ -90,7 +90,7 @@ private:
 	MapSubDefinition subDefinition;
 
 	void init(MapType mapType);
-	bool initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorType interiorType,
+	bool initInteriorLevels(const MIFFile &mif, ArenaInteriorType interiorType,
 		const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
@@ -101,7 +101,7 @@ private:
 	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX,
 		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
-		bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaTypes::CityType cityType,
+		bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaCityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,

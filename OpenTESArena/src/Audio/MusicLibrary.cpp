@@ -120,19 +120,19 @@ bool MusicLibrary::tryParseValue(const std::string_view valueStr, MusicType type
 		return true;
 	};
 
-	auto tryParseJingleCityType = [](const std::string_view str, ArenaTypes::CityType *outCityType)
+	auto tryParseJingleCityType = [](const std::string_view str, ArenaCityType *outCityType)
 	{
 		if (str == "CityState")
 		{
-			*outCityType = ArenaTypes::CityType::CityState;
+			*outCityType = ArenaCityType::CityState;
 		}
 		else if (str == "Town")
 		{
-			*outCityType = ArenaTypes::CityType::Town;
+			*outCityType = ArenaCityType::Town;
 		}
 		else if (str == "Village")
 		{
-			*outCityType = ArenaTypes::CityType::Village;
+			*outCityType = ArenaCityType::Village;
 		}
 		else
 		{
@@ -143,19 +143,19 @@ bool MusicLibrary::tryParseValue(const std::string_view valueStr, MusicType type
 		return true;
 	};
 
-	auto tryParseJingleClimateType = [](const std::string_view str, ArenaTypes::ClimateType *outClimateType)
+	auto tryParseJingleClimateType = [](const std::string_view str, ArenaClimateType *outClimateType)
 	{
 		if (str == "Temperate")
 		{
-			*outClimateType = ArenaTypes::ClimateType::Temperate;
+			*outClimateType = ArenaClimateType::Temperate;
 		}
 		else if (str == "Desert")
 		{
-			*outClimateType = ArenaTypes::ClimateType::Desert;
+			*outClimateType = ArenaClimateType::Desert;
 		}
 		else if (str == "Mountain")
 		{
-			*outClimateType = ArenaTypes::ClimateType::Mountain;
+			*outClimateType = ArenaClimateType::Mountain;
 		}
 		else
 		{
@@ -258,14 +258,14 @@ bool MusicLibrary::tryParseValue(const std::string_view valueStr, MusicType type
 	{
 		DebugAssert(strs.getCount() == 3);
 
-		ArenaTypes::CityType cityType;
+		ArenaCityType cityType;
 		if (!tryParseJingleCityType(strs[1], &cityType))
 		{
 			DebugLogWarning("Couldn't parse city type in jingle music definition \"" + std::string(valueStr) + "\".");
 			return false;
 		}
 
-		ArenaTypes::ClimateType climateType;
+		ArenaClimateType climateType;
 		if (!tryParseJingleClimateType(strs[2], &climateType))
 		{
 			DebugLogWarning("Couldn't parse climate type in jingle music definition \"" + std::string(valueStr) + "\".");

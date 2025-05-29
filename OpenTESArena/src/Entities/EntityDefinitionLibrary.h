@@ -45,11 +45,11 @@ struct HumanEnemyEntityDefinitionKey
 struct CitizenEntityDefinitionKey
 {
 	bool male;
-	ArenaTypes::ClimateType climateType;
+	ArenaClimateType climateType;
 
 	bool operator==(const CitizenEntityDefinitionKey &other) const;
 
-	void init(bool male, ArenaTypes::ClimateType climateType);
+	void init(bool male, ArenaClimateType climateType);
 };
 
 struct VfxEntityDefinitionKey
@@ -82,7 +82,7 @@ struct EntityDefinitionKey
 
 	void initCreature(int creatureIndex, bool isFinalBoss);
 	void initHumanEnemy(bool male, int charClassID);
-	void initCitizen(bool male, ArenaTypes::ClimateType climateType);
+	void initCitizen(bool male, ArenaClimateType climateType);
 	void initVfx(VfxEntityAnimationType type, int index);
 };
 

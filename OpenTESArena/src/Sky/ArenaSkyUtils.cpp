@@ -7,12 +7,12 @@
 
 namespace ArenaSkyUtils
 {
-	const std::array<std::pair<ArenaTypes::ClimateType, LandTraits>, 3> LandTraitsMappings =
+	const std::array<std::pair<ArenaClimateType, LandTraits>, 3> LandTraitsMappings =
 	{
 		{
-			{ ArenaTypes::ClimateType::Temperate, ArenaSkyUtils::LandTraits(2, 4, 10, 2) },
-			{ ArenaTypes::ClimateType::Desert, ArenaSkyUtils::LandTraits(1, 6, 4, 1) },
-			{ ArenaTypes::ClimateType::Mountain, ArenaSkyUtils::LandTraits(0, 6, 11, 2) }
+			{ ArenaClimateType::Temperate, ArenaSkyUtils::LandTraits(2, 4, 10, 2) },
+			{ ArenaClimateType::Desert, ArenaSkyUtils::LandTraits(1, 6, 4, 1) },
+			{ ArenaClimateType::Mountain, ArenaSkyUtils::LandTraits(0, 6, 11, 2) }
 		}
 	};
 }
@@ -25,7 +25,7 @@ ArenaSkyUtils::LandTraits::LandTraits(int filenameIndex, int position, int varia
 	this->maxDigits = maxDigits;
 }
 
-const ArenaSkyUtils::LandTraits &ArenaSkyUtils::getLandTraits(ArenaTypes::ClimateType climateType)
+const ArenaSkyUtils::LandTraits &ArenaSkyUtils::getLandTraits(ArenaClimateType climateType)
 {
 	const auto iter = std::find_if(ArenaSkyUtils::LandTraitsMappings.begin(),
 		ArenaSkyUtils::LandTraitsMappings.end(), [climateType](const auto &pair)

@@ -42,7 +42,7 @@ struct VoxelMeshDefinition
 
 	VoxelMeshDefinition();
 
-	void initClassic(ArenaTypes::VoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache);
+	void initClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache);
 
 	bool isEmpty() const;
 	std::vector<int32_t> &getIndicesList(int index);
@@ -73,7 +73,7 @@ struct VoxelShapeDefinition
 
 	VoxelShapeDefinition();
 
-	void initBoxFromClassic(ArenaTypes::VoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache);
+	void initBoxFromClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache);
 };
 
 #endif

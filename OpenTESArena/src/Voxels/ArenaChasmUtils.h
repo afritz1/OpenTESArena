@@ -17,10 +17,10 @@ namespace ArenaChasmUtils
 	// Water and lava chasms use this instead of ceiling scale.
 	constexpr double DEFAULT_HEIGHT = static_cast<double>(INFCeiling::DEFAULT_HEIGHT) / MIFUtils::ARENA_UNITS;
 
-	bool isTextured(ArenaTypes::ChasmType chasmType);
-	bool allowsSwimming(ArenaTypes::ChasmType chasmType);
-	bool isDamaging(ArenaTypes::ChasmType chasmType);
-	Buffer<TextureAsset> getTextureAssets(ArenaTypes::ChasmType chasmType, TextureManager &textureManager);
+	bool isTextured(ArenaChasmType chasmType);
+	bool allowsSwimming(ArenaChasmType chasmType);
+	bool isDamaging(ArenaChasmType chasmType);
+	Buffer<TextureAsset> getTextureAssets(ArenaChasmType chasmType, TextureManager &textureManager);
 }
 
 #endif

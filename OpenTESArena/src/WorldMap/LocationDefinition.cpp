@@ -14,9 +14,9 @@ void LocationCityDefinition::MainQuestTempleOverride::init(int modelIndex, int s
 	this->menuNamesIndex = menuNamesIndex;
 }
 
-void LocationCityDefinition::init(ArenaTypes::CityType type, const char *typeDisplayName,
+void LocationCityDefinition::init(ArenaCityType type, const char *typeDisplayName,
 	const char *mapFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
-	uint32_t rulerSeed, uint32_t skySeed, ArenaTypes::ClimateType climateType,
+	uint32_t rulerSeed, uint32_t skySeed, ArenaClimateType climateType,
 	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
 	bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon)
@@ -83,7 +83,7 @@ void LocationDefinition::init(LocationDefinitionType type, const std::string &na
 }
 
 void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal, bool premade,
-	ArenaTypes::CityType type, const BinaryAssetLibrary &binaryAssetLibrary)
+	ArenaCityType type, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();
 	const auto &provinceData = cityData.getProvinceData(provinceID);
@@ -106,11 +106,11 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		{
 			switch (type)
 			{
-			case ArenaTypes::CityType::CityState:
+			case ArenaCityType::CityState:
 				return 0;
-			case ArenaTypes::CityType::Town:
+			case ArenaCityType::Town:
 				return 1;
-			case ArenaTypes::CityType::Village:
+			case ArenaCityType::Village:
 				return 2;
 			default:
 				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(type)));
@@ -123,23 +123,23 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	}();
 
 	const int globalCityID = ArenaLocationUtils::getGlobalCityID(localCityID, provinceID);
-	const bool isCityState = type == ArenaTypes::CityType::CityState;
+	const bool isCityState = type == ArenaCityType::CityState;
 	const int templateCount = ArenaLocationUtils::getCityTemplateCount(coastal, isCityState);
 	const int templateID = globalCityID % templateCount;
 
 	// @todo: deprecate LocationType in favor of CityDefinition::Type.
-	const ArenaTypes::LocationType locationType = [type]()
+	const ArenaLocationType locationType = [type]()
 	{
 		switch (type)
 		{
-		case ArenaTypes::CityType::CityState:
-			return ArenaTypes::LocationType::CityState;
-		case ArenaTypes::CityType::Town:
-			return ArenaTypes::LocationType::Town;
-		case ArenaTypes::CityType::Village:
-			return ArenaTypes::LocationType::Village;
+		case ArenaCityType::CityState:
+			return ArenaLocationType::CityState;
+		case ArenaCityType::Town:
+			return ArenaLocationType::Town;
+		case ArenaCityType::Village:
+			return ArenaLocationType::Village;
 		default:
-			DebugUnhandledReturnMsg(ArenaTypes::LocationType, std::to_string(static_cast<int>(type)));
+			DebugUnhandledReturnMsg(ArenaLocationType, std::to_string(static_cast<int>(type)));
 		}
 	}();
 
@@ -171,7 +171,7 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	const uint32_t provinceSeed = ArenaLocationUtils::getProvinceSeed(provinceID, provinceData);
 	const uint32_t rulerSeed = ArenaLocationUtils::getRulerSeed(localPoint, provinceRect);
 	const uint32_t skySeed = ArenaLocationUtils::getSkySeed(localPoint, provinceID, provinceRect);
-	const ArenaTypes::ClimateType climateType = ArenaLocationUtils::getCityClimateType(localCityID, provinceID, binaryAssetLibrary);
+	const ArenaClimateType climateType = ArenaLocationUtils::getCityClimateType(localCityID, provinceID, binaryAssetLibrary);
 
 	const auto &cityGen = exeData.cityGen;
 	const std::vector<uint8_t> *reservedBlocks = [coastal, templateID, &cityGen]()
@@ -193,11 +193,11 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 	{
 		switch (type)
 		{
-		case ArenaTypes::CityType::CityState:
+		case ArenaCityType::CityState:
 			return 6;
-		case ArenaTypes::CityType::Town:
+		case ArenaCityType::Town:
 			return 5;
-		case ArenaTypes::CityType::Village:
+		case ArenaCityType::Village:
 			return 4;
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(type)));

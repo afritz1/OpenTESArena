@@ -25,7 +25,7 @@ struct ExeData;
 // Various functions for working with Arena level data, shared between world types.
 namespace ArenaLevelUtils
 {
-	static_assert(sizeof(ArenaTypes::VoxelID) == sizeof(uint16_t));
+	static_assert(sizeof(ArenaVoxelID) == sizeof(uint16_t));
 
 	// The distance in voxels that doors will auto-close when the player is far enough away.
 	constexpr double DOOR_CLOSE_DISTANCE = 3.0; // @todo: probably make this a multiple/fraction of ARENA_UNITS
@@ -38,17 +38,17 @@ namespace ArenaLevelUtils
 	using MenuNamesList = std::vector<std::pair<WorldInt2, std::string>>;
 
 	// Gets the most and least significant bytes from the voxel ID to determine the voxel type/texture/etc..
-	uint8_t getVoxelMostSigByte(ArenaTypes::VoxelID voxelID);
-	uint8_t getVoxelLeastSigByte(ArenaTypes::VoxelID voxelID);
+	uint8_t getVoxelMostSigByte(ArenaVoxelID voxelID);
+	uint8_t getVoxelLeastSigByte(ArenaVoxelID voxelID);
 
 	// Converts an Arena ceiling height from "centimeters" to modern coordinates (1.0 by default).
 	double convertCeilingHeightToScale(int ceilingHeight);
 
 	// Gets the number of voxels a MAP2 voxel occupies vertically (at least 1).
-	int getMap2VoxelHeight(ArenaTypes::VoxelID map2Voxel);
+	int getMap2VoxelHeight(ArenaVoxelID map2Voxel);
 
 	// Gets the max height from a set of MAP2 voxels.
-	int getMap2Height(BufferView2D<const ArenaTypes::VoxelID> map2);
+	int getMap2Height(BufferView2D<const ArenaVoxelID> map2);
 
 	// Gets the voxel height of a .MIF level with optional ceiling data.
 	int getMifLevelHeight(const MIFLevel &level, const INFCeiling *ceiling);
@@ -59,7 +59,7 @@ namespace ArenaLevelUtils
 
 	// Gets the .MIF name for a door voxel in a city or the wilderness.
 	std::string getDoorVoxelMifName(WEInt x, SNInt y, int menuID, uint32_t rulerSeed,
-		bool palaceIsMainQuestDungeon, ArenaTypes::CityType cityType, MapType mapType,
+		bool palaceIsMainQuestDungeon, ArenaCityType cityType, MapType mapType,
 		const ExeData &exeData);
 
 	// Gets the lock level for a door voxel at the given XY coordinate.

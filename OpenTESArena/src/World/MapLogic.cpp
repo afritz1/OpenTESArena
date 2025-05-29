@@ -174,7 +174,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
 
-	const ArenaTypes::WeatherType weatherType = gameState.getWeatherForLocation(provinceID, locationID);
+	const ArenaWeatherType weatherType = gameState.getWeatherForLocation(provinceID, locationID);
 
 	const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());
 	auto &renderer = game.renderer;
@@ -373,7 +373,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				const MapDefinition &activeMapDef = game.gameState.getActiveMapDef();
 				DebugAssert(activeMapDef.getMapType() == MapType::Interior);
 				const MapDefinitionInterior &mapDefInterior = activeMapDef.getSubDefinition().interior;
-				const ArenaTypes::InteriorType interiorType = mapDefInterior.interiorType;
+				const ArenaInteriorType interiorType = mapDefInterior.interiorType;
 				const InteriorMusicType interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
 				const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
 					MusicType::Interior, game.random, [interiorMusicType](const MusicDefinition &def)
@@ -549,8 +549,8 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				return musicDef;
 			};
 
-			const ArenaTypes::CityType cityDefType = cityDef.type;
-			const ArenaTypes::ClimateType cityDefClimateType = cityDef.climateType;
+			const ArenaCityType cityDefType = cityDef.type;
+			const ArenaClimateType cityDefClimateType = cityDef.climateType;
 			GameState::SceneChangeMusicFunc jingleMusicFunc = [cityDefType, cityDefClimateType](Game &game)
 			{
 				// Only play jingle when going wilderness to city.
@@ -612,7 +612,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 
 	const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);	
 	const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
-	if (voxelTraitsDef.type != ArenaTypes::VoxelType::Wall)
+	if (voxelTraitsDef.type != ArenaVoxelType::Wall)
 	{
 		return;
 	}

@@ -322,7 +322,7 @@ namespace PlayerLogic
 		VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-		const ArenaTypes::VoxelType voxelType = voxelTraitsDef.type;
+		const ArenaVoxelType voxelType = voxelTraitsDef.type;
 
 		GameState &gameState = game.gameState;
 		const Player &player = game.player;
@@ -335,10 +335,10 @@ namespace PlayerLogic
 				{
 					if (!debugDestroyVoxel)
 					{
-						const bool isWall = voxelType == ArenaTypes::VoxelType::Wall;
+						const bool isWall = voxelType == ArenaVoxelType::Wall;
 
 						// The only edge voxels with a transition should be should be palace entrances (with collision).
-						const bool isEdge = (voxelType == ArenaTypes::VoxelType::Edge) && voxelTraitsDef.edge.collider;
+						const bool isEdge = (voxelType == ArenaVoxelType::Edge) && voxelTraitsDef.edge.collider;
 
 						if (isWall || isEdge)
 						{
@@ -365,7 +365,7 @@ namespace PlayerLogic
 						}
 					}
 				}
-				else if (voxelType == ArenaTypes::VoxelType::Door)
+				else if (voxelType == ArenaVoxelType::Door)
 				{
 					// If the door is closed, try to open it.
 					int doorAnimInstIndex;

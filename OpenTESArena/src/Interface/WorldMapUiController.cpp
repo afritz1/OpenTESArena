@@ -67,7 +67,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	{
 		// Get weather type from game state.
 		const LocationCityDefinition &cityDef = travelLocationDef.getCityDefinition();
-		const ArenaTypes::WeatherType weatherType = [&game, &gameState, &binaryAssetLibrary,
+		const ArenaWeatherType weatherType = [&game, &gameState, &binaryAssetLibrary,
 			&travelProvinceDef, &travelLocationDef, &cityDef]()
 		{
 			const Int2 localPoint(travelLocationDef.getScreenX(), travelLocationDef.getScreenY());
@@ -76,7 +76,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			const auto &cityData = binaryAssetLibrary.getCityDataFile();
 			const int globalQuarter = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityData);
 
-			BufferView<const ArenaTypes::WeatherType> worldMapWeathers = gameState.getWorldMapWeathers();
+			BufferView<const ArenaWeatherType> worldMapWeathers = gameState.getWorldMapWeathers();
 			DebugAssertIndex(worldMapWeathers, globalQuarter);
 			return ArenaWeatherUtils::getFilteredWeatherType(worldMapWeathers[globalQuarter], cityDef.climateType);
 		}();
@@ -147,8 +147,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return musicDef;
 		};
 
-		const ArenaTypes::CityType cityDefType = cityDef.type;
-		const ArenaTypes::ClimateType cityDefClimateType = cityDef.climateType;
+		const ArenaCityType cityDefType = cityDef.type;
+		const ArenaClimateType cityDefClimateType = cityDef.climateType;
 		GameState::SceneChangeMusicFunc jingleMusicFunc = [cityDefType, cityDefClimateType](Game &game)
 		{
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
@@ -232,7 +232,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(mainQuestDungeonDef.mapFilename, ArenaTypes::InteriorType::Dungeon, rulerIsMale);
+		interiorGenInfo.initPrefab(mainQuestDungeonDef.mapFilename, ArenaInteriorType::Dungeon, rulerIsMale);
 
 		const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest dungeon.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);

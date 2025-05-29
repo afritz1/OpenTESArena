@@ -88,11 +88,11 @@ struct EnemyEntityDefinition
 struct CitizenEntityDefinition
 {
 	bool male;
-	ArenaTypes::ClimateType climateType;
+	ArenaClimateType climateType;
 
 	CitizenEntityDefinition();
 
-	void init(bool male, ArenaTypes::ClimateType climateType);
+	void init(bool male, ArenaClimateType climateType);
 
 	bool operator==(const CitizenEntityDefinition &other) const;
 };
@@ -316,7 +316,7 @@ struct EntityDefinition
 	void initEnemyCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData, EntityAnimationDefinition &&animDef);
 	void initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef);
 
-	void initCitizen(bool male, ArenaTypes::ClimateType climateType, EntityAnimationDefinition &&animDef);
+	void initCitizen(bool male, ArenaClimateType climateType, EntityAnimationDefinition &&animDef);
 
 	void initStaticNpcShopkeeper(StaticNpcEntityDefinition::ShopkeeperDefinition::Type type, EntityAnimationDefinition &&animDef);
 	void initStaticNpcPerson(EntityAnimationDefinition &&animDef);

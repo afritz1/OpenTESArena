@@ -46,7 +46,7 @@ bool CitizenUtils::canMapTypeSpawnCitizens(MapType mapType)
 	return (mapType == MapType::City) || (mapType == MapType::Wilderness);
 }
 
-CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType)
+CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaClimateType climateType)
 {
 	// Citizen entity definitions are level-independent and stored in a library beforehand.
 	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinitionType::Citizen));
@@ -87,7 +87,7 @@ std::optional<CitizenUtils::CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(
 	}
 	
 	const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-	const ArenaTypes::ClimateType climateType = cityDef.climateType;
+	const ArenaClimateType climateType = cityDef.climateType;
 	return CitizenUtils::makeCitizenGenInfo(raceID, climateType);
 }
 

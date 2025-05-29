@@ -35,7 +35,7 @@ bool CitizenEntityDefinitionKey::operator==(const CitizenEntityDefinitionKey &ot
 	return (this->male == other.male) && (this->climateType == other.climateType);
 }
 
-void CitizenEntityDefinitionKey::init(bool male, ArenaTypes::ClimateType climateType)
+void CitizenEntityDefinitionKey::init(bool male, ArenaClimateType climateType)
 {
 	this->male = male;
 	this->climateType = climateType;
@@ -103,7 +103,7 @@ void EntityDefinitionKey::initHumanEnemy(bool male, int charClassID)
 	this->humanEnemy.init(male, charClassID);
 }
 
-void EntityDefinitionKey::initCitizen(bool male, ArenaTypes::ClimateType climateType)
+void EntityDefinitionKey::initCitizen(bool male, ArenaClimateType climateType)
 {
 	this->init(EntityDefinitionKeyType::Citizen);
 	this->citizen.init(male, climateType);
@@ -173,7 +173,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
-	auto addCitizenDef = [this, &exeData, &entityAnimLibrary](ArenaTypes::ClimateType climateType, bool male)
+	auto addCitizenDef = [this, &exeData, &entityAnimLibrary](ArenaClimateType climateType, bool male)
 	{
 		CitizenEntityAnimationKey animKey;
 		animKey.init(male, climateType);
@@ -225,7 +225,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 	const int creatureCount = static_cast<int>(std::size(exeData.entities.creatureNames));
 	for (int i = 0; i < creatureCount; i++)
 	{
-		const ArenaTypes::ItemIndex itemIndex = ArenaAnimUtils::FirstCreatureItemIndex + i;
+		const ArenaItemIndex itemIndex = ArenaAnimUtils::FirstCreatureItemIndex + i;
 		const int creatureID = ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 		addCreatureDef(creatureID, false);
 	}
@@ -245,7 +245,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 	// Iterate all climate type + gender combinations for citizens.
 	for (int i = 0; i < ArenaClimateUtils::getClimateTypeCount(); i++)
 	{
-		const ArenaTypes::ClimateType climateType = ArenaClimateUtils::getClimateType(i);
+		const ArenaClimateType climateType = ArenaClimateUtils::getClimateType(i);
 		addCitizenDef(climateType, true);
 		addCitizenDef(climateType, false);
 	}

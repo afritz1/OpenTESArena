@@ -26,17 +26,17 @@
 
 MapDefinitionInterior::MapDefinitionInterior()
 {
-	this->interiorType = static_cast<ArenaTypes::InteriorType>(-1);
+	this->interiorType = static_cast<ArenaInteriorType>(-1);
 }
 
-void MapDefinitionInterior::init(ArenaTypes::InteriorType interiorType)
+void MapDefinitionInterior::init(ArenaInteriorType interiorType)
 {
 	this->interiorType = interiorType;
 }
 
 void MapDefinitionInterior::clear()
 {
-	this->interiorType = static_cast<ArenaTypes::InteriorType>(-1);
+	this->interiorType = static_cast<ArenaInteriorType>(-1);
 }
 
 MapDefinitionWild::MapDefinitionWild()
@@ -105,7 +105,7 @@ void MapDefinition::init(MapType mapType)
 	this->subDefinition.type = mapType;
 }
 
-bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorType interiorType,
+bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaInteriorType interiorType,
 	const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
@@ -142,7 +142,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaTypes::InteriorT
 		const BufferView<const MIFLevel> mifLevelView(&mifLevel, 1);
 		constexpr MapType mapType = MapType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
-		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for interiors.
+		constexpr std::optional<ArenaCityType> cityType; // Not necessary for interiors.
 		constexpr LocationDungeonDefinition *dungeonDef = nullptr; // Not necessary for non-dungeons.
 		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for non-dungeons.
 		BufferView<LevelDefinition> levelDefView(&levelDef, 1);
@@ -239,7 +239,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	constexpr ArenaTypes::InteriorType interiorType = ArenaTypes::InteriorType::Dungeon;
+	constexpr ArenaInteriorType interiorType = ArenaInteriorType::Dungeon;
 	constexpr std::optional<bool> rulerIsMale;
 	MapGeneration::generateMifDungeon(mif, levelCount, widthChunks, depthChunks, inf, random,
 		this->subDefinition.type, interiorType, rulerIsMale, isArtifactDungeon, charClassLibrary,
@@ -280,7 +280,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX,
 	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-	const std::string_view cityTypeName, ArenaTypes::CityType cityType,
+	const std::string_view cityTypeName, ArenaCityType cityType,
 	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,

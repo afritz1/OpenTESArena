@@ -38,11 +38,11 @@ struct HumanEnemyEntityAnimationKey
 struct CitizenEntityAnimationKey
 {
 	bool male;
-	ArenaTypes::ClimateType climateType;
+	ArenaClimateType climateType;
 
 	CitizenEntityAnimationKey();
 
-	void init(bool male, ArenaTypes::ClimateType climateType);
+	void init(bool male, ArenaClimateType climateType);
 };
 
 struct VfxEntityAnimationKey

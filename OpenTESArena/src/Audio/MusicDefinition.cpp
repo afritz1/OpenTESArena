@@ -12,7 +12,7 @@ void InteriorMusicDefinition::init(InteriorMusicType type)
 	this->type = type;
 }
 
-void JingleMusicDefinition::init(ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType)
+void JingleMusicDefinition::init(ArenaCityType cityType, ArenaClimateType climateType)
 {
 	this->cityType = cityType;
 	this->climateType = climateType;
@@ -43,7 +43,7 @@ void MusicDefinition::initInterior(const std::string &filename, InteriorMusicTyp
 	this->interior.init(type);
 }
 
-void MusicDefinition::initJingle(const std::string &filename, ArenaTypes::CityType cityType, ArenaTypes::ClimateType climateType)
+void MusicDefinition::initJingle(const std::string &filename, ArenaCityType cityType, ArenaClimateType climateType)
 {
 	this->filename = filename;
 	this->type = MusicType::Jingle;

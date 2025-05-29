@@ -33,7 +33,7 @@ bool MainMenuPanel::init()
 	this->loadButton = Button<Game&>(MainMenuUiView::getLoadButtonRect(), MainMenuUiController::onLoadGameButtonSelected);
 	this->newButton = Button<Game&>(MainMenuUiView::getNewGameButtonRect(), MainMenuUiController::onNewGameButtonSelected);
 	this->exitButton = Button<>(MainMenuUiView::getExitButtonRect(), MainMenuUiController::onExitGameButtonSelected);
-	this->quickStartButton = Button<Game&, int, int, const std::string&, const std::optional<ArenaTypes::InteriorType>&, ArenaTypes::WeatherType, MapType>(
+	this->quickStartButton = Button<Game&, int, int, const std::string&, const std::optional<ArenaInteriorType>&, ArenaWeatherType, MapType>(
 		MainMenuUiView::getTestButtonRect(), MainMenuUiController::onQuickStartButtonSelected);
 	this->testTypeUpButton = Button<int*, int*, int*, int*>(
 		MainMenuUiView::getTestTypeUpButtonRect(), MainMenuUiController::onTestTypeUpButtonSelected);
@@ -85,7 +85,7 @@ bool MainMenuPanel::init()
 
 	auto updateWeatherTextBox = [this]()
 	{
-		const ArenaTypes::WeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
+		const ArenaWeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
 		const std::string text = "Test weather: " + MainMenuUiModel::WeatherTypeNames.at(testWeatherType);
 		this->testWeatherTextBox.setText(text);
 	};
@@ -332,7 +332,7 @@ void MainMenuPanel::initTestUI()
 	testNameTextDrawCallInitInfo.pivotType = PivotType::MiddleRight;
 	this->addDrawCall(testNameTextDrawCallInitInfo);
 
-	const ArenaTypes::WeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
+	const ArenaWeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
 	const std::string testWeatherText = "Test weather: " + MainMenuUiModel::WeatherTypeNames.at(testWeatherType);
 	const TextBoxInitInfo testWeatherInitInfo = MainMenuUiView::getTestWeatherTextBoxInitInfo(fontLibrary);
 	if (!this->testWeatherTextBox.init(testWeatherInitInfo, testWeatherText, renderer))

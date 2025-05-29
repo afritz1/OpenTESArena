@@ -127,7 +127,7 @@ namespace SkyGeneration
 	}
 
 	// Includes distant mountains and clouds.
-	void generateArenaStatics(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef, int currentDay,
+	void generateArenaStatics(ArenaClimateType climateType, const WeatherDefinition &weatherDef, int currentDay,
 		uint32_t skySeed, const ExeData &exeData, TextureManager &textureManager, SkyDefinition *outSkyDef,
 		SkyInfoDefinition *outSkyInfoDef)
 	{
@@ -476,7 +476,7 @@ void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
 	this->outdoorDungeon = outdoorDungeon;
 }
 
-void SkyGeneration::ExteriorSkyGenInfo::init(ArenaTypes::ClimateType climateType, const WeatherDefinition &weatherDef,
+void SkyGeneration::ExteriorSkyGenInfo::init(ArenaClimateType climateType, const WeatherDefinition &weatherDef,
 	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
 {
 	this->climateType = climateType;

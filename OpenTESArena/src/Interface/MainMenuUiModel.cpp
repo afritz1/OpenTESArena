@@ -107,11 +107,11 @@ std::string MainMenuUiModel::getSelectedTestName(Game &game, int testType, int t
 	}
 }
 
-std::optional<ArenaTypes::InteriorType> MainMenuUiModel::getSelectedTestInteriorType(int testType, int testIndex)
+std::optional<ArenaInteriorType> MainMenuUiModel::getSelectedTestInteriorType(int testType, int testIndex)
 {
 	if ((testType == MainMenuUiModel::TestType_MainQuest) || (testType == MainMenuUiModel::TestType_Dungeon))
 	{
-		return ArenaTypes::InteriorType::Dungeon;
+		return ArenaInteriorType::Dungeon;
 	}
 	else if (testType == MainMenuUiModel::TestType_Interior)
 	{
@@ -125,11 +125,11 @@ std::optional<ArenaTypes::InteriorType> MainMenuUiModel::getSelectedTestInterior
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(std::optional<ArenaTypes::InteriorType>, std::to_string(testType));
+		DebugUnhandledReturnMsg(std::optional<ArenaInteriorType>, std::to_string(testType));
 	}
 }
 
-ArenaTypes::WeatherType MainMenuUiModel::getSelectedTestWeatherType(int testWeather)
+ArenaWeatherType MainMenuUiModel::getSelectedTestWeatherType(int testWeather)
 {
 	DebugAssertIndex(MainMenuUiModel::Weathers, testWeather);
 	return MainMenuUiModel::Weathers[testWeather];
@@ -193,7 +193,7 @@ std::vector<int> MainMenuUiModel::makeShuffledLocationIndices(const ProvinceDefi
 }
 
 std::optional<int> MainMenuUiModel::getRandomCityLocationDefIndexIfType(const ProvinceDefinition &provinceDef,
-	ArenaTypes::CityType cityType)
+	ArenaCityType cityType)
 {
 	// Iterate over locations in the province in a random order.
 	const std::vector<int> randomLocationIndices = MainMenuUiModel::makeShuffledLocationIndices(provinceDef);

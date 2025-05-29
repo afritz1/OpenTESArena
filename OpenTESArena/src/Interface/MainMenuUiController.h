@@ -18,7 +18,7 @@ namespace MainMenuUiController
 	void onExitGameButtonSelected();
 
 	void onQuickStartButtonSelected(Game &game, int testType, int testIndex, const std::string &mifName,
-		const std::optional<ArenaTypes::InteriorType> &optInteriorType, ArenaTypes::WeatherType weatherType,
+		const std::optional<ArenaInteriorType> &optInteriorType, ArenaWeatherType weatherType,
 		MapType mapType);
 
 	// Takes pointers to MainMenuPanel members due to them being private.

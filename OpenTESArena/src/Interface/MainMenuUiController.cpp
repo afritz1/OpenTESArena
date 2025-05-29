@@ -137,8 +137,8 @@ void MainMenuUiController::onExitGameButtonSelected()
 }
 
 void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, int testIndex,
-	const std::string &mifName, const std::optional<ArenaTypes::InteriorType> &optInteriorType,
-	ArenaTypes::WeatherType weatherType, MapType mapType)
+	const std::string &mifName, const std::optional<ArenaInteriorType> &optInteriorType,
+	ArenaWeatherType weatherType, MapType mapType)
 {
 	// Game data instance, to be initialized further by one of the loading methods below.
 	// Create a player with random data for testing.
@@ -231,7 +231,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 
 			DebugAssert(optInteriorType.has_value());
-			const ArenaTypes::InteriorType interiorType = *optInteriorType;
+			const ArenaInteriorType interiorType = *optInteriorType;
 
 			const std::optional<bool> rulerIsMale = [&locationDef]()
 			{
@@ -365,7 +365,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 					if (curLocationDef.getType() == LocationDefinitionType::City)
 					{
 						const LocationCityDefinition &cityDef = curLocationDef.getCityDefinition();
-						if ((cityDef.type == ArenaTypes::CityType::CityState) && cityDef.premade &&
+						if ((cityDef.type == ArenaCityType::CityState) && cityDef.premade &&
 							cityDef.palaceIsMainQuestDungeon)
 						{
 							return i;
@@ -410,7 +410,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 			{
-				const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+				const ArenaWeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 				WeatherDefinition weatherDef;
 				weatherDef.initFromClassic(filteredWeatherType, currentDay, game.random);
@@ -439,23 +439,23 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			const int provinceIndex = random.next(worldMapDef.getProvinceCount() - 1);
 			const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
 
-			const ArenaTypes::CityType targetCityType = [&mifName]()
+			const ArenaCityType targetCityType = [&mifName]()
 			{
 				if (mifName == MainMenuUiModel::RandomCity)
 				{
-					return ArenaTypes::CityType::CityState;
+					return ArenaCityType::CityState;
 				}
 				else if (mifName == MainMenuUiModel::RandomTown)
 				{
-					return ArenaTypes::CityType::Town;
+					return ArenaCityType::Town;
 				}
 				else if (mifName == MainMenuUiModel::RandomVillage)
 				{
-					return ArenaTypes::CityType::Village;
+					return ArenaCityType::Village;
 				}
 				else
 				{
-					DebugUnhandledReturnMsg(ArenaTypes::CityType, mifName);
+					DebugUnhandledReturnMsg(ArenaCityType, mifName);
 				}
 			}();
 
@@ -495,7 +495,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 			const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 			{
-				const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+				const ArenaWeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 				WeatherDefinition weatherDef;
 				weatherDef.initFromClassic(filteredWeatherType, currentDay, game.random);
@@ -538,7 +538,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 		const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
 		{
-			const ArenaTypes::WeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
+			const ArenaWeatherType filteredWeatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, cityDef.climateType);
 
 			WeatherDefinition weatherDef;
 			weatherDef.initFromClassic(filteredWeatherType, currentDay, game.random);
@@ -592,7 +592,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		else
 		{
 			const MapSubDefinition &mapSubDef = gameState.getActiveMapDef().getSubDefinition();
-			const ArenaTypes::InteriorType interiorType = mapSubDef.interior.interiorType;
+			const ArenaInteriorType interiorType = mapSubDef.interior.interiorType;
 			const InteriorMusicType interiorMusicType = MusicUtils::getInteriorMusicType(interiorType);
 
 			musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Interior,

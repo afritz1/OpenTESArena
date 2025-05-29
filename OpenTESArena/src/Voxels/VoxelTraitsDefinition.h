@@ -29,7 +29,7 @@ struct VoxelTraitsChasmDefinition
 {
 	// @todo: should move this into LevelDefinition/LevelInfoDefinition/Chunk as a VoxelChasmDefinition,
 	// the same as VoxelDoorDefinition.
-	ArenaTypes::ChasmType type;
+	ArenaChasmType type;
 };
 
 // Grab-bag traits that don't fit into other existing categories.
@@ -38,7 +38,7 @@ struct VoxelTraitsDefinition
 {
 	// @todo: eventually this def should not depend on a voxel type; instead it should have things
 	// like an interactivity enum (i.e. "is this a door?").
-	ArenaTypes::VoxelType type;
+	ArenaVoxelType type;
 
 	union
 	{
@@ -50,11 +50,11 @@ struct VoxelTraitsDefinition
 
 	VoxelTraitsDefinition();
 
-	void initGeneral(ArenaTypes::VoxelType type); // @todo: ideally this function wouldn't be needed
+	void initGeneral(ArenaVoxelType type); // @todo: ideally this function wouldn't be needed
 	void initFloor(bool isWildWallColored);
 	void initTransparentWall(bool collider);
 	void initEdge(VoxelFacing2D facing, bool collider);
-	void initChasm(ArenaTypes::ChasmType chasmType);
+	void initChasm(ArenaChasmType chasmType);
 
 	bool hasCollision() const;
 };

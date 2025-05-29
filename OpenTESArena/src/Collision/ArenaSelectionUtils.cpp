@@ -1,16 +1,16 @@
 #include "ArenaSelectionUtils.h"
 
-bool ArenaSelectionUtils::isVoxelSelectableAsPrimary(ArenaTypes::VoxelType voxelType)
+bool ArenaSelectionUtils::isVoxelSelectableAsPrimary(ArenaVoxelType voxelType)
 {
-	return (voxelType == ArenaTypes::VoxelType::Wall) ||
-		(voxelType == ArenaTypes::VoxelType::Floor) ||
-		(voxelType == ArenaTypes::VoxelType::Raised) ||
-		(voxelType == ArenaTypes::VoxelType::Diagonal) ||
-		(voxelType == ArenaTypes::VoxelType::TransparentWall) ||
-		(voxelType == ArenaTypes::VoxelType::Edge);
+	return (voxelType == ArenaVoxelType::Wall) ||
+		(voxelType == ArenaVoxelType::Floor) ||
+		(voxelType == ArenaVoxelType::Raised) ||
+		(voxelType == ArenaVoxelType::Diagonal) ||
+		(voxelType == ArenaVoxelType::TransparentWall) ||
+		(voxelType == ArenaVoxelType::Edge);
 }
 
-bool ArenaSelectionUtils::isVoxelSelectableAsSecondary(ArenaTypes::VoxelType voxelType)
+bool ArenaSelectionUtils::isVoxelSelectableAsSecondary(ArenaVoxelType voxelType)
 {
-	return voxelType == ArenaTypes::VoxelType::Wall;
+	return voxelType == ArenaVoxelType::Wall;
 }

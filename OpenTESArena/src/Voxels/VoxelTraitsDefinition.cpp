@@ -6,36 +6,36 @@ VoxelTraitsDefinition::VoxelTraitsDefinition()
 {
 	// Default to air.
 	std::memset(this, 0, sizeof(*this));
-	this->type = ArenaTypes::VoxelType::None;
+	this->type = ArenaVoxelType::None;
 }
 
-void VoxelTraitsDefinition::initGeneral(ArenaTypes::VoxelType type)
+void VoxelTraitsDefinition::initGeneral(ArenaVoxelType type)
 {
 	this->type = type;
 }
 
 void VoxelTraitsDefinition::initFloor(bool isWildWallColored)
 {
-	this->initGeneral(ArenaTypes::VoxelType::Floor);
+	this->initGeneral(ArenaVoxelType::Floor);
 	this->floor.isWildWallColored = isWildWallColored;
 }
 
 void VoxelTraitsDefinition::initTransparentWall(bool collider)
 {
-	this->initGeneral(ArenaTypes::VoxelType::TransparentWall);
+	this->initGeneral(ArenaVoxelType::TransparentWall);
 	this->transparentWall.collider = collider;
 }
 
 void VoxelTraitsDefinition::initEdge(VoxelFacing2D facing, bool collider)
 {
-	this->initGeneral(ArenaTypes::VoxelType::Edge);
+	this->initGeneral(ArenaVoxelType::Edge);
 	this->edge.facing = facing;
 	this->edge.collider = collider;
 }
 
-void VoxelTraitsDefinition::initChasm(ArenaTypes::ChasmType chasmType)
+void VoxelTraitsDefinition::initChasm(ArenaChasmType chasmType)
 {
-	this->initGeneral(ArenaTypes::VoxelType::Chasm);
+	this->initGeneral(ArenaVoxelType::Chasm);
 	this->chasm.type = chasmType;
 }
 
@@ -43,11 +43,11 @@ bool VoxelTraitsDefinition::hasCollision() const
 {
 	switch (this->type)
 	{
-	case ArenaTypes::VoxelType::None:
+	case ArenaVoxelType::None:
 		return false;
-	case ArenaTypes::VoxelType::TransparentWall:
+	case ArenaVoxelType::TransparentWall:
 		return this->transparentWall.collider;
-	case ArenaTypes::VoxelType::Edge:
+	case ArenaVoxelType::Edge:
 		return this->edge.collider;
 	default:
 		return true;

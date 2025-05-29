@@ -99,7 +99,7 @@ private:
 
 	// One weather for each of the 36 province quadrants (updated hourly).
 	static constexpr int WORLD_MAP_WEATHER_QUADRANT_COUNT = 36;
-	ArenaTypes::WeatherType worldMapWeathers[WORLD_MAP_WEATHER_QUADRANT_COUNT];
+	ArenaWeatherType worldMapWeathers[WORLD_MAP_WEATHER_QUADRANT_COUNT];
 
 	Date date;
 	Clock clock;
@@ -152,8 +152,8 @@ public:
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();
 	const ProvinceMapUiModel::TravelData *getTravelData() const;
-	BufferView<const ArenaTypes::WeatherType> getWorldMapWeathers() const;
-	ArenaTypes::WeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
+	BufferView<const ArenaWeatherType> getWorldMapWeathers() const;
+	ArenaWeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
 	Date &getDate();
 	Clock &getClock();
 	const Clock &getClock() const;

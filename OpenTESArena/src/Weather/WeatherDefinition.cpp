@@ -82,7 +82,7 @@ void WeatherDefinition::initSnow(bool overcast, bool heavyFog)
 	this->snow.init(overcast, heavyFog);
 }
 
-void WeatherDefinition::initFromClassic(ArenaTypes::WeatherType weatherType, int currentDay, Random &random)
+void WeatherDefinition::initFromClassic(ArenaWeatherType weatherType, int currentDay, Random &random)
 {
 	if (ArenaWeatherUtils::isClear(weatherType))
 	{
@@ -100,8 +100,8 @@ void WeatherDefinition::initFromClassic(ArenaTypes::WeatherType weatherType, int
 	}
 	else if (ArenaWeatherUtils::isSnow(weatherType))
 	{
-		const bool overcast = (weatherType == ArenaTypes::WeatherType::SnowOvercast) ||
-			(weatherType == ArenaTypes::WeatherType::SnowOvercast2);
+		const bool overcast = (weatherType == ArenaWeatherType::SnowOvercast) ||
+			(weatherType == ArenaWeatherType::SnowOvercast2);
 		const bool heavyFog = ArenaWeatherUtils::fogIsHeavy(currentDay);
 		this->initSnow(overcast, heavyFog);
 	}

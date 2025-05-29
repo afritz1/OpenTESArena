@@ -15,38 +15,38 @@ namespace
 {
 	// Arbitrary fog distances for each weather; the distance at which fog is maximum.
 	// @todo: make this match the original game more closely? They are currently arbitrary.
-	const std::unordered_map<ArenaTypes::WeatherType, double> WeatherFogDistances =
+	const std::unordered_map<ArenaWeatherType, double> WeatherFogDistances =
 	{
-		{ ArenaTypes::WeatherType::Clear, 100.0 },
-		{ ArenaTypes::WeatherType::Overcast, 30.0 },
-		{ ArenaTypes::WeatherType::Rain, 50.0 },
-		{ ArenaTypes::WeatherType::Snow, 25.0 },
-		{ ArenaTypes::WeatherType::SnowOvercast, 20.0 },
-		{ ArenaTypes::WeatherType::Rain2, 50.0 },
-		{ ArenaTypes::WeatherType::Overcast2, 30.0 },
-		{ ArenaTypes::WeatherType::SnowOvercast2, 20.0 }
+		{ ArenaWeatherType::Clear, 100.0 },
+		{ ArenaWeatherType::Overcast, 30.0 },
+		{ ArenaWeatherType::Rain, 50.0 },
+		{ ArenaWeatherType::Snow, 25.0 },
+		{ ArenaWeatherType::SnowOvercast, 20.0 },
+		{ ArenaWeatherType::Rain2, 50.0 },
+		{ ArenaWeatherType::Overcast2, 30.0 },
+		{ ArenaWeatherType::SnowOvercast2, 20.0 }
 	};
 }
 
-bool ArenaWeatherUtils::isClear(ArenaTypes::WeatherType weatherType)
+bool ArenaWeatherUtils::isClear(ArenaWeatherType weatherType)
 {
-	return weatherType == ArenaTypes::WeatherType::Clear;
+	return weatherType == ArenaWeatherType::Clear;
 }
 
-bool ArenaWeatherUtils::isOvercast(ArenaTypes::WeatherType weatherType)
+bool ArenaWeatherUtils::isOvercast(ArenaWeatherType weatherType)
 {
-	return (weatherType == ArenaTypes::WeatherType::Overcast) || (weatherType == ArenaTypes::WeatherType::Overcast2);
+	return (weatherType == ArenaWeatherType::Overcast) || (weatherType == ArenaWeatherType::Overcast2);
 }
 
-bool ArenaWeatherUtils::isRain(ArenaTypes::WeatherType weatherType)
+bool ArenaWeatherUtils::isRain(ArenaWeatherType weatherType)
 {
-	return (weatherType == ArenaTypes::WeatherType::Rain) || (weatherType == ArenaTypes::WeatherType::Rain2);
+	return (weatherType == ArenaWeatherType::Rain) || (weatherType == ArenaWeatherType::Rain2);
 }
 
-bool ArenaWeatherUtils::isSnow(ArenaTypes::WeatherType weatherType)
+bool ArenaWeatherUtils::isSnow(ArenaWeatherType weatherType)
 {
-	return (weatherType == ArenaTypes::WeatherType::Snow) || (weatherType == ArenaTypes::WeatherType::SnowOvercast) ||
-		(weatherType == ArenaTypes::WeatherType::SnowOvercast2);
+	return (weatherType == ArenaWeatherType::Snow) || (weatherType == ArenaWeatherType::SnowOvercast) ||
+		(weatherType == ArenaWeatherType::SnowOvercast2);
 }
 
 bool ArenaWeatherUtils::fogIsHeavy(int currentDay)
@@ -64,23 +64,23 @@ bool ArenaWeatherUtils::shouldSnowflakeChangeDirection(Random &random)
 	return random.next(0x10000) < 15000;
 }
 
-ArenaTypes::WeatherType ArenaWeatherUtils::getFilteredWeatherType(ArenaTypes::WeatherType weatherType,
-	ArenaTypes::ClimateType climateType)
+ArenaWeatherType ArenaWeatherUtils::getFilteredWeatherType(ArenaWeatherType weatherType,
+	ArenaClimateType climateType)
 {
 	// Snow in deserts is replaced by rain.
 	const bool isSnow = ArenaWeatherUtils::isSnow(weatherType);
-	return ((climateType == ArenaTypes::ClimateType::Desert) && isSnow) ? ArenaTypes::WeatherType::Rain : weatherType;
+	return ((climateType == ArenaClimateType::Desert) && isSnow) ? ArenaWeatherType::Rain : weatherType;
 }
 
-double ArenaWeatherUtils::getFogDistanceFromWeather(ArenaTypes::WeatherType weatherType)
+double ArenaWeatherUtils::getFogDistanceFromWeather(ArenaWeatherType weatherType)
 {
 	return WeatherFogDistances.at(weatherType);
 }
 
-Buffer<Color> ArenaWeatherUtils::makeSkyColors(ArenaTypes::WeatherType weatherType, TextureManager &textureManager)
+Buffer<Color> ArenaWeatherUtils::makeSkyColors(ArenaWeatherType weatherType, TextureManager &textureManager)
 {
 	// Get the palette name for the given weather.
-	const std::string &paletteName = (weatherType == ArenaTypes::WeatherType::Clear) ?
+	const std::string &paletteName = (weatherType == ArenaWeatherType::Clear) ?
 		ArenaPaletteName::Daytime : ArenaPaletteName::Dreary;
 
 	// The palettes in the data files only cover half of the day, so some added

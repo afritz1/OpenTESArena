@@ -31,7 +31,7 @@ struct LocationCityDefinition
 		void init(int modelIndex, int suffixIndex, int menuNamesIndex);
 	};
 
-	ArenaTypes::CityType type;
+	ArenaCityType type;
 	char typeDisplayName[16];
 	char mapFilename[16]; // .MIF name for most/all cases for now.
 
@@ -41,7 +41,7 @@ struct LocationCityDefinition
 	uint32_t rulerSeed;
 	uint32_t skySeed;
 
-	ArenaTypes::ClimateType climateType;
+	ArenaClimateType climateType;
 
 	const std::vector<uint8_t> *reservedBlocks;
 
@@ -57,9 +57,9 @@ struct LocationCityDefinition
 	bool rulerIsMale;
 	bool palaceIsMainQuestDungeon;
 
-	void init(ArenaTypes::CityType type, const char *typeDisplayName, const char *mapFilename,
+	void init(ArenaCityType type, const char *typeDisplayName, const char *mapFilename,
 		uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
-		uint32_t skySeed, ArenaTypes::ClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
+		uint32_t skySeed, ArenaClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
 		WEInt blockStartPosX, SNInt blockStartPosY, const MainQuestTempleOverride *mainQuestTempleOverride,
 		int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon);
 
@@ -121,7 +121,7 @@ private:
 public:
 	// Initialize from original game data.
 	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
-		ArenaTypes::CityType type, const BinaryAssetLibrary &binaryAssetLibrary);
+		ArenaCityType type, const BinaryAssetLibrary &binaryAssetLibrary);
 	void initDungeon(int localDungeonID, int provinceID, const ArenaLocationData &locationData, const ArenaProvinceData &provinceData);
 	void initMainQuestDungeon(const std::optional<int> &optLocalDungeonID, int provinceID,
 		LocationMainQuestDungeonDefinitionType type, const BinaryAssetLibrary &binaryAssetLibrary);

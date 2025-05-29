@@ -7,130 +7,130 @@
 #include <string>
 #include <vector>
 
+// For .MIF and .RMD FLOR/MAP1/MAP2 voxels.
+using ArenaVoxelID = uint16_t;
+
+// Flat entries can be in .MIF and .RMD FLOR/MAP1 voxels.
+using ArenaFlatIndex = uint16_t;
+
+// *ITEM indices are used for entities; some values are reserved for creatures, humans, etc..
+using ArenaItemIndex = uint16_t;
+
+// Maps one or more *MENU IDs to a type of transition voxel. Cities and the wilderness interpret
+// IDs differently.
+enum class ArenaMenuType
+{
+	None,
+	CityGates, // Transition between city and wilderness.
+	Crypt, // WCRYPT
+	Dungeon, // DUNGEON
+	Equipment, // EQUIP
+	House, // BS
+	MagesGuild, // MAGE
+	Noble, // NOBLE
+	Palace, // PALACE
+	Tavern, // TAVERN
+	Temple, // TEMPLE
+	Tower // TOWER
+};
+
+// Helps determine entity definitions during level generation. Separate from MenuType since it's only
+// for interiors.
+// - @todo: add an InteriorDefinition at some point to further de-hardcode things. It would contain
+//   rulerIsMale, etc.. Might also have a variable for loot piles when sneaking in at night.
+enum class ArenaInteriorType
+{
+	Crypt, // WCRYPT
+	Dungeon, // DUNGEON
+	Equipment, // EQUIP
+	House, // BS
+	MagesGuild, // MAGE
+	Noble, // NOBLE
+	Palace, // PALACE
+	Tavern, // TAVERN
+	Temple, // TEMPLE
+	Tower // TOWER
+};
+
+// Each location on a province map has a type.
+enum class ArenaLocationType
+{
+	CityState,
+	Town,
+	Village,
+	StaffDungeon,
+	StaffMapDungeon,
+	NamedDungeon
+};
+
+// Types of city locations in a world map province.
+enum class ArenaCityType
+{
+	CityState,
+	Town,
+	Village
+};
+
+// Each type of voxel definition. These are mostly used with rendering, but also for determining how to
+// interpret the voxel data itself. If the type is None, then the voxel is empty and there is nothing
+// to render.
+enum class ArenaVoxelType
+{
+	None,
+	Wall,
+	Floor,
+	Ceiling,
+	Raised,
+	Diagonal,
+	TransparentWall,
+	Edge,
+	Chasm,
+	Door
+};
+
+enum class ArenaChasmType
+{
+	Dry,
+	Wet,
+	Lava
+};
+
+// Each type of door. Most doors swing open, while others raise up or slide to the side.
+// Splitting doors do not appear in the original game but are supposedly supported.
+enum class ArenaDoorType
+{
+	Swinging,
+	Sliding,
+	Raising,
+	Splitting
+};
+
+// Climate determines the textures and allowed weathers at an exterior world map location.
+enum class ArenaClimateType
+{
+	Temperate,
+	Desert,
+	Mountain
+};
+
+// A unique identifier for each kind of weather. These can have an effect on the sky colors,
+// fog distance, music, etc.. If in a desert, snow is replaced by rain.
+enum class ArenaWeatherType
+{
+	Clear,
+	Overcast, // Always with fog.
+	Rain, // If rnd() < 24000 then thunderstorm.
+	Snow,
+	SnowOvercast, // Always with fog.
+	Rain2, // If rnd() < 24000 then thunderstorm.
+	Overcast2, // Always with fog?
+	SnowOvercast2 // If rnd() < 16000 then with fog.
+};
+
 // Various types used with Arena's binary data files. Struct sizes are hardcoded to show
 // intent and to avoid issues with padding since they map directly to Arena's data.
 namespace ArenaTypes
 {
-	// For .MIF and .RMD FLOR/MAP1/MAP2 voxels.
-	using VoxelID = uint16_t;
-
-	// Flat entries can be in .MIF and .RMD FLOR/MAP1 voxels.
-	using FlatIndex = uint16_t;
-
-	// *ITEM indices are used for entities; some values are reserved for creatures, humans, etc..
-	using ItemIndex = uint16_t;
-
-	// Maps one or more *MENU IDs to a type of transition voxel. Cities and the wilderness interpret
-	// IDs differently.
-	enum class MenuType
-	{
-		None,
-		CityGates, // Transition between city and wilderness.
-		Crypt, // WCRYPT
-		Dungeon, // DUNGEON
-		Equipment, // EQUIP
-		House, // BS
-		MagesGuild, // MAGE
-		Noble, // NOBLE
-		Palace, // PALACE
-		Tavern, // TAVERN
-		Temple, // TEMPLE
-		Tower // TOWER
-	};
-
-	// Helps determine entity definitions during level generation. Separate from MenuType since it's only
-	// for interiors.
-	// - @todo: add an InteriorDefinition at some point to further de-hardcode things. It would contain
-	//   rulerIsMale, etc.. Might also have a variable for loot piles when sneaking in at night.
-	enum class InteriorType
-	{
-		Crypt, // WCRYPT
-		Dungeon, // DUNGEON
-		Equipment, // EQUIP
-		House, // BS
-		MagesGuild, // MAGE
-		Noble, // NOBLE
-		Palace, // PALACE
-		Tavern, // TAVERN
-		Temple, // TEMPLE
-		Tower // TOWER
-	};
-
-	// Each location on a province map has a type.
-	enum class LocationType
-	{
-		CityState,
-		Town,
-		Village,
-		StaffDungeon,
-		StaffMapDungeon,
-		NamedDungeon
-	};
-
-	// Types of city locations in a world map province.
-	enum class CityType
-	{
-		CityState,
-		Town,
-		Village
-	};
-
-	// Each type of voxel definition. These are mostly used with rendering, but also for determining how to
-	// interpret the voxel data itself. If the type is None, then the voxel is empty and there is nothing
-	// to render.
-	enum class VoxelType
-	{
-		None,
-		Wall,
-		Floor,
-		Ceiling,
-		Raised,
-		Diagonal,
-		TransparentWall,
-		Edge,
-		Chasm,
-		Door
-	};
-
-	enum class ChasmType
-	{
-		Dry,
-		Wet,
-		Lava
-	};
-
-	// Each type of door. Most doors swing open, while others raise up or slide to the side.
-	// Splitting doors do not appear in the original game but are supposedly supported.
-	enum class DoorType
-	{
-		Swinging,
-		Sliding,
-		Raising,
-		Splitting
-	};
-
-	// Climate determines the textures and allowed weathers at an exterior world map location.
-	enum class ClimateType
-	{
-		Temperate,
-		Desert,
-		Mountain
-	};
-
-	// A unique identifier for each kind of weather. These can have an effect on the sky colors,
-	// fog distance, music, etc.. If in a desert, snow is replaced by rain.
-	enum class WeatherType
-	{
-		Clear,
-		Overcast, // Always with fog.
-		Rain, // If rnd() < 24000 then thunderstorm.
-		Snow,
-		SnowOvercast, // Always with fog.
-		Rain2, // If rnd() < 24000 then thunderstorm.
-		Overcast2, // Always with fog?
-		SnowOvercast2 // If rnd() < 16000 then with fog.
-	};
-
 	struct Light
 	{
 		static constexpr size_t SIZE = 6;

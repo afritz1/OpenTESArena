@@ -7,58 +7,58 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-ArenaTypes::MenuType ArenaVoxelUtils::getMenuType(int menuID, MapType mapType)
+ArenaMenuType ArenaVoxelUtils::getMenuType(int menuID, MapType mapType)
 {
 	if (menuID != -1)
 	{
 		// Mappings of *MENU IDs to city menu types.
-		constexpr std::array<std::pair<int, ArenaTypes::MenuType>, 14> CityMenuMappings =
+		constexpr std::array<std::pair<int, ArenaMenuType>, 14> CityMenuMappings =
 		{
 			{
-				{ 0, ArenaTypes::MenuType::Equipment },
-				{ 1, ArenaTypes::MenuType::Tavern },
-				{ 2, ArenaTypes::MenuType::MagesGuild },
-				{ 3, ArenaTypes::MenuType::Temple },
-				{ 4, ArenaTypes::MenuType::House },
-				{ 5, ArenaTypes::MenuType::House },
-				{ 6, ArenaTypes::MenuType::House },
-				{ 7, ArenaTypes::MenuType::CityGates },
-				{ 8, ArenaTypes::MenuType::CityGates },
-				{ 9, ArenaTypes::MenuType::Noble },
-				{ 10, ArenaTypes::MenuType::None },
-				{ 11, ArenaTypes::MenuType::Palace },
-				{ 12, ArenaTypes::MenuType::Palace },
-				{ 13, ArenaTypes::MenuType::Palace }
+				{ 0, ArenaMenuType::Equipment },
+				{ 1, ArenaMenuType::Tavern },
+				{ 2, ArenaMenuType::MagesGuild },
+				{ 3, ArenaMenuType::Temple },
+				{ 4, ArenaMenuType::House },
+				{ 5, ArenaMenuType::House },
+				{ 6, ArenaMenuType::House },
+				{ 7, ArenaMenuType::CityGates },
+				{ 8, ArenaMenuType::CityGates },
+				{ 9, ArenaMenuType::Noble },
+				{ 10, ArenaMenuType::None },
+				{ 11, ArenaMenuType::Palace },
+				{ 12, ArenaMenuType::Palace },
+				{ 13, ArenaMenuType::Palace }
 			}
 		};
 
 		// Mappings of *MENU IDs to wilderness menu types.
-		constexpr std::array<std::pair<int, ArenaTypes::MenuType>, 10> WildMenuMappings =
+		constexpr std::array<std::pair<int, ArenaMenuType>, 10> WildMenuMappings =
 		{
 			{
-				{ 0, ArenaTypes::MenuType::None },
-				{ 1, ArenaTypes::MenuType::Crypt },
-				{ 2, ArenaTypes::MenuType::House },
-				{ 3, ArenaTypes::MenuType::Tavern },
-				{ 4, ArenaTypes::MenuType::Temple },
-				{ 5, ArenaTypes::MenuType::Tower },
-				{ 6, ArenaTypes::MenuType::CityGates },
-				{ 7, ArenaTypes::MenuType::CityGates },
-				{ 8, ArenaTypes::MenuType::Dungeon },
-				{ 9, ArenaTypes::MenuType::Dungeon }
+				{ 0, ArenaMenuType::None },
+				{ 1, ArenaMenuType::Crypt },
+				{ 2, ArenaMenuType::House },
+				{ 3, ArenaMenuType::Tavern },
+				{ 4, ArenaMenuType::Temple },
+				{ 5, ArenaMenuType::Tower },
+				{ 6, ArenaMenuType::CityGates },
+				{ 7, ArenaMenuType::CityGates },
+				{ 8, ArenaMenuType::Dungeon },
+				{ 9, ArenaMenuType::Dungeon }
 			}
 		};
 
 		// Get the menu type associated with the *MENU ID and world type, or null if there
 		// is no mapping (only in exceptional cases). Use a pointer since iterators are tied
 		// to their std::array size.
-		const ArenaTypes::MenuType *typePtr = [menuID, mapType, &CityMenuMappings,
+		const ArenaMenuType *typePtr = [menuID, mapType, &CityMenuMappings,
 			&WildMenuMappings]()
 		{
 			auto getPtr = [menuID](const auto &arr)
 			{
 				const auto iter = std::find_if(arr.begin(), arr.end(),
-					[menuID](const std::pair<int, ArenaTypes::MenuType> &pair)
+					[menuID](const std::pair<int, ArenaMenuType> &pair)
 				{
 					return pair.first == menuID;
 				});
@@ -92,28 +92,28 @@ ArenaTypes::MenuType ArenaVoxelUtils::getMenuType(int menuID, MapType mapType)
 		else
 		{
 			DebugLogWarning("Unrecognized *MENU ID \"" + std::to_string(menuID) + "\".");
-			return ArenaTypes::MenuType::None;
+			return ArenaMenuType::None;
 		}
 	}
 	else
 	{
 		// Not a *MENU block.
-		return ArenaTypes::MenuType::None;
+		return ArenaMenuType::None;
 	}
 }
 
-bool ArenaVoxelUtils::menuLeadsToInterior(ArenaTypes::MenuType menuType)
+bool ArenaVoxelUtils::menuLeadsToInterior(ArenaMenuType menuType)
 {
-	return (menuType == ArenaTypes::MenuType::Crypt) ||
-		(menuType == ArenaTypes::MenuType::Dungeon) ||
-		(menuType == ArenaTypes::MenuType::Equipment) ||
-		(menuType == ArenaTypes::MenuType::House) ||
-		(menuType == ArenaTypes::MenuType::MagesGuild) ||
-		(menuType == ArenaTypes::MenuType::Noble) ||
-		(menuType == ArenaTypes::MenuType::Palace) ||
-		(menuType == ArenaTypes::MenuType::Tavern) ||
-		(menuType == ArenaTypes::MenuType::Temple) ||
-		(menuType == ArenaTypes::MenuType::Tower);
+	return (menuType == ArenaMenuType::Crypt) ||
+		(menuType == ArenaMenuType::Dungeon) ||
+		(menuType == ArenaMenuType::Equipment) ||
+		(menuType == ArenaMenuType::House) ||
+		(menuType == ArenaMenuType::MagesGuild) ||
+		(menuType == ArenaMenuType::Noble) ||
+		(menuType == ArenaMenuType::Palace) ||
+		(menuType == ArenaMenuType::Tavern) ||
+		(menuType == ArenaMenuType::Temple) ||
+		(menuType == ArenaMenuType::Tower);
 }
 
 bool ArenaVoxelUtils::isCityGateMenuIndex(int menuIndex, MapType mapType)
@@ -137,12 +137,12 @@ bool ArenaVoxelUtils::isCityGateMenuIndex(int menuIndex, MapType mapType)
 	}
 }
 
-bool ArenaVoxelUtils::menuHasDisplayName(ArenaTypes::MenuType menuType)
+bool ArenaVoxelUtils::menuHasDisplayName(ArenaMenuType menuType)
 {
-	return (menuType == ArenaTypes::MenuType::Equipment) ||
-		(menuType == ArenaTypes::MenuType::MagesGuild) ||
-		(menuType == ArenaTypes::MenuType::Tavern) ||
-		(menuType == ArenaTypes::MenuType::Temple);
+	return (menuType == ArenaMenuType::Equipment) ||
+		(menuType == ArenaMenuType::MagesGuild) ||
+		(menuType == ArenaMenuType::Tavern) ||
+		(menuType == ArenaMenuType::Temple);
 }
 
 int ArenaVoxelUtils::clampVoxelTextureID(int id)
@@ -193,17 +193,17 @@ bool ArenaVoxelUtils::isFloorWildWallColored(int floorID, MapType mapType)
 	return (floorID != 0) && (floorID != 2) && (floorID != 3) && (floorID != 4);
 }
 
-std::optional<int> ArenaVoxelUtils::tryGetOpenSoundIndex(ArenaTypes::DoorType type)
+std::optional<int> ArenaVoxelUtils::tryGetOpenSoundIndex(ArenaDoorType type)
 {
-	if (type == ArenaTypes::DoorType::Swinging)
+	if (type == ArenaDoorType::Swinging)
 	{
 		return 6;
 	}
-	else if (type == ArenaTypes::DoorType::Sliding)
+	else if (type == ArenaDoorType::Sliding)
 	{
 		return 14;
 	}
-	else if (type == ArenaTypes::DoorType::Raising)
+	else if (type == ArenaDoorType::Raising)
 	{
 		return 15;
 	}
@@ -213,17 +213,17 @@ std::optional<int> ArenaVoxelUtils::tryGetOpenSoundIndex(ArenaTypes::DoorType ty
 	}
 }
 
-std::optional<int> ArenaVoxelUtils::tryGetCloseSoundIndex(ArenaTypes::DoorType type)
+std::optional<int> ArenaVoxelUtils::tryGetCloseSoundIndex(ArenaDoorType type)
 {
-	if (type == ArenaTypes::DoorType::Swinging)
+	if (type == ArenaDoorType::Swinging)
 	{
 		return 5;
 	}
-	else if (type == ArenaTypes::DoorType::Sliding)
+	else if (type == ArenaDoorType::Sliding)
 	{
 		return 14;
 	}
-	else if (type == ArenaTypes::DoorType::Raising)
+	else if (type == ArenaDoorType::Raising)
 	{
 		return 15;
 	}
@@ -233,13 +233,13 @@ std::optional<int> ArenaVoxelUtils::tryGetCloseSoundIndex(ArenaTypes::DoorType t
 	}
 }
 
-bool ArenaVoxelUtils::doorHasSoundOnClosed(ArenaTypes::DoorType type)
+bool ArenaVoxelUtils::doorHasSoundOnClosed(ArenaDoorType type)
 {
-	return type == ArenaTypes::DoorType::Swinging;
+	return type == ArenaDoorType::Swinging;
 }
 
-bool ArenaVoxelUtils::doorHasSoundOnClosing(ArenaTypes::DoorType type)
+bool ArenaVoxelUtils::doorHasSoundOnClosing(ArenaDoorType type)
 {
-	return (type == ArenaTypes::DoorType::Sliding) || (type == ArenaTypes::DoorType::Raising) ||
-		(type == ArenaTypes::DoorType::Splitting);
+	return (type == ArenaDoorType::Sliding) || (type == ArenaDoorType::Raising) ||
+		(type == ArenaDoorType::Splitting);
 }

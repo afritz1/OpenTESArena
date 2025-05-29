@@ -24,17 +24,17 @@ namespace ArenaVoxelUtils
 	constexpr double FADING_VOXEL_SECONDS = 1.0;
 
 	// Gets exterior menu type from *MENU ID and world type, or "none" if no mapping exists.
-	ArenaTypes::MenuType getMenuType(int menuID, MapType mapType);
+	ArenaMenuType getMenuType(int menuID, MapType mapType);
 
 	// Returns whether the menu type is for an interior (equipment, tavern, etc.) or something
 	// else (like city gates).
-	bool menuLeadsToInterior(ArenaTypes::MenuType menuType);
+	bool menuLeadsToInterior(ArenaMenuType menuType);
 
 	// Whether the Arena *MENU ID is for a city gate left/right voxel.
 	bool isCityGateMenuIndex(int menuIndex, MapType mapType);
 
 	// Returns whether the menu type displays text on-screen when the player right clicks it.
-	bool menuHasDisplayName(ArenaTypes::MenuType menuType);
+	bool menuHasDisplayName(ArenaMenuType menuType);
 
 	// Validates a voxel texture ID to make sure it's in the proper range and clamps if necessary.
 	int clampVoxelTextureID(int id);
@@ -51,12 +51,12 @@ namespace ArenaVoxelUtils
 	bool isFloorWildWallColored(int floorID, MapType mapType);
 
 	// Returns the door open/close .INF sound index (if any) for the given door type.
-	std::optional<int> tryGetOpenSoundIndex(ArenaTypes::DoorType type);
-	std::optional<int> tryGetCloseSoundIndex(ArenaTypes::DoorType type);
+	std::optional<int> tryGetOpenSoundIndex(ArenaDoorType type);
+	std::optional<int> tryGetCloseSoundIndex(ArenaDoorType type);
 
 	// Returns whether the door plays its close sound when the animation starts or finishes.
-	bool doorHasSoundOnClosed(ArenaTypes::DoorType type);
-	bool doorHasSoundOnClosing(ArenaTypes::DoorType type);
+	bool doorHasSoundOnClosed(ArenaDoorType type);
+	bool doorHasSoundOnClosing(ArenaDoorType type);
 }
 
 #endif

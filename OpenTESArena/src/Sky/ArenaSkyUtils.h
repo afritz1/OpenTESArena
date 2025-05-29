@@ -30,7 +30,7 @@ namespace ArenaSkyUtils
 	};
 
 	// Gets distant land traits for a sky by climate.
-	const LandTraits &getLandTraits(ArenaTypes::ClimateType climateType);
+	const LandTraits &getLandTraits(ArenaClimateType climateType);
 
 	// Converts an Arena angle to an actual angle in radians.
 	Radians arenaAngleToRadians(int arenaAngle);

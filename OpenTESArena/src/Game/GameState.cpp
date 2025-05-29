@@ -221,7 +221,7 @@ void GameState::queueMapDefPop()
 	this->nextMapDefLocationIDs = std::nullopt;
 
 	// Calculate weather.
-	const ArenaTypes::WeatherType weatherType = this->getWeatherForLocation(this->provinceIndex, this->locationIndex);
+	const ArenaWeatherType weatherType = this->getWeatherForLocation(this->provinceIndex, this->locationIndex);
 	Random random; // @todo: get from Game
 	this->nextMapDefWeatherDef = WeatherDefinition();
 	this->nextMapDefWeatherDef->initFromClassic(weatherType, this->date.getDay(), random);
@@ -364,12 +364,12 @@ const ProvinceMapUiModel::TravelData *GameState::getTravelData() const
 	return this->travelData.has_value() ? &(*this->travelData) : nullptr;
 }
 
-BufferView<const ArenaTypes::WeatherType> GameState::getWorldMapWeathers() const
+BufferView<const ArenaWeatherType> GameState::getWorldMapWeathers() const
 {
 	return this->worldMapWeathers;
 }
 
-ArenaTypes::WeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
+ArenaWeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ProvinceDefinition &provinceDef = this->worldMapDef.getProvinceDef(provinceIndex);
@@ -378,13 +378,13 @@ ArenaTypes::WeatherType GameState::getWeatherForLocation(int provinceIndex, int 
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
 	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, binaryAssetLibrary.getCityDataFile());
 	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
-	ArenaTypes::WeatherType weatherType = this->worldMapWeathers[quarterIndex];
+	ArenaWeatherType weatherType = this->worldMapWeathers[quarterIndex];
 
 	if (locationDef.getType() == LocationDefinitionType::City)
 	{
 		// Filter the possible weathers (in case it's trying to have snow in a desert).
 		const LocationCityDefinition &locationCityDef = locationDef.getCityDefinition();
-		const ArenaTypes::ClimateType climateType = locationCityDef.climateType;
+		const ArenaClimateType climateType = locationCityDef.climateType;
 		weatherType = ArenaWeatherUtils::getFilteredWeatherType(weatherType, climateType);
 	}
 
@@ -557,7 +557,7 @@ void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 		const int weatherTableIndex = (climateIndex * 20) + (seasonIndex * 5) + variantIndex;
 		const auto &weatherTable = exeData.locations.weatherTable;
 		DebugAssertIndex(weatherTable, weatherTableIndex);
-		this->worldMapWeathers[i] = static_cast<ArenaTypes::WeatherType>(weatherTable[weatherTableIndex]);
+		this->worldMapWeathers[i] = static_cast<ArenaWeatherType>(weatherTable[weatherTableIndex]);
 	}
 }
 

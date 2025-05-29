@@ -487,7 +487,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				const VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
 				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 				const VoxelTraitsDefinition &groundVoxelTraitsDef = voxelChunk.getTraitsDef(groundVoxelTraitsDefID);
-				const bool isValidSpawnVoxel = (voxelTraitsDef.type == ArenaTypes::VoxelType::None) && (groundVoxelTraitsDef.type == ArenaTypes::VoxelType::Floor);				
+				const bool isValidSpawnVoxel = (voxelTraitsDef.type == ArenaVoxelType::None) && (groundVoxelTraitsDef.type == ArenaVoxelType::Floor);				
 				if (isValidSpawnVoxel)
 				{
 					return spawnVoxel;
@@ -707,7 +707,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					const VoxelInt3 mainFloorVoxel(coord.voxel.x, 1, coord.voxel.y);
 					const VoxelTraitsDefID mainFloorVoxelTraitsDefID = voxelChunk->getTraitsDefID(mainFloorVoxel.x, mainFloorVoxel.y, mainFloorVoxel.z);
 					const VoxelTraitsDefinition &mainFloorVoxelTraitsDef = voxelChunk->getTraitsDef(mainFloorVoxelTraitsDefID);
-					const bool isPassableVoxel = mainFloorVoxelTraitsDef.type == ArenaTypes::VoxelType::None;
+					const bool isPassableVoxel = mainFloorVoxelTraitsDef.type == ArenaVoxelType::None;
 					if (!isPassableVoxel)
 					{
 						return false;
@@ -716,7 +716,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					const VoxelInt3 floorVoxel(coord.voxel.x, 0, coord.voxel.y);
 					const VoxelTraitsDefID floorVoxelTraitsDefID = voxelChunk->getTraitsDefID(floorVoxel.x, floorVoxel.y, floorVoxel.z);
 					const VoxelTraitsDefinition &floorVoxelTraitsDef = voxelChunk->getTraitsDef(floorVoxelTraitsDefID);
-					const bool isWalkableVoxel = floorVoxelTraitsDef.type == ArenaTypes::VoxelType::Floor;
+					const bool isWalkableVoxel = floorVoxelTraitsDef.type == ArenaVoxelType::Floor;
 					if (!isWalkableVoxel)
 					{
 						return false;

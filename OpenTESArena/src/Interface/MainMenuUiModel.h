@@ -33,19 +33,19 @@ namespace MainMenuUiModel
 
 	// Prefixes for some .MIF files, with an inclusive min/max range of ID suffixes.
 	// These also need ".MIF" appended at the end.
-	const std::vector<std::tuple<std::string, std::pair<int, int>, ArenaTypes::InteriorType>> InteriorLocations =
+	const std::vector<std::tuple<std::string, std::pair<int, int>, ArenaInteriorType>> InteriorLocations =
 	{
-		{ "BS", { 1, 8 }, ArenaTypes::InteriorType::House },
-		{ "EQUIP", { 1, 8 }, ArenaTypes::InteriorType::Equipment },
-		{ "MAGE", { 1, 8 }, ArenaTypes::InteriorType::MagesGuild },
-		{ "NOBLE", { 1, 8 }, ArenaTypes::InteriorType::Noble },
-		{ "PALACE", { 1, 5 }, ArenaTypes::InteriorType::Palace },
-		{ "TAVERN", { 1, 8 }, ArenaTypes::InteriorType::Tavern },
-		{ "TEMPLE", { 1, 8 }, ArenaTypes::InteriorType::Temple },
-		{ "TOWER", { 1, 8 }, ArenaTypes::InteriorType::Tower },
-		{ "TOWNPAL", { 1, 3 }, ArenaTypes::InteriorType::Palace },
-		{ "VILPAL", { 1, 3 }, ArenaTypes::InteriorType::Palace },
-		{ "WCRYPT", { 1, 8 }, ArenaTypes::InteriorType::Crypt }
+		{ "BS", { 1, 8 }, ArenaInteriorType::House },
+		{ "EQUIP", { 1, 8 }, ArenaInteriorType::Equipment },
+		{ "MAGE", { 1, 8 }, ArenaInteriorType::MagesGuild },
+		{ "NOBLE", { 1, 8 }, ArenaInteriorType::Noble },
+		{ "PALACE", { 1, 5 }, ArenaInteriorType::Palace },
+		{ "TAVERN", { 1, 8 }, ArenaInteriorType::Tavern },
+		{ "TEMPLE", { 1, 8 }, ArenaInteriorType::Temple },
+		{ "TOWER", { 1, 8 }, ArenaInteriorType::Tower },
+		{ "TOWNPAL", { 1, 3 }, ArenaInteriorType::Palace },
+		{ "VILPAL", { 1, 3 }, ArenaInteriorType::Palace },
+		{ "WCRYPT", { 1, 8 }, ArenaInteriorType::Crypt }
 	};
 
 	const std::string ImperialMIF = "IMPERIAL.MIF";
@@ -75,43 +75,43 @@ namespace MainMenuUiModel
 	};
 
 	// Values for testing.
-	const std::vector<ArenaTypes::WeatherType> Weathers =
+	const std::vector<ArenaWeatherType> Weathers =
 	{
-		ArenaTypes::WeatherType::Clear,
-		ArenaTypes::WeatherType::Overcast,
-		ArenaTypes::WeatherType::Rain,
-		ArenaTypes::WeatherType::Snow,
-		ArenaTypes::WeatherType::SnowOvercast,
-		ArenaTypes::WeatherType::Rain2,
-		ArenaTypes::WeatherType::Overcast2,
-		ArenaTypes::WeatherType::SnowOvercast2
+		ArenaWeatherType::Clear,
+		ArenaWeatherType::Overcast,
+		ArenaWeatherType::Rain,
+		ArenaWeatherType::Snow,
+		ArenaWeatherType::SnowOvercast,
+		ArenaWeatherType::Rain2,
+		ArenaWeatherType::Overcast2,
+		ArenaWeatherType::SnowOvercast2
 	};
 
-	const std::unordered_map<ArenaTypes::WeatherType, std::string> WeatherTypeNames =
+	const std::unordered_map<ArenaWeatherType, std::string> WeatherTypeNames =
 	{
-		{ ArenaTypes::WeatherType::Clear, "Clear" },
-		{ ArenaTypes::WeatherType::Overcast, "Overcast" },
-		{ ArenaTypes::WeatherType::Rain, "Rain" },
-		{ ArenaTypes::WeatherType::Snow, "Snow" },
-		{ ArenaTypes::WeatherType::SnowOvercast, "Snow Overcast" },
-		{ ArenaTypes::WeatherType::Rain2, "Rain 2" },
-		{ ArenaTypes::WeatherType::Overcast2, "Overcast 2" },
-		{ ArenaTypes::WeatherType::SnowOvercast2, "Snow Overcast 2" }
+		{ ArenaWeatherType::Clear, "Clear" },
+		{ ArenaWeatherType::Overcast, "Overcast" },
+		{ ArenaWeatherType::Rain, "Rain" },
+		{ ArenaWeatherType::Snow, "Snow" },
+		{ ArenaWeatherType::SnowOvercast, "Snow Overcast" },
+		{ ArenaWeatherType::Rain2, "Rain 2" },
+		{ ArenaWeatherType::Overcast2, "Overcast 2" },
+		{ ArenaWeatherType::SnowOvercast2, "Snow Overcast 2" }
 	};
 
 	std::string getTestButtonText();
 	std::string getTestTypeName(int type);
 
 	std::string getSelectedTestName(Game &game, int testType, int testIndex, int testIndex2);
-	std::optional<ArenaTypes::InteriorType> getSelectedTestInteriorType(int testType, int testIndex);
-	ArenaTypes::WeatherType getSelectedTestWeatherType(int testWeather);
+	std::optional<ArenaInteriorType> getSelectedTestInteriorType(int testType, int testIndex);
+	ArenaWeatherType getSelectedTestWeatherType(int testWeather);
 	MapType getSelectedTestMapType(int testType);
 
 	void getMainQuestLocationFromIndex(int testIndex, const ExeData &exeData,
 		int *outLocationID, int *outProvinceID, SpecialCaseType *outSpecialCaseType);
 	std::vector<int> makeShuffledLocationIndices(const ProvinceDefinition &provinceDef);
 	std::optional<int> getRandomCityLocationDefIndexIfType(const ProvinceDefinition &provinceDef,
-		ArenaTypes::CityType cityType);
+		ArenaCityType cityType);
 	int getRandomCityLocationIndex(const ProvinceDefinition &provinceDef);
 	std::optional<int> getRandomDungeonLocationDefIndex(const ProvinceDefinition &provinceDef);
 }

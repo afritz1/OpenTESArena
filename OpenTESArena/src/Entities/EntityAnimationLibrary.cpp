@@ -35,10 +35,10 @@ void HumanEnemyEntityAnimationKey::init(bool male, int charClassDefID)
 CitizenEntityAnimationKey::CitizenEntityAnimationKey()
 {
 	this->male = false;
-	this->climateType = static_cast<ArenaTypes::ClimateType>(-1);
+	this->climateType = static_cast<ArenaClimateType>(-1);
 }
 
-void CitizenEntityAnimationKey::init(bool male, ArenaTypes::ClimateType climateType)
+void CitizenEntityAnimationKey::init(bool male, ArenaClimateType climateType)
 {
 	this->male = male;
 	this->climateType = climateType;
@@ -126,7 +126,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	const int climateCount = ArenaClimateUtils::getClimateTypeCount();
 	for (int i = 0; i < climateCount; i++)
 	{
-		const ArenaTypes::ClimateType climateType = ArenaClimateUtils::getClimateType(i);
+		const ArenaClimateType climateType = ArenaClimateUtils::getClimateType(i);
 		EntityAnimationDefinition maleAnimDef, femaleAnimDef;
 		if (!ArenaAnimUtils::tryMakeCitizenAnims(climateType, true, exeData, textureManager, &maleAnimDef))
 		{

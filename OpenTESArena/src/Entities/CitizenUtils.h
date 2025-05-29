@@ -37,7 +37,7 @@ namespace CitizenUtils
 	};
 
 	bool canMapTypeSpawnCitizens(MapType mapType);
-	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaTypes::ClimateType climateType);
+	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaClimateType climateType);
 	std::optional<CitizenGenInfo> tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef);
 
 	// Helper functions for determining a citizen's walking direction.

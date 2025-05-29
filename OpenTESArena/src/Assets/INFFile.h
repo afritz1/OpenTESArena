@@ -59,7 +59,7 @@ struct INFFlat
 	// *ITEM value, if any. *ITEM 32 should be associated with rats, the first
 	// creature type. The highest *ITEM number is 95, although some of them past
 	// 63 might not be used (character class names, lore names, etc.).
-	std::optional<ArenaTypes::ItemIndex> itemIndex;
+	std::optional<ArenaItemIndex> itemIndex;
 
 	int yOffset; // Offsets the flat some number of pixels. Negative goes up.
 	int health; // Number of hit points.
@@ -155,8 +155,8 @@ public:
 	const std::optional<int> &getBoxSide(int index) const;
 	const std::optional<int> &getMenu(int index) const;
 	std::optional<int> getMenuIndex(int textureID) const; // Temporary hack?
-	const INFFlat &getFlat(ArenaTypes::FlatIndex flatIndex) const;
-	ArenaTypes::FlatIndex findFlatIndexWithItemIndex(ArenaTypes::ItemIndex itemIndex) const;
+	const INFFlat &getFlat(ArenaFlatIndex flatIndex) const;
+	ArenaFlatIndex findFlatIndexWithItemIndex(ArenaItemIndex itemIndex) const;
 	const char *getSound(int index) const;
 	bool hasKeyIndex(int index) const;
 	bool hasRiddleIndex(int index) const;

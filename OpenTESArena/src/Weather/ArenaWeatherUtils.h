@@ -50,10 +50,10 @@ namespace ArenaWeatherUtils
 	constexpr double SNOWFLAKE_MIN_SECONDS_BEFORE_DIRECTION_CHANGE = 1.0 / static_cast<double>(ArenaRenderUtils::FRAMES_PER_SECOND);
 
 	// Helper functions for determining what category a weather type falls into.
-	bool isClear(ArenaTypes::WeatherType weatherType);
-	bool isOvercast(ArenaTypes::WeatherType weatherType);
-	bool isRain(ArenaTypes::WeatherType weatherType);
-	bool isSnow(ArenaTypes::WeatherType weatherType);
+	bool isClear(ArenaWeatherType weatherType);
+	bool isOvercast(ArenaWeatherType weatherType);
+	bool isRain(ArenaWeatherType weatherType);
+	bool isSnow(ArenaWeatherType weatherType);
 
 	// Returns whether existing fog on a given day in a month is extra heavy.
 	bool fogIsHeavy(int currentDay);
@@ -66,14 +66,14 @@ namespace ArenaWeatherUtils
 	bool shouldSnowflakeChangeDirection(Random &random);
 
 	// Returns a filtered version of the given weather so that, i.e., deserts can't have snow.
-	ArenaTypes::WeatherType getFilteredWeatherType(ArenaTypes::WeatherType weatherType,
-		ArenaTypes::ClimateType climateType);
+	ArenaWeatherType getFilteredWeatherType(ArenaWeatherType weatherType,
+		ArenaClimateType climateType);
 
 	// Gets the fog distance associated with the given weather type.
-	double getFogDistanceFromWeather(ArenaTypes::WeatherType weatherType);
+	double getFogDistanceFromWeather(ArenaWeatherType weatherType);
 
 	// Creates a sky color buffer from the given weather. This covers the entire day and night.
-	Buffer<Color> makeSkyColors(ArenaTypes::WeatherType weatherType, TextureManager &textureManager);
+	Buffer<Color> makeSkyColors(ArenaWeatherType weatherType, TextureManager &textureManager);
 
 	// Creates a color buffer for thunderstorm flashes in the sky.
 	Buffer<uint8_t> makeThunderstormColors(const ExeData &exeData);

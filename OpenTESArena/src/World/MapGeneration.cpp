@@ -62,7 +62,7 @@ namespace MapGeneration
 
 	struct TransitionMappingKey
 	{
-		ArenaTypes::VoxelID voxelID;
+		ArenaVoxelID voxelID;
 		WorldInt2 levelXZ; // .MIF name generation depends on XY coordinate.
 
 		TransitionMappingKey()
@@ -72,38 +72,38 @@ namespace MapGeneration
 	};
 
 	// Mapping caches of .MIF/.RMD voxels, etc. to modern level info entries.
-	using ArenaVoxelMappingCache = std::unordered_map<ArenaTypes::VoxelID, ArenaVoxelMappingEntry>;
-	using ArenaEntityMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelEntityDefID>;
+	using ArenaVoxelMappingCache = std::unordered_map<ArenaVoxelID, ArenaVoxelMappingEntry>;
+	using ArenaEntityMappingCache = std::unordered_map<ArenaVoxelID, LevelVoxelEntityDefID>;
 	using ArenaLockMappingCache = std::vector<std::pair<ArenaTypes::MIFLock, LevelVoxelLockDefID>>;
 	using ArenaTriggerMappingCache = std::vector<std::pair<ArenaTypes::MIFTrigger, LevelVoxelTriggerDefID>>;
 	using ArenaTransitionMappingCache = std::vector<std::pair<TransitionMappingKey, LevelVoxelTransitionDefID>>;
 	using ArenaBuildingNameMappingCache = std::unordered_map<std::string, LevelVoxelBuildingNameID>;
-	using ArenaDoorMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelDoorDefID>;
-	using ArenaChasmMappingCache = std::unordered_map<ArenaTypes::VoxelID, LevelVoxelChasmDefID>;
+	using ArenaDoorMappingCache = std::unordered_map<ArenaVoxelID, LevelVoxelDoorDefID>;
+	using ArenaChasmMappingCache = std::unordered_map<ArenaVoxelID, LevelVoxelChasmDefID>;
 
 	// Converts the given Arena *MENU ID to a modern interior type, if any.
-	std::optional<ArenaTypes::InteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, MapType mapType)
+	std::optional<ArenaInteriorType> tryGetInteriorTypeFromMenuIndex(int menuIndex, MapType mapType)
 	{
 		if (mapType == MapType::City)
 		{
 			// Mappings of Arena city *MENU IDs to interiors.
-			constexpr std::array<std::pair<int, ArenaTypes::InteriorType>, 11> CityMenuMappings =
+			constexpr std::array<std::pair<int, ArenaInteriorType>, 11> CityMenuMappings =
 			{
 				{
-					{ 0, ArenaTypes::InteriorType::Equipment },
-					{ 1, ArenaTypes::InteriorType::Tavern },
-					{ 2, ArenaTypes::InteriorType::MagesGuild },
-					{ 3, ArenaTypes::InteriorType::Temple },
-					{ 4, ArenaTypes::InteriorType::House },
-					{ 5, ArenaTypes::InteriorType::House },
-					{ 6, ArenaTypes::InteriorType::House },
+					{ 0, ArenaInteriorType::Equipment },
+					{ 1, ArenaInteriorType::Tavern },
+					{ 2, ArenaInteriorType::MagesGuild },
+					{ 3, ArenaInteriorType::Temple },
+					{ 4, ArenaInteriorType::House },
+					{ 5, ArenaInteriorType::House },
+					{ 6, ArenaInteriorType::House },
 					// 7 - city gate
 					// 8 - city gate
-					{ 9, ArenaTypes::InteriorType::Noble },
+					{ 9, ArenaInteriorType::Noble },
 					// 10 - none
-					{ 11, ArenaTypes::InteriorType::Palace },
-					{ 12, ArenaTypes::InteriorType::Palace },
-					{ 13, ArenaTypes::InteriorType::Palace }
+					{ 11, ArenaInteriorType::Palace },
+					{ 12, ArenaInteriorType::Palace },
+					{ 13, ArenaInteriorType::Palace }
 				}
 			};
 
@@ -125,19 +125,19 @@ namespace MapGeneration
 		else if (mapType == MapType::Wilderness)
 		{
 			// Mappings of Arena wilderness *MENU IDs to interiors.
-			constexpr std::array<std::pair<int, ArenaTypes::InteriorType>, 7> WildMenuMappings =
+			constexpr std::array<std::pair<int, ArenaInteriorType>, 7> WildMenuMappings =
 			{
 				{
 					// 0 - none
-					{ 1, ArenaTypes::InteriorType::Crypt },
-					{ 2, ArenaTypes::InteriorType::House },
-					{ 3, ArenaTypes::InteriorType::Tavern },
-					{ 4, ArenaTypes::InteriorType::Temple },
-					{ 5, ArenaTypes::InteriorType::Tower },
+					{ 1, ArenaInteriorType::Crypt },
+					{ 2, ArenaInteriorType::House },
+					{ 3, ArenaInteriorType::Tavern },
+					{ 4, ArenaInteriorType::Temple },
+					{ 5, ArenaInteriorType::Tower },
 					// 6 - city gate
 					// 7 - city gate
-					{ 8, ArenaTypes::InteriorType::Dungeon },
-					{ 9, ArenaTypes::InteriorType::Dungeon }
+					{ 8, ArenaInteriorType::Dungeon },
+					{ 9, ArenaInteriorType::Dungeon }
 				}
 			};
 
@@ -158,21 +158,21 @@ namespace MapGeneration
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(std::optional<ArenaTypes::InteriorType>, std::to_string(static_cast<int>(mapType)));
+			DebugUnhandledReturnMsg(std::optional<ArenaInteriorType>, std::to_string(static_cast<int>(mapType)));
 		}
 	}
 
-	MapGeneration::InteriorGenInfo makePrefabInteriorGenInfo(ArenaTypes::InteriorType interiorType,
+	MapGeneration::InteriorGenInfo makePrefabInteriorGenInfo(ArenaInteriorType interiorType,
 		const WorldInt3 &position, int menuID, uint32_t rulerSeed, const std::optional<bool> &rulerIsMale,
-		bool palaceIsMainQuestDungeon, ArenaTypes::CityType cityType, MapType mapType, const ExeData &exeData)
+		bool palaceIsMainQuestDungeon, ArenaCityType cityType, MapType mapType, const ExeData &exeData)
 	{
 		const OriginalInt2 originalPos = VoxelUtils::worldVoxelToOriginalVoxel(WorldInt2(position.x, position.z));
 		std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(originalPos.x, originalPos.y, menuID,
 			rulerSeed, palaceIsMainQuestDungeon, cityType, mapType, exeData);
 
-		const ArenaTypes::InteriorType revisedInteriorType =
-			(palaceIsMainQuestDungeon && interiorType == ArenaTypes::InteriorType::Palace) ?
-			ArenaTypes::InteriorType::Dungeon : interiorType;
+		const ArenaInteriorType revisedInteriorType =
+			(palaceIsMainQuestDungeon && interiorType == ArenaInteriorType::Palace) ?
+			ArenaInteriorType::Dungeon : interiorType;
 
 		MapGeneration::InteriorGenInfo interiorGenInfo;
 		interiorGenInfo.initPrefab(mifName, revisedInteriorType, rulerIsMale);
@@ -190,15 +190,15 @@ namespace MapGeneration
 	// Makes a modern entity definition from the given Arena FLAT index.
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
-	bool tryMakeEntityDefFromArenaFlat(ArenaTypes::FlatIndex flatIndex, MapType mapType,
-		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+	bool tryMakeEntityDefFromArenaFlat(ArenaFlatIndex flatIndex, MapType mapType,
+		const std::optional<ArenaInteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, EntityDefinition *outDef)
 	{
 		const INFFlat &flatData = inf.getFlat(flatIndex);
 		const bool isDynamicEntity = ArenaAnimUtils::isDynamicEntity(flatIndex, inf);
-		const std::optional<ArenaTypes::ItemIndex> &optItemIndex = flatData.itemIndex;
+		const std::optional<ArenaItemIndex> &optItemIndex = flatData.itemIndex;
 
 		bool isCreature = false;
 		bool isCreatureFinalBoss = false;
@@ -245,7 +245,7 @@ namespace MapGeneration
 
 		if (isCreature)
 		{
-			const ArenaTypes::ItemIndex itemIndex = *optItemIndex;
+			const ArenaItemIndex itemIndex = *optItemIndex;
 			const int creatureID = isCreatureFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 
@@ -302,10 +302,10 @@ namespace MapGeneration
 		return true;
 	}
 
-	void writeVoxelInfoForFLOR(ArenaTypes::VoxelID florVoxel, MapType mapType, const INFFile &inf, ArenaTypes::VoxelType *outVoxelType,
+	void writeVoxelInfoForFLOR(ArenaVoxelID florVoxel, MapType mapType, const INFFile &inf, ArenaVoxelType *outVoxelType,
 		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset, VertexShaderType *outVertexShaderType,
 		BufferView<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsChasm, bool *outIsWildWallColored,
-		ArenaTypes::ChasmType *outChasmType)
+		ArenaChasmType *outChasmType)
 	{
 		const int textureID = (florVoxel & 0xFF00) >> 8;
 		*outIsChasm = MIFUtils::isChasm(textureID);
@@ -313,7 +313,7 @@ namespace MapGeneration
 		// Determine if the floor voxel is either solid or a chasm.
 		if (!*outIsChasm)
 		{
-			*outVoxelType = ArenaTypes::VoxelType::Floor;
+			*outVoxelType = ArenaVoxelType::Floor;
 
 			outShapeInitCache->initDefaultBoxValues();
 			ArenaMeshUtils::WriteFloorRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
@@ -327,11 +327,11 @@ namespace MapGeneration
 			outPixelShaderTypes[0] = PixelShaderType::Opaque;
 			*outPixelShaderCount = 1;
 			*outIsWildWallColored = ArenaVoxelUtils::isFloorWildWallColored(textureID, mapType);
-			*outChasmType = static_cast<ArenaTypes::ChasmType>(-1);
+			*outChasmType = static_cast<ArenaChasmType>(-1);
 		}
 		else
 		{
-			*outVoxelType = ArenaTypes::VoxelType::Chasm;
+			*outVoxelType = ArenaVoxelType::Chasm;
 
 			int chasmID;
 			PixelShaderType chasmFloorPixelShaderType;
@@ -349,7 +349,7 @@ namespace MapGeneration
 					chasmID = 0;
 				}
 
-				*outChasmType = ArenaTypes::ChasmType::Dry;
+				*outChasmType = ArenaChasmType::Dry;
 				chasmFloorPixelShaderType = PixelShaderType::Opaque;
 				chasmWallPixelShaderType = PixelShaderType::OpaqueWithAlphaTestLayer;
 			}
@@ -366,7 +366,7 @@ namespace MapGeneration
 					chasmID = 0;
 				}
 
-				*outChasmType = ArenaTypes::ChasmType::Lava;
+				*outChasmType = ArenaChasmType::Lava;
 				chasmFloorPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimation;
 				chasmWallPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			}
@@ -383,7 +383,7 @@ namespace MapGeneration
 					chasmID = 0;
 				}
 
-				*outChasmType = ArenaTypes::ChasmType::Wet;
+				*outChasmType = ArenaChasmType::Wet;
 				chasmFloorPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimation;
 				chasmWallPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			}
@@ -409,10 +409,10 @@ namespace MapGeneration
 		}
 	}
 
-	void writeDefsForFLOR(ArenaTypes::VoxelID florVoxel, MapType mapType, const INFFile &inf, VoxelShapeDefinition *outShapeDef,
+	void writeDefsForFLOR(ArenaVoxelID florVoxel, MapType mapType, const INFFile &inf, VoxelShapeDefinition *outShapeDef,
 		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
-		ArenaTypes::VoxelType voxelType;
+		ArenaVoxelType voxelType;
 		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
 		VertexShaderType vertexShaderType;
@@ -420,12 +420,12 @@ namespace MapGeneration
 		int pixelShaderCount;
 		bool isChasm;
 		bool isWildWallColored;
-		ArenaTypes::ChasmType chasmType;
+		ArenaChasmType chasmType;
 		MapGeneration::writeVoxelInfoForFLOR(florVoxel, mapType, inf, &voxelType, &shapeInitCache, &textureAsset, &vertexShaderType, pixelShaderTypes, &pixelShaderCount,
 			&isChasm, &isWildWallColored, &chasmType);
 
 		VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
-		if (isChasm && (chasmType != ArenaTypes::ChasmType::Dry))
+		if (isChasm && (chasmType != ArenaChasmType::Dry))
 		{
 			scaleType = VoxelShapeScaleType::UnscaledFromMax;
 		}
@@ -441,10 +441,10 @@ namespace MapGeneration
 
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::Floor:
+		case ArenaVoxelType::Floor:
 			outTraitsDef->initFloor(isWildWallColored);
 			break;
-		case ArenaTypes::VoxelType::Chasm:
+		case ArenaVoxelType::Chasm:
 			outTraitsDef->initChasm(chasmType);
 			break;
 		default:
@@ -452,7 +452,7 @@ namespace MapGeneration
 		}
 	}
 
-	void writeVoxelInfoForFloorReplacement(const INFFile &inf, ArenaTypes::ChasmType chasmType,
+	void writeVoxelInfoForFloorReplacement(const INFFile &inf, ArenaChasmType chasmType,
 		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
 	{
 		const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(chasmType);
@@ -476,8 +476,8 @@ namespace MapGeneration
 	void writeDefsForFloorReplacement(const INFFile &inf, TextureManager &textureManager, VoxelShapeDefinition *outShapeDef,
 		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef, VoxelChasmDefinition *outChasmDef)
 	{
-		constexpr ArenaTypes::VoxelType voxelType = ArenaTypes::VoxelType::Chasm;
-		constexpr ArenaTypes::ChasmType chasmType = ArenaTypes::ChasmType::Wet;
+		constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
+		constexpr ArenaChasmType chasmType = ArenaChasmType::Wet;
 
 		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
@@ -495,8 +495,8 @@ namespace MapGeneration
 		outChasmDef->initClassic(chasmType, textureAsset, textureManager);
 	}
 
-	void writeVoxelInfoForMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf,
-		const ExeData &exeData, ArenaTypes::VoxelType *outVoxelType, ArenaMeshUtils::ShapeInitCache *outShapeInitCache,
+	void writeVoxelInfoForMAP1(ArenaVoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf,
+		const ExeData &exeData, ArenaVoxelType *outVoxelType, ArenaMeshUtils::ShapeInitCache *outShapeInitCache,
 		TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1, TextureAsset *outTextureAsset2, VertexShaderType *outVertexShaderType,
 		BufferView<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsCollider, VoxelFacing2D *outFacing)
 	{
@@ -512,7 +512,7 @@ namespace MapGeneration
 			if (voxelIsSolid)
 			{
 				// Regular solid wall.
-				*outVoxelType = ArenaTypes::VoxelType::Wall;
+				*outVoxelType = ArenaVoxelType::Wall;
 				outShapeInitCache->initDefaultBoxValues();
 				ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 				ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
@@ -533,7 +533,7 @@ namespace MapGeneration
 			else
 			{
 				// Raised platform.
-				*outVoxelType = ArenaTypes::VoxelType::Raised;
+				*outVoxelType = ArenaVoxelType::Raised;
 
 				const uint8_t wallTextureID = map1Voxel & 0x000F;
 				const uint8_t capTextureID = (map1Voxel & 0x00F0) >> 4;
@@ -650,7 +650,7 @@ namespace MapGeneration
 			{
 				// Transparent block with 1-sided texture on all sides, such as wooden arches in dungeons.
 				// These do not have back-faces (especially when standing in the voxel itself).
-				*outVoxelType = ArenaTypes::VoxelType::TransparentWall;
+				*outVoxelType = ArenaVoxelType::TransparentWall;
 
 				outShapeInitCache->initDefaultBoxValues();
 				ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
@@ -671,7 +671,7 @@ namespace MapGeneration
 				// Transparent block with 2-sided texture on one side (i.e. fence). Note that in
 				// the center province's city, there is a temple voxel with zeroes for its texture
 				// index, and it appears solid gray in the original game (presumably a silent bug).
-				*outVoxelType = ArenaTypes::VoxelType::Edge;
+				*outVoxelType = ArenaVoxelType::Edge;
 
 				int textureIndex = (map1Voxel & 0x003F) - 1;
 				if (textureIndex < 0)
@@ -737,29 +737,29 @@ namespace MapGeneration
 			else if (mostSigNibble == 0xB)
 			{
 				// Door voxel.
-				*outVoxelType = ArenaTypes::VoxelType::Door;
+				*outVoxelType = ArenaVoxelType::Door;
 
 				const int textureIndex = (map1Voxel & 0x003F) - 1;
 
-				ArenaTypes::DoorType doorType;
+				ArenaDoorType doorType;
 				VertexShaderType doorVertexShaderType;
 				PixelShaderType doorPixelShaderType;
 				const int type = (map1Voxel & 0x00C0) >> 4;
 				if (type == 0x0)
 				{
-					doorType = ArenaTypes::DoorType::Swinging;
+					doorType = ArenaDoorType::Swinging;
 					doorVertexShaderType = VertexShaderType::Basic;
 					doorPixelShaderType = PixelShaderType::AlphaTested;
 				}
 				else if (type == 0x4)
 				{
-					doorType = ArenaTypes::DoorType::Sliding;
+					doorType = ArenaDoorType::Sliding;
 					doorVertexShaderType = VertexShaderType::Basic;
 					doorPixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin;
 				}
 				else if (type == 0x8)
 				{
-					doorType = ArenaTypes::DoorType::Raising;
+					doorType = ArenaDoorType::Raising;
 					doorVertexShaderType = VertexShaderType::RaisingDoor;
 					doorPixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
 				}
@@ -767,7 +767,7 @@ namespace MapGeneration
 				{
 					// Arena doesn't seem to have splitting doors, but they are supported.
 					DebugLogWarningFormat("Unrecognized door type \"%d\", treating as splitting.", type);
-					doorType = ArenaTypes::DoorType::Splitting;
+					doorType = ArenaDoorType::Splitting;
 					doorVertexShaderType = VertexShaderType::Basic;
 					doorPixelShaderType = PixelShaderType::AlphaTested;
 				}
@@ -788,12 +788,12 @@ namespace MapGeneration
 			{
 				// Unknown.
 				DebugLogWarning("Unrecognized voxel type 0xC.");
-				*outVoxelType = ArenaTypes::VoxelType::None;
+				*outVoxelType = ArenaVoxelType::None;
 			}
 			else if (mostSigNibble == 0xD)
 			{
 				// Diagonal wall.
-				*outVoxelType = ArenaTypes::VoxelType::Diagonal;
+				*outVoxelType = ArenaVoxelType::Diagonal;
 
 				const bool isRightDiag = (map1Voxel & 0x0100) == 0;
 				outShapeInitCache->initDiagonalBoxValues(isRightDiag);
@@ -816,10 +816,10 @@ namespace MapGeneration
 		}
 	}
 
-	void writeDefsForMAP1(ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf, const ExeData &exeData,
+	void writeDefsForMAP1(ArenaVoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf, const ExeData &exeData,
 		VoxelShapeDefinition *outShapeDef, VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
-		ArenaTypes::VoxelType voxelType;
+		ArenaVoxelType voxelType;
 		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
 		VertexShaderType vertexShaderType;
@@ -832,7 +832,7 @@ namespace MapGeneration
 			&isCollider, &facing);
 
 		VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
-		if (voxelType == ArenaTypes::VoxelType::Raised)
+		if (voxelType == ArenaVoxelType::Raised)
 		{
 			scaleType = VoxelShapeScaleType::UnscaledFromMin;
 		}
@@ -856,10 +856,10 @@ namespace MapGeneration
 
 		switch (voxelType)
 		{
-		case ArenaTypes::VoxelType::TransparentWall:
+		case ArenaVoxelType::TransparentWall:
 			outTraitsDef->initTransparentWall(isCollider);
 			break;
-		case ArenaTypes::VoxelType::Edge:
+		case ArenaVoxelType::Edge:
 			outTraitsDef->initEdge(facing, isCollider);
 			break;
 		default:
@@ -868,11 +868,11 @@ namespace MapGeneration
 		}
 	}
 
-	void writeVoxelInfoForMAP2(ArenaTypes::VoxelID map2Voxel, const INFFile &inf, ArenaTypes::VoxelType *outVoxelType,
+	void writeVoxelInfoForMAP2(ArenaVoxelID map2Voxel, const INFFile &inf, ArenaVoxelType *outVoxelType,
 		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1,
 		TextureAsset *outTextureAsset2)
 	{
-		*outVoxelType = ArenaTypes::VoxelType::Wall;
+		*outVoxelType = ArenaVoxelType::Wall;
 		outShapeInitCache->initDefaultBoxValues();
 		ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 		ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
@@ -886,10 +886,10 @@ namespace MapGeneration
 		*outTextureAsset2 = *outTextureAsset0;
 	}
 
-	void writeDefsForMAP2(ArenaTypes::VoxelID map2Voxel, const INFFile &inf, VoxelShapeDefinition *outShapeDef,
+	void writeDefsForMAP2(ArenaVoxelID map2Voxel, const INFFile &inf, VoxelShapeDefinition *outShapeDef,
 		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
-		ArenaTypes::VoxelType voxelType;
+		ArenaVoxelType voxelType;
 		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
 		MapGeneration::writeVoxelInfoForMAP2(map2Voxel, inf, &voxelType, &shapeInitCache, &textureAsset0, &textureAsset1, &textureAsset2);
@@ -909,10 +909,10 @@ namespace MapGeneration
 		outTraitsDef->initGeneral(voxelType);
 	}
 
-	void writeVoxelInfoForCeiling(const INFFile &inf, ArenaTypes::VoxelType *outVoxelType,
+	void writeVoxelInfoForCeiling(const INFFile &inf, ArenaVoxelType *outVoxelType,
 		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
 	{
-		*outVoxelType = ArenaTypes::VoxelType::Ceiling;
+		*outVoxelType = ArenaVoxelType::Ceiling;
 		outShapeInitCache->initDefaultBoxValues();
 		ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 		ArenaMeshUtils::WriteCeilingRendererIndexBuffers(outShapeInitCache->indices0View);
@@ -930,7 +930,7 @@ namespace MapGeneration
 	void writeDefsForCeiling(const INFFile &inf, VoxelShapeDefinition *outShapeDef, VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef,
 		VoxelTraitsDefinition *outTraitsDef)
 	{
-		ArenaTypes::VoxelType voxelType;
+		ArenaVoxelType voxelType;
 		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
 		MapGeneration::writeVoxelInfoForCeiling(inf, &voxelType, &shapeInitCache, &textureAsset);
@@ -993,7 +993,7 @@ namespace MapGeneration
 	}
 
 	std::optional<MapGeneration::TransitionDefGenInfo> tryMakeVoxelTransitionDefGenInfo(
-		ArenaTypes::VoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf)
+		ArenaVoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf)
 	{
 		const uint8_t mostSigByte = ArenaLevelUtils::getVoxelMostSigByte(map1Voxel);
 		const uint8_t leastSigByte = ArenaLevelUtils::getVoxelLeastSigByte(map1Voxel);
@@ -1021,7 +1021,7 @@ namespace MapGeneration
 				const bool isInteriorLevelChange = matchesLevelUp || matchesLevelDown;
 				const TransitionType transitionType = isInteriorLevelChange ? TransitionType::InteriorLevelChange : TransitionType::ExitInterior;
 
-				constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Can't have interiors in interiors.
+				constexpr std::optional<ArenaInteriorType> interiorType; // Can't have interiors in interiors.
 				const std::optional<bool> isInteriorLevelUp = [matchesLevelUp, isInteriorLevelChange]() -> std::optional<bool>
 				{
 					if (isInteriorLevelChange)
@@ -1054,7 +1054,7 @@ namespace MapGeneration
 
 				// Can't guarantee that an Arena *MENU block that isn't a city gate is a valid transition?
 				// I thought there were some wild dungeon voxels that resulted in bad values or something.
-				const std::optional<ArenaTypes::InteriorType> interiorType =
+				const std::optional<ArenaInteriorType> interiorType =
 					MapGeneration::tryGetInteriorTypeFromMenuIndex(*menuIndex, mapType);
 
 				// This is optional because of the interior type issue above.
@@ -1102,7 +1102,7 @@ namespace MapGeneration
 
 	// Returns transition gen info if the MAP1 flat index is a transition entity for the given world type.
 	std::optional<MapGeneration::TransitionDefGenInfo> tryMakeEntityTransitionGenInfo(
-		ArenaTypes::FlatIndex flatIndex, MapType mapType)
+		ArenaFlatIndex flatIndex, MapType mapType)
 	{
 		// Only wild dens are entities with transition data.
 		if (mapType != MapType::Wilderness)
@@ -1117,7 +1117,7 @@ namespace MapGeneration
 		}
 
 		MapGeneration::TransitionDefGenInfo transitionDefGenInfo;
-		transitionDefGenInfo.init(TransitionType::EnterInterior, ArenaTypes::InteriorType::Dungeon,
+		transitionDefGenInfo.init(TransitionType::EnterInterior, ArenaInteriorType::Dungeon,
 			std::nullopt, std::nullopt);
 		return transitionDefGenInfo;
 	}
@@ -1125,7 +1125,7 @@ namespace MapGeneration
 	TransitionDefinition makeTransitionDef(const MapGeneration::TransitionDefGenInfo &transitionDefGenInfo,
 		const WorldInt3 &position, const std::optional<int> &menuID, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<ArenaTypes::CityType> &cityType, const LocationDungeonDefinition *dungeonDef,
+		const std::optional<ArenaCityType> &cityType, const LocationDungeonDefinition *dungeonDef,
 		const std::optional<bool> &isArtifactDungeon, MapType mapType, const ExeData &exeData)
 	{
 		TransitionDefinition transitionDef;
@@ -1137,7 +1137,7 @@ namespace MapGeneration
 		else if (transitionDefGenInfo.transitionType == TransitionType::EnterInterior)
 		{
 			DebugAssert(transitionDefGenInfo.interiorType.has_value());
-			const ArenaTypes::InteriorType interiorType = *transitionDefGenInfo.interiorType;
+			const ArenaInteriorType interiorType = *transitionDefGenInfo.interiorType;
 			MapGeneration::InteriorGenInfo interiorGenInfo = [&position, menuID, rulerSeed, &rulerIsMale,
 				palaceIsMainQuestDungeon, cityType, dungeonDef, &isArtifactDungeon, mapType,
 				&exeData, interiorType]()
@@ -1184,7 +1184,7 @@ namespace MapGeneration
 		return transitionDef;
 	}
 
-	std::optional<MapGeneration::DoorDefGenInfo> tryMakeDoorDefGenInfo(ArenaTypes::VoxelID map1Voxel,
+	std::optional<MapGeneration::DoorDefGenInfo> tryMakeDoorDefGenInfo(ArenaVoxelID map1Voxel,
 		uint8_t mostSigNibble)
 	{
 		if (((map1Voxel & 0x8000) == 0) || (mostSigNibble != 0xB))
@@ -1192,26 +1192,26 @@ namespace MapGeneration
 			return std::nullopt;
 		}
 
-		const ArenaTypes::DoorType doorType = [map1Voxel]()
+		const ArenaDoorType doorType = [map1Voxel]()
 		{
 			const int type = (map1Voxel & 0x00C0) >> 4;
 			if (type == 0x0)
 			{
-				return ArenaTypes::DoorType::Swinging;
+				return ArenaDoorType::Swinging;
 			}
 			else if (type == 0x4)
 			{
-				return ArenaTypes::DoorType::Sliding;
+				return ArenaDoorType::Sliding;
 			}
 			else if (type == 0x8)
 			{
-				return ArenaTypes::DoorType::Raising;
+				return ArenaDoorType::Raising;
 			}
 			else
 			{
 				// Arena doesn't seem to have splitting doors, but they are supported.
 				DebugLogWarning("Unrecognized door type \"" + std::to_string(type) + "\", treating as splitting.");
-				return ArenaTypes::DoorType::Splitting;
+				return ArenaDoorType::Splitting;
 			}
 		}();
 
@@ -1267,8 +1267,8 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD FLOR voxels to modern voxel + entity format.
-	void readArenaFLOR(BufferView2D<const ArenaTypes::VoxelID> flor, MapType mapType,
-		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
+	void readArenaFLOR(BufferView2D<const ArenaVoxelID> flor, MapType mapType,
+		const std::optional<ArenaInteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
@@ -1279,7 +1279,7 @@ namespace MapGeneration
 		{
 			for (WEInt florX = 0; florX < flor.getWidth(); florX++)
 			{
-				const ArenaTypes::VoxelID florVoxel = flor.get(florX, florZ);
+				const ArenaVoxelID florVoxel = flor.get(florX, florZ);
 
 				// Get voxel def IDs from cache or create a new entry.
 				LevelVoxelShapeDefID voxelShapeDefID;
@@ -1333,7 +1333,7 @@ namespace MapGeneration
 					}
 					else
 					{
-						const ArenaTypes::FlatIndex flatIndex = floorFlatID - 1;
+						const ArenaFlatIndex flatIndex = floorFlatID - 1;
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, mapType,
 							interiorType, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
@@ -1358,7 +1358,7 @@ namespace MapGeneration
 				// @todo: the traits def look-up should be replaced by just getting an isChasm from the florVoxel decoding function,
 				// because all users of chasm look-ups in the engine should go through VoxelChasmDefinition, not VoxelTraitsDefinition.
 				const VoxelTraitsDefinition &traitsDef = outLevelInfoDef->getVoxelTraitsDef(voxelTraitsDefID);
-				if (traitsDef.type == ArenaTypes::VoxelType::Chasm)
+				if (traitsDef.type == ArenaVoxelType::Chasm)
 				{
 					const VoxelTraitsChasmDefinition &chasm = traitsDef.chasm;
 
@@ -1408,10 +1408,10 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD MAP1 voxels to modern voxel + entity format.
-	void readArenaMAP1(BufferView2D<const ArenaTypes::VoxelID> map1, MapType mapType,
-		const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
+	void readArenaMAP1(BufferView2D<const ArenaVoxelID> map1, MapType mapType,
+		const std::optional<ArenaInteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<ArenaTypes::CityType> &cityType,
+		const std::optional<ArenaCityType> &cityType,
 		const LocationDungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -1423,7 +1423,7 @@ namespace MapGeneration
 		{
 			for (WEInt map1X = 0; map1X < map1.getWidth(); map1X++)
 			{
-				const ArenaTypes::VoxelID map1Voxel = map1.get(map1X, map1Z);
+				const ArenaVoxelID map1Voxel = map1.get(map1X, map1Z);
 
 				// Skip air voxels.
 				if (map1Voxel == 0)
@@ -1553,7 +1553,7 @@ namespace MapGeneration
 					}
 					else
 					{
-						const ArenaTypes::FlatIndex flatIndex = map1Voxel & 0x00FF;
+						const ArenaFlatIndex flatIndex = map1Voxel & 0x00FF;
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, mapType,
 							interiorType, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
@@ -1578,14 +1578,14 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD MAP2 voxels to modern voxel + entity format.
-	void readArenaMAP2(BufferView2D<const ArenaTypes::VoxelID> map2, const INFFile &inf,
+	void readArenaMAP2(BufferView2D<const ArenaVoxelID> map2, const INFFile &inf,
 		LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef, ArenaVoxelMappingCache *voxelCache)
 	{
 		for (SNInt map2Z = 0; map2Z < map2.getHeight(); map2Z++)
 		{
 			for (WEInt map2X = 0; map2X < map2.getWidth(); map2X++)
 			{
-				const ArenaTypes::VoxelID map2Voxel = map2.get(map2X, map2Z);
+				const ArenaVoxelID map2Voxel = map2.get(map2X, map2Z);
 
 				// Skip air voxels.
 				if (map2Voxel == 0)
@@ -1727,7 +1727,7 @@ namespace MapGeneration
 
 	void generateArenaDungeonLevel(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
 		int levelUpBlock, const std::optional<int> &levelDownBlock, ArenaRandom &random,
-		MapType mapType, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale,
+		MapType mapType, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale,
 		const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
@@ -1738,8 +1738,8 @@ namespace MapGeneration
 		ArenaDoorMappingCache *doorMappings, ArenaChasmMappingCache *chasmMappings)
 	{
 		// Create buffers for level blocks.
-		Buffer2D<ArenaTypes::VoxelID> levelFLOR(mif.getWidth() * widthChunks, mif.getDepth() * depthChunks);
-		Buffer2D<ArenaTypes::VoxelID> levelMAP1(levelFLOR.getWidth(), levelFLOR.getHeight());
+		Buffer2D<ArenaVoxelID> levelFLOR(mif.getWidth() * widthChunks, mif.getDepth() * depthChunks);
+		Buffer2D<ArenaVoxelID> levelMAP1(levelFLOR.getWidth(), levelFLOR.getHeight());
 		levelFLOR.fill(0);
 		levelMAP1.fill(0);
 
@@ -1755,16 +1755,16 @@ namespace MapGeneration
 				// Get the selected level from the random chunks .MIF file.
 				const int blockIndex = (tileSet * 8) + (random.next() % 8);
 				const auto &blockLevel = mif.getLevel(blockIndex);
-				const BufferView2D<const ArenaTypes::VoxelID> blockFLOR = blockLevel.getFLOR();
-				const BufferView2D<const ArenaTypes::VoxelID> blockMAP1 = blockLevel.getMAP1();
+				const BufferView2D<const ArenaVoxelID> blockFLOR = blockLevel.getFLOR();
+				const BufferView2D<const ArenaVoxelID> blockMAP1 = blockLevel.getMAP1();
 
 				// Copy block data to temp buffers.
 				for (SNInt z = 0; z < ArenaInteriorUtils::DUNGEON_CHUNK_DIM; z++)
 				{
 					for (WEInt x = 0; x < ArenaInteriorUtils::DUNGEON_CHUNK_DIM; x++)
 					{
-						const ArenaTypes::VoxelID srcFlorVoxel = blockFLOR.get(x, z);
-						const ArenaTypes::VoxelID srcMap1Voxel = blockMAP1.get(x, z);
+						const ArenaVoxelID srcFlorVoxel = blockFLOR.get(x, z);
+						const ArenaVoxelID srcMap1Voxel = blockMAP1.get(x, z);
 						const WEInt dstX = xOffset + x;
 						const SNInt dstZ = zOffset + z;
 						levelFLOR.set(dstX, dstZ, srcFlorVoxel);
@@ -1798,7 +1798,7 @@ namespace MapGeneration
 		}
 
 		// Draw perimeter blocks. First top and bottom, then right and left.
-		constexpr ArenaTypes::VoxelID perimeterVoxel = 0x7800;
+		constexpr ArenaVoxelID perimeterVoxel = 0x7800;
 		for (WEInt x = 0; x < levelMAP1.getWidth(); x++)
 		{
 			levelMAP1.set(x, 0, perimeterVoxel);
@@ -1832,15 +1832,15 @@ namespace MapGeneration
 		}
 
 		// Convert temp voxel buffers to the modern format.
-		const BufferView2D<const ArenaTypes::VoxelID> levelFlorView(levelFLOR);
-		const BufferView2D<const ArenaTypes::VoxelID> levelMap1View(levelMAP1);
+		const BufferView2D<const ArenaVoxelID> levelFlorView(levelFLOR);
+		const BufferView2D<const ArenaVoxelID> levelMap1View(levelMAP1);
 		MapGeneration::readArenaFLOR(levelFlorView, mapType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef,
 			outLevelInfoDef, florMappings, entityMappings, chasmMappings);
 
 		constexpr std::optional<uint32_t> rulerSeed; // Not necessary for dungeons.
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for dungeons.
-		constexpr std::optional<ArenaTypes::CityType> cityType; // Not necessary for dungeons.
+		constexpr std::optional<ArenaCityType> cityType; // Not necessary for dungeons.
 		constexpr LocationDungeonDefinition *dungeonDef = nullptr; // Not necessary for dungeons.
 
 		MapGeneration::readArenaMAP1(levelMap1View, mapType, interiorType, rulerSeed, rulerIsMale,
@@ -1866,7 +1866,7 @@ namespace MapGeneration
 		const Int2 localCityPoint = ArenaLocationUtils::getLocalCityPoint(citySeed);
 
 		auto tryGetInteriorType = [outLevelDef, outLevelInfoDef](SNInt x, WEInt z)
-			-> std::optional<ArenaTypes::InteriorType>
+			-> std::optional<ArenaInteriorType>
 		{
 			auto tryGetTransitionDefID = [outLevelDef](SNInt x, WEInt z)
 				-> std::optional<LevelVoxelTransitionDefID>
@@ -1912,10 +1912,10 @@ namespace MapGeneration
 		// match the given menu type.
 		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride,
 			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData, &localCityPoint,
-			&tryGetInteriorType](ArenaTypes::InteriorType interiorType)
+			&tryGetInteriorType](ArenaInteriorType interiorType)
 		{
-			if ((interiorType == ArenaTypes::InteriorType::Equipment) ||
-				(interiorType == ArenaTypes::InteriorType::Temple))
+			if ((interiorType == ArenaInteriorType::Equipment) ||
+				(interiorType == ArenaInteriorType::Temple))
 			{
 				citySeed = (localCityPoint.x << 16) + localCityPoint.y;
 				random.srand(citySeed);
@@ -2026,7 +2026,7 @@ namespace MapGeneration
 				const bool matchesTargetType = [x, z, interiorType, outLevelDef, outLevelInfoDef,
 					&tryGetInteriorType]()
 				{
-					const std::optional<ArenaTypes::InteriorType> curInteriorType = tryGetInteriorType(x, z);
+					const std::optional<ArenaInteriorType> curInteriorType = tryGetInteriorType(x, z);
 					return curInteriorType.has_value() && (*curInteriorType == interiorType);
 				}();
 
@@ -2036,7 +2036,7 @@ namespace MapGeneration
 					int hash;
 					std::string name;
 
-					if (interiorType == ArenaTypes::InteriorType::Tavern)
+					if (interiorType == ArenaInteriorType::Tavern)
 					{
 						// Tavern.
 						int prefixIndex, suffixIndex;
@@ -2049,7 +2049,7 @@ namespace MapGeneration
 
 						name = createTavernName(prefixIndex, suffixIndex);
 					}
-					else if (interiorType == ArenaTypes::InteriorType::Equipment)
+					else if (interiorType == ArenaInteriorType::Equipment)
 					{
 						// Equipment store.
 						int prefixIndex, suffixIndex;
@@ -2095,7 +2095,7 @@ namespace MapGeneration
 			}
 
 			// Fix some edge cases with main quest cities.
-			if ((interiorType == ArenaTypes::InteriorType::Temple) && (mainQuestTempleOverride != nullptr))
+			if ((interiorType == ArenaInteriorType::Temple) && (mainQuestTempleOverride != nullptr))
 			{
 				const int modelIndex = mainQuestTempleOverride->modelIndex;
 				const int suffixIndex = mainQuestTempleOverride->suffixIndex;
@@ -2110,9 +2110,9 @@ namespace MapGeneration
 			}
 		};
 
-		generateNames(ArenaTypes::InteriorType::Tavern);
-		generateNames(ArenaTypes::InteriorType::Equipment);
-		generateNames(ArenaTypes::InteriorType::Temple);
+		generateNames(ArenaInteriorType::Tavern);
+		generateNames(ArenaInteriorType::Equipment);
+		generateNames(ArenaInteriorType::Temple);
 
 		// Add names for any mage's guild entrances.
 		std::optional<LevelVoxelBuildingNameID> magesGuildBuildingNameID;
@@ -2120,8 +2120,8 @@ namespace MapGeneration
 		{
 			for (SNInt x = 0; x < outLevelDef->getWidth(); x++)
 			{
-				const std::optional<ArenaTypes::InteriorType> interiorType = tryGetInteriorType(x, z);
-				if (interiorType.has_value() && (*interiorType == ArenaTypes::InteriorType::MagesGuild))
+				const std::optional<ArenaInteriorType> interiorType = tryGetInteriorType(x, z);
+				if (interiorType.has_value() && (*interiorType == ArenaInteriorType::MagesGuild))
 				{
 					if (!magesGuildBuildingNameID.has_value())
 					{
@@ -2147,7 +2147,7 @@ namespace MapGeneration
 		// Lambda for searching for an interior entrance voxel of the given type in the chunk
 		// and generating a name for it if found.
 		auto tryGenerateBuildingNameForChunk = [wildChunkSeed, &levelDef, outBuildingNameInfo,
-			outLevelInfoDef, buildingNameMappings, &exeData](ArenaTypes::InteriorType interiorType)
+			outLevelInfoDef, buildingNameMappings, &exeData](ArenaInteriorType interiorType)
 		{
 			auto createTavernName = [&exeData](int prefixIndex, int suffixIndex)
 			{
@@ -2215,13 +2215,13 @@ namespace MapGeneration
 				// Get the *MENU block's display name.
 				std::string buildingName = [interiorType, &random, &createTavernName, &createTempleName]()
 				{
-					if (interiorType == ArenaTypes::InteriorType::Tavern)
+					if (interiorType == ArenaInteriorType::Tavern)
 					{
 						const int prefixIndex = random.next() % 23;
 						const int suffixIndex = random.next() % 23;
 						return createTavernName(prefixIndex, suffixIndex);
 					}
-					else if (interiorType == ArenaTypes::InteriorType::Temple)
+					else if (interiorType == ArenaInteriorType::Temple)
 					{
 						const int model = random.next() % 3;
 						constexpr std::array<int, 3> ModelVars = { 5, 9, 10 };
@@ -2253,12 +2253,12 @@ namespace MapGeneration
 			}
 		};
 
-		tryGenerateBuildingNameForChunk(ArenaTypes::InteriorType::Tavern);
-		tryGenerateBuildingNameForChunk(ArenaTypes::InteriorType::Temple);
+		tryGenerateBuildingNameForChunk(ArenaInteriorType::Tavern);
+		tryGenerateBuildingNameForChunk(ArenaInteriorType::Temple);
 	}
 }
 
-void MapGeneration::InteriorPrefabGenInfo::init(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale)
+void MapGeneration::InteriorPrefabGenInfo::init(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale)
 {
 	this->mifName = mifName;
 	this->interiorType = interiorType;
@@ -2276,7 +2276,7 @@ MapGeneration::InteriorGenInfo::InteriorGenInfo()
 	this->type = static_cast<InteriorGenType>(-1);
 }
 
-void MapGeneration::InteriorGenInfo::initPrefab(const std::string &mifName, ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale)
+void MapGeneration::InteriorGenInfo::initPrefab(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale)
 {
 	this->type = InteriorGenType::Prefab;
 	this->interiorType = interiorType;
@@ -2286,11 +2286,11 @@ void MapGeneration::InteriorGenInfo::initPrefab(const std::string &mifName, Aren
 void MapGeneration::InteriorGenInfo::initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
 {
 	this->type = InteriorGenType::Dungeon;
-	this->interiorType = ArenaTypes::InteriorType::Dungeon;
+	this->interiorType = ArenaInteriorType::Dungeon;
 	this->dungeon.init(dungeonDef, isArtifactDungeon);
 }
 
-void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaTypes::CityType cityType,
+void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType,
 	uint32_t citySeed, uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale,
 	bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
 	const std::optional<LocationCityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
@@ -2337,7 +2337,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::hasBuildingNames() const
 }
 
 bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
-	ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID *outID) const
+	ArenaInteriorType interiorType, LevelVoxelBuildingNameID *outID) const
 {
 	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
@@ -2352,7 +2352,7 @@ bool MapGeneration::WildChunkBuildingNameInfo::tryGetBuildingNameID(
 }
 
 void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
-	ArenaTypes::InteriorType interiorType, LevelVoxelBuildingNameID id)
+	ArenaInteriorType interiorType, LevelVoxelBuildingNameID id)
 {
 	const auto iter = this->ids.find(interiorType);
 	if (iter != this->ids.end())
@@ -2366,7 +2366,7 @@ void MapGeneration::WildChunkBuildingNameInfo::setBuildingNameID(
 }
 
 void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
-	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<int> &menuID,
+	const std::optional<ArenaInteriorType> &interiorType, const std::optional<int> &menuID,
 	const std::optional<bool> &isLevelUp)
 {
 	this->transitionType = transitionType;
@@ -2375,7 +2375,7 @@ void MapGeneration::TransitionDefGenInfo::init(TransitionType transitionType,
 	this->isLevelUp = isLevelUp;
 }
 
-void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int openSoundIndex, int closeSoundIndex, VoxelDoorCloseType closeType)
+void MapGeneration::DoorDefGenInfo::init(ArenaDoorType doorType, int openSoundIndex, int closeSoundIndex, VoxelDoorCloseType closeType)
 {
 	this->doorType = doorType;
 	this->openSoundIndex = openSoundIndex;
@@ -2384,9 +2384,9 @@ void MapGeneration::DoorDefGenInfo::init(ArenaTypes::DoorType doorType, int open
 }
 
 void MapGeneration::readMifVoxels(BufferView<const MIFLevel> levels, MapType mapType,
-	const std::optional<ArenaTypes::InteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
+	const std::optional<ArenaInteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 	const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-	const std::optional<ArenaTypes::CityType> &cityType, const LocationDungeonDefinition *dungeonDef,
+	const std::optional<ArenaCityType> &cityType, const LocationDungeonDefinition *dungeonDef,
 	const std::optional<bool> &isArtifactDungeon, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef)
@@ -2426,7 +2426,7 @@ void MapGeneration::readMifVoxels(BufferView<const MIFLevel> levels, MapType map
 
 void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt widthChunks,
 	SNInt depthChunks, const INFFile &inf, ArenaRandom &random, MapType mapType,
-	ArenaTypes::InteriorType interiorType, const std::optional<bool> &rulerIsMale,
+	ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale,
 	const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
 	const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
@@ -2518,7 +2518,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon, BufferView<const uint8_t> reservedBlocks,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName,
-	ArenaTypes::CityType cityType, const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+	ArenaCityType cityType, const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
 	LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)
@@ -2533,12 +2533,12 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	const MIFLevel &mifLevel = mif.getLevel(0);
 
 	// Create temp voxel data buffers and write the city skeleton data to them.
-	Buffer2D<ArenaTypes::VoxelID> tempFlor(mif.getWidth(), mif.getDepth());
-	Buffer2D<ArenaTypes::VoxelID> tempMap1(mif.getWidth(), mif.getDepth());
-	Buffer2D<ArenaTypes::VoxelID> tempMap2(mif.getWidth(), mif.getDepth());
-	BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor);
-	BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1);
-	BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2);
+	Buffer2D<ArenaVoxelID> tempFlor(mif.getWidth(), mif.getDepth());
+	Buffer2D<ArenaVoxelID> tempMap1(mif.getWidth(), mif.getDepth());
+	Buffer2D<ArenaVoxelID> tempMap2(mif.getWidth(), mif.getDepth());
+	BufferView2D<ArenaVoxelID> tempFlorView(tempFlor);
+	BufferView2D<ArenaVoxelID> tempMap1View(tempMap1);
+	BufferView2D<ArenaVoxelID> tempMap2View(tempMap2);
 	ArenaCityUtils::writeSkeleton(mifLevel, tempFlorView, tempMap1View, tempMap2View);
 
 	// Use the city's seed for random chunk generation. It is modified later during building
@@ -2556,12 +2556,12 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 	// Run the palace gate graphic algorithm over the perimeter of the MAP1 data.
 	ArenaCityUtils::revisePalaceGraphics(tempMap1, mif.getDepth(), mif.getWidth());
 
-	const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(tempFlor);
-	const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(tempMap1);
-	const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(tempMap2);
+	const BufferView2D<const ArenaVoxelID> tempFlorConstView(tempFlor);
+	const BufferView2D<const ArenaVoxelID> tempMap1ConstView(tempMap1);
+	const BufferView2D<const ArenaVoxelID> tempMap2ConstView(tempMap2);
 
 	constexpr MapType mapType = MapType::City;
-	constexpr std::optional<ArenaTypes::InteriorType> interiorType; // City is not an interior.
+	constexpr std::optional<ArenaInteriorType> interiorType; // City is not an interior.
 	constexpr LocationDungeonDefinition *dungeonDef = nullptr; // Not necessary for city.
 	constexpr std::optional<bool> isArtifactDungeon; // Not necessary for city.
 
@@ -2596,9 +2596,9 @@ void MapGeneration::generateRmdWilderness(BufferView<const ArenaWildUtils::WildB
 
 	// Create temp voxel data buffers to be used by each wilderness chunk.
 	constexpr int chunkDim = ChunkUtils::CHUNK_DIM;
-	Buffer2D<ArenaTypes::VoxelID> tempFlor(chunkDim, chunkDim);
-	Buffer2D<ArenaTypes::VoxelID> tempMap1(chunkDim, chunkDim);
-	Buffer2D<ArenaTypes::VoxelID> tempMap2(chunkDim, chunkDim);
+	Buffer2D<ArenaVoxelID> tempFlor(chunkDim, chunkDim);
+	Buffer2D<ArenaVoxelID> tempMap1(chunkDim, chunkDim);
+	Buffer2D<ArenaVoxelID> tempMap2(chunkDim, chunkDim);
 
 	for (int i = 0; i < uniqueWildBlockIDs.getCount(); i++)
 	{
@@ -2606,18 +2606,18 @@ void MapGeneration::generateRmdWilderness(BufferView<const ArenaWildUtils::WildB
 		const auto &rmdFiles = ArenaLevelLibrary::getInstance().getWildernessChunks();
 		const int rmdIndex = DebugMakeIndex(rmdFiles, wildBlockID - 1);
 		const RMDFile &rmd = rmdFiles[rmdIndex];
-		const BufferView2D<const ArenaTypes::VoxelID> rmdFLOR = rmd.getFLOR();
-		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP1 = rmd.getMAP1();
-		const BufferView2D<const ArenaTypes::VoxelID> rmdMAP2 = rmd.getMAP2();
+		const BufferView2D<const ArenaVoxelID> rmdFLOR = rmd.getFLOR();
+		const BufferView2D<const ArenaVoxelID> rmdMAP1 = rmd.getMAP1();
+		const BufferView2D<const ArenaVoxelID> rmdMAP2 = rmd.getMAP2();
 
 		// Copy .RMD voxels into temp buffers.
 		for (int y = 0; y < tempFlor.getHeight(); y++)
 		{
 			for (int x = 0; x < tempFlor.getWidth(); x++)
 			{
-				const ArenaTypes::VoxelID rmdFlorID = rmdFLOR.get(x, y);
-				const ArenaTypes::VoxelID rmdMap1ID = rmdMAP1.get(x, y);
-				const ArenaTypes::VoxelID rmdMap2ID = rmdMAP2.get(x, y);
+				const ArenaVoxelID rmdFlorID = rmdFLOR.get(x, y);
+				const ArenaVoxelID rmdMap1ID = rmdMAP1.get(x, y);
+				const ArenaVoxelID rmdMap2ID = rmdMAP2.get(x, y);
 				tempFlor.set(x, y, rmdFlorID);
 				tempMap1.set(x, y, rmdMap1ID);
 				tempMap2.set(x, y, rmdMap2ID);
@@ -2627,20 +2627,20 @@ void MapGeneration::generateRmdWilderness(BufferView<const ArenaWildUtils::WildB
 		if (ArenaWildUtils::isWildCityBlock(wildBlockID))
 		{
 			// Change the placeholder WILD00{1..4}.RMD block to the one for the given city.
-			BufferView2D<ArenaTypes::VoxelID> tempFlorView(tempFlor);
-			BufferView2D<ArenaTypes::VoxelID> tempMap1View(tempMap1);
-			BufferView2D<ArenaTypes::VoxelID> tempMap2View(tempMap2);
+			BufferView2D<ArenaVoxelID> tempFlorView(tempFlor);
+			BufferView2D<ArenaVoxelID> tempMap1View(tempMap1);
+			BufferView2D<ArenaVoxelID> tempMap2View(tempMap2);
 			ArenaWildUtils::reviseWildCityBlock(wildBlockID, tempFlorView, tempMap1View, tempMap2View, cityDef, binaryAssetLibrary);
 		}
 
 		LevelDefinition &levelDef = outLevelDefs.get(i);
 
-		const BufferView2D<const ArenaTypes::VoxelID> tempFlorConstView(tempFlor);
-		const BufferView2D<const ArenaTypes::VoxelID> tempMap1ConstView(tempMap1);
-		const BufferView2D<const ArenaTypes::VoxelID> tempMap2ConstView(tempMap2);
+		const BufferView2D<const ArenaVoxelID> tempFlorConstView(tempFlor);
+		const BufferView2D<const ArenaVoxelID> tempMap1ConstView(tempMap1);
+		const BufferView2D<const ArenaVoxelID> tempMap2ConstView(tempMap2);
 
 		constexpr MapType mapType = MapType::Wilderness;
-		constexpr std::optional<ArenaTypes::InteriorType> interiorType; // Wilderness is not an interior.
+		constexpr std::optional<ArenaInteriorType> interiorType; // Wilderness is not an interior.
 
 		// Dungeon definition if this chunk has any dungeons.
 		const uint32_t dungeonSeed = cityDef.provinceSeed;

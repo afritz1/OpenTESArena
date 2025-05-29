@@ -207,10 +207,10 @@ bool EnemyEntityDefinition::operator==(const EnemyEntityDefinition &other) const
 CitizenEntityDefinition::CitizenEntityDefinition()
 {
 	this->male = false;
-	this->climateType = static_cast<ArenaTypes::ClimateType>(-1);
+	this->climateType = static_cast<ArenaClimateType>(-1);
 }
 
-void CitizenEntityDefinition::init(bool male, ArenaTypes::ClimateType climateType)
+void CitizenEntityDefinition::init(bool male, ArenaClimateType climateType)
 {
 	this->male = male;
 	this->climateType = climateType;
@@ -617,7 +617,7 @@ void EntityDefinition::initEnemyHuman(bool male, int charClassID, EntityAnimatio
 	this->enemy.initHuman(male, charClassID);
 }
 
-void EntityDefinition::initCitizen(bool male, ArenaTypes::ClimateType climateType,
+void EntityDefinition::initCitizen(bool male, ArenaClimateType climateType,
 	EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Citizen, std::move(animDef));
