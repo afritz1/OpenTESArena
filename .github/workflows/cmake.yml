@@ -18,6 +18,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Update apt-get (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt-get update
+
+    - name: Update brew (macOS)
+      if: matrix.os == 'macos-latest'
+      run: brew update
     
     - name: Install Dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
