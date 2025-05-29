@@ -469,7 +469,7 @@ namespace ArenaMeshUtils
 			}
 		}
 
-		return faceCount * MeshUtils::INDICES_PER_FACE;
+		return faceCount * MeshUtils::INDICES_PER_QUAD;
 	}
 
 	constexpr int GetChasmWallIndex(bool north, bool east, bool south, bool west)
