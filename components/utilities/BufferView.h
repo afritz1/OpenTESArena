@@ -220,6 +220,18 @@ public:
 		return isStartValid && isEndValid;
 	}
 
+	BufferView<T> slice(int startIndex, int length)
+	{
+		DebugAssert(this->isValidRange(startIndex, length));
+		return BufferView<T>(this->data + startIndex, length);
+	}
+
+	BufferView<const T> slice(int startIndex, int length) const
+	{
+		DebugAssert(this->isValidRange(startIndex, length));
+		return BufferView<const T>(this->data + startIndex, length);
+	}
+
 	void set(int index, const T &value)
 	{
 		DebugAssert(this->isValid());
