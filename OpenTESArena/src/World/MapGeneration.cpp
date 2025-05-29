@@ -316,7 +316,7 @@ namespace MapGeneration
 			*outVoxelType = ArenaTypes::VoxelType::Floor;
 
 			outShapeInitCache->initDefaultBoxValues();
-			ArenaMeshUtils::WriteFloorRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+			ArenaMeshUtils::WriteFloorRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 			ArenaMeshUtils::WriteFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureID);
@@ -394,7 +394,7 @@ namespace MapGeneration
 
 			const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(*outChasmType);
 			outShapeInitCache->initChasmBoxValues(isDryChasm);
-			ArenaMeshUtils::WriteChasmRendererGeometryBuffers(*outChasmType, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+			ArenaMeshUtils::WriteChasmRendererGeometryBuffers(*outChasmType, outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 			ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(chasmID);
@@ -457,7 +457,7 @@ namespace MapGeneration
 	{
 		const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(chasmType);
 		outShapeInitCache->initChasmBoxValues(isDryChasm);
-		ArenaMeshUtils::WriteChasmRendererGeometryBuffers(chasmType, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+		ArenaMeshUtils::WriteChasmRendererGeometryBuffers(chasmType, outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 		ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 		std::optional<int> textureIndex = inf.getWetChasmIndex();
@@ -514,7 +514,7 @@ namespace MapGeneration
 				// Regular solid wall.
 				*outVoxelType = ArenaTypes::VoxelType::Wall;
 				outShapeInitCache->initDefaultBoxValues();
-				ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 				ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 				const int textureIndex = mostSigByte - 1;
@@ -622,7 +622,7 @@ namespace MapGeneration
 				const double vBottom = std::min(vTop + ySizeNormalized, 1.0);
 
 				outShapeInitCache->initRaisedBoxValues(ySize, yOffset);
-				ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(yOffset, ySize, vBottom, vTop, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(yOffset, ySize, vBottom, vTop, outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 				ArenaMeshUtils::WriteRaisedRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 				const int clampedSideID = ArenaVoxelUtils::clampVoxelTextureID(sideID);
@@ -653,7 +653,7 @@ namespace MapGeneration
 				*outVoxelType = ArenaTypes::VoxelType::TransparentWall;
 
 				outShapeInitCache->initDefaultBoxValues();
-				ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 				ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
@@ -721,7 +721,7 @@ namespace MapGeneration
 				}();
 
 				outShapeInitCache->initDefaultBoxValues();
-				ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(facing, yOffset, flipped, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(facing, yOffset, flipped, outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 				ArenaMeshUtils::WriteEdgeRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -773,7 +773,7 @@ namespace MapGeneration
 				}
 
 				outShapeInitCache->initDefaultBoxValues();
-				ArenaMeshUtils::WriteDoorRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteDoorRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 				ArenaMeshUtils::WriteDoorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -797,7 +797,7 @@ namespace MapGeneration
 
 				const bool isRightDiag = (map1Voxel & 0x0100) == 0;
 				outShapeInitCache->initDiagonalBoxValues(isRightDiag);
-				ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(isRightDiag, outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+				ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(isRightDiag, outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 				ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(outShapeInitCache->indices0View);
 
 				const int textureIndex = (map1Voxel & 0x00FF) - 1;
@@ -874,7 +874,7 @@ namespace MapGeneration
 	{
 		*outVoxelType = ArenaTypes::VoxelType::Wall;
 		outShapeInitCache->initDefaultBoxValues();
-		ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+		ArenaMeshUtils::WriteWallRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 		ArenaMeshUtils::WriteWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
 
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
@@ -914,7 +914,7 @@ namespace MapGeneration
 	{
 		*outVoxelType = ArenaTypes::VoxelType::Ceiling;
 		outShapeInitCache->initDefaultBoxValues();
-		ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(outShapeInitCache->verticesView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+		ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 		ArenaMeshUtils::WriteCeilingRendererIndexBuffers(outShapeInitCache->indices0View);
 
 		// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe hardcoding index 1 is enough?

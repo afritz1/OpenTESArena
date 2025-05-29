@@ -54,14 +54,14 @@ public:
 	virtual void resize(int width, int height) = 0;
 
 	// Geometry management functions.
-	virtual bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID) = 0;
-	virtual bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID) = 0;
+	virtual bool tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID) = 0;
+	virtual bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID) = 0;
 	virtual bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID) = 0;
-	virtual void populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices) = 0;
-	virtual void populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes) = 0;
+	virtual void populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions) = 0;
+	virtual void populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes) = 0;
 	virtual void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices) = 0;
-	virtual void freeVertexBuffer(VertexBufferID id) = 0;
-	virtual void freeAttributeBuffer(AttributeBufferID id) = 0;
+	virtual void freePositionBuffer(VertexPositionBufferID id) = 0;
+	virtual void freeAttributeBuffer(VertexAttributeBufferID id) = 0;
 	virtual void freeIndexBuffer(IndexBufferID id) = 0;
 
 	// Texture management functions.

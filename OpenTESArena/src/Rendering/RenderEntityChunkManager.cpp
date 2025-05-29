@@ -133,22 +133,22 @@ void RenderEntityChunkManager::init(Renderer &renderer)
 	constexpr int entityMeshVertexCount = 4;
 	constexpr int entityMeshIndexCount = 6;
 
-	if (!renderer.tryCreateVertexBuffer(entityMeshVertexCount, positionComponentsPerVertex, &this->meshInst.vertexBufferID))
+	if (!renderer.tryCreatePositionBuffer(entityMeshVertexCount, positionComponentsPerVertex, &this->meshInst.positionBufferID))
 	{
-		DebugLogError("Couldn't create vertex buffer for entity mesh ID.");
+		DebugLogError("Couldn't create vertex position buffer for entity mesh ID.");
 		return;
 	}
 
 	if (!renderer.tryCreateAttributeBuffer(entityMeshVertexCount, normalComponentsPerVertex, &this->meshInst.normalBufferID))
 	{
-		DebugLogError("Couldn't create normal attribute buffer for entity mesh def.");
+		DebugLogError("Couldn't create vertex normal attribute buffer for entity mesh def.");
 		this->meshInst.freeBuffers(renderer);
 		return;
 	}
 
 	if (!renderer.tryCreateAttributeBuffer(entityMeshVertexCount, texCoordComponentsPerVertex, &this->meshInst.texCoordBufferID))
 	{
-		DebugLogError("Couldn't create tex coord attribute buffer for entity mesh def.");
+		DebugLogError("Couldn't create vertex tex coord attribute buffer for entity mesh def.");
 		this->meshInst.freeBuffers(renderer);
 		return;
 	}
@@ -160,7 +160,7 @@ void RenderEntityChunkManager::init(Renderer &renderer)
 		return;
 	}
 
-	constexpr std::array<double, entityMeshVertexCount * positionComponentsPerVertex> entityVertices =
+	constexpr std::array<double, entityMeshVertexCount * positionComponentsPerVertex> entityPositions =
 	{
 		0.0, 1.0, -0.50,
 		0.0, 0.0, -0.50,
@@ -190,7 +190,7 @@ void RenderEntityChunkManager::init(Renderer &renderer)
 		2, 3, 0
 	};
 
-	renderer.populateVertexBuffer(this->meshInst.vertexBufferID, entityVertices);
+	renderer.populatePositionBuffer(this->meshInst.positionBufferID, entityPositions);
 	renderer.populateAttributeBuffer(this->meshInst.normalBufferID, dummyEntityNormals);
 	renderer.populateAttributeBuffer(this->meshInst.texCoordBufferID, entityTexCoords);
 	renderer.populateIndexBuffer(this->meshInst.indexBufferID, entityIndices);
@@ -280,7 +280,7 @@ void RenderEntityChunkManager::addDrawCall(UniformBufferID transformBufferID, in
 	drawCall.transformBufferID = transformBufferID;
 	drawCall.transformIndex = transformIndex;
 	drawCall.preScaleTranslationBufferID = -1;
-	drawCall.vertexBufferID = this->meshInst.vertexBufferID;
+	drawCall.positionBufferID = this->meshInst.positionBufferID;
 	drawCall.normalBufferID = this->meshInst.normalBufferID;
 	drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
 	drawCall.indexBufferID = this->meshInst.indexBufferID;

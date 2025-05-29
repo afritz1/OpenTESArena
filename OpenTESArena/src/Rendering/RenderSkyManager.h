@@ -45,17 +45,17 @@ private:
 	Buffer<ScopedObjectTextureRef> skyThunderstormTextureRefs; // One for each frame of flash animation.
 	ScopedObjectTextureRef skyInteriorTextureRef; // Default black for interiors.
 
-	VertexBufferID bgVertexBufferID;
-	AttributeBufferID bgNormalBufferID;
-	AttributeBufferID bgTexCoordBufferID;
+	VertexPositionBufferID bgPositionBufferID;
+	VertexAttributeBufferID bgNormalBufferID;
+	VertexAttributeBufferID bgTexCoordBufferID;
 	IndexBufferID bgIndexBufferID;
 	UniformBufferID bgTransformBufferID;
 	RenderDrawCall bgDrawCall;
 
 	// All sky objects share simple vertex + attribute + index buffers.
-	VertexBufferID objectVertexBufferID;
-	AttributeBufferID objectNormalBufferID;
-	AttributeBufferID objectTexCoordBufferID;
+	VertexPositionBufferID objectPositionBufferID;
+	VertexAttributeBufferID objectNormalBufferID;
+	VertexAttributeBufferID objectTexCoordBufferID;
 	IndexBufferID objectIndexBufferID;
 	UniformBufferID objectTransformBufferID;
 	std::vector<LoadedGeneralSkyObjectTextureEntry> generalSkyObjectTextures;

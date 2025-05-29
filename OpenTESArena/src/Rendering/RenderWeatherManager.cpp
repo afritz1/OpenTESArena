@@ -61,7 +61,7 @@ namespace
 
 RenderWeatherManager::RenderWeatherManager()
 {
-	this->particleVertexBufferID = -1;
+	this->particlePositionBufferID = -1;
 	this->particleNormalBufferID = -1;
 	this->particleTexCoordBufferID = -1;
 	this->particleIndexBufferID = -1;
@@ -75,7 +75,7 @@ RenderWeatherManager::RenderWeatherManager()
 		textureID = -1;
 	}
 
-	this->fogVertexBufferID = -1;
+	this->fogPositionBufferID = -1;
 	this->fogNormalBufferID = -1;
 	this->fogTexCoordBufferID = -1;
 	this->fogIndexBufferID = -1;
@@ -92,7 +92,7 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 	constexpr int particleMeshVertexCount = 4;
 	constexpr int particleMeshIndexCount = 6;
 
-	constexpr double particleVertices[particleMeshVertexCount * positionComponentsPerVertex] =
+	constexpr double particlePositions[particleMeshVertexCount * positionComponentsPerVertex] =
 	{
 		0.0, 0.0, 0.0, // Let the top left be the origin so each particle is positioned like a cursor icon
 		0.0, -1.0, 0.0,
@@ -122,23 +122,23 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		2, 3, 0
 	};
 
-	if (!renderer.tryCreateVertexBuffer(particleMeshVertexCount, positionComponentsPerVertex, &this->particleVertexBufferID))
+	if (!renderer.tryCreatePositionBuffer(particleMeshVertexCount, positionComponentsPerVertex, &this->particlePositionBufferID))
 	{
-		DebugLogError("Couldn't create vertex buffer for rain mesh ID.");
+		DebugLogError("Couldn't create vertex position buffer for rain mesh ID.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
 
 	if (!renderer.tryCreateAttributeBuffer(particleMeshVertexCount, normalComponentsPerVertex, &this->particleNormalBufferID))
 	{
-		DebugLogError("Couldn't create normal attribute buffer for rain mesh def.");
+		DebugLogError("Couldn't create vertex normal attribute buffer for rain mesh def.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
 
 	if (!renderer.tryCreateAttributeBuffer(particleMeshVertexCount, texCoordComponentsPerVertex, &this->particleTexCoordBufferID))
 	{
-		DebugLogError("Couldn't create tex coord attribute buffer for rain mesh def.");
+		DebugLogError("Couldn't create vertex tex coord attribute buffer for rain mesh def.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
@@ -150,7 +150,7 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		return false;
 	}
 
-	renderer.populateVertexBuffer(this->particleVertexBufferID, particleVertices);
+	renderer.populatePositionBuffer(this->particlePositionBufferID, particlePositions);
 	renderer.populateAttributeBuffer(this->particleNormalBufferID, particleNormals);
 	renderer.populateAttributeBuffer(this->particleTexCoordBufferID, particleTexCoords);
 	renderer.populateIndexBuffer(this->particleIndexBufferID, particleIndices);
@@ -159,7 +159,7 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 	constexpr int fogMeshIndexCount = 36;
 
 	// Turned inward to face the camera.
-	constexpr double fogVertices[fogMeshVertexCount * positionComponentsPerVertex] =
+	constexpr double fogPositions[fogMeshVertexCount * positionComponentsPerVertex] =
 	{
 		// X=0
 		-0.5, 0.5, 0.5,
@@ -283,9 +283,9 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		22, 23, 20
 	};
 
-	if (!renderer.tryCreateVertexBuffer(fogMeshVertexCount, positionComponentsPerVertex, &this->fogVertexBufferID))
+	if (!renderer.tryCreatePositionBuffer(fogMeshVertexCount, positionComponentsPerVertex, &this->fogPositionBufferID))
 	{
-		DebugLogError("Couldn't create vertex buffer for fog mesh ID.");
+		DebugLogError("Couldn't create position buffer for fog mesh ID.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
@@ -314,7 +314,7 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		return false;
 	}
 
-	renderer.populateVertexBuffer(this->fogVertexBufferID, fogVertices);
+	renderer.populatePositionBuffer(this->fogPositionBufferID, fogPositions);
 	renderer.populateAttributeBuffer(this->fogNormalBufferID, fogNormals);
 	renderer.populateAttributeBuffer(this->fogTexCoordBufferID, fogTexCoords);
 	renderer.populateIndexBuffer(this->fogIndexBufferID, fogIndices);
@@ -483,10 +483,10 @@ void RenderWeatherManager::populateCommandBuffer(RenderCommandBuffer &commandBuf
 
 void RenderWeatherManager::freeParticleBuffers(Renderer &renderer)
 {
-	if (this->particleVertexBufferID >= 0)
+	if (this->particlePositionBufferID >= 0)
 	{
-		renderer.freeVertexBuffer(this->particleVertexBufferID);
-		this->particleVertexBufferID = -1;
+		renderer.freePositionBuffer(this->particlePositionBufferID);
+		this->particlePositionBufferID = -1;
 	}
 
 	if (this->particleNormalBufferID >= 0)
@@ -537,10 +537,10 @@ void RenderWeatherManager::freeParticleBuffers(Renderer &renderer)
 
 void RenderWeatherManager::freeFogBuffers(Renderer &renderer)
 {
-	if (this->fogVertexBufferID >= 0)
+	if (this->fogPositionBufferID >= 0)
 	{
-		renderer.freeVertexBuffer(this->fogVertexBufferID);
-		this->fogVertexBufferID = -1;
+		renderer.freePositionBuffer(this->fogPositionBufferID);
+		this->fogPositionBufferID = -1;
 	}
 
 	if (this->fogNormalBufferID >= 0)
@@ -585,7 +585,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.transformBufferID = transformBufferID;
 		drawCall.transformIndex = transformIndex;
 		drawCall.preScaleTranslationBufferID = -1;
-		drawCall.vertexBufferID = this->particleVertexBufferID;
+		drawCall.positionBufferID = this->particlePositionBufferID;
 		drawCall.normalBufferID = this->particleNormalBufferID;
 		drawCall.texCoordBufferID = this->particleTexCoordBufferID;
 		drawCall.indexBufferID = this->particleIndexBufferID;
@@ -708,7 +708,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.transformBufferID = this->fogTransformBufferID;
 		this->fogDrawCall.transformIndex = 0;
 		this->fogDrawCall.preScaleTranslationBufferID = -1;
-		this->fogDrawCall.vertexBufferID = this->fogVertexBufferID;
+		this->fogDrawCall.positionBufferID = this->fogPositionBufferID;
 		this->fogDrawCall.normalBufferID = this->fogNormalBufferID;
 		this->fogDrawCall.texCoordBufferID = this->fogTexCoordBufferID;
 		this->fogDrawCall.indexBufferID = this->fogIndexBufferID;

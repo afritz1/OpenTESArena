@@ -3,7 +3,7 @@
 
 RenderEntityMeshInstance::RenderEntityMeshInstance()
 {
-	this->vertexBufferID = -1;
+	this->positionBufferID = -1;
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
@@ -11,10 +11,10 @@ RenderEntityMeshInstance::RenderEntityMeshInstance()
 
 void RenderEntityMeshInstance::freeBuffers(Renderer &renderer)
 {
-	if (this->vertexBufferID >= 0)
+	if (this->positionBufferID >= 0)
 	{
-		renderer.freeVertexBuffer(this->vertexBufferID);
-		this->vertexBufferID = -1;
+		renderer.freePositionBuffer(this->positionBufferID);
+		this->positionBufferID = -1;
 	}
 
 	if (this->normalBufferID >= 0)

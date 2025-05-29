@@ -19,8 +19,8 @@ struct RenderDrawCall
 	
 	UniformBufferID preScaleTranslationBufferID; // Extra translation for some vertex shaders (currently shared by all raised doors).
 
-	VertexBufferID vertexBufferID;
-	AttributeBufferID normalBufferID, texCoordBufferID;
+	VertexPositionBufferID positionBufferID;
+	VertexAttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
 	ObjectTextureID textureIDs[MAX_TEXTURE_COUNT];
 	

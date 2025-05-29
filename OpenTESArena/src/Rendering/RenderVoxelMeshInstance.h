@@ -11,8 +11,8 @@ struct RenderVoxelMeshInstance
 {
 	static constexpr int MAX_DRAW_CALLS = 3; // Based on VoxelDefinition subtypes (wall or raised).
 
-	VertexBufferID vertexBufferID;
-	AttributeBufferID normalBufferID, texCoordBufferID;
+	VertexPositionBufferID positionBufferID;
+	VertexAttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferIDs[MAX_DRAW_CALLS];
 	int indexBufferIdCount;
 

@@ -35,13 +35,13 @@ void RenderSkyManager::LoadedSmallStarTextureEntry::init(uint8_t paletteIndex, S
 
 RenderSkyManager::RenderSkyManager()
 {
-	this->bgVertexBufferID = -1;
+	this->bgPositionBufferID = -1;
 	this->bgNormalBufferID = -1;
 	this->bgTexCoordBufferID = -1;
 	this->bgIndexBufferID = -1;
 	this->bgTransformBufferID = -1;
 
-	this->objectVertexBufferID = -1;
+	this->objectPositionBufferID = -1;
 	this->objectNormalBufferID = -1;
 	this->objectTexCoordBufferID = -1;
 	this->objectIndexBufferID = -1;
@@ -50,7 +50,7 @@ RenderSkyManager::RenderSkyManager()
 
 void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManager, Renderer &renderer)
 {
-	std::vector<double> bgVertices;
+	std::vector<double> bgPositions;
 	std::vector<double> bgNormals;
 	std::vector<double> bgTexCoords;
 	std::vector<int32_t> bgIndices;
@@ -63,12 +63,12 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	constexpr int nadirIndex = 1;
 	constexpr Double3 zenithPoint(0.0, pointDistance, 0.0); // Top of sky
 	constexpr Double3 nadirPoint(0.0, -pointDistance, 0.0); // Bottom of sky
-	bgVertices.emplace_back(zenithPoint.x);
-	bgVertices.emplace_back(zenithPoint.y);
-	bgVertices.emplace_back(zenithPoint.z);
-	bgVertices.emplace_back(nadirPoint.x);
-	bgVertices.emplace_back(nadirPoint.y);
-	bgVertices.emplace_back(nadirPoint.z);
+	bgPositions.emplace_back(zenithPoint.x);
+	bgPositions.emplace_back(zenithPoint.y);
+	bgPositions.emplace_back(zenithPoint.z);
+	bgPositions.emplace_back(nadirPoint.x);
+	bgPositions.emplace_back(nadirPoint.y);
+	bgPositions.emplace_back(nadirPoint.z);
 
 	const Double3 zenithNormal = -zenithPoint.normalized();
 	const Double3 nadirNormal = -nadirPoint.normalized();
@@ -103,18 +103,18 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		const Double3 nextHorizonPoint(std::cos(nextPeriod) * pointDistance, 0.0, std::sin(nextPeriod) * pointDistance);
 		const Double3 aboveHorizonPoint(horizonPoint.x, aboveHorizonPointHeight, horizonPoint.z);
 		const Double3 nextAboveHorizonPoint(nextHorizonPoint.x, aboveHorizonPointHeight, nextHorizonPoint.z);
-		bgVertices.emplace_back(horizonPoint.x);
-		bgVertices.emplace_back(horizonPoint.y);
-		bgVertices.emplace_back(horizonPoint.z);
-		bgVertices.emplace_back(nextHorizonPoint.x);
-		bgVertices.emplace_back(nextHorizonPoint.y);
-		bgVertices.emplace_back(nextHorizonPoint.z);
-		bgVertices.emplace_back(aboveHorizonPoint.x);
-		bgVertices.emplace_back(aboveHorizonPoint.y);
-		bgVertices.emplace_back(aboveHorizonPoint.z);
-		bgVertices.emplace_back(nextAboveHorizonPoint.x);
-		bgVertices.emplace_back(nextAboveHorizonPoint.y);
-		bgVertices.emplace_back(nextAboveHorizonPoint.z);
+		bgPositions.emplace_back(horizonPoint.x);
+		bgPositions.emplace_back(horizonPoint.y);
+		bgPositions.emplace_back(horizonPoint.z);
+		bgPositions.emplace_back(nextHorizonPoint.x);
+		bgPositions.emplace_back(nextHorizonPoint.y);
+		bgPositions.emplace_back(nextHorizonPoint.z);
+		bgPositions.emplace_back(aboveHorizonPoint.x);
+		bgPositions.emplace_back(aboveHorizonPoint.y);
+		bgPositions.emplace_back(aboveHorizonPoint.z);
+		bgPositions.emplace_back(nextAboveHorizonPoint.x);
+		bgPositions.emplace_back(nextAboveHorizonPoint.y);
+		bgPositions.emplace_back(nextAboveHorizonPoint.z);
 
 		// Normals point toward the player.
 		const Double3 horizonNormal = -horizonPoint.normalized();
@@ -153,7 +153,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		bgTexCoords.emplace_back(nextAboveHorizonTexCoord.y);
 
 		// Horizon quad
-		const int currentVertexCount = static_cast<int>(bgVertices.size()) / 3;
+		const int currentVertexCount = static_cast<int>(bgPositions.size()) / 3;
 		const int32_t horizonIndex = static_cast<int32_t>(currentVertexCount - 4);
 		const int32_t nextHorizonIndex = static_cast<int32_t>(currentVertexCount - 3);
 		const int32_t aboveHorizonIndex = static_cast<int32_t>(currentVertexCount - 2);
@@ -181,23 +181,23 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
-	const int bgVertexCount = static_cast<int>(bgVertices.size()) / 3;
-	if (!renderer.tryCreateVertexBuffer(bgVertexCount, positionComponentsPerVertex, &this->bgVertexBufferID))
+	const int bgVertexCount = static_cast<int>(bgPositions.size()) / 3;
+	if (!renderer.tryCreatePositionBuffer(bgVertexCount, positionComponentsPerVertex, &this->bgPositionBufferID))
 	{
-		DebugLogError("Couldn't create vertex buffer for sky background mesh ID.");
+		DebugLogError("Couldn't create vertex position buffer for sky background mesh ID.");
 		return;
 	}
 
 	if (!renderer.tryCreateAttributeBuffer(bgVertexCount, normalComponentsPerVertex, &this->bgNormalBufferID))
 	{
-		DebugLogError("Couldn't create normal attribute buffer for sky background mesh ID.");
+		DebugLogError("Couldn't create vertex normal attribute buffer for sky background mesh ID.");
 		this->freeBgBuffers(renderer);
 		return;
 	}
 
 	if (!renderer.tryCreateAttributeBuffer(bgVertexCount, texCoordComponentsPerVertex, &this->bgTexCoordBufferID))
 	{
-		DebugLogError("Couldn't create tex coord attribute buffer for sky background mesh ID.");
+		DebugLogError("Couldn't create vertex tex coord attribute buffer for sky background mesh ID.");
 		this->freeBgBuffers(renderer);
 		return;
 	}
@@ -209,7 +209,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		return;
 	}
 
-	renderer.populateVertexBuffer(this->bgVertexBufferID, bgVertices);
+	renderer.populatePositionBuffer(this->bgPositionBufferID, bgPositions);
 	renderer.populateAttributeBuffer(this->bgNormalBufferID, bgNormals);
 	renderer.populateAttributeBuffer(this->bgTexCoordBufferID, bgTexCoords);
 	renderer.populateIndexBuffer(this->bgIndexBufferID, bgIndices);
@@ -285,7 +285,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.transformBufferID = this->bgTransformBufferID;
 	this->bgDrawCall.transformIndex = 0;
 	this->bgDrawCall.preScaleTranslationBufferID = -1;
-	this->bgDrawCall.vertexBufferID = this->bgVertexBufferID;
+	this->bgDrawCall.positionBufferID = this->bgPositionBufferID;
 	this->bgDrawCall.normalBufferID = this->bgNormalBufferID;
 	this->bgDrawCall.texCoordBufferID = this->bgTexCoordBufferID;
 	this->bgDrawCall.indexBufferID = this->bgIndexBufferID;
@@ -304,22 +304,22 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	// @todo: to be more accurate, land/air vertices could rest on the horizon, while star/planet/sun vertices would sit halfway under the horizon, etc., and these would be separate buffers for the draw calls to pick from.
 	constexpr int objectMeshVertexCount = 4;
 	constexpr int objectMeshIndexCount = 6;
-	if (!renderer.tryCreateVertexBuffer(objectMeshVertexCount, positionComponentsPerVertex, &this->objectVertexBufferID))
+	if (!renderer.tryCreatePositionBuffer(objectMeshVertexCount, positionComponentsPerVertex, &this->objectPositionBufferID))
 	{
-		DebugLogError("Couldn't create vertex buffer for sky object mesh ID.");
+		DebugLogError("Couldn't create vertex position buffer for sky object mesh ID.");
 		return;
 	}
 
 	if (!renderer.tryCreateAttributeBuffer(objectMeshVertexCount, normalComponentsPerVertex, &this->objectNormalBufferID))
 	{
-		DebugLogError("Couldn't create normal attribute buffer for sky object mesh def.");
+		DebugLogError("Couldn't create vertex normal attribute buffer for sky object mesh def.");
 		this->freeObjectBuffers(renderer);
 		return;
 	}
 
 	if (!renderer.tryCreateAttributeBuffer(objectMeshVertexCount, texCoordComponentsPerVertex, &this->objectTexCoordBufferID))
 	{
-		DebugLogError("Couldn't create tex coord attribute buffer for sky object mesh def.");
+		DebugLogError("Couldn't create vertex tex coord attribute buffer for sky object mesh def.");
 		this->freeObjectBuffers(renderer);
 		return;
 	}
@@ -331,7 +331,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		return;
 	}
 
-	constexpr std::array<double, objectMeshVertexCount * positionComponentsPerVertex> objectVertices =
+	constexpr std::array<double, objectMeshVertexCount * positionComponentsPerVertex> objectPositions =
 	{
 		0.0, 1.0, -0.50,
 		0.0, 0.0, -0.50,
@@ -361,7 +361,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		2, 3, 0
 	};
 
-	renderer.populateVertexBuffer(this->objectVertexBufferID, objectVertices);
+	renderer.populatePositionBuffer(this->objectPositionBufferID, objectPositions);
 	renderer.populateAttributeBuffer(this->objectNormalBufferID, objectNormals);
 	renderer.populateAttributeBuffer(this->objectTexCoordBufferID, objectTexCoords);
 	renderer.populateIndexBuffer(this->objectIndexBufferID, objectIndices);
@@ -412,10 +412,10 @@ ObjectTextureID RenderSkyManager::getSmallStarTextureID(uint8_t paletteIndex) co
 
 void RenderSkyManager::freeBgBuffers(Renderer &renderer)
 {
-	if (this->bgVertexBufferID >= 0)
+	if (this->bgPositionBufferID >= 0)
 	{
-		renderer.freeVertexBuffer(this->bgVertexBufferID);
-		this->bgVertexBufferID = -1;
+		renderer.freePositionBuffer(this->bgPositionBufferID);
+		this->bgPositionBufferID = -1;
 	}
 
 	if (this->bgNormalBufferID >= 0)
@@ -445,10 +445,10 @@ void RenderSkyManager::freeBgBuffers(Renderer &renderer)
 
 void RenderSkyManager::freeObjectBuffers(Renderer &renderer)
 {
-	if (this->objectVertexBufferID >= 0)
+	if (this->objectPositionBufferID >= 0)
 	{
-		renderer.freeVertexBuffer(this->objectVertexBufferID);
-		this->objectVertexBufferID = -1;
+		renderer.freePositionBuffer(this->objectPositionBufferID);
+		this->objectPositionBufferID = -1;
 	}
 
 	if (this->objectNormalBufferID >= 0)
@@ -725,7 +725,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.transformBufferID = this->objectTransformBufferID;
 		drawCall.transformIndex = transformIndex;
 		drawCall.preScaleTranslationBufferID = -1;
-		drawCall.vertexBufferID = this->objectVertexBufferID;
+		drawCall.positionBufferID = this->objectPositionBufferID;
 		drawCall.normalBufferID = this->objectNormalBufferID;
 		drawCall.texCoordBufferID = this->objectTexCoordBufferID;
 		drawCall.indexBufferID = this->objectIndexBufferID;

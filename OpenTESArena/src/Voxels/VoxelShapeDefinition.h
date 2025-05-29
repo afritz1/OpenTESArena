@@ -34,7 +34,7 @@ struct VoxelBoxShapeDefinition
 // For rendering.
 struct VoxelMeshDefinition
 {
-	std::vector<double> rendererVertices, rendererNormals, rendererTexCoords;
+	std::vector<double> rendererPositions, rendererNormals, rendererTexCoords;
 	std::vector<int32_t> indices0, indices1, indices2; // Up to 3 draw calls.
 	int uniqueVertexCount; // Ideal number of vertices to represent the mesh.
 	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
@@ -48,7 +48,7 @@ struct VoxelMeshDefinition
 	std::vector<int32_t> &getIndicesList(int index);
 	BufferView<const int32_t> getIndicesList(int index) const;
 
-	void writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outVertices,
+	void writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions,
 		BufferView<double> outNormals, BufferView<double> outTexCoords) const;
 	void writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1, BufferView<int32_t> outIndices2) const;
 };

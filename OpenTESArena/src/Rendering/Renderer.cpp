@@ -761,13 +761,13 @@ void Renderer::setClipRect(const SDL_Rect *rect)
 	}
 }
 
-bool Renderer::tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID)
+bool Renderer::tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateVertexBuffer(vertexCount, componentsPerVertex, outID);
+	return this->renderer3D->tryCreatePositionBuffer(vertexCount, componentsPerVertex, outID);
 }
 
-bool Renderer::tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID)
+bool Renderer::tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID)
 {
 	DebugAssert(this->renderer3D->isInited());
 	return this->renderer3D->tryCreateAttributeBuffer(vertexCount, componentsPerVertex, outID);
@@ -779,13 +779,13 @@ bool Renderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID)
 	return this->renderer3D->tryCreateIndexBuffer(indexCount, outID);
 }
 
-void Renderer::populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices)
+void Renderer::populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->populateVertexBuffer(id, vertices);
+	this->renderer3D->populatePositionBuffer(id, positions);
 }
 
-void Renderer::populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes)
+void Renderer::populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateAttributeBuffer(id, attributes);
@@ -797,13 +797,13 @@ void Renderer::populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> i
 	this->renderer3D->populateIndexBuffer(id, indices);
 }
 
-void Renderer::freeVertexBuffer(VertexBufferID id)
+void Renderer::freePositionBuffer(VertexPositionBufferID id)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freeVertexBuffer(id);
+	this->renderer3D->freePositionBuffer(id);
 }
 
-void Renderer::freeAttributeBuffer(AttributeBufferID id)
+void Renderer::freeAttributeBuffer(VertexAttributeBufferID id)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->freeAttributeBuffer(id);

@@ -38,14 +38,14 @@ struct SoftwareObjectTexture
 	void clear();
 };
 
-struct SoftwareVertexBuffer
+struct SoftwareVertexPositionBuffer
 {
-	Buffer<double> vertices;
+	Buffer<double> positions;
 
 	void init(int vertexCount, int componentsPerVertex);
 };
 
-struct SoftwareAttributeBuffer
+struct SoftwareVertexAttributeBuffer
 {
 	Buffer<double> attributes;
 
@@ -116,8 +116,8 @@ struct SoftwareLight
 	void init(const Double3 &worldPoint, double startRadius, double endRadius);
 };
 
-using SoftwareVertexBufferPool = RecyclablePool<SoftwareVertexBuffer, VertexBufferID>;
-using SoftwareAttributeBufferPool = RecyclablePool<SoftwareAttributeBuffer, AttributeBufferID>;
+using SoftwareVertexPositionBufferPool = RecyclablePool<SoftwareVertexPositionBuffer, VertexPositionBufferID>;
+using SoftwareVertexAttributeBufferPool = RecyclablePool<SoftwareVertexAttributeBuffer, VertexAttributeBufferID>;
 using SoftwareIndexBufferPool = RecyclablePool<SoftwareIndexBuffer, IndexBufferID>;
 using SoftwareUniformBufferPool = RecyclablePool<SoftwareUniformBuffer, UniformBufferID>;
 using SoftwareObjectTexturePool = RecyclablePool<SoftwareObjectTexture, ObjectTextureID>;
@@ -131,8 +131,8 @@ private:
 	Buffer3D<bool> ditherBuffer; // Stores N layers of pre-computed patterns depending on the option.
 	DitheringMode ditheringMode;
 
-	SoftwareVertexBufferPool vertexBuffers;
-	SoftwareAttributeBufferPool attributeBuffers;
+	SoftwareVertexPositionBufferPool positionBuffers;
+	SoftwareVertexAttributeBufferPool attributeBuffers;
 	SoftwareIndexBufferPool indexBuffers;
 	SoftwareUniformBufferPool uniformBuffers;
 	SoftwareObjectTexturePool objectTextures;
@@ -147,14 +147,14 @@ public:
 
 	void resize(int width, int height) override;
 
-	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID) override;
-	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID) override;
+	bool tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID) override;
+	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID) override;
 	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID) override;
-	void populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices) override;
-	void populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes) override;
+	void populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions) override;
+	void populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes) override;
 	void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices) override;
-	void freeVertexBuffer(VertexBufferID id) override;
-	void freeAttributeBuffer(AttributeBufferID id) override;
+	void freePositionBuffer(VertexPositionBufferID id) override;
+	void freeAttributeBuffer(VertexAttributeBufferID id) override;
 	void freeIndexBuffer(IndexBufferID id) override;
 
 	bool tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID) override;

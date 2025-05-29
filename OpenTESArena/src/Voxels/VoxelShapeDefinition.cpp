@@ -36,8 +36,8 @@ void VoxelMeshDefinition::initClassic(ArenaTypes::VoxelType voxelType, VoxelShap
 	if (voxelType != ArenaTypes::VoxelType::None)
 	{
 		const int rendererVertexPositionComponentCount = ArenaMeshUtils::GetRendererVertexPositionComponentCount(voxelType);
-		this->rendererVertices.resize(rendererVertexPositionComponentCount);
-		std::copy(shapeInitCache.vertices.begin(), shapeInitCache.vertices.begin() + rendererVertexPositionComponentCount, this->rendererVertices.data());
+		this->rendererPositions.resize(rendererVertexPositionComponentCount);
+		std::copy(shapeInitCache.positions.begin(), shapeInitCache.positions.begin() + rendererVertexPositionComponentCount, this->rendererPositions.data());
 
 		const int rendererVertexNormalComponentCount = ArenaMeshUtils::GetRendererVertexNormalComponentCount(voxelType);
 		this->rendererNormals.resize(rendererVertexNormalComponentCount);
@@ -96,28 +96,28 @@ BufferView<const int32_t> VoxelMeshDefinition::getIndicesList(int index) const
 	return *ptrs[index];
 }
 
-void VoxelMeshDefinition::writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outVertices,
+void VoxelMeshDefinition::writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions,
 	BufferView<double> outNormals, BufferView<double> outTexCoords) const
 {
 	static_assert(MeshUtils::POSITION_COMPONENTS_PER_VERTEX == 3);
 	static_assert(MeshUtils::NORMAL_COMPONENTS_PER_VERTEX == 3);
 	static_assert(MeshUtils::TEX_COORDS_PER_VERTEX == 2);
-	DebugAssert(outVertices.getCount() >= this->rendererVertices.size());
+	DebugAssert(outPositions.getCount() >= this->rendererPositions.size());
 	DebugAssert(outNormals.getCount() >= this->rendererNormals.size());
 	DebugAssert(outTexCoords.getCount() >= this->rendererTexCoords.size());
 
 	for (int i = 0; i < this->rendererVertexCount; i++)
 	{
 		const int index = i * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-		const double srcX = this->rendererVertices[index];
-		const double srcY = this->rendererVertices[index + 1];
-		const double srcZ = this->rendererVertices[index + 2];
+		const double srcX = this->rendererPositions[index];
+		const double srcY = this->rendererPositions[index + 1];
+		const double srcZ = this->rendererPositions[index + 2];
 		const double dstX = srcX;
 		const double dstY = MeshUtils::getScaledVertexY(srcY, scaleType, ceilingScale);
 		const double dstZ = srcZ;
-		outVertices.set(index, dstX);
-		outVertices.set(index + 1, dstY);
-		outVertices.set(index + 2, dstZ);
+		outPositions.set(index, dstX);
+		outPositions.set(index + 1, dstY);
+		outPositions.set(index + 2, dstZ);
 	}
 
 	std::copy(this->rendererNormals.begin(), this->rendererNormals.end(), outNormals.begin());

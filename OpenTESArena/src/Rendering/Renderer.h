@@ -187,14 +187,14 @@ public:
 	void setClipRect(const SDL_Rect *rect);
 
 	// Geometry management functions.
-	bool tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID);
-	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID);
+	bool tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID);
+	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID);
 	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID);
-	void populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices);
-	void populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes);
+	void populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions);
+	void populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes);
 	void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices);
-	void freeVertexBuffer(VertexBufferID id);
-	void freeAttributeBuffer(AttributeBufferID id);
+	void freePositionBuffer(VertexPositionBufferID id);
+	void freeAttributeBuffer(VertexAttributeBufferID id);
 	void freeIndexBuffer(IndexBufferID id);
 
 	// Texture handle allocation functions.

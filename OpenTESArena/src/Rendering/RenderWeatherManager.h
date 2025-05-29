@@ -15,9 +15,9 @@ struct RenderCommandBuffer;
 class RenderWeatherManager
 {
 private:
-	VertexBufferID particleVertexBufferID;
-	AttributeBufferID particleNormalBufferID;
-	AttributeBufferID particleTexCoordBufferID;
+	VertexPositionBufferID particlePositionBufferID;
+	VertexAttributeBufferID particleNormalBufferID;
+	VertexAttributeBufferID particleTexCoordBufferID;
 	IndexBufferID particleIndexBufferID;
 
 	UniformBufferID rainTransformBufferID; // Contains render transforms for each raindrop.
@@ -28,9 +28,9 @@ private:
 	ObjectTextureID snowTextureIDs[3]; // Each snowflake size has its own texture.
 	Buffer<RenderDrawCall> snowDrawCalls;
 
-	VertexBufferID fogVertexBufferID;
-	AttributeBufferID fogNormalBufferID;
-	AttributeBufferID fogTexCoordBufferID;
+	VertexPositionBufferID fogPositionBufferID;
+	VertexAttributeBufferID fogNormalBufferID;
+	VertexAttributeBufferID fogTexCoordBufferID;
 	IndexBufferID fogIndexBufferID;
 	UniformBufferID fogTransformBufferID;
 	ObjectTextureID fogTextureID;

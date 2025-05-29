@@ -8,8 +8,8 @@ class Renderer;
 // All the resources needed to define an entity's renderer-allocated mesh.
 struct RenderEntityMeshInstance
 {
-	VertexBufferID vertexBufferID;
-	AttributeBufferID normalBufferID, texCoordBufferID;
+	VertexPositionBufferID positionBufferID;
+	VertexAttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
 
 	RenderEntityMeshInstance();

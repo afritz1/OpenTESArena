@@ -5,7 +5,7 @@
 
 RenderVoxelMeshInstance::RenderVoxelMeshInstance()
 {
-	this->vertexBufferID = -1;
+	this->positionBufferID = -1;
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
 	std::fill(std::begin(this->indexBufferIDs), std::end(this->indexBufferIDs), -1);
@@ -19,10 +19,10 @@ int RenderVoxelMeshInstance::getUniqueDrawCallCount() const
 
 void RenderVoxelMeshInstance::freeBuffers(Renderer &renderer)
 {
-	if (this->vertexBufferID >= 0)
+	if (this->positionBufferID >= 0)
 	{
-		renderer.freeVertexBuffer(this->vertexBufferID);
-		this->vertexBufferID = -1;
+		renderer.freePositionBuffer(this->positionBufferID);
+		this->positionBufferID = -1;
 	}
 
 	if (this->normalBufferID >= 0)

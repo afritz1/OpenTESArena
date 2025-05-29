@@ -521,16 +521,16 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
-			if (!renderer.tryCreateVertexBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshInst.vertexBufferID))
+			if (!renderer.tryCreatePositionBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshInst.positionBufferID))
 			{
-				DebugLogError("Couldn't create vertex buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
+				DebugLogError("Couldn't create vertex position buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				continue;
 			}
 
 			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &renderVoxelMeshInst.normalBufferID))
 			{
-				DebugLogError("Couldn't create normal attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
+				DebugLogError("Couldn't create vertex normal attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				renderVoxelMeshInst.freeBuffers(renderer);
 				continue;
@@ -538,7 +538,7 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 
 			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &renderVoxelMeshInst.texCoordBufferID))
 			{
-				DebugLogError("Couldn't create tex coord attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
+				DebugLogError("Couldn't create vertex tex coord attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				renderVoxelMeshInst.freeBuffers(renderer);
 				continue;
@@ -547,10 +547,10 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			ArenaMeshUtils::ShapeInitCache shapeInitCache;
 
 			// Generate mesh geometry and indices for this voxel definition.
-			voxelMeshDef.writeRendererGeometryBuffers(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.verticesView, shapeInitCache.normalsView, shapeInitCache.texCoordsView);
+			voxelMeshDef.writeRendererGeometryBuffers(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.positionsView, shapeInitCache.normalsView, shapeInitCache.texCoordsView);
 			voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.indices0View, shapeInitCache.indices1View, shapeInitCache.indices2View);
 
-			renderer.populateVertexBuffer(renderVoxelMeshInst.vertexBufferID, BufferView<const double>(shapeInitCache.vertices.data(), vertexCount * positionComponentsPerVertex));
+			renderer.populatePositionBuffer(renderVoxelMeshInst.positionBufferID, BufferView<const double>(shapeInitCache.positions.data(), vertexCount * positionComponentsPerVertex));
 			renderer.populateAttributeBuffer(renderVoxelMeshInst.normalBufferID, BufferView<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
 			renderer.populateAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, BufferView<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
 
@@ -792,7 +792,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 
 		struct DrawCallMeshInitInfo
 		{
-			VertexBufferID vertexBufferID;
+			VertexPositionBufferID positionBufferID;
 			UniformBufferID normalBufferID;
 			UniformBufferID texCoordBufferID;
 			IndexBufferID indexBufferID;
@@ -852,7 +852,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		if (isDoor)
 		{
 			DrawCallMeshInitInfo &doorMeshInitInfo = meshInitInfos[0];
-			doorMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+			doorMeshInitInfo.positionBufferID = renderMeshInst.positionBufferID;
 			doorMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
 			doorMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
 			doorMeshInitInfo.indexBufferID = renderMeshInst.indexBufferIDs[0];
@@ -861,7 +861,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		else if (isChasm)
 		{
 			DrawCallMeshInitInfo &chasmFloorMeshInitInfo = meshInitInfos[0];
-			chasmFloorMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+			chasmFloorMeshInitInfo.positionBufferID = renderMeshInst.positionBufferID;
 			chasmFloorMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
 			chasmFloorMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
 			chasmFloorMeshInitInfo.indexBufferID = renderMeshInst.indexBufferIDs[0];
@@ -870,7 +870,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			if (hasChasmWall)
 			{
 				DrawCallMeshInitInfo &chasmWallMeshInitInfo = meshInitInfos[1];
-				chasmWallMeshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+				chasmWallMeshInitInfo.positionBufferID = renderMeshInst.positionBufferID;
 				chasmWallMeshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
 				chasmWallMeshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
 				chasmWallMeshInitInfo.indexBufferID = chasmWallIndexBufferID;
@@ -883,7 +883,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			{
 				DebugAssertIndex(meshInitInfos, i);
 				DrawCallMeshInitInfo &meshInitInfo = meshInitInfos[i];
-				meshInitInfo.vertexBufferID = renderMeshInst.vertexBufferID;
+				meshInitInfo.positionBufferID = renderMeshInst.positionBufferID;
 				meshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
 				meshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
 				meshInitInfo.indexBufferID = renderMeshInst.indexBufferIDs[i];
@@ -1090,7 +1090,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				doorDrawCall.transformBufferID = doorTransformInitInfo.id;
 				doorDrawCall.transformIndex = doorTransformInitInfo.index;
 				doorDrawCall.preScaleTranslationBufferID = doorTransformInitInfo.preScaleTranslationBufferID;
-				doorDrawCall.vertexBufferID = doorMeshInitInfo.vertexBufferID;
+				doorDrawCall.positionBufferID = doorMeshInitInfo.positionBufferID;
 				doorDrawCall.normalBufferID = doorMeshInitInfo.normalBufferID;
 				doorDrawCall.texCoordBufferID = doorMeshInitInfo.texCoordBufferID;
 				doorDrawCall.indexBufferID = doorMeshInitInfo.indexBufferID;
@@ -1123,7 +1123,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				chasmDrawCall.transformBufferID = chasmTransformInitInfo.id;
 				chasmDrawCall.transformIndex = chasmTransformInitInfo.index;
 				chasmDrawCall.preScaleTranslationBufferID = chasmTransformInitInfo.preScaleTranslationBufferID;
-				chasmDrawCall.vertexBufferID = chasmMeshInitInfo.vertexBufferID;
+				chasmDrawCall.positionBufferID = chasmMeshInitInfo.positionBufferID;
 				chasmDrawCall.normalBufferID = chasmMeshInitInfo.normalBufferID;
 				chasmDrawCall.texCoordBufferID = chasmMeshInitInfo.texCoordBufferID;
 				chasmDrawCall.indexBufferID = chasmMeshInitInfo.indexBufferID;
@@ -1154,7 +1154,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				drawCall.transformBufferID = transformInitInfo.id;
 				drawCall.transformIndex = transformInitInfo.index;
 				drawCall.preScaleTranslationBufferID = transformInitInfo.preScaleTranslationBufferID;
-				drawCall.vertexBufferID = meshInitInfo.vertexBufferID;
+				drawCall.positionBufferID = meshInitInfo.positionBufferID;
 				drawCall.normalBufferID = meshInitInfo.normalBufferID;
 				drawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
 				drawCall.indexBufferID = meshInitInfo.indexBufferID;

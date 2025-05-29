@@ -739,8 +739,8 @@ namespace
 {
 	struct DrawCallCache
 	{
-		const SoftwareVertexBuffer *vertexBuffer;
-		const SoftwareAttributeBuffer *texCoordBuffer;
+		const SoftwareVertexPositionBuffer *positionBuffer;
+		const SoftwareVertexAttributeBuffer *texCoordBuffer;
 		const SoftwareIndexBuffer *indexBuffer;
 		ObjectTextureID textureID0;
 		ObjectTextureID textureID1;
@@ -2002,7 +2002,7 @@ namespace
 
 		// Append vertices and texture coordinates into big arrays. The incoming meshes are likely tiny like 2 triangles each,
 		// so this makes the total triangle loop longer for ease of number crunching.
-		const double *verticesPtr = drawCallCache.vertexBuffer->vertices.begin();
+		const double *positionsPtr = drawCallCache.positionBuffer->positions.begin();
 		const double *texCoordsPtr = drawCallCache.texCoordBuffer->attributes.begin();
 		const SoftwareIndexBuffer &indexBuffer = *drawCallCache.indexBuffer;
 		const int32_t *indicesPtr = indexBuffer.indices.begin();
@@ -2026,17 +2026,17 @@ namespace
 			const int32_t uv0Index = index0 * texCoordComponentsPerVertex;
 			const int32_t uv1Index = index1 * texCoordComponentsPerVertex;
 			const int32_t uv2Index = index2 * texCoordComponentsPerVertex;
-			vertexShaderInputCache.unshadedV0Xs[writeIndex] = verticesPtr[v0Index];
-			vertexShaderInputCache.unshadedV0Ys[writeIndex] = verticesPtr[v0Index + 1];
-			vertexShaderInputCache.unshadedV0Zs[writeIndex] = verticesPtr[v0Index + 2];
+			vertexShaderInputCache.unshadedV0Xs[writeIndex] = positionsPtr[v0Index];
+			vertexShaderInputCache.unshadedV0Ys[writeIndex] = positionsPtr[v0Index + 1];
+			vertexShaderInputCache.unshadedV0Zs[writeIndex] = positionsPtr[v0Index + 2];
 			vertexShaderInputCache.unshadedV0Ws[writeIndex] = 1.0;
-			vertexShaderInputCache.unshadedV1Xs[writeIndex] = verticesPtr[v1Index];
-			vertexShaderInputCache.unshadedV1Ys[writeIndex] = verticesPtr[v1Index + 1];
-			vertexShaderInputCache.unshadedV1Zs[writeIndex] = verticesPtr[v1Index + 2];
+			vertexShaderInputCache.unshadedV1Xs[writeIndex] = positionsPtr[v1Index];
+			vertexShaderInputCache.unshadedV1Ys[writeIndex] = positionsPtr[v1Index + 1];
+			vertexShaderInputCache.unshadedV1Zs[writeIndex] = positionsPtr[v1Index + 2];
 			vertexShaderInputCache.unshadedV1Ws[writeIndex] = 1.0;
-			vertexShaderInputCache.unshadedV2Xs[writeIndex] = verticesPtr[v2Index];
-			vertexShaderInputCache.unshadedV2Ys[writeIndex] = verticesPtr[v2Index + 1];
-			vertexShaderInputCache.unshadedV2Zs[writeIndex] = verticesPtr[v2Index + 2];
+			vertexShaderInputCache.unshadedV2Xs[writeIndex] = positionsPtr[v2Index];
+			vertexShaderInputCache.unshadedV2Ys[writeIndex] = positionsPtr[v2Index + 1];
+			vertexShaderInputCache.unshadedV2Zs[writeIndex] = positionsPtr[v2Index + 2];
 			vertexShaderInputCache.unshadedV2Ws[writeIndex] = 1.0;
 			vertexShaderInputCache.uv0Xs[writeIndex] = texCoordsPtr[uv0Index];
 			vertexShaderInputCache.uv0Ys[writeIndex] = texCoordsPtr[uv0Index + 1];
@@ -3748,13 +3748,13 @@ void SoftwareObjectTexture::clear()
 	this->texels.clear();
 }
 
-void SoftwareVertexBuffer::init(int vertexCount, int componentsPerVertex)
+void SoftwareVertexPositionBuffer::init(int vertexCount, int componentsPerVertex)
 {
 	const int valueCount = vertexCount * componentsPerVertex;
-	this->vertices.init(valueCount);
+	this->positions.init(valueCount);
 }
 
-void SoftwareAttributeBuffer::init(int vertexCount, int componentsPerVertex)
+void SoftwareVertexAttributeBuffer::init(int vertexCount, int componentsPerVertex)
 {
 	const int valueCount = vertexCount * componentsPerVertex;
 	this->attributes.init(valueCount);
@@ -3896,7 +3896,7 @@ void SoftwareRenderer::shutdown()
 	this->depthBuffer.clear();
 	this->ditherBuffer.clear();
 	this->ditheringMode = static_cast<DitheringMode>(-1);
-	this->vertexBuffers.clear();
+	this->positionBuffers.clear();
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();
 	this->uniformBuffers.clear();
@@ -3926,34 +3926,34 @@ void SoftwareRenderer::resize(int width, int height)
 	}
 }
 
-bool SoftwareRenderer::tryCreateVertexBuffer(int vertexCount, int componentsPerVertex, VertexBufferID *outID)
+bool SoftwareRenderer::tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID)
 {
 	DebugAssert(vertexCount > 0);
 	DebugAssert(componentsPerVertex >= 2);
 
-	if (!this->vertexBuffers.tryAlloc(outID))
+	if (!this->positionBuffers.tryAlloc(outID))
 	{
-		DebugLogError("Couldn't allocate vertex buffer ID.");
+		DebugLogError("Couldn't allocate vertex position buffer ID.");
 		return false;
 	}
 
-	SoftwareVertexBuffer &buffer = this->vertexBuffers.get(*outID);
+	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(*outID);
 	buffer.init(vertexCount, componentsPerVertex);
 	return true;
 }
 
-bool SoftwareRenderer::tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, AttributeBufferID *outID)
+bool SoftwareRenderer::tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID)
 {
 	DebugAssert(vertexCount > 0);
 	DebugAssert(componentsPerVertex >= 2);
 
 	if (!this->attributeBuffers.tryAlloc(outID))
 	{
-		DebugLogError("Couldn't allocate attribute buffer ID.");
+		DebugLogError("Couldn't allocate vertex attribute buffer ID.");
 		return false;
 	}
 
-	SoftwareAttributeBuffer &buffer = this->attributeBuffers.get(*outID);
+	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(*outID);
 	buffer.init(vertexCount, componentsPerVertex);
 	return true;
 }
@@ -3974,31 +3974,31 @@ bool SoftwareRenderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID
 	return true;
 }
 
-void SoftwareRenderer::populateVertexBuffer(VertexBufferID id, BufferView<const double> vertices)
+void SoftwareRenderer::populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions)
 {
-	SoftwareVertexBuffer &buffer = this->vertexBuffers.get(id);
-	const int srcCount = vertices.getCount();
-	const int dstCount = buffer.vertices.getCount();
+	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(id);
+	const int srcCount = positions.getCount();
+	const int dstCount = buffer.positions.getCount();
 	if (srcCount != dstCount)
 	{
-		DebugLogError("Mismatched vertex buffer sizes for ID " + std::to_string(id) + ": " +
+		DebugLogError("Mismatched vertex position buffer sizes for ID " + std::to_string(id) + ": " +
 			std::to_string(srcCount) + " != " + std::to_string(dstCount));
 		return;
 	}
 
-	const auto srcBegin = vertices.begin();
+	const auto srcBegin = positions.begin();
 	const auto srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.vertices.begin());
+	std::copy(srcBegin, srcEnd, buffer.positions.begin());
 }
 
-void SoftwareRenderer::populateAttributeBuffer(AttributeBufferID id, BufferView<const double> attributes)
+void SoftwareRenderer::populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes)
 {
-	SoftwareAttributeBuffer &buffer = this->attributeBuffers.get(id);
+	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(id);
 	const int srcCount = attributes.getCount();
 	const int dstCount = buffer.attributes.getCount();
 	if (srcCount != dstCount)
 	{
-		DebugLogError("Mismatched attribute buffer sizes for ID " + std::to_string(id) + ": " +
+		DebugLogError("Mismatched vertex attribute buffer sizes for ID " + std::to_string(id) + ": " +
 			std::to_string(srcCount) + " != " + std::to_string(dstCount));
 		return;
 	}
@@ -4025,12 +4025,12 @@ void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, BufferView<const in
 	std::copy(srcBegin, srcEnd, buffer.indices.begin());
 }
 
-void SoftwareRenderer::freeVertexBuffer(VertexBufferID id)
+void SoftwareRenderer::freePositionBuffer(VertexPositionBufferID id)
 {
-	this->vertexBuffers.free(id);
+	this->positionBuffers.free(id);
 }
 
-void SoftwareRenderer::freeAttributeBuffer(AttributeBufferID id)
+void SoftwareRenderer::freeAttributeBuffer(VertexAttributeBufferID id)
 {
 	this->attributeBuffers.free(id);
 }
@@ -4313,7 +4313,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					auto &transformCachePreScaleTranslationX = workerTransformCache.preScaleTranslationX;
 					auto &transformCachePreScaleTranslationY = workerTransformCache.preScaleTranslationY;
 					auto &transformCachePreScaleTranslationZ = workerTransformCache.preScaleTranslationZ;
-					auto &drawCallCacheVertexBuffer = workerDrawCallCache.vertexBuffer;
+					auto &drawCallCachePositionBuffer = workerDrawCallCache.positionBuffer;
 					auto &drawCallCacheTexCoordBuffer = workerDrawCallCache.texCoordBuffer;
 					auto &drawCallCacheIndexBuffer = workerDrawCallCache.indexBuffer;
 					auto &drawCallCacheTextureID0 = workerDrawCallCache.textureID0;
@@ -4344,7 +4344,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 						transformCachePreScaleTranslationZ = preScaleTranslation.z;
 					}
 
-					drawCallCacheVertexBuffer = &this->vertexBuffers.get(drawCall.vertexBufferID);
+					drawCallCachePositionBuffer = &this->positionBuffers.get(drawCall.positionBufferID);
 					drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
 					drawCallCacheIndexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
 					drawCallCacheTextureID0 = drawCall.textureIDs[0];
