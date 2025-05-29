@@ -280,7 +280,7 @@ void CollisionChunkManager::update(double dt, BufferView<const ChunkInt2> active
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-	for (const ChunkInt2 &chunkPos : freedChunkPositions)
+	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		CollisionChunk &collisionChunk = this->getChunkAtIndex(chunkIndex);
@@ -288,7 +288,7 @@ void CollisionChunkManager::update(double dt, BufferView<const ChunkInt2> active
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const int spawnIndex = this->spawnChunk();
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
@@ -296,7 +296,7 @@ void CollisionChunkManager::update(double dt, BufferView<const ChunkInt2> active
 	}
 
 	// Update dirty voxels.
-	for (const ChunkInt2 &chunkPos : activeChunkPositions)
+	for (const ChunkInt2 chunkPos : activeChunkPositions)
 	{
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		this->updateDirtyVoxels(chunkPos, ceilingScale, voxelChunk, physicsSystem);

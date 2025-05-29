@@ -235,7 +235,7 @@ namespace Physics
 		VoxelFacing3D farFacing, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
-		const ChunkInt2 &chunkPos = rayCoord.chunk;
+		const ChunkInt2 chunkPos = rayCoord.chunk;
 		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(chunkPos);
 		if (voxelChunk == nullptr)
 		{

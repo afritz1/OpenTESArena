@@ -4,13 +4,13 @@
 void VoxelVisibilityChunkManager::update(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const RenderCamera &camera, double ceilingScale, const VoxelChunkManager &voxelChunkManager)
 {
-	for (const ChunkInt2 &chunkPos : freedChunkPositions)
+	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 

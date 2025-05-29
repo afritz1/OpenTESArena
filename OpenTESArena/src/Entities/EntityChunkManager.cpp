@@ -1260,7 +1260,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 {
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
-	for (const ChunkInt2 &chunkPos : freedChunkPositions)
+	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		const EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);
@@ -1273,7 +1273,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	}
 
 	const MapType mapType = mapSubDef.type;
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const int spawnIndex = this->spawnChunk();
@@ -1314,7 +1314,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 	// @todo: this could support entities not registered to a chunk if we iterate over categories of entityInstIDs instead (all citizens, then all creatures, etc)
 	// - at some point may want to store an EntityInstance bool like "isArbitrarySpawn" or something that says "I don't despawn with a chunk" for vfx and temporaries
 
-	for (const ChunkInt2 &chunkPos : activeChunkPositions)
+	for (const ChunkInt2 chunkPos : activeChunkPositions)
 	{
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);

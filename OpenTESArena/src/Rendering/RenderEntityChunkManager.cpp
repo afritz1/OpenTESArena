@@ -445,13 +445,13 @@ void RenderEntityChunkManager::loadScene(TextureManager &textureManager, Rendere
 void RenderEntityChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
-	for (const ChunkInt2 &chunkPos : freedChunkPositions)
+	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
@@ -484,7 +484,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 		}
 	}
 
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		RenderEntityChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
@@ -495,7 +495,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 	const Radians allEntitiesRotationRadians = -MathUtils::fullAtan2(cameraDirXZ) - Constants::HalfPi;
 	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
 
-	for (const ChunkInt2 &chunkPos : activeChunkPositions)
+	for (const ChunkInt2 chunkPos : activeChunkPositions)
 	{
 		RenderEntityChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);

@@ -1224,7 +1224,7 @@ void RenderVoxelChunkManager::populateCommandBuffer(RenderCommandBuffer &command
 void RenderVoxelChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
-	for (const ChunkInt2 &chunkPos : freedChunkPositions)
+	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		RenderVoxelChunk &renderChunk = this->getChunkAtIndex(chunkIndex);
@@ -1232,7 +1232,7 @@ void RenderVoxelChunkManager::updateActiveChunks(BufferView<const ChunkInt2> new
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
@@ -1255,7 +1255,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	const Double3 raisingDoorPreScaleTranslation = MakeRaisingDoorPreScaleTranslation(ceilingScale);
 	renderer.populateUniformBuffer(this->raisingDoorPreScaleTranslationBufferID, raisingDoorPreScaleTranslation);
 
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
@@ -1266,7 +1266,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		this->loadTransforms(renderChunk, voxelChunk, ceilingScale, renderer);
 	}
 
-	for (const ChunkInt2 &chunkPos : activeChunkPositions)
+	for (const ChunkInt2 chunkPos : activeChunkPositions)
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);

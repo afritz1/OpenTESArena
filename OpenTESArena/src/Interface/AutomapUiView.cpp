@@ -304,7 +304,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 	const Color &floorColor = AutomapUiView::ColorFloor;
 	dstBuffer.fill(floorColor.toARGB());
 
-	const ChunkInt2 &playerChunk = playerCoord.chunk;
+	const ChunkInt2 playerChunk = playerCoord.chunk;
 	ChunkInt2 minChunk, maxChunk;
 	ChunkUtils::getSurroundingChunks(playerChunk, AutomapUiView::ChunkDistance, &minChunk, &maxChunk);
 

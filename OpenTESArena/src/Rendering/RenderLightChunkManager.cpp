@@ -252,14 +252,14 @@ void RenderLightChunkManager::loadScene()
 void RenderLightChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
-	for (const ChunkInt2 &chunkPos : freedChunkPositions)
+	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		RenderLightChunk &renderChunk = this->getChunkAtIndex(chunkIndex);
 		this->recycleChunk(chunkIndex);
 	}
 
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
@@ -292,7 +292,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	}
 
 	const int chunkHeight = this->getChunkAtIndex(0).getHeight();
-	for (const ChunkInt2 &chunkPos : newChunkPositions)
+	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
