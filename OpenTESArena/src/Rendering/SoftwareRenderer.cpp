@@ -3934,7 +3934,7 @@ VertexPositionBufferID SoftwareRenderer::createVertexPositionBuffer(int vertexCo
 	VertexPositionBufferID id;
 	if (!this->positionBuffers.tryAlloc(&id))
 	{
-		DebugLogError("Couldn't allocate vertex position buffer ID.");
+		DebugLogErrorFormat("Couldn't allocate vertex position buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
 		return -1;
 	}
 
@@ -3951,7 +3951,7 @@ VertexAttributeBufferID SoftwareRenderer::createVertexAttributeBuffer(int vertex
 	VertexAttributeBufferID id;
 	if (!this->attributeBuffers.tryAlloc(&id))
 	{
-		DebugLogError("Couldn't allocate vertex attribute buffer ID.");
+		DebugLogErrorFormat("Couldn't allocate vertex attribute buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
 		return -1;
 	}
 
@@ -3968,7 +3968,7 @@ IndexBufferID SoftwareRenderer::createIndexBuffer(int indexCount)
 	IndexBufferID id;
 	if (!this->indexBuffers.tryAlloc(&id))
 	{
-		DebugLogError("Couldn't allocate index buffer ID.");
+		DebugLogErrorFormat("Couldn't allocate index buffer (indices: %d).", indexCount);
 		return -1;
 	}
 
@@ -3984,8 +3984,7 @@ void SoftwareRenderer::populateVertexPositionBuffer(VertexPositionBufferID id, B
 	const int dstCount = buffer.positions.getCount();
 	if (srcCount != dstCount)
 	{
-		DebugLogError("Mismatched vertex position buffer sizes for ID " + std::to_string(id) + ": " +
-			std::to_string(srcCount) + " != " + std::to_string(dstCount));
+		DebugLogErrorFormat("Mismatched vertex position buffer sizes for ID %d: %d != %d", id, srcCount, dstCount);
 		return;
 	}
 
@@ -4001,8 +4000,7 @@ void SoftwareRenderer::populateVertexAttributeBuffer(VertexAttributeBufferID id,
 	const int dstCount = buffer.attributes.getCount();
 	if (srcCount != dstCount)
 	{
-		DebugLogError("Mismatched vertex attribute buffer sizes for ID " + std::to_string(id) + ": " +
-			std::to_string(srcCount) + " != " + std::to_string(dstCount));
+		DebugLogErrorFormat("Mismatched vertex attribute buffer sizes for ID %d: %d != %d", id, srcCount, dstCount);
 		return;
 	}
 
@@ -4018,8 +4016,7 @@ void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, BufferView<const in
 	const int dstCount = buffer.indices.getCount();
 	if (srcCount != dstCount)
 	{
-		DebugLogError("Mismatched index buffer sizes for ID " + std::to_string(id) + ": " +
-			std::to_string(srcCount) + " != " + std::to_string(dstCount));
+		DebugLogErrorFormat("Mismatched index buffer sizes for ID %d: %d != %d", id, srcCount, dstCount);
 		return;
 	}
 
@@ -4048,7 +4045,7 @@ ObjectTextureID SoftwareRenderer::createObjectTexture(int width, int height, int
 	ObjectTextureID id;
 	if (!this->objectTextures.tryAlloc(&id))
 	{
-		DebugLogError("Couldn't allocate object texture ID.");
+		DebugLogErrorFormat("Couldn't allocate %dx%d object texture with %d bytes per texel.", width, height, bytesPerTexel);
 		return -1;
 	}
 
@@ -4066,7 +4063,7 @@ ObjectTextureID SoftwareRenderer::createObjectTexture(const TextureBuilder &text
 	const ObjectTextureID id = this->createObjectTexture(width, height, bytesPerTexel);
 	if (id < 0)
 	{
-		DebugLogWarning("Couldn't create " + std::to_string(width) + "x" + std::to_string(height) + " object texture.");
+		DebugLogErrorFormat("Couldn't allocate %dx%d object texture from texture builder with %d bytes per texel.", width, height, bytesPerTexel);
 		return -1;
 	}
 
@@ -4126,7 +4123,7 @@ UniformBufferID SoftwareRenderer::createUniformBuffer(int elementCount, size_t s
 	UniformBufferID id;
 	if (!this->uniformBuffers.tryAlloc(&id))
 	{
-		DebugLogError("Couldn't allocate uniform buffer ID.");
+		DebugLogErrorFormat("Couldn't allocate uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, sizeOfElement, alignmentOfElement);
 		return -1;
 	}
 
@@ -4142,8 +4139,7 @@ void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<cons
 	const int dstCount = buffer.getValidByteCount();
 	if (srcCount != dstCount)
 	{
-		DebugLogError("Mismatched uniform buffer sizes for ID " + std::to_string(id) + ": " +
-			std::to_string(srcCount) + " != " + std::to_string(dstCount));
+		DebugLogErrorFormat("Mismatched uniform buffer sizes for ID %d: %d != %d", id, srcCount, dstCount);
 		return;
 	}
 
@@ -4159,8 +4155,7 @@ void SoftwareRenderer::populateUniformAtIndex(UniformBufferID id, int uniformInd
 	const int dstByteCount = static_cast<int>(buffer.sizeOfElement);
 	if (srcByteCount != dstByteCount)
 	{
-		DebugLogError("Mismatched uniform size for uniform buffer ID " + std::to_string(id) + " index " +
-			std::to_string(uniformIndex) + ": " + std::to_string(srcByteCount) + " != " + std::to_string(dstByteCount));
+		DebugLogErrorFormat("Mismatched uniform size for uniform buffer ID %d index %d: %d != %d", id, uniformIndex, srcByteCount, dstByteCount);
 		return;
 	}
 
