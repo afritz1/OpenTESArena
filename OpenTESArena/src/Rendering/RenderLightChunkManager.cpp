@@ -154,8 +154,8 @@ RenderLightChunkManager::RenderLightChunkManager()
 void RenderLightChunkManager::init(Renderer &renderer)
 {
 	// Player light is always allocated.
-	RenderLightID playerLightID;
-	if (!renderer.tryCreateLight(&playerLightID))
+	const RenderLightID playerLightID = renderer.createLight();
+	if (playerLightID < 0)
 	{
 		DebugLogError("Couldn't create render light ID for player.");
 		return;
@@ -303,8 +303,8 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 			const bool isLight = entityLightRadius.has_value();
 			if (isLight)
 			{
-				RenderLightID lightID;
-				if (!renderer.tryCreateLight(&lightID))
+				const RenderLightID lightID = renderer.createLight();
+				if (lightID < 0)
 				{
 					DebugLogError("Couldn't allocate render light ID in chunk (" + chunkPos.toString() + ").");
 					continue;

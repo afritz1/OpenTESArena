@@ -249,8 +249,8 @@ ObjectTextureID ArenaLevelUtils::allocGameWorldPaletteTexture(const std::string 
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	ObjectTextureID paletteTextureID;
-	if (!renderer.tryCreateObjectTexture(static_cast<int>(palette.size()), 1, 4, &paletteTextureID))
+	const ObjectTextureID paletteTextureID = renderer.createObjectTexture(static_cast<int>(palette.size()), 1, 4);
+	if (paletteTextureID < 0)
 	{
 		DebugLogError("Couldn't create palette texture \"" + filename + "\".");
 		return -1;
@@ -285,8 +285,8 @@ ObjectTextureID ArenaLevelUtils::allocLightTableTexture(const std::string &filen
 	}
 
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	ObjectTextureID textureID;
-	if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
+	const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder);
+	if (textureID < 0)
 	{
 		DebugLogError("Couldn't create light table texture \"" + filename + "\".");
 		return -1;

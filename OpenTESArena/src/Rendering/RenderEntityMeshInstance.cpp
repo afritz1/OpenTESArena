@@ -13,19 +13,19 @@ void RenderEntityMeshInstance::freeBuffers(Renderer &renderer)
 {
 	if (this->positionBufferID >= 0)
 	{
-		renderer.freePositionBuffer(this->positionBufferID);
+		renderer.freeVertexPositionBuffer(this->positionBufferID);
 		this->positionBufferID = -1;
 	}
 
 	if (this->normalBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->normalBufferID);
+		renderer.freeVertexAttributeBuffer(this->normalBufferID);
 		this->normalBufferID = -1;
 	}
 
 	if (this->texCoordBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->texCoordBufferID);
+		renderer.freeVertexAttributeBuffer(this->texCoordBufferID);
 		this->texCoordBufferID = -1;
 	}
 

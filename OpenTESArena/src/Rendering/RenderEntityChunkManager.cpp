@@ -55,8 +55,8 @@ namespace
 					constexpr int bytesPerTexel = 1;
 					DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
 
-					ObjectTextureID textureID;
-					if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
+					const ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, bytesPerTexel);
+					if (textureID < 0)
 					{
 						DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
 						continue;
@@ -99,8 +99,8 @@ namespace
 		constexpr int textureHeight = 1;
 		constexpr int bytesPerTexel = 1;
 
-		ObjectTextureID textureID;
-		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
+		const ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, bytesPerTexel);
+		if (textureID < 0)
 		{
 			DebugCrash("Couldn't create entity palette indices texture.");
 		}
@@ -133,27 +133,31 @@ void RenderEntityChunkManager::init(Renderer &renderer)
 	constexpr int entityMeshVertexCount = 4;
 	constexpr int entityMeshIndexCount = 6;
 
-	if (!renderer.tryCreatePositionBuffer(entityMeshVertexCount, positionComponentsPerVertex, &this->meshInst.positionBufferID))
+	this->meshInst.positionBufferID = renderer.createVertexPositionBuffer(entityMeshVertexCount, positionComponentsPerVertex);
+	if (this->meshInst.positionBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex position buffer for entity mesh ID.");
 		return;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(entityMeshVertexCount, normalComponentsPerVertex, &this->meshInst.normalBufferID))
+	this->meshInst.normalBufferID = renderer.createVertexAttributeBuffer(entityMeshVertexCount, normalComponentsPerVertex);
+	if (this->meshInst.normalBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex normal attribute buffer for entity mesh def.");
 		this->meshInst.freeBuffers(renderer);
 		return;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(entityMeshVertexCount, texCoordComponentsPerVertex, &this->meshInst.texCoordBufferID))
+	this->meshInst.texCoordBufferID = renderer.createVertexAttributeBuffer(entityMeshVertexCount, texCoordComponentsPerVertex);
+	if (this->meshInst.texCoordBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex tex coord attribute buffer for entity mesh def.");
 		this->meshInst.freeBuffers(renderer);
 		return;
 	}
 
-	if (!renderer.tryCreateIndexBuffer(entityMeshIndexCount, &this->meshInst.indexBufferID))
+	this->meshInst.indexBufferID = renderer.createIndexBuffer(entityMeshIndexCount);
+	if (this->meshInst.indexBufferID < 0)
 	{
 		DebugLogError("Couldn't create index buffer for entity mesh def.");
 		this->meshInst.freeBuffers(renderer);
@@ -190,9 +194,9 @@ void RenderEntityChunkManager::init(Renderer &renderer)
 		2, 3, 0
 	};
 
-	renderer.populatePositionBuffer(this->meshInst.positionBufferID, entityPositions);
-	renderer.populateAttributeBuffer(this->meshInst.normalBufferID, dummyEntityNormals);
-	renderer.populateAttributeBuffer(this->meshInst.texCoordBufferID, entityTexCoords);
+	renderer.populateVertexPositionBuffer(this->meshInst.positionBufferID, entityPositions);
+	renderer.populateVertexAttributeBuffer(this->meshInst.normalBufferID, dummyEntityNormals);
+	renderer.populateVertexAttributeBuffer(this->meshInst.texCoordBufferID, entityTexCoords);
 	renderer.populateIndexBuffer(this->meshInst.indexBufferID, entityIndices);
 }
 
@@ -541,7 +545,7 @@ void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPos
 		entityDir.x, 0.0, entityDir.y
 	};
 
-	renderer.populateAttributeBuffer(this->meshInst.normalBufferID, entityNormals);
+	renderer.populateVertexAttributeBuffer(this->meshInst.normalBufferID, entityNormals);
 }
 
 void RenderEntityChunkManager::cleanUp()

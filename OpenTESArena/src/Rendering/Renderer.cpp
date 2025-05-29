@@ -761,34 +761,34 @@ void Renderer::setClipRect(const SDL_Rect *rect)
 	}
 }
 
-bool Renderer::tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID)
+VertexPositionBufferID Renderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreatePositionBuffer(vertexCount, componentsPerVertex, outID);
+	return this->renderer3D->createVertexPositionBuffer(vertexCount, componentsPerVertex);
 }
 
-bool Renderer::tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID)
+VertexAttributeBufferID Renderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateAttributeBuffer(vertexCount, componentsPerVertex, outID);
+	return this->renderer3D->createVertexAttributeBuffer(vertexCount, componentsPerVertex);
 }
 
-bool Renderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID)
+IndexBufferID Renderer::createIndexBuffer(int indexCount)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateIndexBuffer(indexCount, outID);
+	return this->renderer3D->createIndexBuffer(indexCount);
 }
 
-void Renderer::populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions)
+void Renderer::populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->populatePositionBuffer(id, positions);
+	this->renderer3D->populateVertexPositionBuffer(id, positions);
 }
 
-void Renderer::populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes)
+void Renderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->populateAttributeBuffer(id, attributes);
+	this->renderer3D->populateVertexAttributeBuffer(id, attributes);
 }
 
 void Renderer::populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices)
@@ -797,16 +797,16 @@ void Renderer::populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> i
 	this->renderer3D->populateIndexBuffer(id, indices);
 }
 
-void Renderer::freePositionBuffer(VertexPositionBufferID id)
+void Renderer::freeVertexPositionBuffer(VertexPositionBufferID id)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freePositionBuffer(id);
+	this->renderer3D->freeVertexPositionBuffer(id);
 }
 
-void Renderer::freeAttributeBuffer(VertexAttributeBufferID id)
+void Renderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freeAttributeBuffer(id);
+	this->renderer3D->freeVertexAttributeBuffer(id);
 }
 
 void Renderer::freeIndexBuffer(IndexBufferID id)
@@ -815,16 +815,16 @@ void Renderer::freeIndexBuffer(IndexBufferID id)
 	this->renderer3D->freeIndexBuffer(id);
 }
 
-bool Renderer::tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID)
+ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateObjectTexture(width, height, bytesPerTexel, outID);
+	return this->renderer3D->createObjectTexture(width, height, bytesPerTexel);
 }
 
-bool Renderer::tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID)
+ObjectTextureID Renderer::createObjectTexture(const TextureBuilder &textureBuilder)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateObjectTexture(textureBuilder, outID);
+	return this->renderer3D->createObjectTexture(textureBuilder);
 }
 
 bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
@@ -892,10 +892,10 @@ void Renderer::freeUiTexture(UiTextureID id)
 	this->renderer2D->freeUiTexture(id);
 }
 
-bool Renderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID)
+UniformBufferID Renderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateUniformBuffer(elementCount, sizeOfElement, alignmentOfElement, outID);
+	return this->renderer3D->createUniformBuffer(elementCount, sizeOfElement, alignmentOfElement);
 }
 
 void Renderer::populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data)
@@ -916,10 +916,10 @@ void Renderer::freeUniformBuffer(UniformBufferID id)
 	this->renderer3D->freeUniformBuffer(id);
 }
 
-bool Renderer::tryCreateLight(RenderLightID *outID)
+RenderLightID Renderer::createLight()
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryCreateLight(outID);
+	return this->renderer3D->createLight();
 }
 
 void Renderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)

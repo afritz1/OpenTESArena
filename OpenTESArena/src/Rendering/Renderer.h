@@ -187,19 +187,19 @@ public:
 	void setClipRect(const SDL_Rect *rect);
 
 	// Geometry management functions.
-	bool tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID);
-	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID);
-	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID);
-	void populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions);
-	void populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes);
+	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex);
+	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex);
+	IndexBufferID createIndexBuffer(int indexCount);
+	void populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions);
+	void populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes);
 	void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices);
-	void freePositionBuffer(VertexPositionBufferID id);
-	void freeAttributeBuffer(VertexAttributeBufferID id);
+	void freeVertexPositionBuffer(VertexPositionBufferID id);
+	void freeVertexAttributeBuffer(VertexAttributeBufferID id);
 	void freeIndexBuffer(IndexBufferID id);
 
 	// Texture handle allocation functions.
-	bool tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID);
-	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID);
+	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);
+	ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder);
 	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
 	bool tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID);
 	bool tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID);
@@ -220,7 +220,7 @@ public:
 	void freeUiTexture(UiTextureID id);
 
 	// Shading management functions.
-	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID);
+	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
 	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data);
 
 	template<typename T>
@@ -240,7 +240,7 @@ public:
 	}
 
 	void freeUniformBuffer(UniformBufferID id);
-	bool tryCreateLight(RenderLightID *outID);
+	RenderLightID createLight();
 	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
 	void freeLight(RenderLightID id);

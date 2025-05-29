@@ -147,29 +147,29 @@ public:
 
 	void resize(int width, int height) override;
 
-	bool tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID) override;
-	bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID) override;
-	bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID) override;
-	void populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions) override;
-	void populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes) override;
+	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) override;
+	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) override;
+	IndexBufferID createIndexBuffer(int indexCount) override;
+	void populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions) override;
+	void populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes) override;
 	void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices) override;
-	void freePositionBuffer(VertexPositionBufferID id) override;
-	void freeAttributeBuffer(VertexAttributeBufferID id) override;
+	void freeVertexPositionBuffer(VertexPositionBufferID id) override;
+	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
 	void freeIndexBuffer(IndexBufferID id) override;
 
-	bool tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID) override;
-	bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) override;
+	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) override;
+	ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder) override;
 	LockedTexture lockObjectTexture(ObjectTextureID id) override;
 	void unlockObjectTexture(ObjectTextureID id) override;
 	void freeObjectTexture(ObjectTextureID id) override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
 
-	bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID) override;
+	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) override;
 	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) override;
 	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) override;
 	void freeUniformBuffer(UniformBufferID id) override;
 
-	bool tryCreateLight(RenderLightID *outID) override;
+	RenderLightID createLight() override;
 	void setLightPosition(RenderLightID id, const Double3 &worldPoint) override;
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
 	void freeLight(RenderLightID id) override;

@@ -3926,55 +3926,58 @@ void SoftwareRenderer::resize(int width, int height)
 	}
 }
 
-bool SoftwareRenderer::tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID)
+VertexPositionBufferID SoftwareRenderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
 {
 	DebugAssert(vertexCount > 0);
 	DebugAssert(componentsPerVertex >= 2);
 
-	if (!this->positionBuffers.tryAlloc(outID))
+	VertexPositionBufferID id;
+	if (!this->positionBuffers.tryAlloc(&id))
 	{
 		DebugLogError("Couldn't allocate vertex position buffer ID.");
-		return false;
+		return -1;
 	}
 
-	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(*outID);
+	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(id);
 	buffer.init(vertexCount, componentsPerVertex);
-	return true;
+	return id;
 }
 
-bool SoftwareRenderer::tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID)
+VertexAttributeBufferID SoftwareRenderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
 {
 	DebugAssert(vertexCount > 0);
 	DebugAssert(componentsPerVertex >= 2);
 
-	if (!this->attributeBuffers.tryAlloc(outID))
+	VertexAttributeBufferID id;
+	if (!this->attributeBuffers.tryAlloc(&id))
 	{
 		DebugLogError("Couldn't allocate vertex attribute buffer ID.");
-		return false;
+		return -1;
 	}
 
-	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(*outID);
+	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(id);
 	buffer.init(vertexCount, componentsPerVertex);
-	return true;
+	return id;
 }
 
-bool SoftwareRenderer::tryCreateIndexBuffer(int indexCount, IndexBufferID *outID)
+IndexBufferID SoftwareRenderer::createIndexBuffer(int indexCount)
 {
 	DebugAssert(indexCount > 0);
 	DebugAssert((indexCount % 3) == 0);
 
-	if (!this->indexBuffers.tryAlloc(outID))
+	IndexBufferID id;
+	if (!this->indexBuffers.tryAlloc(&id))
 	{
 		DebugLogError("Couldn't allocate index buffer ID.");
-		return false;
+		return -1;
 	}
 
-	SoftwareIndexBuffer &buffer = this->indexBuffers.get(*outID);
+	SoftwareIndexBuffer &buffer = this->indexBuffers.get(id);
 	buffer.init(indexCount);
-	return true;
+	return id;
 }
 
-void SoftwareRenderer::populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions)
+void SoftwareRenderer::populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions)
 {
 	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(id);
 	const int srcCount = positions.getCount();
@@ -3991,7 +3994,7 @@ void SoftwareRenderer::populatePositionBuffer(VertexPositionBufferID id, BufferV
 	std::copy(srcBegin, srcEnd, buffer.positions.begin());
 }
 
-void SoftwareRenderer::populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes)
+void SoftwareRenderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes)
 {
 	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(id);
 	const int srcCount = attributes.getCount();
@@ -4025,12 +4028,12 @@ void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, BufferView<const in
 	std::copy(srcBegin, srcEnd, buffer.indices.begin());
 }
 
-void SoftwareRenderer::freePositionBuffer(VertexPositionBufferID id)
+void SoftwareRenderer::freeVertexPositionBuffer(VertexPositionBufferID id)
 {
 	this->positionBuffers.free(id);
 }
 
-void SoftwareRenderer::freeAttributeBuffer(VertexAttributeBufferID id)
+void SoftwareRenderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
 	this->attributeBuffers.free(id);
 }
@@ -4040,32 +4043,35 @@ void SoftwareRenderer::freeIndexBuffer(IndexBufferID id)
 	this->indexBuffers.free(id);
 }
 
-bool SoftwareRenderer::tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID)
+ObjectTextureID SoftwareRenderer::createObjectTexture(int width, int height, int bytesPerTexel)
 {
-	if (!this->objectTextures.tryAlloc(outID))
+	ObjectTextureID id;
+	if (!this->objectTextures.tryAlloc(&id))
 	{
 		DebugLogError("Couldn't allocate object texture ID.");
-		return false;
+		return -1;
 	}
 
-	SoftwareObjectTexture &texture = this->objectTextures.get(*outID);
+	SoftwareObjectTexture &texture = this->objectTextures.get(id);
 	texture.init(width, height, bytesPerTexel);
-	return true;
+	return id;
 }
 
-bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID)
+ObjectTextureID SoftwareRenderer::createObjectTexture(const TextureBuilder &textureBuilder)
 {
 	const int width = textureBuilder.getWidth();
 	const int height = textureBuilder.getHeight();
 	const int bytesPerTexel = textureBuilder.getBytesPerTexel();
-	if (!this->tryCreateObjectTexture(width, height, bytesPerTexel, outID))
+
+	const ObjectTextureID id = this->createObjectTexture(width, height, bytesPerTexel);
+	if (id < 0)
 	{
 		DebugLogWarning("Couldn't create " + std::to_string(width) + "x" + std::to_string(height) + " object texture.");
-		return false;
+		return -1;
 	}
 
 	const TextureBuilderType textureBuilderType = textureBuilder.type;
-	SoftwareObjectTexture &texture = this->objectTextures.get(*outID);
+	SoftwareObjectTexture &texture = this->objectTextures.get(id);
 	if (textureBuilderType == TextureBuilderType::Paletted)
 	{
 		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
@@ -4085,7 +4091,7 @@ bool SoftwareRenderer::tryCreateObjectTexture(const TextureBuilder &textureBuild
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(textureBuilderType)));
 	}
 
-	return true;
+	return id;
 }
 
 LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
@@ -4111,21 +4117,22 @@ std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id
 	return Int2(texture.width, texture.height);
 }
 
-bool SoftwareRenderer::tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID)
+UniformBufferID SoftwareRenderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
 {
 	DebugAssert(elementCount >= 0);
 	DebugAssert(sizeOfElement > 0);
 	DebugAssert(alignmentOfElement > 0);
 
-	if (!this->uniformBuffers.tryAlloc(outID))
+	UniformBufferID id;
+	if (!this->uniformBuffers.tryAlloc(&id))
 	{
 		DebugLogError("Couldn't allocate uniform buffer ID.");
-		return false;
+		return -1;
 	}
 
-	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(*outID);
+	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
 	buffer.init(elementCount, sizeOfElement, alignmentOfElement);
-	return true;
+	return id;
 }
 
 void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data)
@@ -4168,15 +4175,16 @@ void SoftwareRenderer::freeUniformBuffer(UniformBufferID id)
 	this->uniformBuffers.free(id);
 }
 
-bool SoftwareRenderer::tryCreateLight(RenderLightID *outID)
+RenderLightID SoftwareRenderer::createLight()
 {
-	if (!this->lights.tryAlloc(outID))
+	RenderLightID id;
+	if (!this->lights.tryAlloc(&id))
 	{
 		DebugLogError("Couldn't allocate render light ID.");
-		return false;
+		return -1;
 	}
 
-	return true;
+	return id;
 }
 
 void SoftwareRenderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)

@@ -122,37 +122,41 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		2, 3, 0
 	};
 
-	if (!renderer.tryCreatePositionBuffer(particleMeshVertexCount, positionComponentsPerVertex, &this->particlePositionBufferID))
+	this->particlePositionBufferID = renderer.createVertexPositionBuffer(particleMeshVertexCount, positionComponentsPerVertex);
+	if (this->particlePositionBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex position buffer for rain mesh ID.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(particleMeshVertexCount, normalComponentsPerVertex, &this->particleNormalBufferID))
+	this->particleNormalBufferID = renderer.createVertexAttributeBuffer(particleMeshVertexCount, normalComponentsPerVertex);
+	if (this->particleNormalBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex normal attribute buffer for rain mesh def.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(particleMeshVertexCount, texCoordComponentsPerVertex, &this->particleTexCoordBufferID))
+	this->particleTexCoordBufferID = renderer.createVertexAttributeBuffer(particleMeshVertexCount, texCoordComponentsPerVertex);
+	if (this->particleTexCoordBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex tex coord attribute buffer for rain mesh def.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
 
-	if (!renderer.tryCreateIndexBuffer(particleMeshIndexCount, &this->particleIndexBufferID))
+	this->particleIndexBufferID = renderer.createIndexBuffer(particleMeshIndexCount);
+	if (this->particleIndexBufferID < 0)
 	{
 		DebugLogError("Couldn't create index buffer for rain mesh def.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
 
-	renderer.populatePositionBuffer(this->particlePositionBufferID, particlePositions);
-	renderer.populateAttributeBuffer(this->particleNormalBufferID, particleNormals);
-	renderer.populateAttributeBuffer(this->particleTexCoordBufferID, particleTexCoords);
+	renderer.populateVertexPositionBuffer(this->particlePositionBufferID, particlePositions);
+	renderer.populateVertexAttributeBuffer(this->particleNormalBufferID, particleNormals);
+	renderer.populateVertexAttributeBuffer(this->particleTexCoordBufferID, particleTexCoords);
 	renderer.populateIndexBuffer(this->particleIndexBufferID, particleIndices);
 
 	constexpr int fogMeshVertexCount = 24; // 4 vertices per cube face
@@ -283,14 +287,16 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		22, 23, 20
 	};
 
-	if (!renderer.tryCreatePositionBuffer(fogMeshVertexCount, positionComponentsPerVertex, &this->fogPositionBufferID))
+	this->fogPositionBufferID = renderer.createVertexPositionBuffer(fogMeshVertexCount, positionComponentsPerVertex);
+	if (this->fogPositionBufferID < 0)
 	{
 		DebugLogError("Couldn't create position buffer for fog mesh ID.");
 		this->freeParticleBuffers(renderer);
 		return false;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(fogMeshVertexCount, normalComponentsPerVertex, &this->fogNormalBufferID))
+	this->fogNormalBufferID = renderer.createVertexAttributeBuffer(fogMeshVertexCount, normalComponentsPerVertex);
+	if (this->fogNormalBufferID < 0)
 	{
 		DebugLogError("Couldn't create normal attribute buffer for fog mesh def.");
 		this->freeParticleBuffers(renderer);
@@ -298,7 +304,8 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		return false;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(fogMeshVertexCount, texCoordComponentsPerVertex, &this->fogTexCoordBufferID))
+	this->fogTexCoordBufferID = renderer.createVertexAttributeBuffer(fogMeshVertexCount, texCoordComponentsPerVertex);
+	if (this->fogTexCoordBufferID < 0)
 	{
 		DebugLogError("Couldn't create tex coord attribute buffer for fog mesh def.");
 		this->freeParticleBuffers(renderer);
@@ -306,7 +313,8 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		return false;
 	}
 
-	if (!renderer.tryCreateIndexBuffer(fogMeshIndexCount, &this->fogIndexBufferID))
+	this->fogIndexBufferID = renderer.createIndexBuffer(fogMeshIndexCount);
+	if (this->fogIndexBufferID < 0)
 	{
 		DebugLogError("Couldn't create index buffer for fog mesh def.");
 		this->freeParticleBuffers(renderer);
@@ -314,9 +322,9 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 		return false;
 	}
 
-	renderer.populatePositionBuffer(this->fogPositionBufferID, fogPositions);
-	renderer.populateAttributeBuffer(this->fogNormalBufferID, fogNormals);
-	renderer.populateAttributeBuffer(this->fogTexCoordBufferID, fogTexCoords);
+	renderer.populateVertexPositionBuffer(this->fogPositionBufferID, fogPositions);
+	renderer.populateVertexAttributeBuffer(this->fogNormalBufferID, fogNormals);
+	renderer.populateVertexAttributeBuffer(this->fogTexCoordBufferID, fogTexCoords);
 	renderer.populateIndexBuffer(this->fogIndexBufferID, fogIndices);
 
 	return true;
@@ -325,20 +333,23 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 bool RenderWeatherManager::initUniforms(Renderer &renderer)
 {
 	// Initialize rain and snow buffers but don't populate because they are updated every frame.
-	if (!renderer.tryCreateUniformBuffer(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT, sizeof(RenderTransform), alignof(RenderTransform), &this->rainTransformBufferID))
+	this->rainTransformBufferID = renderer.createUniformBuffer(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT, sizeof(RenderTransform), alignof(RenderTransform));
+	if (this->rainTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for raindrops.");
 		return false;
 	}
 
-	if (!renderer.tryCreateUniformBuffer(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT, sizeof(RenderTransform), alignof(RenderTransform), &this->snowTransformBufferID))
+	this->snowTransformBufferID = renderer.createUniformBuffer(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT, sizeof(RenderTransform), alignof(RenderTransform));
+	if (this->snowTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for snowflakes.");
 		return false;
 	}
 
 	// Fog is not updated every frame so it needs populating here.
-	if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &this->fogTransformBufferID))
+	this->fogTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+	if (this->fogTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for fog.");
 		return false;
@@ -357,7 +368,8 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 {
 	// Init rain texture.
 	constexpr int rainTexelCount = RainTextureWidth * RainTextureHeight;
-	if (!renderer.tryCreateObjectTexture(RainTextureWidth, RainTextureHeight, BytesPerTexel, &this->rainTextureID))
+	this->rainTextureID = renderer.createObjectTexture(RainTextureWidth, RainTextureHeight, BytesPerTexel);
+	if (this->rainTextureID < 0)
 	{
 		DebugLogError("Couldn't create rain object texture.");
 		this->freeParticleBuffers(renderer);
@@ -384,7 +396,8 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 		const int snowTextureHeight = GetSnowTextureHeight(i);
 		const int snowTexelCount = snowTextureWidth * snowTextureHeight;
 		ObjectTextureID &snowTextureID = this->snowTextureIDs[i];
-		if (!renderer.tryCreateObjectTexture(snowTextureWidth, snowTextureHeight, BytesPerTexel, &snowTextureID))
+		snowTextureID = renderer.createObjectTexture(snowTextureWidth, snowTextureHeight, BytesPerTexel);
+		if (snowTextureID < 0)
 		{
 			DebugLogError("Couldn't create snow object texture \"" + std::to_string(i) + "\".");
 			this->freeParticleBuffers(renderer);
@@ -409,7 +422,8 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 	constexpr int fogTextureWidth = 2;// ArenaRenderUtils::FOG_MATRIX_WIDTH;
 	constexpr int fogTextureHeight = 2;// ArenaRenderUtils::FOG_MATRIX_HEIGHT;
 	constexpr int fogTexelCount = fogTextureWidth * fogTextureHeight;
-	if (!renderer.tryCreateObjectTexture(fogTextureWidth, fogTextureHeight, BytesPerTexel, &this->fogTextureID))
+	this->fogTextureID = renderer.createObjectTexture(fogTextureWidth, fogTextureHeight, BytesPerTexel);
+	if (this->fogTextureID < 0)
 	{
 		DebugLogError("Couldn't create fog object texture.");
 		return false;
@@ -485,19 +499,19 @@ void RenderWeatherManager::freeParticleBuffers(Renderer &renderer)
 {
 	if (this->particlePositionBufferID >= 0)
 	{
-		renderer.freePositionBuffer(this->particlePositionBufferID);
+		renderer.freeVertexPositionBuffer(this->particlePositionBufferID);
 		this->particlePositionBufferID = -1;
 	}
 
 	if (this->particleNormalBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->particleNormalBufferID);
+		renderer.freeVertexAttributeBuffer(this->particleNormalBufferID);
 		this->particleNormalBufferID = -1;
 	}
 
 	if (this->particleTexCoordBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->particleTexCoordBufferID);
+		renderer.freeVertexAttributeBuffer(this->particleTexCoordBufferID);
 		this->particleTexCoordBufferID = -1;
 	}
 
@@ -539,19 +553,19 @@ void RenderWeatherManager::freeFogBuffers(Renderer &renderer)
 {
 	if (this->fogPositionBufferID >= 0)
 	{
-		renderer.freePositionBuffer(this->fogPositionBufferID);
+		renderer.freeVertexPositionBuffer(this->fogPositionBufferID);
 		this->fogPositionBufferID = -1;
 	}
 
 	if (this->fogNormalBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->fogNormalBufferID);
+		renderer.freeVertexAttributeBuffer(this->fogNormalBufferID);
 		this->fogNormalBufferID = -1;
 	}
 
 	if (this->fogTexCoordBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->fogTexCoordBufferID);
+		renderer.freeVertexAttributeBuffer(this->fogTexCoordBufferID);
 		this->fogTexCoordBufferID = -1;
 	}
 

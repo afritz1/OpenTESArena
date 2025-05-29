@@ -54,31 +54,31 @@ public:
 	virtual void resize(int width, int height) = 0;
 
 	// Geometry management functions.
-	virtual bool tryCreatePositionBuffer(int vertexCount, int componentsPerVertex, VertexPositionBufferID *outID) = 0;
-	virtual bool tryCreateAttributeBuffer(int vertexCount, int componentsPerVertex, VertexAttributeBufferID *outID) = 0;
-	virtual bool tryCreateIndexBuffer(int indexCount, IndexBufferID *outID) = 0;
-	virtual void populatePositionBuffer(VertexPositionBufferID id, BufferView<const double> positions) = 0;
-	virtual void populateAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes) = 0;
+	virtual VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) = 0;
+	virtual VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) = 0;
+	virtual IndexBufferID createIndexBuffer(int indexCount) = 0;
+	virtual void populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions) = 0;
+	virtual void populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes) = 0;
 	virtual void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices) = 0;
-	virtual void freePositionBuffer(VertexPositionBufferID id) = 0;
-	virtual void freeAttributeBuffer(VertexAttributeBufferID id) = 0;
+	virtual void freeVertexPositionBuffer(VertexPositionBufferID id) = 0;
+	virtual void freeVertexAttributeBuffer(VertexAttributeBufferID id) = 0;
 	virtual void freeIndexBuffer(IndexBufferID id) = 0;
 
 	// Texture management functions.
-	virtual bool tryCreateObjectTexture(int width, int height, int bytesPerTexel, ObjectTextureID *outID) = 0;
-	virtual bool tryCreateObjectTexture(const TextureBuilder &textureBuilder, ObjectTextureID *outID) = 0;
+	virtual ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) = 0;
+	virtual ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder) = 0;
 	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
 	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
 	virtual void freeObjectTexture(ObjectTextureID id) = 0;
 
 	// Uniform management functions.
-	virtual bool tryCreateUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, UniformBufferID *outID) = 0;
+	virtual UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) = 0;
 	virtual void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) = 0;
 	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) = 0;
 	virtual void freeUniformBuffer(UniformBufferID id) = 0;
 
 	// Light management functions.
-	virtual bool tryCreateLight(RenderLightID *outID) = 0;
+	virtual RenderLightID createLight() = 0;
 	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
 	virtual void setLightRadius(RenderLightID id, double startRadius, double endRadius) = 0;
 	virtual void freeLight(RenderLightID id) = 0;

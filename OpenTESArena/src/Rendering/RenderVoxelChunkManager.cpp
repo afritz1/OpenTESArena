@@ -46,8 +46,8 @@ namespace
 				}
 
 				const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-				ObjectTextureID voxelTextureID;
-				if (!renderer.tryCreateObjectTexture(textureBuilder, &voxelTextureID))
+				const ObjectTextureID voxelTextureID = renderer.createObjectTexture(textureBuilder);
+				if (voxelTextureID < 0)
 				{
 					DebugLogWarning("Couldn't create voxel texture \"" + textureAsset.filename + "\".");
 					continue;
@@ -137,8 +137,8 @@ namespace
 			if (chasmDef.animType == VoxelChasmAnimationType::SolidColor)
 			{
 				// Dry chasms are a single color, no texture asset.
-				ObjectTextureID dryChasmTextureID;
-				if (!renderer.tryCreateObjectTexture(1, 1, 1, &dryChasmTextureID))
+				const ObjectTextureID dryChasmTextureID = renderer.createObjectTexture(1, 1, 1);
+				if (dryChasmTextureID < 0)
 				{
 					DebugLogWarning("Couldn't create dry chasm texture.");
 					return;
@@ -179,8 +179,8 @@ namespace
 				const int bytesPerTexel = 1;
 				DebugAssert(firstFrameTextureBuilder.getBytesPerTexel() == bytesPerTexel);
 
-				ObjectTextureID chasmTextureID;
-				if (!renderer.tryCreateObjectTexture(newObjectTextureWidth, newObjectTextureHeight, bytesPerTexel, &chasmTextureID))
+				const ObjectTextureID chasmTextureID = renderer.createObjectTexture(newObjectTextureWidth, newObjectTextureHeight, bytesPerTexel);
+				if (chasmTextureID < 0)
 				{
 					DebugLogWarningFormat("Couldn't create chasm texture sheet %s %dx%d.", firstFrameTextureAsset.filename.c_str(), newObjectTextureWidth, newObjectTextureHeight);
 					return;
@@ -348,7 +348,8 @@ RenderVoxelChunkManager::RenderVoxelChunkManager()
 void RenderVoxelChunkManager::init(Renderer &renderer)
 {
 	// Populate pre-scale translation transform (for raising doors).
-	if (!renderer.tryCreateUniformBuffer(1, sizeof(Double3), alignof(Double3), &this->raisingDoorPreScaleTranslationBufferID))
+	this->raisingDoorPreScaleTranslationBufferID = renderer.createUniformBuffer(1, sizeof(Double3), alignof(Double3));
+	if (this->raisingDoorPreScaleTranslationBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for pre-scale translation.");
 		return;
@@ -383,7 +384,8 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 
 		const int indexCount = faceCount * indicesPerFace;
 		IndexBufferID &indexBufferID = this->chasmWallIndexBufferIDs[i];
-		if (!renderer.tryCreateIndexBuffer(indexCount, &indexBufferID))
+		indexBufferID = renderer.createIndexBuffer(indexCount);
+		if (indexBufferID < 0)
 		{
 			DebugLogError("Couldn't create chasm wall index buffer " + std::to_string(i) + ".");
 			continue;
@@ -521,14 +523,16 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
 			const int vertexCount = voxelMeshDef.rendererVertexCount;
-			if (!renderer.tryCreatePositionBuffer(vertexCount, positionComponentsPerVertex, &renderVoxelMeshInst.positionBufferID))
+			renderVoxelMeshInst.positionBufferID = renderer.createVertexPositionBuffer(vertexCount, positionComponentsPerVertex);
+			if (renderVoxelMeshInst.positionBufferID < 0)
 			{
 				DebugLogError("Couldn't create vertex position buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
 				continue;
 			}
 
-			if (!renderer.tryCreateAttributeBuffer(vertexCount, normalComponentsPerVertex, &renderVoxelMeshInst.normalBufferID))
+			renderVoxelMeshInst.normalBufferID = renderer.createVertexAttributeBuffer(vertexCount, normalComponentsPerVertex);
+			if (renderVoxelMeshInst.normalBufferID < 0)
 			{
 				DebugLogError("Couldn't create vertex normal attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
@@ -536,7 +540,8 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 				continue;
 			}
 
-			if (!renderer.tryCreateAttributeBuffer(vertexCount, texCoordComponentsPerVertex, &renderVoxelMeshInst.texCoordBufferID))
+			renderVoxelMeshInst.texCoordBufferID = renderer.createVertexAttributeBuffer(vertexCount, texCoordComponentsPerVertex);
+			if (renderVoxelMeshInst.texCoordBufferID < 0)
 			{
 				DebugLogError("Couldn't create vertex tex coord attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
 					" in chunk (" + voxelChunk.getPosition().toString() + ").");
@@ -550,16 +555,17 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			voxelMeshDef.writeRendererGeometryBuffers(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.positionsView, shapeInitCache.normalsView, shapeInitCache.texCoordsView);
 			voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.indices0View, shapeInitCache.indices1View, shapeInitCache.indices2View);
 
-			renderer.populatePositionBuffer(renderVoxelMeshInst.positionBufferID, BufferView<const double>(shapeInitCache.positions.data(), vertexCount * positionComponentsPerVertex));
-			renderer.populateAttributeBuffer(renderVoxelMeshInst.normalBufferID, BufferView<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
-			renderer.populateAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, BufferView<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
+			renderer.populateVertexPositionBuffer(renderVoxelMeshInst.positionBufferID, BufferView<const double>(shapeInitCache.positions.data(), vertexCount * positionComponentsPerVertex));
+			renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.normalBufferID, BufferView<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
+			renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, BufferView<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
 
 			const int indexBufferCount = voxelMeshDef.indicesListCount;
 			for (int bufferIndex = 0; bufferIndex < indexBufferCount; bufferIndex++)
 			{
 				const int indexCount = voxelMeshDef.getIndicesList(bufferIndex).getCount();
 				IndexBufferID &indexBufferID = renderVoxelMeshInst.indexBufferIDs[bufferIndex];
-				if (!renderer.tryCreateIndexBuffer(indexCount, &indexBufferID))
+				indexBufferID = renderer.createIndexBuffer(indexCount);
+				if (indexBufferID < 0)
 				{
 					DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.getPosition().toString().c_str());
 					renderVoxelMeshInst.freeBuffers(renderer);
@@ -636,8 +642,8 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 	// Allocate one large uniform buffer that covers all voxels. Air is wasted and doors are double-allocated but this
 	// is much faster than one buffer per voxel.
 	const int chunkTransformsCount = Chunk::WIDTH * chunkHeight * Chunk::DEPTH;
-	UniformBufferID chunkTransformsBufferID;
-	if (!renderer.tryCreateUniformBuffer(chunkTransformsCount, sizeof(RenderTransform), alignof(RenderTransform), &chunkTransformsBufferID))
+	const UniformBufferID chunkTransformsBufferID = renderer.createUniformBuffer(chunkTransformsCount, sizeof(RenderTransform), alignof(RenderTransform));
+	if (chunkTransformsBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for voxel transforms.");
 		return;
@@ -665,8 +671,8 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 					constexpr int doorFaceCount = DoorUtils::FACE_COUNT;
 
 					// Each door voxel has a uniform buffer, one render transform per face.
-					UniformBufferID doorTransformBufferID;
-					if (!renderer.tryCreateUniformBuffer(doorFaceCount, sizeof(RenderTransform), alignof(RenderTransform), &doorTransformBufferID))
+					const UniformBufferID doorTransformBufferID = renderer.createUniformBuffer(doorFaceCount, sizeof(RenderTransform), alignof(RenderTransform));
+					if (doorTransformBufferID < 0)
 					{
 						DebugLogError("Couldn't create uniform buffer for door transform.");
 						continue;

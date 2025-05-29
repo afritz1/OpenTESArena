@@ -97,8 +97,8 @@ namespace
 			}
 
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-			ObjectTextureID textureID;
-			if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
+			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder);
+			if (textureID < 0)
 			{
 				DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
 				continue;
@@ -218,8 +218,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
 	}
 
-	UniformBufferID renderTransformBufferID;
-	if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &renderTransformBufferID))
+	UniformBufferID renderTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+	if (renderTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for entity transform.");
 	}

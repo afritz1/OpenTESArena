@@ -182,39 +182,44 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORDS_PER_VERTEX;
 
 	const int bgVertexCount = static_cast<int>(bgPositions.size()) / 3;
-	if (!renderer.tryCreatePositionBuffer(bgVertexCount, positionComponentsPerVertex, &this->bgPositionBufferID))
+	this->bgPositionBufferID = renderer.createVertexPositionBuffer(bgVertexCount, positionComponentsPerVertex);
+	if (this->bgPositionBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex position buffer for sky background mesh ID.");
 		return;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(bgVertexCount, normalComponentsPerVertex, &this->bgNormalBufferID))
+	this->bgNormalBufferID = renderer.createVertexAttributeBuffer(bgVertexCount, normalComponentsPerVertex);
+	if (this->bgNormalBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex normal attribute buffer for sky background mesh ID.");
 		this->freeBgBuffers(renderer);
 		return;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(bgVertexCount, texCoordComponentsPerVertex, &this->bgTexCoordBufferID))
+	this->bgTexCoordBufferID = renderer.createVertexAttributeBuffer(bgVertexCount, texCoordComponentsPerVertex);
+	if (this->bgTexCoordBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex tex coord attribute buffer for sky background mesh ID.");
 		this->freeBgBuffers(renderer);
 		return;
 	}
 
-	if (!renderer.tryCreateIndexBuffer(static_cast<int>(bgIndices.size()), &this->bgIndexBufferID))
+	this->bgIndexBufferID = renderer.createIndexBuffer(static_cast<int>(bgIndices.size()));
+	if (this->bgIndexBufferID < 0)
 	{
 		DebugLogError("Couldn't create index buffer for sky background mesh ID.");
 		this->freeBgBuffers(renderer);
 		return;
 	}
 
-	renderer.populatePositionBuffer(this->bgPositionBufferID, bgPositions);
-	renderer.populateAttributeBuffer(this->bgNormalBufferID, bgNormals);
-	renderer.populateAttributeBuffer(this->bgTexCoordBufferID, bgTexCoords);
+	renderer.populateVertexPositionBuffer(this->bgPositionBufferID, bgPositions);
+	renderer.populateVertexAttributeBuffer(this->bgNormalBufferID, bgNormals);
+	renderer.populateVertexAttributeBuffer(this->bgTexCoordBufferID, bgTexCoords);
 	renderer.populateIndexBuffer(this->bgIndexBufferID, bgIndices);
 
-	if (!renderer.tryCreateUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform), &this->bgTransformBufferID))
+	this->bgTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+	if (this->bgTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for sky background transform.");
 		this->freeBgBuffers(renderer);
@@ -232,8 +237,8 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		const int textureWidth = texels.getWidth();
 		const int textureHeight = texels.getHeight();
 		const int bytesPerTexel = 1;
-		ObjectTextureID textureID;
-		if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
+		const ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, bytesPerTexel);
+		if (textureID < 0)
 		{
 			DebugLogError("Couldn't create object texture for sky background texture ID.");
 			this->freeBgBuffers(renderer);
@@ -304,27 +309,31 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	// @todo: to be more accurate, land/air vertices could rest on the horizon, while star/planet/sun vertices would sit halfway under the horizon, etc., and these would be separate buffers for the draw calls to pick from.
 	constexpr int objectMeshVertexCount = 4;
 	constexpr int objectMeshIndexCount = 6;
-	if (!renderer.tryCreatePositionBuffer(objectMeshVertexCount, positionComponentsPerVertex, &this->objectPositionBufferID))
+	this->objectPositionBufferID = renderer.createVertexPositionBuffer(objectMeshVertexCount, positionComponentsPerVertex);
+	if (this->objectPositionBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex position buffer for sky object mesh ID.");
 		return;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(objectMeshVertexCount, normalComponentsPerVertex, &this->objectNormalBufferID))
+	this->objectNormalBufferID = renderer.createVertexAttributeBuffer(objectMeshVertexCount, normalComponentsPerVertex);
+	if (this->objectNormalBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex normal attribute buffer for sky object mesh def.");
 		this->freeObjectBuffers(renderer);
 		return;
 	}
 
-	if (!renderer.tryCreateAttributeBuffer(objectMeshVertexCount, texCoordComponentsPerVertex, &this->objectTexCoordBufferID))
+	this->objectTexCoordBufferID = renderer.createVertexAttributeBuffer(objectMeshVertexCount, texCoordComponentsPerVertex);
+	if (this->objectTexCoordBufferID < 0)
 	{
 		DebugLogError("Couldn't create vertex tex coord attribute buffer for sky object mesh def.");
 		this->freeObjectBuffers(renderer);
 		return;
 	}
 
-	if (!renderer.tryCreateIndexBuffer(objectMeshIndexCount, &this->objectIndexBufferID))
+	this->objectIndexBufferID = renderer.createIndexBuffer(objectMeshIndexCount);
+	if (this->objectIndexBufferID < 0)
 	{
 		DebugLogError("Couldn't create index buffer for sky object mesh def.");
 		this->freeObjectBuffers(renderer);
@@ -361,9 +370,9 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		2, 3, 0
 	};
 
-	renderer.populatePositionBuffer(this->objectPositionBufferID, objectPositions);
-	renderer.populateAttributeBuffer(this->objectNormalBufferID, objectNormals);
-	renderer.populateAttributeBuffer(this->objectTexCoordBufferID, objectTexCoords);
+	renderer.populateVertexPositionBuffer(this->objectPositionBufferID, objectPositions);
+	renderer.populateVertexAttributeBuffer(this->objectNormalBufferID, objectNormals);
+	renderer.populateVertexAttributeBuffer(this->objectTexCoordBufferID, objectTexCoords);
 	renderer.populateIndexBuffer(this->objectIndexBufferID, objectIndices);
 }
 
@@ -414,19 +423,19 @@ void RenderSkyManager::freeBgBuffers(Renderer &renderer)
 {
 	if (this->bgPositionBufferID >= 0)
 	{
-		renderer.freePositionBuffer(this->bgPositionBufferID);
+		renderer.freeVertexPositionBuffer(this->bgPositionBufferID);
 		this->bgPositionBufferID = -1;
 	}
 
 	if (this->bgNormalBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->bgNormalBufferID);
+		renderer.freeVertexAttributeBuffer(this->bgNormalBufferID);
 		this->bgNormalBufferID = -1;
 	}
 
 	if (this->bgTexCoordBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->bgTexCoordBufferID);
+		renderer.freeVertexAttributeBuffer(this->bgTexCoordBufferID);
 		this->bgTexCoordBufferID = -1;
 	}
 
@@ -447,19 +456,19 @@ void RenderSkyManager::freeObjectBuffers(Renderer &renderer)
 {
 	if (this->objectPositionBufferID >= 0)
 	{
-		renderer.freePositionBuffer(this->objectPositionBufferID);
+		renderer.freeVertexPositionBuffer(this->objectPositionBufferID);
 		this->objectPositionBufferID = -1;
 	}
 
 	if (this->objectNormalBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->objectNormalBufferID);
+		renderer.freeVertexAttributeBuffer(this->objectNormalBufferID);
 		this->objectNormalBufferID = -1;
 	}
 
 	if (this->objectTexCoordBufferID >= 0)
 	{
-		renderer.freeAttributeBuffer(this->objectTexCoordBufferID);
+		renderer.freeVertexAttributeBuffer(this->objectTexCoordBufferID);
 		this->objectTexCoordBufferID = -1;
 	}
 
@@ -499,8 +508,8 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 			}
 
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-			ObjectTextureID textureID;
-			if (!renderer.tryCreateObjectTexture(textureBuilder, &textureID))
+			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder);
+			if (textureID < 0)
 			{
 				DebugLogError("Couldn't create object texture for sky object texture \"" + textureAsset.filename + "\".");
 				return;
@@ -525,8 +534,8 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 			constexpr int textureWidth = 1;
 			constexpr int textureHeight = textureWidth;
 			constexpr int bytesPerTexel = 1;
-			ObjectTextureID textureID;
-			if (!renderer.tryCreateObjectTexture(textureWidth, textureHeight, bytesPerTexel, &textureID))
+			const ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, bytesPerTexel);
+			if (textureID < 0)
 			{
 				DebugLogError("Couldn't create object texture for sky object texture palette index \"" + std::to_string(paletteIndex) + "\".");
 				return;
@@ -618,7 +627,8 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 	const int totalSkyObjectCount = skyInst.lightningEnd;
 
 	DebugAssert(this->objectTransformBufferID == -1);
-	if (!renderer.tryCreateUniformBuffer(totalSkyObjectCount, sizeof(RenderTransform), alignof(RenderTransform), &this->objectTransformBufferID))
+	this->objectTransformBufferID = renderer.createUniformBuffer(totalSkyObjectCount, sizeof(RenderTransform), alignof(RenderTransform));
+	if (this->objectTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for sky objects.");
 		return;
