@@ -253,5 +253,5 @@ std::string Matrix4<T>::toString() const
 }
 
 // Template instantiations.
-template class Matrix4<float>;
-template class Matrix4<double>;
+template struct Matrix4<float>;
+template struct Matrix4<double>;
