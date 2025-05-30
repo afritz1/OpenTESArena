@@ -787,18 +787,19 @@ void Game::loop()
 {
 	// Set up physics system values.
 	JPH::TempAllocatorImpl physicsAllocator(Physics::TempAllocatorByteCount);
-	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
+	this->physicsTempAllocator = &physicsAllocator;
+	
 	PhysicsBroadPhaseLayerInterface physicsBroadPhaseLayerInterface;
 	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
-	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
-	
-	this->physicsTempAllocator = &physicsAllocator;
+	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;	
 	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
 
 	PhysicsBodyActivationListener physicsBodyActivationListener;
 	PhysicsContactListener physicsContactListener(*this);
 	this->physicsSystem.SetBodyActivationListener(&physicsBodyActivationListener);
 	this->physicsSystem.SetContactListener(&physicsContactListener);
+
+	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
 
 	// Initialize panel and music to default (bootstrapping the first game frame).
 	this->panel = IntroUiModel::makeStartupPanel(*this);
