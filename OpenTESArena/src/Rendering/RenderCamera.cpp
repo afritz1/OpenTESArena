@@ -12,6 +12,8 @@ void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pit
 	this->chunk = coord.chunk;
 	this->chunkPoint = coord.point;
 
+	this->yaw = yaw;
+	this->pitch = pitch;
 	MathUtils::populateCoordinateFrameFromAngles(yaw, pitch, &this->forward, &this->right, &this->up);
 	this->zoom = MathUtils::verticalFovToZoom(fovY);
 	this->forwardScaled = this->forward * this->zoom;

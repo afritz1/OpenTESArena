@@ -14,6 +14,7 @@ struct RenderCamera
 	ChunkInt2 chunk;
 	Double3 chunkPoint; // 3D position relative to chunk origin.
 
+	Degrees yaw, pitch;
 	Double3 forward, right, up;
 	Double3 forwardScaled; // Scaled by zoom.
 	Double3 rightScaled; // Scaled by aspect ratio.

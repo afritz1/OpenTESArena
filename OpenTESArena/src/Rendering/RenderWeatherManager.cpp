@@ -31,7 +31,7 @@ namespace
 
 	Matrix4d MakeParticleTranslationMatrix(const RenderCamera &camera, double xPercent, double yPercent)
 	{
-		const Double3 &basePosition = camera.worldPoint;
+		const Double3 basePosition = camera.worldPoint;
 		const Double3 centerDir = camera.forwardScaled * ParticleArbitraryZ;
 		const Double3 rightDir = camera.rightScaled * ParticleArbitraryZ;
 		const Double3 upDir = camera.upScaled * ParticleArbitraryZ;
@@ -40,12 +40,12 @@ namespace
 		return Matrix4d::translation(position.x, position.y, position.z);
 	}
 
-	Matrix4d MakeParticleRotationMatrix(const Double3 &cameraDirection)
+	Matrix4d MakeParticleRotationMatrix(Degrees yaw, Degrees pitch)
 	{
-		const Radians pitchRadians = cameraDirection.getYAngleRadians();
-		const Radians yawRadians = MathUtils::fullAtan2(Double2(cameraDirection.z, cameraDirection.x).normalized()) + Constants::Pi;
-		const Matrix4d pitchRotation = Matrix4d::zRotation(pitchRadians);
+		const Radians yawRadians = MathUtils::degToRad(90.0 - yaw);
+		const Radians pitchRadians = MathUtils::degToRad(pitch);
 		const Matrix4d yawRotation = Matrix4d::yRotation(yawRadians);
+		const Matrix4d pitchRotation = Matrix4d::zRotation(pitchRadians);
 		return yawRotation * pitchRotation;
 	}
 
@@ -625,7 +625,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		populateParticleDrawCall(drawCall, this->snowTransformBufferID, transformIndex, textureID);
 	};
 
-	const Matrix4d particleRotationMatrix = MakeParticleRotationMatrix(camera.forward);
+	const Matrix4d particleRotationMatrix = MakeParticleRotationMatrix(camera.yaw, camera.pitch);
 
 	if (weatherInst.hasRain())
 	{
