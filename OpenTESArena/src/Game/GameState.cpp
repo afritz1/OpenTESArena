@@ -679,6 +679,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 	sceneManager.voxelChunkManager.clear();
 	sceneManager.entityChunkManager.clear(physicsSystem, renderer);
+	sceneManager.voxelFaceCombineChunkManager.recycleAllChunks();
 	sceneManager.collisionChunkManager.clear(physicsSystem);
 	sceneManager.voxelVisChunkManager.recycleAllChunks();
 	sceneManager.entityVisChunkManager.recycleAllChunks();
@@ -948,6 +949,9 @@ void GameState::tickVoxels(double dt, Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
+	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 
 	const Player &player = game.player;
 
@@ -962,9 +966,12 @@ void GameState::tickVoxels(double dt, Game &game)
 	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
 
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	voxelChunkManager.update(dt, chunkManager.getNewChunkPositions(), chunkManager.getFreedChunkPositions(),
-		player.getEyeCoord(), &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs,
-		this->getActiveCeilingScale(), game.audioManager);
+	voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, player.getEyeCoord(), &levelDef, &levelInfoDef,
+		mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs, this->getActiveCeilingScale(), game.audioManager);
+
+	VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager = sceneManager.voxelFaceCombineChunkManager;
+	voxelFaceCombineChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager);
+	voxelFaceCombineChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager);
 }
 
 void GameState::tickEntities(double dt, Game &game)
