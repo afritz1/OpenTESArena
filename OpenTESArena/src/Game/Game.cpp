@@ -415,6 +415,14 @@ bool Game::init()
 	// Random seed.
 	this->random.init();
 
+	// Initialize debug display.
+	const TextBoxInitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
+	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
+	{
+		DebugLogError("Couldn't init debug info text box.");
+		return false;
+	}
+
 	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
 
@@ -812,12 +820,6 @@ void Game::loop()
 	}
 
 	this->audioManager.setMusic(mainMenuMusicDef);
-
-	const TextBoxInitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
-	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
-	{
-		DebugCrash("Couldn't init debug info text box.");
-	}
 
 	FrameTimer frameTimer;
 	frameTimer.init();
