@@ -31,7 +31,7 @@ void VoxelFaceCombineChunkManager::update(BufferView<const ChunkInt2> activeChun
 		VoxelFaceCombineChunk &faceCombineChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		BufferView<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
-		faceCombineChunk.update(dirtyVoxels);
+		faceCombineChunk.update(dirtyVoxels, voxelChunk);
 	}
 
 	for (const ChunkInt2 chunkPos : activeChunkPositions)
@@ -41,6 +41,6 @@ void VoxelFaceCombineChunkManager::update(BufferView<const ChunkInt2> activeChun
 		// Rebuild combined faces due to changes in material.
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		BufferView<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
-		faceCombineChunk.update(dirtyFadeAnimInstVoxels);
+		faceCombineChunk.update(dirtyFadeAnimInstVoxels, voxelChunk);
 	}
 }
