@@ -181,33 +181,6 @@ namespace
 
 		return isCombinable;
 	}
-
-	struct DirtyVoxelEntry
-	{
-		VoxelInt3 voxel;
-		bool dirtyFaces[VoxelFacesEntry::FACE_COUNT];
-
-		DirtyVoxelEntry()
-		{
-			std::fill(std::begin(this->dirtyFaces), std::end(this->dirtyFaces), false);
-		}
-	};
-
-	int FindDirtyVoxelEntryIndex(BufferView<const DirtyVoxelEntry> entries, const VoxelInt3 &voxel)
-	{
-		const auto iter = std::find_if(entries.begin(), entries.end(),
-			[voxel](const DirtyVoxelEntry &entry)
-		{
-			return entry.voxel == voxel;
-		});
-
-		if (iter == entries.end())
-		{
-			return -1;
-		}
-
-		return static_cast<int>(std::distance(entries.begin(), iter));
-	}
 }
 
 VoxelFacesEntry::VoxelFacesEntry()
@@ -218,6 +191,11 @@ VoxelFacesEntry::VoxelFacesEntry()
 void VoxelFacesEntry::clear()
 {
 	std::fill(std::begin(this->combinedFacesIDs), std::end(this->combinedFacesIDs), -1);
+}
+
+VoxelFaceCombineDirtyEntry::VoxelFaceCombineDirtyEntry()
+{
+	std::fill(std::begin(this->dirtyFaces), std::end(this->dirtyFaces), false);
 }
 
 VoxelFaceCombineResult::VoxelFaceCombineResult()
@@ -243,26 +221,22 @@ void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
 
 void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk)
 {
-	std::vector<DirtyVoxelEntry> dirtyVoxelEntries;
-	dirtyVoxelEntries.reserve(dirtyVoxels.getCount());
+	this->dirtyEntries.clear();
+	this->dirtyEntries.reserve(dirtyVoxels.getCount());
 
 	// Free any combined faces associated with the dirty voxels.
 	for (const VoxelInt3 voxel : dirtyVoxels)
 	{
 		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 
-		int dirtyVoxelEntryIndex = FindDirtyVoxelEntryIndex(dirtyVoxelEntries, voxel);
-		if (dirtyVoxelEntryIndex < 0)
+		auto dirtyEntryIter = this->dirtyEntries.find(voxel);
+		if (dirtyEntryIter == this->dirtyEntries.end())
 		{
-			dirtyVoxelEntryIndex = static_cast<int>(dirtyVoxelEntries.size());
-
-			DirtyVoxelEntry newDirtyVoxelEntry;
-			newDirtyVoxelEntry.voxel = voxel;
-			dirtyVoxelEntries.emplace_back(std::move(newDirtyVoxelEntry));
+			dirtyEntryIter = this->dirtyEntries.emplace(voxel, VoxelFaceCombineDirtyEntry()).first;
 		}
 
-		DirtyVoxelEntry &dirtyVoxelEntry = dirtyVoxelEntries[dirtyVoxelEntryIndex];
-		std::fill(std::begin(dirtyVoxelEntry.dirtyFaces), std::end(dirtyVoxelEntry.dirtyFaces), true);
+		VoxelFaceCombineDirtyEntry &dirtyEntry = dirtyEntryIter->second;
+		std::fill(std::begin(dirtyEntry.dirtyFaces), std::end(dirtyEntry.dirtyFaces), true);
 
 		for (int faceIndex = 0; faceIndex < VoxelFacesEntry::FACE_COUNT; faceIndex++)
 		{
@@ -286,18 +260,14 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 								currentFaceCombineResultID = -1;
 
 								const VoxelInt3 currentVoxel(currentX, currentY, currentZ);
-								int currentDirtyVoxelEntriesIndex = FindDirtyVoxelEntryIndex(dirtyVoxelEntries, currentVoxel);
-								if (currentDirtyVoxelEntriesIndex < 0)
+								auto currentDirtyEntryIter = this->dirtyEntries.find(currentVoxel);
+								if (currentDirtyEntryIter == this->dirtyEntries.end())
 								{
-									currentDirtyVoxelEntriesIndex = static_cast<int>(dirtyVoxelEntries.size());
-
-									DirtyVoxelEntry newDirtyVoxelEntry;
-									newDirtyVoxelEntry.voxel = currentVoxel;
-									dirtyVoxelEntries.emplace_back(std::move(newDirtyVoxelEntry));
+									currentDirtyEntryIter = this->dirtyEntries.emplace(currentVoxel, VoxelFaceCombineDirtyEntry()).first;
 								}
 
-								DirtyVoxelEntry &currentDirtyVoxelEntry = dirtyVoxelEntries[currentDirtyVoxelEntriesIndex];
-								currentDirtyVoxelEntry.dirtyFaces[faceIndex] = true;
+								VoxelFaceCombineDirtyEntry &currentDirtyEntry = currentDirtyEntryIter->second;
+								currentDirtyEntry.dirtyFaces[faceIndex] = true;
 							}
 						}
 					}
@@ -314,7 +284,7 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 	// - allocate id from combinedFacesPool
 	// - look at adjacent faces that are combinedFacesID == -1 and combinable
 
-	for (DirtyVoxelEntry &dirtyVoxelEntry : dirtyVoxelEntries)
+	for (const std::pair<VoxelInt3, VoxelFaceCombineDirtyEntry> &pair : this->dirtyEntries)
 	{
 
 	}
