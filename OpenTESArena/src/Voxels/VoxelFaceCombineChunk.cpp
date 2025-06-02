@@ -205,10 +205,9 @@ VoxelFaceCombineResult::VoxelFaceCombineResult()
 
 void VoxelFaceCombineResult::clear()
 {
+	this->min = VoxelInt3::Zero;
+	this->max = VoxelInt3::Zero;
 	this->facing = static_cast<VoxelFacing3D>(-1);
-	this->vertexShaderType = static_cast<VertexShaderType>(-1);
-	this->pixelShaderType = static_cast<PixelShaderType>(-1);
-	this->lightingType = static_cast<RenderLightingType>(-1);
 }
 
 void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
@@ -278,21 +277,52 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		}
 	}
 
-	// @todo feels like we should have a breadth-first stack of 'work to do' and push/pop the next faces to work on
-
-	// @todo: for all faces that need rebuilding...
-	// - allocate id from combinedFacesPool
-	// - look at adjacent faces that are combinedFacesID == -1 and combinable
-
-	for (const std::pair<VoxelInt3, VoxelFaceCombineDirtyEntry> &pair : this->dirtyEntries)
+	// Combine dirty faces together where possible.
+	for (auto iter = this->dirtyEntries.begin(); iter != this->dirtyEntries.end(); iter++)
 	{
+		const VoxelInt3 voxel = iter->first;
+		VoxelFaceCombineDirtyEntry &dirtyEntry = iter->second;
+		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 
+		for (int faceIndex = 0; faceIndex < VoxelFacesEntry::FACE_COUNT; faceIndex++)
+		{
+			const VoxelFacing3D facing = GetFaceIndexFacing(faceIndex);
+			const bool isFaceDirty = dirtyEntry.dirtyFaces[faceIndex];
+
+			if (isFaceDirty)
+			{
+				VoxelFaceCombineResultID faceCombineResultID;
+				if (!this->combinedFacesPool.tryAlloc(&faceCombineResultID))
+				{
+					DebugLogErrorFormat("Couldn't allocate voxel face combine result ID (voxel %s).", voxel.toString().c_str());
+					continue;
+				}
+
+				VoxelFaceCombineResult &faceCombineResult = this->combinedFacesPool.get(faceCombineResultID);
+				faceCombineResult.min = voxel;
+				faceCombineResult.max = voxel;
+				faceCombineResult.facing = facing;
+
+				DebugAssert(facesEntry.combinedFacesIDs[faceIndex] == -1);
+				facesEntry.combinedFacesIDs[faceIndex] = faceCombineResultID;
+
+				// @todo do the adjacent combining algorithm here
+				// - for all faces going into this combined face, set their ID to not -1 and set their face not dirty anymore
+
+				// @todo feels like we should have a breadth-first stack of 'work to do' and push/pop the next faces to work on
+
+				// @todo: for all faces that need rebuilding...
+				// - allocate id from combinedFacesPool
+				// - look at adjacent faces that are combinedFacesID == -1 and combinable
+			}
+		}
 	}
 }
 
 void VoxelFaceCombineChunk::clear()
 {
 	Chunk::clear();
+	this->dirtyEntries.clear();
 	this->combinedFacesPool.clear();
 	this->entries.clear();
 }
