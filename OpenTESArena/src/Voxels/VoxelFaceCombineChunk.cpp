@@ -137,7 +137,7 @@ namespace
 					{
 						return false;
 					}
-				}				
+				}
 			}
 			else if (voxelTraitsDefType == ArenaVoxelType::Door)
 			{
@@ -160,7 +160,27 @@ namespace
 		return true;
 	}
 
-	// @todo IsAdjacentFaceRangeCombinable(): like the above function but for a span of faces
+	bool IsAdjacentFaceRangeCombinable(const VoxelInt3 &min, const VoxelInt3 &max, const VoxelInt3 &direction, VoxelFacing3D facing, const VoxelChunk &voxelChunk)
+	{
+		bool isCombinable = true;
+		for (WEInt z = min.z; z <= max.z; z++)
+		{
+			for (int y = min.y; y <= max.y; y++)
+			{
+				for (SNInt x = min.x; x <= max.x; x++)
+				{
+					const VoxelInt3 voxel(x, y, z);
+					if (!IsAdjacentFaceCombinable(voxel, direction, facing, voxelChunk))
+					{
+						isCombinable = false;
+						break;
+					}
+				}
+			}
+		}
+
+		return isCombinable;
+	}
 }
 
 VoxelFacesEntry::VoxelFacesEntry()
