@@ -1,6 +1,9 @@
 #ifndef VOXEL_FACE_COMBINE_CHUNK_H
 #define VOXEL_FACE_COMBINE_CHUNK_H
 
+#include <vector>
+
+#include "../Assets/TextureAsset.h"
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer3D.h"
@@ -8,15 +11,32 @@
 
 class VoxelChunk;
 
+enum class PixelShaderType;
+enum class RenderLightingType;
+enum class VertexShaderType;
+
 struct VoxelFacesEntry
 {
 	static constexpr int FACE_COUNT = 6;
 
-	// If >= 0, points into combined face instances.
 	// +X, -X, +Y, -Y, +Z, -Z
-	int faces[FACE_COUNT];
+	int combinedFacesIndices[FACE_COUNT];
 
 	VoxelFacesEntry();
+
+	void clear();
+};
+
+struct VoxelFaceCombineResult
+{
+	VoxelInt3 min, max; // Inclusive max.
+	VoxelFacing3D facing;
+	TextureAsset textureAsset;
+	VertexShaderType vertexShaderType;
+	PixelShaderType pixelShaderType;
+	RenderLightingType lightingType;
+	
+	VoxelFaceCombineResult();
 
 	void clear();
 };
@@ -24,7 +44,7 @@ struct VoxelFacesEntry
 class VoxelFaceCombineChunk : public Chunk
 {
 public:
-	// @todo list of combined faces to make meshes out of
+	std::vector<VoxelFaceCombineResult> combinedFaces;
 	Buffer3D<VoxelFacesEntry> entries;
 
 	void init(const ChunkInt2 &position, int height);

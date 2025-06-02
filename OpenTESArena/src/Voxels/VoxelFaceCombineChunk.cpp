@@ -170,7 +170,20 @@ VoxelFacesEntry::VoxelFacesEntry()
 
 void VoxelFacesEntry::clear()
 {
-	std::fill(std::begin(this->faces), std::end(this->faces), -1);
+	std::fill(std::begin(this->combinedFacesIndices), std::end(this->combinedFacesIndices), -1);
+}
+
+VoxelFaceCombineResult::VoxelFaceCombineResult()
+{
+	this->clear();
+}
+
+void VoxelFaceCombineResult::clear()
+{
+	this->facing = static_cast<VoxelFacing3D>(-1);
+	this->vertexShaderType = static_cast<VertexShaderType>(-1);
+	this->pixelShaderType = static_cast<PixelShaderType>(-1);
+	this->lightingType = static_cast<RenderLightingType>(-1);
 }
 
 void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
@@ -183,20 +196,23 @@ void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
 
 void VoxelFaceCombineChunk::update(const BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk)
 {
-	// @todo each combined face needs an orientation etc
-	// struct VoxelFaceCombineResult { VoxelDouble3 points[4]; VoxelInt3 min, max; TextureAsset; VertexShaderType; PixelShaderType; RenderLightingType; }
+	// @todo i think the reason the voxel is dirty matters. if it's a fade anim starting then it should NOT combine that one, it should BREAK it and rerun combining on ADJACENT ones
+	// - or like it just needs to check if its current Is Adjacent Stuff Combinable is still valid.
 
 	// @todo search through all faces of all dirty voxels, try to make combined face entries
 
 	for (const VoxelInt3 voxel : dirtyVoxels)
 	{
 		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
+
 		for (int faceIndex = 0; faceIndex < VoxelFacesEntry::FACE_COUNT; faceIndex++)
 		{
 			const VoxelFacing3D facing = GetFaceIndexFacing(faceIndex);
 
-			int &face = facesEntry.faces[faceIndex];
-			if (face >= 0)
+			// @todo if this voxel is dirty, need to check if we already combined it with adjacent ones by comparing combinedFaceIndex between them
+
+			int &combinedFaceIndex = facesEntry.combinedFacesIndices[faceIndex];
+			if (combinedFaceIndex >= 0)
 			{
 				// Is part of an existing face, may need to break it up.
 
@@ -212,5 +228,6 @@ void VoxelFaceCombineChunk::update(const BufferView<const VoxelInt3> dirtyVoxels
 void VoxelFaceCombineChunk::clear()
 {
 	Chunk::clear();
+	this->combinedFaces.clear();
 	this->entries.clear();
 }
