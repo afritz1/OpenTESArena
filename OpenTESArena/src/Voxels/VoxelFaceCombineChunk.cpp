@@ -181,6 +181,33 @@ namespace
 
 		return isCombinable;
 	}
+
+	struct DirtyVoxelEntry
+	{
+		VoxelInt3 voxel;
+		bool dirtyFaces[VoxelFacesEntry::FACE_COUNT];
+
+		DirtyVoxelEntry()
+		{
+			std::fill(std::begin(this->dirtyFaces), std::end(this->dirtyFaces), false);
+		}
+	};
+
+	int FindDirtyVoxelEntryIndex(BufferView<const DirtyVoxelEntry> entries, const VoxelInt3 &voxel)
+	{
+		const auto iter = std::find_if(entries.begin(), entries.end(),
+			[voxel](const DirtyVoxelEntry &entry)
+		{
+			return entry.voxel == voxel;
+		});
+
+		if (iter == entries.end())
+		{
+			return -1;
+		}
+
+		return static_cast<int>(std::distance(entries.begin(), iter));
+	}
 }
 
 VoxelFacesEntry::VoxelFacesEntry()
@@ -190,7 +217,7 @@ VoxelFacesEntry::VoxelFacesEntry()
 
 void VoxelFacesEntry::clear()
 {
-	std::fill(std::begin(this->combinedFacesIndices), std::end(this->combinedFacesIndices), -1);
+	std::fill(std::begin(this->combinedFacesIDs), std::end(this->combinedFacesIDs), -1);
 }
 
 VoxelFaceCombineResult::VoxelFaceCombineResult()
@@ -214,40 +241,88 @@ void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
 	this->entries.fill(VoxelFacesEntry());
 }
 
-void VoxelFaceCombineChunk::update(const BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk)
+void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk)
 {
-	// @todo i think the reason the voxel is dirty matters. if it's a fade anim starting then it should NOT combine that one, it should BREAK it and rerun combining on ADJACENT ones
-	// - or like it just needs to check if its current Is Adjacent Stuff Combinable is still valid.
+	std::vector<DirtyVoxelEntry> dirtyVoxelEntries;
+	dirtyVoxelEntries.reserve(dirtyVoxels.getCount());
 
-	// @todo search through all faces of all dirty voxels, try to make combined face entries
-
+	// Free any combined faces associated with the dirty voxels.
 	for (const VoxelInt3 voxel : dirtyVoxels)
 	{
 		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
+
+		int dirtyVoxelEntryIndex = FindDirtyVoxelEntryIndex(dirtyVoxelEntries, voxel);
+		if (dirtyVoxelEntryIndex < 0)
+		{
+			dirtyVoxelEntryIndex = static_cast<int>(dirtyVoxelEntries.size());
+
+			DirtyVoxelEntry newDirtyVoxelEntry;
+			newDirtyVoxelEntry.voxel = voxel;
+			dirtyVoxelEntries.emplace_back(std::move(newDirtyVoxelEntry));
+		}
+
+		DirtyVoxelEntry &dirtyVoxelEntry = dirtyVoxelEntries[dirtyVoxelEntryIndex];
+		std::fill(std::begin(dirtyVoxelEntry.dirtyFaces), std::end(dirtyVoxelEntry.dirtyFaces), true);
 
 		for (int faceIndex = 0; faceIndex < VoxelFacesEntry::FACE_COUNT; faceIndex++)
 		{
 			const VoxelFacing3D facing = GetFaceIndexFacing(faceIndex);
 
-			// @todo if this voxel is dirty, need to check if we already combined it with adjacent ones by comparing combinedFaceIndex between them
-
-			int &combinedFaceIndex = facesEntry.combinedFacesIndices[faceIndex];
-			if (combinedFaceIndex >= 0)
+			VoxelFaceCombineResultID faceCombineResultID = facesEntry.combinedFacesIDs[faceIndex];
+			if (faceCombineResultID >= 0)
 			{
-				// Is part of an existing face, may need to break it up.
+				VoxelFaceCombineResult &faceCombineResult = this->combinedFacesPool.get(faceCombineResultID);
 
-			}
-			else
-			{
-				// Not combined into any faces yet.
+				for (WEInt currentZ = faceCombineResult.min.z; currentZ <= faceCombineResult.max.z; currentZ++)
+				{
+					for (int currentY = faceCombineResult.min.y; currentY <= faceCombineResult.max.y; currentY++)
+					{
+						for (SNInt currentX = faceCombineResult.min.x; currentX <= faceCombineResult.max.x; currentX++)
+						{
+							VoxelFacesEntry &currentFacesEntry = this->entries.get(currentX, currentY, currentZ);
+							VoxelFaceCombineResultID &currentFaceCombineResultID = currentFacesEntry.combinedFacesIDs[faceIndex];
+							if (currentFaceCombineResultID == faceCombineResultID)
+							{
+								currentFaceCombineResultID = -1;
+
+								const VoxelInt3 currentVoxel(currentX, currentY, currentZ);
+								int currentDirtyVoxelEntriesIndex = FindDirtyVoxelEntryIndex(dirtyVoxelEntries, currentVoxel);
+								if (currentDirtyVoxelEntriesIndex < 0)
+								{
+									currentDirtyVoxelEntriesIndex = static_cast<int>(dirtyVoxelEntries.size());
+
+									DirtyVoxelEntry newDirtyVoxelEntry;
+									newDirtyVoxelEntry.voxel = currentVoxel;
+									dirtyVoxelEntries.emplace_back(std::move(newDirtyVoxelEntry));
+								}
+
+								DirtyVoxelEntry &currentDirtyVoxelEntry = dirtyVoxelEntries[currentDirtyVoxelEntriesIndex];
+								currentDirtyVoxelEntry.dirtyFaces[faceIndex] = true;
+							}
+						}
+					}
+				}
+
+				this->combinedFacesPool.free(faceCombineResultID);
 			}
 		}
+	}
+
+	// @todo feels like we should have a breadth-first stack of 'work to do' and push/pop the next faces to work on
+
+	// @todo: for all faces that need rebuilding...
+	// - allocate id from combinedFacesPool
+	// - look at adjacent faces that are combinedFacesID == -1 and combinable
+
+	for (DirtyVoxelEntry &dirtyVoxelEntry : dirtyVoxelEntries)
+	{
+
 	}
 }
 
 void VoxelFaceCombineChunk::clear()
 {
 	Chunk::clear();
-	this->combinedFaces.clear();
+	this->combinedFacesPool.clear();
 	this->entries.clear();
 }
