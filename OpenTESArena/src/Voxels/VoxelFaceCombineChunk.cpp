@@ -323,6 +323,13 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 	for (auto iter = this->dirtyEntries.begin(); iter != this->dirtyEntries.end(); iter++)
 	{
 		const VoxelInt3 voxel = iter->first;
+		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
+		if (shapeDef.mesh.isEmpty())
+		{
+			continue;
+		}
+
 		VoxelFaceCombineDirtyEntry &dirtyEntry = iter->second;
 		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 
