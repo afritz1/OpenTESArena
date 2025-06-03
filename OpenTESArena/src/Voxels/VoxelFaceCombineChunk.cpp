@@ -162,12 +162,26 @@ namespace
 
 	bool IsAdjacentFaceRangeCombinable(const VoxelInt3 &min, const VoxelInt3 &max, const VoxelInt3 &direction, VoxelFacing3D facing, const VoxelChunk &voxelChunk)
 	{
-		bool isCombinable = true;
-		for (WEInt z = min.z; z <= max.z; z++)
+		VoxelInt3 rangeBegin = min;
+		if (direction.x != 0)
 		{
-			for (int y = min.y; y <= max.y; y++)
+			rangeBegin.x = max.x;
+		}
+		else if (direction.y != 0)
+		{
+			rangeBegin.y = max.y;
+		}
+		else if (direction.z != 0)
+		{
+			rangeBegin.z = max.z;
+		}
+
+		bool isCombinable = true;
+		for (WEInt z = rangeBegin.z; z <= max.z; z++)
+		{
+			for (int y = rangeBegin.y; y <= max.y; y++)
 			{
-				for (SNInt x = min.x; x <= max.x; x++)
+				for (SNInt x = rangeBegin.x; x <= max.x; x++)
 				{
 					const VoxelInt3 voxel(x, y, z);
 					if (!IsAdjacentFaceCombinable(voxel, direction, facing, voxelChunk))
