@@ -116,12 +116,12 @@ struct SoftwareLight
 	void init(const Double3 &worldPoint, double startRadius, double endRadius);
 };
 
-using SoftwareVertexPositionBufferPool = RecyclablePool<SoftwareVertexPositionBuffer, VertexPositionBufferID>;
-using SoftwareVertexAttributeBufferPool = RecyclablePool<SoftwareVertexAttributeBuffer, VertexAttributeBufferID>;
-using SoftwareIndexBufferPool = RecyclablePool<SoftwareIndexBuffer, IndexBufferID>;
-using SoftwareUniformBufferPool = RecyclablePool<SoftwareUniformBuffer, UniformBufferID>;
-using SoftwareObjectTexturePool = RecyclablePool<SoftwareObjectTexture, ObjectTextureID>;
-using SoftwareLightPool = RecyclablePool<SoftwareLight, RenderLightID>;
+using SoftwareVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, SoftwareVertexPositionBuffer>;
+using SoftwareVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID, SoftwareVertexAttributeBuffer>;
+using SoftwareIndexBufferPool = RecyclablePool<IndexBufferID, SoftwareIndexBuffer>;
+using SoftwareUniformBufferPool = RecyclablePool<UniformBufferID, SoftwareUniformBuffer>;
+using SoftwareObjectTexturePool = RecyclablePool<ObjectTextureID, SoftwareObjectTexture>;
+using SoftwareLightPool = RecyclablePool<RenderLightID, SoftwareLight>;
 
 class SoftwareRenderer : public RendererSystem3D
 {

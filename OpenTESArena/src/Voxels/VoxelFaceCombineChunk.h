@@ -47,7 +47,7 @@ class VoxelFaceCombineChunk : public Chunk
 private:
 	std::unordered_map<VoxelInt3, VoxelFaceCombineDirtyEntry> dirtyEntries; // Cleared at start of each update.
 public:
-	RecyclablePool<VoxelFaceCombineResult, VoxelFaceCombineResultID> combinedFacesPool;
+	RecyclablePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> combinedFacesPool;
 	Buffer3D<VoxelFacesEntry> entries;
 
 	void init(const ChunkInt2 &position, int height);

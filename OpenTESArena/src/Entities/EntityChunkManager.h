@@ -91,18 +91,18 @@ struct EntityTransferResult
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 private:
-	using EntityPool = RecyclablePool<EntityInstance, EntityInstanceID>;
-	using EntityPositionPool = RecyclablePool<WorldDouble3, EntityPositionID>;
-	using EntityBoundingBoxPool = RecyclablePool<BoundingBox3D, EntityBoundingBoxID>;
-	using EntityDirectionPool = RecyclablePool<Double2, EntityDirectionID>;
-	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstance, EntityAnimationInstanceID>;
-	using EntityCombatStatePool = RecyclablePool<EntityCombatState, EntityCombatStateID>;
-	using EntityCreatureSoundPool = RecyclablePool<double, EntityCreatureSoundInstanceID>;
-	using EntityCitizenDirectionIndexPool = RecyclablePool<int8_t, EntityCitizenDirectionIndexID>;
-	using EntityCitizenNamePool = RecyclablePool<EntityCitizenName, EntityCitizenNameID>;
-	using EntityPaletteIndicesInstancePool = RecyclablePool<PaletteIndices, EntityPaletteIndicesInstanceID>;
-	using EntityItemInventoryInstancePool = RecyclablePool<ItemInventory, EntityItemInventoryInstanceID>;
-	using EntityLockStatePool = RecyclablePool<EntityLockState, EntityLockStateID>;
+	using EntityPool = RecyclablePool<EntityInstanceID, EntityInstance>;
+	using EntityPositionPool = RecyclablePool<EntityPositionID, WorldDouble3>;
+	using EntityBoundingBoxPool = RecyclablePool<EntityBoundingBoxID, BoundingBox3D>;
+	using EntityDirectionPool = RecyclablePool<EntityDirectionID, Double2>;
+	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstanceID, EntityAnimationInstance>;
+	using EntityCombatStatePool = RecyclablePool<EntityCombatStateID, EntityCombatState>;
+	using EntityCreatureSoundPool = RecyclablePool<EntityCreatureSoundInstanceID, double>;
+	using EntityCitizenDirectionIndexPool = RecyclablePool<EntityCitizenDirectionIndexID, int8_t>;
+	using EntityCitizenNamePool = RecyclablePool<EntityCitizenNameID, EntityCitizenName>;
+	using EntityPaletteIndicesInstancePool = RecyclablePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
+	using EntityItemInventoryInstancePool = RecyclablePool<EntityItemInventoryInstanceID, ItemInventory>;
+	using EntityLockStatePool = RecyclablePool<EntityLockStateID, EntityLockState>;
 
 	EntityPool entities;
 	EntityPositionPool positions;
