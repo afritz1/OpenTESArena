@@ -181,6 +181,34 @@ namespace
 
 		return isCombinable;
 	}
+
+	constexpr VoxelInt3 FaceCombineDirections[] =
+	{
+		VoxelInt3(1, 0, 0),
+		VoxelInt3(0, 1, 0),
+		VoxelInt3(0, 0, 1)
+	};
+
+	// Allows combining adjacent voxels in the plane of the voxel facing only.
+	bool IsCombineDirectionValidForFacing(int directionIndex, VoxelFacing3D facing)
+	{
+		if ((facing == VoxelFacing3D::PositiveX) || (facing == VoxelFacing3D::NegativeX))
+		{
+			return directionIndex != 0;
+		}
+		else if ((facing == VoxelFacing3D::PositiveY) || (facing == VoxelFacing3D::NegativeY))
+		{
+			return directionIndex != 1;
+		}
+		else if ((facing == VoxelFacing3D::PositiveZ) || (facing == VoxelFacing3D::NegativeZ))
+		{
+			return directionIndex != 2;
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(facing)));
+		}
+	}
 }
 
 VoxelFacesEntry::VoxelFacesEntry()
@@ -288,32 +316,69 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		{
 			const VoxelFacing3D facing = GetFaceIndexFacing(faceIndex);
 			const bool isFaceDirty = dirtyEntry.dirtyFaces[faceIndex];
-
-			if (isFaceDirty)
+			if (!isFaceDirty)
 			{
-				VoxelFaceCombineResultID faceCombineResultID;
-				if (!this->combinedFacesPool.tryAlloc(&faceCombineResultID))
+				continue;
+			}
+
+			VoxelFaceCombineResultID faceCombineResultID;
+			if (!this->combinedFacesPool.tryAlloc(&faceCombineResultID))
+			{
+				DebugLogErrorFormat("Couldn't allocate voxel face combine result ID (voxel %s).", voxel.toString().c_str());
+				continue;
+			}
+
+			VoxelFaceCombineResult &faceCombineResult = this->combinedFacesPool.get(faceCombineResultID);
+			faceCombineResult.min = voxel;
+			faceCombineResult.max = voxel;
+			faceCombineResult.facing = facing;
+
+			DebugAssert(facesEntry.combinedFacesIDs[faceIndex] == -1);
+			facesEntry.combinedFacesIDs[faceIndex] = faceCombineResultID;
+
+			for (int combineDirectionIndex = 0; combineDirectionIndex < static_cast<int>(std::size(FaceCombineDirections)); combineDirectionIndex++)
+			{
+				// Only combine in this facing's plane.
+				if (!IsCombineDirectionValidForFacing(combineDirectionIndex, facing))
 				{
-					DebugLogErrorFormat("Couldn't allocate voxel face combine result ID (voxel %s).", voxel.toString().c_str());
 					continue;
 				}
 
-				VoxelFaceCombineResult &faceCombineResult = this->combinedFacesPool.get(faceCombineResultID);
-				faceCombineResult.min = voxel;
-				faceCombineResult.max = voxel;
-				faceCombineResult.facing = facing;
+				const VoxelInt3 combineDirection = FaceCombineDirections[combineDirectionIndex];
+				while (true)
+				{
+					const VoxelInt3 adjacentVoxel = faceCombineResult.max + combineDirection;
+					const bool canTestAdjacentVoxel = voxelChunk.isValidVoxel(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+					if (!canTestAdjacentVoxel)
+					{
+						// Ran into chunk edge.
+						break;
+					}
 
-				DebugAssert(facesEntry.combinedFacesIDs[faceIndex] == -1);
-				facesEntry.combinedFacesIDs[faceIndex] = faceCombineResultID;
+					if (!IsAdjacentFaceRangeCombinable(voxel, faceCombineResult.max, combineDirection, facing, voxelChunk))
+					{
+						// One or more voxels in the adjacent range aren't similar enough to the start voxel.
+						break;
+					}
 
-				// @todo do the adjacent combining algorithm here
-				// - for all faces going into this combined face, set their ID to not -1 and set their face not dirty anymore
+					VoxelFacesEntry &adjacentFacesEntry = this->entries.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+					if (adjacentFacesEntry.combinedFacesIDs[faceIndex] >= 0)
+					{
+						// Already combined with something else.
+						break;
+					}
 
-				// @todo feels like we should have a breadth-first stack of 'work to do' and push/pop the next faces to work on
+					// Add this face to the combined face and un-dirty it.
+					adjacentFacesEntry.combinedFacesIDs[faceIndex] = faceCombineResultID;
+					const auto adjacentDirtyEntryIter = this->dirtyEntries.find(adjacentVoxel);
+					if (adjacentDirtyEntryIter != this->dirtyEntries.end())
+					{
+						VoxelFaceCombineDirtyEntry &adjacentDirtyEntry = adjacentDirtyEntryIter->second;
+						adjacentDirtyEntry.dirtyFaces[faceIndex] = false;
+					}
 
-				// @todo: for all faces that need rebuilding...
-				// - allocate id from combinedFacesPool
-				// - look at adjacent faces that are combinedFacesID == -1 and combinable
+					faceCombineResult.max = faceCombineResult.max + combineDirection;
+				}
 			}
 		}
 	}
