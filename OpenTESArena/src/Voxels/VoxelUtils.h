@@ -9,6 +9,7 @@
 #include "../Math/Vector3.h"
 #include "../World/Coord.h"
 
+#include "components/debug/Debug.h"
 #include "components/utilities/BufferView.h"
 
 enum class VoxelFacing2D;
@@ -105,6 +106,36 @@ namespace VoxelUtils
 	int getFacingIndex(VoxelFacing3D facing);
 	VoxelFacing3D getFaceIndexFacing(int faceIndex);
 	VoxelFacing3D getOppositeFacing(VoxelFacing3D facing);
+
+	// Whether this voxel type's mesh is intended to cover the given facing (all four corners). Only determines mesh coverage, not opacity/shading.
+	constexpr bool isVoxelTypeMeshCoveringFacing(ArenaVoxelType voxelType, VoxelFacing3D facing)
+	{
+		switch (voxelType)
+		{
+		case ArenaVoxelType::None:
+			return false;
+		case ArenaVoxelType::Wall:
+			return true;
+		case ArenaVoxelType::Floor:
+			return facing == VoxelFacing3D::PositiveY;
+		case ArenaVoxelType::Ceiling:
+			return facing == VoxelFacing3D::NegativeY;
+		case ArenaVoxelType::Raised:
+			return false;
+		case ArenaVoxelType::Diagonal:
+			return false;
+		case ArenaVoxelType::TransparentWall:
+			return false;
+		case ArenaVoxelType::Edge:
+			return false;
+		case ArenaVoxelType::Chasm:
+			return false;
+		case ArenaVoxelType::Door:
+			return false;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
 }
 
 #endif
