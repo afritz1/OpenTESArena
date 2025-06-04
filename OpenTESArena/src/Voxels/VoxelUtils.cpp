@@ -298,6 +298,11 @@ void VoxelUtils::getSurroundingVoxels(const VoxelInt2 &voxel, int distance, Voxe
 	*outMaxVoxel = VoxelInt2(voxel.x + distance, voxel.y + distance);
 }
 
+int VoxelUtils::getFacingIndex(VoxelFacing3D facing)
+{
+	return static_cast<int>(facing);
+}
+
 VoxelFacing3D VoxelUtils::getFaceIndexFacing(int faceIndex)
 {
 	DebugAssert(faceIndex >= 0);

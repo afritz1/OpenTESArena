@@ -1,6 +1,6 @@
-#include "VoxelFaceEnableChunkManager.h"
 #include "VoxelChunk.h"
 #include "VoxelChunkManager.h"
+#include "VoxelFaceEnableChunkManager.h"
 
 void VoxelFaceEnableChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager)

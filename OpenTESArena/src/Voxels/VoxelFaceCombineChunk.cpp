@@ -2,14 +2,24 @@
 
 #include "VoxelChunk.h"
 #include "VoxelFaceCombineChunk.h"
+#include "VoxelFaceEnableChunk.h"
 #include "VoxelFacing3D.h"
 
 namespace
 {
-	bool IsAdjacentFaceCombinable(const VoxelInt3 &voxel, const VoxelInt3 &direction, VoxelFacing3D facing, const VoxelChunk &voxelChunk)
+	bool IsAdjacentFaceCombinable(const VoxelInt3 &voxel, const VoxelInt3 &direction, VoxelFacing3D facing, const VoxelChunk &voxelChunk,
+		const VoxelFaceEnableChunk &faceEnableChunk)
 	{
 		const VoxelInt3 adjacentVoxel = voxel + direction;
 		if (!voxelChunk.isValidVoxel(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z))
+		{
+			return false;
+		}
+
+		const VoxelFaceEnableEntry &adjacentFaceEnableEntry = faceEnableChunk.entries.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const int adjacentFaceIndex = VoxelUtils::getFacingIndex(facing);
+		const bool isAdjacentFaceEnabled = adjacentFaceEnableEntry.enabledFaces[adjacentFaceIndex];
+		if (!isAdjacentFaceEnabled)
 		{
 			return false;
 		}
@@ -133,7 +143,8 @@ namespace
 		return true;
 	}
 
-	bool IsAdjacentFaceRangeCombinable(const VoxelInt3 &min, const VoxelInt3 &max, const VoxelInt3 &direction, VoxelFacing3D facing, const VoxelChunk &voxelChunk)
+	bool IsAdjacentFaceRangeCombinable(const VoxelInt3 &min, const VoxelInt3 &max, const VoxelInt3 &direction, VoxelFacing3D facing,
+		const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 	{
 		VoxelInt3 rangeBegin = min;
 		if (direction.x != 0)
@@ -157,7 +168,7 @@ namespace
 				for (SNInt x = rangeBegin.x; x <= max.x; x++)
 				{
 					const VoxelInt3 voxel(x, y, z);
-					if (!IsAdjacentFaceCombinable(voxel, direction, facing, voxelChunk))
+					if (!IsAdjacentFaceCombinable(voxel, direction, facing, voxelChunk, faceEnableChunk))
 					{
 						isCombinable = false;
 						break;
@@ -233,7 +244,7 @@ void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
 	this->entries.fill(VoxelFacesEntry());
 }
 
-void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk)
+void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 {
 	this->dirtyEntries.clear();
 	this->dirtyEntries.reserve(dirtyVoxels.getCount());
@@ -305,12 +316,19 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 
 		VoxelFaceCombineDirtyEntry &dirtyEntry = iter->second;
 		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
+		const VoxelFaceEnableEntry &faceEnableEntry = faceEnableChunk.entries.get(voxel.x, voxel.y, voxel.z);
 
 		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
 			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
 			const bool isFaceDirty = dirtyEntry.dirtyFaces[faceIndex];
 			if (!isFaceDirty)
+			{
+				continue;
+			}
+
+			const bool isFaceEnabled = faceEnableEntry.enabledFaces[faceIndex];
+			if (!isFaceEnabled)
 			{
 				continue;
 			}
@@ -349,7 +367,7 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 						break;
 					}
 
-					if (!IsAdjacentFaceRangeCombinable(voxel, faceCombineResult.max, combineDirection, facing, voxelChunk))
+					if (!IsAdjacentFaceRangeCombinable(voxel, faceCombineResult.max, combineDirection, facing, voxelChunk, faceEnableChunk))
 					{
 						// One or more voxels in the adjacent range aren't similar enough to the start voxel.
 						break;

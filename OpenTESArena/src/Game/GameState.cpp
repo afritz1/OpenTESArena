@@ -976,7 +976,7 @@ void GameState::tickVoxels(double dt, Game &game)
 
 	VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager = sceneManager.voxelFaceCombineChunkManager;
 	voxelFaceCombineChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager);
-	voxelFaceCombineChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager);
+	voxelFaceCombineChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager, voxelFaceEnableChunkManager);
 }
 
 void GameState::tickEntities(double dt, Game &game)

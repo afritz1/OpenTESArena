@@ -102,6 +102,7 @@ namespace VoxelUtils
 		{ ArenaVoxelType::Door, BufferView<const VoxelFacing3D>() } // Not worth combining
 	};
 
+	int getFacingIndex(VoxelFacing3D facing);
 	VoxelFacing3D getFaceIndexFacing(int faceIndex);
 	VoxelFacing3D getOppositeFacing(VoxelFacing3D facing);
 }

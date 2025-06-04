@@ -9,6 +9,7 @@
 #include "components/utilities/RecyclablePool.h"
 
 class VoxelChunk;
+class VoxelFaceEnableChunk;
 
 // One or more adjacent voxel faces in the same plane combined into a quad.
 struct VoxelFaceCombineResult
@@ -51,7 +52,7 @@ public:
 
 	void init(const ChunkInt2 &position, int height);
 
-	void update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk);
+	void update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk);
 
 	void clear();
 };
