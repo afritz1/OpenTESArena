@@ -365,14 +365,7 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 				const VoxelInt3 combineDirection = FaceCombineDirections[combineDirectionIndex];
 				while (true)
 				{
-					const VoxelInt3 adjacentVoxel = faceCombineResult.max + combineDirection;
-					const bool canTestAdjacentVoxel = voxelChunk.isValidVoxel(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
-					if (!canTestAdjacentVoxel)
-					{
-						// Ran into chunk edge.
-						break;
-					}
-
+					// Calculate the 1D span of voxels whose adjacent voxels will be checked.
 					VoxelInt3 rangeBegin = voxel;
 					if (combineDirection.x != 0)
 					{
