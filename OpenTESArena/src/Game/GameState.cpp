@@ -679,6 +679,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 	sceneManager.voxelChunkManager.clear();
 	sceneManager.entityChunkManager.clear(physicsSystem, renderer);
+	sceneManager.voxelFaceEnableChunkManager.recycleAllChunks();
 	sceneManager.voxelFaceCombineChunkManager.recycleAllChunks();
 	sceneManager.collisionChunkManager.clear(physicsSystem);
 	sceneManager.voxelVisChunkManager.recycleAllChunks();
@@ -968,6 +969,10 @@ void GameState::tickVoxels(double dt, Game &game)
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, player.getEyeCoord(), &levelDef, &levelInfoDef,
 		mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs, this->getActiveCeilingScale(), game.audioManager);
+
+	VoxelFaceEnableChunkManager &voxelFaceEnableChunkManager = sceneManager.voxelFaceEnableChunkManager;
+	voxelFaceEnableChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager);
+	voxelFaceEnableChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager);
 
 	VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager = sceneManager.voxelFaceCombineChunkManager;
 	voxelFaceCombineChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager);

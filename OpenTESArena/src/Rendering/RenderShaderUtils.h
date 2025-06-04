@@ -10,11 +10,11 @@ enum class VertexShaderType
 
 enum class PixelShaderType
 {
-	Opaque,
+	Opaque, // Most walls/floors/ceilings.
 	OpaqueWithAlphaTestLayer, // Dry chasm walls.
 	OpaqueScreenSpaceAnimation, // Water/lava chasm floors.
 	OpaqueScreenSpaceAnimationWithAlphaTestLayer, // Water/lava chasm walls.
-	AlphaTested,
+	AlphaTested, // Enemies.
 	AlphaTestedWithVariableTexCoordUMin, // Sliding doors.
 	AlphaTestedWithVariableTexCoordVMin, // Raising doors.
 	AlphaTestedWithPaletteIndexLookup, // Citizens.
@@ -37,5 +37,16 @@ enum class DitheringMode
 static constexpr int DITHERING_MODERN_MASK_COUNT = 4;
 
 using UniformBufferID = int;
+
+namespace RenderShaderUtils
+{
+	constexpr bool isOpaque(PixelShaderType type)
+	{
+		return (type == PixelShaderType::Opaque) ||
+			(type == PixelShaderType::OpaqueWithAlphaTestLayer) ||
+			(type == PixelShaderType::OpaqueScreenSpaceAnimation) ||
+			(type == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
+	}
+}
 
 #endif

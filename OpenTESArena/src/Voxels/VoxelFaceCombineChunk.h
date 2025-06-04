@@ -1,6 +1,7 @@
 #ifndef VOXEL_FACE_COMBINE_CHUNK_H
 #define VOXEL_FACE_COMBINE_CHUNK_H
 
+#include "VoxelUtils.h"
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer3D.h"
@@ -25,9 +26,7 @@ using VoxelFaceCombineResultID = int;
 // Mappings of voxel faces to their combined face ID if any.
 struct VoxelFacesEntry
 {
-	static constexpr int FACE_COUNT = 6; // +X, -X, +Y, -Y, +Z, -Z
-
-	VoxelFaceCombineResultID combinedFacesIDs[FACE_COUNT];
+	VoxelFaceCombineResultID combinedFacesIDs[VoxelUtils::FACE_COUNT];
 
 	VoxelFacesEntry();
 
@@ -37,7 +36,7 @@ struct VoxelFacesEntry
 // Faces marked for rebuilding this frame.
 struct VoxelFaceCombineDirtyEntry
 {
-	bool dirtyFaces[VoxelFacesEntry::FACE_COUNT];
+	bool dirtyFaces[VoxelUtils::FACE_COUNT];
 
 	VoxelFaceCombineDirtyEntry();
 };

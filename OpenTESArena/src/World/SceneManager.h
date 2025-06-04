@@ -18,6 +18,7 @@
 #include "../Sky/SkyVisibilityManager.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelFaceCombineChunkManager.h"
+#include "../Voxels/VoxelFaceEnableChunkManager.h"
 #include "../Voxels/VoxelVisibilityChunkManager.h"
 
 class TextureManager;
@@ -31,6 +32,7 @@ struct SceneManager
 	ChunkManager chunkManager;
 	VoxelChunkManager voxelChunkManager;
 	EntityChunkManager entityChunkManager;
+	VoxelFaceEnableChunkManager voxelFaceEnableChunkManager;
 	VoxelFaceCombineChunkManager voxelFaceCombineChunkManager;
 	CollisionChunkManager collisionChunkManager;
 	VoxelVisibilityChunkManager voxelVisChunkManager;

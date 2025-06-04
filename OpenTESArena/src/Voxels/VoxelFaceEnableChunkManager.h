@@ -1,15 +1,15 @@
-#ifndef VOXEL_FACE_COMBINE_CHUNK_MANAGER_H
-#define VOXEL_FACE_COMBINE_CHUNK_MANAGER_H
+#ifndef VOXEL_FACE_ENABLE_MANAGER_CHUNK_H
+#define VOXEL_FACE_ENABLE_MANAGER_CHUNK_H
 
-#include "VoxelFaceCombineChunk.h"
+#include "VoxelFaceEnableChunk.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/BufferView.h"
 
 class VoxelChunkManager;
 
-// Combines voxel faces where possible within each chunk for reduced draw calls.
-class VoxelFaceCombineChunkManager : public SpecializedChunkManager<VoxelFaceCombineChunk>
+// Tracks which voxel faces within each chunk are internal faces blocked by opaque neighbor blocks.
+class VoxelFaceEnableChunkManager : public SpecializedChunkManager<VoxelFaceEnableChunk>
 {
 public:
 	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

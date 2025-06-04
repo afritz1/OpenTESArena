@@ -6,33 +6,6 @@
 
 namespace
 {
-	constexpr VoxelFacing3D ValidFacings_Wall[] = { VoxelFacing3D::PositiveX, VoxelFacing3D::NegativeX, VoxelFacing3D::PositiveY, VoxelFacing3D::NegativeY, VoxelFacing3D::PositiveZ, VoxelFacing3D::NegativeZ };
-	constexpr VoxelFacing3D ValidFacings_Floor[] = { VoxelFacing3D::PositiveY };
-	constexpr VoxelFacing3D ValidFacings_Ceiling[] = { VoxelFacing3D::NegativeY };
-	constexpr VoxelFacing3D ValidFacings_Raised[] = { VoxelFacing3D::PositiveX, VoxelFacing3D::NegativeX, VoxelFacing3D::PositiveY, VoxelFacing3D::NegativeY, VoxelFacing3D::PositiveZ, VoxelFacing3D::NegativeZ };
-	constexpr VoxelFacing3D ValidFacings_TransparentWall[] = { VoxelFacing3D::PositiveX, VoxelFacing3D::NegativeX, VoxelFacing3D::PositiveZ, VoxelFacing3D::NegativeZ };
-
-	const std::pair<ArenaVoxelType, BufferView<const VoxelFacing3D>> VoxelTypeValidFacings[] =
-	{
-		{ ArenaVoxelType::None, BufferView<const VoxelFacing3D>() },
-		{ ArenaVoxelType::Wall, ValidFacings_Wall },
-		{ ArenaVoxelType::Floor, ValidFacings_Floor },
-		{ ArenaVoxelType::Ceiling, ValidFacings_Ceiling },
-		{ ArenaVoxelType::Raised, ValidFacings_Raised },
-		{ ArenaVoxelType::Diagonal, BufferView<const VoxelFacing3D>() }, // Needs more than facing check
-		{ ArenaVoxelType::TransparentWall, ValidFacings_TransparentWall },
-		{ ArenaVoxelType::Edge, BufferView<const VoxelFacing3D>() }, // Depends on edge definition
-		{ ArenaVoxelType::Chasm, BufferView<const VoxelFacing3D>() }, // Depends on chasm wall instance
-		{ ArenaVoxelType::Door, BufferView<const VoxelFacing3D>() } // Not worth combining
-	};
-
-	VoxelFacing3D GetFaceIndexFacing(int faceIndex)
-	{
-		DebugAssert(faceIndex >= 0);
-		DebugAssert(faceIndex < VoxelFacesEntry::FACE_COUNT);
-		return static_cast<VoxelFacing3D>(faceIndex);
-	}
-
 	bool IsAdjacentFaceCombinable(const VoxelInt3 &voxel, const VoxelInt3 &direction, VoxelFacing3D facing, const VoxelChunk &voxelChunk)
 	{
 		const VoxelInt3 adjacentVoxel = voxel + direction;
@@ -72,7 +45,7 @@ namespace
 		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
 		const ArenaVoxelType voxelTraitsDefType = voxelTraitsDef.type;
 		BufferView<const VoxelFacing3D> validFacings;
-		for (const std::pair<ArenaVoxelType, BufferView<const VoxelFacing3D>> &pair : VoxelTypeValidFacings)
+		for (const std::pair<ArenaVoxelType, BufferView<const VoxelFacing3D>> &pair : VoxelUtils::VoxelTypeValidFacings)
 		{
 			if (pair.first == voxelTraitsDefType)
 			{
@@ -279,9 +252,9 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		VoxelFaceCombineDirtyEntry &dirtyEntry = dirtyEntryIter->second;
 		std::fill(std::begin(dirtyEntry.dirtyFaces), std::end(dirtyEntry.dirtyFaces), true);
 
-		for (int faceIndex = 0; faceIndex < VoxelFacesEntry::FACE_COUNT; faceIndex++)
+		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
-			const VoxelFacing3D facing = GetFaceIndexFacing(faceIndex);
+			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
 
 			VoxelFaceCombineResultID faceCombineResultID = facesEntry.combinedFacesIDs[faceIndex];
 			if (faceCombineResultID >= 0)
@@ -333,9 +306,9 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		VoxelFaceCombineDirtyEntry &dirtyEntry = iter->second;
 		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 
-		for (int faceIndex = 0; faceIndex < VoxelFacesEntry::FACE_COUNT; faceIndex++)
+		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
-			const VoxelFacing3D facing = GetFaceIndexFacing(faceIndex);
+			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
 			const bool isFaceDirty = dirtyEntry.dirtyFaces[faceIndex];
 			if (!isFaceDirty)
 			{
