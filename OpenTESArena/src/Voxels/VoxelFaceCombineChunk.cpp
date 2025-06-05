@@ -110,7 +110,7 @@ namespace
 			{
 				int chasmWallInstIndex, adjacentChasmWallInstIndex;
 				bool hasChasmWallInst = voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmWallInstIndex);
-				bool hasAdjacentChasmWallInst = voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &adjacentChasmWallInstIndex);
+				bool hasAdjacentChasmWallInst = voxelChunk.tryGetChasmWallInstIndex(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z, &adjacentChasmWallInstIndex);
 				if (hasChasmWallInst != hasAdjacentChasmWallInst)
 				{
 					return false;
@@ -263,7 +263,7 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		{
 			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
 
-			VoxelFaceCombineResultID faceCombineResultID = facesEntry.combinedFacesIDs[faceIndex];
+			const VoxelFaceCombineResultID faceCombineResultID = facesEntry.combinedFacesIDs[faceIndex];
 			if (faceCombineResultID >= 0)
 			{
 				VoxelFaceCombineResult &faceCombineResult = this->combinedFacesPool.get(faceCombineResultID);
@@ -303,10 +303,14 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 	for (auto iter = this->dirtyEntries.begin(); iter != this->dirtyEntries.end(); iter++)
 	{
 		const VoxelInt3 voxel = iter->first;
+		VoxelFaceCombineDirtyEntry &dirtyEntry = iter->second;
+
 		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
 		if (shapeDef.mesh.isEmpty())
 		{
+			// No need to dirty air.
+			std::fill(std::begin(dirtyEntry.dirtyFaces), std::end(dirtyEntry.dirtyFaces), false);
 			continue;
 		}
 
@@ -314,26 +318,25 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		const VoxelTraitsDefinition &traitsDef = voxelChunk.getTraitsDef(traitsDefID);
 		const ArenaVoxelType voxelType = traitsDef.type;
 
-		VoxelFaceCombineDirtyEntry &dirtyEntry = iter->second;
 		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 		const VoxelFaceEnableEntry &faceEnableEntry = faceEnableChunk.entries.get(voxel.x, voxel.y, voxel.z);
 
 		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
-			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
 			const bool isFaceDirty = dirtyEntry.dirtyFaces[faceIndex];
 			if (!isFaceDirty)
 			{
 				continue;
 			}
 
-			if (!VoxelUtils::isVoxelTypeMeshCoveringFacing(voxelType, facing))
+			const bool isFaceEnabled = faceEnableEntry.enabledFaces[faceIndex];
+			if (!isFaceEnabled)
 			{
 				continue;
 			}
 
-			const bool isFaceEnabled = faceEnableEntry.enabledFaces[faceIndex];
-			if (!isFaceEnabled)
+			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
+			if (!VoxelUtils::isVoxelTypeMeshCoveringFacing(voxelType, facing))
 			{
 				continue;
 			}
@@ -381,11 +384,6 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 					}
 
 					const VoxelInt3 rangeEnd = faceCombineResult.max;
-					if (!IsAdjacentFaceRangeCombinable(rangeBegin, rangeEnd, combineDirection, facing, this->entries, voxelChunk, faceEnableChunk))
-					{
-						// One or more voxels in the adjacent range aren't able to combine.
-						break;
-					}
 
 					// Set all faces in this range to be part of the combined face.
 					for (WEInt combinedFaceZ = rangeBegin.z; combinedFaceZ <= rangeEnd.z; combinedFaceZ++)
@@ -406,6 +404,12 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 								}
 							}
 						}
+					}
+
+					if (!IsAdjacentFaceRangeCombinable(rangeBegin, rangeEnd, combineDirection, facing, this->entries, voxelChunk, faceEnableChunk))
+					{
+						// One or more voxels in the adjacent range aren't able to combine.
+						break;
 					}
 
 					faceCombineResult.max = faceCombineResult.max + combineDirection;
