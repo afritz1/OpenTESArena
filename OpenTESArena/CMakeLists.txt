@@ -606,10 +606,10 @@ SET(TES_VOXELS
     "${SRC_ROOT}/Voxels/VoxelTriggerInstance.h"
     "${SRC_ROOT}/Voxels/VoxelUtils.cpp"
     "${SRC_ROOT}/Voxels/VoxelUtils.h"
-    "${SRC_ROOT}/Voxels/VoxelVisibilityChunk.cpp"
-    "${SRC_ROOT}/Voxels/VoxelVisibilityChunk.h"
-    "${SRC_ROOT}/Voxels/VoxelVisibilityChunkManager.cpp"
-    "${SRC_ROOT}/Voxels/VoxelVisibilityChunkManager.h")
+    "${SRC_ROOT}/Voxels/VoxelFrustumCullingChunk.cpp"
+    "${SRC_ROOT}/Voxels/VoxelFrustumCullingChunk.h"
+    "${SRC_ROOT}/Voxels/VoxelFrustumCullingChunkManager.cpp"
+    "${SRC_ROOT}/Voxels/VoxelFrustumCullingChunkManager.h")
 
 SET(TES_WEATHER
     "${SRC_ROOT}/Weather/ArenaWeatherUtils.cpp"

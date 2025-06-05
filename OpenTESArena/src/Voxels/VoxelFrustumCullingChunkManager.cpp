@@ -1,7 +1,7 @@
 #include "VoxelChunkManager.h"
-#include "VoxelVisibilityChunkManager.h"
+#include "VoxelFrustumCullingChunkManager.h"
 
-void VoxelVisibilityChunkManager::update(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void VoxelFrustumCullingChunkManager::update(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
 	const RenderCamera &camera, double ceilingScale, const VoxelChunkManager &voxelChunkManager)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
@@ -15,7 +15,7 @@ void VoxelVisibilityChunkManager::update(BufferView<const ChunkInt2> newChunkPos
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 
 		const int spawnIndex = this->spawnChunk();
-		VoxelVisibilityChunk &visChunk = this->getChunkAtIndex(spawnIndex);
+		VoxelFrustumCullingChunk &visChunk = this->getChunkAtIndex(spawnIndex);
 		visChunk.init(chunkPos, voxelChunk.getHeight(), ceilingScale);
 	}
 

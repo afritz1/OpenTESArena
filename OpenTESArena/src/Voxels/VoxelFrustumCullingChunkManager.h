@@ -1,7 +1,7 @@
-#ifndef VOXEL_VISIBILITY_CHUNK_MANAGER_H
-#define VOXEL_VISIBILITY_CHUNK_MANAGER_H
+#ifndef VOXEL_FRUSTUM_CULLING_CHUNK_MANAGER_H
+#define VOXEL_FRUSTUM_CULLING_CHUNK_MANAGER_H
 
-#include "VoxelVisibilityChunk.h"
+#include "VoxelFrustumCullingChunk.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/BufferView.h"
@@ -10,7 +10,7 @@ class VoxelChunkManager;
 
 struct RenderCamera;
 
-class VoxelVisibilityChunkManager final : public SpecializedChunkManager<VoxelVisibilityChunk>
+class VoxelFrustumCullingChunkManager final : public SpecializedChunkManager<VoxelFrustumCullingChunk>
 {
 public:
 	void update(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

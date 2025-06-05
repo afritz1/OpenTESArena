@@ -20,11 +20,11 @@ class Renderer;
 class RenderLightChunkManager;
 class TextureManager;
 class VoxelChunkManager;
-class VoxelVisibilityChunkManager;
+class VoxelFrustumCullingChunkManager;
 
 struct RenderCamera;
 struct RenderCommandBuffer;
-struct VoxelVisibilityChunk;
+struct VoxelFrustumCullingChunk;
 
 class RenderVoxelChunkManager final : public SpecializedChunkManager<RenderVoxelChunk>
 {
@@ -90,7 +90,7 @@ private:
 	void updateChunkDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
 		const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent);
 
-	void rebuildDrawCallsList(const VoxelVisibilityChunkManager &voxelVisChunkManager);
+	void rebuildDrawCallsList(const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager);
 public:
 	RenderVoxelChunkManager();
 
@@ -105,7 +105,7 @@ public:
 
 	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager,
-		const VoxelVisibilityChunkManager &voxelVisChunkManager, const RenderLightChunkManager &renderLightChunkManager,
+		const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager, const RenderLightChunkManager &renderLightChunkManager,
 		TextureManager &textureManager, Renderer &renderer);
 
 	// End of frame clean-up.

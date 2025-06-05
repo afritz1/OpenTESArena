@@ -19,7 +19,7 @@
 #include "../Voxels/VoxelChunkManager.h"
 #include "../Voxels/VoxelFaceCombineChunkManager.h"
 #include "../Voxels/VoxelFaceEnableChunkManager.h"
-#include "../Voxels/VoxelVisibilityChunkManager.h"
+#include "../Voxels/VoxelFrustumCullingChunkManager.h"
 
 class TextureManager;
 class Renderer;
@@ -35,7 +35,7 @@ struct SceneManager
 	VoxelFaceEnableChunkManager voxelFaceEnableChunkManager;
 	VoxelFaceCombineChunkManager voxelFaceCombineChunkManager;
 	CollisionChunkManager collisionChunkManager;
-	VoxelVisibilityChunkManager voxelVisChunkManager;
+	VoxelFrustumCullingChunkManager voxelFrustumCullingChunkManager;
 	EntityVisibilityChunkManager entityVisChunkManager;
 	RenderVoxelChunkManager renderVoxelChunkManager;
 	RenderEntityChunkManager renderEntityChunkManager;

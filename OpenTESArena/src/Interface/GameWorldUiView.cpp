@@ -875,13 +875,13 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 {
 	Renderer &renderer = game.renderer;
-	UiTextureID quadtreeTextureIdList[VoxelVisibilityChunk::TREE_LEVEL_COUNT];
-	ScopedUiTextureRef quadtreeTextureRefList[VoxelVisibilityChunk::TREE_LEVEL_COUNT];
-	Int2 quadtreeTextureDimsList[VoxelVisibilityChunk::TREE_LEVEL_COUNT];
-	for (int treeLevelIndex = 0; treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
+	UiTextureID quadtreeTextureIdList[VoxelFrustumCullingChunk::TREE_LEVEL_COUNT];
+	ScopedUiTextureRef quadtreeTextureRefList[VoxelFrustumCullingChunk::TREE_LEVEL_COUNT];
+	Int2 quadtreeTextureDimsList[VoxelFrustumCullingChunk::TREE_LEVEL_COUNT];
+	for (int treeLevelIndex = 0; treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
 	{
-		DebugAssertIndex(VoxelVisibilityChunk::NODES_PER_SIDE, treeLevelIndex);
-		const int quadtreeTextureDim = VoxelVisibilityChunk::NODES_PER_SIDE[treeLevelIndex];
+		DebugAssertIndex(VoxelFrustumCullingChunk::NODES_PER_SIDE, treeLevelIndex);
+		const int quadtreeTextureDim = VoxelFrustumCullingChunk::NODES_PER_SIDE[treeLevelIndex];
 		if (!renderer.tryCreateUiTexture(quadtreeTextureDim, quadtreeTextureDim, &quadtreeTextureIdList[treeLevelIndex]))
 		{
 			DebugLogErrorFormat("Couldn't allocate voxel visibility quadtree debug texture %d.", treeLevelIndex);
@@ -892,13 +892,13 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 		quadtreeTextureDimsList[treeLevelIndex] = Int2(quadtreeTextureRefList[treeLevelIndex].getWidth(), quadtreeTextureRefList[treeLevelIndex].getHeight());
 	}
 
-	int quadtreeDrawPositionYs[VoxelVisibilityChunk::TREE_LEVEL_COUNT];
-	for (int treeLevelIndex = 0; treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
+	int quadtreeDrawPositionYs[VoxelFrustumCullingChunk::TREE_LEVEL_COUNT];
+	for (int treeLevelIndex = 0; treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
 	{
 		int quadtreeDrawPositionY = 0;
-		for (int i = treeLevelIndex; i < VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF; i++)
+		for (int i = treeLevelIndex; i < VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF; i++)
 		{
-			const int yDimIndex = VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF - (i - treeLevelIndex);
+			const int yDimIndex = VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF - (i - treeLevelIndex);
 			DebugAssertIndex(quadtreeTextureDimsList, yDimIndex);
 			quadtreeDrawPositionY += quadtreeTextureDimsList[yDimIndex].y;
 		}
@@ -910,9 +910,9 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 	const Player &player = game.player;
 	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
-	const VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
-	const VoxelVisibilityChunk *playerVoxelVisChunk = voxelVisChunkManager.tryGetChunkAtPosition(playerCoord.chunk);
-	if (playerVoxelVisChunk == nullptr)
+	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager = sceneManager.voxelFrustumCullingChunkManager;
+	const VoxelFrustumCullingChunk *playerVoxelFrustumCullingChunk = voxelFrustumCullingChunkManager.tryGetChunkAtPosition(playerCoord.chunk);
+	if (playerVoxelFrustumCullingChunk == nullptr)
 	{
 		return;
 	}
@@ -923,11 +923,11 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 	const uint32_t invisibleColor = Color(255, 0, 0, alpha).toARGB();
 	const uint32_t playerColor = Color(255, 255, 255, alpha).toARGB();
 
-	for (int treeLevelIndex = 0; treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
+	for (int treeLevelIndex = 0; treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
 	{
 		ScopedUiTextureRef &quadtreeTextureRef = quadtreeTextureRefList[treeLevelIndex];
 		const Int2 &quadtreeTextureDims = quadtreeTextureDimsList[treeLevelIndex];
-		const int quadtreeSideLength = VoxelVisibilityChunk::NODES_PER_SIDE[treeLevelIndex];
+		const int quadtreeSideLength = VoxelFrustumCullingChunk::NODES_PER_SIDE[treeLevelIndex];
 
 		uint32_t *quadtreeTexels = quadtreeTextureRef.lockTexels();
 
@@ -936,19 +936,19 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 			for (int x = 0; x < quadtreeTextureDims.x; x++)
 			{
 				VisibilityType visibilityType = VisibilityType::Outside;
-				const bool isLeaf = treeLevelIndex == VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF;
+				const bool isLeaf = treeLevelIndex == VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF;
 				if (isLeaf)
 				{
 					const int leafNodeIndex = y + (x * quadtreeTextureDims.y);
-					DebugAssertIndex(playerVoxelVisChunk->leafNodeFrustumTests, leafNodeIndex);
-					visibilityType = playerVoxelVisChunk->leafNodeFrustumTests[leafNodeIndex] ? VisibilityType::Inside : VisibilityType::Outside;
+					DebugAssertIndex(playerVoxelFrustumCullingChunk->leafNodeFrustumTests, leafNodeIndex);
+					visibilityType = playerVoxelFrustumCullingChunk->leafNodeFrustumTests[leafNodeIndex] ? VisibilityType::Inside : VisibilityType::Outside;
 				}
 				else
 				{
-					const int globalNodeOffset = VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS[treeLevelIndex];
+					const int globalNodeOffset = VoxelFrustumCullingChunk::GLOBAL_NODE_OFFSETS[treeLevelIndex];
 					const int internalNodeIndex = globalNodeOffset + (y + (x * quadtreeTextureDims.y));
-					DebugAssertIndex(playerVoxelVisChunk->internalNodeVisibilityTypes, internalNodeIndex);
-					visibilityType = playerVoxelVisChunk->internalNodeVisibilityTypes[internalNodeIndex];
+					DebugAssertIndex(playerVoxelFrustumCullingChunk->internalNodeVisibilityTypes, internalNodeIndex);
+					visibilityType = playerVoxelFrustumCullingChunk->internalNodeVisibilityTypes[internalNodeIndex];
 				}
 
 				const int dstIndex = ((quadtreeTextureDims.x - 1) - x) + (y * quadtreeTextureDims.x);
