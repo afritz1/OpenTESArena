@@ -1,4 +1,4 @@
-#include "VoxelVisibilityChunk.h"
+#include "VoxelFrustumCullingChunk.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
 
@@ -7,16 +7,16 @@
 namespace
 {
 	// Child node indices for each internal node (root owns 4 indices, etc.) using breadth-first traversal.
-	int CHILD_INDICES[VoxelVisibilityChunk::TOTAL_CHILD_COUNT];
+	int CHILD_INDICES[VoxelFrustumCullingChunk::TOTAL_CHILD_COUNT];
 
 	// XY point for each tree level node index.
-	Int2 Z_ORDER_CURVE_POINTS_LEVEL0[VoxelVisibilityChunk::NODE_COUNT_LEVEL0];
-	Int2 Z_ORDER_CURVE_POINTS_LEVEL1[VoxelVisibilityChunk::NODE_COUNT_LEVEL1];
-	Int2 Z_ORDER_CURVE_POINTS_LEVEL2[VoxelVisibilityChunk::NODE_COUNT_LEVEL2];
-	Int2 Z_ORDER_CURVE_POINTS_LEVEL3[VoxelVisibilityChunk::NODE_COUNT_LEVEL3];
-	Int2 Z_ORDER_CURVE_POINTS_LEVEL4[VoxelVisibilityChunk::NODE_COUNT_LEVEL4];
-	Int2 Z_ORDER_CURVE_POINTS_LEVEL5[VoxelVisibilityChunk::NODE_COUNT_LEVEL5];
-	Int2 Z_ORDER_CURVE_POINTS_LEVEL6[VoxelVisibilityChunk::NODE_COUNT_LEVEL6];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL0[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL0];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL1[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL1];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL2[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL2];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL3[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL3];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL4[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL4];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL5[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL5];
+	Int2 Z_ORDER_CURVE_POINTS_LEVEL6[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL6];
 	BufferView<Int2> Z_ORDER_CURVE_POINT_ARRAYS[] =
 	{
 		Z_ORDER_CURVE_POINTS_LEVEL0,
@@ -82,33 +82,33 @@ namespace
 		const BufferView<Int2> zOrderCurvePoints = Z_ORDER_CURVE_POINT_ARRAYS[treeLevelIndex];
 		const Int2 point = zOrderCurvePoints[treeLevelNodeIndex];
 
-		DebugAssertIndex(VoxelVisibilityChunk::NODES_PER_SIDE, treeLevelIndex);
-		const int nodesPerSide = VoxelVisibilityChunk::NODES_PER_SIDE[treeLevelIndex];
+		DebugAssertIndex(VoxelFrustumCullingChunk::NODES_PER_SIDE, treeLevelIndex);
+		const int nodesPerSide = VoxelFrustumCullingChunk::NODES_PER_SIDE[treeLevelIndex];
 		return point.x + (point.y * nodesPerSide);
 	}
 
 	// Gets the first of four child indices one level down from an internal node.
 	int GetFirstChildTreeLevelNodeIndex(int treeLevelNodeIndex)
 	{
-		return treeLevelNodeIndex * VoxelVisibilityChunk::CHILD_COUNT_PER_NODE;
+		return treeLevelNodeIndex * VoxelFrustumCullingChunk::CHILD_COUNT_PER_NODE;
 	}
 
 	// Converts the "0-# of nodes on tree level - 1" value to 0-3 for a specific subtree.
 	int GetSubtreeChildNodeIndex(int treeLevelNodeIndex)
 	{
-		return treeLevelNodeIndex % VoxelVisibilityChunk::CHILD_COUNT_PER_NODE;
+		return treeLevelNodeIndex % VoxelFrustumCullingChunk::CHILD_COUNT_PER_NODE;
 	}
 
-	void BroadcastCompleteVisibilityResult(VoxelVisibilityChunk &chunk, int treeLevelIndex, int treeLevelNodeIndex, VisibilityType visibilityType)
+	void BroadcastCompleteVisibilityResult(VoxelFrustumCullingChunk &chunk, int treeLevelIndex, int treeLevelNodeIndex, VisibilityType visibilityType)
 	{
-		static_assert(VoxelVisibilityChunk::CHILD_COUNT_PER_NODE == 4);
-		DebugAssert(treeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF);
+		static_assert(VoxelFrustumCullingChunk::CHILD_COUNT_PER_NODE == 4);
+		DebugAssert(treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF);
 		DebugAssert(visibilityType != VisibilityType::Partial);
 
 		const bool isAtLeastPartiallyVisible = visibilityType != VisibilityType::Outside;
 
 		// Very fast writes if the root node is completely visible/invisible.
-		if (treeLevelIndex == VoxelVisibilityChunk::TREE_LEVEL_INDEX_ROOT)
+		if (treeLevelIndex == VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_ROOT)
 		{
 			std::fill(std::begin(chunk.internalNodeVisibilityTypes), std::end(chunk.internalNodeVisibilityTypes), visibilityType);
 			std::fill(std::begin(chunk.leafNodeFrustumTests), std::end(chunk.leafNodeFrustumTests), isAtLeastPartiallyVisible);
@@ -116,18 +116,18 @@ namespace
 		}
 
 		const int firstChildTreeLevelNodeIndex = GetFirstChildTreeLevelNodeIndex(treeLevelNodeIndex);
-		int childrenTreeLevelNodeIndices[VoxelVisibilityChunk::CHILD_COUNT_PER_NODE];
+		int childrenTreeLevelNodeIndices[VoxelFrustumCullingChunk::CHILD_COUNT_PER_NODE];
 		childrenTreeLevelNodeIndices[0] = firstChildTreeLevelNodeIndex;
 		childrenTreeLevelNodeIndices[1] = firstChildTreeLevelNodeIndex + 1;
 		childrenTreeLevelNodeIndices[2] = firstChildTreeLevelNodeIndex + 2;
 		childrenTreeLevelNodeIndices[3] = firstChildTreeLevelNodeIndex + 3;
 
 		const int childrenTreeLevelIndex = treeLevelIndex + 1;
-		const bool childrenTreeLevelHasChildNodes = childrenTreeLevelIndex < VoxelVisibilityChunk::TREE_LEVEL_INDEX_LEAF;
+		const bool childrenTreeLevelHasChildNodes = childrenTreeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF;
 		if (childrenTreeLevelHasChildNodes)
 		{
-			DebugAssertIndex(VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS, childrenTreeLevelIndex);
-			const int globalNodeOffset = VoxelVisibilityChunk::GLOBAL_NODE_OFFSETS[childrenTreeLevelIndex];
+			DebugAssertIndex(VoxelFrustumCullingChunk::GLOBAL_NODE_OFFSETS, childrenTreeLevelIndex);
+			const int globalNodeOffset = VoxelFrustumCullingChunk::GLOBAL_NODE_OFFSETS[childrenTreeLevelIndex];
 
 			for (const int childTreeLevelNodeIndex : childrenTreeLevelNodeIndices)
 			{
@@ -155,7 +155,7 @@ namespace
 	}
 }
 
-VoxelVisibilityChunk::VoxelVisibilityChunk()
+VoxelFrustumCullingChunk::VoxelFrustumCullingChunk()
 {
 	if (!s_areGlobalVariablesInited)
 	{
@@ -168,7 +168,7 @@ VoxelVisibilityChunk::VoxelVisibilityChunk()
 	std::fill(std::begin(this->leafNodeFrustumTests), std::end(this->leafNodeFrustumTests), false);
 }
 
-void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ceilingScale)
+void VoxelFrustumCullingChunk::init(const ChunkInt2 &position, int height, double ceilingScale)
 {
 	Chunk::init(position, height);
 
@@ -214,13 +214,13 @@ void VoxelVisibilityChunk::init(const ChunkInt2 &position, int height, double ce
 	std::fill(std::begin(this->leafNodeFrustumTests), std::end(this->leafNodeFrustumTests), false);
 }
 
-VisibilityType VoxelVisibilityChunk::getRootVisibilityType() const
+VisibilityType VoxelFrustumCullingChunk::getRootVisibilityType() const
 {
 	constexpr int rootNodeIndex = 0;
 	return this->internalNodeVisibilityTypes[rootNodeIndex];
 }
 
-void VoxelVisibilityChunk::update(const RenderCamera &camera)
+void VoxelFrustumCullingChunk::update(const RenderCamera &camera)
 {
 	int currentTreeLevelIndex = 0; // Starts at root, ends at leaves.
 	int currentTreeLevelNodeIndex = 0; // 0-# of nodes on the current tree level.
@@ -304,7 +304,7 @@ void VoxelVisibilityChunk::update(const RenderCamera &camera)
 	} while (GetSubtreeChildNodeIndex(currentTreeLevelNodeIndex) < CHILD_COUNT_PER_NODE);
 }
 
-void VoxelVisibilityChunk::clear()
+void VoxelFrustumCullingChunk::clear()
 {
 	Chunk::clear();
 	std::fill(std::begin(this->nodeBBoxes), std::end(this->nodeBBoxes), BoundingBox3D());

@@ -10,25 +10,25 @@
 
 // Contiguous pool that allows elements to be freed and their position reused by future elements
 // without affecting other elements.
-template<typename ElementT, typename IdT>
+template<typename KeyT, typename ValueT>
 class RecyclablePool
 {
 private:
-	static_assert(std::is_default_constructible_v<ElementT>);
-	static_assert(std::is_move_assignable_v<ElementT>);
-	static_assert(!std::is_polymorphic_v<ElementT>);
-	static_assert(std::is_integral_v<IdT>);
+	static_assert(std::is_integral_v<KeyT>);
+	static_assert(std::is_default_constructible_v<ValueT>);
+	static_assert(std::is_move_assignable_v<ValueT>);
+	static_assert(!std::is_polymorphic_v<ValueT>);
 	
-	std::vector<ElementT> elements;
-	std::unordered_set<IdT> freedIDs;
-	IdT nextID;
+	std::vector<ValueT> elements;
+	std::unordered_set<KeyT> freedIDs;
+	KeyT nextID;
 
-	bool isFreedID(IdT id) const
+	bool isFreedID(KeyT id) const
 	{
 		return this->freedIDs.find(id) != this->freedIDs.end();
 	}
 
-	bool isValidID(IdT id) const
+	bool isValidID(KeyT id) const
 	{
 		if ((id < 0) || (id >= this->nextID))
 		{
@@ -64,21 +64,21 @@ public:
 		return this->getTotalCount() - this->getFreeCount();
 	}
 
-	ElementT &get(IdT id)
+	ValueT &get(KeyT id)
 	{
 		DebugAssert(this->isValidID(id));
 		DebugAssertIndex(this->elements, id);
 		return this->elements[id];
 	}
 
-	const ElementT &get(IdT id) const
+	const ValueT &get(KeyT id) const
 	{
 		DebugAssert(this->isValidID(id));
 		DebugAssertIndex(this->elements, id);
 		return this->elements[id];
 	}
 
-	ElementT *tryGet(IdT id)
+	ValueT *tryGet(KeyT id)
 	{
 		if (!this->isValidID(id))
 		{
@@ -89,7 +89,7 @@ public:
 		return &this->elements[id];
 	}
 
-	const ElementT *tryGet(IdT id) const
+	const ValueT *tryGet(KeyT id) const
 	{
 		if (!this->isValidID(id))
 		{
@@ -100,7 +100,7 @@ public:
 		return &this->elements[id];
 	}
 
-	bool tryAlloc(IdT *outID)
+	bool tryAlloc(KeyT *outID)
 	{
 		if (!this->freedIDs.empty())
 		{
@@ -111,13 +111,13 @@ public:
 		{
 			*outID = this->nextID;
 			this->nextID++;
-			this->elements.emplace_back(ElementT());
+			this->elements.emplace_back(ValueT());
 		}
 
 		return true;
 	}
 
-	void free(IdT id)
+	void free(KeyT id)
 	{
 		if (!this->isValidID(id))
 		{
@@ -127,7 +127,7 @@ public:
 		this->freedIDs.emplace(id);
 		
 		DebugAssertIndex(this->elements, id);
-		this->elements[id] = ElementT();
+		this->elements[id] = ValueT();
 	}
 
 	void clear()

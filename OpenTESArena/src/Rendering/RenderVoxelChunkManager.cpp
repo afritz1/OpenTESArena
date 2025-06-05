@@ -11,8 +11,8 @@
 #include "../Assets/TextureManager.h"
 #include "../Voxels/DoorUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
-#include "../Voxels/VoxelVisibilityChunk.h"
-#include "../Voxels/VoxelVisibilityChunkManager.h"
+#include "../Voxels/VoxelFrustumCullingChunk.h"
+#include "../Voxels/VoxelFrustumCullingChunkManager.h"
 
 #include "components/debug/Debug.h"
 
@@ -1180,7 +1180,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 	}
 }
 
-void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkManager &voxelVisChunkManager)
+void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager)
 {
 	this->drawCallsCache.clear();
 
@@ -1189,8 +1189,8 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkMan
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
 		const RenderVoxelChunk &renderChunk = *chunkPtr;
-		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtIndex(i);
-		const VisibilityType rootVisibilityType = voxelVisChunk.getRootVisibilityType();
+		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtIndex(i);
+		const VisibilityType rootVisibilityType = voxelFrustumCullingChunk.getRootVisibilityType();
 		const bool anyVisibleLeafNodes = rootVisibilityType != VisibilityType::Outside;
 		if (!anyVisibleLeafNodes)
 		{
@@ -1203,8 +1203,8 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelVisibilityChunkMan
 			for (SNInt x = 0; x < rangeIDs.getWidth(); x++)
 			{
 				const int visibilityLeafNodeIndex = x + (z * rangeIDs.getWidth());
-				DebugAssertIndex(voxelVisChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
-				const bool isVoxelColumnVisible = voxelVisChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
+				DebugAssertIndex(voxelFrustumCullingChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
+				const bool isVoxelColumnVisible = voxelFrustumCullingChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
 				if (isVoxelColumnVisible)
 				{
 					for (int y = 0; y < rangeIDs.getHeight(); y++)
@@ -1254,7 +1254,7 @@ void RenderVoxelChunkManager::updateActiveChunks(BufferView<const ChunkInt2> new
 
 void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
 	double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager,
-	const VoxelVisibilityChunkManager &voxelVisChunkManager, const RenderLightChunkManager &renderLightChunkManager,
+	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager, const RenderLightChunkManager &renderLightChunkManager,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	// Update pre-scale transition used by all raising doors (ideally this would be once on scene change).
@@ -1265,7 +1265,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtPosition(chunkPos);
+		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtPosition(chunkPos);
 		this->loadMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->loadChunkTextures(voxelChunk, voxelChunkManager, textureManager, renderer);
 		this->loadChasmWalls(renderChunk, voxelChunk);
@@ -1276,7 +1276,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		const VoxelVisibilityChunk &voxelVisChunk = voxelVisChunkManager.getChunkAtPosition(chunkPos);
+		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtPosition(chunkPos);
 		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 
 		BufferView<const VoxelInt3> dirtyChasmWallInstVoxels = voxelChunk.getDirtyChasmWallInstPositions();
@@ -1326,7 +1326,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		this->updateChunkDrawCalls(renderChunk, dirtyLightVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
 	}
 
-	this->rebuildDrawCallsList(voxelVisChunkManager);
+	this->rebuildDrawCallsList(voxelFrustumCullingChunkManager);
 }
 
 void RenderVoxelChunkManager::cleanUp()

@@ -581,8 +581,15 @@ SET(TES_VOXELS
     "${SRC_ROOT}/Voxels/VoxelDoorDefinition.h"
     "${SRC_ROOT}/Voxels/VoxelDoorVisibilityInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelDoorVisibilityInstance.h"
-    "${SRC_ROOT}/Voxels/VoxelFacing2D.h"
-    "${SRC_ROOT}/Voxels/VoxelFacing3D.h"
+    "${SRC_ROOT}/Voxels/VoxelFaceCombineChunk.h"
+    "${SRC_ROOT}/Voxels/VoxelFaceCombineChunk.cpp"
+    "${SRC_ROOT}/Voxels/VoxelFaceCombineChunkManager.h"
+    "${SRC_ROOT}/Voxels/VoxelFaceCombineChunkManager.cpp"
+    "${SRC_ROOT}/Voxels/VoxelFaceEnableChunk.h"
+    "${SRC_ROOT}/Voxels/VoxelFaceEnableChunk.cpp"
+    "${SRC_ROOT}/Voxels/VoxelFaceEnableChunkManager.h"
+    "${SRC_ROOT}/Voxels/VoxelFaceEnableChunkManager.cpp"
+    "${SRC_ROOT}/Voxels/VoxelFacing.h"
     "${SRC_ROOT}/Voxels/VoxelFadeAnimationInstance.cpp"
     "${SRC_ROOT}/Voxels/VoxelFadeAnimationInstance.h"
     "${SRC_ROOT}/Voxels/VoxelShadingDefinition.cpp"
@@ -599,10 +606,10 @@ SET(TES_VOXELS
     "${SRC_ROOT}/Voxels/VoxelTriggerInstance.h"
     "${SRC_ROOT}/Voxels/VoxelUtils.cpp"
     "${SRC_ROOT}/Voxels/VoxelUtils.h"
-    "${SRC_ROOT}/Voxels/VoxelVisibilityChunk.cpp"
-    "${SRC_ROOT}/Voxels/VoxelVisibilityChunk.h"
-    "${SRC_ROOT}/Voxels/VoxelVisibilityChunkManager.cpp"
-    "${SRC_ROOT}/Voxels/VoxelVisibilityChunkManager.h")
+    "${SRC_ROOT}/Voxels/VoxelFrustumCullingChunk.cpp"
+    "${SRC_ROOT}/Voxels/VoxelFrustumCullingChunk.h"
+    "${SRC_ROOT}/Voxels/VoxelFrustumCullingChunkManager.cpp"
+    "${SRC_ROOT}/Voxels/VoxelFrustumCullingChunkManager.h")
 
 SET(TES_WEATHER
     "${SRC_ROOT}/Weather/ArenaWeatherUtils.cpp"

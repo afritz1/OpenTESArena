@@ -679,8 +679,10 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 	sceneManager.voxelChunkManager.clear();
 	sceneManager.entityChunkManager.clear(physicsSystem, renderer);
+	sceneManager.voxelFaceEnableChunkManager.recycleAllChunks();
+	sceneManager.voxelFaceCombineChunkManager.recycleAllChunks();
 	sceneManager.collisionChunkManager.clear(physicsSystem);
-	sceneManager.voxelVisChunkManager.recycleAllChunks();
+	sceneManager.voxelFrustumCullingChunkManager.recycleAllChunks();
 	sceneManager.entityVisChunkManager.recycleAllChunks();
 	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
 	sceneManager.renderEntityChunkManager.unloadScene(renderer);
@@ -948,6 +950,9 @@ void GameState::tickVoxels(double dt, Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
+	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 
 	const Player &player = game.player;
 
@@ -962,9 +967,16 @@ void GameState::tickVoxels(double dt, Game &game)
 	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
 
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	voxelChunkManager.update(dt, chunkManager.getNewChunkPositions(), chunkManager.getFreedChunkPositions(),
-		player.getEyeCoord(), &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs,
-		this->getActiveCeilingScale(), game.audioManager);
+	voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, player.getEyeCoord(), &levelDef, &levelInfoDef,
+		mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs, this->getActiveCeilingScale(), game.audioManager);
+
+	VoxelFaceEnableChunkManager &voxelFaceEnableChunkManager = sceneManager.voxelFaceEnableChunkManager;
+	voxelFaceEnableChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager);
+	voxelFaceEnableChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager);
+
+	VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager = sceneManager.voxelFaceCombineChunkManager;
+	voxelFaceCombineChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager);
+	voxelFaceCombineChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager, voxelFaceEnableChunkManager);
 }
 
 void GameState::tickEntities(double dt, Game &game)
@@ -1027,8 +1039,8 @@ void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const double ceilingScale = this->getActiveCeilingScale();
 
-	VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
-	voxelVisChunkManager.update(newChunkPositions, freedChunkPositions, renderCamera, ceilingScale, voxelChunkManager);
+	VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager = sceneManager.voxelFrustumCullingChunkManager;
+	voxelFrustumCullingChunkManager.update(newChunkPositions, freedChunkPositions, renderCamera, ceilingScale, voxelChunkManager);
 
 	EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
 	entityVisChunkManager.update(activeChunkPositions, newChunkPositions, freedChunkPositions, renderCamera, ceilingScale,
@@ -1071,11 +1083,11 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	renderLightChunkManager.update(activeChunkPositions, newChunkPositions, playerCoord, ceilingScale, isFoggy, nightLightsAreActive,
 		options.getMisc_PlayerHasLight(), voxelChunkManager, entityChunkManager, renderer);
 
-	const VoxelVisibilityChunkManager &voxelVisChunkManager = sceneManager.voxelVisChunkManager;
+	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager = sceneManager.voxelFrustumCullingChunkManager;
 	RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
 	renderVoxelChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
 	renderVoxelChunkManager.update(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
-		voxelChunkManager, voxelVisChunkManager, renderLightChunkManager, textureManager, renderer);
+		voxelChunkManager, voxelFrustumCullingChunkManager, renderLightChunkManager, textureManager, renderer);
 
 	const EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
 	RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;

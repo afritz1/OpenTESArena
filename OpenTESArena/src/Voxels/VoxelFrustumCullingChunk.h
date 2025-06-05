@@ -1,5 +1,5 @@
-#ifndef VOXEL_VISIBILITY_CHUNK_H
-#define VOXEL_VISIBILITY_CHUNK_H
+#ifndef VOXEL_FRUSTUM_CULLING_CHUNK_H
+#define VOXEL_FRUSTUM_CULLING_CHUNK_H
 
 #include "../Math/BoundingBox.h"
 #include "../Rendering/VisibilityType.h"
@@ -10,7 +10,7 @@
 struct RenderCamera;
 
 // Implements a quadtree for fast visibility tests against the camera.
-struct VoxelVisibilityChunk final : public Chunk
+struct VoxelFrustumCullingChunk final : public Chunk
 {
 	static constexpr int NODE_COUNT_LEVEL0 = 1; // Entire chunk.
 	static constexpr int NODE_COUNT_LEVEL1 = 4;
@@ -76,7 +76,7 @@ struct VoxelVisibilityChunk final : public Chunk
 	VisibilityType internalNodeVisibilityTypes[INTERNAL_NODE_COUNT]; // Non-leaf quadtree bbox tests against the camera this frame.
 	bool leafNodeFrustumTests[LEAF_NODE_COUNT];
 
-	VoxelVisibilityChunk();
+	VoxelFrustumCullingChunk();
 
 	void init(const ChunkInt2 &position, int height, double ceilingScale);
 

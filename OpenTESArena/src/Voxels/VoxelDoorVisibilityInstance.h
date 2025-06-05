@@ -1,7 +1,7 @@
 #ifndef VOXEL_DOOR_VISIBILITY_INSTANCE_H
 #define VOXEL_DOOR_VISIBILITY_INSTANCE_H
 
-#include "VoxelFacing2D.h"
+#include "VoxelFacing.h"
 #include "../World/Coord.h"
 
 // Door face visibility depends on adjacent air voxels and camera position.

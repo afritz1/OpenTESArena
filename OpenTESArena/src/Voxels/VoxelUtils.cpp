@@ -1,7 +1,6 @@
 #include <cmath>
 
-#include "VoxelFacing2D.h"
-#include "VoxelFacing3D.h"
+#include "VoxelFacing.h"
 #include "VoxelUtils.h"
 #include "../World/ChunkUtils.h"
 
@@ -296,4 +295,37 @@ void VoxelUtils::getSurroundingVoxels(const VoxelInt2 &voxel, int distance, Voxe
 	DebugAssert(distance >= 0);
 	*outMinVoxel = VoxelInt2(voxel.x - distance, voxel.y - distance);
 	*outMaxVoxel = VoxelInt2(voxel.x + distance, voxel.y + distance);
+}
+
+int VoxelUtils::getFacingIndex(VoxelFacing3D facing)
+{
+	return static_cast<int>(facing);
+}
+
+VoxelFacing3D VoxelUtils::getFaceIndexFacing(int faceIndex)
+{
+	DebugAssert(faceIndex >= 0);
+	DebugAssert(faceIndex < VoxelUtils::FACE_COUNT);
+	return static_cast<VoxelFacing3D>(faceIndex);
+}
+
+VoxelFacing3D VoxelUtils::getOppositeFacing(VoxelFacing3D facing)
+{
+	switch (facing)
+	{
+		case VoxelFacing3D::PositiveX:
+			return VoxelFacing3D::NegativeX;
+		case VoxelFacing3D::NegativeX:
+			return VoxelFacing3D::PositiveX;
+		case VoxelFacing3D::PositiveY:
+			return VoxelFacing3D::NegativeY;
+		case VoxelFacing3D::NegativeY:
+			return VoxelFacing3D::PositiveY;
+		case VoxelFacing3D::PositiveZ:
+			return VoxelFacing3D::NegativeZ;
+		case VoxelFacing3D::NegativeZ:
+			return VoxelFacing3D::PositiveZ;
+		default:
+			DebugUnhandledReturnMsg(VoxelFacing3D, std::to_string(static_cast<int>(facing)));
+	}
 }

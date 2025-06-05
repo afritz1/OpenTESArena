@@ -3,15 +3,19 @@
 
 #include <optional>
 
+#include "VoxelFacing.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 #include "../World/Coord.h"
 
-enum class VoxelFacing2D;
-enum class VoxelFacing3D;
+#include "components/debug/Debug.h"
+#include "components/utilities/BufferView.h"
 
 namespace VoxelUtils
 {
+	static constexpr int FACE_COUNT = 6; // +X, -X, +Y, -Y, +Z, -Z
+
 	const VoxelInt2 North(-1, 0);
 	const VoxelInt2 South(1, 0);
 	const VoxelInt2 East(0, -1);
@@ -75,6 +79,61 @@ namespace VoxelUtils
 	// clamp within any specified range.
 	void getSurroundingVoxels(const VoxelInt3 &voxel, int distance, VoxelInt3 *outMinVoxel, VoxelInt3 *outMaxVoxel);
 	void getSurroundingVoxels(const VoxelInt2 &voxel, int distance, VoxelInt2 *outMinVoxel, VoxelInt2 *outMaxVoxel);
+
+	// Valid facings for face enabling/combining logic.
+	constexpr VoxelFacing3D ValidFacings_Wall[] = { VoxelFacing3D::PositiveX, VoxelFacing3D::NegativeX, VoxelFacing3D::PositiveY, VoxelFacing3D::NegativeY, VoxelFacing3D::PositiveZ, VoxelFacing3D::NegativeZ };
+	constexpr VoxelFacing3D ValidFacings_Floor[] = { VoxelFacing3D::PositiveY };
+	constexpr VoxelFacing3D ValidFacings_Ceiling[] = { VoxelFacing3D::NegativeY };
+	constexpr VoxelFacing3D ValidFacings_Raised[] = { VoxelFacing3D::PositiveX, VoxelFacing3D::NegativeX, VoxelFacing3D::PositiveY, VoxelFacing3D::NegativeY, VoxelFacing3D::PositiveZ, VoxelFacing3D::NegativeZ };
+	constexpr VoxelFacing3D ValidFacings_TransparentWall[] = { VoxelFacing3D::PositiveX, VoxelFacing3D::NegativeX, VoxelFacing3D::PositiveZ, VoxelFacing3D::NegativeZ };
+
+	const std::pair<ArenaVoxelType, BufferView<const VoxelFacing3D>> VoxelTypeValidFacings[] =
+	{
+		{ ArenaVoxelType::None, BufferView<const VoxelFacing3D>() },
+		{ ArenaVoxelType::Wall, ValidFacings_Wall },
+		{ ArenaVoxelType::Floor, ValidFacings_Floor },
+		{ ArenaVoxelType::Ceiling, ValidFacings_Ceiling },
+		{ ArenaVoxelType::Raised, ValidFacings_Raised },
+		{ ArenaVoxelType::Diagonal, BufferView<const VoxelFacing3D>() }, // Needs more than facing check
+		{ ArenaVoxelType::TransparentWall, ValidFacings_TransparentWall },
+		{ ArenaVoxelType::Edge, BufferView<const VoxelFacing3D>() }, // Depends on edge definition
+		{ ArenaVoxelType::Chasm, BufferView<const VoxelFacing3D>() }, // Depends on chasm wall instance
+		{ ArenaVoxelType::Door, BufferView<const VoxelFacing3D>() } // Not worth combining
+	};
+
+	int getFacingIndex(VoxelFacing3D facing);
+	VoxelFacing3D getFaceIndexFacing(int faceIndex);
+	VoxelFacing3D getOppositeFacing(VoxelFacing3D facing);
+
+	// Whether this voxel type's mesh is intended to cover the given facing (all four corners). Only determines mesh coverage, not opacity/shading.
+	constexpr bool isVoxelTypeMeshCoveringFacing(ArenaVoxelType voxelType, VoxelFacing3D facing)
+	{
+		switch (voxelType)
+		{
+		case ArenaVoxelType::None:
+			return false;
+		case ArenaVoxelType::Wall:
+			return true;
+		case ArenaVoxelType::Floor:
+			return facing == VoxelFacing3D::PositiveY;
+		case ArenaVoxelType::Ceiling:
+			return facing == VoxelFacing3D::NegativeY;
+		case ArenaVoxelType::Raised:
+			return false;
+		case ArenaVoxelType::Diagonal:
+			return false;
+		case ArenaVoxelType::TransparentWall:
+			return false;
+		case ArenaVoxelType::Edge:
+			return false;
+		case ArenaVoxelType::Chasm:
+			return false;
+		case ArenaVoxelType::Door:
+			return false;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
 }
 
 #endif

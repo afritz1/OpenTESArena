@@ -14,7 +14,7 @@
 #include "../Time/ArenaClockUtils.h"
 #include "../UI/TextBox.h"
 #include "../Voxels/ArenaVoxelUtils.h"
-#include "../Voxels/VoxelFacing3D.h"
+#include "../Voxels/VoxelFacing.h"
 
 void MapLogic::handleNightLightChange(Game &game, bool active)
 {

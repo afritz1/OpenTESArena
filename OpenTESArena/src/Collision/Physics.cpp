@@ -13,7 +13,7 @@
 #include "../Math/Matrix4.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
-#include "../Voxels/VoxelFacing3D.h"
+#include "../Voxels/VoxelFacing.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MeshUtils.h"
 
