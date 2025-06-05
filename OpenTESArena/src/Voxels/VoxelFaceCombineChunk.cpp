@@ -3,7 +3,7 @@
 #include "VoxelChunk.h"
 #include "VoxelFaceCombineChunk.h"
 #include "VoxelFaceEnableChunk.h"
-#include "VoxelFacing3D.h"
+#include "VoxelFacing.h"
 
 #include "components/utilities/BufferView3D.h"
 

@@ -2,7 +2,7 @@
 
 #include "VoxelFaceEnableChunk.h"
 #include "VoxelChunk.h"
-#include "VoxelFacing3D.h"
+#include "VoxelFacing.h"
 #include "../Rendering/RenderShaderUtils.h"
 
 namespace

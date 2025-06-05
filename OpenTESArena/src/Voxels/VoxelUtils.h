@@ -3,7 +3,7 @@
 
 #include <optional>
 
-#include "VoxelFacing3D.h"
+#include "VoxelFacing.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
@@ -11,8 +11,6 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/BufferView.h"
-
-enum class VoxelFacing2D;
 
 namespace VoxelUtils
 {
