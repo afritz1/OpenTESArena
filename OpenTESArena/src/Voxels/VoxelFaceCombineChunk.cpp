@@ -238,27 +238,24 @@ void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
 
 	this->entries.init(Chunk::WIDTH, height, Chunk::DEPTH);
 	this->entries.fill(VoxelFacesEntry());
+
+	this->dirtyEntries.init(Chunk::WIDTH, height, Chunk::DEPTH);
+	this->dirtyEntries.fill(VoxelFaceCombineDirtyEntry());
 }
 
 void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 {
-	this->dirtyEntries.clear();
-	this->dirtyEntries.reserve(dirtyVoxels.getCount());
+	this->dirtyEntryPositions.clear();
+	this->dirtyEntryPositions.reserve(dirtyVoxels.getCount());
 
 	// Free any combined faces associated with the dirty voxels.
 	for (const VoxelInt3 voxel : dirtyVoxels)
 	{
-		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
-
-		auto dirtyEntryIter = this->dirtyEntries.find(voxel);
-		if (dirtyEntryIter == this->dirtyEntries.end())
-		{
-			dirtyEntryIter = this->dirtyEntries.emplace(voxel, VoxelFaceCombineDirtyEntry()).first;
-		}
-
-		VoxelFaceCombineDirtyEntry &dirtyEntry = dirtyEntryIter->second;
+		VoxelFaceCombineDirtyEntry &dirtyEntry = this->dirtyEntries.get(voxel.x, voxel.y, voxel.z);
 		std::fill(std::begin(dirtyEntry.dirtyFaces), std::end(dirtyEntry.dirtyFaces), true);
+		this->dirtyEntryPositions.emplace_back(voxel);
 
+		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
 			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
@@ -281,14 +278,9 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 								currentFaceCombineResultID = -1;
 
 								const VoxelInt3 currentVoxel(currentX, currentY, currentZ);
-								auto currentDirtyEntryIter = this->dirtyEntries.find(currentVoxel);
-								if (currentDirtyEntryIter == this->dirtyEntries.end())
-								{
-									currentDirtyEntryIter = this->dirtyEntries.emplace(currentVoxel, VoxelFaceCombineDirtyEntry()).first;
-								}
-
-								VoxelFaceCombineDirtyEntry &currentDirtyEntry = currentDirtyEntryIter->second;
+								VoxelFaceCombineDirtyEntry &currentDirtyEntry = this->dirtyEntries.get(currentX, currentY, currentZ);
 								currentDirtyEntry.dirtyFaces[faceIndex] = true;
+								this->dirtyEntryPositions.emplace_back(currentVoxel); // Possible duplicate of 'this' voxel, sort + remove afterwards.
 							}
 						}
 					}
@@ -299,11 +291,43 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		}
 	}
 
-	// Combine dirty faces together where possible.
-	for (auto iter = this->dirtyEntries.begin(); iter != this->dirtyEntries.end(); iter++)
+	// Sort dirty positions lexicographically to remove duplicates.
+	std::sort(this->dirtyEntryPositions.begin(), this->dirtyEntryPositions.end(),
+		[](const VoxelInt3 a, const VoxelInt3 b)
 	{
-		const VoxelInt3 voxel = iter->first;
-		VoxelFaceCombineDirtyEntry &dirtyEntry = iter->second;
+		if (a.x != b.x)
+		{
+			return a.x < b.x;
+		}
+		else if (a.y != b.y)
+		{
+			return a.y < b.y;
+		}
+		else
+		{
+			return a.z < b.z;
+		}
+	});
+
+	const auto uniqueDirtyPositionsEnd = std::unique(this->dirtyEntryPositions.begin(), this->dirtyEntryPositions.end());
+
+	// Now sort by distance to origin so the combining algorithm has the best chance to generate big squares
+	// since it works along positive axes.
+	std::sort(this->dirtyEntryPositions.begin(), uniqueDirtyPositionsEnd,
+		[](const VoxelInt3 a, const VoxelInt3 b)
+	{
+		const int aLengthSqr = (a.x * a.x) + (a.y * a.y) + (a.z * a.z);
+		const int bLengthSqr = (b.x * b.x) + (b.y * b.y) + (b.z * b.z);
+		return aLengthSqr < bLengthSqr;
+	});
+
+	const int uniqueDirtyPositionCount = static_cast<int>(std::distance(this->dirtyEntryPositions.begin(), uniqueDirtyPositionsEnd));
+
+	// Combine dirty faces together where possible.
+	for (int i = 0; i < uniqueDirtyPositionCount; i++)
+	{
+		const VoxelInt3 voxel = this->dirtyEntryPositions[i];
+		VoxelFaceCombineDirtyEntry &dirtyEntry = this->dirtyEntries.get(voxel.x, voxel.y, voxel.z);
 
 		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
@@ -396,12 +420,8 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 								VoxelFacesEntry &combinedFacesEntry = this->entries.get(combinedFaceVoxel.x, combinedFaceVoxel.y, combinedFaceVoxel.z);
 								combinedFacesEntry.combinedFacesIDs[faceIndex] = faceCombineResultID;
 
-								const auto combinedDirtyEntryIter = this->dirtyEntries.find(combinedFaceVoxel);
-								if (combinedDirtyEntryIter != this->dirtyEntries.end())
-								{
-									VoxelFaceCombineDirtyEntry &combinedDirtyEntry = combinedDirtyEntryIter->second;
-									combinedDirtyEntry.dirtyFaces[faceIndex] = false;
-								}
+								VoxelFaceCombineDirtyEntry &combinedDirtyEntry = this->dirtyEntries.get(combinedFaceVoxel.x, combinedFaceVoxel.y, combinedFaceVoxel.z);
+								combinedDirtyEntry.dirtyFaces[faceIndex] = false;
 							}
 						}
 					}
@@ -423,6 +443,7 @@ void VoxelFaceCombineChunk::clear()
 {
 	Chunk::clear();
 	this->dirtyEntries.clear();
+	this->dirtyEntryPositions.clear();
 	this->combinedFacesPool.clear();
 	this->entries.clear();
 }

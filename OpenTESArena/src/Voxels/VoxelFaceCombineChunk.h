@@ -1,6 +1,8 @@
 #ifndef VOXEL_FACE_COMBINE_CHUNK_H
 #define VOXEL_FACE_COMBINE_CHUNK_H
 
+#include <vector>
+
 #include "VoxelUtils.h"
 #include "../World/Chunk.h"
 
@@ -45,7 +47,8 @@ struct VoxelFaceCombineDirtyEntry
 class VoxelFaceCombineChunk : public Chunk
 {
 private:
-	std::unordered_map<VoxelInt3, VoxelFaceCombineDirtyEntry> dirtyEntries; // Cleared at start of each update.
+	Buffer3D<VoxelFaceCombineDirtyEntry> dirtyEntries;
+	std::vector<VoxelInt3> dirtyEntryPositions; // Voxels that need dirty entry updating this frame. Cleared at start of each update.
 public:
 	RecyclablePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> combinedFacesPool;
 	Buffer3D<VoxelFacesEntry> entries;
