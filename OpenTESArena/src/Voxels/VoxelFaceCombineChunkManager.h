@@ -10,7 +10,7 @@ class VoxelChunkManager;
 class VoxelFaceEnableChunkManager;
 
 // Combines voxel faces where possible within each chunk for reduced draw calls.
-class VoxelFaceCombineChunkManager : public SpecializedChunkManager<VoxelFaceCombineChunk>
+class VoxelFaceCombineChunkManager final : public SpecializedChunkManager<VoxelFaceCombineChunk>
 {
 public:
 	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

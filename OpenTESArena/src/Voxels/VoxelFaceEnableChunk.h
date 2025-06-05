@@ -20,7 +20,7 @@ struct VoxelFaceEnableEntry
 	void fill(bool enabled);
 };
 
-class VoxelFaceEnableChunk : public Chunk
+class VoxelFaceEnableChunk final : public Chunk
 {
 public:
 	Buffer3D<VoxelFaceEnableEntry> entries;

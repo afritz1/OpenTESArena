@@ -9,7 +9,7 @@
 class VoxelChunkManager;
 
 // Tracks which voxel faces within each chunk are internal faces blocked by opaque neighbor blocks.
-class VoxelFaceEnableChunkManager : public SpecializedChunkManager<VoxelFaceEnableChunk>
+class VoxelFaceEnableChunkManager final : public SpecializedChunkManager<VoxelFaceEnableChunk>
 {
 public:
 	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,

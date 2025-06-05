@@ -44,7 +44,7 @@ struct VoxelFaceCombineDirtyEntry
 	VoxelFaceCombineDirtyEntry();
 };
 
-class VoxelFaceCombineChunk : public Chunk
+class VoxelFaceCombineChunk final : public Chunk
 {
 private:
 	Buffer3D<VoxelFaceCombineDirtyEntry> dirtyEntries;
