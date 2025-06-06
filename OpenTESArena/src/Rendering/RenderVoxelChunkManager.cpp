@@ -340,6 +340,7 @@ void RenderVoxelLoadedChasmTextureKey::init(VoxelChasmDefID chasmDefID, int chas
 RenderVoxelChunkManager::RenderVoxelChunkManager()
 {
 	this->raisingDoorPreScaleTranslationBufferID = -1;
+	this->defaultQuadIndexBufferID = -1;
 	this->chasmWallIndexBufferIDs.fill(-1);
 }
 
@@ -355,6 +356,19 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 
 	const Double3 preScaleTranslation = Double3::Zero; // Populated on scene change.
 	renderer.populateUniformBuffer(this->raisingDoorPreScaleTranslationBufferID, preScaleTranslation);
+
+	// Populate default quad indices for combined voxel faces.
+	constexpr int indicesPerQuad = MeshUtils::INDICES_PER_QUAD;
+	this->defaultQuadIndexBufferID = renderer.createIndexBuffer(indicesPerQuad);
+	if (this->defaultQuadIndexBufferID < 0)
+	{
+		DebugLogError("Couldn't create default quad index buffer.");
+		return;
+	}
+
+	int32_t defaultQuadIndexBufferIndices[indicesPerQuad];
+	MeshUtils::createVoxelFaceQuadIndices(defaultQuadIndexBufferIndices);
+	renderer.populateIndexBuffer(this->defaultQuadIndexBufferID, defaultQuadIndexBufferIndices);
 
 	// Populate chasm wall index buffers.
 	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
@@ -423,6 +437,12 @@ void RenderVoxelChunkManager::shutdown(Renderer &renderer)
 	{
 		renderer.freeUniformBuffer(this->raisingDoorPreScaleTranslationBufferID);
 		this->raisingDoorPreScaleTranslationBufferID = -1;
+	}
+
+	if (this->defaultQuadIndexBufferID >= 0)
+	{
+		renderer.freeIndexBuffer(this->defaultQuadIndexBufferID);
+		this->defaultQuadIndexBufferID = -1;
 	}
 
 	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)

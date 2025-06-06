@@ -67,6 +67,9 @@ private:
 	// Updated on scene change.
 	UniformBufferID raisingDoorPreScaleTranslationBufferID;
 
+	// For combined voxel faces.
+	IndexBufferID defaultQuadIndexBufferID;
+
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
 
