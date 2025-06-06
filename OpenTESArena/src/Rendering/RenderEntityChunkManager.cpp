@@ -11,8 +11,8 @@
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Entities/EntityObservedResult.h"
 #include "../Entities/EntityVisibilityChunkManager.h"
-#include "../Voxels/DoorUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
+#include "../Voxels/VoxelDoorUtils.h"
 
 #include "components/debug/Debug.h"
 

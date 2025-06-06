@@ -1,10 +1,10 @@
 #include <algorithm>
 
-#include "DoorUtils.h"
 #include "VoxelChunk.h"
+#include "VoxelDoorUtils.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
-double DoorUtils::getAnimPercentOrZero(SNInt x, int y, WEInt z, const VoxelChunk &voxelChunk)
+double VoxelDoorUtils::getAnimPercentOrZero(SNInt x, int y, WEInt z, const VoxelChunk &voxelChunk)
 {
 	double animPercent = 0.0;
 	int animInstIndex;
@@ -18,17 +18,17 @@ double DoorUtils::getAnimPercentOrZero(SNInt x, int y, WEInt z, const VoxelChunk
 	return animPercent;
 }
 
-Radians DoorUtils::getSwingingRotationRadians(Radians baseRadians, double animPercent)
+Radians VoxelDoorUtils::getSwingingRotationRadians(Radians baseRadians, double animPercent)
 {
 	return baseRadians + (-(Constants::HalfPi - Constants::Epsilon) * animPercent);
 }
 
-double DoorUtils::getAnimatedTexCoordPercent(double animPercent)
+double VoxelDoorUtils::getAnimatedTexCoordPercent(double animPercent)
 {
 	return std::clamp((1.0 - ArenaRenderUtils::DOOR_MIN_VISIBLE) * animPercent, 0.0, 1.0);
 }
 
-double DoorUtils::getAnimatedScaleAmount(double texCoordPercent)
+double VoxelDoorUtils::getAnimatedScaleAmount(double texCoordPercent)
 {
 	return std::clamp(1.0 - texCoordPercent, 0.0, 1.0);
 }

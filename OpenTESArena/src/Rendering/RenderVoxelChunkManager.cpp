@@ -9,8 +9,8 @@
 #include "Renderer.h"
 #include "RendererUtils.h"
 #include "../Assets/TextureManager.h"
-#include "../Voxels/DoorUtils.h"
 #include "../Voxels/VoxelChunkManager.h"
+#include "../Voxels/VoxelDoorUtils.h"
 #include "../Voxels/VoxelFrustumCullingChunk.h"
 #include "../Voxels/VoxelFrustumCullingChunkManager.h"
 
@@ -257,8 +257,8 @@ namespace
 
 	RenderTransform MakeDoorFaceRenderTransform(ArenaDoorType doorType, int doorFaceIndex, const WorldDouble3 &worldPosition, double animPercent)
 	{
-		const Radians faceBaseRadians = DoorUtils::BaseAngles[doorFaceIndex];
-		const Double3 hingeOffset = DoorUtils::SwingingHingeOffsets[doorFaceIndex];
+		const Radians faceBaseRadians = VoxelDoorUtils::BaseAngles[doorFaceIndex];
+		const Double3 hingeOffset = VoxelDoorUtils::SwingingHingeOffsets[doorFaceIndex];
 		const Double3 hingePosition = worldPosition + hingeOffset;
 
 		RenderTransform renderTransform;
@@ -266,7 +266,7 @@ namespace
 		{
 		case ArenaDoorType::Swinging:
 		{
-			const Radians rotationRadians = DoorUtils::getSwingingRotationRadians(faceBaseRadians, animPercent);
+			const Radians rotationRadians = VoxelDoorUtils::getSwingingRotationRadians(faceBaseRadians, animPercent);
 			renderTransform.translation = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
 			renderTransform.rotation = Matrix4d::yRotation(rotationRadians);
 			renderTransform.scale = Matrix4d::identity();
@@ -274,8 +274,8 @@ namespace
 		}
 		case ArenaDoorType::Sliding:
 		{
-			const double uMin = DoorUtils::getAnimatedTexCoordPercent(animPercent);
-			const double scaleAmount = DoorUtils::getAnimatedScaleAmount(uMin);
+			const double uMin = VoxelDoorUtils::getAnimatedTexCoordPercent(animPercent);
+			const double scaleAmount = VoxelDoorUtils::getAnimatedScaleAmount(uMin);
 			renderTransform.translation = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
 			renderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
 			renderTransform.scale = Matrix4d::scale(1.0, 1.0, scaleAmount);
@@ -283,8 +283,8 @@ namespace
 		}
 		case ArenaDoorType::Raising:
 		{
-			const double vMin = DoorUtils::getAnimatedTexCoordPercent(animPercent);
-			const double scaleAmount = DoorUtils::getAnimatedScaleAmount(vMin);
+			const double vMin = VoxelDoorUtils::getAnimatedTexCoordPercent(animPercent);
+			const double scaleAmount = VoxelDoorUtils::getAnimatedScaleAmount(vMin);
 			renderTransform.translation = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
 			renderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
 			renderTransform.scale = Matrix4d::scale(1.0, scaleAmount, 1.0);
@@ -684,7 +684,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 					const ArenaDoorType doorType = doorDef.type;
 					DebugAssert(renderChunk.doorTransformBuffers.find(voxel) == renderChunk.doorTransformBuffers.end());
 
-					constexpr int doorFaceCount = DoorUtils::FACE_COUNT;
+					constexpr int doorFaceCount = VoxelDoorUtils::FACE_COUNT;
 
 					// Each door voxel has a uniform buffer, one render transform per face.
 					const UniformBufferID doorTransformBufferID = renderer.createUniformBuffer(doorFaceCount, sizeof(RenderTransform), alignof(RenderTransform));
@@ -694,7 +694,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 						continue;
 					}
 
-					const double doorAnimPercent = DoorUtils::getAnimPercentOrZero(voxel.x, voxel.y, voxel.z, voxelChunk);
+					const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(voxel.x, voxel.y, voxel.z, voxelChunk);
 
 					// Initialize to default appearance. Dirty door animations trigger an update.
 					for (int i = 0; i < doorFaceCount; i++)
@@ -802,7 +802,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 
 		const RenderLightIdList &voxelLightIdList = renderLightChunk.lightIdLists.get(voxel.x, voxel.y, voxel.z);
 
-		constexpr int maxTransformsPerVoxel = DoorUtils::FACE_COUNT;
+		constexpr int maxTransformsPerVoxel = VoxelDoorUtils::FACE_COUNT;
 		constexpr int maxDrawCallsPerVoxel = RenderVoxelMeshInstance::MAX_DRAW_CALLS;
 
 		struct DrawCallTransformInitInfo
@@ -970,13 +970,13 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 				doorShadingInitInfo.pixelShaderParam0 = 0.0;
 				break;
 			case ArenaDoorType::Sliding:
-				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+				doorShadingInitInfo.pixelShaderParam0 = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
 			case ArenaDoorType::Raising:
-				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+				doorShadingInitInfo.pixelShaderParam0 = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
 			case ArenaDoorType::Splitting:
-				doorShadingInitInfo.pixelShaderParam0 = DoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+				doorShadingInitInfo.pixelShaderParam0 = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 				break;
 			default:
 				DebugNotImplementedMsg(std::to_string(static_cast<int>(doorType)));
@@ -1040,7 +1040,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			lightingInitInfo.idCount = voxelLightIDs.getCount();
 		}
 
-		bool visibleDoorFaces[DoorUtils::FACE_COUNT];
+		bool visibleDoorFaces[VoxelDoorUtils::FACE_COUNT];
 		int drawCallCount = 0;
 		if (isDoor)
 		{
@@ -1056,7 +1056,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 			std::fill(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), false);
 			for (size_t i = 0; i < std::size(visibleDoorFaces); i++)
 			{
-				const VoxelFacing2D doorFacing = DoorUtils::Facings[i];
+				const VoxelFacing2D doorFacing = VoxelDoorUtils::Facings[i];
 				bool &canRenderFace = visibleDoorFaces[i];
 				for (int j = 0; j < doorVisInst.visibleFaceCount; j++)
 				{
@@ -1093,7 +1093,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 
 		if (isDoor)
 		{			
-			DebugAssert(transformInitInfoCount == DoorUtils::FACE_COUNT);
+			DebugAssert(transformInitInfoCount == VoxelDoorUtils::FACE_COUNT);
 
 			int doorDrawCallWriteIndex = 0;
 			for (int i = 0; i < transformInitInfoCount; i++)
@@ -1315,9 +1315,9 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 			const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 			const ArenaDoorType doorType = doorDef.type;
 			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.getPosition(), doorVoxel, ceilingScale);
-			const double doorAnimPercent = DoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
+			const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
 
-			for (int i = 0; i < DoorUtils::FACE_COUNT; i++)
+			for (int i = 0; i < VoxelDoorUtils::FACE_COUNT; i++)
 			{
 				const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, doorAnimPercent);
 

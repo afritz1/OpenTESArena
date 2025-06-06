@@ -1,7 +1,5 @@
-#ifndef DOOR_UTILS_H
-#define DOOR_UTILS_H
-
-#include <array>
+#ifndef VOXEL_DOOR_UTILS_H
+#define VOXEL_DOOR_UTILS_H
 
 #include "VoxelFacing.h"
 #include "../Math/Constants.h"
@@ -11,11 +9,11 @@
 
 class VoxelChunk;
 
-namespace DoorUtils
+namespace VoxelDoorUtils
 {
 	static constexpr int FACE_COUNT = ArenaMeshUtils::GetUniqueFaceCount(ArenaVoxelType::Door);
 
-	constexpr std::array<VoxelFacing2D, FACE_COUNT> Facings =
+	constexpr VoxelFacing2D Facings[] =
 	{
 		// X=0
 		VoxelFacing2D::NegativeX,
@@ -28,7 +26,7 @@ namespace DoorUtils
 	};
 
 	// Angle away from default face's orientation when closed.
-	constexpr std::array<Radians, FACE_COUNT> BaseAngles =
+	constexpr Radians BaseAngles[] =
 	{
 		// X=0
 		0.0,
@@ -41,7 +39,7 @@ namespace DoorUtils
 	};
 
 	// Distance of the swinging door hinge from the voxel origin.
-	const std::array<Double3, FACE_COUNT> SwingingHingeOffsets =
+	const Double3 SwingingHingeOffsets[] =
 	{
 		// X=0
 		Double3::Zero,
