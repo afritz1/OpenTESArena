@@ -178,6 +178,104 @@ Double3 MeshUtils::createVertexNormalAtIndex(BufferView<const double> positions,
 	return cross;
 }
 
+void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<Double3> outPositions)
+{
+	DebugAssert(outPositions.getCount() == 4);
+
+	const VoxelInt3 voxelDiff = max - min;
+	const VoxelDouble3 voxelDiffReal(
+		static_cast<SNDouble>(voxelDiff.x),
+		static_cast<double>(voxelDiff.y),
+		static_cast<WEDouble>(voxelDiff.z));
+
+	Double3 tlModelSpacePoint;
+	Double3 tlBlDelta;
+	Double3 tlBrDelta;
+
+	switch (facing)
+	{
+	case VoxelFacing3D::PositiveX:
+		tlModelSpacePoint = Double3(1.0, ceilingScale, 1.0 + voxelDiffReal.z);
+		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
+		tlBrDelta = Double3(0.0, 0.0, -1.0 - voxelDiffReal.z);
+		break;
+	case VoxelFacing3D::NegativeX:
+		tlModelSpacePoint = Double3(0.0, ceilingScale, 0.0);
+		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
+		tlBrDelta = Double3();
+		break;
+	case VoxelFacing3D::PositiveY:
+		tlModelSpacePoint = Double3(0.0, ceilingScale, 0.0);
+		tlBlDelta = Double3(0.0, 0.0, voxelDiffReal.z);
+		tlBrDelta = Double3(voxelDiffReal.x, 0.0, 0.0);
+		break;
+	case VoxelFacing3D::NegativeY:
+		tlModelSpacePoint = Double3(0.0, 0.0, 0.0);
+		tlBlDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
+		tlBrDelta = Double3(0.0, 0.0, 1.0 + voxelDiffReal.z);
+		break;
+	case VoxelFacing3D::PositiveZ:
+		tlModelSpacePoint = Double3(0.0, ceilingScale, 1.0);
+		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
+		tlBrDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
+		break;
+	case VoxelFacing3D::NegativeZ:
+		tlModelSpacePoint = Double3(1.0 + voxelDiffReal.x, ceilingScale, 0.0);
+		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
+		tlBrDelta = Double3(-1.0 - voxelDiffReal.x, 0.0, 0.0);
+		break;
+	default:
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
+	}
+
+	const Double3 v0 = tlModelSpacePoint;
+	const Double3 v1 = v0 + tlBlDelta;
+	const Double3 v2 = v0 + tlBlDelta + tlBrDelta;
+	const Double3 v3 = v0 + tlBrDelta;
+	outPositions[0] = v0;
+	outPositions[1] = v1;
+	outPositions[2] = v2;
+	outPositions[3] = v3;
+}
+
+void MeshUtils::createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<Double3> outNormals)
+{
+	DebugAssert(outNormals.getCount() == 4);
+
+	const Double3 normal = VoxelUtils::getNormal(facing);
+	outNormals[0] = normal;
+	outNormals[1] = normal;
+	outNormals[2] = normal;
+	outNormals[3] = normal;
+}
+
+void MeshUtils::createVoxelFaceQuadTexCoords(int width, int height, BufferView<Double2> outUVs)
+{
+	DebugAssert(width >= 1);
+	DebugAssert(height >= 1);
+	DebugAssert(outUVs.getCount() == 4);
+
+	const double uMin = 0.0;
+	const double uMax = 1.0; // @todo for GL_REPEAT support, change to width
+	const double vMin = 0.0;
+	const double vMax = 1.0; // @todo for GL_REPEAT support, change to height
+	outUVs[0] = Double2(uMin, vMin);
+	outUVs[1] = Double2(uMin, vMax);
+	outUVs[2] = Double2(uMax, vMax);
+	outUVs[3] = Double2(uMax, vMin);
+}
+
+void MeshUtils::createVoxelFaceQuadIndices(BufferView<int32_t> outIndices)
+{
+	DebugAssert(outIndices.getCount() == 6);
+	outIndices[0] = 0;
+	outIndices[1] = 1;
+	outIndices[2] = 2;
+	outIndices[3] = 2;
+	outIndices[4] = 3;
+	outIndices[5] = 0;
+}
+
 double MeshUtils::getScaledVertexY(double meshY, VoxelShapeScaleType scaleType, double ceilingScale)
 {
 	switch (scaleType)

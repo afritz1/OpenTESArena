@@ -231,6 +231,38 @@ Double3 VoxelUtils::getNormal(VoxelFacing2D facing)
 	}
 }
 
+Double3 VoxelUtils::getNormal(VoxelFacing3D facing)
+{
+	if (facing == VoxelFacing3D::PositiveX)
+	{
+		return Double3::UnitX;
+	}
+	else if (facing == VoxelFacing3D::NegativeX)
+	{
+		return -Double3::UnitX;
+	}
+	else if (facing == VoxelFacing3D::PositiveY)
+	{
+		return Double3::UnitY;
+	}
+	else if (facing == VoxelFacing3D::NegativeY)
+	{
+		return -Double3::UnitY;
+	}
+	else if (facing == VoxelFacing3D::PositiveZ)
+	{
+		return Double3::UnitZ;
+	}
+	else if (facing == VoxelFacing3D::NegativeZ)
+	{
+		return -Double3::UnitZ;
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(Double3, std::to_string(static_cast<int>(facing)));
+	}
+}
+
 VoxelFacing3D VoxelUtils::convertFaceTo3D(VoxelFacing2D facing)
 {
 	if (facing == VoxelFacing2D::PositiveX)

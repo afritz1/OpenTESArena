@@ -69,6 +69,7 @@ namespace VoxelUtils
 
 	// Gets the normal associated with a voxel facing.
 	Double3 getNormal(VoxelFacing2D facing);
+	Double3 getNormal(VoxelFacing3D facing);
 
 	// Converts between 2D and 3D specializations of voxel facings.
 	VoxelFacing3D convertFaceTo3D(VoxelFacing2D facing);

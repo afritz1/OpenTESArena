@@ -1,10 +1,14 @@
 #ifndef MESH_UTILS_H
 #define MESH_UTILS_H
 
+#include <cstdint>
+
+#include "Coord.h"
 #include "../Math/Vector3.h"
 
 #include "components/utilities/BufferView.h"
 
+enum class VoxelFacing3D;
 enum class VoxelShapeScaleType;
 
 // Various helper functions for planar vertex components. Not using interleaved since some vertices
@@ -51,6 +55,13 @@ namespace MeshUtils
 
 	// Creates a normal facing out of the three vertices (nine components) starting at the given index.
 	Double3 createVertexNormalAtIndex(BufferView<const double> positions, int vertexIndex);
+
+	// Creates quad vertex positions/attributes/indices counterclockwise (top left - bottom left - bottom right - top right).
+	// To get world space, translate model space vertices by the 'min' point.
+	void createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<Double3> outPositions);
+	void createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<Double3> outNormals);
+	void createVoxelFaceQuadTexCoords(int width, int height, BufferView<Double2> outUVs);
+	void createVoxelFaceQuadIndices(BufferView<int32_t> outIndices);
 
 	// For positioning raised platforms, etc. correctly.
 	double getScaledVertexY(double meshY, VoxelShapeScaleType scaleType, double ceilingScale);
