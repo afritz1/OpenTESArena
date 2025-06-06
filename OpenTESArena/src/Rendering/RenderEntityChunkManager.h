@@ -32,18 +32,18 @@ struct EntityVisibilityChunk;
 struct RenderCamera;
 struct RenderCommandBuffer;
 
+struct RenderEntityLoadedAnimation
+{
+	EntityDefID defID;
+	Buffer<ScopedObjectTextureRef> textureRefs; // Linearized based on the anim def's keyframes.
+
+	void init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs);
+};
+
 class RenderEntityChunkManager final : public SpecializedChunkManager<RenderEntityChunk>
 {
-public:
-	struct LoadedAnimation
-	{
-		EntityDefID defID;
-		Buffer<ScopedObjectTextureRef> textureRefs; // Linearized based on the anim def's keyframes.
-
-		void init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs);
-	};
 private:
-	std::vector<LoadedAnimation> anims;
+	std::vector<RenderEntityLoadedAnimation> anims;
 	RenderEntityMeshInstance meshInst; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> paletteIndicesTextureRefs;
 

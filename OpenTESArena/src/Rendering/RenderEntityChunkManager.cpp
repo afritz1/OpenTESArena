@@ -113,7 +113,7 @@ namespace
 	}
 }
 
-void RenderEntityChunkManager::LoadedAnimation::init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs)
+void RenderEntityLoadedAnimation::init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs)
 {
 	this->defID = defID;
 	this->textureRefs = std::move(textureRefs);
@@ -220,7 +220,7 @@ ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityIn
 	const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 	const EntityDefID entityDefID = entityInst.defID;
 	const auto defIter = std::find_if(this->anims.begin(), this->anims.end(),
-		[entityDefID](const LoadedAnimation &loadedAnim)
+		[entityDefID](const RenderEntityLoadedAnimation &loadedAnim)
 	{
 		return loadedAnim.defID == entityDefID;
 	});
@@ -246,7 +246,7 @@ void RenderEntityChunkManager::loadTexturesForChunkEntities(const EntityChunk &e
 		const EntityDefID entityDefID = entityInst.defID;
 
 		const auto animIter = std::find_if(this->anims.begin(), this->anims.end(),
-			[entityDefID](const LoadedAnimation &loadedAnim)
+			[entityDefID](const RenderEntityLoadedAnimation &loadedAnim)
 		{
 			return loadedAnim.defID == entityDefID;
 		});
@@ -257,7 +257,7 @@ void RenderEntityChunkManager::loadTexturesForChunkEntities(const EntityChunk &e
 			const EntityAnimationDefinition &animDef = entityDef.animDef;
 			Buffer<ScopedObjectTextureRef> textureRefs = MakeEntityAnimationTextures(animDef, textureManager, renderer);
 
-			LoadedAnimation loadedEntityAnim;
+			RenderEntityLoadedAnimation loadedEntityAnim;
 			loadedEntityAnim.init(entityDefID, std::move(textureRefs));
 			this->anims.emplace_back(std::move(loadedEntityAnim));
 		}
@@ -378,7 +378,7 @@ void RenderEntityChunkManager::rebuildDrawCallsList()
 void RenderEntityChunkManager::loadTexturesForEntity(EntityDefID entityDefID, TextureManager &textureManager, Renderer &renderer)
 {
 	const auto animIter = std::find_if(this->anims.begin(), this->anims.end(),
-		[entityDefID](const LoadedAnimation &loadedAnim)
+		[entityDefID](const RenderEntityLoadedAnimation &loadedAnim)
 	{
 		return loadedAnim.defID == entityDefID;
 	});
@@ -390,7 +390,7 @@ void RenderEntityChunkManager::loadTexturesForEntity(EntityDefID entityDefID, Te
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
 		Buffer<ScopedObjectTextureRef> textureRefs = MakeEntityAnimationTextures(animDef, textureManager, renderer);
 
-		LoadedAnimation loadedEntityAnim;
+		RenderEntityLoadedAnimation loadedEntityAnim;
 		loadedEntityAnim.init(entityDefID, std::move(textureRefs));
 		this->anims.emplace_back(std::move(loadedEntityAnim));
 	}
