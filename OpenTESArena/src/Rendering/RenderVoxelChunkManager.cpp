@@ -532,69 +532,67 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
 		const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
 		const bool isRenderMeshValid = !voxelMeshDef.isEmpty(); // Air has a shape for trigger voxels but no mesh
+		if (!isRenderMeshValid)
+		{
+			continue;
+		}
 
 		RenderVoxelMeshInstance renderVoxelMeshInst;
-		if (isRenderMeshValid)
+		constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+		constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+		constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+
+		const int vertexCount = voxelMeshDef.rendererVertexCount;
+		renderVoxelMeshInst.positionBufferID = renderer.createVertexPositionBuffer(vertexCount, positionComponentsPerVertex);
+		if (renderVoxelMeshInst.positionBufferID < 0)
 		{
-			constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-			constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-			constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+			DebugLogError("Couldn't create vertex position buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) + " in chunk (" + chunkPos.toString() + ").");
+			continue;
+		}
 
-			const int vertexCount = voxelMeshDef.rendererVertexCount;
-			renderVoxelMeshInst.positionBufferID = renderer.createVertexPositionBuffer(vertexCount, positionComponentsPerVertex);
-			if (renderVoxelMeshInst.positionBufferID < 0)
-			{
-				DebugLogError("Couldn't create vertex position buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
-					" in chunk (" + voxelChunk.getPosition().toString() + ").");
-				continue;
-			}
+		renderVoxelMeshInst.normalBufferID = renderer.createVertexAttributeBuffer(vertexCount, normalComponentsPerVertex);
+		if (renderVoxelMeshInst.normalBufferID < 0)
+		{
+			DebugLogError("Couldn't create vertex normal attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) + " in chunk (" + chunkPos.toString() + ").");
+			renderVoxelMeshInst.freeBuffers(renderer);
+			continue;
+		}
 
-			renderVoxelMeshInst.normalBufferID = renderer.createVertexAttributeBuffer(vertexCount, normalComponentsPerVertex);
-			if (renderVoxelMeshInst.normalBufferID < 0)
+		renderVoxelMeshInst.texCoordBufferID = renderer.createVertexAttributeBuffer(vertexCount, texCoordComponentsPerVertex);
+		if (renderVoxelMeshInst.texCoordBufferID < 0)
+		{
+			DebugLogError("Couldn't create vertex tex coord attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) + " in chunk (" + chunkPos.toString() + ").");
+			renderVoxelMeshInst.freeBuffers(renderer);
+			continue;
+		}
+
+		ArenaMeshUtils::ShapeInitCache shapeInitCache;
+
+		// Generate mesh geometry and indices for this voxel definition.
+		voxelMeshDef.writeRendererGeometryBuffers(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.positionsView, shapeInitCache.normalsView, shapeInitCache.texCoordsView);
+		voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.indices0View, shapeInitCache.indices1View, shapeInitCache.indices2View);
+
+		renderer.populateVertexPositionBuffer(renderVoxelMeshInst.positionBufferID, BufferView<const double>(shapeInitCache.positions.data(), vertexCount * positionComponentsPerVertex));
+		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.normalBufferID, BufferView<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
+		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, BufferView<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
+
+		const int indexBufferCount = voxelMeshDef.indicesListCount;
+		for (int bufferIndex = 0; bufferIndex < indexBufferCount; bufferIndex++)
+		{
+			const int indexCount = voxelMeshDef.getIndicesList(bufferIndex).getCount();
+			IndexBufferID &indexBufferID = renderVoxelMeshInst.indexBufferIDs[bufferIndex];
+			indexBufferID = renderer.createIndexBuffer(indexCount);
+			if (indexBufferID < 0)
 			{
-				DebugLogError("Couldn't create vertex normal attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
-					" in chunk (" + voxelChunk.getPosition().toString() + ").");
+				DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.getPosition().toString().c_str());
 				renderVoxelMeshInst.freeBuffers(renderer);
 				continue;
 			}
 
-			renderVoxelMeshInst.texCoordBufferID = renderer.createVertexAttributeBuffer(vertexCount, texCoordComponentsPerVertex);
-			if (renderVoxelMeshInst.texCoordBufferID < 0)
-			{
-				DebugLogError("Couldn't create vertex tex coord attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) +
-					" in chunk (" + voxelChunk.getPosition().toString() + ").");
-				renderVoxelMeshInst.freeBuffers(renderer);
-				continue;
-			}
+			renderVoxelMeshInst.indexBufferIdCount++;
 
-			ArenaMeshUtils::ShapeInitCache shapeInitCache;
-
-			// Generate mesh geometry and indices for this voxel definition.
-			voxelMeshDef.writeRendererGeometryBuffers(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.positionsView, shapeInitCache.normalsView, shapeInitCache.texCoordsView);
-			voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.indices0View, shapeInitCache.indices1View, shapeInitCache.indices2View);
-
-			renderer.populateVertexPositionBuffer(renderVoxelMeshInst.positionBufferID, BufferView<const double>(shapeInitCache.positions.data(), vertexCount * positionComponentsPerVertex));
-			renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.normalBufferID, BufferView<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
-			renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, BufferView<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
-
-			const int indexBufferCount = voxelMeshDef.indicesListCount;
-			for (int bufferIndex = 0; bufferIndex < indexBufferCount; bufferIndex++)
-			{
-				const int indexCount = voxelMeshDef.getIndicesList(bufferIndex).getCount();
-				IndexBufferID &indexBufferID = renderVoxelMeshInst.indexBufferIDs[bufferIndex];
-				indexBufferID = renderer.createIndexBuffer(indexCount);
-				if (indexBufferID < 0)
-				{
-					DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.getPosition().toString().c_str());
-					renderVoxelMeshInst.freeBuffers(renderer);
-					continue;
-				}
-
-				renderVoxelMeshInst.indexBufferIdCount++;
-
-				const auto &indices = *shapeInitCache.indicesPtrs[bufferIndex];
-				renderer.populateIndexBuffer(indexBufferID, BufferView<const int32_t>(indices.data(), indexCount));
-			}
+			const auto &indices = *shapeInitCache.indicesPtrs[bufferIndex];
+			renderer.populateIndexBuffer(indexBufferID, BufferView<const int32_t>(indices.data(), indexCount));
 		}
 
 		const RenderVoxelMeshInstID renderMeshInstID = renderChunk.addMeshInst(std::move(renderVoxelMeshInst));
