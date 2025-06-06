@@ -24,14 +24,14 @@ namespace
 	}
 
 	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
-	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef, std::vector<RenderVoxelChunkManager::LoadedTexture> &textures,
+	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef, std::vector<RenderVoxelLoadedTexture> &textures,
 		TextureManager &textureManager, Renderer &renderer)
 	{
 		for (int i = 0; i < voxelTextureDef.textureCount; i++)
 		{
 			const TextureAsset &textureAsset = voxelTextureDef.getTextureAsset(i);
 			const auto cacheIter = std::find_if(textures.begin(), textures.end(),
-				[&textureAsset](const RenderVoxelChunkManager::LoadedTexture &loadedTexture)
+				[&textureAsset](const RenderVoxelLoadedTexture &loadedTexture)
 			{
 				return loadedTexture.textureAsset == textureAsset;
 			});
@@ -54,14 +54,14 @@ namespace
 				}
 
 				ScopedObjectTextureRef voxelTextureRef(voxelTextureID, renderer);
-				RenderVoxelChunkManager::LoadedTexture newTexture;
+				RenderVoxelLoadedTexture newTexture;
 				newTexture.init(textureAsset, std::move(voxelTextureRef));
 				textures.emplace_back(std::move(newTexture));
 			}
 		}
 	}
 
-	bool LoadedChasmFloorComparer(const RenderVoxelChunkManager::LoadedChasmFloorTexture &textureList, const VoxelChasmDefinition &chasmDef)
+	bool LoadedChasmFloorComparer(const RenderVoxelLoadedChasmFloorTexture &textureList, const VoxelChasmDefinition &chasmDef)
 	{
 		if (textureList.animType != chasmDef.animType)
 		{
@@ -99,16 +99,14 @@ namespace
 	}
 
 	void LoadChasmDefTextures(VoxelChasmDefID chasmDefID, const VoxelChunkManager &voxelChunkManager,
-		BufferView<const RenderVoxelChunkManager::LoadedTexture> textures,
-		std::vector<RenderVoxelChunkManager::LoadedChasmFloorTexture> &chasmFloorTextures,
-		std::vector<RenderVoxelChunkManager::LoadedChasmTextureKey> &chasmTextureKeys,
-		TextureManager &textureManager, Renderer &renderer)
+		BufferView<const RenderVoxelLoadedTexture> textures, std::vector<RenderVoxelLoadedChasmFloorTexture> &chasmFloorTextures,
+		std::vector<RenderVoxelLoadedChasmTextureKey> &chasmTextureKeys, TextureManager &textureManager, Renderer &renderer)
 	{
 		const VoxelChasmDefinition &chasmDef = voxelChunkManager.getChasmDef(chasmDefID);
 
 		// Check if this chasm already has a mapping (i.e. have we seen this chunk before?).
 		const auto keyIter = std::find_if(chasmTextureKeys.begin(), chasmTextureKeys.end(),
-			[chasmDefID](const RenderVoxelChunkManager::LoadedChasmTextureKey &loadedKey)
+			[chasmDefID](const RenderVoxelLoadedChasmTextureKey &loadedKey)
 		{
 			return loadedKey.chasmDefID == chasmDefID;
 		});
@@ -120,7 +118,7 @@ namespace
 
 		// Check if any loaded chasm floors reference the same asset(s).
 		const auto chasmFloorIter = std::find_if(chasmFloorTextures.begin(), chasmFloorTextures.end(),
-			[&chasmDef](const RenderVoxelChunkManager::LoadedChasmFloorTexture &textureList)
+			[&chasmDef](const RenderVoxelLoadedChasmFloorTexture &textureList)
 		{
 			return LoadedChasmFloorComparer(textureList, chasmDef);
 		});
@@ -133,7 +131,7 @@ namespace
 		else
 		{
 			// Load the required textures and add a key for them.
-			RenderVoxelChunkManager::LoadedChasmFloorTexture newFloorTexture;
+			RenderVoxelLoadedChasmFloorTexture newFloorTexture;
 			if (chasmDef.animType == VoxelChasmAnimationType::SolidColor)
 			{
 				// Dry chasms are a single color, no texture asset.
@@ -232,7 +230,7 @@ namespace
 		// The chasm wall (if any) should already be loaded as a voxel texture during map gen.
 		// @todo: support chasm walls adding to the voxel textures list (i.e. for destroyed voxels; the list would have to be non-const)
 		const auto chasmWallIter = std::find_if(textures.begin(), textures.end(),
-			[&chasmDef](const RenderVoxelChunkManager::LoadedTexture &texture)
+			[&chasmDef](const RenderVoxelLoadedTexture &texture)
 		{
 			return texture.textureAsset == chasmDef.wallTextureAsset;
 		});
@@ -243,7 +241,7 @@ namespace
 		DebugAssert(chasmFloorListIndex >= 0);
 		DebugAssert(chasmWallIndex >= 0);
 
-		RenderVoxelChunkManager::LoadedChasmTextureKey key;
+		RenderVoxelLoadedChasmTextureKey key;
 		key.init(chasmDefID, chasmFloorListIndex, chasmWallIndex);
 		chasmTextureKeys.emplace_back(std::move(key));
 	}
@@ -306,33 +304,33 @@ namespace
 	}
 }
 
-void RenderVoxelChunkManager::LoadedTexture::init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef)
+void RenderVoxelLoadedTexture::init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef)
 {
 	this->textureAsset = textureAsset;
 	this->objectTextureRef = std::move(objectTextureRef);
 }
 
-RenderVoxelChunkManager::LoadedChasmFloorTexture::LoadedChasmFloorTexture()
+RenderVoxelLoadedChasmFloorTexture::RenderVoxelLoadedChasmFloorTexture()
 {
 	this->animType = static_cast<VoxelChasmAnimationType>(-1);
 	this->paletteIndex = 0;
 }
 
-void RenderVoxelChunkManager::LoadedChasmFloorTexture::initColor(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef)
+void RenderVoxelLoadedChasmFloorTexture::initColor(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef)
 {
 	this->animType = VoxelChasmAnimationType::SolidColor;
 	this->paletteIndex = paletteIndex;
 	this->objectTextureRef = std::move(objectTextureRef);
 }
 
-void RenderVoxelChunkManager::LoadedChasmFloorTexture::initTextured(std::vector<TextureAsset> &&textureAssets, ScopedObjectTextureRef &&objectTextureRef)
+void RenderVoxelLoadedChasmFloorTexture::initTextured(std::vector<TextureAsset> &&textureAssets, ScopedObjectTextureRef &&objectTextureRef)
 {
 	this->animType = VoxelChasmAnimationType::Animated;
 	this->textureAssets = std::move(textureAssets);
 	this->objectTextureRef = std::move(objectTextureRef);
 }
 
-void RenderVoxelChunkManager::LoadedChasmTextureKey::init(VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex)
+void RenderVoxelLoadedChasmTextureKey::init(VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex)
 {
 	this->chasmDefID = chasmDefID;
 	this->chasmFloorListIndex = chasmFloorListIndex;
@@ -445,7 +443,7 @@ void RenderVoxelChunkManager::shutdown(Renderer &renderer)
 ObjectTextureID RenderVoxelChunkManager::getTextureID(const TextureAsset &textureAsset) const
 {
 	const auto iter = std::find_if(this->textures.begin(), this->textures.end(),
-		[&textureAsset](const LoadedTexture &loadedTexture)
+		[&textureAsset](const RenderVoxelLoadedTexture &loadedTexture)
 	{
 		return loadedTexture.textureAsset == textureAsset;
 	});
@@ -458,7 +456,7 @@ ObjectTextureID RenderVoxelChunkManager::getTextureID(const TextureAsset &textur
 ObjectTextureID RenderVoxelChunkManager::getChasmFloorTextureID(VoxelChasmDefID chasmDefID) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
-		[chasmDefID](const LoadedChasmTextureKey &key)
+		[chasmDefID](const RenderVoxelLoadedChasmTextureKey &key)
 	{
 		return key.chasmDefID == chasmDefID;
 	});
@@ -467,7 +465,7 @@ ObjectTextureID RenderVoxelChunkManager::getChasmFloorTextureID(VoxelChasmDefID 
 
 	const int floorListIndex = keyIter->chasmFloorListIndex;
 	DebugAssertIndex(this->chasmFloorTextures, floorListIndex);
-	const LoadedChasmFloorTexture &textureList = this->chasmFloorTextures[floorListIndex];
+	const RenderVoxelLoadedChasmFloorTexture &textureList = this->chasmFloorTextures[floorListIndex];
 	const ScopedObjectTextureRef &objectTextureRef = textureList.objectTextureRef;
 	return objectTextureRef.get();
 }
@@ -475,7 +473,7 @@ ObjectTextureID RenderVoxelChunkManager::getChasmFloorTextureID(VoxelChasmDefID 
 ObjectTextureID RenderVoxelChunkManager::getChasmWallTextureID(VoxelChasmDefID chasmDefID) const
 {
 	const auto keyIter = std::find_if(this->chasmTextureKeys.begin(), this->chasmTextureKeys.end(),
-		[chasmDefID](const LoadedChasmTextureKey &key)
+		[chasmDefID](const RenderVoxelLoadedChasmTextureKey &key)
 	{
 		return key.chasmDefID == chasmDefID;
 	});
@@ -483,7 +481,7 @@ ObjectTextureID RenderVoxelChunkManager::getChasmWallTextureID(VoxelChasmDefID c
 	DebugAssertMsg(keyIter != this->chasmTextureKeys.end(), "No chasm texture key for chasm def ID \"" + std::to_string(chasmDefID) + "\".");
 
 	const int wallIndex = keyIter->chasmWallIndex;
-	const LoadedTexture &voxelTexture = this->textures[wallIndex];
+	const RenderVoxelLoadedTexture &voxelTexture = this->textures[wallIndex];
 	const ScopedObjectTextureRef &objectTextureRef = voxelTexture.objectTextureRef;
 	return objectTextureRef.get();
 }

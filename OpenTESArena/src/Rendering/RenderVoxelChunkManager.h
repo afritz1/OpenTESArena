@@ -26,42 +26,42 @@ struct RenderCamera;
 struct RenderCommandBuffer;
 struct VoxelFrustumCullingChunk;
 
+struct RenderVoxelLoadedTexture
+{
+	TextureAsset textureAsset;
+	ScopedObjectTextureRef objectTextureRef;
+
+	void init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef);
+};
+
+// Chasm walls are multi-textured. They use the chasm animation and a separate wall texture.
+// The draw call and pixel shader need two textures in order to support chasm wall rendering.
+struct RenderVoxelLoadedChasmFloorTexture
+{
+	VoxelChasmAnimationType animType;
+
+	uint8_t paletteIndex;
+	std::vector<TextureAsset> textureAssets; // All frames packed vertically into object texture ref.
+
+	ScopedObjectTextureRef objectTextureRef;
+
+	RenderVoxelLoadedChasmFloorTexture();
+
+	void initColor(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
+	void initTextured(std::vector<TextureAsset> &&textureAssets, ScopedObjectTextureRef &&objectTextureRef);
+};
+
+struct RenderVoxelLoadedChasmTextureKey
+{
+	VoxelChasmDefID chasmDefID;
+	int chasmFloorListIndex;
+	int chasmWallIndex; // Points into voxel textures.
+
+	void init(VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
+};
+
 class RenderVoxelChunkManager final : public SpecializedChunkManager<RenderVoxelChunk>
 {
-public:
-	struct LoadedTexture
-	{
-		TextureAsset textureAsset;
-		ScopedObjectTextureRef objectTextureRef;
-
-		void init(const TextureAsset &textureAsset, ScopedObjectTextureRef &&objectTextureRef);
-	};
-
-	// Chasm walls are multi-textured. They use the chasm animation and a separate wall texture.
-	// The draw call and pixel shader need two textures in order to support chasm wall rendering.
-	struct LoadedChasmFloorTexture
-	{
-		VoxelChasmAnimationType animType;
-
-		uint8_t paletteIndex;
-		std::vector<TextureAsset> textureAssets; // All frames packed vertically into object texture ref.
-
-		ScopedObjectTextureRef objectTextureRef;
-
-		LoadedChasmFloorTexture();
-
-		void initColor(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
-		void initTextured(std::vector<TextureAsset> &&textureAssets, ScopedObjectTextureRef &&objectTextureRef);
-	};
-
-	struct LoadedChasmTextureKey
-	{
-		VoxelChasmDefID chasmDefID;
-		int chasmFloorListIndex;
-		int chasmWallIndex; // Points into voxel textures.
-
-		void init(VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
-	};
 private:
 	// Buffer for all raising doors' translation to push/pop during vertex shading so they scale towards the ceiling.
 	// Updated on scene change.
@@ -70,9 +70,9 @@ private:
 	// Chasm wall support - one index buffer for each face combination.
 	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
 
-	std::vector<LoadedTexture> textures; // Includes chasm walls.
-	std::vector<LoadedChasmFloorTexture> chasmFloorTextures;
-	std::vector<LoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
+	std::vector<RenderVoxelLoadedTexture> textures; // Includes chasm walls.
+	std::vector<RenderVoxelLoadedChasmFloorTexture> chasmFloorTextures;
+	std::vector<RenderVoxelLoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
