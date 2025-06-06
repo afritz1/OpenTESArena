@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "VoxelFacing2D.h"
+#include "VoxelFacing.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Vector3.h"

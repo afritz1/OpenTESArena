@@ -1,6 +1,6 @@
 #include "ArenaMeshUtils.h"
 #include "../Math/Constants.h"
-#include "../Voxels/VoxelFacing2D.h"
+#include "../Voxels/VoxelFacing.h"
 
 // Unique geometry positions are lexicographically ordered for separation of responsibility from how
 // they're used, and renderer positions are ordered in the way they're consumed when being converted

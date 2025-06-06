@@ -24,7 +24,6 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../Utilities/Color.h"
-#include "../Voxels/VoxelFacing2D.h"
 #include "../World/ArenaWildUtils.h"
 #include "../World/MapType.h"
 

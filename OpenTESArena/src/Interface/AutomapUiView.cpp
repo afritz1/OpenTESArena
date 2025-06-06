@@ -8,7 +8,7 @@
 #include "../UI/Surface.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelChunkManager.h"
-#include "../Voxels/VoxelFacing2D.h"
+#include "../Voxels/VoxelFacing.h"
 #include "../Voxels/VoxelTraitsDefinition.h"
 #include "../World/CardinalDirection.h"
 #include "../World/ChunkManager.h"

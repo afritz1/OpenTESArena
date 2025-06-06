@@ -25,7 +25,7 @@
 #include "../Math/Random.h"
 #include "../Voxels/ArenaChasmUtils.h"
 #include "../Voxels/ArenaVoxelUtils.h"
-#include "../Voxels/VoxelFacing2D.h"
+#include "../Voxels/VoxelFacing.h"
 #include "../Voxels/VoxelTriggerDefinition.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
