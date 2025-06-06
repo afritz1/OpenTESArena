@@ -7,7 +7,7 @@
 
 #include "RenderDrawCall.h"
 #include "RenderEntityChunk.h"
-#include "RenderEntityMeshInstance.h"
+#include "RenderMeshInstance.h"
 #include "RenderShaderUtils.h"
 #include "../Entities/EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"

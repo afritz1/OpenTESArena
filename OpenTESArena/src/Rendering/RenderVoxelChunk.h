@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "RenderDrawCall.h"
+#include "RenderMeshInstance.h"
 #include "RenderMeshUtils.h"
 #include "RenderShaderUtils.h"
-#include "RenderVoxelMeshInstance.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../World/Chunk.h"

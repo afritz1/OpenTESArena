@@ -1,5 +1,5 @@
-#ifndef RENDER_VOXEL_MESH_INSTANCE_H
-#define RENDER_VOXEL_MESH_INSTANCE_H
+#ifndef RENDER_MESH_INSTANCE_H
+#define RENDER_MESH_INSTANCE_H
 
 #include "RenderMeshUtils.h"
 
@@ -19,6 +19,18 @@ struct RenderVoxelMeshInstance
 	RenderVoxelMeshInstance();
 
 	int getUniqueDrawCallCount() const;
+	void freeBuffers(Renderer &renderer);
+};
+
+// All the resources needed to define an entity's renderer-allocated mesh.
+struct RenderEntityMeshInstance
+{
+	VertexPositionBufferID positionBufferID;
+	VertexAttributeBufferID normalBufferID, texCoordBufferID;
+	IndexBufferID indexBufferID;
+
+	RenderEntityMeshInstance();
+
 	void freeBuffers(Renderer &renderer);
 };
 
