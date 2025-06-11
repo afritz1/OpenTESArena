@@ -28,7 +28,7 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 }
 
 void VoxelMeshDefinition::initClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType,
-	const ArenaMeshUtils::ShapeInitCache &shapeInitCache)
+	const ArenaShapeInitCache &shapeInitCache)
 {
 	this->uniqueVertexCount = ArenaMeshUtils::GetUniqueVertexCount(voxelType);
 	this->rendererVertexCount = ArenaMeshUtils::GetRendererVertexCount(voxelType);
@@ -217,12 +217,12 @@ void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outIndic
 VoxelShapeDefinition::VoxelShapeDefinition()
 {
 	// Air by default. Needs the shape defined in case of trigger voxels, but doesn't need a render mesh.
-	ArenaMeshUtils::ShapeInitCache airShapeInitCache;
+	ArenaShapeInitCache airShapeInitCache;
 	airShapeInitCache.initDefaultBoxValues();
 	this->initBoxFromClassic(ArenaVoxelType::None, VoxelShapeScaleType::ScaledFromMin, airShapeInitCache);
 }
 
-void VoxelShapeDefinition::initBoxFromClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaMeshUtils::ShapeInitCache &shapeInitCache)
+void VoxelShapeDefinition::initBoxFromClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaShapeInitCache &shapeInitCache)
 {
 	this->type = VoxelShapeType::Box;
 	this->box.init(shapeInitCache.boxWidth, shapeInitCache.boxHeight, shapeInitCache.boxDepth, shapeInitCache.boxYOffset, shapeInitCache.boxYRotation);

@@ -303,7 +303,7 @@ namespace MapGeneration
 	}
 
 	void writeVoxelInfoForFLOR(ArenaVoxelID florVoxel, MapType mapType, const INFFile &inf, ArenaVoxelType *outVoxelType,
-		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset, VertexShaderType *outVertexShaderType,
+		ArenaShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset, VertexShaderType *outVertexShaderType,
 		BufferView<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsChasm, bool *outIsWildWallColored,
 		ArenaChasmType *outChasmType)
 	{
@@ -413,7 +413,7 @@ namespace MapGeneration
 		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
 		ArenaVoxelType voxelType;
-		ArenaMeshUtils::ShapeInitCache shapeInitCache;
+		ArenaShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
 		VertexShaderType vertexShaderType;
 		PixelShaderType pixelShaderTypes[VoxelShadingDefinition::MAX_PIXEL_SHADERS];
@@ -453,7 +453,7 @@ namespace MapGeneration
 	}
 
 	void writeVoxelInfoForFloorReplacement(const INFFile &inf, ArenaChasmType chasmType,
-		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
+		ArenaShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
 	{
 		const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(chasmType);
 		outShapeInitCache->initChasmBoxValues(isDryChasm);
@@ -479,7 +479,7 @@ namespace MapGeneration
 		constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
 		constexpr ArenaChasmType chasmType = ArenaChasmType::Wet;
 
-		ArenaMeshUtils::ShapeInitCache shapeInitCache;
+		ArenaShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
 		MapGeneration::writeVoxelInfoForFloorReplacement(inf, chasmType, &shapeInitCache, &textureAsset);
 
@@ -496,7 +496,7 @@ namespace MapGeneration
 	}
 
 	void writeVoxelInfoForMAP1(ArenaVoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf,
-		const ExeData &exeData, ArenaVoxelType *outVoxelType, ArenaMeshUtils::ShapeInitCache *outShapeInitCache,
+		const ExeData &exeData, ArenaVoxelType *outVoxelType, ArenaShapeInitCache *outShapeInitCache,
 		TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1, TextureAsset *outTextureAsset2, VertexShaderType *outVertexShaderType,
 		BufferView<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsCollider, VoxelFacing2D *outFacing)
 	{
@@ -820,7 +820,7 @@ namespace MapGeneration
 		VoxelShapeDefinition *outShapeDef, VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
 		ArenaVoxelType voxelType;
-		ArenaMeshUtils::ShapeInitCache shapeInitCache;
+		ArenaShapeInitCache shapeInitCache;
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
 		VertexShaderType vertexShaderType;
 		PixelShaderType pixelShaderTypes[VoxelShadingDefinition::MAX_PIXEL_SHADERS];
@@ -869,7 +869,7 @@ namespace MapGeneration
 	}
 
 	void writeVoxelInfoForMAP2(ArenaVoxelID map2Voxel, const INFFile &inf, ArenaVoxelType *outVoxelType,
-		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1,
+		ArenaShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1,
 		TextureAsset *outTextureAsset2)
 	{
 		*outVoxelType = ArenaVoxelType::Wall;
@@ -890,7 +890,7 @@ namespace MapGeneration
 		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef)
 	{
 		ArenaVoxelType voxelType;
-		ArenaMeshUtils::ShapeInitCache shapeInitCache;
+		ArenaShapeInitCache shapeInitCache;
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
 		MapGeneration::writeVoxelInfoForMAP2(map2Voxel, inf, &voxelType, &shapeInitCache, &textureAsset0, &textureAsset1, &textureAsset2);
 
@@ -910,7 +910,7 @@ namespace MapGeneration
 	}
 
 	void writeVoxelInfoForCeiling(const INFFile &inf, ArenaVoxelType *outVoxelType,
-		ArenaMeshUtils::ShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
+		ArenaShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
 	{
 		*outVoxelType = ArenaVoxelType::Ceiling;
 		outShapeInitCache->initDefaultBoxValues();
@@ -931,7 +931,7 @@ namespace MapGeneration
 		VoxelTraitsDefinition *outTraitsDef)
 	{
 		ArenaVoxelType voxelType;
-		ArenaMeshUtils::ShapeInitCache shapeInitCache;
+		ArenaShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
 		MapGeneration::writeVoxelInfoForCeiling(inf, &voxelType, &shapeInitCache, &textureAsset);
 

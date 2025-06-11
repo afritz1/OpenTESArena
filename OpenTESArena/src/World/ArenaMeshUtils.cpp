@@ -2,10 +2,91 @@
 #include "../Math/Constants.h"
 #include "../Voxels/VoxelFacing.h"
 
+ArenaShapeInitCache::ArenaShapeInitCache()
+{
+	this->boxWidth = 0.0;
+	this->boxHeight = 0.0;
+	this->boxDepth = 0.0;
+	this->boxYOffset = 0.0;
+	this->boxYRotation = 0.0;
+
+	this->positions.fill(0.0);
+	this->normals.fill(0.0);
+	this->texCoords.fill(0.0);
+
+	this->indices0.fill(-1);
+	this->indices1.fill(-1);
+	this->indices2.fill(-1);
+	this->indicesPtrs = { &this->indices0, &this->indices1, &this->indices2 };
+
+	this->facings0.fill(static_cast<VoxelFacing3D>(-1));
+	this->facings1.fill(static_cast<VoxelFacing3D>(-1));
+	this->facings2.fill(static_cast<VoxelFacing3D>(-1));
+	this->facingsPtrs = { &this->facings0, &this->facings1, &this->facings2 };
+
+	this->positionsView.init(this->positions);
+	this->normalsView.init(this->normals);
+	this->texCoordsView.init(this->texCoords);
+
+	this->indices0View.init(this->indices0);
+	this->indices1View.init(this->indices1);
+	this->indices2View.init(this->indices2);
+
+	this->facings0View.init(this->facings0);
+	this->facings1View.init(this->facings1);
+	this->facings2View.init(this->facings2);
+}
+
+void ArenaShapeInitCache::initDefaultBoxValues()
+{
+	this->boxWidth = 1.0;
+	this->boxHeight = 1.0;
+	this->boxDepth = 1.0;
+	this->boxYOffset = 0.0;
+	this->boxYRotation = 0.0;
+}
+
+void ArenaShapeInitCache::initRaisedBoxValues(double height, double yOffset)
+{
+	this->boxWidth = 1.0;
+	this->boxHeight = height;
+	this->boxDepth = 1.0;
+	this->boxYOffset = yOffset;
+	this->boxYRotation = 0.0;
+}
+
+void ArenaShapeInitCache::initChasmBoxValues(bool isDryChasm)
+{
+	// Offset below the chasm floor so the collider isn't infinitely thin.
+	// @todo: this doesn't seem right for wet chasms
+	this->boxWidth = 1.0;
+	this->boxHeight = 0.10;
+	if (!isDryChasm)
+	{
+		this->boxHeight += 1.0 - ArenaChasmUtils::DEFAULT_HEIGHT;
+	}
+
+	this->boxDepth = 1.0;
+	this->boxYOffset = -0.10;
+	this->boxYRotation = 0.0;
+}
+
+void ArenaShapeInitCache::initDiagonalBoxValues(bool isRightDiag)
+{
+	constexpr Radians diagonalAngle = Constants::Pi / 4.0;
+	constexpr double diagonalThickness = 0.050; // Arbitrary thin wall thickness
+	static_assert(diagonalThickness > (Physics::BoxConvexRadius * 2.0));
+
+	this->boxWidth = Constants::Sqrt2 - diagonalThickness; // Fit the edges of the voxel exactly
+	this->boxHeight = 1.0;
+	this->boxDepth = diagonalThickness;
+	this->boxYOffset = 0.0;
+	this->boxYRotation = isRightDiag ? -diagonalAngle : diagonalAngle;
+}
+
 // Unique geometry positions are lexicographically ordered for separation of responsibility from how
 // they're used, and renderer positions are ordered in the way they're consumed when being converted
 // to triangles.
-
 void ArenaMeshUtils::WriteWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
@@ -1313,8 +1394,8 @@ void ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> out
 	std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.begin());
 }
 
-void ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices,
-	ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices)
+void ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices,
+	ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices)
 {
 	if (outNorthIndices != nullptr) // X=0
 	{

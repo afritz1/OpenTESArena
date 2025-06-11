@@ -371,7 +371,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 	renderer.populateIndexBuffer(this->defaultQuadIndexBufferID, defaultQuadIndexBufferIndices);
 
 	// Populate chasm wall index buffers.
-	ArenaMeshUtils::ChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
+	ArenaChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
 	ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
 	constexpr int indicesPerFace = static_cast<int>(northIndices.size());
 
@@ -405,8 +405,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 
 		std::array<int32_t, indicesPerFace * 4> totalIndicesBuffer;
 		int writingIndex = 0;
-		auto tryWriteIndices = [indicesPerFace, &totalIndicesBuffer, &writingIndex](bool hasFace,
-			const ArenaMeshUtils::ChasmWallIndexBuffer &faceIndices)
+		auto tryWriteIndices = [indicesPerFace, &totalIndicesBuffer, &writingIndex](bool hasFace, const ArenaChasmWallIndexBuffer &faceIndices)
 		{
 			if (hasFace)
 			{
@@ -566,7 +565,7 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			continue;
 		}
 
-		ArenaMeshUtils::ShapeInitCache shapeInitCache;
+		ArenaShapeInitCache shapeInitCache;
 
 		// Generate mesh geometry and indices for this voxel definition.
 		voxelMeshDef.writeRendererVertexPositionBuffer(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.positionsView);

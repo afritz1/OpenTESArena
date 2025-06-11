@@ -18,125 +18,50 @@
 enum class VoxelFacing2D;
 enum class VoxelFacing3D;
 
-// The original game doesn't actually have meshes - this is just a convenient way to define things.
-namespace ArenaMeshUtils
+using ArenaChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
+
+// Provides init values for physics shape and render mesh, comes from map generation.
+struct ArenaShapeInitCache
 {
 	static constexpr int MAX_RENDERER_VERTICES = 24;
 	static constexpr int MAX_RENDERER_INDICES = 36;
 
+	// Simplified box shape values.
+	double boxWidth;
+	double boxHeight;
+	double boxDepth;
+	double boxYOffset;
+	Radians boxYRotation;
+
+	// Per-vertex data (duplicated to some extent, compared to the minimum-required).
+	std::array<double, MAX_RENDERER_VERTICES * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> positions;
+	std::array<double, MAX_RENDERER_VERTICES * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals;
+	std::array<double, MAX_RENDERER_VERTICES * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX> texCoords;
+	std::array<int32_t, MAX_RENDERER_INDICES> indices0, indices1, indices2;
+	std::array<const decltype(indices0)*, 3> indicesPtrs;
+	std::array<VoxelFacing3D, VoxelUtils::FACE_COUNT> facings0, facings1, facings2;
+	std::array<const decltype(facings0)*, 3> facingsPtrs;
+
+	BufferView<double> positionsView, normalsView, texCoordsView;
+	BufferView<int32_t> indices0View, indices1View, indices2View;
+	BufferView<VoxelFacing3D> facings0View, facings1View, facings2View;
+
+	ArenaShapeInitCache();
+
+	void initDefaultBoxValues();
+	void initRaisedBoxValues(double height, double yOffset);
+	void initChasmBoxValues(bool isDryChasm);
+	void initDiagonalBoxValues(bool isRightDiag);
+};
+
+// The original game doesn't actually have meshes - this is just a convenient way to define things.
+namespace ArenaMeshUtils
+{
 	static constexpr int CHASM_WALL_NORTH = 0x1;
 	static constexpr int CHASM_WALL_EAST = 0x2;
 	static constexpr int CHASM_WALL_SOUTH = 0x4;
 	static constexpr int CHASM_WALL_WEST = 0x8;
 	static constexpr int CHASM_WALL_COMBINATION_COUNT = CHASM_WALL_NORTH | CHASM_WALL_EAST | CHASM_WALL_SOUTH | CHASM_WALL_WEST;
-
-	using ChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
-
-	// Provides init values for physics shape and render mesh, comes from map generation.
-	struct ShapeInitCache
-	{
-		// Simplified box shape values.
-		double boxWidth;
-		double boxHeight;
-		double boxDepth;
-		double boxYOffset;
-		Radians boxYRotation;
-
-		// Per-vertex data (duplicated to some extent, compared to the minimum-required).
-		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::POSITION_COMPONENTS_PER_VERTEX> positions;
-		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX> normals;
-		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX> texCoords;
-		std::array<int32_t, MAX_RENDERER_INDICES> indices0, indices1, indices2;
-		std::array<const decltype(indices0)*, 3> indicesPtrs;
-		std::array<VoxelFacing3D, VoxelUtils::FACE_COUNT> facings0, facings1, facings2;
-		std::array<const decltype(facings0)*, 3> facingsPtrs;
-
-		BufferView<double> positionsView, normalsView, texCoordsView;
-		BufferView<int32_t> indices0View, indices1View, indices2View;
-		BufferView<VoxelFacing3D> facings0View, facings1View, facings2View;
-
-		ShapeInitCache()
-		{
-			this->boxWidth = 0.0;
-			this->boxHeight = 0.0;
-			this->boxDepth = 0.0;
-			this->boxYOffset = 0.0;
-			this->boxYRotation = 0.0;
-
-			this->positions.fill(0.0);
-			this->normals.fill(0.0);
-			this->texCoords.fill(0.0);
-
-			this->indices0.fill(-1);
-			this->indices1.fill(-1);
-			this->indices2.fill(-1);
-			this->indicesPtrs = { &this->indices0, &this->indices1, &this->indices2 };
-
-			this->facings0.fill(static_cast<VoxelFacing3D>(-1));
-			this->facings1.fill(static_cast<VoxelFacing3D>(-1));
-			this->facings2.fill(static_cast<VoxelFacing3D>(-1));
-			this->facingsPtrs = { &this->facings0, &this->facings1, &this->facings2 };
-
-			this->positionsView.init(this->positions);
-			this->normalsView.init(this->normals);
-			this->texCoordsView.init(this->texCoords);
-
-			this->indices0View.init(this->indices0);
-			this->indices1View.init(this->indices1);
-			this->indices2View.init(this->indices2);
-
-			this->facings0View.init(this->facings0);
-			this->facings1View.init(this->facings1);
-			this->facings2View.init(this->facings2);
-		}
-
-		void initDefaultBoxValues()
-		{
-			this->boxWidth = 1.0;
-			this->boxHeight = 1.0;
-			this->boxDepth = 1.0;
-			this->boxYOffset = 0.0;
-			this->boxYRotation = 0.0;
-		}
-
-		void initRaisedBoxValues(double height, double yOffset)
-		{
-			this->boxWidth = 1.0;
-			this->boxHeight = height;
-			this->boxDepth = 1.0;
-			this->boxYOffset = yOffset;
-			this->boxYRotation = 0.0;
-		}
-		
-		void initChasmBoxValues(bool isDryChasm)
-		{
-			// Offset below the chasm floor so the collider isn't infinitely thin.
-			// @todo: this doesn't seem right for wet chasms
-			this->boxWidth = 1.0;
-			this->boxHeight = 0.10;
-			if (!isDryChasm)
-			{
-				this->boxHeight += 1.0 - ArenaChasmUtils::DEFAULT_HEIGHT;
-			}
-
-			this->boxDepth = 1.0;
-			this->boxYOffset = -0.10;
-			this->boxYRotation = 0.0;
-		}
-
-		void initDiagonalBoxValues(bool isRightDiag)
-		{
-			constexpr Radians diagonalAngle = Constants::Pi / 4.0;
-			constexpr double diagonalThickness = 0.050; // Arbitrary thin wall thickness
-			static_assert(diagonalThickness > (Physics::BoxConvexRadius * 2.0));
-
-			this->boxWidth = Constants::Sqrt2 - diagonalThickness; // Fit the edges of the voxel exactly
-			this->boxHeight = 1.0;
-			this->boxDepth = diagonalThickness;
-			this->boxYOffset = 0.0;
-			this->boxYRotation = isRightDiag ? -diagonalAngle : diagonalAngle;
-		}
-	};
 
 	// The "ideal" vertices per voxel (no duplication).
 	constexpr int GetUniqueVertexCount(ArenaVoxelType voxelType)
@@ -766,7 +691,7 @@ namespace ArenaMeshUtils
 	void WriteChasmUniqueGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals);
 	void WriteChasmRendererGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
-	void WriteChasmWallRendererIndexBuffers(ChasmWallIndexBuffer *outNorthIndices, ChasmWallIndexBuffer *outEastIndices, ChasmWallIndexBuffer *outSouthIndices, ChasmWallIndexBuffer *outWestIndices);
+	void WriteChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
 	void WriteDoorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
 	void WriteDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void WriteDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
