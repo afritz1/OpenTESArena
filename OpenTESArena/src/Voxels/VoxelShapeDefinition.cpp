@@ -140,9 +140,9 @@ BufferView<const VoxelFacing3D> VoxelMeshDefinition::getFacingsList(int index) c
 	return *ptrs[index];
 }
 
-bool VoxelMeshDefinition::hasFullCoverageOfFacing(VoxelFacing3D facing) const
+int VoxelMeshDefinition::findIndexBufferIndexWithFacing(VoxelFacing3D facing) const
 {
-	// @todo eventually this should analyze the mesh + indices, using vertex position checks w/ epsilons
+	DebugAssert(this->indicesListCount >= this->facingsListCount);
 
 	for (int i = 0; i < this->facingsListCount; i++)
 	{
@@ -151,12 +151,20 @@ bool VoxelMeshDefinition::hasFullCoverageOfFacing(VoxelFacing3D facing) const
 		{
 			if (currentFacing == facing)
 			{
-				return true;
+				return i;
 			}
 		}
 	}
 
-	return false;
+	return -1;
+}
+
+bool VoxelMeshDefinition::hasFullCoverageOfFacing(VoxelFacing3D facing) const
+{
+	// @todo eventually this should analyze the mesh + indices, using vertex position checks w/ epsilons
+
+	const int indexBufferIndex = this->findIndexBufferIndexWithFacing(facing);
+	return indexBufferIndex >= 0;
 }
 
 void VoxelMeshDefinition::writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions) const

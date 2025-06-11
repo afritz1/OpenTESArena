@@ -52,7 +52,8 @@ struct VoxelMeshDefinition
 	std::vector<VoxelFacing3D> &getFacingsList(int index);
 	BufferView<const VoxelFacing3D> getFacingsList(int index) const;
 
-	// Used with face combining.
+	// Finds the index buffer (if any) that fully covers the voxel facing. Used with mesh combining.
+	int findIndexBufferIndexWithFacing(VoxelFacing3D facing) const;
 	bool hasFullCoverageOfFacing(VoxelFacing3D facing) const;
 
 	void writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions) const;
