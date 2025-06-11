@@ -61,37 +61,20 @@ namespace
 			return false;
 		}
 
-		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-		const ArenaVoxelType voxelTraitsDefType = voxelTraitsDef.type;
-		BufferView<const VoxelFacing3D> validFacings;
-		for (const std::pair<ArenaVoxelType, BufferView<const VoxelFacing3D>> &pair : VoxelUtils::VoxelTypeValidFacings)
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+		if (voxelShapeDef.allowsAdjacentFaceCombining)
 		{
-			if (pair.first == voxelTraitsDefType)
-			{
-				validFacings = pair.second;
-				break;
-			}
-		}
-
-		if (validFacings.isValid())
-		{
-			bool isValidFacing = false;
-			for (const VoxelFacing3D validFacing : validFacings)
-			{
-				if (validFacing == facing)
-				{
-					isValidFacing = true;
-					break;
-				}
-			}
-
-			if (!isValidFacing)
+			const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
+			if (!voxelMeshDef.hasFullCoverageOfFacing(facing))
 			{
 				return false;
 			}
 		}
 		else
 		{
+			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+			const ArenaVoxelType voxelTraitsDefType = voxelTraitsDef.type;
+
 			// Filter out special case voxel types.
 			if (voxelTraitsDefType == ArenaVoxelType::None)
 			{
@@ -331,16 +314,13 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 
 		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
-		if (shapeDef.mesh.isEmpty())
+		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
+		if (meshDef.isEmpty())
 		{
 			// No need to dirty air.
 			std::fill(std::begin(dirtyEntry.dirtyFaces), std::end(dirtyEntry.dirtyFaces), false);
 			continue;
 		}
-
-		const VoxelTraitsDefID traitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefinition &traitsDef = voxelChunk.getTraitsDef(traitsDefID);
-		const ArenaVoxelType voxelType = traitsDef.type;
 
 		VoxelFacesEntry &facesEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 		const VoxelFaceEnableEntry &faceEnableEntry = faceEnableChunk.entries.get(voxel.x, voxel.y, voxel.z);
@@ -360,7 +340,7 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 			}
 
 			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
-			if (!VoxelUtils::isVoxelTypeMeshCoveringFacing(voxelType, facing))
+			if (!meshDef.hasFullCoverageOfFacing(facing))
 			{
 				continue;
 			}

@@ -36,9 +36,11 @@ struct VoxelMeshDefinition
 {
 	std::vector<double> rendererPositions, rendererNormals, rendererTexCoords;
 	std::vector<int32_t> indices0, indices1, indices2; // Up to 3 draw calls.
+	std::vector<VoxelFacing3D> facings0, facings1, facings2; // Up to 3 sets of fully-covered voxel faces, associated with index buffers, used with face combining.
 	int uniqueVertexCount; // Ideal number of vertices to represent the mesh.
 	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
 	int indicesListCount;
+	int facingsListCount;
 
 	VoxelMeshDefinition();
 
@@ -47,6 +49,11 @@ struct VoxelMeshDefinition
 	bool isEmpty() const;
 	std::vector<int32_t> &getIndicesList(int index);
 	BufferView<const int32_t> getIndicesList(int index) const;
+	std::vector<VoxelFacing3D> &getFacingsList(int index);
+	BufferView<const VoxelFacing3D> getFacingsList(int index) const;
+
+	// Used with face combining.
+	bool hasFullCoverageOfFacing(VoxelFacing3D facing) const;
 
 	void writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions,
 		BufferView<double> outNormals, BufferView<double> outTexCoords) const;
@@ -65,8 +72,10 @@ struct VoxelShapeDefinition
 
 	VoxelMeshDefinition mesh;
 	VoxelShapeScaleType scaleType;
-	bool allowsBackFaces;
+	bool allowsBackFaces; // Back face culling for rendering.
 	bool allowsAdjacentDoorFaces; // For voxels that don't prevent a door's face from rendering.
+	bool allowsInternalFaceRemoval; // For voxels that can disable their faces when blocked by an opaque neighbor's face.
+	bool allowsAdjacentFaceCombining; // For voxels that can combine their faces with adjacent voxel faces to create a larger mesh.
 	bool enablesNeighborGeometry; // For voxels that influence adjacent context-sensitive voxels like chasms.
 	bool isContextSensitive; // For voxels like chasms whose geometry is conditional to what's around them.
 	bool isElevatedPlatform; // For voxels that entities sit on top of and for letting player sleep in peace.

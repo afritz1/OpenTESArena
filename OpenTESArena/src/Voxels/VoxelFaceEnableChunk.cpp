@@ -62,21 +62,25 @@ void VoxelFaceEnableChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const
 
 		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
-		if (shapeDef.mesh.isEmpty())
+		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
+		if (meshDef.isEmpty())
 		{
 			// Disable air faces.
 			faceEnableEntry.fill(false);
 			continue;
 		}
-
-		const VoxelTraitsDefID traitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefinition &traitsDef = voxelChunk.getTraitsDef(traitsDefID);
-		const ArenaVoxelType voxelType = traitsDef.type;
+		
+		if (!shapeDef.allowsInternalFaceRemoval)
+		{
+			// This shape doesn't participate in face enabling/disabling.
+			faceEnableEntry.fill(true);
+			continue;
+		}
 
 		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShadingDefinition &shadingDef = voxelChunk.getShadingDef(shadingDefID);
 
-		for (int faceIndex = 0; faceIndex < VoxelFaceEnableEntry::FACE_COUNT; faceIndex++)
+		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
 			DebugAssertIndex(FaceEnableDirections, faceIndex);
 			const Int3 direction = FaceEnableDirections[faceIndex];
@@ -89,7 +93,7 @@ void VoxelFaceEnableChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const
 			}
 
 			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
-			if (!VoxelUtils::isVoxelTypeMeshCoveringFacing(voxelType, facing))
+			if (!meshDef.hasFullCoverageOfFacing(facing))
 			{
 				// This face doesn't get full coverage from its own mesh, not important enough.
 				faceEnableEntry.enabledFaces[faceIndex] = true;
@@ -104,11 +108,11 @@ void VoxelFaceEnableChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const
 			}
 
 			// Disable this voxel's face if the adjacent one blocks it completely.
-			const VoxelTraitsDefID adjacentTraitsDefID = voxelChunk.getTraitsDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
-			const VoxelTraitsDefinition &adjacentTraitsDef = voxelChunk.getTraitsDef(adjacentTraitsDefID);
-			const ArenaVoxelType adjacentVoxelType = adjacentTraitsDef.type;
+			const VoxelShapeDefID adjacentShapeDefID = voxelChunk.getShapeDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+			const VoxelShapeDefinition &adjacentShapeDef = voxelChunk.getShapeDef(adjacentShapeDefID);
+			const VoxelMeshDefinition &adjacentMeshDef = adjacentShapeDef.mesh;
 			const VoxelFacing3D adjacentFacing = VoxelUtils::getOppositeFacing(facing);
-			if (!VoxelUtils::isVoxelTypeMeshCoveringFacing(adjacentVoxelType, adjacentFacing))
+			if (!adjacentMeshDef.hasFullCoverageOfFacing(adjacentFacing))
 			{
 				// Adjacent face doesn't get full coverage from its mesh, not important enough.
 				faceEnableEntry.enabledFaces[faceIndex] = true;

@@ -1,6 +1,7 @@
 #ifndef VOXEL_FACE_ENABLE_CHUNK_H
 #define VOXEL_FACE_ENABLE_CHUNK_H
 
+#include "VoxelUtils.h"
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer3D.h"
@@ -10,10 +11,8 @@ class VoxelChunk;
 
 struct VoxelFaceEnableEntry
 {
-	static constexpr int FACE_COUNT = 6; // +X, -X, +Y, -Y, +Z, -Z
-
 	// For each face, should it be presented by the renderer?
-	bool enabledFaces[FACE_COUNT];
+	bool enabledFaces[VoxelUtils::FACE_COUNT];
 
 	VoxelFaceEnableEntry();
 

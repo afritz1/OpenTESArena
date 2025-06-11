@@ -8,6 +8,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Collision/Physics.h"
 #include "../Voxels/ArenaChasmUtils.h"
+#include "../Voxels/VoxelUtils.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 
@@ -15,6 +16,7 @@
 #include "components/utilities/BufferView.h"
 
 enum class VoxelFacing2D;
+enum class VoxelFacing3D;
 
 // The original game doesn't actually have meshes - this is just a convenient way to define things.
 namespace ArenaMeshUtils
@@ -46,9 +48,12 @@ namespace ArenaMeshUtils
 		std::array<double, MAX_RENDERER_VERTICES * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX> texCoords;
 		std::array<int32_t, MAX_RENDERER_INDICES> indices0, indices1, indices2;
 		std::array<const decltype(indices0)*, 3> indicesPtrs;
+		std::array<VoxelFacing3D, VoxelUtils::FACE_COUNT> facings0, facings1, facings2;
+		std::array<const decltype(facings0)*, 3> facingsPtrs;
 
 		BufferView<double> positionsView, normalsView, texCoordsView;
 		BufferView<int32_t> indices0View, indices1View, indices2View;
+		BufferView<VoxelFacing3D> facings0View, facings1View, facings2View;
 
 		ShapeInitCache()
 		{
@@ -61,17 +66,28 @@ namespace ArenaMeshUtils
 			this->positions.fill(0.0);
 			this->normals.fill(0.0);
 			this->texCoords.fill(0.0);
+
 			this->indices0.fill(-1);
 			this->indices1.fill(-1);
 			this->indices2.fill(-1);
 			this->indicesPtrs = { &this->indices0, &this->indices1, &this->indices2 };
 
+			this->facings0.fill(static_cast<VoxelFacing3D>(-1));
+			this->facings1.fill(static_cast<VoxelFacing3D>(-1));
+			this->facings2.fill(static_cast<VoxelFacing3D>(-1));
+			this->facingsPtrs = { &this->facings0, &this->facings1, &this->facings2 };
+
 			this->positionsView.init(this->positions);
 			this->normalsView.init(this->normals);
 			this->texCoordsView.init(this->texCoords);
+
 			this->indices0View.init(this->indices0);
 			this->indices1View.init(this->indices1);
 			this->indices2View.init(this->indices2);
+
+			this->facings0View.init(this->facings0);
+			this->facings1View.init(this->facings1);
+			this->facings2View.init(this->facings2);
 		}
 
 		void initDefaultBoxValues()
@@ -472,6 +488,106 @@ namespace ArenaMeshUtils
 		return faceCount * MeshUtils::INDICES_PER_QUAD;
 	}
 
+	// Similar to index buffer count but only for voxels whose mesh can cover one or more entire voxel faces.
+	constexpr int GetFacingBufferCount(ArenaVoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaVoxelType::Wall:
+			return 3;
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+			return 1;
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Chasm:
+		case ArenaVoxelType::Door:
+			return 0;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	constexpr int GetFacingBufferFaceCount(ArenaVoxelType voxelType, int facingBufferIndex)
+	{
+		constexpr std::pair<ArenaVoxelType, int> FacingBuffer0FaceCounts[] =
+		{
+			{ ArenaVoxelType::None, 0 },
+			{ ArenaVoxelType::Wall, 4 },
+			{ ArenaVoxelType::Floor, 1 },
+			{ ArenaVoxelType::Ceiling, 1 },
+			{ ArenaVoxelType::Raised, 0 },
+			{ ArenaVoxelType::Diagonal, 0 },
+			{ ArenaVoxelType::TransparentWall, 0 },
+			{ ArenaVoxelType::Edge, 0 },
+			{ ArenaVoxelType::Chasm, 0 },
+			{ ArenaVoxelType::Door, 0 }
+		};
+
+		constexpr std::pair<ArenaVoxelType, int> FacingBuffer1FaceCounts[] =
+		{
+			{ ArenaVoxelType::None, 0 },
+			{ ArenaVoxelType::Wall, 1 },
+			{ ArenaVoxelType::Floor, 0 },
+			{ ArenaVoxelType::Ceiling, 0 },
+			{ ArenaVoxelType::Raised, 0 },
+			{ ArenaVoxelType::Diagonal, 0 },
+			{ ArenaVoxelType::TransparentWall, 0 },
+			{ ArenaVoxelType::Edge, 0 },
+			{ ArenaVoxelType::Chasm, 0 },
+			{ ArenaVoxelType::Door, 0 }
+		};
+
+		constexpr std::pair<ArenaVoxelType, int> FacingBuffer2FaceCounts[] =
+		{
+			{ ArenaVoxelType::None, 0 },
+			{ ArenaVoxelType::Wall, 1 },
+			{ ArenaVoxelType::Floor, 0 },
+			{ ArenaVoxelType::Ceiling, 0 },
+			{ ArenaVoxelType::Raised, 0 },
+			{ ArenaVoxelType::Diagonal, 0 },
+			{ ArenaVoxelType::TransparentWall, 0 },
+			{ ArenaVoxelType::Edge, 0 },
+			{ ArenaVoxelType::Chasm, 0 },
+			{ ArenaVoxelType::Door, 0 }
+		};
+
+		const std::pair<ArenaVoxelType, int> *facingBufferFaceCounts = nullptr;
+		switch (facingBufferIndex)
+		{
+		case 0:
+			facingBufferFaceCounts = FacingBuffer0FaceCounts;
+			break;
+		case 1:
+			facingBufferFaceCounts = FacingBuffer1FaceCounts;
+			break;
+		case 2:
+			facingBufferFaceCounts = FacingBuffer2FaceCounts;
+			break;
+		default:
+			DebugNotImplemented();
+			break;
+		}
+
+		constexpr int voxelTypeCount = static_cast<int>(std::size(FacingBuffer0FaceCounts));
+
+		int faceCount = 0;
+		for (int i = 0; i < voxelTypeCount; i++)
+		{
+			const std::pair<ArenaVoxelType, int> &pair = facingBufferFaceCounts[i];
+			if (pair.first == voxelType)
+			{
+				faceCount = pair.second;
+				break;
+			}
+		}
+
+		return faceCount;
+	}
+
 	constexpr int GetChasmWallIndex(bool north, bool east, bool south, bool west)
 	{
 		const int index = (north ? CHASM_WALL_NORTH : 0) | (east ? CHASM_WALL_EAST : 0) | (south ? CHASM_WALL_SOUTH : 0) | (west ? CHASM_WALL_WEST : 0);
@@ -514,6 +630,48 @@ namespace ArenaMeshUtils
 		case ArenaVoxelType::None:
 		case ArenaVoxelType::Raised:
 		case ArenaVoxelType::Edge:
+			return true;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	constexpr bool AllowsInternalFaceRemoval(ArenaVoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Door:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Chasm:
+			return false;
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+			return true;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+		}
+	}
+
+	constexpr bool AllowsAdjacentFaceCombining(ArenaVoxelType voxelType)
+	{
+		switch (voxelType)
+		{
+		case ArenaVoxelType::None:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::TransparentWall: // @todo eventually allow hedges to combine
+		case ArenaVoxelType::Door:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Chasm: // @todo eventually allow chasm floors to combine (it covers O(n^2) of the game world, not just chunk edges)
+			return false;
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
