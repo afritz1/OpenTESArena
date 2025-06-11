@@ -372,7 +372,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 
 	// Populate chasm wall index buffers.
 	ArenaChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
-	ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
+	ArenaMeshUtils::writeChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
 	constexpr int indicesPerFace = static_cast<int>(northIndices.size());
 
 	for (int i = 0; i < static_cast<int>(this->chasmWallIndexBufferIDs.size()); i++)

@@ -84,10 +84,7 @@ void ArenaShapeInitCache::initDiagonalBoxValues(bool isRightDiag)
 	this->boxYRotation = isRightDiag ? -diagonalAngle : diagonalAngle;
 }
 
-// Unique geometry positions are lexicographically ordered for separation of responsibility from how
-// they're used, and renderer positions are ordered in the way they're consumed when being converted
-// to triangles.
-void ArenaMeshUtils::WriteWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
+void ArenaMeshUtils::writeWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
 	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
@@ -122,7 +119,7 @@ void ArenaMeshUtils::WriteWallUniqueGeometryBuffers(BufferView<double> outPositi
 	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
+void ArenaMeshUtils::writeWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
@@ -236,7 +233,7 @@ void ArenaMeshUtils::WriteWallRendererGeometryBuffers(BufferView<double> outPosi
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices,
+void ArenaMeshUtils::writeWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices,
 	BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
@@ -278,7 +275,7 @@ void ArenaMeshUtils::WriteWallRendererIndexBuffers(BufferView<int32_t> outOpaque
 	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.begin());
 }
 
-void ArenaMeshUtils::WriteFloorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
+void ArenaMeshUtils::writeFloorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
 	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
@@ -299,7 +296,7 @@ void ArenaMeshUtils::WriteFloorUniqueGeometryBuffers(BufferView<double> outPosit
 	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
+void ArenaMeshUtils::writeFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
@@ -335,7 +332,7 @@ void ArenaMeshUtils::WriteFloorRendererGeometryBuffers(BufferView<double> outPos
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
+void ArenaMeshUtils::writeFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
@@ -351,7 +348,7 @@ void ArenaMeshUtils::WriteFloorRendererIndexBuffers(BufferView<int32_t> outOpaqu
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
-void ArenaMeshUtils::WriteCeilingUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
+void ArenaMeshUtils::writeCeilingUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
 	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
@@ -372,7 +369,7 @@ void ArenaMeshUtils::WriteCeilingUniqueGeometryBuffers(BufferView<double> outPos
 	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
+void ArenaMeshUtils::writeCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
@@ -408,7 +405,7 @@ void ArenaMeshUtils::WriteCeilingRendererGeometryBuffers(BufferView<double> outP
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
+void ArenaMeshUtils::writeCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
@@ -424,7 +421,7 @@ void ArenaMeshUtils::WriteCeilingRendererIndexBuffers(BufferView<int32_t> outOpa
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
-void ArenaMeshUtils::WriteRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outPositions,
+void ArenaMeshUtils::writeRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outPositions,
 	BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Raised;
@@ -463,7 +460,7 @@ void ArenaMeshUtils::WriteRaisedUniqueGeometryBuffers(double yOffset, double ySi
 	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
+void ArenaMeshUtils::writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
 	BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Raised;
@@ -578,7 +575,7 @@ void ArenaMeshUtils::WriteRaisedRendererGeometryBuffers(double yOffset, double y
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices)
+void ArenaMeshUtils::writeRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Raised;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 2);
@@ -619,7 +616,7 @@ void ArenaMeshUtils::WriteRaisedRendererIndexBuffers(BufferView<int32_t> outSide
 	std::copy(topIndices.begin(), topIndices.end(), outTopIndices.begin());
 }
 
-void ArenaMeshUtils::WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals)
+void ArenaMeshUtils::writeDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Diagonal;
 	constexpr int positionComponentCount = GetUniqueVertexPositionComponentCount(voxelType);
@@ -664,7 +661,7 @@ void ArenaMeshUtils::WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<d
 	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions,
+void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions,
 	BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Diagonal;
@@ -754,7 +751,7 @@ void ArenaMeshUtils::WriteDiagonalRendererGeometryBuffers(bool type1, BufferView
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
+void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Diagonal;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
@@ -774,7 +771,7 @@ void ArenaMeshUtils::WriteDiagonalRendererIndexBuffers(BufferView<int32_t> outOp
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
-void ArenaMeshUtils::WriteTransparentWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
+void ArenaMeshUtils::writeTransparentWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::TransparentWall;
 	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
@@ -805,7 +802,7 @@ void ArenaMeshUtils::WriteTransparentWallUniqueGeometryBuffers(BufferView<double
 	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(BufferView<double> outPositions,
+void ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(BufferView<double> outPositions,
 	BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::TransparentWall;
@@ -888,7 +885,7 @@ void ArenaMeshUtils::WriteTransparentWallRendererGeometryBuffers(BufferView<doub
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
+void ArenaMeshUtils::writeTransparentWallRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::TransparentWall;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 0);
@@ -913,7 +910,7 @@ void ArenaMeshUtils::WriteTransparentWallRendererIndexBuffers(BufferView<int32_t
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
 }
 
-void ArenaMeshUtils::WriteEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outPositions,
+void ArenaMeshUtils::writeEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outPositions,
 	BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Edge;
@@ -1024,7 +1021,7 @@ void ArenaMeshUtils::WriteEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double
 	std::copy(normals->begin(), normals->end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
+void ArenaMeshUtils::writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
 	BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Edge;
@@ -1221,7 +1218,7 @@ void ArenaMeshUtils::WriteEdgeRendererGeometryBuffers(VoxelFacing2D facing, doub
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
+void ArenaMeshUtils::writeEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Edge;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 0);
@@ -1241,7 +1238,7 @@ void ArenaMeshUtils::WriteEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaT
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
 }
 
-void ArenaMeshUtils::WriteChasmUniqueGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions,
+void ArenaMeshUtils::writeChasmUniqueGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions,
 	BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
@@ -1276,7 +1273,7 @@ void ArenaMeshUtils::WriteChasmUniqueGeometryBuffers(ArenaChasmType chasmType, B
 	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteChasmRendererGeometryBuffers(ArenaChasmType chasmType,
+void ArenaMeshUtils::writeChasmRendererGeometryBuffers(ArenaChasmType chasmType,
 	BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
@@ -1378,7 +1375,7 @@ void ArenaMeshUtils::WriteChasmRendererGeometryBuffers(ArenaChasmType chasmType,
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
+void ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 1);
@@ -1394,7 +1391,7 @@ void ArenaMeshUtils::WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> out
 	std::copy(opaqueIndices.begin(), opaqueIndices.end(), outOpaqueIndices.begin());
 }
 
-void ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices,
+void ArenaMeshUtils::writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices,
 	ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices)
 {
 	if (outNorthIndices != nullptr) // X=0
@@ -1438,7 +1435,7 @@ void ArenaMeshUtils::WriteChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffe
 	}
 }
 
-void ArenaMeshUtils::WriteDoorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
+void ArenaMeshUtils::writeDoorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Door;
 	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
@@ -1469,7 +1466,7 @@ void ArenaMeshUtils::WriteDoorUniqueGeometryBuffers(BufferView<double> outPositi
 	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
-void ArenaMeshUtils::WriteDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
+void ArenaMeshUtils::writeDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Door;
@@ -1509,7 +1506,7 @@ void ArenaMeshUtils::WriteDoorRendererGeometryBuffers(BufferView<double> outPosi
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::WriteDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
+void ArenaMeshUtils::writeDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Door;
 	static_assert(GetOpaqueIndexBufferCount(voxelType) == 0);

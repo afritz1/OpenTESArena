@@ -667,34 +667,44 @@ namespace ArenaMeshUtils
 	}
 
 	// Mesh writing functions. All of these are in unscaled model space.
-	void WriteWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
-	void WriteFloorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteCeilingUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices);
-	void WriteDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
-	void WriteTransparentWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteTransparentWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteTransparentWallRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
-	void WriteChasmUniqueGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteChasmRendererGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
-	void WriteChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
-	void WriteDoorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
-	void WriteDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void WriteDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	// Unique geometry positions are lexicographically ordered for separation of responsibility from how they're used,
+	// and renderer positions are ordered in the way they're consumed when being converted to triangles.
+	void writeWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+
+	void writeFloorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	
+	void writeCeilingUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	
+	void writeRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices);
+	
+	void writeDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	
+	void writeTransparentWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeTransparentWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeTransparentWallRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	
+	void writeEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	
+	void writeChasmUniqueGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeChasmRendererGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
+	void writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
+	
+	void writeDoorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
+	void writeDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
+	void writeDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
 }
 
 #endif
