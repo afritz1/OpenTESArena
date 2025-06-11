@@ -18,7 +18,7 @@
 enum class VoxelFacing2D;
 enum class VoxelFacing3D;
 
-using ArenaChasmWallIndexBuffer = std::array<int32_t, 6>; // Two triangles per buffer.
+using ArenaChasmWallIndexBuffer = std::array<int32_t, MeshUtils::INDICES_PER_QUAD>; // Two triangles per buffer.
 
 // Provides init values for physics shape and render mesh, comes from map generation.
 struct ArenaShapeInitCache

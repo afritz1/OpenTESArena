@@ -373,7 +373,6 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 	// Populate chasm wall index buffers.
 	ArenaChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
 	ArenaMeshUtils::writeChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
-	constexpr int indicesPerFace = static_cast<int>(northIndices.size());
 
 	for (int i = 0; i < static_cast<int>(this->chasmWallIndexBufferIDs.size()); i++)
 	{
@@ -394,7 +393,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 			continue;
 		}
 
-		const int indexCount = faceCount * indicesPerFace;
+		const int indexCount = faceCount * indicesPerQuad;
 		IndexBufferID &indexBufferID = this->chasmWallIndexBufferIDs[i];
 		indexBufferID = renderer.createIndexBuffer(indexCount);
 		if (indexBufferID < 0)
@@ -403,14 +402,14 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 			continue;
 		}
 
-		std::array<int32_t, indicesPerFace * 4> totalIndicesBuffer;
+		std::array<int32_t, indicesPerQuad * 4> totalIndicesBuffer;
 		int writingIndex = 0;
-		auto tryWriteIndices = [indicesPerFace, &totalIndicesBuffer, &writingIndex](bool hasFace, const ArenaChasmWallIndexBuffer &faceIndices)
+		auto tryWriteIndices = [indicesPerQuad, &totalIndicesBuffer, &writingIndex](bool hasFace, const ArenaChasmWallIndexBuffer &faceIndices)
 		{
 			if (hasFace)
 			{
 				std::copy(faceIndices.begin(), faceIndices.end(), totalIndicesBuffer.begin() + writingIndex);
-				writingIndex += indicesPerFace;
+				writingIndex += indicesPerQuad;
 			}
 		};
 
