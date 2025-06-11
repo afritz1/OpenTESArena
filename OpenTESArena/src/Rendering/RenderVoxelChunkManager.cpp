@@ -569,7 +569,9 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 		ArenaMeshUtils::ShapeInitCache shapeInitCache;
 
 		// Generate mesh geometry and indices for this voxel definition.
-		voxelMeshDef.writeRendererGeometryBuffers(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.positionsView, shapeInitCache.normalsView, shapeInitCache.texCoordsView);
+		voxelMeshDef.writeRendererVertexPositionBuffer(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.positionsView);
+		voxelMeshDef.writeRendererVertexNormalBuffer(shapeInitCache.normalsView);
+		voxelMeshDef.writeRendererVertexTexCoordBuffer(shapeInitCache.texCoordsView);
 		voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.indices0View, shapeInitCache.indices1View, shapeInitCache.indices2View);
 
 		renderer.populateVertexPositionBuffer(renderVoxelMeshInst.positionBufferID, BufferView<const double>(shapeInitCache.positions.data(), vertexCount * positionComponentsPerVertex));

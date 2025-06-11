@@ -159,15 +159,10 @@ bool VoxelMeshDefinition::hasFullCoverageOfFacing(VoxelFacing3D facing) const
 	return false;
 }
 
-void VoxelMeshDefinition::writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions,
-	BufferView<double> outNormals, BufferView<double> outTexCoords) const
+void VoxelMeshDefinition::writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions) const
 {
 	static_assert(MeshUtils::POSITION_COMPONENTS_PER_VERTEX == 3);
-	static_assert(MeshUtils::NORMAL_COMPONENTS_PER_VERTEX == 3);
-	static_assert(MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX == 2);
 	DebugAssert(outPositions.getCount() >= this->rendererPositions.size());
-	DebugAssert(outNormals.getCount() >= this->rendererNormals.size());
-	DebugAssert(outTexCoords.getCount() >= this->rendererTexCoords.size());
 
 	for (int i = 0; i < this->rendererVertexCount; i++)
 	{
@@ -182,26 +177,39 @@ void VoxelMeshDefinition::writeRendererGeometryBuffers(VoxelShapeScaleType scale
 		outPositions.set(index + 1, dstY);
 		outPositions.set(index + 2, dstZ);
 	}
+}
 
+void VoxelMeshDefinition::writeRendererVertexNormalBuffer(BufferView<double> outNormals) const
+{
+	static_assert(MeshUtils::NORMAL_COMPONENTS_PER_VERTEX == 3);
+	DebugAssert(outNormals.getCount() >= this->rendererNormals.size());
 	std::copy(this->rendererNormals.begin(), this->rendererNormals.end(), outNormals.begin());
+}
+
+void VoxelMeshDefinition::writeRendererVertexTexCoordBuffer(BufferView<double> outTexCoords) const
+{
+	static_assert(MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX == 2);
+	DebugAssert(outTexCoords.getCount() >= this->rendererTexCoords.size());
 	std::copy(this->rendererTexCoords.begin(), this->rendererTexCoords.end(), outTexCoords.begin());
 }
 
-void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1,
-	BufferView<int32_t> outIndices2) const
+void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1, BufferView<int32_t> outIndices2) const
 {
 	if (!this->indices0.empty())
 	{
+		DebugAssert(outIndices0.getCount() >= this->indices0.size());
 		std::copy(this->indices0.begin(), this->indices0.end(), outIndices0.begin());
 	}
 
 	if (!this->indices1.empty())
 	{
+		DebugAssert(outIndices1.getCount() >= this->indices1.size());
 		std::copy(this->indices1.begin(), this->indices1.end(), outIndices1.begin());
 	}
 
 	if (!this->indices2.empty())
 	{
+		DebugAssert(outIndices2.getCount() >= this->indices2.size());
 		std::copy(this->indices2.begin(), this->indices2.end(), outIndices2.begin());
 	}
 }

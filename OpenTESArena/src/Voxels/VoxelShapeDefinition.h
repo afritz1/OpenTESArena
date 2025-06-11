@@ -55,8 +55,9 @@ struct VoxelMeshDefinition
 	// Used with face combining.
 	bool hasFullCoverageOfFacing(VoxelFacing3D facing) const;
 
-	void writeRendererGeometryBuffers(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions,
-		BufferView<double> outNormals, BufferView<double> outTexCoords) const;
+	void writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions) const;
+	void writeRendererVertexNormalBuffer(BufferView<double> outNormals) const;
+	void writeRendererVertexTexCoordBuffer(BufferView<double> outTexCoords) const;
 	void writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1, BufferView<int32_t> outIndices2) const;
 };
 
