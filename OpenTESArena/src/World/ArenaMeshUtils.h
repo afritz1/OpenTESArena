@@ -672,14 +672,17 @@ namespace ArenaMeshUtils
 	void writeWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+	void writeWallFacingBuffers(BufferView<VoxelFacing3D> outSideFacings, BufferView<VoxelFacing3D> outBottomFacings, BufferView<VoxelFacing3D> outTopFacings);
 
 	void writeFloorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void writeFloorFacingBuffers(BufferView<VoxelFacing3D> outFacings);
 	
 	void writeCeilingUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void writeCeilingFacingBuffers(BufferView<VoxelFacing3D> outFacings);
 	
 	void writeRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);

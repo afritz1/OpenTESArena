@@ -318,6 +318,7 @@ namespace MapGeneration
 			outShapeInitCache->initDefaultBoxValues();
 			ArenaMeshUtils::writeFloorRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 			ArenaMeshUtils::writeFloorRendererIndexBuffers(outShapeInitCache->indices0View);
+			ArenaMeshUtils::writeFloorFacingBuffers(outShapeInitCache->facings0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureID);
 			*outTextureAsset = TextureAsset(
@@ -516,6 +517,7 @@ namespace MapGeneration
 				outShapeInitCache->initDefaultBoxValues();
 				ArenaMeshUtils::writeWallRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 				ArenaMeshUtils::writeWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
+				ArenaMeshUtils::writeWallFacingBuffers(outShapeInitCache->facings0View, outShapeInitCache->facings1View, outShapeInitCache->facings2View);
 
 				const int textureIndex = mostSigByte - 1;
 				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -876,6 +878,7 @@ namespace MapGeneration
 		outShapeInitCache->initDefaultBoxValues();
 		ArenaMeshUtils::writeWallRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 		ArenaMeshUtils::writeWallRendererIndexBuffers(outShapeInitCache->indices0View, outShapeInitCache->indices1View, outShapeInitCache->indices2View);
+		ArenaMeshUtils::writeWallFacingBuffers(outShapeInitCache->facings0View, outShapeInitCache->facings1View, outShapeInitCache->facings2View);
 
 		const int textureIndex = (map2Voxel & 0x007F) - 1;
 		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
@@ -909,13 +912,13 @@ namespace MapGeneration
 		outTraitsDef->initGeneral(voxelType);
 	}
 
-	void writeVoxelInfoForCeiling(const INFFile &inf, ArenaVoxelType *outVoxelType,
-		ArenaShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
+	void writeVoxelInfoForCeiling(const INFFile &inf, ArenaVoxelType *outVoxelType, ArenaShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
 	{
 		*outVoxelType = ArenaVoxelType::Ceiling;
 		outShapeInitCache->initDefaultBoxValues();
 		ArenaMeshUtils::writeCeilingRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 		ArenaMeshUtils::writeCeilingRendererIndexBuffers(outShapeInitCache->indices0View);
+		ArenaMeshUtils::writeCeilingFacingBuffers(outShapeInitCache->facings0View);
 
 		// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe hardcoding index 1 is enough?
 		const INFCeiling &ceiling = inf.getCeiling();

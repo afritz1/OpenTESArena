@@ -275,6 +275,32 @@ void ArenaMeshUtils::writeWallRendererIndexBuffers(BufferView<int32_t> outOpaque
 	std::copy(topIndices.begin(), topIndices.end(), outOpaqueTopIndices.begin());
 }
 
+void ArenaMeshUtils::writeWallFacingBuffers(BufferView<VoxelFacing3D> outSideFacings, BufferView<VoxelFacing3D> outBottomFacings, BufferView<VoxelFacing3D> outTopFacings)
+{
+	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
+	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> sideFacings =
+	{
+		VoxelFacing3D::PositiveX,
+		VoxelFacing3D::NegativeX,
+		VoxelFacing3D::PositiveZ,
+		VoxelFacing3D::NegativeZ
+	};
+
+	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 1)> bottomFacings =
+	{
+		VoxelFacing3D::NegativeY
+	};
+
+	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 2)> topFacings =
+	{
+		VoxelFacing3D::PositiveY
+	};
+
+	std::copy(sideFacings.begin(), sideFacings.end(), outSideFacings.begin());
+	std::copy(bottomFacings.begin(), bottomFacings.end(), outBottomFacings.begin());
+	std::copy(topFacings.begin(), topFacings.end(), outTopFacings.begin());
+}
+
 void ArenaMeshUtils::writeFloorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
@@ -348,6 +374,17 @@ void ArenaMeshUtils::writeFloorRendererIndexBuffers(BufferView<int32_t> outOpaqu
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
+void ArenaMeshUtils::writeFloorFacingBuffers(BufferView<VoxelFacing3D> outFacings)
+{
+	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
+	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> facings =
+	{
+		VoxelFacing3D::PositiveY
+	};
+
+	std::copy(facings.begin(), facings.end(), outFacings.begin());
+}
+
 void ArenaMeshUtils::writeCeilingUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
@@ -419,6 +456,17 @@ void ArenaMeshUtils::writeCeilingRendererIndexBuffers(BufferView<int32_t> outOpa
 	};
 
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
+}
+
+void ArenaMeshUtils::writeCeilingFacingBuffers(BufferView<VoxelFacing3D> outFacings)
+{
+	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
+	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> facings =
+	{
+		VoxelFacing3D::NegativeY
+	};
+
+	std::copy(facings.begin(), facings.end(), outFacings.begin());
 }
 
 void ArenaMeshUtils::writeRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outPositions,
