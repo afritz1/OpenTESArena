@@ -62,10 +62,10 @@ protected:
 	{
 		const CoordInt3 adjacentCoords[] =
 		{
-			VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::North),
-			VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::East),
-			VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::South),
-			VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::West)
+			VoxelUtils::getCoordWithOffset(coord, VoxelUtils::North),
+			VoxelUtils::getCoordWithOffset(coord, VoxelUtils::East),
+			VoxelUtils::getCoordWithOffset(coord, VoxelUtils::South),
+			VoxelUtils::getCoordWithOffset(coord, VoxelUtils::West)
 		};
 
 		std::optional<int> *outAdjacentChunkIndices[] =

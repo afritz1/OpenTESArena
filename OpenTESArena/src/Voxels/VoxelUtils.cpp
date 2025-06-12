@@ -167,17 +167,26 @@ CoordInt2 VoxelUtils::levelVoxelToCoord(const WorldInt2 &voxel)
 	return VoxelUtils::worldVoxelToCoord(voxel);
 }
 
-VoxelInt3 VoxelUtils::getAdjacentVoxelXZ(const VoxelInt3 &voxel, const VoxelInt2 &direction)
+VoxelInt3 VoxelUtils::getVoxelWithOffset(const VoxelInt3 &voxel, const VoxelInt3 &offset)
 {
-	DebugAssert(std::abs(direction.x) <= 1);
-	DebugAssert(std::abs(direction.y) <= 1);
-	const VoxelInt3 diff(direction.x, 0, direction.y);
-	return voxel + diff;
+	return voxel + offset;
 }
 
-CoordInt3 VoxelUtils::getAdjacentCoordXZ(const CoordInt3 &coord, const VoxelInt2 &direction)
+VoxelInt3 VoxelUtils::getVoxelWithOffset(const VoxelInt3 &voxel, const VoxelInt2 &offset)
 {
-	return ChunkUtils::recalculateCoord(coord.chunk, VoxelUtils::getAdjacentVoxelXZ(coord.voxel, direction));
+	const VoxelInt3 offset3D(offset.x, 0, offset.y);
+	return VoxelUtils::getVoxelWithOffset(voxel, offset3D);
+}
+
+CoordInt3 VoxelUtils::getCoordWithOffset(const CoordInt3 &coord, const VoxelInt3 &offset)
+{
+	return ChunkUtils::recalculateCoord(coord.chunk, VoxelUtils::getVoxelWithOffset(coord.voxel, offset));
+}
+
+CoordInt3 VoxelUtils::getCoordWithOffset(const CoordInt3 &coord, const VoxelInt2 &offset)
+{
+	const VoxelInt3 offset3D(offset.x, 0, offset.y);
+	return VoxelUtils::getCoordWithOffset(coord, offset3D);
 }
 
 VoxelInt2 VoxelUtils::wrapVoxelCoord(const VoxelInt2 &voxel)

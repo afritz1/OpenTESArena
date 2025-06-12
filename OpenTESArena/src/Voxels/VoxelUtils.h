@@ -55,9 +55,11 @@ namespace VoxelUtils
 	// Converts a voxel from level definition space to chunk voxel space.
 	CoordInt2 levelVoxelToCoord(const WorldInt2 &voxel);
 
-	// Gets the coordinate of an adjacent voxel.
-	VoxelInt3 getAdjacentVoxelXZ(const VoxelInt3 &voxel, const VoxelInt2 &direction);
-	CoordInt3 getAdjacentCoordXZ(const CoordInt3 &coord, const VoxelInt2 &direction);
+	// Gets the coordinate of a nearby voxel.
+	VoxelInt3 getVoxelWithOffset(const VoxelInt3 &voxel, const VoxelInt3 &offset);
+	VoxelInt3 getVoxelWithOffset(const VoxelInt3 &voxel, const VoxelInt2 &offset);
+	CoordInt3 getCoordWithOffset(const CoordInt3 &coord, const VoxelInt3 &offset);
+	CoordInt3 getCoordWithOffset(const CoordInt3 &coord, const VoxelInt2 &offset);
 
 	// Wraps a voxel coordinate so it stays within the chunk range.
 	VoxelInt2 wrapVoxelCoord(const VoxelInt2 &voxel);

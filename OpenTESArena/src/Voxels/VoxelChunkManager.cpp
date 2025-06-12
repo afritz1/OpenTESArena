@@ -856,10 +856,10 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 			const CoordInt3 coord(chunkPtr->position, dirtyChasmWallPos);
 			const CoordInt3 adjacentCoords[] =
 			{
-				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::North),
-				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::East),
-				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::South),
-				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::West)
+				VoxelUtils::getCoordWithOffset(coord, VoxelUtils::North),
+				VoxelUtils::getCoordWithOffset(coord, VoxelUtils::East),
+				VoxelUtils::getCoordWithOffset(coord, VoxelUtils::South),
+				VoxelUtils::getCoordWithOffset(coord, VoxelUtils::West)
 			};
 
 			for (const CoordInt3 adjacentCoord : adjacentCoords)

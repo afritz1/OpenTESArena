@@ -37,10 +37,10 @@ protected:
 			return voxelIDs.get(voxel.x, voxel.y, voxel.z);
 		};
 
-		const VoxelInt3 northVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::North);
-		const VoxelInt3 eastVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::East);
-		const VoxelInt3 southVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::South);
-		const VoxelInt3 westVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::West);
+		const VoxelInt3 northVoxel = VoxelUtils::getVoxelWithOffset(voxel, VoxelUtils::North);
+		const VoxelInt3 eastVoxel = VoxelUtils::getVoxelWithOffset(voxel, VoxelUtils::East);
+		const VoxelInt3 southVoxel = VoxelUtils::getVoxelWithOffset(voxel, VoxelUtils::South);
+		const VoxelInt3 westVoxel = VoxelUtils::getVoxelWithOffset(voxel, VoxelUtils::West);
 		*outNorthID = getIdOrDefault(northVoxel);
 		*outEastID = getIdOrDefault(eastVoxel);
 		*outSouthID = getIdOrDefault(southVoxel);
