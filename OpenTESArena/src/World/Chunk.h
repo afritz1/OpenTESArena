@@ -5,7 +5,7 @@
 #include "Coord.h"
 #include "../Math/MathUtils.h"
 
-#include "components/utilities/Buffer3D.h"
+#include "components/utilities/BufferView3D.h"
 
 // Base type for all chunks in the game world occupying 64x64 voxels.
 struct Chunk
@@ -24,13 +24,17 @@ protected:
 	void clear();
 
 	template<typename VoxelIdType>
-	void getAdjacentIDsInternal(const VoxelInt3 &voxel, const Buffer3D<VoxelIdType> &voxelIDs,
-		VoxelIdType defaultID, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
-		VoxelIdType *outWestID)
+	void getAdjacentIDsInternal(const VoxelInt3 &voxel, BufferView3D<const VoxelIdType> voxelIDs, VoxelIdType defaultID,
+		VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID, VoxelIdType *outWestID) const
 	{
-		auto getIdOrDefault = [this, &voxelIDs, defaultID](const VoxelInt3 &voxel)
+		auto getIdOrDefault = [this, voxelIDs, defaultID](const VoxelInt3 &voxel)
 		{
-			return this->isValidVoxel(voxel.x, voxel.y, voxel.z) ? voxelIDs.get(voxel.x, voxel.y, voxel.z) : defaultID;
+			if (!this->isValidVoxel(voxel.x, voxel.y, voxel.z))
+			{
+				return defaultID;
+			}
+
+			return voxelIDs.get(voxel.x, voxel.y, voxel.z);
 		};
 
 		const VoxelInt3 northVoxel = VoxelUtils::getAdjacentVoxelXZ(voxel, VoxelUtils::North);

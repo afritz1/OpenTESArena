@@ -43,27 +43,27 @@ void VoxelChunk::init(const ChunkInt2 &position, int height)
 }
 
 void VoxelChunk::getAdjacentShapeDefIDs(const VoxelInt3 &voxel, VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID,
-	VoxelShapeDefID *outSouthID, VoxelShapeDefID *outWestID)
+	VoxelShapeDefID *outSouthID, VoxelShapeDefID *outWestID) const
 {
-	this->getAdjacentIDsInternal(voxel, this->shapeDefIDs, VoxelChunk::AIR_SHAPE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal<VoxelShapeDefID>(voxel, this->shapeDefIDs, VoxelChunk::AIR_SHAPE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 void VoxelChunk::getAdjacentTextureDefIDs(const VoxelInt3 &voxel, VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID,
-	VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID)
+	VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID) const
 {
-	this->getAdjacentIDsInternal(voxel, this->textureDefIDs, VoxelChunk::AIR_TEXTURE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal<VoxelTextureDefID>(voxel, this->textureDefIDs, VoxelChunk::AIR_TEXTURE_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 void VoxelChunk::getAdjacentShadingDefIDs(const VoxelInt3 &voxel, VoxelShadingDefID *outNorthID, VoxelShadingDefID *outEastID,
-	VoxelShadingDefID *outSouthID, VoxelShadingDefID *outWestID)
+	VoxelShadingDefID *outSouthID, VoxelShadingDefID *outWestID) const
 {
-	this->getAdjacentIDsInternal(voxel, this->shadingDefIDs, VoxelChunk::AIR_SHADING_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal<VoxelShadingDefID>(voxel, this->shadingDefIDs, VoxelChunk::AIR_SHADING_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 void VoxelChunk::getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID,
-	VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID)
+	VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID) const
 {
-	this->getAdjacentIDsInternal(voxel, this->traitsDefIDs, VoxelChunk::AIR_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
+	this->getAdjacentIDsInternal<VoxelTraitsDefID>(voxel, this->traitsDefIDs, VoxelChunk::AIR_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
 int VoxelChunk::getShapeDefCount() const
