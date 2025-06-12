@@ -138,7 +138,7 @@ int CitizenUtils::getCitizenCount(const EntityChunkManager &entityChunkManager)
 	for (int i = 0; i < entityChunkManager.getChunkCount(); i++)
 	{
 		const EntityChunk &chunk = entityChunkManager.getChunkAtIndex(i);
-		count += CitizenUtils::getCitizenCountInChunk(chunk.getPosition(), entityChunkManager);
+		count += CitizenUtils::getCitizenCountInChunk(chunk.position, entityChunkManager);
 	}
 
 	return count;

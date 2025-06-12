@@ -7,7 +7,7 @@
 #include "components/utilities/Buffer3D.h"
 #include "components/utilities/BufferView.h"
 
-class VoxelChunk;
+struct VoxelChunk;
 
 struct VoxelFaceEnableEntry
 {
@@ -19,9 +19,8 @@ struct VoxelFaceEnableEntry
 	void fill(bool enabled);
 };
 
-class VoxelFaceEnableChunk final : public Chunk
+struct VoxelFaceEnableChunk final : public Chunk
 {
-public:
 	Buffer3D<VoxelFaceEnableEntry> entries;
 
 	void init(const ChunkInt2 &position, int height);

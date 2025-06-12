@@ -50,8 +50,8 @@ namespace
 
 	JPH::BodyID createChunkCompoundShape(const CollisionChunk &collisionChunk, const VoxelChunk &voxelChunk, double ceilingScale, CompoundShapeCategory category, JPH::PhysicsSystem &physicsSystem)
 	{
-		const ChunkInt2 chunkPos = collisionChunk.getPosition();
-		const int chunkHeight = collisionChunk.getHeight();
+		const ChunkInt2 chunkPos = collisionChunk.position;
+		const int chunkHeight = collisionChunk.height;
 
 		JPH::StaticCompoundShapeSettings compoundShapeSettings;
 		compoundShapeSettings.SetEmbedded();
@@ -156,7 +156,7 @@ namespace
 
 void CollisionChunkManager::populateChunkShapeDefs(CollisionChunk &collisionChunk, const VoxelChunk &voxelChunk)
 {
-	const int chunkHeight = collisionChunk.getHeight();
+	const int chunkHeight = collisionChunk.height;
 
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
@@ -179,7 +179,7 @@ void CollisionChunkManager::populateChunkShapeDefs(CollisionChunk &collisionChun
 
 void CollisionChunkManager::populateChunkEnabledColliders(CollisionChunk &collisionChunk, const VoxelChunk &voxelChunk)
 {
-	const int chunkHeight = collisionChunk.getHeight();
+	const int chunkHeight = collisionChunk.height;
 
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
@@ -211,7 +211,7 @@ void CollisionChunkManager::populateChunkEnabledColliders(CollisionChunk &collis
 
 void CollisionChunkManager::populateChunk(int index, double ceilingScale, const ChunkInt2 &chunkPos, const VoxelChunk &voxelChunk, JPH::PhysicsSystem &physicsSystem)
 {
-	const int chunkHeight = voxelChunk.getHeight();
+	const int chunkHeight = voxelChunk.height;
 	CollisionChunk &collisionChunk = this->getChunkAtIndex(index);
 	collisionChunk.init(chunkPos, chunkHeight);
 

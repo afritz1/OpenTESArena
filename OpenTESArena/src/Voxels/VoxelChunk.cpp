@@ -693,7 +693,7 @@ void VoxelChunk::setChasmWallInstDirty(SNInt x, int y, WEInt z)
 
 void VoxelChunk::updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
 {
-	const ChunkInt2 chunkPos = this->getPosition();
+	const ChunkInt2 chunkPos = this->position;
 
 	for (int i = static_cast<int>(this->doorAnimInsts.size()) - 1; i >= 0; i--)
 	{

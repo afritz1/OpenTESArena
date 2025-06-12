@@ -7,7 +7,7 @@
 #include "../Math/Vector3.h"
 #include "../World/ArenaMeshUtils.h"
 
-class VoxelChunk;
+struct VoxelChunk;
 
 namespace VoxelDoorUtils
 {

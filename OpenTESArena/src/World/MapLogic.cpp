@@ -119,7 +119,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 	const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 	const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
 	const std::string &soundFilename = openSoundDef.soundFilename;
-	const CoordDouble3 soundCoord(voxelChunk.getPosition(), VoxelUtils::getVoxelCenter(voxel, ceilingScale));
+	const CoordDouble3 soundCoord(voxelChunk.position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 	const WorldDouble3 soundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
 
 	VoxelDoorAnimationInstance newDoorAnimInst;

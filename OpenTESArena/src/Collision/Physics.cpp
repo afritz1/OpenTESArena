@@ -567,8 +567,7 @@ namespace Physics
 		// We do need an exit condition in case Y stepping would result in never being in the chunk, since it doesn't
 		// follow the same wrapping rule as X and Z. Doing this instead of "is voxel Y valid?" lets the player be
 		// above or below the chunk and still select things.
-		bool canDoYStep = (currentChunkPtr != nullptr) &&
-			(NonNegativeDirY ? (currentVoxel.y < currentChunkPtr->getHeight()) : (currentVoxel.y >= 0));
+		bool canDoYStep = (currentChunkPtr != nullptr) && (NonNegativeDirY ? (currentVoxel.y < currentChunkPtr->height) : (currentVoxel.y >= 0));
 
 		// Helper values for ray distance calculation.
 		constexpr SNDouble halfOneMinusStepXReal = static_cast<SNDouble>((1 - stepX) / 2);
@@ -615,7 +614,7 @@ namespace Physics
 			{
 				deltaDistSumY += deltaDist.y;
 				currentVoxel.y += stepY;
-				canDoYStep = NonNegativeDirY ? (currentVoxel.y < currentChunkPtr->getHeight()) : (currentVoxel.y >= 0);
+				canDoYStep = NonNegativeDirY ? (currentVoxel.y < currentChunkPtr->height) : (currentVoxel.y >= 0);
 				facing = visibleWallFacings[1];
 				rayDistance = ((static_cast<double>(currentVoxel.y) - rayCoord.point.y) + halfOneMinusStepYReal) / rayDirection.y;
 			}

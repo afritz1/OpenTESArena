@@ -7,9 +7,9 @@
 #include "../Math/BoundingBox.h"
 #include "../World/Chunk.h"
 
-class EntityChunk;
 class EntityChunkManager;
 
+struct EntityChunk;
 struct RenderCamera;
 
 struct VisibleEntityEntry

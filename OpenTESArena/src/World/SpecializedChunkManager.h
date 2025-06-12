@@ -30,7 +30,7 @@ protected:
 		const auto iter = std::find_if(this->activeChunks.begin(), this->activeChunks.end(),
 			[&position](const ChunkPtr &chunkPtr)
 		{
-			return chunkPtr->getPosition() == position;
+			return chunkPtr->position == position;
 		});
 
 		if (iter != this->activeChunks.end())
@@ -153,7 +153,7 @@ protected:
 	{
 		DebugAssertIndex(this->activeChunks, index);
 		ChunkPtr &chunkPtr = this->activeChunks[index];
-		const ChunkInt2 chunkPos = chunkPtr->getPosition();
+		const ChunkInt2 chunkPos = chunkPtr->position;
 
 		// @todo: save chunk changes
 

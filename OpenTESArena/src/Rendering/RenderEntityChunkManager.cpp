@@ -461,7 +461,7 @@ void RenderEntityChunkManager::updateActiveChunks(BufferView<const ChunkInt2> ne
 
 		const int spawnIndex = this->spawnChunk();
 		RenderEntityChunk &renderChunk = this->getChunkAtIndex(spawnIndex);
-		renderChunk.init(chunkPos, voxelChunk.getHeight());
+		renderChunk.init(chunkPos, voxelChunk.height);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large

@@ -26,12 +26,12 @@ class LevelDefinition;
 class LevelInfoDefinition;
 class Renderer;
 class TextureManager;
-class VoxelChunk;
 class VoxelChunkManager;
 
 struct EntityObservedResult;
 struct MapSubDefinition;
 struct Player;
+struct VoxelChunk;
 
 struct EntityCitizenName
 {

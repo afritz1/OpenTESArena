@@ -50,9 +50,8 @@ struct RenderVoxelDrawCallHeap
 	void clear();
 };
 
-class RenderVoxelChunk final : public Chunk
+struct RenderVoxelChunk final : public Chunk
 {
-public:
 	static constexpr RenderVoxelMeshInstID AIR_MESH_INST_ID = 0;
 
 	std::vector<RenderVoxelMeshInstance> meshInsts;

@@ -18,7 +18,7 @@ void EntityVisibilityChunkManager::update(BufferView<const ChunkInt2> activeChun
 
 		const int spawnIndex = this->spawnChunk();
 		EntityVisibilityChunk &visChunk = this->getChunkAtIndex(spawnIndex);
-		visChunk.init(chunkPos, voxelChunk.getHeight());
+		visChunk.init(chunkPos, voxelChunk.height);
 	}
 
 	this->chunkPool.clear();

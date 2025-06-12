@@ -10,8 +10,8 @@
 #include "components/utilities/BufferView.h"
 #include "components/utilities/RecyclablePool.h"
 
-class VoxelChunk;
-class VoxelFaceEnableChunk;
+struct VoxelChunk;
+struct VoxelFaceEnableChunk;
 
 // One or more adjacent voxel faces in the same plane combined into a quad.
 struct VoxelFaceCombineResult
@@ -44,7 +44,7 @@ struct VoxelFaceCombineDirtyEntry
 	VoxelFaceCombineDirtyEntry();
 };
 
-class VoxelFaceCombineChunk final : public Chunk
+struct VoxelFaceCombineChunk final : public Chunk
 {
 private:
 	Buffer3D<VoxelFaceCombineDirtyEntry> dirtyEntries;

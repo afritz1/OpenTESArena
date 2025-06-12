@@ -367,7 +367,7 @@ void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
 
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
-		for (int y = 0; y < chunk.getHeight(); y++)
+		for (int y = 0; y < chunk.height; y++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
@@ -416,10 +416,10 @@ void VoxelChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 {
 	// @todo: only iterate over chunk writing ranges
 
-	const ChunkInt2 chunkPos = chunk.getPosition();
+	const ChunkInt2 chunkPos = chunk.position;
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
-		for (int y = 0; y < chunk.getHeight(); y++)
+		for (int y = 0; y < chunk.height; y++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
@@ -476,10 +476,10 @@ void VoxelChunkManager::populateChunkDoorVisibilityInsts(VoxelChunk &chunk)
 {
 	DebugAssert(chunk.getDoorVisibilityInsts().getCount() == 0);
 
-	const ChunkInt2 chunkPos = chunk.getPosition();
+	const ChunkInt2 chunkPos = chunk.position;
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
-		for (int y = 0; y < chunk.getHeight(); y++)
+		for (int y = 0; y < chunk.height; y++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
@@ -538,7 +538,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		constexpr VoxelTraitsDefID floorVoxelTraitsDefID = floorVoxelShapeDefID; // @todo: this is probably brittle; can't assume shape def ID -> traits def ID mapping.
 		const VoxelTraitsDefID ceilingVoxelTraitsDefID = ceilingVoxelShapeDefID; // @todo: this is probably brittle; can't assume shape def ID -> traits def ID mapping.
 
-		const int chunkHeight = chunk.getHeight();
+		const int chunkHeight = chunk.height;
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
@@ -669,7 +669,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, WEInt z)
 {
 	const VoxelInt3 voxel(x, y, z);
-	const CoordInt3 coord(chunk.getPosition(), voxel);
+	const CoordInt3 coord(chunk.position, voxel);
 	auto getChasmFaces = [this, &coord](bool *outNorth, bool *outEast, bool *outSouth, bool *outWest)
 	{
 		auto getChasmFace = [this](const std::optional<int> &chunkIndex, VoxelShapeDefID shapeDefID)
@@ -753,7 +753,7 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 
 void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const CoordDouble3 &playerCoord)
 {
-	const ChunkInt2 chunkPos = chunk.getPosition();
+	const ChunkInt2 chunkPos = chunk.position;
 	const ChunkInt2 playerChunkPos = playerCoord.chunk;
 	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
 
@@ -853,7 +853,7 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 
 		for (const VoxelInt3 dirtyChasmWallPos : cachedDirtyChasmWallPositions)
 		{
-			const CoordInt3 coord(chunkPtr->getPosition(), dirtyChasmWallPos);
+			const CoordInt3 coord(chunkPtr->position, dirtyChasmWallPos);
 			const CoordInt3 adjacentCoords[] =
 			{
 				VoxelUtils::getAdjacentCoordXZ(coord, VoxelUtils::North),
@@ -892,7 +892,7 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 		}
 
 		// North and south sides.
-		const int chunkHeight = chunk.getHeight();
+		const int chunkHeight = chunk.height;
 		for (WEInt z = 0; z < Chunk::DEPTH; z++)
 		{
 			for (int y = 0; y < chunkHeight; y++)

@@ -16,9 +16,8 @@
 
 using CollisionShapeDefID = int;
 
-class CollisionChunk final : public Chunk
+struct CollisionChunk final : public Chunk
 {
-public:
 	std::vector<CollisionShapeDefinition> shapeDefs;
 	std::unordered_map<VoxelShapeDefID, CollisionShapeDefID> shapeMappings;
 	Buffer3D<CollisionShapeDefID> shapeDefIDs;

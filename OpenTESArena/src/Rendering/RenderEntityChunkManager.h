@@ -15,22 +15,22 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/BufferView.h"
 
-class EntityChunk;
 class EntityChunkManager;
 class EntityDefinitionLibrary;
 class EntityVisibilityChunkManager;
 class Renderer;
-class RenderLightChunk;
 class RenderLightChunkManager;
-class RenderVoxelChunk;
 class RenderVoxelChunkManager;
 class TextureManager;
 class VoxelChunkManager;
 
 struct EntityAnimationInstance;
+struct EntityChunk;
 struct EntityVisibilityChunk;
 struct RenderCamera;
 struct RenderCommandBuffer;
+struct RenderLightChunk;
+struct RenderVoxelChunk;
 
 struct RenderEntityLoadedAnimation
 {

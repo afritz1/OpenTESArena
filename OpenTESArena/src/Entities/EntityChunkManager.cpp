@@ -384,7 +384,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 	Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const ChunkInt2 chunkPos = voxelChunk.getPosition();
+	const ChunkInt2 chunkPos = voxelChunk.position;
 	const double ceilingScale = levelInfoDefinition.getCeilingScale();
 	ArenaRandom arenaRandom(random.next()); // Don't need the one from Game, this is only a cosmetic random	
 
@@ -569,7 +569,7 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
 	TextureManager &textureManager, Renderer &renderer)
 {
-	const ChunkInt2 chunkPos = entityChunk.getPosition();
+	const ChunkInt2 chunkPos = entityChunk.position;
 	const SNInt levelWidth = levelDef.getWidth();
 	const WEInt levelDepth = levelDef.getDepth();
 
@@ -1278,7 +1278,7 @@ void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChu
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const int spawnIndex = this->spawnChunk();
 		EntityChunk &entityChunk = this->getChunkAtIndex(spawnIndex);
-		entityChunk.init(chunkPos, voxelChunk.getHeight());
+		entityChunk.init(chunkPos, voxelChunk.height);
 
 		// Default to the active level def unless it's the wilderness which relies on this chunk coordinate.
 		const LevelDefinition *levelDefPtr = activeLevelDef;

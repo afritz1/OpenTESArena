@@ -14,9 +14,8 @@
 
 class Renderer;
 
-class RenderLightChunk final : public Chunk
+struct RenderLightChunk final : public Chunk
 {
-public:
 	Buffer3D<RenderLightIdList> lightIdLists; // Enabled lights touching each voxel. IDs are owned by RenderLightChunkManager.
 	
 	std::vector<VoxelInt3> dirtyVoxelPositions; // Voxels with added/removed light IDs this frame that the renderer should update draw calls for.

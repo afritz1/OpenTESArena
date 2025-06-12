@@ -8,12 +8,18 @@
 #include "components/utilities/Buffer3D.h"
 
 // Base type for all chunks in the game world occupying 64x64 voxels.
-class Chunk
+struct Chunk
 {
-private:
+	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
+	static constexpr WEInt DEPTH = WIDTH;
+	static_assert(MathUtils::isPowerOf2(WIDTH));
+
 	ChunkInt2 position;
 	int height;
-protected:	
+
+	bool isValidVoxel(SNInt x, int y, WEInt z) const;
+protected:
+	// To be called by derived chunk type.
 	void init(const ChunkInt2 &position, int height);
 	void clear();
 
@@ -36,14 +42,6 @@ protected:
 		*outSouthID = getIdOrDefault(southVoxel);
 		*outWestID = getIdOrDefault(westVoxel);
 	}
-public:
-	static constexpr SNInt WIDTH = ChunkUtils::CHUNK_DIM;
-	static constexpr WEInt DEPTH = WIDTH;
-	static_assert(MathUtils::isPowerOf2(WIDTH));
-
-	const ChunkInt2 &getPosition() const;
-	int getHeight() const;
-	bool isValidVoxel(SNInt x, int y, WEInt z) const;
 };
 
 #endif

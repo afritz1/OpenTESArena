@@ -16,7 +16,7 @@ void VoxelFrustumCullingChunkManager::update(BufferView<const ChunkInt2> newChun
 
 		const int spawnIndex = this->spawnChunk();
 		VoxelFrustumCullingChunk &visChunk = this->getChunkAtIndex(spawnIndex);
-		visChunk.init(chunkPos, voxelChunk.getHeight(), ceilingScale);
+		visChunk.init(chunkPos, voxelChunk.height, ceilingScale);
 	}
 
 	this->chunkPool.clear();

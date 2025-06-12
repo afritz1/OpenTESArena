@@ -8,8 +8,9 @@
 #include "../World/Coord.h"
 #include "../World/SpecializedChunkManager.h"
 
-class VoxelChunk;
 class VoxelChunkManager;
+
+struct VoxelChunk;
 
 // Handles the lifetimes of collision chunks.
 class CollisionChunkManager final : public SpecializedChunkManager<CollisionChunk>

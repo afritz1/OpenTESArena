@@ -5,10 +5,10 @@
 
 class Game;
 class TextBox;
-class VoxelChunk;
 
 struct RayCastHit;
 struct TransitionDefinition;
+struct VoxelChunk;
 
 namespace MapLogic
 {

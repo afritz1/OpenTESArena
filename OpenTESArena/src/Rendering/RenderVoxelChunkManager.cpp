@@ -521,7 +521,7 @@ void RenderVoxelChunkManager::loadChunkTextures(const VoxelChunk &voxelChunk, co
 
 void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
 {
-	const ChunkInt2 chunkPos = voxelChunk.getPosition();
+	const ChunkInt2 chunkPos = voxelChunk.position;
 
 	// Add render chunk voxel mesh instances and create mappings to them.
 	for (int shapeDefIndex = 0; shapeDefIndex < voxelChunk.getShapeDefCount(); shapeDefIndex++)
@@ -584,7 +584,7 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			indexBufferID = renderer.createIndexBuffer(indexCount);
 			if (indexBufferID < 0)
 			{
-				DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.getPosition().toString().c_str());
+				DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.position.toString().c_str());
 				renderVoxelMeshInst.freeBuffers(renderer);
 				continue;
 			}
@@ -641,7 +641,7 @@ void RenderVoxelChunkManager::loadChasmWalls(RenderVoxelChunk &renderChunk, cons
 {
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
-		for (int y = 0; y < voxelChunk.getHeight(); y++)
+		for (int y = 0; y < voxelChunk.height; y++)
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
@@ -653,7 +653,7 @@ void RenderVoxelChunkManager::loadChasmWalls(RenderVoxelChunk &renderChunk, cons
 
 void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
 {
-	const int chunkHeight = voxelChunk.getHeight();
+	const int chunkHeight = voxelChunk.height;
 
 	// Allocate one large uniform buffer that covers all voxels. Air is wasted and doors are double-allocated but this
 	// is much faster than one buffer per voxel.
@@ -674,7 +674,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
 				const VoxelInt3 voxel(x, y, z);
-				const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.getPosition(), voxel, ceilingScale);
+				const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, voxel, ceilingScale);
 
 				VoxelDoorDefID doorDefID;
 				if (voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID))
@@ -724,7 +724,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 	const VoxelChunk &voxelChunk, const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager,
 	double ceilingScale, double chasmAnimPercent)
 {
-	const ChunkInt2 chunkPos = renderChunk.getPosition();
+	const ChunkInt2 chunkPos = renderChunk.position;
 	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
 	// Regenerate all draw calls in the given dirty voxels.
@@ -864,7 +864,7 @@ void RenderVoxelChunkManager::updateChunkDrawCalls(RenderVoxelChunk &renderChunk
 		{
 			DrawCallTransformInitInfo &transformInitInfo = transformInitInfos[0];
 			transformInitInfo.id = renderChunk.transformBufferID;
-			transformInitInfo.index = GetVoxelRenderTransformIndex(voxel.x, voxel.y, voxel.z, renderChunk.getHeight());
+			transformInitInfo.index = GetVoxelRenderTransformIndex(voxel.x, voxel.y, voxel.z, renderChunk.height);
 			transformInitInfo.preScaleTranslationBufferID = -1;
 			transformInitInfoCount = 1;
 		}
@@ -1260,7 +1260,7 @@ void RenderVoxelChunkManager::updateActiveChunks(BufferView<const ChunkInt2> new
 
 		const int spawnIndex = this->spawnChunk();
 		RenderVoxelChunk &renderChunk = this->getChunkAtIndex(spawnIndex);
-		renderChunk.init(chunkPos, voxelChunk.getHeight());
+		renderChunk.init(chunkPos, voxelChunk.height);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
@@ -1314,7 +1314,7 @@ void RenderVoxelChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 
 			const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
 			const ArenaDoorType doorType = doorDef.type;
-			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.getPosition(), doorVoxel, ceilingScale);
+			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, doorVoxel, ceilingScale);
 			const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
 
 			for (int i = 0; i < VoxelDoorUtils::FACE_COUNT; i++)

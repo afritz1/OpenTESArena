@@ -43,7 +43,7 @@ using VoxelDoorDefID = int;
 using VoxelChasmDefID = int;
 
 // Gameplay values for a 3D set of voxels occupying a 64x64 portion of the game world.
-class VoxelChunk final : public Chunk
+struct VoxelChunk final : public Chunk
 {
 private:
 	// Definitions pointed to by voxel IDs.

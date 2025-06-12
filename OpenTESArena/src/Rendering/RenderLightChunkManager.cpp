@@ -220,7 +220,7 @@ void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, Buff
 	for (const WorldInt3 voxel : voxels)
 	{
 		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(voxel);
-		if (renderChunkPtr == nullptr || renderChunkPtr->getPosition() != curLightCoord.chunk)
+		if (renderChunkPtr == nullptr || renderChunkPtr->position != curLightCoord.chunk)
 		{
 			renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
 		}
@@ -265,7 +265,7 @@ void RenderLightChunkManager::updateActiveChunks(BufferView<const ChunkInt2> new
 
 		const int spawnIndex = this->spawnChunk();
 		RenderLightChunk &renderChunk = this->getChunkAtIndex(spawnIndex);
-		renderChunk.init(chunkPos, voxelChunk.getHeight());
+		renderChunk.init(chunkPos, voxelChunk.height);
 	}
 
 	// Free any unneeded chunks for memory savings in case the chunk distance was once large
@@ -291,7 +291,7 @@ void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPosi
 		}
 	}
 
-	const int chunkHeight = this->getChunkAtIndex(0).getHeight();
+	const int chunkHeight = this->getChunkAtIndex(0).height;
 	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
@@ -430,7 +430,7 @@ void RenderLightChunkManager::setNightLightsActive(bool enabled, double ceilingS
 	// Update streetlight enabled states.
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{
-		const ChunkInt2 chunkPos = chunkPtr->getPosition();
+		const ChunkInt2 chunkPos = chunkPtr->position;
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{

@@ -6,9 +6,8 @@
 #include "EntityInstance.h"
 #include "../World/Chunk.h"
 
-class EntityChunk final : public Chunk
+struct EntityChunk final : public Chunk
 {
-public:
 	// Entities physically present in this chunk, based on their center position. Owned by EntityChunkManager.
 	std::vector<EntityInstanceID> entityIDs;
 

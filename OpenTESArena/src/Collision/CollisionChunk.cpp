@@ -88,7 +88,7 @@ CollisionShapeDefID CollisionChunk::addShapeDefIdMapping(const VoxelChunk &voxel
 	const auto iter = this->shapeMappings.find(voxelShapeDefID);
 	if (iter != this->shapeMappings.end())
 	{
-		DebugLogError("CollisionShapeDefID mapping already exists for chunk (" + this->getPosition().toString() + ").");
+		DebugLogError("CollisionShapeDefID mapping already exists for chunk (" + this->position.toString() + ").");
 		return iter->second;
 	}
 

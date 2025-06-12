@@ -17,7 +17,7 @@ void VoxelFaceEnableChunkManager::updateActiveChunks(BufferView<const ChunkInt2>
 
 		const int spawnIndex = this->spawnChunk();
 		VoxelFaceEnableChunk &faceEnableChunk = this->getChunkAtIndex(spawnIndex);
-		faceEnableChunk.init(chunkPos, voxelChunk.getHeight());
+		faceEnableChunk.init(chunkPos, voxelChunk.height);
 	}
 
 	this->chunkPool.clear();
