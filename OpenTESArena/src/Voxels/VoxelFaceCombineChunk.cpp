@@ -315,9 +315,9 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
 		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
-		if (meshDef.isEmpty())
+		if (!shapeDef.allowsAdjacentFaceCombining || meshDef.isEmpty())
 		{
-			// No need to dirty air.
+			// This voxel can't combine with anything, or it's air.
 			std::fill(std::begin(dirtyEntry.dirtyFaces), std::end(dirtyEntry.dirtyFaces), false);
 			continue;
 		}

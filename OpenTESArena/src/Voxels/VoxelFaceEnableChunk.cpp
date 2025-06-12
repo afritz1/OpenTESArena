@@ -61,15 +61,7 @@ void VoxelFaceEnableChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const
 		VoxelFaceEnableEntry &faceEnableEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 
 		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
-		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
-		if (meshDef.isEmpty())
-		{
-			// Disable air faces.
-			faceEnableEntry.fill(false);
-			continue;
-		}
-		
+		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);		
 		if (!shapeDef.allowsInternalFaceRemoval)
 		{
 			// This shape doesn't participate in face enabling/disabling.
@@ -77,6 +69,7 @@ void VoxelFaceEnableChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const
 			continue;
 		}
 
+		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
 		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShadingDefinition &shadingDef = voxelChunk.getShadingDef(shadingDefID);
 
