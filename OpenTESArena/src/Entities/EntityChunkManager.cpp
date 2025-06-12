@@ -696,7 +696,7 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 				auto isSuitableVoxel = [&voxelChunkManager](const WorldInt2 &worldVoxel)
 				{
 					const CoordInt2 coord = VoxelUtils::worldVoxelToCoord(worldVoxel);
-					const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
+					const VoxelChunk *voxelChunk = voxelChunkManager.findChunkAtPosition(coord.chunk);
 
 					const bool isValidVoxel = voxelChunk != nullptr;
 					if (!isValidVoxel)
@@ -914,15 +914,16 @@ EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID body
 
 int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
 {
-	int count = 0;
-	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
-	if (!chunkIndex.has_value())
+	const int chunkIndex = this->findChunkIndex(chunkPos);
+	if (chunkIndex < 0)
 	{
-		DebugLogWarning("Missing chunk (" + chunkPos.toString() + ") for counting entities with direction.");
+		DebugLogWarningFormat("Missing chunk (%s) for counting entities with direction.", chunkPos.toString().c_str());
 		return 0;
 	}
 
-	const EntityChunk &chunk = this->getChunkAtIndex(*chunkIndex);
+	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
+	
+	int count = 0;
 	for (const EntityInstanceID entityInstID : chunk.entityIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
@@ -937,15 +938,16 @@ int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) 
 
 int EntityChunkManager::getCountInChunkWithCreatureSound(const ChunkInt2 &chunkPos) const
 {
-	int count = 0;
-	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
-	if (!chunkIndex.has_value())
+	const int chunkIndex = this->findChunkIndex(chunkPos);
+	if (chunkIndex < 0)
 	{
-		DebugLogWarning("Missing chunk (" + chunkPos.toString() + ") for counting entities with creature sound.");
+		DebugLogWarningFormat("Missing chunk (%s) for counting entities with creature sound.", chunkPos.toString().c_str());
 		return 0;
 	}
 
-	const EntityChunk &chunk = this->getChunkAtIndex(*chunkIndex);
+	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
+
+	int count = 0;
 	for (const EntityInstanceID entityInstID : chunk.entityIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
@@ -960,15 +962,16 @@ int EntityChunkManager::getCountInChunkWithCreatureSound(const ChunkInt2 &chunkP
 
 int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chunkPos) const
 {
-	int count = 0;
-	const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
-	if (!chunkIndex.has_value())
+	const int chunkIndex = this->findChunkIndex(chunkPos);
+	if (chunkIndex < 0)
 	{
-		DebugLogWarning("Missing chunk (" + chunkPos.toString() + ") for counting entities with citizen direction.");
+		DebugLogWarningFormat("Missing chunk (%s) for counting entities with citizen direction.", chunkPos.toString().c_str());
 		return 0;
 	}
 
-	const EntityChunk &chunk = this->getChunkAtIndex(*chunkIndex);
+	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
+
+	int count = 0;
 	for (const EntityInstanceID entityInstID : chunk.entityIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
@@ -1237,7 +1240,7 @@ EntityInstanceID EntityChunkManager::createEntity(const EntityInitInfo &initInfo
 	// Register with chunk if possible.
 	// @todo: not all entities should need registering, like vfx
 	const ChunkInt2 chunkPos = VoxelUtils::worldPointToChunk(initInfo.feetPosition);
-	EntityChunk *entityChunk = this->tryGetChunkAtPosition(chunkPos);
+	EntityChunk *entityChunk = this->findChunkAtPosition(chunkPos);
 	if (entityChunk != nullptr)
 	{
 		entityChunk->entityIDs.emplace_back(entityInstID);

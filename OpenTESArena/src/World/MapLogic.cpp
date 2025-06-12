@@ -56,7 +56,7 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 	GameState &gameState = game.gameState;
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	VoxelChunk *chunkPtr = voxelChunkManager.tryGetChunkAtPosition(coord.chunk);
+	VoxelChunk *chunkPtr = voxelChunkManager.findChunkAtPosition(coord.chunk);
 	if (chunkPtr == nullptr)
 	{
 		DebugLogError("No voxel chunk at (" + coord.chunk.toString() + ") for checking triggers.");
@@ -596,7 +596,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 
 	const SceneManager &sceneManager = game.sceneManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	const VoxelChunk *chunkPtr = voxelChunkManager.tryGetChunkAtPosition(transitionCoord.chunk);
+	const VoxelChunk *chunkPtr = voxelChunkManager.findChunkAtPosition(transitionCoord.chunk);
 	if (chunkPtr == nullptr)
 	{
 		DebugLogError("No voxel chunk at (" + transitionCoord.chunk.toString() + ") for checking level transition.");

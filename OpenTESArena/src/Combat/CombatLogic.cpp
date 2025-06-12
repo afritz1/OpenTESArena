@@ -45,7 +45,7 @@ void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double sea
 				const WorldInt3 searchWorldVoxel(x, y, z);
 				const CoordInt3 searchVoxelCoord = VoxelUtils::worldVoxelToCoord(searchWorldVoxel);
 				const VoxelInt3 searchVoxel = searchVoxelCoord.voxel;
-				const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(searchVoxelCoord.chunk);
+				const VoxelChunk *voxelChunk = voxelChunkManager.findChunkAtPosition(searchVoxelCoord.chunk);
 				if ((voxelChunk == nullptr) || !voxelChunk->isValidVoxel(searchVoxel.x, searchVoxel.y, searchVoxel.z))
 				{
 					continue;
@@ -70,7 +70,7 @@ void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double sea
 		for (SNInt chunkX = searchMinChunk.x; chunkX <= searchMaxChunk.x; chunkX++)
 		{
 			const ChunkInt2 searchChunkPos(chunkX, chunkZ);
-			const EntityChunk *entityChunk = entityChunkManager.tryGetChunkAtPosition(searchChunkPos);
+			const EntityChunk *entityChunk = entityChunkManager.findChunkAtPosition(searchChunkPos);
 			if (entityChunk != nullptr)
 			{
 				for (const EntityInstanceID entityInstID : entityChunk->entityIDs)

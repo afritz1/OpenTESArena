@@ -69,10 +69,8 @@ VoxelChasmDefID VoxelChunkManager::addChasmDef(VoxelChasmDefinition &&def)
 	return id;
 }
 
-void VoxelChunkManager::getAdjacentVoxelShapeDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
-	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-	VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID, VoxelShapeDefID *outSouthID,
-	VoxelShapeDefID *outWestID)
+void VoxelChunkManager::getAdjacentVoxelShapeDefIDs(const CoordInt3 &coord, int *outNorthChunkIndex, int *outEastChunkIndex, int *outSouthChunkIndex, int *outWestChunkIndex,
+	VoxelShapeDefID *outNorthID, VoxelShapeDefID *outEastID, VoxelShapeDefID *outSouthID, VoxelShapeDefID *outWestID)
 {
 	auto voxelIdFunc = [](const VoxelChunk &chunk, const VoxelInt3 &voxel)
 	{
@@ -83,10 +81,8 @@ void VoxelChunkManager::getAdjacentVoxelShapeDefIDs(const CoordInt3 &coord, std:
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-void VoxelChunkManager::getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
-	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-	VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID, VoxelTextureDefID *outSouthID,
-	VoxelTextureDefID *outWestID)
+void VoxelChunkManager::getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, int *outNorthChunkIndex, int *outEastChunkIndex, int *outSouthChunkIndex, int *outWestChunkIndex,
+	VoxelTextureDefID *outNorthID, VoxelTextureDefID *outEastID, VoxelTextureDefID *outSouthID, VoxelTextureDefID *outWestID)
 {
 	auto voxelIdFunc = [](const VoxelChunk &chunk, const VoxelInt3 &voxel)
 	{
@@ -97,8 +93,7 @@ void VoxelChunkManager::getAdjacentVoxelTextureDefIDs(const CoordInt3 &coord, st
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-void VoxelChunkManager::getAdjacentVoxelShadingDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
-	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
+void VoxelChunkManager::getAdjacentVoxelShadingDefIDs(const CoordInt3 &coord, int *outNorthChunkIndex, int *outEastChunkIndex, int *outSouthChunkIndex, int *outWestChunkIndex,
 	VoxelShadingDefID *outNorthID, VoxelShadingDefID *outEastID, VoxelShadingDefID *outSouthID, VoxelShadingDefID *outWestID)
 {
 	auto voxelIdFunc = [](const VoxelChunk &chunk, const VoxelInt3 &voxel)
@@ -110,10 +105,8 @@ void VoxelChunkManager::getAdjacentVoxelShadingDefIDs(const CoordInt3 &coord, st
 		outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-void VoxelChunkManager::getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, std::optional<int> *outNorthChunkIndex,
-	std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex, std::optional<int> *outWestChunkIndex,
-	VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID,
-	VoxelTraitsDefID *outWestID)
+void VoxelChunkManager::getAdjacentVoxelTraitsDefIDs(const CoordInt3 &coord, int *outNorthChunkIndex, int *outEastChunkIndex, int *outSouthChunkIndex, int *outWestChunkIndex,
+	VoxelTraitsDefID *outNorthID, VoxelTraitsDefID *outEastID, VoxelTraitsDefID *outSouthID, VoxelTraitsDefID *outWestID)
 {
 	auto voxelIdFunc = [](const VoxelChunk &chunk, const VoxelInt3 &voxel)
 	{
@@ -439,19 +432,19 @@ void VoxelChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 				}
 
 				const CoordInt3 coord(chunkPos, VoxelInt3(x, y, z));
-				std::optional<int> northChunkIndex, eastChunkIndex, southChunkIndex, westChunkIndex;
+				int northChunkIndex, eastChunkIndex, southChunkIndex, westChunkIndex;
 				VoxelShapeDefID northVoxelShapeDefID, eastVoxelShapeDefID, southVoxelShapeDefID, westVoxelShapeDefID;
 				this->getAdjacentVoxelShapeDefIDs(coord, &northChunkIndex, &eastChunkIndex, &southChunkIndex, &westChunkIndex,
 					&northVoxelShapeDefID, &eastVoxelShapeDefID, &southVoxelShapeDefID, &westVoxelShapeDefID);
 
-				auto isFaceActive = [this](const std::optional<int> &chunkIndex, VoxelShapeDefID shapeDefID)
+				auto isFaceActive = [this](int chunkIndex, VoxelShapeDefID shapeDefID)
 				{
-					if (!chunkIndex.has_value())
+					if (chunkIndex < 0)
 					{
 						return false;
 					}
 
-					const VoxelChunk &voxelChunk = this->getChunkAtIndex(*chunkIndex);
+					const VoxelChunk &voxelChunk = this->getChunkAtIndex(chunkIndex);
 					const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
 					return shapeDef.enablesNeighborGeometry;
 				};
@@ -672,21 +665,19 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 	const CoordInt3 coord(chunk.position, voxel);
 	auto getChasmFaces = [this, &coord](bool *outNorth, bool *outEast, bool *outSouth, bool *outWest)
 	{
-		auto getChasmFace = [this](const std::optional<int> &chunkIndex, VoxelShapeDefID shapeDefID)
+		auto getChasmFace = [this](int chunkIndex, VoxelShapeDefID shapeDefID)
 		{
-			if (chunkIndex.has_value())
-			{
-				const VoxelChunk &chunk = this->getChunkAtIndex(*chunkIndex);
-				const VoxelShapeDefinition &shapeDef = chunk.getShapeDef(shapeDefID);
-				return shapeDef.enablesNeighborGeometry;
-			}
-			else
+			if (chunkIndex < 0)
 			{
 				return false;
 			}
+
+			const VoxelChunk &chunk = this->getChunkAtIndex(chunkIndex);
+			const VoxelShapeDefinition &shapeDef = chunk.getShapeDef(shapeDefID);
+			return shapeDef.enablesNeighborGeometry;
 		};
 
-		std::optional<int> outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex;
+		int outNorthChunkIndex, outEastChunkIndex, outSouthChunkIndex, outWestChunkIndex;
 		VoxelShapeDefID northDefID, eastDefID, southDefID, westDefID;
 		this->getAdjacentVoxelShapeDefIDs(coord, &outNorthChunkIndex, &outEastChunkIndex, &outSouthChunkIndex,
 			&outWestChunkIndex, &northDefID, &eastDefID, &southDefID, &westDefID);
@@ -764,19 +755,19 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 		const bool isCameraEastInclusive = (playerChunkPos.y < chunkPos.y) || ((playerChunkPos.y == chunkPos.y) && (playerVoxelXZ.y <= doorVoxel.z));
 
 		const CoordInt3 doorVoxelCoord(chunkPos, doorVoxel);
-		std::optional<int> northChunkIndex, eastChunkIndex, southChunkIndex, westChunkIndex;
+		int northChunkIndex, eastChunkIndex, southChunkIndex, westChunkIndex;
 		VoxelShapeDefID northVoxelShapeDefID, eastVoxelShapeDefID, southVoxelShapeDefID, westVoxelShapeDefID;
 		this->getAdjacentVoxelShapeDefIDs(doorVoxelCoord, &northChunkIndex, &eastChunkIndex, &southChunkIndex, &westChunkIndex,
 			&northVoxelShapeDefID, &eastVoxelShapeDefID, &southVoxelShapeDefID, &westVoxelShapeDefID);
 
-		auto isVoxelValidForDoorFace = [this](const std::optional<int> &chunkIndex, VoxelShapeDefID shapeDefID)
+		auto isVoxelValidForDoorFace = [this](int chunkIndex, VoxelShapeDefID shapeDefID)
 		{
-			if (!chunkIndex.has_value())
+			if (chunkIndex < 0)
 			{
 				return true;
 			}
 
-			const VoxelChunk &voxelChunk = this->getChunkAtIndex(*chunkIndex);
+			const VoxelChunk &voxelChunk = this->getChunkAtIndex(chunkIndex);
 			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(shapeDefID);
 			const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
 			return voxelMeshDef.isEmpty() || voxelShapeDef.allowsAdjacentDoorFaces;
@@ -864,10 +855,10 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 
 			for (const CoordInt3 adjacentCoord : adjacentCoords)
 			{
-				const std::optional<int> adjacentChunkIndex = this->tryGetChunkIndex(adjacentCoord.chunk);
-				if (adjacentChunkIndex.has_value())
+				const int adjacentChunkIndex = this->findChunkIndex(adjacentCoord.chunk);
+				if (adjacentChunkIndex >= 0)
 				{
-					VoxelChunk &adjacentChunk = this->getChunkAtIndex(*adjacentChunkIndex);
+					VoxelChunk &adjacentChunk = this->getChunkAtIndex(adjacentChunkIndex);
 					const VoxelInt3 adjacentVoxel = adjacentCoord.voxel;
 					int dummyChasmWallInstIndex;
 					if (adjacentChunk.tryGetChasmWallInstIndex(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z, &dummyChasmWallInstIndex))

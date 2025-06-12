@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <optional>
 #include <vector>
 
 #include "Chunk.h"
@@ -19,46 +18,43 @@ protected:
 
 	using ChunkPtr = std::unique_ptr<ChunkType>;
 
-	std::vector<ChunkPtr> chunkPool;
-	std::vector<ChunkPtr> activeChunks;
-
 	template<typename VoxelIdType>
 	using VoxelIdFunc = VoxelIdType(*)(const ChunkType &chunk, const VoxelInt3 &voxel);
 
-	std::optional<int> tryGetChunkIndex(const ChunkInt2 &position) const
-	{
-		const auto iter = std::find_if(this->activeChunks.begin(), this->activeChunks.end(),
-			[&position](const ChunkPtr &chunkPtr)
-		{
-			return chunkPtr->position == position;
-		});
+	std::vector<ChunkPtr> chunkPool;
+	std::vector<ChunkPtr> activeChunks;
 
-		if (iter != this->activeChunks.end())
+	int findChunkIndex(const ChunkInt2 &position) const
+	{
+		const int chunkCount = static_cast<int>(this->activeChunks.size());
+		for (int i = 0; i < chunkCount; i++)
 		{
-			return static_cast<int>(std::distance(this->activeChunks.begin(), iter));
+			const ChunkPtr &chunkPtr = this->activeChunks[i];
+			if (chunkPtr->position == position)
+			{
+				return i;
+			}
 		}
-		else
-		{
-			return std::nullopt;
-		}
+
+		return -1;
 	}
 
 	int getChunkIndex(const ChunkInt2 &position) const
 	{
-		const std::optional<int> index = this->tryGetChunkIndex(position);
+		const int index = this->findChunkIndex(position);
+		if (index < 0)
+		{
+			DebugLogErrorFormat("Chunk (%s) not found.", position.toString().c_str());
+		}
 
-		// If this fails, we didn't properly update from the base chunk manager.
-		DebugAssertMsg(index.has_value(), "Chunk (" + position.toString() + ") not found.");
-
-		return *index;
+		return index;
 	}
 
 	// Gets the def IDs adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	template<typename VoxelIdType>
 	void getAdjacentVoxelIDsInternal(const CoordInt3 &coord, VoxelIdFunc<VoxelIdType> voxelIdFunc, VoxelIdType defaultID,
-		std::optional<int> *outNorthChunkIndex, std::optional<int> *outEastChunkIndex, std::optional<int> *outSouthChunkIndex,
-		std::optional<int> *outWestChunkIndex, VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID,
-		VoxelIdType *outWestID)
+		int *outNorthChunkIndex, int *outEastChunkIndex, int *outSouthChunkIndex, int *outWestChunkIndex,
+		VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID, VoxelIdType *outWestID)
 	{
 		const CoordInt3 adjacentCoords[] =
 		{
@@ -68,7 +64,7 @@ protected:
 			VoxelUtils::getCoordWithOffset(coord, VoxelUtils::West)
 		};
 
-		std::optional<int> *outAdjacentChunkIndices[] =
+		int *outAdjacentChunkIndices[] =
 		{
 			outNorthChunkIndex,
 			outEastChunkIndex,
@@ -93,7 +89,7 @@ protected:
 		{
 			const CoordInt3 adjacentCoord = adjacentCoords[i];
 			const ChunkInt2 adjacentChunkPos = adjacentCoord.chunk;
-			std::optional<int> &adjacentChunkIndex = *outAdjacentChunkIndices[i];
+			int &adjacentChunkIndex = *outAdjacentChunkIndices[i];
 
 			bool foundExistingChunkIndex = false;
 			for (int cacheIndex = 0; cacheIndex < cachedChunkPositionCount; cacheIndex++)
@@ -108,19 +104,19 @@ protected:
 
 			if (!foundExistingChunkIndex)
 			{
-				adjacentChunkIndex = this->tryGetChunkIndex(adjacentChunkPos);
-				if (adjacentChunkIndex.has_value())
+				adjacentChunkIndex = this->findChunkIndex(adjacentChunkPos);
+				if (adjacentChunkIndex >= 0)
 				{
 					DebugAssertIndex(cachedChunkPositions, cachedChunkPositionCount);
 					cachedChunkPositions[cachedChunkPositionCount] = adjacentChunkPos;
-					cachedChunkIndices[cachedChunkPositionCount] = *adjacentChunkIndex;
+					cachedChunkIndices[cachedChunkPositionCount] = adjacentChunkIndex;
 					cachedChunkPositionCount++;
 				}
 			}
 
-			if (adjacentChunkIndex.has_value())
+			if (adjacentChunkIndex >= 0)
 			{
-				const ChunkType &adjacentChunk = this->getChunkAtIndex(*adjacentChunkIndex);
+				const ChunkType &adjacentChunk = this->getChunkAtIndex(adjacentChunkIndex);
 				const VoxelInt3 adjacentVoxel = adjacentCoord.voxel;
 				*outAdjacentVoxelIDs[i] = voxelIdFunc(adjacentChunk, adjacentVoxel);
 			}
@@ -181,16 +177,26 @@ public:
 		return *this->activeChunks[index];
 	}
 
-	ChunkType *tryGetChunkAtPosition(const ChunkInt2 &position)
+	ChunkType *findChunkAtPosition(const ChunkInt2 &position)
 	{
-		const std::optional<int> index = this->tryGetChunkIndex(position);
-		return index.has_value() ? &this->getChunkAtIndex(*index) : nullptr;
+		const int index = this->findChunkIndex(position);
+		if (index < 0)
+		{
+			return nullptr;
+		}
+
+		return &this->getChunkAtIndex(index);
 	}
 
-	const ChunkType *tryGetChunkAtPosition(const ChunkInt2 &position) const
+	const ChunkType *findChunkAtPosition(const ChunkInt2 &position) const
 	{
-		const std::optional<int> index = this->tryGetChunkIndex(position);
-		return index.has_value() ? &this->getChunkAtIndex(*index) : nullptr;
+		const int index = this->findChunkIndex(position);
+		if (index < 0)
+		{
+			return nullptr;
+		}
+
+		return &this->getChunkAtIndex(index);
 	}
 
 	ChunkType &getChunkAtPosition(const ChunkInt2 &position)

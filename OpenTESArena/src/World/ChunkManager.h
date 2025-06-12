@@ -22,7 +22,7 @@ public:
 	BufferView<const ChunkInt2> getNewChunkPositions() const;
 	BufferView<const ChunkInt2> getFreedChunkPositions() const;
 	int getCenterChunkIndex() const;
-	std::optional<int> tryGetChunkIndex(const ChunkInt2 &position) const;
+	std::optional<int> findChunkIndex(const ChunkInt2 &position) const;
 
 	void update(const ChunkInt2 &centerChunkPos, int chunkDistance);
 	void cleanUp();

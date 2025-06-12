@@ -577,7 +577,7 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 
 	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
-	const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(playerFeetVoxelCoord.chunk);
+	const VoxelChunk *voxelChunk = voxelChunkManager.findChunkAtPosition(playerFeetVoxelCoord.chunk);
 	if (voxelChunk != nullptr)
 	{
 		VoxelChasmDefID chasmDefID;

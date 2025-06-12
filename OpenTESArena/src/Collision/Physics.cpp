@@ -78,7 +78,7 @@ namespace Physics
 			{
 				for (SNInt x = minChunk.x; x <= maxChunk.x; x++)
 				{
-					const EntityChunk *entityChunkPtr = entityChunkManager.tryGetChunkAtPosition(ChunkInt2(x, z));
+					const EntityChunk *entityChunkPtr = entityChunkManager.findChunkAtPosition(ChunkInt2(x, z));
 					if (entityChunkPtr != nullptr)
 					{
 						count += static_cast<int>(entityChunkPtr->entityIDs.size());
@@ -97,7 +97,7 @@ namespace Physics
 		{
 			EntityInstanceID *entityInstIDsPtr = entityInstIDs.begin() + entityInsertIndex;
 			const int size = entityInstIDs.getCount() - entityInsertIndex;
-			const EntityChunk *entityChunkPtr = entityChunkManager.tryGetChunkAtPosition(ChunkInt2(chunkX, chunkZ));
+			const EntityChunk *entityChunkPtr = entityChunkManager.findChunkAtPosition(ChunkInt2(chunkX, chunkZ));
 			if (entityChunkPtr != nullptr)
 			{
 				int writtenCount = 0;
@@ -236,7 +236,7 @@ namespace Physics
 		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
 		const ChunkInt2 chunkPos = rayCoord.chunk;
-		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(chunkPos);
+		const VoxelChunk *voxelChunk = voxelChunkManager.findChunkAtPosition(chunkPos);
 		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
@@ -249,7 +249,7 @@ namespace Physics
 			return false;
 		}
 
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(chunkPos);
+		const CollisionChunk *collisionChunk = collisionChunkManager.findChunkAtPosition(chunkPos);
 		DebugAssert(collisionChunk != nullptr);
 		if (!collisionChunk->enabledColliders.get(voxel.x, voxel.y, voxel.z))
 		{
@@ -299,7 +299,7 @@ namespace Physics
 		const CollisionChunkManager &collisionChunkManager, RayCastHit &hit)
 	{
 		const ChunkInt2 chunkPos = voxelCoord.chunk;
-		const VoxelChunk *voxelChunk = voxelChunkManager.tryGetChunkAtPosition(chunkPos);
+		const VoxelChunk *voxelChunk = voxelChunkManager.findChunkAtPosition(chunkPos);
 		if (voxelChunk == nullptr)
 		{
 			// Nothing to intersect with.
@@ -313,7 +313,7 @@ namespace Physics
 			return false;
 		}
 
-		const CollisionChunk *collisionChunk = collisionChunkManager.tryGetChunkAtPosition(chunkPos);
+		const CollisionChunk *collisionChunk = collisionChunkManager.findChunkAtPosition(chunkPos);
 		DebugAssert(collisionChunk != nullptr);
 		if (!collisionChunk->enabledColliders.get(voxel.x, voxel.y, voxel.z))
 		{
@@ -508,7 +508,7 @@ namespace Physics
 
 		// Check whether the initial voxel is in a loaded chunk.
 		ChunkInt2 currentChunk = rayCoord.chunk;
-		const VoxelChunk *currentChunkPtr = voxelChunkManager.tryGetChunkAtPosition(currentChunk);
+		const VoxelChunk *currentChunkPtr = voxelChunkManager.findChunkAtPosition(currentChunk);
 
 		// The initial DDA step is a special case, so it's brought outside the DDA loop. This complicates things
 		// a little bit, but it's important enough that it should be kept.
@@ -649,7 +649,7 @@ namespace Physics
 
 			if (currentChunk != oldChunk)
 			{
-				currentChunkPtr = voxelChunkManager.tryGetChunkAtPosition(currentChunk);
+				currentChunkPtr = voxelChunkManager.findChunkAtPosition(currentChunk);
 			}
 		};
 

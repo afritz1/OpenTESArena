@@ -30,7 +30,7 @@ int ChunkManager::getCenterChunkIndex() const
 	return this->centerChunkPosIndex;
 }
 
-std::optional<int> ChunkManager::tryGetChunkIndex(const ChunkInt2 &position) const
+std::optional<int> ChunkManager::findChunkIndex(const ChunkInt2 &position) const
 {
 	const auto iter = std::find(this->activeChunkPositions.begin(), this->activeChunkPositions.end(), position);
 	if (iter != this->activeChunkPositions.end())
@@ -95,7 +95,7 @@ void ChunkManager::update(const ChunkInt2 &centerChunkPos, int chunkDistance)
 		for (SNInt x = minChunkPos.x; x <= maxChunkPos.x; x++)
 		{
 			const ChunkInt2 chunkPos(x, y);
-			const std::optional<int> chunkIndex = this->tryGetChunkIndex(chunkPos);
+			const std::optional<int> chunkIndex = this->findChunkIndex(chunkPos);
 			if (!chunkIndex.has_value())
 			{
 				this->newChunkPositions.emplace_back(chunkPos);

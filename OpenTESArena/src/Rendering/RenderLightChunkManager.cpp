@@ -196,7 +196,7 @@ void RenderLightChunkManager::registerLightToVoxels(const Light &light, BufferVi
 	for (const WorldInt3 voxel : voxels)
 	{
 		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(voxel);
-		RenderLightChunk *renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+		RenderLightChunk *renderChunkPtr = this->findChunkAtPosition(curLightCoord.chunk);
 		if (renderChunkPtr != nullptr)
 		{
 			const VoxelInt3 curLightVoxel = curLightCoord.voxel;
@@ -222,7 +222,7 @@ void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, Buff
 		const CoordInt3 curLightCoord = VoxelUtils::worldVoxelToCoord(voxel);
 		if (renderChunkPtr == nullptr || renderChunkPtr->position != curLightCoord.chunk)
 		{
-			renderChunkPtr = this->tryGetChunkAtPosition(curLightCoord.chunk);
+			renderChunkPtr = this->findChunkAtPosition(curLightCoord.chunk);
 		}
 
 		if (renderChunkPtr != nullptr)

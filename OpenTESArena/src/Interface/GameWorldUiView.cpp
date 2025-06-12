@@ -911,7 +911,7 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
 	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager = sceneManager.voxelFrustumCullingChunkManager;
-	const VoxelFrustumCullingChunk *playerVoxelFrustumCullingChunk = voxelFrustumCullingChunkManager.tryGetChunkAtPosition(playerCoord.chunk);
+	const VoxelFrustumCullingChunk *playerVoxelFrustumCullingChunk = voxelFrustumCullingChunkManager.findChunkAtPosition(playerCoord.chunk);
 	if (playerVoxelFrustumCullingChunk == nullptr)
 	{
 		return;
