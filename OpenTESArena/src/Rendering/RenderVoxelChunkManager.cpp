@@ -402,7 +402,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 			continue;
 		}
 
-		std::array<int32_t, indicesPerQuad * 4> totalIndicesBuffer;
+		std::array<int32_t, ArenaMeshUtils::CHASM_WALL_TOTAL_COUNT * indicesPerQuad> totalIndicesBuffer;
 		int writingIndex = 0;
 		auto tryWriteIndices = [indicesPerQuad, &totalIndicesBuffer, &writingIndex](bool hasFace, const ArenaChasmWallIndexBuffer &faceIndices)
 		{

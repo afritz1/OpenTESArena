@@ -57,6 +57,7 @@ struct ArenaShapeInitCache
 // The original game doesn't actually have meshes - this is just a convenient way to define things.
 namespace ArenaMeshUtils
 {
+	static constexpr int CHASM_WALL_TOTAL_COUNT = 4;
 	static constexpr int CHASM_WALL_NORTH = 0x1;
 	static constexpr int CHASM_WALL_EAST = 0x2;
 	static constexpr int CHASM_WALL_SOUTH = 0x4;
