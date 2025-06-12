@@ -17,22 +17,18 @@ namespace
 		Int3(0, 0, -1)
 	};
 
-	bool IsVoxelFaceOpaque(const VoxelShadingDefinition &shadingDef, VoxelFacing3D facing)
+	bool IsVoxelFaceOpaque(VoxelFacing3D facing, const VoxelMeshDefinition &meshDef, const VoxelShadingDefinition &shadingDef)
 	{
-		// @todo: currently this is very pessimistic. Ideally need a way to map mesh faces (or triangles) to pixel shader indices
-
-		bool isOpaque = true;
-		for (int i = 0; i < shadingDef.pixelShaderCount; i++)
+		const int indexBufferIndex = meshDef.findIndexBufferIndexWithFacing(facing);
+		if (indexBufferIndex < 0)
 		{
-			const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[i];
-			if (!RenderShaderUtils::isOpaque(pixelShaderType))
-			{
-				isOpaque = false;
-				break;
-			}
+			return false;
 		}
 
-		return isOpaque;
+		DebugAssert(indexBufferIndex < shadingDef.pixelShaderCount);
+		DebugAssertIndex(shadingDef.pixelShaderTypes, indexBufferIndex);
+		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[indexBufferIndex];
+		return RenderShaderUtils::isOpaque(pixelShaderType);
 	}
 }
 
@@ -93,7 +89,7 @@ void VoxelFaceEnableChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const
 				continue;
 			}
 
-			if (!IsVoxelFaceOpaque(shadingDef, facing))
+			if (!IsVoxelFaceOpaque(facing, meshDef, shadingDef))
 			{
 				// Non-opaque faces not important enough.
 				faceEnableEntry.enabledFaces[faceIndex] = true;
@@ -114,7 +110,7 @@ void VoxelFaceEnableChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const
 
 			const VoxelShadingDefID adjacentShadingDefID = voxelChunk.getShadingDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 			const VoxelShadingDefinition &adjacentShadingDef = voxelChunk.getShadingDef(adjacentShadingDefID);
-			const bool isAdjacentFaceBlocking = IsVoxelFaceOpaque(adjacentShadingDef, adjacentFacing);
+			const bool isAdjacentFaceBlocking = IsVoxelFaceOpaque(adjacentFacing, adjacentMeshDef, adjacentShadingDef);
 			faceEnableEntry.enabledFaces[faceIndex] = !isAdjacentFaceBlocking;
 		}
 	}
