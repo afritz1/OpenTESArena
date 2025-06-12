@@ -142,15 +142,13 @@ private:
 		Renderer &renderer);
 
 	void populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &chunk, const LevelDefinition &levelDefinition,
-		const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset,
-		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
-		Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
-		TextureManager &textureManager, Renderer &renderer);
+		const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset, const EntityGenInfo &entityGenInfo,
+		const std::optional<CitizenGenInfo> &citizenGenInfo, Random &random, const EntityDefinitionLibrary &entityDefLibrary,
+		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 	void populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, const LevelDefinition &levelDef,
-		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGeneration::EntityGenInfo &entityGenInfo,
-		const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo, double ceilingScale,
-		Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
-		TextureManager &textureManager, Renderer &renderer);
+		const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, const EntityGenInfo &entityGenInfo,
+		const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random,
+		const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
 	void updateCitizenStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving,
 		bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
@@ -202,7 +200,7 @@ public:
 		const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
 		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
-		const EntityGeneration::EntityGenInfo &entityGenInfo, const std::optional<CitizenUtils::CitizenGenInfo> &citizenGenInfo,
+		const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 

@@ -18,23 +18,23 @@ enum class MapType;
 
 struct EntityDefinition;
 
+struct CitizenGenInfo
+{
+	EntityDefID maleEntityDefID;
+	EntityDefID femaleEntityDefID;
+	const EntityDefinition *maleEntityDef;
+	const EntityDefinition *femaleEntityDef;
+	int raceID;
+
+	void init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID, const EntityDefinition *maleEntityDef,
+		const EntityDefinition *femaleEntityDef, int raceID);
+};
+
 namespace CitizenUtils
 {
 	// Arbitrary values.
 	constexpr int CITIZENS_PER_CHUNK = 30;
 	constexpr int MAX_ACTIVE_CITIZENS = CITIZENS_PER_CHUNK * 9;
-
-	struct CitizenGenInfo
-	{
-		EntityDefID maleEntityDefID;
-		EntityDefID femaleEntityDefID;
-		const EntityDefinition *maleEntityDef;
-		const EntityDefinition *femaleEntityDef;
-		int raceID;
-
-		void init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID, const EntityDefinition *maleEntityDef,
-			const EntityDefinition *femaleEntityDef, int raceID);
-	};
 
 	bool canMapTypeSpawnCitizens(MapType mapType);
 	CitizenGenInfo makeCitizenGenInfo(int raceID, ArenaClimateType climateType);

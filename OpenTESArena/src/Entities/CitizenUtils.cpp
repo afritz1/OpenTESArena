@@ -20,7 +20,7 @@
 namespace
 {
 	// Allowed directions for citizens to walk.
-	const std::array<std::pair<CardinalDirectionName, WorldDouble2>, 4> CitizenDirections =
+	constexpr std::array<std::pair<CardinalDirectionName, WorldDouble2>, 4> CitizenDirections =
 	{
 		{
 			{ CardinalDirectionName::North, CardinalDirection::North },
@@ -31,7 +31,7 @@ namespace
 	};
 }
 
-void CitizenUtils::CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID,
+void CitizenGenInfo::init(EntityDefID maleEntityDefID, EntityDefID femaleEntityDefID,
 	const EntityDefinition *maleEntityDef, const EntityDefinition *femaleEntityDef, int raceID)
 {
 	this->maleEntityDefID = maleEntityDefID;
@@ -46,7 +46,7 @@ bool CitizenUtils::canMapTypeSpawnCitizens(MapType mapType)
 	return (mapType == MapType::City) || (mapType == MapType::Wilderness);
 }
 
-CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaClimateType climateType)
+CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaClimateType climateType)
 {
 	// Citizen entity definitions are level-independent and stored in a library beforehand.
 	static_assert(EntityDefinitionLibrary::supportsDefType(EntityDefinitionType::Citizen));
@@ -72,8 +72,7 @@ CitizenUtils::CitizenGenInfo CitizenUtils::makeCitizenGenInfo(int raceID, ArenaC
 	return citizenGenInfo;
 }
 
-std::optional<CitizenUtils::CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapType, int raceID,
-	const LocationDefinition &locationDef)
+std::optional<CitizenGenInfo> CitizenUtils::tryMakeCitizenGenInfo(MapType mapType, int raceID, const LocationDefinition &locationDef)
 {
 	if (!CitizenUtils::canMapTypeSpawnCitizens(mapType))
 	{

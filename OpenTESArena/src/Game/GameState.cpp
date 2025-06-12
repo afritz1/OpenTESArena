@@ -998,13 +998,12 @@ void GameState::tickEntities(double dt, Game &game)
 	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoIndex];
 	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
 
-	EntityGeneration::EntityGenInfo entityGenInfo;
+	EntityGenInfo entityGenInfo;
 	entityGenInfo.init(ArenaClockUtils::nightLightsAreActive(this->clock));
 
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
 	const LocationDefinition &locationDef = this->getLocationDefinition();
-	const std::optional<CitizenUtils::CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(
-		mapType, provinceDef.getRaceID(), locationDef);
+	const std::optional<CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(mapType, provinceDef.getRaceID(), locationDef);
 
 	const double ceilingScale = this->getActiveCeilingScale();
 

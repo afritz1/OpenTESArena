@@ -8,18 +8,15 @@ class Random;
 
 struct EntityAnimationDefinition;
 
-namespace EntityGeneration
+struct EntityGenInfo
 {
-	struct EntityGenInfo
-	{
-		bool nightLightsAreActive;
+	bool nightLightsAreActive;
 
-		// @todo? (might also affect EntityAnimationDef/Inst)
-		// - optional rulerIsMale
-		// - optional interiorType
+	// @todo? (might also affect EntityAnimationDef/Inst)
+	// - optional rulerIsMale
+	// - optional interiorType
 
-		void init(bool nightLightsAreActive);
-	};
-}
+	void init(bool nightLightsAreActive);
+};
 
 #endif
