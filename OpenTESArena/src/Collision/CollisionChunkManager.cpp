@@ -91,7 +91,7 @@ namespace
 						{
 							const BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
 							const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
-							isClosedDoor = doorAnimInst.stateType == VoxelDoorAnimationInstance::StateType::Closed;
+							isClosedDoor = doorAnimInst.stateType == VoxelDoorAnimationStateType::Closed;
 						}
 						else
 						{
@@ -194,7 +194,7 @@ void CollisionChunkManager::populateChunkEnabledColliders(CollisionChunk &collis
 				{
 					const BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
 					const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
-					voxelHasCollision = doorAnimInst.stateType == VoxelDoorAnimationInstance::StateType::Closed;
+					voxelHasCollision = doorAnimInst.stateType == VoxelDoorAnimationStateType::Closed;
 				}
 				else
 				{

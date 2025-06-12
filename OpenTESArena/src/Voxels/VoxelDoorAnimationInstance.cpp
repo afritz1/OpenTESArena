@@ -11,16 +11,16 @@ VoxelDoorAnimationInstance::VoxelDoorAnimationInstance()
 	this->z = 0;
 	this->speed = 0.0;
 	this->percentOpen = 0.0;
-	this->stateType = StateType::Closed;
+	this->stateType = VoxelDoorAnimationStateType::Closed;
 }
 
-void VoxelDoorAnimationInstance::init(SNInt x, int y, WEInt z, double speed, double percentOpen, StateType stateType)
+void VoxelDoorAnimationInstance::init(SNInt x, int y, WEInt z, double speed, double percentOpen, VoxelDoorAnimationStateType stateType)
 {
-	if (stateType == StateType::Closed)
+	if (stateType == VoxelDoorAnimationStateType::Closed)
 	{
 		DebugAssert(percentOpen == 0.0);
 	}
-	else if (stateType == StateType::Open)
+	else if (stateType == VoxelDoorAnimationStateType::Open)
 	{
 		DebugAssert(percentOpen == 1.0);
 	}
@@ -35,18 +35,18 @@ void VoxelDoorAnimationInstance::init(SNInt x, int y, WEInt z, double speed, dou
 
 void VoxelDoorAnimationInstance::initOpening(SNInt x, int y, WEInt z, double speed)
 {
-	this->init(x, y, z, speed, 0.0, StateType::Opening);
+	this->init(x, y, z, speed, 0.0, VoxelDoorAnimationStateType::Opening);
 }
 
-void VoxelDoorAnimationInstance::setStateType(StateType stateType)
+void VoxelDoorAnimationInstance::setStateType(VoxelDoorAnimationStateType stateType)
 {
 	this->stateType = stateType;
 
-	if (stateType == StateType::Closed)
+	if (stateType == VoxelDoorAnimationStateType::Closed)
 	{
 		this->percentOpen = 0.0;
 	}
-	else if (stateType == StateType::Open)
+	else if (stateType == VoxelDoorAnimationStateType::Open)
 	{
 		this->percentOpen = 1.0;
 	}
@@ -56,22 +56,22 @@ void VoxelDoorAnimationInstance::update(double dt)
 {
 	const double delta = this->speed * dt;
 
-	if (this->stateType == StateType::Opening)
+	if (this->stateType == VoxelDoorAnimationStateType::Opening)
 	{
 		this->percentOpen = std::clamp(this->percentOpen + delta, this->percentOpen, 1.0);
 
 		if (this->percentOpen == 1.0)
 		{
-			this->stateType = StateType::Open;
+			this->stateType = VoxelDoorAnimationStateType::Open;
 		}
 	}
-	else if (this->stateType == StateType::Closing)
+	else if (this->stateType == VoxelDoorAnimationStateType::Closing)
 	{
 		this->percentOpen = std::clamp(this->percentOpen - delta, 0.0, this->percentOpen);
 
 		if (this->percentOpen == 0.0)
 		{
-			this->stateType = StateType::Closed;
+			this->stateType = VoxelDoorAnimationStateType::Closed;
 		}
 	}
 }

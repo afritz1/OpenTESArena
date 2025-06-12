@@ -3,31 +3,31 @@
 
 #include "../World/Coord.h"
 
+enum class VoxelDoorAnimationStateType
+{
+	Closed,
+	Opening,
+	Open,
+	Closing
+};
+
 struct VoxelDoorAnimationInstance
 {
-	enum class StateType
-	{
-		Closed,
-		Opening,
-		Open,
-		Closing
-	};
-
 	SNInt x;
 	int y;
 	WEInt z;
 	double speed;
 	double percentOpen;
-	StateType stateType;
+	VoxelDoorAnimationStateType stateType;
 
 	VoxelDoorAnimationInstance();
 
-	void init(SNInt x, int y, WEInt z, double speed, double percentOpen, StateType stateType);
+	void init(SNInt x, int y, WEInt z, double speed, double percentOpen, VoxelDoorAnimationStateType stateType);
 
 	// Defaults to opening so it isn't cleared on the first frame.
 	void initOpening(SNInt x, int y, WEInt z, double speed);
 
-	void setStateType(StateType stateType);
+	void setStateType(VoxelDoorAnimationStateType stateType);
 	void update(double dt);
 };
 
