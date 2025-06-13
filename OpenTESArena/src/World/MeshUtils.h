@@ -15,6 +15,9 @@ enum class VoxelShapeScaleType;
 // like for voxels may have extra values in the future.
 namespace MeshUtils
 {
+	static constexpr int VERTICES_PER_TRIANGLE = 3;
+	static constexpr int VERTICES_PER_QUAD = 4;
+
 	static constexpr int INDICES_PER_TRIANGLE = 3; // Example: [0, 1, 2].
 	static constexpr int INDICES_PER_QUAD = INDICES_PER_TRIANGLE * 2; // Example: [0, 1, 2, 2, 3, 0].
 	
@@ -58,9 +61,9 @@ namespace MeshUtils
 
 	// Creates quad vertex positions/attributes/indices counterclockwise (top left - bottom left - bottom right - top right).
 	// To get world space, translate model space vertices by the 'min' point.
-	void createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<Double3> outPositions);
-	void createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<Double3> outNormals);
-	void createVoxelFaceQuadTexCoords(int width, int height, BufferView<Double2> outUVs);
+	void createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<double> outPositions);
+	void createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<double> outNormals);
+	void createVoxelFaceQuadTexCoords(int width, int height, BufferView<double> outUVs);
 	void createVoxelFaceQuadIndices(BufferView<int32_t> outIndices);
 
 	// For positioning raised platforms, etc. correctly.

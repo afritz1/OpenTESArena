@@ -1060,6 +1060,7 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager = sceneManager.voxelFaceCombineChunkManager;
 	const SkyInstance &skyInst = sceneManager.skyInstance;
 
 	const double ceilingScale = this->getActiveCeilingScale();
@@ -1086,7 +1087,8 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
 	renderVoxelChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
 	renderVoxelChunkManager.update(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
-		voxelChunkManager, voxelFrustumCullingChunkManager, renderLightChunkManager, textureManager, renderer);
+		voxelChunkManager, voxelFaceCombineChunkManager, voxelFrustumCullingChunkManager, renderLightChunkManager,
+		textureManager, renderer);
 
 	const EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
 	RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;

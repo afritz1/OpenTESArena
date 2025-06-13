@@ -178,9 +178,9 @@ Double3 MeshUtils::createVertexNormalAtIndex(BufferView<const double> positions,
 	return cross;
 }
 
-void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<Double3> outPositions)
+void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<double> outPositions)
 {
-	DebugAssert(outPositions.getCount() == 4);
+	DebugAssert(outPositions.getCount() == (MeshUtils::VERTICES_PER_QUAD * MeshUtils::POSITION_COMPONENTS_PER_VERTEX));
 
 	const VoxelInt3 voxelDiff = max - min;
 	const VoxelDouble3 voxelDiffReal(
@@ -232,42 +232,75 @@ void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, con
 	const Double3 v1 = v0 + tlBlDelta;
 	const Double3 v2 = v0 + tlBlDelta + tlBrDelta;
 	const Double3 v3 = v0 + tlBrDelta;
-	outPositions[0] = v0;
-	outPositions[1] = v1;
-	outPositions[2] = v2;
-	outPositions[3] = v3;
+
+	outPositions[0] = v0.x;
+	outPositions[1] = v0.y;
+	outPositions[2] = v0.z;
+
+	outPositions[3] = v1.x;
+	outPositions[4] = v1.y;
+	outPositions[5] = v1.z;
+
+	outPositions[6] = v2.x;
+	outPositions[7] = v2.y;
+	outPositions[8] = v2.z;
+
+	outPositions[9] = v3.x;
+	outPositions[10] = v3.y;
+	outPositions[11] = v3.z;
 }
 
-void MeshUtils::createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<Double3> outNormals)
+void MeshUtils::createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<double> outNormals)
 {
-	DebugAssert(outNormals.getCount() == 4);
+	DebugAssert(outNormals.getCount() == (MeshUtils::VERTICES_PER_QUAD * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX));
 
 	const Double3 normal = VoxelUtils::getNormal(facing);
-	outNormals[0] = normal;
-	outNormals[1] = normal;
-	outNormals[2] = normal;
-	outNormals[3] = normal;
+
+	outNormals[0] = normal.x;
+	outNormals[1] = normal.y;
+	outNormals[2] = normal.z;
+
+	outNormals[3] = normal.x;
+	outNormals[4] = normal.y;
+	outNormals[5] = normal.z;
+
+	outNormals[6] = normal.x;
+	outNormals[7] = normal.y;
+	outNormals[8] = normal.z;
+
+	outNormals[9] = normal.x;
+	outNormals[10] = normal.y;
+	outNormals[11] = normal.z;
 }
 
-void MeshUtils::createVoxelFaceQuadTexCoords(int width, int height, BufferView<Double2> outUVs)
+void MeshUtils::createVoxelFaceQuadTexCoords(int width, int height, BufferView<double> outUVs)
 {
 	DebugAssert(width >= 1);
 	DebugAssert(height >= 1);
-	DebugAssert(outUVs.getCount() == 4);
+	DebugAssert(outUVs.getCount() == (MeshUtils::VERTICES_PER_QUAD * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX));
 
 	const double uMin = 0.0;
 	const double uMax = 1.0; // @todo for GL_REPEAT support, change to width
 	const double vMin = 0.0;
 	const double vMax = 1.0; // @todo for GL_REPEAT support, change to height
-	outUVs[0] = Double2(uMin, vMin);
-	outUVs[1] = Double2(uMin, vMax);
-	outUVs[2] = Double2(uMax, vMax);
-	outUVs[3] = Double2(uMax, vMin);
+
+	outUVs[0] = uMin;
+	outUVs[1] = vMin;
+
+	outUVs[2] = uMin;
+	outUVs[3] = vMax;
+
+	outUVs[4] = uMax;
+	outUVs[5] = vMax;
+
+	outUVs[6] = uMax;
+	outUVs[7] = vMin;
 }
 
 void MeshUtils::createVoxelFaceQuadIndices(BufferView<int32_t> outIndices)
 {
-	DebugAssert(outIndices.getCount() == 6);
+	DebugAssert(outIndices.getCount() == MeshUtils::INDICES_PER_QUAD);
+
 	outIndices[0] = 0;
 	outIndices[1] = 1;
 	outIndices[2] = 2;

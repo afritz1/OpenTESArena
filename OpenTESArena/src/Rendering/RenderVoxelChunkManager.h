@@ -20,6 +20,7 @@ class Renderer;
 class RenderLightChunkManager;
 class TextureManager;
 class VoxelChunkManager;
+class VoxelFaceCombineChunkManager;
 class VoxelFrustumCullingChunkManager;
 
 struct RenderCamera;
@@ -60,6 +61,17 @@ struct RenderVoxelLoadedChasmTextureKey
 	void init(VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 };
 
+struct RenderVoxelCombinedMeshEntry
+{
+	VoxelInt3 minVoxel, maxVoxel;
+	VoxelFacing3D facing;
+
+	VertexPositionBufferID positionBufferID;
+	VertexAttributeBufferID normalBufferID;
+	VertexAttributeBufferID texCoordBufferID;
+	UniformBufferID transformBufferID;
+};
+
 class RenderVoxelChunkManager final : public SpecializedChunkManager<RenderVoxelChunk>
 {
 private:
@@ -77,6 +89,9 @@ private:
 	std::vector<RenderVoxelLoadedChasmFloorTexture> chasmFloorTextures;
 	std::vector<RenderVoxelLoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
 
+	// For sharing vertex buffers between chunks.
+	std::vector<RenderVoxelCombinedMeshEntry> combinedMeshEntries;
+
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
 
@@ -90,8 +105,11 @@ private:
 	void loadChasmWalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk);
 	void loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
-	void updateChunkDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
+	void updateChunkVoxelDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
 		const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent);
+	void updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, BufferView<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
+		const VoxelFaceCombineChunk &faceCombineChunk, const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager,
+		double ceilingScale, double chasmAnimPercent, Renderer &renderer);
 
 	void rebuildDrawCallsList(const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager);
 public:
@@ -107,7 +125,7 @@ public:
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 
 	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
-		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager,
+		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager,
 		const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager, const RenderLightChunkManager &renderLightChunkManager,
 		TextureManager &textureManager, Renderer &renderer);
 
