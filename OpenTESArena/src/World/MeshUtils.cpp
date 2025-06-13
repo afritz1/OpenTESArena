@@ -190,39 +190,39 @@ void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, con
 
 	Double3 tlModelSpacePoint;
 	Double3 tlBlDelta;
-	Double3 tlBrDelta;
+	Double3 tlTrDelta;
 
 	switch (facing)
 	{
 	case VoxelFacing3D::PositiveX:
 		tlModelSpacePoint = Double3(1.0, ceilingScale, 1.0 + voxelDiffReal.z);
 		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
-		tlBrDelta = Double3(0.0, 0.0, -1.0 - voxelDiffReal.z);
+		tlTrDelta = Double3(0.0, 0.0, -1.0 - voxelDiffReal.z);
 		break;
 	case VoxelFacing3D::NegativeX:
 		tlModelSpacePoint = Double3(0.0, ceilingScale, 0.0);
 		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
-		tlBrDelta = Double3();
+		tlTrDelta = Double3(0.0, 0.0, 1.0 + voxelDiffReal.z);
 		break;
 	case VoxelFacing3D::PositiveY:
 		tlModelSpacePoint = Double3(0.0, ceilingScale, 0.0);
 		tlBlDelta = Double3(0.0, 0.0, voxelDiffReal.z);
-		tlBrDelta = Double3(voxelDiffReal.x, 0.0, 0.0);
+		tlTrDelta = Double3(voxelDiffReal.x, 0.0, 0.0);
 		break;
 	case VoxelFacing3D::NegativeY:
 		tlModelSpacePoint = Double3(0.0, 0.0, 0.0);
 		tlBlDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
-		tlBrDelta = Double3(0.0, 0.0, 1.0 + voxelDiffReal.z);
+		tlTrDelta = Double3(0.0, 0.0, 1.0 + voxelDiffReal.z);
 		break;
 	case VoxelFacing3D::PositiveZ:
 		tlModelSpacePoint = Double3(0.0, ceilingScale, 1.0);
 		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
-		tlBrDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
+		tlTrDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
 		break;
 	case VoxelFacing3D::NegativeZ:
 		tlModelSpacePoint = Double3(1.0 + voxelDiffReal.x, ceilingScale, 0.0);
 		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
-		tlBrDelta = Double3(-1.0 - voxelDiffReal.x, 0.0, 0.0);
+		tlTrDelta = Double3(-1.0 - voxelDiffReal.x, 0.0, 0.0);
 		break;
 	default:
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
@@ -230,8 +230,8 @@ void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, con
 
 	const Double3 v0 = tlModelSpacePoint;
 	const Double3 v1 = v0 + tlBlDelta;
-	const Double3 v2 = v0 + tlBlDelta + tlBrDelta;
-	const Double3 v3 = v0 + tlBrDelta;
+	const Double3 v2 = v0 + tlBlDelta + tlTrDelta;
+	const Double3 v3 = v0 + tlTrDelta;
 
 	outPositions[0] = v0.x;
 	outPositions[1] = v0.y;
