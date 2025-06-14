@@ -187,6 +187,10 @@ void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, con
 		static_cast<SNDouble>(voxelDiff.x),
 		static_cast<double>(voxelDiff.y) * ceilingScale,
 		static_cast<WEDouble>(voxelDiff.z));
+	const Double3 meshVoxelDimsReal(
+		1.0 + voxelDiffReal.x,
+		ceilingScale + voxelDiffReal.y,
+		1.0 + voxelDiffReal.z);
 
 	Double3 tlModelSpacePoint;
 	Double3 tlBlDelta;
@@ -195,34 +199,34 @@ void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, con
 	switch (facing)
 	{
 	case VoxelFacing3D::PositiveX:
-		tlModelSpacePoint = Double3(1.0, ceilingScale + voxelDiffReal.y, 1.0 + voxelDiffReal.z);
-		tlBlDelta = Double3(0.0, -ceilingScale - voxelDiffReal.y, 0.0);
-		tlTrDelta = Double3(0.0, 0.0, -1.0 - voxelDiffReal.z);
+		tlModelSpacePoint = Double3(1.0, meshVoxelDimsReal.y, meshVoxelDimsReal.z);
+		tlBlDelta = Double3(0.0, -meshVoxelDimsReal.y, 0.0);
+		tlTrDelta = Double3(0.0, 0.0, -meshVoxelDimsReal.z);
 		break;
 	case VoxelFacing3D::NegativeX:
-		tlModelSpacePoint = Double3(0.0, ceilingScale + voxelDiffReal.y, 0.0);
-		tlBlDelta = Double3(0.0, -ceilingScale - voxelDiffReal.y, 0.0);
-		tlTrDelta = Double3(0.0, 0.0, 1.0 + voxelDiffReal.z);
+		tlModelSpacePoint = Double3(0.0, meshVoxelDimsReal.y, 0.0);
+		tlBlDelta = Double3(0.0, -meshVoxelDimsReal.y, 0.0);
+		tlTrDelta = Double3(0.0, 0.0, meshVoxelDimsReal.z);
 		break;
 	case VoxelFacing3D::PositiveY:
-		tlModelSpacePoint = Double3(0.0, ceilingScale + voxelDiffReal.y, 0.0);
-		tlBlDelta = Double3(0.0, 0.0, 1.0 + voxelDiffReal.z);
-		tlTrDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
+		tlModelSpacePoint = Double3(0.0, meshVoxelDimsReal.y, 0.0);
+		tlBlDelta = Double3(0.0, 0.0, meshVoxelDimsReal.z);
+		tlTrDelta = Double3(meshVoxelDimsReal.x, 0.0, 0.0);
 		break;
 	case VoxelFacing3D::NegativeY:
 		tlModelSpacePoint = Double3(0.0, 0.0, 0.0);
-		tlBlDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
-		tlTrDelta = Double3(0.0, 0.0, 1.0 + voxelDiffReal.z);
+		tlBlDelta = Double3(meshVoxelDimsReal.x, 0.0, 0.0);
+		tlTrDelta = Double3(0.0, 0.0, meshVoxelDimsReal.z);
 		break;
 	case VoxelFacing3D::PositiveZ:
-		tlModelSpacePoint = Double3(0.0, ceilingScale + voxelDiffReal.y, 1.0);
-		tlBlDelta = Double3(0.0, -ceilingScale - voxelDiffReal.y, 0.0);
-		tlTrDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
+		tlModelSpacePoint = Double3(0.0, meshVoxelDimsReal.y, 1.0);
+		tlBlDelta = Double3(0.0, -meshVoxelDimsReal.y, 0.0);
+		tlTrDelta = Double3(meshVoxelDimsReal.x, 0.0, 0.0);
 		break;
 	case VoxelFacing3D::NegativeZ:
-		tlModelSpacePoint = Double3(1.0 + voxelDiffReal.x, ceilingScale + voxelDiffReal.y, 0.0);
-		tlBlDelta = Double3(0.0, -ceilingScale - voxelDiffReal.y, 0.0);
-		tlTrDelta = Double3(-1.0 - voxelDiffReal.x, 0.0, 0.0);
+		tlModelSpacePoint = Double3(meshVoxelDimsReal.x, meshVoxelDimsReal.y, 0.0);
+		tlBlDelta = Double3(0.0, -meshVoxelDimsReal.y, 0.0);
+		tlTrDelta = Double3(-meshVoxelDimsReal.x, 0.0, 0.0);
 		break;
 	default:
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
