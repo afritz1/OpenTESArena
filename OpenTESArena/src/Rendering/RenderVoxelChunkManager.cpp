@@ -338,6 +338,14 @@ void RenderVoxelLoadedChasmTextureKey::init(VoxelChasmDefID chasmDefID, int chas
 	this->chasmWallIndex = chasmWallIndex;
 }
 
+RenderVoxelCombinedFaceVertexBuffer::RenderVoxelCombinedFaceVertexBuffer()
+{
+	this->facing = static_cast<VoxelFacing3D>(-1);
+	this->positionBufferID = -1;
+	this->normalBufferID = -1;
+	this->texCoordBufferID = -1;
+}
+
 RenderVoxelChunkManager::RenderVoxelChunkManager()
 {
 	this->raisingDoorPreScaleTranslationBufferID = -1;
@@ -1208,7 +1216,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 	// can't rely on VoxelFaceCombineResultID meaning the same thing - it may have been freed and immediately renewed in the same update()
 
 	const ChunkInt2 chunkPos = renderChunk.position;
-	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
+	RenderVoxelDrawCallHeap &chunkDrawCallHeap = renderChunk.drawCallHeap;
 
 	const RecyclablePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> &combinedFacesPool = faceCombineChunk.combinedFacesPool;
 	int combinedFaceCount = combinedFacesPool.getTotalCount();
@@ -1221,11 +1229,116 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			continue;
 		}
 
-		const VoxelFacing3D facing = faceCombineResult->facing;
 		const VoxelInt3 minVoxel = faceCombineResult->min;
 		const VoxelInt3 maxVoxel = faceCombineResult->max;
+		const VoxelFacing3D facing = faceCombineResult->facing;
+		bool shouldAllocateDrawCall = false;
 
-		// Use all the rendering characteristics of the first voxel for the combined faces.
+		UniformBufferID transformBufferID = -1;
+		std::vector<RenderVoxelCombinedFaceTransform> &chunkCombinedFaceTransforms = renderChunk.combinedFaceTransforms;
+		const auto transformIter = std::find_if(chunkCombinedFaceTransforms.begin(), chunkCombinedFaceTransforms.end(),
+			[minVoxel, maxVoxel, facing](const RenderVoxelCombinedFaceTransform &curTransform)
+		{
+			return (curTransform.minVoxel == minVoxel) && (curTransform.maxVoxel == maxVoxel) && (curTransform.facing == facing);
+		});
+
+		if (transformIter != chunkCombinedFaceTransforms.end())
+		{
+			transformBufferID = transformIter->transformBufferID;
+		}
+		else
+		{
+			// Create and reuse for any identical mesh at this spot in this chunk.
+			RenderVoxelCombinedFaceTransform combinedFaceTransform;
+			combinedFaceTransform.minVoxel = minVoxel;
+			combinedFaceTransform.maxVoxel = maxVoxel;
+			combinedFaceTransform.facing = facing;
+			combinedFaceTransform.transformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+			if (combinedFaceTransform.transformBufferID < 0)
+			{
+				DebugLogErrorFormat("Couldn't allocate combined face transform buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
+			}
+
+			const WorldInt3 meshMinVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, minVoxel);
+			const WorldDouble3 meshPosition(
+				static_cast<SNDouble>(meshMinVoxel.x),
+				static_cast<double>(meshMinVoxel.y) * ceilingScale,
+				static_cast<WEDouble>(meshMinVoxel.z));
+
+			RenderTransform transform;
+			transform.translation = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
+			transform.rotation = Matrix4d::identity();
+			transform.scale = Matrix4d::identity();
+			renderer.populateUniformBuffer(combinedFaceTransform.transformBufferID, transform);
+
+			transformBufferID = combinedFaceTransform.transformBufferID;
+			chunkCombinedFaceTransforms.emplace_back(std::move(combinedFaceTransform));
+
+			// This mesh instance needs a draw call since its transform is newly made.
+			shouldAllocateDrawCall = true;
+		}
+
+		if (!shouldAllocateDrawCall)
+		{
+			continue;
+		}
+
+		const auto vertexBufferIter = std::find_if(this->combinedFaceVertexBuffers.begin(), this->combinedFaceVertexBuffers.end(),
+			[minVoxel, maxVoxel, facing](const RenderVoxelCombinedFaceVertexBuffer &curEntry)
+		{
+			return (curEntry.minVoxel == minVoxel) && (curEntry.maxVoxel == maxVoxel) && (curEntry.facing == facing);
+		});
+
+		RenderVoxelCombinedFaceVertexBuffer *combinedFaceVertexBuffer = nullptr;
+		if (vertexBufferIter != this->combinedFaceVertexBuffers.end())
+		{
+			combinedFaceVertexBuffer = &(*vertexBufferIter);
+		}
+		else
+		{
+			this->combinedFaceVertexBuffers.emplace_back(std::move(RenderVoxelCombinedFaceVertexBuffer()));
+			combinedFaceVertexBuffer = &this->combinedFaceVertexBuffers.back();
+
+			// @todo determine what width and height mean for the current facing. make a MeshUtils::getVoxelFaceQuadDimensions(VoxelInt3, VoxelInt3, facing)
+			const int quadVoxelWidth = 1;
+			const int quadVoxelHeight = 1;
+
+			constexpr int quadVertexCount = 4;
+			double quadVertexPositions[quadVertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX];
+			double quadVertexNormals[quadVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX];
+			double quadVertexTexCoords[quadVertexCount * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX];
+			MeshUtils::createVoxelFaceQuadPositionsModelSpace(minVoxel, maxVoxel, facing, ceilingScale, quadVertexPositions);
+			MeshUtils::createVoxelFaceQuadNormals(facing, quadVertexNormals);
+			MeshUtils::createVoxelFaceQuadTexCoords(quadVoxelWidth, quadVoxelHeight, quadVertexTexCoords);
+
+			combinedFaceVertexBuffer->minVoxel = minVoxel;
+			combinedFaceVertexBuffer->maxVoxel = maxVoxel;
+			combinedFaceVertexBuffer->facing = facing;
+
+			combinedFaceVertexBuffer->positionBufferID = renderer.createVertexPositionBuffer(quadVertexCount, MeshUtils::POSITION_COMPONENTS_PER_VERTEX);
+			if (combinedFaceVertexBuffer->positionBufferID < 0)
+			{
+				DebugLogErrorFormat("Couldn't allocate combined face vertex position buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
+			}
+
+			combinedFaceVertexBuffer->normalBufferID = renderer.createVertexAttributeBuffer(quadVertexCount, MeshUtils::NORMAL_COMPONENTS_PER_VERTEX);
+			if (combinedFaceVertexBuffer->normalBufferID < 0)
+			{
+				DebugLogErrorFormat("Couldn't allocate combined face vertex normal buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
+			}
+
+			combinedFaceVertexBuffer->texCoordBufferID = renderer.createVertexAttributeBuffer(quadVertexCount, MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX);
+			if (combinedFaceVertexBuffer->texCoordBufferID < 0)
+			{
+				DebugLogErrorFormat("Couldn't allocate combined face vertex tex coords buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
+			}
+
+			renderer.populateVertexPositionBuffer(combinedFaceVertexBuffer->positionBufferID, quadVertexPositions);
+			renderer.populateVertexAttributeBuffer(combinedFaceVertexBuffer->normalBufferID, quadVertexNormals);
+			renderer.populateVertexAttributeBuffer(combinedFaceVertexBuffer->texCoordBufferID, quadVertexTexCoords);
+		}
+
+		// Use the texture/shading values of the first voxel.
 		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelTextureDefID textureDefID = voxelChunk.getTextureDefID(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(minVoxel.x, minVoxel.y, minVoxel.z);
@@ -1251,78 +1364,30 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		const RenderLightingType dummyLightingType = RenderLightingType::PerMesh;
 		constexpr double dummyLightIntensity = 1.0;
 
-		// @todo determine what width and height mean for the current facing. make a MeshUtils::getVoxelFaceQuadDimensions(VoxelInt3, VoxelInt3, facing)
-		const int quadVoxelWidth = 1;
-		const int quadVoxelHeight = 1;
+		constexpr int drawCallCount = 1;
+		const RenderVoxelDrawCallRangeID drawCallRangeID = chunkDrawCallHeap.alloc(drawCallCount);
+		renderChunk.combinedFaceDrawCallRangeIDs.emplace_back(drawCallRangeID);
+		BufferView<RenderDrawCall> drawCalls = chunkDrawCallHeap.get(drawCallRangeID);
 
-		constexpr int quadVertexCount = 4;
-		double quadVertexPositions[quadVertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX];
-		double quadVertexNormals[quadVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX];
-		double quadVertexTexCoords[quadVertexCount * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX];
-		MeshUtils::createVoxelFaceQuadPositionsModelSpace(minVoxel, maxVoxel, facing, ceilingScale, quadVertexPositions);
-		MeshUtils::createVoxelFaceQuadNormals(facing, quadVertexNormals);
-		MeshUtils::createVoxelFaceQuadTexCoords(quadVoxelWidth, quadVoxelHeight, quadVertexTexCoords);
-		
-		const auto entryIter = std::find_if(this->combinedMeshEntries.begin(), this->combinedMeshEntries.end(),
-			[facing, minVoxel, maxVoxel](const RenderVoxelCombinedMeshEntry &curEntry)
-		{
-			return (curEntry.facing == facing) && (curEntry.minVoxel == minVoxel) && (curEntry.maxVoxel == maxVoxel);
-		});
-
-		if (entryIter == this->combinedMeshEntries.end()) // @todo this check isn't correct across chunks due to transformBufferID not being sharable, need to allocate transformBufferID for each chunk's entries
-		{
-			RenderVoxelCombinedMeshEntry combinedMeshEntry;
-			combinedMeshEntry.minVoxel = minVoxel;
-			combinedMeshEntry.maxVoxel = maxVoxel;
-			combinedMeshEntry.facing = facing;
-			combinedMeshEntry.positionBufferID = renderer.createVertexPositionBuffer(quadVertexCount, MeshUtils::POSITION_COMPONENTS_PER_VERTEX);
-			combinedMeshEntry.normalBufferID = renderer.createVertexAttributeBuffer(quadVertexCount, MeshUtils::NORMAL_COMPONENTS_PER_VERTEX);
-			combinedMeshEntry.texCoordBufferID = renderer.createVertexAttributeBuffer(quadVertexCount, MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX);
-			combinedMeshEntry.transformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
-
-			renderer.populateVertexPositionBuffer(combinedMeshEntry.positionBufferID, quadVertexPositions);
-			renderer.populateVertexAttributeBuffer(combinedMeshEntry.normalBufferID, quadVertexNormals);
-			renderer.populateVertexAttributeBuffer(combinedMeshEntry.texCoordBufferID, quadVertexTexCoords);
-
-			const WorldInt3 meshMinVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, minVoxel);
-			const WorldDouble3 meshPosition(
-				static_cast<SNDouble>(meshMinVoxel.x),
-				static_cast<double>(meshMinVoxel.y) * ceilingScale,
-				static_cast<WEDouble>(meshMinVoxel.z));
-			
-			RenderTransform transform;
-			transform.translation = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
-			transform.rotation = Matrix4d::identity();
-			transform.scale = Matrix4d::identity();
-			renderer.populateUniformBuffer(combinedMeshEntry.transformBufferID, transform);
-
-			this->combinedMeshEntries.emplace_back(std::move(combinedMeshEntry));
-
-			constexpr int drawCallCount = 1;
-			const RenderVoxelDrawCallRangeID drawCallRangeID = drawCallHeap.alloc(drawCallCount);
-			renderChunk.combinedFaceDrawCallRangeIDs.emplace_back(drawCallRangeID);
-			BufferView<RenderDrawCall> drawCalls = drawCallHeap.get(drawCallRangeID);
-			
-			RenderDrawCall &drawCall = drawCalls[0];
-			drawCall.transformBufferID = combinedMeshEntry.transformBufferID;
-			drawCall.transformIndex = 0;
-			drawCall.preScaleTranslationBufferID = -1;
-			drawCall.positionBufferID = combinedMeshEntry.positionBufferID;
-			drawCall.normalBufferID = combinedMeshEntry.normalBufferID;
-			drawCall.texCoordBufferID = combinedMeshEntry.texCoordBufferID;
-			drawCall.indexBufferID = this->defaultQuadIndexBufferID;
-			drawCall.textureIDs[0] = textureID0;
-			drawCall.textureIDs[1] = -1;
-			drawCall.vertexShaderType = vertexShaderType;
-			drawCall.pixelShaderType = pixelShaderType;
-			drawCall.pixelShaderParam0 = 0.0;
-			drawCall.lightingType = dummyLightingType;
-			drawCall.lightPercent = dummyLightIntensity;
-			//std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(drawCall.lightIDs));
-			drawCall.lightIdCount = 0;
-			drawCall.enableDepthRead = true;
-			drawCall.enableDepthWrite = true;
-		}
+		RenderDrawCall &drawCall = drawCalls[0];
+		drawCall.transformBufferID = transformBufferID;
+		drawCall.transformIndex = 0;
+		drawCall.preScaleTranslationBufferID = -1;
+		drawCall.positionBufferID = combinedFaceVertexBuffer->positionBufferID;
+		drawCall.normalBufferID = combinedFaceVertexBuffer->normalBufferID;
+		drawCall.texCoordBufferID = combinedFaceVertexBuffer->texCoordBufferID;
+		drawCall.indexBufferID = this->defaultQuadIndexBufferID;
+		drawCall.textureIDs[0] = textureID0;
+		drawCall.textureIDs[1] = -1;
+		drawCall.vertexShaderType = vertexShaderType;
+		drawCall.pixelShaderType = pixelShaderType;
+		drawCall.pixelShaderParam0 = 0.0;
+		drawCall.lightingType = dummyLightingType;
+		drawCall.lightPercent = dummyLightIntensity;
+		//std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(drawCall.lightIDs));
+		drawCall.lightIdCount = 0;
+		drawCall.enableDepthRead = true;
+		drawCall.enableDepthWrite = true;
 	}
 }
 
@@ -1505,29 +1570,24 @@ void RenderVoxelChunkManager::unloadScene(Renderer &renderer)
 		this->recycleChunk(i);
 	}
 
-	for (RenderVoxelCombinedMeshEntry &entry : this->combinedMeshEntries)
+	for (RenderVoxelCombinedFaceVertexBuffer &buffer : this->combinedFaceVertexBuffers)
 	{
-		if (entry.positionBufferID >= 0)
+		if (buffer.positionBufferID >= 0)
 		{
-			renderer.freeVertexPositionBuffer(entry.positionBufferID);
+			renderer.freeVertexPositionBuffer(buffer.positionBufferID);
 		}
 
-		if (entry.normalBufferID >= 0)
+		if (buffer.normalBufferID >= 0)
 		{
-			renderer.freeVertexAttributeBuffer(entry.normalBufferID);
+			renderer.freeVertexAttributeBuffer(buffer.normalBufferID);
 		}
 
-		if (entry.texCoordBufferID >= 0)
+		if (buffer.texCoordBufferID >= 0)
 		{
-			renderer.freeVertexAttributeBuffer(entry.texCoordBufferID);
-		}
-
-		if (entry.transformBufferID >= 0)
-		{
-			renderer.freeUniformBuffer(entry.transformBufferID);
+			renderer.freeVertexAttributeBuffer(buffer.texCoordBufferID);
 		}
 	}
 
-	this->combinedMeshEntries.clear();
+	this->combinedFaceVertexBuffers.clear();
 	this->drawCallsCache.clear();
 }

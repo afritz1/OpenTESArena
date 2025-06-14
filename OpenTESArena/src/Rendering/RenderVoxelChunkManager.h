@@ -61,7 +61,8 @@ struct RenderVoxelLoadedChasmTextureKey
 	void init(VoxelChasmDefID chasmDefID, int chasmFloorListIndex, int chasmWallIndex);
 };
 
-struct RenderVoxelCombinedMeshEntry
+// Allocated vertex buffer in model space, reusable at the same voxel span in any chunk (transformed by the world space uniform in that chunk).
+struct RenderVoxelCombinedFaceVertexBuffer
 {
 	VoxelInt3 minVoxel, maxVoxel;
 	VoxelFacing3D facing;
@@ -69,7 +70,8 @@ struct RenderVoxelCombinedMeshEntry
 	VertexPositionBufferID positionBufferID;
 	VertexAttributeBufferID normalBufferID;
 	VertexAttributeBufferID texCoordBufferID;
-	UniformBufferID transformBufferID;
+
+	RenderVoxelCombinedFaceVertexBuffer();
 };
 
 class RenderVoxelChunkManager final : public SpecializedChunkManager<RenderVoxelChunk>
@@ -89,8 +91,8 @@ private:
 	std::vector<RenderVoxelLoadedChasmFloorTexture> chasmFloorTextures;
 	std::vector<RenderVoxelLoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
 
-	// For sharing vertex buffers between chunks.
-	std::vector<RenderVoxelCombinedMeshEntry> combinedMeshEntries;
+	// For reusing model space vertex buffers between chunks.
+	std::vector<RenderVoxelCombinedFaceVertexBuffer> combinedFaceVertexBuffers;
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;

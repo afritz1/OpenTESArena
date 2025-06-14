@@ -51,6 +51,15 @@ struct RenderVoxelDrawCallHeap
 	void clear();
 };
 
+struct RenderVoxelCombinedFaceTransform
+{
+	VoxelInt3 minVoxel, maxVoxel;
+	VoxelFacing3D facing;
+	UniformBufferID transformBufferID;
+
+	RenderVoxelCombinedFaceTransform();
+};
+
 struct RenderVoxelChunk final : public Chunk
 {
 	static constexpr RenderVoxelMeshInstID AIR_MESH_INST_ID = 0;
@@ -60,6 +69,8 @@ struct RenderVoxelChunk final : public Chunk
 	Buffer3D<RenderVoxelMeshInstID> meshInstIDs; // Points into mesh instances.
 
 	std::vector<RenderVoxelDrawCallRangeID> combinedFaceDrawCallRangeIDs; // tbd, can't be freed yet, only added
+
+	std::vector<RenderVoxelCombinedFaceTransform> combinedFaceTransforms; // Allocated transforms for static positions in space, doesn't need freeing when dirty.
 
 	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	UniformBufferID transformBufferID; // One RenderTransform buffer for all voxels, though doors are handled separately. Owned by this chunk.

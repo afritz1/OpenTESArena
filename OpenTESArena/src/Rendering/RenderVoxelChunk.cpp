@@ -171,6 +171,12 @@ void RenderVoxelDrawCallHeap::clear()
 	this->nextID = 0;
 }
 
+RenderVoxelCombinedFaceTransform::RenderVoxelCombinedFaceTransform()
+{
+	this->facing = static_cast<VoxelFacing3D>(-1);
+	this->transformBufferID = -1;
+}
+
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
@@ -211,6 +217,15 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		meshInst.freeBuffers(renderer);
 	}
 
+	for (RenderVoxelCombinedFaceTransform &transform : this->combinedFaceTransforms)
+	{
+		if (transform.transformBufferID >= 0)
+		{
+			renderer.freeUniformBuffer(transform.transformBufferID);
+			transform.transformBufferID = -1;
+		}
+	}
+
 	if (this->transformBufferID >= 0)
 	{
 		renderer.freeUniformBuffer(this->transformBufferID);
@@ -230,6 +245,7 @@ void RenderVoxelChunk::clear()
 	this->meshInstMappings.clear();
 	this->meshInstIDs.clear();
 	this->combinedFaceDrawCallRangeIDs.clear();
+	this->combinedFaceTransforms.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
 	this->transformBufferID = -1;
 	this->doorTransformBuffers.clear();
