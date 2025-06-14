@@ -64,7 +64,8 @@ struct RenderVoxelLoadedChasmTextureKey
 // Allocated vertex buffer in model space, reusable at the same voxel span in any chunk (transformed by the world space uniform in that chunk).
 struct RenderVoxelCombinedFaceVertexBuffer
 {
-	VoxelInt3 minVoxel, maxVoxel;
+	int voxelWidth, voxelHeight;
+	VoxelShapeScaleType scaleType;
 	VoxelFacing3D facing;
 
 	VertexPositionBufferID positionBufferID;

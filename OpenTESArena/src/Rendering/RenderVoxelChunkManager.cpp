@@ -340,6 +340,9 @@ void RenderVoxelLoadedChasmTextureKey::init(VoxelChasmDefID chasmDefID, int chas
 
 RenderVoxelCombinedFaceVertexBuffer::RenderVoxelCombinedFaceVertexBuffer()
 {
+	this->voxelWidth = 0;
+	this->voxelHeight = 0;
+	this->scaleType = static_cast<VoxelShapeScaleType>(-1);
 	this->facing = static_cast<VoxelFacing3D>(-1);
 	this->positionBufferID = -1;
 	this->normalBufferID = -1;
@@ -1279,10 +1282,19 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			continue;
 		}
 
+		// Find model space vertex buffer matching this voxel span (also need scale type in case of chasms etc).
+		int quadVoxelWidth;
+		int quadVoxelHeight;
+		MeshUtils::getVoxelFaceDimensions(minVoxel, maxVoxel, facing, &quadVoxelWidth, &quadVoxelHeight);
+
+		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(minVoxel.x, minVoxel.y, minVoxel.z);
+		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
+		const VoxelShapeScaleType scaleType = shapeDef.scaleType;
+
 		const auto vertexBufferIter = std::find_if(this->combinedFaceVertexBuffers.begin(), this->combinedFaceVertexBuffers.end(),
-			[minVoxel, maxVoxel, facing](const RenderVoxelCombinedFaceVertexBuffer &curEntry)
+			[quadVoxelWidth, quadVoxelHeight, scaleType, facing](const RenderVoxelCombinedFaceVertexBuffer &curEntry)
 		{
-			return (curEntry.minVoxel == minVoxel) && (curEntry.maxVoxel == maxVoxel) && (curEntry.facing == facing);
+			return (curEntry.voxelWidth == quadVoxelWidth) && (curEntry.voxelHeight == quadVoxelHeight) && (curEntry.scaleType == scaleType) && (curEntry.facing == facing);
 		});
 
 		RenderVoxelCombinedFaceVertexBuffer *combinedFaceVertexBuffer = nullptr;
@@ -1295,10 +1307,6 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			this->combinedFaceVertexBuffers.emplace_back(std::move(RenderVoxelCombinedFaceVertexBuffer()));
 			combinedFaceVertexBuffer = &this->combinedFaceVertexBuffers.back();
 
-			// @todo determine what width and height mean for the current facing. make a MeshUtils::getVoxelFaceQuadDimensions(VoxelInt3, VoxelInt3, facing)
-			const int quadVoxelWidth = 1;
-			const int quadVoxelHeight = 1;
-
 			constexpr int quadVertexCount = 4;
 			double quadVertexPositions[quadVertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX];
 			double quadVertexNormals[quadVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX];
@@ -1307,8 +1315,9 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			MeshUtils::createVoxelFaceQuadNormals(facing, quadVertexNormals);
 			MeshUtils::createVoxelFaceQuadTexCoords(quadVoxelWidth, quadVoxelHeight, quadVertexTexCoords);
 
-			combinedFaceVertexBuffer->minVoxel = minVoxel;
-			combinedFaceVertexBuffer->maxVoxel = maxVoxel;
+			combinedFaceVertexBuffer->voxelWidth = quadVoxelWidth;
+			combinedFaceVertexBuffer->voxelHeight = quadVoxelHeight;
+			combinedFaceVertexBuffer->scaleType = scaleType;
 			combinedFaceVertexBuffer->facing = facing;
 
 			combinedFaceVertexBuffer->positionBufferID = renderer.createVertexPositionBuffer(quadVertexCount, MeshUtils::POSITION_COMPONENTS_PER_VERTEX);
@@ -1335,10 +1344,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		}
 
 		// Use the texture/shading values of the first voxel.
-		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelTextureDefID textureDefID = voxelChunk.getTextureDefID(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(minVoxel.x, minVoxel.y, minVoxel.z);
-		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
 		const VoxelTextureDefinition &textureDef = voxelChunk.getTextureDef(textureDefID);
 		const VoxelShadingDefinition &shadingDef = voxelChunk.getShadingDef(shadingDefID);
 

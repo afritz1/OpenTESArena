@@ -178,6 +178,38 @@ Double3 MeshUtils::createVertexNormalAtIndex(BufferView<const double> positions,
 	return cross;
 }
 
+void MeshUtils::getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, int *outWidth, int *outHeight)
+{
+	const Int3 voxelDiff = max - min;
+	const Int3 meshVoxelDims(1 + voxelDiff.x, 1 + voxelDiff.y, 1 + voxelDiff.z);
+
+	int width = -1;
+	int height = -1;
+	switch (facing)
+	{
+	case VoxelFacing3D::PositiveX:
+	case VoxelFacing3D::NegativeX:
+		width = meshVoxelDims.z;
+		height = meshVoxelDims.y;
+		break;
+	case VoxelFacing3D::PositiveY:
+	case VoxelFacing3D::NegativeY:
+		width = meshVoxelDims.x;
+		height = meshVoxelDims.z;
+		break;
+	case VoxelFacing3D::PositiveZ:
+	case VoxelFacing3D::NegativeZ:
+		width = meshVoxelDims.x;
+		height = meshVoxelDims.y;
+		break;
+	default:
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
+	}
+
+	*outWidth = width;
+	*outHeight = height;
+}
+
 void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<double> outPositions)
 {
 	DebugAssert(outPositions.getCount() == (MeshUtils::VERTICES_PER_QUAD * MeshUtils::POSITION_COMPONENTS_PER_VERTEX));
