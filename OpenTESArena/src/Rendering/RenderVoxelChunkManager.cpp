@@ -1235,26 +1235,23 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		bool shouldAllocateDrawCall = false;
 
 		UniformBufferID transformBufferID = -1;
-		std::vector<RenderVoxelCombinedFaceTransform> &chunkCombinedFaceTransforms = renderChunk.combinedFaceTransforms;
-		const auto transformIter = std::find_if(chunkCombinedFaceTransforms.begin(), chunkCombinedFaceTransforms.end(),
-			[minVoxel, maxVoxel, facing](const RenderVoxelCombinedFaceTransform &curTransform)
-		{
-			return (curTransform.minVoxel == minVoxel) && (curTransform.maxVoxel == maxVoxel) && (curTransform.facing == facing);
-		});
 
+		RenderVoxelCombinedFaceTransformKey transformKey;
+		transformKey.minVoxel = minVoxel;
+		transformKey.maxVoxel = maxVoxel;
+		transformKey.facing = facing;
+
+		std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> &chunkCombinedFaceTransforms = renderChunk.combinedFaceTransforms;
+		const auto transformIter = chunkCombinedFaceTransforms.find(transformKey);
 		if (transformIter != chunkCombinedFaceTransforms.end())
 		{
-			transformBufferID = transformIter->transformBufferID;
+			transformBufferID = transformIter->second;
 		}
 		else
 		{
 			// Create and reuse for any identical mesh at this spot in this chunk.
-			RenderVoxelCombinedFaceTransform combinedFaceTransform;
-			combinedFaceTransform.minVoxel = minVoxel;
-			combinedFaceTransform.maxVoxel = maxVoxel;
-			combinedFaceTransform.facing = facing;
-			combinedFaceTransform.transformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
-			if (combinedFaceTransform.transformBufferID < 0)
+			transformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+			if (transformBufferID < 0)
 			{
 				DebugLogErrorFormat("Couldn't allocate combined face transform buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
 			}
@@ -1269,10 +1266,9 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			transform.translation = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
 			transform.rotation = Matrix4d::identity();
 			transform.scale = Matrix4d::identity();
-			renderer.populateUniformBuffer(combinedFaceTransform.transformBufferID, transform);
+			renderer.populateUniformBuffer(transformBufferID, transform);
 
-			transformBufferID = combinedFaceTransform.transformBufferID;
-			chunkCombinedFaceTransforms.emplace_back(std::move(combinedFaceTransform));
+			chunkCombinedFaceTransforms.emplace(transformKey, transformBufferID);
 
 			// This mesh instance needs a draw call since its transform is newly made.
 			shouldAllocateDrawCall = true;

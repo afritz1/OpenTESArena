@@ -171,10 +171,34 @@ void RenderVoxelDrawCallHeap::clear()
 	this->nextID = 0;
 }
 
-RenderVoxelCombinedFaceTransform::RenderVoxelCombinedFaceTransform()
+RenderVoxelCombinedFaceTransformKey::RenderVoxelCombinedFaceTransformKey()
 {
 	this->facing = static_cast<VoxelFacing3D>(-1);
-	this->transformBufferID = -1;
+}
+
+bool RenderVoxelCombinedFaceTransformKey::operator==(const RenderVoxelCombinedFaceTransformKey &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->minVoxel != other.minVoxel)
+	{
+		return false;
+	}
+
+	if (this->maxVoxel != other.maxVoxel)
+	{
+		return false;
+	}
+
+	if (this->facing != other.facing)
+	{
+		return false;
+	}
+
+	return true;
 }
 
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
@@ -217,12 +241,14 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		meshInst.freeBuffers(renderer);
 	}
 
-	for (RenderVoxelCombinedFaceTransform &transform : this->combinedFaceTransforms)
+	for (auto &pair : this->combinedFaceTransforms)
 	{
-		if (transform.transformBufferID >= 0)
+		UniformBufferID &transformBufferID = pair.second;
+
+		if (transformBufferID >= 0)
 		{
-			renderer.freeUniformBuffer(transform.transformBufferID);
-			transform.transformBufferID = -1;
+			renderer.freeUniformBuffer(transformBufferID);
+			transformBufferID = -1;
 		}
 	}
 
