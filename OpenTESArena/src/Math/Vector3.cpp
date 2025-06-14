@@ -2,6 +2,7 @@
 #include <cstdio>
 
 #include "Constants.h"
+#include "MathUtils.h"
 #include "Random.h"
 #include "Vector3.h"
 
@@ -93,6 +94,16 @@ std::string Vector3i<T>::toString() const
 	char buffer[64];
 	std::snprintf(buffer, std::size(buffer), "%d, %d, %d", this->x, this->y, this->z);
 	return std::string(buffer);
+}
+
+template<typename T>
+size_t Vector3i<T>::toHash() const
+{
+	size_t hash = 0;
+	hash = MathUtils::hashCombine(hash, this->x);
+	hash = MathUtils::hashCombine(hash, this->y);
+	hash = MathUtils::hashCombine(hash, this->z);
+	return hash;
 }
 
 // -- Vector3f --
