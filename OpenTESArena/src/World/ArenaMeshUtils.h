@@ -130,178 +130,26 @@ namespace ArenaMeshUtils
 		return GetRendererVertexCount(voxelType) * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 	}
 
-	constexpr int GetOpaqueIndexBufferCount(ArenaVoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaVoxelType::Wall:
-			return 3;
-		case ArenaVoxelType::Raised:
-			return 2;
-		case ArenaVoxelType::Floor:
-		case ArenaVoxelType::Ceiling:
-		case ArenaVoxelType::Diagonal:
-		case ArenaVoxelType::Chasm:
-			return 1;
-		case ArenaVoxelType::None:
-		case ArenaVoxelType::TransparentWall:
-		case ArenaVoxelType::Edge:
-		case ArenaVoxelType::Door:
-			return 0;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	constexpr int GetOpaqueIndexCount(ArenaVoxelType voxelType, int bufferIndex)
-	{
-		int triangleCount = -1;
-
-		switch (voxelType)
-		{
-		case ArenaVoxelType::None:
-		case ArenaVoxelType::TransparentWall:
-		case ArenaVoxelType::Door:
-		case ArenaVoxelType::Edge:
-			// @todo: should this static_assert false instead?
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-		case ArenaVoxelType::Wall:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 8;
-			}
-			else if ((bufferIndex == 1) || (bufferIndex == 2))
-			{
-				triangleCount = 2;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaVoxelType::Raised:
-			if ((bufferIndex == 0) || (bufferIndex == 1))
-			{
-				triangleCount = 4;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaVoxelType::Chasm:
-		case ArenaVoxelType::Floor:
-		case ArenaVoxelType::Ceiling:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 2;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaVoxelType::Diagonal:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 4;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-
-		return triangleCount * MeshUtils::INDICES_PER_TRIANGLE;
-	}
-
-	constexpr int GetAlphaTestedIndexBufferCount(ArenaVoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaVoxelType::None:
-		case ArenaVoxelType::Wall:
-		case ArenaVoxelType::Floor:
-		case ArenaVoxelType::Ceiling:
-		case ArenaVoxelType::Diagonal:
-		case ArenaVoxelType::Chasm:
-			return 0;
-		case ArenaVoxelType::Raised:
-		case ArenaVoxelType::TransparentWall:
-		case ArenaVoxelType::Edge:
-		case ArenaVoxelType::Door:
-			return 1;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
-	constexpr int GetAlphaTestedIndexCount(ArenaVoxelType voxelType, int bufferIndex)
-	{
-		int triangleCount = -1;
-
-		switch (voxelType)
-		{
-		case ArenaVoxelType::None:
-		case ArenaVoxelType::Wall:
-		case ArenaVoxelType::Floor:
-		case ArenaVoxelType::Ceiling:
-		case ArenaVoxelType::Diagonal:
-		case ArenaVoxelType::Chasm:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-		case ArenaVoxelType::Raised:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 12;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaVoxelType::TransparentWall:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 8;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaVoxelType::Edge:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 4;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		case ArenaVoxelType::Door:
-			if (bufferIndex == 0)
-			{
-				triangleCount = 2;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)) + " " + std::to_string(bufferIndex));
-			}
-			break;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-
-		return triangleCount * MeshUtils::INDICES_PER_TRIANGLE;
-	}
-
 	constexpr int GetIndexBufferCount(ArenaVoxelType voxelType)
 	{
-		return GetOpaqueIndexBufferCount(voxelType) + GetAlphaTestedIndexBufferCount(voxelType);
+		switch (voxelType)
+		{
+		case ArenaVoxelType::None:
+			return 0;
+		case ArenaVoxelType::Wall:
+		case ArenaVoxelType::Raised:
+			return 3;
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Chasm:
+		case ArenaVoxelType::Door:
+			return 1;
+		default:
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
+		}
 	}
 
 	constexpr int GetIndexBufferIndexCount(ArenaVoxelType voxelType, int indexBufferIndex)
@@ -637,35 +485,35 @@ namespace ArenaMeshUtils
 	// Mesh writing functions. All of these are in unscaled model space.
 	// Renderer positions are ordered in the way they're consumed when being converted to triangles.
 	void writeWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
+	void writeWallRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices);
 	void writeWallFacingBuffers(BufferView<VoxelFacing3D> outSideFacings, BufferView<VoxelFacing3D> outBottomFacings, BufferView<VoxelFacing3D> outTopFacings);
 
 	void writeFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void writeFloorRendererIndexBuffers(BufferView<int32_t> outIndices);
 	void writeFloorFacingBuffers(BufferView<VoxelFacing3D> outFacings);
 	
 	void writeCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void writeCeilingRendererIndexBuffers(BufferView<int32_t> outIndices);
 	void writeCeilingFacingBuffers(BufferView<VoxelFacing3D> outFacings);
 	
 	void writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices);
 	
 	void writeDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
+	void writeDiagonalRendererIndexBuffers(BufferView<int32_t> outIndices);
 	
 	void writeTransparentWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeTransparentWallRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void writeTransparentWallRendererIndexBuffers(BufferView<int32_t> outIndices);
 	
 	void writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void writeEdgeRendererIndexBuffers(BufferView<int32_t> outIndices);
 	
 	void writeChasmRendererGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
+	void writeChasmFloorRendererIndexBuffers(BufferView<int32_t> outIndices); // Chasm walls are separate because they're conditionally enabled.
 	void writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
 	
 	void writeDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
+	void writeDoorRendererIndexBuffers(BufferView<int32_t> outIndices);
 }
 
 #endif
