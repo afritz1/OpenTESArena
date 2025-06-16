@@ -37,7 +37,6 @@ struct VoxelMeshDefinition
 	std::vector<double> rendererPositions, rendererNormals, rendererTexCoords;
 	std::vector<int32_t> indices0, indices1, indices2; // Up to 3 draw calls.
 	std::vector<VoxelFacing3D> facings0, facings1, facings2; // Up to 3 sets of fully-covered voxel faces, associated with index buffers, used with face combining.
-	int uniqueVertexCount; // Ideal number of vertices to represent the mesh.
 	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
 	int indicesListCount;
 	int facingsListCount;

@@ -64,29 +64,6 @@ namespace ArenaMeshUtils
 	static constexpr int CHASM_WALL_WEST = 0x8;
 	static constexpr int CHASM_WALL_COMBINATION_COUNT = CHASM_WALL_NORTH | CHASM_WALL_EAST | CHASM_WALL_SOUTH | CHASM_WALL_WEST;
 
-	// The "ideal" vertices per voxel (no duplication).
-	constexpr int GetUniqueVertexCount(ArenaVoxelType voxelType)
-	{
-		switch (voxelType)
-		{
-		case ArenaVoxelType::None:
-			return 0;
-		case ArenaVoxelType::Wall:
-		case ArenaVoxelType::Raised:
-		case ArenaVoxelType::TransparentWall:
-		case ArenaVoxelType::Chasm:
-		case ArenaVoxelType::Door:
-			return 8;
-		case ArenaVoxelType::Floor:
-		case ArenaVoxelType::Ceiling:
-		case ArenaVoxelType::Diagonal:
-		case ArenaVoxelType::Edge:
-			return 4;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
-		}
-	}
-
 	constexpr int GetUniqueFaceCount(ArenaVoxelType voxelType)
 	{
 		switch (voxelType)
@@ -136,16 +113,6 @@ namespace ArenaMeshUtils
 		default:
 			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(voxelType)));
 		}
-	}
-
-	constexpr int GetUniqueVertexPositionComponentCount(ArenaVoxelType voxelType)
-	{
-		return GetUniqueVertexCount(voxelType) * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-	}
-
-	constexpr int GetUniqueFaceNormalComponentCount(ArenaVoxelType voxelType)
-	{
-		return GetUniqueFaceCount(voxelType) * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	}
 
 	constexpr int GetRendererVertexPositionComponentCount(ArenaVoxelType voxelType)
@@ -668,45 +635,35 @@ namespace ArenaMeshUtils
 	}
 
 	// Mesh writing functions. All of these are in unscaled model space.
-	// Unique geometry positions are lexicographically ordered for separation of responsibility from how they're used,
-	// and renderer positions are ordered in the way they're consumed when being converted to triangles.
-	void writeWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
+	// Renderer positions are ordered in the way they're consumed when being converted to triangles.
 	void writeWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeWallRendererIndexBuffers(BufferView<int32_t> outOpaqueSideIndices, BufferView<int32_t> outOpaqueBottomIndices, BufferView<int32_t> outOpaqueTopIndices);
 	void writeWallFacingBuffers(BufferView<VoxelFacing3D> outSideFacings, BufferView<VoxelFacing3D> outBottomFacings, BufferView<VoxelFacing3D> outTopFacings);
 
-	void writeFloorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
 	void writeFloorFacingBuffers(BufferView<VoxelFacing3D> outFacings);
 	
-	void writeCeilingUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeCeilingRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
 	void writeCeilingFacingBuffers(BufferView<VoxelFacing3D> outFacings);
 	
-	void writeRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices);
 	
-	void writeDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeDiagonalRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices);
 	
-	void writeTransparentWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeTransparentWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeTransparentWallRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
 	
-	void writeEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
 	
-	void writeChasmUniqueGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeChasmRendererGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeChasmFloorRendererIndexBuffers(BufferView<int32_t> outOpaqueIndices); // Chasm walls are separate because they're conditionally enabled.
 	void writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
 	
-	void writeDoorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals);
 	void writeDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
 	void writeDoorRendererIndexBuffers(BufferView<int32_t> outAlphaTestedIndices);
 }

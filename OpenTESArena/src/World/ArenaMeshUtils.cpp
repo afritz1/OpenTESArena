@@ -84,41 +84,6 @@ void ArenaShapeInitCache::initDiagonalBoxValues(bool isRightDiag)
 	this->boxYRotation = isRightDiag ? -diagonalAngle : diagonalAngle;
 }
 
-void ArenaMeshUtils::writeWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
-	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
-	{
-		0.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0,
-		1.0, 1.0, 0.0,
-		0.0, 0.0, 1.0,
-		1.0, 0.0, 1.0,
-		0.0, 1.0, 1.0,
-		1.0, 1.0, 1.0
-	};
-
-	constexpr std::array<double, GetUniqueFaceNormalComponentCount(voxelType)> normals =
-	{
-		// X=0
-		-1.0, 0.0, 0.0,
-		// X=1
-		1.0, 0.0, 0.0,
-		// Y=0
-		0.0, -1.0, 0.0,
-		// Y=1
-		0.0, 1.0, 0.0,
-		// Z=0
-		0.0, 0.0, -1.0,
-		// Z=1
-		0.0, 0.0, 1.0
-	};
-
-	std::copy(positions.begin(), positions.end(), outPositions.begin());
-	std::copy(normals.begin(), normals.end(), outNormals.begin());
-}
-
 void ArenaMeshUtils::writeWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
@@ -301,27 +266,6 @@ void ArenaMeshUtils::writeWallFacingBuffers(BufferView<VoxelFacing3D> outSideFac
 	std::copy(topFacings.begin(), topFacings.end(), outTopFacings.begin());
 }
 
-void ArenaMeshUtils::writeFloorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
-	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
-	{
-		0.0, 1.0, 0.0,
-		1.0, 1.0, 0.0,
-		0.0, 1.0, 1.0,
-		1.0, 1.0, 1.0
-	};
-
-	constexpr std::array<double, GetUniqueFaceNormalComponentCount(voxelType)> normals =
-	{
-		// Y=1
-		0.0, 1.0, 0.0
-	};
-
-	std::copy(positions.begin(), positions.end(), outPositions.begin());
-	std::copy(normals.begin(), normals.end(), outNormals.begin());
-}
-
 void ArenaMeshUtils::writeFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
@@ -385,27 +329,6 @@ void ArenaMeshUtils::writeFloorFacingBuffers(BufferView<VoxelFacing3D> outFacing
 	std::copy(facings.begin(), facings.end(), outFacings.begin());
 }
 
-void ArenaMeshUtils::writeCeilingUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
-	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
-	{
-		0.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		0.0, 0.0, 1.0,
-		1.0, 0.0, 1.0
-	};
-
-	constexpr std::array<double, GetUniqueFaceNormalComponentCount(voxelType)> normals =
-	{
-		// Y=0
-		0.0, -1.0, 0.0
-	};
-
-	std::copy(positions.begin(), positions.end(), outPositions.begin());
-	std::copy(normals.begin(), normals.end(), outNormals.begin());
-}
-
 void ArenaMeshUtils::writeCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
 	BufferView<double> outTexCoords)
 {
@@ -467,45 +390,6 @@ void ArenaMeshUtils::writeCeilingFacingBuffers(BufferView<VoxelFacing3D> outFaci
 	};
 
 	std::copy(facings.begin(), facings.end(), outFacings.begin());
-}
-
-void ArenaMeshUtils::writeRaisedUniqueGeometryBuffers(double yOffset, double ySize, BufferView<double> outPositions,
-	BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Raised;
-	const double yBottom = yOffset;
-	const double yTop = yOffset + ySize;
-
-	const std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
-	{
-		0.0, yBottom, 0.0,
-		1.0, yBottom, 0.0,
-		0.0, yTop, 0.0,
-		1.0, yTop, 0.0,
-		0.0, yBottom, 1.0,
-		1.0, yBottom, 1.0,
-		0.0, yTop, 1.0,
-		1.0, yTop, 1.0
-	};
-
-	constexpr std::array<double, GetUniqueFaceNormalComponentCount(voxelType)> normals =
-	{
-		// X=0
-		-1.0, 0.0, 0.0,
-		// X=1
-		1.0, 0.0, 0.0,
-		// Y=0
-		0.0, -1.0, 0.0,
-		// Y=1
-		0.0, 1.0, 0.0,
-		// Z=0
-		0.0, 0.0, -1.0,
-		// Z=1
-		0.0, 0.0, 1.0
-	};
-
-	std::copy(positions.begin(), positions.end(), outPositions.begin());
-	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
@@ -664,51 +548,6 @@ void ArenaMeshUtils::writeRaisedRendererIndexBuffers(BufferView<int32_t> outSide
 	std::copy(topIndices.begin(), topIndices.end(), outTopIndices.begin());
 }
 
-void ArenaMeshUtils::writeDiagonalUniqueGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Diagonal;
-	constexpr int positionComponentCount = GetUniqueVertexPositionComponentCount(voxelType);
-	constexpr std::array<double, positionComponentCount> type1Positions =
-	{
-		0.0, 1.0, 0.0,
-		0.0, 0.0, 0.0,
-		1.0, 0.0, 1.0,
-		1.0, 1.0, 1.0
-	};
-
-	constexpr std::array<double, positionComponentCount> type2Positions =
-	{
-		1.0, 1.0, 0.0,
-		1.0, 0.0, 0.0,
-		0.0, 0.0, 1.0,
-		0.0, 1.0, 1.0
-	};
-
-	constexpr int normalComponentsCount = GetUniqueFaceNormalComponentCount(voxelType);
-	constexpr double halfSqrt2 = Constants::HalfSqrt2;
-	constexpr std::array<double, normalComponentsCount> type1Normals =
-	{
-		// Front
-		-halfSqrt2, 0.0, halfSqrt2,
-		// Back
-		halfSqrt2, 0.0, -halfSqrt2
-	};
-
-	constexpr std::array<double, normalComponentsCount> type2Normals =
-	{
-		// Front
-		-halfSqrt2, 0.0, -halfSqrt2,
-		// Back
-		halfSqrt2, 0.0, halfSqrt2
-	};
-
-	const auto &positions = type1 ? type1Positions : type2Positions;
-	const auto &normals = type1 ? type1Normals : type2Normals;
-
-	std::copy(positions.begin(), positions.end(), outPositions.begin());
-	std::copy(normals.begin(), normals.end(), outNormals.begin());
-}
-
 void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions,
 	BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
@@ -819,37 +658,6 @@ void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(BufferView<int32_t> outOp
 	std::copy(indices.begin(), indices.end(), outOpaqueIndices.begin());
 }
 
-void ArenaMeshUtils::writeTransparentWallUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::TransparentWall;
-	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
-	{
-		0.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0,
-		1.0, 1.0, 0.0,
-		0.0, 0.0, 1.0,
-		1.0, 0.0, 1.0,
-		0.0, 1.0, 1.0,
-		1.0, 1.0, 1.0
-	};
-
-	constexpr std::array<double, GetUniqueFaceNormalComponentCount(voxelType)> normals =
-	{
-		// X=0
-		-1.0, 0.0, 0.0,
-		// X=1
-		1.0, 0.0, 0.0,
-		// Z=0
-		0.0, 0.0, -1.0,
-		// Z=1
-		0.0, 0.0, 1.0
-	};
-
-	std::copy(positions.begin(), positions.end(), outPositions.begin());
-	std::copy(normals.begin(), normals.end(), outNormals.begin());
-}
-
 void ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(BufferView<double> outPositions,
 	BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
@@ -956,117 +764,6 @@ void ArenaMeshUtils::writeTransparentWallRendererIndexBuffers(BufferView<int32_t
 	};
 
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
-}
-
-void ArenaMeshUtils::writeEdgeUniqueGeometryBuffers(VoxelFacing2D facing, double yOffset, BufferView<double> outPositions,
-	BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Edge;
-
-	// Bias the geometry towards the center of the voxel to avoid Z-fighting.
-	constexpr double xBiasMin = Constants::Epsilon;
-	constexpr double xBiasMax = 1.0 - Constants::Epsilon;
-	const double yBottom = yOffset;
-	const double yTop = yOffset + 1.0;
-	constexpr double zBiasMin = xBiasMin;
-	constexpr double zBiasMax = xBiasMax;
-
-	constexpr int positionComponentCount = GetUniqueVertexPositionComponentCount(voxelType);
-	const std::array<double, positionComponentCount> nearXPositions =
-	{
-		// X=0
-		xBiasMin, yTop, 0.0,
-		xBiasMin, yBottom, 0.0,
-		xBiasMin, yBottom, 1.0,
-		xBiasMin, yTop, 1.0
-	};
-
-	const std::array<double, positionComponentCount> farXPositions =
-	{
-		// X=1
-		xBiasMax, yTop, 1.0,
-		xBiasMax, yBottom, 1.0,
-		xBiasMax, yBottom, 0.0,
-		xBiasMax, yTop, 0.0
-	};
-
-	const std::array<double, positionComponentCount> nearZPositions =
-	{
-		// Z=0
-		1.0, yTop, zBiasMin,
-		1.0, yBottom, zBiasMin,
-		0.0, yBottom, zBiasMin,
-		0.0, yTop, zBiasMin
-	};
-
-	const std::array<double, positionComponentCount> farZPositions =
-	{
-		// Z=1
-		0.0, yTop, zBiasMax,
-		0.0, yBottom, zBiasMax,
-		1.0, yBottom, zBiasMax,
-		1.0, yTop, zBiasMax
-	};
-
-	constexpr int normalComponentCount = GetUniqueFaceNormalComponentCount(voxelType);
-	constexpr std::array<double, normalComponentCount> nearXNormals =
-	{
-		// X=0 Front
-		-1.0, 0.0, 0.0,
-		// X=0 Back
-		1.0, 0.0, 0.0
-	};
-
-	constexpr std::array<double, normalComponentCount> farXNormals =
-	{
-		// X=1 Front
-		1.0, 0.0, 0.0,
-		// X=1 Back
-		-1.0, 0.0, 0.0
-	};
-
-	constexpr std::array<double, normalComponentCount> nearZNormals =
-	{
-		// Z=0 Front
-		0.0, 0.0, -1.0,
-		// Z=0 Back
-		0.0, 0.0, 1.0
-	};
-
-	constexpr std::array<double, normalComponentCount> farZNormals =
-	{
-		// Z=1 Front
-		0.0, 0.0, 1.0,
-		// Z=1 Back
-		0.0, 0.0, -1.0
-	};
-
-	const std::array<double, positionComponentCount> *positions = nullptr;
-	const std::array<double, normalComponentCount> *normals = nullptr;
-	switch (facing)
-	{
-	case VoxelFacing2D::PositiveX:
-		positions = &farXPositions;
-		normals = &farXNormals;
-		break;
-	case VoxelFacing2D::NegativeX:
-		positions = &nearXPositions;
-		normals = &nearXNormals;
-		break;
-	case VoxelFacing2D::PositiveZ:
-		positions = &farZPositions;
-		normals = &farZNormals;
-		break;
-	case VoxelFacing2D::NegativeZ:
-		positions = &nearZPositions;
-		normals = &nearZNormals;
-		break;
-	default:
-		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
-	}
-
-	std::copy(positions->begin(), positions->end(), outPositions.begin());
-	std::copy(normals->begin(), normals->end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
@@ -1286,41 +983,6 @@ void ArenaMeshUtils::writeEdgeRendererIndexBuffers(BufferView<int32_t> outAlphaT
 	std::copy(indices.begin(), indices.end(), outAlphaTestedIndices.begin());
 }
 
-void ArenaMeshUtils::writeChasmUniqueGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions,
-	BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
-	const std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
-	{
-		0.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0,
-		1.0, 1.0, 0.0,
-		0.0, 0.0, 1.0,
-		1.0, 0.0, 1.0,
-		0.0, 1.0, 1.0,
-		1.0, 1.0, 1.0
-	};
-
-	constexpr std::array<double, GetUniqueFaceNormalComponentCount(voxelType)> normals =
-	{
-		// Y=0 (guaranteed to exist)
-		0.0, 1.0, 0.0,
-
-		// X=0
-		1.0, 0.0, 0.0,
-		// X=1
-		-1.0, 0.0, 0.0,
-		// Z=0
-		0.0, 0.0, 1.0,
-		// Z=1
-		0.0, 0.0, -1.0
-	};
-
-	std::copy(positions.begin(), positions.end(), outPositions.begin());
-	std::copy(normals.begin(), normals.end(), outNormals.begin());
-}
-
 void ArenaMeshUtils::writeChasmRendererGeometryBuffers(ArenaChasmType chasmType,
 	BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords)
 {
@@ -1481,37 +1143,6 @@ void ArenaMeshUtils::writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffe
 		(*outWestIndices)[4] = 19;
 		(*outWestIndices)[5] = 16;
 	}
-}
-
-void ArenaMeshUtils::writeDoorUniqueGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals)
-{
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Door;
-	constexpr std::array<double, GetUniqueVertexPositionComponentCount(voxelType)> positions =
-	{
-		0.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		0.0, 1.0, 0.0,
-		1.0, 1.0, 0.0,
-		0.0, 0.0, 1.0,
-		1.0, 0.0, 1.0,
-		0.0, 1.0, 1.0,
-		1.0, 1.0, 1.0
-	};
-
-	constexpr std::array<double, GetUniqueFaceNormalComponentCount(voxelType)> normals =
-	{
-		// X=0
-		-1.0, 0.0, 0.0,
-		// X=1
-		1.0, 0.0, 0.0,
-		// Z=0
-		0.0, 0.0, -1.0,
-		// Z=1
-		0.0, 0.0, 1.0
-	};
-
-	std::copy(positions.begin(), positions.end(), outPositions.begin());
-	std::copy(normals.begin(), normals.end(), outNormals.begin());
 }
 
 void ArenaMeshUtils::writeDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,

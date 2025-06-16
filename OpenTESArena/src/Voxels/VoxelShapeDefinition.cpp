@@ -21,7 +21,6 @@ void VoxelBoxShapeDefinition::init(double width, double height, double depth, do
 VoxelMeshDefinition::VoxelMeshDefinition()
 {
 	// Default to air voxel.
-	this->uniqueVertexCount = 0;
 	this->rendererVertexCount = 0;
 	this->indicesListCount = 0;
 	this->facingsListCount = 0;
@@ -30,7 +29,6 @@ VoxelMeshDefinition::VoxelMeshDefinition()
 void VoxelMeshDefinition::initClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType,
 	const ArenaShapeInitCache &shapeInitCache)
 {
-	this->uniqueVertexCount = ArenaMeshUtils::GetUniqueVertexCount(voxelType);
 	this->rendererVertexCount = ArenaMeshUtils::GetRendererVertexCount(voxelType);
 	this->indicesListCount = ArenaMeshUtils::GetIndexBufferCount(voxelType);
 	this->facingsListCount = ArenaMeshUtils::GetFacingBufferCount(voxelType);
@@ -109,7 +107,7 @@ void VoxelMeshDefinition::initClassic(ArenaVoxelType voxelType, VoxelShapeScaleT
 
 bool VoxelMeshDefinition::isEmpty() const
 {
-	return this->uniqueVertexCount == 0;
+	return this->rendererVertexCount == 0;
 }
 
 std::vector<int32_t> &VoxelMeshDefinition::getIndicesList(int index)
