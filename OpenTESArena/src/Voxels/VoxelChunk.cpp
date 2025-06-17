@@ -816,7 +816,7 @@ void VoxelChunk::updateFadeAnimInsts(double dt)
 	}
 }
 
-void VoxelChunk::cleanUp()
+void VoxelChunk::endFrame()
 {
 	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
 	this->dirtyShapeDefPositions.clear();

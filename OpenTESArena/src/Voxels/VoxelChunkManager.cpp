@@ -916,13 +916,13 @@ void VoxelChunkManager::update(double dt, Span<const ChunkInt2> newChunkPosition
 	}
 }
 
-void VoxelChunkManager::cleanUp()
+void VoxelChunkManager::endFrame()
 {
 	const int activeChunkCount = static_cast<int>(this->activeChunks.size());
 	for (int i = 0; i < activeChunkCount; i++)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
-		chunkPtr->cleanUp();
+		chunkPtr->endFrame();
 	}
 }
 

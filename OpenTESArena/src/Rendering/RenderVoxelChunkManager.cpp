@@ -1554,7 +1554,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 	this->rebuildDrawCallsList(voxelFrustumCullingChunkManager);
 }
 
-void RenderVoxelChunkManager::cleanUp()
+void RenderVoxelChunkManager::endFrame()
 {
 
 }

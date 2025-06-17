@@ -75,7 +75,7 @@ public:
 		double ceilingScale, AudioManager &audioManager);
 
 	// Run at the end of a frame to reset certain frame data like dirty voxels.
-	void cleanUp();
+	void endFrame();
 
 	void clear();
 };

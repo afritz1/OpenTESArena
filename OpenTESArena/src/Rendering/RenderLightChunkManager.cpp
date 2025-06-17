@@ -457,7 +457,7 @@ void RenderLightChunkManager::setNightLightsActive(bool enabled, double ceilingS
 	}
 }
 
-void RenderLightChunkManager::cleanUp()
+void RenderLightChunkManager::endFrame()
 {
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{

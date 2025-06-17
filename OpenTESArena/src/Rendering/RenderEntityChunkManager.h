@@ -84,7 +84,7 @@ public:
 		const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// End of frame clean-up.
-	void cleanUp();
+	void endFrame();
 
 	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);

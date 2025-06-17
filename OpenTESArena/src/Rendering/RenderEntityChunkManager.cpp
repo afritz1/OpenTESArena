@@ -548,7 +548,7 @@ void RenderEntityChunkManager::update(Span<const ChunkInt2> activeChunkPositions
 	renderer.populateVertexAttributeBuffer(this->meshInst.normalBufferID, entityNormals);
 }
 
-void RenderEntityChunkManager::cleanUp()
+void RenderEntityChunkManager::endFrame()
 {
 	
 }

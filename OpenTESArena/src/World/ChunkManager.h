@@ -25,7 +25,7 @@ public:
 	std::optional<int> findChunkIndex(const ChunkInt2 &position) const;
 
 	void update(const ChunkInt2 &centerChunkPos, int chunkDistance);
-	void cleanUp();
+	void endFrame();
 	void clear();
 };
 

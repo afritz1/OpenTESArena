@@ -1371,7 +1371,7 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool 
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
 }
 
-void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -1463,6 +1463,6 @@ void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem, Renderer &rend
 		}
 	}
 
-	this->cleanUp(physicsSystem, renderer);
+	this->endFrame(physicsSystem, renderer);
 	this->recycleAllChunks();
 }

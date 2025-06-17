@@ -232,7 +232,7 @@ public:
 	void updateFadeAnimInsts(double dt);
 
 	// End-of-frame clean-up.
-	void cleanUp();
+	void endFrame();
 
 	// Clears all chunk state.
 	void clear();

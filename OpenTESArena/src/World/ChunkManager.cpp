@@ -119,7 +119,7 @@ void ChunkManager::update(const ChunkInt2 &centerChunkPos, int chunkDistance)
 	}
 }
 
-void ChunkManager::cleanUp()
+void ChunkManager::endFrame()
 {
 	this->newChunkPositions.clear();
 	this->freedChunkPositions.clear();
