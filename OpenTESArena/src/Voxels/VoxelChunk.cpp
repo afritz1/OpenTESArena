@@ -10,6 +10,7 @@ VoxelChunk::VoxelChunk()
 {
 	this->floorReplacementShapeDefID = -1;
 	this->floorReplacementTextureDefID = -1;
+	this->floorReplacementShadingDefID = -1;
 	this->floorReplacementTraitsDefID = -1;
 	this->floorReplacementChasmDefID = -1;
 }
