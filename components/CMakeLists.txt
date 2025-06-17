@@ -18,8 +18,6 @@ SET(COMP_UTILITIES
 	"utilities/Buffer.h"
 	"utilities/Buffer2D.h"
 	"utilities/Buffer3D.h"
-	"utilities/BufferRef.h"
-	"utilities/BufferRef2D.h"
 	"utilities/BufferView.h"
 	"utilities/BufferView2D.h"
 	"utilities/BufferView3D.h"

@@ -14,7 +14,6 @@
 #include "../Utilities/Palette.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferRef2D.h"
 
 struct TextureAsset;
 
