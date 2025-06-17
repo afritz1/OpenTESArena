@@ -55,7 +55,7 @@ bool CharacterPanel::init()
 	const Span<const PrimaryAttribute> playerAttributesView = playerAttributes.getView();
 	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
-		const PrimaryAttribute &attribute = playerAttributesView.get(i);
+		const PrimaryAttribute &attribute = playerAttributesView[i];
 		const int attributeValue = attribute.maxValue;
 		const std::string attributeValueText = std::to_string(attributeValue);
 		const TextBoxInitInfo &attributeTextBoxInitInfo = playerAttributesTextBoxInitInfos[i];
@@ -71,7 +71,7 @@ bool CharacterPanel::init()
 	Span<const int> playerDerivedAttributesView = playerDerivedAttributes.getView();
 	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
 	{
-		const int derivedAttributeValue = playerDerivedAttributesView.get(i);
+		const int derivedAttributeValue = playerDerivedAttributesView[i];
 		const std::string derivedAttributeValueText = DerivedAttributes::isModifier(i) ?
 			CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
 		const TextBoxInitInfo &derivedAttributeTextBoxInitInfo = playerDerivedAttributesTextBoxInitInfos[i];

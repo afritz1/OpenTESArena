@@ -102,8 +102,8 @@ namespace
 				if (hasChasmWallInst && hasAdjacentChasmWallInst)
 				{
 					Span<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
-					const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts.get(chasmWallInstIndex);
-					const VoxelChasmWallInstance &adjacentChasmWallInst = chasmWallInsts.get(adjacentChasmWallInstIndex);
+					const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
+					const VoxelChasmWallInstance &adjacentChasmWallInst = chasmWallInsts[adjacentChasmWallInstIndex];
 
 					if (((facing == VoxelFacing3D::PositiveX) && !(chasmWallInst.north && adjacentChasmWallInst.north)) ||
 						((facing == VoxelFacing3D::NegativeX) && !(chasmWallInst.south && adjacentChasmWallInst.south)) ||

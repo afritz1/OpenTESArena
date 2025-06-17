@@ -179,9 +179,9 @@ void VoxelMeshDefinition::writeRendererVertexPositionBuffer(VoxelShapeScaleType 
 		const double dstX = srcX;
 		const double dstY = MeshUtils::getScaledVertexY(srcY, scaleType, ceilingScale);
 		const double dstZ = srcZ;
-		outPositions.set(index, dstX);
-		outPositions.set(index + 1, dstY);
-		outPositions.set(index + 2, dstZ);
+		outPositions[index] = dstX;
+		outPositions[index + 1] = dstY;
+		outPositions[index + 2] = dstZ;
 	}
 }
 

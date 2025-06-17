@@ -171,30 +171,20 @@ public:
 		return (this->data != nullptr) ? (this->data + this->count) : nullptr;
 	}
 
-	T &get(int index)
-	{
-		DebugAssert(this->isValid());
-		DebugAssert(index >= 0);
-		DebugAssert(index < this->count);
-		return this->data[index];
-	}
-
-	const T &get(int index) const
-	{
-		DebugAssert(this->isValid());
-		DebugAssert(index >= 0);
-		DebugAssert(index < this->count);
-		return this->data[index];
-	}
-
 	T &operator[](int index)
 	{
-		return this->get(index);
+		DebugAssert(this->isValid());
+		DebugAssert(index >= 0);
+		DebugAssert(index < this->count);
+		return this->data[index];
 	}
 
 	const T &operator[](int index) const
 	{
-		return this->get(index);
+		DebugAssert(this->isValid());
+		DebugAssert(index >= 0);
+		DebugAssert(index < this->count);
+		return this->data[index];
 	}
 
 	int getCount() const
@@ -230,22 +220,6 @@ public:
 	{
 		DebugAssert(this->isValidRange(startIndex, length));
 		return Span<const T>(this->data + startIndex, length);
-	}
-
-	void set(int index, const T &value)
-	{
-		DebugAssert(this->isValid());
-		DebugAssert(index >= 0);
-		DebugAssert(index < this->count);
-		this->data[index] = value;
-	}
-
-	void set(int index, T &&value)
-	{
-		DebugAssert(this->isValid());
-		DebugAssert(index >= 0);
-		DebugAssert(index < this->count);
-		this->data[index] = std::move(value);
 	}
 
 	void fill(const T &value)

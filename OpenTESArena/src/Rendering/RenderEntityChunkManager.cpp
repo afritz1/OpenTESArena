@@ -234,7 +234,7 @@ ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityIn
 	const EntityAnimationDefinition &animDef = entityDef.animDef;
 	const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
 	Span<const ScopedObjectTextureRef> textureRefs = defIter->textureRefs;
-	return textureRefs.get(linearizedKeyframeIndex).get();
+	return textureRefs[linearizedKeyframeIndex].get();
 }
 
 void RenderEntityChunkManager::loadTexturesForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,

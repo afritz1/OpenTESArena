@@ -270,7 +270,7 @@ void GameWorldUiModel::updateNativeCursorRegions(Span<Rect> nativeCursorRegions,
 
 	for (int i = 0; i < nativeCursorRegions.getCount(); i++)
 	{
-		nativeCursorRegions.set(i, GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale));
+		nativeCursorRegions[i] = GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale);
 	}
 }
 

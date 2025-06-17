@@ -235,7 +235,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(Span<const std::string_view> 
 		// Text lines are centered horizontally around the middle of the texture.
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
-			const std::string_view textLine = textLines.get(i);
+			const std::string_view textLine = textLines[i];
 			const int linePixelWidth = TextRenderUtils::getLinePixelWidth(textLine, fontDef, shadow);
 			offsets[i].x = (textureWidth / 2) - (linePixelWidth / 2);
 		}
@@ -247,7 +247,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(Span<const std::string_view> 
 		// Text lines are against the right edge.
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
-			const std::string_view textLine = textLines.get(i);
+			const std::string_view textLine = textLines[i];
 			const int linePixelWidth = TextRenderUtils::getLinePixelWidth(textLine, fontDef, shadow);
 			offsets[i].x = textureWidth - linePixelWidth;
 		}
@@ -333,7 +333,7 @@ void TextRenderUtils::drawTextLine(Span<const FontDefinition::CharID> charIDs, c
 		int currentX = 0;
 		for (int i = 0; i < charIDs.getCount(); i++)
 		{
-			const FontDefinition::CharID charID = charIDs.get(i);
+			const FontDefinition::CharID charID = charIDs[i];
 			const FontDefinition::Character &fontChar = fontDef.getCharacter(charID);
 			const Color &charColor = [colorOverrideInfo, &color, allowColorOverrides, i]() -> const Color&
 			{
@@ -401,7 +401,7 @@ void TextRenderUtils::drawTextLines(Span<const std::string_view> textLines, cons
 	// @todo: might need to draw all shadow lines before all regular lines.
 	for (int i = 0; i < textLines.getCount(); i++)
 	{
-		const std::string_view textLine = textLines.get(i);
+		const std::string_view textLine = textLines[i];
 		const Int2 &offset = offsets[i];
 		TextRenderUtils::drawTextLine(textLine, fontDef, dstX + offset.x, dstY + offset.y, textColor,
 			colorOverrideInfo, shadow, outBuffer);

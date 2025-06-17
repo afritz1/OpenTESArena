@@ -831,11 +831,11 @@ int ExeDataRaisedPlatforms::getTextureMappingValueA(MapType mapType, int heightI
 	switch (mapType)
 	{
 	case MapType::Interior:
-		return this->texMappingInterior.get(heightIndex) % maxTextureHeight;
+		return this->texMappingInterior[heightIndex] % maxTextureHeight;
 	case MapType::City:
-		return this->texMappingCity.get(heightIndex) % maxTextureHeight;
+		return this->texMappingCity[heightIndex] % maxTextureHeight;
 	case MapType::Wilderness:
-		return this->texMappingWild.get(heightIndex) % maxTextureHeight;
+		return this->texMappingWild[heightIndex] % maxTextureHeight;
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(mapType)));
 	}

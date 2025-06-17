@@ -156,7 +156,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 {
 	auto addGeneralObjectInst = [this, &textureManager](const Double3 &baseDirection, Span<const TextureAsset> textureAssets, bool emissive, double animSeconds = 0.0)
 	{
-		const TextureAsset &firstTextureAsset = textureAssets.get(0);
+		const TextureAsset &firstTextureAsset = textureAssets[0];
 		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(firstTextureAsset.filename.c_str());
 		if (!metadataID.has_value())
 		{

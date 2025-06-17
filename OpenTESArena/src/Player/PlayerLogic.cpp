@@ -55,12 +55,12 @@ namespace PlayerLogic
 			const int mouseY = mousePosition.y;
 
 			// Native cursor regions for motion (scaled to the current window).
-			const Rect &topLeft = nativeCursorRegions.get(GameWorldUiView::CursorTopLeftIndex);
-			const Rect &top = nativeCursorRegions.get(GameWorldUiView::CursorTopMiddleIndex);
-			const Rect &topRight = nativeCursorRegions.get(GameWorldUiView::CursorTopRightIndex);
-			const Rect &bottomLeft = nativeCursorRegions.get(GameWorldUiView::CursorBottomLeftIndex);
-			const Rect &bottom = nativeCursorRegions.get(GameWorldUiView::CursorBottomMiddleIndex);
-			const Rect &bottomRight = nativeCursorRegions.get(GameWorldUiView::CursorBottomRightIndex);
+			const Rect &topLeft = nativeCursorRegions[GameWorldUiView::CursorTopLeftIndex];
+			const Rect &top = nativeCursorRegions[GameWorldUiView::CursorTopMiddleIndex];
+			const Rect &topRight = nativeCursorRegions[GameWorldUiView::CursorTopRightIndex];
+			const Rect &bottomLeft = nativeCursorRegions[GameWorldUiView::CursorBottomLeftIndex];
+			const Rect &bottom = nativeCursorRegions[GameWorldUiView::CursorBottomMiddleIndex];
+			const Rect &bottomRight = nativeCursorRegions[GameWorldUiView::CursorBottomRightIndex];
 
 			// Strength of movement is determined by the mouse's position in each region.
 			// Motion magnitude (percent) is between 0.0 and 1.0.
@@ -641,10 +641,10 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 					const int mouseX = mousePosition.x;
 
 					// Native cursor regions for turning (scaled to the current window).
-					const Rect &topLeft = nativeCursorRegions.get(GameWorldUiView::CursorTopLeftIndex);
-					const Rect &topRight = nativeCursorRegions.get(GameWorldUiView::CursorTopRightIndex);
-					const Rect &middleLeft = nativeCursorRegions.get(GameWorldUiView::CursorMiddleLeftIndex);
-					const Rect &middleRight = nativeCursorRegions.get(GameWorldUiView::CursorMiddleRightIndex);
+					const Rect &topLeft = nativeCursorRegions[GameWorldUiView::CursorTopLeftIndex];
+					const Rect &topRight = nativeCursorRegions[GameWorldUiView::CursorTopRightIndex];
+					const Rect &middleLeft = nativeCursorRegions[GameWorldUiView::CursorMiddleLeftIndex];
+					const Rect &middleRight = nativeCursorRegions[GameWorldUiView::CursorMiddleRightIndex];
 
 					if (topLeft.contains(mousePosition))
 					{

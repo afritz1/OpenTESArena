@@ -878,7 +878,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 			textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
 		}
 
-		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
+		const TextureAsset &textureAsset = textureAssets[textureAssetIndex];
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 		const double meshLightPercent = skyObjectInst.emissive ? fullBrightLightPercent : distantAmbientPercent;
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, landDistance);
@@ -915,7 +915,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		const double animPercent = animInst.percentDone;
 		textureAssetIndex = std::clamp(static_cast<int>(static_cast<double>(textureCount) * animPercent), 0, textureCount - 1);
 
-		const TextureAsset &textureAsset = textureAssets.get(textureAssetIndex);
+		const TextureAsset &textureAsset = textureAssets[textureAssetIndex];
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, lightningDistance);
 		addDrawCall(i, textureID, meshLightPercent, PixelShaderType::AlphaTested);

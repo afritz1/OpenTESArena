@@ -96,7 +96,7 @@ bool ChooseAttributesPanel::init()
 	const Span<const PrimaryAttribute> playerAttributesView = primaryAttributes.getView();
 	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
-		const PrimaryAttribute &attribute = playerAttributesView.get(i);
+		const PrimaryAttribute &attribute = playerAttributesView[i];
 		const int attributeValue = attribute.maxValue;
 		const std::string attributeValueText = std::to_string(attributeValue);
 		const TextBoxInitInfo &attributeTextBoxInitInfo = playerAttributesTextBoxInitInfos[i];
@@ -111,7 +111,7 @@ bool ChooseAttributesPanel::init()
 	Span<const int> playerDerivedAttributesView = charCreationState.derivedAttributes.getView();
 	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
 	{
-		const int derivedAttributeValue = playerDerivedAttributesView.get(i);
+		const int derivedAttributeValue = playerDerivedAttributesView[i];
 		const std::string derivedAttributeValueText = DerivedAttributes::isModifier(i) ?
 			CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
 		const TextBoxInitInfo &derivedAttributeTextBoxInitInfo = playerDerivedAttributesTextBoxInitInfos[i];
@@ -362,7 +362,7 @@ bool ChooseAttributesPanel::init()
 
 			PrimaryAttributes &attributes = charCreationState.attributes;
 			Span<PrimaryAttribute> attributesView = attributes.getView();
-			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
+			PrimaryAttribute &attribute = attributesView[attributeIndex];
 			attribute.maxValue += 1;
 
 			this->updateDerivedAttributeValues();
@@ -390,7 +390,7 @@ bool ChooseAttributesPanel::init()
 
 			PrimaryAttributes &attributes = charCreationState.attributes;
 			Span<PrimaryAttribute> attributesView = attributes.getView();
-			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
+			PrimaryAttribute &attribute = attributesView[attributeIndex];
 			attribute.maxValue -= 1;
 
 			this->updateDerivedAttributeValues();

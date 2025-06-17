@@ -589,20 +589,20 @@ namespace MapGeneration
 				int baseOffset, baseSize;
 				if (mapType == MapType::Interior)
 				{
-					baseOffset = raisedPlatforms.heightsInterior.get(heightIndex);
+					baseOffset = raisedPlatforms.heightsInterior[heightIndex];
 
-					const int boxSize = raisedPlatforms.thicknessesInterior.get(thicknessIndex);
+					const int boxSize = raisedPlatforms.thicknessesInterior[thicknessIndex];
 					const auto &boxScale = inf.getCeiling().boxScale;
 					baseSize = boxScale.has_value() ? ((boxSize * (*boxScale)) / 256) : boxSize;
 				}
 				else if (mapType == MapType::City)
 				{
-					baseOffset = raisedPlatforms.heightsCity.get(heightIndex);
-					baseSize = raisedPlatforms.thicknessesCity.get(thicknessIndex);
+					baseOffset = raisedPlatforms.heightsCity[heightIndex];
+					baseSize = raisedPlatforms.thicknessesCity[thicknessIndex];
 				}
 				else if (mapType == MapType::Wilderness)
 				{
-					baseOffset = raisedPlatforms.heightsWild.get(heightIndex);
+					baseOffset = raisedPlatforms.heightsWild[heightIndex];
 
 					constexpr int boxSize = 32;
 					const auto &boxScale = inf.getCeiling().boxScale;
@@ -2404,8 +2404,8 @@ void MapGeneration::readMifVoxels(Span<const MIFLevel> levels, MapType mapType,
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
-		const MIFLevel &level = levels.get(i);
-		LevelDefinition &levelDef = outLevelDefs.get(i);
+		const MIFLevel &level = levels[i];
+		LevelDefinition &levelDef = outLevelDefs[i];
 		MapGeneration::readArenaFLOR(level.getFLOR(), mapType, interiorType, rulerIsMale, inf,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
 			outLevelInfoDef, &florMappings, &entityMappings, &chasmMappings);
@@ -2495,7 +2495,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 			}
 		}();
 
-		LevelDefinition &levelDef = outLevelDefs.get(i);
+		LevelDefinition &levelDef = outLevelDefs[i];
 		MapGeneration::generateArenaDungeonLevel(mif, widthChunks, depthChunks, levelUpBlock,
 			levelDownBlock, random, mapType, interiorType, rulerIsMale, isArtifactDungeon,
 			inf, charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &levelDef,
@@ -2605,7 +2605,7 @@ void MapGeneration::generateRmdWilderness(Span<const ArenaWildUtils::WildBlockID
 
 	for (int i = 0; i < uniqueWildBlockIDs.getCount(); i++)
 	{
-		const ArenaWildUtils::WildBlockID wildBlockID = uniqueWildBlockIDs.get(i);
+		const ArenaWildUtils::WildBlockID wildBlockID = uniqueWildBlockIDs[i];
 		const auto &rmdFiles = ArenaLevelLibrary::getInstance().getWildernessChunks();
 		const int rmdIndex = DebugMakeIndex(rmdFiles, wildBlockID - 1);
 		const RMDFile &rmd = rmdFiles[rmdIndex];
@@ -2636,7 +2636,7 @@ void MapGeneration::generateRmdWilderness(Span<const ArenaWildUtils::WildBlockID
 			ArenaWildUtils::reviseWildCityBlock(wildBlockID, tempFlorView, tempMap1View, tempMap2View, cityDef, binaryAssetLibrary);
 		}
 
-		LevelDefinition &levelDef = outLevelDefs.get(i);
+		LevelDefinition &levelDef = outLevelDefs[i];
 
 		const Span2D<const ArenaVoxelID> tempFlorConstView(tempFlor);
 		const Span2D<const ArenaVoxelID> tempMap1ConstView(tempMap1);
@@ -2668,7 +2668,7 @@ void MapGeneration::generateRmdWilderness(Span<const ArenaWildUtils::WildBlockID
 		for (SNInt x = 0; x < levelDefIndices.getWidth(); x++)
 		{
 			const int levelDefIndex = levelDefIndices.get(x, z);
-			const LevelDefinition &levelDef = outLevelDefs.get(levelDefIndex);
+			const LevelDefinition &levelDef = outLevelDefs[levelDefIndex];
 			const ChunkInt2 chunk(x, z);
 			const uint32_t chunkSeed = ArenaWildUtils::makeWildChunkSeed(chunk.y, chunk.x);
 			MapGeneration::WildChunkBuildingNameInfo buildingNameInfo;
@@ -2693,8 +2693,8 @@ void MapGeneration::readMifLocks(Span<const MIFLevel> levels, const INFFile &inf
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
-		const MIFLevel &level = levels.get(i);
-		LevelDefinition &levelDef = outLevelDefs.get(i);
+		const MIFLevel &level = levels[i];
+		LevelDefinition &levelDef = outLevelDefs[i];
 		const Span<const ArenaTypes::MIFLock> locks = level.getLOCK();
 
 		for (const ArenaTypes::MIFLock &lock : locks)
@@ -2711,8 +2711,8 @@ void MapGeneration::readMifTriggers(Span<const MIFLevel> levels, const INFFile &
 
 	for (int i = 0; i < levels.getCount(); i++)
 	{
-		const MIFLevel &level = levels.get(i);
-		LevelDefinition &levelDef = outLevelDefs.get(i);
+		const MIFLevel &level = levels[i];
+		LevelDefinition &levelDef = outLevelDefs[i];
 		const Span<const ArenaTypes::MIFTrigger> triggers = level.getTRIG();
 
 		for (const ArenaTypes::MIFTrigger &trigger : triggers)
