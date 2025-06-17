@@ -6,13 +6,13 @@
 
 #include "Random.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 namespace RandomUtils
 {
 	// Shuffles the elements randomly with an unspecified RNG source.
 	template<typename T>
-	void shuffle(BufferView<T> buffer)
+	void shuffle(Span<T> buffer)
 	{
 		std::random_device randomDevice;
 		std::shuffle(buffer.begin(), buffer.end(), std::default_random_engine(randomDevice()));
@@ -20,7 +20,7 @@ namespace RandomUtils
 
 	// Shuffles the elements randomly with the given RNG source.
 	template<typename T>
-	void shuffle(BufferView<T> buffer, Random &random)
+	void shuffle(Span<T> buffer, Random &random)
 	{
 		const int count = buffer.getCount();
 		for (int i = 0; i < count - 1; i++)

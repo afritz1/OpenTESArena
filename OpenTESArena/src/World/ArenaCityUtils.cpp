@@ -102,7 +102,7 @@ void ArenaCityUtils::writeSkeleton(const MIFLevel &level,
 	}
 }
 
-void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth, BufferView<const uint8_t> reservedBlocks,
+void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth, Span<const uint8_t> reservedBlocks,
 	const OriginalInt2 &startPosition, ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
 	Buffer2D<ArenaVoxelID> &dstFlor, Buffer2D<ArenaVoxelID> &dstMap1, Buffer2D<ArenaVoxelID> &dstMap2)
 {

@@ -14,7 +14,7 @@ std::string MainQuestSplashUiModel::getDungeonText(Game &game, int provinceID)
 	DebugAssertIndex(splashIndices, provinceID);
 	const int index = splashIndices[provinceID];
 
-	const BufferView<const ArenaDungeonTxtEntry> dungeonTxtEntries = textAssetLibrary.dungeonTxt;
+	const Span<const ArenaDungeonTxtEntry> dungeonTxtEntries = textAssetLibrary.dungeonTxt;
 
 	// @todo: maybe don't split these two strings in the first place. And convert
 	// the carriage return to a newline instead of removing it.

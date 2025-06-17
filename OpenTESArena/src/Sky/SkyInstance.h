@@ -9,7 +9,7 @@
 #include "../Math/Vector3.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class MapDefinition;
 class Random;
@@ -93,7 +93,7 @@ private:
 	Buffer<int> lightningAnimIndices; // Non-empty during thunderstorm so animations can be updated.
 	std::optional<int> currentLightningBoltObjectIndex; // Updated by WeatherInstance.
 
-	bool tryGetTextureAssetEntryID(BufferView<const TextureAsset> textureAssets, SkyObjectTextureAssetEntryID *outID) const;
+	bool tryGetTextureAssetEntryID(Span<const TextureAsset> textureAssets, SkyObjectTextureAssetEntryID *outID) const;
 	bool tryGetPaletteIndexEntryID(uint8_t paletteIndex, SkyObjectPaletteIndexEntryID *outID) const;
 public:
 	// Start (inclusive) and end (exclusive) indices of each sky object type.

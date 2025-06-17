@@ -84,7 +84,7 @@ void ArenaShapeInitCache::initDiagonalBoxValues(bool isRightDiag)
 	this->boxYRotation = isRightDiag ? -diagonalAngle : diagonalAngle;
 }
 
-void ArenaMeshUtils::writeWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords)
+void ArenaMeshUtils::writeWallRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
 
@@ -196,7 +196,7 @@ void ArenaMeshUtils::writeWallRendererGeometryBuffers(BufferView<double> outPosi
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeWallRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices)
+void ArenaMeshUtils::writeWallRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
 
@@ -235,7 +235,7 @@ void ArenaMeshUtils::writeWallRendererIndexBuffers(BufferView<int32_t> outSideIn
 	std::copy(topIndices.begin(), topIndices.end(), outTopIndices.begin());
 }
 
-void ArenaMeshUtils::writeWallFacingBuffers(BufferView<VoxelFacing3D> outSideFacings, BufferView<VoxelFacing3D> outBottomFacings, BufferView<VoxelFacing3D> outTopFacings)
+void ArenaMeshUtils::writeWallFacingBuffers(Span<VoxelFacing3D> outSideFacings, Span<VoxelFacing3D> outBottomFacings, Span<VoxelFacing3D> outTopFacings)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
 	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> sideFacings =
@@ -261,8 +261,8 @@ void ArenaMeshUtils::writeWallFacingBuffers(BufferView<VoxelFacing3D> outSideFac
 	std::copy(topFacings.begin(), topFacings.end(), outTopFacings.begin());
 }
 
-void ArenaMeshUtils::writeFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
-	BufferView<double> outTexCoords)
+void ArenaMeshUtils::writeFloorRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals,
+	Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
 	constexpr std::array<double, GetRendererVertexPositionComponentCount(voxelType)> positions =
@@ -297,7 +297,7 @@ void ArenaMeshUtils::writeFloorRendererGeometryBuffers(BufferView<double> outPos
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeFloorRendererIndexBuffers(BufferView<int32_t> outIndices)
+void ArenaMeshUtils::writeFloorRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
 
@@ -311,7 +311,7 @@ void ArenaMeshUtils::writeFloorRendererIndexBuffers(BufferView<int32_t> outIndic
 	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
-void ArenaMeshUtils::writeFloorFacingBuffers(BufferView<VoxelFacing3D> outFacings)
+void ArenaMeshUtils::writeFloorFacingBuffers(Span<VoxelFacing3D> outFacings)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
 	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> facings =
@@ -322,8 +322,8 @@ void ArenaMeshUtils::writeFloorFacingBuffers(BufferView<VoxelFacing3D> outFacing
 	std::copy(facings.begin(), facings.end(), outFacings.begin());
 }
 
-void ArenaMeshUtils::writeCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
-	BufferView<double> outTexCoords)
+void ArenaMeshUtils::writeCeilingRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals,
+	Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
 	constexpr std::array<double, GetRendererVertexPositionComponentCount(voxelType)> positions =
@@ -358,7 +358,7 @@ void ArenaMeshUtils::writeCeilingRendererGeometryBuffers(BufferView<double> outP
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeCeilingRendererIndexBuffers(BufferView<int32_t> outIndices)
+void ArenaMeshUtils::writeCeilingRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
 
@@ -372,7 +372,7 @@ void ArenaMeshUtils::writeCeilingRendererIndexBuffers(BufferView<int32_t> outInd
 	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
-void ArenaMeshUtils::writeCeilingFacingBuffers(BufferView<VoxelFacing3D> outFacings)
+void ArenaMeshUtils::writeCeilingFacingBuffers(Span<VoxelFacing3D> outFacings)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
 	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> facings =
@@ -384,7 +384,7 @@ void ArenaMeshUtils::writeCeilingFacingBuffers(BufferView<VoxelFacing3D> outFaci
 }
 
 void ArenaMeshUtils::writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
-	BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords)
+	Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Raised;
 	const double yBottom = yOffset;
@@ -498,7 +498,7 @@ void ArenaMeshUtils::writeRaisedRendererGeometryBuffers(double yOffset, double y
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices)
+void ArenaMeshUtils::writeRaisedRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Raised;
 
@@ -537,8 +537,8 @@ void ArenaMeshUtils::writeRaisedRendererIndexBuffers(BufferView<int32_t> outSide
 	std::copy(topIndices.begin(), topIndices.end(), outTopIndices.begin());
 }
 
-void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions,
-	BufferView<double> outNormals, BufferView<double> outTexCoords)
+void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, Span<double> outPositions,
+	Span<double> outNormals, Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Diagonal;
 	constexpr int positionComponentCount = GetRendererVertexPositionComponentCount(voxelType);
@@ -627,7 +627,7 @@ void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, BufferView
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(BufferView<int32_t> outIndices)
+void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Diagonal;
 
@@ -645,8 +645,8 @@ void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(BufferView<int32_t> outIn
 	std::copy(indices.begin(), indices.end(), outIndices.begin());
 }
 
-void ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(BufferView<double> outPositions,
-	BufferView<double> outNormals, BufferView<double> outTexCoords)
+void ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(Span<double> outPositions,
+	Span<double> outNormals, Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::TransparentWall;
 
@@ -728,7 +728,7 @@ void ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(BufferView<doub
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeTransparentWallRendererIndexBuffers(BufferView<int32_t> outIndices)
+void ArenaMeshUtils::writeTransparentWallRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::TransparentWall;
 
@@ -752,7 +752,7 @@ void ArenaMeshUtils::writeTransparentWallRendererIndexBuffers(BufferView<int32_t
 }
 
 void ArenaMeshUtils::writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
-	BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords)
+	Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Edge;
 
@@ -948,7 +948,7 @@ void ArenaMeshUtils::writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, doub
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeEdgeRendererIndexBuffers(BufferView<int32_t> outIndices)
+void ArenaMeshUtils::writeEdgeRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Edge;
 
@@ -967,7 +967,7 @@ void ArenaMeshUtils::writeEdgeRendererIndexBuffers(BufferView<int32_t> outIndice
 }
 
 void ArenaMeshUtils::writeChasmRendererGeometryBuffers(ArenaChasmType chasmType,
-	BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords)
+	Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
 	const double yBottom = 0.0;
@@ -1068,7 +1068,7 @@ void ArenaMeshUtils::writeChasmRendererGeometryBuffers(ArenaChasmType chasmType,
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(BufferView<int32_t> outIndices)
+void ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
 
@@ -1126,8 +1126,8 @@ void ArenaMeshUtils::writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffe
 	}
 }
 
-void ArenaMeshUtils::writeDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals,
-	BufferView<double> outTexCoords)
+void ArenaMeshUtils::writeDoorRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals,
+	Span<double> outTexCoords)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Door;
 
@@ -1166,7 +1166,7 @@ void ArenaMeshUtils::writeDoorRendererGeometryBuffers(BufferView<double> outPosi
 	std::copy(texCoords.begin(), texCoords.end(), outTexCoords.begin());
 }
 
-void ArenaMeshUtils::writeDoorRendererIndexBuffers(BufferView<int32_t> outIndices)
+void ArenaMeshUtils::writeDoorRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Door;
 

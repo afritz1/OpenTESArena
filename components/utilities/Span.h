@@ -1,5 +1,5 @@
-#ifndef BUFFER_VIEW_H
-#define BUFFER_VIEW_H
+#ifndef SPAN_H
+#define SPAN_H
 
 #include <algorithm>
 #include <array>
@@ -8,77 +8,77 @@
 #include "Buffer.h"
 #include "../debug/Debug.h"
 
-// Simple non-owning view over a 1D range of data. Useful when separating a container from the usage
+// Simple non-owning view of a 1D range of data. Useful when separating a container from the usage
 // of its data. Data can be null. Only need assertions on things that reach into the buffer itself.
 template<typename T>
-class BufferView
+class Span
 {
 private:
 	T *data;
 	int count;
 public:
-	BufferView()
+	Span()
 	{
 		this->reset();
 	}
 
 	// View across a subset of a range of data. Provided for bounds-checking the view range
 	// inside a full range (data, data + count) at initialization.
-	BufferView(T *data, int count, int viewOffset, int viewCount)
+	Span(T *data, int count, int viewOffset, int viewCount)
 	{
 		this->init(data, count, viewOffset, viewCount);
 	}
 
 	// View across a range of data.
-	BufferView(T *data, int count)
+	Span(T *data, int count)
 	{
 		this->init(data, count);
 	}
 
 	template<typename U>
-	BufferView(Buffer<U> &buffer)
+	Span(Buffer<U> &buffer)
 	{
 		this->init(static_cast<T*>(buffer.begin()), buffer.getCount());
 	}
 
 	template<typename U>
-	BufferView(const Buffer<U> &buffer)
+	Span(const Buffer<U> &buffer)
 	{
 		this->init(static_cast<T*>(buffer.begin()), buffer.getCount());
 	}
 
 	template<typename U>
-	BufferView(std::vector<U> &vec)
+	Span(std::vector<U> &vec)
 	{
 		this->init(static_cast<T*>(vec.data()), static_cast<int>(vec.size()));
 	}
 
 	template<typename U>
-	BufferView(const std::vector<U> &vec)
+	Span(const std::vector<U> &vec)
 	{
 		this->init(static_cast<T*>(vec.data()), static_cast<int>(vec.size()));
 	}
 
 	template<typename U, size_t Length>
-	BufferView(std::array<U, Length> &arr)
+	Span(std::array<U, Length> &arr)
 	{
 		this->init(static_cast<T*>(arr.data()), static_cast<int>(arr.size()));
 	}
 
 	template<typename U, size_t Length>
-	BufferView(const std::array<U, Length> &arr)
+	Span(const std::array<U, Length> &arr)
 	{
 		this->init(static_cast<T*>(arr.data()), static_cast<int>(arr.size()));
 	}
 
 	template<typename U, size_t Length>
-	BufferView(U(&arr)[Length])
+	Span(U(&arr)[Length])
 	{
 		this->init(static_cast<T*>(std::begin(arr)), static_cast<int>(std::size(arr)));
 	}
 
 	template<typename U, size_t Length>
-	BufferView(const U(&arr)[Length])
+	Span(const U(&arr)[Length])
 	{
 		this->init(static_cast<T*>(std::begin(arr)), static_cast<int>(std::size(arr)));
 	}
@@ -220,16 +220,16 @@ public:
 		return isStartValid && isEndValid;
 	}
 
-	BufferView<T> slice(int startIndex, int length)
+	Span<T> slice(int startIndex, int length)
 	{
 		DebugAssert(this->isValidRange(startIndex, length));
-		return BufferView<T>(this->data + startIndex, length);
+		return Span<T>(this->data + startIndex, length);
 	}
 
-	BufferView<const T> slice(int startIndex, int length) const
+	Span<const T> slice(int startIndex, int length) const
 	{
 		DebugAssert(this->isValidRange(startIndex, length));
-		return BufferView<const T>(this->data + startIndex, length);
+		return Span<const T>(this->data + startIndex, length);
 	}
 
 	void set(int index, const T &value)
@@ -263,9 +263,9 @@ public:
 namespace std
 {
 	template<typename T>
-	size_t size(const BufferView<T> &view)
+	size_t size(const Span<T> &span)
 	{
-		return static_cast<size_t>(view.getCount());
+		return static_cast<size_t>(span.getCount());
 	}
 }
 

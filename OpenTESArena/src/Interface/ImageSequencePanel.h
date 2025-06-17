@@ -9,7 +9,7 @@
 #include "../UI/Button.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 // Halfway between a CinematicPanel and an ImagePanel, this panel displays still images one at a time and
 // allows only the escape button to fully skip until the end, unlike the CinematicPanel. Mouse clicks, etc.
@@ -29,8 +29,8 @@ public:
 	ImageSequencePanel(Game &game);
 	~ImageSequencePanel() override = default;
 
-	bool init(BufferView<const std::string> paletteNames, BufferView<const std::string> textureNames,
-		BufferView<const double> imageDurations, const OnFinishedFunction &onFinished);
+	bool init(Span<const std::string> paletteNames, Span<const std::string> textureNames,
+		Span<const double> imageDurations, const OnFinishedFunction &onFinished);
 
 	virtual void tick(double dt) override;
 };

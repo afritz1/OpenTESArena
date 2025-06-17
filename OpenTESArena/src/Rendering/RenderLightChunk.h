@@ -10,7 +10,7 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer3D.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class Renderer;
 

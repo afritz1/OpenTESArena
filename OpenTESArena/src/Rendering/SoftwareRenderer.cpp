@@ -3977,7 +3977,7 @@ IndexBufferID SoftwareRenderer::createIndexBuffer(int indexCount)
 	return id;
 }
 
-void SoftwareRenderer::populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions)
+void SoftwareRenderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
 {
 	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(id);
 	const int srcCount = positions.getCount();
@@ -3993,7 +3993,7 @@ void SoftwareRenderer::populateVertexPositionBuffer(VertexPositionBufferID id, B
 	std::copy(srcBegin, srcEnd, buffer.positions.begin());
 }
 
-void SoftwareRenderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes)
+void SoftwareRenderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
 {
 	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(id);
 	const int srcCount = attributes.getCount();
@@ -4009,7 +4009,7 @@ void SoftwareRenderer::populateVertexAttributeBuffer(VertexAttributeBufferID id,
 	std::copy(srcBegin, srcEnd, buffer.attributes.begin());
 }
 
-void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices)
+void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
 {
 	SoftwareIndexBuffer &buffer = this->indexBuffers.get(id);
 	const int srcCount = indices.getCount();
@@ -4132,7 +4132,7 @@ UniformBufferID SoftwareRenderer::createUniformBuffer(int elementCount, size_t s
 	return id;
 }
 
-void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data)
+void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
 {
 	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
 	const int srcCount = data.getCount();
@@ -4148,7 +4148,7 @@ void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, BufferView<cons
 	std::copy(srcBegin, srcEnd, buffer.begin());
 }
 
-void SoftwareRenderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData)
+void SoftwareRenderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
 {
 	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
 	const int srcByteCount = uniformData.getCount();
@@ -4271,7 +4271,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 
 	for (int commandIndex = 0; commandIndex < commandBuffer.entryCount; commandIndex++)
 	{
-		const BufferView<const RenderDrawCall> drawCalls = commandBuffer.entries[commandIndex];
+		const Span<const RenderDrawCall> drawCalls = commandBuffer.entries[commandIndex];
 		int startDrawCallIndex = 0;
 		int remainingDrawCallCount = drawCalls.getCount();
 		constexpr int maxDrawCallsPerLoop = 8192;

@@ -18,7 +18,7 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class ArenaRandom;
 class BinaryAssetLibrary;
@@ -159,14 +159,14 @@ namespace MapGeneration
 	};
 
 	// Converts .MIF voxels into a more modern voxel + entity format.
-	void readMifVoxels(BufferView<const MIFLevel> levels, MapType mapType,
+	void readMifVoxels(Span<const MIFLevel> levels, MapType mapType,
 		const std::optional<ArenaInteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
 		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
 		const std::optional<ArenaCityType> &cityType, const LocationDungeonDefinition *dungeonDef,
 		const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
-		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
+		Span<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
 
 	// Generates levels from the random chunk .MIF file and converts them to the modern format.
 	// Also writes out the player start voxel.
@@ -175,14 +175,14 @@ namespace MapGeneration
 		ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale,
 		const std::optional<bool> &isArtifactDungeon, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+		TextureManager &textureManager, Span<LevelDefinition> &outLevelDefs,
 		LevelInfoDefinition *outLevelInfoDef, WorldInt2 *outStartPoint);
 
 	// Generates a level from the city .MIF file, optionally generating random city blocks if it
 	// is not a premade city, and converts the level to the modern format.
 	void generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 		bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-		BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
+		Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 		int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName, ArenaCityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
@@ -192,18 +192,18 @@ namespace MapGeneration
 
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
-	void generateRmdWilderness(BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIDs,
+	void generateRmdWilderness(Span<const ArenaWildUtils::WildBlockID> uniqueWildBlockIDs,
 		BufferView2D<const int> levelDefIndices, const LocationCityDefinition &cityDef,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary,const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, BufferView<LevelDefinition> &outLevelDefs,
+		TextureManager &textureManager, Span<LevelDefinition> &outLevelDefs,
 		LevelInfoDefinition *outLevelInfoDef,
 		std::vector<MapGeneration::WildChunkBuildingNameInfo> *outBuildingNameInfos);
 
-	void readMifLocks(BufferView<const MIFLevel> levels, const INFFile &inf,
-		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
-	void readMifTriggers(BufferView<const MIFLevel> levels, const INFFile &inf,
-		BufferView<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
+	void readMifLocks(Span<const MIFLevel> levels, const INFFile &inf,
+		Span<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
+	void readMifTriggers(Span<const MIFLevel> levels, const INFFile &inf,
+		Span<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
 }
 
 #endif

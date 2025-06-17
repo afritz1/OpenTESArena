@@ -10,7 +10,7 @@
 #include "../World/Coord.h"
 #include "../World/SpecializedChunkManager.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 struct MapSubDefinition;
 
@@ -68,10 +68,10 @@ public:
 	VoxelChasmDefID findChasmDef(const VoxelChasmDefinition &def);
 	VoxelChasmDefID addChasmDef(VoxelChasmDefinition &&def);
 
-	void update(double dt, BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+	void update(double dt, Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		const CoordDouble3 &playerCoord, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
-		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
-		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
+		const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
+		Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs,
 		double ceilingScale, AudioManager &audioManager);
 
 	// Run at the end of a frame to reset certain frame data like dirty voxels.

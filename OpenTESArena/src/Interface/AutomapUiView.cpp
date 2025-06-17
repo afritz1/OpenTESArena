@@ -399,7 +399,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 		uint32_t *pixels = dstBuffer.begin();
 
 		// Draw the player's arrow within the map pixel.
-		BufferView<const Int2> offsets = AutomapUiView::PlayerArrowPatterns.at(cardinalDirection);
+		Span<const Int2> offsets = AutomapUiView::PlayerArrowPatterns.at(cardinalDirection);
 		for (const Int2 &offset : offsets)
 		{
 			const int index = (surfaceX + offset.x) + ((surfaceY + offset.y) * dstBuffer.getWidth());
@@ -421,7 +421,7 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 	const CardinalDirectionName playerCompassDir = CardinalDirection::getDirectionName(playerDirection);
 	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
 	const bool isWild = activeMapDef.getMapType() == MapType::Wilderness;
-	const BufferView<const LevelDefinition> levelDefs = activeMapDef.getLevels();
+	const Span<const LevelDefinition> levelDefs = activeMapDef.getLevels();
 	const LevelDefinition &activeLevelDef = levelDefs[gameState.getActiveLevelIndex()];
 	const WorldInt2 levelDims(activeLevelDef.getWidth(), activeLevelDef.getDepth());
 

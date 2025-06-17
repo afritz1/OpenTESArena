@@ -32,14 +32,14 @@ void PrimaryAttribute::clear()
 
 void PrimaryAttributes::init(int raceID, bool isMale, const ExeData &exeData)
 {
-	BufferView<PrimaryAttribute> attributes = this->getView();
+	Span<PrimaryAttribute> attributes = this->getView();
 	for (int i = 0; i < COUNT; i++)
 	{
 		DebugAssertIndex(exeData.entities.attributeNames, i);
 		const std::string &attributeName = exeData.entities.attributeNames[i];
 		const int raceAttributesIndex = (raceID * 2) + (isMale ? 0 : 1); // Alternates male/female
 		DebugAssertIndex(exeData.entities.raceAttributes, raceAttributesIndex);
-		const BufferView<const uint8_t> raceAttributesView = exeData.entities.raceAttributes[raceAttributesIndex];
+		const Span<const uint8_t> raceAttributesView = exeData.entities.raceAttributes[raceAttributesIndex];
 		const uint8_t attributeValue = raceAttributesView[i]; // 0..255
 		const int attributeValueCorrected = static_cast<int>(std::round(static_cast<double>(attributeValue) / (255.0 / 100.0)));
 
@@ -48,14 +48,14 @@ void PrimaryAttributes::init(int raceID, bool isMale, const ExeData &exeData)
 	}
 }
 
-BufferView<PrimaryAttribute> PrimaryAttributes::getView()
+Span<PrimaryAttribute> PrimaryAttributes::getView()
 {
-	return BufferView<PrimaryAttribute>(&this->strength, COUNT);
+	return Span<PrimaryAttribute>(&this->strength, COUNT);
 }
 
-BufferView<const PrimaryAttribute> PrimaryAttributes::getView() const
+Span<const PrimaryAttribute> PrimaryAttributes::getView() const
 {
-	return BufferView<const PrimaryAttribute>(&this->strength, COUNT);
+	return Span<const PrimaryAttribute>(&this->strength, COUNT);
 }
 
 void PrimaryAttributes::clear()
@@ -88,7 +88,7 @@ bool DerivedAttributes::isModifier(int index)
 	return index != 1;
 }
 
-BufferView<const int> DerivedAttributes::getView() const
+Span<const int> DerivedAttributes::getView() const
 {
-	return BufferView<const int>(&this->bonusDamage, COUNT);
+	return Span<const int>(&this->bonusDamage, COUNT);
 }

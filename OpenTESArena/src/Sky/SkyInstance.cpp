@@ -83,12 +83,12 @@ void SkyObjectAnimationInstance::init(int skyObjectIndex, double targetSeconds)
 	this->percentDone = 0.0;
 }
 
-bool SkyInstance::tryGetTextureAssetEntryID(BufferView<const TextureAsset> textureAssets, SkyObjectTextureAssetEntryID *outID) const
+bool SkyInstance::tryGetTextureAssetEntryID(Span<const TextureAsset> textureAssets, SkyObjectTextureAssetEntryID *outID) const
 {
 	for (int i = 0; i < static_cast<int>(this->textureAssetEntries.size()); i++)
 	{
 		const SkyObjectTextureAssetEntry &entry = this->textureAssetEntries[i];
-		const BufferView<const TextureAsset> entryTextureAssets(entry.textureAssets);
+		const Span<const TextureAsset> entryTextureAssets(entry.textureAssets);
 		if (entryTextureAssets.getCount() != textureAssets.getCount())
 		{
 			continue;
@@ -154,7 +154,7 @@ SkyInstance::SkyInstance()
 void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefinition &skyInfoDefinition, int currentDay,
 	TextureManager &textureManager)
 {
-	auto addGeneralObjectInst = [this, &textureManager](const Double3 &baseDirection, BufferView<const TextureAsset> textureAssets, bool emissive, double animSeconds = 0.0)
+	auto addGeneralObjectInst = [this, &textureManager](const Double3 &baseDirection, Span<const TextureAsset> textureAssets, bool emissive, double animSeconds = 0.0)
 	{
 		const TextureAsset &firstTextureAsset = textureAssets.get(0);
 		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(firstTextureAsset.filename.c_str());
@@ -172,7 +172,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		auto textureIter = std::find_if(this->textureAssetEntries.begin(), this->textureAssetEntries.end(),
 			[&textureAssets](const SkyObjectTextureAssetEntry &entry)
 		{
-			BufferView<const TextureAsset> entryTextureAssets(entry.textureAssets);
+			Span<const TextureAsset> entryTextureAssets(entry.textureAssets);
 			if (entryTextureAssets.getCount() != textureAssets.getCount())
 			{
 				return false;
@@ -261,7 +261,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 		const SkyDefinition::LandPlacementDef &placementDef = skyDefinition.getLandPlacementDef(i);
 		const SkyDefinition::LandDefID defID = placementDef.id;
 		const SkyLandDefinition &skyLandDef = skyInfoDefinition.getLand(defID);
-		BufferView<const TextureAsset> textureAssets(skyLandDef.textureAssets);
+		Span<const TextureAsset> textureAssets(skyLandDef.textureAssets);
 
 		for (const Radians position : placementDef.positions)
 		{
@@ -297,7 +297,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Radians angleY = position.second;
 			const Double3 direction = SkyUtils::getSkyObjectDirection(angleX, angleY);
 			constexpr bool emissive = false;
-			addGeneralObjectInst(direction, BufferView<const TextureAsset>(&textureAsset, 1), emissive);
+			addGeneralObjectInst(direction, Span<const TextureAsset>(&textureAsset, 1), emissive);
 
 			// Do position transform since it's only needed once at initialization for air objects.
 			SkyObjectInstance &skyObjectInst = this->skyObjectInsts.back();
@@ -333,7 +333,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			direction4D = moonOrbitPercentRotation * direction4D;
 
 			constexpr bool emissive = true;
-			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z), BufferView<const TextureAsset>(&textureAsset, 1), emissive);
+			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z), Span<const TextureAsset>(&textureAsset, 1), emissive);
 		}
 
 		moonInstCount += static_cast<int>(placementDef.positions.size());
@@ -357,7 +357,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			const Double3 baseDirection = -Double3::UnitY;
 			const Double4 direction4D = sunLatitudeRotation * Double4(baseDirection.x, baseDirection.y, baseDirection.z, 0.0);
 			constexpr bool emissive = true;
-			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z), BufferView<const TextureAsset>(&textureAsset, 1), emissive);
+			addGeneralObjectInst(Double3(direction4D.x, direction4D.y, direction4D.z), Span<const TextureAsset>(&textureAsset, 1), emissive);
 		}
 
 		sunInstCount += static_cast<int>(placementDef.positions.size());
@@ -395,7 +395,7 @@ void SkyInstance::init(const SkyDefinition &skyDefinition, const SkyInfoDefiniti
 			{
 				// Use star direction directly.
 				constexpr bool emissive = true;
-				addGeneralObjectInst(position, BufferView<const TextureAsset>(&textureAsset, 1), emissive);
+				addGeneralObjectInst(position, Span<const TextureAsset>(&textureAsset, 1), emissive);
 			}
 		}
 		else

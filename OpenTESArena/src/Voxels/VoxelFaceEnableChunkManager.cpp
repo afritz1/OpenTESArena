@@ -2,7 +2,7 @@
 #include "VoxelChunkManager.h"
 #include "VoxelFaceEnableChunkManager.h"
 
-void VoxelFaceEnableChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void VoxelFaceEnableChunkManager::updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
@@ -23,14 +23,14 @@ void VoxelFaceEnableChunkManager::updateActiveChunks(BufferView<const ChunkInt2>
 	this->chunkPool.clear();
 }
 
-void VoxelFaceEnableChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+void VoxelFaceEnableChunkManager::update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	const VoxelChunkManager &voxelChunkManager)
 {
 	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		VoxelFaceEnableChunk &faceEnableChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		BufferView<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
+		Span<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
 		faceEnableChunk.update(dirtyVoxels, voxelChunk);
 	}
 
@@ -38,8 +38,8 @@ void VoxelFaceEnableChunkManager::update(BufferView<const ChunkInt2> activeChunk
 	{
 		VoxelFaceEnableChunk &faceEnableChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		BufferView<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
-		BufferView<const VoxelInt3> dirtyChasmWallInstVoxels = voxelChunk.getDirtyChasmWallInstPositions();
+		Span<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
+		Span<const VoxelInt3> dirtyChasmWallInstVoxels = voxelChunk.getDirtyChasmWallInstPositions();
 		faceEnableChunk.update(dirtyVoxels, voxelChunk);
 		faceEnableChunk.update(dirtyChasmWallInstVoxels, voxelChunk);
 	}

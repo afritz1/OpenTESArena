@@ -11,7 +11,7 @@
 #include "../Math/Vector3.h"
 #include "../Utilities/Palette.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class Random;
 
@@ -57,9 +57,9 @@ public:
 	virtual VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) = 0;
 	virtual VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) = 0;
 	virtual IndexBufferID createIndexBuffer(int indexCount) = 0;
-	virtual void populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions) = 0;
-	virtual void populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes) = 0;
-	virtual void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices) = 0;
+	virtual void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions) = 0;
+	virtual void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes) = 0;
+	virtual void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices) = 0;
 	virtual void freeVertexPositionBuffer(VertexPositionBufferID id) = 0;
 	virtual void freeVertexAttributeBuffer(VertexAttributeBufferID id) = 0;
 	virtual void freeIndexBuffer(IndexBufferID id) = 0;
@@ -73,8 +73,8 @@ public:
 
 	// Uniform management functions.
 	virtual UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) = 0;
-	virtual void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) = 0;
-	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) = 0;
+	virtual void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data) = 0;
+	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData) = 0;
 	virtual void freeUniformBuffer(UniformBufferID id) = 0;
 
 	// Light management functions.

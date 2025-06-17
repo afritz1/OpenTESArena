@@ -25,7 +25,7 @@
 namespace PlayerLogic
 {
 	PlayerInputAcceleration getInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
-		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
+		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, Span<const Rect> nativeCursorRegions)
 	{
 		PlayerInputAcceleration inputAcceleration;
 		if (!isOnGround && !isClimbing)
@@ -610,7 +610,7 @@ PlayerInputAcceleration::PlayerInputAcceleration()
 	this->shouldResetVelocity = false;
 }
 
-Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, BufferView<const Rect> nativeCursorRegions)
+Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, Span<const Rect> nativeCursorRegions)
 {
 	const auto &inputManager = game.inputManager;
 
@@ -711,7 +711,7 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 	return Double2::Zero;
 }
 
-PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, BufferView<const Rect> nativeCursorRegions)
+PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, Span<const Rect> nativeCursorRegions)
 {
 	const InputManager &inputManager = game.inputManager;
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;

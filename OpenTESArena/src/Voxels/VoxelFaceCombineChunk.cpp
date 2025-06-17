@@ -101,7 +101,7 @@ namespace
 
 				if (hasChasmWallInst && hasAdjacentChasmWallInst)
 				{
-					BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
+					Span<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
 					const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts.get(chasmWallInstIndex);
 					const VoxelChasmWallInstance &adjacentChasmWallInst = chasmWallInsts.get(adjacentChasmWallInstIndex);
 
@@ -226,7 +226,7 @@ void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
 	this->dirtyEntries.fill(VoxelFaceCombineDirtyEntry());
 }
 
-void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
+void VoxelFaceCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 {
 	this->dirtyEntryPositions.clear();
 	this->dirtyEntryPositions.reserve(dirtyVoxels.getCount());

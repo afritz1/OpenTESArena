@@ -7,8 +7,8 @@
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer3D.h"
-#include "components/utilities/BufferView.h"
 #include "components/utilities/RecyclablePool.h"
+#include "components/utilities/Span.h"
 
 struct VoxelChunk;
 struct VoxelFaceEnableChunk;
@@ -55,7 +55,7 @@ public:
 
 	void init(const ChunkInt2 &position, int height);
 
-	void update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk);
+	void update(Span<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk);
 
 	void clear();
 };

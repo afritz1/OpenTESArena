@@ -598,8 +598,8 @@ bool InputManager::isInTextEntryMode() const
 	return inTextEntryMode == SDL_TRUE;
 }
 
-void InputManager::handleHeldInputs(Game &game, BufferView<const InputActionMap*> activeMaps,
-	BufferView<const InputActionListenerEntry*> enabledInputActionListeners,
+void InputManager::handleHeldInputs(Game &game, Span<const InputActionMap*> activeMaps,
+	Span<const InputActionListenerEntry*> enabledInputActionListeners,
 	uint32_t mouseState, const Int2 &mousePosition, double dt)
 {
 	auto handleHeldMouseButton = [this, &game, mouseState, &mousePosition, dt](MouseButtonType buttonType)
@@ -662,7 +662,7 @@ void InputManager::handleHeldInputs(Game &game, BufferView<const InputActionMap*
 	}
 }
 
-void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> buttonProxies,
+void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonProxies,
 	const std::function<void()> &onFinishedProcessingEvent)
 {
 	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
@@ -758,8 +758,8 @@ void InputManager::update(Game &game, double dt, BufferView<const ButtonProxy> b
 	}
 
 	// Handle held mouse buttons and keys.
-	const BufferView<const InputActionMap*> activeMapsView(activeMaps);
-	const BufferView<const InputActionListenerEntry*> enabledInputActionListenersView(enabledInputActionListeners);
+	const Span<const InputActionMap*> activeMapsView(activeMaps);
+	const Span<const InputActionListenerEntry*> enabledInputActionListenersView(enabledInputActionListeners);
 	Int2 mousePosition;
 	const uint32_t mouseState = SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
 	this->handleHeldInputs(game, activeMapsView, enabledInputActionListenersView, mouseState, mousePosition, dt);

@@ -8,7 +8,7 @@
 
 void ItemLibrary::init(const ExeData &exeData)
 {
-	const BufferView<const std::string> accessoryNames = exeData.equipment.enhancementItemNames;
+	const Span<const std::string> accessoryNames = exeData.equipment.enhancementItemNames;
 	for (int i = 0; i < accessoryNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
@@ -19,12 +19,12 @@ void ItemLibrary::init(const ExeData &exeData)
 
 	constexpr double kgDivisor = ArenaItemUtils::KilogramsDivisor;
 	constexpr int armorCount = 7; // Ignores shields at end.
-	const BufferView<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames, armorCount);
-	const BufferView<const std::string> chainArmorNames(exeData.equipment.chainArmorNames, armorCount);
-	const BufferView<const std::string> armorNames(exeData.equipment.armorNames, armorCount); // Requires an associated material.
-	const BufferView<const uint16_t> leatherArmorWeights(exeData.equipment.leatherArmorWeights, armorCount);
-	const BufferView<const uint16_t> chainArmorWeights(exeData.equipment.chainArmorWeights, armorCount);
-	const BufferView<const uint16_t> plateArmorWeights(exeData.equipment.plateArmorWeights, armorCount);
+	const Span<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames, armorCount);
+	const Span<const std::string> chainArmorNames(exeData.equipment.chainArmorNames, armorCount);
+	const Span<const std::string> armorNames(exeData.equipment.armorNames, armorCount); // Requires an associated material.
+	const Span<const uint16_t> leatherArmorWeights(exeData.equipment.leatherArmorWeights, armorCount);
+	const Span<const uint16_t> chainArmorWeights(exeData.equipment.chainArmorWeights, armorCount);
+	const Span<const uint16_t> plateArmorWeights(exeData.equipment.plateArmorWeights, armorCount);
 	//const BufferView<const std::string> plateArmorNames = exeData.equipment.plateArmorNames; // Not sure 'ordinary' plate exists in-game
 	for (int i = 0; i < leatherArmorNames.getCount(); i++)
 	{
@@ -59,7 +59,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
-	const BufferView<const std::string> potionNames = exeData.equipment.potionNames;
+	const Span<const std::string> potionNames = exeData.equipment.potionNames;
 	const std::string &unidentifiedPotionName = exeData.equipment.unidentifiedPotionName;
 	for (int i = 0; i < potionNames.getCount(); i++)
 	{
@@ -69,7 +69,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	
-	const BufferView<const std::string> mainQuestItemNames = exeData.quests.mainQuestItemNames;
+	const Span<const std::string> mainQuestItemNames = exeData.quests.mainQuestItemNames;
 	for (int i = 0; i < mainQuestItemNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
@@ -79,8 +79,8 @@ void ItemLibrary::init(const ExeData &exeData)
 	}
 	
 	constexpr int shieldCount = 4;
-	const BufferView<const std::string> shieldNames(exeData.equipment.armorNames + armorCount, shieldCount);
-	const BufferView<const uint16_t> shieldWeights(exeData.equipment.plateArmorWeights + armorCount, shieldCount);
+	const Span<const std::string> shieldNames(exeData.equipment.armorNames + armorCount, shieldCount);
+	const Span<const uint16_t> shieldWeights(exeData.equipment.plateArmorWeights + armorCount, shieldCount);
 	for (int i = 0; i < shieldNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
@@ -92,7 +92,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	
-	const BufferView<const std::string> trinketNames = exeData.equipment.spellcastingItemNames;
+	const Span<const std::string> trinketNames = exeData.equipment.spellcastingItemNames;
 	for (int i = 0; i < trinketNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
@@ -101,11 +101,11 @@ void ItemLibrary::init(const ExeData &exeData)
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	
-	const BufferView<const std::string> weaponNames = exeData.equipment.weaponNames;
-	const BufferView<const uint16_t> weaponWeights = exeData.equipment.weaponWeights;
-	const BufferView<const uint8_t> weaponBasePrices = exeData.equipment.weaponBasePrices;
-	const BufferView<const std::pair<uint8_t, uint8_t>> weaponDamages = exeData.equipment.weaponDamages;
-	const BufferView<const uint8_t> weaponHandednesses = exeData.equipment.weaponHandednesses;
+	const Span<const std::string> weaponNames = exeData.equipment.weaponNames;
+	const Span<const uint16_t> weaponWeights = exeData.equipment.weaponWeights;
+	const Span<const uint8_t> weaponBasePrices = exeData.equipment.weaponBasePrices;
+	const Span<const std::pair<uint8_t, uint8_t>> weaponDamages = exeData.equipment.weaponDamages;
+	const Span<const uint8_t> weaponHandednesses = exeData.equipment.weaponHandednesses;
 	for (int i = 0; i < weaponNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;

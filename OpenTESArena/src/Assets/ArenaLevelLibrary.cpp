@@ -89,12 +89,12 @@ bool ArenaLevelLibrary::initWildernessChunks()
 	return true;
 }
 
-BufferView<const MIFFile> ArenaLevelLibrary::getCityBlockMifs() const
+Span<const MIFFile> ArenaLevelLibrary::getCityBlockMifs() const
 {
 	return this->cityBlockMifs;
 }
 
-BufferView<const RMDFile> ArenaLevelLibrary::getWildernessChunks() const
+Span<const RMDFile> ArenaLevelLibrary::getWildernessChunks() const
 {
 	return this->wildernessChunks;
 }

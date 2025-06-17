@@ -52,7 +52,7 @@ bool CharacterPanel::init()
 
 	const PrimaryAttributes &playerAttributes = CharacterSheetUiModel::getPlayerAttributes(game);
 	const Buffer<TextBoxInitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(fontLibrary);
-	const BufferView<const PrimaryAttribute> playerAttributesView = playerAttributes.getView();
+	const Span<const PrimaryAttribute> playerAttributesView = playerAttributes.getView();
 	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = playerAttributesView.get(i);
@@ -68,7 +68,7 @@ bool CharacterPanel::init()
 
 	const DerivedAttributes playerDerivedAttributes = CharacterSheetUiModel::getPlayerDerivedAttributes(game);
 	const Buffer<TextBoxInitInfo> playerDerivedAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerDerivedAttributeTextBoxInitInfos(fontLibrary);
-	BufferView<const int> playerDerivedAttributesView = playerDerivedAttributes.getView();
+	Span<const int> playerDerivedAttributesView = playerDerivedAttributes.getView();
 	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
 	{
 		const int derivedAttributeValue = playerDerivedAttributesView.get(i);

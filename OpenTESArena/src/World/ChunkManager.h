@@ -6,7 +6,7 @@
 
 #include "Coord.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class ChunkManager
 {
@@ -18,9 +18,9 @@ private:
 public:
 	ChunkManager();
 
-	BufferView<const ChunkInt2> getActiveChunkPositions() const;
-	BufferView<const ChunkInt2> getNewChunkPositions() const;
-	BufferView<const ChunkInt2> getFreedChunkPositions() const;
+	Span<const ChunkInt2> getActiveChunkPositions() const;
+	Span<const ChunkInt2> getNewChunkPositions() const;
+	Span<const ChunkInt2> getFreedChunkPositions() const;
 	int getCenterChunkIndex() const;
 	std::optional<int> findChunkIndex(const ChunkInt2 &position) const;
 

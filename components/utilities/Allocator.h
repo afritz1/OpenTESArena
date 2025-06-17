@@ -77,7 +77,7 @@ public:
 	}
 
 	template<typename T>
-	BufferView<T> alloc(int count, const T &defaultValue)
+	Span<T> alloc(int count, const T &defaultValue)
 	{
 		static_assert(std::is_trivial_v<T>);
 		DebugAssert(count >= 0);
@@ -91,11 +91,11 @@ public:
 		}
 
 		this->index += ScratchAllocator::getByteCount<T>(count);
-		return BufferView<T>(ptr, count);
+		return Span<T>(ptr, count);
 	}
 
 	template<typename T>
-	BufferView<T> alloc(int count)
+	Span<T> alloc(int count)
 	{
 		return this->alloc(count, T());
 	}
@@ -103,8 +103,8 @@ public:
 	template<typename T>
 	T *alloc()
 	{
-		BufferView<T> bufferView = this->alloc(1, T());
-		return bufferView.get();
+		Span<T> span = this->alloc(1, T());
+		return span.get();
 	}
 
 	void clear()

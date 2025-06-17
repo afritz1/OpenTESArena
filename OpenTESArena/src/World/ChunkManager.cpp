@@ -10,19 +10,19 @@ ChunkManager::ChunkManager()
 	this->centerChunkPosIndex = -1;
 }
 
-BufferView<const ChunkInt2> ChunkManager::getActiveChunkPositions() const
+Span<const ChunkInt2> ChunkManager::getActiveChunkPositions() const
 {
-	return BufferView<const ChunkInt2>(this->activeChunkPositions);
+	return Span<const ChunkInt2>(this->activeChunkPositions);
 }
 
-BufferView<const ChunkInt2> ChunkManager::getNewChunkPositions() const
+Span<const ChunkInt2> ChunkManager::getNewChunkPositions() const
 {
-	return BufferView<const ChunkInt2>(this->newChunkPositions);
+	return Span<const ChunkInt2>(this->newChunkPositions);
 }
 
-BufferView<const ChunkInt2> ChunkManager::getFreedChunkPositions() const
+Span<const ChunkInt2> ChunkManager::getFreedChunkPositions() const
 {
-	return BufferView<const ChunkInt2>(this->freedChunkPositions);
+	return Span<const ChunkInt2>(this->freedChunkPositions);
 }
 
 int ChunkManager::getCenterChunkIndex() const

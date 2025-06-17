@@ -84,7 +84,7 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 		[&wildData, &random]()
 	{
 		// Determine the wilderness block list to draw from.
-		const BufferView<const WildBlockID> blockList = [&wildData, &random]() -> BufferView<const uint8_t>
+		const Span<const WildBlockID> blockList = [&wildData, &random]() -> Span<const uint8_t>
 		{
 			constexpr uint16_t normalVal = 0x6666;
 			constexpr uint16_t villageVal = 0x4000;
@@ -182,7 +182,7 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 	if (!isPremadeCity)
 	{
 		const int cityBlocksPerSide = cityDef.cityBlocksPerSide;
-		const BufferView<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
+		const Span<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
 			static_cast<int>(cityDef.reservedBlocks->size()));
 		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
 		const uint32_t citySeed = cityDef.citySeed;

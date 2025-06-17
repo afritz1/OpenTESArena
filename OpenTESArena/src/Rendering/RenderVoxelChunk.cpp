@@ -24,24 +24,24 @@ RenderVoxelDrawCallHeap::RenderVoxelDrawCallHeap()
 	this->nextID = 0;
 }
 
-BufferView<RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id)
+Span<RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id)
 {
 	DebugAssertIndex(this->drawCallRanges, id);
 	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
 
 	RenderDrawCall *rangeBegin = std::begin(this->drawCalls) + drawCallRange.index;
 	DebugAssert((rangeBegin + drawCallRange.count) <= std::end(this->drawCalls));
-	return BufferView<RenderDrawCall>(rangeBegin, drawCallRange.count);
+	return Span<RenderDrawCall>(rangeBegin, drawCallRange.count);
 }
 
-BufferView<const RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id) const
+Span<const RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id) const
 {
 	DebugAssertIndex(this->drawCallRanges, id);
 	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
 
 	const RenderDrawCall *rangeBegin = std::begin(this->drawCalls) + drawCallRange.index;
 	DebugAssert((rangeBegin + drawCallRange.count) <= std::end(this->drawCalls));
-	return BufferView<const RenderDrawCall>(rangeBegin, drawCallRange.count);
+	return Span<const RenderDrawCall>(rangeBegin, drawCallRange.count);
 }
 
 RenderVoxelDrawCallRangeID RenderVoxelDrawCallHeap::alloc(int drawCallCount)

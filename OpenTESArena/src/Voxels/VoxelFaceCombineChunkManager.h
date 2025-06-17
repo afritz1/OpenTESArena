@@ -4,7 +4,7 @@
 #include "VoxelFaceCombineChunk.h"
 #include "../World/SpecializedChunkManager.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class VoxelChunkManager;
 class VoxelFaceEnableChunkManager;
@@ -13,9 +13,9 @@ class VoxelFaceEnableChunkManager;
 class VoxelFaceCombineChunkManager final : public SpecializedChunkManager<VoxelFaceCombineChunk>
 {
 public:
-	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+	void updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		const VoxelChunkManager &voxelChunkManager);
-	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 		const VoxelChunkManager &voxelChunkManager, const VoxelFaceEnableChunkManager &voxelFaceEnableChunkManager);
 };
 

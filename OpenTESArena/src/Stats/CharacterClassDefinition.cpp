@@ -37,7 +37,7 @@ CharacterClassDefinition::CharacterClassDefinition()
 }
 
 void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID categoryID, const char *preferredAttributes,
-	BufferView<const int> allowedArmors, BufferView<const int> allowedShields, BufferView<const int> allowedWeapons,
+	Span<const int> allowedArmors, Span<const int> allowedShields, Span<const int> allowedWeapons,
 	bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, double lockpickPercent, bool criticalHit,
 	int originalClassIndex)
 {

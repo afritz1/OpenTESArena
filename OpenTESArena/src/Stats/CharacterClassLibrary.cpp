@@ -82,7 +82,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 				constexpr int ShieldIDMappings[] = { 0, 1, 2, 3 };
 
 				DebugAssertIndex(allowedShieldsLists, shieldIndex);
-				const BufferView<const uint8_t> shieldsList = allowedShieldsLists[shieldIndex];
+				const Span<const uint8_t> shieldsList = allowedShieldsLists[shieldIndex];
 
 				std::vector<int> shields;
 				for (const uint8_t shield : shieldsList)
@@ -119,7 +119,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 			else
 			{
 				DebugAssertIndex(allowedWeaponsLists, weaponIndex);
-				const BufferView<const uint8_t> weaponsList = allowedWeaponsLists[weaponIndex];
+				const Span<const uint8_t> weaponsList = allowedWeaponsLists[weaponIndex];
 				
 				std::vector<int> weapons;
 				for (const uint8_t weapon : weaponsList)

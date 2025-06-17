@@ -8,8 +8,8 @@
 
 #include "MusicDefinition.h"
 
-#include "components/utilities/BufferView.h"
 #include "components/utilities/Singleton.h"
+#include "components/utilities/Span.h"
 
 class Random;
 

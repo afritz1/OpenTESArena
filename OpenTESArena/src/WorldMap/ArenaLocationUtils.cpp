@@ -183,7 +183,7 @@ int ArenaLocationUtils::getMapDistance(const Int2 &globalSrc, const Int2 &global
 }
 
 int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-	int month, BufferView<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random,
+	int month, Span<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random,
 	const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	const auto &cityData = binaryAssetLibrary.getCityDataFile();

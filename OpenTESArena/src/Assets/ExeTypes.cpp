@@ -2,7 +2,7 @@
 
 #include "components/utilities/Bytes.h"
 
-void ExeTypes::Rect16::init(BufferView<const std::byte> exeBytes, int exeAddress)
+void ExeTypes::Rect16::init(Span<const std::byte> exeBytes, int exeAddress)
 {
 	DebugAssert(exeBytes.isValidRange(exeAddress, ExeTypes::Rect16::SIZE));
 	const uint8_t *ptr = reinterpret_cast<const uint8_t*>(exeBytes.begin()) + exeAddress;
@@ -12,7 +12,7 @@ void ExeTypes::Rect16::init(BufferView<const std::byte> exeBytes, int exeAddress
 	this->h = Bytes::getLE16(ptr + (sizeof(int16_t) * 3));
 }
 
-void ExeTypes::List::init(BufferView<const std::byte> exeBytes, int exeAddress)
+void ExeTypes::List::init(Span<const std::byte> exeBytes, int exeAddress)
 {
 	DebugAssert(exeBytes.isValidRange(exeAddress, ExeTypes::List::SIZE));
 	this->buttonUp.init(exeBytes, exeAddress);

@@ -122,7 +122,7 @@ namespace
 		}
 	};
 
-	bool TryGetArenaAssetsDirectory(BufferView<const std::string> arenaPaths, const std::string &basePath, std::string *outDirectory, bool *outIsFloppyDiskVersion)
+	bool TryGetArenaAssetsDirectory(Span<const std::string> arenaPaths, const std::string &basePath, std::string *outDirectory, bool *outIsFloppyDiskVersion)
 	{
 		std::vector<std::string> validArenaPaths;
 		for (std::string path : arenaPaths)
@@ -838,7 +838,7 @@ void Game::loop()
 		// User input.
 		try
 		{
-			const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
+			const Span<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
 			auto onFinishedProcessingEventFunc = [this]()
 			{
 				this->handlePanelChanges();
@@ -987,7 +987,7 @@ void Game::loop()
 
 			for (const Panel *currentPanel : panelsToRender)
 			{
-				const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
+				const Span<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
 				for (const UiDrawCall &drawCall : drawCallsView)
 				{
 					if (!drawCall.activeFunc())

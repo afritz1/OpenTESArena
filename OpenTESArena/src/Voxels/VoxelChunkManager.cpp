@@ -702,7 +702,7 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 			if (hasNorthFace || hasEastFace || hasSouthFace || hasWestFace)
 			{
 				// The instance is still needed. Update its chasm walls.
-				BufferView<VoxelChasmWallInstance> chasmWallInsts = chunk.getChasmWallInsts();
+				Span<VoxelChasmWallInstance> chasmWallInsts = chunk.getChasmWallInsts();
 				VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmInstIndex];
 
 				const bool shouldDirtyChasmWallInst = (chasmWallInst.north != hasNorthFace) || (chasmWallInst.east != hasEastFace) ||
@@ -783,10 +783,10 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 	}
 }
 
-void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void VoxelChunkManager::update(double dt, Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 	const CoordDouble3 &playerCoord, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
-	const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs, BufferView<const int> levelInfoDefIndices,
-	BufferView<const LevelInfoDefinition> levelInfoDefs, double ceilingScale, AudioManager &audioManager)
+	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs, Span<const int> levelInfoDefIndices,
+	Span<const LevelInfoDefinition> levelInfoDefs, double ceilingScale, AudioManager &audioManager)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
 	{
@@ -832,7 +832,7 @@ void VoxelChunkManager::update(double dt, BufferView<const ChunkInt2> newChunkPo
 	for (int i = 0; i < activeChunkCount; i++)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
-		BufferView<const VoxelInt3> oldDirtyChasmWallPositions = chunkPtr->getDirtyChasmWallInstPositions();
+		Span<const VoxelInt3> oldDirtyChasmWallPositions = chunkPtr->getDirtyChasmWallInstPositions();
 		if (oldDirtyChasmWallPositions.getCount() == 0)
 		{
 			continue;

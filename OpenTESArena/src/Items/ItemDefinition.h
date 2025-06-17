@@ -1,7 +1,7 @@
 #ifndef ITEM_DEFINITION_H
 #define ITEM_DEFINITION_H
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 using ItemConditionDefinitionID = int;
 
@@ -117,7 +117,7 @@ struct ArtifactItemDefinition
 
 	ArtifactItemDefinition();
 
-	void init(const char *flavorText, BufferView<const int> provinceIDs);
+	void init(const char *flavorText, Span<const int> provinceIDs);
 };
 
 enum class ItemType

@@ -317,7 +317,7 @@ double GameState::getActiveCeilingScale() const
 		return 0.0;
 	}
 
-	BufferView<const LevelInfoDefinition> levelInfoDefs = this->activeMapDef.getLevelInfos();
+	Span<const LevelInfoDefinition> levelInfoDefs = this->activeMapDef.getLevelInfos();
 	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[this->activeLevelIndex];
 	return levelInfoDef.getCeilingScale();
 }
@@ -364,7 +364,7 @@ const ProvinceMapUiModel::TravelData *GameState::getTravelData() const
 	return this->travelData.has_value() ? &(*this->travelData) : nullptr;
 }
 
-BufferView<const ArenaWeatherType> GameState::getWorldMapWeathers() const
+Span<const ArenaWeatherType> GameState::getWorldMapWeathers() const
 {
 	return this->worldMapWeathers;
 }
@@ -950,17 +950,17 @@ void GameState::tickVoxels(double dt, Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
-	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
-	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
-	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
+	const Span<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+	const Span<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+	const Span<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 
 	const Player &player = game.player;
 
 	const MapDefinition &mapDef = this->getActiveMapDef();
 	const int levelIndex = this->getActiveLevelIndex();
-	const BufferView<const LevelDefinition> levelDefs = mapDef.getLevels();
-	const BufferView<const int> levelInfoDefIndices = mapDef.getLevelInfoIndices();
-	const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDef.getLevelInfos();
+	const Span<const LevelDefinition> levelDefs = mapDef.getLevels();
+	const Span<const int> levelInfoDefIndices = mapDef.getLevelInfoIndices();
+	const Span<const LevelInfoDefinition> levelInfoDefs = mapDef.getLevelInfos();
 	const LevelDefinition &levelDef = levelDefs[levelIndex];
 	const int levelInfoIndex = levelInfoDefIndices[levelIndex];
 	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoIndex];
@@ -990,9 +990,9 @@ void GameState::tickEntities(double dt, Game &game)
 	const MapDefinition &mapDef = this->getActiveMapDef();
 	const MapType mapType = mapDef.getMapType();
 	const int levelIndex = this->getActiveLevelIndex();
-	const BufferView<const LevelDefinition> levelDefs = mapDef.getLevels();
-	const BufferView<const int> levelInfoDefIndices = mapDef.getLevelInfoIndices();
-	const BufferView<const LevelInfoDefinition> levelInfoDefs = mapDef.getLevelInfos();
+	const Span<const LevelDefinition> levelDefs = mapDef.getLevels();
+	const Span<const int> levelInfoDefIndices = mapDef.getLevelInfoIndices();
+	const Span<const LevelInfoDefinition> levelInfoDefs = mapDef.getLevelInfos();
 	const LevelDefinition &levelDef = levelDefs[levelIndex];
 	const int levelInfoIndex = levelInfoDefIndices[levelIndex];
 	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoIndex];
@@ -1030,9 +1030,9 @@ void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
-	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
-	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
-	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
+	const Span<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+	const Span<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+	const Span<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
@@ -1054,9 +1054,9 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
-	const BufferView<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
-	const BufferView<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
-	const BufferView<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
+	const Span<const ChunkInt2> activeChunkPositions = chunkManager.getActiveChunkPositions();
+	const Span<const ChunkInt2> newChunkPositions = chunkManager.getNewChunkPositions();
+	const Span<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;

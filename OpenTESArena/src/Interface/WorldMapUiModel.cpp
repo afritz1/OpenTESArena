@@ -209,7 +209,7 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 			const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
 			const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
 			const ArenaTemplateDatEntry &entry = templateDat.getEntry(templateDatEntryKey);
-			const BufferView<const std::string> templateDatTexts = entry.values;
+			const Span<const std::string> templateDatTexts = entry.values;
 
 			if (locationType == ArenaLocationType::CityState)
 			{

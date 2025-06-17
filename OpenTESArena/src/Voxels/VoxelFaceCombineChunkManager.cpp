@@ -3,7 +3,7 @@
 #include "VoxelFaceCombineChunkManager.h"
 #include "VoxelFaceEnableChunkManager.h"
 
-void VoxelFaceCombineChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void VoxelFaceCombineChunkManager::updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
@@ -23,14 +23,14 @@ void VoxelFaceCombineChunkManager::updateActiveChunks(BufferView<const ChunkInt2
 	this->chunkPool.clear();
 }
 
-void VoxelFaceCombineChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+void VoxelFaceCombineChunkManager::update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, const VoxelFaceEnableChunkManager &voxelFaceEnableChunkManager)
 {
 	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		VoxelFaceCombineChunk &faceCombineChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		BufferView<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
+		Span<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
 		const VoxelFaceEnableChunk &faceEnableChunk = voxelFaceEnableChunkManager.getChunkAtPosition(chunkPos);
 		faceCombineChunk.update(dirtyVoxels, voxelChunk, faceEnableChunk);
 	}
@@ -41,7 +41,7 @@ void VoxelFaceCombineChunkManager::update(BufferView<const ChunkInt2> activeChun
 
 		// Rebuild combined faces due to changes in material.
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		BufferView<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
+		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
 		const VoxelFaceEnableChunk &faceEnableChunk = voxelFaceEnableChunkManager.getChunkAtPosition(chunkPos);
 		faceCombineChunk.update(dirtyFadeAnimInstVoxels, voxelChunk, faceEnableChunk);
 	}

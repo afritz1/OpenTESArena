@@ -9,12 +9,12 @@
 #include "../Items/ArenaItemUtils.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 #include "components/utilities/String.h"
 
 namespace
 {
-	void AddAnimationStates(WeaponAnimationDefinition &animDef, const std::string &animFilename, BufferView<const ArenaWeaponUtils::AnimationStateInfo> animStateInfos, TextureManager &textureManager)
+	void AddAnimationStates(WeaponAnimationDefinition &animDef, const std::string &animFilename, Span<const ArenaWeaponUtils::AnimationStateInfo> animStateInfos, TextureManager &textureManager)
 	{
 		const std::optional<TextureFileMetadataID> textureFileMetadataID = textureManager.tryGetMetadataID(animFilename.c_str());
 		if (!textureFileMetadataID.has_value())
@@ -28,7 +28,7 @@ namespace
 		for (const ArenaWeaponUtils::AnimationStateInfo &animStateInfo : animStateInfos)
 		{
 			const std::string &stateName = animStateInfo.name;
-			const BufferView<const int> frameIndices = animStateInfo.frames;
+			const Span<const int> frameIndices = animStateInfo.frames;
 			const double stateSeconds = (static_cast<double>(frameIndices.getCount()) / ArenaWeaponUtils::FRAMES_PER_SECOND) / animStateInfo.timeScale;
 			const int stateIndex = animDef.addState(stateName.c_str(), stateSeconds);
 			const WeaponAnimationDefinitionState &state = animDef.states[stateIndex];

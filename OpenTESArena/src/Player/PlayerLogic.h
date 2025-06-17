@@ -4,7 +4,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class Game;
 class Random;
@@ -29,10 +29,10 @@ namespace PlayerLogic
 {
 	// Determines how much to turn the player by, given user input and delta time.
 	// @todo: make these be Radians instead of "units".
-	Double2 makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, BufferView<const Rect> nativeCursorRegions);
+	Double2 makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, Span<const Rect> nativeCursorRegions);
 
 	// Gets movement values based on player input.
-	PlayerInputAcceleration getInputAcceleration(Game &game, BufferView<const Rect> nativeCursorRegions);
+	PlayerInputAcceleration getInputAcceleration(Game &game, Span<const Rect> nativeCursorRegions);
 
 	CardinalDirectionName getRandomMeleeSwingDirection(Random &random);
 

@@ -158,7 +158,7 @@ int ArenaVoxelUtils::clampVoxelTextureID(int id)
 
 std::string ArenaVoxelUtils::getVoxelTextureFilename(int id, const INFFile &inf)
 {
-	const BufferView<const INFVoxelTexture> voxelTextures = inf.getVoxelTextures();
+	const Span<const INFVoxelTexture> voxelTextures = inf.getVoxelTextures();
 	if ((id < 0) || (id >= voxelTextures.getCount()))
 	{
 		DebugLogWarningFormat("Invalid .INF voxel texture ID \"%d\", defaulting to filename at index 0.", id);
@@ -172,7 +172,7 @@ std::string ArenaVoxelUtils::getVoxelTextureFilename(int id, const INFFile &inf)
 
 std::optional<int> ArenaVoxelUtils::getVoxelTextureSetIndex(int id, const INFFile &inf)
 {
-	const BufferView<const INFVoxelTexture> voxelTextures = inf.getVoxelTextures();
+	const Span<const INFVoxelTexture> voxelTextures = inf.getVoxelTextures();
 	if ((id < 0) || (id >= voxelTextures.getCount()))
 	{
 		DebugLogWarningFormat("Invalid .INF voxel texture ID \"%d\", defaulting to .SET index at index 0.", id);

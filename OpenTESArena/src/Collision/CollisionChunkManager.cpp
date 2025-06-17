@@ -89,7 +89,7 @@ namespace
 						int doorAnimInstIndex;
 						if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
 						{
-							const BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
+							const Span<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
 							const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
 							isClosedDoor = doorAnimInst.stateType == VoxelDoorAnimationStateType::Closed;
 						}
@@ -192,7 +192,7 @@ void CollisionChunkManager::populateChunkEnabledColliders(CollisionChunk &collis
 				int doorAnimInstIndex;
 				if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
 				{
-					const BufferView<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
+					const Span<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
 					const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
 					voxelHasCollision = doorAnimInst.stateType == VoxelDoorAnimationStateType::Closed;
 				}
@@ -233,8 +233,8 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 
 	// @todo: this dirty shapes list might be full of 10k brand new voxels this frame, so we're accidentally destroying + recreating them all (found during the AddBodiesPrepare/Finalize() work)
 
-	const BufferView<const VoxelInt3> dirtyShapeDefPositions = voxelChunk.getDirtyShapeDefPositions();
-	const BufferView<const VoxelInt3> dirtyDoorAnimInstPositions = voxelChunk.getDirtyDoorAnimInstPositions();
+	const Span<const VoxelInt3> dirtyShapeDefPositions = voxelChunk.getDirtyShapeDefPositions();
+	const Span<const VoxelInt3> dirtyDoorAnimInstPositions = voxelChunk.getDirtyDoorAnimInstPositions();
 
 	if (dirtyShapeDefPositions.getCount() > 0)
 	{
@@ -274,8 +274,8 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 	}
 }
 
-void CollisionChunkManager::update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
-	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions, double ceilingScale,
+void CollisionChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPositions,
+	Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions, double ceilingScale,
 	const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();

@@ -481,7 +481,7 @@ void RenderWeatherManager::populateCommandBuffer(RenderCommandBuffer &commandBuf
 {
 	if (weatherInst.hasFog() && isFoggy)
 	{
-		commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(&this->fogDrawCall, 1));
+		commandBuffer.addDrawCalls(Span<const RenderDrawCall>(&this->fogDrawCall, 1));
 	}
 
 	if (weatherInst.hasRain())
@@ -630,7 +630,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 	if (weatherInst.hasRain())
 	{
 		const WeatherRainInstance &rainInst = weatherInst.getRain();
-		const BufferView<const WeatherParticle> rainParticles = rainInst.particles;
+		const Span<const WeatherParticle> rainParticles = rainInst.particles;
 		const int rainParticleCount = rainParticles.getCount();
 		DebugAssert(rainParticleCount == ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
 
@@ -658,7 +658,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 	if (weatherInst.hasSnow())
 	{
 		const WeatherSnowInstance &snowInst = weatherInst.getSnow();
-		const BufferView<const WeatherParticle> snowParticles = snowInst.particles;
+		const Span<const WeatherParticle> snowParticles = snowInst.particles;
 		const int snowParticleCount = snowParticles.getCount();
 
 		if (this->snowDrawCalls.getCount() != snowParticleCount)

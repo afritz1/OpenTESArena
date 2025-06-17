@@ -13,7 +13,7 @@
 #include "../UI/TextBox.h"
 #include "../Utilities/Color.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class Game;
 

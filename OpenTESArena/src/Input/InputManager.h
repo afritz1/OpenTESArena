@@ -17,7 +17,7 @@
 #include "TextEvents.h"
 #include "../Math/Vector2.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 struct ButtonProxy;
 
@@ -175,8 +175,8 @@ private:
 	InputListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
 		std::vector<int> &freedListenerIndices);
 	
-	void handleHeldInputs(Game &game, BufferView<const InputActionMap*> activeMaps,
-		BufferView<const InputActionListenerEntry*> enabledInputActionListeners, uint32_t mouseState,
+	void handleHeldInputs(Game &game, Span<const InputActionMap*> activeMaps,
+		Span<const InputActionListenerEntry*> enabledInputActionListeners, uint32_t mouseState,
 		const Int2 &mousePosition, double dt);
 public:
 	InputManager();
@@ -230,7 +230,7 @@ public:
 	void setTextInputMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(Game &game, double dt, BufferView<const ButtonProxy> buttonProxies, const std::function<void()> &onFinishedProcessingEvent);
+	void update(Game &game, double dt, Span<const ButtonProxy> buttonProxies, const std::function<void()> &onFinishedProcessingEvent);
 };
 
 #endif

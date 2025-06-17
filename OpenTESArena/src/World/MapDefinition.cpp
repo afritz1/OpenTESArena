@@ -21,7 +21,7 @@
 #include "../Weather/WeatherUtils.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 #include "components/utilities/String.h"
 
 MapDefinitionInterior::MapDefinitionInterior()
@@ -139,13 +139,13 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaInteriorType int
 
 		// Set LevelDefinition and LevelInfoDefinition voxels and entities from .MIF + .INF together
 		// (due to ceiling, etc.).
-		const BufferView<const MIFLevel> mifLevelView(&mifLevel, 1);
+		const Span<const MIFLevel> mifLevelView(&mifLevel, 1);
 		constexpr MapType mapType = MapType::Interior;
 		constexpr std::optional<bool> palaceIsMainQuestDungeon; // Not necessary for interiors.
 		constexpr std::optional<ArenaCityType> cityType; // Not necessary for interiors.
 		constexpr LocationDungeonDefinition *dungeonDef = nullptr; // Not necessary for non-dungeons.
 		constexpr std::optional<bool> isArtifactDungeon; // Not necessary for non-dungeons.
-		BufferView<LevelDefinition> levelDefView(&levelDef, 1);
+		Span<LevelDefinition> levelDefView(&levelDef, 1);
 		MapGeneration::readMifVoxels(mifLevelView, mapType, interiorType, rulerSeed, rulerIsMale,
 			palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon, inf, charClassLibrary,
 			entityDefLibrary, binaryAssetLibrary, textureManager, levelDefView, &levelInfoDef);
@@ -233,7 +233,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 		levelDef.init(levelDepth, levelHeight, levelWidth);
 	}
 
-	BufferView<LevelDefinition> levelDefView(this->levels);
+	Span<LevelDefinition> levelDefView(this->levels);
 	LevelInfoDefinition &levelInfoDef = this->levelInfos.get(0);
 
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
@@ -278,7 +278,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 }
 
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-	bool isPremade, BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX,
+	bool isPremade, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX,
 	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const std::string_view cityTypeName, ArenaCityType cityType,
 	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
@@ -381,9 +381,9 @@ bool MapDefinition::initWildLevels(BufferView2D<const ArenaWildUtils::WildBlockI
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	const BufferView<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(uniqueWildBlockIDs);
+	const Span<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(uniqueWildBlockIDs);
 	const BufferView2D<const int> levelDefIndicesConstView(levelDefIndices);
-	BufferView<LevelDefinition> levelDefsView(this->levels);
+	Span<LevelDefinition> levelDefsView(this->levels);
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
 	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView, cityDef, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef,
@@ -508,7 +508,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 		return false;
 	}
 
-	const BufferView<const uint8_t> reservedBlocks(generationInfo.reservedBlocks);
+	const Span<const uint8_t> reservedBlocks(generationInfo.reservedBlocks);
 	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride =
 		generationInfo.mainQuestTempleOverride.has_value() ? &(*generationInfo.mainQuestTempleOverride) : nullptr;
 
@@ -577,17 +577,17 @@ const WorldDouble2 &MapDefinition::getStartPoint(int index) const
 	return this->startPoints.get(index);
 }
 
-BufferView<const LevelDefinition> MapDefinition::getLevels() const
+Span<const LevelDefinition> MapDefinition::getLevels() const
 {
 	return this->levels;
 }
 
-BufferView<const int> MapDefinition::getLevelInfoIndices() const
+Span<const int> MapDefinition::getLevelInfoIndices() const
 {
 	return this->levelInfoMappings;
 }
 
-BufferView<const LevelInfoDefinition> MapDefinition::getLevelInfos() const
+Span<const LevelInfoDefinition> MapDefinition::getLevelInfos() const
 {
 	return this->levelInfos;
 }

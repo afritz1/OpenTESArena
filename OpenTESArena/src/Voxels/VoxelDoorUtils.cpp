@@ -10,7 +10,7 @@ double VoxelDoorUtils::getAnimPercentOrZero(SNInt x, int y, WEInt z, const Voxel
 	int animInstIndex;
 	if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &animInstIndex))
 	{
-		BufferView<const VoxelDoorAnimationInstance> animInsts = voxelChunk.getDoorAnimInsts();
+		Span<const VoxelDoorAnimationInstance> animInsts = voxelChunk.getDoorAnimInsts();
 		const VoxelDoorAnimationInstance &animInst = animInsts[animInstIndex];
 		animPercent = animInst.percentOpen;
 	}

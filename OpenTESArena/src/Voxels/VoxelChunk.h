@@ -158,11 +158,11 @@ public:
 	VoxelTraitsDefID getFloorReplacementTraitsDefID() const;
 	VoxelChasmDefID getFloorReplacementChasmDefID() const;
 
-	BufferView<const VoxelInt3> getDirtyShapeDefPositions() const;
-	BufferView<const VoxelInt3> getDirtyDoorAnimInstPositions() const; // Either animating or just closed this frame.
-	BufferView<const VoxelInt3> getDirtyDoorVisInstPositions() const;
-	BufferView<const VoxelInt3> getDirtyFadeAnimInstPositions() const; // Either animating or just finished this frame.
-	BufferView<const VoxelInt3> getDirtyChasmWallInstPositions() const;
+	Span<const VoxelInt3> getDirtyShapeDefPositions() const;
+	Span<const VoxelInt3> getDirtyDoorAnimInstPositions() const; // Either animating or just closed this frame.
+	Span<const VoxelInt3> getDirtyDoorVisInstPositions() const;
+	Span<const VoxelInt3> getDirtyFadeAnimInstPositions() const; // Either animating or just finished this frame.
+	Span<const VoxelInt3> getDirtyChasmWallInstPositions() const;
 
 	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, VoxelTransitionDefID *outID) const;
 	bool tryGetTriggerDefID(SNInt x, int y, WEInt z, VoxelTriggerDefID *outID) const;
@@ -172,18 +172,18 @@ public:
 	bool tryGetChasmDefID(SNInt x, int y, WEInt z, VoxelChasmDefID *outID) const;
 
 	// Animation instance getters. A destroyed instance is still valid to read until end-of-frame.
-	BufferView<const VoxelDoorAnimationInstance> getDoorAnimInsts() const;
+	Span<const VoxelDoorAnimationInstance> getDoorAnimInsts() const;
 	bool tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	BufferView<const VoxelFadeAnimationInstance> getFadeAnimInsts() const;
+	Span<const VoxelFadeAnimationInstance> getFadeAnimInsts() const;
 	bool tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
-	BufferView<VoxelChasmWallInstance> getChasmWallInsts();
-	BufferView<const VoxelChasmWallInstance> getChasmWallInsts() const;
+	Span<VoxelChasmWallInstance> getChasmWallInsts();
+	Span<const VoxelChasmWallInstance> getChasmWallInsts() const;
 	bool tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	BufferView<VoxelDoorVisibilityInstance> getDoorVisibilityInsts();
-	BufferView<const VoxelDoorVisibilityInstance> getDoorVisibilityInsts() const;
+	Span<VoxelDoorVisibilityInstance> getDoorVisibilityInsts();
+	Span<const VoxelDoorVisibilityInstance> getDoorVisibilityInsts() const;
 	bool tryGetDoorVisibilityInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	BufferView<const VoxelTriggerInstance> getTriggerInsts() const;
+	Span<const VoxelTriggerInstance> getTriggerInsts() const;
 	bool tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
 	void setShapeDefID(SNInt x, int y, WEInt z, VoxelShapeDefID id);

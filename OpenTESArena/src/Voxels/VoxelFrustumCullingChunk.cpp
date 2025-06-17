@@ -2,7 +2,7 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RendererUtils.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 namespace
 {
@@ -17,7 +17,7 @@ namespace
 	Int2 Z_ORDER_CURVE_POINTS_LEVEL4[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL4];
 	Int2 Z_ORDER_CURVE_POINTS_LEVEL5[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL5];
 	Int2 Z_ORDER_CURVE_POINTS_LEVEL6[VoxelFrustumCullingChunk::NODE_COUNT_LEVEL6];
-	BufferView<Int2> Z_ORDER_CURVE_POINT_ARRAYS[] =
+	Span<Int2> Z_ORDER_CURVE_POINT_ARRAYS[] =
 	{
 		Z_ORDER_CURVE_POINTS_LEVEL0,
 		Z_ORDER_CURVE_POINTS_LEVEL1,
@@ -44,7 +44,7 @@ namespace
 	{
 		DebugAssert(!s_areGlobalVariablesInited);
 
-		for (BufferView<Int2> dstArray : Z_ORDER_CURVE_POINT_ARRAYS)
+		for (Span<Int2> dstArray : Z_ORDER_CURVE_POINT_ARRAYS)
 		{
 			for (int i = 0; i < dstArray.getCount(); i++)
 			{
@@ -79,7 +79,7 @@ namespace
 	int GetZOrderCurveNodeIndex(int treeLevelIndex, int treeLevelNodeIndex)
 	{
 		DebugAssertIndex(Z_ORDER_CURVE_POINT_ARRAYS, treeLevelIndex);
-		const BufferView<Int2> zOrderCurvePoints = Z_ORDER_CURVE_POINT_ARRAYS[treeLevelIndex];
+		const Span<Int2> zOrderCurvePoints = Z_ORDER_CURVE_POINT_ARRAYS[treeLevelIndex];
 		const Int2 point = zOrderCurvePoints[treeLevelNodeIndex];
 
 		DebugAssertIndex(VoxelFrustumCullingChunk::NODES_PER_SIDE, treeLevelIndex);

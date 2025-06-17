@@ -34,7 +34,7 @@ namespace ArenaCityUtils
 
 	// Writes generated city building data into the output buffers. The buffers should already
 	// be initialized with the city skeleton.
-	void generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth, BufferView<const uint8_t> reservedBlocks,
+	void generateCity(uint32_t citySeed, int cityDim, WEInt gridDepth, Span<const uint8_t> reservedBlocks,
 		const OriginalInt2 &startPosition, ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
 		Buffer2D<ArenaVoxelID> &dstFlor, Buffer2D<ArenaVoxelID> &dstMap1,
 		Buffer2D<ArenaVoxelID> &dstMap2);

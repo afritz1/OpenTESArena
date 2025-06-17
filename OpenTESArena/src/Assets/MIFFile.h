@@ -11,8 +11,8 @@
 #include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span.h"
 
 // A .MIF file contains a map header and an array of levels. It defines the dimensions of
 // a particular area and which voxels have which IDs, as well as some other data. It is normally
@@ -63,14 +63,14 @@ public:
 	BufferView2D<const ArenaVoxelID> getMAP1() const;
 	BufferView2D<const ArenaVoxelID> getMAP2() const;
 
-	BufferView<const uint8_t> getFLAT() const;
-	BufferView<const uint8_t> getINNS() const;
-	BufferView<const uint8_t> getLOOT() const;
-	BufferView<const uint8_t> getSTOR() const;
+	Span<const uint8_t> getFLAT() const;
+	Span<const uint8_t> getINNS() const;
+	Span<const uint8_t> getLOOT() const;
+	Span<const uint8_t> getSTOR() const;
 
-	BufferView<const ArenaTypes::MIFTarget> getTARG() const;
-	BufferView<const ArenaTypes::MIFLock> getLOCK() const;
-	BufferView<const ArenaTypes::MIFTrigger> getTRIG() const;
+	Span<const ArenaTypes::MIFTarget> getTARG() const;
+	Span<const ArenaTypes::MIFLock> getLOCK() const;
+	Span<const ArenaTypes::MIFTrigger> getTRIG() const;
 };
 
 class MIFFile

@@ -5,7 +5,7 @@
 
 #include "RenderDrawCall.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 struct RenderCommandBuffer
 {
@@ -14,14 +14,14 @@ struct RenderCommandBuffer
 	// One per range of draw calls (voxels, entities, weather, sky, etc). Each range starts execution once the previous one
 	// is complete, ensuring correctness in the final image. Meant for proper rendering of more involved effects like
 	// screen-space reflections that impact the renderer's ability to multi-task.
-	BufferView<const RenderDrawCall> entries[MAX_ENTRIES];
+	Span<const RenderDrawCall> entries[MAX_ENTRIES];
 	int entryCount;
 
 	RenderCommandBuffer();
 
 	int getTotalDrawCallCount() const;
 
-	void addDrawCalls(BufferView<const RenderDrawCall> drawCalls);
+	void addDrawCalls(Span<const RenderDrawCall> drawCalls);
 	void clear();
 };
 

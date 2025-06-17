@@ -50,7 +50,7 @@ void VoxelFaceEnableChunk::init(const ChunkInt2 &position, int height)
 	this->entries.fill(VoxelFaceEnableEntry());
 }
 
-void VoxelFaceEnableChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk)
+void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk)
 {
 	for (const VoxelInt3 voxel : dirtyVoxels)
 	{

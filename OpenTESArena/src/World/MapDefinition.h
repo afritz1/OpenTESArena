@@ -99,7 +99,7 @@ private:
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, WorldInt2 *outStartPoint);
 	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-		bool isPremade, BufferView<const uint8_t> reservedBlocks, WEInt blockStartPosX,
+		bool isPremade, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX,
 		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
 		bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaCityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
@@ -134,12 +134,12 @@ public:
 	// level up/down transitions. For a city, there is only one level. For the wilderness, it gets
 	// the level associated with a wild chunk whose index is acquired by querying some wild chunk
 	// coordinate.
-	BufferView<const LevelDefinition> getLevels() const;
+	Span<const LevelDefinition> getLevels() const;
 
 	// Gets the indices for accessing the level info of a level. It's possible that several levels
 	// use the same level info.
-	BufferView<const int> getLevelInfoIndices() const;
-	BufferView<const LevelInfoDefinition> getLevelInfos() const;
+	Span<const int> getLevelInfoIndices() const;
+	Span<const LevelInfoDefinition> getLevelInfos() const;
 
 	int getSkyIndexForLevel(int levelIndex) const;
 	const SkyDefinition &getSky(int index) const;

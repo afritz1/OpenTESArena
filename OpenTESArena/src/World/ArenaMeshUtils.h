@@ -13,7 +13,7 @@
 #include "../Math/MathUtils.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 enum class VoxelFacing2D;
 enum class VoxelFacing3D;
@@ -42,9 +42,9 @@ struct ArenaShapeInitCache
 	std::array<VoxelFacing3D, VoxelUtils::FACE_COUNT> facings0, facings1, facings2;
 	std::array<const decltype(facings0)*, 3> facingsPtrs;
 
-	BufferView<double> positionsView, normalsView, texCoordsView;
-	BufferView<int32_t> indices0View, indices1View, indices2View;
-	BufferView<VoxelFacing3D> facings0View, facings1View, facings2View;
+	Span<double> positionsView, normalsView, texCoordsView;
+	Span<int32_t> indices0View, indices1View, indices2View;
+	Span<VoxelFacing3D> facings0View, facings1View, facings2View;
 
 	ArenaShapeInitCache();
 
@@ -484,36 +484,36 @@ namespace ArenaMeshUtils
 
 	// Mesh writing functions. All of these are in unscaled model space.
 	// Renderer positions are ordered in the way they're consumed when being converted to triangles.
-	void writeWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeWallRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices);
-	void writeWallFacingBuffers(BufferView<VoxelFacing3D> outSideFacings, BufferView<VoxelFacing3D> outBottomFacings, BufferView<VoxelFacing3D> outTopFacings);
+	void writeWallRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeWallRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices);
+	void writeWallFacingBuffers(Span<VoxelFacing3D> outSideFacings, Span<VoxelFacing3D> outBottomFacings, Span<VoxelFacing3D> outTopFacings);
 
-	void writeFloorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeFloorRendererIndexBuffers(BufferView<int32_t> outIndices);
-	void writeFloorFacingBuffers(BufferView<VoxelFacing3D> outFacings);
+	void writeFloorRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeFloorRendererIndexBuffers(Span<int32_t> outIndices);
+	void writeFloorFacingBuffers(Span<VoxelFacing3D> outFacings);
 	
-	void writeCeilingRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeCeilingRendererIndexBuffers(BufferView<int32_t> outIndices);
-	void writeCeilingFacingBuffers(BufferView<VoxelFacing3D> outFacings);
+	void writeCeilingRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeCeilingRendererIndexBuffers(Span<int32_t> outIndices);
+	void writeCeilingFacingBuffers(Span<VoxelFacing3D> outFacings);
 	
-	void writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeRaisedRendererIndexBuffers(BufferView<int32_t> outSideIndices, BufferView<int32_t> outBottomIndices, BufferView<int32_t> outTopIndices);
+	void writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeRaisedRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices);
 	
-	void writeDiagonalRendererGeometryBuffers(bool type1, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeDiagonalRendererIndexBuffers(BufferView<int32_t> outIndices);
+	void writeDiagonalRendererGeometryBuffers(bool type1, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeDiagonalRendererIndexBuffers(Span<int32_t> outIndices);
 	
-	void writeTransparentWallRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeTransparentWallRendererIndexBuffers(BufferView<int32_t> outIndices);
+	void writeTransparentWallRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeTransparentWallRendererIndexBuffers(Span<int32_t> outIndices);
 	
-	void writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeEdgeRendererIndexBuffers(BufferView<int32_t> outIndices);
+	void writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeEdgeRendererIndexBuffers(Span<int32_t> outIndices);
 	
-	void writeChasmRendererGeometryBuffers(ArenaChasmType chasmType, BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeChasmFloorRendererIndexBuffers(BufferView<int32_t> outIndices); // Chasm walls are separate because they're conditionally enabled.
+	void writeChasmRendererGeometryBuffers(ArenaChasmType chasmType, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeChasmFloorRendererIndexBuffers(Span<int32_t> outIndices); // Chasm walls are separate because they're conditionally enabled.
 	void writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
 	
-	void writeDoorRendererGeometryBuffers(BufferView<double> outPositions, BufferView<double> outNormals, BufferView<double> outTexCoords);
-	void writeDoorRendererIndexBuffers(BufferView<int32_t> outIndices);
+	void writeDoorRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeDoorRendererIndexBuffers(Span<int32_t> outIndices);
 }
 
 #endif

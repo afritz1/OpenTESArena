@@ -44,8 +44,8 @@ struct RenderVoxelDrawCallHeap
 
 	RenderVoxelDrawCallHeap();
 
-	BufferView<RenderDrawCall> get(RenderVoxelDrawCallRangeID id);
-	BufferView<const RenderDrawCall> get(RenderVoxelDrawCallRangeID id) const;
+	Span<RenderDrawCall> get(RenderVoxelDrawCallRangeID id);
+	Span<const RenderDrawCall> get(RenderVoxelDrawCallRangeID id) const;
 	RenderVoxelDrawCallRangeID alloc(int drawCallCount);
 	void free(RenderVoxelDrawCallRangeID id);
 	void clear();

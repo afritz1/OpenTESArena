@@ -371,7 +371,7 @@ namespace Physics
 		if (iter != entityMappings.end())
 		{
 			// Iterate over all entities that cross this voxel and ray test them.
-			BufferView<const EntityEntry> entityEntryList = iter->second;
+			Span<const EntityEntry> entityEntryList = iter->second;
 			for (const EntityEntry &entry : entityEntryList)
 			{
 				const EntityObservedResult &observedResult = entry.observedResult;

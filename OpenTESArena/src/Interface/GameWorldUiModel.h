@@ -7,7 +7,7 @@
 #include "../Math/MathUtils.h"
 #include "../World/Coord.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class Game;
 
@@ -48,7 +48,7 @@ namespace GameWorldUiModel
 
 	// Modifies the values in the native cursor regions array so rectangles in
 	// the current window correctly represent regions for different arrow cursors.
-	void updateNativeCursorRegions(BufferView<Rect> nativeCursorRegions, int width, int height);
+	void updateNativeCursorRegions(Span<Rect> nativeCursorRegions, int width, int height);
 
 	std::string getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData);
 	std::string getEnemyCorpseGoldMessage(int goldCount, const ExeData &exeData);

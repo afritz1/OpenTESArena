@@ -233,7 +233,7 @@ ObjectTextureID RenderEntityChunkManager::getTextureID(EntityInstanceID entityIn
 	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 	const EntityAnimationDefinition &animDef = entityDef.animDef;
 	const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
-	BufferView<const ScopedObjectTextureRef> textureRefs = defIter->textureRefs;
+	Span<const ScopedObjectTextureRef> textureRefs = defIter->textureRefs;
 	return textureRefs.get(linearizedKeyframeIndex).get();
 }
 
@@ -277,7 +277,7 @@ void RenderEntityChunkManager::loadTexturesForChunkEntities(const EntityChunk &e
 }
 
 void RenderEntityChunkManager::addDrawCall(UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
-	const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
+	const std::optional<ObjectTextureID> &textureID1, Span<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
 	std::vector<RenderDrawCall> &drawCalls)
 {
 	RenderDrawCall drawCall;
@@ -346,7 +346,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
 		const VoxelDouble3 &entityLightPoint = entityCoord.point; // Where the entity receives its light (can't use center due to some really tall entities reaching outside the chunk).
 		const VoxelInt3 entityLightVoxel = VoxelUtils::pointToVoxel(entityLightPoint, ceilingScale);
-		BufferView<const RenderLightID> lightIdsView; // Limitation of reusing lights per voxel: entity is unlit if they are outside the world.
+		Span<const RenderLightID> lightIdsView; // Limitation of reusing lights per voxel: entity is unlit if they are outside the world.
 		if (renderLightChunk.isValidVoxel(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z))
 		{
 			const RenderLightIdList &voxelLightIdList = renderLightChunk.lightIdLists.get(entityLightVoxel.x, entityLightVoxel.y, entityLightVoxel.z);
@@ -370,7 +370,7 @@ void RenderEntityChunkManager::rebuildDrawCallsList()
 	for (size_t i = 0; i < this->activeChunks.size(); i++)
 	{
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
-		BufferView<const RenderDrawCall> drawCalls = chunkPtr->drawCalls;
+		Span<const RenderDrawCall> drawCalls = chunkPtr->drawCalls;
 		this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
 	}
 }
@@ -411,11 +411,11 @@ void RenderEntityChunkManager::populateCommandBuffer(RenderCommandBuffer &comman
 		{
 			if (currentCount > 0)
 			{
-				commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
+				commandBuffer.addDrawCalls(Span<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
 				currentCount = 0;
 			}
 
-			commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(this->drawCallsCache.data() + i, 1));
+			commandBuffer.addDrawCalls(Span<const RenderDrawCall>(this->drawCallsCache.data() + i, 1));
 			currentStartIndex = i + 1;
 			continue;
 		}
@@ -426,7 +426,7 @@ void RenderEntityChunkManager::populateCommandBuffer(RenderCommandBuffer &comman
 	if (currentCount > 0)
 	{
 		// Add one last draw call range.
-		commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
+		commandBuffer.addDrawCalls(Span<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
 	}
 }
 
@@ -446,7 +446,7 @@ void RenderEntityChunkManager::loadScene(TextureManager &textureManager, Rendere
 	}
 }
 
-void RenderEntityChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void RenderEntityChunkManager::updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
@@ -469,7 +469,7 @@ void RenderEntityChunkManager::updateActiveChunks(BufferView<const ChunkInt2> ne
 	this->chunkPool.clear();
 }
 
-void RenderEntityChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+void RenderEntityChunkManager::update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	const WorldDouble3 &cameraPosition, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 	const EntityChunkManager &entityChunkManager, const EntityVisibilityChunkManager &entityVisChunkManager,
 	const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager, Renderer &renderer)

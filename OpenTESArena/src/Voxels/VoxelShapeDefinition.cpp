@@ -54,7 +54,7 @@ void VoxelMeshDefinition::initClassic(ArenaVoxelType voxelType, VoxelShapeScaleT
 			const int indexCount = ArenaMeshUtils::GetIndexBufferIndexCount(voxelType, i);
 			dstBuffer.resize(indexCount);
 
-			const BufferView<int32_t> *srcBuffer = nullptr;
+			const Span<int32_t> *srcBuffer = nullptr;
 			if (i == 0)
 			{
 				srcBuffer = &shapeInitCache.indices0View;
@@ -82,7 +82,7 @@ void VoxelMeshDefinition::initClassic(ArenaVoxelType voxelType, VoxelShapeScaleT
 			const int faceCount = ArenaMeshUtils::GetFacingBufferFaceCount(voxelType, i);
 			dstBuffer.resize(faceCount);
 
-			const BufferView<VoxelFacing3D> *srcBuffer = nullptr;
+			const Span<VoxelFacing3D> *srcBuffer = nullptr;
 			if (i == 0)
 			{
 				srcBuffer = &shapeInitCache.facings0View;
@@ -117,7 +117,7 @@ std::vector<int32_t> &VoxelMeshDefinition::getIndicesList(int index)
 	return *ptrs[index];
 }
 
-BufferView<const int32_t> VoxelMeshDefinition::getIndicesList(int index) const
+Span<const int32_t> VoxelMeshDefinition::getIndicesList(int index) const
 {
 	const std::vector<int32_t> *ptrs[] = { &this->indices0, &this->indices1, &this->indices2 };
 	DebugAssertIndex(ptrs, index);
@@ -131,7 +131,7 @@ std::vector<VoxelFacing3D> &VoxelMeshDefinition::getFacingsList(int index)
 	return *ptrs[index];
 }
 
-BufferView<const VoxelFacing3D> VoxelMeshDefinition::getFacingsList(int index) const
+Span<const VoxelFacing3D> VoxelMeshDefinition::getFacingsList(int index) const
 {
 	const std::vector<VoxelFacing3D> *ptrs[] = { &this->facings0, &this->facings1, &this->facings2 };
 	DebugAssertIndex(ptrs, index);
@@ -144,7 +144,7 @@ int VoxelMeshDefinition::findIndexBufferIndexWithFacing(VoxelFacing3D facing) co
 
 	for (int i = 0; i < this->facingsListCount; i++)
 	{
-		BufferView<const VoxelFacing3D> facingList = this->getFacingsList(i);
+		Span<const VoxelFacing3D> facingList = this->getFacingsList(i);
 		for (const VoxelFacing3D currentFacing : facingList)
 		{
 			if (currentFacing == facing)
@@ -165,7 +165,7 @@ bool VoxelMeshDefinition::hasFullCoverageOfFacing(VoxelFacing3D facing) const
 	return indexBufferIndex >= 0;
 }
 
-void VoxelMeshDefinition::writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions) const
+void VoxelMeshDefinition::writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, Span<double> outPositions) const
 {
 	static_assert(MeshUtils::POSITION_COMPONENTS_PER_VERTEX == 3);
 	DebugAssert(outPositions.getCount() >= this->rendererPositions.size());
@@ -185,21 +185,21 @@ void VoxelMeshDefinition::writeRendererVertexPositionBuffer(VoxelShapeScaleType 
 	}
 }
 
-void VoxelMeshDefinition::writeRendererVertexNormalBuffer(BufferView<double> outNormals) const
+void VoxelMeshDefinition::writeRendererVertexNormalBuffer(Span<double> outNormals) const
 {
 	static_assert(MeshUtils::NORMAL_COMPONENTS_PER_VERTEX == 3);
 	DebugAssert(outNormals.getCount() >= this->rendererNormals.size());
 	std::copy(this->rendererNormals.begin(), this->rendererNormals.end(), outNormals.begin());
 }
 
-void VoxelMeshDefinition::writeRendererVertexTexCoordBuffer(BufferView<double> outTexCoords) const
+void VoxelMeshDefinition::writeRendererVertexTexCoordBuffer(Span<double> outTexCoords) const
 {
 	static_assert(MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX == 2);
 	DebugAssert(outTexCoords.getCount() >= this->rendererTexCoords.size());
 	std::copy(this->rendererTexCoords.begin(), this->rendererTexCoords.end(), outTexCoords.begin());
 }
 
-void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1, BufferView<int32_t> outIndices2) const
+void VoxelMeshDefinition::writeRendererIndexBuffers(Span<int32_t> outIndices0, Span<int32_t> outIndices1, Span<int32_t> outIndices2) const
 {
 	if (!this->indices0.empty())
 	{

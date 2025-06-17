@@ -21,7 +21,7 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextRenderUtils.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 ChooseAttributesPanel::ChooseAttributesPanel(Game &game)
 	: Panel(game)
@@ -34,7 +34,7 @@ void ChooseAttributesPanel::populateBaseAttributesRandomly(CharacterCreationStat
 {
 	charCreationState.populateBaseAttributes();
 
-	BufferView<PrimaryAttribute> attributes = charCreationState.attributes.getView();
+	Span<PrimaryAttribute> attributes = charCreationState.attributes.getView();
 	for (int i = 0; i < PrimaryAttributes::COUNT; i++)
 	{
 		PrimaryAttribute &attribute = attributes[i];
@@ -93,7 +93,7 @@ bool ChooseAttributesPanel::init()
 	}
 
 	const Buffer<TextBoxInitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(fontLibrary);
-	const BufferView<const PrimaryAttribute> playerAttributesView = primaryAttributes.getView();
+	const Span<const PrimaryAttribute> playerAttributesView = primaryAttributes.getView();
 	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
 		const PrimaryAttribute &attribute = playerAttributesView.get(i);
@@ -108,7 +108,7 @@ bool ChooseAttributesPanel::init()
 	}
 
 	const Buffer<TextBoxInitInfo> playerDerivedAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerDerivedAttributeTextBoxInitInfos(fontLibrary);
-	BufferView<const int> playerDerivedAttributesView = charCreationState.derivedAttributes.getView();
+	Span<const int> playerDerivedAttributesView = charCreationState.derivedAttributes.getView();
 	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
 	{
 		const int derivedAttributeValue = playerDerivedAttributesView.get(i);
@@ -356,12 +356,12 @@ bool ChooseAttributesPanel::init()
 		{
 			Game &game = this->getGame();
 			CharacterCreationState &charCreationState = game.getCharacterCreationState();
-			BufferView<int> changedPoints = charCreationState.changedPoints;
+			Span<int> changedPoints = charCreationState.changedPoints;
 			changedPoints[attributeIndex]++;
 			charCreationState.bonusPoints--;
 
 			PrimaryAttributes &attributes = charCreationState.attributes;
-			BufferView<PrimaryAttribute> attributesView = attributes.getView();
+			Span<PrimaryAttribute> attributesView = attributes.getView();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue += 1;
 
@@ -389,7 +389,7 @@ bool ChooseAttributesPanel::init()
 			charCreationState.bonusPoints++;
 
 			PrimaryAttributes &attributes = charCreationState.attributes;
-			BufferView<PrimaryAttribute> attributesView = attributes.getView();
+			Span<PrimaryAttribute> attributesView = attributes.getView();
 			PrimaryAttribute &attribute = attributesView.get(attributeIndex);
 			attribute.maxValue -= 1;
 
@@ -404,7 +404,7 @@ bool ChooseAttributesPanel::init()
 		{
 			Game &game = this->getGame();
 			CharacterCreationState &charCreationState = game.getCharacterCreationState();
-			BufferView<const int> changedPoints = charCreationState.changedPoints;
+			Span<const int> changedPoints = charCreationState.changedPoints;
 			return !this->attributesAreSaved && (attributeIndex == this->selectedAttributeIndex) && changedPoints[attributeIndex] > 0;
 		});
 	}
@@ -553,7 +553,7 @@ void ChooseAttributesPanel::updateDerivedAttributeValues()
 	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, primaryAttributes.intelligence.maxValue);
 	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(primaryAttributes);
 
-	const BufferView<const int> derivedAttributesView = charCreationState.derivedAttributes.getView();
+	const Span<const int> derivedAttributesView = charCreationState.derivedAttributes.getView();
 	for (int i = 0; i < DerivedAttributes::COUNT; i++)
 	{
 		const int derivedAttributeValue = derivedAttributesView[i];

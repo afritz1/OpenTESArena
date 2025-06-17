@@ -7,7 +7,7 @@
 #include "../Entities/EntityInstance.h"
 #include "../World/Coord.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class EntityChunkManager;
 class Random;
@@ -27,8 +27,8 @@ struct CombatHitSearchResult
 
 	CombatHitSearchResult();
 
-	BufferView<const WorldInt3> getVoxels() const;
-	BufferView<const EntityInstanceID> getEntities() const;
+	Span<const WorldInt3> getVoxels() const;
+	Span<const EntityInstanceID> getEntities() const;
 };
 
 namespace CombatLogic

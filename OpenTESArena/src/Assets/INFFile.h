@@ -11,7 +11,7 @@
 #include "ArenaTypes.h"
 
 #include "components/dos/DOSUtils.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 struct INFVoxelTexture
 {
@@ -149,8 +149,8 @@ private:
 public:
 	bool init(const char *filename);
 
-	BufferView<const INFVoxelTexture> getVoxelTextures() const;
-	BufferView<const INFFlatTexture> getFlatTextures() const;
+	Span<const INFVoxelTexture> getVoxelTextures() const;
+	Span<const INFFlatTexture> getFlatTextures() const;
 	const std::optional<int> &getBoxCap(int index) const;
 	const std::optional<int> &getBoxSide(int index) const;
 	const std::optional<int> &getMenu(int index) const;

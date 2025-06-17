@@ -3,7 +3,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 
-void Compression::decodeRLE(const uint8_t *src, int stopCount, BufferView<uint8_t> dst)
+void Compression::decodeRLE(const uint8_t *src, int stopCount, Span<uint8_t> dst)
 {
 	// Adapted from WinArena.
 	int i = 0;
@@ -46,7 +46,7 @@ void Compression::decodeRLE(const uint8_t *src, int stopCount, BufferView<uint8_
 	}
 }
 
-void Compression::decodeRLEWords(const uint8_t *src, int stopCount, BufferView<uint8_t> out)
+void Compression::decodeRLEWords(const uint8_t *src, int stopCount, Span<uint8_t> out)
 {
 	int i = 0;
 	int o = 0;

@@ -7,7 +7,7 @@
 #include "../Math/MathUtils.h"
 #include "../World/ArenaMeshUtils.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 enum class VoxelShapeType
 {
@@ -47,18 +47,18 @@ struct VoxelMeshDefinition
 
 	bool isEmpty() const;
 	std::vector<int32_t> &getIndicesList(int index);
-	BufferView<const int32_t> getIndicesList(int index) const;
+	Span<const int32_t> getIndicesList(int index) const;
 	std::vector<VoxelFacing3D> &getFacingsList(int index);
-	BufferView<const VoxelFacing3D> getFacingsList(int index) const;
+	Span<const VoxelFacing3D> getFacingsList(int index) const;
 
 	// Finds the index buffer (if any) that fully covers the voxel facing. Used with mesh combining.
 	int findIndexBufferIndexWithFacing(VoxelFacing3D facing) const;
 	bool hasFullCoverageOfFacing(VoxelFacing3D facing) const;
 
-	void writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions) const;
-	void writeRendererVertexNormalBuffer(BufferView<double> outNormals) const;
-	void writeRendererVertexTexCoordBuffer(BufferView<double> outTexCoords) const;
-	void writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1, BufferView<int32_t> outIndices2) const;
+	void writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, Span<double> outPositions) const;
+	void writeRendererVertexNormalBuffer(Span<double> outNormals) const;
+	void writeRendererVertexTexCoordBuffer(Span<double> outTexCoords) const;
+	void writeRendererIndexBuffers(Span<int32_t> outIndices0, Span<int32_t> outIndices1, Span<int32_t> outIndices2) const;
 };
 
 // Provides geometry for physics and rendering.

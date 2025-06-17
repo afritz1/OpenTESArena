@@ -5,23 +5,23 @@
 #include "../Voxels/ArenaChasmUtils.h"
 #include "../Voxels/VoxelShapeDefinition.h"
 
-int MeshUtils::getVertexCount(BufferView<const double> components, int componentsPerVertex)
+int MeshUtils::getVertexCount(Span<const double> components, int componentsPerVertex)
 {
 	return components.getCount() / componentsPerVertex;
 }
 
-int MeshUtils::getTriangleCount(BufferView<const double> components, int componentsPerVertex)
+int MeshUtils::getTriangleCount(Span<const double> components, int componentsPerVertex)
 {
 	const int componentsPerTriangle = componentsPerVertex * 3;
 	return components.getCount() / componentsPerTriangle;
 }
 
-bool MeshUtils::isEmpty(BufferView<const double> components)
+bool MeshUtils::isEmpty(Span<const double> components)
 {
 	return components.getCount() == 0;
 }
 
-bool MeshUtils::isFinite(BufferView<const double> components)
+bool MeshUtils::isFinite(Span<const double> components)
 {
 	for (int i = 0; i < components.getCount(); i++)
 	{
@@ -35,7 +35,7 @@ bool MeshUtils::isFinite(BufferView<const double> components)
 	return true;
 }
 
-bool MeshUtils::isValid(BufferView<const double> components)
+bool MeshUtils::isValid(Span<const double> components)
 {
 	if (MeshUtils::isEmpty(components))
 	{
@@ -50,14 +50,14 @@ bool MeshUtils::isValid(BufferView<const double> components)
 	return true;
 }
 
-bool MeshUtils::isComplete(BufferView<const double> components, int componentsPerVertex)
+bool MeshUtils::isComplete(Span<const double> components, int componentsPerVertex)
 {
 	const int componentCount = components.getCount();
 	const int componentsPerTriangle = componentsPerVertex * 3;
 	return (componentCount > 0) && (componentCount % componentsPerTriangle) == 0;
 }
 
-bool MeshUtils::hasValidNormals(BufferView<const double> normals)
+bool MeshUtils::hasValidNormals(Span<const double> normals)
 {
 	if (!MeshUtils::isValid(normals))
 	{
@@ -82,7 +82,7 @@ bool MeshUtils::hasValidNormals(BufferView<const double> normals)
 	return true;
 }
 
-bool MeshUtils::hasValidTexCoords(BufferView<const double> uvs, double maxU, double maxV)
+bool MeshUtils::hasValidTexCoords(Span<const double> uvs, double maxU, double maxV)
 {
 	if (!MeshUtils::isValid(uvs))
 	{
@@ -109,7 +109,7 @@ bool MeshUtils::hasValidTexCoords(BufferView<const double> uvs, double maxU, dou
 	return true;
 }
 
-Double3 MeshUtils::getVertexPositionAtIndex(BufferView<const double> positions, int vertexIndex)
+Double3 MeshUtils::getVertexPositionAtIndex(Span<const double> positions, int vertexIndex)
 {
 	const int componentIndex = vertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	const double x = positions[componentIndex];
@@ -118,7 +118,7 @@ Double3 MeshUtils::getVertexPositionAtIndex(BufferView<const double> positions, 
 	return Double3(x, y, z);
 }
 
-Double3 MeshUtils::getVertexNormalAtIndex(BufferView<const double> normals, int vertexIndex)
+Double3 MeshUtils::getVertexNormalAtIndex(Span<const double> normals, int vertexIndex)
 {
 	const int componentIndex = vertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	const double x = normals[componentIndex];
@@ -127,7 +127,7 @@ Double3 MeshUtils::getVertexNormalAtIndex(BufferView<const double> normals, int 
 	return Double3(x, y, z);
 }
 
-Double2 MeshUtils::getVertexTexCoordAtIndex(BufferView<const double> uvs, int vertexIndex)
+Double2 MeshUtils::getVertexTexCoordAtIndex(Span<const double> uvs, int vertexIndex)
 {
 	const int componentIndex = vertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 	const double u = uvs[componentIndex];
@@ -135,7 +135,7 @@ Double2 MeshUtils::getVertexTexCoordAtIndex(BufferView<const double> uvs, int ve
 	return Double2(u, v);
 }
 
-int MeshUtils::findDuplicateVertexPosition(BufferView<const double> positions, double x, double y, double z, int startVertexIndex)
+int MeshUtils::findDuplicateVertexPosition(Span<const double> positions, double x, double y, double z, int startVertexIndex)
 {
 	const int componentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	const int vertexCount = MeshUtils::getVertexCount(positions, componentsPerVertex);
@@ -157,7 +157,7 @@ int MeshUtils::findDuplicateVertexPosition(BufferView<const double> positions, d
 	return -1;
 }
 
-Double3 MeshUtils::createVertexNormalAtIndex(BufferView<const double> positions, int vertexIndex)
+Double3 MeshUtils::createVertexNormalAtIndex(Span<const double> positions, int vertexIndex)
 {
 	const int componentIndex = vertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	const double v0X = positions[componentIndex];
@@ -210,7 +210,7 @@ void MeshUtils::getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &ma
 	*outHeight = height;
 }
 
-void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<double> outPositions)
+void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, Span<double> outPositions)
 {
 	DebugAssert(outPositions.getCount() == (MeshUtils::VERTICES_PER_QUAD * MeshUtils::POSITION_COMPONENTS_PER_VERTEX));
 
@@ -286,7 +286,7 @@ void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, con
 	outPositions[11] = v3.z;
 }
 
-void MeshUtils::createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<double> outNormals)
+void MeshUtils::createVoxelFaceQuadNormals(VoxelFacing3D facing, Span<double> outNormals)
 {
 	DebugAssert(outNormals.getCount() == (MeshUtils::VERTICES_PER_QUAD * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX));
 
@@ -309,7 +309,7 @@ void MeshUtils::createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<doub
 	outNormals[11] = normal.z;
 }
 
-void MeshUtils::createVoxelFaceQuadTexCoords(int width, int height, BufferView<double> outUVs)
+void MeshUtils::createVoxelFaceQuadTexCoords(int width, int height, Span<double> outUVs)
 {
 	DebugAssert(width >= 1);
 	DebugAssert(height >= 1);
@@ -333,7 +333,7 @@ void MeshUtils::createVoxelFaceQuadTexCoords(int width, int height, BufferView<d
 	outUVs[7] = vMin;
 }
 
-void MeshUtils::createVoxelFaceQuadIndices(BufferView<int32_t> outIndices)
+void MeshUtils::createVoxelFaceQuadIndices(Span<int32_t> outIndices)
 {
 	DebugAssert(outIndices.getCount() == MeshUtils::INDICES_PER_QUAD);
 

@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 // Creative Voice audio file. All sounds and voices in Arena are mono 8-bit unsigned PCM.
 class VOCFile
@@ -19,8 +19,8 @@ public:
 	int getSampleRate() const;
 
 	// Gets the 8-bit unsigned PCM samples.
-	BufferView<uint8_t> getAudioData();
-	BufferView<const uint8_t> getAudioData() const;
+	Span<uint8_t> getAudioData();
+	Span<const uint8_t> getAudioData() const;
 };
 
 #endif

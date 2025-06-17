@@ -13,8 +13,8 @@
 ImageSequencePanel::ImageSequencePanel(Game &game)
 	: Panel(game) { }
 
-bool ImageSequencePanel::init(BufferView<const std::string> paletteNames,
-	BufferView<const std::string> textureNames, BufferView<const double> imageDurations,
+bool ImageSequencePanel::init(Span<const std::string> paletteNames,
+	Span<const std::string> textureNames, Span<const double> imageDurations,
 	const OnFinishedFunction &onFinished)
 {
 	if (paletteNames.getCount() != textureNames.getCount())

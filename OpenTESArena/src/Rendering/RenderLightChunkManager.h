@@ -9,7 +9,7 @@
 #include "../Entities/EntityInstance.h"
 #include "../World/SpecializedChunkManager.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class Renderer;
 class EntityChunkManager;
@@ -39,8 +39,8 @@ private:
 	std::unordered_map<EntityInstanceID, Light> entityLights; // All lights have an associated entity.
 	bool isSceneChanged; // Supports player light position changes between interiors.
 
-	void registerLightToVoxels(const Light &light, BufferView<const WorldInt3> voxels, double ceilingScale);
-	void unregisterLightFromVoxels(const Light &light, BufferView<const WorldInt3> voxels);
+	void registerLightToVoxels(const Light &light, Span<const WorldInt3> voxels, double ceilingScale);
+	void unregisterLightFromVoxels(const Light &light, Span<const WorldInt3> voxels);
 public:
 	RenderLightChunkManager();
 
@@ -50,10 +50,10 @@ public:
 	void loadScene();
 
 	// Chunk allocating/freeing update function, called before light resources are updated.
-	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+	void updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 	
-	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 		const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
 		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, Renderer &renderer);
 

@@ -16,10 +16,10 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/Buffer3D.h"
-#include "components/utilities/BufferView.h"
 #include "components/utilities/BufferView2D.h"
 #include "components/utilities/BufferView3D.h"
 #include "components/utilities/RecyclablePool.h"
+#include "components/utilities/Span.h"
 
 struct RasterizerBin; // For triangle binning.
 
@@ -150,9 +150,9 @@ public:
 	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) override;
 	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) override;
 	IndexBufferID createIndexBuffer(int indexCount) override;
-	void populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions) override;
-	void populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes) override;
-	void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices) override;
+	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions) override;
+	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes) override;
+	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices) override;
 	void freeVertexPositionBuffer(VertexPositionBufferID id) override;
 	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
 	void freeIndexBuffer(IndexBufferID id) override;
@@ -165,8 +165,8 @@ public:
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
 
 	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) override;
-	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data) override;
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData) override;
+	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data) override;
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData) override;
 	void freeUniformBuffer(UniformBufferID id) override;
 
 	RenderLightID createLight() override;

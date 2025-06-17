@@ -275,7 +275,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->skyGradientPMTextureRef.init(skyGradientPMTextureID, renderer);
 	this->skyFogTextureRef.init(skyFogTextureID, renderer);
 
-	const BufferView<const uint8_t> thunderstormColorsView(exeData.weather.thunderstormFlashColors);
+	const Span<const uint8_t> thunderstormColorsView(exeData.weather.thunderstormFlashColors);
 	this->skyThunderstormTextureRefs.init(thunderstormColorsView.getCount());
 	for (int i = 0; i < thunderstormColorsView.getCount(); i++)
 	{
@@ -642,7 +642,7 @@ ObjectTextureID RenderSkyManager::getBgTextureID() const
 
 void RenderSkyManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
 {
-	commandBuffer.addDrawCalls(BufferView<const RenderDrawCall>(&this->bgDrawCall, 1));
+	commandBuffer.addDrawCalls(Span<const RenderDrawCall>(&this->bgDrawCall, 1));
 	commandBuffer.addDrawCalls(this->objectDrawCalls);
 }
 
@@ -865,7 +865,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky land objects to use TextureAsset texture type.");
 
 		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
-		const BufferView<const TextureAsset> textureAssets = textureAssetEntry.textureAssets;
+		const Span<const TextureAsset> textureAssets = textureAssetEntry.textureAssets;
 		const int textureCount = textureAssets.getCount();
 
 		int textureAssetIndex = 0;
@@ -902,7 +902,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		DebugAssertMsg(textureType == SkyObjectTextureType::TextureAsset, "Expected all sky lightning objects to use TextureAsset texture type.");
 
 		const SkyObjectTextureAssetEntry &textureAssetEntry = skyInst.getTextureAssetEntry(skyObjectInst.textureAssetEntryID);
-		const BufferView<const TextureAsset> textureAssets = textureAssetEntry.textureAssets;
+		const Span<const TextureAsset> textureAssets = textureAssetEntry.textureAssets;
 		const int textureCount = textureAssets.getCount();
 
 		int textureAssetIndex = 0;

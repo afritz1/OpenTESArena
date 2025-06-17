@@ -9,7 +9,7 @@
 #include "ExeTypes.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class KeyValueFile;
 class KeyValueFileSection;
@@ -24,7 +24,7 @@ struct ExeDataCalendar
 	std::string holidayNames[15];
 	uint16_t holidayDates[15];
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataCharacterClasses
@@ -56,7 +56,7 @@ struct ExeDataCharacterClasses
 	std::string preferredAttributes[18];
 	uint8_t magicClassIntelligenceMultipliers[7];
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataCharacterCreation
@@ -85,7 +85,7 @@ struct ExeDataCharacterCreation
 	std::string chooseAttributesBonusPointsRemaining;
 	std::string chooseAppearance;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataCityGeneration
@@ -116,7 +116,7 @@ struct ExeDataCityGeneration
 	// The displayed name when a mage's guild *MENU voxel is right-clicked.
 	std::string magesGuildMenuName;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataEntities
@@ -195,7 +195,7 @@ struct ExeDataEntities
 	uint8_t citizenColorBase[16];
 	uint8_t citizenSkinColors[10];
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 // See Items wiki page for more information.
@@ -287,7 +287,7 @@ struct ExeDataEquipment
 	std::string bodyPartNames[11]; // Chest, ..., general.
 	std::string weaponAnimationFilenames[11]; // staff.cif, ..., spell.img.
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataItems
@@ -296,7 +296,7 @@ struct ExeDataItems
 	std::string goldPiece;
 	std::string bagOfGoldPieces;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataLight
@@ -304,7 +304,7 @@ struct ExeDataLight
 	uint8_t windowTwilightColors[48]; // VGA (6-bit, 63 = 255) RGB triplets for window color transition.
 	uint16_t waterTwilightLightLevels[16];
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataLocations
@@ -371,14 +371,14 @@ struct ExeDataLocations
 	// Base filename for distant stars.
 	std::string starFilename;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataLogbook
 {
 	std::string isEmpty;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataMeta
@@ -387,7 +387,7 @@ struct ExeDataMeta
 	// weapons lists (not necessary for this class, though).
 	uint32_t dataSegmentOffset;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataQuests
@@ -397,7 +397,7 @@ struct ExeDataQuests
 	// Staff piece count in inventory.
 	std::string staffPieces;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataRaces
@@ -406,7 +406,7 @@ struct ExeDataRaces
 	std::string singularNames[8];
 	std::string pluralNames[8];
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataRaisedPlatforms
@@ -435,11 +435,11 @@ struct ExeDataRaisedPlatforms
 	// Number of texels tall a 64x64 texture is rendered as, also used with calculation for starting row in texture.
 	uint16_t box4[8];
 
-	BufferView<uint16_t> heightsInterior, heightsCity, heightsWild;
-	BufferView<uint16_t> thicknessesInterior, thicknessesCity, thicknessesWild;
-	BufferView<uint16_t> texMappingInterior, texMappingCity, texMappingWild;
+	Span<uint16_t> heightsInterior, heightsCity, heightsWild;
+	Span<uint16_t> thicknessesInterior, thicknessesCity, thicknessesWild;
+	Span<uint16_t> texMappingInterior, texMappingCity, texMappingWild;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 
 	// Unknown
 	int getTextureMappingValueA(MapType mapType, int heightIndex) const;
@@ -474,7 +474,7 @@ struct ExeDataStatus
 	std::string enemyCorpseGold;
 	std::string citizenCorpseGold;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataTravel
@@ -517,7 +517,7 @@ struct ExeDataTravel
 	// Province indices into the staff dungeon splash filenames.
 	uint8_t staffDungeonSplashIndices[8];
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataUI
@@ -553,14 +553,14 @@ struct ExeDataUI
 	// Displayed when clicking an entity.
 	std::string inspectedEntityName;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataWeather
 {
 	uint8_t thunderstormFlashColors[3];
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 struct ExeDataWilderness
@@ -569,7 +569,7 @@ struct ExeDataWilderness
 	// Each list starts with the number of elements.
 	Buffer<uint8_t> normalBlocks, villageBlocks, dungeonBlocks, tavernBlocks, templeBlocks;
 
-	bool init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
 // A view into various ranges of bytes in the original Arena executable A.EXE or ACD.EXE.

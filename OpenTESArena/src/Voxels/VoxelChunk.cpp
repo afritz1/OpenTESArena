@@ -211,27 +211,27 @@ VoxelChasmDefID VoxelChunk::getFloorReplacementChasmDefID() const
 	return this->floorReplacementChasmDefID;
 }
 
-BufferView<const VoxelInt3> VoxelChunk::getDirtyShapeDefPositions() const
+Span<const VoxelInt3> VoxelChunk::getDirtyShapeDefPositions() const
 {
 	return this->dirtyShapeDefPositions;
 }
 
-BufferView<const VoxelInt3> VoxelChunk::getDirtyDoorAnimInstPositions() const
+Span<const VoxelInt3> VoxelChunk::getDirtyDoorAnimInstPositions() const
 {
 	return this->dirtyDoorAnimInstPositions;
 }
 
-BufferView<const VoxelInt3> VoxelChunk::getDirtyDoorVisInstPositions() const
+Span<const VoxelInt3> VoxelChunk::getDirtyDoorVisInstPositions() const
 {
 	return this->dirtyDoorVisInstPositions;
 }
 
-BufferView<const VoxelInt3> VoxelChunk::getDirtyFadeAnimInstPositions() const
+Span<const VoxelInt3> VoxelChunk::getDirtyFadeAnimInstPositions() const
 {
 	return this->dirtyFadeAnimInstPositions;
 }
 
-BufferView<const VoxelInt3> VoxelChunk::getDirtyChasmWallInstPositions() const
+Span<const VoxelInt3> VoxelChunk::getDirtyChasmWallInstPositions() const
 {
 	return this->dirtyChasmWallInstPositions;
 }
@@ -331,7 +331,7 @@ bool VoxelChunk::tryGetChasmDefID(SNInt x, int y, WEInt z, VoxelChasmDefID *outI
 	}
 }
 
-BufferView<const VoxelDoorAnimationInstance> VoxelChunk::getDoorAnimInsts() const
+Span<const VoxelDoorAnimationInstance> VoxelChunk::getDoorAnimInsts() const
 {
 	return this->doorAnimInsts;
 }
@@ -355,7 +355,7 @@ bool VoxelChunk::tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex)
 	}
 }
 
-BufferView<const VoxelFadeAnimationInstance> VoxelChunk::getFadeAnimInsts() const
+Span<const VoxelFadeAnimationInstance> VoxelChunk::getFadeAnimInsts() const
 {
 	return this->fadeAnimInsts;
 }
@@ -375,12 +375,12 @@ bool VoxelChunk::tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex)
 	return false;
 }
 
-BufferView<VoxelChasmWallInstance> VoxelChunk::getChasmWallInsts()
+Span<VoxelChasmWallInstance> VoxelChunk::getChasmWallInsts()
 {
 	return this->chasmWallInsts;
 }
 
-BufferView<const VoxelChasmWallInstance> VoxelChunk::getChasmWallInsts() const
+Span<const VoxelChasmWallInstance> VoxelChunk::getChasmWallInsts() const
 {
 	return this->chasmWallInsts;
 }
@@ -404,12 +404,12 @@ bool VoxelChunk::tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex
 	}
 }
 
-BufferView<VoxelDoorVisibilityInstance> VoxelChunk::getDoorVisibilityInsts()
+Span<VoxelDoorVisibilityInstance> VoxelChunk::getDoorVisibilityInsts()
 {
 	return this->doorVisInsts;
 }
 
-BufferView<const VoxelDoorVisibilityInstance> VoxelChunk::getDoorVisibilityInsts() const
+Span<const VoxelDoorVisibilityInstance> VoxelChunk::getDoorVisibilityInsts() const
 {
 	return this->doorVisInsts;
 }
@@ -433,7 +433,7 @@ bool VoxelChunk::tryGetDoorVisibilityInstIndex(SNInt x, int y, WEInt z, int *out
 	}
 }
 
-BufferView<const VoxelTriggerInstance> VoxelChunk::getTriggerInsts() const
+Span<const VoxelTriggerInstance> VoxelChunk::getTriggerInsts() const
 {
 	return this->triggerInsts;
 }

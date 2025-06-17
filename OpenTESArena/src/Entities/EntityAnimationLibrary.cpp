@@ -158,9 +158,9 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	const int spellProjectileStartIndex = spellTypeCount;
 	const int spellExplosionStartIndex = 0;
 	const int meleeVfxStartIndex = spellProjectileStartIndex + spellTypeCount;
-	const BufferView<const std::string> spellProjectileAnimFilenames(exeData.entities.effectAnimations + spellProjectileStartIndex, spellTypeCount);
-	const BufferView<const std::string> spellExplosionAnimFilenames(exeData.entities.effectAnimations + spellExplosionStartIndex, spellTypeCount);
-	const BufferView<const std::string> meleeVfxAnimFilenames(exeData.entities.effectAnimations + meleeVfxStartIndex, meleeVfxCount); // Blood, demon, undead
+	const Span<const std::string> spellProjectileAnimFilenames(exeData.entities.effectAnimations + spellProjectileStartIndex, spellTypeCount);
+	const Span<const std::string> spellExplosionAnimFilenames(exeData.entities.effectAnimations + spellExplosionStartIndex, spellTypeCount);
+	const Span<const std::string> meleeVfxAnimFilenames(exeData.entities.effectAnimations + meleeVfxStartIndex, meleeVfxCount); // Blood, demon, undead
 	for (int i = 0; i < spellProjectileAnimFilenames.getCount(); i++)
 	{
 		const std::string animFilename = String::toUppercase(spellProjectileAnimFilenames[i]);

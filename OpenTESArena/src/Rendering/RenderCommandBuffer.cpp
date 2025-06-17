@@ -18,7 +18,7 @@ int RenderCommandBuffer::getTotalDrawCallCount() const
 	return count;
 }
 
-void RenderCommandBuffer::addDrawCalls(BufferView<const RenderDrawCall> drawCalls)
+void RenderCommandBuffer::addDrawCalls(Span<const RenderDrawCall> drawCalls)
 {
 	if (this->entryCount >= static_cast<int>(std::size(this->entries)))
 	{
