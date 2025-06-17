@@ -5,8 +5,8 @@
 #include <type_traits>
 
 #include "Buffer.h"
-#include "BufferView.h"
 #include "Bytes.h"
+#include "Span.h"
 
 // Simple scratch allocator for POD types. Very fast destruction, intended for clearing
 // frequently without worrying about heap fragmentation.
@@ -27,7 +27,7 @@ private:
 	int getAlignmentByteCount() const
 	{
 		DebugAssert(this->data.isValid());
-		return Bytes::getBytesToNextAlignment<T>(reinterpret_cast<uintptr_t>(this->data.get() + this->index));
+		return Bytes::getBytesToNextAlignment(reinterpret_cast<uintptr_t>(this->data.begin() + this->index), alignof(T));
 	}
 
 	template<typename T>
@@ -84,7 +84,7 @@ public:
 		DebugAssert(this->canAlloc<T>(count));
 
 		this->index += this->getAlignmentByteCount<T>();
-		T *ptr = reinterpret_cast<T*>(this->data.get() + this->index);
+		T *ptr = reinterpret_cast<T*>(this->data.begin() + this->index);
 		for (int i = 0; i < count; i++)
 		{
 			*(ptr + i) = defaultValue;
@@ -104,7 +104,7 @@ public:
 	T *alloc()
 	{
 		Span<T> span = this->alloc(1, T());
-		return span.get();
+		return span.begin();
 	}
 
 	void clear()
