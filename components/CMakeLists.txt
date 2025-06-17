@@ -41,6 +41,7 @@ SET(COMP_UTILITIES
 	"utilities/Profiler.h"
 	"utilities/RecyclablePool.h"
 	"utilities/Singleton.h"
+	"utilities/StaticVector.h"
 	"utilities/String.cpp"
 	"utilities/String.h"
 	"utilities/StringView.cpp"
