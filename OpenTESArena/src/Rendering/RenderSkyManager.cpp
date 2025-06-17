@@ -232,7 +232,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	bgTransform.scale = Matrix4d::identity();
 	renderer.populateUniformBuffer(this->bgTransformBufferID, bgTransform);
 
-	auto allocBgTextureID = [this, &renderer](BufferView2D<const uint8_t> texels)
+	auto allocBgTextureID = [this, &renderer](Span2D<const uint8_t> texels)
 	{
 		const int textureWidth = texels.getWidth();
 		const int textureHeight = texels.getHeight();
@@ -265,12 +265,12 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*skyGradientTextureBuilderID);
 		DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
 		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
-		return allocBgTextureID(BufferView2D<const uint8_t>(palettedTexture.texels.begin(), textureBuilder.getWidth(), textureBuilder.getHeight()));
+		return allocBgTextureID(Span2D<const uint8_t>(palettedTexture.texels.begin(), textureBuilder.getWidth(), textureBuilder.getHeight()));
 	};
 
 	const ObjectTextureID skyGradientAMTextureID = allocBgTextureIdByFilename(ArenaTextureName::SkyDitherAM);
 	const ObjectTextureID skyGradientPMTextureID = allocBgTextureIdByFilename(ArenaTextureName::SkyDitherPM);
-	const ObjectTextureID skyFogTextureID = allocBgTextureID(BufferView2D<const uint8_t>(&ArenaRenderUtils::PALETTE_INDEX_SKY_COLOR_FOG, 1, 1));
+	const ObjectTextureID skyFogTextureID = allocBgTextureID(Span2D<const uint8_t>(&ArenaRenderUtils::PALETTE_INDEX_SKY_COLOR_FOG, 1, 1));
 	this->skyGradientAMTextureRef.init(skyGradientAMTextureID, renderer);
 	this->skyGradientPMTextureRef.init(skyGradientPMTextureID, renderer);
 	this->skyFogTextureRef.init(skyFogTextureID, renderer);
@@ -279,12 +279,12 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->skyThunderstormTextureRefs.init(thunderstormColorsView.getCount());
 	for (int i = 0; i < thunderstormColorsView.getCount(); i++)
 	{
-		const ObjectTextureID flashTextureID = allocBgTextureID(BufferView2D<const uint8_t>(&thunderstormColorsView[i], 1, 1));
+		const ObjectTextureID flashTextureID = allocBgTextureID(Span2D<const uint8_t>(&thunderstormColorsView[i], 1, 1));
 		this->skyThunderstormTextureRefs.set(i, ScopedObjectTextureRef(flashTextureID, renderer));
 	}
 
 	const uint8_t skyInteriorColor = 0; // Black
-	const ObjectTextureID skyInteriorTextureID = allocBgTextureID(BufferView2D<const uint8_t>(&skyInteriorColor, 1, 1));
+	const ObjectTextureID skyInteriorTextureID = allocBgTextureID(Span2D<const uint8_t>(&skyInteriorColor, 1, 1));
 	this->skyInteriorTextureRef.init(skyInteriorTextureID, renderer);
 
 	this->bgDrawCall.transformBufferID = this->bgTransformBufferID;

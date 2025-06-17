@@ -48,7 +48,7 @@ int ArenaLevelUtils::getMap2VoxelHeight(ArenaVoxelID map2Voxel)
 	}
 }
 
-int ArenaLevelUtils::getMap2Height(BufferView2D<const ArenaVoxelID> map2)
+int ArenaLevelUtils::getMap2Height(Span2D<const ArenaVoxelID> map2)
 {
 	DebugAssert(map2.isValid());
 
@@ -68,7 +68,7 @@ int ArenaLevelUtils::getMap2Height(BufferView2D<const ArenaVoxelID> map2)
 
 int ArenaLevelUtils::getMifLevelHeight(const MIFLevel &level, const INFCeiling *ceiling)
 {
-	const BufferView2D<const ArenaVoxelID> map2 = level.getMAP2();
+	const Span2D<const ArenaVoxelID> map2 = level.getMAP2();
 
 	if (map2.isValid())
 	{

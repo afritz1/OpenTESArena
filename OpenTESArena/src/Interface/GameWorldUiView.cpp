@@ -35,7 +35,7 @@ namespace
 		}
 
 		uint32_t *texels = renderer.lockUiTexture(textureID);
-		BufferView2D<uint32_t> texelsView(texels, width, height);
+		Span2D<uint32_t> texelsView(texels, width, height);
 		const uint32_t texelARGB = color.toARGB();
 		texelsView.fill(texelARGB);
 		renderer.unlockUiTexture(textureID);
@@ -601,7 +601,7 @@ UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType bu
 {
 	const std::string text = GameWorldUiModel::getButtonTooltip(buttonType);
 	const Surface surface = TextureUtils::createTooltip(text, fontLibrary);
-	const BufferView2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
+	const Span2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
 		surface.getWidth(), surface.getHeight());
 
 	UiTextureID id;
@@ -639,7 +639,7 @@ UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textu
 	}
 
 	uint32_t *lockedTexels = renderer.lockUiTexture(id);
-	BufferView2D<uint32_t> texelsView(static_cast<uint32_t*>(lockedTexels), width, height);
+	Span2D<uint32_t> texelsView(static_cast<uint32_t*>(lockedTexels), width, height);
 
 	constexpr Color cursorBgColor(0, 0, 0, 0);
 	const uint32_t cursorBgARGB = cursorBgColor.toARGB();

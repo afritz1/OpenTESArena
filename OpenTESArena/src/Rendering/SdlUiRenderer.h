@@ -6,7 +6,7 @@
 
 #include "RendererSystem2D.h"
 
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span2D.h"
 
 struct Rect;
 struct SDL_Renderer;
@@ -19,7 +19,7 @@ private:
 	std::unordered_map<UiTextureID, SDL_Texture*> textures;
 	UiTextureID nextID;
 
-	using TexelsInitFunc = std::function<void(BufferView2D<uint32_t>)>;
+	using TexelsInitFunc = std::function<void(Span2D<uint32_t>)>;
 	bool tryCreateUiTextureInternal(int width, int height, const TexelsInitFunc &initFunc, UiTextureID *outID);
 public:
 	SdlUiRenderer();
@@ -28,8 +28,8 @@ public:
 	void shutdown() override;
 
 	bool tryCreateUiTexture(int width, int height, UiTextureID *outID) override;
-	bool tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID) override;
-	bool tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID) override;
+	bool tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID) override;
+	bool tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID) override;
 	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID) override;
 

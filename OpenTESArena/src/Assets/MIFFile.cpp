@@ -312,19 +312,19 @@ int MIFLevel::getNumf() const
 	return this->numf;
 }
 
-BufferView2D<const ArenaVoxelID> MIFLevel::getFLOR() const
+Span2D<const ArenaVoxelID> MIFLevel::getFLOR() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->flor);
+	return Span2D<const ArenaVoxelID>(this->flor);
 }
 
-BufferView2D<const ArenaVoxelID> MIFLevel::getMAP1() const
+Span2D<const ArenaVoxelID> MIFLevel::getMAP1() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->map1);
+	return Span2D<const ArenaVoxelID>(this->map1);
 }
 
-BufferView2D<const ArenaVoxelID> MIFLevel::getMAP2() const
+Span2D<const ArenaVoxelID> MIFLevel::getMAP2() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->map2);
+	return Span2D<const ArenaVoxelID>(this->map2);
 }
 
 Span<const uint8_t> MIFLevel::getFLAT() const

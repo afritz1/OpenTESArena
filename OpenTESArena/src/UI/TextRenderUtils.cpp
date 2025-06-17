@@ -301,7 +301,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(Span<const std::string_view> 
 }
 
 void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
-	BufferView2D<uint32_t> &outBuffer)
+	Span2D<uint32_t> &outBuffer)
 {
 	// @todo: clip loop ranges instead of checking in loop.
 	for (int y = dstY; y < (dstY + fontChar.getHeight()); y++)
@@ -325,7 +325,7 @@ void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int ds
 
 void TextRenderUtils::drawTextLine(Span<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
 	int dstX, int dstY, const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-	BufferView2D<uint32_t> &outBuffer)
+	Span2D<uint32_t> &outBuffer)
 {
 	auto drawLine = [&charIDs, &fontDef, colorOverrideInfo, &outBuffer](
 		int x, int y, const Color &color, bool allowColorOverrides)
@@ -373,7 +373,7 @@ void TextRenderUtils::drawTextLine(Span<const FontDefinition::CharID> charIDs, c
 
 void TextRenderUtils::drawTextLine(const std::string_view line, const FontDefinition &fontDef, int dstX, int dstY,
 	const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-	BufferView2D<uint32_t> &outBuffer)
+	Span2D<uint32_t> &outBuffer)
 {
 	const Buffer<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
 	const Span<const FontDefinition::CharID> charIdsView(charIDs);
@@ -382,7 +382,7 @@ void TextRenderUtils::drawTextLine(const std::string_view line, const FontDefini
 
 void TextRenderUtils::drawTextLines(Span<const std::string_view> textLines, const FontDefinition &fontDef,
 	int dstX, int dstY, const Color &textColor, TextAlignment alignment, int lineSpacing,
-	const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer)
+	const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow, Span2D<uint32_t> &outBuffer)
 {
 	// @todo: should pass std::optional parameter instead
 	std::optional<TextRenderShadowInfo> shadowInfo;

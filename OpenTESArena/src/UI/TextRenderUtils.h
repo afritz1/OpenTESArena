@@ -13,8 +13,8 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView2D.h"
 #include "components/utilities/Span.h"
+#include "components/utilities/Span2D.h"
 
 enum class TextAlignment;
 
@@ -109,16 +109,16 @@ namespace TextRenderUtils
 	// - draw text
 	// - render
 	void drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
-		BufferView2D<uint32_t> &outBuffer);
+		Span2D<uint32_t> &outBuffer);
 	void drawTextLine(Span<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
 		int dstX, int dstY, const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-		BufferView2D<uint32_t> &outBuffer);
+		Span2D<uint32_t> &outBuffer);
 	void drawTextLine(const std::string_view line, const FontDefinition &fontDef, int dstX, int dstY,
 		const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-		BufferView2D<uint32_t> &outBuffer);
+		Span2D<uint32_t> &outBuffer);
 	void drawTextLines(Span<const std::string_view> textLines, const FontDefinition &fontDef, int dstX, int dstY,
 		const Color &textColor, TextAlignment alignment, int lineSpacing, const TextRenderColorOverrideInfo *colorOverrideInfo,
-		const TextRenderShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer);
+		const TextRenderShadowInfo *shadow, Span2D<uint32_t> &outBuffer);
 }
 
 #endif

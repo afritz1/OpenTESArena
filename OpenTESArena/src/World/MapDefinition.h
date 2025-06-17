@@ -17,7 +17,7 @@
 #include "../WorldMap/LocationDefinition.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span2D.h"
 
 class ArenaRandom;
 class BinaryAssetLibrary;
@@ -107,7 +107,7 @@ private:
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
-	bool initWildLevels(BufferView2D<const ArenaWildUtils::WildBlockID> wildBlockIDs,
+	bool initWildLevels(Span2D<const ArenaWildUtils::WildBlockID> wildBlockIDs,
 		uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,

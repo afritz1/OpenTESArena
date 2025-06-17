@@ -11,7 +11,7 @@
 #include "../Weather/WeatherDefinition.h"
 
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span2D.h"
 
 class ArenaRandom;
 class BinaryAssetLibrary;
@@ -29,8 +29,8 @@ namespace ArenaCityUtils
 	std::string generateInfName(ArenaClimateType climateType, WeatherType weatherType);
 
 	// Writes the barebones city layout (just ground and walls).
-	void writeSkeleton(const MIFLevel &level, BufferView2D<ArenaVoxelID> &dstFlor,
-		BufferView2D<ArenaVoxelID> &dstMap1, BufferView2D<ArenaVoxelID> &dstMap2);
+	void writeSkeleton(const MIFLevel &level, Span2D<ArenaVoxelID> &dstFlor,
+		Span2D<ArenaVoxelID> &dstMap1, Span2D<ArenaVoxelID> &dstMap2);
 
 	// Writes generated city building data into the output buffers. The buffers should already
 	// be initialized with the city skeleton.

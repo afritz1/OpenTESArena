@@ -206,7 +206,7 @@ namespace
 
 					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 					DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
-					const BufferView2D<const uint8_t> textureBuilderTexels = textureBuilder.paletteTexture.texels;
+					const Span2D<const uint8_t> textureBuilderTexels = textureBuilder.paletteTexture.texels;
 					const int dstByteOffset = (newObjectTextureCurrentY * newObjectTextureWidth) * bytesPerTexel;
 					uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);
 					std::copy(textureBuilderTexels.begin(), textureBuilderTexels.end(), dstTexels + dstByteOffset);

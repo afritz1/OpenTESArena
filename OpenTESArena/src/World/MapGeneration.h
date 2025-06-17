@@ -193,7 +193,7 @@ namespace MapGeneration
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
 	void generateRmdWilderness(Span<const ArenaWildUtils::WildBlockID> uniqueWildBlockIDs,
-		BufferView2D<const int> levelDefIndices, const LocationCityDefinition &cityDef,
+		Span2D<const int> levelDefIndices, const LocationCityDefinition &cityDef,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary,const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, Span<LevelDefinition> &outLevelDefs,

@@ -12,7 +12,7 @@
 #include "../Voxels/VoxelUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span2D.h"
 
 class ArenaRandom;
 class Renderer;
@@ -48,7 +48,7 @@ namespace ArenaLevelUtils
 	int getMap2VoxelHeight(ArenaVoxelID map2Voxel);
 
 	// Gets the max height from a set of MAP2 voxels.
-	int getMap2Height(BufferView2D<const ArenaVoxelID> map2);
+	int getMap2Height(Span2D<const ArenaVoxelID> map2);
 
 	// Gets the voxel height of a .MIF level with optional ceiling data.
 	int getMifLevelHeight(const MIFLevel &level, const INFCeiling *ceiling);

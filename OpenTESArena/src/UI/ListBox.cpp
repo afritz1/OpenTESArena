@@ -201,7 +201,7 @@ void ListBox::updateTexture()
 
 	const int width = this->textureRef.getWidth();
 	const int height = this->textureRef.getHeight();
-	BufferView2D<uint32_t> textureView(texels, width, height);
+	Span2D<uint32_t> textureView(texels, width, height);
 
 	// Clear texture.
 	textureView.fill(0);

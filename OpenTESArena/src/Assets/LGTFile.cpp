@@ -33,7 +33,7 @@ Span<const uint8_t> LGTFile::getLightPalette(int index) const
 	return Span(ptr, LGTFile::ELEMENTS_PER_PALETTE);
 }
 
-BufferView2D<const uint8_t> LGTFile::getAllLightPalettes() const
+Span2D<const uint8_t> LGTFile::getAllLightPalettes() const
 {
-	return BufferView2D<const uint8_t>(this->palettes);
+	return Span2D<const uint8_t>(this->palettes);
 }

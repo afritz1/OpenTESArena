@@ -6,7 +6,7 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/Surface.h"
 
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span2D.h"
 
 Rect MainMenuUiView::getLoadButtonRect()
 {
@@ -241,7 +241,7 @@ UiTextureID MainMenuUiView::allocTestButtonTexture(TextureManager &textureManage
 	const Rect rect = MainMenuUiView::getTestButtonRect();
 	const Surface surface = TextureUtils::generate(MainMenuUiView::TestButtonPatternType,
 		rect.width, rect.height, textureManager, renderer);
-	const BufferView2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
+	const Span2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
 		surface.getWidth(), surface.getHeight());
 
 	UiTextureID textureID;

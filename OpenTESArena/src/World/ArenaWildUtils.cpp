@@ -149,9 +149,8 @@ bool ArenaWildUtils::isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID)
 }
 
 void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID,
-	BufferView2D<ArenaVoxelID> &flor, BufferView2D<ArenaVoxelID> &map1,
-	BufferView2D<ArenaVoxelID> &map2, const LocationCityDefinition &cityDef,
-	const BinaryAssetLibrary &binaryAssetLibrary)
+	Span2D<ArenaVoxelID> &flor, Span2D<ArenaVoxelID> &map1, Span2D<ArenaVoxelID> &map2,
+	const LocationCityDefinition &cityDef, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	DebugAssert(ArenaWildUtils::isWildCityBlock(wildBlockID));
 
@@ -170,9 +169,9 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 	Buffer2D<ArenaVoxelID> cityFlor(mif.getWidth(), mif.getDepth());
 	Buffer2D<ArenaVoxelID> cityMap1(mif.getWidth(), mif.getDepth());
 	Buffer2D<ArenaVoxelID> cityMap2(mif.getWidth(), mif.getDepth());
-	BufferView2D<ArenaVoxelID> cityFlorView(cityFlor);
-	BufferView2D<ArenaVoxelID> cityMap1View(cityMap1);
-	BufferView2D<ArenaVoxelID> cityMap2View(cityMap2);
+	Span2D<ArenaVoxelID> cityFlorView(cityFlor);
+	Span2D<ArenaVoxelID> cityMap1View(cityMap1);
+	Span2D<ArenaVoxelID> cityMap2View(cityMap2);
 	ArenaCityUtils::writeSkeleton(level, cityFlorView, cityMap1View, cityMap2View);
 
 	// Run city generation if it's not a premade city. The center province's city does not have

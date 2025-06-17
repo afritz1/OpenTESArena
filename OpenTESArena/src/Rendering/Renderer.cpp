@@ -832,12 +832,12 @@ bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
 	return this->renderer2D->tryCreateUiTexture(width, height, outID);
 }
 
-bool Renderer::tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID)
+bool Renderer::tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(texels, outID);
 }
 
-bool Renderer::tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID)
+bool Renderer::tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(texels, palette, outID);
 }

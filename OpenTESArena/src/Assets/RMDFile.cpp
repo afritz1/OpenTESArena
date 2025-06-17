@@ -71,17 +71,17 @@ bool RMDFile::init(const char *filename)
 	return true;
 }
 
-BufferView2D<const ArenaVoxelID> RMDFile::getFLOR() const
+Span2D<const ArenaVoxelID> RMDFile::getFLOR() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->flor);
+	return Span2D<const ArenaVoxelID>(this->flor);
 }
 
-BufferView2D<const ArenaVoxelID> RMDFile::getMAP1() const
+Span2D<const ArenaVoxelID> RMDFile::getMAP1() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->map1);
+	return Span2D<const ArenaVoxelID>(this->map1);
 }
 
-BufferView2D<const ArenaVoxelID> RMDFile::getMAP2() const
+Span2D<const ArenaVoxelID> RMDFile::getMAP2() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->map2);
+	return Span2D<const ArenaVoxelID>(this->map2);
 }

@@ -78,13 +78,11 @@ std::string ArenaCityUtils::generateInfName(ArenaClimateType climateType, Weathe
 	return std::string { climateLetter, locationLetter, weatherLetter } + ".INF";
 }
 
-void ArenaCityUtils::writeSkeleton(const MIFLevel &level,
-	BufferView2D<ArenaVoxelID> &dstFlor, BufferView2D<ArenaVoxelID> &dstMap1,
-	BufferView2D<ArenaVoxelID> &dstMap2)
+void ArenaCityUtils::writeSkeleton(const MIFLevel &level, Span2D<ArenaVoxelID> &dstFlor, Span2D<ArenaVoxelID> &dstMap1, Span2D<ArenaVoxelID> &dstMap2)
 {
-	const BufferView2D<const ArenaVoxelID> levelFLOR = level.getFLOR();
-	const BufferView2D<const ArenaVoxelID> levelMAP1 = level.getMAP1();
-	const BufferView2D<const ArenaVoxelID> levelMAP2 = level.getMAP2();
+	const Span2D<const ArenaVoxelID> levelFLOR = level.getFLOR();
+	const Span2D<const ArenaVoxelID> levelMAP1 = level.getMAP1();
+	const Span2D<const ArenaVoxelID> levelMAP2 = level.getMAP2();
 	const WEInt levelWidth = levelFLOR.getWidth();
 	const SNInt levelDepth = levelFLOR.getHeight();
 
@@ -179,9 +177,9 @@ void ArenaCityUtils::generateCity(uint32_t citySeed, int cityDim, WEInt gridDept
 			const WEInt blockWidth = blockMif.getWidth();
 			const SNInt blockDepth = blockMif.getDepth();
 			const auto &blockLevel = blockMif.getLevel(0);
-			const BufferView2D<const ArenaVoxelID> blockFLOR = blockLevel.getFLOR();
-			const BufferView2D<const ArenaVoxelID> blockMAP1 = blockLevel.getMAP1();
-			const BufferView2D<const ArenaVoxelID> blockMAP2 = blockLevel.getMAP2();
+			const Span2D<const ArenaVoxelID> blockFLOR = blockLevel.getFLOR();
+			const Span2D<const ArenaVoxelID> blockMAP1 = blockLevel.getMAP1();
+			const Span2D<const ArenaVoxelID> blockMAP2 = blockLevel.getMAP2();
 
 			// Offset of the block in the voxel grid.
 			const WEInt xOffset = startPosition.x + (xDim * 20);

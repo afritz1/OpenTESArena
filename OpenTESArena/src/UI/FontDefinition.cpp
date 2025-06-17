@@ -27,7 +27,7 @@ bool FontDefinition::init(const char *filename)
 
 	for (int i = 0; i < this->characters.getCount(); i++)
 	{
-		BufferView2D<const FontFile::Pixel> srcPixels = fontFile.getPixels(i);
+		Span2D<const FontFile::Pixel> srcPixels = fontFile.getPixels(i);
 		Buffer2D<Pixel> &characterPixels = this->characters.get(i);
 		characterPixels.init(srcPixels.getWidth(), characterHeight);
 		std::copy(srcPixels.begin(), srcPixels.end(), characterPixels.begin());

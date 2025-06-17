@@ -11,8 +11,8 @@
 #include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView2D.h"
 #include "components/utilities/Span.h"
+#include "components/utilities/Span2D.h"
 
 // A .MIF file contains a map header and an array of levels. It defines the dimensions of
 // a particular area and which voxels have which IDs, as well as some other data. It is normally
@@ -59,9 +59,9 @@ public:
 	const std::string &getInfo() const;
 	int getNumf() const;
 
-	BufferView2D<const ArenaVoxelID> getFLOR() const;
-	BufferView2D<const ArenaVoxelID> getMAP1() const;
-	BufferView2D<const ArenaVoxelID> getMAP2() const;
+	Span2D<const ArenaVoxelID> getFLOR() const;
+	Span2D<const ArenaVoxelID> getMAP1() const;
+	Span2D<const ArenaVoxelID> getMAP2() const;
 
 	Span<const uint8_t> getFLAT() const;
 	Span<const uint8_t> getINNS() const;
