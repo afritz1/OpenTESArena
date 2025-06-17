@@ -48,15 +48,15 @@ struct MapDefinitionWild
 	uint32_t fallbackSeed; // I.e. the world map location seed.
 
 	// Building name infos for each chunk.
-	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
+	std::vector<MapGenerationWildChunkBuildingNameInfo> buildingNameInfos;
 
 	MapDefinitionWild();
 
 	void init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
-		std::vector<MapGeneration::WildChunkBuildingNameInfo> &&buildingNameInfos);
+		std::vector<MapGenerationWildChunkBuildingNameInfo> &&buildingNameInfos);
 
 	int getLevelDefIndex(const ChunkInt2 &chunk) const;
-	const MapGeneration::WildChunkBuildingNameInfo *getBuildingNameInfo(const ChunkInt2 &chunk) const;
+	const MapGenerationWildChunkBuildingNameInfo *getBuildingNameInfo(const ChunkInt2 &chunk) const;
 
 	void clear();
 };
@@ -114,10 +114,10 @@ private:
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 public:
-	bool initInterior(const MapGeneration::InteriorGenInfo &generationInfo, TextureManager &textureManager);
-	bool initCity(const MapGeneration::CityGenInfo &generationInfo,
+	bool initInterior(const MapGenerationInteriorInfo &generationInfo, TextureManager &textureManager);
+	bool initCity(const MapGenerationCityInfo &generationInfo,
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager);
-	bool initWild(const MapGeneration::WildGenInfo &generationInfo,
+	bool initWild(const MapGenerationWildInfo &generationInfo,
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager);
 
 	MapType getMapType() const;

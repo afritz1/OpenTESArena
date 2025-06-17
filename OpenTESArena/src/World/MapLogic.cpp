@@ -202,7 +202,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 		}
 	}();
 
-	MapGeneration::CityGenInfo cityGenInfo;
+	MapGenerationCityInfo cityGenInfo;
 	cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
 		cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
 		cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
@@ -357,7 +357,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			}();
 
 			const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
-			const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+			const MapGenerationInteriorInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
 
 			MapDefinition mapDefinition;
 			if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
@@ -392,7 +392,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			};
 
 			VoxelInt2 playerStartOffset = VoxelInt2::Zero;
-			if (interiorGenInfo.type == MapGeneration::InteriorGenType::Dungeon)
+			if (interiorGenInfo.type == MapGenerationInteriorType::Dungeon)
 			{
 				// @temp hack, assume entering a wild dungeon, need to push player south by one due to original map bug.
 				playerStartOffset = VoxelUtils::South;
@@ -450,7 +450,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				const auto &exeData = binaryAssetLibrary.getExeData();
 				Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
-				MapGeneration::WildGenInfo wildGenInfo;
+				MapGenerationWildInfo wildGenInfo;
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
 				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
@@ -505,7 +505,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					}
 				}();
 
-				MapGeneration::CityGenInfo cityGenInfo;
+				MapGenerationCityInfo cityGenInfo;
 				cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
 					cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
 					cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),

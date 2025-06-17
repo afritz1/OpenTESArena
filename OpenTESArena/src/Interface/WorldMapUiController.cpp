@@ -106,7 +106,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			}
 		}();
 
-		MapGeneration::CityGenInfo cityGenInfo;
+		MapGenerationCityInfo cityGenInfo;
 		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
 			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
 			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks), mainQuestTempleOverride,
@@ -188,7 +188,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
 		const LocationDungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
 
-		MapGeneration::InteriorGenInfo interiorGenInfo;
+		MapGenerationInteriorInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 		const VoxelInt2 playerStartOffset(
@@ -231,7 +231,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
 
-		MapGeneration::InteriorGenInfo interiorGenInfo;
+		MapGenerationInteriorInfo interiorGenInfo;
 		interiorGenInfo.initPrefab(mainQuestDungeonDef.mapFilename, ArenaInteriorType::Dungeon, rulerIsMale);
 
 		const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest dungeon.

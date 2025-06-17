@@ -45,7 +45,7 @@ MapDefinitionWild::MapDefinitionWild()
 }
 
 void MapDefinitionWild::init(Buffer2D<int> &&levelDefIndices, uint32_t fallbackSeed,
-	std::vector<MapGeneration::WildChunkBuildingNameInfo> &&buildingNameInfos)
+	std::vector<MapGenerationWildChunkBuildingNameInfo> &&buildingNameInfos)
 {
 	this->levelDefIndices = std::move(levelDefIndices);
 	this->fallbackSeed = fallbackSeed;
@@ -70,10 +70,10 @@ int MapDefinitionWild::getLevelDefIndex(const ChunkInt2 &chunk) const
 	}
 }
 
-const MapGeneration::WildChunkBuildingNameInfo *MapDefinitionWild::getBuildingNameInfo(const ChunkInt2 &chunk) const
+const MapGenerationWildChunkBuildingNameInfo *MapDefinitionWild::getBuildingNameInfo(const ChunkInt2 &chunk) const
 {
 	const auto iter = std::find_if(this->buildingNameInfos.begin(), this->buildingNameInfos.end(),
-		[&chunk](const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo)
+		[&chunk](const MapGenerationWildChunkBuildingNameInfo &buildingNameInfo)
 	{
 		return buildingNameInfo.getChunk() == chunk;
 	});
@@ -384,7 +384,7 @@ bool MapDefinition::initWildLevels(Span2D<const ArenaWildBlockID> wildBlockIDs,
 	const Span<const ArenaWildBlockID> uniqueWildBlockIdsConstView(uniqueWildBlockIDs);
 	const Span2D<const int> levelDefIndicesConstView(levelDefIndices);
 	Span<LevelDefinition> levelDefsView(this->levels);
-	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
+	std::vector<MapGenerationWildChunkBuildingNameInfo> buildingNameInfos;
 	MapGeneration::generateRmdWilderness(uniqueWildBlockIdsConstView, levelDefIndicesConstView, cityDef, inf,
 		charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, levelDefsView, &levelInfoDef,
 		&buildingNameInfos);
@@ -423,7 +423,7 @@ void MapDefinition::initStartPoints(const MIFFile &mif)
 	}
 }
 
-bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generationInfo, TextureManager &textureManager)
+bool MapDefinition::initInterior(const MapGenerationInteriorInfo &generationInfo, TextureManager &textureManager)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
@@ -431,10 +431,10 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 
 	this->init(MapType::Interior);
 
-	const MapGeneration::InteriorGenType interiorType = generationInfo.type;
-	if (interiorType == MapGeneration::InteriorGenType::Prefab)
+	const MapGenerationInteriorType interiorType = generationInfo.type;
+	if (interiorType == MapGenerationInteriorType::Prefab)
 	{
-		const MapGeneration::InteriorPrefabGenInfo &prefabGenInfo = generationInfo.prefab;
+		const MapGenerationInteriorPrefabInfo &prefabGenInfo = generationInfo.prefab;
 		MIFFile mif;
 		if (!mif.init(prefabGenInfo.mifName.c_str()))
 		{
@@ -448,9 +448,9 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 		this->initStartPoints(mif);
 		this->startLevelIndex = mif.getStartingLevelIndex();
 	}
-	else if (interiorType == MapGeneration::InteriorGenType::Dungeon)
+	else if (interiorType == MapGenerationInteriorType::Dungeon)
 	{
-		const MapGeneration::InteriorDungeonGenInfo &dungeonGenInfo = generationInfo.dungeon;
+		const MapGenerationInteriorDungeonInfo &dungeonGenInfo = generationInfo.dungeon;
 
 		// Dungeon .MIF file with chunks for random generation.
 		const std::string &mifName = ArenaInteriorUtils::DUNGEON_MIF_NAME;
@@ -482,7 +482,7 @@ bool MapDefinition::initInterior(const MapGeneration::InteriorGenInfo &generatio
 	return true;
 }
 
-bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
+bool MapDefinition::initCity(const MapGenerationCityInfo &generationInfo,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
@@ -524,7 +524,7 @@ bool MapDefinition::initCity(const MapGeneration::CityGenInfo &generationInfo,
 	return true;
 }
 
-bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
+bool MapDefinition::initWild(const MapGenerationWildInfo &generationInfo,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();

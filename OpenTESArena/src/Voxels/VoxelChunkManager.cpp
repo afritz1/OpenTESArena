@@ -353,7 +353,7 @@ void VoxelChunkManager::populateChunkDecorators(VoxelChunk &chunk, const LevelDe
 }
 
 void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
-	const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo, const LevelInfoDefinition &levelInfoDefinition)
+	const MapGenerationWildChunkBuildingNameInfo &buildingNameInfo, const LevelInfoDefinition &levelInfoDefinition)
 {
 	// Cache of level building names that have been added to the chunk.
 	std::unordered_map<LevelVoxelBuildingNameID, VoxelBuildingNameID> buildingNameIDs;
@@ -377,7 +377,7 @@ void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
 				}
 
 				const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
-				const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+				const MapGenerationInteriorInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
 				const ArenaInteriorType interiorType = interiorGenInfo.interiorType;
 
 				LevelVoxelBuildingNameID buildingNameID;
@@ -644,7 +644,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		// Load building names for the given chunk. The wilderness might use the same level definition in
 		// multiple places, so the building names have to be generated separately.
 		const MapDefinitionWild &mapDefWild = mapSubDef.wild;
-		const MapGeneration::WildChunkBuildingNameInfo *buildingNameInfo = mapDefWild.getBuildingNameInfo(chunkPos);
+		const MapGenerationWildChunkBuildingNameInfo *buildingNameInfo = mapDefWild.getBuildingNameInfo(chunkPos);
 		if (buildingNameInfo != nullptr)
 		{
 			this->populateWildChunkBuildingNames(chunk, *buildingNameInfo, levelInfoDef);

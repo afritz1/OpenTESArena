@@ -2,7 +2,7 @@
 
 #include "components/debug/Debug.h"
 
-void InteriorEntranceTransitionDefinition::init(MapGeneration::InteriorGenInfo &&interiorGenInfo)
+void InteriorEntranceTransitionDefinition::init(MapGenerationInteriorInfo &&interiorGenInfo)
 {
 	this->interiorGenInfo = std::move(interiorGenInfo);
 }
@@ -22,7 +22,7 @@ void TransitionDefinition::initCityGate()
 	this->type = TransitionType::CityGate;
 }
 
-void TransitionDefinition::initInteriorEntrance(MapGeneration::InteriorGenInfo &&interiorGenInfo)
+void TransitionDefinition::initInteriorEntrance(MapGenerationInteriorInfo &&interiorGenInfo)
 {
 	this->type = TransitionType::EnterInterior;
 	this->interiorEntrance.init(std::move(interiorGenInfo));

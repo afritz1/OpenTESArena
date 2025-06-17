@@ -43,7 +43,7 @@ private:
 		const LevelInfoDefinition &levelInfoDefinition, const WorldInt2 &levelOffset);
 
 	// Helper function for setting a wild chunk's building names.
-	void populateWildChunkBuildingNames(VoxelChunk &chunk, const MapGeneration::WildChunkBuildingNameInfo &buildingNameInfo,
+	void populateWildChunkBuildingNames(VoxelChunk &chunk, const MapGenerationWildChunkBuildingNameInfo &buildingNameInfo,
 		const LevelInfoDefinition &levelInfoDefinition);
 
 	// Adds chasm instances to the chunk that should exist at level generation time. Chasms are context-sensitive
