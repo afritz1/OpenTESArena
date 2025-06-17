@@ -14,10 +14,10 @@ SET(COMP_DOS
 	"dos/DOSUtils.h")
 
 SET(COMP_UTILITIES
-	"utilities/Allocator.h"
 	"utilities/Buffer.h"
 	"utilities/Buffer2D.h"
 	"utilities/Buffer3D.h"
+	"utilities/BumpAllocator.h"
 	"utilities/Bytes.cpp"
 	"utilities/Bytes.h"
 	"utilities/Directory.cpp"

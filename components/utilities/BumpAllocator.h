@@ -1,5 +1,5 @@
-#ifndef ALLOCATOR_H
-#define ALLOCATOR_H
+#ifndef BUMP_ALLOCATOR_H
+#define BUMP_ALLOCATOR_H
 
 #include <cstddef>
 #include <type_traits>
@@ -8,9 +8,8 @@
 #include "Bytes.h"
 #include "Span.h"
 
-// Simple scratch allocator for POD types. Very fast destruction, intended for clearing
-// frequently without worrying about heap fragmentation.
-class ScratchAllocator
+// Simple allocate-only buffer for POD types that "bumps" the next address to allocate at. Very cheap to destroy.
+class BumpAllocator
 {
 private:
 	Buffer<std::byte> data;
@@ -24,7 +23,7 @@ private:
 
 	// Gets the number of bytes needed to push an allocation to the next valid alignment for T.
 	template<typename T>
-	int getAlignmentByteCount() const
+	int getBytesToNextAlignment() const
 	{
 		DebugAssert(this->data.isValid());
 		return Bytes::getBytesToNextAlignment(reinterpret_cast<uintptr_t>(this->data.begin() + this->index), alignof(T));
@@ -33,17 +32,17 @@ private:
 	template<typename T>
 	int getCombinedByteCount(int count) const
 	{
-		const int byteCount = ScratchAllocator::getByteCount<T>(count);
-		const int alignmentBytes = this->getAlignmentByteCount<T>();
+		const int byteCount = BumpAllocator::getByteCount<T>(count);
+		const int alignmentBytes = this->getBytesToNextAlignment<T>();
 		return byteCount + alignmentBytes;
 	}
 public:
-	ScratchAllocator(int byteCount)
+	BumpAllocator(int byteCount)
 	{
 		this->init(byteCount);
 	}
 
-	ScratchAllocator()
+	BumpAllocator()
 	{
 		this->index = 0;
 	}
@@ -54,11 +53,6 @@ public:
 		this->index = 0;
 	}
 
-	bool isInited() const
-	{
-		return this->data.getCount() > 0;
-	}
-
 	int getByteSize() const
 	{
 		return this->data.getCount();
@@ -67,13 +61,14 @@ public:
 	template<typename T>
 	bool canAlloc(int count) const
 	{
-		if (!this->isInited() || !this->data.isValid())
-		{
-			return false;
-		}
-
 		const int byteCount = this->getCombinedByteCount<T>(count);
-		return (index + byteCount) <= this->data.getCount();
+		return (this->index + byteCount) <= this->data.getCount();
+	}
+
+	template<typename T>
+	bool canAlloc() const
+	{
+		return this->canAlloc<T>(1);
 	}
 
 	template<typename T>
@@ -83,14 +78,14 @@ public:
 		DebugAssert(count >= 0);
 		DebugAssert(this->canAlloc<T>(count));
 
-		this->index += this->getAlignmentByteCount<T>();
+		this->index += this->getBytesToNextAlignment<T>();
 		T *ptr = reinterpret_cast<T*>(this->data.begin() + this->index);
 		for (int i = 0; i < count; i++)
 		{
 			*(ptr + i) = defaultValue;
 		}
 
-		this->index += ScratchAllocator::getByteCount<T>(count);
+		this->index += BumpAllocator::getByteCount<T>(count);
 		return Span<T>(ptr, count);
 	}
 
