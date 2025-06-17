@@ -5,11 +5,11 @@
 #include "VoxelFaceEnableChunk.h"
 #include "VoxelFacing.h"
 
-#include "components/utilities/BufferView3D.h"
+#include "components/utilities/Span3D.h"
 
 namespace
 {
-	bool IsAdjacentFaceCombinable(const VoxelInt3 &voxel, const VoxelInt3 &direction, VoxelFacing3D facing, BufferView3D<const VoxelFacesEntry> facesEntry,
+	bool IsAdjacentFaceCombinable(const VoxelInt3 &voxel, const VoxelInt3 &direction, VoxelFacing3D facing, Span3D<const VoxelFacesEntry> facesEntry,
 		const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 	{
 		const VoxelInt3 adjacentVoxel = voxel + direction;
@@ -136,7 +136,7 @@ namespace
 	}
 
 	bool IsAdjacentFaceRangeCombinable(const VoxelInt3 &rangeBegin, const VoxelInt3 &rangeEnd, const VoxelInt3 &direction, VoxelFacing3D facing,
-		BufferView3D<const VoxelFacesEntry> facesEntry, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
+		Span3D<const VoxelFacesEntry> facesEntry, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 	{
 		// The input range should be a 1D span of voxels, we only care about the next 1D span adjacent to it.
 		bool isCombinable = true;

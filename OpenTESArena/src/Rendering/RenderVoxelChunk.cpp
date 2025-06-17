@@ -5,8 +5,6 @@
 #include "RenderVoxelChunk.h"
 #include "../World/ChunkUtils.h"
 
-#include "components/utilities/BufferView3D.h"
-
 RenderVoxelDrawCallRange::RenderVoxelDrawCallRange()
 {
 	this->clear();

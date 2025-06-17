@@ -13,8 +13,8 @@
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView3D.h"
 #include "components/utilities/Span.h"
+#include "components/utilities/Span3D.h"
 
 class Renderer;
 class RenderLightChunkManager;

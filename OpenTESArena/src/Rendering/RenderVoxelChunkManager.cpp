@@ -1419,7 +1419,7 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 			this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
 		}
 
-		/*BufferView3D<const RenderVoxelDrawCallRangeID> rangeIDs = renderChunk.drawCallRangeIDs;
+		/*Span3D<const RenderVoxelDrawCallRangeID> rangeIDs = renderChunk.drawCallRangeIDs;
 		for (WEInt z = 0; z < rangeIDs.getDepth(); z++)
 		{
 			for (SNInt x = 0; x < rangeIDs.getWidth(); x++)

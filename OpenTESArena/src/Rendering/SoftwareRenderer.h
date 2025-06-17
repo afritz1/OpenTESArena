@@ -16,10 +16,10 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/Buffer3D.h"
-#include "components/utilities/BufferView3D.h"
 #include "components/utilities/RecyclablePool.h"
 #include "components/utilities/Span.h"
 #include "components/utilities/Span2D.h"
+#include "components/utilities/Span3D.h"
 
 struct RasterizerBin; // For triangle binning.
 

@@ -5,7 +5,7 @@
 #include "Coord.h"
 #include "../Math/MathUtils.h"
 
-#include "components/utilities/BufferView3D.h"
+#include "components/utilities/Span3D.h"
 
 // Base type for all chunks in the game world occupying 64x64 voxels.
 struct Chunk
@@ -24,7 +24,7 @@ protected:
 	void clear();
 
 	template<typename VoxelIdType>
-	void getAdjacentIDsInternal(const VoxelInt3 &voxel, BufferView3D<const VoxelIdType> voxelIDs, VoxelIdType defaultID,
+	void getAdjacentIDsInternal(const VoxelInt3 &voxel, Span3D<const VoxelIdType> voxelIDs, VoxelIdType defaultID,
 		VoxelIdType *outNorthID, VoxelIdType *outEastID, VoxelIdType *outSouthID, VoxelIdType *outWestID) const
 	{
 		auto getIdOrDefault = [this, voxelIDs, defaultID](const VoxelInt3 &voxel)

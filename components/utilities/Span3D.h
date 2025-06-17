@@ -1,16 +1,15 @@
-#ifndef BUFFER_VIEW_3D_H
-#define BUFFER_VIEW_3D_H
+#ifndef SPAN_3D_H
+#define SPAN_3D_H
 
 #include <algorithm>
 
 #include "Buffer3D.h"
 #include "../debug/Debug.h"
 
-// Non-owning view over a 3D range of data stored in memory as a 1D array. More complex than 2D buffer
-// view due to the look-up requirements of a 3D array. Data can be null. Only need assertions on things
-// that reach into the buffer itself.
+// Non-owning view of a 3D range of data stored in memory as a 1D array. More sophisticated than 2D span due
+// to slicing capability. Data can be null. Only need assertions on things that reach into the buffer itself.
 template<typename T>
-class BufferView3D
+class Span3D
 {
 private:
 	T *data; // Start of original 3D array.
@@ -43,33 +42,33 @@ private:
 		}
 	}
 public:
-	BufferView3D()
+	Span3D()
 	{
 		this->reset();
 	}
 
 	// View across a subset of a 3D range of data. The original 3D range's dimensions are required
 	// for proper look-up (and bounds-checking).
-	BufferView3D(T *data, int width, int height, int depth, int viewX, int viewY, int viewZ,
+	Span3D(T *data, int width, int height, int depth, int viewX, int viewY, int viewZ,
 		int viewWidth, int viewHeight, int viewDepth)
 	{
 		this->init(data, width, height, depth, viewX, viewY, viewZ, viewWidth, viewHeight, viewDepth);
 	}
 
 	// View across a 3D range of data.
-	BufferView3D(T *data, int width, int height, int depth)
+	Span3D(T *data, int width, int height, int depth)
 	{
 		this->init(data, width, height, depth);
 	}
 
 	template<typename U>
-	BufferView3D(Buffer3D<U> &buffer)
+	Span3D(Buffer3D<U> &buffer)
 	{
 		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
 	}
 
 	template<typename U>
-	BufferView3D(const Buffer3D<U> &buffer)
+	Span3D(const Buffer3D<U> &buffer)
 	{
 		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight(), buffer.getDepth());
 	}
