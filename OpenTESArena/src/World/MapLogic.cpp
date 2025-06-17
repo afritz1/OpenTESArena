@@ -189,8 +189,8 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 		return buffer;
 	}();
 
-	const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-		[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+	const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+		[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 	{
 		if (cityDef.hasMainQuestTempleOverride)
 		{
@@ -492,8 +492,8 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					return buffer;
 				}();
 
-				const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-					[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+				const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+					[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 				{
 					if (cityDef.hasMainQuestTempleOverride)
 					{

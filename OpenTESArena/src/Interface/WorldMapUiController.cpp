@@ -93,8 +93,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return buffer;
 		}();
 
-		const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+		const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+			[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 		{
 			if (cityDef.hasMainQuestTempleOverride)
 			{

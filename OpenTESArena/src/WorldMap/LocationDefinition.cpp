@@ -7,7 +7,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
-void LocationCityDefinition::MainQuestTempleOverride::init(int modelIndex, int suffixIndex, int menuNamesIndex)
+void LocationCityMainQuestTempleOverride::init(int modelIndex, int suffixIndex, int menuNamesIndex)
 {
 	this->modelIndex = modelIndex;
 	this->suffixIndex = suffixIndex;
@@ -18,7 +18,7 @@ void LocationCityDefinition::init(ArenaCityType type, const char *typeDisplayNam
 	const char *mapFilename, uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed,
 	uint32_t rulerSeed, uint32_t skySeed, ArenaClimateType climateType,
 	const std::vector<uint8_t> *reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
-	const MainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
+	const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, int cityBlocksPerSide, bool coastal,
 	bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon)
 {
 	this->type = type;
@@ -204,8 +204,8 @@ void LocationDefinition::initCity(int localCityID, int provinceID, bool coastal,
 		}
 	}();
 
-	LocationCityDefinition::MainQuestTempleOverride mainQuestTempleOverride;
-	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverridePtr = &mainQuestTempleOverride;
+	LocationCityMainQuestTempleOverride mainQuestTempleOverride;
+	const LocationCityMainQuestTempleOverride *mainQuestTempleOverridePtr = &mainQuestTempleOverride;
 	if (globalCityID == 2)
 	{
 		mainQuestTempleOverride.init(1, 7, 23);

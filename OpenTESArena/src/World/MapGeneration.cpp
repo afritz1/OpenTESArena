@@ -1857,21 +1857,17 @@ namespace MapGeneration
 		}
 	}
 
-	void generateArenaCityBuildingNames(uint32_t citySeed, int raceID, bool coastal,
-		const std::string_view cityTypeName,
-		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
-		ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary,
-		const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
+	void generateArenaCityBuildingNames(uint32_t citySeed, int raceID, bool coastal, const std::string_view cityTypeName,
+		const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, ArenaRandom &random,
+		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, LevelDefinition *outLevelDef,
 		LevelInfoDefinition *outLevelInfoDef)
 	{
 		const auto &exeData = binaryAssetLibrary.getExeData();
 		const Int2 localCityPoint = ArenaLocationUtils::getLocalCityPoint(citySeed);
 
-		auto tryGetInteriorType = [outLevelDef, outLevelInfoDef](SNInt x, WEInt z)
-			-> std::optional<ArenaInteriorType>
+		auto tryGetInteriorType = [outLevelDef, outLevelInfoDef](SNInt x, WEInt z) -> std::optional<ArenaInteriorType>
 		{
-			auto tryGetTransitionDefID = [outLevelDef](SNInt x, WEInt z)
-				-> std::optional<LevelVoxelTransitionDefID>
+			auto tryGetTransitionDefID = [outLevelDef](SNInt x, WEInt z) -> std::optional<LevelVoxelTransitionDefID>
 			{
 				// Find the associated transition for this voxel (if any).
 				const WorldInt3 voxel(x, 1, z);
@@ -2293,10 +2289,9 @@ void MapGenerationInteriorInfo::initDungeon(const LocationDungeonDefinition &dun
 	this->dungeon.init(dungeonDef, isArtifactDungeon);
 }
 
-void MapGenerationCityInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType,
-	uint32_t citySeed, uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale,
-	bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
-	const std::optional<LocationCityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
+void MapGenerationCityInfo::init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType, uint32_t citySeed,
+	uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
+	Buffer<uint8_t> &&reservedBlocks, const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide)
 {
 	this->mifName = std::move(mifName);
@@ -2516,7 +2511,7 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
 	bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon, Span<const uint8_t> reservedBlocks,
 	WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName,
-	ArenaCityType cityType, const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+	ArenaCityType cityType, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,
 	LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)

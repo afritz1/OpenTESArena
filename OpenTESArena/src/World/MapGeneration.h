@@ -93,7 +93,7 @@ struct MapGenerationCityInfo
 	// Affects which types of city blocks are used at generation start.
 	Buffer<uint8_t> reservedBlocks;
 
-	std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride;
+	std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride;
 
 	// Generation offset from city origin.
 	WEInt blockStartPosX;
@@ -104,7 +104,7 @@ struct MapGenerationCityInfo
 	void init(std::string &&mifName, std::string &&cityTypeName, ArenaCityType cityType, uint32_t citySeed,
 		uint32_t rulerSeed, int raceID, bool isPremade, bool coastal, bool rulerIsMale,
 		bool palaceIsMainQuestDungeon, Buffer<uint8_t> &&reservedBlocks,
-		const std::optional<LocationCityDefinition::MainQuestTempleOverride> &mainQuestTempleOverride,
+		const std::optional<LocationCityMainQuestTempleOverride> &mainQuestTempleOverride,
 		WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide);
 };
 
@@ -188,7 +188,7 @@ namespace MapGeneration
 		bool isPremade, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 		Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY,
 		int cityBlocksPerSide, bool coastal, const std::string_view cityTypeName, ArenaCityType cityType,
-		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
+		const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager,

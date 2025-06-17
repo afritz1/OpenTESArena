@@ -90,35 +90,26 @@ private:
 	MapSubDefinition subDefinition;
 
 	void init(MapType mapType);
-	bool initInteriorLevels(const MIFFile &mif, ArenaInteriorType interiorType,
-		const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	bool initInteriorLevels(const MIFFile &mif, ArenaInteriorType interiorType, const std::optional<uint32_t> &rulerSeed,
+		const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
-	bool initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks,
-		bool isArtifactDungeon, ArenaRandom &random, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
+	bool initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon, ArenaRandom &random,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, WorldInt2 *outStartPoint);
-	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-		bool isPremade, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX,
-		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
-		bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaCityType cityType,
-		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
-		const SkyGenerationExteriorInfo &exteriorSkyGenInfo, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
+	bool initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID, bool isPremade, Span<const uint8_t> reservedBlocks,
+		WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
+		const std::string_view cityTypeName, ArenaCityType cityType, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
+		const SkyGenerationExteriorInfo &exteriorSkyGenInfo, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
-	bool initWildLevels(Span2D<const ArenaWildBlockID> wildBlockIDs,
-		uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
-		const SkyGenerationExteriorInfo &skyGenInfo, const INFFile &inf,
-		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
+	bool initWildLevels(Span2D<const ArenaWildBlockID> wildBlockIDs, uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
+		const SkyGenerationExteriorInfo &skyGenInfo, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 public:
 	bool initInterior(const MapGenerationInteriorInfo &generationInfo, TextureManager &textureManager);
-	bool initCity(const MapGenerationCityInfo &generationInfo,
-		const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager);
-	bool initWild(const MapGenerationWildInfo &generationInfo,
-		const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager);
+	bool initCity(const MapGenerationCityInfo &generationInfo, const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager);
+	bool initWild(const MapGenerationWildInfo &generationInfo, const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager);
 
 	MapType getMapType() const;
 	bool isValid() const;

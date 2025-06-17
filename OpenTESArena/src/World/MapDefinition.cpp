@@ -278,14 +278,11 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 }
 
 bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_t rulerSeed, int raceID,
-	bool isPremade, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX,
-	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
-	const std::string_view cityTypeName, ArenaCityType cityType,
-	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
-	const SkyGenerationExteriorInfo &exteriorSkyGenInfo, const INFFile &inf,
-	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
-	TextureManager &textureManager)
+	bool isPremade, Span<const uint8_t> reservedBlocks, WEInt blockStartPosX, SNInt blockStartPosY, int cityBlocksPerSide,
+	bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaCityType cityType,
+	const LocationCityMainQuestTempleOverride *mainQuestTempleOverride, const SkyGenerationExteriorInfo &exteriorSkyGenInfo,
+	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary, TextureManager &textureManager)
 {
 	// 1 LevelDefinition and 1 LevelInfoDefinition.
 	this->levels.init(1);
@@ -482,8 +479,7 @@ bool MapDefinition::initInterior(const MapGenerationInteriorInfo &generationInfo
 	return true;
 }
 
-bool MapDefinition::initCity(const MapGenerationCityInfo &generationInfo,
-	const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager)
+bool MapDefinition::initCity(const MapGenerationCityInfo &generationInfo, const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
@@ -509,7 +505,7 @@ bool MapDefinition::initCity(const MapGenerationCityInfo &generationInfo,
 	}
 
 	const Span<const uint8_t> reservedBlocks(generationInfo.reservedBlocks);
-	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride =
+	const LocationCityMainQuestTempleOverride *mainQuestTempleOverride =
 		generationInfo.mainQuestTempleOverride.has_value() ? &(*generationInfo.mainQuestTempleOverride) : nullptr;
 
 	// Generate city level (optionally generating random city blocks if not premade).

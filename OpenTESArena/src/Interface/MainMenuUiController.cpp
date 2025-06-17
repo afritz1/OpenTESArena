@@ -389,8 +389,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return buffer;
 			}();
 
-			const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+			const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+				[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 			{
 				if (cityDef.hasMainQuestTempleOverride)
 				{
@@ -474,8 +474,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return buffer;
 			}();
 
-			const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+			const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+				[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 			{
 				if (cityDef.hasMainQuestTempleOverride)
 				{
