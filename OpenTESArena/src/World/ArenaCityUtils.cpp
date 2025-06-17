@@ -19,63 +19,61 @@
 
 std::string ArenaCityUtils::generateInfName(ArenaClimateType climateType, WeatherType weatherType)
 {
-	const char climateLetter = [climateType]()
+	char climateLetter = -1;
+	if (climateType == ArenaClimateType::Temperate)
 	{
-		if (climateType == ArenaClimateType::Temperate)
-		{
-			return 'T';
-		}
-		else if (climateType == ArenaClimateType::Desert)
-		{
-			return 'D';
-		}
-		else if (climateType == ArenaClimateType::Mountain)
-		{
-			return 'M';
-		}
-		else
-		{
-			DebugUnhandledReturnMsg(char, std::to_string(static_cast<int>(climateType)));
-		}
-	}();
+		climateLetter = 'T';
+	}
+	else if (climateType == ArenaClimateType::Desert)
+	{
+		climateLetter = 'D';
+	}
+	else if (climateType == ArenaClimateType::Mountain)
+	{
+		climateLetter = 'M';
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(climateType)));
+	}
 
 	// City/town/village letter.
 	constexpr char locationLetter = 'C';
 
-	const char weatherLetter = [climateType, weatherType]()
+	char weatherLetter = -1;
+	if (weatherType == WeatherType::Clear)
 	{
-		if (weatherType == WeatherType::Clear)
+		weatherLetter = 'N';
+	}
+	else if (weatherType == WeatherType::Overcast)
+	{
+		weatherLetter = 'R';
+	}
+	else if (weatherType == WeatherType::Rain)
+	{
+		weatherLetter = 'W';
+	}
+	else if (weatherType == WeatherType::Snow)
+	{
+		// Deserts can't have snow.
+		if (climateType != ArenaClimateType::Desert)
 		{
-			return 'N';
-		}
-		else if (weatherType == WeatherType::Overcast)
-		{
-			return 'R';
-		}
-		else if (weatherType == WeatherType::Rain)
-		{
-			return 'W';
-		}
-		else if (weatherType == WeatherType::Snow)
-		{
-			// Deserts can't have snow.
-			if (climateType != ArenaClimateType::Desert)
-			{
-				return 'S';
-			}
-			else
-			{
-				DebugLogWarning("Deserts do not have snow templates.");
-				return 'N';
-			}
+			weatherLetter = 'S';
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(char, std::to_string(static_cast<int>(weatherType)));
+			DebugLogWarning("Deserts do not have snow templates.");
+			weatherLetter = 'N';
 		}
-	}();
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(weatherType)));
+	}
 
-	return std::string { climateLetter, locationLetter, weatherLetter } + ".INF";
+	char buffer[16];
+	std::snprintf(buffer, sizeof(buffer), "%c%c%c.INF", climateLetter, locationLetter, weatherLetter);
+	return std::string(buffer);
 }
 
 void ArenaCityUtils::writeSkeleton(const MIFLevel &level, Span2D<ArenaVoxelID> &dstFlor, Span2D<ArenaVoxelID> &dstMap1, Span2D<ArenaVoxelID> &dstMap2)
