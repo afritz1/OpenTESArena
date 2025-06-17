@@ -74,9 +74,9 @@ uint32_t ArenaWildUtils::makeWildChunkSeed(int wildX, int wildY)
 	return (wildY << 16) + wildX;
 }
 
-Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData)
+Buffer2D<ArenaWildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData)
 {
-	Buffer2D<ArenaWildUtils::WildBlockID> indices(ArenaWildUtils::WILD_WIDTH, ArenaWildUtils::WILD_HEIGHT);
+	Buffer2D<ArenaWildBlockID> indices(ArenaWildUtils::WILD_WIDTH, ArenaWildUtils::WILD_HEIGHT);
 	ArenaRandom random(wildSeed);
 
 	// Generate a random wilderness .MIF index for each wilderness chunk.
@@ -84,7 +84,7 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 		[&wildData, &random]()
 	{
 		// Determine the wilderness block list to draw from.
-		const Span<const WildBlockID> blockList = [&wildData, &random]() -> Span<const uint8_t>
+		const Span<const ArenaWildBlockID> blockList = [&wildData, &random]() -> Span<const uint8_t>
 		{
 			constexpr uint16_t normalVal = 0x6666;
 			constexpr uint16_t villageVal = 0x4000;
@@ -143,12 +143,12 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 	return indices;
 }
 
-bool ArenaWildUtils::isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID)
+bool ArenaWildUtils::isWildCityBlock(ArenaWildBlockID wildBlockID)
 {
 	return (wildBlockID >= 1) && (wildBlockID <= 4);
 }
 
-void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID,
+void ArenaWildUtils::reviseWildCityBlock(ArenaWildBlockID wildBlockID,
 	Span2D<ArenaVoxelID> &flor, Span2D<ArenaVoxelID> &map1, Span2D<ArenaVoxelID> &map2,
 	const LocationCityDefinition &cityDef, const BinaryAssetLibrary &binaryAssetLibrary)
 {

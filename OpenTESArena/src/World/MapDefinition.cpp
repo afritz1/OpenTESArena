@@ -327,7 +327,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	return true;
 }
 
-bool MapDefinition::initWildLevels(Span2D<const ArenaWildUtils::WildBlockID> wildBlockIDs,
+bool MapDefinition::initWildLevels(Span2D<const ArenaWildBlockID> wildBlockIDs,
 	uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
 	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
@@ -335,14 +335,14 @@ bool MapDefinition::initWildLevels(Span2D<const ArenaWildUtils::WildBlockID> wil
 {
 	// Create a list of unique block IDs and a 2D table of level definition index mappings. The index
 	// of a wild block ID is its level definition index.
-	std::vector<ArenaWildUtils::WildBlockID> uniqueWildBlockIDs;
+	std::vector<ArenaWildBlockID> uniqueWildBlockIDs;
 	Buffer2D<int> levelDefIndices(wildBlockIDs.getWidth(), wildBlockIDs.getHeight());
 	for (int y = 0; y < wildBlockIDs.getHeight(); y++)
 	{
 		for (int x = 0; x < wildBlockIDs.getWidth(); x++)
 		{
 			// Transpose the XY coordinate since the wild block IDs buffer is in original space.
-			const ArenaWildUtils::WildBlockID blockID = wildBlockIDs.get(y, x);
+			const ArenaWildBlockID blockID = wildBlockIDs.get(y, x);
 			const auto iter = std::find(uniqueWildBlockIDs.begin(), uniqueWildBlockIDs.end(), blockID);
 
 			int levelDefIndex;
@@ -381,7 +381,7 @@ bool MapDefinition::initWildLevels(Span2D<const ArenaWildUtils::WildBlockID> wil
 	const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(ceiling.height);
 	levelInfoDef.init(ceilingScale);
 
-	const Span<const ArenaWildUtils::WildBlockID> uniqueWildBlockIdsConstView(uniqueWildBlockIDs);
+	const Span<const ArenaWildBlockID> uniqueWildBlockIdsConstView(uniqueWildBlockIDs);
 	const Span2D<const int> levelDefIndicesConstView(levelDefIndices);
 	Span<LevelDefinition> levelDefsView(this->levels);
 	std::vector<MapGeneration::WildChunkBuildingNameInfo> buildingNameInfos;
@@ -541,7 +541,7 @@ bool MapDefinition::initWild(const MapGeneration::WildGenInfo &generationInfo,
 		return false;
 	}
 	
-	const Span2D<const ArenaWildUtils::WildBlockID> wildBlockIDs(generationInfo.wildBlockIDs);
+	const Span2D<const ArenaWildBlockID> wildBlockIDs(generationInfo.wildBlockIDs);
 	const LocationCityDefinition &cityDef = *generationInfo.cityDef;
 
 	this->initWildLevels(wildBlockIDs, generationInfo.fallbackSeed, cityDef, skyGenInfo, inf,

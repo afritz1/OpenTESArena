@@ -2316,7 +2316,7 @@ void MapGeneration::CityGenInfo::init(std::string &&mifName, std::string &&cityT
 	this->cityBlocksPerSide = cityBlocksPerSide;
 }
 
-void MapGeneration::WildGenInfo::init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs,
+void MapGeneration::WildGenInfo::init(Buffer2D<ArenaWildBlockID> &&wildBlockIDs,
 	const LocationCityDefinition &cityDef, uint32_t fallbackSeed)
 {
 	this->wildBlockIDs = std::move(wildBlockIDs);
@@ -2581,7 +2581,7 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 		outLevelInfoDef);
 }
 
-void MapGeneration::generateRmdWilderness(Span<const ArenaWildUtils::WildBlockID> uniqueWildBlockIDs,
+void MapGeneration::generateRmdWilderness(Span<const ArenaWildBlockID> uniqueWildBlockIDs,
 	Span2D<const int> levelDefIndices, const LocationCityDefinition &cityDef,
 	const INFFile &inf, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager,
@@ -2605,7 +2605,7 @@ void MapGeneration::generateRmdWilderness(Span<const ArenaWildUtils::WildBlockID
 
 	for (int i = 0; i < uniqueWildBlockIDs.getCount(); i++)
 	{
-		const ArenaWildUtils::WildBlockID wildBlockID = uniqueWildBlockIDs[i];
+		const ArenaWildBlockID wildBlockID = uniqueWildBlockIDs[i];
 		const auto &rmdFiles = ArenaLevelLibrary::getInstance().getWildernessChunks();
 		const int rmdIndex = DebugMakeIndex(rmdFiles, wildBlockID - 1);
 		const RMDFile &rmd = rmdFiles[rmdIndex];

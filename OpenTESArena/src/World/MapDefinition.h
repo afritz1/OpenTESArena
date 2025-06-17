@@ -107,7 +107,7 @@ private:
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
-	bool initWildLevels(Span2D<const ArenaWildUtils::WildBlockID> wildBlockIDs,
+	bool initWildLevels(Span2D<const ArenaWildBlockID> wildBlockIDs,
 		uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
 		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,

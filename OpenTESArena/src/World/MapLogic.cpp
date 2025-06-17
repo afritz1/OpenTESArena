@@ -448,8 +448,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				}();
 
 				const auto &exeData = binaryAssetLibrary.getExeData();
-				Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs =
-					ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
+				Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
 				MapGeneration::WildGenInfo wildGenInfo;
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);

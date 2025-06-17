@@ -110,11 +110,11 @@ namespace MapGeneration
 	// Output: 70 LevelDefinitions + 1 LevelInfoDefinition
 	struct WildGenInfo
 	{
-		Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs;
+		Buffer2D<ArenaWildBlockID> wildBlockIDs;
 		const LocationCityDefinition *cityDef;
 		uint32_t fallbackSeed;
 
-		void init(Buffer2D<ArenaWildUtils::WildBlockID> &&wildBlockIDs, const LocationCityDefinition &cityDef, uint32_t fallbackSeed);
+		void init(Buffer2D<ArenaWildBlockID> &&wildBlockIDs, const LocationCityDefinition &cityDef, uint32_t fallbackSeed);
 	};
 
 	// Building names in the wild are shared per-chunk.
@@ -192,7 +192,7 @@ namespace MapGeneration
 
 	// Generates wilderness chunks from a list of unique wild block IDs. Each block ID maps to the
 	// level definition at the same index.
-	void generateRmdWilderness(Span<const ArenaWildUtils::WildBlockID> uniqueWildBlockIDs,
+	void generateRmdWilderness(Span<const ArenaWildBlockID> uniqueWildBlockIDs,
 		Span2D<const int> levelDefIndices, const LocationCityDefinition &cityDef,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary,const BinaryAssetLibrary &binaryAssetLibrary,
