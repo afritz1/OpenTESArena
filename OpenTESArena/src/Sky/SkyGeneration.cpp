@@ -435,17 +435,14 @@ namespace SkyGeneration
 			const auto &moonFilenames = exeData.locations.moonFilenames;
 			DebugAssertIndex(moonFilenames, moonFilenameIndex);
 			std::string moonFilename = String::toUppercase(moonFilenames[moonFilenameIndex]);
-			Buffer<TextureAsset> textureAssets =
-				TextureUtils::makeTextureAssets(moonFilename, textureManager);
+			Buffer<TextureAsset> textureAssets = TextureUtils::makeTextureAssets(moonFilename, textureManager);
 
 			// Base direction from original game values.
 			// @todo: move to ArenaSkyUtils
-			const Double3 baseDir = (isFirstMoon ?
-				Double3(0.0, -57536.0, 0.0) : Double3(-3000.0, -53536.0, 0.0)).normalized();
+			const Double3 baseDir = (isFirstMoon ? Double3(0.0, -57536.0, 0.0) : Double3(-3000.0, -53536.0, 0.0)).normalized();
 
 			const double orbitPercent = static_cast<double>(phaseIndex) / static_cast<double>(phaseCount);
-			const double bonusLatitude = isFirstMoon ?
-				ArenaSkyUtils::MOON_1_BONUS_LATITUDE : ArenaSkyUtils::MOON_2_BONUS_LATITUDE;
+			const double bonusLatitude = isFirstMoon ? ArenaSkyUtils::MOON_1_BONUS_LATITUDE : ArenaSkyUtils::MOON_2_BONUS_LATITUDE;
 
 			SkyMoonDefinition skyMoonDef;
 			skyMoonDef.init(std::move(textureAssets));
@@ -471,12 +468,12 @@ namespace SkyGeneration
 	}
 }
 
-void SkyGeneration::InteriorSkyGenInfo::init(bool outdoorDungeon)
+void SkyGenerationInteriorInfo::init(bool outdoorDungeon)
 {
 	this->outdoorDungeon = outdoorDungeon;
 }
 
-void SkyGeneration::ExteriorSkyGenInfo::init(ArenaClimateType climateType, const WeatherDefinition &weatherDef,
+void SkyGenerationExteriorInfo::init(ArenaClimateType climateType, const WeatherDefinition &weatherDef,
 	int currentDay, int starCount, uint32_t citySeed, uint32_t skySeed, bool provinceHasAnimatedLand)
 {
 	this->climateType = climateType;
@@ -488,39 +485,36 @@ void SkyGeneration::ExteriorSkyGenInfo::init(ArenaClimateType climateType, const
 	this->provinceHasAnimatedLand = provinceHasAnimatedLand;
 }
 
-void SkyGeneration::generateInteriorSky(const InteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager,
+void SkyGeneration::generateInteriorSky(const SkyGenerationInteriorInfo &skyGenInfo, TextureManager &textureManager,
 	SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 {
 	// Only worry about sky color/fog for interiors.
 	outSkyInfoDef->init(skyGenInfo.outdoorDungeon);
 }
 
-void SkyGeneration::generateExteriorSky(const ExteriorSkyGenInfo &skyGenInfo, const BinaryAssetLibrary &binaryAssetLibrary,
+void SkyGeneration::generateExteriorSky(const SkyGenerationExteriorInfo &skyGenInfo, const BinaryAssetLibrary &binaryAssetLibrary,
 	TextureManager &textureManager, SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 {
-	const auto &exeData = binaryAssetLibrary.getExeData();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 
 	outSkyInfoDef->init(false);
 
 	// Generate static land and air objects.
-	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherDef,
-		skyGenInfo.currentDay, skyGenInfo.skySeed, exeData, textureManager, outSkyDef, outSkyInfoDef);
+	SkyGeneration::generateArenaStatics(skyGenInfo.climateType, skyGenInfo.weatherDef, skyGenInfo.currentDay,
+		skyGenInfo.skySeed, exeData, textureManager, outSkyDef, outSkyInfoDef);
 
 	// Generate animated land if the province has it.
 	if (skyGenInfo.provinceHasAnimatedLand)
 	{
-		SkyGeneration::generateArenaAnimatedLand(skyGenInfo.citySeed, exeData, textureManager,
-			outSkyDef, outSkyInfoDef);
+		SkyGeneration::generateArenaAnimatedLand(skyGenInfo.citySeed, exeData, textureManager, outSkyDef, outSkyInfoDef);
 	}
 
 	const WeatherType weatherDefType = skyGenInfo.weatherDef.type;
 	if (weatherDefType == WeatherType::Clear)
 	{
 		// Add space objects.
-		SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager,
-			outSkyDef, outSkyInfoDef);
-		SkyGeneration::generateArenaStars(skyGenInfo.starCount, exeData, textureManager,
-			outSkyDef, outSkyInfoDef);
+		SkyGeneration::generateArenaMoons(skyGenInfo.currentDay, exeData, textureManager, outSkyDef, outSkyInfoDef);
+		SkyGeneration::generateArenaStars(skyGenInfo.starCount, exeData, textureManager, outSkyDef, outSkyInfoDef);
 		SkyGeneration::generateArenaSun(exeData, textureManager, outSkyDef, outSkyInfoDef);
 	}
 	else if (weatherDefType == WeatherType::Rain)

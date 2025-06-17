@@ -216,7 +216,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 		return weatherDef;
 	}();
 
-	SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+	SkyGenerationExteriorInfo skyGenInfo;
 	skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 		cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -453,7 +453,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				MapGenerationWildInfo wildGenInfo;
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
-				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+				SkyGenerationExteriorInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -512,7 +512,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY,
 					cityDef.cityBlocksPerSide);
 
-				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+				SkyGenerationExteriorInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 

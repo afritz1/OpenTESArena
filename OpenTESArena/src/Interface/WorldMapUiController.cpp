@@ -120,7 +120,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return weatherDef;
 		}();
 
-		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+		SkyGenerationExteriorInfo skyGenInfo;
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
 

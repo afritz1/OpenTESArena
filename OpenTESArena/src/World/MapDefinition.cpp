@@ -153,7 +153,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaInteriorType int
 		MapGeneration::readMifTriggers(mifLevelView, inf, levelDefView, &levelInfoDef);
 
 		// Generate interior sky.
-		SkyGeneration::InteriorSkyGenInfo interiorSkyGenInfo;
+		SkyGenerationInteriorInfo interiorSkyGenInfo;
 		interiorSkyGenInfo.init(ceiling.outdoorDungeon);
 
 		SkyDefinition &skyDef = this->skies.get(levelIndex);
@@ -248,7 +248,7 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 	// Generate sky for each dungeon level.
 	for (int i = 0; i < levelCount; i++)
 	{
-		SkyGeneration::InteriorSkyGenInfo interiorSkyGenInfo;
+		SkyGenerationInteriorInfo interiorSkyGenInfo;
 		interiorSkyGenInfo.init(ceiling.outdoorDungeon);
 
 		SkyDefinition &skyDef = this->skies.get(i);
@@ -282,7 +282,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 	SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale, bool palaceIsMainQuestDungeon,
 	const std::string_view cityTypeName, ArenaCityType cityType,
 	const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
-	const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
+	const SkyGenerationExteriorInfo &exteriorSkyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 	TextureManager &textureManager)
@@ -329,7 +329,7 @@ bool MapDefinition::initCityLevel(const MIFFile &mif, uint32_t citySeed, uint32_
 
 bool MapDefinition::initWildLevels(Span2D<const ArenaWildBlockID> wildBlockIDs,
 	uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
+	const SkyGenerationExteriorInfo &skyGenInfo, const INFFile &inf,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
@@ -483,7 +483,7 @@ bool MapDefinition::initInterior(const MapGenerationInteriorInfo &generationInfo
 }
 
 bool MapDefinition::initCity(const MapGenerationCityInfo &generationInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager)
+	const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
@@ -525,7 +525,7 @@ bool MapDefinition::initCity(const MapGenerationCityInfo &generationInfo,
 }
 
 bool MapDefinition::initWild(const MapGenerationWildInfo &generationInfo,
-	const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager)
+	const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();

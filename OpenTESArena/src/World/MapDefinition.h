@@ -103,22 +103,22 @@ private:
 		SNInt blockStartPosY, int cityBlocksPerSide, bool coastal, bool rulerIsMale,
 		bool palaceIsMainQuestDungeon, const std::string_view cityTypeName, ArenaCityType cityType,
 		const LocationCityDefinition::MainQuestTempleOverride *mainQuestTempleOverride,
-		const SkyGeneration::ExteriorSkyGenInfo &exteriorSkyGenInfo, const INFFile &inf,
+		const SkyGenerationExteriorInfo &exteriorSkyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, const TextAssetLibrary &textAssetLibrary,
 		TextureManager &textureManager);
 	bool initWildLevels(Span2D<const ArenaWildBlockID> wildBlockIDs,
 		uint32_t fallbackSeed, const LocationCityDefinition &cityDef,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, const INFFile &inf,
+		const SkyGenerationExteriorInfo &skyGenInfo, const INFFile &inf,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	void initStartPoints(const MIFFile &mif);
 public:
 	bool initInterior(const MapGenerationInteriorInfo &generationInfo, TextureManager &textureManager);
 	bool initCity(const MapGenerationCityInfo &generationInfo,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager);
+		const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager);
 	bool initWild(const MapGenerationWildInfo &generationInfo,
-		const SkyGeneration::ExteriorSkyGenInfo &skyGenInfo, TextureManager &textureManager);
+		const SkyGenerationExteriorInfo &skyGenInfo, TextureManager &textureManager);
 
 	MapType getMapType() const;
 	bool isValid() const;

@@ -417,7 +417,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return weatherDef;
 			}();
 
-			SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+			SkyGenerationExteriorInfo skyGenInfo;
 			skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -502,7 +502,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return weatherDef;
 			}();
 
-			SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+			SkyGenerationExteriorInfo skyGenInfo;
 			skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -544,7 +544,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			return weatherDef;
 		}();
 
-		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+		SkyGenerationExteriorInfo skyGenInfo;
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
