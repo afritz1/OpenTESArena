@@ -30,6 +30,8 @@ SET(COMP_UTILITIES
 	"utilities/HexPrinter.h"
 	"utilities/KeyValueFile.cpp"
 	"utilities/KeyValueFile.h"
+	"utilities/ObjFile.cpp"
+	"utilities/ObjFile.h"
 	"utilities/Path.cpp"
 	"utilities/Path.h"
 	"utilities/Profiler.cpp"
