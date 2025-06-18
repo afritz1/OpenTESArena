@@ -54,6 +54,7 @@
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
+#include "../World/MeshLibrary.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
@@ -329,6 +330,13 @@ bool Game::init()
 	if (!FontLibrary::getInstance().init())
 	{
 		DebugLogError("Couldn't init font library.");
+		return false;
+	}
+
+	const std::string meshLibraryPath = dataFolderPath + "meshes/";
+	if (!MeshLibrary::getInstance().init(meshLibraryPath.c_str()))
+	{
+		DebugLogError("Couldn't init mesh library.");
 		return false;
 	}
 
