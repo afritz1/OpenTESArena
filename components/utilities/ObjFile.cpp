@@ -42,6 +42,11 @@ bool ObjFile::init(const char *filename)
 	while (std::getline(ifs, lineStr))
 	{
 		lineNumber++;
+		if (!lineStr.empty() && lineStr.back() == '\r')
+		{
+			lineStr.pop_back();
+		}
+
 		const Buffer<std::string> lineTokens = String::split(lineStr, ' ');
 		if (lineTokens.getCount() == 0)
 		{
@@ -49,18 +54,29 @@ bool ObjFile::init(const char *filename)
 		}
 
 		const std::string &lineType = lineTokens[0];
-		if (lineType.empty() || lineType == "\r")
+		if (lineType.empty())
 		{
 			continue;
 		}
 
+		constexpr const char useMaterialSpecifier[] = "usemtl";
 		constexpr const char positionSpecifier[] = "v";
 		constexpr const char normalSpecifier[] = "vn";
 		constexpr const char texCoordSpecifier[] = "vt";
 		constexpr const char faceSpecifier[] = "f";
 		constexpr const char commentSpecifier[] = "#";
 		
-		if (lineType == positionSpecifier)
+		if (lineType == useMaterialSpecifier)
+		{
+			if (lineTokens.getCount() != 2)
+			{
+				DebugLogErrorFormat("Must have one keyword after %s in \"%s\" at line %d \"%s\".", useMaterialSpecifier, filename, lineNumber, lineStr.c_str());
+				continue;
+			}
+
+			this->materialName = lineTokens[1];
+		}
+		else if (lineType == positionSpecifier)
 		{
 			double positionArray[positionComponentsPerVertex] = { 0.0, 0.0, 0.0, 1.0 };
 			for (int i = 1; i < lineTokens.getCount(); i++)
