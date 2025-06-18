@@ -1,5 +1,5 @@
-# Doors are one quad that's translated + rotated to represent four faces.
-usemtl Door
+# Raised platform positions and tex coords are transformed by the level they're used in.
+usemtl RaisedSide
 
 # Positions
 # X=0

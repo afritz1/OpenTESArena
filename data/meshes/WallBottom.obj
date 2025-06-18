@@ -1,27 +1,27 @@
-usemtl ChasmWall
+usemtl WallBottom
 
 # Positions
-# Z=0
-v 0.0 1.0 0.0
+# Y=0
 v 0.0 0.0 0.0
 v 1.0 0.0 0.0
-v 1.0 1.0 0.0
+v 1.0 0.0 1.0
+v 0.0 0.0 1.0
 
 # Normals
-# Z=0
-vn 0.0 0.0 1.0
-vn 0.0 0.0 1.0
-vn 0.0 0.0 1.0
-vn 0.0 0.0 1.0
+# Y=0
+vn 0.0 -1.0 0.0
+vn 0.0 -1.0 0.0
+vn 0.0 -1.0 0.0
+vn 0.0 -1.0 0.0
 
 # Tex coords
-# Z=0
+# Y=0
 vt 0.0 0.0
 vt 0.0 1.0
 vt 1.0 1.0
 vt 1.0 0.0
 
 # Indices (1-based)
-# Z=0
+# Y=0
 f 1 2 3
 f 3 4 1

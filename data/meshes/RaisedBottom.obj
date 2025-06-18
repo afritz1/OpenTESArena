@@ -1,4 +1,5 @@
-usemtl Ceiling
+# Raised platform positions and tex coords are transformed by the level they're used in.
+usemtl RaisedBottom
 
 # Positions
 # Y=0

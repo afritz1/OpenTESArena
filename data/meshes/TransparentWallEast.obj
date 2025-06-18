@@ -1,18 +1,18 @@
-usemtl ChasmWall
+usemtl TransparentWall
 
 # Positions
 # Z=0
-v 0.0 1.0 0.0
-v 0.0 0.0 0.0
-v 1.0 0.0 0.0
 v 1.0 1.0 0.0
+v 1.0 0.0 0.0
+v 0.0 0.0 0.0
+v 0.0 1.0 0.0
 
 # Normals
 # Z=0
-vn 0.0 0.0 1.0
-vn 0.0 0.0 1.0
-vn 0.0 0.0 1.0
-vn 0.0 0.0 1.0
+vn 0.0 0.0 -1.0
+vn 0.0 0.0 -1.0
+vn 0.0 0.0 -1.0
+vn 0.0 0.0 -1.0
 
 # Tex coords
 # Z=0

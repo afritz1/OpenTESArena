@@ -1,4 +1,5 @@
-usemtl Floor
+# Raised platform positions and tex coords are transformed by the level they're used in.
+usemtl RaisedTop
 
 # Positions
 # Y=1
