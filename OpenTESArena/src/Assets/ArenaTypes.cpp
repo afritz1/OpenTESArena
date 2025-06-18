@@ -466,3 +466,32 @@ void ArenaTypes::Names::init(const uint8_t *data)
 		this->entries[i].init(entriesStart + (Entry::SIZE * i));
 	}
 }
+
+std::string ArenaTypes::voxelTypeToString(ArenaVoxelType voxelType)
+{
+	switch (voxelType)
+	{
+	case ArenaVoxelType::None:
+		return "None";
+	case ArenaVoxelType::Wall:
+		return "Wall";
+	case ArenaVoxelType::Floor:
+		return "Floor";
+	case ArenaVoxelType::Ceiling:
+		return "Ceiling";
+	case ArenaVoxelType::Raised:
+		return "Raised";
+	case ArenaVoxelType::Diagonal:
+		return "Diagonal";
+	case ArenaVoxelType::TransparentWall:
+		return "TransparentWall";
+	case ArenaVoxelType::Edge:
+		return "Edge";
+	case ArenaVoxelType::Chasm:
+		return "Chasm";
+	case ArenaVoxelType::Door:
+		return "Door";
+	default:
+		return "";
+	}
+}
