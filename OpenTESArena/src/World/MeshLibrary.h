@@ -25,6 +25,8 @@ public:
 	std::vector<MeshLibraryEntry> entries;
 
 	bool init(const char *folderPath);
+
+	std::vector<const MeshLibraryEntry*> getEntriesOfType(ArenaVoxelType voxelType) const;
 };
 
 #endif

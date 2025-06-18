@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <string>
 
 #include "MeshLibrary.h"
@@ -96,4 +97,24 @@ bool MeshLibrary::init(const char *folderPath)
 	}
 
 	return true;
+}
+
+std::vector<const MeshLibraryEntry*> MeshLibrary::getEntriesOfType(ArenaVoxelType voxelType) const
+{
+	std::vector<const MeshLibraryEntry*> entryPtrs;
+	for (const MeshLibraryEntry &entry : this->entries)
+	{
+		if (entry.voxelType == voxelType)
+		{
+			entryPtrs.emplace_back(&entry);
+		}
+	}
+	
+	std::sort(entryPtrs.begin(), entryPtrs.end(),
+		[](const MeshLibraryEntry *a, const MeshLibraryEntry *b)
+	{
+		return a->textureSlotIndex < b->textureSlotIndex;
+	});
+
+	return entryPtrs;
 }
