@@ -32,7 +32,6 @@ bool ObjFile::init(const char *filename)
 	constexpr int normalComponentsPerVertex = 3;
 	constexpr int texCoordComponentsPerVertex = 2;
 
-	// Reserve vertex 0 with zeroes since .OBJ is 1-based.
 	std::vector<double> positions;
 	std::vector<double> normals;
 	std::vector<double> texCoords;
@@ -59,24 +58,14 @@ bool ObjFile::init(const char *filename)
 			continue;
 		}
 
-		constexpr const char useMaterialSpecifier[] = "usemtl";
+		constexpr const char commentSpecifier[] = "#";
 		constexpr const char positionSpecifier[] = "v";
 		constexpr const char normalSpecifier[] = "vn";
 		constexpr const char texCoordSpecifier[] = "vt";
 		constexpr const char faceSpecifier[] = "f";
-		constexpr const char commentSpecifier[] = "#";
+		constexpr const char useMaterialSpecifier[] = "usemtl";
 		
-		if (lineType == useMaterialSpecifier)
-		{
-			if (lineTokens.getCount() != 2)
-			{
-				DebugLogErrorFormat("Must have one keyword after %s in \"%s\" at line %d \"%s\".", useMaterialSpecifier, filename, lineNumber, lineStr.c_str());
-				continue;
-			}
-
-			this->materialName = lineTokens[1];
-		}
-		else if (lineType == positionSpecifier)
+		if (lineType == positionSpecifier)
 		{
 			double positionArray[positionComponentsPerVertex] = { 0.0, 0.0, 0.0, 1.0 };
 			for (int i = 1; i < lineTokens.getCount(); i++)
@@ -147,26 +136,22 @@ bool ObjFile::init(const char *filename)
 				}
 
 				const int zeroBasedIndex = index - 1;
-				const int positionComponentsIndex = zeroBasedIndex * positionComponentsPerVertex;
-				const int normalComponentsIndex = zeroBasedIndex * normalComponentsPerVertex;
-				const int texCoordComponentsIndex = zeroBasedIndex * texCoordComponentsPerVertex;
-
-				ObjVertex vertex;
-				vertex.positionX = positions[positionComponentsIndex];
-				vertex.positionY = positions[positionComponentsIndex + 1];
-				vertex.positionZ = positions[positionComponentsIndex + 2];
-				vertex.normalX = normals[normalComponentsIndex];
-				vertex.normalY = normals[normalComponentsIndex + 1];
-				vertex.normalZ = normals[normalComponentsIndex + 2];
-				vertex.texCoordU = texCoords[texCoordComponentsIndex];
-				vertex.texCoordV = texCoords[texCoordComponentsIndex + 1];
-
-				this->vertices.emplace_back(std::move(vertex));
+				this->indices.emplace_back(zeroBasedIndex);
 			}
 		}
 		else if (lineType == commentSpecifier)
 		{
 			// Comment line
+		}
+		else if (lineType == useMaterialSpecifier)
+		{
+			if (lineTokens.getCount() != 2)
+			{
+				DebugLogErrorFormat("Must have one keyword after %s in \"%s\" at line %d \"%s\".", useMaterialSpecifier, filename, lineNumber, lineStr.c_str());
+				continue;
+			}
+
+			this->materialName = lineTokens[1];
 		}
 		else
 		{
@@ -174,5 +159,27 @@ bool ObjFile::init(const char *filename)
 		}
 	}
 
+	// Convert the component arrays into output format for the engine.
+	// @todo add vertex deduplication instead of assuming N positions / N normals / N tex coords
+	const int vertexCount = static_cast<int>(positions.size()) / positionComponentsPerVertex;
+	for (int i = 0; i < vertexCount; i++)
+	{
+		const int positionComponentsIndex = i * positionComponentsPerVertex;
+		const int normalComponentsIndex = i * normalComponentsPerVertex;
+		const int texCoordComponentsIndex = i * texCoordComponentsPerVertex;
+
+		ObjVertex vertex;
+		vertex.positionX = positions[positionComponentsIndex];
+		vertex.positionY = positions[positionComponentsIndex + 1];
+		vertex.positionZ = positions[positionComponentsIndex + 2];
+		vertex.normalX = normals[normalComponentsIndex];
+		vertex.normalY = normals[normalComponentsIndex + 1];
+		vertex.normalZ = normals[normalComponentsIndex + 2];
+		vertex.texCoordU = texCoords[texCoordComponentsIndex];
+		vertex.texCoordV = texCoords[texCoordComponentsIndex + 1];
+
+		this->vertices.emplace_back(std::move(vertex));
+	}
+	
 	return true;
 }

@@ -15,8 +15,9 @@ struct ObjVertex
 // Wavefront .OBJ file for 3D meshes, intended for rendering.
 struct ObjFile
 {
-	std::string materialName; // usemtl
 	std::vector<ObjVertex> vertices;
+	std::vector<int> indices;
+	std::string materialName; // usemtl
 
 	bool init(const char *filename);
 };
