@@ -13,6 +13,7 @@ struct MeshLibraryEntry
 {
 	ArenaVoxelType voxelType;
 	std::vector<ObjVertex> vertices;
+	std::vector<int32_t> vertexIndices;
 	std::string materialName;
 	int textureSlotIndex;
 

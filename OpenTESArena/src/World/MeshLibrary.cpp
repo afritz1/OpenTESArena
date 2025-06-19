@@ -78,6 +78,7 @@ bool MeshLibrary::init(const char *folderPath)
 		MeshLibraryEntry entry;
 		entry.voxelType = voxelType;
 		entry.vertices = std::move(objFile.vertices);
+		entry.vertexIndices = std::move(objFile.indices);
 		entry.materialName = materialName;
 
 		const auto textureIter = std::find_if(std::begin(MaterialNameTextureSlots), std::end(MaterialNameTextureSlots),
@@ -101,6 +102,8 @@ bool MeshLibrary::init(const char *folderPath)
 
 std::vector<const MeshLibraryEntry*> MeshLibrary::getEntriesOfType(ArenaVoxelType voxelType) const
 {
+	// @todo return a Span instead, these should all be presorted
+
 	std::vector<const MeshLibraryEntry*> entryPtrs;
 	for (const MeshLibraryEntry &entry : this->entries)
 	{
