@@ -140,6 +140,205 @@ namespace
 		Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(voxelType);
 		WriteVertexBuffers(meshEntries, outPositions, outNormals, outTexCoords);
 	}
+
+	void WriteIndexBuffersSidesBottomTop(ArenaVoxelType voxelType, Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
+	{
+		const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+		const MeshLibraryEntry *faceMeshEntries[] =
+		{
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveX),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeX),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveY),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeY),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveZ),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeZ)
+		};
+
+		auto writeEntryIndices = [](const MeshLibraryEntry *entry, Span<int32_t> outIndices, int &writeIndex)
+		{
+			if (entry == nullptr)
+			{
+				DebugLogWarning("Missing mesh library entry for sides/bottom/top indices.");
+				return;
+			}
+
+			for (const int vertexIndex : entry->vertexIndices)
+			{
+				outIndices[writeIndex] = vertexIndex;
+				writeIndex++;
+			}
+		};
+
+		int sideIndicesWriteIndex = 0;
+		writeEntryIndices(faceMeshEntries[0], outSideIndices, sideIndicesWriteIndex);
+		writeEntryIndices(faceMeshEntries[1], outSideIndices, sideIndicesWriteIndex);
+		writeEntryIndices(faceMeshEntries[4], outSideIndices, sideIndicesWriteIndex);
+		writeEntryIndices(faceMeshEntries[5], outSideIndices, sideIndicesWriteIndex);
+
+		int bottomIndicesWriteIndex = 0;
+		writeEntryIndices(faceMeshEntries[3], outBottomIndices, bottomIndicesWriteIndex);
+
+		int topIndicesWriteIndex = 0;
+		writeEntryIndices(faceMeshEntries[2], outTopIndices, topIndicesWriteIndex);
+	}
+
+	void WriteIndexBuffersSides(ArenaVoxelType voxelType, Span<int32_t> outSideIndices)
+	{
+		const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+		const MeshLibraryEntry *faceMeshEntries[] =
+		{
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveX),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeX),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveZ),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeZ)
+		};
+
+		auto writeEntryIndices = [](const MeshLibraryEntry *entry, Span<int32_t> outIndices, int &writeIndex)
+		{
+			if (entry == nullptr)
+			{
+				DebugLogWarning("Missing mesh library entry for side indices.");
+				return;
+			}
+
+			for (const int vertexIndex : entry->vertexIndices)
+			{
+				outIndices[writeIndex] = vertexIndex;
+				writeIndex++;
+			}
+		};
+
+		int sideIndicesWriteIndex = 0;
+		writeEntryIndices(faceMeshEntries[0], outSideIndices, sideIndicesWriteIndex);
+		writeEntryIndices(faceMeshEntries[1], outSideIndices, sideIndicesWriteIndex);
+		writeEntryIndices(faceMeshEntries[2], outSideIndices, sideIndicesWriteIndex);
+		writeEntryIndices(faceMeshEntries[3], outSideIndices, sideIndicesWriteIndex);
+	}
+
+	void WriteIndexBuffer(const MeshLibraryEntry &entry, Span<int32_t> outIndices)
+	{
+		int writeIndex = 0;
+		for (const int vertexIndex : entry.vertexIndices)
+		{
+			outIndices[writeIndex] = vertexIndex;
+			writeIndex++;
+		}
+	}
+
+	void WriteIndexBuffer(ArenaVoxelType voxelType, Span<int32_t> outIndices)
+	{
+		const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+		Span<const MeshLibraryEntry> entries = meshLibrary.getEntriesOfType(voxelType);
+		if (entries.getCount() != 1)
+		{
+			DebugLogErrorFormat("Expected only one mesh entry for voxel type %d.", static_cast<int>(voxelType));
+			return;
+		}
+
+		WriteIndexBuffer(entries[0], outIndices);
+	}
+
+	void WriteFacingBuffersSidesBottomTop(ArenaVoxelType voxelType, Span<VoxelFacing3D> outSideFacings,
+		Span<VoxelFacing3D> outBottomFacings, Span<VoxelFacing3D> outTopFacings)
+	{
+		const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+		const MeshLibraryEntry *faceMeshEntries[] =
+		{
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveX),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeX),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveY),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeY),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveZ),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeZ)
+		};
+
+		auto writeEntryFacing = [](const MeshLibraryEntry *entry, Span<VoxelFacing3D> outFacings, int &writeIndex)
+		{
+			if (entry == nullptr)
+			{
+				DebugLogWarning("Missing mesh library entry for sides/bottom/top facings.");
+				return;
+			}
+
+			if (!entry->facing.has_value())
+			{
+				return;
+			}
+
+			outFacings[writeIndex] = *entry->facing;
+			writeIndex++;
+		};
+
+		int sideFacingsWriteIndex = 0;
+		writeEntryFacing(faceMeshEntries[0], outSideFacings, sideFacingsWriteIndex);
+		writeEntryFacing(faceMeshEntries[1], outSideFacings, sideFacingsWriteIndex);
+		writeEntryFacing(faceMeshEntries[4], outSideFacings, sideFacingsWriteIndex);
+		writeEntryFacing(faceMeshEntries[5], outSideFacings, sideFacingsWriteIndex);
+
+		int bottomFacingsWriteIndex = 0;
+		writeEntryFacing(faceMeshEntries[3], outBottomFacings, bottomFacingsWriteIndex);
+
+		int topFacingsWriteIndex = 0;
+		writeEntryFacing(faceMeshEntries[2], outTopFacings, topFacingsWriteIndex);
+	}
+
+	void WriteFacingBuffersSides(ArenaVoxelType voxelType, Span<VoxelFacing3D> outSideFacings)
+	{
+		const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+		const MeshLibraryEntry *faceMeshEntries[] =
+		{
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveX),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeX),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::PositiveZ),
+			meshLibrary.getEntryWithTypeAndFacing(voxelType, VoxelFacing3D::NegativeZ)
+		};
+
+		auto writeEntryFacing = [](const MeshLibraryEntry *entry, Span<VoxelFacing3D> outFacings, int &writeIndex)
+		{
+			if (entry == nullptr)
+			{
+				DebugLogWarning("Missing mesh library entry for side facings.");
+				return;
+			}
+
+			if (!entry->facing.has_value())
+			{
+				return;
+			}
+
+			outFacings[writeIndex] = *entry->facing;
+			writeIndex++;
+		};
+
+		int sideFacingsWriteIndex = 0;
+		writeEntryFacing(faceMeshEntries[0], outSideFacings, sideFacingsWriteIndex);
+		writeEntryFacing(faceMeshEntries[1], outSideFacings, sideFacingsWriteIndex);
+		writeEntryFacing(faceMeshEntries[2], outSideFacings, sideFacingsWriteIndex);
+		writeEntryFacing(faceMeshEntries[3], outSideFacings, sideFacingsWriteIndex);
+	}
+
+	void WriteFacing(const MeshLibraryEntry &entry, Span<VoxelFacing3D> outFacings)
+	{
+		if (!entry.facing.has_value())
+		{
+			return;
+		}
+
+		outFacings[0] = *entry.facing;
+	}
+
+	void WriteFacing(ArenaVoxelType voxelType, Span<VoxelFacing3D> outFacings)
+	{
+		const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+		Span<const MeshLibraryEntry> entries = meshLibrary.getEntriesOfType(voxelType);
+		if (entries.getCount() != 1)
+		{
+			DebugLogErrorFormat("Expected only one mesh entry for voxel type %d.", static_cast<int>(voxelType));
+			return;
+		}
+
+		WriteFacing(entries[0], outFacings);
+	}
 }
 
 ArenaShapeInitCache::ArenaShapeInitCache()
@@ -231,67 +430,12 @@ void ArenaMeshUtils::writeWallRendererGeometryBuffers(Span<double> outPositions,
 
 void ArenaMeshUtils::writeWallRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> sideIndices =
-	{
-		// X=0
-		0, 1, 2,
-		2, 3, 0,
-		// X=1
-		4, 5, 6,
-		6, 7, 4,
-		// Z=0
-		16, 17, 18,
-		18, 19, 16,
-		// Z=1
-		20, 21, 22,
-		22, 23, 20
-	};
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 1)> bottomIndices =
-	{
-		// Y=0
-		8, 9, 10,
-		10, 11, 8
-	};
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 2)> topIndices =
-	{
-		// Y=1
-		12, 13, 14,
-		14, 15, 12
-	};
-
-	std::copy(sideIndices.begin(), sideIndices.end(), outSideIndices.begin());
-	std::copy(bottomIndices.begin(), bottomIndices.end(), outBottomIndices.begin());
-	std::copy(topIndices.begin(), topIndices.end(), outTopIndices.begin());
+	WriteIndexBuffersSidesBottomTop(ArenaVoxelType::Wall, outSideIndices, outBottomIndices, outTopIndices);
 }
 
 void ArenaMeshUtils::writeWallFacingBuffers(Span<VoxelFacing3D> outSideFacings, Span<VoxelFacing3D> outBottomFacings, Span<VoxelFacing3D> outTopFacings)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Wall;
-	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> sideFacings =
-	{
-		VoxelFacing3D::PositiveX,
-		VoxelFacing3D::NegativeX,
-		VoxelFacing3D::PositiveZ,
-		VoxelFacing3D::NegativeZ
-	};
-
-	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 1)> bottomFacings =
-	{
-		VoxelFacing3D::NegativeY
-	};
-
-	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 2)> topFacings =
-	{
-		VoxelFacing3D::PositiveY
-	};
-
-	std::copy(sideFacings.begin(), sideFacings.end(), outSideFacings.begin());
-	std::copy(bottomFacings.begin(), bottomFacings.end(), outBottomFacings.begin());
-	std::copy(topFacings.begin(), topFacings.end(), outTopFacings.begin());
+	WriteFacingBuffersSidesBottomTop(ArenaVoxelType::Wall, outSideFacings, outBottomFacings, outTopFacings);
 }
 
 void ArenaMeshUtils::writeFloorRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals,
@@ -302,27 +446,12 @@ void ArenaMeshUtils::writeFloorRendererGeometryBuffers(Span<double> outPositions
 
 void ArenaMeshUtils::writeFloorRendererIndexBuffers(Span<int32_t> outIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> indices =
-	{
-		// Y=1
-		0, 1, 2,
-		2, 3, 0
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
+	WriteIndexBuffer(ArenaVoxelType::Floor, outIndices);
 }
 
 void ArenaMeshUtils::writeFloorFacingBuffers(Span<VoxelFacing3D> outFacings)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Floor;
-	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> facings =
-	{
-		VoxelFacing3D::PositiveY
-	};
-
-	std::copy(facings.begin(), facings.end(), outFacings.begin());
+	WriteFacing(ArenaVoxelType::Floor, outFacings);
 }
 
 void ArenaMeshUtils::writeCeilingRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
@@ -332,27 +461,12 @@ void ArenaMeshUtils::writeCeilingRendererGeometryBuffers(Span<double> outPositio
 
 void ArenaMeshUtils::writeCeilingRendererIndexBuffers(Span<int32_t> outIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> indices =
-	{
-		// Y=0
-		0, 1, 2,
-		2, 3, 0
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
+	WriteIndexBuffer(ArenaVoxelType::Ceiling, outIndices);
 }
 
 void ArenaMeshUtils::writeCeilingFacingBuffers(Span<VoxelFacing3D> outFacings)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Ceiling;
-	constexpr std::array<VoxelFacing3D, GetFacingBufferFaceCount(voxelType, 0)> facings =
-	{
-		VoxelFacing3D::NegativeY
-	};
-
-	std::copy(facings.begin(), facings.end(), outFacings.begin());
+	WriteFacing(ArenaVoxelType::Ceiling, outFacings);
 }
 
 void ArenaMeshUtils::writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
@@ -363,41 +477,7 @@ void ArenaMeshUtils::writeRaisedRendererGeometryBuffers(double yOffset, double y
 
 void ArenaMeshUtils::writeRaisedRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Raised;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> sideIndices =
-	{
-		// X=0
-		0, 1, 2,
-		2, 3, 0,
-		// X=1
-		4, 5, 6,
-		6, 7, 4,
-		// Z=0
-		16, 17, 18,
-		18, 19, 16,
-		// Z=1
-		20, 21, 22,
-		22, 23, 20
-	};
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 1)> bottomIndices =
-	{
-		// Y=0
-		8, 9, 10,
-		10, 11, 8
-	};
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 2)> topIndices =
-	{
-		// Y=1
-		12, 13, 14,
-		14, 15, 12
-	};
-
-	std::copy(sideIndices.begin(), sideIndices.end(), outSideIndices.begin());
-	std::copy(bottomIndices.begin(), bottomIndices.end(), outBottomIndices.begin());
-	std::copy(topIndices.begin(), topIndices.end(), outTopIndices.begin());
+	WriteIndexBuffersSidesBottomTop(ArenaVoxelType::Raised, outSideIndices, outBottomIndices, outTopIndices);
 }
 
 void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
@@ -406,7 +486,7 @@ void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, Span<doubl
 	Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(ArenaVoxelType::Diagonal);
 	if (meshEntries.getCount() != 2)
 	{
-		DebugLogErrorFormat("Expected two diagonal meshes to pick from (have %d).", meshEntries.getCount());
+		DebugLogErrorFormat("Expected two diagonal mesh entries to pick from (have %d).", meshEntries.getCount());
 		return;
 	}
 
@@ -417,20 +497,15 @@ void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, Span<doubl
 
 void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(Span<int32_t> outIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Diagonal;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> indices =
+	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+	Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(ArenaVoxelType::Diagonal);
+	if (meshEntries.getCount() == 0)
 	{
-		// Front
-		0, 1, 2,
-		2, 3, 0,
+		DebugLogError("Missing diagonal mesh entries.");
+		return;
+	}
 
-		// Back
-		4, 5, 6,
-		6, 7, 4
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
+	WriteIndexBuffer(meshEntries[0], outIndices);
 }
 
 void ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
@@ -440,25 +515,7 @@ void ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(Span<double> ou
 
 void ArenaMeshUtils::writeTransparentWallRendererIndexBuffers(Span<int32_t> outIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::TransparentWall;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> indices =
-	{
-		// X=0
-		0, 1, 2,
-		2, 3, 0,
-		// X=1
-		4, 5, 6,
-		6, 7, 4,
-		// Z=0
-		8, 9, 10,
-		10, 11, 8,
-		// Z=1
-		12, 13, 14,
-		14, 15, 12
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
+	WriteIndexBuffersSides(ArenaVoxelType::TransparentWall, outIndices);
 }
 
 void ArenaMeshUtils::writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
@@ -469,20 +526,15 @@ void ArenaMeshUtils::writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, doub
 
 void ArenaMeshUtils::writeEdgeRendererIndexBuffers(Span<int32_t> outIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Edge;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> indices =
+	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+	Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(ArenaVoxelType::Edge);
+	if (meshEntries.getCount() == 0)
 	{
-		// Front
-		0, 1, 2,
-		2, 3, 0,
+		DebugLogError("Missing edge mesh entries.");
+		return;
+	}
 
-		// Back
-		4, 5, 6,
-		6, 7, 4
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
+	WriteIndexBuffer(meshEntries[0], outIndices);
 }
 
 void ArenaMeshUtils::writeChasmRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
@@ -492,16 +544,15 @@ void ArenaMeshUtils::writeChasmRendererGeometryBuffers(Span<double> outPositions
 
 void ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(Span<int32_t> outIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Chasm;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> indices =
+	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+	const MeshLibraryEntry *bottomEntry = meshLibrary.getEntryWithTypeAndFacing(ArenaVoxelType::Chasm, VoxelFacing3D::NegativeY);
+	if (bottomEntry == nullptr)
 	{
-		// Y=0
-		0, 1, 2,
-		2, 3, 0
-	};
+		DebugLogError("Missing chasm floor mesh entry.");
+		return;
+	}
 
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
+	WriteIndexBuffer(*bottomEntry, outIndices);
 }
 
 void ArenaMeshUtils::writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices,
@@ -556,14 +607,5 @@ void ArenaMeshUtils::writeDoorRendererGeometryBuffers(Span<double> outPositions,
 
 void ArenaMeshUtils::writeDoorRendererIndexBuffers(Span<int32_t> outIndices)
 {
-	constexpr ArenaVoxelType voxelType = ArenaVoxelType::Door;
-
-	constexpr std::array<int32_t, GetIndexBufferIndexCount(voxelType, 0)> indices =
-	{
-		// X=0
-		0, 1, 2,
-		2, 3, 0
-	};
-
-	std::copy(indices.begin(), indices.end(), outIndices.begin());
+	WriteIndexBuffer(ArenaVoxelType::Door, outIndices);
 }
