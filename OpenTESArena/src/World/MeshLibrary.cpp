@@ -3,9 +3,12 @@
 
 #include "MeshLibrary.h"
 #include "../Assets/ArenaTypes.h"
+#include "../Voxels/VoxelFacing.h"
+#include "../Voxels/VoxelUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
+#include "components/utilities/String.h"
 
 namespace
 {
@@ -25,6 +28,17 @@ namespace
 		{ "WallSide", 0 },
 		{ "WallBottom", 1 },
 		{ "WallTop", 2 }
+	};
+
+	// The voxel face that a mesh intends to cover.
+	constexpr std::pair<const char*, VoxelFacing3D> FacingMappings[] =
+	{
+		{ "North", VoxelFacing3D::NegativeX },
+		{ "East", VoxelFacing3D::NegativeZ },
+		{ "South", VoxelFacing3D::PositiveX },
+		{ "West", VoxelFacing3D::PositiveZ },
+		{ "Bottom", VoxelFacing3D::NegativeY },
+		{ "Top", VoxelFacing3D::PositiveY }
 	};
 }
 
@@ -82,7 +96,7 @@ bool MeshLibrary::init(const char *folderPath)
 		entry.materialName = materialName;
 
 		const auto textureIter = std::find_if(std::begin(MaterialNameTextureSlots), std::end(MaterialNameTextureSlots),
-			[materialName](const auto &pair)
+			[materialName](const std::pair<const char*, int> &pair)
 		{
 			return pair.first == materialName;
 		});
@@ -94,30 +108,74 @@ bool MeshLibrary::init(const char *folderPath)
 		}
 
 		entry.textureSlotIndex = textureIter->second;
+
+		size_t lastDirectorySeparatorIndex = objFilename.find_last_of("/\\");
+		if (lastDirectorySeparatorIndex != std::string::npos)
+		{
+			lastDirectorySeparatorIndex++;
+		}
+		else
+		{
+			lastDirectorySeparatorIndex = 0;
+		}
+
+		std::string baseFilename = objFilename.substr(lastDirectorySeparatorIndex, objFilename.size() - lastDirectorySeparatorIndex);
+		std::optional<VoxelFacing3D> facing;
+		for (const std::pair<const char*, VoxelFacing3D> &facingMapping : FacingMappings)
+		{
+			const char *orientationName = facingMapping.first;
+			if (baseFilename.find(orientationName) != std::string::npos)
+			{
+				facing = facingMapping.second;
+				break;
+			}
+		}
+
+		entry.facing = facing;
 		this->entries.emplace_back(std::move(entry));
 	}
+
+	std::sort(this->entries.begin(), this->entries.end(),
+		[](const MeshLibraryEntry &a, const MeshLibraryEntry &b)
+	{
+		if (a.voxelType != b.voxelType)
+		{
+			return static_cast<int>(a.voxelType) < static_cast<int>(b.voxelType);
+		}
+
+		const int aFacingIndex = VoxelUtils::getFacingIndex(a.facing.value_or(VoxelFacing3D::PositiveX));
+		const int bFacingIndex = VoxelUtils::getFacingIndex(b.facing.value_or(VoxelFacing3D::PositiveX));
+		return aFacingIndex < bFacingIndex;
+	});
 
 	return true;
 }
 
-std::vector<const MeshLibraryEntry*> MeshLibrary::getEntriesOfType(ArenaVoxelType voxelType) const
+Span<const MeshLibraryEntry> MeshLibrary::getEntriesOfType(ArenaVoxelType voxelType) const
 {
-	// @todo return a Span instead, these should all be presorted
-
-	std::vector<const MeshLibraryEntry*> entryPtrs;
-	for (const MeshLibraryEntry &entry : this->entries)
+	auto entryComparer = [voxelType](const MeshLibraryEntry &entry) { return entry.voxelType == voxelType; };
+	const auto beginIter = std::find_if(this->entries.begin(), this->entries.end(), entryComparer);
+	if (beginIter == this->entries.end())
 	{
-		if (entry.voxelType == voxelType)
+		return Span<const MeshLibraryEntry>();
+	}
+
+	const auto endIter = std::find_if_not(beginIter, this->entries.end(), entryComparer);
+	int startIndex = static_cast<int>(std::distance(this->entries.begin(), beginIter));
+	const int count = static_cast<int>(std::distance(beginIter, endIter));
+	return Span<const MeshLibraryEntry>(this->entries.data() + startIndex, count);
+}
+
+const MeshLibraryEntry *MeshLibrary::getEntryWithTypeAndFacing(ArenaVoxelType voxelType, VoxelFacing3D facing) const
+{
+	Span<const MeshLibraryEntry> entries = this->getEntriesOfType(voxelType);
+	for (const MeshLibraryEntry &entry : entries)
+	{
+		if (entry.facing == facing)
 		{
-			entryPtrs.emplace_back(&entry);
+			return &entry;
 		}
 	}
-	
-	std::sort(entryPtrs.begin(), entryPtrs.end(),
-		[](const MeshLibraryEntry *a, const MeshLibraryEntry *b)
-	{
-		return a->textureSlotIndex < b->textureSlotIndex;
-	});
 
-	return entryPtrs;
+	return nullptr;
 }

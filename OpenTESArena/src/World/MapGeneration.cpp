@@ -395,7 +395,7 @@ namespace MapGeneration
 
 			const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(*outChasmType);
 			outShapeInitCache->initChasmBoxValues(isDryChasm);
-			ArenaMeshUtils::writeChasmRendererGeometryBuffers(*outChasmType, outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+			ArenaMeshUtils::writeChasmRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 			ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(chasmID);
@@ -458,7 +458,7 @@ namespace MapGeneration
 	{
 		const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(chasmType);
 		outShapeInitCache->initChasmBoxValues(isDryChasm);
-		ArenaMeshUtils::writeChasmRendererGeometryBuffers(chasmType, outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
+		ArenaMeshUtils::writeChasmRendererGeometryBuffers(outShapeInitCache->positionsView, outShapeInitCache->normalsView, outShapeInitCache->texCoordsView);
 		ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(outShapeInitCache->indices0View);
 
 		std::optional<int> textureIndex = inf.getWetChasmIndex();

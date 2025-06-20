@@ -508,7 +508,7 @@ namespace ArenaMeshUtils
 	void writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
 	void writeEdgeRendererIndexBuffers(Span<int32_t> outIndices);
 	
-	void writeChasmRendererGeometryBuffers(ArenaChasmType chasmType, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+	void writeChasmRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
 	void writeChasmFloorRendererIndexBuffers(Span<int32_t> outIndices); // Chasm walls are separate because they're conditionally enabled.
 	void writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
 	
