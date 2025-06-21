@@ -1011,14 +1011,16 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 		}
 		else
 		{
-			DebugAssert(voxelShadingDef.pixelShaderCount >= renderMeshInst.indexBufferIdCount); // @todo this should be == but needs outside-city-bounds chasmDefIDs to be inited properly so that isChasm succeeds in here
-
 			for (int i = 0; i < renderMeshInst.indexBufferIdCount; i++)
 			{
 				DebugAssertIndex(shadingInitInfos, i);
 				DrawCallShadingInitInfo &shadingInitInfo = shadingInitInfos[i];
 				shadingInitInfo.vertexShaderType = voxelShadingDef.vertexShaderType;
-				shadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[i];
+
+				DebugAssertIndex(voxelMeshDef.textureSlotIndices, i);
+				const int textureSlotIndex = voxelMeshDef.textureSlotIndices[i];
+				shadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[textureSlotIndex];
+
 				shadingInitInfo.pixelShaderParam0 = 0.0;
 			}
 
