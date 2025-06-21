@@ -34,31 +34,26 @@ struct VoxelBoxShapeDefinition
 // For rendering.
 struct VoxelMeshDefinition
 {
+	static constexpr int MAX_DRAW_CALLS = 6; // One per voxel face.
+
 	std::vector<double> rendererPositions, rendererNormals, rendererTexCoords;
-	std::vector<int32_t> indices0, indices1, indices2; // Up to 3 draw calls.
-	std::vector<VoxelFacing3D> facings0, facings1, facings2; // Up to 3 sets of fully-covered voxel faces, associated with index buffers, used with face combining.
-	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
+	std::vector<int32_t> indicesLists[MAX_DRAW_CALLS];
+	VoxelFacing3D facings[MAX_DRAW_CALLS]; // Up to 6 fully-covered voxel faces, associated with index buffers, used with face combining.
+	int textureSlotIndices[MAX_DRAW_CALLS]; // Maps index buffer to its voxel texture definition slot.
 	int indicesListCount;
-	int facingsListCount;
+	int facingCount;
+	int textureSlotIndexCount;
 
 	VoxelMeshDefinition();
 
-	void initClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaShapeInitCache &shapeInitCache);
+	void initClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale);
 
 	bool isEmpty() const;
-	std::vector<int32_t> &getIndicesList(int index);
-	Span<const int32_t> getIndicesList(int index) const;
-	std::vector<VoxelFacing3D> &getFacingsList(int index);
-	Span<const VoxelFacing3D> getFacingsList(int index) const;
 
 	// Finds the index buffer (if any) that fully covers the voxel facing. Used with mesh combining.
 	int findIndexBufferIndexWithFacing(VoxelFacing3D facing) const;
+	int findTextureSlotIndexWithFacing(VoxelFacing3D facing) const;
 	bool hasFullCoverageOfFacing(VoxelFacing3D facing) const;
-
-	void writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, Span<double> outPositions) const;
-	void writeRendererVertexNormalBuffer(Span<double> outNormals) const;
-	void writeRendererVertexTexCoordBuffer(Span<double> outTexCoords) const;
-	void writeRendererIndexBuffers(Span<int32_t> outIndices0, Span<int32_t> outIndices1, Span<int32_t> outIndices2) const;
 };
 
 // Provides geometry for physics and rendering.
@@ -83,7 +78,7 @@ struct VoxelShapeDefinition
 
 	VoxelShapeDefinition();
 
-	void initBoxFromClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaShapeInitCache &shapeInitCache);
+	void initBoxFromClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale);
 };
 
 #endif

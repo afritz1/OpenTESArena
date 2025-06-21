@@ -552,7 +552,7 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 		constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 		constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 
-		const int vertexCount = voxelMeshDef.rendererVertexCount;
+		const int vertexCount = MeshUtils::getVertexCount(voxelMeshDef.rendererPositions, MeshUtils::POSITION_COMPONENTS_PER_VERTEX);
 		renderVoxelMeshInst.positionBufferID = renderer.createVertexPositionBuffer(vertexCount, positionComponentsPerVertex);
 		if (renderVoxelMeshInst.positionBufferID < 0)
 		{
@@ -576,23 +576,19 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			continue;
 		}
 
-		ArenaShapeInitCache shapeInitCache;
-
-		// Generate mesh geometry and indices for this voxel definition.
-		voxelMeshDef.writeRendererVertexPositionBuffer(voxelShapeDef.scaleType, ceilingScale, shapeInitCache.positionsView);
-		voxelMeshDef.writeRendererVertexNormalBuffer(shapeInitCache.normalsView);
-		voxelMeshDef.writeRendererVertexTexCoordBuffer(shapeInitCache.texCoordsView);
-		voxelMeshDef.writeRendererIndexBuffers(shapeInitCache.indices0View, shapeInitCache.indices1View, shapeInitCache.indices2View);
-
-		renderer.populateVertexPositionBuffer(renderVoxelMeshInst.positionBufferID, Span<const double>(shapeInitCache.positions.data(), vertexCount * positionComponentsPerVertex));
-		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.normalBufferID, Span<const double>(shapeInitCache.normals.data(), vertexCount * normalComponentsPerVertex));
-		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, Span<const double>(shapeInitCache.texCoords.data(), vertexCount * texCoordComponentsPerVertex));
+		// Populate renderer mesh geometry and indices from this voxel definition.
+		renderer.populateVertexPositionBuffer(renderVoxelMeshInst.positionBufferID, voxelMeshDef.rendererPositions);
+		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.normalBufferID, voxelMeshDef.rendererNormals);
+		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, voxelMeshDef.rendererTexCoords);
 
 		const int indexBufferCount = voxelMeshDef.indicesListCount;
-		for (int bufferIndex = 0; bufferIndex < indexBufferCount; bufferIndex++)
+		for (int indexBufferIndex = 0; indexBufferIndex < indexBufferCount; indexBufferIndex++)
 		{
-			const int indexCount = voxelMeshDef.getIndicesList(bufferIndex).getCount();
-			IndexBufferID &indexBufferID = renderVoxelMeshInst.indexBufferIDs[bufferIndex];
+			Span<const int32_t> indices = voxelMeshDef.indicesLists[indexBufferIndex];
+			const int indexCount = indices.getCount();
+
+			DebugAssertIndex(renderVoxelMeshInst.indexBufferIDs, indexBufferIndex);
+			IndexBufferID &indexBufferID = renderVoxelMeshInst.indexBufferIDs[indexBufferIndex];
 			indexBufferID = renderer.createIndexBuffer(indexCount);
 			if (indexBufferID < 0)
 			{
@@ -602,9 +598,7 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 			}
 
 			renderVoxelMeshInst.indexBufferIdCount++;
-
-			const auto &indices = *shapeInitCache.indicesPtrs[bufferIndex];
-			renderer.populateIndexBuffer(indexBufferID, Span<const int32_t>(indices.data(), indexCount));
+			renderer.populateIndexBuffer(indexBufferID, indices);
 		}
 
 		const RenderVoxelMeshInstID renderMeshInstID = renderChunk.addMeshInst(std::move(renderVoxelMeshInst));
@@ -1351,17 +1345,17 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 		DebugAssert(shapeDef.allowsAdjacentFaceCombining);
 
-		const int indexBufferIndex = shapeDef.mesh.findIndexBufferIndexWithFacing(facing);
-		DebugAssert(indexBufferIndex >= 0);
+		const int textureSlotIndex = shapeDef.mesh.findTextureSlotIndexWithFacing(facing);
+		DebugAssert(textureSlotIndex >= 0);
 
-		const TextureAsset &textureAsset = textureDef.getTextureAsset(indexBufferIndex);
+		const TextureAsset &textureAsset = textureDef.getTextureAsset(textureSlotIndex);
 		const ObjectTextureID textureID0 = this->getTextureID(textureAsset);
 
 		const VertexShaderType vertexShaderType = shadingDef.vertexShaderType;
 
-		DebugAssertIndex(shadingDef.pixelShaderTypes, indexBufferIndex);
-		DebugAssert(indexBufferIndex < shadingDef.pixelShaderCount);
-		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[indexBufferIndex];
+		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
+		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
+		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
 
 		// @todo solve lights per mesh in RenderLightChunk :O as a temporary fix, could use lights in minVoxel
 		const RenderLightingType dummyLightingType = RenderLightingType::PerMesh;

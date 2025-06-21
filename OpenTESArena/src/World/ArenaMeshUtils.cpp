@@ -341,6 +341,23 @@ namespace
 	}
 }
 
+ArenaShapeRaisedInitInfo::ArenaShapeRaisedInitInfo()
+{
+	this->vTop = 0.0;
+	this->vBottom = 0.0;
+}
+
+ArenaShapeEdgeInitInfo::ArenaShapeEdgeInitInfo()
+{
+	this->facing = static_cast<VoxelFacing2D>(-1);
+	this->flippedTexCoords = false;
+}
+
+ArenaShapeDiagonalInitInfo::ArenaShapeDiagonalInitInfo()
+{
+	this->isRightDiagonal = false;
+}
+
 ArenaShapeInitCache::ArenaShapeInitCache()
 {
 	this->boxWidth = 0.0;
@@ -348,50 +365,43 @@ ArenaShapeInitCache::ArenaShapeInitCache()
 	this->boxDepth = 0.0;
 	this->boxYOffset = 0.0;
 	this->boxYRotation = 0.0;
-
-	this->positions.fill(0.0);
-	this->normals.fill(0.0);
-	this->texCoords.fill(0.0);
-
-	this->indices0.fill(-1);
-	this->indices1.fill(-1);
-	this->indices2.fill(-1);
-	this->indicesPtrs = { &this->indices0, &this->indices1, &this->indices2 };
-
-	this->facings0.fill(static_cast<VoxelFacing3D>(-1));
-	this->facings1.fill(static_cast<VoxelFacing3D>(-1));
-	this->facings2.fill(static_cast<VoxelFacing3D>(-1));
-	this->facingsPtrs = { &this->facings0, &this->facings1, &this->facings2 };
-
-	this->positionsView.init(this->positions);
-	this->normalsView.init(this->normals);
-	this->texCoordsView.init(this->texCoords);
-
-	this->indices0View.init(this->indices0);
-	this->indices1View.init(this->indices1);
-	this->indices2View.init(this->indices2);
-
-	this->facings0View.init(this->facings0);
-	this->facings1View.init(this->facings1);
-	this->facings2View.init(this->facings2);
+	this->voxelType = static_cast<ArenaVoxelType>(-1);
 }
 
-void ArenaShapeInitCache::initDefaultBoxValues()
+void ArenaShapeInitCache::initDefaultBoxValues(ArenaVoxelType voxelType)
 {
 	this->boxWidth = 1.0;
 	this->boxHeight = 1.0;
 	this->boxDepth = 1.0;
 	this->boxYOffset = 0.0;
 	this->boxYRotation = 0.0;
+	this->voxelType = voxelType;
 }
 
-void ArenaShapeInitCache::initRaisedBoxValues(double height, double yOffset)
+void ArenaShapeInitCache::initRaisedBoxValues(double yOffset, double ySize, double vTop, double vBottom)
 {
 	this->boxWidth = 1.0;
-	this->boxHeight = height;
+	this->boxHeight = ySize;
 	this->boxDepth = 1.0;
 	this->boxYOffset = yOffset;
 	this->boxYRotation = 0.0;
+	this->voxelType = ArenaVoxelType::Raised;
+
+	this->raised.vTop = vTop;
+	this->raised.vBottom = vBottom;
+}
+
+void ArenaShapeInitCache::initEdgeBoxValues(double yOffset, VoxelFacing2D facing, bool flippedTexCoords)
+{
+	this->boxWidth = 1.0;
+	this->boxHeight = 1.0;
+	this->boxDepth = 1.0;
+	this->boxYOffset = yOffset;
+	this->boxYRotation = 0.0;
+	this->voxelType = ArenaVoxelType::Edge;
+
+	this->edge.facing = facing;
+	this->edge.flippedTexCoords = flippedTexCoords;
 }
 
 void ArenaShapeInitCache::initChasmBoxValues(bool isDryChasm)
@@ -408,9 +418,10 @@ void ArenaShapeInitCache::initChasmBoxValues(bool isDryChasm)
 	this->boxDepth = 1.0;
 	this->boxYOffset = -0.10;
 	this->boxYRotation = 0.0;
+	this->voxelType = ArenaVoxelType::Chasm;
 }
 
-void ArenaShapeInitCache::initDiagonalBoxValues(bool isRightDiag)
+void ArenaShapeInitCache::initDiagonalBoxValues(bool isRightDiagonal)
 {
 	constexpr Radians diagonalAngle = Constants::Pi / 4.0;
 	constexpr double diagonalThickness = 0.050; // Arbitrary thin wall thickness
@@ -420,7 +431,10 @@ void ArenaShapeInitCache::initDiagonalBoxValues(bool isRightDiag)
 	this->boxHeight = 1.0;
 	this->boxDepth = diagonalThickness;
 	this->boxYOffset = 0.0;
-	this->boxYRotation = isRightDiag ? -diagonalAngle : diagonalAngle;
+	this->boxYRotation = isRightDiagonal ? -diagonalAngle : diagonalAngle;
+	this->voxelType = ArenaVoxelType::Diagonal;
+
+	this->diagonal.isRightDiagonal = isRightDiagonal;
 }
 
 void ArenaMeshUtils::writeWallRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
@@ -428,7 +442,7 @@ void ArenaMeshUtils::writeWallRendererGeometryBuffers(Span<double> outPositions,
 	WriteVertexBuffers(ArenaVoxelType::Wall, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeWallRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
+/*void ArenaMeshUtils::writeWallRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
 {
 	WriteIndexBuffersSidesBottomTop(ArenaVoxelType::Wall, outSideIndices, outBottomIndices, outTopIndices);
 }
@@ -436,7 +450,7 @@ void ArenaMeshUtils::writeWallRendererIndexBuffers(Span<int32_t> outSideIndices,
 void ArenaMeshUtils::writeWallFacingBuffers(Span<VoxelFacing3D> outSideFacings, Span<VoxelFacing3D> outBottomFacings, Span<VoxelFacing3D> outTopFacings)
 {
 	WriteFacingBuffersSidesBottomTop(ArenaVoxelType::Wall, outSideFacings, outBottomFacings, outTopFacings);
-}
+}*/
 
 void ArenaMeshUtils::writeFloorRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals,
 	Span<double> outTexCoords)
@@ -444,7 +458,7 @@ void ArenaMeshUtils::writeFloorRendererGeometryBuffers(Span<double> outPositions
 	WriteVertexBuffers(ArenaVoxelType::Floor, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeFloorRendererIndexBuffers(Span<int32_t> outIndices)
+/*void ArenaMeshUtils::writeFloorRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	WriteIndexBuffer(ArenaVoxelType::Floor, outIndices);
 }
@@ -452,14 +466,14 @@ void ArenaMeshUtils::writeFloorRendererIndexBuffers(Span<int32_t> outIndices)
 void ArenaMeshUtils::writeFloorFacingBuffers(Span<VoxelFacing3D> outFacings)
 {
 	WriteFacing(ArenaVoxelType::Floor, outFacings);
-}
+}*/
 
 void ArenaMeshUtils::writeCeilingRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
 	WriteVertexBuffers(ArenaVoxelType::Ceiling, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeCeilingRendererIndexBuffers(Span<int32_t> outIndices)
+/*void ArenaMeshUtils::writeCeilingRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	WriteIndexBuffer(ArenaVoxelType::Ceiling, outIndices);
 }
@@ -467,7 +481,7 @@ void ArenaMeshUtils::writeCeilingRendererIndexBuffers(Span<int32_t> outIndices)
 void ArenaMeshUtils::writeCeilingFacingBuffers(Span<VoxelFacing3D> outFacings)
 {
 	WriteFacing(ArenaVoxelType::Ceiling, outFacings);
-}
+}*/
 
 void ArenaMeshUtils::writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop,
 	Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
@@ -475,10 +489,10 @@ void ArenaMeshUtils::writeRaisedRendererGeometryBuffers(double yOffset, double y
 	WriteVertexBuffersRaised(yOffset, ySize, vBottom, vTop, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeRaisedRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
+/*void ArenaMeshUtils::writeRaisedRendererIndexBuffers(Span<int32_t> outSideIndices, Span<int32_t> outBottomIndices, Span<int32_t> outTopIndices)
 {
 	WriteIndexBuffersSidesBottomTop(ArenaVoxelType::Raised, outSideIndices, outBottomIndices, outTopIndices);
-}
+}*/
 
 void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
@@ -495,7 +509,7 @@ void ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(bool type1, Span<doubl
 	WriteVertexBuffers(meshEntriesSlice, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(Span<int32_t> outIndices)
+/*void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
 	Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(ArenaVoxelType::Diagonal);
@@ -506,25 +520,25 @@ void ArenaMeshUtils::writeDiagonalRendererIndexBuffers(Span<int32_t> outIndices)
 	}
 
 	WriteIndexBuffer(meshEntries[0], outIndices);
-}
+}*/
 
 void ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
 	WriteVertexBuffers(ArenaVoxelType::TransparentWall, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeTransparentWallRendererIndexBuffers(Span<int32_t> outIndices)
+/*void ArenaMeshUtils::writeTransparentWallRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	WriteIndexBuffersSides(ArenaVoxelType::TransparentWall, outIndices);
-}
+}*/
 
-void ArenaMeshUtils::writeEdgeRendererGeometryBuffers(VoxelFacing2D facing, double yOffset, bool flipped,
+void ArenaMeshUtils::writeEdgeRendererGeometryBuffers(double yOffset, VoxelFacing2D facing, bool flipped,
 	Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
 	WriteVertexBuffersEdge(facing, yOffset, flipped, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeEdgeRendererIndexBuffers(Span<int32_t> outIndices)
+/*void ArenaMeshUtils::writeEdgeRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
 	Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(ArenaVoxelType::Edge);
@@ -535,14 +549,14 @@ void ArenaMeshUtils::writeEdgeRendererIndexBuffers(Span<int32_t> outIndices)
 	}
 
 	WriteIndexBuffer(meshEntries[0], outIndices);
-}
+}*/
 
 void ArenaMeshUtils::writeChasmRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords)
 {
 	WriteVertexBuffers(ArenaVoxelType::Chasm, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(Span<int32_t> outIndices)
+/*void ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
 	const MeshLibraryEntry *bottomEntry = meshLibrary.getEntryWithTypeAndFacing(ArenaVoxelType::Chasm, VoxelFacing3D::NegativeY);
@@ -553,7 +567,7 @@ void ArenaMeshUtils::writeChasmFloorRendererIndexBuffers(Span<int32_t> outIndice
 	}
 
 	WriteIndexBuffer(*bottomEntry, outIndices);
-}
+}*/
 
 void ArenaMeshUtils::writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices,
 	ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices)
@@ -605,7 +619,7 @@ void ArenaMeshUtils::writeDoorRendererGeometryBuffers(Span<double> outPositions,
 	WriteVertexBuffers(ArenaVoxelType::Door, outPositions, outNormals, outTexCoords);
 }
 
-void ArenaMeshUtils::writeDoorRendererIndexBuffers(Span<int32_t> outIndices)
+/*void ArenaMeshUtils::writeDoorRendererIndexBuffers(Span<int32_t> outIndices)
 {
 	WriteIndexBuffer(ArenaVoxelType::Door, outIndices);
-}
+}*/

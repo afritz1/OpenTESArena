@@ -19,15 +19,15 @@ namespace
 
 	bool IsVoxelFaceOpaque(VoxelFacing3D facing, const VoxelMeshDefinition &meshDef, const VoxelShadingDefinition &shadingDef)
 	{
-		const int indexBufferIndex = meshDef.findIndexBufferIndexWithFacing(facing);
-		if (indexBufferIndex < 0)
+		const int textureSlotIndex = meshDef.findTextureSlotIndexWithFacing(facing);
+		if (textureSlotIndex < 0)
 		{
 			return false;
 		}
 
-		DebugAssert(indexBufferIndex < shadingDef.pixelShaderCount);
-		DebugAssertIndex(shadingDef.pixelShaderTypes, indexBufferIndex);
-		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[indexBufferIndex];
+		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
+		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
+		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
 		return RenderShaderUtils::isOpaque(pixelShaderType);
 	}
 }

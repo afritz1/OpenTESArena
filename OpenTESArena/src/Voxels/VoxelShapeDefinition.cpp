@@ -3,6 +3,7 @@
 #include "ArenaChasmUtils.h"
 #include "VoxelShapeDefinition.h"
 #include "../Collision/Physics.h"
+#include "../World/MeshLibrary.h"
 
 #include "components/debug/Debug.h"
 
@@ -21,136 +22,125 @@ void VoxelBoxShapeDefinition::init(double width, double height, double depth, do
 VoxelMeshDefinition::VoxelMeshDefinition()
 {
 	// Default to air voxel.
-	this->rendererVertexCount = 0;
 	this->indicesListCount = 0;
-	this->facingsListCount = 0;
+	this->facingCount = 0;
+	this->textureSlotIndexCount = 0;
 }
 
-void VoxelMeshDefinition::initClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType,
-	const ArenaShapeInitCache &shapeInitCache)
+void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale)
 {
-	this->rendererVertexCount = ArenaMeshUtils::GetRendererVertexCount(voxelType);
-	this->indicesListCount = ArenaMeshUtils::GetIndexBufferCount(voxelType);
-	this->facingsListCount = ArenaMeshUtils::GetFacingBufferCount(voxelType);
+	const ArenaVoxelType voxelType = shapeInitCache.voxelType;
+	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+	Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(voxelType);
 
-	if (voxelType != ArenaVoxelType::None)
+	this->indicesListCount = meshEntries.getCount();
+	this->facingCount = 0;
+	this->textureSlotIndexCount = meshEntries.getCount();
+
+	int vertexCount = 0;
+	for (int i = 0; i < meshEntries.getCount(); i++)
 	{
-		const int rendererVertexPositionComponentCount = ArenaMeshUtils::GetRendererVertexPositionComponentCount(voxelType);
-		this->rendererPositions.resize(rendererVertexPositionComponentCount);
-		std::copy(shapeInitCache.positions.begin(), shapeInitCache.positions.begin() + rendererVertexPositionComponentCount, this->rendererPositions.data());
+		const MeshLibraryEntry &entry = meshEntries[i];
+		vertexCount += static_cast<int>(entry.vertices.size());
 
-		const int rendererVertexNormalComponentCount = ArenaMeshUtils::GetRendererVertexNormalComponentCount(voxelType);
-		this->rendererNormals.resize(rendererVertexNormalComponentCount);
-		std::copy(shapeInitCache.normals.begin(), shapeInitCache.normals.begin() + rendererVertexNormalComponentCount, this->rendererNormals.data());
+		Span<const int32_t> meshIndices = entry.vertexIndices;
+		std::vector<int32_t> &indicesList = this->indicesLists[i];
+		indicesList.resize(meshIndices.getCount());
+		std::copy(meshIndices.begin(), meshIndices.end(), indicesList.begin());
 
-		const int rendererVertexTexCoordComponentCount = ArenaMeshUtils::GetRendererVertexTexCoordComponentCount(voxelType);
-		this->rendererTexCoords.resize(rendererVertexTexCoordComponentCount);
-		std::copy(shapeInitCache.texCoords.begin(), shapeInitCache.texCoords.begin() + rendererVertexTexCoordComponentCount, this->rendererTexCoords.data());
-
-		for (int i = 0; i < this->indicesListCount; i++)
+		if (entry.facing.has_value())
 		{
-			std::vector<int32_t> &dstBuffer = this->getIndicesList(i);
-
-			const int indexCount = ArenaMeshUtils::GetIndexBufferIndexCount(voxelType, i);
-			dstBuffer.resize(indexCount);
-
-			const Span<int32_t> *srcBuffer = nullptr;
-			if (i == 0)
-			{
-				srcBuffer = &shapeInitCache.indices0View;
-			}
-			else if (i == 1)
-			{
-				srcBuffer = &shapeInitCache.indices1View;
-			}
-			else if (i == 2)
-			{
-				srcBuffer = &shapeInitCache.indices2View;
-			}
-			else
-			{
-				DebugNotImplementedMsg(std::to_string(i));
-			}
-
-			std::copy(srcBuffer->begin(), srcBuffer->begin() + indexCount, dstBuffer.data());
+			this->facings[this->facingCount] = *entry.facing;
+			this->facingCount++;
 		}
 
-		for (int i = 0; i < this->facingsListCount; i++)
-		{
-			std::vector<VoxelFacing3D> &dstBuffer = this->getFacingsList(i);
+		this->textureSlotIndices[i] = entry.textureSlotIndex;
+	}
 
-			const int faceCount = ArenaMeshUtils::GetFacingBufferFaceCount(voxelType, i);
-			dstBuffer.resize(faceCount);
+	const int rendererVertexPositionComponentCount = vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+	const int rendererVertexNormalComponentCount = vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+	const int rendererVertexTexCoordComponentCount = vertexCount * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+	this->rendererPositions.resize(rendererVertexPositionComponentCount);
+	this->rendererNormals.resize(rendererVertexNormalComponentCount);
+	this->rendererTexCoords.resize(rendererVertexTexCoordComponentCount);
 
-			const Span<VoxelFacing3D> *srcBuffer = nullptr;
-			if (i == 0)
-			{
-				srcBuffer = &shapeInitCache.facings0View;
-			}
-			else if (i == 1)
-			{
-				srcBuffer = &shapeInitCache.facings1View;
-			}
-			else if (i == 2)
-			{
-				srcBuffer = &shapeInitCache.facings2View;
-			}
-			else
-			{
-				DebugNotImplementedMsg(std::to_string(i));
-			}
+	// @todo: use ceilingScale for the position buffers here FOR NON-COMBINED MESHES
+	// - do the MeshUtils::getScaledVertexY(srcY, scaleType, ceilingScale); to the rendererPositions
+	// - ^^ MeshUtils::createVoxelFaceQuadPositionsModelSpace() is doing this for combined meshes in RenderVoxelChunkManager.cpp
+	//DebugNotImplemented();
 
-			std::copy(srcBuffer->begin(), srcBuffer->begin() + faceCount, dstBuffer.data());
-		}
+	// @todo only need the special WriteIndexBuffers() functions if order is needed for voxel texture def stuff (which idk, need to use the textureSlotIndex at some point)
+
+	switch (voxelType)
+	{
+		case ArenaVoxelType::None:
+			// Nothing
+			break;
+		case ArenaVoxelType::Wall:
+			ArenaMeshUtils::writeWallRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			//WriteIndexBuffersSidesBottomTop(ArenaVoxelType::Wall, this->indicesLists[0], this->indicesLists[1], this->indicesLists[2]);
+			break;
+		case ArenaVoxelType::Floor:
+			ArenaMeshUtils::writeFloorRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			break;
+		case ArenaVoxelType::Ceiling:
+			ArenaMeshUtils::writeCeilingRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			break;
+		case ArenaVoxelType::Raised:
+			ArenaMeshUtils::writeRaisedRendererGeometryBuffers(shapeInitCache.boxYOffset, shapeInitCache.boxHeight, shapeInitCache.raised.vBottom, shapeInitCache.raised.vTop, this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			break;
+		case ArenaVoxelType::Diagonal:
+			ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(shapeInitCache.diagonal.isRightDiagonal, this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			break;
+		case ArenaVoxelType::TransparentWall:
+			ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			break;
+		case ArenaVoxelType::Edge:
+			ArenaMeshUtils::writeEdgeRendererGeometryBuffers(shapeInitCache.boxYOffset, shapeInitCache.edge.facing, shapeInitCache.edge.flippedTexCoords, this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			break;
+		case ArenaVoxelType::Chasm:
+			// @todo we only want the chasm floor index buffer written above, right? don't want all chasm walls? idk
+			ArenaMeshUtils::writeChasmRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			break;
+		case ArenaVoxelType::Door:
+			ArenaMeshUtils::writeDoorRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
+			break;
 	}
 }
 
 bool VoxelMeshDefinition::isEmpty() const
 {
-	return this->rendererVertexCount == 0;
-}
-
-std::vector<int32_t> &VoxelMeshDefinition::getIndicesList(int index)
-{
-	std::vector<int32_t> *ptrs[] = { &this->indices0, &this->indices1, &this->indices2 };
-	DebugAssertIndex(ptrs, index);
-	return *ptrs[index];
-}
-
-Span<const int32_t> VoxelMeshDefinition::getIndicesList(int index) const
-{
-	const std::vector<int32_t> *ptrs[] = { &this->indices0, &this->indices1, &this->indices2 };
-	DebugAssertIndex(ptrs, index);
-	return *ptrs[index];
-}
-
-std::vector<VoxelFacing3D> &VoxelMeshDefinition::getFacingsList(int index)
-{
-	std::vector<VoxelFacing3D> *ptrs[] = { &this->facings0, &this->facings1, &this->facings2 };
-	DebugAssertIndex(ptrs, index);
-	return *ptrs[index];
-}
-
-Span<const VoxelFacing3D> VoxelMeshDefinition::getFacingsList(int index) const
-{
-	const std::vector<VoxelFacing3D> *ptrs[] = { &this->facings0, &this->facings1, &this->facings2 };
-	DebugAssertIndex(ptrs, index);
-	return *ptrs[index];
+	return this->rendererPositions.empty();
 }
 
 int VoxelMeshDefinition::findIndexBufferIndexWithFacing(VoxelFacing3D facing) const
 {
-	DebugAssert(this->indicesListCount >= this->facingsListCount);
+	DebugAssert(this->indicesListCount >= this->facingCount);
 
-	for (int i = 0; i < this->facingsListCount; i++)
+	for (int i = 0; i < this->facingCount; i++)
 	{
-		Span<const VoxelFacing3D> facingList = this->getFacingsList(i);
-		for (const VoxelFacing3D currentFacing : facingList)
+		DebugAssertIndex(this->facings, i);
+		const VoxelFacing3D currentFacing = this->facings[i];
+		if (currentFacing == facing)
 		{
-			if (currentFacing == facing)
-			{
-				return i;
-			}
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int VoxelMeshDefinition::findTextureSlotIndexWithFacing(VoxelFacing3D facing) const
+{
+	DebugAssert(this->textureSlotIndexCount >= this->facingCount);
+
+	for (int i = 0; i < this->facingCount; i++)
+	{
+		DebugAssertIndex(this->facings, i);
+		const VoxelFacing3D currentFacing = this->facings[i];
+		if (currentFacing == facing)
+		{
+			return this->textureSlotIndices[i];
 		}
 	}
 
@@ -165,75 +155,22 @@ bool VoxelMeshDefinition::hasFullCoverageOfFacing(VoxelFacing3D facing) const
 	return indexBufferIndex >= 0;
 }
 
-void VoxelMeshDefinition::writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, Span<double> outPositions) const
-{
-	static_assert(MeshUtils::POSITION_COMPONENTS_PER_VERTEX == 3);
-	DebugAssert(outPositions.getCount() >= this->rendererPositions.size());
-
-	for (int i = 0; i < this->rendererVertexCount; i++)
-	{
-		const int index = i * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-		const double srcX = this->rendererPositions[index];
-		const double srcY = this->rendererPositions[index + 1];
-		const double srcZ = this->rendererPositions[index + 2];
-		const double dstX = srcX;
-		const double dstY = MeshUtils::getScaledVertexY(srcY, scaleType, ceilingScale);
-		const double dstZ = srcZ;
-		outPositions[index] = dstX;
-		outPositions[index + 1] = dstY;
-		outPositions[index + 2] = dstZ;
-	}
-}
-
-void VoxelMeshDefinition::writeRendererVertexNormalBuffer(Span<double> outNormals) const
-{
-	static_assert(MeshUtils::NORMAL_COMPONENTS_PER_VERTEX == 3);
-	DebugAssert(outNormals.getCount() >= this->rendererNormals.size());
-	std::copy(this->rendererNormals.begin(), this->rendererNormals.end(), outNormals.begin());
-}
-
-void VoxelMeshDefinition::writeRendererVertexTexCoordBuffer(Span<double> outTexCoords) const
-{
-	static_assert(MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX == 2);
-	DebugAssert(outTexCoords.getCount() >= this->rendererTexCoords.size());
-	std::copy(this->rendererTexCoords.begin(), this->rendererTexCoords.end(), outTexCoords.begin());
-}
-
-void VoxelMeshDefinition::writeRendererIndexBuffers(Span<int32_t> outIndices0, Span<int32_t> outIndices1, Span<int32_t> outIndices2) const
-{
-	if (!this->indices0.empty())
-	{
-		DebugAssert(outIndices0.getCount() >= this->indices0.size());
-		std::copy(this->indices0.begin(), this->indices0.end(), outIndices0.begin());
-	}
-
-	if (!this->indices1.empty())
-	{
-		DebugAssert(outIndices1.getCount() >= this->indices1.size());
-		std::copy(this->indices1.begin(), this->indices1.end(), outIndices1.begin());
-	}
-
-	if (!this->indices2.empty())
-	{
-		DebugAssert(outIndices2.getCount() >= this->indices2.size());
-		std::copy(this->indices2.begin(), this->indices2.end(), outIndices2.begin());
-	}
-}
-
 VoxelShapeDefinition::VoxelShapeDefinition()
 {
 	// Air by default. Needs the shape defined in case of trigger voxels, but doesn't need a render mesh.
 	ArenaShapeInitCache airShapeInitCache;
-	airShapeInitCache.initDefaultBoxValues();
-	this->initBoxFromClassic(ArenaVoxelType::None, VoxelShapeScaleType::ScaledFromMin, airShapeInitCache);
+	airShapeInitCache.initDefaultBoxValues(ArenaVoxelType::None);
+	this->initBoxFromClassic(airShapeInitCache, VoxelShapeScaleType::ScaledFromMin, 1.0);
 }
 
-void VoxelShapeDefinition::initBoxFromClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaShapeInitCache &shapeInitCache)
+void VoxelShapeDefinition::initBoxFromClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale)
 {
 	this->type = VoxelShapeType::Box;
 	this->box.init(shapeInitCache.boxWidth, shapeInitCache.boxHeight, shapeInitCache.boxDepth, shapeInitCache.boxYOffset, shapeInitCache.boxYRotation);
-	this->mesh.initClassic(voxelType, scaleType, shapeInitCache);
+	this->mesh.initClassic(shapeInitCache, scaleType, ceilingScale);
 	this->scaleType = scaleType;
+
+	const ArenaVoxelType voxelType = shapeInitCache.voxelType;
 	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
 	this->allowsAdjacentDoorFaces = ArenaMeshUtils::AllowsAdjacentDoorFaces(voxelType);
 	this->allowsInternalFaceRemoval = ArenaMeshUtils::AllowsInternalFaceRemoval(voxelType);
