@@ -154,8 +154,6 @@ namespace ArenaMeshUtils
 		switch (voxelType)
 		{
 		case ArenaVoxelType::None:
-		case ArenaVoxelType::Raised:
-		case ArenaVoxelType::TransparentWall: // @todo eventually allow hedges to combine
 		case ArenaVoxelType::Door:
 		case ArenaVoxelType::Diagonal:
 		case ArenaVoxelType::Edge:
@@ -164,6 +162,8 @@ namespace ArenaMeshUtils
 		case ArenaVoxelType::Wall:
 		case ArenaVoxelType::Floor:
 		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Raised:
+		case ArenaVoxelType::TransparentWall:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
