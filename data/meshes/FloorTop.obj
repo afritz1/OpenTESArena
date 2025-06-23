@@ -2,10 +2,10 @@ usemtl Floor
 
 # Positions
 # Y=1
+v 0.0 1.0 0.0
 v 0.0 1.0 1.0
 v 1.0 1.0 1.0
 v 1.0 1.0 0.0
-v 0.0 1.0 0.0
 
 # Normals
 # Y=1
