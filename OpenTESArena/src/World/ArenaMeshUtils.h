@@ -156,7 +156,6 @@ namespace ArenaMeshUtils
 		case ArenaVoxelType::None:
 		case ArenaVoxelType::Door:
 		case ArenaVoxelType::Diagonal:
-		case ArenaVoxelType::Edge:
 		case ArenaVoxelType::Chasm: // @todo eventually allow chasm floors to combine (it covers O(n^2) of the game world, not just chunk edges)
 			return false;
 		case ArenaVoxelType::Wall:
@@ -164,6 +163,7 @@ namespace ArenaMeshUtils
 		case ArenaVoxelType::Ceiling:
 		case ArenaVoxelType::Raised:
 		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Edge:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
