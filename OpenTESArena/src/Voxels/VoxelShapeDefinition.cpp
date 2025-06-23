@@ -41,12 +41,17 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 	for (int i = 0; i < meshEntries.getCount(); i++)
 	{
 		const MeshLibraryEntry &entry = meshEntries[i];
-		vertexCount += static_cast<int>(entry.vertices.size());
 
 		Span<const int32_t> meshIndices = entry.vertexIndices;
 		std::vector<int32_t> &indicesList = this->indicesLists[i];
 		indicesList.resize(meshIndices.getCount());
-		std::copy(meshIndices.begin(), meshIndices.end(), indicesList.begin());
+		std::transform(meshIndices.begin(), meshIndices.end(), indicesList.begin(),
+			[&vertexCount](const int32_t meshIndex)
+		{
+			return meshIndex + vertexCount;
+		});
+
+		vertexCount += static_cast<int>(entry.vertices.size());
 
 		if (entry.facing.has_value())
 		{

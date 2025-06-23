@@ -65,7 +65,7 @@ struct RenderVoxelLoadedChasmTextureKey
 struct RenderVoxelCombinedFaceVertexBuffer
 {
 	int voxelWidth, voxelHeight;
-	VoxelShapeScaleType scaleType;
+	VoxelShapeDefID shapeDefID;
 	VoxelFacing3D facing;
 
 	VertexPositionBufferID positionBufferID;

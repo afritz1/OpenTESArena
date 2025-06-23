@@ -345,6 +345,36 @@ void MeshUtils::createVoxelFaceQuadIndices(Span<int32_t> outIndices)
 	outIndices[5] = 0;
 }
 
+void MeshUtils::writeFirstFourUniqueIndices(Span<const int32_t> inputIndices, Span<int32_t> outputIndices)
+{
+	constexpr int quadVertexCount = MeshUtils::VERTICES_PER_QUAD;
+
+	DebugAssert(outputIndices.getCount() == quadVertexCount);
+	DebugAssert(inputIndices.getCount() >= quadVertexCount);
+
+	int outputWriteIndex = 0;
+	const auto faceVertexIndicesBegin = outputIndices.begin();
+	const auto faceVertexIndicesEnd = outputIndices.end();
+	std::fill(faceVertexIndicesBegin, faceVertexIndicesEnd, -1);
+	for (int faceIndicesIndex = 0; faceIndicesIndex < inputIndices.getCount(); faceIndicesIndex++)
+	{
+		const int faceVertexIndex = inputIndices[faceIndicesIndex];
+		const auto existingIter = std::find(faceVertexIndicesBegin, faceVertexIndicesEnd, faceVertexIndex);
+		if (existingIter != faceVertexIndicesEnd)
+		{
+			continue;
+		}
+
+		outputIndices[outputWriteIndex] = faceVertexIndex;
+		outputWriteIndex++;
+
+		if (outputWriteIndex == quadVertexCount)
+		{
+			break;
+		}
+	}
+}
+
 double MeshUtils::getScaledVertexY(double meshY, VoxelShapeScaleType scaleType, double ceilingScale)
 {
 	switch (scaleType)

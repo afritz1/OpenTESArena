@@ -69,6 +69,8 @@ namespace MeshUtils
 	void createVoxelFaceQuadTexCoords(int width, int height, Span<double> outUVs);
 	void createVoxelFaceQuadIndices(Span<int32_t> outIndices);
 
+	void writeFirstFourUniqueIndices(Span<const int32_t> inputIndices, Span<int32_t> outputIndices);
+
 	// For positioning raised platforms, etc. correctly.
 	double getScaledVertexY(double meshY, VoxelShapeScaleType scaleType, double ceilingScale);
 }

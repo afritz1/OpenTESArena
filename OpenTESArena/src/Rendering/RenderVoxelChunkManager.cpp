@@ -342,7 +342,7 @@ RenderVoxelCombinedFaceVertexBuffer::RenderVoxelCombinedFaceVertexBuffer()
 {
 	this->voxelWidth = 0;
 	this->voxelHeight = 0;
-	this->scaleType = static_cast<VoxelShapeScaleType>(-1);
+	this->shapeDefID = -1;
 	this->facing = static_cast<VoxelFacing3D>(-1);
 	this->positionBufferID = -1;
 	this->normalBufferID = -1;
@@ -1102,7 +1102,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 		Span<RenderDrawCall> drawCalls = drawCallHeap.get(drawCallRangeID);
 
 		if (isDoor)
-		{			
+		{
 			DebugAssert(transformInitInfoCount == VoxelDoorUtils::FACE_COUNT);
 
 			int doorDrawCallWriteIndex = 0;
@@ -1112,12 +1112,12 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 				{
 					continue;
 				}
-				
+
 				const DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
 				const DrawCallMeshInitInfo &doorMeshInitInfo = meshInitInfos[0];
 				const DrawCallTextureInitInfo &doorTextureInitInfo = textureInitInfos[0];
 				const DrawCallShadingInitInfo &doorShadingInitInfo = shadingInitInfos[0];
-				
+
 				RenderDrawCall &doorDrawCall = drawCalls[doorDrawCallWriteIndex];
 				doorDrawCall.transformBufferID = doorTransformInitInfo.id;
 				doorDrawCall.transformIndex = doorTransformInitInfo.index;
@@ -1137,7 +1137,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 				doorDrawCall.lightIdCount = lightingInitInfo.idCount;
 				doorDrawCall.enableDepthRead = true;
 				doorDrawCall.enableDepthWrite = true;
-				
+
 				doorDrawCallWriteIndex++;
 			}
 		}
@@ -1150,7 +1150,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 				const DrawCallMeshInitInfo &chasmMeshInitInfo = meshInitInfos[i];
 				const DrawCallTextureInitInfo &chasmTextureInitInfo = textureInitInfos[i];
 				const DrawCallShadingInitInfo &chasmShadingInitInfo = shadingInitInfos[i];
-				
+
 				RenderDrawCall &chasmDrawCall = drawCalls[i];
 				chasmDrawCall.transformBufferID = chasmTransformInitInfo.id;
 				chasmDrawCall.transformIndex = chasmTransformInitInfo.index;
@@ -1288,9 +1288,9 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		const VoxelShapeScaleType scaleType = shapeDef.scaleType;
 
 		const auto vertexBufferIter = std::find_if(this->combinedFaceVertexBuffers.begin(), this->combinedFaceVertexBuffers.end(),
-			[quadVoxelWidth, quadVoxelHeight, scaleType, facing](const RenderVoxelCombinedFaceVertexBuffer &curEntry)
+			[quadVoxelWidth, quadVoxelHeight, shapeDefID, facing](const RenderVoxelCombinedFaceVertexBuffer &curEntry)
 		{
-			return (curEntry.voxelWidth == quadVoxelWidth) && (curEntry.voxelHeight == quadVoxelHeight) && (curEntry.scaleType == scaleType) && (curEntry.facing == facing);
+			return (curEntry.voxelWidth == quadVoxelWidth) && (curEntry.voxelHeight == quadVoxelHeight) && (curEntry.shapeDefID == shapeDefID) && (curEntry.facing == facing);
 		});
 
 		RenderVoxelCombinedFaceVertexBuffer *combinedFaceVertexBuffer = nullptr;
@@ -1303,17 +1303,56 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			this->combinedFaceVertexBuffers.emplace_back(std::move(RenderVoxelCombinedFaceVertexBuffer()));
 			combinedFaceVertexBuffer = &this->combinedFaceVertexBuffers.back();
 
-			constexpr int quadVertexCount = 4;
+			const VoxelMeshDefinition &meshDef = shapeDef.mesh;
+			const int faceIndexBufferIndex = meshDef.findIndexBufferIndexWithFacing(facing);
+			DebugAssert(faceIndexBufferIndex >= 0);
+			Span<const int32_t> faceIndicesList = meshDef.indicesLists[faceIndexBufferIndex];
+
+			constexpr int quadVertexCount = MeshUtils::VERTICES_PER_QUAD;
+			int32_t faceVertexIndices[quadVertexCount];
+			std::fill(std::begin(faceVertexIndices), std::end(faceVertexIndices), -1);
+			MeshUtils::writeFirstFourUniqueIndices(faceIndicesList, faceVertexIndices);
+
+			const Double3 quadVoxelDimsReal(
+				1.0 + static_cast<SNDouble>(maxVoxel.x - minVoxel.x),
+				1.0 + static_cast<double>(maxVoxel.y - minVoxel.y),
+				1.0 + static_cast<WEDouble>(maxVoxel.z - minVoxel.z));
+
+			// Transform the first voxel's vertices for this combined face.
 			double quadVertexPositions[quadVertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX];
 			double quadVertexNormals[quadVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX];
 			double quadVertexTexCoords[quadVertexCount * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX];
-			MeshUtils::createVoxelFaceQuadPositionsModelSpace(minVoxel, maxVoxel, facing, ceilingScale, quadVertexPositions);
-			MeshUtils::createVoxelFaceQuadNormals(facing, quadVertexNormals);
-			MeshUtils::createVoxelFaceQuadTexCoords(quadVoxelWidth, quadVoxelHeight, quadVertexTexCoords);
+			for (int vertexIndex = 0; vertexIndex < quadVertexCount; vertexIndex++)
+			{
+				const int32_t sourceVertexIndex = faceVertexIndices[vertexIndex];
+
+				const int sourcePositionComponentIndex = sourceVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+				const int destinationPositionComponentIndex = vertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+				const double sourcePositionX = meshDef.rendererPositions[sourcePositionComponentIndex];
+				const double sourcePositionY = meshDef.rendererPositions[sourcePositionComponentIndex + 1];
+				const double sourcePositionZ = meshDef.rendererPositions[sourcePositionComponentIndex + 2];
+				const double sourcePositionScaledX = sourcePositionX * quadVoxelDimsReal.x;
+				const double sourcePositionScaledY = MeshUtils::getScaledVertexY(sourcePositionY * quadVoxelDimsReal.y, scaleType, ceilingScale);
+				const double sourcePositionScaledZ = sourcePositionZ * quadVoxelDimsReal.z;
+				quadVertexPositions[destinationPositionComponentIndex] = sourcePositionScaledX;
+				quadVertexPositions[destinationPositionComponentIndex + 1] = sourcePositionScaledY;
+				quadVertexPositions[destinationPositionComponentIndex + 2] = sourcePositionScaledZ;
+
+				const int sourceNormalComponentIndex = sourceVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+				const int destinationNormalComponentIndex = vertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+				quadVertexNormals[destinationNormalComponentIndex] = meshDef.rendererNormals[sourceNormalComponentIndex];
+				quadVertexNormals[destinationNormalComponentIndex + 1] = meshDef.rendererNormals[sourceNormalComponentIndex + 1];
+				quadVertexNormals[destinationNormalComponentIndex + 2] = meshDef.rendererNormals[sourceNormalComponentIndex + 2];
+
+				const int sourceTexCoordComponentIndex = sourceVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+				const int destinationTexCoordComponentIndex = vertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+				quadVertexTexCoords[destinationTexCoordComponentIndex] = meshDef.rendererTexCoords[sourceTexCoordComponentIndex];
+				quadVertexTexCoords[destinationTexCoordComponentIndex + 1] = meshDef.rendererTexCoords[sourceTexCoordComponentIndex + 1];
+			}
 
 			combinedFaceVertexBuffer->voxelWidth = quadVoxelWidth;
 			combinedFaceVertexBuffer->voxelHeight = quadVoxelHeight;
-			combinedFaceVertexBuffer->scaleType = scaleType;
+			combinedFaceVertexBuffer->shapeDefID = shapeDefID;
 			combinedFaceVertexBuffer->facing = facing;
 
 			combinedFaceVertexBuffer->positionBufferID = renderer.createVertexPositionBuffer(quadVertexCount, MeshUtils::POSITION_COMPONENTS_PER_VERTEX);
