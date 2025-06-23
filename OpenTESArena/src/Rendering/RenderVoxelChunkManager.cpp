@@ -378,9 +378,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 		return;
 	}
 
-	int32_t defaultQuadIndexBufferIndices[indicesPerQuad];
-	MeshUtils::createVoxelFaceQuadIndices(defaultQuadIndexBufferIndices);
-	renderer.populateIndexBuffer(this->defaultQuadIndexBufferID, defaultQuadIndexBufferIndices);
+	renderer.populateIndexBuffer(this->defaultQuadIndexBufferID, MeshUtils::DefaultQuadVertexIndices);
 
 	// Populate chasm wall index buffers.
 	ArenaChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;

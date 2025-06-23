@@ -30,6 +30,8 @@ namespace MeshUtils
 	static constexpr int TEX_COORD_COMPONENTS_PER_VERTEX = 2; // UV texture coordinates.
 	static constexpr int TEX_COORD_COMPONENTS_PER_TRIANGLE = TEX_COORD_COMPONENTS_PER_VERTEX * 3;
 
+	constexpr int32_t DefaultQuadVertexIndices[] = { 0, 1, 2, 2, 3, 0 };
+
 	// Returns the number of vertices these planar components completely fill. Does not handle leftovers.
 	int getVertexCount(Span<const double> components, int componentsPerVertex);
 
