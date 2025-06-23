@@ -233,26 +233,8 @@ namespace ArenaMeshUtils
 		}
 	}
 
-	// Mesh writing functions. All of these are in unscaled model space.
-	// Renderer positions are ordered in the way they're consumed when being converted to triangles.
-	void writeWallRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
-
-	void writeFloorRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
-	
-	void writeCeilingRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
-	
-	void writeRaisedRendererGeometryBuffers(double yOffset, double ySize, double vBottom, double vTop, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
-	
-	void writeDiagonalRendererGeometryBuffers(bool type1, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
-	
-	void writeTransparentWallRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
-	
-	void writeEdgeRendererGeometryBuffers(double yOffset, VoxelFacing2D facing, bool flipped, Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
-	
-	void writeChasmRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
 	void writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
-	
-	void writeDoorRendererGeometryBuffers(Span<double> outPositions, Span<double> outNormals, Span<double> outTexCoords);
+
 }
 
 #endif

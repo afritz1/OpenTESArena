@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstring>
 
 #include "ArenaChasmUtils.h"
@@ -69,47 +70,180 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 	this->rendererNormals.resize(rendererVertexNormalComponentCount);
 	this->rendererTexCoords.resize(rendererVertexTexCoordComponentCount);
 
-	// @todo: use ceilingScale for the position buffers here FOR NON-COMBINED MESHES
-	// - do the MeshUtils::getScaledVertexY(srcY, scaleType, ceilingScale); to the rendererPositions
-	// - ^^ MeshUtils::createVoxelFaceQuadPositionsModelSpace() is doing this for combined meshes in RenderVoxelChunkManager.cpp
-	//DebugNotImplemented();
-
-	// @todo only need the special WriteIndexBuffers() functions if order is needed for voxel texture def stuff (which idk, need to use the textureSlotIndex at some point)
-
 	switch (voxelType)
 	{
-		case ArenaVoxelType::None:
-			// Nothing
-			break;
-		case ArenaVoxelType::Wall:
-			ArenaMeshUtils::writeWallRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			//WriteIndexBuffersSidesBottomTop(ArenaVoxelType::Wall, this->indicesLists[0], this->indicesLists[1], this->indicesLists[2]);
-			break;
-		case ArenaVoxelType::Floor:
-			ArenaMeshUtils::writeFloorRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			break;
-		case ArenaVoxelType::Ceiling:
-			ArenaMeshUtils::writeCeilingRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			break;
-		case ArenaVoxelType::Raised:
-			ArenaMeshUtils::writeRaisedRendererGeometryBuffers(shapeInitCache.boxYOffset, shapeInitCache.boxHeight, shapeInitCache.raised.vBottom, shapeInitCache.raised.vTop, this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			break;
-		case ArenaVoxelType::Diagonal:
-			ArenaMeshUtils::writeDiagonalRendererGeometryBuffers(shapeInitCache.diagonal.isRightDiagonal, this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			break;
-		case ArenaVoxelType::TransparentWall:
-			ArenaMeshUtils::writeTransparentWallRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			break;
-		case ArenaVoxelType::Edge:
-			ArenaMeshUtils::writeEdgeRendererGeometryBuffers(shapeInitCache.boxYOffset, shapeInitCache.edge.facing, shapeInitCache.edge.flippedTexCoords, this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			break;
-		case ArenaVoxelType::Chasm:
-			// @todo we only want the chasm floor index buffer written above, right? don't want all chasm walls? idk
-			ArenaMeshUtils::writeChasmRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			break;
-		case ArenaVoxelType::Door:
-			ArenaMeshUtils::writeDoorRendererGeometryBuffers(this->rendererPositions, this->rendererNormals, this->rendererTexCoords);
-			break;
+	case ArenaVoxelType::None:
+		break;
+	case ArenaVoxelType::Wall:
+	case ArenaVoxelType::Floor:
+	case ArenaVoxelType::Ceiling:
+	case ArenaVoxelType::TransparentWall:
+	case ArenaVoxelType::Chasm:
+	case ArenaVoxelType::Door:
+	{
+		int destinationVertexIndex = 0;
+		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		{
+			for (const ObjVertex &sourceVertex : meshEntry.vertices)
+			{
+				const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+				const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+				this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+				this->rendererPositions[outPositionsIndex + 1] = sourceVertex.positionY; // @todo move getScaledVertexY from RenderVoxelChunkManager here
+				this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+				this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+				this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+				this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+				this->rendererTexCoords[outTexCoordsIndex] = sourceVertex.texCoordU;
+				this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+				destinationVertexIndex++;
+			}
+		}
+
+		break;
+	}
+	case ArenaVoxelType::Raised:
+	{
+		DebugAssert(shapeInitCache.voxelType == ArenaVoxelType::Raised);
+
+		double yMax = std::numeric_limits<double>::lowest();
+		double vMax = std::numeric_limits<double>::lowest();
+
+		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		{
+			for (const ObjVertex &sourceVertex : meshEntry.vertices)
+			{
+				yMax = std::max(yMax, sourceVertex.positionY);
+				vMax = std::max(vMax, sourceVertex.texCoordV);
+			}
+		}
+
+		int destinationVertexIndex = 0;
+		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		{
+			const bool isSideFace = (meshEntry.facing != VoxelFacing3D::PositiveY) && (meshEntry.facing != VoxelFacing3D::NegativeY);
+
+			for (const ObjVertex &sourceVertex : meshEntry.vertices)
+			{
+				const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+				const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX; 
+
+				this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+
+				this->rendererPositions[outPositionsIndex + 1] = shapeInitCache.boxYOffset;
+				if (sourceVertex.positionY == yMax)
+				{
+					this->rendererPositions[outPositionsIndex + 1] += shapeInitCache.boxHeight;
+				}
+
+				this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+
+				this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+				this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+				this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+
+				this->rendererTexCoords[outTexCoordsIndex] = sourceVertex.texCoordU;
+
+				if (isSideFace)
+				{
+					this->rendererTexCoords[outTexCoordsIndex + 1] = (sourceVertex.texCoordV == vMax) ? shapeInitCache.raised.vBottom : shapeInitCache.raised.vTop;
+				}
+				else
+				{
+					this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+				}
+
+				destinationVertexIndex++;
+			}
+		}
+
+		break;
+	}
+	case ArenaVoxelType::Diagonal:
+	{
+		DebugAssert(shapeInitCache.voxelType == ArenaVoxelType::Diagonal);
+
+		const int diagonalMeshEntryIndex = shapeInitCache.diagonal.isRightDiagonal ? 1 : 0;
+		const MeshLibraryEntry &diagonalMeshEntry = meshEntries[diagonalMeshEntryIndex];
+
+		int destinationVertexIndex = 0;
+		for (const ObjVertex &sourceVertex : diagonalMeshEntry.vertices)
+		{
+			const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+			const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+			this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+			this->rendererPositions[outPositionsIndex + 1] = sourceVertex.positionY; // @todo move getScaledVertexY from RenderVoxelChunkManager here
+			this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+			this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+			this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+			this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+			this->rendererTexCoords[outTexCoordsIndex] = sourceVertex.texCoordU;
+			this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+			destinationVertexIndex++;
+		}
+
+		break;
+	}
+	case ArenaVoxelType::Edge:
+	{
+		DebugAssert(shapeInitCache.voxelType == ArenaVoxelType::Edge);
+
+		int edgeMeshEntryIndex = -1;
+		for (int i = 0; i < meshEntries.getCount(); i++)
+		{
+			const MeshLibraryEntry &currentEdgeMeshEntry = meshEntries[i];
+			const std::optional<VoxelFacing3D> &currentEdgeFacing = currentEdgeMeshEntry.facing;
+			const VoxelFacing3D targetEdgeFacing = VoxelUtils::convertFaceTo3D(shapeInitCache.edge.facing);
+			if (currentEdgeFacing == targetEdgeFacing)
+			{
+				edgeMeshEntryIndex = i;
+				break;
+			}
+		}
+
+		const MeshLibraryEntry &edgeMeshEntry = meshEntries[edgeMeshEntryIndex];
+
+		double yMax = std::numeric_limits<double>::lowest();
+		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		{
+			for (const ObjVertex &sourceVertex : meshEntry.vertices)
+			{
+				yMax = std::max(yMax, sourceVertex.positionY);
+			}
+		}
+
+		int destinationVertexIndex = 0;
+		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		{
+			for (const ObjVertex &sourceVertex : meshEntry.vertices)
+			{
+				const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+				const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+
+				this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+				this->rendererPositions[outPositionsIndex + 1] = sourceVertex.positionY + shapeInitCache.boxYOffset; // @todo move getScaledVertexY from RenderVoxelChunkManager here
+				this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+
+				this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+				this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+				this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+
+				this->rendererTexCoords[outTexCoordsIndex] = shapeInitCache.edge.flippedTexCoords ? std::clamp(1.0 - sourceVertex.texCoordU, 0.0, 1.0) : sourceVertex.texCoordU;
+				this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+
+				destinationVertexIndex++;
+			}
+		}
+
+		break;
+	}
+	default:
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
+		break;
 	}
 }
 

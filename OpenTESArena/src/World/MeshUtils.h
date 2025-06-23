@@ -64,13 +64,6 @@ namespace MeshUtils
 	// Gets the width and height of the voxel span.
 	void getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, int *outWidth, int *outHeight);
 
-	// Creates quad vertex positions/attributes/indices counterclockwise (top left - bottom left - bottom right - top right).
-	// To get world space, translate model space vertices by the 'min' point.
-	void createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, Span<double> outPositions);
-	void createVoxelFaceQuadNormals(VoxelFacing3D facing, Span<double> outNormals);
-	void createVoxelFaceQuadTexCoords(int width, int height, Span<double> outUVs);
-	void createVoxelFaceQuadIndices(Span<int32_t> outIndices);
-
 	void writeFirstFourUniqueIndices(Span<const int32_t> inputIndices, Span<int32_t> outputIndices);
 
 	// For positioning raised platforms, etc. correctly.
