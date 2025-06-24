@@ -1208,8 +1208,6 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 	const VoxelChunk &voxelChunk, const VoxelFaceCombineChunk &faceCombineChunk, const RenderLightChunk &renderLightChunk,
 	const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent, Renderer &renderer)
 {
-	// @todo this function should be blazing fast for empty interior chunks - just two draw calls
-
 	// can't rely on VoxelFaceCombineResultID meaning the same thing - it may have been freed and immediately renewed in the same update()
 
 	const ChunkInt2 chunkPos = renderChunk.position;
@@ -1283,7 +1281,10 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
+		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
 		const VoxelShapeScaleType scaleType = shapeDef.scaleType;
+
+		DebugAssert(shapeDef.allowsAdjacentFaceCombining);
 
 		const auto vertexBufferIter = std::find_if(this->combinedFaceVertexBuffers.begin(), this->combinedFaceVertexBuffers.end(),
 			[quadVoxelWidth, quadVoxelHeight, shapeDefID, facing](const RenderVoxelCombinedFaceVertexBuffer &curEntry)
@@ -1301,7 +1302,6 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			this->combinedFaceVertexBuffers.emplace_back(std::move(RenderVoxelCombinedFaceVertexBuffer()));
 			combinedFaceVertexBuffer = &this->combinedFaceVertexBuffers.back();
 
-			const VoxelMeshDefinition &meshDef = shapeDef.mesh;
 			const int faceIndexBufferIndex = meshDef.findIndexBufferIndexWithFacing(facing);
 			DebugAssert(faceIndexBufferIndex >= 0);
 			Span<const int32_t> faceIndicesList = meshDef.indicesLists[faceIndexBufferIndex];
@@ -1377,24 +1377,43 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		}
 
 		// Use the texture/shading values of the first voxel.
-		const VoxelTextureDefID textureDefID = voxelChunk.getTextureDefID(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(minVoxel.x, minVoxel.y, minVoxel.z);
-		const VoxelTextureDefinition &textureDef = voxelChunk.getTextureDef(textureDefID);
 		const VoxelShadingDefinition &shadingDef = voxelChunk.getShadingDef(shadingDefID);
 
-		DebugAssert(shapeDef.allowsAdjacentFaceCombining);
+		VoxelChasmDefID chasmDefID;
+		bool isChasm = voxelChunk.tryGetChasmDefID(minVoxel.x, minVoxel.y, minVoxel.z, &chasmDefID);
 
-		const int textureSlotIndex = shapeDef.mesh.findTextureSlotIndexWithFacing(facing);
-		DebugAssert(textureSlotIndex >= 0);
+		ObjectTextureID textureID0 = -1;
+		ObjectTextureID textureID1 = -1;
+		PixelShaderType pixelShaderType = static_cast<PixelShaderType>(-1);
+		if (isChasm)
+		{
+			const bool isChasmFloor = facing == VoxelFacing3D::NegativeY;
 
-		const TextureAsset &textureAsset = textureDef.getTextureAsset(textureSlotIndex);
-		const ObjectTextureID textureID0 = this->getTextureID(textureAsset);
+			textureID0 = this->getChasmFloorTextureID(chasmDefID);
+			if (!isChasmFloor)
+			{
+				textureID1 = this->getChasmWallTextureID(chasmDefID);
+			}
 
-		const VertexShaderType vertexShaderType = shadingDef.vertexShaderType;
+			// @todo this is probably wrong
+			const int chasmIndexBufferIndex = meshDef.findIndexBufferIndexWithFacing(facing);
+			pixelShaderType = shadingDef.pixelShaderTypes[chasmIndexBufferIndex];
+		}
+		else
+		{
+			const VoxelTextureDefID textureDefID = voxelChunk.getTextureDefID(minVoxel.x, minVoxel.y, minVoxel.z);
+			const VoxelTextureDefinition &textureDef = voxelChunk.getTextureDef(textureDefID);
+			const int textureSlotIndex = meshDef.findTextureSlotIndexWithFacing(facing);
+			DebugAssert(textureSlotIndex >= 0);
 
-		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
-		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
-		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
+			const TextureAsset &textureAsset = textureDef.getTextureAsset(textureSlotIndex);
+			textureID0 = this->getTextureID(textureAsset);
+
+			DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
+			DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
+			pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
+		}
 
 		// @todo solve lights per mesh in RenderLightChunk :O as a temporary fix, could use lights in minVoxel
 		const RenderLightingType dummyLightingType = RenderLightingType::PerMesh;
@@ -1414,8 +1433,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		drawCall.texCoordBufferID = combinedFaceVertexBuffer->texCoordBufferID;
 		drawCall.indexBufferID = this->defaultQuadIndexBufferID;
 		drawCall.textureIDs[0] = textureID0;
-		drawCall.textureIDs[1] = -1;
-		drawCall.vertexShaderType = vertexShaderType;
+		drawCall.textureIDs[1] = textureID1;
+		drawCall.vertexShaderType = shadingDef.vertexShaderType;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = 0.0;
 		drawCall.lightingType = dummyLightingType;
