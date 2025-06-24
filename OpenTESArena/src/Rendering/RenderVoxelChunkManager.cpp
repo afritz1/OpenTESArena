@@ -1376,16 +1376,13 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			renderer.populateVertexAttributeBuffer(combinedFaceVertexBuffer->texCoordBufferID, quadVertexTexCoords);
 		}
 
-		// Use the texture/shading values of the first voxel.
-		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(minVoxel.x, minVoxel.y, minVoxel.z);
-		const VoxelShadingDefinition &shadingDef = voxelChunk.getShadingDef(shadingDefID);
-
 		VoxelChasmDefID chasmDefID;
 		bool isChasm = voxelChunk.tryGetChasmDefID(minVoxel.x, minVoxel.y, minVoxel.z, &chasmDefID);
 
+		// Use the texture/shading values of the first voxel.
+		const int textureSlotIndex = meshDef.findTextureSlotIndexWithFacing(facing);
 		ObjectTextureID textureID0 = -1;
 		ObjectTextureID textureID1 = -1;
-		PixelShaderType pixelShaderType = static_cast<PixelShaderType>(-1);
 		if (isChasm)
 		{
 			const bool isChasmFloor = facing == VoxelFacing3D::NegativeY;
@@ -1395,25 +1392,20 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			{
 				textureID1 = this->getChasmWallTextureID(chasmDefID);
 			}
-
-			// @todo this is probably wrong
-			const int chasmIndexBufferIndex = meshDef.findIndexBufferIndexWithFacing(facing);
-			pixelShaderType = shadingDef.pixelShaderTypes[chasmIndexBufferIndex];
 		}
 		else
 		{
 			const VoxelTextureDefID textureDefID = voxelChunk.getTextureDefID(minVoxel.x, minVoxel.y, minVoxel.z);
 			const VoxelTextureDefinition &textureDef = voxelChunk.getTextureDef(textureDefID);
-			const int textureSlotIndex = meshDef.findTextureSlotIndexWithFacing(facing);
-			DebugAssert(textureSlotIndex >= 0);
-
 			const TextureAsset &textureAsset = textureDef.getTextureAsset(textureSlotIndex);
 			textureID0 = this->getTextureID(textureAsset);
-
-			DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
-			DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
-			pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
 		}
+
+		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(minVoxel.x, minVoxel.y, minVoxel.z);
+		const VoxelShadingDefinition &shadingDef = voxelChunk.getShadingDef(shadingDefID);
+		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
+		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
+		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
 
 		// @todo solve lights per mesh in RenderLightChunk :O as a temporary fix, could use lights in minVoxel
 		const RenderLightingType dummyLightingType = RenderLightingType::PerMesh;

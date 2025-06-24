@@ -15,8 +15,8 @@ namespace
 	constexpr std::pair<const char*, int> MaterialNameTextureSlots[] =
 	{
 		{ "Ceiling", 0 },
-		{ "ChasmFloor", -1 }, // Screen-space texture not part of voxel texture definitions
-		{ "ChasmWall", 0 },
+		{ "ChasmFloor", 0 }, // Placeholder -- screen-space textures not part of voxel texture defs
+		{ "ChasmWall", 1 },
 		{ "Diagonal", 0 },
 		{ "Door", 0 },
 		{ "Edge", 0 },
