@@ -96,11 +96,11 @@ namespace ArenaMeshUtils
 		case ArenaVoxelType::Ceiling:
 		case ArenaVoxelType::Raised:
 		case ArenaVoxelType::TransparentWall:
+		case ArenaVoxelType::Chasm:
 		case ArenaVoxelType::Door:
 			return false;
 		case ArenaVoxelType::Diagonal:
 		case ArenaVoxelType::Edge:
-		case ArenaVoxelType::Chasm:
 			return true;
 		default:
 			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
