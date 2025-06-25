@@ -104,6 +104,7 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 						break;
 					case VoxelFacing3D::NegativeY:
 						shouldEnableChasmFace = true;
+						break;
 					case VoxelFacing3D::PositiveZ:
 						shouldEnableChasmFace = chasmWallInst.west;
 						break;
