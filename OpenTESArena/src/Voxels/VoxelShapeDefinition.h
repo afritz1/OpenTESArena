@@ -38,7 +38,8 @@ struct VoxelMeshDefinition
 
 	std::vector<double> rendererPositions, rendererNormals, rendererTexCoords;
 	std::vector<int32_t> indicesLists[MAX_DRAW_CALLS];
-	VoxelFacing3D facings[MAX_DRAW_CALLS]; // Up to 6 fully-covered voxel faces, associated with index buffers, used with face combining.
+	VoxelFacing3D facings[MAX_DRAW_CALLS]; // Up to 6 voxel faces, associated with index buffers, used with face combining.
+	bool fullFacingCoverages[MAX_DRAW_CALLS]; // Each voxel face that is physically covered by the mesh.
 	int textureSlotIndices[MAX_DRAW_CALLS]; // Maps index buffer to its voxel texture definition slot.
 	int indicesListCount;
 	int facingCount;
@@ -50,8 +51,10 @@ struct VoxelMeshDefinition
 
 	bool isEmpty() const;
 
-	// Finds the index buffer (if any) that fully covers the voxel facing. Used with mesh combining.
+	// Finds the index buffer (if any) associated with the voxel facing. Does not have to fully cover the voxel face, just has
+	// to represent that particular surface normal. Used with mesh combining.
 	int findIndexBufferIndexWithFacing(VoxelFacing3D facing) const;
+
 	int findTextureSlotIndexWithFacing(VoxelFacing3D facing) const;
 	bool hasFullCoverageOfFacing(VoxelFacing3D facing) const;
 };

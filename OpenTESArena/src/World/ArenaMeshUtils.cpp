@@ -99,6 +99,53 @@ void ArenaShapeInitCache::initDiagonalBoxValues(bool isRightDiagonal)
 	this->diagonal.isRightDiagonal = isRightDiagonal;
 }
 
+bool ArenaMeshUtils::isFullyCoveringFacing(const ArenaShapeInitCache &shapeInitCache, VoxelFacing3D facing)
+{
+	const ArenaVoxelType voxelType = shapeInitCache.voxelType;
+
+	switch (voxelType)
+	{
+	case ArenaVoxelType::None:
+		return false;
+	case ArenaVoxelType::Wall:
+		return true;
+	case ArenaVoxelType::Floor:
+		return facing == VoxelFacing3D::PositiveY;
+	case ArenaVoxelType::Ceiling:
+		return facing == VoxelFacing3D::NegativeY;
+	case ArenaVoxelType::Raised:
+	{
+		if (facing == VoxelFacing3D::PositiveY)
+		{
+			return MathUtils::almostEqual(shapeInitCache.boxYOffset + shapeInitCache.boxHeight, 1.0);
+		}
+		else if (facing == VoxelFacing3D::NegativeY)
+		{
+			return shapeInitCache.boxYOffset == 0.0;
+		}
+		else
+		{
+			return (shapeInitCache.boxYOffset == 0.0) && (shapeInitCache.boxHeight == 1.0);
+		}
+	}
+	case ArenaVoxelType::Diagonal:
+		return false;
+	case ArenaVoxelType::TransparentWall:
+		return (facing != VoxelFacing3D::PositiveY) && (facing != VoxelFacing3D::NegativeY);
+	case ArenaVoxelType::Edge:
+	{
+		const VoxelFacing3D edgeFacing = VoxelUtils::convertFaceTo3D(shapeInitCache.edge.facing);
+		return facing == edgeFacing;
+	}
+	case ArenaVoxelType::Chasm:
+		return facing == VoxelFacing3D::NegativeY;
+	case ArenaVoxelType::Door:
+		return false;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelType)));
+	}
+}
+
 void ArenaMeshUtils::writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices,
 	ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices)
 {

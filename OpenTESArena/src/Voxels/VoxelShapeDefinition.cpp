@@ -66,7 +66,9 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 
 		if (entry.facing.has_value())
 		{
-			this->facings[this->facingCount] = *entry.facing;
+			const VoxelFacing3D entryFacing = *entry.facing;
+			this->facings[this->facingCount] = entryFacing;
+			this->fullFacingCoverages[this->facingCount] = ArenaMeshUtils::isFullyCoveringFacing(shapeInitCache, entryFacing);
 			this->facingCount++;
 		}
 
@@ -292,10 +294,14 @@ int VoxelMeshDefinition::findTextureSlotIndexWithFacing(VoxelFacing3D facing) co
 
 bool VoxelMeshDefinition::hasFullCoverageOfFacing(VoxelFacing3D facing) const
 {
-	// @todo eventually this should analyze the mesh + indices, using vertex position checks w/ epsilons
-
 	const int indexBufferIndex = this->findIndexBufferIndexWithFacing(facing);
-	return indexBufferIndex >= 0;
+	if (indexBufferIndex < 0)
+	{
+		return false;
+	}
+
+	DebugAssertIndex(this->fullFacingCoverages, indexBufferIndex);
+	return this->fullFacingCoverages[indexBufferIndex];
 }
 
 VoxelShapeDefinition::VoxelShapeDefinition()

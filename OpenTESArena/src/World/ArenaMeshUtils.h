@@ -233,6 +233,8 @@ namespace ArenaMeshUtils
 		}
 	}
 
+	bool isFullyCoveringFacing(const ArenaShapeInitCache &shapeInitCache, VoxelFacing3D facing);
+
 	void writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
 
 }

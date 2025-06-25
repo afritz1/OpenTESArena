@@ -65,7 +65,7 @@ namespace
 		if (voxelShapeDef.allowsAdjacentFaceCombining)
 		{
 			const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
-			if (!voxelMeshDef.hasFullCoverageOfFacing(facing))
+			if (voxelMeshDef.findIndexBufferIndexWithFacing(facing) < 0)
 			{
 				return false;
 			}
@@ -340,7 +340,7 @@ void VoxelFaceCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxe
 			}
 
 			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
-			if (!meshDef.hasFullCoverageOfFacing(facing))
+			if (meshDef.findIndexBufferIndexWithFacing(facing) < 0)
 			{
 				continue;
 			}
