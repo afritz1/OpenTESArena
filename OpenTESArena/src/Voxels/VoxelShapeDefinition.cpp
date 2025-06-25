@@ -34,23 +34,33 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
 	Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(voxelType);
 
-	this->indicesListCount = meshEntries.getCount();
+	this->indicesListCount = 0;
 	this->facingCount = 0;
-	this->textureSlotIndexCount = meshEntries.getCount();
+	this->textureSlotIndexCount = 0;
 
 	int vertexCount = 0;
 	for (int i = 0; i < meshEntries.getCount(); i++)
 	{
 		const MeshLibraryEntry &entry = meshEntries[i];
+		if (voxelType == ArenaVoxelType::Edge)
+		{
+			const VoxelFacing3D edgeFacing3D = VoxelUtils::convertFaceTo3D(shapeInitCache.edge.facing);
+			if (entry.facing != edgeFacing3D)
+			{
+				continue;
+			}
+		}
 
 		Span<const int32_t> meshIndices = entry.vertexIndices;
-		std::vector<int32_t> &indicesList = this->indicesLists[i];
+		std::vector<int32_t> &indicesList = this->indicesLists[this->indicesListCount];
 		indicesList.resize(meshIndices.getCount());
 		std::transform(meshIndices.begin(), meshIndices.end(), indicesList.begin(),
 			[&vertexCount](const int32_t meshIndex)
 		{
 			return meshIndex + vertexCount;
 		});
+
+		this->indicesListCount++;
 
 		vertexCount += static_cast<int>(entry.vertices.size());
 
@@ -60,7 +70,8 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 			this->facingCount++;
 		}
 
-		this->textureSlotIndices[i] = entry.textureSlotIndex;
+		this->textureSlotIndices[this->textureSlotIndexCount] = entry.textureSlotIndex;
+		this->textureSlotIndexCount++;
 	}
 
 	const int rendererVertexPositionComponentCount = vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -128,7 +139,7 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 			{
 				const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 				const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX; 
+				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 
 				this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
 
@@ -205,38 +216,31 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 		}
 
 		const MeshLibraryEntry &edgeMeshEntry = meshEntries[edgeMeshEntryIndex];
-
 		double yMax = std::numeric_limits<double>::lowest();
-		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		for (const ObjVertex &sourceVertex : edgeMeshEntry.vertices)
 		{
-			for (const ObjVertex &sourceVertex : meshEntry.vertices)
-			{
-				yMax = std::max(yMax, sourceVertex.positionY);
-			}
+			yMax = std::max(yMax, sourceVertex.positionY);
 		}
 
 		int destinationVertexIndex = 0;
-		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		for (const ObjVertex &sourceVertex : edgeMeshEntry.vertices)
 		{
-			for (const ObjVertex &sourceVertex : meshEntry.vertices)
-			{
-				const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-				const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
-				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+			const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+			const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 
-				this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
-				this->rendererPositions[outPositionsIndex + 1] = sourceVertex.positionY + shapeInitCache.boxYOffset; // @todo move getScaledVertexY from RenderVoxelChunkManager here
-				this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+			this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+			this->rendererPositions[outPositionsIndex + 1] = sourceVertex.positionY + shapeInitCache.boxYOffset; // @todo move getScaledVertexY from RenderVoxelChunkManager here
+			this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
 
-				this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
-				this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
-				this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+			this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+			this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+			this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
 
-				this->rendererTexCoords[outTexCoordsIndex] = shapeInitCache.edge.flippedTexCoords ? std::clamp(1.0 - sourceVertex.texCoordU, 0.0, 1.0) : sourceVertex.texCoordU;
-				this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+			this->rendererTexCoords[outTexCoordsIndex] = shapeInitCache.edge.flippedTexCoords ? std::clamp(1.0 - sourceVertex.texCoordU, 0.0, 1.0) : sourceVertex.texCoordU;
+			this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
 
-				destinationVertexIndex++;
-			}
+			destinationVertexIndex++;
 		}
 
 		break;
