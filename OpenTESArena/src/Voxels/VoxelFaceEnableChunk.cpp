@@ -96,9 +96,16 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 				continue;
 			}
 
-			// Disable this voxel's face if the adjacent one blocks it completely.
 			const VoxelShapeDefID adjacentShapeDefID = voxelChunk.getShapeDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 			const VoxelShapeDefinition &adjacentShapeDef = voxelChunk.getShapeDef(adjacentShapeDefID);
+			const bool canAdjacentShapeDisableNeighborFaces = adjacentShapeDef.allowsInternalFaceRemoval;
+			if (!canAdjacentShapeDisableNeighborFaces)
+			{
+				// Adjacent face doesn't participate in face enabling/disabling.
+				faceEnableEntry.enabledFaces[faceIndex] = true;
+				continue;
+			}
+
 			const VoxelMeshDefinition &adjacentMeshDef = adjacentShapeDef.mesh;
 			const VoxelFacing3D adjacentFacing = VoxelUtils::getOppositeFacing(facing);
 			if (!adjacentMeshDef.hasFullCoverageOfFacing(adjacentFacing))

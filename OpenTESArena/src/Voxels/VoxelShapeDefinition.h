@@ -74,7 +74,7 @@ struct VoxelShapeDefinition
 	bool allowsBackFaces; // Back face culling for rendering.
 	bool allowsAdjacentDoorFaces; // For voxels that don't prevent a door's face from rendering.
 	bool allowsInternalFaceRemoval; // For voxels that can disable their faces when blocked by an opaque neighbor's face.
-	bool allowsAdjacentFaceCombining; // For voxels that can combine their faces with adjacent voxel faces to create a larger mesh.
+	bool allowsAdjacentFaceCombining; // For voxels that can combine their faces with adjacent voxel faces in the same plane to create a larger mesh.
 	bool enablesNeighborGeometry; // For voxels that influence adjacent context-sensitive voxels like chasms.
 	bool isContextSensitive; // For voxels like chasms whose geometry is conditional to what's around them.
 	bool isElevatedPlatform; // For voxels that entities sit on top of and for letting player sleep in peace.
