@@ -71,6 +71,15 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 
 		VoxelChasmDefID chasmDefID;
 		const bool isChasm = voxelChunk.tryGetChasmDefID(voxel.x, voxel.y, voxel.z, &chasmDefID);
+		const VoxelChasmWallInstance *chasmWallInst = nullptr;
+		if (isChasm)
+		{
+			int chasmWallInstIndex;
+			if (voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmWallInstIndex))
+			{
+				chasmWallInst = &voxelChunk.getChasmWallInsts()[chasmWallInstIndex];
+			}			
+		}
 
 		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
@@ -90,26 +99,24 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 				// Face enabling is determined by chasm wall instance.
 				bool shouldEnableChasmFace = false;
 
-				int chasmWallInstIndex;
-				if (voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmWallInstIndex))
+				if (chasmWallInst != nullptr)
 				{
-					const VoxelChasmWallInstance &chasmWallInst = voxelChunk.getChasmWallInsts()[chasmWallInstIndex];
 					switch (facing)
 					{
 					case VoxelFacing3D::PositiveX:
-						shouldEnableChasmFace = chasmWallInst.south;
+						shouldEnableChasmFace = chasmWallInst->south;
 						break;
 					case VoxelFacing3D::NegativeX:
-						shouldEnableChasmFace = chasmWallInst.north;
+						shouldEnableChasmFace = chasmWallInst->north;
 						break;
 					case VoxelFacing3D::NegativeY:
 						shouldEnableChasmFace = true;
 						break;
 					case VoxelFacing3D::PositiveZ:
-						shouldEnableChasmFace = chasmWallInst.west;
+						shouldEnableChasmFace = chasmWallInst->west;
 						break;
 					case VoxelFacing3D::NegativeZ:
-						shouldEnableChasmFace = chasmWallInst.east;
+						shouldEnableChasmFace = chasmWallInst->east;
 						break;
 					default:
 						break;
