@@ -751,6 +751,7 @@ namespace
 		VertexShaderType vertexShaderType;
 		PixelShaderType pixelShaderType;
 		double pixelShaderParam0;
+		bool enableBackFaceCulling;
 		bool enableDepthRead;
 		bool enableDepthWrite;
 	};
@@ -2764,7 +2765,7 @@ namespace
 		}
 	};
 
-	void ProcessClipSpaceTrianglesForBinning(int workerDrawCallIndex, const ClippingOutputCache &clippingOutputCache, RasterizerInputCache &rasterizerInputCache)
+	void ProcessClipSpaceTrianglesForBinning(int workerDrawCallIndex, bool enableBackFaceCulling, const ClippingOutputCache &clippingOutputCache, RasterizerInputCache &rasterizerInputCache)
 	{
 		const auto &clipSpaceMeshV0XYZWs = clippingOutputCache.clipSpaceMeshV0XYZWArray;
 		const auto &clipSpaceMeshV1XYZWs = clippingOutputCache.clipSpaceMeshV1XYZWArray;
@@ -2779,53 +2780,77 @@ namespace
 			const auto &clipSpaceMeshV0XYZW = clipSpaceMeshV0XYZWs[meshTriangleIndex];
 			const auto &clipSpaceMeshV1XYZW = clipSpaceMeshV1XYZWs[meshTriangleIndex];
 			const auto &clipSpaceMeshV2XYZW = clipSpaceMeshV2XYZWs[meshTriangleIndex];
-			const double clip0X = clipSpaceMeshV0XYZW[0];
-			const double clip0Y = clipSpaceMeshV0XYZW[1];
-			const double clip0Z = clipSpaceMeshV0XYZW[2];
-			const double clip0W = clipSpaceMeshV0XYZW[3];
+			double clip0X = clipSpaceMeshV0XYZW[0];
+			double clip0Y = clipSpaceMeshV0XYZW[1];
+			double clip0Z = clipSpaceMeshV0XYZW[2];
+			double clip0W = clipSpaceMeshV0XYZW[3];
 			const double clip1X = clipSpaceMeshV1XYZW[0];
 			const double clip1Y = clipSpaceMeshV1XYZW[1];
 			const double clip1Z = clipSpaceMeshV1XYZW[2];
 			const double clip1W = clipSpaceMeshV1XYZW[3];
-			const double clip2X = clipSpaceMeshV2XYZW[0];
-			const double clip2Y = clipSpaceMeshV2XYZW[1];
-			const double clip2Z = clipSpaceMeshV2XYZW[2];
-			const double clip2W = clipSpaceMeshV2XYZW[3];
-			const double clip0WRecip = 1.0 / clip0W;
+			double clip2X = clipSpaceMeshV2XYZW[0];
+			double clip2Y = clipSpaceMeshV2XYZW[1];
+			double clip2Z = clipSpaceMeshV2XYZW[2];
+			double clip2W = clipSpaceMeshV2XYZW[3];
+			double clip0WRecip = 1.0 / clip0W;
 			const double clip1WRecip = 1.0 / clip1W;
-			const double clip2WRecip = 1.0 / clip2W;
-			const double ndc0X = clip0X * clip0WRecip;
-			const double ndc0Y = clip0Y * clip0WRecip;
-			const double ndc0Z = clip0Z * clip0WRecip;
+			double clip2WRecip = 1.0 / clip2W;
+			double ndc0X = clip0X * clip0WRecip;
+			double ndc0Y = clip0Y * clip0WRecip;
+			double ndc0Z = clip0Z * clip0WRecip;
 			const double ndc1X = clip1X * clip1WRecip;
 			const double ndc1Y = clip1Y * clip1WRecip;
 			const double ndc1Z = clip1Z * clip1WRecip;
-			const double ndc2X = clip2X * clip2WRecip;
-			const double ndc2Y = clip2Y * clip2WRecip;
-			const double ndc2Z = clip2Z * clip2WRecip;
-			const double screenSpace0X = NdcXToScreenSpace(ndc0X, g_frameBufferWidthReal);
-			const double screenSpace0Y = NdcYToScreenSpace(ndc0Y, g_frameBufferHeightReal);
+			double ndc2X = clip2X * clip2WRecip;
+			double ndc2Y = clip2Y * clip2WRecip;
+			double ndc2Z = clip2Z * clip2WRecip;
+			double screenSpace0X = NdcXToScreenSpace(ndc0X, g_frameBufferWidthReal);
+			double screenSpace0Y = NdcYToScreenSpace(ndc0Y, g_frameBufferHeightReal);
 			const double screenSpace1X = NdcXToScreenSpace(ndc1X, g_frameBufferWidthReal);
 			const double screenSpace1Y = NdcYToScreenSpace(ndc1Y, g_frameBufferHeightReal);
-			const double screenSpace2X = NdcXToScreenSpace(ndc2X, g_frameBufferWidthReal);
-			const double screenSpace2Y = NdcYToScreenSpace(ndc2Y, g_frameBufferHeightReal);
-			const double screenSpace01X = screenSpace1X - screenSpace0X;
-			const double screenSpace01Y = screenSpace1Y - screenSpace0Y;
-			const double screenSpace12X = screenSpace2X - screenSpace1X;
-			const double screenSpace12Y = screenSpace2Y - screenSpace1Y;
-			const double screenSpace20X = screenSpace0X - screenSpace2X;
-			const double screenSpace20Y = screenSpace0Y - screenSpace2Y;
+			double screenSpace2X = NdcXToScreenSpace(ndc2X, g_frameBufferWidthReal);
+			double screenSpace2Y = NdcYToScreenSpace(ndc2Y, g_frameBufferHeightReal);
 
-			double screenSpace01Cross12, screenSpace12Cross20, screenSpace20Cross01;
-			Double2_CrossN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace01X, &screenSpace01Y, &screenSpace01Cross12);
-			Double2_CrossN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace12X, &screenSpace12Y, &screenSpace12Cross20);
-			Double2_CrossN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace20X, &screenSpace20Y, &screenSpace20Cross01);
+			const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[meshTriangleIndex];
+			const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[meshTriangleIndex];
+			const auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[meshTriangleIndex];
+			double uv0X = clipSpaceMeshUV0XY[0];
+			double uv0Y = clipSpaceMeshUV0XY[1];
+			const double uv1X = clipSpaceMeshUV1XY[0];
+			const double uv1Y = clipSpaceMeshUV1XY[1];
+			double uv2X = clipSpaceMeshUV2XY[0];
+			double uv2Y = clipSpaceMeshUV2XY[1];
+			double uv0XDivW = uv0X * clip0WRecip;
+			double uv0YDivW = uv0Y * clip0WRecip;
+			const double uv1XDivW = uv1X * clip1WRecip;
+			const double uv1YDivW = uv1Y * clip1WRecip;
+			double uv2XDivW = uv2X * clip2WRecip;
+			double uv2YDivW = uv2Y * clip2WRecip;
 
-			// Discard back-facing.
-			const bool isFrontFacing = (screenSpace01Cross12 + screenSpace12Cross20 + screenSpace20Cross01) > 0.0;
+			const double screenSpaceCrossProduct = ((screenSpace1Y - screenSpace0Y) * (screenSpace2X - screenSpace0X)) - ((screenSpace1X - screenSpace0X) * (screenSpace2Y - screenSpace0Y));
+			const bool isFrontFacing = screenSpaceCrossProduct > 0.0;
 			if (!isFrontFacing)
 			{
-				continue;
+				if (enableBackFaceCulling)
+				{
+					continue;
+				}
+
+				// Swap first and last vertices so it's front facing for the rasterizer.
+				std::swap(clip0X, clip2X);
+				std::swap(clip0Y, clip2Y);
+				std::swap(clip0Z, clip2Z);
+				std::swap(clip0W, clip2W);
+				std::swap(clip0WRecip, clip2WRecip);
+				std::swap(ndc0X, ndc2X);
+				std::swap(ndc0Y, ndc2Y);
+				std::swap(ndc0Z, ndc2Z);
+				std::swap(screenSpace0X, screenSpace2X);
+				std::swap(screenSpace0Y, screenSpace2Y);
+				std::swap(uv0X, uv2X);
+				std::swap(uv0Y, uv2Y);
+				std::swap(uv0XDivW, uv2XDivW);
+				std::swap(uv0YDivW, uv2YDivW);
 			}
 
 			// Naive screen-space bounding box around triangle.
@@ -2844,28 +2869,19 @@ namespace
 				continue;
 			}
 
+			const double screenSpace01X = screenSpace1X - screenSpace0X;
+			const double screenSpace01Y = screenSpace1Y - screenSpace0Y;
+			const double screenSpace12X = screenSpace2X - screenSpace1X;
+			const double screenSpace12Y = screenSpace2Y - screenSpace1Y;
+			const double screenSpace20X = screenSpace0X - screenSpace2X;
+			const double screenSpace20Y = screenSpace0Y - screenSpace2Y;
+
 			double screenSpace01PerpX, screenSpace01PerpY;
 			double screenSpace12PerpX, screenSpace12PerpY;
 			double screenSpace20PerpX, screenSpace20PerpY;
 			Double2_RightPerpN<1>(&screenSpace01X, &screenSpace01Y, &screenSpace01PerpX, &screenSpace01PerpY);
 			Double2_RightPerpN<1>(&screenSpace12X, &screenSpace12Y, &screenSpace12PerpX, &screenSpace12PerpY);
 			Double2_RightPerpN<1>(&screenSpace20X, &screenSpace20Y, &screenSpace20PerpX, &screenSpace20PerpY);
-
-			const auto &clipSpaceMeshUV0XY = clipSpaceMeshUV0XYs[meshTriangleIndex];
-			const auto &clipSpaceMeshUV1XY = clipSpaceMeshUV1XYs[meshTriangleIndex];
-			const auto &clipSpaceMeshUV2XY = clipSpaceMeshUV2XYs[meshTriangleIndex];
-			const double uv0X = clipSpaceMeshUV0XY[0];
-			const double uv0Y = clipSpaceMeshUV0XY[1];
-			const double uv1X = clipSpaceMeshUV1XY[0];
-			const double uv1Y = clipSpaceMeshUV1XY[1];
-			const double uv2X = clipSpaceMeshUV2XY[0];
-			const double uv2Y = clipSpaceMeshUV2XY[1];
-			const double uv0XDivW = uv0X * clip0WRecip;
-			const double uv0YDivW = uv0Y * clip0WRecip;
-			const double uv1XDivW = uv1X * clip1WRecip;
-			const double uv1YDivW = uv1Y * clip1WRecip;
-			const double uv2XDivW = uv2X * clip2WRecip;
-			const double uv2YDivW = uv2Y * clip2WRecip;
 
 			// Write triangle to this worker's list.
 			auto &outputTriangles = rasterizerInputCache.triangles;
@@ -3198,7 +3214,7 @@ namespace
 					const bool isPixelCenterIn1 = pixelCenterDot1 >= 0.0;
 					const bool isPixelCenterIn2 = pixelCenterDot2 >= 0.0;
 					const bool pixelCenterHasCoverage = isPixelCenterIn0 && isPixelCenterIn1 && isPixelCenterIn2;
-					
+
 					totalCoverageTests++;
 
 					if (!pixelCenterHasCoverage)
@@ -3505,7 +3521,7 @@ namespace
 	struct Worker
 	{
 		std::thread thread;
-		
+
 		DrawCallCache drawCallCaches[MAX_WORKER_DRAW_CALLS_PER_LOOP];
 		TransformCache transformCaches[MAX_WORKER_DRAW_CALLS_PER_LOOP];
 		int drawCallStartIndex, drawCallCount;
@@ -3553,7 +3569,7 @@ namespace
 				CalculateVertexShaderTransforms(transformCache);
 				ProcessVertexShaders(drawCallCache.vertexShaderType, transformCache, vertexShaderInputCache, vertexShaderOutputCache);
 				ProcessClipping(drawCallCache, vertexShaderOutputCache, clippingOutputCache);
-				ProcessClipSpaceTrianglesForBinning(drawCallIndex, clippingOutputCache, rasterizerInputCache);
+				ProcessClipSpaceTrianglesForBinning(drawCallIndex, drawCallCache.enableBackFaceCulling, clippingOutputCache, rasterizerInputCache);
 			}
 
 			// Clear screen before rasterization sync as frame buffer rows are faster than bin rows.
@@ -4328,6 +4344,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					auto &drawCallCacheVertexShaderType = workerDrawCallCache.vertexShaderType;
 					auto &drawCallCachePixelShaderType = workerDrawCallCache.pixelShaderType;
 					auto &drawCallCachePixelShaderParam0 = workerDrawCallCache.pixelShaderParam0;
+					auto &drawCallCacheEnableBackFaceCulling = workerDrawCallCache.enableBackFaceCulling;
 					auto &drawCallCacheEnableDepthRead = workerDrawCallCache.enableDepthRead;
 					auto &drawCallCacheEnableDepthWrite = workerDrawCallCache.enableDepthWrite;
 
@@ -4366,6 +4383,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					drawCallCacheVertexShaderType = drawCall.vertexShaderType;
 					drawCallCachePixelShaderType = drawCall.pixelShaderType;
 					drawCallCachePixelShaderParam0 = drawCall.pixelShaderParam0;
+					drawCallCacheEnableBackFaceCulling = drawCall.enableBackFaceCulling;
 					drawCallCacheEnableDepthRead = drawCall.enableDepthRead;
 					drawCallCacheEnableDepthWrite = drawCall.enableDepthWrite;
 				}
@@ -4385,7 +4403,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 			});
 
 			shouldWorkersClearFrameBuffer = false;
-			
+
 			for (Worker &worker : g_workers)
 			{
 				DebugAssert(worker.shouldWorkOnDrawCalls);
