@@ -300,6 +300,7 @@ void RenderEntityChunkManager::addDrawCall(UniformBufferID transformBufferID, in
 	drawCall.vertexShaderType = VertexShaderType::Entity;
 	drawCall.pixelShaderType = pixelShaderType;
 	drawCall.pixelShaderParam0 = 0.0;
+	drawCall.enableBackFaceCulling = true;
 	drawCall.enableDepthRead = true;
 	drawCall.enableDepthWrite = true;
 

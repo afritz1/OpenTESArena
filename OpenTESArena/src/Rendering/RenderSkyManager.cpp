@@ -302,6 +302,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.vertexShaderType = VertexShaderType::Basic;
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
+	this->bgDrawCall.enableBackFaceCulling = false;
 	this->bgDrawCall.enableDepthRead = false;
 	this->bgDrawCall.enableDepthWrite = false;
 
@@ -747,6 +748,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.vertexShaderType = VertexShaderType::Basic;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = 0.0;
+		drawCall.enableBackFaceCulling = false;
 		drawCall.enableDepthRead = false;
 		drawCall.enableDepthWrite = false;
 		this->objectDrawCalls.emplace_back(std::move(drawCall));

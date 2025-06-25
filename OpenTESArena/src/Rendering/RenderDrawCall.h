@@ -33,6 +33,7 @@ struct RenderDrawCall
 	PixelShaderType pixelShaderType;
 	double pixelShaderParam0; // For specialized values like texture coordinate manipulation.
 
+	bool enableBackFaceCulling;
 	bool enableDepthRead;
 	bool enableDepthWrite;
 

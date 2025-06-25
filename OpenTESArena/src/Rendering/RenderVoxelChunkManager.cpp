@@ -1133,6 +1133,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 				doorDrawCall.lightPercent = lightingInitInfo.percent;
 				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(doorDrawCall.lightIDs));
 				doorDrawCall.lightIdCount = lightingInitInfo.idCount;
+				doorDrawCall.enableBackFaceCulling = true;
 				doorDrawCall.enableDepthRead = true;
 				doorDrawCall.enableDepthWrite = true;
 
@@ -1166,6 +1167,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 				chasmDrawCall.lightPercent = lightingInitInfo.percent;
 				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(chasmDrawCall.lightIDs));
 				chasmDrawCall.lightIdCount = lightingInitInfo.idCount;
+				chasmDrawCall.enableBackFaceCulling = false;
 				chasmDrawCall.enableDepthRead = true;
 				chasmDrawCall.enableDepthWrite = true;
 			}
@@ -1197,6 +1199,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 				drawCall.lightPercent = lightingInitInfo.percent;
 				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(drawCall.lightIDs));
 				drawCall.lightIdCount = lightingInitInfo.idCount;
+				drawCall.enableBackFaceCulling = true;
 				drawCall.enableDepthRead = true;
 				drawCall.enableDepthWrite = true;
 			}
@@ -1433,6 +1436,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		drawCall.lightPercent = dummyLightIntensity;
 		//std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(drawCall.lightIDs));
 		drawCall.lightIdCount = 0;
+		drawCall.enableBackFaceCulling = !shapeDef.allowsBackFaces;
 		drawCall.enableDepthRead = true;
 		drawCall.enableDepthWrite = true;
 	}
