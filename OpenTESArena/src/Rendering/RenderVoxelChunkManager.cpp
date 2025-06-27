@@ -1202,7 +1202,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 				drawCall.lightPercent = lightingInitInfo.percent;
 				std::copy(std::begin(lightingInitInfo.ids), std::end(lightingInitInfo.ids), std::begin(drawCall.lightIDs));
 				drawCall.lightIdCount = lightingInitInfo.idCount;
-				drawCall.enableBackFaceCulling = true;
+				drawCall.enableBackFaceCulling = !voxelShapeDef.allowsBackFaces;
 				drawCall.enableDepthRead = true;
 				drawCall.enableDepthWrite = true;
 			}

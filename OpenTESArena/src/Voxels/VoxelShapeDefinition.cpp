@@ -178,7 +178,7 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 	{
 		DebugAssert(shapeInitCache.voxelType == ArenaVoxelType::Diagonal);
 
-		const int diagonalMeshEntryIndex = shapeInitCache.diagonal.isRightDiagonal ? 1 : 0;
+		const int diagonalMeshEntryIndex = shapeInitCache.diagonal.isRightDiagonal ? 0 : 1;
 		const MeshLibraryEntry &diagonalMeshEntry = meshEntries[diagonalMeshEntryIndex];
 
 		int destinationVertexIndex = 0;
