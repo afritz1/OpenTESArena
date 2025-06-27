@@ -38,9 +38,9 @@ void VoxelFaceEnableChunkManager::update(Span<const ChunkInt2> activeChunkPositi
 	{
 		VoxelFaceEnableChunk &faceEnableChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		Span<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
-		Span<const VoxelInt3> dirtyChasmWallInstVoxels = voxelChunk.getDirtyChasmWallInstPositions();
-		faceEnableChunk.update(dirtyVoxels, voxelChunk);
-		faceEnableChunk.update(dirtyChasmWallInstVoxels, voxelChunk);
+		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.getDirtyShapeDefPositions();
+		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.getDirtyFaceActivationPositions();
+		faceEnableChunk.update(dirtyShapeDefVoxels, voxelChunk);
+		faceEnableChunk.update(dirtyFaceActivationVoxels, voxelChunk);
 	}
 }

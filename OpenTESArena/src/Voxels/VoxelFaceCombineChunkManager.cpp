@@ -45,7 +45,8 @@ void VoxelFaceCombineChunkManager::update(Span<const ChunkInt2> activeChunkPosit
 		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.getDirtyShapeDefPositions();
 		faceCombineChunk.update(dirtyShapeDefVoxels, voxelChunk, faceEnableChunk);
 
-		// @todo may want a face enable dirty type as well which becomes dirty when an adjacent mesh def changes, possibly changing the blockage of that face
+		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.getDirtyFaceActivationPositions();
+		faceCombineChunk.update(dirtyFaceActivationVoxels, voxelChunk, faceEnableChunk);
 
 		// Rebuild combined faces due to changes in material.
 		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();

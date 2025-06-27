@@ -744,7 +744,10 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 			continue;
 		}
 
-		// @todo: if voxel participates in face combining algorithm, then continue
+		if (voxelShapeDef.allowsAdjacentFaceCombining)
+		{
+			continue;
+		}
 
 		const VoxelTextureDefID voxelTextureDefID = voxelChunk.getTextureDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShadingDefID voxelShadingDefID = voxelChunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
@@ -1438,8 +1441,11 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		if (voxelChunk.tryGetFadeAnimInstIndex(minVoxel.x, minVoxel.y, minVoxel.z, &fadeAnimInstIndex))
 		{
 			const VoxelFadeAnimationInstance &fadeAnimInst = voxelChunk.getFadeAnimInsts()[fadeAnimInstIndex];
-			lightingType = RenderLightingType::PerMesh;
-			lightIntensity = std::clamp(1.0 - fadeAnimInst.percentFaded, 0.0, 1.0);
+			if (!fadeAnimInst.isDoneFading())
+			{
+				lightingType = RenderLightingType::PerMesh;
+				lightIntensity = std::clamp(1.0 - fadeAnimInst.percentFaded, 0.0, 1.0);
+			}			
 		}
 
 		constexpr int drawCallCount = 1;
@@ -1577,10 +1583,10 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtPosition(chunkPos);
 		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 
-		Span<const VoxelInt3> dirtyChasmWallInstVoxels = voxelChunk.getDirtyChasmWallInstPositions();
-		for (const VoxelInt3 chasmWallPos : dirtyChasmWallInstVoxels)
+		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.getDirtyFaceActivationPositions();
+		for (const VoxelInt3 dirtyFaceActivationPos : dirtyFaceActivationVoxels)
 		{
-			this->loadChasmWall(renderChunk, voxelChunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
+			this->loadChasmWall(renderChunk, voxelChunk, dirtyFaceActivationPos.x, dirtyFaceActivationPos.y, dirtyFaceActivationPos.z);
 		}
 
 		// Update door render transforms (rotation angle, etc.).
@@ -1610,26 +1616,25 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 			}
 		}
 
+		const VoxelFaceCombineChunk &faceCombineChunk = voxelFaceCombineChunkManager.getChunkAtPosition(chunkPos);
+
 		// Update draw calls of dirty voxels.
 		// - @todo: there is some double/triple updating possible here, maybe optimize.
 		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.getDirtyShapeDefPositions();
 		Span<const VoxelInt3> dirtyDoorVisInstVoxels = voxelChunk.getDirtyDoorVisInstPositions();
 		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
 		Span<const VoxelInt3> dirtyLightVoxels = renderLightChunk.dirtyVoxelPositions;
-		//this->updateChunkVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
-		//this->updateChunkVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
-		//this->updateChunkVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
-		//this->updateChunkVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
-		//this->updateChunkVoxelDrawCalls(renderChunk, dirtyChasmWallInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
-		//this->updateChunkVoxelDrawCalls(renderChunk, dirtyLightVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
-
-		const VoxelFaceCombineChunk &faceCombineChunk = voxelFaceCombineChunkManager.getChunkAtPosition(chunkPos);
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
+		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
-		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyChasmWallInstVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyLightVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
+		this->updateChunkVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
+		this->updateChunkVoxelDrawCalls(renderChunk, dirtyLightVoxels, voxelChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent);
 	}
 
 	this->rebuildDrawCallsList(voxelFrustumCullingChunkManager);

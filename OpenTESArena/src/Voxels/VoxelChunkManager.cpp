@@ -715,14 +715,14 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 
 				if (shouldDirtyChasmWallInst)
 				{
-					chunk.addDirtyChasmWallInstPosition(voxel);
+					chunk.addDirtyFaceActivationPosition(voxel);
 				}
 			}
 			else
 			{
 				// The chasm wall instance no longer has any interesting data.
 				chunk.removeChasmWallInst(voxel);
-				chunk.addDirtyChasmWallInstPosition(voxel);
+				chunk.addDirtyFaceActivationPosition(voxel);
 			}
 		}
 		else
@@ -736,7 +736,7 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 				VoxelChasmWallInstance chasmWallInst;
 				chasmWallInst.init(x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
 				chunk.addChasmWallInst(std::move(chasmWallInst));
-				chunk.addDirtyChasmWallInstPosition(voxel);
+				chunk.addDirtyFaceActivationPosition(voxel);
 			}
 		}
 	}
@@ -832,19 +832,19 @@ void VoxelChunkManager::update(double dt, Span<const ChunkInt2> newChunkPosition
 	for (int i = 0; i < activeChunkCount; i++)
 	{
 		ChunkPtr &chunkPtr = this->activeChunks[i];
-		Span<const VoxelInt3> oldDirtyChasmWallPositions = chunkPtr->getDirtyChasmWallInstPositions();
-		if (oldDirtyChasmWallPositions.getCount() == 0)
+		Span<const VoxelInt3> oldDirtyFaceActivationPositions = chunkPtr->getDirtyFaceActivationPositions();
+		if (oldDirtyFaceActivationPositions.getCount() == 0)
 		{
 			continue;
 		}
 
 		// Cache the existing dirty chasm walls since they get invalidated below.
-		Buffer<VoxelInt3> cachedDirtyChasmWallPositions(oldDirtyChasmWallPositions.getCount());
-		std::copy(oldDirtyChasmWallPositions.begin(), oldDirtyChasmWallPositions.end(), cachedDirtyChasmWallPositions.begin());
+		Buffer<VoxelInt3> cachedDirtyFaceActivationPositions(oldDirtyFaceActivationPositions.getCount());
+		std::copy(oldDirtyFaceActivationPositions.begin(), oldDirtyFaceActivationPositions.end(), cachedDirtyFaceActivationPositions.begin());
 
-		for (const VoxelInt3 dirtyChasmWallPos : cachedDirtyChasmWallPositions)
+		for (const VoxelInt3 dirtyFaceActivationPos : cachedDirtyFaceActivationPositions)
 		{
-			const CoordInt3 coord(chunkPtr->position, dirtyChasmWallPos);
+			const CoordInt3 coord(chunkPtr->position, dirtyFaceActivationPos);
 			const CoordInt3 adjacentCoords[] =
 			{
 				VoxelUtils::getCoordWithOffset(coord, VoxelUtils::North),
@@ -863,7 +863,7 @@ void VoxelChunkManager::update(double dt, Span<const ChunkInt2> newChunkPosition
 					int dummyChasmWallInstIndex;
 					if (adjacentChunk.tryGetChasmWallInstIndex(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z, &dummyChasmWallInstIndex))
 					{
-						adjacentChunk.addDirtyChasmWallInstPosition(adjacentVoxel);
+						adjacentChunk.addDirtyFaceActivationPosition(adjacentVoxel);
 					}
 				}
 			}
@@ -877,9 +877,9 @@ void VoxelChunkManager::update(double dt, Span<const ChunkInt2> newChunkPosition
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		VoxelChunk &chunk = *chunkPtr;
 
-		for (const VoxelInt3 chasmWallPos : chunk.getDirtyChasmWallInstPositions())
+		for (const VoxelInt3 dirtyFaceActivationPos : chunk.getDirtyFaceActivationPositions())
 		{
-			this->updateChasmWallInst(chunk, chasmWallPos.x, chasmWallPos.y, chasmWallPos.z);
+			this->updateChasmWallInst(chunk, dirtyFaceActivationPos.x, dirtyFaceActivationPos.y, dirtyFaceActivationPos.z);
 		}
 
 		// North and south sides.

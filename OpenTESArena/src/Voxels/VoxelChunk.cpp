@@ -216,6 +216,11 @@ Span<const VoxelInt3> VoxelChunk::getDirtyShapeDefPositions() const
 	return this->dirtyShapeDefPositions;
 }
 
+Span<const VoxelInt3> VoxelChunk::getDirtyFaceActivationPositions() const
+{
+	return this->dirtyFaceActivationPositions;
+}
+
 Span<const VoxelInt3> VoxelChunk::getDirtyDoorAnimInstPositions() const
 {
 	return this->dirtyDoorAnimInstPositions;
@@ -229,11 +234,6 @@ Span<const VoxelInt3> VoxelChunk::getDirtyDoorVisInstPositions() const
 Span<const VoxelInt3> VoxelChunk::getDirtyFadeAnimInstPositions() const
 {
 	return this->dirtyFadeAnimInstPositions;
-}
-
-Span<const VoxelInt3> VoxelChunk::getDirtyChasmWallInstPositions() const
-{
-	return this->dirtyChasmWallInstPositions;
 }
 
 bool VoxelChunk::tryGetTransitionDefID(SNInt x, int y, WEInt z, VoxelTransitionDefID *outID) const
@@ -602,9 +602,9 @@ void VoxelChunk::addChasmDefPosition(VoxelChasmDefID id, const VoxelInt3 &voxel)
 	this->chasmDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addDirtyChasmWallInstPosition(const VoxelInt3 &voxel)
+void VoxelChunk::addDirtyFaceActivationPosition(const VoxelInt3 &voxel)
 {
-	this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
+	this->setFaceActivationDirty(voxel.x, voxel.y, voxel.z);
 }
 
 void VoxelChunk::addDirtyDoorVisInstPosition(const VoxelInt3 &voxel)
@@ -672,6 +672,11 @@ void VoxelChunk::setShapeDefDirty(SNInt x, int y, WEInt z)
 	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyShapeDefPositions, VoxelDirtyType::ShapeDefinition);
 }
 
+void VoxelChunk::setFaceActivationDirty(SNInt x, int y, WEInt z)
+{
+	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyFaceActivationPositions, VoxelDirtyType::FaceActivation);
+}
+
 void VoxelChunk::setDoorAnimInstDirty(SNInt x, int y, WEInt z)
 {
 	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyDoorAnimInstPositions, VoxelDirtyType::DoorAnimation);
@@ -685,11 +690,6 @@ void VoxelChunk::setDoorVisInstDirty(SNInt x, int y, WEInt z)
 void VoxelChunk::setFadeAnimInstDirty(SNInt x, int y, WEInt z)
 {
 	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyFadeAnimInstPositions, VoxelDirtyType::FadeAnimation);
-}
-
-void VoxelChunk::setChasmWallInstDirty(SNInt x, int y, WEInt z)
-{
-	this->trySetVoxelDirtyInternal(x, y, z, this->dirtyChasmWallInstPositions, VoxelDirtyType::ChasmWall);
 }
 
 void VoxelChunk::updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord, double ceilingScale, AudioManager &audioManager)
@@ -780,7 +780,7 @@ void VoxelChunk::updateFadeAnimInsts(double dt)
 				this->setShadingDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementShadingDefID);
 				this->setTraitsDefID(voxel.x, voxel.y, voxel.z, this->floorReplacementTraitsDefID);
 				this->chasmDefIndices.emplace(voxel, this->floorReplacementChasmDefID);
-				this->setChasmWallInstDirty(voxel.x, voxel.y, voxel.z);
+				this->setFaceActivationDirty(voxel.x, voxel.y, voxel.z);
 			}
 			else
 			{
@@ -805,6 +805,25 @@ void VoxelChunk::updateFadeAnimInsts(double dt)
 				tryEraseVoxelMapEntry(this->buildingNameIndices);
 				tryEraseVoxelMapEntry(this->doorDefIndices);
 				tryEraseVoxelMapEntry(this->chasmDefIndices);
+
+				// Set adjacent face activations dirty in case they became unblocked.
+				const VoxelInt3 adjacentVoxels[] =
+				{
+					VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitX),
+					VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitX),
+					VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitY),
+					VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitY),
+					VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitZ),
+					VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitZ)
+				};
+
+				for (const VoxelInt3 adjacentVoxel : adjacentVoxels)
+				{
+					if (this->isValidVoxel(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z))
+					{
+						this->setFaceActivationDirty(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+					}
+				}
 			}
 
 			this->destroyedFadeAnimInsts.emplace_back(voxel);
@@ -820,10 +839,10 @@ void VoxelChunk::endFrame()
 {
 	this->dirtyVoxelTypes.fill(static_cast<VoxelDirtyType>(0));
 	this->dirtyShapeDefPositions.clear();
+	this->dirtyFaceActivationPositions.clear();
 	this->dirtyDoorAnimInstPositions.clear();
 	this->dirtyDoorVisInstPositions.clear();
 	this->dirtyFadeAnimInstPositions.clear();
-	this->dirtyChasmWallInstPositions.clear();
 
 	for (const VoxelInt3 position : this->destroyedDoorAnimInsts)
 	{
@@ -872,10 +891,10 @@ void VoxelChunk::clear()
 	this->traitsDefIDs.clear();
 	this->dirtyVoxelTypes.clear();
 	this->dirtyShapeDefPositions.clear();
+	this->dirtyFaceActivationPositions.clear();
 	this->dirtyDoorAnimInstPositions.clear();
 	this->dirtyDoorVisInstPositions.clear();
 	this->dirtyFadeAnimInstPositions.clear();
-	this->dirtyChasmWallInstPositions.clear();
 	this->transitionDefIndices.clear();
 	this->triggerDefIndices.clear();
 	this->lockDefIndices.clear();

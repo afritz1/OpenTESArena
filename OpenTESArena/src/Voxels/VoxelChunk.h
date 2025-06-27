@@ -71,10 +71,10 @@ private:
 	// Voxels that changed this frame. Reset at end-of-frame.
 	Buffer3D<VoxelDirtyType> dirtyVoxelTypes;
 	std::vector<VoxelInt3> dirtyShapeDefPositions;
+	std::vector<VoxelInt3> dirtyFaceActivationPositions;
 	std::vector<VoxelInt3> dirtyDoorAnimInstPositions;
 	std::vector<VoxelInt3> dirtyDoorVisInstPositions;
 	std::vector<VoxelInt3> dirtyFadeAnimInstPositions;
-	std::vector<VoxelInt3> dirtyChasmWallInstPositions;
 
 	// Indices into decorators (generally sparse in comparison to voxels themselves).
 	std::unordered_map<VoxelInt3, VoxelTransitionDefID> transitionDefIndices;
@@ -113,10 +113,10 @@ private:
 	// Sets this voxel dirty for geometry updating, etc. if not already.
 	void trySetVoxelDirtyInternal(SNInt x, int y, WEInt z, std::vector<VoxelInt3> &dirtyPositions, VoxelDirtyType dirtyType);
 	void setShapeDefDirty(SNInt x, int y, WEInt z);
+	void setFaceActivationDirty(SNInt x, int y, WEInt z);
 	void setDoorAnimInstDirty(SNInt x, int y, WEInt z);
 	void setDoorVisInstDirty(SNInt x, int y, WEInt z);
 	void setFadeAnimInstDirty(SNInt x, int y, WEInt z);
-	void setChasmWallInstDirty(SNInt x, int y, WEInt z);
 public:
 	static constexpr VoxelShapeDefID AIR_SHAPE_DEF_ID = 0;
 	static constexpr VoxelTextureDefID AIR_TEXTURE_DEF_ID = 0;
@@ -159,10 +159,10 @@ public:
 	VoxelChasmDefID getFloorReplacementChasmDefID() const;
 
 	Span<const VoxelInt3> getDirtyShapeDefPositions() const;
+	Span<const VoxelInt3> getDirtyFaceActivationPositions() const;
 	Span<const VoxelInt3> getDirtyDoorAnimInstPositions() const; // Either animating or just closed this frame.
 	Span<const VoxelInt3> getDirtyDoorVisInstPositions() const;
 	Span<const VoxelInt3> getDirtyFadeAnimInstPositions() const; // Either animating or just finished this frame.
-	Span<const VoxelInt3> getDirtyChasmWallInstPositions() const;
 
 	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, VoxelTransitionDefID *outID) const;
 	bool tryGetTriggerDefID(SNInt x, int y, WEInt z, VoxelTriggerDefID *outID) const;
@@ -214,7 +214,7 @@ public:
 	void addDoorDefPosition(VoxelDoorDefID id, const VoxelInt3 &voxel);
 	void addChasmDefPosition(VoxelChasmDefID id, const VoxelInt3 &voxel);
 
-	void addDirtyChasmWallInstPosition(const VoxelInt3 &voxel);
+	void addDirtyFaceActivationPosition(const VoxelInt3 &voxel);
 	void addDirtyDoorVisInstPosition(const VoxelInt3 &voxel);
 
 	void addDoorAnimInst(VoxelDoorAnimationInstance &&animInst);
