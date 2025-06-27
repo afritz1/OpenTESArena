@@ -738,13 +738,13 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 
 		const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
-		const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
-		if (voxelMeshDef.isEmpty())
+		if (voxelShapeDef.allowsAdjacentFaceCombining)
 		{
 			continue;
 		}
 
-		if (voxelShapeDef.allowsAdjacentFaceCombining)
+		const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
+		if (voxelMeshDef.isEmpty())
 		{
 			continue;
 		}
@@ -1501,7 +1501,7 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 			this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
 		}
 
-		/*Span3D<const RenderVoxelDrawCallRangeID> rangeIDs = renderChunk.drawCallRangeIDs;
+		Span3D<const RenderVoxelDrawCallRangeID> rangeIDs = renderChunk.drawCallRangeIDs;
 		for (WEInt z = 0; z < rangeIDs.getDepth(); z++)
 		{
 			for (SNInt x = 0; x < rangeIDs.getWidth(); x++)
@@ -1516,13 +1516,13 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 						const RenderVoxelDrawCallRangeID rangeID = rangeIDs.get(x, y, z);
 						if (rangeID >= 0)
 						{
-							const BufferView<const RenderDrawCall> drawCalls = renderChunk.drawCallHeap.get(rangeID);
+							const Span<const RenderDrawCall> drawCalls = renderChunk.drawCallHeap.get(rangeID);
 							this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
 						}
 					}
 				}
 			}
-		}*/
+		}
 	}
 }
 
