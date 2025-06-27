@@ -1354,7 +1354,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 				const double sourcePositionY = meshDef.rendererPositions[sourcePositionComponentIndex + 1];
 				const double sourcePositionZ = meshDef.rendererPositions[sourcePositionComponentIndex + 2];
 				const double sourcePositionScaledX = sourcePositionX * quadVoxelDimsReal.x;
-				const double sourcePositionScaledY = MeshUtils::getScaledVertexY(sourcePositionY * quadVoxelDimsReal.y, scaleType, ceilingScale);
+				const double sourcePositionScaledY = sourcePositionY * quadVoxelDimsReal.y;
 				const double sourcePositionScaledZ = sourcePositionZ * quadVoxelDimsReal.z;
 				quadVertexPositions[destinationPositionComponentIndex] = sourcePositionScaledX;
 				quadVertexPositions[destinationPositionComponentIndex + 1] = sourcePositionScaledY;

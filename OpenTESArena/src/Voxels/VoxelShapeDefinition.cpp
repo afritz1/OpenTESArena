@@ -103,7 +103,7 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 				const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 				this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
-				this->rendererPositions[outPositionsIndex + 1] = sourceVertex.positionY; // @todo move getScaledVertexY from RenderVoxelChunkManager here
+				this->rendererPositions[outPositionsIndex + 1] = MeshUtils::getScaledVertexY(sourceVertex.positionY, scaleType, ceilingScale);
 				this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
 				this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
 				this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
@@ -188,7 +188,7 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 			const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 			const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 			this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
-			this->rendererPositions[outPositionsIndex + 1] = sourceVertex.positionY; // @todo move getScaledVertexY from RenderVoxelChunkManager here
+			this->rendererPositions[outPositionsIndex + 1] = MeshUtils::getScaledVertexY(sourceVertex.positionY, scaleType, ceilingScale);
 			this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
 			this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
 			this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
@@ -232,7 +232,7 @@ void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache,
 			const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 
 			this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
-			this->rendererPositions[outPositionsIndex + 1] = sourceVertex.positionY + shapeInitCache.boxYOffset; // @todo move getScaledVertexY from RenderVoxelChunkManager here
+			this->rendererPositions[outPositionsIndex + 1] = MeshUtils::getScaledVertexY(sourceVertex.positionY + shapeInitCache.boxYOffset, scaleType, ceilingScale);
 			this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
 
 			this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
