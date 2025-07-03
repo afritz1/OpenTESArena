@@ -564,7 +564,7 @@ void RenderVoxelChunkManager::loadChunkTextures(const VoxelChunk &voxelChunk, co
 	}
 }
 
-void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
+void RenderVoxelChunkManager::loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = voxelChunk.position;
 
@@ -574,6 +574,12 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 	{
 		const VoxelShapeDefID voxelShapeDefID = static_cast<VoxelShapeDefID>(shapeDefIndex);
 		const VoxelShapeDefinition &voxelShapeDef = shapeDefs[voxelShapeDefID];
+		if (voxelShapeDef.allowsAdjacentFaceCombining)
+		{
+			// Let combined face draw call generation create vertex buffers instead.
+			continue;
+		}
+
 		const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
 		const bool isRenderMeshValid = !voxelMeshDef.isEmpty(); // Air has a shape for trigger voxels but no mesh
 		if (!isRenderMeshValid)
@@ -1415,7 +1421,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtPosition(chunkPos);
-		this->loadMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
+		this->loadChunkNonCombinedVoxelMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->loadChunkTextures(voxelChunk, voxelChunkManager, textureManager, renderer);
 		this->loadChasmWalls(renderChunk, voxelChunk);
 		this->loadTransforms(renderChunk, voxelChunk, ceilingScale, renderer);
