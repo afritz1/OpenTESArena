@@ -45,7 +45,6 @@ using VoxelChasmDefID = int;
 // Gameplay values for a 3D set of voxels occupying a 64x64 portion of the game world.
 struct VoxelChunk final : public Chunk
 {
-private:
 	// Definitions pointed to by voxel IDs.
 	std::vector<VoxelShapeDefinition> shapeDefs;
 	std::vector<VoxelTextureDefinition> textureDefs;
@@ -72,9 +71,9 @@ private:
 	Buffer3D<VoxelDirtyType> dirtyVoxelTypes;
 	std::vector<VoxelInt3> dirtyShapeDefPositions;
 	std::vector<VoxelInt3> dirtyFaceActivationPositions;
-	std::vector<VoxelInt3> dirtyDoorAnimInstPositions;
+	std::vector<VoxelInt3> dirtyDoorAnimInstPositions; // Either animating or just closed this frame.
 	std::vector<VoxelInt3> dirtyDoorVisInstPositions;
-	std::vector<VoxelInt3> dirtyFadeAnimInstPositions;
+	std::vector<VoxelInt3> dirtyFadeAnimInstPositions; // Either animating or just finished this frame.
 
 	// Indices into decorators (generally sparse in comparison to voxels themselves).
 	std::unordered_map<VoxelInt3, VoxelTransitionDefID> transitionDefIndices;
@@ -98,6 +97,15 @@ private:
 	std::vector<VoxelInt3> destroyedDoorAnimInsts;
 	std::vector<VoxelInt3> destroyedFadeAnimInsts;
 
+	static constexpr VoxelShapeDefID AIR_SHAPE_DEF_ID = 0;
+	static constexpr VoxelTextureDefID AIR_TEXTURE_DEF_ID = 0;
+	static constexpr VoxelShadingDefID AIR_SHADING_DEF_ID = 0;
+	static constexpr VoxelTraitsDefID AIR_TRAITS_DEF_ID = 0;
+
+	VoxelChunk();
+
+	void init(const ChunkInt2 &position, int height);
+
 	// Gets the voxel definitions adjacent to a voxel. Useful with context-sensitive voxels like chasms.
 	// This is slightly different than the chunk manager's version since it is chunk-independent (but as
 	// a result, voxels on a chunk edge must be updated by the chunk manager).
@@ -117,52 +125,6 @@ private:
 	void setDoorAnimInstDirty(SNInt x, int y, WEInt z);
 	void setDoorVisInstDirty(SNInt x, int y, WEInt z);
 	void setFadeAnimInstDirty(SNInt x, int y, WEInt z);
-public:
-	static constexpr VoxelShapeDefID AIR_SHAPE_DEF_ID = 0;
-	static constexpr VoxelTextureDefID AIR_TEXTURE_DEF_ID = 0;
-	static constexpr VoxelShadingDefID AIR_SHADING_DEF_ID = 0;
-	static constexpr VoxelTraitsDefID AIR_TRAITS_DEF_ID = 0;
-
-	VoxelChunk();
-
-	void init(const ChunkInt2 &position, int height);
-
-	int getShapeDefCount() const;
-	int getTextureDefCount() const;
-	int getShadingDefCount() const;
-	int getTraitsDefCount() const;
-	int getTransitionDefCount() const;
-	int getTriggerDefCount() const;
-	int getLockDefCount() const;
-	int getBuildingNameDefCount() const;
-	int getDoorDefCount() const;
-
-	// Gets the definition associated with a voxel def ID (can iterate with an index too).
-	const VoxelShapeDefinition &getShapeDef(VoxelShapeDefID id) const;
-	const VoxelTextureDefinition &getTextureDef(VoxelTextureDefID id) const;
-	const VoxelShadingDefinition &getShadingDef(VoxelShadingDefID id) const;
-	const VoxelTraitsDefinition &getTraitsDef(VoxelTraitsDefID id) const;
-	const TransitionDefinition &getTransitionDef(VoxelTransitionDefID id) const;
-	const VoxelTriggerDefinition &getTriggerDef(VoxelTriggerDefID id) const;
-	const LockDefinition &getLockDef(VoxelLockDefID id) const;
-	const std::string &getBuildingName(VoxelBuildingNameID id) const;
-	const VoxelDoorDefinition &getDoorDef(VoxelDoorDefID id) const;
-
-	VoxelShapeDefID getShapeDefID(SNInt x, int y, WEInt z) const;
-	VoxelTextureDefID getTextureDefID(SNInt x, int y, WEInt z) const;
-	VoxelShadingDefID getShadingDefID(SNInt x, int y, WEInt z) const;
-	VoxelTraitsDefID getTraitsDefID(SNInt x, int y, WEInt z) const;
-	VoxelShapeDefID getFloorReplacementShapeDefID() const;
-	VoxelTextureDefID getFloorReplacementTextureDefID() const;
-	VoxelShadingDefID getFloorReplacementShadingDefID() const;
-	VoxelTraitsDefID getFloorReplacementTraitsDefID() const;
-	VoxelChasmDefID getFloorReplacementChasmDefID() const;
-
-	Span<const VoxelInt3> getDirtyShapeDefPositions() const;
-	Span<const VoxelInt3> getDirtyFaceActivationPositions() const;
-	Span<const VoxelInt3> getDirtyDoorAnimInstPositions() const; // Either animating or just closed this frame.
-	Span<const VoxelInt3> getDirtyDoorVisInstPositions() const;
-	Span<const VoxelInt3> getDirtyFadeAnimInstPositions() const; // Either animating or just finished this frame.
 
 	bool tryGetTransitionDefID(SNInt x, int y, WEInt z, VoxelTransitionDefID *outID) const;
 	bool tryGetTriggerDefID(SNInt x, int y, WEInt z, VoxelTriggerDefID *outID) const;
@@ -172,30 +134,17 @@ public:
 	bool tryGetChasmDefID(SNInt x, int y, WEInt z, VoxelChasmDefID *outID) const;
 
 	// Animation instance getters. A destroyed instance is still valid to read until end-of-frame.
-	Span<const VoxelDoorAnimationInstance> getDoorAnimInsts() const;
 	bool tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	Span<const VoxelFadeAnimationInstance> getFadeAnimInsts() const;
 	bool tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
-	Span<VoxelChasmWallInstance> getChasmWallInsts();
-	Span<const VoxelChasmWallInstance> getChasmWallInsts() const;
 	bool tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	Span<VoxelDoorVisibilityInstance> getDoorVisibilityInsts();
-	Span<const VoxelDoorVisibilityInstance> getDoorVisibilityInsts() const;
 	bool tryGetDoorVisibilityInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
-	Span<const VoxelTriggerInstance> getTriggerInsts() const;
 	bool tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const;
 
 	void setShapeDefID(SNInt x, int y, WEInt z, VoxelShapeDefID id);
 	void setTextureDefID(SNInt x, int y, WEInt z, VoxelTextureDefID id);
 	void setShadingDefID(SNInt x, int y, WEInt z, VoxelShadingDefID id);
 	void setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id);
-	
-	void setFloorReplacementShapeDefID(VoxelShapeDefID id);
-	void setFloorReplacementTextureDefID(VoxelTextureDefID id);
-	void setFloorReplacementShadingDefID(VoxelShadingDefID id);
-	void setFloorReplacementTraitsDefID(VoxelTraitsDefID id);
-	void setFloorReplacementChasmDefID(VoxelChasmDefID id);
 
 	VoxelShapeDefID addShapeDef(VoxelShapeDefinition &&shapeDef);
 	VoxelTextureDefID addTextureDef(VoxelTextureDefinition &&textureDef);

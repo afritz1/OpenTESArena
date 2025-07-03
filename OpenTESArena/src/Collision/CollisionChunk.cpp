@@ -92,7 +92,7 @@ CollisionShapeDefID CollisionChunk::addShapeDefIdMapping(const VoxelChunk &voxel
 		return iter->second;
 	}
 
-	const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+	const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
 
 	CollisionShapeDefinition collisionShapeDef;
 	if (voxelShapeDef.type == VoxelShapeType::Box)

@@ -71,7 +71,7 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 		return;
 	}
 
-	const VoxelTriggerDefinition &triggerDef = chunk.getTriggerDef(triggerDefID);
+	const VoxelTriggerDefinition &triggerDef = chunk.triggerDefs[triggerDefID];
 	if (triggerDef.hasSoundDef())
 	{
 		const VoxelTriggerSoundDefinition &soundDef = triggerDef.sound;
@@ -116,7 +116,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 		return;
 	}
 
-	const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+	const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
 	const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
 	const std::string &soundFilename = openSoundDef.soundFilename;
 	const CoordDouble3 soundCoord(voxelChunk.position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
@@ -609,8 +609,8 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		return;
 	}
 
-	const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);	
-	const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+	const VoxelTraitsDefID voxelTraitsDefID = chunk.traitsDefIDs.get(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);	
+	const VoxelTraitsDefinition &voxelTraitsDef = chunk.traitsDefs[voxelTraitsDefID];
 	if (voxelTraitsDef.type != ArenaVoxelType::Wall)
 	{
 		return;
@@ -622,7 +622,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		return;
 	}
 
-	const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
+	const TransitionDefinition &transitionDef = chunk.transitionDefs[transitionDefID];
 	if (transitionDef.type != TransitionType::InteriorLevelChange)
 	{
 		return;

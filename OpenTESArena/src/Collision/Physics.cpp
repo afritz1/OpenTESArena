@@ -257,8 +257,8 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->shapeDefs[voxelShapeDefID];
 		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
 		const CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
@@ -321,8 +321,8 @@ namespace Physics
 			return false;
 		}
 
-		const VoxelShapeDefID voxelShapeDefID = voxelChunk->getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->getShapeDef(voxelShapeDefID);
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk->shapeDefs[voxelShapeDefID];
 		const VoxelShapeScaleType scaleType = voxelShapeDef.scaleType;
 
 		const CollisionShapeDefID collisionShapeDefID = collisionChunk->shapeDefIDs.get(voxel.x, voxel.y, voxel.z);

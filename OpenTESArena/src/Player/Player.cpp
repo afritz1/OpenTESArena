@@ -584,8 +584,8 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 		if (voxelChunk->tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
 		{
 			const VoxelChasmDefinition &chasmDef = voxelChunkManager.getChasmDef(chasmDefID);
-			const VoxelShapeDefID chasmFloorShapeDefID = voxelChunk->getShapeDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z);
-			const VoxelShapeDefinition &chasmFloorShapeDef = voxelChunk->getShapeDef(chasmFloorShapeDefID);
+			const VoxelShapeDefID chasmFloorShapeDefID = voxelChunk->shapeDefIDs.get(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z);
+			const VoxelShapeDefinition &chasmFloorShapeDef = voxelChunk->shapeDefs[chasmFloorShapeDefID];
 			DebugAssert(chasmFloorShapeDef.type == VoxelShapeType::Box);
 			const double chasmFloorShapeYPos = chasmFloorShapeDef.box.yOffset + chasmFloorShapeDef.box.height;
 			const double chasmBottomY = static_cast<double>(playerFeetVoxel.y) + MeshUtils::getScaledVertexY(chasmFloorShapeYPos, chasmFloorShapeDef.scaleType, ceilingScale);
@@ -811,8 +811,8 @@ void Player::postPhysicsStep(double dt, Game &game)
 					const CoordInt3 gatherVoxelCoord = VoxelUtils::worldVoxelToCoord(gatherWorldVoxel);
 					const VoxelInt3 gatherVoxel = gatherVoxelCoord.voxel;
 					const VoxelChunk &gatherVoxelChunk = voxelChunkManager.getChunkAtPosition(gatherVoxelCoord.chunk);
-					const VoxelShapeDefID gatherVoxelShapeDefID = gatherVoxelChunk.getShapeDefID(gatherVoxel.x, gatherVoxel.y, gatherVoxel.z);
-					const VoxelShapeDefinition &gatherVoxelShapeDef = gatherVoxelChunk.getShapeDef(gatherVoxelShapeDefID);
+					const VoxelShapeDefID gatherVoxelShapeDefID = gatherVoxelChunk.shapeDefIDs.get(gatherVoxel.x, gatherVoxel.y, gatherVoxel.z);
+					const VoxelShapeDefinition &gatherVoxelShapeDef = gatherVoxelChunk.shapeDefs[gatherVoxelShapeDefID];
 					if (gatherVoxelShapeDef.isElevatedPlatform)
 					{
 						DebugAssert(gatherVoxelShapeDef.type == VoxelShapeType::Box);

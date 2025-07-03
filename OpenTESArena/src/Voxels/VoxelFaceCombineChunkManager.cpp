@@ -30,7 +30,7 @@ void VoxelFaceCombineChunkManager::update(Span<const ChunkInt2> activeChunkPosit
 	{
 		VoxelFaceCombineChunk &faceCombineChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		Span<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
+		Span<const VoxelInt3> dirtyVoxels = voxelChunk.dirtyShapeDefPositions;
 		const VoxelFaceEnableChunk &faceEnableChunk = voxelFaceEnableChunkManager.getChunkAtPosition(chunkPos);
 		faceCombineChunk.update(dirtyVoxels, voxelChunk, faceEnableChunk);
 	}
@@ -42,14 +42,14 @@ void VoxelFaceCombineChunkManager::update(Span<const ChunkInt2> activeChunkPosit
 		const VoxelFaceEnableChunk &faceEnableChunk = voxelFaceEnableChunkManager.getChunkAtPosition(chunkPos);
 
 		// Rebuild combined faces due to change in mesh.
-		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.getDirtyShapeDefPositions();
+		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.dirtyShapeDefPositions;
 		faceCombineChunk.update(dirtyShapeDefVoxels, voxelChunk, faceEnableChunk);
 
-		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.getDirtyFaceActivationPositions();
+		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.dirtyFaceActivationPositions;
 		faceCombineChunk.update(dirtyFaceActivationVoxels, voxelChunk, faceEnableChunk);
 
 		// Rebuild combined faces due to changes in material.
-		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
+		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.dirtyFadeAnimInstPositions;
 		faceCombineChunk.update(dirtyFadeAnimInstVoxels, voxelChunk, faceEnableChunk);
 	}
 }

@@ -68,7 +68,7 @@ namespace
 					VoxelTriggerDefID triggerDefID;
 					if (voxelChunk.tryGetTriggerDefID(x, y, z, &triggerDefID))
 					{
-						const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.getTriggerDef(triggerDefID);
+						const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.triggerDefs[triggerDefID];
 						isTriggerVoxel = voxelTriggerDef.hasValidDefForPhysics();
 					}
 
@@ -76,7 +76,7 @@ namespace
 					VoxelTransitionDefID transitionDefID;
 					if (voxelChunk.tryGetTransitionDefID(x, y, z, &transitionDefID))
 					{
-						const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
+						const TransitionDefinition &transitionDef = voxelChunk.transitionDefs[transitionDefID];
 						isInteriorLevelChangeVoxel = transitionDef.type == TransitionType::InteriorLevelChange;
 					}
 
@@ -89,8 +89,7 @@ namespace
 						int doorAnimInstIndex;
 						if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
 						{
-							const Span<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
-							const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
+							const VoxelDoorAnimationInstance &doorAnimInst = voxelChunk.doorAnimInsts[doorAnimInstIndex];
 							isClosedDoor = doorAnimInst.stateType == VoxelDoorAnimationStateType::Closed;
 						}
 						else
@@ -109,8 +108,8 @@ namespace
 
 					if (shouldCreateCollider)
 					{
-						const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
-						const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+						const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(x, y, z);
+						const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
 						const CollisionShapeDefID collisionShapeDefID = collisionChunk.shapeDefIDs.get(x, y, z);
 						const CollisionShapeDefinition &collisionShapeDef = collisionChunk.getCollisionShapeDef(collisionShapeDefID);
 
@@ -164,7 +163,7 @@ void CollisionChunkManager::populateChunkShapeDefs(CollisionChunk &collisionChun
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
-				const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(x, y, z);
+				const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(x, y, z);
 				CollisionShapeDefID collisionShapeDefID = collisionChunk.findShapeDefIdMapping(voxelChunk, voxelShapeDefID);
 				if (collisionShapeDefID == -1)
 				{
@@ -192,14 +191,13 @@ void CollisionChunkManager::populateChunkEnabledColliders(CollisionChunk &collis
 				int doorAnimInstIndex;
 				if (voxelChunk.tryGetDoorAnimInstIndex(x, y, z, &doorAnimInstIndex))
 				{
-					const Span<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
-					const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
+					const VoxelDoorAnimationInstance &doorAnimInst = voxelChunk.doorAnimInsts[doorAnimInstIndex];
 					voxelHasCollision = doorAnimInst.stateType == VoxelDoorAnimationStateType::Closed;
 				}
 				else
 				{
-					const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(x, y, z);
-					const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+					const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.traitsDefIDs.get(x, y, z);
+					const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
 					voxelHasCollision = voxelTraitsDef.hasCollision();
 				}
 
@@ -233,8 +231,8 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 
 	// @todo: this dirty shapes list might be full of 10k brand new voxels this frame, so we're accidentally destroying + recreating them all (found during the AddBodiesPrepare/Finalize() work)
 
-	const Span<const VoxelInt3> dirtyShapeDefPositions = voxelChunk.getDirtyShapeDefPositions();
-	const Span<const VoxelInt3> dirtyDoorAnimInstPositions = voxelChunk.getDirtyDoorAnimInstPositions();
+	const Span<const VoxelInt3> dirtyShapeDefPositions = voxelChunk.dirtyShapeDefPositions;
+	const Span<const VoxelInt3> dirtyDoorAnimInstPositions = voxelChunk.dirtyDoorAnimInstPositions;
 
 	if (dirtyShapeDefPositions.getCount() > 0)
 	{

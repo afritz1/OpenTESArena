@@ -516,9 +516,8 @@ ObjectTextureID RenderVoxelChunkManager::getChasmWallTextureID(VoxelChasmDefID c
 
 void RenderVoxelChunkManager::loadChunkTextures(const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
-	for (int i = 0; i < voxelChunk.getTextureDefCount(); i++)
+	for (const VoxelTextureDefinition &voxelTextureDef : voxelChunk.textureDefs)
 	{
-		const VoxelTextureDefinition &voxelTextureDef = voxelChunk.getTextureDef(i);
 		LoadVoxelDefTextures(voxelTextureDef, this->textures, textureManager, renderer);
 	}
 
@@ -534,10 +533,11 @@ void RenderVoxelChunkManager::loadMeshBuffers(RenderVoxelChunk &renderChunk, con
 	const ChunkInt2 chunkPos = voxelChunk.position;
 
 	// Add render chunk voxel mesh instances and create mappings to them.
-	for (int shapeDefIndex = 0; shapeDefIndex < voxelChunk.getShapeDefCount(); shapeDefIndex++)
+	Span<const VoxelShapeDefinition> shapeDefs = voxelChunk.shapeDefs;
+	for (int shapeDefIndex = 0; shapeDefIndex < shapeDefs.getCount(); shapeDefIndex++)
 	{
 		const VoxelShapeDefID voxelShapeDefID = static_cast<VoxelShapeDefID>(shapeDefIndex);
-		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+		const VoxelShapeDefinition &voxelShapeDef = shapeDefs[voxelShapeDefID];
 		const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
 		const bool isRenderMeshValid = !voxelMeshDef.isEmpty(); // Air has a shape for trigger voxels but no mesh
 		if (!isRenderMeshValid)
@@ -612,8 +612,7 @@ void RenderVoxelChunkManager::loadChasmWall(RenderVoxelChunk &renderChunk, const
 	int chasmWallInstIndex;
 	if (voxelChunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
 	{
-		Span<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
-		const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
+		const VoxelChasmWallInstance &chasmWallInst = voxelChunk.chasmWallInsts[chasmWallInstIndex];
 		DebugAssert(chasmWallInst.getFaceCount() > 0);
 
 		const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
@@ -684,7 +683,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 				if (voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID))
 				{
 					// Door transform uniform buffers. These are separate because each voxel has a RenderTransform per door face.
-					const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+					const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
 					const ArenaDoorType doorType = doorDef.type;
 					DebugAssert(renderChunk.doorTransformBuffers.find(voxel) == renderChunk.doorTransformBuffers.end());
 
@@ -736,8 +735,8 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 	{
 		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
 
-		const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
 		if (voxelShapeDef.allowsAdjacentFaceCombining)
 		{
 			continue;
@@ -749,10 +748,10 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 			continue;
 		}
 
-		const VoxelTextureDefID voxelTextureDefID = voxelChunk.getTextureDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShadingDefID voxelShadingDefID = voxelChunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTextureDefinition &voxelTextureDef = voxelChunk.getTextureDef(voxelTextureDefID);
-		const VoxelShadingDefinition &voxelShadingDef = voxelChunk.getShadingDef(voxelShadingDefID);
+		const VoxelTextureDefID voxelTextureDefID = voxelChunk.textureDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShadingDefID voxelShadingDefID = voxelChunk.shadingDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelTextureDefinition &voxelTextureDef = voxelChunk.textureDefs[voxelTextureDefID];
+		const VoxelShadingDefinition &voxelShadingDef = voxelChunk.shadingDefs[voxelShadingDefID];
 
 		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelShapeDefID);
 		DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
@@ -763,7 +762,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 
 		VoxelDoorDefID doorDefID;
 		const bool isDoor = voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID);
-		const VoxelDoorDefinition *doorDef = isDoor ? &voxelChunk.getDoorDef(doorDefID) : nullptr;
+		const VoxelDoorDefinition *doorDef = isDoor ? &voxelChunk.doorDefs[doorDefID] : nullptr;
 
 		double doorAnimPercent = 0.0;
 		if (isDoor)
@@ -771,8 +770,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 			int doorAnimInstIndex;
 			if (voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex))
 			{
-				Span<const VoxelDoorAnimationInstance> doorAnimInsts = voxelChunk.getDoorAnimInsts();
-				const VoxelDoorAnimationInstance &doorAnimInst = doorAnimInsts[doorAnimInstIndex];
+				const VoxelDoorAnimationInstance &doorAnimInst = voxelChunk.doorAnimInsts[doorAnimInstIndex];
 				doorAnimPercent = doorAnimInst.percentOpen;
 			}
 		}
@@ -804,8 +802,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 		int fadeAnimInstIndex;
 		if (voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
 		{
-			Span<const VoxelFadeAnimationInstance> fadeAnimInsts = voxelChunk.getFadeAnimInsts();
-			fadeAnimInst = &fadeAnimInsts[fadeAnimInstIndex];
+			fadeAnimInst = &voxelChunk.fadeAnimInsts[fadeAnimInstIndex];
 			isFading = !fadeAnimInst->isDoneFading();
 		}
 
@@ -1062,8 +1059,7 @@ void RenderVoxelChunkManager::updateChunkVoxelDrawCalls(RenderVoxelChunk &render
 				continue;
 			}
 
-			Span<const VoxelDoorVisibilityInstance> doorVisInsts = voxelChunk.getDoorVisibilityInsts();
-			const VoxelDoorVisibilityInstance &doorVisInst = doorVisInsts[doorVisInstIndex];
+			const VoxelDoorVisibilityInstance &doorVisInst = voxelChunk.doorVisInsts[doorVisInstIndex];
 			std::fill(std::begin(visibleDoorFaces), std::end(visibleDoorFaces), false);
 			for (size_t i = 0; i < std::size(visibleDoorFaces); i++)
 			{
@@ -1303,8 +1299,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		int quadVoxelHeight;
 		MeshUtils::getVoxelFaceDimensions(minVoxel, maxVoxel, facing, &quadVoxelWidth, &quadVoxelHeight);
 
-		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(minVoxel.x, minVoxel.y, minVoxel.z);
-		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
+		const VoxelShapeDefID shapeDefID = voxelChunk.shapeDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
+		const VoxelShapeDefinition &shapeDef = voxelChunk.shapeDefs[shapeDefID];
 		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
 		const VoxelShapeScaleType scaleType = shapeDef.scaleType;
 
@@ -1419,14 +1415,14 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		}
 		else
 		{
-			const VoxelTextureDefID textureDefID = voxelChunk.getTextureDefID(minVoxel.x, minVoxel.y, minVoxel.z);
-			const VoxelTextureDefinition &textureDef = voxelChunk.getTextureDef(textureDefID);
+			const VoxelTextureDefID textureDefID = voxelChunk.textureDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
+			const VoxelTextureDefinition &textureDef = voxelChunk.textureDefs[textureDefID];
 			const TextureAsset &textureAsset = textureDef.getTextureAsset(textureSlotIndex);
 			textureID0 = this->getTextureID(textureAsset);
 		}
 
-		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(minVoxel.x, minVoxel.y, minVoxel.z);
-		const VoxelShadingDefinition &shadingDef = voxelChunk.getShadingDef(shadingDefID);
+		const VoxelShadingDefID shadingDefID = voxelChunk.shadingDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
+		const VoxelShadingDefinition &shadingDef = voxelChunk.shadingDefs[shadingDefID];
 		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
 		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
 		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
@@ -1440,7 +1436,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		int fadeAnimInstIndex;
 		if (voxelChunk.tryGetFadeAnimInstIndex(minVoxel.x, minVoxel.y, minVoxel.z, &fadeAnimInstIndex))
 		{
-			const VoxelFadeAnimationInstance &fadeAnimInst = voxelChunk.getFadeAnimInsts()[fadeAnimInstIndex];
+			const VoxelFadeAnimationInstance &fadeAnimInst = voxelChunk.fadeAnimInsts[fadeAnimInstIndex];
 			if (!fadeAnimInst.isDoneFading())
 			{
 				lightingType = RenderLightingType::PerMesh;
@@ -1583,14 +1579,14 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtPosition(chunkPos);
 		const RenderLightChunk &renderLightChunk = renderLightChunkManager.getChunkAtPosition(chunkPos);
 
-		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.getDirtyFaceActivationPositions();
+		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.dirtyFaceActivationPositions;
 		for (const VoxelInt3 dirtyFaceActivationPos : dirtyFaceActivationVoxels)
 		{
 			this->loadChasmWall(renderChunk, voxelChunk, dirtyFaceActivationPos.x, dirtyFaceActivationPos.y, dirtyFaceActivationPos.z);
 		}
 
 		// Update door render transforms (rotation angle, etc.).
-		Span<const VoxelInt3> dirtyDoorAnimInstVoxels = voxelChunk.getDirtyDoorAnimInstPositions();
+		Span<const VoxelInt3> dirtyDoorAnimInstVoxels = voxelChunk.dirtyDoorAnimInstPositions;
 		for (const VoxelInt3 doorVoxel : dirtyDoorAnimInstVoxels)
 		{
 			VoxelDoorDefID doorDefID;
@@ -1600,7 +1596,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 				continue;
 			}
 
-			const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+			const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
 			const ArenaDoorType doorType = doorDef.type;
 			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, doorVoxel, ceilingScale);
 			const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
@@ -1620,9 +1616,9 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 
 		// Update draw calls of dirty voxels.
 		// - @todo: there is some double/triple updating possible here, maybe optimize.
-		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.getDirtyShapeDefPositions();
-		Span<const VoxelInt3> dirtyDoorVisInstVoxels = voxelChunk.getDirtyDoorVisInstPositions();
-		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
+		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.dirtyShapeDefPositions;
+		Span<const VoxelInt3> dirtyDoorVisInstVoxels = voxelChunk.dirtyDoorVisInstPositions;
+		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.dirtyFadeAnimInstPositions;
 		Span<const VoxelInt3> dirtyLightVoxels = renderLightChunk.dirtyVoxelPositions;
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, voxelChunk, faceCombineChunk, renderLightChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);

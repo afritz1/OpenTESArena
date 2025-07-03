@@ -56,8 +56,8 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 	{
 		VoxelFaceEnableEntry &faceEnableEntry = this->entries.get(voxel.x, voxel.y, voxel.z);
 
-		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
+		const VoxelShapeDefID shapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &shapeDef = voxelChunk.shapeDefs[shapeDefID];
 		if (!shapeDef.allowsInternalFaceRemoval)
 		{
 			// This shape doesn't participate in face enabling/disabling.
@@ -81,7 +81,7 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 			int chasmWallInstIndex;
 			if (voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmWallInstIndex))
 			{
-				const VoxelChasmWallInstance &chasmWallInst = voxelChunk.getChasmWallInsts()[chasmWallInstIndex];				
+				const VoxelChasmWallInstance &chasmWallInst = voxelChunk.chasmWallInsts[chasmWallInstIndex];				
 				faceEnableEntry.enabledFaces[positiveXFaceIndex] = chasmWallInst.south;
 				faceEnableEntry.enabledFaces[negativeXFaceIndex] = chasmWallInst.north;
 				faceEnableEntry.enabledFaces[positiveZFaceIndex] = chasmWallInst.west;
@@ -99,8 +99,8 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 		}
 
 		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
-		const VoxelShadingDefID shadingDefID = voxelChunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShadingDefinition &shadingDef = voxelChunk.getShadingDef(shadingDefID);
+		const VoxelShadingDefID shadingDefID = voxelChunk.shadingDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShadingDefinition &shadingDef = voxelChunk.shadingDefs[shadingDefID];
 
 		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
@@ -129,8 +129,8 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 				continue;
 			}
 
-			const VoxelShapeDefID adjacentShapeDefID = voxelChunk.getShapeDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
-			const VoxelShapeDefinition &adjacentShapeDef = voxelChunk.getShapeDef(adjacentShapeDefID);
+			const VoxelShapeDefID adjacentShapeDefID = voxelChunk.shapeDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+			const VoxelShapeDefinition &adjacentShapeDef = voxelChunk.shapeDefs[adjacentShapeDefID];
 			const bool canAdjacentShapeDisableNeighborFaces = adjacentShapeDef.allowsInternalFaceRemoval;
 			if (!canAdjacentShapeDisableNeighborFaces)
 			{
@@ -148,8 +148,8 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 				continue;
 			}
 
-			const VoxelShadingDefID adjacentShadingDefID = voxelChunk.getShadingDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
-			const VoxelShadingDefinition &adjacentShadingDef = voxelChunk.getShadingDef(adjacentShadingDefID);
+			const VoxelShadingDefID adjacentShadingDefID = voxelChunk.shadingDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+			const VoxelShadingDefinition &adjacentShadingDef = voxelChunk.shadingDefs[adjacentShadingDefID];
 			const bool isAdjacentFaceBlocking = IsVoxelFaceOpaque(adjacentFacing, adjacentMeshDef, adjacentShadingDef);
 			faceEnableEntry.enabledFaces[faceIndex] = !isAdjacentFaceBlocking;
 		}

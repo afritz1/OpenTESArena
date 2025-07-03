@@ -33,35 +33,35 @@ namespace
 			return false;
 		}
 
-		const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefID adjacentVoxelShapeDefID = voxelChunk.getShapeDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefID adjacentVoxelShapeDefID = voxelChunk.shapeDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 		if (voxelShapeDefID != adjacentVoxelShapeDefID)
 		{
 			return false;
 		}
 
-		const VoxelTextureDefID voxelTextureDefID = voxelChunk.getTextureDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTextureDefID adjacentVoxelTextureDefID = voxelChunk.getTextureDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const VoxelTextureDefID voxelTextureDefID = voxelChunk.textureDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelTextureDefID adjacentVoxelTextureDefID = voxelChunk.textureDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 		if (voxelTextureDefID != adjacentVoxelTextureDefID)
 		{
 			return false;
 		}
 
-		const VoxelShadingDefID voxelShadingDefID = voxelChunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShadingDefID adjacentVoxelShadingDefID = voxelChunk.getShadingDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const VoxelShadingDefID voxelShadingDefID = voxelChunk.shadingDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShadingDefID adjacentVoxelShadingDefID = voxelChunk.shadingDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 		if (voxelShadingDefID != adjacentVoxelShadingDefID)
 		{
 			return false;
 		}
 
-		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefID adjacentVoxelTraitsDefID = voxelChunk.getTraitsDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.traitsDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelTraitsDefID adjacentVoxelTraitsDefID = voxelChunk.traitsDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 		if (voxelTraitsDefID != adjacentVoxelTraitsDefID)
 		{
 			return false;
 		}
 
-		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
 		if (voxelShapeDef.allowsAdjacentFaceCombining)
 		{
 			const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
@@ -72,7 +72,7 @@ namespace
 		}
 		else
 		{
-			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
 			const ArenaVoxelType voxelTraitsDefType = voxelTraitsDef.type;
 
 			// Filter out special case voxel types.
@@ -101,7 +101,7 @@ namespace
 
 				if (hasChasmWallInst && hasAdjacentChasmWallInst)
 				{
-					Span<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
+					Span<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.chasmWallInsts;
 					const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
 					const VoxelChasmWallInstance &adjacentChasmWallInst = chasmWallInsts[adjacentChasmWallInstIndex];
 
@@ -312,8 +312,8 @@ void VoxelFaceCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxe
 		const VoxelInt3 voxel = this->dirtyEntryPositions[i];
 		VoxelFaceCombineDirtyEntry &dirtyEntry = this->dirtyEntries.get(voxel.x, voxel.y, voxel.z);
 
-		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
+		const VoxelShapeDefID shapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &shapeDef = voxelChunk.shapeDefs[shapeDefID];
 		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
 		if (!shapeDef.allowsAdjacentFaceCombining || meshDef.isEmpty())
 		{

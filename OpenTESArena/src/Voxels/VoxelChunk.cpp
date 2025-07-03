@@ -67,175 +67,6 @@ void VoxelChunk::getAdjacentTraitsDefIDs(const VoxelInt3 &voxel, VoxelTraitsDefI
 	this->getAdjacentIDsInternal<VoxelTraitsDefID>(voxel, this->traitsDefIDs, VoxelChunk::AIR_TRAITS_DEF_ID, outNorthID, outEastID, outSouthID, outWestID);
 }
 
-int VoxelChunk::getShapeDefCount() const
-{
-	return static_cast<int>(this->shapeDefs.size());
-}
-
-int VoxelChunk::getTextureDefCount() const
-{
-	return static_cast<int>(this->textureDefs.size());
-}
-
-int VoxelChunk::getShadingDefCount() const
-{
-	return static_cast<int>(this->shadingDefs.size());
-}
-
-int VoxelChunk::getTraitsDefCount() const
-{
-	return static_cast<int>(this->traitsDefs.size());
-}
-
-int VoxelChunk::getTransitionDefCount() const
-{
-	return static_cast<int>(this->transitionDefs.size());
-}
-
-int VoxelChunk::getTriggerDefCount() const
-{
-	return static_cast<int>(this->triggerDefs.size());
-}
-
-int VoxelChunk::getLockDefCount() const
-{
-	return static_cast<int>(this->lockDefs.size());
-}
-
-int VoxelChunk::getBuildingNameDefCount() const
-{
-	return static_cast<int>(this->buildingNames.size());
-}
-
-int VoxelChunk::getDoorDefCount() const
-{
-	return static_cast<int>(this->doorDefs.size());
-}
-
-const VoxelShapeDefinition &VoxelChunk::getShapeDef(VoxelShapeDefID id) const
-{
-	DebugAssertIndex(this->shapeDefs, id);
-	return this->shapeDefs[id];
-}
-
-const VoxelTextureDefinition &VoxelChunk::getTextureDef(VoxelTextureDefID id) const
-{
-	DebugAssertIndex(this->textureDefs, id);
-	return this->textureDefs[id];
-}
-
-const VoxelShadingDefinition &VoxelChunk::getShadingDef(VoxelShadingDefID id) const
-{
-	DebugAssertIndex(this->shadingDefs, id);
-	return this->shadingDefs[id];
-}
-
-const VoxelTraitsDefinition &VoxelChunk::getTraitsDef(VoxelTraitsDefID id) const
-{
-	DebugAssertIndex(this->traitsDefs, id);
-	return this->traitsDefs[id];
-}
-
-const TransitionDefinition &VoxelChunk::getTransitionDef(VoxelTransitionDefID id) const
-{
-	DebugAssertIndex(this->transitionDefs, id);
-	return this->transitionDefs[id];
-}
-
-const VoxelTriggerDefinition &VoxelChunk::getTriggerDef(VoxelTriggerDefID id) const
-{
-	DebugAssertIndex(this->triggerDefs, id);
-	return this->triggerDefs[id];
-}
-
-const LockDefinition &VoxelChunk::getLockDef(VoxelLockDefID id) const
-{
-	DebugAssertIndex(this->lockDefs, id);
-	return this->lockDefs[id];
-}
-
-const std::string &VoxelChunk::getBuildingName(VoxelBuildingNameID id) const
-{
-	DebugAssertIndex(this->buildingNames, id);
-	return this->buildingNames[id];
-}
-
-const VoxelDoorDefinition &VoxelChunk::getDoorDef(VoxelDoorDefID id) const
-{
-	DebugAssertIndex(this->doorDefs, id);
-	return this->doorDefs[id];
-}
-
-VoxelShapeDefID VoxelChunk::getShapeDefID(SNInt x, int y, WEInt z) const
-{
-	return this->shapeDefIDs.get(x, y, z);
-}
-
-VoxelTextureDefID VoxelChunk::getTextureDefID(SNInt x, int y, WEInt z) const
-{
-	return this->textureDefIDs.get(x, y, z);
-}
-
-VoxelShadingDefID VoxelChunk::getShadingDefID(SNInt x, int y, WEInt z) const
-{
-	return this->shadingDefIDs.get(x, y, z);
-}
-
-VoxelTraitsDefID VoxelChunk::getTraitsDefID(SNInt x, int y, WEInt z) const
-{
-	return this->traitsDefIDs.get(x, y, z);
-}
-
-VoxelShapeDefID VoxelChunk::getFloorReplacementShapeDefID() const
-{
-	return this->floorReplacementShapeDefID;
-}
-
-VoxelTextureDefID VoxelChunk::getFloorReplacementTextureDefID() const
-{
-	return this->floorReplacementTextureDefID;
-}
-
-VoxelShadingDefID VoxelChunk::getFloorReplacementShadingDefID() const
-{
-	return this->floorReplacementShadingDefID;
-}
-
-VoxelTraitsDefID VoxelChunk::getFloorReplacementTraitsDefID() const
-{
-	return this->floorReplacementTraitsDefID;
-}
-
-VoxelChasmDefID VoxelChunk::getFloorReplacementChasmDefID() const
-{
-	return this->floorReplacementChasmDefID;
-}
-
-Span<const VoxelInt3> VoxelChunk::getDirtyShapeDefPositions() const
-{
-	return this->dirtyShapeDefPositions;
-}
-
-Span<const VoxelInt3> VoxelChunk::getDirtyFaceActivationPositions() const
-{
-	return this->dirtyFaceActivationPositions;
-}
-
-Span<const VoxelInt3> VoxelChunk::getDirtyDoorAnimInstPositions() const
-{
-	return this->dirtyDoorAnimInstPositions;
-}
-
-Span<const VoxelInt3> VoxelChunk::getDirtyDoorVisInstPositions() const
-{
-	return this->dirtyDoorVisInstPositions;
-}
-
-Span<const VoxelInt3> VoxelChunk::getDirtyFadeAnimInstPositions() const
-{
-	return this->dirtyFadeAnimInstPositions;
-}
-
 bool VoxelChunk::tryGetTransitionDefID(SNInt x, int y, WEInt z, VoxelTransitionDefID *outID) const
 {
 	const auto iter = this->transitionDefIndices.find(VoxelInt3(x, y, z));
@@ -331,11 +162,6 @@ bool VoxelChunk::tryGetChasmDefID(SNInt x, int y, WEInt z, VoxelChasmDefID *outI
 	}
 }
 
-Span<const VoxelDoorAnimationInstance> VoxelChunk::getDoorAnimInsts() const
-{
-	return this->doorAnimInsts;
-}
-
 bool VoxelChunk::tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
 {
 	const auto iter = std::find_if(this->doorAnimInsts.begin(), this->doorAnimInsts.end(),
@@ -355,11 +181,6 @@ bool VoxelChunk::tryGetDoorAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex)
 	}
 }
 
-Span<const VoxelFadeAnimationInstance> VoxelChunk::getFadeAnimInsts() const
-{
-	return this->fadeAnimInsts;
-}
-
 bool VoxelChunk::tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
 {
 	for (int i = 0; i < static_cast<int>(this->fadeAnimInsts.size()); i++)
@@ -373,16 +194,6 @@ bool VoxelChunk::tryGetFadeAnimInstIndex(SNInt x, int y, WEInt z, int *outIndex)
 	}
 
 	return false;
-}
-
-Span<VoxelChasmWallInstance> VoxelChunk::getChasmWallInsts()
-{
-	return this->chasmWallInsts;
-}
-
-Span<const VoxelChasmWallInstance> VoxelChunk::getChasmWallInsts() const
-{
-	return this->chasmWallInsts;
 }
 
 bool VoxelChunk::tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
@@ -404,16 +215,6 @@ bool VoxelChunk::tryGetChasmWallInstIndex(SNInt x, int y, WEInt z, int *outIndex
 	}
 }
 
-Span<VoxelDoorVisibilityInstance> VoxelChunk::getDoorVisibilityInsts()
-{
-	return this->doorVisInsts;
-}
-
-Span<const VoxelDoorVisibilityInstance> VoxelChunk::getDoorVisibilityInsts() const
-{
-	return this->doorVisInsts;
-}
-
 bool VoxelChunk::tryGetDoorVisibilityInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
 {
 	const auto iter = std::find_if(this->doorVisInsts.begin(), this->doorVisInsts.end(),
@@ -431,11 +232,6 @@ bool VoxelChunk::tryGetDoorVisibilityInstIndex(SNInt x, int y, WEInt z, int *out
 	{
 		return false;
 	}
-}
-
-Span<const VoxelTriggerInstance> VoxelChunk::getTriggerInsts() const
-{
-	return this->triggerInsts;
 }
 
 bool VoxelChunk::tryGetTriggerInstIndex(SNInt x, int y, WEInt z, int *outIndex) const
@@ -476,31 +272,6 @@ void VoxelChunk::setShadingDefID(SNInt x, int y, WEInt z, VoxelShadingDefID id)
 void VoxelChunk::setTraitsDefID(SNInt x, int y, WEInt z, VoxelTraitsDefID id)
 {
 	this->traitsDefIDs.set(x, y, z, id);
-}
-
-void VoxelChunk::setFloorReplacementShapeDefID(VoxelShapeDefID id)
-{
-	this->floorReplacementShapeDefID = id;
-}
-
-void VoxelChunk::setFloorReplacementTextureDefID(VoxelTextureDefID id)
-{
-	this->floorReplacementTextureDefID = id;
-}
-
-void VoxelChunk::setFloorReplacementShadingDefID(VoxelShadingDefID id)
-{
-	this->floorReplacementShadingDefID = id;
-}
-
-void VoxelChunk::setFloorReplacementTraitsDefID(VoxelTraitsDefID id)
-{
-	this->floorReplacementTraitsDefID = id;
-}
-
-void VoxelChunk::setFloorReplacementChasmDefID(VoxelChasmDefID id)
-{
-	this->floorReplacementChasmDefID = id;
 }
 
 VoxelShapeDefID VoxelChunk::addShapeDef(VoxelShapeDefinition &&voxelShapeDef)
@@ -724,7 +495,7 @@ void VoxelChunk::updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord,
 						DebugCrash("Expected door def ID to exist.");
 					}
 
-					const VoxelDoorDefinition &doorDef = this->getDoorDef(doorDefID);
+					const VoxelDoorDefinition &doorDef = this->doorDefs[doorDefID];
 					const VoxelDoorCloseSoundDefinition &closeSoundDef = doorDef.closeSoundDef;
 					if (closeSoundDef.closeType == VoxelDoorCloseType::OnClosing)
 					{
@@ -743,7 +514,7 @@ void VoxelChunk::updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord,
 				DebugCrash("Expected door def ID to exist.");
 			}
 
-			const VoxelDoorDefinition &doorDef = this->getDoorDef(doorDefID);
+			const VoxelDoorDefinition &doorDef = this->doorDefs[doorDefID];
 			const VoxelDoorCloseSoundDefinition &closeSoundDef = doorDef.closeSoundDef;
 			if (closeSoundDef.closeType == VoxelDoorCloseType::OnClosed)
 			{
@@ -769,8 +540,8 @@ void VoxelChunk::updateFadeAnimInsts(double dt)
 		const VoxelInt3 voxel(animInst.x, animInst.y, animInst.z);
 		if (animInst.isDoneFading())
 		{
-			const VoxelTraitsDefID voxelTraitsDefID = this->getTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = this->getTraitsDef(voxelTraitsDefID);
+			const VoxelTraitsDefID voxelTraitsDefID = this->traitsDefIDs.get(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = this->traitsDefs[voxelTraitsDefID];
 			const bool shouldConvertToChasm = voxelTraitsDef.type == ArenaVoxelType::Floor;
 			if (shouldConvertToChasm)
 			{
