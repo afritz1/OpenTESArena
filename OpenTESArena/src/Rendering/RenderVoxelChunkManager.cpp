@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <array>
 #include <numeric>
 #include <optional>
 
@@ -415,10 +414,12 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 
 	renderer.populateIndexBuffer(this->defaultQuadIndexBufferID, MeshUtils::DefaultQuadVertexIndices);
 
-	// Populate chasm wall index buffers.
-	ArenaChasmWallIndexBuffer northIndices, eastIndices, southIndices, westIndices;
-	ArenaMeshUtils::writeChasmWallRendererIndexBuffers(&northIndices, &eastIndices, &southIndices, &westIndices);
+	Span<const int32_t> northIndices = ArenaMeshUtils::ChasmWallNorthIndexBuffer;
+	Span<const int32_t> eastIndices = ArenaMeshUtils::ChasmWallEastIndexBuffer;
+	Span<const int32_t> southIndices = ArenaMeshUtils::ChasmWallSouthIndexBuffer;
+	Span<const int32_t> westIndices = ArenaMeshUtils::ChasmWallWestIndexBuffer;
 
+	// Populate global chasm wall index buffers.
 	for (int i = 0; i < static_cast<int>(this->chasmWallIndexBufferIDs.size()); i++)
 	{
 		const int baseIndex = i + 1;
@@ -447,13 +448,13 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 			continue;
 		}
 
-		std::array<int32_t, ArenaMeshUtils::CHASM_WALL_TOTAL_COUNT * indicesPerQuad> totalIndicesBuffer;
+		int32_t totalIndicesBuffer[ArenaMeshUtils::CHASM_WALL_TOTAL_COUNT * indicesPerQuad];
 		int writingIndex = 0;
-		auto tryWriteIndices = [indicesPerQuad, &totalIndicesBuffer, &writingIndex](bool hasFace, const ArenaChasmWallIndexBuffer &faceIndices)
+		auto tryWriteIndices = [indicesPerQuad, &totalIndicesBuffer, &writingIndex](bool hasFace, Span<const int32_t> faceIndices)
 		{
 			if (hasFace)
 			{
-				std::copy(faceIndices.begin(), faceIndices.end(), totalIndicesBuffer.begin() + writingIndex);
+				std::copy(faceIndices.begin(), faceIndices.end(), std::begin(totalIndicesBuffer) + writingIndex);
 				writingIndex += indicesPerQuad;
 			}
 		};
@@ -463,7 +464,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 		tryWriteIndices(hasSouth, southIndices);
 		tryWriteIndices(hasWest, westIndices);
 
-		renderer.populateIndexBuffer(indexBufferID, Span<const int32_t>(totalIndicesBuffer.data(), writingIndex));
+		renderer.populateIndexBuffer(indexBufferID, Span<const int32_t>(std::begin(totalIndicesBuffer), writingIndex));
 	}
 }
 

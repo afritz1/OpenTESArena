@@ -18,8 +18,6 @@
 enum class VoxelFacing2D;
 enum class VoxelFacing3D;
 
-using ArenaChasmWallIndexBuffer = std::array<int32_t, MeshUtils::INDICES_PER_QUAD>; // Two triangles per buffer.
-
 struct ArenaShapeRaisedInitInfo
 {
 	double vTop;
@@ -79,6 +77,11 @@ namespace ArenaMeshUtils
 	static constexpr int CHASM_WALL_SOUTH = 0x4;
 	static constexpr int CHASM_WALL_WEST = 0x8;
 	static constexpr int CHASM_WALL_COMBINATION_COUNT = CHASM_WALL_NORTH | CHASM_WALL_EAST | CHASM_WALL_SOUTH | CHASM_WALL_WEST;
+
+	static constexpr int32_t ChasmWallNorthIndexBuffer[] = { 4, 5, 6, 6, 7, 4 };
+	static constexpr int32_t ChasmWallEastIndexBuffer[] = { 12, 13, 14, 14, 15, 12 };
+	static constexpr int32_t ChasmWallSouthIndexBuffer[] = { 8, 9, 10, 10, 11, 8 };
+	static constexpr int32_t ChasmWallWestIndexBuffer[] = { 16, 17, 18, 18, 19, 16 };
 
 	constexpr int GetChasmWallIndex(bool north, bool east, bool south, bool west)
 	{
@@ -234,8 +237,6 @@ namespace ArenaMeshUtils
 	}
 
 	bool isFullyCoveringFacing(const ArenaShapeInitCache &shapeInitCache, VoxelFacing3D facing);
-
-	void writeChasmWallRendererIndexBuffers(ArenaChasmWallIndexBuffer *outNorthIndices, ArenaChasmWallIndexBuffer *outEastIndices, ArenaChasmWallIndexBuffer *outSouthIndices, ArenaChasmWallIndexBuffer *outWestIndices);
 
 }
 
