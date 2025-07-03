@@ -134,10 +134,10 @@ namespace ArenaMeshUtils
 		{
 		case ArenaVoxelType::None:
 		case ArenaVoxelType::Raised:
-		case ArenaVoxelType::TransparentWall:
-		case ArenaVoxelType::Door:
 		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::TransparentWall:
 		case ArenaVoxelType::Edge:
+		case ArenaVoxelType::Door:
 			return false;
 		case ArenaVoxelType::Wall:
 		case ArenaVoxelType::Floor:
@@ -154,8 +154,8 @@ namespace ArenaMeshUtils
 		switch (voxelType)
 		{
 		case ArenaVoxelType::None:
-		case ArenaVoxelType::Door:
 		case ArenaVoxelType::Diagonal:
+		case ArenaVoxelType::Door:
 			return false;
 		case ArenaVoxelType::Wall:
 		case ArenaVoxelType::Floor:
