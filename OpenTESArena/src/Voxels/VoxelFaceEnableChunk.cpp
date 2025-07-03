@@ -69,23 +69,30 @@ void VoxelFaceEnableChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 		if (voxelChunk.tryGetChasmDefID(voxel.x, voxel.y, voxel.z, &chasmDefID))
 		{
 			// Chasm face enabling is determined by chasm wall instance.
+			const int positiveXFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::PositiveX);
+			const int negativeXFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::NegativeX);
 			const int positiveYFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::PositiveY);
 			const int negativeYFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::NegativeY);
+			const int positiveZFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::PositiveZ);
+			const int negativeZFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::NegativeZ);
 			faceEnableEntry.enabledFaces[positiveYFaceIndex] = false;
 			faceEnableEntry.enabledFaces[negativeYFaceIndex] = true;
 
 			int chasmWallInstIndex;
 			if (voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmWallInstIndex))
 			{
-				const VoxelChasmWallInstance &chasmWallInst = voxelChunk.getChasmWallInsts()[chasmWallInstIndex];
-				const int positiveXFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::PositiveX);
-				const int negativeXFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::NegativeX);
-				const int positiveZFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::PositiveZ);
-				const int negativeZFaceIndex = VoxelUtils::getFacingIndex(VoxelFacing3D::NegativeZ);
+				const VoxelChasmWallInstance &chasmWallInst = voxelChunk.getChasmWallInsts()[chasmWallInstIndex];				
 				faceEnableEntry.enabledFaces[positiveXFaceIndex] = chasmWallInst.south;
 				faceEnableEntry.enabledFaces[negativeXFaceIndex] = chasmWallInst.north;
 				faceEnableEntry.enabledFaces[positiveZFaceIndex] = chasmWallInst.west;
 				faceEnableEntry.enabledFaces[negativeZFaceIndex] = chasmWallInst.east;
+			}
+			else
+			{
+				faceEnableEntry.enabledFaces[positiveXFaceIndex] = false;
+				faceEnableEntry.enabledFaces[negativeXFaceIndex] = false;
+				faceEnableEntry.enabledFaces[positiveZFaceIndex] = false;
+				faceEnableEntry.enabledFaces[negativeZFaceIndex] = false;
 			}
 
 			continue;
