@@ -805,24 +805,24 @@ void VoxelChunk::updateFadeAnimInsts(double dt)
 				tryEraseVoxelMapEntry(this->buildingNameIndices);
 				tryEraseVoxelMapEntry(this->doorDefIndices);
 				tryEraseVoxelMapEntry(this->chasmDefIndices);
+			}
 
-				// Set adjacent face activations dirty in case they became unblocked.
-				const VoxelInt3 adjacentVoxels[] =
-				{
-					VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitX),
-					VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitX),
-					VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitY),
-					VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitY),
-					VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitZ),
-					VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitZ)
-				};
+			// Set adjacent face activations dirty in case they became unblocked.
+			const VoxelInt3 adjacentVoxels[] =
+			{
+				VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitX),
+				VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitX),
+				VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitY),
+				VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitY),
+				VoxelUtils::getVoxelWithOffset(voxel, VoxelInt3::UnitZ),
+				VoxelUtils::getVoxelWithOffset(voxel, -VoxelInt3::UnitZ)
+			};
 
-				for (const VoxelInt3 adjacentVoxel : adjacentVoxels)
+			for (const VoxelInt3 adjacentVoxel : adjacentVoxels)
+			{
+				if (this->isValidVoxel(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z))
 				{
-					if (this->isValidVoxel(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z))
-					{
-						this->setFaceActivationDirty(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
-					}
+					this->setFaceActivationDirty(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 				}
 			}
 
