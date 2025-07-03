@@ -361,7 +361,7 @@ namespace PlayerLogic
 						{
 							VoxelFadeAnimationInstance fadeAnimInst;
 							fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-							voxelChunk.addFadeAnimInst(std::move(fadeAnimInst));
+							voxelChunk.fadeAnimInsts.emplace_back(std::move(fadeAnimInst));
 						}
 					}
 				}

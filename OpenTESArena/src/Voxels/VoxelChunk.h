@@ -163,15 +163,6 @@ struct VoxelChunk final : public Chunk
 	void addDoorDefPosition(VoxelDoorDefID id, const VoxelInt3 &voxel);
 	void addChasmDefPosition(VoxelChasmDefID id, const VoxelInt3 &voxel);
 
-	void addDirtyFaceActivationPosition(const VoxelInt3 &voxel);
-	void addDirtyDoorVisInstPosition(const VoxelInt3 &voxel);
-
-	void addDoorAnimInst(VoxelDoorAnimationInstance &&animInst);
-	void addFadeAnimInst(VoxelFadeAnimationInstance &&animInst);
-
-	void addChasmWallInst(VoxelChasmWallInstance &&inst);
-	void addDoorVisibilityInst(VoxelDoorVisibilityInstance &&inst);
-	void addTriggerInst(VoxelTriggerInstance &&inst);
 	void removeChasmWallInst(const VoxelInt3 &voxel);
 
 	// Simulates the chunk's voxels by delta time.

@@ -101,7 +101,7 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 			{
 				VoxelTriggerInstance newTriggerInst;
 				newTriggerInst.init(voxel.x, voxel.y, voxel.z);
-				chunk.addTriggerInst(std::move(newTriggerInst));
+				chunk.triggerInsts.emplace_back(std::move(newTriggerInst));
 			}
 		}
 	}
@@ -124,7 +124,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 
 	VoxelDoorAnimationInstance newDoorAnimInst;
 	newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-	voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
+	voxelChunk.doorAnimInsts.emplace_back(std::move(newDoorAnimInst));
 
 	bool isDoorBecomingUnlocked = false;
 
@@ -143,7 +143,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 	{
 		VoxelTriggerInstance newTriggerInst;
 		newTriggerInst.init(voxel.x, voxel.y, voxel.z);
-		voxelChunk.addTriggerInst(std::move(newTriggerInst));
+		voxelChunk.triggerInsts.emplace_back(std::move(newTriggerInst));
 	}
 
 	const bool isDoorKeyUseValid = isApplyingDoorKeyToLock && isDoorBecomingUnlocked;

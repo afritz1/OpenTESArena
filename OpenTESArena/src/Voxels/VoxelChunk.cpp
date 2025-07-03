@@ -373,41 +373,6 @@ void VoxelChunk::addChasmDefPosition(VoxelChasmDefID id, const VoxelInt3 &voxel)
 	this->chasmDefIndices.emplace(voxel, id);
 }
 
-void VoxelChunk::addDirtyFaceActivationPosition(const VoxelInt3 &voxel)
-{
-	this->setFaceActivationDirty(voxel.x, voxel.y, voxel.z);
-}
-
-void VoxelChunk::addDirtyDoorVisInstPosition(const VoxelInt3 &voxel)
-{
-	this->setDoorVisInstDirty(voxel.x, voxel.y, voxel.z);
-}
-
-void VoxelChunk::addDoorAnimInst(VoxelDoorAnimationInstance &&animInst)
-{
-	this->doorAnimInsts.emplace_back(std::move(animInst));
-}
-
-void VoxelChunk::addFadeAnimInst(VoxelFadeAnimationInstance &&animInst)
-{
-	this->fadeAnimInsts.emplace_back(std::move(animInst));
-}
-
-void VoxelChunk::addChasmWallInst(VoxelChasmWallInstance &&inst)
-{
-	this->chasmWallInsts.emplace_back(std::move(inst));
-}
-
-void VoxelChunk::addDoorVisibilityInst(VoxelDoorVisibilityInstance &&inst)
-{
-	this->doorVisInsts.emplace_back(std::move(inst));
-}
-
-void VoxelChunk::addTriggerInst(VoxelTriggerInstance &&inst)
-{
-	this->triggerInsts.emplace_back(std::move(inst));
-}
-
 void VoxelChunk::removeChasmWallInst(const VoxelInt3 &voxel)
 {
 	for (int i = 0; i < static_cast<int>(this->chasmWallInsts.size()); i++)

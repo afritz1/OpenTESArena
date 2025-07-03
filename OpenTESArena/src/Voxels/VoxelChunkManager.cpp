@@ -454,7 +454,7 @@ void VoxelChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 				{
 					VoxelChasmWallInstance chasmWallInst;
 					chasmWallInst.init(x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-					chunk.addChasmWallInst(std::move(chasmWallInst));
+					chunk.chasmWallInsts.emplace_back(std::move(chasmWallInst));
 				}
 			}
 		}
@@ -477,7 +477,7 @@ void VoxelChunkManager::populateChunkDoorVisibilityInsts(VoxelChunk &chunk)
 				{
 					VoxelDoorVisibilityInstance doorVisInst;
 					doorVisInst.init(x, y, z);
-					chunk.addDoorVisibilityInst(std::move(doorVisInst));
+					chunk.doorVisInsts.emplace_back(std::move(doorVisInst));
 				}
 			}
 		}
@@ -709,14 +709,14 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 
 				if (shouldDirtyChasmWallInst)
 				{
-					chunk.addDirtyFaceActivationPosition(voxel);
+					chunk.setFaceActivationDirty(voxel.x, voxel.y, voxel.z);
 				}
 			}
 			else
 			{
 				// The chasm wall instance no longer has any interesting data.
 				chunk.removeChasmWallInst(voxel);
-				chunk.addDirtyFaceActivationPosition(voxel);
+				chunk.setFaceActivationDirty(voxel.x, voxel.y, voxel.z);
 			}
 		}
 		else
@@ -729,8 +729,8 @@ void VoxelChunkManager::updateChasmWallInst(VoxelChunk &chunk, SNInt x, int y, W
 			{
 				VoxelChasmWallInstance chasmWallInst;
 				chasmWallInst.init(x, y, z, hasNorthFace, hasEastFace, hasSouthFace, hasWestFace);
-				chunk.addChasmWallInst(std::move(chasmWallInst));
-				chunk.addDirtyFaceActivationPosition(voxel);
+				chunk.chasmWallInsts.emplace_back(std::move(chasmWallInst));
+				chunk.setFaceActivationDirty(voxel.x, voxel.y, voxel.z);
 			}
 		}
 	}
@@ -773,7 +773,7 @@ void VoxelChunkManager::updateChunkDoorVisibilityInsts(VoxelChunk &chunk, const 
 		const bool isWestValid = isVoxelValidForDoorFace(westChunkIndex, westVoxelShapeDefID);
 
 		visInst.update(isCameraNorthInclusive, isCameraEastInclusive, isNorthValid, isEastValid, isSouthValid, isWestValid);
-		chunk.addDirtyDoorVisInstPosition(doorVoxel); // @todo why is this dirtying every frame?
+		chunk.setDoorVisInstDirty(doorVoxel.x, doorVoxel.y, doorVoxel.z); // @todo why is this dirtying every frame?
 	}
 }
 
@@ -857,7 +857,7 @@ void VoxelChunkManager::update(double dt, Span<const ChunkInt2> newChunkPosition
 					int dummyChasmWallInstIndex;
 					if (adjacentChunk.tryGetChasmWallInstIndex(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z, &dummyChasmWallInstIndex))
 					{
-						adjacentChunk.addDirtyFaceActivationPosition(adjacentVoxel);
+						adjacentChunk.setFaceActivationDirty(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 					}
 				}
 			}
