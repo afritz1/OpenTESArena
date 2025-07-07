@@ -1,6 +1,7 @@
 #ifndef MESH_LIBRARY_H
 #define MESH_LIBRARY_H
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <vector>
