@@ -1530,17 +1530,26 @@ namespace
 	};
 
 	double g_ambientPercent;
-	Span<const RenderLightID> g_visibleLightIDs;
+	const SoftwareLight *g_visibleLights[16]; // @todo increase and actually do deferred lighting pass
+	int g_visibleLightCount;
 	double g_screenSpaceAnimPercent;
 	const SoftwareObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
 	const SoftwareObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
 	const SoftwareObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
-	void PopulatePixelShaderGlobals(double ambientPercent, Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent,
-		const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
+	void PopulatePixelShaderGlobals(double ambientPercent, Span<const RenderLightID> visibleLightIDs, const SoftwareLightPool &lightPool,
+		double screenSpaceAnimPercent, const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture,
+		const SoftwareObjectTexture &skyBgTexture)
 	{
 		g_ambientPercent = ambientPercent;
-		g_visibleLightIDs = visibleLightIDs;
+
+		std::fill(std::begin(g_visibleLights), std::end(g_visibleLights), nullptr);
+		g_visibleLightCount = std::min<int>(visibleLightIDs.getCount(), std::size(g_visibleLights));
+		for (int i = 0; i < g_visibleLightCount; i++)
+		{
+			g_visibleLights[i] = &lightPool.get(visibleLightIDs[i]);
+		}
+		
 		g_screenSpaceAnimPercent = screenSpaceAnimPercent;
 		g_paletteTexture = &paletteTexture;
 		g_lightTableTexture = &lightTableTexture;
@@ -3287,8 +3296,21 @@ namespace
 					double lightIntensitySum = 0.0;
 					if constexpr (requiresPerPixelLightIntensity)
 					{
-						lightIntensitySum = g_ambientPercent;
 						// @todo redo this in deferred lighting pass
+						lightIntensitySum = g_ambientPercent;
+
+						for (int lightIndex = 0; lightIndex < g_visibleLightCount; lightIndex++)
+						{
+							const SoftwareLight &light = *g_visibleLights[lightIndex];
+							double lightIntensity = 0.0;
+							GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
+							lightIntensitySum += lightIntensity;
+							if (lightIntensitySum >= 1.0)
+							{
+								lightIntensitySum = 1.0;
+								break;
+							}
+						}
 					}
 					else if (requiresPerMeshLightIntensity)
 					{
@@ -4260,7 +4282,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	PopulateDrawCallGlobals(totalDrawCallCount);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
-	PopulatePixelShaderGlobals(settings.ambientPercent, settings.visibleLightIDs, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
+	PopulatePixelShaderGlobals(settings.ambientPercent, settings.visibleLightIDs, this->lights, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
 	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);

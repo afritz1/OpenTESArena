@@ -965,9 +965,9 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
 		const double pixelShaderParam0 = 0.0;
 
-		// @todo solve lights per mesh in RenderLightChunk :O as a temporary fix, could use lights in minVoxel
-		RenderLightingType lightingType = RenderLightingType::PerPixel;
-		double lightIntensity = 1.0;
+		DrawCallLightingInitInfo lightingInitInfo;
+		lightingInitInfo.type = RenderLightingType::PerPixel;
+		lightingInitInfo.percent = 1.0;
 
 		int fadeAnimInstIndex;
 		if (voxelChunk.tryGetFadeAnimInstIndex(minVoxel.x, minVoxel.y, minVoxel.z, &fadeAnimInstIndex))
@@ -975,8 +975,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			const VoxelFadeAnimationInstance &fadeAnimInst = voxelChunk.fadeAnimInsts[fadeAnimInstIndex];
 			if (!fadeAnimInst.isDoneFading())
 			{
-				lightingType = RenderLightingType::PerMesh;
-				lightIntensity = std::clamp(1.0 - fadeAnimInst.percentFaded, 0.0, 1.0);
+				lightingInitInfo.type = RenderLightingType::PerMesh;
+				lightingInitInfo.percent = std::clamp(1.0 - fadeAnimInst.percentFaded, 0.0, 1.0);
 			}
 		}
 
@@ -998,8 +998,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		drawCall.vertexShaderType = shadingDef.vertexShaderType;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = pixelShaderParam0;
-		drawCall.lightingType = lightingType;
-		drawCall.lightPercent = lightIntensity;
+		drawCall.lightingType = lightingInitInfo.type;
+		drawCall.lightPercent = lightingInitInfo.percent;
 		drawCall.enableBackFaceCulling = !shapeDef.allowsBackFaces;
 		drawCall.enableDepthRead = true;
 		drawCall.enableDepthWrite = true;
@@ -1074,6 +1074,7 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 
 		DrawCallLightingInitInfo lightingInitInfo;
 		lightingInitInfo.type = RenderLightingType::PerPixel;
+		lightingInitInfo.percent = 0.0;
 		if (isFading)
 		{
 			lightingInitInfo.type = RenderLightingType::PerMesh;
