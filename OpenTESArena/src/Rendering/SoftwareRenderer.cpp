@@ -3285,7 +3285,7 @@ namespace
 					double lightIntensitySum = 0.0;
 					if constexpr (requiresPerPixelLightIntensity)
 					{
-						//lightIntensitySum = g_ambientPercent;
+						lightIntensitySum = g_ambientPercent;
 						// @todo redo this in deferred lighting pass
 					}
 					else if (requiresPerMeshLightIntensity)
