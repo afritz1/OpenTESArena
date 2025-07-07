@@ -935,6 +935,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 		VoxelChasmDefID chasmDefID;
 		bool isChasm = voxelChunk.tryGetChasmDefID(minVoxel.x, minVoxel.y, minVoxel.z, &chasmDefID);
+		const VoxelChasmDefinition *chasmDef = nullptr;
 
 		// Use the texture/shading values of the first voxel.
 		const int textureSlotIndex = meshDef.findTextureSlotIndexWithFacing(facing);
@@ -942,6 +943,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		ObjectTextureID textureID1 = -1;
 		if (isChasm)
 		{
+			chasmDef = &voxelChunkManager.getChasmDef(chasmDefID);
+
 			const bool isChasmFloor = facing == VoxelFacing3D::NegativeY;
 
 			textureID0 = this->getChasmFloorTextureID(chasmDefID);
@@ -977,6 +980,14 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			{
 				lightingInitInfo.type = RenderLightingType::PerMesh;
 				lightingInitInfo.percent = std::clamp(1.0 - fadeAnimInst.percentFaded, 0.0, 1.0);
+			}
+		}
+		else if (isChasm)
+		{
+			if (chasmDef->isEmissive)
+			{
+				lightingInitInfo.type = RenderLightingType::PerMesh;
+				lightingInitInfo.percent = 1.0;
 			}
 		}
 
