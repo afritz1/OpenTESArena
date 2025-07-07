@@ -746,8 +746,6 @@ namespace
 		ObjectTextureID textureID1;
 		RenderLightingType lightingType;
 		double meshLightPercent;
-		const SoftwareLight *lightPtrArray[RenderLightIdList::MAX_LIGHTS];
-		int lightCount;
 		VertexShaderType vertexShaderType;
 		PixelShaderType pixelShaderType;
 		double pixelShaderParam0;
@@ -3048,8 +3046,6 @@ namespace
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
 		const double meshLightPercent = drawCallCache.meshLightPercent;
-		const auto &lights = drawCallCache.lightPtrArray;
-		const int lightCount = drawCallCache.lightCount;
 		const double pixelShaderParam0 = drawCallCache.pixelShaderParam0;
 
 		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
@@ -3289,20 +3285,8 @@ namespace
 					double lightIntensitySum = 0.0;
 					if constexpr (requiresPerPixelLightIntensity)
 					{
-						lightIntensitySum = g_ambientPercent;
-						for (int lightIndex = 0; lightIndex < lightCount; lightIndex++)
-						{
-							const SoftwareLight &light = *lights[lightIndex];
-							double lightIntensity;
-							GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
-							lightIntensitySum += lightIntensity;
-
-							if (lightIntensitySum >= 1.0)
-							{
-								lightIntensitySum = 1.0;
-								break;
-							}
-						}
+						//lightIntensitySum = g_ambientPercent;
+						// @todo redo this in deferred lighting pass
 					}
 					else if (requiresPerMeshLightIntensity)
 					{
@@ -4339,8 +4323,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					auto &drawCallCacheTextureID1 = workerDrawCallCache.textureID1;
 					auto &drawCallCacheLightingType = workerDrawCallCache.lightingType;
 					auto &drawCallCacheMeshLightPercent = workerDrawCallCache.meshLightPercent;
-					auto &drawCallCacheLightPtrArray = workerDrawCallCache.lightPtrArray;
-					auto &drawCallCacheLightCount = workerDrawCallCache.lightCount;
 					auto &drawCallCacheVertexShaderType = workerDrawCallCache.vertexShaderType;
 					auto &drawCallCachePixelShaderType = workerDrawCallCache.pixelShaderType;
 					auto &drawCallCachePixelShaderParam0 = workerDrawCallCache.pixelShaderParam0;
@@ -4371,15 +4353,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					drawCallCacheTextureID1 = drawCall.textureIDs[1];
 					drawCallCacheLightingType = drawCall.lightingType;
 					drawCallCacheMeshLightPercent = drawCall.lightPercent;
-
-					auto &drawCallCacheLightPtrs = drawCallCacheLightPtrArray;
-					for (int lightIndex = 0; lightIndex < drawCall.lightIdCount; lightIndex++)
-					{
-						const RenderLightID lightID = drawCall.lightIDs[lightIndex];
-						drawCallCacheLightPtrs[lightIndex] = &this->lights.get(lightID);
-					}
-
-					drawCallCacheLightCount = drawCall.lightIdCount;
 					drawCallCacheVertexShaderType = drawCall.vertexShaderType;
 					drawCallCachePixelShaderType = drawCall.pixelShaderType;
 					drawCallCachePixelShaderParam0 = drawCall.pixelShaderParam0;

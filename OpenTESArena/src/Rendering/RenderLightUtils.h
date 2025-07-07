@@ -1,8 +1,6 @@
 #ifndef RENDER_LIGHT_UTILS_H
 #define RENDER_LIGHT_UTILS_H
 
-#include "components/utilities/Span.h"
-
 // Unique ID for a light allocated in the renderer's internal format.
 using RenderLightID = int;
 
@@ -14,24 +12,5 @@ enum class RenderLightingType
 
 static constexpr RenderLightingType RENDER_LIGHTING_TYPE_MAX = RenderLightingType::PerPixel;
 static constexpr int RENDER_LIGHTING_TYPE_COUNT = static_cast<int>(RENDER_LIGHTING_TYPE_MAX) + 1;
-
-// Lights affecting a specific portion of the scene, like a voxel or entity. Sorted by distance.
-struct RenderLightIdList
-{
-	static constexpr int MAX_LIGHTS = 8;
-
-	RenderLightID lightIDs[MAX_LIGHTS];
-	double distanceSqrs[MAX_LIGHTS];
-	int lightCount;
-
-	RenderLightIdList();
-
-	Span<const RenderLightID> getLightIDs() const;
-	void tryAddLight(RenderLightID id, double distanceSqr);
-	int findLight(RenderLightID id);
-	void removeLightAt(int index);
-	void removeLight(RenderLightID id);
-	void clear();
-};
 
 #endif

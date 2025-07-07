@@ -298,7 +298,6 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.textureIDs[1] = -1;
 	this->bgDrawCall.lightingType = RenderLightingType::PerMesh;
 	this->bgDrawCall.lightPercent = 1.0;
-	this->bgDrawCall.lightIdCount = 0;
 	this->bgDrawCall.vertexShaderType = VertexShaderType::Basic;
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
@@ -744,7 +743,6 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.textureIDs[1] = -1;
 		drawCall.lightingType = RenderLightingType::PerMesh;
 		drawCall.lightPercent = meshLightPercent;
-		drawCall.lightIdCount = 0;
 		drawCall.vertexShaderType = VertexShaderType::Basic;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = 0.0;

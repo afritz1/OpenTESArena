@@ -17,7 +17,6 @@
 #include "components/utilities/Span3D.h"
 
 class Renderer;
-class RenderLightChunkManager;
 class TextureManager;
 class VoxelChunkManager;
 class VoxelFaceCombineChunkManager;
@@ -109,12 +108,11 @@ private:
 	void loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
 	void updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const VoxelFaceCombineChunk &faceCombineChunk, const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager,
-		double ceilingScale, double chasmAnimPercent, Renderer &renderer);
+		const VoxelFaceCombineChunk &faceCombineChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent, Renderer &renderer);
 	void updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale);
+		const VoxelChunkManager &voxelChunkManager, double ceilingScale);
 	void updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const RenderLightChunk &renderLightChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale);
+		const VoxelChunkManager &voxelChunkManager, double ceilingScale);
 
 	void clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, Renderer &renderer);
 	void clearChunkNonCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions);
@@ -134,8 +132,7 @@ public:
 
 	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager,
-		const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager, const RenderLightChunkManager &renderLightChunkManager,
-		TextureManager &textureManager, Renderer &renderer);
+		const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// End of frame clean-up.
 	void endFrame();

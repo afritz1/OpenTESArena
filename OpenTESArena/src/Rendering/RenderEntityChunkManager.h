@@ -19,7 +19,6 @@ class EntityChunkManager;
 class EntityDefinitionLibrary;
 class EntityVisibilityChunkManager;
 class Renderer;
-class RenderLightChunkManager;
 class RenderVoxelChunkManager;
 class TextureManager;
 class VoxelChunkManager;
@@ -29,7 +28,6 @@ struct EntityChunk;
 struct EntityVisibilityChunk;
 struct RenderCamera;
 struct RenderCommandBuffer;
-struct RenderLightChunk;
 struct RenderVoxelChunk;
 
 struct RenderEntityLoadedAnimation
@@ -55,11 +53,9 @@ private:
 	void loadTexturesForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	void addDrawCall(UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
-		const std::optional<ObjectTextureID> &textureID1, Span<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
-		std::vector<RenderDrawCall> &drawCalls);
+		const std::optional<ObjectTextureID> &textureID1, PixelShaderType pixelShaderType, std::vector<RenderDrawCall> &drawCalls);
 	void rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityVisibilityChunk &entityVisChunk,
-		const RenderLightChunk &renderLightChunk, const WorldDouble3 &cameraPosition, double ceilingScale,
-		const EntityChunkManager &entityChunkManager);
+		const WorldDouble3 &cameraPosition, double ceilingScale, const EntityChunkManager &entityChunkManager);
 	void rebuildDrawCallsList();
 public:
 	RenderEntityChunkManager();
@@ -81,7 +77,7 @@ public:
 	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 		const WorldDouble3 &cameraPosition, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, const EntityVisibilityChunkManager &entityVisChunkManager,
-		const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager, Renderer &renderer);
+		TextureManager &textureManager, Renderer &renderer);
 
 	// End of frame clean-up.
 	void endFrame();
