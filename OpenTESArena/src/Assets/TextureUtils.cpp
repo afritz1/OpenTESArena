@@ -253,7 +253,7 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 	Surface surface = Surface::createWithFormat(textureGenInfo.width + padding, textureGenInfo.height + padding,
 		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
-	const Color backColor(32, 32, 32, 192);
+	constexpr Color backColor(32, 32, 32, 192);
 	surface.fill(backColor.r, backColor.g, backColor.b, backColor.a);
 
 	// Offset the text from the top left corner a bit so it isn't against the side of the tooltip
@@ -261,9 +261,8 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 	const int dstX = padding / 2;
 	const int dstY = padding / 2;
 
-	const Color textColor(255, 255, 255, 255);
-	BufferView2D<uint32_t> surfacePixelsView(
-		static_cast<uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
+	constexpr Color textColor(255, 255, 255, 255);
+	Span2D<uint32_t> surfacePixelsView(static_cast<uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
 
 	Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(text);
 	constexpr TextAlignment alignment = TextAlignment::TopLeft;

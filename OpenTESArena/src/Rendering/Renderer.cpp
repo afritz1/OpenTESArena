@@ -286,7 +286,7 @@ double Renderer::getWindowAspect() const
 	return static_cast<double>(dims.x) / static_cast<double>(dims.y);
 }
 
-BufferView<const RenderDisplayMode> Renderer::getDisplayModes() const
+Span<const RenderDisplayMode> Renderer::getDisplayModes() const
 {
 	return this->displayModes;
 }
@@ -779,19 +779,19 @@ IndexBufferID Renderer::createIndexBuffer(int indexCount)
 	return this->renderer3D->createIndexBuffer(indexCount);
 }
 
-void Renderer::populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions)
+void Renderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateVertexPositionBuffer(id, positions);
 }
 
-void Renderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes)
+void Renderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateVertexAttributeBuffer(id, attributes);
 }
 
-void Renderer::populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices)
+void Renderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateIndexBuffer(id, indices);
@@ -832,12 +832,12 @@ bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
 	return this->renderer2D->tryCreateUiTexture(width, height, outID);
 }
 
-bool Renderer::tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID)
+bool Renderer::tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(texels, outID);
 }
 
-bool Renderer::tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID)
+bool Renderer::tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID)
 {
 	return this->renderer2D->tryCreateUiTexture(texels, palette, outID);
 }
@@ -898,13 +898,13 @@ UniformBufferID Renderer::createUniformBuffer(int elementCount, size_t sizeOfEle
 	return this->renderer3D->createUniformBuffer(elementCount, sizeOfElement, alignmentOfElement);
 }
 
-void Renderer::populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data)
+void Renderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateUniformBuffer(id, data);
 }
 
-void Renderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData)
+void Renderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
 {
 	DebugAssert(this->renderer3D->isInited());
 	this->renderer3D->populateUniformAtIndex(id, uniformIndex, uniformData);

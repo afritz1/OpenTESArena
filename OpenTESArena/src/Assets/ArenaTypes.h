@@ -88,6 +88,8 @@ enum class ArenaVoxelType
 	Door
 };
 
+constexpr int ARENA_VOXEL_TYPE_COUNT = static_cast<int>(ArenaVoxelType::Door) + 1;
+
 enum class ArenaChasmType
 {
 	Dry,
@@ -632,6 +634,8 @@ namespace ArenaTypes
 
 		void init(const uint8_t *data);
 	};
+
+	std::string voxelTypeToString(ArenaVoxelType voxelType);
 }
 
 #endif

@@ -10,8 +10,8 @@
 #include "WorldMapMask.h"
 #include "../Player/CharacterClassGeneration.h"
 
-#include "components/utilities/BufferView.h"
 #include "components/utilities/Singleton.h"
+#include "components/utilities/Span.h"
 
 class ArenaRandom;
 

@@ -19,18 +19,18 @@ enum class LocationDefinitionType
 	MainQuestDungeon // Start, map, or staff dungeon
 };
 
+// Used with a couple special-cased temple names in the original game.
+struct LocationCityMainQuestTempleOverride
+{
+	int modelIndex;
+	int suffixIndex;
+	int menuNamesIndex;
+
+	void init(int modelIndex, int suffixIndex, int menuNamesIndex);
+};
+
 struct LocationCityDefinition
 {
-	// Used with a couple special-cased temple names in the original game.
-	struct MainQuestTempleOverride
-	{
-		int modelIndex;
-		int suffixIndex;
-		int menuNamesIndex;
-
-		void init(int modelIndex, int suffixIndex, int menuNamesIndex);
-	};
-
 	ArenaCityType type;
 	char typeDisplayName[16];
 	char mapFilename[16]; // .MIF name for most/all cases for now.
@@ -49,7 +49,7 @@ struct LocationCityDefinition
 	SNInt blockStartPosY;
 
 	bool hasMainQuestTempleOverride;
-	MainQuestTempleOverride mainQuestTempleOverride;
+	LocationCityMainQuestTempleOverride mainQuestTempleOverride;
 
 	int cityBlocksPerSide;
 	bool coastal;
@@ -60,7 +60,7 @@ struct LocationCityDefinition
 	void init(ArenaCityType type, const char *typeDisplayName, const char *mapFilename,
 		uint32_t citySeed, uint32_t wildSeed, uint32_t provinceSeed, uint32_t rulerSeed,
 		uint32_t skySeed, ArenaClimateType climateType, const std::vector<uint8_t> *reservedBlocks,
-		WEInt blockStartPosX, SNInt blockStartPosY, const MainQuestTempleOverride *mainQuestTempleOverride,
+		WEInt blockStartPosX, SNInt blockStartPosY, const LocationCityMainQuestTempleOverride *mainQuestTempleOverride,
 		int cityBlocksPerSide, bool coastal, bool premade, bool rulerIsMale, bool palaceIsMainQuestDungeon);
 
 	uint32_t getWildDungeonSeed(int wildBlockX, int wildBlockY) const;
@@ -120,8 +120,7 @@ private:
 	void init(LocationDefinitionType type, const std::string &name, int x, int y, double latitude);
 public:
 	// Initialize from original game data.
-	void initCity(int localCityID, int provinceID, bool coastal, bool premade,
-		ArenaCityType type, const BinaryAssetLibrary &binaryAssetLibrary);
+	void initCity(int localCityID, int provinceID, bool coastal, bool premade, ArenaCityType type, const BinaryAssetLibrary &binaryAssetLibrary);
 	void initDungeon(int localDungeonID, int provinceID, const ArenaLocationData &locationData, const ArenaProvinceData &provinceData);
 	void initMainQuestDungeon(const std::optional<int> &optLocalDungeonID, int provinceID,
 		LocationMainQuestDungeonDefinitionType type, const BinaryAssetLibrary &binaryAssetLibrary);

@@ -434,8 +434,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			const CoordDouble2 coordXZ(chunkPos, ChunkUtils::MakeChunkPointFromLevel(worldPosition, startX, startZ));
 			const WorldDouble2 worldPositionXZ = VoxelUtils::coordToWorldPoint(coordXZ);
 			const VoxelInt3 voxel = VoxelUtils::worldVoxelToCoord(worldVoxel).voxel;
-			const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+			const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+			const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
 			const double feetY = ceilingScale + entityDefYOffset + GetElevatedPlatformHeight(voxelShapeDef, ceilingScale);
 
 			EntityInitInfo initInfo;
@@ -483,10 +483,10 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			for (int spawnAttempt = 0; spawnAttempt < maxSpawnAttemptsCount; spawnAttempt++)
 			{
 				const VoxelInt2 spawnVoxel(random.next(Chunk::WIDTH), random.next(Chunk::DEPTH));
-				const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 1, spawnVoxel.y);
-				const VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.getTraitsDefID(spawnVoxel.x, 0, spawnVoxel.y);
-				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
-				const VoxelTraitsDefinition &groundVoxelTraitsDef = voxelChunk.getTraitsDef(groundVoxelTraitsDefID);
+				const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.traitsDefIDs.get(spawnVoxel.x, 1, spawnVoxel.y);
+				const VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.traitsDefIDs.get(spawnVoxel.x, 0, spawnVoxel.y);
+				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
+				const VoxelTraitsDefinition &groundVoxelTraitsDef = voxelChunk.traitsDefs[groundVoxelTraitsDefID];
 				const bool isValidSpawnVoxel = (voxelTraitsDef.type == ArenaVoxelType::None) && (groundVoxelTraitsDef.type == ArenaVoxelType::Floor);				
 				if (isValidSpawnVoxel)
 				{
@@ -705,8 +705,8 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					}
 
 					const VoxelInt3 mainFloorVoxel(coord.voxel.x, 1, coord.voxel.y);
-					const VoxelTraitsDefID mainFloorVoxelTraitsDefID = voxelChunk->getTraitsDefID(mainFloorVoxel.x, mainFloorVoxel.y, mainFloorVoxel.z);
-					const VoxelTraitsDefinition &mainFloorVoxelTraitsDef = voxelChunk->getTraitsDef(mainFloorVoxelTraitsDefID);
+					const VoxelTraitsDefID mainFloorVoxelTraitsDefID = voxelChunk->traitsDefIDs.get(mainFloorVoxel.x, mainFloorVoxel.y, mainFloorVoxel.z);
+					const VoxelTraitsDefinition &mainFloorVoxelTraitsDef = voxelChunk->traitsDefs[mainFloorVoxelTraitsDefID];
 					const bool isPassableVoxel = mainFloorVoxelTraitsDef.type == ArenaVoxelType::None;
 					if (!isPassableVoxel)
 					{
@@ -714,8 +714,8 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 					}
 
 					const VoxelInt3 floorVoxel(coord.voxel.x, 0, coord.voxel.y);
-					const VoxelTraitsDefID floorVoxelTraitsDefID = voxelChunk->getTraitsDefID(floorVoxel.x, floorVoxel.y, floorVoxel.z);
-					const VoxelTraitsDefinition &floorVoxelTraitsDef = voxelChunk->getTraitsDef(floorVoxelTraitsDefID);
+					const VoxelTraitsDefID floorVoxelTraitsDefID = voxelChunk->traitsDefIDs.get(floorVoxel.x, floorVoxel.y, floorVoxel.z);
+					const VoxelTraitsDefinition &floorVoxelTraitsDef = voxelChunk->traitsDefs[floorVoxelTraitsDefID];
 					const bool isWalkableVoxel = floorVoxelTraitsDef.type == ArenaVoxelType::Floor;
 					if (!isWalkableVoxel)
 					{
@@ -984,12 +984,12 @@ int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chu
 	return count;
 }
 
-BufferView<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs() const
+Span<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs() const
 {
 	return this->destroyedEntityIDs;
 }
 
-BufferView<const EntityTransferResult> EntityChunkManager::getEntityTransferResults() const
+Span<const EntityTransferResult> EntityChunkManager::getEntityTransferResults() const
 {
 	return this->transferResults;
 }
@@ -1099,7 +1099,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChun
 
 void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem)
 {
-	for (const VoxelFadeAnimationInstance &fadeAnimInst : voxelChunk.getFadeAnimInsts())
+	for (const VoxelFadeAnimationInstance &fadeAnimInst : voxelChunk.fadeAnimInsts)
 	{
 		if (fadeAnimInst.isDoneFading())
 		{
@@ -1252,11 +1252,11 @@ EntityInstanceID EntityChunkManager::createEntity(const EntityInitInfo &initInfo
 	return entityInstID;
 }
 
-void EntityChunkManager::update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
-	BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPositions,
+	Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 	const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
-	const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
-	BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
+	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
+	Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs,
 	const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
 	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
 	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
@@ -1371,7 +1371,7 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool 
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
 }
 
-void EntityChunkManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -1463,6 +1463,6 @@ void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem, Renderer &rend
 		}
 	}
 
-	this->cleanUp(physicsSystem, renderer);
+	this->endFrame(physicsSystem, renderer);
 	this->recycleAllChunks();
 }

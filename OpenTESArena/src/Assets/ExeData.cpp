@@ -18,7 +18,7 @@ namespace
 	static constexpr char PAIR_SEPARATOR = ',';
 
 	template<typename T, size_t Length>
-	void initInt8Array(T (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
+	void initInt8Array(T (&arr)[Length], Span<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 1);
 
@@ -29,7 +29,7 @@ namespace
 	}
 
 	template<typename T, size_t Length>
-	void initInt8PairArray(std::pair<T, T> (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
+	void initInt8PairArray(std::pair<T, T> (&arr)[Length], Span<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 1);
 
@@ -44,7 +44,7 @@ namespace
 	}
 
 	template<typename T, size_t Length>
-	void initJaggedInt8Array(std::vector<T> (&arr)[Length], T terminator, BufferView<const std::byte> exeBytes, int exeAddress)
+	void initJaggedInt8Array(std::vector<T> (&arr)[Length], T terminator, Span<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 1);
 
@@ -75,7 +75,7 @@ namespace
 	}
 
 	template<typename T, size_t Rows, size_t Columns>
-	void init2DInt8Array(T (&arrs)[Columns][Rows], BufferView<const std::byte> exeBytes, int exeAddress)
+	void init2DInt8Array(T (&arrs)[Columns][Rows], Span<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 1);
 
@@ -91,7 +91,7 @@ namespace
 	}
 
 	template<typename T, size_t Length>
-	void initInt16Array(T (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
+	void initInt16Array(T (&arr)[Length], Span<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 2);
 		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(exeBytes.begin()) + exeAddress;
@@ -103,7 +103,7 @@ namespace
 	}
 
 	template<typename T, size_t Length>
-	void initInt16PairArray(std::pair<T, T> (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
+	void initInt16PairArray(std::pair<T, T> (&arr)[Length], Span<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 2);
 		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(exeBytes.begin()) + exeAddress;
@@ -117,7 +117,7 @@ namespace
 	}
 
 	template<typename T, size_t Length>
-	void initInt32Array(T (&arr)[Length], BufferView<const std::byte> exeBytes, int exeAddress)
+	void initInt32Array(T (&arr)[Length], Span<const std::byte> exeBytes, int exeAddress)
 	{
 		static_assert(sizeof(T) == 4);
 		const uint8_t *ptr = reinterpret_cast<const uint8_t*>(exeBytes.begin()) + exeAddress;
@@ -157,7 +157,7 @@ namespace
 	}
 
 	template<size_t T>
-	void initStringArrayNullTerminated(std::string (&arr)[T], BufferView<const std::byte> exeBytes, int exeAddress)
+	void initStringArrayNullTerminated(std::string (&arr)[T], Span<const std::byte> exeBytes, int exeAddress)
 	{
 		size_t currentStrOffset = 0;
 		for (std::string &str : arr)
@@ -221,7 +221,7 @@ namespace
 		return std::make_pair(offset, length);
 	}
 
-	std::string GetExeStringNullTerminated(BufferView<const std::byte> exeBytes, int exeAddress)
+	std::string GetExeStringNullTerminated(Span<const std::byte> exeBytes, int exeAddress)
 	{
 		const char *strBegin = reinterpret_cast<const char*>(exeBytes.begin()) + exeAddress;
 		const int length = static_cast<int>(std::strlen(strBegin));
@@ -229,7 +229,7 @@ namespace
 		return std::string(strBegin, length);
 	}
 
-	std::string GetExeStringFixedLength(BufferView<const std::byte> exeBytes, const std::pair<int, int> &offsetAndLength)
+	std::string GetExeStringFixedLength(Span<const std::byte> exeBytes, const std::pair<int, int> &offsetAndLength)
 	{
 		const int exeAddress = offsetAndLength.first;
 		const int length = offsetAndLength.second;
@@ -238,7 +238,7 @@ namespace
 	}
 }
 
-bool ExeDataCalendar::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataCalendar::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Calendar";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -263,7 +263,7 @@ bool ExeDataCalendar::init(BufferView<const std::byte> exeBytes, const KeyValueF
 	return true;
 }
 
-bool ExeDataCharacterClasses::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataCharacterClasses::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterClasses";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -310,7 +310,7 @@ bool ExeDataCharacterClasses::init(BufferView<const std::byte> exeBytes, const K
 	return true;
 }
 
-bool ExeDataCharacterCreation::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataCharacterCreation::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterCreation";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -369,7 +369,7 @@ bool ExeDataCharacterCreation::init(BufferView<const std::byte> exeBytes, const 
 	return true;
 }
 
-bool ExeDataCityGeneration::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataCityGeneration::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CityGeneration";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -415,7 +415,7 @@ bool ExeDataCityGeneration::init(BufferView<const std::byte> exeBytes, const Key
 	return true;
 }
 
-bool ExeDataEntities::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Entities";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -490,7 +490,7 @@ bool ExeDataEntities::init(BufferView<const std::byte> exeBytes, const KeyValueF
 	return true;
 }
 
-bool ExeDataEquipment::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Equipment";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -619,7 +619,7 @@ bool ExeDataEquipment::init(BufferView<const std::byte> exeBytes, const KeyValue
 	return true;
 }
 
-bool ExeDataItems::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataItems::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Items";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -638,7 +638,7 @@ bool ExeDataItems::init(BufferView<const std::byte> exeBytes, const KeyValueFile
 	return true;
 }
 
-bool ExeDataLight::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataLight::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Light";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -657,7 +657,7 @@ bool ExeDataLight::init(BufferView<const std::byte> exeBytes, const KeyValueFile
 	return true;
 }
 
-bool ExeDataLocations::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataLocations::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Locations";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -719,7 +719,7 @@ bool ExeDataLocations::init(BufferView<const std::byte> exeBytes, const KeyValue
 	return true;
 }
 
-bool ExeDataLogbook::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataLogbook::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Logbook";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -736,7 +736,7 @@ bool ExeDataLogbook::init(BufferView<const std::byte> exeBytes, const KeyValueFi
 	return true;
 }
 
-bool ExeDataMeta::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataMeta::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Meta";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -751,7 +751,7 @@ bool ExeDataMeta::init(BufferView<const std::byte> exeBytes, const KeyValueFile 
 	return true;
 }
 
-bool ExeDataQuests::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataQuests::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Quests";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -770,7 +770,7 @@ bool ExeDataQuests::init(BufferView<const std::byte> exeBytes, const KeyValueFil
 	return true;
 }
 
-bool ExeDataRaces::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataRaces::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Races";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -789,7 +789,7 @@ bool ExeDataRaces::init(BufferView<const std::byte> exeBytes, const KeyValueFile
 	return true;
 }
 
-bool ExeDataRaisedPlatforms::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataRaisedPlatforms::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "RaisedPlatforms";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -831,11 +831,11 @@ int ExeDataRaisedPlatforms::getTextureMappingValueA(MapType mapType, int heightI
 	switch (mapType)
 	{
 	case MapType::Interior:
-		return this->texMappingInterior.get(heightIndex) % maxTextureHeight;
+		return this->texMappingInterior[heightIndex] % maxTextureHeight;
 	case MapType::City:
-		return this->texMappingCity.get(heightIndex) % maxTextureHeight;
+		return this->texMappingCity[heightIndex] % maxTextureHeight;
 	case MapType::Wilderness:
-		return this->texMappingWild.get(heightIndex) % maxTextureHeight;
+		return this->texMappingWild[heightIndex] % maxTextureHeight;
 	default:
 		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(mapType)));
 	}
@@ -848,7 +848,7 @@ int ExeDataRaisedPlatforms::getTextureMappingValueB(int thicknessIndex, int text
 	return maxTextureHeight - this->box4[thicknessIndex] - textureMappingValueA;
 }
 
-bool ExeDataStatus::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Status";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -895,7 +895,7 @@ bool ExeDataStatus::init(BufferView<const std::byte> exeBytes, const KeyValueFil
 	return true;
 }
 
-bool ExeDataTravel::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataTravel::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Travel";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -936,7 +936,7 @@ bool ExeDataTravel::init(BufferView<const std::byte> exeBytes, const KeyValueFil
 	return true;
 }
 
-bool ExeDataUI::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataUI::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "UI";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -993,7 +993,7 @@ bool ExeDataUI::init(BufferView<const std::byte> exeBytes, const KeyValueFile &k
 	return true;
 }
 
-bool ExeDataWeather::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataWeather::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Weather";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -1010,7 +1010,7 @@ bool ExeDataWeather::init(BufferView<const std::byte> exeBytes, const KeyValueFi
 	return true;
 }
 
-bool ExeDataWilderness::init(BufferView<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+bool ExeDataWilderness::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Wilderness";
 	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
@@ -1020,7 +1020,7 @@ bool ExeDataWilderness::init(BufferView<const std::byte> exeBytes, const KeyValu
 		return false;
 	}
 
-	auto initWildBlockList = [](Buffer<uint8_t> &buffer, BufferView<const std::byte> exeBytes, int exeAddress)
+	auto initWildBlockList = [](Buffer<uint8_t> &buffer, Span<const std::byte> exeBytes, int exeAddress)
 	{
 		// Each wilderness block list starts with the list size.
 		const uint8_t listSize = static_cast<uint8_t>(exeBytes[exeAddress]);
@@ -1068,7 +1068,7 @@ bool ExeData::init(bool floppyVersion)
 		return false;
 	}
 
-	const BufferView<const std::byte> exeBytes(reinterpret_cast<const std::byte*>(exe.getData().begin()), exe.getData().getCount());
+	const Span<const std::byte> exeBytes(reinterpret_cast<const std::byte*>(exe.getData().begin()), exe.getData().getCount());
 
 	const std::string &mapFilename = floppyVersion ? ExeData::FLOPPY_VERSION_MAP_FILENAME : ExeData::CD_VERSION_MAP_FILENAME;
 	KeyValueFile keyValueFile;

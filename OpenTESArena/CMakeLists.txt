@@ -656,6 +656,8 @@ SET(TES_WORLD
     "${SRC_ROOT}/World/MapLogic.cpp"
     "${SRC_ROOT}/World/MapLogic.h"
     "${SRC_ROOT}/World/MapType.h"
+    "${SRC_ROOT}/World/MeshLibrary.cpp"
+    "${SRC_ROOT}/World/MeshLibrary.h"
     "${SRC_ROOT}/World/MeshUtils.cpp"
     "${SRC_ROOT}/World/MeshUtils.h"
     "${SRC_ROOT}/World/SceneManager.cpp"

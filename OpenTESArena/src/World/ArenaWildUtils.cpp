@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cstdio>
 
 #include "ArenaCityUtils.h"
 #include "ArenaWildUtils.h"
@@ -14,59 +15,57 @@
 
 std::string ArenaWildUtils::generateInfName(ArenaClimateType climateType, WeatherType weatherType)
 {
-	const char climateLetter = [climateType]()
+	char climateLetter = -1;
+	if (climateType == ArenaClimateType::Temperate)
 	{
-		if (climateType == ArenaClimateType::Temperate)
-		{
-			return 'T';
-		}
-		else if (climateType == ArenaClimateType::Desert)
-		{
-			return 'D';
-		}
-		else if (climateType == ArenaClimateType::Mountain)
-		{
-			return 'M';
-		}
-		else
-		{
-			DebugUnhandledReturnMsg(char, std::to_string(static_cast<int>(climateType)));
-		}
-	}();
+		climateLetter = 'T';
+	}
+	else if (climateType == ArenaClimateType::Desert)
+	{
+		climateLetter = 'D';
+	}
+	else if (climateType == ArenaClimateType::Mountain)
+	{
+		climateLetter = 'M';
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(climateType)));
+	}
 
 	// Wilderness is "W".
 	constexpr char locationLetter = 'W';
 
-	const char weatherLetter = [climateType, weatherType]()
+	char weatherLetter = -1;
+	if (weatherType == WeatherType::Clear)
 	{
-		if (weatherType == WeatherType::Clear)
+		weatherLetter = 'N';
+	}
+	else if ((weatherType == WeatherType::Overcast) || (weatherType == WeatherType::Rain))
+	{
+		weatherLetter = 'R';
+	}
+	else if (weatherType == WeatherType::Snow)
+	{
+		// Deserts can't have snow.
+		if (climateType != ArenaClimateType::Desert)
 		{
-			return 'N';
-		}
-		else if ((weatherType == WeatherType::Overcast) || (weatherType == WeatherType::Rain))
-		{
-			return 'R';
-		}
-		else if (weatherType == WeatherType::Snow)
-		{
-			// Deserts can't have snow.
-			if (climateType != ArenaClimateType::Desert)
-			{
-				return 'S';
-			}
-			else
-			{
-				DebugLogWarning("Deserts do not have snow templates.");
-				return 'N';
-			}
+			weatherLetter = 'S';
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(char, std::to_string(static_cast<int>(weatherType)));
+			DebugLogWarning("Deserts do not have snow templates.");
+			weatherLetter = 'N';
 		}
-	}();
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(weatherType)));
+	}
 
-	return std::string { climateLetter, locationLetter, weatherLetter } + ".INF";
+	char buffer[16];
+	std::snprintf(buffer, sizeof(buffer), "%c%c%c.INF", climateLetter, locationLetter, weatherLetter);
+	return std::string(buffer);
 }
 
 uint32_t ArenaWildUtils::makeWildChunkSeed(int wildX, int wildY)
@@ -74,9 +73,9 @@ uint32_t ArenaWildUtils::makeWildChunkSeed(int wildX, int wildY)
 	return (wildY << 16) + wildX;
 }
 
-Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData)
+Buffer2D<ArenaWildBlockID> ArenaWildUtils::generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData)
 {
-	Buffer2D<ArenaWildUtils::WildBlockID> indices(ArenaWildUtils::WILD_WIDTH, ArenaWildUtils::WILD_HEIGHT);
+	Buffer2D<ArenaWildBlockID> indices(ArenaWildUtils::WILD_WIDTH, ArenaWildUtils::WILD_HEIGHT);
 	ArenaRandom random(wildSeed);
 
 	// Generate a random wilderness .MIF index for each wilderness chunk.
@@ -84,7 +83,7 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 		[&wildData, &random]()
 	{
 		// Determine the wilderness block list to draw from.
-		const BufferView<const WildBlockID> blockList = [&wildData, &random]() -> BufferView<const uint8_t>
+		const Span<const ArenaWildBlockID> blockList = [&wildData, &random]() -> Span<const uint8_t>
 		{
 			constexpr uint16_t normalVal = 0x6666;
 			constexpr uint16_t villageVal = 0x4000;
@@ -143,15 +142,14 @@ Buffer2D<ArenaWildUtils::WildBlockID> ArenaWildUtils::generateWildernessIndices(
 	return indices;
 }
 
-bool ArenaWildUtils::isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID)
+bool ArenaWildUtils::isWildCityBlock(ArenaWildBlockID wildBlockID)
 {
 	return (wildBlockID >= 1) && (wildBlockID <= 4);
 }
 
-void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID,
-	BufferView2D<ArenaVoxelID> &flor, BufferView2D<ArenaVoxelID> &map1,
-	BufferView2D<ArenaVoxelID> &map2, const LocationCityDefinition &cityDef,
-	const BinaryAssetLibrary &binaryAssetLibrary)
+void ArenaWildUtils::reviseWildCityBlock(ArenaWildBlockID wildBlockID,
+	Span2D<ArenaVoxelID> &flor, Span2D<ArenaVoxelID> &map1, Span2D<ArenaVoxelID> &map2,
+	const LocationCityDefinition &cityDef, const BinaryAssetLibrary &binaryAssetLibrary)
 {
 	DebugAssert(ArenaWildUtils::isWildCityBlock(wildBlockID));
 
@@ -170,9 +168,9 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 	Buffer2D<ArenaVoxelID> cityFlor(mif.getWidth(), mif.getDepth());
 	Buffer2D<ArenaVoxelID> cityMap1(mif.getWidth(), mif.getDepth());
 	Buffer2D<ArenaVoxelID> cityMap2(mif.getWidth(), mif.getDepth());
-	BufferView2D<ArenaVoxelID> cityFlorView(cityFlor);
-	BufferView2D<ArenaVoxelID> cityMap1View(cityMap1);
-	BufferView2D<ArenaVoxelID> cityMap2View(cityMap2);
+	Span2D<ArenaVoxelID> cityFlorView(cityFlor);
+	Span2D<ArenaVoxelID> cityMap1View(cityMap1);
+	Span2D<ArenaVoxelID> cityMap2View(cityMap2);
 	ArenaCityUtils::writeSkeleton(level, cityFlorView, cityMap1View, cityMap2View);
 
 	// Run city generation if it's not a premade city. The center province's city does not have
@@ -182,7 +180,7 @@ void ArenaWildUtils::reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID
 	if (!isPremadeCity)
 	{
 		const int cityBlocksPerSide = cityDef.cityBlocksPerSide;
-		const BufferView<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
+		const Span<const uint8_t> reservedBlocks(cityDef.reservedBlocks->data(),
 			static_cast<int>(cityDef.reservedBlocks->size()));
 		const OriginalInt2 blockStartPosition(cityDef.blockStartPosX, cityDef.blockStartPosY);
 		const uint32_t citySeed = cityDef.citySeed;

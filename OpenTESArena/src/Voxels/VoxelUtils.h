@@ -10,7 +10,7 @@
 #include "../World/Coord.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 namespace VoxelUtils
 {

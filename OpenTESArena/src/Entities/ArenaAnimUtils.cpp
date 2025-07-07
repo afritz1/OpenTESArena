@@ -119,7 +119,7 @@ namespace ArenaAnimUtils
 		const INFFlat &flatData = inf.getFlat(flatIndex);
 		const char *flatTextureName = [&inf, &flatData]()
 		{
-			const BufferView<const INFFlatTexture> flatTextures = inf.getFlatTextures();
+			const Span<const INFFlatTexture> flatTextures = inf.getFlatTextures();
 			DebugAssertIndex(flatTextures, flatData.textureIndex);
 			const INFFlatTexture &flatTextureData = flatTextures[flatData.textureIndex];
 			return flatTextureData.filename.c_str();
@@ -161,7 +161,7 @@ namespace ArenaAnimUtils
 
 	// 'Basic' dynamic entity anim state being one of: Idle, Look, Walk.
 	bool tryAddDynamicEntityCreatureBasicAnimState(int creatureID, const char *stateName, double secondsPerFrame,
-		bool isLooping, BufferView<const int> animIndices, const ExeData &exeData, TextureManager &textureManager,
+		bool isLooping, Span<const int> animIndices, const ExeData &exeData, TextureManager &textureManager,
 		EntityAnimationDefinition *outAnimDef)
 	{
 		DebugAssert(outAnimDef != nullptr);
@@ -244,7 +244,7 @@ namespace ArenaAnimUtils
 
 	// Idle or walk animation state for human enemies.
 	bool tryAddDynamicEntityHumanBasicAnimState(int charClassIndex, bool isMale, const char *stateName, double secondsPerFrame,
-		bool isLooping, BufferView<const int> animIndices, const CharacterClassLibrary &charClassLibrary,
+		bool isLooping, Span<const int> animIndices, const CharacterClassLibrary &charClassLibrary,
 		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
 		DebugAssert(outAnimDef != nullptr);
@@ -548,7 +548,7 @@ namespace ArenaAnimUtils
 
 	// Citizens have idle and walk animation states.
 	bool tryAddDynamicEntityCitizenBasicAnimState(const char *stateName, double secondsPerFrame, bool isLooping,
-		int citizenIndex, bool isMale, BufferView<const int> animIndices, const ExeData &exeData,
+		int citizenIndex, bool isMale, Span<const int> animIndices, const ExeData &exeData,
 		TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 	{
 		// Animation filename list depends on the gender.
@@ -1188,7 +1188,7 @@ PaletteIndices ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t se
 	std::iota(newPaletteIndices.begin(), newPaletteIndices.end(), 0);
 
 	// Clothes transformation.
-	const BufferView<const uint8_t> colorBase = exeData.entities.citizenColorBase;
+	const Span<const uint8_t> colorBase = exeData.entities.citizenColorBase;
 	uint16_t val = seed & 0x7FFF;
 	for (const uint8_t color : colorBase)
 	{
@@ -1217,7 +1217,7 @@ PaletteIndices ArenaAnimUtils::transformCitizenColors(int raceIndex, uint16_t se
 		}
 	}
 
-	const BufferView<const uint8_t> skinColors = exeData.entities.citizenSkinColors;
+	const Span<const uint8_t> skinColors = exeData.entities.citizenSkinColors;
 
 	// Skin transformation, only if the given race should have its colors transformed.
 	constexpr int RaceOffsets[] = { -1, 148, -1, 52, 192, -1, -1, 116, 148 };

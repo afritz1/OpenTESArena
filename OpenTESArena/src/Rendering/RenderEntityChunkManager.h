@@ -13,7 +13,7 @@
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class EntityChunkManager;
 class EntityDefinitionLibrary;
@@ -55,7 +55,7 @@ private:
 	void loadTexturesForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	void addDrawCall(UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID0,
-		const std::optional<ObjectTextureID> &textureID1, BufferView<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
+		const std::optional<ObjectTextureID> &textureID1, Span<const RenderLightID> lightIDs, PixelShaderType pixelShaderType,
 		std::vector<RenderDrawCall> &drawCalls);
 	void rebuildChunkDrawCalls(RenderEntityChunk &renderChunk, const EntityVisibilityChunk &entityVisChunk,
 		const RenderLightChunk &renderLightChunk, const WorldDouble3 &cameraPosition, double ceilingScale,
@@ -75,16 +75,16 @@ public:
 	void loadScene(TextureManager &textureManager, Renderer &renderer);
 
 	// Chunk allocating/freeing update function, called before entity resources are updated.
-	void updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+	void updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 
-	void update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 		const WorldDouble3 &cameraPosition, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
 		const EntityChunkManager &entityChunkManager, const EntityVisibilityChunkManager &entityVisChunkManager,
 		const RenderLightChunkManager &renderLightChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// End of frame clean-up.
-	void cleanUp();
+	void endFrame();
 
 	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);

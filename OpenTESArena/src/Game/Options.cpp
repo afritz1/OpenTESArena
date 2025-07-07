@@ -7,9 +7,9 @@
 #include "../Utilities/Platform.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/BufferView.h"
 #include "components/utilities/Directory.h"
 #include "components/utilities/KeyValueFile.h"
+#include "components/utilities/Span.h"
 #include "components/utilities/String.h"
 
 namespace
@@ -541,7 +541,7 @@ void Options::saveChanges()
 	}
 
 	// Writes out all key-value pairs in a section if it exists.
-	auto tryWriteSection = [this, &ofs](const std::string &section, BufferView<const std::pair<const char*, OptionType>> keyList)
+	auto tryWriteSection = [this, &ofs](const std::string &section, Span<const std::pair<const char*, OptionType>> keyList)
 	{
 		const auto sectionIter = this->changedMaps.find(section);
 		if (sectionIter != this->changedMaps.end())

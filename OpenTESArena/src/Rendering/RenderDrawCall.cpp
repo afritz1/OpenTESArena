@@ -26,6 +26,7 @@ RenderDrawCall::RenderDrawCall()
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
 	this->pixelShaderParam0 = 0.0;
+	this->enableBackFaceCulling = false;
 	this->enableDepthRead = false;
 	this->enableDepthWrite = false;
 }
@@ -56,6 +57,7 @@ void RenderDrawCall::clear()
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
 	this->pixelShaderParam0 = 0.0;
+	this->enableBackFaceCulling = false;
 	this->enableDepthRead = false;
 	this->enableDepthWrite = false;
 }

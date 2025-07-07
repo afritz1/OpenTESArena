@@ -1,7 +1,7 @@
 #ifndef RENDER_LIGHT_UTILS_H
 #define RENDER_LIGHT_UTILS_H
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 // Unique ID for a light allocated in the renderer's internal format.
 using RenderLightID = int;
@@ -26,7 +26,7 @@ struct RenderLightIdList
 
 	RenderLightIdList();
 
-	BufferView<const RenderLightID> getLightIDs() const;
+	Span<const RenderLightID> getLightIDs() const;
 	void tryAddLight(RenderLightID id, double distanceSqr);
 	int findLight(RenderLightID id);
 	void removeLightAt(int index);

@@ -7,7 +7,7 @@
 #include <string>
 
 #include "Buffer.h"
-#include "BufferView.h"
+#include "Span.h"
 
 // Various string operations and conversions.
 namespace String
@@ -36,7 +36,7 @@ namespace String
 	// early if too many splits are encountered. Returns whether the split count matches the
 	// destination size.
 	template<int T>
-	bool splitExpected(const std::string &str, char separator, BufferView<std::string> dst)
+	bool splitExpected(const std::string &str, char separator, Span<std::string> dst)
 	{
 		static_assert(T > 0);
 
@@ -71,7 +71,7 @@ namespace String
 	// too many splits are encountered. Returns whether the split count matches the destination
 	// size.
 	template<int T>
-	bool splitExpected(const std::string &str, BufferView<std::string> dst)
+	bool splitExpected(const std::string &str, Span<std::string> dst)
 	{
 		return String::splitExpected<T>(str, String::SPACE, dst);
 	}

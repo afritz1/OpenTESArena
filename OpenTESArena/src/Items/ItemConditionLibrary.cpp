@@ -5,7 +5,7 @@
 
 void ItemConditionLibrary::init(const ExeData &exeData)
 {
-	const BufferView<const std::string> conditionNames = exeData.equipment.itemConditionNames;
+	const Span<const std::string> conditionNames = exeData.equipment.itemConditionNames;
 	for (int i = 0; i < conditionNames.getCount(); i++)
 	{
 		ItemConditionDefinition conditionDef;

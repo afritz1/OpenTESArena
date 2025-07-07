@@ -2,7 +2,6 @@
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -23,7 +22,7 @@
 *.exe
 *.out
 *.app
-TESArena
+otesa
 
 # Unnecessary Visual C++ files
 ipch/
@@ -46,7 +45,6 @@ x86*
 bld*
 [Bb]uild*/*
 [Bb]in/*
-[Oo]bj*
 
 # Compressed files
 *.tar.gz

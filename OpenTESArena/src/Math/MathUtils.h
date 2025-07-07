@@ -112,6 +112,8 @@ namespace MathUtils
 
 	Radians safeDegToRad(Degrees degrees);
 
+	size_t hashCombine(size_t hash, size_t otherHash);
+
 	// Gets a real (not integer) index in an array from the given percent.
 	double getRealIndex(int bufferSize, double percent);
 

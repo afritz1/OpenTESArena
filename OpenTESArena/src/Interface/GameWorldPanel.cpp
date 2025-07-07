@@ -919,7 +919,7 @@ void GameWorldPanel::initUiDrawCalls()
 				return PivotType::TopLeft;
 			}
 
-			BufferView<const PivotType> arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
+			Span<const PivotType> arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
 			return arrowCursorPivotTypes[*index];
 		};
 

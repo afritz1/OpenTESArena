@@ -94,7 +94,7 @@ UiTextureID ChooseClassCreationUiView::allocParchmentTexture(TextureManager &tex
 		textureManager,
 		renderer);
 
-	const BufferView2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
+	const Span2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
 		surface.getWidth(), surface.getHeight());
 
 	UiTextureID textureID;
@@ -283,7 +283,7 @@ UiTextureID ChooseGenderUiView::allocParchmentTexture(TextureManager &textureMan
 {
 	const Surface surface = TextureUtils::generate(ChooseGenderUiView::TexturePatternType,
 		ChooseGenderUiView::TextureWidth, ChooseGenderUiView::TextureHeight, textureManager, renderer);
-	const BufferView2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
+	const Span2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
 		surface.getWidth(), surface.getHeight());
 
 	UiTextureID textureID;
@@ -331,7 +331,7 @@ UiTextureID ChooseNameUiView::allocParchmentTexture(TextureManager &textureManag
 {
 	const Surface surface = TextureUtils::generate(ChooseNameUiView::TexturePatternType,
 		ChooseNameUiView::TextureWidth, ChooseNameUiView::TextureHeight, textureManager, renderer);
-	const BufferView2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
+	const Span2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
 		surface.getWidth(), surface.getHeight());
 
 	UiTextureID textureID;

@@ -159,7 +159,7 @@ int FontFile::getHeight() const
 	return this->characterHeight;
 }
 
-BufferView2D<const FontFile::Pixel> FontFile::getPixels(int index) const
+Span2D<const FontFile::Pixel> FontFile::getPixels(int index) const
 {
 	DebugAssertIndex(this->characters, index);
 	return this->characters[index];

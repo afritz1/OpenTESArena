@@ -13,7 +13,7 @@
 #include "../UI/Button.h"
 #include "../UI/UiDrawCall.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class FontLibrary;
 class Game;
@@ -85,11 +85,11 @@ public:
 
 	// Returns button proxies for ease of iteration and finding out which button is clicked in a frame
 	// so its callback can be called.
-	BufferView<const ButtonProxy> getButtonProxies() const;
+	Span<const ButtonProxy> getButtonProxies() const;
 
 	// Gets the registered UI draw calls for this panel. Each draw call is conditionally rendered
 	// depending on whether it is active.
-	BufferView<const UiDrawCall> getDrawCalls() const;
+	Span<const UiDrawCall> getDrawCalls() const;
 
 	// Called when a sub-panel above this panel is pushed (added) or popped (removed).
 	virtual void onPauseChanged(bool paused);

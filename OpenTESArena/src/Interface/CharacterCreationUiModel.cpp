@@ -151,7 +151,7 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinition &charClassDef)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const BufferView<const std::string> shieldStrings(exeData.equipment.armorNames + 7, 4);
+	const Span<const std::string> shieldStrings(exeData.equipment.armorNames + 7, 4);
 
 	std::vector<int> allowedShields(charClassDef.getAllowedShieldCount());
 	for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)

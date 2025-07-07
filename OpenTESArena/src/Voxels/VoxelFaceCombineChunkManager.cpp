@@ -3,7 +3,7 @@
 #include "VoxelFaceCombineChunkManager.h"
 #include "VoxelFaceEnableChunkManager.h"
 
-void VoxelFaceCombineChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void VoxelFaceCombineChunkManager::updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
@@ -23,14 +23,14 @@ void VoxelFaceCombineChunkManager::updateActiveChunks(BufferView<const ChunkInt2
 	this->chunkPool.clear();
 }
 
-void VoxelFaceCombineChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+void VoxelFaceCombineChunkManager::update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, const VoxelFaceEnableChunkManager &voxelFaceEnableChunkManager)
 {
 	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		VoxelFaceCombineChunk &faceCombineChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		BufferView<const VoxelInt3> dirtyVoxels = voxelChunk.getDirtyShapeDefPositions();
+		Span<const VoxelInt3> dirtyVoxels = voxelChunk.dirtyShapeDefPositions;
 		const VoxelFaceEnableChunk &faceEnableChunk = voxelFaceEnableChunkManager.getChunkAtPosition(chunkPos);
 		faceCombineChunk.update(dirtyVoxels, voxelChunk, faceEnableChunk);
 	}
@@ -38,11 +38,18 @@ void VoxelFaceCombineChunkManager::update(BufferView<const ChunkInt2> activeChun
 	for (const ChunkInt2 chunkPos : activeChunkPositions)
 	{
 		VoxelFaceCombineChunk &faceCombineChunk = this->getChunkAtPosition(chunkPos);
+		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		const VoxelFaceEnableChunk &faceEnableChunk = voxelFaceEnableChunkManager.getChunkAtPosition(chunkPos);
+
+		// Rebuild combined faces due to change in mesh.
+		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.dirtyShapeDefPositions;
+		faceCombineChunk.update(dirtyShapeDefVoxels, voxelChunk, faceEnableChunk);
+
+		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.dirtyFaceActivationPositions;
+		faceCombineChunk.update(dirtyFaceActivationVoxels, voxelChunk, faceEnableChunk);
 
 		// Rebuild combined faces due to changes in material.
-		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		BufferView<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.getDirtyFadeAnimInstPositions();
-		const VoxelFaceEnableChunk &faceEnableChunk = voxelFaceEnableChunkManager.getChunkAtPosition(chunkPos);
+		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.dirtyFadeAnimInstPositions;
 		faceCombineChunk.update(dirtyFadeAnimInstVoxels, voxelChunk, faceEnableChunk);
 	}
 }

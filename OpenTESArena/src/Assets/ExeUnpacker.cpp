@@ -6,8 +6,6 @@
 #include "ExeUnpacker.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
@@ -49,7 +47,7 @@ namespace
 		BitTree::Node root;
 	public:
 		// Inserts a node into the tree, overwriting any existing entry.
-		void insert(BufferView<const bool> bits, int value)
+		void insert(Span<const bool> bits, int value)
 		{
 			BitTree::Node *node = &this->root;
 
@@ -165,7 +163,7 @@ namespace
 	constexpr bool Duplication1_23[] = { false, true, true, true, true, true, true, true, false };
 	constexpr bool Duplication1_24[] = { false, true, true, true, true, true, true, true, true };
 
-	const BufferView<const bool> Duplication1[] =
+	const Span<const bool> Duplication1[] =
 	{
 		Duplication1_2,
 		Duplication1_3,
@@ -228,7 +226,7 @@ namespace
 	constexpr bool Duplication2_30[] = { false, true, true, true, true, true, false };
 	constexpr bool Duplication2_31[] = { false, true, true, true, true, true, true };
 
-	const BufferView<const bool> Duplication2[] =
+	const Span<const bool> Duplication2[] =
 	{
 		Duplication2_0,
 		Duplication2_1,
@@ -389,7 +387,7 @@ bool ExeUnpacker::init(const char *filename)
 			// Lambda for comparing a bit vector's equality with the special case.
 			auto matchesSpecialCase = [](const BitVector &bitVector)
 			{
-				const BufferView<const bool> specialCase = Duplication1[11];
+				const Span<const bool> specialCase = Duplication1[11];
 				const bool equalSize = bitVector.count == specialCase.getCount();
 
 				if (!equalSize)
@@ -502,7 +500,7 @@ bool ExeUnpacker::init(const char *filename)
 	return true;
 }
 
-BufferView<const uint8_t> ExeUnpacker::getData() const
+Span<const uint8_t> ExeUnpacker::getData() const
 {
 	return this->exeData;
 }

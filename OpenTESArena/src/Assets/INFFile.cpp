@@ -956,12 +956,12 @@ bool INFFile::init(const char *filename)
 	return true;
 }
 
-BufferView<const INFVoxelTexture> INFFile::getVoxelTextures() const
+Span<const INFVoxelTexture> INFFile::getVoxelTextures() const
 {
 	return this->voxelTextures;
 }
 
-BufferView<const INFFlatTexture> INFFile::getFlatTextures() const
+Span<const INFFlatTexture> INFFile::getFlatTextures() const
 {
 	return this->flatTextures;
 }

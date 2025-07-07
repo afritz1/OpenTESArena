@@ -9,7 +9,7 @@
 #include "../Assets/CityDataFile.h"
 #include "../Math/Vector2.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class ArenaRandom;
 class BinaryAssetLibrary;
@@ -43,10 +43,8 @@ namespace ArenaLocationUtils
 	ArenaLocationType getDungeonType(int localDungeonID);
 
 	// Functions for getting the climate type of a location.
-	ArenaClimateType getCityClimateType(int localCityID, int provinceID,
-		const BinaryAssetLibrary &binaryAssetLibrary);
-	ArenaClimateType getDungeonClimateType(int localDungeonID, int provinceID,
-		const BinaryAssetLibrary &binaryAssetLibrary);
+	ArenaClimateType getCityClimateType(int localCityID, int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
+	ArenaClimateType getDungeonClimateType(int localDungeonID, int provinceID, const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the .MIF name for a main quest dungeon, given its seed from getDungeonSeed().
 	std::string getMainQuestDungeonMifName(uint32_t dungeonSeed);
@@ -73,9 +71,8 @@ namespace ArenaLocationUtils
 	int getMapDistance(const Int2 &globalSrc, const Int2 &globalDst);
 
 	// Gets the number of days required to travel from one province's local point to another.
-	int getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,
-		int month, BufferView<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random,
-		const BinaryAssetLibrary &binaryAssetLibrary);
+	int getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint, int month,
+		Span<const ArenaWeatherType> worldMapWeathers, ArenaRandom &random, const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the 32-bit seed for a city in the given province.
 	uint32_t getCitySeed(int localCityID, const ArenaProvinceData &province);

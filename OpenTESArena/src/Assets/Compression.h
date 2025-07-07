@@ -8,21 +8,21 @@
 #include <vector>
 
 #include "components/debug/Debug.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 // There are a few different methods used for compressing textures in Arena.
 // The reusable decompression algorithms will be kept in this namespace.
 namespace Compression
 {
 	// Uncompresses an RLE run of bytes.
-	void decodeRLE(const uint8_t *src, int stopCount, BufferView<uint8_t> dst);
+	void decodeRLE(const uint8_t *src, int stopCount, Span<uint8_t> dst);
 
 	// Uncompresses an RLE run of words. Used with .RMD files.
-	void decodeRLEWords(const uint8_t *src, int stopCount, BufferView<uint8_t> out);
+	void decodeRLEWords(const uint8_t *src, int stopCount, Span<uint8_t> out);
 
 	// Works with .IMG and .CIF type 4 files.
 	template<typename T>
-	void decodeType04(T src, T srcend, BufferView<uint8_t> out)
+	void decodeType04(T src, T srcend, Span<uint8_t> out)
 	{
 		auto dst = out.begin();
 
@@ -83,7 +83,7 @@ namespace Compression
 
 	// Works with type 8 .IMG and .CIF files, and voxel data in .MIF files.
 	template<typename T>
-	void decodeType08(T src, T srcend, BufferView<uint8_t> out)
+	void decodeType08(T src, T srcend, Span<uint8_t> out)
 	{
 		constexpr std::array<uint8_t, 256> highOffsetBits =
 		{

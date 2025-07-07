@@ -5,11 +5,11 @@
 #include "VoxelFaceEnableChunk.h"
 #include "VoxelFacing.h"
 
-#include "components/utilities/BufferView3D.h"
+#include "components/utilities/Span3D.h"
 
 namespace
 {
-	bool IsAdjacentFaceCombinable(const VoxelInt3 &voxel, const VoxelInt3 &direction, VoxelFacing3D facing, BufferView3D<const VoxelFacesEntry> facesEntry,
+	bool IsAdjacentFaceCombinable(const VoxelInt3 &voxel, const VoxelInt3 &direction, VoxelFacing3D facing, Span3D<const VoxelFacesEntry> facesEntry,
 		const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 	{
 		const VoxelInt3 adjacentVoxel = voxel + direction;
@@ -33,46 +33,46 @@ namespace
 			return false;
 		}
 
-		const VoxelShapeDefID voxelShapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefID adjacentVoxelShapeDefID = voxelChunk.getShapeDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefID adjacentVoxelShapeDefID = voxelChunk.shapeDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 		if (voxelShapeDefID != adjacentVoxelShapeDefID)
 		{
 			return false;
 		}
 
-		const VoxelTextureDefID voxelTextureDefID = voxelChunk.getTextureDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTextureDefID adjacentVoxelTextureDefID = voxelChunk.getTextureDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const VoxelTextureDefID voxelTextureDefID = voxelChunk.textureDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelTextureDefID adjacentVoxelTextureDefID = voxelChunk.textureDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 		if (voxelTextureDefID != adjacentVoxelTextureDefID)
 		{
 			return false;
 		}
 
-		const VoxelShadingDefID voxelShadingDefID = voxelChunk.getShadingDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShadingDefID adjacentVoxelShadingDefID = voxelChunk.getShadingDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const VoxelShadingDefID voxelShadingDefID = voxelChunk.shadingDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShadingDefID adjacentVoxelShadingDefID = voxelChunk.shadingDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 		if (voxelShadingDefID != adjacentVoxelShadingDefID)
 		{
 			return false;
 		}
 
-		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefID adjacentVoxelTraitsDefID = voxelChunk.getTraitsDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
+		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.traitsDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelTraitsDefID adjacentVoxelTraitsDefID = voxelChunk.traitsDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
 		if (voxelTraitsDefID != adjacentVoxelTraitsDefID)
 		{
 			return false;
 		}
 
-		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.getShapeDef(voxelShapeDefID);
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
 		if (voxelShapeDef.allowsAdjacentFaceCombining)
 		{
 			const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
-			if (!voxelMeshDef.hasFullCoverageOfFacing(facing))
+			if (voxelMeshDef.findIndexBufferIndexWithFacing(facing) < 0)
 			{
 				return false;
 			}
 		}
 		else
 		{
-			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
 			const ArenaVoxelType voxelTraitsDefType = voxelTraitsDef.type;
 
 			// Filter out special case voxel types.
@@ -101,9 +101,9 @@ namespace
 
 				if (hasChasmWallInst && hasAdjacentChasmWallInst)
 				{
-					BufferView<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.getChasmWallInsts();
-					const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts.get(chasmWallInstIndex);
-					const VoxelChasmWallInstance &adjacentChasmWallInst = chasmWallInsts.get(adjacentChasmWallInstIndex);
+					Span<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.chasmWallInsts;
+					const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
+					const VoxelChasmWallInstance &adjacentChasmWallInst = chasmWallInsts[adjacentChasmWallInstIndex];
 
 					if (((facing == VoxelFacing3D::PositiveX) && !(chasmWallInst.north && adjacentChasmWallInst.north)) ||
 						((facing == VoxelFacing3D::NegativeX) && !(chasmWallInst.south && adjacentChasmWallInst.south)) ||
@@ -136,7 +136,7 @@ namespace
 	}
 
 	bool IsAdjacentFaceRangeCombinable(const VoxelInt3 &rangeBegin, const VoxelInt3 &rangeEnd, const VoxelInt3 &direction, VoxelFacing3D facing,
-		BufferView3D<const VoxelFacesEntry> facesEntry, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
+		Span3D<const VoxelFacesEntry> facesEntry, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 	{
 		// The input range should be a 1D span of voxels, we only care about the next 1D span adjacent to it.
 		bool isCombinable = true;
@@ -226,7 +226,7 @@ void VoxelFaceCombineChunk::init(const ChunkInt2 &position, int height)
 	this->dirtyEntries.fill(VoxelFaceCombineDirtyEntry());
 }
 
-void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
+void VoxelFaceCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const VoxelChunk &voxelChunk, const VoxelFaceEnableChunk &faceEnableChunk)
 {
 	this->dirtyEntryPositions.clear();
 	this->dirtyEntryPositions.reserve(dirtyVoxels.getCount());
@@ -312,8 +312,8 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 		const VoxelInt3 voxel = this->dirtyEntryPositions[i];
 		VoxelFaceCombineDirtyEntry &dirtyEntry = this->dirtyEntries.get(voxel.x, voxel.y, voxel.z);
 
-		const VoxelShapeDefID shapeDefID = voxelChunk.getShapeDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelShapeDefinition &shapeDef = voxelChunk.getShapeDef(shapeDefID);
+		const VoxelShapeDefID shapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelShapeDefinition &shapeDef = voxelChunk.shapeDefs[shapeDefID];
 		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
 		if (!shapeDef.allowsAdjacentFaceCombining || meshDef.isEmpty())
 		{
@@ -340,7 +340,7 @@ void VoxelFaceCombineChunk::update(BufferView<const VoxelInt3> dirtyVoxels, cons
 			}
 
 			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
-			if (!meshDef.hasFullCoverageOfFacing(facing))
+			if (meshDef.findIndexBufferIndexWithFacing(facing) < 0)
 			{
 				continue;
 			}

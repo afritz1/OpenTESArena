@@ -5,23 +5,23 @@
 #include "../Voxels/ArenaChasmUtils.h"
 #include "../Voxels/VoxelShapeDefinition.h"
 
-int MeshUtils::getVertexCount(BufferView<const double> components, int componentsPerVertex)
+int MeshUtils::getVertexCount(Span<const double> components, int componentsPerVertex)
 {
 	return components.getCount() / componentsPerVertex;
 }
 
-int MeshUtils::getTriangleCount(BufferView<const double> components, int componentsPerVertex)
+int MeshUtils::getTriangleCount(Span<const double> components, int componentsPerVertex)
 {
 	const int componentsPerTriangle = componentsPerVertex * 3;
 	return components.getCount() / componentsPerTriangle;
 }
 
-bool MeshUtils::isEmpty(BufferView<const double> components)
+bool MeshUtils::isEmpty(Span<const double> components)
 {
 	return components.getCount() == 0;
 }
 
-bool MeshUtils::isFinite(BufferView<const double> components)
+bool MeshUtils::isFinite(Span<const double> components)
 {
 	for (int i = 0; i < components.getCount(); i++)
 	{
@@ -35,7 +35,7 @@ bool MeshUtils::isFinite(BufferView<const double> components)
 	return true;
 }
 
-bool MeshUtils::isValid(BufferView<const double> components)
+bool MeshUtils::isValid(Span<const double> components)
 {
 	if (MeshUtils::isEmpty(components))
 	{
@@ -50,14 +50,14 @@ bool MeshUtils::isValid(BufferView<const double> components)
 	return true;
 }
 
-bool MeshUtils::isComplete(BufferView<const double> components, int componentsPerVertex)
+bool MeshUtils::isComplete(Span<const double> components, int componentsPerVertex)
 {
 	const int componentCount = components.getCount();
 	const int componentsPerTriangle = componentsPerVertex * 3;
 	return (componentCount > 0) && (componentCount % componentsPerTriangle) == 0;
 }
 
-bool MeshUtils::hasValidNormals(BufferView<const double> normals)
+bool MeshUtils::hasValidNormals(Span<const double> normals)
 {
 	if (!MeshUtils::isValid(normals))
 	{
@@ -82,7 +82,7 @@ bool MeshUtils::hasValidNormals(BufferView<const double> normals)
 	return true;
 }
 
-bool MeshUtils::hasValidTexCoords(BufferView<const double> uvs, double maxU, double maxV)
+bool MeshUtils::hasValidTexCoords(Span<const double> uvs, double maxU, double maxV)
 {
 	if (!MeshUtils::isValid(uvs))
 	{
@@ -109,7 +109,7 @@ bool MeshUtils::hasValidTexCoords(BufferView<const double> uvs, double maxU, dou
 	return true;
 }
 
-Double3 MeshUtils::getVertexPositionAtIndex(BufferView<const double> positions, int vertexIndex)
+Double3 MeshUtils::getVertexPositionAtIndex(Span<const double> positions, int vertexIndex)
 {
 	const int componentIndex = vertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	const double x = positions[componentIndex];
@@ -118,7 +118,7 @@ Double3 MeshUtils::getVertexPositionAtIndex(BufferView<const double> positions, 
 	return Double3(x, y, z);
 }
 
-Double3 MeshUtils::getVertexNormalAtIndex(BufferView<const double> normals, int vertexIndex)
+Double3 MeshUtils::getVertexNormalAtIndex(Span<const double> normals, int vertexIndex)
 {
 	const int componentIndex = vertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 	const double x = normals[componentIndex];
@@ -127,7 +127,7 @@ Double3 MeshUtils::getVertexNormalAtIndex(BufferView<const double> normals, int 
 	return Double3(x, y, z);
 }
 
-Double2 MeshUtils::getVertexTexCoordAtIndex(BufferView<const double> uvs, int vertexIndex)
+Double2 MeshUtils::getVertexTexCoordAtIndex(Span<const double> uvs, int vertexIndex)
 {
 	const int componentIndex = vertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 	const double u = uvs[componentIndex];
@@ -135,7 +135,7 @@ Double2 MeshUtils::getVertexTexCoordAtIndex(BufferView<const double> uvs, int ve
 	return Double2(u, v);
 }
 
-int MeshUtils::findDuplicateVertexPosition(BufferView<const double> positions, double x, double y, double z, int startVertexIndex)
+int MeshUtils::findDuplicateVertexPosition(Span<const double> positions, double x, double y, double z, int startVertexIndex)
 {
 	const int componentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	const int vertexCount = MeshUtils::getVertexCount(positions, componentsPerVertex);
@@ -157,7 +157,7 @@ int MeshUtils::findDuplicateVertexPosition(BufferView<const double> positions, d
 	return -1;
 }
 
-Double3 MeshUtils::createVertexNormalAtIndex(BufferView<const double> positions, int vertexIndex)
+Double3 MeshUtils::createVertexNormalAtIndex(Span<const double> positions, int vertexIndex)
 {
 	const int componentIndex = vertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 	const double v0X = positions[componentIndex];
@@ -178,102 +178,66 @@ Double3 MeshUtils::createVertexNormalAtIndex(BufferView<const double> positions,
 	return cross;
 }
 
-void MeshUtils::createVoxelFaceQuadPositionsModelSpace(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, double ceilingScale, BufferView<Double3> outPositions)
+void MeshUtils::getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, int *outWidth, int *outHeight)
 {
-	DebugAssert(outPositions.getCount() == 4);
+	const Int3 voxelDiff = max - min;
+	const Int3 meshVoxelDims(1 + voxelDiff.x, 1 + voxelDiff.y, 1 + voxelDiff.z);
 
-	const VoxelInt3 voxelDiff = max - min;
-	const VoxelDouble3 voxelDiffReal(
-		static_cast<SNDouble>(voxelDiff.x),
-		static_cast<double>(voxelDiff.y),
-		static_cast<WEDouble>(voxelDiff.z));
-
-	Double3 tlModelSpacePoint;
-	Double3 tlBlDelta;
-	Double3 tlBrDelta;
-
+	int width = -1;
+	int height = -1;
 	switch (facing)
 	{
 	case VoxelFacing3D::PositiveX:
-		tlModelSpacePoint = Double3(1.0, ceilingScale, 1.0 + voxelDiffReal.z);
-		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
-		tlBrDelta = Double3(0.0, 0.0, -1.0 - voxelDiffReal.z);
-		break;
 	case VoxelFacing3D::NegativeX:
-		tlModelSpacePoint = Double3(0.0, ceilingScale, 0.0);
-		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
-		tlBrDelta = Double3();
+		width = meshVoxelDims.z;
+		height = meshVoxelDims.y;
 		break;
 	case VoxelFacing3D::PositiveY:
-		tlModelSpacePoint = Double3(0.0, ceilingScale, 0.0);
-		tlBlDelta = Double3(0.0, 0.0, voxelDiffReal.z);
-		tlBrDelta = Double3(voxelDiffReal.x, 0.0, 0.0);
-		break;
 	case VoxelFacing3D::NegativeY:
-		tlModelSpacePoint = Double3(0.0, 0.0, 0.0);
-		tlBlDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
-		tlBrDelta = Double3(0.0, 0.0, 1.0 + voxelDiffReal.z);
+		width = meshVoxelDims.x;
+		height = meshVoxelDims.z;
 		break;
 	case VoxelFacing3D::PositiveZ:
-		tlModelSpacePoint = Double3(0.0, ceilingScale, 1.0);
-		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
-		tlBrDelta = Double3(1.0 + voxelDiffReal.x, 0.0, 0.0);
-		break;
 	case VoxelFacing3D::NegativeZ:
-		tlModelSpacePoint = Double3(1.0 + voxelDiffReal.x, ceilingScale, 0.0);
-		tlBlDelta = Double3(0.0, -ceilingScale, 0.0);
-		tlBrDelta = Double3(-1.0 - voxelDiffReal.x, 0.0, 0.0);
+		width = meshVoxelDims.x;
+		height = meshVoxelDims.y;
 		break;
 	default:
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(facing)));
 	}
 
-	const Double3 v0 = tlModelSpacePoint;
-	const Double3 v1 = v0 + tlBlDelta;
-	const Double3 v2 = v0 + tlBlDelta + tlBrDelta;
-	const Double3 v3 = v0 + tlBrDelta;
-	outPositions[0] = v0;
-	outPositions[1] = v1;
-	outPositions[2] = v2;
-	outPositions[3] = v3;
+	*outWidth = width;
+	*outHeight = height;
 }
 
-void MeshUtils::createVoxelFaceQuadNormals(VoxelFacing3D facing, BufferView<Double3> outNormals)
+void MeshUtils::writeFirstFourUniqueIndices(Span<const int32_t> inputIndices, Span<int32_t> outputIndices)
 {
-	DebugAssert(outNormals.getCount() == 4);
+	constexpr int quadVertexCount = MeshUtils::VERTICES_PER_QUAD;
 
-	const Double3 normal = VoxelUtils::getNormal(facing);
-	outNormals[0] = normal;
-	outNormals[1] = normal;
-	outNormals[2] = normal;
-	outNormals[3] = normal;
-}
+	DebugAssert(outputIndices.getCount() == quadVertexCount);
+	DebugAssert(inputIndices.getCount() >= quadVertexCount);
 
-void MeshUtils::createVoxelFaceQuadTexCoords(int width, int height, BufferView<Double2> outUVs)
-{
-	DebugAssert(width >= 1);
-	DebugAssert(height >= 1);
-	DebugAssert(outUVs.getCount() == 4);
+	int outputWriteIndex = 0;
+	const auto faceVertexIndicesBegin = outputIndices.begin();
+	const auto faceVertexIndicesEnd = outputIndices.end();
+	std::fill(faceVertexIndicesBegin, faceVertexIndicesEnd, -1);
+	for (int faceIndicesIndex = 0; faceIndicesIndex < inputIndices.getCount(); faceIndicesIndex++)
+	{
+		const int faceVertexIndex = inputIndices[faceIndicesIndex];
+		const auto existingIter = std::find(faceVertexIndicesBegin, faceVertexIndicesEnd, faceVertexIndex);
+		if (existingIter != faceVertexIndicesEnd)
+		{
+			continue;
+		}
 
-	const double uMin = 0.0;
-	const double uMax = 1.0; // @todo for GL_REPEAT support, change to width
-	const double vMin = 0.0;
-	const double vMax = 1.0; // @todo for GL_REPEAT support, change to height
-	outUVs[0] = Double2(uMin, vMin);
-	outUVs[1] = Double2(uMin, vMax);
-	outUVs[2] = Double2(uMax, vMax);
-	outUVs[3] = Double2(uMax, vMin);
-}
+		outputIndices[outputWriteIndex] = faceVertexIndex;
+		outputWriteIndex++;
 
-void MeshUtils::createVoxelFaceQuadIndices(BufferView<int32_t> outIndices)
-{
-	DebugAssert(outIndices.getCount() == 6);
-	outIndices[0] = 0;
-	outIndices[1] = 1;
-	outIndices[2] = 2;
-	outIndices[3] = 2;
-	outIndices[4] = 3;
-	outIndices[5] = 0;
+		if (outputWriteIndex == quadVertexCount)
+		{
+			break;
+		}
+	}
 }
 
 double MeshUtils::getScaledVertexY(double meshY, VoxelShapeScaleType scaleType, double ceilingScale)

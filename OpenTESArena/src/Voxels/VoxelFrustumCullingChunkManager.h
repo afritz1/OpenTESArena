@@ -4,7 +4,7 @@
 #include "VoxelFrustumCullingChunk.h"
 #include "../World/SpecializedChunkManager.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class VoxelChunkManager;
 
@@ -13,7 +13,7 @@ struct RenderCamera;
 class VoxelFrustumCullingChunkManager final : public SpecializedChunkManager<VoxelFrustumCullingChunk>
 {
 public:
-	void update(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+	void update(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		const RenderCamera &camera, double ceilingScale, const VoxelChunkManager &voxelChunkManager);
 };
 

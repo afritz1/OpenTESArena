@@ -9,6 +9,7 @@
 #include "RenderMeshUtils.h"
 #include "RenderShaderUtils.h"
 #include "../Voxels/VoxelChunk.h"
+#include "../Voxels/VoxelFaceCombineChunk.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../World/Chunk.h"
 
@@ -43,12 +44,43 @@ struct RenderVoxelDrawCallHeap
 
 	RenderVoxelDrawCallHeap();
 
-	BufferView<RenderDrawCall> get(RenderVoxelDrawCallRangeID id);
-	BufferView<const RenderDrawCall> get(RenderVoxelDrawCallRangeID id) const;
+	Span<RenderDrawCall> get(RenderVoxelDrawCallRangeID id);
+	Span<const RenderDrawCall> get(RenderVoxelDrawCallRangeID id) const;
 	RenderVoxelDrawCallRangeID alloc(int drawCallCount);
 	void free(RenderVoxelDrawCallRangeID id);
 	void clear();
 };
+
+struct RenderVoxelCombinedFaceTransformKey
+{
+	VoxelInt3 minVoxel, maxVoxel;
+	VoxelFacing3D facing;
+
+	RenderVoxelCombinedFaceTransformKey();
+
+	bool operator==(const RenderVoxelCombinedFaceTransformKey &other) const;
+};
+
+namespace std
+{
+	// For fast lookup of a mesh instance's transform in this chunk.
+	template<>
+	struct hash<RenderVoxelCombinedFaceTransformKey>
+	{
+		size_t operator()(const RenderVoxelCombinedFaceTransformKey &key) const
+		{
+			const size_t minVoxelHash = key.minVoxel.toHash();
+			const size_t maxVoxelHash = key.maxVoxel.toHash();
+			const size_t facingHash = static_cast<size_t>(key.facing);
+
+			size_t hash = 0;
+			hash = MathUtils::hashCombine(hash, minVoxelHash);
+			hash = MathUtils::hashCombine(hash, maxVoxelHash);
+			hash = MathUtils::hashCombine(hash, facingHash);
+			return hash;
+		}
+	};
+}
 
 struct RenderVoxelChunk final : public Chunk
 {
@@ -57,6 +89,10 @@ struct RenderVoxelChunk final : public Chunk
 	std::vector<RenderVoxelMeshInstance> meshInsts;
 	std::unordered_map<VoxelShapeDefID, RenderVoxelMeshInstID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
 	Buffer3D<RenderVoxelMeshInstID> meshInstIDs; // Points into mesh instances.
+
+	std::vector<RenderVoxelDrawCallRangeID> combinedFaceDrawCallRangeIDs; // tbd, can't be freed yet, only added
+	std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> combinedFaceTransforms; // Allocated transforms for static positions in space, doesn't need freeing when dirty.
+
 	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	UniformBufferID transformBufferID; // One RenderTransform buffer for all voxels, though doors are handled separately. Owned by this chunk.
 	std::unordered_map<VoxelInt3, UniformBufferID> doorTransformBuffers; // Unique transform buffer per door instance, owned by this chunk. Four RenderTransforms (one per door face) per buffer.

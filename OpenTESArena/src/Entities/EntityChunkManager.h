@@ -16,8 +16,8 @@
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
 #include "components/utilities/RecyclablePool.h"
+#include "components/utilities/Span.h"
 
 class AudioManager;
 class BinaryAssetLibrary;
@@ -179,10 +179,10 @@ public:
 
 	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
 	// simulated or rendered.
-	BufferView<const EntityInstanceID> getQueuedDestroyEntityIDs() const;
+	Span<const EntityInstanceID> getQueuedDestroyEntityIDs() const;
 
 	// Gets all entities who have moved between chunks this frame. Cleared at end of frame.
-	BufferView<const EntityTransferResult> getEntityTransferResults() const;
+	Span<const EntityTransferResult> getEntityTransferResults() const;
 
 	// Count functions for specialized entities.
 	int getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const;
@@ -195,11 +195,11 @@ public:
 	// Creates a fully-initialized entity in the scene that is immediately ready to simulate.
 	EntityInstanceID createEntity(const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 
-	void update(double dt, BufferView<const ChunkInt2> activeChunkPositions,
-		BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+	void update(double dt, Span<const ChunkInt2> activeChunkPositions,
+		Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
-		const MapSubDefinition &mapSubDef, BufferView<const LevelDefinition> levelDefs,
-		BufferView<const int> levelInfoDefIndices, BufferView<const LevelInfoDefinition> levelInfoDefs,
+		const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
+		Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs,
 		const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
@@ -211,7 +211,7 @@ public:
 
 	// @todo: support spawning an entity not from the level def
 
-	void cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
+	void endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 	void clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 };
 

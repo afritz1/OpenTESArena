@@ -1,16 +1,15 @@
-#ifndef BUFFER_VIEW_2D_H
-#define BUFFER_VIEW_2D_H
+#ifndef SPAN_2D_H
+#define SPAN_2D_H
 
 #include <algorithm>
 
 #include "Buffer2D.h"
 #include "../debug/Debug.h"
 
-// Non-owning view over a 2D range of data stored in memory as a 1D array. More complex than 1D buffer
-// view due to the look-up requirements of a 2D array. Data can be null. Only need assertions on things
-// that reach into the buffer itself.
+// Non-owning view of a 2D range of data stored in memory as a 1D array. More sophisticated than 1D span due
+// to slicing capability. Data can be null. Only need assertions on things that reach into the buffer itself.
 template<typename T>
-class BufferView2D
+class Span2D
 {
 private:
 	T *data; // Start of original 2D array.
@@ -41,32 +40,32 @@ private:
 		}
 	}
 public:
-	BufferView2D()
+	Span2D()
 	{
 		this->reset();
 	}
 
 	// View across a subset of a 2D range of data. The original 2D range's dimensions are required
 	// for proper look-up (and bounds-checking).
-	BufferView2D(T *data, int width, int height, int viewX, int viewY, int viewWidth, int viewHeight)
+	Span2D(T *data, int width, int height, int viewX, int viewY, int viewWidth, int viewHeight)
 	{
 		this->init(data, width, height, viewX, viewY, viewWidth, viewHeight);
 	}
 
 	// View across a 2D range of data.
-	BufferView2D(T *data, int width, int height)
+	Span2D(T *data, int width, int height)
 	{
 		this->init(data, width, height);
 	}
 
 	template<typename U>
-	BufferView2D(Buffer2D<U> &buffer)
+	Span2D(Buffer2D<U> &buffer)
 	{
 		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight());
 	}
 
 	template<typename U>
-	BufferView2D(const Buffer2D<U> &buffer)
+	Span2D(const Buffer2D<U> &buffer)
 	{
 		this->init(static_cast<T*>(buffer.begin()), buffer.getWidth(), buffer.getHeight());
 	}

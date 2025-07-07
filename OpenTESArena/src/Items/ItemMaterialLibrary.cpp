@@ -5,7 +5,7 @@
 
 void ItemMaterialLibrary::init(const ExeData &exeData)
 {
-	const BufferView<const std::string> materialNames = exeData.equipment.materialNames;
+	const Span<const std::string> materialNames = exeData.equipment.materialNames;
 	for (int i = 0; i < materialNames.getCount(); i++)
 	{
 		ItemMaterialDefinition materialDef;

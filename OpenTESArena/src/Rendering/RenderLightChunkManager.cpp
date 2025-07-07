@@ -191,7 +191,7 @@ void RenderLightChunkManager::shutdown(Renderer &renderer)
 	this->entityLights.clear();
 }
 
-void RenderLightChunkManager::registerLightToVoxels(const Light &light, BufferView<const WorldInt3> voxels, double ceilingScale)
+void RenderLightChunkManager::registerLightToVoxels(const Light &light, Span<const WorldInt3> voxels, double ceilingScale)
 {
 	for (const WorldInt3 voxel : voxels)
 	{
@@ -213,7 +213,7 @@ void RenderLightChunkManager::registerLightToVoxels(const Light &light, BufferVi
 	}
 }
 
-void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, BufferView<const WorldInt3> voxels)
+void RenderLightChunkManager::unregisterLightFromVoxels(const Light &light, Span<const WorldInt3> voxels)
 {
 	RenderLightChunk *renderChunkPtr = nullptr; // Cache for performance in big scenes
 
@@ -249,7 +249,7 @@ void RenderLightChunkManager::loadScene()
 	this->isSceneChanged = true;
 }
 
-void RenderLightChunkManager::updateActiveChunks(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void RenderLightChunkManager::updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 	const VoxelChunkManager &voxelChunkManager, Renderer &renderer)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)
@@ -273,7 +273,7 @@ void RenderLightChunkManager::updateActiveChunks(BufferView<const ChunkInt2> new
 	this->chunkPool.clear();
 }
 
-void RenderLightChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
+void RenderLightChunkManager::update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	const CoordDouble3 &cameraCoord, double ceilingScale, bool isFogActive, bool nightLightsAreActive, bool playerHasLight,
 	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
@@ -457,7 +457,7 @@ void RenderLightChunkManager::setNightLightsActive(bool enabled, double ceilingS
 	}
 }
 
-void RenderLightChunkManager::cleanUp()
+void RenderLightChunkManager::endFrame()
 {
 	for (ChunkPtr &chunkPtr : this->activeChunks)
 	{

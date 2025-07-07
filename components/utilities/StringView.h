@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include "Buffer.h"
+#include "Span.h"
 #include "String.h"
 
 namespace StringView
@@ -31,7 +32,7 @@ namespace StringView
 	// Breaks early if too many splits are encountered. Returns whether the split count matches
 	// the destination size.
 	template<int T>
-	bool splitExpected(std::string_view str, char separator, BufferView<std::string_view> dst)
+	bool splitExpected(std::string_view str, char separator, Span<std::string_view> dst)
 	{
 		static_assert(T > 0);
 
@@ -74,7 +75,7 @@ namespace StringView
 	// if too many splits are encountered. Returns whether the split count matches the destination
 	// size.
 	template<int T>
-	bool splitExpected(std::string_view str, BufferView<std::string_view> dst)
+	bool splitExpected(std::string_view str, Span<std::string_view> dst)
 	{
 		return StringView::splitExpected<T>(str, String::SPACE, dst);
 	}

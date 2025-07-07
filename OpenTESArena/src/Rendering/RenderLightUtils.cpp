@@ -16,9 +16,9 @@ RenderLightIdList::RenderLightIdList()
 	this->clear();
 }
 
-BufferView<const RenderLightID> RenderLightIdList::getLightIDs() const
+Span<const RenderLightID> RenderLightIdList::getLightIDs() const
 {
-	return BufferView<const RenderLightID>(this->lightIDs, this->lightCount);
+	return Span<const RenderLightID>(this->lightIDs, this->lightCount);
 }
 
 void RenderLightIdList::tryAddLight(RenderLightID id, double distanceSqr)

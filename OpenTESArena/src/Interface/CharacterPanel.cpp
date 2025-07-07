@@ -52,10 +52,10 @@ bool CharacterPanel::init()
 
 	const PrimaryAttributes &playerAttributes = CharacterSheetUiModel::getPlayerAttributes(game);
 	const Buffer<TextBoxInitInfo> playerAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerAttributeTextBoxInitInfos(fontLibrary);
-	const BufferView<const PrimaryAttribute> playerAttributesView = playerAttributes.getView();
+	const Span<const PrimaryAttribute> playerAttributesView = playerAttributes.getView();
 	for (int i = 0; i < playerAttributesView.getCount(); i++)
 	{
-		const PrimaryAttribute &attribute = playerAttributesView.get(i);
+		const PrimaryAttribute &attribute = playerAttributesView[i];
 		const int attributeValue = attribute.maxValue;
 		const std::string attributeValueText = std::to_string(attributeValue);
 		const TextBoxInitInfo &attributeTextBoxInitInfo = playerAttributesTextBoxInitInfos[i];
@@ -68,10 +68,10 @@ bool CharacterPanel::init()
 
 	const DerivedAttributes playerDerivedAttributes = CharacterSheetUiModel::getPlayerDerivedAttributes(game);
 	const Buffer<TextBoxInitInfo> playerDerivedAttributesTextBoxInitInfos = CharacterSheetUiView::getPlayerDerivedAttributeTextBoxInitInfos(fontLibrary);
-	BufferView<const int> playerDerivedAttributesView = playerDerivedAttributes.getView();
+	Span<const int> playerDerivedAttributesView = playerDerivedAttributes.getView();
 	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
 	{
-		const int derivedAttributeValue = playerDerivedAttributesView.get(i);
+		const int derivedAttributeValue = playerDerivedAttributesView[i];
 		const std::string derivedAttributeValueText = DerivedAttributes::isModifier(i) ?
 			CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
 		const TextBoxInitInfo &derivedAttributeTextBoxInitInfo = playerDerivedAttributesTextBoxInitInfos[i];

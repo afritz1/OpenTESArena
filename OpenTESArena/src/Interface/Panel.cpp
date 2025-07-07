@@ -63,14 +63,14 @@ Panel::~Panel()
 	}
 }
 
-BufferView<const ButtonProxy> Panel::getButtonProxies() const
+Span<const ButtonProxy> Panel::getButtonProxies() const
 {
-	return BufferView<const ButtonProxy>(this->buttonProxies);
+	return Span<const ButtonProxy>(this->buttonProxies);
 }
 
-BufferView<const UiDrawCall> Panel::getDrawCalls() const
+Span<const UiDrawCall> Panel::getDrawCalls() const
 {
-	return BufferView<const UiDrawCall>(this->drawCalls);
+	return Span<const UiDrawCall>(this->drawCalls);
 }
 
 void Panel::onPauseChanged(bool paused)

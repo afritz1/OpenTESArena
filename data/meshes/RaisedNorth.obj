@@ -1,0 +1,28 @@
+# Raised platform positions and tex coords are transformed by the level they're used in.
+usemtl RaisedSide
+
+# Positions
+# X=0
+v 0.0 1.0 0.0
+v 0.0 0.0 0.0
+v 0.0 0.0 1.0
+v 0.0 1.0 1.0
+
+# Normals
+# X=0
+vn -1.0 0.0 0.0
+vn -1.0 0.0 0.0
+vn -1.0 0.0 0.0
+vn -1.0 0.0 0.0
+
+# Tex coords
+# X=0
+vt 0.0 0.0
+vt 0.0 1.0
+vt 1.0 1.0
+vt 1.0 0.0
+
+# Indices (1-based)
+# X=0
+f 1 2 3
+f 3 4 1

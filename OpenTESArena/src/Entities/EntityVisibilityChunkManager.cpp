@@ -2,8 +2,8 @@
 #include "EntityVisibilityChunkManager.h"
 #include "../Voxels/VoxelChunkManager.h"
 
-void EntityVisibilityChunkManager::update(BufferView<const ChunkInt2> activeChunkPositions, BufferView<const ChunkInt2> newChunkPositions,
-	BufferView<const ChunkInt2> freedChunkPositions, const RenderCamera &camera, double ceilingScale,
+void EntityVisibilityChunkManager::update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
+	Span<const ChunkInt2> freedChunkPositions, const RenderCamera &camera, double ceilingScale,
 	const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)

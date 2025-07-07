@@ -15,6 +15,13 @@ Radians MathUtils::safeDegToRad(Degrees degrees)
 	return radians;
 }
 
+size_t MathUtils::hashCombine(size_t hash, size_t otherHash)
+{
+	constexpr size_t goldenRatioConstant = 0x9E3779B9;
+	const size_t shiftedHashSum = (hash << 6) + (hash >> 2);
+	return hash ^ (otherHash + goldenRatioConstant + shiftedHashSum);
+}
+
 double MathUtils::getRealIndex(int bufferSize, double percent)
 {
 	DebugAssert(bufferSize > 0);

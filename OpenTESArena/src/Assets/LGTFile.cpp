@@ -26,14 +26,14 @@ bool LGTFile::init(const char *filename)
 	return true;
 }
 
-BufferView<const uint8_t> LGTFile::getLightPalette(int index) const
+Span<const uint8_t> LGTFile::getLightPalette(int index) const
 {
 	DebugAssert(index < LGTFile::PALETTE_COUNT);
 	const uint8_t *ptr = this->palettes.begin() + (index * this->palettes.getWidth());
-	return BufferView(ptr, LGTFile::ELEMENTS_PER_PALETTE);
+	return Span(ptr, LGTFile::ELEMENTS_PER_PALETTE);
 }
 
-BufferView2D<const uint8_t> LGTFile::getAllLightPalettes() const
+Span2D<const uint8_t> LGTFile::getAllLightPalettes() const
 {
-	return BufferView2D<const uint8_t>(this->palettes);
+	return Span2D<const uint8_t>(this->palettes);
 }

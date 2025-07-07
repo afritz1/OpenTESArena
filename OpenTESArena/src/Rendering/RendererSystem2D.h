@@ -9,7 +9,7 @@
 #include "../Math/Vector2.h"
 #include "../Utilities/Palette.h"
 
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span2D.h"
 
 class TextureManager;
 
@@ -49,8 +49,8 @@ public:
 
 	// Texture handle allocation functions for a UI texture. All UI textures are stored as 32-bit.
 	virtual bool tryCreateUiTexture(int width, int height, UiTextureID *outID) = 0;
-	virtual bool tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID) = 0;
-	virtual bool tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID) = 0;
+	virtual bool tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID) = 0;
+	virtual bool tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID) = 0;
 	virtual bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID) = 0;
 

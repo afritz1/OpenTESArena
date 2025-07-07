@@ -5,7 +5,7 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span2D.h"
 
 // This class loads a .DAT file containing font information. Each character is put
 // into its own black and white image. White pixels are part of a character, while
@@ -30,7 +30,7 @@ public:
 
 	int getCharacterCount() const;
 	int getHeight() const;
-	BufferView2D<const Pixel> getPixels(int index) const;
+	Span2D<const Pixel> getPixels(int index) const;
 };
 
 #endif

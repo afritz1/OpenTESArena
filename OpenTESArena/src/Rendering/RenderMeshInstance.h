@@ -9,7 +9,7 @@ using RenderVoxelMeshInstID = int;
 
 struct RenderVoxelMeshInstance
 {
-	static constexpr int MAX_DRAW_CALLS = 3; // Based on VoxelDefinition subtypes (wall or raised).
+	static constexpr int MAX_DRAW_CALLS = 6; // Based on voxel mesh faces.
 
 	VertexPositionBufferID positionBufferID;
 	VertexAttributeBufferID normalBufferID, texCoordBufferID;

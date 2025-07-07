@@ -1,7 +1,7 @@
 #ifndef PRIMARY_ATTRIBUTE_H
 #define PRIMARY_ATTRIBUTE_H
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 struct ExeData;
 
@@ -24,8 +24,8 @@ struct PrimaryAttributes
 
 	void init(int raceID, bool isMale, const ExeData &exeData);
 
-	BufferView<PrimaryAttribute> getView();
-	BufferView<const PrimaryAttribute> getView() const;
+	Span<PrimaryAttribute> getView();
+	Span<const PrimaryAttribute> getView() const;
 
 	void clear();
 };
@@ -47,7 +47,7 @@ struct DerivedAttributes
 
 	static bool isModifier(int index);
 
-	BufferView<const int> getView() const;
+	Span<const int> getView() const;
 
 	void clear();
 };

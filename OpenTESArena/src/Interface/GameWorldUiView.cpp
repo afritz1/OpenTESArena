@@ -35,7 +35,7 @@ namespace
 		}
 
 		uint32_t *texels = renderer.lockUiTexture(textureID);
-		BufferView2D<uint32_t> texelsView(texels, width, height);
+		Span2D<uint32_t> texelsView(texels, width, height);
 		const uint32_t texelARGB = color.toARGB();
 		texelsView.fill(texelARGB);
 		renderer.unlockUiTexture(textureID);
@@ -601,7 +601,7 @@ UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType bu
 {
 	const std::string text = GameWorldUiModel::getButtonTooltip(buttonType);
 	const Surface surface = TextureUtils::createTooltip(text, fontLibrary);
-	const BufferView2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
+	const Span2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
 		surface.getWidth(), surface.getHeight());
 
 	UiTextureID id;
@@ -639,7 +639,7 @@ UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textu
 	}
 
 	uint32_t *lockedTexels = renderer.lockUiTexture(id);
-	BufferView2D<uint32_t> texelsView(static_cast<uint32_t*>(lockedTexels), width, height);
+	Span2D<uint32_t> texelsView(static_cast<uint32_t*>(lockedTexels), width, height);
 
 	constexpr Color cursorBgColor(0, 0, 0, 0);
 	const uint32_t cursorBgARGB = cursorBgColor.toARGB();
@@ -811,8 +811,8 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 			const VoxelInt3 voxel = voxelHit.voxelCoord.voxel;
 
 			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-			const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+			const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.traitsDefIDs.get(voxel.x, voxel.y, voxel.z);
+			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
 
 			text = "Voxel: (" + voxel.toString() + "), " + std::to_string(static_cast<int>(voxelTraitsDef.type)) + ' ' + std::to_string(hit.t);
 			break;

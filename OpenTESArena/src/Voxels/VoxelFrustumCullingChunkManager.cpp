@@ -1,7 +1,7 @@
 #include "VoxelChunkManager.h"
 #include "VoxelFrustumCullingChunkManager.h"
 
-void VoxelFrustumCullingChunkManager::update(BufferView<const ChunkInt2> newChunkPositions, BufferView<const ChunkInt2> freedChunkPositions,
+void VoxelFrustumCullingChunkManager::update(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 	const RenderCamera &camera, double ceilingScale, const VoxelChunkManager &voxelChunkManager)
 {
 	for (const ChunkInt2 chunkPos : freedChunkPositions)

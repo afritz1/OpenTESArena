@@ -246,7 +246,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				}
 			}();
 
-			MapGeneration::InteriorGenInfo interiorGenInfo;
+			MapGenerationInteriorInfo interiorGenInfo;
 			interiorGenInfo.initPrefab(mifName, interiorType, rulerIsMale);
 
 			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
@@ -282,7 +282,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
 				const LocationDungeonDefinition &dungeonDef = locationDef.getDungeonDefinition();
 
-				MapGeneration::InteriorGenInfo interiorGenInfo;
+				MapGenerationInteriorInfo interiorGenInfo;
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
@@ -324,7 +324,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				LocationDungeonDefinition dungeonDef;
 				dungeonDef.init(dungeonSeed, widthChunkCount, heightChunkCount);
 
-				MapGeneration::InteriorGenInfo interiorGenInfo;
+				MapGenerationInteriorInfo interiorGenInfo;
 				interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 				const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, locationIndex);
@@ -389,8 +389,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return buffer;
 			}();
 
-			const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+			const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+				[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 			{
 				if (cityDef.hasMainQuestTempleOverride)
 				{
@@ -402,7 +402,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				}
 			}();
 
-			MapGeneration::CityGenInfo cityGenInfo;
+			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
 				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
@@ -417,7 +417,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return weatherDef;
 			}();
 
-			SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+			SkyGenerationExteriorInfo skyGenInfo;
 			skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -474,8 +474,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return buffer;
 			}();
 
-			const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-				[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+			const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+				[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 			{
 				if (cityDef.hasMainQuestTempleOverride)
 				{
@@ -487,7 +487,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				}
 			}();
 
-			MapGeneration::CityGenInfo cityGenInfo;
+			MapGenerationCityInfo cityGenInfo;
 			cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
 				cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
 				cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
@@ -502,7 +502,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 				return weatherDef;
 			}();
 
-			SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+			SkyGenerationExteriorInfo skyGenInfo;
 			skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 				cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -530,10 +530,9 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
 
 		const auto &exeData = binaryAssetLibrary.getExeData();
-		Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs =
-			ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
+		Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
-		MapGeneration::WildGenInfo wildGenInfo;
+		MapGenerationWildInfo wildGenInfo;
 		wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
 		const WeatherDefinition overrideWeather = [&game, weatherType, &cityDef, currentDay]()
@@ -545,7 +544,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 			return weatherDef;
 		}();
 
-		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+		SkyGenerationExteriorInfo skyGenInfo;
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 			cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 

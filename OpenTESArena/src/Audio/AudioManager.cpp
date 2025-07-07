@@ -23,7 +23,7 @@
 #include "../Math/Vector4.h"
 
 #include "components/debug/Debug.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 #include "components/utilities/String.h"
 #include "components/utilities/StringView.h"
 #include "components/utilities/TextLinesFile.h"
@@ -103,7 +103,7 @@ private:
 	/* Read samples from the song and fill the given OpenAL buffer ID (buffer
 	 * vector is for temporary storage). Returns true if the buffer was filled.
 	 */
-	bool fillBuffer(ALuint bufid, BufferView<char> buffer)
+	bool fillBuffer(ALuint bufid, Span<char> buffer)
 	{
 		size_t totalSize = 0;
 		while (totalSize < buffer.getCount())
@@ -150,7 +150,7 @@ private:
 	/* Fill buffers to fill up the source queue. Returns the number of buffers
 	 * queued.
 	 */
-	ALint fillBufferQueue(BufferView<char> buffer)
+	ALint fillBufferQueue(Span<char> buffer)
 	{
 		ALint queued;
 		alGetSourcei(mSource, AL_BUFFERS_QUEUED, &queued);
@@ -667,7 +667,7 @@ void AudioManager::playSound(const char *filename, const std::optional<Double3> 
 				DebugLogWarning("alGenBuffers() error 0x" + String::toHexString(status));
 			}
 
-			BufferView<uint8_t> audioData = voc.getAudioData();
+			Span<uint8_t> audioData = voc.getAudioData();
 
 			// Find and repair any bad samples we know of. A mod should eventually do this.
 			const auto repairIter = std::find_if(this->mVocRepairEntries.begin(), this->mVocRepairEntries.end(),
@@ -678,7 +678,7 @@ void AudioManager::playSound(const char *filename, const std::optional<Double3> 
 
 			if (repairIter != this->mVocRepairEntries.end())
 			{
-				const BufferView<const VocRepairSpan> repairSpans = repairIter->spans;
+				const Span<const VocRepairSpan> repairSpans = repairIter->spans;
 				for (const VocRepairSpan span : repairSpans)
 				{
 					const auto spanBegin = audioData.begin() + span.startIndex;

@@ -80,7 +80,7 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	}
 
 	const Palette &skyGradientPalette = textureManager.getPaletteHandle(*skyGradientPaletteID);
-	const BufferView<const Color> skyGradientPaletteTexels(skyGradientPalette);
+	const Span<const Color> skyGradientPaletteTexels(skyGradientPalette);
 	LockedTexture lockedTexture = this->gameWorldPaletteTextureRef.lockTexels();
 	if (!lockedTexture.isValid())
 	{
@@ -93,8 +93,8 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 
 	int srcTexelsIndexStart = daytimePaletteIndexOffset.has_value() ? *daytimePaletteIndexOffset : 1;
 	const int skyGradientColorCount = static_cast<int>(std::size(ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR));
-	BufferView<uint32_t> gameWorldTexels(reinterpret_cast<uint32_t*>(lockedTexture.texels), paletteLength);
-	BufferView<uint32_t> gameWorldSkyGradientTexels(gameWorldTexels.begin() + 1, skyGradientColorCount);
+	Span<uint32_t> gameWorldTexels(reinterpret_cast<uint32_t*>(lockedTexture.texels), paletteLength);
+	Span<uint32_t> gameWorldSkyGradientTexels(gameWorldTexels.begin() + 1, skyGradientColorCount);
 	for (int i = 0; i < skyGradientColorCount; i++)
 	{
 		const int srcIndex = (srcTexelsIndexStart + i) % paletteLength;
@@ -130,7 +130,7 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
-		const BufferView<const uint8_t> windowColorBytes = exeData.light.windowTwilightColors;
+		const Span<const uint8_t> windowColorBytes = exeData.light.windowTwilightColors;
 
 		auto getWindowRGBForTransitionPercent = [&windowColorBytes](double percent)
 		{
@@ -176,12 +176,12 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	this->gameWorldPaletteTextureRef.unlockTexels();
 }
 
-void SceneManager::cleanUp(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
+void SceneManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
-	this->chunkManager.cleanUp();
-	this->voxelChunkManager.cleanUp();
-	this->entityChunkManager.cleanUp(physicsSystem, renderer);
-	this->renderVoxelChunkManager.cleanUp();
-	this->renderEntityChunkManager.cleanUp();
-	this->renderLightChunkManager.cleanUp();
+	this->chunkManager.endFrame();
+	this->voxelChunkManager.endFrame();
+	this->entityChunkManager.endFrame(physicsSystem, renderer);
+	this->renderVoxelChunkManager.endFrame();
+	this->renderEntityChunkManager.endFrame();
+	this->renderLightChunkManager.endFrame();
 }

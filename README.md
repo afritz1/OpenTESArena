@@ -179,12 +179,14 @@ cd OpenTESArena
     ```bash
     mkdir build
     cd build
-    cmake -DCMAKE_BUILD_TYPE=<?> ..
+    cmake -DCMAKE_BUILD_TYPE=? ..
     make -j8
     ```
-    where `CMAKE_BUILD_TYPE` is one of `Debug`|`ReleaseGenericNoLTO`|`ReleaseGeneric`|`ReleaseNative`
-  - For maximum compatibility, use `ReleaseGeneric`
-  - For maximum speed only compatible with your specific CPU, use `ReleaseNative`
+    where `CMAKE_BUILD_TYPE` is one of:
+  - `Debug`
+  - `ReleaseGenericNoLTO` - typical development/testing
+  - `ReleaseGeneric` - release build for general audience, uses your CPU architecture (x86-64, ARM64)
+  - `ReleaseNative` - max performance compatible only with your exact CPU (equivalent to `-march=native`)
 - **Warning**: Jolt Physics enables CPU features which may cause illegal instruction errors. You can set these `OFF` in CMake ([more information](https://github.com/jrouwe/JoltPhysics/blob/20eedf47c4bf064e740c9de2f638a8c1d57ce2ed/Build/README.md#illegal-instruction-error))
     ```bash
     -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF

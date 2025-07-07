@@ -2,6 +2,7 @@
 #define VECTOR2_H
 
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib> // std::abs.
 #include <string>
 #include <type_traits>
@@ -53,6 +54,7 @@ struct Vector2i
 	Vector2i<T> operator/(const Vector2i<T> &v) const;
 
 	std::string toString() const;
+	size_t toHash() const;
 };
 
 template<typename T>
@@ -133,7 +135,7 @@ using Uint2 = Vector2i<unsigned int>;
 using Float2 = Vector2f<float>;
 using Double2 = Vector2f<double>;
 
-// Hash definition for unordered_map<Int2, ...>.
+// Hash definition for unordered_map.
 namespace std
 {
 	template<>
@@ -141,8 +143,7 @@ namespace std
 	{
 		size_t operator()(const Int2 &v) const
 		{
-			// Multiply with a prime number before xor'ing.
-			return static_cast<size_t>(v.x ^ (v.y * 41));
+			return v.toHash();
 		}
 	};
 }

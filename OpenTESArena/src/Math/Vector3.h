@@ -61,6 +61,7 @@ struct Vector3i
 	Vector2i<T> getYZ() const;
 
 	std::string toString() const;
+	size_t toHash() const;
 };
 
 template<typename T>
@@ -159,7 +160,7 @@ using Uint3 = Vector3i<unsigned int>;
 using Float3 = Vector3f<float>;
 using Double3 = Vector3f<double>;
 
-// Hash definition for unordered_map<Int3, ...>.
+// Hash definition for unordered_map.
 namespace std
 {
 	template<>
@@ -167,8 +168,7 @@ namespace std
 	{
 		size_t operator()(const Int3 &v) const
 		{
-			// Multiply with some prime numbers before xor'ing.
-			return static_cast<size_t>(v.x ^ (v.y * 41) ^ (v.z * 199));
+			return v.toHash();
 		}
 	};
 }

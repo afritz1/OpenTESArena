@@ -25,7 +25,7 @@
 namespace PlayerLogic
 {
 	PlayerInputAcceleration getInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
-		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, BufferView<const Rect> nativeCursorRegions)
+		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, Span<const Rect> nativeCursorRegions)
 	{
 		PlayerInputAcceleration inputAcceleration;
 		if (!isOnGround && !isClimbing)
@@ -55,12 +55,12 @@ namespace PlayerLogic
 			const int mouseY = mousePosition.y;
 
 			// Native cursor regions for motion (scaled to the current window).
-			const Rect &topLeft = nativeCursorRegions.get(GameWorldUiView::CursorTopLeftIndex);
-			const Rect &top = nativeCursorRegions.get(GameWorldUiView::CursorTopMiddleIndex);
-			const Rect &topRight = nativeCursorRegions.get(GameWorldUiView::CursorTopRightIndex);
-			const Rect &bottomLeft = nativeCursorRegions.get(GameWorldUiView::CursorBottomLeftIndex);
-			const Rect &bottom = nativeCursorRegions.get(GameWorldUiView::CursorBottomMiddleIndex);
-			const Rect &bottomRight = nativeCursorRegions.get(GameWorldUiView::CursorBottomRightIndex);
+			const Rect &topLeft = nativeCursorRegions[GameWorldUiView::CursorTopLeftIndex];
+			const Rect &top = nativeCursorRegions[GameWorldUiView::CursorTopMiddleIndex];
+			const Rect &topRight = nativeCursorRegions[GameWorldUiView::CursorTopRightIndex];
+			const Rect &bottomLeft = nativeCursorRegions[GameWorldUiView::CursorBottomLeftIndex];
+			const Rect &bottom = nativeCursorRegions[GameWorldUiView::CursorBottomMiddleIndex];
+			const Rect &bottomRight = nativeCursorRegions[GameWorldUiView::CursorBottomRightIndex];
 
 			// Strength of movement is determined by the mouse's position in each region.
 			// Motion magnitude (percent) is between 0.0 and 1.0.
@@ -320,8 +320,8 @@ namespace PlayerLogic
 		const VoxelInt3 voxel = voxelHit.voxelCoord.voxel;
 
 		VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.getTraitsDefID(voxel.x, voxel.y, voxel.z);
-		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.getTraitsDef(voxelTraitsDefID);
+		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.traitsDefIDs.get(voxel.x, voxel.y, voxel.z);
+		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
 		const ArenaVoxelType voxelType = voxelTraitsDef.type;
 
 		GameState &gameState = game.gameState;
@@ -345,7 +345,7 @@ namespace PlayerLogic
 							VoxelTransitionDefID transitionDefID;
 							if (voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 							{
-								const TransitionDefinition &transitionDef = voxelChunk.getTransitionDef(transitionDefID);
+								const TransitionDefinition &transitionDef = voxelChunk.transitionDefs[transitionDefID];
 								if (transitionDef.type != TransitionType::InteriorLevelChange)
 								{
 									MapLogic::handleMapTransition(game, hit, transitionDef);
@@ -361,7 +361,7 @@ namespace PlayerLogic
 						{
 							VoxelFadeAnimationInstance fadeAnimInst;
 							fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-							voxelChunk.addFadeAnimInst(std::move(fadeAnimInst));
+							voxelChunk.fadeAnimInsts.emplace_back(std::move(fadeAnimInst));
 						}
 					}
 				}
@@ -383,7 +383,7 @@ namespace PlayerLogic
 							VoxelLockDefID lockDefID;
 							if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
 							{
-								const LockDefinition &lockDef = voxelChunk.getLockDef(lockDefID);
+								const LockDefinition &lockDef = voxelChunk.lockDefs[lockDefID];
 								requiredDoorKeyID = lockDef.keyID;
 
 								if (requiredDoorKeyID >= 0)
@@ -424,7 +424,7 @@ namespace PlayerLogic
 				VoxelBuildingNameID buildingNameID;
 				if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
 				{
-					const std::string &buildingName = voxelChunk.getBuildingName(buildingNameID);
+					const std::string &buildingName = voxelChunk.buildingNames[buildingNameID];
 					actionTextBox.setText(buildingName);
 					gameState.setActionTextDuration(buildingName);
 				}
@@ -504,7 +504,7 @@ namespace PlayerLogic
 						VoxelTriggerDefID triggerDefID;
 						if (voxelChunk.tryGetTriggerDefID(entityVoxel.x, entityVoxel.y, entityVoxel.z, &triggerDefID))
 						{
-							const VoxelTriggerDefinition &triggerDef = voxelChunk.getTriggerDef(triggerDefID);
+							const VoxelTriggerDefinition &triggerDef = voxelChunk.triggerDefs[triggerDefID];
 							if (triggerDef.hasKeyDef())
 							{
 								const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
@@ -610,7 +610,7 @@ PlayerInputAcceleration::PlayerInputAcceleration()
 	this->shouldResetVelocity = false;
 }
 
-Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, BufferView<const Rect> nativeCursorRegions)
+Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, Span<const Rect> nativeCursorRegions)
 {
 	const auto &inputManager = game.inputManager;
 
@@ -641,10 +641,10 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 					const int mouseX = mousePosition.x;
 
 					// Native cursor regions for turning (scaled to the current window).
-					const Rect &topLeft = nativeCursorRegions.get(GameWorldUiView::CursorTopLeftIndex);
-					const Rect &topRight = nativeCursorRegions.get(GameWorldUiView::CursorTopRightIndex);
-					const Rect &middleLeft = nativeCursorRegions.get(GameWorldUiView::CursorMiddleLeftIndex);
-					const Rect &middleRight = nativeCursorRegions.get(GameWorldUiView::CursorMiddleRightIndex);
+					const Rect &topLeft = nativeCursorRegions[GameWorldUiView::CursorTopLeftIndex];
+					const Rect &topRight = nativeCursorRegions[GameWorldUiView::CursorTopRightIndex];
+					const Rect &middleLeft = nativeCursorRegions[GameWorldUiView::CursorMiddleLeftIndex];
+					const Rect &middleRight = nativeCursorRegions[GameWorldUiView::CursorMiddleRightIndex];
 
 					if (topLeft.contains(mousePosition))
 					{
@@ -711,7 +711,7 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 	return Double2::Zero;
 }
 
-PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, BufferView<const Rect> nativeCursorRegions)
+PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, Span<const Rect> nativeCursorRegions)
 {
 	const InputManager &inputManager = game.inputManager;
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
@@ -857,7 +857,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					VoxelLockDefID lockDefID;
 					if (hitVoxelChunk.tryGetLockDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &lockDefID))
 					{
-						const LockDefinition &lockDef = hitVoxelChunk.getLockDef(lockDefID);
+						const LockDefinition &lockDef = hitVoxelChunk.lockDefs[lockDefID];
 						isDoorBashable = lockDef.lockLevel >= 0; // @todo don't allow key-only doors to be bashable
 					}
 				}

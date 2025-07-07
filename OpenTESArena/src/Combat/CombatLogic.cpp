@@ -13,14 +13,14 @@ CombatHitSearchResult::CombatHitSearchResult()
 	this->entityCount = 0;
 }
 
-BufferView<const WorldInt3> CombatHitSearchResult::getVoxels() const
+Span<const WorldInt3> CombatHitSearchResult::getVoxels() const
 {
-	return BufferView<const WorldInt3>(this->voxels, this->voxelCount);
+	return Span<const WorldInt3>(this->voxels, this->voxelCount);
 }
 
-BufferView<const EntityInstanceID> CombatHitSearchResult::getEntities() const
+Span<const EntityInstanceID> CombatHitSearchResult::getEntities() const
 {
-	return BufferView<const EntityInstanceID>(this->entities, this->entityCount);
+	return Span<const EntityInstanceID>(this->entities, this->entityCount);
 }
 
 void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double searchRadius, double ceilingScale,

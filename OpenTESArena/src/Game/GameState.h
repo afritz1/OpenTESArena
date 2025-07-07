@@ -152,7 +152,7 @@ public:
 	ProvinceInstance &getProvinceInstance();
 	LocationInstance &getLocationInstance();
 	const ProvinceMapUiModel::TravelData *getTravelData() const;
-	BufferView<const ArenaWeatherType> getWorldMapWeathers() const;
+	Span<const ArenaWeatherType> getWorldMapWeathers() const;
 	ArenaWeatherType getWeatherForLocation(int provinceIndex, int locationIndex) const;
 	Date &getDate();
 	Clock &getClock();

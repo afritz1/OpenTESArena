@@ -14,10 +14,10 @@
 
 class BinaryAssetLibrary;
 
+using ArenaWildBlockID = uint8_t; // Corresponds to WILD{...}.MIF file.
+
 namespace ArenaWildUtils
 {
-	using WildBlockID = uint8_t; // Corresponds to WILD{...}.MIF file.
-
 	// Chunk counts across wilderness width and height.
 	constexpr int WILD_WIDTH = 64;
 	constexpr int WILD_HEIGHT = WILD_WIDTH;
@@ -43,14 +43,14 @@ namespace ArenaWildUtils
 	uint32_t makeWildChunkSeed(int wildX, int wildY);
 
 	// Wilderness indices for looking up WILD{...}.MIF files, generated once per world map location.
-	Buffer2D<WildBlockID> generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData);
+	Buffer2D<ArenaWildBlockID> generateWildernessIndices(uint32_t wildSeed, const ExeDataWilderness &wildData);
 
 	// Returns whether the given WILD{...}.MIF block ID is for a city block.
-	bool isWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID);
+	bool isWildCityBlock(ArenaWildBlockID wildBlockID);
 
 	// Changes the default filler city skeleton to the one intended for the city.
-	void reviseWildCityBlock(ArenaWildUtils::WildBlockID wildBlockID, BufferView2D<ArenaVoxelID> &flor,
-		BufferView2D<ArenaVoxelID> &map1, BufferView2D<ArenaVoxelID> &map2,
+	void reviseWildCityBlock(ArenaWildBlockID wildBlockID, Span2D<ArenaVoxelID> &flor,
+		Span2D<ArenaVoxelID> &map1, Span2D<ArenaVoxelID> &map2,
 		const LocationCityDefinition &cityDef, const BinaryAssetLibrary &binaryAssetLibrary);
 
 	// Gets the origin of a virtual 128x128 space in the wild as if the player was at the given

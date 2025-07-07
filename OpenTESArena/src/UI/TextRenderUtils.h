@@ -13,8 +13,8 @@
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
-#include "components/utilities/BufferView.h"
-#include "components/utilities/BufferView2D.h"
+#include "components/utilities/Span.h"
+#include "components/utilities/Span2D.h"
 
 enum class TextAlignment;
 
@@ -79,26 +79,26 @@ namespace TextRenderUtils
 	Buffer<FontDefinition::CharID> getLineFontCharIDs(const std::string_view line, const FontDefinition &fontDef);
 
 	// Gets the number of pixels long a rendered line of characters would be.
-	int getLinePixelWidth(BufferView<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
+	int getLinePixelWidth(Span<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow = std::nullopt);
 	int getLinePixelWidth(const std::string_view line, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow = std::nullopt);
 
 	// Gets the number of pixels wide or tall a rendered block of text lines would be.
-	int getLinesPixelWidth(BufferView<const std::string_view> textLines, const FontDefinition &fontDef,
+	int getLinesPixelWidth(Span<const std::string_view> textLines, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow = std::nullopt);
-	int getLinesPixelHeight(BufferView<const std::string_view> textLines, const FontDefinition &fontDef,
+	int getLinesPixelHeight(Span<const std::string_view> textLines, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 
 	// Determines how large a text box texture should be in pixels.
 	// @todo: might need to change lineSpacing to a percent of character height so it scales with HD fonts
-	TextRenderTextureGenInfo makeTextureGenInfo(BufferView<const std::string_view> textLines, const FontDefinition &fontDef,
+	TextRenderTextureGenInfo makeTextureGenInfo(Span<const std::string_view> textLines, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 	TextRenderTextureGenInfo makeTextureGenInfo(const std::string_view text, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow = std::nullopt, int lineSpacing = 0);
 
 	// Generates XY pixel offsets for each line of a text box based on text alignment.
-	Buffer<Int2> makeAlignmentOffsets(BufferView<const std::string_view> textLines, int textureWidth,
+	Buffer<Int2> makeAlignmentOffsets(Span<const std::string_view> textLines, int textureWidth,
 		int textureHeight, TextAlignment alignment, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow, int lineSpacing);
 
@@ -109,16 +109,16 @@ namespace TextRenderUtils
 	// - draw text
 	// - render
 	void drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
-		BufferView2D<uint32_t> &outBuffer);
-	void drawTextLine(BufferView<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
+		Span2D<uint32_t> &outBuffer);
+	void drawTextLine(Span<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
 		int dstX, int dstY, const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-		BufferView2D<uint32_t> &outBuffer);
+		Span2D<uint32_t> &outBuffer);
 	void drawTextLine(const std::string_view line, const FontDefinition &fontDef, int dstX, int dstY,
 		const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-		BufferView2D<uint32_t> &outBuffer);
-	void drawTextLines(BufferView<const std::string_view> textLines, const FontDefinition &fontDef, int dstX, int dstY,
+		Span2D<uint32_t> &outBuffer);
+	void drawTextLines(Span<const std::string_view> textLines, const FontDefinition &fontDef, int dstX, int dstY,
 		const Color &textColor, TextAlignment alignment, int lineSpacing, const TextRenderColorOverrideInfo *colorOverrideInfo,
-		const TextRenderShadowInfo *shadow, BufferView2D<uint32_t> &outBuffer);
+		const TextRenderShadowInfo *shadow, Span2D<uint32_t> &outBuffer);
 }
 
 #endif

@@ -262,7 +262,7 @@ Radians GameWorldUiModel::getCompassAngle(const VoxelDouble2 &direction)
 	return std::atan2(-direction.y, -direction.x);
 }
 
-void GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect> nativeCursorRegions, int width, int height)
+void GameWorldUiModel::updateNativeCursorRegions(Span<Rect> nativeCursorRegions, int width, int height)
 {
 	// @todo: maybe the classic rects should be converted to vector space then scaled by the ratio of aspect ratios?
 	const double xScale = static_cast<double>(width) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
@@ -270,7 +270,7 @@ void GameWorldUiModel::updateNativeCursorRegions(BufferView<Rect> nativeCursorRe
 
 	for (int i = 0; i < nativeCursorRegions.getCount(); i++)
 	{
-		nativeCursorRegions.set(i, GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale));
+		nativeCursorRegions[i] = GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale);
 	}
 }
 

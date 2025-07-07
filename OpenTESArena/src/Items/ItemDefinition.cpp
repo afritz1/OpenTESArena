@@ -126,7 +126,7 @@ ArtifactItemDefinition::ArtifactItemDefinition()
 	this->provinceCount = 0;
 }
 
-void ArtifactItemDefinition::init(const char *flavorText, BufferView<const int> provinceIDs)
+void ArtifactItemDefinition::init(const char *flavorText, Span<const int> provinceIDs)
 {
 	std::snprintf(std::begin(this->flavorText), std::size(this->flavorText), "%s", flavorText);
 	

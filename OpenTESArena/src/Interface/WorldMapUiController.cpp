@@ -76,7 +76,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			const auto &cityData = binaryAssetLibrary.getCityDataFile();
 			const int globalQuarter = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityData);
 
-			BufferView<const ArenaWeatherType> worldMapWeathers = gameState.getWorldMapWeathers();
+			Span<const ArenaWeatherType> worldMapWeathers = gameState.getWorldMapWeathers();
 			DebugAssertIndex(worldMapWeathers, globalQuarter);
 			return ArenaWeatherUtils::getFilteredWeatherType(worldMapWeathers[globalQuarter], cityDef.climateType);
 		}();
@@ -93,8 +93,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return buffer;
 		}();
 
-		const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-			[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+		const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+			[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 		{
 			if (cityDef.hasMainQuestTempleOverride)
 			{
@@ -106,7 +106,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			}
 		}();
 
-		MapGeneration::CityGenInfo cityGenInfo;
+		MapGenerationCityInfo cityGenInfo;
 		cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
 			cityDef.citySeed, cityDef.rulerSeed, travelProvinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
 			cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks), mainQuestTempleOverride,
@@ -120,7 +120,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return weatherDef;
 		}();
 
-		SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+		SkyGenerationExteriorInfo skyGenInfo;
 		skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 			cityDef.skySeed, travelProvinceDef.hasAnimatedDistantLand());
 
@@ -188,7 +188,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
 		const LocationDungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
 
-		MapGeneration::InteriorGenInfo interiorGenInfo;
+		MapGenerationInteriorInfo interiorGenInfo;
 		interiorGenInfo.initDungeon(dungeonDef, isArtifactDungeon);
 
 		const VoxelInt2 playerStartOffset(
@@ -231,7 +231,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
 
-		MapGeneration::InteriorGenInfo interiorGenInfo;
+		MapGenerationInteriorInfo interiorGenInfo;
 		interiorGenInfo.initPrefab(mainQuestDungeonDef.mapFilename, ArenaInteriorType::Dungeon, rulerIsMale);
 
 		const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest dungeon.

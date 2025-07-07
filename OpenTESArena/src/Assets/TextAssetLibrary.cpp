@@ -9,7 +9,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 #include "components/utilities/String.h"
 #include "components/vfs/manager.hpp"
 
@@ -68,7 +68,7 @@ namespace
 		}
 	};
 
-	using GenderNameRules = BufferView<const NameRule>;
+	using GenderNameRules = Span<const NameRule>;
 
 	constexpr NameRule NameRules_Race0_Male[] = { { 0 }, { 1 }, { " " }, { 4 }, { 5 } };
 	constexpr NameRule NameRules_Race0_Female[] = { { 2 }, { 3 }, { " " }, { 4 }, { 5 } };
@@ -166,7 +166,7 @@ namespace
 	constexpr NameRule NameRules_Race23_Female[] = { { 55 }, { 56 }, { 57 } };
 	const GenderNameRules NameRules_Race23[] = { NameRules_Race23_Male, NameRules_Race23_Female };
 
-	using RaceNameRules = BufferView<const GenderNameRules>;
+	using RaceNameRules = Span<const GenderNameRules>;
 
 	// Rules for accessing NAMECHNK.DAT lists for name generation, with associated chances if any.
 	const RaceNameRules NameRules[] =
@@ -202,7 +202,7 @@ const ArenaTemplateDatEntry &ArenaTemplateDat::getEntry(int key) const
 {
 	// Use first vector for non-tileset entry requests.
 	DebugAssertMsg(!this->entryLists.empty(), "Missing TEMPLATE.DAT entry lists.");
-	const BufferView<const ArenaTemplateDatEntry> entryList = this->entryLists[0];
+	const Span<const ArenaTemplateDatEntry> entryList = this->entryLists[0];
 
 	const auto iter = std::lower_bound(entryList.begin(), entryList.end(), key,
 		[](const ArenaTemplateDatEntry &a, int key)
@@ -222,7 +222,7 @@ const ArenaTemplateDatEntry &ArenaTemplateDat::getEntry(int key, char letter) co
 {
 	// Use first vector for non-tileset entry requests.
 	DebugAssertMsg(!this->entryLists.empty(), "Missing TEMPLATE.DAT entry lists.");
-	const BufferView<const ArenaTemplateDatEntry> entryList = this->entryLists[0];
+	const Span<const ArenaTemplateDatEntry> entryList = this->entryLists[0];
 
 	// The requested entry has a letter in its key, so need to find the range of
 	// equal values for 'key' via binary search.
@@ -256,7 +256,7 @@ const ArenaTemplateDatEntry &ArenaTemplateDat::getEntry(int key, char letter) co
 const ArenaTemplateDatEntry &ArenaTemplateDat::getTilesetEntry(int tileset, int key, char letter) const
 {
 	DebugAssertIndex(this->entryLists, tileset);
-	const BufferView<const ArenaTemplateDatEntry> entryList = this->entryLists[tileset];
+	const Span<const ArenaTemplateDatEntry> entryList = this->entryLists[tileset];
 
 	// Do binary search in the tileset vector to find the equal range for 'key'.
 	const auto lowerIter = std::lower_bound(entryList.begin(), entryList.end(), key,
@@ -368,7 +368,7 @@ bool ArenaTemplateDat::init()
 		auto containsEntry = [this, key, letter](int i)
 		{
 			DebugAssertIndex(this->entryLists, i);
-			const BufferView<const ArenaTemplateDatEntry> entryList = this->entryLists[i];
+			const Span<const ArenaTemplateDatEntry> entryList = this->entryLists[i];
 
 			// The entry list might be big (>500 entries) but a linear search shouldn't be
 			// very slow when comparing integers. Keeping it sorted during initialization
@@ -491,7 +491,7 @@ bool ArenaTemplateDat::init()
 
 	// Now that all entry lists have been constructed, sort each one by key, then sort each
 	// equal-key sub-group by letter.
-	for (BufferView<ArenaTemplateDatEntry> entryList : this->entryLists)
+	for (Span<ArenaTemplateDatEntry> entryList : this->entryLists)
 	{
 		std::sort(entryList.begin(), entryList.end(),
 			[](const ArenaTemplateDatEntry &a, const ArenaTemplateDatEntry &b)
@@ -535,7 +535,7 @@ bool TextAssetLibrary::initArtifactText()
 		}
 
 		const char *stringPtr = reinterpret_cast<const char*>(src.begin());
-		auto writeNextStrings = [&stringPtr](BufferView<std::string> outStrings)
+		auto writeNextStrings = [&stringPtr](Span<std::string> outStrings)
 		{
 			for (std::string &str : outStrings)
 			{

@@ -5,8 +5,8 @@
 #include "RMDFile.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/BufferView.h"
 #include "components/utilities/Singleton.h"
+#include "components/utilities/Span.h"
 
 class ArenaLevelLibrary : public Singleton<ArenaLevelLibrary>
 {
@@ -19,8 +19,8 @@ private:
 public:
 	bool init();
 
-	BufferView<const MIFFile> getCityBlockMifs() const;
-	BufferView<const RMDFile> getWildernessChunks() const;
+	Span<const MIFFile> getCityBlockMifs() const;
+	Span<const RMDFile> getWildernessChunks() const;
 };
 
 #endif

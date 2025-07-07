@@ -2,6 +2,7 @@
 #include <filesystem>
 
 #include "Directory.h"
+#include "StringView.h"
 
 #include "../debug/Debug.h"
 
@@ -62,6 +63,36 @@ int Directory::getFileCount(const char *path)
 	});
 
 	return static_cast<int>(count);
+}
+
+std::vector<std::string> Directory::getFilesWithExtension(const char *path, const char *extension)
+{
+	std::vector<std::string> filenames;
+	if (!Directory::exists(path))
+	{
+		return filenames;
+	}
+
+	const std::filesystem::path fsPath(path);
+	for (const std::filesystem::directory_entry &dirEntry : std::filesystem::directory_iterator(fsPath))
+	{
+		std::error_code code;
+		if (!dirEntry.is_regular_file(code))
+		{
+			continue;
+		}
+
+		const std::filesystem::path dirEntryPath = dirEntry.path();
+		const std::string dirEntryExtension = dirEntryPath.extension().string();
+		if (!StringView::caseInsensitiveEquals(dirEntryExtension, extension))
+		{
+			continue;
+		}
+
+		filenames.emplace_back(dirEntryPath.string());
+	}
+
+	return filenames;
 }
 
 void Directory::deleteOldestFile(const char *path)

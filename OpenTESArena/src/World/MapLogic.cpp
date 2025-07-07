@@ -71,7 +71,7 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 		return;
 	}
 
-	const VoxelTriggerDefinition &triggerDef = chunk.getTriggerDef(triggerDefID);
+	const VoxelTriggerDefinition &triggerDef = chunk.triggerDefs[triggerDefID];
 	if (triggerDef.hasSoundDef())
 	{
 		const VoxelTriggerSoundDefinition &soundDef = triggerDef.sound;
@@ -101,7 +101,7 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 			{
 				VoxelTriggerInstance newTriggerInst;
 				newTriggerInst.init(voxel.x, voxel.y, voxel.z);
-				chunk.addTriggerInst(std::move(newTriggerInst));
+				chunk.triggerInsts.emplace_back(std::move(newTriggerInst));
 			}
 		}
 	}
@@ -116,7 +116,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 		return;
 	}
 
-	const VoxelDoorDefinition &doorDef = voxelChunk.getDoorDef(doorDefID);
+	const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
 	const VoxelDoorOpenSoundDefinition &openSoundDef = doorDef.openSoundDef;
 	const std::string &soundFilename = openSoundDef.soundFilename;
 	const CoordDouble3 soundCoord(voxelChunk.position, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
@@ -124,7 +124,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 
 	VoxelDoorAnimationInstance newDoorAnimInst;
 	newDoorAnimInst.initOpening(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::DOOR_ANIM_SPEED);
-	voxelChunk.addDoorAnimInst(std::move(newDoorAnimInst));
+	voxelChunk.doorAnimInsts.emplace_back(std::move(newDoorAnimInst));
 
 	bool isDoorBecomingUnlocked = false;
 
@@ -143,7 +143,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 	{
 		VoxelTriggerInstance newTriggerInst;
 		newTriggerInst.init(voxel.x, voxel.y, voxel.z);
-		voxelChunk.addTriggerInst(std::move(newTriggerInst));
+		voxelChunk.triggerInsts.emplace_back(std::move(newTriggerInst));
 	}
 
 	const bool isDoorKeyUseValid = isApplyingDoorKeyToLock && isDoorBecomingUnlocked;
@@ -189,8 +189,8 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 		return buffer;
 	}();
 
-	const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-		[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+	const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+		[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 	{
 		if (cityDef.hasMainQuestTempleOverride)
 		{
@@ -202,7 +202,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 		}
 	}();
 
-	MapGeneration::CityGenInfo cityGenInfo;
+	MapGenerationCityInfo cityGenInfo;
 	cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName), cityDef.type,
 		cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade, cityDef.coastal,
 		cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
@@ -216,7 +216,7 @@ void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 		return weatherDef;
 	}();
 
-	SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+	SkyGenerationExteriorInfo skyGenInfo;
 	skyGenInfo.init(cityDef.climateType, overrideWeather, currentDay, starCount, cityDef.citySeed,
 		cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -357,7 +357,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			}();
 
 			const InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
-			const MapGeneration::InteriorGenInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+			const MapGenerationInteriorInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
 
 			MapDefinition mapDefinition;
 			if (!mapDefinition.initInterior(interiorGenInfo, textureManager))
@@ -392,7 +392,7 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 			};
 
 			VoxelInt2 playerStartOffset = VoxelInt2::Zero;
-			if (interiorGenInfo.type == MapGeneration::InteriorGenType::Dungeon)
+			if (interiorGenInfo.type == MapGenerationInteriorType::Dungeon)
 			{
 				// @temp hack, assume entering a wild dungeon, need to push player south by one due to original map bug.
 				playerStartOffset = VoxelUtils::South;
@@ -448,13 +448,12 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 				}();
 
 				const auto &exeData = binaryAssetLibrary.getExeData();
-				Buffer2D<ArenaWildUtils::WildBlockID> wildBlockIDs =
-					ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
+				Buffer2D<ArenaWildBlockID> wildBlockIDs = ArenaWildUtils::generateWildernessIndices(cityDef.wildSeed, exeData.wild);
 
-				MapGeneration::WildGenInfo wildGenInfo;
+				MapGenerationWildInfo wildGenInfo;
 				wildGenInfo.init(std::move(wildBlockIDs), cityDef, cityDef.citySeed);
 
-				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+				SkyGenerationExteriorInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -493,8 +492,8 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					return buffer;
 				}();
 
-				const std::optional<LocationCityDefinition::MainQuestTempleOverride> mainQuestTempleOverride =
-					[&cityDef]() -> std::optional<LocationCityDefinition::MainQuestTempleOverride>
+				const std::optional<LocationCityMainQuestTempleOverride> mainQuestTempleOverride =
+					[&cityDef]() -> std::optional<LocationCityMainQuestTempleOverride>
 				{
 					if (cityDef.hasMainQuestTempleOverride)
 					{
@@ -506,14 +505,14 @@ void MapLogic::handleMapTransition(Game &game, const RayCastHit &hit, const Tran
 					}
 				}();
 
-				MapGeneration::CityGenInfo cityGenInfo;
+				MapGenerationCityInfo cityGenInfo;
 				cityGenInfo.init(std::string(cityDef.mapFilename), std::string(cityDef.typeDisplayName),
 					cityDef.type, cityDef.citySeed, cityDef.rulerSeed, provinceDef.getRaceID(), cityDef.premade,
 					cityDef.coastal, cityDef.rulerIsMale, cityDef.palaceIsMainQuestDungeon, std::move(reservedBlocks),
 					mainQuestTempleOverride, cityDef.blockStartPosX, cityDef.blockStartPosY,
 					cityDef.cityBlocksPerSide);
 
-				SkyGeneration::ExteriorSkyGenInfo skyGenInfo;
+				SkyGenerationExteriorInfo skyGenInfo;
 				skyGenInfo.init(cityDef.climateType, weatherDef, currentDay, starCount, cityDef.citySeed,
 					cityDef.skySeed, provinceDef.hasAnimatedDistantLand());
 
@@ -610,8 +609,8 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		return;
 	}
 
-	const VoxelTraitsDefID voxelTraitsDefID = chunk.getTraitsDefID(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);	
-	const VoxelTraitsDefinition &voxelTraitsDef = chunk.getTraitsDef(voxelTraitsDefID);
+	const VoxelTraitsDefID voxelTraitsDefID = chunk.traitsDefIDs.get(transitionVoxel.x, transitionVoxel.y, transitionVoxel.z);	
+	const VoxelTraitsDefinition &voxelTraitsDef = chunk.traitsDefs[voxelTraitsDefID];
 	if (voxelTraitsDef.type != ArenaVoxelType::Wall)
 	{
 		return;
@@ -623,7 +622,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		return;
 	}
 
-	const TransitionDefinition &transitionDef = chunk.getTransitionDef(transitionDefID);
+	const TransitionDefinition &transitionDef = chunk.transitionDefs[transitionDefID];
 	if (transitionDef.type != TransitionType::InteriorLevelChange)
 	{
 		return;

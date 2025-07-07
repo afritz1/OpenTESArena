@@ -19,7 +19,7 @@
 #include "../Assets/TextureUtils.h"
 #include "../UI/Texture.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 class Surface;
 class TextureManager;
@@ -120,7 +120,7 @@ public:
 	double getWindowAspect() const;
 
 	// Gets a list of supported fullscreen display modes.
-	BufferView<const RenderDisplayMode> getDisplayModes() const;
+	Span<const RenderDisplayMode> getDisplayModes() const;
 
 	// Gets the active window's pixels-per-inch scale divided by platform DPI.
 	double getDpiScale() const;
@@ -190,9 +190,9 @@ public:
 	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex);
 	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex);
 	IndexBufferID createIndexBuffer(int indexCount);
-	void populateVertexPositionBuffer(VertexPositionBufferID id, BufferView<const double> positions);
-	void populateVertexAttributeBuffer(VertexAttributeBufferID id, BufferView<const double> attributes);
-	void populateIndexBuffer(IndexBufferID id, BufferView<const int32_t> indices);
+	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions);
+	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes);
+	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices);
 	void freeVertexPositionBuffer(VertexPositionBufferID id);
 	void freeVertexAttributeBuffer(VertexAttributeBufferID id);
 	void freeIndexBuffer(IndexBufferID id);
@@ -201,8 +201,8 @@ public:
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);
 	ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder);
 	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
-	bool tryCreateUiTexture(BufferView2D<const uint32_t> texels, UiTextureID *outID);
-	bool tryCreateUiTexture(BufferView2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID);
+	bool tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID);
+	bool tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID);
 	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
 		const TextureManager &textureManager, UiTextureID *outID);
 
@@ -221,21 +221,21 @@ public:
 
 	// Shading management functions.
 	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
-	void populateUniformBuffer(UniformBufferID id, BufferView<const std::byte> data);
+	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data);
 
 	template<typename T>
 	void populateUniformBuffer(UniformBufferID id, const T &value)
 	{
-		BufferView<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
+		Span<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
 		this->populateUniformBuffer(id, valueAsBytes);
 	}
 
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, BufferView<const std::byte> uniformData);
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData);
 
 	template<typename T>
 	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, const T &value)
 	{
-		BufferView<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
+		Span<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
 		this->populateUniformAtIndex(id, uniformIndex, valueAsBytes);
 	}
 

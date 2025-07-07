@@ -7,7 +7,7 @@
 #include "../Math/MathUtils.h"
 #include "../World/ArenaMeshUtils.h"
 
-#include "components/utilities/BufferView.h"
+#include "components/utilities/Span.h"
 
 enum class VoxelShapeType
 {
@@ -34,32 +34,29 @@ struct VoxelBoxShapeDefinition
 // For rendering.
 struct VoxelMeshDefinition
 {
+	static constexpr int MAX_DRAW_CALLS = 6; // One per voxel face.
+
 	std::vector<double> rendererPositions, rendererNormals, rendererTexCoords;
-	std::vector<int32_t> indices0, indices1, indices2; // Up to 3 draw calls.
-	std::vector<VoxelFacing3D> facings0, facings1, facings2; // Up to 3 sets of fully-covered voxel faces, associated with index buffers, used with face combining.
-	int uniqueVertexCount; // Ideal number of vertices to represent the mesh.
-	int rendererVertexCount; // Number of vertices required by rendering due to vertex attributes.
+	std::vector<int32_t> indicesLists[MAX_DRAW_CALLS];
+	VoxelFacing3D facings[MAX_DRAW_CALLS]; // Up to 6 voxel faces, associated with index buffers, used with face combining.
+	bool fullFacingCoverages[MAX_DRAW_CALLS]; // Each voxel face that is physically covered by the mesh.
+	int textureSlotIndices[MAX_DRAW_CALLS]; // Maps index buffer to its voxel texture definition slot.
 	int indicesListCount;
-	int facingsListCount;
+	int facingCount;
+	int textureSlotIndexCount;
 
 	VoxelMeshDefinition();
 
-	void initClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaShapeInitCache &shapeInitCache);
+	void initClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale);
 
 	bool isEmpty() const;
-	std::vector<int32_t> &getIndicesList(int index);
-	BufferView<const int32_t> getIndicesList(int index) const;
-	std::vector<VoxelFacing3D> &getFacingsList(int index);
-	BufferView<const VoxelFacing3D> getFacingsList(int index) const;
 
-	// Finds the index buffer (if any) that fully covers the voxel facing. Used with mesh combining.
+	// Finds the index buffer (if any) associated with the voxel facing. Does not have to fully cover the voxel face, just has
+	// to represent that particular surface normal. Used with mesh combining.
 	int findIndexBufferIndexWithFacing(VoxelFacing3D facing) const;
-	bool hasFullCoverageOfFacing(VoxelFacing3D facing) const;
 
-	void writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions) const;
-	void writeRendererVertexNormalBuffer(BufferView<double> outNormals) const;
-	void writeRendererVertexTexCoordBuffer(BufferView<double> outTexCoords) const;
-	void writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1, BufferView<int32_t> outIndices2) const;
+	int findTextureSlotIndexWithFacing(VoxelFacing3D facing) const;
+	bool hasFullCoverageOfFacing(VoxelFacing3D facing) const;
 };
 
 // Provides geometry for physics and rendering.
@@ -77,14 +74,14 @@ struct VoxelShapeDefinition
 	bool allowsBackFaces; // Back face culling for rendering.
 	bool allowsAdjacentDoorFaces; // For voxels that don't prevent a door's face from rendering.
 	bool allowsInternalFaceRemoval; // For voxels that can disable their faces when blocked by an opaque neighbor's face.
-	bool allowsAdjacentFaceCombining; // For voxels that can combine their faces with adjacent voxel faces to create a larger mesh.
+	bool allowsAdjacentFaceCombining; // For voxels that can combine their faces with adjacent voxel faces in the same plane to create a larger mesh.
 	bool enablesNeighborGeometry; // For voxels that influence adjacent context-sensitive voxels like chasms.
 	bool isContextSensitive; // For voxels like chasms whose geometry is conditional to what's around them.
 	bool isElevatedPlatform; // For voxels that entities sit on top of and for letting player sleep in peace.
 
 	VoxelShapeDefinition();
 
-	void initBoxFromClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaShapeInitCache &shapeInitCache);
+	void initBoxFromClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale);
 };
 
 #endif

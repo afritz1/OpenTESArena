@@ -54,6 +54,7 @@
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
+#include "../World/MeshLibrary.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
@@ -122,7 +123,7 @@ namespace
 		}
 	};
 
-	bool TryGetArenaAssetsDirectory(BufferView<const std::string> arenaPaths, const std::string &basePath, std::string *outDirectory, bool *outIsFloppyDiskVersion)
+	bool TryGetArenaAssetsDirectory(Span<const std::string> arenaPaths, const std::string &basePath, std::string *outDirectory, bool *outIsFloppyDiskVersion)
 	{
 		std::vector<std::string> validArenaPaths;
 		for (std::string path : arenaPaths)
@@ -329,6 +330,13 @@ bool Game::init()
 	if (!FontLibrary::getInstance().init())
 	{
 		DebugLogError("Couldn't init font library.");
+		return false;
+	}
+
+	const std::string meshLibraryPath = dataFolderPath + "meshes/";
+	if (!MeshLibrary::getInstance().init(meshLibraryPath.c_str()))
+	{
+		DebugLogError("Couldn't init mesh library.");
 		return false;
 	}
 
@@ -838,7 +846,7 @@ void Game::loop()
 		// User input.
 		try
 		{
-			const BufferView<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
+			const Span<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
 			auto onFinishedProcessingEventFunc = [this]()
 			{
 				this->handlePanelChanges();
@@ -987,7 +995,7 @@ void Game::loop()
 
 			for (const Panel *currentPanel : panelsToRender)
 			{
-				const BufferView<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
+				const Span<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
 				for (const UiDrawCall &drawCall : drawCallsView)
 				{
 					if (!drawCall.activeFunc())
@@ -1033,7 +1041,7 @@ void Game::loop()
 		// End-of-frame clean up.
 		try
 		{
-			this->sceneManager.cleanUp(this->physicsSystem, this->renderer);
+			this->sceneManager.endFrame(this->physicsSystem, this->renderer);
 		}
 		catch (const std::exception &e)
 		{

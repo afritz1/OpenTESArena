@@ -155,12 +155,12 @@ int VOCFile::getSampleRate() const
 	return this->sampleRate;
 }
 
-BufferView<uint8_t> VOCFile::getAudioData()
+Span<uint8_t> VOCFile::getAudioData()
 {
 	return this->audioData;
 }
 
-BufferView<const uint8_t> VOCFile::getAudioData() const
+Span<const uint8_t> VOCFile::getAudioData() const
 {
 	return this->audioData;
 }

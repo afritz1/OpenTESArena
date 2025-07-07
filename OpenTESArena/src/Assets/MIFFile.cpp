@@ -312,54 +312,54 @@ int MIFLevel::getNumf() const
 	return this->numf;
 }
 
-BufferView2D<const ArenaVoxelID> MIFLevel::getFLOR() const
+Span2D<const ArenaVoxelID> MIFLevel::getFLOR() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->flor);
+	return Span2D<const ArenaVoxelID>(this->flor);
 }
 
-BufferView2D<const ArenaVoxelID> MIFLevel::getMAP1() const
+Span2D<const ArenaVoxelID> MIFLevel::getMAP1() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->map1);
+	return Span2D<const ArenaVoxelID>(this->map1);
 }
 
-BufferView2D<const ArenaVoxelID> MIFLevel::getMAP2() const
+Span2D<const ArenaVoxelID> MIFLevel::getMAP2() const
 {
-	return BufferView2D<const ArenaVoxelID>(this->map2);
+	return Span2D<const ArenaVoxelID>(this->map2);
 }
 
-BufferView<const uint8_t> MIFLevel::getFLAT() const
+Span<const uint8_t> MIFLevel::getFLAT() const
 {
-	return BufferView<const uint8_t>(this->flat);
+	return Span<const uint8_t>(this->flat);
 }
 
-BufferView<const uint8_t> MIFLevel::getINNS() const
+Span<const uint8_t> MIFLevel::getINNS() const
 {
-	return BufferView<const uint8_t>(this->inns);
+	return Span<const uint8_t>(this->inns);
 }
 
-BufferView<const uint8_t> MIFLevel::getLOOT() const
+Span<const uint8_t> MIFLevel::getLOOT() const
 {
-	return BufferView<const uint8_t>(this->loot);
+	return Span<const uint8_t>(this->loot);
 }
 
-BufferView<const uint8_t> MIFLevel::getSTOR() const
+Span<const uint8_t> MIFLevel::getSTOR() const
 {
-	return BufferView<const uint8_t>(this->stor);
+	return Span<const uint8_t>(this->stor);
 }
 
-BufferView<const ArenaTypes::MIFTarget> MIFLevel::getTARG() const
+Span<const ArenaTypes::MIFTarget> MIFLevel::getTARG() const
 {
-	return BufferView<const ArenaTypes::MIFTarget>(this->targ);
+	return Span<const ArenaTypes::MIFTarget>(this->targ);
 }
 
-BufferView<const ArenaTypes::MIFLock> MIFLevel::getLOCK() const
+Span<const ArenaTypes::MIFLock> MIFLevel::getLOCK() const
 {
-	return BufferView<const ArenaTypes::MIFLock>(this->lock);
+	return Span<const ArenaTypes::MIFLock>(this->lock);
 }
 
-BufferView<const ArenaTypes::MIFTrigger> MIFLevel::getTRIG() const
+Span<const ArenaTypes::MIFTrigger> MIFLevel::getTRIG() const
 {
-	return BufferView<const ArenaTypes::MIFTrigger>(this->trig);
+	return Span<const ArenaTypes::MIFTrigger>(this->trig);
 }
 
 bool MIFFile::init(const char *filename)

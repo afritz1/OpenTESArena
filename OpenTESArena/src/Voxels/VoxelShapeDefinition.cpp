@@ -1,8 +1,10 @@
+#include <algorithm>
 #include <cstring>
 
 #include "ArenaChasmUtils.h"
 #include "VoxelShapeDefinition.h"
 #include "../Collision/Physics.h"
+#include "../World/MeshLibrary.h"
 
 #include "components/debug/Debug.h"
 
@@ -21,138 +23,269 @@ void VoxelBoxShapeDefinition::init(double width, double height, double depth, do
 VoxelMeshDefinition::VoxelMeshDefinition()
 {
 	// Default to air voxel.
-	this->uniqueVertexCount = 0;
-	this->rendererVertexCount = 0;
 	this->indicesListCount = 0;
-	this->facingsListCount = 0;
+	this->facingCount = 0;
+	this->textureSlotIndexCount = 0;
 }
 
-void VoxelMeshDefinition::initClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType,
-	const ArenaShapeInitCache &shapeInitCache)
+void VoxelMeshDefinition::initClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale)
 {
-	this->uniqueVertexCount = ArenaMeshUtils::GetUniqueVertexCount(voxelType);
-	this->rendererVertexCount = ArenaMeshUtils::GetRendererVertexCount(voxelType);
-	this->indicesListCount = ArenaMeshUtils::GetIndexBufferCount(voxelType);
-	this->facingsListCount = ArenaMeshUtils::GetFacingBufferCount(voxelType);
+	const ArenaVoxelType voxelType = shapeInitCache.voxelType;
+	const MeshLibrary &meshLibrary = MeshLibrary::getInstance();
+	Span<const MeshLibraryEntry> meshEntries = meshLibrary.getEntriesOfType(voxelType);
 
-	if (voxelType != ArenaVoxelType::None)
+	this->indicesListCount = 0;
+	this->facingCount = 0;
+	this->textureSlotIndexCount = 0;
+
+	int vertexCount = 0;
+	for (int i = 0; i < meshEntries.getCount(); i++)
 	{
-		const int rendererVertexPositionComponentCount = ArenaMeshUtils::GetRendererVertexPositionComponentCount(voxelType);
-		this->rendererPositions.resize(rendererVertexPositionComponentCount);
-		std::copy(shapeInitCache.positions.begin(), shapeInitCache.positions.begin() + rendererVertexPositionComponentCount, this->rendererPositions.data());
-
-		const int rendererVertexNormalComponentCount = ArenaMeshUtils::GetRendererVertexNormalComponentCount(voxelType);
-		this->rendererNormals.resize(rendererVertexNormalComponentCount);
-		std::copy(shapeInitCache.normals.begin(), shapeInitCache.normals.begin() + rendererVertexNormalComponentCount, this->rendererNormals.data());
-
-		const int rendererVertexTexCoordComponentCount = ArenaMeshUtils::GetRendererVertexTexCoordComponentCount(voxelType);
-		this->rendererTexCoords.resize(rendererVertexTexCoordComponentCount);
-		std::copy(shapeInitCache.texCoords.begin(), shapeInitCache.texCoords.begin() + rendererVertexTexCoordComponentCount, this->rendererTexCoords.data());
-
-		for (int i = 0; i < this->indicesListCount; i++)
+		const MeshLibraryEntry &entry = meshEntries[i];
+		if (voxelType == ArenaVoxelType::Edge)
 		{
-			std::vector<int32_t> &dstBuffer = this->getIndicesList(i);
-
-			const int indexCount = ArenaMeshUtils::GetIndexBufferIndexCount(voxelType, i);
-			dstBuffer.resize(indexCount);
-
-			const BufferView<int32_t> *srcBuffer = nullptr;
-			if (i == 0)
+			const VoxelFacing3D edgeFacing3D = VoxelUtils::convertFaceTo3D(shapeInitCache.edge.facing);
+			if (entry.facing != edgeFacing3D)
 			{
-				srcBuffer = &shapeInitCache.indices0View;
+				continue;
 			}
-			else if (i == 1)
-			{
-				srcBuffer = &shapeInitCache.indices1View;
-			}
-			else if (i == 2)
-			{
-				srcBuffer = &shapeInitCache.indices2View;
-			}
-			else
-			{
-				DebugNotImplementedMsg(std::to_string(i));
-			}
-
-			std::copy(srcBuffer->begin(), srcBuffer->begin() + indexCount, dstBuffer.data());
 		}
 
-		for (int i = 0; i < this->facingsListCount; i++)
+		Span<const int32_t> meshIndices = entry.vertexIndices;
+		std::vector<int32_t> &indicesList = this->indicesLists[this->indicesListCount];
+		indicesList.resize(meshIndices.getCount());
+		std::transform(meshIndices.begin(), meshIndices.end(), indicesList.begin(),
+			[&vertexCount](const int32_t meshIndex)
 		{
-			std::vector<VoxelFacing3D> &dstBuffer = this->getFacingsList(i);
+			return meshIndex + vertexCount;
+		});
 
-			const int faceCount = ArenaMeshUtils::GetFacingBufferFaceCount(voxelType, i);
-			dstBuffer.resize(faceCount);
+		this->indicesListCount++;
 
-			const BufferView<VoxelFacing3D> *srcBuffer = nullptr;
-			if (i == 0)
-			{
-				srcBuffer = &shapeInitCache.facings0View;
-			}
-			else if (i == 1)
-			{
-				srcBuffer = &shapeInitCache.facings1View;
-			}
-			else if (i == 2)
-			{
-				srcBuffer = &shapeInitCache.facings2View;
-			}
-			else
-			{
-				DebugNotImplementedMsg(std::to_string(i));
-			}
+		vertexCount += static_cast<int>(entry.vertices.size());
 
-			std::copy(srcBuffer->begin(), srcBuffer->begin() + faceCount, dstBuffer.data());
+		if (entry.facing.has_value())
+		{
+			const VoxelFacing3D entryFacing = *entry.facing;
+			this->facings[this->facingCount] = entryFacing;
+			this->fullFacingCoverages[this->facingCount] = ArenaMeshUtils::isFullyCoveringFacing(shapeInitCache, entryFacing);
+			this->facingCount++;
 		}
+
+		this->textureSlotIndices[this->textureSlotIndexCount] = entry.textureSlotIndex;
+		this->textureSlotIndexCount++;
+	}
+
+	const int rendererVertexPositionComponentCount = vertexCount * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+	const int rendererVertexNormalComponentCount = vertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+	const int rendererVertexTexCoordComponentCount = vertexCount * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+	this->rendererPositions.resize(rendererVertexPositionComponentCount);
+	this->rendererNormals.resize(rendererVertexNormalComponentCount);
+	this->rendererTexCoords.resize(rendererVertexTexCoordComponentCount);
+
+	switch (voxelType)
+	{
+	case ArenaVoxelType::None:
+		break;
+	case ArenaVoxelType::Wall:
+	case ArenaVoxelType::Floor:
+	case ArenaVoxelType::Ceiling:
+	case ArenaVoxelType::TransparentWall:
+	case ArenaVoxelType::Chasm:
+	case ArenaVoxelType::Door:
+	{
+		int destinationVertexIndex = 0;
+		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		{
+			for (const ObjVertex &sourceVertex : meshEntry.vertices)
+			{
+				const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+				const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+				this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+				this->rendererPositions[outPositionsIndex + 1] = MeshUtils::getScaledVertexY(sourceVertex.positionY, scaleType, ceilingScale);
+				this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+				this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+				this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+				this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+				this->rendererTexCoords[outTexCoordsIndex] = sourceVertex.texCoordU;
+				this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+				destinationVertexIndex++;
+			}
+		}
+
+		break;
+	}
+	case ArenaVoxelType::Raised:
+	{
+		DebugAssert(shapeInitCache.voxelType == ArenaVoxelType::Raised);
+
+		double yMax = std::numeric_limits<double>::lowest();
+		double vMax = std::numeric_limits<double>::lowest();
+
+		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		{
+			for (const ObjVertex &sourceVertex : meshEntry.vertices)
+			{
+				yMax = std::max(yMax, sourceVertex.positionY);
+				vMax = std::max(vMax, sourceVertex.texCoordV);
+			}
+		}
+
+		int destinationVertexIndex = 0;
+		for (const MeshLibraryEntry &meshEntry : meshEntries)
+		{
+			const bool isSideFace = (meshEntry.facing != VoxelFacing3D::PositiveY) && (meshEntry.facing != VoxelFacing3D::NegativeY);
+
+			for (const ObjVertex &sourceVertex : meshEntry.vertices)
+			{
+				const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+				const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+				const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+
+				this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+
+				this->rendererPositions[outPositionsIndex + 1] = shapeInitCache.boxYOffset;
+				if (sourceVertex.positionY == yMax)
+				{
+					this->rendererPositions[outPositionsIndex + 1] += shapeInitCache.boxHeight;
+				}
+
+				this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+
+				this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+				this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+				this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+
+				this->rendererTexCoords[outTexCoordsIndex] = sourceVertex.texCoordU;
+
+				if (isSideFace)
+				{
+					this->rendererTexCoords[outTexCoordsIndex + 1] = (sourceVertex.texCoordV == vMax) ? shapeInitCache.raised.vBottom : shapeInitCache.raised.vTop;
+				}
+				else
+				{
+					this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+				}
+
+				destinationVertexIndex++;
+			}
+		}
+
+		break;
+	}
+	case ArenaVoxelType::Diagonal:
+	{
+		DebugAssert(shapeInitCache.voxelType == ArenaVoxelType::Diagonal);
+
+		const int diagonalMeshEntryIndex = shapeInitCache.diagonal.isRightDiagonal ? 0 : 1;
+		const MeshLibraryEntry &diagonalMeshEntry = meshEntries[diagonalMeshEntryIndex];
+
+		int destinationVertexIndex = 0;
+		for (const ObjVertex &sourceVertex : diagonalMeshEntry.vertices)
+		{
+			const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+			const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+			this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+			this->rendererPositions[outPositionsIndex + 1] = MeshUtils::getScaledVertexY(sourceVertex.positionY, scaleType, ceilingScale);
+			this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+			this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+			this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+			this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+			this->rendererTexCoords[outTexCoordsIndex] = sourceVertex.texCoordU;
+			this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+			destinationVertexIndex++;
+		}
+
+		break;
+	}
+	case ArenaVoxelType::Edge:
+	{
+		DebugAssert(shapeInitCache.voxelType == ArenaVoxelType::Edge);
+
+		int edgeMeshEntryIndex = -1;
+		for (int i = 0; i < meshEntries.getCount(); i++)
+		{
+			const MeshLibraryEntry &currentEdgeMeshEntry = meshEntries[i];
+			const std::optional<VoxelFacing3D> &currentEdgeFacing = currentEdgeMeshEntry.facing;
+			const VoxelFacing3D targetEdgeFacing = VoxelUtils::convertFaceTo3D(shapeInitCache.edge.facing);
+			if (currentEdgeFacing == targetEdgeFacing)
+			{
+				edgeMeshEntryIndex = i;
+				break;
+			}
+		}
+
+		const MeshLibraryEntry &edgeMeshEntry = meshEntries[edgeMeshEntryIndex];
+		double yMax = std::numeric_limits<double>::lowest();
+		for (const ObjVertex &sourceVertex : edgeMeshEntry.vertices)
+		{
+			yMax = std::max(yMax, sourceVertex.positionY);
+		}
+
+		int destinationVertexIndex = 0;
+		for (const ObjVertex &sourceVertex : edgeMeshEntry.vertices)
+		{
+			const int outPositionsIndex = destinationVertexIndex * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
+			const int outNormalsIndex = destinationVertexIndex * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
+			const int outTexCoordsIndex = destinationVertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
+
+			this->rendererPositions[outPositionsIndex] = sourceVertex.positionX;
+			this->rendererPositions[outPositionsIndex + 1] = MeshUtils::getScaledVertexY(sourceVertex.positionY + shapeInitCache.boxYOffset, scaleType, ceilingScale);
+			this->rendererPositions[outPositionsIndex + 2] = sourceVertex.positionZ;
+
+			this->rendererNormals[outNormalsIndex] = sourceVertex.normalX;
+			this->rendererNormals[outNormalsIndex + 1] = sourceVertex.normalY;
+			this->rendererNormals[outNormalsIndex + 2] = sourceVertex.normalZ;
+
+			this->rendererTexCoords[outTexCoordsIndex] = shapeInitCache.edge.flippedTexCoords ? std::clamp(1.0 - sourceVertex.texCoordU, 0.0, 1.0) : sourceVertex.texCoordU;
+			this->rendererTexCoords[outTexCoordsIndex + 1] = sourceVertex.texCoordV;
+
+			destinationVertexIndex++;
+		}
+
+		break;
+	}
+	default:
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
+		break;
 	}
 }
 
 bool VoxelMeshDefinition::isEmpty() const
 {
-	return this->uniqueVertexCount == 0;
-}
-
-std::vector<int32_t> &VoxelMeshDefinition::getIndicesList(int index)
-{
-	std::vector<int32_t> *ptrs[] = { &this->indices0, &this->indices1, &this->indices2 };
-	DebugAssertIndex(ptrs, index);
-	return *ptrs[index];
-}
-
-BufferView<const int32_t> VoxelMeshDefinition::getIndicesList(int index) const
-{
-	const std::vector<int32_t> *ptrs[] = { &this->indices0, &this->indices1, &this->indices2 };
-	DebugAssertIndex(ptrs, index);
-	return *ptrs[index];
-}
-
-std::vector<VoxelFacing3D> &VoxelMeshDefinition::getFacingsList(int index)
-{
-	std::vector<VoxelFacing3D> *ptrs[] = { &this->facings0, &this->facings1, &this->facings2 };
-	DebugAssertIndex(ptrs, index);
-	return *ptrs[index];
-}
-
-BufferView<const VoxelFacing3D> VoxelMeshDefinition::getFacingsList(int index) const
-{
-	const std::vector<VoxelFacing3D> *ptrs[] = { &this->facings0, &this->facings1, &this->facings2 };
-	DebugAssertIndex(ptrs, index);
-	return *ptrs[index];
+	return this->rendererPositions.empty();
 }
 
 int VoxelMeshDefinition::findIndexBufferIndexWithFacing(VoxelFacing3D facing) const
 {
-	DebugAssert(this->indicesListCount >= this->facingsListCount);
+	DebugAssert(this->indicesListCount >= this->facingCount);
 
-	for (int i = 0; i < this->facingsListCount; i++)
+	for (int i = 0; i < this->facingCount; i++)
 	{
-		BufferView<const VoxelFacing3D> facingList = this->getFacingsList(i);
-		for (const VoxelFacing3D currentFacing : facingList)
+		DebugAssertIndex(this->facings, i);
+		const VoxelFacing3D currentFacing = this->facings[i];
+		if (currentFacing == facing)
 		{
-			if (currentFacing == facing)
-			{
-				return i;
-			}
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+int VoxelMeshDefinition::findTextureSlotIndexWithFacing(VoxelFacing3D facing) const
+{
+	DebugAssert(this->textureSlotIndexCount >= this->facingCount);
+
+	for (int i = 0; i < this->facingCount; i++)
+	{
+		DebugAssertIndex(this->facings, i);
+		const VoxelFacing3D currentFacing = this->facings[i];
+		if (currentFacing == facing)
+		{
+			return this->textureSlotIndices[i];
 		}
 	}
 
@@ -161,81 +294,32 @@ int VoxelMeshDefinition::findIndexBufferIndexWithFacing(VoxelFacing3D facing) co
 
 bool VoxelMeshDefinition::hasFullCoverageOfFacing(VoxelFacing3D facing) const
 {
-	// @todo eventually this should analyze the mesh + indices, using vertex position checks w/ epsilons
-
 	const int indexBufferIndex = this->findIndexBufferIndexWithFacing(facing);
-	return indexBufferIndex >= 0;
-}
-
-void VoxelMeshDefinition::writeRendererVertexPositionBuffer(VoxelShapeScaleType scaleType, double ceilingScale, BufferView<double> outPositions) const
-{
-	static_assert(MeshUtils::POSITION_COMPONENTS_PER_VERTEX == 3);
-	DebugAssert(outPositions.getCount() >= this->rendererPositions.size());
-
-	for (int i = 0; i < this->rendererVertexCount; i++)
+	if (indexBufferIndex < 0)
 	{
-		const int index = i * MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-		const double srcX = this->rendererPositions[index];
-		const double srcY = this->rendererPositions[index + 1];
-		const double srcZ = this->rendererPositions[index + 2];
-		const double dstX = srcX;
-		const double dstY = MeshUtils::getScaledVertexY(srcY, scaleType, ceilingScale);
-		const double dstZ = srcZ;
-		outPositions.set(index, dstX);
-		outPositions.set(index + 1, dstY);
-		outPositions.set(index + 2, dstZ);
-	}
-}
-
-void VoxelMeshDefinition::writeRendererVertexNormalBuffer(BufferView<double> outNormals) const
-{
-	static_assert(MeshUtils::NORMAL_COMPONENTS_PER_VERTEX == 3);
-	DebugAssert(outNormals.getCount() >= this->rendererNormals.size());
-	std::copy(this->rendererNormals.begin(), this->rendererNormals.end(), outNormals.begin());
-}
-
-void VoxelMeshDefinition::writeRendererVertexTexCoordBuffer(BufferView<double> outTexCoords) const
-{
-	static_assert(MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX == 2);
-	DebugAssert(outTexCoords.getCount() >= this->rendererTexCoords.size());
-	std::copy(this->rendererTexCoords.begin(), this->rendererTexCoords.end(), outTexCoords.begin());
-}
-
-void VoxelMeshDefinition::writeRendererIndexBuffers(BufferView<int32_t> outIndices0, BufferView<int32_t> outIndices1, BufferView<int32_t> outIndices2) const
-{
-	if (!this->indices0.empty())
-	{
-		DebugAssert(outIndices0.getCount() >= this->indices0.size());
-		std::copy(this->indices0.begin(), this->indices0.end(), outIndices0.begin());
+		return false;
 	}
 
-	if (!this->indices1.empty())
-	{
-		DebugAssert(outIndices1.getCount() >= this->indices1.size());
-		std::copy(this->indices1.begin(), this->indices1.end(), outIndices1.begin());
-	}
-
-	if (!this->indices2.empty())
-	{
-		DebugAssert(outIndices2.getCount() >= this->indices2.size());
-		std::copy(this->indices2.begin(), this->indices2.end(), outIndices2.begin());
-	}
+	DebugAssertIndex(this->fullFacingCoverages, indexBufferIndex);
+	return this->fullFacingCoverages[indexBufferIndex];
 }
 
 VoxelShapeDefinition::VoxelShapeDefinition()
 {
 	// Air by default. Needs the shape defined in case of trigger voxels, but doesn't need a render mesh.
 	ArenaShapeInitCache airShapeInitCache;
-	airShapeInitCache.initDefaultBoxValues();
-	this->initBoxFromClassic(ArenaVoxelType::None, VoxelShapeScaleType::ScaledFromMin, airShapeInitCache);
+	airShapeInitCache.initDefaultBoxValues(ArenaVoxelType::None);
+	this->initBoxFromClassic(airShapeInitCache, VoxelShapeScaleType::ScaledFromMin, 1.0);
 }
 
-void VoxelShapeDefinition::initBoxFromClassic(ArenaVoxelType voxelType, VoxelShapeScaleType scaleType, const ArenaShapeInitCache &shapeInitCache)
+void VoxelShapeDefinition::initBoxFromClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale)
 {
 	this->type = VoxelShapeType::Box;
 	this->box.init(shapeInitCache.boxWidth, shapeInitCache.boxHeight, shapeInitCache.boxDepth, shapeInitCache.boxYOffset, shapeInitCache.boxYRotation);
-	this->mesh.initClassic(voxelType, scaleType, shapeInitCache);
+	this->mesh.initClassic(shapeInitCache, scaleType, ceilingScale);
 	this->scaleType = scaleType;
+
+	const ArenaVoxelType voxelType = shapeInitCache.voxelType;
 	this->allowsBackFaces = ArenaMeshUtils::AllowsBackFacingGeometry(voxelType);
 	this->allowsAdjacentDoorFaces = ArenaMeshUtils::AllowsAdjacentDoorFaces(voxelType);
 	this->allowsInternalFaceRemoval = ArenaMeshUtils::AllowsInternalFaceRemoval(voxelType);

@@ -5,8 +5,6 @@
 #include "RenderVoxelChunk.h"
 #include "../World/ChunkUtils.h"
 
-#include "components/utilities/BufferView3D.h"
-
 RenderVoxelDrawCallRange::RenderVoxelDrawCallRange()
 {
 	this->clear();
@@ -24,24 +22,24 @@ RenderVoxelDrawCallHeap::RenderVoxelDrawCallHeap()
 	this->nextID = 0;
 }
 
-BufferView<RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id)
+Span<RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id)
 {
 	DebugAssertIndex(this->drawCallRanges, id);
 	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
 
 	RenderDrawCall *rangeBegin = std::begin(this->drawCalls) + drawCallRange.index;
 	DebugAssert((rangeBegin + drawCallRange.count) <= std::end(this->drawCalls));
-	return BufferView<RenderDrawCall>(rangeBegin, drawCallRange.count);
+	return Span<RenderDrawCall>(rangeBegin, drawCallRange.count);
 }
 
-BufferView<const RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id) const
+Span<const RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id) const
 {
 	DebugAssertIndex(this->drawCallRanges, id);
 	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
 
 	const RenderDrawCall *rangeBegin = std::begin(this->drawCalls) + drawCallRange.index;
 	DebugAssert((rangeBegin + drawCallRange.count) <= std::end(this->drawCalls));
-	return BufferView<const RenderDrawCall>(rangeBegin, drawCallRange.count);
+	return Span<const RenderDrawCall>(rangeBegin, drawCallRange.count);
 }
 
 RenderVoxelDrawCallRangeID RenderVoxelDrawCallHeap::alloc(int drawCallCount)
@@ -171,6 +169,36 @@ void RenderVoxelDrawCallHeap::clear()
 	this->nextID = 0;
 }
 
+RenderVoxelCombinedFaceTransformKey::RenderVoxelCombinedFaceTransformKey()
+{
+	this->facing = static_cast<VoxelFacing3D>(-1);
+}
+
+bool RenderVoxelCombinedFaceTransformKey::operator==(const RenderVoxelCombinedFaceTransformKey &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->minVoxel != other.minVoxel)
+	{
+		return false;
+	}
+
+	if (this->maxVoxel != other.maxVoxel)
+	{
+		return false;
+	}
+
+	if (this->facing != other.facing)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
@@ -211,6 +239,17 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		meshInst.freeBuffers(renderer);
 	}
 
+	for (auto &pair : this->combinedFaceTransforms)
+	{
+		UniformBufferID &transformBufferID = pair.second;
+
+		if (transformBufferID >= 0)
+		{
+			renderer.freeUniformBuffer(transformBufferID);
+			transformBufferID = -1;
+		}
+	}
+
 	if (this->transformBufferID >= 0)
 	{
 		renderer.freeUniformBuffer(this->transformBufferID);
@@ -229,6 +268,8 @@ void RenderVoxelChunk::clear()
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
 	this->meshInstIDs.clear();
+	this->combinedFaceDrawCallRangeIDs.clear();
+	this->combinedFaceTransforms.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
 	this->transformBufferID = -1;
 	this->doorTransformBuffers.clear();
