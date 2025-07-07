@@ -1530,15 +1530,17 @@ namespace
 	};
 
 	double g_ambientPercent;
+	Span<const RenderLightID> g_visibleLightIDs;
 	double g_screenSpaceAnimPercent;
 	const SoftwareObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
 	const SoftwareObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
 	const SoftwareObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
-	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const SoftwareObjectTexture &paletteTexture,
-		const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
+	void PopulatePixelShaderGlobals(double ambientPercent, Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent,
+		const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
 	{
 		g_ambientPercent = ambientPercent;
+		g_visibleLightIDs = visibleLightIDs;
 		g_screenSpaceAnimPercent = screenSpaceAnimPercent;
 		g_paletteTexture = &paletteTexture;
 		g_lightTableTexture = &lightTableTexture;
@@ -4258,7 +4260,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	PopulateDrawCallGlobals(totalDrawCallCount);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
-	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
+	PopulatePixelShaderGlobals(settings.ambientPercent, settings.visibleLightIDs, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
 	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);

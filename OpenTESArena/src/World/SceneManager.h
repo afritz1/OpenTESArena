@@ -9,6 +9,7 @@
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityVisibilityChunkManager.h"
 #include "../Rendering/RenderEntityChunkManager.h"
+#include "../Rendering/RenderLightManager.h"
 #include "../Rendering/RenderSkyManager.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../Rendering/RenderVoxelChunkManager.h"
@@ -42,6 +43,7 @@ struct SceneManager
 	// Game world systems not tied to chunks.
 	SkyInstance skyInstance;
 	SkyVisibilityManager skyVisManager;
+	RenderLightManager renderLightManager;
 	RenderSkyManager renderSkyManager;
 	RenderWeatherManager renderWeatherManager;
 

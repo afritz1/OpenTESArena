@@ -433,6 +433,8 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderFrameSettings.h"
     "${SRC_ROOT}/Rendering/RenderInitSettings.cpp"
     "${SRC_ROOT}/Rendering/RenderInitSettings.h"
+    "${SRC_ROOT}/Rendering/RenderLightManager.cpp"
+    "${SRC_ROOT}/Rendering/RenderLightManager.h"
     "${SRC_ROOT}/Rendering/RenderLightUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderLightUtils.h"
     "${SRC_ROOT}/Rendering/RenderMeshInstance.cpp"

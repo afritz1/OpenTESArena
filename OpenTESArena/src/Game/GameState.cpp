@@ -689,6 +689,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	
 	sceneManager.skyInstance.clear();
 	sceneManager.skyVisManager.clear();
+	sceneManager.renderLightManager.unloadScene(renderer);
 	sceneManager.renderSkyManager.unloadScene(renderer);
 	sceneManager.renderWeatherManager.unloadScene();
 
@@ -699,6 +700,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager);
 	sceneManager.renderEntityChunkManager.loadScene(textureManager, renderer);
+	sceneManager.renderLightManager.loadScene(renderer);
 	sceneManager.renderSkyManager.loadScene(sceneManager.skyInstance, activeSkyInfoDef, textureManager, renderer);
 	sceneManager.renderWeatherManager.loadScene();
 
@@ -1087,6 +1089,9 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	renderEntityChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
 	renderEntityChunkManager.update(activeChunkPositions, newChunkPositions, playerPosition, playerDirXZ, ceilingScale,
 		voxelChunkManager, entityChunkManager, entityVisChunkManager, textureManager, renderer);
+
+	RenderLightManager &renderLightManager = sceneManager.renderLightManager;
+	renderLightManager.update(renderCamera, nightLightsAreActive, isFoggy, options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
 
 	const bool isInterior = this->getActiveMapType() == MapType::Interior;
 	const WeatherType weatherType = this->weatherDef.type;
