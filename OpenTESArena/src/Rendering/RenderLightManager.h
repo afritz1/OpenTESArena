@@ -14,15 +14,22 @@ class Renderer;
 
 struct RenderCamera;
 
+struct RenderLight
+{
+	RenderLightID id;
+	WorldDouble3 position;
+	bool enabled;
+
+	RenderLight();
+};
+
 class RenderLightManager
 {
 private:
-	RenderLightID playerLightID;
-	std::unordered_map<EntityInstanceID, RenderLightID> entityLightIDs;
+	RenderLight playerLight;
+	std::unordered_map<EntityInstanceID, RenderLight> entityLights;
 	std::vector<RenderLightID> visibleLightIDs;
 public:
-	RenderLightManager();
-
 	Span<const RenderLightID> getVisibleLightIDs() const;
 
 	void loadScene(Renderer &renderer);
