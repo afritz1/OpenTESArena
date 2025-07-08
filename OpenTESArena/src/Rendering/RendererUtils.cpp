@@ -148,12 +148,18 @@ int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette
 	return *nearestIndex;
 }
 
-void RendererUtils::getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera,
+void RendererUtils::getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const WorldDouble3 &frustumPoint, const Double3 &frustumForward,
+	const Double3 &frustumNormalLeft, const Double3 &frustumNormalRight, const Double3 &frustumNormalBottom, const Double3 &frustumNormalTop,
 	bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible)
 {
-	const Double3 frustumNormals[5] =
+	// Each plane to test the bounding box against.
+	const Double3 frustumNormals[] =
 	{
-		camera.forward, camera.leftFrustumNormal, camera.rightFrustumNormal, camera.bottomFrustumNormal, camera.topFrustumNormal
+		frustumForward,
+		frustumNormalLeft,
+		frustumNormalRight,
+		frustumNormalBottom,
+		frustumNormalTop
 	};
 
 	constexpr int bboxCornerCount = 8;
@@ -177,7 +183,7 @@ void RendererUtils::getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const 
 		int outsidePoints = 0;
 		for (const WorldDouble3 &cornerPoint : bboxCorners)
 		{
-			const double dist = MathUtils::distanceToPlane(cornerPoint, camera.worldPoint, frustumNormal);
+			const double dist = MathUtils::distanceToPlane(cornerPoint, frustumPoint, frustumNormal);
 			if (dist >= 0.0)
 			{
 				insidePoints++;
@@ -202,4 +208,11 @@ void RendererUtils::getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const 
 
 	*outIsCompletelyVisible = isCompletelyVisible;
 	*outIsCompletelyInvisible = isCompletelyInvisible;
+}
+
+void RendererUtils::getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera,
+	bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible)
+{
+	RendererUtils::getBBoxVisibilityInFrustum(bbox, camera.worldPoint, camera.forward, camera.leftFrustumNormal, camera.rightFrustumNormal,
+		camera.bottomFrustumNormal, camera.topFrustumNormal, outIsCompletelyVisible, outIsCompletelyInvisible);
 }

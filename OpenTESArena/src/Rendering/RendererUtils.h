@@ -61,8 +61,10 @@ namespace RendererUtils
 	int getNearestPaletteColorIndex(const Color &color, const Palette &palette);
 
 	// Writes out visibility results for the bounding box test against the given camera frustum.
-	void getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera,
+	void getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const WorldDouble3 &frustumPoint, const Double3 &frustumForward,
+		const Double3 &frustumNormalLeft, const Double3 &frustumNormalRight, const Double3 &frustumNormalBottom, const Double3 &frustumNormalTop,
 		bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible);
+	void getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera, bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible);
 }
 
 #endif
