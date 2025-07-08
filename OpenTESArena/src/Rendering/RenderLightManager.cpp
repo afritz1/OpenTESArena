@@ -3,6 +3,7 @@
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
 #include "Renderer.h"
+#include "RendererUtils.h"
 #include "RenderLightManager.h"
 
 namespace
@@ -17,6 +18,7 @@ namespace
 RenderLight::RenderLight()
 {
 	this->id = -1;
+	this->radius = 0.0;
 	this->enabled = false;
 }
 
@@ -91,13 +93,14 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 			entityLight.id = renderer.createLight();
 			if (entityLight.id < 0)
 			{
-				DebugLogErrorFormat("Couldn't allocate render light ID in chunk (%s).", entityChunkPos.toString().c_str());
+				DebugLogErrorFormat("Couldn't allocate render light ID for entity %d in chunk (%s).", entityInstID, entityChunkPos.toString().c_str());
 				break;
 			}
 
 			// The original game doesn't seem to update a light's radius after transitioning levels, it just uses the "S:#" from the start level .INF.
 			const double lightEndRadius = *entityLightRadius;
 			const double lightStartRadius = lightEndRadius * 0.50;
+			entityLight.radius = lightEndRadius;
 			renderer.setLightRadius(entityLight.id, lightStartRadius, lightEndRadius);
 
 			this->entityLights.emplace(entityInstID, std::move(entityLight));
@@ -121,12 +124,25 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 		entityLight.enabled = !EntityUtils::isStreetlight(entityDef) || nightLightsAreActive;
-		
-		const bool isEntityLightVisible = entityLight.enabled && true; // @todo bounding box tests against entity lights.
-		if (isEntityLightVisible)
+		if (!entityLight.enabled)
 		{
-			enabledLights.emplace_back(&entityLight);
+			continue;
 		}
+
+		const double entityLightWidth = entityLight.radius * 2.0;
+		const double entityLightHeight = entityLightWidth;
+		const double entityLightDepth = entityLightWidth;
+		BoundingBox3D entityLightBBox;
+		entityLightBBox.init(entityLight.position, entityLightWidth, entityLightHeight, entityLightDepth);
+
+		bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
+		RendererUtils::getBBoxVisibilityInFrustum(entityLightBBox, camera, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
+		if (isBBoxCompletelyInvisible)
+		{
+			continue;
+		}
+		
+		enabledLights.emplace_back(&entityLight);
 	}
 
 	std::sort(enabledLights.begin(), enabledLights.end(),
