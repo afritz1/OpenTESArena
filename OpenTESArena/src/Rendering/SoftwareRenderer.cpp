@@ -18,6 +18,7 @@
 #include "RenderTransform.h"
 #include "SoftwareRenderer.h"
 #include "../Assets/TextureBuilder.h"
+#include "../Math/BoundingBox.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Random.h"
@@ -1022,6 +1023,86 @@ namespace
 	}
 }
 
+// Lighting utils.
+namespace
+{
+	static constexpr int MAX_LIGHTS_IN_FRUSTUM = 256; // Total allowed in frustum each frame, sorted by distance to camera.
+	static constexpr int MAX_LIGHTS_PER_LIGHT_BIN = 32; // Fraction of max frustum lights for a light bin.
+
+	struct LightBin
+	{
+		int lightIndices[MAX_LIGHTS_PER_LIGHT_BIN]; // Points into visible SoftwareLight list.
+		int lightCount;
+	};
+
+	constexpr int LIGHT_BIN_MIN_WIDTH = RASTERIZER_BIN_MIN_WIDTH / 2;
+	constexpr int LIGHT_BIN_MAX_WIDTH = RASTERIZER_BIN_MAX_WIDTH / 2;
+	constexpr int LIGHT_BIN_MIN_HEIGHT = LIGHT_BIN_MIN_WIDTH;
+	constexpr int LIGHT_BIN_MAX_HEIGHT = LIGHT_BIN_MAX_WIDTH;
+	constexpr int LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH = RASTERIZER_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH * 2;
+	constexpr int LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_HEIGHT = RASTERIZER_TYPICAL_BINS_PER_FRAME_BUFFER_HEIGHT * 2;
+	static_assert(MathUtils::isPowerOf2(LIGHT_BIN_MIN_WIDTH));
+	static_assert(MathUtils::isPowerOf2(LIGHT_BIN_MAX_WIDTH));
+	static_assert(MathUtils::isPowerOf2(LIGHT_BIN_MIN_HEIGHT));
+	static_assert(MathUtils::isPowerOf2(LIGHT_BIN_MAX_HEIGHT));
+
+	int GetLightBinWidth(int frameBufferWidth)
+	{
+		const int estimatedBinWidth = frameBufferWidth / LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH;
+		const int powerOfTwoBinWidth = MathUtils::roundToGreaterPowerOf2(estimatedBinWidth);
+		return std::clamp(powerOfTwoBinWidth, LIGHT_BIN_MIN_WIDTH, LIGHT_BIN_MAX_WIDTH);
+	}
+
+	int GetLightBinHeight(int frameBufferHeight)
+	{
+		const int estimatedBinHeight = frameBufferHeight / LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_HEIGHT;
+		const int powerOfTwoBinHeight = MathUtils::roundToGreaterPowerOf2(estimatedBinHeight);
+		return std::clamp(powerOfTwoBinHeight, LIGHT_BIN_MIN_HEIGHT, LIGHT_BIN_MAX_HEIGHT);
+	}
+
+	int GetLightBinCountX(int frameBufferWidth, int binWidth)
+	{
+		return 1 + (frameBufferWidth / binWidth);
+	}
+
+	int GetLightBinCountY(int frameBufferHeight, int binHeight)
+	{
+		return 1 + (frameBufferHeight / binHeight);
+	}
+
+	int GetLightBinX(int frameBufferPixelX, int binWidth)
+	{
+		return frameBufferPixelX / binWidth;
+	}
+
+	int GetLightBinY(int frameBufferPixelY, int binHeight)
+	{
+		return frameBufferPixelY / binHeight;
+	}
+
+	int GetLightBinPixelXInclusive(int frameBufferPixelX, int binWidth)
+	{
+		return frameBufferPixelX % binWidth;
+	}
+
+	int GetLightBinPixelXExclusive(int frameBufferPixelX, int binWidth)
+	{
+		const int modulo = frameBufferPixelX % binWidth;
+		return (modulo != 0) ? modulo : binWidth;
+	}
+
+	int GetLightBinPixelYInclusive(int frameBufferPixelY, int binHeight)
+	{
+		return frameBufferPixelY % binHeight;
+	}
+
+	int GetLightBinPixelYExclusive(int frameBufferPixelY, int binHeight)
+	{
+		const int modulo = frameBufferPixelY % binHeight;
+		return (modulo != 0) ? modulo : binHeight;
+	}
+}
+
 // Frame buffer globals.
 namespace
 {
@@ -1529,27 +1610,94 @@ namespace
 		}
 	};
 
-	double g_ambientPercent;
-	const SoftwareLight *g_visibleLights[16]; // @todo increase and actually do deferred lighting pass
+	const SoftwareLight *g_visibleLights[MAX_LIGHTS_IN_FRUSTUM];
 	int g_visibleLightCount;
+	Buffer2D<LightBin> g_lightBins; // Populated each frame, shared by all workers.
+
+	double g_ambientPercent;
 	double g_screenSpaceAnimPercent;
 	const SoftwareObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
 	const SoftwareObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
 	const SoftwareObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
-	void PopulatePixelShaderGlobals(double ambientPercent, Span<const RenderLightID> visibleLightIDs, const SoftwareLightPool &lightPool,
-		double screenSpaceAnimPercent, const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture,
-		const SoftwareObjectTexture &skyBgTexture)
+	void PopulateLightGlobals(Span<const RenderLightID> visibleLightIDs, const SoftwareLightPool &lightPool, const RenderCamera &camera,
+		int frameBufferWidth, int frameBufferHeight)
 	{
-		g_ambientPercent = ambientPercent;
-
 		std::fill(std::begin(g_visibleLights), std::end(g_visibleLights), nullptr);
 		g_visibleLightCount = std::min<int>(visibleLightIDs.getCount(), std::size(g_visibleLights));
 		for (int i = 0; i < g_visibleLightCount; i++)
 		{
 			g_visibleLights[i] = &lightPool.get(visibleLightIDs[i]);
 		}
-		
+
+		const int lightBinWidth = GetLightBinWidth(frameBufferWidth);
+		const int lightBinHeight = GetLightBinHeight(frameBufferHeight);
+		const int lightBinCountX = GetLightBinCountX(frameBufferWidth, lightBinWidth);
+		const int lightBinCountY = GetLightBinCountY(frameBufferHeight, lightBinHeight);
+		if ((g_lightBins.getWidth() != lightBinCountX) || (g_lightBins.getHeight() != lightBinCountY))
+		{
+			g_lightBins.init(lightBinCountX, lightBinCountY);
+		}
+
+		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
+		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
+
+		for (int binY = 0; binY < g_lightBins.getHeight(); binY++)
+		{
+			const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0, lightBinHeight);
+			const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, lightBinHeight, lightBinHeight);
+			const double binStartFrameBufferPercentY = static_cast<double>(binStartFrameBufferPixelY) / frameBufferHeightReal;
+			const double binEndFrameBufferPercentY = static_cast<double>(binEndFrameBufferPixelY) / frameBufferHeightReal;
+
+			for (int binX = 0; binX < g_lightBins.getWidth(); binX++)
+			{
+				const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0, lightBinWidth);
+				const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, lightBinWidth, lightBinWidth);
+				const double binStartFrameBufferPercentX = static_cast<double>(binStartFrameBufferPixelX) / frameBufferWidthReal;
+				const double binEndFrameBufferPercentX = static_cast<double>(binEndFrameBufferPixelX) / frameBufferWidthReal;
+
+				LightBin &lightBin = g_lightBins.get(binX, binY);
+				lightBin.lightCount = 0;
+
+				Double3 frustumDirLeft, frustumDirRight, frustumDirBottom, frustumDirTop;
+				Double3 frustumNormalLeft, frustumNormalRight, frustumNormalBottom, frustumNormalTop;
+				camera.createFrustumVectors(binStartFrameBufferPercentX, binEndFrameBufferPercentX, binStartFrameBufferPercentY, binEndFrameBufferPercentY,
+					&frustumDirLeft, &frustumDirRight, &frustumDirBottom, &frustumDirTop, &frustumNormalLeft, &frustumNormalRight, &frustumNormalBottom, &frustumNormalTop);
+
+				for (int visibleLightIndex = 0; visibleLightIndex < g_visibleLightCount; visibleLightIndex++)
+				{
+					const SoftwareLight &light = *g_visibleLights[visibleLightIndex];
+					const Double3 lightPosition(light.worldPointX, light.worldPointY, light.worldPointZ);
+					const double lightWidth = light.endRadius * 2.0;
+					const double lightHeight = lightWidth;
+					const double lightDepth = lightWidth;
+					BoundingBox3D lightBBox;
+					lightBBox.init(lightPosition, lightWidth, lightHeight, lightDepth);
+
+					bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
+					RendererUtils::getBBoxVisibilityInFrustum(lightBBox, camera.worldPoint, camera.forward, frustumNormalLeft, frustumNormalRight,
+						frustumNormalBottom, frustumNormalTop, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
+					if (isBBoxCompletelyInvisible)
+					{
+						continue;
+					}
+
+					if (lightBin.lightCount >= MAX_LIGHTS_PER_LIGHT_BIN)
+					{
+						continue;
+					}
+
+					lightBin.lightIndices[lightBin.lightCount] = visibleLightIndex;
+					lightBin.lightCount++;
+				}
+			}
+		}
+	}
+
+	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const SoftwareObjectTexture &paletteTexture,
+		const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
+	{
+		g_ambientPercent = ambientPercent;
 		g_screenSpaceAnimPercent = screenSpaceAnimPercent;
 		g_paletteTexture = &paletteTexture;
 		g_lightTableTexture = &lightTableTexture;
@@ -3190,6 +3338,9 @@ namespace
 			const int binPixelYStart = bin.triangleBinPixelYStarts[triangleIndicesIndex];
 			const int binPixelYEnd = bin.triangleBinPixelYEnds[triangleIndicesIndex];
 
+			const int lightBinWidth = GetLightBinWidth(g_frameBufferWidth);
+			const int lightBinHeight = GetLightBinHeight(g_frameBufferHeight);
+
 			for (int binPixelY = binPixelYStart; binPixelY < binPixelYEnd; binPixelY++)
 			{
 				const int frameBufferPixelY = GetFrameBufferPixelY(binY, binPixelY, rasterizerInputCache.binHeight);
@@ -3198,6 +3349,7 @@ namespace
 				const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
 				const double barycentricDot20Y = screenSpace0CurrentY * screenSpace01Y;
 				const double barycentricDot21Y = screenSpace0CurrentY * screenSpace02Y;
+				const int lightBinY = GetLightBinY(frameBufferPixelY, lightBinHeight);
 
 				double pixelCoverageDot0Y, pixelCoverageDot1Y, pixelCoverageDot2Y;
 				GetScreenSpacePointHalfSpaceComponents(pixelCenterY, screenSpace0Y, screenSpace1Y, screenSpace2Y, screenSpace01PerpY,
@@ -3209,6 +3361,7 @@ namespace
 					shaderFrameBuffer.pixelIndex = frameBufferPixelX + (frameBufferPixelY * g_frameBufferWidth);
 					shaderFrameBuffer.xPercent = (static_cast<double>(frameBufferPixelX) + 0.50) * g_frameBufferWidthRealRecip;
 					const double pixelCenterX = shaderFrameBuffer.xPercent * g_frameBufferWidthReal;
+					const int lightBinX = GetLightBinX(frameBufferPixelX, lightBinWidth);
 
 					double pixelCoverageDot0X, pixelCoverageDot1X, pixelCoverageDot2X;
 					GetScreenSpacePointHalfSpaceComponents(pixelCenterX, screenSpace0X, screenSpace1X, screenSpace2X, screenSpace01PerpX,
@@ -3299,9 +3452,11 @@ namespace
 						// @todo redo this in deferred lighting pass
 						lightIntensitySum = g_ambientPercent;
 
-						for (int lightIndex = 0; lightIndex < g_visibleLightCount; lightIndex++)
+						const LightBin &lightBin = g_lightBins.get(lightBinX, lightBinY);
+						for (int lightIndex = 0; lightIndex < lightBin.lightCount; lightIndex++)
 						{
-							const SoftwareLight &light = *g_visibleLights[lightIndex];
+							const int lightBinLightIndex = lightBin.lightIndices[lightIndex];
+							const SoftwareLight &light = *g_visibleLights[lightBinLightIndex];
 							double lightIntensity = 0.0;
 							GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
 							lightIntensitySum += lightIntensity;
@@ -4282,7 +4437,8 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	PopulateDrawCallGlobals(totalDrawCallCount);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
-	PopulatePixelShaderGlobals(settings.ambientPercent, settings.visibleLightIDs, this->lights, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
+	PopulateLightGlobals(settings.visibleLightIDs, this->lights, camera, frameBufferWidth, frameBufferHeight);
+	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
 	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);

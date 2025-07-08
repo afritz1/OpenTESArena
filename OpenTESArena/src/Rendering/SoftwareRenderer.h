@@ -21,8 +21,6 @@
 #include "components/utilities/Span2D.h"
 #include "components/utilities/Span3D.h"
 
-struct RasterizerBin; // For triangle binning.
-
 struct SoftwareObjectTexture
 {
 	Buffer<std::byte> texels;
