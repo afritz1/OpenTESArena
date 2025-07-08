@@ -49,6 +49,11 @@ struct RenderCamera
 
 	// Generates a 3D ray from an XY position on-screen.
 	Double3 screenToWorld(double xPercent, double yPercent) const;
+
+	// Defines a frustum with a direction along each of the four planes, and four plane normals pointing inwards.
+	void createFrustumVectors(double startXPercent, double endXPercent, double startYPercent, double endYPercent,
+		Double3 *outFrustumDirLeft, Double3 *outFrustumDirRight, Double3 *outFrustumDirBottom, Double3 *outFrustumDirTop,
+		Double3 *outFrustumNormalLeft, Double3 *outFrustumNormalRight, Double3 *outFrustumNormalBottom, Double3 *outFrustumNormalTop) const;
 };
 
 #endif
