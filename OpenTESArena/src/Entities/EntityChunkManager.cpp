@@ -65,6 +65,14 @@ namespace
 		const JPH::ObjectLayer capsuleObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::MOVING;
 		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, capsuleObjectLayer);
 		capsuleSettings.mIsSensor = isSensor;
+		
+		if (!isSensor)
+		{
+			capsuleSettings.mFriction = 0.5f;
+			capsuleSettings.mRestitution = 0.0f;
+			capsuleSettings.mLinearDamping = 0.1f;
+			capsuleSettings.mAllowSleeping = false;
+		}
 
 		const JPH::Body *capsule = bodyInterface.CreateBody(capsuleSettings);
 		if (capsule == nullptr)
@@ -76,6 +84,13 @@ namespace
 
 		const JPH::BodyID &capsuleBodyID = capsule->GetID();
 		bodyInterface.AddBody(capsuleBodyID, JPH::EActivation::Activate); // @todo: inefficient to add one at a time
+		
+		if (!isSensor)
+		{
+			bodyInterface.SetLinearVelocity(capsuleBodyID, JPH::Vec3(0, 0, 0));
+			bodyInterface.SetGravityFactor(capsuleBodyID, 0.0f);
+		}
+		
 		*outBodyID = capsuleBodyID;
 		return true;
 	}
@@ -444,13 +459,17 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			initInfo.initialAnimStateIndex = *initialAnimStateIndex;
 			initInfo.isSensorCollider = !EntityUtils::hasCollision(entityDef);
 
-			if (isDynamicEntity)
+			if (entityDefType == EntityDefinitionType::Enemy)
 			{
-				initInfo.direction = CardinalDirection::North;
-				initInfo.canBeKilled = entityDefType == EntityDefinitionType::Enemy;
-				initInfo.hasCreatureSound = (entityDefType == EntityDefinitionType::Enemy) && (entityDef.enemy.type == EnemyEntityDefinitionType::Creature);
+				initInfo.canBeKilled = true;
+				initInfo.isSensorCollider = false;
+				initInfo.hasCreatureSound = (entityDef.enemy.type == EnemyEntityDefinitionType::Creature);	
+				const double randomAngle = random.nextReal() * M_PI * 2.0;
+				const Double2 randomDirection(std::cos(randomAngle), std::sin(randomAngle));
+				initInfo.direction = randomDirection;
 			}
 
+			
 			initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
 
 			if (entityDefType == EntityDefinitionType::Container)
@@ -803,6 +822,201 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 	}
 }
 
+void EntityChunkManager::updateEnemyStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ,
+	JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
+{
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
+	for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
+	{
+		const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
+		EntityInstance &entityInst = this->entities.get(entityInstID);
+		
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		if (entityDef.type != EntityDefinitionType::Enemy)
+		{
+			continue;
+		}
+
+		if (entityInst.combatStateID >= 0)
+		{
+			EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+			if (combatState.isInDeathState())
+			{
+				continue;
+			}
+		}
+		else
+		{
+			continue;
+		}
+
+		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
+		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
+		ChunkInt2 curEntityChunkPos = prevEntityChunkPos;
+		
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+
+		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
+		const double distToPlayerSqr = dirToPlayer.lengthSquared();
+
+		const std::optional<int> idleStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+		const std::optional<int> walkStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+		
+		if (!idleStateIndex.has_value() || !walkStateIndex.has_value())
+		{
+			continue;
+		}
+
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+
+		if (entityInst.directionID < 0)
+		{
+			EntityDirectionID directionID;
+			if (this->directions.tryAlloc(&directionID))
+			{
+				entityInst.directionID = directionID;
+				VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
+				entityDir = distToPlayerSqr > 0.01 ? dirToPlayer.normalized() : VoxelDouble2(1.0, 0.0);
+			}
+			else
+			{
+				DebugLogError("Could not assign EntityDirectionID for enemy");
+				continue;
+			}
+		}
+
+		VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
+		
+		constexpr double chaseDistanceSqr = 10.0 * 10.0;
+		constexpr double stopDistanceSqr = 0.5 * 0.5;
+		constexpr double attackDistanceSqr = 1.0 * 1.0;
+		constexpr double moveSpeed = 1.0;
+		constexpr double attackCooldown = 1.1;
+		
+		if (entityInst.lastAttackTime == 0.0)
+		{
+			entityInst.lastAttackTime = -attackCooldown;
+		}
+		
+		if (distToPlayerSqr <= chaseDistanceSqr && distToPlayerSqr > stopDistanceSqr)
+		{
+			if (distToPlayerSqr <= attackDistanceSqr)
+			{
+				const double currentTime = static_cast<double>(SDL_GetTicks()) / 1000.0;
+				if (currentTime - entityInst.lastAttackTime >= attackCooldown)
+				{
+					const std::optional<int> attackStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_ATTACK.c_str());
+					if (attackStateIndex.has_value())
+					{
+						animInst.setStateIndex(*attackStateIndex);
+						DebugLog("Enemy attacked you");
+						entityInst.lastAttackTime = currentTime;
+					}
+				}
+			}
+			else
+			{
+				if (animInst.currentStateIndex != *walkStateIndex)
+				{
+					animInst.setStateIndex(*walkStateIndex);
+				}
+				
+				entityDir = dirToPlayer.normalized();
+				
+				const WorldDouble2 movement = entityDir * moveSpeed * dt;
+				
+				WorldDouble3 newPosition = entityPosition;
+				newPosition.x += movement.x;
+				newPosition.z += movement.y;
+				
+				const WorldInt2 targetVoxel = VoxelUtils::pointToVoxel(WorldDouble2(newPosition.x, newPosition.z));
+				const CoordInt2 targetCoord = VoxelUtils::worldVoxelToCoord(targetVoxel);
+				bool canMove = true;
+				
+				const VoxelChunk *targetChunk = voxelChunkManager.tryGetChunkAtPosition(targetCoord.chunk);
+				if (targetChunk != nullptr)
+				{
+					const VoxelInt3 mainVoxel(targetCoord.voxel.x, 1, targetCoord.voxel.y);
+					const VoxelTraitsDefID mainTraitsID = targetChunk->getTraitsDefID(mainVoxel.x, mainVoxel.y, mainVoxel.z);
+					const VoxelTraitsDefinition &mainTraits = targetChunk->getTraitsDef(mainTraitsID);
+					
+					if (mainTraits.type != ArenaTypes::VoxelType::None)
+					{
+						canMove = false;
+					}
+					
+					const VoxelInt3 floorVoxel(targetCoord.voxel.x, 0, targetCoord.voxel.y);
+					const VoxelTraitsDefID floorTraitsID = targetChunk->getTraitsDefID(floorVoxel.x, floorVoxel.y, floorVoxel.z);
+					const VoxelTraitsDefinition &floorTraits = targetChunk->getTraitsDef(floorTraitsID);
+					
+					if (floorTraits.type != ArenaTypes::VoxelType::Floor)
+					{
+						canMove = false;
+					}
+				}
+				else
+				{
+					canMove = false; 
+				}
+				
+				if (canMove)
+				{
+					entityPosition = newPosition;
+					curEntityChunkPos = VoxelUtils::worldPointToChunk(WorldDouble2(newPosition.x, newPosition.z));
+					
+					if (!entityInst.physicsBodyID.IsInvalid())
+					{
+						const JPH::RVec3 oldPos = bodyInterface.GetPosition(entityInst.physicsBodyID);
+						const JPH::RVec3 newPos(
+							static_cast<float>(newPosition.x),
+							static_cast<float>(oldPos.GetY()), 
+							static_cast<float>(newPosition.z));
+						
+						bodyInterface.SetPosition(entityInst.physicsBodyID, newPos, JPH::EActivation::Activate);
+						bodyInterface.ActivateBody(entityInst.physicsBodyID);
+					}
+				}
+				else
+				{
+					const double angle = std::atan2(entityDir.y, entityDir.x) + (M_PI / 4.0);
+					entityDir.x = std::cos(angle);
+					entityDir.y = std::sin(angle);
+				}
+			}
+		}
+		else
+		{
+			if (animInst.currentStateIndex != *idleStateIndex)
+			{
+				animInst.setStateIndex(*idleStateIndex);
+			}
+			
+			if (distToPlayerSqr <= chaseDistanceSqr) {
+				entityDir = dirToPlayer.normalized();
+			}
+			
+			if (!entityInst.physicsBodyID.IsInvalid())
+			{
+				bodyInterface.ActivateBody(entityInst.physicsBodyID);
+			}
+		}	
+		if (curEntityChunkPos != prevEntityChunkPos)
+		{
+			EntityChunk &curEntityChunk = this->getChunkAtPosition(curEntityChunkPos);
+			entityChunk.entityIDs.erase(entityChunk.entityIDs.begin() + i);
+			curEntityChunk.entityIDs.emplace_back(entityInstID);
+
+			EntityTransferResult transferResult;
+			transferResult.id = entityInstID;
+			transferResult.oldChunkPos = prevEntityChunkPos;
+			transferResult.newChunkPos = curEntityChunkPos;
+			this->transferResults.emplace_back(std::move(transferResult));
+		}
+	}
+}
+
 std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID) const
 {
 	const EntityDefinition &entityDef = this->getEntityDef(defID);
@@ -823,6 +1037,11 @@ std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID
 }
 
 const EntityInstance &EntityChunkManager::getEntity(EntityInstanceID id) const
+{
+	return this->entities.get(id);
+}
+
+EntityInstance &EntityChunkManager::getEntity(EntityInstanceID id)
 {
 	return this->entities.get(id);
 }
@@ -1144,7 +1363,7 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 	{
 		EntityInstance &entityInst = this->entities.get(entityInstID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityDefinitionType entityDefType = entityDef.type;
+		const EntityDefinitionType entityDefType = entityDef.type;	
 		if (!entityInst.canBeKilledInCombat())
 		{
 			continue;
@@ -1157,13 +1376,25 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 		}
 
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		
+		if (combatState.isDying && animInst.currentStateIndex != *deathAnimStateIndex)
+		{
+			animInst.setStateIndex(*deathAnimStateIndex);
+			
+			JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+			if (!physicsBodyID.IsInvalid())
+			{
+				bodyInterface.DeactivateBody(physicsBodyID);
+			}
+		}
+		
 		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
 		if (!isInDeathAnimState)
 		{
 			continue;
 		}
 
-		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
 		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
 		if (isDeathAnimComplete)
 		{
@@ -1185,7 +1416,6 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 				else
 				{
 					this->queueEntityDestroy(entityInstID, true);
-					// @todo remove from dyingEntities list once that is a thing
 				}
 			}
 		}
@@ -1323,6 +1553,7 @@ void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPosi
 		EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		this->updateCitizenStates(dt, entityChunk, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
+		this->updateEnemyStates(dt, entityChunk, playerPositionXZ, physicsSystem, voxelChunkManager);
 
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
@@ -1377,7 +1608,7 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 
 	for (const EntityInstanceID entityInstID : this->destroyedEntityIDs)
 	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		EntityInstance &entityInst = this->entities.get(entityInstID);
 		
 		if (entityInst.positionID >= 0)
 		{
@@ -1455,9 +1686,10 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 
 void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
-	for (ChunkPtr &chunkPtr : this->activeChunks)
+	for (int i = 0; i < this->getChunkCount(); i++)
 	{
-		for (const EntityInstanceID entityInstID : chunkPtr->entityIDs)
+		EntityChunk &chunk = this->getChunkAtIndex(i);
+		for (const EntityInstanceID entityInstID : chunk.entityIDs)
 		{
 			this->queueEntityDestroy(entityInstID, false);
 		}
