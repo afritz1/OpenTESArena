@@ -135,7 +135,7 @@ bool MeshLibrary::init(const char *folderPath)
 		this->entries.emplace_back(std::move(entry));
 	}
 
-	std::sort(this->entries.begin(), this->entries.end(),
+	std::stable_sort(this->entries.begin(), this->entries.end(),
 		[](const MeshLibraryEntry &a, const MeshLibraryEntry &b)
 	{
 		if (a.voxelType != b.voxelType)
