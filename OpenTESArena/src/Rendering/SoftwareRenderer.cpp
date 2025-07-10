@@ -49,7 +49,8 @@ namespace
 {
 	int FractToInt(double texCoord, double textureDimReal)
 	{
-		return static_cast<int>((texCoord - std::floor(texCoord)) * textureDimReal);
+		const double texCoordFract = texCoord - std::floor(texCoord);
+		return static_cast<int>(texCoordFract * textureDimReal);
 	}
 
 	template<int N>

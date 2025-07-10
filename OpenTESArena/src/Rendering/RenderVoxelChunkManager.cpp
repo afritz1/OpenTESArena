@@ -907,8 +907,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 				const int destinationTexCoordComponentIndex = vertexIndex * MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 				const double sourceTexCoordU = meshDef.rendererTexCoords[sourceTexCoordComponentIndex];
 				const double sourceTexCoordV = meshDef.rendererTexCoords[sourceTexCoordComponentIndex + 1];
-				quadVertexTexCoords[destinationTexCoordComponentIndex] = sourceTexCoordU * static_cast<double>(quadVoxelWidth);
-				quadVertexTexCoords[destinationTexCoordComponentIndex + 1] = sourceTexCoordV * static_cast<double>(quadVoxelHeight);
+				quadVertexTexCoords[destinationTexCoordComponentIndex] = sourceTexCoordU * (static_cast<double>(quadVoxelWidth) * Constants::JustBelowOne); // Keep between [0, 1)
+				quadVertexTexCoords[destinationTexCoordComponentIndex + 1] = sourceTexCoordV * (static_cast<double>(quadVoxelHeight) * Constants::JustBelowOne);
 			}
 
 			combinedFaceVertexBuffer->voxelWidth = quadVoxelWidth;
