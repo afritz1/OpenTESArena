@@ -831,10 +831,14 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			continue;
 		}
 
+		const VoxelTraitsDefID traitsDefID = voxelChunk.traitsDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
+		const VoxelTraitsDefinition &traitsDef = voxelChunk.traitsDefs[traitsDefID];
+		const ArenaVoxelType voxelType = traitsDef.type;
+
 		// Find model space vertex buffer matching this voxel span (also need scale type in case of chasms etc).
 		int quadVoxelWidth;
 		int quadVoxelHeight;
-		MeshUtils::getVoxelFaceDimensions(minVoxel, maxVoxel, facing, &quadVoxelWidth, &quadVoxelHeight);
+		MeshUtils::getVoxelFaceDimensions(minVoxel, maxVoxel, facing, voxelType, &quadVoxelWidth, &quadVoxelHeight);
 
 		const VoxelShapeDefID shapeDefID = voxelChunk.shapeDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelShapeDefinition &shapeDef = voxelChunk.shapeDefs[shapeDefID];

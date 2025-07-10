@@ -178,7 +178,7 @@ Double3 MeshUtils::createVertexNormalAtIndex(Span<const double> positions, int v
 	return cross;
 }
 
-void MeshUtils::getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, int *outWidth, int *outHeight)
+void MeshUtils::getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, ArenaVoxelType voxelType, int *outWidth, int *outHeight)
 {
 	const Int3 voxelDiff = max - min;
 	const Int3 meshVoxelDims(1 + voxelDiff.x, 1 + voxelDiff.y, 1 + voxelDiff.z);
@@ -193,9 +193,20 @@ void MeshUtils::getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &ma
 		height = meshVoxelDims.y;
 		break;
 	case VoxelFacing3D::PositiveY:
+		if (voxelType == ArenaVoxelType::Floor)
+		{
+			width = meshVoxelDims.x;
+			height = meshVoxelDims.z;
+		}
+		else
+		{
+			width = meshVoxelDims.z;
+			height = meshVoxelDims.x;
+		}
+		break;
 	case VoxelFacing3D::NegativeY:
-		width = meshVoxelDims.x;
-		height = meshVoxelDims.z;
+		width = meshVoxelDims.z;
+		height = meshVoxelDims.x;
 		break;
 	case VoxelFacing3D::PositiveZ:
 	case VoxelFacing3D::NegativeZ:
