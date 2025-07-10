@@ -47,6 +47,11 @@ namespace
 // Optimized math functions.
 namespace
 {
+	int FractToInt(double texCoord, double textureDimReal)
+	{
+		return static_cast<int>((texCoord - std::floor(texCoord)) * textureDimReal);
+	}
+
 	template<int N>
 	void Double_LerpN(const double *__restrict starts, const double *__restrict ends, const double *__restrict percents,
 		double *__restrict outs)
@@ -1708,8 +1713,8 @@ namespace
 	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
+		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
+		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -1727,16 +1732,16 @@ namespace
 	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
 		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercentX * alphaTestTexture.widthReal), 0, alphaTestTexture.widthMinusOne);
-		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercentY * alphaTestTexture.heightReal), 0, alphaTestTexture.heightMinusOne);
+		const int layerTexelX = FractToInt(perspective.texelPercentX, alphaTestTexture.widthReal);
+		const int layerTexelY = FractToInt(perspective.texelPercentY, alphaTestTexture.heightReal);
 		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
 		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
 
 		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
 		{
-			const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * opaqueTexture.widthReal), 0, opaqueTexture.widthMinusOne);
-			const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * opaqueTexture.heightReal), 0, opaqueTexture.heightMinusOne);
+			const int texelX = FractToInt(perspective.texelPercentX, opaqueTexture.widthReal);
+			const int texelY = FractToInt(perspective.texelPercentY, opaqueTexture.heightReal);
 			const int texelIndex = texelX + (texelY * opaqueTexture.width);
 			texel = opaqueTexture.texels[texelIndex];
 		}
@@ -1785,8 +1790,8 @@ namespace
 	void PixelShader_OpaqueScreenSpaceAnimationWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
 		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int layerTexelX = std::clamp(static_cast<int>(perspective.texelPercentX * alphaTestTexture.widthReal), 0, alphaTestTexture.widthMinusOne);
-		const int layerTexelY = std::clamp(static_cast<int>(perspective.texelPercentY * alphaTestTexture.heightReal), 0, alphaTestTexture.heightMinusOne);
+		const int layerTexelX = FractToInt(perspective.texelPercentX, alphaTestTexture.widthReal);
+		const int layerTexelY = FractToInt(perspective.texelPercentY, alphaTestTexture.heightReal);
 		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
 		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
 
@@ -1823,8 +1828,8 @@ namespace
 	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
+		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
+		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -1849,8 +1854,8 @@ namespace
 		double uMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
 		const double u = std::clamp(uMin + ((1.0 - uMin) * perspective.texelPercentX), uMin, 1.0);
-		const int texelX = std::clamp(static_cast<int>(u * texture.widthReal), 0, texture.widthMinusOne);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.height), 0, texture.heightMinusOne);
+		const int texelX = FractToInt(u, texture.widthReal);
+		const int texelY = FractToInt(perspective.texelPercentY, texture.height);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -1874,9 +1879,9 @@ namespace
 	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		double vMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
+		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
 		const double v = std::clamp(vMin + ((1.0 - vMin) * perspective.texelPercentY), vMin, 1.0);
-		const int texelY = std::clamp(static_cast<int>(v * texture.heightReal), 0, texture.heightMinusOne);
+		const int texelY = FractToInt(v, texture.heightReal);
 
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
@@ -1901,8 +1906,8 @@ namespace
 	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderTexture &lookupTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
+		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
+		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -1928,8 +1933,8 @@ namespace
 	void PixelShader_AlphaTestedWithLightLevelColor(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
+		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
+		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -1954,8 +1959,8 @@ namespace
 	void PixelShader_AlphaTestedWithLightLevelOpacity(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
 		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
+		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
+		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -2017,8 +2022,8 @@ namespace
 			return;
 		}
 
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
+		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
+		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
@@ -2041,8 +2046,8 @@ namespace
 		const PixelShaderTexture &texture, const PixelShaderHorizonMirror &horizon, const PixelShaderLighting &lighting,
 		PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = std::clamp(static_cast<int>(perspective.texelPercentX * texture.widthReal), 0, texture.widthMinusOne);
-		const int texelY = std::clamp(static_cast<int>(perspective.texelPercentY * texture.heightReal), 0, texture.heightMinusOne);
+		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
+		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
 
