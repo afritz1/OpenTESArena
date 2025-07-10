@@ -86,10 +86,10 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	bgTexCoords.emplace_back(nadirTexCoord.x);
 	bgTexCoords.emplace_back(nadirTexCoord.y);
 
-	constexpr int bgTextureTileCount = 150; // # of times the sky gradient texture tiles around the horizon.
-	constexpr int bgHorizonEdgeCount = 150; // # of hemisphere edges on the horizon, determines total # of triangles and smoothness of horizon.
-	constexpr int horizonEdgesPerTextureTile = bgHorizonEdgeCount / bgTextureTileCount;
-	constexpr double horizonEdgesPerTextureTileReal = static_cast<double>(horizonEdgesPerTextureTile);
+	constexpr int bgTextureTileCount = 150; // # of times the sky gradient texture tiles around the horizon (depends on original sky texture width).
+	constexpr int bgHorizonEdgeCount = 30; // # of hemisphere edges on the horizon, determines total # of triangles and smoothness of shape.
+	constexpr double horizonEdgesPerTextureTile = static_cast<double>(bgHorizonEdgeCount) / static_cast<double>(bgTextureTileCount);
+	constexpr double textureTilesPerHorizonEdge = 1.0 / horizonEdgesPerTextureTile;
 
 	for (int i = 0; i < bgHorizonEdgeCount; i++)
 	{
@@ -135,8 +135,8 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		bgNormals.emplace_back(nextAboveHorizonNormal.z);
 
 		// Texture coordinates for this horizon quad and triangle above.
-		const double texCoordUStart = static_cast<double>(i % horizonEdgesPerTextureTile) / horizonEdgesPerTextureTileReal;
-		const double texCoordUEnd = texCoordUStart + (1.0 / horizonEdgesPerTextureTileReal);
+		const double texCoordUStart = std::fmod(static_cast<double>(i), horizonEdgesPerTextureTile) * textureTilesPerHorizonEdge;
+		const double texCoordUEnd = texCoordUStart + textureTilesPerHorizonEdge;
 		const double texCoordVStart = 0.0;
 		const double texCoordVEnd = 1.0;
 		const Double2 horizonTexCoord(texCoordUStart, texCoordVEnd);
