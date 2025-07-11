@@ -88,7 +88,6 @@ struct RenderVoxelChunk final : public Chunk
 
 	std::vector<RenderMeshInstance> meshInsts;
 	std::unordered_map<VoxelShapeDefID, RenderMeshInstID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
-	Buffer3D<RenderMeshInstID> meshInstIDs; // Points into mesh instances.
 
 	std::vector<RenderVoxelDrawCallRangeID> combinedFaceDrawCallRangeIDs; // tbd, can't be freed yet, only added
 	std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> combinedFaceTransforms; // Allocated transforms for static positions in space, doesn't need freeing when dirty.

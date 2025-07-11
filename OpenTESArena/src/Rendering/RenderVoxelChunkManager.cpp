@@ -1046,7 +1046,6 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelShapeDefID);
 		DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
 		const RenderMeshInstID renderMeshInstID = meshInstIter->second;
-		renderChunk.meshInstIDs.set(voxel.x, voxel.y, voxel.z, renderMeshInstID);
 		DebugAssertIndex(renderChunk.meshInsts, renderMeshInstID);
 		const RenderMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
 
@@ -1143,7 +1142,6 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelShapeDefID);
 		DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
 		const RenderMeshInstID renderMeshInstID = meshInstIter->second;
-		renderChunk.meshInstIDs.set(voxel.x, voxel.y, voxel.z, renderMeshInstID);
 		DebugAssertIndex(renderChunk.meshInsts, renderMeshInstID);
 		const RenderMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
 

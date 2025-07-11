@@ -202,8 +202,7 @@ bool RenderVoxelCombinedFaceTransformKey::operator==(const RenderVoxelCombinedFa
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
-	this->meshInstIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
-	this->meshInstIDs.fill(RenderVoxelChunk::AIR_MESH_INST_ID);
+
 	this->meshInstMappings.emplace(VoxelChunk::AIR_SHAPE_DEF_ID, RenderVoxelChunk::AIR_MESH_INST_ID);
 
 	this->transformBufferID = -1;
@@ -267,7 +266,6 @@ void RenderVoxelChunk::clear()
 	Chunk::clear();
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
-	this->meshInstIDs.clear();
 	this->combinedFaceDrawCallRangeIDs.clear();
 	this->combinedFaceTransforms.clear();
 	this->chasmWallIndexBufferIDsMap.clear();
