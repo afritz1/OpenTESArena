@@ -174,6 +174,11 @@ RenderVoxelCombinedFaceTransformKey::RenderVoxelCombinedFaceTransformKey()
 	this->facing = static_cast<VoxelFacing3D>(-1);
 }
 
+RenderVoxelCombinedFaceDrawCallEntry::RenderVoxelCombinedFaceDrawCallEntry()
+{
+	this->rangeID = -1;
+}
+
 bool RenderVoxelCombinedFaceTransformKey::operator==(const RenderVoxelCombinedFaceTransformKey &other) const
 {
 	if (this == &other)
@@ -202,8 +207,7 @@ bool RenderVoxelCombinedFaceTransformKey::operator==(const RenderVoxelCombinedFa
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
-	this->meshInstIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
-	this->meshInstIDs.fill(RenderVoxelChunk::AIR_MESH_INST_ID);
+
 	this->meshInstMappings.emplace(VoxelChunk::AIR_SHAPE_DEF_ID, RenderVoxelChunk::AIR_MESH_INST_ID);
 
 	this->transformBufferID = -1;
@@ -212,12 +216,12 @@ void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 	this->drawCallRangeIDs.fill(-1);
 
 	// Add empty mesh instance for air.
-	this->addMeshInst(RenderVoxelMeshInstance());
+	this->addMeshInst(RenderMeshInstance());
 }
 
-RenderVoxelMeshInstID RenderVoxelChunk::addMeshInst(RenderVoxelMeshInstance &&meshInst)
+RenderMeshInstID RenderVoxelChunk::addMeshInst(RenderMeshInstance &&meshInst)
 {
-	const RenderVoxelMeshInstID id = static_cast<RenderVoxelMeshInstID>(this->meshInsts.size());
+	const RenderMeshInstID id = static_cast<RenderMeshInstID>(this->meshInsts.size());
 	this->meshInsts.emplace_back(std::move(meshInst));
 	return id;
 }
@@ -234,7 +238,7 @@ void RenderVoxelChunk::freeDrawCalls(SNInt x, int y, WEInt z)
 
 void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 {
-	for (RenderVoxelMeshInstance &meshInst : this->meshInsts)
+	for (RenderMeshInstance &meshInst : this->meshInsts)
 	{
 		meshInst.freeBuffers(renderer);
 	}
@@ -267,10 +271,8 @@ void RenderVoxelChunk::clear()
 	Chunk::clear();
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
-	this->meshInstIDs.clear();
-	this->combinedFaceDrawCallRangeIDs.clear();
+	this->combinedFaceDrawCallEntries.clear();
 	this->combinedFaceTransforms.clear();
-	this->chasmWallIndexBufferIDsMap.clear();
 	this->transformBufferID = -1;
 	this->doorTransformBuffers.clear();
 	this->drawCallHeap.clear();

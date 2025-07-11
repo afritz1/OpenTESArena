@@ -26,8 +26,6 @@ struct RenderDrawCall
 	
 	RenderLightingType lightingType;
 	double lightPercent; // For per-mesh lighting.
-	RenderLightID lightIDs[RenderLightIdList::MAX_LIGHTS]; // For per-pixel lighting.
-	int lightIdCount;
 
 	VertexShaderType vertexShaderType;
 	PixelShaderType pixelShaderType;

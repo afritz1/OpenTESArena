@@ -80,16 +80,16 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	bgNormals.emplace_back(nadirNormal.z);
 
 	constexpr Double2 zenithTexCoord(0.50, 0.0);
-	constexpr Double2 nadirTexCoord(0.50, 0.0);
+	constexpr Double2 nadirTexCoord(0.50, Constants::JustBelowOne); // Keep below 1 to retain [0, 1) exclusive max
 	bgTexCoords.emplace_back(zenithTexCoord.x);
 	bgTexCoords.emplace_back(zenithTexCoord.y);
 	bgTexCoords.emplace_back(nadirTexCoord.x);
 	bgTexCoords.emplace_back(nadirTexCoord.y);
 
-	constexpr int bgTextureTileCount = 150; // # of times the sky gradient texture tiles around the horizon.
-	constexpr int bgHorizonEdgeCount = 150; // # of hemisphere edges on the horizon, determines total # of triangles and smoothness of horizon.
-	constexpr int horizonEdgesPerTextureTile = bgHorizonEdgeCount / bgTextureTileCount;
-	constexpr double horizonEdgesPerTextureTileReal = static_cast<double>(horizonEdgesPerTextureTile);
+	constexpr int bgTextureTileCount = 150; // # of times the sky gradient texture tiles around the horizon (depends on original sky texture width).
+	constexpr int bgHorizonEdgeCount = 30; // # of hemisphere edges on the horizon, determines total # of triangles and smoothness of shape.
+	constexpr double horizonEdgesPerTextureTile = static_cast<double>(bgHorizonEdgeCount) / static_cast<double>(bgTextureTileCount);
+	constexpr double textureTilesPerHorizonEdge = 1.0 / horizonEdgesPerTextureTile;
 
 	for (int i = 0; i < bgHorizonEdgeCount; i++)
 	{
@@ -135,8 +135,8 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		bgNormals.emplace_back(nextAboveHorizonNormal.z);
 
 		// Texture coordinates for this horizon quad and triangle above.
-		const double texCoordUStart = static_cast<double>(i % horizonEdgesPerTextureTile) / horizonEdgesPerTextureTileReal;
-		const double texCoordUEnd = texCoordUStart + (1.0 / horizonEdgesPerTextureTileReal);
+		const double texCoordUStart = std::fmod(static_cast<double>(i), horizonEdgesPerTextureTile) * textureTilesPerHorizonEdge;
+		const double texCoordUEnd = texCoordUStart + textureTilesPerHorizonEdge;
 		const double texCoordVStart = 0.0;
 		const double texCoordVEnd = 1.0;
 		const Double2 horizonTexCoord(texCoordUStart, texCoordVEnd);
@@ -170,11 +170,46 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		bgIndices.emplace_back(zenithIndex);
 		bgIndices.emplace_back(aboveHorizonIndex);
 		bgIndices.emplace_back(nextAboveHorizonIndex);
+	}
 
-		// Triangle below horizon
+	// Add simple pyramid mesh for triangles below horizon.
+	for (int i = 0; i < 3; i++)
+	{
+		constexpr Radians simpleHorizonPeriodStep = MathUtils::degToRad(120.0);
+		const Radians simpleHorizonPeriod = MathUtils::degToRad(90.0) + (simpleHorizonPeriodStep * static_cast<double>(i));
+		const Radians nextSimpleHorizonPeriod = simpleHorizonPeriod + simpleHorizonPeriodStep;
+		const Double3 simpleHorizonPoint(std::cos(simpleHorizonPeriod), 0.0, std::sin(simpleHorizonPeriod));
+		const Double3 nextSimpleHorizonPoint(std::cos(nextSimpleHorizonPeriod), 0.0, std::sin(nextSimpleHorizonPeriod));
+		const Double3 simpleHorizonNormal = -simpleHorizonPoint.normalized();
+		const Double3 nextSimpleHorizonNormal = -nextSimpleHorizonPoint.normalized();
+		constexpr double simpleHorizonTexCoordU = 0.0;
+		constexpr double simpleHorizonTexCoordV = nadirTexCoord.y;
+		constexpr double nextSimpleHorizonTexCoordU = 1.0;
+		constexpr double nextSimpleHorizonTexCoordV = nadirTexCoord.y;
+
+		bgPositions.emplace_back(simpleHorizonPoint.x);
+		bgPositions.emplace_back(simpleHorizonPoint.y);
+		bgPositions.emplace_back(simpleHorizonPoint.z);
+		bgPositions.emplace_back(nextSimpleHorizonPoint.x);
+		bgPositions.emplace_back(nextSimpleHorizonPoint.y);
+		bgPositions.emplace_back(nextSimpleHorizonPoint.z);
+		bgNormals.emplace_back(simpleHorizonNormal.x);
+		bgNormals.emplace_back(simpleHorizonNormal.y);
+		bgNormals.emplace_back(simpleHorizonNormal.z);
+		bgNormals.emplace_back(nextSimpleHorizonNormal.x);
+		bgNormals.emplace_back(nextSimpleHorizonNormal.y);
+		bgNormals.emplace_back(nextSimpleHorizonNormal.z);
+		bgTexCoords.emplace_back(simpleHorizonTexCoordU);
+		bgTexCoords.emplace_back(simpleHorizonTexCoordV);
+		bgTexCoords.emplace_back(nextSimpleHorizonTexCoordU);
+		bgTexCoords.emplace_back(nextSimpleHorizonTexCoordV);
+
+		const int currentVertexCount = static_cast<int>(bgPositions.size()) / 3;
+		const int32_t simpleHorizonIndex = static_cast<int32_t>(currentVertexCount - 2);
+		const int32_t nextSimpleHorizonIndex = static_cast<int32_t>(currentVertexCount - 1);
 		bgIndices.emplace_back(nadirIndex);
-		bgIndices.emplace_back(nextHorizonIndex);
-		bgIndices.emplace_back(horizonIndex);
+		bgIndices.emplace_back(simpleHorizonIndex);
+		bgIndices.emplace_back(nextSimpleHorizonIndex);
 	}
 
 	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
@@ -298,7 +333,6 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.textureIDs[1] = -1;
 	this->bgDrawCall.lightingType = RenderLightingType::PerMesh;
 	this->bgDrawCall.lightPercent = 1.0;
-	this->bgDrawCall.lightIdCount = 0;
 	this->bgDrawCall.vertexShaderType = VertexShaderType::Basic;
 	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
 	this->bgDrawCall.pixelShaderParam0 = 0.0;
@@ -744,7 +778,6 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.textureIDs[1] = -1;
 		drawCall.lightingType = RenderLightingType::PerMesh;
 		drawCall.lightPercent = meshLightPercent;
-		drawCall.lightIdCount = 0;
 		drawCall.vertexShaderType = VertexShaderType::Basic;
 		drawCall.pixelShaderType = pixelShaderType;
 		drawCall.pixelShaderParam0 = 0.0;

@@ -31,7 +31,7 @@ using RenderVoxelDrawCallRangeID = int;
 
 struct RenderVoxelDrawCallHeap
 {
-	static constexpr int MAX_DRAW_CALLS = 24000;
+	static constexpr int MAX_DRAW_CALLS = 8192;
 	static constexpr int MAX_DRAW_CALL_RANGES = (7 * MAX_DRAW_CALLS) / 8; // Arbitrary, most ranges will be 1 draw call.
 
 	RenderDrawCall drawCalls[MAX_DRAW_CALLS];
@@ -61,6 +61,14 @@ struct RenderVoxelCombinedFaceTransformKey
 	bool operator==(const RenderVoxelCombinedFaceTransformKey &other) const;
 };
 
+struct RenderVoxelCombinedFaceDrawCallEntry
+{
+	RenderVoxelDrawCallRangeID rangeID; // One draw call.
+	VoxelInt3 min, max;
+
+	RenderVoxelCombinedFaceDrawCallEntry();
+};
+
 namespace std
 {
 	// For fast lookup of a mesh instance's transform in this chunk.
@@ -84,16 +92,14 @@ namespace std
 
 struct RenderVoxelChunk final : public Chunk
 {
-	static constexpr RenderVoxelMeshInstID AIR_MESH_INST_ID = 0;
+	static constexpr RenderMeshInstID AIR_MESH_INST_ID = 0;
 
-	std::vector<RenderVoxelMeshInstance> meshInsts;
-	std::unordered_map<VoxelShapeDefID, RenderVoxelMeshInstID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
-	Buffer3D<RenderVoxelMeshInstID> meshInstIDs; // Points into mesh instances.
+	std::vector<RenderMeshInstance> meshInsts;
+	std::unordered_map<VoxelShapeDefID, RenderMeshInstID> meshInstMappings;
 
-	std::vector<RenderVoxelDrawCallRangeID> combinedFaceDrawCallRangeIDs; // tbd, can't be freed yet, only added
+	std::vector<RenderVoxelCombinedFaceDrawCallEntry> combinedFaceDrawCallEntries;
 	std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> combinedFaceTransforms; // Allocated transforms for static positions in space, doesn't need freeing when dirty.
 
-	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	UniformBufferID transformBufferID; // One RenderTransform buffer for all voxels, though doors are handled separately. Owned by this chunk.
 	std::unordered_map<VoxelInt3, UniformBufferID> doorTransformBuffers; // Unique transform buffer per door instance, owned by this chunk. Four RenderTransforms (one per door face) per buffer.
 
@@ -101,7 +107,7 @@ struct RenderVoxelChunk final : public Chunk
 	Buffer3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs; // Most voxel geometry (walls, floors, etc.).
 
 	void init(const ChunkInt2 &position, int height);
-	RenderVoxelMeshInstID addMeshInst(RenderVoxelMeshInstance &&meshInst);
+	RenderMeshInstID addMeshInst(RenderMeshInstance &&meshInst);
 	void freeDrawCalls(SNInt x, int y, WEInt z);
 	void freeBuffers(Renderer &renderer);
 	void clear();

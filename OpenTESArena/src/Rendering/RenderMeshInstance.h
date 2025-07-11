@@ -5,31 +5,15 @@
 
 class Renderer;
 
-using RenderVoxelMeshInstID = int;
+using RenderMeshInstID = int;
 
-struct RenderVoxelMeshInstance
-{
-	static constexpr int MAX_DRAW_CALLS = 6; // Based on voxel mesh faces.
-
-	VertexPositionBufferID positionBufferID;
-	VertexAttributeBufferID normalBufferID, texCoordBufferID;
-	IndexBufferID indexBufferIDs[MAX_DRAW_CALLS];
-	int indexBufferIdCount;
-
-	RenderVoxelMeshInstance();
-
-	int getUniqueDrawCallCount() const;
-	void freeBuffers(Renderer &renderer);
-};
-
-// All the resources needed to define an entity's renderer-allocated mesh.
-struct RenderEntityMeshInstance
+struct RenderMeshInstance
 {
 	VertexPositionBufferID positionBufferID;
 	VertexAttributeBufferID normalBufferID, texCoordBufferID;
 	IndexBufferID indexBufferID;
 
-	RenderEntityMeshInstance();
+	RenderMeshInstance();
 
 	void freeBuffers(Renderer &renderer);
 };

@@ -229,7 +229,6 @@ bool MainMenuPanel::init()
 	SceneManager &sceneManager = game.sceneManager;
 	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
 	sceneManager.renderEntityChunkManager.unloadScene(renderer);
-	sceneManager.renderLightChunkManager.unloadScene(renderer);
 
 	return true;
 }

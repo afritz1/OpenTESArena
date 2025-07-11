@@ -30,15 +30,8 @@ void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pit
 	this->inverseViewMatrix = Matrix4d::inverse(this->viewMatrix);
 	this->inverseProjectionMatrix = Matrix4d::inverse(this->projectionMatrix);
 
-	this->leftFrustumDir = (this->forwardScaled - this->rightScaled).normalized();
-	this->rightFrustumDir = (this->forwardScaled + this->rightScaled).normalized();
-	this->bottomFrustumDir = (this->forwardScaled - this->upScaledRecip).normalized();
-	this->topFrustumDir = (this->forwardScaled + this->upScaledRecip).normalized();
-
-	this->leftFrustumNormal = this->leftFrustumDir.cross(this->up).normalized();
-	this->rightFrustumNormal = this->up.cross(this->rightFrustumDir).normalized();
-	this->bottomFrustumNormal = this->right.cross(this->bottomFrustumDir).normalized();
-	this->topFrustumNormal = this->topFrustumDir.cross(this->right).normalized();
+	this->createFrustumVectors(0.0, 1.0, 0.0, 1.0, &this->leftFrustumDir, &this->rightFrustumDir, &this->bottomFrustumDir, &this->topFrustumDir,
+		&this->leftFrustumNormal, &this->rightFrustumNormal, &this->bottomFrustumNormal, &this->topFrustumNormal);
 
 	this->horizonDir = Double3(this->forward.x, 0.0, this->forward.z).normalized();
 	this->horizonNormal = Double3::UnitY;
@@ -58,4 +51,29 @@ Double3 RenderCamera::screenToWorld(double xPercent, double yPercent) const
 	const Double3 baseDir = this->forwardScaled - this->rightScaled + this->upScaledRecip;
 	const Double3 adjustedDir = baseDir + (this->rightScaled * (2.0 * xPercent)) - (this->upScaledRecip * (2.0 * yPercent));
 	return adjustedDir.normalized();
+}
+
+void RenderCamera::createFrustumVectors(double startXPercent, double endXPercent, double startYPercent, double endYPercent,
+	Double3 *outFrustumDirLeft, Double3 *outFrustumDirRight, Double3 *outFrustumDirBottom, Double3 *outFrustumDirTop,
+	Double3 *outFrustumNormalLeft, Double3 *outFrustumNormalRight, Double3 *outFrustumNormalBottom, Double3 *outFrustumNormalTop) const
+{
+	DebugAssert(endXPercent >= startXPercent);
+	DebugAssert(endYPercent >= startYPercent);
+
+	const Double3 baseVectorX = this->forwardScaled - this->rightScaled;
+	const Double3 baseVectorY = this->forwardScaled + this->upScaledRecip;
+	const Double3 frustumBeginRightComponent = this->rightScaled * (2.0 * startXPercent);
+	const Double3 frustumEndRightComponent = this->rightScaled * (2.0 * endXPercent);
+	const Double3 frustumBeginUpComponent = this->upScaledRecip * (2.0 * startYPercent);
+	const Double3 frustumEndUpComponent = this->upScaledRecip * (2.0 * endYPercent);
+
+	*outFrustumDirLeft = (baseVectorX + frustumBeginRightComponent).normalized();
+	*outFrustumDirRight = (baseVectorX + frustumEndRightComponent).normalized();
+	*outFrustumDirBottom = (baseVectorY - frustumEndUpComponent).normalized();
+	*outFrustumDirTop = (baseVectorY - frustumBeginUpComponent).normalized();
+
+	*outFrustumNormalLeft = outFrustumDirLeft->cross(this->up).normalized();
+	*outFrustumNormalRight = this->up.cross(*outFrustumDirRight).normalized();
+	*outFrustumNormalBottom = this->right.cross(*outFrustumDirBottom).normalized();
+	*outFrustumNormalTop = outFrustumDirTop->cross(this->right).normalized();
 }

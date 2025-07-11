@@ -8,6 +8,7 @@
 
 #include "components/utilities/Span.h"
 
+enum class ArenaVoxelType;
 enum class VoxelFacing3D;
 enum class VoxelShapeScaleType;
 
@@ -62,7 +63,7 @@ namespace MeshUtils
 	Double3 createVertexNormalAtIndex(Span<const double> positions, int vertexIndex);
 
 	// Gets the width and height of the voxel span.
-	void getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, int *outWidth, int *outHeight);
+	void getVoxelFaceDimensions(const VoxelInt3 &min, const VoxelInt3 &max, VoxelFacing3D facing, ArenaVoxelType voxelType, int *outWidth, int *outHeight);
 
 	void writeFirstFourUniqueIndices(Span<const int32_t> inputIndices, Span<int32_t> outputIndices);
 

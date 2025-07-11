@@ -1,6 +1,8 @@
 #include <algorithm>
 
 #include "MathUtils.h"
+#include "Matrix4.h"
+#include "Vector4.h"
 
 #include "components/debug/Debug.h"
 
@@ -380,10 +382,10 @@ bool MathUtils::rayBoxIntersection(const Double3 &rayStart, const Double3 &rayDi
 
 	auto makeModelSpaceVertex = [yRotation](double x, double y, double z)
 	{
-		return Double3(
-			(x * std::cos(yRotation)) - (z * std::sin(yRotation)),
-			y,
-			(x * std::sin(yRotation)) + (z * std::cos(yRotation)));
+		const Double4 vertex(x, y, z, 1.0);
+		const Matrix4d rotationMatrix = Matrix4d::yRotation(-yRotation);
+		const Double4 rotatedVertex = rotationMatrix * vertex;
+		return Double3(rotatedVertex.x, rotatedVertex.y, rotatedVertex.z);
 	};
 	
 	const Double3 modelVertices[] =

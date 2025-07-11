@@ -267,8 +267,8 @@ public:
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
 	void submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
-		double screenSpaceAnimPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
+		Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
+		ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(const Texture &texture, int x, int y, int w, int h);

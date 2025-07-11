@@ -16,12 +16,6 @@ RenderDrawCall::RenderDrawCall()
 	}
 
 	this->lightingType = static_cast<RenderLightingType>(-1);
-	for (RenderLightID &lightID : this->lightIDs)
-	{
-		lightID = -1;
-	}
-
-	this->lightIdCount = 0;
 	this->lightPercent = 0.0;
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);
@@ -47,12 +41,6 @@ void RenderDrawCall::clear()
 	}
 	
 	this->lightingType = static_cast<RenderLightingType>(-1);
-	for (RenderLightID &lightID : this->lightIDs)
-	{
-		lightID = -1;
-	}
-
-	this->lightIdCount = 0;
 	this->lightPercent = 0.0;
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->pixelShaderType = static_cast<PixelShaderType>(-1);

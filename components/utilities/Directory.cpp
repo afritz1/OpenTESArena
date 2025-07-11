@@ -92,6 +92,7 @@ std::vector<std::string> Directory::getFilesWithExtension(const char *path, cons
 		filenames.emplace_back(dirEntryPath.string());
 	}
 
+	std::sort(filenames.begin(), filenames.end());
 	return filenames;
 }
 
