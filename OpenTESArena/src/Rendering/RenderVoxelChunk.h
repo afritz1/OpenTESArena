@@ -61,6 +61,14 @@ struct RenderVoxelCombinedFaceTransformKey
 	bool operator==(const RenderVoxelCombinedFaceTransformKey &other) const;
 };
 
+struct RenderVoxelCombinedFaceDrawCallEntry
+{
+	RenderVoxelDrawCallRangeID rangeID; // One draw call.
+	VoxelInt3 min, max;
+
+	RenderVoxelCombinedFaceDrawCallEntry();
+};
+
 namespace std
 {
 	// For fast lookup of a mesh instance's transform in this chunk.
@@ -87,9 +95,9 @@ struct RenderVoxelChunk final : public Chunk
 	static constexpr RenderMeshInstID AIR_MESH_INST_ID = 0;
 
 	std::vector<RenderMeshInstance> meshInsts;
-	std::unordered_map<VoxelShapeDefID, RenderMeshInstID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
+	std::unordered_map<VoxelShapeDefID, RenderMeshInstID> meshInstMappings;
 
-	std::vector<RenderVoxelDrawCallRangeID> combinedFaceDrawCallRangeIDs; // tbd, can't be freed yet, only added
+	std::vector<RenderVoxelCombinedFaceDrawCallEntry> combinedFaceDrawCallEntries;
 	std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> combinedFaceTransforms; // Allocated transforms for static positions in space, doesn't need freeing when dirty.
 
 	UniformBufferID transformBufferID; // One RenderTransform buffer for all voxels, though doors are handled separately. Owned by this chunk.

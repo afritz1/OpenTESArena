@@ -174,6 +174,11 @@ RenderVoxelCombinedFaceTransformKey::RenderVoxelCombinedFaceTransformKey()
 	this->facing = static_cast<VoxelFacing3D>(-1);
 }
 
+RenderVoxelCombinedFaceDrawCallEntry::RenderVoxelCombinedFaceDrawCallEntry()
+{
+	this->rangeID = -1;
+}
+
 bool RenderVoxelCombinedFaceTransformKey::operator==(const RenderVoxelCombinedFaceTransformKey &other) const
 {
 	if (this == &other)
@@ -266,7 +271,7 @@ void RenderVoxelChunk::clear()
 	Chunk::clear();
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
-	this->combinedFaceDrawCallRangeIDs.clear();
+	this->combinedFaceDrawCallEntries.clear();
 	this->combinedFaceTransforms.clear();
 	this->transformBufferID = -1;
 	this->doorTransformBuffers.clear();

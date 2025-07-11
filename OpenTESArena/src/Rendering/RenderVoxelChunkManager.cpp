@@ -881,9 +881,14 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 		constexpr int drawCallCount = 1;
 		const RenderVoxelDrawCallRangeID drawCallRangeID = chunkDrawCallHeap.alloc(drawCallCount);
-		renderChunk.combinedFaceDrawCallRangeIDs.emplace_back(drawCallRangeID);
-		Span<RenderDrawCall> drawCalls = chunkDrawCallHeap.get(drawCallRangeID);
 
+		RenderVoxelCombinedFaceDrawCallEntry combinedFaceDrawCallEntry;
+		combinedFaceDrawCallEntry.rangeID = drawCallRangeID;
+		combinedFaceDrawCallEntry.min = minVoxel;
+		combinedFaceDrawCallEntry.max = maxVoxel;
+		renderChunk.combinedFaceDrawCallEntries.emplace_back(std::move(combinedFaceDrawCallEntry));
+
+		Span<RenderDrawCall> drawCalls = chunkDrawCallHeap.get(drawCallRangeID);
 		RenderDrawCall &drawCall = drawCalls[0];
 		drawCall.transformBufferID = transformBufferID;
 		drawCall.transformIndex = 0;
@@ -1174,12 +1179,12 @@ void RenderVoxelChunkManager::clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk 
 {
 	if (dirtyVoxelPositions.getCount() > 0)
 	{
-		for (const RenderVoxelDrawCallRangeID rangeID : renderChunk.combinedFaceDrawCallRangeIDs)
+		for (const RenderVoxelCombinedFaceDrawCallEntry &drawCallEntry : renderChunk.combinedFaceDrawCallEntries)
 		{
-			renderChunk.drawCallHeap.free(rangeID);
+			renderChunk.drawCallHeap.free(drawCallEntry.rangeID);
 		}
 
-		renderChunk.combinedFaceDrawCallRangeIDs.clear();
+		renderChunk.combinedFaceDrawCallEntries.clear();
 
 		for (const std::pair<RenderVoxelCombinedFaceTransformKey, UniformBufferID> &pair : renderChunk.combinedFaceTransforms)
 		{
@@ -1214,32 +1219,58 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 			continue;
 		}
 
-		Span<const RenderVoxelDrawCallRangeID> combinedFaceDrawCallRangeIDs = renderChunk.combinedFaceDrawCallRangeIDs;
-		for (const RenderVoxelDrawCallRangeID rangeID : combinedFaceDrawCallRangeIDs)
-		{
-			// @todo check visibility types of all voxel columns for this combined face, probably need a struct w/ VoxelFaceCombineResultID and this rangeID
+		const RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
-			const Span<const RenderDrawCall> drawCalls = renderChunk.drawCallHeap.get(rangeID);
-			this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
+		// Add draw calls that are at least partially in the camera frustum.
+		Span<const RenderVoxelCombinedFaceDrawCallEntry> combinedFaceDrawCallEntries = renderChunk.combinedFaceDrawCallEntries;
+		for (const RenderVoxelCombinedFaceDrawCallEntry &combinedFaceDrawCallEntry : combinedFaceDrawCallEntries)
+		{
+			bool isCombinedFaceVisible = false;
+			for (WEInt z = combinedFaceDrawCallEntry.min.z; z <= combinedFaceDrawCallEntry.max.z; z++)
+			{
+				for (SNInt x = combinedFaceDrawCallEntry.min.x; x <= combinedFaceDrawCallEntry.max.x; x++)
+				{
+					const int visibilityLeafNodeIndex = x + (z * Chunk::WIDTH);
+					DebugAssertIndex(voxelFrustumCullingChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
+					const bool isVoxelColumnVisible = voxelFrustumCullingChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
+					if (isVoxelColumnVisible)
+					{
+						isCombinedFaceVisible = true;
+						break;
+					}
+				}
+
+				if (isCombinedFaceVisible)
+				{
+					break;
+				}
+			}
+
+			if (isCombinedFaceVisible)
+			{
+				const Span<const RenderDrawCall> combinedFaceDrawCalls = drawCallHeap.get(combinedFaceDrawCallEntry.rangeID);
+				DebugAssert(combinedFaceDrawCalls.getCount() == 1);
+				this->drawCallsCache.emplace_back(combinedFaceDrawCalls[0]);
+			}
 		}
 
-		Span3D<const RenderVoxelDrawCallRangeID> rangeIDs = renderChunk.drawCallRangeIDs;
-		for (WEInt z = 0; z < rangeIDs.getDepth(); z++)
+		Span3D<const RenderVoxelDrawCallRangeID> nonCombinedRangeIDs = renderChunk.drawCallRangeIDs;
+		for (WEInt z = 0; z < nonCombinedRangeIDs.getDepth(); z++)
 		{
-			for (SNInt x = 0; x < rangeIDs.getWidth(); x++)
+			for (SNInt x = 0; x < nonCombinedRangeIDs.getWidth(); x++)
 			{
-				const int visibilityLeafNodeIndex = x + (z * rangeIDs.getWidth());
+				const int visibilityLeafNodeIndex = x + (z * Chunk::WIDTH);
 				DebugAssertIndex(voxelFrustumCullingChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
 				const bool isVoxelColumnVisible = voxelFrustumCullingChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
 				if (isVoxelColumnVisible)
 				{
-					for (int y = 0; y < rangeIDs.getHeight(); y++)
+					for (int y = 0; y < nonCombinedRangeIDs.getHeight(); y++)
 					{
-						const RenderVoxelDrawCallRangeID rangeID = rangeIDs.get(x, y, z);
+						const RenderVoxelDrawCallRangeID rangeID = nonCombinedRangeIDs.get(x, y, z);
 						if (rangeID >= 0)
 						{
-							const Span<const RenderDrawCall> drawCalls = renderChunk.drawCallHeap.get(rangeID);
-							this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
+							const Span<const RenderDrawCall> nonCombinedDrawCalls = drawCallHeap.get(rangeID);
+							this->drawCallsCache.insert(this->drawCallsCache.end(), nonCombinedDrawCalls.begin(), nonCombinedDrawCalls.end());
 						}
 					}
 				}
