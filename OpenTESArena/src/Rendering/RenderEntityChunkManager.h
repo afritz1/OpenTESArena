@@ -42,7 +42,7 @@ class RenderEntityChunkManager final : public SpecializedChunkManager<RenderEnti
 {
 private:
 	std::vector<RenderEntityLoadedAnimation> anims;
-	RenderEntityMeshInstance meshInst; // Shared by all entities.
+	RenderMeshInstance meshInst; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> paletteIndicesTextureRefs;
 
 	// All accumulated draw calls from entities each frame. This is sent to the renderer.

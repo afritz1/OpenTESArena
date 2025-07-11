@@ -584,56 +584,56 @@ void RenderVoxelChunkManager::loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelCh
 			continue;
 		}
 
-		RenderVoxelMeshInstance renderVoxelMeshInst;
+		RenderMeshInstance renderMeshInst;
 		constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 		constexpr int normalComponentsPerVertex = MeshUtils::NORMAL_COMPONENTS_PER_VERTEX;
 		constexpr int texCoordComponentsPerVertex = MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX;
 
 		const int vertexCount = MeshUtils::getVertexCount(voxelMeshDef.rendererPositions, MeshUtils::POSITION_COMPONENTS_PER_VERTEX);
-		renderVoxelMeshInst.positionBufferID = renderer.createVertexPositionBuffer(vertexCount, positionComponentsPerVertex);
-		if (renderVoxelMeshInst.positionBufferID < 0)
+		renderMeshInst.positionBufferID = renderer.createVertexPositionBuffer(vertexCount, positionComponentsPerVertex);
+		if (renderMeshInst.positionBufferID < 0)
 		{
 			DebugLogError("Couldn't create vertex position buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) + " in chunk (" + chunkPos.toString() + ").");
 			continue;
 		}
 
-		renderVoxelMeshInst.normalBufferID = renderer.createVertexAttributeBuffer(vertexCount, normalComponentsPerVertex);
-		if (renderVoxelMeshInst.normalBufferID < 0)
+		renderMeshInst.normalBufferID = renderer.createVertexAttributeBuffer(vertexCount, normalComponentsPerVertex);
+		if (renderMeshInst.normalBufferID < 0)
 		{
 			DebugLogError("Couldn't create vertex normal attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) + " in chunk (" + chunkPos.toString() + ").");
-			renderVoxelMeshInst.freeBuffers(renderer);
+			renderMeshInst.freeBuffers(renderer);
 			continue;
 		}
 
-		renderVoxelMeshInst.texCoordBufferID = renderer.createVertexAttributeBuffer(vertexCount, texCoordComponentsPerVertex);
-		if (renderVoxelMeshInst.texCoordBufferID < 0)
+		renderMeshInst.texCoordBufferID = renderer.createVertexAttributeBuffer(vertexCount, texCoordComponentsPerVertex);
+		if (renderMeshInst.texCoordBufferID < 0)
 		{
 			DebugLogError("Couldn't create vertex tex coord attribute buffer for voxel shape def ID " + std::to_string(voxelShapeDefID) + " in chunk (" + chunkPos.toString() + ").");
-			renderVoxelMeshInst.freeBuffers(renderer);
+			renderMeshInst.freeBuffers(renderer);
 			continue;
 		}
 
 		// Populate renderer mesh geometry and indices from this voxel definition.
-		renderer.populateVertexPositionBuffer(renderVoxelMeshInst.positionBufferID, voxelMeshDef.rendererPositions);
-		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.normalBufferID, voxelMeshDef.rendererNormals);
-		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, voxelMeshDef.rendererTexCoords);
+		renderer.populateVertexPositionBuffer(renderMeshInst.positionBufferID, voxelMeshDef.rendererPositions);
+		renderer.populateVertexAttributeBuffer(renderMeshInst.normalBufferID, voxelMeshDef.rendererNormals);
+		renderer.populateVertexAttributeBuffer(renderMeshInst.texCoordBufferID, voxelMeshDef.rendererTexCoords);
 
 		// No longer supporting index buffer per face in one voxel -- this is just for doors and diagonals now which select one index buffer.
 		DebugAssert(voxelMeshDef.indicesListCount >= 1);
 		Span<const int32_t> indices = voxelMeshDef.indicesLists[0];
 		const int indexCount = indices.getCount();
 
-		renderVoxelMeshInst.indexBufferID = renderer.createIndexBuffer(indexCount);
-		if (renderVoxelMeshInst.indexBufferID < 0)
+		renderMeshInst.indexBufferID = renderer.createIndexBuffer(indexCount);
+		if (renderMeshInst.indexBufferID < 0)
 		{
 			DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.position.toString().c_str());
-			renderVoxelMeshInst.freeBuffers(renderer);
+			renderMeshInst.freeBuffers(renderer);
 			continue;
 		}
 
-		renderer.populateIndexBuffer(renderVoxelMeshInst.indexBufferID, indices);
+		renderer.populateIndexBuffer(renderMeshInst.indexBufferID, indices);
 
-		const RenderVoxelMeshInstID renderMeshInstID = renderChunk.addMeshInst(std::move(renderVoxelMeshInst));
+		const RenderMeshInstID renderMeshInstID = renderChunk.addMeshInst(std::move(renderMeshInst));
 		renderChunk.meshInstMappings.emplace(voxelShapeDefID, renderMeshInstID);
 	}
 }
@@ -1045,10 +1045,10 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 
 		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelShapeDefID);
 		DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
-		const RenderVoxelMeshInstID renderMeshInstID = meshInstIter->second;
+		const RenderMeshInstID renderMeshInstID = meshInstIter->second;
 		renderChunk.meshInstIDs.set(voxel.x, voxel.y, voxel.z, renderMeshInstID);
 		DebugAssertIndex(renderChunk.meshInsts, renderMeshInstID);
-		const RenderVoxelMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
+		const RenderMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
 
 		const VoxelFadeAnimationInstance *fadeAnimInst = nullptr;
 		bool isFading = false;
@@ -1142,10 +1142,10 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 
 		const auto meshInstIter = renderChunk.meshInstMappings.find(voxelShapeDefID);
 		DebugAssert(meshInstIter != renderChunk.meshInstMappings.end());
-		const RenderVoxelMeshInstID renderMeshInstID = meshInstIter->second;
+		const RenderMeshInstID renderMeshInstID = meshInstIter->second;
 		renderChunk.meshInstIDs.set(voxel.x, voxel.y, voxel.z, renderMeshInstID);
 		DebugAssertIndex(renderChunk.meshInsts, renderMeshInstID);
-		const RenderVoxelMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
+		const RenderMeshInstance &renderMeshInst = renderChunk.meshInsts[renderMeshInstID];
 
 		double doorAnimPercent = 0.0;
 		int doorAnimInstIndex;

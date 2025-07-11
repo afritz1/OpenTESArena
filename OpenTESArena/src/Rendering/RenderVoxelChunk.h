@@ -84,11 +84,11 @@ namespace std
 
 struct RenderVoxelChunk final : public Chunk
 {
-	static constexpr RenderVoxelMeshInstID AIR_MESH_INST_ID = 0;
+	static constexpr RenderMeshInstID AIR_MESH_INST_ID = 0;
 
-	std::vector<RenderVoxelMeshInstance> meshInsts;
-	std::unordered_map<VoxelShapeDefID, RenderVoxelMeshInstID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
-	Buffer3D<RenderVoxelMeshInstID> meshInstIDs; // Points into mesh instances.
+	std::vector<RenderMeshInstance> meshInsts;
+	std::unordered_map<VoxelShapeDefID, RenderMeshInstID> meshInstMappings; // Note: this doesn't support VoxelIDs changing which def they point to (important if VoxelChunk::removeVoxelDef() is ever in use).
+	Buffer3D<RenderMeshInstID> meshInstIDs; // Points into mesh instances.
 
 	std::vector<RenderVoxelDrawCallRangeID> combinedFaceDrawCallRangeIDs; // tbd, can't be freed yet, only added
 	std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> combinedFaceTransforms; // Allocated transforms for static positions in space, doesn't need freeing when dirty.
@@ -101,7 +101,7 @@ struct RenderVoxelChunk final : public Chunk
 	Buffer3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs; // Most voxel geometry (walls, floors, etc.).
 
 	void init(const ChunkInt2 &position, int height);
-	RenderVoxelMeshInstID addMeshInst(RenderVoxelMeshInstance &&meshInst);
+	RenderMeshInstID addMeshInst(RenderMeshInstance &&meshInst);
 	void freeDrawCalls(SNInt x, int y, WEInt z);
 	void freeBuffers(Renderer &renderer);
 	void clear();
