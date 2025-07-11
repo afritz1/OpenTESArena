@@ -9,16 +9,12 @@ using RenderVoxelMeshInstID = int;
 
 struct RenderVoxelMeshInstance
 {
-	static constexpr int MAX_DRAW_CALLS = 6; // Based on voxel mesh faces.
-
 	VertexPositionBufferID positionBufferID;
 	VertexAttributeBufferID normalBufferID, texCoordBufferID;
-	IndexBufferID indexBufferIDs[MAX_DRAW_CALLS];
-	int indexBufferIdCount;
+	IndexBufferID indexBufferID;
 
 	RenderVoxelMeshInstance();
 
-	int getUniqueDrawCallCount() const;
 	void freeBuffers(Renderer &renderer);
 };
 

@@ -618,25 +618,20 @@ void RenderVoxelChunkManager::loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelCh
 		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.normalBufferID, voxelMeshDef.rendererNormals);
 		renderer.populateVertexAttributeBuffer(renderVoxelMeshInst.texCoordBufferID, voxelMeshDef.rendererTexCoords);
 
-		const int indexBufferCount = voxelMeshDef.indicesListCount;
-		for (int indexBufferIndex = 0; indexBufferIndex < indexBufferCount; indexBufferIndex++)
+		// No longer supporting index buffer per face in one voxel -- this is just for doors and diagonals now which select one index buffer.
+		DebugAssert(voxelMeshDef.indicesListCount >= 1);
+		Span<const int32_t> indices = voxelMeshDef.indicesLists[0];
+		const int indexCount = indices.getCount();
+
+		renderVoxelMeshInst.indexBufferID = renderer.createIndexBuffer(indexCount);
+		if (renderVoxelMeshInst.indexBufferID < 0)
 		{
-			Span<const int32_t> indices = voxelMeshDef.indicesLists[indexBufferIndex];
-			const int indexCount = indices.getCount();
-
-			DebugAssertIndex(renderVoxelMeshInst.indexBufferIDs, indexBufferIndex);
-			IndexBufferID &indexBufferID = renderVoxelMeshInst.indexBufferIDs[indexBufferIndex];
-			indexBufferID = renderer.createIndexBuffer(indexCount);
-			if (indexBufferID < 0)
-			{
-				DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.position.toString().c_str());
-				renderVoxelMeshInst.freeBuffers(renderer);
-				continue;
-			}
-
-			renderVoxelMeshInst.indexBufferIdCount++;
-			renderer.populateIndexBuffer(indexBufferID, indices);
+			DebugLogErrorFormat("Couldn't create index buffer for voxel shape def ID %d in chunk (%s).", voxelShapeDefID, voxelChunk.position.toString().c_str());
+			renderVoxelMeshInst.freeBuffers(renderer);
+			continue;
 		}
+
+		renderer.populateIndexBuffer(renderVoxelMeshInst.indexBufferID, indices);
 
 		const RenderVoxelMeshInstID renderMeshInstID = renderChunk.addMeshInst(std::move(renderVoxelMeshInst));
 		renderChunk.meshInstMappings.emplace(voxelShapeDefID, renderMeshInstID);
@@ -1074,7 +1069,7 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		meshInitInfo.positionBufferID = renderMeshInst.positionBufferID;
 		meshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
 		meshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
-		meshInitInfo.indexBufferID = renderMeshInst.indexBufferIDs[0];
+		meshInitInfo.indexBufferID = renderMeshInst.indexBufferID;
 
 		const TextureAsset &textureAsset = voxelTextureDef.getTextureAsset(0);
 		DrawCallTextureInitInfo textureInitInfo;
@@ -1180,7 +1175,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		meshInitInfo.positionBufferID = renderMeshInst.positionBufferID;
 		meshInitInfo.normalBufferID = renderMeshInst.normalBufferID;
 		meshInitInfo.texCoordBufferID = renderMeshInst.texCoordBufferID;
-		meshInitInfo.indexBufferID = renderMeshInst.indexBufferIDs[0];
+		meshInitInfo.indexBufferID = renderMeshInst.indexBufferID;
 
 		DrawCallTextureInitInfo textureInitInfo;
 		textureInitInfo.id0 = this->getTextureID(voxelTextureDef.getTextureAsset(0));

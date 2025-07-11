@@ -8,13 +8,7 @@ RenderVoxelMeshInstance::RenderVoxelMeshInstance()
 	this->positionBufferID = -1;
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
-	std::fill(std::begin(this->indexBufferIDs), std::end(this->indexBufferIDs), -1);
-	this->indexBufferIdCount = 0;
-}
-
-int RenderVoxelMeshInstance::getUniqueDrawCallCount() const
-{
-	return this->indexBufferIdCount;
+	this->indexBufferID = -1;
 }
 
 void RenderVoxelMeshInstance::freeBuffers(Renderer &renderer)
@@ -37,13 +31,11 @@ void RenderVoxelMeshInstance::freeBuffers(Renderer &renderer)
 		this->texCoordBufferID = -1;
 	}
 
-	for (int i = 0; i < this->indexBufferIdCount; i++)
+	if (this->indexBufferID >= 0)
 	{
-		renderer.freeIndexBuffer(this->indexBufferIDs[i]);
+		renderer.freeIndexBuffer(this->indexBufferID);
+		this->indexBufferID = -1;
 	}
-
-	std::fill(std::begin(this->indexBufferIDs), std::end(this->indexBufferIDs), -1);
-	this->indexBufferIdCount = 0;
 }
 
 RenderEntityMeshInstance::RenderEntityMeshInstance()
