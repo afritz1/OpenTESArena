@@ -31,7 +31,7 @@ using RenderVoxelDrawCallRangeID = int;
 
 struct RenderVoxelDrawCallHeap
 {
-	static constexpr int MAX_DRAW_CALLS = 24000;
+	static constexpr int MAX_DRAW_CALLS = 8192;
 	static constexpr int MAX_DRAW_CALL_RANGES = (7 * MAX_DRAW_CALLS) / 8; // Arbitrary, most ranges will be 1 draw call.
 
 	RenderDrawCall drawCalls[MAX_DRAW_CALLS];
