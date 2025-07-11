@@ -268,7 +268,6 @@ void RenderVoxelChunk::clear()
 	this->meshInstMappings.clear();
 	this->combinedFaceDrawCallRangeIDs.clear();
 	this->combinedFaceTransforms.clear();
-	this->chasmWallIndexBufferIDsMap.clear();
 	this->transformBufferID = -1;
 	this->doorTransformBuffers.clear();
 	this->drawCallHeap.clear();

@@ -384,7 +384,6 @@ RenderVoxelChunkManager::RenderVoxelChunkManager()
 {
 	this->raisingDoorPreScaleTranslationBufferID = -1;
 	this->defaultQuadIndexBufferID = -1;
-	this->chasmWallIndexBufferIDs.fill(-1);
 }
 
 void RenderVoxelChunkManager::init(Renderer &renderer)
@@ -410,59 +409,6 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 	}
 
 	renderer.populateIndexBuffer(this->defaultQuadIndexBufferID, MeshUtils::DefaultQuadVertexIndices);
-
-	Span<const int32_t> northIndices = ArenaMeshUtils::ChasmWallNorthIndexBuffer;
-	Span<const int32_t> eastIndices = ArenaMeshUtils::ChasmWallEastIndexBuffer;
-	Span<const int32_t> southIndices = ArenaMeshUtils::ChasmWallSouthIndexBuffer;
-	Span<const int32_t> westIndices = ArenaMeshUtils::ChasmWallWestIndexBuffer;
-
-	// Populate global chasm wall index buffers.
-	for (int i = 0; i < static_cast<int>(this->chasmWallIndexBufferIDs.size()); i++)
-	{
-		const int baseIndex = i + 1;
-		const bool hasNorth = (baseIndex & ArenaMeshUtils::CHASM_WALL_NORTH) != 0;
-		const bool hasEast = (baseIndex & ArenaMeshUtils::CHASM_WALL_EAST) != 0;
-		const bool hasSouth = (baseIndex & ArenaMeshUtils::CHASM_WALL_SOUTH) != 0;
-		const bool hasWest = (baseIndex & ArenaMeshUtils::CHASM_WALL_WEST) != 0;
-
-		auto countFace = [](bool face)
-		{
-			return face ? 1 : 0;
-		};
-
-		const int faceCount = countFace(hasNorth) + countFace(hasEast) + countFace(hasSouth) + countFace(hasWest);
-		if (faceCount == 0)
-		{
-			continue;
-		}
-
-		const int indexCount = faceCount * indicesPerQuad;
-		IndexBufferID &indexBufferID = this->chasmWallIndexBufferIDs[i];
-		indexBufferID = renderer.createIndexBuffer(indexCount);
-		if (indexBufferID < 0)
-		{
-			DebugLogError("Couldn't create chasm wall index buffer " + std::to_string(i) + ".");
-			continue;
-		}
-
-		int32_t totalIndicesBuffer[ArenaMeshUtils::CHASM_WALL_TOTAL_COUNT * indicesPerQuad];
-		int writingIndex = 0;
-		auto tryWriteIndices = [indicesPerQuad, &totalIndicesBuffer, &writingIndex](bool hasFace, Span<const int32_t> faceIndices)
-		{
-			if (hasFace)
-			{
-				std::copy(faceIndices.begin(), faceIndices.end(), std::begin(totalIndicesBuffer) + writingIndex);
-				writingIndex += indicesPerQuad;
-			}
-		};
-
-		tryWriteIndices(hasNorth, northIndices);
-		tryWriteIndices(hasEast, eastIndices);
-		tryWriteIndices(hasSouth, southIndices);
-		tryWriteIndices(hasWest, westIndices);
-
-		renderer.populateIndexBuffer(indexBufferID, Span<const int32_t>(std::begin(totalIndicesBuffer), writingIndex));
-	}
 }
 
 void RenderVoxelChunkManager::shutdown(Renderer &renderer)
@@ -484,15 +430,6 @@ void RenderVoxelChunkManager::shutdown(Renderer &renderer)
 	{
 		renderer.freeIndexBuffer(this->defaultQuadIndexBufferID);
 		this->defaultQuadIndexBufferID = -1;
-	}
-
-	for (IndexBufferID &indexBufferID : this->chasmWallIndexBufferIDs)
-	{
-		if (indexBufferID >= 0)
-		{
-			renderer.freeIndexBuffer(indexBufferID);
-			indexBufferID = -1;
-		}
 	}
 
 	this->textures.clear();
@@ -635,56 +572,6 @@ void RenderVoxelChunkManager::loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelCh
 
 		const RenderMeshInstID renderMeshInstID = renderChunk.addMeshInst(std::move(renderMeshInst));
 		renderChunk.meshInstMappings.emplace(voxelShapeDefID, renderMeshInstID);
-	}
-}
-
-void RenderVoxelChunkManager::loadChasmWall(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, SNInt x, int y, WEInt z)
-{
-	const VoxelInt3 voxel(x, y, z);
-	auto &chasmWallIndexBufferIDsMap = renderChunk.chasmWallIndexBufferIDsMap;
-
-	int chasmWallInstIndex;
-	if (voxelChunk.tryGetChasmWallInstIndex(x, y, z, &chasmWallInstIndex))
-	{
-		const VoxelChasmWallInstance &chasmWallInst = voxelChunk.chasmWallInsts[chasmWallInstIndex];
-		DebugAssert(chasmWallInst.getFaceCount() > 0);
-
-		const int chasmWallIndexBufferIndex = ArenaMeshUtils::GetChasmWallIndex(
-			chasmWallInst.north, chasmWallInst.east, chasmWallInst.south, chasmWallInst.west);
-		const IndexBufferID indexBufferID = this->chasmWallIndexBufferIDs[chasmWallIndexBufferIndex];
-
-		const auto iter = chasmWallIndexBufferIDsMap.find(voxel);
-		if (iter == chasmWallIndexBufferIDsMap.end())
-		{
-			chasmWallIndexBufferIDsMap.emplace(voxel, indexBufferID);
-		}
-		else
-		{
-			iter->second = indexBufferID;
-		}
-	}
-	else
-	{
-		// Clear index buffer mapping if this chasm wall was removed.
-		const auto iter = chasmWallIndexBufferIDsMap.find(voxel);
-		if (iter != chasmWallIndexBufferIDsMap.end())
-		{
-			chasmWallIndexBufferIDsMap.erase(iter);
-		}
-	}
-}
-
-void RenderVoxelChunkManager::loadChasmWalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk)
-{
-	for (WEInt z = 0; z < Chunk::DEPTH; z++)
-	{
-		for (int y = 0; y < voxelChunk.height; y++)
-		{
-			for (SNInt x = 0; x < Chunk::WIDTH; x++)
-			{
-				this->loadChasmWall(renderChunk, voxelChunk, x, y, z);
-			}
-		}
 	}
 }
 
@@ -1406,7 +1293,6 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtPosition(chunkPos);
 		this->loadChunkNonCombinedVoxelMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->loadChunkTextures(voxelChunk, voxelChunkManager, textureManager, renderer);
-		this->loadChasmWalls(renderChunk, voxelChunk);
 		this->loadTransforms(renderChunk, voxelChunk, ceilingScale, renderer);
 	}
 
@@ -1415,12 +1301,6 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
 		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtPosition(chunkPos);
-
-		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.dirtyFaceActivationPositions;
-		for (const VoxelInt3 dirtyFaceActivationPos : dirtyFaceActivationVoxels)
-		{
-			this->loadChasmWall(renderChunk, voxelChunk, dirtyFaceActivationPos.x, dirtyFaceActivationPos.y, dirtyFaceActivationPos.z);
-		}
 
 		// Update door render transforms (rotation angle, etc.).
 		Span<const VoxelInt3> dirtyDoorAnimInstVoxels = voxelChunk.dirtyDoorAnimInstPositions;
@@ -1454,6 +1334,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		// Update draw calls of dirty voxels.
 		// - @todo: there is some double/triple updating possible here, maybe optimize.
 		Span<const VoxelInt3> dirtyShapeDefVoxels = voxelChunk.dirtyShapeDefPositions;
+		Span<const VoxelInt3> dirtyFaceActivationVoxels = voxelChunk.dirtyFaceActivationPositions;
 		Span<const VoxelInt3> dirtyDoorVisInstVoxels = voxelChunk.dirtyDoorVisInstPositions;
 		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.dirtyFadeAnimInstPositions;
 

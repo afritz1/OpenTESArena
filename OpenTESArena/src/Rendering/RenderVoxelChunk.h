@@ -92,7 +92,6 @@ struct RenderVoxelChunk final : public Chunk
 	std::vector<RenderVoxelDrawCallRangeID> combinedFaceDrawCallRangeIDs; // tbd, can't be freed yet, only added
 	std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> combinedFaceTransforms; // Allocated transforms for static positions in space, doesn't need freeing when dirty.
 
-	std::unordered_map<VoxelInt3, IndexBufferID> chasmWallIndexBufferIDsMap; // If an index buffer ID exists for a voxel, it adds a draw call for the chasm wall. IDs are owned by the render chunk manager.
 	UniformBufferID transformBufferID; // One RenderTransform buffer for all voxels, though doors are handled separately. Owned by this chunk.
 	std::unordered_map<VoxelInt3, UniformBufferID> doorTransformBuffers; // Unique transform buffer per door instance, owned by this chunk. Four RenderTransforms (one per door face) per buffer.
 

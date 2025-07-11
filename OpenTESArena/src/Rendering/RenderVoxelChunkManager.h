@@ -84,9 +84,6 @@ private:
 	// For combined voxel faces.
 	IndexBufferID defaultQuadIndexBufferID;
 
-	// Chasm wall support - one index buffer for each face combination.
-	std::array<IndexBufferID, ArenaMeshUtils::CHASM_WALL_COMBINATION_COUNT> chasmWallIndexBufferIDs;
-
 	std::vector<RenderVoxelLoadedTexture> textures; // Includes chasm walls.
 	std::vector<RenderVoxelLoadedChasmFloorTexture> chasmFloorTextures;
 	std::vector<RenderVoxelLoadedChasmTextureKey> chasmTextureKeys; // Points into floor lists and wall textures.
@@ -103,8 +100,6 @@ private:
 
 	void loadChunkTextures(const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer);
 	void loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
-	void loadChasmWall(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, SNInt x, int y, WEInt z);
-	void loadChasmWalls(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk);
 	void loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
 	void updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
