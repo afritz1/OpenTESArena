@@ -52,7 +52,9 @@ namespace RendererUtils
 	// Gets the pixel coordinate with the nearest available pixel center based on the projected
 	// value and some bounding rule. This is used to keep integer drawing ranges clamped in such
 	// a way that they never allow sampling of texture coordinates outside of the 0->1 range.
+	int getLowerBoundedPixelAligned(double projected, int frameDim, int alignment);
 	int getLowerBoundedPixel(double projected, int frameDim);
+	int getUpperBoundedPixelAligned(double projected, int frameDim, int alignment);
 	int getUpperBoundedPixel(double projected, int frameDim);
 
 	// Creates a rotation matrix for drawing latitude-correct distant space objects.
