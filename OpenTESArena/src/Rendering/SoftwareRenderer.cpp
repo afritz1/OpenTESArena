@@ -31,9 +31,11 @@
 // Loop unroll utils.
 namespace
 {
-	constexpr int TYPICAL_LOOP_UNROLL = 4; // Elements processed per unrolled loop, possibly also for SIMD lanes.
+	// Elements processed per unrolled loop, possibly also for SIMD lanes.
+	constexpr int TYPICAL_LOOP_UNROLL = 4;
+	constexpr int FRAME_BUFFER_LOOP_UNROLL = RendererUtils::RESOLUTION_ALIGNMENT;
 	static_assert(MathUtils::isPowerOf2(TYPICAL_LOOP_UNROLL));
-	static_assert(TYPICAL_LOOP_UNROLL <= RendererUtils::RESOLUTION_ALIGNMENT);
+	static_assert(TYPICAL_LOOP_UNROLL <= FRAME_BUFFER_LOOP_UNROLL);
 
 	int GetUnrollAdjustedLoopCount(int loopCount, int unrollCount)
 	{
@@ -3018,10 +3020,10 @@ namespace
 			const double xMax = std::max(screenSpace0X, std::max(screenSpace1X, screenSpace2X));
 			const double yMin = std::min(screenSpace0Y, std::min(screenSpace1Y, screenSpace2Y));
 			const double yMax = std::max(screenSpace0Y, std::max(screenSpace1Y, screenSpace2Y));
-			const int xStart = RendererUtils::getLowerBoundedPixel(xMin, g_frameBufferWidth);
-			const int xEnd = RendererUtils::getUpperBoundedPixel(xMax, g_frameBufferWidth);
-			const int yStart = RendererUtils::getLowerBoundedPixel(yMin, g_frameBufferHeight);
-			const int yEnd = RendererUtils::getUpperBoundedPixel(yMax, g_frameBufferHeight);
+			const int xStart = RendererUtils::getLowerBoundedPixelAligned(xMin, g_frameBufferWidth, TYPICAL_LOOP_UNROLL);
+			const int xEnd = RendererUtils::getUpperBoundedPixelAligned(xMax, g_frameBufferWidth, TYPICAL_LOOP_UNROLL);
+			const int yStart = RendererUtils::getLowerBoundedPixelAligned(yMin, g_frameBufferHeight, TYPICAL_LOOP_UNROLL);
+			const int yEnd = RendererUtils::getUpperBoundedPixelAligned(yMax, g_frameBufferHeight, TYPICAL_LOOP_UNROLL);
 
 			const bool hasPositiveScreenArea = (xEnd > xStart) && (yEnd > yStart);
 			if (!hasPositiveScreenArea)
