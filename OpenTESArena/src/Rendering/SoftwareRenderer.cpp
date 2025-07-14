@@ -32,11 +32,8 @@
 namespace
 {
 	constexpr int TYPICAL_LOOP_UNROLL = 4; // Elements processed per unrolled loop, possibly also for SIMD lanes.
-	constexpr int WEAK_LOOP_UNROLL = TYPICAL_LOOP_UNROLL / 2;
-	constexpr int AGGRESSIVE_LOOP_UNROLL = TYPICAL_LOOP_UNROLL * 2;
 	static_assert(MathUtils::isPowerOf2(TYPICAL_LOOP_UNROLL));
-	static_assert(MathUtils::isPowerOf2(WEAK_LOOP_UNROLL));
-	static_assert(MathUtils::isPowerOf2(AGGRESSIVE_LOOP_UNROLL));
+	static_assert(TYPICAL_LOOP_UNROLL <= RendererUtils::RESOLUTION_ALIGNMENT);
 
 	int GetUnrollAdjustedLoopCount(int loopCount, int unrollCount)
 	{

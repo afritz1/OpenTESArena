@@ -165,10 +165,21 @@ namespace
 
 	Int2 MakeInternalRendererDimensions(const Int2 &dimensions, double resolutionScale)
 	{
-		// Make sure dimensions are at least 1x1, and round to avoid off-by-one resolutions like 1079p.
-		const int renderWidth = std::max(static_cast<int>(std::round(static_cast<double>(dimensions.x) * resolutionScale)), 1);
-		const int renderHeight = std::max(static_cast<int>(std::round(static_cast<double>(dimensions.y) * resolutionScale)), 1);
-		return Int2(renderWidth, renderHeight);
+		const double scaledWidthReal = static_cast<double>(dimensions.x) * resolutionScale;
+		const double scaledHeightReal = static_cast<double>(dimensions.y) * resolutionScale;
+
+		// Avoid off-by-one like 1079p.
+		const int roundedWidth = static_cast<int>(std::round(scaledWidthReal));
+		const int roundedHeight = static_cast<int>(std::round(scaledHeightReal));
+
+		// Keep as a multiple of a power of 2 for SIMD-friendliness. Don't worry about skewing aspect ratio at low resolution.
+		// The camera retains the projection so the result is taller/wider pixels.
+		constexpr int alignment = RendererUtils::RESOLUTION_ALIGNMENT;
+		constexpr int alignmentMask = ~(alignment - 1);
+		const int alignedWidth = std::max(roundedWidth & alignmentMask, alignment);
+		const int alignedHeight = std::max(roundedHeight & alignmentMask, alignment);
+
+		return Int2(alignedWidth, alignedHeight);
 	}
 }
 

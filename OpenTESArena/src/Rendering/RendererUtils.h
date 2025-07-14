@@ -17,6 +17,10 @@ namespace RendererUtils
 	constexpr double NEAR_PLANE = 0.02;
 	constexpr double FAR_PLANE = 1500.0;
 
+	// Internal resolution must be a multiple of this. Intended for SIMD-friendliness.
+	constexpr int RESOLUTION_ALIGNMENT = 8;
+	static_assert(MathUtils::isPowerOf2(RESOLUTION_ALIGNMENT));
+
 	RenderCamera makeCamera(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, bool tallPixelCorrection);
 
 	// Gets the number of render threads to use based on the given mode.
