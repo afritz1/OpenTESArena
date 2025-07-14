@@ -100,6 +100,21 @@ namespace MathUtils
 		}
 	}
 
+	constexpr bool isMultipleOf(int value, int alignment)
+	{
+		return (value % alignment) == 0;
+	}
+
+	constexpr int roundToGreaterMultipleOf(int value, int alignment)
+	{
+		return ((value + (alignment - 1)) / alignment) * alignment;
+	}
+
+	constexpr int roundToLesserMultipleOf(int value, int alignment)
+	{
+		return (value / alignment) * alignment;
+	}
+
 	constexpr Radians degToRad(Degrees degrees)
 	{
 		return degrees * (Constants::Pi / 180.0);

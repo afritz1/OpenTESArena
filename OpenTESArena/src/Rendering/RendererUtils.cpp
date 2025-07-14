@@ -100,8 +100,8 @@ Double2 RendererUtils::ndcToScreenSpace(const Double3 &point, double frameWidth,
 
 int RendererUtils::getLowerBoundedPixelAligned(double projected, int frameDim, int alignment)
 {
-	const int boundedPixel = static_cast<int>(std::ceil(projected - 0.50));
-	const int alignedPixel = (boundedPixel / alignment) * alignment;
+	const int pixel = static_cast<int>(std::ceil(projected - 0.50));
+	const int alignedPixel = MathUtils::roundToLesserMultipleOf(pixel, alignment);
 	return std::clamp(alignedPixel, 0, frameDim);
 }
 
@@ -112,8 +112,8 @@ int RendererUtils::getLowerBoundedPixel(double projected, int frameDim)
 
 int RendererUtils::getUpperBoundedPixelAligned(double projected, int frameDim, int alignment)
 {
-	const int boundedPixel = static_cast<int>(std::floor(projected + 0.50));
-	const int alignedPixel = ((boundedPixel + (alignment - 1)) / alignment) * alignment;
+	const int pixel = static_cast<int>(std::floor(projected + 0.50));
+	const int alignedPixel = MathUtils::roundToGreaterMultipleOf(pixel, alignment);
 	return std::clamp(alignedPixel, 0, frameDim);
 }
 
