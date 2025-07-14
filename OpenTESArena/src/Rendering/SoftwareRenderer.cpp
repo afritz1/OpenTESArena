@@ -1147,9 +1147,9 @@ namespace
 	}
 
 	// For measuring overdraw.
-	std::atomic<int> g_totalCoverageTests = 0;
-	std::atomic<int> g_totalDepthTests = 0;
-	std::atomic<int> g_totalColorWrites = 0;
+	std::atomic<int64_t> g_totalCoverageTests = 0;
+	std::atomic<int64_t> g_totalDepthTests = 0;
+	std::atomic<int64_t> g_totalColorWrites = 0;
 
 	void ClearFrameBufferOperationCounts()
 	{
@@ -4401,7 +4401,7 @@ Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
 	const int presentedTriangleCount = g_totalPresentedTriangleCount;
 
 	const int textureCount = this->objectTextures.getUsedCount();
-	int textureByteCount = 0;
+	int64_t textureByteCount = 0;
 	for (int i = 0; i < this->objectTextures.getTotalCount(); i++)
 	{
 		const ObjectTextureID id = static_cast<ObjectTextureID>(i);
@@ -4413,9 +4413,9 @@ Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
 	}
 
 	const int totalLightCount = this->lights.getUsedCount();
-	const int totalCoverageTests = g_totalCoverageTests;
-	const int totalDepthTests = g_totalDepthTests;
-	const int totalColorWrites = g_totalColorWrites;
+	const int64_t totalCoverageTests = g_totalCoverageTests;
+	const int64_t totalDepthTests = g_totalDepthTests;
+	const int64_t totalColorWrites = g_totalColorWrites;
 
 	return Renderer3DProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, presentedTriangleCount,
 		textureCount, textureByteCount, totalLightCount, totalCoverageTests, totalDepthTests, totalColorWrites);

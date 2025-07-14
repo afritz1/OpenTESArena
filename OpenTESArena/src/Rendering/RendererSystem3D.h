@@ -32,12 +32,12 @@ struct Renderer3DProfilerData
 	int textureCount;
 	int64_t textureByteCount;
 	int totalLightCount;
-	int totalCoverageTests;
-	int totalDepthTests;
-	int totalColorWrites;
+	int64_t totalCoverageTests;
+	int64_t totalDepthTests;
+	int64_t totalColorWrites;
 
 	Renderer3DProfilerData(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
-		int textureCount, int64_t textureByteCount, int totalLightCount, int totalCoverageTests, int totalDepthTests, int totalColorWrites);
+		int textureCount, int64_t textureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests, int64_t totalColorWrites);
 };
 
 // Abstract base class for 3D renderer.

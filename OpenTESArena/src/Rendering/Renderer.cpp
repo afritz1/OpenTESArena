@@ -209,8 +209,8 @@ RendererProfilerData::RendererProfilerData()
 }
 
 void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
-	int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int totalCoverageTests, int totalDepthTests,
-	int totalColorWrites, double renderTime, double presentTime)
+	int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
+	int64_t totalColorWrites, double renderTime, double presentTime)
 {
 	this->width = width;
 	this->height = height;

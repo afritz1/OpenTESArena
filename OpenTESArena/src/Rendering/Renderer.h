@@ -69,9 +69,9 @@ struct RendererProfilerData
 	int totalLightCount;
 
 	// Pixel writes/overdraw.
-	int totalCoverageTests;
-	int totalDepthTests;
-	int totalColorWrites;
+	int64_t totalCoverageTests;
+	int64_t totalDepthTests;
+	int64_t totalColorWrites;
 
 	double renderTime;
 	double presentTime;
@@ -79,7 +79,7 @@ struct RendererProfilerData
 	RendererProfilerData();
 
 	void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
-		int64_t objectTextureByteCount, int totalLightCount, int totalCoverageTests, int totalDepthTests, int totalColorWrites,
+		int64_t objectTextureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests, int64_t totalColorWrites,
 		double renderTime, double presentTime);
 };
 
