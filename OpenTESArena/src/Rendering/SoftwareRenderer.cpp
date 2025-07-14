@@ -2834,10 +2834,10 @@ struct RasterizerBin
 	int entryCount;
 
 	int triangleIndicesToRasterize[MAX_FRUSTUM_TRIANGLES]; // Points into this worker's triangles to rasterize.
-	int triangleBinPixelXStarts[MAX_FRUSTUM_TRIANGLES];
-	int triangleBinPixelXEnds[MAX_FRUSTUM_TRIANGLES];
-	int triangleBinPixelYStarts[MAX_FRUSTUM_TRIANGLES];
-	int triangleBinPixelYEnds[MAX_FRUSTUM_TRIANGLES];
+	int triangleBinPixelAlignedXStarts[MAX_FRUSTUM_TRIANGLES];
+	int triangleBinPixelAlignedXEnds[MAX_FRUSTUM_TRIANGLES];
+	int triangleBinPixelAlignedYStarts[MAX_FRUSTUM_TRIANGLES];
+	int triangleBinPixelAlignedYEnds[MAX_FRUSTUM_TRIANGLES];
 	int triangleCount; // Triangles this bin should try to render. Determines where the next bin entry can allocate its triangle range.
 
 	RasterizerBin()
@@ -3120,6 +3120,8 @@ namespace
 				const int clampedYEnd = std::min(yEnd, binEndFrameBufferPixelY);
 				const int triangleBinPixelYStart = GetRasterizerBinPixelYInclusive(clampedYStart, binPixelHeight);
 				const int triangleBinPixelYEnd = GetRasterizerBinPixelYExclusive(clampedYEnd, binPixelHeight);
+				DebugAssert(MathUtils::isMultipleOf(triangleBinPixelYStart, TYPICAL_LOOP_UNROLL));
+				DebugAssert(MathUtils::isMultipleOf(triangleBinPixelYEnd, TYPICAL_LOOP_UNROLL));
 
 				for (int binX = startBinX; binX <= endBinX; binX++)
 				{
@@ -3132,10 +3134,15 @@ namespace
 					const int binEndFrameBufferPixelX = GetFrameBufferPixelX(binX, binPixelWidth, binPixelWidth);
 					const int clampedXStart = std::max(xStart, binStartFrameBufferPixelX);
 					const int clampedXEnd = std::min(xEnd, binEndFrameBufferPixelX);
-					bin.triangleBinPixelXStarts[binTriangleIndex] = GetRasterizerBinPixelXInclusive(clampedXStart, binPixelWidth);
-					bin.triangleBinPixelXEnds[binTriangleIndex] = GetRasterizerBinPixelXExclusive(clampedXEnd, binPixelWidth);
-					bin.triangleBinPixelYStarts[binTriangleIndex] = triangleBinPixelYStart;
-					bin.triangleBinPixelYEnds[binTriangleIndex] = triangleBinPixelYEnd;
+					const int triangleBinPixelXStart = GetRasterizerBinPixelXInclusive(clampedXStart, binPixelWidth);
+					const int triangleBinPixelXEnd = GetRasterizerBinPixelXExclusive(clampedXEnd, binPixelWidth);
+					DebugAssert(MathUtils::isMultipleOf(triangleBinPixelXStart, TYPICAL_LOOP_UNROLL));
+					DebugAssert(MathUtils::isMultipleOf(triangleBinPixelXEnd, TYPICAL_LOOP_UNROLL));
+
+					bin.triangleBinPixelAlignedXStarts[binTriangleIndex] = triangleBinPixelXStart;
+					bin.triangleBinPixelAlignedXEnds[binTriangleIndex] = triangleBinPixelXEnd;
+					bin.triangleBinPixelAlignedYStarts[binTriangleIndex] = triangleBinPixelYStart;
+					bin.triangleBinPixelAlignedYEnds[binTriangleIndex] = triangleBinPixelYEnd;
 
 					RasterizerBinEntry &binEntry = bin.getOrAddEntry(workerDrawCallIndex, binTriangleIndex);
 					binEntry.triangleIndicesCount++;
@@ -3263,10 +3270,6 @@ namespace
 		int totalColorWrites = 0;
 
 		const auto &triangleIndices = bin.triangleIndicesToRasterize;
-		const auto &triangleBinPixelXStarts = bin.triangleBinPixelXStarts;
-		const auto &triangleBinPixelXEnds = bin.triangleBinPixelXEnds;
-		const auto &triangleBinPixelYStarts = bin.triangleBinPixelYStarts;
-		const auto &triangleBinPixelYEnds = bin.triangleBinPixelYEnds;
 		for (int entryTriangleIndex = 0; entryTriangleIndex < binEntry.triangleIndicesCount; entryTriangleIndex++)
 		{
 			const int triangleIndicesIndex = binEntry.triangleIndicesStartIndex + entryTriangleIndex;
@@ -3338,10 +3341,10 @@ namespace
 			const double barycentricDenominator = (barycentricDot00 * barycentricDot11) - (barycentricDot01 * barycentricDot01);
 			const double barycentricDenominatorRecip = 1.0 / barycentricDenominator;
 
-			const int binPixelXStart = bin.triangleBinPixelXStarts[triangleIndicesIndex];
-			const int binPixelXEnd = bin.triangleBinPixelXEnds[triangleIndicesIndex];
-			const int binPixelYStart = bin.triangleBinPixelYStarts[triangleIndicesIndex];
-			const int binPixelYEnd = bin.triangleBinPixelYEnds[triangleIndicesIndex];
+			const int binPixelXStart = bin.triangleBinPixelAlignedXStarts[triangleIndicesIndex];
+			const int binPixelXEnd = bin.triangleBinPixelAlignedXEnds[triangleIndicesIndex];
+			const int binPixelYStart = bin.triangleBinPixelAlignedYStarts[triangleIndicesIndex];
+			const int binPixelYEnd = bin.triangleBinPixelAlignedYEnds[triangleIndicesIndex];
 
 			const int lightBinWidth = GetLightBinWidth(g_frameBufferWidth);
 			const int lightBinHeight = GetLightBinHeight(g_frameBufferHeight);
