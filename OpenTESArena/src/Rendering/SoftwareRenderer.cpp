@@ -2995,17 +2995,21 @@ namespace
 			const double screenSpaceMinY = std::min(screenSpace0Y, std::min(screenSpace1Y, screenSpace2Y));
 			const double screenSpaceMaxY = std::max(screenSpace0Y, std::max(screenSpace1Y, screenSpace2Y));
 
-			// Naive screen-space bounding box around triangle.
-			const int bboxXStart = RendererUtils::getLowerBoundedPixelAligned(screenSpaceMinX, g_frameBufferWidth, TYPICAL_LOOP_UNROLL);
-			const int bboxXEnd = RendererUtils::getUpperBoundedPixelAligned(screenSpaceMaxX, g_frameBufferWidth, TYPICAL_LOOP_UNROLL);
-			const int bboxYStart = RendererUtils::getLowerBoundedPixelAligned(screenSpaceMinY, g_frameBufferHeight, TYPICAL_LOOP_UNROLL);
-			const int bboxYEnd = RendererUtils::getUpperBoundedPixelAligned(screenSpaceMaxY, g_frameBufferHeight, TYPICAL_LOOP_UNROLL);
-
-			const bool hasPositiveScreenArea = (bboxXEnd > bboxXStart) && (bboxYEnd > bboxYStart);
+			// Naive screen-space bounding box around triangle (align afterwards to avoid expanding zero-area boxes).
+			const int bboxStartX = RendererUtils::getLowerBoundedPixel(screenSpaceMinX, g_frameBufferWidth);
+			const int bboxEndX = RendererUtils::getUpperBoundedPixel(screenSpaceMaxX, g_frameBufferWidth);
+			const int bboxStartY = RendererUtils::getLowerBoundedPixel(screenSpaceMinY, g_frameBufferHeight);
+			const int bboxEndY = RendererUtils::getUpperBoundedPixel(screenSpaceMaxY, g_frameBufferHeight);
+			const bool hasPositiveScreenArea = (bboxEndX > bboxStartX) && (bboxEndY > bboxStartY);
 			if (!hasPositiveScreenArea)
 			{
 				continue;
 			}
+
+			const int bboxAlignedStartX = RendererUtils::getLowerBoundedPixelAligned(screenSpaceMinX, g_frameBufferWidth, TYPICAL_LOOP_UNROLL);
+			const int bboxAlignedEndX = RendererUtils::getUpperBoundedPixelAligned(screenSpaceMaxX, g_frameBufferWidth, TYPICAL_LOOP_UNROLL);
+			const int bboxAlignedStartY = RendererUtils::getLowerBoundedPixelAligned(screenSpaceMinY, g_frameBufferHeight, TYPICAL_LOOP_UNROLL);
+			const int bboxAlignedEndY = RendererUtils::getUpperBoundedPixelAligned(screenSpaceMaxY, g_frameBufferHeight, TYPICAL_LOOP_UNROLL);
 
 			const double screenSpace01X = screenSpace1X - screenSpace0X;
 			const double screenSpace01Y = screenSpace1Y - screenSpace0Y;
@@ -3084,10 +3088,10 @@ namespace
 			// Write this triangle's index to all affected rasterizer bins.
 			const int binPixelWidth = rasterizerInputCache.binWidth;
 			const int binPixelHeight = rasterizerInputCache.binHeight;
-			const int bboxStartBinX = GetRasterizerBinIndexStart(bboxXStart, binPixelWidth);
-			const int bboxEndBinX = GetRasterizerBinIndexEnd(bboxXEnd, binPixelWidth, rasterizerInputCache.binCountX);
-			const int bboxStartBinY = GetRasterizerBinIndexStart(bboxYStart, binPixelHeight);
-			const int bboxEndBinY = GetRasterizerBinIndexEnd(bboxYEnd, binPixelHeight, rasterizerInputCache.binCountY);
+			const int bboxStartBinX = GetRasterizerBinIndexStart(bboxStartX, binPixelWidth);
+			const int bboxEndBinX = GetRasterizerBinIndexEnd(bboxEndX, binPixelWidth, rasterizerInputCache.binCountX);
+			const int bboxStartBinY = GetRasterizerBinIndexStart(bboxStartY, binPixelHeight);
+			const int bboxEndBinY = GetRasterizerBinIndexEnd(bboxEndY, binPixelHeight, rasterizerInputCache.binCountY);
 
 			for (int binY = bboxStartBinY; binY < bboxEndBinY; binY++)
 			{
@@ -3096,21 +3100,18 @@ namespace
 				const int binFrameBufferRemainingRows = g_frameBufferHeight - (binY * binPixelHeight);
 				const bool isBinHeightFractional = binFrameBufferRemainingRows < binPixelHeight;
 
-				const int bboxClampedStartY = std::max(bboxYStart, binFrameBufferPixelStartY);
-				const int bboxClampedEndY = std::min(bboxYEnd, binFrameBufferPixelEndY);
-				const int binPixelStartY = FrameBufferPixelToBinPixelInclusive(bboxClampedStartY, binPixelHeight);
-				const int binPixelEndY = FrameBufferPixelToBinPixelExclusive(bboxClampedEndY, binPixelHeight);
-
-				int binPixelClampedStartY = binPixelStartY;
-				int binPixelClampedEndY = binPixelEndY;
+				const int bboxClampedStartY = std::max(bboxAlignedStartY, binFrameBufferPixelStartY);
+				const int bboxClampedEndY = std::min(bboxAlignedEndY, binFrameBufferPixelEndY);
+				int binPixelStartY = FrameBufferPixelToBinPixelInclusive(bboxClampedStartY, binPixelHeight);
+				int binPixelEndY = FrameBufferPixelToBinPixelExclusive(bboxClampedEndY, binPixelHeight);
 				if (isBinHeightFractional)
 				{
-					binPixelClampedStartY = std::min(binPixelStartY, binFrameBufferRemainingRows);
-					binPixelClampedEndY = std::min(binPixelEndY, binFrameBufferRemainingRows);
+					binPixelStartY = std::min(binPixelStartY, binFrameBufferRemainingRows);
+					binPixelEndY = std::min(binPixelEndY, binFrameBufferRemainingRows);
 				}
 
-				DebugAssert(MathUtils::isMultipleOf(binPixelClampedStartY, TYPICAL_LOOP_UNROLL));
-				DebugAssert(MathUtils::isMultipleOf(binPixelClampedEndY, TYPICAL_LOOP_UNROLL));
+				DebugAssert(MathUtils::isMultipleOf(binPixelStartY, TYPICAL_LOOP_UNROLL));
+				DebugAssert(MathUtils::isMultipleOf(binPixelEndY, TYPICAL_LOOP_UNROLL));
 
 				for (int binX = bboxStartBinX; binX < bboxEndBinX; binX++)
 				{
@@ -3124,26 +3125,23 @@ namespace
 					const int binFrameBufferRemainingColumns = g_frameBufferWidth - (binX * binPixelWidth);
 					const bool isBinWidthFractional = binFrameBufferRemainingRows < binPixelWidth;
 
-					const int bboxClampedStartX = std::max(bboxXStart, binFrameBufferPixelStartX);
-					const int bboxClampedEndX = std::min(bboxXEnd, binFrameBufferPixelEndX);
-					const int binPixelStartX = FrameBufferPixelToBinPixelInclusive(bboxClampedStartX, binPixelWidth);
-					const int binPixelEndX = FrameBufferPixelToBinPixelExclusive(bboxClampedEndX, binPixelWidth);
-					
-					int binPixelClampedStartX = binPixelStartX;
-					int binPixelClampedEndX = binPixelEndX;
+					const int bboxClampedStartX = std::max(bboxAlignedStartX, binFrameBufferPixelStartX);
+					const int bboxClampedEndX = std::min(bboxAlignedEndX, binFrameBufferPixelEndX);
+					int binPixelStartX = FrameBufferPixelToBinPixelInclusive(bboxClampedStartX, binPixelWidth);
+					int binPixelEndX = FrameBufferPixelToBinPixelExclusive(bboxClampedEndX, binPixelWidth);
 					if (isBinWidthFractional)
 					{
-						binPixelClampedStartX = std::min(binPixelStartX, binFrameBufferRemainingColumns);
-						binPixelClampedEndX = std::min(binPixelEndX, binFrameBufferRemainingColumns);
+						binPixelStartX = std::min(binPixelStartX, binFrameBufferRemainingColumns);
+						binPixelEndX = std::min(binPixelEndX, binFrameBufferRemainingColumns);
 					}
 
-					DebugAssert(MathUtils::isMultipleOf(binPixelClampedStartX, TYPICAL_LOOP_UNROLL));
-					DebugAssert(MathUtils::isMultipleOf(binPixelClampedEndX, TYPICAL_LOOP_UNROLL));
+					DebugAssert(MathUtils::isMultipleOf(binPixelStartX, TYPICAL_LOOP_UNROLL));
+					DebugAssert(MathUtils::isMultipleOf(binPixelEndX, TYPICAL_LOOP_UNROLL));
 
-					bin.triangleBinPixelAlignedXStarts[binTriangleIndex] = binPixelClampedStartX;
-					bin.triangleBinPixelAlignedXEnds[binTriangleIndex] = binPixelClampedEndX;
-					bin.triangleBinPixelAlignedYStarts[binTriangleIndex] = binPixelClampedStartY;
-					bin.triangleBinPixelAlignedYEnds[binTriangleIndex] = binPixelClampedEndY;
+					bin.triangleBinPixelAlignedXStarts[binTriangleIndex] = binPixelStartX;
+					bin.triangleBinPixelAlignedXEnds[binTriangleIndex] = binPixelEndX;
+					bin.triangleBinPixelAlignedYStarts[binTriangleIndex] = binPixelStartY;
+					bin.triangleBinPixelAlignedYEnds[binTriangleIndex] = binPixelEndY;
 
 					RasterizerBinEntry &binEntry = bin.getOrAddEntry(workerDrawCallIndex, binTriangleIndex);
 					binEntry.triangleIndicesCount++;
