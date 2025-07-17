@@ -977,22 +977,22 @@ namespace
 
 	int GetRasterizerBinCountX(int frameBufferWidth, int binWidth)
 	{
-		return 1 + (frameBufferWidth / binWidth);
+		return (frameBufferWidth + (binWidth - 1)) / binWidth;
 	}
 
 	int GetRasterizerBinCountY(int frameBufferHeight, int binHeight)
 	{
-		return 1 + (frameBufferHeight / binHeight);
+		return (frameBufferHeight + (binHeight - 1)) / binHeight;
 	}
 
-	int GetRasterizerBinX(int frameBufferPixelX, int binWidth)
+	int GetRasterizerBinIndexStart(int frameBufferPixel, int binDimension)
 	{
-		return frameBufferPixelX / binWidth;
+		return frameBufferPixel / binDimension;
 	}
 
-	int GetRasterizerBinY(int frameBufferPixelY, int binHeight)
+	int GetRasterizerBinIndexEnd(int frameBufferPixel, int binDimension, int binCount)
 	{
-		return frameBufferPixelY / binHeight;
+		return std::min((frameBufferPixel / binDimension) + 1, binCount);
 	}
 
 	int GetRasterizerBinPixelXInclusive(int frameBufferPixelX, int binWidth)
@@ -3108,11 +3108,12 @@ namespace
 			// Write this triangle's index to all affected rasterizer bins.
 			const int binPixelWidth = rasterizerInputCache.binWidth;
 			const int binPixelHeight = rasterizerInputCache.binHeight;
-			const int startBinX = GetRasterizerBinX(xStart, binPixelWidth);
-			const int endBinX = GetRasterizerBinX(xEnd, binPixelWidth);
-			const int startBinY = GetRasterizerBinY(yStart, binPixelHeight);
-			const int endBinY = GetRasterizerBinY(yEnd, binPixelHeight);
-			for (int binY = startBinY; binY <= endBinY; binY++)
+			const int startBinX = GetRasterizerBinIndexStart(xStart, binPixelWidth);
+			const int endBinX = GetRasterizerBinIndexEnd(xEnd, binPixelWidth, rasterizerInputCache.binCountX);
+			const int startBinY = GetRasterizerBinIndexStart(yStart, binPixelHeight);
+			const int endBinY = GetRasterizerBinIndexEnd(yEnd, binPixelHeight, rasterizerInputCache.binCountY);
+
+			for (int binY = startBinY; binY < endBinY; binY++)
 			{
 				const int binStartFrameBufferPixelY = GetFrameBufferPixelY(binY, 0, binPixelHeight);
 				const int binEndFrameBufferPixelY = GetFrameBufferPixelY(binY, binPixelHeight, binPixelHeight);
@@ -3123,11 +3124,11 @@ namespace
 				DebugAssert(MathUtils::isMultipleOf(triangleBinPixelYStart, TYPICAL_LOOP_UNROLL));
 				DebugAssert(MathUtils::isMultipleOf(triangleBinPixelYEnd, TYPICAL_LOOP_UNROLL));
 
-				for (int binX = startBinX; binX <= endBinX; binX++)
+				for (int binX = startBinX; binX < endBinX; binX++)
 				{
 					RasterizerBin &bin = rasterizerInputCache.bins.get(binX, binY);
 					const int binTriangleIndex = bin.triangleCount;
-					DebugAssert(binTriangleIndex < std::size(bin.triangleIndicesToRasterize));
+					DebugAssertIndex(bin.triangleIndicesToRasterize, binTriangleIndex);
 					bin.triangleIndicesToRasterize[binTriangleIndex] = outputTriangleIndex;
 
 					const int binStartFrameBufferPixelX = GetFrameBufferPixelX(binX, 0, binPixelWidth);
@@ -3457,7 +3458,6 @@ namespace
 					double lightIntensitySum = 0.0;
 					if constexpr (requiresPerPixelLightIntensity)
 					{
-						// @todo redo this in deferred lighting pass
 						lightIntensitySum = g_ambientPercent;
 
 						const LightBin &lightBin = g_lightBins.get(lightBinX, lightBinY);
