@@ -1684,63 +1684,23 @@ namespace
 		g_skyBgTexture = &skyBgTexture;
 	}
 
-	template<bool enableDepthWrite>
-	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	uint8_t GetPerspectiveTexel(const PixelShaderTexture &texture, double perspectiveTexCoordU, double perspectiveTexCoordV)
 	{
-		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
-		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
+		const int texelX = FractToInt(perspectiveTexCoordU, texture.widthReal);
+		const int texelY = FractToInt(perspectiveTexCoordV, texture.heightReal);
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
-
-		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
-	}
-
-	template<bool enableDepthWrite>
-	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
-		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
-	{
-		const int layerTexelX = FractToInt(perspective.texelPercentX, alphaTestTexture.widthReal);
-		const int layerTexelY = FractToInt(perspective.texelPercentY, alphaTestTexture.heightReal);
-		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
-		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
-
-		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-		if (isTransparent)
-		{
-			const int texelX = FractToInt(perspective.texelPercentX, opaqueTexture.widthReal);
-			const int texelY = FractToInt(perspective.texelPercentY, opaqueTexture.heightReal);
-			const int texelIndex = texelX + (texelY * opaqueTexture.width);
-			texel = opaqueTexture.texels[texelIndex];
-		}
-
-		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
+		return texel;
 	}
 
 	constexpr int SCREEN_SPACE_ANIM_HEIGHT = 100; // @todo dehardcode w/ another parameter
-	template<bool enableDepthWrite>
-	void PixelShader_OpaqueScreenSpaceAnimation(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
+	uint8_t GetScreenSpaceAnimationTexel(const PixelShaderTexture &texture, double animPercent, const PixelShaderFrameBuffer &frameBuffer)
 	{
 		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.		
 		const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * texture.widthReal), 0, texture.widthMinusOne);
 
 		constexpr int frameHeight = SCREEN_SPACE_ANIM_HEIGHT;
 		const int frameCount = texture.height / frameHeight;
-		const double animPercent = uniforms.screenSpaceAnimPercent;
 		const int currentFrameIndex = std::clamp(static_cast<int>(static_cast<double>(frameCount) * animPercent), 0, frameCount - 1);
 
 		const double frameBufferV = frameBuffer.yPercent * 2.0;
@@ -1750,201 +1710,23 @@ namespace
 
 		const int texelIndex = texelX + (texelY * texture.width);
 		const uint8_t texel = texture.texels[texelIndex];
+		return texel;
+	}
 
+	uint8_t GetReplacementTexel(uint8_t texel, const PixelShaderTexture &lookupTexture)
+	{
+		return lookupTexture.texels[texel];
+	}
+
+	uint8_t GetTexelWithLightLevelLighting(uint8_t texel, const PixelShaderLighting &lighting)
+	{
 		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
+		return shadedTexel;
 	}
 
-	template<bool enableDepthWrite>
-	void PixelShader_OpaqueScreenSpaceAnimationWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
-		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
+	uint8_t GetTexelWithLightTableLighting(uint8_t texel, const PixelShaderLighting &lighting, const PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int layerTexelX = FractToInt(perspective.texelPercentX, alphaTestTexture.widthReal);
-		const int layerTexelY = FractToInt(perspective.texelPercentY, alphaTestTexture.heightReal);
-		const int layerTexelIndex = layerTexelX + (layerTexelY * alphaTestTexture.width);
-		uint8_t texel = alphaTestTexture.texels[layerTexelIndex];
-
-		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-		if (isTransparent)
-		{
-			const int texelX = std::clamp(static_cast<int>(frameBuffer.xPercent * opaqueTexture.widthReal), 0, opaqueTexture.widthMinusOne);
-
-			constexpr int frameHeight = SCREEN_SPACE_ANIM_HEIGHT;
-			const int frameCount = opaqueTexture.height / frameHeight;
-			const double animPercent = uniforms.screenSpaceAnimPercent;
-			const int currentFrameIndex = std::clamp(static_cast<int>(static_cast<double>(frameCount) * animPercent), 0, frameCount - 1);
-
-			const double frameBufferV = frameBuffer.yPercent * 2.0;
-			const double normalizedV = frameBufferV >= 1.0 ? (frameBufferV - 1.0) : frameBufferV;
-			const double sampleV = (normalizedV / static_cast<double>(frameCount)) + (static_cast<double>(currentFrameIndex) / static_cast<double>(frameCount));
-			const int texelY = std::clamp(static_cast<int>(sampleV * opaqueTexture.heightReal), 0, opaqueTexture.heightMinusOne);
-
-			const int texelIndex = texelX + (texelY * opaqueTexture.width);
-			texel = opaqueTexture.texels[texelIndex];
-		}
-
-		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
-	}
-
-	template<bool enableDepthWrite>
-	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
-	{
-		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
-		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-
-		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-		if (isTransparent)
-		{
-			return;
-		}
-
-		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
-	}
-
-	template<bool enableDepthWrite>
-	void PixelShader_AlphaTestedWithVariableTexCoordUMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		double uMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
-	{
-		const double u = std::clamp(uMin + ((1.0 - uMin) * perspective.texelPercentX), uMin, 1.0);
-		const int texelX = FractToInt(u, texture.widthReal);
-		const int texelY = FractToInt(perspective.texelPercentY, texture.height);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-
-		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-		if (isTransparent)
-		{
-			return;
-		}
-
-		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
-	}
-
-	template<bool enableDepthWrite>
-	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		double vMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
-	{
-		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
-		const double v = std::clamp(vMin + ((1.0 - vMin) * perspective.texelPercentY), vMin, 1.0);
-		const int texelY = FractToInt(v, texture.heightReal);
-
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-
-		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-		if (isTransparent)
-		{
-			return;
-		}
-
-		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
-	}
-
-	template<bool enableDepthWrite>
-	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderTexture &lookupTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
-	{
-		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
-		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-
-		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-		if (isTransparent)
-		{
-			return;
-		}
-
-		const uint8_t replacementTexel = lookupTexture.texels[texel];
-
-		const int shadedTexelIndex = replacementTexel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
-	}
-
-	template<bool enableDepthWrite>
-	void PixelShader_AlphaTestedWithLightLevelColor(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
-	{
-		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
-		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-
-		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-		if (isTransparent)
-		{
-			return;
-		}
-
-		const int lightTableTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
-
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = resultTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
-	}
-
-	template<bool enableDepthWrite>
-	void PixelShader_AlphaTestedWithLightLevelOpacity(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
-		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
-	{
-		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
-		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-
-		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-		if (isTransparent)
-		{
-			return;
-		}
-
 		int lightTableTexelIndex;
 		if (ArenaRenderUtils::isLightLevelTexel(texel))
 		{
@@ -1969,18 +1751,26 @@ namespace
 			}
 		}
 
-		const uint8_t resultTexel = lighting.lightTableTexels[lightTableTexelIndex];
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = resultTexel;
-
-		if constexpr (enableDepthWrite)
-		{
-			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
-		}
+		const uint8_t shadedTexel = lighting.lightTableTexels[lightTableTexelIndex];
+		return shadedTexel;
 	}
 
-	template<bool enableDepthWrite>
-	void PixelShader_AlphaTestedWithPreviousBrightnessLimit(const PixelShaderPerspectiveCorrection &perspective,
-		const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
+	uint8_t GetHorizonMirrorTexel(const PixelShaderHorizonMirror &horizon)
+	{
+		uint8_t mirroredTexel;
+		if (horizon.isReflectedPixelInFrameBuffer)
+		{
+			mirroredTexel = g_paletteIndexBuffer[horizon.reflectedPixelIndex];
+		}
+		else
+		{
+			mirroredTexel = horizon.fallbackSkyColor;
+		}
+
+		return mirroredTexel;
+	}
+
+	bool IsFrameBufferTexelBelowBrightnessLimit(const PixelShaderFrameBuffer &frameBuffer)
 	{
 		constexpr int brightnessLimit = 0x3F; // Highest value each RGB component can be.
 		constexpr uint8_t brightnessMask = ~brightnessLimit;
@@ -1992,15 +1782,218 @@ namespace
 		const uint8_t prevFrameBufferPixel = g_paletteIndexBuffer[frameBuffer.pixelIndex];
 		const uint32_t prevFrameBufferColor = frameBuffer.palette.colors[prevFrameBufferPixel];
 		const bool isDarkEnough = (prevFrameBufferColor & brightnessMaskRGB) == 0;
+		return isDarkEnough;
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_Opaque(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const uint8_t texel = GetPerspectiveTexel(texture, perspective.texelPercentX, perspective.texelPercentY);
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_OpaqueWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
+		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		uint8_t texel = GetPerspectiveTexel(alphaTestTexture, perspective.texelPercentX, perspective.texelPercentY);
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			texel = GetPerspectiveTexel(opaqueTexture, perspective.texelPercentX, perspective.texelPercentY);
+		}
+
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_OpaqueScreenSpaceAnimation(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const uint8_t texel = GetScreenSpaceAnimationTexel(texture, uniforms.screenSpaceAnimPercent, frameBuffer);
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_OpaqueScreenSpaceAnimationWithAlphaTestLayer(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &opaqueTexture,
+		const PixelShaderTexture &alphaTestTexture, const PixelShaderLighting &lighting, const PixelShaderUniforms &uniforms, PixelShaderFrameBuffer &frameBuffer)
+	{
+		uint8_t texel = GetPerspectiveTexel(alphaTestTexture, perspective.texelPercentX, perspective.texelPercentY);
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			texel = GetScreenSpaceAnimationTexel(opaqueTexture, uniforms.screenSpaceAnimPercent, frameBuffer);
+		}
+
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_AlphaTested(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const uint8_t texel = GetPerspectiveTexel(texture, perspective.texelPercentX, perspective.texelPercentY);
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_AlphaTestedWithVariableTexCoordUMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		double uMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const double u = std::clamp(uMin + ((1.0 - uMin) * perspective.texelPercentX), uMin, 1.0);
+		const uint8_t texel = GetPerspectiveTexel(texture, u, perspective.texelPercentY);
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_AlphaTestedWithVariableTexCoordVMin(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		double vMin, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const double v = std::clamp(vMin + ((1.0 - vMin) * perspective.texelPercentY), vMin, 1.0);
+		const uint8_t texel = GetPerspectiveTexel(texture, perspective.texelPercentX, v);
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_AlphaTestedWithPaletteIndexLookup(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderTexture &lookupTexture, const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const uint8_t texel = GetPerspectiveTexel(texture, perspective.texelPercentX, perspective.texelPercentY);
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		const uint8_t replacementTexel = GetReplacementTexel(texel, lookupTexture);
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(replacementTexel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_AlphaTestedWithLightLevelColor(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const uint8_t texel = GetPerspectiveTexel(texture, perspective.texelPercentX, perspective.texelPercentY);
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		const uint8_t shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_AlphaTestedWithLightLevelOpacity(const PixelShaderPerspectiveCorrection &perspective, const PixelShaderTexture &texture,
+		const PixelShaderLighting &lighting, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const uint8_t texel = GetPerspectiveTexel(texture, perspective.texelPercentX, perspective.texelPercentY);
+
+		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+		if (isTransparent)
+		{
+			return;
+		}
+
+		const uint8_t shadedTexel = GetTexelWithLightTableLighting(texel, lighting, frameBuffer);
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
+
+		if constexpr (enableDepthWrite)
+		{
+			g_depthBuffer[frameBuffer.pixelIndex] = perspective.ndcZDepth;
+		}
+	}
+
+	template<bool enableDepthWrite>
+	void PixelShader_AlphaTestedWithPreviousBrightnessLimit(const PixelShaderPerspectiveCorrection &perspective,
+		const PixelShaderTexture &texture, PixelShaderFrameBuffer &frameBuffer)
+	{
+		const bool isDarkEnough = IsFrameBufferTexelBelowBrightnessLimit(frameBuffer);
 		if (!isDarkEnough)
 		{
 			return;
 		}
 
-		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
-		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
+		const uint8_t texel = GetPerspectiveTexel(texture, perspective.texelPercentX, perspective.texelPercentY);
 
 		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
@@ -2021,10 +2014,7 @@ namespace
 		const PixelShaderTexture &texture, const PixelShaderHorizonMirror &horizon, const PixelShaderLighting &lighting,
 		PixelShaderFrameBuffer &frameBuffer)
 	{
-		const int texelX = FractToInt(perspective.texelPercentX, texture.widthReal);
-		const int texelY = FractToInt(perspective.texelPercentY, texture.heightReal);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
+		const uint8_t texel = GetPerspectiveTexel(texture, perspective.texelPercentX, perspective.texelPercentY);
 
 		const bool isTransparent = texel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
 		if (isTransparent)
@@ -2032,27 +2022,18 @@ namespace
 			return;
 		}
 
-		uint8_t resultTexel;
+		uint8_t shadedTexel;
 		const bool isReflective = texel == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW;
 		if (isReflective)
 		{
-			if (horizon.isReflectedPixelInFrameBuffer)
-			{
-				const uint8_t mirroredTexel = g_paletteIndexBuffer[horizon.reflectedPixelIndex];
-				resultTexel = mirroredTexel;
-			}
-			else
-			{
-				resultTexel = horizon.fallbackSkyColor;
-			}
+			shadedTexel = GetHorizonMirrorTexel(horizon);
 		}
 		else
 		{
-			const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
-			resultTexel = lighting.lightTableTexels[shadedTexelIndex];
+			shadedTexel = GetTexelWithLightLevelLighting(texel, lighting);
 		}
 
-		g_paletteIndexBuffer[frameBuffer.pixelIndex] = resultTexel;
+		g_paletteIndexBuffer[frameBuffer.pixelIndex] = shadedTexel;
 
 		if constexpr (enableDepthWrite)
 		{
@@ -3215,13 +3196,26 @@ namespace
 	void RasterizeMeshInternal(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
-		const double meshLightPercent = drawCallCache.meshLightPercent;
-		const double pixelShaderParam0 = drawCallCache.pixelShaderParam0;
+		// Early-out conditions.
+		constexpr bool requiresAlphaTest = !RenderShaderUtils::isOpaque(pixelShaderType);
+		constexpr bool requiresPreviousBrightnessTest = pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit;
 
-		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) || (pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
+		// Texturing conditions.
+		constexpr bool requiresTwoTextures = (pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
+			(pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) ||
+			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
+		constexpr bool requiresPerspectiveTexel = pixelShaderType != PixelShaderType::OpaqueScreenSpaceAnimation;
+		constexpr bool requiresScreenSpaceAnimationTexel = !requiresPerspectiveTexel;
+		constexpr bool requiresVariableTexCoordUMin = pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin;
+		constexpr bool requiresVariableTexCoordVMin = pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
 		constexpr bool requiresHorizonMirror = pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
+
+		// Lighting conditions.
 		constexpr bool requiresPerPixelLightIntensity = lightingType == RenderLightingType::PerPixel;
 		constexpr bool requiresPerMeshLightIntensity = lightingType == RenderLightingType::PerMesh;
+
+		const double meshLightPercent = drawCallCache.meshLightPercent;
+		const double pixelShaderParam0 = drawCallCache.pixelShaderParam0;
 
 		PixelShaderLighting shaderLighting;
 		shaderLighting.lightTableTexels = g_lightTableTexture->texels8Bit;
@@ -3439,6 +3433,21 @@ namespace
 					const double shaderClipSpacePointZ = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
 					const double shaderClipSpacePointW = (clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w);
 					const double shaderClipSpacePointWRecip = 1.0 / shaderClipSpacePointW;
+					shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
+					shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
+
+					bool passesAlphaTest = true;
+					if constexpr (requiresAlphaTest)
+					{
+						// @todo move alpha test out of shaders into here
+					}
+
+					bool passesPreviousBrightnessTest = true;
+					if constexpr (requiresPreviousBrightnessTest)
+					{
+						// @todo move brightness test out of sky shader into here
+					}
+
 					const double shaderHomogeneousSpacePointX = shaderClipSpacePointX * shaderClipSpacePointWRecip;
 					const double shaderHomogeneousSpacePointY = shaderClipSpacePointY * shaderClipSpacePointWRecip;
 					const double shaderHomogeneousSpacePointZ = shaderClipSpacePointZ * shaderClipSpacePointWRecip;
@@ -3468,9 +3477,6 @@ namespace
 						g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ,
 						&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW,
 						&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ);
-
-					shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
-					shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
 
 					double lightIntensitySum = 0.0;
 					if constexpr (requiresPerPixelLightIntensity)
