@@ -3339,86 +3339,110 @@ namespace
 			const int binPixelXUnrollAdjustedEnd = GetUnrollAdjustedLoopCount(binPixelXEnd, TYPICAL_LOOP_UNROLL);
 			const int binPixelYStart = bin.triangleBinPixelAlignedYStarts[triangleIndicesIndex];
 			const int binPixelYEnd = bin.triangleBinPixelAlignedYEnds[triangleIndicesIndex];
+			const int binPixelYUnrollAdjustedEnd = GetUnrollAdjustedLoopCount(binPixelYEnd, TYPICAL_LOOP_UNROLL);
 
 			// Calculate triangle coverage in its bounding box.
-			for (int binPixelY = binPixelYStart; binPixelY < binPixelYEnd; binPixelY++)
+			for (int binPixelY = binPixelYStart; binPixelY < binPixelYUnrollAdjustedEnd; binPixelY += TYPICAL_LOOP_UNROLL)
 			{
-				const int frameBufferPixelY = BinPixelToFrameBufferPixel(binY, binPixelY, rasterizerInputCache.binHeight);
-				const double frameBufferYPercent = (static_cast<double>(frameBufferPixelY) + 0.50) * g_frameBufferHeightRealRecip;
-				const double pixelCenterY = frameBufferYPercent * g_frameBufferHeightReal;
+				int frameBufferPixelY[TYPICAL_LOOP_UNROLL];
+				double frameBufferYPercent[TYPICAL_LOOP_UNROLL];
+				double pixelCenterY[TYPICAL_LOOP_UNROLL];
+				double pixelCoverageDot0Y[TYPICAL_LOOP_UNROLL];
+				double pixelCoverageDot1Y[TYPICAL_LOOP_UNROLL];
+				double pixelCoverageDot2Y[TYPICAL_LOOP_UNROLL];
 
-				double pixelCoverageDot0Y, pixelCoverageDot1Y, pixelCoverageDot2Y;
-				GetScreenSpacePointHalfSpaceComponents(pixelCenterY, screenSpace0Y, screenSpace1Y, screenSpace2Y, screenSpace01PerpY,
-					screenSpace12PerpY, screenSpace20PerpY, &pixelCoverageDot0Y, &pixelCoverageDot1Y, &pixelCoverageDot2Y);
-
-				for (int binPixelX = binPixelXStart; binPixelX < binPixelXUnrollAdjustedEnd; binPixelX += TYPICAL_LOOP_UNROLL)
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
-					int frameBufferPixelX[TYPICAL_LOOP_UNROLL];
-					int frameBufferPixelIndex[TYPICAL_LOOP_UNROLL];
-					double frameBufferXPercent[TYPICAL_LOOP_UNROLL];
-					double pixelCenterX[TYPICAL_LOOP_UNROLL];
-					double pixelCoverageDot0X[TYPICAL_LOOP_UNROLL];
-					double pixelCoverageDot1X[TYPICAL_LOOP_UNROLL];
-					double pixelCoverageDot2X[TYPICAL_LOOP_UNROLL];
-					double pixelCenterDot0[TYPICAL_LOOP_UNROLL];
-					double pixelCenterDot1[TYPICAL_LOOP_UNROLL];
-					double pixelCenterDot2[TYPICAL_LOOP_UNROLL];
-					bool isPixelCenterIn0[TYPICAL_LOOP_UNROLL];
-					bool isPixelCenterIn1[TYPICAL_LOOP_UNROLL];
-					bool isPixelCenterIn2[TYPICAL_LOOP_UNROLL];
-					bool pixelCenterHasCoverage[TYPICAL_LOOP_UNROLL];
+					frameBufferPixelY[i] = BinPixelToFrameBufferPixel(binY, binPixelY + i, rasterizerInputCache.binHeight);
+				}
 
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-					{
-						frameBufferPixelX[i] = BinPixelToFrameBufferPixel(binX, binPixelX + i, rasterizerInputCache.binWidth);
-					}
-					
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-					{
-						frameBufferPixelIndex[i] = frameBufferPixelX[i] + (frameBufferPixelY * g_frameBufferWidth);
-					}
-					
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-					{
-						frameBufferXPercent[i] = (static_cast<double>(frameBufferPixelX[i]) + 0.50) * g_frameBufferWidthRealRecip;
-					}
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					frameBufferYPercent[i] = (static_cast<double>(frameBufferPixelY[i]) + 0.50) * g_frameBufferHeightRealRecip;
+				}
+				
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					pixelCenterY[i] = frameBufferYPercent[i] * g_frameBufferHeightReal;
+				}
 
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-					{
-						pixelCenterX[i] = frameBufferXPercent[i] * g_frameBufferWidthReal;
-					}
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					GetScreenSpacePointHalfSpaceComponents(pixelCenterY[i], screenSpace0Y, screenSpace1Y, screenSpace2Y, screenSpace01PerpY,
+						screenSpace12PerpY, screenSpace20PerpY, &pixelCoverageDot0Y[i], &pixelCoverageDot1Y[i], &pixelCoverageDot2Y[i]);
+				}
 
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				for (int yUnrollIndex = 0; yUnrollIndex < TYPICAL_LOOP_UNROLL; yUnrollIndex++)
+				{
+					for (int binPixelX = binPixelXStart; binPixelX < binPixelXUnrollAdjustedEnd; binPixelX += TYPICAL_LOOP_UNROLL)
 					{
-						GetScreenSpacePointHalfSpaceComponents(pixelCenterX[i], screenSpace0X, screenSpace1X, screenSpace2X, screenSpace01PerpX,
-							screenSpace12PerpX, screenSpace20PerpX, &pixelCoverageDot0X[i], &pixelCoverageDot1X[i], &pixelCoverageDot2X[i]);
-					}
+						int frameBufferPixelX[TYPICAL_LOOP_UNROLL];
+						int frameBufferPixelIndex[TYPICAL_LOOP_UNROLL];
+						double frameBufferXPercent[TYPICAL_LOOP_UNROLL];
+						double pixelCenterX[TYPICAL_LOOP_UNROLL];
+						double pixelCoverageDot0X[TYPICAL_LOOP_UNROLL];
+						double pixelCoverageDot1X[TYPICAL_LOOP_UNROLL];
+						double pixelCoverageDot2X[TYPICAL_LOOP_UNROLL];
+						double pixelCenterDot0[TYPICAL_LOOP_UNROLL];
+						double pixelCenterDot1[TYPICAL_LOOP_UNROLL];
+						double pixelCenterDot2[TYPICAL_LOOP_UNROLL];
+						bool isPixelCenterIn0[TYPICAL_LOOP_UNROLL];
+						bool isPixelCenterIn1[TYPICAL_LOOP_UNROLL];
+						bool isPixelCenterIn2[TYPICAL_LOOP_UNROLL];
+						bool pixelCenterHasCoverage[TYPICAL_LOOP_UNROLL];
 
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-					{
-						pixelCenterDot0[i] = pixelCoverageDot0X[i] + pixelCoverageDot0Y;
-						pixelCenterDot1[i] = pixelCoverageDot1X[i] + pixelCoverageDot1Y;
-						pixelCenterDot2[i] = pixelCoverageDot2X[i] + pixelCoverageDot2Y;
-					}
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							frameBufferPixelX[i] = BinPixelToFrameBufferPixel(binX, binPixelX + i, rasterizerInputCache.binWidth);
+						}
 
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-					{
-						isPixelCenterIn0[i] = pixelCenterDot0[i] >= 0.0;
-						isPixelCenterIn1[i] = pixelCenterDot1[i] >= 0.0;
-						isPixelCenterIn2[i] = pixelCenterDot2[i] >= 0.0;
-					}
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							frameBufferPixelIndex[i] = frameBufferPixelX[i] + (frameBufferPixelY[yUnrollIndex] * g_frameBufferWidth);
+						}
 
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-					{
-						pixelCenterHasCoverage[i] = isPixelCenterIn0[i] && isPixelCenterIn1[i] && isPixelCenterIn2[i];
-					}
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							frameBufferXPercent[i] = (static_cast<double>(frameBufferPixelX[i]) + 0.50) * g_frameBufferWidthRealRecip;
+						}
 
-					for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-					{
-						g_coverageBuffer[frameBufferPixelIndex[i]] = pixelCenterHasCoverage[i];
-					}
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCenterX[i] = frameBufferXPercent[i] * g_frameBufferWidthReal;
+						}
 
-					totalCoverageTests += TYPICAL_LOOP_UNROLL;
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							GetScreenSpacePointHalfSpaceComponents(pixelCenterX[i], screenSpace0X, screenSpace1X, screenSpace2X, screenSpace01PerpX,
+								screenSpace12PerpX, screenSpace20PerpX, &pixelCoverageDot0X[i], &pixelCoverageDot1X[i], &pixelCoverageDot2X[i]);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCenterDot0[i] = pixelCoverageDot0X[i] + pixelCoverageDot0Y[yUnrollIndex];
+							pixelCenterDot1[i] = pixelCoverageDot1X[i] + pixelCoverageDot1Y[yUnrollIndex];
+							pixelCenterDot2[i] = pixelCoverageDot2X[i] + pixelCoverageDot2Y[yUnrollIndex];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							isPixelCenterIn0[i] = pixelCenterDot0[i] >= 0.0;
+							isPixelCenterIn1[i] = pixelCenterDot1[i] >= 0.0;
+							isPixelCenterIn2[i] = pixelCenterDot2[i] >= 0.0;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCenterHasCoverage[i] = isPixelCenterIn0[i] && isPixelCenterIn1[i] && isPixelCenterIn2[i];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							g_coverageBuffer[frameBufferPixelIndex[i]] = pixelCenterHasCoverage[i];
+						}
+
+						totalCoverageTests += TYPICAL_LOOP_UNROLL;
+					}
 				}
 			}
 
