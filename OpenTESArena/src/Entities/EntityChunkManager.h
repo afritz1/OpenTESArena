@@ -153,6 +153,9 @@ private:
 	void updateCitizenStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving,
 		bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
+	void updateEnemyStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ, 
+		JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
+
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
@@ -161,6 +164,7 @@ private:
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	const EntityInstance &getEntity(EntityInstanceID id) const;
+	EntityInstance &getEntity(EntityInstanceID id);
 	const WorldDouble3 &getEntityPosition(EntityPositionID id) const;
 	const BoundingBox3D &getEntityBoundingBox(EntityBoundingBoxID id) const;
 	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
