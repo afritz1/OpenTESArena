@@ -3277,14 +3277,68 @@ namespace
 					shaderPerspective.texelPercentX = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
 					shaderPerspective.texelPercentY = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
 
+					double perspectiveTexCoordU;
+					double perspectiveTexCoordV;
+					if constexpr (requiresVariableTexCoordUMin)
+					{
+						const double uMin = pixelShaderParam0;
+						perspectiveTexCoordU = std::clamp(uMin + ((1.0 - uMin) * shaderPerspective.texelPercentX), uMin, 1.0);
+						perspectiveTexCoordV = shaderPerspective.texelPercentY;
+					}
+					else if (requiresVariableTexCoordVMin)
+					{
+						const double vMin = pixelShaderParam0;
+						perspectiveTexCoordU = shaderPerspective.texelPercentX;
+						perspectiveTexCoordV = std::clamp(vMin + ((1.0 - vMin) * shaderPerspective.texelPercentY), vMin, 1.0);
+					}
+					else
+					{
+						perspectiveTexCoordU = shaderPerspective.texelPercentX;
+						perspectiveTexCoordV = shaderPerspective.texelPercentY;
+					}
+
+					uint8_t layerTexel = 0;
+					if constexpr (requiresPerspectiveTexelLayer)
+					{
+						layerTexel = GetPerspectiveTexel(shaderTexture1, perspectiveTexCoordU, perspectiveTexCoordV);
+					}
+
+					uint8_t mainTexel = 0;
+					if constexpr (requiresLayerAlphaTest)
+					{
+						if (layerTexel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT)
+						{
+							if constexpr (requiresPerspectiveTexelMain)
+							{
+								mainTexel = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU, perspectiveTexCoordV);
+							}
+							else if (requiresScreenSpaceAnimationTexelMain)
+							{
+								mainTexel = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, shaderFrameBuffer);
+							}
+						}
+						else
+						{
+							mainTexel = layerTexel;
+						}
+					}
+					else if (requiresPerspectiveTexelMain)
+					{
+						mainTexel = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU, perspectiveTexCoordV);
+					}
+					else if (requiresScreenSpaceAnimationTexelMain)
+					{
+						mainTexel = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, shaderFrameBuffer);
+					}
+
 					bool passesAlphaTest = true;
 					if constexpr (requiresMainAlphaTest)
 					{
-						// @todo move alpha test out of shaders into here
-					}
-					else if (requiresLayerAlphaTest)
-					{
-						// @todo
+						passesAlphaTest = mainTexel != ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+						if (!passesAlphaTest)
+						{
+							continue;
+						}
 					}
 
 					bool passesPreviousBrightnessTest = true;
@@ -3378,68 +3432,6 @@ namespace
 							(reflectedPixelX >= 0) && (reflectedPixelX < g_frameBufferWidth) &&
 							(reflectedPixelY >= 0) && (reflectedPixelY < g_frameBufferHeight);
 						shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * g_frameBufferWidth);
-					}
-
-					double perspectiveTexCoordU;
-					double perspectiveTexCoordV;
-					if constexpr (requiresVariableTexCoordUMin)
-					{
-						const double uMin = pixelShaderParam0;
-						perspectiveTexCoordU = std::clamp(uMin + ((1.0 - uMin) * shaderPerspective.texelPercentX), uMin, 1.0);
-						perspectiveTexCoordV = shaderPerspective.texelPercentY;
-					}
-					else if (requiresVariableTexCoordVMin)
-					{
-						const double vMin = pixelShaderParam0;
-						perspectiveTexCoordU = shaderPerspective.texelPercentX;
-						perspectiveTexCoordV = std::clamp(vMin + ((1.0 - vMin) * shaderPerspective.texelPercentY), vMin, 1.0);
-					}
-					else
-					{
-						perspectiveTexCoordU = shaderPerspective.texelPercentX;
-						perspectiveTexCoordV = shaderPerspective.texelPercentY;
-					}
-
-					uint8_t layerTexel = 0;
-					if constexpr (requiresPerspectiveTexelLayer)
-					{
-						layerTexel = GetPerspectiveTexel(shaderTexture1, perspectiveTexCoordU, perspectiveTexCoordV);
-					}
-
-					uint8_t mainTexel = 0;
-					if constexpr (requiresLayerAlphaTest)
-					{
-						if (layerTexel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT)
-						{
-							if constexpr (requiresPerspectiveTexelMain)
-							{
-								mainTexel = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU, perspectiveTexCoordV);
-							}
-							else if (requiresScreenSpaceAnimationTexelMain)
-							{
-								mainTexel = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, shaderFrameBuffer);
-							}
-						}
-						else
-						{
-							mainTexel = layerTexel;
-						}
-					}
-					else if (requiresPerspectiveTexelMain)
-					{
-						mainTexel = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU, perspectiveTexCoordV);
-					}
-					else if (requiresScreenSpaceAnimationTexelMain)
-					{
-						mainTexel = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, shaderFrameBuffer);
-					}
-
-					if constexpr (requiresMainAlphaTest)
-					{
-						if (mainTexel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT)
-						{
-							continue;
-						}
 					}
 
 					if constexpr (requiresMainPaletteLookup)
