@@ -1094,13 +1094,12 @@ namespace
 	int g_ditherBufferDepth;
 	DitheringMode g_ditheringMode;
 	uint8_t *g_paletteIndexBuffer;
-	bool *g_coverageBuffer;
 	double *g_depthBuffer;
 	const bool *g_ditherBuffer;
 	uint32_t *g_colorBuffer;
 	SoftwareObjectTexturePool *g_objectTextures;
 
-	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, bool *coverageBuffer, double *depthBuffer,
+	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
 		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, uint32_t *colorBuffer,
 		SoftwareObjectTexturePool *objectTextures)
 	{
@@ -1114,7 +1113,6 @@ namespace
 		g_ditherBufferDepth = ditherBufferDepth;
 		g_ditheringMode = ditheringMode;
 		g_paletteIndexBuffer = paletteIndexBuffer;
-		g_coverageBuffer = coverageBuffer;
 		g_depthBuffer = depthBuffer;
 		g_ditherBuffer = ditherBuffer;
 		g_colorBuffer = colorBuffer;
@@ -1526,7 +1524,6 @@ namespace
 		double lightLevelCountReal;
 		int lastLightLevel;
 		int texelsPerLightLevel; // Should be 256 for 8-bit colors.
-		int lightLevel; // The selected row of shades between light and dark.
 
 		PixelShaderLighting()
 		{
@@ -1535,7 +1532,6 @@ namespace
 			this->lightLevelCountReal = 0.0;
 			this->lastLightLevel = -1;
 			this->texelsPerLightLevel = 0;
-			this->lightLevel = -1;
 		}
 	};
 
@@ -1545,16 +1541,12 @@ namespace
 		double horizonScreenSpacePointX;
 		double horizonScreenSpacePointY;
 
-		int reflectedPixelIndex;
-		bool isReflectedPixelInFrameBuffer;
 		uint8_t fallbackSkyColor;
 
 		PixelShaderHorizonMirror()
 		{
 			this->horizonScreenSpacePointX = 0.0;
 			this->horizonScreenSpacePointY = 0.0;
-			this->reflectedPixelIndex = -1;
-			this->isReflectedPixelInFrameBuffer = false;
 			this->fallbackSkyColor = 0;
 		}
 	};
@@ -1697,14 +1689,14 @@ namespace
 		return lookupTexture.texels[texel];
 	}
 
-	uint8_t GetTexelWithLightLevelLighting(uint8_t texel, const PixelShaderLighting &lighting)
+	uint8_t GetTexelWithLightLevelLighting(uint8_t texel, int lightLevel, const PixelShaderLighting &lighting)
 	{
-		const int shadedTexelIndex = texel + (lighting.lightLevel * lighting.texelsPerLightLevel);
+		const int shadedTexelIndex = texel + (lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		return shadedTexel;
 	}
 
-	uint8_t GetTexelWithLightTableLighting(uint8_t texel, const PixelShaderLighting &lighting, int frameBufferPixelIndex)
+	uint8_t GetTexelWithLightTableLighting(uint8_t texel, int lightLevel, const PixelShaderLighting &lighting, int frameBufferPixelIndex)
 	{
 		int lightTableTexelIndex;
 		if (ArenaRenderUtils::isLightLevelTexel(texel))
@@ -1715,7 +1707,7 @@ namespace
 		}
 		else
 		{
-			const int lightTableOffset = lighting.lightLevel * lighting.texelsPerLightLevel;
+			const int lightTableOffset = lightLevel * lighting.texelsPerLightLevel;
 			if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC1)
 			{
 				lightTableTexelIndex = lightTableOffset + ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST1;
@@ -1732,36 +1724,6 @@ namespace
 
 		const uint8_t shadedTexel = lighting.lightTableTexels[lightTableTexelIndex];
 		return shadedTexel;
-	}
-
-	uint8_t GetHorizonMirrorTexel(const PixelShaderHorizonMirror &horizon)
-	{
-		uint8_t mirroredTexel;
-		if (horizon.isReflectedPixelInFrameBuffer)
-		{
-			mirroredTexel = g_paletteIndexBuffer[horizon.reflectedPixelIndex];
-		}
-		else
-		{
-			mirroredTexel = horizon.fallbackSkyColor;
-		}
-
-		return mirroredTexel;
-	}
-
-	bool IsFrameBufferTexelBelowBrightnessLimit(int frameBufferPixelIndex, const PixelShaderPalette &palette)
-	{
-		constexpr int brightnessLimit = 0x3F; // Highest value each RGB component can be.
-		constexpr uint8_t brightnessMask = ~brightnessLimit;
-		constexpr uint32_t brightnessMaskR = brightnessMask << 16;
-		constexpr uint32_t brightnessMaskG = brightnessMask << 8;
-		constexpr uint32_t brightnessMaskB = brightnessMask;
-		constexpr uint32_t brightnessMaskRGB = brightnessMaskR | brightnessMaskG | brightnessMaskB;
-
-		const uint8_t prevFrameBufferPixel = g_paletteIndexBuffer[frameBufferPixelIndex];
-		const uint32_t prevFrameBufferColor = palette.colors[prevFrameBufferPixel];
-		const bool isDarkEnough = (prevFrameBufferColor & brightnessMaskRGB) == 0;
-		return isDarkEnough;
 	}
 }
 
@@ -2606,6 +2568,22 @@ namespace
 		}
 	};
 
+	// Rasterizer tile dimensions for SIMD stepping.
+	static constexpr int RASTERIZER_TILE_WIDTH = TYPICAL_LOOP_UNROLL;
+	static constexpr int RASTERIZER_TILE_HEIGHT = TYPICAL_LOOP_UNROLL;
+	static constexpr int RASTERIZER_TILE_PIXEL_COUNT = RASTERIZER_TILE_WIDTH * RASTERIZER_TILE_HEIGHT;
+	static_assert(MathUtils::isMultipleOf(FRAME_BUFFER_LOOP_UNROLL, RASTERIZER_TILE_WIDTH));
+	static_assert(MathUtils::isMultipleOf(FRAME_BUFFER_LOOP_UNROLL, RASTERIZER_TILE_HEIGHT));
+
+	// Rasterizer cache for drawing the current triangle.
+	struct RasterizerPixelTile
+	{
+		bool coverageTests[RASTERIZER_TILE_PIXEL_COUNT];
+		bool depthTests[RASTERIZER_TILE_PIXEL_COUNT];
+		bool alphaTests[RASTERIZER_TILE_PIXEL_COUNT];
+		bool previousBrightnessTests[RASTERIZER_TILE_PIXEL_COUNT];
+	};
+
 	void ProcessClipSpaceTrianglesForBinning(int workerDrawCallIndex, bool enableBackFaceCulling, const ClippingOutputCache &clippingOutputCache, RasterizerInputCache &rasterizerInputCache)
 	{
 		const auto &clipSpaceMeshV0XYZWs = clippingOutputCache.clipSpaceMeshV0XYZWArray;
@@ -2971,7 +2949,6 @@ namespace
 		shaderLighting.lightLevelCountReal = static_cast<double>(shaderLighting.lightLevelCount);
 		shaderLighting.lastLightLevel = shaderLighting.lightLevelCount - 1;
 		shaderLighting.texelsPerLightLevel = g_lightTableTexture->width;
-		shaderLighting.lightLevel = 0;
 
 		PixelShaderPalette shaderPalette;
 		shaderPalette.colors = g_paletteTexture->texels32Bit;
@@ -3004,6 +2981,9 @@ namespace
 
 		PixelShaderUniforms shaderUniforms;
 		shaderUniforms.screenSpaceAnimPercent = g_screenSpaceAnimPercent;
+
+		const int lightBinWidth = GetLightBinWidth(g_frameBufferWidth);
+		const int lightBinHeight = GetLightBinHeight(g_frameBufferHeight);
 
 		// Local variables added to a global afterwards to avoid fighting with threads.
 		int totalCoverageTests = 0;
@@ -3089,15 +3069,19 @@ namespace
 			const int binPixelYEnd = bin.triangleBinPixelAlignedYEnds[triangleIndicesIndex];
 			const int binPixelYUnrollAdjustedEnd = GetUnrollAdjustedLoopCount(binPixelYEnd, TYPICAL_LOOP_UNROLL);
 
-			// Calculate triangle coverage in its bounding box.
+			// Shade triangle using this bin's bounding box of it.
 			for (int binPixelY = binPixelYStart; binPixelY < binPixelYUnrollAdjustedEnd; binPixelY += TYPICAL_LOOP_UNROLL)
 			{
 				int frameBufferPixelY[TYPICAL_LOOP_UNROLL];
-				double frameBufferYPercent[TYPICAL_LOOP_UNROLL];
+				double frameBufferPercentY[TYPICAL_LOOP_UNROLL];
 				double pixelCenterY[TYPICAL_LOOP_UNROLL];
 				double pixelCoverageDot0Y[TYPICAL_LOOP_UNROLL];
 				double pixelCoverageDot1Y[TYPICAL_LOOP_UNROLL];
 				double pixelCoverageDot2Y[TYPICAL_LOOP_UNROLL];
+				double screenSpace0CurrentY[TYPICAL_LOOP_UNROLL];
+				double barycentricDot20Y[TYPICAL_LOOP_UNROLL];
+				double barycentricDot21Y[TYPICAL_LOOP_UNROLL];
+				int lightBinY[TYPICAL_LOOP_UNROLL];
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
@@ -3106,12 +3090,12 @@ namespace
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
-					frameBufferYPercent[i] = (static_cast<double>(frameBufferPixelY[i]) + 0.50) * g_frameBufferHeightRealRecip;
+					frameBufferPercentY[i] = (static_cast<double>(frameBufferPixelY[i]) + 0.50) * g_frameBufferHeightRealRecip;
 				}
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
-					pixelCenterY[i] = frameBufferYPercent[i] * g_frameBufferHeightReal;
+					pixelCenterY[i] = frameBufferPercentY[i] * g_frameBufferHeightReal;
 				}
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -3120,13 +3104,34 @@ namespace
 						screenSpace12PerpY, screenSpace20PerpY, &pixelCoverageDot0Y[i], &pixelCoverageDot1Y[i], &pixelCoverageDot2Y[i]);
 				}
 
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					screenSpace0CurrentY[i] = pixelCenterY[i] - screenSpace0Y;
+				}
+
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					barycentricDot20Y[i] = screenSpace0CurrentY[i] * screenSpace01Y;
+				}
+
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					barycentricDot21Y[i] = screenSpace0CurrentY[i] * screenSpace02Y;
+				}
+
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					lightBinY[i] = GetLightBinY(frameBufferPixelY[i], lightBinHeight);
+				}
+
 				for (int yUnrollIndex = 0; yUnrollIndex < TYPICAL_LOOP_UNROLL; yUnrollIndex++)
 				{
 					for (int binPixelX = binPixelXStart; binPixelX < binPixelXUnrollAdjustedEnd; binPixelX += TYPICAL_LOOP_UNROLL)
 					{
+						// Coverage test (is pixel center in triangle?).
 						int frameBufferPixelX[TYPICAL_LOOP_UNROLL];
 						int frameBufferPixelIndex[TYPICAL_LOOP_UNROLL];
-						double frameBufferXPercent[TYPICAL_LOOP_UNROLL];
+						double frameBufferPercentX[TYPICAL_LOOP_UNROLL];
 						double pixelCenterX[TYPICAL_LOOP_UNROLL];
 						double pixelCoverageDot0X[TYPICAL_LOOP_UNROLL];
 						double pixelCoverageDot1X[TYPICAL_LOOP_UNROLL];
@@ -3137,7 +3142,7 @@ namespace
 						bool isPixelCenterIn0[TYPICAL_LOOP_UNROLL];
 						bool isPixelCenterIn1[TYPICAL_LOOP_UNROLL];
 						bool isPixelCenterIn2[TYPICAL_LOOP_UNROLL];
-						bool pixelCenterHasCoverage[TYPICAL_LOOP_UNROLL];
+						bool isPixelCenterCovered[TYPICAL_LOOP_UNROLL];
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
@@ -3151,12 +3156,12 @@ namespace
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							frameBufferXPercent[i] = (static_cast<double>(frameBufferPixelX[i]) + 0.50) * g_frameBufferWidthRealRecip;
+							frameBufferPercentX[i] = (static_cast<double>(frameBufferPixelX[i]) + 0.50) * g_frameBufferWidthRealRecip;
 						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							pixelCenterX[i] = frameBufferXPercent[i] * g_frameBufferWidthReal;
+							pixelCenterX[i] = frameBufferPercentX[i] * g_frameBufferWidthReal;
 						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -3181,263 +3186,539 @@ namespace
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							pixelCenterHasCoverage[i] = isPixelCenterIn0[i] && isPixelCenterIn1[i] && isPixelCenterIn2[i];
+							isPixelCenterCovered[i] = isPixelCenterIn0[i] && isPixelCenterIn1[i] && isPixelCenterIn2[i];
+						}
+
+						totalCoverageTests += TYPICAL_LOOP_UNROLL;
+
+						bool passesAnyCoverageTest = false;
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							passesAnyCoverageTest |= isPixelCenterCovered[i];
+						}
+
+						if (!passesAnyCoverageTest)
+						{
+							continue;
+						}
+
+						// Previous brightness test (is pixel center dark enough for certain shaders?).
+						bool isPixelCenterDarkEnough[TYPICAL_LOOP_UNROLL];
+
+						if constexpr (requiresPreviousBrightnessTest)
+						{
+							uint8_t prevFrameBufferPixel[TYPICAL_LOOP_UNROLL];
+							uint32_t prevFrameBufferColor[TYPICAL_LOOP_UNROLL];
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								prevFrameBufferPixel[i] = g_paletteIndexBuffer[frameBufferPixelIndex[i]];
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								prevFrameBufferColor[i] = shaderPalette.colors[prevFrameBufferPixel[i]];
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								constexpr int brightnessLimit = 0x3F; // Highest value each RGB component can be.
+								constexpr uint8_t brightnessMask = ~brightnessLimit;
+								constexpr uint32_t brightnessMaskR = brightnessMask << 16;
+								constexpr uint32_t brightnessMaskG = brightnessMask << 8;
+								constexpr uint32_t brightnessMaskB = brightnessMask;
+								constexpr uint32_t brightnessMaskRGB = brightnessMaskR | brightnessMaskG | brightnessMaskB;
+
+								isPixelCenterDarkEnough[i] = (prevFrameBufferColor[i] & brightnessMaskRGB) == 0;
+							}
+
+							bool passesAnyPreviousBrightnessTests = false;
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								passesAnyPreviousBrightnessTests |= isPixelCenterDarkEnough[i];
+							}
+
+							if (!passesAnyPreviousBrightnessTests)
+							{
+								continue;
+							}
+						}
+
+						// Depth test (is pixel center closer than depth buffer?).
+						double screenSpace0CurrentX[TYPICAL_LOOP_UNROLL];
+						double barycentricDot20X[TYPICAL_LOOP_UNROLL];
+						double barycentricDot21X[TYPICAL_LOOP_UNROLL];
+						double barycentricDot20[TYPICAL_LOOP_UNROLL];
+						double barycentricDot21[TYPICAL_LOOP_UNROLL];
+						double vNumerator[TYPICAL_LOOP_UNROLL];
+						double wNumerator[TYPICAL_LOOP_UNROLL];
+						double v[TYPICAL_LOOP_UNROLL];
+						double w[TYPICAL_LOOP_UNROLL];
+						double u[TYPICAL_LOOP_UNROLL];
+						double ndcZDepth[TYPICAL_LOOP_UNROLL];
+						bool isPixelCenterDepthLower[TYPICAL_LOOP_UNROLL];
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							screenSpace0CurrentX[i] = pixelCenterX[i] - screenSpace0X;
 						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							g_coverageBuffer[frameBufferPixelIndex[i]] = pixelCenterHasCoverage[i];
+							barycentricDot20X[i] = screenSpace0CurrentX[i] * screenSpace01X;
 						}
 
-						totalCoverageTests += TYPICAL_LOOP_UNROLL;
-					}
-				}
-			}
-
-			const int lightBinWidth = GetLightBinWidth(g_frameBufferWidth);
-			const int lightBinHeight = GetLightBinHeight(g_frameBufferHeight);
-
-			// Shade pixels that pass coverage test.
-			for (int binPixelY = binPixelYStart; binPixelY < binPixelYEnd; binPixelY++)
-			{
-				const int frameBufferPixelY = BinPixelToFrameBufferPixel(binY, binPixelY, rasterizerInputCache.binHeight);
-				const double frameBufferPercentY = (static_cast<double>(frameBufferPixelY) + 0.50) * g_frameBufferHeightRealRecip;
-				const double pixelCenterY = frameBufferPercentY * g_frameBufferHeightReal;
-				const int lightBinY = GetLightBinY(frameBufferPixelY, lightBinHeight);
-
-				const double screenSpace0CurrentY = pixelCenterY - screenSpace0Y;
-				const double barycentricDot20Y = screenSpace0CurrentY * screenSpace01Y;
-				const double barycentricDot21Y = screenSpace0CurrentY * screenSpace02Y;
-
-				for (int binPixelX = binPixelXStart; binPixelX < binPixelXEnd; binPixelX++)
-				{
-					const int frameBufferPixelX = BinPixelToFrameBufferPixel(binX, binPixelX, rasterizerInputCache.binWidth);
-					const int frameBufferPixelIndex = frameBufferPixelX + (frameBufferPixelY * g_frameBufferWidth);
-
-					const bool passesPixelCoverageTest = g_coverageBuffer[frameBufferPixelIndex];
-					if (!passesPixelCoverageTest)
-					{
-						continue;
-					}
-
-					const double frameBufferPercentX = (static_cast<double>(frameBufferPixelX) + 0.50) * g_frameBufferWidthRealRecip;
-					const double pixelCenterX = frameBufferPercentX * g_frameBufferWidthReal;
-					const int lightBinX = GetLightBinX(frameBufferPixelX, lightBinWidth);
-
-					const double screenSpace0CurrentX = pixelCenterX - screenSpace0X;
-					const double barycentricDot20X = screenSpace0CurrentX * screenSpace01X;
-					const double barycentricDot21X = screenSpace0CurrentX * screenSpace02X;
-					const double barycentricDot20 = barycentricDot20X + barycentricDot20Y;
-					const double barycentricDot21 = barycentricDot21X + barycentricDot21Y;
-					const double vNumerator = (barycentricDot11 * barycentricDot20) - (barycentricDot01 * barycentricDot21);
-					const double wNumerator = (barycentricDot00 * barycentricDot21) - (barycentricDot01 * barycentricDot20);
-					const double v = vNumerator * barycentricDenominatorRecip;
-					const double w = wNumerator * barycentricDenominatorRecip;
-					const double u = 1.0 - v - w;
-					const double ndcZDepth = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
-
-					bool passesDepthTest = true;
-					if constexpr (enableDepthRead)
-					{
-						passesDepthTest = ndcZDepth < g_depthBuffer[frameBufferPixelIndex];
-						totalDepthTests++;
-					}
-
-					if (!passesDepthTest)
-					{
-						continue;
-					}
-
-					const double shaderClipSpacePointX = (ndc0X * u) + (ndc1X * v) + (ndc2X * w);
-					const double shaderClipSpacePointY = (ndc0Y * u) + (ndc1Y * v) + (ndc2Y * w);
-					const double shaderClipSpacePointZ = (ndc0Z * u) + (ndc1Z * v) + (ndc2Z * w);
-					const double shaderClipSpacePointW = (clip0WRecip * u) + (clip1WRecip * v) + (clip2WRecip * w);
-					const double shaderClipSpacePointWRecip = 1.0 / shaderClipSpacePointW;
-					
-					double perspectiveTexCoordU = ((uv0XDivW * u) + (uv1XDivW * v) + (uv2XDivW * w)) * shaderClipSpacePointWRecip;
-					double perspectiveTexCoordV = ((uv0YDivW * u) + (uv1YDivW * v) + (uv2YDivW * w)) * shaderClipSpacePointWRecip;
-					if constexpr (requiresVariableTexCoordUMin)
-					{
-						const double uMin = pixelShaderParam0;
-						perspectiveTexCoordU = std::clamp(uMin + ((1.0 - uMin) * perspectiveTexCoordU), uMin, 1.0);
-					}
-					else if (requiresVariableTexCoordVMin)
-					{
-						const double vMin = pixelShaderParam0;
-						perspectiveTexCoordV = std::clamp(vMin + ((1.0 - vMin) * perspectiveTexCoordV), vMin, 1.0);
-					}
-
-					uint8_t layerTexel = 0;
-					if constexpr (requiresPerspectiveTexelLayer)
-					{
-						layerTexel = GetPerspectiveTexel(shaderTexture1, perspectiveTexCoordU, perspectiveTexCoordV);
-					}
-
-					uint8_t mainTexel = 0;
-					if constexpr (requiresLayerAlphaTest)
-					{
-						if (layerTexel == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT)
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							if constexpr (requiresPerspectiveTexelMain)
+							barycentricDot21X[i] = screenSpace0CurrentX[i] * screenSpace02X;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							barycentricDot20[i] = barycentricDot20X[i] + barycentricDot20Y[yUnrollIndex];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							barycentricDot21[i] = barycentricDot21X[i] + barycentricDot21Y[yUnrollIndex];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							vNumerator[i] = (barycentricDot11 * barycentricDot20[i]) - (barycentricDot01 * barycentricDot21[i]);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							wNumerator[i] = (barycentricDot00 * barycentricDot21[i]) - (barycentricDot01 * barycentricDot20[i]);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							v[i] = vNumerator[i] * barycentricDenominatorRecip;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							w[i] = wNumerator[i] * barycentricDenominatorRecip;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							u[i] = 1.0 - v[i] - w[i];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							ndcZDepth[i] = (ndc0Z * u[i]) + (ndc1Z * v[i]) + (ndc2Z * w[i]);
+						}
+
+						if constexpr (enableDepthRead)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								mainTexel = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU, perspectiveTexCoordV);
+								isPixelCenterDepthLower[i] = ndcZDepth[i] < g_depthBuffer[frameBufferPixelIndex[i]];
+							}
+
+							totalDepthTests += TYPICAL_LOOP_UNROLL;
+
+							bool passesAnyDepthTest = false;
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								passesAnyDepthTest |= isPixelCenterDepthLower[i];
+							}
+
+							if (!passesAnyDepthTest)
+							{
+								continue;
+							}
+						}
+
+						// Texture lookup.
+						double shaderClipSpacePointX[TYPICAL_LOOP_UNROLL];
+						double shaderClipSpacePointY[TYPICAL_LOOP_UNROLL];
+						double shaderClipSpacePointZ[TYPICAL_LOOP_UNROLL];
+						double shaderClipSpacePointW[TYPICAL_LOOP_UNROLL];
+						double shaderClipSpacePointWRecip[TYPICAL_LOOP_UNROLL];
+						double perspectiveTexCoordU[TYPICAL_LOOP_UNROLL];
+						double perspectiveTexCoordV[TYPICAL_LOOP_UNROLL];
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderClipSpacePointX[i] = (ndc0X * u[i]) + (ndc1X * v[i]) + (ndc2X * w[i]);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderClipSpacePointY[i] = (ndc0Y * u[i]) + (ndc1Y * v[i]) + (ndc2Y * w[i]);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderClipSpacePointZ[i] = (ndc0Z * u[i]) + (ndc1Z * v[i]) + (ndc2Z * w[i]);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderClipSpacePointW[i] = (clip0WRecip * u[i]) + (clip1WRecip * v[i]) + (clip2WRecip * w[i]);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderClipSpacePointWRecip[i] = 1.0 / shaderClipSpacePointW[i];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							perspectiveTexCoordU[i] = ((uv0XDivW * u[i]) + (uv1XDivW * v[i]) + (uv2XDivW * w[i])) * shaderClipSpacePointWRecip[i];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							perspectiveTexCoordV[i] = ((uv0YDivW * u[i]) + (uv1YDivW * v[i]) + (uv2YDivW * w[i])) * shaderClipSpacePointWRecip[i];
+						}
+
+						if constexpr (requiresVariableTexCoordUMin)
+						{
+							const double uMin = pixelShaderParam0;
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								perspectiveTexCoordU[i] = std::clamp(uMin + ((1.0 - uMin) * perspectiveTexCoordU[i]), uMin, 1.0);
+							}
+						}
+						else if (requiresVariableTexCoordVMin)
+						{
+							const double vMin = pixelShaderParam0;
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								perspectiveTexCoordV[i] = std::clamp(vMin + ((1.0 - vMin) * perspectiveTexCoordV[i]), vMin, 1.0);
+							}
+						}
+
+						uint8_t layerTexel[TYPICAL_LOOP_UNROLL];
+						if constexpr (requiresPerspectiveTexelLayer)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								layerTexel[i] = GetPerspectiveTexel(shaderTexture1, perspectiveTexCoordU[i], perspectiveTexCoordV[i]);
+							}
+						}
+
+						uint8_t mainTexel[TYPICAL_LOOP_UNROLL];
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							if constexpr (requiresLayerAlphaTest)
+							{
+								if (layerTexel[i] == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT)
+								{
+									if constexpr (requiresPerspectiveTexelMain)
+									{
+										mainTexel[i] = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU[i], perspectiveTexCoordV[i]);
+									}
+									else if (requiresScreenSpaceAnimationTexelMain)
+									{
+										mainTexel[i] = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, frameBufferPercentX[i], frameBufferPercentY[yUnrollIndex]);
+									}
+								}
+								else
+								{
+									mainTexel[i] = layerTexel[i];
+								}
+							}
+							else if (requiresPerspectiveTexelMain)
+							{
+								mainTexel[i] = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU[i], perspectiveTexCoordV[i]);
 							}
 							else if (requiresScreenSpaceAnimationTexelMain)
 							{
-								mainTexel = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, frameBufferPercentX, frameBufferPercentY);
+								mainTexel[i] = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, frameBufferPercentX[i], frameBufferPercentY[yUnrollIndex]);
 							}
 						}
-						else
+
+						// Alpha test (is pixel center texture opaque?).
+						bool isPixelCenterOpaque[TYPICAL_LOOP_UNROLL];
+
+						if constexpr (requiresMainAlphaTest)
 						{
-							mainTexel = layerTexel;
-						}
-					}
-					else if (requiresPerspectiveTexelMain)
-					{
-						mainTexel = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU, perspectiveTexCoordV);
-					}
-					else if (requiresScreenSpaceAnimationTexelMain)
-					{
-						mainTexel = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, frameBufferPercentX, frameBufferPercentY);
-					}
-
-					bool passesAlphaTest = true;
-					if constexpr (requiresMainAlphaTest)
-					{
-						passesAlphaTest = mainTexel != ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
-						if (!passesAlphaTest)
-						{
-							continue;
-						}
-					}
-
-					bool passesPreviousBrightnessTest = true;
-					if constexpr (requiresPreviousBrightnessTest)
-					{
-						passesPreviousBrightnessTest = IsFrameBufferTexelBelowBrightnessLimit(frameBufferPixelIndex, shaderPalette);
-						if (!passesPreviousBrightnessTest)
-						{
-							continue;
-						}
-					}
-
-					const double shaderHomogeneousSpacePointX = shaderClipSpacePointX * shaderClipSpacePointWRecip;
-					const double shaderHomogeneousSpacePointY = shaderClipSpacePointY * shaderClipSpacePointWRecip;
-					const double shaderHomogeneousSpacePointZ = shaderClipSpacePointZ * shaderClipSpacePointWRecip;
-					const double shaderHomogeneousSpacePointW = shaderClipSpacePointWRecip;
-
-					// Apply homogeneous-to-camera space transform.
-					double shaderCameraSpacePointX = 0.0;
-					double shaderCameraSpacePointY = 0.0;
-					double shaderCameraSpacePointZ = 0.0;
-					double shaderCameraSpacePointW = 0.0;
-					Matrix4_MultiplyVectorN<1>(
-						g_invProjMatrixXX, g_invProjMatrixXY, g_invProjMatrixXZ, g_invProjMatrixXW,
-						g_invProjMatrixYX, g_invProjMatrixYY, g_invProjMatrixYZ, g_invProjMatrixYW,
-						g_invProjMatrixZX, g_invProjMatrixZY, g_invProjMatrixZZ, g_invProjMatrixZW,
-						g_invProjMatrixWX, g_invProjMatrixWY, g_invProjMatrixWZ, g_invProjMatrixWW,
-						&shaderHomogeneousSpacePointX, &shaderHomogeneousSpacePointY, &shaderHomogeneousSpacePointZ, &shaderHomogeneousSpacePointW,
-						&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW);
-
-					// Apply camera-to-world space transform.
-					double shaderWorldSpacePointX = 0.0;
-					double shaderWorldSpacePointY = 0.0;
-					double shaderWorldSpacePointZ = 0.0;
-					Matrix4_MultiplyVectorIgnoreW_N<1>(
-						g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ,
-						g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ,
-						g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ,
-						g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ,
-						&shaderCameraSpacePointX, &shaderCameraSpacePointY, &shaderCameraSpacePointZ, &shaderCameraSpacePointW,
-						&shaderWorldSpacePointX, &shaderWorldSpacePointY, &shaderWorldSpacePointZ);
-
-					double lightIntensitySum = 0.0;
-					if constexpr (requiresPerPixelLightIntensity)
-					{
-						lightIntensitySum = g_ambientPercent;
-
-						const LightBin &lightBin = g_lightBins.get(lightBinX, lightBinY);
-						for (int lightIndex = 0; lightIndex < lightBin.lightCount; lightIndex++)
-						{
-							const int lightBinLightIndex = lightBin.lightIndices[lightIndex];
-							const SoftwareLight &light = *g_visibleLights[lightBinLightIndex];
-							double lightIntensity = 0.0;
-							GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ, light, &lightIntensity);
-							lightIntensitySum += lightIntensity;
-							if (lightIntensitySum >= 1.0)
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								lightIntensitySum = 1.0;
-								break;
+								isPixelCenterOpaque[i] = mainTexel[i] != ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT;
+							}
+
+							bool passesAnyAlphaTest = false;
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								passesAnyAlphaTest |= isPixelCenterOpaque[i];
+							}
+
+							if (!passesAnyAlphaTest)
+							{
+								continue;
 							}
 						}
-					}
-					else if (requiresPerMeshLightIntensity)
-					{
-						lightIntensitySum = meshLightPercent;
-					}
 
-					const double lightLevelReal = lightIntensitySum * shaderLighting.lightLevelCountReal;
-					shaderLighting.lightLevel = shaderLighting.lastLightLevel - std::clamp(static_cast<int>(lightLevelReal), 0, shaderLighting.lastLightLevel);
+						// Sum together tests to know which pixels are valid to shade.
+						bool isPixelCenterValid[TYPICAL_LOOP_UNROLL];
 
-					if constexpr (requiresPerPixelLightIntensity)
-					{
-						bool shouldDither;
-						GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal, lightIntensitySum, frameBufferPixelIndex, &shouldDither);
-
-						if (shouldDither)
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							shaderLighting.lightLevel = std::min(shaderLighting.lightLevel + 1, shaderLighting.lastLightLevel);
+							isPixelCenterValid[i] = true;
 						}
-					}
 
-					if constexpr (requiresHorizonMirror)
-					{
-						// @todo: support camera roll
-						const double reflectedScreenSpacePointX = pixelCenterX;
-						const double reflectedScreenSpacePointY = shaderHorizonMirror.horizonScreenSpacePointY + (shaderHorizonMirror.horizonScreenSpacePointY - pixelCenterY);
-
-						const int reflectedPixelX = static_cast<int>(reflectedScreenSpacePointX);
-						const int reflectedPixelY = static_cast<int>(reflectedScreenSpacePointY);
-						shaderHorizonMirror.isReflectedPixelInFrameBuffer =
-							(reflectedPixelX >= 0) && (reflectedPixelX < g_frameBufferWidth) &&
-							(reflectedPixelY >= 0) && (reflectedPixelY < g_frameBufferHeight);
-						shaderHorizonMirror.reflectedPixelIndex = reflectedPixelX + (reflectedPixelY * g_frameBufferWidth);
-					}
-
-					if constexpr (requiresMainPaletteLookup)
-					{
-						mainTexel = GetPaletteReplacementTexel(mainTexel, shaderTexture1);
-					}
-
-					uint8_t shadedTexel = 0;
-					if constexpr (requiresHorizonMirror)
-					{
-						const bool isReflective = mainTexel == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW;
-						if (isReflective)
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							shadedTexel = GetHorizonMirrorTexel(shaderHorizonMirror);
+							isPixelCenterValid[i] &= isPixelCenterCovered[i];
 						}
-						else
+
+						if constexpr (requiresPreviousBrightnessTest)
 						{
-							shadedTexel = GetTexelWithLightLevelLighting(mainTexel, shaderLighting);
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isPixelCenterValid[i] &= isPixelCenterDarkEnough[i];
+							}
 						}
-					}
-					else if (requiresLightLevelLighting)
-					{
-						shadedTexel = GetTexelWithLightLevelLighting(mainTexel, shaderLighting);
-					}
-					else if (requiresLightTableLighting)
-					{
-						shadedTexel = GetTexelWithLightTableLighting(mainTexel, shaderLighting, frameBufferPixelIndex);
-					}
 
-					g_paletteIndexBuffer[frameBufferPixelIndex] = shadedTexel;
-					g_colorBuffer[frameBufferPixelIndex] = shaderPalette.colors[shadedTexel];
-					totalColorWrites++;
+						if constexpr (enableDepthRead)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isPixelCenterValid[i] &= isPixelCenterDepthLower[i];
+							}
+						}
 
-					if constexpr (enableDepthWrite)
-					{
-						g_depthBuffer[frameBufferPixelIndex] = ndcZDepth;
+						if constexpr (requiresMainAlphaTest)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isPixelCenterValid[i] &= isPixelCenterOpaque[i];
+							}
+						}
+
+						// Convert clip space to world space for shading.
+						double shaderHomogeneousSpacePointX[TYPICAL_LOOP_UNROLL];
+						double shaderHomogeneousSpacePointY[TYPICAL_LOOP_UNROLL];
+						double shaderHomogeneousSpacePointZ[TYPICAL_LOOP_UNROLL];
+						double shaderHomogeneousSpacePointW[TYPICAL_LOOP_UNROLL];
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderHomogeneousSpacePointX[i] = shaderClipSpacePointX[i] * shaderClipSpacePointWRecip[i];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderHomogeneousSpacePointY[i] = shaderClipSpacePointY[i] * shaderClipSpacePointWRecip[i];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderHomogeneousSpacePointZ[i] = shaderClipSpacePointZ[i] * shaderClipSpacePointWRecip[i];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							shaderHomogeneousSpacePointW[i] = shaderClipSpacePointWRecip[i];
+						}
+
+						double shaderCameraSpacePointX[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderCameraSpacePointY[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderCameraSpacePointZ[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderCameraSpacePointW[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						static_assert(sizeof(shaderCameraSpacePointX) == sizeof(g_invProjMatrixXX));
+						Matrix4_MultiplyVectorN<TYPICAL_LOOP_UNROLL>(
+							g_invProjMatrixXX, g_invProjMatrixXY, g_invProjMatrixXZ, g_invProjMatrixXW,
+							g_invProjMatrixYX, g_invProjMatrixYY, g_invProjMatrixYZ, g_invProjMatrixYW,
+							g_invProjMatrixZX, g_invProjMatrixZY, g_invProjMatrixZZ, g_invProjMatrixZW,
+							g_invProjMatrixWX, g_invProjMatrixWY, g_invProjMatrixWZ, g_invProjMatrixWW,
+							shaderHomogeneousSpacePointX, shaderHomogeneousSpacePointY, shaderHomogeneousSpacePointZ, shaderHomogeneousSpacePointW,
+							shaderCameraSpacePointX, shaderCameraSpacePointY, shaderCameraSpacePointZ, shaderCameraSpacePointW);
+
+						double shaderWorldSpacePointX[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderWorldSpacePointY[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderWorldSpacePointZ[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						static_assert(sizeof(shaderWorldSpacePointX) == sizeof(g_invViewMatrixXX));
+						Matrix4_MultiplyVectorIgnoreW_N<TYPICAL_LOOP_UNROLL>(
+							g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ,
+							g_invViewMatrixYX, g_invViewMatrixYY, g_invViewMatrixYZ,
+							g_invViewMatrixZX, g_invViewMatrixZY, g_invViewMatrixZZ,
+							g_invViewMatrixWX, g_invViewMatrixWY, g_invViewMatrixWZ,
+							shaderCameraSpacePointX, shaderCameraSpacePointY, shaderCameraSpacePointZ, shaderCameraSpacePointW,
+							shaderWorldSpacePointX, shaderWorldSpacePointY, shaderWorldSpacePointZ);
+
+						// Lighting.
+						int lightBinX[TYPICAL_LOOP_UNROLL];
+						double lightIntensitySum[TYPICAL_LOOP_UNROLL];
+						double lightLevelReal[TYPICAL_LOOP_UNROLL];
+						int lightLevel[TYPICAL_LOOP_UNROLL]; // Selected row of shades between light and dark.
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							lightBinX[i] = GetLightBinX(frameBufferPixelX[i], lightBinWidth);
+						}
+
+						if constexpr (requiresPerPixelLightIntensity)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								lightIntensitySum[i] = g_ambientPercent;
+							}
+
+							// @todo don't cross light bin boundary, currently very hard to simdify due to variable light count
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								const LightBin &lightBin = g_lightBins.get(lightBinX[i], lightBinY[yUnrollIndex]);
+								for (int lightIndex = 0; lightIndex < lightBin.lightCount; lightIndex++)
+								{
+									const int lightBinLightIndex = lightBin.lightIndices[lightIndex];
+									const SoftwareLight &light = *g_visibleLights[lightBinLightIndex];
+									double lightIntensity = 0.0;
+									GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX[i], shaderWorldSpacePointY[i], shaderWorldSpacePointZ[i], light, &lightIntensity);
+									lightIntensitySum[i] += lightIntensity;
+									if (lightIntensitySum[i] >= 1.0)
+									{
+										lightIntensitySum[i] = 1.0;
+										break;
+									}
+								}
+							}
+						}
+						else if (requiresPerMeshLightIntensity)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								lightIntensitySum[i] = meshLightPercent;
+							}
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							lightLevelReal[i] = lightIntensitySum[i] * shaderLighting.lightLevelCountReal;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							lightLevel[i] = shaderLighting.lastLightLevel - std::clamp(static_cast<int>(lightLevelReal[i]), 0, shaderLighting.lastLightLevel);
+						}
+
+						if constexpr (requiresPerPixelLightIntensity)
+						{
+							bool shouldDither[TYPICAL_LOOP_UNROLL];
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal[i], lightIntensitySum[i], frameBufferPixelIndex[i], &shouldDither[i]);
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								if (shouldDither[i])
+								{
+									lightLevel[i] = std::min(lightLevel[i] + 1, shaderLighting.lastLightLevel);
+								}
+							}
+						}
+
+						// Screen-space reflections.
+						bool isReflectedPixelInFrameBuffer[TYPICAL_LOOP_UNROLL];
+						int reflectedPixelIndex[TYPICAL_LOOP_UNROLL];
+
+						if constexpr (requiresHorizonMirror)
+						{
+							// @todo: support camera roll
+							double reflectedScreenSpacePointX[TYPICAL_LOOP_UNROLL];
+							double reflectedScreenSpacePointY[TYPICAL_LOOP_UNROLL];
+							int reflectedPixelX[TYPICAL_LOOP_UNROLL];
+							int reflectedPixelY[TYPICAL_LOOP_UNROLL];
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								reflectedScreenSpacePointX[i] = pixelCenterX[i];
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								reflectedScreenSpacePointY[i] = shaderHorizonMirror.horizonScreenSpacePointY + (shaderHorizonMirror.horizonScreenSpacePointY - pixelCenterY[yUnrollIndex]);
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								reflectedPixelX[i] = static_cast<int>(reflectedScreenSpacePointX[i]);
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								reflectedPixelY[i] = static_cast<int>(reflectedScreenSpacePointY[i]);
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isReflectedPixelInFrameBuffer[i] = (reflectedPixelX[i] >= 0) && (reflectedPixelX[i] < g_frameBufferWidth) && (reflectedPixelY[i] >= 0) && (reflectedPixelY[i] < g_frameBufferHeight);
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								reflectedPixelIndex[i] = reflectedPixelX[i] + (reflectedPixelY[i] * g_frameBufferWidth);
+							}
+						}
+
+						// Shading.
+						if constexpr (requiresMainPaletteLookup)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								mainTexel[i] = GetPaletteReplacementTexel(mainTexel[i], shaderTexture1);
+							}
+						}
+
+						uint8_t shadedTexel[TYPICAL_LOOP_UNROLL] = { 0 };
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							if constexpr (requiresHorizonMirror)
+							{
+								bool isReflective = mainTexel[i] == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW;
+								if (isReflective)
+								{
+									if (isReflectedPixelInFrameBuffer[i])
+									{
+										shadedTexel[i] = g_paletteIndexBuffer[reflectedPixelIndex[i]];
+									}
+									else
+									{
+										shadedTexel[i] = shaderHorizonMirror.fallbackSkyColor;
+									}
+								}
+								else
+								{
+									shadedTexel[i] = GetTexelWithLightLevelLighting(mainTexel[i], lightLevel[i], shaderLighting);
+								}
+							}
+							else if (requiresLightLevelLighting)
+							{
+								shadedTexel[i] = GetTexelWithLightLevelLighting(mainTexel[i], lightLevel[i], shaderLighting);
+							}
+							else if (requiresLightTableLighting)
+							{
+								shadedTexel[i] = GetTexelWithLightTableLighting(mainTexel[i], lightLevel[i], shaderLighting, frameBufferPixelIndex[i]);
+							}
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							if (isPixelCenterValid[i])
+							{
+								g_paletteIndexBuffer[frameBufferPixelIndex[i]] = shadedTexel[i];
+								g_colorBuffer[frameBufferPixelIndex[i]] = shaderPalette.colors[shadedTexel[i]];
+								totalColorWrites++;
+
+								if constexpr (enableDepthWrite)
+								{
+									g_depthBuffer[frameBufferPixelIndex[i]] = ndcZDepth[i];
+								}
+							}
+						}
 					}
 				}
 			}
@@ -3946,7 +4227,6 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 	const int frameBufferWidth = settings.width;
 	const int frameBufferHeight = settings.height;
 	this->paletteIndexBuffer.init(frameBufferWidth, frameBufferHeight);
-	this->coverageBuffer.init(frameBufferWidth, frameBufferHeight);
 	this->depthBuffer.init(frameBufferWidth, frameBufferHeight);
 
 	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
@@ -3959,7 +4239,6 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 void SoftwareRenderer::shutdown()
 {
 	this->paletteIndexBuffer.clear();
-	this->coverageBuffer.clear();
 	this->depthBuffer.clear();
 	this->ditherBuffer.clear();
 	this->ditheringMode = static_cast<DitheringMode>(-1);
@@ -3981,9 +4260,6 @@ void SoftwareRenderer::resize(int width, int height)
 {
 	this->paletteIndexBuffer.init(width, height);
 	this->paletteIndexBuffer.fill(0);
-
-	this->coverageBuffer.init(width, height);
-	this->coverageBuffer.fill(false);
 
 	this->depthBuffer.init(width, height);
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
@@ -4326,7 +4602,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 
 	PopulateCameraGlobals(camera);
 	PopulateDrawCallGlobals(totalDrawCallCount);
-	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->coverageBuffer.begin(), this->depthBuffer.begin(),
+	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
 	PopulateLightGlobals(settings.visibleLightIDs, this->lights, camera, frameBufferWidth, frameBufferHeight);
 	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
