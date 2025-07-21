@@ -3315,9 +3315,15 @@ namespace
 
 						if constexpr (enableDepthRead)
 						{
+							double prevDepthBufferPixels[TYPICAL_LOOP_UNROLL];
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								isPixelCenterDepthLower[i] = ndcZDepth[i] < g_depthBuffer[frameBufferPixelIndex[i]];
+								prevDepthBufferPixels[i] = g_depthBuffer[frameBufferPixelIndex[i]];
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isPixelCenterDepthLower[i] = ndcZDepth[i] < prevDepthBufferPixels[i];
 							}
 
 							totalDepthTests += TYPICAL_LOOP_UNROLL;
@@ -3501,6 +3507,13 @@ namespace
 						double shaderHomogeneousSpacePointY[TYPICAL_LOOP_UNROLL];
 						double shaderHomogeneousSpacePointZ[TYPICAL_LOOP_UNROLL];
 						double shaderHomogeneousSpacePointW[TYPICAL_LOOP_UNROLL];
+						double shaderCameraSpacePointX[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderCameraSpacePointY[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderCameraSpacePointZ[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderCameraSpacePointW[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderWorldSpacePointX[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderWorldSpacePointY[TYPICAL_LOOP_UNROLL] = { 0.0 };
+						double shaderWorldSpacePointZ[TYPICAL_LOOP_UNROLL] = { 0.0 };
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
@@ -3522,10 +3535,6 @@ namespace
 							shaderHomogeneousSpacePointW[i] = shaderClipSpacePointWRecip[i];
 						}
 
-						double shaderCameraSpacePointX[TYPICAL_LOOP_UNROLL] = { 0.0 };
-						double shaderCameraSpacePointY[TYPICAL_LOOP_UNROLL] = { 0.0 };
-						double shaderCameraSpacePointZ[TYPICAL_LOOP_UNROLL] = { 0.0 };
-						double shaderCameraSpacePointW[TYPICAL_LOOP_UNROLL] = { 0.0 };
 						static_assert(sizeof(shaderCameraSpacePointX) == sizeof(g_invProjMatrixXX));
 						Matrix4_MultiplyVectorN<TYPICAL_LOOP_UNROLL>(
 							g_invProjMatrixXX, g_invProjMatrixXY, g_invProjMatrixXZ, g_invProjMatrixXW,
@@ -3535,9 +3544,6 @@ namespace
 							shaderHomogeneousSpacePointX, shaderHomogeneousSpacePointY, shaderHomogeneousSpacePointZ, shaderHomogeneousSpacePointW,
 							shaderCameraSpacePointX, shaderCameraSpacePointY, shaderCameraSpacePointZ, shaderCameraSpacePointW);
 
-						double shaderWorldSpacePointX[TYPICAL_LOOP_UNROLL] = { 0.0 };
-						double shaderWorldSpacePointY[TYPICAL_LOOP_UNROLL] = { 0.0 };
-						double shaderWorldSpacePointZ[TYPICAL_LOOP_UNROLL] = { 0.0 };
 						static_assert(sizeof(shaderWorldSpacePointX) == sizeof(g_invViewMatrixXX));
 						Matrix4_MultiplyVectorIgnoreW_N<TYPICAL_LOOP_UNROLL>(
 							g_invViewMatrixXX, g_invViewMatrixXY, g_invViewMatrixXZ,
