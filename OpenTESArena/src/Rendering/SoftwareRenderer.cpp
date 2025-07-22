@@ -1654,7 +1654,7 @@ namespace
 		g_skyBgTexture = &skyBgTexture;
 	}
 
-	uint8_t GetPerspectiveTexel(const PixelShaderTexture &texture, double perspectiveTexCoordU, double perspectiveTexCoordV)
+	uint8_t GetPerspectiveTexel(const PixelShaderTexture &__restrict texture, double perspectiveTexCoordU, double perspectiveTexCoordV)
 	{
 		const int texelX = FractToInt(perspectiveTexCoordU, texture.widthReal);
 		const int texelY = FractToInt(perspectiveTexCoordV, texture.heightReal);
@@ -1664,7 +1664,7 @@ namespace
 	}
 
 	constexpr int SCREEN_SPACE_ANIM_HEIGHT = 100; // @todo dehardcode w/ another parameter
-	uint8_t GetScreenSpaceAnimationTexel(const PixelShaderTexture &texture, double animPercent, double frameBufferPercentX, double frameBufferPercentY)
+	uint8_t GetScreenSpaceAnimationTexel(const PixelShaderTexture &__restrict texture, double animPercent, double frameBufferPercentX, double frameBufferPercentY)
 	{
 		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.		
 		const int texelX = std::clamp(static_cast<int>(frameBufferPercentX * texture.widthReal), 0, texture.widthMinusOne);
@@ -1683,19 +1683,19 @@ namespace
 		return texel;
 	}
 
-	uint8_t GetPaletteReplacementTexel(uint8_t texel, const PixelShaderTexture &lookupTexture)
+	uint8_t GetPaletteReplacementTexel(uint8_t texel, const PixelShaderTexture &__restrict lookupTexture)
 	{
 		return lookupTexture.texels[texel];
 	}
 
-	uint8_t GetTexelWithLightLevelLighting(uint8_t texel, int lightLevel, const PixelShaderLighting &lighting)
+	uint8_t GetTexelWithLightLevelLighting(uint8_t texel, int lightLevel, const PixelShaderLighting &__restrict lighting)
 	{
 		const int shadedTexelIndex = texel + (lightLevel * lighting.texelsPerLightLevel);
 		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
 		return shadedTexel;
 	}
 
-	uint8_t GetTexelWithLightTableLighting(uint8_t texel, int lightLevel, const PixelShaderLighting &lighting, int frameBufferPixelIndex)
+	uint8_t GetTexelWithLightTableLighting(uint8_t texel, int lightLevel, const PixelShaderLighting &__restrict lighting, int frameBufferPixelIndex)
 	{
 		int lightTableTexelIndex;
 		if (ArenaRenderUtils::isLightLevelTexel(texel))
