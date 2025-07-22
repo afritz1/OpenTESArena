@@ -3130,9 +3130,26 @@ namespace
 				{
 					for (int binPixelX = binPixelXStart; binPixelX < binPixelXUnrollAdjustedEnd; binPixelX += TYPICAL_LOOP_UNROLL)
 					{
-						// Coverage test (is pixel center in triangle?).
+						// Frame buffer slice for this set of pixels.
 						int frameBufferPixelX[TYPICAL_LOOP_UNROLL];
 						int frameBufferPixelIndex[TYPICAL_LOOP_UNROLL];
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							frameBufferPixelX[i] = BinPixelToFrameBufferPixel(binX, binPixelX + i, rasterizerInputCache.binWidth);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							frameBufferPixelIndex[i] = frameBufferPixelX[i] + (frameBufferPixelY[yUnrollIndex] * g_frameBufferWidth);
+						}
+
+						const int frameBufferSlicePixelIndex = frameBufferPixelIndex[0];
+						uint8_t *paletteIndexBufferSlice = g_paletteIndexBuffer + frameBufferSlicePixelIndex;
+						double *depthBufferSlice = g_depthBuffer + frameBufferSlicePixelIndex;
+						uint32_t *colorBufferSlice = g_colorBuffer + frameBufferSlicePixelIndex;
+
+						// Coverage test (is pixel center in triangle?).
 						double frameBufferPercentX[TYPICAL_LOOP_UNROLL];
 						double pixelCenterX[TYPICAL_LOOP_UNROLL];
 						double pixelCoverageDot0X[TYPICAL_LOOP_UNROLL];
@@ -3145,16 +3162,6 @@ namespace
 						bool isPixelCenterIn1[TYPICAL_LOOP_UNROLL];
 						bool isPixelCenterIn2[TYPICAL_LOOP_UNROLL];
 						bool isPixelCenterCovered[TYPICAL_LOOP_UNROLL];
-
-						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-						{
-							frameBufferPixelX[i] = BinPixelToFrameBufferPixel(binX, binPixelX + i, rasterizerInputCache.binWidth);
-						}
-
-						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-						{
-							frameBufferPixelIndex[i] = frameBufferPixelX[i] + (frameBufferPixelY[yUnrollIndex] * g_frameBufferWidth);
-						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
@@ -3214,7 +3221,7 @@ namespace
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								prevFrameBufferPixel[i] = g_paletteIndexBuffer[frameBufferPixelIndex[i]];
+								prevFrameBufferPixel[i] = paletteIndexBufferSlice[i];
 							}
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -3320,7 +3327,7 @@ namespace
 							double prevDepthBufferPixels[TYPICAL_LOOP_UNROLL];
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								prevDepthBufferPixels[i] = g_depthBuffer[frameBufferPixelIndex[i]];
+								prevDepthBufferPixels[i] = depthBufferSlice[i];
 							}
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -3769,13 +3776,13 @@ namespace
 						{
 							if (isPixelCenterValid[i])
 							{
-								g_paletteIndexBuffer[frameBufferPixelIndex[i]] = shadedTexel[i];
-								g_colorBuffer[frameBufferPixelIndex[i]] = shaderPalette.colors[shadedTexel[i]];
+								paletteIndexBufferSlice[i] = shadedTexel[i];
+								colorBufferSlice[i] = shaderPalette.colors[shadedTexel[i]];
 								totalColorWrites++;
 
 								if constexpr (enableDepthWrite)
 								{
-									g_depthBuffer[frameBufferPixelIndex[i]] = ndcZDepth[i];
+									depthBufferSlice[i] = ndcZDepth[i];
 								}
 							}
 						}
