@@ -1682,48 +1682,6 @@ namespace
 		const uint8_t texel = texture.texels[texelIndex];
 		return texel;
 	}
-
-	uint8_t GetPaletteReplacementTexel(uint8_t texel, const PixelShaderTexture &__restrict lookupTexture)
-	{
-		return lookupTexture.texels[texel];
-	}
-
-	uint8_t GetTexelWithLightLevelLighting(uint8_t texel, int lightLevel, const PixelShaderLighting &__restrict lighting)
-	{
-		const int shadedTexelIndex = texel + (lightLevel * lighting.texelsPerLightLevel);
-		const uint8_t shadedTexel = lighting.lightTableTexels[shadedTexelIndex];
-		return shadedTexel;
-	}
-
-	uint8_t GetTexelWithLightTableLighting(uint8_t texel, int lightLevel, const PixelShaderLighting &__restrict lighting, int frameBufferPixelIndex)
-	{
-		int lightTableTexelIndex;
-		if (ArenaRenderUtils::isLightLevelTexel(texel))
-		{
-			const int lightLevel = static_cast<int>(texel) - ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
-			const uint8_t prevFrameBufferPixel = g_paletteIndexBuffer[frameBufferPixelIndex];
-			lightTableTexelIndex = prevFrameBufferPixel + (lightLevel * lighting.texelsPerLightLevel);
-		}
-		else
-		{
-			const int lightTableOffset = lightLevel * lighting.texelsPerLightLevel;
-			if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC1)
-			{
-				lightTableTexelIndex = lightTableOffset + ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST1;
-			}
-			else if (texel == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC2)
-			{
-				lightTableTexelIndex = lightTableOffset + ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST2;
-			}
-			else
-			{
-				lightTableTexelIndex = lightTableOffset + texel;
-			}
-		}
-
-		const uint8_t shadedTexel = lighting.lightTableTexels[lightTableTexelIndex];
-		return shadedTexel;
-	}
 }
 
 // Mesh processing, vertex shader execution.
@@ -3742,16 +3700,23 @@ namespace
 						// Shading.
 						if constexpr (requiresMainPaletteLookup)
 						{
+							uint8_t replacementTexel[TYPICAL_LOOP_UNROLL];
+
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								mainTexel[i] = GetPaletteReplacementTexel(mainTexel[i], shaderTexture1);
+								replacementTexel[i] = shaderTexture1.texels[mainTexel[i]];
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								mainTexel[i] = replacementTexel[i];
 							}
 						}
 
 						uint8_t shadedTexel[TYPICAL_LOOP_UNROLL] = { 0 };
-						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						if constexpr (requiresHorizonMirrorReflection)
 						{
-							if constexpr (requiresHorizonMirrorReflection)
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
 								if (isReflectedPixelInFrameBuffer[i])
 								{
@@ -3762,13 +3727,54 @@ namespace
 									shadedTexel[i] = shaderHorizonMirror.fallbackSkyColor;
 								}
 							}
-							else if (requiresLightLevelLighting)
+						}
+						else if (requiresLightLevelLighting)
+						{
+							int shadedTexelIndex[TYPICAL_LOOP_UNROLL];
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								shadedTexel[i] = GetTexelWithLightLevelLighting(mainTexel[i], lightLevel[i], shaderLighting);
+								shadedTexelIndex[i] = mainTexel[i] + (lightLevel[i] * shaderLighting.texelsPerLightLevel);
 							}
-							else if (requiresLightTableLighting)
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								shadedTexel[i] = GetTexelWithLightTableLighting(mainTexel[i], lightLevel[i], shaderLighting, frameBufferPixelIndex[i]);
+								shadedTexel[i] = shaderLighting.lightTableTexels[shadedTexelIndex[i]];
+							}
+						}
+						else if (requiresLightTableLighting)
+						{
+							int lightTableTexelIndex[TYPICAL_LOOP_UNROLL];
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								if (ArenaRenderUtils::isLightLevelTexel(mainTexel[i]))
+								{
+									const int texelAsLightLevel = static_cast<int>(mainTexel[i]) - ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
+									const uint8_t prevFrameBufferPixel = paletteIndexBufferSlice[i];
+									lightTableTexelIndex[i] = prevFrameBufferPixel + (texelAsLightLevel * shaderLighting.texelsPerLightLevel);
+								}
+								else
+								{
+									const int lightTableOffset = lightLevel[i] * shaderLighting.texelsPerLightLevel;
+									if (mainTexel[i] == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC1)
+									{
+										lightTableTexelIndex[i] = lightTableOffset + ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST1;
+									}
+									else if (mainTexel[i] == ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_SRC2)
+									{
+										lightTableTexelIndex[i] = lightTableOffset + ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_DST2;
+									}
+									else
+									{
+										lightTableTexelIndex[i] = lightTableOffset + mainTexel[i];
+									}
+								}
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								shadedTexel[i] = shaderLighting.lightTableTexels[lightTableTexelIndex[i]];
 							}
 						}
 
