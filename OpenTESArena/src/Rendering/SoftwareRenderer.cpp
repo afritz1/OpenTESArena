@@ -1653,71 +1653,6 @@ namespace
 		g_lightTableTexture = &lightTableTexture;
 		g_skyBgTexture = &skyBgTexture;
 	}
-
-	template<int N>
-	void GetPerspectiveTexel_N(const PixelShaderTexture &__restrict texture, const double *__restrict perspectiveTexCoordU, const double *__restrict perspectiveTexCoordV,
-		uint8_t *__restrict outTexel)
-	{
-		int texelX[N];
-		int texelY[N];
-		int texelIndex[N];
-		uint8_t texel[N];
-
-		for (int i = 0; i < N; i++)
-		{
-			texelX[i] = FractToInt(perspectiveTexCoordU[i], texture.widthReal);
-		}
-
-		for (int i = 0; i < N; i++)
-		{
-			texelY[i] = FractToInt(perspectiveTexCoordV[i], texture.heightReal);
-		}
-
-		for (int i = 0; i < N; i++)
-		{
-			texelIndex[i] = texelX[i] + (texelY[i] * texture.width);
-		}
-
-		for (int i = 0; i < N; i++)
-		{
-			outTexel[i] = texture.texels[texelIndex[i]];
-		}
-	}
-
-	template<int N>
-	void GetScreenSpaceAnimationTexel_N(const PixelShaderTexture &__restrict texture, double animPercent, const double *__restrict frameBufferPercentX, double frameBufferPercentY,
-		uint8_t *__restrict outTexel)
-	{
-		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.
-
-		constexpr int frameHeight = 100; // @todo dehardcode w/ another parameter
-		const int frameCount = texture.height / frameHeight;
-		const int currentFrameIndex = std::clamp(static_cast<int>(static_cast<double>(frameCount) * animPercent), 0, frameCount - 1);
-
-		const double frameBufferV = frameBufferPercentY * 2.0;
-		const double normalizedV = frameBufferV >= 1.0 ? (frameBufferV - 1.0) : frameBufferV;
-		const double sampleV = (normalizedV / static_cast<double>(frameCount)) + (static_cast<double>(currentFrameIndex) / static_cast<double>(frameCount));
-		const int texelY = std::clamp(static_cast<int>(sampleV * texture.heightReal), 0, texture.heightMinusOne);
-
-		int texelX[N];
-		int texelIndex[N];
-		uint8_t texel[N];
-
-		for (int i = 0; i < N; i++)
-		{
-			texelX[i] = std::clamp(static_cast<int>(frameBufferPercentX[i] * texture.widthReal), 0, texture.widthMinusOne);
-		}
-
-		for (int i = 0; i < N; i++)
-		{
-			texelIndex[i] = texelX[i] + (texelY * texture.width);
-		}
-
-		for (int i = 0; i < N; i++)
-		{
-			outTexel[i] = texture.texels[texelIndex[i]];
-		}
-	}
 }
 
 // Mesh processing, vertex shader execution.
@@ -2830,6 +2765,71 @@ namespace
 		}
 	}
 
+	template<int N>
+	void GetPerspectiveTexel_N(const PixelShaderTexture &__restrict texture, const double *__restrict perspectiveTexCoordU, const double *__restrict perspectiveTexCoordV,
+		uint8_t *__restrict outTexel)
+	{
+		int texelX[N];
+		int texelY[N];
+		int texelIndex[N];
+		uint8_t texel[N];
+
+		for (int i = 0; i < N; i++)
+		{
+			texelX[i] = FractToInt(perspectiveTexCoordU[i], texture.widthReal);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			texelY[i] = FractToInt(perspectiveTexCoordV[i], texture.heightReal);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			texelIndex[i] = texelX[i] + (texelY[i] * texture.width);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outTexel[i] = texture.texels[texelIndex[i]];
+		}
+	}
+
+	template<int N>
+	void GetScreenSpaceAnimationTexel_N(const PixelShaderTexture &__restrict texture, double animPercent, const double *__restrict frameBufferPercentX, double frameBufferPercentY,
+		uint8_t *__restrict outTexel)
+	{
+		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.
+
+		constexpr int frameHeight = 100; // @todo dehardcode w/ another parameter
+		const int frameCount = texture.height / frameHeight;
+		const int currentFrameIndex = std::clamp(static_cast<int>(static_cast<double>(frameCount) * animPercent), 0, frameCount - 1);
+
+		const double frameBufferV = frameBufferPercentY * 2.0;
+		const double normalizedV = frameBufferV >= 1.0 ? (frameBufferV - 1.0) : frameBufferV;
+		const double sampleV = (normalizedV / static_cast<double>(frameCount)) + (static_cast<double>(currentFrameIndex) / static_cast<double>(frameCount));
+		const int texelY = std::clamp(static_cast<int>(sampleV * texture.heightReal), 0, texture.heightMinusOne);
+
+		int texelX[N];
+		int texelIndex[N];
+		uint8_t texel[N];
+
+		for (int i = 0; i < N; i++)
+		{
+			texelX[i] = std::clamp(static_cast<int>(frameBufferPercentX[i] * texture.widthReal), 0, texture.widthMinusOne);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			texelIndex[i] = texelX[i] + (texelY * texture.width);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outTexel[i] = texture.texels[texelIndex[i]];
+		}
+	}
+
 	void GetWorldSpaceLightIntensityValue(double pointX, double pointY, double pointZ, const SoftwareLight &__restrict light,
 		double *__restrict outLightIntensity)
 	{
@@ -3621,6 +3621,7 @@ namespace
 						int lightBinX[TYPICAL_LOOP_UNROLL];
 						double lightIntensitySum[TYPICAL_LOOP_UNROLL];
 						double lightLevelReal[TYPICAL_LOOP_UNROLL];
+						int lightLevelClamped[TYPICAL_LOOP_UNROLL];
 						int lightLevel[TYPICAL_LOOP_UNROLL]; // Selected row of shades between light and dark.
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -3670,7 +3671,12 @@ namespace
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							lightLevel[i] = shaderLighting.lastLightLevel - std::clamp(static_cast<int>(lightLevelReal[i]), 0, shaderLighting.lastLightLevel);
+							lightLevelClamped[i] = std::clamp(static_cast<int>(lightLevelReal[i]), 0, shaderLighting.lastLightLevel);
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							lightLevel[i] = shaderLighting.lastLightLevel - lightLevelClamped[i];
 						}
 
 						if constexpr (requiresPerPixelLightIntensity)
