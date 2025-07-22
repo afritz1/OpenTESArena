@@ -932,20 +932,6 @@ namespace
 		return (0.50 - (ndcY * 0.50)) * frameHeight;
 	}
 
-	// Helper function for the dot product X's or Y's used to see if a screen space point is inside the triangle.
-	void GetScreenSpacePointHalfSpaceComponents(double pointComponent, double plane0PointComponent,
-		double plane1PointComponent, double plane2PointComponent, double plane0NormalComponent,
-		double plane1NormalComponent, double plane2NormalComponent, double *__restrict outDot0Component,
-		double *__restrict outDot1Component, double *__restrict outDot2Component)
-	{
-		const double point0Diff = pointComponent - plane0PointComponent;
-		const double point1Diff = pointComponent - plane1PointComponent;
-		const double point2Diff = pointComponent - plane2PointComponent;
-		*outDot0Component = point0Diff * plane0NormalComponent;
-		*outDot1Component = point1Diff * plane1NormalComponent;
-		*outDot2Component = point2Diff * plane2NormalComponent;
-	}
-
 	// Bin dimensions vary with frame buffer resolution for better thread balancing.
 	constexpr int RASTERIZER_BIN_MIN_WIDTH = 64; // For low resolutions (<720p).
 	constexpr int RASTERIZER_BIN_MAX_WIDTH = 512; // For high resolutions (>2160p).
@@ -3080,16 +3066,9 @@ namespace
 			// Shade triangle using this bin's bounding box of it.
 			for (int binPixelY = binPixelYStart; binPixelY < binPixelYUnrollAdjustedEnd; binPixelY += TYPICAL_LOOP_UNROLL)
 			{
+				// Column slice setup.
 				int frameBufferPixelY[TYPICAL_LOOP_UNROLL];
 				double frameBufferPercentY[TYPICAL_LOOP_UNROLL];
-				double pixelCenterY[TYPICAL_LOOP_UNROLL];
-				double pixelCoverageDot0Y[TYPICAL_LOOP_UNROLL];
-				double pixelCoverageDot1Y[TYPICAL_LOOP_UNROLL];
-				double pixelCoverageDot2Y[TYPICAL_LOOP_UNROLL];
-				double screenSpace0CurrentY[TYPICAL_LOOP_UNROLL];
-				double barycentricDot20Y[TYPICAL_LOOP_UNROLL];
-				double barycentricDot21Y[TYPICAL_LOOP_UNROLL];
-				int lightBinY[TYPICAL_LOOP_UNROLL];
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
@@ -3101,6 +3080,18 @@ namespace
 					frameBufferPercentY[i] = (static_cast<double>(frameBufferPixelY[i]) + 0.50) * g_frameBufferHeightRealRecip;
 				}
 
+				// Column pixel coverage test components.
+				double pixelCenterY[TYPICAL_LOOP_UNROLL];
+				double pixelCenterPlane0DiffY[TYPICAL_LOOP_UNROLL];
+				double pixelCenterPlane1DiffY[TYPICAL_LOOP_UNROLL];
+				double pixelCenterPlane2DiffY[TYPICAL_LOOP_UNROLL];
+				double pixelCoverageDot0Y[TYPICAL_LOOP_UNROLL];
+				double pixelCoverageDot1Y[TYPICAL_LOOP_UNROLL];
+				double pixelCoverageDot2Y[TYPICAL_LOOP_UNROLL];
+				double screenSpace0CurrentY[TYPICAL_LOOP_UNROLL];
+				double barycentricDot20Y[TYPICAL_LOOP_UNROLL];
+				double barycentricDot21Y[TYPICAL_LOOP_UNROLL];
+
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
 					pixelCenterY[i] = frameBufferPercentY[i] * g_frameBufferHeightReal;
@@ -3108,8 +3099,32 @@ namespace
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
-					GetScreenSpacePointHalfSpaceComponents(pixelCenterY[i], screenSpace0Y, screenSpace1Y, screenSpace2Y, screenSpace01PerpY,
-						screenSpace12PerpY, screenSpace20PerpY, &pixelCoverageDot0Y[i], &pixelCoverageDot1Y[i], &pixelCoverageDot2Y[i]);
+					pixelCenterPlane0DiffY[i] = pixelCenterY[i] - screenSpace0Y;
+				}
+
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					pixelCenterPlane1DiffY[i] = pixelCenterY[i] - screenSpace1Y;
+				}
+
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					pixelCenterPlane2DiffY[i] = pixelCenterY[i] - screenSpace2Y;
+				}
+
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					pixelCoverageDot0Y[i] = pixelCenterPlane0DiffY[i] * screenSpace01PerpY;
+				}
+
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					pixelCoverageDot1Y[i] = pixelCenterPlane1DiffY[i] * screenSpace12PerpY;
+				}
+
+				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+				{
+					pixelCoverageDot2Y[i] = pixelCenterPlane2DiffY[i] * screenSpace20PerpY;
 				}
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -3126,6 +3141,9 @@ namespace
 				{
 					barycentricDot21Y[i] = screenSpace0CurrentY[i] * screenSpace02Y;
 				}
+
+				// Column light bin component.
+				int lightBinY[TYPICAL_LOOP_UNROLL];
 
 				for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 				{
@@ -3158,6 +3176,9 @@ namespace
 						// Coverage test (is pixel center in triangle?).
 						double frameBufferPercentX[TYPICAL_LOOP_UNROLL];
 						double pixelCenterX[TYPICAL_LOOP_UNROLL];
+						double pixelCenterPlane0DiffX[TYPICAL_LOOP_UNROLL];
+						double pixelCenterPlane1DiffX[TYPICAL_LOOP_UNROLL];
+						double pixelCenterPlane2DiffX[TYPICAL_LOOP_UNROLL];
 						double pixelCoverageDot0X[TYPICAL_LOOP_UNROLL];
 						double pixelCoverageDot1X[TYPICAL_LOOP_UNROLL];
 						double pixelCoverageDot2X[TYPICAL_LOOP_UNROLL];
@@ -3181,21 +3202,61 @@ namespace
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							GetScreenSpacePointHalfSpaceComponents(pixelCenterX[i], screenSpace0X, screenSpace1X, screenSpace2X, screenSpace01PerpX,
-								screenSpace12PerpX, screenSpace20PerpX, &pixelCoverageDot0X[i], &pixelCoverageDot1X[i], &pixelCoverageDot2X[i]);
+							pixelCenterPlane0DiffX[i] = pixelCenterX[i] - screenSpace0X;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCenterPlane1DiffX[i] = pixelCenterX[i] - screenSpace1X;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCenterPlane2DiffX[i] = pixelCenterX[i] - screenSpace2X;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCoverageDot0X[i] = pixelCenterPlane0DiffX[i] * screenSpace01PerpX;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCoverageDot1X[i] = pixelCenterPlane1DiffX[i] * screenSpace12PerpX;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
+							pixelCoverageDot2X[i] = pixelCenterPlane2DiffX[i] * screenSpace20PerpX;
 						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
 							pixelCenterDot0[i] = pixelCoverageDot0X[i] + pixelCoverageDot0Y[yUnrollIndex];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
 							pixelCenterDot1[i] = pixelCoverageDot1X[i] + pixelCoverageDot1Y[yUnrollIndex];
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
 							pixelCenterDot2[i] = pixelCoverageDot2X[i] + pixelCoverageDot2Y[yUnrollIndex];
 						}
 
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
 							isPixelCenterIn0[i] = pixelCenterDot0[i] >= 0.0;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
 							isPixelCenterIn1[i] = pixelCenterDot1[i] >= 0.0;
+						}
+
+						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						{
 							isPixelCenterIn2[i] = pixelCenterDot2[i] >= 0.0;
 						}
 
