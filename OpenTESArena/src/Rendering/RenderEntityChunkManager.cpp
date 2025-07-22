@@ -392,10 +392,16 @@ void RenderEntityChunkManager::loadTexturesForEntity(EntityDefID entityDefID, Te
 
 void RenderEntityChunkManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
 {
-	commandBuffer.addDrawCalls(this->drawCallsCache);
+	if (!this->drawCallsCache.empty())
+	{
+		commandBuffer.addDrawCalls(this->drawCallsCache);
+	}
 
-	// Puddles require two passes to avoid race conditions when rasterizing.
-	commandBuffer.addDrawCalls(this->puddleSecondPassDrawCallsCache);
+	if (!this->puddleSecondPassDrawCallsCache.empty())
+	{
+		// Puddles require two passes to avoid race conditions when rasterizing.
+		commandBuffer.addDrawCalls(this->puddleSecondPassDrawCallsCache);
+	}
 }
 
 void RenderEntityChunkManager::loadScene(TextureManager &textureManager, Renderer &renderer)
