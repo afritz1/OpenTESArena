@@ -1654,22 +1654,43 @@ namespace
 		g_skyBgTexture = &skyBgTexture;
 	}
 
-	uint8_t GetPerspectiveTexel(const PixelShaderTexture &__restrict texture, double perspectiveTexCoordU, double perspectiveTexCoordV)
+	template<int N>
+	void GetPerspectiveTexel_N(const PixelShaderTexture &__restrict texture, const double *__restrict perspectiveTexCoordU, const double *__restrict perspectiveTexCoordV,
+		uint8_t *__restrict outTexel)
 	{
-		const int texelX = FractToInt(perspectiveTexCoordU, texture.widthReal);
-		const int texelY = FractToInt(perspectiveTexCoordV, texture.heightReal);
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-		return texel;
+		int texelX[N];
+		int texelY[N];
+		int texelIndex[N];
+		uint8_t texel[N];
+
+		for (int i = 0; i < N; i++)
+		{
+			texelX[i] = FractToInt(perspectiveTexCoordU[i], texture.widthReal);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			texelY[i] = FractToInt(perspectiveTexCoordV[i], texture.heightReal);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			texelIndex[i] = texelX[i] + (texelY[i] * texture.width);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outTexel[i] = texture.texels[texelIndex[i]];
+		}
 	}
 
-	constexpr int SCREEN_SPACE_ANIM_HEIGHT = 100; // @todo dehardcode w/ another parameter
-	uint8_t GetScreenSpaceAnimationTexel(const PixelShaderTexture &__restrict texture, double animPercent, double frameBufferPercentX, double frameBufferPercentY)
+	template<int N>
+	void GetScreenSpaceAnimationTexel_N(const PixelShaderTexture &__restrict texture, double animPercent, const double *__restrict frameBufferPercentX, double frameBufferPercentY,
+		uint8_t *__restrict outTexel)
 	{
-		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.		
-		const int texelX = std::clamp(static_cast<int>(frameBufferPercentX * texture.widthReal), 0, texture.widthMinusOne);
+		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.
 
-		constexpr int frameHeight = SCREEN_SPACE_ANIM_HEIGHT;
+		constexpr int frameHeight = 100; // @todo dehardcode w/ another parameter
 		const int frameCount = texture.height / frameHeight;
 		const int currentFrameIndex = std::clamp(static_cast<int>(static_cast<double>(frameCount) * animPercent), 0, frameCount - 1);
 
@@ -1678,9 +1699,24 @@ namespace
 		const double sampleV = (normalizedV / static_cast<double>(frameCount)) + (static_cast<double>(currentFrameIndex) / static_cast<double>(frameCount));
 		const int texelY = std::clamp(static_cast<int>(sampleV * texture.heightReal), 0, texture.heightMinusOne);
 
-		const int texelIndex = texelX + (texelY * texture.width);
-		const uint8_t texel = texture.texels[texelIndex];
-		return texel;
+		int texelX[N];
+		int texelIndex[N];
+		uint8_t texel[N];
+
+		for (int i = 0; i < N; i++)
+		{
+			texelX[i] = std::clamp(static_cast<int>(frameBufferPercentX[i] * texture.widthReal), 0, texture.widthMinusOne);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			texelIndex[i] = texelX[i] + (texelY * texture.width);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			outTexel[i] = texture.texels[texelIndex[i]];
+		}
 	}
 }
 
@@ -3373,41 +3409,42 @@ namespace
 						uint8_t layerTexel[TYPICAL_LOOP_UNROLL];
 						if constexpr (requiresPerspectiveTexelLayer)
 						{
-							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
-							{
-								layerTexel[i] = GetPerspectiveTexel(shaderTexture1, perspectiveTexCoordU[i], perspectiveTexCoordV[i]);
-							}
+							GetPerspectiveTexel_N<TYPICAL_LOOP_UNROLL>(shaderTexture1, perspectiveTexCoordU, perspectiveTexCoordV, layerTexel);
 						}
 
 						uint8_t mainTexel[TYPICAL_LOOP_UNROLL];
-						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+						if constexpr (requiresLayerAlphaTest)
 						{
-							if constexpr (requiresLayerAlphaTest)
+							uint8_t baseTexel[TYPICAL_LOOP_UNROLL];
+
+							if constexpr (requiresPerspectiveTexelMain)
+							{
+								GetPerspectiveTexel_N<TYPICAL_LOOP_UNROLL>(shaderTexture0, perspectiveTexCoordU, perspectiveTexCoordV, baseTexel);
+							}
+							else if (requiresScreenSpaceAnimationTexelMain)
+							{
+								GetScreenSpaceAnimationTexel_N<TYPICAL_LOOP_UNROLL>(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, frameBufferPercentX, frameBufferPercentY[yUnrollIndex], baseTexel);
+							}
+
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
 								if (layerTexel[i] == ArenaRenderUtils::PALETTE_INDEX_TRANSPARENT)
 								{
-									if constexpr (requiresPerspectiveTexelMain)
-									{
-										mainTexel[i] = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU[i], perspectiveTexCoordV[i]);
-									}
-									else if (requiresScreenSpaceAnimationTexelMain)
-									{
-										mainTexel[i] = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, frameBufferPercentX[i], frameBufferPercentY[yUnrollIndex]);
-									}
+									mainTexel[i] = baseTexel[i];
 								}
 								else
 								{
 									mainTexel[i] = layerTexel[i];
 								}
 							}
-							else if (requiresPerspectiveTexelMain)
-							{
-								mainTexel[i] = GetPerspectiveTexel(shaderTexture0, perspectiveTexCoordU[i], perspectiveTexCoordV[i]);
-							}
-							else if (requiresScreenSpaceAnimationTexelMain)
-							{
-								mainTexel[i] = GetScreenSpaceAnimationTexel(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, frameBufferPercentX[i], frameBufferPercentY[yUnrollIndex]);
-							}
+						}
+						else if (requiresPerspectiveTexelMain)
+						{
+							GetPerspectiveTexel_N<TYPICAL_LOOP_UNROLL>(shaderTexture0, perspectiveTexCoordU, perspectiveTexCoordV, mainTexel);
+						}
+						else if (requiresScreenSpaceAnimationTexelMain)
+						{
+							GetScreenSpaceAnimationTexel_N<TYPICAL_LOOP_UNROLL>(shaderTexture0, shaderUniforms.screenSpaceAnimPercent, frameBufferPercentX, frameBufferPercentY[yUnrollIndex], mainTexel);
 						}
 
 						// Alpha test (is pixel center texture opaque?).
