@@ -21,10 +21,11 @@ enum class PixelShaderType
 	AlphaTestedWithLightLevelColor, // Clouds, distant moons.
 	AlphaTestedWithLightLevelOpacity, // Ghosts, screen-space fog.
 	AlphaTestedWithPreviousBrightnessLimit, // Stars.
-	AlphaTestedWithHorizonMirror // Puddles.
+	AlphaTestedWithHorizonMirrorFirstPass, // Puddles without reflection.
+	AlphaTestedWithHorizonMirrorSecondPass // Puddle reflections.
 };
 
-static constexpr PixelShaderType PIXEL_SHADER_TYPE_MAX = PixelShaderType::AlphaTestedWithHorizonMirror;
+static constexpr PixelShaderType PIXEL_SHADER_TYPE_MAX = PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
 static constexpr int PIXEL_SHADER_TYPE_COUNT = static_cast<int>(PIXEL_SHADER_TYPE_MAX) + 1;
 
 enum class DitheringMode

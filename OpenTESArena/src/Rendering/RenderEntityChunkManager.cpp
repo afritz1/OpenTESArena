@@ -333,7 +333,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 		}
 		else if (isPuddle)
 		{
-			pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirror;
+			pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass;
 		}
 
 		const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
@@ -345,9 +345,7 @@ void RenderEntityChunkManager::rebuildChunkDrawCalls(RenderEntityChunk &renderCh
 void RenderEntityChunkManager::rebuildDrawCallsList()
 {
 	this->drawCallsCache.clear();
-
-	// @todo: puddles don't show reflections of entities in later chunks, maybe need to sort chunks far->near by distance sqr,
-	// not just entities per-chunk in EntityVisibilityChunk.
+	this->puddleSecondPassDrawCallsCache.clear();
 
 	// Assumed to be sorted during entity visibility calculations.
 	for (size_t i = 0; i < this->activeChunks.size(); i++)
@@ -355,6 +353,19 @@ void RenderEntityChunkManager::rebuildDrawCallsList()
 		const ChunkPtr &chunkPtr = this->activeChunks[i];
 		Span<const RenderDrawCall> drawCalls = chunkPtr->drawCalls;
 		this->drawCallsCache.insert(this->drawCallsCache.end(), drawCalls.begin(), drawCalls.end());
+
+		for (const RenderDrawCall &drawCall : drawCalls)
+		{
+			if (drawCall.pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
+			{
+				RenderDrawCall puddleSecondPassDrawCall = drawCall;
+				puddleSecondPassDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
+				puddleSecondPassDrawCall.lightingType = RenderLightingType::PerMesh; // Don't spend effort lighting reflection, value is unused.
+				puddleSecondPassDrawCall.lightPercent = 0.0;
+
+				this->puddleSecondPassDrawCallsCache.emplace_back(std::move(puddleSecondPassDrawCall));
+			}
+		}
 	}
 }
 
@@ -381,36 +392,10 @@ void RenderEntityChunkManager::loadTexturesForEntity(EntityDefID entityDefID, Te
 
 void RenderEntityChunkManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
 {
-	// Need to have barriers around puddle draw calls to avoid artifacts with reflected entities.
-	int currentStartIndex = 0;
-	int currentCount = 0;
+	commandBuffer.addDrawCalls(this->drawCallsCache);
 
-	const int drawCallCount = static_cast<int>(this->drawCallsCache.size());
-	for (int i = 0; i < drawCallCount; i++)
-	{
-		const RenderDrawCall &drawCall = this->drawCallsCache[i];
-		const bool isPuddle = drawCall.pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
-		if (isPuddle)
-		{
-			if (currentCount > 0)
-			{
-				commandBuffer.addDrawCalls(Span<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
-				currentCount = 0;
-			}
-
-			commandBuffer.addDrawCalls(Span<const RenderDrawCall>(this->drawCallsCache.data() + i, 1));
-			currentStartIndex = i + 1;
-			continue;
-		}
-
-		currentCount++;
-	}
-
-	if (currentCount > 0)
-	{
-		// Add one last draw call range.
-		commandBuffer.addDrawCalls(Span<const RenderDrawCall>(this->drawCallsCache.data() + currentStartIndex, currentCount));
-	}
+	// Puddles require two passes to avoid race conditions when rasterizing.
+	commandBuffer.addDrawCalls(this->puddleSecondPassDrawCallsCache);
 }
 
 void RenderEntityChunkManager::loadScene(TextureManager &textureManager, Renderer &renderer)

@@ -2905,12 +2905,16 @@ namespace
 			(pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelColor) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror);
+			(pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass);
 		constexpr bool requiresLayerAlphaTest =
 			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
 			(pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 		constexpr bool requiresPreviousBrightnessTest =
 			pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit;
+		constexpr bool requiresNotReflectiveTest =
+			pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass;
+		constexpr bool requiresReflectiveTest =
+			pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
 
 		// Texturing conditions.
 		constexpr bool requiresTwoTextures =
@@ -2930,8 +2934,8 @@ namespace
 			pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
 		constexpr bool requiresMainPaletteLookup =
 			pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup;
-		constexpr bool requiresHorizonMirror =
-			pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirror;
+		constexpr bool requiresHorizonMirrorReflection =
+			(pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass);
 
 		// Lighting conditions.
 		constexpr bool requiresPerPixelLightIntensity = lightingType == RenderLightingType::PerPixel;
@@ -2954,7 +2958,7 @@ namespace
 		shaderPalette.count = g_paletteTexture->texelCount;
 
 		PixelShaderHorizonMirror shaderHorizonMirror;
-		if constexpr (requiresHorizonMirror)
+		if constexpr (requiresHorizonMirrorReflection)
 		{
 			shaderHorizonMirror.horizonScreenSpacePointX = g_horizonScreenSpacePoint.x;
 			shaderHorizonMirror.horizonScreenSpacePointY = g_horizonScreenSpacePoint.y;
@@ -3463,6 +3467,50 @@ namespace
 							}
 						}
 
+						// Non-reflective test (is pixel center texture not reflecting? For puddle first pass).
+						bool isPixelCenterNotReflective[TYPICAL_LOOP_UNROLL];
+
+						if constexpr (requiresNotReflectiveTest)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isPixelCenterNotReflective[i] = mainTexel[i] != ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW;
+							}
+
+							bool passesAnyNotReflectiveTest = false;
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								passesAnyNotReflectiveTest |= isPixelCenterNotReflective[i];
+							}
+
+							if (!passesAnyNotReflectiveTest)
+							{
+								continue;
+							}
+						}
+
+						// Reflective test (is pixel center texture reflecting? For puddle second pass).
+						bool isPixelCenterReflective[TYPICAL_LOOP_UNROLL];
+
+						if constexpr (requiresReflectiveTest)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isPixelCenterReflective[i] = mainTexel[i] == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW;
+							}
+
+							bool passesAnyReflectiveTest = false;
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								passesAnyReflectiveTest |= isPixelCenterReflective[i];
+							}
+
+							if (!passesAnyReflectiveTest)
+							{
+								continue;
+							}
+						}
+
 						// Sum together tests to know which pixels are valid to shade.
 						bool isPixelCenterValid[TYPICAL_LOOP_UNROLL];
 
@@ -3497,6 +3545,22 @@ namespace
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
 								isPixelCenterValid[i] &= isPixelCenterOpaque[i];
+							}
+						}
+
+						if constexpr (requiresNotReflectiveTest)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isPixelCenterValid[i] &= isPixelCenterNotReflective[i];
+							}
+						}
+
+						if constexpr (requiresReflectiveTest)
+						{
+							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
+							{
+								isPixelCenterValid[i] &= isPixelCenterReflective[i];
 							}
 						}
 
@@ -3629,7 +3693,7 @@ namespace
 						bool isReflectedPixelInFrameBuffer[TYPICAL_LOOP_UNROLL];
 						int reflectedPixelIndex[TYPICAL_LOOP_UNROLL];
 
-						if constexpr (requiresHorizonMirror)
+						if constexpr (requiresHorizonMirrorReflection)
 						{
 							// @todo: support camera roll
 							double reflectedScreenSpacePointX[TYPICAL_LOOP_UNROLL];
@@ -3680,23 +3744,15 @@ namespace
 						uint8_t shadedTexel[TYPICAL_LOOP_UNROLL] = { 0 };
 						for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 						{
-							if constexpr (requiresHorizonMirror)
+							if constexpr (requiresHorizonMirrorReflection)
 							{
-								bool isReflective = mainTexel[i] == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW;
-								if (isReflective)
+								if (isReflectedPixelInFrameBuffer[i])
 								{
-									if (isReflectedPixelInFrameBuffer[i])
-									{
-										shadedTexel[i] = g_paletteIndexBuffer[reflectedPixelIndex[i]];
-									}
-									else
-									{
-										shadedTexel[i] = shaderHorizonMirror.fallbackSkyColor;
-									}
+									shadedTexel[i] = g_paletteIndexBuffer[reflectedPixelIndex[i]];
 								}
 								else
 								{
-									shadedTexel[i] = GetTexelWithLightLevelLighting(mainTexel[i], lightLevel[i], shaderLighting);
+									shadedTexel[i] = shaderHorizonMirror.fallbackSkyColor;
 								}
 							}
 							else if (requiresLightLevelLighting)
@@ -3786,7 +3842,7 @@ namespace
 	void RasterizeMeshDispatchPixelShaderType(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
-		static_assert(PixelShaderType::AlphaTestedWithHorizonMirror == PIXEL_SHADER_TYPE_MAX);
+		static_assert(PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass == PIXEL_SHADER_TYPE_MAX);
 		const PixelShaderType pixelShaderType = drawCallCache.pixelShaderType;
 
 		switch (pixelShaderType)
@@ -3824,8 +3880,11 @@ namespace
 		case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTestedWithHorizonMirror:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirror>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass:
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			break;
+		case PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass:
+			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		}
 	}
