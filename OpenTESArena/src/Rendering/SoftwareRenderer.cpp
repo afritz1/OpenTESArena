@@ -616,8 +616,6 @@ namespace
 // Camera globals.
 namespace
 {
-	Double3 g_horizonNdcPoint; // For horizon reflections.
-
 	Matrix4d g_viewMatrix;
 	Matrix4d g_projMatrix;
 
@@ -677,7 +675,6 @@ namespace
 
 	void PopulateCameraGlobals(const RenderCamera &camera)
 	{
-		g_horizonNdcPoint = camera.horizonNdcPoint;
 		g_viewMatrix = camera.viewMatrix;
 		g_projMatrix = camera.projectionMatrix;
 		g_viewProjMatrix = camera.projectionMatrix * camera.viewMatrix;
@@ -1567,6 +1564,7 @@ namespace
 
 	double g_ambientPercent;
 	double g_screenSpaceAnimPercent;
+	Double2 g_horizonScreenSpacePoint; // For puddle reflections.
 	const SoftwareObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
 	const SoftwareObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
 	const SoftwareObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
@@ -1645,11 +1643,12 @@ namespace
 		}
 	}
 
-	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const SoftwareObjectTexture &paletteTexture,
-		const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
+	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const Double3 &horizonNdcPoint,
+		const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
 	{
 		g_ambientPercent = ambientPercent;
 		g_screenSpaceAnimPercent = screenSpaceAnimPercent;
+		g_horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(horizonNdcPoint, g_frameBufferWidthReal, g_frameBufferHeightReal);
 		g_paletteTexture = &paletteTexture;
 		g_lightTableTexture = &lightTableTexture;
 		g_skyBgTexture = &skyBgTexture;
@@ -2957,9 +2956,8 @@ namespace
 		PixelShaderHorizonMirror shaderHorizonMirror;
 		if constexpr (requiresHorizonMirror)
 		{
-			const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(g_horizonNdcPoint, g_frameBufferWidthReal, g_frameBufferHeightReal);
-			shaderHorizonMirror.horizonScreenSpacePointX = horizonScreenSpacePoint.x;
-			shaderHorizonMirror.horizonScreenSpacePointY = horizonScreenSpacePoint.y;
+			shaderHorizonMirror.horizonScreenSpacePointX = g_horizonScreenSpacePoint.x;
+			shaderHorizonMirror.horizonScreenSpacePointY = g_horizonScreenSpacePoint.y;
 
 			DebugAssert(g_skyBgTexture->texelCount > 0);
 			shaderHorizonMirror.fallbackSkyColor = g_skyBgTexture->texels8Bit[0];
@@ -4611,7 +4609,7 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
 	PopulateLightGlobals(settings.visibleLightIDs, this->lights, camera, frameBufferWidth, frameBufferHeight);
-	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, paletteTexture, lightTableTexture, skyBgTexture);
+	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, camera.horizonNdcPoint, paletteTexture, lightTableTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
 	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);
