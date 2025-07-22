@@ -2769,6 +2769,8 @@ namespace
 	void GetPerspectiveTexel_N(const PixelShaderTexture &__restrict texture, const double *__restrict perspectiveTexCoordU, const double *__restrict perspectiveTexCoordV,
 		uint8_t *__restrict outTexel)
 	{
+		double uFract[N];
+		double vFract[N];
 		int texelX[N];
 		int texelY[N];
 		int texelIndex[N];
@@ -2776,12 +2778,22 @@ namespace
 
 		for (int i = 0; i < N; i++)
 		{
-			texelX[i] = FractToInt(perspectiveTexCoordU[i], texture.widthReal);
+			uFract[i] = perspectiveTexCoordU[i] - std::floor(perspectiveTexCoordU[i]);
 		}
 
 		for (int i = 0; i < N; i++)
 		{
-			texelY[i] = FractToInt(perspectiveTexCoordV[i], texture.heightReal);
+			vFract[i] = perspectiveTexCoordV[i] - std::floor(perspectiveTexCoordV[i]);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			texelX[i] = static_cast<int>(uFract[i] * texture.widthReal);
+		}
+
+		for (int i = 0; i < N; i++)
+		{
+			texelY[i] = static_cast<int>(vFract[i] * texture.heightReal);
 		}
 
 		for (int i = 0; i < N; i++)
