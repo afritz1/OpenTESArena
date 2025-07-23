@@ -125,7 +125,6 @@ class SoftwareRenderer : public RendererSystem3D
 {
 private:
 	Buffer2D<uint8_t> paletteIndexBuffer; // Intermediate buffer to support back-to-front transparencies.
-	Buffer2D<bool> coverageBuffer;
 	Buffer2D<double> depthBuffer;
 	Buffer3D<bool> ditherBuffer; // Stores N layers of pre-computed patterns depending on the option.
 	DitheringMode ditheringMode;

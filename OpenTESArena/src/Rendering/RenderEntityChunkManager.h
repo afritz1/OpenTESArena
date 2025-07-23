@@ -47,6 +47,7 @@ private:
 
 	// All accumulated draw calls from entities each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
+	std::vector<RenderDrawCall> puddleSecondPassDrawCallsCache;
 
 	ObjectTextureID getTextureID(EntityInstanceID entityInstID, const WorldDouble3 &cameraPosition, const EntityChunkManager &entityChunkManager) const;
 
