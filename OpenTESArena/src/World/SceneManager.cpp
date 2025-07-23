@@ -182,5 +182,5 @@ void SceneManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &rendere
 	this->voxelChunkManager.endFrame();
 	this->entityChunkManager.endFrame(physicsSystem, renderer);
 	this->renderVoxelChunkManager.endFrame();
-	this->renderEntityChunkManager.endFrame();
+	this->renderEntityManager.endFrame();
 }

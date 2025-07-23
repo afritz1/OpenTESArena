@@ -511,7 +511,7 @@ namespace PlayerLogic
 								const int keyID = triggerKeyDef.keyID;
 								player.addToKeyInventory(keyID);
 
-								// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityChunkManager draw calls due to skipping scene simulation.
+								// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityManager draw calls due to skipping scene simulation.
 								const auto callback = [&entityChunkManager, entityChunkPos, entityInstID]()
 								{
 									entityChunkManager.queueEntityDestroy(entityInstID, &entityChunkPos);

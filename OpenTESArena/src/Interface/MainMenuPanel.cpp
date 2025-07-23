@@ -228,7 +228,7 @@ bool MainMenuPanel::init()
 	// Unload in case we are returning from a game session.
 	SceneManager &sceneManager = game.sceneManager;
 	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
-	sceneManager.renderEntityChunkManager.unloadScene(renderer);
+	sceneManager.renderEntityManager.unloadScene(renderer);
 
 	return true;
 }

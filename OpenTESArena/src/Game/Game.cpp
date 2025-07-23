@@ -232,7 +232,7 @@ Game::~Game()
 	}
 
 	this->sceneManager.renderVoxelChunkManager.shutdown(this->renderer);
-	this->sceneManager.renderEntityChunkManager.shutdown(this->renderer);
+	this->sceneManager.renderEntityManager.shutdown(this->renderer);
 	this->sceneManager.renderSkyManager.shutdown(this->renderer);
 	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
 }
@@ -392,7 +392,7 @@ bool Game::init()
 
 	this->sceneManager.init(this->textureManager, this->renderer);
 	this->sceneManager.renderVoxelChunkManager.init(this->renderer);
-	this->sceneManager.renderEntityChunkManager.init(this->renderer);
+	this->sceneManager.renderEntityManager.init(this->renderer);
 	this->sceneManager.renderSkyManager.init(exeData, this->textureManager, this->renderer);
 
 	if (!this->sceneManager.renderWeatherManager.init(this->renderer))

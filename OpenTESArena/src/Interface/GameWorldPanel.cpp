@@ -960,8 +960,8 @@ bool GameWorldPanel::renderScene(Game &game)
 	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
 	renderVoxelChunkManager.populateCommandBuffer(commandBuffer);
 
-	const RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
-	renderEntityChunkManager.populateCommandBuffer(commandBuffer);
+	const RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
+	renderEntityManager.populateCommandBuffer(commandBuffer);
 
 	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
 	const bool isFoggy = gameState.isFogActive();

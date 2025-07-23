@@ -8,7 +8,7 @@
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityVisibilityChunkManager.h"
-#include "../Rendering/RenderEntityChunkManager.h"
+#include "../Rendering/RenderEntityManager.h"
 #include "../Rendering/RenderLightManager.h"
 #include "../Rendering/RenderSkyManager.h"
 #include "../Rendering/RenderTextureUtils.h"
@@ -38,7 +38,7 @@ struct SceneManager
 	VoxelFrustumCullingChunkManager voxelFrustumCullingChunkManager;
 	EntityVisibilityChunkManager entityVisChunkManager;
 	RenderVoxelChunkManager renderVoxelChunkManager;
-	RenderEntityChunkManager renderEntityChunkManager;
+	RenderEntityManager renderEntityManager;
 
 	// Game world systems not tied to chunks.
 	SkyInstance skyInstance;

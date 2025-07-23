@@ -685,7 +685,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	sceneManager.voxelFrustumCullingChunkManager.recycleAllChunks();
 	sceneManager.entityVisChunkManager.recycleAllChunks();
 	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
-	sceneManager.renderEntityChunkManager.unloadScene(renderer);
+	sceneManager.renderEntityManager.unloadScene(renderer);
 	
 	sceneManager.skyInstance.clear();
 	sceneManager.skyVisManager.clear();
@@ -699,7 +699,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	const SkyInfoDefinition &activeSkyInfoDef = this->activeMapDef.getSkyInfoForSky(activeSkyIndex);
 
 	sceneManager.skyInstance.init(activeSkyDef, activeSkyInfoDef, this->date.getDay(), textureManager);
-	sceneManager.renderEntityChunkManager.loadScene(textureManager, renderer);
+	sceneManager.renderEntityManager.loadScene(textureManager, renderer);
 	sceneManager.renderLightManager.loadScene(renderer);
 	sceneManager.renderSkyManager.loadScene(sceneManager.skyInstance, activeSkyInfoDef, textureManager, renderer);
 	sceneManager.renderWeatherManager.loadScene();
@@ -1085,10 +1085,9 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 		voxelChunkManager, voxelFaceCombineChunkManager, voxelFrustumCullingChunkManager, textureManager, renderer);
 
 	const EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
-	RenderEntityChunkManager &renderEntityChunkManager = sceneManager.renderEntityChunkManager;
-	renderEntityChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
-	renderEntityChunkManager.update(activeChunkPositions, newChunkPositions, playerPosition, playerDirXZ, ceilingScale,
-		voxelChunkManager, entityChunkManager, entityVisChunkManager, textureManager, renderer);
+	RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
+	renderEntityManager.update(activeChunkPositions, newChunkPositions, playerPosition, playerDirXZ, ceilingScale,
+		entityChunkManager, entityVisChunkManager, textureManager, renderer);
 
 	RenderLightManager &renderLightManager = sceneManager.renderLightManager;
 	renderLightManager.update(renderCamera, nightLightsAreActive, isFoggy, options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
