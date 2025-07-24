@@ -679,6 +679,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 	sceneManager.voxelChunkManager.clear();
 	sceneManager.entityChunkManager.clear(physicsSystem, renderer);
+	sceneManager.voxelBoxCombineChunkManager.recycleAllChunks();
 	sceneManager.voxelFaceEnableChunkManager.recycleAllChunks();
 	sceneManager.voxelFaceCombineChunkManager.recycleAllChunks();
 	sceneManager.collisionChunkManager.clear(physicsSystem);
@@ -970,6 +971,10 @@ void GameState::tickVoxels(double dt, Game &game)
 	voxelChunkManager.update(dt, newChunkPositions, freedChunkPositions, player.getEyeCoord(), &levelDef, &levelInfoDef,
 		mapSubDef, levelDefs, levelInfoDefIndices, levelInfoDefs, this->getActiveCeilingScale(), game.audioManager);
 
+	VoxelBoxCombineChunkManager &voxelBoxCombineChunkManager = sceneManager.voxelBoxCombineChunkManager;
+	voxelBoxCombineChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager);
+	voxelBoxCombineChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager);
+
 	VoxelFaceEnableChunkManager &voxelFaceEnableChunkManager = sceneManager.voxelFaceEnableChunkManager;
 	voxelFaceEnableChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager);
 	voxelFaceEnableChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager);
@@ -1019,11 +1024,12 @@ void GameState::tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const VoxelBoxCombineChunkManager &boxCombineChunkManager = sceneManager.voxelBoxCombineChunkManager;
 	const double ceilingScale = this->getActiveCeilingScale();
 
 	CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 	collisionChunkManager.update(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
-		chunkManager.getFreedChunkPositions(), ceilingScale, voxelChunkManager, physicsSystem);
+		chunkManager.getFreedChunkPositions(), ceilingScale, voxelChunkManager, boxCombineChunkManager, physicsSystem);
 }
 
 void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)

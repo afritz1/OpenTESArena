@@ -183,11 +183,20 @@ void VoxelBoxCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 		const VoxelShapeDefID shapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefinition &shapeDef = voxelChunk.shapeDefs[shapeDefID];
 		const VoxelMeshDefinition &meshDef = shapeDef.mesh;
-		if (!shapeDef.allowsAdjacentFaceCombining || meshDef.isEmpty())
+		if (meshDef.isEmpty())
 		{
-			// This voxel can't combine with anything, or it's air.
-			isBoxDirty = false;
-			continue;
+			bool isTriggerVoxel = false;
+			VoxelTriggerDefID triggerDefID;
+			if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
+			{
+				const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.triggerDefs[triggerDefID];
+				if (!voxelTriggerDef.hasValidDefForPhysics())
+				{
+					// This voxel is air and has no trigger.
+					isBoxDirty = false;
+					continue;
+				}
+			}
 		}
 
 		VoxelBoxCombineResultID boxCombineResultID;
@@ -204,6 +213,13 @@ void VoxelBoxCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 		VoxelBoxCombineResult &faceCombineResult = this->combinedBoxesPool.get(boxCombineResultID);
 		faceCombineResult.min = voxel;
 		faceCombineResult.max = voxel;
+
+		if (!shapeDef.allowsAdjacentFaceCombining)
+		{
+			// This voxel can't combine with anything.
+			isBoxDirty = false;
+			continue;
+		}
 
 		for (int combineDirectionIndex = 0; combineDirectionIndex < static_cast<int>(std::size(BoxCombineDirections)); combineDirectionIndex++)
 		{
