@@ -190,12 +190,14 @@ void VoxelBoxCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 			if (voxelChunk.tryGetTriggerDefID(voxel.x, voxel.y, voxel.z, &triggerDefID))
 			{
 				const VoxelTriggerDefinition &voxelTriggerDef = voxelChunk.triggerDefs[triggerDefID];
-				if (!voxelTriggerDef.hasValidDefForPhysics())
-				{
-					// This voxel is air and has no trigger.
-					isBoxDirty = false;
-					continue;
-				}
+				isTriggerVoxel = voxelTriggerDef.hasValidDefForPhysics();
+			}
+
+			if (!isTriggerVoxel)
+			{
+				// This voxel is air and has no trigger.
+				isBoxDirty = false;
+				continue;
 			}
 		}
 
