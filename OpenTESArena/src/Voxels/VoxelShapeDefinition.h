@@ -29,6 +29,8 @@ struct VoxelBoxShapeDefinition
 	Radians yRotation; // For diagonal walls.
 
 	void init(double width, double height, double depth, double yOffset, Radians yRotation);
+
+	bool operator==(const VoxelBoxShapeDefinition &other) const;
 };
 
 // For rendering.

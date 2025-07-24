@@ -24,22 +24,96 @@ namespace
 
 		const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const VoxelShapeDefID adjacentVoxelShapeDefID = voxelChunk.shapeDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
-		if (voxelShapeDefID != adjacentVoxelShapeDefID)
+		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
+		const VoxelShapeDefinition &adjacentVoxelShapeDef = voxelChunk.shapeDefs[adjacentVoxelShapeDefID];
+		if (!voxelShapeDef.allowsAdjacentFaceCombining || !adjacentVoxelShapeDef.allowsAdjacentFaceCombining)
 		{
 			return false;
 		}
 
 		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.traitsDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const VoxelTraitsDefID adjacentVoxelTraitsDefID = voxelChunk.traitsDefIDs.get(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z);
-		if (voxelTraitsDefID != adjacentVoxelTraitsDefID)
+		const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
+		const VoxelTraitsDefinition &adjacentVoxelTraitsDef = voxelChunk.traitsDefs[adjacentVoxelTraitsDefID];
+		const ArenaVoxelType voxelType = voxelTraitsDef.type;
+		const ArenaVoxelType adjacentVoxelType = adjacentVoxelTraitsDef.type;
+		if (voxelType != adjacentVoxelType)
 		{
 			return false;
 		}
 
-		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
-		if (!voxelShapeDef.allowsAdjacentFaceCombining)
+		DebugAssert(voxelShapeDef.type == VoxelShapeType::Box);
+		const VoxelBoxShapeDefinition &boxShapeDef = voxelShapeDef.box;
+		const VoxelBoxShapeDefinition &adjacentBoxShapeDef = adjacentVoxelShapeDef.box;
+		if (boxShapeDef != adjacentBoxShapeDef)
 		{
 			return false;
+		}
+
+		switch (voxelType)
+		{
+		case ArenaVoxelType::Floor:
+		case ArenaVoxelType::Ceiling:
+		case ArenaVoxelType::Raised:
+			break;
+		case ArenaVoxelType::Wall:
+		{
+			VoxelTransitionDefID transitionDefID;
+			VoxelTransitionDefID adjacentTransitionDefID;
+			const bool isTransitionVoxel = voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID);
+			const bool adjacentIsTransitionVoxel = voxelChunk.tryGetTransitionDefID(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z, &adjacentTransitionDefID);
+			if (isTransitionVoxel != adjacentIsTransitionVoxel)
+			{
+				return false;
+			}
+			else if (isTransitionVoxel)
+			{
+				const TransitionDefinition &transitionDef = voxelChunk.transitionDefs[transitionDefID];
+				const TransitionDefinition &adjacentTransitionDef = voxelChunk.transitionDefs[adjacentTransitionDefID];
+				if (transitionDef.type != adjacentTransitionDef.type)
+				{
+					return false;
+				}
+			}
+
+			break;
+		}
+		case ArenaVoxelType::Edge:
+		{
+			const VoxelTraitsEdgeDefinition &edgeDef = voxelTraitsDef.edge;
+			const VoxelTraitsEdgeDefinition &adjacentEdgeDef = adjacentVoxelTraitsDef.edge;
+			if ((edgeDef.facing != adjacentEdgeDef.facing) || (edgeDef.collider != adjacentEdgeDef.collider))
+			{
+				return false;
+			}
+
+			break;
+		}
+		case ArenaVoxelType::TransparentWall:
+		{
+			const VoxelTraitsTransparentWallDefinition &transparentWallDef = voxelTraitsDef.transparentWall;
+			const VoxelTraitsTransparentWallDefinition &adjacentTransparentWallDef = adjacentVoxelTraitsDef.transparentWall;
+			if (transparentWallDef.collider != adjacentTransparentWallDef.collider)
+			{
+				return false;
+			}
+
+			break;
+		}
+		case ArenaVoxelType::Chasm:
+		{
+			const VoxelTraitsChasmDefinition &chasmDef = voxelTraitsDef.chasm;
+			const VoxelTraitsChasmDefinition &adjacentChasmDef = adjacentVoxelTraitsDef.chasm;
+			if (chasmDef.type != adjacentChasmDef.type)
+			{
+				return false;
+			}
+
+			break;
+		}
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(voxelType)));
+			break;
 		}
 
 		return true;

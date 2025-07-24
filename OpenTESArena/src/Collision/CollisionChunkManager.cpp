@@ -270,8 +270,8 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 			collisionChunk.sensorCompoundBodyID = Physics::INVALID_BODY_ID;
 		}
 
-		populateChunkShapeDefs(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
-		populateChunkEnabledColliders(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
+		this->populateChunkShapeDefs(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
+		this->populateChunkEnabledColliders(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
 
 		collisionChunk.wallCompoundBodyID = CreateChunkCompoundShape(collisionChunk, ceilingScale, CompoundShapeCategory::Walls, voxelChunk, boxCombineChunk, physicsSystem);
 		collisionChunk.sensorCompoundBodyID = CreateChunkCompoundShape(collisionChunk, ceilingScale, CompoundShapeCategory::Sensors, voxelChunk, boxCombineChunk, physicsSystem);
@@ -286,7 +286,7 @@ void CollisionChunkManager::updateDirtyVoxels(const ChunkInt2 &chunkPos, double 
 			collisionChunk.doorCompoundBodyID = Physics::INVALID_BODY_ID;
 		}
 
-		populateChunkEnabledColliders(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
+		this->populateChunkEnabledColliders(collisionChunk, voxelChunk); // @todo: give dirty positions span so it's much faster
 
 		collisionChunk.doorCompoundBodyID = CreateChunkCompoundShape(collisionChunk, ceilingScale, CompoundShapeCategory::Doors, voxelChunk, boxCombineChunk, physicsSystem);
 	}

@@ -20,6 +20,41 @@ void VoxelBoxShapeDefinition::init(double width, double height, double depth, do
 	this->yRotation = yRotation;
 }
 
+bool VoxelBoxShapeDefinition::operator==(const VoxelBoxShapeDefinition &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->width != other.width)
+	{
+		return false;
+	}
+
+	if (this->height != other.height)
+	{
+		return false;
+	}
+
+	if (this->depth != other.depth)
+	{
+		return false;
+	}
+
+	if (this->yOffset != other.yOffset)
+	{
+		return false;
+	}
+
+	if (this->yRotation != other.yRotation)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 VoxelMeshDefinition::VoxelMeshDefinition()
 {
 	// Default to air voxel.
