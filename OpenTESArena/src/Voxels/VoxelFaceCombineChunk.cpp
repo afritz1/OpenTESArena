@@ -62,67 +62,15 @@ namespace
 		}
 
 		const VoxelShapeDefinition &voxelShapeDef = voxelChunk.shapeDefs[voxelShapeDefID];
-		if (voxelShapeDef.allowsAdjacentFaceCombining)
+		if (!voxelShapeDef.allowsAdjacentFaceCombining)
 		{
-			const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
-			if (voxelMeshDef.findIndexBufferIndexWithFacing(facing) < 0)
-			{
-				return false;
-			}
+			return false;
 		}
-		else
+
+		const VoxelMeshDefinition &voxelMeshDef = voxelShapeDef.mesh;
+		if (voxelMeshDef.findIndexBufferIndexWithFacing(facing) < 0)
 		{
-			const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
-			const ArenaVoxelType voxelTraitsDefType = voxelTraitsDef.type;
-
-			// Filter out special case voxel types.
-			if (voxelTraitsDefType == ArenaVoxelType::None)
-			{
-				return false;
-			}
-			else if (voxelTraitsDefType == ArenaVoxelType::Diagonal)
-			{
-				// @todo diagonal adjacency support
-				return false;
-			}
-			else if (voxelTraitsDefType == ArenaVoxelType::Edge)
-			{
-				// Can assume same edge def due to equal traits IDs.
-			}
-			else if (voxelTraitsDefType == ArenaVoxelType::Chasm)
-			{
-				int chasmWallInstIndex, adjacentChasmWallInstIndex;
-				bool hasChasmWallInst = voxelChunk.tryGetChasmWallInstIndex(voxel.x, voxel.y, voxel.z, &chasmWallInstIndex);
-				bool hasAdjacentChasmWallInst = voxelChunk.tryGetChasmWallInstIndex(adjacentVoxel.x, adjacentVoxel.y, adjacentVoxel.z, &adjacentChasmWallInstIndex);
-				if (hasChasmWallInst != hasAdjacentChasmWallInst)
-				{
-					return false;
-				}
-
-				if (hasChasmWallInst && hasAdjacentChasmWallInst)
-				{
-					Span<const VoxelChasmWallInstance> chasmWallInsts = voxelChunk.chasmWallInsts;
-					const VoxelChasmWallInstance &chasmWallInst = chasmWallInsts[chasmWallInstIndex];
-					const VoxelChasmWallInstance &adjacentChasmWallInst = chasmWallInsts[adjacentChasmWallInstIndex];
-
-					if (((facing == VoxelFacing3D::PositiveX) && !(chasmWallInst.north && adjacentChasmWallInst.north)) ||
-						((facing == VoxelFacing3D::NegativeX) && !(chasmWallInst.south && adjacentChasmWallInst.south)) ||
-						((facing == VoxelFacing3D::PositiveZ) && !(chasmWallInst.west && adjacentChasmWallInst.west)) ||
-						((facing == VoxelFacing3D::NegativeZ) && !(chasmWallInst.east && adjacentChasmWallInst.east)))
-					{
-						return false;
-					}
-				}
-			}
-			else if (voxelTraitsDefType == ArenaVoxelType::Door)
-			{
-				// Doors not allowed
-				return false;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(voxelTraitsDefType)));
-			}
+			return false;
 		}
 
 		int fadeAnimInstIndex;
