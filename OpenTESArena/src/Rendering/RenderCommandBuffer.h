@@ -9,7 +9,7 @@
 
 struct RenderCommandBuffer
 {
-	static constexpr int MAX_ENTRIES = 4096; // Allowing a lot more than usual for large view distance involving puddles.
+	static constexpr int MAX_ENTRIES = 16;
 
 	// One per range of draw calls (voxels, entities, weather, sky, etc). Each range starts execution once the previous one
 	// is complete, ensuring correctness in the final image. Meant for proper rendering of more involved effects like
