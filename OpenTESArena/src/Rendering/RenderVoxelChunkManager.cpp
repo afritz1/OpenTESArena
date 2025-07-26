@@ -927,6 +927,8 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 			continue;
 		}
 
+		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
+
 		const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const VoxelTextureDefID voxelTextureDefID = voxelChunk.textureDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const VoxelShadingDefID voxelShadingDefID = voxelChunk.shadingDefIDs.get(voxel.x, voxel.y, voxel.z);
@@ -984,8 +986,10 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 			lightingInitInfo.percent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
 		}
 
+		DebugAssert(renderChunk.drawCallRangeIDs.get(voxel.x, voxel.y, voxel.z) == -1);
 		const RenderVoxelDrawCallRangeID drawCallRangeID = drawCallHeap.alloc(1);
 		renderChunk.drawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, drawCallRangeID);
+
 		RenderDrawCall &drawCall = drawCallHeap.get(drawCallRangeID)[0];
 		drawCall.transformBufferID = transformInitInfo.id;
 		drawCall.transformIndex = transformInitInfo.index;
@@ -1021,6 +1025,8 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		{
 			continue;
 		}
+
+		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
 
 		const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
 		const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
@@ -1135,6 +1141,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 			continue;
 		}
 
+		DebugAssert(renderChunk.drawCallRangeIDs.get(voxel.x, voxel.y, voxel.z) == -1);
 		const RenderVoxelDrawCallRangeID drawCallRangeID = drawCallHeap.alloc(drawCallCount);
 		renderChunk.drawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, drawCallRangeID);
 		Span<RenderDrawCall> drawCalls = drawCallHeap.get(drawCallRangeID);
