@@ -603,7 +603,7 @@ void Options::saveChanges()
 				}
 				else
 				{
-					throw DebugException("Unrecognized option type \"" + std::to_string(static_cast<int>(type)) + "\".");
+					DebugLogErrorFormat("Unrecognized option type %d.", type);
 				}
 			}
 

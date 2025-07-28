@@ -50,11 +50,10 @@ ArenaMenuType ArenaVoxelUtils::getMenuType(int menuID, MapType mapType)
 		};
 
 		// Get the menu type associated with the *MENU ID and world type, or null if there
-		// is no mapping (only in exceptional cases). Use a pointer since iterators are tied
-		// to their std::array size.
-		const ArenaMenuType *typePtr = [menuID, mapType, &CityMenuMappings,
-			&WildMenuMappings]()
+		// is no mapping (only in exceptional cases).
+		const ArenaMenuType *typePtr = [menuID, mapType, &CityMenuMappings, &WildMenuMappings]() -> const ArenaMenuType*
 		{
+			// @todo: try to replace getPtr() with getIndex() for each world type branch, or just return None menu type.
 			auto getPtr = [menuID](const auto &arr)
 			{
 				const auto iter = std::find_if(arr.begin(), arr.end(),
@@ -77,23 +76,18 @@ ArenaMenuType ArenaVoxelUtils::getMenuType(int menuID, MapType mapType)
 			}
 			else
 			{
-				// @todo: try to replace getPtr() with getIndex() for each world type branch, or
-				// just return None menu type.
-				throw DebugException("Invalid world type \"" +
-					std::to_string(static_cast<int>(mapType)) + "\".");
+				DebugLogErrorFormat("Invalid map type %d.", mapType);
+				return nullptr;
 			}
 		}();
 
-		// See if the array contains the associated *MENU ID.
-		if (typePtr != nullptr)
+		if (typePtr == nullptr)
 		{
-			return *typePtr;
-		}
-		else
-		{
-			DebugLogWarning("Unrecognized *MENU ID \"" + std::to_string(menuID) + "\".");
+			DebugLogWarningFormat("Unrecognized *MENU ID %d.", menuID);
 			return ArenaMenuType::None;
 		}
+
+		return *typePtr;
 	}
 	else
 	{

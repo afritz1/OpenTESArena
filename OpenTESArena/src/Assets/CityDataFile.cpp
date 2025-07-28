@@ -64,8 +64,8 @@ const ArenaLocationData &ArenaProvinceData::getLocationData(int locationID) cons
 	}
 	else
 	{
-		// @todo: change function return so we can use DebugUnhandledReturn().
-		throw DebugException("Bad location ID \"" + std::to_string(locationID) + "\".");
+		DebugLogErrorFormat("Bad location ID %d.", locationID);
+		return this->cityStates[0];
 	}
 }
 

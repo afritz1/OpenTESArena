@@ -2,7 +2,6 @@
 #define DEBUG_H
 
 #include <cstdio>
-#include <stdexcept>
 #include <string>
 #include <type_traits>
 
@@ -111,9 +110,6 @@ namespace Debug
 	DebugCrash("Not implemented: " + std::string(message))
 #define DebugNotImplemented() \
 	DebugCrash("Not implemented.")
-
-#define DebugException(message) \
-	std::runtime_error(std::string(message) + " (" + Debug::getShorterPath(__FILE__) + "(" + std::to_string(__LINE__) + "))")
 
 #define DebugIsValidIndex(container, index) \
 	(std::is_integral_v<std::remove_reference_t<decltype(index)>> && ((index) >= 0) && ((index) < std::size(container)))
