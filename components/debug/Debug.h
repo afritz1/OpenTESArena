@@ -115,7 +115,5 @@ namespace Debug
 	(std::is_integral_v<std::remove_reference_t<decltype(index)>> && ((index) >= 0) && ((index) < std::size(container)))
 #define DebugAssertIndex(container, index) \
 	do { if (!DebugIsValidIndex(container, index)) DebugCrashFormat("Index '%d' out of bounds.", index); } while (false)
-#define DebugMakeIndex(container, index) \
-	([&]() { const auto val = (index); DebugAssertIndex(container, val); return val; }())
 
 #endif

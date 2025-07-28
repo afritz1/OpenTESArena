@@ -36,7 +36,8 @@ uint8_t WorldMapTerrain::getNormalizedIndex(uint8_t index)
 
 uint8_t WorldMapTerrain::getAt(int x, int y) const
 {
-	const int index = DebugMakeIndex(this->indices, x + (y * WorldMapTerrain::WIDTH));
+	const int index = x + (y * WorldMapTerrain::WIDTH);
+	DebugAssertIndex(this->indices, index);
 	return this->indices[index];
 }
 

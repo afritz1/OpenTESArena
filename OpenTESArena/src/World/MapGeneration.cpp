@@ -2457,7 +2457,8 @@ void MapGeneration::generateMifDungeon(const MIFFile &mif, int levelCount, WEInt
 		{
 			if (i < (levelCount - 1))
 			{
-				const int index = DebugMakeIndex(transitions, i + 1);
+				const int index = i + 1;
+				DebugAssertIndex(transitions, index);
 				return transitions[index];
 			}
 			else
@@ -2578,8 +2579,8 @@ void MapGeneration::generateRmdWilderness(Span<const ArenaWildBlockID> uniqueWil
 	for (int i = 0; i < uniqueWildBlockIDs.getCount(); i++)
 	{
 		const ArenaWildBlockID wildBlockID = uniqueWildBlockIDs[i];
-		const auto &rmdFiles = ArenaLevelLibrary::getInstance().getWildernessChunks();
-		const int rmdIndex = DebugMakeIndex(rmdFiles, wildBlockID - 1);
+		const Span<const RMDFile> rmdFiles = ArenaLevelLibrary::getInstance().getWildernessChunks();
+		const int rmdIndex = wildBlockID - 1;
 		const RMDFile &rmd = rmdFiles[rmdIndex];
 		const Span2D<const ArenaVoxelID> rmdFLOR = rmd.getFLOR();
 		const Span2D<const ArenaVoxelID> rmdMAP1 = rmd.getMAP1();

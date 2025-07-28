@@ -935,7 +935,8 @@ std::string TextAssetLibrary::generateNpcName(int raceID, bool isMale, ArenaRand
 		{
 			DebugAssertIndex(this->nameChunks, rule.index);
 			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.index];
-			const int chunkListIndex = DebugMakeIndex(chunkList, random.next() % static_cast<int>(chunkList.size()));
+			const int chunkListIndex = random.next() % static_cast<int>(chunkList.size());
+			DebugAssertIndex(chunkList, chunkListIndex);
 			name += chunkList[chunkListIndex];
 		}
 		else if (rule.type == NameRuleType::String)
@@ -948,7 +949,8 @@ std::string TextAssetLibrary::generateNpcName(int raceID, bool isMale, ArenaRand
 			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.index];
 			if ((random.next() % 100) <= rule.chance)
 			{
-				const int chunkListIndex = DebugMakeIndex(chunkList, random.next() % static_cast<int>(chunkList.size()));
+				const int chunkListIndex = random.next() % static_cast<int>(chunkList.size());
+				DebugAssertIndex(chunkList, chunkListIndex);
 				name += chunkList[chunkListIndex];
 			}
 		}
@@ -958,7 +960,8 @@ std::string TextAssetLibrary::generateNpcName(int raceID, bool isMale, ArenaRand
 			const ArenaNameChunkEntry &chunkList = this->nameChunks[rule.index];
 			if ((random.next() % 100) <= rule.chance)
 			{
-				const int chunkListIndex = DebugMakeIndex(chunkList, random.next() % static_cast<int>(chunkList.size()));
+				const int chunkListIndex = random.next() % static_cast<int>(chunkList.size());
+				DebugAssertIndex(chunkList, chunkListIndex);
 				name += chunkList[chunkListIndex] + std::string(rule.str);
 			}
 		}
