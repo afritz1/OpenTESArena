@@ -5,7 +5,6 @@
 
 #include "Panel.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 class Renderer;
 

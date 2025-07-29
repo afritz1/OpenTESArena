@@ -228,10 +228,10 @@ void RendererProfilerData::init(int width, int height, int threadCount, int draw
 
 Renderer::Renderer()
 {
-	DebugAssert(this->nativeTexture.get() == nullptr);
-	DebugAssert(this->gameWorldTexture.get() == nullptr);
 	this->window = nullptr;
 	this->renderer = nullptr;
+	this->nativeTexture = nullptr;
+	this->gameWorldTexture = nullptr;
 	this->letterboxMode = 0;
 	this->fullGameWindow = false;
 }
@@ -254,6 +254,9 @@ Renderer::~Renderer()
 
 	// This also destroys the frame buffer textures.
 	SDL_DestroyRenderer(this->renderer);
+
+	this->nativeTexture = nullptr;
+	this->gameWorldTexture = nullptr;
 
 	SDL_Quit();
 }
@@ -471,22 +474,8 @@ Rect Renderer::originalToNative(const Rect &originalRect) const
 bool Renderer::letterboxContains(const Int2 &nativePoint) const
 {
 	const SDL_Rect letterbox = this->getLetterboxDimensions();
-	const Rect rectangle(letterbox.x, letterbox.y,
-		letterbox.w, letterbox.h);
+	const Rect rectangle(letterbox.x, letterbox.y, letterbox.w, letterbox.h);
 	return rectangle.contains(nativePoint);
-}
-
-Texture Renderer::createTexture(uint32_t format, int access, int w, int h)
-{
-	SDL_Texture *tex = SDL_CreateTexture(this->renderer, format, access, w, h);
-	if (tex == nullptr)
-	{
-		DebugLogError("Couldn't create SDL_Texture (" + std::string(SDL_GetError()) + ").");
-	}
-
-	Texture texture;
-	texture.init(tex);
-	return texture;
 }
 
 bool Renderer::init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
@@ -555,8 +544,8 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 	const Int2 windowDimensions = this->getWindowDimensions();
 
 	// Initialize native frame buffer.
-	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
-	if (this->nativeTexture.get() == nullptr)
+	this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
+	if (this->nativeTexture == nullptr)
 	{
 		DebugLogErrorFormat("Couldn't create SDL_Texture frame buffer (%s).", SDL_GetError());
 		return false;
@@ -600,8 +589,8 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
 	// Initialize game world destination frame buffer.
-	this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
-	if (this->gameWorldTexture.get() == nullptr)
+	this->gameWorldTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
+	if (this->gameWorldTexture == nullptr)
 	{
 		DebugLogErrorFormat("Couldn't create game world texture with dimensions %dx%d (%s).", internalRenderDims.x, internalRenderDims.y, SDL_GetError());
 	}
@@ -623,8 +612,13 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 	SDL_RenderSetLogicalSize(this->renderer, width, height);
 
 	// Reinitialize native frame buffer.
-	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, width, height);
-	if (this->nativeTexture.get() == nullptr)
+	if (this->nativeTexture != nullptr)
+	{
+		SDL_DestroyTexture(this->nativeTexture);
+	}
+
+	this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, width, height);
+	if (this->nativeTexture == nullptr)
 	{
 		DebugLogErrorFormat("Couldn't recreate native frame buffer for resize to %dx%d (%s).", width, height, SDL_GetError());
 	}
@@ -638,8 +632,13 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
 		// Reinitialize the game world frame buffer.
-		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
-		if (this->gameWorldTexture.get() == nullptr)
+		if (this->gameWorldTexture != nullptr)
+		{
+			SDL_DestroyTexture(this->gameWorldTexture);
+		}
+
+		this->gameWorldTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
+		if (this->gameWorldTexture == nullptr)
 		{
 			DebugLogErrorFormat("Couldn't recreate game world texture for resize to %dx%d (%s).", internalRenderDims.x, internalRenderDims.y, SDL_GetError());
 		}
@@ -662,9 +661,14 @@ void Renderer::handleRenderTargetsReset()
 		return;
 	}
 
+	if (this->nativeTexture != nullptr)
+	{
+		SDL_DestroyTexture(this->nativeTexture);
+	}
+
 	const Int2 windowDims = this->getWindowDimensions();
-	this->nativeTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDims.x, windowDims.y);
-	if (this->nativeTexture.get() == nullptr)
+	this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDims.x, windowDims.y);
+	if (this->nativeTexture == nullptr)
 	{
 		DebugLogErrorFormat("Couldn't recreate native frame buffer for render targets reset to %dx%d (%s).", windowDims.x, windowDims.y, SDL_GetError());
 	}
@@ -675,8 +679,13 @@ void Renderer::handleRenderTargetsReset()
 		const double resolutionScale = this->resolutionScaleFunc();
 		const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
-		this->gameWorldTexture = this->createTexture(Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
-		if (this->gameWorldTexture.get() == nullptr)
+		if (this->gameWorldTexture != nullptr)
+		{
+			SDL_DestroyTexture(this->gameWorldTexture);
+		}
+
+		this->gameWorldTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
+		if (this->gameWorldTexture == nullptr)
 		{
 			DebugLogErrorFormat("Couldn't recreate game world texture for render targets reset to %dx%d (%s).", internalRenderDims.x, internalRenderDims.y, SDL_GetError());
 		}
@@ -938,7 +947,7 @@ void Renderer::freeLight(RenderLightID id)
 
 void Renderer::clear(const Color &color)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderClear(this->renderer);
 }
@@ -950,7 +959,7 @@ void Renderer::clear()
 
 void Renderer::clearOriginal(const Color &color)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	const SDL_Rect rect = this->getLetterboxDimensions();
@@ -964,21 +973,21 @@ void Renderer::clearOriginal()
 
 void Renderer::drawPixel(const Color &color, int x, int y)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawPoint(this->renderer, x, y);
 }
 
 void Renderer::drawLine(const Color &color, int x1, int y1, int x2, int y2)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawLine(this->renderer, x1, y1, x2, y2);
 }
 
 void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	SDL_Rect rect;
@@ -992,7 +1001,7 @@ void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::fillRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	SDL_Rect rect;
@@ -1006,7 +1015,7 @@ void Renderer::fillRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	const Rect rect = this->originalToNative(Rect(x, y, w, h));
@@ -1109,18 +1118,24 @@ void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer
 
 	g_physicsDebugCamera = camera;
 
-	const Int2 renderDims(this->gameWorldTexture.getWidth(), this->gameWorldTexture.getHeight());
+	int gameWorldTextureWidth, gameWorldTextureHeight;
+	int status = SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &gameWorldTextureWidth, &gameWorldTextureHeight);
+	if (status != 0)
+	{
+		DebugLogErrorFormat("Couldn't query game world texture dimensions for scene rendering (%s).", SDL_GetError());
+		return;
+	}
 
 	RenderFrameSettings renderFrameSettings;
 	renderFrameSettings.init(ambientPercent, visibleLightIDs, screenSpaceAnimPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
-		renderDims.x, renderDims.y, renderThreadsMode, ditheringMode);
+		gameWorldTextureWidth, gameWorldTextureHeight, renderThreadsMode, ditheringMode);
 
 	uint32_t *outputBuffer;
 	int gameWorldPitch;
-	int status = SDL_LockTexture(this->gameWorldTexture.get(), nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
+	status = SDL_LockTexture(this->gameWorldTexture, nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
 	if (status != 0)
 	{
-		DebugLogErrorFormat("Couldn't lock game world SDL_Texture for scene rendering (%s).", SDL_GetError());
+		DebugLogErrorFormat("Couldn't lock game world texture for scene rendering (%s).", SDL_GetError());
 		return;
 	}
 
@@ -1132,7 +1147,7 @@ void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer
 
 	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
 	const auto presentStartTime = std::chrono::high_resolution_clock::now();
-	SDL_UnlockTexture(this->gameWorldTexture.get());
+	SDL_UnlockTexture(this->gameWorldTexture);
 
 	const Int2 viewDims = this->getViewDimensions();
 	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);
@@ -1147,9 +1162,9 @@ void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer
 		swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
 }
 
-void Renderer::draw(const Texture &texture, int x, int y, int w, int h)
+void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 
 	SDL_Rect rect;
 	rect.x = x;
@@ -1157,15 +1172,14 @@ void Renderer::draw(const Texture &texture, int x, int y, int w, int h)
 	rect.w = w;
 	rect.h = h;
 
-	SDL_RenderCopy(this->renderer, texture.get(), nullptr, &rect);
+	SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
 }
 
 void Renderer::draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture.get());
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	const SDL_Rect letterboxRect = this->getLetterboxDimensions();
-	this->renderer2D->draw(renderElements, count, renderSpace,
-		Rect(letterboxRect.x, letterboxRect.y, letterboxRect.w, letterboxRect.h));
+	this->renderer2D->draw(renderElements, count, renderSpace, Rect(letterboxRect.x, letterboxRect.y, letterboxRect.w, letterboxRect.h));
 }
 
 void Renderer::present()
@@ -1173,6 +1187,6 @@ void Renderer::present()
 	this->renderer3D->present(); // @todo: maybe this call will do the below at some point? Not sure
 
 	SDL_SetRenderTarget(this->renderer, nullptr);
-	SDL_RenderCopy(this->renderer, this->nativeTexture.get(), nullptr, nullptr);
+	SDL_RenderCopy(this->renderer, this->nativeTexture, nullptr, nullptr);
 	SDL_RenderPresent(this->renderer);
 }

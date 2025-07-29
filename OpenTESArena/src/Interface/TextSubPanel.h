@@ -7,7 +7,6 @@
 #include "Panel.h"
 #include "../Math/Vector2.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 // A simple sub-panel for displaying a text pop-up on-screen.
 class TextSubPanel : public Panel

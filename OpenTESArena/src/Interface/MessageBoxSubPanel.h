@@ -10,7 +10,6 @@
 #include "Panel.h"
 #include "../Assets/TextureUtils.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 #include "components/utilities/Buffer.h"
 

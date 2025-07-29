@@ -5,7 +5,6 @@
 #include "../Input/InputActionName.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/Texture.h"
 
 CinematicPanel::CinematicPanel(Game &game)
 	: Panel(game) { }

@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "TextRenderUtils.h"
-#include "Texture.h"
 #include "../Math/Rect.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../Utilities/Color.h"

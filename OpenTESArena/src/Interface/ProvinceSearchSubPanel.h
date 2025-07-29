@@ -9,7 +9,6 @@
 #include "../Math/Vector2.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 class ProvinceMapPanel;
 

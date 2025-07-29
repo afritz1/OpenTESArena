@@ -17,7 +17,6 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 #include "components/debug/Debug.h"
 

@@ -17,7 +17,6 @@
 #include "RendererSystemType.h"
 #include "RenderLightUtils.h"
 #include "../Assets/TextureUtils.h"
-#include "../UI/Texture.h"
 
 #include "components/utilities/Span.h"
 
@@ -94,7 +93,7 @@ private:
 	std::vector<RenderDisplayMode> displayModes;
 	SDL_Window *window;
 	SDL_Renderer *renderer;
-	Texture nativeTexture, gameWorldTexture; // Frame buffers.
+	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
 	RendererProfilerData profilerData;
 	RenderResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
@@ -153,9 +152,6 @@ public:
 
 	// Returns true if the letterbox contains a native point.
 	bool letterboxContains(const Int2 &nativePoint) const;
-
-	// Wrapper methods for SDL_CreateTexture.
-	Texture createTexture(uint32_t format, int access, int w, int h);
 
 	bool init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
 		const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
@@ -271,7 +267,7 @@ public:
 		ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 
 	// Draw methods for the native and original frame buffers.
-	void draw(const Texture &texture, int x, int y, int w, int h);
+	void draw(SDL_Texture *texture, int x, int y, int w, int h);
 	void draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace);
 
 	// Refreshes the displayed frame buffer.

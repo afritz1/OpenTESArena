@@ -537,8 +537,6 @@ SET(TES_UI
     "${SRC_ROOT}/UI/TextEntry.h"
     "${SRC_ROOT}/UI/TextRenderUtils.cpp"
     "${SRC_ROOT}/UI/TextRenderUtils.h"
-    "${SRC_ROOT}/UI/Texture.cpp"
-    "${SRC_ROOT}/UI/Texture.h"
     "${SRC_ROOT}/UI/ToggleButton.cpp"
     "${SRC_ROOT}/UI/ToggleButton.h"
     "${SRC_ROOT}/UI/UiDrawCall.cpp"

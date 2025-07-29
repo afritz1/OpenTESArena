@@ -6,7 +6,6 @@
 #include "Panel.h"
 #include "../UI/ListBox.h"
 #include "../UI/TextBox.h"
-#include "../UI/Texture.h"
 
 class ItemInventory;
 
