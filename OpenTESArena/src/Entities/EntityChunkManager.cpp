@@ -206,19 +206,19 @@ EntityDefID EntityChunkManager::getOrAddEntityDefID(const EntityDefinition &def,
 void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
 	const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
-	EntityPositionID positionID;
-	if (!this->positions.tryAlloc(&positionID))
+	const EntityPositionID positionID = this->positions.alloc();
+	if (positionID < 0)
 	{
 		DebugLogError("Couldn't allocate EntityPositionID.");
 	}
 
-	EntityBoundingBoxID bboxID;
-	if (!this->boundingBoxes.tryAlloc(&bboxID))
+	const EntityBoundingBoxID bboxID = this->boundingBoxes.alloc();
+	if (bboxID < 0)
 	{
 		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
 	}
 
-	UniformBufferID renderTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+	const UniformBufferID renderTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
 	if (renderTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for entity transform.");
@@ -241,7 +241,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 	BoundingBox3D &entityBBox = this->boundingBoxes.get(bboxID);
 	entityBBox.init(entityBBoxMin, entityBBoxMax);
 
-	if (!this->animInsts.tryAlloc(&entityInst.animInstID))
+	entityInst.animInstID = this->animInsts.alloc();
+	if (entityInst.animInstID < 0)
 	{
 		DebugLogError("Couldn't allocate EntityAnimationInstanceID.");
 	}
@@ -262,7 +263,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (initInfo.canBeKilled)
 	{
-		if (!this->combatStates.tryAlloc(&entityInst.combatStateID))
+		entityInst.combatStateID = this->combatStates.alloc();
+		if (entityInst.combatStateID < 0)
 		{
 			DebugLogError("Couldn't allocate EntityCombatStateID.");
 		}
@@ -274,7 +276,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (initInfo.direction.has_value())
 	{
-		if (!this->directions.tryAlloc(&entityInst.directionID))
+		entityInst.directionID = this->directions.alloc();
+		if (entityInst.directionID < 0)
 		{
 			DebugLogError("Couldn't allocate EntityDirectionID.");
 		}
@@ -285,7 +288,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (initInfo.citizenDirectionIndex.has_value())
 	{
-		if (!this->citizenDirectionIndices.tryAlloc(&entityInst.citizenDirectionIndexID))
+		entityInst.citizenDirectionIndexID = this->citizenDirectionIndices.alloc();
+		if (entityInst.citizenDirectionIndexID < 0)
 		{
 			DebugLogError("Couldn't allocate EntityCitizenDirectionIndexID.");
 		}
@@ -296,7 +300,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (initInfo.citizenName.has_value())
 	{
-		if (!this->citizenNames.tryAlloc(&entityInst.citizenNameID))
+		entityInst.citizenNameID = this->citizenNames.alloc();
+		if (entityInst.citizenNameID < 0)
 		{
 			DebugLogError("Couldn't allocate EntityCitizenNameID.");
 		}
@@ -307,7 +312,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (initInfo.citizenColorSeed.has_value())
 	{
-		if (!this->paletteIndices.tryAlloc(&entityInst.paletteIndicesInstID))
+		entityInst.paletteIndicesInstID = this->paletteIndices.alloc();
+		if (entityInst.paletteIndicesInstID < 0)
 		{
 			DebugLogError("Couldn't allocate EntityPaletteIndicesInstanceID.");
 		}
@@ -322,7 +328,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (initInfo.hasInventory)
 	{
-		if (!this->itemInventories.tryAlloc(&entityInst.itemInventoryInstID))
+		entityInst.itemInventoryInstID = this->itemInventories.alloc();
+		if (entityInst.itemInventoryInstID < 0)
 		{
 			DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
 		}
@@ -350,7 +357,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (initInfo.hasCreatureSound)
 	{
-		if (!this->creatureSoundInsts.tryAlloc(&entityInst.creatureSoundInstID))
+		entityInst.creatureSoundInstID = this->creatureSoundInsts.alloc();
+		if (entityInst.creatureSoundInstID < 0)
 		{
 			DebugCrash("Couldn't allocate EntityCreatureSoundInstanceID.");
 		}
@@ -361,7 +369,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	if (initInfo.isLocked.has_value())
 	{
-		if (!this->lockStates.tryAlloc(&entityInst.lockStateID))
+		entityInst.lockStateID = this->lockStates.alloc();
+		if (entityInst.lockStateID < 0)
 		{
 			DebugCrash("Couldn't allocate EntityLockStateID.");
 		}
@@ -462,8 +471,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				}
 			}
 
-			EntityInstanceID entityInstID;
-			if (!this->entities.tryAlloc(&entityInstID))
+			const EntityInstanceID entityInstID = this->entities.alloc();
+			if (entityInstID < 0)
 			{
 				DebugLogError("Couldn't allocate level EntityInstanceID.");
 				continue;
@@ -548,8 +557,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.hasInventory = false;
 				citizenInitInfo.hasCreatureSound = false;
 
-				EntityInstanceID entityInstID;
-				if (!this->entities.tryAlloc(&entityInstID))
+				const EntityInstanceID entityInstID = this->entities.alloc();
+				if (entityInstID < 0)
 				{
 					DebugLogError("Couldn't allocate citizen EntityInstanceID.");
 					continue;
@@ -900,12 +909,11 @@ EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID body
 	}
 
 	// @todo: probably want a smarter lookup than this
-	for (int i = 0; i < this->entities.getTotalCount(); i++)
+	for (const EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstance *entityInst = this->entities.tryGet(i);
-		if (entityInst != nullptr && entityInst->physicsBodyID == bodyID)
+		if (entityInst.physicsBodyID == bodyID)
 		{
-			return entityInst->instanceID;
+			return entityInst.instanceID;
 		}
 	}
 
@@ -1228,8 +1236,8 @@ void EntityChunkManager::updateVfx(EntityChunk &entityChunk)
 
 EntityInstanceID EntityChunkManager::createEntity(const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
-	EntityInstanceID entityInstID;
-	if (!this->entities.tryAlloc(&entityInstID))
+	const EntityInstanceID entityInstID = this->entities.alloc();
+	if (entityInstID < 0)
 	{
 		DebugLogError("Couldn't allocate EntityInstanceID.");
 		return -1;

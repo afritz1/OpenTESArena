@@ -275,8 +275,8 @@ void VoxelBoxCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxel
 			}
 		}
 
-		VoxelBoxCombineResultID boxCombineResultID;
-		if (!this->combinedBoxesPool.tryAlloc(&boxCombineResultID))
+		const VoxelBoxCombineResultID boxCombineResultID = this->combinedBoxesPool.alloc();
+		if (boxCombineResultID < 0)
 		{
 			DebugLogErrorFormat("Couldn't allocate voxel box combine result ID (voxel %s).", voxel.toString().c_str());
 			continue;

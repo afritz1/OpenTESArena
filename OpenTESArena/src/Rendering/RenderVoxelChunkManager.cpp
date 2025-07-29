@@ -653,19 +653,11 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 	// @todo the VoxelFaceCombineResultID should've been freed from this pool when the floor became a chasm, it's trying to use the old Top face of the floor for the chasm mesh indicesList lookup
 	const RecyclablePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> &combinedFacesPool = faceCombineChunk.combinedFacesPool;
-	int combinedFaceCount = combinedFacesPool.getTotalCount();
-	for (int combinedFaceIndex = 0; combinedFaceIndex < combinedFaceCount; combinedFaceIndex++)
+	for (const VoxelFaceCombineResult &faceCombineResult : combinedFacesPool.values)
 	{
-		const VoxelFaceCombineResultID faceCombineResultID = static_cast<VoxelFaceCombineResultID>(combinedFaceIndex);
-		const VoxelFaceCombineResult *faceCombineResult = combinedFacesPool.tryGet(faceCombineResultID);
-		if (faceCombineResult == nullptr)
-		{
-			continue;
-		}
-
-		const VoxelInt3 minVoxel = faceCombineResult->min;
-		const VoxelInt3 maxVoxel = faceCombineResult->max;
-		const VoxelFacing3D facing = faceCombineResult->facing;
+		const VoxelInt3 minVoxel = faceCombineResult.min;
+		const VoxelInt3 maxVoxel = faceCombineResult.max;
+		const VoxelFacing3D facing = faceCombineResult.facing;
 		bool shouldAllocateDrawCall = false;
 
 		UniformBufferID transformBufferID = -1;

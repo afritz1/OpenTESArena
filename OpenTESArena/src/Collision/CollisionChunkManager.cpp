@@ -71,16 +71,10 @@ namespace
 		std::vector<JPH::Ref<JPH::BoxShapeSettings>> boxShapeSettingsList; // Freed at end of scope
 
 		const RecyclablePool<VoxelBoxCombineResultID, VoxelBoxCombineResult> &combinedBoxesPool = boxCombineChunk.combinedBoxesPool;
-		for (int i = 0; i < combinedBoxesPool.getTotalCount(); i++)
+		for (const VoxelBoxCombineResult &combinedBoxResult : combinedBoxesPool.values)
 		{
-			const VoxelBoxCombineResult *combinedBoxResult = combinedBoxesPool.tryGet(i);
-			if (combinedBoxResult == nullptr)
-			{
-				continue;
-			}
-
-			const VoxelInt3 combinedBoxMin = combinedBoxResult->min;
-			const VoxelInt3 combinedBoxMax = combinedBoxResult->max;
+			const VoxelInt3 combinedBoxMin = combinedBoxResult.min;
+			const VoxelInt3 combinedBoxMax = combinedBoxResult.max;
 
 			bool isTriggerVoxel = false;
 			VoxelTriggerDefID triggerDefID;

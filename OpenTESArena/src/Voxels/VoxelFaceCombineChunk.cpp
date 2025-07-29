@@ -295,8 +295,8 @@ void VoxelFaceCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxe
 
 			DebugAssert(facesEntry.combinedFacesIDs[faceIndex] == -1);
 
-			VoxelFaceCombineResultID faceCombineResultID;
-			if (!this->combinedFacesPool.tryAlloc(&faceCombineResultID))
+			const VoxelFaceCombineResultID faceCombineResultID = this->combinedFacesPool.alloc();
+			if (faceCombineResultID < 0)
 			{
 				DebugLogErrorFormat("Couldn't allocate voxel face combine result ID (voxel %s).", voxel.toString().c_str());
 				continue;

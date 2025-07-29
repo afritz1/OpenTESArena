@@ -4469,8 +4469,8 @@ VertexPositionBufferID SoftwareRenderer::createVertexPositionBuffer(int vertexCo
 	DebugAssert(vertexCount > 0);
 	DebugAssert(componentsPerVertex >= 2);
 
-	VertexPositionBufferID id;
-	if (!this->positionBuffers.tryAlloc(&id))
+	const VertexPositionBufferID id = this->positionBuffers.alloc();
+	if (id < 0)
 	{
 		DebugLogErrorFormat("Couldn't allocate vertex position buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
 		return -1;
@@ -4486,8 +4486,8 @@ VertexAttributeBufferID SoftwareRenderer::createVertexAttributeBuffer(int vertex
 	DebugAssert(vertexCount > 0);
 	DebugAssert(componentsPerVertex >= 2);
 
-	VertexAttributeBufferID id;
-	if (!this->attributeBuffers.tryAlloc(&id))
+	const VertexAttributeBufferID id = this->attributeBuffers.alloc();
+	if (id < 0)
 	{
 		DebugLogErrorFormat("Couldn't allocate vertex attribute buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
 		return -1;
@@ -4503,8 +4503,8 @@ IndexBufferID SoftwareRenderer::createIndexBuffer(int indexCount)
 	DebugAssert(indexCount > 0);
 	DebugAssert((indexCount % 3) == 0);
 
-	IndexBufferID id;
-	if (!this->indexBuffers.tryAlloc(&id))
+	const IndexBufferID id = this->indexBuffers.alloc();
+	if (id < 0)
 	{
 		DebugLogErrorFormat("Couldn't allocate index buffer (indices: %d).", indexCount);
 		return -1;
@@ -4580,8 +4580,8 @@ void SoftwareRenderer::freeIndexBuffer(IndexBufferID id)
 
 ObjectTextureID SoftwareRenderer::createObjectTexture(int width, int height, int bytesPerTexel)
 {
-	ObjectTextureID id;
-	if (!this->objectTextures.tryAlloc(&id))
+	const ObjectTextureID id = this->objectTextures.alloc();
+	if (id < 0)
 	{
 		DebugLogErrorFormat("Couldn't allocate %dx%d object texture with %d bytes per texel.", width, height, bytesPerTexel);
 		return -1;
@@ -4658,8 +4658,8 @@ UniformBufferID SoftwareRenderer::createUniformBuffer(int elementCount, size_t s
 	DebugAssert(sizeOfElement > 0);
 	DebugAssert(alignmentOfElement > 0);
 
-	UniformBufferID id;
-	if (!this->uniformBuffers.tryAlloc(&id))
+	const UniformBufferID id = this->uniformBuffers.alloc();
+	if (id < 0)
 	{
 		DebugLogErrorFormat("Couldn't allocate uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, sizeOfElement, alignmentOfElement);
 		return -1;
@@ -4710,8 +4710,8 @@ void SoftwareRenderer::freeUniformBuffer(UniformBufferID id)
 
 RenderLightID SoftwareRenderer::createLight()
 {
-	RenderLightID id;
-	if (!this->lights.tryAlloc(&id))
+	const RenderLightID id = this->lights.alloc();
+	if (id < 0)
 	{
 		DebugLogError("Couldn't allocate render light ID.");
 		return -1;
@@ -4754,19 +4754,14 @@ Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
 	const int drawCallCount = g_totalDrawCallCount;
 	const int presentedTriangleCount = g_totalPresentedTriangleCount;
 
-	const int textureCount = this->objectTextures.getUsedCount();
+	const int textureCount = this->objectTextures.getCount();
 	int64_t textureByteCount = 0;
-	for (int i = 0; i < this->objectTextures.getTotalCount(); i++)
+	for (const SoftwareObjectTexture &texture : this->objectTextures.values)
 	{
-		const ObjectTextureID id = static_cast<ObjectTextureID>(i);
-		const SoftwareObjectTexture *texturePtr = this->objectTextures.tryGet(id);
-		if (texturePtr != nullptr)
-		{
-			textureByteCount += texturePtr->texels.getCount();
-		}
+		textureByteCount += texture.texels.getCount();
 	}
 
-	const int totalLightCount = this->lights.getUsedCount();
+	const int totalLightCount = this->lights.getCount();
 	const int64_t totalCoverageTests = g_totalCoverageTests;
 	const int64_t totalDepthTests = g_totalDepthTests;
 	const int64_t totalColorWrites = g_totalColorWrites;
