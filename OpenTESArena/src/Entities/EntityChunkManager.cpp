@@ -626,6 +626,10 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
+	// @todo now that this entity loop isn't per-chunk, it's possible the citizen starts in a freed chunk this frame and walks to an active chunk
+	// despite already being marked for destruction. Ideally would not iterate over all entities (or even all citizens) but a list of citizens
+	// not marked for destruction.
+
 	for (const EntityInstance &entityInst : this->entities.values)
 	{
 		if (!entityInst.isCitizen())
@@ -798,25 +802,38 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 		// Transfer ownership of the entity ID to a new chunk if needed.
 		if (curEntityChunkPos != prevEntityChunkPos)
 		{
-			EntityChunk &prevEntityChunk = this->getChunkAtPosition(prevEntityChunkPos);
-			for (int entityIndex = 0; entityIndex < static_cast<int>(prevEntityChunk.entityIDs.size()); entityIndex++)
+			EntityChunk *prevEntityChunk = this->findChunkAtPosition(prevEntityChunkPos); // Citizen may have crossed chunk boundary same frame as player.
+			EntityChunk *curEntityChunk = this->findChunkAtPosition(curEntityChunkPos);
+
+			if (prevEntityChunk != nullptr)
 			{
-				const EntityInstanceID prevEntityChunkInstID = prevEntityChunk.entityIDs[entityIndex];
-				if (prevEntityChunkInstID == entityInstID)
+				std::vector<EntityInstanceID> &prevEntityChunkIDs = prevEntityChunk->entityIDs;
+				for (int entityIndex = 0; entityIndex < static_cast<int>(prevEntityChunkIDs.size()); entityIndex++)
 				{
-					prevEntityChunk.entityIDs.erase(prevEntityChunk.entityIDs.begin() + entityIndex);
-					break;
+					const EntityInstanceID prevEntityChunkInstID = prevEntityChunkIDs[entityIndex];
+					if (prevEntityChunkInstID == entityInstID)
+					{
+						prevEntityChunkIDs.erase(prevEntityChunkIDs.begin() + entityIndex);
+						break;
+					}
 				}
 			}
 
-			EntityChunk &curEntityChunk = this->getChunkAtPosition(curEntityChunkPos);
-			curEntityChunk.entityIDs.emplace_back(entityInstID);
+			if (curEntityChunk != nullptr)
+			{
+				const auto destroyedIter = std::find(this->destroyedEntityIDs.begin(), this->destroyedEntityIDs.end(), entityInstID);
+				const bool isCitizenDestroyedThisFrame = destroyedIter != this->destroyedEntityIDs.end();
+				if (!isCitizenDestroyedThisFrame)
+				{
+					curEntityChunk->entityIDs.emplace_back(entityInstID);
 
-			EntityTransferResult transferResult;
-			transferResult.id = entityInstID;
-			transferResult.oldChunkPos = prevEntityChunkPos;
-			transferResult.newChunkPos = curEntityChunkPos;
-			this->transferResults.emplace_back(std::move(transferResult));
+					EntityTransferResult transferResult;
+					transferResult.id = entityInstID;
+					transferResult.oldChunkPos = prevEntityChunkPos;
+					transferResult.newChunkPos = curEntityChunkPos;
+					this->transferResults.emplace_back(std::move(transferResult));
+				}
+			}
 		}
 	}
 }

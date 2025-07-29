@@ -397,7 +397,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			{
 				const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
 				const auto paletteIndicesIter = this->paletteIndicesTextureRefs.find(paletteIndicesInstID);
-				DebugAssertMsg(paletteIndicesIter != this->paletteIndicesTextureRefs.end(), "Expected entity palette indices texture for ID " + std::to_string(paletteIndicesInstID) + ".");
+				DebugAssertMsgFormat(paletteIndicesIter != this->paletteIndicesTextureRefs.end(), "Expected entity palette indices texture at ID %d for entity %d.", paletteIndicesInstID, entityInstID);
 				textureID1 = paletteIndicesIter->second.get();
 				pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndexLookup;
 			}
