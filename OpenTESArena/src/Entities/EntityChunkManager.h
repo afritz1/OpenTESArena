@@ -150,14 +150,14 @@ private:
 		const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random,
 		const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
-	void updateCitizenStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving,
-		bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
+	void updateCitizenStates(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
+		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
-	void updateCreatureSounds(double dt, EntityChunk &entityChunk, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
+	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
-	void updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
-	void updateVfx(EntityChunk &entityChunk);
+	void updateEnemyDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
+	void updateVfx();
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
 	const EntityInstance &getEntity(EntityInstanceID id) const;
@@ -181,7 +181,7 @@ public:
 	// simulated or rendered.
 	Span<const EntityInstanceID> getQueuedDestroyEntityIDs() const;
 
-	// Gets all entities who have moved between chunks this frame. Cleared at end of frame.
+	// Gets all entities who moved between chunks this frame. Cleared at end of frame.
 	Span<const EntityTransferResult> getEntityTransferResults() const;
 
 	// Count functions for specialized entities.
@@ -208,8 +208,6 @@ public:
 	// Don't need to notify the chunk if it's being unloaded this frame.
 	void queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify);
 	void queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk);
-
-	// @todo: support spawning an entity not from the level def
 
 	void endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 	void clear(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);

@@ -621,20 +621,19 @@ void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChun
 	}
 }
 
-void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk, const WorldDouble2 &playerPositionXZ,
-	bool isPlayerMoving, bool isPlayerWeaponSheathed, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
+void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
+	Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-	for (int i = static_cast<int>(entityChunk.entityIDs.size()) - 1; i >= 0; i--)
+	for (const EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		if (!entityInst.isCitizen())
 		{
 			continue;
 		}
 
+		const EntityInstanceID entityInstID = entityInst.instanceID;
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
 		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
@@ -799,8 +798,18 @@ void EntityChunkManager::updateCitizenStates(double dt, EntityChunk &entityChunk
 		// Transfer ownership of the entity ID to a new chunk if needed.
 		if (curEntityChunkPos != prevEntityChunkPos)
 		{
+			EntityChunk &prevEntityChunk = this->getChunkAtPosition(prevEntityChunkPos);
+			for (int entityIndex = 0; entityIndex < static_cast<int>(prevEntityChunk.entityIDs.size()); entityIndex++)
+			{
+				const EntityInstanceID prevEntityChunkInstID = prevEntityChunk.entityIDs[entityIndex];
+				if (prevEntityChunkInstID == entityInstID)
+				{
+					prevEntityChunk.entityIDs.erase(prevEntityChunk.entityIDs.begin() + entityIndex);
+					break;
+				}
+			}
+
 			EntityChunk &curEntityChunk = this->getChunkAtPosition(curEntityChunkPos);
-			entityChunk.entityIDs.erase(entityChunk.entityIDs.begin() + i);
 			curEntityChunk.entityIDs.emplace_back(entityInstID);
 
 			EntityTransferResult transferResult;
@@ -1063,14 +1072,10 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 	result.init(id, linearizedKeyframeIndex);
 }
 
-void EntityChunkManager::updateCreatureSounds(double dt, EntityChunk &entityChunk, const WorldDouble3 &playerPosition,
-	Random &random, AudioManager &audioManager)
+void EntityChunkManager::updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager)
 {
-	const int entityCount = static_cast<int>(entityChunk.entityIDs.size());
-	for (int i = 0; i < entityCount; i++)
+	for (EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstanceID instID = entityChunk.entityIDs[i];
-		EntityInstance &entityInst = this->entities.get(instID);
 		if (entityInst.creatureSoundInstID >= 0)
 		{
 			const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
@@ -1142,15 +1147,15 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 	}
 }
 
-void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager)
+void EntityChunkManager::updateEnemyDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
 	// @todo: just check an EntityChunkManager::dyingEntities list instead, added to when player swing kills them
 
-	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	for (EntityInstance &entityInst : this->entities.values)
 	{
-		EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityInstanceID entityInstID = entityInst.instanceID;
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityDefinitionType entityDefType = entityDef.type;
 		if (!entityInst.canBeKilledInCombat())
@@ -1213,11 +1218,11 @@ void EntityChunkManager::updateEnemyDeathStates(EntityChunk &entityChunk, JPH::P
 	}
 }
 
-void EntityChunkManager::updateVfx(EntityChunk &entityChunk)
+void EntityChunkManager::updateVfx()
 {
-	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+	for (const EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityInstanceID entityInstID = entityInst.instanceID;
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityDefinitionType entityDefType = entityDef.type;
 		if (entityDefType != EntityDefinitionType::Vfx)
@@ -1330,20 +1335,19 @@ void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPosi
 		const int chunkIndex = this->getChunkIndex(chunkPos);
 		EntityChunk &entityChunk = this->getChunkAtIndex(chunkIndex);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
-		this->updateCitizenStates(dt, entityChunk, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
-
-		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
-		{
-			const EntityInstance &entityInst = this->entities.get(entityInstID);
-			EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-			animInst.update(dt);
-		}
-
-		this->updateCreatureSounds(dt, entityChunk, playerPosition, random, audioManager);
 		this->updateFadedElevatedPlatforms(entityChunk, voxelChunk, ceilingScale, physicsSystem);
-		this->updateEnemyDeathStates(entityChunk, physicsSystem, audioManager);
-		this->updateVfx(entityChunk);
 	}
+
+	for (const EntityInstance &entityInst : this->entities.values)
+	{
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		animInst.update(dt);
+	}
+
+	this->updateCitizenStates(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
+	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
+	this->updateEnemyDeathStates(physicsSystem, audioManager);
+	this->updateVfx();
 }
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)
