@@ -1,6 +1,7 @@
 #include "PlayerLogic.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaSoundName.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Collision/ArenaSelectionUtils.h"
 #include "../Collision/Physics.h"
 #include "../Collision/RayCastTypes.h"

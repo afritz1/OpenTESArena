@@ -8,6 +8,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Collision/RayCastTypes.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"

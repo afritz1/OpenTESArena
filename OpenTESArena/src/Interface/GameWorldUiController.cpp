@@ -10,6 +10,7 @@
 #include "PauseMenuPanel.h"
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Entities/ArenaCitizenUtils.h"
 #include "../Entities/ArenaEntityUtils.h"

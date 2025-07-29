@@ -6,6 +6,7 @@
 #include "CharacterSheetUiView.h"
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontDefinition.h"

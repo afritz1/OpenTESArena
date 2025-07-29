@@ -2,6 +2,7 @@
 
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/RMDFile.h"
 #include "../Game/Game.h"
 #include "../Player/ArenaPlayerUtils.h"

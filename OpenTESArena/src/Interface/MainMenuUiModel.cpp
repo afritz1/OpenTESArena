@@ -1,6 +1,7 @@
 #include <numeric>
 
 #include "MainMenuUiModel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
 #include "../Game/Game.h"
 #include "../Math/RandomUtils.h"

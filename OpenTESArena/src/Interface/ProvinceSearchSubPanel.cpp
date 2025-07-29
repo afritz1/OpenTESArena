@@ -7,6 +7,7 @@
 #include "ProvinceMapUiView.h"
 #include "ProvinceSearchSubPanel.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/TextureManager.h"
 #include "../Game/Game.h"

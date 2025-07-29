@@ -7,6 +7,7 @@
 #include "GameState.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/INFFile.h"
 #include "../Assets/MIFFile.h"

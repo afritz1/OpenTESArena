@@ -1,20 +1,13 @@
 #ifndef PROVINCE_MAP_PANEL_H
 #define PROVINCE_MAP_PANEL_H
 
-#include <string>
-
 #include "Panel.h"
 #include "../Math/Vector2.h"
 #include "../UI/AnimationState.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../Utilities/Palette.h"
 
-class LocationDefinition;
-class ProvinceDefinition;
 class Renderer;
-class Texture;
-class TextureManager;
 
 class ProvinceMapPanel : public Panel
 {

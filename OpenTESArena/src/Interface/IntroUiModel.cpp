@@ -4,6 +4,7 @@
 #include "IntroUiModel.h"
 #include "IntroUiView.h"
 #include "MainMenuPanel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 
 std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)

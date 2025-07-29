@@ -2,6 +2,7 @@
 
 #include "ProvinceMapUiView.h"
 #include "../Assets/ArenaTextureName.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../UI/FontDefinition.h"
 #include "../UI/FontLibrary.h"

@@ -3,6 +3,7 @@
 #include "ProvinceMapUiModel.h"
 #include "ProvinceSearchSubPanel.h"
 #include "WorldMapPanel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 
 #include "components/utilities/String.h"

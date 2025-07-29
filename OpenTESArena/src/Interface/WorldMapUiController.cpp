@@ -4,6 +4,7 @@
 #include "ProvinceMapPanel.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"

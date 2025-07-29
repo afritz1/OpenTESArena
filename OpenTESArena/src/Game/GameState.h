@@ -10,8 +10,6 @@
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/PhysicsSystem.h"
 
-#include "../Assets/ArenaTypes.h"
-#include "../Assets/BinaryAssetLibrary.h"
 #include "../Interface/ProvinceMapUiModel.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
@@ -23,20 +21,9 @@
 #include "../World/MapDefinition.h"
 #include "../WorldMap/WorldMapInstance.h"
 
-class BinaryAssetLibrary;
-class CharacterClassLibrary;
-class CityDataFile;
-class EntityDefinitionLibrary;
-class FontLibrary;
-class INFFile;
 class LocationDefinition;
 class LocationInstance;
-class MIFFile;
 class ProvinceDefinition;
-class Renderer;
-class TextAssetLibrary;
-class Texture;
-class TextureManager;
 
 enum class MapType;
 

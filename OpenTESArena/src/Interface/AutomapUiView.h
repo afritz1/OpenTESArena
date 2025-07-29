@@ -21,7 +21,6 @@
 
 class GameState;
 class Renderer;
-class Texture;
 class VoxelChunkManager;
 
 enum class CardinalDirectionName;

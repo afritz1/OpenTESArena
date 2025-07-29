@@ -1,6 +1,7 @@
 #include "MapLogic.h"
 #include "MapType.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"

@@ -10,6 +10,7 @@
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiView.h"
 #include "WorldMapPanel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 #include "../UI/FontLibrary.h"

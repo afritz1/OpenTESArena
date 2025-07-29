@@ -2,10 +2,8 @@
 #define TEXTURE_UTILS_H
 
 #include <string>
-#include <vector>
 
 #include "../Rendering/RenderTextureUtils.h"
-#include "../Utilities/Palette.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -13,7 +11,6 @@
 class FontLibrary;
 class Renderer;
 class Surface;
-class Texture;
 class TextureManager;
 
 struct TextureAsset;
@@ -61,8 +58,7 @@ public:
 namespace TextureUtils
 {
 	// Generates a new texture from a pattern.
-	Surface generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager,
-		Renderer &renderer);
+	Surface generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager, Renderer &renderer);
 
 	// Generates a tooltip texture with pre-defined font/color/background.
 	Surface createTooltip(const std::string &text, const FontLibrary &fontLibrary);
@@ -78,8 +74,7 @@ namespace TextureUtils
 	// Convenience function for allocating a UI texture from an SDL surface. Note that the usage of this generally
 	// means there is waste with the allocation of the input surface, and this should just be a UI texture allocation
 	// and write instead eventually (instead of a copy).
-	bool tryAllocUiTextureFromSurface(const Surface &surface, TextureManager &textureManager, Renderer &renderer,
-		UiTextureID *outID);
+	bool tryAllocUiTextureFromSurface(const Surface &surface, TextureManager &textureManager, Renderer &renderer, UiTextureID *outID);
 }
 
 using PaletteIdGroup = TextureIdSequence<PaletteID>;

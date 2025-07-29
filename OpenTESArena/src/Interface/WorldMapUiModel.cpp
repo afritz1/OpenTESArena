@@ -5,6 +5,7 @@
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Math/Random.h"

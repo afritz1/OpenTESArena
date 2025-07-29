@@ -1,4 +1,5 @@
 #include "MainQuestSplashUiView.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/FontLibrary.h"

@@ -2,6 +2,7 @@
 #include "CharacterCreationUiView.h"
 #include "CharacterSheetUiModel.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Player/CharacterCreationState.h"

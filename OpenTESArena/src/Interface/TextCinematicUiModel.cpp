@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "TextCinematicUiModel.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Interface/TextCinematicDefinition.h"

@@ -13,6 +13,7 @@
 #include "EntityUtils.h"
 #include "../Items/ItemInventory.h"
 #include "../Math/BoundingBox.h"
+#include "../Utilities/Palette.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
