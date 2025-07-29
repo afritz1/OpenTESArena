@@ -1,6 +1,8 @@
 #ifndef CHOOSE_RACE_PANEL_H
 #define CHOOSE_RACE_PANEL_H
 
+#include <memory>
+
 #include "Panel.h"
 
 class Renderer;

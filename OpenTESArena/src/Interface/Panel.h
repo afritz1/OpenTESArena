@@ -1,8 +1,6 @@
 #ifndef PANEL_H
 #define PANEL_H
 
-#include <memory>
-#include <string>
 #include <string_view>
 #include <vector>
 
@@ -15,19 +13,11 @@
 
 #include "components/utilities/Span.h"
 
-class FontLibrary;
 class Game;
-class Renderer;
-class Texture;
 
-enum class CursorAlignment;
 enum class MouseButtonType;
 
-struct Color;
 struct Rect;
-struct SDL_Texture;
-
-union SDL_Event;
 
 // Each panel interprets user input and draws to the screen. There is only one panel active at
 // a time, and it is owned by Game, although there can be any number of sub-panels.
