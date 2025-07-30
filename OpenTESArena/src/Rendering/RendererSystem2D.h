@@ -48,11 +48,10 @@ public:
 	virtual void shutdown() = 0;
 
 	// Texture handle allocation functions for a UI texture. All UI textures are stored as 32-bit.
-	virtual bool tryCreateUiTexture(int width, int height, UiTextureID *outID) = 0;
-	virtual bool tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID) = 0;
-	virtual bool tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID) = 0;
-	virtual bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
-		const TextureManager &textureManager, UiTextureID *outID) = 0;
+	virtual UiTextureID createUiTexture(int width, int height) = 0;
+	virtual UiTextureID createUiTexture(Span2D<const uint32_t> texels) = 0;
+	virtual UiTextureID createUiTexture(Span2D<const uint8_t> texels, const Palette &palette) = 0;
+	virtual UiTextureID createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager) = 0;
 
 	virtual uint32_t *lockUiTexture(UiTextureID textureID) = 0;
 	virtual void unlockUiTexture(UiTextureID textureID) = 0;

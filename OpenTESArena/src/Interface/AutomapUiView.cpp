@@ -428,8 +428,8 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 	Buffer2D<uint32_t> automapBuffer = AutomapUiView::makeAutomap(playerCoordXZ, playerCompassDir, isWild, levelDims, voxelChunkManager);
 	const Span2D<const uint32_t> automapBufferView(automapBuffer);
 
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(automapBufferView, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(automapBufferView);
+	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for automap.");
 	}

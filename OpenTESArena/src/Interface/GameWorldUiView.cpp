@@ -29,10 +29,10 @@ namespace
 		const int width = rect.width;
 		const int height = rect.height;
 
-		UiTextureID textureID;
-		if (!renderer.tryCreateUiTexture(width, height, &textureID))
+		const UiTextureID textureID = renderer.createUiTexture(width, height);
+		if (textureID < 0)
 		{
-			DebugCrash("Couldn't create status bar texture with color (" + color.toString() + ").");
+			DebugCrashFormat("Couldn't create status bar texture with color (%s).", color.toString().c_str());
 		}
 
 		uint32_t *texels = renderer.lockUiTexture(textureID);
@@ -605,13 +605,13 @@ UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType bu
 	const Span2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
 		surface.getWidth(), surface.getHeight());
 
-	UiTextureID id;
-	if (!renderer.tryCreateUiTexture(pixelsView, &id))
+	const UiTextureID textureID = renderer.createUiTexture(pixelsView);
+	if (textureID < 0)
 	{
-		DebugCrash("Couldn't create tooltip texture for \"" + text + "\".");
+		DebugCrashFormat("Couldn't create tooltip texture for \"%s\".", text.c_str());
 	}
 
-	return id;
+	return textureID;
 }
 
 UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer)
@@ -633,13 +633,13 @@ UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textu
 	constexpr int width = 7;
 	constexpr int height = width;
 
-	UiTextureID id;
-	if (!renderer.tryCreateUiTexture(width, height, &id))
+	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create modern mode cursor texture.");
 	}
 
-	uint32_t *lockedTexels = renderer.lockUiTexture(id);
+	uint32_t *lockedTexels = renderer.lockUiTexture(textureID);
 	Span2D<uint32_t> texelsView(static_cast<uint32_t*>(lockedTexels), width, height);
 
 	constexpr Color cursorBgColor(0, 0, 0, 0);
@@ -664,9 +664,9 @@ UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textu
 		texelsView.set(middleX, height - y - 1, cursorColorARGB);
 	}
 
-	renderer.unlockUiTexture(id);
+	renderer.unlockUiTexture(textureID);
 
-	return id;
+	return textureID;
 }
 
 UiTextureID GameWorldUiView::allocKeyTexture(int keyIndex, TextureManager &textureManager, Renderer &renderer)
@@ -883,13 +883,15 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 	{
 		DebugAssertIndex(VoxelFrustumCullingChunk::NODES_PER_SIDE, treeLevelIndex);
 		const int quadtreeTextureDim = VoxelFrustumCullingChunk::NODES_PER_SIDE[treeLevelIndex];
-		if (!renderer.tryCreateUiTexture(quadtreeTextureDim, quadtreeTextureDim, &quadtreeTextureIdList[treeLevelIndex]))
+		UiTextureID &quadtreeTextureID = quadtreeTextureIdList[treeLevelIndex];
+		quadtreeTextureID = renderer.createUiTexture(quadtreeTextureDim, quadtreeTextureDim);
+		if (quadtreeTextureID < 0)
 		{
 			DebugLogErrorFormat("Couldn't allocate voxel visibility quadtree debug texture %d.", treeLevelIndex);
 			continue;
 		}
 
-		quadtreeTextureRefList[treeLevelIndex].init(quadtreeTextureIdList[treeLevelIndex], renderer);
+		quadtreeTextureRefList[treeLevelIndex].init(quadtreeTextureID, renderer);
 		quadtreeTextureDimsList[treeLevelIndex] = Int2(quadtreeTextureRefList[treeLevelIndex].getWidth(), quadtreeTextureRefList[treeLevelIndex].getHeight());
 	}
 
@@ -919,10 +921,10 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 	}
 
 	constexpr uint8_t alpha = 192;
-	const uint32_t visibleColor = Color(0, 255, 0, alpha).toARGB();
-	const uint32_t partiallyVisibleColor = Color(255, 255, 0, alpha).toARGB();
-	const uint32_t invisibleColor = Color(255, 0, 0, alpha).toARGB();
-	const uint32_t playerColor = Color(255, 255, 255, alpha).toARGB();
+	constexpr uint32_t visibleColor = Color(0, 255, 0, alpha).toARGB();
+	constexpr uint32_t partiallyVisibleColor = Color(255, 255, 0, alpha).toARGB();
+	constexpr uint32_t invisibleColor = Color(255, 0, 0, alpha).toARGB();
+	constexpr uint32_t playerColor = Color(255, 255, 255, alpha).toARGB();
 
 	for (int treeLevelIndex = 0; treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
 	{

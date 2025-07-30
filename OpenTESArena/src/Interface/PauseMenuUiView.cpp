@@ -126,12 +126,11 @@ UiTextureID PauseMenuUiView::allocBackgroundTexture(TextureManager &textureManag
 UiTextureID PauseMenuUiView::allocOptionsButtonTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const Rect buttonRect = PauseMenuUiView::getOptionsButtonRect();
-	const Surface surface = TextureUtils::generate(PauseMenuUiView::OptionsButtonPatternType,
-		buttonRect.width, buttonRect.height, textureManager, renderer);
+	const Surface surface = TextureUtils::generate(PauseMenuUiView::OptionsButtonPatternType, buttonRect.width, buttonRect.height, textureManager, renderer);
 	const Span2D<const uint32_t> surfaceTexelsView(static_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
 
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(surfaceTexelsView, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(surfaceTexelsView);
+	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create options button texture for pause menu.");
 	}

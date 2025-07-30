@@ -38,13 +38,13 @@ Buffer<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::strin
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(animFilename.c_str());
 	if (!paletteID.has_value())
 	{
-		DebugCrash("Couldn't get palette ID for \"" + animFilename + "\".");
+		DebugCrashFormat("Couldn't get palette ID for \"%s\".", animFilename.c_str());
 	}
 
 	const std::optional<TextureBuilderIdGroup> textureBuilderIDs = textureManager.tryGetTextureBuilderIDs(animFilename.c_str());
 	if (!textureBuilderIDs.has_value())
 	{
-		DebugCrash("Couldn't get texture builder IDs for \"" + animFilename + "\".");
+		DebugCrashFormat("Couldn't get texture builder IDs for \"%s\".", animFilename.c_str());
 	}
 
 	const int textureCount = textureBuilderIDs->count;
@@ -52,10 +52,10 @@ Buffer<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::strin
 	for (int i = 0; i < textureCount; i++)
 	{
 		const TextureBuilderID textureBuilderID = textureBuilderIDs->getID(i);
-		UiTextureID textureID;
-		if (!renderer.tryCreateUiTexture(textureBuilderID, *paletteID, textureManager, &textureID))
+		const UiTextureID textureID = renderer.createUiTexture(textureBuilderID, *paletteID, textureManager);
+		if (textureID < 0)
 		{
-			DebugCrash("Couldn't create UI texture for \"" + animFilename + "\" index " + std::to_string(i) + ".");
+			DebugCrashFormat("Couldn't create UI texture for \"%s\" index %d.", animFilename.c_str(), i);
 		}
 
 		textureIDs.set(i, textureID);

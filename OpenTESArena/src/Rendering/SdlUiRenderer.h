@@ -20,18 +20,17 @@ private:
 	UiTextureID nextID;
 
 	using TexelsInitFunc = std::function<void(Span2D<uint32_t>)>;
-	bool tryCreateUiTextureInternal(int width, int height, const TexelsInitFunc &initFunc, UiTextureID *outID);
+	UiTextureID createUiTextureInternal(int width, int height, const TexelsInitFunc &initFunc);
 public:
 	SdlUiRenderer();
 
 	bool init(SDL_Window *window) override;
 	void shutdown() override;
 
-	bool tryCreateUiTexture(int width, int height, UiTextureID *outID) override;
-	bool tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID) override;
-	bool tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID) override;
-	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
-		const TextureManager &textureManager, UiTextureID *outID) override;
+	UiTextureID createUiTexture(int width, int height) override;
+	UiTextureID createUiTexture(Span2D<const uint32_t> texels) override;
+	UiTextureID createUiTexture(Span2D<const uint8_t> texels, const Palette &palette) override;
+	UiTextureID createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager) override;
 
 	uint32_t *lockUiTexture(UiTextureID textureID) override;
 	void unlockUiTexture(UiTextureID textureID) override;

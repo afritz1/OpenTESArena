@@ -138,8 +138,8 @@ UiTextureID OptionsUiView::allocBackgroundTexture(Renderer &renderer)
 {
 	constexpr int width = ArenaRenderUtils::SCREEN_WIDTH;
 	constexpr int height = ArenaRenderUtils::SCREEN_HEIGHT;
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for options menu background.");
 	}
@@ -170,8 +170,8 @@ UiTextureID OptionsUiView::allocTabTexture(TextureManager &textureManager, Rende
 
 	const int width = surface.getWidth();
 	const int height = surface.getHeight();
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for options menu tab.");
 	}
@@ -196,8 +196,8 @@ UiTextureID OptionsUiView::allocHighlightTexture(Renderer &renderer)
 	const Rect listRect = OptionsUiView::getListRect();
 	const int width = listRect.width;
 	const int height = 9;
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for highlighted option.");
 	}
@@ -228,8 +228,8 @@ UiTextureID OptionsUiView::allocBackButtonTexture(TextureManager &textureManager
 
 	const int width = surface.getWidth();
 	const int height = surface.getHeight();
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for options menu back button.");
 	}

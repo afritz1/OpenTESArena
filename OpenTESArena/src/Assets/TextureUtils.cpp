@@ -294,9 +294,8 @@ Buffer<TextureAsset> TextureUtils::makeTextureAssets(const std::string &filename
 	return textureAssets;
 }
 
-bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset,
-	const TextureAsset &paletteTextureAsset, TextureManager &textureManager, Renderer &renderer,
-	UiTextureID *outID)
+bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset, const TextureAsset &paletteTextureAsset,
+	TextureManager &textureManager, Renderer &renderer, UiTextureID *outID)
 {
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
 	if (!paletteID.has_value())
@@ -312,12 +311,14 @@ bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset,
 		return false;
 	}
 
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, outID))
+	const UiTextureID textureID = renderer.createUiTexture(*textureBuilderID, *paletteID, textureManager);
+	if (textureID < 0)
 	{
 		DebugLogError("Couldn't create UI texture for \"" + textureAsset.filename + "\".");
 		return false;
 	}
 
+	*outID = textureID;
 	return true;
 }
 
@@ -327,8 +328,8 @@ bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureM
 	const int width = surface.getWidth();
 	const int height = surface.getHeight();
 
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
 		DebugLogError("Couldn't create UI texture from surface.");
 		return false;

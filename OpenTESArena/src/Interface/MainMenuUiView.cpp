@@ -239,13 +239,11 @@ UiTextureID MainMenuUiView::allocTestArrowsTexture(TextureManager &textureManage
 UiTextureID MainMenuUiView::allocTestButtonTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const Rect rect = MainMenuUiView::getTestButtonRect();
-	const Surface surface = TextureUtils::generate(MainMenuUiView::TestButtonPatternType,
-		rect.width, rect.height, textureManager, renderer);
-	const Span2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
-		surface.getWidth(), surface.getHeight());
+	const Surface surface = TextureUtils::generate(MainMenuUiView::TestButtonPatternType, rect.width, rect.height, textureManager, renderer);
+	const Span2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
 
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(pixelsView, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(pixelsView);
+	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for test button.");
 	}

@@ -244,20 +244,20 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
 	if (!paletteID.has_value())
 	{
-		DebugCrash("Couldn't get staff dungeon palette ID for \"" + paletteTextureAsset.filename + "\".");
+		DebugCrashFormat("Couldn't get staff dungeon palette ID for \"%s\".", paletteTextureAsset.filename.c_str());
 	}
 
 	const TextureAsset textureAsset = ProvinceMapUiView::getStaffDungeonIconTextureAsset(provinceID);
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
-		DebugCrash("Couldn't get staff dungeon texture builder ID for \"" + textureAsset.filename + "\".");
+		DebugCrashFormat("Couldn't get staff dungeon texture builder ID for \"%s\".", textureAsset.filename.c_str());
 	}
 
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(*textureBuilderID, *paletteID, textureManager, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(*textureBuilderID, *paletteID, textureManager);
+	if (textureID < 0)
 	{
-		DebugCrash("Couldn't create staff dungeon texture for \"" + textureAsset.filename + "\".");
+		DebugCrashFormat("Couldn't create staff dungeon texture for \"%s\".", textureAsset.filename.c_str());
 	}
 
 	if (highlightType == HighlightType::None)
@@ -395,10 +395,10 @@ UiTextureID ProvinceSearchUiView::allocParchmentTexture(TextureManager &textureM
 	const int height = ProvinceSearchUiView::TextureHeight;
 	const Surface surface = TextureUtils::generate(ProvinceSearchUiView::TexturePattern, width, height, textureManager, renderer);
 	
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(width, height, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	if (textureID < 0)
 	{
-		DebugCrash("Couldn't create parchment texture (dims: " + std::to_string(width) + "x" + std::to_string(height) + ").");
+		DebugCrashFormat("Couldn't create parchment texture with dims %dx%d.", width, height);
 	}
 
 	uint32_t *dstTexels = renderer.lockUiTexture(textureID);

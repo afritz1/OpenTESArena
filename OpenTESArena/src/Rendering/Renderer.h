@@ -196,11 +196,10 @@ public:
 	// Texture handle allocation functions.
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);
 	ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder);
-	bool tryCreateUiTexture(int width, int height, UiTextureID *outID);
-	bool tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID);
-	bool tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID);
-	bool tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
-		const TextureManager &textureManager, UiTextureID *outID);
+	UiTextureID createUiTexture(int width, int height);
+	UiTextureID createUiTexture(Span2D<const uint32_t> texels);
+	UiTextureID createUiTexture(Span2D<const uint8_t> texels, const Palette &palette);
+	UiTextureID createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
 
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const;
 	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;

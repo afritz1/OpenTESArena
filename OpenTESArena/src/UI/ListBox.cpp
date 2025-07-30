@@ -43,10 +43,10 @@ bool ListBox::init(const Rect &rect, const ListBoxProperties &properties, Render
 
 	const int textureWidth = properties.textureGenInfo.width;
 	const int textureHeight = properties.textureGenInfo.height;
-	UiTextureID textureID;
-	if (!renderer.tryCreateUiTexture(textureWidth, textureHeight, &textureID))
+	const UiTextureID textureID = renderer.createUiTexture(textureWidth, textureHeight);
+	if (textureID < 0)
 	{
-		DebugLogError("Couldn't create UI texture for list box (dims: " + std::to_string(textureWidth) + "x" + std::to_string(textureHeight) + ").");
+		DebugLogErrorFormat("Couldn't create UI texture for list box with dims %dx%d.", textureWidth, textureHeight);
 		return false;
 	}
 

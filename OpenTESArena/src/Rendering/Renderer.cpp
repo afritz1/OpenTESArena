@@ -832,25 +832,24 @@ ObjectTextureID Renderer::createObjectTexture(const TextureBuilder &textureBuild
 	return this->renderer3D->createObjectTexture(textureBuilder);
 }
 
-bool Renderer::tryCreateUiTexture(int width, int height, UiTextureID *outID)
+UiTextureID Renderer::createUiTexture(int width, int height)
 {
-	return this->renderer2D->tryCreateUiTexture(width, height, outID);
+	return this->renderer2D->createUiTexture(width, height);
 }
 
-bool Renderer::tryCreateUiTexture(Span2D<const uint32_t> texels, UiTextureID *outID)
+UiTextureID Renderer::createUiTexture(Span2D<const uint32_t> texels)
 {
-	return this->renderer2D->tryCreateUiTexture(texels, outID);
+	return this->renderer2D->createUiTexture(texels);
 }
 
-bool Renderer::tryCreateUiTexture(Span2D<const uint8_t> texels, const Palette &palette, UiTextureID *outID)
+UiTextureID Renderer::createUiTexture(Span2D<const uint8_t> texels, const Palette &palette)
 {
-	return this->renderer2D->tryCreateUiTexture(texels, palette, outID);
+	return this->renderer2D->createUiTexture(texels, palette);
 }
 
-bool Renderer::tryCreateUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID,
-	const TextureManager &textureManager, UiTextureID *outID)
+UiTextureID Renderer::createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
 {
-	return this->renderer2D->tryCreateUiTexture(textureBuilderID, paletteID, textureManager, outID);
+	return this->renderer2D->createUiTexture(textureBuilderID, paletteID, textureManager);
 }
 
 std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
