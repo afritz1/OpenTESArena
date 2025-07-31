@@ -2,6 +2,7 @@
 #define RENDERER_SYSTEM_3D_H
 
 #include <cstdint>
+#include <optional>
 
 #include "RenderLightUtils.h"
 #include "RenderMeshUtils.h"
@@ -13,14 +14,11 @@
 
 #include "components/utilities/Span.h"
 
-class Random;
-
+struct ObjectTextureAllocator;
 struct RenderCamera;
 struct RenderCommandBuffer;
-struct RenderDrawCall;
 struct RenderFrameSettings;
 struct RenderInitSettings;
-struct TextureBuilder;
 
 // Profiling info gathered from internal renderer state.
 struct Renderer3DProfilerData
@@ -65,11 +63,7 @@ public:
 	virtual void freeIndexBuffer(IndexBufferID id) = 0;
 
 	// Texture management functions.
-	virtual ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) = 0;
-	virtual ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder) = 0;
-	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
-	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
-	virtual void freeObjectTexture(ObjectTextureID id) = 0;
+	virtual ObjectTextureAllocator *getTextureAllocator() = 0;
 
 	// Uniform management functions.
 	virtual UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) = 0;

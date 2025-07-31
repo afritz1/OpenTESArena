@@ -6,6 +6,7 @@
 
 #include "RendererSystem3D.h"
 #include "RenderLightUtils.h"
+#include "RenderTextureAllocator.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
@@ -121,7 +122,24 @@ using SoftwareUniformBufferPool = RecyclablePool<UniformBufferID, SoftwareUnifor
 using SoftwareObjectTexturePool = RecyclablePool<ObjectTextureID, SoftwareObjectTexture>;
 using SoftwareLightPool = RecyclablePool<RenderLightID, SoftwareLight>;
 
-class SoftwareRenderer : public RendererSystem3D
+struct SoftwareObjectTextureAllocator final : public ObjectTextureAllocator
+{
+	SoftwareObjectTexturePool *pool;
+
+	SoftwareObjectTextureAllocator();
+
+	void init(SoftwareObjectTexturePool *pool);
+
+	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
+	ObjectTextureID create(const TextureBuilder &textureBuilder) override;
+
+	void free(ObjectTextureID textureID) override;
+
+	LockedTexture lock(ObjectTextureID textureID) override;
+	void unlock(ObjectTextureID textureID) override;
+};
+
+class SoftwareRenderer final : public RendererSystem3D
 {
 private:
 	Buffer2D<uint8_t> paletteIndexBuffer; // Intermediate buffer to support back-to-front transparencies.
@@ -135,6 +153,8 @@ private:
 	SoftwareUniformBufferPool uniformBuffers;
 	SoftwareObjectTexturePool objectTextures;
 	SoftwareLightPool lights;
+
+	SoftwareObjectTextureAllocator textureAllocator;
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer() override;
@@ -155,11 +175,7 @@ public:
 	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
 	void freeIndexBuffer(IndexBufferID id) override;
 
-	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) override;
-	ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder) override;
-	LockedTexture lockObjectTexture(ObjectTextureID id) override;
-	void unlockObjectTexture(ObjectTextureID id) override;
-	void freeObjectTexture(ObjectTextureID id) override;
+	ObjectTextureAllocator *getTextureAllocator() override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
 
 	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) override;

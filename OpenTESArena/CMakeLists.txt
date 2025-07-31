@@ -441,6 +441,7 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderShaderUtils.h"
     "${SRC_ROOT}/Rendering/RenderSkyManager.h"
     "${SRC_ROOT}/Rendering/RenderSkyManager.cpp"
+    "${SRC_ROOT}/Rendering/RenderTextureAllocator.h"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.h"
     "${SRC_ROOT}/Rendering/RenderTransform.cpp"

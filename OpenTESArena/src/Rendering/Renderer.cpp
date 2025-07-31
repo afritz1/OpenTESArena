@@ -823,33 +823,39 @@ void Renderer::freeIndexBuffer(IndexBufferID id)
 ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->createObjectTexture(width, height, bytesPerTexel);
+	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
+	return allocator->create(width, height, bytesPerTexel);
 }
 
 ObjectTextureID Renderer::createObjectTexture(const TextureBuilder &textureBuilder)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->createObjectTexture(textureBuilder);
+	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
+	return allocator->create(textureBuilder);
 }
 
 UiTextureID Renderer::createUiTexture(int width, int height)
 {
-	return this->renderer2D->createUiTexture(width, height);
+	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
+	return allocator->create(width, height);
 }
 
 UiTextureID Renderer::createUiTexture(Span2D<const uint32_t> texels)
 {
-	return this->renderer2D->createUiTexture(texels);
+	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
+	return allocator->create(texels);
 }
 
 UiTextureID Renderer::createUiTexture(Span2D<const uint8_t> texels, const Palette &palette)
 {
-	return this->renderer2D->createUiTexture(texels, palette);
+	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
+	return allocator->create(texels, palette);
 }
 
 UiTextureID Renderer::createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
 {
-	return this->renderer2D->createUiTexture(textureBuilderID, paletteID, textureManager);
+	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
+	return allocator->create(textureBuilderID, paletteID, textureManager);
 }
 
 std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
@@ -866,34 +872,40 @@ std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
 LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
 {
 	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->lockObjectTexture(id);
+	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
+	return allocator->lock(id);
 }
 
 uint32_t *Renderer::lockUiTexture(UiTextureID textureID)
 {
-	return this->renderer2D->lockUiTexture(textureID);
+	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
+	return allocator->lock(textureID);
 }
 
 void Renderer::unlockObjectTexture(ObjectTextureID id)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->unlockObjectTexture(id);
+	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
+	allocator->unlock(id);
 }
 
 void Renderer::unlockUiTexture(UiTextureID textureID)
 {
-	this->renderer2D->unlockUiTexture(textureID);
+	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
+	allocator->unlock(textureID);
 }
 
 void Renderer::freeObjectTexture(ObjectTextureID id)
 {
 	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freeObjectTexture(id);
+	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
+	allocator->free(id);
 }
 
 void Renderer::freeUiTexture(UiTextureID id)
 {
-	this->renderer2D->freeUiTexture(id);
+	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
+	allocator->free(id);
 }
 
 UniformBufferID Renderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)

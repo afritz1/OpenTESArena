@@ -4404,6 +4404,84 @@ void SoftwareLight::init(const Double3 &worldPoint, double startRadius, double e
 	this->startEndRadiusDiffRecip = 1.0 / this->startEndRadiusDiff;
 }
 
+SoftwareObjectTextureAllocator::SoftwareObjectTextureAllocator()
+{
+	this->pool = nullptr;
+}
+
+void SoftwareObjectTextureAllocator::init(SoftwareObjectTexturePool *pool)
+{
+	this->pool = pool;
+}
+
+ObjectTextureID SoftwareObjectTextureAllocator::create(int width, int height, int bytesPerTexel)
+{
+	const ObjectTextureID textureID = this->pool->alloc();
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate software object texture with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
+		return -1;
+	}
+
+	SoftwareObjectTexture &texture = this->pool->get(textureID);
+	texture.init(width, height, bytesPerTexel);
+	return textureID;
+}
+
+ObjectTextureID SoftwareObjectTextureAllocator::create(const TextureBuilder &textureBuilder)
+{
+	const int width = textureBuilder.getWidth();
+	const int height = textureBuilder.getHeight();
+	const int bytesPerTexel = textureBuilder.getBytesPerTexel();
+
+	const ObjectTextureID textureID = this->create(width, height, bytesPerTexel);
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate software object texture from texture builder with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
+		return -1;
+	}
+
+	const TextureBuilderType textureBuilderType = textureBuilder.type;
+	SoftwareObjectTexture &texture = this->pool->get(textureID);
+	if (textureBuilderType == TextureBuilderType::Paletted)
+	{
+		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
+		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
+		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
+	}
+	else if (textureBuilderType == TextureBuilderType::TrueColor)
+	{
+		const TextureBuilderTrueColorTexture &trueColorTexture = textureBuilder.trueColorTexture;
+		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
+		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.begin());
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(textureBuilderType)));
+	}
+
+	return textureID;
+}
+
+void SoftwareObjectTextureAllocator::free(ObjectTextureID textureID)
+{
+	this->pool->free(textureID);
+}
+
+LockedTexture SoftwareObjectTextureAllocator::lock(ObjectTextureID textureID)
+{
+	SoftwareObjectTexture &texture = this->pool->get(textureID);
+	return LockedTexture(texture.texels.begin(), texture.bytesPerTexel);
+}
+
+void SoftwareObjectTextureAllocator::unlock(ObjectTextureID textureID)
+{
+	// Do nothing; any writes are already in RAM.
+	static_cast<void>(textureID);
+}
+
 SoftwareRenderer::SoftwareRenderer()
 {
 	this->ditheringMode = static_cast<DitheringMode>(-1);
@@ -4423,6 +4501,8 @@ void SoftwareRenderer::init(const RenderInitSettings &settings)
 
 	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
 	this->ditheringMode = settings.ditheringMode;
+
+	this->textureAllocator.init(&this->objectTextures);
 
 	const int workerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
 	InitializeWorkers(workerCount, frameBufferWidth, frameBufferHeight);
@@ -4578,72 +4658,9 @@ void SoftwareRenderer::freeIndexBuffer(IndexBufferID id)
 	this->indexBuffers.free(id);
 }
 
-ObjectTextureID SoftwareRenderer::createObjectTexture(int width, int height, int bytesPerTexel)
+ObjectTextureAllocator *SoftwareRenderer::getTextureAllocator()
 {
-	const ObjectTextureID id = this->objectTextures.alloc();
-	if (id < 0)
-	{
-		DebugLogErrorFormat("Couldn't allocate %dx%d object texture with %d bytes per texel.", width, height, bytesPerTexel);
-		return -1;
-	}
-
-	SoftwareObjectTexture &texture = this->objectTextures.get(id);
-	texture.init(width, height, bytesPerTexel);
-	return id;
-}
-
-ObjectTextureID SoftwareRenderer::createObjectTexture(const TextureBuilder &textureBuilder)
-{
-	const int width = textureBuilder.getWidth();
-	const int height = textureBuilder.getHeight();
-	const int bytesPerTexel = textureBuilder.getBytesPerTexel();
-
-	const ObjectTextureID id = this->createObjectTexture(width, height, bytesPerTexel);
-	if (id < 0)
-	{
-		DebugLogErrorFormat("Couldn't allocate %dx%d object texture from texture builder with %d bytes per texel.", width, height, bytesPerTexel);
-		return -1;
-	}
-
-	const TextureBuilderType textureBuilderType = textureBuilder.type;
-	SoftwareObjectTexture &texture = this->objectTextures.get(id);
-	if (textureBuilderType == TextureBuilderType::Paletted)
-	{
-		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
-		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
-		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
-		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
-	}
-	else if (textureBuilderType == TextureBuilderType::TrueColor)
-	{
-		const TextureBuilderTrueColorTexture &trueColorTexture = textureBuilder.trueColorTexture;
-		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
-		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.begin());
-		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(textureBuilderType)));
-	}
-
-	return id;
-}
-
-LockedTexture SoftwareRenderer::lockObjectTexture(ObjectTextureID id)
-{
-	SoftwareObjectTexture &texture = this->objectTextures.get(id);
-	return LockedTexture(texture.texels.begin(), texture.bytesPerTexel);
-}
-
-void SoftwareRenderer::unlockObjectTexture(ObjectTextureID id)
-{
-	// Do nothing; any writes are already in RAM.
-	static_cast<void>(id);
-}
-
-void SoftwareRenderer::freeObjectTexture(ObjectTextureID id)
-{
-	this->objectTextures.free(id);
+	return &this->textureAllocator;
 }
 
 std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id) const

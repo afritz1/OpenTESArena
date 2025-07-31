@@ -1,13 +1,10 @@
 #ifndef RENDERER_SYSTEM_2D_H
 #define RENDERER_SYSTEM_2D_H
 
-#include <cstdint>
 #include <optional>
 
 #include "RenderTextureUtils.h"
-#include "../Assets/TextureUtils.h"
 #include "../Math/Vector2.h"
-#include "../Utilities/Palette.h"
 
 #include "components/utilities/Span2D.h"
 
@@ -17,6 +14,7 @@ enum class RenderSpace;
 
 struct Rect;
 struct SDL_Window;
+struct UiTextureAllocator;
 
 // Abstract base class for UI renderer.
 //
@@ -47,17 +45,8 @@ public:
 	virtual bool init(SDL_Window *window) = 0;
 	virtual void shutdown() = 0;
 
-	// Texture handle allocation functions for a UI texture. All UI textures are stored as 32-bit.
-	virtual UiTextureID createUiTexture(int width, int height) = 0;
-	virtual UiTextureID createUiTexture(Span2D<const uint32_t> texels) = 0;
-	virtual UiTextureID createUiTexture(Span2D<const uint8_t> texels, const Palette &palette) = 0;
-	virtual UiTextureID createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager) = 0;
-
-	virtual uint32_t *lockUiTexture(UiTextureID textureID) = 0;
-	virtual void unlockUiTexture(UiTextureID textureID) = 0;
-
-	// Texture handle freeing function for a UI texture.
-	virtual void freeUiTexture(UiTextureID id) = 0;
+	// Texture management functions. All UI textures are stored as 32-bit.
+	virtual UiTextureAllocator *getTextureAllocator() = 0;
 
 	// Returns the texture's dimensions, if it exists.
 	virtual std::optional<Int2> tryGetTextureDims(UiTextureID id) const = 0;
