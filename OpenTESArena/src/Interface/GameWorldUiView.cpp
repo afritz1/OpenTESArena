@@ -602,10 +602,9 @@ UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType bu
 {
 	const std::string text = GameWorldUiModel::getButtonTooltip(buttonType);
 	const Surface surface = TextureUtils::createTooltip(text, fontLibrary);
-	const Span2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()),
-		surface.getWidth(), surface.getHeight());
+	Span2D<const uint32_t> pixels = surface.getPixels();
 
-	const UiTextureID textureID = renderer.createUiTexture(pixelsView);
+	const UiTextureID textureID = renderer.createUiTexture(pixels);
 	if (textureID < 0)
 	{
 		DebugCrashFormat("Couldn't create tooltip texture for \"%s\".", text.c_str());

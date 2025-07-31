@@ -95,9 +95,8 @@ UiTextureID ChooseClassCreationUiView::allocParchmentTexture(TextureManager &tex
 		textureManager,
 		renderer);
 
-	const Span2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
-
-	const UiTextureID textureID = renderer.createUiTexture(texelsView);
+	Span2D<const uint32_t> texels = surface.getPixels();
+	const UiTextureID textureID = renderer.createUiTexture(texels);
 	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for parchment.");
@@ -281,12 +280,15 @@ TextBoxInitInfo ChooseGenderUiView::getFemaleTextBoxInitInfo(const std::string_v
 
 UiTextureID ChooseGenderUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const Surface surface = TextureUtils::generate(ChooseGenderUiView::TexturePatternType,
-		ChooseGenderUiView::TextureWidth, ChooseGenderUiView::TextureHeight, textureManager, renderer);
-	const Span2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
-		surface.getWidth(), surface.getHeight());
+	const Surface surface = TextureUtils::generate(
+		ChooseGenderUiView::TexturePatternType,
+		ChooseGenderUiView::TextureWidth,
+		ChooseGenderUiView::TextureHeight,
+		textureManager,
+		renderer);
+	Span2D<const uint32_t> texels = surface.getPixels();
 
-	const UiTextureID textureID = renderer.createUiTexture(texelsView);
+	const UiTextureID textureID = renderer.createUiTexture(texels);
 	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for parchment.");
@@ -329,12 +331,15 @@ TextBoxInitInfo ChooseNameUiView::getEntryTextBoxInitInfo(const FontLibrary &fon
 
 UiTextureID ChooseNameUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const Surface surface = TextureUtils::generate(ChooseNameUiView::TexturePatternType,
-		ChooseNameUiView::TextureWidth, ChooseNameUiView::TextureHeight, textureManager, renderer);
-	const Span2D<const uint32_t> texelsView(reinterpret_cast<const uint32_t*>(surface.getPixels()),
-		surface.getWidth(), surface.getHeight());
+	const Surface surface = TextureUtils::generate(
+		ChooseNameUiView::TexturePatternType,
+		ChooseNameUiView::TextureWidth,
+		ChooseNameUiView::TextureHeight,
+		textureManager,
+		renderer);
+	Span2D<const uint32_t> texels = surface.getPixels();
 
-	const UiTextureID textureID = renderer.createUiTexture(texelsView);
+	const UiTextureID textureID = renderer.createUiTexture(texels);
 	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for parchment.");
@@ -576,13 +581,13 @@ UiTextureID ChooseRaceUiView::allocInitialPopUpTexture(TextureManager &textureMa
 {
 	const Surface surface = TextureUtils::generate(ChooseRaceUiView::InitialPopUpPatternType,
 		ChooseRaceUiView::InitialPopUpTextureWidth, ChooseRaceUiView::InitialPopUpTextureHeight, textureManager, renderer);
-	
+
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
 	{
 		DebugCrash("Couldn't create initial pop-up texture.");
 	}
-	
+
 	return textureID;
 }
 

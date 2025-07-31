@@ -85,25 +85,10 @@ bool TextureManager::tryLoadPalettes(const char *filename, Buffer<Palette> *outP
 	return true;
 }
 
-bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures,
-	TextureFileMetadata *outMetadata)
+bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuilder> *outTextures, TextureFileMetadata *outMetadata)
 {
 	// Need at least one non-null out parameter.
 	DebugAssert((outTextures != nullptr) || (outMetadata != nullptr));
-
-	auto makePaletted = [](int width, int height, const uint8_t *texels)
-	{
-		TextureBuilder textureBuilder;
-		textureBuilder.initPaletted(width, height, texels);
-		return textureBuilder;
-	};
-
-	auto makeTrueColor = [](int width, int height, const uint32_t *texels)
-	{
-		TextureBuilder textureBuilder;
-		textureBuilder.initTrueColor(width, height, texels);
-		return textureBuilder;
-	};
 
 	auto makeDimensions = [](int width, int height)
 	{
@@ -130,8 +115,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outTextures != nullptr)
 		{
-			TextureBuilder textureBuilder = makeTrueColor(surface.getWidth(), surface.getHeight(),
-				static_cast<const uint32_t*>(surface.getPixels()));
+			TextureBuilder textureBuilder;
+			textureBuilder.initTrueColor(surface.getWidth(), surface.getHeight(), surface.getPixels().begin());
 			outTextures->init(1);
 			outTextures->set(0, std::move(textureBuilder));
 		}
@@ -155,7 +140,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 			outTextures->init(cfa.getImageCount());
 			for (int i = 0; i < cfa.getImageCount(); i++)
 			{
-				TextureBuilder textureBuilder = makePaletted(cfa.getWidth(), cfa.getHeight(), cfa.getPixels(i));
+				TextureBuilder textureBuilder;
+				textureBuilder.initPaletted(cfa.getWidth(), cfa.getHeight(), cfa.getPixels(i));
 				outTextures->set(i, std::move(textureBuilder));
 			}
 		}
@@ -187,7 +173,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 			outTextures->init(cif.getImageCount());
 			for (int i = 0; i < cif.getImageCount(); i++)
 			{
-				TextureBuilder textureBuilder = makePaletted(cif.getWidth(i), cif.getHeight(i), cif.getPixels(i));
+				TextureBuilder textureBuilder;
+				textureBuilder.initPaletted(cif.getWidth(i), cif.getHeight(i), cif.getPixels(i));
 				outTextures->set(i, std::move(textureBuilder));
 			}
 		}
@@ -219,7 +206,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 			outTextures->init(dfa.getImageCount());
 			for (int i = 0; i < dfa.getImageCount(); i++)
 			{
-				TextureBuilder textureBuilder = makePaletted(dfa.getWidth(), dfa.getHeight(), dfa.getPixels(i));
+				TextureBuilder textureBuilder;
+				textureBuilder.initPaletted(dfa.getWidth(), dfa.getHeight(), dfa.getPixels(i));
 				outTextures->set(i, std::move(textureBuilder));
 			}
 		}
@@ -250,7 +238,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 			outTextures->init(flc.getFrameCount());
 			for (int i = 0; i < flc.getFrameCount(); i++)
 			{
-				TextureBuilder textureBuilder = makePaletted(flc.getWidth(), flc.getHeight(), flc.getPixels(i));
+				TextureBuilder textureBuilder;
+				textureBuilder.initPaletted(flc.getWidth(), flc.getHeight(), flc.getPixels(i));
 				outTextures->set(i, std::move(textureBuilder));
 			}
 		}
@@ -278,7 +267,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outTextures != nullptr)
 		{
-			TextureBuilder textureBuilder = makePaletted(img.getWidth(), img.getHeight(), img.getPixels());
+			TextureBuilder textureBuilder;
+			textureBuilder.initPaletted(img.getWidth(), img.getHeight(), img.getPixels());
 			outTextures->init(1);
 			outTextures->set(0, std::move(textureBuilder));
 		}
@@ -299,8 +289,9 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 		if (outTextures != nullptr)
 		{
-			const Span2D<const uint8_t> lightPalettes = lgt.getAllLightPalettes();
-			TextureBuilder textureBuilder = makePaletted(lightPalettes.getWidth(), lightPalettes.getHeight(), lightPalettes.begin());
+			Span2D<const uint8_t> lightPalettes = lgt.getAllLightPalettes();
+			TextureBuilder textureBuilder;
+			textureBuilder.initPaletted(lightPalettes.getWidth(), lightPalettes.getHeight(), lightPalettes.begin());
 			outTextures->init(1);
 			outTextures->set(0, std::move(textureBuilder));
 		}
@@ -324,7 +315,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 			outTextures->init(rci.getImageCount());
 			for (int i = 0; i < rci.getImageCount(); i++)
 			{
-				TextureBuilder textureBuilder = makePaletted(RCIFile::WIDTH, RCIFile::HEIGHT, rci.getPixels(i));
+				TextureBuilder textureBuilder;
+				textureBuilder.initPaletted(RCIFile::WIDTH, RCIFile::HEIGHT, rci.getPixels(i));
 				outTextures->set(i, std::move(textureBuilder));
 			}
 		}
@@ -354,7 +346,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 			outTextures->init(set.getImageCount());
 			for (int i = 0; i < set.getImageCount(); i++)
 			{
-				TextureBuilder textureBuilder = makePaletted(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, set.getPixels(i));
+				TextureBuilder textureBuilder;
+				textureBuilder.initPaletted(SETFile::CHUNK_WIDTH, SETFile::CHUNK_HEIGHT, set.getPixels(i));
 				outTextures->set(i, std::move(textureBuilder));
 			}
 		}
@@ -392,7 +385,8 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 				return static_cast<uint32_t>(Bytes::getLE16(reinterpret_cast<const uint8_t*>(&srcPixel)));
 			});
 
-			TextureBuilder textureBuilder = makeTrueColor(TXTFile::WIDTH, TXTFile::HEIGHT, trueColorBuffer.begin());
+			TextureBuilder textureBuilder;
+			textureBuilder.initTrueColor(TXTFile::WIDTH, TXTFile::HEIGHT, trueColorBuffer.begin());
 			outTextures->init(1);
 			outTextures->set(0, std::move(textureBuilder));
 		}

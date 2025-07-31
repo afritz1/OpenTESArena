@@ -3,14 +3,13 @@
 
 #include <cstdint>
 
+#include "components/utilities/Span2D.h"
+
 struct Rect;
 struct SDL_Surface;
 
-// A thin SDL_Surface wrapper.
-//
-// The usage of SDL_Surfaces in the engine is falling in favor of SDL_Textures.
-// SDL_Surfaces are really just being used as scratch images which are then converted 
-// to a hardware texture for rendering.
+// A thin SDL_Surface wrapper. Surfaces are really just being used like scratch images which are then converted 
+// to a GPU texture later.
 class Surface
 {
 private:
@@ -28,20 +27,19 @@ public:
 	Surface &operator=(const Surface&) = delete;
 	Surface &operator=(Surface &&surface);
 
-	// Wrapper function for SDL_LoadBMP(). Also converts to the given pixel format. Returns null
-	// on failure.
+	// Wrapper function for SDL_LoadBMP(). Also converts to the given pixel format. Returns null on failure.
 	static Surface loadBMP(const char *filename, uint32_t format);
 
 	// Wrapper function for SDL_CreateRGBSurfaceWithFormat() in SDL 2.0.5.
 	static Surface createWithFormat(int width, int height, int depth, uint32_t format);
 
 	// Wrapper function for SDL_CreateRGBSurfaceWithFormatFrom() in SDL 2.0.5.
-	static Surface createWithFormatFrom(void *pixels, int width, int height,
-		int depth, int pitch, uint32_t format);
+	static Surface createWithFormatFrom(void *pixels, int width, int height, int depth, int pitch, uint32_t format);
 
 	int getWidth() const;
 	int getHeight() const;
-	void *getPixels() const;
+	Span2D<uint32_t> getPixels();
+	Span2D<const uint32_t> getPixels() const;
 	SDL_Surface *get() const;
 
 	uint32_t mapRGB(uint8_t r, uint8_t g, uint8_t b) const;

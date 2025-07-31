@@ -161,16 +161,14 @@ UiTextureID OptionsUiView::allocBackgroundTexture(Renderer &renderer)
 UiTextureID OptionsUiView::allocTabTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const Rect firstTabRect = OptionsUiView::getTabRect(0);
-	Surface surface = TextureUtils::generate(
+	const Surface surface = TextureUtils::generate(
 		OptionsUiView::TabBackgroundPatternType,
 		firstTabRect.width,
 		firstTabRect.height,
 		textureManager,
 		renderer);
 
-	const int width = surface.getWidth();
-	const int height = surface.getHeight();
-	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	const UiTextureID textureID = renderer.createUiTexture(surface.getWidth(), surface.getHeight());
 	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for options menu tab.");
@@ -182,11 +180,9 @@ UiTextureID OptionsUiView::allocTabTexture(TextureManager &textureManager, Rende
 		DebugCrash("Couldn't lock texels for updating options menu tab.");
 	}
 
+	Span2D<const uint32_t> srcTexels = surface.getPixels();
 	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-	const int texelCount = width * height;
-	const uint32_t *srcTexels = reinterpret_cast<const uint32_t*>(surface.getPixels());
-	const uint32_t *srcTexelsEnd = srcTexels + texelCount;
-	std::copy(srcTexels, srcTexelsEnd, dstTexels.begin());
+	std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
 	renderer.unlockUiTexture(textureID);
 
 	return textureID;
@@ -220,16 +216,14 @@ UiTextureID OptionsUiView::allocHighlightTexture(Renderer &renderer)
 UiTextureID OptionsUiView::allocBackButtonTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const Rect backButtonRect = OptionsUiView::getBackButtonRect();
-	Surface surface = TextureUtils::generate(
+	const Surface surface = TextureUtils::generate(
 		OptionsUiView::TabBackgroundPatternType,
 		backButtonRect.width,
 		backButtonRect.height,
 		textureManager,
 		renderer);
 
-	const int width = surface.getWidth();
-	const int height = surface.getHeight();
-	const UiTextureID textureID = renderer.createUiTexture(width, height);
+	const UiTextureID textureID = renderer.createUiTexture(surface.getWidth(), surface.getHeight());
 	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for options menu back button.");
@@ -241,11 +235,9 @@ UiTextureID OptionsUiView::allocBackButtonTexture(TextureManager &textureManager
 		DebugCrash("Couldn't lock texels for updating options menu back button.");
 	}
 
+	Span2D<const uint32_t> srcTexels = surface.getPixels();
 	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-	const int texelCount = width * height;
-	const uint32_t *srcTexels = reinterpret_cast<const uint32_t*>(surface.getPixels());
-	const uint32_t *srcTexelsEnd = srcTexels + texelCount;
-	std::copy(srcTexels, srcTexelsEnd, dstTexels.begin());
+	std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
 	renderer.unlockUiTexture(textureID);
 
 	return textureID;

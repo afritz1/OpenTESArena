@@ -240,9 +240,9 @@ UiTextureID MainMenuUiView::allocTestButtonTexture(TextureManager &textureManage
 {
 	const Rect rect = MainMenuUiView::getTestButtonRect();
 	const Surface surface = TextureUtils::generate(MainMenuUiView::TestButtonPatternType, rect.width, rect.height, textureManager, renderer);
-	const Span2D<const uint32_t> pixelsView(static_cast<const uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
+	Span2D<const uint32_t> pixels = surface.getPixels();
 
-	const UiTextureID textureID = renderer.createUiTexture(pixelsView);
+	const UiTextureID textureID = renderer.createUiTexture(pixels);
 	if (textureID < 0)
 	{
 		DebugCrash("Couldn't create UI texture for test button.");

@@ -405,10 +405,9 @@ UiTextureID ProvinceSearchUiView::allocParchmentTexture(TextureManager &textureM
 		DebugCrash("Couldn't lock parchment texels for writing.");
 	}
 
+	Span2D<const uint32_t> srcTexels = surface.getPixels();
 	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-	const int texelCount = width * height;
-	const uint32_t *srcTexels = static_cast<const uint32_t*>(surface.getPixels());
-	std::copy(srcTexels, srcTexels + texelCount, dstTexels.begin());
+	std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
 	renderer.unlockUiTexture(textureID);
 
 	return textureID;

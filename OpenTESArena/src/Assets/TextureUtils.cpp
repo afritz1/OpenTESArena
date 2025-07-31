@@ -55,7 +55,7 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 			// Parchment tiles should all be 8-bit for now.
 			Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
 
-			uint32_t *dstPixels = static_cast<uint32_t*>(surface.getPixels());
+			uint32_t *dstPixels = surface.getPixels().begin();
 			const Palette &palette = textureManager.getPaletteHandle(*tilesPaletteID);
 			std::transform(srcTexels.begin(), srcTexels.end(), dstPixels,
 				[&palette](const uint8_t srcTexel)
@@ -255,12 +255,11 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 	const int dstY = padding / 2;
 
 	constexpr Color textColor(255, 255, 255, 255);
-	Span2D<uint32_t> surfacePixelsView(static_cast<uint32_t*>(surface.getPixels()), surface.getWidth(), surface.getHeight());
+	Span2D<uint32_t> surfacePixels = surface.getPixels();
 
 	Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(text);
 	constexpr TextAlignment alignment = TextAlignment::TopLeft;
-	TextRenderUtils::drawTextLines(textLines, fontDef, dstX, dstY, textColor, alignment, lineSpacing,
-		nullptr, nullptr, surfacePixelsView);
+	TextRenderUtils::drawTextLines(textLines, fontDef, dstX, dstY, textColor, alignment, lineSpacing, nullptr, nullptr, surfacePixels);
 	
 	return surface;
 }
@@ -320,6 +319,7 @@ bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureM
 {
 	const int width = surface.getWidth();
 	const int height = surface.getHeight();
+	Span2D<const uint32_t> srcTexels = surface.getPixels();
 
 	const UiTextureID textureID = renderer.createUiTexture(width, height);
 	if (textureID < 0)
@@ -328,8 +328,6 @@ bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureM
 		return false;
 	}
 
-	const int texelCount = width * height;
-	const uint32_t *srcTexels = static_cast<const uint32_t*>(surface.getPixels());
 	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
 	if (!lockedTexture.isValid())
 	{
@@ -338,7 +336,7 @@ bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureM
 	}
 
 	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-	std::copy(srcTexels, srcTexels + texelCount, dstTexels.begin());
+	std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
 	renderer.unlockUiTexture(textureID);
 	*outID = textureID;
 	return true;

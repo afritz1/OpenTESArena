@@ -77,8 +77,7 @@ Surface Surface::createWithFormat(int width, int height, int depth, uint32_t for
 	surface.init(SDL_CreateRGBSurfaceWithFormat(0, width, height, depth, format));
 	return surface;
 #else
-	SDL_Surface *unoptSurface = SDL_CreateRGBSurface(0, width, height,
-		depth, 0, 0, 0, 0);
+	SDL_Surface *unoptSurface = SDL_CreateRGBSurface(0, width, height, depth, 0, 0, 0, 0);
 	SDL_Surface *optSurface = SDL_ConvertSurfaceFormat(unoptSurface, format, 0);
 	SDL_FreeSurface(unoptSurface);
 
@@ -94,8 +93,7 @@ Surface Surface::createWithFormat(int width, int height, int depth, uint32_t for
 #endif
 }
 
-Surface Surface::createWithFormatFrom(void *pixels, int width, int height,
-	int depth, int pitch, uint32_t format)
+Surface Surface::createWithFormatFrom(void *pixels, int width, int height, int depth, int pitch, uint32_t format)
 {
 #if SDL_VERSION_ATLEAST(2, 0, 5)
 	Surface surface;
@@ -118,9 +116,14 @@ int Surface::getHeight() const
 	return this->surface->h;
 }
 
-void *Surface::getPixels() const
+Span2D<uint32_t> Surface::getPixels()
 {
-	return this->surface->pixels;
+	return Span2D<uint32_t>(reinterpret_cast<uint32_t*>(this->surface->pixels), this->surface->w, this->surface->h);
+}
+
+Span2D<const uint32_t> Surface::getPixels() const
+{
+	return Span2D<const uint32_t>(reinterpret_cast<const uint32_t*>(this->surface->pixels), this->surface->w, this->surface->h);
 }
 
 SDL_Surface *Surface::get() const
