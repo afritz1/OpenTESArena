@@ -1,9 +1,12 @@
 #ifndef RENDER_TEXTURE_UTILS_H
 #define RENDER_TEXTURE_UTILS_H
 
+#include <cstddef>
 #include <cstdint>
 
 #include "RenderShaderUtils.h"
+
+#include "components/utilities/Span2D.h"
 
 // Handles to allocated textures in internal renderer format.
 using ObjectTextureID = int; // For scene geometry (voxels/entities/sky/particles).
@@ -13,12 +16,16 @@ class Renderer;
 
 struct LockedTexture
 {
-	void *texels;
+	Span2D<std::byte> texels;
 	int bytesPerTexel;
 
-	LockedTexture(void *texels, int bytesPerTexel);
+	LockedTexture();
+	LockedTexture(Span2D<std::byte> texels, int bytesPerTexel);
 
 	bool isValid();
+
+	Span2D<uint8_t> getTexels8();
+	Span2D<uint32_t> getTexels32();
 };
 
 // Owning reference to an object texture ID.
@@ -75,7 +82,7 @@ public:
 	int getHeight() const;
 
 	// Texture updating functions. The returned pointer allows for changing any texels in the texture.
-	uint32_t *lockTexels();
+	LockedTexture lockTexels();
 	void unlockTexels();
 };
 

@@ -30,7 +30,7 @@ struct UiTextureAllocator
 
 	virtual void free(UiTextureID textureID) = 0;
 
-	virtual uint32_t *lock(UiTextureID textureID) = 0;
+	virtual LockedTexture lock(UiTextureID textureID) = 0;
 	virtual void unlock(UiTextureID textureID) = 0;
 };
 

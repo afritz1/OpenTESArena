@@ -281,7 +281,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		}
 
 		LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-		uint8_t *bgTexels = static_cast<uint8_t*>(lockedTexture.texels);
+		uint8_t *bgTexels = lockedTexture.getTexels8().begin();
 		std::copy(texels.begin(), texels.end(), bgTexels);
 		renderer.unlockObjectTexture(textureID);
 
@@ -583,8 +583,7 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 				return;
 			}
 
-			DebugAssert(lockedTexture.bytesPerTexel == 1);
-			uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);
+			uint8_t *dstTexels = lockedTexture.getTexels8().begin();
 			*dstTexels = paletteIndex;
 			renderer.unlockObjectTexture(textureID);
 

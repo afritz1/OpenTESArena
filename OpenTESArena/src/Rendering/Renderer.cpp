@@ -876,7 +876,7 @@ LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
 	return allocator->lock(id);
 }
 
-uint32_t *Renderer::lockUiTexture(UiTextureID textureID)
+LockedTexture Renderer::lockUiTexture(UiTextureID textureID)
 {
 	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
 	return allocator->lock(textureID);

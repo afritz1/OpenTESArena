@@ -185,22 +185,18 @@ void TextBox::updateTexture()
 		return;
 	}
 
-	uint32_t *texels = this->textureRef.lockTexels();
-	if (texels == nullptr)
+	LockedTexture lockedTexture = this->textureRef.lockTexels();
+	if (!lockedTexture.isValid())
 	{
 		DebugLogError("Couldn't lock text box UI texture for updating.");
 		return;
 	}
 
+	Span2D<uint32_t> texels = lockedTexture.getTexels32();
+	texels.fill(0);
+
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
-
-	const int width = this->textureRef.getWidth();
-	const int height = this->textureRef.getHeight();
-	Span2D<uint32_t> textureView(texels, width, height);
-
-	// Clear texture.
-	textureView.fill(0);
 
 	if (!this->text.empty())
 	{
@@ -208,7 +204,7 @@ void TextBox::updateTexture()
 		const TextRenderColorOverrideInfo *colorOverrideInfoPtr = (this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
 		const TextRenderShadowInfo *shadowInfoPtr = this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;
 		TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, this->properties.defaultColor, this->properties.alignment,
-			this->properties.lineSpacing, colorOverrideInfoPtr, shadowInfoPtr, textureView);
+			this->properties.lineSpacing, colorOverrideInfoPtr, shadowInfoPtr, texels);
 	}
 
 	this->textureRef.unlockTexels();

@@ -207,7 +207,7 @@ public:
 
 	// Allows for updating all texels in the given texture. Must be unlocked to flush the changes.
 	LockedTexture lockObjectTexture(ObjectTextureID id);
-	uint32_t *lockUiTexture(UiTextureID id);
+	LockedTexture lockUiTexture(UiTextureID id);
 	void unlockObjectTexture(ObjectTextureID id);
 	void unlockUiTexture(UiTextureID id);
 

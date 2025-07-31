@@ -32,7 +32,7 @@ struct SdlUiTextureAllocator final : public UiTextureAllocator
 
 	void free(UiTextureID textureID) override;
 
-	uint32_t *lock(UiTextureID textureID) override;
+	LockedTexture lock(UiTextureID textureID) override;
 	void unlock(UiTextureID textureID) override;
 };
 

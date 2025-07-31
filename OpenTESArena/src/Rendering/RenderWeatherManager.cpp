@@ -385,7 +385,7 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 	}
 
 	const uint8_t *srcRainTexels = ArenaRenderUtils::RAINDROP_TEXELS;
-	uint8_t *dstRainTexels = static_cast<uint8_t*>(lockedRainTexture.texels);
+	uint8_t *dstRainTexels = lockedRainTexture.getTexels8().begin();
 	std::copy(srcRainTexels, srcRainTexels + rainTexelCount, dstRainTexels);
 	renderer.unlockObjectTexture(this->rainTextureID);
 
@@ -413,7 +413,7 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 		}
 
 		const uint8_t *srcSnowTexels = ArenaRenderUtils::SNOWFLAKE_TEXELS_PTRS[i];
-		uint8_t *dstSnowTexels = static_cast<uint8_t*>(lockedSnowTexture.texels);
+		uint8_t *dstSnowTexels = lockedSnowTexture.getTexels8().begin();
 		std::copy(srcSnowTexels, srcSnowTexels + snowTexelCount, dstSnowTexels);
 		renderer.unlockObjectTexture(snowTextureID);
 	}
@@ -438,7 +438,7 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 
 	const uint8_t tempFogTexelColors[] = { 5, 6, 7, 8 };
 	const uint8_t *srcFogTexels = tempFogTexelColors;
-	uint8_t *dstFogTexels = static_cast<uint8_t*>(lockedFogTexture.texels);
+	uint8_t *dstFogTexels = lockedFogTexture.getTexels8().begin();
 	std::copy(srcFogTexels, srcFogTexels + fogTexelCount, dstFogTexels);
 	renderer.unlockObjectTexture(this->fogTextureID);
 	return true;

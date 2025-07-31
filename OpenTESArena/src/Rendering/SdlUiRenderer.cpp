@@ -144,20 +144,20 @@ void SdlUiTextureAllocator::free(UiTextureID textureID)
 	this->pool->free(textureID);
 }
 
-uint32_t *SdlUiTextureAllocator::lock(UiTextureID textureID)
+LockedTexture SdlUiTextureAllocator::lock(UiTextureID textureID)
 {
 	SDL_Texture **texture = this->pool->tryGet(textureID);
 	if (texture == nullptr)
 	{
 		DebugLogWarningFormat("No SDL_Texture to lock at ID %d.", textureID);
-		return nullptr;
+		return LockedTexture();
 	}
 
 	int width, height;
 	if (SDL_QueryTexture(*texture, nullptr, nullptr, &width, &height) != 0)
 	{
 		DebugLogErrorFormat("Couldn't query SDL_Texture dimensions for ID %d (%s).", textureID, SDL_GetError());
-		return nullptr;
+		return LockedTexture();
 	}
 
 	uint32_t *dstTexels;
@@ -165,10 +165,10 @@ uint32_t *SdlUiTextureAllocator::lock(UiTextureID textureID)
 	if (SDL_LockTexture(*texture, nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
 	{
 		DebugLogErrorFormat("Couldn't lock SDL_Texture for updating (ID %d, dims %dx%d, %s).", textureID, width, height, SDL_GetError());
-		return nullptr;
+		return LockedTexture();
 	}
 
-	return dstTexels;
+	return LockedTexture(Span2D<std::byte>(reinterpret_cast<std::byte*>(dstTexels), width, height), sizeof(*dstTexels));
 }
 
 void SdlUiTextureAllocator::unlock(UiTextureID textureID)

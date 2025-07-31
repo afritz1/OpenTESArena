@@ -264,7 +264,7 @@ ObjectTextureID ArenaLevelUtils::allocGameWorldPaletteTexture(const std::string 
 	}
 
 	DebugAssert(lockedTexture.bytesPerTexel == 4);
-	uint32_t *paletteTexels = static_cast<uint32_t*>(lockedTexture.texels);
+	uint32_t *paletteTexels = reinterpret_cast<uint32_t*>(lockedTexture.texels.begin());
 	std::transform(palette.begin(), palette.end(), paletteTexels,
 		[](const Color &paletteColor)
 	{

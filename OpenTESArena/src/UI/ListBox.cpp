@@ -189,22 +189,18 @@ void ListBox::updateTexture()
 		return;
 	}
 
-	uint32_t *texels = this->textureRef.lockTexels();
-	if (texels == nullptr)
+	LockedTexture lockedTexture = this->textureRef.lockTexels();
+	if (!lockedTexture.isValid())
 	{
 		DebugLogError("Couldn't lock list box texture for updating.");
 		return;
 	}
 
+	Span2D<uint32_t> texels = lockedTexture.getTexels32();
+	texels.fill(0);
+
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
-
-	const int width = this->textureRef.getWidth();
-	const int height = this->textureRef.getHeight();
-	Span2D<uint32_t> textureView(texels, width, height);
-
-	// Clear texture.
-	textureView.fill(0);
 
 	// Re-draw list box items relative to where they should be with the current scroll value.
 	for (int i = 0; i < static_cast<int>(this->items.size()); i++)
@@ -215,7 +211,7 @@ void ListBox::updateTexture()
 		constexpr TextRenderColorOverrideInfo *colorOverrideInfo = nullptr;
 		constexpr TextRenderShadowInfo *shadowInfo = nullptr;
 		TextRenderUtils::drawTextLine(item.text, fontDef, itemRect.getLeft(), itemRect.getTop(),
-			itemColor, colorOverrideInfo, shadowInfo, textureView);
+			itemColor, colorOverrideInfo, shadowInfo, texels);
 	}
 
 	this->textureRef.unlockTexels();

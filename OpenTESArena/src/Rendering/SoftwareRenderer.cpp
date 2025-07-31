@@ -4473,7 +4473,7 @@ void SoftwareObjectTextureAllocator::free(ObjectTextureID textureID)
 LockedTexture SoftwareObjectTextureAllocator::lock(ObjectTextureID textureID)
 {
 	SoftwareObjectTexture &texture = this->pool->get(textureID);
-	return LockedTexture(texture.texels.begin(), texture.bytesPerTexel);
+	return LockedTexture(Span2D<std::byte>(static_cast<std::byte*>(texture.texels.begin()), texture.width, texture.height), texture.bytesPerTexel);
 }
 
 void SoftwareObjectTextureAllocator::unlock(ObjectTextureID textureID)

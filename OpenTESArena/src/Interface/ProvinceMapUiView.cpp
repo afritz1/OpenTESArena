@@ -272,14 +272,15 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 
 	const TextureBuilderPalettedTexture &srcTexture = textureBuilder.paletteTexture;
 	const uint8_t *srcTexels = srcTexture.texels.begin();
-	uint32_t *dstTexels = renderer.lockUiTexture(textureID);
-	if (dstTexels == nullptr)
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
 	{
 		DebugCrash("Couldn't lock staff dungeon icon texels for highlight modification.");
 	}
 
-	const uint8_t highlightColorIndex = (highlightType == HighlightType::PlayerLocation) ?
-		ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+	uint32_t *dstTexelsPtr = dstTexels.begin();
+	const uint8_t highlightColorIndex = (highlightType == HighlightType::PlayerLocation) ? ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
 	const uint32_t highlightColor = palette[highlightColorIndex].toARGB();
 
 	const int texelCount = textureBuilder.getWidth() * textureBuilder.getHeight();
@@ -288,7 +289,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 		const uint8_t srcTexel = srcTexels[i];
 		if (srcTexel == ProvinceMapUiView::BackgroundPaletteIndex)
 		{
-			dstTexels[i] = highlightColor;
+			dstTexelsPtr[i] = highlightColor;
 		}
 	}
 
@@ -401,15 +402,16 @@ UiTextureID ProvinceSearchUiView::allocParchmentTexture(TextureManager &textureM
 		DebugCrashFormat("Couldn't create parchment texture with dims %dx%d.", width, height);
 	}
 
-	uint32_t *dstTexels = renderer.lockUiTexture(textureID);
-	if (dstTexels == nullptr)
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
 	{
 		DebugCrash("Couldn't lock parchment texels for writing.");
 	}
 
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
 	const int texelCount = width * height;
 	const uint32_t *srcTexels = static_cast<const uint32_t*>(surface.getPixels());
-	std::copy(srcTexels, srcTexels + texelCount, dstTexels);
+	std::copy(srcTexels, srcTexels + texelCount, dstTexels.begin());
 	renderer.unlockUiTexture(textureID);
 
 	return textureID;

@@ -65,7 +65,7 @@ namespace
 					const uint8_t *srcTexels = palettedTexture.texels.begin();
 
 					LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-					uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);
+					uint8_t *dstTexels = lockedTexture.getTexels8().begin();
 
 					// Copy texels from source texture, mirroring if necessary.
 					for (int y = 0; y < textureHeight; y++)
@@ -103,7 +103,7 @@ namespace
 		}
 
 		LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-		uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);
+		uint8_t *dstTexels = lockedTexture.getTexels8().begin();
 		std::copy(paletteIndices.begin(), paletteIndices.end(), dstTexels);
 		renderer.unlockObjectTexture(textureID);
 		return ScopedObjectTextureRef(textureID, renderer);

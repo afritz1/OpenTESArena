@@ -35,8 +35,8 @@ namespace
 			DebugCrashFormat("Couldn't create status bar texture with color (%s).", color.toString().c_str());
 		}
 
-		uint32_t *texels = renderer.lockUiTexture(textureID);
-		Span2D<uint32_t> texelsView(texels, width, height);
+		LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+		Span2D<uint32_t> texelsView(reinterpret_cast<uint32_t*>(lockedTexture.texels.begin()), width, height);
 		const uint32_t texelARGB = color.toARGB();
 		texelsView.fill(texelARGB);
 		renderer.unlockUiTexture(textureID);
@@ -639,8 +639,8 @@ UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textu
 		DebugCrash("Couldn't create modern mode cursor texture.");
 	}
 
-	uint32_t *lockedTexels = renderer.lockUiTexture(textureID);
-	Span2D<uint32_t> texelsView(static_cast<uint32_t*>(lockedTexels), width, height);
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	Span2D<uint32_t> texelsView = lockedTexture.getTexels32();
 
 	constexpr Color cursorBgColor(0, 0, 0, 0);
 	const uint32_t cursorBgARGB = cursorBgColor.toARGB();
@@ -932,7 +932,8 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 		const Int2 &quadtreeTextureDims = quadtreeTextureDimsList[treeLevelIndex];
 		const int quadtreeSideLength = VoxelFrustumCullingChunk::NODES_PER_SIDE[treeLevelIndex];
 
-		uint32_t *quadtreeTexels = quadtreeTextureRef.lockTexels();
+		LockedTexture lockedTexture = quadtreeTextureRef.lockTexels();
+		Span2D<uint32_t> quadtreeTexels = lockedTexture.getTexels32();
 
 		for (int y = 0; y < quadtreeTextureDims.y; y++)
 		{
@@ -954,7 +955,8 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 					visibilityType = playerVoxelFrustumCullingChunk->internalNodeVisibilityTypes[internalNodeIndex];
 				}
 
-				const int dstIndex = ((quadtreeTextureDims.x - 1) - x) + (y * quadtreeTextureDims.x);
+				const int dstX = (quadtreeTextureDims.x - 1) - x;
+				const int dstY = y;
 				uint32_t color = 0;
 
 				const bool inPlayerVoxel = isLeaf && (y == playerVoxelXZ.x) && (x == playerVoxelXZ.y);
@@ -978,7 +980,7 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 					}
 				}
 
-				quadtreeTexels[dstIndex] = color;
+				quadtreeTexels.set(dstX, dstY, color);
 			}
 		}
 

@@ -184,8 +184,7 @@ namespace
 
 				const uint8_t paletteIndex = chasmDef.solidColor.paletteIndex;
 
-				DebugAssert(lockedTexture.bytesPerTexel == 1);
-				uint8_t *texels = static_cast<uint8_t*>(lockedTexture.texels);
+				uint8_t *texels = lockedTexture.getTexels8().begin();
 				*texels = paletteIndex;
 				renderer.unlockObjectTexture(dryChasmTextureID);
 
@@ -239,7 +238,7 @@ namespace
 					DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
 					const Span2D<const uint8_t> textureBuilderTexels = textureBuilder.paletteTexture.texels;
 					const int dstByteOffset = (newObjectTextureCurrentY * newObjectTextureWidth) * bytesPerTexel;
-					uint8_t *dstTexels = static_cast<uint8_t*>(lockedTexture.texels);
+					uint8_t *dstTexels = lockedTexture.getTexels8().begin();
 					std::copy(textureBuilderTexels.begin(), textureBuilderTexels.end(), dstTexels + dstByteOffset);
 					newObjectTextureCurrentY += firstFrameTextureBuilder.getHeight();
 

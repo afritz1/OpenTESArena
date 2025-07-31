@@ -40,8 +40,8 @@ void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 	LockedTexture fogLockedTexture = this->fogLightTableTextureRef.lockTexels();
 	DebugAssert(nightLockedTexture.isValid());
 	DebugAssert(fogLockedTexture.isValid());
-	uint8_t *nightTexels = static_cast<uint8_t*>(nightLockedTexture.texels);
-	uint8_t *fogTexels = static_cast<uint8_t*>(fogLockedTexture.texels);
+	uint8_t *nightTexels = nightLockedTexture.getTexels8().begin();;
+	uint8_t *fogTexels = fogLockedTexture.getTexels8().begin();
 
 	const int y = lightTableHeight - 1;
 	for (int x = 0; x < lightTableWidth; x++)
@@ -93,7 +93,7 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 
 	int srcTexelsIndexStart = daytimePaletteIndexOffset.has_value() ? *daytimePaletteIndexOffset : 1;
 	const int skyGradientColorCount = static_cast<int>(std::size(ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR));
-	Span<uint32_t> gameWorldTexels(reinterpret_cast<uint32_t*>(lockedTexture.texels), paletteLength);
+	Span<uint32_t> gameWorldTexels(lockedTexture.getTexels32().begin(), paletteLength);
 	Span<uint32_t> gameWorldSkyGradientTexels(gameWorldTexels.begin() + 1, skyGradientColorCount);
 	for (int i = 0; i < skyGradientColorCount; i++)
 	{

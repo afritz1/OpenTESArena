@@ -3,7 +3,12 @@
 
 #include "components/debug/Debug.h"
 
-LockedTexture::LockedTexture(void *texels, int bytesPerTexel)
+LockedTexture::LockedTexture()
+{
+	this->bytesPerTexel = 0;
+}
+
+LockedTexture::LockedTexture(Span2D<std::byte> texels, int bytesPerTexel)
 {
 	this->texels = texels;
 	this->bytesPerTexel = bytesPerTexel;
@@ -11,7 +16,19 @@ LockedTexture::LockedTexture(void *texels, int bytesPerTexel)
 
 bool LockedTexture::isValid()
 {
-	return this->texels != nullptr;
+	return this->texels.isValid();
+}
+
+Span2D<uint8_t> LockedTexture::getTexels8()
+{
+	DebugAssert(this->bytesPerTexel == 1);
+	return Span2D<uint8_t>(reinterpret_cast<uint8_t*>(this->texels.begin()), this->texels.getWidth(), this->texels.getHeight());
+}
+
+Span2D<uint32_t> LockedTexture::getTexels32()
+{
+	DebugAssert(this->bytesPerTexel == 4);
+	return Span2D<uint32_t>(reinterpret_cast<uint32_t*>(this->texels.begin()), this->texels.getWidth(), this->texels.getHeight());
 }
 
 ScopedObjectTextureRef::ScopedObjectTextureRef(ObjectTextureID id, Renderer &renderer)
@@ -221,7 +238,7 @@ int ScopedUiTextureRef::getHeight() const
 	return this->height;
 }
 
-uint32_t *ScopedUiTextureRef::lockTexels()
+LockedTexture ScopedUiTextureRef::lockTexels()
 {
 	return this->renderer->lockUiTexture(this->id);
 }

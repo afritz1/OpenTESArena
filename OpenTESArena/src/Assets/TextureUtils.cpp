@@ -337,14 +337,15 @@ bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureM
 
 	const int texelCount = width * height;
 	const uint32_t *srcTexels = static_cast<const uint32_t*>(surface.getPixels());
-	uint32_t *dstTexels = renderer.lockUiTexture(textureID);
-	if (dstTexels == nullptr)
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
 	{
 		DebugLogError("Couldn't lock UI texels for writing from surface.");
 		return false;
 	}
 
-	std::copy(srcTexels, srcTexels + texelCount, dstTexels);
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+	std::copy(srcTexels, srcTexels + texelCount, dstTexels.begin());
 	renderer.unlockUiTexture(textureID);
 	*outID = textureID;
 	return true;
