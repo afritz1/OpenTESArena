@@ -268,10 +268,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	// Modify icon background texels based on the highlight type.
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
-
-	const TextureBuilderPalettedTexture &srcTexture = textureBuilder.paletteTexture;
-	const uint8_t *srcTexels = srcTexture.texels.begin();
+	const uint8_t *srcTexels = textureBuilder.getTexels8().begin();
 	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
 	if (!lockedTexture.isValid())
 	{
@@ -283,7 +280,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	const uint8_t highlightColorIndex = (highlightType == HighlightType::PlayerLocation) ? ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
 	const uint32_t highlightColor = palette[highlightColorIndex].toARGB();
 
-	const int texelCount = textureBuilder.getWidth() * textureBuilder.getHeight();
+	const int texelCount = textureBuilder.width * textureBuilder.height;
 	for (int i = 0; i < texelCount; i++)
 	{
 		const uint8_t srcTexel = srcTexels[i];

@@ -46,41 +46,33 @@ namespace
 					}
 
 					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-					const int textureWidth = textureBuilder.getWidth();
-					const int textureHeight = textureBuilder.getHeight();
-					const int texelCount = textureWidth * textureHeight;
 					constexpr int bytesPerTexel = 1;
-					DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
-
-					const ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, bytesPerTexel);
+					const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, bytesPerTexel);
 					if (textureID < 0)
 					{
 						DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
 						continue;
 					}
 
-					ScopedObjectTextureRef textureRef(textureID, renderer);
-
-					const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
-					const uint8_t *srcTexels = palettedTexture.texels.begin();
+					Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
 
 					LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-					uint8_t *dstTexels = lockedTexture.getTexels8().begin();
+					Span2D<uint8_t> dstTexels = lockedTexture.getTexels8();
 
 					// Copy texels from source texture, mirroring if necessary.
-					for (int y = 0; y < textureHeight; y++)
+					for (int y = 0; y < textureBuilder.height; y++)
 					{
-						for (int x = 0; x < textureWidth; x++)
+						for (int x = 0; x < textureBuilder.width; x++)
 						{
-							const int srcX = !keyframeList.isMirrored ? x : (textureWidth - 1 - x);
-							const int srcIndex = srcX + (y * textureWidth);
-							const int dstIndex = x + (y * textureWidth);
-							dstTexels[dstIndex] = srcTexels[srcIndex];
+							const int srcX = !keyframeList.isMirrored ? x : (textureBuilder.width - 1 - x);
+							const uint8_t srcTexel = srcTexels.get(srcX, y);
+							dstTexels.set(x, y, srcTexel);
 						}
 					}
 
 					renderer.unlockObjectTexture(textureID);
-					textureRefs.set(writeIndex, std::move(textureRef));
+
+					textureRefs.set(writeIndex, ScopedObjectTextureRef(textureID, renderer));
 					writeIndex++;
 				}
 			}

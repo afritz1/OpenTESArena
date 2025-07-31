@@ -202,11 +202,11 @@ namespace
 				}
 
 				const TextureBuilder &firstFrameTextureBuilder = textureManager.getTextureBuilderHandle(*firstFrameTextureBuilderID);
-				int newObjectTextureWidth = firstFrameTextureBuilder.getWidth();
-				int newObjectTextureHeight = firstFrameTextureBuilder.getHeight() * chasmDef.animated.textureAssets.getCount();
+				int newObjectTextureWidth = firstFrameTextureBuilder.width;
+				int newObjectTextureHeight = firstFrameTextureBuilder.height * chasmDef.animated.textureAssets.getCount();
 
-				const int bytesPerTexel = 1;
-				DebugAssert(firstFrameTextureBuilder.getBytesPerTexel() == bytesPerTexel);
+				constexpr int bytesPerTexel = 1;
+				DebugAssert(firstFrameTextureBuilder.bytesPerTexel == bytesPerTexel);
 
 				const ObjectTextureID chasmTextureID = renderer.createObjectTexture(newObjectTextureWidth, newObjectTextureHeight, bytesPerTexel);
 				if (chasmTextureID < 0)
@@ -235,12 +235,11 @@ namespace
 					}
 
 					const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-					DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
-					const Span2D<const uint8_t> textureBuilderTexels = textureBuilder.paletteTexture.texels;
+					Span2D<const uint8_t> textureBuilderTexels = textureBuilder.getTexels8();
 					const int dstByteOffset = (newObjectTextureCurrentY * newObjectTextureWidth) * bytesPerTexel;
 					uint8_t *dstTexels = lockedTexture.getTexels8().begin();
 					std::copy(textureBuilderTexels.begin(), textureBuilderTexels.end(), dstTexels + dstByteOffset);
-					newObjectTextureCurrentY += firstFrameTextureBuilder.getHeight();
+					newObjectTextureCurrentY += firstFrameTextureBuilder.height;
 
 					newTextureAssets.emplace_back(textureAsset);
 				}

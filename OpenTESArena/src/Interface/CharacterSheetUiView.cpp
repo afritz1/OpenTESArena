@@ -262,7 +262,7 @@ Int2 CharacterSheetUiView::getBodyOffset(Game &game)
 	}
 
 	const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	return Int2(ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth(), 0);
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.width, 0);
 }
 
 Int2 CharacterSheetUiView::getHeadOffset(Game &game)

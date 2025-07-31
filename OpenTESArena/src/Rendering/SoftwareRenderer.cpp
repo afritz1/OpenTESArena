@@ -4430,9 +4430,9 @@ ObjectTextureID SoftwareObjectTextureAllocator::create(int width, int height, in
 
 ObjectTextureID SoftwareObjectTextureAllocator::create(const TextureBuilder &textureBuilder)
 {
-	const int width = textureBuilder.getWidth();
-	const int height = textureBuilder.getHeight();
-	const int bytesPerTexel = textureBuilder.getBytesPerTexel();
+	const int width = textureBuilder.width;
+	const int height = textureBuilder.height;
+	const int bytesPerTexel = textureBuilder.bytesPerTexel;
 
 	const ObjectTextureID textureID = this->create(width, height, bytesPerTexel);
 	if (textureID < 0)
@@ -4441,25 +4441,23 @@ ObjectTextureID SoftwareObjectTextureAllocator::create(const TextureBuilder &tex
 		return -1;
 	}
 
-	const TextureBuilderType textureBuilderType = textureBuilder.type;
 	SoftwareObjectTexture &texture = this->pool->get(textureID);
-	if (textureBuilderType == TextureBuilderType::Paletted)
+
+	if (bytesPerTexel == 1)
 	{
-		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
-		const Buffer2D<uint8_t> &srcTexels = palettedTexture.texels;
+		Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
 		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
 		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
 	}
-	else if (textureBuilderType == TextureBuilderType::TrueColor)
+	else if (bytesPerTexel == 4)
 	{
-		const TextureBuilderTrueColorTexture &trueColorTexture = textureBuilder.trueColorTexture;
-		const Buffer2D<uint32_t> &srcTexels = trueColorTexture.texels;
+		Span2D<const uint32_t> srcTexels = textureBuilder.getTexels32();
 		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.begin());
 		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(textureBuilderType)));
+		DebugUnhandledReturnMsg(bool, std::to_string(bytesPerTexel));
 	}
 
 	return textureID;

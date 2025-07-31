@@ -2,79 +2,45 @@
 
 #include "TextureBuilder.h"
 
-void TextureBuilderPalettedTexture::init(int width, int height, const uint8_t *texels)
-{
-	this->texels.init(width, height);
-	std::copy(texels, texels + (width * height), this->texels.begin());
-}
-
-void TextureBuilderTrueColorTexture::init(int width, int height, const uint32_t *texels)
-{
-	this->texels.init(width, height);
-	std::copy(texels, texels + (width * height), this->texels.begin());
-}
-
 TextureBuilder::TextureBuilder()
 {
-	this->type = static_cast<TextureBuilderType>(-1);
+	this->width = 0;
+	this->height = 0;
+	this->bytesPerTexel = 0;
 }
 
 void TextureBuilder::initPaletted(int width, int height, const uint8_t *texels)
 {
-	this->type = TextureBuilderType::Paletted;
-	this->paletteTexture.init(width, height, texels);
+	this->width = width;
+	this->height = height;
+	this->bytesPerTexel = 1;
+
+	const int texelCount = width * height;
+	const int byteCount = texelCount;
+	this->texels.init(byteCount);
+	std::copy(texels, texels + texelCount, reinterpret_cast<uint8_t*>(this->texels.begin()));
 }
 
 void TextureBuilder::initTrueColor(int width, int height, const uint32_t *texels)
 {
-	this->type = TextureBuilderType::TrueColor;
-	this->trueColorTexture.init(width, height, texels);
+	this->width = width;
+	this->height = height;
+	this->bytesPerTexel = 4;
+
+	const int texelCount = width * height;
+	const int byteCount = texelCount * 4;
+	this->texels.init(byteCount);
+	std::copy(texels, texels + texelCount, reinterpret_cast<uint32_t*>(this->texels.begin()));
 }
 
-int TextureBuilder::getWidth() const
+Span2D<const uint8_t> TextureBuilder::getTexels8() const
 {
-	if (this->type == TextureBuilderType::Paletted)
-	{
-		return this->paletteTexture.texels.getWidth();
-	}
-	else if (this->type == TextureBuilderType::TrueColor)
-	{
-		return this->trueColorTexture.texels.getWidth();
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
-	}
+	DebugAssert(this->bytesPerTexel == 1);
+	return Span2D<const uint8_t>(reinterpret_cast<const uint8_t*>(this->texels.begin()), this->width, this->height);
 }
 
-int TextureBuilder::getHeight() const
+Span2D<const uint32_t> TextureBuilder::getTexels32() const
 {
-	if (this->type == TextureBuilderType::Paletted)
-	{
-		return this->paletteTexture.texels.getHeight();
-	}
-	else if (this->type == TextureBuilderType::TrueColor)
-	{
-		return this->trueColorTexture.texels.getHeight();
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
-	}
-}
-
-int TextureBuilder::getBytesPerTexel() const
-{
-	if (this->type == TextureBuilderType::Paletted)
-	{
-		return 1;
-	}
-	else if (this->type == TextureBuilderType::TrueColor)
-	{
-		return 4;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(this->type)));
-	}
+	DebugAssert(this->bytesPerTexel == 4);
+	return Span2D<const uint32_t>(reinterpret_cast<const uint32_t*>(this->texels.begin()), this->width, this->height);
 }

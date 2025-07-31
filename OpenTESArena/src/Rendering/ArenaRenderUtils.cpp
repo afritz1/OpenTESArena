@@ -115,8 +115,7 @@ bool ArenaRenderUtils::tryMakeFogMatrix(int zeroedRow, Random &random, TextureMa
 	// The fog texture is 16 bits per pixel but it's expanded to 32-bit so the engine doesn't have to support
 	// another texture builder format only used here.
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	const TextureBuilderTrueColorTexture &texture = textureBuilder.trueColorTexture;
-	const Buffer2D<uint32_t> &texels = texture.texels;
+	const Span2D<const uint32_t> texels = textureBuilder.getTexels32();
 	const uint32_t *pixelMaxPtr = std::max_element(texels.begin(), texels.end());
 	const uint8_t pixelMax = static_cast<uint8_t>((*pixelMaxPtr) >> 8);
 

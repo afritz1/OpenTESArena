@@ -109,25 +109,20 @@ UiTextureID SdlUiTextureAllocator::create(Span2D<const uint8_t> texels, const Pa
 UiTextureID SdlUiTextureAllocator::create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
 {
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-	const TextureBuilderType type = textureBuilder.type;
-	if (type == TextureBuilderType::Paletted)
+	if (textureBuilder.bytesPerTexel == 1)
 	{
-		const TextureBuilderPalettedTexture &palettedTexture = textureBuilder.paletteTexture;
-		const Buffer2D<uint8_t> &texels = palettedTexture.texels;
-		const Span2D<const uint8_t> texelsView(texels);
+		Span2D<const uint8_t> texels = textureBuilder.getTexels8();
 		const Palette &palette = textureManager.getPaletteHandle(paletteID);
-		return this->create(texelsView, palette);
+		return this->create(texels, palette);
 	}
-	else if (type == TextureBuilderType::TrueColor)
+	else if (textureBuilder.bytesPerTexel == 4)
 	{
-		const TextureBuilderTrueColorTexture &trueColorTexture = textureBuilder.trueColorTexture;
-		const Buffer2D<uint32_t> &texels = trueColorTexture.texels;
-		const Span2D<const uint32_t> texelsView(texels);
-		return this->create(texelsView);
+		Span2D<const uint32_t> texels = textureBuilder.getTexels32();
+		return this->create(texels);
 	}
 	else
 	{
-		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(type)));
+		DebugUnhandledReturnMsg(bool, std::to_string(textureBuilder.bytesPerTexel));
 	}
 }
 

@@ -681,7 +681,7 @@ Int2 ChooseAttributesUiView::getBodyOffset(Game &game)
 	}
 
 	const TextureBuilder &bodyTexture = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	return Int2(ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.getWidth(), 0);
+	return Int2(ArenaRenderUtils::SCREEN_WIDTH - bodyTexture.width, 0);
 }
 
 Int2 ChooseAttributesUiView::getHeadOffset(Game &game)

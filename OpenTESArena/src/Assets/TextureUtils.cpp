@@ -38,8 +38,7 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 		}
 
 		const std::string &tilesFilename = ArenaTextureName::Parchment;
-		const std::optional<TextureBuilderIdGroup> tilesTextureBuilderIDs =
-			textureManager.tryGetTextureBuilderIDs(tilesFilename.c_str());
+		const std::optional<TextureBuilderIdGroup> tilesTextureBuilderIDs = textureManager.tryGetTextureBuilderIDs(tilesFilename.c_str());
 		if (!tilesTextureBuilderIDs.has_value())
 		{
 			DebugCrash("Couldn't get tiles texture builder IDs for \"" + tilesFilename + "\".");
@@ -51,13 +50,10 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 		auto makeSurface = [&textureManager, tilesPaletteID](TextureBuilderID textureBuilderID)
 		{
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-			Surface surface = Surface::createWithFormat(textureBuilder.getWidth(), textureBuilder.getHeight(),
-				Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			Surface surface = Surface::createWithFormat(textureBuilder.width, textureBuilder.height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
 
 			// Parchment tiles should all be 8-bit for now.
-			DebugAssert(textureBuilder.type == TextureBuilderType::Paletted);
-			const TextureBuilderPalettedTexture &srcTexture = textureBuilder.paletteTexture;
-			const Buffer2D<uint8_t> &srcTexels = srcTexture.texels;
+			Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
 
 			uint32_t *dstPixels = static_cast<uint32_t*>(surface.getPixels());
 			const Palette &palette = textureManager.getPaletteHandle(*tilesPaletteID);
@@ -133,12 +129,9 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 
 		// Draw corner tiles.
 		const Rect topLeftRect(0, 0, topLeft.getWidth(), topLeft.getHeight());
-		const Rect topRightRect(surface.getWidth() - topRight.getWidth(), 0,
-			topRight.getWidth(), topRight.getHeight());
-		const Rect bottomLeftRect(0, surface.getHeight() - bottomLeft.getHeight(),
-			bottomLeft.getWidth(), bottomLeft.getHeight());
-		const Rect bottomRightRect(surface.getWidth() - bottomRight.getWidth(),
-			surface.getHeight() - bottomRight.getHeight(), bottomRight.getWidth(), bottomRight.getHeight());
+		const Rect topRightRect(surface.getWidth() - topRight.getWidth(), 0, topRight.getWidth(), topRight.getHeight());
+		const Rect bottomLeftRect(0, surface.getHeight() - bottomLeft.getHeight(), bottomLeft.getWidth(), bottomLeft.getHeight());
+		const Rect bottomRightRect(surface.getWidth() - bottomRight.getWidth(), surface.getHeight() - bottomRight.getHeight(), bottomRight.getWidth(), bottomRight.getHeight());
 
 		// Remove any traces of other tiles underneath.
 		surface.fillRect(topLeftRect, clearColor);

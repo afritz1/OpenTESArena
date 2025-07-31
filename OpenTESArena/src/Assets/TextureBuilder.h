@@ -1,45 +1,27 @@
 #ifndef TEXTURE_BUILDER_H
 #define TEXTURE_BUILDER_H
 
+#include <cstddef>
 #include <cstdint>
 
-#include "components/utilities/Buffer2D.h"
+#include "components/utilities/Buffer.h"
+#include "components/utilities/Span2D.h"
 
-enum class TextureBuilderType
-{
-	Paletted,
-	TrueColor
-};
-
-struct TextureBuilderPalettedTexture
-{
-	Buffer2D<uint8_t> texels;
-
-	void init(int width, int height, const uint8_t *texels);
-};
-
-struct TextureBuilderTrueColorTexture
-{
-	Buffer2D<uint32_t> texels;
-
-	void init(int width, int height, const uint32_t *texels);
-};
-
-// Intermediate texture data for initializing renderer-specific textures (voxels, entities, UI, etc.).
+// Intermediate texture for initializing other renderer-specific textures for the game world or UI.
 struct TextureBuilder
 {
-	TextureBuilderType type;
-	TextureBuilderPalettedTexture paletteTexture;
-	TextureBuilderTrueColorTexture trueColorTexture;
+	Buffer<std::byte> texels;
+	int width;
+	int height;
+	int bytesPerTexel;
 
 	TextureBuilder();
 
 	void initPaletted(int width, int height, const uint8_t *texels);
 	void initTrueColor(int width, int height, const uint32_t *texels);
 
-	int getWidth() const;
-	int getHeight() const;
-	int getBytesPerTexel() const;
+	Span2D<const uint8_t> getTexels8() const;
+	Span2D<const uint32_t> getTexels32() const;
 };
 
 #endif
