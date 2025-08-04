@@ -1,28 +1,18 @@
 #include <algorithm>
 #include <cmath>
 
-#include "SDL.h"
-
 #include "CommonUiView.h"
 #include "GameWorldPanel.h"
 #include "GameWorldUiController.h"
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
-#include "../Assets/ArenaPaletteName.h"
-#include "../Assets/ArenaPortraitUtils.h"
-#include "../Assets/ArenaTextureName.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Items/ArenaItemUtils.h"
 #include "../Player/WeaponAnimationLibrary.h"
-#include "../Rendering/RenderCamera.h"
-#include "../Rendering/RenderCommandBuffer.h"
-#include "../Rendering/RendererUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
-#include "../Time/ArenaClockUtils.h"
 #include "../UI/FontLibrary.h"
-#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 
@@ -55,8 +45,7 @@ bool GameWorldPanel::init()
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
-	const TextBoxInitInfo playerNameTextBoxInitInfo =
-		GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
+	const TextBoxInitInfo playerNameTextBoxInitInfo = GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
 	if (!this->playerNameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
 		DebugLogError("Couldn't init player name text box.");
@@ -79,28 +68,17 @@ bool GameWorldPanel::init()
 
 	// @todo: effect text box initialization
 
-	this->characterSheetButton = Button<Game&>(
-		GameWorldUiView::getCharacterSheetButtonRect(), GameWorldUiController::onCharacterSheetButtonSelected);
-	this->drawWeaponButton = Button<Player&>(
-		GameWorldUiView::getWeaponSheathButtonRect(), GameWorldUiController::onWeaponButtonSelected);
-	this->stealButton = Button<>(
-		GameWorldUiView::getStealButtonRect(), GameWorldUiController::onStealButtonSelected);
-	this->statusButton = Button<Game&>(
-		GameWorldUiView::getStatusButtonRect(), GameWorldUiController::onStatusButtonSelected);
-	this->magicButton = Button<>(
-		GameWorldUiView::getMagicButtonRect(), GameWorldUiController::onMagicButtonSelected);
-	this->logbookButton = Button<Game&>(
-		GameWorldUiView::getLogbookButtonRect(), GameWorldUiController::onLogbookButtonSelected);
-	this->useItemButton = Button<>(
-		GameWorldUiView::getUseItemButtonRect(), GameWorldUiController::onUseItemButtonSelected);
-	this->campButton = Button<>(
-		GameWorldUiView::getCampButtonRect(), GameWorldUiController::onCampButtonSelected);
-	this->scrollUpButton = Button<GameWorldPanel&>(
-		GameWorldUiView::getScrollUpButtonRect(), GameWorldUiController::onScrollUpButtonSelected);
-	this->scrollDownButton = Button<GameWorldPanel&>(
-		GameWorldUiView::getScrollDownButtonRect(), GameWorldUiController::onScrollDownButtonSelected);
-	this->mapButton = Button<Game&, bool>(
-		GameWorldUiView::getMapButtonRect(), GameWorldUiController::onMapButtonSelected);
+	this->characterSheetButton = Button<Game&>(GameWorldUiView::getCharacterSheetButtonRect(), GameWorldUiController::onCharacterSheetButtonSelected);
+	this->drawWeaponButton = Button<Player&>(GameWorldUiView::getWeaponSheathButtonRect(), GameWorldUiController::onWeaponButtonSelected);
+	this->stealButton = Button<>(GameWorldUiView::getStealButtonRect(), GameWorldUiController::onStealButtonSelected);
+	this->statusButton = Button<Game&>(GameWorldUiView::getStatusButtonRect(), GameWorldUiController::onStatusButtonSelected);
+	this->magicButton = Button<>(GameWorldUiView::getMagicButtonRect(), GameWorldUiController::onMagicButtonSelected);
+	this->logbookButton = Button<Game&>(GameWorldUiView::getLogbookButtonRect(), GameWorldUiController::onLogbookButtonSelected);
+	this->useItemButton = Button<>(GameWorldUiView::getUseItemButtonRect(), GameWorldUiController::onUseItemButtonSelected);
+	this->campButton = Button<>(GameWorldUiView::getCampButtonRect(), GameWorldUiController::onCampButtonSelected);
+	this->scrollUpButton = Button<GameWorldPanel&>(GameWorldUiView::getScrollUpButtonRect(), GameWorldUiController::onScrollUpButtonSelected);
+	this->scrollDownButton = Button<GameWorldPanel&>(GameWorldUiView::getScrollDownButtonRect(), GameWorldUiController::onScrollDownButtonSelected);
+	this->mapButton = Button<Game&, bool>(GameWorldUiView::getMapButtonRect(), GameWorldUiController::onMapButtonSelected);
 
 	auto &player = game.player;
 	const auto &options = game.options;
@@ -937,70 +915,6 @@ TextBox &GameWorldPanel::getTriggerTextBox()
 TextBox &GameWorldPanel::getActionTextBox()
 {
 	return this->actionText;
-}
-
-bool GameWorldPanel::renderScene(Game &game)
-{
-	RenderCommandBuffer commandBuffer;
-
-	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
-	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-	const Player &player = game.player;
-	const WorldDouble3 playerPosition = player.getEyePosition();
-
-	GameState &gameState = game.gameState;
-	const MapDefinition &activeMapDef = gameState.getActiveMapDef();
-	const WeatherInstance &activeWeatherInst = gameState.getWeatherInstance();
-
-	const SceneManager &sceneManager = game.sceneManager;
-	const RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.populateCommandBuffer(commandBuffer);
-
-	const RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
-	renderVoxelChunkManager.populateCommandBuffer(commandBuffer);
-
-	const RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
-	renderEntityManager.populateCommandBuffer(commandBuffer);
-
-	const RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
-	const bool isFoggy = gameState.isFogActive();
-	renderWeatherManager.populateCommandBuffer(commandBuffer, activeWeatherInst, isFoggy);
-
-	const MapType activeMapType = activeMapDef.getMapType();
-	const double ambientPercent = ArenaRenderUtils::getAmbientPercent(gameState.getClock(), activeMapType, isFoggy);
-
-	const RenderLightManager &renderLightManager = sceneManager.renderLightManager;
-	const Span<const RenderLightID> visibleLightIDs = renderLightManager.getVisibleLightIDs();
-
-	const double chasmAnimPercent = gameState.getChasmAnimPercent();
-
-	auto &renderer = game.renderer;
-	const auto &options = game.options;
-	const Degrees fovY = options.getGraphics_VerticalFOV();
-	const double viewAspectRatio = renderer.getViewAspect();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY, fovY, viewAspectRatio, options.getGraphics_TallPixelCorrection());
-	const ObjectTextureID paletteTextureID = sceneManager.gameWorldPaletteTextureRef.get();
-	
-	const bool isInterior = gameState.getActiveMapType() == MapType::Interior;
-	const double dayPercent = gameState.getDayPercent();
-	const bool isBefore6AM = dayPercent < 0.25;
-	const bool isAfter6PM = dayPercent > 0.75;
-
-	ObjectTextureID lightTableTextureID = sceneManager.normalLightTableDaytimeTextureRef.get();
-	if (isFoggy)
-	{
-		lightTableTextureID = sceneManager.fogLightTableTextureRef.get();
-	}
-	else if (isInterior || isBefore6AM || isAfter6PM)
-	{
-		lightTableTextureID = sceneManager.normalLightTableNightTextureRef.get();
-	}
-
-	const DitheringMode ditheringMode = static_cast<DitheringMode>(options.getGraphics_DitheringMode());
-	renderer.submitFrame(renderCamera, commandBuffer, ambientPercent, visibleLightIDs, chasmAnimPercent, paletteTextureID, lightTableTextureID,
-		renderSkyManager.getBgTextureID(), options.getGraphics_RenderThreadsMode(), ditheringMode);
-
-	return true;
 }
 
 void GameWorldPanel::onPauseChanged(bool paused)

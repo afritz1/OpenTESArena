@@ -3,10 +3,8 @@
 
 #include "Panel.h"
 #include "../Assets/TextureUtils.h"
-#include "../Math/Rect.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../Voxels/VoxelUtils.h"
 
 struct Player;
 
@@ -38,9 +36,6 @@ public:
 	// @temp workaround until there are listener callbacks or something for updating text boxes from game logic
 	TextBox &getTriggerTextBox();
 	TextBox &getActionTextBox();
-
-	// Called by game loop for rendering the 3D scene.
-	static bool renderScene(Game &game);
 
 	virtual void onPauseChanged(bool paused) override;
 };

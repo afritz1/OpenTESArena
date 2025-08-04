@@ -1,9 +1,9 @@
 #ifndef RENDER_COMMAND_BUFFER_H
 #define RENDER_COMMAND_BUFFER_H
 
-#include "RenderDrawCall.h"
-
 #include "components/utilities/Span.h"
+
+struct RenderDrawCall;
 
 struct RenderCommandBuffer
 {

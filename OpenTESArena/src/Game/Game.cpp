@@ -44,6 +44,7 @@
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderCamera.h"
+#include "../Rendering/RenderCommandBuffer.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -55,6 +56,7 @@
 #include "../UI/UiCommandBuffer.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
+#include "../World/MapType.h"
 #include "../World/MeshLibrary.h"
 
 #include "components/debug/Debug.h"
@@ -976,10 +978,53 @@ void Game::loop()
 
 			if (this->shouldRenderScene)
 			{
-				if (!GameWorldPanel::renderScene(*this))
+				RenderCommandBuffer renderCommandBuffer;
+
+
+				const RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
+				renderSkyManager.populateCommandBuffer(renderCommandBuffer);
+
+				this->sceneManager.renderVoxelChunkManager.populateCommandBuffer(renderCommandBuffer);
+				this->sceneManager.renderEntityManager.populateCommandBuffer(renderCommandBuffer);
+
+				const WeatherInstance &activeWeatherInst = this->gameState.getWeatherInstance();
+				const bool isFoggy = this->gameState.isFogActive();
+				this->sceneManager.renderWeatherManager.populateCommandBuffer(renderCommandBuffer, activeWeatherInst, isFoggy);
+
+				const MapDefinition &activeMapDef = this->gameState.getActiveMapDef();
+				const MapType activeMapType = activeMapDef.getMapType();
+				const double ambientPercent = ArenaRenderUtils::getAmbientPercent(this->gameState.getClock(), activeMapType, isFoggy);
+				const Span<const RenderLightID> visibleLightIDs = this->sceneManager.renderLightManager.getVisibleLightIDs();
+				const double chasmAnimPercent = this->gameState.getChasmAnimPercent();
+
+				const WorldDouble3 playerPosition = this->player.getEyePosition();
+				const Degrees fovY = this->options.getGraphics_VerticalFOV();
+				const double viewAspectRatio = this->renderer.getViewAspect();
+				const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY, fovY, viewAspectRatio, this->options.getGraphics_TallPixelCorrection());
+				const ObjectTextureID paletteTextureID = this->sceneManager.gameWorldPaletteTextureRef.get();
+
+				const bool isInterior = this->gameState.getActiveMapType() == MapType::Interior;
+				const double dayPercent = this->gameState.getDayPercent();
+				const bool isBefore6AM = dayPercent < 0.25;
+				const bool isAfter6PM = dayPercent > 0.75;
+
+				ObjectTextureID lightTableTextureID = this->sceneManager.normalLightTableDaytimeTextureRef.get();
+				if (isFoggy)
 				{
-					DebugLogError("Couldn't render game world.");
+					lightTableTextureID = this->sceneManager.fogLightTableTextureRef.get();
 				}
+				else if (isInterior || isBefore6AM || isAfter6PM)
+				{
+					lightTableTextureID = this->sceneManager.normalLightTableNightTextureRef.get();
+				}
+
+				const ObjectTextureID skyBgTextureID = renderSkyManager.getBgTextureID();
+				const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
+
+				// Draw game world onto the native frame buffer. The game world buffer might not completely fill
+				// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
+				this->renderer.submitFrame(renderCamera, renderCommandBuffer, ambientPercent, visibleLightIDs, chasmAnimPercent, paletteTextureID, lightTableTextureID,
+					skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
 			const Int2 windowDims = this->renderer.getWindowDimensions();
