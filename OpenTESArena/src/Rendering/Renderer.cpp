@@ -961,7 +961,6 @@ void Renderer::freeLight(RenderLightID id)
 
 void Renderer::clear(const Color &color)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderClear(this->renderer);
 }
@@ -973,7 +972,6 @@ void Renderer::clear()
 
 void Renderer::clearOriginal(const Color &color)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	const SDL_Rect rect = this->getLetterboxDimensions();
@@ -987,21 +985,18 @@ void Renderer::clearOriginal()
 
 void Renderer::drawPixel(const Color &color, int x, int y)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawPoint(this->renderer, x, y);
 }
 
 void Renderer::drawLine(const Color &color, int x1, int y1, int x2, int y2)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawLine(this->renderer, x1, y1, x2, y2);
 }
 
 void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	SDL_Rect rect;
@@ -1015,7 +1010,6 @@ void Renderer::drawRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::fillRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	SDL_Rect rect;
@@ -1029,7 +1023,6 @@ void Renderer::fillRect(const Color &color, int x, int y, int w, int h)
 
 void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
 	const Rect rect = this->originalToNative(Rect(x, y, w, h));
@@ -1221,8 +1214,6 @@ void Renderer::submitUiCommands(const UiCommandBuffer &commandBuffer)
 
 void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
-
 	SDL_Rect rect;
 	rect.x = x;
 	rect.y = y;
@@ -1234,16 +1225,25 @@ void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
 
 void Renderer::draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace)
 {
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 	const SDL_Rect letterboxRect = this->getLetterboxDimensions();
 	this->renderer2D->draw(renderElements, count, renderSpace, Rect(letterboxRect.x, letterboxRect.y, letterboxRect.w, letterboxRect.h));
+}
+
+void Renderer::setRenderTargetToFrameBuffer()
+{
+	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
+}
+
+void Renderer::setRenderTargetToOutput()
+{
+	SDL_SetRenderTarget(this->renderer, nullptr);
 }
 
 void Renderer::present()
 {
 	this->renderer3D->present(); // @todo: maybe this call will do the below at some point? Not sure
 
-	SDL_SetRenderTarget(this->renderer, nullptr);
+	this->setRenderTargetToOutput();
 	SDL_RenderCopy(this->renderer, this->nativeTexture, nullptr, nullptr);
 	SDL_RenderPresent(this->renderer);
 }

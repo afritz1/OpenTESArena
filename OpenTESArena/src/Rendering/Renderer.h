@@ -274,6 +274,12 @@ public:
 	void draw(SDL_Texture *texture, int x, int y, int w, int h);
 	void draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace);
 
+	// Causes all draw operations to render to a framebuffer that eventually is presented to the screen.
+	void setRenderTargetToFrameBuffer();
+
+	// Causes draw operations to render directly to the output window texture.
+	void setRenderTargetToOutput();
+
 	// Refreshes the displayed frame buffer.
 	void present();
 };

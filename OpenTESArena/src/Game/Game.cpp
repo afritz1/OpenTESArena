@@ -974,6 +974,7 @@ void Game::loop()
 		// Render.
 		try
 		{
+			this->renderer.setRenderTargetToFrameBuffer();
 			this->renderer.clear();
 
 			if (this->shouldRenderScene)
