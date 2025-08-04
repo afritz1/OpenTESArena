@@ -1,8 +1,6 @@
 #ifndef RENDER_COMMAND_BUFFER_H
 #define RENDER_COMMAND_BUFFER_H
 
-#include <vector>
-
 #include "RenderDrawCall.h"
 
 #include "components/utilities/Span.h"

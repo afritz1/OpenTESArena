@@ -52,6 +52,7 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
+#include "../UI/UiCommandBuffer.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
 #include "../World/MeshLibrary.h"
@@ -971,14 +972,6 @@ void Game::loop()
 		// Render.
 		try
 		{
-			// Get the draw calls from each UI panel/sub-panel and determine what to draw.
-			std::vector<const Panel*> panelsToRender;
-			panelsToRender.emplace_back(this->panel.get());
-			for (const auto &subPanel : this->subPanels)
-			{
-				panelsToRender.emplace_back(subPanel.get());
-			}
-
 			this->renderer.clear();
 
 			if (this->shouldRenderScene)
@@ -991,10 +984,20 @@ void Game::loop()
 
 			const Int2 windowDims = this->renderer.getWindowDimensions();
 
-			for (const Panel *currentPanel : panelsToRender)
+			// Get UI draw calls from each panel/sub-panel and determine what to draw.
+			UiCommandBuffer uiCommandBuffer;
+			this->panel->populateCommandBuffer(uiCommandBuffer);
+
+			for (const std::unique_ptr<Panel> &subPanel : this->subPanels)
 			{
-				const Span<const UiDrawCall> drawCallsView = currentPanel->getDrawCalls();
-				for (const UiDrawCall &drawCall : drawCallsView)
+				subPanel->populateCommandBuffer(uiCommandBuffer);
+			}
+
+			for (int uiCommandCount = 0; uiCommandCount < uiCommandBuffer.entryCount; uiCommandCount++)
+			{
+				Span<const UiDrawCall> uiDrawCalls = uiCommandBuffer.entries[uiCommandCount];
+
+				for (const UiDrawCall &drawCall : uiDrawCalls)
 				{
 					if (!drawCall.activeFunc())
 					{

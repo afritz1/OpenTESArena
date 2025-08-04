@@ -941,8 +941,7 @@ TextBox &GameWorldPanel::getActionTextBox()
 
 bool GameWorldPanel::renderScene(Game &game)
 {
-	static RenderCommandBuffer commandBuffer;
-	commandBuffer.clear();
+	RenderCommandBuffer commandBuffer;
 
 	// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 	// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.

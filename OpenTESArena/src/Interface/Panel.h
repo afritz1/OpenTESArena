@@ -18,6 +18,7 @@ class Game;
 enum class MouseButtonType;
 
 struct Rect;
+struct UiCommandBuffer;
 
 // Each panel interprets user input and draws to the screen. There is only one panel active at
 // a time, and it is owned by Game, although there can be any number of sub-panels.
@@ -77,9 +78,9 @@ public:
 	// so its callback can be called.
 	Span<const ButtonProxy> getButtonProxies() const;
 
-	// Gets the registered UI draw calls for this panel. Each draw call is conditionally rendered
+	// Adds the registered UI draw calls from this panel. Each draw call is conditionally rendered
 	// depending on whether it is active.
-	Span<const UiDrawCall> getDrawCalls() const;
+	void populateCommandBuffer(UiCommandBuffer &commandBuffer);
 
 	// Called when a sub-panel above this panel is pushed (added) or popped (removed).
 	virtual void onPauseChanged(bool paused);
