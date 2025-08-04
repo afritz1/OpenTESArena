@@ -16,8 +16,11 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Rect.h"
 #include "../UI/CursorAlignment.h"
+#include "../UI/GuiUtils.h"
 #include "../UI/RenderSpace.h"
 #include "../UI/Surface.h"
+#include "../UI/UiCommandBuffer.h"
+#include "../UI/UiDrawCall.h"
 #include "../Utilities/Color.h"
 #include "../Utilities/Platform.h"
 
@@ -1121,7 +1124,7 @@ void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, J
 	// Do nothing.
 }
 
-void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
+void Renderer::submitSceneCommands(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
 	Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
 	ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode)
 {
@@ -1171,6 +1174,49 @@ void Renderer::submitFrame(const RenderCamera &camera, const RenderCommandBuffer
 		swProfilerData.drawCallCount, swProfilerData.presentedTriangleCount, swProfilerData.textureCount,
 		swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalCoverageTests,
 		swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
+}
+
+void Renderer::submitUiCommands(const UiCommandBuffer &commandBuffer)
+{
+	const Int2 windowDims = this->getWindowDimensions();
+
+	for (int entryIndex = 0; entryIndex < commandBuffer.entryCount; entryIndex++)
+	{
+		Span<const UiDrawCall> uiDrawCalls = commandBuffer.entries[entryIndex];
+
+		for (const UiDrawCall &drawCall : uiDrawCalls)
+		{
+			if (!drawCall.activeFunc())
+			{
+				continue;
+			}
+
+			const std::optional<Rect> &optClipRect = drawCall.clipRect;
+			if (optClipRect.has_value())
+			{
+				const SDL_Rect clipRect = optClipRect->getSdlRect();
+				this->setClipRect(&clipRect);
+			}
+
+			const UiTextureID textureID = drawCall.textureFunc();
+			const Int2 position = drawCall.positionFunc();
+			const Int2 size = drawCall.sizeFunc();
+			const PivotType pivotType = drawCall.pivotFunc();
+			const RenderSpace renderSpace = drawCall.renderSpace;
+
+			double xPercent, yPercent, wPercent, hPercent;
+			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
+
+			const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+			this->draw(&renderElement, 1, renderSpace);
+
+			if (optClipRect.has_value())
+			{
+				this->setClipRect(nullptr);
+			}
+		}
+	}
 }
 
 void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)

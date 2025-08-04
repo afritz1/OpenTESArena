@@ -33,6 +33,7 @@ struct SDL_Surface;
 struct SDL_Texture;
 struct SDL_Window;
 struct TextureBuilder;
+struct UiCommandBuffer;
 
 struct RenderDisplayMode
 {
@@ -262,9 +263,12 @@ public:
 	void DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height) override;
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	void submitFrame(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
+	void submitSceneCommands(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
 		Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
 		ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
+
+	// Draws UI onto the screen.
+	void submitUiCommands(const UiCommandBuffer &commandBuffer);
 
 	// Draw methods for the native and original frame buffers.
 	void draw(SDL_Texture *texture, int x, int y, int w, int h);

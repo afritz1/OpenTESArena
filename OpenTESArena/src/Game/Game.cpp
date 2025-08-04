@@ -980,7 +980,6 @@ void Game::loop()
 			{
 				RenderCommandBuffer renderCommandBuffer;
 
-
 				const RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
 				renderSkyManager.populateCommandBuffer(renderCommandBuffer);
 
@@ -1023,11 +1022,9 @@ void Game::loop()
 
 				// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 				// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-				this->renderer.submitFrame(renderCamera, renderCommandBuffer, ambientPercent, visibleLightIDs, chasmAnimPercent, paletteTextureID, lightTableTextureID,
-					skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
+				this->renderer.submitSceneCommands(renderCamera, renderCommandBuffer, ambientPercent, visibleLightIDs, chasmAnimPercent, paletteTextureID,
+					lightTableTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
-
-			const Int2 windowDims = this->renderer.getWindowDimensions();
 
 			// Get UI draw calls from each panel/sub-panel and determine what to draw.
 			UiCommandBuffer uiCommandBuffer;
@@ -1038,43 +1035,7 @@ void Game::loop()
 				subPanel->populateCommandBuffer(uiCommandBuffer);
 			}
 
-			for (int uiCommandCount = 0; uiCommandCount < uiCommandBuffer.entryCount; uiCommandCount++)
-			{
-				Span<const UiDrawCall> uiDrawCalls = uiCommandBuffer.entries[uiCommandCount];
-
-				for (const UiDrawCall &drawCall : uiDrawCalls)
-				{
-					if (!drawCall.activeFunc())
-					{
-						continue;
-					}
-
-					const std::optional<Rect> &optClipRect = drawCall.clipRect;
-					if (optClipRect.has_value())
-					{
-						const SDL_Rect clipRect = optClipRect->getSdlRect();
-						this->renderer.setClipRect(&clipRect);
-					}
-
-					const UiTextureID textureID = drawCall.textureFunc();
-					const Int2 position = drawCall.positionFunc();
-					const Int2 size = drawCall.sizeFunc();
-					const PivotType pivotType = drawCall.pivotFunc();
-					const RenderSpace renderSpace = drawCall.renderSpace;
-
-					double xPercent, yPercent, wPercent, hPercent;
-					GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-						renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-					const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
-					this->renderer.draw(&renderElement, 1, renderSpace);
-
-					if (optClipRect.has_value())
-					{
-						this->renderer.setClipRect(nullptr);
-					}
-				}
-			}
+			this->renderer.submitUiCommands(uiCommandBuffer);
 
 			this->renderDebugInfo();
 			this->renderer.present();
