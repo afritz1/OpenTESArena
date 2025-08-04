@@ -724,7 +724,20 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		}
 		else if (isCityWildernessDungeon)
 		{
+			GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
+			{
+				GameState &gameState = game.gameState;
+				const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
+				if (musicDef == nullptr)
+				{
+					DebugLogWarning("Missing exterior music.");
+				}
+
+				return musicDef;
+			};
+
 			gameState.queueMapDefPop();
+			gameState.queueMusicOnSceneChange(musicFunc);
 		}
 		else
 		{
