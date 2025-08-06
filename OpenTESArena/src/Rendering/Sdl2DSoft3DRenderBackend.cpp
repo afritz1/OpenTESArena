@@ -372,7 +372,7 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 	const auto renderStartTime = std::chrono::high_resolution_clock::now();
 	if (renderCommandList.entryCount > 0)
 	{
-		this->renderer3D.submitFrame(camera, frameSettings, renderCommandList, outputBuffer);
+		this->renderer3D.submitFrame(renderCommandList, camera, frameSettings, outputBuffer);
 	}
 	
 	const auto renderEndTime = std::chrono::high_resolution_clock::now();

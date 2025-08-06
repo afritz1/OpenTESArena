@@ -4788,8 +4788,8 @@ Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
 		textureCount, textureByteCount, totalLightCount, totalCoverageTests, totalDepthTests, totalColorWrites);
 }
 
-void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
-	const RenderCommandList &commandList, uint32_t *outputBuffer)
+void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
+	const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
 	const int totalDrawCallCount = commandList.getTotalDrawCallCount();
 	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();
