@@ -44,7 +44,7 @@
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderCamera.h"
-#include "../Rendering/RenderCommandBuffer.h"
+#include "../Rendering/RenderCommand.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -53,7 +53,7 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommandBuffer.h"
+#include "../UI/UiCommand.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
@@ -981,17 +981,17 @@ void Game::loop()
 
 			if (this->shouldRenderScene)
 			{
-				RenderCommandBuffer renderCommandBuffer;
+				RenderCommandList renderCommandList;
 
 				const RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-				renderSkyManager.populateCommandBuffer(renderCommandBuffer);
+				renderSkyManager.populateCommandList(renderCommandList);
 
-				this->sceneManager.renderVoxelChunkManager.populateCommandBuffer(renderCommandBuffer);
-				this->sceneManager.renderEntityManager.populateCommandBuffer(renderCommandBuffer);
+				this->sceneManager.renderVoxelChunkManager.populateCommandList(renderCommandList);
+				this->sceneManager.renderEntityManager.populateCommandList(renderCommandList);
 
 				const WeatherInstance &activeWeatherInst = this->gameState.getWeatherInstance();
 				const bool isFoggy = this->gameState.isFogActive();
-				this->sceneManager.renderWeatherManager.populateCommandBuffer(renderCommandBuffer, activeWeatherInst, isFoggy);
+				this->sceneManager.renderWeatherManager.populateCommandList(renderCommandList, activeWeatherInst, isFoggy);
 
 				const MapDefinition &activeMapDef = this->gameState.getActiveMapDef();
 				const MapType activeMapType = activeMapDef.getMapType();
@@ -1025,20 +1025,20 @@ void Game::loop()
 
 				// Draw game world onto the native frame buffer. The game world buffer might not completely fill
 				// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-				this->renderer.submitSceneCommands(renderCamera, renderCommandBuffer, ambientPercent, visibleLightIDs, chasmAnimPercent, paletteTextureID,
+				this->renderer.submitSceneCommands(renderCamera, renderCommandList, ambientPercent, visibleLightIDs, chasmAnimPercent, paletteTextureID,
 					lightTableTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
 			// Get UI draw calls from each panel/sub-panel and determine what to draw.
-			UiCommandBuffer uiCommandBuffer;
-			this->panel->populateCommandBuffer(uiCommandBuffer);
+			UiCommandList uiCommandList;
+			this->panel->populateCommandList(uiCommandList);
 
 			for (const std::unique_ptr<Panel> &subPanel : this->subPanels)
 			{
-				subPanel->populateCommandBuffer(uiCommandBuffer);
+				subPanel->populateCommandList(uiCommandList);
 			}
 
-			this->renderer.submitUiCommands(uiCommandBuffer);
+			this->renderer.submitUiCommands(uiCommandList);
 
 			this->renderDebugInfo();
 			this->renderer.present();

@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include "RenderCamera.h"
-#include "RenderCommandBuffer.h"
+#include "RenderCommand.h"
 #include "RenderTransform.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
@@ -477,21 +477,21 @@ void RenderWeatherManager::shutdown(Renderer &renderer)
 	this->fogDrawCall.clear();
 }
 
-void RenderWeatherManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer, const WeatherInstance &weatherInst, bool isFoggy) const
+void RenderWeatherManager::populateCommandList(RenderCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const
 {
 	if (weatherInst.hasFog() && isFoggy)
 	{
-		commandBuffer.addDrawCalls(Span<const RenderDrawCall>(&this->fogDrawCall, 1));
+		commandList.addDrawCalls(Span<const RenderDrawCall>(&this->fogDrawCall, 1));
 	}
 
 	if (weatherInst.hasRain())
 	{
-		commandBuffer.addDrawCalls(this->rainDrawCalls);
+		commandList.addDrawCalls(this->rainDrawCalls);
 	}
 
 	if (weatherInst.hasSnow())
 	{
-		commandBuffer.addDrawCalls(this->snowDrawCalls);
+		commandList.addDrawCalls(this->snowDrawCalls);
 	}
 }
 

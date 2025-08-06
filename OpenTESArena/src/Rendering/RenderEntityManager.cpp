@@ -1,6 +1,6 @@
 #include <algorithm>
 
-#include "RenderCommandBuffer.h"
+#include "RenderCommand.h"
 #include "RenderEntityManager.h"
 #include "Renderer.h"
 #include "RenderTransform.h"
@@ -280,17 +280,17 @@ void RenderEntityManager::loadTexturesForEntity(EntityDefID entityDefID, Texture
 	}
 }
 
-void RenderEntityManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
+void RenderEntityManager::populateCommandList(RenderCommandList &commandList) const
 {
 	if (!this->drawCallsCache.empty())
 	{
-		commandBuffer.addDrawCalls(this->drawCallsCache);
+		commandList.addDrawCalls(this->drawCallsCache);
 	}
 
 	if (!this->puddleSecondPassDrawCallsCache.empty())
 	{
 		// Puddles require two passes to avoid race conditions when rasterizing.
-		commandBuffer.addDrawCalls(this->puddleSecondPassDrawCallsCache);
+		commandList.addDrawCalls(this->puddleSecondPassDrawCallsCache);
 	}
 }
 

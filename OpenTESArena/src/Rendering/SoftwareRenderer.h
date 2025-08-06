@@ -191,7 +191,7 @@ public:
 	Renderer3DProfilerData getProfilerData() const override;
 
 	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
-		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) override;
+		const RenderCommandList &commandList, uint32_t *outputBuffer) override;
 };
 
 #endif

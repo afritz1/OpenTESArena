@@ -2,7 +2,7 @@
 #include <vector>
 
 #include "ArenaRenderUtils.h"
-#include "RenderCommandBuffer.h"
+#include "RenderCommand.h"
 #include "Renderer.h"
 #include "RenderSkyManager.h"
 #include "RenderTransform.h"
@@ -672,10 +672,10 @@ ObjectTextureID RenderSkyManager::getBgTextureID() const
 	return this->bgDrawCall.textureIDs[0];
 }
 
-void RenderSkyManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
+void RenderSkyManager::populateCommandList(RenderCommandList &commandList) const
 {
-	commandBuffer.addDrawCalls(Span<const RenderDrawCall>(&this->bgDrawCall, 1));
-	commandBuffer.addDrawCalls(this->objectDrawCalls);
+	commandList.addDrawCalls(Span<const RenderDrawCall>(&this->bgDrawCall, 1));
+	commandList.addDrawCalls(this->objectDrawCalls);
 }
 
 void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,

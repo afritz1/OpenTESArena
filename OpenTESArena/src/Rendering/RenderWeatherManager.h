@@ -10,7 +10,7 @@
 class WeatherInstance;
 
 struct RenderCamera;
-struct RenderCommandBuffer;
+struct RenderCommandList;
 
 class RenderWeatherManager
 {
@@ -48,7 +48,7 @@ public:
 	bool init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	void populateCommandBuffer(RenderCommandBuffer &commandBuffer, const WeatherInstance &weatherInst, bool isFoggy) const;
+	void populateCommandList(RenderCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const;
 
 	void loadScene();
 	void update(const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer);

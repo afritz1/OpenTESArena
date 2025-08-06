@@ -23,7 +23,7 @@ class VoxelFaceCombineChunkManager;
 class VoxelFrustumCullingChunkManager;
 
 struct RenderCamera;
-struct RenderCommandBuffer;
+struct RenderCommandList;
 struct VoxelFrustumCullingChunk;
 
 struct RenderVoxelLoadedTexture
@@ -119,7 +119,7 @@ public:
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	void populateCommandBuffer(RenderCommandBuffer &commandBuffer) const;
+	void populateCommandList(RenderCommandList &commandList) const;
 
 	// Chunk allocating/freeing update function, called before voxel resources are updated.
 	void updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,

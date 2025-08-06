@@ -1,14 +1,14 @@
-#include "RenderCommandBuffer.h"
+#include "RenderCommand.h"
 #include "RenderDrawCall.h"
 
 #include "components/debug/Debug.h"
 
-RenderCommandBuffer::RenderCommandBuffer()
+RenderCommandList::RenderCommandList()
 {
 	this->clear();
 }
 
-int RenderCommandBuffer::getTotalDrawCallCount() const
+int RenderCommandList::getTotalDrawCallCount() const
 {
 	int count = 0;
 	for (int i = 0; i < this->entryCount; i++)
@@ -19,7 +19,7 @@ int RenderCommandBuffer::getTotalDrawCallCount() const
 	return count;
 }
 
-void RenderCommandBuffer::addDrawCalls(Span<const RenderDrawCall> drawCalls)
+void RenderCommandList::addDrawCalls(Span<const RenderDrawCall> drawCalls)
 {
 	if (this->entryCount >= static_cast<int>(std::size(this->entries)))
 	{
@@ -31,7 +31,7 @@ void RenderCommandBuffer::addDrawCalls(Span<const RenderDrawCall> drawCalls)
 	this->entryCount++;
 }
 
-void RenderCommandBuffer::clear()
+void RenderCommandList::clear()
 {
 	this->entryCount = 0;
 }

@@ -17,7 +17,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
-#include "../UI/UiCommandBuffer.h"
+#include "../UI/UiCommand.h"
 #include "../Utilities/Color.h"
 
 #include "components/vfs/manager.hpp"
@@ -69,9 +69,9 @@ Span<const ButtonProxy> Panel::getButtonProxies() const
 	return Span<const ButtonProxy>(this->buttonProxies);
 }
 
-void Panel::populateCommandBuffer(UiCommandBuffer &commandBuffer)
+void Panel::populateCommandList(UiCommandList &commandList)
 {
-	commandBuffer.addDrawCalls(this->drawCalls);
+	commandList.addDrawCalls(this->drawCalls);
 }
 
 void Panel::onPauseChanged(bool paused)

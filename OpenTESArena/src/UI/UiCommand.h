@@ -1,11 +1,11 @@
-#ifndef UI_COMMAND_BUFFER_H
-#define UI_COMMAND_BUFFER_H
+#ifndef UI_COMMAND_H
+#define UI_COMMAND_H
 
 #include "components/utilities/Span.h"
 
 struct UiDrawCall;
 
-struct UiCommandBuffer
+struct UiCommandList
 {
 	static constexpr int MAX_ENTRIES = 8;
 
@@ -13,7 +13,7 @@ struct UiCommandBuffer
 	Span<const UiDrawCall> entries[MAX_ENTRIES];
 	int entryCount;
 
-	UiCommandBuffer();
+	UiCommandList();
 
 	int getTotalDrawCallCount() const;
 

@@ -18,7 +18,7 @@
 #include "../UI/GuiUtils.h"
 #include "../UI/RenderSpace.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommandBuffer.h"
+#include "../UI/UiCommand.h"
 #include "../UI/UiDrawCall.h"
 #include "../Utilities/Color.h"
 #include "../Utilities/Platform.h"
@@ -771,7 +771,7 @@ void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, J
 	// Do nothing.
 }
 
-void Renderer::submitSceneCommands(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
+void Renderer::submitSceneCommands(const RenderCamera &camera, const RenderCommandList &commandList, double ambientPercent,
 	Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
 	ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode)
 {
@@ -802,7 +802,7 @@ void Renderer::submitSceneCommands(const RenderCamera &camera, const RenderComma
 
 	// Render the game world (no UI).
 	const auto renderStartTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(camera, renderFrameSettings, commandBuffer, outputBuffer);
+	this->renderer3D->submitFrame(camera, renderFrameSettings, commandList, outputBuffer);
 	const auto renderEndTime = std::chrono::high_resolution_clock::now();
 	const double renderTotalTime = static_cast<double>((renderEndTime - renderStartTime).count()) / static_cast<double>(std::nano::den);
 
@@ -823,13 +823,13 @@ void Renderer::submitSceneCommands(const RenderCamera &camera, const RenderComma
 		swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
 }
 
-void Renderer::submitUiCommands(const UiCommandBuffer &commandBuffer)
+void Renderer::submitUiCommands(const UiCommandList &commandList)
 {
 	const Int2 windowDims = this->window->getDimensions();
 
-	for (int entryIndex = 0; entryIndex < commandBuffer.entryCount; entryIndex++)
+	for (int entryIndex = 0; entryIndex < commandList.entryCount; entryIndex++)
 	{
-		Span<const UiDrawCall> uiDrawCalls = commandBuffer.entries[entryIndex];
+		Span<const UiDrawCall> uiDrawCalls = commandList.entries[entryIndex];
 
 		for (const UiDrawCall &drawCall : uiDrawCalls)
 		{

@@ -976,7 +976,7 @@ Renderer3DProfilerData VulkanRenderer::getProfilerData() const
 	return Renderer3DProfilerData(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
-void VulkanRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer)
+void VulkanRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, const RenderCommandList &commandList, uint32_t *outputBuffer)
 {
 	constexpr uint64_t busyFenceWaitTimeout = std::numeric_limits<uint64_t>::max();
 	const vk::Result busyFenceWaitResult = this->device.waitForFences(this->busyFence, VK_TRUE, busyFenceWaitTimeout);

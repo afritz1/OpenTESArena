@@ -16,7 +16,7 @@
 
 struct ObjectTextureAllocator;
 struct RenderCamera;
-struct RenderCommandBuffer;
+struct RenderCommandList;
 struct RenderFrameSettings;
 struct RenderInitSettings;
 
@@ -86,7 +86,7 @@ public:
 	// Begins rendering a frame. Currently this is a blocking call and it should be safe to present the frame
 	// upon returning from this.
 	virtual void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
-		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) = 0;
+		const RenderCommandList &commandList, uint32_t *outputBuffer) = 0;
 };
 
 #endif

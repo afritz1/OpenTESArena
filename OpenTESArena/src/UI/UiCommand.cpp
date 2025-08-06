@@ -1,14 +1,14 @@
-#include "UiCommandBuffer.h"
+#include "UiCommand.h"
 #include "UiDrawCall.h"
 
 #include "components/debug/Debug.h"
 
-UiCommandBuffer::UiCommandBuffer()
+UiCommandList::UiCommandList()
 {
 	this->clear();
 }
 
-int UiCommandBuffer::getTotalDrawCallCount() const
+int UiCommandList::getTotalDrawCallCount() const
 {
 	int count = 0;
 	for (int i = 0; i < this->entryCount; i++)
@@ -19,7 +19,7 @@ int UiCommandBuffer::getTotalDrawCallCount() const
 	return count;
 }
 
-void UiCommandBuffer::addDrawCalls(Span<const UiDrawCall> drawCalls)
+void UiCommandList::addDrawCalls(Span<const UiDrawCall> drawCalls)
 {
 	if (this->entryCount >= static_cast<int>(std::size(this->entries)))
 	{
@@ -31,7 +31,7 @@ void UiCommandBuffer::addDrawCalls(Span<const UiDrawCall> drawCalls)
 	this->entryCount++;
 }
 
-void UiCommandBuffer::clear()
+void UiCommandList::clear()
 {
 	this->entryCount = 0;
 }

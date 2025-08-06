@@ -422,8 +422,8 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.h"
     "${SRC_ROOT}/Rendering/RenderCamera.cpp"
     "${SRC_ROOT}/Rendering/RenderCamera.h"
-    "${SRC_ROOT}/Rendering/RenderCommandBuffer.cpp"
-    "${SRC_ROOT}/Rendering/RenderCommandBuffer.h"
+    "${SRC_ROOT}/Rendering/RenderCommand.cpp"
+    "${SRC_ROOT}/Rendering/RenderCommand.h"
     "${SRC_ROOT}/Rendering/RenderDrawCall.cpp"
     "${SRC_ROOT}/Rendering/RenderDrawCall.h"
     "${SRC_ROOT}/Rendering/RenderEntityManager.cpp"
@@ -554,8 +554,8 @@ SET(TES_UI
     "${SRC_ROOT}/UI/TextRenderUtils.h"
     "${SRC_ROOT}/UI/ToggleButton.cpp"
     "${SRC_ROOT}/UI/ToggleButton.h"
-    "${SRC_ROOT}/UI/UiCommandBuffer.cpp"
-    "${SRC_ROOT}/UI/UiCommandBuffer.h"
+    "${SRC_ROOT}/UI/UiCommand.cpp"
+    "${SRC_ROOT}/UI/UiCommand.h"
     "${SRC_ROOT}/UI/UiDrawCall.cpp"
     "${SRC_ROOT}/UI/UiDrawCall.h")
 

@@ -10,7 +10,7 @@
 
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
-#include "RenderCommandBuffer.h"
+#include "RenderCommand.h"
 #include "RenderDrawCall.h"
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
@@ -4788,9 +4788,9 @@ Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
 }
 
 void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
-	const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer)
+	const RenderCommandList &commandList, uint32_t *outputBuffer)
 {
-	const int totalDrawCallCount = commandBuffer.getTotalDrawCallCount();
+	const int totalDrawCallCount = commandList.getTotalDrawCallCount();
 	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();
 	const int frameBufferHeight = this->paletteIndexBuffer.getHeight();
 
@@ -4820,9 +4820,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	bool shouldWorkersClearFrameBuffer = true; // Once per frame.
 	std::unique_lock<std::mutex> lock(g_mutex);
 
-	for (int commandIndex = 0; commandIndex < commandBuffer.entryCount; commandIndex++)
+	for (int commandIndex = 0; commandIndex < commandList.entryCount; commandIndex++)
 	{
-		const Span<const RenderDrawCall> drawCalls = commandBuffer.entries[commandIndex];
+		const Span<const RenderDrawCall> drawCalls = commandList.entries[commandIndex];
 		int startDrawCallIndex = 0;
 		int remainingDrawCallCount = drawCalls.getCount();
 		constexpr int maxDrawCallsPerLoop = 8192;
