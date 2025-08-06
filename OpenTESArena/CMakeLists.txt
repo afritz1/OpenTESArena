@@ -5,16 +5,26 @@ SET(OpenTESArena_VERSION "0.16.0")
 FIND_PACKAGE(SDL2 REQUIRED)
 FIND_PACKAGE(OpenAL REQUIRED)
 FIND_PACKAGE(WildMidi)
+FIND_PACKAGE(Vulkan)
 
 SET(EXTERNAL_LIBS ${OPENAL_LIBRARY} ${SDL2_LIBRARY})
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}" ${SDL2_INCLUDE_DIR} ${OPENAL_INCLUDE_DIR} ${JOLT_INCLUDE_DIR})
+
 IF(WILDMIDI_FOUND)
     SET(EXTERNAL_LIBS ${EXTERNAL_LIBS} ${WILDMIDI_LIBRARIES})
     INCLUDE_DIRECTORIES(${WILDMIDI_INCLUDE_DIRS})
     ADD_DEFINITIONS("-DHAVE_WILDMIDI=1")
 ELSE(WILDMIDI_FOUND)
-    MESSAGE(STATUS "WildMIDI not found, no MIDI support!")
+    MESSAGE(STATUS "WildMIDI not found, no MIDI support.")
 ENDIF(WILDMIDI_FOUND)
+
+IF(VULKAN_FOUND)
+    SET(EXTERNAL_LIBS ${EXTERNAL_LIBS} ${Vulkan_LIBRARY})
+    INCLUDE_DIRECTORIES(${Vulkan_INCLUDE_DIR})
+    ADD_DEFINITIONS("-DHAVE_VULKAN=1")
+ELSE(VULKAN_FOUND)
+    MESSAGE(STATUS "Vulkan not found, graphics backend is limited to SDL renderer.")
+ENDIF(VULKAN_FOUND)
 
 SET(SRC_ROOT ${otesa_SOURCE_DIR}/src)
 
@@ -456,7 +466,9 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/SdlUiRenderer.h"
     "${SRC_ROOT}/Rendering/SoftwareRenderer.cpp"
     "${SRC_ROOT}/Rendering/SoftwareRenderer.h"
-    "${SRC_ROOT}/Rendering/VisibilityType.h")
+    "${SRC_ROOT}/Rendering/VisibilityType.h"
+    "${SRC_ROOT}/Rendering/VulkanRenderer.cpp"
+    "${SRC_ROOT}/Rendering/VulkanRenderer.h")
 
 SET(TES_SKY
     "${SRC_ROOT}/Sky/ArenaSkyUtils.cpp"
