@@ -4490,20 +4490,22 @@ SoftwareRenderer::~SoftwareRenderer()
 
 }
 
-void SoftwareRenderer::init(const RenderInitSettings &settings)
+bool SoftwareRenderer::init(const RenderInitSettings &initSettings)
 {
-	const int frameBufferWidth = settings.width;
-	const int frameBufferHeight = settings.height;
+	const int frameBufferWidth = initSettings.width;
+	const int frameBufferHeight = initSettings.height;
 	this->paletteIndexBuffer.init(frameBufferWidth, frameBufferHeight);
 	this->depthBuffer.init(frameBufferWidth, frameBufferHeight);
 
-	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
-	this->ditheringMode = settings.ditheringMode;
+	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, initSettings.ditheringMode);
+	this->ditheringMode = initSettings.ditheringMode;
 
 	this->textureAllocator.init(&this->objectTextures);
 
-	const int workerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
+	const int workerCount = RendererUtils::getRenderThreadsFromMode(initSettings.renderThreadsMode);
 	InitializeWorkers(workerCount, frameBufferWidth, frameBufferHeight);
+
+	return true;
 }
 
 void SoftwareRenderer::shutdown()
@@ -4955,9 +4957,4 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 			remainingDrawCallCount -= drawCallsToConsume;
 		}
 	}
-}
-
-void SoftwareRenderer::present()
-{
-	// Do nothing for now, might change later.
 }

@@ -44,7 +44,7 @@ class RendererSystem3D
 public:
 	virtual ~RendererSystem3D();
 
-	virtual void init(const RenderInitSettings &settings) = 0;
+	virtual bool init(const RenderInitSettings &initSettings) = 0;
 	virtual void shutdown() = 0;
 
 	virtual bool isInited() const = 0;
@@ -87,10 +87,6 @@ public:
 	// upon returning from this.
 	virtual void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
 		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) = 0;
-
-	// Presents the finished frame to the screen. This may just be a copy to the screen frame buffer that
-	// is then taken care of by the top-level rendering manager, since UI must be drawn afterwards.
-	virtual void present() = 0;
 };
 
 #endif

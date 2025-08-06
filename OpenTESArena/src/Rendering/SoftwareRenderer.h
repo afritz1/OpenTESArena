@@ -159,7 +159,7 @@ public:
 	SoftwareRenderer();
 	~SoftwareRenderer() override;
 
-	void init(const RenderInitSettings &settings) override;
+	bool init(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
 	bool isInited() const override;
 
@@ -192,7 +192,6 @@ public:
 
 	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
 		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) override;
-	void present() override;
 };
 
 #endif

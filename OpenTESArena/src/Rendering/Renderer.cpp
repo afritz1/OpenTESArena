@@ -1241,8 +1241,6 @@ void Renderer::setRenderTargetToOutput()
 
 void Renderer::present()
 {
-	this->renderer3D->present(); // @todo: maybe this call will do the below at some point? Not sure
-
 	this->setRenderTargetToOutput();
 	SDL_RenderCopy(this->renderer, this->nativeTexture, nullptr, nullptr);
 	SDL_RenderPresent(this->renderer);
