@@ -9,16 +9,35 @@
 std::string File::readAllText(const char *filename)
 {
 	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
-
-	DebugAssertMsg(ifs.is_open(), "Could not open \"" + std::string(filename) + "\".");
+	if (!ifs.is_open())
+	{
+		DebugLogErrorFormat("Couldn't open file \"%s\".", filename);
+		return std::string();
+	}
 
 	ifs.seekg(0, std::ios::end);
 	std::string text(ifs.tellg(), '\0');
 	ifs.seekg(0, std::ios::beg);
-	
-	ifs.read(&text[0], text.size());
+	ifs.read(text.data(), text.size());
 	
 	return text;
+}
+
+Buffer<std::byte> File::readAllBytes(const char *filename)
+{
+	std::ifstream ifs(filename, std::ios::in | std::ios::binary);
+	if (!ifs.is_open())
+	{
+		DebugLogErrorFormat("Couldn't open file \"%s\".", filename);
+		return Buffer<std::byte>();
+	}
+
+	ifs.seekg(0, std::ios::end);
+	Buffer<std::byte> bytes(ifs.tellg());
+	ifs.seekg(0, std::ios::beg);
+	ifs.read(reinterpret_cast<char*>(bytes.begin()), bytes.getCount());
+
+	return bytes;
 }
 
 bool File::exists(const char *filename)
