@@ -53,15 +53,15 @@ private:
 	vk::Queue graphicsQueue;
 	vk::Queue presentQueue;
 	vk::Device device;
-	
-	vk::CommandPool commandPool;
-	std::vector<vk::CommandBuffer> commandBuffers;
 
 	vk::SwapchainKHR swapchain;
 	Buffer<vk::ImageView> swapchainImageViews;
 
 	vk::RenderPass renderPass;
 	Buffer<vk::Framebuffer> swapchainFramebuffers;
+
+	vk::CommandPool commandPool;
+	std::vector<vk::CommandBuffer> commandBuffers;
 
 	vk::ShaderModule vertexShaderModule;
 	vk::ShaderModule fragmentShaderModule;

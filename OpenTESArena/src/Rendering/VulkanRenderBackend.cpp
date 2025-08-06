@@ -321,38 +321,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	this->objectTextureAllocator.init(this->device);
 	this->uiTextureAllocator.init(this->device);
 
-	vk::CommandPoolCreateInfo commandPoolCreateInfo;
-	commandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
-	commandPoolCreateInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
-
-	vk::ResultValue<vk::CommandPool> commandPoolCreateResult = this->device.createCommandPool(commandPoolCreateInfo);
-	if (commandPoolCreateResult.result != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't create vk::CommandPool (%d).", commandPoolCreateResult.result);
-		return false;
-	}
-
-	this->commandPool = std::move(commandPoolCreateResult.value);
-
-	vk::CommandBufferAllocateInfo commandBufferAllocateInfo;
-	commandBufferAllocateInfo.commandPool = this->commandPool;
-	commandBufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
-	commandBufferAllocateInfo.commandBufferCount = 1;
-
-	vk::ResultValue<std::vector<vk::CommandBuffer>> commandBufferAllocateResult = this->device.allocateCommandBuffers(commandBufferAllocateInfo);
-	if (commandBufferAllocateResult.result != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't create vk::CommandBuffer list (%d).", commandBufferAllocateResult.result);
-		return false;
-	}
-
-	this->commandBuffers = std::move(commandBufferAllocateResult.value);
-	if (this->commandBuffers.empty())
-	{
-		DebugLogError("No command buffers allocated.");
-		return false;
-	}
-
 	vk::ResultValue<vk::SurfaceCapabilitiesKHR> surfaceCapabilitiesResult = physicalDevice.getSurfaceCapabilitiesKHR(this->surface);
 	if (surfaceCapabilitiesResult.result != vk::Result::eSuccess)
 	{
@@ -562,6 +530,38 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		this->swapchainFramebuffers[i] = std::move(framebufferCreateResult.value);
 	}
 
+	vk::CommandPoolCreateInfo commandPoolCreateInfo;
+	commandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+	commandPoolCreateInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
+
+	vk::ResultValue<vk::CommandPool> commandPoolCreateResult = this->device.createCommandPool(commandPoolCreateInfo);
+	if (commandPoolCreateResult.result != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't create vk::CommandPool (%d).", commandPoolCreateResult.result);
+		return false;
+	}
+
+	this->commandPool = std::move(commandPoolCreateResult.value);
+
+	vk::CommandBufferAllocateInfo commandBufferAllocateInfo;
+	commandBufferAllocateInfo.commandPool = this->commandPool;
+	commandBufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
+	commandBufferAllocateInfo.commandBufferCount = this->swapchainFramebuffers.getCount();
+
+	vk::ResultValue<std::vector<vk::CommandBuffer>> commandBufferAllocateResult = this->device.allocateCommandBuffers(commandBufferAllocateInfo);
+	if (commandBufferAllocateResult.result != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't create vk::CommandBuffer list (%d).", commandBufferAllocateResult.result);
+		return false;
+	}
+
+	this->commandBuffers = std::move(commandBufferAllocateResult.value);
+	if (this->commandBuffers.empty())
+	{
+		DebugLogError("No command buffers allocated.");
+		return false;
+	}
+
 	const std::string shadersFolderPath = dataFolderPath + "shaders/";
 	const std::string vertexShaderBytesFilename = shadersFolderPath + "testVertex.spv";
 	const std::string fragmentShaderBytesFilename = shadersFolderPath + "testFragment.spv";
@@ -751,14 +751,15 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	void *vertexBufferHostMemory = std::move(vertexBufferMapMemoryResult.value);
 	std::copy(std::begin(vertices), std::end(vertices), reinterpret_cast<Vertex*>(vertexBufferHostMemory));
 	this->device.unmapMemory(this->vertexBufferDeviceMemory);
-
-	const vk::CommandBuffer commandBuffer = this->commandBuffers[0];
 	
 	vk::ClearValue clearColor;
 	clearColor.color = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
 
-	for (vk::Framebuffer framebuffer : this->swapchainFramebuffers)
+	for (int swapchainImageIndex = 0; swapchainImageIndex < this->swapchainFramebuffers.getCount(); swapchainImageIndex++)
 	{
+		vk::CommandBuffer commandBuffer = this->commandBuffers[swapchainImageIndex];
+		vk::Framebuffer framebuffer = this->swapchainFramebuffers[swapchainImageIndex];
+
 		vk::CommandBufferBeginInfo commandBufferBeginInfo;
 		const vk::Result commandBufferBeginResult = commandBuffer.begin(commandBufferBeginInfo);
 		if (commandBufferBeginResult != vk::Result::eSuccess)
@@ -885,6 +886,18 @@ void VulkanRenderBackend::shutdown()
 			this->vertexShaderModule = nullptr;
 		}
 
+		if (!this->commandBuffers.empty())
+		{
+			this->device.freeCommandBuffers(this->commandPool, this->commandBuffers);
+			this->commandBuffers.clear();
+		}
+
+		if (this->commandPool)
+		{
+			this->device.destroyCommandPool(this->commandPool);
+			this->commandPool = nullptr;
+		}
+
 		for (vk::Framebuffer framebuffer : this->swapchainFramebuffers)
 		{
 			this->device.destroyFramebuffer(framebuffer);
@@ -909,18 +922,6 @@ void VulkanRenderBackend::shutdown()
 		{
 			this->device.destroySwapchainKHR(this->swapchain);
 			this->swapchain = nullptr;
-		}
-
-		if (!this->commandBuffers.empty())
-		{
-			this->device.freeCommandBuffers(this->commandPool, this->commandBuffers);
-			this->commandBuffers.clear();
-		}
-
-		if (this->commandPool)
-		{
-			this->device.destroyCommandPool(this->commandPool);
-			this->commandPool = nullptr;
 		}
 
 		this->presentQueue = nullptr;
@@ -1112,7 +1113,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	submitInfo.pWaitSemaphores = &this->imageIsAvailableSemaphore;
 	submitInfo.pWaitDstStageMask = &waitPipelineStageFlags;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &this->commandBuffers[0];
+	submitInfo.pCommandBuffers = &this->commandBuffers[swapchainAcquiredImageIndex];
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &this->renderIsFinishedSemaphore;
 
