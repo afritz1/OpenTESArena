@@ -19,6 +19,8 @@
 class FontLibrary;
 class Game;
 
+struct Window;
+
 namespace GameWorldUiView
 {
 	constexpr int ArrowCursorRegionCount = 9;
@@ -174,7 +176,7 @@ namespace GameWorldUiView
 	Int2 getInterfaceCenter(Game &game);
 
 	// Gets the pixel coordinate of the center of the window. Does not handle classic vs. modern mode.
-	Int2 getNativeWindowCenter(const Renderer &renderer);
+	Int2 getNativeWindowCenter(const Window &window);
 
 	// Helper functions for various UI textures.
 	TextureAsset getPaletteTextureAsset();

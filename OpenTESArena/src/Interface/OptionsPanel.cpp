@@ -159,11 +159,11 @@ bool OptionsPanel::init()
 				return false;
 			}
 
-			auto &game = this->getGame();
-			auto &renderer = game.renderer;
-			const auto &inputManager = game.inputManager;
+			const Game &game = this->getGame();
+			const Window &window = game.window;
+			const InputManager &inputManager = game.inputManager;
 			const Int2 mousePosition = inputManager.getMousePosition();
-			const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
+			const Int2 originalPoint = window.nativeToOriginal(mousePosition);
 
 			DebugAssertIndex(this->optionTextBoxes, i);
 			const TextBox &textBox = this->optionTextBoxes[i];
@@ -238,11 +238,11 @@ OptionsUiModel::OptionGroup &OptionsPanel::getVisibleOptions()
 
 std::optional<int> OptionsPanel::getHoveredOptionIndex() const
 {
-	auto &game = this->getGame();
-	auto &renderer = game.renderer;
-	const auto &inputManager = game.inputManager;
+	const Game &game = this->getGame();
+	const Window &window = game.window;
+	const InputManager &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
+	const Int2 originalPoint = window.nativeToOriginal(mousePosition);
 
 	for (int i = 0; i < static_cast<int>(this->optionTextBoxes.size()); i++)
 	{

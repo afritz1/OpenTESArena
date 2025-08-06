@@ -16,6 +16,7 @@
 #include "RendererSystem3D.h"
 #include "RendererSystemType.h"
 #include "RenderLightUtils.h"
+#include "Window.h"
 #include "../Assets/TextureUtils.h"
 
 #include "components/utilities/Span.h"
@@ -31,23 +32,9 @@ struct SDL_Rect;
 struct SDL_Renderer;
 struct SDL_Surface;
 struct SDL_Texture;
-struct SDL_Window;
 struct TextureBuilder;
 struct UiCommandBuffer;
-
-struct RenderDisplayMode
-{
-	int width, height, refreshRate;
-
-	RenderDisplayMode(int width, int height, int refreshRate);
-};
-
-enum class RenderWindowMode
-{
-	Window,
-	BorderlessFullscreen,
-	ExclusiveFullscreen
-};
+struct Window;
 
 // Profiler information from the most recently rendered frame.
 struct RendererProfilerData
@@ -90,51 +77,26 @@ using RenderResolutionScaleFunc = std::function<double()>;
 class Renderer : public JPH::DebugRendererSimple
 {
 private:
+	const Window *window;
 	std::unique_ptr<RendererSystem2D> renderer2D;
 	std::unique_ptr<RendererSystem3D> renderer3D;
-	std::vector<RenderDisplayMode> displayModes;
-	SDL_Window *window;
 	SDL_Renderer *renderer;
 	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
 	RendererProfilerData profilerData;
 	RenderResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
-	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
-	bool fullGameWindow; // Determines height of 3D frame buffer.
 public:
-	// Only defined so members are initialized for Game ctor exception handling.
-	Renderer();
-	~Renderer();
-
 	// Default bits per pixel.
 	static constexpr int DEFAULT_BPP = 32;
 
 	// The default pixel format for all software surfaces, ARGB8888.
 	static constexpr uint32_t DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
 
-	// Gets the letterbox aspect associated with the current letterbox mode.
-	double getLetterboxAspect() const;
+	// Only defined so members are initialized for Game ctor exception handling.
+	Renderer();
+	~Renderer();
 
-	// Gets the width and height of the active window.
-	Int2 getWindowDimensions() const;
-
-	// Gets the aspect ratio of the active window.
-	double getWindowAspect() const;
-
-	// Gets a list of supported fullscreen display modes.
-	Span<const RenderDisplayMode> getDisplayModes() const;
-
-	// Gets the active window's pixels-per-inch scale divided by platform DPI.
-	double getDpiScale() const;
-
-	// The "view height" is the height in pixels for the visible game world. This 
-	// depends on whether the whole screen is rendered or just the portion above 
-	// the interface. The game interface is 53 pixels tall in 320x200.
-	Int2 getViewDimensions() const;
-	double getViewAspect() const;
-
-	// This is for the "letterbox" part of the screen, scaled to fit the window 
-	// using the given letterbox aspect.
-	SDL_Rect getLetterboxDimensions() const;
+	bool init(const Window *window, const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
+		int renderThreadsMode, DitheringMode ditheringMode, const std::string &dataFolderPath);
 
 	// Gets a screenshot of the current window.
 	Surface getScreenshot() const;
@@ -142,43 +104,11 @@ public:
 	// Gets profiler data (timings, renderer properties, etc.).
 	const RendererProfilerData &getProfilerData() const;
 
-	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
-	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
-	// or outside the 320x200 limit when returned.
-	Int2 nativeToOriginal(const Int2 &nativePoint) const;
-	Rect nativeToOriginal(const Rect &nativeRect) const;
-
-	// Does the opposite of nativeToOriginal().
-	Int2 originalToNative(const Int2 &originalPoint) const;
-	Rect originalToNative(const Rect &originalRect) const;
-
-	// Returns true if the letterbox contains a native point.
-	bool letterboxContains(const Int2 &nativePoint) const;
-
-	bool init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
-		const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
-		RendererSystemType3D systemType3D, int renderThreadsMode, DitheringMode ditheringMode, const std::string &dataFolderPath);
-
 	// Resizes the renderer dimensions.
-	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
+	void resize(int width, int height);
 
 	// Handles resetting render target textures when switching in and out of exclusive fullscreen.
 	void handleRenderTargetsReset();
-
-	// Sets the letterbox mode.
-	void setLetterboxMode(int letterboxMode);
-
-	// Sets whether the program is windowed, fullscreen, etc..
-	void setWindowMode(RenderWindowMode mode);
-
-	// Sets the window icon to be the given surface.
-	void setWindowIcon(const Surface &icon);
-
-	// Sets the window title.
-	void setWindowTitle(const char *title);
-
-	// Teleports the mouse to a location in the window.
-	void warpMouse(int x, int y);
 
 	// Sets the clip rectangle of the renderer so that pixels outside the specified area
 	// will not be rendered. If rect is null, then clipping is disabled.

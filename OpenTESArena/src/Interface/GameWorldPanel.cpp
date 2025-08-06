@@ -42,7 +42,7 @@ bool GameWorldPanel::init()
 {
 	auto &game = this->getGame();
 
-	auto &renderer = game.renderer;
+	Renderer &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
 	const TextBoxInitInfo playerNameTextBoxInitInfo = GameWorldUiView::getPlayerNameTextBoxInitInfo(playerNameText, fontLibrary);
@@ -256,11 +256,12 @@ bool GameWorldPanel::init()
 
 void GameWorldPanel::initUiDrawCalls()
 {
-	auto &game = this->getGame();
-	auto &textureManager = game.textureManager;
-	auto &renderer = game.renderer;
+	Game &game = this->getGame();
+	TextureManager &textureManager = game.textureManager;
+	const Window &window = game.window;
+	Renderer &renderer = game.renderer;
 
-	const auto &options = game.options;
+	const Options &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 
 	const UiTextureID gameWorldInterfaceTextureID = GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
@@ -277,7 +278,7 @@ void GameWorldPanel::initUiDrawCalls()
 	const UiTextureID statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(gradientType, textureManager, renderer);
 	this->statusGradientTextureRef.init(statusGradientTextureID, renderer);
 
-	const auto &player = game.player;
+	const Player &player = game.player;
 	const UiTextureID playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->playerPortraitTextureRef.init(playerPortraitTextureID, renderer);
 
@@ -390,8 +391,8 @@ void GameWorldPanel::initUiDrawCalls()
 				static_cast<double>(weaponAnimFrame.xOffset) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(weaponAnimFrame.yOffset) / static_cast<double>(classicViewHeight));
 
-			const auto &renderer = game.renderer;
-			const Int2 windowDims = renderer.getWindowDimensions();
+			const Window &window = game.window;
+			const Int2 windowDims = window.getDimensions();
 			const Int2 nativePosition(
 				static_cast<int>(std::round(offsetPercents.x * static_cast<double>(windowDims.x))),
 				static_cast<int>(std::round(offsetPercents.y * static_cast<double>(windowDims.y))));
@@ -412,8 +413,8 @@ void GameWorldPanel::initUiDrawCalls()
 				static_cast<double>(textureDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(textureDims.y) / static_cast<double>(classicViewHeight));
 
-			const auto &renderer = game.renderer;
-			const Int2 windowDims = renderer.getWindowDimensions();
+			const Window &window = game.window;
+			const Int2 windowDims = window.getDimensions();
 			const Int2 nativeTextureDims(
 				static_cast<int>(std::round(texturePercents.x * static_cast<double>(windowDims.x))),
 				static_cast<int>(std::round(texturePercents.y * static_cast<double>(windowDims.y))));
@@ -459,20 +460,20 @@ void GameWorldPanel::initUiDrawCalls()
 		compassFrameDrawCallInitInfo.activeFunc = compassSliderDrawCallInitInfo.activeFunc;
 		this->addDrawCall(compassFrameDrawCallInitInfo);
 
-		auto getStatusBarsModernModeOrigin = [&renderer]()
+		auto getStatusBarsModernModeOrigin = [&window]()
 		{
-			const Int2 windowDims = renderer.getWindowDimensions();
+			const Int2 windowDims = window.getDimensions();
 			return Int2(GameWorldUiView::StatusBarModernModeXOffset, windowDims.y - GameWorldUiView::StatusBarModernModeYOffset);
 		};
 
-		auto getStatusBarScaledXDelta = [&renderer](const Rect &statusBarRect)
+		auto getStatusBarScaledXDelta = [&window](const Rect &statusBarRect)
 		{
 			const int originalXDelta = statusBarRect.getLeft() - GameWorldUiView::HealthBarRect.getLeft();
 			const double originalXPercentDelta = static_cast<double>(originalXDelta) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
 
-			const Int2 windowDims = renderer.getWindowDimensions();
+			const Int2 windowDims = window.getDimensions();
 			const double scaleXRatio = static_cast<double>(windowDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
-			const double aspectRatioMultiplier = ArenaRenderUtils::ASPECT_RATIO / renderer.getWindowAspect();
+			const double aspectRatioMultiplier = ArenaRenderUtils::ASPECT_RATIO / window.getAspectRatio();
 			return static_cast<int>(std::round(static_cast<double>(originalXDelta) * (scaleXRatio * aspectRatioMultiplier)));
 		};
 
@@ -481,11 +482,11 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCallInitInfo healthBarDrawCallInitInfo;
 		healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
-		healthBarDrawCallInitInfo.positionFunc = [&renderer, getStatusBarsModernModeOrigin]()
+		healthBarDrawCallInitInfo.positionFunc = [&window, getStatusBarsModernModeOrigin]()
 		{			
-			const Int2 windowDims = renderer.getWindowDimensions();
+			const Int2 windowDims = window.getDimensions();
 			const Int2 nativePoint = getStatusBarsModernModeOrigin();
-			return renderer.nativeToOriginal(nativePoint);
+			return window.nativeToOriginal(nativePoint);
 		};
 
 		healthBarDrawCallInitInfo.sizeFunc = [&game]()
@@ -501,11 +502,11 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCallInitInfo staminaBarDrawCallInitInfo;
 		staminaBarDrawCallInitInfo.textureID = this->staminaBarTextureRef.get();
-		staminaBarDrawCallInitInfo.positionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
+		staminaBarDrawCallInitInfo.positionFunc = [&window, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
 		{
 			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::StaminaBarRect);
 			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
-			return renderer.nativeToOriginal(nativePoint);
+			return window.nativeToOriginal(nativePoint);
 		};
 
 		staminaBarDrawCallInitInfo.sizeFunc = [&game]()
@@ -521,11 +522,11 @@ void GameWorldPanel::initUiDrawCalls()
 
 		UiDrawCallInitInfo spellPointsBarDrawCallInitInfo;
 		spellPointsBarDrawCallInitInfo.textureID = this->spellPointsBarTextureRef.get();
-		spellPointsBarDrawCallInitInfo.positionFunc = [&renderer, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
+		spellPointsBarDrawCallInitInfo.positionFunc = [&window, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
 		{
 			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::SpellPointsBarRect);
 			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
-			return renderer.nativeToOriginal(nativePoint);
+			return window.nativeToOriginal(nativePoint);
 		};
 
 		spellPointsBarDrawCallInitInfo.sizeFunc = [&game]()

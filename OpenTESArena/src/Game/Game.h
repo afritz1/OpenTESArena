@@ -17,6 +17,7 @@
 #include "../Interface/Panel.h"
 #include "../Player/CharacterCreationState.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Window.h"
 #include "../UI/TextBox.h"
 #include "../World/ChunkManager.h"
 #include "../World/SceneManager.h"
@@ -35,6 +36,7 @@ public:
 	InputManager inputManager;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
+	Window window;
 	Renderer renderer;
 	TextureManager textureManager; // The texture manager object for loading images from file.
 	JPH::PhysicsSystem physicsSystem; // The Jolt physics system for the scene.

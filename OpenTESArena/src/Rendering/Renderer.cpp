@@ -3,7 +3,6 @@
 #include <cmath>
 #include <string>
 
-#include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
@@ -13,7 +12,6 @@
 #include "SoftwareRenderer.h"
 #include "VulkanRenderer.h"
 #include "../Assets/TextureManager.h"
-#include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Rect.h"
 #include "../UI/CursorAlignment.h"
@@ -37,74 +35,9 @@ namespace
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE = 4.0;
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE_SQR = PHYSICS_DEBUG_MAX_DISTANCE * PHYSICS_DEBUG_MAX_DISTANCE;
 
-	int GetSdlWindowPosition(RenderWindowMode windowMode)
-	{
-		switch (windowMode)
-		{
-		case RenderWindowMode::Window:
-			return SDL_WINDOWPOS_CENTERED;
-		case RenderWindowMode::BorderlessFullscreen:
-		case RenderWindowMode::ExclusiveFullscreen:
-			return SDL_WINDOWPOS_UNDEFINED;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(windowMode)));
-		}
-	}
-
-	uint32_t GetSdlWindowFlags(RenderWindowMode windowMode)
-	{
-		uint32_t flags = SDL_WINDOW_ALLOW_HIGHDPI;
-		if (windowMode == RenderWindowMode::Window)
-		{
-			flags |= SDL_WINDOW_RESIZABLE;
-		}
-		else if (windowMode == RenderWindowMode::BorderlessFullscreen)
-		{
-			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-		}
-		else if (windowMode == RenderWindowMode::ExclusiveFullscreen)
-		{
-			flags |= SDL_WINDOW_FULLSCREEN;
-		}
-
-		if constexpr (UseVulkan)
-		{
-			flags |= SDL_WINDOW_VULKAN;
-		}
-
-		return flags;
-	}
-
-	const char *GetSdlWindowTitle()
-	{
-		return "OpenTESArena";
-	}
-
 	const char *GetSdlRenderScaleQuality()
 	{
 		return "nearest";
-	}
-
-	Int2 GetWindowDimsForMode(RenderWindowMode windowMode, int fallbackWidth, int fallbackHeight)
-	{
-		if (windowMode == RenderWindowMode::ExclusiveFullscreen)
-		{
-			// Use desktop resolution of the primary display device. In the future, the display index could be
-			// an option in the options menu.
-			constexpr int displayIndex = 0;
-			SDL_DisplayMode displayMode;
-			const int result = SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
-			if (result == 0)
-			{
-				return Int2(displayMode.w, displayMode.h);
-			}
-			else
-			{
-				DebugLogErrorFormat("Couldn't get desktop %d display mode, using given window dimensions \"%dx%d\" (%s).", displayIndex, fallbackWidth, fallbackHeight, SDL_GetError());
-			}
-		}
-
-		return Int2(fallbackWidth, fallbackHeight);
 	}
 
 	// Helper method for making a renderer context.
@@ -246,8 +179,6 @@ Renderer::Renderer()
 	this->renderer = nullptr;
 	this->nativeTexture = nullptr;
 	this->gameWorldTexture = nullptr;
-	this->letterboxMode = 0;
-	this->fullGameWindow = false;
 }
 
 Renderer::~Renderer()
@@ -269,298 +200,33 @@ Renderer::~Renderer()
 		g_vulkanRenderer.shutdown();
 	}
 
-	SDL_DestroyWindow(this->window);
-
 	// This also destroys the frame buffer textures.
 	SDL_DestroyRenderer(this->renderer);
 
 	this->nativeTexture = nullptr;
 	this->gameWorldTexture = nullptr;
-
-	SDL_Quit();
+	this->renderer = nullptr;
+	this->window = nullptr;
 }
 
-double Renderer::getLetterboxAspect() const
-{
-	if (this->letterboxMode == 0)
-	{
-		// 16:10.
-		return 16.0 / 10.0;
-	}
-	else if (this->letterboxMode == 1)
-	{
-		// 4:3.
-		return 4.0 / 3.0;
-	}
-	else if (this->letterboxMode == 2)
-	{
-		// Stretch to fill.
-		const Int2 windowDims = this->getWindowDimensions();
-		return static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(double, std::to_string(this->letterboxMode));
-	}
-}
-
-Int2 Renderer::getWindowDimensions() const
-{
-	int windowWidth, windowHeight;
-	SDL_GetWindowSize(this->window, &windowWidth, &windowHeight);
-	return Int2(windowWidth, windowHeight);
-}
-
-double Renderer::getWindowAspect() const
-{
-	const Int2 dims = this->getWindowDimensions();
-	return static_cast<double>(dims.x) / static_cast<double>(dims.y);
-}
-
-Span<const RenderDisplayMode> Renderer::getDisplayModes() const
-{
-	return this->displayModes;
-}
-
-double Renderer::getDpiScale() const
-{
-	const double platformDpi = Platform::getDefaultDPI();
-	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
-
-	float hdpi;
-	if (SDL_GetDisplayDPI(displayIndex, nullptr, &hdpi, nullptr) == 0)
-	{
-		return static_cast<double>(hdpi) / platformDpi;
-	}
-	else
-	{
-		DebugLogWarningFormat("Couldn't get DPI of display %d (%s).", displayIndex, SDL_GetError());
-		return 1.0;
-	}
-}
-
-Int2 Renderer::getViewDimensions() const
-{
-	const Int2 windowDims = this->getWindowDimensions();
-	const int screenHeight = windowDims.y;
-
-	// Ratio of the view height and window height in 320x200.
-	const double viewWindowRatio = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - 53) /
-		ArenaRenderUtils::SCREEN_HEIGHT_REAL;
-
-	// Actual view height to use.
-	const int viewHeight = this->fullGameWindow ? screenHeight :
-		static_cast<int>(std::ceil(screenHeight * viewWindowRatio));
-
-	return Int2(windowDims.x, viewHeight);
-}
-
-double Renderer::getViewAspect() const
-{
-	const Int2 viewDims = this->getViewDimensions();
-	return static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
-}
-
-SDL_Rect Renderer::getLetterboxDimensions() const
-{
-	const Int2 windowDims = this->getWindowDimensions();
-	const double nativeAspect = static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
-	const double letterboxAspect = this->getLetterboxAspect();
-
-	// Compare the two aspects to decide what the letterbox dimensions are.
-	if (std::abs(nativeAspect - letterboxAspect) < Constants::Epsilon)
-	{
-		// Equal aspects. The letterbox is equal to the screen size.
-		SDL_Rect rect;
-		rect.x = 0;
-		rect.y = 0;
-		rect.w = windowDims.x;
-		rect.h = windowDims.y;
-		return rect;
-	}
-	else if (nativeAspect > letterboxAspect)
-	{
-		// Native window is wider = empty left and right.
-		const int subWidth = static_cast<int>(std::ceil(static_cast<double>(windowDims.y) * letterboxAspect));
-		SDL_Rect rect;
-		rect.x = (windowDims.x - subWidth) / 2;
-		rect.y = 0;
-		rect.w = subWidth;
-		rect.h = windowDims.y;
-		return rect;
-	}
-	else
-	{
-		// Native window is taller = empty top and bottom.
-		const int subHeight = static_cast<int>(std::ceil(static_cast<double>(windowDims.x) / letterboxAspect));
-		SDL_Rect rect;
-		rect.x = 0;
-		rect.y = (windowDims.y - subHeight) / 2;
-		rect.w = windowDims.x;
-		rect.h = subHeight;
-		return rect;
-	}
-}
-
-Surface Renderer::getScreenshot() const
-{
-	const Int2 dimensions = this->getWindowDimensions();
-	Surface screenshot = Surface::createWithFormat(dimensions.x, dimensions.y, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	const int status = SDL_RenderReadPixels(this->renderer, nullptr, screenshot.get()->format->format, screenshot.get()->pixels, screenshot.get()->pitch);
-
-	if (status != 0)
-	{
-		DebugCrashFormat("Couldn't take screenshot (%s).", SDL_GetError());
-	}
-
-	return screenshot;
-}
-
-const RendererProfilerData &Renderer::getProfilerData() const
-{
-	return this->profilerData;
-}
-
-Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
-{
-	// From native point to letterbox point.
-	const Int2 windowDimensions = this->getWindowDimensions();
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
-
-	const Int2 letterboxPoint(
-		nativePoint.x - letterbox.x,
-		nativePoint.y - letterbox.y);
-
-	// Then from letterbox point to original point.
-	const double letterboxXPercent = static_cast<double>(letterboxPoint.x) / static_cast<double>(letterbox.w);
-	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) / static_cast<double>(letterbox.h);
-
-	const double originalWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
-	const double originalHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
-
-	const Int2 originalPoint(
-		static_cast<int>(originalWidthReal * letterboxXPercent),
-		static_cast<int>(originalHeightReal * letterboxYPercent));
-
-	return originalPoint;
-}
-
-Rect Renderer::nativeToOriginal(const Rect &nativeRect) const
-{
-	const Int2 newTopLeft = this->nativeToOriginal(nativeRect.getTopLeft());
-	const Int2 newBottomRight = this->nativeToOriginal(nativeRect.getBottomRight());
-	return Rect(
-		newTopLeft.x,
-		newTopLeft.y,
-		newBottomRight.x - newTopLeft.x,
-		newBottomRight.y - newTopLeft.y);
-}
-
-Int2 Renderer::originalToNative(const Int2 &originalPoint) const
-{
-	// From original point to letterbox point.
-	const double originalXPercent = static_cast<double>(originalPoint.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
-	const double originalYPercent = static_cast<double>(originalPoint.y) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
-
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
-	const double letterboxWidthReal = static_cast<double>(letterbox.w);
-	const double letterboxHeightReal = static_cast<double>(letterbox.h);
-
-	// Convert to letterbox point. Round to avoid off-by-one errors.
-	const Int2 letterboxPoint(
-		static_cast<int>(std::round(letterboxWidthReal * originalXPercent)),
-		static_cast<int>(std::round(letterboxHeightReal * originalYPercent)));
-
-	// Then from letterbox point to native point.
-	const Int2 nativePoint(
-		letterboxPoint.x + letterbox.x,
-		letterboxPoint.y + letterbox.y);
-
-	return nativePoint;
-}
-
-Rect Renderer::originalToNative(const Rect &originalRect) const
-{
-	const Int2 newTopLeft = this->originalToNative(originalRect.getTopLeft());
-	const Int2 newBottomRight = this->originalToNative(originalRect.getBottomRight());
-	return Rect(
-		newTopLeft.x,
-		newTopLeft.y,
-		newBottomRight.x - newTopLeft.x,
-		newBottomRight.y - newTopLeft.y);
-}
-
-bool Renderer::letterboxContains(const Int2 &nativePoint) const
-{
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
-	const Rect rectangle(letterbox.x, letterbox.y, letterbox.w, letterbox.h);
-	return rectangle.contains(nativePoint);
-}
-
-bool Renderer::init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
-	const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
+bool Renderer::init(const Window *window, const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
 	int renderThreadsMode, DitheringMode ditheringMode, const std::string &dataFolderPath)
 {
 	DebugLog("Initializing.");
-	const int result = SDL_Init(SDL_INIT_VIDEO); // Required for SDL_GetDesktopDisplayMode() to work for exclusive fullscreen.
-	if (result != 0)
-	{
-		DebugLogErrorFormat("Couldn't init SDL video subsystem (result: %d, %s).", result, SDL_GetError());
-		return false;
-	}
 
-	if ((width <= 0) || (height <= 0))
-	{
-		DebugLogErrorFormat("Invalid renderer dimensions %dx%d.", width, height);
-		return false;
-	}
-
-	this->letterboxMode = letterboxMode;
-	this->fullGameWindow = fullGameWindow;
+	this->window = window;
 	this->resolutionScaleFunc = resolutionScaleFunc;
 
-	// Initialize SDL window.
-	const char *windowTitle = GetSdlWindowTitle();
-	const int windowPosition = GetSdlWindowPosition(windowMode);
-	const uint32_t windowFlags = GetSdlWindowFlags(windowMode);
-	const Int2 windowDims = GetWindowDimsForMode(windowMode, width, height);
-	this->window = SDL_CreateWindow(windowTitle, windowPosition, windowPosition, windowDims.x, windowDims.y, windowFlags);
-	if (this->window == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't create SDL_Window (dimensions: %dx%d, window mode: %d, %s).", width, height, windowMode, SDL_GetError());
-		return false;
-	}
-
-	// Initialize display modes list for the current window.
-	// @todo: these display modes will only work on the display device the window was initialized on
-	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
-	const int displayModeCount = SDL_GetNumDisplayModes(displayIndex);
-	for (int i = 0; i < displayModeCount; i++)
-	{
-		// Convert SDL display mode to our display mode.
-		SDL_DisplayMode mode;
-		if (SDL_GetDisplayMode(displayIndex, i, &mode) == 0)
-		{
-			// Filter away non-24-bit displays. Perhaps this could be handled better, but I don't
-			// know how to do that for all possible displays out there.
-			if (mode.format == SDL_PIXELFORMAT_RGB888)
-			{
-				this->displayModes.emplace_back(RenderDisplayMode(mode.w, mode.h, mode.refresh_rate));
-			}
-		}
-	}
-
 	// Use window dimensions, just in case it's fullscreen and the given width and height are ignored.
-	const Int2 windowDimensions = this->getWindowDimensions();
-
-	const Int2 viewDims = this->getViewDimensions();
+	const Int2 windowDimensions = window->getDimensions();
+	const Int2 viewDims = window->getViewDimensions();
 	const double resolutionScale = resolutionScaleFunc();
 	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
 	if constexpr (!UseVulkan)
 	{
 		// Initialize SDL renderer context.
-		this->renderer = CreateSdlRendererForWindow(this->window);
+		this->renderer = CreateSdlRendererForWindow(window->window);
 		if (this->renderer == nullptr)
 		{
 			DebugLogErrorFormat("Couldn't create SDL_Renderer (%s).", SDL_GetError());
@@ -597,7 +263,7 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 		}
 	}();
 
-	if (!this->renderer2D->init(this->window))
+	if (!this->renderer2D->init(window->window))
 	{
 		DebugCrash("Couldn't init 2D renderer.");
 	}
@@ -621,7 +287,7 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 	}();
 
 	RenderInitSettings initSettings;
-	initSettings.init(this->window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
+	initSettings.init(window->window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
 	if (!this->renderer3D->init(initSettings))
 	{
 		DebugLogError("Couldn't init RendererSystem3D.");
@@ -632,10 +298,29 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 	return true;
 }
 
-void Renderer::resize(int width, int height, double resolutionScale, bool fullGameWindow)
+Surface Renderer::getScreenshot() const
+{
+	const Int2 dimensions = this->window->getDimensions();
+	Surface screenshot = Surface::createWithFormat(dimensions.x, dimensions.y, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+	const int status = SDL_RenderReadPixels(this->renderer, nullptr, screenshot.get()->format->format, screenshot.get()->pixels, screenshot.get()->pitch);
+
+	if (status != 0)
+	{
+		DebugCrashFormat("Couldn't take screenshot (%s).", SDL_GetError());
+	}
+
+	return screenshot;
+}
+
+const RendererProfilerData &Renderer::getProfilerData() const
+{
+	return this->profilerData;
+}
+
+void Renderer::resize(int width, int height)
 {
 	// The window's dimensions are resized automatically by SDL. The renderer's are not.
-	const Int2 windowDims = this->getWindowDimensions();
+	const Int2 windowDims = this->window->getDimensions();
 	DebugAssertMsg(windowDims.x == width, "Mismatched resize widths.");
 	DebugAssertMsg(windowDims.y == height, "Mismatched resize heights.");
 
@@ -653,12 +338,11 @@ void Renderer::resize(int width, int height, double resolutionScale, bool fullGa
 		DebugLogErrorFormat("Couldn't recreate native frame buffer for resize to %dx%d (%s).", width, height, SDL_GetError());
 	}
 
-	this->fullGameWindow = fullGameWindow;
-
 	// Rebuild the 3D renderer if initialized.
 	if (this->renderer3D->isInited())
 	{
-		const Int2 viewDims = this->getViewDimensions();
+		const Int2 viewDims = this->window->getViewDimensions();
+		const double resolutionScale = this->resolutionScaleFunc();
 		const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
 		// Reinitialize the game world frame buffer.
@@ -696,7 +380,7 @@ void Renderer::handleRenderTargetsReset()
 		SDL_DestroyTexture(this->nativeTexture);
 	}
 
-	const Int2 windowDims = this->getWindowDimensions();
+	const Int2 windowDims = this->window->getDimensions();
 	this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDims.x, windowDims.y);
 	if (this->nativeTexture == nullptr)
 	{
@@ -705,7 +389,7 @@ void Renderer::handleRenderTargetsReset()
 
 	if (this->renderer3D->isInited())
 	{
-		const Int2 viewDims = this->getViewDimensions();
+		const Int2 viewDims = this->window->getViewDimensions();
 		const double resolutionScale = this->resolutionScaleFunc();
 		const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
@@ -724,69 +408,12 @@ void Renderer::handleRenderTargetsReset()
 	}
 }
 
-void Renderer::setLetterboxMode(int letterboxMode)
-{
-	this->letterboxMode = letterboxMode;
-}
-
-void Renderer::setWindowMode(RenderWindowMode mode)
-{
-	int result = 0;
-	if (mode == RenderWindowMode::ExclusiveFullscreen)
-	{
-		SDL_DisplayMode displayMode; // @todo: may consider changing this to some GetDisplayModeForWindowMode()
-		result = SDL_GetDesktopDisplayMode(0, &displayMode);
-		if (result != 0)
-		{
-			DebugLogErrorFormat("Couldn't get desktop display mode for exclusive fullscreen (%s).", SDL_GetError());
-			return;
-		}
-
-		result = SDL_SetWindowDisplayMode(this->window, &displayMode);
-		if (result != 0)
-		{
-			DebugLogErrorFormat("Couldn't set window display mode to %dx%d %dHz for exclusive fullscreen (%s).", displayMode.w, displayMode.h, displayMode.refresh_rate, SDL_GetError());
-			return;
-		}
-	}
-
-	const uint32_t flags = GetSdlWindowFlags(mode);
-	result = SDL_SetWindowFullscreen(this->window, flags);
-	if (result != 0)
-	{
-		DebugLogErrorFormat("Couldn't set window fullscreen flags to 0x%X (%s).", flags, SDL_GetError());
-		return;
-	}
-
-	const Int2 windowDims = this->getWindowDimensions();
-	const double resolutionScale = this->resolutionScaleFunc();
-	this->resize(windowDims.x, windowDims.y, resolutionScale, this->fullGameWindow);
-
-	// Reset the cursor to the center of the screen for consistency.
-	this->warpMouse(windowDims.x / 2, windowDims.y / 2);
-}
-
-void Renderer::setWindowIcon(const Surface &icon)
-{
-	SDL_SetWindowIcon(this->window, icon.get());
-}
-
-void Renderer::setWindowTitle(const char *title)
-{
-	SDL_SetWindowTitle(this->window, title);
-}
-
-void Renderer::warpMouse(int x, int y)
-{
-	SDL_WarpMouseInWindow(this->window, x, y);
-}
-
 void Renderer::setClipRect(const SDL_Rect *rect)
 {
 	if (rect != nullptr)
 	{
 		// @temp: assume in classic space
-		const Rect nativeRect = this->originalToNative(Rect(rect->x, rect->y, rect->w, rect->h));
+		const Rect nativeRect = this->window->originalToNative(Rect(rect->x, rect->y, rect->w, rect->h));
 		const SDL_Rect nativeRectSdl = nativeRect.getSdlRect();
 		SDL_RenderSetClipRect(this->renderer, &nativeRectSdl);
 	}
@@ -1001,7 +628,7 @@ void Renderer::clearOriginal(const Color &color)
 {
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
-	const SDL_Rect rect = this->getLetterboxDimensions();
+	const SDL_Rect rect = this->window->getLetterboxDimensions();
 	SDL_RenderFillRect(this->renderer, &rect);
 }
 
@@ -1052,7 +679,7 @@ void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
 {
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 
-	const Rect rect = this->originalToNative(Rect(x, y, w, h));
+	const Rect rect = this->window->originalToNative(Rect(x, y, w, h));
 	const SDL_Rect rectSdl = rect.getSdlRect();
 	SDL_RenderFillRect(this->renderer, &rectSdl);
 }
@@ -1076,7 +703,7 @@ void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg colo
 		return;
 	}
 
-	const Int2 viewDims = this->getViewDimensions();
+	const Int2 viewDims = this->window->getViewDimensions();
 	const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clipPoint0);
 	const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clipPoint1);
 	const Double2 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, viewDims.x, viewDims.y);
@@ -1113,7 +740,7 @@ void Renderer::DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3
 		return;
 	}
 
-	const Int2 viewDims = this->getViewDimensions();
+	const Int2 viewDims = this->window->getViewDimensions();
 	const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clipPoint0);
 	const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clipPoint1);
 	const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clipPoint2);
@@ -1183,7 +810,7 @@ void Renderer::submitSceneCommands(const RenderCamera &camera, const RenderComma
 	const auto presentStartTime = std::chrono::high_resolution_clock::now();
 	SDL_UnlockTexture(this->gameWorldTexture);
 
-	const Int2 viewDims = this->getViewDimensions();
+	const Int2 viewDims = this->window->getViewDimensions();
 	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);
 	const auto presentEndTime = std::chrono::high_resolution_clock::now();
 	const double presentTotalTime = static_cast<double>((presentEndTime - presentStartTime).count()) / static_cast<double>(std::nano::den);
@@ -1198,7 +825,7 @@ void Renderer::submitSceneCommands(const RenderCamera &camera, const RenderComma
 
 void Renderer::submitUiCommands(const UiCommandBuffer &commandBuffer)
 {
-	const Int2 windowDims = this->getWindowDimensions();
+	const Int2 windowDims = this->window->getDimensions();
 
 	for (int entryIndex = 0; entryIndex < commandBuffer.entryCount; entryIndex++)
 	{
@@ -1252,7 +879,7 @@ void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
 
 void Renderer::draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace)
 {
-	const SDL_Rect letterboxRect = this->getLetterboxDimensions();
+	const SDL_Rect letterboxRect = this->window->getLetterboxDimensions();
 	this->renderer2D->draw(renderElements, count, renderSpace, Rect(letterboxRect.x, letterboxRect.y, letterboxRect.w, letterboxRect.h));
 }
 

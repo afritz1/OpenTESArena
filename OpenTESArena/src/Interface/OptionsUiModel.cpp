@@ -179,8 +179,9 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeWindowModeOption(
 		std::vector<std::string> { "Window", "Borderless Fullscreen", "Exclusive Fullscreen" },
 		[&game](int value)
 	{
-		auto &options = game.options;
-		auto &renderer = game.renderer;
+		Options &options = game.options;
+		Window &window = game.window;
+		Renderer &renderer = game.renderer;
 		options.setGraphics_WindowMode(value);
 
 		const RenderWindowMode mode = [value]()
@@ -198,7 +199,13 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeWindowModeOption(
 			}
 		}();
 
-		renderer.setWindowMode(mode);
+		window.setMode(mode);
+
+		const Int2 newWindowDims = window.getDimensions();
+		renderer.resize(newWindowDims.x, newWindowDims.y);
+
+		// Reset the cursor to the center of the screen for consistency.
+		window.warpMouse(newWindowDims.x / 2, newWindowDims.y / 2);
 	});
 }
 
@@ -231,14 +238,14 @@ std::unique_ptr<OptionsUiModel::DoubleOption> OptionsUiModel::makeResolutionScal
 		2,
 		[&game](double value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_ResolutionScale(value);
 
-		// Resize the game world rendering.
-		auto &renderer = game.renderer;
-		const Int2 windowDimensions = renderer.getWindowDimensions();
-		const bool fullGameWindow = options.getGraphics_ModernInterface();
-		renderer.resize(windowDimensions.x, windowDimensions.y, value, fullGameWindow);
+		const Window &window = game.window;
+		const Int2 windowDimensions = window.getDimensions();
+
+		Renderer &renderer = game.renderer;
+		renderer.resize(windowDimensions.x, windowDimensions.y);
 	});
 }
 
@@ -273,10 +280,11 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeLetterboxModeOpti
 		std::vector<std::string> { "16:10", "4:3", "Stretch" },
 		[&game](int value)
 	{
-		auto &options = game.options;
-		auto &renderer = game.renderer;
+		Options &options = game.options;
 		options.setGraphics_LetterboxMode(value);
-		renderer.setLetterboxMode(value);
+
+		Window &window = game.window;
+		window.letterboxMode = value;
 	});
 }
 
@@ -306,23 +314,23 @@ std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeModernInterfaceO
 		options.getGraphics_ModernInterface(),
 		[&game](bool value)
 	{
-		auto &options = game.options;
+		Options &options = game.options;
 		options.setGraphics_ModernInterface(value);
 
-		// If classic mode, make sure the player is looking straight forward.
-		// This is a restriction on the camera to retain the original feel.
+		// If classic mode, make sure the player is looking straight forward. This is a restriction on the camera to retain the original feel.
 		const bool isModernMode = value;
 		if (!isModernMode)
 		{
-			auto &player = game.player;
+			Player &player = game.player;
 			player.setDirectionToHorizon();
 		}
+		
+		Window &window = game.window;
+		const Int2 windowDims = window.getDimensions();
+		window.fullGameWindow = isModernMode;
 
-		// Resize the game world rendering.
-		auto &renderer = game.renderer;
-		const Int2 windowDims = renderer.getWindowDimensions();
-		const bool fullGameWindow = isModernMode;
-		renderer.resize(windowDims.x, windowDims.y, options.getGraphics_ResolutionScale(), fullGameWindow);
+		Renderer &renderer = game.renderer;
+		renderer.resize(windowDims.x, windowDims.y);
 	});
 }
 

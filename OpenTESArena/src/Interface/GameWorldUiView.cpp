@@ -405,9 +405,9 @@ Int2 GameWorldUiView::getInterfaceCenter(Game &game)
 	}
 }
 
-Int2 GameWorldUiView::getNativeWindowCenter(const Renderer &renderer)
+Int2 GameWorldUiView::getNativeWindowCenter(const Window &window)
 {
-	const Int2 windowDims = renderer.getWindowDimensions();
+	const Int2 windowDims = window.getDimensions();
 	const Int2 nativeCenter = windowDims / 2;
 	return nativeCenter;
 }
@@ -701,9 +701,10 @@ UiTextureID GameWorldUiView::allocContainerInventoryTexture(TextureManager &text
 // @todo: As of SDL 2.0.10 which introduced batching, this now behaves like the color is per frame, not per call, which isn't correct, and flushing doesn't help.
 void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 {
+	const Window &window = game.window;
 	auto &renderer = game.renderer;
 	const int selectionDim = 3;
-	const Int2 windowDims = renderer.getWindowDimensions();
+	const Int2 windowDims = window.getDimensions();
 
 	constexpr int xOffset = 16;
 	constexpr int yOffset = 16;
@@ -717,7 +718,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const auto &player = game.player;
 	const CoordDouble3 rayStart = player.getEyeCoord();
 	const Double3 &cameraDirection = player.forward;
-	const double viewAspectRatio = renderer.getViewAspect();
+	const double viewAspectRatio = window.getViewAspectRatio();
 
 	const double ceilingScale = gameState.getActiveCeilingScale();
 	const SceneManager &sceneManager = game.sceneManager;
@@ -773,12 +774,12 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	// ray cast out from center and display hit info (faster/better than console logging).
 	GameWorldUiView::DEBUG_ColorRaycastPixel(game);
 
-	const auto &options = game.options;
-	const auto &player = game.player;
+	const Options &options = game.options;
+	const Player &player = game.player;
 	const Double3 &cameraDirection = player.forward;
 
-	auto &renderer = game.renderer;
-	const Int2 viewDims = renderer.getViewDimensions();
+	const Window &window = game.window;
+	const Int2 viewDims = window.getViewDimensions();
 	const Int2 viewCenterPoint(viewDims.x / 2, viewDims.y / 2);
 
 	const CoordDouble3 rayStart = player.getEyeCoord();
@@ -789,7 +790,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 
-	const auto &gameState = game.gameState;
+	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 
 	EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
@@ -850,6 +851,8 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	{
 		text = "No hit";
 	}
+
+	Renderer &renderer = game.renderer;
 
 	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		text,
@@ -988,7 +991,8 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 		const int positionY = quadtreeDrawPositionYs[treeLevelIndex];
 		const Int2 position(ArenaRenderUtils::SCREEN_WIDTH, positionY);
 		const Int2 size = quadtreeTextureDims;
-		const Int2 windowDims = renderer.getWindowDimensions();
+		const Window &window = game.window;
+		const Int2 windowDims = window.getDimensions();
 		constexpr PivotType pivotType = PivotType::TopRight;
 		constexpr RenderSpace renderSpace = RenderSpace::Classic;
 

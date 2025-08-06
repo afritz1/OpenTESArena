@@ -33,7 +33,7 @@ void AutomapUiController::onMouseButtonHeld(Game &game, MouseButtonType buttonTy
 	// Listen for when the LMB is held on a compass direction.
 	if (buttonType == MouseButtonType::Left)
 	{
-		const Int2 originalPoint = game.renderer.nativeToOriginal(position);
+		const Int2 originalPoint = game.window.nativeToOriginal(position);
 		const double scrollSpeed = AutomapUiView::ScrollSpeed * dt;
 
 		// Modify the automap offset based on input. The directions are reversed because

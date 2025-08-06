@@ -468,7 +468,9 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/SoftwareRenderer.h"
     "${SRC_ROOT}/Rendering/VisibilityType.h"
     "${SRC_ROOT}/Rendering/VulkanRenderer.cpp"
-    "${SRC_ROOT}/Rendering/VulkanRenderer.h")
+    "${SRC_ROOT}/Rendering/VulkanRenderer.h"
+    "${SRC_ROOT}/Rendering/Window.cpp"
+    "${SRC_ROOT}/Rendering/Window.h")
 
 SET(TES_SKY
     "${SRC_ROOT}/Sky/ArenaSkyUtils.cpp"

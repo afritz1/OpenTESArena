@@ -267,7 +267,6 @@ bool Game::init()
 
 	VFS::Manager::get().initialize(std::string(arenaPath));
 
-	// Initialize audio manager.
 	const bool midiPathIsRelative = Path::isRelative(this->options.getAudio_MidiConfig().c_str());
 	const std::string midiFilePath = (midiPathIsRelative ? basePath : "") + this->options.getAudio_MidiConfig();
 	const std::string audioDataPath = dataFolderPath + "audio/";
@@ -275,7 +274,14 @@ bool Game::init()
 		this->options.getAudio_SoundChannels(), this->options.getAudio_SoundResampling(),
 		this->options.getAudio_Is3DAudio(), midiFilePath, audioDataPath);
 
-	// Initialize the renderer and window with the given settings.
+	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
+		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
+		this->options.getGraphics_ModernInterface()))
+	{
+		DebugLogErrorFormat("Couldn't init window.");
+		return false;
+	}
+
 	auto resolutionScaleFunc = [this]()
 	{
 		return this->options.getGraphics_ResolutionScale();
@@ -284,9 +290,7 @@ bool Game::init()
 	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
 	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
-	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
-		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
-		this->options.getGraphics_ModernInterface(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D,
+	if (!this->renderer.init(&this->window, resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D,
 		this->options.getGraphics_RenderThreadsMode(), ditheringMode, dataFolderPath))
 	{
 		DebugLogErrorFormat("Couldn't init renderer (2D: %d, 3D: %d).", rendererSystemType2D, rendererSystemType3D);
@@ -414,10 +418,10 @@ bool Game::init()
 
 	const uint32_t windowIconColorKey = windowIconSurface.mapRGBA(0, 0, 0, 255);
 	SDL_SetColorKey(windowIconSurface.get(), SDL_TRUE, windowIconColorKey);
-	this->renderer.setWindowIcon(windowIconSurface);
+	this->window.setIcon(windowIconSurface);
 
 	// Initialize click regions for player movement in classic interface mode.
-	const Int2 windowDims = this->renderer.getWindowDimensions();
+	const Int2 windowDims = this->window.getDimensions();
 	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
 
 	// Random seed.
@@ -545,8 +549,7 @@ void Game::initOptions(const std::string &basePath, const std::string &optionsPa
 void Game::resizeWindow(int windowWidth, int windowHeight)
 {
 	// Resize the window, and the 3D renderer if initialized.
-	const bool fullGameWindow = this->options.getGraphics_ModernInterface();
-	this->renderer.resize(windowWidth, windowHeight, this->options.getGraphics_ResolutionScale(), fullGameWindow);
+	this->renderer.resize(windowWidth, windowHeight);
 
 	// Update where the mouse can click for player movement in the classic interface.
 	this->updateNativeCursorRegions(windowWidth, windowHeight);
@@ -556,7 +559,7 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
 		const WorldDouble3 playerPosition = this->player.getEyePosition();
 		const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY,
-			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
+			this->options.getGraphics_VerticalFOV(), this->window.getViewAspectRatio(), this->options.getGraphics_TallPixelCorrection());
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
 	}
@@ -708,7 +711,7 @@ void Game::renderDebugInfo()
 			"ms " + highestFrameTimeText + "ms)");
 	}
 
-	const Int2 windowDims = this->renderer.getWindowDimensions();
+	const Int2 windowDims = this->window.getDimensions();
 	if (profilerLevel >= 2)
 	{
 		// Renderer details (window res, render res, threads, frame times, etc.).
@@ -939,7 +942,7 @@ void Game::loop()
 				const Degrees newPlayerYaw = this->player.angleX;
 				const Degrees newPlayerPitch = this->player.angleY;
 				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(),
-					this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
+					this->window.getViewAspectRatio(), this->options.getGraphics_TallPixelCorrection());
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(renderCamera, *this);
@@ -998,7 +1001,7 @@ void Game::loop()
 
 				const WorldDouble3 playerPosition = this->player.getEyePosition();
 				const Degrees fovY = this->options.getGraphics_VerticalFOV();
-				const double viewAspectRatio = this->renderer.getViewAspect();
+				const double viewAspectRatio = this->window.getViewAspectRatio();
 				const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY, fovY, viewAspectRatio, this->options.getGraphics_TallPixelCorrection());
 				const ObjectTextureID paletteTextureID = this->sceneManager.gameWorldPaletteTextureRef.get();
 
