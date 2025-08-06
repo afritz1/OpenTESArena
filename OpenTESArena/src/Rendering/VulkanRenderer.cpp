@@ -3,6 +3,7 @@
 
 #include "SDL_vulkan.h"
 
+#include "RenderInitSettings.h"
 #include "VulkanRenderer.h"
 
 #include "components/debug/Debug.h"
@@ -102,8 +103,11 @@ namespace
 	}
 }
 
-bool VulkanRenderer::init(SDL_Window *window, const std::string &dataFolderPath)
+bool VulkanRenderer::init(const RenderInitSettings &initSettings)
 {
+	SDL_Window *window = initSettings.window;
+	const std::string &dataFolderPath = initSettings.dataFolderPath;
+
 	const Buffer<const char*> instanceExtensions = GetInstanceExtensions(window);
 	if (instanceExtensions.getCount() == 0)
 	{
@@ -139,7 +143,7 @@ bool VulkanRenderer::init(SDL_Window *window, const std::string &dataFolderPath)
 		return false;
 	}
 
-	this->surface = std::move(vulkanSurface);
+	this->surface = vulkanSurface;
 
 	vk::ResultValue<std::vector<vk::PhysicalDevice>> physicalDevicesResult = this->instance.enumeratePhysicalDevices();
 	if (physicalDevicesResult.result != vk::Result::eSuccess)
@@ -853,7 +857,126 @@ void VulkanRenderer::shutdown()
 	}
 }
 
-void VulkanRenderer::update()
+bool VulkanRenderer::isInited() const
+{
+	DebugNotImplemented();
+	return false;
+}
+
+void VulkanRenderer::resize(int width, int height)
+{
+	DebugNotImplemented();
+}
+
+VertexPositionBufferID VulkanRenderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
+{
+	DebugNotImplemented();
+	return VertexPositionBufferID();
+}
+
+VertexAttributeBufferID VulkanRenderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
+{
+	DebugNotImplemented();
+	return VertexAttributeBufferID();
+}
+
+IndexBufferID VulkanRenderer::createIndexBuffer(int indexCount)
+{
+	DebugNotImplemented();
+	return IndexBufferID();
+}
+
+void VulkanRenderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::freeVertexPositionBuffer(VertexPositionBufferID id)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::freeIndexBuffer(IndexBufferID id)
+{
+	DebugNotImplemented();
+}
+
+ObjectTextureAllocator *VulkanRenderer::getTextureAllocator()
+{
+	DebugNotImplemented();
+	return nullptr;
+}
+
+UniformBufferID VulkanRenderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
+{
+	DebugNotImplemented();
+	return UniformBufferID();
+}
+
+void VulkanRenderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::freeUniformBuffer(UniformBufferID id)
+{
+	DebugNotImplemented();
+}
+
+RenderLightID VulkanRenderer::createLight()
+{
+	DebugNotImplemented();
+	return RenderLightID();
+}
+
+void VulkanRenderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)
+{
+	DebugNotImplemented();
+}
+
+void VulkanRenderer::freeLight(RenderLightID id)
+{
+	DebugNotImplemented();
+}
+
+std::optional<Int2> VulkanRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
+{
+	DebugNotImplemented();
+	return std::optional<Int2>();
+}
+
+Renderer3DProfilerData VulkanRenderer::getProfilerData() const
+{
+	DebugNotImplemented();
+	return Renderer3DProfilerData(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+void VulkanRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer)
 {
 	constexpr uint64_t busyFenceWaitTimeout = std::numeric_limits<uint64_t>::max();
 	const vk::Result busyFenceWaitResult = this->device.waitForFences(this->busyFence, VK_TRUE, busyFenceWaitTimeout);
@@ -881,14 +1004,13 @@ void VulkanRenderer::update()
 	const uint32_t swapchainAcquiredImageIndex = std::move(swapchainAcquiredImageIndexResult.value);
 
 	const vk::PipelineStageFlags waitPipelineStageFlags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-	const vk::CommandBuffer commandBuffer = this->commandBuffers[0];
 
 	vk::SubmitInfo submitInfo;
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = &this->imageIsAvailableSemaphore;
 	submitInfo.pWaitDstStageMask = &waitPipelineStageFlags;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
+	submitInfo.pCommandBuffers = &this->commandBuffers[0];
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &this->renderIsFinishedSemaphore;
 

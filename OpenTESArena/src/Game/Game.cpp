@@ -287,10 +287,9 @@ bool Game::init()
 	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
 		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
 		this->options.getGraphics_ModernInterface(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D,
-		this->options.getGraphics_RenderThreadsMode(), ditheringMode))
+		this->options.getGraphics_RenderThreadsMode(), ditheringMode, dataFolderPath))
 	{
-		DebugLogError("Couldn't init renderer (2D: " + std::to_string(static_cast<int>(rendererSystemType2D)) +
-			", 3D: " + std::to_string(static_cast<int>(rendererSystemType3D)) + ").");
+		DebugLogErrorFormat("Couldn't init renderer (2D: %d, 3D: %d).", rendererSystemType2D, rendererSystemType3D);
 		return false;
 	}
 

@@ -11,6 +11,7 @@
 #include "RenderInitSettings.h"
 #include "SdlUiRenderer.h"
 #include "SoftwareRenderer.h"
+#include "VulkanRenderer.h"
 #include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
@@ -29,6 +30,9 @@
 
 namespace
 {
+	constexpr bool UseVulkan = true;
+	VulkanRenderer g_vulkanRenderer;
+
 	RenderCamera g_physicsDebugCamera; // Cached every frame for Jolt Physics debug renderer.
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE = 4.0;
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE_SQR = PHYSICS_DEBUG_MAX_DISTANCE * PHYSICS_DEBUG_MAX_DISTANCE;
@@ -61,6 +65,11 @@ namespace
 		else if (windowMode == RenderWindowMode::ExclusiveFullscreen)
 		{
 			flags |= SDL_WINDOW_FULLSCREEN;
+		}
+
+		if constexpr (UseVulkan)
+		{
+			flags |= SDL_WINDOW_VULKAN;
 		}
 
 		return flags;
@@ -101,6 +110,8 @@ namespace
 	// Helper method for making a renderer context.
 	SDL_Renderer *CreateSdlRendererForWindow(SDL_Window *window)
 	{
+		DebugAssert(!UseVulkan);
+
 		// Automatically choose the best driver.
 		constexpr int bestDriver = -1;
 
@@ -251,6 +262,11 @@ Renderer::~Renderer()
 	if (this->renderer3D)
 	{
 		this->renderer3D->shutdown();
+	}
+
+	if constexpr (UseVulkan)
+	{
+		g_vulkanRenderer.shutdown();
 	}
 
 	SDL_DestroyWindow(this->window);
@@ -483,7 +499,7 @@ bool Renderer::letterboxContains(const Int2 &nativePoint) const
 
 bool Renderer::init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
 	const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
-	int renderThreadsMode, DitheringMode ditheringMode)
+	int renderThreadsMode, DitheringMode ditheringMode, const std::string &dataFolderPath)
 {
 	DebugLog("Initializing.");
 	const int result = SDL_Init(SDL_INIT_VIDEO); // Required for SDL_GetDesktopDisplayMode() to work for exclusive fullscreen.
@@ -515,14 +531,6 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 		return false;
 	}
 
-	// Initialize SDL renderer context.
-	this->renderer = CreateSdlRendererForWindow(this->window);
-	if (this->renderer == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't create SDL_Renderer (%s).", SDL_GetError());
-		return false;
-	}
-
 	// Initialize display modes list for the current window.
 	// @todo: these display modes will only work on the display device the window was initialized on
 	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
@@ -542,16 +550,37 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 		}
 	}
 
-	// Use window dimensions, just in case it's fullscreen and the given width and
-	// height are ignored.
+	// Use window dimensions, just in case it's fullscreen and the given width and height are ignored.
 	const Int2 windowDimensions = this->getWindowDimensions();
 
-	// Initialize native frame buffer.
-	this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
-	if (this->nativeTexture == nullptr)
+	const Int2 viewDims = this->getViewDimensions();
+	const double resolutionScale = resolutionScaleFunc();
+	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
+
+	if constexpr (!UseVulkan)
 	{
-		DebugLogErrorFormat("Couldn't create SDL_Texture frame buffer (%s).", SDL_GetError());
-		return false;
+		// Initialize SDL renderer context.
+		this->renderer = CreateSdlRendererForWindow(this->window);
+		if (this->renderer == nullptr)
+		{
+			DebugLogErrorFormat("Couldn't create SDL_Renderer (%s).", SDL_GetError());
+			return false;
+		}
+
+		// Initialize native frame buffer.
+		this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
+		if (this->nativeTexture == nullptr)
+		{
+			DebugLogErrorFormat("Couldn't create SDL_Texture frame buffer (%s).", SDL_GetError());
+			return false;
+		}
+
+		// Initialize game world destination frame buffer.
+		this->gameWorldTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
+		if (this->gameWorldTexture == nullptr)
+		{
+			DebugLogErrorFormat("Couldn't create game world texture with dimensions %dx%d (%s).", internalRenderDims.x, internalRenderDims.y, SDL_GetError());
+		}
 	}
 
 	// Initialize 2D renderer.
@@ -580,6 +609,10 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 		{
 			return std::make_unique<SoftwareRenderer>();
 		}
+		else if (systemType3D == RendererSystemType3D::Vulkan)
+		{
+			return std::make_unique<VulkanRenderer>();
+		}
 		else
 		{
 			DebugLogErrorFormat("Unrecognized 3D renderer system type \"%d\".", systemType3D);
@@ -587,20 +620,14 @@ bool Renderer::init(int width, int height, RenderWindowMode windowMode, int lett
 		}
 	}();
 
-	const Int2 viewDims = this->getViewDimensions();
-	const double resolutionScale = resolutionScaleFunc();
-	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
-
-	// Initialize game world destination frame buffer.
-	this->gameWorldTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
-	if (this->gameWorldTexture == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't create game world texture with dimensions %dx%d (%s).", internalRenderDims.x, internalRenderDims.y, SDL_GetError());
-	}
-
 	RenderInitSettings initSettings;
-	initSettings.init(internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
-	this->renderer3D->init(initSettings);
+	initSettings.init(this->window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
+	if (!this->renderer3D->init(initSettings))
+	{
+		DebugLogError("Couldn't init RendererSystem3D.");
+		this->renderer3D->shutdown();
+		return false;
+	}
 
 	return true;
 }

@@ -8,7 +8,8 @@ enum class RendererSystemType2D
 
 enum class RendererSystemType3D
 {
-	SoftwareClassic
+	SoftwareClassic,
+	Vulkan
 };
 
 #endif

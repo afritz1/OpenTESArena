@@ -157,7 +157,7 @@ public:
 
 	bool init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
 		const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
-		RendererSystemType3D systemType3D, int renderThreadsMode, DitheringMode ditheringMode);
+		RendererSystemType3D systemType3D, int renderThreadsMode, DitheringMode ditheringMode, const std::string &dataFolderPath);
 
 	// Resizes the renderer dimensions.
 	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
