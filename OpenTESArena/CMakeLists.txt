@@ -420,6 +420,9 @@ SET(TES_PLAYER
 SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.cpp"
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.h"
+    "${SRC_ROOT}/Rendering/RenderBackend.cpp"
+    "${SRC_ROOT}/Rendering/RenderBackend.h"
+    "${SRC_ROOT}/Rendering/RenderBackendType.h"
     "${SRC_ROOT}/Rendering/RenderCamera.cpp"
     "${SRC_ROOT}/Rendering/RenderCamera.h"
     "${SRC_ROOT}/Rendering/RenderCommand.cpp"
