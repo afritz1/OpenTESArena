@@ -276,8 +276,10 @@ bool Game::init()
 		this->options.getAudio_SoundChannels(), this->options.getAudio_SoundResampling(),
 		this->options.getAudio_Is3DAudio(), midiFilePath, audioDataPath);
 
-	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
-		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
+	constexpr RenderBackendType renderBackendType = RenderBackendType::Sdl2DSoft3D;
+	const uint32_t windowAdditionalFlags = (renderBackendType == RenderBackendType::Vulkan) ? SDL_WINDOW_VULKAN : 0;
+	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(), 
+		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), windowAdditionalFlags, this->options.getGraphics_LetterboxMode(),
 		this->options.getGraphics_ModernInterface()))
 	{
 		DebugLogErrorFormat("Couldn't init window.");
@@ -289,7 +291,6 @@ bool Game::init()
 		return this->options.getGraphics_ResolutionScale();
 	};
 
-	constexpr RenderBackendType renderBackendType = RenderBackendType::Sdl2DSoft3D;
 	const int renderThreadsMode = this->options.getGraphics_RenderThreadsMode();
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
 	if (!this->renderer.init(&this->window, renderBackendType, resolutionScaleFunc, renderThreadsMode, ditheringMode, dataFolderPath))

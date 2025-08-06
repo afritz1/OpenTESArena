@@ -11,8 +11,6 @@
 
 namespace
 {
-	constexpr bool UseVulkan = true; // @todo pass in a renderer type enum
-
 	int GetSdlWindowPosition(RenderWindowMode windowMode)
 	{
 		switch (windowMode)
@@ -27,7 +25,7 @@ namespace
 		}
 	}
 
-	uint32_t GetSdlWindowFlags(RenderWindowMode windowMode, bool useVulkan)
+	uint32_t GetSdlWindowFlags(RenderWindowMode windowMode, uint32_t additionalFlags)
 	{
 		uint32_t flags = SDL_WINDOW_ALLOW_HIGHDPI;
 		if (windowMode == RenderWindowMode::Window)
@@ -43,10 +41,7 @@ namespace
 			flags |= SDL_WINDOW_FULLSCREEN;
 		}
 
-		if (useVulkan)
-		{
-			flags |= SDL_WINDOW_VULKAN;
-		}
+		flags |= additionalFlags;
 
 		return flags;
 	}
@@ -82,6 +77,7 @@ namespace
 Window::Window()
 {
 	this->window = nullptr;
+	this->additionalFlags = 0;
 	this->letterboxMode = 0;
 	this->fullGameWindow = false;
 }
@@ -92,7 +88,7 @@ Window::~Window()
 	SDL_Quit();
 }
 
-bool Window::init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow)
+bool Window::init(int width, int height, RenderWindowMode windowMode, uint32_t additionalFlags, int letterboxMode, bool fullGameWindow)
 {
 	DebugLog("Initializing.");
 
@@ -111,7 +107,7 @@ bool Window::init(int width, int height, RenderWindowMode windowMode, int letter
 
 	const char *windowTitle = GetSdlWindowTitle();
 	const int windowPosition = GetSdlWindowPosition(windowMode);
-	const uint32_t windowFlags = GetSdlWindowFlags(windowMode, UseVulkan);
+	const uint32_t windowFlags = GetSdlWindowFlags(windowMode, additionalFlags);
 	const Int2 windowDims = GetWindowDimsForMode(windowMode, width, height);
 	this->window = SDL_CreateWindow(windowTitle, windowPosition, windowPosition, windowDims.x, windowDims.y, windowFlags);
 	if (this->window == nullptr)
@@ -119,6 +115,8 @@ bool Window::init(int width, int height, RenderWindowMode windowMode, int letter
 		DebugLogErrorFormat("Couldn't create SDL_Window (dimensions: %dx%d, window mode: %d, %s).", width, height, windowMode, SDL_GetError());
 		return false;
 	}
+
+	this->additionalFlags = additionalFlags;
 
 	// Initialize display modes list for the current window.
 	// @todo: these display modes will only work on the display device the window was initialized on
@@ -346,7 +344,7 @@ void Window::setMode(RenderWindowMode mode)
 		}
 	}
 
-	const uint32_t flags = GetSdlWindowFlags(mode, UseVulkan);
+	const uint32_t flags = GetSdlWindowFlags(mode, this->additionalFlags);
 	result = SDL_SetWindowFullscreen(this->window, flags);
 	if (result != 0)
 	{

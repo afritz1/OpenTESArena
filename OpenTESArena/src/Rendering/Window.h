@@ -1,6 +1,7 @@
 #ifndef WINDOW_H
 #define WINDOW_H
 
+#include <cstdint>
 #include <vector>
 
 #include "../Math/Vector2.h"
@@ -30,6 +31,7 @@ enum class RenderWindowMode
 struct Window
 {
 	SDL_Window *window;
+	uint32_t additionalFlags;
 	std::vector<RenderDisplayMode> displayModes; // Supported fullscreen display modes.
 	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
 	bool fullGameWindow; // Determines height of 3D frame buffer.
@@ -37,7 +39,7 @@ struct Window
 	Window();
 	~Window();
 
-	bool init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow);
+	bool init(int width, int height, RenderWindowMode windowMode, uint32_t additionalFlags, int letterboxMode, bool fullGameWindow);
 
 	Int2 getDimensions() const;
 	double getAspectRatio() const;
