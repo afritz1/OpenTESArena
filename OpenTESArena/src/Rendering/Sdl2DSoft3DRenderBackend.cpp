@@ -91,6 +91,7 @@ namespace
 
 Sdl2DSoft3DRenderBackend::Sdl2DSoft3DRenderBackend()
 {
+	this->window = nullptr;
 	this->renderer = nullptr;
 	this->nativeTexture = nullptr;
 	this->gameWorldTexture = nullptr;
@@ -351,48 +352,55 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 	SDL_SetRenderDrawColor(this->renderer, clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 	SDL_RenderClear(this->renderer);
 
-	int gameWorldTextureWidth, gameWorldTextureHeight;
-	int status = SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &gameWorldTextureWidth, &gameWorldTextureHeight);
-	if (status != 0)
-	{
-		DebugLogErrorFormat("Couldn't query game world texture dimensions for scene rendering (%s).", SDL_GetError());
-		return;
-	}
-
-	uint32_t *outputBuffer;
-	int gameWorldPitch;
-	status = SDL_LockTexture(this->gameWorldTexture, nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
-	if (status != 0)
-	{
-		DebugLogErrorFormat("Couldn't lock game world texture for scene rendering (%s).", SDL_GetError());
-		return;
-	}
-
 	// Render the game world (no UI).
-	const auto renderStartTime = std::chrono::high_resolution_clock::now();
 	if (renderCommandList.entryCount > 0)
 	{
+		int gameWorldTextureWidth, gameWorldTextureHeight;
+		int status = SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &gameWorldTextureWidth, &gameWorldTextureHeight);
+		if (status != 0)
+		{
+			DebugLogErrorFormat("Couldn't query game world texture dimensions for scene rendering (%s).", SDL_GetError());
+			return;
+		}
+
+		uint32_t *outputBuffer;
+		int gameWorldPitch;
+		status = SDL_LockTexture(this->gameWorldTexture, nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
+		if (status != 0)
+		{
+			DebugLogErrorFormat("Couldn't lock game world texture for scene rendering (%s).", SDL_GetError());
+			return;
+		}
+
+		const auto renderStartTime = std::chrono::high_resolution_clock::now();
 		this->renderer3D.submitFrame(renderCommandList, camera, frameSettings, outputBuffer);
+		const auto renderEndTime = std::chrono::high_resolution_clock::now();
+		const double renderTotalTime = static_cast<double>((renderEndTime - renderStartTime).count()) / static_cast<double>(std::nano::den);
+
+		// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
+		const auto presentStartTime = std::chrono::high_resolution_clock::now();
+		SDL_UnlockTexture(this->gameWorldTexture);
+
+		const Int2 viewDims = this->window->getViewDimensions();
+
+		SDL_Rect gameWorldDrawRect;
+		gameWorldDrawRect.x = 0;
+		gameWorldDrawRect.y = 0;
+		gameWorldDrawRect.w = viewDims.x;
+		gameWorldDrawRect.h = viewDims.y;
+		SDL_RenderCopy(this->renderer, this->gameWorldTexture, nullptr, &gameWorldDrawRect);
+
+		const auto presentEndTime = std::chrono::high_resolution_clock::now();
+		const double presentTotalTime = static_cast<double>((presentEndTime - presentStartTime).count()) / static_cast<double>(std::nano::den);
+
+		// @todo include some more times in here for UI rendering and final present, then update in Renderer
+		// Update profiler stats.
+		/*const Renderer3DProfilerData swProfilerData = this->backend->getProfilerData();
+		this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
+			swProfilerData.drawCallCount, swProfilerData.presentedTriangleCount, swProfilerData.textureCount,
+			swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalCoverageTests,
+			swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);*/
 	}
-	
-	const auto renderEndTime = std::chrono::high_resolution_clock::now();
-	const double renderTotalTime = static_cast<double>((renderEndTime - renderStartTime).count()) / static_cast<double>(std::nano::den);
-
-	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
-	const auto presentStartTime = std::chrono::high_resolution_clock::now();
-	SDL_UnlockTexture(this->gameWorldTexture);
-
-	const Int2 viewDims = this->window->getViewDimensions();
-
-	SDL_Rect gameWorldDrawRect;
-	gameWorldDrawRect.x = 0;
-	gameWorldDrawRect.y = 0;
-	gameWorldDrawRect.w = viewDims.x;
-	gameWorldDrawRect.h = viewDims.y;
-	SDL_RenderCopy(this->renderer, this->gameWorldTexture, nullptr, &gameWorldDrawRect);
-
-	const auto presentEndTime = std::chrono::high_resolution_clock::now();
-	const double presentTotalTime = static_cast<double>((presentEndTime - presentStartTime).count()) / static_cast<double>(std::nano::den);
 
 	const Int2 windowDims = this->window->getDimensions();
 	const Rect letterboxRect = this->window->getLetterboxRect();
@@ -455,12 +463,4 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 	SDL_SetRenderTarget(this->renderer, nullptr);
 	SDL_RenderCopy(this->renderer, this->nativeTexture, nullptr, nullptr);
 	SDL_RenderPresent(this->renderer);
-
-	// @todo include some more times in here for UI rendering and final present, then update in Renderer
-	// Update profiler stats.
-	/*const Renderer3DProfilerData swProfilerData = this->backend->getProfilerData();
-	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
-		swProfilerData.drawCallCount, swProfilerData.presentedTriangleCount, swProfilerData.textureCount,
-		swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalCoverageTests,
-		swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);*/
 }
