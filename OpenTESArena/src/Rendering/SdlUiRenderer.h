@@ -51,7 +51,7 @@ public:
 	UiTextureAllocator *getTextureAllocator() override;
 	std::optional<Int2> tryGetTextureDims(UiTextureID id) const override;
 
-	void draw(const RenderElement *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect) override;
+	void draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect) override;
 };
 
 #endif

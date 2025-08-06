@@ -2,7 +2,7 @@
 
 #include "components/debug/Debug.h"
 
-RendererSystem2D::RenderElement::RenderElement(UiTextureID id, double x, double y, double width, double height)
+RenderElement2D::RenderElement2D(UiTextureID id, double x, double y, double width, double height)
 {
 	this->id = id;
 	this->x = x;

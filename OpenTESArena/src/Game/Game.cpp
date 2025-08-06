@@ -798,7 +798,7 @@ void Game::renderDebugInfo()
 	GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
 		renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
-	const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+	const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
 	this->renderer.draw(&renderElement, 1, renderSpace);
 }
 

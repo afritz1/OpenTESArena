@@ -855,7 +855,7 @@ void Renderer::submitUiCommands(const UiCommandBuffer &commandBuffer)
 			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
 				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
-			const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+			const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
 			this->draw(&renderElement, 1, renderSpace);
 
 			if (optClipRect.has_value())
@@ -877,7 +877,7 @@ void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
 	SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
 }
 
-void Renderer::draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace)
+void Renderer::draw(const RenderElement2D *renderElements, int count, RenderSpace renderSpace)
 {
 	const SDL_Rect letterboxRect = this->window->getLetterboxDimensions();
 	this->renderer2D->draw(renderElements, count, renderSpace, Rect(letterboxRect.x, letterboxRect.y, letterboxRect.w, letterboxRect.h));

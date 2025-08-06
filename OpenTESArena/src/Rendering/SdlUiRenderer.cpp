@@ -232,7 +232,7 @@ std::optional<Int2> SdlUiRenderer::tryGetTextureDims(UiTextureID textureID) cons
 	return Int2(width, height);
 }
 
-void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect)
+void SdlUiRenderer::draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect)
 {
 	auto originalPointToNative = [&letterboxRect](const Int2 &point)
 	{
@@ -276,7 +276,7 @@ void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace r
 
 	for (int i = 0; i < count; i++)
 	{
-		const RenderElement &element = elements[i];
+		const RenderElement2D &element = elements[i];
 		SDL_Texture *texture = this->texturePool.get(element.id);
 
 		SDL_Rect nativeRect;

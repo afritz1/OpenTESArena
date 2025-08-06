@@ -202,7 +202,7 @@ public:
 
 	// Draw methods for the native and original frame buffers.
 	void draw(SDL_Texture *texture, int x, int y, int w, int h);
-	void draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace);
+	void draw(const RenderElement2D *renderElements, int count, RenderSpace renderSpace);
 
 	// Causes all draw operations to render to a framebuffer that eventually is presented to the screen.
 	void setRenderTargetToFrameBuffer();

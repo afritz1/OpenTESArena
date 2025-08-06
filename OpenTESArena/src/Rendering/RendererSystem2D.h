@@ -16,30 +16,20 @@ struct Rect;
 struct SDL_Window;
 struct UiTextureAllocator;
 
+struct RenderElement2D
+{
+	UiTextureID id;
+	double x, y; // X and Y percents across the render space.
+	double width, height; // Percents of render space dimensions.
+	// @todo: optional shading/blending parameters? SDL_BlendMode? Alpha percent?
+
+	RenderElement2D(UiTextureID id, double x, double y, double width, double height);
+};
+
 // Abstract base class for UI renderer.
-//
-// @todo: finish designing Renderer/RendererSystem2D/RendererSystem3D interconnect.
-// - Renderer has "the screen frame buffer" via SDL_Window probably.
-// - RendererSystem3D has a "game world frame buffer" that's copied to "the screen" when done.
-// - RendererSystem2D draws to "the screen frame buffer" after RendererSystem3D.
-// - Move most of Renderer SDL drawing code to SdlRenderer2D and call renderer2D->draw(...) in Renderer functions.
-// - Renderer::renderer could probably be moved to SdlRenderer2D. Renderer probably just needs the SDL_Window.
-//
-// @todo: might eventually need some "shared" struct for resources to talk between 2D and 3D renderer
-// if it's the same backend.
 class RendererSystem2D
 {
 public:
-	struct RenderElement
-	{
-		UiTextureID id;
-		double x, y; // X and Y percents across the render space.
-		double width, height; // Percents of render space dimensions.
-		// @todo: optional shading/blending parameters? SDL_BlendMode? Alpha percent?
-
-		RenderElement(UiTextureID id, double x, double y, double width, double height);
-	};
-
 	virtual ~RendererSystem2D();
 
 	virtual bool init(SDL_Window *window) = 0;
@@ -53,7 +43,7 @@ public:
 
 	// Drawing method for UI elements. Positions and sizes are in 0->1 vector space so that the caller's
 	// data is resolution-independent.
-	virtual void draw(const RenderElement *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect) = 0;
+	virtual void draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect) = 0;
 };
 
 #endif

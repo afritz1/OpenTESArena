@@ -1000,7 +1000,7 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 		GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
 			renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
-		const RendererSystem2D::RenderElement renderElement(quadtreeTextureRef.get(), xPercent, yPercent, wPercent, hPercent);
+		const RenderElement2D renderElement(quadtreeTextureRef.get(), xPercent, yPercent, wPercent, hPercent);
 		renderer.draw(&renderElement, 1, renderSpace);
 	}
 }
