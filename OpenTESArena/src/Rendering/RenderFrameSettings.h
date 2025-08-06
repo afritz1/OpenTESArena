@@ -16,14 +16,13 @@ struct RenderFrameSettings
 	Span<const RenderLightID> visibleLightIDs;
 	double screenSpaceAnimPercent;
 	ObjectTextureID paletteTextureID, lightTableTextureID, skyBgTextureID;
-	int renderWidth, renderHeight, renderThreadsMode;
+	int renderThreadsMode;
 	DitheringMode ditheringMode;
 
 	RenderFrameSettings();
 
 	void init(double ambientPercent, Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
-		ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderWidth, int renderHeight, int renderThreadsMode,
-		DitheringMode ditheringMode);
+		ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 };
 
 #endif

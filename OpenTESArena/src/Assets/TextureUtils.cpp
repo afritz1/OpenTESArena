@@ -8,6 +8,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Math/Rect.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RendererUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
@@ -15,11 +16,10 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 
-Surface TextureUtils::generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager,
-	Renderer &renderer)
+Surface TextureUtils::generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager, Renderer &renderer)
 {
 	// Initialize the scratch surface to transparent.
-	Surface surface = Surface::createWithFormat(width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+	Surface surface = Surface::createWithFormat(width, height, RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
 	const uint32_t clearColor = surface.mapRGBA(0, 0, 0, 0);
 	surface.fill(clearColor);
 
@@ -50,7 +50,7 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 		auto makeSurface = [&textureManager, tilesPaletteID](TextureBuilderID textureBuilderID)
 		{
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-			Surface surface = Surface::createWithFormat(textureBuilder.width, textureBuilder.height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			Surface surface = Surface::createWithFormat(textureBuilder.width, textureBuilder.height, RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
 
 			// Parchment tiles should all be 8-bit for now.
 			Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
@@ -244,7 +244,7 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 	constexpr int padding = 4;
 
 	Surface surface = Surface::createWithFormat(textureGenInfo.width + padding, textureGenInfo.height + padding,
-		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
 
 	constexpr Color backColor(32, 32, 32, 192);
 	surface.fill(backColor.r, backColor.g, backColor.b, backColor.a);

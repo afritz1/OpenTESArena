@@ -233,7 +233,7 @@ void GameWorldUiModel::setFreeLookActive(Game &game, bool active)
 {
 	// Set relative mouse mode. When enabled, this freezes the hardware cursor in place but relative motion
 	// events are still recorded.
-	auto &inputManager = game.inputManager;
+	InputManager &inputManager = game.inputManager;
 	inputManager.setRelativeMouseMode(active);
 
 	Window &window = game.window;
@@ -247,8 +247,10 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 	const Window &window = game.window;
 	const Player &player = game.player;
 	const WorldDouble3 playerPosition = player.getEyePosition();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY,
-		options.getGraphics_VerticalFOV(), window.getViewAspectRatio(), options.getGraphics_TallPixelCorrection());
+	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
+
+	RenderCamera renderCamera;
+	renderCamera.init(playerPosition, player.angleX, player.angleY, options.getGraphics_VerticalFOV(), window.getViewAspectRatio(), tallPixelRatio);
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.
 	const Int2 viewDims = window.getViewDimensions();

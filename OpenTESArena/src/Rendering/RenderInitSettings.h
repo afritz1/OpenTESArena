@@ -5,18 +5,18 @@
 
 #include "RenderShaderUtils.h"
 
-struct SDL_Window;
+struct Window;
 
 struct RenderInitSettings
 {
-	SDL_Window *window;
+	const Window *window;
 	std::string dataFolderPath;
 
-	int width, height;
+	int internalWidth, internalHeight;
 	int renderThreadsMode;
 	DitheringMode ditheringMode;
 
-	void init(SDL_Window *window, const std::string &dataFolderPath, int width, int height, int renderThreadsMode, DitheringMode ditheringMode);
+	void init(const Window *window, const std::string &dataFolderPath, int internalWidth, int internalHeight, int renderThreadsMode, DitheringMode ditheringMode);
 };
 
 #endif

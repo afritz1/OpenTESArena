@@ -1,7 +1,6 @@
 #include <algorithm>
 
 #include "Renderer.h"
-#include "RendererSystem3D.h"
 #include "RenderVoxelChunk.h"
 #include "../World/ChunkUtils.h"
 

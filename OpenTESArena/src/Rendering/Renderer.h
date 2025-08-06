@@ -5,36 +5,46 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <string_view>
-#include <vector>
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Renderer/DebugRendererSimple.h"
 #include "SDL.h"
 
-#include "RendererSystem2D.h"
-#include "RendererSystem3D.h"
-#include "RendererSystemType.h"
+#include "RenderMeshUtils.h"
 #include "RenderLightUtils.h"
+#include "RenderTextureUtils.h"
 #include "Window.h"
 #include "../Assets/TextureUtils.h"
+#include "../Math/Vector3.h"
+#include "../Utilities/Palette.h"
 
 #include "components/utilities/Span.h"
+#include "components/utilities/Span2D.h"
 
+class RenderBackend;
 class Surface;
 class TextureManager;
 
 enum class CursorAlignment;
+enum class RenderBackendType;
 
-struct Color;
 struct Rect;
-struct SDL_Rect;
-struct SDL_Renderer;
-struct SDL_Surface;
-struct SDL_Texture;
+struct RenderCamera;
+struct RenderCommandList;
+struct RenderFrameSettings;
 struct TextureBuilder;
 struct UiCommandList;
 struct Window;
+
+struct RenderElement2D
+{
+	UiTextureID id;
+	double x, y; // X and Y percents across the render space.
+	double width, height; // Percents of render space dimensions.
+	// @todo: optional shading/blending parameters? SDL_BlendMode? Alpha percent?
+
+	RenderElement2D(UiTextureID id, double x, double y, double width, double height);
+};
 
 // Profiler information from the most recently rendered frame.
 struct RendererProfilerData
@@ -74,28 +84,19 @@ struct RendererProfilerData
 using RenderResolutionScaleFunc = std::function<double()>;
 
 // Manages the active window and 2D and 3D rendering operations.
-class Renderer : public JPH::DebugRendererSimple
+class Renderer //: public JPH::DebugRendererSimple
 {
 private:
 	const Window *window;
-	std::unique_ptr<RendererSystem2D> renderer2D;
-	std::unique_ptr<RendererSystem3D> renderer3D;
-	SDL_Renderer *renderer;
-	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
+	std::unique_ptr<RenderBackend> backend;
 	RendererProfilerData profilerData;
 	RenderResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
 public:
-	// Default bits per pixel.
-	static constexpr int DEFAULT_BPP = 32;
-
-	// The default pixel format for all software surfaces, ARGB8888.
-	static constexpr uint32_t DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
-
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();
 	~Renderer();
 
-	bool init(const Window *window, const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
+	bool init(const Window *window, RenderBackendType backendType, const RenderResolutionScaleFunc &resolutionScaleFunc,
 		int renderThreadsMode, DitheringMode ditheringMode, const std::string &dataFolderPath);
 
 	// Gets a screenshot of the current window.
@@ -109,10 +110,6 @@ public:
 
 	// Handles resetting render target textures when switching in and out of exclusive fullscreen.
 	void handleRenderTargetsReset();
-
-	// Sets the clip rectangle of the renderer so that pixels outside the specified area
-	// will not be rendered. If rect is null, then clipping is disabled.
-	void setClipRect(const SDL_Rect *rect);
 
 	// Geometry management functions.
 	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex);
@@ -172,46 +169,22 @@ public:
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
 	void freeLight(RenderLightID id);
 
-	// Fills the native frame buffer with the draw color, or default black/transparent.
-	void clear(const Color &color);
-	void clear();
-	void clearOriginal(const Color &color);
-	void clearOriginal();
-
 	// Wrapper methods for some SDL draw functions.
-	void drawPixel(const Color &color, int x, int y);
-	void drawLine(const Color &color, int x1, int y1, int x2, int y2);
-	void drawRect(const Color &color, int x, int y, int w, int h);
+	//void drawPixel(const Color &color, int x, int y);
+	//void drawLine(const Color &color, int x1, int y1, int x2, int y2);
+	//void drawRect(const Color &color, int x, int y, int w, int h);
 
 	// Wrapper methods for some SDL fill functions.
-	void fillRect(const Color &color, int x, int y, int w, int h);
-	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
+	//void fillRect(const Color &color, int x, int y, int w, int h);
 
 	// Jolt Physics debugging.
-	void DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color) override;
-	void DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3, JPH::ColorArg color, ECastShadow castShadow) override;
-	void DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height) override;
+	//void DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color) override;
+	//void DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3, JPH::ColorArg color, ECastShadow castShadow) override;
+	//void DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height) override;
 
-	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	void submitSceneCommands(const RenderCamera &camera, const RenderCommandList &commandList, double ambientPercent,
-		Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
-		ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
-
-	// Draws UI onto the screen.
-	void submitUiCommands(const UiCommandList &commandList);
-
-	// Draw methods for the native and original frame buffers.
-	void draw(SDL_Texture *texture, int x, int y, int w, int h);
-	void draw(const RenderElement2D *renderElements, int count, RenderSpace renderSpace);
-
-	// Causes all draw operations to render to a framebuffer that eventually is presented to the screen.
-	void setRenderTargetToFrameBuffer();
-
-	// Causes draw operations to render directly to the output window texture.
-	void setRenderTargetToOutput();
-
-	// Refreshes the displayed frame buffer.
-	void present();
+	// Runs the 3D renderer which draws the world onto the native frame buffer then runs the 2D renderer for UI.
+	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+		const RenderCamera &camera, const RenderFrameSettings &frameSettings);
 };
 
 #endif

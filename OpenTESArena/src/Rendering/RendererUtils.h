@@ -1,6 +1,8 @@
 #ifndef RENDERER_UTILS_H
 #define RENDERER_UTILS_H
 
+#include "SDL_pixels.h"
+
 #include "../Assets/ArenaTypes.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -14,6 +16,12 @@ struct RenderCamera;
 
 namespace RendererUtils
 {
+	// Default bits per pixel.
+	static constexpr int DEFAULT_BPP = 32;
+
+	// The default pixel format for all software surfaces, ARGB8888.
+	static constexpr uint32_t DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
+
 	constexpr double NEAR_PLANE = 0.02;
 	constexpr double FAR_PLANE = 1500.0;
 
@@ -21,7 +29,7 @@ namespace RendererUtils
 	constexpr int RESOLUTION_ALIGNMENT = 8;
 	static_assert(MathUtils::isPowerOf2(RESOLUTION_ALIGNMENT));
 
-	RenderCamera makeCamera(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, bool tallPixelCorrection);
+	double getTallPixelRatio(bool useTallPixelCorrection);
 
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);

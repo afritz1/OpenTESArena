@@ -4,7 +4,9 @@
 #include "SDL_vulkan.h"
 
 #include "RenderInitSettings.h"
-#include "VulkanRenderer.h"
+#include "VulkanRenderBackend.h"
+#include "Window.h"
+#include "../UI/Surface.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -103,12 +105,12 @@ namespace
 	}
 }
 
-bool VulkanRenderer::init(const RenderInitSettings &initSettings)
+bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 {
-	SDL_Window *window = initSettings.window;
+	const Window *window = initSettings.window;
 	const std::string &dataFolderPath = initSettings.dataFolderPath;
 
-	const Buffer<const char*> instanceExtensions = GetInstanceExtensions(window);
+	const Buffer<const char*> instanceExtensions = GetInstanceExtensions(window->window);
 	if (instanceExtensions.getCount() == 0)
 	{
 		DebugLogError("Couldn't get Vulkan instance extensions.");
@@ -137,13 +139,13 @@ bool VulkanRenderer::init(const RenderInitSettings &initSettings)
 	this->instance = std::move(instanceCreateResult.value);
 
 	VkSurfaceKHR vulkanSurface;
-	if (SDL_Vulkan_CreateSurface(window, this->instance, &vulkanSurface) != SDL_TRUE)
+	if (SDL_Vulkan_CreateSurface(window->window, this->instance, &vulkanSurface) != SDL_TRUE)
 	{
 		DebugLogErrorFormat("Couldn't create VkSurfaceKHR.");
 		return false;
 	}
 
-	this->surface = vulkanSurface;
+	this->surface = vk::SurfaceKHR(vulkanSurface);
 
 	vk::ResultValue<std::vector<vk::PhysicalDevice>> physicalDevicesResult = this->instance.enumeratePhysicalDevices();
 	if (physicalDevicesResult.result != vk::Result::eSuccess)
@@ -329,7 +331,7 @@ bool VulkanRenderer::init(const RenderInitSettings &initSettings)
 	if (swapchainExtent.width == std::numeric_limits<uint32_t>::max())
 	{
 		int windowWidth, windowHeight;
-		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+		SDL_GetWindowSize(window->window, &windowWidth, &windowHeight);
 		swapchainExtent.width = windowWidth;
 		swapchainExtent.height = windowHeight;
 	}
@@ -741,7 +743,7 @@ bool VulkanRenderer::init(const RenderInitSettings &initSettings)
 	return true;
 }
 
-void VulkanRenderer::shutdown()
+void VulkanRenderBackend::shutdown()
 {
 	if (this->device)
 	{
@@ -857,126 +859,144 @@ void VulkanRenderer::shutdown()
 	}
 }
 
-bool VulkanRenderer::isInited() const
-{
-	DebugNotImplemented();
-	return false;
-}
-
-void VulkanRenderer::resize(int width, int height)
+void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
 {
 	DebugNotImplemented();
 }
 
-VertexPositionBufferID VulkanRenderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
+void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
+{
+	DebugNotImplemented();
+}
+
+VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
 {
 	DebugNotImplemented();
 	return VertexPositionBufferID();
 }
 
-VertexAttributeBufferID VulkanRenderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
+VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
 {
 	DebugNotImplemented();
 	return VertexAttributeBufferID();
 }
 
-IndexBufferID VulkanRenderer::createIndexBuffer(int indexCount)
+IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount)
 {
 	DebugNotImplemented();
 	return IndexBufferID();
 }
 
-void VulkanRenderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
+void VulkanRenderBackend::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
+void VulkanRenderBackend::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
+void VulkanRenderBackend::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::freeVertexPositionBuffer(VertexPositionBufferID id)
+void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
+void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::freeIndexBuffer(IndexBufferID id)
+void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 {
 	DebugNotImplemented();
 }
 
-ObjectTextureAllocator *VulkanRenderer::getTextureAllocator()
+ObjectTextureAllocator *VulkanRenderBackend::getObjectTextureAllocator()
 {
 	DebugNotImplemented();
 	return nullptr;
 }
 
-UniformBufferID VulkanRenderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
+UiTextureAllocator *VulkanRenderBackend::getUiTextureAllocator()
+{
+	DebugNotImplemented();
+	return nullptr;
+}
+
+UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
 {
 	DebugNotImplemented();
 	return UniformBufferID();
 }
 
-void VulkanRenderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
+void VulkanRenderBackend::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
+void VulkanRenderBackend::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::freeUniformBuffer(UniformBufferID id)
+void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 {
 	DebugNotImplemented();
 }
 
-RenderLightID VulkanRenderer::createLight()
+RenderLightID VulkanRenderBackend::createLight()
 {
 	DebugNotImplemented();
 	return RenderLightID();
 }
 
-void VulkanRenderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
+void VulkanRenderBackend::setLightPosition(RenderLightID id, const Double3 &worldPoint)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)
+void VulkanRenderBackend::setLightRadius(RenderLightID id, double startRadius, double endRadius)
 {
 	DebugNotImplemented();
 }
 
-void VulkanRenderer::freeLight(RenderLightID id)
+void VulkanRenderBackend::freeLight(RenderLightID id)
 {
 	DebugNotImplemented();
 }
 
-std::optional<Int2> VulkanRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
+std::optional<Int2> VulkanRenderBackend::tryGetObjectTextureDims(ObjectTextureID id) const
 {
 	DebugNotImplemented();
 	return std::optional<Int2>();
 }
 
-Renderer3DProfilerData VulkanRenderer::getProfilerData() const
+std::optional<Int2> VulkanRenderBackend::tryGetUiTextureDims(UiTextureID id) const
+{
+	DebugNotImplemented();
+	return std::optional<Int2>();
+}
+
+Renderer3DProfilerData VulkanRenderBackend::getProfilerData() const
 {
 	DebugNotImplemented();
 	return Renderer3DProfilerData(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
-void VulkanRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, const RenderCommandList &commandList, uint32_t *outputBuffer)
+Surface VulkanRenderBackend::getScreenshot() const
+{
+	DebugNotImplemented();
+	return Surface();
+}
+
+void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
 	constexpr uint64_t busyFenceWaitTimeout = std::numeric_limits<uint64_t>::max();
 	const vk::Result busyFenceWaitResult = this->device.waitForFences(this->busyFence, VK_TRUE, busyFenceWaitTimeout);

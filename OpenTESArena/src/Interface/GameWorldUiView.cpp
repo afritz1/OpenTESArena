@@ -761,7 +761,8 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 				}
 				}
 
-				renderer.drawRect(color, x, y, selectionDim, selectionDim);
+				DebugNotImplemented();
+				//renderer.drawRect(color, x, y, selectionDim, selectionDim);
 			}
 		}
 	}
@@ -1001,6 +1002,7 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 			renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
 		const RenderElement2D renderElement(quadtreeTextureRef.get(), xPercent, yPercent, wPercent, hPercent);
-		renderer.draw(&renderElement, 1, renderSpace);
+		DebugNotImplemented();
+		//renderer.draw(&renderElement, 1, renderSpace);
 	}
 }

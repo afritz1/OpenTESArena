@@ -214,57 +214,55 @@ double Window::getViewAspectRatio() const
 	return static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
 }
 
-SDL_Rect Window::getLetterboxDimensions() const
+Rect Window::getLetterboxRect() const
 {
 	const Int2 windowDims = this->getDimensions();
-	const double nativeAspect = static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
+	const double windowAspect = static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
 	const double letterboxAspect = this->getLetterboxAspectRatio();
 
+	Rect rect;
+
 	// Compare the two aspects to decide what the letterbox dimensions are.
-	if (std::abs(nativeAspect - letterboxAspect) < Constants::Epsilon)
+	if (std::abs(windowAspect - letterboxAspect) < Constants::Epsilon)
 	{
 		// Equal aspects. The letterbox is equal to the screen size.
-		SDL_Rect rect;
 		rect.x = 0;
 		rect.y = 0;
-		rect.w = windowDims.x;
-		rect.h = windowDims.y;
-		return rect;
+		rect.width = windowDims.x;
+		rect.height = windowDims.y;
 	}
-	else if (nativeAspect > letterboxAspect)
+	else if (windowAspect > letterboxAspect)
 	{
 		// Native window is wider = empty left and right.
 		const int subWidth = static_cast<int>(std::ceil(static_cast<double>(windowDims.y) * letterboxAspect));
-		SDL_Rect rect;
 		rect.x = (windowDims.x - subWidth) / 2;
 		rect.y = 0;
-		rect.w = subWidth;
-		rect.h = windowDims.y;
-		return rect;
+		rect.width = subWidth;
+		rect.height = windowDims.y;
 	}
 	else
 	{
 		// Native window is taller = empty top and bottom.
 		const int subHeight = static_cast<int>(std::ceil(static_cast<double>(windowDims.x) / letterboxAspect));
-		SDL_Rect rect;
 		rect.x = 0;
 		rect.y = (windowDims.y - subHeight) / 2;
-		rect.w = windowDims.x;
-		rect.h = subHeight;
-		return rect;
+		rect.width = windowDims.x;
+		rect.height = subHeight;
 	}
+
+	return rect;
 }
 
 Int2 Window::nativeToOriginal(const Int2 &nativePoint) const
 {
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
+	const Rect letterboxRect = this->getLetterboxRect();
 	const Int2 letterboxPoint(
-		nativePoint.x - letterbox.x,
-		nativePoint.y - letterbox.y);
+		nativePoint.x - letterboxRect.x,
+		nativePoint.y - letterboxRect.y);
 
 	// Then from letterbox point to original point.
-	const double letterboxXPercent = static_cast<double>(letterboxPoint.x) / static_cast<double>(letterbox.w);
-	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) / static_cast<double>(letterbox.h);
+	const double letterboxXPercent = static_cast<double>(letterboxPoint.x) / static_cast<double>(letterboxRect.width);
+	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) / static_cast<double>(letterboxRect.height);
 
 	const double originalWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
 	const double originalHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
@@ -293,9 +291,9 @@ Int2 Window::originalToNative(const Int2 &originalPoint) const
 	const double originalXPercent = static_cast<double>(originalPoint.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
 	const double originalYPercent = static_cast<double>(originalPoint.y) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
-	const double letterboxWidthReal = static_cast<double>(letterbox.w);
-	const double letterboxHeightReal = static_cast<double>(letterbox.h);
+	const Rect letterbox = this->getLetterboxRect();
+	const double letterboxWidthReal = static_cast<double>(letterbox.width);
+	const double letterboxHeightReal = static_cast<double>(letterbox.height);
 
 	// Convert to letterbox point. Round to avoid off-by-one errors.
 	const Int2 letterboxPoint(
@@ -323,9 +321,8 @@ Rect Window::originalToNative(const Rect &originalRect) const
 
 bool Window::letterboxContains(const Int2 &nativePoint) const
 {
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
-	const Rect rectangle(letterbox.x, letterbox.y, letterbox.w, letterbox.h);
-	return rectangle.contains(nativePoint);
+	const Rect letterboxRect = this->getLetterboxRect();
+	return letterboxRect.contains(nativePoint);
 }
 
 void Window::setMode(RenderWindowMode mode)

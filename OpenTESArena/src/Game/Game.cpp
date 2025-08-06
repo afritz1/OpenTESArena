@@ -43,10 +43,12 @@
 #include "../Player/PlayerInterface.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
+#include "../Rendering/RenderBackendType.h"
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/RenderCommand.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Rendering/RenderFrameSettings.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/CharacterRaceLibrary.h"
 #include "../Time/ClockLibrary.h"
@@ -287,13 +289,12 @@ bool Game::init()
 		return this->options.getGraphics_ResolutionScale();
 	};
 
-	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
-	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
+	constexpr RenderBackendType renderBackendType = RenderBackendType::Sdl2DSoft3D;
+	const int renderThreadsMode = this->options.getGraphics_RenderThreadsMode();
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
-	if (!this->renderer.init(&this->window, resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D,
-		this->options.getGraphics_RenderThreadsMode(), ditheringMode, dataFolderPath))
+	if (!this->renderer.init(&this->window, renderBackendType, resolutionScaleFunc, renderThreadsMode, ditheringMode, dataFolderPath))
 	{
-		DebugLogErrorFormat("Couldn't init renderer (2D: %d, 3D: %d).", rendererSystemType2D, rendererSystemType3D);
+		DebugLogErrorFormat("Couldn't init renderer.");
 		return false;
 	}
 
@@ -409,7 +410,7 @@ bool Game::init()
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";
-	const Surface windowIconSurface = Surface::loadBMP(windowIconPath.c_str(), Renderer::DEFAULT_PIXELFORMAT);
+	const Surface windowIconSurface = Surface::loadBMP(windowIconPath.c_str(), RendererUtils::DEFAULT_PIXELFORMAT);
 	if (windowIconSurface.get() == nullptr)
 	{
 		DebugLogError("Couldn't load window icon with path \"" + windowIconPath + "\".");
@@ -558,8 +559,11 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
 		const WorldDouble3 playerPosition = this->player.getEyePosition();
-		const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY,
-			this->options.getGraphics_VerticalFOV(), this->window.getViewAspectRatio(), this->options.getGraphics_TallPixelCorrection());
+		const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
+		
+		RenderCamera renderCamera;
+		renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, this->options.getGraphics_VerticalFOV(), this->window.getViewAspectRatio(), tallPixelRatio);
+
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
 	}
@@ -707,8 +711,7 @@ void Game::renderDebugInfo()
 		const std::string averageFrameTimeText = String::fixedPrecision(averageFrameTimeMS, 1);
 		const std::string lowestFrameTimeText = String::fixedPrecision(lowestFrameTimeMS, 1);
 		const std::string highestFrameTimeText = String::fixedPrecision(highestFrameTimeMS, 1);
-		debugText.append("FPS: " + averageFpsText + " (" + averageFrameTimeText + "ms " + lowestFrameTimeText +
-			"ms " + highestFrameTimeText + "ms)");
+		debugText.append("FPS: " + averageFpsText + " (" + averageFrameTimeText + "ms " + lowestFrameTimeText + "ms " + highestFrameTimeText + "ms)");
 	}
 
 	const Int2 windowDims = this->window.getDimensions();
@@ -775,11 +778,11 @@ void Game::renderDebugInfo()
 		if (this->shouldRenderScene)
 		{
 			// Set Jolt Physics camera position for LOD.
-			const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerCoord);
+			/*const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerCoord);
 			this->renderer.SetCameraPos(JPH::RVec3Arg(static_cast<float>(playerWorldPos.x), static_cast<float>(playerWorldPos.y), static_cast<float>(playerWorldPos.z)));
 
 			JPH::BodyManager::DrawSettings drawSettings;
-			this->physicsSystem.DrawBodies(drawSettings, &this->renderer);
+			this->physicsSystem.DrawBodies(drawSettings, &this->renderer);*/
 		}		
 
 		GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(*this);
@@ -799,7 +802,8 @@ void Game::renderDebugInfo()
 		renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
 	const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
-	this->renderer.draw(&renderElement, 1, renderSpace);
+	// @todo properly allocate this stuff ^ as UiTextureID then draw that w/ UiCommandList. Probably pass UiCommandList& to this function
+	//this->renderer.draw(&renderElement, 1, renderSpace);
 }
 
 void Game::loop()
@@ -941,8 +945,9 @@ void Game::loop()
 				const WorldDouble3 newPlayerPosition = this->player.getEyePosition();
 				const Degrees newPlayerYaw = this->player.angleX;
 				const Degrees newPlayerPitch = this->player.angleY;
-				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(),
-					this->window.getViewAspectRatio(), this->options.getGraphics_TallPixelCorrection());
+				const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
+				RenderCamera renderCamera;
+				renderCamera.init(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(), this->window.getViewAspectRatio(), tallPixelRatio);
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(renderCamera, *this);
@@ -976,13 +981,13 @@ void Game::loop()
 		// Render.
 		try
 		{
-			this->renderer.setRenderTargetToFrameBuffer();
-			this->renderer.clear();
+			RenderCommandList renderCommandList;
+			UiCommandList uiCommandList;
+			RenderCamera renderCamera;
+			RenderFrameSettings frameSettings;
 
 			if (this->shouldRenderScene)
 			{
-				RenderCommandList renderCommandList;
-
 				const RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
 				renderSkyManager.populateCommandList(renderCommandList);
 
@@ -997,12 +1002,14 @@ void Game::loop()
 				const MapType activeMapType = activeMapDef.getMapType();
 				const double ambientPercent = ArenaRenderUtils::getAmbientPercent(this->gameState.getClock(), activeMapType, isFoggy);
 				const Span<const RenderLightID> visibleLightIDs = this->sceneManager.renderLightManager.getVisibleLightIDs();
-				const double chasmAnimPercent = this->gameState.getChasmAnimPercent();
+				const double screenSpaceAnimPercent = this->gameState.getChasmAnimPercent();
 
 				const WorldDouble3 playerPosition = this->player.getEyePosition();
 				const Degrees fovY = this->options.getGraphics_VerticalFOV();
 				const double viewAspectRatio = this->window.getViewAspectRatio();
-				const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY, fovY, viewAspectRatio, this->options.getGraphics_TallPixelCorrection());
+				const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
+				renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, fovY, viewAspectRatio, tallPixelRatio);
+
 				const ObjectTextureID paletteTextureID = this->sceneManager.gameWorldPaletteTextureRef.get();
 
 				const bool isInterior = this->gameState.getActiveMapType() == MapType::Interior;
@@ -1023,14 +1030,10 @@ void Game::loop()
 				const ObjectTextureID skyBgTextureID = renderSkyManager.getBgTextureID();
 				const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
 
-				// Draw game world onto the native frame buffer. The game world buffer might not completely fill
-				// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-				this->renderer.submitSceneCommands(renderCamera, renderCommandList, ambientPercent, visibleLightIDs, chasmAnimPercent, paletteTextureID,
-					lightTableTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
+				frameSettings.init(ambientPercent, visibleLightIDs, screenSpaceAnimPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
+					this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
-			// Get UI draw calls from each panel/sub-panel and determine what to draw.
-			UiCommandList uiCommandList;
 			this->panel->populateCommandList(uiCommandList);
 
 			for (const std::unique_ptr<Panel> &subPanel : this->subPanels)
@@ -1038,10 +1041,10 @@ void Game::loop()
 				subPanel->populateCommandList(uiCommandList);
 			}
 
-			this->renderer.submitUiCommands(uiCommandList);
+			this->renderer.submitFrame(renderCommandList, uiCommandList, renderCamera, frameSettings);
 
-			this->renderDebugInfo();
-			this->renderer.present();
+			// @todo replace this with proper UiCommandList population of debug text box UiDrawCall
+			//this->renderDebugInfo();
 		}
 		catch (const std::exception &e)
 		{

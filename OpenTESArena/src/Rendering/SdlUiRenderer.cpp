@@ -1,10 +1,12 @@
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <type_traits>
 
 #include "SDL_render.h"
 
 #include "ArenaRenderUtils.h"
+#include "Renderer.h"
 #include "SdlUiRenderer.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"

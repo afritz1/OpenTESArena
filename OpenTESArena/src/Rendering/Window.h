@@ -54,7 +54,7 @@ struct Window
 	double getViewAspectRatio() const;
 
 	// For the "letterbox" part of the screen, scaled to fit the window using the given letterbox aspect.
-	SDL_Rect getLetterboxDimensions() const;
+	Rect getLetterboxRect() const;
 
 	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original (320x200) point or rectangle.
 	// Points outside the letterbox will either be negative or outside the 320x200 limit when returned.

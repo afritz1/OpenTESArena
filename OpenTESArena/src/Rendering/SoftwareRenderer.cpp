@@ -9,6 +9,7 @@
 #include <thread>
 
 #include "ArenaRenderUtils.h"
+#include "RenderBackend.h"
 #include "RenderCamera.h"
 #include "RenderCommand.h"
 #include "RenderDrawCall.h"
@@ -4492,8 +4493,8 @@ SoftwareRenderer::~SoftwareRenderer()
 
 bool SoftwareRenderer::init(const RenderInitSettings &initSettings)
 {
-	const int frameBufferWidth = initSettings.width;
-	const int frameBufferHeight = initSettings.height;
+	const int frameBufferWidth = initSettings.internalWidth;
+	const int frameBufferHeight = initSettings.internalHeight;
 	this->paletteIndexBuffer.init(frameBufferWidth, frameBufferHeight);
 	this->depthBuffer.init(frameBufferWidth, frameBufferHeight);
 
@@ -4663,7 +4664,7 @@ ObjectTextureAllocator *SoftwareRenderer::getTextureAllocator()
 	return &this->textureAllocator;
 }
 
-std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
+std::optional<Int2> SoftwareRenderer::tryGetTextureDims(ObjectTextureID id) const
 {
 	const SoftwareObjectTexture &texture = this->objectTextures.get(id);
 	return Int2(texture.width, texture.height);

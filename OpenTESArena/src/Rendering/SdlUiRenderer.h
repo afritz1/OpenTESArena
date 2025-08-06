@@ -1,16 +1,17 @@
 #ifndef SDL_UI_RENDERER_H
 #define SDL_UI_RENDERER_H
 
-#include <functional>
-#include <unordered_map>
+#include <optional>
 
-#include "RendererSystem2D.h"
 #include "RenderTextureAllocator.h"
 
 #include "components/utilities/RecyclablePool.h"
 #include "components/utilities/Span2D.h"
 
+enum class RenderSpace;
+
 struct Rect;
+struct RenderElement2D;
 struct SDL_Renderer;
 struct SDL_Texture;
 
@@ -36,7 +37,7 @@ struct SdlUiTextureAllocator final : public UiTextureAllocator
 	void unlock(UiTextureID textureID) override;
 };
 
-class SdlUiRenderer final : public RendererSystem2D
+class SdlUiRenderer
 {
 private:
 	SDL_Renderer *renderer;
@@ -45,13 +46,13 @@ private:
 public:
 	SdlUiRenderer();
 
-	bool init(SDL_Window *window) override;
-	void shutdown() override;
+	bool init(SDL_Window *window);
+	void shutdown();
 	
-	UiTextureAllocator *getTextureAllocator() override;
-	std::optional<Int2> tryGetTextureDims(UiTextureID id) const override;
+	UiTextureAllocator *getTextureAllocator();
+	std::optional<Int2> tryGetTextureDims(UiTextureID id) const;
 
-	void draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect) override;
+	void draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect);
 };
 
 #endif

@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "RendererSystem3D.h"
 #include "RenderLightUtils.h"
 #include "RenderTextureAllocator.h"
 #include "../Math/MathUtils.h"
@@ -21,6 +20,8 @@
 #include "components/utilities/Span.h"
 #include "components/utilities/Span2D.h"
 #include "components/utilities/Span3D.h"
+
+struct Renderer3DProfilerData;
 
 struct SoftwareObjectTexture
 {
@@ -139,7 +140,7 @@ struct SoftwareObjectTextureAllocator final : public ObjectTextureAllocator
 	void unlock(ObjectTextureID textureID) override;
 };
 
-class SoftwareRenderer final : public RendererSystem3D
+class SoftwareRenderer
 {
 private:
 	Buffer2D<uint8_t> paletteIndexBuffer; // Intermediate buffer to support back-to-front transparencies.
@@ -157,41 +158,41 @@ private:
 	SoftwareObjectTextureAllocator textureAllocator;
 public:
 	SoftwareRenderer();
-	~SoftwareRenderer() override;
+	~SoftwareRenderer();
 
-	bool init(const RenderInitSettings &initSettings) override;
-	void shutdown() override;
-	bool isInited() const override;
+	bool init(const RenderInitSettings &initSettings);
+	void shutdown();
+	bool isInited() const;
 
-	void resize(int width, int height) override;
+	void resize(int width, int height);
 
-	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) override;
-	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) override;
-	IndexBufferID createIndexBuffer(int indexCount) override;
-	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions) override;
-	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes) override;
-	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices) override;
-	void freeVertexPositionBuffer(VertexPositionBufferID id) override;
-	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
-	void freeIndexBuffer(IndexBufferID id) override;
+	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex);
+	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex);
+	IndexBufferID createIndexBuffer(int indexCount);
+	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions);
+	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes);
+	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices);
+	void freeVertexPositionBuffer(VertexPositionBufferID id);
+	void freeVertexAttributeBuffer(VertexAttributeBufferID id);
+	void freeIndexBuffer(IndexBufferID id);
 
-	ObjectTextureAllocator *getTextureAllocator() override;
-	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
+	ObjectTextureAllocator *getTextureAllocator();
+	std::optional<Int2> tryGetTextureDims(ObjectTextureID id) const;
 
-	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) override;
-	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data) override;
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData) override;
-	void freeUniformBuffer(UniformBufferID id) override;
+	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
+	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data);
+	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData);
+	void freeUniformBuffer(UniformBufferID id);
 
-	RenderLightID createLight() override;
-	void setLightPosition(RenderLightID id, const Double3 &worldPoint) override;
-	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
-	void freeLight(RenderLightID id) override;
+	RenderLightID createLight();
+	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
+	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
+	void freeLight(RenderLightID id);
 
-	Renderer3DProfilerData getProfilerData() const override;
+	Renderer3DProfilerData getProfilerData() const;
 
 	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
-		const RenderCommandList &commandList, uint32_t *outputBuffer) override;
+		const RenderCommandList &commandList, uint32_t *outputBuffer);
 };
 
 #endif

@@ -1,5 +1,5 @@
-#ifndef VULKAN_RENDERER_H
-#define VULKAN_RENDERER_H
+#ifndef VULKAN_RENDER_BACKEND_H
+#define VULKAN_RENDER_BACKEND_H
 
 #include <vector>
 
@@ -7,11 +7,11 @@
 #define VULKAN_HPP_NO_SMART_HANDLE
 #include "vulkan/vulkan.hpp"
 
-#include "RendererSystem3D.h"
+#include "RenderBackend.h"
 
 #include "components/utilities/Buffer.h"
 
-class VulkanRenderer final : public RendererSystem3D
+class VulkanRenderBackend final : public RenderBackend
 {
 private:
 	vk::Instance instance;
@@ -46,9 +46,8 @@ public:
 	bool init(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
 
-	bool isInited() const override;
-
-	void resize(int width, int height) override;
+	void resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight) override;
+	void handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight) override;
 
 	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) override;
 	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) override;
@@ -60,7 +59,10 @@ public:
 	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
 	void freeIndexBuffer(IndexBufferID id) override;
 
-	ObjectTextureAllocator *getTextureAllocator() override;
+	ObjectTextureAllocator *getObjectTextureAllocator() override;
+	UiTextureAllocator *getUiTextureAllocator() override;
+	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
+	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const override;
 
 	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) override;
 	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data) override;
@@ -72,11 +74,12 @@ public:
 	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
 	void freeLight(RenderLightID id) override;
 
-	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
-
 	Renderer3DProfilerData getProfilerData() const override;
 
-	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings, const RenderCommandList &commandList, uint32_t *outputBuffer) override;
+	Surface getScreenshot() const override;
+
+	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;
 };
 
 #endif

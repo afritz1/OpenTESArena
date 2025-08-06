@@ -22,16 +22,6 @@ struct Surface;
 struct UiCommandList;
 struct UiTextureAllocator;
 
-struct RenderElement2D
-{
-	UiTextureID id;
-	double x, y; // X and Y percents across the render space.
-	double width, height; // Percents of render space dimensions.
-	// @todo: optional shading/blending parameters? SDL_BlendMode? Alpha percent?
-
-	RenderElement2D(UiTextureID id, double x, double y, double width, double height);
-};
-
 // Profiling info gathered from internal renderer state.
 struct Renderer3DProfilerData
 {
@@ -95,8 +85,8 @@ public:
 	virtual Surface getScreenshot() const = 0;
 
 	// Renders a frame to the target window. Currently this is blocking and should be safe to present the frame upon returning.
-	virtual void submitFrame(const RenderCamera &camera, const RenderFrameSettings &frameSettings,
-		const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList) = 0;
+	virtual void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+		const RenderCamera &camera, const RenderFrameSettings &frameSettings) = 0;
 };
 
 #endif

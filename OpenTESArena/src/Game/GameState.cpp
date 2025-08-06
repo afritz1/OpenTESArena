@@ -710,8 +710,9 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.random, textureManager);
 
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY,
-		options.getGraphics_VerticalFOV(), window.getViewAspectRatio(), options.getGraphics_TallPixelCorrection());
+	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
+	RenderCamera renderCamera;
+	renderCamera.init(playerPosition, player.angleX, player.angleY, options.getGraphics_VerticalFOV(), window.getViewAspectRatio(), tallPixelRatio);
 
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
