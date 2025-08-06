@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <limits>
 
 #include "SDL_vulkan.h"
 
@@ -26,6 +27,9 @@ namespace
 	{
 		"VK_LAYER_KHRONOS_validation"
 	};
+
+	constexpr uint32_t INVALID_UINT32 = std::numeric_limits<uint32_t>::max();
+	constexpr uint64_t TIMEOUT_UNLIMITED = std::numeric_limits<uint64_t>::max();
 
 	Buffer<const char*> GetInstanceExtensions(SDL_Window *window)
 	{
@@ -101,8 +105,86 @@ namespace
 			}
 		}
 
-		return std::numeric_limits<uint32_t>::max();
+		return INVALID_UINT32;
 	}
+}
+
+void VulkanObjectTextureAllocator::init(vk::Device device)
+{
+	this->device = device;
+}
+
+ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int bytesPerTexel)
+{
+	DebugNotImplemented();
+	return ObjectTextureID();
+}
+
+ObjectTextureID VulkanObjectTextureAllocator::create(const TextureBuilder &textureBuilder)
+{
+	DebugNotImplemented();
+	return ObjectTextureID();
+}
+
+void VulkanObjectTextureAllocator::free(ObjectTextureID textureID)
+{
+	DebugNotImplemented();
+}
+
+LockedTexture VulkanObjectTextureAllocator::lock(ObjectTextureID textureID)
+{
+	DebugNotImplemented();
+	return LockedTexture();
+}
+
+void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
+{
+	DebugNotImplemented();
+}
+
+void VulkanUiTextureAllocator::init(vk::Device device)
+{
+	this->device = device;
+}
+
+UiTextureID VulkanUiTextureAllocator::create(int width, int height)
+{
+	DebugNotImplemented();
+	return UiTextureID();
+}
+
+UiTextureID VulkanUiTextureAllocator::create(Span2D<const uint32_t> texels)
+{
+	DebugNotImplemented();
+	return UiTextureID();
+}
+
+UiTextureID VulkanUiTextureAllocator::create(Span2D<const uint8_t> texels, const Palette &palette)
+{
+	DebugNotImplemented();
+	return UiTextureID();
+}
+
+UiTextureID VulkanUiTextureAllocator::create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
+{
+	DebugNotImplemented();
+	return UiTextureID();
+}
+
+void VulkanUiTextureAllocator::free(UiTextureID textureID)
+{
+	DebugNotImplemented();
+}
+
+LockedTexture VulkanUiTextureAllocator::lock(UiTextureID textureID)
+{
+	DebugNotImplemented();
+	return LockedTexture();
+}
+
+void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
+{
+	DebugNotImplemented();
 }
 
 bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
@@ -164,7 +246,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const vk::PhysicalDevice physicalDevice = GetBestPhysicalDevice(physicalDevices);
 	
 	const std::vector<vk::QueueFamilyProperties> queueFamilyPropertiesList = physicalDevice.getQueueFamilyProperties();
-	uint32_t graphicsQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
+	uint32_t graphicsQueueFamilyIndex = INVALID_UINT32;
 	for (uint32_t i = 0; i < queueFamilyPropertiesList.size(); i++)
 	{
 		const vk::QueueFamilyProperties &queueFamilyProperties = queueFamilyPropertiesList[i];
@@ -175,13 +257,13 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		}
 	}
 
-	if (graphicsQueueFamilyIndex == std::numeric_limits<uint32_t>::max())
+	if (graphicsQueueFamilyIndex == INVALID_UINT32)
 	{
 		DebugLogErrorFormat("No graphics queue family index found.");
 		return false;
 	}
 
-	uint32_t presentQueueFamilyIndex = std::numeric_limits<uint32_t>::max();
+	uint32_t presentQueueFamilyIndex = INVALID_UINT32;
 	for (uint32_t i = 0; i < queueFamilyPropertiesList.size(); i++)
 	{
 		vk::ResultValue<uint32_t> surfaceSupportResult = physicalDevice.getSurfaceSupportKHR(i, this->surface);
@@ -203,7 +285,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		}
 	}
 
-	if (presentQueueFamilyIndex == std::numeric_limits<uint32_t>::max())
+	if (presentQueueFamilyIndex == INVALID_UINT32)
 	{
 		DebugLogErrorFormat("Couldn't find present queue family index.");
 		return false;
@@ -236,6 +318,8 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	this->device = std::move(deviceCreateResult.value);
 	this->graphicsQueue = this->device.getQueue(graphicsQueueFamilyIndex, 0);
 	this->presentQueue = this->device.getQueue(presentQueueFamilyIndex, 0);
+	this->objectTextureAllocator.init(this->device);
+	this->uiTextureAllocator.init(this->device);
 
 	vk::CommandPoolCreateInfo commandPoolCreateInfo;
 	commandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
@@ -328,7 +412,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	vk::Extent2D swapchainExtent = surfaceCapabilities.currentExtent;
-	if (swapchainExtent.width == std::numeric_limits<uint32_t>::max())
+	if (swapchainExtent.width == INVALID_UINT32)
 	{
 		int windowWidth, windowHeight;
 		SDL_GetWindowSize(window->window, &windowWidth, &windowHeight);
@@ -635,7 +719,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	vk::MemoryAllocateInfo vertexBufferMemoryAllocateInfo;
 	vertexBufferMemoryAllocateInfo.allocationSize = vertexBufferMemoryRequirements.size;
 	vertexBufferMemoryAllocateInfo.memoryTypeIndex = FindBufferMemoryTypeIndex(vertexBufferMemoryRequirements, vertexBufferMemoryPropertyFlags, physicalDevice);
-	if (vertexBufferMemoryAllocateInfo.memoryTypeIndex == std::numeric_limits<uint32_t>::max())
+	if (vertexBufferMemoryAllocateInfo.memoryTypeIndex == INVALID_UINT32)
 	{
 		DebugLogErrorFormat("Couldn't find suitable vertex buffer memory type.");
 		return false;
@@ -919,14 +1003,12 @@ void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 
 ObjectTextureAllocator *VulkanRenderBackend::getObjectTextureAllocator()
 {
-	DebugNotImplemented();
-	return nullptr;
+	return &this->objectTextureAllocator;
 }
 
 UiTextureAllocator *VulkanRenderBackend::getUiTextureAllocator()
 {
-	DebugNotImplemented();
-	return nullptr;
+	return &this->uiTextureAllocator;
 }
 
 UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
@@ -998,7 +1080,7 @@ Surface VulkanRenderBackend::getScreenshot() const
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
-	constexpr uint64_t busyFenceWaitTimeout = std::numeric_limits<uint64_t>::max();
+	constexpr uint64_t busyFenceWaitTimeout = TIMEOUT_UNLIMITED;
 	const vk::Result busyFenceWaitResult = this->device.waitForFences(this->busyFence, VK_TRUE, busyFenceWaitTimeout);
 	if (busyFenceWaitResult != vk::Result::eSuccess)
 	{
@@ -1013,7 +1095,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		return;
 	}
 
-	constexpr uint64_t acquireTimeout = std::numeric_limits<uint64_t>::max();
+	constexpr uint64_t acquireTimeout = TIMEOUT_UNLIMITED;
 	vk::ResultValue<uint32_t> swapchainAcquiredImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
 	if (swapchainAcquiredImageIndexResult.result != vk::Result::eSuccess)
 	{

@@ -8,8 +8,41 @@
 #include "vulkan/vulkan.hpp"
 
 #include "RenderBackend.h"
+#include "RenderTextureAllocator.h"
 
 #include "components/utilities/Buffer.h"
+
+struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
+{
+	vk::Device device;
+
+	void init(vk::Device device);
+
+	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
+	ObjectTextureID create(const TextureBuilder &textureBuilder) override;
+	
+	void free(ObjectTextureID textureID) override;
+
+	LockedTexture lock(ObjectTextureID textureID) override;
+	void unlock(ObjectTextureID textureID) override;
+};
+
+struct VulkanUiTextureAllocator final : public UiTextureAllocator
+{
+	vk::Device device;
+
+	void init(vk::Device device);
+
+	UiTextureID create(int width, int height) override;
+	UiTextureID create(Span2D<const uint32_t> texels) override;
+	UiTextureID create(Span2D<const uint8_t> texels, const Palette &palette) override;
+	UiTextureID create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager) override;
+
+	void free(UiTextureID textureID) override;
+
+	LockedTexture lock(UiTextureID textureID) override;
+	void unlock(UiTextureID textureID) override;
+};
 
 class VulkanRenderBackend final : public RenderBackend
 {
@@ -42,6 +75,9 @@ private:
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;
 	vk::Fence busyFence;
+
+	VulkanObjectTextureAllocator objectTextureAllocator;
+	VulkanUiTextureAllocator uiTextureAllocator;
 public:
 	bool init(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
