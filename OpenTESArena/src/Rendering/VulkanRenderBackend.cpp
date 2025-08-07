@@ -14,6 +14,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
 #include "components/utilities/File.h"
+#include "components/utilities/StringView.h"
 
 namespace
 {
@@ -24,11 +25,6 @@ namespace
 	};
 
 	constexpr uint32_t RequiredApiVersion = VK_API_VERSION_1_0;
-
-	constexpr const char *ValidationLayers[] =
-	{
-		"VK_LAYER_KHRONOS_validation"
-	};
 
 	constexpr uint32_t INVALID_UINT32 = std::numeric_limits<uint32_t>::max();
 	constexpr uint64_t TIMEOUT_UNLIMITED = std::numeric_limits<uint64_t>::max();
@@ -48,6 +44,39 @@ namespace
 		}
 
 		return extensions;
+	}
+
+	std::vector<const char*> GetInstanceValidationLayers()
+	{
+		vk::ResultValue<std::vector<vk::LayerProperties>> availableValidationLayersResult = vk::enumerateInstanceLayerProperties();
+		if (availableValidationLayersResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't enumerate validation layers (%d).", availableValidationLayersResult.result);
+			return std::vector<const char*>();
+		}
+
+		const std::vector<vk::LayerProperties> availableValidationLayers = std::move(availableValidationLayersResult.value);
+
+		std::vector<const char*> validationLayers;
+
+		bool supportsKhronosValidationLayer = false;
+		const char *khronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
+		for (const vk::LayerProperties &layerProperties : availableValidationLayers)
+		{
+			if (StringView::equals(layerProperties.layerName, khronosValidationLayerName))
+			{
+				supportsKhronosValidationLayer = true;
+				validationLayers.emplace_back(khronosValidationLayerName);
+				break;
+			}
+		}
+
+		if (!supportsKhronosValidationLayer)
+		{
+			DebugLogWarningFormat("%s not supported.", khronosValidationLayerName);
+		}
+
+		return validationLayers;
 	}
 
 	vk::PhysicalDevice GetBestPhysicalDevice(Span<const vk::PhysicalDevice> physicalDevices)
@@ -388,10 +417,12 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	appInfo.applicationVersion = 0;
 	appInfo.apiVersion = RequiredApiVersion;
 
+	const std::vector<const char*> instanceValidationLayers = GetInstanceValidationLayers();
+
 	vk::InstanceCreateInfo instanceCreateInfo;
 	instanceCreateInfo.pApplicationInfo = &appInfo;
-	instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(std::size(ValidationLayers));
-	instanceCreateInfo.ppEnabledLayerNames = ValidationLayers;
+	instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceValidationLayers.size());
+	instanceCreateInfo.ppEnabledLayerNames = instanceValidationLayers.data();
 	instanceCreateInfo.enabledExtensionCount = instanceExtensions.getCount();
 	instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.begin();
 
