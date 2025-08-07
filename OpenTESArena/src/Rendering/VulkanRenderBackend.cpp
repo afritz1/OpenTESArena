@@ -809,18 +809,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	this->renderIsFinishedSemaphore = std::move(renderIsFinishedSemaphoreResult.value);
 
-	vk::FenceCreateInfo fenceCreateInfo;
-	fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-
-	vk::ResultValue<vk::Fence> busyFenceResult = this->device.createFence(fenceCreateInfo);
-	if (busyFenceResult.result != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't create busy fence (%d).", busyFenceResult.result);
-		return false;
-	}
-
-	this->busyFence = std::move(busyFenceResult.value);
-
 	return true;
 }
 
@@ -828,12 +816,6 @@ void VulkanRenderBackend::shutdown()
 {
 	if (this->device)
 	{
-		if (this->busyFence)
-		{
-			this->device.destroyFence(this->busyFence);
-			this->busyFence = nullptr;
-		}
-
 		if (this->renderIsFinishedSemaphore)
 		{
 			this->device.destroySemaphore(this->renderIsFinishedSemaphore);
@@ -1077,21 +1059,6 @@ Surface VulkanRenderBackend::getScreenshot() const
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
-	constexpr uint64_t busyFenceWaitTimeout = TIMEOUT_UNLIMITED;
-	const vk::Result busyFenceWaitResult = this->device.waitForFences(this->busyFence, VK_TRUE, busyFenceWaitTimeout);
-	if (busyFenceWaitResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't wait for busy fence (%d).", busyFenceWaitResult);
-		return;
-	}
-
-	const vk::Result busyFenceResetResult = this->device.resetFences(this->busyFence);
-	if (busyFenceResetResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't reset busy fence (%d).", busyFenceResetResult);
-		return;
-	}
-
 	constexpr uint64_t acquireTimeout = TIMEOUT_UNLIMITED;
 	vk::ResultValue<uint32_t> swapchainAcquiredImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
 	if (swapchainAcquiredImageIndexResult.result != vk::Result::eSuccess)
@@ -1113,7 +1080,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &this->renderIsFinishedSemaphore;
 
-	const vk::Result graphicsQueueSubmitResult = this->graphicsQueue.submit(submitInfo, this->busyFence);
+	const vk::Result graphicsQueueSubmitResult = this->graphicsQueue.submit(submitInfo);
 	if (graphicsQueueSubmitResult != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't submit graphics queue (%d).", graphicsQueueSubmitResult);

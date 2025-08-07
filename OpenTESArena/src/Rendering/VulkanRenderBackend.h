@@ -74,7 +74,6 @@ private:
 
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;
-	vk::Fence busyFence;
 
 	VulkanObjectTextureAllocator objectTextureAllocator;
 	VulkanUiTextureAllocator uiTextureAllocator;
