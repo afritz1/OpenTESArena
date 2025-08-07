@@ -244,7 +244,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	const vk::PhysicalDevice physicalDevice = GetBestPhysicalDevice(physicalDevices);
-	
 	const std::vector<vk::QueueFamilyProperties> queueFamilyPropertiesList = physicalDevice.getQueueFamilyProperties();
 	uint32_t graphicsQueueFamilyIndex = INVALID_UINT32;
 	for (uint32_t i = 0; i < queueFamilyPropertiesList.size(); i++)
@@ -639,17 +638,14 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
 	pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 	pipelineRasterizationStateCreateInfo.polygonMode = vk::PolygonMode::eFill;
-	pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 	pipelineRasterizationStateCreateInfo.cullMode = vk::CullModeFlagBits::eNone;
 	pipelineRasterizationStateCreateInfo.frontFace = vk::FrontFace::eCounterClockwise;
 
 	vk::PipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo;
-	pipelineMultisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
-	pipelineMultisampleStateCreateInfo.rasterizationSamples = vk::SampleCountFlagBits::e1;
 
 	vk::PipelineColorBlendAttachmentState pipelineColorBlendAttachmentState;
-	pipelineColorBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 	pipelineColorBlendAttachmentState.blendEnable = VK_FALSE;
+	pipelineColorBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
 
 	vk::PipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo;
 	pipelineColorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
@@ -715,7 +711,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	const vk::MemoryRequirements vertexBufferMemoryRequirements = this->device.getBufferMemoryRequirements(this->vertexBuffer);
 	const vk::MemoryPropertyFlags vertexBufferMemoryPropertyFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent;
-	
+
 	vk::MemoryAllocateInfo vertexBufferMemoryAllocateInfo;
 	vertexBufferMemoryAllocateInfo.allocationSize = vertexBufferMemoryRequirements.size;
 	vertexBufferMemoryAllocateInfo.memoryTypeIndex = FindBufferMemoryTypeIndex(vertexBufferMemoryRequirements, vertexBufferMemoryPropertyFlags, physicalDevice);
@@ -751,7 +747,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	void *vertexBufferHostMemory = std::move(vertexBufferMapMemoryResult.value);
 	std::copy(std::begin(vertices), std::end(vertices), reinterpret_cast<Vertex*>(vertexBufferHostMemory));
 	this->device.unmapMemory(this->vertexBufferDeviceMemory);
-	
+
 	vk::ClearValue clearColor;
 	clearColor.color = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
 
@@ -774,7 +770,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		renderPassBeginInfo.renderArea.extent = swapchainExtent;
 		renderPassBeginInfo.clearValueCount = 1;
 		renderPassBeginInfo.pClearValues = &clearColor;
-		
+
 		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->graphicsPipeline);
 
