@@ -371,7 +371,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	vk::PresentModeKHR presentMode = presentModes[0];
 	for (const vk::PresentModeKHR currentPresentMode : presentModes)
 	{
-		if (currentPresentMode == vk::PresentModeKHR::eFifo) // Vsync
+		if (currentPresentMode == vk::PresentModeKHR::eImmediate) // No vsync
 		{
 			presentMode = currentPresentMode;
 			break;
@@ -388,9 +388,9 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	uint32_t swapchainSurfaceImageCount = surfaceCapabilities.minImageCount + 1;
-	if ((surfaceCapabilities.maxImageCount > 0) && (swapchainSurfaceImageCount > surfaceCapabilities.maxImageCount))
+	if (surfaceCapabilities.maxImageCount > 0)
 	{
-		swapchainSurfaceImageCount = surfaceCapabilities.maxImageCount;
+		swapchainSurfaceImageCount = std::min(swapchainSurfaceImageCount, surfaceCapabilities.maxImageCount);
 	}
 
 	vk::SwapchainCreateInfoKHR swapchainCreateInfo;
