@@ -49,15 +49,15 @@ class VulkanRenderBackend final : public RenderBackend
 private:
 	vk::Instance instance;
 	vk::SurfaceKHR surface;
+	vk::PhysicalDevice physicalDevice;
 
+	vk::Device device;
 	vk::Queue graphicsQueue;
 	vk::Queue presentQueue;
-	vk::Device device;
 
 	vk::Extent2D swapchainExtent;
 	vk::SwapchainKHR swapchain;
 	Buffer<vk::ImageView> swapchainImageViews;
-
 	vk::RenderPass renderPass;
 	Buffer<vk::Framebuffer> swapchainFramebuffers;
 

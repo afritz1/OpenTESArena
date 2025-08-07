@@ -243,8 +243,8 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	const vk::PhysicalDevice physicalDevice = GetBestPhysicalDevice(physicalDevices);
-	const std::vector<vk::QueueFamilyProperties> queueFamilyPropertiesList = physicalDevice.getQueueFamilyProperties();
+	this->physicalDevice = GetBestPhysicalDevice(physicalDevices);
+	const std::vector<vk::QueueFamilyProperties> queueFamilyPropertiesList = this->physicalDevice.getQueueFamilyProperties();
 	uint32_t graphicsQueueFamilyIndex = INVALID_UINT32;
 	for (uint32_t i = 0; i < queueFamilyPropertiesList.size(); i++)
 	{
@@ -265,7 +265,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	uint32_t presentQueueFamilyIndex = INVALID_UINT32;
 	for (uint32_t i = 0; i < queueFamilyPropertiesList.size(); i++)
 	{
-		vk::ResultValue<uint32_t> surfaceSupportResult = physicalDevice.getSurfaceSupportKHR(i, this->surface);
+		vk::ResultValue<uint32_t> surfaceSupportResult = this->physicalDevice.getSurfaceSupportKHR(i, this->surface);
 		if (surfaceSupportResult.result != vk::Result::eSuccess)
 		{
 			DebugLogErrorFormat("Couldn't query physical device getSurfaceSupportKHR() index %d (%d).", i, surfaceSupportResult.result);
@@ -307,7 +307,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	deviceCreateInfo.enabledExtensionCount = deviceExtensions.getCount();
 	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.begin();
 
-	vk::ResultValue<vk::Device> deviceCreateResult = physicalDevice.createDevice(deviceCreateInfo);
+	vk::ResultValue<vk::Device> deviceCreateResult = this->physicalDevice.createDevice(deviceCreateInfo);
 	if (deviceCreateResult.result != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't create vk::Device (%d).", deviceCreateResult.result);
@@ -320,7 +320,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	this->objectTextureAllocator.init(this->device);
 	this->uiTextureAllocator.init(this->device);
 
-	vk::ResultValue<vk::SurfaceCapabilitiesKHR> surfaceCapabilitiesResult = physicalDevice.getSurfaceCapabilitiesKHR(this->surface);
+	vk::ResultValue<vk::SurfaceCapabilitiesKHR> surfaceCapabilitiesResult = this->physicalDevice.getSurfaceCapabilitiesKHR(this->surface);
 	if (surfaceCapabilitiesResult.result != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't query physical device getSurfaceCapabilitiesKHR() (%d).", surfaceCapabilitiesResult.result);
@@ -329,7 +329,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	const vk::SurfaceCapabilitiesKHR surfaceCapabilities = std::move(surfaceCapabilitiesResult.value);
 
-	vk::ResultValue<std::vector<vk::SurfaceFormatKHR>> surfaceFormatsResult = physicalDevice.getSurfaceFormatsKHR(this->surface);
+	vk::ResultValue<std::vector<vk::SurfaceFormatKHR>> surfaceFormatsResult = this->physicalDevice.getSurfaceFormatsKHR(this->surface);
 	if (surfaceFormatsResult.result != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't query physical device getSurfaceFormatsKHR() (%d).", surfaceFormatsResult.result);
@@ -354,7 +354,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		}
 	}
 
-	vk::ResultValue<std::vector<vk::PresentModeKHR>> presentModesResult = physicalDevice.getSurfacePresentModesKHR(this->surface);
+	vk::ResultValue<std::vector<vk::PresentModeKHR>> presentModesResult = this->physicalDevice.getSurfacePresentModesKHR(this->surface);
 	if (presentModesResult.result != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't query physical device getSurfacePresentModesKHR() (%d).", presentModesResult.result);
@@ -717,7 +717,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	vk::MemoryAllocateInfo vertexBufferMemoryAllocateInfo;
 	vertexBufferMemoryAllocateInfo.allocationSize = vertexBufferMemoryRequirements.size;
-	vertexBufferMemoryAllocateInfo.memoryTypeIndex = FindBufferMemoryTypeIndex(vertexBufferMemoryRequirements, vertexBufferMemoryPropertyFlags, physicalDevice);
+	vertexBufferMemoryAllocateInfo.memoryTypeIndex = FindBufferMemoryTypeIndex(vertexBufferMemoryRequirements, vertexBufferMemoryPropertyFlags, this->physicalDevice);
 	if (vertexBufferMemoryAllocateInfo.memoryTypeIndex == INVALID_UINT32)
 	{
 		DebugLogErrorFormat("Couldn't find suitable vertex buffer memory type.");
@@ -874,6 +874,11 @@ void VulkanRenderBackend::shutdown()
 
 	if (this->instance)
 	{
+		if (this->physicalDevice)
+		{
+			this->physicalDevice = nullptr;
+		}
+
 		if (this->surface)
 		{
 			this->instance.destroySurfaceKHR(this->surface);
