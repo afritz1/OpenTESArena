@@ -640,6 +640,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	pipelineRasterizationStateCreateInfo.polygonMode = vk::PolygonMode::eFill;
 	pipelineRasterizationStateCreateInfo.cullMode = vk::CullModeFlagBits::eNone;
 	pipelineRasterizationStateCreateInfo.frontFace = vk::FrontFace::eCounterClockwise;
+	pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
 	vk::PipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo;
 
