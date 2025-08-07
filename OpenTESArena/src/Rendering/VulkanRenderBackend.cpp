@@ -378,13 +378,13 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		}
 	}
 
-	vk::Extent2D swapchainExtent = surfaceCapabilities.currentExtent;
-	if (swapchainExtent.width == INVALID_UINT32)
+	this->swapchainExtent = surfaceCapabilities.currentExtent;
+	if (this->swapchainExtent.width == INVALID_UINT32)
 	{
 		int windowWidth, windowHeight;
 		SDL_GetWindowSize(window->window, &windowWidth, &windowHeight);
-		swapchainExtent.width = windowWidth;
-		swapchainExtent.height = windowHeight;
+		this->swapchainExtent.width = windowWidth;
+		this->swapchainExtent.height = windowHeight;
 	}
 
 	uint32_t swapchainSurfaceImageCount = surfaceCapabilities.minImageCount + 1;
@@ -398,7 +398,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	swapchainCreateInfo.minImageCount = swapchainSurfaceImageCount;
 	swapchainCreateInfo.imageFormat = surfaceFormat.format;
 	swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
-	swapchainCreateInfo.imageExtent = swapchainExtent;
+	swapchainCreateInfo.imageExtent = this->swapchainExtent;
 	swapchainCreateInfo.imageArrayLayers = 1;
 	swapchainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
@@ -515,8 +515,8 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		framebufferCreateInfo.renderPass = this->renderPass;
 		framebufferCreateInfo.attachmentCount = 1;
 		framebufferCreateInfo.pAttachments = &this->swapchainImageViews[i];
-		framebufferCreateInfo.width = swapchainExtent.width;
-		framebufferCreateInfo.height = swapchainExtent.height;
+		framebufferCreateInfo.width = this->swapchainExtent.width;
+		framebufferCreateInfo.height = this->swapchainExtent.height;
 		framebufferCreateInfo.layers = 1;
 
 		vk::ResultValue<vk::Framebuffer> framebufferCreateResult = this->device.createFramebuffer(framebufferCreateInfo);
@@ -545,7 +545,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	vk::CommandBufferAllocateInfo commandBufferAllocateInfo;
 	commandBufferAllocateInfo.commandPool = this->commandPool;
 	commandBufferAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
-	commandBufferAllocateInfo.commandBufferCount = this->swapchainFramebuffers.getCount();
+	commandBufferAllocateInfo.commandBufferCount = 1;
 
 	vk::ResultValue<std::vector<vk::CommandBuffer>> commandBufferAllocateResult = this->device.allocateCommandBuffers(commandBufferAllocateInfo);
 	if (commandBufferAllocateResult.result != vk::Result::eSuccess)
@@ -554,12 +554,14 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	this->commandBuffers = std::move(commandBufferAllocateResult.value);
-	if (this->commandBuffers.empty())
+	const std::vector<vk::CommandBuffer> commandBuffers = std::move(commandBufferAllocateResult.value);
+	if (commandBuffers.empty())
 	{
 		DebugLogError("No command buffers allocated.");
 		return false;
 	}
+
+	this->commandBuffer = commandBuffers[0];
 
 	const std::string shadersFolderPath = dataFolderPath + "shaders/";
 	const std::string vertexShaderBytesFilename = shadersFolderPath + "testVertex.spv";
@@ -620,13 +622,13 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
 	vk::Viewport viewport;
-	viewport.width = static_cast<float>(swapchainExtent.width);
-	viewport.height = static_cast<float>(swapchainExtent.height);
+	viewport.width = static_cast<float>(this->swapchainExtent.width);
+	viewport.height = static_cast<float>(this->swapchainExtent.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	vk::Rect2D viewportScissor;
-	viewportScissor.extent = swapchainExtent;
+	viewportScissor.extent = this->swapchainExtent;
 
 	vk::PipelineViewportStateCreateInfo pipelineViewportStateCreateInfo;
 	pipelineViewportStateCreateInfo.viewportCount = 1;
@@ -749,48 +751,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	std::copy(std::begin(vertices), std::end(vertices), reinterpret_cast<Vertex*>(vertexBufferHostMemory));
 	this->device.unmapMemory(this->vertexBufferDeviceMemory);
 
-	vk::ClearValue clearColor;
-	clearColor.color = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
-
-	for (int swapchainImageIndex = 0; swapchainImageIndex < this->swapchainFramebuffers.getCount(); swapchainImageIndex++)
-	{
-		vk::CommandBuffer commandBuffer = this->commandBuffers[swapchainImageIndex];
-		vk::Framebuffer framebuffer = this->swapchainFramebuffers[swapchainImageIndex];
-
-		vk::CommandBufferBeginInfo commandBufferBeginInfo;
-		const vk::Result commandBufferBeginResult = commandBuffer.begin(commandBufferBeginInfo);
-		if (commandBufferBeginResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't begin command buffer (%d).", commandBufferBeginResult);
-			return false;
-		}
-
-		vk::RenderPassBeginInfo renderPassBeginInfo;
-		renderPassBeginInfo.renderPass = this->renderPass;
-		renderPassBeginInfo.framebuffer = framebuffer;
-		renderPassBeginInfo.renderArea.extent = swapchainExtent;
-		renderPassBeginInfo.clearValueCount = 1;
-		renderPassBeginInfo.pClearValues = &clearColor;
-
-		commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-		commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->graphicsPipeline);
-
-		constexpr vk::DeviceSize vertexBufferOffset = 0;
-		commandBuffer.bindVertexBuffers(0, this->vertexBuffer, vertexBufferOffset);
-
-		constexpr uint32_t vertexCount = 3;
-		constexpr uint32_t instanceCount = 1;
-		commandBuffer.draw(vertexCount, instanceCount, 0, 0);
-
-		commandBuffer.endRenderPass();
-		const vk::Result commandBufferEndResult = commandBuffer.end();
-		if (commandBufferEndResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't end command buffer (%d).", commandBufferEndResult);
-			return false;
-		}
-	}
-
 	vk::SemaphoreCreateInfo semaphoreCreateInfo;
 	vk::ResultValue<vk::Semaphore> imageIsAvailableSemaphoreResult = this->device.createSemaphore(semaphoreCreateInfo);
 	if (imageIsAvailableSemaphoreResult.result != vk::Result::eSuccess)
@@ -865,10 +825,10 @@ void VulkanRenderBackend::shutdown()
 			this->vertexShaderModule = nullptr;
 		}
 
-		if (!this->commandBuffers.empty())
+		if (this->commandBuffer)
 		{
-			this->device.freeCommandBuffers(this->commandPool, this->commandBuffers);
-			this->commandBuffers.clear();
+			this->device.freeCommandBuffers(this->commandPool, this->commandBuffer);
+			this->commandBuffer = nullptr;
 		}
 
 		if (this->commandPool)
@@ -902,6 +862,8 @@ void VulkanRenderBackend::shutdown()
 			this->device.destroySwapchainKHR(this->swapchain);
 			this->swapchain = nullptr;
 		}
+
+		this->swapchainExtent = vk::Extent2D();
 
 		this->presentQueue = nullptr;
 		this->graphicsQueue = nullptr;
@@ -1061,14 +1023,53 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
 	constexpr uint64_t acquireTimeout = TIMEOUT_UNLIMITED;
-	vk::ResultValue<uint32_t> swapchainAcquiredImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
-	if (swapchainAcquiredImageIndexResult.result != vk::Result::eSuccess)
+	vk::ResultValue<uint32_t> acquiredSwapchainImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
+	if (acquiredSwapchainImageIndexResult.result != vk::Result::eSuccess)
 	{
-		DebugLogErrorFormat("Couldn't acquire next swapchain image (%d).", swapchainAcquiredImageIndexResult.result);
+		DebugLogErrorFormat("Couldn't acquire next swapchain image (%d).", acquiredSwapchainImageIndexResult.result);
 		return;
 	}
 
-	const uint32_t swapchainAcquiredImageIndex = std::move(swapchainAcquiredImageIndexResult.value);
+	const uint32_t acquiredSwapchainImageIndex = std::move(acquiredSwapchainImageIndexResult.value);
+	const vk::Framebuffer acquiredSwapchainFramebuffer = this->swapchainFramebuffers[acquiredSwapchainImageIndex];
+
+	this->commandBuffer.reset();
+
+	vk::CommandBufferBeginInfo commandBufferBeginInfo;
+	const vk::Result commandBufferBeginResult = this->commandBuffer.begin(commandBufferBeginInfo);
+	if (commandBufferBeginResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't begin command buffer (%d).", commandBufferBeginResult);
+		return;
+	}
+
+	vk::ClearValue clearColor;
+	clearColor.color = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+
+	vk::RenderPassBeginInfo renderPassBeginInfo;
+	renderPassBeginInfo.renderPass = this->renderPass;
+	renderPassBeginInfo.framebuffer = acquiredSwapchainFramebuffer;
+	renderPassBeginInfo.renderArea.extent = this->swapchainExtent;
+	renderPassBeginInfo.clearValueCount = 1;
+	renderPassBeginInfo.pClearValues = &clearColor;
+
+	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+	this->commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->graphicsPipeline);
+
+	constexpr vk::DeviceSize vertexBufferOffset = 0;
+	this->commandBuffer.bindVertexBuffers(0, this->vertexBuffer, vertexBufferOffset);
+
+	constexpr uint32_t vertexCount = 3;
+	constexpr uint32_t instanceCount = 1;
+	this->commandBuffer.draw(vertexCount, instanceCount, 0, 0);
+
+	this->commandBuffer.endRenderPass();
+	const vk::Result commandBufferEndResult = this->commandBuffer.end();
+	if (commandBufferEndResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't end command buffer (%d).", commandBufferEndResult);
+		return;
+	}
 
 	const vk::PipelineStageFlags waitPipelineStageFlags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
@@ -1077,7 +1078,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	submitInfo.pWaitSemaphores = &this->imageIsAvailableSemaphore;
 	submitInfo.pWaitDstStageMask = &waitPipelineStageFlags;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &this->commandBuffers[swapchainAcquiredImageIndex];
+	submitInfo.pCommandBuffers = &this->commandBuffer;
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &this->renderIsFinishedSemaphore;
 
@@ -1093,7 +1094,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	presentInfo.pWaitSemaphores = &this->renderIsFinishedSemaphore;
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = &this->swapchain;
-	presentInfo.pImageIndices = &swapchainAcquiredImageIndex;
+	presentInfo.pImageIndices = &acquiredSwapchainImageIndex;
 
 	const vk::Result presentQueuePresentResult = this->presentQueue.presentKHR(presentInfo);
 	if (presentQueuePresentResult != vk::Result::eSuccess)
