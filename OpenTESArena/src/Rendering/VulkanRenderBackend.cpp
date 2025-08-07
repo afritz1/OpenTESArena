@@ -7,6 +7,8 @@
 #include "RenderInitSettings.h"
 #include "VulkanRenderBackend.h"
 #include "Window.h"
+#include "../Assets/TextureBuilder.h"
+#include "../Assets/TextureManager.h"
 #include "../UI/Surface.h"
 
 #include "components/debug/Debug.h"
@@ -109,82 +111,215 @@ namespace
 	}
 }
 
-void VulkanObjectTextureAllocator::init(vk::Device device)
+VulkanTexture::VulkanTexture()
 {
+	this->width = 0;
+	this->height = 0;
+	this->bytesPerTexel = 0;
+}
+
+void VulkanTexture::init(int width, int height, int bytesPerTexel)
+{
+	DebugAssert(width > 0);
+	DebugAssert(height > 0);
+	DebugAssert(bytesPerTexel > 0);
+
+	this->width = width;
+	this->height = height;
+	this->bytesPerTexel = bytesPerTexel;
+
+	const int texelCount = width * height;
+	const int byteCount = texelCount * bytesPerTexel;
+	this->texels.init(byteCount);
+}
+
+VulkanObjectTextureAllocator::VulkanObjectTextureAllocator()
+{
+	this->pool = nullptr;
+}
+
+void VulkanObjectTextureAllocator::init(VulkanObjectTexturePool *pool, vk::Device device)
+{
+	this->pool = pool;
 	this->device = device;
 }
 
 ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int bytesPerTexel)
 {
-	DebugNotImplemented();
-	return ObjectTextureID();
+	const ObjectTextureID textureID = this->pool->alloc();
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate object texture with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
+		return -1;
+	}
+
+	VulkanTexture &texture = this->pool->get(textureID);
+	texture.init(width, height, bytesPerTexel);
+
+	// @todo vk::Image creation
+
+	return textureID;
 }
 
 ObjectTextureID VulkanObjectTextureAllocator::create(const TextureBuilder &textureBuilder)
 {
-	DebugNotImplemented();
-	return ObjectTextureID();
+	const int width = textureBuilder.width;
+	const int height = textureBuilder.height;
+	const int bytesPerTexel = textureBuilder.bytesPerTexel;
+
+	const ObjectTextureID textureID = this->create(width, height, bytesPerTexel);
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate object texture from texture builder with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
+		return -1;
+	}
+
+	VulkanTexture &texture = this->pool->get(textureID);
+
+	if (bytesPerTexel == 1)
+	{
+		Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
+		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
+	}
+	else if (bytesPerTexel == 4)
+	{
+		Span2D<const uint32_t> srcTexels = textureBuilder.getTexels32();
+		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.begin());
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(bool, std::to_string(bytesPerTexel));
+	}
+
+	// @todo vk::Image creation
+
+	return textureID;
 }
 
 void VulkanObjectTextureAllocator::free(ObjectTextureID textureID)
 {
-	DebugNotImplemented();
+	this->pool->free(textureID);
+	// @todo vk::Image destroy
 }
 
 LockedTexture VulkanObjectTextureAllocator::lock(ObjectTextureID textureID)
 {
-	DebugNotImplemented();
-	return LockedTexture();
+	VulkanTexture &texture = this->pool->get(textureID);
+
+	// @todo: vk::Image locking/allocating/binding/mapping to host memory
+
+	return LockedTexture(Span2D<std::byte>(static_cast<std::byte*>(texture.texels.begin()), texture.width, texture.height), texture.bytesPerTexel);
 }
 
 void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
 {
-	DebugNotImplemented();
+	// @todo: vk::Image unmap etc
 }
 
-void VulkanUiTextureAllocator::init(vk::Device device)
+VulkanUiTextureAllocator::VulkanUiTextureAllocator()
 {
+	this->pool = nullptr;
+}
+
+void VulkanUiTextureAllocator::init(VulkanUiTexturePool *pool, vk::Device device)
+{
+	this->pool = pool;
 	this->device = device;
 }
 
 UiTextureID VulkanUiTextureAllocator::create(int width, int height)
 {
-	DebugNotImplemented();
-	return UiTextureID();
+	const UiTextureID textureID = this->pool->alloc();
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate UI texture with dims %dx%d.", width, height);
+		return -1;
+	}
+
+	VulkanTexture &texture = this->pool->get(textureID);
+	texture.init(width, height, 4);
+
+	// @todo vk::Image creation
+
+	return textureID;
 }
 
 UiTextureID VulkanUiTextureAllocator::create(Span2D<const uint32_t> texels)
 {
-	DebugNotImplemented();
-	return UiTextureID();
+	const int width = texels.getWidth();
+	const int height = texels.getHeight();
+	const UiTextureID textureID = this->create(width, height);
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate UI texture with texels and dims %dx%d.", width, height);
+		return -1;
+	}
+
+	// @todo vk::Image creation w/ texels
+
+	return textureID;
 }
 
 UiTextureID VulkanUiTextureAllocator::create(Span2D<const uint8_t> texels, const Palette &palette)
 {
-	DebugNotImplemented();
-	return UiTextureID();
+	const int width = texels.getWidth();
+	const int height = texels.getHeight();
+	const UiTextureID textureID = this->create(width, height);
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate UI texture with texels and dims %dx%d.", width, height);
+		return -1;
+	}
+
+	// @todo vk::Image creation w/ texels and palette
+
+	return textureID;
 }
 
 UiTextureID VulkanUiTextureAllocator::create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
 {
-	DebugNotImplemented();
-	return UiTextureID();
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+
+	UiTextureID textureID = -1;
+	if (textureBuilder.bytesPerTexel == 1)
+	{
+		Span2D<const uint8_t> texels = textureBuilder.getTexels8();
+		const Palette &palette = textureManager.getPaletteHandle(paletteID);
+		textureID = this->create(texels, palette);
+	}
+	else if (textureBuilder.bytesPerTexel == 4)
+	{
+		Span2D<const uint32_t> texels = textureBuilder.getTexels32();
+		textureID = this->create(texels);
+	}
+	else
+	{
+		DebugUnhandledReturnMsg(bool, std::to_string(textureBuilder.bytesPerTexel));
+	}
+
+	return textureID;
 }
 
 void VulkanUiTextureAllocator::free(UiTextureID textureID)
 {
-	DebugNotImplemented();
+	this->pool->free(textureID);
+	// @todo vk::Image destroy
 }
 
 LockedTexture VulkanUiTextureAllocator::lock(UiTextureID textureID)
 {
-	DebugNotImplemented();
-	return LockedTexture();
+	VulkanTexture &texture = this->pool->get(textureID);
+
+	// @todo: vk::Image locking/allocating/binding/mapping to host memory
+
+	return LockedTexture(Span2D<std::byte>(static_cast<std::byte*>(texture.texels.begin()), texture.width, texture.height), texture.bytesPerTexel);
 }
 
 void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
 {
-	DebugNotImplemented();
+	// @todo: vk::Image unmap etc
 }
 
 bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
@@ -317,8 +452,8 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	this->device = std::move(deviceCreateResult.value);
 	this->graphicsQueue = this->device.getQueue(graphicsQueueFamilyIndex, 0);
 	this->presentQueue = this->device.getQueue(presentQueueFamilyIndex, 0);
-	this->objectTextureAllocator.init(this->device);
-	this->uiTextureAllocator.init(this->device);
+	this->objectTextureAllocator.init(&this->objectTexturePool, this->device);
+	this->uiTextureAllocator.init(&this->uiTexturePool, this->device);
 
 	vk::ResultValue<vk::SurfaceCapabilitiesKHR> surfaceCapabilitiesResult = this->physicalDevice.getSurfaceCapabilitiesKHR(this->surface);
 	if (surfaceCapabilitiesResult.result != vk::Result::eSuccess)
@@ -777,6 +912,20 @@ void VulkanRenderBackend::shutdown()
 {
 	if (this->device)
 	{
+		for (VulkanTexture &texture : this->objectTexturePool.values)
+		{
+			// @todo device destroy image
+		}
+
+		this->objectTexturePool.clear();
+
+		for (VulkanTexture &texture : this->uiTexturePool.values)
+		{
+			// @todo device destroy image
+		}
+
+		this->uiTexturePool.clear();
+
 		if (this->renderIsFinishedSemaphore)
 		{
 			this->device.destroySemaphore(this->renderIsFinishedSemaphore);
@@ -902,50 +1051,50 @@ void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHe
 
 VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
 {
-	DebugNotImplemented();
-	return VertexPositionBufferID();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::createVertexPositionBuffer");
+	return 0;
 }
 
 VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
 {
-	DebugNotImplemented();
-	return VertexAttributeBufferID();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::createVertexAttributeBuffer");
+	return 0;
 }
 
 IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount)
 {
-	DebugNotImplemented();
-	return IndexBufferID();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::createIndexBuffer");
+	return 0;
 }
 
 void VulkanRenderBackend::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::populateVertexPositionBuffer");
 }
 
 void VulkanRenderBackend::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::populateVertexAttributeBuffer");
 }
 
 void VulkanRenderBackend::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::populateIndexBuffer");
 }
 
 void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::freeVertexPositionBuffer");
 }
 
 void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::freeVertexAttributeBuffer");
 }
 
 void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::freeIndexBuffer");
 }
 
 ObjectTextureAllocator *VulkanRenderBackend::getObjectTextureAllocator()
@@ -960,67 +1109,77 @@ UiTextureAllocator *VulkanRenderBackend::getUiTextureAllocator()
 
 UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
 {
-	DebugNotImplemented();
-	return UniformBufferID();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::createUniformBuffer");
+	return 0;
 }
 
 void VulkanRenderBackend::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::populateUniformBuffer");
 }
 
 void VulkanRenderBackend::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::populateUniformAtIndex");
 }
 
 void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::freeUniformBuffer");
 }
 
 RenderLightID VulkanRenderBackend::createLight()
 {
-	DebugNotImplemented();
-	return RenderLightID();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::createLight");
+	return 0;
 }
 
 void VulkanRenderBackend::setLightPosition(RenderLightID id, const Double3 &worldPoint)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::setLightPosition");
 }
 
 void VulkanRenderBackend::setLightRadius(RenderLightID id, double startRadius, double endRadius)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::setLightRadius");
 }
 
 void VulkanRenderBackend::freeLight(RenderLightID id)
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::freeLight");
 }
 
 std::optional<Int2> VulkanRenderBackend::tryGetObjectTextureDims(ObjectTextureID id) const
 {
-	DebugNotImplemented();
-	return std::optional<Int2>();
+	const VulkanTexture *texture = this->objectTexturePool.tryGet(id);
+	if (texture == nullptr)
+	{
+		return std::nullopt;
+	}
+
+	return Int2(texture->width, texture->height);
 }
 
 std::optional<Int2> VulkanRenderBackend::tryGetUiTextureDims(UiTextureID id) const
 {
-	DebugNotImplemented();
-	return std::optional<Int2>();
+	const VulkanTexture *texture = this->uiTexturePool.tryGet(id);
+	if (texture == nullptr)
+	{
+		return std::nullopt;
+	}
+
+	return Int2(texture->width, texture->height);
 }
 
 Renderer3DProfilerData VulkanRenderBackend::getProfilerData() const
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::getProfilerData");
 	return Renderer3DProfilerData(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 }
 
 Surface VulkanRenderBackend::getScreenshot() const
 {
-	DebugNotImplemented();
+	DebugLogWarning("Not implemented: VulkanRenderBackend::getScreenshot");
 	return Surface();
 }
 

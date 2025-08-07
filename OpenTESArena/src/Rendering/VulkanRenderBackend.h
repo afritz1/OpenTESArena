@@ -11,12 +11,33 @@
 #include "RenderTextureAllocator.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/RecyclablePool.h"
+
+struct VulkanTexture
+{
+	Buffer<std::byte> texels;
+	int width = 0;
+	int height = 0;
+	int bytesPerTexel = 0;
+
+	// @todo vk::Image handle
+
+	VulkanTexture();
+	
+	void init(int width, int height, int bytesPerTexel);
+};
+
+using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
+using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
 
 struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 {
+	VulkanObjectTexturePool *pool;
 	vk::Device device;
 
-	void init(vk::Device device);
+	VulkanObjectTextureAllocator();
+
+	void init(VulkanObjectTexturePool *pool, vk::Device device);
 
 	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
 	ObjectTextureID create(const TextureBuilder &textureBuilder) override;
@@ -29,9 +50,12 @@ struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 
 struct VulkanUiTextureAllocator final : public UiTextureAllocator
 {
+	VulkanUiTexturePool *pool;
 	vk::Device device;
 
-	void init(vk::Device device);
+	VulkanUiTextureAllocator();
+
+	void init(VulkanUiTexturePool *pool, vk::Device device);
 
 	UiTextureID create(int width, int height) override;
 	UiTextureID create(Span2D<const uint32_t> texels) override;
@@ -76,7 +100,10 @@ private:
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;
 
+	VulkanObjectTexturePool objectTexturePool;
 	VulkanObjectTextureAllocator objectTextureAllocator;
+
+	VulkanUiTexturePool uiTexturePool;
 	VulkanUiTextureAllocator uiTextureAllocator;
 public:
 	bool init(const RenderInitSettings &initSettings) override;

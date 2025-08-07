@@ -111,21 +111,25 @@ UiTextureID SdlUiTextureAllocator::create(Span2D<const uint8_t> texels, const Pa
 UiTextureID SdlUiTextureAllocator::create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
 {
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
+
+	UiTextureID textureID = -1;
 	if (textureBuilder.bytesPerTexel == 1)
 	{
 		Span2D<const uint8_t> texels = textureBuilder.getTexels8();
 		const Palette &palette = textureManager.getPaletteHandle(paletteID);
-		return this->create(texels, palette);
+		textureID = this->create(texels, palette);
 	}
 	else if (textureBuilder.bytesPerTexel == 4)
 	{
 		Span2D<const uint32_t> texels = textureBuilder.getTexels32();
-		return this->create(texels);
+		textureID = this->create(texels);
 	}
 	else
 	{
 		DebugUnhandledReturnMsg(bool, std::to_string(textureBuilder.bytesPerTexel));
 	}
+
+	return textureID;
 }
 
 void SdlUiTextureAllocator::free(UiTextureID textureID)
