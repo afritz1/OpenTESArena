@@ -117,6 +117,7 @@ Renderer::~Renderer()
 	if (this->backend != nullptr)
 	{
 		this->backend->shutdown();
+		this->backend = nullptr;
 	}
 
 	this->window = nullptr;

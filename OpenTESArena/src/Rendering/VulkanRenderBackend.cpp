@@ -811,7 +811,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	this->renderIsFinishedSemaphore = std::move(imageIsAvailableSemaphoreResult.value);
+	this->renderIsFinishedSemaphore = std::move(renderIsFinishedSemaphoreResult.value);
 
 	vk::FenceCreateInfo fenceCreateInfo;
 	fenceCreateInfo.flags = vk::FenceCreateFlagBits::eSignaled;
