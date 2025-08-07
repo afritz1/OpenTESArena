@@ -50,39 +50,88 @@ namespace
 		return extensions;
 	}
 
-	bool IsPhysicalDeviceSuitable(const vk::PhysicalDevice &physicalDevice)
-	{
-		const vk::PhysicalDeviceProperties properties = physicalDevice.getProperties();
-
-		const vk::PhysicalDeviceType deviceType = properties.deviceType;
-		if (deviceType != vk::PhysicalDeviceType::eDiscreteGpu && deviceType != vk::PhysicalDeviceType::eIntegratedGpu)
-		{
-			return false;
-		}
-
-		const uint32_t deviceApiVersion = properties.apiVersion;
-		if (deviceApiVersion < RequiredApiVersion)
-		{
-			return false;
-		}
-
-		return true;
-	}
-
-	// maybe the options menu values could be 0: best, 1: index 0 of physical devices, 2: index 1 of physical devices...
 	vk::PhysicalDevice GetBestPhysicalDevice(Span<const vk::PhysicalDevice> physicalDevices)
 	{
-		DebugAssert(physicalDevices.getCount() > 0);
-
-		for (const vk::PhysicalDevice physicalDevice : physicalDevices)
+		if (physicalDevices.getCount() == 0)
 		{
-			if (IsPhysicalDeviceSuitable(physicalDevice))
+			DebugLogError("No physical devices to choose from.");
+			return nullptr;
+		}
+
+		int discreteGpuCount = 0;
+		int integratedGpuCount = 0;
+		int cpuCount = 0;
+		int virtualGpuCount = 0;
+		int otherCount = 0;
+
+		int bestDiscreteGpuIndex = -1;
+		int bestIntegratedGpuIndex = -1;
+		int bestCpuIndex = -1;
+		int bestVirtualGpuIndex = -1;
+		int bestOtherIndex = -1;
+
+		for (int i = 0; i < physicalDevices.getCount(); i++)
+		{
+			const vk::PhysicalDevice &physicalDevice = physicalDevices[i];
+			const vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
+			const vk::PhysicalDeviceType physicalDeviceType = physicalDeviceProperties.deviceType;
+
+			switch (physicalDeviceType)
 			{
-				return physicalDevice;
+			case vk::PhysicalDeviceType::eDiscreteGpu:
+				bestDiscreteGpuIndex = i;
+				discreteGpuCount++;
+				break;
+			case vk::PhysicalDeviceType::eIntegratedGpu:
+				bestIntegratedGpuIndex = i;
+				integratedGpuCount++;
+				break;
+			case vk::PhysicalDeviceType::eCpu:
+				bestCpuIndex = i;
+				cpuCount++;
+				break;
+			case vk::PhysicalDeviceType::eVirtualGpu:
+				bestVirtualGpuIndex = i;
+				virtualGpuCount++;
+				break;
+			case vk::PhysicalDeviceType::eOther:
+				bestOtherIndex = i;
+				otherCount++;
+				break;
 			}
 		}
 
-		DebugUnhandledReturn(vk::PhysicalDevice);
+		DebugLogFormat("Physical devices: %d discrete GPU(s), %d integrated GPU(s), %d CPU(s), %d virtual GPU(s), %d other(s).",
+			discreteGpuCount, integratedGpuCount, cpuCount, virtualGpuCount, otherCount);
+
+		const int bestPhysicalDeviceIndices[] =
+		{
+			bestDiscreteGpuIndex,
+			bestIntegratedGpuIndex,
+			bestVirtualGpuIndex,
+			bestCpuIndex
+			// Don't want 'other' for now
+		};
+
+		vk::PhysicalDevice selectedPhysicalDevice;
+		for (const int physicalDeviceIndex : bestPhysicalDeviceIndices)
+		{
+			if (physicalDeviceIndex >= 0)
+			{
+				selectedPhysicalDevice = physicalDevices[physicalDeviceIndex];
+				break;
+			}
+		}
+
+		if (selectedPhysicalDevice == nullptr)
+		{
+			DebugLogError("No valid physical device available.");
+			return nullptr;
+		}
+
+		const vk::PhysicalDeviceProperties selectedPhysicalDeviceProperties = selectedPhysicalDevice.getProperties();
+		DebugLogFormat("Selected: %s", selectedPhysicalDeviceProperties.deviceName.data());
+		return selectedPhysicalDevice;
 	}
 
 	Buffer<const char*> GetDeviceExtensions()
