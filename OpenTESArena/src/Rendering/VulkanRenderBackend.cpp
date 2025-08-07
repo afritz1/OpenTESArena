@@ -1137,4 +1137,11 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		DebugLogErrorFormat("Couldn't execute present queue (%d).", presentQueuePresentResult);
 		return;
 	}
+
+	const vk::Result waitForFrameCompletionResult = this->device.waitIdle();
+	if (waitForFrameCompletionResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't wait idle for frame completion (%d).", waitForFrameCompletionResult);
+		return;
+	}
 }
