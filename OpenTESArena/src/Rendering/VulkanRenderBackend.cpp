@@ -123,15 +123,15 @@ namespace
 			}
 		}
 
-		if (selectedPhysicalDevice == nullptr)
+		if (selectedPhysicalDevice)
 		{
-			DebugLogError("No valid physical device available.");
-			return nullptr;
+			const vk::PhysicalDeviceProperties selectedPhysicalDeviceProperties = selectedPhysicalDevice.getProperties();
+			DebugLogFormat("Selected: %s", selectedPhysicalDeviceProperties.deviceName.data());
+			return selectedPhysicalDevice;
 		}
 
-		const vk::PhysicalDeviceProperties selectedPhysicalDeviceProperties = selectedPhysicalDevice.getProperties();
-		DebugLogFormat("Selected: %s", selectedPhysicalDeviceProperties.deviceName.data());
-		return selectedPhysicalDevice;
+		DebugLogError("No valid physical device available.");
+		return nullptr;
 	}
 
 	Buffer<const char*> GetDeviceExtensions()
