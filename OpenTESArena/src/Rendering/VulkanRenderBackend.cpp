@@ -188,6 +188,35 @@ namespace
 		return INVALID_UINT32;
 	}
 }
+void VulkanVertexPositionBuffer::init(int vertexCount, int componentsPerVertex)
+{
+	// @todo vk::Buffer creation
+}
+
+void VulkanVertexAttributeBuffer::init(int vertexCount, int componentsPerVertex)
+{
+	// @todo vk::Buffer creation
+}
+
+void VulkanIndexBuffer::init(int indexCount)
+{
+	// @todo vk::Buffer creation
+}
+
+VulkanUniformBuffer::VulkanUniformBuffer()
+{
+	this->elementCount = 0;
+	this->sizeOfElement = 0;
+	this->alignmentOfElement = 0;
+}
+
+void VulkanUniformBuffer::init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
+{
+	this->elementCount = elementCount;
+	this->sizeOfElement = sizeOfElement;
+	this->alignmentOfElement = alignmentOfElement;
+	// @todo vk::Buffer creation
+}
 
 VulkanTexture::VulkanTexture()
 {
@@ -209,6 +238,7 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel)
 	const int texelCount = width * height;
 	const int byteCount = texelCount * bytesPerTexel;
 	this->texels.init(byteCount);
+	// @todo vk::Image creation
 }
 
 VulkanObjectTextureAllocator::VulkanObjectTextureAllocator()
@@ -278,8 +308,13 @@ ObjectTextureID VulkanObjectTextureAllocator::create(const TextureBuilder &textu
 
 void VulkanObjectTextureAllocator::free(ObjectTextureID textureID)
 {
+	VulkanTexture *texture = this->pool->tryGet(textureID);
+	if (texture != nullptr)
+	{
+		// @todo vk::Image destroy
+	}
+
 	this->pool->free(textureID);
-	// @todo vk::Image destroy
 }
 
 LockedTexture VulkanObjectTextureAllocator::lock(ObjectTextureID textureID)
@@ -382,8 +417,13 @@ UiTextureID VulkanUiTextureAllocator::create(TextureBuilderID textureBuilderID, 
 
 void VulkanUiTextureAllocator::free(UiTextureID textureID)
 {
+	VulkanTexture *texture = this->pool->tryGet(textureID);
+	if (texture != nullptr)
+	{
+		// @todo vk::Image destroy
+	}
+
 	this->pool->free(textureID);
-	// @todo vk::Image destroy
 }
 
 LockedTexture VulkanUiTextureAllocator::lock(UiTextureID textureID)
@@ -1011,6 +1051,13 @@ void VulkanRenderBackend::shutdown()
 {
 	if (this->device)
 	{
+		for (VulkanTexture &texture : this->uiTexturePool.values)
+		{
+			// @todo device destroy image
+		}
+
+		this->uiTexturePool.clear();
+
 		for (VulkanTexture &texture : this->objectTexturePool.values)
 		{
 			// @todo device destroy image
@@ -1018,12 +1065,40 @@ void VulkanRenderBackend::shutdown()
 
 		this->objectTexturePool.clear();
 
-		for (VulkanTexture &texture : this->uiTexturePool.values)
+		for (VulkanLight &light : this->lightPool.values)
 		{
-			// @todo device destroy image
+			// @todo device destroy something
 		}
 
-		this->uiTexturePool.clear();
+		this->lightPool.clear();
+
+		for (VulkanUniformBuffer &buffer : this->uniformBufferPool.values)
+		{
+			// @todo device destroy buffer
+		}
+
+		this->uniformBufferPool.clear();
+
+		for (VulkanIndexBuffer &buffer : this->indexBufferPool.values)
+		{
+			// @todo device destroy buffer
+		}
+
+		this->indexBufferPool.clear();
+
+		for (VulkanVertexAttributeBuffer &buffer : this->vertexAttributeBufferPool.values)
+		{
+			// @todo device destroy buffer
+		}
+
+		this->vertexAttributeBufferPool.clear();
+
+		for (VulkanVertexPositionBuffer &buffer : this->vertexPositionBufferPool.values)
+		{
+			// @todo device destroy buffer
+		}
+
+		this->vertexPositionBufferPool.clear();
 
 		if (this->renderIsFinishedSemaphore)
 		{
@@ -1150,50 +1225,113 @@ void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHe
 
 VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::createVertexPositionBuffer");
-	return 0;
+	DebugAssert(vertexCount > 0);
+	DebugAssert(componentsPerVertex >= 2);
+
+	const VertexPositionBufferID id = this->vertexPositionBufferPool.alloc();
+	if (id < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate vertex position buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
+		return -1;
+	}
+
+	VulkanVertexPositionBuffer &buffer = this->vertexPositionBufferPool.get(id);
+	buffer.init(vertexCount, componentsPerVertex);
+
+	// @todo vk::Buffer creation
+
+	return id;
 }
 
 VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::createVertexAttributeBuffer");
-	return 0;
+	DebugAssert(vertexCount > 0);
+	DebugAssert(componentsPerVertex >= 2);
+
+	const VertexAttributeBufferID id = this->vertexAttributeBufferPool.alloc();
+	if (id < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate vertex attribute buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
+		return -1;
+	}
+
+	VulkanVertexAttributeBuffer &buffer = this->vertexAttributeBufferPool.get(id);
+	buffer.init(vertexCount, componentsPerVertex);
+
+	// @todo vk::Buffer creation
+
+	return id;
 }
 
 IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::createIndexBuffer");
-	return 0;
+	DebugAssert(indexCount > 0);
+	DebugAssert((indexCount % 3) == 0);
+
+	const IndexBufferID id = this->indexBufferPool.alloc();
+	if (id < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate index buffer (indices: %d).", indexCount);
+		return -1;
+	}
+
+	VulkanIndexBuffer &buffer = this->indexBufferPool.get(id);
+	buffer.init(indexCount);
+
+	// @todo vk::Buffer creation
+
+	return id;
 }
 
 void VulkanRenderBackend::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::populateVertexPositionBuffer");
+	VulkanVertexPositionBuffer &buffer = this->vertexPositionBufferPool.get(id);
+	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::populateVertexAttributeBuffer");
+	VulkanVertexAttributeBuffer &buffer = this->vertexAttributeBufferPool.get(id);
+	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::populateIndexBuffer");
+	VulkanIndexBuffer &buffer = this->indexBufferPool.get(id);
+	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::freeVertexPositionBuffer");
+	VulkanVertexPositionBuffer *buffer = this->vertexPositionBufferPool.tryGet(id);
+	if (buffer != nullptr)
+	{
+		// @todo vk::Buffer destroy
+	}
+
+	this->vertexPositionBufferPool.free(id);
 }
 
 void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::freeVertexAttributeBuffer");
+	VulkanVertexAttributeBuffer *buffer = this->vertexAttributeBufferPool.tryGet(id);
+	if (buffer != nullptr)
+	{
+		// @todo vk::Buffer destroy
+	}
+
+	this->vertexAttributeBufferPool.free(id);
 }
 
 void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::freeIndexBuffer");
+	VulkanIndexBuffer *buffer = this->indexBufferPool.tryGet(id);
+	if (buffer != nullptr)
+	{
+		// @todo vk::Buffer destroy
+	}
+
+	this->indexBufferPool.free(id);
 }
 
 ObjectTextureAllocator *VulkanRenderBackend::getObjectTextureAllocator()
@@ -1208,44 +1346,81 @@ UiTextureAllocator *VulkanRenderBackend::getUiTextureAllocator()
 
 UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::createUniformBuffer");
-	return 0;
+	DebugAssert(elementCount >= 0);
+	DebugAssert(sizeOfElement > 0);
+	DebugAssert(alignmentOfElement > 0);
+
+	const UniformBufferID id = this->uniformBufferPool.alloc();
+	if (id < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, sizeOfElement, alignmentOfElement);
+		return -1;
+	}
+
+	VulkanUniformBuffer &buffer = this->uniformBufferPool.get(id);
+	buffer.init(elementCount, sizeOfElement, alignmentOfElement);
+
+	// @todo vk::Buffer creation
+
+	return id;
 }
 
 void VulkanRenderBackend::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::populateUniformBuffer");
+	VulkanUniformBuffer &buffer = this->uniformBufferPool.get(id);
+	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::populateUniformAtIndex");
+	VulkanUniformBuffer &buffer = this->uniformBufferPool.get(id);
+	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::freeUniformBuffer");
+	VulkanUniformBuffer *buffer = this->uniformBufferPool.tryGet(id);
+	if (buffer != nullptr)
+	{
+		// @todo vk::Buffer destroy
+	}
+
+	this->uniformBufferPool.free(id);
 }
 
 RenderLightID VulkanRenderBackend::createLight()
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::createLight");
-	return 0;
+	const RenderLightID id = this->lightPool.alloc();
+	if (id < 0)
+	{
+		DebugLogError("Couldn't allocate render light ID.");
+		return -1;
+	}
+
+	return id;
 }
 
 void VulkanRenderBackend::setLightPosition(RenderLightID id, const Double3 &worldPoint)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::setLightPosition");
+	VulkanLight &light = this->lightPool.get(id);
+	// @todo vk copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::setLightRadius(RenderLightID id, double startRadius, double endRadius)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::setLightRadius");
+	VulkanLight &light = this->lightPool.get(id);
+	// @todo vk copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::freeLight(RenderLightID id)
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::freeLight");
+	VulkanLight *light = this->lightPool.tryGet(id);
+	if (light != nullptr)
+	{
+		// @todo vk destroy something
+	}
+
+	this->lightPool.free(id);
 }
 
 std::optional<Int2> VulkanRenderBackend::tryGetObjectTextureDims(ObjectTextureID id) const

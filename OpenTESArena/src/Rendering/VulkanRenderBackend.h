@@ -13,6 +13,44 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/RecyclablePool.h"
 
+struct VulkanVertexPositionBuffer
+{
+	// @todo: vk::Buffer
+
+	void init(int vertexCount, int componentsPerVertex);
+};
+
+struct VulkanVertexAttributeBuffer
+{
+	// @todo: vk::Buffer
+
+	void init(int vertexCount, int componentsPerVertex);
+};
+
+struct VulkanIndexBuffer
+{
+	// @todo: vk::Buffer
+
+	void init(int indexCount);
+};
+
+struct VulkanUniformBuffer
+{
+	// @todo vk::Buffer
+	int elementCount;
+	size_t sizeOfElement;
+	size_t alignmentOfElement;
+
+	VulkanUniformBuffer();
+
+	void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
+};
+
+struct VulkanLight
+{
+	// @todo vk something for worldPoint/startRadius/endRadius
+};
+
 struct VulkanTexture
 {
 	Buffer<std::byte> texels;
@@ -27,6 +65,11 @@ struct VulkanTexture
 	void init(int width, int height, int bytesPerTexel);
 };
 
+using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanVertexPositionBuffer>;
+using VulkanVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID, VulkanVertexAttributeBuffer>;
+using VulkanIndexBufferPool = RecyclablePool<IndexBufferID, VulkanIndexBuffer>;
+using VulkanUniformBufferPool = RecyclablePool<UniformBufferID, VulkanUniformBuffer>;
+using VulkanLightPool = RecyclablePool<RenderLightID, VulkanLight>;
 using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
 
@@ -99,6 +142,12 @@ private:
 
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;
+
+	VulkanVertexPositionBufferPool vertexPositionBufferPool;
+	VulkanVertexAttributeBufferPool vertexAttributeBufferPool;
+	VulkanIndexBufferPool indexBufferPool;
+	VulkanUniformBufferPool uniformBufferPool;
+	VulkanLightPool lightPool;
 
 	VulkanObjectTexturePool objectTexturePool;
 	VulkanObjectTextureAllocator objectTextureAllocator;
