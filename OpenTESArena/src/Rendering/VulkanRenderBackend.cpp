@@ -535,7 +535,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	const Buffer<const char*> deviceExtensions = GetDeviceExtensions();
 
-	DebugAssertMsgFormat(graphicsQueueFamilyIndex == presentQueueFamilyIndex, "Queue family indices are different for graphics (%d) and present (%d), not supported yet.", graphicsQueueFamilyIndex, presentQueueFamilyIndex);
 	vk::DeviceCreateInfo deviceCreateInfo;
 	deviceCreateInfo.queueCreateInfoCount = deviceQueueCreateInfos.getCount();
 	deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.begin();
