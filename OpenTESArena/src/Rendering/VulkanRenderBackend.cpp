@@ -508,17 +508,37 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const uint32_t queueFamilyIndices[] = { graphicsQueueFamilyIndex, presentQueueFamilyIndex };
 
 	constexpr float deviceQueuePriority = 1.0f;
-	vk::DeviceQueueCreateInfo deviceQueueCreateInfo;
-	deviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
-	deviceQueueCreateInfo.queueCount = 1;
-	deviceQueueCreateInfo.pQueuePriorities = &deviceQueuePriority;
+	Buffer<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
+	if (graphicsQueueFamilyIndex != presentQueueFamilyIndex)
+	{
+		deviceQueueCreateInfos.init(2);
+
+		vk::DeviceQueueCreateInfo &graphicsDeviceQueueCreateInfo = deviceQueueCreateInfos[0];
+		graphicsDeviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+		graphicsDeviceQueueCreateInfo.queueCount = 1;
+		graphicsDeviceQueueCreateInfo.pQueuePriorities = &deviceQueuePriority;
+
+		vk::DeviceQueueCreateInfo &presentDeviceQueueCreateInfo = deviceQueueCreateInfos[1];
+		presentDeviceQueueCreateInfo.queueFamilyIndex = presentQueueFamilyIndex;
+		presentDeviceQueueCreateInfo.queueCount = 1;
+		presentDeviceQueueCreateInfo.pQueuePriorities = &deviceQueuePriority;
+	}
+	else
+	{
+		deviceQueueCreateInfos.init(1);
+
+		vk::DeviceQueueCreateInfo &deviceQueueCreateInfo = deviceQueueCreateInfos[0];
+		deviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+		deviceQueueCreateInfo.queueCount = 1;
+		deviceQueueCreateInfo.pQueuePriorities = &deviceQueuePriority;
+	}
 
 	const Buffer<const char*> deviceExtensions = GetDeviceExtensions();
 
 	DebugAssertMsgFormat(graphicsQueueFamilyIndex == presentQueueFamilyIndex, "Queue family indices are different for graphics (%d) and present (%d), not supported yet.", graphicsQueueFamilyIndex, presentQueueFamilyIndex);
-	vk::DeviceCreateInfo deviceCreateInfo; // @todo this needs to be 1) graphics and 2) present if their family indices are different
-	deviceCreateInfo.queueCreateInfoCount = 1;
-	deviceCreateInfo.pQueueCreateInfos = &deviceQueueCreateInfo;
+	vk::DeviceCreateInfo deviceCreateInfo;
+	deviceCreateInfo.queueCreateInfoCount = deviceQueueCreateInfos.getCount();
+	deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.begin();
 	deviceCreateInfo.enabledExtensionCount = deviceExtensions.getCount();
 	deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.begin();
 
