@@ -33,23 +33,6 @@ namespace
 {
 	constexpr uint32_t RequiredApiVersion = VK_API_VERSION_1_0;
 
-	Buffer<const char*> GetInstanceExtensions(SDL_Window *window)
-	{
-		uint32_t count;
-		if (SDL_Vulkan_GetInstanceExtensions(window, &count, nullptr) != SDL_TRUE)
-		{
-			return Buffer<const char*>();
-		}
-
-		Buffer<const char*> extensions(count);
-		if (SDL_Vulkan_GetInstanceExtensions(window, &count, extensions.begin()) != SDL_TRUE)
-		{
-			return Buffer<const char*>();
-		}
-
-		return extensions;
-	}
-
 	std::vector<const char*> GetInstanceValidationLayers()
 	{
 		vk::ResultValue<std::vector<vk::LayerProperties>> availableValidationLayersResult = vk::enumerateInstanceLayerProperties();
@@ -81,6 +64,63 @@ namespace
 		}
 
 		return validationLayers;
+	}
+
+	bool TryCreateVulkanInstance(SDL_Window *window, vk::Instance *outInstance)
+	{
+		uint32_t instanceExtensionCount;
+		if (SDL_Vulkan_GetInstanceExtensions(window, &instanceExtensionCount, nullptr) != SDL_TRUE)
+		{
+			DebugLogError("Couldn't get Vulkan instance extension count. Vulkan is not supported.");
+			return false;
+		}
+
+		Buffer<const char*> instanceExtensions(instanceExtensionCount);
+		if (SDL_Vulkan_GetInstanceExtensions(window, &instanceExtensionCount, instanceExtensions.begin()) != SDL_TRUE)
+		{
+			DebugLogErrorFormat("Couldn't get Vulkan instance extensions (expected %d).", instanceExtensionCount);
+			return false;
+		}
+
+		bool isMinimumRequiredSurfaceAvailable = false;
+		for (const char *instanceExtensionName : instanceExtensions)
+		{
+			if (StringView::equals(instanceExtensionName, VK_KHR_SURFACE_EXTENSION_NAME))
+			{
+				isMinimumRequiredSurfaceAvailable = true;
+				break;
+			}
+		}
+
+		if (!isMinimumRequiredSurfaceAvailable)
+		{
+			DebugLogError("Vulkan is supported but no window surface is available.");
+			return false;
+		}
+
+		vk::ApplicationInfo appInfo;
+		appInfo.pApplicationName = "OpenTESArena";
+		appInfo.applicationVersion = 0;
+		appInfo.apiVersion = RequiredApiVersion;
+
+		const std::vector<const char*> instanceValidationLayers = GetInstanceValidationLayers();
+
+		vk::InstanceCreateInfo instanceCreateInfo;
+		instanceCreateInfo.pApplicationInfo = &appInfo;
+		instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceValidationLayers.size());
+		instanceCreateInfo.ppEnabledLayerNames = instanceValidationLayers.data();
+		instanceCreateInfo.enabledExtensionCount = instanceExtensions.getCount();
+		instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.begin();
+
+		vk::ResultValue<vk::Instance> instanceCreateResult = vk::createInstance(instanceCreateInfo);
+		if (instanceCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't create vk::Instance (%d).", instanceCreateResult.result);
+			return false;
+		}
+
+		*outInstance = std::move(instanceCreateResult.value);
+		return true;
 	}
 }
 
@@ -1113,35 +1153,11 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const Window *window = initSettings.window;
 	const std::string &dataFolderPath = initSettings.dataFolderPath;
 
-	const Buffer<const char*> instanceExtensions = GetInstanceExtensions(window->window);
-	if (instanceExtensions.getCount() == 0)
+	if (!TryCreateVulkanInstance(window->window, &this->instance))
 	{
-		DebugLogError("Couldn't get Vulkan instance extensions.");
+		DebugLogError("Couldn't create Vulkan instance.");
 		return false;
 	}
-
-	vk::ApplicationInfo appInfo;
-	appInfo.pApplicationName = "OpenTESArena";
-	appInfo.applicationVersion = 0;
-	appInfo.apiVersion = RequiredApiVersion;
-
-	const std::vector<const char*> instanceValidationLayers = GetInstanceValidationLayers();
-
-	vk::InstanceCreateInfo instanceCreateInfo;
-	instanceCreateInfo.pApplicationInfo = &appInfo;
-	instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceValidationLayers.size());
-	instanceCreateInfo.ppEnabledLayerNames = instanceValidationLayers.data();
-	instanceCreateInfo.enabledExtensionCount = instanceExtensions.getCount();
-	instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.begin();
-
-	vk::ResultValue<vk::Instance> instanceCreateResult = vk::createInstance(instanceCreateInfo);
-	if (instanceCreateResult.result != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't create vk::Instance (%d).", instanceCreateResult.result);
-		return false;
-	}
-
-	this->instance = std::move(instanceCreateResult.value);
 
 	VkSurfaceKHR vulkanSurface;
 	if (SDL_Vulkan_CreateSurface(window->window, this->instance, &vulkanSurface) != SDL_TRUE)
