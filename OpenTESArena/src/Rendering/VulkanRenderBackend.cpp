@@ -1444,7 +1444,10 @@ void VulkanRenderBackend::shutdown()
 
 		for (vk::Framebuffer framebuffer : this->swapchainFramebuffers)
 		{
-			this->device.destroyFramebuffer(framebuffer);
+			if (framebuffer)
+			{
+				this->device.destroyFramebuffer(framebuffer);
+			}
 		}
 
 		this->swapchainFramebuffers.clear();
@@ -1457,7 +1460,10 @@ void VulkanRenderBackend::shutdown()
 
 		for (vk::ImageView imageView : this->swapchainImageViews)
 		{
-			this->device.destroyImageView(imageView);
+			if (imageView)
+			{
+				this->device.destroyImageView(imageView);
+			}
 		}
 
 		this->swapchainImageViews.clear();
