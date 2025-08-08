@@ -13,12 +13,13 @@
 
 #include "components/utilities/Span.h"
 
+class Surface;
+
 struct ObjectTextureAllocator;
 struct RenderCamera;
 struct RenderCommandList;
 struct RenderFrameSettings;
 struct RenderInitSettings;
-struct Surface;
 struct UiCommandList;
 struct UiTextureAllocator;
 
