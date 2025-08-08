@@ -3,8 +3,6 @@
 
 #include <vector>
 
-#define VULKAN_HPP_NO_EXCEPTIONS
-#define VULKAN_HPP_NO_SMART_HANDLE
 #include "vulkan/vulkan.hpp"
 
 #include "RenderBackend.h"
