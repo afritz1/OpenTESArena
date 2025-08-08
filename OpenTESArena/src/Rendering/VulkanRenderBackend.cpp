@@ -499,25 +499,26 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	this->physicalDevice = GetBestPhysicalDevice(physicalDevices);
+
 	const std::vector<vk::QueueFamilyProperties> queueFamilyPropertiesList = this->physicalDevice.getQueueFamilyProperties();
-	uint32_t graphicsQueueFamilyIndex = INVALID_UINT32;
+	this->graphicsQueueFamilyIndex = INVALID_UINT32;
 	for (uint32_t i = 0; i < queueFamilyPropertiesList.size(); i++)
 	{
 		const vk::QueueFamilyProperties &queueFamilyProperties = queueFamilyPropertiesList[i];
 		if (queueFamilyProperties.queueFlags & vk::QueueFlagBits::eGraphics)
 		{
-			graphicsQueueFamilyIndex = i;
+			this->graphicsQueueFamilyIndex = i;
 			break;
 		}
 	}
 
-	if (graphicsQueueFamilyIndex == INVALID_UINT32)
+	if (this->graphicsQueueFamilyIndex == INVALID_UINT32)
 	{
 		DebugLogErrorFormat("No graphics queue family index found.");
 		return false;
 	}
 
-	uint32_t presentQueueFamilyIndex = INVALID_UINT32;
+	this->presentQueueFamilyIndex = INVALID_UINT32;
 	for (uint32_t i = 0; i < queueFamilyPropertiesList.size(); i++)
 	{
 		vk::ResultValue<uint32_t> surfaceSupportResult = this->physicalDevice.getSurfaceSupportKHR(i, this->surface);
@@ -530,8 +531,8 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		const VkBool32 isPresentSupported = surfaceSupportResult.value;
 		if (isPresentSupported)
 		{
-			presentQueueFamilyIndex = i;
-			if (i == graphicsQueueFamilyIndex)
+			this->presentQueueFamilyIndex = i;
+			if (i == this->graphicsQueueFamilyIndex)
 			{
 				// Queue family index is valid for graphics and presenting.
 				break;
@@ -539,27 +540,27 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		}
 	}
 
-	if (presentQueueFamilyIndex == INVALID_UINT32)
+	if (this->presentQueueFamilyIndex == INVALID_UINT32)
 	{
 		DebugLogErrorFormat("Couldn't find present queue family index.");
 		return false;
 	}
 
-	const uint32_t queueFamilyIndices[] = { graphicsQueueFamilyIndex, presentQueueFamilyIndex };
+	const uint32_t queueFamilyIndices[] = { this->graphicsQueueFamilyIndex, this->presentQueueFamilyIndex };
 
 	constexpr float deviceQueuePriority = 1.0f;
 	Buffer<vk::DeviceQueueCreateInfo> deviceQueueCreateInfos;
-	if (graphicsQueueFamilyIndex != presentQueueFamilyIndex)
+	if (this->graphicsQueueFamilyIndex != this->presentQueueFamilyIndex)
 	{
 		deviceQueueCreateInfos.init(2);
 
 		vk::DeviceQueueCreateInfo &graphicsDeviceQueueCreateInfo = deviceQueueCreateInfos[0];
-		graphicsDeviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+		graphicsDeviceQueueCreateInfo.queueFamilyIndex = this->graphicsQueueFamilyIndex;
 		graphicsDeviceQueueCreateInfo.queueCount = 1;
 		graphicsDeviceQueueCreateInfo.pQueuePriorities = &deviceQueuePriority;
 
 		vk::DeviceQueueCreateInfo &presentDeviceQueueCreateInfo = deviceQueueCreateInfos[1];
-		presentDeviceQueueCreateInfo.queueFamilyIndex = presentQueueFamilyIndex;
+		presentDeviceQueueCreateInfo.queueFamilyIndex = this->presentQueueFamilyIndex;
 		presentDeviceQueueCreateInfo.queueCount = 1;
 		presentDeviceQueueCreateInfo.pQueuePriorities = &deviceQueuePriority;
 	}
@@ -568,7 +569,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		deviceQueueCreateInfos.init(1);
 
 		vk::DeviceQueueCreateInfo &deviceQueueCreateInfo = deviceQueueCreateInfos[0];
-		deviceQueueCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+		deviceQueueCreateInfo.queueFamilyIndex = this->graphicsQueueFamilyIndex;
 		deviceQueueCreateInfo.queueCount = 1;
 		deviceQueueCreateInfo.pQueuePriorities = &deviceQueuePriority;
 	}
@@ -589,8 +590,8 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	this->device = std::move(deviceCreateResult.value);
-	this->graphicsQueue = this->device.getQueue(graphicsQueueFamilyIndex, 0);
-	this->presentQueue = this->device.getQueue(presentQueueFamilyIndex, 0);
+	this->graphicsQueue = this->device.getQueue(this->graphicsQueueFamilyIndex, 0);
+	this->presentQueue = this->device.getQueue(this->presentQueueFamilyIndex, 0);
 	this->objectTextureAllocator.init(&this->objectTexturePool, this->device);
 	this->uiTextureAllocator.init(&this->uiTexturePool, this->device);
 
@@ -676,7 +677,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	swapchainCreateInfo.imageArrayLayers = 1;
 	swapchainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
 
-	if (graphicsQueueFamilyIndex != presentQueueFamilyIndex)
+	if (this->graphicsQueueFamilyIndex != this->presentQueueFamilyIndex)
 	{
 		swapchainCreateInfo.imageSharingMode = vk::SharingMode::eConcurrent;
 		swapchainCreateInfo.queueFamilyIndexCount = 2;
@@ -804,7 +805,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	vk::CommandPoolCreateInfo commandPoolCreateInfo;
-	commandPoolCreateInfo.queueFamilyIndex = graphicsQueueFamilyIndex;
+	commandPoolCreateInfo.queueFamilyIndex = this->graphicsQueueFamilyIndex;
 	commandPoolCreateInfo.flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer;
 
 	vk::ResultValue<vk::CommandPool> commandPoolCreateResult = this->device.createCommandPool(commandPoolCreateInfo);
@@ -975,7 +976,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	vertexBufferCreateInfo.usage = vk::BufferUsageFlagBits::eVertexBuffer;
 	vertexBufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
 	vertexBufferCreateInfo.queueFamilyIndexCount = 1;
-	vertexBufferCreateInfo.pQueueFamilyIndices = &graphicsQueueFamilyIndex;
+	vertexBufferCreateInfo.pQueueFamilyIndices = &this->graphicsQueueFamilyIndex;
 
 	vk::ResultValue<vk::Buffer> vertexBufferCreateResult = this->device.createBuffer(vertexBufferCreateInfo);
 	if (vertexBufferCreateResult.result != vk::Result::eSuccess)
@@ -1197,6 +1198,9 @@ void VulkanRenderBackend::shutdown()
 
 	if (this->instance)
 	{
+		this->graphicsQueueFamilyIndex = INVALID_UINT32;
+		this->presentQueueFamilyIndex = INVALID_UINT32;
+
 		if (this->physicalDevice)
 		{
 			this->physicalDevice = nullptr;

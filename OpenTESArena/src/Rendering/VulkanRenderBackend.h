@@ -59,7 +59,7 @@ struct VulkanTexture
 	// @todo vk::Image handle
 
 	VulkanTexture();
-	
+
 	void init(int width, int height, int bytesPerTexel);
 };
 
@@ -82,7 +82,7 @@ struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 
 	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
 	ObjectTextureID create(const TextureBuilder &textureBuilder) override;
-	
+
 	void free(ObjectTextureID textureID) override;
 
 	LockedTexture lock(ObjectTextureID textureID) override;
@@ -115,6 +115,8 @@ private:
 	vk::Instance instance;
 	vk::SurfaceKHR surface;
 	vk::PhysicalDevice physicalDevice;
+	uint32_t graphicsQueueFamilyIndex;
+	uint32_t presentQueueFamilyIndex;
 
 	vk::Device device;
 	vk::Queue graphicsQueue;
