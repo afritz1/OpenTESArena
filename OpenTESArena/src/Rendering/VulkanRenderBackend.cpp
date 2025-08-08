@@ -693,6 +693,7 @@ namespace
 		if (bufferMemoryAllocateInfo.memoryTypeIndex == INVALID_UINT32)
 		{
 			DebugLogErrorFormat("Couldn't find suitable buffer memory type.");
+			device.destroyBuffer(buffer);
 			return false;
 		}
 
@@ -700,6 +701,7 @@ namespace
 		if (bufferDeviceMemoryResult.result != vk::Result::eSuccess)
 		{
 			DebugLogErrorFormat("Couldn't allocate device buffer memory (%d).", bufferDeviceMemoryResult.result);
+			device.destroyBuffer(buffer);
 			return false;
 		}
 
@@ -709,6 +711,8 @@ namespace
 		if (bufferBindMemoryResult != vk::Result::eSuccess)
 		{
 			DebugLogErrorFormat("Couldn't bind device buffer memory (%d).", bufferBindMemoryResult);
+			device.freeMemory(deviceMemory);
+			device.destroyBuffer(buffer);
 			return false;
 		}
 
@@ -741,10 +745,132 @@ namespace
 		return TryCopyToBufferHostVisible(device, valuesAsBytes, destinationDeviceMemory);
 	}
 
-	bool TryCopyToBufferDeviceLocal()
+	void CopyToBufferDeviceLocal(vk::Buffer sourceBuffer, int sourceByteCount, vk::Buffer destinationBuffer, vk::CommandBuffer commandBuffer)
 	{
-		// @todo
+		vk::BufferCopy bufferCopy;
+		bufferCopy.srcOffset = 0;
+		bufferCopy.dstOffset = 0;
+		bufferCopy.size = sourceByteCount;
+
+		commandBuffer.copyBuffer(sourceBuffer, destinationBuffer, bufferCopy);
+	}
+
+	bool TryCreateImage(vk::Device device, int width, int height, vk::Format format, vk::ImageUsageFlags usageFlags, uint32_t queueFamilyIndex,
+		vk::PhysicalDevice physicalDevice, vk::Image *outImage, vk::DeviceMemory *outDeviceMemory)
+	{
+		vk::ImageCreateInfo imageCreateInfo;
+		imageCreateInfo.imageType = vk::ImageType::e2D;
+		imageCreateInfo.format = format;
+		imageCreateInfo.extent = vk::Extent3D(width, height, 1);
+		imageCreateInfo.mipLevels = 1;
+		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.samples = vk::SampleCountFlagBits::e1;
+		imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
+		imageCreateInfo.usage = usageFlags;
+		imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+		imageCreateInfo.queueFamilyIndexCount = 1;
+		imageCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+		imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
+
+		vk::ResultValue<vk::Image> createImageResult = device.createImage(imageCreateInfo);
+		if (createImageResult.result != vk::Result::eSuccess)
+		{
+			DebugLogError("Couldn't create vk::Image.");
+			return false;
+		}
+
+		const vk::Image image = std::move(createImageResult.value);
+		const vk::MemoryRequirements imageMemoryRequirements = device.getImageMemoryRequirements(image);
+		const vk::MemoryPropertyFlags imageMemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+		vk::MemoryAllocateInfo imageMemoryAllocateInfo;
+		imageMemoryAllocateInfo.allocationSize = imageMemoryRequirements.size;
+		imageMemoryAllocateInfo.memoryTypeIndex = FindPhysicalDeviceMemoryTypeIndex(physicalDevice, imageMemoryRequirements, imageMemoryPropertyFlags);
+
+		vk::ResultValue<vk::DeviceMemory> createImageMemoryResult = device.allocateMemory(imageMemoryAllocateInfo);
+		if (createImageMemoryResult.result != vk::Result::eSuccess)
+		{
+			DebugLogError("Couldn't allocate vk::Image memory.");
+			device.destroyImage(image);
+			return false;
+		}
+
+		vk::DeviceMemory deviceMemory = std::move(createImageMemoryResult.value);
+
+		const vk::Result imageBindMemoryResult = device.bindImageMemory(image, deviceMemory, 0);
+		if (imageBindMemoryResult != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't bind device image memory (%d).", imageBindMemoryResult);
+			device.freeMemory(deviceMemory);
+			device.destroyImage(image);
+			return false;
+		}
+
+		*outImage = image;
+		*outDeviceMemory = deviceMemory;
 		return true;
+	}
+
+	void TransitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer)
+	{
+		const bool isTransitionToInitialPopulate = (oldLayout == vk::ImageLayout::eUndefined) && (newLayout == vk::ImageLayout::eTransferDstOptimal);
+		const bool isTransitionToShaderReadOnly = (oldLayout == vk::ImageLayout::eTransferDstOptimal) && (newLayout == vk::ImageLayout::eShaderReadOnlyOptimal);
+
+		vk::ImageMemoryBarrier imageMemoryBarrier;
+		imageMemoryBarrier.oldLayout = oldLayout;
+		imageMemoryBarrier.newLayout = newLayout;
+		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+		imageMemoryBarrier.subresourceRange.levelCount = 1;
+		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+		imageMemoryBarrier.subresourceRange.layerCount = 1;
+
+		vk::PipelineStageFlags srcPipelineStageFlags;
+		vk::PipelineStageFlags dstPipelineStageFlags;
+		if (isTransitionToInitialPopulate)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+			srcPipelineStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
+			dstPipelineStageFlags = vk::PipelineStageFlagBits::eTransfer;
+		}
+		else if (isTransitionToShaderReadOnly)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+			srcPipelineStageFlags = vk::PipelineStageFlagBits::eTransfer;
+			dstPipelineStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
+		}
+		else
+		{
+			DebugLogErrorFormat("Unsupported image layout transition %d -> %d.", oldLayout, newLayout);
+			return;
+		}
+
+		vk::DependencyFlags dependencyFlags;
+		vk::MemoryBarrier memoryBarrier;
+		vk::BufferMemoryBarrier bufferMemoryBarrier;
+		commandBuffer.pipelineBarrier(srcPipelineStageFlags, dstPipelineStageFlags, dependencyFlags, memoryBarrier, bufferMemoryBarrier, imageMemoryBarrier);
+	}
+
+	void CopyBufferToImage(vk::Buffer sourceBuffer, vk::Image destinationImage, int imageWidth, int imageHeight, vk::CommandBuffer commandBuffer)
+	{
+		const vk::ImageLayout imageLayout = vk::ImageLayout::eTransferDstOptimal;
+
+		vk::BufferImageCopy bufferImageCopy;
+		bufferImageCopy.bufferOffset = 0;
+		bufferImageCopy.bufferRowLength = 0;
+		bufferImageCopy.bufferImageHeight = 0;
+		bufferImageCopy.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		bufferImageCopy.imageSubresource.mipLevel = 0;
+		bufferImageCopy.imageSubresource.baseArrayLayer = 0;
+		bufferImageCopy.imageSubresource.layerCount = 1;
+		bufferImageCopy.imageOffset = vk::Offset3D();
+		bufferImageCopy.imageExtent = vk::Extent3D(imageWidth, imageHeight, 1);
+
+		commandBuffer.copyBufferToImage(sourceBuffer, destinationImage, imageLayout, bufferImageCopy);
 	}
 }
 
