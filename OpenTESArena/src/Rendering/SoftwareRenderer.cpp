@@ -4672,7 +4672,7 @@ std::optional<Int2> SoftwareRenderer::tryGetTextureDims(ObjectTextureID id) cons
 
 UniformBufferID SoftwareRenderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
 {
-	DebugAssert(elementCount >= 0);
+	DebugAssert(elementCount > 0);
 	DebugAssert(sizeOfElement > 0);
 	DebugAssert(alignmentOfElement > 0);
 

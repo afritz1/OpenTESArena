@@ -659,11 +659,15 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 	const int totalSkyObjectCount = skyInst.lightningEnd;
 
 	DebugAssert(this->objectTransformBufferID == -1);
-	this->objectTransformBufferID = renderer.createUniformBuffer(totalSkyObjectCount, sizeof(RenderTransform), alignof(RenderTransform));
-	if (this->objectTransformBufferID < 0)
+
+	if (totalSkyObjectCount > 0) // Don't allow empty uniform buffer (Vulkan limitation).
 	{
-		DebugLogError("Couldn't create uniform buffer for sky objects.");
-		return;
+		this->objectTransformBufferID = renderer.createUniformBuffer(totalSkyObjectCount, sizeof(RenderTransform), alignof(RenderTransform));
+		if (this->objectTransformBufferID < 0)
+		{
+			DebugLogError("Couldn't create uniform buffer for sky objects.");
+			return;
+		}
 	}
 }
 
