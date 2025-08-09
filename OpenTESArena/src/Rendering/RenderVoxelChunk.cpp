@@ -18,14 +18,11 @@ void RenderVoxelDrawCallRange::clear()
 RenderVoxelDrawCallHeap::RenderVoxelDrawCallHeap()
 {
 	this->nextDrawCall = 0;
-	this->nextID = 0;
 }
 
 Span<RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id)
 {
-	DebugAssertIndex(this->drawCallRanges, id);
-	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
-
+	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRangesPool.get(id);
 	RenderDrawCall *rangeBegin = std::begin(this->drawCalls) + drawCallRange.index;
 	DebugAssert((rangeBegin + drawCallRange.count) <= std::end(this->drawCalls));
 	return Span<RenderDrawCall>(rangeBegin, drawCallRange.count);
@@ -33,9 +30,7 @@ Span<RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id)
 
 Span<const RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id) const
 {
-	DebugAssertIndex(this->drawCallRanges, id);
-	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
-
+	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRangesPool.get(id);
 	const RenderDrawCall *rangeBegin = std::begin(this->drawCalls) + drawCallRange.index;
 	DebugAssert((rangeBegin + drawCallRange.count) <= std::end(this->drawCalls));
 	return Span<const RenderDrawCall>(rangeBegin, drawCallRange.count);
@@ -45,26 +40,14 @@ RenderVoxelDrawCallRangeID RenderVoxelDrawCallHeap::alloc(int drawCallCount)
 {
 	DebugAssert(drawCallCount > 0);
 
-	RenderVoxelDrawCallRangeID rangeID;
-	if (!this->freedIDs.empty())
+	const RenderVoxelDrawCallRangeID rangeID = this->drawCallRangesPool.alloc();
+	if (rangeID < 0)
 	{
-		rangeID = this->freedIDs.back();
-		this->freedIDs.pop_back();
-	}
-	else
-	{
-		if (this->nextID == MAX_DRAW_CALL_RANGES)
-		{
-			DebugLogError("No more draw call range IDs available.");
-			return -1;
-		}
-
-		rangeID = this->nextID;
-		this->nextID++;
+		DebugLogError("Couldn't allocate draw call range ID.");
+		return -1;
 	}
 
-	DebugAssertIndex(this->drawCallRanges, rangeID);
-	RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[rangeID];
+	RenderVoxelDrawCallRange &drawCallRange = this->drawCallRangesPool.get(rangeID);
 	if (!this->freedDrawCalls.empty())
 	{
 		// Find a suitable sequence of free draw call slots.
@@ -121,16 +104,13 @@ void RenderVoxelDrawCallHeap::free(RenderVoxelDrawCallRangeID id)
 {
 	DebugAssert(id >= 0);
 
-	const auto freedIdIter = std::find(this->freedIDs.begin(), this->freedIDs.end(), id);
-	if (freedIdIter != this->freedIDs.end())
+	if (this->drawCallRangesPool.isFreedKey(id))
 	{
 		DebugLogWarning("Already freed draw call range ID " + std::to_string(id) + ".");
 		return;
 	}
 
-	// Free the draw call slots.
-	DebugAssertIndex(this->drawCallRanges, id);
-	RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
+	RenderVoxelDrawCallRange &drawCallRange = this->drawCallRangesPool.get(id);
 	for (int i = 0; i < drawCallRange.count; i++)
 	{
 		const int drawCallIndexToFree = drawCallRange.index + i;
@@ -144,9 +124,7 @@ void RenderVoxelDrawCallHeap::free(RenderVoxelDrawCallRangeID id)
 		this->freedDrawCalls.insert(insertIter, drawCallIndexToFree);
 	}
 
-	// Free the draw call range slot.
-	drawCallRange.clear();
-	this->freedIDs.push_back(id);
+	this->drawCallRangesPool.free(id);
 }
 
 void RenderVoxelDrawCallHeap::clear()
@@ -159,13 +137,7 @@ void RenderVoxelDrawCallHeap::clear()
 	this->freedDrawCalls.clear();
 	this->nextDrawCall = 0;
 
-	for (RenderVoxelDrawCallRange &drawCallRange : this->drawCallRanges)
-	{
-		drawCallRange.clear();
-	}
-
-	this->freedIDs.clear();
-	this->nextID = 0;
+	this->drawCallRangesPool.clear();
 }
 
 RenderVoxelCombinedFaceTransformKey::RenderVoxelCombinedFaceTransformKey()

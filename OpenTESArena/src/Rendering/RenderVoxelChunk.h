@@ -32,15 +32,12 @@ using RenderVoxelDrawCallRangeID = int;
 struct RenderVoxelDrawCallHeap
 {
 	static constexpr int MAX_DRAW_CALLS = 8192;
-	static constexpr int MAX_DRAW_CALL_RANGES = (7 * MAX_DRAW_CALLS) / 8; // Arbitrary, most ranges will be 1 draw call.
 
 	RenderDrawCall drawCalls[MAX_DRAW_CALLS];
 	std::vector<int> freedDrawCalls;
 	int nextDrawCall;
 
-	RenderVoxelDrawCallRange drawCallRanges[MAX_DRAW_CALL_RANGES];
-	std::vector<RenderVoxelDrawCallRangeID> freedIDs;
-	RenderVoxelDrawCallRangeID nextID;
+	RecyclablePool<RenderVoxelDrawCallRangeID, RenderVoxelDrawCallRange> drawCallRangesPool;
 
 	RenderVoxelDrawCallHeap();
 
