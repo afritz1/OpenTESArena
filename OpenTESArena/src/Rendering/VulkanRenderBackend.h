@@ -1,6 +1,7 @@
 #ifndef VULKAN_RENDER_BACKEND_H
 #define VULKAN_RENDER_BACKEND_H
 
+#include <cstdint>
 #include <vector>
 
 #include "vulkan/vulkan.hpp"
@@ -11,57 +12,67 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/RecyclablePool.h"
 
-struct VulkanVertexPositionBuffer
+struct VulkanBufferVertexPositionInfo
 {
 	int vertexCount;
 	int componentsPerVertex;
+	size_t sizeOfComponent;
+};
+
+struct VulkanBufferVertexAttributeInfo
+{
+	int vertexCount;
+	int componentsPerVertex;
+	size_t sizeOfComponent;
+};
+
+struct VulkanBufferIndexInfo
+{
+	int indexCount;
+	size_t sizeOfIndex;
+};
+
+struct VulkanBufferUniformInfo
+{
+	int elementCount;
+	size_t sizeOfElement;
+	size_t alignmentOfElement;
+};
+
+enum class VulkanBufferType
+{
+	VertexPosition,
+	VertexAttribute,
+	Index,
+	Uniform
+};
+
+struct VulkanBuffer
+{
 	vk::Buffer buffer;
 	vk::DeviceMemory deviceMemory;
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
 
-	VulkanVertexPositionBuffer();
+	VulkanBufferType type;
 
-	void init(int vertexCount, int componentsPerVertex, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	union
+	{
+		VulkanBufferVertexPositionInfo vertexPosition;
+		VulkanBufferVertexAttributeInfo vertexAttribute;
+		VulkanBufferIndexInfo index;
+		VulkanBufferUniformInfo uniform;
+	};
+
+	VulkanBuffer();
+
+	void initVertexPosition(int vertexCount, int componentsPerVertex, size_t sizeOfComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	void initVertexAttribute(int vertexCount, int componentsPerVertex, size_t sizeOfComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	void initIndex(int indexCount, size_t sizeOfIndex, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	void initUniform(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
 
 	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
 	void setUnlocked();
-};
-
-struct VulkanVertexAttributeBuffer
-{
-	int vertexCount;
-	int componentsPerVertex;
-	vk::Buffer buffer;
-	vk::DeviceMemory deviceMemory;
-
-	VulkanVertexAttributeBuffer();
-
-	void init(int vertexCount, int componentsPerVertex, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-};
-
-struct VulkanIndexBuffer
-{
-	int indexCount;
-	vk::Buffer buffer;
-	vk::DeviceMemory deviceMemory;
-
-	VulkanIndexBuffer();
-
-	void init(int indexCount, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-};
-
-struct VulkanUniformBuffer
-{
-	int elementCount;
-	size_t sizeOfElement;
-	size_t alignmentOfElement;
-	vk::Buffer buffer;
-	vk::DeviceMemory deviceMemory;
-
-	VulkanUniformBuffer();
-
-	void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
 };
 
 struct VulkanLight
@@ -88,10 +99,10 @@ struct VulkanTexture
 	void setUnlocked();
 };
 
-using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanVertexPositionBuffer>;
-using VulkanVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID, VulkanVertexAttributeBuffer>;
-using VulkanIndexBufferPool = RecyclablePool<IndexBufferID, VulkanIndexBuffer>;
-using VulkanUniformBufferPool = RecyclablePool<UniformBufferID, VulkanUniformBuffer>;
+using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanBuffer>;
+using VulkanVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID, VulkanBuffer>;
+using VulkanIndexBufferPool = RecyclablePool<IndexBufferID, VulkanBuffer>;
+using VulkanUniformBufferPool = RecyclablePool<UniformBufferID, VulkanBuffer>;
 using VulkanLightPool = RecyclablePool<RenderLightID, VulkanLight>;
 using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;

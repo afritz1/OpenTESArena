@@ -295,6 +295,243 @@ namespace
 	}
 }
 
+// Vulkan buffers
+namespace
+{
+	bool TryCreateBuffer(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, uint32_t queueFamilyIndex,
+		vk::PhysicalDevice physicalDevice, vk::Buffer *outBuffer, vk::DeviceMemory *outDeviceMemory)
+	{
+		vk::BufferCreateInfo bufferCreateInfo;
+		bufferCreateInfo.size = byteCount;
+		bufferCreateInfo.usage = usageFlags;
+		bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+		bufferCreateInfo.queueFamilyIndexCount = 1;
+		bufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+
+		vk::ResultValue<vk::Buffer> bufferCreateResult = device.createBuffer(bufferCreateInfo);
+		if (bufferCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't create device buffer (%d).", bufferCreateResult.result);
+			return false;
+		}
+
+		const vk::Buffer buffer = std::move(bufferCreateResult.value);
+
+		const vk::MemoryRequirements bufferMemoryRequirements = device.getBufferMemoryRequirements(buffer);
+		const vk::MemoryPropertyFlags bufferMemoryPropertyFlags = isHostVisible ? (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) : vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+		vk::MemoryAllocateInfo bufferMemoryAllocateInfo;
+		bufferMemoryAllocateInfo.allocationSize = bufferMemoryRequirements.size;
+		bufferMemoryAllocateInfo.memoryTypeIndex = FindPhysicalDeviceMemoryTypeIndex(physicalDevice, bufferMemoryRequirements, bufferMemoryPropertyFlags);
+		if (bufferMemoryAllocateInfo.memoryTypeIndex == INVALID_UINT32)
+		{
+			DebugLogErrorFormat("Couldn't find suitable buffer memory type.");
+			device.destroyBuffer(buffer);
+			return false;
+		}
+
+		vk::ResultValue<vk::DeviceMemory> bufferDeviceMemoryResult = device.allocateMemory(bufferMemoryAllocateInfo);
+		if (bufferDeviceMemoryResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't allocate device buffer memory (%d).", bufferDeviceMemoryResult.result);
+			device.destroyBuffer(buffer);
+			return false;
+		}
+
+		const vk::DeviceMemory deviceMemory = std::move(bufferDeviceMemoryResult.value);
+
+		const vk::Result bufferBindMemoryResult = device.bindBufferMemory(buffer, deviceMemory, 0);
+		if (bufferBindMemoryResult != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't bind device buffer memory (%d).", bufferBindMemoryResult);
+			device.freeMemory(deviceMemory);
+			device.destroyBuffer(buffer);
+			return false;
+		}
+
+		*outBuffer = buffer;
+		*outDeviceMemory = deviceMemory;
+		return true;
+	}
+
+	bool TryCopyToBufferHostVisible(vk::Device device, Span<const std::byte> sourceBytes, vk::DeviceMemory destinationDeviceMemory)
+	{
+		const vk::DeviceSize sourceByteCount = sourceBytes.getCount();
+		vk::ResultValue<void*> destinationMapMemoryResult = device.mapMemory(destinationDeviceMemory, 0, sourceByteCount);
+		if (destinationMapMemoryResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't map device buffer memory with %d bytes (%d).", sourceByteCount, destinationMapMemoryResult.result);
+			return false;
+		}
+
+		void *hostMappedMemory = std::move(destinationMapMemoryResult.value);
+		std::copy(sourceBytes.begin(), sourceBytes.end(), reinterpret_cast<std::byte*>(hostMappedMemory));
+		device.unmapMemory(destinationDeviceMemory);
+		return true;
+	}
+
+	template<typename T>
+	bool TryCopyToBufferHostVisible(vk::Device device, Span<const T> values, vk::DeviceMemory destinationDeviceMemory)
+	{
+		const size_t valuesByteCount = values.getCount() * sizeof(T);
+		Span<const std::byte> valuesAsBytes(reinterpret_cast<const std::byte*>(values.begin()), valuesByteCount);
+		return TryCopyToBufferHostVisible(device, valuesAsBytes, destinationDeviceMemory);
+	}
+
+	void CopyToBufferDeviceLocal(vk::Buffer sourceBuffer, int sourceByteCount, vk::Buffer destinationBuffer, vk::CommandBuffer commandBuffer)
+	{
+		vk::BufferCopy bufferCopy;
+		bufferCopy.srcOffset = 0;
+		bufferCopy.dstOffset = 0;
+		bufferCopy.size = sourceByteCount;
+
+		commandBuffer.copyBuffer(sourceBuffer, destinationBuffer, bufferCopy);
+	}
+
+	bool TryCreateImage(vk::Device device, int width, int height, vk::Format format, vk::ImageUsageFlags usageFlags, uint32_t queueFamilyIndex,
+		vk::PhysicalDevice physicalDevice, vk::Image *outImage, vk::DeviceMemory *outDeviceMemory)
+	{
+		vk::ImageCreateInfo imageCreateInfo;
+		imageCreateInfo.imageType = vk::ImageType::e2D;
+		imageCreateInfo.format = format;
+		imageCreateInfo.extent = vk::Extent3D(width, height, 1);
+		imageCreateInfo.mipLevels = 1;
+		imageCreateInfo.arrayLayers = 1;
+		imageCreateInfo.samples = vk::SampleCountFlagBits::e1;
+		imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
+		imageCreateInfo.usage = usageFlags;
+		imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+		imageCreateInfo.queueFamilyIndexCount = 1;
+		imageCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+		imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
+
+		vk::ResultValue<vk::Image> createImageResult = device.createImage(imageCreateInfo);
+		if (createImageResult.result != vk::Result::eSuccess)
+		{
+			DebugLogError("Couldn't create vk::Image.");
+			return false;
+		}
+
+		const vk::Image image = std::move(createImageResult.value);
+		const vk::MemoryRequirements imageMemoryRequirements = device.getImageMemoryRequirements(image);
+		const vk::MemoryPropertyFlags imageMemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+		vk::MemoryAllocateInfo imageMemoryAllocateInfo;
+		imageMemoryAllocateInfo.allocationSize = imageMemoryRequirements.size;
+		imageMemoryAllocateInfo.memoryTypeIndex = FindPhysicalDeviceMemoryTypeIndex(physicalDevice, imageMemoryRequirements, imageMemoryPropertyFlags);
+
+		vk::ResultValue<vk::DeviceMemory> createImageMemoryResult = device.allocateMemory(imageMemoryAllocateInfo);
+		if (createImageMemoryResult.result != vk::Result::eSuccess)
+		{
+			DebugLogError("Couldn't allocate vk::Image memory.");
+			device.destroyImage(image);
+			return false;
+		}
+
+		vk::DeviceMemory deviceMemory = std::move(createImageMemoryResult.value);
+
+		const vk::Result imageBindMemoryResult = device.bindImageMemory(image, deviceMemory, 0);
+		if (imageBindMemoryResult != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't bind device image memory (%d).", imageBindMemoryResult);
+			device.freeMemory(deviceMemory);
+			device.destroyImage(image);
+			return false;
+		}
+
+		*outImage = image;
+		*outDeviceMemory = deviceMemory;
+		return true;
+	}
+
+	bool TryCreateImageView(vk::Device device, vk::Format format, vk::Image image, vk::ImageView *outImageView)
+	{
+		vk::ImageViewCreateInfo imageViewCreateInfo;
+		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
+		imageViewCreateInfo.format = format;
+		imageViewCreateInfo.components = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity };
+		imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+		imageViewCreateInfo.subresourceRange.levelCount = 1;
+		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+		imageViewCreateInfo.subresourceRange.layerCount = 1;
+		imageViewCreateInfo.image = image;
+
+		vk::ResultValue<vk::ImageView> imageViewCreateResult = device.createImageView(imageViewCreateInfo);
+		if (imageViewCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't create image view (%d).", imageViewCreateResult.result);
+			return false;
+		}
+
+		*outImageView = std::move(imageViewCreateResult.value);
+		return true;
+	}
+
+	void TransitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer)
+	{
+		const bool isTransitionToInitialPopulate = (oldLayout == vk::ImageLayout::eUndefined) && (newLayout == vk::ImageLayout::eTransferDstOptimal);
+		const bool isTransitionToShaderReadOnly = (oldLayout == vk::ImageLayout::eTransferDstOptimal) && (newLayout == vk::ImageLayout::eShaderReadOnlyOptimal);
+
+		vk::ImageMemoryBarrier imageMemoryBarrier;
+		imageMemoryBarrier.oldLayout = oldLayout;
+		imageMemoryBarrier.newLayout = newLayout;
+		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageMemoryBarrier.image = image;
+		imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+		imageMemoryBarrier.subresourceRange.levelCount = 1;
+		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+		imageMemoryBarrier.subresourceRange.layerCount = 1;
+
+		vk::PipelineStageFlags srcPipelineStageFlags;
+		vk::PipelineStageFlags dstPipelineStageFlags;
+		if (isTransitionToInitialPopulate)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+			srcPipelineStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
+			dstPipelineStageFlags = vk::PipelineStageFlagBits::eTransfer;
+		}
+		else if (isTransitionToShaderReadOnly)
+		{
+			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+			srcPipelineStageFlags = vk::PipelineStageFlagBits::eTransfer;
+			dstPipelineStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
+		}
+		else
+		{
+			DebugLogErrorFormat("Unsupported image layout transition %d -> %d.", oldLayout, newLayout);
+			return;
+		}
+
+		vk::DependencyFlags dependencyFlags;
+		vk::ArrayProxy<vk::MemoryBarrier> memoryBarrierArrayProxy; // Unused
+		vk::ArrayProxy<vk::BufferMemoryBarrier> bufferMemoryBarrierArrayProxy; // Unused
+		commandBuffer.pipelineBarrier(srcPipelineStageFlags, dstPipelineStageFlags, dependencyFlags, memoryBarrierArrayProxy, bufferMemoryBarrierArrayProxy, imageMemoryBarrier);
+	}
+
+	void CopyBufferToImage(vk::Buffer sourceBuffer, vk::Image destinationImage, int imageWidth, int imageHeight, vk::CommandBuffer commandBuffer)
+	{
+		const vk::ImageLayout imageLayout = vk::ImageLayout::eTransferDstOptimal;
+
+		vk::BufferImageCopy bufferImageCopy;
+		bufferImageCopy.bufferOffset = 0;
+		bufferImageCopy.bufferRowLength = 0;
+		bufferImageCopy.bufferImageHeight = 0;
+		bufferImageCopy.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		bufferImageCopy.imageSubresource.mipLevel = 0;
+		bufferImageCopy.imageSubresource.baseArrayLayer = 0;
+		bufferImageCopy.imageSubresource.layerCount = 1;
+		bufferImageCopy.imageOffset = vk::Offset3D();
+		bufferImageCopy.imageExtent = vk::Extent3D(imageWidth, imageHeight, 1);
+
+		commandBuffer.copyBufferToImage(sourceBuffer, destinationImage, imageLayout, bufferImageCopy);
+	}
+}
+
 // Vulkan device
 namespace
 {
@@ -648,242 +885,6 @@ namespace
 	}
 }
 
-// Vulkan buffers
-namespace
-{
-	bool TryCreateBuffer(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, uint32_t queueFamilyIndex,
-		vk::PhysicalDevice physicalDevice, vk::Buffer *outBuffer, vk::DeviceMemory *outDeviceMemory)
-	{
-		vk::BufferCreateInfo bufferCreateInfo;
-		bufferCreateInfo.size = byteCount;
-		bufferCreateInfo.usage = usageFlags;
-		bufferCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-		bufferCreateInfo.queueFamilyIndexCount = 1;
-		bufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
-
-		vk::ResultValue<vk::Buffer> bufferCreateResult = device.createBuffer(bufferCreateInfo);
-		if (bufferCreateResult.result != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't create device buffer (%d).", bufferCreateResult.result);
-			return false;
-		}
-
-		const vk::Buffer buffer = std::move(bufferCreateResult.value);
-
-		const vk::MemoryRequirements bufferMemoryRequirements = device.getBufferMemoryRequirements(buffer);
-		const vk::MemoryPropertyFlags bufferMemoryPropertyFlags = isHostVisible ? (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) : vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-		vk::MemoryAllocateInfo bufferMemoryAllocateInfo;
-		bufferMemoryAllocateInfo.allocationSize = bufferMemoryRequirements.size;
-		bufferMemoryAllocateInfo.memoryTypeIndex = FindPhysicalDeviceMemoryTypeIndex(physicalDevice, bufferMemoryRequirements, bufferMemoryPropertyFlags);
-		if (bufferMemoryAllocateInfo.memoryTypeIndex == INVALID_UINT32)
-		{
-			DebugLogErrorFormat("Couldn't find suitable buffer memory type.");
-			device.destroyBuffer(buffer);
-			return false;
-		}
-
-		vk::ResultValue<vk::DeviceMemory> bufferDeviceMemoryResult = device.allocateMemory(bufferMemoryAllocateInfo);
-		if (bufferDeviceMemoryResult.result != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't allocate device buffer memory (%d).", bufferDeviceMemoryResult.result);
-			device.destroyBuffer(buffer);
-			return false;
-		}
-
-		const vk::DeviceMemory deviceMemory = std::move(bufferDeviceMemoryResult.value);
-
-		const vk::Result bufferBindMemoryResult = device.bindBufferMemory(buffer, deviceMemory, 0);
-		if (bufferBindMemoryResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't bind device buffer memory (%d).", bufferBindMemoryResult);
-			device.freeMemory(deviceMemory);
-			device.destroyBuffer(buffer);
-			return false;
-		}
-
-		*outBuffer = buffer;
-		*outDeviceMemory = deviceMemory;
-		return true;
-	}
-
-	bool TryCopyToBufferHostVisible(vk::Device device, Span<const std::byte> sourceBytes, vk::DeviceMemory destinationDeviceMemory)
-	{
-		const vk::DeviceSize sourceByteCount = sourceBytes.getCount();
-		vk::ResultValue<void*> destinationMapMemoryResult = device.mapMemory(destinationDeviceMemory, 0, sourceByteCount);
-		if (destinationMapMemoryResult.result != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't map device buffer memory with %d bytes (%d).", sourceByteCount, destinationMapMemoryResult.result);
-			return false;
-		}
-
-		void *hostMappedMemory = std::move(destinationMapMemoryResult.value);
-		std::copy(sourceBytes.begin(), sourceBytes.end(), reinterpret_cast<std::byte*>(hostMappedMemory));
-		device.unmapMemory(destinationDeviceMemory);
-		return true;
-	}
-
-	template<typename T>
-	bool TryCopyToBufferHostVisible(vk::Device device, Span<const T> values, vk::DeviceMemory destinationDeviceMemory)
-	{
-		const size_t valuesByteCount = values.getCount() * sizeof(T);
-		Span<const std::byte> valuesAsBytes(reinterpret_cast<const std::byte*>(values.begin()), valuesByteCount);
-		return TryCopyToBufferHostVisible(device, valuesAsBytes, destinationDeviceMemory);
-	}
-
-	void CopyToBufferDeviceLocal(vk::Buffer sourceBuffer, int sourceByteCount, vk::Buffer destinationBuffer, vk::CommandBuffer commandBuffer)
-	{
-		vk::BufferCopy bufferCopy;
-		bufferCopy.srcOffset = 0;
-		bufferCopy.dstOffset = 0;
-		bufferCopy.size = sourceByteCount;
-
-		commandBuffer.copyBuffer(sourceBuffer, destinationBuffer, bufferCopy);
-	}
-
-	bool TryCreateImage(vk::Device device, int width, int height, vk::Format format, vk::ImageUsageFlags usageFlags, uint32_t queueFamilyIndex,
-		vk::PhysicalDevice physicalDevice, vk::Image *outImage, vk::DeviceMemory *outDeviceMemory)
-	{
-		vk::ImageCreateInfo imageCreateInfo;
-		imageCreateInfo.imageType = vk::ImageType::e2D;
-		imageCreateInfo.format = format;
-		imageCreateInfo.extent = vk::Extent3D(width, height, 1);
-		imageCreateInfo.mipLevels = 1;
-		imageCreateInfo.arrayLayers = 1;
-		imageCreateInfo.samples = vk::SampleCountFlagBits::e1;
-		imageCreateInfo.tiling = vk::ImageTiling::eOptimal;
-		imageCreateInfo.usage = usageFlags;
-		imageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
-		imageCreateInfo.queueFamilyIndexCount = 1;
-		imageCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
-		imageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
-
-		vk::ResultValue<vk::Image> createImageResult = device.createImage(imageCreateInfo);
-		if (createImageResult.result != vk::Result::eSuccess)
-		{
-			DebugLogError("Couldn't create vk::Image.");
-			return false;
-		}
-
-		const vk::Image image = std::move(createImageResult.value);
-		const vk::MemoryRequirements imageMemoryRequirements = device.getImageMemoryRequirements(image);
-		const vk::MemoryPropertyFlags imageMemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-		vk::MemoryAllocateInfo imageMemoryAllocateInfo;
-		imageMemoryAllocateInfo.allocationSize = imageMemoryRequirements.size;
-		imageMemoryAllocateInfo.memoryTypeIndex = FindPhysicalDeviceMemoryTypeIndex(physicalDevice, imageMemoryRequirements, imageMemoryPropertyFlags);
-
-		vk::ResultValue<vk::DeviceMemory> createImageMemoryResult = device.allocateMemory(imageMemoryAllocateInfo);
-		if (createImageMemoryResult.result != vk::Result::eSuccess)
-		{
-			DebugLogError("Couldn't allocate vk::Image memory.");
-			device.destroyImage(image);
-			return false;
-		}
-
-		vk::DeviceMemory deviceMemory = std::move(createImageMemoryResult.value);
-
-		const vk::Result imageBindMemoryResult = device.bindImageMemory(image, deviceMemory, 0);
-		if (imageBindMemoryResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't bind device image memory (%d).", imageBindMemoryResult);
-			device.freeMemory(deviceMemory);
-			device.destroyImage(image);
-			return false;
-		}
-
-		*outImage = image;
-		*outDeviceMemory = deviceMemory;
-		return true;
-	}
-
-	bool TryCreateImageView(vk::Device device, vk::Format format, vk::Image image, vk::ImageView *outImageView)
-	{
-		vk::ImageViewCreateInfo imageViewCreateInfo;
-		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
-		imageViewCreateInfo.format = format;
-		imageViewCreateInfo.components = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity };
-		imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
-		imageViewCreateInfo.subresourceRange.levelCount = 1;
-		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
-		imageViewCreateInfo.subresourceRange.layerCount = 1;
-		imageViewCreateInfo.image = image;
-
-		vk::ResultValue<vk::ImageView> imageViewCreateResult = device.createImageView(imageViewCreateInfo);
-		if (imageViewCreateResult.result != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't create image view (%d).", imageViewCreateResult.result);
-			return false;
-		}
-
-		*outImageView = std::move(imageViewCreateResult.value);
-		return true;
-	}
-
-	void TransitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer)
-	{
-		const bool isTransitionToInitialPopulate = (oldLayout == vk::ImageLayout::eUndefined) && (newLayout == vk::ImageLayout::eTransferDstOptimal);
-		const bool isTransitionToShaderReadOnly = (oldLayout == vk::ImageLayout::eTransferDstOptimal) && (newLayout == vk::ImageLayout::eShaderReadOnlyOptimal);
-
-		vk::ImageMemoryBarrier imageMemoryBarrier;
-		imageMemoryBarrier.oldLayout = oldLayout;
-		imageMemoryBarrier.newLayout = newLayout;
-		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-		imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-		imageMemoryBarrier.subresourceRange.levelCount = 1;
-		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-		imageMemoryBarrier.subresourceRange.layerCount = 1;
-
-		vk::PipelineStageFlags srcPipelineStageFlags;
-		vk::PipelineStageFlags dstPipelineStageFlags;
-		if (isTransitionToInitialPopulate)
-		{
-			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
-			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-			srcPipelineStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
-			dstPipelineStageFlags = vk::PipelineStageFlagBits::eTransfer;
-		}
-		else if (isTransitionToShaderReadOnly)
-		{
-			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-			srcPipelineStageFlags = vk::PipelineStageFlagBits::eTransfer;
-			dstPipelineStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
-		}
-		else
-		{
-			DebugLogErrorFormat("Unsupported image layout transition %d -> %d.", oldLayout, newLayout);
-			return;
-		}
-
-		vk::DependencyFlags dependencyFlags;
-		vk::MemoryBarrier memoryBarrier;
-		vk::BufferMemoryBarrier bufferMemoryBarrier;
-		commandBuffer.pipelineBarrier(srcPipelineStageFlags, dstPipelineStageFlags, dependencyFlags, memoryBarrier, bufferMemoryBarrier, imageMemoryBarrier);
-	}
-
-	void CopyBufferToImage(vk::Buffer sourceBuffer, vk::Image destinationImage, int imageWidth, int imageHeight, vk::CommandBuffer commandBuffer)
-	{
-		const vk::ImageLayout imageLayout = vk::ImageLayout::eTransferDstOptimal;
-
-		vk::BufferImageCopy bufferImageCopy;
-		bufferImageCopy.bufferOffset = 0;
-		bufferImageCopy.bufferRowLength = 0;
-		bufferImageCopy.bufferImageHeight = 0;
-		bufferImageCopy.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-		bufferImageCopy.imageSubresource.mipLevel = 0;
-		bufferImageCopy.imageSubresource.baseArrayLayer = 0;
-		bufferImageCopy.imageSubresource.layerCount = 1;
-		bufferImageCopy.imageOffset = vk::Offset3D();
-		bufferImageCopy.imageExtent = vk::Extent3D(imageWidth, imageHeight, 1);
-
-		commandBuffer.copyBufferToImage(sourceBuffer, destinationImage, imageLayout, bufferImageCopy);
-	}
-}
-
 // Vulkan synchronization
 namespace
 {
@@ -1032,60 +1033,78 @@ namespace
 	}
 }
 
-VulkanVertexPositionBuffer::VulkanVertexPositionBuffer()
+VulkanBuffer::VulkanBuffer()
 {
-	this->vertexCount = 0;
-	this->componentsPerVertex = 0;
+	this->type = static_cast<VulkanBufferType>(-1);
 }
 
-void VulkanVertexPositionBuffer::init(int vertexCount, int componentsPerVertex, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
+void VulkanBuffer::initVertexPosition(int vertexCount, int componentsPerVertex, size_t sizeOfComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
 {
-	this->vertexCount = vertexCount;
-	this->componentsPerVertex = componentsPerVertex;
+	DebugAssert(!this->stagingBuffer);
+	DebugAssert(!this->stagingDeviceMemory);
 	this->buffer = buffer;
 	this->deviceMemory = deviceMemory;
+
+	this->type = VulkanBufferType::VertexPosition;
+	this->vertexPosition.vertexCount = vertexCount;
+	this->vertexPosition.componentsPerVertex = componentsPerVertex;
+	this->vertexPosition.sizeOfComponent = sizeOfComponent;
 }
 
-VulkanVertexAttributeBuffer::VulkanVertexAttributeBuffer()
+void VulkanBuffer::initVertexAttribute(int vertexCount, int componentsPerVertex, size_t sizeOfComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
 {
-	this->vertexCount = 0;
-	this->componentsPerVertex = 0;
-}
-
-void VulkanVertexAttributeBuffer::init(int vertexCount, int componentsPerVertex, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
-{
-	this->vertexCount = vertexCount;
-	this->componentsPerVertex = componentsPerVertex;
+	DebugAssert(!this->stagingBuffer);
+	DebugAssert(!this->stagingDeviceMemory);
 	this->buffer = buffer;
 	this->deviceMemory = deviceMemory;
+
+	this->type = VulkanBufferType::VertexAttribute;
+	this->vertexAttribute.vertexCount = vertexCount;
+	this->vertexAttribute.componentsPerVertex = componentsPerVertex;
+	this->vertexAttribute.sizeOfComponent = sizeOfComponent;
 }
 
-VulkanIndexBuffer::VulkanIndexBuffer()
+void VulkanBuffer::initIndex(int indexCount, size_t sizeOfIndex, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
 {
-	this->indexCount = 0;
-}
-
-void VulkanIndexBuffer::init(int indexCount, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
-{
-	this->indexCount = indexCount;
+	DebugAssert(!this->stagingBuffer);
+	DebugAssert(!this->stagingDeviceMemory);
 	this->buffer = buffer;
 	this->deviceMemory = deviceMemory;
+
+	this->type = VulkanBufferType::Index;
+	this->index.indexCount = indexCount;
+	this->index.sizeOfIndex = sizeOfIndex;
 }
 
-VulkanUniformBuffer::VulkanUniformBuffer()
+void VulkanBuffer::initUniform(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
 {
-	this->elementCount = 0;
-	this->sizeOfElement = 0;
-	this->alignmentOfElement = 0;
-}
-
-void VulkanUniformBuffer::init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
-{
-	this->elementCount = elementCount;
-	this->sizeOfElement = sizeOfElement;
-	this->alignmentOfElement = alignmentOfElement;
+	DebugAssert(!this->stagingBuffer);
+	DebugAssert(!this->stagingDeviceMemory);
 	this->buffer = buffer;
 	this->deviceMemory = deviceMemory;
+
+	this->type = VulkanBufferType::Uniform;
+	this->uniform.elementCount = elementCount;
+	this->uniform.sizeOfElement = sizeOfElement;
+	this->uniform.alignmentOfElement = alignmentOfElement;
+}
+
+void VulkanBuffer::setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory)
+{
+	DebugAssert(!this->stagingBuffer);
+	DebugAssert(!this->stagingDeviceMemory);
+	DebugAssert(stagingBuffer);
+	DebugAssert(stagingDeviceMemory);
+	this->stagingBuffer = stagingBuffer;
+	this->stagingDeviceMemory = stagingDeviceMemory;
+}
+
+void VulkanBuffer::setUnlocked()
+{
+	DebugAssert(this->stagingBuffer);
+	DebugAssert(this->stagingDeviceMemory);
+	this->stagingBuffer = vk::Buffer(nullptr);
+	this->stagingDeviceMemory = vk::DeviceMemory(nullptr);
 }
 
 VulkanTexture::VulkanTexture()
@@ -1153,10 +1172,11 @@ ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int 
 	}
 
 	const vk::Format format = (bytesPerTexel == 1) ? vk::Format::eR8Uint : vk::Format::eR8G8B8A8Unorm;
+	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
 	vk::Image image;
 	vk::DeviceMemory deviceMemory;
-	if (!TryCreateImage(this->device, width, height, format, vk::ImageUsageFlagBits::eSampled, this->queueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
+	if (!TryCreateImage(this->device, width, height, format, usageFlags, this->queueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
 	{
 		DebugLogErrorFormat("Couldn't create image with dims %dx%d.", width, height);
 		this->pool->free(textureID);
@@ -1371,10 +1391,11 @@ UiTextureID VulkanUiTextureAllocator::create(int width, int height)
 
 	constexpr int bytesPerTexel = 4;
 	constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
+	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
 	vk::Image image;
 	vk::DeviceMemory deviceMemory;
-	if (!TryCreateImage(this->device, width, height, format, vk::ImageUsageFlagBits::eSampled, this->queueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
+	if (!TryCreateImage(this->device, width, height, format, usageFlags, this->queueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
 	{
 		DebugLogErrorFormat("Couldn't create image with dims %dx%d.", width, height);
 		this->pool->free(textureID);
@@ -1869,30 +1890,102 @@ void VulkanRenderBackend::shutdown()
 
 		this->lightPool.clear();
 
-		for (VulkanUniformBuffer &buffer : this->uniformBufferPool.values)
+		for (VulkanBuffer &buffer : this->uniformBufferPool.values)
 		{
-			// @todo device destroy buffer
+			if (buffer.stagingDeviceMemory)
+			{
+				this->device.freeMemory(buffer.stagingDeviceMemory);
+			}
+
+			if (buffer.stagingBuffer)
+			{
+				this->device.destroyBuffer(buffer.stagingBuffer);
+			}
+
+			if (buffer.deviceMemory)
+			{
+				this->device.freeMemory(buffer.deviceMemory);
+			}
+
+			if (buffer.buffer)
+			{
+				this->device.destroyBuffer(buffer.buffer);
+			}
 		}
 
 		this->uniformBufferPool.clear();
 
-		for (VulkanIndexBuffer &buffer : this->indexBufferPool.values)
+		for (VulkanBuffer &buffer : this->indexBufferPool.values)
 		{
-			// @todo device destroy buffer
+			if (buffer.stagingDeviceMemory)
+			{
+				this->device.freeMemory(buffer.stagingDeviceMemory);
+			}
+
+			if (buffer.stagingBuffer)
+			{
+				this->device.destroyBuffer(buffer.stagingBuffer);
+			}
+
+			if (buffer.deviceMemory)
+			{
+				this->device.freeMemory(buffer.deviceMemory);
+			}
+
+			if (buffer.buffer)
+			{
+				this->device.destroyBuffer(buffer.buffer);
+			}
 		}
 
 		this->indexBufferPool.clear();
 
-		for (VulkanVertexAttributeBuffer &buffer : this->vertexAttributeBufferPool.values)
+		for (VulkanBuffer &buffer : this->vertexAttributeBufferPool.values)
 		{
-			// @todo device destroy buffer
+			if (buffer.stagingDeviceMemory)
+			{
+				this->device.freeMemory(buffer.stagingDeviceMemory);
+			}
+
+			if (buffer.stagingBuffer)
+			{
+				this->device.destroyBuffer(buffer.stagingBuffer);
+			}
+
+			if (buffer.deviceMemory)
+			{
+				this->device.freeMemory(buffer.deviceMemory);
+			}
+
+			if (buffer.buffer)
+			{
+				this->device.destroyBuffer(buffer.buffer);
+			}
 		}
 
 		this->vertexAttributeBufferPool.clear();
 
-		for (VulkanVertexPositionBuffer &buffer : this->vertexPositionBufferPool.values)
+		for (VulkanBuffer &buffer : this->vertexPositionBufferPool.values)
 		{
-			// @todo device destroy buffer
+			if (buffer.stagingDeviceMemory)
+			{
+				this->device.freeMemory(buffer.stagingDeviceMemory);
+			}
+
+			if (buffer.stagingBuffer)
+			{
+				this->device.destroyBuffer(buffer.stagingBuffer);
+			}
+
+			if (buffer.deviceMemory)
+			{
+				this->device.freeMemory(buffer.deviceMemory);
+			}
+
+			if (buffer.buffer)
+			{
+				this->device.destroyBuffer(buffer.buffer);
+			}
 		}
 
 		this->vertexPositionBufferPool.clear();
@@ -2041,10 +2134,20 @@ VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int verte
 		return -1;
 	}
 
-	VulkanVertexPositionBuffer &buffer = this->vertexPositionBufferPool.get(id);
-	buffer.init(vertexCount, componentsPerVertex);
+	const size_t sizeOfComponent = sizeof(float);
+	const int byteCount = vertexCount * componentsPerVertex * sizeOfComponent;
 
-	// @todo vk::Buffer creation
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
+	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't create vertex position buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
+		this->vertexPositionBufferPool.free(id);
+		return -1;
+	}
+
+	VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
+	vertexPositionBuffer.initVertexPosition(vertexCount, componentsPerVertex, sizeOfComponent, buffer, deviceMemory);
 
 	return id;
 }
@@ -2061,10 +2164,20 @@ VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int ver
 		return -1;
 	}
 
-	VulkanVertexAttributeBuffer &buffer = this->vertexAttributeBufferPool.get(id);
-	buffer.init(vertexCount, componentsPerVertex);
+	const size_t sizeOfComponent = sizeof(float);
+	const int byteCount = vertexCount * componentsPerVertex * sizeOfComponent;
 
-	// @todo vk::Buffer creation
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
+	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't create vertex attribute buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
+		this->vertexAttributeBufferPool.free(id);
+		return -1;
+	}
+
+	VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
+	vertexAttributeBuffer.initVertexAttribute(vertexCount, componentsPerVertex, sizeOfComponent, buffer, deviceMemory);
 
 	return id;
 }
@@ -2081,38 +2194,66 @@ IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount)
 		return -1;
 	}
 
-	VulkanIndexBuffer &buffer = this->indexBufferPool.get(id);
-	buffer.init(indexCount);
+	const int byteCount = indexCount * sizeof(int32_t);
 
-	// @todo vk::Buffer creation
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
+	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't create index buffer (indices: %d).", indexCount);
+		this->indexBufferPool.free(id);
+		return -1;
+	}
+
+	VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
+	indexBuffer.initIndex(indexCount, byteCount, buffer, deviceMemory);
 
 	return id;
 }
 
 void VulkanRenderBackend::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
 {
-	VulkanVertexPositionBuffer &buffer = this->vertexPositionBufferPool.get(id);
+	VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
 	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
 {
-	VulkanVertexAttributeBuffer &buffer = this->vertexAttributeBufferPool.get(id);
+	VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
 	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
 {
-	VulkanIndexBuffer &buffer = this->indexBufferPool.get(id);
+	VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
 	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 {
-	VulkanVertexPositionBuffer *buffer = this->vertexPositionBufferPool.tryGet(id);
-	if (buffer != nullptr)
+	VulkanBuffer *vertexPositionBuffer = this->vertexPositionBufferPool.tryGet(id);
+	if (vertexPositionBuffer != nullptr)
 	{
-		// @todo vk::Buffer destroy
+		if (vertexPositionBuffer->stagingDeviceMemory)
+		{
+			DebugLogWarningFormat("Freeing vertex position buffer %d that was still locked.", id);
+			this->device.freeMemory(vertexPositionBuffer->stagingDeviceMemory);
+		}
+
+		if (vertexPositionBuffer->stagingBuffer)
+		{
+			this->device.destroyBuffer(vertexPositionBuffer->stagingBuffer);
+		}
+
+		if (vertexPositionBuffer->deviceMemory)
+		{
+			this->device.freeMemory(vertexPositionBuffer->deviceMemory);
+		}
+
+		if (vertexPositionBuffer->buffer)
+		{
+			this->device.destroyBuffer(vertexPositionBuffer->buffer);
+		}
 	}
 
 	this->vertexPositionBufferPool.free(id);
@@ -2120,10 +2261,29 @@ void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 
 void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
-	VulkanVertexAttributeBuffer *buffer = this->vertexAttributeBufferPool.tryGet(id);
-	if (buffer != nullptr)
+	VulkanBuffer *vertexAttributeBuffer = this->vertexAttributeBufferPool.tryGet(id);
+	if (vertexAttributeBuffer != nullptr)
 	{
-		// @todo vk::Buffer destroy
+		if (vertexAttributeBuffer->stagingDeviceMemory)
+		{
+			DebugLogWarningFormat("Freeing vertex attribute buffer %d that was still locked.", id);
+			this->device.freeMemory(vertexAttributeBuffer->stagingDeviceMemory);
+		}
+
+		if (vertexAttributeBuffer->stagingBuffer)
+		{
+			this->device.destroyBuffer(vertexAttributeBuffer->stagingBuffer);
+		}
+
+		if (vertexAttributeBuffer->deviceMemory)
+		{
+			this->device.freeMemory(vertexAttributeBuffer->deviceMemory);
+		}
+
+		if (vertexAttributeBuffer->buffer)
+		{
+			this->device.destroyBuffer(vertexAttributeBuffer->buffer);
+		}
 	}
 
 	this->vertexAttributeBufferPool.free(id);
@@ -2131,10 +2291,29 @@ void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 
 void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 {
-	VulkanIndexBuffer *buffer = this->indexBufferPool.tryGet(id);
-	if (buffer != nullptr)
+	VulkanBuffer *indexBuffer = this->indexBufferPool.tryGet(id);
+	if (indexBuffer != nullptr)
 	{
-		// @todo vk::Buffer destroy
+		if (indexBuffer->stagingDeviceMemory)
+		{
+			DebugLogWarningFormat("Freeing index buffer %d that was still locked.", id);
+			this->device.freeMemory(indexBuffer->stagingDeviceMemory);
+		}
+
+		if (indexBuffer->stagingBuffer)
+		{
+			this->device.destroyBuffer(indexBuffer->stagingBuffer);
+		}
+
+		if (indexBuffer->deviceMemory)
+		{
+			this->device.freeMemory(indexBuffer->deviceMemory);
+		}
+
+		if (indexBuffer->buffer)
+		{
+			this->device.destroyBuffer(indexBuffer->buffer);
+		}
 	}
 
 	this->indexBufferPool.free(id);
@@ -2163,32 +2342,60 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, size_
 		return -1;
 	}
 
-	VulkanUniformBuffer &buffer = this->uniformBufferPool.get(id);
-	buffer.init(elementCount, sizeOfElement, alignmentOfElement);
+	const int byteCount = elementCount * sizeOfElement;
 
-	// @todo vk::Buffer creation
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
+	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't create uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, sizeOfElement, alignmentOfElement);
+		this->uniformBufferPool.free(id);
+		return -1;
+	}
+
+	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	uniformBuffer.initUniform(elementCount, sizeOfElement, alignmentOfElement, buffer, deviceMemory);
 
 	return id;
 }
 
 void VulkanRenderBackend::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
 {
-	VulkanUniformBuffer &buffer = this->uniformBufferPool.get(id);
+	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
 {
-	VulkanUniformBuffer &buffer = this->uniformBufferPool.get(id);
+	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	// @todo vk::Buffer copy (allocate/bind/map/etc.)
 }
 
 void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 {
-	VulkanUniformBuffer *buffer = this->uniformBufferPool.tryGet(id);
-	if (buffer != nullptr)
+	VulkanBuffer *uniformBuffer = this->uniformBufferPool.tryGet(id);
+	if (uniformBuffer != nullptr)
 	{
-		// @todo vk::Buffer destroy
+		if (uniformBuffer->stagingDeviceMemory)
+		{
+			DebugLogWarningFormat("Freeing uniform buffer %d that was still locked.", id);
+			this->device.freeMemory(uniformBuffer->stagingDeviceMemory);
+		}
+
+		if (uniformBuffer->stagingBuffer)
+		{
+			this->device.destroyBuffer(uniformBuffer->stagingBuffer);
+		}
+
+		if (uniformBuffer->deviceMemory)
+		{
+			this->device.freeMemory(uniformBuffer->deviceMemory);
+		}
+
+		if (uniformBuffer->buffer)
+		{
+			this->device.destroyBuffer(uniformBuffer->buffer);
+		}
 	}
 
 	this->uniformBufferPool.free(id);
