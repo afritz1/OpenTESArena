@@ -53,3 +53,11 @@ void VoxelFaceCombineChunkManager::update(Span<const ChunkInt2> activeChunkPosit
 		faceCombineChunk.update(dirtyFadeAnimInstVoxels, voxelChunk, faceEnableChunk);
 	}
 }
+
+void VoxelFaceCombineChunkManager::endFrame()
+{
+	for (ChunkPtr &chunkPtr : this->activeChunks)
+	{
+		chunkPtr->dirtyIDs.clear();
+	}
+}
