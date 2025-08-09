@@ -647,61 +647,43 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 	double ceilingScale, double chasmAnimPercent, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = renderChunk.position;
+	std::unordered_map<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &combinedFaceDrawCallEntries = renderChunk.combinedFaceDrawCallEntries;
 	RenderVoxelDrawCallHeap &chunkDrawCallHeap = renderChunk.drawCallHeap;
 
 	// @todo the VoxelFaceCombineResultID should've been freed from this pool when the floor became a chasm, it's trying to use the old Top face of the floor for the chasm mesh indicesList lookup
+
 	const RecyclablePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> &combinedFacesPool = faceCombineChunk.combinedFacesPool;
-	for (const VoxelFaceCombineResult &faceCombineResult : combinedFacesPool.values)
+	for (const VoxelFaceCombineResultID faceCombineResultID : combinedFacesPool.keys)
 	{
-		const VoxelInt3 minVoxel = faceCombineResult.min;
-		const VoxelInt3 maxVoxel = faceCombineResult.max;
-		const VoxelFacing3D facing = faceCombineResult.facing;
-		bool shouldAllocateDrawCall = false;
-
-		UniformBufferID transformBufferID = -1;
-
-		RenderVoxelCombinedFaceTransformKey transformKey;
-		transformKey.minVoxel = minVoxel;
-		transformKey.maxVoxel = maxVoxel;
-		transformKey.facing = facing;
-
-		std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> &chunkCombinedFaceTransforms = renderChunk.combinedFaceTransforms;
-		const auto transformIter = chunkCombinedFaceTransforms.find(transformKey);
-		if (transformIter != chunkCombinedFaceTransforms.end())
-		{
-			transformBufferID = transformIter->second;
-		}
-		else
-		{
-			// Create and reuse for any identical mesh at this spot in this chunk.
-			transformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
-			if (transformBufferID < 0)
-			{
-				DebugLogErrorFormat("Couldn't allocate combined face transform buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
-			}
-
-			const WorldInt3 meshMinVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, minVoxel);
-			const WorldDouble3 meshPosition(
-				static_cast<SNDouble>(meshMinVoxel.x),
-				static_cast<double>(meshMinVoxel.y) * ceilingScale,
-				static_cast<WEDouble>(meshMinVoxel.z));
-
-			RenderTransform transform;
-			transform.translation = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
-			transform.rotation = Matrix4d::identity();
-			transform.scale = Matrix4d::identity();
-			renderer.populateUniformBuffer(transformBufferID, transform);
-
-			chunkCombinedFaceTransforms.emplace(transformKey, transformBufferID);
-
-			// This mesh instance needs a draw call since its transform is newly made.
-			shouldAllocateDrawCall = true;
-		}
-
+		bool shouldAllocateDrawCall = !combinedFaceDrawCallEntries.contains(faceCombineResultID);
 		if (!shouldAllocateDrawCall)
 		{
 			continue;
 		}
+
+		const VoxelFaceCombineResult &faceCombineResult = combinedFacesPool.get(faceCombineResultID);
+		const VoxelInt3 minVoxel = faceCombineResult.min;
+		const VoxelInt3 maxVoxel = faceCombineResult.max;
+		const VoxelFacing3D facing = faceCombineResult.facing;
+
+		// Create and populate transform buffer for this combined face.
+		UniformBufferID transformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+		if (transformBufferID < 0)
+		{
+			DebugLogErrorFormat("Couldn't allocate combined face transform buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
+		}
+
+		const WorldInt3 worldMinVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, minVoxel);
+		const WorldDouble3 meshPosition(
+			static_cast<SNDouble>(worldMinVoxel.x),
+			static_cast<double>(worldMinVoxel.y) * ceilingScale,
+			static_cast<WEDouble>(worldMinVoxel.z));
+
+		RenderTransform transform;
+		transform.translation = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
+		transform.rotation = Matrix4d::identity();
+		transform.scale = Matrix4d::identity();
+		renderer.populateUniformBuffer(transformBufferID, transform);
 
 		const VoxelTraitsDefID traitsDefID = voxelChunk.traitsDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelTraitsDefinition &traitsDef = voxelChunk.traitsDefs[traitsDefID];
@@ -874,9 +856,10 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 		RenderVoxelCombinedFaceDrawCallEntry combinedFaceDrawCallEntry;
 		combinedFaceDrawCallEntry.rangeID = drawCallRangeID;
+		combinedFaceDrawCallEntry.transformBufferID = transformBufferID;
 		combinedFaceDrawCallEntry.min = minVoxel;
 		combinedFaceDrawCallEntry.max = maxVoxel;
-		renderChunk.combinedFaceDrawCallEntries.emplace_back(std::move(combinedFaceDrawCallEntry));
+		combinedFaceDrawCallEntries.emplace(faceCombineResultID, std::move(combinedFaceDrawCallEntry));
 
 		Span<RenderDrawCall> drawCalls = chunkDrawCallHeap.get(drawCallRangeID);
 		RenderDrawCall &drawCall = drawCalls[0];
@@ -1172,23 +1155,25 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 	}
 }
 
-void RenderVoxelChunkManager::clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, Renderer &renderer)
+void RenderVoxelChunkManager::clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelFaceCombineResultID> dirtyFaceCombineResultIDs, Renderer &renderer)
 {
-	if (dirtyVoxelPositions.getCount() > 0)
+	std::unordered_map<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &drawCallEntriesPool = renderChunk.combinedFaceDrawCallEntries;
+
+	for (const VoxelFaceCombineResultID faceCombineResultID : dirtyFaceCombineResultIDs)
 	{
-		for (const RenderVoxelCombinedFaceDrawCallEntry &drawCallEntry : renderChunk.combinedFaceDrawCallEntries)
+		DebugAssert(faceCombineResultID >= 0);
+
+		const auto iter = drawCallEntriesPool.find(faceCombineResultID);
+		if (iter == drawCallEntriesPool.end())
 		{
-			renderChunk.drawCallHeap.free(drawCallEntry.rangeID);
+			continue;
 		}
 
-		renderChunk.combinedFaceDrawCallEntries.clear();
+		RenderVoxelCombinedFaceDrawCallEntry &drawCallEntry = iter->second;
+		renderChunk.drawCallHeap.free(drawCallEntry.rangeID);
+		renderer.freeUniformBuffer(drawCallEntry.transformBufferID);
 
-		for (const std::pair<RenderVoxelCombinedFaceTransformKey, UniformBufferID> &pair : renderChunk.combinedFaceTransforms)
-		{
-			renderer.freeUniformBuffer(pair.second);
-		}
-
-		renderChunk.combinedFaceTransforms.clear();
+		drawCallEntriesPool.erase(iter);
 	}
 }
 
@@ -1219,9 +1204,10 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 		const RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
 		// Add draw calls that are at least partially in the camera frustum.
-		Span<const RenderVoxelCombinedFaceDrawCallEntry> combinedFaceDrawCallEntries = renderChunk.combinedFaceDrawCallEntries;
-		for (const RenderVoxelCombinedFaceDrawCallEntry &combinedFaceDrawCallEntry : combinedFaceDrawCallEntries)
+		for (const std::pair<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &pair : renderChunk.combinedFaceDrawCallEntries)
 		{
+			const RenderVoxelCombinedFaceDrawCallEntry &combinedFaceDrawCallEntry = pair.second;
+
 			bool isCombinedFaceVisible = false;
 			for (WEInt z = combinedFaceDrawCallEntry.min.z; z <= combinedFaceDrawCallEntry.max.z; z++)
 			{
@@ -1358,6 +1344,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		}
 
 		const VoxelFaceCombineChunk &faceCombineChunk = voxelFaceCombineChunkManager.getChunkAtPosition(chunkPos);
+		Span<const VoxelFaceCombineResultID> dirtyFaceCombineResultIDs = faceCombineChunk.dirtyIDs;
 
 		// Update draw calls of dirty voxels.
 		// - @todo: there is some double/triple updating possible here, maybe optimize.
@@ -1366,11 +1353,9 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		Span<const VoxelInt3> dirtyDoorVisInstVoxels = voxelChunk.dirtyDoorVisInstPositions;
 		Span<const VoxelInt3> dirtyFadeAnimInstVoxels = voxelChunk.dirtyFadeAnimInstPositions;
 
-		this->clearChunkCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, renderer);
-		this->clearChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, renderer);
-		this->clearChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, renderer);
-		this->clearChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, renderer);
-		this->clearChunkCombinedVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, renderer);
+		// @todo all these dirty lists should be one list of DirtyVoxelFlags instead
+
+		this->clearChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceCombineResultIDs, renderer);
 
 		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels);
 		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels);

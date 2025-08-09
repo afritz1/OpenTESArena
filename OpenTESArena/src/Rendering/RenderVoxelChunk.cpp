@@ -140,39 +140,10 @@ void RenderVoxelDrawCallHeap::clear()
 	this->drawCallRangesPool.clear();
 }
 
-RenderVoxelCombinedFaceTransformKey::RenderVoxelCombinedFaceTransformKey()
-{
-	this->facing = static_cast<VoxelFacing3D>(-1);
-}
-
 RenderVoxelCombinedFaceDrawCallEntry::RenderVoxelCombinedFaceDrawCallEntry()
 {
 	this->rangeID = -1;
-}
-
-bool RenderVoxelCombinedFaceTransformKey::operator==(const RenderVoxelCombinedFaceTransformKey &other) const
-{
-	if (this == &other)
-	{
-		return true;
-	}
-
-	if (this->minVoxel != other.minVoxel)
-	{
-		return false;
-	}
-
-	if (this->maxVoxel != other.maxVoxel)
-	{
-		return false;
-	}
-
-	if (this->facing != other.facing)
-	{
-		return false;
-	}
-
-	return true;
+	this->transformBufferID = -1;
 }
 
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
@@ -214,14 +185,13 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		meshInst.freeBuffers(renderer);
 	}
 
-	for (auto &pair : this->combinedFaceTransforms)
+	for (std::pair<const VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &pair : this->combinedFaceDrawCallEntries)
 	{
-		UniformBufferID &transformBufferID = pair.second;
-
-		if (transformBufferID >= 0)
+		RenderVoxelCombinedFaceDrawCallEntry &drawCallEntry = pair.second;
+		if (drawCallEntry.transformBufferID >= 0)
 		{
-			renderer.freeUniformBuffer(transformBufferID);
-			transformBufferID = -1;
+			renderer.freeUniformBuffer(drawCallEntry.transformBufferID);
+			drawCallEntry.transformBufferID = -1;
 		}
 	}
 
@@ -243,7 +213,6 @@ void RenderVoxelChunk::clear()
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
 	this->combinedFaceDrawCallEntries.clear();
-	this->combinedFaceTransforms.clear();
 	this->transformBufferID = -1;
 	this->doorTransformBuffers.clear();
 	this->drawCallHeap.clear();
