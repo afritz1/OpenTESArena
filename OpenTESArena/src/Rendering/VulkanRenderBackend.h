@@ -13,35 +13,55 @@
 
 struct VulkanVertexPositionBuffer
 {
-	// @todo: vk::Buffer
+	int vertexCount;
+	int componentsPerVertex;
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
 
-	void init(int vertexCount, int componentsPerVertex);
+	VulkanVertexPositionBuffer();
+
+	void init(int vertexCount, int componentsPerVertex, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+
+	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
+	void setUnlocked();
 };
 
 struct VulkanVertexAttributeBuffer
 {
-	// @todo: vk::Buffer
+	int vertexCount;
+	int componentsPerVertex;
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
 
-	void init(int vertexCount, int componentsPerVertex);
+	VulkanVertexAttributeBuffer();
+
+	void init(int vertexCount, int componentsPerVertex, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
 };
 
 struct VulkanIndexBuffer
 {
-	// @todo: vk::Buffer
+	int indexCount;
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
 
-	void init(int indexCount);
+	VulkanIndexBuffer();
+
+	void init(int indexCount, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
 };
 
 struct VulkanUniformBuffer
 {
-	// @todo vk::Buffer
 	int elementCount;
 	size_t sizeOfElement;
 	size_t alignmentOfElement;
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
 
 	VulkanUniformBuffer();
 
-	void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
+	void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
 };
 
 struct VulkanLight
@@ -51,16 +71,21 @@ struct VulkanLight
 
 struct VulkanTexture
 {
-	Buffer<std::byte> texels;
-	int width = 0;
-	int height = 0;
-	int bytesPerTexel = 0;
-
-	// @todo vk::Image handle
+	int width;
+	int height;
+	int bytesPerTexel;
+	vk::Image image;
+	vk::DeviceMemory deviceMemory;
+	vk::ImageView imageView;
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
 
 	VulkanTexture();
 
-	void init(int width, int height, int bytesPerTexel);
+	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView);
+
+	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
+	void setUnlocked();
 };
 
 using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanVertexPositionBuffer>;
@@ -74,11 +99,15 @@ using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
 struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 {
 	VulkanObjectTexturePool *pool;
+	vk::PhysicalDevice physicalDevice;
+	uint32_t queueFamilyIndex;
 	vk::Device device;
+	vk::Queue queue;
+	vk::CommandBuffer commandBuffer;
 
 	VulkanObjectTextureAllocator();
 
-	void init(VulkanObjectTexturePool *pool, vk::Device device);
+	void init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer);
 
 	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
 	ObjectTextureID create(const TextureBuilder &textureBuilder) override;
@@ -92,11 +121,15 @@ struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 struct VulkanUiTextureAllocator final : public UiTextureAllocator
 {
 	VulkanUiTexturePool *pool;
+	vk::PhysicalDevice physicalDevice;
+	uint32_t queueFamilyIndex;
 	vk::Device device;
+	vk::Queue queue;
+	vk::CommandBuffer commandBuffer;
 
 	VulkanUiTextureAllocator();
 
-	void init(VulkanUiTexturePool *pool, vk::Device device);
+	void init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer);
 
 	UiTextureID create(int width, int height) override;
 	UiTextureID create(Span2D<const uint32_t> texels) override;
