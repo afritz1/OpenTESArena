@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <fstream>
 #include <limits>
+#include <string>
 
 #include "SDL_vulkan.h"
 
@@ -135,80 +136,128 @@ namespace
 			return nullptr;
 		}
 
-		int discreteGpuCount = 0;
-		int integratedGpuCount = 0;
-		int cpuCount = 0;
-		int virtualGpuCount = 0;
-		int otherCount = 0;
+		struct PhysicalDeviceEntry
+		{
+			int index;
+			std::string name;
+			vk::PhysicalDeviceType type;
+			uint32_t vendorID;
+			bool isDriverWrapper; // Vulkan-on-D3D12 etc.
+			int score;
+		};
 
-		int bestDiscreteGpuIndex = -1;
-		int bestIntegratedGpuIndex = -1;
-		int bestCpuIndex = -1;
-		int bestVirtualGpuIndex = -1;
-		int bestOtherIndex = -1;
+		auto getDeviceEntryScore = [](const PhysicalDeviceEntry &entry)
+		{
+			int score = 0;
+
+			switch (entry.type)
+			{
+			case vk::PhysicalDeviceType::eDiscreteGpu:
+				score += 100;
+				break;
+			case vk::PhysicalDeviceType::eIntegratedGpu:
+				score += 20;
+				break;
+			case vk::PhysicalDeviceType::eVirtualGpu:
+				score += 10;
+				break;
+			case vk::PhysicalDeviceType::eCpu:
+				score += 5;
+				break;
+			case vk::PhysicalDeviceType::eOther:
+				score += 0;
+				break;
+			}
+
+			constexpr uint32_t recognizedHardwareVendorIDs[] =
+			{
+				0x1002, // AMD
+				0x10DE, // Nvidia
+				0x8086, // Intel
+				0x106B, // Apple M-series
+				0x14E4 // Raspberry Pi
+			};
+
+			bool isRecognizedHardwareVendor = false;
+			for (const uint32_t recognizedVendorID : recognizedHardwareVendorIDs)
+			{
+				if (entry.vendorID == recognizedVendorID)
+				{
+					isRecognizedHardwareVendor = true;
+					break;
+				}
+			}
+
+			if (isRecognizedHardwareVendor)
+			{
+				score *= 2;
+			}
+
+			if (entry.isDriverWrapper)
+			{
+				score /= 2;
+			}
+
+			return score;
+		};
+
+		std::vector<PhysicalDeviceEntry> entries;
 
 		for (int i = 0; i < physicalDevices.getCount(); i++)
 		{
 			const vk::PhysicalDevice &physicalDevice = physicalDevices[i];
 			const vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
-			const vk::PhysicalDeviceType physicalDeviceType = physicalDeviceProperties.deviceType;
+			const std::string deviceName = physicalDeviceProperties.deviceName;
+			
+			PhysicalDeviceEntry entry;
+			entry.index = i;
+			entry.name = deviceName;
+			entry.type = physicalDeviceProperties.deviceType;
+			entry.vendorID = physicalDeviceProperties.vendorID;
 
-			switch (physicalDeviceType)
+			bool isDriverWrapper = false;
+			if ((deviceName.find("Microsoft") != std::string::npos) ||
+				(deviceName.find("Direct3D") != std::string::npos) ||
+				(deviceName.find("Basic Render Driver") != std::string::npos))
 			{
-			case vk::PhysicalDeviceType::eDiscreteGpu:
-				bestDiscreteGpuIndex = i;
-				discreteGpuCount++;
-				break;
-			case vk::PhysicalDeviceType::eIntegratedGpu:
-				bestIntegratedGpuIndex = i;
-				integratedGpuCount++;
-				break;
-			case vk::PhysicalDeviceType::eCpu:
-				bestCpuIndex = i;
-				cpuCount++;
-				break;
-			case vk::PhysicalDeviceType::eVirtualGpu:
-				bestVirtualGpuIndex = i;
-				virtualGpuCount++;
-				break;
-			case vk::PhysicalDeviceType::eOther:
-				bestOtherIndex = i;
-				otherCount++;
-				break;
+				isDriverWrapper = true;
 			}
+
+			entry.isDriverWrapper = isDriverWrapper;
+			entry.score = getDeviceEntryScore(entry);
+			entries.emplace_back(std::move(entry));
 		}
 
-		DebugLogFormat("Physical devices: %d discrete GPU(s), %d integrated GPU(s), %d CPU(s), %d virtual GPU(s), %d other(s).",
-			discreteGpuCount, integratedGpuCount, cpuCount, virtualGpuCount, otherCount);
-
-		const int bestPhysicalDeviceIndices[] =
+		constexpr const char *deviceTypeNames[] =
 		{
-			bestDiscreteGpuIndex,
-			bestIntegratedGpuIndex,
-			bestVirtualGpuIndex,
-			bestCpuIndex
-			// Don't want 'other' for now
+			"Other", "Integrated GPU", "Discrete GPU", "Virtual GPU", "CPU"
 		};
 
-		vk::PhysicalDevice selectedPhysicalDevice;
-		for (const int physicalDeviceIndex : bestPhysicalDeviceIndices)
+		DebugLog("Physical devices:");
+		for (const PhysicalDeviceEntry &entry : entries)
 		{
-			if (physicalDeviceIndex >= 0)
-			{
-				selectedPhysicalDevice = physicalDevices[physicalDeviceIndex];
-				break;
-			}
+			const int deviceTypeIndex = static_cast<int>(entry.type);
+			DebugAssertIndex(deviceTypeNames, deviceTypeIndex);
+			const char *deviceTypeName = deviceTypeNames[deviceTypeIndex];
+			DebugLogFormat("- %s | %s | Vendor: 0x%X", entry.name.c_str(), deviceTypeName, entry.vendorID);
 		}
 
-		if (selectedPhysicalDevice)
+		std::sort(entries.begin(), entries.end(),
+			[](const PhysicalDeviceEntry &a, const PhysicalDeviceEntry &b)
 		{
-			const vk::PhysicalDeviceProperties selectedPhysicalDeviceProperties = selectedPhysicalDevice.getProperties();
-			DebugLogFormat("Selected: %s", selectedPhysicalDeviceProperties.deviceName.data());
-			return selectedPhysicalDevice;
+			return a.score > b.score;
+		});
+
+		const PhysicalDeviceEntry &selectedEntry = entries[0];
+		const vk::PhysicalDevice selectedPhysicalDevice = physicalDevices[selectedEntry.index];
+		if (!selectedPhysicalDevice)
+		{
+			DebugLogError("No valid physical device available.");
+			return nullptr;
 		}
 
-		DebugLogError("No valid physical device available.");
-		return nullptr;
+		DebugLogFormat("Selected: %s", selectedEntry.name.c_str());
+		return selectedPhysicalDevice;
 	}
 
 	bool TryGetQueueFamilyIndices(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface, uint32_t *outGraphicsQueueFamilyIndex, uint32_t *outPresentQueueFamilyIndex)
