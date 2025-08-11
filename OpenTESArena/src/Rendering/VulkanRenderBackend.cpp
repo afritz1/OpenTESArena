@@ -3041,6 +3041,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	this->camera.model = Matrix4f::identity();
 	this->camera.view = matrix4DoubleToFloat(camera.viewMatrix);
 	this->camera.projection = matrix4DoubleToFloat(camera.projectionMatrix);
+	this->camera.projection.y.y = -this->camera.projection.y.y; // Flip Y so world is not upside down.
 	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
 
 	this->commandBuffer.reset();
