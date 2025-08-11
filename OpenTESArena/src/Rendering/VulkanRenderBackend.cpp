@@ -6,12 +6,15 @@
 
 #include "SDL_vulkan.h"
 
+#include "RenderCommand.h"
+#include "RenderDrawCall.h"
 #include "RenderInitSettings.h"
 #include "VulkanRenderBackend.h"
 #include "Window.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
 #include "../UI/Surface.h"
+#include "../World/MeshUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Buffer.h"
@@ -1107,11 +1110,22 @@ namespace
 			fragmentPipelineShaderStageCreateInfo
 		};
 
+		vk::VertexInputBindingDescription vertexInputBindingDescription;
+		vertexInputBindingDescription.binding = 0;
+		vertexInputBindingDescription.stride = static_cast<uint32_t>(MeshUtils::POSITION_COMPONENTS_PER_VERTEX * MeshUtils::POSITION_COMPONENT_SIZE_FLOAT);
+		vertexInputBindingDescription.inputRate = vk::VertexInputRate::eVertex;
+
+		vk::VertexInputAttributeDescription vertexInputAttributeDescription;
+		vertexInputAttributeDescription.location = 0;
+		vertexInputAttributeDescription.binding = 0;
+		vertexInputAttributeDescription.format = vk::Format::eR32G32B32Sfloat;
+		vertexInputAttributeDescription.offset = 0;
+
 		vk::PipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo;
-		pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = 0;
-		pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = nullptr;
-		pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = 0;
-		pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = nullptr;
+		pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
+		pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexInputBindingDescription;
+		pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = 1;
+		pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = &vertexInputAttributeDescription;
 
 		vk::PipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo;
 		pipelineInputAssemblyStateCreateInfo.topology = vk::PrimitiveTopology::eTriangleList;
@@ -1873,27 +1887,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	constexpr Vertex vertices[] =
-	{
-		{ { 0.0f, -0.5f }, { 1.0f, 0.0f, 0.0f } },
-		{ { 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f } },
-		{ { -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f } },
-	};
-
-	const uint32_t verticesByteCount = sizeof(Vertex) * static_cast<int>(std::size(vertices));
-	if (!TryCreateBuffer(this->device, verticesByteCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice,
-		&this->vertexBuffer, &this->vertexBufferDeviceMemory))
-	{
-		DebugLogErrorFormat("Couldn't create vertex buffer with %d bytes.", verticesByteCount);
-		return false;
-	}
-
-	if (!TryCopyToBufferHostVisible<Vertex>(this->device, vertices, this->vertexBufferDeviceMemory))
-	{
-		DebugLogError("Couldn't copy vertices to vertex buffer.");
-		return false;
-	}
-
 	if (!TryCreateSemaphore(this->device, &this->imageIsAvailableSemaphore))
 	{
 		DebugLogError("Couldn't create image-is-available semaphore.");
@@ -2108,18 +2101,6 @@ void VulkanRenderBackend::shutdown()
 		{
 			this->device.destroySemaphore(this->imageIsAvailableSemaphore);
 			this->imageIsAvailableSemaphore = nullptr;
-		}
-
-		if (this->vertexBufferDeviceMemory)
-		{
-			this->device.freeMemory(this->vertexBufferDeviceMemory);
-			this->vertexBufferDeviceMemory = nullptr;
-		}
-
-		if (this->vertexBuffer)
-		{
-			this->device.destroyBuffer(this->vertexBuffer);
-			this->vertexBuffer = nullptr;
 		}
 
 		if (this->graphicsPipeline)
@@ -2903,12 +2884,35 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 	this->commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->graphicsPipeline);
 
-	constexpr vk::DeviceSize vertexBufferOffset = 0;
-	this->commandBuffer.bindVertexBuffers(0, this->vertexBuffer, vertexBufferOffset);
+	for (int i = 0; i < renderCommandList.entryCount; i++)
+	{
+		for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
+		{
+			if (drawCall.pixelShaderType != PixelShaderType::Opaque) // @todo
+			{
+				continue;
+			}
 
-	constexpr uint32_t vertexCount = 3;
-	constexpr uint32_t instanceCount = 1;
-	this->commandBuffer.draw(vertexCount, instanceCount, 0, 0);
+			const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(drawCall.positionBufferID);
+			const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
+
+			const VulkanBuffer &vertexTexCoordsBuffer = this->vertexAttributeBufferPool.get(drawCall.texCoordBufferID);
+			const VulkanBufferVertexAttributeInfo &vertexTexCoordsInfo = vertexTexCoordsBuffer.vertexAttribute;
+
+			const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID); // @todo uniform at index
+			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
+
+			const vk::DeviceSize bufferOffset = 0;
+			this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
+
+			const VulkanBuffer &indexBuffer = this->indexBufferPool.get(drawCall.indexBufferID);
+			const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
+			this->commandBuffer.bindIndexBuffer(indexBuffer.buffer, bufferOffset, vk::IndexType::eUint32);
+
+			constexpr uint32_t meshInstanceCount = 1;
+			this->commandBuffer.drawIndexed(indexInfo.indexCount, meshInstanceCount, 0, 0, 0);
+		}
+	}
 
 	this->commandBuffer.endRenderPass();
 	const vk::Result commandBufferEndResult = this->commandBuffer.end();

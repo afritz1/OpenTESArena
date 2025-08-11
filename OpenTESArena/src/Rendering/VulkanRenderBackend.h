@@ -201,9 +201,6 @@ private:
 	vk::PipelineLayout pipelineLayout;
 	vk::Pipeline graphicsPipeline;
 
-	vk::Buffer vertexBuffer;
-	vk::DeviceMemory vertexBufferDeviceMemory;
-
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;
 

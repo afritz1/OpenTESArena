@@ -24,12 +24,18 @@ namespace MeshUtils
 	
 	static constexpr int POSITION_COMPONENTS_PER_VERTEX = 3; // XYZ position.
 	static constexpr int POSITION_COMPONENTS_PER_TRIANGLE = POSITION_COMPONENTS_PER_VERTEX * 3;
+	static constexpr size_t POSITION_COMPONENT_SIZE_FLOAT = sizeof(float);
+	static constexpr size_t POSITION_COMPONENT_SIZE_DOUBLE = sizeof(double);
 
 	static constexpr int NORMAL_COMPONENTS_PER_VERTEX = 3; // XYZ direction.
 	static constexpr int NORMAL_COMPONENTS_PER_TRIANGLE = NORMAL_COMPONENTS_PER_VERTEX * 3;
+	static constexpr size_t NORMAL_COMPONENT_SIZE_FLOAT = POSITION_COMPONENT_SIZE_FLOAT;
+	static constexpr size_t NORMAL_COMPONENT_SIZE_DOUBLE = POSITION_COMPONENT_SIZE_DOUBLE;
 
 	static constexpr int TEX_COORD_COMPONENTS_PER_VERTEX = 2; // UV texture coordinates.
 	static constexpr int TEX_COORD_COMPONENTS_PER_TRIANGLE = TEX_COORD_COMPONENTS_PER_VERTEX * 3;
+	static constexpr size_t TEX_COORD_COMPONENT_SIZE_FLOAT = POSITION_COMPONENT_SIZE_FLOAT;
+	static constexpr size_t TEX_COORD_COMPONENT_SIZE_DOUBLE = POSITION_COMPONENT_SIZE_DOUBLE;
 
 	constexpr int32_t DefaultQuadVertexIndices[] = { 0, 1, 2, 2, 3, 0 };
 
