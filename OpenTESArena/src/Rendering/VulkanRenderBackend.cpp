@@ -403,6 +403,54 @@ namespace
 		return true;
 	}
 
+	template<typename T>
+	bool TryCreateBuffer(vk::Device device, int elementCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, uint32_t queueFamilyIndex,
+		vk::PhysicalDevice physicalDevice, vk::Buffer *outBuffer, vk::DeviceMemory *outDeviceMemory)
+	{
+		const int byteCount = elementCount * sizeof(T);
+		return TryCreateBuffer(device, byteCount, usageFlags, isHostVisible, queueFamilyIndex, physicalDevice, outBuffer, outDeviceMemory);
+	}
+
+	bool TryCreateAndMapStagingBuffer(vk::Device device, int byteCount, uint32_t queueFamilyIndex, vk::PhysicalDevice physicalDevice,
+		vk::Buffer *outBuffer, vk::DeviceMemory *outDeviceMemory, Span<std::byte> *outHostMappedBytes)
+	{
+		constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferSrc;
+		constexpr bool isHostVisible = true;
+
+		vk::Buffer buffer;
+		vk::DeviceMemory deviceMemory;
+		if (!TryCreateBuffer(device, byteCount, usageFlags, isHostVisible, queueFamilyIndex, physicalDevice, &buffer, &deviceMemory))
+		{
+			DebugLogErrorFormat("Couldn't create buffer for staging buffer with %d bytes.", byteCount);
+			return false;
+		}
+
+		vk::ResultValue<void*> deviceMemoryMapResult = device.mapMemory(deviceMemory, 0, byteCount);
+		if (deviceMemoryMapResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't map device memory for staging buffer with %d bytes.", byteCount);
+			device.freeMemory(deviceMemory);
+			device.destroyBuffer(buffer);
+			return false;
+		}
+
+		*outBuffer = buffer;
+		*outDeviceMemory = deviceMemory;
+		*outHostMappedBytes = Span<std::byte>(reinterpret_cast<std::byte*>(deviceMemoryMapResult.value), byteCount);
+		return true;
+	}
+
+	template<typename T>
+	bool TryCreateAndMapStagingBuffer(vk::Device device, int elementCount, uint32_t queueFamilyIndex, vk::PhysicalDevice physicalDevice,
+		vk::Buffer *outBuffer, vk::DeviceMemory *outDeviceMemory, Span<T> *outHostMappedElements)
+	{
+		const int byteCount = elementCount * sizeof(T);
+		Span<std::byte> hostMappedBytes;
+		const bool success = TryCreateAndMapStagingBuffer(device, byteCount, queueFamilyIndex, physicalDevice, outBuffer, outDeviceMemory, &hostMappedBytes);
+		*outHostMappedElements = Span<T>(reinterpret_cast<T*>(hostMappedBytes.begin()), elementCount);
+		return success;
+	}
+
 	bool TryCopyToBufferHostVisible(vk::Device device, Span<const std::byte> sourceBytes, vk::DeviceMemory destinationDeviceMemory)
 	{
 		const vk::DeviceSize sourceByteCount = sourceBytes.getCount();
@@ -1319,24 +1367,15 @@ LockedTexture VulkanObjectTextureAllocator::lock(ObjectTextureID textureID)
 
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
-	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, true, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory))
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
 	{
-		DebugLogErrorFormat("Couldn't create staging buffer for object texture lock with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
+		DebugLogErrorFormat("Couldn't create and map staging buffer for object texture lock with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
 		return LockedTexture();
 	}
 
-	vk::ResultValue<void*> stagingDeviceMemoryMapResult = this->device.mapMemory(stagingDeviceMemory, 0, byteCount);
-	if (stagingDeviceMemoryMapResult.result != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't map device buffer memory for object texture lock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel, stagingDeviceMemoryMapResult.result);
-		this->device.freeMemory(stagingDeviceMemory);
-		this->device.destroyBuffer(stagingBuffer);
-		return LockedTexture();
-	}
-
-	void *hostMappedMemory = std::move(stagingDeviceMemoryMapResult.value);
 	texture.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedTexture(Span2D<std::byte>(static_cast<std::byte*>(hostMappedMemory), texture.width, texture.height), texture.bytesPerTexel);
+	return LockedTexture(Span2D<std::byte>(stagingHostMappedBytes.begin(), texture.width, texture.height), texture.bytesPerTexel);
 }
 
 void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
@@ -1585,31 +1624,20 @@ LockedTexture VulkanUiTextureAllocator::lock(UiTextureID textureID)
 	const int width = texture.width;
 	const int height = texture.height;
 	const int bytesPerTexel = texture.bytesPerTexel;
-	DebugAssert(bytesPerTexel == 4);
-
 	const int texelCount = width * height;
-	const int byteCount = texelCount * bytesPerTexel;
+	DebugAssert(bytesPerTexel == 4);
 
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
-	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, true, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory))
+	Span<uint32_t> stagingHostMappedElements;
+	if (!TryCreateAndMapStagingBuffer<uint32_t>(this->device, texelCount, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedElements))
 	{
-		DebugLogErrorFormat("Couldn't create staging buffer for UI texture lock with dims %dx%d.", width, height);
+		DebugLogErrorFormat("Couldn't create and map staging buffer for UI texture lock with dims %dx%d.", width, height);
 		return LockedTexture();
 	}
 
-	vk::ResultValue<void*> stagingDeviceMemoryMapResult = this->device.mapMemory(stagingDeviceMemory, 0, byteCount);
-	if (stagingDeviceMemoryMapResult.result != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't map device buffer memory for UI texture lock with dims %dx%d (%d).", width, height, stagingDeviceMemoryMapResult.result);
-		this->device.freeMemory(stagingDeviceMemory);
-		this->device.destroyBuffer(stagingBuffer);
-		return LockedTexture();
-	}
-
-	void *hostMappedMemory = std::move(stagingDeviceMemoryMapResult.value);
 	texture.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedTexture(Span2D<std::byte>(static_cast<std::byte*>(hostMappedMemory), texture.width, texture.height), texture.bytesPerTexel);
+	return LockedTexture(Span2D<std::byte>(reinterpret_cast<std::byte*>(stagingHostMappedElements.begin()), texture.width, texture.height), texture.bytesPerTexel);
 }
 
 void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
