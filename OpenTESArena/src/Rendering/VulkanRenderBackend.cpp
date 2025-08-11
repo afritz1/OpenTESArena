@@ -569,6 +569,36 @@ namespace
 		return true;
 	}
 
+	bool TryCreateSampler(vk::Device device, vk::Sampler *outSampler)
+	{
+		vk::SamplerCreateInfo samplerCreateInfo;
+		samplerCreateInfo.magFilter = vk::Filter::eNearest;
+		samplerCreateInfo.minFilter = vk::Filter::eNearest;
+		samplerCreateInfo.mipmapMode = vk::SamplerMipmapMode::eNearest;
+		samplerCreateInfo.addressModeU = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.addressModeV = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.addressModeW = vk::SamplerAddressMode::eRepeat;
+		samplerCreateInfo.mipLodBias = 0.0f;
+		samplerCreateInfo.anisotropyEnable = false;
+		samplerCreateInfo.maxAnisotropy = 1.0f;
+		samplerCreateInfo.compareEnable = vk::False;
+		samplerCreateInfo.compareOp = vk::CompareOp::eAlways;
+		samplerCreateInfo.minLod = 0.0f;
+		samplerCreateInfo.maxLod = 0.0f;
+		samplerCreateInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
+		samplerCreateInfo.unnormalizedCoordinates = vk::False;
+
+		vk::ResultValue<vk::Sampler> samplerCreateResult = device.createSampler(samplerCreateInfo);
+		if (samplerCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogError("Couldn't create vk::Sampler (%d).", samplerCreateResult.result);
+			return false;
+		}
+
+		*outSampler = std::move(samplerCreateResult.value);
+		return true;
+	}
+
 	void TransitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer)
 	{
 		const bool isTransitionToInitialPopulate = (oldLayout == vk::ImageLayout::eUndefined) && (newLayout == vk::ImageLayout::eTransferDstOptimal);
@@ -1420,7 +1450,7 @@ VulkanTexture::VulkanTexture()
 	this->bytesPerTexel = 0;
 }
 
-void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView)
+void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -1431,6 +1461,7 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image ima
 	this->image = image;
 	this->deviceMemory = deviceMemory;
 	this->imageView = imageView;
+	this->sampler = sampler;
 }
 
 void VulkanTexture::setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory)
@@ -1497,8 +1528,16 @@ ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int 
 		return -1;
 	}
 
+	vk::Sampler sampler;
+	if (!TryCreateSampler(this->device, &sampler))
+	{
+		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
+		this->free(textureID);
+		return -1;
+	}
+
 	VulkanTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView);
+	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler);
 
 	return textureID;
 }
@@ -1544,6 +1583,11 @@ void VulkanObjectTextureAllocator::free(ObjectTextureID textureID)
 		if (texture->stagingBuffer)
 		{
 			this->device.destroyBuffer(texture->stagingBuffer);
+		}
+
+		if (texture->sampler)
+		{
+			this->device.destroySampler(texture->sampler);
 		}
 
 		if (texture->imageView)
@@ -1664,8 +1708,16 @@ UiTextureID VulkanUiTextureAllocator::create(int width, int height)
 		return -1;
 	}
 
+	vk::Sampler sampler;
+	if (!TryCreateSampler(this->device, &sampler))
+	{
+		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
+		this->free(textureID);
+		return -1;
+	}
+
 	VulkanTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView);
+	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler);
 
 	return textureID;
 }
@@ -1763,6 +1815,11 @@ void VulkanUiTextureAllocator::free(UiTextureID textureID)
 		if (texture->stagingBuffer)
 		{
 			this->device.destroyBuffer(texture->stagingBuffer);
+		}
+
+		if (texture->sampler)
+		{
+			this->device.destroySampler(texture->sampler);
 		}
 
 		if (texture->imageView)
@@ -2070,6 +2127,11 @@ void VulkanRenderBackend::shutdown()
 				this->device.destroyBuffer(texture.stagingBuffer);
 			}
 
+			if (texture.sampler)
+			{
+				this->device.destroySampler(texture.sampler);
+			}
+
 			if (texture.imageView)
 			{
 				this->device.destroyImageView(texture.imageView);
@@ -2098,6 +2160,11 @@ void VulkanRenderBackend::shutdown()
 			if (texture.stagingBuffer)
 			{
 				this->device.destroyBuffer(texture.stagingBuffer);
+			}
+
+			if (texture.sampler)
+			{
+				this->device.destroySampler(texture.sampler);
 			}
 
 			if (texture.imageView)

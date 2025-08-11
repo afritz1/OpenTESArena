@@ -108,12 +108,13 @@ struct VulkanTexture
 	vk::Image image;
 	vk::DeviceMemory deviceMemory;
 	vk::ImageView imageView;
+	vk::Sampler sampler;
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
 
 	VulkanTexture();
 
-	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView);
+	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler);
 
 	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
 	void setUnlocked();
