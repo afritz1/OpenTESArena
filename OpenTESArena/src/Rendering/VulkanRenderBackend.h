@@ -216,6 +216,8 @@ private:
 	vk::ShaderModule fragmentShaderModule;
 
 	vk::DescriptorSetLayout descriptorSetLayout;
+	vk::DescriptorPool descriptorPool;
+	vk::DescriptorSet descriptorSet;
 
 	vk::PipelineLayout pipelineLayout;
 	vk::Pipeline graphicsPipeline;

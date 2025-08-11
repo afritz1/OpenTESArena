@@ -1100,6 +1100,71 @@ namespace
 		*outDescriptorSetLayout = std::move(descriptorSetLayoutCreateResult.value);
 		return true;
 	}
+
+	bool TryCreateDescriptorPool(vk::Device device, vk::DescriptorPool *outDescriptorPool)
+	{
+		vk::DescriptorPoolSize descriptorPoolSize;
+		descriptorPoolSize.type = vk::DescriptorType::eUniformBuffer;
+		descriptorPoolSize.descriptorCount = 1;
+
+		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo;
+		descriptorPoolCreateInfo.maxSets = 1;
+		descriptorPoolCreateInfo.poolSizeCount = 1;
+		descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+
+		vk::ResultValue<vk::DescriptorPool> descriptorPoolCreateResult = device.createDescriptorPool(descriptorPoolCreateInfo);
+		if (descriptorPoolCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't create vk::DescriptorPool (%d).", descriptorPoolCreateResult.result);
+			return false;
+		}
+
+		*outDescriptorPool = std::move(descriptorPoolCreateResult.value);
+		return true;
+	}
+
+	bool TryCreateDescriptorSet(vk::Device device, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, vk::Buffer buffer, vk::DescriptorSet *outDescriptorSet)
+	{
+		vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo;
+		descriptorSetAllocateInfo.descriptorPool = descriptorPool;
+		descriptorSetAllocateInfo.descriptorSetCount = 1;
+		descriptorSetAllocateInfo.pSetLayouts = &descriptorSetLayout;
+
+		vk::ResultValue<std::vector<vk::DescriptorSet>> descriptorSetCreateResult = device.allocateDescriptorSets(descriptorSetAllocateInfo);
+		if (descriptorSetCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't allocate descriptor set (%d).", descriptorSetCreateResult.result);
+			return false;
+		}
+
+		std::vector<vk::DescriptorSet> descriptorSets = std::move(descriptorSetCreateResult.value);
+		if (descriptorSets.empty())
+		{
+			DebugLogError("Couldn't allocate any desecriptor sets.");
+			return false;
+		}
+
+		const vk::DescriptorSet descriptorSet = descriptorSets[0];
+
+		vk::DescriptorBufferInfo descriptorBufferInfo;
+		descriptorBufferInfo.buffer = buffer;
+		descriptorBufferInfo.offset = 0;
+		descriptorBufferInfo.range = VK_WHOLE_SIZE;
+
+		vk::WriteDescriptorSet writeDescriptorSet;
+		writeDescriptorSet.dstSet = descriptorSet;
+		writeDescriptorSet.dstBinding = 0;
+		writeDescriptorSet.dstArrayElement = 0;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
+
+		vk::ArrayProxy<vk::CopyDescriptorSet> copyDescriptorSetArrayProxy;
+		device.updateDescriptorSets(writeDescriptorSet, copyDescriptorSetArrayProxy);
+
+		*outDescriptorSet = descriptorSet;
+		return true;
+	}
 }
 
 // Vulkan pipelines
@@ -1923,6 +1988,30 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	if (!TryCreateDescriptorPool(this->device, &this->descriptorPool))
+	{
+		DebugLogError("Couldn't create descriptor pool.");
+		return false;
+	}
+
+	vk::Buffer cameraBuffer;
+	vk::DeviceMemory cameraDeviceMemory;
+	Span<std::byte> cameraHostMappedBytes;
+	constexpr int cameraByteCount = VulkanCamera::BYTE_COUNT;
+	if (!TryCreateAndMapStagingBuffer(this->device, cameraByteCount, vk::BufferUsageFlagBits::eUniformBuffer, this->graphicsQueueFamilyIndex, this->physicalDevice, &cameraBuffer, &cameraDeviceMemory, &cameraHostMappedBytes))
+	{
+		DebugLogError("Couldn't create camera uniform buffer.");
+		return false;
+	}
+
+	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes);
+
+	if (!TryCreateDescriptorSet(this->device, this->descriptorSetLayout, this->descriptorPool, cameraBuffer, &this->descriptorSet))
+	{
+		DebugLogError("Couldn't create camera descriptor set.");
+		return false;
+	}
+
 	if (!TryCreatePipelineLayout(this->device, this->descriptorSetLayout, &this->pipelineLayout))
 	{
 		DebugLogError("Couldn't create pipeline layout.");
@@ -1947,18 +2036,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		DebugLogError("Couldn't create render-is-finished semaphore.");
 		return false;
 	}
-
-	vk::Buffer cameraBuffer;
-	vk::DeviceMemory cameraDeviceMemory;
-	Span<std::byte> cameraHostMappedBytes;
-	constexpr int cameraByteCount = VulkanCamera::BYTE_COUNT;
-	if (!TryCreateAndMapStagingBuffer(this->device, cameraByteCount, vk::BufferUsageFlagBits::eUniformBuffer, this->graphicsQueueFamilyIndex, this->physicalDevice, &cameraBuffer, &cameraDeviceMemory, &cameraHostMappedBytes))
-	{
-		DebugLogError("Couldn't create camera uniform buffer.");
-		return false;
-	}
-
-	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes);
 
 	return true;
 }
@@ -2176,6 +2253,14 @@ void VulkanRenderBackend::shutdown()
 		{
 			this->device.destroySemaphore(this->imageIsAvailableSemaphore);
 			this->imageIsAvailableSemaphore = nullptr;
+		}
+
+		if (this->descriptorPool)
+		{
+			this->descriptorSet = nullptr;
+
+			this->device.destroyDescriptorPool(this->descriptorPool);
+			this->descriptorPool = nullptr;
 		}
 
 		if (this->descriptorSetLayout)
@@ -2931,13 +3016,6 @@ Surface VulkanRenderBackend::getScreenshot() const
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
-	/*const vk::Result waitForFrameStartResult = this->device.waitIdle();
-	if (waitForFrameStartResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't wait idle for frame start (%d).", waitForFrameStartResult);
-		return;
-	}*/
-
 	constexpr uint64_t acquireTimeout = TIMEOUT_UNLIMITED;
 	vk::ResultValue<uint32_t> acquiredSwapchainImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
 	if (acquiredSwapchainImageIndexResult.result != vk::Result::eSuccess)
@@ -2987,6 +3065,9 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 	this->commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->graphicsPipeline);
+
+	vk::ArrayProxy<const uint32_t> dynamicOffsets;
+	this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, 0, this->descriptorSet, dynamicOffsets);
 
 	for (int i = 0; i < renderCommandList.entryCount; i++)
 	{
