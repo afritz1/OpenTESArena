@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <functional>
 #include <limits>
 #include <string>
 
@@ -980,6 +981,53 @@ namespace
 		*outCommandBuffer = commandBuffers[0];
 		return true;
 	}
+
+	bool TrySubmitCommandBufferOnce(const std::function<void()> &func, vk::CommandBuffer commandBuffer, vk::Queue queue)
+	{
+		const vk::Result commandBufferResetResult = commandBuffer.reset();
+		if (commandBufferResetResult != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't reset command buffer one-time command (%d).", commandBufferResetResult);
+			return false;
+		}
+
+		vk::CommandBufferBeginInfo commandBufferBeginInfo;
+		const vk::Result commandBufferBeginResult = commandBuffer.begin(commandBufferBeginInfo);
+		if (commandBufferBeginResult != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't begin command buffer for one-time command (%d).", commandBufferBeginResult);
+			return false;
+		}
+
+		func();
+
+		const vk::Result commandBufferEndResult = commandBuffer.end();
+		if (commandBufferEndResult != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't end command buffer for one-time command (%d).", commandBufferEndResult);
+			return false;
+		}
+
+		vk::SubmitInfo submitInfo;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+
+		const vk::Result queueSubmitResult = queue.submit(submitInfo);
+		if (queueSubmitResult != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't submit queue for one-time command (%d).", queueSubmitResult);
+			return false;
+		}
+
+		const vk::Result waitForCopyCompletionResult = queue.waitIdle();
+		if (waitForCopyCompletionResult != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't wait idle for one-time command (%d).", waitForCopyCompletionResult);
+			return false;
+		}
+
+		return true;
+	}
 }
 
 // Vulkan synchronization
@@ -1387,60 +1435,17 @@ void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
 
 	this->device.unmapMemory(texture.stagingDeviceMemory);
 
-	const vk::Result commandBufferResetResult = this->commandBuffer.reset();
-	if (commandBufferResetResult != vk::Result::eSuccess)
+	auto commandBufferFunc = [this, &texture, width, height]()
 	{
-		DebugLogErrorFormat("Couldn't reset command buffer for object texture unlock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel, commandBufferResetResult);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
-		return;
-	}
+		vk::Image image = texture.image;
+		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
+		CopyBufferToImage(texture.stagingBuffer, image, width, height, this->commandBuffer);
+		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
+	};
 
-	vk::CommandBufferBeginInfo commandBufferBeginInfo;
-	const vk::Result commandBufferBeginResult = this->commandBuffer.begin(commandBufferBeginInfo);
-	if (commandBufferBeginResult != vk::Result::eSuccess)
+	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->queue))
 	{
-		DebugLogErrorFormat("Couldn't begin command buffer for object texture unlock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel, commandBufferBeginResult);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
-		return;
-	}
-
-	vk::Image image = texture.image;
-	TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
-	CopyBufferToImage(texture.stagingBuffer, image, width, height, this->commandBuffer);
-	TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
-
-	const vk::Result commandBufferEndResult = this->commandBuffer.end();
-	if (commandBufferEndResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't end command buffer for object texture unlock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel, commandBufferEndResult);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
-		return;
-	}
-
-	vk::SubmitInfo submitInfo;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &this->commandBuffer;
-
-	const vk::Result queueSubmitResult = this->queue.submit(submitInfo);
-	if (queueSubmitResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't submit queue for object texture unlock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel, queueSubmitResult);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
-		return;
-	}
-
-	const vk::Result waitForCopyCompletionResult = this->device.waitIdle();
-	if (waitForCopyCompletionResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't wait idle for copy completion for object texture unlock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel, waitForCopyCompletionResult);
+		DebugLogErrorFormat("Couldn't submit command buffer one-time command for object texture unlock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel);
 		this->device.freeMemory(texture.stagingDeviceMemory);
 		this->device.destroyBuffer(texture.stagingBuffer);
 		texture.setUnlocked();
@@ -1649,60 +1654,17 @@ void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
 
 	this->device.unmapMemory(texture.stagingDeviceMemory);
 
-	const vk::Result commandBufferResetResult = this->commandBuffer.reset();
-	if (commandBufferResetResult != vk::Result::eSuccess)
+	auto commandBufferFunc = [this, &texture, width, height]()
 	{
-		DebugLogErrorFormat("Couldn't reset command buffer for UI texture unlock with dims %dx%d (%d).", width, height, commandBufferResetResult);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
-		return;
-	}
+		vk::Image image = texture.image;
+		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
+		CopyBufferToImage(texture.stagingBuffer, image, width, height, this->commandBuffer);
+		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
+	};
 
-	vk::CommandBufferBeginInfo commandBufferBeginInfo;
-	const vk::Result commandBufferBeginResult = this->commandBuffer.begin(commandBufferBeginInfo);
-	if (commandBufferBeginResult != vk::Result::eSuccess)
+	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->queue))
 	{
-		DebugLogErrorFormat("Couldn't begin command buffer for UI texture unlock with dims %dx%d (%d).", width, height, commandBufferBeginResult);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
-		return;
-	}
-
-	vk::Image image = texture.image;
-	TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
-	CopyBufferToImage(texture.stagingBuffer, image, width, height, this->commandBuffer);
-	TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
-
-	const vk::Result commandBufferEndResult = this->commandBuffer.end();
-	if (commandBufferEndResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't end command buffer for UI texture unlock with dims %dx%d (%d).", width, height, commandBufferEndResult);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
-		return;
-	}
-
-	vk::SubmitInfo submitInfo;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &this->commandBuffer;
-
-	const vk::Result queueSubmitResult = this->queue.submit(submitInfo);
-	if (queueSubmitResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't submit queue for UI texture unlock with dims %dx%d (%d).", width, height, queueSubmitResult);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
-		return;
-	}
-
-	const vk::Result waitForCopyCompletionResult = this->device.waitIdle();
-	if (waitForCopyCompletionResult != vk::Result::eSuccess)
-	{
-		DebugLogErrorFormat("Couldn't wait idle for copy completion for UI texture unlock with dims %dx%d (%d).", width, height, waitForCopyCompletionResult);
+		DebugLogErrorFormat("Couldn't submit command buffer one-time command for UI texture unlock with dims %dx%d (%d).", width, height);
 		this->device.freeMemory(texture.stagingDeviceMemory);
 		this->device.destroyBuffer(texture.stagingBuffer);
 		texture.setUnlocked();
@@ -2212,11 +2174,12 @@ VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int verte
 	}
 
 	const size_t sizeOfComponent = sizeof(float);
-	const int byteCount = vertexCount * componentsPerVertex * sizeOfComponent;
+	const int elementCount = vertexCount * componentsPerVertex;
+	constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vk::Buffer buffer;
 	vk::DeviceMemory deviceMemory;
-	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	if (!TryCreateBuffer<float>(this->device, elementCount, usageFlags, false, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
 	{
 		DebugLogErrorFormat("Couldn't create vertex position buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
 		this->vertexPositionBufferPool.free(id);
@@ -2242,11 +2205,12 @@ VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int ver
 	}
 
 	const size_t sizeOfComponent = sizeof(float);
-	const int byteCount = vertexCount * componentsPerVertex * sizeOfComponent;
+	const int elementCount = vertexCount * componentsPerVertex;
+	constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
 
 	vk::Buffer buffer;
 	vk::DeviceMemory deviceMemory;
-	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	if (!TryCreateBuffer<float>(this->device, elementCount, usageFlags, false, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
 	{
 		DebugLogErrorFormat("Couldn't create vertex attribute buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
 		this->vertexAttributeBufferPool.free(id);
@@ -2272,10 +2236,11 @@ IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount)
 	}
 
 	constexpr int sizeOfIndex = sizeof(int32_t);
+	constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
 
 	vk::Buffer buffer;
 	vk::DeviceMemory deviceMemory;
-	if (!TryCreateBuffer<int32_t>(this->device, indexCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	if (!TryCreateBuffer<int32_t>(this->device, indexCount, usageFlags, false, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
 	{
 		DebugLogErrorFormat("Couldn't create index buffer (indices: %d).", indexCount);
 		this->indexBufferPool.free(id);
@@ -2313,7 +2278,24 @@ void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
 {
 	VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
 	this->device.unmapMemory(vertexPositionBuffer.stagingDeviceMemory);
-	// @todo staging -> device local
+	
+	auto commandBufferFunc = [this, &vertexPositionBuffer]()
+	{
+		const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
+		const int sourceElementCount = vertexPositionInfo.vertexCount * vertexPositionInfo.componentsPerVertex;
+		const int sourceByteCount = sourceElementCount * vertexPositionInfo.sizeOfComponent;
+		CopyToBufferDeviceLocal(vertexPositionBuffer.stagingBuffer, sourceByteCount, vertexPositionBuffer.buffer, this->commandBuffer);
+	};
+
+	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
+	{
+		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking vertex position buffer %d.", id);
+		this->device.freeMemory(vertexPositionBuffer.stagingDeviceMemory);
+		this->device.destroyBuffer(vertexPositionBuffer.stagingBuffer);
+		vertexPositionBuffer.setUnlocked();
+		return;
+	}
+
 	this->device.freeMemory(vertexPositionBuffer.stagingDeviceMemory);
 	this->device.destroyBuffer(vertexPositionBuffer.stagingBuffer);
 	vertexPositionBuffer.setUnlocked();
@@ -2362,7 +2344,24 @@ void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id
 {
 	VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
 	this->device.unmapMemory(vertexAttributeBuffer.stagingDeviceMemory);
-	// @todo staging -> device local
+	
+	auto commandBufferFunc = [this, &vertexAttributeBuffer]()
+	{
+		const VulkanBufferVertexAttributeInfo &vertexAttributeInfo = vertexAttributeBuffer.vertexAttribute;
+		const int sourceElementCount = vertexAttributeInfo.vertexCount * vertexAttributeInfo.componentsPerVertex;
+		const int sourceByteCount = sourceElementCount * vertexAttributeInfo.sizeOfComponent;
+		CopyToBufferDeviceLocal(vertexAttributeBuffer.stagingBuffer, sourceByteCount, vertexAttributeBuffer.buffer, this->commandBuffer);
+	};
+
+	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
+	{
+		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking vertex attribute buffer %d.", id);
+		this->device.freeMemory(vertexAttributeBuffer.stagingDeviceMemory);
+		this->device.destroyBuffer(vertexAttributeBuffer.stagingBuffer);
+		vertexAttributeBuffer.setUnlocked();
+		return;
+	}
+
 	this->device.freeMemory(vertexAttributeBuffer.stagingDeviceMemory);
 	this->device.destroyBuffer(vertexAttributeBuffer.stagingBuffer);
 	vertexAttributeBuffer.setUnlocked();
@@ -2411,7 +2410,24 @@ void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 {
 	VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
 	this->device.unmapMemory(indexBuffer.stagingDeviceMemory);
-	// @todo staging -> device local
+	
+	auto commandBufferFunc = [this, &indexBuffer]()
+	{
+		const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
+		const int sourceElementCount = indexInfo.indexCount;
+		const int sourceByteCount = sourceElementCount * indexInfo.sizeOfIndex;
+		CopyToBufferDeviceLocal(indexBuffer.stagingBuffer, sourceByteCount, indexBuffer.buffer, this->commandBuffer);
+	};
+
+	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
+	{
+		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking index buffer %d.", id);
+		this->device.freeMemory(indexBuffer.stagingDeviceMemory);
+		this->device.destroyBuffer(indexBuffer.stagingBuffer);
+		indexBuffer.setUnlocked();
+		return;
+	}
+
 	this->device.freeMemory(indexBuffer.stagingDeviceMemory);
 	this->device.destroyBuffer(indexBuffer.stagingBuffer);
 	indexBuffer.setUnlocked();
@@ -2544,10 +2560,11 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, size_
 	}
 
 	const int byteCount = elementCount * sizeOfElement;
+	constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
 
 	vk::Buffer buffer;
 	vk::DeviceMemory deviceMemory;
-	if (!TryCreateBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eVertexBuffer, true, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	if (!TryCreateBuffer(this->device, byteCount, usageFlags, false, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
 	{
 		DebugLogErrorFormat("Couldn't create uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, sizeOfElement, alignmentOfElement);
 		this->uniformBufferPool.free(id);
@@ -2584,7 +2601,24 @@ void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 {
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	this->device.unmapMemory(uniformBuffer.stagingDeviceMemory);
-	// @todo staging -> device local
+	
+	auto commandBufferFunc = [this, &uniformBuffer]()
+	{
+		const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
+		const int sourceElementCount = uniformInfo.elementCount;
+		const int sourceByteCount = sourceElementCount * uniformInfo.sizeOfElement;
+		CopyToBufferDeviceLocal(uniformBuffer.stagingBuffer, sourceByteCount, uniformBuffer.buffer, this->commandBuffer);
+	};
+
+	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
+	{
+		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking uniform buffer %d.", id);
+		this->device.freeMemory(uniformBuffer.stagingDeviceMemory);
+		this->device.destroyBuffer(uniformBuffer.stagingBuffer);
+		uniformBuffer.setUnlocked();
+		return;
+	}
+
 	this->device.freeMemory(uniformBuffer.stagingDeviceMemory);
 	this->device.destroyBuffer(uniformBuffer.stagingBuffer);
 	uniformBuffer.setUnlocked();
@@ -2594,7 +2628,7 @@ void VulkanRenderBackend::populateUniformBuffer(UniformBufferID id, Span<const s
 {
 	// @todo RenderTranform isn't compatible with this bytes design if Vulkan wants 32-bit floats. may want a RenderBackend::sizeOfFloat == 4 or 8 so callsites know to convert RenderTransform to a RenderTransformF
 
-	Span<std::byte> hostMappedBytes = this->lockUniformBuffer(id);
+	/*Span<std::byte> hostMappedBytes = this->lockUniformBuffer(id);
 	if (!hostMappedBytes.isValid())
 	{
 		DebugLogErrorFormat("Couldn't populate uniform buffer %d.", id);
@@ -2602,14 +2636,14 @@ void VulkanRenderBackend::populateUniformBuffer(UniformBufferID id, Span<const s
 	}
 
 	std::copy(data.begin(), data.end(), hostMappedBytes.begin());
-	this->unlockUniformBuffer(id);
+	this->unlockUniformBuffer(id);*/
 }
 
 void VulkanRenderBackend::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
 {
 	// @todo ideally this would probably make a staging buffer only for the required incoming size (sizeOfElement) then commit to that one spot in device local memory
 
-	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	/*VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
 	const int elementCount = 1;
 	const int byteCount = elementCount * uniformInfo.sizeOfElement;
@@ -2625,7 +2659,9 @@ void VulkanRenderBackend::populateUniformAtIndex(UniformBufferID id, int uniform
 
 	uniformBuffer.setLocked(stagingBuffer, stagingDeviceMemory);
 	std::copy(uniformData.begin(), uniformData.end(), stagingHostMappedBytes.begin());
-	this->unlockUniformBuffer(id);
+
+	// @todo this doesn't know the uniformIndex to update, need to do that all here (command buffer submit etc)
+	this->unlockUniformBuffer(id);*/
 }
 
 void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
