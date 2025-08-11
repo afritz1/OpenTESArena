@@ -208,8 +208,14 @@ public:
 	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) override;
 	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) override;
 	IndexBufferID createIndexBuffer(int indexCount) override;
+	Span<float> lockVertexPositionBuffer(VertexPositionBufferID id);
+	void unlockVertexPositionBuffer(VertexPositionBufferID id);
 	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions) override;
+	Span<float> lockVertexAttributeBuffer(VertexAttributeBufferID id);
+	void unlockVertexAttributeBuffer(VertexAttributeBufferID id);
 	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes) override;
+	Span<int32_t> lockIndexBuffer(IndexBufferID id);
+	void unlockIndexBuffer(IndexBufferID id);
 	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices) override;
 	void freeVertexPositionBuffer(VertexPositionBufferID id) override;
 	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
@@ -221,6 +227,8 @@ public:
 	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const override;
 
 	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) override;
+	Span<std::byte> lockUniformBuffer(UniformBufferID id);
+	void unlockUniformBuffer(UniformBufferID id);
 	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data) override;
 	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData) override;
 	void freeUniformBuffer(UniformBufferID id) override;
