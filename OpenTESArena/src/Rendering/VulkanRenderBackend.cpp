@@ -1325,7 +1325,7 @@ LockedTexture VulkanObjectTextureAllocator::lock(ObjectTextureID textureID)
 		return LockedTexture();
 	}
 
-	const vk::ResultValue<void*> stagingDeviceMemoryMapResult = this->device.mapMemory(stagingDeviceMemory, 0, byteCount);
+	vk::ResultValue<void*> stagingDeviceMemoryMapResult = this->device.mapMemory(stagingDeviceMemory, 0, byteCount);
 	if (stagingDeviceMemoryMapResult.result != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't map device buffer memory for object texture lock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel, stagingDeviceMemoryMapResult.result);
@@ -1598,7 +1598,7 @@ LockedTexture VulkanUiTextureAllocator::lock(UiTextureID textureID)
 		return LockedTexture();
 	}
 
-	const vk::ResultValue<void*> stagingDeviceMemoryMapResult = this->device.mapMemory(stagingDeviceMemory, 0, byteCount);
+	vk::ResultValue<void*> stagingDeviceMemoryMapResult = this->device.mapMemory(stagingDeviceMemory, 0, byteCount);
 	if (stagingDeviceMemoryMapResult.result != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't map device buffer memory for UI texture lock with dims %dx%d (%d).", width, height, stagingDeviceMemoryMapResult.result);
