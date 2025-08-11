@@ -6,6 +6,7 @@
 
 #include "SDL_vulkan.h"
 
+#include "RenderCamera.h"
 #include "RenderCommand.h"
 #include "RenderDrawCall.h"
 #include "RenderInitSettings.h"
@@ -415,10 +416,9 @@ namespace
 		return TryCreateBuffer(device, byteCount, usageFlags, isHostVisible, queueFamilyIndex, physicalDevice, outBuffer, outDeviceMemory);
 	}
 
-	bool TryCreateAndMapStagingBuffer(vk::Device device, int byteCount, uint32_t queueFamilyIndex, vk::PhysicalDevice physicalDevice,
+	bool TryCreateAndMapStagingBuffer(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, uint32_t queueFamilyIndex, vk::PhysicalDevice physicalDevice,
 		vk::Buffer *outBuffer, vk::DeviceMemory *outDeviceMemory, Span<std::byte> *outHostMappedBytes)
 	{
-		constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 		constexpr bool isHostVisible = true;
 
 		vk::Buffer buffer;
@@ -445,12 +445,12 @@ namespace
 	}
 
 	template<typename T>
-	bool TryCreateAndMapStagingBuffer(vk::Device device, int elementCount, uint32_t queueFamilyIndex, vk::PhysicalDevice physicalDevice,
-		vk::Buffer *outBuffer, vk::DeviceMemory *outDeviceMemory, Span<T> *outHostMappedElements)
+	bool TryCreateAndMapStagingBuffer(vk::Device device, int elementCount, vk::BufferUsageFlags usageFlags, uint32_t queueFamilyIndex,
+		vk::PhysicalDevice physicalDevice, vk::Buffer *outBuffer, vk::DeviceMemory *outDeviceMemory, Span<T> *outHostMappedElements)
 	{
 		const int byteCount = elementCount * sizeof(T);
 		Span<std::byte> hostMappedBytes;
-		const bool success = TryCreateAndMapStagingBuffer(device, byteCount, queueFamilyIndex, physicalDevice, outBuffer, outDeviceMemory, &hostMappedBytes);
+		const bool success = TryCreateAndMapStagingBuffer(device, byteCount, usageFlags, queueFamilyIndex, physicalDevice, outBuffer, outDeviceMemory, &hostMappedBytes);
 		*outHostMappedElements = Span<T>(reinterpret_cast<T*>(hostMappedBytes.begin()), elementCount);
 		return success;
 	}
@@ -1074,12 +1074,43 @@ namespace
 	}
 }
 
+// Vulkan descriptor sets
+namespace
+{
+	bool TryCreateDescriptorSetLayout(vk::Device device, vk::DescriptorSetLayout *outDescriptorSetLayout)
+	{
+		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding;
+		descriptorSetLayoutBinding.binding = 0;
+		descriptorSetLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+		descriptorSetLayoutBinding.descriptorCount = 1;
+		descriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+
+		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
+		descriptorSetLayoutCreateInfo.bindingCount = 1;
+		descriptorSetLayoutCreateInfo.pBindings = &descriptorSetLayoutBinding;
+
+		vk::ResultValue<vk::DescriptorSetLayout> descriptorSetLayoutCreateResult = device.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+		if (descriptorSetLayoutCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't create vk::DescriptorSetLayout (%d).", descriptorSetLayoutCreateResult.result);
+			return false;
+		}
+
+		*outDescriptorSetLayout = std::move(descriptorSetLayoutCreateResult.value);
+		return true;
+	}
+}
+
 // Vulkan pipelines
 namespace
 {
-	bool TryCreatePipelineLayout(vk::Device device, vk::PipelineLayout *outPipelineLayout)
+	bool TryCreatePipelineLayout(vk::Device device, vk::DescriptorSetLayout descriptorSetLayout, vk::PipelineLayout *outPipelineLayout)
 	{
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo;
+		pipelineLayoutCreateInfo.setLayoutCount = 1;
+		pipelineLayoutCreateInfo.pSetLayouts = &descriptorSetLayout;
+
 		vk::ResultValue<vk::PipelineLayout> pipelineLayoutResult = device.createPipelineLayout(pipelineLayoutCreateInfo);
 		if (pipelineLayoutResult.result != vk::Result::eSuccess)
 		{
@@ -1481,7 +1512,7 @@ LockedTexture VulkanObjectTextureAllocator::lock(ObjectTextureID textureID)
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create and map staging buffer for object texture lock with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
 		return LockedTexture();
@@ -1700,7 +1731,7 @@ LockedTexture VulkanUiTextureAllocator::lock(UiTextureID textureID)
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
 	Span<uint32_t> stagingHostMappedElements;
-	if (!TryCreateAndMapStagingBuffer<uint32_t>(this->device, texelCount, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedElements))
+	if (!TryCreateAndMapStagingBuffer<uint32_t>(this->device, texelCount, vk::BufferUsageFlagBits::eTransferSrc, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedElements))
 	{
 		DebugLogErrorFormat("Couldn't create and map staging buffer for UI texture lock with dims %dx%d.", width, height);
 		return LockedTexture();
@@ -1739,6 +1770,18 @@ void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
 	this->device.freeMemory(texture.stagingDeviceMemory);
 	this->device.destroyBuffer(texture.stagingBuffer);
 	texture.setUnlocked();
+}
+
+VulkanCamera::VulkanCamera()
+{
+	this->matrixBytes = Span<const std::byte>(reinterpret_cast<const std::byte*>(&this->model), VulkanCamera::BYTE_COUNT);
+}
+
+void VulkanCamera::init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, Span<std::byte> hostMappedBytes)
+{
+	this->buffer = buffer;
+	this->deviceMemory = deviceMemory;
+	this->hostMappedBytes = hostMappedBytes;
 }
 
 bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
@@ -1874,7 +1917,13 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!TryCreatePipelineLayout(this->device, &this->pipelineLayout))
+	if (!TryCreateDescriptorSetLayout(this->device, &this->descriptorSetLayout))
+	{
+		DebugLogError("Couldn't create descriptor set layout.");
+		return false;
+	}
+
+	if (!TryCreatePipelineLayout(this->device, this->descriptorSetLayout, &this->pipelineLayout))
 	{
 		DebugLogError("Couldn't create pipeline layout.");
 		return false;
@@ -1899,6 +1948,18 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	vk::Buffer cameraBuffer;
+	vk::DeviceMemory cameraDeviceMemory;
+	Span<std::byte> cameraHostMappedBytes;
+	constexpr int cameraByteCount = VulkanCamera::BYTE_COUNT;
+	if (!TryCreateAndMapStagingBuffer(this->device, cameraByteCount, vk::BufferUsageFlagBits::eUniformBuffer, this->graphicsQueueFamilyIndex, this->physicalDevice, &cameraBuffer, &cameraDeviceMemory, &cameraHostMappedBytes))
+	{
+		DebugLogError("Couldn't create camera uniform buffer.");
+		return false;
+	}
+
+	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes);
+
 	return true;
 }
 
@@ -1906,6 +1967,20 @@ void VulkanRenderBackend::shutdown()
 {
 	if (this->device)
 	{
+		if (this->camera.buffer)
+		{
+			this->device.destroyBuffer(this->camera.buffer);
+			this->camera.buffer = nullptr;
+		}
+
+		if (this->camera.deviceMemory)
+		{
+			this->device.freeMemory(this->camera.deviceMemory);
+			this->camera.deviceMemory = nullptr;
+		}
+
+		this->camera.hostMappedBytes = Span<std::byte>();
+
 		for (VulkanTexture &texture : this->uiTexturePool.values)
 		{
 			if (texture.stagingDeviceMemory)
@@ -2101,6 +2176,12 @@ void VulkanRenderBackend::shutdown()
 		{
 			this->device.destroySemaphore(this->imageIsAvailableSemaphore);
 			this->imageIsAvailableSemaphore = nullptr;
+		}
+
+		if (this->descriptorSetLayout)
+		{
+			this->device.destroyDescriptorSetLayout(this->descriptorSetLayout);
+			this->descriptorSetLayout = nullptr;
 		}
 
 		if (this->graphicsPipeline)
@@ -2314,7 +2395,7 @@ Span<float> VulkanRenderBackend::lockVertexPositionBuffer(VertexPositionBufferID
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create and map staging buffer for vertex position buffer (vertices: %d, components: %d).", vertexPositionInfo.vertexCount, vertexPositionInfo.componentsPerVertex);
 		return Span<float>();
@@ -2380,7 +2461,7 @@ Span<float> VulkanRenderBackend::lockVertexAttributeBuffer(VertexAttributeBuffer
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create and map staging buffer for vertex attribute buffer (vertices: %d, components: %d).", vertexAttributeInfo.vertexCount, vertexAttributeInfo.componentsPerVertex);
 		return Span<float>();
@@ -2446,7 +2527,7 @@ Span<int32_t> VulkanRenderBackend::lockIndexBuffer(IndexBufferID id)
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
 	Span<int32_t> stagingHostMappedElements;
-	if (!TryCreateAndMapStagingBuffer<int32_t>(this->device, elementCount, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedElements))
+	if (!TryCreateAndMapStagingBuffer<int32_t>(this->device, elementCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedElements))
 	{
 		DebugLogErrorFormat("Couldn't create and map staging buffer for index buffer (indices: %d).", indexInfo.indexCount);
 		return Span<int32_t>();
@@ -2637,7 +2718,7 @@ Span<std::byte> VulkanRenderBackend::lockUniformBuffer(UniformBufferID id)
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create and map staging buffer for uniform buffer (elements: %d, sizeOf: %d).", elementCount, uniformInfo.sizeOfElement);
 		return Span<std::byte>();
@@ -2850,6 +2931,13 @@ Surface VulkanRenderBackend::getScreenshot() const
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
+	/*const vk::Result waitForFrameStartResult = this->device.waitIdle();
+	if (waitForFrameStartResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't wait idle for frame start (%d).", waitForFrameStartResult);
+		return;
+	}*/
+
 	constexpr uint64_t acquireTimeout = TIMEOUT_UNLIMITED;
 	vk::ResultValue<uint32_t> acquiredSwapchainImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
 	if (acquiredSwapchainImageIndexResult.result != vk::Result::eSuccess)
@@ -2860,6 +2948,22 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 	const uint32_t acquiredSwapchainImageIndex = std::move(acquiredSwapchainImageIndexResult.value);
 	const vk::Framebuffer acquiredSwapchainFramebuffer = this->swapchainFramebuffers[acquiredSwapchainImageIndex];
+
+	auto matrix4DoubleToFloat = [](const Matrix4d &mat)
+	{
+		Matrix4f floatMatrix;
+		floatMatrix.x = Float4(static_cast<float>(mat.x.x), static_cast<float>(mat.x.y), static_cast<float>(mat.x.z), static_cast<float>(mat.x.w));
+		floatMatrix.y = Float4(static_cast<float>(mat.y.x), static_cast<float>(mat.y.y), static_cast<float>(mat.y.z), static_cast<float>(mat.y.w));
+		floatMatrix.z = Float4(static_cast<float>(mat.z.x), static_cast<float>(mat.z.y), static_cast<float>(mat.z.z), static_cast<float>(mat.z.w));
+		floatMatrix.w = Float4(static_cast<float>(mat.w.x), static_cast<float>(mat.w.y), static_cast<float>(mat.w.z), static_cast<float>(mat.w.w));
+		return floatMatrix;
+	};
+
+	DebugAssert(this->camera.matrixBytes.getCount() == this->camera.hostMappedBytes.getCount());
+	this->camera.model = Matrix4f::identity();
+	this->camera.view = matrix4DoubleToFloat(camera.viewMatrix);
+	this->camera.projection = matrix4DoubleToFloat(camera.projectionMatrix);
+	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
 
 	this->commandBuffer.reset();
 

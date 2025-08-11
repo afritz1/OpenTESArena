@@ -173,6 +173,23 @@ struct VulkanUiTextureAllocator final : public UiTextureAllocator
 	void unlock(UiTextureID textureID) override;
 };
 
+struct VulkanCamera
+{
+	static constexpr int BYTE_COUNT = sizeof(Matrix4f) * 3;
+
+	// Updates frequently, host-visible.
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
+	Span<std::byte> hostMappedBytes; // Always mapped.
+
+	Matrix4f model, view, projection;
+	Span<const std::byte> matrixBytes;
+
+	VulkanCamera();
+
+	void init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, Span<std::byte> hostMappedBytes);
+};
+
 class VulkanRenderBackend final : public RenderBackend
 {
 private:
@@ -198,6 +215,8 @@ private:
 	vk::ShaderModule vertexShaderModule;
 	vk::ShaderModule fragmentShaderModule;
 
+	vk::DescriptorSetLayout descriptorSetLayout;
+
 	vk::PipelineLayout pipelineLayout;
 	vk::Pipeline graphicsPipeline;
 
@@ -215,6 +234,8 @@ private:
 
 	VulkanUiTexturePool uiTexturePool;
 	VulkanUiTextureAllocator uiTextureAllocator;
+
+	VulkanCamera camera;
 public:
 	bool init(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
