@@ -209,7 +209,7 @@ namespace
 			const vk::PhysicalDevice &physicalDevice = physicalDevices[i];
 			const vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
 			const std::string deviceName = physicalDeviceProperties.deviceName;
-			
+
 			PhysicalDeviceEntry entry;
 			entry.index = i;
 			entry.name = deviceName;
@@ -1252,6 +1252,57 @@ void VulkanBuffer::setUnlocked()
 	this->stagingDeviceMemory = vk::DeviceMemory(nullptr);
 }
 
+VulkanLightInfo::VulkanLightInfo()
+{
+	this->pointX = 0.0f;
+	this->pointY = 0.0f;
+	this->pointZ = 0.0f;
+	this->startRadius = 0.0f;
+	this->endRadius = 0.0f;
+	this->startRadiusSqr = 0.0f;
+	this->endRadiusSqr = 0.0f;
+}
+
+void VulkanLightInfo::init(float pointX, float pointY, float pointZ, float startRadius, float endRadius)
+{
+	this->pointX = pointX;
+	this->pointY = pointY;
+	this->pointZ = pointZ;
+	this->startRadius = startRadius;
+	this->endRadius = endRadius;
+	this->startRadiusSqr = startRadius * startRadius;
+	this->endRadiusSqr = endRadius * endRadius;
+}
+
+void VulkanLight::init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
+{
+	DebugAssert(!this->stagingBuffer);
+	DebugAssert(!this->stagingDeviceMemory);
+	this->buffer = buffer;
+	this->deviceMemory = deviceMemory;
+
+	DebugAssert(endRadius >= startRadius);
+	this->lightInfo.init(pointX, pointY, pointZ, startRadius, endRadius);
+}
+
+void VulkanLight::setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory)
+{
+	DebugAssert(!this->stagingBuffer);
+	DebugAssert(!this->stagingDeviceMemory);
+	DebugAssert(stagingBuffer);
+	DebugAssert(stagingDeviceMemory);
+	this->stagingBuffer = stagingBuffer;
+	this->stagingDeviceMemory = stagingDeviceMemory;
+}
+
+void VulkanLight::setUnlocked()
+{
+	DebugAssert(this->stagingBuffer);
+	DebugAssert(this->stagingDeviceMemory);
+	this->stagingBuffer = vk::Buffer(nullptr);
+	this->stagingDeviceMemory = vk::DeviceMemory(nullptr);
+}
+
 VulkanTexture::VulkanTexture()
 {
 	this->width = 0;
@@ -1924,7 +1975,25 @@ void VulkanRenderBackend::shutdown()
 
 		for (VulkanLight &light : this->lightPool.values)
 		{
-			// @todo device destroy something
+			if (light.stagingDeviceMemory)
+			{
+				this->device.freeMemory(light.stagingDeviceMemory);
+			}
+
+			if (light.stagingBuffer)
+			{
+				this->device.destroyBuffer(light.stagingBuffer);
+			}
+
+			if (light.deviceMemory)
+			{
+				this->device.freeMemory(light.deviceMemory);
+			}
+
+			if (light.buffer)
+			{
+				this->device.destroyBuffer(light.buffer);
+			}
 		}
 
 		this->lightPool.clear();
@@ -2278,7 +2347,7 @@ void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
 {
 	VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
 	this->device.unmapMemory(vertexPositionBuffer.stagingDeviceMemory);
-	
+
 	auto commandBufferFunc = [this, &vertexPositionBuffer]()
 	{
 		const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
@@ -2344,7 +2413,7 @@ void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id
 {
 	VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
 	this->device.unmapMemory(vertexAttributeBuffer.stagingDeviceMemory);
-	
+
 	auto commandBufferFunc = [this, &vertexAttributeBuffer]()
 	{
 		const VulkanBufferVertexAttributeInfo &vertexAttributeInfo = vertexAttributeBuffer.vertexAttribute;
@@ -2410,7 +2479,7 @@ void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 {
 	VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
 	this->device.unmapMemory(indexBuffer.stagingDeviceMemory);
-	
+
 	auto commandBufferFunc = [this, &indexBuffer]()
 	{
 		const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
@@ -2560,7 +2629,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, size_
 	}
 
 	const int byteCount = elementCount * sizeOfElement;
-	constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
+	constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer;
 
 	vk::Buffer buffer;
 	vk::DeviceMemory deviceMemory;
@@ -2601,7 +2670,7 @@ void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 {
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	this->device.unmapMemory(uniformBuffer.stagingDeviceMemory);
-	
+
 	auto commandBufferFunc = [this, &uniformBuffer]()
 	{
 		const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
@@ -2703,6 +2772,21 @@ RenderLightID VulkanRenderBackend::createLight()
 		return -1;
 	}
 
+	const int byteCount = 1; // @todo
+	constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer;
+
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
+	if (!TryCreateBuffer(this->device, byteCount, usageFlags, false, this->graphicsQueueFamilyIndex, this->physicalDevice, &buffer, &deviceMemory))
+	{
+		DebugLogError("Couldn't create buffer for light.");
+		return -1;
+	}
+
+	VulkanLightInfo lightInfo; // Default-constructed
+	VulkanLight &light = this->lightPool.get(id);
+	light.init(lightInfo.pointX, lightInfo.pointY, lightInfo.pointZ, lightInfo.startRadius, lightInfo.endRadius, buffer, deviceMemory);
+
 	return id;
 }
 
@@ -2723,7 +2807,26 @@ void VulkanRenderBackend::freeLight(RenderLightID id)
 	VulkanLight *light = this->lightPool.tryGet(id);
 	if (light != nullptr)
 	{
-		// @todo vk destroy something
+		if (light->stagingDeviceMemory)
+		{
+			DebugLogWarningFormat("Freeing light %d that was still locked.", id);
+			this->device.freeMemory(light->stagingDeviceMemory);
+		}
+
+		if (light->stagingBuffer)
+		{
+			this->device.destroyBuffer(light->stagingBuffer);
+		}
+
+		if (light->deviceMemory)
+		{
+			this->device.freeMemory(light->deviceMemory);
+		}
+
+		if (light->buffer)
+		{
+			this->device.destroyBuffer(light->buffer);
+		}
 	}
 
 	this->lightPool.free(id);

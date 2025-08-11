@@ -75,9 +75,29 @@ struct VulkanBuffer
 	void setUnlocked();
 };
 
+struct VulkanLightInfo
+{
+	float pointX, pointY, pointZ;
+	float startRadius, endRadius;
+	float startRadiusSqr, endRadiusSqr;
+
+	VulkanLightInfo();
+
+	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius);
+};
+
 struct VulkanLight
 {
-	// @todo vk something for worldPoint/startRadius/endRadius
+	vk::Buffer buffer;
+	vk::DeviceMemory deviceMemory;
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
+	VulkanLightInfo lightInfo;
+
+	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+
+	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
+	void setUnlocked();
 };
 
 struct VulkanTexture
