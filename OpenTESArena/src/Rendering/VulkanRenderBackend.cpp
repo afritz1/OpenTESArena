@@ -9,6 +9,7 @@
 #include "RenderCamera.h"
 #include "RenderCommand.h"
 #include "RenderDrawCall.h"
+#include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
 #include "VulkanRenderBackend.h"
 #include "Window.h"
@@ -1109,7 +1110,7 @@ namespace
 {
 	bool TryCreateDescriptorSetLayout(vk::Device device, vk::DescriptorSetLayout *outDescriptorSetLayout)
 	{
-		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding[2];
+		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding[3];
 
 		vk::DescriptorSetLayoutBinding &cameraDescriptorSetLayoutBinding = descriptorSetLayoutBinding[0];
 		cameraDescriptorSetLayoutBinding.binding = 0;
@@ -1118,12 +1119,19 @@ namespace
 		cameraDescriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
 		cameraDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
 
-		vk::DescriptorSetLayoutBinding &samplerDescriptorSetLayoutBinding = descriptorSetLayoutBinding[1];
-		samplerDescriptorSetLayoutBinding.binding = 1;
-		samplerDescriptorSetLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		samplerDescriptorSetLayoutBinding.descriptorCount = 1;
-		samplerDescriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
-		samplerDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+		vk::DescriptorSetLayoutBinding &textureDescriptorSetLayoutBinding = descriptorSetLayoutBinding[1];
+		textureDescriptorSetLayoutBinding.binding = 1;
+		textureDescriptorSetLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		textureDescriptorSetLayoutBinding.descriptorCount = 1;
+		textureDescriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		textureDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+
+		vk::DescriptorSetLayoutBinding &paletteDescriptorSetLayoutBinding = descriptorSetLayoutBinding[2];
+		paletteDescriptorSetLayoutBinding.binding = 2;
+		paletteDescriptorSetLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		paletteDescriptorSetLayoutBinding.descriptorCount = 1;
+		paletteDescriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		paletteDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
 
 		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
 		descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(std::size(descriptorSetLayoutBinding));
@@ -1150,7 +1158,7 @@ namespace
 
 		vk::DescriptorPoolSize &samplerDescriptorPoolSize = descriptorPoolSizes[1];
 		samplerDescriptorPoolSize.type = vk::DescriptorType::eCombinedImageSampler;
-		samplerDescriptorPoolSize.descriptorCount = 1;
+		samplerDescriptorPoolSize.descriptorCount = 2;
 
 		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo;
 		descriptorPoolCreateInfo.maxSets = 1;
@@ -1194,19 +1202,24 @@ namespace
 	}
 
 	void UpdateDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer,
-		vk::ImageView textureImageView, vk::Sampler textureSampler)
+		vk::ImageView textureImageView, vk::Sampler textureSampler, vk::ImageView paletteImageView, vk::Sampler paletteSampler)
 	{
 		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
 		cameraDescriptorBufferInfo.buffer = cameraBuffer;
 		cameraDescriptorBufferInfo.offset = 0;
 		cameraDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
-		vk::DescriptorImageInfo samplerDescriptorImageInfo;
-		samplerDescriptorImageInfo.sampler = textureSampler;
-		samplerDescriptorImageInfo.imageView = textureImageView;
-		samplerDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		vk::DescriptorImageInfo textureDescriptorImageInfo;
+		textureDescriptorImageInfo.sampler = textureSampler;
+		textureDescriptorImageInfo.imageView = textureImageView;
+		textureDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-		vk::WriteDescriptorSet writeDescriptorSets[2];
+		vk::DescriptorImageInfo paletteDescriptorImageInfo;
+		paletteDescriptorImageInfo.sampler = paletteSampler;
+		paletteDescriptorImageInfo.imageView = paletteImageView;
+		paletteDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::WriteDescriptorSet writeDescriptorSets[3];
 
 		vk::WriteDescriptorSet &cameraWriteDescriptorSet = writeDescriptorSets[0];
 		cameraWriteDescriptorSet.dstSet = descriptorSet;
@@ -1216,13 +1229,21 @@ namespace
 		cameraWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
 		cameraWriteDescriptorSet.pBufferInfo = &cameraDescriptorBufferInfo;
 
-		vk::WriteDescriptorSet &samplerWriteDescriptorSet = writeDescriptorSets[1];
-		samplerWriteDescriptorSet.dstSet = descriptorSet;
-		samplerWriteDescriptorSet.dstBinding = 1;
-		samplerWriteDescriptorSet.dstArrayElement = 0;
-		samplerWriteDescriptorSet.descriptorCount = 1;
-		samplerWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		samplerWriteDescriptorSet.pImageInfo = &samplerDescriptorImageInfo;
+		vk::WriteDescriptorSet &textureWriteDescriptorSet = writeDescriptorSets[1];
+		textureWriteDescriptorSet.dstSet = descriptorSet;
+		textureWriteDescriptorSet.dstBinding = 1;
+		textureWriteDescriptorSet.dstArrayElement = 0;
+		textureWriteDescriptorSet.descriptorCount = 1;
+		textureWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		textureWriteDescriptorSet.pImageInfo = &textureDescriptorImageInfo;
+
+		vk::WriteDescriptorSet &paletteWriteDescriptorSet = writeDescriptorSets[2];
+		paletteWriteDescriptorSet.dstSet = descriptorSet;
+		paletteWriteDescriptorSet.dstBinding = 2;
+		paletteWriteDescriptorSet.dstArrayElement = 0;
+		paletteWriteDescriptorSet.descriptorCount = 1;
+		paletteWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		paletteWriteDescriptorSet.pImageInfo = &paletteDescriptorImageInfo;
 
 		vk::ArrayProxy<vk::CopyDescriptorSet> copyDescriptorSets;
 		device.updateDescriptorSets(writeDescriptorSets, copyDescriptorSets);
@@ -1563,7 +1584,7 @@ ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int 
 		return -1;
 	}
 
-	const vk::Format format = (bytesPerTexel == 1) ? vk::Format::eR8Uint : vk::Format::eR8G8B8A8Unorm;
+	const vk::Format format = (bytesPerTexel == 1) ? vk::Format::eR8Uint : vk::Format::eR8G8B8A8Uint;
 	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
 	vk::Image image;
@@ -3166,10 +3187,17 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	this->camera.projection.y.y = -this->camera.projection.y.y; // Flip Y so world is not upside down.
 	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
 
-	// @todo I think we have to have one descriptor set per texture? so that vkCmdBindDescriptorSets() can pick the texture for the draw call
-	// - also i think i have to do texture atlases to reduce the # of descriptor sets so it's not in the hundreds
-	const VulkanTexture &texture = this->objectTexturePool.get(0);
-	UpdateDescriptorSet(this->device, this->descriptorSet, this->camera.buffer, texture.imageView, texture.sampler);
+	const bool isSceneValid = frameSettings.paletteTextureID >= 0;
+	if (isSceneValid)
+	{
+		// @todo light table + light level calculation
+		const VulkanTexture &paletteTexture = this->objectTexturePool.get(frameSettings.paletteTextureID);
+
+		// @todo I think we have to have one descriptor set per texture? so that vkCmdBindDescriptorSets() can pick the texture for the draw call
+		// - also i think i have to do texture atlases to reduce the # of descriptor sets so it's not in the hundreds
+		const VulkanTexture &texture = this->objectTexturePool.get(250);
+		UpdateDescriptorSet(this->device, this->descriptorSet, this->camera.buffer, texture.imageView, texture.sampler, paletteTexture.imageView, paletteTexture.sampler);
+	} 
 
 	this->commandBuffer.reset();
 
@@ -3182,7 +3210,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	}
 
 	vk::ClearValue clearColor;
-	clearColor.color = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+	clearColor.color = vk::ClearColorValue(0.05f, 0.05f, 0.05f, 1.0f);
 
 	vk::RenderPassBeginInfo renderPassBeginInfo;
 	renderPassBeginInfo.renderPass = this->renderPass;
