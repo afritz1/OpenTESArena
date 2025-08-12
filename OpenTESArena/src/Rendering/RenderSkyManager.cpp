@@ -208,8 +208,8 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		const int32_t simpleHorizonIndex = static_cast<int32_t>(currentVertexCount - 2);
 		const int32_t nextSimpleHorizonIndex = static_cast<int32_t>(currentVertexCount - 1);
 		bgIndices.emplace_back(nadirIndex);
-		bgIndices.emplace_back(simpleHorizonIndex);
 		bgIndices.emplace_back(nextSimpleHorizonIndex);
+		bgIndices.emplace_back(simpleHorizonIndex);
 	}
 
 	constexpr int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
