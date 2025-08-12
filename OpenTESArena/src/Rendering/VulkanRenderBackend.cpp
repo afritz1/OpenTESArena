@@ -582,12 +582,12 @@ namespace
 		samplerCreateInfo.mipLodBias = 0.0f;
 		samplerCreateInfo.anisotropyEnable = false;
 		samplerCreateInfo.maxAnisotropy = 1.0f;
-		samplerCreateInfo.compareEnable = vk::False;
+		samplerCreateInfo.compareEnable = VK_FALSE;
 		samplerCreateInfo.compareOp = vk::CompareOp::eAlways;
 		samplerCreateInfo.minLod = 0.0f;
 		samplerCreateInfo.maxLod = 0.0f;
 		samplerCreateInfo.borderColor = vk::BorderColor::eIntOpaqueBlack;
-		samplerCreateInfo.unnormalizedCoordinates = vk::False;
+		samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
 
 		vk::ResultValue<vk::Sampler> samplerCreateResult = device.createSampler(samplerCreateInfo);
 		if (samplerCreateResult.result != vk::Result::eSuccess)
@@ -3197,7 +3197,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		// - also i think i have to do texture atlases to reduce the # of descriptor sets so it's not in the hundreds
 		const VulkanTexture &texture = this->objectTexturePool.get(250);
 		UpdateDescriptorSet(this->device, this->descriptorSet, this->camera.buffer, texture.imageView, texture.sampler, paletteTexture.imageView, paletteTexture.sampler);
-	} 
+	}
 
 	this->commandBuffer.reset();
 
