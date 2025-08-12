@@ -591,7 +591,7 @@ namespace
 		vk::ResultValue<vk::Sampler> samplerCreateResult = device.createSampler(samplerCreateInfo);
 		if (samplerCreateResult.result != vk::Result::eSuccess)
 		{
-			DebugLogError("Couldn't create vk::Sampler (%d).", samplerCreateResult.result);
+			DebugLogErrorFormat("Couldn't create vk::Sampler (%d).", samplerCreateResult.result);
 			return false;
 		}
 
@@ -1109,16 +1109,25 @@ namespace
 {
 	bool TryCreateDescriptorSetLayout(vk::Device device, vk::DescriptorSetLayout *outDescriptorSetLayout)
 	{
-		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding;
-		descriptorSetLayoutBinding.binding = 0;
-		descriptorSetLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
-		descriptorSetLayoutBinding.descriptorCount = 1;
-		descriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
-		descriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+		vk::DescriptorSetLayoutBinding descriptorSetLayoutBinding[2];
+
+		vk::DescriptorSetLayoutBinding &cameraDescriptorSetLayoutBinding = descriptorSetLayoutBinding[0];
+		cameraDescriptorSetLayoutBinding.binding = 0;
+		cameraDescriptorSetLayoutBinding.descriptorType = vk::DescriptorType::eUniformBuffer;
+		cameraDescriptorSetLayoutBinding.descriptorCount = 1;
+		cameraDescriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		cameraDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
+
+		vk::DescriptorSetLayoutBinding &samplerDescriptorSetLayoutBinding = descriptorSetLayoutBinding[1];
+		samplerDescriptorSetLayoutBinding.binding = 1;
+		samplerDescriptorSetLayoutBinding.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		samplerDescriptorSetLayoutBinding.descriptorCount = 1;
+		samplerDescriptorSetLayoutBinding.stageFlags = vk::ShaderStageFlagBits::eFragment;
+		samplerDescriptorSetLayoutBinding.pImmutableSamplers = nullptr;
 
 		vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
-		descriptorSetLayoutCreateInfo.bindingCount = 1;
-		descriptorSetLayoutCreateInfo.pBindings = &descriptorSetLayoutBinding;
+		descriptorSetLayoutCreateInfo.bindingCount = static_cast<uint32_t>(std::size(descriptorSetLayoutBinding));
+		descriptorSetLayoutCreateInfo.pBindings = descriptorSetLayoutBinding;
 
 		vk::ResultValue<vk::DescriptorSetLayout> descriptorSetLayoutCreateResult = device.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
 		if (descriptorSetLayoutCreateResult.result != vk::Result::eSuccess)
@@ -1133,14 +1142,20 @@ namespace
 
 	bool TryCreateDescriptorPool(vk::Device device, vk::DescriptorPool *outDescriptorPool)
 	{
-		vk::DescriptorPoolSize descriptorPoolSize;
-		descriptorPoolSize.type = vk::DescriptorType::eUniformBuffer;
-		descriptorPoolSize.descriptorCount = 1;
+		vk::DescriptorPoolSize descriptorPoolSizes[2];
+
+		vk::DescriptorPoolSize &cameraDescriptorPoolSize = descriptorPoolSizes[0];
+		cameraDescriptorPoolSize.type = vk::DescriptorType::eUniformBuffer;
+		cameraDescriptorPoolSize.descriptorCount = 1;
+
+		vk::DescriptorPoolSize &samplerDescriptorPoolSize = descriptorPoolSizes[1];
+		samplerDescriptorPoolSize.type = vk::DescriptorType::eCombinedImageSampler;
+		samplerDescriptorPoolSize.descriptorCount = 1;
 
 		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo;
 		descriptorPoolCreateInfo.maxSets = 1;
-		descriptorPoolCreateInfo.poolSizeCount = 1;
-		descriptorPoolCreateInfo.pPoolSizes = &descriptorPoolSize;
+		descriptorPoolCreateInfo.poolSizeCount = static_cast<int>(std::size(descriptorPoolSizes));
+		descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes;
 
 		vk::ResultValue<vk::DescriptorPool> descriptorPoolCreateResult = device.createDescriptorPool(descriptorPoolCreateInfo);
 		if (descriptorPoolCreateResult.result != vk::Result::eSuccess)
@@ -1153,7 +1168,7 @@ namespace
 		return true;
 	}
 
-	bool TryCreateDescriptorSet(vk::Device device, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, vk::Buffer buffer, vk::DescriptorSet *outDescriptorSet)
+	bool TryCreateDescriptorSet(vk::Device device, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, vk::DescriptorSet *outDescriptorSet)
 	{
 		vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo;
 		descriptorSetAllocateInfo.descriptorPool = descriptorPool;
@@ -1174,26 +1189,43 @@ namespace
 			return false;
 		}
 
-		const vk::DescriptorSet descriptorSet = descriptorSets[0];
-
-		vk::DescriptorBufferInfo descriptorBufferInfo;
-		descriptorBufferInfo.buffer = buffer;
-		descriptorBufferInfo.offset = 0;
-		descriptorBufferInfo.range = VK_WHOLE_SIZE;
-
-		vk::WriteDescriptorSet writeDescriptorSet;
-		writeDescriptorSet.dstSet = descriptorSet;
-		writeDescriptorSet.dstBinding = 0;
-		writeDescriptorSet.dstArrayElement = 0;
-		writeDescriptorSet.descriptorCount = 1;
-		writeDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
-		writeDescriptorSet.pBufferInfo = &descriptorBufferInfo;
-
-		vk::ArrayProxy<vk::CopyDescriptorSet> copyDescriptorSetArrayProxy;
-		device.updateDescriptorSets(writeDescriptorSet, copyDescriptorSetArrayProxy);
-
-		*outDescriptorSet = descriptorSet;
+		*outDescriptorSet = descriptorSets[0];
 		return true;
+	}
+
+	void UpdateDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer,
+		vk::ImageView textureImageView, vk::Sampler textureSampler)
+	{
+		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
+		cameraDescriptorBufferInfo.buffer = cameraBuffer;
+		cameraDescriptorBufferInfo.offset = 0;
+		cameraDescriptorBufferInfo.range = VK_WHOLE_SIZE;
+
+		vk::DescriptorImageInfo samplerDescriptorImageInfo;
+		samplerDescriptorImageInfo.sampler = textureSampler;
+		samplerDescriptorImageInfo.imageView = textureImageView;
+		samplerDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::WriteDescriptorSet writeDescriptorSets[2];
+
+		vk::WriteDescriptorSet &cameraWriteDescriptorSet = writeDescriptorSets[0];
+		cameraWriteDescriptorSet.dstSet = descriptorSet;
+		cameraWriteDescriptorSet.dstBinding = 0;
+		cameraWriteDescriptorSet.dstArrayElement = 0;
+		cameraWriteDescriptorSet.descriptorCount = 1;
+		cameraWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		cameraWriteDescriptorSet.pBufferInfo = &cameraDescriptorBufferInfo;
+
+		vk::WriteDescriptorSet &samplerWriteDescriptorSet = writeDescriptorSets[1];
+		samplerWriteDescriptorSet.dstSet = descriptorSet;
+		samplerWriteDescriptorSet.dstBinding = 1;
+		samplerWriteDescriptorSet.dstArrayElement = 0;
+		samplerWriteDescriptorSet.descriptorCount = 1;
+		samplerWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		samplerWriteDescriptorSet.pImageInfo = &samplerDescriptorImageInfo;
+
+		vk::ArrayProxy<vk::CopyDescriptorSet> copyDescriptorSets;
+		device.updateDescriptorSets(writeDescriptorSets, copyDescriptorSets);
 	}
 }
 
@@ -1236,22 +1268,45 @@ namespace
 			fragmentPipelineShaderStageCreateInfo
 		};
 
-		vk::VertexInputBindingDescription vertexInputBindingDescription;
-		vertexInputBindingDescription.binding = 0;
-		vertexInputBindingDescription.stride = static_cast<uint32_t>(MeshUtils::POSITION_COMPONENTS_PER_VERTEX * MeshUtils::POSITION_COMPONENT_SIZE_FLOAT);
-		vertexInputBindingDescription.inputRate = vk::VertexInputRate::eVertex;
+		vk::VertexInputBindingDescription positionVertexInputBindingDescription;
+		positionVertexInputBindingDescription.binding = 0;
+		positionVertexInputBindingDescription.stride = static_cast<uint32_t>(MeshUtils::POSITION_COMPONENTS_PER_VERTEX * MeshUtils::POSITION_COMPONENT_SIZE_FLOAT);
+		positionVertexInputBindingDescription.inputRate = vk::VertexInputRate::eVertex;
 
-		vk::VertexInputAttributeDescription vertexInputAttributeDescription;
-		vertexInputAttributeDescription.location = 0;
-		vertexInputAttributeDescription.binding = 0;
-		vertexInputAttributeDescription.format = vk::Format::eR32G32B32Sfloat;
-		vertexInputAttributeDescription.offset = 0;
+		vk::VertexInputAttributeDescription positionVertexInputAttributeDescription;
+		positionVertexInputAttributeDescription.location = 0;
+		positionVertexInputAttributeDescription.binding = 0;
+		positionVertexInputAttributeDescription.format = vk::Format::eR32G32B32Sfloat;
+		positionVertexInputAttributeDescription.offset = 0;
+
+		vk::VertexInputBindingDescription texCoordVertexInputBindingDescription;
+		texCoordVertexInputBindingDescription.binding = 1;
+		texCoordVertexInputBindingDescription.stride = static_cast<uint32_t>(MeshUtils::TEX_COORD_COMPONENTS_PER_VERTEX * MeshUtils::TEX_COORD_COMPONENT_SIZE_FLOAT);
+		texCoordVertexInputBindingDescription.inputRate = vk::VertexInputRate::eVertex;
+
+		vk::VertexInputAttributeDescription texCoordVertexInputAttributeDescription;
+		texCoordVertexInputAttributeDescription.location = 1;
+		texCoordVertexInputAttributeDescription.binding = 0;
+		texCoordVertexInputAttributeDescription.format = vk::Format::eR32G32Sfloat;
+		texCoordVertexInputAttributeDescription.offset = 0;
+
+		const vk::VertexInputBindingDescription vertexInputBindingDescriptions[] =
+		{
+			positionVertexInputBindingDescription,
+			texCoordVertexInputBindingDescription
+		};
+
+		const vk::VertexInputAttributeDescription vertexInputAttributeDescriptions[] =
+		{
+			positionVertexInputAttributeDescription,
+			texCoordVertexInputAttributeDescription
+		};
 
 		vk::PipelineVertexInputStateCreateInfo pipelineVertexInputStateCreateInfo;
-		pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = 1;
-		pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = &vertexInputBindingDescription;
-		pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = 1;
-		pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = &vertexInputAttributeDescription;
+		pipelineVertexInputStateCreateInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(std::size(vertexInputBindingDescriptions));
+		pipelineVertexInputStateCreateInfo.pVertexBindingDescriptions = vertexInputBindingDescriptions;
+		pipelineVertexInputStateCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(std::size(vertexInputAttributeDescriptions));
+		pipelineVertexInputStateCreateInfo.pVertexAttributeDescriptions = vertexInputAttributeDescriptions;
 
 		vk::PipelineInputAssemblyStateCreateInfo pipelineInputAssemblyStateCreateInfo;
 		pipelineInputAssemblyStateCreateInfo.topology = vk::PrimitiveTopology::eTriangleList;
@@ -2051,19 +2106,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	vk::Buffer cameraBuffer;
-	vk::DeviceMemory cameraDeviceMemory;
-	Span<std::byte> cameraHostMappedBytes;
-	constexpr int cameraByteCount = VulkanCamera::BYTE_COUNT;
-	if (!TryCreateAndMapStagingBuffer(this->device, cameraByteCount, vk::BufferUsageFlagBits::eUniformBuffer, this->graphicsQueueFamilyIndex, this->physicalDevice, &cameraBuffer, &cameraDeviceMemory, &cameraHostMappedBytes))
-	{
-		DebugLogError("Couldn't create camera uniform buffer.");
-		return false;
-	}
-
-	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes);
-
-	if (!TryCreateDescriptorSet(this->device, this->descriptorSetLayout, this->descriptorPool, cameraBuffer, &this->descriptorSet))
+	if (!TryCreateDescriptorSet(this->device, this->descriptorSetLayout, this->descriptorPool, &this->descriptorSet))
 	{
 		DebugLogError("Couldn't create camera descriptor set.");
 		return false;
@@ -2093,6 +2136,18 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		DebugLogError("Couldn't create render-is-finished semaphore.");
 		return false;
 	}
+
+	vk::Buffer cameraBuffer;
+	vk::DeviceMemory cameraDeviceMemory;
+	Span<std::byte> cameraHostMappedBytes;
+	constexpr int cameraByteCount = VulkanCamera::BYTE_COUNT;
+	if (!TryCreateAndMapStagingBuffer(this->device, cameraByteCount, vk::BufferUsageFlagBits::eUniformBuffer, this->graphicsQueueFamilyIndex, this->physicalDevice, &cameraBuffer, &cameraDeviceMemory, &cameraHostMappedBytes))
+	{
+		DebugLogError("Couldn't create camera uniform buffer.");
+		return false;
+	}
+
+	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes);
 
 	return true;
 }
@@ -3111,6 +3166,11 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	this->camera.projection.y.y = -this->camera.projection.y.y; // Flip Y so world is not upside down.
 	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
 
+	// @todo I think we have to have one descriptor set per texture? so that vkCmdBindDescriptorSets() can pick the texture for the draw call
+	// - also i think i have to do texture atlases to reduce the # of descriptor sets so it's not in the hundreds
+	const VulkanTexture &texture = this->objectTexturePool.get(0);
+	UpdateDescriptorSet(this->device, this->descriptorSet, this->camera.buffer, texture.imageView, texture.sampler);
+
 	this->commandBuffer.reset();
 
 	vk::CommandBufferBeginInfo commandBufferBeginInfo;
@@ -3157,6 +3217,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 			const vk::DeviceSize bufferOffset = 0;
 			this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
+			this->commandBuffer.bindVertexBuffers(1, vertexTexCoordsBuffer.buffer, bufferOffset);
 
 			const VulkanBuffer &indexBuffer = this->indexBufferPool.get(drawCall.indexBufferID);
 			const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
