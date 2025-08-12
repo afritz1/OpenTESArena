@@ -1307,7 +1307,7 @@ namespace
 
 		vk::VertexInputAttributeDescription texCoordVertexInputAttributeDescription;
 		texCoordVertexInputAttributeDescription.location = 1;
-		texCoordVertexInputAttributeDescription.binding = 0;
+		texCoordVertexInputAttributeDescription.binding = 1;
 		texCoordVertexInputAttributeDescription.format = vk::Format::eR32G32Sfloat;
 		texCoordVertexInputAttributeDescription.offset = 0;
 
