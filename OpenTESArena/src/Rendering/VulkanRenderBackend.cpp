@@ -2034,7 +2034,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	this->presentQueue = this->device.getQueue(this->presentQueueFamilyIndex, 0);
 
 	vk::SurfaceFormatKHR surfaceFormat;
-	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear, &surfaceFormat))
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear, &surfaceFormat))
 	{
 		DebugLogError("Couldn't get surface format for swapchain.");
 		return false;
