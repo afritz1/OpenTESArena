@@ -1352,7 +1352,7 @@ namespace
 		pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.polygonMode = vk::PolygonMode::eFill;
-		pipelineRasterizationStateCreateInfo.cullMode = vk::CullModeFlagBits::eNone;
+		pipelineRasterizationStateCreateInfo.cullMode = vk::CullModeFlagBits::eBack;
 		pipelineRasterizationStateCreateInfo.frontFace = vk::FrontFace::eCounterClockwise;
 		pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
