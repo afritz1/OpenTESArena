@@ -74,6 +74,11 @@ struct Color
 		return static_cast<uint32_t>((this->r << 16) | (this->g << 8) | (this->b) | (this->a << 24));
 	}
 
+	constexpr uint32_t toBGRA() const
+	{
+		return static_cast<uint32_t>((this->r << 8) | (this->g << 16) | (this->b << 24) | this->a);
+	}
+
 	constexpr uint32_t toRGBA() const
 	{
 		return static_cast<uint32_t>((this->r << 24) | (this->g << 16) | (this->b << 8) | (this->a));
