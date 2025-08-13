@@ -292,7 +292,7 @@ ObjectTextureID ArenaLevelUtils::allocLightTableTexture(const std::string &filen
 		return -1;
 	}
 
-	if (!renderer.populateObjectTexture(textureID, textureBuilder.texels))
+	if (!renderer.populateObjectTexture(textureID, textureBuilder.bytes))
 	{
 		DebugLogErrorFormat("Couldn't populate light table texture \"%s\".", filename.c_str());
 	}

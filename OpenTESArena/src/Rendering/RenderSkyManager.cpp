@@ -549,7 +549,7 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 				return;
 			}
 
-			if (!renderer.populateObjectTexture(textureID, textureBuilder.texels))
+			if (!renderer.populateObjectTexture(textureID, textureBuilder.bytes))
 			{
 				DebugLogErrorFormat("Couldn't populate object texture for sky object texture \"%s\".", textureAsset.filename.c_str());
 				return;

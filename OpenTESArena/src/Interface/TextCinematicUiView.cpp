@@ -64,7 +64,7 @@ Buffer<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::strin
 
 		textureIDs.set(i, textureID);
 
-		if (!renderer.populateUiTexture(textureID, textureBuilder.texels, &palette))
+		if (!renderer.populateUiTexture(textureID, textureBuilder.bytes, &palette))
 		{
 			DebugLogErrorFormat("Couldn't populate UI texture for \"%s\" index %d.", animFilename.c_str(), i);
 		}

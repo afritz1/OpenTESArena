@@ -10,7 +10,7 @@
 // Intermediate texture for initializing other renderer-specific textures for the game world or UI.
 struct TextureBuilder
 {
-	Buffer<std::byte> texels;
+	Buffer<std::byte> bytes;
 	int width;
 	int height;
 	int bytesPerTexel;

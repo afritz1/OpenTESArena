@@ -312,7 +312,7 @@ bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset, const Tex
 		return false;
 	}
 
-	if (!renderer.populateUiTexture(textureID, textureBuilder.texels, &palette))
+	if (!renderer.populateUiTexture(textureID, textureBuilder.bytes, &palette))
 	{
 		DebugLogErrorFormat("Couldn't populate UI texture for \"%s\".", textureAsset.filename.c_str());
 	}

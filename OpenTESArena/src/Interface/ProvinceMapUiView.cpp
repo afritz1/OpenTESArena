@@ -265,7 +265,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 		return -1;
 	}
 
-	if (!renderer.populateUiTexture(textureID, textureBuilder.texels, &palette))
+	if (!renderer.populateUiTexture(textureID, textureBuilder.bytes, &palette))
 	{
 		DebugLogErrorFormat("Couldn't populate staff dungeon texture for \"%s\".", textureAsset.filename.c_str());
 	}

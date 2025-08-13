@@ -85,7 +85,7 @@ namespace
 					continue;
 				}
 
-				if (!renderer.populateObjectTexture(textureID, textureBuilder.texels))
+				if (!renderer.populateObjectTexture(textureID, textureBuilder.bytes))
 				{
 					DebugLogWarningFormat("Couldn't populate voxel texture \"%s\".", textureAsset.filename.c_str());
 				}
