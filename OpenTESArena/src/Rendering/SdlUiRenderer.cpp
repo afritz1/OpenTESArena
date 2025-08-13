@@ -84,54 +84,6 @@ UiTextureID SdlUiTextureAllocator::create(int width, int height)
 	return CreateUiTexture(width, height, initFunc, this->pool, this->renderer);
 }
 
-UiTextureID SdlUiTextureAllocator::create(Span2D<const uint32_t> texels)
-{
-	TexelsInitFunc initFunc = [&texels](Span2D<uint32_t> dstTexels)
-	{
-		std::copy(texels.begin(), texels.end(), dstTexels.begin());
-	};
-
-	return CreateUiTexture(texels.getWidth(), texels.getHeight(), initFunc, this->pool, this->renderer);
-}
-
-UiTextureID SdlUiTextureAllocator::create(Span2D<const uint8_t> texels, const Palette &palette)
-{
-	TexelsInitFunc initFunc = [&texels, &palette](Span2D<uint32_t> dstTexels)
-	{
-		std::transform(texels.begin(), texels.end(), dstTexels.begin(),
-			[&palette](uint8_t texel)
-		{
-			return palette[texel].toARGB();
-		});
-	};
-
-	return CreateUiTexture(texels.getWidth(), texels.getHeight(), initFunc, this->pool, this->renderer);
-}
-
-UiTextureID SdlUiTextureAllocator::create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
-{
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-
-	UiTextureID textureID = -1;
-	if (textureBuilder.bytesPerTexel == 1)
-	{
-		Span2D<const uint8_t> texels = textureBuilder.getTexels8();
-		const Palette &palette = textureManager.getPaletteHandle(paletteID);
-		textureID = this->create(texels, palette);
-	}
-	else if (textureBuilder.bytesPerTexel == 4)
-	{
-		Span2D<const uint32_t> texels = textureBuilder.getTexels32();
-		textureID = this->create(texels);
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(bool, std::to_string(textureBuilder.bytesPerTexel));
-	}
-
-	return textureID;
-}
-
 void SdlUiTextureAllocator::free(UiTextureID textureID)
 {
 	SDL_Texture **texture = this->pool->tryGet(textureID);
@@ -143,6 +95,26 @@ void SdlUiTextureAllocator::free(UiTextureID textureID)
 
 	SDL_DestroyTexture(*texture);
 	this->pool->free(textureID);
+}
+
+std::optional<Int2> SdlUiTextureAllocator::tryGetDimensions(UiTextureID textureID) const
+{
+	SDL_Texture *const *texture = this->pool->tryGet(textureID);
+	if (texture == nullptr)
+	{
+		DebugLogWarningFormat("No SDL_Texture registered for ID %d.", textureID);
+		return std::nullopt;
+	}
+
+	int width, height;
+	const int result = SDL_QueryTexture(*texture, nullptr, nullptr, &width, &height);
+	if (result != 0)
+	{
+		DebugLogWarningFormat("Couldn't query SDL_Texture %d dimensions (%s).", textureID, SDL_GetError());
+		return std::nullopt;
+	}
+
+	return Int2(width, height);
 }
 
 LockedTexture SdlUiTextureAllocator::lock(UiTextureID textureID)
@@ -169,7 +141,9 @@ LockedTexture SdlUiTextureAllocator::lock(UiTextureID textureID)
 		return LockedTexture();
 	}
 
-	return LockedTexture(Span2D<std::byte>(reinterpret_cast<std::byte*>(dstTexels), width, height), sizeof(*dstTexels));
+	const int bytesPerElement = sizeof(*dstTexels);
+	const int byteCount = width * height * bytesPerElement;
+	return LockedTexture(Span<std::byte>(reinterpret_cast<std::byte*>(dstTexels), byteCount), width, height, bytesPerElement);
 }
 
 void SdlUiTextureAllocator::unlock(UiTextureID textureID)
@@ -216,26 +190,6 @@ void SdlUiRenderer::shutdown()
 UiTextureAllocator *SdlUiRenderer::getTextureAllocator()
 {
 	return &this->textureAllocator;
-}
-
-std::optional<Int2> SdlUiRenderer::tryGetTextureDims(UiTextureID textureID) const
-{
-	SDL_Texture *const *texture = this->texturePool.tryGet(textureID);
-	if (texture == nullptr)
-	{
-		DebugLogWarningFormat("No SDL_Texture registered for ID %d.", textureID);
-		return std::nullopt;
-	}
-
-	int width, height;
-	const int result = SDL_QueryTexture(*texture, nullptr, nullptr, &width, &height);
-	if (result != 0)
-	{
-		DebugLogWarningFormat("Couldn't query SDL_Texture %d dimensions (%s).", textureID, SDL_GetError());
-		return std::nullopt;
-	}
-
-	return Int2(width, height);
 }
 
 void SdlUiRenderer::draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect)

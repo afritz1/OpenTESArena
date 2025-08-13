@@ -244,20 +244,30 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
 	if (!paletteID.has_value())
 	{
-		DebugCrashFormat("Couldn't get staff dungeon palette ID for \"%s\".", paletteTextureAsset.filename.c_str());
+		DebugLogErrorFormat("Couldn't get staff dungeon palette ID for \"%s\".", paletteTextureAsset.filename.c_str());
+		return -1;
 	}
 
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	const TextureAsset textureAsset = ProvinceMapUiView::getStaffDungeonIconTextureAsset(provinceID);
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
-		DebugCrashFormat("Couldn't get staff dungeon texture builder ID for \"%s\".", textureAsset.filename.c_str());
+		DebugLogErrorFormat("Couldn't get staff dungeon texture builder ID for \"%s\".", textureAsset.filename.c_str());
+		return -1;
 	}
 
-	const UiTextureID textureID = renderer.createUiTexture(*textureBuilderID, *paletteID, textureManager);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	const UiTextureID textureID = renderer.createUiTexture(textureBuilder.width, textureBuilder.height);
 	if (textureID < 0)
 	{
-		DebugCrashFormat("Couldn't create staff dungeon texture for \"%s\".", textureAsset.filename.c_str());
+		DebugLogErrorFormat("Couldn't create staff dungeon texture for \"%s\".", textureAsset.filename.c_str());
+		return -1;
+	}
+
+	if (!renderer.populateUiTexture(textureID, textureBuilder.texels, &palette))
+	{
+		DebugLogErrorFormat("Couldn't populate staff dungeon texture for \"%s\".", textureAsset.filename.c_str());
 	}
 
 	if (highlightType == HighlightType::None)
@@ -266,13 +276,12 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	}
 
 	// Modify icon background texels based on the highlight type.
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
 	const uint8_t *srcTexels = textureBuilder.getTexels8().begin();
 	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
 	if (!lockedTexture.isValid())
 	{
-		DebugCrash("Couldn't lock staff dungeon icon texels for highlight modification.");
+		DebugLogError("Couldn't lock staff dungeon icon texels for highlight modification.");
+		return textureID;
 	}
 
 	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();

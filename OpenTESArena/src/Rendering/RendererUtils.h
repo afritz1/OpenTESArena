@@ -79,6 +79,8 @@ namespace RendererUtils
 		const Double3 &frustumNormalLeft, const Double3 &frustumNormalRight, const Double3 &frustumNormalBottom, const Double3 &frustumNormalTop,
 		bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible);
 	void getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera, bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible);
+
+	Matrix4f matrix4DoubleToFloat(const Matrix4d &matrix);
 }
 
 #endif

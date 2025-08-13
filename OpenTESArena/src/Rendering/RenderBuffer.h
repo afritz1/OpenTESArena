@@ -13,7 +13,7 @@ struct LockedBuffer
 	LockedBuffer();
 	LockedBuffer(Span<std::byte> bytes, int bytesPerElement);
 
-	bool isValid();
+	bool isValid() const;
 
 	Span<int> getInts();
 	Span<float> getFloats();

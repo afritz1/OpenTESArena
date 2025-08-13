@@ -15,6 +15,7 @@
 
 class Surface;
 
+struct LockedBuffer;
 struct ObjectTextureAllocator;
 struct RenderCamera;
 struct RenderCommandList;
@@ -51,39 +52,44 @@ public:
 	virtual void resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight) = 0;
 	virtual void handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight) = 0;
 
-	// Geometry management functions.
-	virtual VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) = 0;
-	virtual VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) = 0;
-	virtual IndexBufferID createIndexBuffer(int indexCount) = 0;
-	virtual void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions) = 0;
-	virtual void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes) = 0;
-	virtual void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices) = 0;
-	virtual void freeVertexPositionBuffer(VertexPositionBufferID id) = 0;
-	virtual void freeVertexAttributeBuffer(VertexAttributeBufferID id) = 0;
-	virtual void freeIndexBuffer(IndexBufferID id) = 0;
-
-	// Texture management functions.
-	virtual ObjectTextureAllocator *getObjectTextureAllocator() = 0;
-	virtual UiTextureAllocator *getUiTextureAllocator() = 0;
-	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
-	virtual std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const = 0;
-
-	// Uniform management functions.
-	virtual UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) = 0;
-	virtual void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data) = 0;
-	virtual void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData) = 0;
-	virtual void freeUniformBuffer(UniformBufferID id) = 0;
-
-	// Light management functions.
-	virtual RenderLightID createLight() = 0;
-	virtual void setLightPosition(RenderLightID id, const Double3 &worldPoint) = 0;
-	virtual void setLightRadius(RenderLightID id, double startRadius, double endRadius) = 0;
-	virtual void freeLight(RenderLightID id) = 0;
-
 	// Gets various profiler information about internal renderer state.
 	virtual Renderer3DProfilerData getProfilerData() const = 0;
 
 	virtual Surface getScreenshot() const = 0;
+
+	virtual int getBytesPerFloat() const = 0;
+
+	// Geometry management functions.
+	virtual VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent) = 0;
+	virtual void freeVertexPositionBuffer(VertexPositionBufferID id) = 0;
+	virtual LockedBuffer lockVertexPositionBuffer(VertexPositionBufferID id) = 0;
+	virtual void unlockVertexPositionBuffer(VertexPositionBufferID id) = 0;
+
+	virtual VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent) = 0;
+	virtual void freeVertexAttributeBuffer(VertexAttributeBufferID id) = 0;
+	virtual LockedBuffer lockVertexAttributeBuffer(VertexAttributeBufferID id) = 0;
+	virtual void unlockVertexAttributeBuffer(VertexAttributeBufferID id) = 0;
+
+	virtual IndexBufferID createIndexBuffer(int indexCount, int bytesPerIndex) = 0;
+	virtual void freeIndexBuffer(IndexBufferID id) = 0;
+	virtual LockedBuffer lockIndexBuffer(IndexBufferID id) = 0;
+	virtual void unlockIndexBuffer(IndexBufferID id) = 0;
+
+	// Texture management functions.
+	virtual ObjectTextureAllocator *getObjectTextureAllocator() = 0;
+	virtual UiTextureAllocator *getUiTextureAllocator() = 0;
+
+	// Shading management functions.
+	virtual UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement) = 0;
+	virtual void freeUniformBuffer(UniformBufferID id) = 0;
+	virtual LockedBuffer lockUniformBuffer(UniformBufferID id) = 0;
+	virtual LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index) = 0;
+	virtual void unlockUniformBuffer(UniformBufferID id) = 0;
+	virtual void unlockUniformBufferIndex(UniformBufferID id, int index) = 0;
+
+	virtual RenderLightID createLight() = 0;
+	virtual void freeLight(RenderLightID id) = 0;
+	virtual bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) = 0;
 
 	// Renders a frame to the target window. Currently this is blocking and should be safe to present the frame upon returning.
 	virtual void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

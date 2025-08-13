@@ -18,7 +18,7 @@ struct RenderLight
 {
 	RenderLightID id;
 	WorldDouble3 position;
-	double radius; // Farthest radius (the end radius).
+	double startRadius, endRadius;
 	bool enabled;
 
 	RenderLight();

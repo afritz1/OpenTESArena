@@ -27,11 +27,9 @@ struct SdlUiTextureAllocator final : public UiTextureAllocator
 	void init(SdlUiTexturePool *pool, SDL_Renderer *renderer);
 
 	UiTextureID create(int width, int height) override;
-	UiTextureID create(Span2D<const uint32_t> texels) override;
-	UiTextureID create(Span2D<const uint8_t> texels, const Palette &palette) override;
-	UiTextureID create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager) override;
-
 	void free(UiTextureID textureID) override;
+
+	std::optional<Int2> tryGetDimensions(UiTextureID textureID) const override;
 
 	LockedTexture lock(UiTextureID textureID) override;
 	void unlock(UiTextureID textureID) override;
@@ -50,7 +48,6 @@ public:
 	void shutdown();
 	
 	UiTextureAllocator *getTextureAllocator();
-	std::optional<Int2> tryGetTextureDims(UiTextureID id) const;
 
 	void draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect);
 };

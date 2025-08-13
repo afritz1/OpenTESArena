@@ -73,19 +73,24 @@ namespace
 				const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 				if (!textureBuilderID.has_value())
 				{
-					DebugLogWarning("Couldn't load voxel texture \"" + textureAsset.filename + "\".");
+					DebugLogWarningFormat("Couldn't load voxel texture \"%s\".", textureAsset.filename.c_str());
 					continue;
 				}
 
 				const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-				const ObjectTextureID voxelTextureID = renderer.createObjectTexture(textureBuilder);
-				if (voxelTextureID < 0)
+				const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
+				if (textureID < 0)
 				{
-					DebugLogWarning("Couldn't create voxel texture \"" + textureAsset.filename + "\".");
+					DebugLogWarningFormat("Couldn't create voxel texture \"%s\".", textureAsset.filename.c_str());
 					continue;
 				}
 
-				ScopedObjectTextureRef voxelTextureRef(voxelTextureID, renderer);
+				if (!renderer.populateObjectTexture(textureID, textureBuilder.texels))
+				{
+					DebugLogWarningFormat("Couldn't populate voxel texture \"%s\".", textureAsset.filename.c_str());
+				}
+
+				ScopedObjectTextureRef voxelTextureRef(textureID, renderer);
 				RenderVoxelLoadedTexture newTexture;
 				newTexture.init(textureAsset, std::move(voxelTextureRef));
 				textures.emplace_back(std::move(newTexture));
@@ -175,18 +180,13 @@ namespace
 				}
 
 				ScopedObjectTextureRef dryChasmTextureRef(dryChasmTextureID, renderer);
-				LockedTexture lockedTexture = renderer.lockObjectTexture(dryChasmTextureID);
-				if (!lockedTexture.isValid())
+				const uint8_t paletteIndex = chasmDef.solidColor.paletteIndex;
+				Span<const uint8_t> srcTexel(&paletteIndex, 1);
+				if (!renderer.populateObjectTexture8Bit(dryChasmTextureID, srcTexel))
 				{
-					DebugLogWarning("Couldn't lock dry chasm texture for writing.");
+					DebugLogWarning("Couldn't populate dry chasm texture for writing.");
 					return;
 				}
-
-				const uint8_t paletteIndex = chasmDef.solidColor.paletteIndex;
-
-				uint8_t *texels = lockedTexture.getTexels8().begin();
-				*texels = paletteIndex;
-				renderer.unlockObjectTexture(dryChasmTextureID);
 
 				newFloorTexture.initColor(paletteIndex, std::move(dryChasmTextureRef));
 				chasmFloorTextures.emplace_back(std::move(newFloorTexture));
@@ -395,7 +395,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 	}
 
 	const Double3 preScaleTranslation = Double3::Zero; // Populated on scene change.
-	renderer.populateUniformBuffer(this->raisingDoorPreScaleTranslationBufferID, preScaleTranslation);
+	renderer.populateUniformBufferDouble3s(this->raisingDoorPreScaleTranslationBufferID, Span<const Double3>(&preScaleTranslation, 1));
 
 	// Populate default quad indices for combined voxel faces.
 	constexpr int indicesPerQuad = MeshUtils::INDICES_PER_QUAD;
@@ -622,7 +622,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 					for (int i = 0; i < doorFaceCount; i++)
 					{
 						const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, doorAnimPercent);
-						renderer.populateUniformAtIndex(doorTransformBufferID, i, faceRenderTransform);
+						renderer.populateUniformBufferIndexRenderTransform(doorTransformBufferID, i, faceRenderTransform);
 					}
 
 					renderChunk.doorTransformBuffers.emplace(voxel, doorTransformBufferID);
@@ -635,7 +635,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 					renderTransform.translation = Matrix4d::translation(worldPosition.x, worldPosition.y, worldPosition.z);
 					renderTransform.rotation = Matrix4d::identity();
 					renderTransform.scale = Matrix4d::identity();
-					renderer.populateUniformAtIndex(chunkTransformsBufferID, chunkTransformsBufferIndex, renderTransform);
+					renderer.populateUniformBufferIndexRenderTransform(chunkTransformsBufferID, chunkTransformsBufferIndex, renderTransform);
 				}
 			}
 		}
@@ -683,7 +683,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		transform.translation = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
 		transform.rotation = Matrix4d::identity();
 		transform.scale = Matrix4d::identity();
-		renderer.populateUniformBuffer(transformBufferID, transform);
+		renderer.populateUniformBufferRenderTransforms(transformBufferID, Span<const RenderTransform>(&transform, 1));
 
 		const VoxelTraitsDefID traitsDefID = voxelChunk.traitsDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelTraitsDefinition &traitsDef = voxelChunk.traitsDefs[traitsDefID];
@@ -1298,7 +1298,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 {
 	// Update pre-scale transition used by all raising doors (ideally this would be once on scene change).
 	const Double3 raisingDoorPreScaleTranslation = MakeRaisingDoorPreScaleTranslation(ceilingScale);
-	renderer.populateUniformBuffer(this->raisingDoorPreScaleTranslationBufferID, raisingDoorPreScaleTranslation);
+	renderer.populateUniformBufferDouble3s(this->raisingDoorPreScaleTranslationBufferID, Span<const Double3>(&raisingDoorPreScaleTranslation, 1));
 
 	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
@@ -1339,7 +1339,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 				const auto doorTransformIter = renderChunk.doorTransformBuffers.find(doorVoxel);
 				DebugAssert(doorTransformIter != renderChunk.doorTransformBuffers.end());
 				const UniformBufferID doorTransformBufferID = doorTransformIter->second;
-				renderer.populateUniformAtIndex(doorTransformBufferID, i, faceRenderTransform);
+				renderer.populateUniformBufferIndexRenderTransform(doorTransformBufferID, i, faceRenderTransform);
 			}
 		}
 

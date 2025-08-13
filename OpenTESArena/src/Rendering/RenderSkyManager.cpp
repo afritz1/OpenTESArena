@@ -265,7 +265,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	bgTransform.translation = Matrix4d::identity();
 	bgTransform.rotation = Matrix4d::identity();
 	bgTransform.scale = Matrix4d::identity();
-	renderer.populateUniformBuffer(this->bgTransformBufferID, bgTransform);
+	renderer.populateUniformBufferRenderTransforms(this->bgTransformBufferID, Span<const RenderTransform>(&bgTransform, 1));
 
 	auto allocBgTextureID = [this, &renderer](Span2D<const uint8_t> texels)
 	{
@@ -280,10 +280,11 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 			return -1;
 		}
 
-		LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-		uint8_t *bgTexels = lockedTexture.getTexels8().begin();
-		std::copy(texels.begin(), texels.end(), bgTexels);
-		renderer.unlockObjectTexture(textureID);
+		Span<const uint8_t> texelSpan(texels.begin(), textureWidth * textureHeight * bytesPerTexel);
+		if (!renderer.populateObjectTexture8Bit(textureID, texelSpan))
+		{
+			DebugLogError("Couldn't populate object texture for sky background texture ID.");
+		}
 
 		return textureID;
 	};
@@ -536,15 +537,21 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 			if (!textureBuilderID.has_value())
 			{
-				DebugLogError("Couldn't get texture builder ID for sky object texture \"" + textureAsset.filename + "\".");
+				DebugLogErrorFormat("Couldn't get texture builder ID for sky object texture \"%s\".", textureAsset.filename.c_str());
 				return;
 			}
 
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder);
+			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
 			if (textureID < 0)
 			{
-				DebugLogError("Couldn't create object texture for sky object texture \"" + textureAsset.filename + "\".");
+				DebugLogErrorFormat("Couldn't create object texture for sky object texture \"%s\".", textureAsset.filename.c_str());
+				return;
+			}
+
+			if (!renderer.populateObjectTexture(textureID, textureBuilder.texels))
+			{
+				DebugLogErrorFormat("Couldn't populate object texture for sky object texture \"%s\".", textureAsset.filename.c_str());
 				return;
 			}
 
@@ -570,20 +577,16 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 			const ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, bytesPerTexel);
 			if (textureID < 0)
 			{
-				DebugLogError("Couldn't create object texture for sky object texture palette index \"" + std::to_string(paletteIndex) + "\".");
+				DebugLogErrorFormat("Couldn't create object texture for sky object texture palette index %d.", paletteIndex);
 				return;
 			}
 
-			LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-			if (!lockedTexture.isValid())
+			Span<const uint8_t> srcTexel(&paletteIndex, 1);
+			if (!renderer.populateObjectTexture8Bit(textureID, srcTexel))
 			{
-				DebugLogError("Couldn't lock sky object texture for writing palette index \"" + std::to_string(paletteIndex) + "\".");
+				DebugLogErrorFormat("Couldn't populate sky object texture with palette index %d.", paletteIndex);
 				return;
 			}
-
-			uint8_t *dstTexels = lockedTexture.getTexels8().begin();
-			*dstTexels = paletteIndex;
-			renderer.unlockObjectTexture(textureID);
 
 			LoadedSmallStarTextureEntry loadedEntry;
 			loadedEntry.init(paletteIndex, ScopedObjectTextureRef(textureID, renderer));
@@ -693,7 +696,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 	bgTransform.translation = Matrix4d::translation(cameraPos.x, cameraPos.y, cameraPos.z);
 	bgTransform.rotation = Matrix4d::identity();
 	bgTransform.scale = Matrix4d::identity();
-	renderer.populateUniformBuffer(this->bgTransformBufferID, bgTransform);
+	renderer.populateUniformBufferRenderTransforms(this->bgTransformBufferID, Span<const RenderTransform>(&bgTransform, 1));
 
 	// Update background texture ID based on active weather.
 	std::optional<double> thunderstormFlashPercent;
@@ -762,7 +765,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		const double scaledHeight = height * arbitraryDistance;
 		renderTransform.scale = Matrix4d::scale(1.0, scaledHeight, scaledWidth);
 
-		renderer.populateUniformAtIndex(this->objectTransformBufferID, transformIndex, renderTransform);
+		renderer.populateUniformBufferIndexRenderTransform(this->objectTransformBufferID, transformIndex, renderTransform);
 	};
 
 	auto addDrawCall = [this](int transformIndex, ObjectTextureID textureID, double meshLightPercent, PixelShaderType pixelShaderType)

@@ -32,6 +32,7 @@ struct Rect;
 struct RenderCamera;
 struct RenderCommandList;
 struct RenderFrameSettings;
+struct RenderTransform;
 struct TextureBuilder;
 struct UiCommandList;
 struct Window;
@@ -113,61 +114,46 @@ public:
 
 	// Geometry management functions.
 	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex);
-	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex);
-	IndexBufferID createIndexBuffer(int indexCount);
-	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions);
-	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes);
-	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices);
 	void freeVertexPositionBuffer(VertexPositionBufferID id);
+	bool populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions);
+
+	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex);
 	void freeVertexAttributeBuffer(VertexAttributeBufferID id);
+	bool populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes);
+
+	IndexBufferID createIndexBuffer(int indexCount);
 	void freeIndexBuffer(IndexBufferID id);
+	bool populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices);
 
-	// Texture handle allocation functions.
+	// Texture management functions.
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);
-	ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder);
-	UiTextureID createUiTexture(int width, int height);
-	UiTextureID createUiTexture(Span2D<const uint32_t> texels);
-	UiTextureID createUiTexture(Span2D<const uint8_t> texels, const Palette &palette);
-	UiTextureID createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
-
-	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const;
-	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;
-
-	// Allows for updating all texels in the given texture. Must be unlocked to flush the changes.
-	LockedTexture lockObjectTexture(ObjectTextureID id);
-	LockedTexture lockUiTexture(UiTextureID id);
-	void unlockObjectTexture(ObjectTextureID id);
-	void unlockUiTexture(UiTextureID id);
-
-	// Texture handle freeing functions.
 	void freeObjectTexture(ObjectTextureID id);
+	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const;
+	LockedTexture lockObjectTexture(ObjectTextureID id);
+	void unlockObjectTexture(ObjectTextureID id);
+	bool populateObjectTexture(ObjectTextureID id, Span<const std::byte> texels);
+	bool populateObjectTexture8Bit(ObjectTextureID id, Span<const uint8_t> texels);
+
+	UiTextureID createUiTexture(int width, int height);
 	void freeUiTexture(UiTextureID id);
+	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;
+	LockedTexture lockUiTexture(UiTextureID id);
+	void unlockUiTexture(UiTextureID id);
+	bool populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette = nullptr);
+	bool populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t> texels);
 
 	// Shading management functions.
-	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
-	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data);
-
-	template<typename T>
-	void populateUniformBuffer(UniformBufferID id, const T &value)
-	{
-		Span<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
-		this->populateUniformBuffer(id, valueAsBytes);
-	}
-
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData);
-
-	template<typename T>
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, const T &value)
-	{
-		Span<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
-		this->populateUniformAtIndex(id, uniformIndex, valueAsBytes);
-	}
-
+	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
 	void freeUniformBuffer(UniformBufferID id);
+	bool populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes);
+	bool populateUniformBufferDouble3s(UniformBufferID id, Span<const Double3> values);
+	bool populateUniformBufferRenderTransforms(UniformBufferID id, Span<const RenderTransform> transforms);
+	bool populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes);
+	bool populateUniformBufferIndexRenderTransform(UniformBufferID id, int uniformIndex, const RenderTransform &transform);
+
 	RenderLightID createLight();
-	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
-	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
 	void freeLight(RenderLightID id);
+	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius);
 
 	// Wrapper methods for some SDL draw functions.
 	//void drawPixel(const Color &color, int x, int y);

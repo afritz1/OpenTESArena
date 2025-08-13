@@ -280,16 +280,21 @@ ObjectTextureID ArenaLevelUtils::allocLightTableTexture(const std::string &filen
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
 	if (!textureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get light table texture builder ID from \"" + filename + "\".");
+		DebugLogErrorFormat("Couldn't get light table texture builder ID from \"%s\".", filename.c_str());
 		return -1;
 	}
 
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder);
+	const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
 	if (textureID < 0)
 	{
-		DebugLogError("Couldn't create light table texture \"" + filename + "\".");
+		DebugLogErrorFormat("Couldn't create light table texture \"%s\".", filename.c_str());
 		return -1;
+	}
+
+	if (!renderer.populateObjectTexture(textureID, textureBuilder.texels))
+	{
+		DebugLogErrorFormat("Couldn't populate light table texture \"%s\".", filename.c_str());
 	}
 
 	return textureID;

@@ -16,27 +16,27 @@ struct VulkanBufferVertexPositionInfo
 {
 	int vertexCount;
 	int componentsPerVertex;
-	size_t sizeOfComponent;
+	int bytesPerComponent;
 };
 
 struct VulkanBufferVertexAttributeInfo
 {
 	int vertexCount;
 	int componentsPerVertex;
-	size_t sizeOfComponent;
+	int bytesPerComponent;
 };
 
 struct VulkanBufferIndexInfo
 {
 	int indexCount;
-	size_t sizeOfIndex;
+	int bytesPerIndex;
 };
 
 struct VulkanBufferUniformInfo
 {
 	int elementCount;
-	size_t sizeOfElement;
-	size_t alignmentOfElement;
+	int bytesPerElement;
+	int alignmentOfElement;
 };
 
 enum class VulkanBufferType
@@ -66,10 +66,10 @@ struct VulkanBuffer
 
 	VulkanBuffer();
 
-	void initVertexPosition(int vertexCount, int componentsPerVertex, size_t sizeOfComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-	void initVertexAttribute(int vertexCount, int componentsPerVertex, size_t sizeOfComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-	void initIndex(int indexCount, size_t sizeOfIndex, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-	void initUniform(int elementCount, size_t sizeOfElement, size_t alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	void initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	void initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	void initIndex(int indexCount, int bytesPerIndex, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	void initUniform(int elementCount, int bytesPerElement, int alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
 
 	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
 	void setUnlocked();
@@ -142,9 +142,9 @@ struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 	void init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer);
 
 	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
-	ObjectTextureID create(const TextureBuilder &textureBuilder) override;
-
 	void free(ObjectTextureID textureID) override;
+
+	std::optional<Int2> tryGetDimensions(ObjectTextureID id) const override;
 
 	LockedTexture lock(ObjectTextureID textureID) override;
 	void unlock(ObjectTextureID textureID) override;
@@ -164,11 +164,9 @@ struct VulkanUiTextureAllocator final : public UiTextureAllocator
 	void init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer);
 
 	UiTextureID create(int width, int height) override;
-	UiTextureID create(Span2D<const uint32_t> texels) override;
-	UiTextureID create(Span2D<const uint8_t> texels, const Palette &palette) override;
-	UiTextureID create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager) override;
-
 	void free(UiTextureID textureID) override;
+
+	std::optional<Int2> tryGetDimensions(UiTextureID id) const override;
 
 	LockedTexture lock(UiTextureID textureID) override;
 	void unlock(UiTextureID textureID) override;
@@ -246,42 +244,40 @@ public:
 	void resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight) override;
 	void handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight) override;
 
-	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) override;
-	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) override;
-	IndexBufferID createIndexBuffer(int indexCount) override;
-	Span<float> lockVertexPositionBuffer(VertexPositionBufferID id);
-	void unlockVertexPositionBuffer(VertexPositionBufferID id);
-	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions) override;
-	Span<float> lockVertexAttributeBuffer(VertexAttributeBufferID id);
-	void unlockVertexAttributeBuffer(VertexAttributeBufferID id);
-	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes) override;
-	Span<int32_t> lockIndexBuffer(IndexBufferID id);
-	void unlockIndexBuffer(IndexBufferID id);
-	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices) override;
-	void freeVertexPositionBuffer(VertexPositionBufferID id) override;
-	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
-	void freeIndexBuffer(IndexBufferID id) override;
-
-	ObjectTextureAllocator *getObjectTextureAllocator() override;
-	UiTextureAllocator *getUiTextureAllocator() override;
-	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
-	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const override;
-
-	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) override;
-	Span<std::byte> lockUniformBuffer(UniformBufferID id);
-	void unlockUniformBuffer(UniformBufferID id);
-	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data) override;
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData) override;
-	void freeUniformBuffer(UniformBufferID id) override;
-
-	RenderLightID createLight() override;
-	void setLightPosition(RenderLightID id, const Double3 &worldPoint) override;
-	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
-	void freeLight(RenderLightID id) override;
-
 	Renderer3DProfilerData getProfilerData() const override;
 
 	Surface getScreenshot() const override;
+
+	int getBytesPerFloat() const override;
+
+	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent) override;
+	void freeVertexPositionBuffer(VertexPositionBufferID id) override;
+	LockedBuffer lockVertexPositionBuffer(VertexPositionBufferID id) override;
+	void unlockVertexPositionBuffer(VertexPositionBufferID id) override;
+
+	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent) override;
+	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
+	LockedBuffer lockVertexAttributeBuffer(VertexAttributeBufferID id) override;
+	void unlockVertexAttributeBuffer(VertexAttributeBufferID id) override;
+
+	IndexBufferID createIndexBuffer(int indexCount, int bytesPerIndex) override;
+	void freeIndexBuffer(IndexBufferID id) override;
+	LockedBuffer lockIndexBuffer(IndexBufferID id) override;
+	void unlockIndexBuffer(IndexBufferID id) override;
+
+	ObjectTextureAllocator *getObjectTextureAllocator() override;
+	UiTextureAllocator *getUiTextureAllocator() override;
+
+	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement) override;
+	void freeUniformBuffer(UniformBufferID id) override;
+	LockedBuffer lockUniformBuffer(UniformBufferID id) override;
+	LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index) override;
+	void unlockUniformBuffer(UniformBufferID id) override;
+	void unlockUniformBufferIndex(UniformBufferID id, int index) override;
+
+	RenderLightID createLight() override;
+	void freeLight(RenderLightID id) override;
+	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) override;
 
 	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;

@@ -230,3 +230,13 @@ void RendererUtils::getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const 
 	RendererUtils::getBBoxVisibilityInFrustum(bbox, camera.worldPoint, camera.forward, camera.leftFrustumNormal, camera.rightFrustumNormal,
 		camera.bottomFrustumNormal, camera.topFrustumNormal, outIsCompletelyVisible, outIsCompletelyInvisible);
 }
+
+Matrix4f RendererUtils::matrix4DoubleToFloat(const Matrix4d &matrix)
+{
+	Matrix4f mat4f;
+	mat4f.x = Float4(static_cast<float>(matrix.x.x), static_cast<float>(matrix.x.y), static_cast<float>(matrix.x.z), static_cast<float>(matrix.x.w));
+	mat4f.y = Float4(static_cast<float>(matrix.y.x), static_cast<float>(matrix.y.y), static_cast<float>(matrix.y.z), static_cast<float>(matrix.y.w));
+	mat4f.z = Float4(static_cast<float>(matrix.z.x), static_cast<float>(matrix.z.y), static_cast<float>(matrix.z.z), static_cast<float>(matrix.z.w));
+	mat4f.w = Float4(static_cast<float>(matrix.w.x), static_cast<float>(matrix.w.y), static_cast<float>(matrix.w.z), static_cast<float>(matrix.w.w));
+	return mat4f;
+}

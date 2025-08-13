@@ -32,10 +32,17 @@ namespace
 		const UiTextureID textureID = renderer.createUiTexture(width, height);
 		if (textureID < 0)
 		{
-			DebugCrashFormat("Couldn't create status bar texture with color (%s).", color.toString().c_str());
+			DebugLogErrorFormat("Couldn't create status bar texture with color (%s).", color.toString().c_str());
+			return -1;
 		}
 
 		LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+		if (!lockedTexture.isValid())
+		{
+			DebugLogErrorFormat("Couldn't lock status bar texture with color (%s).", color.toString().c_str());
+			return textureID;
+		}
+
 		Span2D<uint32_t> texelsView(reinterpret_cast<uint32_t*>(lockedTexture.texels.begin()), width, height);
 		const uint32_t texelARGB = color.toARGB();
 		texelsView.fill(texelARGB);
@@ -602,12 +609,18 @@ UiTextureID GameWorldUiView::allocTooltipTexture(GameWorldUiModel::ButtonType bu
 {
 	const std::string text = GameWorldUiModel::getButtonTooltip(buttonType);
 	const Surface surface = TextureUtils::createTooltip(text, fontLibrary);
-	Span2D<const uint32_t> pixels = surface.getPixels();
 
-	const UiTextureID textureID = renderer.createUiTexture(pixels);
+	Span2D<const uint32_t> pixels = surface.getPixels();
+	const UiTextureID textureID = renderer.createUiTexture(pixels.getWidth(), pixels.getHeight());
 	if (textureID < 0)
 	{
-		DebugCrashFormat("Couldn't create tooltip texture for \"%s\".", text.c_str());
+		DebugLogErrorFormat("Couldn't create tooltip texture for \"%s\".", text.c_str());
+		return -1;
+	}
+
+	if (!renderer.populateUiTextureNoPalette(textureID, pixels))
+	{
+		DebugLogErrorFormat("Couldn't populate tooltip texture for \"%s\".", text.c_str());
 	}
 
 	return textureID;

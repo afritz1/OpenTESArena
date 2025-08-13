@@ -4,11 +4,13 @@
 #include <string>
 
 #include "RenderBackendType.h"
+#include "RenderBuffer.h"
 #include "RenderCamera.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
+#include "RenderTransform.h"
 #include "Sdl2DSoft3DRenderBackend.h"
 #include "VulkanRenderBackend.h"
 #include "../Assets/TextureManager.h"
@@ -48,6 +50,27 @@ namespace
 		const int alignedHeight = std::max(roundedHeight & alignmentMask, alignment);
 
 		return Int2(alignedWidth, alignedHeight);
+	}
+	
+	static_assert(sizeof(RenderTransform) == sizeof(Matrix4d) * 3);
+	constexpr int BytesPerTransformF = sizeof(RenderTransform) / 2;
+	constexpr int BytesPerMatrix4f = sizeof(Matrix4f);
+
+	void WriteRenderTransformFloat32(const RenderTransform &transform, std::byte *dstBytes)
+	{
+		const Matrix4f &translationF = RendererUtils::matrix4DoubleToFloat(transform.translation);
+		const Matrix4f &rotationF = RendererUtils::matrix4DoubleToFloat(transform.rotation);
+		const Matrix4f &scaleF = RendererUtils::matrix4DoubleToFloat(transform.scale);
+
+		Span<const std::byte> srcTranslationBytes(reinterpret_cast<const std::byte*>(&translationF), BytesPerMatrix4f);
+		Span<const std::byte> srcRotationBegin(reinterpret_cast<const std::byte*>(&rotationF), BytesPerMatrix4f);
+		Span<const std::byte> srcScaleBegin(reinterpret_cast<const std::byte*>(&scaleF), BytesPerMatrix4f);
+		Span<std::byte> dstTranslationBytes(dstBytes, BytesPerMatrix4f);
+		Span<std::byte> dstRotationBytes(dstTranslationBytes.end(), BytesPerMatrix4f);
+		Span<std::byte> dstScaleBytes(dstRotationBytes.end(), BytesPerMatrix4f);
+		std::copy(srcTranslationBytes.begin(), srcTranslationBytes.end(), dstTranslationBytes.begin());
+		std::copy(srcRotationBegin.begin(), srcRotationBegin.end(), dstRotationBytes.begin());
+		std::copy(srcScaleBegin.begin(), srcScaleBegin.end(), dstScaleBytes.begin());
 	}
 }
 
@@ -192,32 +215,8 @@ void Renderer::handleRenderTargetsReset()
 
 VertexPositionBufferID Renderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
 {
-	return this->backend->createVertexPositionBuffer(vertexCount, componentsPerVertex);
-}
-
-VertexAttributeBufferID Renderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
-{
-	return this->backend->createVertexAttributeBuffer(vertexCount, componentsPerVertex);
-}
-
-IndexBufferID Renderer::createIndexBuffer(int indexCount)
-{
-	return this->backend->createIndexBuffer(indexCount);
-}
-
-void Renderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
-{
-	this->backend->populateVertexPositionBuffer(id, positions);
-}
-
-void Renderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
-{
-	this->backend->populateVertexAttributeBuffer(id, attributes);
-}
-
-void Renderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
-{
-	this->backend->populateIndexBuffer(id, indices);
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	return this->backend->createVertexPositionBuffer(vertexCount, componentsPerVertex, bytesPerFloat);
 }
 
 void Renderer::freeVertexPositionBuffer(VertexPositionBufferID id)
@@ -225,14 +224,107 @@ void Renderer::freeVertexPositionBuffer(VertexPositionBufferID id)
 	this->backend->freeVertexPositionBuffer(id);
 }
 
+bool Renderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
+{
+	LockedBuffer lockedBuffer = this->backend->lockVertexPositionBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock vertex position buffer %d.", id);
+		return false;
+	}
+
+	const int elementCount = positions.getCount();
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		Span<double> dstDoubles = lockedBuffer.getDoubles();
+		DebugAssert(elementCount == dstDoubles.getCount());
+		std::copy(positions.begin(), positions.end(), dstDoubles.begin());
+	}
+	else
+	{
+		Span<float> dstFloats = lockedBuffer.getFloats();
+		DebugAssert(elementCount == dstFloats.getCount());
+		std::transform(positions.begin(), positions.end(), dstFloats.begin(),
+			[](double value)
+		{
+			return static_cast<float>(value);
+		});
+	}
+
+	this->backend->unlockVertexPositionBuffer(id);
+	return true;
+}
+
+VertexAttributeBufferID Renderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
+{
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	return this->backend->createVertexAttributeBuffer(vertexCount, componentsPerVertex, bytesPerFloat);
+}
+
 void Renderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
 	return this->backend->freeVertexAttributeBuffer(id);
 }
 
+bool Renderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
+{
+	LockedBuffer lockedBuffer = this->backend->lockVertexAttributeBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock vertex attribute buffer %d.", id);
+		return false;
+	}
+
+	const int elementCount = attributes.getCount();
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		Span<double> dstDoubles = lockedBuffer.getDoubles();
+		DebugAssert(elementCount == dstDoubles.getCount());
+		std::copy(attributes.begin(), attributes.end(), dstDoubles.begin());
+	}
+	else
+	{
+		Span<float> dstFloats = lockedBuffer.getFloats();
+		DebugAssert(elementCount == dstFloats.getCount());
+		std::transform(attributes.begin(), attributes.end(), dstFloats.begin(),
+			[](double value)
+		{
+			return static_cast<float>(value);
+		});
+	}
+
+	this->backend->unlockVertexAttributeBuffer(id);
+	return true;
+}
+
+IndexBufferID Renderer::createIndexBuffer(int indexCount)
+{
+	constexpr int bytesPerIndex = sizeof(int32_t);
+	return this->backend->createIndexBuffer(indexCount, bytesPerIndex);
+}
+
 void Renderer::freeIndexBuffer(IndexBufferID id)
 {
 	this->backend->freeIndexBuffer(id);
+}
+
+bool Renderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
+{
+	LockedBuffer lockedBuffer = this->backend->lockIndexBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock index buffer %d.", id);
+		return false;
+	}
+
+	Span<int32_t> dstIndices = lockedBuffer.getInts();
+
+	DebugAssert(indices.getCount() == dstIndices.getCount());
+	std::copy(indices.begin(), indices.end(), dstIndices.begin());
+	this->backend->unlockIndexBuffer(id);
+	return true;
 }
 
 ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)
@@ -241,44 +333,16 @@ ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPe
 	return allocator->create(width, height, bytesPerTexel);
 }
 
-ObjectTextureID Renderer::createObjectTexture(const TextureBuilder &textureBuilder)
+void Renderer::freeObjectTexture(ObjectTextureID id)
 {
 	ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
-	return allocator->create(textureBuilder);
-}
-
-UiTextureID Renderer::createUiTexture(int width, int height)
-{
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	return allocator->create(width, height);
-}
-
-UiTextureID Renderer::createUiTexture(Span2D<const uint32_t> texels)
-{
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	return allocator->create(texels);
-}
-
-UiTextureID Renderer::createUiTexture(Span2D<const uint8_t> texels, const Palette &palette)
-{
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	return allocator->create(texels, palette);
-}
-
-UiTextureID Renderer::createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
-{
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	return allocator->create(textureBuilderID, paletteID, textureManager);
+	allocator->free(id);
 }
 
 std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
 {
-	return this->backend->tryGetObjectTextureDims(id);
-}
-
-std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
-{
-	return this->backend->tryGetUiTextureDims(id);
+	const ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
+	return allocator->tryGetDimensions(id);
 }
 
 LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
@@ -287,28 +351,39 @@ LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
 	return allocator->lock(id);
 }
 
-LockedTexture Renderer::lockUiTexture(UiTextureID textureID)
-{
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	return allocator->lock(textureID);
-}
-
 void Renderer::unlockObjectTexture(ObjectTextureID id)
 {
 	ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
 	allocator->unlock(id);
 }
 
-void Renderer::unlockUiTexture(UiTextureID textureID)
-{
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	allocator->unlock(textureID);
-}
-
-void Renderer::freeObjectTexture(ObjectTextureID id)
+bool Renderer::populateObjectTexture(ObjectTextureID id, Span<const std::byte> texels)
 {
 	ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
-	allocator->free(id);
+	LockedTexture lockedTexture = allocator->lock(id);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock object texture %d.", id);
+		return false;
+	}
+
+	DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
+	std::copy(texels.begin(), texels.end(), lockedTexture.texels.begin());
+
+	allocator->unlock(id);
+	return true;
+}
+
+bool Renderer::populateObjectTexture8Bit(ObjectTextureID id, Span<const uint8_t> texels)
+{
+	Span<const std::byte> texelBytes(reinterpret_cast<const std::byte*>(texels.begin()), texels.getCount());
+	return this->populateObjectTexture(id, texelBytes);
+}
+
+UiTextureID Renderer::createUiTexture(int width, int height)
+{
+	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
+	return allocator->create(width, height);
 }
 
 void Renderer::freeUiTexture(UiTextureID id)
@@ -317,19 +392,66 @@ void Renderer::freeUiTexture(UiTextureID id)
 	allocator->free(id);
 }
 
-UniformBufferID Renderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
+std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
 {
-	return this->backend->createUniformBuffer(elementCount, sizeOfElement, alignmentOfElement);
+	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
+	return allocator->tryGetDimensions(id);
 }
 
-void Renderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
+LockedTexture Renderer::lockUiTexture(UiTextureID id)
 {
-	this->backend->populateUniformBuffer(id, data);
+	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
+	return allocator->lock(id);
 }
 
-void Renderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
+void Renderer::unlockUiTexture(UiTextureID id)
 {
-	this->backend->populateUniformAtIndex(id, uniformIndex, uniformData);
+	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
+	allocator->unlock(id);
+}
+
+bool Renderer::populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette)
+{
+	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
+	LockedTexture lockedTexture = allocator->lock(id);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock UI texture %d.", id);
+		return false;
+	}
+
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+
+	if (palette == nullptr)
+	{
+		DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
+		Span<const uint32_t> srcTexels(reinterpret_cast<const uint32_t*>(texels.begin()), texels.getCount() / sizeof(uint32_t));
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
+	}
+	else
+	{
+		DebugAssert(texels.getCount() == (lockedTexture.texels.getCount() / lockedTexture.bytesPerTexel));
+		Span<const uint8_t> srcTexels(reinterpret_cast<const uint8_t*>(texels.begin()), texels.getCount());
+		std::transform(srcTexels.begin(), srcTexels.end(), dstTexels.begin(),
+			[palette](uint8_t texel)
+		{
+			return (*palette)[texel].toARGB();
+		});
+	}
+
+	allocator->unlock(id);
+	return true;
+}
+
+bool Renderer::populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t> texels)
+{
+	Span<const std::byte> texelBytes(reinterpret_cast<const std::byte*>(texels.begin()), texels.getWidth() * texels.getHeight() * sizeof(uint32_t));
+	return this->populateUiTexture(id, texelBytes);
+}
+
+UniformBufferID Renderer::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
+{
+	return this->backend->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
 void Renderer::freeUniformBuffer(UniformBufferID id)
@@ -337,24 +459,135 @@ void Renderer::freeUniformBuffer(UniformBufferID id)
 	this->backend->freeUniformBuffer(id);
 }
 
+bool Renderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes)
+{
+	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d.", id);
+		return false;
+	}
+
+	DebugAssert(bytes.getCount() == lockedBuffer.bytes.getCount());
+	std::copy(bytes.begin(), bytes.end(), lockedBuffer.bytes.begin());
+	this->backend->unlockUniformBuffer(id);
+	return true;
+}
+
+bool Renderer::populateUniformBufferDouble3s(UniformBufferID id, Span<const Double3> values)
+{
+	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d.", id);
+		return false;
+	}
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		Span<const std::byte> valueBytes(reinterpret_cast<const std::byte*>(values.begin()), values.getCount() * sizeof(Double3));
+		DebugAssert(valueBytes.getCount() == lockedBuffer.bytes.getCount());
+		std::copy(valueBytes.begin(), valueBytes.end(), lockedBuffer.bytes.begin());
+	}
+	else
+	{
+		for (int i = 0; i < values.getCount(); i++)
+		{
+			const Double3 &value = values[i];
+			float *currentDstFloats = reinterpret_cast<float*>(lockedBuffer.bytes.begin()) + (i * 3);
+			currentDstFloats[0] = static_cast<float>(value.x);
+			currentDstFloats[1] = static_cast<float>(value.y);
+			currentDstFloats[2] = static_cast<float>(value.z);
+		}
+	}
+
+	this->backend->unlockUniformBuffer(id);
+	return true;
+}
+
+bool Renderer::populateUniformBufferRenderTransforms(UniformBufferID id, Span<const RenderTransform> transforms)
+{
+	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d.", id);
+		return false;
+	}
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		Span<const std::byte> transformBytes(reinterpret_cast<const std::byte*>(transforms.begin()), transforms.getCount() * sizeof(RenderTransform));
+		DebugAssert(transformBytes.getCount() == lockedBuffer.bytes.getCount());
+		std::copy(transformBytes.begin(), transformBytes.end(), lockedBuffer.bytes.begin());
+	}
+	else
+	{
+		for (int i = 0; i < transforms.getCount(); i++)
+		{
+			const RenderTransform &transform = transforms[i];
+			WriteRenderTransformFloat32(transform, lockedBuffer.bytes.begin() + (i * BytesPerTransformF));
+		}
+	}
+
+	this->backend->unlockUniformBuffer(id);
+	return true;
+}
+
+bool Renderer::populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes)
+{
+	LockedBuffer lockedBuffer = this->backend->lockUniformBufferIndex(id, uniformIndex);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d index %d.", id, uniformIndex);
+		return false;
+	}
+
+	DebugAssert(uniformBytes.getCount() == lockedBuffer.bytes.getCount());
+	std::copy(uniformBytes.begin(), uniformBytes.end(), lockedBuffer.bytes.begin());
+	this->backend->unlockUniformBufferIndex(id, uniformIndex);
+	return true;
+}
+
+bool Renderer::populateUniformBufferIndexRenderTransform(UniformBufferID id, int uniformIndex, const RenderTransform &transform)
+{
+	LockedBuffer lockedBuffer = this->backend->lockUniformBufferIndex(id, uniformIndex);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d at index %d.", id, uniformIndex);
+		return false;
+	}
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		Span<const std::byte> transformBytes(reinterpret_cast<const std::byte*>(&transform), sizeof(RenderTransform));
+		DebugAssert(transformBytes.getCount() == lockedBuffer.bytes.getCount());
+		std::copy(transformBytes.begin(), transformBytes.end(), lockedBuffer.bytes.begin());
+	}
+	else
+	{
+		WriteRenderTransformFloat32(transform, lockedBuffer.bytes.begin());
+	}
+
+	this->backend->unlockUniformBufferIndex(id, uniformIndex);
+	return true;
+}
+
 RenderLightID Renderer::createLight()
 {
 	return this->backend->createLight();
 }
 
-void Renderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
-{
-	this->backend->setLightPosition(id, worldPoint);
-}
-
-void Renderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)
-{
-	this->backend->setLightRadius(id, startRadius, endRadius);
-}
-
 void Renderer::freeLight(RenderLightID id)
 {
 	this->backend->freeLight(id);
+}
+
+bool Renderer::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
+{
+	return this->backend->populateLight(id, point, startRadius, endRadius);
 }
 
 /*void Renderer::drawPixel(const Color &color, int x, int y)

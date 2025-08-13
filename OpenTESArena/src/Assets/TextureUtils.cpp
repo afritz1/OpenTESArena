@@ -292,22 +292,29 @@ bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset, const Tex
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
 	if (!paletteID.has_value())
 	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAsset.filename + "\".");
+		DebugLogErrorFormat("Couldn't get palette ID for \"%s\".", paletteTextureAsset.filename.c_str());
 		return false;
 	}
 
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get texture builder ID for \"" + textureAsset.filename + "\".");
+		DebugLogErrorFormat("Couldn't get texture builder ID for \"%s\".", textureAsset.filename.c_str());
 		return false;
 	}
 
-	const UiTextureID textureID = renderer.createUiTexture(*textureBuilderID, *paletteID, textureManager);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	const UiTextureID textureID = renderer.createUiTexture(textureBuilder.width, textureBuilder.height);
 	if (textureID < 0)
 	{
-		DebugLogError("Couldn't create UI texture for \"" + textureAsset.filename + "\".");
+		DebugLogErrorFormat("Couldn't create UI texture for \"%s\".", textureAsset.filename.c_str());
 		return false;
+	}
+
+	if (!renderer.populateUiTexture(textureID, textureBuilder.texels, &palette))
+	{
+		DebugLogErrorFormat("Couldn't populate UI texture for \"%s\".", textureAsset.filename.c_str());
 	}
 
 	*outID = textureID;
@@ -328,16 +335,11 @@ bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureM
 		return false;
 	}
 
-	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
-	if (!lockedTexture.isValid())
+	if (!renderer.populateUiTextureNoPalette(textureID, srcTexels))
 	{
-		DebugLogError("Couldn't lock UI texels for writing from surface.");
-		return false;
+		DebugLogError("Couldn't populate UI texture from surface.");
 	}
 
-	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-	std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
-	renderer.unlockUiTexture(textureID);
 	*outID = textureID;
 	return true;
 }

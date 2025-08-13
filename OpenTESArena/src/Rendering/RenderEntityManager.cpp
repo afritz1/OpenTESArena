@@ -91,13 +91,15 @@ namespace
 		const ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, bytesPerTexel);
 		if (textureID < 0)
 		{
-			DebugCrash("Couldn't create entity palette indices texture.");
+			DebugLogError("Couldn't create entity palette indices texture.");
+			return ScopedObjectTextureRef();
 		}
 
-		LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-		uint8_t *dstTexels = lockedTexture.getTexels8().begin();
-		std::copy(paletteIndices.begin(), paletteIndices.end(), dstTexels);
-		renderer.unlockObjectTexture(textureID);
+		if (!renderer.populateObjectTexture8Bit(textureID, paletteIndices))
+		{
+			DebugLogError("Couldn't populate entity palette indices texture.");
+		}
+
 		return ScopedObjectTextureRef(textureID, renderer);
 	}
 }
@@ -365,7 +367,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			entityRenderTransform.translation = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
 			entityRenderTransform.rotation = allEntitiesRotationMatrix;
 			entityRenderTransform.scale = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
-			renderer.populateUniformBuffer(transformBufferID, entityRenderTransform);
+			renderer.populateUniformBufferRenderTransforms(transformBufferID, Span<const RenderTransform>(&entityRenderTransform, 1));
 		}
 
 		const EntityVisibilityChunk &entityVisChunk = entityVisChunkManager.getChunkAtPosition(chunkPos);

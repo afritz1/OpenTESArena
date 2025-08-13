@@ -92,16 +92,21 @@ namespace
 			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 			if (!textureBuilderID.has_value())
 			{
-				DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
+				DebugLogWarningFormat("Couldn't load entity anim texture \"%s\".", textureAsset.filename.c_str());
 				continue;
 			}
 
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder);
+			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
 			if (textureID < 0)
 			{
-				DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
+				DebugLogWarningFormat("Couldn't create entity anim texture \"%s\".", textureAsset.filename.c_str());
 				continue;
+			}
+
+			if (!renderer.populateObjectTexture(textureID, textureBuilder.texels))
+			{
+				DebugLogWarningFormat("Couldn't populate entity anim texture \"%s\".", textureAsset.filename.c_str());
 			}
 
 			ScopedObjectTextureRef textureRef(textureID, renderer);

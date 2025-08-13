@@ -18,7 +18,8 @@ namespace
 RenderLight::RenderLight()
 {
 	this->id = -1;
-	this->radius = 0.0;
+	this->startRadius = 0.0;
+	this->endRadius = 0.0;
 	this->enabled = false;
 }
 
@@ -38,7 +39,6 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 {
 	// Update player light.
 	this->playerLight.position = camera.worldPoint;
-	renderer.setLightPosition(this->playerLight.id, this->playerLight.position);
 
 	double newPlayerLightStartRadius, newPlayerLightEndRadius;
 	if (isFogActive)
@@ -52,7 +52,7 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 		newPlayerLightEndRadius = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
 	}
 
-	renderer.setLightRadius(this->playerLight.id, newPlayerLightStartRadius, newPlayerLightEndRadius);
+	renderer.populateLight(this->playerLight.id, this->playerLight.position, newPlayerLightStartRadius, newPlayerLightEndRadius);
 
 	// Free destroyed entity lights.
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
@@ -99,9 +99,12 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 
 			// The original game doesn't seem to update a light's radius after transitioning levels, it just uses the "S:#" from the start level .INF.
 			const double lightEndRadius = *entityLightRadius;
-			const double lightStartRadius = lightEndRadius * 0.50;
-			entityLight.radius = lightEndRadius;
-			renderer.setLightRadius(entityLight.id, lightStartRadius, lightEndRadius);
+			entityLight.startRadius = lightEndRadius * 0.50;
+			entityLight.endRadius = lightEndRadius;
+			if (!renderer.populateLight(entityLight.id, Double3::Zero, entityLight.startRadius, entityLight.endRadius))
+			{
+				DebugLogErrorFormat("Couldn't populate light for entity %d in chunk (%s).", entityInstID, entityChunkPos.toString().c_str());
+			}
 
 			this->entityLights.emplace(entityInstID, std::move(entityLight));
 		}
@@ -120,7 +123,7 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 		const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
 		const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
 		entityLight.position = GetLightPositionInEntity(entityPosition, entityBBox);
-		renderer.setLightPosition(entityLight.id, entityLight.position);
+		renderer.populateLight(entityLight.id, entityLight.position, entityLight.startRadius, entityLight.endRadius);
 
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 		entityLight.enabled = !EntityUtils::isStreetlight(entityDef) || nightLightsAreActive;
@@ -129,7 +132,7 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 			continue;
 		}
 
-		const double entityLightWidth = entityLight.radius * 2.0;
+		const double entityLightWidth = entityLight.endRadius * 2.0;
 		const double entityLightHeight = entityLightWidth;
 		const double entityLightDepth = entityLightWidth;
 		BoundingBox3D entityLightBBox;

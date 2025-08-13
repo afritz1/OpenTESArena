@@ -359,7 +359,7 @@ bool RenderWeatherManager::initUniforms(Renderer &renderer)
 	fogRenderTransform.translation = Matrix4d::identity();
 	fogRenderTransform.rotation = Matrix4d::identity();
 	fogRenderTransform.scale = Matrix4d::identity();
-	renderer.populateUniformBuffer(this->fogTransformBufferID, fogRenderTransform);
+	renderer.populateUniformBufferRenderTransforms(this->fogTransformBufferID, Span<const RenderTransform>(&fogRenderTransform, 1));
 
 	return true;
 }
@@ -367,7 +367,6 @@ bool RenderWeatherManager::initUniforms(Renderer &renderer)
 bool RenderWeatherManager::initTextures(Renderer &renderer)
 {
 	// Init rain texture.
-	constexpr int rainTexelCount = RainTextureWidth * RainTextureHeight;
 	this->rainTextureID = renderer.createObjectTexture(RainTextureWidth, RainTextureHeight, BytesPerTexel);
 	if (this->rainTextureID < 0)
 	{
@@ -376,18 +375,10 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 		return false;
 	}
 
-	LockedTexture lockedRainTexture = renderer.lockObjectTexture(this->rainTextureID);
-	if (!lockedRainTexture.isValid())
+	if (!renderer.populateObjectTexture8Bit(this->rainTextureID, ArenaRenderUtils::RAINDROP_TEXELS))
 	{
-		DebugLogError("Couldn't lock rain object texture for writing.");
-		this->freeParticleBuffers(renderer);
-		return false;
+		DebugLogError("Couldn't populate rain object texture.");
 	}
-
-	const uint8_t *srcRainTexels = ArenaRenderUtils::RAINDROP_TEXELS;
-	uint8_t *dstRainTexels = lockedRainTexture.getTexels8().begin();
-	std::copy(srcRainTexels, srcRainTexels + rainTexelCount, dstRainTexels);
-	renderer.unlockObjectTexture(this->rainTextureID);
 
 	// Init snow textures.
 	for (int i = 0; i < static_cast<int>(std::size(this->snowTextureIDs)); i++)
@@ -399,23 +390,16 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 		snowTextureID = renderer.createObjectTexture(snowTextureWidth, snowTextureHeight, BytesPerTexel);
 		if (snowTextureID < 0)
 		{
-			DebugLogError("Couldn't create snow object texture \"" + std::to_string(i) + "\".");
+			DebugLogErrorFormat("Couldn't create snow object texture %d.", i);
 			this->freeParticleBuffers(renderer);
 			return false;
 		}
 
-		LockedTexture lockedSnowTexture = renderer.lockObjectTexture(snowTextureID);
-		if (!lockedSnowTexture.isValid())
+		Span<const uint8_t> srcSnowTexels(ArenaRenderUtils::SNOWFLAKE_TEXELS_PTRS[i], snowTexelCount);
+		if (!renderer.populateObjectTexture8Bit(snowTextureID, srcSnowTexels))
 		{
-			DebugLogError("Couldn't lock snow object texture \"" + std::to_string(i) + "\" for writing.");
-			this->freeParticleBuffers(renderer);
-			return false;
+			DebugLogError("Couldn't populate snow object texture.");
 		}
-
-		const uint8_t *srcSnowTexels = ArenaRenderUtils::SNOWFLAKE_TEXELS_PTRS[i];
-		uint8_t *dstSnowTexels = lockedSnowTexture.getTexels8().begin();
-		std::copy(srcSnowTexels, srcSnowTexels + snowTexelCount, dstSnowTexels);
-		renderer.unlockObjectTexture(snowTextureID);
 	}
 
 	// Init fog texture (currently temp, not understood).
@@ -429,18 +413,12 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 		return false;
 	}
 
-	LockedTexture lockedFogTexture = renderer.lockObjectTexture(this->fogTextureID);
-	if (!lockedFogTexture.isValid())
+	constexpr uint8_t tempFogTexelColors[] = { 5, 6, 7, 8 };
+	if (!renderer.populateObjectTexture8Bit(this->fogTextureID, tempFogTexelColors))
 	{
-		DebugLogError("Couldn't lock fog object texture for writing.");
-		return false;
+		DebugLogError("Couldn't populate fog object texture.");
 	}
 
-	const uint8_t tempFogTexelColors[] = { 5, 6, 7, 8 };
-	const uint8_t *srcFogTexels = tempFogTexelColors;
-	uint8_t *dstFogTexels = lockedFogTexture.getTexels8().begin();
-	std::copy(srcFogTexels, srcFogTexels + fogTexelCount, dstFogTexels);
-	renderer.unlockObjectTexture(this->fogTextureID);
 	return true;
 }
 
@@ -649,7 +627,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 			raindropRenderTransform.translation = MakeParticleTranslationMatrix(camera, rainParticle.xPercent, rainParticle.yPercent);
 			raindropRenderTransform.rotation = particleRotationMatrix;
 			raindropRenderTransform.scale = raindropScaleMatrix;
-			renderer.populateUniformAtIndex(this->rainTransformBufferID, raindropTransformIndex, raindropRenderTransform);
+			renderer.populateUniformBufferIndexRenderTransform(this->rainTransformBufferID, raindropTransformIndex, raindropRenderTransform);
 
 			populateRainDrawCall(this->rainDrawCalls[i], raindropTransformIndex);
 		}
@@ -703,7 +681,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 				snowParticleRenderTransform.translation = MakeParticleTranslationMatrix(camera, snowParticle.xPercent, snowParticle.yPercent);
 				snowParticleRenderTransform.rotation = particleRotationMatrix;
 				snowParticleRenderTransform.scale = snowParticleScaleMatrix;
-				renderer.populateUniformAtIndex(this->snowTransformBufferID, snowParticleTransformIndex, snowParticleRenderTransform);
+				renderer.populateUniformBufferIndexRenderTransform(this->snowTransformBufferID, snowParticleTransformIndex, snowParticleRenderTransform);
 
 				const ObjectTextureID snowParticleTextureID = this->snowTextureIDs[snowParticleSizeIndex];
 				populateSnowDrawCall(this->snowDrawCalls[i], snowParticleTransformIndex, snowParticleTextureID);
@@ -717,7 +695,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		fogRenderTransform.translation = Matrix4d::translation(camera.worldPoint.x, camera.worldPoint.y, camera.worldPoint.z);
 		fogRenderTransform.rotation = Matrix4d::identity();
 		fogRenderTransform.scale = Matrix4d::identity();
-		renderer.populateUniformBuffer(this->fogTransformBufferID, fogRenderTransform);
+		renderer.populateUniformBufferRenderTransforms(this->fogTransformBufferID, Span<const RenderTransform>(&fogRenderTransform, 1));
 
 		this->fogDrawCall.transformBufferID = this->fogTransformBufferID;
 		this->fogDrawCall.transformIndex = 0;

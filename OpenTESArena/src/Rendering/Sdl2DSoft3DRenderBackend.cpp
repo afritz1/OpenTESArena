@@ -3,6 +3,7 @@
 #include "SDL_hints.h"
 #include "SDL_render.h"
 
+#include "RenderBuffer.h"
 #include "RenderCamera.h"
 #include "RenderCommand.h"
 #include "RenderInitSettings.h"
@@ -150,7 +151,7 @@ void Sdl2DSoft3DRenderBackend::shutdown()
 		this->nativeTexture = nullptr;
 		this->renderer = nullptr;
 	}
-	
+
 	this->window = nullptr;
 }
 
@@ -216,111 +217,6 @@ void Sdl2DSoft3DRenderBackend::handleRenderTargetsReset(int windowWidth, int win
 	this->renderer3D.resize(internalWidth, internalHeight);
 }
 
-VertexPositionBufferID Sdl2DSoft3DRenderBackend::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
-{
-	return this->renderer3D.createVertexPositionBuffer(vertexCount, componentsPerVertex);
-}
-
-VertexAttributeBufferID Sdl2DSoft3DRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
-{
-	return this->renderer3D.createVertexAttributeBuffer(vertexCount, componentsPerVertex);
-}
-
-IndexBufferID Sdl2DSoft3DRenderBackend::createIndexBuffer(int indexCount)
-{
-	return this->renderer3D.createIndexBuffer(indexCount);
-}
-
-void Sdl2DSoft3DRenderBackend::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
-{
-	this->renderer3D.populateVertexPositionBuffer(id, positions);
-}
-
-void Sdl2DSoft3DRenderBackend::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
-{
-	this->renderer3D.populateVertexAttributeBuffer(id, attributes);
-}
-
-void Sdl2DSoft3DRenderBackend::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
-{
-	this->renderer3D.populateIndexBuffer(id, indices);
-}
-
-void Sdl2DSoft3DRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
-{
-	this->renderer3D.freeVertexPositionBuffer(id);
-}
-
-void Sdl2DSoft3DRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
-{
-	this->renderer3D.freeVertexAttributeBuffer(id);
-}
-
-void Sdl2DSoft3DRenderBackend::freeIndexBuffer(IndexBufferID id)
-{
-	this->renderer3D.freeIndexBuffer(id);
-}
-
-ObjectTextureAllocator *Sdl2DSoft3DRenderBackend::getObjectTextureAllocator()
-{
-	return this->renderer3D.getTextureAllocator();
-}
-
-UiTextureAllocator *Sdl2DSoft3DRenderBackend::getUiTextureAllocator()
-{
-	return this->renderer2D.getTextureAllocator();
-}
-
-std::optional<Int2> Sdl2DSoft3DRenderBackend::tryGetObjectTextureDims(ObjectTextureID id) const
-{
-	return this->renderer3D.tryGetTextureDims(id);
-}
-
-std::optional<Int2> Sdl2DSoft3DRenderBackend::tryGetUiTextureDims(UiTextureID id) const
-{
-	return this->renderer2D.tryGetTextureDims(id);
-}
-
-UniformBufferID Sdl2DSoft3DRenderBackend::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
-{
-	return this->renderer3D.createUniformBuffer(elementCount, sizeOfElement, alignmentOfElement);
-}
-
-void Sdl2DSoft3DRenderBackend::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
-{
-	return this->renderer3D.populateUniformBuffer(id, data);
-}
-
-void Sdl2DSoft3DRenderBackend::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
-{
-	return this->renderer3D.populateUniformAtIndex(id, uniformIndex, uniformData);
-}
-
-void Sdl2DSoft3DRenderBackend::freeUniformBuffer(UniformBufferID id)
-{
-	return this->renderer3D.freeUniformBuffer(id);
-}
-
-RenderLightID Sdl2DSoft3DRenderBackend::createLight()
-{
-	return this->renderer3D.createLight();
-}
-
-void Sdl2DSoft3DRenderBackend::setLightPosition(RenderLightID id, const Double3 &worldPoint)
-{
-	return this->renderer3D.setLightPosition(id, worldPoint);
-}
-
-void Sdl2DSoft3DRenderBackend::setLightRadius(RenderLightID id, double startRadius, double endRadius)
-{
-	return this->renderer3D.setLightRadius(id, startRadius, endRadius);
-}
-
-void Sdl2DSoft3DRenderBackend::freeLight(RenderLightID id)
-{
-	return this->renderer3D.freeLight(id);
-}
-
 Renderer3DProfilerData Sdl2DSoft3DRenderBackend::getProfilerData() const
 {
 	return this->renderer3D.getProfilerData();
@@ -341,11 +237,131 @@ Surface Sdl2DSoft3DRenderBackend::getScreenshot() const
 	return screenshot;
 }
 
+int Sdl2DSoft3DRenderBackend::getBytesPerFloat() const
+{
+	return this->renderer3D.getBytesPerFloat();
+}
+
+VertexPositionBufferID Sdl2DSoft3DRenderBackend::createVertexPositionBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent)
+{
+	return this->renderer3D.createVertexPositionBuffer(vertexCount, componentsPerVertex, bytesPerComponent);
+}
+
+void Sdl2DSoft3DRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
+{
+	this->renderer3D.freeVertexPositionBuffer(id);
+}
+
+LockedBuffer Sdl2DSoft3DRenderBackend::lockVertexPositionBuffer(VertexPositionBufferID id)
+{
+	return this->renderer3D.lockVertexPositionBuffer(id);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
+{
+	this->renderer3D.unlockVertexPositionBuffer(id);
+}
+
+VertexAttributeBufferID Sdl2DSoft3DRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent)
+{
+	return this->renderer3D.createVertexAttributeBuffer(vertexCount, componentsPerVertex, bytesPerComponent);
+}
+
+void Sdl2DSoft3DRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
+{
+	this->renderer3D.freeVertexAttributeBuffer(id);
+}
+
+LockedBuffer Sdl2DSoft3DRenderBackend::lockVertexAttributeBuffer(VertexAttributeBufferID id)
+{
+	return this->renderer3D.lockVertexAttributeBuffer(id);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id)
+{
+	this->renderer3D.unlockVertexAttributeBuffer(id);
+}
+
+IndexBufferID Sdl2DSoft3DRenderBackend::createIndexBuffer(int indexCount, int bytesPerIndex)
+{
+	return this->renderer3D.createIndexBuffer(indexCount, bytesPerIndex);
+}
+
+void Sdl2DSoft3DRenderBackend::freeIndexBuffer(IndexBufferID id)
+{
+	this->renderer3D.freeIndexBuffer(id);
+}
+
+LockedBuffer Sdl2DSoft3DRenderBackend::lockIndexBuffer(IndexBufferID id)
+{
+	return this->renderer3D.lockIndexBuffer(id);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockIndexBuffer(IndexBufferID id)
+{
+	this->renderer3D.unlockIndexBuffer(id);
+}
+
+ObjectTextureAllocator *Sdl2DSoft3DRenderBackend::getObjectTextureAllocator()
+{
+	return this->renderer3D.getTextureAllocator();
+}
+
+UiTextureAllocator *Sdl2DSoft3DRenderBackend::getUiTextureAllocator()
+{
+	return this->renderer2D.getTextureAllocator();
+}
+
+UniformBufferID Sdl2DSoft3DRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
+{
+	return this->renderer3D.createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
+}
+
+void Sdl2DSoft3DRenderBackend::freeUniformBuffer(UniformBufferID id)
+{
+	return this->renderer3D.freeUniformBuffer(id);
+}
+
+LockedBuffer Sdl2DSoft3DRenderBackend::lockUniformBuffer(UniformBufferID id)
+{
+	return this->renderer3D.lockUniformBuffer(id);
+}
+
+LockedBuffer Sdl2DSoft3DRenderBackend::lockUniformBufferIndex(UniformBufferID id, int index)
+{
+	return this->renderer3D.lockUniformBufferIndex(id, index);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockUniformBuffer(UniformBufferID id)
+{
+	return this->renderer3D.unlockUniformBuffer(id);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
+{
+	return this->renderer3D.unlockUniformBufferIndex(id, index);
+}
+
+RenderLightID Sdl2DSoft3DRenderBackend::createLight()
+{
+	return this->renderer3D.createLight();
+}
+
+void Sdl2DSoft3DRenderBackend::freeLight(RenderLightID id)
+{
+	return this->renderer3D.freeLight(id);
+}
+
+bool Sdl2DSoft3DRenderBackend::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
+{
+	return this->renderer3D.populateLight(id, point, startRadius, endRadius);
+}
+
 void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
 	g_physicsDebugCamera = camera;
-	
+
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 
 	constexpr Color clearColor = Colors::Black;

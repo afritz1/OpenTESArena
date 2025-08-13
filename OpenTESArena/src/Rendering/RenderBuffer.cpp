@@ -9,9 +9,14 @@ LockedBuffer::LockedBuffer()
 
 LockedBuffer::LockedBuffer(Span<std::byte> bytes, int bytesPerElement)
 {
-	DebugAssert((bytes.getCount() % bytesPerElement) == 0);
+	// bytes.count >= elements * bytesPerElement due to alignment taking extra bytes.
 	this->bytes = bytes;
 	this->bytesPerElement = bytesPerElement;
+}
+
+bool LockedBuffer::isValid() const
+{
+	return this->bytes.isValid();
 }
 
 Span<int> LockedBuffer::getInts()

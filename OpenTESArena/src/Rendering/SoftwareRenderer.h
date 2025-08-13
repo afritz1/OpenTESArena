@@ -64,12 +64,12 @@ struct SoftwareUniformBuffer
 {
 	Buffer<std::byte> bytes;
 	int elementCount;
-	size_t sizeOfElement;
-	size_t alignmentOfElement;
+	int bytesPerElement;
+	int alignmentOfElement;
 
 	SoftwareUniformBuffer();
 
-	void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
+	void init(int elementCount, int bytesPerElement, int alignmentOfElement);
 
 	std::byte *begin();
 	const std::byte *begin() const;
@@ -79,7 +79,7 @@ struct SoftwareUniformBuffer
 	template<typename T>
 	T &get(int index)
 	{
-		DebugAssert(sizeof(T) == this->sizeOfElement);
+		DebugAssert(sizeof(T) == this->bytesPerElement);
 		DebugAssert(alignof(T) == this->alignmentOfElement);
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->elementCount);
@@ -90,7 +90,7 @@ struct SoftwareUniformBuffer
 	template<typename T>
 	const T &get(int index) const
 	{
-		DebugAssert(sizeof(T) == this->sizeOfElement);
+		DebugAssert(sizeof(T) == this->bytesPerElement);
 		DebugAssert(alignof(T) == this->alignmentOfElement);
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->elementCount);
@@ -132,9 +132,9 @@ struct SoftwareObjectTextureAllocator final : public ObjectTextureAllocator
 	void init(SoftwareObjectTexturePool *pool);
 
 	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
-	ObjectTextureID create(const TextureBuilder &textureBuilder) override;
-
 	void free(ObjectTextureID textureID) override;
+
+	std::optional<Int2> tryGetDimensions(ObjectTextureID textureID) const override;
 
 	LockedTexture lock(ObjectTextureID textureID) override;
 	void unlock(ObjectTextureID textureID) override;
@@ -166,30 +166,37 @@ public:
 
 	void resize(int width, int height);
 
-	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex);
-	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex);
-	IndexBufferID createIndexBuffer(int indexCount);
-	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions);
-	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes);
-	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices);
+	Renderer3DProfilerData getProfilerData() const;
+
+	int getBytesPerFloat() const;
+
+	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void freeVertexPositionBuffer(VertexPositionBufferID id);
+	LockedBuffer lockVertexPositionBuffer(VertexPositionBufferID id);
+	void unlockVertexPositionBuffer(VertexPositionBufferID id);
+
+	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void freeVertexAttributeBuffer(VertexAttributeBufferID id);
+	LockedBuffer lockVertexAttributeBuffer(VertexAttributeBufferID id);
+	void unlockVertexAttributeBuffer(VertexAttributeBufferID id);
+
+	IndexBufferID createIndexBuffer(int indexCount, int bytesPerIndex);
 	void freeIndexBuffer(IndexBufferID id);
+	LockedBuffer lockIndexBuffer(IndexBufferID id);
+	void unlockIndexBuffer(IndexBufferID id);
 
 	ObjectTextureAllocator *getTextureAllocator();
-	std::optional<Int2> tryGetTextureDims(ObjectTextureID id) const;
 
-	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
-	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data);
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData);
+	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
 	void freeUniformBuffer(UniformBufferID id);
+	LockedBuffer lockUniformBuffer(UniformBufferID id);
+	LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index);
+	void unlockUniformBuffer(UniformBufferID id);
+	void unlockUniformBufferIndex(UniformBufferID id, int index);
 
 	RenderLightID createLight();
-	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
-	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
 	void freeLight(RenderLightID id);
-
-	Renderer3DProfilerData getProfilerData() const;
+	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius);
 
 	void submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer);

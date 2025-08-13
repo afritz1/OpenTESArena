@@ -96,10 +96,16 @@ UiTextureID ChooseClassCreationUiView::allocParchmentTexture(TextureManager &tex
 		renderer);
 
 	Span2D<const uint32_t> texels = surface.getPixels();
-	const UiTextureID textureID = renderer.createUiTexture(texels);
+	const UiTextureID textureID = renderer.createUiTexture(texels.getWidth(), texels.getHeight());
 	if (textureID < 0)
 	{
-		DebugCrash("Couldn't create UI texture for parchment.");
+		DebugLogError("Couldn't create UI texture for parchment.");
+		return -1;
+	}
+
+	if (!renderer.populateUiTextureNoPalette(textureID, texels))
+	{
+		DebugLogError("Couldn't populate UI texture for parchment.");
 	}
 
 	return textureID;
@@ -286,12 +292,18 @@ UiTextureID ChooseGenderUiView::allocParchmentTexture(TextureManager &textureMan
 		ChooseGenderUiView::TextureHeight,
 		textureManager,
 		renderer);
-	Span2D<const uint32_t> texels = surface.getPixels();
 
-	const UiTextureID textureID = renderer.createUiTexture(texels);
+	Span2D<const uint32_t> texels = surface.getPixels();
+	const UiTextureID textureID = renderer.createUiTexture(texels.getWidth(), texels.getHeight());
 	if (textureID < 0)
 	{
-		DebugCrash("Couldn't create UI texture for parchment.");
+		DebugLogError("Couldn't create UI texture for parchment.");
+		return -1;
+	}
+
+	if (!renderer.populateUiTextureNoPalette(textureID, texels))
+	{
+		DebugLogError("Couldn't populate UI texture for parchment.");
 	}
 
 	return textureID;
@@ -337,12 +349,18 @@ UiTextureID ChooseNameUiView::allocParchmentTexture(TextureManager &textureManag
 		ChooseNameUiView::TextureHeight,
 		textureManager,
 		renderer);
-	Span2D<const uint32_t> texels = surface.getPixels();
 
-	const UiTextureID textureID = renderer.createUiTexture(texels);
+	Span2D<const uint32_t> texels = surface.getPixels();
+	const UiTextureID textureID = renderer.createUiTexture(texels.getWidth(), texels.getHeight());
 	if (textureID < 0)
 	{
-		DebugCrash("Couldn't create UI texture for parchment.");
+		DebugLogError("Couldn't create UI texture for parchment.");
+		return -1;
+	}
+
+	if (!renderer.populateUiTextureNoPalette(textureID, texels))
+	{
+		DebugLogError("Couldn't populate UI texture for parchment.");
 	}
 
 	return textureID;
