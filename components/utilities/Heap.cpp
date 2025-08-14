@@ -25,7 +25,7 @@ HeapBlock::HeapBlock()
 
 bool HeapBlock::isValid() const
 {
-	return this->byteCount >= 0;
+	return this->byteCount > 0;
 }
 
 HeapAllocator::HeapAllocator()
