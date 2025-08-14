@@ -5,18 +5,18 @@
 
 #include "../debug/Debug.h"
 
-VirtualHeap::Block::Block(Offset offset, Size size)
+VirtualHeapBlock::VirtualHeapBlock(VirtualHeapBlockOffset offset, VirtualHeapBlockSize size)
 {
 	this->offset = offset;
 	this->size = size;
 }
 
-bool VirtualHeap::Block::isInfinite() const
+bool VirtualHeapBlock::isInfinite() const
 {
-	return this->size == INFINITE_BLOCK_SIZE;
+	return this->size == VIRTUAL_HEAP_INFINITE_BLOCK_SIZE;
 }
 
-void VirtualHeap::Block::combineLeft(const Block &block)
+void VirtualHeapBlock::combineLeft(const VirtualHeapBlock &block)
 {
 	DebugAssert(!block.isInfinite());
 	DebugAssert((block.offset + block.size) == this->offset);
@@ -28,14 +28,14 @@ void VirtualHeap::Block::combineLeft(const Block &block)
 	}
 }
 
-void VirtualHeap::Block::combineRight(const Block &block)
+void VirtualHeapBlock::combineRight(const VirtualHeapBlock &block)
 {
 	DebugAssert(!this->isInfinite());
 	DebugAssert((this->offset + this->size) == block.offset);
 
 	if (block.isInfinite())
 	{
-		this->size = INFINITE_BLOCK_SIZE;
+		this->size = VIRTUAL_HEAP_INFINITE_BLOCK_SIZE;
 	}
 	else
 	{
@@ -48,13 +48,13 @@ VirtualHeap::VirtualHeap()
 	this->nextHandle = 0;
 
 	// Allocate one infinite free block to start.
-	Block block(0, INFINITE_BLOCK_SIZE);
+	VirtualHeapBlock block(0, VIRTUAL_HEAP_INFINITE_BLOCK_SIZE);
 	this->freeBlocks.push_back(block);
 }
 
-VirtualHeap::Handle VirtualHeap::getNextHandle()
+VirtualHeapHandle VirtualHeap::getNextHandle()
 {
-	Handle handle;
+	VirtualHeapHandle handle;
 	if (!this->freedHandles.empty())
 	{
 		handle = this->freedHandles.back();
@@ -69,7 +69,7 @@ VirtualHeap::Handle VirtualHeap::getNextHandle()
 	return handle;
 }
 
-bool VirtualHeap::tryGetBlock(Handle handle, const Block **outBlock) const
+bool VirtualHeap::tryGetBlock(VirtualHeapHandle handle, const VirtualHeapBlock **outBlock) const
 {
 	const auto iter = this->usedBlocks.find(handle);
 	if (iter != this->usedBlocks.end())
@@ -83,24 +83,24 @@ bool VirtualHeap::tryGetBlock(Handle handle, const Block **outBlock) const
 	}
 }
 
-VirtualHeap::Handle VirtualHeap::alloc(Block::Size size)
+VirtualHeapHandle VirtualHeap::alloc(VirtualHeapBlockSize size)
 {
 	if (size <= 0)
 	{
-		DebugLogWarning("Allocation size (" + std::to_string(size) + ") must be positive.");
+		DebugLogWarningFormat("Allocation size %d must be positive.", size);
 		return INVALID_HANDLE;
 	}
 
 	// Adds a new used block and returns its unique handle.
-	auto addUsedBlock = [this](VirtualHeap::Block::Offset offset, VirtualHeap::Block::Size size)
+	auto addUsedBlock = [this](VirtualHeapBlockOffset offset, VirtualHeapBlockSize size)
 	{
-		const Handle handle = this->getNextHandle();
-		this->usedBlocks.emplace(handle, Block(offset, size));
+		const VirtualHeapHandle handle = this->getNextHandle();
+		this->usedBlocks.emplace(handle, VirtualHeapBlock(offset, size));
 		return handle;
 	};
 
 	// Find a suitable free block via first-fit.
-	VirtualHeap::Handle handle = INVALID_HANDLE;
+	VirtualHeapHandle handle = INVALID_HANDLE;
 	for (auto freeBlock = this->freeBlocks.begin(); freeBlock != this->freeBlocks.end(); ++freeBlock)
 	{
 		if (freeBlock->isInfinite())
@@ -130,27 +130,27 @@ VirtualHeap::Handle VirtualHeap::alloc(Block::Size size)
 	return handle;
 }
 
-void VirtualHeap::free(Handle handle)
+void VirtualHeap::free(VirtualHeapHandle handle)
 {
 	if (handle == INVALID_HANDLE)
 	{
-		DebugLogWarning("Tried freeing invalid handle \"" + std::to_string(handle) + "\".");
+		DebugLogWarningFormat("Tried freeing invalid handle %d.", handle);
 		return;
 	}
 
 	const auto usedBlockIter = this->usedBlocks.find(handle);
 	if (usedBlockIter == this->usedBlocks.end())
 	{
-		DebugLogWarning("No block to free for handle \"" + std::to_string(handle) + "\".");
+		DebugLogWarningFormat("No block to free for handle %d.", handle);
 		return;
 	}
 
-	const Block &usedBlock = usedBlockIter->second;
+	const VirtualHeapBlock &usedBlock = usedBlockIter->second;
 
 	// Find the first free block after the used block. There will always be at least one free
 	// block somewhere to the right.
 	const auto nextFreeIter = std::find_if(this->freeBlocks.begin(), this->freeBlocks.end(),
-		[&usedBlock](const Block &freeBlock)
+		[&usedBlock](const VirtualHeapBlock &freeBlock)
 	{
 		return freeBlock.offset > usedBlock.offset;
 	});
@@ -194,7 +194,7 @@ void VirtualHeap::free(Handle handle)
 	else
 	{
 		// Not adjacent to any free blocks. Create a new free block.
-		this->freeBlocks.emplace(nextFreeIter, Block(usedBlock.offset, usedBlock.size));
+		this->freeBlocks.emplace(nextFreeIter, VirtualHeapBlock(usedBlock.offset, usedBlock.size));
 	}
 
 	// Remove the used block and release its unique handle.
