@@ -26,6 +26,8 @@ SET(COMP_UTILITIES
 	"utilities/File.h"
 	"utilities/FPSCounter.cpp"
 	"utilities/FPSCounter.h"
+	"utilities/Heap.cpp"
+	"utilities/Heap.h"
 	"utilities/HexPrinter.cpp"
 	"utilities/HexPrinter.h"
 	"utilities/KeyValueFile.cpp"
