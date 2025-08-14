@@ -53,6 +53,7 @@ struct VulkanBuffer
 	vk::DeviceMemory deviceMemory;
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
 
 	VulkanBufferType type;
 
@@ -66,13 +67,12 @@ struct VulkanBuffer
 
 	VulkanBuffer();
 
-	void initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-	void initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-	void initIndex(int indexCount, int bytesPerIndex, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-	void initUniform(int elementCount, int bytesPerElement, int alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
+	void init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes);
 
-	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
-	void setUnlocked();
+	void initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent);
+	void initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent);
+	void initIndex(int indexCount, int bytesPerIndex);
+	void initUniform(int elementCount, int bytesPerElement, int alignmentOfElement);
 };
 
 struct VulkanLightInfo
@@ -92,12 +92,11 @@ struct VulkanLight
 	vk::DeviceMemory deviceMemory;
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
 	VulkanLightInfo lightInfo;
 
-	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::DeviceMemory deviceMemory);
-
-	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
-	void setUnlocked();
+	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::DeviceMemory deviceMemory,
+		vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes);
 };
 
 struct VulkanTexture
@@ -111,13 +110,12 @@ struct VulkanTexture
 	vk::Sampler sampler;
 	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
 
 	VulkanTexture();
 
-	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler);
-
-	void setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory);
-	void setUnlocked();
+	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler,
+		vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes);
 };
 
 using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanBuffer>;

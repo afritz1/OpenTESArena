@@ -1399,73 +1399,44 @@ VulkanBuffer::VulkanBuffer()
 	this->type = static_cast<VulkanBufferType>(-1);
 }
 
-void VulkanBuffer::initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
+void VulkanBuffer::init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes)
 {
-	DebugAssert(!this->stagingBuffer);
-	DebugAssert(!this->stagingDeviceMemory);
 	this->buffer = buffer;
 	this->deviceMemory = deviceMemory;
+	this->stagingBuffer = stagingBuffer;
+	this->stagingDeviceMemory = stagingDeviceMemory;
+	this->stagingHostMappedBytes = stagingHostMappedBytes;
+}
 
+void VulkanBuffer::initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent)
+{
 	this->type = VulkanBufferType::VertexPosition;
 	this->vertexPosition.vertexCount = vertexCount;
 	this->vertexPosition.componentsPerVertex = componentsPerVertex;
 	this->vertexPosition.bytesPerComponent = bytesPerComponent;
 }
 
-void VulkanBuffer::initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
+void VulkanBuffer::initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent)
 {
-	DebugAssert(!this->stagingBuffer);
-	DebugAssert(!this->stagingDeviceMemory);
-	this->buffer = buffer;
-	this->deviceMemory = deviceMemory;
-
 	this->type = VulkanBufferType::VertexAttribute;
 	this->vertexAttribute.vertexCount = vertexCount;
 	this->vertexAttribute.componentsPerVertex = componentsPerVertex;
 	this->vertexAttribute.bytesPerComponent = bytesPerComponent;
 }
 
-void VulkanBuffer::initIndex(int indexCount, int bytesPerIndex, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
+void VulkanBuffer::initIndex(int indexCount, int bytesPerIndex)
 {
-	DebugAssert(!this->stagingBuffer);
-	DebugAssert(!this->stagingDeviceMemory);
-	this->buffer = buffer;
-	this->deviceMemory = deviceMemory;
-
 	this->type = VulkanBufferType::Index;
 	this->index.indexCount = indexCount;
 	this->index.bytesPerIndex = bytesPerIndex;
 }
 
-void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int alignmentOfElement, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
+void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int alignmentOfElement)
 {
-	DebugAssert(!this->stagingBuffer);
-	DebugAssert(!this->stagingDeviceMemory);
-	this->buffer = buffer;
-	this->deviceMemory = deviceMemory;
-
 	this->type = VulkanBufferType::Uniform;
 	this->uniform.elementCount = elementCount;
 	this->uniform.bytesPerElement = bytesPerElement;
 	this->uniform.alignmentOfElement = alignmentOfElement;
-}
-
-void VulkanBuffer::setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory)
-{
-	DebugAssert(!this->stagingBuffer);
-	DebugAssert(!this->stagingDeviceMemory);
-	DebugAssert(stagingBuffer);
-	DebugAssert(stagingDeviceMemory);
-	this->stagingBuffer = stagingBuffer;
-	this->stagingDeviceMemory = stagingDeviceMemory;
-}
-
-void VulkanBuffer::setUnlocked()
-{
-	DebugAssert(this->stagingBuffer);
-	DebugAssert(this->stagingDeviceMemory);
-	this->stagingBuffer = vk::Buffer(nullptr);
-	this->stagingDeviceMemory = vk::DeviceMemory(nullptr);
 }
 
 VulkanLightInfo::VulkanLightInfo()
@@ -1490,33 +1461,17 @@ void VulkanLightInfo::init(float pointX, float pointY, float pointZ, float start
 	this->endRadiusSqr = endRadius * endRadius;
 }
 
-void VulkanLight::init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::DeviceMemory deviceMemory)
+void VulkanLight::init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::DeviceMemory deviceMemory,
+	vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes)
 {
-	DebugAssert(!this->stagingBuffer);
-	DebugAssert(!this->stagingDeviceMemory);
 	this->buffer = buffer;
 	this->deviceMemory = deviceMemory;
+	this->stagingBuffer = stagingBuffer;
+	this->stagingDeviceMemory = stagingDeviceMemory;
+	this->stagingHostMappedBytes = stagingHostMappedBytes;
 
 	DebugAssert(endRadius >= startRadius);
 	this->lightInfo.init(pointX, pointY, pointZ, startRadius, endRadius);
-}
-
-void VulkanLight::setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory)
-{
-	DebugAssert(!this->stagingBuffer);
-	DebugAssert(!this->stagingDeviceMemory);
-	DebugAssert(stagingBuffer);
-	DebugAssert(stagingDeviceMemory);
-	this->stagingBuffer = stagingBuffer;
-	this->stagingDeviceMemory = stagingDeviceMemory;
-}
-
-void VulkanLight::setUnlocked()
-{
-	DebugAssert(this->stagingBuffer);
-	DebugAssert(this->stagingDeviceMemory);
-	this->stagingBuffer = vk::Buffer(nullptr);
-	this->stagingDeviceMemory = vk::DeviceMemory(nullptr);
 }
 
 VulkanTexture::VulkanTexture()
@@ -1526,7 +1481,8 @@ VulkanTexture::VulkanTexture()
 	this->bytesPerTexel = 0;
 }
 
-void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler)
+void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler,
+	vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -1538,24 +1494,9 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image ima
 	this->deviceMemory = deviceMemory;
 	this->imageView = imageView;
 	this->sampler = sampler;
-}
-
-void VulkanTexture::setLocked(vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory)
-{
-	DebugAssert(!this->stagingBuffer);
-	DebugAssert(!this->stagingDeviceMemory);
-	DebugAssert(stagingBuffer);
-	DebugAssert(stagingDeviceMemory);
 	this->stagingBuffer = stagingBuffer;
 	this->stagingDeviceMemory = stagingDeviceMemory;
-}
-
-void VulkanTexture::setUnlocked()
-{
-	DebugAssert(this->stagingBuffer);
-	DebugAssert(this->stagingDeviceMemory);
-	this->stagingBuffer = vk::Buffer(nullptr);
-	this->stagingDeviceMemory = vk::DeviceMemory(nullptr);
+	this->stagingHostMappedBytes = stagingHostMappedBytes;
 }
 
 VulkanObjectTextureAllocator::VulkanObjectTextureAllocator()
@@ -1612,8 +1553,19 @@ ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int 
 		return -1;
 	}
 
+	const int byteCount = width * height * bytesPerTexel;
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create and map staging buffer for image with dims %dx%d.", width, height);
+		this->free(textureID);
+		return -1;
+	}
+
 	VulkanTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler);
+	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, stagingBuffer, stagingDeviceMemory, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -1625,7 +1577,6 @@ void VulkanObjectTextureAllocator::free(ObjectTextureID textureID)
 	{
 		if (texture->stagingDeviceMemory)
 		{
-			DebugLogWarningFormat("Freeing object texture %d that was still locked.", textureID);
 			this->device.freeMemory(texture->stagingDeviceMemory);
 		}
 
@@ -1672,23 +1623,7 @@ std::optional<Int2> VulkanObjectTextureAllocator::tryGetDimensions(ObjectTexture
 LockedTexture VulkanObjectTextureAllocator::lock(ObjectTextureID textureID)
 {
 	VulkanTexture &texture = this->pool->get(textureID);
-	const int width = texture.width;
-	const int height = texture.height;
-	const int bytesPerTexel = texture.bytesPerTexel;
-	const int texelCount = width * height;
-	const int byteCount = texelCount * bytesPerTexel;
-
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create and map staging buffer for object texture lock with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
-		return LockedTexture();
-	}
-
-	texture.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedTexture(Span<std::byte>(stagingHostMappedBytes.begin(), byteCount), texture.width, texture.height, texture.bytesPerTexel);
+	return LockedTexture(texture.stagingHostMappedBytes, texture.width, texture.height, texture.bytesPerTexel);
 }
 
 void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
@@ -1697,8 +1632,6 @@ void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
 	const int width = texture.width;
 	const int height = texture.height;
 	const int bytesPerTexel = texture.bytesPerTexel;
-
-	this->device.unmapMemory(texture.stagingDeviceMemory);
 
 	auto commandBufferFunc = [this, &texture, width, height]()
 	{
@@ -1711,15 +1644,8 @@ void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->queue))
 	{
 		DebugLogErrorFormat("Couldn't submit command buffer one-time command for object texture unlock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
 		return;
 	}
-
-	this->device.freeMemory(texture.stagingDeviceMemory);
-	this->device.destroyBuffer(texture.stagingBuffer);
-	texture.setUnlocked();
 }
 
 VulkanUiTextureAllocator::VulkanUiTextureAllocator()
@@ -1776,8 +1702,19 @@ UiTextureID VulkanUiTextureAllocator::create(int width, int height)
 		return -1;
 	}
 
+	const int byteCount = width * height * bytesPerTexel;
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create and map staging buffer for image with dims %dx%d.", width, height);
+		this->free(textureID);
+		return -1;
+	}
+
 	VulkanTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler);
+	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, stagingBuffer, stagingDeviceMemory, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -1789,7 +1726,6 @@ void VulkanUiTextureAllocator::free(UiTextureID textureID)
 	{
 		if (texture->stagingDeviceMemory)
 		{
-			DebugLogWarningFormat("Freeing UI texture %d that was still locked.", textureID);
 			this->device.freeMemory(texture->stagingDeviceMemory);
 		}
 
@@ -1836,24 +1772,7 @@ std::optional<Int2> VulkanUiTextureAllocator::tryGetDimensions(UiTextureID id) c
 LockedTexture VulkanUiTextureAllocator::lock(UiTextureID textureID)
 {
 	VulkanTexture &texture = this->pool->get(textureID);
-	const int width = texture.width;
-	const int height = texture.height;
-	const int bytesPerTexel = texture.bytesPerTexel;
-	const int texelCount = width * height;
-	DebugAssert(bytesPerTexel == 4);
-	const int byteCount = texelCount * bytesPerTexel;
-
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
-	Span<uint32_t> stagingHostMappedElements;
-	if (!TryCreateAndMapStagingBuffer<uint32_t>(this->device, texelCount, vk::BufferUsageFlagBits::eTransferSrc, this->queueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedElements))
-	{
-		DebugLogErrorFormat("Couldn't create and map staging buffer for UI texture lock with dims %dx%d.", width, height);
-		return LockedTexture();
-	}
-
-	texture.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedTexture(Span<std::byte>(reinterpret_cast<std::byte*>(stagingHostMappedElements.begin()), byteCount), texture.width, texture.height, texture.bytesPerTexel);
+	return LockedTexture(texture.stagingHostMappedBytes, texture.width, texture.height, texture.bytesPerTexel);
 }
 
 void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
@@ -1862,8 +1781,6 @@ void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
 	const int width = texture.width;
 	const int height = texture.height;
 	DebugAssert(texture.bytesPerTexel == 4);
-
-	this->device.unmapMemory(texture.stagingDeviceMemory);
 
 	auto commandBufferFunc = [this, &texture, width, height]()
 	{
@@ -1876,15 +1793,8 @@ void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->queue))
 	{
 		DebugLogErrorFormat("Couldn't submit command buffer one-time command for UI texture unlock with dims %dx%d (%d).", width, height);
-		this->device.freeMemory(texture.stagingDeviceMemory);
-		this->device.destroyBuffer(texture.stagingBuffer);
-		texture.setUnlocked();
 		return;
 	}
-
-	this->device.freeMemory(texture.stagingDeviceMemory);
-	this->device.destroyBuffer(texture.stagingBuffer);
-	texture.setUnlocked();
 }
 
 VulkanCamera::VulkanCamera()
@@ -2479,8 +2389,20 @@ VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int verte
 		return -1;
 	}
 
+	const int byteCount = elementCount * bytesPerComponent;
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create and map staging buffer for vertex position buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
+		this->vertexPositionBufferPool.free(id);
+		return -1;
+	}
+
 	VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
-	vertexPositionBuffer.initVertexPosition(vertexCount, componentsPerVertex, bytesPerComponent, buffer, deviceMemory);
+	vertexPositionBuffer.init(buffer, deviceMemory, stagingBuffer, stagingDeviceMemory, stagingHostMappedBytes);
+	vertexPositionBuffer.initVertexPosition(vertexCount, componentsPerVertex, bytesPerComponent);
 
 	return id;
 }
@@ -2492,7 +2414,6 @@ void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 	{
 		if (vertexPositionBuffer->stagingDeviceMemory)
 		{
-			DebugLogWarningFormat("Freeing vertex position buffer %d that was still locked.", id);
 			this->device.freeMemory(vertexPositionBuffer->stagingDeviceMemory);
 		}
 
@@ -2519,26 +2440,12 @@ LockedBuffer VulkanRenderBackend::lockVertexPositionBuffer(VertexPositionBufferI
 {
 	VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
 	const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
-	const int elementCount = vertexPositionInfo.vertexCount * vertexPositionInfo.componentsPerVertex;
-	const int byteCount = elementCount * vertexPositionInfo.bytesPerComponent;
-
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create and map staging buffer for vertex position buffer (vertices: %d, components: %d).", vertexPositionInfo.vertexCount, vertexPositionInfo.componentsPerVertex);
-		return LockedBuffer();
-	}
-
-	vertexPositionBuffer.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedBuffer(stagingHostMappedBytes, vertexPositionInfo.bytesPerComponent);
+	return LockedBuffer(vertexPositionBuffer.stagingHostMappedBytes, vertexPositionInfo.bytesPerComponent);
 }
 
 void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
 {
-	VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
-	this->device.unmapMemory(vertexPositionBuffer.stagingDeviceMemory);
+	const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
 
 	auto commandBufferFunc = [this, &vertexPositionBuffer]()
 	{
@@ -2551,15 +2458,8 @@ void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
 	{
 		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking vertex position buffer %d.", id);
-		this->device.freeMemory(vertexPositionBuffer.stagingDeviceMemory);
-		this->device.destroyBuffer(vertexPositionBuffer.stagingBuffer);
-		vertexPositionBuffer.setUnlocked();
 		return;
 	}
-
-	this->device.freeMemory(vertexPositionBuffer.stagingDeviceMemory);
-	this->device.destroyBuffer(vertexPositionBuffer.stagingBuffer);
-	vertexPositionBuffer.setUnlocked();
 }
 
 VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent)
@@ -2587,8 +2487,20 @@ VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int ver
 		return -1;
 	}
 
+	const int byteCount = elementCount * bytesPerComponent;
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create and map staging buffer for vertex attribute buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
+		this->vertexAttributeBufferPool.free(id);
+		return -1;
+	}
+
 	VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
-	vertexAttributeBuffer.initVertexAttribute(vertexCount, componentsPerVertex, bytesPerComponent, buffer, deviceMemory);
+	vertexAttributeBuffer.init(buffer, deviceMemory, stagingBuffer, stagingDeviceMemory, stagingHostMappedBytes);
+	vertexAttributeBuffer.initVertexAttribute(vertexCount, componentsPerVertex, bytesPerComponent);
 
 	return id;
 }
@@ -2600,7 +2512,6 @@ void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 	{
 		if (vertexAttributeBuffer->stagingDeviceMemory)
 		{
-			DebugLogWarningFormat("Freeing vertex attribute buffer %d that was still locked.", id);
 			this->device.freeMemory(vertexAttributeBuffer->stagingDeviceMemory);
 		}
 
@@ -2627,26 +2538,12 @@ LockedBuffer VulkanRenderBackend::lockVertexAttributeBuffer(VertexAttributeBuffe
 {
 	VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
 	const VulkanBufferVertexAttributeInfo &vertexAttributeInfo = vertexAttributeBuffer.vertexAttribute;
-	const int elementCount = vertexAttributeInfo.vertexCount * vertexAttributeInfo.componentsPerVertex;
-	const int byteCount = elementCount * vertexAttributeInfo.bytesPerComponent;
-
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create and map staging buffer for vertex attribute buffer (vertices: %d, components: %d).", vertexAttributeInfo.vertexCount, vertexAttributeInfo.componentsPerVertex);
-		return LockedBuffer();
-	}
-
-	vertexAttributeBuffer.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedBuffer(stagingHostMappedBytes, vertexAttributeInfo.bytesPerComponent);
+	return LockedBuffer(vertexAttributeBuffer.stagingHostMappedBytes, vertexAttributeInfo.bytesPerComponent);
 }
 
 void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id)
 {
-	VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
-	this->device.unmapMemory(vertexAttributeBuffer.stagingDeviceMemory);
+	const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
 
 	auto commandBufferFunc = [this, &vertexAttributeBuffer]()
 	{
@@ -2659,15 +2556,8 @@ void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
 	{
 		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking vertex attribute buffer %d.", id);
-		this->device.freeMemory(vertexAttributeBuffer.stagingDeviceMemory);
-		this->device.destroyBuffer(vertexAttributeBuffer.stagingBuffer);
-		vertexAttributeBuffer.setUnlocked();
 		return;
 	}
-
-	this->device.freeMemory(vertexAttributeBuffer.stagingDeviceMemory);
-	this->device.destroyBuffer(vertexAttributeBuffer.stagingBuffer);
-	vertexAttributeBuffer.setUnlocked();
 }
 
 IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount, int bytesPerIndex)
@@ -2694,8 +2584,20 @@ IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount, int bytesPe
 		return -1;
 	}
 
+	const int byteCount = indexCount * bytesPerIndex;
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create and map staging buffer for index buffer (indices: %d).", indexCount);
+		this->indexBufferPool.free(id);
+		return -1;
+	}
+
 	VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
-	indexBuffer.initIndex(indexCount, bytesPerIndex, buffer, deviceMemory);
+	indexBuffer.init(buffer, deviceMemory, stagingBuffer, stagingDeviceMemory, stagingHostMappedBytes);
+	indexBuffer.initIndex(indexCount, bytesPerIndex);
 
 	return id;
 }
@@ -2707,7 +2609,6 @@ void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 	{
 		if (indexBuffer->stagingDeviceMemory)
 		{
-			DebugLogWarningFormat("Freeing index buffer %d that was still locked.", id);
 			this->device.freeMemory(indexBuffer->stagingDeviceMemory);
 		}
 
@@ -2734,26 +2635,12 @@ LockedBuffer VulkanRenderBackend::lockIndexBuffer(IndexBufferID id)
 {
 	VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
 	const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
-	const int elementCount = indexInfo.indexCount;
-	const int byteCount = elementCount * indexInfo.bytesPerIndex;
-
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create and map staging buffer for index buffer (indices: %d).", indexInfo.indexCount);
-		return LockedBuffer();
-	}
-
-	indexBuffer.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedBuffer(stagingHostMappedBytes, indexInfo.bytesPerIndex);
+	return LockedBuffer(indexBuffer.stagingHostMappedBytes, indexInfo.bytesPerIndex);
 }
 
 void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 {
-	VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
-	this->device.unmapMemory(indexBuffer.stagingDeviceMemory);
+	const VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
 
 	auto commandBufferFunc = [this, &indexBuffer]()
 	{
@@ -2766,15 +2653,8 @@ void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
 	{
 		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking index buffer %d.", id);
-		this->device.freeMemory(indexBuffer.stagingDeviceMemory);
-		this->device.destroyBuffer(indexBuffer.stagingBuffer);
-		indexBuffer.setUnlocked();
 		return;
 	}
-
-	this->device.freeMemory(indexBuffer.stagingDeviceMemory);
-	this->device.destroyBuffer(indexBuffer.stagingBuffer);
-	indexBuffer.setUnlocked();
 }
 
 ObjectTextureAllocator *VulkanRenderBackend::getObjectTextureAllocator()
@@ -2812,8 +2692,19 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 		return -1;
 	}
 
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create and map staging buffer for uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
+		this->uniformBufferPool.free(id);
+		return -1;
+	}
+
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	uniformBuffer.initUniform(elementCount, bytesPerElement, alignmentOfElement, buffer, deviceMemory);
+	uniformBuffer.init(buffer, deviceMemory, stagingBuffer, stagingDeviceMemory, stagingHostMappedBytes);
+	uniformBuffer.initUniform(elementCount, bytesPerElement, alignmentOfElement);
 
 	return id;
 }
@@ -2825,7 +2716,6 @@ void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 	{
 		if (uniformBuffer->stagingDeviceMemory)
 		{
-			DebugLogWarningFormat("Freeing uniform buffer %d that was still locked.", id);
 			this->device.freeMemory(uniformBuffer->stagingDeviceMemory);
 		}
 
@@ -2852,45 +2742,21 @@ LockedBuffer VulkanRenderBackend::lockUniformBuffer(UniformBufferID id)
 {
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-	const int elementCount = uniformInfo.elementCount;
-	const int byteCount = elementCount * uniformInfo.bytesPerElement;
-
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create and map staging buffer for uniform buffer (elements: %d, sizeof: %d).", elementCount, uniformInfo.bytesPerElement);
-		return LockedBuffer();
-	}
-
-	uniformBuffer.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedBuffer(stagingHostMappedBytes, uniformInfo.bytesPerElement);
+	return LockedBuffer(uniformBuffer.stagingHostMappedBytes, uniformInfo.bytesPerElement);
 }
 
 LockedBuffer VulkanRenderBackend::lockUniformBufferIndex(UniformBufferID id, int index)
 {
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-	const int byteCount = uniformInfo.bytesPerElement;
-
-	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create and map staging buffer for uniform buffer at index %d (elements: %d, sizeof: %d).", index, uniformInfo.elementCount, uniformInfo.bytesPerElement);
-		return LockedBuffer();
-	}
-
-	uniformBuffer.setLocked(stagingBuffer, stagingDeviceMemory);
-	return LockedBuffer(stagingHostMappedBytes, uniformInfo.bytesPerElement);
+	const int bytesPerElement = uniformInfo.bytesPerElement;
+	Span<std::byte> stagingHostMappedBytesSlice(uniformBuffer.stagingHostMappedBytes.begin() + (index * bytesPerElement), bytesPerElement);
+	return LockedBuffer(stagingHostMappedBytesSlice, bytesPerElement);
 }
 
 void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 {
-	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	this->device.unmapMemory(uniformBuffer.stagingDeviceMemory);
+	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 
 	auto commandBufferFunc = [this, &uniformBuffer]()
 	{
@@ -2903,28 +2769,14 @@ void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
 	{
 		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking uniform buffer %d.", id);
-		this->device.freeMemory(uniformBuffer.stagingDeviceMemory);
-		this->device.destroyBuffer(uniformBuffer.stagingBuffer);
-		uniformBuffer.setUnlocked();
 		return;
 	}
-
-	this->device.freeMemory(uniformBuffer.stagingDeviceMemory);
-	this->device.destroyBuffer(uniformBuffer.stagingBuffer);
-	uniformBuffer.setUnlocked();
 }
 
 void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
 {
+	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	// @todo need CopyToBufferDeviceLocal() to take an offset into the device local buffer
-
-	//DebugLogWarning("VulkanRenderBackend::unlockUniformBufferIndex() not implemented");
-
-	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	this->device.unmapMemory(uniformBuffer.stagingDeviceMemory);
-	this->device.freeMemory(uniformBuffer.stagingDeviceMemory);
-	this->device.destroyBuffer(uniformBuffer.stagingBuffer);
-	uniformBuffer.setUnlocked();
 }
 
 RenderLightID VulkanRenderBackend::createLight()
@@ -2936,7 +2788,7 @@ RenderLightID VulkanRenderBackend::createLight()
 		return -1;
 	}
 
-	const int byteCount = 1; // @todo
+	const int byteCount = sizeof(VulkanLightInfo);
 	constexpr vk::BufferUsageFlags usageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer;
 
 	vk::Buffer buffer;
@@ -2947,9 +2799,18 @@ RenderLightID VulkanRenderBackend::createLight()
 		return -1;
 	}
 
-	VulkanLightInfo lightInfo; // Default-constructed
+	vk::Buffer stagingBuffer;
+	vk::DeviceMemory stagingDeviceMemory;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateAndMapStagingBuffer(this->device, byteCount, vk::BufferUsageFlagBits::eTransferSrc, this->graphicsQueueFamilyIndex, this->physicalDevice, &stagingBuffer, &stagingDeviceMemory, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create and map staging buffer for light.");
+		this->lightPool.free(id);
+		return -1;
+	}
+
 	VulkanLight &light = this->lightPool.get(id);
-	light.init(lightInfo.pointX, lightInfo.pointY, lightInfo.pointZ, lightInfo.startRadius, lightInfo.endRadius, buffer, deviceMemory);
+	light.init(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, buffer, deviceMemory, stagingBuffer, stagingDeviceMemory, stagingHostMappedBytes);
 
 	return id;
 }
@@ -2961,7 +2822,6 @@ void VulkanRenderBackend::freeLight(RenderLightID id)
 	{
 		if (light->stagingDeviceMemory)
 		{
-			DebugLogWarningFormat("Freeing light %d that was still locked.", id);
 			this->device.freeMemory(light->stagingDeviceMemory);
 		}
 
