@@ -74,19 +74,17 @@ namespace
 {
 	struct FrameTimer
 	{
-		std::chrono::nanoseconds maximumTime; // Longest allowed frame time before engine will run in slow motion.
-		std::chrono::nanoseconds minimumTime; // Shortest allowed frame time if not enough work is happening.
-		std::chrono::time_point<std::chrono::high_resolution_clock> previousTime, currentTime;
-		std::chrono::nanoseconds sleepBias; // Thread sleeping takes longer than it should on some platforms.
+		std::chrono::nanoseconds maximumFrameDuration; // Longest allowed frame time before engine will run in slow motion.
+		std::chrono::nanoseconds minimumFrameDuration; // Shortest allowed frame time if not enough work is happening.
+		std::chrono::time_point<std::chrono::high_resolution_clock> previousTimePoint, currentTimePoint;
 		double deltaTime; // Difference between frame times in seconds.
 		double clampedDeltaTime; // For game logic calculations that become imprecise or break at low FPS.
 		int physicsSteps; // 1 unless the engine has to do more steps this frame to keep numeric accuracy.
 
 		FrameTimer()
 		{
-			this->maximumTime = std::chrono::nanoseconds(0);
-			this->minimumTime = std::chrono::nanoseconds(0);
-			this->sleepBias = std::chrono::nanoseconds(0);
+			this->maximumFrameDuration = std::chrono::nanoseconds(0);
+			this->minimumFrameDuration = std::chrono::nanoseconds(0);
 			this->deltaTime = 0.0;
 			this->clampedDeltaTime = 0.0;
 			this->physicsSteps = 0;
@@ -94,36 +92,43 @@ namespace
 
 		void init()
 		{
-			this->maximumTime = std::chrono::nanoseconds(std::nano::den / Options::MIN_FPS);
-			this->currentTime = std::chrono::high_resolution_clock::now();
-			this->sleepBias = std::chrono::nanoseconds::zero();
+			this->maximumFrameDuration = std::chrono::nanoseconds(std::nano::den / Options::MIN_FPS);
+			this->currentTimePoint = std::chrono::high_resolution_clock::now();
 		}
 
 		void startFrame(int targetFPS)
 		{
 			DebugAssert(targetFPS > 0);
-			this->minimumTime = std::chrono::nanoseconds(std::nano::den / targetFPS);
-			this->previousTime = this->currentTime;
-			this->currentTime = std::chrono::high_resolution_clock::now();
+			this->minimumFrameDuration = std::chrono::nanoseconds(std::nano::den / targetFPS);
+			this->previousTimePoint = this->currentTimePoint;
+			this->currentTimePoint = std::chrono::high_resolution_clock::now();
 
-			auto previousFrameDuration = this->currentTime - this->previousTime;
-			if (previousFrameDuration < this->minimumTime)
+			auto previousFrameDuration = this->currentTimePoint - this->previousTimePoint;
+			if (previousFrameDuration < this->minimumFrameDuration)
 			{
-				const auto sleepDuration = this->minimumTime - previousFrameDuration + this->sleepBias;
-				std::this_thread::sleep_for(sleepDuration);
+				const auto sleepBias = previousFrameDuration / 1000; // Keep slightly above target FPS instead of slightly below.
+				const auto sleepDuration = this->minimumFrameDuration - previousFrameDuration - sleepBias;
+				const auto reducedSleepDuration = (sleepDuration * 5) / 10; // Sleep less to prevent oversleeping, busy wait the rest.
+				std::this_thread::sleep_for(reducedSleepDuration);
 
-				const auto currentTimeAfterSleeping = std::chrono::high_resolution_clock::now();
-				const auto sleptDuration = currentTimeAfterSleeping - this->currentTime;
-				const auto oversleptDuration = sleptDuration - sleepDuration;
+				while (true)
+				{
+					const auto timePointWhileBusyWaiting = std::chrono::high_resolution_clock::now();
+					if (timePointWhileBusyWaiting - this->currentTimePoint > sleepDuration)
+					{
+						break;
+					}
 
-				this->sleepBias = -oversleptDuration;
-				this->currentTime = currentTimeAfterSleeping;
-				previousFrameDuration = this->currentTime - this->previousTime;
+					std::this_thread::yield();
+				}
+
+				this->currentTimePoint = std::chrono::high_resolution_clock::now();
+				previousFrameDuration = this->currentTimePoint - this->previousTimePoint;
 			}
 
 			constexpr double timeUnitsReal = static_cast<double>(std::nano::den);
 			this->deltaTime = static_cast<double>(previousFrameDuration.count()) / timeUnitsReal;
-			this->clampedDeltaTime = std::fmin(previousFrameDuration.count(), this->maximumTime.count()) / timeUnitsReal;
+			this->clampedDeltaTime = std::fmin(previousFrameDuration.count(), this->maximumFrameDuration.count()) / timeUnitsReal;
 			this->physicsSteps = static_cast<int>(std::ceil(this->clampedDeltaTime / Physics::DeltaTime));
 		}
 	};
