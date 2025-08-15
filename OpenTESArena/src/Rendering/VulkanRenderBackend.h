@@ -178,14 +178,14 @@ struct VulkanUiTextureAllocator final : public UiTextureAllocator
 
 struct VulkanCamera
 {
-	static constexpr int BYTE_COUNT = sizeof(Matrix4f) * 3;
+	static constexpr int BYTE_COUNT = sizeof(Matrix4f);
 
 	// Updates frequently, host-visible.
 	vk::Buffer buffer;
 	vk::DeviceMemory deviceMemory;
 	Span<std::byte> hostMappedBytes; // Always mapped.
 
-	Matrix4f model, view, projection;
+	Matrix4f viewProjection;
 	Span<const std::byte> matrixBytes;
 
 	VulkanCamera();

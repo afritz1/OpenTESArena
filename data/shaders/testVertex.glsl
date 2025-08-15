@@ -2,7 +2,7 @@
 
 layout(binding = 0) uniform Camera
 {
-    mat4 model, view, projection;
+    mat4 viewProjection;
 } camera;
 
 layout(location = 0) in vec3 vertInPosition;
@@ -12,6 +12,7 @@ layout(location = 0) out vec2 fragInTexCoord;
 
 void main()
 {
-    gl_Position = camera.projection * (camera.view * (camera.model * vec4(vertInPosition, 1.0)));
+    mat4 modelMatrix = mat4(1.0);
+    gl_Position = camera.viewProjection * (modelMatrix * vec4(vertInPosition, 1.0));
     fragInTexCoord = vertInTexCoord;
 }

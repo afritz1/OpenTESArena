@@ -1816,7 +1816,7 @@ void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
 
 VulkanCamera::VulkanCamera()
 {
-	this->matrixBytes = Span<const std::byte>(reinterpret_cast<const std::byte*>(&this->model), VulkanCamera::BYTE_COUNT);
+	this->matrixBytes = Span<const std::byte>(reinterpret_cast<const std::byte*>(&this->viewProjection), VulkanCamera::BYTE_COUNT);
 }
 
 void VulkanCamera::init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, Span<std::byte> hostMappedBytes)
@@ -2959,11 +2959,10 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	const vk::Framebuffer acquiredSwapchainFramebuffer = this->swapchainFramebuffers[acquiredSwapchainImageIndex];
 
 	DebugAssert(this->camera.matrixBytes.getCount() == this->camera.hostMappedBytes.getCount());
-	this->camera.model = Matrix4f::identity();
-	this->camera.view = RendererUtils::matrix4DoubleToFloat(camera.viewMatrix);
-	this->camera.projection = RendererUtils::matrix4DoubleToFloat(camera.projectionMatrix);
-	this->camera.projection.y.y = -this->camera.projection.y.y; // Flip Y so world is not upside down.
-	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
+	Matrix4d projectionMatrix = camera.projectionMatrix;
+	projectionMatrix.y.y = -projectionMatrix.y.y; // Flip Y so world is not upside down.
+	this->camera.viewProjection = RendererUtils::matrix4DoubleToFloat(projectionMatrix * camera.viewMatrix);
+	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin()); 
 
 	const bool isSceneValid = frameSettings.paletteTextureID >= 0;
 	if (isSceneValid)
