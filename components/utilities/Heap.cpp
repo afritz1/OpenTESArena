@@ -35,7 +35,6 @@ HeapAllocator::HeapAllocator()
 
 void HeapAllocator::init(uintptr_t baseAddress, int byteCount)
 {
-	DebugAssert(baseAddress > 0);
 	DebugAssert(byteCount >= 0);
 	this->baseAddress = baseAddress;
 
