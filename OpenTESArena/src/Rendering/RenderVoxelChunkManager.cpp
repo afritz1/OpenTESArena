@@ -387,7 +387,7 @@ RenderVoxelChunkManager::RenderVoxelChunkManager()
 void RenderVoxelChunkManager::init(Renderer &renderer)
 {
 	// Populate pre-scale translation transform (for raising doors).
-	this->raisingDoorPreScaleTranslationBufferID = renderer.createUniformBuffer(1, sizeof(Double3), alignof(Double3));
+	this->raisingDoorPreScaleTranslationBufferID = renderer.createUniformBufferVector3s(1);
 	if (this->raisingDoorPreScaleTranslationBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for pre-scale translation.");
@@ -395,7 +395,7 @@ void RenderVoxelChunkManager::init(Renderer &renderer)
 	}
 
 	const Double3 preScaleTranslation = Double3::Zero; // Populated on scene change.
-	renderer.populateUniformBufferDouble3s(this->raisingDoorPreScaleTranslationBufferID, Span<const Double3>(&preScaleTranslation, 1));
+	renderer.populateUniformBufferVector3s(this->raisingDoorPreScaleTranslationBufferID, Span<const Double3>(&preScaleTranslation, 1));
 
 	// Populate default quad indices for combined voxel faces.
 	constexpr int indicesPerQuad = MeshUtils::INDICES_PER_QUAD;
@@ -580,7 +580,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 	// Allocate one large uniform buffer that covers all voxels. Air is wasted and doors are double-allocated but this
 	// is much faster than one buffer per voxel.
 	const int chunkTransformsCount = Chunk::WIDTH * chunkHeight * Chunk::DEPTH;
-	const UniformBufferID chunkTransformsBufferID = renderer.createUniformBuffer(chunkTransformsCount, sizeof(RenderTransform), alignof(RenderTransform));
+	const UniformBufferID chunkTransformsBufferID = renderer.createUniformBufferRenderTransforms(chunkTransformsCount);
 	if (chunkTransformsBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for voxel transforms.");
@@ -609,7 +609,7 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 					constexpr int doorFaceCount = VoxelDoorUtils::FACE_COUNT;
 
 					// Each door voxel has a uniform buffer, one render transform per face.
-					const UniformBufferID doorTransformBufferID = renderer.createUniformBuffer(doorFaceCount, sizeof(RenderTransform), alignof(RenderTransform));
+					const UniformBufferID doorTransformBufferID = renderer.createUniformBufferRenderTransforms(doorFaceCount);
 					if (doorTransformBufferID < 0)
 					{
 						DebugLogError("Couldn't create uniform buffer for door transform.");
@@ -667,7 +667,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		const VoxelFacing3D facing = faceCombineResult.facing;
 
 		// Create and populate transform buffer for this combined face.
-		UniformBufferID transformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+		UniformBufferID transformBufferID = renderer.createUniformBufferRenderTransforms(1);
 		if (transformBufferID < 0)
 		{
 			DebugLogErrorFormat("Couldn't allocate combined face transform buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
@@ -1298,7 +1298,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 {
 	// Update pre-scale transition used by all raising doors (ideally this would be once on scene change).
 	const Double3 raisingDoorPreScaleTranslation = MakeRaisingDoorPreScaleTranslation(ceilingScale);
-	renderer.populateUniformBufferDouble3s(this->raisingDoorPreScaleTranslationBufferID, Span<const Double3>(&raisingDoorPreScaleTranslation, 1));
+	renderer.populateUniformBufferVector3s(this->raisingDoorPreScaleTranslationBufferID, Span<const Double3>(&raisingDoorPreScaleTranslation, 1));
 
 	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{

@@ -333,14 +333,14 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 bool RenderWeatherManager::initUniforms(Renderer &renderer)
 {
 	// Initialize rain and snow buffers but don't populate because they are updated every frame.
-	this->rainTransformBufferID = renderer.createUniformBuffer(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT, sizeof(RenderTransform), alignof(RenderTransform));
+	this->rainTransformBufferID = renderer.createUniformBufferRenderTransforms(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
 	if (this->rainTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for raindrops.");
 		return false;
 	}
 
-	this->snowTransformBufferID = renderer.createUniformBuffer(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT, sizeof(RenderTransform), alignof(RenderTransform));
+	this->snowTransformBufferID = renderer.createUniformBufferRenderTransforms(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT);
 	if (this->snowTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for snowflakes.");
@@ -348,7 +348,7 @@ bool RenderWeatherManager::initUniforms(Renderer &renderer)
 	}
 
 	// Fog is not updated every frame so it needs populating here.
-	this->fogTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+	this->fogTransformBufferID = renderer.createUniformBufferRenderTransforms(1);
 	if (this->fogTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for fog.");

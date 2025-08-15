@@ -253,7 +253,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	renderer.populateVertexAttributeBuffer(this->bgTexCoordBufferID, bgTexCoords);
 	renderer.populateIndexBuffer(this->bgIndexBufferID, bgIndices);
 
-	this->bgTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+	this->bgTransformBufferID = renderer.createUniformBufferRenderTransforms(1);
 	if (this->bgTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for sky background transform.");
@@ -665,7 +665,7 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 
 	if (totalSkyObjectCount > 0) // Don't allow empty uniform buffer (Vulkan limitation).
 	{
-		this->objectTransformBufferID = renderer.createUniformBuffer(totalSkyObjectCount, sizeof(RenderTransform), alignof(RenderTransform));
+		this->objectTransformBufferID = renderer.createUniformBufferRenderTransforms(totalSkyObjectCount);
 		if (this->objectTransformBufferID < 0)
 		{
 			DebugLogError("Couldn't create uniform buffer for sky objects.");

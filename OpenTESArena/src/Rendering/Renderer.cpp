@@ -454,6 +454,37 @@ UniformBufferID Renderer::createUniformBuffer(int elementCount, int bytesPerElem
 	return this->backend->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
+UniformBufferID Renderer::createUniformBufferVector3s(int elementCount)
+{
+	static_assert(sizeof(Double3) == (sizeof(Float3) * 2));
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	int bytesPerElement = sizeof(Double3);
+	if (bytesPerFloat == 4)
+	{
+		bytesPerElement = sizeof(Float3);
+	}
+
+	const int alignmentOfElement = alignof(Double3);
+	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
+}
+
+UniformBufferID Renderer::createUniformBufferRenderTransforms(int elementCount)
+{
+	static_assert(sizeof(Matrix4d) == (sizeof(Matrix4f) * 2));
+	static_assert(sizeof(RenderTransform) == (sizeof(Matrix4d) * 3));
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	int bytesPerElement = sizeof(RenderTransform);
+	if (bytesPerFloat == 4)
+	{
+		bytesPerElement /= 2;
+	}
+
+	const int alignmentOfElement = alignof(RenderTransform);
+	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
+}
+
 void Renderer::freeUniformBuffer(UniformBufferID id)
 {
 	this->backend->freeUniformBuffer(id);
@@ -474,7 +505,7 @@ bool Renderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> b
 	return true;
 }
 
-bool Renderer::populateUniformBufferDouble3s(UniformBufferID id, Span<const Double3> values)
+bool Renderer::populateUniformBufferVector3s(UniformBufferID id, Span<const Double3> values)
 {
 	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
 	if (!lockedBuffer.isValid())

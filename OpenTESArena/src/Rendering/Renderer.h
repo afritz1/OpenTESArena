@@ -144,9 +144,11 @@ public:
 
 	// Shading management functions.
 	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
+	UniformBufferID createUniformBufferVector3s(int elementCount);
+	UniformBufferID createUniformBufferRenderTransforms(int elementCount);
 	void freeUniformBuffer(UniformBufferID id);
 	bool populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes);
-	bool populateUniformBufferDouble3s(UniformBufferID id, Span<const Double3> values);
+	bool populateUniformBufferVector3s(UniformBufferID id, Span<const Double3> values);
 	bool populateUniformBufferRenderTransforms(UniformBufferID id, Span<const RenderTransform> transforms);
 	bool populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes);
 	bool populateUniformBufferIndexRenderTransform(UniformBufferID id, int uniformIndex, const RenderTransform &transform);

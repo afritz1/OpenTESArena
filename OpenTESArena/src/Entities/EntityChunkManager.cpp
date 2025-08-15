@@ -223,7 +223,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
 	}
 
-	const UniformBufferID renderTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+	const UniformBufferID renderTransformBufferID = renderer.createUniformBufferRenderTransforms(1);
 	if (renderTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for entity transform.");
