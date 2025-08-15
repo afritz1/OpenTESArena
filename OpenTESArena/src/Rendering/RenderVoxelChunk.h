@@ -58,6 +58,22 @@ struct RenderVoxelCombinedFaceDrawCallEntry
 	RenderVoxelCombinedFaceDrawCallEntry();
 };
 
+struct RenderVoxelNonCombinedTransformEntry
+{
+	VoxelInt3 voxel;
+	UniformBufferID transformBufferID;
+
+	RenderVoxelNonCombinedTransformEntry();
+};
+
+struct RenderVoxelDoorTransformsEntry
+{
+	VoxelInt3 voxel;
+	UniformBufferID transformBufferIDs[4]; // One per face.
+
+	RenderVoxelDoorTransformsEntry();
+};
+
 struct RenderVoxelChunk final : public Chunk
 {
 	static constexpr RenderMeshInstID AIR_MESH_INST_ID = 0;
@@ -70,8 +86,8 @@ struct RenderVoxelChunk final : public Chunk
 	// - RecyclablePool::emplace() would check that the given key is not used
 	std::unordered_map<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> combinedFaceDrawCallEntries;
 
-	UniformBufferID transformBufferID; // One RenderTransform buffer for all voxels, though doors are handled separately. Owned by this chunk.
-	std::unordered_map<VoxelInt3, UniformBufferID> doorTransformBuffers; // Unique transform buffer per door instance, owned by this chunk. Four RenderTransforms (one per door face) per buffer.
+	std::vector<RenderVoxelNonCombinedTransformEntry> nonCombinedTransformEntries; // One transform per non-combined voxel. Owned by this chunk.
+	std::vector<RenderVoxelDoorTransformsEntry> doorTransformEntries; // Transforms for door voxel, owned by this chunk.
 
 	RenderVoxelDrawCallHeap drawCallHeap;
 	Buffer3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs; // Non-combined voxel geometry (diagonals, doors).

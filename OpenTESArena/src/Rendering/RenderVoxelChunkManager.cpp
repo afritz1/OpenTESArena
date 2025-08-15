@@ -50,11 +50,6 @@ namespace
 		double percent;
 	};
 
-	int GetVoxelRenderTransformIndex(SNInt x, int y, WEInt z, int chunkHeight)
-	{
-		return x + (y * Chunk::WIDTH) + (z * Chunk::WIDTH * chunkHeight);
-	}
-
 	// Loads the given voxel definition's textures into the voxel textures list if they haven't been loaded yet.
 	void LoadVoxelDefTextures(const VoxelTextureDefinition &voxelTextureDef, std::vector<RenderVoxelLoadedTexture> &textures,
 		TextureManager &textureManager, Renderer &renderer)
@@ -573,21 +568,13 @@ void RenderVoxelChunkManager::loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelCh
 	}
 }
 
-void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer)
+void RenderVoxelChunkManager::loadChunkNonCombinedTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const VoxelFaceCombineChunk &faceCombineChunk,
+	double ceilingScale, Renderer &renderer)
 {
 	const int chunkHeight = voxelChunk.height;
 
-	// Allocate one large uniform buffer that covers all voxels. Air is wasted and doors are double-allocated but this
-	// is much faster than one buffer per voxel.
-	const int chunkTransformsCount = Chunk::WIDTH * chunkHeight * Chunk::DEPTH;
-	const UniformBufferID chunkTransformsBufferID = renderer.createUniformBufferRenderTransforms(chunkTransformsCount);
-	if (chunkTransformsBufferID < 0)
-	{
-		DebugLogError("Couldn't create uniform buffer for voxel transforms.");
-		return;
-	}
-
-	renderChunk.transformBufferID = chunkTransformsBufferID;
+	std::vector<RenderVoxelNonCombinedTransformEntry> &nonCombinedTransformEntries = renderChunk.nonCombinedTransformEntries;
+	std::vector<RenderVoxelDoorTransformsEntry> &doorTransformsEntries = renderChunk.doorTransformEntries;
 
 	for (WEInt z = 0; z < Chunk::DEPTH; z++)
 	{
@@ -595,47 +582,81 @@ void RenderVoxelChunkManager::loadTransforms(RenderVoxelChunk &renderChunk, cons
 		{
 			for (SNInt x = 0; x < Chunk::WIDTH; x++)
 			{
+				const VoxelFacesEntry &facesEntry = faceCombineChunk.entries.get(x, y, z);
+				if (facesEntry.anyCombinedFaces())
+				{
+					continue;
+				}
+
 				const VoxelInt3 voxel(x, y, z);
 				const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, voxel, ceilingScale);
 
-				VoxelDoorDefID doorDefID;
-				if (voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID))
+				VoxelDoorDefID doorDefID = -1;
+				const bool isDoor = voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID);
+
+				const VoxelShapeDefID shapeDefID = voxelChunk.shapeDefIDs.get(x, y, z);
+				DebugAssertIndex(voxelChunk.shapeDefs, shapeDefID);
+				const VoxelShapeDefinition &shapeDef = voxelChunk.shapeDefs[shapeDefID];
+				const bool isAir = shapeDef.mesh.isEmpty();
+				const bool allowsFaceCombining = shapeDef.allowsAdjacentFaceCombining;
+
+				if (isDoor)
 				{
 					// Door transform uniform buffers. These are separate because each voxel has a RenderTransform per door face.
 					const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
 					const ArenaDoorType doorType = doorDef.type;
-					DebugAssert(renderChunk.doorTransformBuffers.find(voxel) == renderChunk.doorTransformBuffers.end());
 
-					constexpr int doorFaceCount = VoxelDoorUtils::FACE_COUNT;
-
-					// Each door voxel has a uniform buffer, one render transform per face.
-					const UniformBufferID doorTransformBufferID = renderer.createUniformBufferRenderTransforms(doorFaceCount);
-					if (doorTransformBufferID < 0)
+					const auto existingTransformIter = std::find_if(doorTransformsEntries.begin(), doorTransformsEntries.end(),
+						[voxel](const RenderVoxelDoorTransformsEntry &entry)
 					{
-						DebugLogError("Couldn't create uniform buffer for door transform.");
-						continue;
-					}
+						return entry.voxel == voxel;
+					});
 
+					DebugAssert(existingTransformIter == doorTransformsEntries.end());
+					
 					const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(voxel.x, voxel.y, voxel.z, voxelChunk);
 
-					// Initialize to default appearance. Dirty door animations trigger an update.
-					for (int i = 0; i < doorFaceCount; i++)
+					RenderVoxelDoorTransformsEntry doorTransformsEntry;
+					doorTransformsEntry.voxel = voxel;
+
+					for (int i = 0; i < VoxelDoorUtils::FACE_COUNT; i++)
 					{
+						const UniformBufferID doorTransformBufferID = renderer.createUniformBufferRenderTransforms(1);
+						if (doorTransformBufferID < 0)
+						{
+							DebugLogErrorFormat("Couldn't create uniform buffer for door transform %d at voxel (%s).", i, voxel.toString().c_str());
+							continue;
+						}
+
+						// Initialize to default appearance. Dirty door animations trigger an update.
 						const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, doorAnimPercent);
-						renderer.populateUniformBufferIndexRenderTransform(doorTransformBufferID, i, faceRenderTransform);
+						renderer.populateUniformBufferRenderTransforms(doorTransformBufferID, Span<const RenderTransform>(&faceRenderTransform, 1));
+						
+						DebugAssertIndex(doorTransformsEntry.transformBufferIDs, i);
+						doorTransformsEntry.transformBufferIDs[i] = doorTransformBufferID;
 					}
 
-					renderChunk.doorTransformBuffers.emplace(voxel, doorTransformBufferID);
+					doorTransformsEntries.emplace_back(std::move(doorTransformsEntry));
 				}
-				else
+				else if (!isAir && !allowsFaceCombining)
 				{
-					const int chunkTransformsBufferIndex = GetVoxelRenderTransformIndex(x, y, z, chunkHeight);
+					const UniformBufferID transformBufferID = renderer.createUniformBufferRenderTransforms(1);
+					if (transformBufferID < 0)
+					{
+						DebugLogErrorFormat("Couldn't create uniform buffer for transform at voxel (%s).", voxel.toString().c_str());
+						continue;
+					}
 
 					RenderTransform renderTransform;
 					renderTransform.translation = Matrix4d::translation(worldPosition.x, worldPosition.y, worldPosition.z);
 					renderTransform.rotation = Matrix4d::identity();
 					renderTransform.scale = Matrix4d::identity();
-					renderer.populateUniformBufferIndexRenderTransform(chunkTransformsBufferID, chunkTransformsBufferIndex, renderTransform);
+					renderer.populateUniformBufferRenderTransforms(transformBufferID, Span<const RenderTransform>(&renderTransform, 1));
+
+					RenderVoxelNonCombinedTransformEntry transformEntry;
+					transformEntry.voxel = voxel;
+					transformEntry.transformBufferID = transformBufferID;
+					nonCombinedTransformEntries.emplace_back(std::move(transformEntry));
 				}
 			}
 		}
@@ -925,10 +946,19 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 			isFading = !fadeAnimInst->isDoneFading();
 		}
 
+		Span<const RenderVoxelNonCombinedTransformEntry> nonCombinedTransformEntries = renderChunk.nonCombinedTransformEntries;
+		const auto transformIter = std::find_if(nonCombinedTransformEntries.begin(), nonCombinedTransformEntries.end(),
+			[voxel](const RenderVoxelNonCombinedTransformEntry &entry)
+		{
+			return entry.voxel == voxel;
+		});
+
+		DebugAssert(transformIter != nonCombinedTransformEntries.end());
+
 		// Populate various init infos to be used for generating draw calls.
 		DrawCallTransformInitInfo transformInitInfo;
-		transformInitInfo.id = renderChunk.transformBufferID;
-		transformInitInfo.index = GetVoxelRenderTransformIndex(voxel.x, voxel.y, voxel.z, renderChunk.height);
+		transformInitInfo.id = transformIter->transformBufferID;
+		transformInitInfo.index = 0;
 		transformInitInfo.preScaleTranslationBufferID = -1;
 
 		DrawCallMeshInitInfo meshInitInfo;
@@ -1028,15 +1058,21 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		constexpr int doorTransformCount = VoxelDoorUtils::FACE_COUNT;
 		DrawCallTransformInitInfo transformInitInfos[doorTransformCount];
 
-		const auto transformIter = renderChunk.doorTransformBuffers.find(voxel);
-		DebugAssert(transformIter != renderChunk.doorTransformBuffers.end());
+		Span<const RenderVoxelDoorTransformsEntry> doorTransformsEntries = renderChunk.doorTransformEntries;
+		const auto transformIter = std::find_if(doorTransformsEntries.begin(), doorTransformsEntries.end(),
+			[voxel](const RenderVoxelDoorTransformsEntry &entry)
+		{
+			return entry.voxel == voxel;
+		});
+
+		DebugAssert(transformIter != doorTransformsEntries.end());
 
 		const UniformBufferID preScaleTranslationBufferID = (doorDef.type == ArenaDoorType::Raising) ? this->raisingDoorPreScaleTranslationBufferID : -1;
 		for (int i = 0; i < doorTransformCount; i++)
 		{
 			DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
-			doorTransformInitInfo.id = transformIter->second;
-			doorTransformInitInfo.index = i;
+			doorTransformInitInfo.id = transformIter->transformBufferIDs[i];
+			doorTransformInitInfo.index = 0;
 			doorTransformInitInfo.preScaleTranslationBufferID = preScaleTranslationBufferID;
 		}
 
@@ -1304,10 +1340,11 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		const VoxelFaceCombineChunk &faceCombineChunk = voxelFaceCombineChunkManager.getChunkAtPosition(chunkPos);
 		const VoxelFrustumCullingChunk &voxelFrustumCullingChunk = voxelFrustumCullingChunkManager.getChunkAtPosition(chunkPos);
 		this->loadChunkNonCombinedVoxelMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->loadChunkTextures(voxelChunk, voxelChunkManager, textureManager, renderer);
-		this->loadTransforms(renderChunk, voxelChunk, ceilingScale, renderer);
+		this->loadChunkNonCombinedTransforms(renderChunk, voxelChunk, faceCombineChunk, ceilingScale, renderer);
 	}
 
 	for (const ChunkInt2 chunkPos : activeChunkPositions)
@@ -1332,14 +1369,20 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, doorVoxel, ceilingScale);
 			const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
 
+			Span<const RenderVoxelDoorTransformsEntry> doorTransformsEntries = renderChunk.doorTransformEntries;
+			const auto doorTransformsIter = std::find_if(doorTransformsEntries.begin(), doorTransformsEntries.end(),
+				[doorVoxel](const RenderVoxelDoorTransformsEntry &entry)
+			{
+				return entry.voxel == doorVoxel;
+			});
+
+			DebugAssert(doorTransformsIter != doorTransformsEntries.end());
+
 			for (int i = 0; i < VoxelDoorUtils::FACE_COUNT; i++)
 			{
-				const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, doorAnimPercent);
-
-				const auto doorTransformIter = renderChunk.doorTransformBuffers.find(doorVoxel);
-				DebugAssert(doorTransformIter != renderChunk.doorTransformBuffers.end());
-				const UniformBufferID doorTransformBufferID = doorTransformIter->second;
-				renderer.populateUniformBufferIndexRenderTransform(doorTransformBufferID, i, faceRenderTransform);
+				const RenderTransform doorFaceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, doorAnimPercent);				
+				const UniformBufferID doorTransformBufferID = doorTransformsIter->transformBufferIDs[i];
+				renderer.populateUniformBufferRenderTransforms(doorTransformBufferID, Span<const RenderTransform>(&doorFaceRenderTransform, 1));
 			}
 		}
 

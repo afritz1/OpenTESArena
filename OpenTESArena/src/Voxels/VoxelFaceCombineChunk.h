@@ -33,6 +33,8 @@ struct VoxelFacesEntry
 
 	VoxelFacesEntry();
 
+	bool anyCombinedFaces() const;
+
 	void clear();
 };
 

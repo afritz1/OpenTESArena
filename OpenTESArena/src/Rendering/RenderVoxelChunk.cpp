@@ -146,13 +146,21 @@ RenderVoxelCombinedFaceDrawCallEntry::RenderVoxelCombinedFaceDrawCallEntry()
 	this->transformBufferID = -1;
 }
 
+RenderVoxelNonCombinedTransformEntry::RenderVoxelNonCombinedTransformEntry()
+{
+	this->transformBufferID = -1;
+}
+
+RenderVoxelDoorTransformsEntry::RenderVoxelDoorTransformsEntry()
+{
+	std::fill(std::begin(this->transformBufferIDs), std::end(this->transformBufferIDs), -1);
+}
+
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 {
 	Chunk::init(position, height);
 
 	this->meshInstMappings.emplace(VoxelChunk::AIR_SHAPE_DEF_ID, RenderVoxelChunk::AIR_MESH_INST_ID);
-
-	this->transformBufferID = -1;
 	
 	this->drawCallRangeIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->drawCallRangeIDs.fill(-1);
@@ -195,15 +203,19 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		}
 	}
 
-	if (this->transformBufferID >= 0)
+	for (RenderVoxelNonCombinedTransformEntry &entry : this->nonCombinedTransformEntries)
 	{
-		renderer.freeUniformBuffer(this->transformBufferID);
-		this->transformBufferID = -1;
+		renderer.freeUniformBuffer(entry.transformBufferID);
+		entry.transformBufferID = -1;
 	}
 
-	for (const auto &pair : this->doorTransformBuffers)
+	for (RenderVoxelDoorTransformsEntry &entry : this->doorTransformEntries)
 	{
-		renderer.freeUniformBuffer(pair.second);
+		for (UniformBufferID &transformBufferID : entry.transformBufferIDs)
+		{
+			renderer.freeUniformBuffer(transformBufferID);
+			transformBufferID = -1;
+		}
 	}
 }
 
@@ -213,8 +225,8 @@ void RenderVoxelChunk::clear()
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
 	this->combinedFaceDrawCallEntries.clear();
-	this->transformBufferID = -1;
-	this->doorTransformBuffers.clear();
+	this->nonCombinedTransformEntries.clear();
+	this->doorTransformEntries.clear();
 	this->drawCallHeap.clear();
 	this->drawCallRangeIDs.clear();
 }

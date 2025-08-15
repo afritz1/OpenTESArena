@@ -141,6 +141,19 @@ VoxelFacesEntry::VoxelFacesEntry()
 	this->clear();
 }
 
+bool VoxelFacesEntry::anyCombinedFaces() const
+{
+	for (const VoxelFaceCombineResultID id : this->combinedFacesIDs)
+	{
+		if (id >= 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void VoxelFacesEntry::clear()
 {
 	std::fill(std::begin(this->combinedFacesIDs), std::end(this->combinedFacesIDs), -1);
