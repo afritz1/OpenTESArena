@@ -3031,7 +3031,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	}
 
 	vk::ClearValue clearColor;
-	clearColor.color = vk::ClearColorValue(0.05f, 0.05f, 0.05f, 1.0f);
+	clearColor.color = vk::ClearColorValue(0.1f, 0.1f, 0.1f, 1.0f);
 
 	vk::RenderPassBeginInfo renderPassBeginInfo;
 	renderPassBeginInfo.renderPass = this->renderPass;
