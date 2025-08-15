@@ -240,9 +240,11 @@ private:
 	vk::ShaderModule vertexShaderModule;
 	vk::ShaderModule fragmentShaderModule;
 
-	vk::DescriptorSetLayout descriptorSetLayout;
 	vk::DescriptorPool descriptorPool;
-	vk::DescriptorSet descriptorSet;
+	vk::DescriptorSetLayout perFrameDescriptorSetLayout;
+	vk::DescriptorSetLayout perDrawCallDescriptorSetLayout;
+	vk::DescriptorSet perFrameDescriptorSet;
+	vk::DescriptorSet perDrawCallDescriptorSet;
 
 	vk::PipelineLayout pipelineLayout;
 	vk::Pipeline graphicsPipeline;

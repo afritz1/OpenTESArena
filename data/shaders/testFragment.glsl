@@ -1,7 +1,7 @@
 #version 450
 
-layout(binding = 1) uniform usampler2D textureSampler;
-layout(binding = 2) uniform usampler2D paletteSampler;
+layout(set = 0, binding = 1) uniform usampler2D paletteSampler;
+layout(set = 1, binding = 1) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
 
