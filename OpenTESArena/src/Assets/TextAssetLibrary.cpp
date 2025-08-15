@@ -691,10 +691,7 @@ bool TextAssetLibrary::initQuestionTxt()
 			// l: Logical (mage)
 			// c: Clever (thief)
 			// v: Violent (warrior)
-			constexpr char mageLetter = 'l';
-			constexpr char thiefLetter = 'c';
-			constexpr char warriorLetter = 'v';
-			constexpr char categoryChars[3] = { mageLetter, thiefLetter, warriorLetter };
+			constexpr char categoryChars[] = "lcv";
 
 			const size_t categoryCharIndex = choice.find_first_of(categoryChars, categoryCharBeginIndex + 2);
 			if (categoryCharIndex == std::string::npos)

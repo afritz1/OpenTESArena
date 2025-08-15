@@ -6,6 +6,8 @@
 
 LockedTexture::LockedTexture()
 {
+	this->width = 0;
+	this->height = 0;
 	this->bytesPerTexel = 0;
 }
 

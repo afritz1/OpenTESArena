@@ -16,6 +16,8 @@ struct RenderInitSettings
 	int renderThreadsMode;
 	DitheringMode ditheringMode;
 
+	RenderInitSettings();
+
 	void init(const Window *window, const std::string &dataFolderPath, int internalWidth, int internalHeight, int renderThreadsMode, DitheringMode ditheringMode);
 };
 
