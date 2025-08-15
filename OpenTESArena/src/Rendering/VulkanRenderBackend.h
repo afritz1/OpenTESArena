@@ -10,6 +10,7 @@
 #include "RenderTextureAllocator.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/Heap.h"
 #include "components/utilities/RecyclablePool.h"
 
 struct VulkanBufferVertexPositionInfo
@@ -50,9 +51,7 @@ enum class VulkanBufferType
 struct VulkanBuffer
 {
 	vk::Buffer buffer;
-	vk::DeviceMemory deviceMemory;
 	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
 	Span<std::byte> stagingHostMappedBytes;
 
 	VulkanBufferType type;
@@ -67,7 +66,7 @@ struct VulkanBuffer
 
 	VulkanBuffer();
 
-	void init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes);
+	void init(vk::Buffer buffer, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 
 	void initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent);
@@ -89,14 +88,11 @@ struct VulkanLightInfo
 struct VulkanLight
 {
 	vk::Buffer buffer;
-	vk::DeviceMemory deviceMemory;
 	vk::Buffer stagingBuffer;
-	vk::DeviceMemory stagingDeviceMemory;
 	Span<std::byte> stagingHostMappedBytes;
 	VulkanLightInfo lightInfo;
 
-	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::DeviceMemory deviceMemory,
-		vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes);
+	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 };
 
 struct VulkanTexture
@@ -108,14 +104,14 @@ struct VulkanTexture
 	vk::DeviceMemory deviceMemory;
 	vk::ImageView imageView;
 	vk::Sampler sampler;
-	vk::Buffer stagingBuffer;
 	vk::DeviceMemory stagingDeviceMemory;
+	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 
 	VulkanTexture();
 
 	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler,
-		vk::Buffer stagingBuffer, vk::DeviceMemory stagingDeviceMemory, Span<std::byte> stagingHostMappedBytes);
+		vk::DeviceMemory stagingDeviceMemory, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 };
 
 using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanBuffer>;
@@ -187,6 +183,27 @@ struct VulkanCamera
 	void init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, Span<std::byte> hostMappedBytes);
 };
 
+struct VulkanHeapMapping
+{
+	vk::Buffer buffer;
+	HeapBlock block;
+};
+
+// A single memory allocation sliced by several smaller buffers.
+struct VulkanHeap
+{
+	vk::DeviceMemory deviceMemory;
+	Span<std::byte> hostMappedBytes;
+	HeapAllocator allocator;
+	std::vector<VulkanHeapMapping> bufferMappings;
+
+	bool init(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice);
+
+	HeapBlock addMapping(vk::Buffer buffer, int byteCount, int alignment);
+	void freeMapping(vk::Buffer buffer);
+	void clear();
+};
+
 class VulkanRenderBackend final : public RenderBackend
 {
 private:
@@ -233,6 +250,13 @@ private:
 
 	VulkanUiTexturePool uiTexturePool;
 	VulkanUiTextureAllocator uiTextureAllocator;
+
+	VulkanHeap vertexBufferDeviceLocalHeap;
+	VulkanHeap vertexBufferStagingHeap;
+	VulkanHeap indexBufferDeviceLocalHeap;
+	VulkanHeap indexBufferStagingHeap;
+	VulkanHeap uniformBufferDeviceLocalHeap;
+	VulkanHeap uniformBufferStagingHeap;
 
 	VulkanCamera camera;
 public:
