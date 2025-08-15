@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	}
 	catch (const std::exception &e)
 	{
-		DebugCrash("Exception: " + std::string(e.what()));
+		DebugCrashFormat("Exception: %s", e.what());
 	}
 	
 	JPH::UnregisterTypes();
