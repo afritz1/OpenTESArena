@@ -19,7 +19,12 @@ namespace Platform
 	std::string getHomeEnv()
 	{
 		const char *homeEnvPtr = SDL_getenv("HOME");
-		return (homeEnvPtr != nullptr) ? std::string(homeEnvPtr) : std::string();
+		if (homeEnvPtr != nullptr)
+		{
+			return homeEnvPtr;
+		}
+
+		return std::string();
 	}
 
 	// Gets the data home directory from $XDG_DATA_HOME (or $HOME/.local/share as a fallback).
@@ -28,8 +33,12 @@ namespace Platform
 	std::string getXDGDataHomeEnv()
 	{
 		const char *xdgEnv = SDL_getenv(Platform::XDGDataHome.c_str());
-		return (xdgEnv != nullptr) ? std::string(xdgEnv) :
-			(Platform::getHomeEnv() + "/.local/share");
+		if (xdgEnv != nullptr)
+		{
+			return xdgEnv;
+		}
+
+		return Platform::getHomeEnv() + "/.local/share";
 	}
 
 	// Gets the config home directory from $XDG_CONFIG_HOME (or $HOME/.config as a fallback).
@@ -38,8 +47,12 @@ namespace Platform
 	std::string getXDGConfigHomeEnv()
 	{
 		const char *xdgEnv = SDL_getenv(Platform::XDGConfigHome.c_str());
-		return (xdgEnv != nullptr) ? std::string(xdgEnv) :
-			(Platform::getHomeEnv() + "/.config");
+		if (xdgEnv != nullptr)
+		{
+			return xdgEnv;			
+		}
+
+		return Platform::getHomeEnv() + "/.config";
 	}
 }
 
