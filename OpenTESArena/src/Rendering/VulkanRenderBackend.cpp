@@ -1067,53 +1067,6 @@ namespace
 		*outCommandBuffer = commandBuffers[0];
 		return true;
 	}
-
-	bool TrySubmitCommandBufferOnce(const std::function<void()> &func, vk::CommandBuffer commandBuffer, vk::Queue queue)
-	{
-		const vk::Result commandBufferResetResult = commandBuffer.reset();
-		if (commandBufferResetResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't reset command buffer one-time command (%d).", commandBufferResetResult);
-			return false;
-		}
-
-		vk::CommandBufferBeginInfo commandBufferBeginInfo;
-		const vk::Result commandBufferBeginResult = commandBuffer.begin(commandBufferBeginInfo);
-		if (commandBufferBeginResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't begin command buffer for one-time command (%d).", commandBufferBeginResult);
-			return false;
-		}
-
-		func();
-
-		const vk::Result commandBufferEndResult = commandBuffer.end();
-		if (commandBufferEndResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't end command buffer for one-time command (%d).", commandBufferEndResult);
-			return false;
-		}
-
-		vk::SubmitInfo submitInfo;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-
-		const vk::Result queueSubmitResult = queue.submit(submitInfo);
-		if (queueSubmitResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't submit queue for one-time command (%d).", queueSubmitResult);
-			return false;
-		}
-
-		const vk::Result waitForCopyCompletionResult = queue.waitIdle();
-		if (waitForCopyCompletionResult != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't wait idle for one-time command (%d).", waitForCopyCompletionResult);
-			return false;
-		}
-
-		return true;
-	}
 }
 
 // Vulkan synchronization
@@ -1550,10 +1503,11 @@ VulkanObjectTextureAllocator::VulkanObjectTextureAllocator()
 {
 	this->pool = nullptr;
 	this->queueFamilyIndex = INVALID_UINT32;
+	this->pendingCommands = nullptr;
 }
 
 void VulkanObjectTextureAllocator::init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-	vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer)
+	vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer, VulkanPendingCommands *pendingCommands)
 {
 	this->pool = pool;
 	this->physicalDevice = physicalDevice;
@@ -1561,6 +1515,7 @@ void VulkanObjectTextureAllocator::init(VulkanObjectTexturePool *pool, vk::Physi
 	this->device = device;
 	this->queue = queue;
 	this->commandBuffer = commandBuffer;
+	this->pendingCommands = pendingCommands;
 }
 
 ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int bytesPerTexel)
@@ -1688,29 +1643,28 @@ void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
 	const int width = texture.width;
 	const int height = texture.height;
 	const int bytesPerTexel = texture.bytesPerTexel;
+	vk::Image image = texture.image;
+	vk::Buffer stagingBuffer = texture.stagingBuffer;
 
-	auto commandBufferFunc = [this, &texture, width, height]()
+	auto commandBufferFunc = [this, width, height, image, stagingBuffer]()
 	{
-		vk::Image image = texture.image;
 		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
-		CopyBufferToImage(texture.stagingBuffer, image, width, height, this->commandBuffer);
+		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
 		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
 	};
 
-	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->queue))
-	{
-		DebugLogErrorFormat("Couldn't submit command buffer one-time command for object texture unlock with dims %dx%d and %d bytes per texel (%d).", width, height, bytesPerTexel);
-		return;
-	}
+	this->pendingCommands->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 VulkanUiTextureAllocator::VulkanUiTextureAllocator()
 {
 	this->pool = nullptr;
 	this->queueFamilyIndex = INVALID_UINT32;
+	this->pendingCommands = nullptr;
 }
 
-void VulkanUiTextureAllocator::init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer)
+void VulkanUiTextureAllocator::init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
+	vk::CommandBuffer commandBuffer, VulkanPendingCommands *pendingCommands)
 {
 	this->pool = pool;
 	this->physicalDevice = physicalDevice;
@@ -1718,6 +1672,7 @@ void VulkanUiTextureAllocator::init(VulkanUiTexturePool *pool, vk::PhysicalDevic
 	this->device = device;
 	this->queue = queue;
 	this->commandBuffer = commandBuffer;
+	this->pendingCommands = pendingCommands;
 }
 
 UiTextureID VulkanUiTextureAllocator::create(int width, int height)
@@ -1846,20 +1801,17 @@ void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
 	const int width = texture.width;
 	const int height = texture.height;
 	DebugAssert(texture.bytesPerTexel == 4);
+	vk::Image image = texture.image;
+	vk::Buffer stagingBuffer = texture.stagingBuffer;
 
-	auto commandBufferFunc = [this, &texture, width, height]()
+	auto commandBufferFunc = [this, width, height, image, stagingBuffer]()
 	{
-		vk::Image image = texture.image;
 		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
-		CopyBufferToImage(texture.stagingBuffer, image, width, height, this->commandBuffer);
+		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
 		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
 	};
 
-	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->queue))
-	{
-		DebugLogErrorFormat("Couldn't submit command buffer one-time command for UI texture unlock with dims %dx%d (%d).", width, height);
-		return;
-	}
+	this->pendingCommands->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 VulkanCamera::VulkanCamera()
@@ -2069,8 +2021,8 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	this->objectTextureAllocator.init(&this->objectTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue, this->commandBuffer);
-	this->uiTextureAllocator.init(&this->uiTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue, this->commandBuffer);
+	this->objectTextureAllocator.init(&this->objectTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue, this->commandBuffer, &this->pendingCommands);
+	this->uiTextureAllocator.init(&this->uiTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue, this->commandBuffer, &this->pendingCommands);
 
 	const std::string shadersFolderPath = dataFolderPath + "shaders/";
 	const std::string vertexShaderBytesFilename = shadersFolderPath + "testVertex.spv";
@@ -2449,6 +2401,8 @@ void VulkanRenderBackend::shutdown()
 			this->vertexShaderModule = nullptr;
 		}
 
+		this->pendingCommands.copyCommands.clear();
+
 		if (this->commandBuffer)
 		{
 			this->device.freeCommandBuffers(this->commandPool, this->commandBuffer);
@@ -2623,18 +2577,16 @@ LockedBuffer VulkanRenderBackend::lockVertexPositionBuffer(VertexPositionBufferI
 void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
 {
 	const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
+	vk::Buffer buffer = vertexPositionBuffer.buffer;
+	vk::Buffer stagingBuffer = vertexPositionBuffer.stagingBuffer;
+	const int byteCount = vertexPositionBuffer.stagingHostMappedBytes.getCount();
 
-	auto commandBufferFunc = [this, &vertexPositionBuffer]()
+	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
 	{
-		const int byteCount = vertexPositionBuffer.stagingHostMappedBytes.getCount();
-		CopyToBufferDeviceLocal(vertexPositionBuffer.stagingBuffer, vertexPositionBuffer.buffer, 0, byteCount, this->commandBuffer);
+		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
 	};
 
-	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
-	{
-		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking vertex position buffer %d.", id);
-		return;
-	}
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent)
@@ -2710,18 +2662,16 @@ LockedBuffer VulkanRenderBackend::lockVertexAttributeBuffer(VertexAttributeBuffe
 void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id)
 {
 	const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
+	vk::Buffer buffer = vertexAttributeBuffer.buffer;
+	vk::Buffer stagingBuffer = vertexAttributeBuffer.stagingBuffer;
+	const int byteCount = vertexAttributeBuffer.stagingHostMappedBytes.getCount();
 
-	auto commandBufferFunc = [this, &vertexAttributeBuffer]()
+	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
 	{
-		const int byteCount = vertexAttributeBuffer.stagingHostMappedBytes.getCount();
-		CopyToBufferDeviceLocal(vertexAttributeBuffer.stagingBuffer, vertexAttributeBuffer.buffer, 0, byteCount, this->commandBuffer);
+		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
 	};
 
-	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
-	{
-		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking vertex attribute buffer %d.", id);
-		return;
-	}
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount, int bytesPerIndex)
@@ -2796,18 +2746,16 @@ LockedBuffer VulkanRenderBackend::lockIndexBuffer(IndexBufferID id)
 void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 {
 	const VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
+	vk::Buffer buffer = indexBuffer.buffer;
+	vk::Buffer stagingBuffer = indexBuffer.stagingBuffer;
+	const int byteCount = indexBuffer.stagingHostMappedBytes.getCount();
 
-	auto commandBufferFunc = [this, &indexBuffer]()
+	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
 	{
-		const int byteCount = indexBuffer.stagingHostMappedBytes.getCount();
-		CopyToBufferDeviceLocal(indexBuffer.stagingBuffer, indexBuffer.buffer, 0, byteCount, this->commandBuffer);
+		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
 	};
 
-	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
-	{
-		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking index buffer %d.", id);
-		return;
-	}
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 ObjectTextureAllocator *VulkanRenderBackend::getObjectTextureAllocator()
@@ -2902,37 +2850,33 @@ LockedBuffer VulkanRenderBackend::lockUniformBufferIndex(UniformBufferID id, int
 void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 {
 	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	vk::Buffer buffer = uniformBuffer.buffer;
+	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
+	const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
 
-	auto commandBufferFunc = [this, &uniformBuffer]()
+	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
 	{
-		const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
-		CopyToBufferDeviceLocal(uniformBuffer.stagingBuffer, uniformBuffer.buffer, 0, byteCount, this->commandBuffer);
+		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
 	};
 
-	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
-	{
-		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking uniform buffer %d.", id);
-		return;
-	}
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
 {
 	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	vk::Buffer buffer = uniformBuffer.buffer;
+	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
+	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
+	const int byteOffset = index * uniformInfo.bytesPerElement;
+	const int byteCount = uniformInfo.bytesPerElement;
 	
-	auto commandBufferFunc = [this, index, &uniformBuffer]()
+	auto commandBufferFunc = [this, index, buffer, stagingBuffer, byteOffset, byteCount]()
 	{
-		const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-		const int byteOffset = index * uniformInfo.bytesPerElement;
-		const int byteCount = uniformInfo.bytesPerElement;
-		CopyToBufferDeviceLocal(uniformBuffer.stagingBuffer, uniformBuffer.buffer, byteOffset, byteCount, this->commandBuffer);
+		CopyToBufferDeviceLocal(stagingBuffer, buffer, byteOffset, byteCount, this->commandBuffer);
 	};
 
-	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
-	{
-		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking uniform buffer %d.", id);
-		return;
-	}
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 RenderLightID VulkanRenderBackend::createLight()
@@ -3033,7 +2977,12 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		UpdateDescriptorSet(this->device, this->descriptorSet, this->camera.buffer, texture.imageView, texture.sampler, paletteTexture.imageView, paletteTexture.sampler);
 	}
 
-	this->commandBuffer.reset();
+	const vk::Result commandBufferResetResult = this->commandBuffer.reset();
+	if (commandBufferResetResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't reset command buffer (%d).", commandBufferResetResult);
+		return;
+	}
 
 	vk::CommandBufferBeginInfo commandBufferBeginInfo;
 	const vk::Result commandBufferBeginResult = this->commandBuffer.begin(commandBufferBeginInfo);
@@ -3041,6 +2990,28 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	{
 		DebugLogErrorFormat("Couldn't begin command buffer (%d).", commandBufferBeginResult);
 		return;
+	}
+
+	if (!this->pendingCommands.copyCommands.empty())
+	{
+		for (const std::function<void()> &copyCommand : this->pendingCommands.copyCommands)
+		{
+			copyCommand();
+		}
+
+		this->pendingCommands.copyCommands.clear();
+
+		const vk::DependencyFlags dependencyFlags;
+		vk::ArrayProxy<vk::MemoryBarrier> memoryBarriers;
+		vk::ArrayProxy<vk::BufferMemoryBarrier> bufferMemoryBarriers;
+		vk::ArrayProxy<vk::ImageMemoryBarrier> imageMemoryBarriers;
+		this->commandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::PipelineStageFlagBits::eVertexInput | vk::PipelineStageFlagBits::eVertexShader,
+			dependencyFlags,
+			memoryBarriers,
+			bufferMemoryBarriers,
+			imageMemoryBarriers);
 	}
 
 	vk::ClearValue clearColor;
@@ -3130,7 +3101,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		return;
 	}
 
-	const vk::Result waitForFrameCompletionResult = this->device.waitIdle();
+	const vk::Result waitForFrameCompletionResult = this->presentQueue.waitIdle();
 	if (waitForFrameCompletionResult != vk::Result::eSuccess)
 	{
 		DebugLogErrorFormat("Couldn't wait idle for frame completion (%d).", waitForFrameCompletionResult);

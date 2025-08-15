@@ -2,6 +2,7 @@
 #define VULKAN_RENDER_BACKEND_H
 
 #include <cstdint>
+#include <functional>
 #include <vector>
 
 #include "vulkan/vulkan.hpp"
@@ -122,6 +123,11 @@ using VulkanLightPool = RecyclablePool<RenderLightID, VulkanLight>;
 using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
 
+struct VulkanPendingCommands
+{
+	std::vector<std::function<void()>> copyCommands;
+};
+
 struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 {
 	VulkanObjectTexturePool *pool;
@@ -130,10 +136,12 @@ struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 	vk::Device device;
 	vk::Queue queue;
 	vk::CommandBuffer commandBuffer;
+	VulkanPendingCommands *pendingCommands;
 
 	VulkanObjectTextureAllocator();
 
-	void init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer);
+	void init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
+		vk::CommandBuffer commandBuffer, VulkanPendingCommands *pendingCommands);
 
 	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
 	void free(ObjectTextureID textureID) override;
@@ -152,10 +160,12 @@ struct VulkanUiTextureAllocator final : public UiTextureAllocator
 	vk::Device device;
 	vk::Queue queue;
 	vk::CommandBuffer commandBuffer;
+	VulkanPendingCommands *pendingCommands;
 
 	VulkanUiTextureAllocator();
 
-	void init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer);
+	void init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
+		vk::CommandBuffer commandBuffer, VulkanPendingCommands *pendingCommands);
 
 	UiTextureID create(int width, int height) override;
 	void free(UiTextureID textureID) override;
@@ -225,6 +235,7 @@ private:
 
 	vk::CommandPool commandPool;
 	vk::CommandBuffer commandBuffer;
+	VulkanPendingCommands pendingCommands;
 
 	vk::ShaderModule vertexShaderModule;
 	vk::ShaderModule fragmentShaderModule;
