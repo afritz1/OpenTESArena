@@ -532,12 +532,12 @@ namespace
 		return true;
 	}
 
-	void CopyToBufferDeviceLocal(vk::Buffer sourceBuffer, int sourceByteCount, vk::Buffer destinationBuffer, vk::CommandBuffer commandBuffer)
+	void CopyToBufferDeviceLocal(vk::Buffer sourceBuffer, vk::Buffer destinationBuffer, int byteOffset, int byteCount, vk::CommandBuffer commandBuffer)
 	{
 		vk::BufferCopy bufferCopy;
-		bufferCopy.srcOffset = 0;
-		bufferCopy.dstOffset = 0;
-		bufferCopy.size = sourceByteCount;
+		bufferCopy.srcOffset = byteOffset;
+		bufferCopy.dstOffset = byteOffset;
+		bufferCopy.size = byteCount;
 
 		commandBuffer.copyBuffer(sourceBuffer, destinationBuffer, bufferCopy);
 	}
@@ -2627,7 +2627,7 @@ void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
 	auto commandBufferFunc = [this, &vertexPositionBuffer]()
 	{
 		const int byteCount = vertexPositionBuffer.stagingHostMappedBytes.getCount();
-		CopyToBufferDeviceLocal(vertexPositionBuffer.stagingBuffer, byteCount, vertexPositionBuffer.buffer, this->commandBuffer);
+		CopyToBufferDeviceLocal(vertexPositionBuffer.stagingBuffer, vertexPositionBuffer.buffer, 0, byteCount, this->commandBuffer);
 	};
 
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
@@ -2714,7 +2714,7 @@ void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id
 	auto commandBufferFunc = [this, &vertexAttributeBuffer]()
 	{
 		const int byteCount = vertexAttributeBuffer.stagingHostMappedBytes.getCount();
-		CopyToBufferDeviceLocal(vertexAttributeBuffer.stagingBuffer, byteCount, vertexAttributeBuffer.buffer, this->commandBuffer);
+		CopyToBufferDeviceLocal(vertexAttributeBuffer.stagingBuffer, vertexAttributeBuffer.buffer, 0, byteCount, this->commandBuffer);
 	};
 
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
@@ -2800,7 +2800,7 @@ void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 	auto commandBufferFunc = [this, &indexBuffer]()
 	{
 		const int byteCount = indexBuffer.stagingHostMappedBytes.getCount();
-		CopyToBufferDeviceLocal(indexBuffer.stagingBuffer, byteCount, indexBuffer.buffer, this->commandBuffer);
+		CopyToBufferDeviceLocal(indexBuffer.stagingBuffer, indexBuffer.buffer, 0, byteCount, this->commandBuffer);
 	};
 
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
@@ -2906,7 +2906,7 @@ void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 	auto commandBufferFunc = [this, &uniformBuffer]()
 	{
 		const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
-		CopyToBufferDeviceLocal(uniformBuffer.stagingBuffer, byteCount, uniformBuffer.buffer, this->commandBuffer);
+		CopyToBufferDeviceLocal(uniformBuffer.stagingBuffer, uniformBuffer.buffer, 0, byteCount, this->commandBuffer);
 	};
 
 	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
@@ -2919,7 +2919,20 @@ void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
 {
 	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	// @todo need CopyToBufferDeviceLocal() to take an offset into the device local buffer
+	
+	auto commandBufferFunc = [this, index, &uniformBuffer]()
+	{
+		const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
+		const int byteOffset = index * uniformInfo.bytesPerElement;
+		const int byteCount = uniformInfo.bytesPerElement;
+		CopyToBufferDeviceLocal(uniformBuffer.stagingBuffer, uniformBuffer.buffer, byteOffset, byteCount, this->commandBuffer);
+	};
+
+	if (!TrySubmitCommandBufferOnce(commandBufferFunc, this->commandBuffer, this->graphicsQueue))
+	{
+		DebugLogErrorFormat("Couldn't submit command buffer one-time command for unlocking uniform buffer %d.", id);
+		return;
+	}
 }
 
 RenderLightID VulkanRenderBackend::createLight()
