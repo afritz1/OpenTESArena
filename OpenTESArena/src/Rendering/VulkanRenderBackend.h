@@ -39,6 +39,7 @@ struct VulkanBufferUniformInfo
 	int elementCount;
 	int bytesPerElement;
 	int alignmentOfElement;
+	vk::DescriptorSet descriptorSet;
 };
 
 enum class VulkanBufferType
@@ -72,7 +73,7 @@ struct VulkanBuffer
 	void initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void initIndex(int indexCount, int bytesPerIndex);
-	void initUniform(int elementCount, int bytesPerElement, int alignmentOfElement);
+	void initUniform(int elementCount, int bytesPerElement, int alignmentOfElement, vk::DescriptorSet descriptorSet);
 };
 
 struct VulkanLightInfo
@@ -105,6 +106,7 @@ struct VulkanTexture
 	vk::DeviceMemory deviceMemory;
 	vk::ImageView imageView;
 	vk::Sampler sampler;
+	vk::DescriptorSet descriptorSet;
 	vk::DeviceMemory stagingDeviceMemory;
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
@@ -112,7 +114,7 @@ struct VulkanTexture
 	VulkanTexture();
 
 	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler,
-		vk::DeviceMemory stagingDeviceMemory, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
+		vk::DescriptorSet descriptorSet, vk::DeviceMemory stagingDeviceMemory, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 };
 
 using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanBuffer>;
@@ -136,12 +138,14 @@ struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
 	vk::Device device;
 	vk::Queue queue;
 	vk::CommandBuffer commandBuffer;
+	vk::DescriptorSetLayout descriptorSetLayout;
+	vk::DescriptorPool descriptorPool;
 	VulkanPendingCommands *pendingCommands;
 
 	VulkanObjectTextureAllocator();
 
 	void init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
-		vk::CommandBuffer commandBuffer, VulkanPendingCommands *pendingCommands);
+		vk::CommandBuffer commandBuffer, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, VulkanPendingCommands *pendingCommands);
 
 	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
 	void free(ObjectTextureID textureID) override;
@@ -160,12 +164,14 @@ struct VulkanUiTextureAllocator final : public UiTextureAllocator
 	vk::Device device;
 	vk::Queue queue;
 	vk::CommandBuffer commandBuffer;
+	vk::DescriptorSetLayout descriptorSetLayout;
+	vk::DescriptorPool descriptorPool;
 	VulkanPendingCommands *pendingCommands;
 
 	VulkanUiTextureAllocator();
 
 	void init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
-		vk::CommandBuffer commandBuffer, VulkanPendingCommands *pendingCommands);
+		vk::CommandBuffer commandBuffer, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, VulkanPendingCommands *pendingCommands);
 
 	UiTextureID create(int width, int height) override;
 	void free(UiTextureID textureID) override;
@@ -241,10 +247,10 @@ private:
 	vk::ShaderModule fragmentShaderModule;
 
 	vk::DescriptorPool descriptorPool;
-	vk::DescriptorSetLayout perFrameDescriptorSetLayout;
-	vk::DescriptorSetLayout perDrawCallDescriptorSetLayout;
-	vk::DescriptorSet perFrameDescriptorSet;
-	vk::DescriptorSet perDrawCallDescriptorSet;
+	vk::DescriptorSetLayout globalDescriptorSetLayout;
+	vk::DescriptorSetLayout transformDescriptorSetLayout;
+	vk::DescriptorSetLayout materialDescriptorSetLayout;
+	vk::DescriptorSet globalDescriptorSet;
 
 	vk::PipelineLayout pipelineLayout;
 	vk::Pipeline graphicsPipeline;

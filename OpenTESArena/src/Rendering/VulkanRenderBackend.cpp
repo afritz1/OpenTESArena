@@ -1192,7 +1192,7 @@ namespace
 		return true;
 	}
 
-	void UpdatePerFrameDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::ImageView paletteImageView, vk::Sampler paletteSampler)
+	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::ImageView paletteImageView, vk::Sampler paletteSampler)
 	{
 		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
 		cameraDescriptorBufferInfo.buffer = cameraBuffer;
@@ -1226,21 +1226,14 @@ namespace
 		device.updateDescriptorSets(writeDescriptorSets, copyDescriptorSets);
 	}
 
-	void UpdatePerDrawCallDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer transformBuffer, vk::ImageView textureImageView, vk::Sampler textureSampler)
+	void UpdateTransformDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer transformBuffer)
 	{
 		vk::DescriptorBufferInfo transformDescriptorBufferInfo;
 		transformDescriptorBufferInfo.buffer = transformBuffer;
 		transformDescriptorBufferInfo.offset = 0;
 		transformDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
-		vk::DescriptorImageInfo textureDescriptorImageInfo;
-		textureDescriptorImageInfo.sampler = textureSampler;
-		textureDescriptorImageInfo.imageView = textureImageView;
-		textureDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-
-		vk::WriteDescriptorSet writeDescriptorSets[2];
-
-		vk::WriteDescriptorSet &transformWriteDescriptorSet = writeDescriptorSets[0];
+		vk::WriteDescriptorSet transformWriteDescriptorSet;
 		transformWriteDescriptorSet.dstSet = descriptorSet;
 		transformWriteDescriptorSet.dstBinding = 0;
 		transformWriteDescriptorSet.dstArrayElement = 0;
@@ -1248,16 +1241,27 @@ namespace
 		transformWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
 		transformWriteDescriptorSet.pBufferInfo = &transformDescriptorBufferInfo;
 
-		vk::WriteDescriptorSet &textureWriteDescriptorSet = writeDescriptorSets[1];
+		vk::ArrayProxy<vk::CopyDescriptorSet> copyDescriptorSets;
+		device.updateDescriptorSets(transformWriteDescriptorSet, copyDescriptorSets);
+	}
+
+	void UpdateMaterialDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView textureImageView, vk::Sampler textureSampler)
+	{
+		vk::DescriptorImageInfo textureDescriptorImageInfo;
+		textureDescriptorImageInfo.sampler = textureSampler;
+		textureDescriptorImageInfo.imageView = textureImageView;
+		textureDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::WriteDescriptorSet textureWriteDescriptorSet;
 		textureWriteDescriptorSet.dstSet = descriptorSet;
-		textureWriteDescriptorSet.dstBinding = 1;
+		textureWriteDescriptorSet.dstBinding = 0;
 		textureWriteDescriptorSet.dstArrayElement = 0;
 		textureWriteDescriptorSet.descriptorCount = 1;
 		textureWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 		textureWriteDescriptorSet.pImageInfo = &textureDescriptorImageInfo;
 
 		vk::ArrayProxy<vk::CopyDescriptorSet> copyDescriptorSets;
-		device.updateDescriptorSets(writeDescriptorSets, copyDescriptorSets);
+		device.updateDescriptorSets(textureWriteDescriptorSet, copyDescriptorSets);
 	}
 }
 
@@ -1440,12 +1444,13 @@ void VulkanBuffer::initIndex(int indexCount, int bytesPerIndex)
 	this->index.bytesPerIndex = bytesPerIndex;
 }
 
-void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int alignmentOfElement)
+void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int alignmentOfElement, vk::DescriptorSet descriptorSet)
 {
 	this->type = VulkanBufferType::Uniform;
 	this->uniform.elementCount = elementCount;
 	this->uniform.bytesPerElement = bytesPerElement;
 	this->uniform.alignmentOfElement = alignmentOfElement;
+	this->uniform.descriptorSet = descriptorSet;
 }
 
 VulkanLightInfo::VulkanLightInfo()
@@ -1488,7 +1493,7 @@ VulkanTexture::VulkanTexture()
 }
 
 void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler,
-	vk::DeviceMemory stagingDeviceMemory, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
+	vk::DescriptorSet descriptorSet, vk::DeviceMemory stagingDeviceMemory, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -1500,6 +1505,7 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image ima
 	this->deviceMemory = deviceMemory; // @todo device memory is more important than the buffer, it should come first
 	this->imageView = imageView;
 	this->sampler = sampler;
+	this->descriptorSet = descriptorSet;
 	this->stagingDeviceMemory = stagingDeviceMemory;
 	this->stagingBuffer = stagingBuffer;
 	this->stagingHostMappedBytes = stagingHostMappedBytes;
@@ -1512,8 +1518,9 @@ VulkanObjectTextureAllocator::VulkanObjectTextureAllocator()
 	this->pendingCommands = nullptr;
 }
 
-void VulkanObjectTextureAllocator::init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex,
-	vk::Device device, vk::Queue queue, vk::CommandBuffer commandBuffer, VulkanPendingCommands *pendingCommands)
+void VulkanObjectTextureAllocator::init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device,
+	vk::Queue queue, vk::CommandBuffer commandBuffer, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool,
+	VulkanPendingCommands *pendingCommands)
 {
 	this->pool = pool;
 	this->physicalDevice = physicalDevice;
@@ -1521,6 +1528,8 @@ void VulkanObjectTextureAllocator::init(VulkanObjectTexturePool *pool, vk::Physi
 	this->device = device;
 	this->queue = queue;
 	this->commandBuffer = commandBuffer;
+	this->descriptorSetLayout = descriptorSetLayout;
+	this->descriptorPool = descriptorPool;
 	this->pendingCommands = pendingCommands;
 }
 
@@ -1561,6 +1570,16 @@ ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int 
 		return -1;
 	}
 
+	vk::DescriptorSet descriptorSet;
+	if (!TryCreateDescriptorSet(this->device, this->descriptorSetLayout, this->descriptorPool, &descriptorSet))
+	{
+		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
+		this->free(textureID);
+		return -1;
+	}
+
+	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
+
 	constexpr vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	const int byteCount = width * height * bytesPerTexel;
 	vk::DeviceMemory stagingDeviceMemory;
@@ -1582,7 +1601,7 @@ ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int 
 	}
 
 	VulkanTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
+	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, descriptorSet, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -1601,6 +1620,8 @@ void VulkanObjectTextureAllocator::free(ObjectTextureID textureID)
 		{
 			this->device.destroyBuffer(texture->stagingBuffer);
 		}
+
+		texture->descriptorSet = nullptr;
 
 		if (texture->sampler)
 		{
@@ -1670,7 +1691,7 @@ VulkanUiTextureAllocator::VulkanUiTextureAllocator()
 }
 
 void VulkanUiTextureAllocator::init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
-	vk::CommandBuffer commandBuffer, VulkanPendingCommands *pendingCommands)
+	vk::CommandBuffer commandBuffer, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, VulkanPendingCommands *pendingCommands)
 {
 	this->pool = pool;
 	this->physicalDevice = physicalDevice;
@@ -1678,6 +1699,8 @@ void VulkanUiTextureAllocator::init(VulkanUiTexturePool *pool, vk::PhysicalDevic
 	this->device = device;
 	this->queue = queue;
 	this->commandBuffer = commandBuffer;
+	this->descriptorSetLayout = descriptorSetLayout;
+	this->descriptorPool = descriptorPool;
 	this->pendingCommands = pendingCommands;
 }
 
@@ -1719,6 +1742,16 @@ UiTextureID VulkanUiTextureAllocator::create(int width, int height)
 		return -1;
 	}
 
+	vk::DescriptorSet descriptorSet;
+	if (!TryCreateDescriptorSet(this->device, this->descriptorSetLayout, this->descriptorPool, &descriptorSet))
+	{
+		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
+		this->free(textureID);
+		return -1;
+	}
+
+	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
+
 	constexpr vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	const int byteCount = width * height * bytesPerTexel;
 	vk::DeviceMemory stagingDeviceMemory;
@@ -1740,7 +1773,7 @@ UiTextureID VulkanUiTextureAllocator::create(int width, int height)
 	}
 
 	VulkanTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
+	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, descriptorSet, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -1759,6 +1792,8 @@ void VulkanUiTextureAllocator::free(UiTextureID textureID)
 		{
 			this->device.destroyBuffer(texture->stagingBuffer);
 		}
+
+		texture->descriptorSet = nullptr;
 
 		if (texture->sampler)
 		{
@@ -2027,9 +2062,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	this->objectTextureAllocator.init(&this->objectTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue, this->commandBuffer, &this->pendingCommands);
-	this->uiTextureAllocator.init(&this->uiTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue, this->commandBuffer, &this->pendingCommands);
-
 	const std::string shadersFolderPath = dataFolderPath + "shaders/";
 	const std::string vertexShaderBytesFilename = shadersFolderPath + "testVertex.spv";
 	if (!TryCreateShaderModule(this->device, vertexShaderBytesFilename.c_str(), &this->vertexShaderModule))
@@ -2045,59 +2077,75 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	constexpr int maxUniformBufferDescriptorSets = 16384;
+	constexpr int maxImageDescriptorSets = 1024;
 	const vk::DescriptorPoolSize descriptorPoolSizes[] =
 	{
-		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, 2),
-		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, 2)
+		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, maxUniformBufferDescriptorSets),
+		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, maxImageDescriptorSets)
 	};
 
-	constexpr int maxDescriptorSetCount = 8;
+	constexpr int maxDescriptorSetCount = maxUniformBufferDescriptorSets + maxImageDescriptorSets;
 	if (!TryCreateDescriptorPool(this->device, descriptorPoolSizes, maxDescriptorSetCount, &this->descriptorPool))
 	{
 		DebugLogError("Couldn't create descriptor pool.");
 		return false;
 	}
 
-	const vk::DescriptorSetLayoutBinding perFrameDescriptorSetLayoutBindings[] =
+	const vk::DescriptorSetLayoutBinding globalDescriptorSetLayoutBindings[] =
 	{
-		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex), // Camera
-		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment) // Palette
+		// Camera
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex),
+		// Palette
+		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
 	};
 
-	const vk::DescriptorSetLayoutBinding perDrawCallDescriptorSetLayoutBindings[] =
+	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
 	{
-		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex), // Transform
-		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment) // Texture
+		// Mesh transform
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
 	};
 
-	if (!TryCreateDescriptorSetLayout(this->device, perFrameDescriptorSetLayoutBindings, &this->perFrameDescriptorSetLayout))
+	const vk::DescriptorSetLayoutBinding materialDescriptorSetLayoutBindings[] =
 	{
-		DebugLogError("Couldn't create per-frame descriptor set layout.");
+		// Mesh texture
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+	};
+
+	if (!TryCreateDescriptorSetLayout(this->device, globalDescriptorSetLayoutBindings, &this->globalDescriptorSetLayout))
+	{
+		DebugLogError("Couldn't create global descriptor set layout.");
 		return false;
 	}
 
-	if (!TryCreateDescriptorSetLayout(this->device, perDrawCallDescriptorSetLayoutBindings, &this->perDrawCallDescriptorSetLayout))
+	if (!TryCreateDescriptorSetLayout(this->device, transformDescriptorSetLayoutBindings, &this->transformDescriptorSetLayout))
 	{
-		DebugLogError("Couldn't create per-draw-call descriptor set layout.");
+		DebugLogError("Couldn't create transform descriptor set layout.");
 		return false;
 	}
 
-	if (!TryCreateDescriptorSet(this->device, this->perFrameDescriptorSetLayout, this->descriptorPool, &this->perFrameDescriptorSet))
+	if (!TryCreateDescriptorSetLayout(this->device, materialDescriptorSetLayoutBindings, &this->materialDescriptorSetLayout))
 	{
-		DebugLogError("Couldn't create per-frame descriptor set.");
+		DebugLogError("Couldn't create material descriptor set layout.");
 		return false;
 	}
 
-	if (!TryCreateDescriptorSet(this->device, this->perDrawCallDescriptorSetLayout, this->descriptorPool, &this->perDrawCallDescriptorSet))
+	if (!TryCreateDescriptorSet(this->device, this->globalDescriptorSetLayout, this->descriptorPool, &this->globalDescriptorSet))
 	{
-		DebugLogError("Couldn't create per-draw-call descriptor set.");
+		DebugLogError("Couldn't create global descriptor set.");
 		return false;
 	}
+
+	this->objectTextureAllocator.init(&this->objectTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue,
+		this->commandBuffer, this->materialDescriptorSetLayout, this->descriptorPool, &this->pendingCommands);
+	this->uiTextureAllocator.init(&this->uiTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue,
+		this->commandBuffer, this->materialDescriptorSetLayout, this->descriptorPool, &this->pendingCommands);
 
 	const vk::DescriptorSetLayout descriptorSetLayouts[] =
 	{
-		this->perFrameDescriptorSetLayout,
-		this->perDrawCallDescriptorSetLayout
+		this->globalDescriptorSetLayout,
+		this->transformDescriptorSetLayout,
+		this->materialDescriptorSetLayout
 	};
 
 	if (!TryCreatePipelineLayout(this->device, descriptorSetLayouts, &this->pipelineLayout))
@@ -2418,22 +2466,27 @@ void VulkanRenderBackend::shutdown()
 			this->pipelineLayout = nullptr;
 		}
 
-		if (this->perDrawCallDescriptorSetLayout)
+		if (this->materialDescriptorSetLayout)
 		{
-			this->device.destroyDescriptorSetLayout(this->perDrawCallDescriptorSetLayout);
-			this->perDrawCallDescriptorSetLayout = nullptr;
+			this->device.destroyDescriptorSetLayout(this->materialDescriptorSetLayout);
+			this->materialDescriptorSetLayout = nullptr;
 		}
 
-		if (this->perFrameDescriptorSetLayout)
+		if (this->transformDescriptorSetLayout)
 		{
-			this->device.destroyDescriptorSetLayout(this->perFrameDescriptorSetLayout);
-			this->perFrameDescriptorSetLayout = nullptr;
+			this->device.destroyDescriptorSetLayout(this->transformDescriptorSetLayout);
+			this->transformDescriptorSetLayout = nullptr;
+		}
+
+		if (this->globalDescriptorSetLayout)
+		{
+			this->device.destroyDescriptorSetLayout(this->globalDescriptorSetLayout);
+			this->globalDescriptorSetLayout = nullptr;
 		}
 
 		if (this->descriptorPool)
 		{
-			this->perFrameDescriptorSet = nullptr;
-			this->perDrawCallDescriptorSet = nullptr;
+			this->globalDescriptorSet = nullptr;
 
 			this->device.destroyDescriptorPool(this->descriptorPool);
 			this->descriptorPool = nullptr;
@@ -2841,6 +2894,18 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 		return -1;
 	}
 
+	vk::DescriptorSet descriptorSet;
+	if (!TryCreateDescriptorSet(this->device, this->transformDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	{
+		DebugLogErrorFormat("Couldn't create descriptor set for uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
+		this->uniformBufferDeviceLocalHeap.freeMapping(buffer);
+		this->device.destroyBuffer(buffer);
+		this->uniformBufferPool.free(id);
+		return -1;
+	}
+
+	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer);
+
 	vk::Buffer stagingBuffer;
 	HeapBlock stagingBlock;
 	Span<std::byte> stagingHostMappedBytes;
@@ -2855,7 +2920,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	uniformBuffer.init(buffer, stagingBuffer, stagingHostMappedBytes);
-	uniformBuffer.initUniform(elementCount, bytesPerElement, alignmentOfElement);
+	uniformBuffer.initUniform(elementCount, bytesPerElement, alignmentOfElement, descriptorSet);
 
 	return id;
 }
@@ -3019,17 +3084,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	{
 		// @todo light table + light level calculation
 		const VulkanTexture &paletteTexture = this->objectTexturePool.get(frameSettings.paletteTextureID);
-		UpdatePerFrameDescriptorSet(this->device, this->perFrameDescriptorSet, this->camera.buffer, paletteTexture.imageView, paletteTexture.sampler);
-	}
-
-	// @todo write all the descriptor sets ahead of time (like one per mesh?)
-	if (renderCommandList.entryCount > 0)
-	{
-		Span<const RenderDrawCall> firstEntry = renderCommandList.entries[0];
-		const RenderDrawCall &dummyDrawCall = firstEntry[0];
-		const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(dummyDrawCall.transformBufferID);
-		const VulkanTexture &texture = this->objectTexturePool.get(dummyDrawCall.textureIDs[0]);
-		UpdatePerDrawCallDescriptorSet(this->device, this->perDrawCallDescriptorSet, transformBuffer.buffer, texture.imageView, texture.sampler); 
+		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer, paletteTexture.imageView, paletteTexture.sampler);
 	}
 
 	const vk::Result commandBufferResetResult = this->commandBuffer.reset();
@@ -3082,14 +3137,10 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 	this->commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->graphicsPipeline);
 
-	constexpr uint32_t perFrameDescriptorSetIndex = 0;
 	vk::ArrayProxy<const uint32_t> dynamicOffsets;
-	this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, perFrameDescriptorSetIndex, this->perFrameDescriptorSet, dynamicOffsets);
 
-	// @todo I think we have to have one descriptor set per texture? so that vkCmdBindDescriptorSets() can pick the texture for the draw call
-	// - also i think i have to do texture atlases to reduce the # of descriptor sets so it's not in the hundreds
-	constexpr uint32_t perDrawCallDescriptorSetIndex = 1;
-	this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, perDrawCallDescriptorSetIndex, this->perDrawCallDescriptorSet, dynamicOffsets);
+	constexpr uint32_t globalDescriptorSetIndex = 0;
+	this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, dynamicOffsets);
 
 	for (int i = 0; i < renderCommandList.entryCount; i++)
 	{
@@ -3106,19 +3157,23 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			const VulkanBuffer &vertexTexCoordsBuffer = this->vertexAttributeBufferPool.get(drawCall.texCoordBufferID);
 			const VulkanBufferVertexAttributeInfo &vertexTexCoordsInfo = vertexTexCoordsBuffer.vertexAttribute;
 
-			/*const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
-			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
-
-			const ObjectTextureID textureID = drawCall.textureIDs[0];
-			const VulkanTexture &texture = this->objectTexturePool.get(textureID);*/
-
-			const vk::DeviceSize bufferOffset = 0;
+			constexpr vk::DeviceSize bufferOffset = 0;
 			this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
 			this->commandBuffer.bindVertexBuffers(1, vertexTexCoordsBuffer.buffer, bufferOffset);
 
 			const VulkanBuffer &indexBuffer = this->indexBufferPool.get(drawCall.indexBufferID);
 			const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
 			this->commandBuffer.bindIndexBuffer(indexBuffer.buffer, bufferOffset, vk::IndexType::eUint32);
+
+			const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
+			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform; // @todo uniform buffer index for weather particles, use w/ dynamicOffsets?
+			constexpr uint32_t transformDescriptorSetIndex = 1;
+			this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, dynamicOffsets);
+
+			const ObjectTextureID textureID = drawCall.textureIDs[0];
+			const VulkanTexture &texture = this->objectTexturePool.get(textureID);
+			constexpr uint32_t materialDescriptorSetIndex = 2;
+			this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
 
 			constexpr uint32_t meshInstanceCount = 1;
 			this->commandBuffer.drawIndexed(indexInfo.indexCount, meshInstanceCount, 0, 0, 0);
