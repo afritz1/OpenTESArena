@@ -1300,7 +1300,10 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 
 void RenderVoxelChunkManager::populateCommandList(RenderCommandList &commandList) const
 {
-	commandList.addDrawCalls(this->drawCallsCache);
+	if (!this->drawCallsCache.empty())
+	{
+		commandList.addDrawCalls(this->drawCallsCache);
+	}
 }
 
 void RenderVoxelChunkManager::updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,

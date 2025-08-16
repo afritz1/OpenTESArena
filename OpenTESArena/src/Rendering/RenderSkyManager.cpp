@@ -682,7 +682,11 @@ ObjectTextureID RenderSkyManager::getBgTextureID() const
 void RenderSkyManager::populateCommandList(RenderCommandList &commandList) const
 {
 	commandList.addDrawCalls(Span<const RenderDrawCall>(&this->bgDrawCall, 1));
-	commandList.addDrawCalls(this->objectDrawCalls);
+
+	if (!this->objectDrawCalls.empty())
+	{
+		commandList.addDrawCalls(this->objectDrawCalls);
+	}
 }
 
 void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,
