@@ -3177,7 +3177,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 			constexpr uint32_t meshInstanceCount = 1;
 			this->commandBuffer.drawIndexed(indexInfo.indexCount, meshInstanceCount, 0, 0, 0);
-			break;
 		}
 	}
 
