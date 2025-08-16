@@ -39,6 +39,8 @@ namespace
 	constexpr vk::BufferUsageFlags UniformBufferStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::BufferUsageFlags UniformBufferDeviceLocalUsageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer;
 
+	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
+
 	struct Vertex
 	{
 		Float2 position;
@@ -599,13 +601,13 @@ namespace
 		return true;
 	}
 
-	bool TryCreateImageView(vk::Device device, vk::Format format, vk::Image image, vk::ImageView *outImageView)
+	bool TryCreateImageView(vk::Device device, vk::Format format, vk::ImageAspectFlags imageAspectFlags, vk::Image image, vk::ImageView *outImageView)
 	{
 		vk::ImageViewCreateInfo imageViewCreateInfo;
 		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
 		imageViewCreateInfo.format = format;
 		imageViewCreateInfo.components = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity };
-		imageViewCreateInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageViewCreateInfo.subresourceRange.aspectMask = imageAspectFlags;
 		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 		imageViewCreateInfo.subresourceRange.levelCount = 1;
 		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
@@ -939,7 +941,7 @@ namespace
 
 		for (int i = 0; i < static_cast<int>(swapchainImages.size()); i++)
 		{
-			if (!TryCreateImageView(device, surfaceFormat.format, swapchainImages[i], &(*outImageViews)[i]))
+			if (!TryCreateImageView(device, surfaceFormat.format, vk::ImageAspectFlagBits::eColor, swapchainImages[i], &(*outImageViews)[i]))
 			{
 				DebugLogErrorFormat("Couldn't create swapchain image view index %d.", i);
 				return false;
@@ -961,24 +963,46 @@ namespace
 		colorAttachmentDescription.initialLayout = vk::ImageLayout::eUndefined;
 		colorAttachmentDescription.finalLayout = vk::ImageLayout::ePresentSrcKHR;
 
+		vk::AttachmentDescription depthAttachmentDescription;
+		depthAttachmentDescription.format = DepthBufferFormat;
+		depthAttachmentDescription.samples = vk::SampleCountFlagBits::e1;
+		depthAttachmentDescription.loadOp = vk::AttachmentLoadOp::eClear;
+		depthAttachmentDescription.storeOp = vk::AttachmentStoreOp::eDontCare;
+		depthAttachmentDescription.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+		depthAttachmentDescription.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+		depthAttachmentDescription.initialLayout = vk::ImageLayout::eUndefined;
+		depthAttachmentDescription.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+
+		const vk::AttachmentDescription attachmentDescriptions[] =
+		{
+			colorAttachmentDescription,
+			depthAttachmentDescription
+		};
+
 		vk::AttachmentReference colorAttachmentReference;
 		colorAttachmentReference.attachment = 0;
 		colorAttachmentReference.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+		vk::AttachmentReference depthAttachmentReference;
+		depthAttachmentReference.attachment = 1;
+		depthAttachmentReference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
 		vk::SubpassDescription colorAttachmentSubpassDescription;
 		colorAttachmentSubpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 		colorAttachmentSubpassDescription.colorAttachmentCount = 1;
 		colorAttachmentSubpassDescription.pColorAttachments = &colorAttachmentReference;
+		colorAttachmentSubpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
 
 		vk::SubpassDependency colorAttachmentSubpassDependency;
 		colorAttachmentSubpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		colorAttachmentSubpassDependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		colorAttachmentSubpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-		colorAttachmentSubpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+		colorAttachmentSubpassDependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests;
+		colorAttachmentSubpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		colorAttachmentSubpassDependency.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		colorAttachmentSubpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 
 		vk::RenderPassCreateInfo renderPassCreateInfo;
-		renderPassCreateInfo.attachmentCount = 1;
-		renderPassCreateInfo.pAttachments = &colorAttachmentDescription;
+		renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(std::size(attachmentDescriptions));
+		renderPassCreateInfo.pAttachments = attachmentDescriptions;
 		renderPassCreateInfo.subpassCount = 1;
 		renderPassCreateInfo.pSubpasses = &colorAttachmentSubpassDescription;
 		renderPassCreateInfo.dependencyCount = 1;
@@ -995,17 +1019,23 @@ namespace
 		return true;
 	}
 
-	bool TryCreateSwapchainFramebuffers(vk::Device device, Span<const vk::ImageView> swapchainImageViews, vk::Extent2D swapchainExtent,
-		vk::RenderPass renderPass, Buffer<vk::Framebuffer> *outFramebuffers)
+	bool TryCreateSwapchainFramebuffers(vk::Device device, Span<const vk::ImageView> swapchainImageViews, vk::ImageView depthImageView,
+		vk::Extent2D swapchainExtent, vk::RenderPass renderPass, Buffer<vk::Framebuffer> *outFramebuffers)
 	{
 		outFramebuffers->init(swapchainImageViews.getCount());
 
 		for (int i = 0; i < swapchainImageViews.getCount(); i++)
 		{
+			const vk::ImageView attachmentImageViews[] =
+			{
+				swapchainImageViews[i],
+				depthImageView
+			};
+
 			vk::FramebufferCreateInfo framebufferCreateInfo;
 			framebufferCreateInfo.renderPass = renderPass;
-			framebufferCreateInfo.attachmentCount = 1;
-			framebufferCreateInfo.pAttachments = &swapchainImageViews[i];
+			framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(std::size(attachmentImageViews));
+			framebufferCreateInfo.pAttachments = attachmentImageViews;
 			framebufferCreateInfo.width = swapchainExtent.width;
 			framebufferCreateInfo.height = swapchainExtent.height;
 			framebufferCreateInfo.layers = 1;
@@ -1375,6 +1405,17 @@ namespace
 
 		vk::PipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo;
 
+		vk::PipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo;
+		pipelineDepthStencilStateCreateInfo.depthTestEnable = true;
+		pipelineDepthStencilStateCreateInfo.depthWriteEnable = true;
+		pipelineDepthStencilStateCreateInfo.depthCompareOp = vk::CompareOp::eLess;
+		pipelineDepthStencilStateCreateInfo.depthBoundsTestEnable = false;
+		pipelineDepthStencilStateCreateInfo.stencilTestEnable = false;
+		pipelineDepthStencilStateCreateInfo.front = vk::StencilOp::eKeep;
+		pipelineDepthStencilStateCreateInfo.back = vk::StencilOp::eKeep;
+		pipelineDepthStencilStateCreateInfo.minDepthBounds = 0.0f;
+		pipelineDepthStencilStateCreateInfo.maxDepthBounds = 1.0f;
+
 		vk::PipelineColorBlendAttachmentState pipelineColorBlendAttachmentState;
 		pipelineColorBlendAttachmentState.blendEnable = VK_FALSE;
 		pipelineColorBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -1392,6 +1433,7 @@ namespace
 		graphicsPipelineCreateInfo.pViewportState = &pipelineViewportStateCreateInfo;
 		graphicsPipelineCreateInfo.pRasterizationState = &pipelineRasterizationStateCreateInfo;
 		graphicsPipelineCreateInfo.pMultisampleState = &pipelineMultisampleStateCreateInfo;
+		graphicsPipelineCreateInfo.pDepthStencilState = &pipelineDepthStencilStateCreateInfo;
 		graphicsPipelineCreateInfo.pColorBlendState = &pipelineColorBlendStateCreateInfo;
 		graphicsPipelineCreateInfo.layout = pipelineLayout;
 		graphicsPipelineCreateInfo.renderPass = renderPass;
@@ -1696,13 +1738,26 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	if (!TryCreateImage(this->device, this->swapchainExtent.width, this->swapchainExtent.height, DepthBufferFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment,
+		this->graphicsQueueFamilyIndex, this->physicalDevice, &this->depthImage, &this->depthDeviceMemory))
+	{
+		DebugLogError("Couldn't create depth image.");
+		return false;
+	}
+
+	if (!TryCreateImageView(this->device, DepthBufferFormat, vk::ImageAspectFlagBits::eDepth, this->depthImage, &this->depthImageView))
+	{
+		DebugLogError("Couldn't create depth image view.");
+		return false;
+	}
+
 	if (!TryCreateSwapchainRenderPass(this->device, surfaceFormat, &this->renderPass))
 	{
 		DebugLogError("Couldn't create swapchain render pass.");
 		return false;
 	}
 
-	if (!TryCreateSwapchainFramebuffers(this->device, this->swapchainImageViews, this->swapchainExtent, this->renderPass, &this->swapchainFramebuffers))
+	if (!TryCreateSwapchainFramebuffers(this->device, this->swapchainImageViews, this->depthImageView, this->swapchainExtent, this->renderPass, &this->swapchainFramebuffers))
 	{
 		DebugLogError("Couldn't create swapchain framebuffers.");
 		return false;
@@ -2187,6 +2242,24 @@ void VulkanRenderBackend::shutdown()
 			this->renderPass = nullptr;
 		}
 
+		if (this->depthImageView)
+		{
+			this->device.destroyImageView(this->depthImageView);
+			this->depthImageView = nullptr;
+		}
+
+		if (this->depthImage)
+		{
+			this->device.destroyImage(this->depthImage);
+			this->depthImage = nullptr;
+		}
+
+		if (this->depthDeviceMemory)
+		{
+			this->device.freeMemory(this->depthDeviceMemory);
+			this->depthDeviceMemory = nullptr;
+		}
+
 		for (vk::ImageView imageView : this->swapchainImageViews)
 		{
 			if (imageView)
@@ -2536,7 +2609,7 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 	}
 
 	vk::ImageView imageView;
-	if (!TryCreateImageView(this->device, format, image, &imageView))
+	if (!TryCreateImageView(this->device, format, vk::ImageAspectFlagBits::eColor, image, &imageView))
 	{
 		DebugLogErrorFormat("Couldn't create image view with dims %dx%d.", width, height);
 		this->device.freeMemory(deviceMemory);
@@ -2710,7 +2783,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 	}
 
 	vk::ImageView imageView;
-	if (!TryCreateImageView(this->device, format, image, &imageView))
+	if (!TryCreateImageView(this->device, format, vk::ImageAspectFlagBits::eColor, image, &imageView))
 	{
 		DebugLogErrorFormat("Couldn't create image view with dims %dx%d.", width, height);
 		this->device.freeMemory(deviceMemory);
@@ -3120,15 +3193,16 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			imageMemoryBarriers);
 	}
 
-	vk::ClearValue clearColor;
-	clearColor.color = vk::ClearColorValue(0.1f, 0.1f, 0.1f, 1.0f);
+	vk::ClearValue clearValues[2];
+	clearValues[0].color = vk::ClearColorValue(0.1f, 0.1f, 0.1f, 1.0f);
+	clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 	vk::RenderPassBeginInfo renderPassBeginInfo;
 	renderPassBeginInfo.renderPass = this->renderPass;
 	renderPassBeginInfo.framebuffer = acquiredSwapchainFramebuffer;
 	renderPassBeginInfo.renderArea.extent = this->swapchainExtent;
-	renderPassBeginInfo.clearValueCount = 1;
-	renderPassBeginInfo.pClearValues = &clearColor;
+	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(std::size(clearValues));
+	renderPassBeginInfo.pClearValues = clearValues;
 
 	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 	this->commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->graphicsPipeline);

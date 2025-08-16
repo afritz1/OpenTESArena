@@ -183,6 +183,9 @@ private:
 	vk::Extent2D swapchainExtent;
 	vk::SwapchainKHR swapchain;
 	Buffer<vk::ImageView> swapchainImageViews;
+	vk::DeviceMemory depthDeviceMemory;
+	vk::Image depthImage;
+	vk::ImageView depthImageView;
 	vk::RenderPass renderPass;
 	Buffer<vk::Framebuffer> swapchainFramebuffers;
 
