@@ -28,7 +28,7 @@ namespace
 	constexpr uint32_t INVALID_UINT32 = std::numeric_limits<uint32_t>::max();
 	constexpr uint64_t TIMEOUT_UNLIMITED = std::numeric_limits<uint64_t>::max();
 
-	constexpr int HEAP_MAX_BYTES_VERTEX_BUFFER = 1 << 16; // 64KB
+	constexpr int HEAP_MAX_BYTES_VERTEX_BUFFER = 1 << 20; // 1MB
 	constexpr int HEAP_MAX_BYTES_INDEX_BUFFER = HEAP_MAX_BYTES_VERTEX_BUFFER;
 	constexpr int HEAP_MAX_BYTES_UNIFORM_BUFFER = 1 << 27; // 128MB (need lots for render transforms)
 
@@ -2078,7 +2078,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	constexpr int maxUniformBufferDescriptorSets = 16384;
-	constexpr int maxImageDescriptorSets = 1024;
+	constexpr int maxImageDescriptorSets = 2048;
 	const vk::DescriptorPoolSize descriptorPoolSizes[] =
 	{
 		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, maxUniformBufferDescriptorSets),
