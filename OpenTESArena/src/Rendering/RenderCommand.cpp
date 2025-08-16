@@ -21,9 +21,14 @@ int RenderCommandList::getTotalDrawCallCount() const
 
 void RenderCommandList::addDrawCalls(Span<const RenderDrawCall> drawCalls)
 {
+	if (drawCalls.getCount() == 0)
+	{
+		return;
+	}
+
 	if (this->entryCount >= static_cast<int>(std::size(this->entries)))
 	{
-		DebugLogError("Too many entries in command buffer, can't add range of " + std::to_string(drawCalls.getCount()) + " draw call(s).");
+		DebugLogErrorFormat("Too many entries in command buffer, can't add range of %d draw call(s).", drawCalls.getCount());
 		return;
 	}
 
