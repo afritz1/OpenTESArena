@@ -1318,7 +1318,7 @@ namespace
 	}
 
 	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule, vk::Extent2D swapchainExtent,
-		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, vk::Pipeline *outPipeline)
+		bool enableDepth, vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, vk::Pipeline *outPipeline)
 	{
 		vk::PipelineShaderStageCreateInfo vertexPipelineShaderStageCreateInfo;
 		vertexPipelineShaderStageCreateInfo.stage = vk::ShaderStageFlagBits::eVertex;
@@ -1406,9 +1406,9 @@ namespace
 		vk::PipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo;
 
 		vk::PipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo;
-		pipelineDepthStencilStateCreateInfo.depthTestEnable = true;
-		pipelineDepthStencilStateCreateInfo.depthWriteEnable = true;
-		pipelineDepthStencilStateCreateInfo.depthCompareOp = vk::CompareOp::eLess;
+		pipelineDepthStencilStateCreateInfo.depthTestEnable = enableDepth;
+		pipelineDepthStencilStateCreateInfo.depthWriteEnable = enableDepth;
+		pipelineDepthStencilStateCreateInfo.depthCompareOp = enableDepth ? vk::CompareOp::eLess : vk::CompareOp::eNever;
 		pipelineDepthStencilStateCreateInfo.depthBoundsTestEnable = false;
 		pipelineDepthStencilStateCreateInfo.stencilTestEnable = false;
 		pipelineDepthStencilStateCreateInfo.front = vk::StencilOp::eKeep;
@@ -1862,10 +1862,20 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, this->swapchainExtent, this->pipelineLayout,
+	// @todo eventually will probably want a PipelineKey struct
+	// - maybe precompile like 60% of the "known variants" ahead of time and let the remaining be discovered in play
+	// - shader thread?? use a fallback pitch black shader if key is not found
+	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, this->swapchainExtent, true, this->pipelineLayout,
 		this->renderPass, &this->graphicsPipeline))
 	{
 		DebugLogError("Couldn't create graphics pipeline.");
+		return false;
+	}
+
+	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, this->swapchainExtent, false, this->pipelineLayout,
+		this->renderPass, &this->noDepthGraphicsPipeline))
+	{
+		DebugLogError("Couldn't create no-depth graphics pipeline.");
 		return false;
 	}
 
@@ -2160,6 +2170,12 @@ void VulkanRenderBackend::shutdown()
 		{
 			this->device.destroySemaphore(this->imageIsAvailableSemaphore);
 			this->imageIsAvailableSemaphore = nullptr;
+		}
+
+		if (this->noDepthGraphicsPipeline)
+		{
+			this->device.destroyPipeline(this->noDepthGraphicsPipeline);
+			this->noDepthGraphicsPipeline = nullptr;
 		}
 
 		if (this->graphicsPipeline)
@@ -3205,17 +3221,25 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	renderPassBeginInfo.pClearValues = clearValues;
 
 	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
-	this->commandBuffer.bindPipeline(vk::PipelineBindPoint::eGraphics, this->graphicsPipeline);
 
+	constexpr vk::PipelineBindPoint pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 	vk::ArrayProxy<const uint32_t> dynamicOffsets;
 
 	constexpr uint32_t globalDescriptorSetIndex = 0;
-	this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, dynamicOffsets);
+	this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, dynamicOffsets);
 
+	vk::Pipeline currentPipeline;
 	for (int i = 0; i < renderCommandList.entryCount; i++)
 	{
 		for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
 		{
+			const vk::Pipeline pipeline = drawCall.enableDepthWrite ? this->graphicsPipeline : this->noDepthGraphicsPipeline;
+			if (currentPipeline != pipeline)
+			{
+				currentPipeline = pipeline;
+				this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline);
+			}
+
 			const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(drawCall.positionBufferID);
 			const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
 
@@ -3233,12 +3257,12 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
 			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform; // @todo uniform buffer index for weather particles, use w/ dynamicOffsets?
 			constexpr uint32_t transformDescriptorSetIndex = 1;
-			this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, dynamicOffsets);
+			this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, dynamicOffsets);
 
 			const ObjectTextureID textureID = drawCall.textureIDs[0];
 			const VulkanTexture &texture = this->objectTexturePool.get(textureID);
 			constexpr uint32_t materialDescriptorSetIndex = 2;
-			this->commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
+			this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
 
 			constexpr uint32_t meshInstanceCount = 1;
 			this->commandBuffer.drawIndexed(indexInfo.indexCount, meshInstanceCount, 0, 0, 0);

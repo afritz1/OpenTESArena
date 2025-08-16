@@ -204,6 +204,7 @@ private:
 
 	vk::PipelineLayout pipelineLayout;
 	vk::Pipeline graphicsPipeline;
+	vk::Pipeline noDepthGraphicsPipeline;
 
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;
