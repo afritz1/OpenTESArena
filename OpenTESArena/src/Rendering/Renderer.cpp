@@ -329,38 +329,32 @@ bool Renderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices
 
 ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)
 {
-	ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
-	return allocator->create(width, height, bytesPerTexel);
+	return this->backend->createObjectTexture(width, height, bytesPerTexel);
 }
 
 void Renderer::freeObjectTexture(ObjectTextureID id)
 {
-	ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
-	allocator->free(id);
+	this->backend->freeObjectTexture(id);
 }
 
 std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
 {
-	const ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
-	return allocator->tryGetDimensions(id);
+	return this->backend->tryGetObjectTextureDims(id);
 }
 
 LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
 {
-	ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
-	return allocator->lock(id);
+	return this->backend->lockObjectTexture(id);
 }
 
 void Renderer::unlockObjectTexture(ObjectTextureID id)
 {
-	ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
-	allocator->unlock(id);
+	this->backend->unlockObjectTexture(id);
 }
 
 bool Renderer::populateObjectTexture(ObjectTextureID id, Span<const std::byte> texels)
 {
-	ObjectTextureAllocator *allocator = this->backend->getObjectTextureAllocator();
-	LockedTexture lockedTexture = allocator->lock(id);
+	LockedTexture lockedTexture = this->backend->lockObjectTexture(id);
 	if (!lockedTexture.isValid())
 	{
 		DebugLogErrorFormat("Couldn't lock object texture %d.", id);
@@ -370,7 +364,7 @@ bool Renderer::populateObjectTexture(ObjectTextureID id, Span<const std::byte> t
 	DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
 	std::copy(texels.begin(), texels.end(), lockedTexture.texels.begin());
 
-	allocator->unlock(id);
+	this->backend->unlockObjectTexture(id);
 	return true;
 }
 
@@ -382,38 +376,32 @@ bool Renderer::populateObjectTexture8Bit(ObjectTextureID id, Span<const uint8_t>
 
 UiTextureID Renderer::createUiTexture(int width, int height)
 {
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	return allocator->create(width, height);
+	return this->backend->createUiTexture(width, height);
 }
 
 void Renderer::freeUiTexture(UiTextureID id)
 {
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	allocator->free(id);
+	this->backend->freeUiTexture(id);
 }
 
 std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
 {
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	return allocator->tryGetDimensions(id);
+	return this->backend->tryGetUiTextureDims(id);
 }
 
 LockedTexture Renderer::lockUiTexture(UiTextureID id)
 {
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	return allocator->lock(id);
+	return this->backend->lockUiTexture(id);
 }
 
 void Renderer::unlockUiTexture(UiTextureID id)
 {
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	allocator->unlock(id);
+	this->backend->unlockUiTexture(id);
 }
 
 bool Renderer::populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette)
 {
-	UiTextureAllocator *allocator = this->backend->getUiTextureAllocator();
-	LockedTexture lockedTexture = allocator->lock(id);
+	LockedTexture lockedTexture = this->backend->lockUiTexture(id);
 	if (!lockedTexture.isValid())
 	{
 		DebugLogErrorFormat("Couldn't lock UI texture %d.", id);
@@ -439,7 +427,7 @@ bool Renderer::populateUiTexture(UiTextureID id, Span<const std::byte> texels, c
 		});
 	}
 
-	allocator->unlock(id);
+	this->backend->unlockUiTexture(id);
 	return true;
 }
 

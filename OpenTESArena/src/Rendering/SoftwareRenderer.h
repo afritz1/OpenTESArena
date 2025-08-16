@@ -5,7 +5,6 @@
 #include <cstdint>
 
 #include "RenderLightUtils.h"
-#include "RenderTextureAllocator.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
@@ -123,23 +122,6 @@ using SoftwareUniformBufferPool = RecyclablePool<UniformBufferID, SoftwareUnifor
 using SoftwareObjectTexturePool = RecyclablePool<ObjectTextureID, SoftwareObjectTexture>;
 using SoftwareLightPool = RecyclablePool<RenderLightID, SoftwareLight>;
 
-struct SoftwareObjectTextureAllocator final : public ObjectTextureAllocator
-{
-	SoftwareObjectTexturePool *pool;
-
-	SoftwareObjectTextureAllocator();
-
-	void init(SoftwareObjectTexturePool *pool);
-
-	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
-	void free(ObjectTextureID textureID) override;
-
-	std::optional<Int2> tryGetDimensions(ObjectTextureID textureID) const override;
-
-	LockedTexture lock(ObjectTextureID textureID) override;
-	void unlock(ObjectTextureID textureID) override;
-};
-
 class SoftwareRenderer
 {
 private:
@@ -154,8 +136,6 @@ private:
 	SoftwareUniformBufferPool uniformBuffers;
 	SoftwareObjectTexturePool objectTextures;
 	SoftwareLightPool lights;
-
-	SoftwareObjectTextureAllocator textureAllocator;
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer();
@@ -185,7 +165,11 @@ public:
 	LockedBuffer lockIndexBuffer(IndexBufferID id);
 	void unlockIndexBuffer(IndexBufferID id);
 
-	ObjectTextureAllocator *getTextureAllocator();
+	ObjectTextureID createTexture(int width, int height, int bytesPerTexel);
+	void freeTexture(ObjectTextureID textureID);
+	std::optional<Int2> tryGetTextureDims(ObjectTextureID id) const;
+	LockedTexture lockTexture(ObjectTextureID textureID);
+	void unlockTexture(ObjectTextureID textureID);
 
 	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
 	void freeUniformBuffer(UniformBufferID id);

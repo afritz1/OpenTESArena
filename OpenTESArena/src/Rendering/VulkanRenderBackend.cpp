@@ -1513,358 +1513,6 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image ima
 	this->stagingHostMappedBytes = stagingHostMappedBytes;
 }
 
-VulkanObjectTextureAllocator::VulkanObjectTextureAllocator()
-{
-	this->pool = nullptr;
-	this->queueFamilyIndex = INVALID_UINT32;
-	this->pendingCommands = nullptr;
-}
-
-void VulkanObjectTextureAllocator::init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device,
-	vk::Queue queue, vk::CommandBuffer commandBuffer, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool,
-	VulkanPendingCommands *pendingCommands)
-{
-	this->pool = pool;
-	this->physicalDevice = physicalDevice;
-	this->queueFamilyIndex = queueFamilyIndex;
-	this->device = device;
-	this->queue = queue;
-	this->commandBuffer = commandBuffer;
-	this->descriptorSetLayout = descriptorSetLayout;
-	this->descriptorPool = descriptorPool;
-	this->pendingCommands = pendingCommands;
-}
-
-ObjectTextureID VulkanObjectTextureAllocator::create(int width, int height, int bytesPerTexel)
-{
-	const ObjectTextureID textureID = this->pool->alloc();
-	if (textureID < 0)
-	{
-		DebugLogErrorFormat("Couldn't allocate object texture with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
-		return -1;
-	}
-
-	const vk::Format format = (bytesPerTexel == 1) ? vk::Format::eR8Uint : vk::Format::eR8G8B8A8Uint;
-	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-
-	vk::Image image;
-	vk::DeviceMemory deviceMemory;
-	if (!TryCreateImage(this->device, width, height, format, usageFlags, this->queueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
-	{
-		DebugLogErrorFormat("Couldn't create image with dims %dx%d.", width, height);
-		this->pool->free(textureID);
-		return -1;
-	}
-
-	vk::ImageView imageView;
-	if (!TryCreateImageView(this->device, format, image, &imageView))
-	{
-		DebugLogErrorFormat("Couldn't create image view with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	vk::Sampler sampler;
-	if (!TryCreateSampler(this->device, &sampler))
-	{
-		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	vk::DescriptorSet descriptorSet;
-	if (!TryCreateDescriptorSet(this->device, this->descriptorSetLayout, this->descriptorPool, &descriptorSet))
-	{
-		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
-
-	constexpr vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
-	const int byteCount = width * height * bytesPerTexel;
-	vk::DeviceMemory stagingDeviceMemory;
-	if (!TryAllocateMemory(this->device, byteCount, stagingUsageFlags, true, this->physicalDevice, &stagingDeviceMemory))
-	{
-		DebugLogErrorFormat("Couldn't allocate memory for object texture with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	constexpr int stagingByteOffset = 0;
-	vk::Buffer stagingBuffer;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndMapMemory(this->device, stagingByteOffset, byteCount, stagingUsageFlags, this->queueFamilyIndex, stagingDeviceMemory, &stagingBuffer, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create buffer and map memory for object texture with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	VulkanTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, descriptorSet, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
-
-	return textureID;
-}
-
-void VulkanObjectTextureAllocator::free(ObjectTextureID textureID)
-{
-	VulkanTexture *texture = this->pool->tryGet(textureID);
-	if (texture != nullptr)
-	{
-		if (texture->stagingDeviceMemory)
-		{
-			this->device.freeMemory(texture->stagingDeviceMemory);
-		}
-
-		if (texture->stagingBuffer)
-		{
-			this->device.destroyBuffer(texture->stagingBuffer);
-		}
-
-		if (texture->descriptorSet)
-		{
-			this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
-			texture->descriptorSet = nullptr;
-		}
-
-		if (texture->sampler)
-		{
-			this->device.destroySampler(texture->sampler);
-		}
-
-		if (texture->imageView)
-		{
-			this->device.destroyImageView(texture->imageView);
-		}
-
-		if (texture->deviceMemory)
-		{
-			this->device.freeMemory(texture->deviceMemory);
-		}
-
-		if (texture->image)
-		{
-			this->device.destroyImage(texture->image);
-		}
-	}
-
-	this->pool->free(textureID);
-}
-
-std::optional<Int2> VulkanObjectTextureAllocator::tryGetDimensions(ObjectTextureID id) const
-{
-	const VulkanTexture *texture = this->pool->tryGet(id);
-	if (texture == nullptr)
-	{
-		return std::nullopt;
-	}
-
-	return Int2(texture->width, texture->height);
-}
-
-LockedTexture VulkanObjectTextureAllocator::lock(ObjectTextureID textureID)
-{
-	VulkanTexture &texture = this->pool->get(textureID);
-	return LockedTexture(texture.stagingHostMappedBytes, texture.width, texture.height, texture.bytesPerTexel);
-}
-
-void VulkanObjectTextureAllocator::unlock(ObjectTextureID textureID)
-{
-	VulkanTexture &texture = this->pool->get(textureID);
-	const int width = texture.width;
-	const int height = texture.height;
-	const int bytesPerTexel = texture.bytesPerTexel;
-	vk::Image image = texture.image;
-	vk::Buffer stagingBuffer = texture.stagingBuffer;
-
-	auto commandBufferFunc = [this, width, height, image, stagingBuffer]()
-	{
-		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
-		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
-		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
-	};
-
-	this->pendingCommands->copyCommands.emplace_back(std::move(commandBufferFunc));
-}
-
-VulkanUiTextureAllocator::VulkanUiTextureAllocator()
-{
-	this->pool = nullptr;
-	this->queueFamilyIndex = INVALID_UINT32;
-	this->pendingCommands = nullptr;
-}
-
-void VulkanUiTextureAllocator::init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
-	vk::CommandBuffer commandBuffer, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, VulkanPendingCommands *pendingCommands)
-{
-	this->pool = pool;
-	this->physicalDevice = physicalDevice;
-	this->queueFamilyIndex = queueFamilyIndex;
-	this->device = device;
-	this->queue = queue;
-	this->commandBuffer = commandBuffer;
-	this->descriptorSetLayout = descriptorSetLayout;
-	this->descriptorPool = descriptorPool;
-	this->pendingCommands = pendingCommands;
-}
-
-UiTextureID VulkanUiTextureAllocator::create(int width, int height)
-{
-	const UiTextureID textureID = this->pool->alloc();
-	if (textureID < 0)
-	{
-		DebugLogErrorFormat("Couldn't allocate UI texture with dims %dx%d.", width, height);
-		return -1;
-	}
-
-	constexpr int bytesPerTexel = 4;
-	constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
-	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-
-	vk::Image image;
-	vk::DeviceMemory deviceMemory;
-	if (!TryCreateImage(this->device, width, height, format, usageFlags, this->queueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
-	{
-		DebugLogErrorFormat("Couldn't create image with dims %dx%d.", width, height);
-		this->pool->free(textureID);
-		return -1;
-	}
-
-	vk::ImageView imageView;
-	if (!TryCreateImageView(this->device, format, image, &imageView))
-	{
-		DebugLogErrorFormat("Couldn't create image view with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	vk::Sampler sampler;
-	if (!TryCreateSampler(this->device, &sampler))
-	{
-		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	vk::DescriptorSet descriptorSet;
-	if (!TryCreateDescriptorSet(this->device, this->descriptorSetLayout, this->descriptorPool, &descriptorSet))
-	{
-		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
-
-	constexpr vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
-	const int byteCount = width * height * bytesPerTexel;
-	vk::DeviceMemory stagingDeviceMemory;
-	if (!TryAllocateMemory(this->device, byteCount, stagingUsageFlags, true, this->physicalDevice, &stagingDeviceMemory))
-	{
-		DebugLogErrorFormat("Couldn't allocate memory for UI texture with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	constexpr int stagingByteOffset = 0;
-	vk::Buffer stagingBuffer;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndMapMemory(this->device, stagingByteOffset, byteCount, stagingUsageFlags, this->queueFamilyIndex, stagingDeviceMemory, &stagingBuffer, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create buffer and map memory for UI texture with dims %dx%d.", width, height);
-		this->free(textureID);
-		return -1;
-	}
-
-	VulkanTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, descriptorSet, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
-
-	return textureID;
-}
-
-void VulkanUiTextureAllocator::free(UiTextureID textureID)
-{
-	VulkanTexture *texture = this->pool->tryGet(textureID);
-	if (texture != nullptr)
-	{
-		if (texture->stagingDeviceMemory)
-		{
-			this->device.freeMemory(texture->stagingDeviceMemory);
-		}
-
-		if (texture->stagingBuffer)
-		{
-			this->device.destroyBuffer(texture->stagingBuffer);
-		}
-
-		if (texture->descriptorSet)
-		{
-			this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
-			texture->descriptorSet = nullptr;
-		}
-
-		if (texture->sampler)
-		{
-			this->device.destroySampler(texture->sampler);
-		}
-
-		if (texture->imageView)
-		{
-			this->device.destroyImageView(texture->imageView);
-		}
-
-		if (texture->deviceMemory)
-		{
-			this->device.freeMemory(texture->deviceMemory);
-		}
-
-		if (texture->image)
-		{
-			this->device.destroyImage(texture->image);
-		}
-	}
-
-	this->pool->free(textureID);
-}
-
-std::optional<Int2> VulkanUiTextureAllocator::tryGetDimensions(UiTextureID id) const
-{
-	const VulkanTexture *texture = this->pool->tryGet(id);
-	if (texture == nullptr)
-	{
-		return std::nullopt;
-	}
-
-	return Int2(texture->width, texture->height);
-}
-
-LockedTexture VulkanUiTextureAllocator::lock(UiTextureID textureID)
-{
-	VulkanTexture &texture = this->pool->get(textureID);
-	return LockedTexture(texture.stagingHostMappedBytes, texture.width, texture.height, texture.bytesPerTexel);
-}
-
-void VulkanUiTextureAllocator::unlock(UiTextureID textureID)
-{
-	VulkanTexture &texture = this->pool->get(textureID);
-	const int width = texture.width;
-	const int height = texture.height;
-	DebugAssert(texture.bytesPerTexel == 4);
-	vk::Image image = texture.image;
-	vk::Buffer stagingBuffer = texture.stagingBuffer;
-
-	auto commandBufferFunc = [this, width, height, image, stagingBuffer]()
-	{
-		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
-		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
-		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
-	};
-
-	this->pendingCommands->copyCommands.emplace_back(std::move(commandBufferFunc));
-}
-
 VulkanCamera::VulkanCamera()
 {
 	this->matrixBytes = Span<const std::byte>(reinterpret_cast<const std::byte*>(&this->viewProjection), VulkanCamera::BYTE_COUNT);
@@ -2145,11 +1793,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		DebugLogError("Couldn't create global descriptor set.");
 		return false;
 	}
-
-	this->objectTextureAllocator.init(&this->objectTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue,
-		this->commandBuffer, this->materialDescriptorSetLayout, this->descriptorPool, &this->pendingCommands);
-	this->uiTextureAllocator.init(&this->uiTexturePool, this->physicalDevice, this->graphicsQueueFamilyIndex, this->device, this->graphicsQueue,
-		this->commandBuffer, this->materialDescriptorSetLayout, this->descriptorPool, &this->pendingCommands);
 
 	const vk::DescriptorSetLayout descriptorSetLayouts[] =
 	{
@@ -2675,9 +2318,9 @@ void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 			this->vertexBufferDeviceLocalHeap.freeMapping(vertexPositionBuffer->buffer);
 			this->device.destroyBuffer(vertexPositionBuffer->buffer);
 		}
-	}
 
-	this->vertexPositionBufferPool.free(id);
+		this->vertexPositionBufferPool.free(id);
+	}
 }
 
 LockedBuffer VulkanRenderBackend::lockVertexPositionBuffer(VertexPositionBufferID id)
@@ -2760,9 +2403,9 @@ void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 			this->vertexBufferDeviceLocalHeap.freeMapping(vertexAttributeBuffer->buffer);
 			this->device.destroyBuffer(vertexAttributeBuffer->buffer);
 		}
-	}
 
-	this->vertexAttributeBufferPool.free(id);
+		this->vertexAttributeBufferPool.free(id);
+	}
 }
 
 LockedBuffer VulkanRenderBackend::lockVertexAttributeBuffer(VertexAttributeBufferID id)
@@ -2844,9 +2487,9 @@ void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 			this->indexBufferDeviceLocalHeap.freeMapping(indexBuffer->buffer);
 			this->device.destroyBuffer(indexBuffer->buffer);
 		}
-	}
 
-	this->indexBufferPool.free(id);
+		this->indexBufferPool.free(id);
+	}
 }
 
 LockedBuffer VulkanRenderBackend::lockIndexBuffer(IndexBufferID id)
@@ -2871,14 +2514,351 @@ void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
-ObjectTextureAllocator *VulkanRenderBackend::getObjectTextureAllocator()
+ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, int bytesPerTexel)
 {
-	return &this->objectTextureAllocator;
+	const ObjectTextureID textureID = this->objectTexturePool.alloc();
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate object texture with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
+		return -1;
+	}
+
+	const vk::Format format = (bytesPerTexel == 1) ? vk::Format::eR8Uint : vk::Format::eR8G8B8A8Uint;
+	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+
+	vk::Image image;
+	vk::DeviceMemory deviceMemory;
+	if (!TryCreateImage(this->device, width, height, format, usageFlags, this->graphicsQueueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't create image with dims %dx%d.", width, height);
+		this->objectTexturePool.free(textureID);
+		return -1;
+	}
+
+	vk::ImageView imageView;
+	if (!TryCreateImageView(this->device, format, image, &imageView))
+	{
+		DebugLogErrorFormat("Couldn't create image view with dims %dx%d.", width, height);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->objectTexturePool.free(textureID);
+		return -1;
+	}
+
+	vk::Sampler sampler;
+	if (!TryCreateSampler(this->device, &sampler))
+	{
+		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
+		this->device.destroyImageView(imageView);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->objectTexturePool.free(textureID);
+		return -1;
+	}
+
+	vk::DescriptorSet descriptorSet;
+	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	{
+		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
+		this->device.destroySampler(sampler);
+		this->device.destroyImageView(imageView);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->objectTexturePool.free(textureID);
+		return -1;
+	}
+
+	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
+
+	constexpr vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
+	const int byteCount = width * height * bytesPerTexel;
+	vk::DeviceMemory stagingDeviceMemory;
+	if (!TryAllocateMemory(this->device, byteCount, stagingUsageFlags, true, this->physicalDevice, &stagingDeviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't allocate memory for object texture with dims %dx%d.", width, height);
+		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
+		this->device.destroySampler(sampler);
+		this->device.destroyImageView(imageView);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->objectTexturePool.free(textureID);
+		return -1;
+	}
+
+	constexpr int stagingByteOffset = 0;
+	vk::Buffer stagingBuffer;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateBufferAndMapMemory(this->device, stagingByteOffset, byteCount, stagingUsageFlags, this->graphicsQueueFamilyIndex, stagingDeviceMemory, &stagingBuffer, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create buffer and map memory for object texture with dims %dx%d.", width, height);
+		this->device.freeMemory(stagingDeviceMemory);
+		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
+		this->device.destroySampler(sampler);
+		this->device.destroyImageView(imageView);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->objectTexturePool.free(textureID);
+		return -1;
+	}
+
+	VulkanTexture &texture = this->objectTexturePool.get(textureID);
+	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, descriptorSet, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
+
+	return textureID;
 }
 
-UiTextureAllocator *VulkanRenderBackend::getUiTextureAllocator()
+void VulkanRenderBackend::freeObjectTexture(ObjectTextureID id)
 {
-	return &this->uiTextureAllocator;
+	VulkanTexture *texture = this->objectTexturePool.tryGet(id);
+	if (texture != nullptr)
+	{
+		if (texture->stagingDeviceMemory)
+		{
+			this->device.freeMemory(texture->stagingDeviceMemory);
+		}
+
+		if (texture->stagingBuffer)
+		{
+			this->device.destroyBuffer(texture->stagingBuffer);
+		}
+
+		if (texture->descriptorSet)
+		{
+			this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
+		}
+
+		if (texture->sampler)
+		{
+			this->device.destroySampler(texture->sampler);
+		}
+
+		if (texture->imageView)
+		{
+			this->device.destroyImageView(texture->imageView);
+		}
+
+		if (texture->deviceMemory)
+		{
+			this->device.freeMemory(texture->deviceMemory);
+		}
+
+		if (texture->image)
+		{
+			this->device.destroyImage(texture->image);
+		}
+
+		this->objectTexturePool.free(id);
+	}
+}
+
+std::optional<Int2> VulkanRenderBackend::tryGetObjectTextureDims(ObjectTextureID id) const
+{
+	const VulkanTexture *texture = this->objectTexturePool.tryGet(id);
+	if (texture == nullptr)
+	{
+		return std::nullopt;
+	}
+
+	return Int2(texture->width, texture->height);
+}
+
+LockedTexture VulkanRenderBackend::lockObjectTexture(ObjectTextureID id)
+{
+	VulkanTexture &texture = this->objectTexturePool.get(id);
+	return LockedTexture(texture.stagingHostMappedBytes, texture.width, texture.height, texture.bytesPerTexel);
+}
+
+void VulkanRenderBackend::unlockObjectTexture(ObjectTextureID id)
+{
+	VulkanTexture &texture = this->objectTexturePool.get(id);
+	const int width = texture.width;
+	const int height = texture.height;
+	const int bytesPerTexel = texture.bytesPerTexel;
+	vk::Image image = texture.image;
+	vk::Buffer stagingBuffer = texture.stagingBuffer;
+
+	auto commandBufferFunc = [this, width, height, image, stagingBuffer]()
+	{
+		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
+		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
+		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
+	};
+
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+}
+
+UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
+{
+	const UiTextureID textureID = this->uiTexturePool.alloc();
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate UI texture with dims %dx%d.", width, height);
+		return -1;
+	}
+
+	constexpr int bytesPerTexel = 4;
+	constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
+	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+
+	vk::Image image;
+	vk::DeviceMemory deviceMemory;
+	if (!TryCreateImage(this->device, width, height, format, usageFlags, this->graphicsQueueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't create image with dims %dx%d.", width, height);
+		this->uiTexturePool.free(textureID);
+		return -1;
+	}
+
+	vk::ImageView imageView;
+	if (!TryCreateImageView(this->device, format, image, &imageView))
+	{
+		DebugLogErrorFormat("Couldn't create image view with dims %dx%d.", width, height);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->uiTexturePool.free(textureID);
+		return -1;
+	}
+
+	vk::Sampler sampler;
+	if (!TryCreateSampler(this->device, &sampler))
+	{
+		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
+		this->device.destroyImageView(imageView);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->uiTexturePool.free(textureID);
+		return -1;
+	}
+
+	vk::DescriptorSet descriptorSet;
+	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	{
+		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
+		this->device.destroySampler(sampler);
+		this->device.destroyImageView(imageView);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->uiTexturePool.free(textureID);
+		return -1;
+	}
+
+	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
+
+	constexpr vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
+	const int byteCount = width * height * bytesPerTexel;
+	vk::DeviceMemory stagingDeviceMemory;
+	if (!TryAllocateMemory(this->device, byteCount, stagingUsageFlags, true, this->physicalDevice, &stagingDeviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't allocate memory for UI texture with dims %dx%d.", width, height);
+		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
+		this->device.destroySampler(sampler);
+		this->device.destroyImageView(imageView);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->uiTexturePool.free(textureID);
+		return -1;
+	}
+
+	constexpr int stagingByteOffset = 0;
+	vk::Buffer stagingBuffer;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateBufferAndMapMemory(this->device, stagingByteOffset, byteCount, stagingUsageFlags, this->graphicsQueueFamilyIndex, stagingDeviceMemory, &stagingBuffer, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create buffer and map memory for UI texture with dims %dx%d.", width, height);
+		this->device.freeMemory(stagingDeviceMemory);
+		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
+		this->device.destroySampler(sampler);
+		this->device.destroyImageView(imageView);
+		this->device.freeMemory(deviceMemory);
+		this->device.destroyImage(image);
+		this->uiTexturePool.free(textureID);
+		return -1;
+	}
+
+	VulkanTexture &texture = this->uiTexturePool.get(textureID);
+	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, descriptorSet, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
+
+	return textureID;
+}
+
+void VulkanRenderBackend::freeUiTexture(UiTextureID id)
+{
+	VulkanTexture *texture = this->uiTexturePool.tryGet(id);
+	if (texture != nullptr)
+	{
+		if (texture->stagingDeviceMemory)
+		{
+			this->device.freeMemory(texture->stagingDeviceMemory);
+		}
+
+		if (texture->stagingBuffer)
+		{
+			this->device.destroyBuffer(texture->stagingBuffer);
+		}
+
+		if (texture->descriptorSet)
+		{
+			this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
+		}
+
+		if (texture->sampler)
+		{
+			this->device.destroySampler(texture->sampler);
+		}
+
+		if (texture->imageView)
+		{
+			this->device.destroyImageView(texture->imageView);
+		}
+
+		if (texture->deviceMemory)
+		{
+			this->device.freeMemory(texture->deviceMemory);
+		}
+
+		if (texture->image)
+		{
+			this->device.destroyImage(texture->image);
+		}
+
+		this->uiTexturePool.free(id);
+	}
+}
+
+std::optional<Int2> VulkanRenderBackend::tryGetUiTextureDims(UiTextureID id) const
+{
+	const VulkanTexture *texture = this->uiTexturePool.tryGet(id);
+	if (texture == nullptr)
+	{
+		return std::nullopt;
+	}
+
+	return Int2(texture->width, texture->height);
+}
+
+LockedTexture VulkanRenderBackend::lockUiTexture(UiTextureID id)
+{
+	VulkanTexture &texture = this->uiTexturePool.get(id);
+	return LockedTexture(texture.stagingHostMappedBytes, texture.width, texture.height, texture.bytesPerTexel);
+}
+
+void VulkanRenderBackend::unlockUiTexture(UiTextureID id)
+{
+	VulkanTexture &texture = this->uiTexturePool.get(id);
+	const int width = texture.width;
+	const int height = texture.height;
+	DebugAssert(texture.bytesPerTexel == 4);
+	vk::Image image = texture.image;
+	vk::Buffer stagingBuffer = texture.stagingBuffer;
+
+	auto commandBufferFunc = [this, width, height, image, stagingBuffer]()
+	{
+		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
+		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
+		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
+	};
+
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)

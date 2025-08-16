@@ -20,28 +20,28 @@ namespace
 {
 	using TexelsInitFunc = std::function<void(Span2D<uint32_t>)>;
 
-	UiTextureID CreateUiTexture(int width, int height, const TexelsInitFunc &initFunc, SdlUiTexturePool *pool, SDL_Renderer *renderer)
+	UiTextureID CreateUiTexture(int width, int height, const TexelsInitFunc &initFunc, SdlUiTexturePool &pool, SDL_Renderer *renderer)
 	{
-		const UiTextureID textureID = pool->alloc();
+		const UiTextureID textureID = pool.alloc();
 		if (textureID < 0)
 		{
 			DebugLogErrorFormat("Couldn't allocate texture ID from pool for SDL_Texture with dims %dx%d.", width, height);
 			return -1;
 		}
 
-		SDL_Texture *&texture = pool->get(textureID);
+		SDL_Texture *&texture = pool.get(textureID);
 		texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
 		if (texture == nullptr)
 		{
 			DebugLogErrorFormat("Couldn't allocate SDL_Texture with dims %dx%d (%s).", width, height, SDL_GetError());
-			pool->free(textureID);
+			pool.free(textureID);
 			return -1;
 		}
 
 		if (SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND) != 0)
 		{
 			DebugLogErrorFormat("Couldn't set SDL_Texture blend mode with dims %dx%d (%s).", width, height, SDL_GetError());
-			pool->free(textureID);
+			pool.free(textureID);
 			return -1;
 		}
 
@@ -50,7 +50,7 @@ namespace
 		if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
 		{
 			DebugLogErrorFormat("Couldn't lock SDL_Texture for writing with dims %dx%d (%s).", width, height, SDL_GetError());
-			pool->free(textureID);
+			pool.free(textureID);
 			return -1;
 		}
 
@@ -62,31 +62,47 @@ namespace
 	}
 }
 
-SdlUiTextureAllocator::SdlUiTextureAllocator()
+SdlUiRenderer::SdlUiRenderer()
 {
-	this->pool = nullptr;
 	this->renderer = nullptr;
 }
 
-void SdlUiTextureAllocator::init(SdlUiTexturePool *pool, SDL_Renderer *renderer)
+bool SdlUiRenderer::init(SDL_Window *window)
 {
-	this->pool = pool;
-	this->renderer = renderer;
+	this->renderer = SDL_GetRenderer(window);
+	if (this->renderer == nullptr)
+	{
+		DebugLogError("Couldn't get SDL_Renderer from window.");
+		return false;
+	}
+
+	return true;
 }
 
-UiTextureID SdlUiTextureAllocator::create(int width, int height)
+void SdlUiRenderer::shutdown()
+{
+	for (SDL_Texture *texture : this->texturePool.values)
+	{
+		SDL_DestroyTexture(texture);
+	}
+
+	this->texturePool.clear();
+	this->renderer = nullptr;
+}
+
+UiTextureID SdlUiRenderer::createTexture(int width, int height)
 {
 	TexelsInitFunc initFunc = [](Span2D<uint32_t> dstTexels)
 	{
 		dstTexels.fill(Colors::MagentaARGB);
 	};
 
-	return CreateUiTexture(width, height, initFunc, this->pool, this->renderer);
+	return CreateUiTexture(width, height, initFunc, this->texturePool, this->renderer);
 }
 
-void SdlUiTextureAllocator::free(UiTextureID textureID)
+void SdlUiRenderer::freeTexture(UiTextureID textureID)
 {
-	SDL_Texture **texture = this->pool->tryGet(textureID);
+	SDL_Texture **texture = this->texturePool.tryGet(textureID);
 	if (texture == nullptr)
 	{
 		DebugLogWarningFormat("No SDL_Texture to free at ID %d.", textureID);
@@ -94,12 +110,12 @@ void SdlUiTextureAllocator::free(UiTextureID textureID)
 	}
 
 	SDL_DestroyTexture(*texture);
-	this->pool->free(textureID);
+	this->texturePool.free(textureID);
 }
 
-std::optional<Int2> SdlUiTextureAllocator::tryGetDimensions(UiTextureID textureID) const
+std::optional<Int2> SdlUiRenderer::tryGetTextureDims(UiTextureID textureID) const
 {
-	SDL_Texture *const *texture = this->pool->tryGet(textureID);
+	SDL_Texture *const *texture = this->texturePool.tryGet(textureID);
 	if (texture == nullptr)
 	{
 		DebugLogWarningFormat("No SDL_Texture registered for ID %d.", textureID);
@@ -117,9 +133,9 @@ std::optional<Int2> SdlUiTextureAllocator::tryGetDimensions(UiTextureID textureI
 	return Int2(width, height);
 }
 
-LockedTexture SdlUiTextureAllocator::lock(UiTextureID textureID)
+LockedTexture SdlUiRenderer::lockTexture(UiTextureID textureID)
 {
-	SDL_Texture **texture = this->pool->tryGet(textureID);
+	SDL_Texture **texture = this->texturePool.tryGet(textureID);
 	if (texture == nullptr)
 	{
 		DebugLogWarningFormat("No SDL_Texture to lock at ID %d.", textureID);
@@ -146,9 +162,9 @@ LockedTexture SdlUiTextureAllocator::lock(UiTextureID textureID)
 	return LockedTexture(Span<std::byte>(reinterpret_cast<std::byte*>(dstTexels), byteCount), width, height, bytesPerElement);
 }
 
-void SdlUiTextureAllocator::unlock(UiTextureID textureID)
+void SdlUiRenderer::unlockTexture(UiTextureID textureID)
 {
-	SDL_Texture **texture = this->pool->tryGet(textureID);
+	SDL_Texture **texture = this->texturePool.tryGet(textureID);
 	if (texture == nullptr)
 	{
 		DebugLogWarningFormat("No SDL_Texture to unlock at ID %d.", textureID);
@@ -156,40 +172,6 @@ void SdlUiTextureAllocator::unlock(UiTextureID textureID)
 	}
 
 	SDL_UnlockTexture(*texture);
-}
-
-SdlUiRenderer::SdlUiRenderer()
-{
-	this->renderer = nullptr;
-}
-
-bool SdlUiRenderer::init(SDL_Window *window)
-{
-	this->renderer = SDL_GetRenderer(window);
-	if (this->renderer == nullptr)
-	{
-		DebugLogError("Couldn't get SDL_Renderer from window.");
-		return false;
-	}
-
-	this->textureAllocator.init(&this->texturePool, this->renderer);
-	return true;
-}
-
-void SdlUiRenderer::shutdown()
-{
-	for (SDL_Texture *texture : this->texturePool.values)
-	{
-		SDL_DestroyTexture(texture);
-	}
-
-	this->texturePool.clear();
-	this->renderer = nullptr;
-}
-
-UiTextureAllocator *SdlUiRenderer::getTextureAllocator()
-{
-	return &this->textureAllocator;
 }
 
 void SdlUiRenderer::draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect)

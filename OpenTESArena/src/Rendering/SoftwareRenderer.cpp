@@ -4406,54 +4406,6 @@ void SoftwareLight::init(const Double3 &worldPoint, double startRadius, double e
 	this->startEndRadiusDiffRecip = 1.0 / this->startEndRadiusDiff;
 }
 
-SoftwareObjectTextureAllocator::SoftwareObjectTextureAllocator()
-{
-	this->pool = nullptr;
-}
-
-void SoftwareObjectTextureAllocator::init(SoftwareObjectTexturePool *pool)
-{
-	this->pool = pool;
-}
-
-ObjectTextureID SoftwareObjectTextureAllocator::create(int width, int height, int bytesPerTexel)
-{
-	const ObjectTextureID textureID = this->pool->alloc();
-	if (textureID < 0)
-	{
-		DebugLogErrorFormat("Couldn't allocate software object texture with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
-		return -1;
-	}
-
-	SoftwareObjectTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel);
-	return textureID;
-}
-
-void SoftwareObjectTextureAllocator::free(ObjectTextureID textureID)
-{
-	this->pool->free(textureID);
-}
-
-std::optional<Int2> SoftwareObjectTextureAllocator::tryGetDimensions(ObjectTextureID id) const
-{
-	const SoftwareObjectTexture &texture = this->pool->get(id);
-	return Int2(texture.width, texture.height);
-}
-
-LockedTexture SoftwareObjectTextureAllocator::lock(ObjectTextureID textureID)
-{
-	SoftwareObjectTexture &texture = this->pool->get(textureID);
-	const int byteCount = texture.width * texture.height * texture.bytesPerTexel;
-	return LockedTexture(Span<std::byte>(texture.texels.begin(), byteCount), texture.width, texture.height, texture.bytesPerTexel);
-}
-
-void SoftwareObjectTextureAllocator::unlock(ObjectTextureID textureID)
-{
-	// Do nothing; any writes are already in RAM.
-	static_cast<void>(textureID);
-}
-
 SoftwareRenderer::SoftwareRenderer()
 {
 	this->ditheringMode = static_cast<DitheringMode>(-1);
@@ -4473,8 +4425,6 @@ bool SoftwareRenderer::init(const RenderInitSettings &initSettings)
 
 	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, initSettings.ditheringMode);
 	this->ditheringMode = initSettings.ditheringMode;
-
-	this->textureAllocator.init(&this->objectTextures);
 
 	const int workerCount = RendererUtils::getRenderThreadsFromMode(initSettings.renderThreadsMode);
 	InitializeWorkers(workerCount, frameBufferWidth, frameBufferHeight);
@@ -4658,9 +4608,42 @@ void SoftwareRenderer::unlockIndexBuffer(IndexBufferID id)
 	static_cast<void>(id);
 }
 
-ObjectTextureAllocator *SoftwareRenderer::getTextureAllocator()
+ObjectTextureID SoftwareRenderer::createTexture(int width, int height, int bytesPerTexel)
 {
-	return &this->textureAllocator;
+	const ObjectTextureID textureID = this->objectTextures.alloc();
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate software object texture with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
+		return -1;
+	}
+
+	SoftwareObjectTexture &texture = this->objectTextures.get(textureID);
+	texture.init(width, height, bytesPerTexel);
+	return textureID;
+}
+
+void SoftwareRenderer::freeTexture(ObjectTextureID textureID)
+{
+	this->objectTextures.free(textureID);
+}
+
+std::optional<Int2> SoftwareRenderer::tryGetTextureDims(ObjectTextureID id) const
+{
+	const SoftwareObjectTexture &texture = this->objectTextures.get(id);
+	return Int2(texture.width, texture.height);
+}
+
+LockedTexture SoftwareRenderer::lockTexture(ObjectTextureID textureID)
+{
+	SoftwareObjectTexture &texture = this->objectTextures.get(textureID);
+	const int byteCount = texture.width * texture.height * texture.bytesPerTexel;
+	return LockedTexture(Span<std::byte>(texture.texels.begin(), byteCount), texture.width, texture.height, texture.bytesPerTexel);
+}
+
+void SoftwareRenderer::unlockTexture(ObjectTextureID textureID)
+{
+	// Do nothing; any writes are already in RAM.
+	static_cast<void>(textureID);
 }
 
 UniformBufferID SoftwareRenderer::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)

@@ -16,13 +16,11 @@
 class Surface;
 
 struct LockedBuffer;
-struct ObjectTextureAllocator;
 struct RenderCamera;
 struct RenderCommandList;
 struct RenderFrameSettings;
 struct RenderInitSettings;
 struct UiCommandList;
-struct UiTextureAllocator;
 
 // Profiling info gathered from internal renderer state.
 struct Renderer3DProfilerData
@@ -76,8 +74,17 @@ public:
 	virtual void unlockIndexBuffer(IndexBufferID id) = 0;
 
 	// Texture management functions.
-	virtual ObjectTextureAllocator *getObjectTextureAllocator() = 0;
-	virtual UiTextureAllocator *getUiTextureAllocator() = 0;
+	virtual ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) = 0;
+	virtual void freeObjectTexture(ObjectTextureID textureID) = 0;
+	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
+	virtual LockedTexture lockObjectTexture(ObjectTextureID textureID) = 0;
+	virtual void unlockObjectTexture(ObjectTextureID textureID) = 0;
+
+	virtual UiTextureID createUiTexture(int width, int height) = 0;
+	virtual void freeUiTexture(UiTextureID textureID) = 0;
+	virtual std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const = 0;
+	virtual LockedTexture lockUiTexture(UiTextureID textureID) = 0;
+	virtual void unlockUiTexture(UiTextureID textureID) = 0;
 
 	// Shading management functions.
 	virtual UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement) = 0;

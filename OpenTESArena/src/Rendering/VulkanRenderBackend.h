@@ -8,7 +8,6 @@
 #include "vulkan/vulkan.hpp"
 
 #include "RenderBackend.h"
-#include "RenderTextureAllocator.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Heap.h"
@@ -130,58 +129,6 @@ struct VulkanPendingCommands
 	std::vector<std::function<void()>> copyCommands;
 };
 
-struct VulkanObjectTextureAllocator final : public ObjectTextureAllocator
-{
-	VulkanObjectTexturePool *pool;
-	vk::PhysicalDevice physicalDevice;
-	uint32_t queueFamilyIndex;
-	vk::Device device;
-	vk::Queue queue;
-	vk::CommandBuffer commandBuffer;
-	vk::DescriptorSetLayout descriptorSetLayout;
-	vk::DescriptorPool descriptorPool;
-	VulkanPendingCommands *pendingCommands;
-
-	VulkanObjectTextureAllocator();
-
-	void init(VulkanObjectTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
-		vk::CommandBuffer commandBuffer, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, VulkanPendingCommands *pendingCommands);
-
-	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
-	void free(ObjectTextureID textureID) override;
-
-	std::optional<Int2> tryGetDimensions(ObjectTextureID id) const override;
-
-	LockedTexture lock(ObjectTextureID textureID) override;
-	void unlock(ObjectTextureID textureID) override;
-};
-
-struct VulkanUiTextureAllocator final : public UiTextureAllocator
-{
-	VulkanUiTexturePool *pool;
-	vk::PhysicalDevice physicalDevice;
-	uint32_t queueFamilyIndex;
-	vk::Device device;
-	vk::Queue queue;
-	vk::CommandBuffer commandBuffer;
-	vk::DescriptorSetLayout descriptorSetLayout;
-	vk::DescriptorPool descriptorPool;
-	VulkanPendingCommands *pendingCommands;
-
-	VulkanUiTextureAllocator();
-
-	void init(VulkanUiTexturePool *pool, vk::PhysicalDevice physicalDevice, uint32_t queueFamilyIndex, vk::Device device, vk::Queue queue,
-		vk::CommandBuffer commandBuffer, vk::DescriptorSetLayout descriptorSetLayout, vk::DescriptorPool descriptorPool, VulkanPendingCommands *pendingCommands);
-
-	UiTextureID create(int width, int height) override;
-	void free(UiTextureID textureID) override;
-
-	std::optional<Int2> tryGetDimensions(UiTextureID id) const override;
-
-	LockedTexture lock(UiTextureID textureID) override;
-	void unlock(UiTextureID textureID) override;
-};
-
 struct VulkanCamera
 {
 	static constexpr int BYTE_COUNT = sizeof(Matrix4f);
@@ -263,12 +210,8 @@ private:
 	VulkanIndexBufferPool indexBufferPool;
 	VulkanUniformBufferPool uniformBufferPool;
 	VulkanLightPool lightPool;
-
 	VulkanObjectTexturePool objectTexturePool;
-	VulkanObjectTextureAllocator objectTextureAllocator;
-
 	VulkanUiTexturePool uiTexturePool;
-	VulkanUiTextureAllocator uiTextureAllocator;
 
 	VulkanHeap vertexBufferDeviceLocalHeap;
 	VulkanHeap vertexBufferStagingHeap;
@@ -306,8 +249,17 @@ public:
 	LockedBuffer lockIndexBuffer(IndexBufferID id) override;
 	void unlockIndexBuffer(IndexBufferID id) override;
 
-	ObjectTextureAllocator *getObjectTextureAllocator() override;
-	UiTextureAllocator *getUiTextureAllocator() override;
+	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) override;
+	void freeObjectTexture(ObjectTextureID id) override;
+	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
+	LockedTexture lockObjectTexture(ObjectTextureID id) override;
+	void unlockObjectTexture(ObjectTextureID id) override;
+
+	UiTextureID createUiTexture(int width, int height) override;
+	void freeUiTexture(UiTextureID id) override;
+	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const override;
+	LockedTexture lockUiTexture(UiTextureID id) override;
+	void unlockUiTexture(UiTextureID id) override;
 
 	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement) override;
 	void freeUniformBuffer(UniformBufferID id) override;

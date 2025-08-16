@@ -302,14 +302,54 @@ void Sdl2DSoft3DRenderBackend::unlockIndexBuffer(IndexBufferID id)
 	this->renderer3D.unlockIndexBuffer(id);
 }
 
-ObjectTextureAllocator *Sdl2DSoft3DRenderBackend::getObjectTextureAllocator()
+ObjectTextureID Sdl2DSoft3DRenderBackend::createObjectTexture(int width, int height, int bytesPerTexel)
 {
-	return this->renderer3D.getTextureAllocator();
+	return this->renderer3D.createTexture(width, height, bytesPerTexel);
 }
 
-UiTextureAllocator *Sdl2DSoft3DRenderBackend::getUiTextureAllocator()
+void Sdl2DSoft3DRenderBackend::freeObjectTexture(ObjectTextureID id)
 {
-	return this->renderer2D.getTextureAllocator();
+	this->renderer3D.freeTexture(id);
+}
+
+std::optional<Int2> Sdl2DSoft3DRenderBackend::tryGetObjectTextureDims(ObjectTextureID id) const
+{
+	return this->renderer3D.tryGetTextureDims(id);
+}
+
+LockedTexture Sdl2DSoft3DRenderBackend::lockObjectTexture(ObjectTextureID id)
+{
+	return this->renderer3D.lockTexture(id);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockObjectTexture(ObjectTextureID id)
+{
+	this->renderer3D.unlockTexture(id);
+}
+
+UiTextureID Sdl2DSoft3DRenderBackend::createUiTexture(int width, int height)
+{
+	return this->renderer2D.createTexture(width, height);
+}
+
+void Sdl2DSoft3DRenderBackend::freeUiTexture(UiTextureID id)
+{
+	this->renderer2D.freeTexture(id);
+}
+
+std::optional<Int2> Sdl2DSoft3DRenderBackend::tryGetUiTextureDims(UiTextureID id) const
+{
+	return this->renderer2D.tryGetTextureDims(id);
+}
+
+LockedTexture Sdl2DSoft3DRenderBackend::lockUiTexture(UiTextureID id)
+{
+	return this->renderer2D.lockTexture(id);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockUiTexture(UiTextureID id)
+{
+	this->renderer2D.unlockTexture(id);
 }
 
 UniformBufferID Sdl2DSoft3DRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
