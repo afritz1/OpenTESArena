@@ -3229,12 +3229,13 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, dynamicOffsets);
 
 	vk::Pipeline currentPipeline;
+	vk::DescriptorSet currentMaterialDescriptorSet;
 	for (int i = 0; i < renderCommandList.entryCount; i++)
 	{
 		for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
 		{
 			const vk::Pipeline pipeline = drawCall.enableDepthWrite ? this->graphicsPipeline : this->noDepthGraphicsPipeline;
-			if (currentPipeline != pipeline)
+			if (pipeline != currentPipeline)
 			{
 				currentPipeline = pipeline;
 				this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline);
@@ -3261,8 +3262,13 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 			const ObjectTextureID textureID = drawCall.textureIDs[0];
 			const VulkanTexture &texture = this->objectTexturePool.get(textureID);
-			constexpr uint32_t materialDescriptorSetIndex = 2;
-			this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
+			if (texture.descriptorSet != currentMaterialDescriptorSet)
+			{
+				currentMaterialDescriptorSet = texture.descriptorSet;
+
+				constexpr uint32_t materialDescriptorSetIndex = 2;
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
+			}
 
 			constexpr uint32_t meshInstanceCount = 1;
 			this->commandBuffer.drawIndexed(indexInfo.indexCount, meshInstanceCount, 0, 0, 0);
