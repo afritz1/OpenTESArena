@@ -3146,11 +3146,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	{
 		for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
 		{
-			if (drawCall.pixelShaderType != PixelShaderType::Opaque) // @todo
-			{
-				continue;
-			}
-
 			const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(drawCall.positionBufferID);
 			const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
 
