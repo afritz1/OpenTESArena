@@ -1152,6 +1152,7 @@ namespace
 	bool TryCreateDescriptorPool(vk::Device device, Span<const vk::DescriptorPoolSize> poolSizes, int maxDescriptorSets, vk::DescriptorPool *outDescriptorPool)
 	{
 		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo;
+		descriptorPoolCreateInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 		descriptorPoolCreateInfo.maxSets = maxDescriptorSets;
 		descriptorPoolCreateInfo.poolSizeCount = poolSizes.getCount();
 		descriptorPoolCreateInfo.pPoolSizes = poolSizes.begin();
@@ -1621,7 +1622,11 @@ void VulkanObjectTextureAllocator::free(ObjectTextureID textureID)
 			this->device.destroyBuffer(texture->stagingBuffer);
 		}
 
-		texture->descriptorSet = nullptr;
+		if (texture->descriptorSet)
+		{
+			this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
+			texture->descriptorSet = nullptr;
+		}
 
 		if (texture->sampler)
 		{
@@ -1793,7 +1798,11 @@ void VulkanUiTextureAllocator::free(UiTextureID textureID)
 			this->device.destroyBuffer(texture->stagingBuffer);
 		}
 
-		texture->descriptorSet = nullptr;
+		if (texture->descriptorSet)
+		{
+			this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
+			texture->descriptorSet = nullptr;
+		}
 
 		if (texture->sampler)
 		{
@@ -2934,6 +2943,12 @@ void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 		{
 			this->uniformBufferStagingHeap.freeMapping(uniformBuffer->stagingBuffer);
 			this->device.destroyBuffer(uniformBuffer->stagingBuffer);
+		}
+
+		if (uniformBuffer->uniform.descriptorSet)
+		{
+			this->device.freeDescriptorSets(this->descriptorPool, uniformBuffer->uniform.descriptorSet);
+			uniformBuffer->uniform.descriptorSet = nullptr;
 		}
 
 		if (uniformBuffer->buffer)
