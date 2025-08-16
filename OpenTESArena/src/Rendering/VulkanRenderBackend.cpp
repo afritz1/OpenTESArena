@@ -476,7 +476,8 @@ namespace
 
 		if (outHostMappedBytes)
 		{
-			*outHostMappedBytes = Span<std::byte>(heap.hostMappedBytes.begin() + block.offset, block.byteCount);
+			// Memory requirements byte count may be greater than requested but only expose what the caller expects.
+			*outHostMappedBytes = Span<std::byte>(heap.hostMappedBytes.begin() + block.offset, byteCount);
 		}
 		
 		return true;
