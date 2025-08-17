@@ -102,18 +102,16 @@ struct VulkanTexture
 	int height;
 	int bytesPerTexel;
 	vk::Image image;
-	vk::DeviceMemory deviceMemory;
 	vk::ImageView imageView;
 	vk::Sampler sampler;
 	vk::DescriptorSet descriptorSet;
-	vk::DeviceMemory stagingDeviceMemory;
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 
 	VulkanTexture();
 
-	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler,
-		vk::DescriptorSet descriptorSet, vk::DeviceMemory stagingDeviceMemory, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
+	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::DescriptorSet descriptorSet,
+		vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 };
 
 using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanBuffer>;
@@ -146,24 +144,43 @@ struct VulkanCamera
 	void init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, Span<std::byte> hostMappedBytes);
 };
 
-struct VulkanHeapMapping
+enum class VulkanHeapType
+{
+	Buffer,
+	Image
+};
+
+struct VulkanHeapBufferMapping
 {
 	vk::Buffer buffer;
 	HeapBlock block;
 };
 
-// A single memory allocation sliced by several smaller buffers.
+struct VulkanHeapImageMapping
+{
+	vk::Image image;
+	HeapBlock block;
+};
+
+// A single memory allocation sliced by several smaller buffers/images.
 struct VulkanHeap
 {
+	VulkanHeapType type;
 	vk::DeviceMemory deviceMemory;
 	Span<std::byte> hostMappedBytes;
 	HeapAllocator allocator;
-	std::vector<VulkanHeapMapping> bufferMappings;
+	std::vector<VulkanHeapBufferMapping> bufferMappings;
+	std::vector<VulkanHeapImageMapping> imageMappings;
 
-	bool init(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice);
+	VulkanHeap();
 
-	HeapBlock addMapping(vk::Buffer buffer, int byteCount, int alignment);
-	void freeMapping(vk::Buffer buffer);
+	bool initBufferHeap(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice);
+	bool initImageHeap(vk::Device device, int byteCount, vk::ImageUsageFlags usageFlags, vk::PhysicalDevice physicalDevice);
+
+	HeapBlock addBufferMapping(vk::Buffer buffer, int byteCount, int alignment);
+	HeapBlock addImageMapping(vk::Image image, int byteCount, int alignment);
+	void freeBufferMapping(vk::Buffer buffer);
+	void freeImageMapping(vk::Image image);
 	void clear();
 };
 
@@ -223,6 +240,10 @@ private:
 	VulkanHeap indexBufferStagingHeap;
 	VulkanHeap uniformBufferDeviceLocalHeap;
 	VulkanHeap uniformBufferStagingHeap;
+	VulkanHeap objectTextureDeviceLocalHeap;
+	VulkanHeap objectTextureStagingHeap;
+	VulkanHeap uiTextureDeviceLocalHeap;
+	VulkanHeap uiTextureStagingHeap;
 
 	VulkanCamera camera;
 public:

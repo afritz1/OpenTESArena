@@ -28,9 +28,11 @@ namespace
 	constexpr uint32_t INVALID_UINT32 = std::numeric_limits<uint32_t>::max();
 	constexpr uint64_t TIMEOUT_UNLIMITED = std::numeric_limits<uint64_t>::max();
 
-	constexpr int HEAP_MAX_BYTES_VERTEX_BUFFER = 1 << 20; // 1MB
+	constexpr int HEAP_MAX_BYTES_VERTEX_BUFFER = 1 << 20; // 1 MB
 	constexpr int HEAP_MAX_BYTES_INDEX_BUFFER = HEAP_MAX_BYTES_VERTEX_BUFFER;
-	constexpr int HEAP_MAX_BYTES_UNIFORM_BUFFER = 1 << 27; // 128MB (need lots for render transforms)
+	constexpr int HEAP_MAX_BYTES_UNIFORM_BUFFER = 1 << 27; // 128 MB (need lots for render transforms)
+	constexpr int HEAP_MAX_BYTES_OBJECT_TEXTURE = 1 << 28; // 256 MB
+	constexpr int HEAP_MAX_BYTES_UI_TEXTURE = 1 << 28; // 256 MB
 
 	constexpr vk::BufferUsageFlags VertexBufferStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::BufferUsageFlags VertexBufferDeviceLocalUsageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
@@ -39,7 +41,13 @@ namespace
 	constexpr vk::BufferUsageFlags UniformBufferStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::BufferUsageFlags UniformBufferDeviceLocalUsageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer;
 
+	constexpr vk::BufferUsageFlags ObjectTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
+	constexpr vk::ImageUsageFlags ObjectTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+	constexpr vk::BufferUsageFlags UiTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
+	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+
 	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
+	constexpr vk::ImageUsageFlagBits DepthBufferUsageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
 	struct Vertex
 	{
@@ -363,10 +371,10 @@ namespace
 	}
 }
 
-// Vulkan buffers
+// Vulkan memory
 namespace
 {
-	bool TryAllocateMemory(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice, vk::DeviceMemory *outDeviceMemory)
+	vk::MemoryAllocateInfo CreateBufferMemoryAllocateInfo(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice)
 	{
 		// Create dummy buffer for memory requirements.
 		vk::BufferCreateInfo dummyBufferCreateInfo;
@@ -379,14 +387,13 @@ namespace
 		vk::ResultValue<vk::Buffer> dummyBufferCreateResult = device.createBuffer(dummyBufferCreateInfo);
 		if (dummyBufferCreateResult.result != vk::Result::eSuccess)
 		{
-			DebugLogErrorFormat("Couldn't create dummy vk::Buffer with %d bytes requirement (%d).", byteCount, dummyBufferCreateResult.result);
+			DebugLogErrorFormat("Couldn't create dummy vk::Buffer with %d bytes (%d).", byteCount, dummyBufferCreateResult.result);
 			return false;
 		}
 
 		vk::Buffer dummyBuffer = std::move(dummyBufferCreateResult.value);
 		const vk::MemoryRequirements memoryRequirements = device.getBufferMemoryRequirements(dummyBuffer);
 		device.destroyBuffer(dummyBuffer);
-		dummyBuffer = vk::Buffer(nullptr);
 
 		const vk::MemoryPropertyFlags memoryPropertyFlags = isHostVisible ? (vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent) : vk::MemoryPropertyFlagBits::eDeviceLocal;
 
@@ -395,14 +402,61 @@ namespace
 		memoryAllocateInfo.memoryTypeIndex = FindPhysicalDeviceMemoryTypeIndex(physicalDevice, memoryRequirements, memoryPropertyFlags);
 		if (memoryAllocateInfo.memoryTypeIndex == INVALID_UINT32)
 		{
-			DebugLogErrorFormat("Couldn't find suitable memory type.");
+			DebugLogErrorFormat("Couldn't find suitable memory type for buffer.");
 			return false;
 		}
 
+		return memoryAllocateInfo;
+	}
+
+	vk::MemoryAllocateInfo CreateImageMemoryAllocateInfo(vk::Device device, int width, int height, vk::Format format, vk::ImageUsageFlags usageFlags, vk::PhysicalDevice physicalDevice)
+	{
+		// Create dummy image for memory requirements.
+		vk::ImageCreateInfo dummyImageCreateInfo;
+		dummyImageCreateInfo.imageType = vk::ImageType::e2D;
+		dummyImageCreateInfo.format = format;
+		dummyImageCreateInfo.extent = vk::Extent3D(width, height, 1);
+		dummyImageCreateInfo.mipLevels = 1;
+		dummyImageCreateInfo.arrayLayers = 1;
+		dummyImageCreateInfo.samples = vk::SampleCountFlagBits::e1;
+		dummyImageCreateInfo.tiling = vk::ImageTiling::eOptimal;
+		dummyImageCreateInfo.usage = usageFlags;
+		dummyImageCreateInfo.sharingMode = vk::SharingMode::eExclusive;
+		dummyImageCreateInfo.queueFamilyIndexCount = 0;
+		dummyImageCreateInfo.pQueueFamilyIndices = nullptr;
+		dummyImageCreateInfo.initialLayout = vk::ImageLayout::eUndefined;
+
+		vk::ResultValue<vk::Image> dummyCreateImageResult = device.createImage(dummyImageCreateInfo);
+		if (dummyCreateImageResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't create dummy vk::Image with dims %dx%d and format %d (%d).", width, height, format, dummyCreateImageResult.result);
+			return false;
+		}
+
+		vk::Image image = std::move(dummyCreateImageResult.value);
+		const vk::MemoryRequirements memoryRequirements = device.getImageMemoryRequirements(image);
+		device.destroyImage(image);
+
+		constexpr vk::MemoryPropertyFlags memoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+
+		vk::MemoryAllocateInfo memoryAllocateInfo;
+		memoryAllocateInfo.allocationSize = memoryRequirements.size;
+		memoryAllocateInfo.memoryTypeIndex = FindPhysicalDeviceMemoryTypeIndex(physicalDevice, memoryRequirements, memoryPropertyFlags);
+		if (memoryAllocateInfo.memoryTypeIndex == INVALID_UINT32)
+		{
+			DebugLogErrorFormat("Couldn't find suitable memory type for image.");
+			return false;
+		}
+
+		return memoryAllocateInfo;
+	}
+
+	bool TryAllocateMemory(vk::Device device, vk::MemoryAllocateInfo memoryAllocateInfo, vk::DeviceMemory *outDeviceMemory)
+	{
 		vk::ResultValue<vk::DeviceMemory> deviceMemoryCreateResult = device.allocateMemory(memoryAllocateInfo);
 		if (deviceMemoryCreateResult.result != vk::Result::eSuccess)
 		{
-			DebugLogErrorFormat("Couldn't allocate device memory for %d bytes (%d).", byteCount, deviceMemoryCreateResult.result);
+			DebugLogErrorFormat("Couldn't allocate device memory with %d bytes and memory type index %d (%d).", memoryAllocateInfo.allocationSize, memoryAllocateInfo.memoryTypeIndex, deviceMemoryCreateResult.result);
 			return false;
 		}
 
@@ -410,6 +464,23 @@ namespace
 		return true;
 	}
 
+	bool TryMapMemory(vk::Device device, vk::DeviceMemory deviceMemory, int byteOffset, int byteCount, Span<std::byte> *outHostMappedBytes)
+	{
+		vk::ResultValue<void*> deviceMemoryMapResult = device.mapMemory(deviceMemory, byteOffset, byteCount);
+		if (deviceMemoryMapResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't map device memory at byte offset %d with %d bytes.", byteOffset, byteCount);
+			return false;
+		}
+
+		*outHostMappedBytes = Span<std::byte>(reinterpret_cast<std::byte*>(deviceMemoryMapResult.value), byteCount);
+		return true;
+	}
+}
+
+// Vulkan buffers
+namespace
+{
 	bool TryCreateBuffer(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, uint32_t queueFamilyIndex, vk::Buffer *outBuffer)
 	{
 		vk::BufferCreateInfo bufferCreateInfo;
@@ -450,7 +521,7 @@ namespace
 	}
 
 	bool TryCreateBufferAndBindWithHeap(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, uint32_t queueFamilyIndex, VulkanHeap &heap,
-		vk::Buffer *outBuffer, HeapBlock *outBlock, Span<std::byte> *outHostMappedBytes)
+		vk::Buffer *outBuffer, Span<std::byte> *outHostMappedBytes)
 	{
 		vk::Buffer buffer;
 		if (!TryCreateBuffer(device, byteCount, usageFlags, queueFamilyIndex, &buffer))
@@ -460,50 +531,41 @@ namespace
 		}
 
 		const vk::MemoryRequirements memoryRequirements = device.getBufferMemoryRequirements(buffer);
-		const HeapBlock block = heap.addMapping(buffer, memoryRequirements.size, memoryRequirements.alignment);
+		const HeapBlock block = heap.addBufferMapping(buffer, memoryRequirements.size, memoryRequirements.alignment);
 		if (!block.isValid())
 		{
-			DebugLogError("Couldn't add heap block mapping.");
+			DebugLogError("Couldn't add heap block mapping for buffer.");
+			device.destroyBuffer(buffer);
 			return false;
 		}
 
 		if (!TryBindBufferToMemory(device, buffer, heap.deviceMemory, block.offset))
 		{
 			DebugLogError("Couldn't bind buffer to heap memory.");
+			heap.freeBufferMapping(buffer);
+			device.destroyBuffer(buffer);
 			return false;
 		}
 
 		*outBuffer = buffer;
-		*outBlock = block;
 
 		if (outHostMappedBytes)
 		{
+			DebugAssert(heap.hostMappedBytes.isValid());
+
 			// Memory requirements byte count may be greater than requested but only expose what the caller expects.
 			*outHostMappedBytes = Span<std::byte>(heap.hostMappedBytes.begin() + block.offset, byteCount);
 		}
-		
+
 		return true;
 	}
 
 	template<typename T>
 	bool TryCreateBufferAndBindWithHeap(vk::Device device, int elementCount, vk::BufferUsageFlags usageFlags, uint32_t queueFamilyIndex, VulkanHeap &heap,
-		vk::Buffer *outBuffer, HeapBlock *outBlock, Span<std::byte> *outHostMappedBytes)
+		vk::Buffer *outBuffer, Span<std::byte> *outHostMappedBytes)
 	{
 		const int byteCount = elementCount * sizeof(T);
-		return TryCreateBufferAndBindWithHeap(device, byteCount, usageFlags, queueFamilyIndex, heap, outBuffer, outBlock, outHostMappedBytes);
-	}
-
-	bool TryMapMemory(vk::Device device, vk::DeviceMemory deviceMemory, int byteOffset, int byteCount, Span<std::byte> *outHostMappedBytes)
-	{
-		vk::ResultValue<void*> deviceMemoryMapResult = device.mapMemory(deviceMemory, byteOffset, byteCount);
-		if (deviceMemoryMapResult.result != vk::Result::eSuccess)
-		{
-			DebugLogErrorFormat("Couldn't map device memory at byte offset %d with %d bytes.", byteOffset, byteCount);
-			return false;
-		}
-
-		*outHostMappedBytes = Span<std::byte>(reinterpret_cast<std::byte*>(deviceMemoryMapResult.value), byteCount);
-		return true;
+		return TryCreateBufferAndBindWithHeap(device, byteCount, usageFlags, queueFamilyIndex, heap, outBuffer, outHostMappedBytes);
 	}
 
 	// Assumes device memory has already been allocated but not mapped.
@@ -545,8 +607,7 @@ namespace
 		commandBuffer.copyBuffer(sourceBuffer, destinationBuffer, bufferCopy);
 	}
 
-	bool TryCreateImage(vk::Device device, int width, int height, vk::Format format, vk::ImageUsageFlags usageFlags, uint32_t queueFamilyIndex,
-		vk::PhysicalDevice physicalDevice, vk::Image *outImage, vk::DeviceMemory *outDeviceMemory)
+	bool TryCreateImage(vk::Device device, int width, int height, vk::Format format, vk::ImageUsageFlags usageFlags, uint32_t queueFamilyIndex, vk::Image *outImage)
 	{
 		vk::ImageCreateInfo imageCreateInfo;
 		imageCreateInfo.imageType = vk::ImageType::e2D;
@@ -569,35 +630,50 @@ namespace
 			return false;
 		}
 
-		const vk::Image image = std::move(createImageResult.value);
-		const vk::MemoryRequirements imageMemoryRequirements = device.getImageMemoryRequirements(image);
-		const vk::MemoryPropertyFlags imageMemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
+		*outImage = std::move(createImageResult.value);
+		return true;
+	}
 
-		vk::MemoryAllocateInfo imageMemoryAllocateInfo;
-		imageMemoryAllocateInfo.allocationSize = imageMemoryRequirements.size;
-		imageMemoryAllocateInfo.memoryTypeIndex = FindPhysicalDeviceMemoryTypeIndex(physicalDevice, imageMemoryRequirements, imageMemoryPropertyFlags);
-
-		vk::ResultValue<vk::DeviceMemory> createImageMemoryResult = device.allocateMemory(imageMemoryAllocateInfo);
-		if (createImageMemoryResult.result != vk::Result::eSuccess)
+	bool TryBindImageToMemory(vk::Device device, vk::Image image, vk::DeviceMemory deviceMemory, int byteOffset)
+	{
+		const vk::Result imageBindMemoryResult = device.bindImageMemory(image, deviceMemory, byteOffset);
+		if (imageBindMemoryResult != vk::Result::eSuccess)
 		{
-			DebugLogError("Couldn't allocate vk::Image memory.");
+			DebugLogErrorFormat("Couldn't bind image to device memory at byte offset %d (%d).", byteOffset, imageBindMemoryResult);
+			return false;
+		}
+
+		return true;
+	}
+
+	bool TryCreateImageAndBindWithHeap(vk::Device device, int width, int height, vk::Format format, vk::ImageUsageFlags usageFlags, uint32_t queueFamilyIndex,
+		VulkanHeap &heap, vk::Image *outImage)
+	{
+		vk::Image image;
+		if (!TryCreateImage(device, width, height, format, usageFlags, queueFamilyIndex, &image))
+		{
+			DebugLogError("Couldn't create image with heap.");
+			return false;
+		}
+
+		const vk::MemoryRequirements memoryRequirements = device.getImageMemoryRequirements(image);
+		const HeapBlock block = heap.addImageMapping(image, memoryRequirements.size, memoryRequirements.alignment);
+		if (!block.isValid())
+		{
+			DebugLogError("Couldn't add heap block mapping for image.");
 			device.destroyImage(image);
 			return false;
 		}
 
-		vk::DeviceMemory deviceMemory = std::move(createImageMemoryResult.value);
-
-		const vk::Result imageBindMemoryResult = device.bindImageMemory(image, deviceMemory, 0);
-		if (imageBindMemoryResult != vk::Result::eSuccess)
+		if (!TryBindImageToMemory(device, image, heap.deviceMemory, block.offset))
 		{
-			DebugLogErrorFormat("Couldn't bind device image memory (%d).", imageBindMemoryResult);
-			device.freeMemory(deviceMemory);
+			DebugLogError("Couldn't bind image to heap memory.");
+			heap.freeImageMapping(image);
 			device.destroyImage(image);
 			return false;
 		}
 
 		*outImage = image;
-		*outDeviceMemory = deviceMemory;
 		return true;
 	}
 
@@ -1536,8 +1612,8 @@ VulkanTexture::VulkanTexture()
 	this->bytesPerTexel = 0;
 }
 
-void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::DeviceMemory deviceMemory, vk::ImageView imageView, vk::Sampler sampler,
-	vk::DescriptorSet descriptorSet, vk::DeviceMemory stagingDeviceMemory, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
+void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::DescriptorSet descriptorSet,
+	vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -1546,11 +1622,9 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image ima
 	this->height = height;
 	this->bytesPerTexel = bytesPerTexel;
 	this->image = image;
-	this->deviceMemory = deviceMemory; // @todo device memory is more important than the buffer, it should come first
 	this->imageView = imageView;
 	this->sampler = sampler;
 	this->descriptorSet = descriptorSet;
-	this->stagingDeviceMemory = stagingDeviceMemory;
 	this->stagingBuffer = stagingBuffer;
 	this->stagingHostMappedBytes = stagingHostMappedBytes;
 }
@@ -1567,11 +1641,19 @@ void VulkanCamera::init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, Span<s
 	this->hostMappedBytes = hostMappedBytes;
 }
 
-bool VulkanHeap::init(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice)
+VulkanHeap::VulkanHeap()
 {
-	if (!TryAllocateMemory(device, byteCount, usageFlags, isHostVisible, physicalDevice, &this->deviceMemory))
+	this->type = static_cast<VulkanHeapType>(-1);
+}
+
+bool VulkanHeap::initBufferHeap(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice)
+{
+	this->type = VulkanHeapType::Buffer;
+
+	const vk::MemoryAllocateInfo memoryAllocateInfo = CreateBufferMemoryAllocateInfo(device, byteCount, usageFlags, isHostVisible, physicalDevice);
+	if (!TryAllocateMemory(device, memoryAllocateInfo, &this->deviceMemory))
 	{
-		DebugLogErrorFormat("Couldn't allocate memory for heap with %d bytes.", byteCount);
+		DebugLogErrorFormat("Couldn't allocate memory for buffer heap with %d bytes.", byteCount);
 		return false;
 	}
 
@@ -1590,9 +1672,31 @@ bool VulkanHeap::init(vk::Device device, int byteCount, vk::BufferUsageFlags usa
 	return true;
 }
 
-HeapBlock VulkanHeap::addMapping(vk::Buffer buffer, int byteCount, int alignment)
+bool VulkanHeap::initImageHeap(vk::Device device, int byteCount, vk::ImageUsageFlags usageFlags, vk::PhysicalDevice physicalDevice)
 {
-	for (const VulkanHeapMapping &mapping : this->bufferMappings)
+	this->type = VulkanHeapType::Image;
+
+	constexpr int dummyWidth = 1;
+	constexpr int dummyHeight = 1;
+	constexpr vk::Format dummyFormat = vk::Format::eR8G8B8A8Uint;
+	vk::MemoryAllocateInfo memoryAllocateInfo = CreateImageMemoryAllocateInfo(device, dummyWidth, dummyHeight, dummyFormat, usageFlags, physicalDevice);
+	memoryAllocateInfo.allocationSize = byteCount;
+
+	if (!TryAllocateMemory(device, memoryAllocateInfo, &this->deviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't allocate memory for image heap with %d bytes.", byteCount);
+		return false;
+	}
+
+	this->allocator.init(0, byteCount);
+	return true;
+}
+
+HeapBlock VulkanHeap::addBufferMapping(vk::Buffer buffer, int byteCount, int alignment)
+{
+	DebugAssert(this->type == VulkanHeapType::Buffer);
+
+	for (const VulkanHeapBufferMapping &mapping : this->bufferMappings)
 	{
 		if (mapping.buffer == buffer)
 		{
@@ -1608,7 +1712,7 @@ HeapBlock VulkanHeap::addMapping(vk::Buffer buffer, int byteCount, int alignment
 		return block;
 	}
 
-	VulkanHeapMapping mapping;
+	VulkanHeapBufferMapping mapping;
 	mapping.buffer = buffer;
 	mapping.block = block;
 	this->bufferMappings.emplace_back(std::move(mapping));
@@ -1616,12 +1720,42 @@ HeapBlock VulkanHeap::addMapping(vk::Buffer buffer, int byteCount, int alignment
 	return block;
 }
 
-void VulkanHeap::freeMapping(vk::Buffer buffer)
+HeapBlock VulkanHeap::addImageMapping(vk::Image image, int byteCount, int alignment)
 {
+	DebugAssert(this->type == VulkanHeapType::Image);
+
+	for (const VulkanHeapImageMapping &mapping : this->imageMappings)
+	{
+		if (mapping.image == image)
+		{
+			DebugLogError("Heap image mapping already exists.");
+			return HeapBlock();
+		}
+	}
+
+	const HeapBlock block = this->allocator.alloc(byteCount, alignment);
+	if (!block.isValid())
+	{
+		DebugLogWarningFormat("Couldn't allocate block for image mapping with %d bytes and alignment %d.", byteCount, alignment);
+		return block;
+	}
+
+	VulkanHeapImageMapping mapping;
+	mapping.image = image;
+	mapping.block = block;
+	this->imageMappings.emplace_back(std::move(mapping));
+
+	return block;
+}
+
+void VulkanHeap::freeBufferMapping(vk::Buffer buffer)
+{
+	DebugAssert(this->type == VulkanHeapType::Buffer);
+
 	int index = -1;
 	for (int i = 0; i < static_cast<int>(this->bufferMappings.size()); i++)
 	{
-		const VulkanHeapMapping &mapping = this->bufferMappings[i];
+		const VulkanHeapBufferMapping &mapping = this->bufferMappings[i];
 		if (mapping.buffer == buffer)
 		{
 			index = i;
@@ -1635,9 +1769,35 @@ void VulkanHeap::freeMapping(vk::Buffer buffer)
 		return;
 	}
 
-	const VulkanHeapMapping &mapping = this->bufferMappings[index];
+	const VulkanHeapBufferMapping &mapping = this->bufferMappings[index];
 	this->allocator.free(mapping.block);
 	this->bufferMappings.erase(this->bufferMappings.begin() + index);
+}
+
+void VulkanHeap::freeImageMapping(vk::Image image)
+{
+	DebugAssert(this->type == VulkanHeapType::Image);
+
+	int index = -1;
+	for (int i = 0; i < static_cast<int>(this->imageMappings.size()); i++)
+	{
+		const VulkanHeapImageMapping &mapping = this->imageMappings[i];
+		if (mapping.image == image)
+		{
+			index = i;
+			break;
+		}
+	}
+
+	if (index < 0)
+	{
+		DebugLogWarning("No heap image to free.");
+		return;
+	}
+
+	const VulkanHeapImageMapping &mapping = this->imageMappings[index];
+	this->allocator.free(mapping.block);
+	this->imageMappings.erase(this->imageMappings.begin() + index);
 }
 
 void VulkanHeap::clear()
@@ -1645,6 +1805,7 @@ void VulkanHeap::clear()
 	this->deviceMemory = nullptr;
 	this->allocator.clear();
 	this->bufferMappings.clear();
+	this->imageMappings.clear();
 }
 
 bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
@@ -1738,10 +1899,23 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!TryCreateImage(this->device, this->swapchainExtent.width, this->swapchainExtent.height, DepthBufferFormat, vk::ImageUsageFlagBits::eDepthStencilAttachment,
-		this->graphicsQueueFamilyIndex, this->physicalDevice, &this->depthImage, &this->depthDeviceMemory))
+	const vk::MemoryAllocateInfo depthMemoryAllocateInfo = CreateImageMemoryAllocateInfo(this->device, this->swapchainExtent.width, this->swapchainExtent.height,
+		DepthBufferFormat, DepthBufferUsageFlags, this->physicalDevice);
+	if (!TryAllocateMemory(this->device, depthMemoryAllocateInfo, &this->depthDeviceMemory))
+	{
+		DebugLogError("Couldn't allocate depth image memory.");
+		return false;
+	}
+
+	if (!TryCreateImage(this->device, this->swapchainExtent.width, this->swapchainExtent.height, DepthBufferFormat, DepthBufferUsageFlags, this->graphicsQueueFamilyIndex, &this->depthImage))
 	{
 		DebugLogError("Couldn't create depth image.");
+		return false;
+	}
+
+	if (!TryBindImageToMemory(this->device, this->depthImage, this->depthDeviceMemory, 0))
+	{
+		DebugLogError("Couldn't bind depth image to memory.");
 		return false;
 	}
 
@@ -1891,46 +2065,72 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!this->vertexBufferDeviceLocalHeap.init(this->device, HEAP_MAX_BYTES_VERTEX_BUFFER, VertexBufferDeviceLocalUsageFlags, false, this->physicalDevice))
+	if (!this->vertexBufferDeviceLocalHeap.initBufferHeap(this->device, HEAP_MAX_BYTES_VERTEX_BUFFER, VertexBufferDeviceLocalUsageFlags, false, this->physicalDevice))
 	{
 		DebugLogError("Couldn't create vertex buffer device-local heap.");
 		return false;
 	}
 
-	if (!this->vertexBufferStagingHeap.init(this->device, HEAP_MAX_BYTES_VERTEX_BUFFER, VertexBufferStagingUsageFlags, true, this->physicalDevice))
+	if (!this->vertexBufferStagingHeap.initBufferHeap(this->device, HEAP_MAX_BYTES_VERTEX_BUFFER, VertexBufferStagingUsageFlags, true, this->physicalDevice))
 	{
 		DebugLogError("Couldn't create vertex buffer staging heap.");
 		return false;
 	}
 
-	if (!this->indexBufferDeviceLocalHeap.init(this->device, HEAP_MAX_BYTES_INDEX_BUFFER, IndexBufferDeviceLocalUsageFlags, false, this->physicalDevice))
+	if (!this->indexBufferDeviceLocalHeap.initBufferHeap(this->device, HEAP_MAX_BYTES_INDEX_BUFFER, IndexBufferDeviceLocalUsageFlags, false, this->physicalDevice))
 	{
 		DebugLogError("Couldn't create index buffer device-local heap.");
 		return false;
 	}
 
-	if (!this->indexBufferStagingHeap.init(this->device, HEAP_MAX_BYTES_INDEX_BUFFER, IndexBufferStagingUsageFlags, true, this->physicalDevice))
+	if (!this->indexBufferStagingHeap.initBufferHeap(this->device, HEAP_MAX_BYTES_INDEX_BUFFER, IndexBufferStagingUsageFlags, true, this->physicalDevice))
 	{
 		DebugLogError("Couldn't create index buffer staging heap.");
 		return false;
 	}
 
-	if (!this->uniformBufferDeviceLocalHeap.init(this->device, HEAP_MAX_BYTES_UNIFORM_BUFFER, UniformBufferDeviceLocalUsageFlags, false, this->physicalDevice))
+	if (!this->uniformBufferDeviceLocalHeap.initBufferHeap(this->device, HEAP_MAX_BYTES_UNIFORM_BUFFER, UniformBufferDeviceLocalUsageFlags, false, this->physicalDevice))
 	{
 		DebugLogError("Couldn't create uniform buffer device-local heap.");
 		return false;
 	}
 
-	if (!this->uniformBufferStagingHeap.init(this->device, HEAP_MAX_BYTES_UNIFORM_BUFFER, UniformBufferStagingUsageFlags, true, this->physicalDevice))
+	if (!this->uniformBufferStagingHeap.initBufferHeap(this->device, HEAP_MAX_BYTES_UNIFORM_BUFFER, UniformBufferStagingUsageFlags, true, this->physicalDevice))
 	{
 		DebugLogError("Couldn't create uniform buffer staging heap.");
 		return false;
 	}
 
+	if (!this->objectTextureDeviceLocalHeap.initImageHeap(this->device, HEAP_MAX_BYTES_OBJECT_TEXTURE, ObjectTextureDeviceLocalUsageFlags, this->physicalDevice))
+	{
+		DebugLogError("Couldn't create object texture device-local heap.");
+		return false;
+	}
+
+	if (!this->objectTextureStagingHeap.initBufferHeap(this->device, HEAP_MAX_BYTES_OBJECT_TEXTURE, ObjectTextureStagingUsageFlags, true, this->physicalDevice))
+	{
+		DebugLogError("Couldn't create object texture staging heap.");
+		return false;
+	}
+
+	if (!this->uiTextureDeviceLocalHeap.initImageHeap(this->device, HEAP_MAX_BYTES_UI_TEXTURE, UiTextureDeviceLocalUsageFlags, this->physicalDevice))
+	{
+		DebugLogError("Couldn't create UI texture device-local heap.");
+		return false;
+	}
+
+	if (!this->uiTextureStagingHeap.initBufferHeap(this->device, HEAP_MAX_BYTES_UI_TEXTURE, UiTextureStagingUsageFlags, true, this->physicalDevice))
+	{
+		DebugLogError("Couldn't create UI texture staging heap.");
+		return false;
+	}
+
 	constexpr vk::BufferUsageFlags cameraUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
 	constexpr int cameraByteCount = VulkanCamera::BYTE_COUNT;
+	const vk::MemoryAllocateInfo cameraMemoryAllocateInfo = CreateBufferMemoryAllocateInfo(this->device, cameraByteCount, cameraUsageFlags, true, this->physicalDevice);
+
 	vk::DeviceMemory cameraDeviceMemory;
-	if (!TryAllocateMemory(this->device, cameraByteCount, cameraUsageFlags, true, this->physicalDevice, &cameraDeviceMemory))
+	if (!TryAllocateMemory(this->device, cameraMemoryAllocateInfo, &cameraDeviceMemory))
 	{
 		DebugLogError("Couldn't allocate memory for camera uniform buffer.");
 		return false;
@@ -1966,6 +2166,38 @@ void VulkanRenderBackend::shutdown()
 		}
 
 		this->camera.hostMappedBytes = Span<std::byte>();
+
+		if (this->uiTextureStagingHeap.deviceMemory)
+		{
+			this->device.freeMemory(this->uiTextureStagingHeap.deviceMemory);
+			this->uiTextureStagingHeap.deviceMemory = nullptr;
+		}
+
+		this->uiTextureStagingHeap.clear();
+
+		if (this->uiTextureDeviceLocalHeap.deviceMemory)
+		{
+			this->device.freeMemory(this->uiTextureDeviceLocalHeap.deviceMemory);
+			this->uiTextureDeviceLocalHeap.deviceMemory = nullptr;
+		}
+
+		this->uiTextureDeviceLocalHeap.clear();
+
+		if (this->objectTextureStagingHeap.deviceMemory)
+		{
+			this->device.freeMemory(this->objectTextureStagingHeap.deviceMemory);
+			this->objectTextureStagingHeap.deviceMemory = nullptr;
+		}
+
+		this->objectTextureStagingHeap.clear();
+
+		if (this->objectTextureDeviceLocalHeap.deviceMemory)
+		{
+			this->device.freeMemory(this->objectTextureDeviceLocalHeap.deviceMemory);
+			this->objectTextureDeviceLocalHeap.deviceMemory = nullptr;
+		}
+
+		this->objectTextureDeviceLocalHeap.clear();
 
 		if (this->uniformBufferStagingHeap.deviceMemory)
 		{
@@ -2017,11 +2249,6 @@ void VulkanRenderBackend::shutdown()
 
 		for (VulkanTexture &texture : this->uiTexturePool.values)
 		{
-			if (texture.stagingDeviceMemory)
-			{
-				this->device.freeMemory(texture.stagingDeviceMemory);
-			}
-
 			if (texture.stagingBuffer)
 			{
 				this->device.destroyBuffer(texture.stagingBuffer);
@@ -2035,11 +2262,6 @@ void VulkanRenderBackend::shutdown()
 			if (texture.imageView)
 			{
 				this->device.destroyImageView(texture.imageView);
-			}
-
-			if (texture.deviceMemory)
-			{
-				this->device.freeMemory(texture.deviceMemory);
 			}
 
 			if (texture.image)
@@ -2052,11 +2274,6 @@ void VulkanRenderBackend::shutdown()
 
 		for (VulkanTexture &texture : this->objectTexturePool.values)
 		{
-			if (texture.stagingDeviceMemory)
-			{
-				this->device.freeMemory(texture.stagingDeviceMemory);
-			}
-
 			if (texture.stagingBuffer)
 			{
 				this->device.destroyBuffer(texture.stagingBuffer);
@@ -2070,11 +2287,6 @@ void VulkanRenderBackend::shutdown()
 			if (texture.imageView)
 			{
 				this->device.destroyImageView(texture.imageView);
-			}
-
-			if (texture.deviceMemory)
-			{
-				this->device.freeMemory(texture.deviceMemory);
 			}
 
 			if (texture.image)
@@ -2364,8 +2576,7 @@ VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int verte
 
 	const int elementCount = vertexCount * componentsPerVertex;
 	vk::Buffer buffer;
-	HeapBlock block;
-	if (!TryCreateBufferAndBindWithHeap<float>(this->device, elementCount, VertexBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->vertexBufferDeviceLocalHeap, &buffer, &block, nullptr))
+	if (!TryCreateBufferAndBindWithHeap<float>(this->device, elementCount, VertexBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->vertexBufferDeviceLocalHeap, &buffer, nullptr))
 	{
 		DebugLogErrorFormat("Couldn't create vertex position buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
 		this->vertexPositionBufferPool.free(id);
@@ -2373,12 +2584,11 @@ VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int verte
 	}
 
 	vk::Buffer stagingBuffer;
-	HeapBlock stagingBlock;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap<float>(this->device, elementCount, VertexBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->vertexBufferStagingHeap, &stagingBuffer, &stagingBlock, &stagingHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap<float>(this->device, elementCount, VertexBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->vertexBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create vertex position staging buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
-		this->vertexBufferDeviceLocalHeap.freeMapping(buffer);
+		this->vertexBufferDeviceLocalHeap.freeBufferMapping(buffer);
 		this->device.destroyBuffer(buffer);
 		this->vertexPositionBufferPool.free(id);
 		return -1;
@@ -2398,13 +2608,13 @@ void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 	{
 		if (vertexPositionBuffer->stagingBuffer)
 		{
-			this->vertexBufferStagingHeap.freeMapping(vertexPositionBuffer->stagingBuffer);
+			this->vertexBufferStagingHeap.freeBufferMapping(vertexPositionBuffer->stagingBuffer);
 			this->device.destroyBuffer(vertexPositionBuffer->stagingBuffer);
 		}
 
 		if (vertexPositionBuffer->buffer)
 		{
-			this->vertexBufferDeviceLocalHeap.freeMapping(vertexPositionBuffer->buffer);
+			this->vertexBufferDeviceLocalHeap.freeBufferMapping(vertexPositionBuffer->buffer);
 			this->device.destroyBuffer(vertexPositionBuffer->buffer);
 		}
 
@@ -2449,8 +2659,7 @@ VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int ver
 
 	const int elementCount = vertexCount * componentsPerVertex;
 	vk::Buffer buffer;
-	HeapBlock block;
-	if (!TryCreateBufferAndBindWithHeap<float>(this->device, elementCount, VertexBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->vertexBufferDeviceLocalHeap, &buffer, &block, nullptr))
+	if (!TryCreateBufferAndBindWithHeap<float>(this->device, elementCount, VertexBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->vertexBufferDeviceLocalHeap, &buffer, nullptr))
 	{
 		DebugLogErrorFormat("Couldn't create vertex attribute buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
 		this->vertexAttributeBufferPool.free(id);
@@ -2458,12 +2667,11 @@ VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int ver
 	}
 
 	vk::Buffer stagingBuffer;
-	HeapBlock stagingBlock;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap<float>(this->device, elementCount, VertexBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->vertexBufferStagingHeap, &stagingBuffer, &stagingBlock, &stagingHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap<float>(this->device, elementCount, VertexBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->vertexBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create vertex attribute staging buffer (vertices: %d, components: %d).", vertexCount, componentsPerVertex);
-		this->vertexBufferDeviceLocalHeap.freeMapping(buffer);
+		this->vertexBufferDeviceLocalHeap.freeBufferMapping(buffer);
 		this->device.destroyBuffer(buffer);
 		this->vertexAttributeBufferPool.free(id);
 		return -1;
@@ -2483,13 +2691,13 @@ void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 	{
 		if (vertexAttributeBuffer->stagingBuffer)
 		{
-			this->vertexBufferStagingHeap.freeMapping(vertexAttributeBuffer->stagingBuffer);
+			this->vertexBufferStagingHeap.freeBufferMapping(vertexAttributeBuffer->stagingBuffer);
 			this->device.destroyBuffer(vertexAttributeBuffer->stagingBuffer);
 		}
 
 		if (vertexAttributeBuffer->buffer)
 		{
-			this->vertexBufferDeviceLocalHeap.freeMapping(vertexAttributeBuffer->buffer);
+			this->vertexBufferDeviceLocalHeap.freeBufferMapping(vertexAttributeBuffer->buffer);
 			this->device.destroyBuffer(vertexAttributeBuffer->buffer);
 		}
 
@@ -2533,8 +2741,7 @@ IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount, int bytesPe
 	}
 
 	vk::Buffer buffer;
-	HeapBlock block;
-	if (!TryCreateBufferAndBindWithHeap<int32_t>(this->device, indexCount, IndexBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->indexBufferDeviceLocalHeap, &buffer, &block, nullptr))
+	if (!TryCreateBufferAndBindWithHeap<int32_t>(this->device, indexCount, IndexBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->indexBufferDeviceLocalHeap, &buffer, nullptr))
 	{
 		DebugLogErrorFormat("Couldn't create index buffer (indices: %d).", indexCount);
 		this->indexBufferPool.free(id);
@@ -2542,12 +2749,11 @@ IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount, int bytesPe
 	}
 
 	vk::Buffer stagingBuffer;
-	HeapBlock stagingBlock;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap<int32_t>(this->device, indexCount, IndexBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->indexBufferStagingHeap, &stagingBuffer, &stagingBlock, &stagingHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap<int32_t>(this->device, indexCount, IndexBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->indexBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create index staging buffer (indices: %d).", indexCount);
-		this->indexBufferDeviceLocalHeap.freeMapping(buffer);
+		this->indexBufferDeviceLocalHeap.freeBufferMapping(buffer);
 		this->device.destroyBuffer(buffer);
 		this->indexBufferPool.free(id);
 		return -1;
@@ -2567,13 +2773,13 @@ void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 	{
 		if (indexBuffer->stagingBuffer)
 		{
-			this->indexBufferStagingHeap.freeMapping(indexBuffer->stagingBuffer);
+			this->indexBufferStagingHeap.freeBufferMapping(indexBuffer->stagingBuffer);
 			this->device.destroyBuffer(indexBuffer->stagingBuffer);
 		}
 
 		if (indexBuffer->buffer)
 		{
-			this->indexBufferDeviceLocalHeap.freeMapping(indexBuffer->buffer);
+			this->indexBufferDeviceLocalHeap.freeBufferMapping(indexBuffer->buffer);
 			this->device.destroyBuffer(indexBuffer->buffer);
 		}
 
@@ -2613,11 +2819,10 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 	}
 
 	const vk::Format format = (bytesPerTexel == 1) ? vk::Format::eR8Uint : vk::Format::eR8G8B8A8Uint;
-	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
+	const int byteCount = width * height * bytesPerTexel;
 
 	vk::Image image;
-	vk::DeviceMemory deviceMemory;
-	if (!TryCreateImage(this->device, width, height, format, usageFlags, this->graphicsQueueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
+	if (!TryCreateImageAndBindWithHeap(this->device, width, height, format, ObjectTextureDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->objectTextureDeviceLocalHeap, &image))
 	{
 		DebugLogErrorFormat("Couldn't create image with dims %dx%d.", width, height);
 		this->objectTexturePool.free(textureID);
@@ -2628,7 +2833,7 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 	if (!TryCreateImageView(this->device, format, vk::ImageAspectFlagBits::eColor, image, &imageView))
 	{
 		DebugLogErrorFormat("Couldn't create image view with dims %dx%d.", width, height);
-		this->device.freeMemory(deviceMemory);
+		this->objectTextureDeviceLocalHeap.freeImageMapping(image);
 		this->device.destroyImage(image);
 		this->objectTexturePool.free(textureID);
 		return -1;
@@ -2639,7 +2844,7 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 	{
 		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
 		this->device.destroyImageView(imageView);
-		this->device.freeMemory(deviceMemory);
+		this->objectTextureDeviceLocalHeap.freeImageMapping(image);
 		this->device.destroyImage(image);
 		this->objectTexturePool.free(textureID);
 		return -1;
@@ -2651,7 +2856,7 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
 		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
-		this->device.freeMemory(deviceMemory);
+		this->objectTextureDeviceLocalHeap.freeImageMapping(image);
 		this->device.destroyImage(image);
 		this->objectTexturePool.free(textureID);
 		return -1;
@@ -2659,39 +2864,22 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 
 	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
 
-	constexpr vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
-	const int byteCount = width * height * bytesPerTexel;
-	vk::DeviceMemory stagingDeviceMemory;
-	if (!TryAllocateMemory(this->device, byteCount, stagingUsageFlags, true, this->physicalDevice, &stagingDeviceMemory))
-	{
-		DebugLogErrorFormat("Couldn't allocate memory for object texture with dims %dx%d.", width, height);
-		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
-		this->device.destroySampler(sampler);
-		this->device.destroyImageView(imageView);
-		this->device.freeMemory(deviceMemory);
-		this->device.destroyImage(image);
-		this->objectTexturePool.free(textureID);
-		return -1;
-	}
-
-	constexpr int stagingByteOffset = 0;
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndMapMemory(this->device, stagingByteOffset, byteCount, stagingUsageFlags, this->graphicsQueueFamilyIndex, stagingDeviceMemory, &stagingBuffer, &stagingHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, ObjectTextureStagingUsageFlags, this->graphicsQueueFamilyIndex, this->objectTextureStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create buffer and map memory for object texture with dims %dx%d.", width, height);
-		this->device.freeMemory(stagingDeviceMemory);
 		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
 		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
-		this->device.freeMemory(deviceMemory);
+		this->objectTextureDeviceLocalHeap.freeImageMapping(image);
 		this->device.destroyImage(image);
 		this->objectTexturePool.free(textureID);
 		return -1;
 	}
 
 	VulkanTexture &texture = this->objectTexturePool.get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, descriptorSet, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
+	texture.init(width, height, bytesPerTexel, image, imageView, sampler, descriptorSet, stagingBuffer, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -2701,13 +2889,9 @@ void VulkanRenderBackend::freeObjectTexture(ObjectTextureID id)
 	VulkanTexture *texture = this->objectTexturePool.tryGet(id);
 	if (texture != nullptr)
 	{
-		if (texture->stagingDeviceMemory)
-		{
-			this->device.freeMemory(texture->stagingDeviceMemory);
-		}
-
 		if (texture->stagingBuffer)
 		{
+			this->objectTextureStagingHeap.freeBufferMapping(texture->stagingBuffer);
 			this->device.destroyBuffer(texture->stagingBuffer);
 		}
 
@@ -2726,13 +2910,9 @@ void VulkanRenderBackend::freeObjectTexture(ObjectTextureID id)
 			this->device.destroyImageView(texture->imageView);
 		}
 
-		if (texture->deviceMemory)
-		{
-			this->device.freeMemory(texture->deviceMemory);
-		}
-
 		if (texture->image)
 		{
+			this->objectTextureDeviceLocalHeap.freeImageMapping(texture->image);
 			this->device.destroyImage(texture->image);
 		}
 
@@ -2786,12 +2966,11 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 	}
 
 	constexpr int bytesPerTexel = 4;
+	const int byteCount = width * height * bytesPerTexel;
 	constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
-	constexpr vk::ImageUsageFlags usageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
 	vk::Image image;
-	vk::DeviceMemory deviceMemory;
-	if (!TryCreateImage(this->device, width, height, format, usageFlags, this->graphicsQueueFamilyIndex, this->physicalDevice, &image, &deviceMemory))
+	if (!TryCreateImageAndBindWithHeap(this->device, width, height, format, UiTextureDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uiTextureDeviceLocalHeap, &image))
 	{
 		DebugLogErrorFormat("Couldn't create image with dims %dx%d.", width, height);
 		this->uiTexturePool.free(textureID);
@@ -2802,7 +2981,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 	if (!TryCreateImageView(this->device, format, vk::ImageAspectFlagBits::eColor, image, &imageView))
 	{
 		DebugLogErrorFormat("Couldn't create image view with dims %dx%d.", width, height);
-		this->device.freeMemory(deviceMemory);
+		this->uiTextureDeviceLocalHeap.freeImageMapping(image);
 		this->device.destroyImage(image);
 		this->uiTexturePool.free(textureID);
 		return -1;
@@ -2813,7 +2992,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 	{
 		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
 		this->device.destroyImageView(imageView);
-		this->device.freeMemory(deviceMemory);
+		this->uiTextureDeviceLocalHeap.freeImageMapping(image);
 		this->device.destroyImage(image);
 		this->uiTexturePool.free(textureID);
 		return -1;
@@ -2825,7 +3004,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
 		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
-		this->device.freeMemory(deviceMemory);
+		this->uiTextureDeviceLocalHeap.freeImageMapping(image);
 		this->device.destroyImage(image);
 		this->uiTexturePool.free(textureID);
 		return -1;
@@ -2833,39 +3012,22 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 
 	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
 
-	constexpr vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
-	const int byteCount = width * height * bytesPerTexel;
-	vk::DeviceMemory stagingDeviceMemory;
-	if (!TryAllocateMemory(this->device, byteCount, stagingUsageFlags, true, this->physicalDevice, &stagingDeviceMemory))
-	{
-		DebugLogErrorFormat("Couldn't allocate memory for UI texture with dims %dx%d.", width, height);
-		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
-		this->device.destroySampler(sampler);
-		this->device.destroyImageView(imageView);
-		this->device.freeMemory(deviceMemory);
-		this->device.destroyImage(image);
-		this->uiTexturePool.free(textureID);
-		return -1;
-	}
-
-	constexpr int stagingByteOffset = 0;
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndMapMemory(this->device, stagingByteOffset, byteCount, stagingUsageFlags, this->graphicsQueueFamilyIndex, stagingDeviceMemory, &stagingBuffer, &stagingHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UiTextureStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uiTextureStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
 	{
-		DebugLogErrorFormat("Couldn't create buffer and map memory for UI texture with dims %dx%d.", width, height);
-		this->device.freeMemory(stagingDeviceMemory);
+		DebugLogErrorFormat("Couldn't create buffer and bind memory for UI texture with dims %dx%d.", width, height);
 		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
 		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
-		this->device.freeMemory(deviceMemory);
+		this->uiTextureDeviceLocalHeap.freeImageMapping(image);
 		this->device.destroyImage(image);
 		this->uiTexturePool.free(textureID);
 		return -1;
 	}
 
 	VulkanTexture &texture = this->uiTexturePool.get(textureID);
-	texture.init(width, height, bytesPerTexel, image, deviceMemory, imageView, sampler, descriptorSet, stagingDeviceMemory, stagingBuffer, stagingHostMappedBytes);
+	texture.init(width, height, bytesPerTexel, image, imageView, sampler, descriptorSet, stagingBuffer, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -2875,13 +3037,9 @@ void VulkanRenderBackend::freeUiTexture(UiTextureID id)
 	VulkanTexture *texture = this->uiTexturePool.tryGet(id);
 	if (texture != nullptr)
 	{
-		if (texture->stagingDeviceMemory)
-		{
-			this->device.freeMemory(texture->stagingDeviceMemory);
-		}
-
 		if (texture->stagingBuffer)
 		{
+			this->uiTextureStagingHeap.freeBufferMapping(texture->stagingBuffer);
 			this->device.destroyBuffer(texture->stagingBuffer);
 		}
 
@@ -2900,13 +3058,9 @@ void VulkanRenderBackend::freeUiTexture(UiTextureID id)
 			this->device.destroyImageView(texture->imageView);
 		}
 
-		if (texture->deviceMemory)
-		{
-			this->device.freeMemory(texture->deviceMemory);
-		}
-
 		if (texture->image)
 		{
+			this->uiTextureDeviceLocalHeap.freeImageMapping(texture->image);
 			this->device.destroyImage(texture->image);
 		}
 
@@ -2965,8 +3119,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 
 	const int byteCount = elementCount * bytesPerElement;
 	vk::Buffer buffer;
-	HeapBlock block;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, &block, nullptr))
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
 	{
 		DebugLogErrorFormat("Couldn't create uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
 		this->uniformBufferPool.free(id);
@@ -2977,7 +3130,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 	if (!TryCreateDescriptorSet(this->device, this->transformDescriptorSetLayout, this->descriptorPool, &descriptorSet))
 	{
 		DebugLogErrorFormat("Couldn't create descriptor set for uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
-		this->uniformBufferDeviceLocalHeap.freeMapping(buffer);
+		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
 		this->device.destroyBuffer(buffer);
 		this->uniformBufferPool.free(id);
 		return -1;
@@ -2986,12 +3139,11 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer);
 
 	vk::Buffer stagingBuffer;
-	HeapBlock stagingBlock;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferStagingHeap, &stagingBuffer, &stagingBlock, &stagingHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create uniform staging buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
-		this->uniformBufferDeviceLocalHeap.freeMapping(buffer);
+		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
 		this->device.destroyBuffer(buffer);
 		this->uniformBufferPool.free(id);
 		return -1;
@@ -3011,7 +3163,7 @@ void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 	{
 		if (uniformBuffer->stagingBuffer)
 		{
-			this->uniformBufferStagingHeap.freeMapping(uniformBuffer->stagingBuffer);
+			this->uniformBufferStagingHeap.freeBufferMapping(uniformBuffer->stagingBuffer);
 			this->device.destroyBuffer(uniformBuffer->stagingBuffer);
 		}
 
@@ -3023,7 +3175,7 @@ void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 
 		if (uniformBuffer->buffer)
 		{
-			this->uniformBufferDeviceLocalHeap.freeMapping(uniformBuffer->buffer);
+			this->uniformBufferDeviceLocalHeap.freeBufferMapping(uniformBuffer->buffer);
 			this->device.destroyBuffer(uniformBuffer->buffer);
 		}
 	}
@@ -3070,7 +3222,7 @@ void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index
 	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
 	const int byteOffset = index * uniformInfo.bytesPerElement;
 	const int byteCount = uniformInfo.bytesPerElement;
-	
+
 	auto commandBufferFunc = [this, index, buffer, stagingBuffer, byteOffset, byteCount]()
 	{
 		CopyToBufferDeviceLocal(stagingBuffer, buffer, byteOffset, byteCount, this->commandBuffer);
@@ -3090,8 +3242,7 @@ RenderLightID VulkanRenderBackend::createLight()
 
 	const int byteCount = sizeof(VulkanLightInfo);
 	vk::Buffer buffer;
-	HeapBlock block;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, &block, nullptr))
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
 	{
 		DebugLogErrorFormat("Couldn't create buffer for light.");
 		this->lightPool.free(id);
@@ -3099,12 +3250,11 @@ RenderLightID VulkanRenderBackend::createLight()
 	}
 
 	vk::Buffer stagingBuffer;
-	HeapBlock stagingBlock;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferStagingHeap, &stagingBuffer, &stagingBlock, &stagingHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create staging buffer for light.");
-		this->uniformBufferDeviceLocalHeap.freeMapping(buffer);
+		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
 		this->device.destroyBuffer(buffer);
 		this->lightPool.free(id);
 		return -1;
@@ -3123,13 +3273,13 @@ void VulkanRenderBackend::freeLight(RenderLightID id)
 	{
 		if (light->stagingBuffer)
 		{
-			this->uniformBufferStagingHeap.freeMapping(light->stagingBuffer);
+			this->uniformBufferStagingHeap.freeBufferMapping(light->stagingBuffer);
 			this->device.destroyBuffer(light->stagingBuffer);
 		}
 
 		if (light->buffer)
 		{
-			this->uniformBufferDeviceLocalHeap.freeMapping(light->buffer);
+			this->uniformBufferDeviceLocalHeap.freeBufferMapping(light->buffer);
 			this->device.destroyBuffer(light->buffer);
 		}
 	}
@@ -3162,7 +3312,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	Matrix4d projectionMatrix = camera.projectionMatrix;
 	projectionMatrix.y.y = -projectionMatrix.y.y; // Flip Y so world is not upside down.
 	this->camera.viewProjection = RendererUtils::matrix4DoubleToFloat(projectionMatrix * camera.viewMatrix);
-	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin()); 
+	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
 
 	const bool isSceneValid = frameSettings.paletteTextureID >= 0;
 	if (isSceneValid)
