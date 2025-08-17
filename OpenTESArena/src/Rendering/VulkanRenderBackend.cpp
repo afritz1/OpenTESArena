@@ -49,6 +49,10 @@ namespace
 	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
 	constexpr vk::ImageUsageFlagBits DepthBufferUsageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
+	constexpr int MaxUniformBufferDescriptorSets = 24576; // @todo this is very high, probably want to batch
+	constexpr int MaxImageDescriptorSets = 4096;
+	constexpr int MaxDescriptorSets = MaxUniformBufferDescriptorSets + MaxImageDescriptorSets;
+
 	struct Vertex
 	{
 		Float2 position;
@@ -1964,16 +1968,13 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	constexpr int maxUniformBufferDescriptorSets = 16384;
-	constexpr int maxImageDescriptorSets = 2048;
 	const vk::DescriptorPoolSize descriptorPoolSizes[] =
 	{
-		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, maxUniformBufferDescriptorSets),
-		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, maxImageDescriptorSets)
+		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, MaxUniformBufferDescriptorSets),
+		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxImageDescriptorSets)
 	};
 
-	constexpr int maxDescriptorSetCount = maxUniformBufferDescriptorSets + maxImageDescriptorSets;
-	if (!TryCreateDescriptorPool(this->device, descriptorPoolSizes, maxDescriptorSetCount, &this->descriptorPool))
+	if (!TryCreateDescriptorPool(this->device, descriptorPoolSizes, MaxDescriptorSets, &this->descriptorPool))
 	{
 		DebugLogError("Couldn't create descriptor pool.");
 		return false;
