@@ -3409,7 +3409,11 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, dynamicOffsets);
 
 	vk::Pipeline currentPipeline;
-	vk::DescriptorSet currentMaterialDescriptorSet;
+	VertexPositionBufferID currentVertexPositionBufferID = -1;
+	VertexAttributeBufferID currentVertexTexCoordBufferID = -1;
+	IndexBufferID currentIndexBufferID = -1;
+	int currentIndexBufferIndexCount = 0;
+	ObjectTextureID currentTextureID = -1;
 	for (int i = 0; i < renderCommandList.entryCount; i++)
 	{
 		for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
@@ -3421,19 +3425,39 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline);
 			}
 
-			const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(drawCall.positionBufferID);
-			const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
-
-			const VulkanBuffer &vertexTexCoordsBuffer = this->vertexAttributeBufferPool.get(drawCall.texCoordBufferID);
-			const VulkanBufferVertexAttributeInfo &vertexTexCoordsInfo = vertexTexCoordsBuffer.vertexAttribute;
-
 			constexpr vk::DeviceSize bufferOffset = 0;
-			this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
-			this->commandBuffer.bindVertexBuffers(1, vertexTexCoordsBuffer.buffer, bufferOffset);
 
-			const VulkanBuffer &indexBuffer = this->indexBufferPool.get(drawCall.indexBufferID);
-			const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
-			this->commandBuffer.bindIndexBuffer(indexBuffer.buffer, bufferOffset, vk::IndexType::eUint32);
+			const VertexPositionBufferID vertexPositionBufferID = drawCall.positionBufferID;
+			if (vertexPositionBufferID != currentVertexPositionBufferID)
+			{
+				currentVertexPositionBufferID = vertexPositionBufferID;
+
+				const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(vertexPositionBufferID);
+				const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
+				this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
+			}
+
+			const VertexAttributeBufferID vertexTexCoordsBufferID = drawCall.texCoordBufferID;
+			if (vertexTexCoordsBufferID != currentVertexTexCoordBufferID)
+			{
+				currentVertexTexCoordBufferID = vertexTexCoordsBufferID;
+
+				const VulkanBuffer &vertexTexCoordsBuffer = this->vertexAttributeBufferPool.get(vertexTexCoordsBufferID);
+				const VulkanBufferVertexAttributeInfo &vertexTexCoordsInfo = vertexTexCoordsBuffer.vertexAttribute;
+				this->commandBuffer.bindVertexBuffers(1, vertexTexCoordsBuffer.buffer, bufferOffset);
+			}
+
+			const IndexBufferID indexBufferID = drawCall.indexBufferID;
+			if (indexBufferID != currentIndexBufferID)
+			{
+				currentIndexBufferID = indexBufferID;
+
+				const VulkanBuffer &indexBuffer = this->indexBufferPool.get(indexBufferID);
+				const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
+				currentIndexBufferIndexCount = indexInfo.indexCount;
+
+				this->commandBuffer.bindIndexBuffer(indexBuffer.buffer, bufferOffset, vk::IndexType::eUint32);
+			}
 
 			const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
 			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform; // @todo uniform buffer index for weather particles, use w/ dynamicOffsets?
@@ -3441,17 +3465,17 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, dynamicOffsets);
 
 			const ObjectTextureID textureID = drawCall.textureIDs[0];
-			const VulkanTexture &texture = this->objectTexturePool.get(textureID);
-			if (texture.descriptorSet != currentMaterialDescriptorSet)
+			if (textureID != currentTextureID)
 			{
-				currentMaterialDescriptorSet = texture.descriptorSet;
+				currentTextureID = textureID;
 
+				const VulkanTexture &texture = this->objectTexturePool.get(textureID);
 				constexpr uint32_t materialDescriptorSetIndex = 2;
 				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
 			}
 
 			constexpr uint32_t meshInstanceCount = 1;
-			this->commandBuffer.drawIndexed(indexInfo.indexCount, meshInstanceCount, 0, 0, 0);
+			this->commandBuffer.drawIndexed(currentIndexBufferIndexCount, meshInstanceCount, 0, 0, 0);
 		}
 	}
 
