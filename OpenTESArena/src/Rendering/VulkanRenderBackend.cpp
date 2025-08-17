@@ -2440,7 +2440,8 @@ void VulkanRenderBackend::shutdown()
 			this->vertexShaderModule = nullptr;
 		}
 
-		this->pendingCommands.copyCommands.clear();
+		this->freeCommands.clear();
+		this->copyCommands.clear();
 
 		if (this->commandBuffer)
 		{
@@ -2603,23 +2604,28 @@ VertexPositionBufferID VulkanRenderBackend::createVertexPositionBuffer(int verte
 
 void VulkanRenderBackend::freeVertexPositionBuffer(VertexPositionBufferID id)
 {
-	VulkanBuffer *vertexPositionBuffer = this->vertexPositionBufferPool.tryGet(id);
-	if (vertexPositionBuffer != nullptr)
+	auto commandBufferFunc = [this, id]()
 	{
-		if (vertexPositionBuffer->stagingBuffer)
+		VulkanBuffer *vertexPositionBuffer = this->vertexPositionBufferPool.tryGet(id);
+		if (vertexPositionBuffer != nullptr)
 		{
-			this->vertexBufferStagingHeap.freeBufferMapping(vertexPositionBuffer->stagingBuffer);
-			this->device.destroyBuffer(vertexPositionBuffer->stagingBuffer);
-		}
+			if (vertexPositionBuffer->stagingBuffer)
+			{
+				this->vertexBufferStagingHeap.freeBufferMapping(vertexPositionBuffer->stagingBuffer);
+				this->device.destroyBuffer(vertexPositionBuffer->stagingBuffer);
+			}
 
-		if (vertexPositionBuffer->buffer)
-		{
-			this->vertexBufferDeviceLocalHeap.freeBufferMapping(vertexPositionBuffer->buffer);
-			this->device.destroyBuffer(vertexPositionBuffer->buffer);
-		}
+			if (vertexPositionBuffer->buffer)
+			{
+				this->vertexBufferDeviceLocalHeap.freeBufferMapping(vertexPositionBuffer->buffer);
+				this->device.destroyBuffer(vertexPositionBuffer->buffer);
+			}
 
-		this->vertexPositionBufferPool.free(id);
-	}
+			this->vertexPositionBufferPool.free(id);
+		}
+	};
+
+	this->freeCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 LockedBuffer VulkanRenderBackend::lockVertexPositionBuffer(VertexPositionBufferID id)
@@ -2631,17 +2637,16 @@ LockedBuffer VulkanRenderBackend::lockVertexPositionBuffer(VertexPositionBufferI
 
 void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
 {
-	const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
-	vk::Buffer buffer = vertexPositionBuffer.buffer;
-	vk::Buffer stagingBuffer = vertexPositionBuffer.stagingBuffer;
-	const int byteCount = vertexPositionBuffer.stagingHostMappedBytes.getCount();
-
-	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
+	auto commandBufferFunc = [this, id]()
 	{
+		const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
+		vk::Buffer buffer = vertexPositionBuffer.buffer;
+		vk::Buffer stagingBuffer = vertexPositionBuffer.stagingBuffer;
+		const int byteCount = vertexPositionBuffer.stagingHostMappedBytes.getCount();
 		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
 	};
 
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent)
@@ -2686,23 +2691,28 @@ VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int ver
 
 void VulkanRenderBackend::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
-	VulkanBuffer *vertexAttributeBuffer = this->vertexAttributeBufferPool.tryGet(id);
-	if (vertexAttributeBuffer != nullptr)
+	auto commandBufferFunc = [this, id]()
 	{
-		if (vertexAttributeBuffer->stagingBuffer)
+		VulkanBuffer *vertexAttributeBuffer = this->vertexAttributeBufferPool.tryGet(id);
+		if (vertexAttributeBuffer != nullptr)
 		{
-			this->vertexBufferStagingHeap.freeBufferMapping(vertexAttributeBuffer->stagingBuffer);
-			this->device.destroyBuffer(vertexAttributeBuffer->stagingBuffer);
-		}
+			if (vertexAttributeBuffer->stagingBuffer)
+			{
+				this->vertexBufferStagingHeap.freeBufferMapping(vertexAttributeBuffer->stagingBuffer);
+				this->device.destroyBuffer(vertexAttributeBuffer->stagingBuffer);
+			}
 
-		if (vertexAttributeBuffer->buffer)
-		{
-			this->vertexBufferDeviceLocalHeap.freeBufferMapping(vertexAttributeBuffer->buffer);
-			this->device.destroyBuffer(vertexAttributeBuffer->buffer);
-		}
+			if (vertexAttributeBuffer->buffer)
+			{
+				this->vertexBufferDeviceLocalHeap.freeBufferMapping(vertexAttributeBuffer->buffer);
+				this->device.destroyBuffer(vertexAttributeBuffer->buffer);
+			}
 
-		this->vertexAttributeBufferPool.free(id);
-	}
+			this->vertexAttributeBufferPool.free(id);
+		}
+	};
+
+	this->freeCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 LockedBuffer VulkanRenderBackend::lockVertexAttributeBuffer(VertexAttributeBufferID id)
@@ -2714,17 +2724,16 @@ LockedBuffer VulkanRenderBackend::lockVertexAttributeBuffer(VertexAttributeBuffe
 
 void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id)
 {
-	const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
-	vk::Buffer buffer = vertexAttributeBuffer.buffer;
-	vk::Buffer stagingBuffer = vertexAttributeBuffer.stagingBuffer;
-	const int byteCount = vertexAttributeBuffer.stagingHostMappedBytes.getCount();
-
-	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
+	auto commandBufferFunc = [this, id]()
 	{
+		const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
+		vk::Buffer buffer = vertexAttributeBuffer.buffer;
+		vk::Buffer stagingBuffer = vertexAttributeBuffer.stagingBuffer;
+		const int byteCount = vertexAttributeBuffer.stagingHostMappedBytes.getCount();
 		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
 	};
 
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount, int bytesPerIndex)
@@ -2768,23 +2777,28 @@ IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount, int bytesPe
 
 void VulkanRenderBackend::freeIndexBuffer(IndexBufferID id)
 {
-	VulkanBuffer *indexBuffer = this->indexBufferPool.tryGet(id);
-	if (indexBuffer != nullptr)
+	auto commandBufferFunc = [this, id]()
 	{
-		if (indexBuffer->stagingBuffer)
+		VulkanBuffer *indexBuffer = this->indexBufferPool.tryGet(id);
+		if (indexBuffer != nullptr)
 		{
-			this->indexBufferStagingHeap.freeBufferMapping(indexBuffer->stagingBuffer);
-			this->device.destroyBuffer(indexBuffer->stagingBuffer);
-		}
+			if (indexBuffer->stagingBuffer)
+			{
+				this->indexBufferStagingHeap.freeBufferMapping(indexBuffer->stagingBuffer);
+				this->device.destroyBuffer(indexBuffer->stagingBuffer);
+			}
 
-		if (indexBuffer->buffer)
-		{
-			this->indexBufferDeviceLocalHeap.freeBufferMapping(indexBuffer->buffer);
-			this->device.destroyBuffer(indexBuffer->buffer);
-		}
+			if (indexBuffer->buffer)
+			{
+				this->indexBufferDeviceLocalHeap.freeBufferMapping(indexBuffer->buffer);
+				this->device.destroyBuffer(indexBuffer->buffer);
+			}
 
-		this->indexBufferPool.free(id);
-	}
+			this->indexBufferPool.free(id);
+		}
+	};
+
+	this->freeCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 LockedBuffer VulkanRenderBackend::lockIndexBuffer(IndexBufferID id)
@@ -2796,17 +2810,16 @@ LockedBuffer VulkanRenderBackend::lockIndexBuffer(IndexBufferID id)
 
 void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 {
-	const VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
-	vk::Buffer buffer = indexBuffer.buffer;
-	vk::Buffer stagingBuffer = indexBuffer.stagingBuffer;
-	const int byteCount = indexBuffer.stagingHostMappedBytes.getCount();
-
-	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
+	auto commandBufferFunc = [this, id]()
 	{
+		const VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
+		vk::Buffer buffer = indexBuffer.buffer;
+		vk::Buffer stagingBuffer = indexBuffer.stagingBuffer;
+		const int byteCount = indexBuffer.stagingHostMappedBytes.getCount();
 		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
 	};
 
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
@@ -2863,29 +2876,34 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 
 void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 {
-	VulkanBuffer *uniformBuffer = this->uniformBufferPool.tryGet(id);
-	if (uniformBuffer != nullptr)
+	auto commandBufferFunc = [this, id]()
 	{
-		if (uniformBuffer->stagingBuffer)
+		VulkanBuffer *uniformBuffer = this->uniformBufferPool.tryGet(id);
+		if (uniformBuffer != nullptr)
 		{
-			this->uniformBufferStagingHeap.freeBufferMapping(uniformBuffer->stagingBuffer);
-			this->device.destroyBuffer(uniformBuffer->stagingBuffer);
-		}
+			if (uniformBuffer->stagingBuffer)
+			{
+				this->uniformBufferStagingHeap.freeBufferMapping(uniformBuffer->stagingBuffer);
+				this->device.destroyBuffer(uniformBuffer->stagingBuffer);
+			}
 
-		if (uniformBuffer->uniform.descriptorSet)
-		{
-			this->device.freeDescriptorSets(this->descriptorPool, uniformBuffer->uniform.descriptorSet);
-			uniformBuffer->uniform.descriptorSet = nullptr;
-		}
+			if (uniformBuffer->uniform.descriptorSet)
+			{
+				this->device.freeDescriptorSets(this->descriptorPool, uniformBuffer->uniform.descriptorSet);
+				uniformBuffer->uniform.descriptorSet = nullptr;
+			}
 
-		if (uniformBuffer->buffer)
-		{
-			this->uniformBufferDeviceLocalHeap.freeBufferMapping(uniformBuffer->buffer);
-			this->device.destroyBuffer(uniformBuffer->buffer);
-		}
-	}
+			if (uniformBuffer->buffer)
+			{
+				this->uniformBufferDeviceLocalHeap.freeBufferMapping(uniformBuffer->buffer);
+				this->device.destroyBuffer(uniformBuffer->buffer);
+			}
 
-	this->uniformBufferPool.free(id);
+			this->uniformBufferPool.free(id);
+		}
+	};
+
+	this->freeCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 LockedBuffer VulkanRenderBackend::lockUniformBuffer(UniformBufferID id)
@@ -2906,34 +2924,32 @@ LockedBuffer VulkanRenderBackend::lockUniformBufferIndex(UniformBufferID id, int
 
 void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 {
-	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	vk::Buffer buffer = uniformBuffer.buffer;
-	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
-	const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
-
-	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
+	auto commandBufferFunc = [this, id]()
 	{
+		const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+		vk::Buffer buffer = uniformBuffer.buffer;
+		vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
+		const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
 		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
 	};
 
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
 {
-	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	vk::Buffer buffer = uniformBuffer.buffer;
-	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
-	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-	const int byteOffset = index * uniformInfo.bytesPerElement;
-	const int byteCount = uniformInfo.bytesPerElement;
-
-	auto commandBufferFunc = [this, index, buffer, stagingBuffer, byteOffset, byteCount]()
+	auto commandBufferFunc = [this, id, index]()
 	{
+		const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+		vk::Buffer buffer = uniformBuffer.buffer;
+		vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
+		const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
+		const int byteOffset = index * uniformInfo.bytesPerElement;
+		const int byteCount = uniformInfo.bytesPerElement;
 		CopyToBufferDeviceLocal(stagingBuffer, buffer, byteOffset, byteCount, this->commandBuffer);
 	};
 
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 RenderLightID VulkanRenderBackend::createLight()
@@ -2973,23 +2989,28 @@ RenderLightID VulkanRenderBackend::createLight()
 
 void VulkanRenderBackend::freeLight(RenderLightID id)
 {
-	VulkanLight *light = this->lightPool.tryGet(id);
-	if (light != nullptr)
+	auto commandBufferFunc = [this, id]()
 	{
-		if (light->stagingBuffer)
+		VulkanLight *light = this->lightPool.tryGet(id);
+		if (light != nullptr)
 		{
-			this->uniformBufferStagingHeap.freeBufferMapping(light->stagingBuffer);
-			this->device.destroyBuffer(light->stagingBuffer);
-		}
+			if (light->stagingBuffer)
+			{
+				this->uniformBufferStagingHeap.freeBufferMapping(light->stagingBuffer);
+				this->device.destroyBuffer(light->stagingBuffer);
+			}
 
-		if (light->buffer)
-		{
-			this->uniformBufferDeviceLocalHeap.freeBufferMapping(light->buffer);
-			this->device.destroyBuffer(light->buffer);
-		}
-	}
+			if (light->buffer)
+			{
+				this->uniformBufferDeviceLocalHeap.freeBufferMapping(light->buffer);
+				this->device.destroyBuffer(light->buffer);
+			}
 
-	this->lightPool.free(id);
+			this->lightPool.free(id);
+		}
+	};
+
+	this->freeCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 bool VulkanRenderBackend::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
@@ -3076,38 +3097,43 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 
 void VulkanRenderBackend::freeObjectTexture(ObjectTextureID id)
 {
-	VulkanTexture *texture = this->objectTexturePool.tryGet(id);
-	if (texture != nullptr)
+	auto commandBufferFunc = [this, id]()
 	{
-		if (texture->stagingBuffer)
+		VulkanTexture *texture = this->objectTexturePool.tryGet(id);
+		if (texture != nullptr)
 		{
-			this->objectTextureStagingHeap.freeBufferMapping(texture->stagingBuffer);
-			this->device.destroyBuffer(texture->stagingBuffer);
-		}
+			if (texture->stagingBuffer)
+			{
+				this->objectTextureStagingHeap.freeBufferMapping(texture->stagingBuffer);
+				this->device.destroyBuffer(texture->stagingBuffer);
+			}
 
-		if (texture->descriptorSet)
-		{
-			this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
-		}
+			if (texture->descriptorSet)
+			{
+				this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
+			}
 
-		if (texture->sampler)
-		{
-			this->device.destroySampler(texture->sampler);
-		}
+			if (texture->sampler)
+			{
+				this->device.destroySampler(texture->sampler);
+			}
 
-		if (texture->imageView)
-		{
-			this->device.destroyImageView(texture->imageView);
-		}
+			if (texture->imageView)
+			{
+				this->device.destroyImageView(texture->imageView);
+			}
 
-		if (texture->image)
-		{
-			this->objectTextureDeviceLocalHeap.freeImageMapping(texture->image);
-			this->device.destroyImage(texture->image);
-		}
+			if (texture->image)
+			{
+				this->objectTextureDeviceLocalHeap.freeImageMapping(texture->image);
+				this->device.destroyImage(texture->image);
+			}
 
-		this->objectTexturePool.free(id);
-	}
+			this->objectTexturePool.free(id);
+		}
+	};
+
+	this->freeCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 std::optional<Int2> VulkanRenderBackend::tryGetObjectTextureDims(ObjectTextureID id) const
@@ -3129,21 +3155,20 @@ LockedTexture VulkanRenderBackend::lockObjectTexture(ObjectTextureID id)
 
 void VulkanRenderBackend::unlockObjectTexture(ObjectTextureID id)
 {
-	VulkanTexture &texture = this->objectTexturePool.get(id);
-	const int width = texture.width;
-	const int height = texture.height;
-	const int bytesPerTexel = texture.bytesPerTexel;
-	vk::Image image = texture.image;
-	vk::Buffer stagingBuffer = texture.stagingBuffer;
-
-	auto commandBufferFunc = [this, width, height, image, stagingBuffer]()
+	auto commandBufferFunc = [this, id]()
 	{
+		VulkanTexture &texture = this->objectTexturePool.get(id);
+		const int width = texture.width;
+		const int height = texture.height;
+		const int bytesPerTexel = texture.bytesPerTexel;
+		vk::Image image = texture.image;
+		vk::Buffer stagingBuffer = texture.stagingBuffer;
 		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
 		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
 		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
 	};
 
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
@@ -3224,38 +3249,43 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 
 void VulkanRenderBackend::freeUiTexture(UiTextureID id)
 {
-	VulkanTexture *texture = this->uiTexturePool.tryGet(id);
-	if (texture != nullptr)
+	auto commandBufferFunc = [this, id]()
 	{
-		if (texture->stagingBuffer)
+		VulkanTexture *texture = this->uiTexturePool.tryGet(id);
+		if (texture != nullptr)
 		{
-			this->uiTextureStagingHeap.freeBufferMapping(texture->stagingBuffer);
-			this->device.destroyBuffer(texture->stagingBuffer);
-		}
+			if (texture->stagingBuffer)
+			{
+				this->uiTextureStagingHeap.freeBufferMapping(texture->stagingBuffer);
+				this->device.destroyBuffer(texture->stagingBuffer);
+			}
 
-		if (texture->descriptorSet)
-		{
-			this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
-		}
+			if (texture->descriptorSet)
+			{
+				this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
+			}
 
-		if (texture->sampler)
-		{
-			this->device.destroySampler(texture->sampler);
-		}
+			if (texture->sampler)
+			{
+				this->device.destroySampler(texture->sampler);
+			}
 
-		if (texture->imageView)
-		{
-			this->device.destroyImageView(texture->imageView);
-		}
+			if (texture->imageView)
+			{
+				this->device.destroyImageView(texture->imageView);
+			}
 
-		if (texture->image)
-		{
-			this->uiTextureDeviceLocalHeap.freeImageMapping(texture->image);
-			this->device.destroyImage(texture->image);
-		}
+			if (texture->image)
+			{
+				this->uiTextureDeviceLocalHeap.freeImageMapping(texture->image);
+				this->device.destroyImage(texture->image);
+			}
 
-		this->uiTexturePool.free(id);
-	}
+			this->uiTexturePool.free(id);
+		}
+	};
+
+	this->freeCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 std::optional<Int2> VulkanRenderBackend::tryGetUiTextureDims(UiTextureID id) const
@@ -3277,21 +3307,20 @@ LockedTexture VulkanRenderBackend::lockUiTexture(UiTextureID id)
 
 void VulkanRenderBackend::unlockUiTexture(UiTextureID id)
 {
-	VulkanTexture &texture = this->uiTexturePool.get(id);
-	const int width = texture.width;
-	const int height = texture.height;
-	DebugAssert(texture.bytesPerTexel == 4);
-	vk::Image image = texture.image;
-	vk::Buffer stagingBuffer = texture.stagingBuffer;
-
-	auto commandBufferFunc = [this, width, height, image, stagingBuffer]()
+	auto commandBufferFunc = [this, id]()
 	{
+		VulkanTexture &texture = this->uiTexturePool.get(id);
+		const int width = texture.width;
+		const int height = texture.height;
+		DebugAssert(texture.bytesPerTexel == 4);
+		vk::Image image = texture.image;
+		vk::Buffer stagingBuffer = texture.stagingBuffer;
 		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
 		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
 		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
 	};
 
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
@@ -3337,14 +3366,14 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		return;
 	}
 
-	if (!this->pendingCommands.copyCommands.empty())
+	if (!this->copyCommands.empty())
 	{
-		for (const std::function<void()> &copyCommand : this->pendingCommands.copyCommands)
+		for (const std::function<void()> &copyCommand : this->copyCommands)
 		{
 			copyCommand();
 		}
 
-		this->pendingCommands.copyCommands.clear();
+		this->copyCommands.clear();
 
 		const vk::DependencyFlags dependencyFlags;
 		vk::ArrayProxy<vk::MemoryBarrier> memoryBarriers;
@@ -3470,5 +3499,15 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	{
 		DebugLogErrorFormat("Couldn't wait idle for frame completion (%d).", waitForFrameCompletionResult);
 		return;
+	}
+
+	if (!this->freeCommands.empty())
+	{
+		for (const std::function<void()> &func : this->freeCommands)
+		{
+			func();
+		}
+
+		this->freeCommands.clear();
 	}
 }

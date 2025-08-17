@@ -122,11 +122,6 @@ using VulkanLightPool = RecyclablePool<RenderLightID, VulkanLight>;
 using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
 
-struct VulkanPendingCommands
-{
-	std::vector<std::function<void()>> copyCommands;
-};
-
 struct VulkanCamera
 {
 	static constexpr int BYTE_COUNT = sizeof(Matrix4f);
@@ -184,6 +179,8 @@ struct VulkanHeap
 	void clear();
 };
 
+using VulkanPendingCommands = std::vector<std::function<void()>>;
+
 class VulkanRenderBackend final : public RenderBackend
 {
 private:
@@ -208,7 +205,8 @@ private:
 
 	vk::CommandPool commandPool;
 	vk::CommandBuffer commandBuffer;
-	VulkanPendingCommands pendingCommands;
+	VulkanPendingCommands copyCommands;
+	VulkanPendingCommands freeCommands;
 
 	vk::ShaderModule vertexShaderModule;
 	vk::ShaderModule fragmentShaderModule;
