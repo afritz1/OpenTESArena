@@ -112,7 +112,7 @@ public:
 	// Handles resetting render target textures when switching in and out of exclusive fullscreen.
 	void handleRenderTargetsReset();
 
-	// Geometry management functions.
+	// Buffer management functions.
 	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex);
 	void freeVertexPositionBuffer(VertexPositionBufferID id);
 	bool populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions);
@@ -124,6 +124,20 @@ public:
 	IndexBufferID createIndexBuffer(int indexCount);
 	void freeIndexBuffer(IndexBufferID id);
 	bool populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices);
+
+	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
+	UniformBufferID createUniformBufferVector3s(int elementCount);
+	UniformBufferID createUniformBufferRenderTransforms(int elementCount);
+	void freeUniformBuffer(UniformBufferID id);
+	bool populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes);
+	bool populateUniformBufferVector3s(UniformBufferID id, Span<const Double3> values);
+	bool populateUniformBufferRenderTransforms(UniformBufferID id, Span<const RenderTransform> transforms);
+	bool populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes);
+	bool populateUniformBufferIndexRenderTransform(UniformBufferID id, int uniformIndex, const RenderTransform &transform);
+
+	RenderLightID createLight();
+	void freeLight(RenderLightID id);
+	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius);
 
 	// Texture management functions.
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);
@@ -141,21 +155,6 @@ public:
 	void unlockUiTexture(UiTextureID id);
 	bool populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette = nullptr);
 	bool populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t> texels);
-
-	// Shading management functions.
-	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
-	UniformBufferID createUniformBufferVector3s(int elementCount);
-	UniformBufferID createUniformBufferRenderTransforms(int elementCount);
-	void freeUniformBuffer(UniformBufferID id);
-	bool populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes);
-	bool populateUniformBufferVector3s(UniformBufferID id, Span<const Double3> values);
-	bool populateUniformBufferRenderTransforms(UniformBufferID id, Span<const RenderTransform> transforms);
-	bool populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes);
-	bool populateUniformBufferIndexRenderTransform(UniformBufferID id, int uniformIndex, const RenderTransform &transform);
-
-	RenderLightID createLight();
-	void freeLight(RenderLightID id);
-	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius);
 
 	// Wrapper methods for some SDL draw functions.
 	//void drawPixel(const Color &color, int x, int y);

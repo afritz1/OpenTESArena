@@ -57,7 +57,7 @@ public:
 
 	virtual int getBytesPerFloat() const = 0;
 
-	// Geometry management functions.
+	// Buffer management functions.
 	virtual VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent) = 0;
 	virtual void freeVertexPositionBuffer(VertexPositionBufferID id) = 0;
 	virtual LockedBuffer lockVertexPositionBuffer(VertexPositionBufferID id) = 0;
@@ -73,6 +73,17 @@ public:
 	virtual LockedBuffer lockIndexBuffer(IndexBufferID id) = 0;
 	virtual void unlockIndexBuffer(IndexBufferID id) = 0;
 
+	virtual UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement) = 0;
+	virtual void freeUniformBuffer(UniformBufferID id) = 0;
+	virtual LockedBuffer lockUniformBuffer(UniformBufferID id) = 0;
+	virtual LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index) = 0;
+	virtual void unlockUniformBuffer(UniformBufferID id) = 0;
+	virtual void unlockUniformBufferIndex(UniformBufferID id, int index) = 0;
+
+	virtual RenderLightID createLight() = 0;
+	virtual void freeLight(RenderLightID id) = 0;
+	virtual bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) = 0;
+
 	// Texture management functions.
 	virtual ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) = 0;
 	virtual void freeObjectTexture(ObjectTextureID textureID) = 0;
@@ -85,18 +96,6 @@ public:
 	virtual std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const = 0;
 	virtual LockedTexture lockUiTexture(UiTextureID textureID) = 0;
 	virtual void unlockUiTexture(UiTextureID textureID) = 0;
-
-	// Shading management functions.
-	virtual UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement) = 0;
-	virtual void freeUniformBuffer(UniformBufferID id) = 0;
-	virtual LockedBuffer lockUniformBuffer(UniformBufferID id) = 0;
-	virtual LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index) = 0;
-	virtual void unlockUniformBuffer(UniformBufferID id) = 0;
-	virtual void unlockUniformBufferIndex(UniformBufferID id, int index) = 0;
-
-	virtual RenderLightID createLight() = 0;
-	virtual void freeLight(RenderLightID id) = 0;
-	virtual bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) = 0;
 
 	// Renders a frame to the target window. Currently this is blocking and should be safe to present the frame upon returning.
 	virtual void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

@@ -302,6 +302,51 @@ void Sdl2DSoft3DRenderBackend::unlockIndexBuffer(IndexBufferID id)
 	this->renderer3D.unlockIndexBuffer(id);
 }
 
+UniformBufferID Sdl2DSoft3DRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
+{
+	return this->renderer3D.createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
+}
+
+void Sdl2DSoft3DRenderBackend::freeUniformBuffer(UniformBufferID id)
+{
+	return this->renderer3D.freeUniformBuffer(id);
+}
+
+LockedBuffer Sdl2DSoft3DRenderBackend::lockUniformBuffer(UniformBufferID id)
+{
+	return this->renderer3D.lockUniformBuffer(id);
+}
+
+LockedBuffer Sdl2DSoft3DRenderBackend::lockUniformBufferIndex(UniformBufferID id, int index)
+{
+	return this->renderer3D.lockUniformBufferIndex(id, index);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockUniformBuffer(UniformBufferID id)
+{
+	return this->renderer3D.unlockUniformBuffer(id);
+}
+
+void Sdl2DSoft3DRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
+{
+	return this->renderer3D.unlockUniformBufferIndex(id, index);
+}
+
+RenderLightID Sdl2DSoft3DRenderBackend::createLight()
+{
+	return this->renderer3D.createLight();
+}
+
+void Sdl2DSoft3DRenderBackend::freeLight(RenderLightID id)
+{
+	return this->renderer3D.freeLight(id);
+}
+
+bool Sdl2DSoft3DRenderBackend::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
+{
+	return this->renderer3D.populateLight(id, point, startRadius, endRadius);
+}
+
 ObjectTextureID Sdl2DSoft3DRenderBackend::createObjectTexture(int width, int height, int bytesPerTexel)
 {
 	return this->renderer3D.createTexture(width, height, bytesPerTexel);
@@ -350,51 +395,6 @@ LockedTexture Sdl2DSoft3DRenderBackend::lockUiTexture(UiTextureID id)
 void Sdl2DSoft3DRenderBackend::unlockUiTexture(UiTextureID id)
 {
 	this->renderer2D.unlockTexture(id);
-}
-
-UniformBufferID Sdl2DSoft3DRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
-{
-	return this->renderer3D.createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
-}
-
-void Sdl2DSoft3DRenderBackend::freeUniformBuffer(UniformBufferID id)
-{
-	return this->renderer3D.freeUniformBuffer(id);
-}
-
-LockedBuffer Sdl2DSoft3DRenderBackend::lockUniformBuffer(UniformBufferID id)
-{
-	return this->renderer3D.lockUniformBuffer(id);
-}
-
-LockedBuffer Sdl2DSoft3DRenderBackend::lockUniformBufferIndex(UniformBufferID id, int index)
-{
-	return this->renderer3D.lockUniformBufferIndex(id, index);
-}
-
-void Sdl2DSoft3DRenderBackend::unlockUniformBuffer(UniformBufferID id)
-{
-	return this->renderer3D.unlockUniformBuffer(id);
-}
-
-void Sdl2DSoft3DRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
-{
-	return this->renderer3D.unlockUniformBufferIndex(id, index);
-}
-
-RenderLightID Sdl2DSoft3DRenderBackend::createLight()
-{
-	return this->renderer3D.createLight();
-}
-
-void Sdl2DSoft3DRenderBackend::freeLight(RenderLightID id)
-{
-	return this->renderer3D.freeLight(id);
-}
-
-bool Sdl2DSoft3DRenderBackend::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
-{
-	return this->renderer3D.populateLight(id, point, startRadius, endRadius);
 }
 
 void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

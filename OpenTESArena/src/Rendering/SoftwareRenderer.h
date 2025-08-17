@@ -165,12 +165,6 @@ public:
 	LockedBuffer lockIndexBuffer(IndexBufferID id);
 	void unlockIndexBuffer(IndexBufferID id);
 
-	ObjectTextureID createTexture(int width, int height, int bytesPerTexel);
-	void freeTexture(ObjectTextureID textureID);
-	std::optional<Int2> tryGetTextureDims(ObjectTextureID id) const;
-	LockedTexture lockTexture(ObjectTextureID textureID);
-	void unlockTexture(ObjectTextureID textureID);
-
 	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
 	void freeUniformBuffer(UniformBufferID id);
 	LockedBuffer lockUniformBuffer(UniformBufferID id);
@@ -181,6 +175,12 @@ public:
 	RenderLightID createLight();
 	void freeLight(RenderLightID id);
 	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius);
+
+	ObjectTextureID createTexture(int width, int height, int bytesPerTexel);
+	void freeTexture(ObjectTextureID textureID);
+	std::optional<Int2> tryGetTextureDims(ObjectTextureID id) const;
+	LockedTexture lockTexture(ObjectTextureID textureID);
+	void unlockTexture(ObjectTextureID textureID);
 
 	void submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer);

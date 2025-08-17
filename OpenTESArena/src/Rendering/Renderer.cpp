@@ -327,116 +327,6 @@ bool Renderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices
 	return true;
 }
 
-ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)
-{
-	return this->backend->createObjectTexture(width, height, bytesPerTexel);
-}
-
-void Renderer::freeObjectTexture(ObjectTextureID id)
-{
-	this->backend->freeObjectTexture(id);
-}
-
-std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
-{
-	return this->backend->tryGetObjectTextureDims(id);
-}
-
-LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
-{
-	return this->backend->lockObjectTexture(id);
-}
-
-void Renderer::unlockObjectTexture(ObjectTextureID id)
-{
-	this->backend->unlockObjectTexture(id);
-}
-
-bool Renderer::populateObjectTexture(ObjectTextureID id, Span<const std::byte> texels)
-{
-	LockedTexture lockedTexture = this->backend->lockObjectTexture(id);
-	if (!lockedTexture.isValid())
-	{
-		DebugLogErrorFormat("Couldn't lock object texture %d.", id);
-		return false;
-	}
-
-	DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
-	std::copy(texels.begin(), texels.end(), lockedTexture.texels.begin());
-
-	this->backend->unlockObjectTexture(id);
-	return true;
-}
-
-bool Renderer::populateObjectTexture8Bit(ObjectTextureID id, Span<const uint8_t> texels)
-{
-	Span<const std::byte> texelBytes(reinterpret_cast<const std::byte*>(texels.begin()), texels.getCount());
-	return this->populateObjectTexture(id, texelBytes);
-}
-
-UiTextureID Renderer::createUiTexture(int width, int height)
-{
-	return this->backend->createUiTexture(width, height);
-}
-
-void Renderer::freeUiTexture(UiTextureID id)
-{
-	this->backend->freeUiTexture(id);
-}
-
-std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
-{
-	return this->backend->tryGetUiTextureDims(id);
-}
-
-LockedTexture Renderer::lockUiTexture(UiTextureID id)
-{
-	return this->backend->lockUiTexture(id);
-}
-
-void Renderer::unlockUiTexture(UiTextureID id)
-{
-	this->backend->unlockUiTexture(id);
-}
-
-bool Renderer::populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette)
-{
-	LockedTexture lockedTexture = this->backend->lockUiTexture(id);
-	if (!lockedTexture.isValid())
-	{
-		DebugLogErrorFormat("Couldn't lock UI texture %d.", id);
-		return false;
-	}
-
-	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-
-	if (palette == nullptr)
-	{
-		DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
-		Span<const uint32_t> srcTexels(reinterpret_cast<const uint32_t*>(texels.begin()), texels.getCount() / sizeof(uint32_t));
-		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
-	}
-	else
-	{
-		DebugAssert(texels.getCount() == (lockedTexture.texels.getCount() / lockedTexture.bytesPerTexel));
-		Span<const uint8_t> srcTexels(reinterpret_cast<const uint8_t*>(texels.begin()), texels.getCount());
-		std::transform(srcTexels.begin(), srcTexels.end(), dstTexels.begin(),
-			[palette](uint8_t texel)
-		{
-			return (*palette)[texel].toARGB();
-		});
-	}
-
-	this->backend->unlockUiTexture(id);
-	return true;
-}
-
-bool Renderer::populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t> texels)
-{
-	Span<const std::byte> texelBytes(reinterpret_cast<const std::byte*>(texels.begin()), texels.getWidth() * texels.getHeight() * sizeof(uint32_t));
-	return this->populateUiTexture(id, texelBytes);
-}
-
 UniformBufferID Renderer::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
 {
 	return this->backend->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
@@ -607,6 +497,116 @@ void Renderer::freeLight(RenderLightID id)
 bool Renderer::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
 {
 	return this->backend->populateLight(id, point, startRadius, endRadius);
+}
+
+ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)
+{
+	return this->backend->createObjectTexture(width, height, bytesPerTexel);
+}
+
+void Renderer::freeObjectTexture(ObjectTextureID id)
+{
+	this->backend->freeObjectTexture(id);
+}
+
+std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
+{
+	return this->backend->tryGetObjectTextureDims(id);
+}
+
+LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
+{
+	return this->backend->lockObjectTexture(id);
+}
+
+void Renderer::unlockObjectTexture(ObjectTextureID id)
+{
+	this->backend->unlockObjectTexture(id);
+}
+
+bool Renderer::populateObjectTexture(ObjectTextureID id, Span<const std::byte> texels)
+{
+	LockedTexture lockedTexture = this->backend->lockObjectTexture(id);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock object texture %d.", id);
+		return false;
+	}
+
+	DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
+	std::copy(texels.begin(), texels.end(), lockedTexture.texels.begin());
+
+	this->backend->unlockObjectTexture(id);
+	return true;
+}
+
+bool Renderer::populateObjectTexture8Bit(ObjectTextureID id, Span<const uint8_t> texels)
+{
+	Span<const std::byte> texelBytes(reinterpret_cast<const std::byte*>(texels.begin()), texels.getCount());
+	return this->populateObjectTexture(id, texelBytes);
+}
+
+UiTextureID Renderer::createUiTexture(int width, int height)
+{
+	return this->backend->createUiTexture(width, height);
+}
+
+void Renderer::freeUiTexture(UiTextureID id)
+{
+	this->backend->freeUiTexture(id);
+}
+
+std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
+{
+	return this->backend->tryGetUiTextureDims(id);
+}
+
+LockedTexture Renderer::lockUiTexture(UiTextureID id)
+{
+	return this->backend->lockUiTexture(id);
+}
+
+void Renderer::unlockUiTexture(UiTextureID id)
+{
+	this->backend->unlockUiTexture(id);
+}
+
+bool Renderer::populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette)
+{
+	LockedTexture lockedTexture = this->backend->lockUiTexture(id);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock UI texture %d.", id);
+		return false;
+	}
+
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+
+	if (palette == nullptr)
+	{
+		DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
+		Span<const uint32_t> srcTexels(reinterpret_cast<const uint32_t*>(texels.begin()), texels.getCount() / sizeof(uint32_t));
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
+	}
+	else
+	{
+		DebugAssert(texels.getCount() == (lockedTexture.texels.getCount() / lockedTexture.bytesPerTexel));
+		Span<const uint8_t> srcTexels(reinterpret_cast<const uint8_t*>(texels.begin()), texels.getCount());
+		std::transform(srcTexels.begin(), srcTexels.end(), dstTexels.begin(),
+			[palette](uint8_t texel)
+		{
+			return (*palette)[texel].toARGB();
+		});
+	}
+
+	this->backend->unlockUiTexture(id);
+	return true;
+}
+
+bool Renderer::populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t> texels)
+{
+	Span<const std::byte> texelBytes(reinterpret_cast<const std::byte*>(texels.begin()), texels.getWidth() * texels.getHeight() * sizeof(uint32_t));
+	return this->populateUiTexture(id, texelBytes);
 }
 
 /*void Renderer::drawPixel(const Color &color, int x, int y)

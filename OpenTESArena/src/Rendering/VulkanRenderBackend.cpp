@@ -2809,6 +2809,196 @@ void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
 }
 
+UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
+{
+	DebugAssert(elementCount > 0);
+	DebugAssert(bytesPerElement > 0);
+	DebugAssert(alignmentOfElement > 0);
+
+	const UniformBufferID id = this->uniformBufferPool.alloc();
+	if (id < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate ID for uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
+		return -1;
+	}
+
+	const int byteCount = elementCount * bytesPerElement;
+	vk::Buffer buffer;
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
+	{
+		DebugLogErrorFormat("Couldn't create uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
+		this->uniformBufferPool.free(id);
+		return -1;
+	}
+
+	vk::DescriptorSet descriptorSet;
+	if (!TryCreateDescriptorSet(this->device, this->transformDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	{
+		DebugLogErrorFormat("Couldn't create descriptor set for uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
+		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
+		this->device.destroyBuffer(buffer);
+		this->uniformBufferPool.free(id);
+		return -1;
+	}
+
+	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer);
+
+	vk::Buffer stagingBuffer;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create uniform staging buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
+		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
+		this->device.destroyBuffer(buffer);
+		this->uniformBufferPool.free(id);
+		return -1;
+	}
+
+	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	uniformBuffer.init(buffer, stagingBuffer, stagingHostMappedBytes);
+	uniformBuffer.initUniform(elementCount, bytesPerElement, alignmentOfElement, descriptorSet);
+
+	return id;
+}
+
+void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
+{
+	VulkanBuffer *uniformBuffer = this->uniformBufferPool.tryGet(id);
+	if (uniformBuffer != nullptr)
+	{
+		if (uniformBuffer->stagingBuffer)
+		{
+			this->uniformBufferStagingHeap.freeBufferMapping(uniformBuffer->stagingBuffer);
+			this->device.destroyBuffer(uniformBuffer->stagingBuffer);
+		}
+
+		if (uniformBuffer->uniform.descriptorSet)
+		{
+			this->device.freeDescriptorSets(this->descriptorPool, uniformBuffer->uniform.descriptorSet);
+			uniformBuffer->uniform.descriptorSet = nullptr;
+		}
+
+		if (uniformBuffer->buffer)
+		{
+			this->uniformBufferDeviceLocalHeap.freeBufferMapping(uniformBuffer->buffer);
+			this->device.destroyBuffer(uniformBuffer->buffer);
+		}
+	}
+
+	this->uniformBufferPool.free(id);
+}
+
+LockedBuffer VulkanRenderBackend::lockUniformBuffer(UniformBufferID id)
+{
+	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
+	return LockedBuffer(uniformBuffer.stagingHostMappedBytes, uniformInfo.bytesPerElement);
+}
+
+LockedBuffer VulkanRenderBackend::lockUniformBufferIndex(UniformBufferID id, int index)
+{
+	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
+	const int bytesPerElement = uniformInfo.bytesPerElement;
+	Span<std::byte> stagingHostMappedBytesSlice(uniformBuffer.stagingHostMappedBytes.begin() + (index * bytesPerElement), bytesPerElement);
+	return LockedBuffer(stagingHostMappedBytesSlice, bytesPerElement);
+}
+
+void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
+{
+	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	vk::Buffer buffer = uniformBuffer.buffer;
+	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
+	const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
+
+	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
+	{
+		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
+	};
+
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+}
+
+void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
+{
+	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	vk::Buffer buffer = uniformBuffer.buffer;
+	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
+	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
+	const int byteOffset = index * uniformInfo.bytesPerElement;
+	const int byteCount = uniformInfo.bytesPerElement;
+
+	auto commandBufferFunc = [this, index, buffer, stagingBuffer, byteOffset, byteCount]()
+	{
+		CopyToBufferDeviceLocal(stagingBuffer, buffer, byteOffset, byteCount, this->commandBuffer);
+	};
+
+	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
+}
+
+RenderLightID VulkanRenderBackend::createLight()
+{
+	const RenderLightID id = this->lightPool.alloc();
+	if (id < 0)
+	{
+		DebugLogError("Couldn't allocate render light ID.");
+		return -1;
+	}
+
+	const int byteCount = sizeof(VulkanLightInfo);
+	vk::Buffer buffer;
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
+	{
+		DebugLogErrorFormat("Couldn't create buffer for light.");
+		this->lightPool.free(id);
+		return -1;
+	}
+
+	vk::Buffer stagingBuffer;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create staging buffer for light.");
+		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
+		this->device.destroyBuffer(buffer);
+		this->lightPool.free(id);
+		return -1;
+	}
+
+	VulkanLight &light = this->lightPool.get(id);
+	light.init(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, buffer, stagingBuffer, stagingHostMappedBytes);
+
+	return id;
+}
+
+void VulkanRenderBackend::freeLight(RenderLightID id)
+{
+	VulkanLight *light = this->lightPool.tryGet(id);
+	if (light != nullptr)
+	{
+		if (light->stagingBuffer)
+		{
+			this->uniformBufferStagingHeap.freeBufferMapping(light->stagingBuffer);
+			this->device.destroyBuffer(light->stagingBuffer);
+		}
+
+		if (light->buffer)
+		{
+			this->uniformBufferDeviceLocalHeap.freeBufferMapping(light->buffer);
+			this->device.destroyBuffer(light->buffer);
+		}
+	}
+
+	this->lightPool.free(id);
+}
+
+bool VulkanRenderBackend::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
+{
+	// @todo
+	//DebugLogWarning("VulkanRenderBackend::populateLight() not implemented");
+	return true;
+}
+
 ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, int bytesPerTexel)
 {
 	const ObjectTextureID textureID = this->objectTexturePool.alloc();
@@ -3102,196 +3292,6 @@ void VulkanRenderBackend::unlockUiTexture(UiTextureID id)
 	};
 
 	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
-}
-
-UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
-{
-	DebugAssert(elementCount > 0);
-	DebugAssert(bytesPerElement > 0);
-	DebugAssert(alignmentOfElement > 0);
-
-	const UniformBufferID id = this->uniformBufferPool.alloc();
-	if (id < 0)
-	{
-		DebugLogErrorFormat("Couldn't allocate ID for uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
-		return -1;
-	}
-
-	const int byteCount = elementCount * bytesPerElement;
-	vk::Buffer buffer;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
-	{
-		DebugLogErrorFormat("Couldn't create uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
-		this->uniformBufferPool.free(id);
-		return -1;
-	}
-
-	vk::DescriptorSet descriptorSet;
-	if (!TryCreateDescriptorSet(this->device, this->transformDescriptorSetLayout, this->descriptorPool, &descriptorSet))
-	{
-		DebugLogErrorFormat("Couldn't create descriptor set for uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
-		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
-		this->device.destroyBuffer(buffer);
-		this->uniformBufferPool.free(id);
-		return -1;
-	}
-
-	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer);
-
-	vk::Buffer stagingBuffer;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create uniform staging buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
-		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
-		this->device.destroyBuffer(buffer);
-		this->uniformBufferPool.free(id);
-		return -1;
-	}
-
-	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	uniformBuffer.init(buffer, stagingBuffer, stagingHostMappedBytes);
-	uniformBuffer.initUniform(elementCount, bytesPerElement, alignmentOfElement, descriptorSet);
-
-	return id;
-}
-
-void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
-{
-	VulkanBuffer *uniformBuffer = this->uniformBufferPool.tryGet(id);
-	if (uniformBuffer != nullptr)
-	{
-		if (uniformBuffer->stagingBuffer)
-		{
-			this->uniformBufferStagingHeap.freeBufferMapping(uniformBuffer->stagingBuffer);
-			this->device.destroyBuffer(uniformBuffer->stagingBuffer);
-		}
-
-		if (uniformBuffer->uniform.descriptorSet)
-		{
-			this->device.freeDescriptorSets(this->descriptorPool, uniformBuffer->uniform.descriptorSet);
-			uniformBuffer->uniform.descriptorSet = nullptr;
-		}
-
-		if (uniformBuffer->buffer)
-		{
-			this->uniformBufferDeviceLocalHeap.freeBufferMapping(uniformBuffer->buffer);
-			this->device.destroyBuffer(uniformBuffer->buffer);
-		}
-	}
-
-	this->uniformBufferPool.free(id);
-}
-
-LockedBuffer VulkanRenderBackend::lockUniformBuffer(UniformBufferID id)
-{
-	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-	return LockedBuffer(uniformBuffer.stagingHostMappedBytes, uniformInfo.bytesPerElement);
-}
-
-LockedBuffer VulkanRenderBackend::lockUniformBufferIndex(UniformBufferID id, int index)
-{
-	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-	const int bytesPerElement = uniformInfo.bytesPerElement;
-	Span<std::byte> stagingHostMappedBytesSlice(uniformBuffer.stagingHostMappedBytes.begin() + (index * bytesPerElement), bytesPerElement);
-	return LockedBuffer(stagingHostMappedBytesSlice, bytesPerElement);
-}
-
-void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
-{
-	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	vk::Buffer buffer = uniformBuffer.buffer;
-	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
-	const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
-
-	auto commandBufferFunc = [this, buffer, stagingBuffer, byteCount]()
-	{
-		CopyToBufferDeviceLocal(stagingBuffer, buffer, 0, byteCount, this->commandBuffer);
-	};
-
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
-}
-
-void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
-{
-	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-	vk::Buffer buffer = uniformBuffer.buffer;
-	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
-	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-	const int byteOffset = index * uniformInfo.bytesPerElement;
-	const int byteCount = uniformInfo.bytesPerElement;
-
-	auto commandBufferFunc = [this, index, buffer, stagingBuffer, byteOffset, byteCount]()
-	{
-		CopyToBufferDeviceLocal(stagingBuffer, buffer, byteOffset, byteCount, this->commandBuffer);
-	};
-
-	this->pendingCommands.copyCommands.emplace_back(std::move(commandBufferFunc));
-}
-
-RenderLightID VulkanRenderBackend::createLight()
-{
-	const RenderLightID id = this->lightPool.alloc();
-	if (id < 0)
-	{
-		DebugLogError("Couldn't allocate render light ID.");
-		return -1;
-	}
-
-	const int byteCount = sizeof(VulkanLightInfo);
-	vk::Buffer buffer;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
-	{
-		DebugLogErrorFormat("Couldn't create buffer for light.");
-		this->lightPool.free(id);
-		return -1;
-	}
-
-	vk::Buffer stagingBuffer;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferStagingHeap, &stagingBuffer, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create staging buffer for light.");
-		this->uniformBufferDeviceLocalHeap.freeBufferMapping(buffer);
-		this->device.destroyBuffer(buffer);
-		this->lightPool.free(id);
-		return -1;
-	}
-
-	VulkanLight &light = this->lightPool.get(id);
-	light.init(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, buffer, stagingBuffer, stagingHostMappedBytes);
-
-	return id;
-}
-
-void VulkanRenderBackend::freeLight(RenderLightID id)
-{
-	VulkanLight *light = this->lightPool.tryGet(id);
-	if (light != nullptr)
-	{
-		if (light->stagingBuffer)
-		{
-			this->uniformBufferStagingHeap.freeBufferMapping(light->stagingBuffer);
-			this->device.destroyBuffer(light->stagingBuffer);
-		}
-
-		if (light->buffer)
-		{
-			this->uniformBufferDeviceLocalHeap.freeBufferMapping(light->buffer);
-			this->device.destroyBuffer(light->buffer);
-		}
-	}
-
-	this->lightPool.free(id);
-}
-
-bool VulkanRenderBackend::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
-{
-	// @todo
-	//DebugLogWarning("VulkanRenderBackend::populateLight() not implemented");
-	return true;
 }
 
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

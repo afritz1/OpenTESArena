@@ -46,6 +46,17 @@ public:
 	LockedBuffer lockIndexBuffer(IndexBufferID id) override;
 	void unlockIndexBuffer(IndexBufferID id) override;
 
+	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement) override;
+	void freeUniformBuffer(UniformBufferID id) override;
+	LockedBuffer lockUniformBuffer(UniformBufferID id) override;
+	LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index) override;
+	void unlockUniformBuffer(UniformBufferID id) override;
+	void unlockUniformBufferIndex(UniformBufferID id, int index) override;
+
+	RenderLightID createLight() override;
+	void freeLight(RenderLightID id) override;
+	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) override;
+
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) override;
 	void freeObjectTexture(ObjectTextureID id) override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
@@ -57,17 +68,6 @@ public:
 	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const override;
 	LockedTexture lockUiTexture(UiTextureID id) override;
 	void unlockUiTexture(UiTextureID id) override;
-
-	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement) override;
-	void freeUniformBuffer(UniformBufferID id) override;
-	LockedBuffer lockUniformBuffer(UniformBufferID id) override;
-	LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index) override;
-	void unlockUniformBuffer(UniformBufferID id) override;
-	void unlockUniformBufferIndex(UniformBufferID id, int index) override;
-
-	RenderLightID createLight() override;
-	void freeLight(RenderLightID id) override;
-	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) override;
 
 	// Renders a frame to the target window. Currently this is blocking and should be safe to present
 	// the frame upon returning.
