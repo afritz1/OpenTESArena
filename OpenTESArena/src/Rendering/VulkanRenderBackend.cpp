@@ -49,9 +49,10 @@ namespace
 	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
 	constexpr vk::ImageUsageFlagBits DepthBufferUsageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
-	constexpr int MaxUniformBufferDescriptorSets = 24576; // @todo this is very high, probably want to batch
+	constexpr int MaxUniformBufferDescriptorSets = 1;
+	constexpr int MaxUniformBufferDynamicDescriptorSets = 24576; // @todo this is very high, probably want to batch
 	constexpr int MaxImageDescriptorSets = 4096;
-	constexpr int MaxDescriptorSets = MaxUniformBufferDescriptorSets + MaxImageDescriptorSets;
+	constexpr int MaxDescriptorSets = MaxUniformBufferDescriptorSets + MaxUniformBufferDynamicDescriptorSets + MaxImageDescriptorSets;
 
 	struct Vertex
 	{
@@ -1338,19 +1339,19 @@ namespace
 		device.updateDescriptorSets(writeDescriptorSets, copyDescriptorSets);
 	}
 
-	void UpdateTransformDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer transformBuffer)
+	void UpdateTransformDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer transformBuffer, int bytesPerElement)
 	{
 		vk::DescriptorBufferInfo transformDescriptorBufferInfo;
 		transformDescriptorBufferInfo.buffer = transformBuffer;
 		transformDescriptorBufferInfo.offset = 0;
-		transformDescriptorBufferInfo.range = VK_WHOLE_SIZE;
+		transformDescriptorBufferInfo.range = bytesPerElement;
 
 		vk::WriteDescriptorSet transformWriteDescriptorSet;
 		transformWriteDescriptorSet.dstSet = descriptorSet;
 		transformWriteDescriptorSet.dstBinding = 0;
 		transformWriteDescriptorSet.dstArrayElement = 0;
 		transformWriteDescriptorSet.descriptorCount = 1;
-		transformWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		transformWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBufferDynamic;
 		transformWriteDescriptorSet.pBufferInfo = &transformDescriptorBufferInfo;
 
 		vk::ArrayProxy<vk::CopyDescriptorSet> copyDescriptorSets;
@@ -1971,6 +1972,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const vk::DescriptorPoolSize descriptorPoolSizes[] =
 	{
 		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, MaxUniformBufferDescriptorSets),
+		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, MaxUniformBufferDynamicDescriptorSets),
 		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxImageDescriptorSets)
 	};
 
@@ -1991,7 +1993,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
 	{
 		// Mesh transform
-		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBufferDynamic, vk::ShaderStageFlagBits::eVertex)
 	};
 
 	const vk::DescriptorSetLayoutBinding materialDescriptorSetLayoutBindings[] =
@@ -2855,7 +2857,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 		return -1;
 	}
 
-	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer);
+	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer, bytesPerElement);
 
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
@@ -3460,9 +3462,10 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			}
 
 			const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
-			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform; // @todo uniform buffer index for weather particles, use w/ dynamicOffsets?
+			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
 			constexpr uint32_t transformDescriptorSetIndex = 1;
-			this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, dynamicOffsets);
+			uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.bytesPerElement;
+			this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
 
 			const ObjectTextureID textureID = drawCall.textureIDs[0];
 			if (textureID != currentTextureID)
