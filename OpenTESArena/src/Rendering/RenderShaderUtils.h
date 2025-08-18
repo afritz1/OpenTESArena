@@ -8,6 +8,9 @@ enum class VertexShaderType
 	Entity
 };
 
+static constexpr VertexShaderType VERTEX_SHADER_TYPE_MAX = VertexShaderType::Entity;
+static constexpr int VERTEX_SHADER_TYPE_COUNT = static_cast<int>(VERTEX_SHADER_TYPE_MAX) + 1;
+
 enum class PixelShaderType
 {
 	Opaque, // Most walls/floors/ceilings.

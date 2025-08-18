@@ -179,6 +179,48 @@ struct VulkanHeap
 	void clear();
 };
 
+struct VulkanVertexShader
+{
+	VertexShaderType type;
+	vk::ShaderModule module;
+
+	VulkanVertexShader();
+};
+
+struct VulkanFragmentShader
+{
+	PixelShaderType type;
+	vk::ShaderModule module;
+	
+	VulkanFragmentShader();
+};
+
+using VulkanPipelineKeyCode = uint8_t;
+
+struct VulkanPipelineKey
+{
+	VertexShaderType vertexShaderType;
+	PixelShaderType fragmentShaderType;
+	bool depthTest;
+	bool backFaceCulling;
+
+	VulkanPipelineKey();
+
+	constexpr VulkanPipelineKey(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthTest, bool backFaceCulling)
+	{
+		this->vertexShaderType = vertexShaderType;
+		this->fragmentShaderType = fragmentShaderType;
+		this->depthTest = depthTest;
+		this->backFaceCulling = backFaceCulling;
+	}
+};
+
+struct VulkanPipeline
+{
+	VulkanPipelineKeyCode keyCode;
+	vk::Pipeline pipeline;
+};
+
 using VulkanPendingCommands = std::vector<std::function<void()>>;
 
 class VulkanRenderBackend final : public RenderBackend
@@ -208,8 +250,8 @@ private:
 	VulkanPendingCommands copyCommands;
 	VulkanPendingCommands freeCommands;
 
-	vk::ShaderModule vertexShaderModule;
-	vk::ShaderModule fragmentShaderModule;
+	Buffer<VulkanVertexShader> vertexShaders;
+	Buffer<VulkanFragmentShader> fragmentShaders;
 
 	vk::DescriptorPool descriptorPool;
 	vk::DescriptorSetLayout globalDescriptorSetLayout;
@@ -218,8 +260,7 @@ private:
 	vk::DescriptorSet globalDescriptorSet;
 
 	vk::PipelineLayout pipelineLayout;
-	vk::Pipeline graphicsPipeline;
-	vk::Pipeline noDepthGraphicsPipeline;
+	Buffer<VulkanPipeline> graphicsPipelines;
 
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;

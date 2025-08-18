@@ -57,10 +57,74 @@ namespace
 	constexpr int MaxImageDescriptorSets = 4096;
 	constexpr int MaxDescriptorSets = MaxUniformBufferDescriptorSets + MaxUniformBufferDynamicDescriptorSets + MaxImageDescriptorSets;
 
-	struct Vertex
+	constexpr std::pair<VertexShaderType, const char*> VertexShaderTypeFilenames[] =
 	{
-		Float2 position;
-		Float3 color;
+		{ VertexShaderType::Basic, "Basic" },
+		{ VertexShaderType::RaisingDoor, "RaisingDoor" },
+		{ VertexShaderType::Entity, "Entity" }
+	};
+
+	constexpr std::pair<PixelShaderType, const char*> FragmentShaderTypeFilenames[] =
+	{
+		{ PixelShaderType::Opaque, "Opaque" },
+		{ PixelShaderType::OpaqueWithAlphaTestLayer, "OpaqueWithAlphaTestLayer" },
+		{ PixelShaderType::OpaqueScreenSpaceAnimation, "OpaqueScreenSpaceAnimation" },
+		{ PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, "OpaqueScreenSpaceAnimationWithAlphaTestLayer" },
+		{ PixelShaderType::AlphaTested, "AlphaTested" },
+		{ PixelShaderType::AlphaTestedWithVariableTexCoordUMin, "AlphaTestedWithVariableTexCoordUMin" },
+		{ PixelShaderType::AlphaTestedWithVariableTexCoordVMin, "AlphaTestedWithVariableTexCoordVMin" },
+		{ PixelShaderType::AlphaTestedWithPaletteIndexLookup, "AlphaTestedWithPaletteIndexLookup" },
+		{ PixelShaderType::AlphaTestedWithLightLevelColor, "AlphaTestedWithLightLevelColor" },
+		{ PixelShaderType::AlphaTestedWithLightLevelOpacity, "AlphaTestedWithLightLevelOpacity" },
+		{ PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, "AlphaTestedWithPreviousBrightnessLimit" },
+		{ PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, "AlphaTestedWithHorizonMirrorFirstPass" },
+		{ PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, "AlphaTestedWithHorizonMirrorSecondPass" }
+	};
+
+	VulkanPipelineKeyCode MakePipelineKeyCode(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthTest, bool backFaceCulling)
+	{
+		constexpr int vertexShaderTypeRequiredBits = Bytes::getRequiredBitCount(VERTEX_SHADER_TYPE_COUNT);
+		constexpr int fragmentShaderTypeRequiredBits = Bytes::getRequiredBitCount(PIXEL_SHADER_TYPE_COUNT);
+		constexpr int depthTestRequiredBits = 1;
+		constexpr int backFaceCullingRequiredBits = 1;
+		constexpr int totalRequiredBits = vertexShaderTypeRequiredBits + fragmentShaderTypeRequiredBits + depthTestRequiredBits + backFaceCullingRequiredBits;
+		static_assert((sizeof(VulkanPipelineKeyCode) * CHAR_BIT) >= totalRequiredBits);
+
+		constexpr int vertexShaderTypeBitOffset = 0;
+		constexpr int fragmentShaderTypeBitOffset = vertexShaderTypeBitOffset + vertexShaderTypeRequiredBits;
+		constexpr int depthTestBitOffset = fragmentShaderTypeBitOffset + fragmentShaderTypeRequiredBits;
+		constexpr int backFaceCullingBitOffset = depthTestBitOffset + depthTestRequiredBits;
+
+		const uint32_t vertexShaderTypeBits = static_cast<uint32_t>(vertexShaderType);
+		const uint32_t fragmentShaderTypeBits = static_cast<uint32_t>(fragmentShaderType);
+		const uint32_t depthTestBits = depthTest ? 1 : 0;
+		const uint32_t backFaceCullingBits = backFaceCulling ? 1 : 0;
+
+		return vertexShaderTypeBits | (fragmentShaderTypeBits << fragmentShaderTypeBitOffset) | (depthTestBits << depthTestBitOffset) | (backFaceCullingBits << backFaceCullingBitOffset);
+	}
+
+	constexpr VulkanPipelineKey RequiredPipelines[] =
+	{
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueWithAlphaTestLayer, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimation, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelColor, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false),
+
+		VulkanPipelineKey(VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true),
+
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTested, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithPaletteIndexLookup, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithLightLevelOpacity, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true)
 	};
 }
 
@@ -1208,6 +1272,11 @@ namespace
 	bool TryCreateShaderModule(vk::Device device, const char *filename, vk::ShaderModule *outShaderModule)
 	{
 		const Buffer<std::byte> shaderBytes = File::readAllBytes(filename);
+		if (shaderBytes.getCount() == 0)
+		{
+			DebugLogErrorFormat("Expected SPIR-V shader bytes in \"%s\".", filename);
+			return false;
+		}
 
 		vk::ShaderModuleCreateInfo shaderModuleCreateInfo;
 		shaderModuleCreateInfo.codeSize = shaderBytes.getCount();
@@ -1401,7 +1470,7 @@ namespace
 		return true;
 	}
 
-	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule, bool enableDepth,
+	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule, bool enableDepth, bool enableBackFaceCulling,
 		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, vk::Pipeline *outPipeline)
 	{
 		vk::PipelineShaderStageCreateInfo vertexPipelineShaderStageCreateInfo;
@@ -1477,7 +1546,7 @@ namespace
 		pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 		pipelineRasterizationStateCreateInfo.polygonMode = vk::PolygonMode::eFill;
-		pipelineRasterizationStateCreateInfo.cullMode = vk::CullModeFlagBits::eBack;
+		pipelineRasterizationStateCreateInfo.cullMode = enableBackFaceCulling ? vk::CullModeFlagBits::eBack : vk::CullModeFlagBits::eNone;
 		pipelineRasterizationStateCreateInfo.frontFace = vk::FrontFace::eCounterClockwise;
 		pipelineRasterizationStateCreateInfo.lineWidth = 1.0f;
 
@@ -1817,6 +1886,24 @@ void VulkanHeap::clear()
 	this->imageMappings.clear();
 }
 
+VulkanVertexShader::VulkanVertexShader()
+{
+	this->type = static_cast<VertexShaderType>(-1);
+}
+
+VulkanFragmentShader::VulkanFragmentShader()
+{
+	this->type = static_cast<PixelShaderType>(-1);
+}
+
+VulkanPipelineKey::VulkanPipelineKey()
+{
+	this->vertexShaderType = static_cast<VertexShaderType>(-1);
+	this->fragmentShaderType = static_cast<PixelShaderType>(-1);
+	this->depthTest = false;
+	this->backFaceCulling = false;
+}
+
 bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 {
 	const Window *window = initSettings.window;
@@ -1959,18 +2046,39 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	const std::string shadersFolderPath = dataFolderPath + "shaders/";
-	const std::string vertexShaderBytesFilename = shadersFolderPath + "testVertex.spv";
-	if (!TryCreateShaderModule(this->device, vertexShaderBytesFilename.c_str(), &this->vertexShaderModule))
+
+	this->vertexShaders.init(static_cast<int>(std::size(VertexShaderTypeFilenames)));
+	for (int i = 0; i < this->vertexShaders.getCount(); i++)
 	{
-		DebugLogError("Couldn't create vertex shader module.");
-		return false;
+		VulkanVertexShader &shader = this->vertexShaders[i];
+
+		const std::pair<VertexShaderType, const char*> &pair = VertexShaderTypeFilenames[i];
+		shader.type = pair.first;
+
+		const char *vertexShaderName = pair.second;
+		const std::string vertexShaderBytesFilename = shadersFolderPath + vertexShaderName + ".spv";
+		if (!TryCreateShaderModule(this->device, vertexShaderBytesFilename.c_str(), &shader.module))
+		{
+			DebugLogErrorFormat("Couldn't create vertex shader module \"%s\".", vertexShaderBytesFilename.c_str());
+			return false;
+		}
 	}
 
-	const std::string fragmentShaderBytesFilename = shadersFolderPath + "testFragment.spv";
-	if (!TryCreateShaderModule(this->device, fragmentShaderBytesFilename.c_str(), &this->fragmentShaderModule))
+	this->fragmentShaders.init(static_cast<int>(std::size(FragmentShaderTypeFilenames)));
+	for (int i = 0; i < this->fragmentShaders.getCount(); i++)
 	{
-		DebugLogError("Couldn't create fragment shader module.");
-		return false;
+		VulkanFragmentShader &shader = this->fragmentShaders[i];
+
+		const std::pair<PixelShaderType, const char*> &pair = FragmentShaderTypeFilenames[i];
+		shader.type = pair.first;
+
+		const char *fragmentShaderName = pair.second;
+		const std::string fragmentShaderBytesFilename = shadersFolderPath + fragmentShaderName + ".spv";
+		if (!TryCreateShaderModule(this->device, fragmentShaderBytesFilename.c_str(), &shader.module))
+		{
+			DebugLogErrorFormat("Couldn't create fragment shader module \"%s\".", fragmentShaderBytesFilename.c_str());
+			return false;
+		}
 	}
 
 	const vk::DescriptorPoolSize descriptorPoolSizes[] =
@@ -2043,19 +2151,36 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	// @todo eventually will probably want a PipelineKey struct
-	// - maybe precompile like 60% of the "known variants" ahead of time and let the remaining be discovered in play
-	// - shader thread?? use a fallback pitch black shader if key is not found
-	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, true, this->pipelineLayout, this->renderPass, &this->graphicsPipeline))
+	this->graphicsPipelines.init(static_cast<int>(std::size(RequiredPipelines)));
+	for (int i = 0; i < this->graphicsPipelines.getCount(); i++)
 	{
-		DebugLogError("Couldn't create graphics pipeline.");
-		return false;
-	}
+		const VulkanPipelineKey &requiredPipelineKey = RequiredPipelines[i];
 
-	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, false, this->pipelineLayout, this->renderPass, &this->noDepthGraphicsPipeline))
-	{
-		DebugLogError("Couldn't create no-depth graphics pipeline.");
-		return false;
+		const auto vertexShaderIter = std::find_if(this->vertexShaders.begin(), this->vertexShaders.end(),
+			[&requiredPipelineKey](const VulkanVertexShader &shader)
+		{
+			return shader.type == requiredPipelineKey.vertexShaderType;
+		});
+
+		DebugAssert(vertexShaderIter != this->vertexShaders.end());
+
+		const auto fragmentShaderIter = std::find_if(this->fragmentShaders.begin(), this->fragmentShaders.end(),
+			[&requiredPipelineKey](const VulkanFragmentShader &shader)
+		{
+			return shader.type == requiredPipelineKey.fragmentShaderType;
+		});
+
+		DebugAssert(fragmentShaderIter != this->fragmentShaders.end());
+
+		VulkanPipeline &pipeline = this->graphicsPipelines[i];
+		pipeline.keyCode = MakePipelineKeyCode(requiredPipelineKey.vertexShaderType, requiredPipelineKey.fragmentShaderType, requiredPipelineKey.depthTest, requiredPipelineKey.backFaceCulling);
+
+		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, requiredPipelineKey.depthTest, requiredPipelineKey.backFaceCulling,
+			this->pipelineLayout, this->renderPass, &pipeline.pipeline))
+		{
+			DebugLogErrorFormat("Couldn't create graphics pipeline %d.", i);
+			return false;
+		}
 	}
 
 	if (!TryCreateSemaphore(this->device, &this->imageIsAvailableSemaphore))
@@ -2389,17 +2514,16 @@ void VulkanRenderBackend::shutdown()
 			this->imageIsAvailableSemaphore = nullptr;
 		}
 
-		if (this->noDepthGraphicsPipeline)
+		for (VulkanPipeline &pipeline : this->graphicsPipelines)
 		{
-			this->device.destroyPipeline(this->noDepthGraphicsPipeline);
-			this->noDepthGraphicsPipeline = nullptr;
+			if (pipeline.pipeline)
+			{
+				this->device.destroyPipeline(pipeline.pipeline);
+				pipeline.pipeline = nullptr;
+			}
 		}
 
-		if (this->graphicsPipeline)
-		{
-			this->device.destroyPipeline(this->graphicsPipeline);
-			this->graphicsPipeline = nullptr;
-		}
+		this->graphicsPipelines.clear();
 
 		if (this->pipelineLayout)
 		{
@@ -2433,17 +2557,27 @@ void VulkanRenderBackend::shutdown()
 			this->descriptorPool = nullptr;
 		}
 
-		if (this->fragmentShaderModule)
+		for (VulkanFragmentShader &shader : this->fragmentShaders)
 		{
-			this->device.destroyShaderModule(this->fragmentShaderModule);
-			this->fragmentShaderModule = nullptr;
+			if (shader.module)
+			{
+				this->device.destroyShaderModule(shader.module);
+				shader.module = nullptr;
+			}
 		}
 
-		if (this->vertexShaderModule)
+		this->fragmentShaders.clear();
+
+		for (VulkanVertexShader &shader : this->vertexShaders)
 		{
-			this->device.destroyShaderModule(this->vertexShaderModule);
-			this->vertexShaderModule = nullptr;
+			if (shader.module)
+			{
+				this->device.destroyShaderModule(shader.module);
+				shader.module = nullptr;
+			}
 		}
+
+		this->vertexShaders.clear();
 
 		this->freeCommands.clear();
 		this->copyCommands.clear();
@@ -3434,11 +3568,32 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	{
 		for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
 		{
-			const vk::Pipeline pipeline = drawCall.enableDepthWrite ? this->graphicsPipeline : this->noDepthGraphicsPipeline;
-			if (pipeline != currentPipeline)
+			const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
+			const PixelShaderType fragmentShaderType = drawCall.pixelShaderType;
+			const bool enableDepthTest = drawCall.enableDepthRead;
+			const bool enableBackFaceCulling = drawCall.enableBackFaceCulling;
+			const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, enableDepthTest, enableBackFaceCulling);
+
+			const VulkanPipeline *pipeline = nullptr;
+			for (const VulkanPipeline &currentPipeline : this->graphicsPipelines)
 			{
-				currentPipeline = pipeline;
-				this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline);
+				if (currentPipeline.keyCode == pipelineKeyCode)
+				{
+					pipeline = &currentPipeline;
+					break;
+				}
+			}
+
+			if (pipeline == nullptr)
+			{
+				DebugCrashFormat("Missing pipeline: vertex shader: %d, fragment shader: %d, depth test: %d, back-face culling: %d.",
+					vertexShaderType, fragmentShaderType, enableDepthTest, enableBackFaceCulling);
+			}
+
+			if (pipeline->pipeline != currentPipeline)
+			{
+				currentPipeline = pipeline->pipeline;
+				this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline->pipeline);
 			}
 
 			constexpr vk::DeviceSize bufferOffset = 0;
