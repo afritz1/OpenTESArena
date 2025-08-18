@@ -16,6 +16,7 @@
 #include "../Assets/TextureAsset.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RendererUtils.h"
 #include "../UI/Surface.h"
 
 #include "components/debug/Debug.h"
@@ -107,7 +108,7 @@ bool TextureManager::tryLoadTextureData(const char *filename, Buffer<TextureBuil
 
 	if (TextureManager::matchesExtension(filename, EXTENSION_BMP))
 	{
-		Surface surface = Surface::loadBMP(filename, SDL_PIXELFORMAT_ARGB8888);
+		Surface surface = Surface::loadBMP(filename, RendererUtils::DEFAULT_PIXELFORMAT);
 		if (surface.get() == nullptr)
 		{
 			DebugLogWarning("Couldn't load .BMP file \"" + std::string(filename) + "\".");

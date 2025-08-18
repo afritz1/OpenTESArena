@@ -49,6 +49,9 @@ namespace
 	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
 	constexpr vk::ImageUsageFlagBits DepthBufferUsageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
+	constexpr vk::Format ImageFormatUint8 = vk::Format::eR8Uint;
+	constexpr vk::Format ImageFormatUint32 = vk::Format::eB8G8R8A8Uint; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
+
 	constexpr int MaxUniformBufferDescriptorSets = 1;
 	constexpr int MaxUniformBufferDynamicDescriptorSets = 24576; // @todo this is very high, probably want to batch
 	constexpr int MaxImageDescriptorSets = 4096;
@@ -1683,7 +1686,7 @@ bool VulkanHeap::initImageHeap(vk::Device device, int byteCount, vk::ImageUsageF
 
 	constexpr int dummyWidth = 1;
 	constexpr int dummyHeight = 1;
-	constexpr vk::Format dummyFormat = vk::Format::eR8G8B8A8Uint;
+	constexpr vk::Format dummyFormat = ImageFormatUint32;
 	vk::MemoryAllocateInfo memoryAllocateInfo = CreateImageMemoryAllocateInfo(device, dummyWidth, dummyHeight, dummyFormat, usageFlags, physicalDevice);
 	memoryAllocateInfo.allocationSize = byteCount;
 
@@ -3032,7 +3035,7 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 		return -1;
 	}
 
-	const vk::Format format = (bytesPerTexel == 1) ? vk::Format::eR8Uint : vk::Format::eR8G8B8A8Uint;
+	const vk::Format format = (bytesPerTexel == 1) ? ImageFormatUint8 : ImageFormatUint32;
 	const int byteCount = width * height * bytesPerTexel;
 
 	vk::Image image;
@@ -3185,7 +3188,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 
 	constexpr int bytesPerTexel = 4;
 	const int byteCount = width * height * bytesPerTexel;
-	constexpr vk::Format format = vk::Format::eR8G8B8A8Unorm;
+	constexpr vk::Format format = vk::Format::eB8G8R8A8Unorm;
 
 	vk::Image image;
 	if (!TryCreateImageAndBindWithHeap(this->device, width, height, format, UiTextureDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uiTextureDeviceLocalHeap, &image))

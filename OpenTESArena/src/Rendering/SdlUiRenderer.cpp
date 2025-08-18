@@ -7,6 +7,7 @@
 
 #include "ArenaRenderUtils.h"
 #include "Renderer.h"
+#include "RendererUtils.h"
 #include "SdlUiRenderer.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
@@ -30,7 +31,7 @@ namespace
 		}
 
 		SDL_Texture *&texture = pool.get(textureID);
-		texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+		texture = SDL_CreateTexture(renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);
 		if (texture == nullptr)
 		{
 			DebugLogErrorFormat("Couldn't allocate SDL_Texture with dims %dx%d (%s).", width, height, SDL_GetError());
