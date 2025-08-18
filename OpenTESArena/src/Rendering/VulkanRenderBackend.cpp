@@ -3395,7 +3395,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	}
 
 	vk::ClearValue clearValues[2];
-	clearValues[0].color = vk::ClearColorValue(0.1f, 0.1f, 0.1f, 1.0f);
+	clearValues[0].color = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
 	clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 	vk::RenderPassBeginInfo renderPassBeginInfo;
