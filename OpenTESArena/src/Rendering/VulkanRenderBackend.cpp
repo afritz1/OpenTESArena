@@ -1401,8 +1401,8 @@ namespace
 		return true;
 	}
 
-	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule, vk::Extent2D swapchainExtent,
-		bool enableDepth, vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, vk::Pipeline *outPipeline)
+	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule, bool enableDepth,
+		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, vk::Pipeline *outPipeline)
 	{
 		vk::PipelineShaderStageCreateInfo vertexPipelineShaderStageCreateInfo;
 		vertexPipelineShaderStageCreateInfo.stage = vk::ShaderStageFlagBits::eVertex;
@@ -1464,20 +1464,14 @@ namespace
 		pipelineInputAssemblyStateCreateInfo.topology = vk::PrimitiveTopology::eTriangleList;
 		pipelineInputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
 
-		vk::Viewport viewport;
-		viewport.width = static_cast<float>(swapchainExtent.width);
-		viewport.height = static_cast<float>(swapchainExtent.height);
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
-
-		vk::Rect2D viewportScissor;
-		viewportScissor.extent = swapchainExtent;
+		vk::Viewport dummyViewport;
+		vk::Rect2D dummyViewportScissor;
 
 		vk::PipelineViewportStateCreateInfo pipelineViewportStateCreateInfo;
 		pipelineViewportStateCreateInfo.viewportCount = 1;
-		pipelineViewportStateCreateInfo.pViewports = &viewport;
+		pipelineViewportStateCreateInfo.pViewports = &dummyViewport;
 		pipelineViewportStateCreateInfo.scissorCount = 1;
-		pipelineViewportStateCreateInfo.pScissors = &viewportScissor;
+		pipelineViewportStateCreateInfo.pScissors = &dummyViewportScissor;
 
 		vk::PipelineRasterizationStateCreateInfo pipelineRasterizationStateCreateInfo;
 		pipelineRasterizationStateCreateInfo.depthClampEnable = VK_FALSE;
@@ -1509,6 +1503,12 @@ namespace
 		pipelineColorBlendStateCreateInfo.attachmentCount = 1;
 		pipelineColorBlendStateCreateInfo.pAttachments = &pipelineColorBlendAttachmentState;
 
+		constexpr vk::DynamicState dynamicStates[] = { vk::DynamicState::eViewport, vk::DynamicState::eScissor };
+
+		vk::PipelineDynamicStateCreateInfo pipelineDynamicStateCreateInfo;
+		pipelineDynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(std::size(dynamicStates));
+		pipelineDynamicStateCreateInfo.pDynamicStates = dynamicStates;
+
 		vk::GraphicsPipelineCreateInfo graphicsPipelineCreateInfo;
 		graphicsPipelineCreateInfo.stageCount = static_cast<uint32_t>(std::size(pipelineShaderStageCreateInfos));
 		graphicsPipelineCreateInfo.pStages = pipelineShaderStageCreateInfos;
@@ -1519,6 +1519,7 @@ namespace
 		graphicsPipelineCreateInfo.pMultisampleState = &pipelineMultisampleStateCreateInfo;
 		graphicsPipelineCreateInfo.pDepthStencilState = &pipelineDepthStencilStateCreateInfo;
 		graphicsPipelineCreateInfo.pColorBlendState = &pipelineColorBlendStateCreateInfo;
+		graphicsPipelineCreateInfo.pDynamicState = &pipelineDynamicStateCreateInfo;
 		graphicsPipelineCreateInfo.layout = pipelineLayout;
 		graphicsPipelineCreateInfo.renderPass = renderPass;
 		graphicsPipelineCreateInfo.subpass = 0;
@@ -2045,15 +2046,13 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	// @todo eventually will probably want a PipelineKey struct
 	// - maybe precompile like 60% of the "known variants" ahead of time and let the remaining be discovered in play
 	// - shader thread?? use a fallback pitch black shader if key is not found
-	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, this->swapchainExtent, true, this->pipelineLayout,
-		this->renderPass, &this->graphicsPipeline))
+	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, true, this->pipelineLayout, this->renderPass, &this->graphicsPipeline))
 	{
 		DebugLogError("Couldn't create graphics pipeline.");
 		return false;
 	}
 
-	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, this->swapchainExtent, false, this->pipelineLayout,
-		this->renderPass, &this->noDepthGraphicsPipeline))
+	if (!TryCreateGraphicsPipeline(this->device, this->vertexShaderModule, this->fragmentShaderModule, false, this->pipelineLayout, this->renderPass, &this->noDepthGraphicsPipeline))
 	{
 		DebugLogError("Couldn't create no-depth graphics pipeline.");
 		return false;
@@ -3406,6 +3405,18 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	renderPassBeginInfo.pClearValues = clearValues;
 
 	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+
+	vk::Viewport viewport;
+	viewport.width = static_cast<float>(this->swapchainExtent.width);
+	viewport.height = static_cast<float>(this->swapchainExtent.height);
+	viewport.minDepth = 0.0f;
+	viewport.maxDepth = 1.0f;
+
+	vk::Rect2D viewportScissor;
+	viewportScissor.extent = this->swapchainExtent;
+
+	this->commandBuffer.setViewport(0, viewport);
+	this->commandBuffer.setScissor(0, viewportScissor);
 
 	constexpr vk::PipelineBindPoint pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 	vk::ArrayProxy<const uint32_t> dynamicOffsets;
