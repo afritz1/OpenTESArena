@@ -5,6 +5,7 @@
 #include "Jolt/Physics/PhysicsSystem.h"
 
 #include "ChunkManager.h"
+#include "../Assets/TextureUtils.h"
 #include "../Collision/CollisionChunkManager.h"
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityVisibilityChunkManager.h"
@@ -49,6 +50,7 @@ struct SceneManager
 	RenderSkyManager renderSkyManager;
 	RenderWeatherManager renderWeatherManager;
 
+	PaletteID gameWorldPaletteID;
 	ScopedObjectTextureRef gameWorldPaletteTextureRef;
 
 	// Light tables; these might be switched between instantaneously depending on weather and time of day.

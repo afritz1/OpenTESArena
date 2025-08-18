@@ -12,12 +12,13 @@
 
 SceneManager::SceneManager()
 {
-	
+	this->gameWorldPaletteID = -1;
 }
 
 void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 {
-	ObjectTextureID gameWorldPaletteTextureID = ArenaLevelUtils::allocGameWorldPaletteTexture(ArenaPaletteName::Default, textureManager, renderer);
+	this->gameWorldPaletteID = ArenaLevelUtils::getGameWorldPaletteID(ArenaPaletteName::Default, textureManager);
+	ObjectTextureID gameWorldPaletteTextureID = ArenaLevelUtils::allocGameWorldPaletteTexture(this->gameWorldPaletteID, textureManager, renderer);
 	this->gameWorldPaletteTextureRef.init(gameWorldPaletteTextureID, renderer);
 
 	const ObjectTextureID normalLightTableDaytimeTextureID = ArenaLevelUtils::allocLightTableTexture(ArenaTextureName::NormalLightTable, textureManager, renderer);
@@ -40,7 +41,7 @@ void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 	LockedTexture fogLockedTexture = this->fogLightTableTextureRef.lockTexels();
 	DebugAssert(nightLockedTexture.isValid());
 	DebugAssert(fogLockedTexture.isValid());
-	uint8_t *nightTexels = nightLockedTexture.getTexels8().begin();;
+	uint8_t *nightTexels = nightLockedTexture.getTexels8().begin();
 	uint8_t *fogTexels = fogLockedTexture.getTexels8().begin();
 
 	const int y = lightTableHeight - 1;
@@ -58,6 +59,22 @@ void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double dayPercent, TextureManager &textureManager)
 {
 	constexpr int paletteLength = PaletteLength;
+	LockedTexture lockedTexture = this->gameWorldPaletteTextureRef.lockTexels();
+	if (!lockedTexture.isValid())
+	{
+		DebugLogError("Couldn't lock game world palette texture for updating.");
+		return;
+	}
+
+	Span<uint32_t> gameWorldTexels(lockedTexture.getTexels32().begin(), paletteLength);
+
+	// Refill entire palette due to how locking clears texels in some APIs.
+	const Palette &gameWorldPalette = textureManager.getPaletteHandle(this->gameWorldPaletteID);
+	std::transform(gameWorldPalette.begin(), gameWorldPalette.end(), gameWorldTexels.begin(),
+		[](const Color &paletteColor)
+	{
+		return paletteColor.toARGB();
+	});
 
 	// Update sky gradient. Write to palette indices 1-8 using one of the three palettes.
 	const std::string *skyGradientFilename = &ArenaPaletteName::Default;
@@ -75,25 +92,17 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	const std::optional<PaletteID> skyGradientPaletteID = textureManager.tryGetPaletteID(skyGradientFilename->c_str());
 	if (!skyGradientPaletteID.has_value())
 	{
-		DebugLogError("Couldn't get palette ID for sky gradient \"" + (*skyGradientFilename) + "\".");
+		DebugLogErrorFormat("Couldn't get palette ID for sky gradient \"%s\".", skyGradientFilename->c_str());
 		return;
 	}
 
 	const Palette &skyGradientPalette = textureManager.getPaletteHandle(*skyGradientPaletteID);
 	const Span<const Color> skyGradientPaletteTexels(skyGradientPalette);
-	LockedTexture lockedTexture = this->gameWorldPaletteTextureRef.lockTexels();
-	if (!lockedTexture.isValid())
-	{
-		DebugLogError("Couldn't lock sky gradient texture \"" + (*skyGradientFilename) + "\" for updating.");
-		return;
-	}
-
-	DebugAssert(lockedTexture.bytesPerTexel == 4);
 	DebugAssert((this->gameWorldPaletteTextureRef.getWidth() * this->gameWorldPaletteTextureRef.getHeight()) == skyGradientPaletteTexels.getCount());
 
+	// Update sky gradient depending on time of day.
 	int srcTexelsIndexStart = daytimePaletteIndexOffset.has_value() ? *daytimePaletteIndexOffset : 1;
 	const int skyGradientColorCount = static_cast<int>(std::size(ArenaRenderUtils::PALETTE_INDICES_SKY_COLOR));
-	Span<uint32_t> gameWorldTexels(lockedTexture.getTexels32().begin(), paletteLength);
 	Span<uint32_t> gameWorldSkyGradientTexels(gameWorldTexels.begin() + 1, skyGradientColorCount);
 	for (int i = 0; i < skyGradientColorCount; i++)
 	{
