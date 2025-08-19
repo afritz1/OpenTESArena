@@ -16,6 +16,7 @@
 #include "VulkanRenderBackend.h"
 #include "Window.h"
 #include "../Math/MathUtils.h"
+#include "../UI/UiCommand.h"
 #include "../UI/Surface.h"
 #include "../World/MeshUtils.h"
 
@@ -1748,7 +1749,7 @@ bool VulkanHeapManager::initBufferManager(vk::Device device, int byteCount, vk::
 	this->device = device;
 	this->memoryAllocateInfo = CreateBufferMemoryAllocateInfo(device, byteCount, usageFlags, isHostVisible, physicalDevice);
 	this->isHostVisible = isHostVisible;
-	
+
 	const int firstHeapIndex = this->addHeap();
 	if (firstHeapIndex != 0)
 	{
@@ -1804,7 +1805,7 @@ int VulkanHeapManager::addHeap()
 {
 	const int byteCount = this->memoryAllocateInfo.allocationSize;
 
-	VulkanHeap heap; 
+	VulkanHeap heap;
 	if (!TryAllocateMemory(this->device, this->memoryAllocateInfo, &heap.deviceMemory))
 	{
 		DebugLogErrorFormat("Couldn't allocate %d bytes for heap (type %d).", byteCount, this->type);
@@ -2428,7 +2429,7 @@ void VulkanRenderBackend::shutdown()
 		this->uiTextureHeapManagerStaging.clear();
 
 		this->uiTextureHeapManagerDeviceLocal.freeAllocations();
-		this->uiTextureHeapManagerDeviceLocal.clear();		
+		this->uiTextureHeapManagerDeviceLocal.clear();
 
 		this->objectTextureHeapManagerStaging.freeAllocations();
 		this->objectTextureHeapManagerStaging.clear();
@@ -3556,20 +3557,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	const uint32_t acquiredSwapchainImageIndex = std::move(acquiredSwapchainImageIndexResult.value);
 	const vk::Framebuffer acquiredSwapchainFramebuffer = this->swapchainFramebuffers[acquiredSwapchainImageIndex];
 
-	DebugAssert(this->camera.matrixBytes.getCount() == this->camera.hostMappedBytes.getCount());
-	Matrix4d projectionMatrix = camera.projectionMatrix;
-	projectionMatrix.y.y = -projectionMatrix.y.y; // Flip Y so world is not upside down.
-	this->camera.viewProjection = RendererUtils::matrix4DoubleToFloat(projectionMatrix * camera.viewMatrix);
-	std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
-
-	const bool isSceneValid = frameSettings.paletteTextureID >= 0;
-	if (isSceneValid)
-	{
-		// @todo light table + light level calculation
-		const VulkanTexture &paletteTexture = this->objectTexturePool.get(frameSettings.paletteTextureID);
-		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer, paletteTexture.imageView, paletteTexture.sampler);
-	}
-
 	const vk::Result commandBufferResetResult = this->commandBuffer.reset();
 	if (commandBufferResetResult != vk::Result::eSuccess)
 	{
@@ -3620,114 +3607,128 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
-	vk::Viewport viewport;
-	viewport.width = static_cast<float>(this->swapchainExtent.width);
-	viewport.height = static_cast<float>(this->swapchainExtent.height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	vk::Rect2D viewportScissor;
-	viewportScissor.extent = this->swapchainExtent;
-
-	this->commandBuffer.setViewport(0, viewport);
-	this->commandBuffer.setScissor(0, viewportScissor);
-
 	constexpr vk::PipelineBindPoint pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-	vk::ArrayProxy<const uint32_t> dynamicOffsets;
 
-	constexpr uint32_t globalDescriptorSetIndex = 0;
-	this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, dynamicOffsets);
-
-	vk::Pipeline currentPipeline;
-	VertexPositionBufferID currentVertexPositionBufferID = -1;
-	VertexAttributeBufferID currentVertexTexCoordBufferID = -1;
-	IndexBufferID currentIndexBufferID = -1;
-	int currentIndexBufferIndexCount = 0;
-	ObjectTextureID currentTextureID = -1;
-	for (int i = 0; i < renderCommandList.entryCount; i++)
+	if (renderCommandList.entryCount > 0)
 	{
-		for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
+		// @todo this should be the view dimensions, different for classic interface mode
+		vk::Viewport viewport;
+		viewport.width = static_cast<float>(this->swapchainExtent.width);
+		viewport.height = static_cast<float>(this->swapchainExtent.height);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+
+		vk::Rect2D viewportScissor;
+		viewportScissor.extent = this->swapchainExtent;
+
+		this->commandBuffer.setViewport(0, viewport);
+		this->commandBuffer.setScissor(0, viewportScissor);
+
+		DebugAssert(this->camera.matrixBytes.getCount() == this->camera.hostMappedBytes.getCount());
+		Matrix4d projectionMatrix = camera.projectionMatrix;
+		projectionMatrix.y.y = -projectionMatrix.y.y; // Flip Y so world is not upside down.
+		this->camera.viewProjection = RendererUtils::matrix4DoubleToFloat(projectionMatrix * camera.viewMatrix);
+		std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
+
+		// @todo light table + light level calculation
+		const VulkanTexture &paletteTexture = this->objectTexturePool.get(frameSettings.paletteTextureID);
+		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer, paletteTexture.imageView, paletteTexture.sampler);
+
+		vk::ArrayProxy<const uint32_t> dynamicOffsets;
+		constexpr uint32_t globalDescriptorSetIndex = 0;
+		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, dynamicOffsets);
+
+		vk::Pipeline currentPipeline;
+		VertexPositionBufferID currentVertexPositionBufferID = -1;
+		VertexAttributeBufferID currentVertexTexCoordBufferID = -1;
+		IndexBufferID currentIndexBufferID = -1;
+		int currentIndexBufferIndexCount = 0;
+		ObjectTextureID currentTextureID = -1;
+		for (int i = 0; i < renderCommandList.entryCount; i++)
 		{
-			const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
-			const PixelShaderType fragmentShaderType = drawCall.pixelShaderType;
-			const bool enableDepthTest = drawCall.enableDepthRead;
-			const bool enableBackFaceCulling = drawCall.enableBackFaceCulling;
-			const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, enableDepthTest, enableBackFaceCulling);
-
-			const VulkanPipeline *pipeline = nullptr;
-			for (const VulkanPipeline &currentPipeline : this->graphicsPipelines)
+			for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
 			{
-				if (currentPipeline.keyCode == pipelineKeyCode)
+				const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
+				const PixelShaderType fragmentShaderType = drawCall.pixelShaderType;
+				const bool enableDepthTest = drawCall.enableDepthRead;
+				const bool enableBackFaceCulling = drawCall.enableBackFaceCulling;
+				const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, enableDepthTest, enableBackFaceCulling);
+
+				const VulkanPipeline *pipeline = nullptr;
+				for (const VulkanPipeline &currentPipeline : this->graphicsPipelines)
 				{
-					pipeline = &currentPipeline;
-					break;
+					if (currentPipeline.keyCode == pipelineKeyCode)
+					{
+						pipeline = &currentPipeline;
+						break;
+					}
 				}
+
+				if (pipeline == nullptr)
+				{
+					DebugCrashFormat("Missing pipeline: vertex shader: %d, fragment shader: %d, depth test: %d, back-face culling: %d.",
+						vertexShaderType, fragmentShaderType, enableDepthTest, enableBackFaceCulling);
+				}
+
+				if (pipeline->pipeline != currentPipeline)
+				{
+					currentPipeline = pipeline->pipeline;
+					this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline->pipeline);
+				}
+
+				constexpr vk::DeviceSize bufferOffset = 0;
+
+				const VertexPositionBufferID vertexPositionBufferID = drawCall.positionBufferID;
+				if (vertexPositionBufferID != currentVertexPositionBufferID)
+				{
+					currentVertexPositionBufferID = vertexPositionBufferID;
+
+					const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(vertexPositionBufferID);
+					const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
+					this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
+				}
+
+				const VertexAttributeBufferID vertexTexCoordsBufferID = drawCall.texCoordBufferID;
+				if (vertexTexCoordsBufferID != currentVertexTexCoordBufferID)
+				{
+					currentVertexTexCoordBufferID = vertexTexCoordsBufferID;
+
+					const VulkanBuffer &vertexTexCoordsBuffer = this->vertexAttributeBufferPool.get(vertexTexCoordsBufferID);
+					const VulkanBufferVertexAttributeInfo &vertexTexCoordsInfo = vertexTexCoordsBuffer.vertexAttribute;
+					this->commandBuffer.bindVertexBuffers(1, vertexTexCoordsBuffer.buffer, bufferOffset);
+				}
+
+				const IndexBufferID indexBufferID = drawCall.indexBufferID;
+				if (indexBufferID != currentIndexBufferID)
+				{
+					currentIndexBufferID = indexBufferID;
+
+					const VulkanBuffer &indexBuffer = this->indexBufferPool.get(indexBufferID);
+					const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
+					currentIndexBufferIndexCount = indexInfo.indexCount;
+
+					this->commandBuffer.bindIndexBuffer(indexBuffer.buffer, bufferOffset, vk::IndexType::eUint32);
+				}
+
+				const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
+				const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
+				constexpr uint32_t transformDescriptorSetIndex = 1;
+				uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.alignedBytesPerElement;
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
+
+				const ObjectTextureID textureID = drawCall.textureIDs[0];
+				if (textureID != currentTextureID)
+				{
+					currentTextureID = textureID;
+
+					const VulkanTexture &texture = this->objectTexturePool.get(textureID);
+					constexpr uint32_t materialDescriptorSetIndex = 2;
+					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
+				}
+
+				constexpr uint32_t meshInstanceCount = 1;
+				this->commandBuffer.drawIndexed(currentIndexBufferIndexCount, meshInstanceCount, 0, 0, 0);
 			}
-
-			if (pipeline == nullptr)
-			{
-				DebugCrashFormat("Missing pipeline: vertex shader: %d, fragment shader: %d, depth test: %d, back-face culling: %d.",
-					vertexShaderType, fragmentShaderType, enableDepthTest, enableBackFaceCulling);
-			}
-
-			if (pipeline->pipeline != currentPipeline)
-			{
-				currentPipeline = pipeline->pipeline;
-				this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline->pipeline);
-			}
-
-			constexpr vk::DeviceSize bufferOffset = 0;
-
-			const VertexPositionBufferID vertexPositionBufferID = drawCall.positionBufferID;
-			if (vertexPositionBufferID != currentVertexPositionBufferID)
-			{
-				currentVertexPositionBufferID = vertexPositionBufferID;
-
-				const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(vertexPositionBufferID);
-				const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
-				this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
-			}
-
-			const VertexAttributeBufferID vertexTexCoordsBufferID = drawCall.texCoordBufferID;
-			if (vertexTexCoordsBufferID != currentVertexTexCoordBufferID)
-			{
-				currentVertexTexCoordBufferID = vertexTexCoordsBufferID;
-
-				const VulkanBuffer &vertexTexCoordsBuffer = this->vertexAttributeBufferPool.get(vertexTexCoordsBufferID);
-				const VulkanBufferVertexAttributeInfo &vertexTexCoordsInfo = vertexTexCoordsBuffer.vertexAttribute;
-				this->commandBuffer.bindVertexBuffers(1, vertexTexCoordsBuffer.buffer, bufferOffset);
-			}
-
-			const IndexBufferID indexBufferID = drawCall.indexBufferID;
-			if (indexBufferID != currentIndexBufferID)
-			{
-				currentIndexBufferID = indexBufferID;
-
-				const VulkanBuffer &indexBuffer = this->indexBufferPool.get(indexBufferID);
-				const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
-				currentIndexBufferIndexCount = indexInfo.indexCount;
-
-				this->commandBuffer.bindIndexBuffer(indexBuffer.buffer, bufferOffset, vk::IndexType::eUint32);
-			}
-
-			const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
-			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
-			constexpr uint32_t transformDescriptorSetIndex = 1;
-			uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.alignedBytesPerElement;
-			this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
-
-			const ObjectTextureID textureID = drawCall.textureIDs[0];
-			if (textureID != currentTextureID)
-			{
-				currentTextureID = textureID;
-
-				const VulkanTexture &texture = this->objectTexturePool.get(textureID);
-				constexpr uint32_t materialDescriptorSetIndex = 2;
-				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
-			}
-
-			constexpr uint32_t meshInstanceCount = 1;
-			this->commandBuffer.drawIndexed(currentIndexBufferIndexCount, meshInstanceCount, 0, 0, 0);
 		}
 	}
 
@@ -3738,6 +3739,13 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		DebugLogErrorFormat("Couldn't end command buffer (%d).", commandBufferEndResult);
 		return;
 	}
+
+	// @todo begin UI render pass
+	if (uiCommandList.entryCount > 0)
+	{
+
+	}
+	// @todo end UI render pass
 
 	const vk::PipelineStageFlags waitPipelineStageFlags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
