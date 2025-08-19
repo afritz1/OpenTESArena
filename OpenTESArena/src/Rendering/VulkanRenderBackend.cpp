@@ -2979,9 +2979,10 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 	}
 
 	const int alignedBytesPerElement = MathUtils::roundToGreaterMultipleOf(bytesPerElement, this->physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
-	const int byteCount = elementCount * alignedBytesPerElement;
+	const int byteCountWithAlignedElements = elementCount * alignedBytesPerElement;
+	const int byteCount = elementCount * bytesPerElement;
 	vk::Buffer buffer;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCountWithAlignedElements, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
 	{
 		DebugLogErrorFormat("Couldn't create uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
 		this->uniformBufferPool.free(id);
