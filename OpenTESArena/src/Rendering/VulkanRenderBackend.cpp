@@ -32,8 +32,8 @@ namespace
 	constexpr int HEAP_MAX_BYTES_VERTEX_BUFFER = 1 << 20; // 1 MB
 	constexpr int HEAP_MAX_BYTES_INDEX_BUFFER = HEAP_MAX_BYTES_VERTEX_BUFFER;
 	constexpr int HEAP_MAX_BYTES_UNIFORM_BUFFER = 1 << 27; // 128 MB (need lots for render transforms)
-	constexpr int HEAP_MAX_BYTES_OBJECT_TEXTURE = 1 << 28; // 256 MB
-	constexpr int HEAP_MAX_BYTES_UI_TEXTURE = 1 << 28; // 256 MB
+	constexpr int HEAP_MAX_BYTES_OBJECT_TEXTURE = 1 << 26; // 64 MB
+	constexpr int HEAP_MAX_BYTES_UI_TEXTURE = 1 << 26; // 64 MB
 
 	constexpr vk::BufferUsageFlags VertexBufferStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::BufferUsageFlags VertexBufferDeviceLocalUsageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer;
