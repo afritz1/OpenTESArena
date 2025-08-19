@@ -15,6 +15,7 @@
 #include "RendererUtils.h"
 #include "VulkanRenderBackend.h"
 #include "Window.h"
+#include "../Math/MathUtils.h"
 #include "../UI/Surface.h"
 #include "../World/MeshUtils.h"
 
@@ -1411,12 +1412,12 @@ namespace
 		device.updateDescriptorSets(writeDescriptorSets, copyDescriptorSets);
 	}
 
-	void UpdateTransformDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer transformBuffer, int bytesPerElement)
+	void UpdateTransformDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer transformBuffer, int alignedBytesPerElement)
 	{
 		vk::DescriptorBufferInfo transformDescriptorBufferInfo;
 		transformDescriptorBufferInfo.buffer = transformBuffer;
 		transformDescriptorBufferInfo.offset = 0;
-		transformDescriptorBufferInfo.range = bytesPerElement;
+		transformDescriptorBufferInfo.range = alignedBytesPerElement;
 
 		vk::WriteDescriptorSet transformWriteDescriptorSet;
 		transformWriteDescriptorSet.dstSet = descriptorSet;
@@ -1642,11 +1643,12 @@ void VulkanBuffer::initIndex(int indexCount, int bytesPerIndex)
 	this->index.bytesPerIndex = bytesPerIndex;
 }
 
-void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int alignmentOfElement, vk::DescriptorSet descriptorSet)
+void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int alignedBytesPerElement, int alignmentOfElement, vk::DescriptorSet descriptorSet)
 {
 	this->type = VulkanBufferType::Uniform;
 	this->uniform.elementCount = elementCount;
 	this->uniform.bytesPerElement = bytesPerElement;
+	this->uniform.alignedBytesPerElement = alignedBytesPerElement;
 	this->uniform.alignmentOfElement = alignmentOfElement;
 	this->uniform.descriptorSet = descriptorSet;
 }
@@ -1939,6 +1941,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	this->physicalDevice = GetBestPhysicalDevice(physicalDevices);
+	this->physicalDeviceProperties = this->physicalDevice.getProperties();
 
 	if (!TryGetQueueFamilyIndices(this->physicalDevice, this->surface, &this->graphicsQueueFamilyIndex, &this->presentQueueFamilyIndex))
 	{
@@ -2660,6 +2663,7 @@ void VulkanRenderBackend::shutdown()
 
 		if (this->physicalDevice)
 		{
+			this->physicalDeviceProperties = vk::PhysicalDeviceProperties();
 			this->physicalDevice = nullptr;
 		}
 
@@ -2974,7 +2978,8 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 		return -1;
 	}
 
-	const int byteCount = elementCount * bytesPerElement;
+	const int alignedBytesPerElement = MathUtils::roundToGreaterMultipleOf(bytesPerElement, this->physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+	const int byteCount = elementCount * alignedBytesPerElement;
 	vk::Buffer buffer;
 	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferDeviceLocalHeap, &buffer, nullptr))
 	{
@@ -2993,7 +2998,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 		return -1;
 	}
 
-	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer, bytesPerElement);
+	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer, alignedBytesPerElement);
 
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
@@ -3008,7 +3013,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	uniformBuffer.init(buffer, stagingBuffer, stagingHostMappedBytes);
-	uniformBuffer.initUniform(elementCount, bytesPerElement, alignmentOfElement, descriptorSet);
+	uniformBuffer.initUniform(elementCount, bytesPerElement, alignedBytesPerElement, alignmentOfElement, descriptorSet);
 
 	return id;
 }
@@ -3633,7 +3638,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
 			const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
 			constexpr uint32_t transformDescriptorSetIndex = 1;
-			uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.bytesPerElement;
+			uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.alignedBytesPerElement;
 			this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
 
 			const ObjectTextureID textureID = drawCall.textureIDs[0];
