@@ -30,6 +30,7 @@ public:
 
 	int getFreeBytes() const;
 	int getUsedBytes() const;
+	int getLargestFreeBlockBytes() const;
 
 	HeapBlock alloc(int byteCount, int alignment = DefaultAlignment);
 

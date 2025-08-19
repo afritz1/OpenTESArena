@@ -54,6 +54,17 @@ int HeapAllocator::getUsedBytes() const
 	return GetTotalByteCount(this->usedBlocks);
 }
 
+int HeapAllocator::getLargestFreeBlockBytes() const
+{
+	int byteCount = 0;
+	for (const HeapBlock freeBlock : this->freeBlocks)
+	{
+		byteCount = std::max(byteCount, freeBlock.byteCount);
+	}
+
+	return byteCount;
+}
+
 HeapBlock HeapAllocator::alloc(int byteCount, int alignment)
 {
 	if ((byteCount <= 0) || (alignment < 1))

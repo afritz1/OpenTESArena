@@ -146,37 +146,62 @@ enum class VulkanHeapType
 	Image
 };
 
+struct VulkanHeap
+{
+	vk::DeviceMemory deviceMemory;
+	Span<std::byte> hostMappedBytes;
+	HeapAllocator allocator;
+};
+
+struct VulkanHeapMapping
+{
+	int heapIndex;
+	HeapBlock block;
+
+	VulkanHeapMapping();
+
+	bool isValid() const;
+};
+
 struct VulkanHeapBufferMapping
 {
+	VulkanHeapMapping mapping;
 	vk::Buffer buffer;
-	HeapBlock block;
 };
 
 struct VulkanHeapImageMapping
 {
+	VulkanHeapMapping mapping;
 	vk::Image image;
-	HeapBlock block;
 };
 
-// A single memory allocation sliced by several smaller buffers/images.
-struct VulkanHeap
+// Manages several independent heaps which are sliced by several smaller buffers/images.
+struct VulkanHeapManager
 {
+	std::vector<VulkanHeap> heaps;
+	vk::Device device;
+	vk::MemoryAllocateInfo memoryAllocateInfo; // For creating new heaps.
+	bool isHostVisible;
+
 	VulkanHeapType type;
-	vk::DeviceMemory deviceMemory;
-	Span<std::byte> hostMappedBytes;
-	HeapAllocator allocator;
 	std::vector<VulkanHeapBufferMapping> bufferMappings;
 	std::vector<VulkanHeapImageMapping> imageMappings;
 
-	VulkanHeap();
+	VulkanHeapManager();
 
-	bool initBufferHeap(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice);
-	bool initImageHeap(vk::Device device, int byteCount, vk::ImageUsageFlags usageFlags, vk::PhysicalDevice physicalDevice);
+	bool initBufferManager(vk::Device device, int byteCount, vk::BufferUsageFlags usageFlags, bool isHostVisible, vk::PhysicalDevice physicalDevice);
+	bool initImageManager(vk::Device device, int byteCount, vk::ImageUsageFlags usageFlags, vk::PhysicalDevice physicalDevice);
 
-	HeapBlock addBufferMapping(vk::Buffer buffer, int byteCount, int alignment);
-	HeapBlock addImageMapping(vk::Image image, int byteCount, int alignment);
+	VulkanHeap &getHeap(int heapIndex);
+	int findAvailableHeapIndex(int byteCount, int alignment) const;
+
+	int addHeap();
+
+	VulkanHeapMapping addBufferMapping(vk::Buffer buffer, int byteCount, int alignment);
+	VulkanHeapMapping addImageMapping(vk::Image image, int byteCount, int alignment);
 	void freeBufferMapping(vk::Buffer buffer);
 	void freeImageMapping(vk::Image image);
+	void freeAllocations();
 	void clear();
 };
 
@@ -275,16 +300,16 @@ private:
 	VulkanObjectTexturePool objectTexturePool;
 	VulkanUiTexturePool uiTexturePool;
 
-	VulkanHeap vertexBufferDeviceLocalHeap;
-	VulkanHeap vertexBufferStagingHeap;
-	VulkanHeap indexBufferDeviceLocalHeap;
-	VulkanHeap indexBufferStagingHeap;
-	VulkanHeap uniformBufferDeviceLocalHeap;
-	VulkanHeap uniformBufferStagingHeap;
-	VulkanHeap objectTextureDeviceLocalHeap;
-	VulkanHeap objectTextureStagingHeap;
-	VulkanHeap uiTextureDeviceLocalHeap;
-	VulkanHeap uiTextureStagingHeap;
+	VulkanHeapManager vertexBufferHeapManagerDeviceLocal;
+	VulkanHeapManager vertexBufferHeapManagerStaging;
+	VulkanHeapManager indexBufferHeapManagerDeviceLocal;
+	VulkanHeapManager indexBufferHeapManagerStaging;
+	VulkanHeapManager uniformBufferHeapManagerDeviceLocal;
+	VulkanHeapManager uniformBufferHeapManagerStaging;
+	VulkanHeapManager objectTextureHeapManagerDeviceLocal;
+	VulkanHeapManager objectTextureHeapManagerStaging;
+	VulkanHeapManager uiTextureHeapManagerDeviceLocal;
+	VulkanHeapManager uiTextureHeapManagerStaging;
 
 	VulkanCamera camera;
 public:
