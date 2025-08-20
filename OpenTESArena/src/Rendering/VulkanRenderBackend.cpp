@@ -143,7 +143,7 @@ namespace
 namespace
 {
 	constexpr uint32_t RequiredApiVersion = VK_API_VERSION_1_0;
-	
+
 	// MoltenVK check.
 	bool IsPlatformPortabilityRequired()
 	{
@@ -151,11 +151,11 @@ namespace
 		{
 			return true;
 		}
-		
+
 		return false;
 	}
 
-	std::vector<const char*> GetInstanceValidationLayers()
+	std::vector<const char*> GetInstanceValidationLayers(bool enableValidationLayers)
 	{
 		vk::ResultValue<std::vector<vk::LayerProperties>> availableValidationLayersResult = vk::enumerateInstanceLayerProperties();
 		if (availableValidationLayersResult.result != vk::Result::eSuccess)
@@ -168,27 +168,44 @@ namespace
 
 		std::vector<const char*> validationLayers;
 
-		bool supportsKhronosValidationLayer = false;
-		const char *khronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
-		for (const vk::LayerProperties &layerProperties : availableValidationLayers)
+		if (enableValidationLayers)
 		{
-			if (StringView::equals(layerProperties.layerName, khronosValidationLayerName))
+			bool supportsKhronosValidationLayer = false;
+			const char *khronosValidationLayerName = "VK_LAYER_KHRONOS_validation";
+
+			for (const vk::LayerProperties &layerProperties : availableValidationLayers)
 			{
-				supportsKhronosValidationLayer = true;
-				validationLayers.emplace_back(khronosValidationLayerName);
-				break;
+				if (StringView::equals(layerProperties.layerName, khronosValidationLayerName))
+				{
+					supportsKhronosValidationLayer = true;
+					validationLayers.emplace_back(khronosValidationLayerName);
+					break;
+				}
+			}
+
+			if (!supportsKhronosValidationLayer)
+			{
+				DebugLogWarningFormat("%s not supported.", khronosValidationLayerName);
+			}
+
+			if (!validationLayers.empty())
+			{
+				DebugLogFormat("Instance validation layers (%d):", validationLayers.size());
+				for (const char *validationLayer : validationLayers)
+				{
+					DebugLogFormat("- %s", validationLayer);
+				}
 			}
 		}
-
-		if (!supportsKhronosValidationLayer)
+		else
 		{
-			DebugLogWarningFormat("%s not supported.", khronosValidationLayerName);
+			DebugLog("Instance validation layers disabled.");
 		}
 
 		return validationLayers;
 	}
 
-	bool TryCreateVulkanInstance(SDL_Window *window, vk::Instance *outInstance)
+	bool TryCreateVulkanInstance(SDL_Window *window, bool enableValidationLayers, vk::Instance *outInstance)
 	{
 		uint32_t instanceExtensionCount;
 		if (SDL_Vulkan_GetInstanceExtensions(window, &instanceExtensionCount, nullptr) != SDL_TRUE)
@@ -203,7 +220,7 @@ namespace
 			DebugLogErrorFormat("Couldn't get Vulkan instance extensions (expected %d).", instanceExtensionCount);
 			return false;
 		}
-		
+
 		if (IsPlatformPortabilityRequired())
 		{
 			instanceExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
@@ -231,7 +248,7 @@ namespace
 		appInfo.applicationVersion = 0;
 		appInfo.apiVersion = RequiredApiVersion;
 
-		const std::vector<const char*> instanceValidationLayers = GetInstanceValidationLayers();
+		const std::vector<const char*> instanceValidationLayers = GetInstanceValidationLayers(enableValidationLayers);
 
 		vk::InstanceCreateInfo instanceCreateInfo;
 		instanceCreateInfo.pApplicationInfo = &appInfo;
@@ -239,7 +256,7 @@ namespace
 		instanceCreateInfo.ppEnabledLayerNames = instanceValidationLayers.data();
 		instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
 		instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
-		
+
 		if (IsPlatformPortabilityRequired())
 		{
 			instanceCreateInfo.flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
@@ -938,7 +955,7 @@ namespace
 
 		std::vector<const char*> deviceExtensions;
 		deviceExtensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-		
+
 		if (IsPlatformPortabilityRequired())
 		{
 			deviceExtensions.emplace_back("VK_KHR_portability_subset");
@@ -2086,7 +2103,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const Window *window = initSettings.window;
 	const std::string &dataFolderPath = initSettings.dataFolderPath;
 
-	if (!TryCreateVulkanInstance(window->window, &this->instance))
+	if (!TryCreateVulkanInstance(window->window, initSettings.enableValidationLayers, &this->instance))
 	{
 		DebugLogError("Couldn't create Vulkan instance.");
 		return false;

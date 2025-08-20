@@ -51,7 +51,7 @@ namespace
 
 		return Int2(alignedWidth, alignedHeight);
 	}
-	
+
 	static_assert(sizeof(RenderTransform) == sizeof(Matrix4d) * 3);
 	constexpr int BytesPerTransformF = sizeof(RenderTransform) / 2;
 	constexpr int BytesPerMatrix4f = sizeof(Matrix4f);
@@ -147,7 +147,7 @@ Renderer::~Renderer()
 }
 
 bool Renderer::init(const Window *window, RenderBackendType backendType, const RenderResolutionScaleFunc &resolutionScaleFunc,
-	int renderThreadsMode, DitheringMode ditheringMode, const std::string &dataFolderPath)
+	int renderThreadsMode, DitheringMode ditheringMode, bool enableValidationLayers, const std::string &dataFolderPath)
 {
 	DebugLog("Initializing.");
 
@@ -172,7 +172,7 @@ bool Renderer::init(const Window *window, RenderBackendType backendType, const R
 	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
 	RenderInitSettings initSettings;
-	initSettings.init(window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
+	initSettings.init(window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode, enableValidationLayers);
 	if (!this->backend->init(initSettings))
 	{
 		DebugLogErrorFormat("Couldn't init render backend %d.", backendType);

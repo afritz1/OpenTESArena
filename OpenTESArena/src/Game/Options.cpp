@@ -59,7 +59,8 @@ namespace
 		{ Options::Key_Misc_ShowCompass, Options::OptionType_Misc_ShowCompass },
 		{ Options::Key_Misc_ChunkDistance, Options::OptionType_Misc_ChunkDistance },
 		{ Options::Key_Misc_StarDensity, Options::OptionType_Misc_StarDensity },
-		{ Options::Key_Misc_PlayerHasLight, Options::OptionType_Misc_PlayerHasLight }
+		{ Options::Key_Misc_PlayerHasLight, Options::OptionType_Misc_PlayerHasLight },
+		{ Options::Key_Misc_EnableValidationLayers, Options::OptionType_Misc_EnableValidationLayers }
 	};
 
 	std::unordered_set<std::string> s_loggedMissingOptions; // Reduces log spam.

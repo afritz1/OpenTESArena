@@ -98,7 +98,7 @@ public:
 	~Renderer();
 
 	bool init(const Window *window, RenderBackendType backendType, const RenderResolutionScaleFunc &resolutionScaleFunc,
-		int renderThreadsMode, DitheringMode ditheringMode, const std::string &dataFolderPath);
+		int renderThreadsMode, DitheringMode ditheringMode, bool enableValidationLayers, const std::string &dataFolderPath);
 
 	// Gets a screenshot of the current window.
 	Surface getScreenshot() const;

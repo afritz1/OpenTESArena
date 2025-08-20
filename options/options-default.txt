@@ -106,3 +106,6 @@ StarDensity=0
 
 # Whether the player has a light attached like in the original game.
 PlayerHasLight=true
+
+# Whether to enable Vulkan API call debugging.
+EnableValidationLayers=true

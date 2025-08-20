@@ -188,6 +188,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Misc, ChunkDistance, MIN_CHUNK_DISTANCE, std::numeric_limits<int>::max())
 	OPTION_INT(Misc, StarDensity, MIN_STAR_DENSITY_MODE, MAX_STAR_DENSITY_MODE)
 	OPTION_BOOL(Misc, PlayerHasLight)
+	OPTION_BOOL(Misc, EnableValidationLayers)
 
 	// Reads all the key-values pairs from the given absolute path into the default members.
 	void loadDefaults(const std::string &filename);

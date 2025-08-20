@@ -57,6 +57,7 @@ namespace OptionsUiModel
 	// Dev.
 	const std::string GHOST_MODE_NAME = "Ghost Mode";
 	const std::string PROFILER_LEVEL_NAME = "Profiler Level";
+	const std::string ENABLE_VALIDATION_LAYERS_NAME = "Enable Validation Layers";
 
 	enum class OptionType { Bool, Int, Double, String };
 
@@ -202,6 +203,7 @@ namespace OptionsUiModel
 	// Developer options.
 	std::unique_ptr<OptionsUiModel::BoolOption> makeGhostModeOption(Game &game);
 	std::unique_ptr<OptionsUiModel::IntOption> makeProfilerLevelOption(Game &game);
+	std::unique_ptr<OptionsUiModel::BoolOption> makeEnableValidationLayersOption(Game &game);
 	OptionGroup makeDevOptionGroup(Game &game);
 
 	// Convenience function for iteration.

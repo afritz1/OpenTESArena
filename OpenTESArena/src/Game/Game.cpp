@@ -298,7 +298,8 @@ bool Game::init()
 
 	const int renderThreadsMode = this->options.getGraphics_RenderThreadsMode();
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
-	if (!this->renderer.init(&this->window, renderBackendType, resolutionScaleFunc, renderThreadsMode, ditheringMode, dataFolderPath))
+	const bool enableValidationLayers = this->options.getMisc_EnableValidationLayers();
+	if (!this->renderer.init(&this->window, renderBackendType, resolutionScaleFunc, renderThreadsMode, ditheringMode, enableValidationLayers, dataFolderPath))
 	{
 		DebugLogErrorFormat("Couldn't init renderer.");
 		return false;

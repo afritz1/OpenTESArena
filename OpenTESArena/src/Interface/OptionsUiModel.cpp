@@ -666,11 +666,26 @@ std::unique_ptr<OptionsUiModel::IntOption> OptionsUiModel::makeProfilerLevelOpti
 	});
 }
 
+std::unique_ptr<OptionsUiModel::BoolOption> OptionsUiModel::makeEnableValidationLayersOption(Game &game)
+{
+	const auto &options = game.options;
+	return std::make_unique<OptionsUiModel::BoolOption>(
+		OptionsUiModel::ENABLE_VALIDATION_LAYERS_NAME,
+		"Enables more Vulkan warnings at the expense of CPU.\nChanges take effect on next application startup.",
+		options.getMisc_EnableValidationLayers(),
+		[&game](bool value)
+	{
+		auto &options = game.options;
+		options.setMisc_EnableValidationLayers(value);
+	});
+}
+
 OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 {
 	OptionGroup group;
 	group.emplace_back(OptionsUiModel::makeGhostModeOption(game));
 	group.emplace_back(OptionsUiModel::makeProfilerLevelOption(game));
+	group.emplace_back(OptionsUiModel::makeEnableValidationLayersOption(game));
 	return group;
 }
 
