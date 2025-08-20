@@ -184,6 +184,20 @@ Matrix4<T> Matrix4<T>::perspective(T fovY, T aspect, T near, T far)
 }
 
 template<typename T>
+Matrix4<T> Matrix4<T>::orthographic(T left, T right, T top, T bottom, T near, T far)
+{
+	Matrix4<T> m;
+	m.x.x = static_cast<T>(2.0) / (right - left);
+	m.y.y = static_cast<T>(2.0) / (top - bottom);
+	m.z.z = static_cast<T>(-1.0) / (far - near);
+	m.w.x = -(right + left) / (right - left);
+	m.w.y = -(top + bottom) / (top - bottom);
+	m.w.z = -near / (far - near);
+	m.w.w = static_cast<T>(1.0);
+	return m;
+}
+
+template<typename T>
 Matrix4<T> Matrix4<T>::operator*(const Matrix4<T> &m) const
 {
 	Matrix4<T> p;
