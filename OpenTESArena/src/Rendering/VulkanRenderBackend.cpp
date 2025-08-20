@@ -3874,6 +3874,13 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		this->commandBuffer.setViewport(0, uiViewport);
 		this->commandBuffer.setScissor(0, uiViewportScissor);
 
+		constexpr vk::DeviceSize bufferOffset = 0;
+		const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(this->uiVertexPositionBufferID);
+		this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
+
+		const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(this->uiVertexPositionBufferID);
+		this->commandBuffer.bindVertexBuffers(1, vertexAttributeBuffer.buffer, bufferOffset);
+
 		for (int i = 0; i < uiCommandList.entryCount; i++)
 		{
 			for (const UiDrawCall &drawCall : uiCommandList.entries[i])
@@ -3897,18 +3904,11 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				const RenderSpace renderSpace = drawCall.renderSpace;
 
 				//const VulkanTexture &texture = this->uiTexturePool.get(textureID);
-				//this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);
-
-				constexpr vk::DeviceSize bufferOffset = 0;
-				const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(this->uiVertexPositionBufferID);
-				this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
-
-				const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(this->uiVertexPositionBufferID);
-				this->commandBuffer.bindVertexBuffers(1, vertexAttributeBuffer.buffer, bufferOffset);
+				//this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);				
 
 				// @todo use push constant for screen offset and scale of rectangle?
 
-				const int uiVertexCount = vertexPositionBuffer.vertexPosition.vertexCount; // Two triangles, no indices
+				const int uiVertexCount = vertexPositionBuffer.vertexPosition.vertexCount;
 				constexpr int uiInstanceCount = 1;
 				this->commandBuffer.draw(uiVertexCount, uiInstanceCount, 0, 0);
 
