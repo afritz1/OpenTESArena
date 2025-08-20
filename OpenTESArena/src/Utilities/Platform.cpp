@@ -83,7 +83,7 @@ std::string Platform::getOptionsPath()
 {
 	const std::string platform = Platform::getPlatform();
 
-	if (platform == "Windows")
+	if (platform == Platform::Windows)
 	{
 		// SDL_GetPrefPath() creates the desired folder if it doesn't exist.
 		char *optionsPathPtr = SDL_GetPrefPath("OpenTESArena", "options");
@@ -100,11 +100,11 @@ std::string Platform::getOptionsPath()
 		// Convert Windows backslashes to forward slashes.
 		return String::replace(optionsPathString, '\\', '/');
 	}
-	else if (platform == "Linux")
+	else if (platform == Platform::Linux)
 	{
 		return Platform::getXDGConfigHomeEnv() + "/OpenTESArena/options/";
 	}
-	else if (platform == "Mac OS X")
+	else if (platform == Platform::macOS)
 	{
 		return Platform::getHomeEnv() + "/Library/Preferences/OpenTESArena/options/";
 	}
@@ -138,7 +138,7 @@ std::string Platform::getLogPath()
 	// Unfortunately there's no SDL_GetLogPath(), so we need to make our own.
 	const std::string platform = Platform::getPlatform();
 
-	if (platform == "Windows")
+	if (platform == Platform::Windows)
 	{
 		char *logPathPtr = SDL_GetPrefPath("OpenTESArena", "log");
 
@@ -154,11 +154,11 @@ std::string Platform::getLogPath()
 		// Convert Windows backslashes to forward slashes.
 		return String::replace(logPathString, '\\', '/');
 	}
-	else if (platform == "Linux")
+	else if (platform == Platform::Linux)
 	{
 		return Platform::getXDGConfigHomeEnv() + "/OpenTESArena/log/";
 	}
-	else if (platform == "Mac OS X")
+	else if (platform == Platform::macOS)
 	{
 		return Platform::getHomeEnv() + "/Library/Logs/OpenTESArena/log/";
 	}
@@ -175,11 +175,11 @@ double Platform::getDefaultDPI()
 
 	// @todo: not sure how to handle Linux. Might need an ifdef and some environment variables.
 
-	if (platform == "Windows")
+	if (platform == Platform::Windows)
 	{
 		return 96.0;
 	}
-	else if (platform == "Mac OS X")
+	else if (platform == Platform::macOS)
 	{
 		return 72.0;
 	}

@@ -147,7 +147,7 @@ namespace
 	// MoltenVK check.
 	bool IsPlatformPortabilityRequired()
 	{
-		if (Platform::getPlatform() == "Mac OS X")
+		if (Platform::getPlatform() == Platform::macOS)
 		{
 			return true;
 		}

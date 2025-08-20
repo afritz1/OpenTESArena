@@ -6,6 +6,10 @@
 // Namespace for various platform-specific functions.
 namespace Platform
 {
+	const std::string Windows = "Windows";
+	const std::string Linux = "Linux";
+	const std::string macOS = "Mac OS X";
+
 	// Gets the current platform name via SDL_GetPlatform().
 	std::string getPlatform();
 

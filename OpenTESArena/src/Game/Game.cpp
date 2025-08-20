@@ -249,7 +249,7 @@ Game::~Game()
 
 bool Game::init()
 {
-	DebugLog("Initializing (Platform: " + Platform::getPlatform() + ").");
+	DebugLogFormat("Initializing (Platform: %s).", Platform::getPlatform().c_str());
 
 	// Current working directory (in most cases). This is most relevant for platforms like macOS, where
 	// the base path might be in the app's Resources folder.
