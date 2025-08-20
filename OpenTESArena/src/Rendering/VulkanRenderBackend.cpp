@@ -19,6 +19,7 @@
 #include "../UI/UiCommand.h"
 #include "../UI/UiDrawCall.h"
 #include "../UI/Surface.h"
+#include "../Utilities/Platform.h"
 #include "../World/MeshUtils.h"
 
 #include "components/debug/Debug.h"
@@ -142,6 +143,17 @@ namespace
 namespace
 {
 	constexpr uint32_t RequiredApiVersion = VK_API_VERSION_1_0;
+	
+	// MoltenVK check.
+	bool IsPlatformPortabilityRequired()
+	{
+		if (Platform::getPlatform() == "Mac OS X")
+		{
+			return true;
+		}
+		
+		return false;
+	}
 
 	std::vector<const char*> GetInstanceValidationLayers()
 	{
@@ -185,11 +197,17 @@ namespace
 			return false;
 		}
 
-		Buffer<const char*> instanceExtensions(instanceExtensionCount);
-		if (SDL_Vulkan_GetInstanceExtensions(window, &instanceExtensionCount, instanceExtensions.begin()) != SDL_TRUE)
+		std::vector<const char*> instanceExtensions(instanceExtensionCount);
+		if (SDL_Vulkan_GetInstanceExtensions(window, &instanceExtensionCount, instanceExtensions.data()) != SDL_TRUE)
 		{
 			DebugLogErrorFormat("Couldn't get Vulkan instance extensions (expected %d).", instanceExtensionCount);
 			return false;
+		}
+		
+		if (IsPlatformPortabilityRequired())
+		{
+			instanceExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+			instanceExtensions.emplace_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 		}
 
 		bool isMinimumRequiredSurfaceAvailable = false;
@@ -219,8 +237,13 @@ namespace
 		instanceCreateInfo.pApplicationInfo = &appInfo;
 		instanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(instanceValidationLayers.size());
 		instanceCreateInfo.ppEnabledLayerNames = instanceValidationLayers.data();
-		instanceCreateInfo.enabledExtensionCount = instanceExtensions.getCount();
-		instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.begin();
+		instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
+		instanceCreateInfo.ppEnabledExtensionNames = instanceExtensions.data();
+		
+		if (IsPlatformPortabilityRequired())
+		{
+			instanceCreateInfo.flags = vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR;
+		}
 
 		vk::ResultValue<vk::Instance> instanceCreateResult = vk::createInstance(instanceCreateInfo);
 		if (instanceCreateResult.result != vk::Result::eSuccess)
@@ -913,14 +936,19 @@ namespace
 			deviceQueueCreateInfo.pQueuePriorities = &deviceQueuePriority;
 		}
 
-		Buffer<const char*> deviceExtensions(1);
-		deviceExtensions[0] = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+		std::vector<const char*> deviceExtensions;
+		deviceExtensions.emplace_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+		
+		if (IsPlatformPortabilityRequired())
+		{
+			deviceExtensions.emplace_back("VK_KHR_portability_subset");
+		}
 
 		vk::DeviceCreateInfo deviceCreateInfo;
 		deviceCreateInfo.queueCreateInfoCount = deviceQueueCreateInfos.getCount();
 		deviceCreateInfo.pQueueCreateInfos = deviceQueueCreateInfos.begin();
-		deviceCreateInfo.enabledExtensionCount = deviceExtensions.getCount();
-		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.begin();
+		deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+		deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
 
 		vk::ResultValue<vk::Device> deviceCreateResult = physicalDevice.createDevice(deviceCreateInfo);
 		if (deviceCreateResult.result != vk::Result::eSuccess)
