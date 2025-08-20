@@ -3973,7 +3973,7 @@ namespace
 	void RasterizeMeshDispatchPixelShaderType(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
-		static_assert(PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass == PIXEL_SHADER_TYPE_MAX);
+		static_assert(PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass == OBJECT_PIXEL_SHADER_TYPE_MAX);
 		const PixelShaderType pixelShaderType = drawCallCache.pixelShaderType;
 
 		switch (pixelShaderType)

@@ -17,6 +17,7 @@
 #include "Window.h"
 #include "../Math/MathUtils.h"
 #include "../UI/UiCommand.h"
+#include "../UI/UiDrawCall.h"
 #include "../UI/Surface.h"
 #include "../World/MeshUtils.h"
 
@@ -64,7 +65,8 @@ namespace
 	{
 		{ VertexShaderType::Basic, "Basic" },
 		{ VertexShaderType::RaisingDoor, "RaisingDoor" },
-		{ VertexShaderType::Entity, "Entity" }
+		{ VertexShaderType::Entity, "Entity" },
+		{ VertexShaderType::UI, "UI" }
 	};
 
 	constexpr std::pair<PixelShaderType, const char*> FragmentShaderTypeFilenames[] =
@@ -81,13 +83,14 @@ namespace
 		{ PixelShaderType::AlphaTestedWithLightLevelOpacity, "AlphaTestedWithLightLevelOpacity" },
 		{ PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, "AlphaTestedWithPreviousBrightnessLimit" },
 		{ PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, "AlphaTestedWithHorizonMirrorFirstPass" },
-		{ PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, "AlphaTestedWithHorizonMirrorSecondPass" }
+		{ PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, "AlphaTestedWithHorizonMirrorSecondPass" },
+		{ PixelShaderType::UiTexture, "UiTexture" }
 	};
 
 	VulkanPipelineKeyCode MakePipelineKeyCode(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthTest, bool backFaceCulling)
 	{
 		constexpr int vertexShaderTypeRequiredBits = Bytes::getRequiredBitCount(VERTEX_SHADER_TYPE_COUNT);
-		constexpr int fragmentShaderTypeRequiredBits = Bytes::getRequiredBitCount(PIXEL_SHADER_TYPE_COUNT);
+		constexpr int fragmentShaderTypeRequiredBits = Bytes::getRequiredBitCount(TOTAL_PIXEL_SHADER_TYPE_COUNT);
 		constexpr int depthTestRequiredBits = 1;
 		constexpr int backFaceCullingRequiredBits = 1;
 		constexpr int totalRequiredBits = vertexShaderTypeRequiredBits + fragmentShaderTypeRequiredBits + depthTestRequiredBits + backFaceCullingRequiredBits;
@@ -127,8 +130,12 @@ namespace
 		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithPaletteIndexLookup, true, true),
 		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithLightLevelOpacity, true, true),
 		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true)
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true),
+
+		VulkanPipelineKey(VertexShaderType::UI, PixelShaderType::UiTexture, false, false)
 	};
+
+	constexpr int UiPipelineKeyIndex = static_cast<int>(std::size(RequiredPipelines) - 1);
 }
 
 // Vulkan application
@@ -1142,26 +1149,38 @@ namespace
 		depthAttachmentReference.attachment = 1;
 		depthAttachmentReference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
-		vk::SubpassDescription colorAttachmentSubpassDescription;
-		colorAttachmentSubpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-		colorAttachmentSubpassDescription.colorAttachmentCount = 1;
-		colorAttachmentSubpassDescription.pColorAttachments = &colorAttachmentReference;
-		colorAttachmentSubpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
+		vk::SubpassDescription sceneSubpassDescription;
+		sceneSubpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+		sceneSubpassDescription.colorAttachmentCount = 1;
+		sceneSubpassDescription.pColorAttachments = &colorAttachmentReference;
+		sceneSubpassDescription.pDepthStencilAttachment = &depthAttachmentReference;
 
-		vk::SubpassDependency colorAttachmentSubpassDependency;
-		colorAttachmentSubpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-		colorAttachmentSubpassDependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests;
-		colorAttachmentSubpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
-		colorAttachmentSubpassDependency.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-		colorAttachmentSubpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		vk::SubpassDescription uiSubpassDescription;
+		uiSubpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+		uiSubpassDescription.colorAttachmentCount = 1;
+		uiSubpassDescription.pColorAttachments = &colorAttachmentReference;
+
+		const vk::SubpassDescription subpassDescriptions[] =
+		{
+			sceneSubpassDescription,
+			uiSubpassDescription
+		};
+
+		vk::SubpassDependency subpassDependency;
+		subpassDependency.srcSubpass = 0;
+		subpassDependency.dstSubpass = 1;
+		subpassDependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests;
+		subpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		subpassDependency.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		subpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
 
 		vk::RenderPassCreateInfo renderPassCreateInfo;
 		renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(std::size(attachmentDescriptions));
 		renderPassCreateInfo.pAttachments = attachmentDescriptions;
-		renderPassCreateInfo.subpassCount = 1;
-		renderPassCreateInfo.pSubpasses = &colorAttachmentSubpassDescription;
+		renderPassCreateInfo.subpassCount = static_cast<uint32_t>(std::size(subpassDescriptions));
+		renderPassCreateInfo.pSubpasses = subpassDescriptions;
 		renderPassCreateInfo.dependencyCount = 1;
-		renderPassCreateInfo.pDependencies = &colorAttachmentSubpassDependency;
+		renderPassCreateInfo.pDependencies = &subpassDependency;
 
 		vk::ResultValue<vk::RenderPass> renderPassCreateResult = device.createRenderPass(renderPassCreateInfo);
 		if (renderPassCreateResult.result != vk::Result::eSuccess)
@@ -1477,9 +1496,12 @@ namespace
 		return true;
 	}
 
-	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule, bool enableDepth, bool enableBackFaceCulling,
-		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, vk::Pipeline *outPipeline)
+	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule,
+		int positionComponentsPerVertex, bool enableDepth, bool enableBackFaceCulling, vk::PipelineLayout pipelineLayout,
+		vk::RenderPass renderPass, int subpassIndex, vk::Pipeline *outPipeline)
 	{
+		DebugAssert((positionComponentsPerVertex == 3) || (positionComponentsPerVertex == 2));
+
 		vk::PipelineShaderStageCreateInfo vertexPipelineShaderStageCreateInfo;
 		vertexPipelineShaderStageCreateInfo.stage = vk::ShaderStageFlagBits::eVertex;
 		vertexPipelineShaderStageCreateInfo.module = vertexShaderModule;
@@ -1498,13 +1520,13 @@ namespace
 
 		vk::VertexInputBindingDescription positionVertexInputBindingDescription;
 		positionVertexInputBindingDescription.binding = 0;
-		positionVertexInputBindingDescription.stride = static_cast<uint32_t>(MeshUtils::POSITION_COMPONENTS_PER_VERTEX * MeshUtils::POSITION_COMPONENT_SIZE_FLOAT);
+		positionVertexInputBindingDescription.stride = static_cast<uint32_t>(positionComponentsPerVertex * MeshUtils::POSITION_COMPONENT_SIZE_FLOAT);
 		positionVertexInputBindingDescription.inputRate = vk::VertexInputRate::eVertex;
 
 		vk::VertexInputAttributeDescription positionVertexInputAttributeDescription;
 		positionVertexInputAttributeDescription.location = 0;
 		positionVertexInputAttributeDescription.binding = 0;
-		positionVertexInputAttributeDescription.format = vk::Format::eR32G32B32Sfloat;
+		positionVertexInputAttributeDescription.format = (positionComponentsPerVertex == 3) ? vk::Format::eR32G32B32Sfloat : vk::Format::eR32G32Sfloat;
 		positionVertexInputAttributeDescription.offset = 0;
 
 		vk::VertexInputBindingDescription texCoordVertexInputBindingDescription;
@@ -1598,7 +1620,7 @@ namespace
 		graphicsPipelineCreateInfo.pDynamicState = &pipelineDynamicStateCreateInfo;
 		graphicsPipelineCreateInfo.layout = pipelineLayout;
 		graphicsPipelineCreateInfo.renderPass = renderPass;
-		graphicsPipelineCreateInfo.subpass = 0;
+		graphicsPipelineCreateInfo.subpass = subpassIndex;
 		graphicsPipelineCreateInfo.basePipelineHandle = nullptr;
 
 		vk::PipelineCache pipelineCache;
@@ -2303,8 +2325,12 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		VulkanPipeline &pipeline = this->graphicsPipelines[i];
 		pipeline.keyCode = MakePipelineKeyCode(requiredPipelineKey.vertexShaderType, requiredPipelineKey.fragmentShaderType, requiredPipelineKey.depthTest, requiredPipelineKey.backFaceCulling);
 
-		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, requiredPipelineKey.depthTest, requiredPipelineKey.backFaceCulling,
-			this->pipelineLayout, this->renderPass, &pipeline.pipeline))
+		const bool isUiPipeline = requiredPipelineKey.fragmentShaderType == PixelShaderType::UiTexture;
+		const int positionComponentsPerVertex = isUiPipeline ? 2 : 3;
+		const int subpassIndex = isUiPipeline ? 1 : 0;
+
+		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, positionComponentsPerVertex, requiredPipelineKey.depthTest,
+			requiredPipelineKey.backFaceCulling, this->pipelineLayout, this->renderPass, subpassIndex, &pipeline.pipeline))
 		{
 			DebugLogErrorFormat("Couldn't create graphics pipeline %d.", i);
 			return false;
@@ -2404,6 +2430,55 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes);
 
+	constexpr int UiRectangleVertexCount = 6; // Two triangles, no indices.
+	constexpr int UiPositionComponentsPerVertex = 2;
+	this->uiVertexPositionBufferID = this->createVertexPositionBuffer(UiRectangleVertexCount, UiPositionComponentsPerVertex, sizeof(float));
+	LockedBuffer lockedUiVertexPositionBuffer = this->lockVertexPositionBuffer(this->uiVertexPositionBufferID);
+	Span<float> uiVertexPositionComponents = lockedUiVertexPositionBuffer.getFloats();
+	uiVertexPositionComponents[0] = 0.0f;
+	uiVertexPositionComponents[1] = 0.0f;
+
+	uiVertexPositionComponents[2] = 0.0f;
+	uiVertexPositionComponents[3] = 1.0f;
+
+	uiVertexPositionComponents[4] = 1.0f;
+	uiVertexPositionComponents[5] = 1.0f;
+
+	uiVertexPositionComponents[6] = 1.0f;
+	uiVertexPositionComponents[7] = 1.0f;
+
+	uiVertexPositionComponents[8] = 1.0f;
+	uiVertexPositionComponents[9] = 0.0f;
+
+	uiVertexPositionComponents[10] = 0.0f;
+	uiVertexPositionComponents[11] = 0.0f;
+
+	this->unlockVertexPositionBuffer(this->uiVertexPositionBufferID);
+
+	constexpr int UiTexCoordComponentsPerVertex = 2;
+	this->uiVertexAttributeBufferID = this->createVertexAttributeBuffer(UiRectangleVertexCount, UiTexCoordComponentsPerVertex, sizeof(float));
+	LockedBuffer lockedUiVertexAttributeBuffer = this->lockVertexAttributeBuffer(this->uiVertexAttributeBufferID);
+	Span<float> uiVertexAttributeComponents = lockedUiVertexAttributeBuffer.getFloats();
+	uiVertexAttributeComponents[0] = 0.0f;
+	uiVertexAttributeComponents[1] = 0.0f;
+
+	uiVertexAttributeComponents[2] = 0.0f;
+	uiVertexAttributeComponents[3] = 1.0f;
+
+	uiVertexAttributeComponents[4] = 1.0f;
+	uiVertexAttributeComponents[5] = 1.0f;
+
+	uiVertexAttributeComponents[6] = 1.0f;
+	uiVertexAttributeComponents[7] = 1.0f;
+
+	uiVertexAttributeComponents[8] = 1.0f;
+	uiVertexAttributeComponents[9] = 0.0f;
+
+	uiVertexAttributeComponents[10] = 0.0f;
+	uiVertexAttributeComponents[11] = 0.0f;
+
+	this->unlockVertexAttributeBuffer(this->uiVertexAttributeBufferID);
+
 	return true;
 }
 
@@ -2411,6 +2486,9 @@ void VulkanRenderBackend::shutdown()
 {
 	if (this->device)
 	{
+		this->uiVertexAttributeBufferID = -1;
+		this->uiVertexPositionBufferID = -1;
+
 		if (this->camera.buffer)
 		{
 			this->device.destroyBuffer(this->camera.buffer);
@@ -3608,6 +3686,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
 
 	constexpr vk::PipelineBindPoint pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+	constexpr vk::ArrayProxy<const uint32_t> emptyDynamicOffsets;
 
 	if (renderCommandList.entryCount > 0)
 	{
@@ -3634,9 +3713,8 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		const VulkanTexture &paletteTexture = this->objectTexturePool.get(frameSettings.paletteTextureID);
 		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer, paletteTexture.imageView, paletteTexture.sampler);
 
-		vk::ArrayProxy<const uint32_t> dynamicOffsets;
 		constexpr uint32_t globalDescriptorSetIndex = 0;
-		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, dynamicOffsets);
+		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, emptyDynamicOffsets);
 
 		vk::Pipeline currentPipeline;
 		VertexPositionBufferID currentVertexPositionBufferID = -1;
@@ -3723,11 +3801,83 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 					const VulkanTexture &texture = this->objectTexturePool.get(textureID);
 					constexpr uint32_t materialDescriptorSetIndex = 2;
-					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, dynamicOffsets);
+					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, emptyDynamicOffsets);
 				}
 
 				constexpr uint32_t meshInstanceCount = 1;
 				this->commandBuffer.drawIndexed(currentIndexBufferIndexCount, meshInstanceCount, 0, 0, 0);
+			}
+		}
+	}
+
+	this->commandBuffer.nextSubpass(vk::SubpassContents::eInline);
+
+	if (uiCommandList.entryCount > 0)
+	{
+		const VulkanPipeline &uiPipeline = this->graphicsPipelines.get(UiPipelineKeyIndex);
+		this->commandBuffer.bindPipeline(pipelineBindPoint, uiPipeline.pipeline);
+
+		vk::Viewport uiViewport;
+		uiViewport.width = static_cast<float>(this->swapchainExtent.width);
+		uiViewport.height = static_cast<float>(this->swapchainExtent.height);
+		uiViewport.minDepth = 0.0f;
+		uiViewport.maxDepth = 1.0f;
+
+		vk::Rect2D uiViewportScissor;
+		uiViewportScissor.extent = this->swapchainExtent;
+
+		this->commandBuffer.setViewport(0, uiViewport);
+		this->commandBuffer.setScissor(0, uiViewportScissor);
+
+		for (int i = 0; i < uiCommandList.entryCount; i++)
+		{
+			for (const UiDrawCall &drawCall : uiCommandList.entries[i])
+			{
+				if (!drawCall.activeFunc())
+				{
+					continue;
+				}
+
+				const std::optional<Rect> &optClipRect = drawCall.clipRect;
+				if (optClipRect.has_value())
+				{
+					//const SDL_Rect clipRect = optClipRect->getSdlRect();
+					//setClipRect(&clipRect); // @todo
+				}
+
+				const UiTextureID textureID = drawCall.textureFunc();
+				const Int2 position = drawCall.positionFunc();
+				const Int2 size = drawCall.sizeFunc();
+				const PivotType pivotType = drawCall.pivotFunc();
+				const RenderSpace renderSpace = drawCall.renderSpace;
+
+				//const VulkanTexture &texture = this->uiTexturePool.get(textureID);
+				//this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);
+
+				constexpr vk::DeviceSize bufferOffset = 0;
+				const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(this->uiVertexPositionBufferID);
+				this->commandBuffer.bindVertexBuffers(0, vertexPositionBuffer.buffer, bufferOffset);
+
+				const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(this->uiVertexPositionBufferID);
+				this->commandBuffer.bindVertexBuffers(1, vertexAttributeBuffer.buffer, bufferOffset);
+
+				// @todo use push constant for screen offset and scale of rectangle?
+
+				const int uiVertexCount = vertexPositionBuffer.vertexPosition.vertexCount; // Two triangles, no indices
+				constexpr int uiInstanceCount = 1;
+				this->commandBuffer.draw(uiVertexCount, uiInstanceCount, 0, 0);
+
+				/*double xPercent, yPercent, wPercent, hPercent;
+				GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
+					renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
+
+				const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+				this->renderer2D.draw(&renderElement, 1, renderSpace, letterboxRect);*/
+
+				if (optClipRect.has_value())
+				{
+					//setClipRect(nullptr); // @todo
+				}
 			}
 		}
 	}
@@ -3739,13 +3889,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		DebugLogErrorFormat("Couldn't end command buffer (%d).", commandBufferEndResult);
 		return;
 	}
-
-	// @todo begin UI render pass
-	if (uiCommandList.entryCount > 0)
-	{
-
-	}
-	// @todo end UI render pass
 
 	const vk::PipelineStageFlags waitPipelineStageFlags = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 

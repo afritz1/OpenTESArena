@@ -312,6 +312,8 @@ private:
 	VulkanHeapManager uiTextureHeapManagerStaging;
 
 	VulkanCamera camera;
+	VertexPositionBufferID uiVertexPositionBufferID;
+	VertexAttributeBufferID uiVertexAttributeBufferID;
 public:
 	bool init(const RenderInitSettings &initSettings) override;
 	void shutdown() override;

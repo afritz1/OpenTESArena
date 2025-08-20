@@ -5,7 +5,8 @@ enum class VertexShaderType
 {
 	Basic,
 	RaisingDoor,
-	Entity
+	Entity,
+	UI
 };
 
 static constexpr VertexShaderType VERTEX_SHADER_TYPE_MAX = VertexShaderType::Entity;
@@ -13,6 +14,7 @@ static constexpr int VERTEX_SHADER_TYPE_COUNT = static_cast<int>(VERTEX_SHADER_T
 
 enum class PixelShaderType
 {
+	// Object textures
 	Opaque, // Most walls/floors/ceilings.
 	OpaqueWithAlphaTestLayer, // Dry chasm walls.
 	OpaqueScreenSpaceAnimation, // Water/lava chasm floors.
@@ -25,11 +27,17 @@ enum class PixelShaderType
 	AlphaTestedWithLightLevelOpacity, // Ghosts, screen-space fog.
 	AlphaTestedWithPreviousBrightnessLimit, // Stars.
 	AlphaTestedWithHorizonMirrorFirstPass, // Puddles without reflection.
-	AlphaTestedWithHorizonMirrorSecondPass // Puddle reflections.
+	AlphaTestedWithHorizonMirrorSecondPass, // Puddle reflections.
+
+	// UI textures
+	UiTexture
 };
 
-static constexpr PixelShaderType PIXEL_SHADER_TYPE_MAX = PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
-static constexpr int PIXEL_SHADER_TYPE_COUNT = static_cast<int>(PIXEL_SHADER_TYPE_MAX) + 1;
+static constexpr PixelShaderType OBJECT_PIXEL_SHADER_TYPE_MAX = PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
+static constexpr int OBJECT_PIXEL_SHADER_TYPE_COUNT = static_cast<int>(OBJECT_PIXEL_SHADER_TYPE_MAX) + 1;
+static constexpr PixelShaderType UI_PIXEL_SHADER_TYPE_MAX = PixelShaderType::UiTexture;
+static constexpr int UI_PIXEL_SHADER_TYPE_COUNT = static_cast<int>(UI_PIXEL_SHADER_TYPE_MAX) + 1 - OBJECT_PIXEL_SHADER_TYPE_COUNT;
+static constexpr int TOTAL_PIXEL_SHADER_TYPE_COUNT = OBJECT_PIXEL_SHADER_TYPE_COUNT + UI_PIXEL_SHADER_TYPE_COUNT;
 
 enum class DitheringMode
 {
