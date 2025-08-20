@@ -209,6 +209,20 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		window.warpMouse(newWindowDims.x / 2, newWindowDims.y / 2);
 	});
 
+	auto graphicsApiOption = std::make_unique<OptionsUiModel::IntOption>(
+		OptionsUiModel::GRAPHICS_API_NAME,
+		"Determines the 3D renderer to use. Changes are applied on next\napplication start.\n\nSoftware\nVulkan",
+		options.getGraphics_GraphicsAPI(),
+		1,
+		Options::MIN_GRAPHICS_API,
+		Options::MAX_GRAPHICS_API,
+		std::vector<std::string> { "Software", "Vulkan" },
+		[&game](int value)
+	{
+		auto &options = game.options;
+		options.setGraphics_GraphicsAPI(value);
+	});
+
 	auto fpsLimitOption = std::make_unique<OptionsUiModel::IntOption>(
 		OptionsUiModel::FPS_LIMIT_NAME,
 		options.getGraphics_TargetFPS(),
@@ -350,6 +364,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 
 	OptionGroup group;
 	group.emplace_back(std::move(windowModeOption));
+	group.emplace_back(std::move(graphicsApiOption));
 	group.emplace_back(std::move(fpsLimitOption));
 	group.emplace_back(std::move(resolutionScaleOption));
 	group.emplace_back(std::move(verticalFovOption));

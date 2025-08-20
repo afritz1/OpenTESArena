@@ -281,7 +281,7 @@ bool Game::init()
 		this->options.getAudio_SoundChannels(), this->options.getAudio_SoundResampling(),
 		this->options.getAudio_Is3DAudio(), midiFilePath, audioDataPath);
 
-	constexpr RenderBackendType renderBackendType = RenderBackendType::Vulkan;
+	const RenderBackendType renderBackendType = static_cast<RenderBackendType>(this->options.getGraphics_GraphicsAPI());
 	const uint32_t windowAdditionalFlags = (renderBackendType == RenderBackendType::Vulkan) ? SDL_WINDOW_VULKAN : 0;
 	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(), 
 		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), windowAdditionalFlags, this->options.getGraphics_LetterboxMode(),

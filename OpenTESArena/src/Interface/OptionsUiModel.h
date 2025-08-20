@@ -15,7 +15,7 @@ namespace OptionsUiModel
 	enum class Tab { Graphics, Audio, Input, Misc, Dev };
 
 	constexpr int TAB_COUNT = 5;
-	constexpr int OPTION_COUNT = 10; // @todo: support list box somehow
+	constexpr int OPTION_COUNT = 11; // @todo: support list box somehow
 
 	const std::string BackButtonText = "Return";
 
@@ -28,6 +28,7 @@ namespace OptionsUiModel
 	const std::string CURSOR_SCALE_NAME = "Cursor Scale";
 	const std::string FPS_LIMIT_NAME = "FPS Limit";
 	const std::string WINDOW_MODE_NAME = "Window Mode";
+	const std::string GRAPHICS_API_NAME = "Graphics API";
 	const std::string LETTERBOX_MODE_NAME = "Letterbox Mode";
 	const std::string MODERN_INTERFACE_NAME = "Modern Interface";
 	const std::string RENDER_THREADS_MODE_NAME = "Render Threads Mode";

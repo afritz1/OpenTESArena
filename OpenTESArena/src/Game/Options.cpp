@@ -20,6 +20,7 @@ namespace
 		{ Options::Key_Graphics_ScreenWidth, Options::OptionType_Graphics_ScreenWidth },
 		{ Options::Key_Graphics_ScreenHeight, Options::OptionType_Graphics_ScreenHeight },
 		{ Options::Key_Graphics_WindowMode, Options::OptionType_Graphics_WindowMode },
+		{ Options::Key_Graphics_GraphicsAPI, Options::OptionType_Graphics_GraphicsAPI },
 		{ Options::Key_Graphics_TargetFPS, Options::OptionType_Graphics_TargetFPS },
 		{ Options::Key_Graphics_ResolutionScale, Options::OptionType_Graphics_ResolutionScale },
 		{ Options::Key_Graphics_VerticalFOV, Options::OptionType_Graphics_VerticalFOV },
