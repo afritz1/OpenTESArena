@@ -5,6 +5,7 @@
 #include <functional>
 #include <vector>
 
+#define VULKAN_HPP_ASSERT(x) (nullptr)
 #include "vulkan/vulkan.hpp"
 
 #include "RenderBackend.h"
