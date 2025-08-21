@@ -285,6 +285,7 @@ private:
 	vk::DescriptorSetLayout globalDescriptorSetLayout;
 	vk::DescriptorSetLayout transformDescriptorSetLayout;
 	vk::DescriptorSetLayout materialDescriptorSetLayout;
+	vk::DescriptorSetLayout uiMaterialDescriptorSetLayout;
 	vk::DescriptorSet globalDescriptorSet;
 
 	vk::PipelineLayout scenePipelineLayout;

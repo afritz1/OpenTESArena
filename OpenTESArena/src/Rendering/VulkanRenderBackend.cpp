@@ -2320,6 +2320,12 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
 	};
 
+	const vk::DescriptorSetLayoutBinding uiMaterialDescriptorSetLayoutBindings[] =
+	{
+		// UI texture
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+	};
+
 	if (!TryCreateDescriptorSetLayout(this->device, globalDescriptorSetLayoutBindings, &this->globalDescriptorSetLayout))
 	{
 		DebugLogError("Couldn't create global descriptor set layout.");
@@ -2338,27 +2344,37 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	if (!TryCreateDescriptorSetLayout(this->device, uiMaterialDescriptorSetLayoutBindings, &this->uiMaterialDescriptorSetLayout))
+	{
+		DebugLogError("Couldn't create UI material descriptor set layout.");
+		return false;
+	}
+
 	if (!TryCreateDescriptorSet(this->device, this->globalDescriptorSetLayout, this->descriptorPool, &this->globalDescriptorSet))
 	{
 		DebugLogError("Couldn't create global descriptor set.");
 		return false;
 	}
 
-	const vk::DescriptorSetLayout descriptorSetLayouts[] =
+	const vk::DescriptorSetLayout sceneDescriptorSetLayouts[] =
 	{
 		this->globalDescriptorSetLayout,
 		this->transformDescriptorSetLayout,
 		this->materialDescriptorSetLayout
 	};
 
-	if (!TryCreatePipelineLayout(this->device, false, descriptorSetLayouts, &this->scenePipelineLayout))
+	if (!TryCreatePipelineLayout(this->device, false, sceneDescriptorSetLayouts, &this->scenePipelineLayout))
 	{
 		DebugLogError("Couldn't create scene pipeline layout.");
 		return false;
 	}
 
-	// @todo probably provide different descriptor set layouts for UI
-	if (!TryCreatePipelineLayout(this->device, true, descriptorSetLayouts, &this->uiPipelineLayout))
+	const vk::DescriptorSetLayout uiDescriptorSetLayouts[] =
+	{
+		this->uiMaterialDescriptorSetLayout
+	};
+
+	if (!TryCreatePipelineLayout(this->device, true, uiDescriptorSetLayouts, &this->uiPipelineLayout))
 	{
 		DebugLogError("Couldn't create UI pipeline layout.");
 		return false;
@@ -2755,6 +2771,12 @@ void VulkanRenderBackend::shutdown()
 		{
 			this->device.destroyPipelineLayout(this->scenePipelineLayout);
 			this->scenePipelineLayout = nullptr;
+		}
+
+		if (this->uiMaterialDescriptorSetLayout)
+		{
+			this->device.destroyDescriptorSetLayout(this->uiMaterialDescriptorSetLayout);
+			this->uiMaterialDescriptorSetLayout = nullptr;
 		}
 
 		if (this->materialDescriptorSetLayout)
@@ -3582,7 +3604,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 	}
 
 	vk::DescriptorSet descriptorSet;
-	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	if (!TryCreateDescriptorSet(this->device, this->uiMaterialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
 	{
 		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
 		this->device.destroySampler(sampler);
@@ -3921,14 +3943,14 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 				const UiTextureID textureID = renderElement.id;
 				const VulkanTexture &texture = this->uiTexturePool.get(textureID);
-				//this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->uiPipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->uiPipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);
 
 				const Rect presentRect = renderElement.rect;
 				const float uiVertexShaderPushConstants[] =
 				{
 					static_cast<float>(presentRect.x),
 					static_cast<float>(presentRect.y),
-					static_cast<float>(presentRect.width), 
+					static_cast<float>(presentRect.width),
 					static_cast<float>(presentRect.height),
 					static_cast<float>(this->swapchainExtent.width),
 					static_cast<float>(this->swapchainExtent.height)
