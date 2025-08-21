@@ -112,4 +112,4 @@ StarDensity=0
 PlayerHasLight=true
 
 # Whether to enable Vulkan API call debugging.
-EnableValidationLayers=true
+EnableValidationLayers=false
