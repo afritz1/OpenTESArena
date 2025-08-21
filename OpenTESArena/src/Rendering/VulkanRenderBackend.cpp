@@ -1524,11 +1524,22 @@ namespace
 // Vulkan pipelines
 namespace
 {
-	bool TryCreatePipelineLayout(vk::Device device, Span<const vk::DescriptorSetLayout> descriptorSetLayouts, vk::PipelineLayout *outPipelineLayout)
+	bool TryCreatePipelineLayout(vk::Device device, bool isUiPipeline, Span<const vk::DescriptorSetLayout> descriptorSetLayouts, vk::PipelineLayout *outPipelineLayout)
 	{
+		vk::PushConstantRange pushConstantRange;
+		pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+		pushConstantRange.offset = 0;
+		pushConstantRange.size = sizeof(float) * 6;
+
 		vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo;
 		pipelineLayoutCreateInfo.setLayoutCount = descriptorSetLayouts.getCount();
 		pipelineLayoutCreateInfo.pSetLayouts = descriptorSetLayouts.begin();
+
+		if (isUiPipeline)
+		{
+			pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
+			pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+		}
 
 		vk::ResultValue<vk::PipelineLayout> pipelineLayoutResult = device.createPipelineLayout(pipelineLayoutCreateInfo);
 		if (pipelineLayoutResult.result != vk::Result::eSuccess)
@@ -2340,9 +2351,16 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		this->materialDescriptorSetLayout
 	};
 
-	if (!TryCreatePipelineLayout(this->device, descriptorSetLayouts, &this->pipelineLayout))
+	if (!TryCreatePipelineLayout(this->device, false, descriptorSetLayouts, &this->scenePipelineLayout))
 	{
-		DebugLogError("Couldn't create pipeline layout.");
+		DebugLogError("Couldn't create scene pipeline layout.");
+		return false;
+	}
+
+	// @todo probably provide different descriptor set layouts for UI
+	if (!TryCreatePipelineLayout(this->device, true, descriptorSetLayouts, &this->uiPipelineLayout))
+	{
+		DebugLogError("Couldn't create UI pipeline layout.");
 		return false;
 	}
 
@@ -2372,10 +2390,11 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 		const bool isUiPipeline = requiredPipelineKey.fragmentShaderType == PixelShaderType::UiTexture;
 		const int positionComponentsPerVertex = isUiPipeline ? 2 : 3;
+		const vk::PipelineLayout pipelineLayout = isUiPipeline ? this->uiPipelineLayout : this->scenePipelineLayout;
 		const int subpassIndex = isUiPipeline ? 1 : 0;
 
 		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, positionComponentsPerVertex, requiredPipelineKey.depthTest,
-			requiredPipelineKey.backFaceCulling, this->pipelineLayout, this->renderPass, subpassIndex, &pipeline.pipeline))
+			requiredPipelineKey.backFaceCulling, pipelineLayout, this->renderPass, subpassIndex, &pipeline.pipeline))
 		{
 			DebugLogErrorFormat("Couldn't create graphics pipeline %d.", i);
 			return false;
@@ -2726,10 +2745,16 @@ void VulkanRenderBackend::shutdown()
 
 		this->graphicsPipelines.clear();
 
-		if (this->pipelineLayout)
+		if (this->uiPipelineLayout)
 		{
-			this->device.destroyPipelineLayout(this->pipelineLayout);
-			this->pipelineLayout = nullptr;
+			this->device.destroyPipelineLayout(this->uiPipelineLayout);
+			this->uiPipelineLayout = nullptr;
+		}
+
+		if (this->scenePipelineLayout)
+		{
+			this->device.destroyPipelineLayout(this->scenePipelineLayout);
+			this->scenePipelineLayout = nullptr;
 		}
 
 		if (this->materialDescriptorSetLayout)
@@ -3759,7 +3784,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer, paletteTexture.imageView, paletteTexture.sampler);
 
 		constexpr uint32_t globalDescriptorSetIndex = 0;
-		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, emptyDynamicOffsets);
+		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->scenePipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, emptyDynamicOffsets);
 
 		vk::Pipeline currentPipeline;
 		VertexPositionBufferID currentVertexPositionBufferID = -1;
@@ -3837,7 +3862,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
 				constexpr uint32_t transformDescriptorSetIndex = 1;
 				uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.alignedBytesPerElement;
-				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->scenePipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
 
 				const ObjectTextureID textureID = drawCall.textureIDs[0];
 				if (textureID != currentTextureID)
@@ -3846,7 +3871,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 					const VulkanTexture &texture = this->objectTexturePool.get(textureID);
 					constexpr uint32_t materialDescriptorSetIndex = 2;
-					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, emptyDynamicOffsets);
+					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->scenePipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, emptyDynamicOffsets);
 				}
 
 				constexpr uint32_t meshInstanceCount = 1;
@@ -3895,12 +3920,21 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				}
 
 				const UiTextureID textureID = renderElement.id;
+				const VulkanTexture &texture = this->uiTexturePool.get(textureID);
+				//this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->uiPipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);
+
 				const Rect presentRect = renderElement.rect;
+				const float uiVertexShaderPushConstants[] =
+				{
+					static_cast<float>(presentRect.x),
+					static_cast<float>(presentRect.y),
+					static_cast<float>(presentRect.width), 
+					static_cast<float>(presentRect.height),
+					static_cast<float>(this->swapchainExtent.width),
+					static_cast<float>(this->swapchainExtent.height)
+				};
 
-				//const VulkanTexture &texture = this->uiTexturePool.get(textureID);
-				//this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);				
-
-				// @todo use push constant for screen offset and scale of rectangle?
+				this->commandBuffer.pushConstants<float>(this->uiPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, uiVertexShaderPushConstants);
 
 				const int uiVertexCount = vertexPositionBuffer.vertexPosition.vertexCount;
 				constexpr int uiInstanceCount = 1;

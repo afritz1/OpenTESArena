@@ -287,7 +287,8 @@ private:
 	vk::DescriptorSetLayout materialDescriptorSetLayout;
 	vk::DescriptorSet globalDescriptorSet;
 
-	vk::PipelineLayout pipelineLayout;
+	vk::PipelineLayout scenePipelineLayout;
+	vk::PipelineLayout uiPipelineLayout;
 	Buffer<VulkanPipeline> graphicsPipelines;
 
 	vk::Semaphore imageIsAvailableSemaphore;
