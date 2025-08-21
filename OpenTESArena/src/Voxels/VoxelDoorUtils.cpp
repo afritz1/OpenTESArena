@@ -19,7 +19,9 @@ double VoxelDoorUtils::getAnimPercentOrZero(SNInt x, int y, WEInt z, const Voxel
 
 Radians VoxelDoorUtils::getSwingingRotationRadians(Radians baseRadians, double animPercent)
 {
-	return baseRadians + (-(Constants::HalfPi - Constants::Epsilon) * animPercent);
+	constexpr double bigEpsilon = 0.005; // Prevents Z-fighting with 32-bit depth
+	constexpr Radians maxSwingRadians = Constants::HalfPi - bigEpsilon;
+	return baseRadians - (maxSwingRadians * animPercent);
 }
 
 double VoxelDoorUtils::getAnimatedTexCoordPercent(double animPercent)
