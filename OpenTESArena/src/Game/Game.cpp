@@ -803,12 +803,13 @@ void Game::renderDebugInfo()
 	const Int2 size = debugInfoRect.getSize();
 	constexpr PivotType pivotType = PivotType::TopLeft;
 	constexpr RenderSpace renderSpace = RenderSpace::Classic;
-
-	double xPercent, yPercent, wPercent, hPercent;
+	
+	// @todo use the new GuiUtils window space rect
+	/*double xPercent, yPercent, wPercent, hPercent;
 	GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
 		renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
-	const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
+	const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);*/
 	// @todo properly allocate this stuff ^ as UiTextureID then draw that w/ UiCommandList. Probably pass UiCommandList& to this function
 	//this->renderer.draw(&renderElement, 1, renderSpace);
 }

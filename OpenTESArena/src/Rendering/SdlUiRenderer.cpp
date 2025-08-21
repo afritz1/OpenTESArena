@@ -175,81 +175,30 @@ void SdlUiRenderer::unlockTexture(UiTextureID textureID)
 	SDL_UnlockTexture(*texture);
 }
 
-void SdlUiRenderer::draw(const RenderElement2D *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect)
+void SdlUiRenderer::draw(Span<const RenderElement2D> elements)
 {
-	auto originalPointToNative = [&letterboxRect](const Int2 &point)
+	for (const RenderElement2D &element : elements)
 	{
-		const double originalXPercent = static_cast<double>(point.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
-		const double originalYPercent = static_cast<double>(point.y) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
+		const Rect clipRect = element.clipRect;
+		if (!clipRect.isEmpty())
+		{
+			const SDL_Rect sdlClipRect = clipRect.getSdlRect();
+			SDL_RenderSetClipRect(this->renderer, &sdlClipRect);
+		}
 
-		const double letterboxWidthReal = static_cast<double>(letterboxRect.width);
-		const double letterboxHeightReal = static_cast<double>(letterboxRect.height);
-		const Int2 letterboxPoint(
-			static_cast<int>(std::round(letterboxWidthReal * originalXPercent)),
-			static_cast<int>(std::round(letterboxHeightReal * originalYPercent)));
-		const Int2 nativePoint(
-			letterboxPoint.x + letterboxRect.getLeft(),
-			letterboxPoint.y + letterboxRect.getTop());
-		return nativePoint;
-	};
-
-	auto originalRectToNative = [&originalPointToNative](const SDL_Rect &rect)
-	{
-		const Int2 oldTopLeft(rect.x, rect.y);
-		const Int2 oldBottomRight(rect.x + rect.w, rect.y + rect.h);
-		const Int2 newTopLeft = originalPointToNative(oldTopLeft);
-		const Int2 newBottomRight = originalPointToNative(oldBottomRight);
-
-		SDL_Rect newRect;
-		newRect.x = newTopLeft.x;
-		newRect.y = newTopLeft.y;
-		newRect.w = newBottomRight.x - newTopLeft.x;
-		newRect.h = newBottomRight.y - newTopLeft.y;
-		return newRect;
-	};
-
-	int renderWidth, renderHeight;
-	if (SDL_GetRendererOutputSize(this->renderer, &renderWidth, &renderHeight) != 0)
-	{
-		DebugCrash("Couldn't get renderer output size.");
-	}
-
-	const double renderWidthReal = static_cast<double>(renderWidth);
-	const double renderHeightReal = static_cast<double>(renderHeight);
-
-	for (int i = 0; i < count; i++)
-	{
-		const RenderElement2D &element = elements[i];
 		SDL_Texture *texture = this->texturePool.get(element.id);
 
-		SDL_Rect nativeRect;
-		if (renderSpace == RenderSpace::Classic)
-		{
-			constexpr double screenWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
-			constexpr double screenHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
+		SDL_Rect rect;
+		rect.x = element.rect.x;
+		rect.y = element.rect.y;
+		rect.w = element.rect.width;
+		rect.h = element.rect.height;
 
-			// Rect in classic 320x200 space.
-			// @todo I wonder if the tiny cracks between things is because we round + truncate, then round + truncate again above?
-			SDL_Rect classicRect;
-			classicRect.x = static_cast<int>(std::round(static_cast<double>(element.x) * screenWidthReal));
-			classicRect.y = static_cast<int>(std::round(static_cast<double>(element.y) * screenHeightReal));
-			classicRect.w = static_cast<int>(std::round(static_cast<double>(element.width) * screenWidthReal)); // @todo: dimensions should honor pixel centers, right?
-			classicRect.h = static_cast<int>(std::round(static_cast<double>(element.height) * screenHeightReal));
+		SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
 
-			nativeRect = originalRectToNative(classicRect);
-		}
-		else if (renderSpace == RenderSpace::Native)
+		if (!clipRect.isEmpty())
 		{
-			nativeRect.x = static_cast<int>(std::round(static_cast<double>(element.x) * renderWidthReal));
-			nativeRect.y = static_cast<int>(std::round(static_cast<double>(element.y) * renderHeightReal));
-			nativeRect.w = static_cast<int>(std::round(static_cast<double>(element.width) * renderWidthReal)); // @todo: dimensions should honor pixel centers, right?
-			nativeRect.h = static_cast<int>(std::round(static_cast<double>(element.height) * renderHeightReal));
+			SDL_RenderSetClipRect(this->renderer, nullptr);
 		}
-		else
-		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(renderSpace)));
-		}
-
-		SDL_RenderCopy(this->renderer, texture, nullptr, &nativeRect);
 	}
 }

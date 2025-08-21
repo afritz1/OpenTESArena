@@ -1010,11 +1010,13 @@ void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
 		constexpr PivotType pivotType = PivotType::TopRight;
 		constexpr RenderSpace renderSpace = RenderSpace::Classic;
 
-		double xPercent, yPercent, wPercent, hPercent;
+
+		// @todo use the new GuiUtils window space rect
+		/*double xPercent, yPercent, wPercent, hPercent;
 		GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
 			renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
 
-		const RenderElement2D renderElement(quadtreeTextureRef.get(), xPercent, yPercent, wPercent, hPercent);
+		const RenderElement2D renderElement(quadtreeTextureRef.get(), xPercent, yPercent, wPercent, hPercent);*/
 		DebugNotImplemented();
 		//renderer.draw(&renderElement, 1, renderSpace);
 	}

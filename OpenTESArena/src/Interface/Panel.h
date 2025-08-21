@@ -7,6 +7,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Assets/TextureUtils.h"
 #include "../Input/InputManager.h"
+#include "../Rendering/Renderer.h"
 #include "../Math/Vector2.h"
 #include "../UI/Button.h"
 #include "../UI/UiDrawCall.h"
@@ -37,9 +38,11 @@ private:
 
 	std::vector<ButtonProxy> buttonProxies;
 
-	// Registered draw calls that will be iterated by the renderer.
+	// Registered draw calls that get evaluated every frame into a presentable texture + rect.
 	std::vector<UiDrawCall> drawCalls;
-	// @todo: add a 'secondaryDrawCalls' list.
+	
+	// Evaluated draw call results provided to the renderer every frame.
+	std::vector<RenderElement2D> renderElementsCache;
 
 	bool paused; // When not the top-most panel.
 protected:

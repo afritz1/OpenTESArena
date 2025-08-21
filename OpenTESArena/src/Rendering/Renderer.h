@@ -15,6 +15,7 @@
 #include "RenderTextureUtils.h"
 #include "Window.h"
 #include "../Assets/TextureUtils.h"
+#include "../Math/Rect.h"
 #include "../Math/Vector3.h"
 #include "../Utilities/Palette.h"
 
@@ -28,7 +29,6 @@ class TextureManager;
 enum class CursorAlignment;
 enum class RenderBackendType;
 
-struct Rect;
 struct RenderCamera;
 struct RenderCommandList;
 struct RenderFrameSettings;
@@ -40,11 +40,11 @@ struct Window;
 struct RenderElement2D
 {
 	UiTextureID id;
-	double x, y; // X and Y percents across the render space.
-	double width, height; // Percents of render space dimensions.
-	// @todo: optional shading/blending parameters? SDL_BlendMode? Alpha percent?
+	Rect rect; // In window space.
+	Rect clipRect; // In window space, non-empty if valid.
 
-	RenderElement2D(UiTextureID id, double x, double y, double width, double height);
+	RenderElement2D(UiTextureID id, Rect rect, Rect clipRect = Rect());
+	RenderElement2D();
 };
 
 // Profiler information from the most recently rendered frame.

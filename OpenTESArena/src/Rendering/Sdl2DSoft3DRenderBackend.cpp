@@ -461,59 +461,10 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 	const Int2 windowDims = this->window->getDimensions();
 	const Rect letterboxRect = this->window->getLetterboxRect();
 
-	// Sets the clip rectangle of the renderer so that pixels outside the specified area
-	// will not be rendered. If rect is null, then clipping is disabled.
-	auto setClipRect = [this](const SDL_Rect *rect)
-	{
-		if (rect != nullptr)
-		{
-			// @temp: assume in classic space
-			const Rect nativeRect = this->window->originalToNative(Rect(rect->x, rect->y, rect->w, rect->h));
-			const SDL_Rect nativeRectSdl = nativeRect.getSdlRect();
-			SDL_RenderSetClipRect(this->renderer, &nativeRectSdl);
-		}
-		else
-		{
-			SDL_RenderSetClipRect(this->renderer, nullptr);
-		}
-	};
-
 	for (int entryIndex = 0; entryIndex < uiCommandList.entryCount; entryIndex++)
 	{
-		Span<const UiDrawCall> uiDrawCalls = uiCommandList.entries[entryIndex];
-
-		for (const UiDrawCall &drawCall : uiDrawCalls)
-		{
-			if (!drawCall.activeFunc())
-			{
-				continue;
-			}
-
-			const std::optional<Rect> &optClipRect = drawCall.clipRect;
-			if (optClipRect.has_value())
-			{
-				const SDL_Rect clipRect = optClipRect->getSdlRect();
-				setClipRect(&clipRect);
-			}
-
-			const UiTextureID textureID = drawCall.textureFunc();
-			const Int2 position = drawCall.positionFunc();
-			const Int2 size = drawCall.sizeFunc();
-			const PivotType pivotType = drawCall.pivotFunc();
-			const RenderSpace renderSpace = drawCall.renderSpace;
-
-			double xPercent, yPercent, wPercent, hPercent;
-			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-			const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
-			this->renderer2D.draw(&renderElement, 1, renderSpace, letterboxRect);
-
-			if (optClipRect.has_value())
-			{
-				setClipRect(nullptr);
-			}
-		}
+		Span<const RenderElement2D> uiRenderElements = uiCommandList.entries[entryIndex];
+		this->renderer2D.draw(uiRenderElements);
 	}
 
 	SDL_SetRenderTarget(this->renderer, nullptr);

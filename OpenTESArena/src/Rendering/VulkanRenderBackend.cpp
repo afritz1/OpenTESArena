@@ -12,12 +12,12 @@
 #include "RenderDrawCall.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
+#include "Renderer.h"
 #include "RendererUtils.h"
 #include "VulkanRenderBackend.h"
 #include "Window.h"
 #include "../Math/MathUtils.h"
 #include "../UI/UiCommand.h"
-#include "../UI/UiDrawCall.h"
 #include "../UI/Surface.h"
 #include "../Utilities/Platform.h"
 #include "../World/MeshUtils.h"
@@ -3883,25 +3883,19 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		for (int i = 0; i < uiCommandList.entryCount; i++)
 		{
-			for (const UiDrawCall &drawCall : uiCommandList.entries[i])
+			for (const RenderElement2D &renderElement : uiCommandList.entries[i])
 			{
-				if (!drawCall.activeFunc())
+				const Rect presentClipRect = renderElement.clipRect;
+				if (!presentClipRect.isEmpty())
 				{
-					continue;
+					const vk::Offset2D clipOffset(presentClipRect.x, presentClipRect.y);
+					const vk::Extent2D clipExtent(presentClipRect.width, presentClipRect.height);
+					const vk::Rect2D clipScissor(clipOffset, clipExtent);
+					this->commandBuffer.setScissor(0, clipScissor);
 				}
 
-				const std::optional<Rect> &optClipRect = drawCall.clipRect;
-				if (optClipRect.has_value())
-				{
-					//const SDL_Rect clipRect = optClipRect->getSdlRect();
-					//setClipRect(&clipRect); // @todo
-				}
-
-				const UiTextureID textureID = drawCall.textureFunc();
-				const Int2 position = drawCall.positionFunc();
-				const Int2 size = drawCall.sizeFunc();
-				const PivotType pivotType = drawCall.pivotFunc();
-				const RenderSpace renderSpace = drawCall.renderSpace;
+				const UiTextureID textureID = renderElement.id;
+				const Rect presentRect = renderElement.rect;
 
 				//const VulkanTexture &texture = this->uiTexturePool.get(textureID);
 				//this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->pipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);				
@@ -3912,16 +3906,9 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				constexpr int uiInstanceCount = 1;
 				this->commandBuffer.draw(uiVertexCount, uiInstanceCount, 0, 0);
 
-				/*double xPercent, yPercent, wPercent, hPercent;
-				GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-					renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-				const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
-				this->renderer2D.draw(&renderElement, 1, renderSpace, letterboxRect);*/
-
-				if (optClipRect.has_value())
+				if (!presentClipRect.isEmpty())
 				{
-					//setClipRect(nullptr); // @todo
+					this->commandBuffer.setScissor(0, uiViewportScissor);
 				}
 			}
 		}

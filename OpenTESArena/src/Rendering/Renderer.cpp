@@ -74,14 +74,14 @@ namespace
 	}
 }
 
-RenderElement2D::RenderElement2D(UiTextureID id, double x, double y, double width, double height)
+RenderElement2D::RenderElement2D(UiTextureID id, Rect rect, Rect clipRect)
+	: rect(rect), clipRect(clipRect)
 {
 	this->id = id;
-	this->x = x;
-	this->y = y;
-	this->width = width;
-	this->height = height;
 }
+
+RenderElement2D::RenderElement2D()
+	: RenderElement2D(-1, Rect(), Rect()) { }
 
 RenderDisplayMode::RenderDisplayMode(int width, int height, int refreshRate)
 {

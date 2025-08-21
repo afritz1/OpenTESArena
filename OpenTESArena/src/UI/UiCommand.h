@@ -3,21 +3,21 @@
 
 #include "components/utilities/Span.h"
 
-struct UiDrawCall;
+struct RenderElement2D;
 
 struct UiCommandList
 {
 	static constexpr int MAX_ENTRIES = 8;
 
-	// One per range of UI draw calls. Each range starts execution once the previous one is complete.
-	Span<const UiDrawCall> entries[MAX_ENTRIES];
+	// One per range of UI shapes to draw. Each range starts execution once the previous one is complete.
+	Span<const RenderElement2D> entries[MAX_ENTRIES];
 	int entryCount;
 
 	UiCommandList();
 
-	int getTotalDrawCallCount() const;
+	int getTotalElementCount() const;
 
-	void addDrawCalls(Span<const UiDrawCall> drawCalls);
+	void addElements(Span<const RenderElement2D> elements);
 	void clear();
 };
 
