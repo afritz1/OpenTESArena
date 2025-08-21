@@ -2930,102 +2930,142 @@ void VulkanRenderBackend::shutdown()
 
 void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
 {
+	for (vk::Framebuffer framebuffer : this->swapchainFramebuffers)
+	{
+		this->device.destroyFramebuffer(framebuffer);
+	}
+
+	this->swapchainFramebuffers.clear();
+
+	if (this->renderPass)
+	{
+		this->device.destroyRenderPass(this->renderPass);
+		this->renderPass = nullptr;
+	}
+
+	if (this->depthImageView)
+	{
+		this->device.destroyImageView(this->depthImageView);
+		this->depthImageView = nullptr;
+	}
+
+	if (this->depthImage)
+	{
+		this->device.destroyImage(this->depthImage);
+		this->depthImage = nullptr;
+	}
+
+	if (this->depthDeviceMemory)
+	{
+		this->device.freeMemory(this->depthDeviceMemory);
+		this->depthDeviceMemory = nullptr;
+	}
+
+	for (vk::ImageView imageView : this->swapchainImageViews)
+	{
+		this->device.destroyImageView(imageView);
+	}
+
+	this->swapchainImageViews.clear();
+
 	if (this->swapchain)
 	{
-		for (vk::Framebuffer framebuffer : this->swapchainFramebuffers)
-		{
-			this->device.destroyFramebuffer(framebuffer);
-		}
-
-		this->swapchainFramebuffers.clear();
-
-		this->device.destroyRenderPass(this->renderPass);
-		this->device.destroyImageView(this->depthImageView);
-		this->device.destroyImage(this->depthImage);
-		this->device.freeMemory(this->depthDeviceMemory);
-
-		for (vk::ImageView imageView : this->swapchainImageViews)
-		{
-			this->device.destroyImageView(imageView);
-		}
-
-		this->swapchainImageViews.clear();
-
 		this->device.destroySwapchainKHR(this->swapchain);
+		this->swapchain = nullptr;
+	}
 
-		this->swapchainExtent = vk::Extent2D(windowWidth, windowHeight);
+	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
+	if (!TryGetSurfaceCapabilities(this->physicalDevice, this->surface, &surfaceCapabilities))
+	{
+		DebugLogErrorFormat("Couldn't get surface capabilities for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 
-		vk::SurfaceFormatKHR surfaceFormat;
-		if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, DefaultSwapchainSurfaceFormat, DefaultSwapchainColorSpace, &surfaceFormat))
-		{
-			DebugLogErrorFormat("Couldn't get surface format for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	const int minWindowWidth = surfaceCapabilities.minImageExtent.width;
+	const int maxWindowWidth = surfaceCapabilities.maxImageExtent.width;
+	const int minWindowHeight = surfaceCapabilities.minImageExtent.height;
+	const int maxWindowHeight = surfaceCapabilities.maxImageExtent.height;
+	const bool isSurfaceCapableOfValidDimensions = (maxWindowWidth > 0) && (maxWindowHeight > 0);
+	if (!isSurfaceCapableOfValidDimensions)
+	{
+		// Alt-tabbed out of borderless/exclusive fullscreen.
+		return;
+	}
 
-		vk::PresentModeKHR presentMode;
-		if (!TryGetPresentModeOrDefault(this->physicalDevice, this->surface, DefaultSwapchainPresentMode, &presentMode))
-		{
-			DebugLogErrorFormat("Couldn't get present mode for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	const bool isValidWindowWidth = (windowWidth >= minWindowWidth) && (windowWidth <= maxWindowWidth);
+	const bool isValidWindowHeight = (windowHeight >= minWindowHeight) && (windowHeight <= maxWindowHeight);
+	if (!isValidWindowWidth || !isValidWindowHeight)
+	{
+		DebugLogWarningFormat("Requested window dimensions %dx%d are outside of capabilities (min %dx%d, max %dx%d).",
+			windowWidth, windowHeight, minWindowWidth, minWindowHeight, maxWindowWidth, maxWindowHeight);
+		return;
+	}
 
-		vk::SurfaceCapabilitiesKHR surfaceCapabilities;
-		if (!TryGetSurfaceCapabilities(this->physicalDevice, this->surface, &surfaceCapabilities))
-		{
-			DebugLogErrorFormat("Couldn't get surface capabilities for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	this->swapchainExtent = vk::Extent2D(windowWidth, windowHeight);
 
-		if (!TryCreateSwapchain(this->device, this->surface, surfaceFormat, presentMode, surfaceCapabilities, this->swapchainExtent,
-			this->graphicsQueueFamilyIndex, this->presentQueueFamilyIndex, &this->swapchain))
-		{
-			DebugLogErrorFormat("Couldn't create swapchain for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	vk::SurfaceFormatKHR surfaceFormat;
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, DefaultSwapchainSurfaceFormat, DefaultSwapchainColorSpace, &surfaceFormat))
+	{
+		DebugLogErrorFormat("Couldn't get surface format for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 
-		if (!TryCreateSwapchainImageViews(this->device, this->swapchain, surfaceFormat, &this->swapchainImageViews))
-		{
-			DebugLogErrorFormat("Couldn't create swapchain image views for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	vk::PresentModeKHR presentMode;
+	if (!TryGetPresentModeOrDefault(this->physicalDevice, this->surface, DefaultSwapchainPresentMode, &presentMode))
+	{
+		DebugLogErrorFormat("Couldn't get present mode for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 
-		const vk::MemoryAllocateInfo depthMemoryAllocateInfo = CreateImageMemoryAllocateInfo(this->device, this->swapchainExtent.width, this->swapchainExtent.height,
-			DepthBufferFormat, DepthBufferUsageFlags, this->physicalDevice);
-		if (!TryAllocateMemory(this->device, depthMemoryAllocateInfo, &this->depthDeviceMemory))
-		{
-			DebugLogErrorFormat("Couldn't allocate depth image memory for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	if (!TryCreateSwapchain(this->device, this->surface, surfaceFormat, presentMode, surfaceCapabilities, this->swapchainExtent,
+		this->graphicsQueueFamilyIndex, this->presentQueueFamilyIndex, &this->swapchain))
+	{
+		DebugLogErrorFormat("Couldn't create swapchain for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 
-		if (!TryCreateImage(this->device, this->swapchainExtent.width, this->swapchainExtent.height, DepthBufferFormat, DepthBufferUsageFlags, this->graphicsQueueFamilyIndex, &this->depthImage))
-		{
-			DebugLogErrorFormat("Couldn't create depth image for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	if (!TryCreateSwapchainImageViews(this->device, this->swapchain, surfaceFormat, &this->swapchainImageViews))
+	{
+		DebugLogErrorFormat("Couldn't create swapchain image views for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 
-		if (!TryBindImageToMemory(this->device, this->depthImage, this->depthDeviceMemory, 0))
-		{
-			DebugLogErrorFormat("Couldn't bind depth image to memory for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	const vk::MemoryAllocateInfo depthMemoryAllocateInfo = CreateImageMemoryAllocateInfo(this->device, this->swapchainExtent.width, this->swapchainExtent.height,
+		DepthBufferFormat, DepthBufferUsageFlags, this->physicalDevice);
+	if (!TryAllocateMemory(this->device, depthMemoryAllocateInfo, &this->depthDeviceMemory))
+	{
+		DebugLogErrorFormat("Couldn't allocate depth image memory for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 
-		if (!TryCreateImageView(this->device, DepthBufferFormat, vk::ImageAspectFlagBits::eDepth, this->depthImage, &this->depthImageView))
-		{
-			DebugLogErrorFormat("Couldn't create depth image view for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	if (!TryCreateImage(this->device, this->swapchainExtent.width, this->swapchainExtent.height, DepthBufferFormat, DepthBufferUsageFlags, this->graphicsQueueFamilyIndex, &this->depthImage))
+	{
+		DebugLogErrorFormat("Couldn't create depth image for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 
-		if (!TryCreateSwapchainRenderPass(this->device, surfaceFormat, &this->renderPass))
-		{
-			DebugLogErrorFormat("Couldn't create swapchain render pass for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	if (!TryBindImageToMemory(this->device, this->depthImage, this->depthDeviceMemory, 0))
+	{
+		DebugLogErrorFormat("Couldn't bind depth image to memory for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 
-		if (!TryCreateSwapchainFramebuffers(this->device, this->swapchainImageViews, this->depthImageView, this->swapchainExtent, this->renderPass, &this->swapchainFramebuffers))
-		{
-			DebugLogErrorFormat("Couldn't create swapchain framebuffers for resize to %dx%d.", windowWidth, windowHeight);
-			return;
-		}
+	if (!TryCreateImageView(this->device, DepthBufferFormat, vk::ImageAspectFlagBits::eDepth, this->depthImage, &this->depthImageView))
+	{
+		DebugLogErrorFormat("Couldn't create depth image view for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
+
+	if (!TryCreateSwapchainRenderPass(this->device, surfaceFormat, &this->renderPass))
+	{
+		DebugLogErrorFormat("Couldn't create swapchain render pass for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
+
+	if (!TryCreateSwapchainFramebuffers(this->device, this->swapchainImageViews, this->depthImageView, this->swapchainExtent, this->renderPass, &this->swapchainFramebuffers))
+	{
+		DebugLogErrorFormat("Couldn't create swapchain framebuffers for resize to %dx%d.", windowWidth, windowHeight);
+		return;
 	}
 }
 
