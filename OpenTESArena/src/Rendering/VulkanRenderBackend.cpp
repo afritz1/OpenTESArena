@@ -57,6 +57,10 @@ namespace
 	constexpr vk::Format ImageFormatUnorm32 = vk::Format::eB8G8R8A8Unorm; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
 	constexpr vk::Format MaxCompatibilityImageFormatUnorm32 = vk::Format::eR8G8B8A8Unorm;
 
+	constexpr vk::PresentModeKHR DefaultSwapchainPresentMode = vk::PresentModeKHR::eImmediate;
+	constexpr vk::Format DefaultSwapchainSurfaceFormat = vk::Format::eB8G8R8A8Unorm;
+	constexpr vk::ColorSpaceKHR DefaultSwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
+
 	constexpr int MaxUniformBufferDescriptorSets = 1;
 	constexpr int MaxUniformBufferDynamicDescriptorSets = 24576; // @todo this is very high, probably want to batch
 	constexpr int MaxImageDescriptorSets = 4096;
@@ -2163,14 +2167,14 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	this->presentQueue = this->device.getQueue(this->presentQueueFamilyIndex, 0);
 
 	vk::SurfaceFormatKHR surfaceFormat;
-	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear, &surfaceFormat))
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, DefaultSwapchainSurfaceFormat, DefaultSwapchainColorSpace, &surfaceFormat))
 	{
 		DebugLogError("Couldn't get surface format for swapchain.");
 		return false;
 	}
 
 	vk::PresentModeKHR presentMode;
-	if (!TryGetPresentModeOrDefault(this->physicalDevice, this->surface, vk::PresentModeKHR::eImmediate, &presentMode))
+	if (!TryGetPresentModeOrDefault(this->physicalDevice, this->surface, DefaultSwapchainPresentMode, &presentMode))
 	{
 		DebugLogError("Couldn't get present mode for swapchain.");
 		return false;
@@ -2926,12 +2930,108 @@ void VulkanRenderBackend::shutdown()
 
 void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
 {
-	DebugNotImplemented();
+	if (this->swapchain)
+	{
+		for (vk::Framebuffer framebuffer : this->swapchainFramebuffers)
+		{
+			this->device.destroyFramebuffer(framebuffer);
+		}
+
+		this->swapchainFramebuffers.clear();
+
+		this->device.destroyRenderPass(this->renderPass);
+		this->device.destroyImageView(this->depthImageView);
+		this->device.destroyImage(this->depthImage);
+		this->device.freeMemory(this->depthDeviceMemory);
+
+		for (vk::ImageView imageView : this->swapchainImageViews)
+		{
+			this->device.destroyImageView(imageView);
+		}
+
+		this->swapchainImageViews.clear();
+
+		this->device.destroySwapchainKHR(this->swapchain);
+
+		this->swapchainExtent = vk::Extent2D(windowWidth, windowHeight);
+
+		vk::SurfaceFormatKHR surfaceFormat;
+		if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, DefaultSwapchainSurfaceFormat, DefaultSwapchainColorSpace, &surfaceFormat))
+		{
+			DebugLogErrorFormat("Couldn't get surface format for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		vk::PresentModeKHR presentMode;
+		if (!TryGetPresentModeOrDefault(this->physicalDevice, this->surface, DefaultSwapchainPresentMode, &presentMode))
+		{
+			DebugLogErrorFormat("Couldn't get present mode for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		vk::SurfaceCapabilitiesKHR surfaceCapabilities;
+		if (!TryGetSurfaceCapabilities(this->physicalDevice, this->surface, &surfaceCapabilities))
+		{
+			DebugLogErrorFormat("Couldn't get surface capabilities for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		if (!TryCreateSwapchain(this->device, this->surface, surfaceFormat, presentMode, surfaceCapabilities, this->swapchainExtent,
+			this->graphicsQueueFamilyIndex, this->presentQueueFamilyIndex, &this->swapchain))
+		{
+			DebugLogErrorFormat("Couldn't create swapchain for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		if (!TryCreateSwapchainImageViews(this->device, this->swapchain, surfaceFormat, &this->swapchainImageViews))
+		{
+			DebugLogErrorFormat("Couldn't create swapchain image views for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		const vk::MemoryAllocateInfo depthMemoryAllocateInfo = CreateImageMemoryAllocateInfo(this->device, this->swapchainExtent.width, this->swapchainExtent.height,
+			DepthBufferFormat, DepthBufferUsageFlags, this->physicalDevice);
+		if (!TryAllocateMemory(this->device, depthMemoryAllocateInfo, &this->depthDeviceMemory))
+		{
+			DebugLogErrorFormat("Couldn't allocate depth image memory for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		if (!TryCreateImage(this->device, this->swapchainExtent.width, this->swapchainExtent.height, DepthBufferFormat, DepthBufferUsageFlags, this->graphicsQueueFamilyIndex, &this->depthImage))
+		{
+			DebugLogErrorFormat("Couldn't create depth image for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		if (!TryBindImageToMemory(this->device, this->depthImage, this->depthDeviceMemory, 0))
+		{
+			DebugLogErrorFormat("Couldn't bind depth image to memory for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		if (!TryCreateImageView(this->device, DepthBufferFormat, vk::ImageAspectFlagBits::eDepth, this->depthImage, &this->depthImageView))
+		{
+			DebugLogErrorFormat("Couldn't create depth image view for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		if (!TryCreateSwapchainRenderPass(this->device, surfaceFormat, &this->renderPass))
+		{
+			DebugLogErrorFormat("Couldn't create swapchain render pass for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+
+		if (!TryCreateSwapchainFramebuffers(this->device, this->swapchainImageViews, this->depthImageView, this->swapchainExtent, this->renderPass, &this->swapchainFramebuffers))
+		{
+			DebugLogErrorFormat("Couldn't create swapchain framebuffers for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
+	}
 }
 
 void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
 {
-	DebugNotImplemented();
+	DebugNotImplementedMsg("handleRenderTargetsReset()");
 }
 
 Renderer3DProfilerData VulkanRenderBackend::getProfilerData() const
