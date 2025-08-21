@@ -123,6 +123,7 @@ namespace
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelColor, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelOpacity, false, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false),
 
 		VulkanPipelineKey(VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true),
