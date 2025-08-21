@@ -195,7 +195,7 @@ namespace
 
 			if (!validationLayers.empty())
 			{
-				DebugLogFormat("Instance validation layers (%d):", validationLayers.size());
+				DebugLog("Instance validation layers:");
 				for (const char *validationLayer : validationLayers)
 				{
 					DebugLogFormat("- %s", validationLayer);
@@ -3817,6 +3817,20 @@ void VulkanRenderBackend::unlockUiTexture(UiTextureID id)
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
+	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
+	if (!TryGetSurfaceCapabilities(this->physicalDevice, this->surface, &surfaceCapabilities))
+	{
+		DebugLogErrorFormat("Couldn't get surface capabilities for checking window.");
+		return;
+	}
+
+	const vk::Extent2D currentSwapchainExtent = surfaceCapabilities.currentExtent;
+	const bool isWindowMinimized = currentSwapchainExtent.width == 0 || currentSwapchainExtent.height == 0;
+	if (isWindowMinimized)
+	{
+		return;
+	}
+
 	constexpr uint64_t acquireTimeout = TIMEOUT_UNLIMITED;
 	vk::ResultValue<uint32_t> acquiredSwapchainImageIndexResult = this->device.acquireNextImageKHR(this->swapchain, acquireTimeout, this->imageIsAvailableSemaphore);
 	if (acquiredSwapchainImageIndexResult.result != vk::Result::eSuccess)
