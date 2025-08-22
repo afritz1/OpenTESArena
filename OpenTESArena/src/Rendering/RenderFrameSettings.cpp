@@ -2,6 +2,7 @@
 
 RenderFrameSettings::RenderFrameSettings()
 {
+	this->clearColor = Colors::Black;
 	this->ambientPercent = 0.0;
 	this->screenSpaceAnimPercent = 0.0;
 	this->paletteTextureID = -1;
@@ -11,9 +12,10 @@ RenderFrameSettings::RenderFrameSettings()
 	this->ditheringMode = static_cast<DitheringMode>(-1);
 }
 
-void RenderFrameSettings::init(double ambientPercent, Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
-	ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode)
+void RenderFrameSettings::init(Color clearColor, double ambientPercent, Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent,
+	ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode)
 {
+	this->clearColor = clearColor;
 	this->ambientPercent = ambientPercent;
 	this->visibleLightIDs = visibleLightIDs;
 	this->screenSpaceAnimPercent = screenSpaceAnimPercent;

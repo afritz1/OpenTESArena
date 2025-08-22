@@ -6,6 +6,7 @@
 #include "RenderBuffer.h"
 #include "RenderCamera.h"
 #include "RenderCommand.h"
+#include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
@@ -404,24 +405,16 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 
 	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
 
-	constexpr Color clearColor = Colors::Black;
+	const Color clearColor = frameSettings.clearColor;
 	SDL_SetRenderDrawColor(this->renderer, clearColor.r, clearColor.g, clearColor.b, clearColor.a);
 	SDL_RenderClear(this->renderer);
 
 	// Render the game world (no UI).
 	if (renderCommandList.entryCount > 0)
 	{
-		int gameWorldTextureWidth, gameWorldTextureHeight;
-		int status = SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &gameWorldTextureWidth, &gameWorldTextureHeight);
-		if (status != 0)
-		{
-			DebugLogErrorFormat("Couldn't query game world texture dimensions for scene rendering (%s).", SDL_GetError());
-			return;
-		}
-
 		uint32_t *outputBuffer;
 		int gameWorldPitch;
-		status = SDL_LockTexture(this->gameWorldTexture, nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
+		int status = SDL_LockTexture(this->gameWorldTexture, nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
 		if (status != 0)
 		{
 			DebugLogErrorFormat("Couldn't lock game world texture for scene rendering (%s).", SDL_GetError());
@@ -457,9 +450,6 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 			swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalCoverageTests,
 			swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);*/
 	}
-
-	const Int2 windowDims = this->window->getDimensions();
-	const Rect letterboxRect = this->window->getLetterboxRect();
 
 	for (int entryIndex = 0; entryIndex < uiCommandList.entryCount; entryIndex++)
 	{

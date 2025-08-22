@@ -1038,8 +1038,8 @@ void Game::loop()
 				const ObjectTextureID skyBgTextureID = renderSkyManager.getBgTextureID();
 				const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
 
-				frameSettings.init(ambientPercent, visibleLightIDs, screenSpaceAnimPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
-					this->options.getGraphics_RenderThreadsMode(), ditheringMode);
+				frameSettings.init(Colors::Black, ambientPercent, visibleLightIDs, screenSpaceAnimPercent, paletteTextureID, lightTableTextureID,
+					skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
 			this->panel->populateCommandList(uiCommandList);

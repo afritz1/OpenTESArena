@@ -6,12 +6,14 @@
 #include "RenderLightUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
+#include "../Utilities/Color.h"
 
 #include "components/utilities/Span.h"
 
 // 3D renderer variables that can change each frame.
 struct RenderFrameSettings
 {
+	Color clearColor;
 	double ambientPercent;
 	Span<const RenderLightID> visibleLightIDs;
 	double screenSpaceAnimPercent;
@@ -21,7 +23,7 @@ struct RenderFrameSettings
 
 	RenderFrameSettings();
 
-	void init(double ambientPercent, Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
+	void init(Color clearColor, double ambientPercent, Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
 		ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 };
 

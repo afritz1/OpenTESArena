@@ -3919,8 +3919,14 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			imageMemoryBarriers);
 	}
 
+	const Float4 clearColor(
+		static_cast<float>(frameSettings.clearColor.r) / 255.0f,
+		static_cast<float>(frameSettings.clearColor.g) / 255.0f,
+		static_cast<float>(frameSettings.clearColor.b) / 255.0f,
+		static_cast<float>(frameSettings.clearColor.a) / 255.0f);
+
 	vk::ClearValue clearValues[2];
-	clearValues[0].color = vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f);
+	clearValues[0].color = vk::ClearColorValue(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 	clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
 	vk::RenderPassBeginInfo renderPassBeginInfo;
