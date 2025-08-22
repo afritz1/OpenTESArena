@@ -575,3 +575,19 @@ const TextureFileMetadata &TextureManager::getMetadataHandle(TextureFileMetadata
 	DebugAssertIndex(this->metadatas, id);
 	return this->metadatas[id];
 }
+
+int TextureManager::getTotalBytes() const
+{
+	int byteCount = 0;
+	for (const Palette &palette : this->palettes)
+	{
+		byteCount += sizeof(Palette);
+	}
+
+	for (const TextureBuilder &textureBuilder : this->textureBuilders)
+	{
+		byteCount += textureBuilder.bytes.getCount();
+	}
+
+	return byteCount;
+}
