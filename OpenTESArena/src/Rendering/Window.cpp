@@ -195,10 +195,9 @@ double Window::getDpiScale() const
 	}
 }
 
-Int2 Window::getViewDimensions() const
+Int2 Window::getSceneViewDimensions() const
 {
-	constexpr int classicViewHeight = ArenaRenderUtils::SCREEN_HEIGHT - 53;
-	constexpr double classicViewHeightRatio = static_cast<double>(classicViewHeight) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
+	constexpr double classicViewHeightRatio = static_cast<double>(ArenaRenderUtils::SCENE_VIEW_HEIGHT) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
 	const Int2 windowDims = this->getDimensions();
 	const int viewHeight = this->fullGameWindow ? windowDims.y : static_cast<int>(std::ceil(windowDims.y * classicViewHeightRatio));
@@ -206,9 +205,9 @@ Int2 Window::getViewDimensions() const
 	return Int2(windowDims.x, viewHeight);
 }
 
-double Window::getViewAspectRatio() const
+double Window::getSceneViewAspectRatio() const
 {
-	const Int2 viewDims = this->getViewDimensions();
+	const Int2 viewDims = this->getSceneViewDimensions();
 	return static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
 }
 

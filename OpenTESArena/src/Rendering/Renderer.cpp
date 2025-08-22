@@ -167,7 +167,7 @@ bool Renderer::init(const Window *window, RenderBackendType backendType, const R
 		return false;
 	}
 
-	const Int2 viewDims = window->getViewDimensions();
+	const Int2 viewDims = window->getSceneViewDimensions();
 	const double resolutionScale = resolutionScaleFunc();
 	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
@@ -198,7 +198,7 @@ void Renderer::resize(int width, int height)
 {
 	// The window's dimensions are resized automatically by SDL. The renderer's are not.
 	const Int2 windowDims = this->window->getDimensions();
-	const Int2 viewDims = this->window->getViewDimensions();
+	const Int2 viewDims = this->window->getSceneViewDimensions();
 	const double resolutionScale = this->resolutionScaleFunc();
 	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 	this->backend->resize(windowDims.x, windowDims.y, internalDims.x, internalDims.y);
@@ -207,7 +207,7 @@ void Renderer::resize(int width, int height)
 void Renderer::handleRenderTargetsReset()
 {
 	const Int2 windowDims = this->window->getDimensions();
-	const Int2 viewDims = this->window->getViewDimensions();
+	const Int2 viewDims = this->window->getSceneViewDimensions();
 	const double resolutionScale = this->resolutionScaleFunc();
 	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 	this->backend->handleRenderTargetsReset(windowDims.x, windowDims.y, internalDims.x, internalDims.y);

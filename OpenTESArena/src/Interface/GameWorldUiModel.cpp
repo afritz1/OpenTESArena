@@ -250,10 +250,10 @@ VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 
 	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
 
 	RenderCamera renderCamera;
-	renderCamera.init(playerPosition, player.angleX, player.angleY, options.getGraphics_VerticalFOV(), window.getViewAspectRatio(), tallPixelRatio);
+	renderCamera.init(playerPosition, player.angleX, player.angleY, options.getGraphics_VerticalFOV(), window.getSceneViewAspectRatio(), tallPixelRatio);
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.
-	const Int2 viewDims = window.getViewDimensions();
+	const Int2 viewDims = window.getSceneViewDimensions();
 	const double screenXPercent = (static_cast<double>(windowPoint.x) + 0.50) / static_cast<double>(viewDims.x);
 	const double screenYPercent = (static_cast<double>(windowPoint.y) + 0.50) / static_cast<double>(viewDims.y);
 

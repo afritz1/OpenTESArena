@@ -430,7 +430,7 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 		const auto presentStartTime = std::chrono::high_resolution_clock::now();
 		SDL_UnlockTexture(this->gameWorldTexture);
 
-		const Int2 viewDims = this->window->getViewDimensions();
+		const Int2 viewDims = this->window->getSceneViewDimensions();
 
 		SDL_Rect gameWorldDrawRect;
 		gameWorldDrawRect.x = 0;

@@ -569,7 +569,7 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 		const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
 		
 		RenderCamera renderCamera;
-		renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, this->options.getGraphics_VerticalFOV(), this->window.getViewAspectRatio(), tallPixelRatio);
+		renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, this->options.getGraphics_VerticalFOV(), this->window.getSceneViewAspectRatio(), tallPixelRatio);
 
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
@@ -955,7 +955,7 @@ void Game::loop()
 				const Degrees newPlayerPitch = this->player.angleY;
 				const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
 				RenderCamera renderCamera;
-				renderCamera.init(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(), this->window.getViewAspectRatio(), tallPixelRatio);
+				renderCamera.init(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(), this->window.getSceneViewAspectRatio(), tallPixelRatio);
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(renderCamera, *this);
@@ -1014,7 +1014,7 @@ void Game::loop()
 
 				const WorldDouble3 playerPosition = this->player.getEyePosition();
 				const Degrees fovY = this->options.getGraphics_VerticalFOV();
-				const double viewAspectRatio = this->window.getViewAspectRatio();
+				const double viewAspectRatio = this->window.getSceneViewAspectRatio();
 				const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
 				renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, fovY, viewAspectRatio, tallPixelRatio);
 

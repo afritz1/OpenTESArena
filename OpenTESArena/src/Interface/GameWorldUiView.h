@@ -55,7 +55,7 @@ namespace GameWorldUiView
 	Rect scaleClassicCursorRectToNative(int rectIndex, double xScale, double yScale);
 
 	// Game world interface UI area.
-	constexpr Rect UiBottomRegion(0, 147, 320, 53);
+	constexpr Rect UiBottomRegion(0, ArenaRenderUtils::SCREEN_HEIGHT - ArenaRenderUtils::SCENE_UI_HEIGHT, ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCENE_UI_HEIGHT);
 
 	// Arrow cursor pivots. These offset the drawn cursor relative to the mouse position so the cursor's
 	// click area is closer to the tip of each arrow.

@@ -18,6 +18,8 @@ namespace ArenaRenderUtils
 {
 	constexpr int SCREEN_WIDTH = 320;
 	constexpr int SCREEN_HEIGHT = 200;
+	constexpr int SCENE_UI_HEIGHT = 53;
+	constexpr int SCENE_VIEW_HEIGHT = SCREEN_HEIGHT - SCENE_UI_HEIGHT;
 	constexpr double SCREEN_WIDTH_REAL = static_cast<double>(SCREEN_WIDTH);
 	constexpr double SCREEN_HEIGHT_REAL = static_cast<double>(SCREEN_HEIGHT);
 	constexpr double ASPECT_RATIO = SCREEN_WIDTH_REAL / SCREEN_HEIGHT_REAL;

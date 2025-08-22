@@ -123,12 +123,12 @@ Rect GameWorldUiView::getCampButtonRect()
 
 Rect GameWorldUiView::getScrollUpButtonRect()
 {
-	return Rect(208, (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 3, 9, 9);
+	return Rect(208, ArenaRenderUtils::SCENE_VIEW_HEIGHT + 3, 9, 9);
 }
 
 Rect GameWorldUiView::getScrollDownButtonRect()
 {
-	return Rect(208, (ArenaRenderUtils::SCREEN_HEIGHT - 53) + 44, 9, 9);
+	return Rect(208, ArenaRenderUtils::SCENE_VIEW_HEIGHT + 44, 9, 9);
 }
 
 Rect GameWorldUiView::getMapButtonRect()
@@ -731,7 +731,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const auto &player = game.player;
 	const CoordDouble3 rayStart = player.getEyeCoord();
 	const Double3 &cameraDirection = player.forward;
-	const double viewAspectRatio = window.getViewAspectRatio();
+	const double viewAspectRatio = window.getSceneViewAspectRatio();
 
 	const double ceilingScale = gameState.getActiveCeilingScale();
 	const SceneManager &sceneManager = game.sceneManager;
@@ -793,7 +793,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	const Double3 &cameraDirection = player.forward;
 
 	const Window &window = game.window;
-	const Int2 viewDims = window.getViewDimensions();
+	const Int2 viewDims = window.getSceneViewDimensions();
 	const Int2 viewCenterPoint(viewDims.x / 2, viewDims.y / 2);
 
 	const CoordDouble3 rayStart = player.getEyeCoord();

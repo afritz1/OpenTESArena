@@ -52,8 +52,8 @@ struct Window
 
 	// The "view height" is the height in pixels for the visible game world. This depends on whether the whole screen
 	// is rendered or just the portion above the interface. The game interface is 53 pixels tall in 320x200.
-	Int2 getViewDimensions() const;
-	double getViewAspectRatio() const;
+	Int2 getSceneViewDimensions() const;
+	double getSceneViewAspectRatio() const;
 
 	// For the "letterbox" part of the screen, scaled to fit the window using the given letterbox aspect.
 	Rect getLetterboxRect() const;
