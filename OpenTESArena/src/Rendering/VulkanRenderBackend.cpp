@@ -3961,7 +3961,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 	if (renderCommandList.entryCount > 0)
 	{
-		// @todo this should be the view dimensions, different for classic interface mode
 		vk::Viewport sceneViewport;
 		sceneViewport.width = static_cast<float>(this->sceneViewExtent.width);
 		sceneViewport.height = static_cast<float>(this->sceneViewExtent.height);
