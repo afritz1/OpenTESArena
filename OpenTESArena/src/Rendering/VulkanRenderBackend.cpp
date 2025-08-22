@@ -57,7 +57,8 @@ namespace
 	constexpr vk::Format ImageFormatUnorm32 = vk::Format::eB8G8R8A8Unorm; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
 	constexpr vk::Format MaxCompatibilityImageFormatUnorm32 = vk::Format::eR8G8B8A8Unorm;
 
-	constexpr vk::PresentModeKHR DefaultSwapchainPresentMode = vk::PresentModeKHR::eImmediate;
+	constexpr vk::PresentModeKHR MaxCompatibilitySwapchainPresentMode = vk::PresentModeKHR::eFifo;
+	constexpr vk::PresentModeKHR DefaultSwapchainPresentMode = MaxCompatibilitySwapchainPresentMode;
 	constexpr vk::Format DefaultSwapchainSurfaceFormat = vk::Format::eB8G8R8A8Unorm;
 	constexpr vk::ColorSpaceKHR DefaultSwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 
