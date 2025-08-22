@@ -57,8 +57,6 @@ namespace
 	constexpr vk::Format ImageFormatUnorm32 = vk::Format::eB8G8R8A8Unorm; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
 	constexpr vk::Format MaxCompatibilityImageFormatUnorm32 = vk::Format::eR8G8B8A8Unorm;
 
-	constexpr vk::PresentModeKHR MaxCompatibilitySwapchainPresentMode = vk::PresentModeKHR::eFifo;
-	constexpr vk::PresentModeKHR DefaultSwapchainPresentMode = MaxCompatibilitySwapchainPresentMode;
 	constexpr vk::Format DefaultSwapchainSurfaceFormat = vk::Format::eB8G8R8A8Unorm;
 	constexpr vk::ColorSpaceKHR DefaultSwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 
@@ -990,6 +988,30 @@ namespace
 // Vulkan swapchain
 namespace
 {
+	// If better present modes are unavailable then FIFO is always a valid fallback on all platforms.
+	vk::PresentModeKHR GetBestSwapchainPresentMode(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface)
+	{
+		vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo;
+
+		vk::ResultValue<std::vector<vk::PresentModeKHR>> presentModesResult = physicalDevice.getSurfacePresentModesKHR(surface);
+		if (presentModesResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't query physical device present modes (%d).", presentModesResult.result);
+			return presentMode;
+		}
+
+		for (const vk::PresentModeKHR currentPresentMode : presentModesResult.value)
+		{
+			if (currentPresentMode == vk::PresentModeKHR::eFifoRelaxed)
+			{
+				presentMode = currentPresentMode;
+				break;
+			}
+		}
+		
+		return presentMode;
+	}
+
 	bool TryGetSurfaceFormat(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface, vk::Format format, vk::ColorSpaceKHR colorSpace, vk::SurfaceFormatKHR *outSurfaceFormat)
 	{
 		vk::ResultValue<std::vector<vk::SurfaceFormatKHR>> surfaceFormatsResult = physicalDevice.getSurfaceFormatsKHR(surface);
@@ -2174,12 +2196,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	vk::PresentModeKHR presentMode;
-	if (!TryGetPresentModeOrDefault(this->physicalDevice, this->surface, DefaultSwapchainPresentMode, &presentMode))
-	{
-		DebugLogError("Couldn't get present mode for swapchain.");
-		return false;
-	}
+	const vk::PresentModeKHR presentMode = GetBestSwapchainPresentMode(this->physicalDevice, this->surface);
 
 	vk::SurfaceCapabilitiesKHR surfaceCapabilities;
 	if (!TryGetSurfaceCapabilities(this->physicalDevice, this->surface, &surfaceCapabilities))
@@ -3011,12 +3028,7 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int internal
 		return;
 	}
 
-	vk::PresentModeKHR presentMode;
-	if (!TryGetPresentModeOrDefault(this->physicalDevice, this->surface, DefaultSwapchainPresentMode, &presentMode))
-	{
-		DebugLogErrorFormat("Couldn't get present mode for resize to %dx%d.", windowWidth, windowHeight);
-		return;
-	}
+	const vk::PresentModeKHR presentMode = GetBestSwapchainPresentMode(this->physicalDevice, this->surface);
 
 	if (!TryCreateSwapchain(this->device, this->surface, surfaceFormat, presentMode, surfaceCapabilities, this->swapchainExtent,
 		this->graphicsQueueFamilyIndex, this->presentQueueFamilyIndex, &this->swapchain))
