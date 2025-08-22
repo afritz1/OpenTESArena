@@ -21,8 +21,8 @@ public:
 	bool init(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
 
-	void resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight) override;
-	void handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight) override;
+	void resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
+	void handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
 
 	// Gets various profiler information about internal renderer state.
 	Renderer3DProfilerData getProfilerData() const override;

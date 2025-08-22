@@ -201,7 +201,7 @@ void Renderer::resize(int width, int height)
 	const Int2 viewDims = this->window->getSceneViewDimensions();
 	const double resolutionScale = this->resolutionScaleFunc();
 	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
-	this->backend->resize(windowDims.x, windowDims.y, internalDims.x, internalDims.y);
+	this->backend->resize(windowDims.x, windowDims.y, viewDims.x, viewDims.y, internalDims.x, internalDims.y);
 }
 
 void Renderer::handleRenderTargetsReset()
@@ -210,7 +210,7 @@ void Renderer::handleRenderTargetsReset()
 	const Int2 viewDims = this->window->getSceneViewDimensions();
 	const double resolutionScale = this->resolutionScaleFunc();
 	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
-	this->backend->handleRenderTargetsReset(windowDims.x, windowDims.y, internalDims.x, internalDims.y);
+	this->backend->handleRenderTargetsReset(windowDims.x, windowDims.y, viewDims.x, viewDims.y, internalDims.x, internalDims.y);
 }
 
 VertexPositionBufferID Renderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)

@@ -218,7 +218,7 @@ struct VulkanFragmentShader
 {
 	PixelShaderType type;
 	vk::ShaderModule module;
-	
+
 	VulkanFragmentShader();
 };
 
@@ -265,6 +265,7 @@ private:
 	vk::Queue presentQueue;
 
 	vk::Extent2D swapchainExtent;
+	vk::Extent2D sceneViewExtent;
 	vk::SwapchainKHR swapchain;
 	Buffer<vk::ImageView> swapchainImageViews;
 	vk::DeviceMemory depthDeviceMemory;
@@ -321,8 +322,8 @@ public:
 	bool init(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
 
-	void resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight) override;
-	void handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight) override;
+	void resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
+	void handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
 
 	Renderer3DProfilerData getProfilerData() const override;
 

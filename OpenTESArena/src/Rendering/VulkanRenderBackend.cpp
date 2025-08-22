@@ -2211,6 +2211,9 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	const Int2 sceneViewDims = window->getSceneViewDimensions();
+	this->sceneViewExtent = vk::Extent2D(sceneViewDims.x, sceneViewDims.y);
+
 	if (!TryCreateSwapchain(this->device, this->surface, surfaceFormat, presentMode, surfaceCapabilities, this->swapchainExtent,
 		this->graphicsQueueFamilyIndex, this->presentQueueFamilyIndex, &this->swapchain))
 	{
@@ -2915,6 +2918,7 @@ void VulkanRenderBackend::shutdown()
 			this->swapchain = nullptr;
 		}
 
+		this->sceneViewExtent = vk::Extent2D();
 		this->swapchainExtent = vk::Extent2D();
 
 		this->presentQueue = nullptr;
@@ -2946,7 +2950,7 @@ void VulkanRenderBackend::shutdown()
 	}
 }
 
-void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
+void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
 {
 	for (vk::Framebuffer framebuffer : this->swapchainFramebuffers)
 	{
@@ -3020,6 +3024,7 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int internal
 	}
 
 	this->swapchainExtent = vk::Extent2D(windowWidth, windowHeight);
+	this->sceneViewExtent = vk::Extent2D(sceneViewWidth, sceneViewHeight);
 
 	vk::SurfaceFormatKHR surfaceFormat;
 	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, DefaultSwapchainSurfaceFormat, DefaultSwapchainColorSpace, &surfaceFormat))
@@ -3082,7 +3087,7 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int internal
 	}
 }
 
-void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
+void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
 {
 	DebugNotImplementedMsg("handleRenderTargetsReset()");
 }
@@ -3957,17 +3962,17 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	if (renderCommandList.entryCount > 0)
 	{
 		// @todo this should be the view dimensions, different for classic interface mode
-		vk::Viewport viewport;
-		viewport.width = static_cast<float>(this->swapchainExtent.width);
-		viewport.height = static_cast<float>(this->swapchainExtent.height);
-		viewport.minDepth = 0.0f;
-		viewport.maxDepth = 1.0f;
+		vk::Viewport sceneViewport;
+		sceneViewport.width = static_cast<float>(this->sceneViewExtent.width);
+		sceneViewport.height = static_cast<float>(this->sceneViewExtent.height);
+		sceneViewport.minDepth = 0.0f;
+		sceneViewport.maxDepth = 1.0f;
 
-		vk::Rect2D viewportScissor;
-		viewportScissor.extent = this->swapchainExtent;
+		vk::Rect2D sceneViewportScissor;
+		sceneViewportScissor.extent = this->sceneViewExtent;
 
-		this->commandBuffer.setViewport(0, viewport);
-		this->commandBuffer.setScissor(0, viewportScissor);
+		this->commandBuffer.setViewport(0, sceneViewport);
+		this->commandBuffer.setScissor(0, sceneViewportScissor);
 
 		DebugAssert(this->camera.matrixBytes.getCount() == this->camera.hostMappedBytes.getCount());
 		Matrix4d projectionMatrix = camera.projectionMatrix;

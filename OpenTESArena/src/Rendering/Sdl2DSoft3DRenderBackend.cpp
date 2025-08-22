@@ -156,7 +156,7 @@ void Sdl2DSoft3DRenderBackend::shutdown()
 	this->window = nullptr;
 }
 
-void Sdl2DSoft3DRenderBackend::resize(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
+void Sdl2DSoft3DRenderBackend::resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
 {
 	SDL_RenderSetLogicalSize(this->renderer, windowWidth, windowHeight);
 
@@ -185,7 +185,7 @@ void Sdl2DSoft3DRenderBackend::resize(int windowWidth, int windowHeight, int int
 	this->renderer3D.resize(internalWidth, internalHeight);
 }
 
-void Sdl2DSoft3DRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int internalWidth, int internalHeight)
+void Sdl2DSoft3DRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
 {
 	if (this->renderer == nullptr)
 	{
