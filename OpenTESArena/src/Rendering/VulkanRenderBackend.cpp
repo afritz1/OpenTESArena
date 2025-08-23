@@ -1510,12 +1510,12 @@ namespace
 		device.updateDescriptorSets(writeDescriptorSets, copyDescriptorSets);
 	}
 
-	void UpdateTransformDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer transformBuffer, int alignedBytesPerElement)
+	void UpdateTransformDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer transformBuffer, int bytesPerStride)
 	{
 		vk::DescriptorBufferInfo transformDescriptorBufferInfo;
 		transformDescriptorBufferInfo.buffer = transformBuffer;
 		transformDescriptorBufferInfo.offset = 0;
-		transformDescriptorBufferInfo.range = alignedBytesPerElement;
+		transformDescriptorBufferInfo.range = bytesPerStride;
 
 		vk::WriteDescriptorSet transformWriteDescriptorSet;
 		transformWriteDescriptorSet.dstSet = descriptorSet;
@@ -1755,13 +1755,12 @@ void VulkanBuffer::initIndex(int indexCount, int bytesPerIndex)
 	this->index.bytesPerIndex = bytesPerIndex;
 }
 
-void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int alignedBytesPerElement, int alignmentOfElement, vk::DescriptorSet descriptorSet)
+void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int bytesPerStride, vk::DescriptorSet descriptorSet)
 {
 	this->type = VulkanBufferType::Uniform;
 	this->uniform.elementCount = elementCount;
 	this->uniform.bytesPerElement = bytesPerElement;
-	this->uniform.alignedBytesPerElement = alignedBytesPerElement;
-	this->uniform.alignmentOfElement = alignmentOfElement;
+	this->uniform.bytesPerStride = bytesPerStride;
 	this->uniform.descriptorSet = descriptorSet;
 }
 
@@ -3179,7 +3178,7 @@ LockedBuffer VulkanRenderBackend::lockVertexPositionBuffer(VertexPositionBufferI
 {
 	VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
 	const VulkanBufferVertexPositionInfo &vertexPositionInfo = vertexPositionBuffer.vertexPosition;
-	return LockedBuffer(vertexPositionBuffer.stagingHostMappedBytes, vertexPositionInfo.bytesPerComponent);
+	return LockedBuffer(vertexPositionBuffer.stagingHostMappedBytes, vertexPositionInfo.vertexCount, vertexPositionInfo.bytesPerComponent, vertexPositionInfo.bytesPerComponent);
 }
 
 void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
@@ -3266,7 +3265,7 @@ LockedBuffer VulkanRenderBackend::lockVertexAttributeBuffer(VertexAttributeBuffe
 {
 	VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
 	const VulkanBufferVertexAttributeInfo &vertexAttributeInfo = vertexAttributeBuffer.vertexAttribute;
-	return LockedBuffer(vertexAttributeBuffer.stagingHostMappedBytes, vertexAttributeInfo.bytesPerComponent);
+	return LockedBuffer(vertexAttributeBuffer.stagingHostMappedBytes, vertexAttributeInfo.vertexCount, vertexAttributeInfo.bytesPerComponent, vertexAttributeInfo.bytesPerComponent);
 }
 
 void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id)
@@ -3352,7 +3351,7 @@ LockedBuffer VulkanRenderBackend::lockIndexBuffer(IndexBufferID id)
 {
 	VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
 	const VulkanBufferIndexInfo &indexInfo = indexBuffer.index;
-	return LockedBuffer(indexBuffer.stagingHostMappedBytes, indexInfo.bytesPerIndex);
+	return LockedBuffer(indexBuffer.stagingHostMappedBytes, indexInfo.indexCount, indexInfo.bytesPerIndex, indexInfo.bytesPerIndex);
 }
 
 void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
@@ -3382,9 +3381,8 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 		return -1;
 	}
 
-	const int alignedBytesPerElement = MathUtils::roundToGreaterMultipleOf(bytesPerElement, this->physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
-	const int byteCountWithAlignedElements = elementCount * alignedBytesPerElement;
-	const int byteCount = elementCount * bytesPerElement;
+	const int bytesPerStride = MathUtils::roundToGreaterMultipleOf(bytesPerElement, this->physicalDeviceProperties.limits.minUniformBufferOffsetAlignment);
+	const int byteCountWithAlignedElements = elementCount * bytesPerStride;
 	vk::Buffer buffer;
 	if (!TryCreateBufferAndBindWithHeap(this->device, byteCountWithAlignedElements, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerDeviceLocal, &buffer, nullptr))
 	{
@@ -3403,11 +3401,11 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 		return -1;
 	}
 
-	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer, alignedBytesPerElement);
+	UpdateTransformDescriptorSet(this->device, descriptorSet, buffer, bytesPerStride);
 
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging, &stagingBuffer, &stagingHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCountWithAlignedElements, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create uniform staging buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
 		this->uniformBufferHeapManagerDeviceLocal.freeBufferMapping(buffer);
@@ -3418,7 +3416,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	uniformBuffer.init(buffer, stagingBuffer, stagingHostMappedBytes);
-	uniformBuffer.initUniform(elementCount, bytesPerElement, alignedBytesPerElement, alignmentOfElement, descriptorSet);
+	uniformBuffer.initUniform(elementCount, bytesPerElement, bytesPerStride, descriptorSet);
 
 	return id;
 }
@@ -3459,16 +3457,15 @@ LockedBuffer VulkanRenderBackend::lockUniformBuffer(UniformBufferID id)
 {
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-	return LockedBuffer(uniformBuffer.stagingHostMappedBytes, uniformInfo.bytesPerElement);
+	return LockedBuffer(uniformBuffer.stagingHostMappedBytes, uniformInfo.elementCount, uniformInfo.bytesPerElement, uniformInfo.bytesPerStride);
 }
 
 LockedBuffer VulkanRenderBackend::lockUniformBufferIndex(UniformBufferID id, int index)
 {
 	VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
 	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-	const int bytesPerElement = uniformInfo.bytesPerElement;
-	Span<std::byte> stagingHostMappedBytesSlice(uniformBuffer.stagingHostMappedBytes.begin() + (index * bytesPerElement), bytesPerElement);
-	return LockedBuffer(stagingHostMappedBytesSlice, bytesPerElement);
+	Span<std::byte> stagingHostMappedBytesSlice(uniformBuffer.stagingHostMappedBytes.begin() + (index * uniformInfo.bytesPerStride), uniformInfo.bytesPerElement);
+	return LockedBuffer(stagingHostMappedBytesSlice, 1, uniformInfo.bytesPerElement, uniformInfo.bytesPerStride);
 }
 
 void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
@@ -4061,7 +4058,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
 				const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
 				constexpr uint32_t transformDescriptorSetIndex = 1;
-				uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.alignedBytesPerElement;
+				uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.bytesPerStride;
 				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->scenePipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
 
 				const ObjectTextureID textureID = drawCall.textureIDs[0];

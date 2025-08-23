@@ -38,8 +38,7 @@ struct VulkanBufferUniformInfo
 {
 	int elementCount;
 	int bytesPerElement;
-	int alignedBytesPerElement;
-	int alignmentOfElement;
+	int bytesPerStride;
 	vk::DescriptorSet descriptorSet;
 };
 
@@ -74,7 +73,7 @@ struct VulkanBuffer
 	void initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void initIndex(int indexCount, int bytesPerIndex);
-	void initUniform(int elementCount, int bytesPerElement, int alignedBytesPerElement, int alignmentOfElement, vk::DescriptorSet descriptorSet);
+	void initUniform(int elementCount, int bytesPerElement, int bytesPerStride, vk::DescriptorSet descriptorSet);
 };
 
 struct VulkanLightInfo

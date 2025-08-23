@@ -4523,9 +4523,10 @@ void SoftwareRenderer::freeVertexPositionBuffer(VertexPositionBufferID id)
 LockedBuffer SoftwareRenderer::lockVertexPositionBuffer(VertexPositionBufferID id)
 {
 	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(id);
+	const int elementCount = buffer.positions.getCount();
 	const int bytesPerElement = sizeof(double);
-	const int byteCount = buffer.positions.getCount() * bytesPerElement;
-	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.positions.begin()), byteCount), bytesPerElement);
+	const int byteCount = elementCount * bytesPerElement;
+	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.positions.begin()), byteCount), elementCount, bytesPerElement, bytesPerElement);
 }
 
 void SoftwareRenderer::unlockVertexPositionBuffer(VertexPositionBufferID id)
@@ -4560,9 +4561,10 @@ void SoftwareRenderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 LockedBuffer SoftwareRenderer::lockVertexAttributeBuffer(VertexAttributeBufferID id)
 {
 	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(id);
+	const int elementCount = buffer.attributes.getCount();
 	const int bytesPerElement = sizeof(double);
-	const int byteCount = buffer.attributes.getCount() * bytesPerElement;
-	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.attributes.begin()), byteCount), bytesPerElement);
+	const int byteCount = elementCount * bytesPerElement;
+	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.attributes.begin()), byteCount), elementCount, bytesPerElement, bytesPerElement);
 }
 
 void SoftwareRenderer::unlockVertexAttributeBuffer(VertexAttributeBufferID id)
@@ -4597,9 +4599,10 @@ void SoftwareRenderer::freeIndexBuffer(IndexBufferID id)
 LockedBuffer SoftwareRenderer::lockIndexBuffer(IndexBufferID id)
 {
 	SoftwareIndexBuffer &buffer = this->indexBuffers.get(id);
+	const int elementCount = buffer.indices.getCount();
 	const int bytesPerElement = sizeof(int32_t);
-	const int byteCount = buffer.indices.getCount() * bytesPerElement;
-	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.indices.begin()), byteCount), bytesPerElement);
+	const int byteCount = elementCount * bytesPerElement;
+	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.indices.begin()), byteCount), elementCount, bytesPerElement, bytesPerElement);
 }
 
 void SoftwareRenderer::unlockIndexBuffer(IndexBufferID id)
@@ -4634,18 +4637,20 @@ void SoftwareRenderer::freeUniformBuffer(UniformBufferID id)
 LockedBuffer SoftwareRenderer::lockUniformBuffer(UniformBufferID id)
 {
 	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
+	const int elementCount = buffer.elementCount;
 	const int bytesPerElement = buffer.bytesPerElement;
 	const int byteCount = buffer.getValidByteCount();
-	return LockedBuffer(Span<std::byte>(buffer.begin(), byteCount), bytesPerElement);
+	return LockedBuffer(Span<std::byte>(buffer.begin(), byteCount), elementCount, bytesPerElement, bytesPerElement);
 }
 
 LockedBuffer SoftwareRenderer::lockUniformBufferIndex(UniformBufferID id, int index)
 {
 	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
+	const int elementCount = 1;
 	const int bytesPerElement = buffer.bytesPerElement;
 	const int byteCount = bytesPerElement;
 	const int byteOffset = index * bytesPerElement;
-	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.begin() + byteOffset), byteCount), bytesPerElement);
+	return LockedBuffer(Span<std::byte>(buffer.begin() + byteOffset, byteCount), elementCount, bytesPerElement, bytesPerElement);
 }
 
 void SoftwareRenderer::unlockUniformBuffer(UniformBufferID id)

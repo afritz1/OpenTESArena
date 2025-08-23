@@ -377,7 +377,9 @@ bool Renderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> b
 		return false;
 	}
 
-	DebugAssert(bytes.getCount() == lockedBuffer.bytes.getCount());
+	DebugAssert(lockedBuffer.isContiguous());
+	DebugAssert(bytes.getCount() == (lockedBuffer.elementCount * lockedBuffer.bytesPerElement));
+	DebugAssert(bytes.getCount() <= lockedBuffer.bytes.getCount());
 	std::copy(bytes.begin(), bytes.end(), lockedBuffer.bytes.begin());
 	this->backend->unlockUniformBuffer(id);
 	return true;
@@ -395,19 +397,34 @@ bool Renderer::populateUniformBufferVector3s(UniformBufferID id, Span<const Doub
 	const int bytesPerFloat = this->backend->getBytesPerFloat();
 	if (bytesPerFloat == sizeof(double))
 	{
+		DebugAssert(lockedBuffer.isContiguous());
+
 		Span<const std::byte> valueBytes(reinterpret_cast<const std::byte*>(values.begin()), values.getCount() * sizeof(Double3));
-		DebugAssert(valueBytes.getCount() == lockedBuffer.bytes.getCount());
+		DebugAssert(valueBytes.getCount() == (lockedBuffer.elementCount * lockedBuffer.bytesPerElement));
+		DebugAssert(valueBytes.getCount() <= lockedBuffer.bytes.getCount());
 		std::copy(valueBytes.begin(), valueBytes.end(), lockedBuffer.bytes.begin());
 	}
 	else
 	{
-		for (int i = 0; i < values.getCount(); i++)
+		auto double3ToFloat3 = [](Double3 value)
 		{
-			const Double3 &value = values[i];
-			float *currentDstFloats = reinterpret_cast<float*>(lockedBuffer.bytes.begin()) + (i * 3);
-			currentDstFloats[0] = static_cast<float>(value.x);
-			currentDstFloats[1] = static_cast<float>(value.y);
-			currentDstFloats[2] = static_cast<float>(value.z);
+			return Float3(static_cast<float>(value.x), static_cast<float>(value.y), static_cast<float>(value.z));
+		};
+
+		if (lockedBuffer.isContiguous())
+		{
+			Float3 *dstFloats = reinterpret_cast<Float3*>(lockedBuffer.bytes.begin());
+			std::transform(values.begin(), values.end(), dstFloats, double3ToFloat3);
+		}
+		else
+		{
+			for (int i = 0; i < lockedBuffer.elementCount; i++)
+			{
+				const int byteOffset = i * lockedBuffer.bytesPerStride;
+				const Double3 &srcValue = values[i];
+				Float3 &dstValue = *reinterpret_cast<Float3*>(lockedBuffer.bytes.begin() + byteOffset);
+				dstValue = double3ToFloat3(srcValue);
+			}
 		}
 	}
 
@@ -427,6 +444,8 @@ bool Renderer::populateUniformBufferRenderTransforms(UniformBufferID id, Span<co
 	const int bytesPerFloat = this->backend->getBytesPerFloat();
 	if (bytesPerFloat == sizeof(double))
 	{
+		DebugAssert(lockedBuffer.isContiguous());
+
 		Span<const std::byte> transformBytes(reinterpret_cast<const std::byte*>(transforms.begin()), transforms.getCount() * sizeof(RenderTransform));
 		DebugAssert(transformBytes.getCount() == lockedBuffer.bytes.getCount());
 		std::copy(transformBytes.begin(), transformBytes.end(), lockedBuffer.bytes.begin());
@@ -436,7 +455,7 @@ bool Renderer::populateUniformBufferRenderTransforms(UniformBufferID id, Span<co
 		for (int i = 0; i < transforms.getCount(); i++)
 		{
 			const RenderTransform &transform = transforms[i];
-			WriteRenderTransformFloat32(transform, lockedBuffer.bytes.begin() + (i * BytesPerTransformF));
+			WriteRenderTransformFloat32(transform, lockedBuffer.bytes.begin() + (i * lockedBuffer.bytesPerStride));
 		}
 	}
 
@@ -453,7 +472,8 @@ bool Renderer::populateUniformBufferIndex(UniformBufferID id, int uniformIndex, 
 		return false;
 	}
 
-	DebugAssert(uniformBytes.getCount() == lockedBuffer.bytes.getCount());
+	DebugAssert(uniformBytes.getCount() == lockedBuffer.bytesPerElement);
+	DebugAssert(uniformBytes.getCount() <= lockedBuffer.bytes.getCount());
 	std::copy(uniformBytes.begin(), uniformBytes.end(), lockedBuffer.bytes.begin());
 	this->backend->unlockUniformBufferIndex(id, uniformIndex);
 	return true;
