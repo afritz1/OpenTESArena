@@ -447,6 +447,8 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderLightManager.h"
     "${SRC_ROOT}/Rendering/RenderLightUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderLightUtils.h"
+    "${SRC_ROOT}/Rendering/RenderMaterialUtils.cpp"
+    "${SRC_ROOT}/Rendering/RenderMaterialUtils.h"
     "${SRC_ROOT}/Rendering/RenderMeshInstance.cpp"
     "${SRC_ROOT}/Rendering/RenderMeshInstance.h"
     "${SRC_ROOT}/Rendering/RenderMeshUtils.h"
