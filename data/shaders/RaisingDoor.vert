@@ -10,6 +10,11 @@ layout(set = 1, binding = 0) uniform Transform
     mat4 translation, rotation, scale;
 } transform;
 
+layout(push_constant) uniform PushConstants
+{
+    vec4 preScaleTranslation;
+} pc;
+
 layout(location = 0) in vec3 vertInPosition;
 layout(location = 1) in vec2 vertInTexCoord;
 
@@ -17,7 +22,10 @@ layout(location = 0) out vec2 fragInTexCoord;
 
 void main()
 {
-    mat4 modelMatrix = transform.translation * (transform.rotation * transform.scale);
-    gl_Position = camera.viewProjection * (modelMatrix * vec4(vertInPosition, 1.0));
+    vec4 translatedVertex = vec4(vertInPosition, 1.0) + pc.preScaleTranslation;
+    vec4 scaledVertex = transform.scale * translatedVertex;
+    vec4 resultVertex = scaledVertex - pc.preScaleTranslation;
+
+    gl_Position = camera.viewProjection * (transform.translation * (transform.rotation * resultVertex));
     fragInTexCoord = vertInTexCoord;
 }

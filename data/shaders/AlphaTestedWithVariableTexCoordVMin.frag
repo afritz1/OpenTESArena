@@ -5,7 +5,7 @@ layout(set = 2, binding = 0) uniform usampler2D textureSampler;
 
 layout(push_constant) uniform PushConstants
 {
-    float vMin;
+    layout(offset = 16) float vMin;
 } pc;
 
 layout(location = 0) in vec2 fragInTexCoord;

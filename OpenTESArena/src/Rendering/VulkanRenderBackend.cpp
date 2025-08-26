@@ -1567,14 +1567,27 @@ namespace
 	std::vector<vk::PushConstantRange> MakePipelineLayoutPushConstantRanges(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType)
 	{
 		std::vector<vk::PushConstantRange> pushConstantRanges;
+		uint32_t offset = 0;
+
+		const bool requiresPreScaleTransform = vertexShaderType == VertexShaderType::RaisingDoor;
+		if (requiresPreScaleTransform)
+		{
+			vk::PushConstantRange pushConstantRange;
+			pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
+			pushConstantRange.offset = offset;
+			pushConstantRange.size = sizeof(float) * 4;
+			offset += pushConstantRange.size;
+			pushConstantRanges.emplace_back(std::move(pushConstantRange));
+		}
 
 		const bool requiresUiRectTransform = vertexShaderType == VertexShaderType::UI;
 		if (requiresUiRectTransform)
 		{
 			vk::PushConstantRange pushConstantRange;
 			pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
-			pushConstantRange.offset = 0;
+			pushConstantRange.offset = offset;
 			pushConstantRange.size = sizeof(float) * 6;
+			offset += pushConstantRange.size;
 			pushConstantRanges.emplace_back(std::move(pushConstantRange));
 		}
 
@@ -1592,8 +1605,9 @@ namespace
 		{
 			vk::PushConstantRange pushConstantRange;
 			pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eFragment;
-			pushConstantRange.offset = 0;
+			pushConstantRange.offset = offset;
 			pushConstantRange.size = sizeof(float);
+			offset += pushConstantRange.size;
 			pushConstantRanges.emplace_back(std::move(pushConstantRange));
 		}
 
@@ -4243,6 +4257,22 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, materialDescriptorSetIndex, material.descriptorSet, emptyDynamicOffsets);
 
 				uint32_t pushConstantOffset = 0;
+				if (drawCall.preScaleTranslationBufferID >= 0)
+				{
+					const VulkanBuffer &preScaleTranslationBuffer = this->uniformBufferPool.get(drawCall.preScaleTranslationBufferID);
+					const float *preScaleTranslationComponents = reinterpret_cast<const float*>(preScaleTranslationBuffer.stagingHostMappedBytes.begin());
+					const float preScaleTranslation[] =
+					{
+						preScaleTranslationComponents[0],
+						preScaleTranslationComponents[1],
+						preScaleTranslationComponents[2],
+						0.0f
+					};
+
+					this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eVertex, pushConstantOffset, preScaleTranslation);
+					pushConstantOffset += sizeof(preScaleTranslation);
+				}
+
 				for (VulkanMaterialPushConstantType materialPushConstantType : material.pushConstantTypes)
 				{
 					switch (materialPushConstantType)
