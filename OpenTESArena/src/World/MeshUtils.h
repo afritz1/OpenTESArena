@@ -23,6 +23,7 @@ namespace MeshUtils
 	static constexpr int INDICES_PER_QUAD = INDICES_PER_TRIANGLE * 2; // Example: [0, 1, 2, 2, 3, 0].
 	
 	static constexpr int POSITION_COMPONENTS_PER_VERTEX = 3; // XYZ position.
+	static constexpr int POSITION_COMPONENTS_PER_VERTEX_2D = 2; // XY position.
 	static constexpr int POSITION_COMPONENTS_PER_TRIANGLE = POSITION_COMPONENTS_PER_VERTEX * 3;
 	static constexpr size_t POSITION_COMPONENT_SIZE_FLOAT = sizeof(float);
 	static constexpr size_t POSITION_COMPONENT_SIZE_DOUBLE = sizeof(double);

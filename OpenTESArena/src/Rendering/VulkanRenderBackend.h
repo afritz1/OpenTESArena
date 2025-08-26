@@ -307,8 +307,7 @@ private:
 	vk::DescriptorSet globalDescriptorSet;
 	FlatMap<UiTextureID, vk::DescriptorSet> uiTextureDescriptorSets; // Avoids needing UI material support since UI is so simplistic.
 
-	vk::PipelineLayout scenePipelineLayout;
-	vk::PipelineLayout uiPipelineLayout;
+	Buffer<vk::PipelineLayout> pipelineLayouts;
 	Buffer<VulkanPipeline> graphicsPipelines;
 
 	vk::Semaphore imageIsAvailableSemaphore;
