@@ -83,6 +83,36 @@ struct FlatMap
 		return &this->values[index];
 	}
 
+	int emplace(KeyT key, const ValueT &value)
+	{
+		int index = -1;
+
+		const auto iter = std::lower_bound(this->keys.begin(), this->keys.end(), key);
+		if (iter != this->keys.end())
+		{
+			index = static_cast<int>(std::distance(this->keys.begin(), iter));
+
+			const KeyT existingKey = *iter;
+			if (existingKey == key)
+			{
+				this->values[index] = value;
+			}
+			else
+			{
+				this->keys.emplace(this->keys.begin() + index, key);
+				this->values.emplace(this->values.begin() + index, value);
+			}
+		}
+		else
+		{
+			index = static_cast<int>(this->keys.size());
+			this->keys.emplace_back(key);
+			this->values.emplace_back(value);
+		}
+
+		return index;
+	}
+
 	int emplace(KeyT key, ValueT &&value)
 	{
 		int index = -1;
