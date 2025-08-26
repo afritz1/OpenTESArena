@@ -629,6 +629,26 @@ bool Renderer::populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t>
 	return this->populateUiTexture(id, texelBytes);
 }
 
+RenderMaterialID Renderer::createMaterial(RenderMaterialKey key)
+{
+	return this->backend->createMaterial(key);
+}
+
+void Renderer::freeMaterial(RenderMaterialID id)
+{
+	this->backend->freeMaterial(id);
+}
+
+void Renderer::setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value)
+{
+	this->backend->setMaterialParameterMeshLightingPercent(id, value);
+}
+
+void Renderer::setMaterialParameterPixelShaderParam(RenderMaterialID id, double value)
+{
+	this->backend->setMaterialParameterPixelShaderParam(id, value);
+}
+
 /*void Renderer::drawPixel(const Color &color, int x, int y)
 {
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);

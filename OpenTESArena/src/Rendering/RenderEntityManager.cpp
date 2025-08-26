@@ -12,6 +12,7 @@
 #include "../Voxels/VoxelDoorUtils.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/StaticVector.h"
 
 namespace
 {
@@ -380,20 +381,21 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 
-			const ObjectTextureID textureID0 = this->getTextureID(entityInstID, cameraPosition, entityChunkManager);
-			std::optional<ObjectTextureID> textureID1 = std::nullopt;
 			PixelShaderType pixelShaderType = PixelShaderType::AlphaTested;
+			StaticVector<ObjectTextureID, 2> textureIDs;
+			textureIDs.emplaceBack(this->getTextureID(entityInstID, cameraPosition, entityChunkManager));
 
 			const bool isCitizen = entityInst.isCitizen();
 			const bool isGhost = EntityUtils::isGhost(entityDef);
 			const bool isPuddle = EntityUtils::isPuddle(entityDef);
 			if (isCitizen)
 			{
+				pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndexLookup;
+				
 				const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
 				const auto paletteIndicesIter = this->paletteIndicesTextureRefs.find(paletteIndicesInstID);
 				DebugAssertMsgFormat(paletteIndicesIter != this->paletteIndicesTextureRefs.end(), "Expected entity palette indices texture at ID %d for entity %d.", paletteIndicesInstID, entityInstID);
-				textureID1 = paletteIndicesIter->second.get();
-				pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndexLookup;
+				textureIDs.emplaceBack(paletteIndicesIter->second.get());
 			}
 			else if (isGhost)
 			{
@@ -407,6 +409,30 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
 			const int entityTransformIndex = 0; // Each entity has their own transform buffer for now.
 
+			RenderMaterialKey materialKey;
+			materialKey.init(VertexShaderType::Entity, pixelShaderType, textureIDs, RenderLightingType::PerPixel, true, true, true);
+			const bool requiresMaterialInstance = false;
+
+			RenderMaterialID materialID = -1;
+			for (const RenderMaterial &material : this->materials)
+			{
+				if (material.key == materialKey)
+				{
+					materialID = material.id;
+					break;
+				}
+			}
+
+			if (materialID < 0)
+			{
+				materialID = renderer.createMaterial(materialKey);
+
+				RenderMaterial material;
+				material.key = materialKey;
+				material.id = materialID;
+				this->materials.emplace_back(std::move(material));
+			}
+
 			RenderDrawCall drawCall;
 			drawCall.transformBufferID = transformBufferID;
 			drawCall.transformIndex = entityTransformIndex;
@@ -415,23 +441,36 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			drawCall.normalBufferID = this->meshInst.normalBufferID;
 			drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
 			drawCall.indexBufferID = this->meshInst.indexBufferID;
-			drawCall.textureIDs[0] = textureID0;
-			drawCall.textureIDs[1] = textureID1.has_value() ? *textureID1 : -1;
-			drawCall.lightingType = RenderLightingType::PerPixel;
-			drawCall.lightPercent = 0.0;
-			drawCall.vertexShaderType = VertexShaderType::Entity;
-			drawCall.pixelShaderType = pixelShaderType;
-			drawCall.pixelShaderParam0 = 0.0;
-			drawCall.enableBackFaceCulling = true;
-			drawCall.enableDepthRead = true;
-			drawCall.enableDepthWrite = true;
+			drawCall.materialID = materialID;
 
-			if (drawCall.pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
+			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
 			{
+				RenderMaterialKey puddleSecondPassMaterialKey = materialKey;
+				puddleSecondPassMaterialKey.pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
+				puddleSecondPassMaterialKey.lightingType = RenderLightingType::PerMesh; // Don't spend effort lighting reflection, value is unused.
+
+				RenderMaterialID puddleSecondPassMaterialID = -1;
+				for (const RenderMaterial &material : this->materials)
+				{
+					if (material.key == puddleSecondPassMaterialKey)
+					{
+						puddleSecondPassMaterialID = material.id;
+						break;
+					}
+				}
+
+				if (puddleSecondPassMaterialID < 0)
+				{
+					puddleSecondPassMaterialID = renderer.createMaterial(puddleSecondPassMaterialKey);
+
+					RenderMaterial material;
+					material.key = puddleSecondPassMaterialKey;
+					material.id = puddleSecondPassMaterialID;
+					this->materials.emplace_back(std::move(material));
+				}
+
 				RenderDrawCall puddleSecondPassDrawCall = drawCall;
-				puddleSecondPassDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
-				puddleSecondPassDrawCall.lightingType = RenderLightingType::PerMesh; // Don't spend effort lighting reflection, value is unused.
-				puddleSecondPassDrawCall.lightPercent = 0.0;
+				puddleSecondPassDrawCall.materialID = puddleSecondPassMaterialID;
 
 				this->puddleSecondPassDrawCallsCache.emplace_back(std::move(puddleSecondPassDrawCall));
 			}
@@ -463,6 +502,16 @@ void RenderEntityManager::unloadScene(Renderer &renderer)
 {
 	this->anims.clear();
 	this->paletteIndicesTextureRefs.clear();
+
+	for (RenderMaterial &material : this->materials)
+	{
+		if (material.id >= 0)
+		{
+			renderer.freeMaterial(material.id);
+		}
+	}
+
+	this->materials.clear();
 	this->drawCallsCache.clear();
 	this->puddleSecondPassDrawCallsCache.clear();
 }

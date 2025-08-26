@@ -14,6 +14,7 @@
 #include "../Voxels/VoxelFrustumCullingChunkManager.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/StaticVector.h"
 
 namespace
 {
@@ -820,18 +821,17 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 		// Use the texture/shading values of the first voxel.
 		const int textureSlotIndex = meshDef.findTextureSlotIndexWithFacing(facing);
-		ObjectTextureID textureID0 = -1;
-		ObjectTextureID textureID1 = -1;
+		StaticVector<ObjectTextureID, 2> textureIDs;
 		if (isChasm)
 		{
 			chasmDef = &voxelChunkManager.getChasmDef(chasmDefID);
 
 			const bool isChasmFloor = facing == VoxelFacing3D::NegativeY;
 
-			textureID0 = this->getChasmFloorTextureID(chasmDefID);
+			textureIDs.emplaceBack(this->getChasmFloorTextureID(chasmDefID));
 			if (!isChasmFloor)
 			{
-				textureID1 = this->getChasmWallTextureID(chasmDefID);
+				textureIDs.emplaceBack(this->getChasmWallTextureID(chasmDefID));
 			}
 		}
 		else
@@ -839,7 +839,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			const VoxelTextureDefID textureDefID = voxelChunk.textureDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
 			const VoxelTextureDefinition &textureDef = voxelChunk.textureDefs[textureDefID];
 			const TextureAsset &textureAsset = textureDef.getTextureAsset(textureSlotIndex);
-			textureID0 = this->getTextureID(textureAsset);
+			textureIDs.emplaceBack(this->getTextureID(textureAsset));
 		}
 
 		const VoxelShadingDefID shadingDefID = voxelChunk.shadingDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
@@ -847,18 +847,20 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
 		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
 		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
-		const double pixelShaderParam0 = 0.0;
+		constexpr double pixelShaderParam0 = 0.0;
 
 		DrawCallLightingInitInfo lightingInitInfo;
 		lightingInitInfo.type = RenderLightingType::PerPixel;
-		lightingInitInfo.percent = 1.0;
+		lightingInitInfo.percent = 0.0;
 
+		bool requiresMeshLightPercent = false;
 		int fadeAnimInstIndex;
 		if (voxelChunk.tryGetFadeAnimInstIndex(minVoxel.x, minVoxel.y, minVoxel.z, &fadeAnimInstIndex))
 		{
 			const VoxelFadeAnimationInstance &fadeAnimInst = voxelChunk.fadeAnimInsts[fadeAnimInstIndex];
 			if (!fadeAnimInst.isDoneFading())
 			{
+				requiresMeshLightPercent = true;
 				lightingInitInfo.type = RenderLightingType::PerMesh;
 				lightingInitInfo.percent = std::clamp(1.0 - fadeAnimInst.percentFaded, 0.0, 1.0);
 			}
@@ -867,9 +869,40 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		{
 			if (chasmDef->isEmissive)
 			{
+				requiresMeshLightPercent = true;
 				lightingInitInfo.type = RenderLightingType::PerMesh;
 				lightingInitInfo.percent = 1.0;
 			}
+		}
+
+		RenderMaterialKey materialKey;
+		materialKey.init(shadingDef.vertexShaderType, pixelShaderType, textureIDs, lightingInitInfo.type, !shapeDef.allowsBackFaces, true, true);
+		const bool requiresMaterialInstance = requiresMeshLightPercent;
+
+		RenderMaterialID materialID = -1;
+		for (const RenderMaterial &material : this->materials)
+		{
+			if (material.key == materialKey)
+			{
+				materialID = material.id;
+				break;
+			}
+		}
+
+		if (materialID < 0)
+		{
+			materialID = renderer.createMaterial(materialKey);
+
+			RenderMaterial material;
+			material.key = materialKey;
+			material.id = materialID;
+			this->materials.emplace_back(std::move(material));
+		}
+
+		// @todo material instance support (probably need to tie the worldMinVoxel to a RenderMaterialInstanceID)
+		if (requiresMeshLightPercent)
+		{
+			renderer.setMaterialParameterMeshLightingPercent(materialID, lightingInitInfo.percent);
 		}
 
 		constexpr int drawCallCount = 1;
@@ -891,21 +924,12 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		drawCall.normalBufferID = combinedFaceVertexBuffer->normalBufferID;
 		drawCall.texCoordBufferID = combinedFaceVertexBuffer->texCoordBufferID;
 		drawCall.indexBufferID = this->defaultQuadIndexBufferID;
-		drawCall.textureIDs[0] = textureID0;
-		drawCall.textureIDs[1] = textureID1;
-		drawCall.vertexShaderType = shadingDef.vertexShaderType;
-		drawCall.pixelShaderType = pixelShaderType;
-		drawCall.pixelShaderParam0 = pixelShaderParam0;
-		drawCall.lightingType = lightingInitInfo.type;
-		drawCall.lightPercent = lightingInitInfo.percent;
-		drawCall.enableBackFaceCulling = !shapeDef.allowsBackFaces;
-		drawCall.enableDepthRead = true;
-		drawCall.enableDepthWrite = true;
+		drawCall.materialID = materialID;
 	}
 }
 
 void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions,
-	const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale)
+	const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer)
 {
 	// Diagonals are treated separately since they can't use the face combining algorithm.
 	const ChunkInt2 chunkPos = renderChunk.position;
@@ -983,10 +1007,43 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		DrawCallLightingInitInfo lightingInitInfo;
 		lightingInitInfo.type = RenderLightingType::PerPixel;
 		lightingInitInfo.percent = 0.0;
+
+		bool requiresMeshLightPercent = false;
 		if (isFading)
 		{
 			lightingInitInfo.type = RenderLightingType::PerMesh;
 			lightingInitInfo.percent = std::clamp(1.0 - fadeAnimInst->percentFaded, 0.0, 1.0);
+			requiresMeshLightPercent = true;
+		}
+
+		RenderMaterialKey materialKey;
+		materialKey.init(shadingInitInfo.vertexShaderType, shadingInitInfo.pixelShaderType, Span<const ObjectTextureID>(&textureInitInfo.id0, 1), lightingInitInfo.type, !voxelShapeDef.allowsBackFaces, true, true);
+		const bool requiresMaterialInstance = requiresMeshLightPercent;
+
+		RenderMaterialID materialID = -1;
+		for (const RenderMaterial &material : this->materials)
+		{
+			if (material.key == materialKey)
+			{
+				materialID = material.id;
+				break;
+			}
+		}
+
+		if (materialID < 0)
+		{
+			materialID = renderer.createMaterial(materialKey);
+
+			RenderMaterial material;
+			material.key = materialKey;
+			material.id = materialID;
+			this->materials.emplace_back(std::move(material));
+		}
+
+		// @todo material instance support (probably need to tie the worldMinVoxel to a RenderMaterialInstanceID)
+		if (requiresMeshLightPercent)
+		{
+			renderer.setMaterialParameterMeshLightingPercent(materialID, lightingInitInfo.percent);
 		}
 
 		DebugAssert(renderChunk.drawCallRangeIDs.get(voxel.x, voxel.y, voxel.z) == -1);
@@ -1001,21 +1058,12 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		drawCall.normalBufferID = meshInitInfo.normalBufferID;
 		drawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
 		drawCall.indexBufferID = meshInitInfo.indexBufferID;
-		drawCall.textureIDs[0] = textureInitInfo.id0;
-		drawCall.textureIDs[1] = textureInitInfo.id1;
-		drawCall.vertexShaderType = shadingInitInfo.vertexShaderType;
-		drawCall.pixelShaderType = shadingInitInfo.pixelShaderType;
-		drawCall.pixelShaderParam0 = shadingInitInfo.pixelShaderParam0;
-		drawCall.lightingType = lightingInitInfo.type;
-		drawCall.lightPercent = lightingInitInfo.percent;
-		drawCall.enableBackFaceCulling = !voxelShapeDef.allowsBackFaces;
-		drawCall.enableDepthRead = true;
-		drawCall.enableDepthWrite = true;
+		drawCall.materialID = materialID;
 	}
 }
 
 void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions,
-	const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale)
+	const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = renderChunk.position;
 	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
@@ -1115,12 +1163,43 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		lightingInitInfo.type = RenderLightingType::PerPixel;
 		lightingInitInfo.percent = 0.0;
 
+		RenderMaterialKey materialKey;
+		materialKey.init(shadingInitInfo.vertexShaderType, shadingInitInfo.pixelShaderType, Span<const ObjectTextureID>(&textureInitInfo.id0, 1), lightingInitInfo.type, true, true, true);
+		const bool requiresPixelShaderParam = doorType != ArenaDoorType::Swinging;
+		const bool requiresMaterialInstance = requiresPixelShaderParam;
+
+		RenderMaterialID materialID = -1;
+		for (const RenderMaterial &material : this->materials)
+		{
+			if (material.key == materialKey)
+			{
+				materialID = material.id;
+				break;
+			}
+		}
+
+		if (materialID < 0)
+		{
+			materialID = renderer.createMaterial(materialKey);
+
+			RenderMaterial material;
+			material.key = materialKey;
+			material.id = materialID;
+			this->materials.emplace_back(std::move(material));
+		}
+
+		// @todo material instance support (probably need to tie the worldMinVoxel to a RenderMaterialInstanceID)
+		if (requiresPixelShaderParam)
+		{
+			renderer.setMaterialParameterPixelShaderParam(materialID, shadingInitInfo.pixelShaderParam0);
+		}
+
 		bool visibleDoorFaces[VoxelDoorUtils::FACE_COUNT];
 		int drawCallCount = 0;
 		int doorVisInstIndex;
 		if (!voxelChunk.tryGetDoorVisibilityInstIndex(voxel.x, voxel.y, voxel.z, &doorVisInstIndex))
 		{
-			DebugLogError("Expected door visibility instance at (" + voxel.toString() + ") in chunk (" + chunkPos.toString() + ").");
+			DebugLogErrorFormat("Expected door visibility instance at (%s) in chunk (%s).", voxel.toString().c_str(), chunkPos.toString().c_str());
 			continue;
 		}
 
@@ -1175,16 +1254,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 			doorDrawCall.normalBufferID = meshInitInfo.normalBufferID;
 			doorDrawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
 			doorDrawCall.indexBufferID = meshInitInfo.indexBufferID;
-			doorDrawCall.textureIDs[0] = textureInitInfo.id0;
-			doorDrawCall.textureIDs[1] = textureInitInfo.id1;
-			doorDrawCall.vertexShaderType = shadingInitInfo.vertexShaderType;
-			doorDrawCall.pixelShaderType = shadingInitInfo.pixelShaderType;
-			doorDrawCall.pixelShaderParam0 = shadingInitInfo.pixelShaderParam0;
-			doorDrawCall.lightingType = lightingInitInfo.type;
-			doorDrawCall.lightPercent = lightingInitInfo.percent;
-			doorDrawCall.enableBackFaceCulling = true;
-			doorDrawCall.enableDepthRead = true;
-			doorDrawCall.enableDepthWrite = true;
+			doorDrawCall.materialID = materialID;
 
 			doorDrawCallWriteIndex++;
 		}
@@ -1415,13 +1485,13 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 
-		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, voxelChunkManager, ceilingScale);
-		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, voxelChunk, voxelChunkManager, ceilingScale);
-		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, voxelChunkManager, ceilingScale);
+		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
 
-		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, voxelChunkManager, ceilingScale);
-		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, voxelChunkManager, ceilingScale);
-		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, voxelChunkManager, ceilingScale);
+		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
 	}
 
 	this->rebuildDrawCallsList(voxelFrustumCullingChunkManager);
@@ -1465,5 +1535,15 @@ void RenderVoxelChunkManager::unloadScene(Renderer &renderer)
 	}
 
 	this->combinedFaceVertexBuffers.clear();
+
+	for (RenderMaterial &material : this->materials)
+	{
+		if (material.id >= 0)
+		{
+			renderer.freeMaterial(material.id);
+		}
+	}
+
+	this->materials.clear();
 	this->drawCallsCache.clear();
 }

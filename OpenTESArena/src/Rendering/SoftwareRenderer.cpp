@@ -4380,6 +4380,41 @@ int SoftwareUniformBuffer::getValidByteCount() const
 	return static_cast<int>(this->end() - this->begin());
 }
 
+SoftwareMaterial::SoftwareMaterial()
+{
+	this->vertexShaderType = static_cast<VertexShaderType>(-1);
+	this->pixelShaderType = static_cast<PixelShaderType>(-1);
+
+	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
+	this->textureCount = 0;
+
+	this->lightingType = static_cast<RenderLightingType>(-1);
+
+	this->enableBackFaceCulling = false;
+	this->enableDepthRead = false;
+	this->enableDepthWrite = false;
+
+	this->meshLightPercent = 0.0;
+	this->pixelShaderParam0 = 0.0;
+}
+
+void SoftwareMaterial::init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
+	RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite)
+{
+	this->vertexShaderType = vertexShaderType;
+	this->pixelShaderType = pixelShaderType;
+
+	DebugAssert(textureIDs.getCount() <= std::size(this->textureIDs));
+	std::copy(textureIDs.begin(), textureIDs.end(), std::begin(this->textureIDs));
+	this->textureCount = textureIDs.getCount();
+
+	this->lightingType = lightingType;
+
+	this->enableBackFaceCulling = enableBackFaceCulling;
+	this->enableDepthRead = enableDepthRead;
+	this->enableDepthWrite = enableDepthWrite;
+}
+
 SoftwareLight::SoftwareLight()
 {
 	this->worldPointX = 0.0;
@@ -4738,6 +4773,49 @@ void SoftwareRenderer::unlockTexture(ObjectTextureID textureID)
 	static_cast<void>(textureID);
 }
 
+RenderMaterialID SoftwareRenderer::createMaterial(RenderMaterialKey key)
+{
+	const RenderMaterialID materialID = this->materials.alloc();
+	if (materialID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate software material with vertex shader %d and pixel shader %d.", key.vertexShaderType, key.pixelShaderType);
+		return -1;
+	}
+
+	SoftwareMaterial &material = this->materials.get(materialID);
+	material.init(key.vertexShaderType, key.pixelShaderType, Span<const ObjectTextureID>(key.textureIDs, key.textureCount), key.lightingType, key.enableBackFaceCulling, key.enableDepthRead, key.enableDepthWrite);
+	return materialID;
+}
+
+void SoftwareRenderer::freeMaterial(RenderMaterialID id)
+{
+	this->materials.free(id);
+}
+
+void SoftwareRenderer::setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value)
+{
+	SoftwareMaterial *material = this->materials.tryGet(id);
+	if (material == nullptr)
+	{
+		DebugLogErrorFormat("Missing material %d for updating mesh lighting percent to %.2f.", id, value);
+		return;
+	}
+
+	material->meshLightPercent = value;
+}
+
+void SoftwareRenderer::setMaterialParameterPixelShaderParam(RenderMaterialID id, double value)
+{
+	SoftwareMaterial *material = this->materials.tryGet(id);
+	if (material == nullptr)
+	{
+		DebugLogErrorFormat("Missing material %d for updating pixel shader param to %.2f.", id, value);
+		return;
+	}
+
+	material->pixelShaderParam0 = value;
+}
+
 void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
 	const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
@@ -4851,16 +4929,18 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					drawCallCachePositionBuffer = &this->positionBuffers.get(drawCall.positionBufferID);
 					drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
 					drawCallCacheIndexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
-					drawCallCacheTextureID0 = drawCall.textureIDs[0];
-					drawCallCacheTextureID1 = drawCall.textureIDs[1];
-					drawCallCacheLightingType = drawCall.lightingType;
-					drawCallCacheMeshLightPercent = drawCall.lightPercent;
-					drawCallCacheVertexShaderType = drawCall.vertexShaderType;
-					drawCallCachePixelShaderType = drawCall.pixelShaderType;
-					drawCallCachePixelShaderParam0 = drawCall.pixelShaderParam0;
-					drawCallCacheEnableBackFaceCulling = drawCall.enableBackFaceCulling;
-					drawCallCacheEnableDepthRead = drawCall.enableDepthRead;
-					drawCallCacheEnableDepthWrite = drawCall.enableDepthWrite;
+
+					const SoftwareMaterial &material = this->materials.get(drawCall.materialID);
+					drawCallCacheTextureID0 = material.textureIDs[0];
+					drawCallCacheTextureID1 = material.textureIDs[1];
+					drawCallCacheLightingType = material.lightingType;
+					drawCallCacheMeshLightPercent = material.meshLightPercent;
+					drawCallCacheVertexShaderType = material.vertexShaderType;
+					drawCallCachePixelShaderType = material.pixelShaderType;
+					drawCallCachePixelShaderParam0 = material.pixelShaderParam0;
+					drawCallCacheEnableBackFaceCulling = material.enableBackFaceCulling;
+					drawCallCacheEnableDepthRead = material.enableDepthRead;
+					drawCallCacheEnableDepthWrite = material.enableDepthWrite;
 				}
 			}
 

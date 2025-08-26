@@ -6,6 +6,7 @@
 #include <optional>
 
 #include "RenderLightUtils.h"
+#include "RenderMaterialUtils.h"
 #include "RenderMeshUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTextureUtils.h"
@@ -86,16 +87,22 @@ public:
 
 	// Texture management functions.
 	virtual ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) = 0;
-	virtual void freeObjectTexture(ObjectTextureID textureID) = 0;
+	virtual void freeObjectTexture(ObjectTextureID id) = 0;
 	virtual std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const = 0;
-	virtual LockedTexture lockObjectTexture(ObjectTextureID textureID) = 0;
-	virtual void unlockObjectTexture(ObjectTextureID textureID) = 0;
+	virtual LockedTexture lockObjectTexture(ObjectTextureID id) = 0;
+	virtual void unlockObjectTexture(ObjectTextureID id) = 0;
 
 	virtual UiTextureID createUiTexture(int width, int height) = 0;
-	virtual void freeUiTexture(UiTextureID textureID) = 0;
+	virtual void freeUiTexture(UiTextureID id) = 0;
 	virtual std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const = 0;
-	virtual LockedTexture lockUiTexture(UiTextureID textureID) = 0;
-	virtual void unlockUiTexture(UiTextureID textureID) = 0;
+	virtual LockedTexture lockUiTexture(UiTextureID id) = 0;
+	virtual void unlockUiTexture(UiTextureID id) = 0;
+
+	// Material management functions.
+	virtual RenderMaterialID createMaterial(RenderMaterialKey key) = 0;
+	virtual void freeMaterial(RenderMaterialID id) = 0;
+	virtual void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value) = 0;
+	virtual void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value) = 0;
 
 	// Renders a frame to the target window. Currently this is blocking and should be safe to present the frame upon returning.
 	virtual void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

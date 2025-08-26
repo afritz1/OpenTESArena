@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "RenderDrawCall.h"
+#include "RenderMaterialUtils.h"
 #include "RenderShaderUtils.h"
 #include "RenderTransform.h"
 #include "RenderVoxelChunk.h"
@@ -91,6 +92,8 @@ private:
 	// For reusing model space vertex buffers between chunks.
 	std::vector<RenderVoxelCombinedFaceVertexBuffer> combinedFaceVertexBuffers;
 
+	std::vector<RenderMaterial> materials;
+
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
 
@@ -105,9 +108,9 @@ private:
 	void updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
 		const VoxelFaceCombineChunk &faceCombineChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent, Renderer &renderer);
 	void updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const VoxelChunkManager &voxelChunkManager, double ceilingScale);
+		const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer);
 	void updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const VoxelChunkManager &voxelChunkManager, double ceilingScale);
+		const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer);
 
 	void clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelFaceCombineResultID> dirtyFaceCombineResultIDs, Renderer &renderer);
 	void clearChunkNonCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions);

@@ -91,53 +91,56 @@ namespace
 		{ PixelShaderType::UiTexture, "UiTexture" }
 	};
 
-	VulkanPipelineKeyCode MakePipelineKeyCode(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthTest, bool backFaceCulling)
+	VulkanPipelineKeyCode MakePipelineKeyCode(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling)
 	{
 		constexpr int vertexShaderTypeRequiredBits = Bytes::getRequiredBitCount(VERTEX_SHADER_TYPE_COUNT);
 		constexpr int fragmentShaderTypeRequiredBits = Bytes::getRequiredBitCount(TOTAL_PIXEL_SHADER_TYPE_COUNT);
-		constexpr int depthTestRequiredBits = 1;
+		constexpr int depthReadRequiredBits = 1;
+		constexpr int depthWriteRequiredBits = 1;
 		constexpr int backFaceCullingRequiredBits = 1;
-		constexpr int totalRequiredBits = vertexShaderTypeRequiredBits + fragmentShaderTypeRequiredBits + depthTestRequiredBits + backFaceCullingRequiredBits;
+		constexpr int totalRequiredBits = vertexShaderTypeRequiredBits + fragmentShaderTypeRequiredBits + depthReadRequiredBits + depthWriteRequiredBits + backFaceCullingRequiredBits;
 		static_assert((sizeof(VulkanPipelineKeyCode) * CHAR_BIT) >= totalRequiredBits);
 
 		constexpr int vertexShaderTypeBitOffset = 0;
 		constexpr int fragmentShaderTypeBitOffset = vertexShaderTypeBitOffset + vertexShaderTypeRequiredBits;
-		constexpr int depthTestBitOffset = fragmentShaderTypeBitOffset + fragmentShaderTypeRequiredBits;
-		constexpr int backFaceCullingBitOffset = depthTestBitOffset + depthTestRequiredBits;
+		constexpr int depthReadBitOffset = fragmentShaderTypeBitOffset + fragmentShaderTypeRequiredBits;
+		constexpr int depthWriteBitOffset = depthReadBitOffset + depthReadRequiredBits;
+		constexpr int backFaceCullingBitOffset = depthWriteBitOffset + depthWriteRequiredBits;
 
 		const uint32_t vertexShaderTypeBits = static_cast<uint32_t>(vertexShaderType);
 		const uint32_t fragmentShaderTypeBits = static_cast<uint32_t>(fragmentShaderType);
-		const uint32_t depthTestBits = depthTest ? 1 : 0;
+		const uint32_t depthReadBits = depthRead ? 1 : 0;
+		const uint32_t depthWriteBits = depthWrite ? 1 : 0;
 		const uint32_t backFaceCullingBits = backFaceCulling ? 1 : 0;
 
-		return vertexShaderTypeBits | (fragmentShaderTypeBits << fragmentShaderTypeBitOffset) | (depthTestBits << depthTestBitOffset) | (backFaceCullingBits << backFaceCullingBitOffset);
+		return vertexShaderTypeBits | (fragmentShaderTypeBits << fragmentShaderTypeBitOffset) | (depthReadBits << depthReadBitOffset) | (depthWriteBits << depthWriteBitOffset) | (backFaceCullingBits << backFaceCullingBitOffset);
 	}
 
 	constexpr VulkanPipelineKey RequiredPipelines[] =
 	{
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueWithAlphaTestLayer, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimation, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelColor, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelOpacity, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueWithAlphaTestLayer, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimation, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelColor, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelOpacity, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false),
 
-		VulkanPipelineKey(VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true),
+		VulkanPipelineKey(VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true, true),
 
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTested, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithPaletteIndexLookup, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithLightLevelOpacity, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTested, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithPaletteIndexLookup, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithLightLevelOpacity, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true, true),
 
-		VulkanPipelineKey(VertexShaderType::UI, PixelShaderType::UiTexture, false, false)
+		VulkanPipelineKey(VertexShaderType::UI, PixelShaderType::UiTexture, false, false, false)
 	};
 
 	constexpr int UiPipelineKeyIndex = static_cast<int>(std::size(RequiredPipelines) - 1);
@@ -1008,7 +1011,7 @@ namespace
 				break;
 			}
 		}
-		
+
 		return presentMode;
 	}
 
@@ -1581,7 +1584,7 @@ namespace
 	}
 
 	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule,
-		int positionComponentsPerVertex, bool enableDepth, bool enableBackFaceCulling, vk::PipelineLayout pipelineLayout,
+		int positionComponentsPerVertex, bool enableDepthRead, bool enableDepthWrite, bool enableBackFaceCulling, vk::PipelineLayout pipelineLayout,
 		vk::RenderPass renderPass, int subpassIndex, vk::Pipeline *outPipeline)
 	{
 		DebugAssert((positionComponentsPerVertex == 3) || (positionComponentsPerVertex == 2));
@@ -1666,9 +1669,9 @@ namespace
 		vk::PipelineMultisampleStateCreateInfo pipelineMultisampleStateCreateInfo;
 
 		vk::PipelineDepthStencilStateCreateInfo pipelineDepthStencilStateCreateInfo;
-		pipelineDepthStencilStateCreateInfo.depthTestEnable = enableDepth;
-		pipelineDepthStencilStateCreateInfo.depthWriteEnable = enableDepth;
-		pipelineDepthStencilStateCreateInfo.depthCompareOp = enableDepth ? vk::CompareOp::eLess : vk::CompareOp::eNever;
+		pipelineDepthStencilStateCreateInfo.depthTestEnable = enableDepthRead;
+		pipelineDepthStencilStateCreateInfo.depthWriteEnable = enableDepthWrite;
+		pipelineDepthStencilStateCreateInfo.depthCompareOp = enableDepthRead ? vk::CompareOp::eLess : vk::CompareOp::eNever;
 		pipelineDepthStencilStateCreateInfo.depthBoundsTestEnable = false;
 		pipelineDepthStencilStateCreateInfo.stencilTestEnable = false;
 		pipelineDepthStencilStateCreateInfo.front = vk::StencilOp::eKeep;
@@ -1803,8 +1806,7 @@ VulkanTexture::VulkanTexture()
 	this->bytesPerTexel = 0;
 }
 
-void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::DescriptorSet descriptorSet,
-	vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
+void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -1815,9 +1817,21 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image ima
 	this->image = image;
 	this->imageView = imageView;
 	this->sampler = sampler;
-	this->descriptorSet = descriptorSet;
 	this->stagingBuffer = stagingBuffer;
 	this->stagingHostMappedBytes = stagingHostMappedBytes;
+}
+
+VulkanMaterial::VulkanMaterial()
+{
+	this->meshLightPercent = 0.0f;
+	this->pixelShaderParam0 = 0.0f;
+}
+
+void VulkanMaterial::init(vk::Pipeline pipeline, vk::PipelineLayout pipelineLayout, vk::DescriptorSet descriptorSet)
+{
+	this->pipeline = pipeline;
+	this->pipelineLayout = pipelineLayout;
+	this->descriptorSet = descriptorSet;
 }
 
 VulkanCamera::VulkanCamera()
@@ -2132,7 +2146,8 @@ VulkanPipelineKey::VulkanPipelineKey()
 {
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
 	this->fragmentShaderType = static_cast<PixelShaderType>(-1);
-	this->depthTest = false;
+	this->depthRead = false;
+	this->depthWrite = false;
 	this->backFaceCulling = false;
 }
 
@@ -2427,15 +2442,15 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		DebugAssert(fragmentShaderIter != this->fragmentShaders.end());
 
 		VulkanPipeline &pipeline = this->graphicsPipelines[i];
-		pipeline.keyCode = MakePipelineKeyCode(requiredPipelineKey.vertexShaderType, requiredPipelineKey.fragmentShaderType, requiredPipelineKey.depthTest, requiredPipelineKey.backFaceCulling);
+		pipeline.keyCode = MakePipelineKeyCode(requiredPipelineKey.vertexShaderType, requiredPipelineKey.fragmentShaderType, requiredPipelineKey.depthRead, requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling);
 
 		const bool isUiPipeline = requiredPipelineKey.fragmentShaderType == PixelShaderType::UiTexture;
 		const int positionComponentsPerVertex = isUiPipeline ? 2 : 3;
 		const vk::PipelineLayout pipelineLayout = isUiPipeline ? this->uiPipelineLayout : this->scenePipelineLayout;
 		const int subpassIndex = isUiPipeline ? 1 : 0;
 
-		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, positionComponentsPerVertex, requiredPipelineKey.depthTest,
-			requiredPipelineKey.backFaceCulling, pipelineLayout, this->renderPass, subpassIndex, &pipeline.pipeline))
+		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, positionComponentsPerVertex, requiredPipelineKey.depthRead,
+			requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling, pipelineLayout, this->renderPass, subpassIndex, &pipeline.pipeline))
 		{
 			DebugLogErrorFormat("Couldn't create graphics pipeline %d.", i);
 			return false;
@@ -2638,6 +2653,16 @@ void VulkanRenderBackend::shutdown()
 		this->vertexBufferHeapManagerDeviceLocal.freeAllocations();
 		this->vertexBufferHeapManagerDeviceLocal.clear();
 
+		for (VulkanMaterial &material : this->materialPool.values)
+		{
+			if (material.descriptorSet)
+			{
+				this->device.freeDescriptorSets(this->descriptorPool, material.descriptorSet);
+			}
+		}
+
+		this->materialPool.clear();
+
 		for (VulkanTexture &texture : this->uiTexturePool.values)
 		{
 			if (texture.stagingBuffer)
@@ -2797,6 +2822,16 @@ void VulkanRenderBackend::shutdown()
 			this->device.destroyPipelineLayout(this->scenePipelineLayout);
 			this->scenePipelineLayout = nullptr;
 		}
+
+		for (vk::DescriptorSet descriptorSet : this->uiTextureDescriptorSets.values)
+		{
+			if (descriptorSet)
+			{
+				this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
+			}
+		}
+
+		this->uiTextureDescriptorSets.clear();
 
 		if (this->uiMaterialDescriptorSetLayout)
 		{
@@ -3607,26 +3642,11 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 		return -1;
 	}
 
-	vk::DescriptorSet descriptorSet;
-	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
-	{
-		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
-		this->device.destroySampler(sampler);
-		this->device.destroyImageView(imageView);
-		this->objectTextureHeapManagerDeviceLocal.freeImageMapping(image);
-		this->device.destroyImage(image);
-		this->objectTexturePool.free(textureID);
-		return -1;
-	}
-
-	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
-
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, ObjectTextureStagingUsageFlags, this->graphicsQueueFamilyIndex, this->objectTextureHeapManagerStaging, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create buffer and map memory for object texture with dims %dx%d.", width, height);
-		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
 		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
 		this->objectTextureHeapManagerDeviceLocal.freeImageMapping(image);
@@ -3636,7 +3656,7 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 	}
 
 	VulkanTexture &texture = this->objectTexturePool.get(textureID);
-	texture.init(width, height, bytesPerTexel, image, imageView, sampler, descriptorSet, stagingBuffer, stagingHostMappedBytes);
+	texture.init(width, height, bytesPerTexel, image, imageView, sampler, stagingBuffer, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -3652,11 +3672,6 @@ void VulkanRenderBackend::freeObjectTexture(ObjectTextureID id)
 			{
 				this->objectTextureHeapManagerStaging.freeBufferMapping(texture->stagingBuffer);
 				this->device.destroyBuffer(texture->stagingBuffer);
-			}
-
-			if (texture->descriptorSet)
-			{
-				this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
 			}
 
 			if (texture->sampler)
@@ -3759,10 +3774,24 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 		return -1;
 	}
 
-	vk::DescriptorSet descriptorSet;
+	vk::Buffer stagingBuffer;
+	Span<std::byte> stagingHostMappedBytes;
+	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UiTextureStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uiTextureHeapManagerStaging, &stagingBuffer, &stagingHostMappedBytes))
+	{
+		DebugLogErrorFormat("Couldn't create buffer and bind memory for UI texture with dims %dx%d.", width, height);
+		this->device.destroySampler(sampler);
+		this->device.destroyImageView(imageView);
+		this->uiTextureHeapManagerDeviceLocal.freeImageMapping(image);
+		this->device.destroyImage(image);
+		this->uiTexturePool.free(textureID);
+		return -1;
+	}
+
+	vk::DescriptorSet descriptorSet; // Making a separate mapping from textures since UI shouldn't need materials.
 	if (!TryCreateDescriptorSet(this->device, this->uiMaterialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
 	{
-		DebugLogErrorFormat("Couldn't create descriptor set for image with dims %dx%d.", width, height);
+		DebugLogErrorFormat("Couldn't create descriptor set for UI texture with dims %dx%d.", width, height);
+		this->device.destroyBuffer(stagingBuffer);
 		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
 		this->uiTextureHeapManagerDeviceLocal.freeImageMapping(image);
@@ -3772,23 +3801,10 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 	}
 
 	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
-
-	vk::Buffer stagingBuffer;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UiTextureStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uiTextureHeapManagerStaging, &stagingBuffer, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create buffer and bind memory for UI texture with dims %dx%d.", width, height);
-		this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
-		this->device.destroySampler(sampler);
-		this->device.destroyImageView(imageView);
-		this->uiTextureHeapManagerDeviceLocal.freeImageMapping(image);
-		this->device.destroyImage(image);
-		this->uiTexturePool.free(textureID);
-		return -1;
-	}
+	this->uiTextureDescriptorSets.emplace(textureID, descriptorSet);
 
 	VulkanTexture &texture = this->uiTexturePool.get(textureID);
-	texture.init(width, height, bytesPerTexel, image, imageView, sampler, descriptorSet, stagingBuffer, stagingHostMappedBytes);
+	texture.init(width, height, bytesPerTexel, image, imageView, sampler, stagingBuffer, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -3804,11 +3820,6 @@ void VulkanRenderBackend::freeUiTexture(UiTextureID id)
 			{
 				this->uiTextureHeapManagerStaging.freeBufferMapping(texture->stagingBuffer);
 				this->device.destroyBuffer(texture->stagingBuffer);
-			}
-
-			if (texture->descriptorSet)
-			{
-				this->device.freeDescriptorSets(this->descriptorPool, texture->descriptorSet);
 			}
 
 			if (texture->sampler)
@@ -3828,6 +3839,13 @@ void VulkanRenderBackend::freeUiTexture(UiTextureID id)
 			}
 
 			this->uiTexturePool.free(id);
+
+			vk::DescriptorSet *descriptorSet = this->uiTextureDescriptorSets.find(id);
+			if (descriptorSet != nullptr)
+			{
+				this->device.freeDescriptorSets(this->descriptorPool, *descriptorSet);
+				this->uiTextureDescriptorSets.erase(id);
+			}
 		}
 	};
 
@@ -3867,6 +3885,98 @@ void VulkanRenderBackend::unlockUiTexture(UiTextureID id)
 	};
 
 	this->copyCommands.emplace_back(std::move(commandBufferFunc));
+}
+
+RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
+{
+	const RenderMaterialID materialID = this->materialPool.alloc();
+	if (materialID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate material ID for key (vertex shader %d, fragment shader %d, depth read %d, depth write %d, back-face culling %d).",
+			key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+		return -1;
+	}
+
+	const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+	int pipelineIndex = -1;
+	for (int i = 0; i < this->graphicsPipelines.getCount(); i++)
+	{
+		const VulkanPipeline &graphicsPipeline = this->graphicsPipelines[i];
+		if (graphicsPipeline.keyCode == pipelineKeyCode)
+		{
+			pipelineIndex = i;
+			break;
+		}
+	}
+
+	if (pipelineIndex < 0)
+	{
+		DebugLogErrorFormat("Couldn't find pipeline for material key (vertex shader %d, fragment shader %d, depth read %d, depth write %d, back-face culling %d).",
+			key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+		return -1;
+	}
+
+	const vk::Pipeline pipeline = this->graphicsPipelines[pipelineIndex].pipeline;
+	const vk::PipelineLayout pipelineLayout = this->scenePipelineLayout; // @todo may want to customize this more for certain push constants
+
+	vk::DescriptorSet descriptorSet;
+	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	{
+		DebugLogErrorFormat("Couldn't create descriptor set for material key (vertex shader %d, fragment shader %d, depth read %d, depth write %d, back-face culling %d).",
+			key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+	}
+
+	const ObjectTextureID textureID = key.textureIDs[0]; // @todo need to get second texture ID if this material requires it
+	const VulkanTexture &texture = this->objectTexturePool.get(textureID);
+	UpdateMaterialDescriptorSet(this->device, descriptorSet, texture.imageView, texture.sampler);
+
+	VulkanMaterial &material = this->materialPool.get(materialID);
+	material.init(pipeline, pipelineLayout, descriptorSet);
+
+	return materialID;
+}
+
+void VulkanRenderBackend::freeMaterial(RenderMaterialID id)
+{
+	auto commandBufferFunc = [this, id]()
+	{
+		VulkanMaterial *material = this->materialPool.tryGet(id);
+		if (material != nullptr)
+		{
+			if (material->descriptorSet)
+			{
+				this->device.freeDescriptorSets(this->descriptorPool, material->descriptorSet);
+			}
+
+			this->materialPool.free(id);
+		}
+	};
+
+	this->freeCommands.emplace_back(std::move(commandBufferFunc));
+}
+
+void VulkanRenderBackend::setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value)
+{
+	VulkanMaterial *material = this->materialPool.tryGet(id);
+	if (material == nullptr)
+	{
+		DebugLogErrorFormat("Missing material %d for updating mesh lighting percent to %.2f.", id, value);
+		return;
+	}
+
+	material->meshLightPercent = static_cast<float>(value);
+}
+
+void VulkanRenderBackend::setMaterialParameterPixelShaderParam(RenderMaterialID id, double value)
+{
+	VulkanMaterial *material = this->materialPool.tryGet(id);
+	if (material == nullptr)
+	{
+		DebugLogErrorFormat("Missing material %d for updating pixel shader param to %.2f.", id, value);
+		return;
+	}
+
+	material->pixelShaderParam0 = static_cast<float>(value);
 }
 
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
@@ -3993,32 +4103,14 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		{
 			for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
 			{
-				const VertexShaderType vertexShaderType = drawCall.vertexShaderType;
-				const PixelShaderType fragmentShaderType = drawCall.pixelShaderType;
-				const bool enableDepthTest = drawCall.enableDepthRead;
-				const bool enableBackFaceCulling = drawCall.enableBackFaceCulling;
-				const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, enableDepthTest, enableBackFaceCulling);
+				const VulkanMaterial &material = this->materialPool.get(drawCall.materialID);
+				const vk::Pipeline pipeline = material.pipeline;
+				const vk::PipelineLayout pipelineLayout = material.pipelineLayout;
 
-				const VulkanPipeline *pipeline = nullptr;
-				for (const VulkanPipeline &currentPipeline : this->graphicsPipelines)
+				if (pipeline != currentPipeline)
 				{
-					if (currentPipeline.keyCode == pipelineKeyCode)
-					{
-						pipeline = &currentPipeline;
-						break;
-					}
-				}
-
-				if (pipeline == nullptr)
-				{
-					DebugCrashFormat("Missing pipeline: vertex shader: %d, fragment shader: %d, depth test: %d, back-face culling: %d.",
-						vertexShaderType, fragmentShaderType, enableDepthTest, enableBackFaceCulling);
-				}
-
-				if (pipeline->pipeline != currentPipeline)
-				{
-					currentPipeline = pipeline->pipeline;
-					this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline->pipeline);
+					currentPipeline = pipeline;
+					this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline);
 				}
 
 				constexpr vk::DeviceSize bufferOffset = 0;
@@ -4059,17 +4151,10 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
 				constexpr uint32_t transformDescriptorSetIndex = 1;
 				uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.bytesPerStride;
-				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->scenePipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
 
-				const ObjectTextureID textureID = drawCall.textureIDs[0];
-				if (textureID != currentTextureID)
-				{
-					currentTextureID = textureID;
-
-					const VulkanTexture &texture = this->objectTexturePool.get(textureID);
-					constexpr uint32_t materialDescriptorSetIndex = 2;
-					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->scenePipelineLayout, materialDescriptorSetIndex, texture.descriptorSet, emptyDynamicOffsets);
-				}
+				constexpr uint32_t materialDescriptorSetIndex = 2;
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, materialDescriptorSetIndex, material.descriptorSet, emptyDynamicOffsets);
 
 				constexpr uint32_t meshInstanceCount = 1;
 				this->commandBuffer.drawIndexed(currentIndexBufferIndexCount, meshInstanceCount, 0, 0, 0);
@@ -4117,8 +4202,14 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				}
 
 				const UiTextureID textureID = renderElement.id;
-				const VulkanTexture &texture = this->uiTexturePool.get(textureID);
-				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->uiPipelineLayout, 0, texture.descriptorSet, emptyDynamicOffsets);
+				const vk::DescriptorSet *textureDescriptorSet = this->uiTextureDescriptorSets.find(textureID);
+				if (textureDescriptorSet == nullptr)
+				{
+					DebugLogErrorFormat("Couldn't find descriptor set for UI texture %d.", textureID);
+					continue;
+				}
+
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, this->uiPipelineLayout, 0, *textureDescriptorSet, emptyDynamicOffsets);
 
 				const Rect presentRect = renderElement.rect;
 				const float uiVertexShaderPushConstants[] =

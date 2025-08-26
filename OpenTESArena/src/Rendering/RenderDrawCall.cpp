@@ -9,20 +9,7 @@ RenderDrawCall::RenderDrawCall()
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
-	
-	for (ObjectTextureID &textureID : this->textureIDs)
-	{
-		textureID = -1;
-	}
-
-	this->lightingType = static_cast<RenderLightingType>(-1);
-	this->lightPercent = 0.0;
-	this->vertexShaderType = static_cast<VertexShaderType>(-1);
-	this->pixelShaderType = static_cast<PixelShaderType>(-1);
-	this->pixelShaderParam0 = 0.0;
-	this->enableBackFaceCulling = false;
-	this->enableDepthRead = false;
-	this->enableDepthWrite = false;
+	this->materialID = -1;
 }
 
 void RenderDrawCall::clear()
@@ -34,18 +21,5 @@ void RenderDrawCall::clear()
 	this->normalBufferID = -1;
 	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
-	
-	for (ObjectTextureID &textureID : this->textureIDs)
-	{
-		textureID = -1;
-	}
-	
-	this->lightingType = static_cast<RenderLightingType>(-1);
-	this->lightPercent = 0.0;
-	this->vertexShaderType = static_cast<VertexShaderType>(-1);
-	this->pixelShaderType = static_cast<PixelShaderType>(-1);
-	this->pixelShaderParam0 = 0.0;
-	this->enableBackFaceCulling = false;
-	this->enableDepthRead = false;
-	this->enableDepthWrite = false;
+	this->materialID = -1;
 }

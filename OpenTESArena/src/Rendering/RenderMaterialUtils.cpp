@@ -19,6 +19,59 @@ RenderMaterialKey::RenderMaterialKey()
 	this->enableDepthWrite = false;
 }
 
+bool RenderMaterialKey::operator==(const RenderMaterialKey &other) const
+{
+	if (this == &other)
+	{
+		return true;
+	}
+
+	if (this->vertexShaderType != other.vertexShaderType)
+	{
+		return false;
+	}
+
+	if (this->pixelShaderType != other.pixelShaderType)
+	{
+		return false;
+	}
+
+	if (this->textureCount != other.textureCount)
+	{
+		return false;
+	}
+
+	for (int i = 0; i < this->textureCount; i++)
+	{
+		if (this->textureIDs[i] != other.textureIDs[i])
+		{
+			return false;
+		}
+	}
+
+	if (this->lightingType != other.lightingType)
+	{
+		return false;
+	}
+
+	if (this->enableBackFaceCulling != other.enableBackFaceCulling)
+	{
+		return false;
+	}
+
+	if (this->enableDepthRead != other.enableDepthRead)
+	{
+		return false;
+	}
+
+	if (this->enableDepthWrite != other.enableDepthWrite)
+	{
+		return false;
+	}
+
+	return true;
+}
+
 void RenderMaterialKey::init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
 	RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite)
 {
@@ -34,4 +87,15 @@ void RenderMaterialKey::init(VertexShaderType vertexShaderType, PixelShaderType 
 	this->enableBackFaceCulling = enableBackFaceCulling;
 	this->enableDepthRead = enableDepthRead;
 	this->enableDepthWrite = enableDepthWrite;
+}
+
+RenderMaterial::RenderMaterial()
+{
+	this->id = -1;
+}
+
+void RenderMaterial::init(RenderMaterialKey key, RenderMaterialID id)
+{
+	this->key = key;
+	this->id = id;
 }

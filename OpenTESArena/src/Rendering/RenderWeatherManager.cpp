@@ -68,11 +68,17 @@ RenderWeatherManager::RenderWeatherManager()
 
 	this->rainTransformBufferID = -1;
 	this->rainTextureID = -1;
+	this->rainMaterialID = -1;
 
 	this->snowTransformBufferID = -1;
 	for (ObjectTextureID &textureID : this->snowTextureIDs)
 	{
 		textureID = -1;
+	}
+
+	for (RenderMaterialID &materialID : this->snowMaterialIDs)
+	{
+		materialID = -1;
 	}
 
 	this->fogPositionBufferID = -1;
@@ -81,6 +87,7 @@ RenderWeatherManager::RenderWeatherManager()
 	this->fogIndexBufferID = -1;
 	this->fogTransformBufferID = -1;
 	this->fogTextureID = -1;
+	this->fogMaterialID = -1;
 }
 
 bool RenderWeatherManager::initMeshes(Renderer &renderer)
@@ -422,6 +429,32 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 	return true;
 }
 
+bool RenderWeatherManager::initMaterials(Renderer &renderer)
+{
+	constexpr VertexShaderType vertexShaderType = VertexShaderType::Basic;
+	constexpr RenderLightingType lightingType = RenderLightingType::PerMesh;
+
+	RenderMaterialKey rainMaterialKey;
+	rainMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTested, Span<const ObjectTextureID>(&this->rainTextureID, 1), lightingType, false, false, false);
+	this->rainMaterialID = renderer.createMaterial(rainMaterialKey);
+	renderer.setMaterialParameterMeshLightingPercent(this->rainMaterialID, 1.0);
+
+	for (int i = 0; i < static_cast<int>(std::size(this->snowMaterialIDs)); i++)
+	{
+		RenderMaterialKey snowMaterialKey;
+		snowMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTested, Span<const ObjectTextureID>(&this->snowTextureIDs[i], 1), lightingType, false, false, false);
+		this->snowMaterialIDs[i] = renderer.createMaterial(snowMaterialKey);
+		renderer.setMaterialParameterMeshLightingPercent(this->snowMaterialIDs[i], 1.0);
+	}
+
+	RenderMaterialKey fogMaterialKey;
+	fogMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTestedWithLightLevelOpacity, Span<const ObjectTextureID>(&this->fogTextureID, 1), lightingType, false, false, false);
+	this->fogMaterialID = renderer.createMaterial(fogMaterialKey);
+	renderer.setMaterialParameterMeshLightingPercent(this->fogMaterialID, 1.0);
+
+	return true;
+}
+
 bool RenderWeatherManager::init(Renderer &renderer)
 {
 	if (!this->initMeshes(renderer))
@@ -439,6 +472,12 @@ bool RenderWeatherManager::init(Renderer &renderer)
 	if (!this->initTextures(renderer))
 	{
 		DebugLogError("Couldn't init all weather textures.");
+		return false;
+	}
+
+	if (!this->initMaterials(renderer))
+	{
+		DebugLogError("Couldn't init all weather materials.");
 		return false;
 	}
 
@@ -511,6 +550,12 @@ void RenderWeatherManager::freeParticleBuffers(Renderer &renderer)
 		this->rainTextureID = -1;
 	}
 
+	if (this->rainMaterialID >= 0)
+	{
+		renderer.freeMaterial(this->rainMaterialID);
+		this->rainMaterialID = -1;
+	}
+
 	if (this->snowTransformBufferID >= 0)
 	{
 		renderer.freeUniformBuffer(this->snowTransformBufferID);
@@ -523,6 +568,15 @@ void RenderWeatherManager::freeParticleBuffers(Renderer &renderer)
 		{
 			renderer.freeObjectTexture(snowTextureID);
 			snowTextureID = -1;
+		}
+	}
+
+	for (RenderMaterialID &snowMaterialID : this->snowMaterialIDs)
+	{
+		if (snowMaterialID >= 0)
+		{
+			renderer.freeMaterial(snowMaterialID);
+			snowMaterialID = -1;
 		}
 	}
 }
@@ -558,6 +612,12 @@ void RenderWeatherManager::freeFogBuffers(Renderer &renderer)
 		renderer.freeObjectTexture(this->fogTextureID);
 		this->fogTextureID = -1;
 	}
+
+	if (this->fogMaterialID >= 0)
+	{
+		renderer.freeMaterial(this->fogMaterialID);
+		this->fogMaterialID = -1;
+	}
 }
 
 void RenderWeatherManager::loadScene()
@@ -572,7 +632,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 	this->fogDrawCall.clear();
 
 	// @todo: this isn't doing anything that changes per-frame now, move it to loadScene()
-	auto populateParticleDrawCall = [this](RenderDrawCall &drawCall, UniformBufferID transformBufferID, int transformIndex, ObjectTextureID textureID)
+	auto populateParticleDrawCall = [this, &renderer](RenderDrawCall &drawCall, UniformBufferID transformBufferID, int transformIndex, RenderMaterialID materialID)
 	{
 		drawCall.transformBufferID = transformBufferID;
 		drawCall.transformIndex = transformIndex;
@@ -581,26 +641,17 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.normalBufferID = this->particleNormalBufferID;
 		drawCall.texCoordBufferID = this->particleTexCoordBufferID;
 		drawCall.indexBufferID = this->particleIndexBufferID;
-		drawCall.textureIDs[0] = textureID;
-		drawCall.textureIDs[1] = -1;
-		drawCall.lightingType = RenderLightingType::PerMesh;
-		drawCall.lightPercent = 1.0;
-		drawCall.vertexShaderType = VertexShaderType::Basic; // @todo: actually have a dedicated vertex shader?
-		drawCall.pixelShaderType = PixelShaderType::AlphaTested;
-		drawCall.pixelShaderParam0 = 0.0;
-		drawCall.enableBackFaceCulling = false;
-		drawCall.enableDepthRead = false;
-		drawCall.enableDepthWrite = false;
+		drawCall.materialID = materialID;
 	};
 
 	auto populateRainDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, int transformIndex)
 	{
-		populateParticleDrawCall(drawCall, this->rainTransformBufferID, transformIndex, this->rainTextureID);
+		populateParticleDrawCall(drawCall, this->rainTransformBufferID, transformIndex, this->rainMaterialID);
 	};
 
-	auto populateSnowDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, int transformIndex, ObjectTextureID textureID)
+	auto populateSnowDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, int transformIndex, RenderMaterialID materialID)
 	{
-		populateParticleDrawCall(drawCall, this->snowTransformBufferID, transformIndex, textureID);
+		populateParticleDrawCall(drawCall, this->snowTransformBufferID, transformIndex, materialID);
 	};
 
 	const Matrix4d particleRotationMatrix = MakeParticleRotationMatrix(camera.yaw, camera.pitch);
@@ -683,8 +734,8 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 				snowParticleRenderTransform.scale = snowParticleScaleMatrix;
 				renderer.populateUniformBufferIndexRenderTransform(this->snowTransformBufferID, snowParticleTransformIndex, snowParticleRenderTransform);
 
-				const ObjectTextureID snowParticleTextureID = this->snowTextureIDs[snowParticleSizeIndex];
-				populateSnowDrawCall(this->snowDrawCalls[i], snowParticleTransformIndex, snowParticleTextureID);
+				const RenderMaterialID snowParticleMaterialID = this->snowMaterialIDs[snowParticleSizeIndex];
+				populateSnowDrawCall(this->snowDrawCalls[i], snowParticleTransformIndex, snowParticleMaterialID);
 			}
 		}
 	}
@@ -704,16 +755,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.normalBufferID = this->fogNormalBufferID;
 		this->fogDrawCall.texCoordBufferID = this->fogTexCoordBufferID;
 		this->fogDrawCall.indexBufferID = this->fogIndexBufferID;
-		this->fogDrawCall.textureIDs[0] = this->fogTextureID;
-		this->fogDrawCall.textureIDs[1] = -1;
-		this->fogDrawCall.lightingType = RenderLightingType::PerMesh;
-		this->fogDrawCall.lightPercent = 1.0;
-		this->fogDrawCall.vertexShaderType = VertexShaderType::Basic;
-		this->fogDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity; // @todo: don't depth test
-		this->fogDrawCall.pixelShaderParam0 = 0.0;
-		this->fogDrawCall.enableBackFaceCulling = false;
-		this->fogDrawCall.enableDepthRead = false;
-		this->fogDrawCall.enableDepthWrite = false;
+		this->fogDrawCall.materialID = this->fogMaterialID;
 	}
 }
 

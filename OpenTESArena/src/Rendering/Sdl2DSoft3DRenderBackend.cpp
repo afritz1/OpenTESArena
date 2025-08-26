@@ -398,6 +398,26 @@ void Sdl2DSoft3DRenderBackend::unlockUiTexture(UiTextureID id)
 	this->renderer2D.unlockTexture(id);
 }
 
+RenderMaterialID Sdl2DSoft3DRenderBackend::createMaterial(RenderMaterialKey key)
+{
+	return this->renderer3D.createMaterial(key);
+}
+
+void Sdl2DSoft3DRenderBackend::freeMaterial(RenderMaterialID id)
+{
+	this->renderer3D.freeMaterial(id);
+}
+
+void Sdl2DSoft3DRenderBackend::setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value)
+{
+	this->renderer3D.setMaterialParameterMeshLightingPercent(id, value);
+}
+
+void Sdl2DSoft3DRenderBackend::setMaterialParameterPixelShaderParam(RenderMaterialID id, double value)
+{
+	this->renderer3D.setMaterialParameterPixelShaderParam(id, value);
+}
+
 void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {

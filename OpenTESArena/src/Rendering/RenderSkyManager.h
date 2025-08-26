@@ -2,6 +2,7 @@
 #define RENDER_SKY_MANAGER_H
 
 #include "RenderDrawCall.h"
+#include "RenderMaterialUtils.h"
 #include "RenderMeshUtils.h"
 #include "RenderTextureUtils.h"
 #include "../Assets/TextureAsset.h"
@@ -45,12 +46,23 @@ private:
 	Buffer<ScopedObjectTextureRef> skyThunderstormTextureRefs; // One for each frame of flash animation.
 	ScopedObjectTextureRef skyInteriorTextureRef; // Default black for interiors.
 
+	RenderMaterialID skyGradientAMMaterialID;
+	RenderMaterialID skyGradientPMMaterialID;
+	RenderMaterialID skyFogMaterialID;
+	Buffer<RenderMaterialID> skyThunderstormMaterialIDs;
+	RenderMaterialID skyInteriorMaterialID;
+
 	VertexPositionBufferID bgPositionBufferID;
 	VertexAttributeBufferID bgNormalBufferID;
 	VertexAttributeBufferID bgTexCoordBufferID;
 	IndexBufferID bgIndexBufferID;
 	UniformBufferID bgTransformBufferID;
 	RenderDrawCall bgDrawCall;
+	ObjectTextureID activeBgTextureID;
+
+	std::vector<LoadedGeneralSkyObjectTextureEntry> generalSkyObjectTextures;
+	std::vector<LoadedSmallStarTextureEntry> smallStarTextures;
+	std::vector<RenderMaterial> objectMaterials;
 
 	// All sky objects share simple vertex + attribute + index buffers.
 	VertexPositionBufferID objectPositionBufferID;
@@ -58,8 +70,6 @@ private:
 	VertexAttributeBufferID objectTexCoordBufferID;
 	IndexBufferID objectIndexBufferID;
 	UniformBufferID objectTransformBufferID;
-	std::vector<LoadedGeneralSkyObjectTextureEntry> generalSkyObjectTextures;
-	std::vector<LoadedSmallStarTextureEntry> smallStarTextures;
 	std::vector<RenderDrawCall> objectDrawCalls; // Order matters: stars, sun, planets, clouds, mountains.
 
 	ObjectTextureID getGeneralSkyObjectTextureID(const TextureAsset &textureAsset) const;
@@ -78,8 +88,7 @@ public:
 
 	void loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
 	void update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,
-		const CoordDouble3 &cameraCoord, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent,
-		Renderer &renderer);
+		const CoordDouble3 &cameraCoord, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
 

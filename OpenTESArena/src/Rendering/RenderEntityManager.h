@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "RenderDrawCall.h"
+#include "RenderMaterialUtils.h"
 #include "RenderMeshInstance.h"
 #include "RenderShaderUtils.h"
 #include "../Entities/EntityInstance.h"
@@ -34,6 +35,8 @@ private:
 	std::vector<RenderEntityLoadedAnimation> anims;
 	RenderMeshInstance meshInst; // Shared by all entities.
 	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> paletteIndicesTextureRefs;
+
+	std::vector<RenderMaterial> materials;
 
 	// All accumulated draw calls from entities each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;

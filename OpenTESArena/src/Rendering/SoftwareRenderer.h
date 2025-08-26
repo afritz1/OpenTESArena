@@ -22,21 +22,6 @@
 
 struct Renderer3DProfilerData;
 
-struct SoftwareObjectTexture
-{
-	Buffer<std::byte> texels;
-	const uint8_t *texels8Bit;
-	const uint32_t *texels32Bit;
-	int width, height, texelCount;
-	double widthReal, heightReal;
-	int bytesPerTexel;
-
-	SoftwareObjectTexture();
-
-	void init(int width, int height, int bytesPerTexel);
-	void clear();
-};
-
 struct SoftwareVertexPositionBuffer
 {
 	Buffer<double> positions;
@@ -101,6 +86,44 @@ struct SoftwareUniformBuffer
 	int getValidByteCount() const;
 };
 
+struct SoftwareObjectTexture
+{
+	Buffer<std::byte> texels;
+	const uint8_t *texels8Bit;
+	const uint32_t *texels32Bit;
+	int width, height, texelCount;
+	double widthReal, heightReal;
+	int bytesPerTexel;
+
+	SoftwareObjectTexture();
+
+	void init(int width, int height, int bytesPerTexel);
+	void clear();
+};
+
+struct SoftwareMaterial
+{
+	VertexShaderType vertexShaderType;
+	PixelShaderType pixelShaderType;
+
+	ObjectTextureID textureIDs[RenderMaterialKey::MAX_TEXTURE_COUNT];
+	int textureCount;
+
+	RenderLightingType lightingType;
+
+	bool enableBackFaceCulling;
+	bool enableDepthRead;
+	bool enableDepthWrite;
+
+	double meshLightPercent;
+	double pixelShaderParam0;
+
+	SoftwareMaterial();
+
+	void init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
+		RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite);
+};
+
 struct SoftwareLight
 {
 	double worldPointX;
@@ -120,6 +143,7 @@ using SoftwareVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID
 using SoftwareIndexBufferPool = RecyclablePool<IndexBufferID, SoftwareIndexBuffer>;
 using SoftwareUniformBufferPool = RecyclablePool<UniformBufferID, SoftwareUniformBuffer>;
 using SoftwareObjectTexturePool = RecyclablePool<ObjectTextureID, SoftwareObjectTexture>;
+using SoftwareMaterialPool = RecyclablePool<RenderMaterialID, SoftwareMaterial>;
 using SoftwareLightPool = RecyclablePool<RenderLightID, SoftwareLight>;
 
 class SoftwareRenderer
@@ -135,6 +159,7 @@ private:
 	SoftwareIndexBufferPool indexBuffers;
 	SoftwareUniformBufferPool uniformBuffers;
 	SoftwareObjectTexturePool objectTextures;
+	SoftwareMaterialPool materials;
 	SoftwareLightPool lights;
 public:
 	SoftwareRenderer();
@@ -177,10 +202,15 @@ public:
 	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius);
 
 	ObjectTextureID createTexture(int width, int height, int bytesPerTexel);
-	void freeTexture(ObjectTextureID textureID);
+	void freeTexture(ObjectTextureID id);
 	std::optional<Int2> tryGetTextureDims(ObjectTextureID id) const;
-	LockedTexture lockTexture(ObjectTextureID textureID);
-	void unlockTexture(ObjectTextureID textureID);
+	LockedTexture lockTexture(ObjectTextureID id);
+	void unlockTexture(ObjectTextureID id);
+
+	RenderMaterialID createMaterial(RenderMaterialKey key);
+	void freeMaterial(RenderMaterialID id);
+	void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value);
+	void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value);
 
 	void submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer);

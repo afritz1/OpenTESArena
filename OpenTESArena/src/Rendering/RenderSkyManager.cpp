@@ -35,11 +35,17 @@ void RenderSkyManager::LoadedSmallStarTextureEntry::init(uint8_t paletteIndex, S
 
 RenderSkyManager::RenderSkyManager()
 {
+	this->skyGradientAMMaterialID = -1;
+	this->skyGradientPMMaterialID = -1;
+	this->skyFogMaterialID = -1;
+	this->skyInteriorMaterialID = -1;
+
 	this->bgPositionBufferID = -1;
 	this->bgNormalBufferID = -1;
 	this->bgTexCoordBufferID = -1;
 	this->bgIndexBufferID = -1;
 	this->bgTransformBufferID = -1;
+	this->activeBgTextureID = -1;
 
 	this->objectPositionBufferID = -1;
 	this->objectNormalBufferID = -1;
@@ -317,9 +323,40 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		this->skyThunderstormTextureRefs.set(i, ScopedObjectTextureRef(flashTextureID, renderer));
 	}
 
-	const uint8_t skyInteriorColor = 0; // Black
+	constexpr uint8_t skyInteriorColor = 0; // Black
 	const ObjectTextureID skyInteriorTextureID = allocBgTextureID(Span2D<const uint8_t>(&skyInteriorColor, 1, 1));
 	this->skyInteriorTextureRef.init(skyInteriorTextureID, renderer);
+
+	constexpr VertexShaderType skyVertexShaderType = VertexShaderType::Basic;
+	constexpr PixelShaderType skyPixelShaderType = PixelShaderType::Opaque;
+	constexpr RenderLightingType skyLightingType = RenderLightingType::PerMesh;
+
+	RenderMaterialKey skyGradientAMMaterialKey;
+	skyGradientAMMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyGradientAMTextureID, 1), skyLightingType, false, false, false);
+	this->skyGradientAMMaterialID = renderer.createMaterial(skyGradientAMMaterialKey);
+
+	RenderMaterialKey skyGradientPMMaterialKey;
+	skyGradientPMMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyGradientPMTextureID, 1), skyLightingType, false, false, false);
+	this->skyGradientPMMaterialID = renderer.createMaterial(skyGradientPMMaterialKey);
+
+	RenderMaterialKey skyFogMaterialKey;
+	skyFogMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyFogTextureID, 1), skyLightingType, false, false, false);
+	this->skyFogMaterialID = renderer.createMaterial(skyFogMaterialKey);
+
+	this->skyThunderstormMaterialIDs.init(this->skyThunderstormTextureRefs.getCount());
+	for (int i = 0; i < this->skyThunderstormTextureRefs.getCount(); i++)
+	{
+		const ObjectTextureID skyThunderstormTextureID = this->skyThunderstormTextureRefs[i].get();
+
+		RenderMaterialKey skyThunderstormMaterialKey;
+		skyThunderstormMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyThunderstormTextureID, 1), skyLightingType, false, false, false);
+
+		this->skyThunderstormMaterialIDs[i] = renderer.createMaterial(skyThunderstormMaterialKey);
+	}
+
+	RenderMaterialKey skyInteriorMaterialKey;
+	skyInteriorMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyInteriorTextureID, 1), skyLightingType, false, false, false);
+	this->skyInteriorMaterialID = renderer.createMaterial(skyInteriorMaterialKey);
 
 	this->bgDrawCall.transformBufferID = this->bgTransformBufferID;
 	this->bgDrawCall.transformIndex = 0;
@@ -328,16 +365,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.normalBufferID = this->bgNormalBufferID;
 	this->bgDrawCall.texCoordBufferID = this->bgTexCoordBufferID;
 	this->bgDrawCall.indexBufferID = this->bgIndexBufferID;
-	this->bgDrawCall.textureIDs[0] = this->skyGradientAMTextureRef.get(); // ID is updated depending on weather.
-	this->bgDrawCall.textureIDs[1] = -1;
-	this->bgDrawCall.lightingType = RenderLightingType::PerMesh;
-	this->bgDrawCall.lightPercent = 1.0;
-	this->bgDrawCall.vertexShaderType = VertexShaderType::Basic;
-	this->bgDrawCall.pixelShaderType = PixelShaderType::Opaque; // @todo?
-	this->bgDrawCall.pixelShaderParam0 = 0.0;
-	this->bgDrawCall.enableBackFaceCulling = false;
-	this->bgDrawCall.enableDepthRead = false;
-	this->bgDrawCall.enableDepthWrite = false;
+	this->bgDrawCall.materialID = this->skyGradientAMMaterialID;
 
 	// Initialize sky object mesh buffers shared with all sky objects.
 	// @todo: to be more accurate, land/air vertices could rest on the horizon, while star/planet/sun vertices would sit halfway under the horizon, etc., and these would be separate buffers for the draw calls to pick from.
@@ -412,6 +440,40 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 
 void RenderSkyManager::shutdown(Renderer &renderer)
 {
+	if (this->skyGradientAMMaterialID >= 0)
+	{
+		renderer.freeMaterial(this->skyGradientAMMaterialID);
+		this->skyGradientAMMaterialID = -1;
+	}
+
+	if (this->skyGradientPMMaterialID >= 0)
+	{
+		renderer.freeMaterial(this->skyGradientPMMaterialID);
+		this->skyGradientPMMaterialID = -1;
+	}
+
+	if (this->skyFogMaterialID >= 0)
+	{
+		renderer.freeMaterial(this->skyFogMaterialID);
+		this->skyFogMaterialID = -1;
+	}
+
+	for (RenderMaterialID materialID : this->skyThunderstormMaterialIDs)
+	{
+		if (materialID >= 0)
+		{
+			renderer.freeMaterial(materialID);
+		}
+	}
+
+	this->skyThunderstormMaterialIDs.clear();
+
+	if (this->skyInteriorMaterialID >= 0)
+	{
+		renderer.freeMaterial(this->skyInteriorMaterialID);
+		this->skyInteriorMaterialID = -1;
+	}
+
 	this->freeBgBuffers(renderer);
 	this->bgDrawCall.clear();
 
@@ -676,7 +738,7 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 
 ObjectTextureID RenderSkyManager::getBgTextureID() const
 {
-	return this->bgDrawCall.textureIDs[0];
+	return this->activeBgTextureID;
 }
 
 void RenderSkyManager::populateCommandList(RenderCommandList &commandList) const
@@ -722,23 +784,28 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 	{
 		const int flashTextureCount = this->skyThunderstormTextureRefs.getCount();
 		const int flashIndex = std::clamp(static_cast<int>(static_cast<double>(flashTextureCount) * (*thunderstormFlashPercent)), 0, flashTextureCount - 1);
-		this->bgDrawCall.textureIDs[0] = this->skyThunderstormTextureRefs[flashIndex].get();
+		this->bgDrawCall.materialID = this->skyThunderstormMaterialIDs[flashIndex];
+		this->activeBgTextureID = this->skyThunderstormTextureRefs[flashIndex].get();
 	}
 	else if (isFoggy)
 	{
-		this->bgDrawCall.textureIDs[0] = this->skyFogTextureRef.get();
+		this->bgDrawCall.materialID = this->skyFogMaterialID;
+		this->activeBgTextureID = this->skyFogTextureRef.get();
 	}
 	else if (isInterior)
 	{
-		this->bgDrawCall.textureIDs[0] = this->skyInteriorTextureRef.get();
+		this->bgDrawCall.materialID = this->skyInteriorMaterialID;
+		this->activeBgTextureID = this->skyInteriorTextureRef.get();
 	}
 	else if (isAM)
 	{
-		this->bgDrawCall.textureIDs[0] = this->skyGradientAMTextureRef.get();
+		this->bgDrawCall.materialID = this->skyGradientAMMaterialID;
+		this->activeBgTextureID = this->skyGradientAMTextureRef.get();
 	}
 	else
 	{
-		this->bgDrawCall.textureIDs[0] = this->skyGradientPMTextureRef.get();
+		this->bgDrawCall.materialID = this->skyGradientPMMaterialID;
+		this->activeBgTextureID = this->skyGradientPMTextureRef.get();
 	}
 
 	// Arbitrary distances from camera, depth should not be checked.
@@ -772,8 +839,33 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		renderer.populateUniformBufferIndexRenderTransform(this->objectTransformBufferID, transformIndex, renderTransform);
 	};
 
-	auto addDrawCall = [this](int transformIndex, ObjectTextureID textureID, double meshLightPercent, PixelShaderType pixelShaderType)
+	auto addDrawCall = [this, &renderer](int transformIndex, ObjectTextureID textureID, double meshLightPercent, PixelShaderType pixelShaderType)
 	{
+		RenderMaterialKey materialKey;
+		materialKey.init(VertexShaderType::Basic, pixelShaderType, Span<const ObjectTextureID>(&textureID, 1), RenderLightingType::PerMesh, false, false, false);
+
+		RenderMaterialID materialID = -1;
+		for (const RenderMaterial &material : this->objectMaterials)
+		{
+			if (material.key == materialKey)
+			{
+				materialID = material.id;
+				break;
+			}
+		}
+
+		if (materialID < 0)
+		{
+			materialID = renderer.createMaterial(materialKey);
+
+			RenderMaterial material;
+			material.key = materialKey;
+			material.id = materialID;
+			this->objectMaterials.emplace_back(std::move(material));
+		}
+
+		renderer.setMaterialParameterMeshLightingPercent(materialID, meshLightPercent);
+
 		RenderDrawCall drawCall;
 		drawCall.transformBufferID = this->objectTransformBufferID;
 		drawCall.transformIndex = transformIndex;
@@ -782,16 +874,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.normalBufferID = this->objectNormalBufferID;
 		drawCall.texCoordBufferID = this->objectTexCoordBufferID;
 		drawCall.indexBufferID = this->objectIndexBufferID;
-		drawCall.textureIDs[0] = textureID;
-		drawCall.textureIDs[1] = -1;
-		drawCall.lightingType = RenderLightingType::PerMesh;
-		drawCall.lightPercent = meshLightPercent;
-		drawCall.vertexShaderType = VertexShaderType::Basic;
-		drawCall.pixelShaderType = pixelShaderType;
-		drawCall.pixelShaderParam0 = 0.0;
-		drawCall.enableBackFaceCulling = false;
-		drawCall.enableDepthRead = false;
-		drawCall.enableDepthWrite = false;
+		drawCall.materialID = materialID;
 		this->objectDrawCalls.emplace_back(std::move(drawCall));
 	};
 
@@ -967,6 +1050,8 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 
 void RenderSkyManager::unloadScene(Renderer &renderer)
 {
+	this->activeBgTextureID = -1;
+
 	if (this->objectTransformBufferID >= 0)
 	{
 		renderer.freeUniformBuffer(this->objectTransformBufferID);
@@ -975,5 +1060,12 @@ void RenderSkyManager::unloadScene(Renderer &renderer)
 
 	this->generalSkyObjectTextures.clear();
 	this->smallStarTextures.clear();
+
+	for (RenderMaterial &material : this->objectMaterials)
+	{
+		renderer.freeMaterial(material.id);
+	}
+
+	this->objectMaterials.clear();
 	this->objectDrawCalls.clear();
 }

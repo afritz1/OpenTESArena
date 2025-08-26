@@ -10,6 +10,7 @@
 #include "Jolt/Renderer/DebugRendererSimple.h"
 #include "SDL.h"
 
+#include "RenderMaterialUtils.h"
 #include "RenderMeshUtils.h"
 #include "RenderLightUtils.h"
 #include "RenderTextureUtils.h"
@@ -155,6 +156,12 @@ public:
 	void unlockUiTexture(UiTextureID id);
 	bool populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette = nullptr);
 	bool populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t> texels);
+
+	// Material management functions.
+	RenderMaterialID createMaterial(RenderMaterialKey key);
+	void freeMaterial(RenderMaterialID id);
+	void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value);
+	void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value);
 
 	// Wrapper methods for some SDL draw functions.
 	//void drawPixel(const Color &color, int x, int y);

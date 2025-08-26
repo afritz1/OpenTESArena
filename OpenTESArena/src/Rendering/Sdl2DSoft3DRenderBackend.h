@@ -69,6 +69,11 @@ public:
 	LockedTexture lockUiTexture(UiTextureID id) override;
 	void unlockUiTexture(UiTextureID id) override;
 
+	RenderMaterialID createMaterial(RenderMaterialKey key) override;
+	void freeMaterial(RenderMaterialID id) override;
+	void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value) override;
+	void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value) override;
+
 	// Renders a frame to the target window. Currently this is blocking and should be safe to present
 	// the frame upon returning.
 	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

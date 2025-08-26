@@ -11,6 +11,7 @@
 #include "RenderBackend.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/FlatMap.h"
 #include "components/utilities/Heap.h"
 #include "components/utilities/RecyclablePool.h"
 
@@ -105,14 +106,26 @@ struct VulkanTexture
 	vk::Image image;
 	vk::ImageView imageView;
 	vk::Sampler sampler;
-	vk::DescriptorSet descriptorSet;
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 
 	VulkanTexture();
 
-	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::DescriptorSet descriptorSet,
-		vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
+	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
+};
+
+struct VulkanMaterial
+{
+	vk::Pipeline pipeline;
+	vk::PipelineLayout pipelineLayout;
+	vk::DescriptorSet descriptorSet;
+
+	float meshLightPercent;
+	float pixelShaderParam0;
+
+	VulkanMaterial();
+
+	void init(vk::Pipeline pipeline, vk::PipelineLayout pipelineLayout, vk::DescriptorSet descriptorSet);
 };
 
 using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanBuffer>;
@@ -122,6 +135,7 @@ using VulkanUniformBufferPool = RecyclablePool<UniformBufferID, VulkanBuffer>;
 using VulkanLightPool = RecyclablePool<RenderLightID, VulkanLight>;
 using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
+using VulkanMaterialPool = RecyclablePool<RenderMaterialID, VulkanMaterial>;
 
 struct VulkanCamera
 {
@@ -221,22 +235,24 @@ struct VulkanFragmentShader
 	VulkanFragmentShader();
 };
 
-using VulkanPipelineKeyCode = uint8_t;
+using VulkanPipelineKeyCode = uint16_t;
 
 struct VulkanPipelineKey
 {
 	VertexShaderType vertexShaderType;
 	PixelShaderType fragmentShaderType;
-	bool depthTest;
+	bool depthRead;
+	bool depthWrite;
 	bool backFaceCulling;
 
 	VulkanPipelineKey();
 
-	constexpr VulkanPipelineKey(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthTest, bool backFaceCulling)
+	constexpr VulkanPipelineKey(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling)
 	{
 		this->vertexShaderType = vertexShaderType;
 		this->fragmentShaderType = fragmentShaderType;
-		this->depthTest = depthTest;
+		this->depthRead = depthRead;
+		this->depthWrite = depthWrite;
 		this->backFaceCulling = backFaceCulling;
 	}
 };
@@ -287,6 +303,7 @@ private:
 	vk::DescriptorSetLayout materialDescriptorSetLayout;
 	vk::DescriptorSetLayout uiMaterialDescriptorSetLayout;
 	vk::DescriptorSet globalDescriptorSet;
+	FlatMap<UiTextureID, vk::DescriptorSet> uiTextureDescriptorSets; // Avoids needing UI material support since UI is so simplistic.
 
 	vk::PipelineLayout scenePipelineLayout;
 	vk::PipelineLayout uiPipelineLayout;
@@ -302,6 +319,7 @@ private:
 	VulkanLightPool lightPool;
 	VulkanObjectTexturePool objectTexturePool;
 	VulkanUiTexturePool uiTexturePool;
+	VulkanMaterialPool materialPool;
 
 	VulkanHeapManager vertexBufferHeapManagerDeviceLocal;
 	VulkanHeapManager vertexBufferHeapManagerStaging;
@@ -367,6 +385,11 @@ public:
 	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const override;
 	LockedTexture lockUiTexture(UiTextureID id) override;
 	void unlockUiTexture(UiTextureID id) override;
+
+	RenderMaterialID createMaterial(RenderMaterialKey key) override;
+	void freeMaterial(RenderMaterialID id) override;
+	void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value) override;
+	void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value) override;
 
 	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;
