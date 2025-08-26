@@ -59,6 +59,12 @@ namespace RenderShaderUtils
 			(type == PixelShaderType::OpaqueScreenSpaceAnimation) ||
 			(type == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 	}
+
+	constexpr bool requiresPixelShaderParam(PixelShaderType type)
+	{
+		return (type == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
+			(type == PixelShaderType::AlphaTestedWithVariableTexCoordVMin);
+	}
 }
 
 #endif

@@ -1594,8 +1594,7 @@ namespace
 			pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eFragment;
 			pushConstantRange.offset = 0;
 			pushConstantRange.size = sizeof(float);
-			// @todo actually push the push constant in command buffer, otherwise get validation error
-			//pushConstantRanges.emplace_back(std::move(pushConstantRange));
+			pushConstantRanges.emplace_back(std::move(pushConstantRange));
 		}
 
 		// @todo mesh lighting percent
@@ -1868,6 +1867,7 @@ VulkanMaterial::VulkanMaterial()
 {
 	this->meshLightPercent = 0.0f;
 	this->pixelShaderParam0 = 0.0f;
+	std::fill(std::begin(this->pushConstantTypes), std::end(this->pushConstantTypes), VulkanMaterialPushConstantType::None);
 }
 
 void VulkanMaterial::init(vk::Pipeline pipeline, vk::PipelineLayout pipelineLayout, vk::DescriptorSet descriptorSet)
@@ -3975,7 +3975,9 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 		return -1;
 	}
 
-	const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+	const VertexShaderType vertexShaderType = key.vertexShaderType;
+	const PixelShaderType fragmentShaderType = key.pixelShaderType;
+	const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
 	int pipelineIndex = -1;
 	for (int i = 0; i < this->graphicsPipelines.getCount(); i++)
 	{
@@ -4011,6 +4013,11 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 
 	VulkanMaterial &material = this->materialPool.get(materialID);
 	material.init(pipeline, pipelineLayout, descriptorSet);
+
+	if (RenderShaderUtils::requiresPixelShaderParam(fragmentShaderType))
+	{
+		material.pushConstantTypes[0] = VulkanMaterialPushConstantType::PixelShaderParam;
+	}
 
 	return materialID;
 }
@@ -4169,10 +4176,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		const VulkanTexture &paletteTexture = this->objectTexturePool.get(frameSettings.paletteTextureID);
 		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer, paletteTexture.imageView, paletteTexture.sampler);
 
-		const vk::PipelineLayout defaultGlobalPipelineLayout = this->pipelineLayouts[0]; // This one has global descriptor set bindings at least.
-		constexpr uint32_t globalDescriptorSetIndex = 0;
-		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, defaultGlobalPipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, emptyDynamicOffsets);
-
 		vk::Pipeline currentPipeline;
 		VertexPositionBufferID currentVertexPositionBufferID = -1;
 		VertexAttributeBufferID currentVertexTexCoordBufferID = -1;
@@ -4191,6 +4194,9 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				{
 					currentPipeline = pipeline;
 					this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline);
+
+					constexpr uint32_t globalDescriptorSetIndex = 0;
+					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, emptyDynamicOffsets);
 				}
 
 				constexpr vk::DeviceSize bufferOffset = 0;
@@ -4235,6 +4241,22 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 				constexpr uint32_t materialDescriptorSetIndex = 2;
 				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, materialDescriptorSetIndex, material.descriptorSet, emptyDynamicOffsets);
+
+				uint32_t pushConstantOffset = 0;
+				for (VulkanMaterialPushConstantType materialPushConstantType : material.pushConstantTypes)
+				{
+					switch (materialPushConstantType)
+					{
+					case VulkanMaterialPushConstantType::MeshLightPercent:
+						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, material.meshLightPercent);
+						pushConstantOffset += sizeof(float);
+						break;
+					case VulkanMaterialPushConstantType::PixelShaderParam:
+						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, material.pixelShaderParam0);
+						pushConstantOffset += sizeof(float);
+						break;
+					}
+				}
 
 				constexpr uint32_t meshInstanceCount = 1;
 				this->commandBuffer.drawIndexed(currentIndexBufferIndexCount, meshInstanceCount, 0, 0, 0);

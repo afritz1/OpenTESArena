@@ -114,6 +114,13 @@ struct VulkanTexture
 	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 };
 
+enum class VulkanMaterialPushConstantType
+{
+	None,
+	MeshLightPercent,
+	PixelShaderParam
+};
+
 struct VulkanMaterial
 {
 	vk::Pipeline pipeline;
@@ -122,6 +129,7 @@ struct VulkanMaterial
 
 	float meshLightPercent;
 	float pixelShaderParam0;
+	VulkanMaterialPushConstantType pushConstantTypes[2];
 
 	VulkanMaterial();
 
