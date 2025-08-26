@@ -297,7 +297,9 @@ private:
 	Buffer<VulkanVertexShader> vertexShaders;
 	Buffer<VulkanFragmentShader> fragmentShaders;
 
-	vk::DescriptorPool descriptorPool;
+	vk::DescriptorPool globalDescriptorPool;
+	vk::DescriptorPool transformDescriptorPool;
+	vk::DescriptorPool materialDescriptorPool;
 	vk::DescriptorSetLayout globalDescriptorSetLayout;
 	vk::DescriptorSetLayout transformDescriptorSetLayout;
 	vk::DescriptorSetLayout materialDescriptorSetLayout;

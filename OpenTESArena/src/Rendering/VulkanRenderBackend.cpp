@@ -60,10 +60,15 @@ namespace
 	constexpr vk::Format DefaultSwapchainSurfaceFormat = vk::Format::eB8G8R8A8Unorm;
 	constexpr vk::ColorSpaceKHR DefaultSwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 
-	constexpr int MaxUniformBufferDescriptorSets = 1;
-	constexpr int MaxUniformBufferDynamicDescriptorSets = 24576; // @todo this is very high, probably want to batch
-	constexpr int MaxImageDescriptorSets = 4096;
-	constexpr int MaxDescriptorSets = MaxUniformBufferDescriptorSets + MaxUniformBufferDynamicDescriptorSets + MaxImageDescriptorSets;
+	constexpr int MaxGlobalUniformBufferDescriptorSets = 1;
+	constexpr int MaxGlobalImageDescriptorSets = 1;
+	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptorSets + MaxGlobalImageDescriptorSets;
+
+	constexpr int MaxTransformUniformBufferDynamicDescriptorSets = 24576; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
+	constexpr int MaxTransformPoolDescriptorSets = MaxTransformUniformBufferDynamicDescriptorSets;
+
+	constexpr int MaxMaterialImageDescriptorSets = 32768; // Lots of unique materials for entities.
+	constexpr int MaxMaterialPoolDescriptorSets = MaxMaterialImageDescriptorSets;
 
 	constexpr std::pair<VertexShaderType, const char*> VertexShaderTypeFilenames[] =
 	{
@@ -1435,13 +1440,17 @@ namespace
 		return poolSize;
 	}
 
-	bool TryCreateDescriptorPool(vk::Device device, Span<const vk::DescriptorPoolSize> poolSizes, int maxDescriptorSets, vk::DescriptorPool *outDescriptorPool)
+	bool TryCreateDescriptorPool(vk::Device device, Span<const vk::DescriptorPoolSize> poolSizes, int maxDescriptorSets, bool isRecycleable, vk::DescriptorPool *outDescriptorPool)
 	{
 		vk::DescriptorPoolCreateInfo descriptorPoolCreateInfo;
-		descriptorPoolCreateInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
 		descriptorPoolCreateInfo.maxSets = maxDescriptorSets;
 		descriptorPoolCreateInfo.poolSizeCount = poolSizes.getCount();
 		descriptorPoolCreateInfo.pPoolSizes = poolSizes.begin();
+
+		if (isRecycleable)
+		{
+			descriptorPoolCreateInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+		}
 
 		vk::ResultValue<vk::DescriptorPool> descriptorPoolCreateResult = device.createDescriptorPool(descriptorPoolCreateInfo);
 		if (descriptorPoolCreateResult.result != vk::Result::eSuccess)
@@ -2327,16 +2336,37 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		}
 	}
 
-	const vk::DescriptorPoolSize descriptorPoolSizes[] =
+	const vk::DescriptorPoolSize globalDescriptorPoolSizes[] =
 	{
-		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, MaxUniformBufferDescriptorSets),
-		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, MaxUniformBufferDynamicDescriptorSets),
-		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxImageDescriptorSets)
+		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, MaxGlobalUniformBufferDescriptorSets),
+		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxGlobalImageDescriptorSets)
 	};
 
-	if (!TryCreateDescriptorPool(this->device, descriptorPoolSizes, MaxDescriptorSets, &this->descriptorPool))
+	const vk::DescriptorPoolSize transformDescriptorPoolSizes[] =
 	{
-		DebugLogError("Couldn't create descriptor pool.");
+		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, MaxTransformUniformBufferDynamicDescriptorSets)
+	};
+
+	const vk::DescriptorPoolSize materialDescriptorPoolSizes[] =
+	{
+		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxMaterialImageDescriptorSets)
+	};
+
+	if (!TryCreateDescriptorPool(this->device, globalDescriptorPoolSizes, MaxGlobalPoolDescriptorSets, false, &this->globalDescriptorPool))
+	{
+		DebugLogError("Couldn't create general descriptor pool.");
+		return false;
+	}
+
+	if (!TryCreateDescriptorPool(this->device, transformDescriptorPoolSizes, MaxTransformPoolDescriptorSets, true, &this->transformDescriptorPool))
+	{
+		DebugLogError("Couldn't create transform descriptor pool.");
+		return false;
+	}
+
+	if (!TryCreateDescriptorPool(this->device, materialDescriptorPoolSizes, MaxMaterialPoolDescriptorSets, true, &this->materialDescriptorPool))
+	{
+		DebugLogError("Couldn't create material descriptor pool.");
 		return false;
 	}
 
@@ -2390,7 +2420,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!TryCreateDescriptorSet(this->device, this->globalDescriptorSetLayout, this->descriptorPool, &this->globalDescriptorSet))
+	if (!TryCreateDescriptorSet(this->device, this->globalDescriptorSetLayout, this->globalDescriptorPool, &this->globalDescriptorSet))
 	{
 		DebugLogError("Couldn't create global descriptor set.");
 		return false;
@@ -2657,7 +2687,7 @@ void VulkanRenderBackend::shutdown()
 		{
 			if (material.descriptorSet)
 			{
-				this->device.freeDescriptorSets(this->descriptorPool, material.descriptorSet);
+				this->device.freeDescriptorSets(this->materialDescriptorPool, material.descriptorSet);
 			}
 		}
 
@@ -2827,7 +2857,7 @@ void VulkanRenderBackend::shutdown()
 		{
 			if (descriptorSet)
 			{
-				this->device.freeDescriptorSets(this->descriptorPool, descriptorSet);
+				this->device.freeDescriptorSets(this->materialDescriptorPool, descriptorSet);
 			}
 		}
 
@@ -2857,12 +2887,24 @@ void VulkanRenderBackend::shutdown()
 			this->globalDescriptorSetLayout = nullptr;
 		}
 
-		if (this->descriptorPool)
+		if (this->materialDescriptorPool)
+		{
+			this->device.destroyDescriptorPool(this->materialDescriptorPool);
+			this->materialDescriptorPool = nullptr;
+		}
+
+		if (this->transformDescriptorPool)
+		{
+			this->device.destroyDescriptorPool(this->transformDescriptorPool);
+			this->transformDescriptorPool = nullptr;
+		}
+
+		if (this->globalDescriptorPool)
 		{
 			this->globalDescriptorSet = nullptr;
 
-			this->device.destroyDescriptorPool(this->descriptorPool);
-			this->descriptorPool = nullptr;
+			this->device.destroyDescriptorPool(this->globalDescriptorPool);
+			this->globalDescriptorPool = nullptr;
 		}
 
 		for (VulkanFragmentShader &shader : this->fragmentShaders)
@@ -3427,7 +3469,7 @@ UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int b
 	}
 
 	vk::DescriptorSet descriptorSet;
-	if (!TryCreateDescriptorSet(this->device, this->transformDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	if (!TryCreateDescriptorSet(this->device, this->transformDescriptorSetLayout, this->transformDescriptorPool, &descriptorSet))
 	{
 		DebugLogErrorFormat("Couldn't create descriptor set for uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
 		this->uniformBufferHeapManagerDeviceLocal.freeBufferMapping(buffer);
@@ -3471,7 +3513,7 @@ void VulkanRenderBackend::freeUniformBuffer(UniformBufferID id)
 
 			if (uniformBuffer->uniform.descriptorSet)
 			{
-				this->device.freeDescriptorSets(this->descriptorPool, uniformBuffer->uniform.descriptorSet);
+				this->device.freeDescriptorSets(this->transformDescriptorPool, uniformBuffer->uniform.descriptorSet);
 				uniformBuffer->uniform.descriptorSet = nullptr;
 			}
 
@@ -3788,7 +3830,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 	}
 
 	vk::DescriptorSet descriptorSet; // Making a separate mapping from textures since UI shouldn't need materials.
-	if (!TryCreateDescriptorSet(this->device, this->uiMaterialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	if (!TryCreateDescriptorSet(this->device, this->uiMaterialDescriptorSetLayout, this->materialDescriptorPool, &descriptorSet))
 	{
 		DebugLogErrorFormat("Couldn't create descriptor set for UI texture with dims %dx%d.", width, height);
 		this->device.destroyBuffer(stagingBuffer);
@@ -3843,7 +3885,7 @@ void VulkanRenderBackend::freeUiTexture(UiTextureID id)
 			vk::DescriptorSet *descriptorSet = this->uiTextureDescriptorSets.find(id);
 			if (descriptorSet != nullptr)
 			{
-				this->device.freeDescriptorSets(this->descriptorPool, *descriptorSet);
+				this->device.freeDescriptorSets(this->materialDescriptorPool, *descriptorSet);
 				this->uiTextureDescriptorSets.erase(id);
 			}
 		}
@@ -3920,10 +3962,11 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 	const vk::PipelineLayout pipelineLayout = this->scenePipelineLayout; // @todo may want to customize this more for certain push constants
 
 	vk::DescriptorSet descriptorSet;
-	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->descriptorPool, &descriptorSet))
+	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->materialDescriptorPool, &descriptorSet))
 	{
 		DebugLogErrorFormat("Couldn't create descriptor set for material key (vertex shader %d, fragment shader %d, depth read %d, depth write %d, back-face culling %d).",
 			key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+		return -1;
 	}
 
 	const ObjectTextureID textureID = key.textureIDs[0]; // @todo need to get second texture ID if this material requires it
@@ -3945,7 +3988,7 @@ void VulkanRenderBackend::freeMaterial(RenderMaterialID id)
 		{
 			if (material->descriptorSet)
 			{
-				this->device.freeDescriptorSets(this->descriptorPool, material->descriptorSet);
+				this->device.freeDescriptorSets(this->materialDescriptorPool, material->descriptorSet);
 			}
 
 			this->materialPool.free(id);
