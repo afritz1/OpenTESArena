@@ -1569,29 +1569,28 @@ namespace
 		std::vector<vk::PushConstantRange> pushConstantRanges;
 		uint32_t offset = 0;
 
+		auto addPushConstantRange = [&pushConstantRanges, &offset](vk::ShaderStageFlagBits stageFlags, int byteCount)
+		{
+			vk::PushConstantRange pushConstantRange;
+			pushConstantRange.stageFlags = stageFlags;
+			pushConstantRange.offset = offset;
+			pushConstantRange.size = byteCount;
+			pushConstantRanges.emplace_back(std::move(pushConstantRange));
+
+			offset += byteCount;
+		};
+
 		const bool requiresPreScaleTransform = vertexShaderType == VertexShaderType::RaisingDoor;
 		if (requiresPreScaleTransform)
 		{
-			vk::PushConstantRange pushConstantRange;
-			pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
-			pushConstantRange.offset = offset;
-			pushConstantRange.size = sizeof(float) * 4;
-			offset += pushConstantRange.size;
-			pushConstantRanges.emplace_back(std::move(pushConstantRange));
+			addPushConstantRange(vk::ShaderStageFlagBits::eVertex, sizeof(float) * 4);
 		}
 
 		const bool requiresUiRectTransform = vertexShaderType == VertexShaderType::UI;
 		if (requiresUiRectTransform)
 		{
-			vk::PushConstantRange pushConstantRange;
-			pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eVertex;
-			pushConstantRange.offset = offset;
-			pushConstantRange.size = sizeof(float) * 6;
-			offset += pushConstantRange.size;
-			pushConstantRanges.emplace_back(std::move(pushConstantRange));
+			addPushConstantRange(vk::ShaderStageFlagBits::eVertex, sizeof(float) * 6);
 		}
-
-		const bool requiresAmbientPercent = false; // @todo most fragment shaders? not puddle 2nd pass?
 
 		// @todo if it needs two floats then either need shader to have two push_constant sections with one value or one section with two values
 		const bool requiresScreenSpaceAnimPercent =
@@ -1603,12 +1602,7 @@ namespace
 			(fragmentShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin);
 		if (requiresPixelShaderParam)
 		{
-			vk::PushConstantRange pushConstantRange;
-			pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eFragment;
-			pushConstantRange.offset = offset;
-			pushConstantRange.size = sizeof(float);
-			offset += pushConstantRange.size;
-			pushConstantRanges.emplace_back(std::move(pushConstantRange));
+			addPushConstantRange(vk::ShaderStageFlagBits::eFragment, sizeof(float));
 		}
 
 		// @todo mesh lighting percent
