@@ -181,11 +181,13 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	// Add simple pyramid mesh for triangles below horizon.
 	for (int i = 0; i < 3; i++)
 	{
+		constexpr double horizonCoverageEpsilon = 0.001; // Avoids hairline crack with 32-bit floats.
+
 		constexpr Radians simpleHorizonPeriodStep = MathUtils::degToRad(120.0);
 		const Radians simpleHorizonPeriod = MathUtils::degToRad(90.0) + (simpleHorizonPeriodStep * static_cast<double>(i));
 		const Radians nextSimpleHorizonPeriod = simpleHorizonPeriod + simpleHorizonPeriodStep;
-		const Double3 simpleHorizonPoint(std::cos(simpleHorizonPeriod), 0.0, std::sin(simpleHorizonPeriod));
-		const Double3 nextSimpleHorizonPoint(std::cos(nextSimpleHorizonPeriod), 0.0, std::sin(nextSimpleHorizonPeriod));
+		const Double3 simpleHorizonPoint(std::cos(simpleHorizonPeriod), horizonCoverageEpsilon, std::sin(simpleHorizonPeriod));
+		const Double3 nextSimpleHorizonPoint(std::cos(nextSimpleHorizonPeriod), horizonCoverageEpsilon, std::sin(nextSimpleHorizonPeriod));
 		const Double3 simpleHorizonNormal = -simpleHorizonPoint.normalized();
 		const Double3 nextSimpleHorizonNormal = -nextSimpleHorizonPoint.normalized();
 		constexpr double simpleHorizonTexCoordU = 0.0;
