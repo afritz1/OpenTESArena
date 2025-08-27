@@ -32,6 +32,19 @@ namespace
 	constexpr uint32_t INVALID_UINT32 = std::numeric_limits<uint32_t>::max();
 	constexpr uint64_t TIMEOUT_UNLIMITED = std::numeric_limits<uint64_t>::max();
 
+	constexpr vk::Format MaxCompatibilityImageFormat8888Unorm = vk::Format::eR8G8B8A8Unorm;
+	constexpr vk::Format MaxCompatibilityImageFormat32Uint = vk::Format::eR32Uint;
+	constexpr vk::Format DefaultSwapchainSurfaceFormat = vk::Format::eB8G8R8A8Unorm; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
+	constexpr vk::Format InternalFramebufferFormat = MaxCompatibilityImageFormat32Uint;
+	constexpr vk::Format ObjectTextureFormat8Bit = vk::Format::eR8Uint;
+	constexpr vk::Format ObjectTextureFormat32Bit = vk::Format::eB8G8R8A8Unorm;
+	constexpr vk::Format UiTextureFormat = ObjectTextureFormat32Bit;
+
+	constexpr vk::ColorSpaceKHR DefaultSwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
+
+	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
+	constexpr vk::ImageUsageFlagBits DepthBufferUsageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+
 	// Size of each new individually-created heap in bytes requested from the driver. A single memory allocation (including alignment) cannot exceed this.
 	constexpr int BYTES_PER_HEAP_VERTEX_BUFFERS = 1 << 22;
 	constexpr int BYTES_PER_HEAP_INDEX_BUFFERS = BYTES_PER_HEAP_VERTEX_BUFFERS;
@@ -49,16 +62,6 @@ namespace
 	constexpr vk::ImageUsageFlags ObjectTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 	constexpr vk::BufferUsageFlags UiTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
-
-	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
-	constexpr vk::ImageUsageFlagBits DepthBufferUsageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
-
-	constexpr vk::Format ImageFormatUint8 = vk::Format::eR8Uint;
-	constexpr vk::Format ImageFormatUnorm32 = vk::Format::eB8G8R8A8Unorm; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
-	constexpr vk::Format MaxCompatibilityImageFormatUnorm32 = vk::Format::eR8G8B8A8Unorm;
-
-	constexpr vk::Format DefaultSwapchainSurfaceFormat = vk::Format::eB8G8R8A8Unorm;
-	constexpr vk::ColorSpaceKHR DefaultSwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 
 	constexpr int MaxGlobalUniformBufferDescriptorSets = 1;
 	constexpr int MaxGlobalImageDescriptorSets = 1;
@@ -1948,7 +1951,7 @@ bool VulkanHeapManager::initImageManager(vk::Device device, int byteCount, vk::I
 {
 	this->type = VulkanHeapType::Image;
 	this->device = device;
-	this->memoryAllocateInfo = CreateImageMemoryAllocateInfo(device, 1, 1, MaxCompatibilityImageFormatUnorm32, usageFlags, physicalDevice);
+	this->memoryAllocateInfo = CreateImageMemoryAllocateInfo(device, 1, 1, MaxCompatibilityImageFormat8888Unorm, usageFlags, physicalDevice);
 	this->memoryAllocateInfo.allocationSize = byteCount;
 	this->isHostVisible = false;
 
@@ -3711,7 +3714,7 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 		return -1;
 	}
 
-	const vk::Format format = (bytesPerTexel == 1) ? ImageFormatUint8 : ImageFormatUnorm32;
+	const vk::Format format = (bytesPerTexel == 1) ? ObjectTextureFormat8Bit : ObjectTextureFormat32Bit;
 	const int byteCount = width * height * bytesPerTexel;
 
 	vk::Image image;
@@ -3844,7 +3847,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 
 	constexpr int bytesPerTexel = 4;
 	const int byteCount = width * height * bytesPerTexel;
-	constexpr vk::Format format = vk::Format::eB8G8R8A8Unorm;
+	constexpr vk::Format format = UiTextureFormat;
 
 	vk::Image image;
 	if (!TryCreateImageAndBindWithHeap(this->device, width, height, format, UiTextureDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uiTextureHeapManagerDeviceLocal, &image))
