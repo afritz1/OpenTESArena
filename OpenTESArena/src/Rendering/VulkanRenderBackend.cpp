@@ -1211,17 +1211,17 @@ namespace
 		return true;
 	}
 
-	bool TryCreateRenderPass(vk::Device device, vk::Format colorFormat, vk::RenderPass *outRenderPass)
+	bool TryCreateSceneRenderPass(vk::Device device, vk::RenderPass *outRenderPass)
 	{
 		vk::AttachmentDescription colorAttachmentDescription;
-		colorAttachmentDescription.format = colorFormat;
+		colorAttachmentDescription.format = ColorBufferFormat;
 		colorAttachmentDescription.samples = vk::SampleCountFlagBits::e1;
 		colorAttachmentDescription.loadOp = vk::AttachmentLoadOp::eClear;
 		colorAttachmentDescription.storeOp = vk::AttachmentStoreOp::eStore;
 		colorAttachmentDescription.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
 		colorAttachmentDescription.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
 		colorAttachmentDescription.initialLayout = vk::ImageLayout::eUndefined;
-		colorAttachmentDescription.finalLayout = vk::ImageLayout::eTransferSrcOptimal; // For blitting after all subpasses complete.
+		colorAttachmentDescription.finalLayout = vk::ImageLayout::eTransferSrcOptimal; // For blitting to swapchain image after subpasses finish.
 
 		vk::AttachmentDescription depthAttachmentDescription;
 		depthAttachmentDescription.format = DepthBufferFormat;
@@ -1247,43 +1247,31 @@ namespace
 		subpassDepthAttachmentReference.attachment = 1;
 		subpassDepthAttachmentReference.layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
-		vk::SubpassDescription sceneSubpassDescription;
-		sceneSubpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-		sceneSubpassDescription.colorAttachmentCount = 1;
-		sceneSubpassDescription.pColorAttachments = &subpassColorAttachmentReference;
-		sceneSubpassDescription.pDepthStencilAttachment = &subpassDepthAttachmentReference;
+		vk::SubpassDescription subpassDescription;
+		subpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+		subpassDescription.colorAttachmentCount = 1;
+		subpassDescription.pColorAttachments = &subpassColorAttachmentReference;
+		subpassDescription.pDepthStencilAttachment = &subpassDepthAttachmentReference;
 
-		vk::SubpassDescription uiSubpassDescription;
-		uiSubpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
-		uiSubpassDescription.colorAttachmentCount = 1;
-		uiSubpassDescription.pColorAttachments = &subpassColorAttachmentReference;
-
-		const vk::SubpassDescription subpassDescriptions[] =
-		{
-			sceneSubpassDescription,
-			uiSubpassDescription
-		};
-
-		vk::SubpassDependency subpassDependency;
+		// @todo will likely need this for ghosts/puddles
+		/*vk::SubpassDependency subpassDependency;
 		subpassDependency.srcSubpass = 0;
 		subpassDependency.dstSubpass = 1;
 		subpassDependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests;
 		subpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
 		subpassDependency.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-		subpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		subpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;*/
 
 		vk::RenderPassCreateInfo renderPassCreateInfo;
 		renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(std::size(attachmentDescriptions));
 		renderPassCreateInfo.pAttachments = attachmentDescriptions;
-		renderPassCreateInfo.subpassCount = static_cast<uint32_t>(std::size(subpassDescriptions));
-		renderPassCreateInfo.pSubpasses = subpassDescriptions;
-		renderPassCreateInfo.dependencyCount = 1;
-		renderPassCreateInfo.pDependencies = &subpassDependency;
+		renderPassCreateInfo.subpassCount = 1;
+		renderPassCreateInfo.pSubpasses = &subpassDescription;
 
 		vk::ResultValue<vk::RenderPass> renderPassCreateResult = device.createRenderPass(renderPassCreateInfo);
 		if (renderPassCreateResult.result != vk::Result::eSuccess)
 		{
-			DebugLogErrorFormat("Couldn't create device render pass (%d).", renderPassCreateResult.result);
+			DebugLogErrorFormat("Couldn't create scene render pass (%d).", renderPassCreateResult.result);
 			return false;
 		}
 
@@ -1291,7 +1279,45 @@ namespace
 		return true;
 	}
 
-	bool TryCreateFramebuffer(vk::Device device, vk::ImageView colorImageView, vk::ImageView depthImageView, vk::Extent2D extent, vk::RenderPass renderPass, vk::Framebuffer *outFramebuffer)
+	bool TryCreateUiRenderPass(vk::Device device, vk::RenderPass *outRenderPass)
+	{
+		vk::AttachmentDescription colorAttachmentDescription;
+		colorAttachmentDescription.format = DefaultSwapchainSurfaceFormat;
+		colorAttachmentDescription.samples = vk::SampleCountFlagBits::e1;
+		colorAttachmentDescription.loadOp = vk::AttachmentLoadOp::eLoad;
+		colorAttachmentDescription.storeOp = vk::AttachmentStoreOp::eStore;
+		colorAttachmentDescription.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
+		colorAttachmentDescription.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
+		colorAttachmentDescription.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		colorAttachmentDescription.finalLayout = vk::ImageLayout::ePresentSrcKHR;
+
+		vk::AttachmentReference subpassColorAttachmentReference;
+		subpassColorAttachmentReference.attachment = 0;
+		subpassColorAttachmentReference.layout = vk::ImageLayout::eColorAttachmentOptimal;
+
+		vk::SubpassDescription subpassDescription;
+		subpassDescription.pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+		subpassDescription.colorAttachmentCount = 1;
+		subpassDescription.pColorAttachments = &subpassColorAttachmentReference;
+
+		vk::RenderPassCreateInfo renderPassCreateInfo;
+		renderPassCreateInfo.attachmentCount = 1;
+		renderPassCreateInfo.pAttachments = &colorAttachmentDescription;
+		renderPassCreateInfo.subpassCount = 1;
+		renderPassCreateInfo.pSubpasses = &subpassDescription;
+
+		vk::ResultValue<vk::RenderPass> renderPassCreateResult = device.createRenderPass(renderPassCreateInfo);
+		if (renderPassCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't create UI render pass (%d).", renderPassCreateResult.result);
+			return false;
+		}
+
+		*outRenderPass = std::move(renderPassCreateResult.value);
+		return true;
+	}
+
+	bool TryCreateSceneFramebuffer(vk::Device device, vk::ImageView colorImageView, vk::ImageView depthImageView, vk::Extent2D extent, vk::RenderPass renderPass, vk::Framebuffer *outFramebuffer)
 	{
 		const vk::ImageView attachmentImageViews[] = { colorImageView, depthImageView };
 
@@ -1306,7 +1332,28 @@ namespace
 		vk::ResultValue<vk::Framebuffer> framebufferCreateResult = device.createFramebuffer(framebufferCreateInfo);
 		if (framebufferCreateResult.result != vk::Result::eSuccess)
 		{
-			DebugLogErrorFormat("Couldn't create device framebuffer (%d).", framebufferCreateResult.result);
+			DebugLogErrorFormat("Couldn't create scene framebuffer (%d).", framebufferCreateResult.result);
+			return false;
+		}
+
+		*outFramebuffer = std::move(framebufferCreateResult.value);
+		return true;
+	}
+
+	bool TryCreateUiFramebuffer(vk::Device device, vk::ImageView swapchainImageView, vk::Extent2D extent, vk::RenderPass renderPass, vk::Framebuffer *outFramebuffer)
+	{
+		vk::FramebufferCreateInfo framebufferCreateInfo;
+		framebufferCreateInfo.renderPass = renderPass;
+		framebufferCreateInfo.attachmentCount = 1;
+		framebufferCreateInfo.pAttachments = &swapchainImageView;
+		framebufferCreateInfo.width = extent.width;
+		framebufferCreateInfo.height = extent.height;
+		framebufferCreateInfo.layers = 1;
+
+		vk::ResultValue<vk::Framebuffer> framebufferCreateResult = device.createFramebuffer(framebufferCreateInfo);
+		if (framebufferCreateResult.result != vk::Result::eSuccess)
+		{
+			DebugLogErrorFormat("Couldn't create UI framebuffer (%d).", framebufferCreateResult.result);
 			return false;
 		}
 
@@ -1638,7 +1685,7 @@ namespace
 
 	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule,
 		int positionComponentsPerVertex, bool enableDepthRead, bool enableDepthWrite, bool enableBackFaceCulling, bool enableAlphaBlend,
-		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, int subpassIndex, vk::Pipeline *outPipeline)
+		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, vk::Pipeline *outPipeline)
 	{
 		DebugAssert((positionComponentsPerVertex == 3) || (positionComponentsPerVertex == 2));
 
@@ -1770,7 +1817,7 @@ namespace
 		graphicsPipelineCreateInfo.pDynamicState = &pipelineDynamicStateCreateInfo;
 		graphicsPipelineCreateInfo.layout = pipelineLayout;
 		graphicsPipelineCreateInfo.renderPass = renderPass;
-		graphicsPipelineCreateInfo.subpass = subpassIndex;
+		graphicsPipelineCreateInfo.subpass = 0;
 		graphicsPipelineCreateInfo.basePipelineHandle = nullptr;
 
 		vk::PipelineCache pipelineCache;
@@ -2360,16 +2407,32 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!TryCreateRenderPass(this->device, ColorBufferFormat, &this->renderPass))
+	if (!TryCreateSceneRenderPass(this->device, &this->sceneRenderPass))
 	{
-		DebugLogError("Couldn't create swapchain render pass.");
+		DebugLogError("Couldn't create scene render pass.");
 		return false;
 	}
 
-	if (!TryCreateFramebuffer(this->device, this->colorImageView, this->depthImageView, this->internalExtent, this->renderPass, &this->framebuffer))
+	if (!TryCreateUiRenderPass(this->device, &this->uiRenderPass))
 	{
-		DebugLogError("Couldn't create swapchain framebuffer.");
+		DebugLogError("Couldn't create UI render pass.");
 		return false;
+	}
+
+	if (!TryCreateSceneFramebuffer(this->device, this->colorImageView, this->depthImageView, this->internalExtent, this->sceneRenderPass, &this->sceneFramebuffer))
+	{
+		DebugLogError("Couldn't create scene framebuffer.");
+		return false;
+	}
+
+	this->uiFramebuffers.init(this->swapchainImageViews.getCount());
+	for (int i = 0; i < this->swapchainImageViews.getCount(); i++)
+	{
+		if (!TryCreateUiFramebuffer(this->device, this->swapchainImageViews[i], this->swapchainExtent, this->uiRenderPass, &this->uiFramebuffers[i]))
+		{
+			DebugLogErrorFormat("Couldn't create UI framebuffer index %d.", i);
+			return false;
+		}
 	}
 
 	if (!TryCreateCommandPool(this->device, this->graphicsQueueFamilyIndex, &this->commandPool))
@@ -2531,12 +2594,12 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		const PixelShaderType fragmentShaderType = requiredPipelineKey.fragmentShaderType;
 
 		int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
-		int subpassIndex = 0;
+		vk::RenderPass renderPass = this->sceneRenderPass;
 		Span<const vk::DescriptorSetLayout> descriptorSetLayouts = sceneDescriptorSetLayouts;
 		if (fragmentShaderType == PixelShaderType::UiTexture)
 		{
 			positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX_2D;
-			subpassIndex = 1;
+			renderPass = this->uiRenderPass;
 			descriptorSetLayouts = uiDescriptorSetLayouts;
 		}
 
@@ -2568,7 +2631,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		pipeline.keyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, requiredPipelineKey.depthRead, requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling, requiredPipelineKey.alphaBlend);
 
 		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, positionComponentsPerVertex, requiredPipelineKey.depthRead,
-			requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling, requiredPipelineKey.alphaBlend, pipelineLayout, this->renderPass, subpassIndex, &pipeline.pipeline))
+			requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling, requiredPipelineKey.alphaBlend, pipelineLayout, renderPass, &pipeline.pipeline))
 		{
 			DebugLogErrorFormat("Couldn't create graphics pipeline %d.", i);
 			return false;
@@ -3030,16 +3093,32 @@ void VulkanRenderBackend::shutdown()
 			this->commandPool = nullptr;
 		}
 
-		if (this->framebuffer)
+		for (vk::Framebuffer framebuffer : this->uiFramebuffers)
 		{
-			this->device.destroyFramebuffer(this->framebuffer);
-			this->framebuffer = nullptr;
+			if (framebuffer)
+			{
+				this->device.destroyFramebuffer(framebuffer);
+			}
 		}
 
-		if (this->renderPass)
+		this->uiFramebuffers.clear();
+
+		if (this->sceneFramebuffer)
 		{
-			this->device.destroyRenderPass(this->renderPass);
-			this->renderPass = nullptr;
+			this->device.destroyFramebuffer(this->sceneFramebuffer);
+			this->sceneFramebuffer = nullptr;
+		}
+
+		if (this->uiRenderPass)
+		{
+			this->device.destroyRenderPass(this->uiRenderPass);
+			this->uiRenderPass = nullptr;
+		}
+
+		if (this->sceneRenderPass)
+		{
+			this->device.destroyRenderPass(this->sceneRenderPass);
+			this->sceneRenderPass = nullptr;
 		}
 
 		if (this->depthImageView)
@@ -3130,16 +3209,32 @@ void VulkanRenderBackend::shutdown()
 
 void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
 {
-	if (this->framebuffer)
+	for (vk::Framebuffer framebuffer : this->uiFramebuffers)
 	{
-		this->device.destroyFramebuffer(this->framebuffer);
-		this->framebuffer = nullptr;
+		if (framebuffer)
+		{
+			this->device.destroyFramebuffer(framebuffer);
+		}
 	}
 
-	if (this->renderPass)
+	this->uiFramebuffers.clear();
+
+	if (this->sceneFramebuffer)
 	{
-		this->device.destroyRenderPass(this->renderPass);
-		this->renderPass = nullptr;
+		this->device.destroyFramebuffer(this->sceneFramebuffer);
+		this->sceneFramebuffer = nullptr;
+	}
+
+	if (this->uiRenderPass)
+	{
+		this->device.destroyRenderPass(this->uiRenderPass);
+		this->uiRenderPass = nullptr;
+	}
+
+	if (this->sceneRenderPass)
+	{
+		this->device.destroyRenderPass(this->sceneRenderPass);
+		this->sceneRenderPass = nullptr;
 	}
 
 	if (this->depthImageView)
@@ -3184,6 +3279,7 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 	}
 
 	this->swapchainImageViews.clear();
+	this->swapchainImages.clear();
 
 	if (this->swapchain)
 	{
@@ -3296,16 +3392,32 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		return;
 	}
 
-	if (!TryCreateRenderPass(this->device, ColorBufferFormat, &this->renderPass))
+	if (!TryCreateSceneRenderPass(this->device, &this->sceneRenderPass))
 	{
-		DebugLogErrorFormat("Couldn't create render pass for resize to %dx%d.", windowWidth, windowHeight);
+		DebugLogErrorFormat("Couldn't create scene render pass for resize to %dx%d.", windowWidth, windowHeight);
 		return;
 	}
 
-	if (!TryCreateFramebuffer(this->device, this->colorImageView, this->depthImageView, this->internalExtent, this->renderPass, &this->framebuffer))
+	if (!TryCreateUiRenderPass(this->device, &this->uiRenderPass))
+	{
+		DebugLogErrorFormat("Couldn't create UI render pass for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
+
+	if (!TryCreateSceneFramebuffer(this->device, this->colorImageView, this->depthImageView, this->internalExtent, this->sceneRenderPass, &this->sceneFramebuffer))
 	{
 		DebugLogErrorFormat("Couldn't create framebuffer for resize to %dx%d.", windowWidth, windowHeight);
 		return;
+	}
+
+	this->uiFramebuffers.init(this->swapchainImageViews.getCount());
+	for (int i = 0; i < this->swapchainImageViews.getCount(); i++)
+	{
+		if (!TryCreateUiFramebuffer(this->device, this->swapchainImageViews[i], this->swapchainExtent, this->uiRenderPass, &this->uiFramebuffers[i]))
+		{
+			DebugLogErrorFormat("Couldn't create UI framebuffer index %d for resize to %dx%d.", i, windowWidth, windowHeight);
+			return;
+		}
 	}
 }
 
@@ -4247,14 +4359,14 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	clearValues[0].color = vk::ClearColorValue(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 	clearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
 
-	vk::RenderPassBeginInfo renderPassBeginInfo;
-	renderPassBeginInfo.renderPass = this->renderPass;
-	renderPassBeginInfo.framebuffer = this->framebuffer;
-	renderPassBeginInfo.renderArea.extent = this->internalExtent;
-	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(std::size(clearValues));
-	renderPassBeginInfo.pClearValues = clearValues;
+	vk::RenderPassBeginInfo sceneRenderPassBeginInfo;
+	sceneRenderPassBeginInfo.renderPass = this->sceneRenderPass;
+	sceneRenderPassBeginInfo.framebuffer = this->sceneFramebuffer;
+	sceneRenderPassBeginInfo.renderArea.extent = this->internalExtent;
+	sceneRenderPassBeginInfo.clearValueCount = static_cast<uint32_t>(std::size(clearValues));
+	sceneRenderPassBeginInfo.pClearValues = clearValues;
 
-	this->commandBuffer.beginRenderPass(renderPassBeginInfo, vk::SubpassContents::eInline);
+	this->commandBuffer.beginRenderPass(sceneRenderPassBeginInfo, vk::SubpassContents::eInline);
 
 	constexpr vk::PipelineBindPoint pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
 
@@ -4386,7 +4498,72 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		}
 	}
 
-	this->commandBuffer.nextSubpass(vk::SubpassContents::eInline);
+	this->commandBuffer.endRenderPass();
+
+	vk::ImageMemoryBarrier preBlitBarrier;
+	preBlitBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
+	preBlitBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+	preBlitBarrier.oldLayout = vk::ImageLayout::eUndefined;
+	preBlitBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+	preBlitBarrier.image = acquiredSwapchainImage;
+	preBlitBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	preBlitBarrier.subresourceRange.baseMipLevel = 0;
+	preBlitBarrier.subresourceRange.levelCount = 1;
+	preBlitBarrier.subresourceRange.baseArrayLayer = 0;
+	preBlitBarrier.subresourceRange.layerCount = 1;
+
+	this->commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eColorAttachmentOutput,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::DependencyFlags(),
+		vk::ArrayProxy<vk::MemoryBarrier>(),
+		vk::ArrayProxy<vk::BufferMemoryBarrier>(),
+		preBlitBarrier);
+
+	vk::ImageBlit imageBlit;
+	imageBlit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+	imageBlit.srcSubresource.layerCount = 1;
+	imageBlit.srcOffsets[0] = vk::Offset3D();
+	imageBlit.srcOffsets[1] = vk::Offset3D(this->internalExtent.width, this->internalExtent.height, 1);
+	imageBlit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+	imageBlit.dstSubresource.layerCount = 1;
+	imageBlit.dstOffsets[0] = vk::Offset3D();
+	imageBlit.dstOffsets[1] = vk::Offset3D(this->sceneViewExtent.width, this->sceneViewExtent.height, 1);
+
+	this->commandBuffer.blitImage(
+		this->colorImage,
+		vk::ImageLayout::eTransferSrcOptimal,
+		acquiredSwapchainImage,
+		vk::ImageLayout::eTransferDstOptimal,
+		imageBlit,
+		vk::Filter::eNearest);
+
+	vk::ImageMemoryBarrier uiRenderPassBarrier;
+	uiRenderPassBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+	uiRenderPassBarrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
+	uiRenderPassBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+	uiRenderPassBarrier.newLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	uiRenderPassBarrier.image = acquiredSwapchainImage;
+	uiRenderPassBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+	uiRenderPassBarrier.subresourceRange.baseMipLevel = 0;
+	uiRenderPassBarrier.subresourceRange.levelCount = 1;
+	uiRenderPassBarrier.subresourceRange.baseArrayLayer = 0;
+	uiRenderPassBarrier.subresourceRange.layerCount = 1;
+
+	this->commandBuffer.pipelineBarrier(
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eColorAttachmentOutput,
+		vk::DependencyFlags(),
+		vk::ArrayProxy<vk::MemoryBarrier>(),
+		vk::ArrayProxy<vk::BufferMemoryBarrier>(),
+		uiRenderPassBarrier);
+
+	vk::RenderPassBeginInfo uiRenderPassBeginInfo;
+	uiRenderPassBeginInfo.renderPass = this->uiRenderPass;
+	uiRenderPassBeginInfo.framebuffer = this->uiFramebuffers[acquiredSwapchainImageIndex];
+	uiRenderPassBeginInfo.renderArea.extent = this->swapchainExtent;
+
+	this->commandBuffer.beginRenderPass(uiRenderPassBeginInfo, vk::SubpassContents::eInline);
 
 	if (uiCommandList.entryCount > 0)
 	{
@@ -4395,13 +4572,13 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		this->commandBuffer.bindPipeline(pipelineBindPoint, uiPipeline.pipeline);
 
 		vk::Viewport uiViewport;
-		uiViewport.width = static_cast<float>(this->internalExtent.width); // @todo this should be swapchain extent once doing the offscreen buffer properly
-		uiViewport.height = static_cast<float>(this->internalExtent.height);
+		uiViewport.width = static_cast<float>(this->swapchainExtent.width);
+		uiViewport.height = static_cast<float>(this->swapchainExtent.height);
 		uiViewport.minDepth = 0.0f;
 		uiViewport.maxDepth = 1.0f;
 
 		vk::Rect2D uiViewportScissor;
-		uiViewportScissor.extent = this->internalExtent;
+		uiViewportScissor.extent = this->swapchainExtent;
 
 		this->commandBuffer.setViewport(0, uiViewport);
 		this->commandBuffer.setScissor(0, uiViewportScissor);
@@ -4462,64 +4639,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	}
 
 	this->commandBuffer.endRenderPass();
-
-	vk::ImageMemoryBarrier preBlitBarrier;
-	preBlitBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
-	preBlitBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-	preBlitBarrier.oldLayout = vk::ImageLayout::eUndefined;
-	preBlitBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
-	preBlitBarrier.image = acquiredSwapchainImage;
-	preBlitBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	preBlitBarrier.subresourceRange.baseMipLevel = 0;
-	preBlitBarrier.subresourceRange.levelCount = 1;
-	preBlitBarrier.subresourceRange.baseArrayLayer = 0;
-	preBlitBarrier.subresourceRange.layerCount = 1;
-
-	this->commandBuffer.pipelineBarrier(
-		vk::PipelineStageFlagBits::eColorAttachmentOutput,
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::DependencyFlags(),
-		vk::ArrayProxy<vk::MemoryBarrier>(),
-		vk::ArrayProxy<vk::BufferMemoryBarrier>(),
-		preBlitBarrier);
-
-	vk::ImageBlit imageBlit;
-	imageBlit.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-	imageBlit.srcSubresource.layerCount = 1;
-	imageBlit.srcOffsets[0] = vk::Offset3D();
-	imageBlit.srcOffsets[1] = vk::Offset3D(this->internalExtent.width, this->internalExtent.height, 1);
-	imageBlit.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-	imageBlit.dstSubresource.layerCount = 1;
-	imageBlit.dstOffsets[0] = vk::Offset3D();
-	imageBlit.dstOffsets[1] = vk::Offset3D(this->sceneViewExtent.width, this->sceneViewExtent.height, 1);
-
-	this->commandBuffer.blitImage(
-		this->colorImage,
-		vk::ImageLayout::eTransferSrcOptimal,
-		acquiredSwapchainImage,
-		vk::ImageLayout::eTransferDstOptimal,
-		imageBlit,
-		vk::Filter::eNearest);
-
-	vk::ImageMemoryBarrier presentBarrier;
-	presentBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-	presentBarrier.dstAccessMask = vk::AccessFlagBits::eNone;
-	presentBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
-	presentBarrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
-	presentBarrier.image = acquiredSwapchainImage;
-	presentBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-	presentBarrier.subresourceRange.baseMipLevel = 0;
-	presentBarrier.subresourceRange.levelCount = 1;
-	presentBarrier.subresourceRange.baseArrayLayer = 0;
-	presentBarrier.subresourceRange.layerCount = 1;
-
-	this->commandBuffer.pipelineBarrier(
-		vk::PipelineStageFlagBits::eTransfer,
-		vk::PipelineStageFlagBits::eBottomOfPipe,
-		vk::DependencyFlags(),
-		vk::ArrayProxy<vk::MemoryBarrier>(),
-		vk::ArrayProxy<vk::BufferMemoryBarrier>(),
-		presentBarrier);
 
 	const vk::Result commandBufferEndResult = this->commandBuffer.end();
 	if (commandBufferEndResult != vk::Result::eSuccess)

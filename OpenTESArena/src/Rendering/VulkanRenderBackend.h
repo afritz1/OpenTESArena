@@ -301,8 +301,10 @@ private:
 	vk::DeviceMemory depthDeviceMemory;
 	vk::Image depthImage;
 	vk::ImageView depthImageView;
-	vk::RenderPass renderPass;
-	vk::Framebuffer framebuffer;
+	vk::RenderPass sceneRenderPass;
+	vk::RenderPass uiRenderPass;
+	vk::Framebuffer sceneFramebuffer;
+	Buffer<vk::Framebuffer> uiFramebuffers;
 
 	vk::CommandPool commandPool;
 	vk::CommandBuffer commandBuffer;
