@@ -1,7 +1,6 @@
 #ifndef RENDER_ENTITY_MANAGER_H
 #define RENDER_ENTITY_MANAGER_H
 
-#include <unordered_map>
 #include <vector>
 
 #include "RenderDrawCall.h"
@@ -26,7 +25,18 @@ struct RenderEntityLoadedAnimation
 	EntityDefID defID;
 	Buffer<ScopedObjectTextureRef> textureRefs; // Linearized based on the anim def's keyframes.
 
+	RenderEntityLoadedAnimation();
+
 	void init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs);
+};
+
+struct RenderEntityPaletteIndicesEntry
+{
+	EntityPaletteIndicesInstanceID paletteIndicesInstanceID;
+	ObjectTextureID textureID; // Palette indices as renderer texture.
+	Buffer<RenderMaterialID> materialIDs; // Linearized animation material IDs.
+
+	RenderEntityPaletteIndicesEntry();
 };
 
 class RenderEntityManager
@@ -34,17 +44,15 @@ class RenderEntityManager
 private:
 	std::vector<RenderEntityLoadedAnimation> anims;
 	RenderMeshInstance meshInst; // Shared by all entities.
-	std::unordered_map<EntityPaletteIndicesInstanceID, ScopedObjectTextureRef> paletteIndicesTextureRefs;
+	std::vector<RenderEntityPaletteIndicesEntry> paletteIndicesEntries; // Unique to each citizen, contains allocated palette texture and material IDs.
 
-	std::vector<RenderMaterial> materials;
+	std::vector<RenderMaterial> materials; // Loaded for every non-citizen animation.
 
 	// All accumulated draw calls from entities each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
 	std::vector<RenderDrawCall> puddleSecondPassDrawCallsCache;
 
-	ObjectTextureID getTextureID(EntityInstanceID entityInstID, const WorldDouble3 &cameraPosition, const EntityChunkManager &entityChunkManager) const;
-
-	void loadTexturesForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
+	void loadMaterialsForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
 public:
 	RenderEntityManager();
 
@@ -52,7 +60,7 @@ public:
 	void shutdown(Renderer &renderer);
 
 	// For entities not from the level itself (i.e. VFX).
-	void loadTexturesForEntity(EntityDefID entityDefID, TextureManager &textureManager, Renderer &renderer);
+	void loadMaterialsForEntity(EntityDefID entityDefID, TextureManager &textureManager, Renderer &renderer);
 
 	void populateCommandList(RenderCommandList &commandList) const;
 
