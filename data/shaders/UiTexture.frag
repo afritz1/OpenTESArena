@@ -9,10 +9,5 @@ layout(location = 0) out vec4 fragOutColor;
 void main()
 {
     vec4 texel = texture(textureSampler, fragInTexCoord);
-    if (texel.a == 0.0)
-    {
-        discard;
-    }
-
     fragOutColor = texel;
 }

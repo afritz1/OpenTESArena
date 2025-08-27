@@ -252,16 +252,18 @@ struct VulkanPipelineKey
 	bool depthRead;
 	bool depthWrite;
 	bool backFaceCulling;
+	bool alphaBlend;
 
 	VulkanPipelineKey();
 
-	constexpr VulkanPipelineKey(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling)
+	constexpr VulkanPipelineKey(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
 	{
 		this->vertexShaderType = vertexShaderType;
 		this->fragmentShaderType = fragmentShaderType;
 		this->depthRead = depthRead;
 		this->depthWrite = depthWrite;
 		this->backFaceCulling = backFaceCulling;
+		this->alphaBlend = alphaBlend;
 	}
 };
 

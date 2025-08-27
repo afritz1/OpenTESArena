@@ -96,14 +96,15 @@ namespace
 		{ PixelShaderType::UiTexture, "UiTexture" }
 	};
 
-	VulkanPipelineKeyCode MakePipelineKeyCode(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling)
+	VulkanPipelineKeyCode MakePipelineKeyCode(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
 	{
 		constexpr int vertexShaderTypeRequiredBits = Bytes::getRequiredBitCount(VERTEX_SHADER_TYPE_COUNT);
 		constexpr int fragmentShaderTypeRequiredBits = Bytes::getRequiredBitCount(TOTAL_PIXEL_SHADER_TYPE_COUNT);
 		constexpr int depthReadRequiredBits = 1;
 		constexpr int depthWriteRequiredBits = 1;
 		constexpr int backFaceCullingRequiredBits = 1;
-		constexpr int totalRequiredBits = vertexShaderTypeRequiredBits + fragmentShaderTypeRequiredBits + depthReadRequiredBits + depthWriteRequiredBits + backFaceCullingRequiredBits;
+		constexpr int alphaBlendRequiredBits = 1;
+		constexpr int totalRequiredBits = vertexShaderTypeRequiredBits + fragmentShaderTypeRequiredBits + depthReadRequiredBits + depthWriteRequiredBits + backFaceCullingRequiredBits + alphaBlendRequiredBits;
 		static_assert((sizeof(VulkanPipelineKeyCode) * CHAR_BIT) >= totalRequiredBits);
 
 		constexpr int vertexShaderTypeBitOffset = 0;
@@ -111,41 +112,44 @@ namespace
 		constexpr int depthReadBitOffset = fragmentShaderTypeBitOffset + fragmentShaderTypeRequiredBits;
 		constexpr int depthWriteBitOffset = depthReadBitOffset + depthReadRequiredBits;
 		constexpr int backFaceCullingBitOffset = depthWriteBitOffset + depthWriteRequiredBits;
+		constexpr int alphaBlendBitOffset = backFaceCullingBitOffset + backFaceCullingRequiredBits;
 
 		const uint32_t vertexShaderTypeBits = static_cast<uint32_t>(vertexShaderType);
 		const uint32_t fragmentShaderTypeBits = static_cast<uint32_t>(fragmentShaderType);
 		const uint32_t depthReadBits = depthRead ? 1 : 0;
 		const uint32_t depthWriteBits = depthWrite ? 1 : 0;
 		const uint32_t backFaceCullingBits = backFaceCulling ? 1 : 0;
+		const uint32_t alphaBlendBits = alphaBlend ? 1 : 0;
 
-		return vertexShaderTypeBits | (fragmentShaderTypeBits << fragmentShaderTypeBitOffset) | (depthReadBits << depthReadBitOffset) | (depthWriteBits << depthWriteBitOffset) | (backFaceCullingBits << backFaceCullingBitOffset);
+		return vertexShaderTypeBits | (fragmentShaderTypeBits << fragmentShaderTypeBitOffset) | (depthReadBits << depthReadBitOffset) |
+			(depthWriteBits << depthWriteBitOffset) | (backFaceCullingBits << backFaceCullingBitOffset) | (alphaBlendBits << alphaBlendBitOffset);
 	}
 
 	constexpr VulkanPipelineKey RequiredPipelines[] =
 	{
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, false, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueWithAlphaTestLayer, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimation, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, false, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelColor, false, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelOpacity, false, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, false, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueWithAlphaTestLayer, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimation, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, false, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelColor, false, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelOpacity, false, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false, false),
 
-		VulkanPipelineKey(VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true, true),
+		VulkanPipelineKey(VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true, true, false),
 
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTested, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithPaletteIndexLookup, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithLightLevelOpacity, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, true, true, true),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true, true),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTested, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithPaletteIndexLookup, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithLightLevelOpacity, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true, true, false),
 
-		VulkanPipelineKey(VertexShaderType::UI, PixelShaderType::UiTexture, false, false, false)
+		VulkanPipelineKey(VertexShaderType::UI, PixelShaderType::UiTexture, false, false, false, true)
 	};
 
 	constexpr int UiPipelineKeyIndex = static_cast<int>(std::size(RequiredPipelines) - 1);
@@ -1634,8 +1638,8 @@ namespace
 	}
 
 	bool TryCreateGraphicsPipeline(vk::Device device, vk::ShaderModule vertexShaderModule, vk::ShaderModule fragmentShaderModule,
-		int positionComponentsPerVertex, bool enableDepthRead, bool enableDepthWrite, bool enableBackFaceCulling, vk::PipelineLayout pipelineLayout,
-		vk::RenderPass renderPass, int subpassIndex, vk::Pipeline *outPipeline)
+		int positionComponentsPerVertex, bool enableDepthRead, bool enableDepthWrite, bool enableBackFaceCulling, bool enableAlphaBlend,
+		vk::PipelineLayout pipelineLayout, vk::RenderPass renderPass, int subpassIndex, vk::Pipeline *outPipeline)
 	{
 		DebugAssert((positionComponentsPerVertex == 3) || (positionComponentsPerVertex == 2));
 
@@ -1730,8 +1734,18 @@ namespace
 		pipelineDepthStencilStateCreateInfo.maxDepthBounds = 1.0f;
 
 		vk::PipelineColorBlendAttachmentState pipelineColorBlendAttachmentState;
-		pipelineColorBlendAttachmentState.blendEnable = VK_FALSE;
 		pipelineColorBlendAttachmentState.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+
+		if (enableAlphaBlend)
+		{
+			pipelineColorBlendAttachmentState.blendEnable = VK_TRUE;
+			pipelineColorBlendAttachmentState.srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
+			pipelineColorBlendAttachmentState.dstColorBlendFactor = vk::BlendFactor::eOneMinusSrcAlpha;
+			pipelineColorBlendAttachmentState.colorBlendOp = vk::BlendOp::eAdd;
+			pipelineColorBlendAttachmentState.srcAlphaBlendFactor = vk::BlendFactor::eOne;
+			pipelineColorBlendAttachmentState.dstAlphaBlendFactor = vk::BlendFactor::eZero;
+			pipelineColorBlendAttachmentState.alphaBlendOp = vk::BlendOp::eAdd;
+		}
 
 		vk::PipelineColorBlendStateCreateInfo pipelineColorBlendStateCreateInfo;
 		pipelineColorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
@@ -2200,6 +2214,7 @@ VulkanPipelineKey::VulkanPipelineKey()
 	this->depthRead = false;
 	this->depthWrite = false;
 	this->backFaceCulling = false;
+	this->alphaBlend = false;
 }
 
 bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
@@ -2523,10 +2538,10 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		DebugAssert(fragmentShaderIter != this->fragmentShaders.end());
 
 		VulkanPipeline &pipeline = this->graphicsPipelines[i];
-		pipeline.keyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, requiredPipelineKey.depthRead, requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling);
+		pipeline.keyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, requiredPipelineKey.depthRead, requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling, requiredPipelineKey.alphaBlend);
 
 		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, positionComponentsPerVertex, requiredPipelineKey.depthRead,
-			requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling, pipelineLayout, this->renderPass, subpassIndex, &pipeline.pipeline))
+			requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling, requiredPipelineKey.alphaBlend, pipelineLayout, this->renderPass, subpassIndex, &pipeline.pipeline))
 		{
 			DebugLogErrorFormat("Couldn't create graphics pipeline %d.", i);
 			return false;
@@ -3985,7 +4000,8 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 
 	const VertexShaderType vertexShaderType = key.vertexShaderType;
 	const PixelShaderType fragmentShaderType = key.pixelShaderType;
-	const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+	constexpr bool enableAlphaBlend = false; // Materials don't need alpha blend, only UI does (and just for the reticle).
+	const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling, enableAlphaBlend);
 	int pipelineIndex = -1;
 	for (int i = 0; i < this->graphicsPipelines.getCount(); i++)
 	{
