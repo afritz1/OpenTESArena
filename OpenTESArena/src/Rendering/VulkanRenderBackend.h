@@ -291,13 +291,18 @@ private:
 
 	vk::Extent2D swapchainExtent;
 	vk::Extent2D sceneViewExtent;
+	vk::Extent2D internalExtent;
 	vk::SwapchainKHR swapchain;
+	std::vector<vk::Image> swapchainImages;
 	Buffer<vk::ImageView> swapchainImageViews;
+	vk::DeviceMemory colorDeviceMemory;
+	vk::Image colorImage;
+	vk::ImageView colorImageView;
 	vk::DeviceMemory depthDeviceMemory;
 	vk::Image depthImage;
 	vk::ImageView depthImageView;
 	vk::RenderPass renderPass;
-	Buffer<vk::Framebuffer> swapchainFramebuffers;
+	vk::Framebuffer framebuffer;
 
 	vk::CommandPool commandPool;
 	vk::CommandBuffer commandBuffer;
