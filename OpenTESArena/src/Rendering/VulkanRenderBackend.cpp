@@ -34,17 +34,18 @@ namespace
 
 	constexpr vk::Format MaxCompatibilityImageFormat8888Unorm = vk::Format::eR8G8B8A8Unorm;
 	constexpr vk::Format MaxCompatibilityImageFormat32Uint = vk::Format::eR32Uint;
-	constexpr vk::Format DefaultSwapchainSurfaceFormat = vk::Format::eB8G8R8A8Unorm; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
-	constexpr vk::Format ColorBufferFormat = vk::Format::eB8G8R8A8Unorm;
+	constexpr vk::Format SwapchainImageFormat = vk::Format::eB8G8R8A8Unorm; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
+	constexpr vk::Format ColorBufferFormat = vk::Format::eB8G8R8A8Unorm; // @todo R8Uint is widely supported by all nvidia/amd/intel gpus in the last ~7 years
 	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
 	constexpr vk::Format ObjectTextureFormat8Bit = vk::Format::eR8Uint;
 	constexpr vk::Format ObjectTextureFormat32Bit = vk::Format::eB8G8R8A8Unorm;
 	constexpr vk::Format UiTextureFormat = ObjectTextureFormat32Bit;
 
-	constexpr vk::ImageUsageFlags ColorBufferUsageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eColorAttachment; //vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage;
+	constexpr vk::ImageUsageFlags ColorBufferUsageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eColorAttachment; //vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage; // @todo we do want sampled but not storage
 	constexpr vk::ImageUsageFlags DepthBufferUsageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+	constexpr vk::ImageUsageFlags SwapchainImageUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment;
 
-	constexpr vk::ColorSpaceKHR DefaultSwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
+	constexpr vk::ColorSpaceKHR SwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 
 	// Size of each new individually-created heap in bytes requested from the driver. A single memory allocation (including alignment) cannot exceed this.
 	constexpr int BYTES_PER_HEAP_VERTEX_BUFFERS = 1 << 22;
@@ -374,7 +375,7 @@ namespace
 
 		for (int i = 0; i < physicalDevices.getCount(); i++)
 		{
-			const vk::PhysicalDevice &physicalDevice = physicalDevices[i];
+			const vk::PhysicalDevice physicalDevice = physicalDevices[i];
 			const vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
 			const std::string deviceName = physicalDeviceProperties.deviceName;
 
@@ -1143,7 +1144,7 @@ namespace
 		swapchainCreateInfo.imageColorSpace = surfaceFormat.colorSpace;
 		swapchainCreateInfo.imageExtent = surfaceExtent;
 		swapchainCreateInfo.imageArrayLayers = 1;
-		swapchainCreateInfo.imageUsage = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eColorAttachment;
+		swapchainCreateInfo.imageUsage = SwapchainImageUsageFlags;
 
 		if (graphicsQueueFamilyIndex != presentQueueFamilyIndex)
 		{
@@ -1282,7 +1283,7 @@ namespace
 	bool TryCreateUiRenderPass(vk::Device device, vk::RenderPass *outRenderPass)
 	{
 		vk::AttachmentDescription colorAttachmentDescription;
-		colorAttachmentDescription.format = DefaultSwapchainSurfaceFormat;
+		colorAttachmentDescription.format = SwapchainImageFormat;
 		colorAttachmentDescription.samples = vk::SampleCountFlagBits::e1;
 		colorAttachmentDescription.loadOp = vk::AttachmentLoadOp::eLoad;
 		colorAttachmentDescription.storeOp = vk::AttachmentStoreOp::eStore;
@@ -2316,7 +2317,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	this->presentQueue = this->device.getQueue(this->presentQueueFamilyIndex, 0);
 
 	vk::SurfaceFormatKHR surfaceFormat;
-	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, DefaultSwapchainSurfaceFormat, DefaultSwapchainColorSpace, &surfaceFormat))
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, SwapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
 	{
 		DebugLogError("Couldn't get surface format for swapchain.");
 		return false;
@@ -3319,7 +3320,7 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 	this->internalExtent = vk::Extent2D(internalWidth, internalHeight);
 
 	vk::SurfaceFormatKHR surfaceFormat;
-	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, DefaultSwapchainSurfaceFormat, DefaultSwapchainColorSpace, &surfaceFormat))
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, SwapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
 	{
 		DebugLogErrorFormat("Couldn't get surface format for resize to %dx%d.", windowWidth, windowHeight);
 		return;
