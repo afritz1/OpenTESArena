@@ -298,6 +298,7 @@ private:
 	vk::DeviceMemory colorDeviceMemory;
 	vk::Image colorImage;
 	vk::ImageView colorImageView;
+	vk::Sampler colorSampler;
 	vk::DeviceMemory depthDeviceMemory;
 	vk::Image depthImage;
 	vk::ImageView depthImageView;
@@ -313,6 +314,7 @@ private:
 
 	Buffer<VulkanVertexShader> vertexShaders;
 	Buffer<VulkanFragmentShader> fragmentShaders;
+	vk::ShaderModule conversionShader;
 
 	vk::DescriptorPool globalDescriptorPool;
 	vk::DescriptorPool transformDescriptorPool;
@@ -320,12 +322,15 @@ private:
 	vk::DescriptorSetLayout globalDescriptorSetLayout;
 	vk::DescriptorSetLayout transformDescriptorSetLayout;
 	vk::DescriptorSetLayout materialDescriptorSetLayout;
+	vk::DescriptorSetLayout conversionDescriptorSetLayout;
 	vk::DescriptorSetLayout uiMaterialDescriptorSetLayout;
 	vk::DescriptorSet globalDescriptorSet;
-	FlatMap<UiTextureID, vk::DescriptorSet> uiTextureDescriptorSets; // Avoids needing UI material support since UI is so simplistic.
+	vk::DescriptorSet conversionDescriptorSet;
+	FlatMap<UiTextureID, vk::DescriptorSet> uiTextureDescriptorSets; // Avoids UI material support since UI is simplistic.
 
 	Buffer<vk::PipelineLayout> pipelineLayouts;
 	Buffer<VulkanPipeline> graphicsPipelines;
+	vk::Pipeline conversionPipeline;
 
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;
