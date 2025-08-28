@@ -4565,6 +4565,25 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 	this->commandBuffer.beginRenderPass(uiRenderPassBeginInfo, vk::SubpassContents::eInline);
 
+	const bool needsNonSceneViewClear = this->sceneViewExtent.height < this->swapchainExtent.height;
+	if (needsNonSceneViewClear)
+	{
+		// Clear non-scene-view portion if not fullscreen (like in classic mode) because UI render pass is set to load.
+		// The scene view portion always gets cleared no matter what.
+		vk::ClearAttachment clearAttachment;
+		clearAttachment.aspectMask = vk::ImageAspectFlagBits::eColor;
+		clearAttachment.colorAttachment = 0;
+		clearAttachment.clearValue = clearValues[0];
+
+		vk::ClearRect clearRect;
+		clearRect.rect.offset = vk::Offset2D(0, this->sceneViewExtent.height);
+		clearRect.rect.extent = vk::Extent2D(this->swapchainExtent.width, this->swapchainExtent.height - this->sceneViewExtent.height);
+		clearRect.baseArrayLayer = 0;
+		clearRect.layerCount = 1;
+
+		this->commandBuffer.clearAttachments(clearAttachment, clearRect);
+	}
+
 	if (uiCommandList.entryCount > 0)
 	{
 		const vk::PipelineLayout uiPipelineLayout = this->pipelineLayouts[UiPipelineKeyIndex];
