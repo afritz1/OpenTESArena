@@ -1,17 +1,23 @@
 #include "RenderBackend.h"
 
-Renderer3DProfilerData::Renderer3DProfilerData(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
-	int textureCount, int64_t textureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests, int64_t totalColorWrites)
+RendererProfilerData2D::RendererProfilerData2D()
 {
-	this->width = width;
-	this->height = height;
-	this->threadCount = threadCount;
-	this->drawCallCount = drawCallCount;
-	this->presentedTriangleCount = presentedTriangleCount;
-	this->textureCount = textureCount;
-	this->textureByteCount = textureByteCount;
-	this->totalLightCount = totalLightCount;
-	this->totalCoverageTests = totalCoverageTests;
-	this->totalDepthTests = totalDepthTests;
-	this->totalColorWrites = totalColorWrites;
+	this->drawCallCount = 0;
+	this->uiTextureCount = 0;
+	this->uiTextureByteCount = 0;
+}
+
+RendererProfilerData3D::RendererProfilerData3D()
+{
+	this->width = 0;
+	this->height = 0;
+	this->threadCount = 0;
+	this->drawCallCount = 0;
+	this->presentedTriangleCount = 0;
+	this->objectTextureCount = 0;
+	this->objectTextureByteCount = 0;
+	this->totalLightCount = 0;
+	this->totalCoverageTests = 0;
+	this->totalDepthTests = 0;
+	this->totalColorWrites = 0;
 }

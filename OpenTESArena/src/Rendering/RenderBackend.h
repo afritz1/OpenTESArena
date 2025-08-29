@@ -24,21 +24,29 @@ struct RenderInitSettings;
 struct UiCommandList;
 
 // Profiling info gathered from internal renderer state.
-struct Renderer3DProfilerData
+struct RendererProfilerData2D
+{
+	int drawCallCount;
+	int uiTextureCount;
+	int64_t uiTextureByteCount;
+
+	RendererProfilerData2D();
+};
+
+struct RendererProfilerData3D
 {
 	int width, height;
 	int threadCount;
 	int drawCallCount;
 	int presentedTriangleCount;
-	int textureCount;
-	int64_t textureByteCount;
+	int objectTextureCount;
+	int64_t objectTextureByteCount;
 	int totalLightCount;
 	int64_t totalCoverageTests;
 	int64_t totalDepthTests;
 	int64_t totalColorWrites;
 
-	Renderer3DProfilerData(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
-		int textureCount, int64_t textureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests, int64_t totalColorWrites);
+	RendererProfilerData3D();
 };
 
 // Abstract base supporting several implementations (software + SDL_Texture, Vulkan, etc.).
@@ -52,7 +60,8 @@ public:
 	virtual void handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) = 0;
 
 	// Gets various profiler information about internal renderer state.
-	virtual Renderer3DProfilerData getProfilerData() const = 0;
+	virtual RendererProfilerData2D getProfilerData2D() const = 0;
+	virtual RendererProfilerData3D getProfilerData3D() const = 0;
 
 	virtual Surface getScreenshot() const = 0;
 

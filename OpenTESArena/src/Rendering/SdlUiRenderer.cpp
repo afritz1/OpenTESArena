@@ -6,6 +6,7 @@
 #include "SDL_render.h"
 
 #include "ArenaRenderUtils.h"
+#include "RenderBackend.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
 #include "SdlUiRenderer.h"
@@ -89,6 +90,28 @@ void SdlUiRenderer::shutdown()
 
 	this->texturePool.clear();
 	this->renderer = nullptr;
+}
+
+RendererProfilerData2D SdlUiRenderer::getProfilerData() const
+{
+	RendererProfilerData2D profilerData;
+	profilerData.drawCallCount = 0;
+	profilerData.uiTextureCount = static_cast<int>(this->texturePool.values.size());
+	for (SDL_Texture *texture : this->texturePool.values)
+	{
+		constexpr int bytesPerTexel = 4;
+
+		int width, height;
+		const int result = SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+		if (result != 0)
+		{
+			continue;
+		}
+
+		profilerData.uiTextureByteCount += width * height * bytesPerTexel;
+	}
+
+	return profilerData;
 }
 
 UiTextureID SdlUiRenderer::createTexture(int width, int height)

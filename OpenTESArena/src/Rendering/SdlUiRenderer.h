@@ -11,6 +11,7 @@ enum class RenderSpace;
 
 struct Rect;
 struct RenderElement2D;
+struct RendererProfilerData2D;
 struct SDL_Renderer;
 struct SDL_Texture;
 
@@ -26,6 +27,8 @@ public:
 
 	bool init(SDL_Window *window);
 	void shutdown();
+
+	RendererProfilerData2D getProfilerData() const;
 
 	UiTextureID createTexture(int width, int height);
 	void freeTexture(UiTextureID textureID);

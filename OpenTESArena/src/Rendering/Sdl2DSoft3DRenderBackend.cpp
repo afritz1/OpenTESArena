@@ -1,5 +1,3 @@
-#include <chrono>
-
 #include "SDL_hints.h"
 #include "SDL_render.h"
 
@@ -218,7 +216,12 @@ void Sdl2DSoft3DRenderBackend::handleRenderTargetsReset(int windowWidth, int win
 	this->renderer3D.resize(internalWidth, internalHeight);
 }
 
-Renderer3DProfilerData Sdl2DSoft3DRenderBackend::getProfilerData() const
+RendererProfilerData2D Sdl2DSoft3DRenderBackend::getProfilerData2D() const
+{
+	return this->renderer2D.getProfilerData();
+}
+
+RendererProfilerData3D Sdl2DSoft3DRenderBackend::getProfilerData3D() const
 {
 	return this->renderer3D.getProfilerData();
 }
@@ -441,13 +444,7 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 			return;
 		}
 
-		const auto renderStartTime = std::chrono::high_resolution_clock::now();
 		this->renderer3D.submitFrame(renderCommandList, camera, frameSettings, outputBuffer);
-		const auto renderEndTime = std::chrono::high_resolution_clock::now();
-		const double renderTotalTime = static_cast<double>((renderEndTime - renderStartTime).count()) / static_cast<double>(std::nano::den);
-
-		// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
-		const auto presentStartTime = std::chrono::high_resolution_clock::now();
 		SDL_UnlockTexture(this->gameWorldTexture);
 
 		const Int2 viewDims = this->window->getSceneViewDimensions();
@@ -458,17 +455,6 @@ void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderComman
 		gameWorldDrawRect.w = viewDims.x;
 		gameWorldDrawRect.h = viewDims.y;
 		SDL_RenderCopy(this->renderer, this->gameWorldTexture, nullptr, &gameWorldDrawRect);
-
-		const auto presentEndTime = std::chrono::high_resolution_clock::now();
-		const double presentTotalTime = static_cast<double>((presentEndTime - presentStartTime).count()) / static_cast<double>(std::nano::den);
-
-		// @todo include some more times in here for UI rendering and final present, then update in Renderer
-		// Update profiler stats.
-		/*const Renderer3DProfilerData swProfilerData = this->backend->getProfilerData();
-		this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
-			swProfilerData.drawCallCount, swProfilerData.presentedTriangleCount, swProfilerData.textureCount,
-			swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalCoverageTests,
-			swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);*/
 	}
 
 	for (int entryIndex = 0; entryIndex < uiCommandList.entryCount; entryIndex++)

@@ -25,7 +25,8 @@ public:
 	void handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
 
 	// Gets various profiler information about internal renderer state.
-	Renderer3DProfilerData getProfilerData() const override;
+	RendererProfilerData2D getProfilerData2D() const override;
+	RendererProfilerData3D getProfilerData3D() const override;
 
 	Surface getScreenshot() const override;
 

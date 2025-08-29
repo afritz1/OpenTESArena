@@ -365,7 +365,8 @@ public:
 	void resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
 	void handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;
 
-	Renderer3DProfilerData getProfilerData() const override;
+	RendererProfilerData2D getProfilerData2D() const override;
+	RendererProfilerData3D getProfilerData3D() const override;
 
 	Surface getScreenshot() const override;
 

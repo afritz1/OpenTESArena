@@ -100,17 +100,18 @@ RendererProfilerData::RendererProfilerData()
 	this->presentedTriangleCount = -1;
 	this->objectTextureCount = -1;
 	this->objectTextureByteCount = -1;
+	this->uiTextureCount = -1;
+	this->uiTextureByteCount = -1;
 	this->totalLightCount = -1;
 	this->totalCoverageTests = -1;
 	this->totalDepthTests = -1;
 	this->totalColorWrites = -1;
 	this->renderTime = 0.0;
-	this->presentTime = 0.0;
 }
 
-void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
-	int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
-	int64_t totalColorWrites, double renderTime, double presentTime)
+void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
+	int64_t objectTextureByteCount, int uiTextureCount, int64_t uiTextureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
+	int64_t totalColorWrites, double renderTime)
 {
 	this->width = width;
 	this->height = height;
@@ -120,12 +121,13 @@ void RendererProfilerData::init(int width, int height, int threadCount, int draw
 	this->presentedTriangleCount = presentedTriangleCount;
 	this->objectTextureCount = objectTextureCount;
 	this->objectTextureByteCount = objectTextureByteCount;
+	this->uiTextureCount = uiTextureCount;
+	this->uiTextureByteCount = uiTextureByteCount;
 	this->totalLightCount = totalLightCount;
 	this->totalCoverageTests = totalCoverageTests;
 	this->totalDepthTests = totalDepthTests;
 	this->totalColorWrites = totalColorWrites;
 	this->renderTime = renderTime;
-	this->presentTime = presentTime;
 }
 
 Renderer::Renderer()
@@ -777,5 +779,16 @@ void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, J
 void Renderer::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
+	const auto renderStartTime = std::chrono::high_resolution_clock::now();
 	this->backend->submitFrame(renderCommandList, uiCommandList, camera, frameSettings);
+	const auto renderEndTime = std::chrono::high_resolution_clock::now();
+	const double renderTotalTime = static_cast<double>((renderEndTime - renderStartTime).count()) / static_cast<double>(std::nano::den);
+
+	// Update profiler stats.
+	const RendererProfilerData2D profilerData2D = this->backend->getProfilerData2D();
+	const RendererProfilerData3D profilerData3D = this->backend->getProfilerData3D();
+	this->profilerData.init(profilerData3D.width, profilerData3D.height, profilerData3D.threadCount, profilerData3D.drawCallCount,
+		profilerData3D.presentedTriangleCount, profilerData3D.objectTextureCount, profilerData3D.objectTextureByteCount, profilerData2D.uiTextureCount,
+		profilerData2D.uiTextureByteCount, profilerData3D.totalLightCount, profilerData3D.totalCoverageTests, profilerData3D.totalDepthTests,
+		profilerData3D.totalColorWrites, renderTotalTime);
 }

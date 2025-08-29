@@ -4503,28 +4503,27 @@ void SoftwareRenderer::resize(int width, int height)
 	}
 }
 
-Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
+RendererProfilerData3D SoftwareRenderer::getProfilerData() const
 {
-	const int renderWidth = this->paletteIndexBuffer.getWidth();
-	const int renderHeight = this->paletteIndexBuffer.getHeight();
-	const int threadCount = g_workers.getCount();
-	const int drawCallCount = g_totalDrawCallCount;
-	const int presentedTriangleCount = g_totalPresentedTriangleCount;
+	RendererProfilerData3D profilerData;
+	profilerData.width = this->paletteIndexBuffer.getWidth();
+	profilerData.height = this->paletteIndexBuffer.getHeight();
+	profilerData.threadCount = g_workers.getCount();
+	profilerData.drawCallCount = g_totalDrawCallCount;
+	profilerData.presentedTriangleCount = g_totalPresentedTriangleCount;
+	profilerData.objectTextureCount = this->objectTextures.getCount();
 
-	const int textureCount = this->objectTextures.getCount();
-	int64_t textureByteCount = 0;
 	for (const SoftwareObjectTexture &texture : this->objectTextures.values)
 	{
-		textureByteCount += texture.texels.getCount();
+		profilerData.objectTextureByteCount += texture.texels.getCount();
 	}
 
-	const int totalLightCount = this->lights.getCount();
-	const int64_t totalCoverageTests = g_totalCoverageTests;
-	const int64_t totalDepthTests = g_totalDepthTests;
-	const int64_t totalColorWrites = g_totalColorWrites;
+	profilerData.totalLightCount = this->lights.getCount();
+	profilerData.totalCoverageTests = g_totalCoverageTests;
+	profilerData.totalDepthTests = g_totalDepthTests;
+	profilerData.totalColorWrites = g_totalColorWrites;
 
-	return Renderer3DProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, presentedTriangleCount,
-		textureCount, textureByteCount, totalLightCount, totalCoverageTests, totalDepthTests, totalColorWrites);
+	return profilerData;
 }
 
 int SoftwareRenderer::getBytesPerFloat() const

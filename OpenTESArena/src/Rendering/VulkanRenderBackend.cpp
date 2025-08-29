@@ -3534,10 +3534,44 @@ void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHe
 	DebugNotImplementedMsg("handleRenderTargetsReset()");
 }
 
-Renderer3DProfilerData VulkanRenderBackend::getProfilerData() const
+RendererProfilerData2D VulkanRenderBackend::getProfilerData2D() const
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::getProfilerData");
-	return Renderer3DProfilerData(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	RendererProfilerData2D profilerData;
+	profilerData.drawCallCount = 0;
+	profilerData.uiTextureCount = static_cast<int>(this->uiTexturePool.values.size());
+	for (const VulkanTexture &texture : this->uiTexturePool.values)
+	{
+		// Don't worry about staging buffers, we mostly care about in VRAM for profiling.
+		const int estimatedDeviceLocalByteCount = texture.width * texture.height * texture.bytesPerTexel;
+		profilerData.uiTextureByteCount += estimatedDeviceLocalByteCount;
+	}
+
+	return profilerData;
+}
+
+RendererProfilerData3D VulkanRenderBackend::getProfilerData3D() const
+{
+	// @todo maybe revise this listing of data to better suit a general render backend
+	// - # of vertex buffers... index buffers... object textures... ui textures... materials...
+
+	RendererProfilerData3D profilerData;
+	profilerData.width = this->internalExtent.width;
+	profilerData.height = this->internalExtent.height;
+	profilerData.threadCount = 1;
+	profilerData.drawCallCount = 0;
+	profilerData.presentedTriangleCount = 0;
+	profilerData.objectTextureCount = static_cast<int>(this->objectTexturePool.values.size());
+	for (const VulkanTexture &texture : this->objectTexturePool.values)
+	{
+		profilerData.objectTextureByteCount += texture.width * texture.height * texture.bytesPerTexel;
+	}
+
+	profilerData.totalLightCount = 0;
+	profilerData.totalCoverageTests = 0;
+	profilerData.totalDepthTests = 0;
+	profilerData.totalColorWrites = 0;
+
+	return profilerData;
 }
 
 Surface VulkanRenderBackend::getScreenshot() const

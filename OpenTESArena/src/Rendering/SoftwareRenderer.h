@@ -20,7 +20,7 @@
 #include "components/utilities/Span2D.h"
 #include "components/utilities/Span3D.h"
 
-struct Renderer3DProfilerData;
+struct RendererProfilerData3D;
 
 struct SoftwareVertexPositionBuffer
 {
@@ -171,7 +171,7 @@ public:
 
 	void resize(int width, int height);
 
-	Renderer3DProfilerData getProfilerData() const;
+	RendererProfilerData3D getProfilerData() const;
 
 	int getBytesPerFloat() const;
 
