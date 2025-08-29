@@ -4518,6 +4518,7 @@ RendererProfilerData3D SoftwareRenderer::getProfilerData() const
 		profilerData.objectTextureByteCount += texture.texels.getCount();
 	}
 
+	profilerData.materialCount = static_cast<int>(this->materials.values.size());
 	profilerData.totalLightCount = this->lights.getCount();
 	profilerData.totalCoverageTests = g_totalCoverageTests;
 	profilerData.totalDepthTests = g_totalDepthTests;

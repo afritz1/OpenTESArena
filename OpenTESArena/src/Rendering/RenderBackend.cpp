@@ -16,6 +16,7 @@ RendererProfilerData3D::RendererProfilerData3D()
 	this->presentedTriangleCount = 0;
 	this->objectTextureCount = 0;
 	this->objectTextureByteCount = 0;
+	this->materialCount = 0;
 	this->totalLightCount = 0;
 	this->totalCoverageTests = 0;
 	this->totalDepthTests = 0;

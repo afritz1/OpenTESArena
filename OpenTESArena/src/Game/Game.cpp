@@ -727,7 +727,7 @@ void Game::updateDebugInfoText()
 		// Renderer details (window res, render res, threads, frame times, etc.).
 		const std::string windowWidth = std::to_string(windowDims.x);
 		const std::string windowHeight = std::to_string(windowDims.y);
-		debugText.append("\nScreen: " + windowWidth + "x" + windowHeight);
+		debugText.append("\nWindow: " + windowWidth + "x" + windowHeight);
 
 		const RendererProfilerData &profilerData = this->renderer.getProfilerData();
 		const Int2 renderDims(profilerData.width, profilerData.height);
@@ -737,7 +737,7 @@ void Game::updateDebugInfoText()
 			const double resolutionScale = this->options.getGraphics_ResolutionScale();
 			const std::string renderWidth = std::to_string(renderDims.x);
 			const std::string renderHeight = std::to_string(renderDims.y);
-			const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
+			const std::string renderResScale = String::fixedPrecision(resolutionScale * 100.0, 0) + "%";
 			const std::string renderThreadCount = std::to_string(profilerData.threadCount);
 			const std::string renderTime = String::fixedPrecision(profilerData.renderTime * 1000.0, 2);
 			const std::string renderDrawCallCount = std::to_string(profilerData.drawCallCount);
@@ -746,11 +746,11 @@ void Game::updateDebugInfoText()
 			const std::string renderColorOverdrawRatio = String::fixedPrecision(static_cast<double>(profilerData.totalColorWrites) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string objectTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.objectTextureByteCount) / (1024.0 * 1024.0), 2);
 			const std::string uiTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.uiTextureByteCount) / (1024.0 * 1024.0), 2);
-			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
-				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
-				"Render: " + renderTime + "ms" + '\n' +
+			debugText.append("\nScene: " + renderWidth + "x" + renderHeight + " (" + renderResScale + ")" + '\n' +
+				"Render: " + renderTime + "ms, " + renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
 				"Object textures: " + std::to_string(profilerData.objectTextureCount) + " (" + objectTextureMbCount + "MB)" + '\n' +
 				"UI textures: " + std::to_string(profilerData.uiTextureCount) + " (" + uiTextureMbCount + "MB)" + '\n' +
+				"Materials: " + std::to_string(profilerData.materialCount) + '\n' +
 				"Draw calls: " + renderDrawCallCount + '\n' +
 				"Rendered Tris: " + std::to_string(profilerData.presentedTriangleCount) + '\n' +
 				"Lights: " + std::to_string(profilerData.totalLightCount) + '\n' +

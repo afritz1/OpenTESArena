@@ -3566,6 +3566,7 @@ RendererProfilerData3D VulkanRenderBackend::getProfilerData3D() const
 		profilerData.objectTextureByteCount += texture.width * texture.height * texture.bytesPerTexel;
 	}
 
+	profilerData.materialCount = static_cast<int>(this->materialPool.values.size());
 	profilerData.totalLightCount = 0;
 	profilerData.totalCoverageTests = 0;
 	profilerData.totalDepthTests = 0;

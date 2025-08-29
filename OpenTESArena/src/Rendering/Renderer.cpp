@@ -102,6 +102,7 @@ RendererProfilerData::RendererProfilerData()
 	this->objectTextureByteCount = -1;
 	this->uiTextureCount = -1;
 	this->uiTextureByteCount = -1;
+	this->materialCount = -1;
 	this->totalLightCount = -1;
 	this->totalCoverageTests = -1;
 	this->totalDepthTests = -1;
@@ -109,8 +110,8 @@ RendererProfilerData::RendererProfilerData()
 	this->renderTime = 0.0;
 }
 
-void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
-	int64_t objectTextureByteCount, int uiTextureCount, int64_t uiTextureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
+void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount, int64_t objectTextureByteCount,
+	int uiTextureCount, int64_t uiTextureByteCount, int materialCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
 	int64_t totalColorWrites, double renderTime)
 {
 	this->width = width;
@@ -123,6 +124,7 @@ void RendererProfilerData::init(int width, int height, int threadCount, int draw
 	this->objectTextureByteCount = objectTextureByteCount;
 	this->uiTextureCount = uiTextureCount;
 	this->uiTextureByteCount = uiTextureByteCount;
+	this->materialCount = materialCount;
 	this->totalLightCount = totalLightCount;
 	this->totalCoverageTests = totalCoverageTests;
 	this->totalDepthTests = totalDepthTests;
@@ -789,6 +791,6 @@ void Renderer::submitFrame(const RenderCommandList &renderCommandList, const UiC
 	const RendererProfilerData3D profilerData3D = this->backend->getProfilerData3D();
 	this->profilerData.init(profilerData3D.width, profilerData3D.height, profilerData3D.threadCount, profilerData3D.drawCallCount,
 		profilerData3D.presentedTriangleCount, profilerData3D.objectTextureCount, profilerData3D.objectTextureByteCount, profilerData2D.uiTextureCount,
-		profilerData2D.uiTextureByteCount, profilerData3D.totalLightCount, profilerData3D.totalCoverageTests, profilerData3D.totalDepthTests,
-		profilerData3D.totalColorWrites, renderTotalTime);
+		profilerData2D.uiTextureByteCount, profilerData3D.materialCount, profilerData3D.totalLightCount, profilerData3D.totalCoverageTests,
+		profilerData3D.totalDepthTests, profilerData3D.totalColorWrites, renderTotalTime);
 }

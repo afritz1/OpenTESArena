@@ -41,6 +41,7 @@ struct RendererProfilerData3D
 	int presentedTriangleCount;
 	int objectTextureCount;
 	int64_t objectTextureByteCount;
+	int materialCount;
 	int totalLightCount;
 	int64_t totalCoverageTests;
 	int64_t totalDepthTests;

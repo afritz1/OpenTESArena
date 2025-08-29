@@ -67,6 +67,9 @@ struct RendererProfilerData
 	int uiTextureCount;
 	int64_t uiTextureByteCount;
 
+	// Materials.
+	int materialCount;
+
 	// Lights.
 	int totalLightCount;
 
@@ -79,8 +82,8 @@ struct RendererProfilerData
 
 	RendererProfilerData();
 
-	void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
-		int64_t objectTextureByteCount, int uiTextureCount, int64_t uiTextureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
+	void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount, int64_t objectTextureByteCount,
+		int uiTextureCount, int64_t uiTextureByteCount, int materialCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
 		int64_t totalColorWrites, double renderTime);
 };
 
