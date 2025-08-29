@@ -8,6 +8,7 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/ListBox.h"
@@ -15,11 +16,28 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../Utilities/Color.h"
+#include "../Voxels/VoxelFrustumCullingChunk.h"
 
 class FontLibrary;
 class Game;
 
+struct UiCommandList;
 struct Window;
+
+struct DebugVoxelVisibilityQuadtreeState
+{
+	static constexpr int TEXTURE_COUNT = VoxelFrustumCullingChunk::TREE_LEVEL_COUNT;
+
+	UiTextureID textureIDs[TEXTURE_COUNT];
+	Int2 textureDimsList[TEXTURE_COUNT];
+	int drawPositionYs[TEXTURE_COUNT];
+	RenderElement2D renderElements[TEXTURE_COUNT];
+
+	DebugVoxelVisibilityQuadtreeState();
+
+	void populateCommandList(Game &game, UiCommandList &commandList);
+	void free(Renderer &renderer);
+};
 
 namespace GameWorldUiView
 {
@@ -209,7 +227,8 @@ namespace GameWorldUiView
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);
-	void DEBUG_DrawVoxelVisibilityQuadtree(Game &game);
+
+	DebugVoxelVisibilityQuadtreeState allocDebugVoxelVisibilityQuadtreeState(Renderer &renderer);
 }
 
 #endif

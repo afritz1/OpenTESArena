@@ -241,6 +241,8 @@ Game::~Game()
 		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
 
+	this->debugQuadtreeState.free(this->renderer);
+
 	this->sceneManager.renderVoxelChunkManager.shutdown(this->renderer);
 	this->sceneManager.renderEntityManager.shutdown(this->renderer);
 	this->sceneManager.renderSkyManager.shutdown(this->renderer);
@@ -442,6 +444,8 @@ bool Game::init()
 		DebugLogError("Couldn't init debug info text box.");
 		return false;
 	}
+
+	this->debugQuadtreeState = GameWorldUiView::allocDebugVoxelVisibilityQuadtreeState(this->renderer);
 
 	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
@@ -696,13 +700,9 @@ void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
 	GameWorldUiModel::updateNativeCursorRegions(this->nativeCursorRegions, windowWidth, windowHeight);
 }
 
-void Game::renderDebugInfo()
+void Game::updateDebugInfoText()
 {
 	const int profilerLevel = this->options.getMisc_ProfilerLevel();
-	if (profilerLevel == Options::MIN_PROFILER_LEVEL)
-	{
-		return;
-	}
 
 	std::string debugText;
 	if (profilerLevel >= 1)
@@ -790,28 +790,10 @@ void Game::renderDebugInfo()
 
 			JPH::BodyManager::DrawSettings drawSettings;
 			this->physicsSystem.DrawBodies(drawSettings, &this->renderer);*/
-		}		
-
-		GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(*this);
+		}
 	}
 
 	this->debugInfoTextBox.setText(debugText);
-
-	const UiTextureID textureID = this->debugInfoTextBox.getTextureID();
-	const Rect &debugInfoRect = this->debugInfoTextBox.getRect();
-	const Int2 position = debugInfoRect.getTopLeft();
-	const Int2 size = debugInfoRect.getSize();
-	constexpr PivotType pivotType = PivotType::TopLeft;
-	constexpr RenderSpace renderSpace = RenderSpace::Classic;
-	
-	// @todo use the new GuiUtils window space rect
-	/*double xPercent, yPercent, wPercent, hPercent;
-	GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-		renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-	const RenderElement2D renderElement(textureID, xPercent, yPercent, wPercent, hPercent);*/
-	// @todo properly allocate this stuff ^ as UiTextureID then draw that w/ UiCommandList. Probably pass UiCommandList& to this function
-	//this->renderer.draw(&renderElement, 1, renderSpace);
 }
 
 void Game::loop()
@@ -1049,10 +1031,30 @@ void Game::loop()
 				subPanel->populateCommandList(uiCommandList);
 			}
 
-			this->renderer.submitFrame(renderCommandList, uiCommandList, renderCamera, frameSettings);
+			const int profilerLevel = this->options.getMisc_ProfilerLevel();
 
-			// @todo replace this with proper UiCommandList population of debug text box UiDrawCall
-			//this->renderDebugInfo();
+			RenderElement2D debugInfoRenderElement;
+			if (profilerLevel > Options::MIN_PROFILER_LEVEL)
+			{
+				this->updateDebugInfoText();
+
+				const Int2 windowDims = this->window.getDimensions();
+				const Rect debugInfoTextBoxRect = this->debugInfoTextBox.getRect();
+				const Rect debugInfoPresentRect = GuiUtils::makeWindowSpaceRect(debugInfoTextBoxRect.x, debugInfoTextBoxRect.y, debugInfoTextBoxRect.width, debugInfoTextBoxRect.height,
+					PivotType::TopLeft, RenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());
+
+				debugInfoRenderElement.id = this->debugInfoTextBox.getTextureID();
+				debugInfoRenderElement.rect = debugInfoPresentRect;
+
+				uiCommandList.addElements(Span<const RenderElement2D>(&debugInfoRenderElement, 1));
+
+				if (profilerLevel >= 3)
+				{
+					this->debugQuadtreeState.populateCommandList(*this, uiCommandList);
+				}
+			}
+
+			this->renderer.submitFrame(renderCommandList, uiCommandList, renderCamera, frameSettings);
 		}
 		catch (const std::exception &e)
 		{

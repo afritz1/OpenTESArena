@@ -19,6 +19,7 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
+#include "../UI/UiCommand.h"
 
 #include "components/utilities/String.h"
 
@@ -49,6 +50,119 @@ namespace
 		renderer.unlockUiTexture(textureID);
 
 		return textureID;
+	}
+}
+
+DebugVoxelVisibilityQuadtreeState::DebugVoxelVisibilityQuadtreeState()
+{
+	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
+	std::fill(std::begin(this->drawPositionYs), std::end(this->drawPositionYs), 0);
+}
+
+void DebugVoxelVisibilityQuadtreeState::populateCommandList(Game &game, UiCommandList &commandList)
+{
+	const SceneManager &sceneManager = game.sceneManager;
+	const Player &player = game.player;
+	const CoordDouble3 playerCoord = player.getEyeCoord();
+	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
+	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager = sceneManager.voxelFrustumCullingChunkManager;
+	const VoxelFrustumCullingChunk *playerVoxelFrustumCullingChunk = voxelFrustumCullingChunkManager.findChunkAtPosition(playerCoord.chunk);
+	if (playerVoxelFrustumCullingChunk == nullptr)
+	{
+		return;
+	}
+
+	constexpr uint8_t alpha = 192;
+	constexpr uint32_t visibleColor = Color(0, 255, 0, alpha).toARGB();
+	constexpr uint32_t partiallyVisibleColor = Color(255, 255, 0, alpha).toARGB();
+	constexpr uint32_t invisibleColor = Color(255, 0, 0, alpha).toARGB();
+	constexpr uint32_t playerColor = Color(255, 255, 255, alpha).toARGB();
+
+	Renderer &renderer = game.renderer;
+
+	for (int treeLevelIndex = 0; treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
+	{
+		const UiTextureID quadtreeTextureID = this->textureIDs[treeLevelIndex];
+		const Int2 quadtreeTextureDims = this->textureDimsList[treeLevelIndex];
+		const int quadtreeSideLength = VoxelFrustumCullingChunk::NODES_PER_SIDE[treeLevelIndex];
+
+		LockedTexture lockedTexture = renderer.lockUiTexture(quadtreeTextureID);
+		Span2D<uint32_t> quadtreeTexels = lockedTexture.getTexels32();
+
+		for (int y = 0; y < quadtreeTextureDims.y; y++)
+		{
+			for (int x = 0; x < quadtreeTextureDims.x; x++)
+			{
+				VisibilityType visibilityType = VisibilityType::Outside;
+				const bool isLeaf = treeLevelIndex == VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF;
+				if (isLeaf)
+				{
+					const int leafNodeIndex = y + (x * quadtreeTextureDims.y);
+					DebugAssertIndex(playerVoxelFrustumCullingChunk->leafNodeFrustumTests, leafNodeIndex);
+					visibilityType = playerVoxelFrustumCullingChunk->leafNodeFrustumTests[leafNodeIndex] ? VisibilityType::Inside : VisibilityType::Outside;
+				}
+				else
+				{
+					const int globalNodeOffset = VoxelFrustumCullingChunk::GLOBAL_NODE_OFFSETS[treeLevelIndex];
+					const int internalNodeIndex = globalNodeOffset + (y + (x * quadtreeTextureDims.y));
+					DebugAssertIndex(playerVoxelFrustumCullingChunk->internalNodeVisibilityTypes, internalNodeIndex);
+					visibilityType = playerVoxelFrustumCullingChunk->internalNodeVisibilityTypes[internalNodeIndex];
+				}
+
+				const int dstX = (quadtreeTextureDims.x - 1) - x;
+				const int dstY = y;
+				uint32_t color = 0;
+
+				const bool inPlayerVoxel = isLeaf && (y == playerVoxelXZ.x) && (x == playerVoxelXZ.y);
+				if (inPlayerVoxel)
+				{
+					color = playerColor;
+				}
+				else
+				{
+					switch (visibilityType)
+					{
+					case VisibilityType::Outside:
+						color = invisibleColor;
+						break;
+					case VisibilityType::Partial:
+						color = partiallyVisibleColor;
+						break;
+					case VisibilityType::Inside:
+						color = visibleColor;
+						break;
+					}
+				}
+
+				quadtreeTexels.set(dstX, dstY, color);
+			}
+		}
+
+		renderer.unlockUiTexture(quadtreeTextureID);
+
+		const Int2 position(ArenaRenderUtils::SCREEN_WIDTH, this->drawPositionYs[treeLevelIndex]);
+		const Int2 size = quadtreeTextureDims;
+		const Window &window = game.window;
+		const Int2 windowDims = window.getDimensions();
+		const Rect letterboxRect = window.getLetterboxRect();
+
+		RenderElement2D &renderElement = this->renderElements[treeLevelIndex];
+		renderElement.id = this->textureIDs[treeLevelIndex];
+		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, PivotType::TopRight, RenderSpace::Classic, windowDims.x, windowDims.y, letterboxRect);
+	}
+
+	commandList.addElements(this->renderElements);
+}
+
+void DebugVoxelVisibilityQuadtreeState::free(Renderer &renderer)
+{
+	for (UiTextureID &textureID : this->textureIDs)
+	{
+		if (textureID >= 0)
+		{
+			renderer.freeUiTexture(textureID);
+			textureID = -1;
+		}
 	}
 }
 
@@ -889,135 +1003,39 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	//renderer.drawOriginal(textBox.getTextureID(), originalX, originalY);
 }
 
-void GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(Game &game)
+DebugVoxelVisibilityQuadtreeState GameWorldUiView::allocDebugVoxelVisibilityQuadtreeState(Renderer &renderer)
 {
-	Renderer &renderer = game.renderer;
-	UiTextureID quadtreeTextureIdList[VoxelFrustumCullingChunk::TREE_LEVEL_COUNT];
-	ScopedUiTextureRef quadtreeTextureRefList[VoxelFrustumCullingChunk::TREE_LEVEL_COUNT];
-	Int2 quadtreeTextureDimsList[VoxelFrustumCullingChunk::TREE_LEVEL_COUNT];
+	DebugVoxelVisibilityQuadtreeState state;
+
 	for (int treeLevelIndex = 0; treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
 	{
 		DebugAssertIndex(VoxelFrustumCullingChunk::NODES_PER_SIDE, treeLevelIndex);
 		const int quadtreeTextureDim = VoxelFrustumCullingChunk::NODES_PER_SIDE[treeLevelIndex];
-		UiTextureID &quadtreeTextureID = quadtreeTextureIdList[treeLevelIndex];
-		quadtreeTextureID = renderer.createUiTexture(quadtreeTextureDim, quadtreeTextureDim);
+		const UiTextureID quadtreeTextureID = renderer.createUiTexture(quadtreeTextureDim, quadtreeTextureDim);
 		if (quadtreeTextureID < 0)
 		{
 			DebugLogErrorFormat("Couldn't allocate voxel visibility quadtree debug texture %d.", treeLevelIndex);
 			continue;
 		}
 
-		quadtreeTextureRefList[treeLevelIndex].init(quadtreeTextureID, renderer);
-		quadtreeTextureDimsList[treeLevelIndex] = Int2(quadtreeTextureRefList[treeLevelIndex].getWidth(), quadtreeTextureRefList[treeLevelIndex].getHeight());
+		state.textureIDs[treeLevelIndex] = quadtreeTextureID;
+
+		const Int2 textureDims = *renderer.tryGetUiTextureDims(quadtreeTextureID);
+		state.textureDimsList[treeLevelIndex] = Int2(textureDims.x, textureDims.y);
 	}
 
-	int quadtreeDrawPositionYs[VoxelFrustumCullingChunk::TREE_LEVEL_COUNT];
 	for (int treeLevelIndex = 0; treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
 	{
 		int quadtreeDrawPositionY = 0;
 		for (int i = treeLevelIndex; i < VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF; i++)
 		{
 			const int yDimIndex = VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF - (i - treeLevelIndex);
-			DebugAssertIndex(quadtreeTextureDimsList, yDimIndex);
-			quadtreeDrawPositionY += quadtreeTextureDimsList[yDimIndex].y;
+			DebugAssertIndex(state.textureDimsList, yDimIndex);
+			quadtreeDrawPositionY += state.textureDimsList[yDimIndex].y;
 		}
 
-		quadtreeDrawPositionYs[treeLevelIndex] = quadtreeDrawPositionY;
+		state.drawPositionYs[treeLevelIndex] = quadtreeDrawPositionY;
 	}
 
-	const SceneManager &sceneManager = game.sceneManager;
-	const Player &player = game.player;
-	const CoordDouble3 playerCoord = player.getEyeCoord();
-	const VoxelInt2 playerVoxelXZ = VoxelUtils::pointToVoxel(playerCoord.point.getXZ());
-	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager = sceneManager.voxelFrustumCullingChunkManager;
-	const VoxelFrustumCullingChunk *playerVoxelFrustumCullingChunk = voxelFrustumCullingChunkManager.findChunkAtPosition(playerCoord.chunk);
-	if (playerVoxelFrustumCullingChunk == nullptr)
-	{
-		return;
-	}
-
-	constexpr uint8_t alpha = 192;
-	constexpr uint32_t visibleColor = Color(0, 255, 0, alpha).toARGB();
-	constexpr uint32_t partiallyVisibleColor = Color(255, 255, 0, alpha).toARGB();
-	constexpr uint32_t invisibleColor = Color(255, 0, 0, alpha).toARGB();
-	constexpr uint32_t playerColor = Color(255, 255, 255, alpha).toARGB();
-
-	for (int treeLevelIndex = 0; treeLevelIndex < VoxelFrustumCullingChunk::TREE_LEVEL_COUNT; treeLevelIndex++)
-	{
-		ScopedUiTextureRef &quadtreeTextureRef = quadtreeTextureRefList[treeLevelIndex];
-		const Int2 &quadtreeTextureDims = quadtreeTextureDimsList[treeLevelIndex];
-		const int quadtreeSideLength = VoxelFrustumCullingChunk::NODES_PER_SIDE[treeLevelIndex];
-
-		LockedTexture lockedTexture = quadtreeTextureRef.lockTexels();
-		Span2D<uint32_t> quadtreeTexels = lockedTexture.getTexels32();
-
-		for (int y = 0; y < quadtreeTextureDims.y; y++)
-		{
-			for (int x = 0; x < quadtreeTextureDims.x; x++)
-			{
-				VisibilityType visibilityType = VisibilityType::Outside;
-				const bool isLeaf = treeLevelIndex == VoxelFrustumCullingChunk::TREE_LEVEL_INDEX_LEAF;
-				if (isLeaf)
-				{
-					const int leafNodeIndex = y + (x * quadtreeTextureDims.y);
-					DebugAssertIndex(playerVoxelFrustumCullingChunk->leafNodeFrustumTests, leafNodeIndex);
-					visibilityType = playerVoxelFrustumCullingChunk->leafNodeFrustumTests[leafNodeIndex] ? VisibilityType::Inside : VisibilityType::Outside;
-				}
-				else
-				{
-					const int globalNodeOffset = VoxelFrustumCullingChunk::GLOBAL_NODE_OFFSETS[treeLevelIndex];
-					const int internalNodeIndex = globalNodeOffset + (y + (x * quadtreeTextureDims.y));
-					DebugAssertIndex(playerVoxelFrustumCullingChunk->internalNodeVisibilityTypes, internalNodeIndex);
-					visibilityType = playerVoxelFrustumCullingChunk->internalNodeVisibilityTypes[internalNodeIndex];
-				}
-
-				const int dstX = (quadtreeTextureDims.x - 1) - x;
-				const int dstY = y;
-				uint32_t color = 0;
-
-				const bool inPlayerVoxel = isLeaf && (y == playerVoxelXZ.x) && (x == playerVoxelXZ.y);
-				if (inPlayerVoxel)
-				{
-					color = playerColor;
-				}
-				else
-				{
-					switch (visibilityType)
-					{
-					case VisibilityType::Outside:
-						color = invisibleColor;
-						break;
-					case VisibilityType::Partial:
-						color = partiallyVisibleColor;
-						break;
-					case VisibilityType::Inside:
-						color = visibleColor;
-						break;
-					}
-				}
-
-				quadtreeTexels.set(dstX, dstY, color);
-			}
-		}
-
-		quadtreeTextureRef.unlockTexels();
-
-		const int positionY = quadtreeDrawPositionYs[treeLevelIndex];
-		const Int2 position(ArenaRenderUtils::SCREEN_WIDTH, positionY);
-		const Int2 size = quadtreeTextureDims;
-		const Window &window = game.window;
-		const Int2 windowDims = window.getDimensions();
-		constexpr PivotType pivotType = PivotType::TopRight;
-		constexpr RenderSpace renderSpace = RenderSpace::Classic;
-
-
-		// @todo use the new GuiUtils window space rect
-		/*double xPercent, yPercent, wPercent, hPercent;
-		GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-			renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-		const RenderElement2D renderElement(quadtreeTextureRef.get(), xPercent, yPercent, wPercent, hPercent);*/
-		DebugNotImplemented();
-		//renderer.draw(&renderElement, 1, renderSpace);
-	}
+	return state;
 }
