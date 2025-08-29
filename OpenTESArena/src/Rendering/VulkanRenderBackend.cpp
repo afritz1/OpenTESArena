@@ -65,15 +65,15 @@ namespace
 	constexpr vk::BufferUsageFlags UiTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
-	constexpr int MaxGlobalUniformBufferDescriptorSets = 1;
-	constexpr int MaxGlobalImageDescriptorSets = 2;
-	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptorSets + MaxGlobalImageDescriptorSets;
+	constexpr int MaxGlobalUniformBufferDescriptors = 1;
+	constexpr int MaxGlobalImageDescriptors = 2;
+	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalImageDescriptors;
 
-	constexpr int MaxTransformUniformBufferDynamicDescriptorSets = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
-	constexpr int MaxTransformPoolDescriptorSets = MaxTransformUniformBufferDynamicDescriptorSets;
+	constexpr int MaxTransformUniformBufferDynamicDescriptors = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
+	constexpr int MaxTransformPoolDescriptorSets = MaxTransformUniformBufferDynamicDescriptors;
 
-	constexpr int MaxMaterialImageDescriptorSets = 65536; // Lots of unique materials for entities. @todo texture atlasing
-	constexpr int MaxMaterialPoolDescriptorSets = MaxMaterialImageDescriptorSets;
+	constexpr int MaxMaterialImageDescriptors = 65536; // Lots of unique materials for entities. @todo texture atlasing
+	constexpr int MaxMaterialPoolDescriptorSets = MaxMaterialImageDescriptors;
 
 	constexpr std::pair<VertexShaderType, const char*> VertexShaderTypeFilenames[] =
 	{
@@ -2554,18 +2554,18 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	const vk::DescriptorPoolSize globalDescriptorPoolSizes[] =
 	{
-		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, MaxGlobalUniformBufferDescriptorSets),
-		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxGlobalImageDescriptorSets)
+		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, MaxGlobalUniformBufferDescriptors),
+		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxGlobalImageDescriptors)
 	};
 
 	const vk::DescriptorPoolSize transformDescriptorPoolSizes[] =
 	{
-		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, MaxTransformUniformBufferDynamicDescriptorSets)
+		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBufferDynamic, MaxTransformUniformBufferDynamicDescriptors)
 	};
 
 	const vk::DescriptorPoolSize materialDescriptorPoolSizes[] =
 	{
-		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxMaterialImageDescriptorSets)
+		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxMaterialImageDescriptors)
 	};
 
 	if (!TryCreateDescriptorPool(this->device, globalDescriptorPoolSizes, MaxGlobalPoolDescriptorSets, false, &this->globalDescriptorPool))
