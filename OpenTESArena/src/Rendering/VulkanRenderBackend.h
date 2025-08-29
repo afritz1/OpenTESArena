@@ -53,7 +53,7 @@ enum class VulkanBufferType
 
 struct VulkanBuffer
 {
-	vk::Buffer buffer;
+	vk::Buffer buffer; // Device local.
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 
@@ -356,6 +356,7 @@ private:
 	VulkanHeapManager uiTextureHeapManagerStaging;
 
 	VulkanCamera camera;
+	VulkanBuffer screenSpaceAnim;
 	VertexPositionBufferID uiVertexPositionBufferID;
 	VertexAttributeBufferID uiVertexAttributeBufferID;
 	vk::Image dummyImage;

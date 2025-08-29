@@ -65,7 +65,7 @@ namespace
 	constexpr vk::BufferUsageFlags UiTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
-	constexpr int MaxGlobalUniformBufferDescriptors = 1;
+	constexpr int MaxGlobalUniformBufferDescriptors = 2;
 	constexpr int MaxGlobalImageDescriptors = 2;
 	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalImageDescriptors;
 
@@ -1545,12 +1545,17 @@ namespace
 		return true;
 	}
 
-	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer)
+	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer screenSpaceAnimBuffer)
 	{
 		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
 		cameraDescriptorBufferInfo.buffer = cameraBuffer;
 		cameraDescriptorBufferInfo.offset = 0;
 		cameraDescriptorBufferInfo.range = VK_WHOLE_SIZE;
+
+		vk::DescriptorBufferInfo screenSpaceAnimDescriptorBufferInfo;
+		screenSpaceAnimDescriptorBufferInfo.buffer = screenSpaceAnimBuffer;
+		screenSpaceAnimDescriptorBufferInfo.offset = 0;
+		screenSpaceAnimDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
 		vk::WriteDescriptorSet cameraWriteDescriptorSet;
 		cameraWriteDescriptorSet.dstSet = descriptorSet;
@@ -1560,7 +1565,17 @@ namespace
 		cameraWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
 		cameraWriteDescriptorSet.pBufferInfo = &cameraDescriptorBufferInfo;
 
-		device.updateDescriptorSets(cameraWriteDescriptorSet, vk::ArrayProxy<vk::CopyDescriptorSet>());
+		vk::WriteDescriptorSet screenSpaceAnimWriteDescriptorSet;
+		screenSpaceAnimWriteDescriptorSet.dstSet = descriptorSet;
+		screenSpaceAnimWriteDescriptorSet.dstBinding = 1;
+		screenSpaceAnimWriteDescriptorSet.dstArrayElement = 0;
+		screenSpaceAnimWriteDescriptorSet.descriptorCount = 1;
+		screenSpaceAnimWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		screenSpaceAnimWriteDescriptorSet.pBufferInfo = &screenSpaceAnimDescriptorBufferInfo;
+
+		const vk::WriteDescriptorSet writeDescriptorSets[] = { cameraWriteDescriptorSet, screenSpaceAnimWriteDescriptorSet };
+
+		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
 
 	void UpdateConversionDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView framebufferImageView, vk::Sampler framebufferSampler,
@@ -1697,11 +1712,6 @@ namespace
 		{
 			addPushConstantRange(vk::ShaderStageFlagBits::eVertex, sizeof(float) * 6);
 		}
-
-		// @todo if it needs two floats then either need shader to have two push_constant sections with one value or one section with two values
-		const bool requiresScreenSpaceAnimPercent =
-			(fragmentShaderType == PixelShaderType::OpaqueScreenSpaceAnimation) ||
-			(fragmentShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 
 		const bool requiresPixelShaderParam =
 			(fragmentShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
@@ -2589,7 +2599,9 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const vk::DescriptorSetLayoutBinding globalDescriptorSetLayoutBindings[] =
 	{
 		// Camera
-		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex),
+		// Screen space animation
+		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
 	};
 
 	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
@@ -2835,7 +2847,21 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes);
+	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes); 
+
+	constexpr vk::BufferUsageFlags screenSpaceAnimUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+	constexpr int screenSpaceAnimByteCount = sizeof(float) * 3; // Percent + framebuffer dimensions
+
+	vk::Buffer screenSpaceAnimBuffer;
+	Span<std::byte> screenSpaceAnimHostMappedBytes;
+	if (!TryCreateBufferAndBindWithHeap(this->device, screenSpaceAnimByteCount, screenSpaceAnimUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging,
+		&screenSpaceAnimBuffer, &screenSpaceAnimHostMappedBytes))
+	{
+		DebugLogError("Couldn't create buffer for screen space animation uniform buffer.");
+		return false;
+	}
+
+	this->screenSpaceAnim.init(nullptr, screenSpaceAnimBuffer, screenSpaceAnimHostMappedBytes);
 
 	constexpr int UiRectangleVertexCount = 6; // Two triangles, no indices.
 	constexpr int UiPositionComponentsPerVertex = 2;
@@ -2923,6 +2949,14 @@ void VulkanRenderBackend::shutdown()
 		this->uiVertexAttributeBufferID = -1;
 		this->uiVertexPositionBufferID = -1;
 
+		if (this->screenSpaceAnim.stagingBuffer)
+		{
+			this->device.destroyBuffer(this->screenSpaceAnim.stagingBuffer);
+			this->screenSpaceAnim.stagingBuffer = nullptr;
+		}
+
+		this->screenSpaceAnim.stagingHostMappedBytes.reset();
+
 		if (this->camera.buffer)
 		{
 			this->device.destroyBuffer(this->camera.buffer);
@@ -2935,7 +2969,7 @@ void VulkanRenderBackend::shutdown()
 			this->camera.deviceMemory = nullptr;
 		}
 
-		this->camera.hostMappedBytes = Span<std::byte>();
+		this->camera.hostMappedBytes.reset();
 
 		this->uiTextureHeapManagerStaging.freeAllocations();
 		this->uiTextureHeapManagerStaging.clear();
@@ -4600,8 +4634,13 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		this->camera.viewProjection = RendererUtils::matrix4DoubleToFloat(projectionMatrix * camera.viewMatrix);
 		std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
 
+		float *screenSpaceAnimValues = reinterpret_cast<float*>(this->screenSpaceAnim.stagingHostMappedBytes.begin());
+		screenSpaceAnimValues[0] = static_cast<float>(frameSettings.screenSpaceAnimPercent);
+		screenSpaceAnimValues[1] = sceneViewport.width;
+		screenSpaceAnimValues[2] = sceneViewport.height;
+
 		// @todo light table + light level calculation
-		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer);
+		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer, this->screenSpaceAnim.stagingBuffer);
 
 		vk::Pipeline currentPipeline;
 		VertexPositionBufferID currentVertexPositionBufferID = -1;
