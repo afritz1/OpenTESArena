@@ -1,6 +1,7 @@
 #version 450
 
 layout(set = 2, binding = 0) uniform usampler2D textureSampler;
+layout(set = 2, binding = 1) uniform usampler2D replacementSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
 
@@ -14,5 +15,5 @@ void main()
         discard;
     }
 
-    fragOutColor = texel;
+    fragOutColor = texelFetch(replacementSampler, ivec2(texel, 0), 0).r;
 }

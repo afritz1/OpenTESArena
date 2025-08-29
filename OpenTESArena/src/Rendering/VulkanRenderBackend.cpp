@@ -2589,7 +2589,7 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const vk::DescriptorSetLayoutBinding globalDescriptorSetLayoutBindings[] =
 	{
 		// Camera
-		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)		
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex)
 	};
 
 	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
