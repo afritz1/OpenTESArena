@@ -2011,18 +2011,6 @@ void VulkanMaterial::init(vk::Pipeline pipeline, vk::PipelineLayout pipelineLayo
 	this->descriptorSet = descriptorSet;
 }
 
-VulkanCamera::VulkanCamera()
-{
-	this->matrixBytes = Span<const std::byte>(reinterpret_cast<const std::byte*>(&this->viewProjection), VulkanCamera::BYTE_COUNT);
-}
-
-void VulkanCamera::init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, Span<std::byte> hostMappedBytes)
-{
-	this->buffer = buffer;
-	this->deviceMemory = deviceMemory;
-	this->hostMappedBytes = hostMappedBytes;
-}
-
 VulkanHeapMapping::VulkanHeapMapping()
 {
 	this->heapIndex = -1;
@@ -2829,25 +2817,18 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	}
 
 	constexpr vk::BufferUsageFlags cameraUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
-	constexpr int cameraByteCount = VulkanCamera::BYTE_COUNT;
-	const vk::MemoryAllocateInfo cameraMemoryAllocateInfo = CreateBufferMemoryAllocateInfo(this->device, cameraByteCount, cameraUsageFlags, true, this->physicalDevice);
-
-	vk::DeviceMemory cameraDeviceMemory;
-	if (!TryAllocateMemory(this->device, cameraMemoryAllocateInfo, &cameraDeviceMemory))
-	{
-		DebugLogError("Couldn't allocate memory for camera uniform buffer.");
-		return false;
-	}
+	constexpr int cameraByteCount = sizeof(Matrix4f);
 
 	vk::Buffer cameraBuffer;
 	Span<std::byte> cameraHostMappedBytes;
-	if (!TryCreateBufferAndMapMemory(this->device, 0, cameraByteCount, cameraUsageFlags, this->graphicsQueueFamilyIndex, cameraDeviceMemory, &cameraBuffer, &cameraHostMappedBytes))
+	if (!TryCreateBufferAndBindWithHeap(this->device, cameraByteCount, cameraUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging,
+		&cameraBuffer, &cameraHostMappedBytes))
 	{
-		DebugLogError("Couldn't create buffer and map memory for camera uniform buffer.");
+		DebugLogError("Couldn't create buffer for camera uniform buffer.");
 		return false;
 	}
 
-	this->camera.init(cameraBuffer, cameraDeviceMemory, cameraHostMappedBytes); 
+	this->camera.init(nullptr, cameraBuffer, cameraHostMappedBytes); 
 
 	constexpr vk::BufferUsageFlags screenSpaceAnimUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
 	constexpr int screenSpaceAnimByteCount = sizeof(float) * 3; // Percent + framebuffer dimensions
@@ -2957,19 +2938,13 @@ void VulkanRenderBackend::shutdown()
 
 		this->screenSpaceAnim.stagingHostMappedBytes.reset();
 
-		if (this->camera.buffer)
+		if (this->camera.stagingBuffer)
 		{
-			this->device.destroyBuffer(this->camera.buffer);
-			this->camera.buffer = nullptr;
+			this->device.destroyBuffer(this->camera.stagingBuffer);
+			this->camera.stagingBuffer = nullptr;
 		}
 
-		if (this->camera.deviceMemory)
-		{
-			this->device.freeMemory(this->camera.deviceMemory);
-			this->camera.deviceMemory = nullptr;
-		}
-
-		this->camera.hostMappedBytes.reset();
+		this->camera.stagingHostMappedBytes.reset();
 
 		this->uiTextureHeapManagerStaging.freeAllocations();
 		this->uiTextureHeapManagerStaging.clear();
@@ -4628,11 +4603,11 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		this->commandBuffer.setViewport(0, sceneViewport);
 		this->commandBuffer.setScissor(0, sceneViewportScissor);
 
-		DebugAssert(this->camera.matrixBytes.getCount() == this->camera.hostMappedBytes.getCount());
 		Matrix4d projectionMatrix = camera.projectionMatrix;
 		projectionMatrix.y.y = -projectionMatrix.y.y; // Flip Y so world is not upside down.
-		this->camera.viewProjection = RendererUtils::matrix4DoubleToFloat(projectionMatrix * camera.viewMatrix);
-		std::copy(this->camera.matrixBytes.begin(), this->camera.matrixBytes.end(), this->camera.hostMappedBytes.begin());
+		const Matrix4f viewProjection = RendererUtils::matrix4DoubleToFloat(projectionMatrix * camera.viewMatrix);
+		Span<const std::byte> viewProjectionBytes(reinterpret_cast<const std::byte*>(&viewProjection), sizeof(viewProjection));
+		std::copy(viewProjectionBytes.begin(), viewProjectionBytes.end(), this->camera.stagingHostMappedBytes.begin());
 
 		float *screenSpaceAnimValues = reinterpret_cast<float*>(this->screenSpaceAnim.stagingHostMappedBytes.begin());
 		screenSpaceAnimValues[0] = static_cast<float>(frameSettings.screenSpaceAnimPercent);
@@ -4640,7 +4615,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		screenSpaceAnimValues[2] = sceneViewport.height;
 
 		// @todo light table + light level calculation
-		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.buffer, this->screenSpaceAnim.stagingBuffer);
+		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.stagingBuffer, this->screenSpaceAnim.stagingBuffer);
 
 		vk::Pipeline currentPipeline;
 		VertexPositionBufferID currentVertexPositionBufferID = -1;

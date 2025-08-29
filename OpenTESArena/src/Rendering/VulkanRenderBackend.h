@@ -145,23 +145,6 @@ using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
 using VulkanMaterialPool = RecyclablePool<RenderMaterialID, VulkanMaterial>;
 
-struct VulkanCamera
-{
-	static constexpr int BYTE_COUNT = sizeof(Matrix4f);
-
-	// Updates frequently, host-visible.
-	vk::Buffer buffer;
-	vk::DeviceMemory deviceMemory;
-	Span<std::byte> hostMappedBytes; // Always mapped.
-
-	Matrix4f viewProjection;
-	Span<const std::byte> matrixBytes;
-
-	VulkanCamera();
-
-	void init(vk::Buffer buffer, vk::DeviceMemory deviceMemory, Span<std::byte> hostMappedBytes);
-};
-
 enum class VulkanHeapType
 {
 	Buffer,
@@ -355,7 +338,7 @@ private:
 	VulkanHeapManager uiTextureHeapManagerDeviceLocal;
 	VulkanHeapManager uiTextureHeapManagerStaging;
 
-	VulkanCamera camera;
+	VulkanBuffer camera;
 	VulkanBuffer screenSpaceAnim;
 	VertexPositionBufferID uiVertexPositionBufferID;
 	VertexAttributeBufferID uiVertexAttributeBufferID;
