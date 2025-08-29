@@ -358,6 +358,8 @@ private:
 	VulkanCamera camera;
 	VertexPositionBufferID uiVertexPositionBufferID;
 	VertexAttributeBufferID uiVertexAttributeBufferID;
+	vk::Image dummyImage;
+	vk::ImageView dummyImageView;
 public:
 	bool init(const RenderInitSettings &initSettings) override;
 	void shutdown() override;

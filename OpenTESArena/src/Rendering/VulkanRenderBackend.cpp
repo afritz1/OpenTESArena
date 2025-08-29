@@ -69,10 +69,10 @@ namespace
 	constexpr int MaxGlobalImageDescriptorSets = 2;
 	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptorSets + MaxGlobalImageDescriptorSets;
 
-	constexpr int MaxTransformUniformBufferDynamicDescriptorSets = 24576; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
+	constexpr int MaxTransformUniformBufferDynamicDescriptorSets = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
 	constexpr int MaxTransformPoolDescriptorSets = MaxTransformUniformBufferDynamicDescriptorSets;
 
-	constexpr int MaxMaterialImageDescriptorSets = 32768; // Lots of unique materials for entities.
+	constexpr int MaxMaterialImageDescriptorSets = 65536; // Lots of unique materials for entities. @todo texture atlasing
 	constexpr int MaxMaterialPoolDescriptorSets = MaxMaterialImageDescriptorSets;
 
 	constexpr std::pair<VertexShaderType, const char*> VertexShaderTypeFilenames[] =
@@ -1615,22 +1615,55 @@ namespace
 		device.updateDescriptorSets(transformWriteDescriptorSet, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
 
-	void UpdateMaterialDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView textureImageView, vk::Sampler textureSampler)
+	void UpdateMaterialDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView texture0ImageView, vk::ImageView texture1ImageView, vk::Sampler textureSampler)
+	{
+		vk::DescriptorImageInfo texture0DescriptorImageInfo;
+		texture0DescriptorImageInfo.sampler = textureSampler;
+		texture0DescriptorImageInfo.imageView = texture0ImageView;
+		texture0DescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::DescriptorImageInfo texture1DescriptorImageInfo;
+		texture1DescriptorImageInfo.sampler = textureSampler;
+		texture1DescriptorImageInfo.imageView = texture1ImageView;
+		texture1DescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::WriteDescriptorSet texture0WriteDescriptorSet;
+		texture0WriteDescriptorSet.dstSet = descriptorSet;
+		texture0WriteDescriptorSet.dstBinding = 0;
+		texture0WriteDescriptorSet.dstArrayElement = 0;
+		texture0WriteDescriptorSet.descriptorCount = 1;
+		texture0WriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		texture0WriteDescriptorSet.pImageInfo = &texture0DescriptorImageInfo;
+
+		vk::WriteDescriptorSet texture1WriteDescriptorSet;
+		texture1WriteDescriptorSet.dstSet = descriptorSet;
+		texture1WriteDescriptorSet.dstBinding = 1;
+		texture1WriteDescriptorSet.dstArrayElement = 0;
+		texture1WriteDescriptorSet.descriptorCount = 1;
+		texture1WriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		texture1WriteDescriptorSet.pImageInfo = &texture1DescriptorImageInfo;
+
+		const vk::WriteDescriptorSet writeDescriptorSets[] = { texture0WriteDescriptorSet, texture1WriteDescriptorSet };
+
+		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
+	}
+
+	void UpdateUiMaterialDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView textureImageView, vk::Sampler textureSampler)
 	{
 		vk::DescriptorImageInfo textureDescriptorImageInfo;
 		textureDescriptorImageInfo.sampler = textureSampler;
 		textureDescriptorImageInfo.imageView = textureImageView;
 		textureDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-		vk::WriteDescriptorSet textureWriteDescriptorSet;
-		textureWriteDescriptorSet.dstSet = descriptorSet;
-		textureWriteDescriptorSet.dstBinding = 0;
-		textureWriteDescriptorSet.dstArrayElement = 0;
-		textureWriteDescriptorSet.descriptorCount = 1;
-		textureWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		textureWriteDescriptorSet.pImageInfo = &textureDescriptorImageInfo;
+		vk::WriteDescriptorSet writeDescriptorSet;
+		writeDescriptorSet.dstSet = descriptorSet;
+		writeDescriptorSet.dstBinding = 0;
+		writeDescriptorSet.dstArrayElement = 0;
+		writeDescriptorSet.descriptorCount = 1;
+		writeDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		writeDescriptorSet.pImageInfo = &textureDescriptorImageInfo;
 
-		device.updateDescriptorSets(textureWriteDescriptorSet, vk::ArrayProxy<vk::CopyDescriptorSet>());
+		device.updateDescriptorSets(writeDescriptorSet, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
 }
 
@@ -2568,7 +2601,9 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	const vk::DescriptorSetLayoutBinding materialDescriptorSetLayoutBindings[] =
 	{
 		// Mesh texture
-		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
+		// Mesh texture
+		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
 	};
 
 	const vk::DescriptorSetLayoutBinding conversionDescriptorSetLayoutBindings[] =
@@ -2851,6 +2886,21 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	this->unlockVertexAttributeBuffer(this->uiVertexAttributeBufferID);
 
+	constexpr int dummyImageWidth = 1;
+	constexpr int dummyImageHeight = 1;
+	if (!TryCreateImageAndBindWithHeap(this->device, dummyImageWidth, dummyImageHeight, ObjectTextureFormat8Bit, ObjectTextureDeviceLocalUsageFlags,
+		this->graphicsQueueFamilyIndex, this->objectTextureHeapManagerDeviceLocal, &this->dummyImage))
+	{
+		DebugLogError("Couldn't create dummy image for object materials.");
+		return false;
+	}
+
+	if (!TryCreateImageView(this->device, ObjectTextureFormat8Bit, vk::ImageAspectFlagBits::eColor, this->dummyImage, &this->dummyImageView))
+	{
+		DebugLogError("Couldn't create dummy image view for object materials.");
+		return false;
+	}
+
 	return true;
 }
 
@@ -2858,6 +2908,18 @@ void VulkanRenderBackend::shutdown()
 {
 	if (this->device)
 	{
+		if (this->dummyImageView)
+		{
+			this->device.destroyImageView(this->dummyImageView);
+			this->dummyImageView = nullptr;
+		}
+
+		if (this->dummyImage)
+		{
+			this->device.destroyImage(this->dummyImage);
+			this->dummyImage = nullptr;
+		}
+
 		this->uiVertexAttributeBufferID = -1;
 		this->uiVertexPositionBufferID = -1;
 
@@ -4243,7 +4305,7 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 		return -1;
 	}
 
-	UpdateMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
+	UpdateUiMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
 	this->uiTextureDescriptorSets.emplace(textureID, descriptorSet);
 
 	VulkanTexture &texture = this->uiTexturePool.get(textureID);
@@ -4373,9 +4435,19 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 		return -1;
 	}
 
-	const ObjectTextureID textureID = key.textureIDs[0]; // @todo need to get second texture ID if this material requires it
-	const VulkanTexture &texture = this->objectTexturePool.get(textureID);
-	UpdateMaterialDescriptorSet(this->device, descriptorSet, texture.imageView, texture.sampler);
+	const ObjectTextureID textureID0 = key.textureIDs[0];
+	const VulkanTexture &texture0 = this->objectTexturePool.get(textureID0);
+	const vk::ImageView texture0ImageView = texture0.imageView;
+
+	vk::ImageView texture1ImageView = this->dummyImageView;
+	if (key.textureCount == 2)
+	{
+		const ObjectTextureID textureID1 = key.textureIDs[1];
+		const VulkanTexture &texture1 = this->objectTexturePool.get(textureID1);
+		texture1ImageView = texture1.imageView;
+	}
+
+	UpdateMaterialDescriptorSet(this->device, descriptorSet, texture0ImageView, texture1ImageView, texture0.sampler);
 
 	VulkanMaterial &material = this->materialPool.get(materialID);
 	material.init(pipeline, pipelineLayout, descriptorSet);
