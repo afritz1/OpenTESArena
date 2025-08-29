@@ -65,7 +65,7 @@ namespace
 	constexpr vk::BufferUsageFlags UiTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
-	constexpr int MaxGlobalUniformBufferDescriptors = 2;
+	constexpr int MaxGlobalUniformBufferDescriptors = 3;
 	constexpr int MaxGlobalImageDescriptors = 2;
 	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalImageDescriptors;
 
@@ -1545,12 +1545,17 @@ namespace
 		return true;
 	}
 
-	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer screenSpaceAnimBuffer)
+	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer ambientLightBuffer, vk::Buffer screenSpaceAnimBuffer)
 	{
 		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
 		cameraDescriptorBufferInfo.buffer = cameraBuffer;
 		cameraDescriptorBufferInfo.offset = 0;
 		cameraDescriptorBufferInfo.range = VK_WHOLE_SIZE;
+
+		vk::DescriptorBufferInfo ambientLightDescriptorBufferInfo;
+		ambientLightDescriptorBufferInfo.buffer = ambientLightBuffer;
+		ambientLightDescriptorBufferInfo.offset = 0;
+		ambientLightDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
 		vk::DescriptorBufferInfo screenSpaceAnimDescriptorBufferInfo;
 		screenSpaceAnimDescriptorBufferInfo.buffer = screenSpaceAnimBuffer;
@@ -1565,15 +1570,23 @@ namespace
 		cameraWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
 		cameraWriteDescriptorSet.pBufferInfo = &cameraDescriptorBufferInfo;
 
+		vk::WriteDescriptorSet ambientLightWriteDescriptorSet;
+		ambientLightWriteDescriptorSet.dstSet = descriptorSet;
+		ambientLightWriteDescriptorSet.dstBinding = 1;
+		ambientLightWriteDescriptorSet.dstArrayElement = 0;
+		ambientLightWriteDescriptorSet.descriptorCount = 1;
+		ambientLightWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		ambientLightWriteDescriptorSet.pBufferInfo = &ambientLightDescriptorBufferInfo;
+
 		vk::WriteDescriptorSet screenSpaceAnimWriteDescriptorSet;
 		screenSpaceAnimWriteDescriptorSet.dstSet = descriptorSet;
-		screenSpaceAnimWriteDescriptorSet.dstBinding = 1;
+		screenSpaceAnimWriteDescriptorSet.dstBinding = 2;
 		screenSpaceAnimWriteDescriptorSet.dstArrayElement = 0;
 		screenSpaceAnimWriteDescriptorSet.descriptorCount = 1;
 		screenSpaceAnimWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
 		screenSpaceAnimWriteDescriptorSet.pBufferInfo = &screenSpaceAnimDescriptorBufferInfo;
 
-		const vk::WriteDescriptorSet writeDescriptorSets[] = { cameraWriteDescriptorSet, screenSpaceAnimWriteDescriptorSet };
+		const vk::WriteDescriptorSet writeDescriptorSets[] = { cameraWriteDescriptorSet, ambientLightWriteDescriptorSet, screenSpaceAnimWriteDescriptorSet };
 
 		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
@@ -2588,8 +2601,10 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	{
 		// Camera
 		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex),
-		// Screen space animation
+		// Ambient percent
 		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
+		// Screen space animation
+		CreateDescriptorSetLayoutBinding(2, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
 	};
 
 	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
@@ -2828,7 +2843,21 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	this->camera.init(nullptr, cameraBuffer, cameraHostMappedBytes); 
+	this->camera.init(nullptr, cameraBuffer, cameraHostMappedBytes);
+
+	constexpr vk::BufferUsageFlags ambientLightUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+	constexpr int ambientLightByteCount = sizeof(float);
+
+	vk::Buffer ambientLightBuffer;
+	Span<std::byte> ambientLightHostMappedBytes;
+	if (!TryCreateBufferAndBindWithHeap(this->device, ambientLightByteCount, ambientLightUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging,
+		&ambientLightBuffer, &ambientLightHostMappedBytes))
+	{
+		DebugLogError("Couldn't create buffer for ambient light uniform buffer.");
+		return false;
+	}
+
+	this->ambientLight.init(nullptr, ambientLightBuffer, ambientLightHostMappedBytes);
 
 	constexpr vk::BufferUsageFlags screenSpaceAnimUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
 	constexpr int screenSpaceAnimByteCount = sizeof(float) * 3; // Percent + framebuffer dimensions
@@ -2937,6 +2966,14 @@ void VulkanRenderBackend::shutdown()
 		}
 
 		this->screenSpaceAnim.stagingHostMappedBytes.reset();
+
+		if (this->ambientLight.stagingBuffer)
+		{
+			this->device.destroyBuffer(this->ambientLight.stagingBuffer);
+			this->ambientLight.stagingBuffer = nullptr;
+		}
+
+		this->ambientLight.stagingHostMappedBytes.reset();
 
 		if (this->camera.stagingBuffer)
 		{
@@ -4609,13 +4646,16 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		Span<const std::byte> viewProjectionBytes(reinterpret_cast<const std::byte*>(&viewProjection), sizeof(viewProjection));
 		std::copy(viewProjectionBytes.begin(), viewProjectionBytes.end(), this->camera.stagingHostMappedBytes.begin());
 
+		float *ambientLightValues = reinterpret_cast<float*>(this->ambientLight.stagingHostMappedBytes.begin());
+		ambientLightValues[0] = static_cast<float>(frameSettings.ambientPercent);
+
 		float *screenSpaceAnimValues = reinterpret_cast<float*>(this->screenSpaceAnim.stagingHostMappedBytes.begin());
 		screenSpaceAnimValues[0] = static_cast<float>(frameSettings.screenSpaceAnimPercent);
 		screenSpaceAnimValues[1] = sceneViewport.width;
 		screenSpaceAnimValues[2] = sceneViewport.height;
 
 		// @todo light table + light level calculation
-		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.stagingBuffer, this->screenSpaceAnim.stagingBuffer);
+		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.stagingBuffer, this->ambientLight.stagingBuffer, this->screenSpaceAnim.stagingBuffer);
 
 		vk::Pipeline currentPipeline;
 		VertexPositionBufferID currentVertexPositionBufferID = -1;

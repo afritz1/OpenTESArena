@@ -339,6 +339,7 @@ private:
 	VulkanHeapManager uiTextureHeapManagerStaging;
 
 	VulkanBuffer camera;
+	VulkanBuffer ambientLight;
 	VulkanBuffer screenSpaceAnim;
 	VertexPositionBufferID uiVertexPositionBufferID;
 	VertexAttributeBufferID uiVertexAttributeBufferID;

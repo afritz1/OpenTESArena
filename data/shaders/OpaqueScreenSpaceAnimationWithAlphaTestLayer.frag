@@ -1,6 +1,11 @@
 #version 450
 
-layout(set = 0, binding = 1) uniform ScreenSpaceAnimation
+layout(set = 0, binding = 1) uniform AmbientLight
+{
+    float percent;
+} ambient;
+
+layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
 {
     float percent;
     float framebufferWidthReal;
