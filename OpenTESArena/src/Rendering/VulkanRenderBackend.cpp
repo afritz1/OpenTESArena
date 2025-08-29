@@ -1256,20 +1256,21 @@ namespace
 		subpassDescription.pColorAttachments = &subpassColorAttachmentReference;
 		subpassDescription.pDepthStencilAttachment = &subpassDepthAttachmentReference;
 
-		// @todo will likely need this for ghosts/puddles
-		/*vk::SubpassDependency subpassDependency;
+		vk::SubpassDependency subpassDependency;
 		subpassDependency.srcSubpass = 0;
-		subpassDependency.dstSubpass = 1;
+		subpassDependency.dstSubpass = VK_SUBPASS_EXTERNAL; // Ensure color attachment writes are done before UI render pass reads it.
 		subpassDependency.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eLateFragmentTests;
-		subpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests;
+		subpassDependency.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eFragmentShader;
 		subpassDependency.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-		subpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite;*/
+		subpassDependency.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite | vk::AccessFlagBits::eShaderRead;
 
 		vk::RenderPassCreateInfo renderPassCreateInfo;
 		renderPassCreateInfo.attachmentCount = static_cast<uint32_t>(std::size(attachmentDescriptions));
 		renderPassCreateInfo.pAttachments = attachmentDescriptions;
 		renderPassCreateInfo.subpassCount = 1;
 		renderPassCreateInfo.pSubpasses = &subpassDescription;
+		renderPassCreateInfo.dependencyCount = 1;
+		renderPassCreateInfo.pDependencies = &subpassDependency;
 
 		vk::ResultValue<vk::RenderPass> renderPassCreateResult = device.createRenderPass(renderPassCreateInfo);
 		if (renderPassCreateResult.result != vk::Result::eSuccess)
