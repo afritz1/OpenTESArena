@@ -336,14 +336,17 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	RenderMaterialKey skyGradientAMMaterialKey;
 	skyGradientAMMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyGradientAMTextureID, 1), skyLightingType, false, false, false);
 	this->skyGradientAMMaterialID = renderer.createMaterial(skyGradientAMMaterialKey);
+	renderer.setMaterialParameterMeshLightingPercent(this->skyGradientAMMaterialID, 1.0);
 
 	RenderMaterialKey skyGradientPMMaterialKey;
 	skyGradientPMMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyGradientPMTextureID, 1), skyLightingType, false, false, false);
 	this->skyGradientPMMaterialID = renderer.createMaterial(skyGradientPMMaterialKey);
+	renderer.setMaterialParameterMeshLightingPercent(this->skyGradientPMMaterialID, 1.0);
 
 	RenderMaterialKey skyFogMaterialKey;
 	skyFogMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyFogTextureID, 1), skyLightingType, false, false, false);
 	this->skyFogMaterialID = renderer.createMaterial(skyFogMaterialKey);
+	renderer.setMaterialParameterMeshLightingPercent(this->skyFogMaterialID, 1.0);
 
 	this->skyThunderstormMaterialIDs.init(this->skyThunderstormTextureRefs.getCount());
 	for (int i = 0; i < this->skyThunderstormTextureRefs.getCount(); i++)
@@ -354,11 +357,13 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		skyThunderstormMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyThunderstormTextureID, 1), skyLightingType, false, false, false);
 
 		this->skyThunderstormMaterialIDs[i] = renderer.createMaterial(skyThunderstormMaterialKey);
+		renderer.setMaterialParameterMeshLightingPercent(this->skyThunderstormMaterialIDs[i], 1.0);
 	}
 
 	RenderMaterialKey skyInteriorMaterialKey;
 	skyInteriorMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyInteriorTextureID, 1), skyLightingType, false, false, false);
 	this->skyInteriorMaterialID = renderer.createMaterial(skyInteriorMaterialKey);
+	renderer.setMaterialParameterMeshLightingPercent(this->skyInteriorMaterialID, 1.0);
 
 	this->bgDrawCall.transformBufferID = this->bgTransformBufferID;
 	this->bgDrawCall.transformIndex = 0;
