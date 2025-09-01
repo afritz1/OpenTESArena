@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <optional>
 
-#include "RenderLightUtils.h"
 #include "RenderMaterialUtils.h"
 #include "RenderMeshUtils.h"
 #include "RenderShaderUtils.h"
@@ -90,10 +89,6 @@ public:
 	virtual LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index) = 0;
 	virtual void unlockUniformBuffer(UniformBufferID id) = 0;
 	virtual void unlockUniformBufferIndex(UniformBufferID id, int index) = 0;
-
-	virtual RenderLightID createLight() = 0;
-	virtual void freeLight(RenderLightID id) = 0;
-	virtual bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) = 0;
 
 	// Texture management functions.
 	virtual ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) = 0;

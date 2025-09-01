@@ -77,25 +77,14 @@ struct VulkanBuffer
 	void initUniform(int elementCount, int bytesPerElement, int bytesPerStride, vk::DescriptorSet descriptorSet);
 };
 
-struct VulkanLightInfo
+struct VulkanLight
 {
 	float pointX, pointY, pointZ;
 	float startRadius, endRadius;
-	float startRadiusSqr, endRadiusSqr;
 
-	VulkanLightInfo();
+	VulkanLight();
 
 	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius);
-};
-
-struct VulkanLight
-{
-	vk::Buffer buffer;
-	vk::Buffer stagingBuffer;
-	Span<std::byte> stagingHostMappedBytes;
-	VulkanLightInfo lightInfo;
-
-	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 };
 
 struct VulkanTexture
@@ -140,7 +129,6 @@ using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, Vu
 using VulkanVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID, VulkanBuffer>;
 using VulkanIndexBufferPool = RecyclablePool<IndexBufferID, VulkanBuffer>;
 using VulkanUniformBufferPool = RecyclablePool<UniformBufferID, VulkanBuffer>;
-using VulkanLightPool = RecyclablePool<RenderLightID, VulkanLight>;
 using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
 using VulkanMaterialPool = RecyclablePool<RenderMaterialID, VulkanMaterial>;
@@ -322,7 +310,6 @@ private:
 	VulkanVertexAttributeBufferPool vertexAttributeBufferPool;
 	VulkanIndexBufferPool indexBufferPool;
 	VulkanUniformBufferPool uniformBufferPool;
-	VulkanLightPool lightPool;
 	VulkanObjectTexturePool objectTexturePool;
 	VulkanUiTexturePool uiTexturePool;
 	VulkanMaterialPool materialPool;
@@ -380,10 +367,6 @@ public:
 	LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index) override;
 	void unlockUniformBuffer(UniformBufferID id) override;
 	void unlockUniformBufferIndex(UniformBufferID id, int index) override;
-
-	RenderLightID createLight() override;
-	void freeLight(RenderLightID id) override;
-	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) override;
 
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) override;
 	void freeObjectTexture(ObjectTextureID id) override;

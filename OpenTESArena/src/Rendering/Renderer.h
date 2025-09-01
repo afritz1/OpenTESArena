@@ -33,6 +33,7 @@ enum class RenderBackendType;
 struct RenderCamera;
 struct RenderCommandList;
 struct RenderFrameSettings;
+struct RenderLight;
 struct RenderTransform;
 struct TextureBuilder;
 struct UiCommandList;
@@ -133,16 +134,14 @@ public:
 	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
 	UniformBufferID createUniformBufferVector3s(int elementCount);
 	UniformBufferID createUniformBufferRenderTransforms(int elementCount);
+	UniformBufferID createUniformBufferLights(int elementCount);
 	void freeUniformBuffer(UniformBufferID id);
 	bool populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes);
 	bool populateUniformBufferVector3s(UniformBufferID id, Span<const Double3> values);
 	bool populateUniformBufferRenderTransforms(UniformBufferID id, Span<const RenderTransform> transforms);
+	bool populateUniformBufferLights(UniformBufferID id, Span<const RenderLight> lights);
 	bool populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes);
 	bool populateUniformBufferIndexRenderTransform(UniformBufferID id, int uniformIndex, const RenderTransform &transform);
-
-	RenderLightID createLight();
-	void freeLight(RenderLightID id);
-	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius);
 
 	// Texture management functions.
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);

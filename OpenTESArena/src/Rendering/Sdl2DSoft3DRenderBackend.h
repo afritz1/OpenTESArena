@@ -54,10 +54,6 @@ public:
 	void unlockUniformBuffer(UniformBufferID id) override;
 	void unlockUniformBufferIndex(UniformBufferID id, int index) override;
 
-	RenderLightID createLight() override;
-	void freeLight(RenderLightID id) override;
-	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius) override;
-
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel) override;
 	void freeObjectTexture(ObjectTextureID id) override;
 	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;

@@ -6,6 +6,7 @@
 #include "RenderBackendType.h"
 #include "RenderBuffer.h"
 #include "RenderCamera.h"
+#include "RenderLightManager.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
@@ -52,25 +53,41 @@ namespace
 		return Int2(alignedWidth, alignedHeight);
 	}
 
-	static_assert(sizeof(RenderTransform) == sizeof(Matrix4d) * 3);
-	constexpr int BytesPerTransformF = sizeof(RenderTransform) / 2;
-	constexpr int BytesPerMatrix4f = sizeof(Matrix4f);
-
 	void WriteRenderTransformFloat32(const RenderTransform &transform, std::byte *dstBytes)
 	{
-		const Matrix4f &translationF = RendererUtils::matrix4DoubleToFloat(transform.translation);
-		const Matrix4f &rotationF = RendererUtils::matrix4DoubleToFloat(transform.rotation);
-		const Matrix4f &scaleF = RendererUtils::matrix4DoubleToFloat(transform.scale);
+		static_assert(sizeof(RenderTransform) == sizeof(Matrix4d) * 3);
+		constexpr int BytesPerMatrix4f = sizeof(Matrix4f);
+
+		const Matrix4f translationF = RendererUtils::matrix4DoubleToFloat(transform.translation);
+		const Matrix4f rotationF = RendererUtils::matrix4DoubleToFloat(transform.rotation);
+		const Matrix4f scaleF = RendererUtils::matrix4DoubleToFloat(transform.scale);
 
 		Span<const std::byte> srcTranslationBytes(reinterpret_cast<const std::byte*>(&translationF), BytesPerMatrix4f);
-		Span<const std::byte> srcRotationBegin(reinterpret_cast<const std::byte*>(&rotationF), BytesPerMatrix4f);
-		Span<const std::byte> srcScaleBegin(reinterpret_cast<const std::byte*>(&scaleF), BytesPerMatrix4f);
-		Span<std::byte> dstTranslationBytes(dstBytes, BytesPerMatrix4f);
-		Span<std::byte> dstRotationBytes(dstTranslationBytes.end(), BytesPerMatrix4f);
-		Span<std::byte> dstScaleBytes(dstRotationBytes.end(), BytesPerMatrix4f);
+		Span<const std::byte> srcRotationBytes(reinterpret_cast<const std::byte*>(&rotationF), BytesPerMatrix4f);
+		Span<const std::byte> srcScaleBytes(reinterpret_cast<const std::byte*>(&scaleF), BytesPerMatrix4f);
+		Span<std::byte> dstTranslationBytes(dstBytes, srcTranslationBytes.getCount());
+		Span<std::byte> dstRotationBytes(dstTranslationBytes.end(), srcRotationBytes.getCount());
+		Span<std::byte> dstScaleBytes(dstRotationBytes.end(), srcScaleBytes.getCount());
 		std::copy(srcTranslationBytes.begin(), srcTranslationBytes.end(), dstTranslationBytes.begin());
-		std::copy(srcRotationBegin.begin(), srcRotationBegin.end(), dstRotationBytes.begin());
-		std::copy(srcScaleBegin.begin(), srcScaleBegin.end(), dstScaleBytes.begin());
+		std::copy(srcRotationBytes.begin(), srcRotationBytes.end(), dstRotationBytes.begin());
+		std::copy(srcScaleBytes.begin(), srcScaleBytes.end(), dstScaleBytes.begin());
+	}
+
+	void WriteRenderLightFloat32(const RenderLight &light, std::byte *dstBytes)
+	{
+		const Float3 positionF(static_cast<float>(light.position.x), static_cast<float>(light.position.y), static_cast<float>(light.position.z));
+		const float startRadiusF = static_cast<float>(light.startRadius);
+		const float endRadiusF = static_cast<float>(light.endRadius);
+
+		Span<const std::byte> srcPositionBytes(reinterpret_cast<const std::byte*>(&positionF), sizeof(Float3));
+		Span<const std::byte> srcStartRadiusBytes(reinterpret_cast<const std::byte*>(&startRadiusF), sizeof(float));
+		Span<const std::byte> srcEndRadiusBytes(reinterpret_cast<const std::byte*>(&endRadiusF), sizeof(float));
+		Span<std::byte> dstPositionBytes(dstBytes, srcPositionBytes.getCount());
+		Span<std::byte> dstStartRadiusBytes(dstPositionBytes.end(), srcStartRadiusBytes.getCount());
+		Span<std::byte> dstEndRadiusBytes(dstStartRadiusBytes.end(), srcEndRadiusBytes.getCount());
+		std::copy(srcPositionBytes.begin(), srcPositionBytes.end(), dstPositionBytes.begin());
+		std::copy(srcStartRadiusBytes.begin(), srcStartRadiusBytes.end(), dstStartRadiusBytes.begin());
+		std::copy(srcEndRadiusBytes.begin(), srcEndRadiusBytes.end(), dstEndRadiusBytes.begin());
 	}
 }
 
@@ -367,6 +384,20 @@ UniformBufferID Renderer::createUniformBufferRenderTransforms(int elementCount)
 	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
+UniformBufferID Renderer::createUniformBufferLights(int elementCount)
+{
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	int bytesPerElement = sizeof(double) * 5;
+	int alignmentOfElement = sizeof(double);
+	if (bytesPerFloat == 4)
+	{
+		bytesPerElement /= 2;
+		alignmentOfElement /= 2;
+	}
+
+	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
+}
+
 void Renderer::freeUniformBuffer(UniformBufferID id)
 {
 	this->backend->freeUniformBuffer(id);
@@ -467,6 +498,37 @@ bool Renderer::populateUniformBufferRenderTransforms(UniformBufferID id, Span<co
 	return true;
 }
 
+bool Renderer::populateUniformBufferLights(UniformBufferID id, Span<const RenderLight> lights)
+{
+	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d.", id);
+		return false;
+	}
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		DebugAssert(lockedBuffer.isContiguous());
+
+		Span<const std::byte> lightBytes(reinterpret_cast<const std::byte*>(lights.begin()), lights.getCount() * sizeof(RenderLight));
+		DebugAssert(lightBytes.getCount() <= lockedBuffer.bytes.getCount());
+		std::copy(lightBytes.begin(), lightBytes.end(), lockedBuffer.bytes.begin());
+	}
+	else
+	{
+		for (int i = 0; i < lights.getCount(); i++)
+		{
+			const RenderLight &light = lights[i];
+			WriteRenderLightFloat32(light, lockedBuffer.bytes.begin() + (i * lockedBuffer.bytesPerStride));
+		}
+	}
+
+	this->backend->unlockUniformBuffer(id);
+	return true;
+}
+
 bool Renderer::populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes)
 {
 	LockedBuffer lockedBuffer = this->backend->lockUniformBufferIndex(id, uniformIndex);
@@ -506,21 +568,6 @@ bool Renderer::populateUniformBufferIndexRenderTransform(UniformBufferID id, int
 
 	this->backend->unlockUniformBufferIndex(id, uniformIndex);
 	return true;
-}
-
-RenderLightID Renderer::createLight()
-{
-	return this->backend->createLight();
-}
-
-void Renderer::freeLight(RenderLightID id)
-{
-	this->backend->freeLight(id);
-}
-
-bool Renderer::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
-{
-	return this->backend->populateLight(id, point, startRadius, endRadius);
 }
 
 ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)

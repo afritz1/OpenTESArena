@@ -247,6 +247,7 @@ Game::~Game()
 	this->sceneManager.renderEntityManager.shutdown(this->renderer);
 	this->sceneManager.renderSkyManager.shutdown(this->renderer);
 	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
+	this->sceneManager.renderLightManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -414,6 +415,12 @@ bool Game::init()
 	if (!this->sceneManager.renderWeatherManager.init(this->renderer))
 	{
 		DebugLogError("Couldn't init render weather manager.");
+		return false;
+	}
+
+	if (!this->sceneManager.renderLightManager.init(this->renderer))
+	{
+		DebugLogError("Couldn't init render light manager.");
 		return false;
 	}
 
@@ -991,7 +998,8 @@ void Game::loop()
 				const MapDefinition &activeMapDef = this->gameState.getActiveMapDef();
 				const MapType activeMapType = activeMapDef.getMapType();
 				const double ambientPercent = ArenaRenderUtils::getAmbientPercent(this->gameState.getClock(), activeMapType, isFoggy);
-				const Span<const RenderLightID> visibleLightIDs = this->sceneManager.renderLightManager.getVisibleLightIDs();
+				const UniformBufferID visibleLightsBufferID = this->sceneManager.renderLightManager.getVisibleLightsBufferID();
+				const int visibleLightCount = this->sceneManager.renderLightManager.getVisibleLightCount();
 				const double screenSpaceAnimPercent = this->gameState.getChasmAnimPercent();
 
 				const WorldDouble3 playerPosition = this->player.getEyePosition();
@@ -1020,8 +1028,8 @@ void Game::loop()
 				const ObjectTextureID skyBgTextureID = renderSkyManager.getBgTextureID();
 				const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
 
-				frameSettings.init(Colors::Black, ambientPercent, visibleLightIDs, screenSpaceAnimPercent, paletteTextureID, lightTableTextureID,
-					skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
+				frameSettings.init(Colors::Black, ambientPercent, visibleLightsBufferID, visibleLightCount, screenSpaceAnimPercent, paletteTextureID,
+					lightTableTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
 			this->panel->populateCommandList(uiCommandList);

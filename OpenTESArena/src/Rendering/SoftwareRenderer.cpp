@@ -989,7 +989,7 @@ namespace
 // Lighting utils.
 namespace
 {
-	static constexpr int MAX_LIGHTS_IN_FRUSTUM = 256; // Total allowed in frustum each frame, sorted by distance to camera.
+	static constexpr int MAX_LIGHTS_IN_FRUSTUM = 256; // Total allowed in frustum each frame, already sorted by distance to camera.
 	static constexpr int MAX_LIGHTS_PER_LIGHT_BIN = 32; // Fraction of max frustum lights for a light bin.
 
 	struct LightBin
@@ -1542,11 +1542,11 @@ namespace
 
 		PixelShaderUniforms()
 		{
-			screenSpaceAnimPercent = 0.0;
+			this->screenSpaceAnimPercent = 0.0;
 		}
 	};
 
-	const SoftwareLight *g_visibleLights[MAX_LIGHTS_IN_FRUSTUM];
+	SoftwareLight g_visibleLights[MAX_LIGHTS_IN_FRUSTUM];
 	int g_visibleLightCount;
 	Buffer2D<LightBin> g_lightBins; // Populated each frame, shared by all workers.
 
@@ -1557,14 +1557,23 @@ namespace
 	const SoftwareObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
 	const SoftwareObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
-	void PopulateLightGlobals(Span<const RenderLightID> visibleLightIDs, const SoftwareLightPool &lightPool, const RenderCamera &camera,
+	void PopulateLightGlobals(const SoftwareUniformBuffer &visibleLightsBuffer, int visibleLightCount, const RenderCamera &camera,
 		int frameBufferWidth, int frameBufferHeight)
 	{
-		std::fill(std::begin(g_visibleLights), std::end(g_visibleLights), nullptr);
-		g_visibleLightCount = std::min<int>(visibleLightIDs.getCount(), std::size(g_visibleLights));
+		std::fill(std::begin(g_visibleLights), std::end(g_visibleLights), SoftwareLight());
+		g_visibleLightCount = std::min(visibleLightCount, MAX_LIGHTS_IN_FRUSTUM);
+
+		// Read visible lights from uniform buffer and cache values to reduce shading work.
+		const std::byte *visibleLightsBytes = visibleLightsBuffer.begin();
 		for (int i = 0; i < g_visibleLightCount; i++)
 		{
-			g_visibleLights[i] = &lightPool.get(visibleLightIDs[i]);
+			const double *currentVisibleLightValues = reinterpret_cast<const double*>(visibleLightsBytes + (visibleLightsBuffer.bytesPerElement * i));
+			const Double3 currentVisibleLightPosition(currentVisibleLightValues[0], currentVisibleLightValues[1], currentVisibleLightValues[2]);
+			const double currentVisibleLightStartRadius = currentVisibleLightValues[3];
+			const double currentVisibleLightEndRadius = currentVisibleLightValues[4];
+
+			SoftwareLight &optimizedVisibleLight = g_visibleLights[i];
+			optimizedVisibleLight.init(currentVisibleLightPosition, currentVisibleLightStartRadius, currentVisibleLightEndRadius);
 		}
 
 		const int lightBinWidth = GetLightBinWidth(frameBufferWidth);
@@ -1603,7 +1612,7 @@ namespace
 
 				for (int visibleLightIndex = 0; visibleLightIndex < g_visibleLightCount; visibleLightIndex++)
 				{
-					const SoftwareLight &light = *g_visibleLights[visibleLightIndex];
+					const SoftwareLight &light = g_visibleLights[visibleLightIndex];
 					const Double3 lightPosition(light.worldPointX, light.worldPointY, light.worldPointZ);
 					const double lightWidth = light.endRadius * 2.0;
 					const double lightHeight = lightWidth;
@@ -3719,7 +3728,7 @@ namespace
 								for (int lightIndex = 0; lightIndex < lightBin.lightCount; lightIndex++)
 								{
 									const int lightBinLightIndex = lightBin.lightIndices[lightIndex];
-									const SoftwareLight &light = *g_visibleLights[lightBinLightIndex];
+									const SoftwareLight &light = g_visibleLights[lightBinLightIndex];
 									double lightIntensity = 0.0;
 									GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX[i], shaderWorldSpacePointY[i], shaderWorldSpacePointZ[i], light, &lightIntensity);
 									lightIntensitySum[i] += lightIntensity;
@@ -4478,7 +4487,6 @@ void SoftwareRenderer::shutdown()
 	this->indexBuffers.clear();
 	this->uniformBuffers.clear();
 	this->objectTextures.clear();
-	this->lights.clear();
 	ShutdownWorkers();
 }
 
@@ -4519,7 +4527,7 @@ RendererProfilerData3D SoftwareRenderer::getProfilerData() const
 	}
 
 	profilerData.materialCount = static_cast<int>(this->materials.values.size());
-	profilerData.totalLightCount = this->lights.getCount();
+	profilerData.totalLightCount = g_visibleLightCount;
 	profilerData.totalCoverageTests = g_totalCoverageTests;
 	profilerData.totalDepthTests = g_totalDepthTests;
 	profilerData.totalColorWrites = g_totalColorWrites;
@@ -4701,40 +4709,6 @@ void SoftwareRenderer::unlockUniformBufferIndex(UniformBufferID id, int index)
 	static_cast<void>(index);
 }
 
-RenderLightID SoftwareRenderer::createLight()
-{
-	const RenderLightID id = this->lights.alloc();
-	if (id < 0)
-	{
-		DebugLogError("Couldn't allocate render light ID.");
-		return -1;
-	}
-
-	return id;
-}
-
-void SoftwareRenderer::freeLight(RenderLightID id)
-{
-	this->lights.free(id);
-}
-
-bool SoftwareRenderer::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
-{
-	DebugAssert(startRadius >= 0.0);
-	DebugAssert(endRadius >= startRadius);
-	SoftwareLight &light = this->lights.get(id);
-	light.worldPointX = point.x;
-	light.worldPointY = point.y;
-	light.worldPointZ = point.z;
-	light.startRadius = startRadius;
-	light.startRadiusSqr = startRadius * startRadius;
-	light.endRadius = endRadius;
-	light.endRadiusSqr = endRadius * endRadius;
-	light.startEndRadiusDiff = endRadius - startRadius;
-	light.startEndRadiusDiffRecip = 1.0 / light.startEndRadiusDiff;
-	return true;
-}
-
 ObjectTextureID SoftwareRenderer::createTexture(int width, int height, int bytesPerTexel)
 {
 	const ObjectTextureID textureID = this->objectTextures.alloc();
@@ -4829,6 +4803,7 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 		CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
 	}
 
+	const SoftwareUniformBuffer &visibleLights = this->uniformBuffers.get(settings.visibleLightsBufferID);
 	const SoftwareObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
 	const SoftwareObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
 	const SoftwareObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
@@ -4837,7 +4812,7 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 	PopulateDrawCallGlobals(totalDrawCallCount);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
 		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
-	PopulateLightGlobals(settings.visibleLightIDs, this->lights, camera, frameBufferWidth, frameBufferHeight);
+	PopulateLightGlobals(visibleLights, settings.visibleLightCount, camera, frameBufferWidth, frameBufferHeight);
 	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, camera.horizonNdcPoint, paletteTexture, lightTableTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);

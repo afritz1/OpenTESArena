@@ -144,7 +144,6 @@ using SoftwareIndexBufferPool = RecyclablePool<IndexBufferID, SoftwareIndexBuffe
 using SoftwareUniformBufferPool = RecyclablePool<UniformBufferID, SoftwareUniformBuffer>;
 using SoftwareObjectTexturePool = RecyclablePool<ObjectTextureID, SoftwareObjectTexture>;
 using SoftwareMaterialPool = RecyclablePool<RenderMaterialID, SoftwareMaterial>;
-using SoftwareLightPool = RecyclablePool<RenderLightID, SoftwareLight>;
 
 class SoftwareRenderer
 {
@@ -160,7 +159,6 @@ private:
 	SoftwareUniformBufferPool uniformBuffers;
 	SoftwareObjectTexturePool objectTextures;
 	SoftwareMaterialPool materials;
-	SoftwareLightPool lights;
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer();
@@ -196,10 +194,6 @@ public:
 	LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index);
 	void unlockUniformBuffer(UniformBufferID id);
 	void unlockUniformBufferIndex(UniformBufferID id, int index);
-
-	RenderLightID createLight();
-	void freeLight(RenderLightID id);
-	bool populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius);
 
 	ObjectTextureID createTexture(int width, int height, int bytesPerTexel);
 	void freeTexture(ObjectTextureID id);

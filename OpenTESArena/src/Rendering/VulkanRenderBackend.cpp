@@ -1956,36 +1956,22 @@ void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int bytesP
 	this->uniform.descriptorSet = descriptorSet;
 }
 
-VulkanLightInfo::VulkanLightInfo()
+VulkanLight::VulkanLight()
 {
 	this->pointX = 0.0f;
 	this->pointY = 0.0f;
 	this->pointZ = 0.0f;
 	this->startRadius = 0.0f;
 	this->endRadius = 0.0f;
-	this->startRadiusSqr = 0.0f;
-	this->endRadiusSqr = 0.0f;
 }
 
-void VulkanLightInfo::init(float pointX, float pointY, float pointZ, float startRadius, float endRadius)
+void VulkanLight::init(float pointX, float pointY, float pointZ, float startRadius, float endRadius)
 {
 	this->pointX = pointX;
 	this->pointY = pointY;
 	this->pointZ = pointZ;
 	this->startRadius = startRadius;
 	this->endRadius = endRadius;
-	this->startRadiusSqr = startRadius * startRadius;
-	this->endRadiusSqr = endRadius * endRadius;
-}
-
-void VulkanLight::init(float pointX, float pointY, float pointZ, float startRadius, float endRadius, vk::Buffer buffer, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
-{
-	this->buffer = buffer;
-	this->stagingBuffer = stagingBuffer;
-	this->stagingHostMappedBytes = stagingHostMappedBytes;
-
-	DebugAssert(endRadius >= startRadius);
-	this->lightInfo.init(pointX, pointY, pointZ, startRadius, endRadius);
 }
 
 VulkanTexture::VulkanTexture()
@@ -3073,21 +3059,6 @@ void VulkanRenderBackend::shutdown()
 
 		this->objectTexturePool.clear();
 
-		for (VulkanLight &light : this->lightPool.values)
-		{
-			if (light.stagingBuffer)
-			{
-				this->device.destroyBuffer(light.stagingBuffer);
-			}
-
-			if (light.buffer)
-			{
-				this->device.destroyBuffer(light.buffer);
-			}
-		}
-
-		this->lightPool.clear();
-
 		for (VulkanBuffer &buffer : this->uniformBufferPool.values)
 		{
 			if (buffer.stagingBuffer)
@@ -4082,74 +4053,6 @@ void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index
 	};
 
 	this->copyCommands.emplace_back(std::move(commandBufferFunc));
-}
-
-RenderLightID VulkanRenderBackend::createLight()
-{
-	const RenderLightID id = this->lightPool.alloc();
-	if (id < 0)
-	{
-		DebugLogError("Couldn't allocate render light ID.");
-		return -1;
-	}
-
-	const int byteCount = sizeof(VulkanLightInfo);
-	vk::Buffer buffer;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferDeviceLocalUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerDeviceLocal, &buffer, nullptr))
-	{
-		DebugLogErrorFormat("Couldn't create buffer for light.");
-		this->lightPool.free(id);
-		return -1;
-	}
-
-	vk::Buffer stagingBuffer;
-	Span<std::byte> stagingHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UniformBufferStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging, &stagingBuffer, &stagingHostMappedBytes))
-	{
-		DebugLogErrorFormat("Couldn't create staging buffer for light.");
-		this->uniformBufferHeapManagerDeviceLocal.freeBufferMapping(buffer);
-		this->device.destroyBuffer(buffer);
-		this->lightPool.free(id);
-		return -1;
-	}
-
-	VulkanLight &light = this->lightPool.get(id);
-	light.init(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, buffer, stagingBuffer, stagingHostMappedBytes);
-
-	return id;
-}
-
-void VulkanRenderBackend::freeLight(RenderLightID id)
-{
-	auto commandBufferFunc = [this, id]()
-	{
-		VulkanLight *light = this->lightPool.tryGet(id);
-		if (light != nullptr)
-		{
-			if (light->stagingBuffer)
-			{
-				this->uniformBufferHeapManagerStaging.freeBufferMapping(light->stagingBuffer);
-				this->device.destroyBuffer(light->stagingBuffer);
-			}
-
-			if (light->buffer)
-			{
-				this->uniformBufferHeapManagerDeviceLocal.freeBufferMapping(light->buffer);
-				this->device.destroyBuffer(light->buffer);
-			}
-
-			this->lightPool.free(id);
-		}
-	};
-
-	this->freeCommands.emplace_back(std::move(commandBufferFunc));
-}
-
-bool VulkanRenderBackend::populateLight(RenderLightID id, const Double3 &point, double startRadius, double endRadius)
-{
-	// @todo
-	//DebugLogWarning("VulkanRenderBackend::populateLight() not implemented");
-	return true;
 }
 
 ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, int bytesPerTexel)

@@ -16,22 +16,37 @@ struct RenderCamera;
 
 struct RenderLight
 {
-	RenderLightID id;
 	WorldDouble3 position;
 	double startRadius, endRadius;
-	bool enabled;
 
 	RenderLight();
+};
+
+struct RenderLightEntry
+{
+	RenderLight light;
+	bool enabled;
+
+	RenderLightEntry();
 };
 
 class RenderLightManager
 {
 private:
 	RenderLight playerLight;
-	std::unordered_map<EntityInstanceID, RenderLight> entityLights;
-	std::vector<RenderLightID> visibleLightIDs;
+	std::unordered_map<EntityInstanceID, RenderLightEntry> entityLights;
+	UniformBufferID visibleLightsBufferID;
+	int visibleLightCount;
 public:
-	Span<const RenderLightID> getVisibleLightIDs() const;
+	static constexpr int MAX_VISIBLE_LIGHTS = 256;
+
+	RenderLightManager();
+
+	bool init(Renderer &renderer);
+	void shutdown(Renderer &renderer);
+	
+	UniformBufferID getVisibleLightsBufferID() const;
+	int getVisibleLightCount();
 
 	void loadScene(Renderer &renderer);
 	void update(const RenderCamera &camera, bool nightLightsAreActive, bool isFogActive, bool playerHasLight,

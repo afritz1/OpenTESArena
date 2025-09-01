@@ -6,6 +6,8 @@
 #include "RendererUtils.h"
 #include "RenderLightManager.h"
 
+#include "components/utilities/Span.h"
+
 namespace
 {
 	Double3 GetLightPositionInEntity(const WorldDouble3 &entityPos, const BoundingBox3D &entityBBox)
@@ -17,51 +19,64 @@ namespace
 
 RenderLight::RenderLight()
 {
-	this->id = -1;
 	this->startRadius = 0.0;
 	this->endRadius = 0.0;
+}
+
+RenderLightEntry::RenderLightEntry()
+{
 	this->enabled = false;
 }
 
-Span<const RenderLightID> RenderLightManager::getVisibleLightIDs() const
+RenderLightManager::RenderLightManager()
 {
-	return this->visibleLightIDs;
+	this->visibleLightsBufferID = -1;
+}
+
+bool RenderLightManager::init(Renderer &renderer)
+{
+	this->visibleLightsBufferID = renderer.createUniformBufferLights(RenderLightManager::MAX_VISIBLE_LIGHTS);
+	if (this->visibleLightsBufferID < 0)
+	{
+		DebugLogError("Couldn't create visible lights uniform buffer.");
+		return false;
+	}
+
+	return true;
+}
+
+void RenderLightManager::shutdown(Renderer &renderer)
+{
+	if (this->visibleLightsBufferID >= 0)
+	{
+		renderer.freeUniformBuffer(this->visibleLightsBufferID);
+		this->visibleLightsBufferID = -1;
+	}
+}
+
+UniformBufferID RenderLightManager::getVisibleLightsBufferID() const
+{
+	return this->visibleLightsBufferID;
+}
+
+int RenderLightManager::getVisibleLightCount()
+{
+	return this->visibleLightCount;
 }
 
 void RenderLightManager::loadScene(Renderer &renderer)
 {
-	DebugAssert(this->playerLight.id < 0);
-	this->playerLight.id = renderer.createLight();
+	
 }
 
 void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreActive, bool isFogActive, bool playerHasLight,
 	const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
-	// Update player light.
-	this->playerLight.position = camera.worldPoint;
-
-	double newPlayerLightStartRadius, newPlayerLightEndRadius;
-	if (isFogActive)
-	{
-		newPlayerLightStartRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_START_RADIUS;
-		newPlayerLightEndRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_END_RADIUS;
-	}
-	else
-	{
-		newPlayerLightStartRadius = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
-		newPlayerLightEndRadius = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
-	}
-
-	renderer.populateLight(this->playerLight.id, this->playerLight.position, newPlayerLightStartRadius, newPlayerLightEndRadius);
-
-	// Free destroyed entity lights.
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
 		const auto entityLightIter = this->entityLights.find(entityInstID);
 		if (entityLightIter != this->entityLights.end())
 		{
-			const RenderLight &entityLight = entityLightIter->second;
-			renderer.freeLight(entityLight.id);
 			this->entityLights.erase(entityLightIter);
 		}
 	}
@@ -89,41 +104,50 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 				continue;
 			}
 
-			RenderLight entityLight;
-			entityLight.id = renderer.createLight();
-			if (entityLight.id < 0)
-			{
-				DebugLogErrorFormat("Couldn't allocate render light ID for entity %d in chunk (%s).", entityInstID, entityChunkPos.toString().c_str());
-				break;
-			}
+			RenderLightEntry entityLight;
+			entityLight.light.position = Double3::Zero;
 
 			// The original game doesn't seem to update a light's radius after transitioning levels, it just uses the "S:#" from the start level .INF.
 			const double lightEndRadius = *entityLightRadius;
-			entityLight.startRadius = lightEndRadius * 0.50;
-			entityLight.endRadius = lightEndRadius;
-			if (!renderer.populateLight(entityLight.id, Double3::Zero, entityLight.startRadius, entityLight.endRadius))
-			{
-				DebugLogErrorFormat("Couldn't populate light for entity %d in chunk (%s).", entityInstID, entityChunkPos.toString().c_str());
-			}
+			entityLight.light.startRadius = lightEndRadius * 0.50;
+			entityLight.light.endRadius = lightEndRadius;
+
+			entityLight.enabled = false;
 
 			this->entityLights.emplace(entityInstID, std::move(entityLight));
 		}
 	}
 
-	// Update entity light positions and determine lights that contribute to rendering.
-	std::vector<const RenderLight*> enabledLights;
-	enabledLights.reserve(this->entityLights.size());
+	std::vector<RenderLight> visibleLights;
+	visibleLights.reserve(this->entityLights.size());
 
-	for (auto &pair : this->entityLights)
+	if (playerHasLight)
+	{
+		this->playerLight.position = camera.worldPoint;
+
+		if (isFogActive)
+		{
+			this->playerLight.startRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_START_RADIUS;
+			this->playerLight.endRadius = ArenaRenderUtils::PLAYER_FOG_LIGHT_END_RADIUS;
+		}
+		else
+		{
+			this->playerLight.startRadius = ArenaRenderUtils::PLAYER_LIGHT_START_RADIUS;
+			this->playerLight.endRadius = ArenaRenderUtils::PLAYER_LIGHT_END_RADIUS;
+		}
+
+		visibleLights.emplace_back(this->playerLight);
+	}
+
+	for (std::pair<const EntityInstanceID, RenderLightEntry> &pair : this->entityLights)
 	{
 		const EntityInstanceID entityInstID = pair.first;
-		RenderLight &entityLight = pair.second;
+		RenderLightEntry &entityLight = pair.second;
 
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
 		const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-		entityLight.position = GetLightPositionInEntity(entityPosition, entityBBox);
-		renderer.populateLight(entityLight.id, entityLight.position, entityLight.startRadius, entityLight.endRadius);
+		entityLight.light.position = GetLightPositionInEntity(entityPosition, entityBBox);
 
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 		entityLight.enabled = !EntityUtils::isStreetlight(entityDef) || nightLightsAreActive;
@@ -132,11 +156,11 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 			continue;
 		}
 
-		const double entityLightWidth = entityLight.endRadius * 2.0;
+		const double entityLightWidth = entityLight.light.endRadius * 2.0;
 		const double entityLightHeight = entityLightWidth;
 		const double entityLightDepth = entityLightWidth;
 		BoundingBox3D entityLightBBox;
-		entityLightBBox.init(entityLight.position, entityLightWidth, entityLightHeight, entityLightDepth);
+		entityLightBBox.init(entityLight.light.position, entityLightWidth, entityLightHeight, entityLightDepth);
 
 		bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
 		RendererUtils::getBBoxVisibilityInFrustum(entityLightBBox, camera, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
@@ -145,44 +169,24 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 			continue;
 		}
 		
-		enabledLights.emplace_back(&entityLight);
+		visibleLights.emplace_back(entityLight.light);
 	}
 
-	std::sort(enabledLights.begin(), enabledLights.end(),
-		[&camera](const RenderLight *a, const RenderLight *b)
+	std::sort(visibleLights.begin(), visibleLights.end(),
+		[&camera](const RenderLight &a, const RenderLight &b)
 	{
-		const double aDistSqr = (a->position - camera.worldPoint).lengthSquared();
-		const double bDistSqr = (b->position - camera.worldPoint).lengthSquared();
+		const double aDistSqr = (a.position - camera.worldPoint).lengthSquared();
+		const double bDistSqr = (b.position - camera.worldPoint).lengthSquared();
 		return aDistSqr < bDistSqr;
 	});
 
-	this->visibleLightIDs.clear();
+	this->visibleLightCount = std::min(static_cast<int>(visibleLights.size()), RenderLightManager::MAX_VISIBLE_LIGHTS);
 
-	if (playerHasLight)
-	{
-		this->visibleLightIDs.emplace_back(this->playerLight.id);
-	}
-
-	for (const RenderLight *enabledLight : enabledLights)
-	{
-		this->visibleLightIDs.emplace_back(enabledLight->id);
-	}	
+	Span<const RenderLight> visibleLightsView(visibleLights.data(), this->visibleLightCount);
+	renderer.populateUniformBufferLights(this->visibleLightsBufferID, visibleLightsView);
 }
 
 void RenderLightManager::unloadScene(Renderer &renderer)
 {
-	if (this->playerLight.id >= 0)
-	{
-		renderer.freeLight(this->playerLight.id);
-		this->playerLight.id = -1;
-	}
-
-	for (const auto &pair : this->entityLights)
-	{
-		const RenderLight &entityLight = pair.second;
-		renderer.freeLight(entityLight.id);
-	}
-
 	this->entityLights.clear();
-	this->visibleLightIDs.clear();
 }
