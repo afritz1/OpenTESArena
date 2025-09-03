@@ -757,7 +757,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.texCoordBufferID = this->fogTexCoordBufferID;
 		this->fogDrawCall.indexBufferID = this->fogIndexBufferID;
 		this->fogDrawCall.materialID = this->fogMaterialID;
-		this->fogDrawCall.multipassType = RenderMultipassType::None;
+		this->fogDrawCall.multipassType = RenderMultipassType::Ghosts;
 	}
 }
 
