@@ -9,7 +9,6 @@ layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
 } screenSpaceAnim;
 
 layout(set = 0, binding = 3) uniform usampler2D framebufferSampler;
-layout(set = 0, binding = 4) uniform sampler2D paletteSampler;
 layout(set = 0, binding = 5) uniform usampler2D lightTableSampler;
 layout(set = 2, binding = 0) uniform usampler2D textureSampler;
 
