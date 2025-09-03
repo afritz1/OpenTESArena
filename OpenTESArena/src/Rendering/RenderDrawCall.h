@@ -1,8 +1,6 @@
 #ifndef RENDER_DRAW_CALL_H
 #define RENDER_DRAW_CALL_H
 
-#include <optional>
-
 #include "RenderMaterialUtils.h"
 #include "RenderMeshUtils.h"
 #include "RenderShaderUtils.h"
@@ -20,6 +18,8 @@ struct RenderDrawCall
 	IndexBufferID indexBufferID;
 
 	RenderMaterialID materialID;
+
+	RenderMultipassType multipassType;
 
 	RenderDrawCall();
 

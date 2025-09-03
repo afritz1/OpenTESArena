@@ -2,14 +2,7 @@
 
 RenderDrawCall::RenderDrawCall()
 {
-	this->transformBufferID = -1;
-	this->transformIndex = -1;
-	this->preScaleTranslationBufferID = -1;
-	this->positionBufferID = -1;
-	this->normalBufferID = -1;
-	this->texCoordBufferID = -1;
-	this->indexBufferID = -1;
-	this->materialID = -1;
+	this->clear();
 }
 
 void RenderDrawCall::clear()
@@ -22,4 +15,5 @@ void RenderDrawCall::clear()
 	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
 	this->materialID = -1;
+	this->multipassType = RenderMultipassType::None;
 }

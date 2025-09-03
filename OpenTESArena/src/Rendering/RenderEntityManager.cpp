@@ -555,6 +555,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
 			drawCall.indexBufferID = this->meshInst.indexBufferID;
 			drawCall.materialID = materialID;
+			drawCall.multipassType = RenderMultipassType::None;
 
 			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
 			{
@@ -574,6 +575,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 
 				RenderDrawCall puddleSecondPassDrawCall = drawCall;
 				puddleSecondPassDrawCall.materialID = puddleSecondPassMaterialID;
+				// @todo RenderMultipassType::Puddle
 
 				this->puddleSecondPassDrawCallsCache.emplace_back(std::move(puddleSecondPassDrawCall));
 			}

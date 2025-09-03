@@ -42,8 +42,8 @@ namespace
 	constexpr vk::Format UiTextureFormat = ObjectTextureFormat32Bit;
 
 	constexpr vk::ImageUsageFlags SwapchainImageUsageFlags = vk::ImageUsageFlagBits::eColorAttachment;
-	constexpr vk::ImageUsageFlags ColorBufferUsageFlags = vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
-	constexpr vk::ImageUsageFlags DepthBufferUsageFlags = vk::ImageUsageFlagBits::eDepthStencilAttachment;
+	constexpr vk::ImageUsageFlags ColorBufferUsageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
+	constexpr vk::ImageUsageFlags DepthBufferUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
 	constexpr vk::ColorSpaceKHR SwapchainColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear;
 
@@ -65,8 +65,8 @@ namespace
 	constexpr vk::BufferUsageFlags UiTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
-	constexpr int MaxGlobalUniformBufferDescriptors = 3;
-	constexpr int MaxGlobalImageDescriptors = 2;
+	constexpr int MaxGlobalUniformBufferDescriptors = 16;
+	constexpr int MaxGlobalImageDescriptors = 16;
 	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalImageDescriptors;
 
 	constexpr int MaxTransformUniformBufferDynamicDescriptors = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
@@ -159,7 +159,25 @@ namespace
 		VulkanPipelineKey(VertexShaderType::UI, PixelShaderType::UiTexture, false, false, false, true)
 	};
 
-	constexpr int UiPipelineKeyIndex = static_cast<int>(std::size(RequiredPipelines) - 1);
+	constexpr int GetPipelineKeyIndex(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
+	{
+		for (int i = 0; i < static_cast<int>(std::size(RequiredPipelines)); i++)
+		{
+			const VulkanPipelineKey key = RequiredPipelines[i];
+			if ((key.vertexShaderType == vertexShaderType) && (key.fragmentShaderType == fragmentShaderType) &&
+				(key.depthRead == depthRead) && (key.depthWrite == depthWrite) &&
+				(key.backFaceCulling == backFaceCulling && key.alphaBlend == alphaBlend))
+			{
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	constexpr int SkyBackgroundPipelineKeyIndex = GetPipelineKeyIndex(VertexShaderType::Basic, PixelShaderType::Opaque, false, false, false, false);
+	constexpr int StarsPipelineKeyIndex = GetPipelineKeyIndex(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false, false);
+	constexpr int UiPipelineKeyIndex = GetPipelineKeyIndex(VertexShaderType::UI, PixelShaderType::UiTexture, false, false, false, true);
 }
 
 // Vulkan application
@@ -880,58 +898,46 @@ namespace
 		return true;
 	}
 
-	void TransitionImageLayout(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::CommandBuffer commandBuffer)
+	void ApplyImageLayoutTransition(vk::Image image, vk::ImageAspectFlags imageAspectFlags, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask,
+		vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::CommandBuffer commandBuffer)
 	{
-		const bool isTransitionToInitialPopulate = (oldLayout == vk::ImageLayout::eUndefined) && (newLayout == vk::ImageLayout::eTransferDstOptimal);
-		const bool isTransitionToShaderReadOnly = (oldLayout == vk::ImageLayout::eTransferDstOptimal) && (newLayout == vk::ImageLayout::eShaderReadOnlyOptimal);
-
-		vk::ImageMemoryBarrier imageMemoryBarrier;
-		imageMemoryBarrier.oldLayout = oldLayout;
-		imageMemoryBarrier.newLayout = newLayout;
-		imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		imageMemoryBarrier.image = image;
-		imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-		imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-		imageMemoryBarrier.subresourceRange.levelCount = 1;
-		imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-		imageMemoryBarrier.subresourceRange.layerCount = 1;
-
-		vk::PipelineStageFlags srcPipelineStageFlags;
-		vk::PipelineStageFlags dstPipelineStageFlags;
-		if (isTransitionToInitialPopulate)
-		{
-			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
-			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
-			srcPipelineStageFlags = vk::PipelineStageFlagBits::eTopOfPipe;
-			dstPipelineStageFlags = vk::PipelineStageFlagBits::eTransfer;
-		}
-		else if (isTransitionToShaderReadOnly)
-		{
-			imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-			imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
-			srcPipelineStageFlags = vk::PipelineStageFlagBits::eTransfer;
-			dstPipelineStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
-		}
-		else
-		{
-			DebugLogErrorFormat("Unsupported image layout transition %d -> %d.", oldLayout, newLayout);
-			return;
-		}
+		vk::ImageMemoryBarrier barrier;
+		barrier.srcAccessMask = srcAccessMask;
+		barrier.dstAccessMask = dstAccessMask;
+		barrier.oldLayout = oldLayout;
+		barrier.newLayout = newLayout;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = image;
+		barrier.subresourceRange.aspectMask = imageAspectFlags;
+		barrier.subresourceRange.baseMipLevel = 0;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.baseArrayLayer = 0;
+		barrier.subresourceRange.layerCount = 1;
 
 		commandBuffer.pipelineBarrier(
-			srcPipelineStageFlags,
-			dstPipelineStageFlags,
+			srcStageMask,
+			dstStageMask,
 			vk::DependencyFlags(),
 			vk::ArrayProxy<vk::MemoryBarrier>(),
 			vk::ArrayProxy<vk::BufferMemoryBarrier>(),
-			imageMemoryBarrier);
+			barrier);
+	}
+
+	void ApplyColorImageLayoutTransition(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask,
+		vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::CommandBuffer commandBuffer)
+	{
+		ApplyImageLayoutTransition(image, vk::ImageAspectFlagBits::eColor, oldLayout, newLayout, srcStageMask, dstStageMask, srcAccessMask, dstAccessMask, commandBuffer);
+	}
+
+	void ApplyDepthImageLayoutTransition(vk::Image image, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::PipelineStageFlags srcStageMask, vk::PipelineStageFlags dstStageMask,
+		vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::CommandBuffer commandBuffer)
+	{
+		ApplyImageLayoutTransition(image, vk::ImageAspectFlagBits::eDepth, oldLayout, newLayout, srcStageMask, dstStageMask, srcAccessMask, dstAccessMask, commandBuffer);
 	}
 
 	void CopyBufferToImage(vk::Buffer sourceBuffer, vk::Image destinationImage, int imageWidth, int imageHeight, vk::CommandBuffer commandBuffer)
 	{
-		const vk::ImageLayout imageLayout = vk::ImageLayout::eTransferDstOptimal;
-
 		vk::BufferImageCopy bufferImageCopy;
 		bufferImageCopy.bufferOffset = 0;
 		bufferImageCopy.bufferRowLength = 0;
@@ -943,7 +949,23 @@ namespace
 		bufferImageCopy.imageOffset = vk::Offset3D();
 		bufferImageCopy.imageExtent = vk::Extent3D(imageWidth, imageHeight, 1);
 
-		commandBuffer.copyBufferToImage(sourceBuffer, destinationImage, imageLayout, bufferImageCopy);
+		commandBuffer.copyBufferToImage(sourceBuffer, destinationImage, vk::ImageLayout::eTransferDstOptimal, bufferImageCopy);
+	}
+
+	void CopyColorImageToImage(vk::Image srcImage, vk::Image dstImage, vk::Extent2D extent, vk::CommandBuffer commandBuffer)
+	{
+		vk::ImageCopy imageCopy;
+		imageCopy.srcSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageCopy.srcSubresource.mipLevel = 0;
+		imageCopy.srcSubresource.baseArrayLayer = 0;
+		imageCopy.srcSubresource.layerCount = 1;
+		imageCopy.dstSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		imageCopy.dstSubresource.mipLevel = 0;
+		imageCopy.dstSubresource.baseArrayLayer = 0;
+		imageCopy.dstSubresource.layerCount = 1;
+		imageCopy.extent = vk::Extent3D(extent.width, extent.height, 1);
+
+		commandBuffer.copyImage(srcImage, vk::ImageLayout::eTransferSrcOptimal, dstImage, vk::ImageLayout::eTransferDstOptimal, imageCopy);
 	}
 }
 
@@ -1219,21 +1241,21 @@ namespace
 		vk::AttachmentDescription colorAttachmentDescription;
 		colorAttachmentDescription.format = ColorBufferFormat;
 		colorAttachmentDescription.samples = vk::SampleCountFlagBits::e1;
-		colorAttachmentDescription.loadOp = vk::AttachmentLoadOp::eClear;
+		colorAttachmentDescription.loadOp = vk::AttachmentLoadOp::eLoad;
 		colorAttachmentDescription.storeOp = vk::AttachmentStoreOp::eStore;
 		colorAttachmentDescription.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
 		colorAttachmentDescription.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-		colorAttachmentDescription.initialLayout = vk::ImageLayout::eUndefined;
-		colorAttachmentDescription.finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal; // For drawing to swapchain image after subpasses finish.
+		colorAttachmentDescription.initialLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		colorAttachmentDescription.finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
 
 		vk::AttachmentDescription depthAttachmentDescription;
 		depthAttachmentDescription.format = DepthBufferFormat;
 		depthAttachmentDescription.samples = vk::SampleCountFlagBits::e1;
-		depthAttachmentDescription.loadOp = vk::AttachmentLoadOp::eClear;
-		depthAttachmentDescription.storeOp = vk::AttachmentStoreOp::eDontCare;
+		depthAttachmentDescription.loadOp = vk::AttachmentLoadOp::eLoad;
+		depthAttachmentDescription.storeOp = vk::AttachmentStoreOp::eStore;
 		depthAttachmentDescription.stencilLoadOp = vk::AttachmentLoadOp::eDontCare;
 		depthAttachmentDescription.stencilStoreOp = vk::AttachmentStoreOp::eDontCare;
-		depthAttachmentDescription.initialLayout = vk::ImageLayout::eUndefined;
+		depthAttachmentDescription.initialLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 		depthAttachmentDescription.finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
 
 		const vk::AttachmentDescription attachmentDescriptions[] =
@@ -1545,7 +1567,8 @@ namespace
 		return true;
 	}
 
-	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer ambientLightBuffer, vk::Buffer screenSpaceAnimBuffer)
+	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer ambientLightBuffer, vk::Buffer screenSpaceAnimBuffer,
+		vk::ImageView sampledFramebufferImageView, vk::Sampler sampledFramebufferSampler, vk::ImageView paletteImageView, vk::Sampler paletteSampler)
 	{
 		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
 		cameraDescriptorBufferInfo.buffer = cameraBuffer;
@@ -1561,6 +1584,16 @@ namespace
 		screenSpaceAnimDescriptorBufferInfo.buffer = screenSpaceAnimBuffer;
 		screenSpaceAnimDescriptorBufferInfo.offset = 0;
 		screenSpaceAnimDescriptorBufferInfo.range = VK_WHOLE_SIZE;
+
+		vk::DescriptorImageInfo sampledFramebufferDescriptorImageInfo;
+		sampledFramebufferDescriptorImageInfo.sampler = sampledFramebufferSampler;
+		sampledFramebufferDescriptorImageInfo.imageView = sampledFramebufferImageView;
+		sampledFramebufferDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::DescriptorImageInfo paletteDescriptorImageInfo;
+		paletteDescriptorImageInfo.sampler = paletteSampler;
+		paletteDescriptorImageInfo.imageView = paletteImageView;
+		paletteDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 		vk::WriteDescriptorSet cameraWriteDescriptorSet;
 		cameraWriteDescriptorSet.dstSet = descriptorSet;
@@ -1586,7 +1619,30 @@ namespace
 		screenSpaceAnimWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
 		screenSpaceAnimWriteDescriptorSet.pBufferInfo = &screenSpaceAnimDescriptorBufferInfo;
 
-		const vk::WriteDescriptorSet writeDescriptorSets[] = { cameraWriteDescriptorSet, ambientLightWriteDescriptorSet, screenSpaceAnimWriteDescriptorSet };
+		vk::WriteDescriptorSet sampledFramebufferWriteDescriptorSet;
+		sampledFramebufferWriteDescriptorSet.dstSet = descriptorSet;
+		sampledFramebufferWriteDescriptorSet.dstBinding = 3;
+		sampledFramebufferWriteDescriptorSet.dstArrayElement = 0;
+		sampledFramebufferWriteDescriptorSet.descriptorCount = 1;
+		sampledFramebufferWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		sampledFramebufferWriteDescriptorSet.pImageInfo = &sampledFramebufferDescriptorImageInfo;
+
+		vk::WriteDescriptorSet paletteWriteDescriptorSet;
+		paletteWriteDescriptorSet.dstSet = descriptorSet;
+		paletteWriteDescriptorSet.dstBinding = 4;
+		paletteWriteDescriptorSet.dstArrayElement = 0;
+		paletteWriteDescriptorSet.descriptorCount = 1;
+		paletteWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		paletteWriteDescriptorSet.pImageInfo = &paletteDescriptorImageInfo;
+
+		const vk::WriteDescriptorSet writeDescriptorSets[] =
+		{
+			cameraWriteDescriptorSet,
+			ambientLightWriteDescriptorSet,
+			screenSpaceAnimWriteDescriptorSet,
+			sampledFramebufferWriteDescriptorSet,
+			paletteWriteDescriptorSet
+		};
 
 		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
@@ -2410,29 +2466,32 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	this->internalExtent = vk::Extent2D(initSettings.internalWidth, initSettings.internalHeight);
 
-	const vk::MemoryAllocateInfo colorMemoryAllocateInfo = CreateImageMemoryAllocateInfo(this->device, this->internalExtent.width, this->internalExtent.height, ColorBufferFormat, ColorBufferUsageFlags, this->physicalDevice);
-	if (!TryAllocateMemory(this->device, colorMemoryAllocateInfo, &this->colorDeviceMemory))
+	for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 	{
-		DebugLogError("Couldn't allocate color buffer image memory.");
-		return false;
-	}
+		const vk::MemoryAllocateInfo colorMemoryAllocateInfo = CreateImageMemoryAllocateInfo(this->device, this->internalExtent.width, this->internalExtent.height, ColorBufferFormat, ColorBufferUsageFlags, this->physicalDevice);
+		if (!TryAllocateMemory(this->device, colorMemoryAllocateInfo, &this->colorDeviceMemories[i]))
+		{
+			DebugLogError("Couldn't allocate color buffer image memory.");
+			return false;
+		}
 
-	if (!TryCreateImage(this->device, this->internalExtent.width, this->internalExtent.height, ColorBufferFormat, ColorBufferUsageFlags, this->graphicsQueueFamilyIndex, &this->colorImage))
-	{
-		DebugLogError("Couldn't create color buffer image.");
-		return false;
-	}
+		if (!TryCreateImage(this->device, this->internalExtent.width, this->internalExtent.height, ColorBufferFormat, ColorBufferUsageFlags, this->graphicsQueueFamilyIndex, &this->colorImages[i]))
+		{
+			DebugLogError("Couldn't create color buffer image.");
+			return false;
+		}
 
-	if (!TryBindImageToMemory(this->device, this->colorImage, this->colorDeviceMemory, 0))
-	{
-		DebugLogError("Couldn't bind color buffer image to memory.");
-		return false;
-	}
+		if (!TryBindImageToMemory(this->device, this->colorImages[i], this->colorDeviceMemories[i], 0))
+		{
+			DebugLogError("Couldn't bind color buffer image to memory.");
+			return false;
+		}
 
-	if (!TryCreateImageView(this->device, ColorBufferFormat, vk::ImageAspectFlagBits::eColor, this->colorImage, &this->colorImageView))
-	{
-		DebugLogError("Couldn't create color buffer image view.");
-		return false;
+		if (!TryCreateImageView(this->device, ColorBufferFormat, vk::ImageAspectFlagBits::eColor, this->colorImages[i], &this->colorImageViews[i]))
+		{
+			DebugLogError("Couldn't create color buffer image view.");
+			return false;
+		}
 	}
 
 	if (!TryCreateSampler(this->device, &this->colorSampler))
@@ -2478,10 +2537,13 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!TryCreateSceneFramebuffer(this->device, this->colorImageView, this->depthImageView, this->internalExtent, this->sceneRenderPass, &this->sceneFramebuffer))
+	for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 	{
-		DebugLogError("Couldn't create scene framebuffer.");
-		return false;
+		if (!TryCreateSceneFramebuffer(this->device, this->colorImageViews[i], this->depthImageView, this->internalExtent, this->sceneRenderPass, &this->sceneFramebuffers[i]))
+		{
+			DebugLogErrorFormat("Couldn't create scene framebuffer %d.", i);
+			return false;
+		}
 	}
 
 	this->uiFramebuffers.init(this->swapchainImageViews.getCount());
@@ -2591,6 +2653,10 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
 		// Screen space animation
 		CreateDescriptorSetLayoutBinding(2, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
+		// Sampled framebuffer
+		CreateDescriptorSetLayoutBinding(3, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
+		// Palette
+		CreateDescriptorSetLayoutBinding(4, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
 	};
 
 	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
@@ -2651,10 +2717,13 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!TryCreateDescriptorSet(this->device, this->globalDescriptorSetLayout, this->globalDescriptorPool, &this->globalDescriptorSet))
+	for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 	{
-		DebugLogError("Couldn't create global descriptor set.");
-		return false;
+		if (!TryCreateDescriptorSet(this->device, this->globalDescriptorSetLayout, this->globalDescriptorPool, &this->globalDescriptorSets[i]))
+		{
+			DebugLogErrorFormat("Couldn't create global descriptor set %d.", i);
+			return false;
+		}
 	}
 
 	if (!TryCreateDescriptorSet(this->device, this->conversionDescriptorSetLayout, this->globalDescriptorPool, &this->conversionDescriptorSet))
@@ -2680,7 +2749,9 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 	this->graphicsPipelines.init(static_cast<int>(std::size(RequiredPipelines)));
 	for (int i = 0; i < this->graphicsPipelines.getCount(); i++)
 	{
-		const VulkanPipelineKey &requiredPipelineKey = RequiredPipelines[i];
+		const VulkanPipelineKey requiredPipelineKey = RequiredPipelines[i];
+		VulkanPipeline &pipeline = this->graphicsPipelines[i];
+
 		const VertexShaderType vertexShaderType = requiredPipelineKey.vertexShaderType;
 		const PixelShaderType fragmentShaderType = requiredPipelineKey.fragmentShaderType;
 
@@ -2718,7 +2789,6 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 		DebugAssert(fragmentShaderIter != this->fragmentShaders.end());
 
-		VulkanPipeline &pipeline = this->graphicsPipelines[i];
 		pipeline.keyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, requiredPipelineKey.depthRead, requiredPipelineKey.depthWrite, requiredPipelineKey.backFaceCulling, requiredPipelineKey.alphaBlend);
 
 		if (!TryCreateGraphicsPipeline(this->device, vertexShaderIter->module, fragmentShaderIter->module, positionComponentsPerVertex, requiredPipelineKey.depthRead,
@@ -3212,8 +3282,12 @@ void VulkanRenderBackend::shutdown()
 
 		if (this->globalDescriptorPool)
 		{
-			this->globalDescriptorSet = nullptr;
 			this->conversionDescriptorSet = nullptr;
+
+			for (vk::DescriptorSet &descriptorSet : this->globalDescriptorSets)
+			{
+				descriptorSet = nullptr;
+			}
 
 			this->device.destroyDescriptorPool(this->globalDescriptorPool);
 			this->globalDescriptorPool = nullptr;
@@ -3272,10 +3346,13 @@ void VulkanRenderBackend::shutdown()
 
 		this->uiFramebuffers.clear();
 
-		if (this->sceneFramebuffer)
+		for (vk::Framebuffer &framebuffer : this->sceneFramebuffers)
 		{
-			this->device.destroyFramebuffer(this->sceneFramebuffer);
-			this->sceneFramebuffer = nullptr;
+			if (framebuffer)
+			{
+				this->device.destroyFramebuffer(framebuffer);
+				framebuffer = nullptr;
+			}
 		}
 
 		if (this->uiRenderPass)
@@ -3314,22 +3391,31 @@ void VulkanRenderBackend::shutdown()
 			this->colorSampler = nullptr;
 		}
 
-		if (this->colorImageView)
+		for (vk::ImageView &imageView : this->colorImageViews)
 		{
-			this->device.destroyImageView(this->colorImageView);
-			this->colorImageView = nullptr;
+			if (imageView)
+			{
+				this->device.destroyImageView(imageView);
+				imageView = nullptr;
+			}
 		}
 
-		if (this->colorImage)
+		for (vk::Image &image : this->colorImages)
 		{
-			this->device.destroyImage(this->colorImage);
-			this->colorImage = nullptr;
+			if (image)
+			{
+				this->device.destroyImage(image);
+				image = nullptr;
+			}
 		}
 
-		if (this->colorDeviceMemory)
+		for (vk::DeviceMemory &deviceMemory : this->colorDeviceMemories)
 		{
-			this->device.freeMemory(this->colorDeviceMemory);
-			this->colorDeviceMemory = nullptr;
+			if (deviceMemory)
+			{
+				this->device.freeMemory(deviceMemory);
+				deviceMemory = nullptr;
+			}
 		}
 
 		for (vk::ImageView imageView : this->swapchainImageViews)
@@ -3394,10 +3480,13 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 
 	this->uiFramebuffers.clear();
 
-	if (this->sceneFramebuffer)
+	for (vk::Framebuffer &framebuffer : this->sceneFramebuffers)
 	{
-		this->device.destroyFramebuffer(this->sceneFramebuffer);
-		this->sceneFramebuffer = nullptr;
+		if (framebuffer)
+		{
+			this->device.destroyFramebuffer(framebuffer);
+			framebuffer = nullptr;
+		}
 	}
 
 	if (this->uiRenderPass)
@@ -3436,22 +3525,31 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		this->colorSampler = nullptr;
 	}
 
-	if (this->colorImageView)
+	for (vk::ImageView &imageView : this->colorImageViews)
 	{
-		this->device.destroyImageView(this->colorImageView);
-		this->colorImageView = nullptr;
+		if (imageView)
+		{
+			this->device.destroyImageView(imageView);
+			imageView = nullptr;
+		}
 	}
 
-	if (this->colorImage)
+	for (vk::Image &image : this->colorImages)
 	{
-		this->device.destroyImage(this->colorImage);
-		this->colorImage = nullptr;
+		if (image)
+		{
+			this->device.destroyImage(image);
+			image = nullptr;
+		}
 	}
 
-	if (this->colorDeviceMemory)
+	for (vk::DeviceMemory &deviceMemory : this->colorDeviceMemories)
 	{
-		this->device.freeMemory(this->colorDeviceMemory);
-		this->colorDeviceMemory = nullptr;
+		if (deviceMemory)
+		{
+			this->device.freeMemory(deviceMemory);
+			deviceMemory = nullptr;
+		}
 	}
 
 	for (vk::ImageView imageView : this->swapchainImageViews)
@@ -3523,29 +3621,32 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		return;
 	}
 
-	const vk::MemoryAllocateInfo colorMemoryAllocateInfo = CreateImageMemoryAllocateInfo(this->device, this->internalExtent.width, this->internalExtent.height, ColorBufferFormat, ColorBufferUsageFlags, this->physicalDevice);
-	if (!TryAllocateMemory(this->device, colorMemoryAllocateInfo, &this->colorDeviceMemory))
+	for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 	{
-		DebugLogErrorFormat("Couldn't allocate color buffer image memory for resize to %dx%d.", windowWidth, windowHeight);
-		return;
-	}
+		const vk::MemoryAllocateInfo colorMemoryAllocateInfo = CreateImageMemoryAllocateInfo(this->device, this->internalExtent.width, this->internalExtent.height, ColorBufferFormat, ColorBufferUsageFlags, this->physicalDevice);
+		if (!TryAllocateMemory(this->device, colorMemoryAllocateInfo, &this->colorDeviceMemories[i]))
+		{
+			DebugLogErrorFormat("Couldn't allocate color buffer image memory for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
 
-	if (!TryCreateImage(this->device, this->internalExtent.width, this->internalExtent.height, ColorBufferFormat, ColorBufferUsageFlags, this->graphicsQueueFamilyIndex, &this->colorImage))
-	{
-		DebugLogErrorFormat("Couldn't create color buffer image for resize to %dx%d.", windowWidth, windowHeight);
-		return;
-	}
+		if (!TryCreateImage(this->device, this->internalExtent.width, this->internalExtent.height, ColorBufferFormat, ColorBufferUsageFlags, this->graphicsQueueFamilyIndex, &this->colorImages[i]))
+		{
+			DebugLogErrorFormat("Couldn't create color buffer image for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
 
-	if (!TryBindImageToMemory(this->device, this->colorImage, this->colorDeviceMemory, 0))
-	{
-		DebugLogErrorFormat("Couldn't bind color buffer image to memory for resize to %dx%d.", windowWidth, windowHeight);
-		return;
-	}
+		if (!TryBindImageToMemory(this->device, this->colorImages[i], this->colorDeviceMemories[i], 0))
+		{
+			DebugLogErrorFormat("Couldn't bind color buffer image to memory for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
 
-	if (!TryCreateImageView(this->device, ColorBufferFormat, vk::ImageAspectFlagBits::eColor, this->colorImage, &this->colorImageView))
-	{
-		DebugLogErrorFormat("Couldn't create color buffer image view for resize to %dx%d.", windowWidth, windowHeight);
-		return;
+		if (!TryCreateImageView(this->device, ColorBufferFormat, vk::ImageAspectFlagBits::eColor, this->colorImages[i], &this->colorImageViews[i]))
+		{
+			DebugLogErrorFormat("Couldn't create color buffer image view for resize to %dx%d.", windowWidth, windowHeight);
+			return;
+		}
 	}
 
 	if (!TryCreateSampler(this->device, &this->colorSampler))
@@ -3591,10 +3692,13 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		return;
 	}
 
-	if (!TryCreateSceneFramebuffer(this->device, this->colorImageView, this->depthImageView, this->internalExtent, this->sceneRenderPass, &this->sceneFramebuffer))
+	for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 	{
-		DebugLogErrorFormat("Couldn't create framebuffer for resize to %dx%d.", windowWidth, windowHeight);
-		return;
+		if (!TryCreateSceneFramebuffer(this->device, this->colorImageViews[i], this->depthImageView, this->internalExtent, this->sceneRenderPass, &this->sceneFramebuffers[i]))
+		{
+			DebugLogErrorFormat("Couldn't create framebuffer %d for resize to %dx%d.", i, windowWidth, windowHeight);
+			return;
+		}
 	}
 
 	this->uiFramebuffers.init(this->swapchainImageViews.getCount());
@@ -4178,9 +4282,28 @@ void VulkanRenderBackend::unlockObjectTexture(ObjectTextureID id)
 		const int bytesPerTexel = texture.bytesPerTexel;
 		vk::Image image = texture.image;
 		vk::Buffer stagingBuffer = texture.stagingBuffer;
-		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
+
+		ApplyColorImageLayoutTransition(
+			image,
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::AccessFlagBits::eNone,
+			vk::AccessFlagBits::eTransferWrite,
+			this->commandBuffer);
+
 		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
-		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
+
+		ApplyColorImageLayoutTransition(
+			image,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			vk::AccessFlagBits::eTransferWrite,
+			vk::AccessFlagBits::eShaderRead,
+			this->commandBuffer);
 	};
 
 	this->copyCommands.emplace_back(std::move(commandBufferFunc));
@@ -4333,9 +4456,28 @@ void VulkanRenderBackend::unlockUiTexture(UiTextureID id)
 		DebugAssert(texture.bytesPerTexel == 4);
 		vk::Image image = texture.image;
 		vk::Buffer stagingBuffer = texture.stagingBuffer;
-		TransitionImageLayout(image, vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal, this->commandBuffer);
+
+		ApplyColorImageLayoutTransition(
+			image,
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::AccessFlagBits::eNone,
+			vk::AccessFlagBits::eTransferWrite,
+			this->commandBuffer);
+
 		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
-		TransitionImageLayout(image, vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal, this->commandBuffer);
+
+		ApplyColorImageLayoutTransition(
+			image,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			vk::AccessFlagBits::eTransferWrite,
+			vk::AccessFlagBits::eShaderRead,
+			this->commandBuffer);
 	};
 
 	this->copyCommands.emplace_back(std::move(commandBufferFunc));
@@ -4374,7 +4516,7 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 	}
 
 	const vk::PipelineLayout pipelineLayout = this->pipelineLayouts[pipelineIndex];
-	const vk::Pipeline pipeline = this->graphicsPipelines[pipelineIndex].pipeline;
+	const VulkanPipeline &pipeline = this->graphicsPipelines[pipelineIndex];
 
 	vk::DescriptorSet descriptorSet;
 	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->materialDescriptorPool, &descriptorSet))
@@ -4399,7 +4541,7 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 	UpdateMaterialDescriptorSet(this->device, descriptorSet, texture0ImageView, texture1ImageView, texture0.sampler);
 
 	VulkanMaterial &material = this->materialPool.get(materialID);
-	material.init(pipeline, pipelineLayout, descriptorSet);
+	material.init(pipeline.pipeline, pipelineLayout, descriptorSet);
 
 	if (RenderShaderUtils::requiresPixelShaderParam(fragmentShaderType))
 	{
@@ -4513,20 +4655,75 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			vk::ArrayProxy<vk::ImageMemoryBarrier>());
 	}
 
-	vk::ClearValue sceneClearValues[2];
-	sceneClearValues[0].color = vk::ClearColorValue(0, 0, 0, 0); // Only uses R channel.
-	sceneClearValues[1].depthStencil = vk::ClearDepthStencilValue(1.0f, 0);
+	for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
+	{
+		constexpr vk::ClearColorValue sceneClearColor(0, 0, 0, 0); // Only uses R channel.
 
-	vk::RenderPassBeginInfo sceneRenderPassBeginInfo;
-	sceneRenderPassBeginInfo.renderPass = this->sceneRenderPass;
-	sceneRenderPassBeginInfo.framebuffer = this->sceneFramebuffer;
-	sceneRenderPassBeginInfo.renderArea.extent = this->internalExtent;
-	sceneRenderPassBeginInfo.clearValueCount = static_cast<uint32_t>(std::size(sceneClearValues));
-	sceneRenderPassBeginInfo.pClearValues = sceneClearValues;
+		vk::ImageSubresourceRange clearColorImageSubresourceRange;
+		clearColorImageSubresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+		clearColorImageSubresourceRange.baseMipLevel = 0;
+		clearColorImageSubresourceRange.levelCount = 1;
+		clearColorImageSubresourceRange.baseArrayLayer = 0;
+		clearColorImageSubresourceRange.layerCount = 1;
 
-	this->commandBuffer.beginRenderPass(sceneRenderPassBeginInfo, vk::SubpassContents::eInline);
+		ApplyColorImageLayoutTransition(
+			this->colorImages[i],
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::AccessFlagBits::eNone,
+			vk::AccessFlagBits::eTransferWrite,
+			this->commandBuffer);
+
+		this->commandBuffer.clearColorImage(this->colorImages[i], vk::ImageLayout::eTransferDstOptimal, sceneClearColor, clearColorImageSubresourceRange);
+
+		ApplyColorImageLayoutTransition(
+			this->colorImages[i],
+			vk::ImageLayout::eTransferDstOptimal,
+			vk::ImageLayout::eColorAttachmentOptimal,
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::AccessFlagBits::eTransferWrite,
+			vk::AccessFlagBits::eColorAttachmentWrite,
+			this->commandBuffer);
+	}
+
+	constexpr vk::ClearDepthStencilValue sceneClearDepthStencil(1.0f, 0);
+
+	vk::ImageSubresourceRange clearDepthImageSubresourceRange;
+	clearDepthImageSubresourceRange.aspectMask = vk::ImageAspectFlagBits::eDepth;
+	clearDepthImageSubresourceRange.baseMipLevel = 0;
+	clearDepthImageSubresourceRange.levelCount = 1;
+	clearDepthImageSubresourceRange.baseArrayLayer = 0;
+	clearDepthImageSubresourceRange.layerCount = 1;
+
+	ApplyDepthImageLayoutTransition(
+		this->depthImage,
+		vk::ImageLayout::eUndefined,
+		vk::ImageLayout::eTransferDstOptimal,
+		vk::PipelineStageFlagBits::eTopOfPipe,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::AccessFlagBits::eNone,
+		vk::AccessFlagBits::eTransferWrite,
+		this->commandBuffer);
+
+	this->commandBuffer.clearDepthStencilImage(this->depthImage, vk::ImageLayout::eTransferDstOptimal, sceneClearDepthStencil, clearDepthImageSubresourceRange);
+
+	ApplyDepthImageLayoutTransition(
+		this->depthImage,
+		vk::ImageLayout::eTransferDstOptimal,
+		vk::ImageLayout::eDepthStencilAttachmentOptimal,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eEarlyFragmentTests,
+		vk::AccessFlagBits::eTransferWrite,
+		vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+		this->commandBuffer);
 
 	constexpr vk::PipelineBindPoint pipelineBindPoint = vk::PipelineBindPoint::eGraphics;
+	const VulkanTexture *paletteTexture = nullptr;
+	int targetFramebufferIndex = 0; // Ping-pong depending on current scene render pass.
+	int inputFramebufferIndex = targetFramebufferIndex ^ 1;
 
 	const bool anySceneDrawCalls = renderCommandList.entryCount > 0;
 	if (anySceneDrawCalls)
@@ -4557,10 +4754,26 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		screenSpaceAnimValues[1] = sceneViewport.width;
 		screenSpaceAnimValues[2] = sceneViewport.height;
 
-		// @todo light table + light level calculation
-		UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSet, this->camera.stagingBuffer, this->ambientLight.stagingBuffer, this->screenSpaceAnim.stagingBuffer);
+		paletteTexture = &this->objectTexturePool.get(frameSettings.paletteTextureID);
+
+		ApplyColorImageLayoutTransition(
+			this->colorImages[inputFramebufferIndex],
+			vk::ImageLayout::eColorAttachmentOptimal,
+			vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			vk::AccessFlagBits::eColorAttachmentWrite,
+			vk::AccessFlagBits::eShaderRead,
+			this->commandBuffer);
+
+		for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
+		{
+			UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSets[i], this->camera.stagingBuffer, this->ambientLight.stagingBuffer, this->screenSpaceAnim.stagingBuffer,
+				this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler);
+		}
 
 		vk::Pipeline currentPipeline;
+		RenderMultipassType currentMultipassType = RenderMultipassType::None;
 		VertexPositionBufferID currentVertexPositionBufferID = -1;
 		VertexAttributeBufferID currentVertexTexCoordBufferID = -1;
 		IndexBufferID currentIndexBufferID = -1;
@@ -4570,17 +4783,89 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		{
 			for (const RenderDrawCall &drawCall : renderCommandList.entries[i])
 			{
+				const RenderMultipassType multipassType = drawCall.multipassType;
+				const bool isStarsBegin = (currentMultipassType != RenderMultipassType::Stars) && (multipassType == RenderMultipassType::Stars);
+				const bool isStarsEnd = (currentMultipassType == RenderMultipassType::Stars) && (multipassType != RenderMultipassType::Stars);
+
+				const bool shouldStartRenderPass = !currentPipeline || isStarsBegin || isStarsEnd;
+
 				const VulkanMaterial &material = this->materialPool.get(drawCall.materialID);
-				const vk::Pipeline pipeline = material.pipeline;
 				const vk::PipelineLayout pipelineLayout = material.pipelineLayout;
+				const vk::Pipeline pipeline = material.pipeline;
 
 				if (pipeline != currentPipeline)
 				{
+					if (shouldStartRenderPass)
+					{
+						if (currentPipeline)
+						{
+							this->commandBuffer.endRenderPass();
+						}
+
+						if (isStarsBegin)
+						{
+							// Copy sky mesh into the framebuffer that stars will draw into (unfortunate side effect of ping-pong pattern is having to also copy src -> dst).
+							ApplyColorImageLayoutTransition(
+								this->colorImages[targetFramebufferIndex],
+								vk::ImageLayout::eColorAttachmentOptimal,
+								vk::ImageLayout::eTransferSrcOptimal,
+								vk::PipelineStageFlagBits::eColorAttachmentOutput,
+								vk::PipelineStageFlagBits::eTransfer,
+								vk::AccessFlagBits::eColorAttachmentWrite,
+								vk::AccessFlagBits::eTransferRead,
+								this->commandBuffer);
+
+							ApplyColorImageLayoutTransition(
+								this->colorImages[inputFramebufferIndex],
+								vk::ImageLayout::eShaderReadOnlyOptimal,
+								vk::ImageLayout::eTransferDstOptimal,
+								vk::PipelineStageFlagBits::eFragmentShader,
+								vk::PipelineStageFlagBits::eTransfer,
+								vk::AccessFlagBits::eShaderRead,
+								vk::AccessFlagBits::eTransferWrite,
+								this->commandBuffer);
+
+							CopyColorImageToImage(this->colorImages[targetFramebufferIndex], this->colorImages[inputFramebufferIndex], this->internalExtent, this->commandBuffer);
+
+							ApplyColorImageLayoutTransition(
+								this->colorImages[targetFramebufferIndex],
+								vk::ImageLayout::eTransferSrcOptimal,
+								vk::ImageLayout::eShaderReadOnlyOptimal,
+								vk::PipelineStageFlagBits::eTransfer,
+								vk::PipelineStageFlagBits::eFragmentShader,
+								vk::AccessFlagBits::eTransferRead,
+								vk::AccessFlagBits::eShaderRead,
+								this->commandBuffer);
+
+							ApplyColorImageLayoutTransition(
+								this->colorImages[inputFramebufferIndex],
+								vk::ImageLayout::eTransferDstOptimal,
+								vk::ImageLayout::eColorAttachmentOptimal,
+								vk::PipelineStageFlagBits::eTransfer,
+								vk::PipelineStageFlagBits::eColorAttachmentOutput,
+								vk::AccessFlagBits::eTransferWrite,
+								vk::AccessFlagBits::eColorAttachmentWrite,
+								this->commandBuffer);
+
+							targetFramebufferIndex ^= 1;
+							inputFramebufferIndex ^= 1;
+						}
+
+						vk::RenderPassBeginInfo sceneRenderPassBeginInfo;
+						sceneRenderPassBeginInfo.renderPass = this->sceneRenderPass;
+						sceneRenderPassBeginInfo.framebuffer = this->sceneFramebuffers[targetFramebufferIndex];
+						sceneRenderPassBeginInfo.renderArea.extent = this->internalExtent;
+
+						this->commandBuffer.beginRenderPass(sceneRenderPassBeginInfo, vk::SubpassContents::eInline);
+					}
+
 					currentPipeline = pipeline;
 					this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline);
 
 					constexpr uint32_t globalDescriptorSetIndex = 0;
-					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSet, vk::ArrayProxy<const uint32_t>());
+					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSets[inputFramebufferIndex], vk::ArrayProxy<const uint32_t>());
+
+					currentMultipassType = multipassType;
 				}
 
 				constexpr vk::DeviceSize bufferOffset = 0;
@@ -4662,9 +4947,20 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				this->commandBuffer.drawIndexed(currentIndexBufferIndexCount, meshInstanceCount, 0, 0, 0);
 			}
 		}
-	}
 
-	this->commandBuffer.endRenderPass();
+		this->commandBuffer.endRenderPass();
+
+		// Prepare final scene image for UI pass.
+		ApplyColorImageLayoutTransition(
+			this->colorImages[targetFramebufferIndex],
+			vk::ImageLayout::eColorAttachmentOptimal,
+			vk::ImageLayout::eShaderReadOnlyOptimal,
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			vk::AccessFlagBits::eColorAttachmentWrite,
+			vk::AccessFlagBits::eShaderRead,
+			this->commandBuffer);
+	}
 
 	vk::RenderPassBeginInfo uiRenderPassBeginInfo;
 	uiRenderPassBeginInfo.renderPass = this->uiRenderPass;
@@ -4729,9 +5025,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		this->commandBuffer.bindPipeline(pipelineBindPoint, this->conversionPipeline);
 
-		const VulkanTexture &paletteTexture = this->objectTexturePool.get(frameSettings.paletteTextureID);
-		UpdateConversionDescriptorSet(this->device, this->conversionDescriptorSet, this->colorImageView, this->colorSampler, paletteTexture.imageView, paletteTexture.sampler);
-
+		UpdateConversionDescriptorSet(this->device, this->conversionDescriptorSet, this->colorImageViews[targetFramebufferIndex], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler);
 		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, uiPipelineLayout, 0, this->conversionDescriptorSet, vk::ArrayProxy<const uint32_t>());
 
 		// Fullscreen quad for scene view.

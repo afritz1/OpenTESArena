@@ -236,6 +236,13 @@ struct VulkanPipelineKey
 		this->backFaceCulling = backFaceCulling;
 		this->alphaBlend = alphaBlend;
 	}
+
+	bool operator==(const VulkanPipelineKey &other) const
+	{
+		return (this->vertexShaderType == other.vertexShaderType) && (this->fragmentShaderType == other.fragmentShaderType) &&
+			(this->depthRead == other.depthRead) && (this->depthWrite == other.depthWrite) &&
+			(this->backFaceCulling == other.backFaceCulling) && (this->alphaBlend == other.alphaBlend);
+	}
 };
 
 struct VulkanPipeline
@@ -266,16 +273,18 @@ private:
 	vk::SwapchainKHR swapchain;
 	std::vector<vk::Image> swapchainImages;
 	Buffer<vk::ImageView> swapchainImageViews;
-	vk::DeviceMemory colorDeviceMemory;
-	vk::Image colorImage;
-	vk::ImageView colorImageView;
+
+	static constexpr int MAX_SCENE_FRAMEBUFFERS = 2; // For ping-pong support.
+	vk::DeviceMemory colorDeviceMemories[MAX_SCENE_FRAMEBUFFERS];
+	vk::Image colorImages[MAX_SCENE_FRAMEBUFFERS];
+	vk::ImageView colorImageViews[MAX_SCENE_FRAMEBUFFERS];
 	vk::Sampler colorSampler;
 	vk::DeviceMemory depthDeviceMemory;
 	vk::Image depthImage;
 	vk::ImageView depthImageView;
 	vk::RenderPass sceneRenderPass;
 	vk::RenderPass uiRenderPass;
-	vk::Framebuffer sceneFramebuffer;
+	vk::Framebuffer sceneFramebuffers[MAX_SCENE_FRAMEBUFFERS];
 	Buffer<vk::Framebuffer> uiFramebuffers;
 
 	vk::CommandPool commandPool;
@@ -295,7 +304,7 @@ private:
 	vk::DescriptorSetLayout materialDescriptorSetLayout;
 	vk::DescriptorSetLayout conversionDescriptorSetLayout;
 	vk::DescriptorSetLayout uiMaterialDescriptorSetLayout;
-	vk::DescriptorSet globalDescriptorSet;
+	vk::DescriptorSet globalDescriptorSets[MAX_SCENE_FRAMEBUFFERS]; // Two for ping-ponging sampled framebuffer.
 	vk::DescriptorSet conversionDescriptorSet;
 	FlatMap<UiTextureID, vk::DescriptorSet> uiTextureDescriptorSets; // Avoids UI material support since UI is simplistic.
 

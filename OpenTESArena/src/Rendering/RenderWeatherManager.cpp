@@ -642,6 +642,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.texCoordBufferID = this->particleTexCoordBufferID;
 		drawCall.indexBufferID = this->particleIndexBufferID;
 		drawCall.materialID = materialID;
+		drawCall.multipassType = RenderMultipassType::None;
 	};
 
 	auto populateRainDrawCall = [this, &populateParticleDrawCall](RenderDrawCall &drawCall, int transformIndex)
@@ -756,6 +757,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.texCoordBufferID = this->fogTexCoordBufferID;
 		this->fogDrawCall.indexBufferID = this->fogIndexBufferID;
 		this->fogDrawCall.materialID = this->fogMaterialID;
+		this->fogDrawCall.multipassType = RenderMultipassType::None;
 	}
 }
 

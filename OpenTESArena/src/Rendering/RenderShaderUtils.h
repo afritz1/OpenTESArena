@@ -50,6 +50,15 @@ static constexpr int DITHERING_MODERN_MASK_COUNT = 4;
 
 using UniformBufferID = int;
 
+// Per-draw-call type for framebuffer dependencies like if the previous framebuffer should be provided as an input texture.
+enum class RenderMultipassType
+{
+	None,
+	Stars = 1 << 0,
+	// @todo ghost pass
+	// @todo puddle pass
+};
+
 namespace RenderShaderUtils
 {
 	constexpr bool isOpaque(PixelShaderType type)

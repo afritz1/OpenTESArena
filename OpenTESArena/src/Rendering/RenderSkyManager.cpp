@@ -373,6 +373,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.texCoordBufferID = this->bgTexCoordBufferID;
 	this->bgDrawCall.indexBufferID = this->bgIndexBufferID;
 	this->bgDrawCall.materialID = this->skyGradientAMMaterialID;
+	this->bgDrawCall.multipassType = RenderMultipassType::None;
 
 	// Initialize sky object mesh buffers shared with all sky objects.
 	// @todo: to be more accurate, land/air vertices could rest on the horizon, while star/planet/sun vertices would sit halfway under the horizon, etc., and these would be separate buffers for the draw calls to pick from.
@@ -882,6 +883,16 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.texCoordBufferID = this->objectTexCoordBufferID;
 		drawCall.indexBufferID = this->objectIndexBufferID;
 		drawCall.materialID = materialID;
+
+		if (pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit)
+		{
+			drawCall.multipassType = RenderMultipassType::Stars;
+		}
+		else
+		{
+			drawCall.multipassType = RenderMultipassType::None;
+		}
+		
 		this->objectDrawCalls.emplace_back(std::move(drawCall));
 	};
 

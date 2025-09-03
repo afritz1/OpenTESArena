@@ -20,7 +20,6 @@ struct RenderCommandList
 	int getTotalDrawCallCount() const;
 
 	void addDrawCalls(Span<const RenderDrawCall> drawCalls);
-	void clear();
 };
 
 #endif

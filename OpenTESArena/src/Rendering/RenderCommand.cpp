@@ -5,7 +5,7 @@
 
 RenderCommandList::RenderCommandList()
 {
-	this->clear();
+	this->entryCount = 0;
 }
 
 int RenderCommandList::getTotalDrawCallCount() const
@@ -34,9 +34,4 @@ void RenderCommandList::addDrawCalls(Span<const RenderDrawCall> drawCalls)
 
 	this->entries[this->entryCount] = drawCalls;
 	this->entryCount++;
-}
-
-void RenderCommandList::clear()
-{
-	this->entryCount = 0;
 }

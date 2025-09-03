@@ -925,6 +925,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		drawCall.texCoordBufferID = combinedFaceVertexBuffer->texCoordBufferID;
 		drawCall.indexBufferID = this->defaultQuadIndexBufferID;
 		drawCall.materialID = materialID;
+		drawCall.multipassType = RenderMultipassType::None;
 	}
 }
 
@@ -1059,6 +1060,7 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		drawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
 		drawCall.indexBufferID = meshInitInfo.indexBufferID;
 		drawCall.materialID = materialID;
+		drawCall.multipassType = RenderMultipassType::None;
 	}
 }
 
@@ -1255,6 +1257,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 			doorDrawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
 			doorDrawCall.indexBufferID = meshInitInfo.indexBufferID;
 			doorDrawCall.materialID = materialID;
+			doorDrawCall.multipassType = RenderMultipassType::None;
 
 			doorDrawCallWriteIndex++;
 		}
