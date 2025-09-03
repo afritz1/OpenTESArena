@@ -54,9 +54,9 @@ using UniformBufferID = int;
 enum class RenderMultipassType
 {
 	None,
-	Stars = 1 << 0,
-	// @todo ghost pass
-	// @todo puddle pass
+	Stars,
+	Ghosts,
+	// @todo puddles pass
 };
 
 namespace RenderShaderUtils

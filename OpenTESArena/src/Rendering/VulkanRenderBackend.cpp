@@ -66,7 +66,7 @@ namespace
 	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
 	constexpr int MaxGlobalUniformBufferDescriptors = 16;
-	constexpr int MaxGlobalImageDescriptors = 16;
+	constexpr int MaxGlobalImageDescriptors = 24;
 	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalImageDescriptors;
 
 	constexpr int MaxTransformUniformBufferDynamicDescriptors = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
@@ -1568,7 +1568,8 @@ namespace
 	}
 
 	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer ambientLightBuffer, vk::Buffer screenSpaceAnimBuffer,
-		vk::ImageView sampledFramebufferImageView, vk::Sampler sampledFramebufferSampler, vk::ImageView paletteImageView, vk::Sampler paletteSampler)
+		vk::ImageView sampledFramebufferImageView, vk::Sampler sampledFramebufferSampler, vk::ImageView paletteImageView, vk::Sampler paletteSampler,
+		vk::ImageView lightTableImageView, vk::Sampler lightTableSampler)
 	{
 		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
 		cameraDescriptorBufferInfo.buffer = cameraBuffer;
@@ -1594,6 +1595,11 @@ namespace
 		paletteDescriptorImageInfo.sampler = paletteSampler;
 		paletteDescriptorImageInfo.imageView = paletteImageView;
 		paletteDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::DescriptorImageInfo lightTableDescriptorImageInfo;
+		lightTableDescriptorImageInfo.sampler = lightTableSampler;
+		lightTableDescriptorImageInfo.imageView = lightTableImageView;
+		lightTableDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 		vk::WriteDescriptorSet cameraWriteDescriptorSet;
 		cameraWriteDescriptorSet.dstSet = descriptorSet;
@@ -1635,13 +1641,22 @@ namespace
 		paletteWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 		paletteWriteDescriptorSet.pImageInfo = &paletteDescriptorImageInfo;
 
+		vk::WriteDescriptorSet lightTableWriteDescriptorSet;
+		lightTableWriteDescriptorSet.dstSet = descriptorSet;
+		lightTableWriteDescriptorSet.dstBinding = 5;
+		lightTableWriteDescriptorSet.dstArrayElement = 0;
+		lightTableWriteDescriptorSet.descriptorCount = 1;
+		lightTableWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		lightTableWriteDescriptorSet.pImageInfo = &lightTableDescriptorImageInfo;
+
 		const vk::WriteDescriptorSet writeDescriptorSets[] =
 		{
 			cameraWriteDescriptorSet,
 			ambientLightWriteDescriptorSet,
 			screenSpaceAnimWriteDescriptorSet,
 			sampledFramebufferWriteDescriptorSet,
-			paletteWriteDescriptorSet
+			paletteWriteDescriptorSet,
+			lightTableWriteDescriptorSet
 		};
 
 		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
@@ -2656,7 +2671,9 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		// Sampled framebuffer
 		CreateDescriptorSetLayoutBinding(3, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
 		// Palette
-		CreateDescriptorSetLayoutBinding(4, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+		CreateDescriptorSetLayoutBinding(4, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
+		// Light table
+		CreateDescriptorSetLayoutBinding(5, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
 	};
 
 	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
@@ -4755,6 +4772,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		screenSpaceAnimValues[2] = sceneViewport.height;
 
 		paletteTexture = &this->objectTexturePool.get(frameSettings.paletteTextureID);
+		const VulkanTexture &lightTableTexture = this->objectTexturePool.get(frameSettings.lightTableTextureID);
 
 		ApplyColorImageLayoutTransition(
 			this->colorImages[inputFramebufferIndex],
@@ -4769,7 +4787,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 		{
 			UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSets[i], this->camera.stagingBuffer, this->ambientLight.stagingBuffer, this->screenSpaceAnim.stagingBuffer,
-				this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler);
+				this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler, lightTableTexture.imageView, lightTableTexture.sampler);
 		}
 
 		vk::Pipeline currentPipeline;
@@ -4786,8 +4804,11 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				const RenderMultipassType multipassType = drawCall.multipassType;
 				const bool isStarsBegin = (currentMultipassType != RenderMultipassType::Stars) && (multipassType == RenderMultipassType::Stars);
 				const bool isStarsEnd = (currentMultipassType == RenderMultipassType::Stars) && (multipassType != RenderMultipassType::Stars);
+				const bool isGhostsBegin = (currentMultipassType != RenderMultipassType::Ghosts) && (multipassType == RenderMultipassType::Ghosts);
+				const bool isGhostsEnd = (currentMultipassType == RenderMultipassType::Ghosts) && (multipassType != RenderMultipassType::Ghosts);
 
-				const bool shouldStartRenderPass = !currentPipeline || isStarsBegin || isStarsEnd;
+				const bool shouldStartRenderPass = !currentPipeline || isStarsBegin || isStarsEnd || isGhostsBegin || isGhostsEnd;
+				const bool shouldPingPong = isStarsBegin || isGhostsBegin;
 
 				const VulkanMaterial &material = this->materialPool.get(drawCall.materialID);
 				const vk::PipelineLayout pipelineLayout = material.pipelineLayout;
@@ -4802,9 +4823,9 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 							this->commandBuffer.endRenderPass();
 						}
 
-						if (isStarsBegin)
+						if (shouldPingPong)
 						{
-							// Copy sky mesh into the framebuffer that stars will draw into (unfortunate side effect of ping-pong pattern is having to also copy src -> dst).
+							// Copy sampled image framebuffer into color attachment framebuffer (unfortunate side effect of ping-pong pattern is having to also copy src -> dst).
 							ApplyColorImageLayoutTransition(
 								this->colorImages[targetFramebufferIndex],
 								vk::ImageLayout::eColorAttachmentOptimal,

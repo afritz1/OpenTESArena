@@ -544,7 +544,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			DebugAssert(materialID >= 0);
 
 			const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
-			const int entityTransformIndex = 0; // Each entity has their own transform buffer for now.						
+			const int entityTransformIndex = 0; // Each entity has their own transform buffer for now.
 
 			RenderDrawCall drawCall;
 			drawCall.transformBufferID = transformBufferID;
@@ -555,7 +555,15 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
 			drawCall.indexBufferID = this->meshInst.indexBufferID;
 			drawCall.materialID = materialID;
-			drawCall.multipassType = RenderMultipassType::None;
+
+			if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
+			{
+				drawCall.multipassType = RenderMultipassType::Ghosts;
+			}
+			else
+			{
+				drawCall.multipassType = RenderMultipassType::None;
+			}
 
 			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
 			{
