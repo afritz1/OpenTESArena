@@ -247,6 +247,8 @@ void RenderEntityManager::shutdown(Renderer &renderer)
 	this->meshInst.freeBuffers(renderer);
 	this->paletteIndicesEntries.clear();
 	this->drawCallsCache.clear();
+	this->ghostDrawCallsCache.clear();
+	this->puddleSecondPassDrawCallsCache.clear();
 }
 
 void RenderEntityManager::loadMaterialsForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
@@ -395,6 +397,11 @@ void RenderEntityManager::populateCommandList(RenderCommandList &commandList) co
 		commandList.addDrawCalls(this->drawCallsCache);
 	}
 
+	if (!this->ghostDrawCallsCache.empty())
+	{
+		commandList.addDrawCalls(this->ghostDrawCallsCache);
+	}
+
 	if (!this->puddleSecondPassDrawCallsCache.empty())
 	{
 		// Puddles require two passes to avoid race conditions when rasterizing.
@@ -461,6 +468,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
 
 	this->drawCallsCache.clear();
+	this->ghostDrawCallsCache.clear();
 	this->puddleSecondPassDrawCallsCache.clear();
 
 	for (const ChunkInt2 chunkPos : activeChunkPositions)
@@ -556,15 +564,6 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			drawCall.indexBufferID = this->meshInst.indexBufferID;
 			drawCall.materialID = materialID;
 
-			if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
-			{
-				drawCall.multipassType = RenderMultipassType::Ghosts;
-			}
-			else
-			{
-				drawCall.multipassType = RenderMultipassType::None;
-			}
-
 			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
 			{
 				const RenderMaterialKey puddleSecondPassMaterialKey = MakePuddleSecondPassMaterialKey(observedTextureIDs[0]);
@@ -588,7 +587,16 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 				this->puddleSecondPassDrawCallsCache.emplace_back(std::move(puddleSecondPassDrawCall));
 			}
 
-			this->drawCallsCache.emplace_back(std::move(drawCall));
+			if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
+			{
+				drawCall.multipassType = RenderMultipassType::Ghosts;
+				this->ghostDrawCallsCache.emplace_back(std::move(drawCall));
+			}
+			else
+			{
+				drawCall.multipassType = RenderMultipassType::None;
+				this->drawCallsCache.emplace_back(std::move(drawCall));
+			}
 		}
 	}
 
@@ -644,5 +652,6 @@ void RenderEntityManager::unloadScene(Renderer &renderer)
 
 	this->materials.clear();
 	this->drawCallsCache.clear();
+	this->ghostDrawCallsCache.clear();
 	this->puddleSecondPassDrawCallsCache.clear();
 }

@@ -50,6 +50,7 @@ private:
 
 	// All accumulated draw calls from entities each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
+	std::vector<RenderDrawCall> ghostDrawCallsCache;
 	std::vector<RenderDrawCall> puddleSecondPassDrawCallsCache;
 
 	void loadMaterialsForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager, TextureManager &textureManager, Renderer &renderer);
