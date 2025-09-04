@@ -65,8 +65,8 @@ namespace
 	constexpr vk::BufferUsageFlags UiTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
-	constexpr int MaxGlobalUniformBufferDescriptors = 16;
-	constexpr int MaxGlobalImageDescriptors = 24;
+	constexpr int MaxGlobalUniformBufferDescriptors = 24;
+	constexpr int MaxGlobalImageDescriptors = 32;
 	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalImageDescriptors;
 
 	constexpr int MaxTransformUniformBufferDynamicDescriptors = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
@@ -1569,7 +1569,7 @@ namespace
 
 	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer ambientLightBuffer, vk::Buffer screenSpaceAnimBuffer,
 		vk::ImageView sampledFramebufferImageView, vk::Sampler sampledFramebufferSampler, vk::ImageView paletteImageView, vk::Sampler paletteSampler,
-		vk::ImageView lightTableImageView, vk::Sampler lightTableSampler)
+		vk::ImageView lightTableImageView, vk::Sampler lightTableSampler, vk::ImageView skyBgImageView, vk::Sampler skyBgSampler, vk::Buffer horizonMirrorBuffer)
 	{
 		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
 		cameraDescriptorBufferInfo.buffer = cameraBuffer;
@@ -1600,6 +1600,16 @@ namespace
 		lightTableDescriptorImageInfo.sampler = lightTableSampler;
 		lightTableDescriptorImageInfo.imageView = lightTableImageView;
 		lightTableDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::DescriptorImageInfo skyBgDescriptorImageInfo;
+		skyBgDescriptorImageInfo.sampler = skyBgSampler;
+		skyBgDescriptorImageInfo.imageView = skyBgImageView;
+		skyBgDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::DescriptorBufferInfo horizonMirrorDescriptorBufferInfo;
+		horizonMirrorDescriptorBufferInfo.buffer = horizonMirrorBuffer;
+		horizonMirrorDescriptorBufferInfo.offset = 0;
+		horizonMirrorDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
 		vk::WriteDescriptorSet cameraWriteDescriptorSet;
 		cameraWriteDescriptorSet.dstSet = descriptorSet;
@@ -1649,6 +1659,22 @@ namespace
 		lightTableWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 		lightTableWriteDescriptorSet.pImageInfo = &lightTableDescriptorImageInfo;
 
+		vk::WriteDescriptorSet skyBgWriteDescriptorSet;
+		skyBgWriteDescriptorSet.dstSet = descriptorSet;
+		skyBgWriteDescriptorSet.dstBinding = 6;
+		skyBgWriteDescriptorSet.dstArrayElement = 0;
+		skyBgWriteDescriptorSet.descriptorCount = 1;
+		skyBgWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		skyBgWriteDescriptorSet.pImageInfo = &skyBgDescriptorImageInfo;
+
+		vk::WriteDescriptorSet horizonMirrorWriteDescriptorSet;
+		horizonMirrorWriteDescriptorSet.dstSet = descriptorSet;
+		horizonMirrorWriteDescriptorSet.dstBinding = 7;
+		horizonMirrorWriteDescriptorSet.dstArrayElement = 0;
+		horizonMirrorWriteDescriptorSet.descriptorCount = 1;
+		horizonMirrorWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		horizonMirrorWriteDescriptorSet.pBufferInfo = &horizonMirrorDescriptorBufferInfo;
+
 		const vk::WriteDescriptorSet writeDescriptorSets[] =
 		{
 			cameraWriteDescriptorSet,
@@ -1656,7 +1682,9 @@ namespace
 			screenSpaceAnimWriteDescriptorSet,
 			sampledFramebufferWriteDescriptorSet,
 			paletteWriteDescriptorSet,
-			lightTableWriteDescriptorSet
+			lightTableWriteDescriptorSet,
+			skyBgWriteDescriptorSet,
+			horizonMirrorWriteDescriptorSet
 		};
 
 		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
@@ -2673,7 +2701,11 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 		// Palette
 		CreateDescriptorSetLayoutBinding(4, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
 		// Light table
-		CreateDescriptorSetLayoutBinding(5, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+		CreateDescriptorSetLayoutBinding(5, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
+		// Sky texture (puddle fallback color)
+		CreateDescriptorSetLayoutBinding(6, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
+		// Horizon mirror point
+		CreateDescriptorSetLayoutBinding(7, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 	};
 
 	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
@@ -2946,6 +2978,20 @@ bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
 
 	this->screenSpaceAnim.init(nullptr, screenSpaceAnimBuffer, screenSpaceAnimHostMappedBytes);
 
+	constexpr vk::BufferUsageFlags horizonMirrorUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+	constexpr int horizonMirrorByteCount = sizeof(float) * 2; // Horizon screen space point
+
+	vk::Buffer horizonMirrorBuffer;
+	Span<std::byte> horizonMirrorHostMappedBytes;
+	if (!TryCreateBufferAndBindWithHeap(this->device, horizonMirrorByteCount, horizonMirrorUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging,
+		&horizonMirrorBuffer, &horizonMirrorHostMappedBytes))
+	{
+		DebugLogError("Couldn't create buffer for horizon mirror uniform buffer.");
+		return false;
+	}
+
+	this->horizonMirror.init(nullptr, horizonMirrorBuffer, horizonMirrorHostMappedBytes);
+
 	constexpr int UiRectangleVertexCount = 6; // Two triangles, no indices.
 	constexpr int UiPositionComponentsPerVertex = 2;
 	this->uiVertexPositionBufferID = this->createVertexPositionBuffer(UiRectangleVertexCount, UiPositionComponentsPerVertex, sizeof(float));
@@ -3031,6 +3077,14 @@ void VulkanRenderBackend::shutdown()
 
 		this->uiVertexAttributeBufferID = -1;
 		this->uiVertexPositionBufferID = -1;
+
+		if (this->horizonMirror.stagingBuffer)
+		{
+			this->device.destroyBuffer(this->horizonMirror.stagingBuffer);
+			this->horizonMirror.stagingBuffer = nullptr;
+		}
+
+		this->horizonMirror.stagingHostMappedBytes.reset();
 
 		if (this->screenSpaceAnim.stagingBuffer)
 		{
@@ -4773,6 +4827,12 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		paletteTexture = &this->objectTexturePool.get(frameSettings.paletteTextureID);
 		const VulkanTexture &lightTableTexture = this->objectTexturePool.get(frameSettings.lightTableTextureID);
+		const VulkanTexture &skyBgTexture = this->objectTexturePool.get(frameSettings.skyBgTextureID);
+
+		const Double2 horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(camera.horizonNdcPoint, this->internalExtent.width, this->internalExtent.height);
+		float *horizonMirrorValues = reinterpret_cast<float*>(this->horizonMirror.stagingHostMappedBytes.begin());
+		horizonMirrorValues[0] = static_cast<float>(horizonScreenSpacePoint.x);
+		horizonMirrorValues[1] = static_cast<float>(horizonScreenSpacePoint.y);
 
 		ApplyColorImageLayoutTransition(
 			this->colorImages[inputFramebufferIndex],
@@ -4787,7 +4847,8 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 		{
 			UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSets[i], this->camera.stagingBuffer, this->ambientLight.stagingBuffer, this->screenSpaceAnim.stagingBuffer,
-				this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler, lightTableTexture.imageView, lightTableTexture.sampler);
+				this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler, lightTableTexture.imageView, lightTableTexture.sampler,
+				skyBgTexture.imageView, skyBgTexture.sampler, this->horizonMirror.stagingBuffer);
 		}
 
 		vk::Pipeline currentPipeline;
@@ -4806,9 +4867,11 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				const bool isStarsEnd = (currentMultipassType == RenderMultipassType::Stars) && (multipassType != RenderMultipassType::Stars);
 				const bool isGhostsBegin = (currentMultipassType != RenderMultipassType::Ghosts) && (multipassType == RenderMultipassType::Ghosts);
 				const bool isGhostsEnd = (currentMultipassType == RenderMultipassType::Ghosts) && (multipassType != RenderMultipassType::Ghosts);
+				const bool isPuddlesBegin = (currentMultipassType != RenderMultipassType::Puddles) && (multipassType == RenderMultipassType::Puddles);
+				const bool isPuddlesEnd = (currentMultipassType == RenderMultipassType::Puddles) && (multipassType != RenderMultipassType::Puddles);
 
-				const bool shouldStartRenderPass = !currentPipeline || isStarsBegin || isStarsEnd || isGhostsBegin || isGhostsEnd;
-				const bool shouldPingPong = isStarsBegin || isGhostsBegin;
+				const bool shouldStartRenderPass = !currentPipeline || isStarsBegin || isStarsEnd || isGhostsBegin || isGhostsEnd || isPuddlesBegin || isPuddlesEnd;
+				const bool shouldPingPong = isStarsBegin || isGhostsBegin || isPuddlesBegin;
 
 				const VulkanMaterial &material = this->materialPool.get(drawCall.materialID);
 				const vk::PipelineLayout pipelineLayout = material.pipelineLayout;

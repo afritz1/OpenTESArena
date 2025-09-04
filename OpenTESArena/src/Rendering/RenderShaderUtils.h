@@ -56,7 +56,7 @@ enum class RenderMultipassType
 	None,
 	Stars,
 	Ghosts,
-	// @todo puddles pass
+	Puddles
 };
 
 namespace RenderShaderUtils

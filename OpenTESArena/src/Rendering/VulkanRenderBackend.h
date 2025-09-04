@@ -337,6 +337,7 @@ private:
 	VulkanBuffer camera;
 	VulkanBuffer ambientLight;
 	VulkanBuffer screenSpaceAnim;
+	VulkanBuffer horizonMirror;
 	VertexPositionBufferID uiVertexPositionBufferID;
 	VertexAttributeBufferID uiVertexAttributeBufferID;
 	vk::Image dummyImage;

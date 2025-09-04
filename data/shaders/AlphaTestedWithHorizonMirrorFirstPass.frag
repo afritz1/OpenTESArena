@@ -11,10 +11,12 @@ layout(location = 0) in vec2 fragInTexCoord;
 
 layout(location = 0) out uint fragOutColor;
 
+const uint PALETTE_INDEX_PUDDLE_EVEN_ROW = 30;
+
 void main()
 {
     uint texel = texture(textureSampler, fragInTexCoord).r;
-    if (texel == 0)
+    if (texel == 0 || texel == PALETTE_INDEX_PUDDLE_EVEN_ROW)
     {
         discard;
     }

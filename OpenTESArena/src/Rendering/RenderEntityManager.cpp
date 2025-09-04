@@ -582,7 +582,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 
 				RenderDrawCall puddleSecondPassDrawCall = drawCall;
 				puddleSecondPassDrawCall.materialID = puddleSecondPassMaterialID;
-				// @todo RenderMultipassType::Puddle
+				puddleSecondPassDrawCall.multipassType = RenderMultipassType::Puddles;
 
 				this->puddleSecondPassDrawCallsCache.emplace_back(std::move(puddleSecondPassDrawCall));
 			}
