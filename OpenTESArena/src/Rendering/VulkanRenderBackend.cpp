@@ -4717,11 +4717,15 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		this->copyCommands.clear();
 
+		vk::MemoryBarrier copyMemoryBarrier;
+		copyMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		copyMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eIndexRead | vk::AccessFlagBits::eVertexAttributeRead | vk::AccessFlagBits::eShaderRead;
+
 		this->commandBuffer.pipelineBarrier(
 			vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eVertexInput | vk::PipelineStageFlagBits::eVertexShader,
+			vk::PipelineStageFlagBits::eVertexInput | vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
 			vk::DependencyFlags(),
-			vk::ArrayProxy<vk::MemoryBarrier>(),
+			copyMemoryBarrier,
 			vk::ArrayProxy<vk::BufferMemoryBarrier>(),
 			vk::ArrayProxy<vk::ImageMemoryBarrier>());
 	}
@@ -4833,6 +4837,18 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		float *horizonMirrorValues = reinterpret_cast<float*>(this->horizonMirror.stagingHostMappedBytes.begin());
 		horizonMirrorValues[0] = static_cast<float>(horizonScreenSpacePoint.x);
 		horizonMirrorValues[1] = static_cast<float>(horizonScreenSpacePoint.y);
+
+		vk::MemoryBarrier hostCoherentMemoryBarrier;
+		hostCoherentMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
+		hostCoherentMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eUniformRead | vk::AccessFlagBits::eShaderRead;
+
+		this->commandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eHost,
+			vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
+			vk::DependencyFlags(),
+			hostCoherentMemoryBarrier,
+			vk::ArrayProxy<const vk::BufferMemoryBarrier>(),
+			vk::ArrayProxy<const vk::ImageMemoryBarrier>());
 
 		ApplyColorImageLayoutTransition(
 			this->colorImages[inputFramebufferIndex],
