@@ -187,16 +187,30 @@ bool Renderer::init(const Window *window, RenderBackendType backendType, const R
 		DebugLogErrorFormat("Unrecognized render backend %d.", backendType);
 		return false;
 	}
+	
+	// Initialize the backend's context first so we can query the physical pixel dimensions of the window.
+	// @todo SDL_GetWindowSizeInPixels() in newer SDL2 versions will allow these two inits to combine again
+	RenderContextSettings contextSettings;
+	contextSettings.init(window, enableValidationLayers);
+	
+	if (!this->backend->initContext(contextSettings))
+	{
+		DebugLogErrorFormat("Couldn't init render backend %d context.", backendType);
+		this->backend->shutdown();
+		this->backend = nullptr;
+		return false;
+	}
 
 	const Int2 viewDims = window->getSceneViewDimensions();
 	const double resolutionScale = resolutionScaleFunc();
 	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
 
 	RenderInitSettings initSettings;
-	initSettings.init(window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode, enableValidationLayers);
-	if (!this->backend->init(initSettings))
+	initSettings.init(window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
+	
+	if (!this->backend->initRendering(initSettings))
 	{
-		DebugLogErrorFormat("Couldn't init render backend %d.", backendType);
+		DebugLogErrorFormat("Couldn't init render backend %d rendering.", backendType);
 		this->backend->shutdown();
 		this->backend = nullptr;
 		return false;
@@ -215,10 +229,9 @@ const RendererProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-void Renderer::resize(int width, int height)
+void Renderer::resize(int windowWidth, int windowHeight)
 {
-	// The window's dimensions are resized automatically by SDL. The renderer's are not.
-	const Int2 windowDims = this->window->getDimensions();
+	const Int2 windowDims = this->window->getPixelDimensions();
 	const Int2 viewDims = this->window->getSceneViewDimensions();
 	const double resolutionScale = this->resolutionScaleFunc();
 	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
@@ -227,7 +240,7 @@ void Renderer::resize(int width, int height)
 
 void Renderer::handleRenderTargetsReset()
 {
-	const Int2 windowDims = this->window->getDimensions();
+	const Int2 windowDims = this->window->getPixelDimensions();
 	const Int2 viewDims = this->window->getSceneViewDimensions();
 	const double resolutionScale = this->resolutionScaleFunc();
 	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);

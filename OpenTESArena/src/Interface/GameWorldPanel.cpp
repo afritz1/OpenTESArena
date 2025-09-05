@@ -392,7 +392,7 @@ void GameWorldPanel::initUiDrawCalls()
 				static_cast<double>(weaponAnimFrame.yOffset) / static_cast<double>(classicViewHeight));
 
 			const Window &window = game.window;
-			const Int2 windowDims = window.getDimensions();
+			const Int2 windowDims = window.getPixelDimensions();
 			const Int2 nativePosition(
 				static_cast<int>(std::round(offsetPercents.x * static_cast<double>(windowDims.x))),
 				static_cast<int>(std::round(offsetPercents.y * static_cast<double>(windowDims.y))));
@@ -414,7 +414,7 @@ void GameWorldPanel::initUiDrawCalls()
 				static_cast<double>(textureDims.y) / static_cast<double>(classicViewHeight));
 
 			const Window &window = game.window;
-			const Int2 windowDims = window.getDimensions();
+			const Int2 windowDims = window.getPixelDimensions();
 			const Int2 nativeTextureDims(
 				static_cast<int>(std::round(texturePercents.x * static_cast<double>(windowDims.x))),
 				static_cast<int>(std::round(texturePercents.y * static_cast<double>(windowDims.y))));
@@ -462,7 +462,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 		auto getStatusBarsModernModeOrigin = [&window]()
 		{
-			const Int2 windowDims = window.getDimensions();
+			const Int2 windowDims = window.getPixelDimensions();
 			return Int2(GameWorldUiView::StatusBarModernModeXOffset, windowDims.y - GameWorldUiView::StatusBarModernModeYOffset);
 		};
 
@@ -471,7 +471,7 @@ void GameWorldPanel::initUiDrawCalls()
 			const int originalXDelta = statusBarRect.getLeft() - GameWorldUiView::HealthBarRect.getLeft();
 			const double originalXPercentDelta = static_cast<double>(originalXDelta) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
 
-			const Int2 windowDims = window.getDimensions();
+			const Int2 windowDims = window.getPixelDimensions();
 			const double scaleXRatio = static_cast<double>(windowDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
 			const double aspectRatioMultiplier = ArenaRenderUtils::ASPECT_RATIO / window.getAspectRatio();
 			return static_cast<int>(std::round(static_cast<double>(originalXDelta) * (scaleXRatio * aspectRatioMultiplier)));
@@ -484,7 +484,7 @@ void GameWorldPanel::initUiDrawCalls()
 		healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
 		healthBarDrawCallInitInfo.positionFunc = [&window, getStatusBarsModernModeOrigin]()
 		{			
-			const Int2 windowDims = window.getDimensions();
+			const Int2 windowDims = window.getPixelDimensions();
 			const Int2 nativePoint = getStatusBarsModernModeOrigin();
 			return window.nativeToOriginal(nativePoint);
 		};

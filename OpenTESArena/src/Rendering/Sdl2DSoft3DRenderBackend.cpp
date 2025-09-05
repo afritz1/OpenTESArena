@@ -29,63 +29,63 @@ namespace
 		// Automatically choose the best driver. Generally Direct3D on Windows, OpenGL on Linux, Metal on macOS.
 		constexpr int bestDriver = -1;
 
-		SDL_Renderer *rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_ACCELERATED);
-		if (rendererContext == nullptr)
+		SDL_Renderer *renderer = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_ACCELERATED);
+		if (renderer == nullptr)
 		{
 			DebugLogErrorFormat("Couldn't create SDL_Renderer with default driver (%s).", SDL_GetError());
 			return nullptr;
 		}
 
 		SDL_RendererInfo rendererInfo;
-		if (SDL_GetRendererInfo(rendererContext, &rendererInfo) < 0)
+		if (SDL_GetRendererInfo(renderer, &rendererInfo) < 0)
 		{
 			DebugLogErrorFormat("Couldn't get SDL_RendererInfo (%s).", SDL_GetError());
 			return nullptr;
 		}
 
-		DebugLogFormat("Created renderer \"%s\" (flags: 0x%X).", rendererInfo.name, rendererInfo.flags);
+		DebugLogFormat("Created SDL_Renderer with \"%s\" (flags: 0x%X).", rendererInfo.name, rendererInfo.flags);
 
 		const SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, RenderScaleQualityHint);
 		if (status != SDL_TRUE)
 		{
 			DebugLogWarningFormat("Couldn't set SDL rendering interpolation hint (%s).", SDL_GetError());
 		}
-
-		int windowWidth, windowHeight;
-		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-
-		auto isValidWindowSize = [](int width, int height)
+		
+		// Get the DPI-correct dimensions. If we created an SDL_Window that's 720p, the presented window might physically
+		// cover 1440p of the display device on operating systems like macOS that provide a scaling factor. This is so the
+		// desktop resolution can behave like 1080p (to make UI larger) but the application has crisp rendering at the display
+		// device's native 2160p.
+		// @todo SDL_GetWindowSizeInPixels() in newer SDL2 versions replaces this
+		int pixelWidth, pixelHeight;
+		SDL_GetRendererOutputSize(renderer, &pixelWidth, &pixelHeight);
+		
+		auto isValidRenderDimensions = [](int width, int height)
 		{
 			return (width > 0) && (height > 0);
 		};
 
-		// Set the size of the render texture to be the size of the whole screen (it automatically scales otherwise).
-		// If this fails, the OS might not support hardware accelerated renderers for some reason (such as with Linux),
-		// so retry with software.
-		if (!isValidWindowSize(windowWidth, windowHeight))
+		// If the output resolution is invalid, the OS might not support hardware accelerated renderers, so retry with software.
+		if (!isValidRenderDimensions(pixelWidth, pixelHeight))
 		{
 			DebugLogWarningFormat("Failed to init accelerated SDL_Renderer, trying software fallback (%s).", SDL_GetError());
-			SDL_DestroyRenderer(rendererContext);
+			SDL_DestroyRenderer(renderer);
 
-			rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
-			if (rendererContext == nullptr)
+			renderer = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
+			if (renderer == nullptr)
 			{
 				DebugLogErrorFormat("Couldn't create software fallback SDL_Renderer (%s).", SDL_GetError());
 				return nullptr;
 			}
-
-			SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-			if (!isValidWindowSize(windowWidth, windowHeight))
+			
+			SDL_GetRendererOutputSize(renderer, &pixelWidth, &pixelHeight);
+			if (!isValidRenderDimensions(pixelWidth, pixelHeight))
 			{
 				DebugLogErrorFormat("Couldn't get software fallback SDL_Window dimensions (%s).", SDL_GetError());
 				return nullptr;
 			}
 		}
 
-		// Set the device-independent resolution for rendering (i.e., the "behind-the-scenes" resolution).
-		SDL_RenderSetLogicalSize(rendererContext, windowWidth, windowHeight);
-
-		return rendererContext;
+		return renderer;
 	}
 }
 
@@ -105,9 +105,9 @@ Sdl2DSoft3DRenderBackend::~Sdl2DSoft3DRenderBackend()
 	DebugAssert(this->gameWorldTexture == nullptr);
 }
 
-bool Sdl2DSoft3DRenderBackend::init(const RenderInitSettings &initSettings)
+bool Sdl2DSoft3DRenderBackend::initContext(const RenderContextSettings &contextSettings)
 {
-	this->window = initSettings.window;
+	this->window = contextSettings.window;
 
 	this->renderer = CreateSdlRendererForWindow(this->window->window);
 	if (this->renderer == nullptr)
@@ -115,8 +115,13 @@ bool Sdl2DSoft3DRenderBackend::init(const RenderInitSettings &initSettings)
 		DebugLogErrorFormat("Couldn't create SDL_Renderer (%s).", SDL_GetError());
 		return false;
 	}
+	
+	return true;
+}
 
-	const Int2 windowDims = this->window->getDimensions();
+bool Sdl2DSoft3DRenderBackend::initRendering(const RenderInitSettings &initSettings)
+{
+	const Int2 windowDims = this->window->getPixelDimensions();
 	this->nativeTexture = SDL_CreateTexture(this->renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDims.x, windowDims.y);
 	if (this->nativeTexture == nullptr)
 	{
@@ -228,7 +233,7 @@ RendererProfilerData3D Sdl2DSoft3DRenderBackend::getProfilerData3D() const
 
 Surface Sdl2DSoft3DRenderBackend::getScreenshot() const
 {
-	const Int2 windowDims = this->window->getDimensions();
+	const Int2 windowDims = this->window->getPixelDimensions();
 	Surface screenshot = Surface::createWithFormat(windowDims.x, windowDims.y, RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
 	SDL_Surface *screenshotSurface = screenshot.get();
 

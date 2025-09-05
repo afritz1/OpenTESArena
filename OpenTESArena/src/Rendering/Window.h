@@ -41,14 +41,20 @@ struct Window
 
 	bool init(int width, int height, RenderWindowMode windowMode, uint32_t additionalFlags, int letterboxMode, bool fullGameWindow);
 
-	Int2 getDimensions() const;
+	// Gets the dimensions the SDL_Window was created with. This is potentially smaller than the physical
+	// pixel count on high-DPI displays using a scale factor like macOS.
+	Int2 getLogicalDimensions() const;
+	
+	// Gets the physical dimensions of the window as it appears relative to the size of the display device.
+	Int2 getPixelDimensions() const;
+	
+	// Gets the scale factor for correcting positions that exist in logical window space like mouse input.
+	double getLogicalToPixelScale() const;
+	
 	double getAspectRatio() const;
 
 	// Gets the letterbox aspect associated with the current letterbox mode.
 	double getLetterboxAspectRatio() const;
-
-	// Gets the active window's pixels-per-inch scale divided by platform DPI.
-	double getDpiScale() const;
 
 	// The "view height" is the height in pixels for the visible game world. This depends on whether the whole screen
 	// is rendered or just the portion above the interface. The game interface is 53 pixels tall in 320x200.
@@ -73,7 +79,7 @@ struct Window
 	void setMode(RenderWindowMode mode);
 	void setIcon(const Surface &icon);
 	void setTitle(const char *title);
-	void warpMouse(int x, int y);
+	void warpMouse(int logicalX, int logicalY);
 };
 
 #endif

@@ -7,6 +7,16 @@
 
 struct Window;
 
+struct RenderContextSettings
+{
+	const Window *window;
+	bool enableValidationLayers;
+	
+	RenderContextSettings();
+	
+	void init(const Window *window, bool enableValidationLayers);
+};
+
 struct RenderInitSettings
 {
 	const Window *window;
@@ -15,13 +25,11 @@ struct RenderInitSettings
 	int internalWidth, internalHeight;
 	int renderThreadsMode;
 	DitheringMode ditheringMode;
-
-	bool enableValidationLayers;
-
+	
 	RenderInitSettings();
 
 	void init(const Window *window, const std::string &dataFolderPath, int internalWidth, int internalHeight, int renderThreadsMode,
-		DitheringMode ditheringMode, bool enableValidationLayers);
+		DitheringMode ditheringMode);
 };
 
 #endif

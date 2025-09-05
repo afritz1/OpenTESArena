@@ -1105,7 +1105,7 @@ namespace
 		if (extent.width == INVALID_UINT32)
 		{
 			int windowWidth, windowHeight;
-			SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+			SDL_Vulkan_GetDrawableSize(window, &windowWidth, &windowHeight);
 			extent.width = windowWidth;
 			extent.height = windowHeight;
 		}
@@ -2415,16 +2415,21 @@ VulkanPipelineKey::VulkanPipelineKey()
 	this->alphaBlend = false;
 }
 
-bool VulkanRenderBackend::init(const RenderInitSettings &initSettings)
+bool VulkanRenderBackend::initContext(const RenderContextSettings &contextSettings)
 {
-	const Window *window = initSettings.window;
-	const std::string &dataFolderPath = initSettings.dataFolderPath;
-
-	if (!TryCreateVulkanInstance(window->window, initSettings.enableValidationLayers, &this->instance))
+	if (!TryCreateVulkanInstance(contextSettings.window->window, contextSettings.enableValidationLayers, &this->instance))
 	{
 		DebugLogError("Couldn't create Vulkan instance.");
 		return false;
 	}
+
+	return true;
+}
+
+bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
+{
+	const Window *window = initSettings.window;
+	const std::string &dataFolderPath = initSettings.dataFolderPath;
 
 	VkSurfaceKHR vulkanSurface;
 	if (SDL_Vulkan_CreateSurface(window->window, this->instance, &vulkanSurface) != SDL_TRUE)

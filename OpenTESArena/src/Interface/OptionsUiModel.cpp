@@ -202,11 +202,12 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 
 		window.setMode(mode);
 
-		const Int2 newWindowDims = window.getDimensions();
+		const Int2 newWindowDims = window.getPixelDimensions();
 		renderer.resize(newWindowDims.x, newWindowDims.y);
 
 		// Reset the cursor to the center of the screen for consistency.
-		window.warpMouse(newWindowDims.x / 2, newWindowDims.y / 2);
+		const Int2 newLogicalDims = window.getLogicalDimensions();
+		window.warpMouse(newLogicalDims.x / 2, newLogicalDims.y / 2);
 	});
 
 	auto graphicsApiOption = std::make_unique<OptionsUiModel::IntOption>(
@@ -249,10 +250,10 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		options.setGraphics_ResolutionScale(value);
 
 		const Window &window = game.window;
-		const Int2 windowDimensions = window.getDimensions();
+		const Int2 windowDims = window.getPixelDimensions();
 
 		Renderer &renderer = game.renderer;
-		renderer.resize(windowDimensions.x, windowDimensions.y);
+		renderer.resize(windowDims.x, windowDims.y);
 	});
 
 	auto verticalFovOption = std::make_unique<OptionsUiModel::DoubleOption>(
@@ -317,7 +318,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		}
 
 		Window &window = game.window;
-		const Int2 windowDims = window.getDimensions();
+		const Int2 windowDims = window.getPixelDimensions();
 		window.fullGameWindow = isModernMode;
 
 		Renderer &renderer = game.renderer;

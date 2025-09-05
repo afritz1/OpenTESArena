@@ -696,7 +696,7 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 
 		if (isTurning)
 		{
-			const Int2 dimensions = game.window.getDimensions();
+			const Int2 dimensions = game.window.getPixelDimensions();
 
 			// Get the smaller of the two dimensions, so the look sensitivity is relative
 			// to a square instead of a rectangle. This keeps the camera look independent
@@ -802,7 +802,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
 	{
-		const Int2 windowDims = window.getDimensions();
+		const Int2 windowDims = window.getPixelDimensions();
 
 		CardinalDirectionName meleeSwingDirection = static_cast<CardinalDirectionName>(-1);
 		bool hasSelectedMeleeSwingDirection = false;

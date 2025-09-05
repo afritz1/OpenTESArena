@@ -175,16 +175,19 @@ InputManager::InputManager()
 	: mouseDelta(0, 0)
 {
 	this->nextListenerID = 0;
+	this->logicalToPixelScale = 0.0;
 	this->secondsSincePreviousCombatMousePosition = 0.0;
 }
 
-void InputManager::init()
+void InputManager::init(double logicalToPixelScale)
 {
 	DebugLog("Initializing.");
-
+	
 	// Add input action maps to be enabled/disabled as needed.
 	this->inputActionMaps = InputActionMap::loadDefaultMaps();
 
+	this->logicalToPixelScale = logicalToPixelScale;
+	
 	// Disable text input mode (for some reason it's on by default)?
 	this->setTextInputMode(false);
 }
@@ -307,9 +310,12 @@ InputListenerID InputManager::getNextListenerID()
 
 Int2 InputManager::getMousePosition() const
 {
-	int x, y;
-	SDL_GetMouseState(&x, &y);
-	return Int2(x, y);
+	int logicalX, logicalY;
+	SDL_GetMouseState(&logicalX, &logicalY);
+	
+	const int pixelX = static_cast<int>(static_cast<double>(logicalX) * this->logicalToPixelScale);
+	const int pixelY = static_cast<int>(static_cast<double>(logicalY) * this->logicalToPixelScale);
+	return Int2(pixelX, pixelY);
 }
 
 Int2 InputManager::getMouseDelta() const
@@ -665,13 +671,16 @@ void InputManager::handleHeldInputs(Game &game, Span<const InputActionMap*> acti
 void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonProxies,
 	const std::function<void()> &onFinishedProcessingEvent)
 {
-	SDL_GetRelativeMouseState(&this->mouseDelta.x, &this->mouseDelta.y);
+	int logicalMouseDeltaX, logicalMouseDeltaY;
+	SDL_GetRelativeMouseState(&logicalMouseDeltaX, &logicalMouseDeltaY);
+	this->mouseDelta.x = static_cast<int>(static_cast<double>(logicalMouseDeltaX) * this->logicalToPixelScale);
+	this->mouseDelta.y = static_cast<int>(static_cast<double>(logicalMouseDeltaY) * this->logicalToPixelScale);
 
 	constexpr double targetSecondsSincePreviousMousePosition = 1.0 / 30.0; // 30 fps weapon swing snapshots
 	this->secondsSincePreviousCombatMousePosition += dt;
 	if (this->secondsSincePreviousCombatMousePosition >= targetSecondsSincePreviousMousePosition)
 	{
-		SDL_GetMouseState(&this->previousCombatMousePosition.x, &this->previousCombatMousePosition.y);
+		this->previousCombatMousePosition = this->getMousePosition();
 		this->secondsSincePreviousCombatMousePosition = std::fmod(this->secondsSincePreviousCombatMousePosition, targetSecondsSincePreviousMousePosition);
 	}
 
@@ -760,8 +769,8 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 	// Handle held mouse buttons and keys.
 	const Span<const InputActionMap*> activeMapsView(activeMaps);
 	const Span<const InputActionListenerEntry*> enabledInputActionListenersView(enabledInputActionListeners);
-	Int2 mousePosition;
-	const uint32_t mouseState = SDL_GetMouseState(&mousePosition.x, &mousePosition.y);
+	const uint32_t mouseState = SDL_GetMouseState(nullptr, nullptr);
+	const Int2 mousePosition = this->getMousePosition();
 	this->handleHeldInputs(game, activeMapsView, enabledInputActionListenersView, mouseState, mousePosition, dt);
 
 	// Handle SDL events.

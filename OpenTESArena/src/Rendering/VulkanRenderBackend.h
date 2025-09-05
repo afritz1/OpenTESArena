@@ -343,7 +343,8 @@ private:
 	vk::Image dummyImage;
 	vk::ImageView dummyImageView;
 public:
-	bool init(const RenderInitSettings &initSettings) override;
+	bool initContext(const RenderContextSettings &contextSettings) override;
+	bool initRendering(const RenderInitSettings &initSettings) override;
 	void shutdown() override;
 
 	void resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) override;

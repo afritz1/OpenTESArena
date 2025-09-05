@@ -113,7 +113,7 @@ public:
 	const RendererProfilerData &getProfilerData() const;
 
 	// Resizes the renderer dimensions.
-	void resize(int width, int height);
+	void resize(int windowWidth, int windowHeight);
 
 	// Handles resetting render target textures when switching in and out of exclusive fullscreen.
 	void handleRenderTargetsReset();

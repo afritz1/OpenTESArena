@@ -237,8 +237,8 @@ void GameWorldUiModel::setFreeLookActive(Game &game, bool active)
 	inputManager.setRelativeMouseMode(active);
 
 	Window &window = game.window;
-	const Int2 windowDims = window.getDimensions();
-	window.warpMouse(windowDims.x / 2, windowDims.y / 2);
+	const Int2 logicalDims = window.getLogicalDimensions();
+	window.warpMouse(logicalDims.x / 2, logicalDims.y / 2);
 }
 
 VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 &windowPoint)

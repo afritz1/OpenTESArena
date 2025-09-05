@@ -308,7 +308,8 @@ bool Game::init()
 		return false;
 	}
 
-	this->inputManager.init();
+	const double logicalToPixelScale = this->window.getLogicalToPixelScale();
+	this->inputManager.init(logicalToPixelScale);
 
 	// Add application-level input event handlers.
 	this->applicationExitListenerID = this->inputManager.addApplicationExitListener(
@@ -438,7 +439,7 @@ bool Game::init()
 	this->window.setIcon(windowIconSurface);
 
 	// Initialize click regions for player movement in classic interface mode.
-	const Int2 windowDims = this->window.getDimensions();
+	const Int2 windowDims = this->window.getPixelDimensions();
 	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
 
 	// Random seed.
@@ -728,7 +729,7 @@ void Game::updateDebugInfoText()
 		debugText.append("FPS: " + averageFpsText + " (" + averageFrameTimeText + "ms " + lowestFrameTimeText + "ms " + highestFrameTimeText + "ms)");
 	}
 
-	const Int2 windowDims = this->window.getDimensions();
+	const Int2 windowDims = this->window.getPixelDimensions();
 	if (profilerLevel >= 2)
 	{
 		// Renderer details (window res, render res, threads, frame times, etc.).
@@ -1046,7 +1047,7 @@ void Game::loop()
 			{
 				this->updateDebugInfoText();
 
-				const Int2 windowDims = this->window.getDimensions();
+				const Int2 windowDims = this->window.getPixelDimensions();
 				const Rect debugInfoTextBoxRect = this->debugInfoTextBox.getRect();
 				const Rect debugInfoPresentRect = GuiUtils::makeWindowSpaceRect(debugInfoTextBoxRect.x, debugInfoTextBoxRect.y, debugInfoTextBoxRect.width, debugInfoTextBoxRect.height,
 					PivotType::TopLeft, RenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());

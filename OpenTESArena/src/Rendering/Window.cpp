@@ -1,4 +1,6 @@
 #include "SDL.h"
+#include "SDL_render.h"
+#include "SDL_vulkan.h"
 
 #include "ArenaRenderUtils.h"
 #include "Window.h"
@@ -143,16 +145,47 @@ bool Window::init(int width, int height, RenderWindowMode windowMode, uint32_t a
 	return true;
 }
 
-Int2 Window::getDimensions() const
+Int2 Window::getLogicalDimensions() const
 {
-	int windowWidth, windowHeight;
-	SDL_GetWindowSize(this->window, &windowWidth, &windowHeight);
-	return Int2(windowWidth, windowHeight);
+	int logicalWidth, logicalHeight;
+	SDL_GetWindowSize(this->window, &logicalWidth, &logicalHeight);
+	return Int2(logicalWidth, logicalHeight);
+}
+
+Int2 Window::getPixelDimensions() const
+{
+	// @todo SDL_GetWindowSizeInPixels() in newer SDL versions replaces these two functions
+	int pixelWidth, pixelHeight;
+	
+	if ((this->additionalFlags & SDL_WINDOW_VULKAN) != 0)
+	{
+		SDL_Vulkan_GetDrawableSize(this->window, &pixelWidth, &pixelHeight);
+	}
+	else
+	{
+		SDL_Renderer *renderer = SDL_GetRenderer(this->window);
+		if (renderer == nullptr)
+		{
+			DebugLogError("Couldn't get SDL_Renderer for window pixel dimensions.");
+			return Int2();
+		}
+		
+		SDL_GetRendererOutputSize(renderer, &pixelWidth, &pixelHeight);
+	}
+	
+	return Int2(pixelWidth, pixelHeight);
+}
+
+double Window::getLogicalToPixelScale() const
+{
+	const Int2 logicalDims = this->getLogicalDimensions();
+	const Int2 pixelDims = this->getPixelDimensions();
+	return static_cast<double>(pixelDims.x) / static_cast<double>(logicalDims.x);
 }
 
 double Window::getAspectRatio() const
 {
-	const Int2 dims = this->getDimensions();
+	const Int2 dims = this->getPixelDimensions();
 	return static_cast<double>(dims.x) / static_cast<double>(dims.y);
 }
 
@@ -169,7 +202,7 @@ double Window::getLetterboxAspectRatio() const
 	else if (this->letterboxMode == 2)
 	{
 		// Stretch to fill.
-		const Int2 windowDims = this->getDimensions();
+		const Int2 windowDims = this->getPixelDimensions();
 		return static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
 	}
 	else
@@ -178,28 +211,11 @@ double Window::getLetterboxAspectRatio() const
 	}
 }
 
-double Window::getDpiScale() const
-{
-	const double platformDpi = Platform::getDefaultDPI();
-	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
-
-	float hdpi;
-	if (SDL_GetDisplayDPI(displayIndex, nullptr, &hdpi, nullptr) == 0)
-	{
-		return static_cast<double>(hdpi) / platformDpi;
-	}
-	else
-	{
-		DebugLogWarningFormat("Couldn't get DPI of display %d (%s).", displayIndex, SDL_GetError());
-		return 1.0;
-	}
-}
-
 Int2 Window::getSceneViewDimensions() const
 {
 	constexpr double classicViewHeightRatio = static_cast<double>(ArenaRenderUtils::SCENE_VIEW_HEIGHT) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 
-	const Int2 windowDims = this->getDimensions();
+	const Int2 windowDims = this->getPixelDimensions();
 	const int viewHeight = this->fullGameWindow ? windowDims.y : static_cast<int>(std::ceil(windowDims.y * classicViewHeightRatio));
 
 	return Int2(windowDims.x, viewHeight);
@@ -213,7 +229,7 @@ double Window::getSceneViewAspectRatio() const
 
 Rect Window::getLetterboxRect() const
 {
-	const Int2 windowDims = this->getDimensions();
+	const Int2 windowDims = this->getPixelDimensions();
 	const double windowAspect = static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
 	const double letterboxAspect = this->getLetterboxAspectRatio();
 
@@ -362,7 +378,7 @@ void Window::setTitle(const char *title)
 	SDL_SetWindowTitle(this->window, title);
 }
 
-void Window::warpMouse(int x, int y)
+void Window::warpMouse(int logicalX, int logicalY)
 {
-	SDL_WarpMouseInWindow(this->window, x, y);
+	SDL_WarpMouseInWindow(this->window, logicalX, logicalY);
 }

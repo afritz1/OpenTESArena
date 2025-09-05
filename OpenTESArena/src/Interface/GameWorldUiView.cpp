@@ -143,7 +143,7 @@ void DebugVoxelVisibilityQuadtreeState::populateCommandList(Game &game, UiComman
 		const Int2 position(ArenaRenderUtils::SCREEN_WIDTH, this->drawPositionYs[treeLevelIndex]);
 		const Int2 size = quadtreeTextureDims;
 		const Window &window = game.window;
-		const Int2 windowDims = window.getDimensions();
+		const Int2 windowDims = window.getPixelDimensions();
 		const Rect letterboxRect = window.getLetterboxRect();
 
 		RenderElement2D &renderElement = this->renderElements[treeLevelIndex];
@@ -528,7 +528,7 @@ Int2 GameWorldUiView::getInterfaceCenter(Game &game)
 
 Int2 GameWorldUiView::getNativeWindowCenter(const Window &window)
 {
-	const Int2 windowDims = window.getDimensions();
+	const Int2 windowDims = window.getPixelDimensions();
 	const Int2 nativeCenter = windowDims / 2;
 	return nativeCenter;
 }
@@ -831,7 +831,7 @@ void GameWorldUiView::DEBUG_ColorRaycastPixel(Game &game)
 	const Window &window = game.window;
 	auto &renderer = game.renderer;
 	const int selectionDim = 3;
-	const Int2 windowDims = window.getDimensions();
+	const Int2 windowDims = window.getPixelDimensions();
 
 	constexpr int xOffset = 16;
 	constexpr int yOffset = 16;

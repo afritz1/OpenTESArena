@@ -75,7 +75,7 @@ void Panel::populateCommandList(UiCommandList &commandList)
 	this->renderElementsCache.clear();
 
 	const Window &window = this->game.window;
-	const Int2 windowDims = window.getDimensions();
+	const Int2 windowDims = window.getPixelDimensions();
 	const Rect letterboxRect = window.getLetterboxRect();
 
 	for (const UiDrawCall &drawCall : this->drawCalls)

@@ -18,6 +18,7 @@ class Surface;
 struct LockedBuffer;
 struct RenderCamera;
 struct RenderCommandList;
+struct RenderContextSettings;
 struct RenderFrameSettings;
 struct RenderInitSettings;
 struct UiCommandList;
@@ -53,7 +54,8 @@ struct RendererProfilerData3D
 class RenderBackend
 {
 public:
-	virtual bool init(const RenderInitSettings &initSettings) = 0;
+	virtual bool initContext(const RenderContextSettings &contextSettings) = 0;
+	virtual bool initRendering(const RenderInitSettings &initSettings) = 0;
 	virtual void shutdown() = 0;
 
 	virtual void resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight) = 0;
