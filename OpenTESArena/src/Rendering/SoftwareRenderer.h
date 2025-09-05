@@ -126,16 +126,16 @@ struct SoftwareMaterial
 
 struct SoftwareLight
 {
-	double worldPointX;
-	double worldPointY;
-	double worldPointZ;
+	double pointX;
+	double pointY;
+	double pointZ;
 	double startRadius, startRadiusSqr;
 	double endRadius, endRadiusSqr;
-	double startEndRadiusDiff, startEndRadiusDiffRecip;
+	double radiusDiffRecip;
 
 	SoftwareLight();
 
-	void init(const Double3 &worldPoint, double startRadius, double endRadius);
+	void init(const Double3 &point, double startRadius, double endRadius);
 };
 
 using SoftwareVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, SoftwareVertexPositionBuffer>;

@@ -1613,7 +1613,7 @@ namespace
 				for (int visibleLightIndex = 0; visibleLightIndex < g_visibleLightCount; visibleLightIndex++)
 				{
 					const SoftwareLight &light = g_visibleLights[visibleLightIndex];
-					const Double3 lightPosition(light.worldPointX, light.worldPointY, light.worldPointZ);
+					const Double3 lightPosition(light.pointX, light.pointY, light.pointZ);
 					const double lightWidth = light.endRadius * 2.0;
 					const double lightHeight = lightWidth;
 					const double lightDepth = lightWidth;
@@ -2842,9 +2842,9 @@ namespace
 	void GetWorldSpaceLightIntensityValue(double pointX, double pointY, double pointZ, const SoftwareLight &__restrict light,
 		double *__restrict outLightIntensity)
 	{
-		const double lightPointDiffX = light.worldPointX - pointX;
-		const double lightPointDiffY = light.worldPointY - pointY;
-		const double lightPointDiffZ = light.worldPointZ - pointZ;
+		const double lightPointDiffX = light.pointX - pointX;
+		const double lightPointDiffY = light.pointY - pointY;
+		const double lightPointDiffZ = light.pointZ - pointZ;
 		const double lightDistanceSqr = (lightPointDiffX * lightPointDiffX) + (lightPointDiffY * lightPointDiffY) + (lightPointDiffZ * lightPointDiffZ);
 		if (lightDistanceSqr <= light.startRadiusSqr)
 		{
@@ -2857,7 +2857,7 @@ namespace
 		else
 		{
 			const double lightDistance = std::sqrt(lightDistanceSqr);
-			const double lightDistancePercent = (lightDistance - light.startRadius) * light.startEndRadiusDiffRecip;
+			const double lightDistancePercent = (lightDistance - light.startRadius) * light.radiusDiffRecip;
 			*outLightIntensity = std::clamp(1.0 - lightDistancePercent, 0.0, 1.0);
 		}
 	}
@@ -4426,28 +4426,26 @@ void SoftwareMaterial::init(VertexShaderType vertexShaderType, PixelShaderType p
 
 SoftwareLight::SoftwareLight()
 {
-	this->worldPointX = 0.0;
-	this->worldPointY = 0.0;
-	this->worldPointZ = 0.0;
+	this->pointX = 0.0;
+	this->pointY = 0.0;
+	this->pointZ = 0.0;
 	this->startRadius = 0.0;
 	this->startRadiusSqr = 0.0;
 	this->endRadius = 0.0;
 	this->endRadiusSqr = 0.0;
-	this->startEndRadiusDiff = 0.0;
-	this->startEndRadiusDiffRecip = 0.0;
+	this->radiusDiffRecip = 0.0;
 }
 
-void SoftwareLight::init(const Double3 &worldPoint, double startRadius, double endRadius)
+void SoftwareLight::init(const Double3 &point, double startRadius, double endRadius)
 {
-	this->worldPointX = worldPoint.x;
-	this->worldPointY = worldPoint.y;
-	this->worldPointZ = worldPoint.z;
+	this->pointX = point.x;
+	this->pointY = point.y;
+	this->pointZ = point.z;
 	this->startRadius = startRadius;
 	this->startRadiusSqr = startRadius * startRadius;
 	this->endRadius = endRadius;
 	this->endRadiusSqr = endRadius * endRadius;
-	this->startEndRadiusDiff = endRadius - startRadius;
-	this->startEndRadiusDiffRecip = 1.0 / this->startEndRadiusDiff;
+	this->radiusDiffRecip = 1.0 / (endRadius - startRadius);
 }
 
 SoftwareRenderer::SoftwareRenderer()
