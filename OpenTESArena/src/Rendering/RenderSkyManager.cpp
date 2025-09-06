@@ -975,7 +975,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, moonDistance);
-		addDrawCall(i, textureID, fullBrightLightPercent, PixelShaderType::AlphaTestedWithLightLevelColor);
+		addDrawCall(i, textureID, fullBrightLightPercent, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
@@ -994,7 +994,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, airDistance);
-		addDrawCall(i, textureID, distantAmbientPercent, PixelShaderType::AlphaTestedWithLightLevelColor);
+		addDrawCall(i, textureID, distantAmbientPercent, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.landStart; i < skyInst.landEnd; i++)

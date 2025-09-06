@@ -108,7 +108,6 @@ namespace
 		{ PixelShaderType::AlphaTestedWithVariableTexCoordUMin, "AlphaTestedWithVariableTexCoordUMin" },
 		{ PixelShaderType::AlphaTestedWithVariableTexCoordVMin, "AlphaTestedWithVariableTexCoordVMin" },
 		{ PixelShaderType::AlphaTestedWithPaletteIndexLookup, "AlphaTestedWithPaletteIndexLookup" },
-		{ PixelShaderType::AlphaTestedWithLightLevelColor, "AlphaTestedWithLightLevelColor" },
 		{ PixelShaderType::AlphaTestedWithLightLevelOpacity, "AlphaTestedWithLightLevelOpacity" },
 		{ PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, "AlphaTestedWithPreviousBrightnessLimit" },
 		{ PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, "AlphaTestedWithHorizonMirrorFirstPass" },
@@ -159,7 +158,6 @@ namespace
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, false, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, true, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelColor, false, false, false, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelOpacity, false, false, false, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false, false),
 

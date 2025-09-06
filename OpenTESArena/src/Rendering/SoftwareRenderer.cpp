@@ -2905,7 +2905,6 @@ namespace
 			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelColor) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass);
@@ -4010,9 +4009,6 @@ namespace
 			break;
 		case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
-			break;
-		case PixelShaderType::AlphaTestedWithLightLevelColor:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelOpacity:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
