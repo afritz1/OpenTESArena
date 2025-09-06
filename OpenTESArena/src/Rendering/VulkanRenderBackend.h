@@ -53,7 +53,7 @@ enum class VulkanBufferType
 
 struct VulkanBuffer
 {
-	vk::Buffer buffer; // Device local.
+	vk::Buffer deviceLocalBuffer;
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 
@@ -69,7 +69,7 @@ struct VulkanBuffer
 
 	VulkanBuffer();
 
-	void init(vk::Buffer buffer, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
+	void init(vk::Buffer deviceLocalBuffer, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 
 	void initVertexPosition(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent);
