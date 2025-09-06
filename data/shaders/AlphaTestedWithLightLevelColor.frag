@@ -1,6 +1,6 @@
 #version 450
 
-layout(set = 2, binding = 0) uniform usampler2D textureSampler;
+layout(set = 3, binding = 0) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
 

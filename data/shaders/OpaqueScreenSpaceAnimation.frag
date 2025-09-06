@@ -12,7 +12,7 @@ layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
     float framebufferHeightReal;
 } screenSpaceAnim;
 
-layout(set = 2, binding = 0) uniform usampler2D textureSampler;
+layout(set = 3, binding = 0) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
 

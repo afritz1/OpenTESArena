@@ -10,7 +10,7 @@ layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
 
 layout(set = 0, binding = 3) uniform usampler2D framebufferSampler;
 layout(set = 0, binding = 4) uniform sampler2D paletteSampler;
-layout(set = 2, binding = 0) uniform usampler2D textureSampler;
+layout(set = 3, binding = 0) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
 

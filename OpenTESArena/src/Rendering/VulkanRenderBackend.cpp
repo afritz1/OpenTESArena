@@ -16,6 +16,7 @@
 #include "RendererUtils.h"
 #include "VulkanRenderBackend.h"
 #include "Window.h"
+#include "../Math/BoundingBox.h"
 #include "../Math/MathUtils.h"
 #include "../UI/UiCommand.h"
 #include "../UI/Surface.h"
@@ -51,6 +52,7 @@ namespace
 	constexpr int BYTES_PER_HEAP_VERTEX_BUFFERS = 1 << 22;
 	constexpr int BYTES_PER_HEAP_INDEX_BUFFERS = BYTES_PER_HEAP_VERTEX_BUFFERS;
 	constexpr int BYTES_PER_HEAP_UNIFORM_BUFFERS = 1 << 23;
+	constexpr int BYTES_PER_HEAP_STORAGE_BUFFERS = 1 << 23;
 	constexpr int BYTES_PER_HEAP_TEXTURES = 1 << 24;
 
 	constexpr vk::BufferUsageFlags VertexBufferStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
@@ -59,21 +61,34 @@ namespace
 	constexpr vk::BufferUsageFlags IndexBufferDeviceLocalUsageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eIndexBuffer;
 	constexpr vk::BufferUsageFlags UniformBufferStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::BufferUsageFlags UniformBufferDeviceLocalUsageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eUniformBuffer;
+	constexpr vk::BufferUsageFlags StorageBufferStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
+	constexpr vk::BufferUsageFlags StorageBufferDeviceLocalUsageFlags = vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer;
 
 	constexpr vk::BufferUsageFlags ObjectTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::ImageUsageFlags ObjectTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 	constexpr vk::BufferUsageFlags UiTextureStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
 	constexpr vk::ImageUsageFlags UiTextureDeviceLocalUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled;
 
-	constexpr int MaxGlobalUniformBufferDescriptors = 24;
+	constexpr int MaxGlobalUniformBufferDescriptors = 32;
+	constexpr int MaxGlobalStorageBufferDescriptors = 4;
 	constexpr int MaxGlobalImageDescriptors = 32;
-	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalImageDescriptors;
+	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalStorageBufferDescriptors + MaxGlobalImageDescriptors;
 
 	constexpr int MaxTransformUniformBufferDynamicDescriptors = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
 	constexpr int MaxTransformPoolDescriptorSets = MaxTransformUniformBufferDynamicDescriptors;
 
 	constexpr int MaxMaterialImageDescriptors = 65536; // Lots of unique materials for entities. @todo texture atlasing
 	constexpr int MaxMaterialPoolDescriptorSets = MaxMaterialImageDescriptors;
+
+	// Scene descriptor set layout indices.
+	constexpr int GlobalDescriptorSetLayoutIndex = 0;
+	constexpr int LightDescriptorSetLayoutIndex = 1;
+	constexpr int TransformDescriptorSetLayoutIndex = 2;
+	constexpr int MaterialDescriptorSetLayoutIndex = 3;
+
+	// UI descriptor set layout indices.
+	constexpr int ConversionDescriptorSetLayoutIndex = 0;
+	constexpr int UiMaterialDescriptorSetLayoutIndex = 1;
 
 	constexpr std::pair<VertexShaderType, const char*> VertexShaderTypeFilenames[] =
 	{
@@ -175,8 +190,6 @@ namespace
 		return -1;
 	}
 
-	constexpr int SkyBackgroundPipelineKeyIndex = GetPipelineKeyIndex(VertexShaderType::Basic, PixelShaderType::Opaque, false, false, false, false);
-	constexpr int StarsPipelineKeyIndex = GetPipelineKeyIndex(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false, false);
 	constexpr int UiPipelineKeyIndex = GetPipelineKeyIndex(VertexShaderType::UI, PixelShaderType::UiTexture, false, false, false, true);
 }
 
@@ -733,34 +746,50 @@ namespace
 		return TryCreateBufferAndBindWithHeap(device, byteCount, usageFlags, queueFamilyIndex, heapManager, outBuffer, outHostMappedBytes);
 	}
 
-	// Assumes device memory has already been allocated but not mapped.
-	bool TryCreateBufferAndMapMemory(vk::Device device, int byteOffset, int byteCount, vk::BufferUsageFlags usageFlags, uint32_t queueFamilyIndex,
-		vk::DeviceMemory deviceMemory, vk::Buffer *outBuffer, Span<std::byte> *outHostMappedBytes)
+	bool TryCreateBuffersAndBindWithHeaps(vk::Device device, int byteCount, vk::BufferUsageFlags deviceLocalUsageFlags, vk::BufferUsageFlags stagingUsageFlags, uint32_t queueFamilyIndex,
+		VulkanHeapManager &deviceLocalHeapManager, VulkanHeapManager &stagingHeapManager, vk::Buffer *outDeviceLocalBuffer, vk::Buffer *outStagingBuffer, Span<std::byte> *outHostMappedBytes)
 	{
-		vk::Buffer buffer;
-		if (!TryCreateBuffer(device, byteCount, usageFlags, queueFamilyIndex, &buffer))
+		vk::Buffer deviceLocalBuffer;
+		if (!TryCreateBufferAndBindWithHeap(device, byteCount, deviceLocalUsageFlags, queueFamilyIndex, deviceLocalHeapManager, &deviceLocalBuffer, nullptr))
 		{
-			DebugLogErrorFormat("Couldn't create buffer with %d bytes.", byteCount);
+			DebugLogError("Couldn't create and bind device-local buffer.");
 			return false;
 		}
 
-		if (!TryBindBufferToMemory(device, buffer, deviceMemory, byteOffset))
-		{
-			DebugLogErrorFormat("Couldn't bind buffer to memory with %d bytes.", byteCount);
-			return false;
-		}
-
+		vk::Buffer stagingBuffer;
 		Span<std::byte> hostMappedBytes;
-		if (!TryMapMemory(device, deviceMemory, byteOffset, byteCount, &hostMappedBytes))
+		if (!TryCreateBufferAndBindWithHeap(device, byteCount, stagingUsageFlags, queueFamilyIndex, stagingHeapManager, &stagingBuffer, &hostMappedBytes))
 		{
-			DebugLogErrorFormat("Couldn't map device memory for %d bytes.", byteCount);
+			DebugLogError("Couldn't create and bind staging buffer.");
+			device.destroyBuffer(deviceLocalBuffer);
 			return false;
 		}
 
-		*outBuffer = buffer;
+		*outDeviceLocalBuffer = deviceLocalBuffer;
+		*outStagingBuffer = stagingBuffer;
 		*outHostMappedBytes = hostMappedBytes;
 		return true;
 	}
+
+	bool TryCreateBufferStagingAndDevice(vk::Device device, VulkanBuffer &buffer, int byteCount, vk::BufferUsageFlags usageFlags, uint32_t queueFamilyIndex,
+		VulkanHeapManager &deviceLocalHeapManager, VulkanHeapManager &stagingHeapManager)
+	{
+		const vk::BufferUsageFlags deviceLocalUsageFlags = usageFlags | vk::BufferUsageFlagBits::eTransferDst;
+		const vk::BufferUsageFlags stagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
+
+		vk::Buffer deviceLocalBuffer;
+		vk::Buffer stagingBuffer;
+		Span<std::byte> stagingHostMappedBytes;
+		if (!TryCreateBuffersAndBindWithHeaps(device, byteCount, deviceLocalUsageFlags, stagingUsageFlags, queueFamilyIndex,
+			deviceLocalHeapManager, stagingHeapManager, &deviceLocalBuffer, &stagingBuffer, &stagingHostMappedBytes))
+		{
+			DebugLogError("Couldn't create buffers for host and device-local buffer.");
+			return false;
+		}
+
+		buffer.init(deviceLocalBuffer, stagingBuffer, stagingHostMappedBytes);
+		return true;
+	};
 
 	void CopyToBufferDeviceLocal(vk::Buffer sourceBuffer, vk::Buffer destinationBuffer, int byteOffset, int byteCount, vk::CommandBuffer commandBuffer)
 	{
@@ -1690,36 +1719,67 @@ namespace
 		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
 
-	void UpdateConversionDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView framebufferImageView, vk::Sampler framebufferSampler,
-		vk::ImageView paletteImageView, vk::Sampler paletteSampler)
+	void UpdateLightDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer lightsBuffer, vk::Buffer lightBinsBuffer, vk::Buffer lightBinLightCountsBuffer, vk::Buffer lightBinDimsBuffer)
 	{
-		vk::DescriptorImageInfo framebufferDescriptorImageInfo;
-		framebufferDescriptorImageInfo.sampler = framebufferSampler;
-		framebufferDescriptorImageInfo.imageView = framebufferImageView;
-		framebufferDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		vk::DescriptorBufferInfo lightsDescriptorBufferInfo;
+		lightsDescriptorBufferInfo.buffer = lightsBuffer;
+		lightsDescriptorBufferInfo.offset = 0;
+		lightsDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
-		vk::DescriptorImageInfo paletteDescriptorImageInfo;
-		paletteDescriptorImageInfo.sampler = paletteSampler;
-		paletteDescriptorImageInfo.imageView = paletteImageView;
-		paletteDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		vk::DescriptorBufferInfo lightBinsDescriptorBufferInfo;
+		lightBinsDescriptorBufferInfo.buffer = lightBinsBuffer;
+		lightBinsDescriptorBufferInfo.offset = 0;
+		lightBinsDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
-		vk::WriteDescriptorSet framebufferWriteDescriptorSet;
-		framebufferWriteDescriptorSet.dstSet = descriptorSet;
-		framebufferWriteDescriptorSet.dstBinding = 0;
-		framebufferWriteDescriptorSet.dstArrayElement = 0;
-		framebufferWriteDescriptorSet.descriptorCount = 1;
-		framebufferWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		framebufferWriteDescriptorSet.pImageInfo = &framebufferDescriptorImageInfo;
+		vk::DescriptorBufferInfo lightBinLightCountsDescriptorBufferInfo;
+		lightBinLightCountsDescriptorBufferInfo.buffer = lightBinLightCountsBuffer;
+		lightBinLightCountsDescriptorBufferInfo.offset = 0;
+		lightBinLightCountsDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
-		vk::WriteDescriptorSet paletteWriteDescriptorSet;
-		paletteWriteDescriptorSet.dstSet = descriptorSet;
-		paletteWriteDescriptorSet.dstBinding = 1;
-		paletteWriteDescriptorSet.dstArrayElement = 0;
-		paletteWriteDescriptorSet.descriptorCount = 1;
-		paletteWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-		paletteWriteDescriptorSet.pImageInfo = &paletteDescriptorImageInfo;
+		vk::DescriptorBufferInfo lightBinDimsDescriptorBufferInfo;
+		lightBinDimsDescriptorBufferInfo.buffer = lightBinDimsBuffer;
+		lightBinDimsDescriptorBufferInfo.offset = 0;
+		lightBinDimsDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
-		const vk::WriteDescriptorSet writeDescriptorSets[] = { framebufferWriteDescriptorSet, paletteWriteDescriptorSet };
+		vk::WriteDescriptorSet lightsWriteDescriptorSet;
+		lightsWriteDescriptorSet.dstSet = descriptorSet;
+		lightsWriteDescriptorSet.dstBinding = 0;
+		lightsWriteDescriptorSet.dstArrayElement = 0;
+		lightsWriteDescriptorSet.descriptorCount = 1;
+		lightsWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		lightsWriteDescriptorSet.pBufferInfo = &lightsDescriptorBufferInfo;
+
+		vk::WriteDescriptorSet lightBinsWriteDescriptorSet;
+		lightBinsWriteDescriptorSet.dstSet = descriptorSet;
+		lightBinsWriteDescriptorSet.dstBinding = 1;
+		lightBinsWriteDescriptorSet.dstArrayElement = 0;
+		lightBinsWriteDescriptorSet.descriptorCount = 1;
+		lightBinsWriteDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
+		lightBinsWriteDescriptorSet.pBufferInfo = &lightBinsDescriptorBufferInfo;
+
+		vk::WriteDescriptorSet lightBinLightCountsWriteDescriptorSet;
+		lightBinLightCountsWriteDescriptorSet.dstSet = descriptorSet;
+		lightBinLightCountsWriteDescriptorSet.dstBinding = 2;
+		lightBinLightCountsWriteDescriptorSet.dstArrayElement = 0;
+		lightBinLightCountsWriteDescriptorSet.descriptorCount = 1;
+		lightBinLightCountsWriteDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
+		lightBinLightCountsWriteDescriptorSet.pBufferInfo = &lightBinLightCountsDescriptorBufferInfo;
+
+		vk::WriteDescriptorSet lightBinDimsWriteDescriptorSet;
+		lightBinDimsWriteDescriptorSet.dstSet = descriptorSet;
+		lightBinDimsWriteDescriptorSet.dstBinding = 3;
+		lightBinDimsWriteDescriptorSet.dstArrayElement = 0;
+		lightBinDimsWriteDescriptorSet.descriptorCount = 1;
+		lightBinDimsWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		lightBinDimsWriteDescriptorSet.pBufferInfo = &lightBinDimsDescriptorBufferInfo;
+
+		const vk::WriteDescriptorSet writeDescriptorSets[] =
+		{
+			lightsWriteDescriptorSet,
+			lightBinsWriteDescriptorSet,
+			lightBinLightCountsWriteDescriptorSet,
+			lightBinDimsWriteDescriptorSet
+		};
 
 		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
@@ -1771,6 +1831,40 @@ namespace
 		texture1WriteDescriptorSet.pImageInfo = &texture1DescriptorImageInfo;
 
 		const vk::WriteDescriptorSet writeDescriptorSets[] = { texture0WriteDescriptorSet, texture1WriteDescriptorSet };
+
+		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
+	}
+
+	void UpdateConversionDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView framebufferImageView, vk::Sampler framebufferSampler,
+		vk::ImageView paletteImageView, vk::Sampler paletteSampler)
+	{
+		vk::DescriptorImageInfo framebufferDescriptorImageInfo;
+		framebufferDescriptorImageInfo.sampler = framebufferSampler;
+		framebufferDescriptorImageInfo.imageView = framebufferImageView;
+		framebufferDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::DescriptorImageInfo paletteDescriptorImageInfo;
+		paletteDescriptorImageInfo.sampler = paletteSampler;
+		paletteDescriptorImageInfo.imageView = paletteImageView;
+		paletteDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::WriteDescriptorSet framebufferWriteDescriptorSet;
+		framebufferWriteDescriptorSet.dstSet = descriptorSet;
+		framebufferWriteDescriptorSet.dstBinding = 0;
+		framebufferWriteDescriptorSet.dstArrayElement = 0;
+		framebufferWriteDescriptorSet.descriptorCount = 1;
+		framebufferWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		framebufferWriteDescriptorSet.pImageInfo = &framebufferDescriptorImageInfo;
+
+		vk::WriteDescriptorSet paletteWriteDescriptorSet;
+		paletteWriteDescriptorSet.dstSet = descriptorSet;
+		paletteWriteDescriptorSet.dstBinding = 1;
+		paletteWriteDescriptorSet.dstArrayElement = 0;
+		paletteWriteDescriptorSet.descriptorCount = 1;
+		paletteWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		paletteWriteDescriptorSet.pImageInfo = &paletteDescriptorImageInfo;
+
+		const vk::WriteDescriptorSet writeDescriptorSets[] = { framebufferWriteDescriptorSet, paletteWriteDescriptorSet };
 
 		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
@@ -2011,6 +2105,167 @@ namespace
 	}
 }
 
+// Vulkan lights
+namespace
+{
+	static constexpr int MAX_LIGHTS_IN_FRUSTUM = 256; // Total allowed in frustum each frame, already sorted by distance to camera.
+	static constexpr int MAX_LIGHTS_PER_LIGHT_BIN = 32; // Fraction of max frustum lights for a light bin.
+	static constexpr int FLOATS_PER_OPTIMIZED_LIGHT = 8;
+
+	// @todo these VulkanBuffers should probably be correctly initialized so their .uniform member contains the bytesPerStride from the memory requirements
+	static constexpr int BYTES_PER_OPTIMIZED_LIGHT = sizeof(float) * FLOATS_PER_OPTIMIZED_LIGHT;
+	static constexpr int BYTES_PER_LIGHT_BIN = sizeof(int) * MAX_LIGHTS_PER_LIGHT_BIN;
+	static constexpr int BYTES_PER_LIGHT_BIN_LIGHT_COUNT = sizeof(int);
+
+	constexpr int LIGHT_BIN_MIN_WIDTH = 16; // @optimization GPUs prefer 16x16 light bins, too many bins to process w/o compute shader
+	constexpr int LIGHT_BIN_MAX_WIDTH = 64;
+	constexpr int LIGHT_BIN_MIN_HEIGHT = LIGHT_BIN_MIN_WIDTH;
+	constexpr int LIGHT_BIN_MAX_HEIGHT = LIGHT_BIN_MAX_WIDTH;
+	constexpr int LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH = 60;
+	constexpr int LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_HEIGHT = 34;
+	static_assert(MathUtils::isPowerOf2(LIGHT_BIN_MIN_WIDTH));
+	static_assert(MathUtils::isPowerOf2(LIGHT_BIN_MAX_WIDTH));
+	static_assert(MathUtils::isPowerOf2(LIGHT_BIN_MIN_HEIGHT));
+	static_assert(MathUtils::isPowerOf2(LIGHT_BIN_MAX_HEIGHT));
+
+	int GetLightBinWidth(int frameBufferWidth)
+	{
+		const int estimatedBinWidth = frameBufferWidth / LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH;
+		const int powerOfTwoBinWidth = MathUtils::roundToGreaterPowerOf2(estimatedBinWidth);
+		return std::clamp(powerOfTwoBinWidth, LIGHT_BIN_MIN_WIDTH, LIGHT_BIN_MAX_WIDTH);
+	}
+
+	int GetLightBinHeight(int frameBufferHeight)
+	{
+		const int estimatedBinHeight = frameBufferHeight / LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_HEIGHT;
+		const int powerOfTwoBinHeight = MathUtils::roundToGreaterPowerOf2(estimatedBinHeight);
+		return std::clamp(powerOfTwoBinHeight, LIGHT_BIN_MIN_HEIGHT, LIGHT_BIN_MAX_HEIGHT);
+	}
+
+	int GetLightBinCountX(int frameBufferWidth, int binWidth)
+	{
+		return 1 + (frameBufferWidth / binWidth);
+	}
+
+	int GetLightBinCountY(int frameBufferHeight, int binHeight)
+	{
+		return 1 + (frameBufferHeight / binHeight);
+	}
+
+	int BinPixelToFrameBufferPixel(int bin, int binPixel, int binDimension)
+	{
+		return (bin * binDimension) + binPixel;
+	}
+
+	void PopulateLightGlobals(const VulkanBuffer &inputVisibleLightsBuffer, int clampedVisibleLightCount, const RenderCamera &camera, int frameBufferWidth, int frameBufferHeight,
+		VulkanBuffer &optimizedVisibleLightsBuffer, VulkanBuffer &visibleLightBinsBuffer, VulkanBuffer &visibleLightBinLightCountsBuffer)
+	{
+		optimizedVisibleLightsBuffer.stagingHostMappedBytes.fill(std::byte(0));
+		visibleLightBinsBuffer.stagingHostMappedBytes.fill(std::byte(0));
+		visibleLightBinLightCountsBuffer.stagingHostMappedBytes.fill(std::byte(0));
+
+		const std::byte *inputVisibleLightsBytes = inputVisibleLightsBuffer.stagingHostMappedBytes.begin();
+		std::byte *optimizedVisibleLightsBytes = optimizedVisibleLightsBuffer.stagingHostMappedBytes.begin();
+
+		constexpr int FloatsPerInputLight = 5;
+
+		// @todo properly use .uniform bytesPerStride here instead of BYTES_PER_thing
+		DebugNotImplemented();
+
+		// Read visible lights from uniform buffer and cache values to reduce shading work.
+		for (int i = 0; i < clampedVisibleLightCount; i++)
+		{
+			Span<const float> inputVisibleLightValues(reinterpret_cast<const float*>(inputVisibleLightsBytes + (inputVisibleLightsBuffer.uniform.bytesPerStride * i)), FloatsPerInputLight);
+			const float inputVisibleLightPointX = inputVisibleLightValues[0];
+			const float inputVisibleLightPointY = inputVisibleLightValues[1];
+			const float inputVisibleLightPointZ = inputVisibleLightValues[2];
+			const float inputVisibleLightStartRadius = inputVisibleLightValues[3];
+			const float inputVisibleLightEndRadius = inputVisibleLightValues[4];
+
+			Span<float> optimizedVisibleLightValues(reinterpret_cast<float*>(optimizedVisibleLightsBytes + (BYTES_PER_OPTIMIZED_LIGHT * i)), FLOATS_PER_OPTIMIZED_LIGHT);
+			optimizedVisibleLightValues[0] = inputVisibleLightPointX;
+			optimizedVisibleLightValues[1] = inputVisibleLightPointY;
+			optimizedVisibleLightValues[2] = inputVisibleLightPointZ;
+			optimizedVisibleLightValues[3] = inputVisibleLightStartRadius;
+			optimizedVisibleLightValues[4] = inputVisibleLightStartRadius * inputVisibleLightStartRadius;
+			optimizedVisibleLightValues[5] = inputVisibleLightEndRadius;
+			optimizedVisibleLightValues[6] = inputVisibleLightEndRadius * inputVisibleLightEndRadius;
+			optimizedVisibleLightValues[7] = 1.0 / (inputVisibleLightEndRadius - inputVisibleLightStartRadius);
+		}
+
+		std::byte *visibleLightBinsBytes = visibleLightBinsBuffer.stagingHostMappedBytes.begin();
+		std::byte *visibleLightBinLightCountsBytes = visibleLightBinLightCountsBuffer.stagingHostMappedBytes.begin();
+
+		const int lightBinWidth = GetLightBinWidth(frameBufferWidth);
+		const int lightBinHeight = GetLightBinHeight(frameBufferHeight);
+		const int lightBinCountX = GetLightBinCountX(frameBufferWidth, lightBinWidth);
+		const int lightBinCountY = GetLightBinCountY(frameBufferHeight, lightBinHeight);
+		const float frameBufferWidthReal = static_cast<float>(frameBufferWidth);
+		const float frameBufferHeightReal = static_cast<float>(frameBufferHeight);
+
+		for (int binY = 0; binY < lightBinCountY; binY++)
+		{
+			const int binStartFrameBufferPixelY = BinPixelToFrameBufferPixel(binY, 0, lightBinHeight);
+			const int binEndFrameBufferPixelY = BinPixelToFrameBufferPixel(binY, lightBinHeight, lightBinHeight);
+			const double binStartFrameBufferPercentY = static_cast<double>(binStartFrameBufferPixelY) / frameBufferHeightReal;
+			const double binEndFrameBufferPercentY = static_cast<double>(binEndFrameBufferPixelY) / frameBufferHeightReal;
+
+			for (int binX = 0; binX < lightBinCountX; binX++)
+			{
+				const int binStartFrameBufferPixelX = BinPixelToFrameBufferPixel(binX, 0, lightBinWidth);
+				const int binEndFrameBufferPixelX = BinPixelToFrameBufferPixel(binX, lightBinWidth, lightBinWidth);
+				const double binStartFrameBufferPercentX = static_cast<double>(binStartFrameBufferPixelX) / frameBufferWidthReal;
+				const double binEndFrameBufferPercentX = static_cast<double>(binEndFrameBufferPixelX) / frameBufferWidthReal;
+
+				const int binIndex = binX + (binY * lightBinCountX);
+				Span<int> lightBinValues(reinterpret_cast<int*>(visibleLightBinsBytes + (BYTES_PER_LIGHT_BIN * binIndex)), MAX_LIGHTS_PER_LIGHT_BIN);
+				int &lightBinLightCount = *reinterpret_cast<int*>(visibleLightBinLightCountsBytes + (BYTES_PER_LIGHT_BIN_LIGHT_COUNT * binIndex));
+				lightBinLightCount = 0;
+
+				Double3 frustumDirLeft, frustumDirRight, frustumDirBottom, frustumDirTop;
+				Double3 frustumNormalLeft, frustumNormalRight, frustumNormalBottom, frustumNormalTop;
+				camera.createFrustumVectors(binStartFrameBufferPercentX, binEndFrameBufferPercentX, binStartFrameBufferPercentY, binEndFrameBufferPercentY,
+					&frustumDirLeft, &frustumDirRight, &frustumDirBottom, &frustumDirTop, &frustumNormalLeft, &frustumNormalRight, &frustumNormalBottom, &frustumNormalTop);
+
+				for (int visibleLightIndex = 0; visibleLightIndex < clampedVisibleLightCount; visibleLightIndex++)
+				{
+					Span<const float> inputVisibleLightValues(reinterpret_cast<const float*>(inputVisibleLightsBytes + (inputVisibleLightsBuffer.uniform.bytesPerStride * visibleLightIndex)), FloatsPerInputLight);
+					const double inputVisibleLightPointX = static_cast<double>(inputVisibleLightValues[0]);
+					const double inputVisibleLightPointY = static_cast<double>(inputVisibleLightValues[1]);
+					const double inputVisibleLightPointZ = static_cast<double>(inputVisibleLightValues[2]);
+					const double inputVisibleLightStartRadius = static_cast<double>(inputVisibleLightValues[3]);
+					const double inputVisibleLightEndRadius = static_cast<double>(inputVisibleLightValues[4]);
+
+					const Double3 lightPosition(inputVisibleLightPointX, inputVisibleLightPointY, inputVisibleLightPointZ);
+					const double lightWidth = inputVisibleLightEndRadius * 2.0;
+					const double lightHeight = lightWidth;
+					const double lightDepth = lightWidth;
+
+					BoundingBox3D lightBBox;
+					lightBBox.init(lightPosition, lightWidth, lightHeight, lightDepth);
+
+					bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
+					RendererUtils::getBBoxVisibilityInFrustum(lightBBox, camera.worldPoint, camera.forward, frustumNormalLeft, frustumNormalRight,
+						frustumNormalBottom, frustumNormalTop, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
+
+					if (isBBoxCompletelyInvisible)
+					{
+						continue;
+					}
+
+					if (lightBinLightCount >= MAX_LIGHTS_PER_LIGHT_BIN)
+					{
+						continue;
+					}
+
+					lightBinValues[lightBinLightCount] = visibleLightIndex;
+					lightBinLightCount++;
+				}
+			}
+		}
+	}
+}
+
 VulkanBuffer::VulkanBuffer()
 {
 	this->type = static_cast<VulkanBufferType>(-1);
@@ -2055,22 +2310,21 @@ void VulkanBuffer::initUniform(int elementCount, int bytesPerElement, int bytesP
 	this->uniform.descriptorSet = descriptorSet;
 }
 
-VulkanLight::VulkanLight()
+void VulkanBuffer::freeAllocations(vk::Device device)
 {
-	this->pointX = 0.0f;
-	this->pointY = 0.0f;
-	this->pointZ = 0.0f;
-	this->startRadius = 0.0f;
-	this->endRadius = 0.0f;
-}
+	this->stagingHostMappedBytes.reset();
 
-void VulkanLight::init(float pointX, float pointY, float pointZ, float startRadius, float endRadius)
-{
-	this->pointX = pointX;
-	this->pointY = pointY;
-	this->pointZ = pointZ;
-	this->startRadius = startRadius;
-	this->endRadius = endRadius;
+	if (this->stagingBuffer)
+	{
+		device.destroyBuffer(this->stagingBuffer);
+		this->stagingBuffer = nullptr;
+	}
+
+	if (this->buffer)
+	{
+		device.destroyBuffer(this->buffer);
+		this->buffer = nullptr;
+	}
 }
 
 VulkanTexture::VulkanTexture()
@@ -2093,6 +2347,35 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image ima
 	this->sampler = sampler;
 	this->stagingBuffer = stagingBuffer;
 	this->stagingHostMappedBytes = stagingHostMappedBytes;
+}
+
+void VulkanTexture::freeAllocations(vk::Device device)
+{
+	this->stagingHostMappedBytes.reset();
+
+	if (this->stagingBuffer)
+	{
+		device.destroyBuffer(this->stagingBuffer);
+		this->stagingBuffer = nullptr;
+	}
+
+	if (this->sampler)
+	{
+		device.destroySampler(this->sampler);
+		this->sampler = nullptr;
+	}
+
+	if (this->imageView)
+	{
+		device.destroyImageView(this->imageView);
+		this->imageView = nullptr;
+	}
+
+	if (this->image)
+	{
+		device.destroyImage(this->image);
+		this->image = nullptr;
+	}
 }
 
 VulkanMaterial::VulkanMaterial()
@@ -2662,6 +2945,7 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 	const vk::DescriptorPoolSize globalDescriptorPoolSizes[] =
 	{
 		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, MaxGlobalUniformBufferDescriptors),
+		CreateDescriptorPoolSize(vk::DescriptorType::eStorageBuffer, MaxGlobalStorageBufferDescriptors),
 		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxGlobalImageDescriptors)
 	};
 
@@ -2713,6 +2997,18 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		CreateDescriptorSetLayoutBinding(7, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 	};
 
+	const vk::DescriptorSetLayoutBinding lightDescriptorSetLayoutBindings[] =
+	{
+		// Lights
+		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
+		// Light index bins (depends on framebuffer size)
+		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eFragment),
+		// Light count per bin (depends on framebuffer size)
+		CreateDescriptorSetLayoutBinding(2, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eFragment),
+		// Light bin dimensions
+		CreateDescriptorSetLayoutBinding(3, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+	};
+
 	const vk::DescriptorSetLayoutBinding transformDescriptorSetLayoutBindings[] =
 	{
 		// Mesh transform
@@ -2744,6 +3040,12 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 	if (!TryCreateDescriptorSetLayout(this->device, globalDescriptorSetLayoutBindings, &this->globalDescriptorSetLayout))
 	{
 		DebugLogError("Couldn't create global descriptor set layout.");
+		return false;
+	}
+
+	if (!TryCreateDescriptorSetLayout(this->device, lightDescriptorSetLayoutBindings, &this->lightDescriptorSetLayout))
+	{
+		DebugLogError("Couldn't create light descriptor set layout.");
 		return false;
 	}
 
@@ -2780,6 +3082,12 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		}
 	}
 
+	if (!TryCreateDescriptorSet(this->device, this->lightDescriptorSetLayout, this->globalDescriptorPool, &this->lightDescriptorSet))
+	{
+		DebugLogError("Couldn't create light descriptor set.");
+		return false;
+	}
+
 	if (!TryCreateDescriptorSet(this->device, this->conversionDescriptorSetLayout, this->globalDescriptorPool, &this->conversionDescriptorSet))
 	{
 		DebugLogError("Couldn't create conversion descriptor set.");
@@ -2789,6 +3097,7 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 	const vk::DescriptorSetLayout sceneDescriptorSetLayouts[] =
 	{
 		this->globalDescriptorSetLayout,
+		this->lightDescriptorSetLayout,
 		this->transformDescriptorSetLayout,
 		this->materialDescriptorSetLayout
 	};
@@ -2917,6 +3226,18 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	if (!this->storageBufferHeapManagerDeviceLocal.initBufferManager(this->device, BYTES_PER_HEAP_STORAGE_BUFFERS, StorageBufferDeviceLocalUsageFlags, false, this->physicalDevice))
+	{
+		DebugLogError("Couldn't create storage buffer device-local heap.");
+		return false;
+	}
+
+	if (!this->storageBufferHeapManagerStaging.initBufferManager(this->device, BYTES_PER_HEAP_STORAGE_BUFFERS, StorageBufferStagingUsageFlags, true, this->physicalDevice))
+	{
+		DebugLogError("Couldn't create storage buffer staging heap.");
+		return false;
+	}
+
 	if (!this->objectTextureHeapManagerDeviceLocal.initImageManager(this->device, BYTES_PER_HEAP_TEXTURES, ObjectTextureDeviceLocalUsageFlags, this->physicalDevice))
 	{
 		DebugLogError("Couldn't create object texture device-local heap.");
@@ -2941,61 +3262,96 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	constexpr vk::BufferUsageFlags cameraUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
+	auto tryCreateBufferStagingOnly = [this](VulkanBuffer &buffer, int byteCount, vk::BufferUsageFlags usageFlags)
+	{
+		VulkanHeapManager *heapManager = nullptr;
+		if (usageFlags & vk::BufferUsageFlagBits::eUniformBuffer)
+		{
+			heapManager = &this->uniformBufferHeapManagerStaging;
+		}
+		else if (usageFlags & vk::BufferUsageFlagBits::eStorageBuffer)
+		{
+			heapManager = &this->storageBufferHeapManagerStaging;
+		}
+
+		vk::Buffer stagingBuffer;
+		Span<std::byte> stagingHostMappedBytes;
+		if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, usageFlags, this->graphicsQueueFamilyIndex, *heapManager,
+			&stagingBuffer, &stagingHostMappedBytes))
+		{
+			DebugLogError("Couldn't create buffer for host-coherent buffer.");
+			return false;
+		}
+
+		buffer.init(nullptr, stagingBuffer, stagingHostMappedBytes);
+		return true;
+	};
+
+	
+
 	constexpr int cameraByteCount = sizeof(Matrix4f);
-
-	vk::Buffer cameraBuffer;
-	Span<std::byte> cameraHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, cameraByteCount, cameraUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging,
-		&cameraBuffer, &cameraHostMappedBytes))
+	if (!tryCreateBufferStagingOnly(this->camera, cameraByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
-		DebugLogError("Couldn't create buffer for camera uniform buffer.");
+		DebugLogError("Couldn't create camera buffer.");
 		return false;
 	}
 
-	this->camera.init(nullptr, cameraBuffer, cameraHostMappedBytes);
-
-	constexpr vk::BufferUsageFlags ambientLightUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
 	constexpr int ambientLightByteCount = sizeof(float);
-
-	vk::Buffer ambientLightBuffer;
-	Span<std::byte> ambientLightHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, ambientLightByteCount, ambientLightUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging,
-		&ambientLightBuffer, &ambientLightHostMappedBytes))
+	if (!tryCreateBufferStagingOnly(this->ambientLight, ambientLightByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
-		DebugLogError("Couldn't create buffer for ambient light uniform buffer.");
+		DebugLogError("Couldn't create ambient light buffer.");
 		return false;
 	}
 
-	this->ambientLight.init(nullptr, ambientLightBuffer, ambientLightHostMappedBytes);
-
-	constexpr vk::BufferUsageFlags screenSpaceAnimUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
-	constexpr int screenSpaceAnimByteCount = sizeof(float) * 3; // Percent + framebuffer dimensions
-
-	vk::Buffer screenSpaceAnimBuffer;
-	Span<std::byte> screenSpaceAnimHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, screenSpaceAnimByteCount, screenSpaceAnimUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging,
-		&screenSpaceAnimBuffer, &screenSpaceAnimHostMappedBytes))
+	constexpr int screenSpaceAnimByteCount = sizeof(float) * 3; // Anim percent + framebuffer dimensions. @todo move framebuffer dims into its own
+	if (!tryCreateBufferStagingOnly(this->screenSpaceAnim, screenSpaceAnimByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
-		DebugLogError("Couldn't create buffer for screen space animation uniform buffer.");
+		DebugLogError("Couldn't create screen space animation buffer.");
 		return false;
 	}
 
-	this->screenSpaceAnim.init(nullptr, screenSpaceAnimBuffer, screenSpaceAnimHostMappedBytes);
-
-	constexpr vk::BufferUsageFlags horizonMirrorUsageFlags = vk::BufferUsageFlagBits::eUniformBuffer;
-	constexpr int horizonMirrorByteCount = sizeof(float) * 2; // Horizon screen space point
-
-	vk::Buffer horizonMirrorBuffer;
-	Span<std::byte> horizonMirrorHostMappedBytes;
-	if (!TryCreateBufferAndBindWithHeap(this->device, horizonMirrorByteCount, horizonMirrorUsageFlags, this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerStaging,
-		&horizonMirrorBuffer, &horizonMirrorHostMappedBytes))
+	constexpr int horizonMirrorByteCount = sizeof(float) * 2; // Horizon screen space point.
+	if (!tryCreateBufferStagingOnly(this->horizonMirror, horizonMirrorByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
-		DebugLogError("Couldn't create buffer for horizon mirror uniform buffer.");
+		DebugLogError("Couldn't create horizon mirror buffer.");
 		return false;
 	}
 
-	this->horizonMirror.init(nullptr, horizonMirrorBuffer, horizonMirrorHostMappedBytes);
+	constexpr int optimizedVisibleLightsByteCount = (sizeof(float) * FLOATS_PER_OPTIMIZED_LIGHT) * MAX_LIGHTS_IN_FRUSTUM;
+	if (!TryCreateBufferStagingAndDevice(this->device, this->optimizedVisibleLights, optimizedVisibleLightsByteCount, vk::BufferUsageFlagBits::eUniformBuffer,
+		this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerDeviceLocal, this->uniformBufferHeapManagerStaging))
+	{
+		DebugLogError("Couldn't create optimized visible lights buffer.");
+		return false;
+	}
+
+	const int lightBinWidth = GetLightBinWidth(initSettings.internalWidth);
+	const int lightBinHeight = GetLightBinHeight(initSettings.internalHeight);
+	const int lightBinCountX = GetLightBinCountX(initSettings.internalWidth, lightBinWidth);
+	const int lightBinCountY = GetLightBinCountY(initSettings.internalHeight, lightBinHeight);
+	const int lightBinCount = lightBinCountX * lightBinCountY;
+	const int lightBinsByteCount = BYTES_PER_LIGHT_BIN * lightBinCount;
+	if (!TryCreateBufferStagingAndDevice(this->device, this->lightBins, lightBinsByteCount, vk::BufferUsageFlagBits::eStorageBuffer,
+		this->graphicsQueueFamilyIndex, this->storageBufferHeapManagerDeviceLocal, this->storageBufferHeapManagerStaging))
+	{
+		DebugLogError("Couldn't create light bins buffer.");
+		return false;
+	}
+
+	const int lightBinLightCountsByteCount = BYTES_PER_LIGHT_BIN_LIGHT_COUNT * lightBinCount;
+	if (!TryCreateBufferStagingAndDevice(this->device, this->lightBinLightCounts, lightBinLightCountsByteCount, vk::BufferUsageFlagBits::eStorageBuffer,
+		this->graphicsQueueFamilyIndex, this->storageBufferHeapManagerDeviceLocal, this->storageBufferHeapManagerStaging))
+	{
+		DebugLogError("Couldn't create light bin light counts buffer.");
+		return false;
+	}
+
+	const int lightBinDimsByteCount = sizeof(int) * 2; // Bin width and height.
+	if (!tryCreateBufferStagingOnly(this->lightBinDims, lightBinDimsByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
+	{
+		DebugLogError("Couldn't create light bin dimensions buffer.");
+		return false;
+	}
 
 	constexpr int UiRectangleVertexCount = 6; // Two triangles, no indices.
 	constexpr int UiPositionComponentsPerVertex = 2;
@@ -3083,37 +3439,14 @@ void VulkanRenderBackend::shutdown()
 		this->uiVertexAttributeBufferID = -1;
 		this->uiVertexPositionBufferID = -1;
 
-		if (this->horizonMirror.stagingBuffer)
-		{
-			this->device.destroyBuffer(this->horizonMirror.stagingBuffer);
-			this->horizonMirror.stagingBuffer = nullptr;
-		}
-
-		this->horizonMirror.stagingHostMappedBytes.reset();
-
-		if (this->screenSpaceAnim.stagingBuffer)
-		{
-			this->device.destroyBuffer(this->screenSpaceAnim.stagingBuffer);
-			this->screenSpaceAnim.stagingBuffer = nullptr;
-		}
-
-		this->screenSpaceAnim.stagingHostMappedBytes.reset();
-
-		if (this->ambientLight.stagingBuffer)
-		{
-			this->device.destroyBuffer(this->ambientLight.stagingBuffer);
-			this->ambientLight.stagingBuffer = nullptr;
-		}
-
-		this->ambientLight.stagingHostMappedBytes.reset();
-
-		if (this->camera.stagingBuffer)
-		{
-			this->device.destroyBuffer(this->camera.stagingBuffer);
-			this->camera.stagingBuffer = nullptr;
-		}
-
-		this->camera.stagingHostMappedBytes.reset();
+		this->lightBinDims.freeAllocations(this->device);
+		this->lightBinLightCounts.freeAllocations(this->device);
+		this->lightBins.freeAllocations(this->device);
+		this->optimizedVisibleLights.freeAllocations(this->device);
+		this->horizonMirror.freeAllocations(this->device);
+		this->screenSpaceAnim.freeAllocations(this->device);
+		this->ambientLight.freeAllocations(this->device);
+		this->camera.freeAllocations(this->device);
 
 		this->uiTextureHeapManagerStaging.freeAllocations();
 		this->uiTextureHeapManagerStaging.clear();
@@ -3126,6 +3459,9 @@ void VulkanRenderBackend::shutdown()
 
 		this->objectTextureHeapManagerDeviceLocal.freeAllocations();
 		this->objectTextureHeapManagerDeviceLocal.clear();
+
+		this->storageBufferHeapManagerStaging.freeAllocations();
+		this->storageBufferHeapManagerStaging.clear();
 
 		this->uniformBufferHeapManagerStaging.freeAllocations();
 		this->uniformBufferHeapManagerStaging.clear();
@@ -3157,110 +3493,42 @@ void VulkanRenderBackend::shutdown()
 
 		for (VulkanTexture &texture : this->uiTexturePool.values)
 		{
-			if (texture.stagingBuffer)
-			{
-				this->device.destroyBuffer(texture.stagingBuffer);
-			}
-
-			if (texture.sampler)
-			{
-				this->device.destroySampler(texture.sampler);
-			}
-
-			if (texture.imageView)
-			{
-				this->device.destroyImageView(texture.imageView);
-			}
-
-			if (texture.image)
-			{
-				this->device.destroyImage(texture.image);
-			}
+			texture.freeAllocations(this->device);
 		}
 
 		this->uiTexturePool.clear();
 
 		for (VulkanTexture &texture : this->objectTexturePool.values)
 		{
-			if (texture.stagingBuffer)
-			{
-				this->device.destroyBuffer(texture.stagingBuffer);
-			}
-
-			if (texture.sampler)
-			{
-				this->device.destroySampler(texture.sampler);
-			}
-
-			if (texture.imageView)
-			{
-				this->device.destroyImageView(texture.imageView);
-			}
-
-			if (texture.image)
-			{
-				this->device.destroyImage(texture.image);
-			}
+			texture.freeAllocations(this->device);
 		}
 
 		this->objectTexturePool.clear();
 
 		for (VulkanBuffer &buffer : this->uniformBufferPool.values)
 		{
-			if (buffer.stagingBuffer)
-			{
-				this->device.destroyBuffer(buffer.stagingBuffer);
-			}
-
-			if (buffer.buffer)
-			{
-				this->device.destroyBuffer(buffer.buffer);
-			}
+			buffer.freeAllocations(this->device);
 		}
 
 		this->uniformBufferPool.clear();
 
 		for (VulkanBuffer &buffer : this->indexBufferPool.values)
 		{
-			if (buffer.stagingBuffer)
-			{
-				this->device.destroyBuffer(buffer.stagingBuffer);
-			}
-
-			if (buffer.buffer)
-			{
-				this->device.destroyBuffer(buffer.buffer);
-			}
+			buffer.freeAllocations(this->device);
 		}
 
 		this->indexBufferPool.clear();
 
 		for (VulkanBuffer &buffer : this->vertexAttributeBufferPool.values)
 		{
-			if (buffer.stagingBuffer)
-			{
-				this->device.destroyBuffer(buffer.stagingBuffer);
-			}
-
-			if (buffer.buffer)
-			{
-				this->device.destroyBuffer(buffer.buffer);
-			}
+			buffer.freeAllocations(this->device);
 		}
 
 		this->vertexAttributeBufferPool.clear();
 
 		for (VulkanBuffer &buffer : this->vertexPositionBufferPool.values)
 		{
-			if (buffer.stagingBuffer)
-			{
-				this->device.destroyBuffer(buffer.stagingBuffer);
-			}
-
-			if (buffer.buffer)
-			{
-				this->device.destroyBuffer(buffer.buffer);
-			}
+			buffer.freeAllocations(this->device);
 		}
 
 		this->vertexPositionBufferPool.clear();
@@ -3338,6 +3606,12 @@ void VulkanRenderBackend::shutdown()
 			this->transformDescriptorSetLayout = nullptr;
 		}
 
+		if (this->lightDescriptorSetLayout)
+		{
+			this->device.destroyDescriptorSetLayout(this->lightDescriptorSetLayout);
+			this->lightDescriptorSetLayout = nullptr;
+		}
+
 		if (this->globalDescriptorSetLayout)
 		{
 			this->device.destroyDescriptorSetLayout(this->globalDescriptorSetLayout);
@@ -3359,6 +3633,7 @@ void VulkanRenderBackend::shutdown()
 		if (this->globalDescriptorPool)
 		{
 			this->conversionDescriptorSet = nullptr;
+			this->lightDescriptorSet = nullptr;
 
 			for (vk::DescriptorSet &descriptorSet : this->globalDescriptorSets)
 			{
@@ -3546,6 +3821,9 @@ void VulkanRenderBackend::shutdown()
 
 void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
 {
+	this->lightBins.freeAllocations(this->device);
+	this->lightBinLightCounts.freeAllocations(this->device);
+
 	for (vk::Framebuffer framebuffer : this->uiFramebuffers)
 	{
 		if (framebuffer)
@@ -3786,6 +4064,9 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 			return;
 		}
 	}
+
+	// @todo reallocate light bins and light bin light counts
+	DebugNotImplementedMsg("resize light bin buffers");
 }
 
 void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
@@ -4698,6 +4979,36 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	const uint32_t acquiredSwapchainImageIndex = std::move(acquiredSwapchainImageIndexResult.value);
 	const vk::Image acquiredSwapchainImage = this->swapchainImages[acquiredSwapchainImageIndex];
 
+	const bool anySceneDrawCalls = renderCommandList.entryCount > 0;
+	if (anySceneDrawCalls)
+	{
+		// Update visible lights.
+		const int clampedVisibleLightCount = std::min(frameSettings.visibleLightCount, MAX_LIGHTS_IN_FRUSTUM);
+		const VulkanBuffer &inputVisibleLightsBuffer = this->uniformBufferPool.get(frameSettings.visibleLightsBufferID);
+		PopulateLightGlobals(inputVisibleLightsBuffer, clampedVisibleLightCount, camera, this->internalExtent.width, this->internalExtent.height,
+			this->optimizedVisibleLights, this->lightBins, this->lightBinLightCounts);
+
+		UpdateLightDescriptorSet(this->device, this->lightDescriptorSet, this->optimizedVisibleLights.buffer,  this->lightBins.buffer, this->lightBinLightCounts.buffer, this->lightBinDims.stagingBuffer);
+
+		Span<int> lightBinDimsValues(reinterpret_cast<int*>(this->lightBinDims.stagingHostMappedBytes.begin()), 2);
+		lightBinDimsValues[0] = GetLightBinWidth(this->internalExtent.width);
+		lightBinDimsValues[1] = GetLightBinHeight(this->internalExtent.height);
+
+		auto copyCommand = [this]()
+		{
+			const int optimizedLightsByteCount = this->optimizedVisibleLights.stagingHostMappedBytes.getCount();
+			CopyToBufferDeviceLocal(this->optimizedVisibleLights.stagingBuffer, this->optimizedVisibleLights.buffer, 0, optimizedLightsByteCount, this->commandBuffer);
+
+			const int lightBinsByteCount = this->lightBins.stagingHostMappedBytes.getCount();
+			CopyToBufferDeviceLocal(this->lightBins.stagingBuffer, this->lightBins.buffer, 0, lightBinsByteCount, this->commandBuffer);
+
+			const int lightBinLightCountsByteCount = this->lightBinLightCounts.stagingHostMappedBytes.getCount();
+			CopyToBufferDeviceLocal(this->lightBinLightCounts.stagingBuffer, this->lightBinLightCounts.buffer, 0, lightBinLightCountsByteCount, this->commandBuffer);
+		};
+
+		this->copyCommands.emplace_back(std::move(copyCommand));
+	}
+
 	const vk::Result commandBufferResetResult = this->commandBuffer.reset();
 	if (commandBufferResetResult != vk::Result::eSuccess)
 	{
@@ -4805,7 +5116,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	int targetFramebufferIndex = 0; // Ping-pong depending on current scene render pass.
 	int inputFramebufferIndex = targetFramebufferIndex ^ 1;
 
-	const bool anySceneDrawCalls = renderCommandList.entryCount > 0;
 	if (anySceneDrawCalls)
 	{
 		vk::Viewport sceneViewport;
@@ -4966,9 +5276,8 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 					currentPipeline = pipeline;
 					this->commandBuffer.bindPipeline(pipelineBindPoint, pipeline);
-
-					constexpr uint32_t globalDescriptorSetIndex = 0;
-					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, globalDescriptorSetIndex, this->globalDescriptorSets[inputFramebufferIndex], vk::ArrayProxy<const uint32_t>());
+					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, GlobalDescriptorSetLayoutIndex, this->globalDescriptorSets[inputFramebufferIndex], vk::ArrayProxy<const uint32_t>());
+					this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, LightDescriptorSetLayoutIndex, this->lightDescriptorSet, vk::ArrayProxy<const uint32_t>());
 
 					currentMultipassType = multipassType;
 				}
@@ -5009,12 +5318,9 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 				const VulkanBuffer &transformBuffer = this->uniformBufferPool.get(drawCall.transformBufferID);
 				const VulkanBufferUniformInfo &transformBufferInfo = transformBuffer.uniform;
-				constexpr uint32_t transformDescriptorSetIndex = 1;
 				uint32_t transformBufferDynamicOffset = drawCall.transformIndex * transformBufferInfo.bytesPerStride;
-				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, transformDescriptorSetIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
-
-				constexpr uint32_t materialDescriptorSetIndex = 2;
-				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, materialDescriptorSetIndex, material.descriptorSet, vk::ArrayProxy<const uint32_t>());
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, TransformDescriptorSetLayoutIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, MaterialDescriptorSetLayoutIndex, material.descriptorSet, vk::ArrayProxy<const uint32_t>());
 
 				uint32_t pushConstantOffset = 0;
 				if (drawCall.preScaleTranslationBufferID >= 0)
@@ -5131,7 +5437,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		this->commandBuffer.bindPipeline(pipelineBindPoint, this->conversionPipeline);
 
 		UpdateConversionDescriptorSet(this->device, this->conversionDescriptorSet, this->colorImageViews[targetFramebufferIndex], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler);
-		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, uiPipelineLayout, 0, this->conversionDescriptorSet, vk::ArrayProxy<const uint32_t>());
+		this->commandBuffer.bindDescriptorSets(pipelineBindPoint, uiPipelineLayout, ConversionDescriptorSetLayoutIndex, this->conversionDescriptorSet, vk::ArrayProxy<const uint32_t>());
 
 		// Fullscreen quad for scene view.
 		constexpr float conversionRectX = 0.0f;
@@ -5193,7 +5499,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 					continue;
 				}
 
-				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, uiPipelineLayout, 1, *textureDescriptorSet, vk::ArrayProxy<const uint32_t>());
+				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, uiPipelineLayout, UiMaterialDescriptorSetLayoutIndex, *textureDescriptorSet, vk::ArrayProxy<const uint32_t>());
 
 				const Rect presentRect = renderElement.rect;
 				const float uiVertexShaderPushConstants[] =

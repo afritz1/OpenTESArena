@@ -75,16 +75,8 @@ struct VulkanBuffer
 	void initVertexAttribute(int vertexCount, int componentsPerVertex, int bytesPerComponent);
 	void initIndex(int indexCount, int bytesPerIndex);
 	void initUniform(int elementCount, int bytesPerElement, int bytesPerStride, vk::DescriptorSet descriptorSet);
-};
 
-struct VulkanLight
-{
-	float pointX, pointY, pointZ;
-	float startRadius, endRadius;
-
-	VulkanLight();
-
-	void init(float pointX, float pointY, float pointZ, float startRadius, float endRadius);
+	void freeAllocations(vk::Device device);
 };
 
 struct VulkanTexture
@@ -101,6 +93,8 @@ struct VulkanTexture
 	VulkanTexture();
 
 	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
+
+	void freeAllocations(vk::Device device);
 };
 
 enum class VulkanMaterialPushConstantType
@@ -300,11 +294,13 @@ private:
 	vk::DescriptorPool transformDescriptorPool;
 	vk::DescriptorPool materialDescriptorPool;
 	vk::DescriptorSetLayout globalDescriptorSetLayout;
+	vk::DescriptorSetLayout lightDescriptorSetLayout;
 	vk::DescriptorSetLayout transformDescriptorSetLayout;
 	vk::DescriptorSetLayout materialDescriptorSetLayout;
 	vk::DescriptorSetLayout conversionDescriptorSetLayout;
 	vk::DescriptorSetLayout uiMaterialDescriptorSetLayout;
 	vk::DescriptorSet globalDescriptorSets[MAX_SCENE_FRAMEBUFFERS]; // Two for ping-ponging sampled framebuffer.
+	vk::DescriptorSet lightDescriptorSet;
 	vk::DescriptorSet conversionDescriptorSet;
 	FlatMap<UiTextureID, vk::DescriptorSet> uiTextureDescriptorSets; // Avoids UI material support since UI is simplistic.
 
@@ -329,6 +325,8 @@ private:
 	VulkanHeapManager indexBufferHeapManagerStaging;
 	VulkanHeapManager uniformBufferHeapManagerDeviceLocal;
 	VulkanHeapManager uniformBufferHeapManagerStaging;
+	VulkanHeapManager storageBufferHeapManagerDeviceLocal;
+	VulkanHeapManager storageBufferHeapManagerStaging;
 	VulkanHeapManager objectTextureHeapManagerDeviceLocal;
 	VulkanHeapManager objectTextureHeapManagerStaging;
 	VulkanHeapManager uiTextureHeapManagerDeviceLocal;
@@ -338,6 +336,10 @@ private:
 	VulkanBuffer ambientLight;
 	VulkanBuffer screenSpaceAnim;
 	VulkanBuffer horizonMirror;
+	VulkanBuffer optimizedVisibleLights;
+	VulkanBuffer lightBins;
+	VulkanBuffer lightBinLightCounts;
+	VulkanBuffer lightBinDims;
 	VertexPositionBufferID uiVertexPositionBufferID;
 	VertexAttributeBufferID uiVertexAttributeBufferID;
 	vk::Image dummyImage;

@@ -15,7 +15,7 @@ layout(set = 0, binding = 7) uniform HorizonMirror
     float screenSpacePointX, screenSpacePointY;
 } horizon;
 
-layout(set = 2, binding = 0) uniform usampler2D textureSampler;
+layout(set = 3, binding = 0) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
 
