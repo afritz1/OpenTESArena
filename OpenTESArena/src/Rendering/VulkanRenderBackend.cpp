@@ -3812,7 +3812,12 @@ void VulkanRenderBackend::shutdown()
 
 void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
 {
+	this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBins.deviceLocalBuffer);
+	this->storageBufferHeapManagerStaging.freeBufferMapping(this->lightBins.stagingBuffer);
 	this->lightBins.freeAllocations(this->device);
+
+	this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBinLightCounts.deviceLocalBuffer);
+	this->storageBufferHeapManagerStaging.freeBufferMapping(this->lightBinLightCounts.stagingBuffer);
 	this->lightBinLightCounts.freeAllocations(this->device);
 
 	for (vk::Framebuffer framebuffer : this->uiFramebuffers)
@@ -4056,8 +4061,26 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		}
 	}
 
-	// @todo reallocate light bins and light bin light counts
-	DebugNotImplementedMsg("resize light bin buffers");
+	const int lightBinWidth = GetLightBinWidth(internalWidth);
+	const int lightBinHeight = GetLightBinHeight(internalHeight);
+	const int lightBinCountX = GetLightBinCountX(internalWidth, lightBinWidth);
+	const int lightBinCountY = GetLightBinCountY(internalHeight, lightBinHeight);
+	const int lightBinCount = lightBinCountX * lightBinCountY;
+	const int lightBinsByteCount = BYTES_PER_LIGHT_BIN * lightBinCount;
+	if (!TryCreateBufferStagingAndDevice(this->device, this->lightBins, lightBinsByteCount, vk::BufferUsageFlagBits::eStorageBuffer,
+		this->graphicsQueueFamilyIndex, this->storageBufferHeapManagerDeviceLocal, this->storageBufferHeapManagerStaging))
+	{
+		DebugLogErrorFormat("Couldn't create light bins buffer for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
+
+	const int lightBinLightCountsByteCount = BYTES_PER_LIGHT_BIN_LIGHT_COUNT * lightBinCount;
+	if (!TryCreateBufferStagingAndDevice(this->device, this->lightBinLightCounts, lightBinLightCountsByteCount, vk::BufferUsageFlagBits::eStorageBuffer,
+		this->graphicsQueueFamilyIndex, this->storageBufferHeapManagerDeviceLocal, this->storageBufferHeapManagerStaging))
+	{
+		DebugLogErrorFormat("Couldn't create light bin light counts buffer for resize to %dx%d.", windowWidth, windowHeight);
+		return;
+	}
 }
 
 void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
