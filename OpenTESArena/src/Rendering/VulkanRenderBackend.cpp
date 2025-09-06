@@ -3463,6 +3463,9 @@ void VulkanRenderBackend::shutdown()
 		this->storageBufferHeapManagerStaging.freeAllocations();
 		this->storageBufferHeapManagerStaging.clear();
 
+		this->storageBufferHeapManagerDeviceLocal.freeAllocations();
+		this->storageBufferHeapManagerDeviceLocal.clear();
+
 		this->uniformBufferHeapManagerStaging.freeAllocations();
 		this->uniformBufferHeapManagerStaging.clear();
 
