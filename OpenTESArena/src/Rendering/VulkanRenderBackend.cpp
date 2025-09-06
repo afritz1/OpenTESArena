@@ -2162,9 +2162,6 @@ namespace
 
 		constexpr int FloatsPerInputLight = 5;
 
-		// @todo properly use .uniform bytesPerStride here instead of BYTES_PER_thing
-		DebugNotImplemented();
-
 		// Read visible lights from uniform buffer and cache values to reduce shading work.
 		for (int i = 0; i < clampedVisibleLightCount; i++)
 		{
@@ -3337,7 +3334,7 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	const int lightBinDimsByteCount = sizeof(int) * 2; // Bin width and height.
+	const int lightBinDimsByteCount = sizeof(int) * 4; // Bin width and height, bin count X and Y.
 	if (!tryCreateBufferStagingOnly(this->lightBinDims, lightBinDimsByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
 		DebugLogError("Couldn't create light bin dimensions buffer.");
@@ -4962,9 +4959,15 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		UpdateLightDescriptorSet(this->device, this->lightDescriptorSet, this->optimizedVisibleLights.deviceLocalBuffer, this->lightBins.deviceLocalBuffer,
 			this->lightBinLightCounts.deviceLocalBuffer, this->lightBinDims.stagingBuffer);
 
-		Span<int> lightBinDimsValues(reinterpret_cast<int*>(this->lightBinDims.stagingHostMappedBytes.begin()), 2);
-		lightBinDimsValues[0] = GetLightBinWidth(this->internalExtent.width);
-		lightBinDimsValues[1] = GetLightBinHeight(this->internalExtent.height);
+		const int lightBinWidth = GetLightBinWidth(this->internalExtent.width);
+		const int lightBinHeight = GetLightBinHeight(this->internalExtent.height);
+		const int lightBinCountX = GetLightBinCountX(this->internalExtent.width, lightBinWidth);
+		const int lightBinCountY = GetLightBinCountY(this->internalExtent.height, lightBinHeight);
+		Span<int> lightBinDimsValues(reinterpret_cast<int*>(this->lightBinDims.stagingHostMappedBytes.begin()), 4);
+		lightBinDimsValues[0] = lightBinWidth;
+		lightBinDimsValues[1] = lightBinHeight;
+		lightBinDimsValues[2] = lightBinCountX;
+		lightBinDimsValues[3] = lightBinCountY;
 
 		auto copyCommand = [this]()
 		{

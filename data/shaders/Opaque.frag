@@ -47,8 +47,10 @@ layout(set = 1, binding = 2) buffer LightBinLightCounts
 
 layout(set = 1, binding = 3) uniform LightBinDimensions
 {
-    uint width;
-    uint height;
+    uint pixelWidth;
+    uint pixelHeight;
+    uint binCountX;
+    uint binCountY;
 } lightBinDims;
 
 layout(set = 3, binding = 0) uniform usampler2D textureSampler;
@@ -83,9 +85,11 @@ float getLightIntensity(vec3 point, Light light)
 
 float getPerPixelLightIntensitySum()
 {
-    uint lightBinX = uint(gl_FragCoord.x) / lightBinDims.width;
-    uint lightBinY = uint(gl_FragCoord.y) / lightBinDims.height;
-    uint lightBinIndex = lightBinX + (lightBinY * lightBinDims.width);
+    uint pixelX = uint(gl_FragCoord.x) - 1;
+    uint pixelY = uint(gl_FragCoord.y) - 1;
+    uint lightBinX = pixelX / lightBinDims.pixelWidth;
+    uint lightBinY = pixelY / lightBinDims.pixelHeight;
+    uint lightBinIndex = lightBinX + (lightBinY * lightBinDims.binCountX);
 
     LightBin lightBin = lightBins.bins[lightBinIndex];
     uint lightBinLightCount = lightBinLightCounts.counts[lightBinIndex];
