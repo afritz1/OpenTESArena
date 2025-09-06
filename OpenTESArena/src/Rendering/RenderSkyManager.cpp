@@ -367,7 +367,6 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 
 	this->bgDrawCall.transformBufferID = this->bgTransformBufferID;
 	this->bgDrawCall.transformIndex = 0;
-	this->bgDrawCall.preScaleTranslationBufferID = -1;
 	this->bgDrawCall.positionBufferID = this->bgPositionBufferID;
 	this->bgDrawCall.normalBufferID = this->bgNormalBufferID;
 	this->bgDrawCall.texCoordBufferID = this->bgTexCoordBufferID;
@@ -877,7 +876,6 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		RenderDrawCall drawCall;
 		drawCall.transformBufferID = this->objectTransformBufferID;
 		drawCall.transformIndex = transformIndex;
-		drawCall.preScaleTranslationBufferID = -1;
 		drawCall.positionBufferID = this->objectPositionBufferID;
 		drawCall.normalBufferID = this->objectNormalBufferID;
 		drawCall.texCoordBufferID = this->objectTexCoordBufferID;

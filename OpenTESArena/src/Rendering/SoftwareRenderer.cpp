@@ -826,9 +826,6 @@ namespace
 		double modelViewProjMatrixWY;
 		double modelViewProjMatrixWZ;
 		double modelViewProjMatrixWW;
-		double preScaleTranslationX;
-		double preScaleTranslationY;
-		double preScaleTranslationZ;
 	};
 
 	int g_totalDrawCallCount = 0;
@@ -1220,187 +1217,6 @@ namespace
 			modelViewProjMatrixZXs, modelViewProjMatrixZYs, modelViewProjMatrixZZs, modelViewProjMatrixZWs,
 			modelViewProjMatrixWXs, modelViewProjMatrixWYs, modelViewProjMatrixWZs, modelViewProjMatrixWWs,
 			vertexXs, vertexYs, vertexZs, vertexWs,
-			outVertexXs, outVertexYs, outVertexZs, outVertexWs);
-	}
-
-	template<int N>
-	void VertexShader_RaisingDoorN(const TransformCache &__restrict transformCache, const double *__restrict vertexXs, const double *__restrict vertexYs,
-		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
-		double *__restrict outVertexZs, double *__restrict outVertexWs)
-	{
-		// Read in each mesh's transforms.
-		double preScaleTranslationXs[N];
-		double preScaleTranslationYs[N];
-		double preScaleTranslationZs[N];
-		double translationMatrixXXs[N];
-		double translationMatrixXYs[N];
-		double translationMatrixXZs[N];
-		double translationMatrixXWs[N];
-		double translationMatrixYXs[N];
-		double translationMatrixYYs[N];
-		double translationMatrixYZs[N];
-		double translationMatrixYWs[N];
-		double translationMatrixZXs[N];
-		double translationMatrixZYs[N];
-		double translationMatrixZZs[N];
-		double translationMatrixZWs[N];
-		double translationMatrixWXs[N];
-		double translationMatrixWYs[N];
-		double translationMatrixWZs[N];
-		double translationMatrixWWs[N];
-		double rotationMatrixXXs[N];
-		double rotationMatrixXYs[N];
-		double rotationMatrixXZs[N];
-		double rotationMatrixXWs[N];
-		double rotationMatrixYXs[N];
-		double rotationMatrixYYs[N];
-		double rotationMatrixYZs[N];
-		double rotationMatrixYWs[N];
-		double rotationMatrixZXs[N];
-		double rotationMatrixZYs[N];
-		double rotationMatrixZZs[N];
-		double rotationMatrixZWs[N];
-		double rotationMatrixWXs[N];
-		double rotationMatrixWYs[N];
-		double rotationMatrixWZs[N];
-		double rotationMatrixWWs[N];
-		double scaleMatrixXXs[N];
-		double scaleMatrixXYs[N];
-		double scaleMatrixXZs[N];
-		double scaleMatrixXWs[N];
-		double scaleMatrixYXs[N];
-		double scaleMatrixYYs[N];
-		double scaleMatrixYZs[N];
-		double scaleMatrixYWs[N];
-		double scaleMatrixZXs[N];
-		double scaleMatrixZYs[N];
-		double scaleMatrixZZs[N];
-		double scaleMatrixZWs[N];
-		double scaleMatrixWXs[N];
-		double scaleMatrixWYs[N];
-		double scaleMatrixWZs[N];
-		double scaleMatrixWWs[N];
-		for (int i = 0; i < N; i++)
-		{
-			// @todo: this isn't taking meshIndex anymore
-			preScaleTranslationXs[i] = transformCache.preScaleTranslationX;
-			preScaleTranslationYs[i] = transformCache.preScaleTranslationY;
-			preScaleTranslationZs[i] = transformCache.preScaleTranslationZ;
-			translationMatrixXXs[i] = transformCache.translationMatrixXX;
-			translationMatrixXYs[i] = transformCache.translationMatrixXY;
-			translationMatrixXZs[i] = transformCache.translationMatrixXZ;
-			translationMatrixXWs[i] = transformCache.translationMatrixXW;
-			translationMatrixYXs[i] = transformCache.translationMatrixYX;
-			translationMatrixYYs[i] = transformCache.translationMatrixYY;
-			translationMatrixYZs[i] = transformCache.translationMatrixYZ;
-			translationMatrixYWs[i] = transformCache.translationMatrixYW;
-			translationMatrixZXs[i] = transformCache.translationMatrixZX;
-			translationMatrixZYs[i] = transformCache.translationMatrixZY;
-			translationMatrixZZs[i] = transformCache.translationMatrixZZ;
-			translationMatrixZWs[i] = transformCache.translationMatrixZW;
-			translationMatrixWXs[i] = transformCache.translationMatrixWX;
-			translationMatrixWYs[i] = transformCache.translationMatrixWY;
-			translationMatrixWZs[i] = transformCache.translationMatrixWZ;
-			translationMatrixWWs[i] = transformCache.translationMatrixWW;
-			rotationMatrixXXs[i] = transformCache.rotationMatrixXX;
-			rotationMatrixXYs[i] = transformCache.rotationMatrixXY;
-			rotationMatrixXZs[i] = transformCache.rotationMatrixXZ;
-			rotationMatrixXWs[i] = transformCache.rotationMatrixXW;
-			rotationMatrixYXs[i] = transformCache.rotationMatrixYX;
-			rotationMatrixYYs[i] = transformCache.rotationMatrixYY;
-			rotationMatrixYZs[i] = transformCache.rotationMatrixYZ;
-			rotationMatrixYWs[i] = transformCache.rotationMatrixYW;
-			rotationMatrixZXs[i] = transformCache.rotationMatrixZX;
-			rotationMatrixZYs[i] = transformCache.rotationMatrixZY;
-			rotationMatrixZZs[i] = transformCache.rotationMatrixZZ;
-			rotationMatrixZWs[i] = transformCache.rotationMatrixZW;
-			rotationMatrixWXs[i] = transformCache.rotationMatrixWX;
-			rotationMatrixWYs[i] = transformCache.rotationMatrixWY;
-			rotationMatrixWZs[i] = transformCache.rotationMatrixWZ;
-			rotationMatrixWWs[i] = transformCache.rotationMatrixWW;
-			scaleMatrixXXs[i] = transformCache.scaleMatrixXX;
-			scaleMatrixXYs[i] = transformCache.scaleMatrixXY;
-			scaleMatrixXZs[i] = transformCache.scaleMatrixXZ;
-			scaleMatrixXWs[i] = transformCache.scaleMatrixXW;
-			scaleMatrixYXs[i] = transformCache.scaleMatrixYX;
-			scaleMatrixYYs[i] = transformCache.scaleMatrixYY;
-			scaleMatrixYZs[i] = transformCache.scaleMatrixYZ;
-			scaleMatrixYWs[i] = transformCache.scaleMatrixYW;
-			scaleMatrixZXs[i] = transformCache.scaleMatrixZX;
-			scaleMatrixZYs[i] = transformCache.scaleMatrixZY;
-			scaleMatrixZZs[i] = transformCache.scaleMatrixZZ;
-			scaleMatrixZWs[i] = transformCache.scaleMatrixZW;
-			scaleMatrixWXs[i] = transformCache.scaleMatrixWX;
-			scaleMatrixWYs[i] = transformCache.scaleMatrixWY;
-			scaleMatrixWZs[i] = transformCache.scaleMatrixWZ;
-			scaleMatrixWWs[i] = transformCache.scaleMatrixWW;
-		}
-
-		// Translate down so floor vertices go underground and ceiling is at y=0.
-		const double preScaleTranslationWs[N] = { 0.0 };
-		double vertexWithPreScaleTranslationXs[N];
-		double vertexWithPreScaleTranslationYs[N];
-		double vertexWithPreScaleTranslationZs[N];
-		double vertexWithPreScaleTranslationWs[N];
-		Double4_AddN<N>(vertexXs, vertexYs, vertexZs, vertexWs,
-			preScaleTranslationXs, preScaleTranslationYs, preScaleTranslationZs, preScaleTranslationWs,
-			vertexWithPreScaleTranslationXs, vertexWithPreScaleTranslationYs, vertexWithPreScaleTranslationZs, vertexWithPreScaleTranslationWs);
-
-		// Shrink towards y=0 depending on anim percent and door min visible amount.
-		double scaledVertexXs[N] = { 0.0 };
-		double scaledVertexYs[N] = { 0.0 };
-		double scaledVertexZs[N] = { 0.0 };
-		double scaledVertexWs[N] = { 0.0 };
-		Matrix4_MultiplyVectorN<N>(
-			scaleMatrixXXs, scaleMatrixXYs, scaleMatrixXZs, scaleMatrixXWs,
-			scaleMatrixYXs, scaleMatrixYYs, scaleMatrixYZs, scaleMatrixYWs,
-			scaleMatrixZXs, scaleMatrixZYs, scaleMatrixZZs, scaleMatrixZWs,
-			scaleMatrixWXs, scaleMatrixWYs, scaleMatrixWZs, scaleMatrixWWs,
-			vertexWithPreScaleTranslationXs, vertexWithPreScaleTranslationYs, vertexWithPreScaleTranslationZs, vertexWithPreScaleTranslationWs,
-			scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs);
-
-		// Translate up to new model space Y position.
-		double resultVertexXs[N];
-		double resultVertexYs[N];
-		double resultVertexZs[N];
-		double resultVertexWs[N];
-		Double4_SubtractN<N>(scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs,
-			preScaleTranslationXs, preScaleTranslationYs, preScaleTranslationZs, preScaleTranslationWs,
-			resultVertexXs, resultVertexYs, resultVertexZs, resultVertexWs);
-
-		// Apply rotation matrix.
-		double rotatedResultVertexXs[N] = { 0.0 };
-		double rotatedResultVertexYs[N] = { 0.0 };
-		double rotatedResultVertexZs[N] = { 0.0 };
-		double rotatedResultVertexWs[N] = { 0.0 };
-		Matrix4_MultiplyVectorN<N>(
-			rotationMatrixXXs, rotationMatrixXYs, rotationMatrixXZs, rotationMatrixXWs,
-			rotationMatrixYXs, rotationMatrixYYs, rotationMatrixYZs, rotationMatrixYWs,
-			rotationMatrixZXs, rotationMatrixZYs, rotationMatrixZZs, rotationMatrixZWs,
-			rotationMatrixWXs, rotationMatrixWYs, rotationMatrixWZs, rotationMatrixWWs,
-			resultVertexXs, resultVertexYs, resultVertexZs, resultVertexWs,
-			rotatedResultVertexXs, rotatedResultVertexYs, rotatedResultVertexZs, rotatedResultVertexWs);
-
-		// Apply translation matrix.
-		double translatedResultVertexXs[N] = { 0.0 };
-		double translatedResultVertexYs[N] = { 0.0 };
-		double translatedResultVertexZs[N] = { 0.0 };
-		double translatedResultVertexWs[N] = { 0.0 };
-		Matrix4_MultiplyVectorN<N>(
-			translationMatrixXXs, translationMatrixXYs, translationMatrixXZs, translationMatrixXWs,
-			translationMatrixYXs, translationMatrixYYs, translationMatrixYZs, translationMatrixYWs,
-			translationMatrixZXs, translationMatrixZYs, translationMatrixZZs, translationMatrixZWs,
-			translationMatrixWXs, translationMatrixWYs, translationMatrixWZs, translationMatrixWWs,
-			rotatedResultVertexXs, rotatedResultVertexYs, rotatedResultVertexZs, rotatedResultVertexWs,
-			translatedResultVertexXs, translatedResultVertexYs, translatedResultVertexZs, translatedResultVertexWs);
-
-		// Apply view-projection matrix.
-		Matrix4_MultiplyVectorN<N>(
-			g_viewProjMatrixXX, g_viewProjMatrixXY, g_viewProjMatrixXZ, g_viewProjMatrixXW,
-			g_viewProjMatrixYX, g_viewProjMatrixYY, g_viewProjMatrixYZ, g_viewProjMatrixYW,
-			g_viewProjMatrixZX, g_viewProjMatrixZY, g_viewProjMatrixZZ, g_viewProjMatrixZW,
-			g_viewProjMatrixWX, g_viewProjMatrixWY, g_viewProjMatrixWZ, g_viewProjMatrixWW,
-			translatedResultVertexXs, translatedResultVertexYs, translatedResultVertexZs, translatedResultVertexWs,
 			outVertexXs, outVertexYs, outVertexZs, outVertexWs);
 	}
 
@@ -1879,12 +1695,6 @@ namespace
 				VertexShader_BasicN<1>(transformCache, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
 				VertexShader_BasicN<1>(transformCache, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
-			else if (vertexShaderType == VertexShaderType::RaisingDoor)
-			{
-				VertexShader_RaisingDoorN<1>(transformCache, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_RaisingDoorN<1>(transformCache, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_RaisingDoorN<1>(transformCache, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
-			}
 			else if (vertexShaderType == VertexShaderType::Entity)
 			{
 				VertexShader_EntityN<1>(transformCache, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
@@ -1934,9 +1744,6 @@ namespace
 		{
 		case VertexShaderType::Basic:
 			ProcessVertexShadersInternal<VertexShaderType::Basic>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
-			break;
-		case VertexShaderType::RaisingDoor:
-			ProcessVertexShadersInternal<VertexShaderType::RaisingDoor>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
 			break;
 		case VertexShaderType::Entity:
 			ProcessVertexShadersInternal<VertexShaderType::Entity>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
@@ -4862,9 +4669,6 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					DebugAssertIndex(worker.drawCallCaches, workerDrawCallIndex);
 					DrawCallCache &workerDrawCallCache = worker.drawCallCaches[workerDrawCallIndex];
 					TransformCache &workerTransformCache = worker.transformCaches[workerDrawCallIndex];
-					auto &transformCachePreScaleTranslationX = workerTransformCache.preScaleTranslationX;
-					auto &transformCachePreScaleTranslationY = workerTransformCache.preScaleTranslationY;
-					auto &transformCachePreScaleTranslationZ = workerTransformCache.preScaleTranslationZ;
 					auto &drawCallCachePositionBuffer = workerDrawCallCache.positionBuffer;
 					auto &drawCallCacheTexCoordBuffer = workerDrawCallCache.texCoordBuffer;
 					auto &drawCallCacheIndexBuffer = workerDrawCallCache.indexBuffer;
@@ -4882,18 +4686,6 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					const SoftwareUniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
 					const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
 					PopulateMeshTransform(workerTransformCache, transform);
-
-					transformCachePreScaleTranslationX = 0.0;
-					transformCachePreScaleTranslationY = 0.0;
-					transformCachePreScaleTranslationZ = 0.0;
-					if (drawCall.preScaleTranslationBufferID >= 0)
-					{
-						const SoftwareUniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
-						const Double3 &preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
-						transformCachePreScaleTranslationX = preScaleTranslation.x;
-						transformCachePreScaleTranslationY = preScaleTranslation.y;
-						transformCachePreScaleTranslationZ = preScaleTranslation.z;
-					}
 
 					drawCallCachePositionBuffer = &this->positionBuffers.get(drawCall.positionBufferID);
 					drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);

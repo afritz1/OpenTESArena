@@ -78,10 +78,6 @@ struct RenderVoxelCombinedFaceVertexBuffer
 class RenderVoxelChunkManager final : public SpecializedChunkManager<RenderVoxelChunk>
 {
 private:
-	// Buffer for all raising doors' translation to push/pop during vertex shading so they scale towards the ceiling.
-	// Updated on scene change.
-	UniformBufferID raisingDoorPreScaleTranslationBufferID;
-
 	// For combined voxel faces.
 	IndexBufferID defaultQuadIndexBufferID;
 

@@ -10,8 +10,6 @@ struct RenderDrawCall
 {
 	UniformBufferID transformBufferID; // Translation/rotation/scale of this model
 	int transformIndex;
-	
-	UniformBufferID preScaleTranslationBufferID; // Extra translation for some vertex shaders (currently shared by all raised doors).
 
 	VertexPositionBufferID positionBufferID;
 	VertexAttributeBufferID normalBufferID, texCoordBufferID;

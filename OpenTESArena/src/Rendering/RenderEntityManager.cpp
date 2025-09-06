@@ -557,7 +557,6 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			RenderDrawCall drawCall;
 			drawCall.transformBufferID = transformBufferID;
 			drawCall.transformIndex = entityTransformIndex;
-			drawCall.preScaleTranslationBufferID = -1;
 			drawCall.positionBufferID = this->meshInst.positionBufferID;
 			drawCall.normalBufferID = this->meshInst.normalBufferID;
 			drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;

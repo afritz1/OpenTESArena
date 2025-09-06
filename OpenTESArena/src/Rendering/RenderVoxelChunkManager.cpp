@@ -22,7 +22,6 @@ namespace
 	{
 		UniformBufferID id;
 		int index;
-		UniformBufferID preScaleTranslationBufferID;
 	};
 
 	struct DrawCallMeshInitInfo
@@ -281,7 +280,8 @@ namespace
 			static_cast<WEDouble>(worldVoxel.z));
 	}
 
-	RenderTransform MakeDoorFaceRenderTransform(ArenaDoorType doorType, int doorFaceIndex, const WorldDouble3 &worldPosition, double animPercent)
+	RenderTransform MakeDoorFaceRenderTransform(ArenaDoorType doorType, int doorFaceIndex, const WorldDouble3 &worldPosition,
+		double ceilingScale, double animPercent)
 	{
 		const Radians faceBaseRadians = VoxelDoorUtils::BaseAngles[doorFaceIndex];
 		const Double3 hingeOffset = VoxelDoorUtils::SwingingHingeOffsets[doorFaceIndex];
@@ -311,9 +311,13 @@ namespace
 		{
 			const double vMin = VoxelDoorUtils::getAnimatedTexCoordPercent(animPercent);
 			const double scaleAmount = VoxelDoorUtils::getAnimatedScaleAmount(vMin);
+			const Double3 preScaleTranslation(0.0, -ceilingScale, 0.0);
 			renderTransform.translation = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
 			renderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
-			renderTransform.scale = Matrix4d::scale(1.0, scaleAmount, 1.0);
+			renderTransform.scale =
+				Matrix4d::translation(-preScaleTranslation.x, -preScaleTranslation.y, -preScaleTranslation.z) *
+				Matrix4d::scale(1.0, scaleAmount, 1.0) *
+				Matrix4d::translation(preScaleTranslation.x, preScaleTranslation.y, preScaleTranslation.z);
 			break;
 		}
 		default:
@@ -322,11 +326,6 @@ namespace
 		}
 
 		return renderTransform;
-	}
-
-	Double3 MakeRaisingDoorPreScaleTranslation(double ceilingScale)
-	{
-		return Double3(0.0, -ceilingScale, 0.0);
 	}
 }
 
@@ -376,23 +375,11 @@ RenderVoxelCombinedFaceVertexBuffer::RenderVoxelCombinedFaceVertexBuffer()
 
 RenderVoxelChunkManager::RenderVoxelChunkManager()
 {
-	this->raisingDoorPreScaleTranslationBufferID = -1;
 	this->defaultQuadIndexBufferID = -1;
 }
 
 void RenderVoxelChunkManager::init(Renderer &renderer)
 {
-	// Populate pre-scale translation transform (for raising doors).
-	this->raisingDoorPreScaleTranslationBufferID = renderer.createUniformBufferVector3s(1);
-	if (this->raisingDoorPreScaleTranslationBufferID < 0)
-	{
-		DebugLogError("Couldn't create uniform buffer for pre-scale translation.");
-		return;
-	}
-
-	const Double3 preScaleTranslation = Double3::Zero; // Populated on scene change.
-	renderer.populateUniformBufferVector3s(this->raisingDoorPreScaleTranslationBufferID, Span<const Double3>(&preScaleTranslation, 1));
-
 	// Populate default quad indices for combined voxel faces.
 	constexpr int indicesPerQuad = MeshUtils::INDICES_PER_QUAD;
 	this->defaultQuadIndexBufferID = renderer.createIndexBuffer(indicesPerQuad);
@@ -412,12 +399,6 @@ void RenderVoxelChunkManager::shutdown(Renderer &renderer)
 		ChunkPtr &chunkPtr = this->activeChunks[i];
 		chunkPtr->freeBuffers(renderer);
 		this->recycleChunk(i);
-	}
-
-	if (this->raisingDoorPreScaleTranslationBufferID >= 0)
-	{
-		renderer.freeUniformBuffer(this->raisingDoorPreScaleTranslationBufferID);
-		this->raisingDoorPreScaleTranslationBufferID = -1;
 	}
 
 	if (this->defaultQuadIndexBufferID >= 0)
@@ -630,7 +611,7 @@ void RenderVoxelChunkManager::loadChunkNonCombinedTransforms(RenderVoxelChunk &r
 						}
 
 						// Initialize to default appearance. Dirty door animations trigger an update.
-						const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, doorAnimPercent);
+						const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, ceilingScale, doorAnimPercent);
 						renderer.populateUniformBufferRenderTransforms(doorTransformBufferID, Span<const RenderTransform>(&faceRenderTransform, 1));
 						
 						DebugAssertIndex(doorTransformsEntry.transformBufferIDs, i);
@@ -919,7 +900,6 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		RenderDrawCall &drawCall = drawCalls[0];
 		drawCall.transformBufferID = transformBufferID;
 		drawCall.transformIndex = 0;
-		drawCall.preScaleTranslationBufferID = -1;
 		drawCall.positionBufferID = combinedFaceVertexBuffer->positionBufferID;
 		drawCall.normalBufferID = combinedFaceVertexBuffer->normalBufferID;
 		drawCall.texCoordBufferID = combinedFaceVertexBuffer->texCoordBufferID;
@@ -984,7 +964,6 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		DrawCallTransformInitInfo transformInitInfo;
 		transformInitInfo.id = transformIter->transformBufferID;
 		transformInitInfo.index = 0;
-		transformInitInfo.preScaleTranslationBufferID = -1;
 
 		DrawCallMeshInitInfo meshInitInfo;
 		meshInitInfo.positionBufferID = renderMeshInst.positionBufferID;
@@ -1054,7 +1033,6 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		RenderDrawCall &drawCall = drawCallHeap.get(drawCallRangeID)[0];
 		drawCall.transformBufferID = transformInitInfo.id;
 		drawCall.transformIndex = transformInitInfo.index;
-		drawCall.preScaleTranslationBufferID = transformInitInfo.preScaleTranslationBufferID;
 		drawCall.positionBufferID = meshInitInfo.positionBufferID;
 		drawCall.normalBufferID = meshInitInfo.normalBufferID;
 		drawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
@@ -1117,13 +1095,11 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 
 		DebugAssert(transformIter != doorTransformsEntries.end());
 
-		const UniformBufferID preScaleTranslationBufferID = (doorDef.type == ArenaDoorType::Raising) ? this->raisingDoorPreScaleTranslationBufferID : -1;
 		for (int i = 0; i < doorTransformCount; i++)
 		{
 			DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
 			doorTransformInitInfo.id = transformIter->transformBufferIDs[i];
 			doorTransformInitInfo.index = 0;
-			doorTransformInitInfo.preScaleTranslationBufferID = preScaleTranslationBufferID;
 		}
 
 		DrawCallMeshInitInfo meshInitInfo;
@@ -1251,7 +1227,6 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 			RenderDrawCall &doorDrawCall = drawCalls[doorDrawCallWriteIndex];
 			doorDrawCall.transformBufferID = doorTransformInitInfo.id;
 			doorDrawCall.transformIndex = doorTransformInitInfo.index;
-			doorDrawCall.preScaleTranslationBufferID = doorTransformInitInfo.preScaleTranslationBufferID;
 			doorDrawCall.positionBufferID = meshInitInfo.positionBufferID;
 			doorDrawCall.normalBufferID = meshInitInfo.normalBufferID;
 			doorDrawCall.texCoordBufferID = meshInitInfo.texCoordBufferID;
@@ -1408,10 +1383,6 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 	double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager,
 	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
-	// Update pre-scale transition used by all raising doors (ideally this would be once on scene change).
-	const Double3 raisingDoorPreScaleTranslation = MakeRaisingDoorPreScaleTranslation(ceilingScale);
-	renderer.populateUniformBufferVector3s(this->raisingDoorPreScaleTranslationBufferID, Span<const Double3>(&raisingDoorPreScaleTranslation, 1));
-
 	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
@@ -1456,7 +1427,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 
 			for (int i = 0; i < VoxelDoorUtils::FACE_COUNT; i++)
 			{
-				const RenderTransform doorFaceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, doorAnimPercent);				
+				const RenderTransform doorFaceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, ceilingScale, doorAnimPercent);				
 				const UniformBufferID doorTransformBufferID = doorTransformsIter->transformBufferIDs[i];
 				renderer.populateUniformBufferRenderTransforms(doorTransformBufferID, Span<const RenderTransform>(&doorFaceRenderTransform, 1));
 			}

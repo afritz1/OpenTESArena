@@ -93,7 +93,6 @@ namespace
 	constexpr std::pair<VertexShaderType, const char*> VertexShaderTypeFilenames[] =
 	{
 		{ VertexShaderType::Basic, "Basic" },
-		{ VertexShaderType::RaisingDoor, "RaisingDoor" },
 		{ VertexShaderType::Entity, "Entity" },
 		{ VertexShaderType::UI, "UI" }
 	};
@@ -158,10 +157,9 @@ namespace
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, false, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, true, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true, true, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelOpacity, false, false, false, false),
 		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false, false),
-
-		VulkanPipelineKey(VertexShaderType::RaisingDoor, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true, true, false),
 
 		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTested, true, true, true, false),
 		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithPaletteIndexLookup, true, true, true, false),
@@ -1897,12 +1895,6 @@ namespace
 
 			offset += byteCount;
 		};
-
-		const bool requiresPreScaleTransform = vertexShaderType == VertexShaderType::RaisingDoor;
-		if (requiresPreScaleTransform)
-		{
-			addPushConstantRange(vk::ShaderStageFlagBits::eVertex, sizeof(float) * 4);
-		}
 
 		const bool requiresUiRectTransform = vertexShaderType == VertexShaderType::UI;
 		if (requiresUiRectTransform)
@@ -5319,22 +5311,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				this->commandBuffer.bindDescriptorSets(pipelineBindPoint, pipelineLayout, MaterialDescriptorSetLayoutIndex, material.descriptorSet, vk::ArrayProxy<const uint32_t>());
 
 				uint32_t pushConstantOffset = 0;
-				if (drawCall.preScaleTranslationBufferID >= 0)
-				{
-					const VulkanBuffer &preScaleTranslationBuffer = this->uniformBufferPool.get(drawCall.preScaleTranslationBufferID);
-					const float *preScaleTranslationComponents = reinterpret_cast<const float*>(preScaleTranslationBuffer.stagingHostMappedBytes.begin());
-					const float preScaleTranslation[] =
-					{
-						preScaleTranslationComponents[0],
-						preScaleTranslationComponents[1],
-						preScaleTranslationComponents[2],
-						0.0f
-					};
-
-					this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eVertex, pushConstantOffset, preScaleTranslation);
-					pushConstantOffset += sizeof(preScaleTranslation);
-				}
-
 				for (VulkanMaterialPushConstantType materialPushConstantType : material.pushConstantTypes)
 				{
 					switch (materialPushConstantType)

@@ -749,7 +749,7 @@ namespace MapGeneration
 				else if (type == 0x8)
 				{
 					doorType = ArenaDoorType::Raising;
-					doorVertexShaderType = VertexShaderType::RaisingDoor;
+					doorVertexShaderType = VertexShaderType::Basic;
 					doorPixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
 				}
 				else

@@ -636,7 +636,6 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 	{
 		drawCall.transformBufferID = transformBufferID;
 		drawCall.transformIndex = transformIndex;
-		drawCall.preScaleTranslationBufferID = -1;
 		drawCall.positionBufferID = this->particlePositionBufferID;
 		drawCall.normalBufferID = this->particleNormalBufferID;
 		drawCall.texCoordBufferID = this->particleTexCoordBufferID;
@@ -751,7 +750,6 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 
 		this->fogDrawCall.transformBufferID = this->fogTransformBufferID;
 		this->fogDrawCall.transformIndex = 0;
-		this->fogDrawCall.preScaleTranslationBufferID = -1;
 		this->fogDrawCall.positionBufferID = this->fogPositionBufferID;
 		this->fogDrawCall.normalBufferID = this->fogNormalBufferID;
 		this->fogDrawCall.texCoordBufferID = this->fogTexCoordBufferID;

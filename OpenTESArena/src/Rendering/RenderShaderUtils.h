@@ -4,7 +4,6 @@
 enum class VertexShaderType
 {
 	Basic,
-	RaisingDoor,
 	Entity,
 	UI
 };
