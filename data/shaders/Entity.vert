@@ -14,9 +14,13 @@ layout(location = 0) in vec3 vertInPosition;
 layout(location = 1) in vec2 vertInTexCoord;
 
 layout(location = 0) out vec2 fragInTexCoord;
+layout(location = 1) out vec3 fragInWorldPoint;
 
 void main()
 {
-    gl_Position = camera.viewProjection * (transform.model * vec4(vertInPosition, 1.0));
+    vec4 worldPoint = transform.model * vec4(vertInPosition, 1.0);
+
+    gl_Position = camera.viewProjection * worldPoint;
     fragInTexCoord = vertInTexCoord;
+    fragInWorldPoint = worldPoint.xyz;
 }

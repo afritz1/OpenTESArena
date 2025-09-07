@@ -1,9 +1,5 @@
 #version 450
-
-layout(set = 0, binding = 1) uniform AmbientLight
-{
-    float percent;
-} ambient;
+#include "Light.glsl"
 
 layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
 {
@@ -12,9 +8,11 @@ layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
     float framebufferHeightReal;
 } screenSpaceAnim;
 
+layout(set = 0, binding = 5) uniform usampler2D lightTableSampler;
 layout(set = 3, binding = 0) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
+layout(location = 1) in vec3 fragInWorldPoint;
 
 layout(location = 0) out uint fragOutColor;
 
@@ -34,5 +32,7 @@ float getScreenSpaceAnimV()
 void main()
 {
     vec2 screenSpaceUV = vec2(gl_FragCoord.x / screenSpaceAnim.framebufferWidthReal, getScreenSpaceAnimV());
-    fragOutColor = texture(textureSampler, screenSpaceUV).r;
+    uint texel = texture(textureSampler, screenSpaceUV).r;
+    uint lightLevel = getLightLevel(fragInWorldPoint);
+    fragOutColor = texelFetch(lightTableSampler, ivec2(texel, lightLevel), 0).r;
 }

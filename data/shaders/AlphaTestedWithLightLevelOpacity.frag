@@ -1,4 +1,5 @@
 #version 450
+#include "Light.glsl"
 
 // @todo make a descriptor set binding that's just FramebufferDimensions so the water/lava shaders and this can share that binding
 layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
@@ -13,6 +14,7 @@ layout(set = 0, binding = 5) uniform usampler2D lightTableSampler;
 layout(set = 3, binding = 0) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
+layout(location = 1) in vec3 fragInWorldPoint;
 
 layout(location = 0) out uint fragOutColor;
 
@@ -74,5 +76,7 @@ void main()
 
     uint lightTableTexelIndex = getLightTableTexelIndex(texel);
     ivec2 lightTableTexelXY = ivec2(lightTableTexelIndex % TEXELS_PER_LIGHT_LEVEL, lightTableTexelIndex / TEXELS_PER_LIGHT_LEVEL);
-    fragOutColor = texelFetch(lightTableSampler, lightTableTexelXY, 0).r;
+    uint lightTableTexel = texelFetch(lightTableSampler, lightTableTexelXY, 0).r;
+    uint lightLevel = getLightLevel(fragInWorldPoint);
+    fragOutColor = texelFetch(lightTableSampler, ivec2(lightTableTexel, lightLevel), 0).r;
 }
