@@ -11,7 +11,6 @@
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
-#include "RenderTransform.h"
 #include "Sdl2DSoft3DRenderBackend.h"
 #include "VulkanRenderBackend.h"
 #include "../Assets/TextureManager.h"
@@ -53,24 +52,11 @@ namespace
 		return Int2(alignedWidth, alignedHeight);
 	}
 
-	void WriteRenderTransformFloat32(const RenderTransform &transform, std::byte *dstBytes)
+	void WriteMatrix4Float32(const Matrix4d &matrix, std::byte *dstBytes)
 	{
-		static_assert(sizeof(RenderTransform) == sizeof(Matrix4d) * 3);
-		constexpr int BytesPerMatrix4f = sizeof(Matrix4f);
-
-		const Matrix4f translationF = RendererUtils::matrix4DoubleToFloat(transform.translation);
-		const Matrix4f rotationF = RendererUtils::matrix4DoubleToFloat(transform.rotation);
-		const Matrix4f scaleF = RendererUtils::matrix4DoubleToFloat(transform.scale);
-
-		Span<const std::byte> srcTranslationBytes(reinterpret_cast<const std::byte*>(&translationF), BytesPerMatrix4f);
-		Span<const std::byte> srcRotationBytes(reinterpret_cast<const std::byte*>(&rotationF), BytesPerMatrix4f);
-		Span<const std::byte> srcScaleBytes(reinterpret_cast<const std::byte*>(&scaleF), BytesPerMatrix4f);
-		Span<std::byte> dstTranslationBytes(dstBytes, srcTranslationBytes.getCount());
-		Span<std::byte> dstRotationBytes(dstTranslationBytes.end(), srcRotationBytes.getCount());
-		Span<std::byte> dstScaleBytes(dstRotationBytes.end(), srcScaleBytes.getCount());
-		std::copy(srcTranslationBytes.begin(), srcTranslationBytes.end(), dstTranslationBytes.begin());
-		std::copy(srcRotationBytes.begin(), srcRotationBytes.end(), dstRotationBytes.begin());
-		std::copy(srcScaleBytes.begin(), srcScaleBytes.end(), dstScaleBytes.begin());
+		const Matrix4f matrixF = RendererUtils::matrix4DoubleToFloat(matrix);
+		Span<const std::byte> srcBytes(reinterpret_cast<const std::byte*>(&matrixF), sizeof(Matrix4f));
+		std::copy(srcBytes.begin(), srcBytes.end(), dstBytes);
 	}
 
 	void WriteRenderLightFloat32(const RenderLight &light, std::byte *dstBytes)
@@ -372,28 +358,29 @@ UniformBufferID Renderer::createUniformBufferVector3s(int elementCount)
 
 	const int bytesPerFloat = this->backend->getBytesPerFloat();
 	int bytesPerElement = sizeof(Double3);
+	int alignmentOfElement = alignof(Double3);
 	if (bytesPerFloat == 4)
 	{
 		bytesPerElement = sizeof(Float3);
+		alignmentOfElement = alignof(Float3);
 	}
 
-	const int alignmentOfElement = alignof(Double3);
 	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
-UniformBufferID Renderer::createUniformBufferRenderTransforms(int elementCount)
+UniformBufferID Renderer::createUniformBufferMatrix4s(int elementCount)
 {
 	static_assert(sizeof(Matrix4d) == (sizeof(Matrix4f) * 2));
-	static_assert(sizeof(RenderTransform) == (sizeof(Matrix4d) * 3));
 
 	const int bytesPerFloat = this->backend->getBytesPerFloat();
-	int bytesPerElement = sizeof(RenderTransform);
+	int bytesPerElement = sizeof(Matrix4d);
+	int alignmentOfElement = alignof(Matrix4d);
 	if (bytesPerFloat == 4)
 	{
-		bytesPerElement /= 2;
+		bytesPerElement = sizeof(Matrix4f);
+		alignmentOfElement = alignof(Matrix4f);
 	}
 
-	const int alignmentOfElement = alignof(RenderTransform);
 	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
@@ -480,7 +467,7 @@ bool Renderer::populateUniformBufferVector3s(UniformBufferID id, Span<const Doub
 	return true;
 }
 
-bool Renderer::populateUniformBufferRenderTransforms(UniformBufferID id, Span<const RenderTransform> transforms)
+bool Renderer::populateUniformBufferMatrix4s(UniformBufferID id, Span<const Matrix4d> values)
 {
 	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
 	if (!lockedBuffer.isValid())
@@ -494,16 +481,16 @@ bool Renderer::populateUniformBufferRenderTransforms(UniformBufferID id, Span<co
 	{
 		DebugAssert(lockedBuffer.isContiguous());
 
-		Span<const std::byte> transformBytes(reinterpret_cast<const std::byte*>(transforms.begin()), transforms.getCount() * sizeof(RenderTransform));
-		DebugAssert(transformBytes.getCount() == lockedBuffer.bytes.getCount());
-		std::copy(transformBytes.begin(), transformBytes.end(), lockedBuffer.bytes.begin());
+		Span<const std::byte> matrixBytes(reinterpret_cast<const std::byte*>(values.begin()), values.getCount() * sizeof(Matrix4d));
+		DebugAssert(matrixBytes.getCount() == lockedBuffer.bytes.getCount());
+		std::copy(matrixBytes.begin(), matrixBytes.end(), lockedBuffer.bytes.begin());
 	}
 	else
 	{
-		for (int i = 0; i < transforms.getCount(); i++)
+		for (int i = 0; i < values.getCount(); i++)
 		{
-			const RenderTransform &transform = transforms[i];
-			WriteRenderTransformFloat32(transform, lockedBuffer.bytes.begin() + (i * lockedBuffer.bytesPerStride));
+			const Matrix4d &matrix = values[i];
+			WriteMatrix4Float32(matrix, lockedBuffer.bytes.begin() + (i * lockedBuffer.bytesPerStride));
 		}
 	}
 
@@ -558,7 +545,7 @@ bool Renderer::populateUniformBufferIndex(UniformBufferID id, int uniformIndex, 
 	return true;
 }
 
-bool Renderer::populateUniformBufferIndexRenderTransform(UniformBufferID id, int uniformIndex, const RenderTransform &transform)
+bool Renderer::populateUniformBufferIndexMatrix4(UniformBufferID id, int uniformIndex, const Matrix4d &matrix)
 {
 	LockedBuffer lockedBuffer = this->backend->lockUniformBufferIndex(id, uniformIndex);
 	if (!lockedBuffer.isValid())
@@ -570,13 +557,13 @@ bool Renderer::populateUniformBufferIndexRenderTransform(UniformBufferID id, int
 	const int bytesPerFloat = this->backend->getBytesPerFloat();
 	if (bytesPerFloat == sizeof(double))
 	{
-		Span<const std::byte> transformBytes(reinterpret_cast<const std::byte*>(&transform), sizeof(RenderTransform));
-		DebugAssert(transformBytes.getCount() == lockedBuffer.bytes.getCount());
-		std::copy(transformBytes.begin(), transformBytes.end(), lockedBuffer.bytes.begin());
+		Span<const std::byte> matrixBytes(reinterpret_cast<const std::byte*>(&matrix), sizeof(Matrix4d));
+		DebugAssert(matrixBytes.getCount() == lockedBuffer.bytes.getCount());
+		std::copy(matrixBytes.begin(), matrixBytes.end(), lockedBuffer.bytes.begin());
 	}
 	else
 	{
-		WriteRenderTransformFloat32(transform, lockedBuffer.bytes.begin());
+		WriteMatrix4Float32(matrix, lockedBuffer.bytes.begin());
 	}
 
 	this->backend->unlockUniformBufferIndex(id, uniformIndex);

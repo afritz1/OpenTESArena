@@ -16,6 +16,7 @@
 #include "RenderTextureUtils.h"
 #include "Window.h"
 #include "../Assets/TextureUtils.h"
+#include "../Math/Matrix4.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector3.h"
 #include "../Utilities/Palette.h"
@@ -34,7 +35,6 @@ struct RenderCamera;
 struct RenderCommandList;
 struct RenderFrameSettings;
 struct RenderLight;
-struct RenderTransform;
 struct TextureBuilder;
 struct UiCommandList;
 struct Window;
@@ -133,15 +133,15 @@ public:
 
 	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
 	UniformBufferID createUniformBufferVector3s(int elementCount);
-	UniformBufferID createUniformBufferRenderTransforms(int elementCount);
+	UniformBufferID createUniformBufferMatrix4s(int elementCount);
 	UniformBufferID createUniformBufferLights(int elementCount);
 	void freeUniformBuffer(UniformBufferID id);
 	bool populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes);
 	bool populateUniformBufferVector3s(UniformBufferID id, Span<const Double3> values);
-	bool populateUniformBufferRenderTransforms(UniformBufferID id, Span<const RenderTransform> transforms);
+	bool populateUniformBufferMatrix4s(UniformBufferID id, Span<const Matrix4d> values);
 	bool populateUniformBufferLights(UniformBufferID id, Span<const RenderLight> lights);
 	bool populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes);
-	bool populateUniformBufferIndexRenderTransform(UniformBufferID id, int uniformIndex, const RenderTransform &transform);
+	bool populateUniformBufferIndexMatrix4(UniformBufferID id, int uniformIndex, const Matrix4d &matrix);
 
 	// Texture management functions.
 	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);

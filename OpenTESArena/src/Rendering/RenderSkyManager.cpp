@@ -5,7 +5,6 @@
 #include "RenderCommand.h"
 #include "Renderer.h"
 #include "RenderSkyManager.h"
-#include "RenderTransform.h"
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/ExeData.h"
@@ -261,7 +260,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	renderer.populateVertexAttributeBuffer(this->bgTexCoordBufferID, bgTexCoords);
 	renderer.populateIndexBuffer(this->bgIndexBufferID, bgIndices);
 
-	this->bgTransformBufferID = renderer.createUniformBufferRenderTransforms(1);
+	this->bgTransformBufferID = renderer.createUniformBufferMatrix4s(1);
 	if (this->bgTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for sky background transform.");
@@ -269,11 +268,8 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		return;
 	}
 
-	RenderTransform bgTransform;
-	bgTransform.translation = Matrix4d::identity();
-	bgTransform.rotation = Matrix4d::identity();
-	bgTransform.scale = Matrix4d::identity();
-	renderer.populateUniformBufferRenderTransforms(this->bgTransformBufferID, Span<const RenderTransform>(&bgTransform, 1));
+	const Matrix4d bgModelMatrix = Matrix4d::identity();
+	renderer.populateUniformBufferMatrix4s(this->bgTransformBufferID, Span<const Matrix4d>(&bgModelMatrix, 1));
 
 	auto allocBgTextureID = [this, &renderer](Span2D<const uint8_t> texels)
 	{
@@ -734,7 +730,7 @@ void RenderSkyManager::loadScene(const SkyInstance &skyInst, const SkyInfoDefini
 
 	if (totalSkyObjectCount > 0) // Don't allow empty uniform buffer (Vulkan limitation).
 	{
-		this->objectTransformBufferID = renderer.createUniformBufferRenderTransforms(totalSkyObjectCount);
+		this->objectTransformBufferID = renderer.createUniformBufferMatrix4s(totalSkyObjectCount);
 		if (this->objectTransformBufferID < 0)
 		{
 			DebugLogError("Couldn't create uniform buffer for sky objects.");
@@ -765,11 +761,8 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
 
 	// Keep background centered on the player.
-	RenderTransform bgTransform;
-	bgTransform.translation = Matrix4d::translation(cameraPos.x, cameraPos.y, cameraPos.z);
-	bgTransform.rotation = Matrix4d::identity();
-	bgTransform.scale = Matrix4d::identity();
-	renderer.populateUniformBufferRenderTransforms(this->bgTransformBufferID, Span<const RenderTransform>(&bgTransform, 1));
+	const Matrix4d bgModelMatrix = Matrix4d::translation(cameraPos.x, cameraPos.y, cameraPos.z);
+	renderer.populateUniformBufferMatrix4s(this->bgTransformBufferID, Span<const Matrix4d>(&bgModelMatrix, 1));
 
 	// Update background texture ID based on active weather.
 	std::optional<double> thunderstormFlashPercent;
@@ -828,22 +821,21 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 	auto updateRenderTransform = [this, &renderer, &cameraPos](const Double3 &direction, int transformIndex,
 		double width, double height, double arbitraryDistance)
 	{
-		RenderTransform renderTransform;
-
 		const WorldDouble3 position = cameraPos + (direction * arbitraryDistance);
-		renderTransform.translation = Matrix4d::translation(position.x, position.y, position.z);
+		const Matrix4d translationMatrix = Matrix4d::translation(position.x, position.y, position.z);
 
 		const Radians pitchRadians = direction.getYAngleRadians();
 		const Radians yawRadians = MathUtils::fullAtan2(Double2(direction.z, direction.x).normalized()) + Constants::Pi;
 		const Matrix4d pitchRotation = Matrix4d::zRotation(pitchRadians);
 		const Matrix4d yawRotation = Matrix4d::yRotation(yawRadians);
-		renderTransform.rotation = yawRotation * pitchRotation;
+		const Matrix4d rotationMatrix = yawRotation * pitchRotation;
 
 		const double scaledWidth = width * arbitraryDistance;
 		const double scaledHeight = height * arbitraryDistance;
-		renderTransform.scale = Matrix4d::scale(1.0, scaledHeight, scaledWidth);
+		const Matrix4d scaleMatrix = Matrix4d::scale(1.0, scaledHeight, scaledWidth);
 
-		renderer.populateUniformBufferIndexRenderTransform(this->objectTransformBufferID, transformIndex, renderTransform);
+		const Matrix4d modelMatrix = translationMatrix * (rotationMatrix * scaleMatrix);
+		renderer.populateUniformBufferIndexMatrix4(this->objectTransformBufferID, transformIndex, modelMatrix);
 	};
 
 	auto addDrawCall = [this, &renderer](int transformIndex, ObjectTextureID textureID, double meshLightPercent, PixelShaderType pixelShaderType)

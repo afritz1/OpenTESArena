@@ -17,7 +17,6 @@
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
-#include "RenderTransform.h"
 #include "SoftwareRenderer.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Math/BoundingBox.h"
@@ -762,54 +761,22 @@ namespace
 	// Transform for the mesh to be processed with.
 	struct TransformCache
 	{
-		double translationMatrixXX;
-		double translationMatrixXY;
-		double translationMatrixXZ;
-		double translationMatrixXW;
-		double translationMatrixYX;
-		double translationMatrixYY;
-		double translationMatrixYZ;
-		double translationMatrixYW;
-		double translationMatrixZX;
-		double translationMatrixZY;
-		double translationMatrixZZ;
-		double translationMatrixZW;
-		double translationMatrixWX;
-		double translationMatrixWY;
-		double translationMatrixWZ;
-		double translationMatrixWW;
-		double rotationMatrixXX;
-		double rotationMatrixXY;
-		double rotationMatrixXZ;
-		double rotationMatrixXW;
-		double rotationMatrixYX;
-		double rotationMatrixYY;
-		double rotationMatrixYZ;
-		double rotationMatrixYW;
-		double rotationMatrixZX;
-		double rotationMatrixZY;
-		double rotationMatrixZZ;
-		double rotationMatrixZW;
-		double rotationMatrixWX;
-		double rotationMatrixWY;
-		double rotationMatrixWZ;
-		double rotationMatrixWW;
-		double scaleMatrixXX;
-		double scaleMatrixXY;
-		double scaleMatrixXZ;
-		double scaleMatrixXW;
-		double scaleMatrixYX;
-		double scaleMatrixYY;
-		double scaleMatrixYZ;
-		double scaleMatrixYW;
-		double scaleMatrixZX;
-		double scaleMatrixZY;
-		double scaleMatrixZZ;
-		double scaleMatrixZW;
-		double scaleMatrixWX;
-		double scaleMatrixWY;
-		double scaleMatrixWZ;
-		double scaleMatrixWW;
+		double modelMatrixXX;
+		double modelMatrixXY;
+		double modelMatrixXZ;
+		double modelMatrixXW;
+		double modelMatrixYX;
+		double modelMatrixYY;
+		double modelMatrixYZ;
+		double modelMatrixYW;
+		double modelMatrixZX;
+		double modelMatrixZY;
+		double modelMatrixZZ;
+		double modelMatrixZW;
+		double modelMatrixWX;
+		double modelMatrixWY;
+		double modelMatrixWZ;
+		double modelMatrixWW;
 		double modelViewProjMatrixXX;
 		double modelViewProjMatrixXY;
 		double modelViewProjMatrixXZ;
@@ -835,56 +802,24 @@ namespace
 		g_totalDrawCallCount = totalDrawCallCount;
 	}
 
-	void PopulateMeshTransform(TransformCache &cache, const RenderTransform &transform)
+	void PopulateMeshTransform(TransformCache &cache, const Matrix4d &modelMatrix)
 	{
-		cache.translationMatrixXX = transform.translation.x.x;
-		cache.translationMatrixXY = transform.translation.x.y;
-		cache.translationMatrixXZ = transform.translation.x.z;
-		cache.translationMatrixXW = transform.translation.x.w;
-		cache.translationMatrixYX = transform.translation.y.x;
-		cache.translationMatrixYY = transform.translation.y.y;
-		cache.translationMatrixYZ = transform.translation.y.z;
-		cache.translationMatrixYW = transform.translation.y.w;
-		cache.translationMatrixZX = transform.translation.z.x;
-		cache.translationMatrixZY = transform.translation.z.y;
-		cache.translationMatrixZZ = transform.translation.z.z;
-		cache.translationMatrixZW = transform.translation.z.w;
-		cache.translationMatrixWX = transform.translation.w.x;
-		cache.translationMatrixWY = transform.translation.w.y;
-		cache.translationMatrixWZ = transform.translation.w.z;
-		cache.translationMatrixWW = transform.translation.w.w;
-		cache.rotationMatrixXX = transform.rotation.x.x;
-		cache.rotationMatrixXY = transform.rotation.x.y;
-		cache.rotationMatrixXZ = transform.rotation.x.z;
-		cache.rotationMatrixXW = transform.rotation.x.w;
-		cache.rotationMatrixYX = transform.rotation.y.x;
-		cache.rotationMatrixYY = transform.rotation.y.y;
-		cache.rotationMatrixYZ = transform.rotation.y.z;
-		cache.rotationMatrixYW = transform.rotation.y.w;
-		cache.rotationMatrixZX = transform.rotation.z.x;
-		cache.rotationMatrixZY = transform.rotation.z.y;
-		cache.rotationMatrixZZ = transform.rotation.z.z;
-		cache.rotationMatrixZW = transform.rotation.z.w;
-		cache.rotationMatrixWX = transform.rotation.w.x;
-		cache.rotationMatrixWY = transform.rotation.w.y;
-		cache.rotationMatrixWZ = transform.rotation.w.z;
-		cache.rotationMatrixWW = transform.rotation.w.w;
-		cache.scaleMatrixXX = transform.scale.x.x;
-		cache.scaleMatrixXY = transform.scale.x.y;
-		cache.scaleMatrixXZ = transform.scale.x.z;
-		cache.scaleMatrixXW = transform.scale.x.w;
-		cache.scaleMatrixYX = transform.scale.y.x;
-		cache.scaleMatrixYY = transform.scale.y.y;
-		cache.scaleMatrixYZ = transform.scale.y.z;
-		cache.scaleMatrixYW = transform.scale.y.w;
-		cache.scaleMatrixZX = transform.scale.z.x;
-		cache.scaleMatrixZY = transform.scale.z.y;
-		cache.scaleMatrixZZ = transform.scale.z.z;
-		cache.scaleMatrixZW = transform.scale.z.w;
-		cache.scaleMatrixWX = transform.scale.w.x;
-		cache.scaleMatrixWY = transform.scale.w.y;
-		cache.scaleMatrixWZ = transform.scale.w.z;
-		cache.scaleMatrixWW = transform.scale.w.w;
+		cache.modelMatrixXX = modelMatrix.x.x;
+		cache.modelMatrixXY = modelMatrix.x.y;
+		cache.modelMatrixXZ = modelMatrix.x.z;
+		cache.modelMatrixXW = modelMatrix.x.w;
+		cache.modelMatrixYX = modelMatrix.y.x;
+		cache.modelMatrixYY = modelMatrix.y.y;
+		cache.modelMatrixYZ = modelMatrix.y.z;
+		cache.modelMatrixYW = modelMatrix.y.w;
+		cache.modelMatrixZX = modelMatrix.z.x;
+		cache.modelMatrixZY = modelMatrix.z.y;
+		cache.modelMatrixZZ = modelMatrix.z.z;
+		cache.modelMatrixZW = modelMatrix.z.w;
+		cache.modelMatrixWX = modelMatrix.w.x;
+		cache.modelMatrixWY = modelMatrix.w.y;
+		cache.modelMatrixWZ = modelMatrix.w.z;
+		cache.modelMatrixWW = modelMatrix.w.w;
 		// Do model-view-projection matrix in the bulk processing loop.
 	}
 }
@@ -1597,55 +1532,15 @@ namespace
 
 	void CalculateVertexShaderTransforms(TransformCache &transformCache)
 	{
-		double rotationScaleMatrixXX, rotationScaleMatrixXY, rotationScaleMatrixXZ, rotationScaleMatrixXW;
-		double rotationScaleMatrixYX, rotationScaleMatrixYY, rotationScaleMatrixYZ, rotationScaleMatrixYW;
-		double rotationScaleMatrixZX, rotationScaleMatrixZY, rotationScaleMatrixZZ, rotationScaleMatrixZW;
-		double rotationScaleMatrixWX, rotationScaleMatrixWY, rotationScaleMatrixWZ, rotationScaleMatrixWW;
-		double modelMatrixXX, modelMatrixXY, modelMatrixXZ, modelMatrixXW;
-		double modelMatrixYX, modelMatrixYY, modelMatrixYZ, modelMatrixYW;
-		double modelMatrixZX, modelMatrixZY, modelMatrixZZ, modelMatrixZW;
-		double modelMatrixWX, modelMatrixWY, modelMatrixWZ, modelMatrixWW;
-
-		// Rotation-scale matrix
-		Matrix4_MultiplyMatrixN<1>(
-			&transformCache.rotationMatrixXX, &transformCache.rotationMatrixXY, &transformCache.rotationMatrixXZ, &transformCache.rotationMatrixXW,
-			&transformCache.rotationMatrixYX, &transformCache.rotationMatrixYY, &transformCache.rotationMatrixYZ, &transformCache.rotationMatrixYW,
-			&transformCache.rotationMatrixZX, &transformCache.rotationMatrixZY, &transformCache.rotationMatrixZZ, &transformCache.rotationMatrixZW,
-			&transformCache.rotationMatrixWX, &transformCache.rotationMatrixWY, &transformCache.rotationMatrixWZ, &transformCache.rotationMatrixWW,
-			&transformCache.scaleMatrixXX, &transformCache.scaleMatrixXY, &transformCache.scaleMatrixXZ, &transformCache.scaleMatrixXW,
-			&transformCache.scaleMatrixYX, &transformCache.scaleMatrixYY, &transformCache.scaleMatrixYZ, &transformCache.scaleMatrixYW,
-			&transformCache.scaleMatrixZX, &transformCache.scaleMatrixZY, &transformCache.scaleMatrixZZ, &transformCache.scaleMatrixZW,
-			&transformCache.scaleMatrixWX, &transformCache.scaleMatrixWY, &transformCache.scaleMatrixWZ, &transformCache.scaleMatrixWW,
-			&rotationScaleMatrixXX, &rotationScaleMatrixXY, &rotationScaleMatrixXZ, &rotationScaleMatrixXW,
-			&rotationScaleMatrixYX, &rotationScaleMatrixYY, &rotationScaleMatrixYZ, &rotationScaleMatrixYW,
-			&rotationScaleMatrixZX, &rotationScaleMatrixZY, &rotationScaleMatrixZZ, &rotationScaleMatrixZW,
-			&rotationScaleMatrixWX, &rotationScaleMatrixWY, &rotationScaleMatrixWZ, &rotationScaleMatrixWW);
-
-		// Model matrix
-		Matrix4_MultiplyMatrixN<1>(
-			&transformCache.translationMatrixXX, &transformCache.translationMatrixXY, &transformCache.translationMatrixXZ, &transformCache.translationMatrixXW,
-			&transformCache.translationMatrixYX, &transformCache.translationMatrixYY, &transformCache.translationMatrixYZ, &transformCache.translationMatrixYW,
-			&transformCache.translationMatrixZX, &transformCache.translationMatrixZY, &transformCache.translationMatrixZZ, &transformCache.translationMatrixZW,
-			&transformCache.translationMatrixWX, &transformCache.translationMatrixWY, &transformCache.translationMatrixWZ, &transformCache.translationMatrixWW,
-			&rotationScaleMatrixXX, &rotationScaleMatrixXY, &rotationScaleMatrixXZ, &rotationScaleMatrixXW,
-			&rotationScaleMatrixYX, &rotationScaleMatrixYY, &rotationScaleMatrixYZ, &rotationScaleMatrixYW,
-			&rotationScaleMatrixZX, &rotationScaleMatrixZY, &rotationScaleMatrixZZ, &rotationScaleMatrixZW,
-			&rotationScaleMatrixWX, &rotationScaleMatrixWY, &rotationScaleMatrixWZ, &rotationScaleMatrixWW,
-			&modelMatrixXX, &modelMatrixXY, &modelMatrixXZ, &modelMatrixXW,
-			&modelMatrixYX, &modelMatrixYY, &modelMatrixYZ, &modelMatrixYW,
-			&modelMatrixZX, &modelMatrixZY, &modelMatrixZZ, &modelMatrixZW,
-			&modelMatrixWX, &modelMatrixWY, &modelMatrixWZ, &modelMatrixWW);
-
-		// Model-view-projection matrix
 		Matrix4_MultiplyMatrixN<1>(
 			g_viewProjMatrixXX, g_viewProjMatrixXY, g_viewProjMatrixXZ, g_viewProjMatrixXW,
 			g_viewProjMatrixYX, g_viewProjMatrixYY, g_viewProjMatrixYZ, g_viewProjMatrixYW,
 			g_viewProjMatrixZX, g_viewProjMatrixZY, g_viewProjMatrixZZ, g_viewProjMatrixZW,
 			g_viewProjMatrixWX, g_viewProjMatrixWY, g_viewProjMatrixWZ, g_viewProjMatrixWW,
-			&modelMatrixXX, &modelMatrixXY, &modelMatrixXZ, &modelMatrixXW,
-			&modelMatrixYX, &modelMatrixYY, &modelMatrixYZ, &modelMatrixYW,
-			&modelMatrixZX, &modelMatrixZY, &modelMatrixZZ, &modelMatrixZW,
-			&modelMatrixWX, &modelMatrixWY, &modelMatrixWZ, &modelMatrixWW,
+			&transformCache.modelMatrixXX, &transformCache.modelMatrixXY, &transformCache.modelMatrixXZ, &transformCache.modelMatrixXW,
+			&transformCache.modelMatrixYX, &transformCache.modelMatrixYY, &transformCache.modelMatrixYZ, &transformCache.modelMatrixYW,
+			&transformCache.modelMatrixZX, &transformCache.modelMatrixZY, &transformCache.modelMatrixZZ, &transformCache.modelMatrixZW,
+			&transformCache.modelMatrixWX, &transformCache.modelMatrixWY, &transformCache.modelMatrixWZ, &transformCache.modelMatrixWW,
 			&transformCache.modelViewProjMatrixXX, &transformCache.modelViewProjMatrixXY, &transformCache.modelViewProjMatrixXZ, &transformCache.modelViewProjMatrixXW,
 			&transformCache.modelViewProjMatrixYX, &transformCache.modelViewProjMatrixYY, &transformCache.modelViewProjMatrixYZ, &transformCache.modelViewProjMatrixYW,
 			&transformCache.modelViewProjMatrixZX, &transformCache.modelViewProjMatrixZY, &transformCache.modelViewProjMatrixZZ, &transformCache.modelViewProjMatrixZW,
@@ -4684,8 +4579,8 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					auto &drawCallCacheEnableDepthWrite = workerDrawCallCache.enableDepthWrite;
 
 					const SoftwareUniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
-					const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-					PopulateMeshTransform(workerTransformCache, transform);
+					const Matrix4d &modelMatrix = transformBuffer.get<Matrix4d>(drawCall.transformIndex);
+					PopulateMeshTransform(workerTransformCache, modelMatrix);
 
 					drawCallCachePositionBuffer = &this->positionBuffers.get(drawCall.positionBufferID);
 					drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);

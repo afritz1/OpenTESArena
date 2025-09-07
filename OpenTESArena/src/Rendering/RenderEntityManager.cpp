@@ -3,7 +3,6 @@
 #include "RenderCommand.h"
 #include "RenderEntityManager.h"
 #include "Renderer.h"
-#include "RenderTransform.h"
 #include "../Assets/TextureManager.h"
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityDefinitionLibrary.h"
@@ -491,11 +490,10 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
 
 			const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
-			RenderTransform entityRenderTransform;
-			entityRenderTransform.translation = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
-			entityRenderTransform.rotation = allEntitiesRotationMatrix;
-			entityRenderTransform.scale = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
-			renderer.populateUniformBufferRenderTransforms(transformBufferID, Span<const RenderTransform>(&entityRenderTransform, 1));
+			const Matrix4d entityTranslationMatrix = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
+			const Matrix4d entityScaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
+			const Matrix4d entityModelMatrix = entityTranslationMatrix * (allEntitiesRotationMatrix * entityScaleMatrix);
+			renderer.populateUniformBufferMatrix4s(transformBufferID, Span<const Matrix4d>(&entityModelMatrix, 1));
 		}
 
 		const EntityVisibilityChunk &entityVisChunk = entityVisChunkManager.getChunkAtPosition(chunkPos);

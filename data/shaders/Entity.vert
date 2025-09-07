@@ -7,7 +7,7 @@ layout(set = 0, binding = 0) uniform Camera
 
 layout(set = 2, binding = 0) uniform Transform
 {
-    mat4 translation, rotation, scale;
+    mat4 model;
 } transform;
 
 layout(location = 0) in vec3 vertInPosition;
@@ -17,7 +17,6 @@ layout(location = 0) out vec2 fragInTexCoord;
 
 void main()
 {
-    mat4 modelMatrix = transform.translation * (transform.rotation * transform.scale);
-    gl_Position = camera.viewProjection * (modelMatrix * vec4(vertInPosition, 1.0));
+    gl_Position = camera.viewProjection * (transform.model * vec4(vertInPosition, 1.0));
     fragInTexCoord = vertInTexCoord;
 }

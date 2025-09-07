@@ -280,31 +280,34 @@ namespace
 			static_cast<WEDouble>(worldVoxel.z));
 	}
 
-	RenderTransform MakeDoorFaceRenderTransform(ArenaDoorType doorType, int doorFaceIndex, const WorldDouble3 &worldPosition,
+	Matrix4d MakeDoorFaceModelMatrix(ArenaDoorType doorType, int doorFaceIndex, const WorldDouble3 &worldPosition,
 		double ceilingScale, double animPercent)
 	{
 		const Radians faceBaseRadians = VoxelDoorUtils::BaseAngles[doorFaceIndex];
 		const Double3 hingeOffset = VoxelDoorUtils::SwingingHingeOffsets[doorFaceIndex];
 		const Double3 hingePosition = worldPosition + hingeOffset;
 
-		RenderTransform renderTransform;
+
+		Matrix4d translationMatrix;
+		Matrix4d rotationMatrix;
+		Matrix4d scaleMatrix;
 		switch (doorType)
 		{
 		case ArenaDoorType::Swinging:
 		{
 			const Radians rotationRadians = VoxelDoorUtils::getSwingingRotationRadians(faceBaseRadians, animPercent);
-			renderTransform.translation = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
-			renderTransform.rotation = Matrix4d::yRotation(rotationRadians);
-			renderTransform.scale = Matrix4d::identity();
+			translationMatrix = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
+			rotationMatrix = Matrix4d::yRotation(rotationRadians);
+			scaleMatrix = Matrix4d::identity();
 			break;
 		}
 		case ArenaDoorType::Sliding:
 		{
 			const double uMin = VoxelDoorUtils::getAnimatedTexCoordPercent(animPercent);
 			const double scaleAmount = VoxelDoorUtils::getAnimatedScaleAmount(uMin);
-			renderTransform.translation = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
-			renderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
-			renderTransform.scale = Matrix4d::scale(1.0, 1.0, scaleAmount);
+			translationMatrix = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
+			rotationMatrix = Matrix4d::yRotation(faceBaseRadians);
+			scaleMatrix = Matrix4d::scale(1.0, 1.0, scaleAmount);
 			break;
 		}
 		case ArenaDoorType::Raising:
@@ -312,10 +315,9 @@ namespace
 			const double vMin = VoxelDoorUtils::getAnimatedTexCoordPercent(animPercent);
 			const double scaleAmount = VoxelDoorUtils::getAnimatedScaleAmount(vMin);
 			const Double3 preScaleTranslation(0.0, -ceilingScale, 0.0);
-			renderTransform.translation = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
-			renderTransform.rotation = Matrix4d::yRotation(faceBaseRadians);
-			renderTransform.scale =
-				Matrix4d::translation(-preScaleTranslation.x, -preScaleTranslation.y, -preScaleTranslation.z) *
+			translationMatrix = Matrix4d::translation(hingePosition.x, hingePosition.y, hingePosition.z);
+			rotationMatrix = Matrix4d::yRotation(faceBaseRadians);
+			scaleMatrix = Matrix4d::translation(-preScaleTranslation.x, -preScaleTranslation.y, -preScaleTranslation.z) *
 				Matrix4d::scale(1.0, scaleAmount, 1.0) *
 				Matrix4d::translation(preScaleTranslation.x, preScaleTranslation.y, preScaleTranslation.z);
 			break;
@@ -325,7 +327,7 @@ namespace
 			break;
 		}
 
-		return renderTransform;
+		return translationMatrix * (rotationMatrix * scaleMatrix);
 	}
 }
 
@@ -603,7 +605,7 @@ void RenderVoxelChunkManager::loadChunkNonCombinedTransforms(RenderVoxelChunk &r
 
 					for (int i = 0; i < VoxelDoorUtils::FACE_COUNT; i++)
 					{
-						const UniformBufferID doorTransformBufferID = renderer.createUniformBufferRenderTransforms(1);
+						const UniformBufferID doorTransformBufferID = renderer.createUniformBufferMatrix4s(1);
 						if (doorTransformBufferID < 0)
 						{
 							DebugLogErrorFormat("Couldn't create uniform buffer for door transform %d at voxel (%s).", i, voxel.toString().c_str());
@@ -611,8 +613,8 @@ void RenderVoxelChunkManager::loadChunkNonCombinedTransforms(RenderVoxelChunk &r
 						}
 
 						// Initialize to default appearance. Dirty door animations trigger an update.
-						const RenderTransform faceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, ceilingScale, doorAnimPercent);
-						renderer.populateUniformBufferRenderTransforms(doorTransformBufferID, Span<const RenderTransform>(&faceRenderTransform, 1));
+						const Matrix4d faceModelMatrix = MakeDoorFaceModelMatrix(doorType, i, worldPosition, ceilingScale, doorAnimPercent);
+						renderer.populateUniformBufferMatrix4s(doorTransformBufferID, Span<const Matrix4d>(&faceModelMatrix, 1));
 						
 						DebugAssertIndex(doorTransformsEntry.transformBufferIDs, i);
 						doorTransformsEntry.transformBufferIDs[i] = doorTransformBufferID;
@@ -622,18 +624,15 @@ void RenderVoxelChunkManager::loadChunkNonCombinedTransforms(RenderVoxelChunk &r
 				}
 				else if (!isAir && !allowsFaceCombining)
 				{
-					const UniformBufferID transformBufferID = renderer.createUniformBufferRenderTransforms(1);
+					const UniformBufferID transformBufferID = renderer.createUniformBufferMatrix4s(1);
 					if (transformBufferID < 0)
 					{
 						DebugLogErrorFormat("Couldn't create uniform buffer for transform at voxel (%s).", voxel.toString().c_str());
 						continue;
 					}
 
-					RenderTransform renderTransform;
-					renderTransform.translation = Matrix4d::translation(worldPosition.x, worldPosition.y, worldPosition.z);
-					renderTransform.rotation = Matrix4d::identity();
-					renderTransform.scale = Matrix4d::identity();
-					renderer.populateUniformBufferRenderTransforms(transformBufferID, Span<const RenderTransform>(&renderTransform, 1));
+					const Matrix4d modelMatrix = Matrix4d::translation(worldPosition.x, worldPosition.y, worldPosition.z);
+					renderer.populateUniformBufferMatrix4s(transformBufferID, Span<const Matrix4d>(&modelMatrix, 1));
 
 					RenderVoxelNonCombinedTransformEntry transformEntry;
 					transformEntry.voxel = voxel;
@@ -670,7 +669,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		const VoxelFacing3D facing = faceCombineResult.facing;
 
 		// Create and populate transform buffer for this combined face.
-		UniformBufferID transformBufferID = renderer.createUniformBufferRenderTransforms(1);
+		UniformBufferID transformBufferID = renderer.createUniformBufferMatrix4s(1);
 		if (transformBufferID < 0)
 		{
 			DebugLogErrorFormat("Couldn't allocate combined face transform buffer starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
@@ -682,11 +681,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			static_cast<double>(worldMinVoxel.y) * ceilingScale,
 			static_cast<WEDouble>(worldMinVoxel.z));
 
-		RenderTransform transform;
-		transform.translation = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
-		transform.rotation = Matrix4d::identity();
-		transform.scale = Matrix4d::identity();
-		renderer.populateUniformBufferRenderTransforms(transformBufferID, Span<const RenderTransform>(&transform, 1));
+		const Matrix4d modelMatrix = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
+		renderer.populateUniformBufferMatrix4s(transformBufferID, Span<const Matrix4d>(&modelMatrix, 1));
 
 		const VoxelTraitsDefID traitsDefID = voxelChunk.traitsDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelTraitsDefinition &traitsDef = voxelChunk.traitsDefs[traitsDefID];
@@ -1427,9 +1423,9 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 
 			for (int i = 0; i < VoxelDoorUtils::FACE_COUNT; i++)
 			{
-				const RenderTransform doorFaceRenderTransform = MakeDoorFaceRenderTransform(doorType, i, worldPosition, ceilingScale, doorAnimPercent);				
+				const Matrix4d doorFaceModelMatrix = MakeDoorFaceModelMatrix(doorType, i, worldPosition, ceilingScale, doorAnimPercent);				
 				const UniformBufferID doorTransformBufferID = doorTransformsIter->transformBufferIDs[i];
-				renderer.populateUniformBufferRenderTransforms(doorTransformBufferID, Span<const RenderTransform>(&doorFaceRenderTransform, 1));
+				renderer.populateUniformBufferMatrix4s(doorTransformBufferID, Span<const Matrix4d>(&doorFaceModelMatrix, 1));
 			}
 		}
 

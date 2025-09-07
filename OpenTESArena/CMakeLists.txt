@@ -457,8 +457,6 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderSkyManager.cpp"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.h"
-    "${SRC_ROOT}/Rendering/RenderTransform.cpp"
-    "${SRC_ROOT}/Rendering/RenderTransform.h"
     "${SRC_ROOT}/Rendering/RenderVoxelChunk.cpp"
     "${SRC_ROOT}/Rendering/RenderVoxelChunk.h"
     "${SRC_ROOT}/Rendering/RenderVoxelChunkManager.cpp"

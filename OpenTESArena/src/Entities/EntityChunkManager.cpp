@@ -21,7 +21,6 @@
 #include "../Player/Player.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/RenderTransform.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/CardinalDirection.h"
@@ -223,7 +222,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
 	}
 
-	const UniformBufferID renderTransformBufferID = renderer.createUniformBufferRenderTransforms(1);
+	const UniformBufferID renderTransformBufferID = renderer.createUniformBufferMatrix4s(1);
 	if (renderTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for entity transform.");

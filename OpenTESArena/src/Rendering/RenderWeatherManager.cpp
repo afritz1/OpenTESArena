@@ -2,7 +2,6 @@
 
 #include "RenderCamera.h"
 #include "RenderCommand.h"
-#include "RenderTransform.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
 #include "RenderWeatherManager.h"
@@ -340,14 +339,14 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 bool RenderWeatherManager::initUniforms(Renderer &renderer)
 {
 	// Initialize rain and snow buffers but don't populate because they are updated every frame.
-	this->rainTransformBufferID = renderer.createUniformBufferRenderTransforms(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
+	this->rainTransformBufferID = renderer.createUniformBufferMatrix4s(ArenaWeatherUtils::RAINDROP_TOTAL_COUNT);
 	if (this->rainTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for raindrops.");
 		return false;
 	}
 
-	this->snowTransformBufferID = renderer.createUniformBufferRenderTransforms(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT);
+	this->snowTransformBufferID = renderer.createUniformBufferMatrix4s(ArenaWeatherUtils::SNOWFLAKE_TOTAL_COUNT);
 	if (this->snowTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for snowflakes.");
@@ -355,18 +354,15 @@ bool RenderWeatherManager::initUniforms(Renderer &renderer)
 	}
 
 	// Fog is not updated every frame so it needs populating here.
-	this->fogTransformBufferID = renderer.createUniformBufferRenderTransforms(1);
+	this->fogTransformBufferID = renderer.createUniformBufferMatrix4s(1);
 	if (this->fogTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for fog.");
 		return false;
 	}
 
-	RenderTransform fogRenderTransform;
-	fogRenderTransform.translation = Matrix4d::identity();
-	fogRenderTransform.rotation = Matrix4d::identity();
-	fogRenderTransform.scale = Matrix4d::identity();
-	renderer.populateUniformBufferRenderTransforms(this->fogTransformBufferID, Span<const RenderTransform>(&fogRenderTransform, 1));
+	const Matrix4d fogModelMatrix = Matrix4d::identity();
+	renderer.populateUniformBufferMatrix4s(this->fogTransformBufferID, Span<const Matrix4d>(&fogModelMatrix, 1));
 
 	return true;
 }
@@ -674,11 +670,9 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 			const WeatherParticle &rainParticle = rainInst.particles[i];
 			const int raindropTransformIndex = i;
 
-			RenderTransform raindropRenderTransform;
-			raindropRenderTransform.translation = MakeParticleTranslationMatrix(camera, rainParticle.xPercent, rainParticle.yPercent);
-			raindropRenderTransform.rotation = particleRotationMatrix;
-			raindropRenderTransform.scale = raindropScaleMatrix;
-			renderer.populateUniformBufferIndexRenderTransform(this->rainTransformBufferID, raindropTransformIndex, raindropRenderTransform);
+			const Matrix4d raindropTranslationMatrix = MakeParticleTranslationMatrix(camera, rainParticle.xPercent, rainParticle.yPercent);
+			const Matrix4d raindropModelMatrix = raindropTranslationMatrix * (particleRotationMatrix * raindropScaleMatrix);
+			renderer.populateUniformBufferIndexMatrix4(this->rainTransformBufferID, raindropTransformIndex, raindropModelMatrix);
 
 			populateRainDrawCall(this->rainDrawCalls[i], raindropTransformIndex);
 		}
@@ -728,11 +722,9 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 				const WeatherParticle &snowParticle = snowInst.particles[i];
 				const int snowParticleTransformIndex = i;
 
-				RenderTransform snowParticleRenderTransform;
-				snowParticleRenderTransform.translation = MakeParticleTranslationMatrix(camera, snowParticle.xPercent, snowParticle.yPercent);
-				snowParticleRenderTransform.rotation = particleRotationMatrix;
-				snowParticleRenderTransform.scale = snowParticleScaleMatrix;
-				renderer.populateUniformBufferIndexRenderTransform(this->snowTransformBufferID, snowParticleTransformIndex, snowParticleRenderTransform);
+				const Matrix4d snowParticleTranslationMatrix = MakeParticleTranslationMatrix(camera, snowParticle.xPercent, snowParticle.yPercent);
+				const Matrix4d snowParticleModelMatrix = snowParticleTranslationMatrix * (particleRotationMatrix * snowParticleScaleMatrix);
+				renderer.populateUniformBufferIndexMatrix4(this->snowTransformBufferID, snowParticleTransformIndex, snowParticleModelMatrix);
 
 				const RenderMaterialID snowParticleMaterialID = this->snowMaterialIDs[snowParticleSizeIndex];
 				populateSnowDrawCall(this->snowDrawCalls[i], snowParticleTransformIndex, snowParticleMaterialID);
@@ -742,11 +734,8 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 
 	if (weatherInst.hasFog())
 	{
-		RenderTransform fogRenderTransform;
-		fogRenderTransform.translation = Matrix4d::translation(camera.worldPoint.x, camera.worldPoint.y, camera.worldPoint.z);
-		fogRenderTransform.rotation = Matrix4d::identity();
-		fogRenderTransform.scale = Matrix4d::identity();
-		renderer.populateUniformBufferRenderTransforms(this->fogTransformBufferID, Span<const RenderTransform>(&fogRenderTransform, 1));
+		const Matrix4d fogModelMatrix = Matrix4d::translation(camera.worldPoint.x, camera.worldPoint.y, camera.worldPoint.z);
+		renderer.populateUniformBufferMatrix4s(this->fogTransformBufferID, Span<const Matrix4d>(&fogModelMatrix, 1));
 
 		this->fogDrawCall.transformBufferID = this->fogTransformBufferID;
 		this->fogDrawCall.transformIndex = 0;
