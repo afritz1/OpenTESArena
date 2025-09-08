@@ -71,6 +71,8 @@ namespace RenderShaderUtils
 	constexpr bool requiresMeshLightPercent(PixelShaderType type)
 	{
 		return (type == PixelShaderType::Opaque) ||
+			(type == PixelShaderType::OpaqueScreenSpaceAnimation) ||
+			(type == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) ||
 			(type == PixelShaderType::AlphaTested);
 	}
 

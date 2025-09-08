@@ -12,13 +12,16 @@ layout(set = 0, binding = 1) uniform FramebufferDimensions
 layout(set = 0, binding = 3) uniform ScreenSpaceAnimation
 {
     float percent;
-    float framebufferWidthReal;
-    float framebufferHeightReal;
 } screenSpaceAnim;
 
 layout(set = 0, binding = 6) uniform usampler2D lightTableSampler;
 layout(set = 3, binding = 0) uniform usampler2D mainTextureSampler;
 layout(set = 3, binding = 1) uniform usampler2D layerTextureSampler;
+
+layout(push_constant) uniform PushConstants
+{
+    float meshLightPercent;
+} pc;
 
 layout(location = 0) in vec2 fragInTexCoord;
 layout(location = 1) in vec3 fragInWorldPoint;
@@ -47,6 +50,6 @@ void main()
         texel = texture(mainTextureSampler, screenSpaceUV).r;
     }
     
-    uint lightLevel = getLightLevel(fragInWorldPoint, 0.0, uvec2(framebuffer.width, framebuffer.height));
+    uint lightLevel = getLightLevel(fragInWorldPoint, pc.meshLightPercent, uvec2(framebuffer.width, framebuffer.height));
     fragOutColor = texelFetch(lightTableSampler, ivec2(texel, lightLevel), 0).r;
 }
