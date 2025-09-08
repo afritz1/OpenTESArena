@@ -1,16 +1,17 @@
 #version 450
 
-// @todo make a descriptor set binding that's just FramebufferDimensions so the water/lava shaders and this can share that binding
-layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
+layout(set = 0, binding = 1) uniform FramebufferDimensions
 {
-    float percent;
-    float framebufferWidthReal;
-    float framebufferHeightReal;
-} screenSpaceAnim;
+    uint width;
+    uint height;
+    float widthReal;
+    float heightReal;
+} framebuffer;
 
-layout(set = 0, binding = 3) uniform usampler2D framebufferSampler;
-layout(set = 0, binding = 6) uniform usampler2D skyBgTextureSampler;
-layout(set = 0, binding = 7) uniform HorizonMirror
+layout(set = 0, binding = 4) uniform usampler2D framebufferSampler;
+layout(set = 0, binding = 7) uniform usampler2D skyBgTextureSampler;
+
+layout(set = 0, binding = 8) uniform HorizonMirror
 {
     float screenSpacePointX, screenSpacePointY;
 } horizon;
@@ -37,11 +38,11 @@ void main()
     uint fallbackTexel = texelFetch(skyBgTextureSampler, ivec2(0, 0), 0).r;
     uint reflectedTexel = fallbackTexel;
 
-    bool isReflectedPixelInFramebuffer = (reflectedScreenSpacePointX >= 0.0) && (reflectedScreenSpacePointX < screenSpaceAnim.framebufferWidthReal) &&
-        (reflectedScreenSpacePointY >= 0.0) && (reflectedScreenSpacePointY < screenSpaceAnim.framebufferHeightReal);
+    bool isReflectedPixelInFramebuffer = (reflectedScreenSpacePointX >= 0.0) && (reflectedScreenSpacePointX < framebuffer.widthReal) &&
+        (reflectedScreenSpacePointY >= 0.0) && (reflectedScreenSpacePointY < framebuffer.heightReal);
     if (isReflectedPixelInFramebuffer)
     {
-        vec2 framebufferUV = vec2(reflectedScreenSpacePointX / screenSpaceAnim.framebufferWidthReal, reflectedScreenSpacePointY / screenSpaceAnim.framebufferHeightReal);
+        vec2 framebufferUV = vec2(reflectedScreenSpacePointX / framebuffer.widthReal, reflectedScreenSpacePointY / framebuffer.heightReal);
         reflectedTexel = texture(framebufferSampler, framebufferUV).r;
     }
 

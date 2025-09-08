@@ -1586,14 +1586,19 @@ namespace
 		return true;
 	}
 
-	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer ambientLightBuffer, vk::Buffer screenSpaceAnimBuffer,
-		vk::ImageView sampledFramebufferImageView, vk::Sampler sampledFramebufferSampler, vk::ImageView paletteImageView, vk::Sampler paletteSampler,
+	void UpdateGlobalDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer cameraBuffer, vk::Buffer framebufferDimsBuffer, vk::Buffer ambientLightBuffer,
+		vk::Buffer screenSpaceAnimBuffer, vk::ImageView sampledFramebufferImageView, vk::Sampler sampledFramebufferSampler, vk::ImageView paletteImageView, vk::Sampler paletteSampler,
 		vk::ImageView lightTableImageView, vk::Sampler lightTableSampler, vk::ImageView skyBgImageView, vk::Sampler skyBgSampler, vk::Buffer horizonMirrorBuffer)
 	{
 		vk::DescriptorBufferInfo cameraDescriptorBufferInfo;
 		cameraDescriptorBufferInfo.buffer = cameraBuffer;
 		cameraDescriptorBufferInfo.offset = 0;
 		cameraDescriptorBufferInfo.range = VK_WHOLE_SIZE;
+
+		vk::DescriptorBufferInfo framebufferDimsDescriptorBufferInfo;
+		framebufferDimsDescriptorBufferInfo.buffer = framebufferDimsBuffer;
+		framebufferDimsDescriptorBufferInfo.offset = 0;
+		framebufferDimsDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
 		vk::DescriptorBufferInfo ambientLightDescriptorBufferInfo;
 		ambientLightDescriptorBufferInfo.buffer = ambientLightBuffer;
@@ -1638,9 +1643,17 @@ namespace
 		cameraWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
 		cameraWriteDescriptorSet.pBufferInfo = &cameraDescriptorBufferInfo;
 
+		vk::WriteDescriptorSet framebufferDimsWriteDescriptorSet;
+		framebufferDimsWriteDescriptorSet.dstSet = descriptorSet;
+		framebufferDimsWriteDescriptorSet.dstBinding = 1;
+		framebufferDimsWriteDescriptorSet.dstArrayElement = 0;
+		framebufferDimsWriteDescriptorSet.descriptorCount = 1;
+		framebufferDimsWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		framebufferDimsWriteDescriptorSet.pBufferInfo = &framebufferDimsDescriptorBufferInfo;
+
 		vk::WriteDescriptorSet ambientLightWriteDescriptorSet;
 		ambientLightWriteDescriptorSet.dstSet = descriptorSet;
-		ambientLightWriteDescriptorSet.dstBinding = 1;
+		ambientLightWriteDescriptorSet.dstBinding = 2;
 		ambientLightWriteDescriptorSet.dstArrayElement = 0;
 		ambientLightWriteDescriptorSet.descriptorCount = 1;
 		ambientLightWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -1648,7 +1661,7 @@ namespace
 
 		vk::WriteDescriptorSet screenSpaceAnimWriteDescriptorSet;
 		screenSpaceAnimWriteDescriptorSet.dstSet = descriptorSet;
-		screenSpaceAnimWriteDescriptorSet.dstBinding = 2;
+		screenSpaceAnimWriteDescriptorSet.dstBinding = 3;
 		screenSpaceAnimWriteDescriptorSet.dstArrayElement = 0;
 		screenSpaceAnimWriteDescriptorSet.descriptorCount = 1;
 		screenSpaceAnimWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -1656,7 +1669,7 @@ namespace
 
 		vk::WriteDescriptorSet sampledFramebufferWriteDescriptorSet;
 		sampledFramebufferWriteDescriptorSet.dstSet = descriptorSet;
-		sampledFramebufferWriteDescriptorSet.dstBinding = 3;
+		sampledFramebufferWriteDescriptorSet.dstBinding = 4;
 		sampledFramebufferWriteDescriptorSet.dstArrayElement = 0;
 		sampledFramebufferWriteDescriptorSet.descriptorCount = 1;
 		sampledFramebufferWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -1664,7 +1677,7 @@ namespace
 
 		vk::WriteDescriptorSet paletteWriteDescriptorSet;
 		paletteWriteDescriptorSet.dstSet = descriptorSet;
-		paletteWriteDescriptorSet.dstBinding = 4;
+		paletteWriteDescriptorSet.dstBinding = 5;
 		paletteWriteDescriptorSet.dstArrayElement = 0;
 		paletteWriteDescriptorSet.descriptorCount = 1;
 		paletteWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -1672,7 +1685,7 @@ namespace
 
 		vk::WriteDescriptorSet lightTableWriteDescriptorSet;
 		lightTableWriteDescriptorSet.dstSet = descriptorSet;
-		lightTableWriteDescriptorSet.dstBinding = 5;
+		lightTableWriteDescriptorSet.dstBinding = 6;
 		lightTableWriteDescriptorSet.dstArrayElement = 0;
 		lightTableWriteDescriptorSet.descriptorCount = 1;
 		lightTableWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -1680,7 +1693,7 @@ namespace
 
 		vk::WriteDescriptorSet skyBgWriteDescriptorSet;
 		skyBgWriteDescriptorSet.dstSet = descriptorSet;
-		skyBgWriteDescriptorSet.dstBinding = 6;
+		skyBgWriteDescriptorSet.dstBinding = 7;
 		skyBgWriteDescriptorSet.dstArrayElement = 0;
 		skyBgWriteDescriptorSet.descriptorCount = 1;
 		skyBgWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
@@ -1688,7 +1701,7 @@ namespace
 
 		vk::WriteDescriptorSet horizonMirrorWriteDescriptorSet;
 		horizonMirrorWriteDescriptorSet.dstSet = descriptorSet;
-		horizonMirrorWriteDescriptorSet.dstBinding = 7;
+		horizonMirrorWriteDescriptorSet.dstBinding = 8;
 		horizonMirrorWriteDescriptorSet.dstArrayElement = 0;
 		horizonMirrorWriteDescriptorSet.descriptorCount = 1;
 		horizonMirrorWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
@@ -1697,6 +1710,7 @@ namespace
 		const vk::WriteDescriptorSet writeDescriptorSets[] =
 		{
 			cameraWriteDescriptorSet,
+			framebufferDimsWriteDescriptorSet,
 			ambientLightWriteDescriptorSet,
 			screenSpaceAnimWriteDescriptorSet,
 			sampledFramebufferWriteDescriptorSet,
@@ -3048,20 +3062,22 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 	{
 		// Camera
 		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eVertex),
-		// Ambient percent
+		// Framebuffer dimensions
 		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
-		// Screen space animation
+		// Ambient percent
 		CreateDescriptorSetLayoutBinding(2, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
+		// Screen space animation
+		CreateDescriptorSetLayoutBinding(3, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment),
 		// Sampled framebuffer
-		CreateDescriptorSetLayoutBinding(3, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
-		// Palette
 		CreateDescriptorSetLayoutBinding(4, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
-		// Light table
+		// Palette
 		CreateDescriptorSetLayoutBinding(5, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
-		// Sky texture (puddle fallback color)
+		// Light table
 		CreateDescriptorSetLayoutBinding(6, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
+		// Sky texture (puddle fallback color)
+		CreateDescriptorSetLayoutBinding(7, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
 		// Horizon mirror point
-		CreateDescriptorSetLayoutBinding(7, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
+		CreateDescriptorSetLayoutBinding(8, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 	};
 
 	const vk::DescriptorSetLayoutBinding lightDescriptorSetLayoutBindings[] =
@@ -3365,6 +3381,13 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	constexpr int framebufferDimsByteCount = (sizeof(int) * 2) + (sizeof(float) * 2); // Width x height, widthReal x heightReal
+	if (!tryCreateBufferStagingOnly(this->framebufferDims, framebufferDimsByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
+	{
+		DebugLogError("Couldn't create framebuffer dimensions buffer.");
+		return false;
+	}
+
 	constexpr int ambientLightByteCount = sizeof(float);
 	if (!tryCreateBufferStagingOnly(this->ambientLight, ambientLightByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
@@ -3372,7 +3395,7 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	constexpr int screenSpaceAnimByteCount = sizeof(float) * 3; // Anim percent + framebuffer dimensions. @todo move framebuffer dims into its own
+	constexpr int screenSpaceAnimByteCount = sizeof(float); // Anim percent
 	if (!tryCreateBufferStagingOnly(this->screenSpaceAnim, screenSpaceAnimByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
 		DebugLogError("Couldn't create screen space animation buffer.");
@@ -3415,7 +3438,7 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	constexpr int lightBinDimsByteCount = sizeof(int) * 7; // Bin width and height, bin count X and Y, framebuffer dims, dither mode.
+	constexpr int lightBinDimsByteCount = sizeof(int) * 5; // Bin width and height, bin count X and Y, dither mode.
 	if (!tryCreateBufferStagingOnly(this->lightBinDims, lightBinDimsByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
 		DebugLogError("Couldn't create light bin dimensions buffer.");
@@ -3558,6 +3581,7 @@ void VulkanRenderBackend::shutdown()
 		this->horizonMirror.freeAllocations(this->device);
 		this->screenSpaceAnim.freeAllocations(this->device);
 		this->ambientLight.freeAllocations(this->device);
+		this->framebufferDims.freeAllocations(this->device);
 		this->camera.freeAllocations(this->device);
 
 		this->uiTextureHeapManagerStaging.freeAllocations();
@@ -5146,9 +5170,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		lightBinDimsValues[1] = lightBinHeight;
 		lightBinDimsValues[2] = lightBinCountX;
 		lightBinDimsValues[3] = lightBinCountY;
-		lightBinDimsValues[4] = this->internalExtent.width; // @todo put in a dedicated descriptor set
-		lightBinDimsValues[5] = this->internalExtent.height;
-		lightBinDimsValues[6] = ditherBufferIndex;
+		lightBinDimsValues[4] = ditherBufferIndex;
 
 		auto copyCommand = [this]()
 		{
@@ -5292,13 +5314,19 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		Span<const std::byte> viewProjectionBytes(reinterpret_cast<const std::byte*>(&viewProjection), sizeof(viewProjection));
 		std::copy(viewProjectionBytes.begin(), viewProjectionBytes.end(), this->camera.stagingHostMappedBytes.begin());
 
+		int *framebufferDimsValues = reinterpret_cast<int*>(this->framebufferDims.stagingHostMappedBytes.begin());
+		framebufferDimsValues[0] = this->internalExtent.width;
+		framebufferDimsValues[1] = this->internalExtent.height;
+
+		float *framebufferDimsRealValues = reinterpret_cast<float*>(framebufferDimsValues + 2);
+		framebufferDimsRealValues[0] = sceneViewport.width;
+		framebufferDimsRealValues[1] = sceneViewport.height;
+
 		float *ambientLightValues = reinterpret_cast<float*>(this->ambientLight.stagingHostMappedBytes.begin());
 		ambientLightValues[0] = static_cast<float>(frameSettings.ambientPercent);
 
 		float *screenSpaceAnimValues = reinterpret_cast<float*>(this->screenSpaceAnim.stagingHostMappedBytes.begin());
 		screenSpaceAnimValues[0] = static_cast<float>(frameSettings.screenSpaceAnimPercent);
-		screenSpaceAnimValues[1] = sceneViewport.width;
-		screenSpaceAnimValues[2] = sceneViewport.height;
 
 		paletteTexture = &this->objectTexturePool.get(frameSettings.paletteTextureID);
 		const VulkanTexture &lightTableTexture = this->objectTexturePool.get(frameSettings.lightTableTextureID);
@@ -5333,9 +5361,9 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 		{
-			UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSets[i], this->camera.stagingBuffer, this->ambientLight.stagingBuffer, this->screenSpaceAnim.stagingBuffer,
-				this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler, lightTableTexture.imageView, lightTableTexture.sampler,
-				skyBgTexture.imageView, skyBgTexture.sampler, this->horizonMirror.stagingBuffer);
+			UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSets[i], this->camera.stagingBuffer, this->framebufferDims.stagingBuffer, this->ambientLight.stagingBuffer,
+				this->screenSpaceAnim.stagingBuffer, this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler, lightTableTexture.imageView,
+				lightTableTexture.sampler, skyBgTexture.imageView, skyBgTexture.sampler, this->horizonMirror.stagingBuffer);
 		}
 
 		vk::Pipeline currentPipeline;

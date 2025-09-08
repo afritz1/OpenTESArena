@@ -58,8 +58,6 @@ layout(set = 1, binding = 4) uniform LightBinDimensions
     uint pixelHeight;
     uint binCountX;
     uint binCountY;
-    uint framebufferWidth;
-    uint framebufferHeight;
     uint ditherMode;
 } lightBinDims;
 
@@ -124,7 +122,7 @@ float getPerPixelLightIntensitySum(vec3 worldPoint)
     return lightIntensitySum;
 }
 
-uint getLightLevel(vec3 worldPoint, float meshLightPercent)
+uint getLightLevel(vec3 worldPoint, float meshLightPercent, uvec2 framebufferDims)
 {
     float lightIntensitySum = 0.0;
 
@@ -146,8 +144,8 @@ uint getLightLevel(vec3 worldPoint, float meshLightPercent)
         uint ditherMode = lightBinDims.ditherMode;
         
         uvec2 framebufferXY = getFramebufferXY();
-        uint pixelIndex = framebufferXY.x + (framebufferXY.y * lightBinDims.framebufferWidth);
-        uint framebufferPixelCount = lightBinDims.framebufferWidth * lightBinDims.framebufferHeight;
+        uint pixelIndex = framebufferXY.x + (framebufferXY.y * framebufferDims.x); // @todo this should just modulo into the dither texture eventually
+        uint framebufferPixelCount = framebufferDims.x * framebufferDims.y; // @todo this should be dither texture pixel count eventually
 
         bool shouldDither = false;
         if (ditherMode == DITHER_MODE_CLASSIC)

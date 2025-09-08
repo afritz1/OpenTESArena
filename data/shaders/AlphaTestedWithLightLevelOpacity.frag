@@ -1,15 +1,15 @@
 #version 450
 
-// @todo make a descriptor set binding that's just FramebufferDimensions so the water/lava shaders and this can share that binding
-layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
+layout(set = 0, binding = 1) uniform FramebufferDimensions
 {
-    float percent;
-    float framebufferWidthReal;
-    float framebufferHeightReal;
-} screenSpaceAnim;
+    uint width;
+    uint height;
+    float widthReal;
+    float heightReal;
+} framebuffer;
 
-layout(set = 0, binding = 3) uniform usampler2D framebufferSampler;
-layout(set = 0, binding = 5) uniform usampler2D lightTableSampler;
+layout(set = 0, binding = 4) uniform usampler2D framebufferSampler;
+layout(set = 0, binding = 6) uniform usampler2D lightTableSampler;
 layout(set = 3, binding = 0) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
@@ -38,7 +38,7 @@ uint getLightTableTexelIndex(uint texel)
     {
         uint texelAsLightLevel = texel - PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
 
-        vec2 framebufferUV = gl_FragCoord.xy / vec2(screenSpaceAnim.framebufferWidthReal, screenSpaceAnim.framebufferHeightReal);
+        vec2 framebufferUV = gl_FragCoord.xy / vec2(framebuffer.widthReal, framebuffer.heightReal);
         uint framebufferTexel = texture(framebufferSampler, framebufferUV).r;
 
         lightTableTexelIndex = framebufferTexel + (texelAsLightLevel * TEXELS_PER_LIGHT_LEVEL);

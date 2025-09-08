@@ -1,15 +1,15 @@
 #version 450
 
-// @todo make a descriptor set binding that's just FramebufferDimensions so the water/lava shaders and this can share that binding
-layout(set = 0, binding = 2) uniform ScreenSpaceAnimation
+layout(set = 0, binding = 1) uniform FramebufferDimensions
 {
-    float percent;
-    float framebufferWidthReal;
-    float framebufferHeightReal;
-} screenSpaceAnim;
+    uint width;
+    uint height;
+    float widthReal;
+    float heightReal;
+} framebuffer;
 
-layout(set = 0, binding = 3) uniform usampler2D framebufferSampler;
-layout(set = 0, binding = 4) uniform sampler2D paletteSampler;
+layout(set = 0, binding = 4) uniform usampler2D framebufferSampler;
+layout(set = 0, binding = 5) uniform sampler2D paletteSampler;
 layout(set = 3, binding = 0) uniform usampler2D textureSampler;
 
 layout(location = 0) in vec2 fragInTexCoord;
@@ -21,7 +21,7 @@ void main()
     const uint brightnessLimit = 0x3F; // Highest 8-bit value each RGB component can be.
     const float brightnessLimitReal = float(brightnessLimit) / 255.0;
 
-    vec2 framebufferUV = gl_FragCoord.xy / vec2(screenSpaceAnim.framebufferWidthReal, screenSpaceAnim.framebufferHeightReal);
+    vec2 framebufferUV = gl_FragCoord.xy / vec2(framebuffer.widthReal, framebuffer.heightReal);
     uint framebufferTexel = texture(framebufferSampler, framebufferUV).r;
     vec4 framebufferColor = texelFetch(paletteSampler, ivec2(framebufferTexel, 0), 0);
     uint texel = framebufferTexel;

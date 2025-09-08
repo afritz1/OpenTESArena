@@ -333,6 +333,7 @@ private:
 	VulkanHeapManager uiTextureHeapManagerStaging;
 
 	VulkanBuffer camera;
+	VulkanBuffer framebufferDims;
 	VulkanBuffer ambientLight;
 	VulkanBuffer screenSpaceAnim;
 	VulkanBuffer horizonMirror;
