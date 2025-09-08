@@ -78,7 +78,8 @@ namespace
 	constexpr int MaxTransformPoolDescriptorSets = MaxTransformUniformBufferDynamicDescriptors;
 
 	constexpr int MaxMaterialImageDescriptors = 65536; // Lots of unique materials for entities. @todo texture atlasing
-	constexpr int MaxMaterialPoolDescriptorSets = MaxMaterialImageDescriptors;
+	constexpr int MaxMaterialUniformBufferDescriptors = 32768; // Need per-pixel/per-mesh lighting mode descriptor per material :/ @todo texture atlasing
+	constexpr int MaxMaterialPoolDescriptorSets = MaxMaterialImageDescriptors + MaxMaterialUniformBufferDescriptors;
 
 	// Scene descriptor set layout indices.
 	constexpr int GlobalDescriptorSetLayoutIndex = 0;
@@ -1791,7 +1792,8 @@ namespace
 		device.updateDescriptorSets(transformWriteDescriptorSet, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
 
-	void UpdateMaterialDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView texture0ImageView, vk::ImageView texture1ImageView, vk::Sampler textureSampler)
+	void UpdateMaterialDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::ImageView texture0ImageView, vk::ImageView texture1ImageView, vk::Sampler textureSampler,
+		vk::Buffer lightingModeBuffer)
 	{
 		vk::DescriptorImageInfo texture0DescriptorImageInfo;
 		texture0DescriptorImageInfo.sampler = textureSampler;
@@ -1802,6 +1804,11 @@ namespace
 		texture1DescriptorImageInfo.sampler = textureSampler;
 		texture1DescriptorImageInfo.imageView = texture1ImageView;
 		texture1DescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		vk::DescriptorBufferInfo lightingModeDescriptorBufferInfo;
+		lightingModeDescriptorBufferInfo.buffer = lightingModeBuffer;
+		lightingModeDescriptorBufferInfo.offset = 0;
+		lightingModeDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
 		vk::WriteDescriptorSet texture0WriteDescriptorSet;
 		texture0WriteDescriptorSet.dstSet = descriptorSet;
@@ -1819,7 +1826,20 @@ namespace
 		texture1WriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
 		texture1WriteDescriptorSet.pImageInfo = &texture1DescriptorImageInfo;
 
-		const vk::WriteDescriptorSet writeDescriptorSets[] = { texture0WriteDescriptorSet, texture1WriteDescriptorSet };
+		vk::WriteDescriptorSet lightingModeWriteDescriptorSet;
+		lightingModeWriteDescriptorSet.dstSet = descriptorSet;
+		lightingModeWriteDescriptorSet.dstBinding = 2;
+		lightingModeWriteDescriptorSet.dstArrayElement = 0;
+		lightingModeWriteDescriptorSet.descriptorCount = 1;
+		lightingModeWriteDescriptorSet.descriptorType = vk::DescriptorType::eUniformBuffer;
+		lightingModeWriteDescriptorSet.pBufferInfo = &lightingModeDescriptorBufferInfo;
+
+		const vk::WriteDescriptorSet writeDescriptorSets[] =
+		{
+			texture0WriteDescriptorSet,
+			texture1WriteDescriptorSet,
+			lightingModeWriteDescriptorSet
+		};
 
 		device.updateDescriptorSets(writeDescriptorSets, vk::ArrayProxy<vk::CopyDescriptorSet>());
 	}
@@ -1902,15 +1922,20 @@ namespace
 			addPushConstantRange(vk::ShaderStageFlagBits::eVertex, sizeof(float) * 6);
 		}
 
-		const bool requiresPixelShaderParam =
-			(fragmentShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
-			(fragmentShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin);
-		if (requiresPixelShaderParam)
+		if (RenderShaderUtils::requiresMeshLightPercent(fragmentShaderType))
+		{
+			int byteCount = sizeof(float);
+			if (RenderShaderUtils::requiresPixelShaderParam(fragmentShaderType))
+			{
+				byteCount += sizeof(float);
+			}
+
+			addPushConstantRange(vk::ShaderStageFlagBits::eFragment, byteCount);
+		}
+		else if (RenderShaderUtils::requiresPixelShaderParam(fragmentShaderType))
 		{
 			addPushConstantRange(vk::ShaderStageFlagBits::eFragment, sizeof(float));
 		}
-
-		// @todo mesh lighting percent
 
 		return pushConstantRanges;
 	}
@@ -2936,7 +2961,8 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 
 	const vk::DescriptorPoolSize materialDescriptorPoolSizes[] =
 	{
-		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxMaterialImageDescriptors)
+		CreateDescriptorPoolSize(vk::DescriptorType::eCombinedImageSampler, MaxMaterialImageDescriptors),
+		CreateDescriptorPoolSize(vk::DescriptorType::eUniformBuffer, MaxMaterialUniformBufferDescriptors)
 	};
 
 	if (!TryCreateDescriptorPool(this->device, globalDescriptorPoolSizes, MaxGlobalPoolDescriptorSets, false, &this->globalDescriptorPool))
@@ -3000,7 +3026,9 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		// Mesh texture
 		CreateDescriptorSetLayoutBinding(0, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
 		// Mesh texture
-		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment)
+		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
+		// Lighting mode
+		CreateDescriptorSetLayoutBinding(2, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 	};
 
 	const vk::DescriptorSetLayoutBinding conversionDescriptorSetLayoutBindings[] =
@@ -3324,12 +3352,41 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	const int lightBinDimsByteCount = sizeof(int) * 4; // Bin width and height, bin count X and Y.
+	constexpr int lightBinDimsByteCount = sizeof(int) * 4; // Bin width and height, bin count X and Y.
 	if (!tryCreateBufferStagingOnly(this->lightBinDims, lightBinDimsByteCount, vk::BufferUsageFlagBits::eUniformBuffer))
 	{
 		DebugLogError("Couldn't create light bin dimensions buffer.");
 		return false;
 	}
+
+	constexpr int lightModeByteCount = sizeof(bool);
+	if (!TryCreateBufferStagingAndDevice(this->device, this->perPixelLightMode, lightModeByteCount, vk::BufferUsageFlagBits::eUniformBuffer,
+		this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerDeviceLocal, this->uniformBufferHeapManagerStaging))
+	{
+		DebugLogError("Couldn't create per-pixel light mode buffer.");
+		return false;
+	}
+
+	if (!TryCreateBufferStagingAndDevice(this->device, this->perMeshLightMode, lightModeByteCount, vk::BufferUsageFlagBits::eUniformBuffer,
+		this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerDeviceLocal, this->uniformBufferHeapManagerStaging))
+	{
+		DebugLogError("Couldn't create per-mesh light mode buffer.");
+		return false;
+	}
+
+	auto lightingModeCopyCommand = [this, lightModeByteCount]()
+	{
+		bool *perPixelLightModeValues = reinterpret_cast<bool*>(this->perPixelLightMode.stagingHostMappedBytes.begin());
+		perPixelLightModeValues[0] = true;
+
+		bool *perMeshLightModeValues = reinterpret_cast<bool*>(this->perMeshLightMode.stagingHostMappedBytes.begin());
+		perMeshLightModeValues[0] = false;
+
+		CopyBufferToBuffer(this->perPixelLightMode.stagingBuffer, this->perPixelLightMode.deviceLocalBuffer, 0, lightModeByteCount, this->commandBuffer);
+		CopyBufferToBuffer(this->perMeshLightMode.stagingBuffer, this->perMeshLightMode.deviceLocalBuffer, 0, lightModeByteCount, this->commandBuffer);
+	};
+
+	this->copyCommands.emplace_back(std::move(lightingModeCopyCommand));
 
 	constexpr int UiRectangleVertexCount = 6; // Two triangles, no indices.
 	constexpr int UiPositionComponentsPerVertex = 2;
@@ -3417,6 +3474,8 @@ void VulkanRenderBackend::shutdown()
 		this->uiVertexAttributeBufferID = -1;
 		this->uiVertexPositionBufferID = -1;
 
+		this->perMeshLightMode.freeAllocations(this->device);
+		this->perPixelLightMode.freeAllocations(this->device);
 		this->lightBinDims.freeAllocations(this->device);
 		this->lightBinLightCounts.freeAllocations(this->device);
 		this->lightBins.freeAllocations(this->device);
@@ -4876,14 +4935,28 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 		texture1ImageView = texture1.imageView;
 	}
 
-	UpdateMaterialDescriptorSet(this->device, descriptorSet, texture0ImageView, texture1ImageView, texture0.sampler);
+	vk::Buffer lightingModeBuffer = this->perPixelLightMode.deviceLocalBuffer;
+	if (key.lightingType == RenderLightingType::PerMesh)
+	{
+		lightingModeBuffer = this->perMeshLightMode.deviceLocalBuffer;
+	}
+
+	UpdateMaterialDescriptorSet(this->device, descriptorSet, texture0ImageView, texture1ImageView, texture0.sampler, lightingModeBuffer);
 
 	VulkanMaterial &material = this->materialPool.get(materialID);
 	material.init(pipeline.pipeline, pipelineLayout, descriptorSet);
 
+	int typeIndex = 0;
+	if (RenderShaderUtils::requiresMeshLightPercent(fragmentShaderType))
+	{
+		material.pushConstantTypes[typeIndex] = VulkanMaterialPushConstantType::MeshLightPercent;
+		typeIndex++;
+	}
+
 	if (RenderShaderUtils::requiresPixelShaderParam(fragmentShaderType))
 	{
-		material.pushConstantTypes[0] = VulkanMaterialPushConstantType::PixelShaderParam;
+		material.pushConstantTypes[typeIndex] = VulkanMaterialPushConstantType::PixelShaderParam;
+		typeIndex++;
 	}
 
 	return materialID;

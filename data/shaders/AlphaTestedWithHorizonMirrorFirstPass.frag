@@ -20,6 +20,6 @@ void main()
         discard;
     }
     
-    uint lightLevel = getLightLevel(fragInWorldPoint);
+    uint lightLevel = getLightLevel(fragInWorldPoint, 0.0);
     fragOutColor = texelFetch(lightTableSampler, ivec2(texel, lightLevel), 0).r;
 }

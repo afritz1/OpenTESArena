@@ -67,6 +67,12 @@ namespace RenderShaderUtils
 			(type == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 	}
 
+	constexpr bool requiresMeshLightPercent(PixelShaderType type)
+	{
+		return (type == PixelShaderType::Opaque) ||
+			(type == PixelShaderType::AlphaTested);
+	}
+
 	constexpr bool requiresPixelShaderParam(PixelShaderType type)
 	{
 		return (type == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||

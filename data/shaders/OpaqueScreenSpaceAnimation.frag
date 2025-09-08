@@ -33,6 +33,6 @@ void main()
 {
     vec2 screenSpaceUV = vec2(gl_FragCoord.x / screenSpaceAnim.framebufferWidthReal, getScreenSpaceAnimV());
     uint texel = texture(textureSampler, screenSpaceUV).r;
-    uint lightLevel = getLightLevel(fragInWorldPoint);
+    uint lightLevel = getLightLevel(fragInWorldPoint, 0.0);
     fragOutColor = texelFetch(lightTableSampler, ivec2(texel, lightLevel), 0).r;
 }

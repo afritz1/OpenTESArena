@@ -49,6 +49,11 @@ layout(set = 1, binding = 3) uniform LightBinDimensions
     uint binCountY;
 } lightBinDims;
 
+layout(set = 3, binding = 2) uniform LightingMode
+{
+    bool isPerPixel;
+} lightingMode;
+
 float getLightIntensity(vec3 point, Light light)
 {
     float lightPointDiffX = light.pointX - point.x;
@@ -99,18 +104,18 @@ float getPerPixelLightIntensitySum(vec3 worldPoint)
     return lightIntensitySum;
 }
 
-uint getLightLevel(vec3 worldPoint)
+uint getLightLevel(vec3 worldPoint, float meshLightPercent)
 {
     float lightIntensitySum = 0.0;
 
-    const bool isPerPixel = true;
+    const bool isPerPixel = lightingMode.isPerPixel;
     if (isPerPixel)
     {
         lightIntensitySum = getPerPixelLightIntensitySum(worldPoint);
     }
     else
     {
-        lightIntensitySum = 1.0; // @todo meshLightingPercent, push constant?
+        lightIntensitySum = meshLightPercent;
     }
 
     float lightLevelReal = lightIntensitySum * LIGHT_LEVEL_COUNT_REAL;
