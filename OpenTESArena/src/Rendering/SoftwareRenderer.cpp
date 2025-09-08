@@ -1047,56 +1047,6 @@ namespace
 		g_totalDepthTests = 0;
 		g_totalColorWrites = 0;
 	}
-
-	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode)
-	{
-		if (ditheringMode == DitheringMode::Classic)
-		{
-			// Original game: 2x2, top left + bottom right are darkened.
-			ditherBuffer.init(width, height, 1);
-
-			bool *ditherPixels = ditherBuffer.begin();
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					const bool shouldDither = ((x + y) & 0x1) == 0;
-					const int index = x + (y * width);
-					ditherPixels[index] = shouldDither;
-				}
-			}
-		}
-		else if (ditheringMode == DitheringMode::Modern)
-		{
-			// Modern 2x2, four levels of dither depending on percent between two light levels.
-			ditherBuffer.init(width, height, DITHERING_MODERN_MASK_COUNT);
-			static_assert(DITHERING_MODERN_MASK_COUNT == 4);
-
-			bool *ditherPixels = ditherBuffer.begin();
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					const bool shouldDither0 = (((x + y) & 0x1) == 0) || (((x % 2) == 1) && ((y % 2) == 0)); // Top left, bottom right, top right
-					const bool shouldDither1 = ((x + y) & 0x1) == 0; // Top left + bottom right
-					const bool shouldDither2 = ((x % 2) == 0) && ((y % 2) == 0); // Top left
-					const bool shouldDither3 = false;
-					const int index0 = x + (y * width);
-					const int index1 = x + (y * width) + (1 * width * height);
-					const int index2 = x + (y * width) + (2 * width * height);
-					const int index3 = x + (y * width) + (3 * width * height);
-					ditherPixels[index0] = shouldDither0;
-					ditherPixels[index1] = shouldDither1;
-					ditherPixels[index2] = shouldDither2;
-					ditherPixels[index3] = shouldDither3;
-				}
-			}
-		}
-		else
-		{
-			ditherBuffer.clear();
-		}
-	}
 }
 
 // Vertex shaders.
@@ -4163,7 +4113,7 @@ bool SoftwareRenderer::init(const RenderInitSettings &initSettings)
 	this->paletteIndexBuffer.init(frameBufferWidth, frameBufferHeight);
 	this->depthBuffer.init(frameBufferWidth, frameBufferHeight);
 
-	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, initSettings.ditheringMode);
+	RendererUtils::initDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, initSettings.ditheringMode);
 	this->ditheringMode = initSettings.ditheringMode;
 
 	const int workerCount = RendererUtils::getRenderThreadsFromMode(initSettings.renderThreadsMode);
@@ -4199,7 +4149,7 @@ void SoftwareRenderer::resize(int width, int height)
 	this->depthBuffer.init(width, height);
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
 
-	CreateDitherBuffer(this->ditherBuffer, width, height, this->ditheringMode);
+	RendererUtils::initDitherBuffer(this->ditherBuffer, width, height, this->ditheringMode);
 
 	for (Worker &worker : g_workers)
 	{
@@ -4496,7 +4446,7 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 	if (this->ditheringMode != settings.ditheringMode)
 	{
 		this->ditheringMode = settings.ditheringMode;
-		CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
+		RendererUtils::initDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
 	}
 
 	const SoftwareUniformBuffer &visibleLights = this->uniformBuffers.get(settings.visibleLightsBufferID);

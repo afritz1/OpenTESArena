@@ -240,3 +240,53 @@ Matrix4f RendererUtils::matrix4DoubleToFloat(const Matrix4d &matrix)
 	mat4f.w = Float4(static_cast<float>(matrix.w.x), static_cast<float>(matrix.w.y), static_cast<float>(matrix.w.z), static_cast<float>(matrix.w.w));
 	return mat4f;
 }
+
+void RendererUtils::initDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode)
+{
+	if (ditheringMode == DitheringMode::Classic)
+	{
+		// Original game: 2x2, top left + bottom right are darkened.
+		ditherBuffer.init(width, height, 1);
+
+		bool *ditherPixels = ditherBuffer.begin();
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				const bool shouldDither = ((x + y) & 0x1) == 0;
+				const int index = x + (y * width);
+				ditherPixels[index] = shouldDither;
+			}
+		}
+	}
+	else if (ditheringMode == DitheringMode::Modern)
+	{
+		// Modern 2x2, four levels of dither depending on percent between two light levels.
+		ditherBuffer.init(width, height, DITHERING_MODERN_MASK_COUNT);
+		static_assert(DITHERING_MODERN_MASK_COUNT == 4);
+
+		bool *ditherPixels = ditherBuffer.begin();
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				const bool shouldDither0 = (((x + y) & 0x1) == 0) || (((x % 2) == 1) && ((y % 2) == 0)); // Top left, bottom right, top right
+				const bool shouldDither1 = ((x + y) & 0x1) == 0; // Top left + bottom right
+				const bool shouldDither2 = ((x % 2) == 0) && ((y % 2) == 0); // Top left
+				const bool shouldDither3 = false;
+				const int index0 = x + (y * width);
+				const int index1 = x + (y * width) + (1 * width * height);
+				const int index2 = x + (y * width) + (2 * width * height);
+				const int index3 = x + (y * width) + (3 * width * height);
+				ditherPixels[index0] = shouldDither0;
+				ditherPixels[index1] = shouldDither1;
+				ditherPixels[index2] = shouldDither2;
+				ditherPixels[index3] = shouldDither3;
+			}
+		}
+	}
+	else
+	{
+		ditherBuffer.clear();
+	}
+}

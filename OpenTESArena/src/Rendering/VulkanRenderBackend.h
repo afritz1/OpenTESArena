@@ -342,6 +342,7 @@ private:
 	VulkanBuffer lightBinDims;
 	VulkanBuffer perPixelLightMode;
 	VulkanBuffer perMeshLightMode;
+	VulkanBuffer ditherBuffers[DITHER_MODE_COUNT];
 	VertexPositionBufferID uiVertexPositionBufferID;
 	VertexAttributeBufferID uiVertexAttributeBufferID;
 	vk::Image dummyImage;

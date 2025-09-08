@@ -11,6 +11,10 @@
 #include "../Utilities/Palette.h"
 #include "../Voxels/VoxelUtils.h"
 
+#include "components/utilities/Buffer3D.h"
+
+enum class DitheringMode;
+
 struct BoundingBox3D;
 struct RenderCamera;
 
@@ -81,6 +85,8 @@ namespace RendererUtils
 	void getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera, bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible);
 
 	Matrix4f matrix4DoubleToFloat(const Matrix4d &matrix);
+
+	void initDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode);
 }
 
 #endif

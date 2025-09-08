@@ -44,6 +44,7 @@ enum class DitheringMode
 	Modern
 };
 
+static constexpr int DITHER_MODE_COUNT = 3;
 static constexpr int DITHERING_MODERN_MASK_COUNT = 4;
 
 using UniformBufferID = int;

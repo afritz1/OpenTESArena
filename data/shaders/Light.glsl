@@ -4,6 +4,12 @@
 #define LIGHT_LEVEL_COUNT_REAL float(LIGHT_LEVEL_COUNT)
 #define LAST_LIGHT_LEVEL (LIGHT_LEVEL_COUNT - 1)
 
+#define DITHER_MODE_NONE 0
+#define DITHER_MODE_CLASSIC 1
+#define DITHER_MODE_MODERN 2
+
+#define DITHERING_MODERN_MASK_COUNT 4
+
 struct Light
 {
     float pointX;
@@ -41,12 +47,20 @@ layout(set = 1, binding = 2) buffer LightBinLightCounts
     uint counts[];
 } lightBinLightCounts;
 
-layout(set = 1, binding = 3) uniform LightBinDimensions
+layout(set = 1, binding = 3) buffer DitherBuffer
+{
+    uint isPixelDithered[];
+} dither;
+
+layout(set = 1, binding = 4) uniform LightBinDimensions
 {
     uint pixelWidth;
     uint pixelHeight;
     uint binCountX;
     uint binCountY;
+    uint framebufferWidth;
+    uint framebufferHeight;
+    uint ditherMode;
 } lightBinDims;
 
 layout(set = 3, binding = 2) uniform LightingMode
@@ -77,12 +91,18 @@ float getLightIntensity(vec3 point, Light light)
     }
 }
 
-float getPerPixelLightIntensitySum(vec3 worldPoint)
+uvec2 getFramebufferXY()
 {
     uint pixelX = uint(gl_FragCoord.x) - 1;
     uint pixelY = uint(gl_FragCoord.y) - 1;
-    uint lightBinX = pixelX / lightBinDims.pixelWidth;
-    uint lightBinY = pixelY / lightBinDims.pixelHeight;
+    return uvec2(pixelX, pixelY);
+}
+
+float getPerPixelLightIntensitySum(vec3 worldPoint)
+{
+    uvec2 framebufferXY = getFramebufferXY();
+    uint lightBinX = framebufferXY.x / lightBinDims.pixelWidth;
+    uint lightBinY = framebufferXY.y / lightBinDims.pixelHeight;
     uint lightBinIndex = lightBinX + (lightBinY * lightBinDims.binCountX);
 
     LightBin lightBin = lightBins.bins[lightBinIndex];
@@ -119,11 +139,38 @@ uint getLightLevel(vec3 worldPoint, float meshLightPercent)
     }
 
     float lightLevelReal = lightIntensitySum * LIGHT_LEVEL_COUNT_REAL;
-    uint lightLevel = LAST_LIGHT_LEVEL - clamp(uint(lightLevelReal), 0, LAST_LIGHT_LEVEL);
+    uint lightLevel = LAST_LIGHT_LEVEL - clamp(int(lightLevelReal), 0, LAST_LIGHT_LEVEL);
 
     if (isPerPixel)
     {
-        // @todo dithering
+        uint ditherMode = lightBinDims.ditherMode;
+        
+        uvec2 framebufferXY = getFramebufferXY();
+        uint pixelIndex = framebufferXY.x + (framebufferXY.y * lightBinDims.framebufferWidth);
+        uint framebufferPixelCount = lightBinDims.framebufferWidth * lightBinDims.framebufferHeight;
+
+        bool shouldDither = false;
+        if (ditherMode == DITHER_MODE_CLASSIC)
+        {
+            uint ditherBufferIndex = pixelIndex;
+            shouldDither = dither.isPixelDithered[ditherBufferIndex] != 0;
+        }
+        else if (ditherMode == DITHER_MODE_MODERN)
+        {
+            if (lightIntensitySum < 1.0) // Keeps from dithering right next to the camera, not sure why the lowest dither level doesn't do this.
+            {
+                const uint modernMaskCount = DITHERING_MODERN_MASK_COUNT;
+                float lightLevelFraction = lightLevelReal - floor(lightLevelReal);
+                uint maskIndex = clamp(int(float(modernMaskCount) * lightLevelFraction), 0, modernMaskCount - 1);
+                uint ditherBufferIndex = pixelIndex + (maskIndex * framebufferPixelCount);
+                shouldDither = dither.isPixelDithered[ditherBufferIndex] != 0;
+            }
+        }
+
+        if (shouldDither)
+        {
+            lightLevel = min(lightLevel + 1, LAST_LIGHT_LEVEL);
+        }
     }
 
     return lightLevel;
