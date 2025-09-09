@@ -4091,17 +4091,41 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 {
 	for (VulkanBuffer &buffer : this->ditherBuffers)
 	{
-		this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(buffer.deviceLocalBuffer);
-		this->storageBufferHeapManagerStaging.freeBufferMapping(buffer.stagingBuffer);
+		if (buffer.deviceLocalBuffer)
+		{
+			this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(buffer.deviceLocalBuffer);
+		}
+		
+		if (buffer.stagingBuffer)
+		{
+			this->storageBufferHeapManagerStaging.freeBufferMapping(buffer.stagingBuffer);
+		}
+		
 		buffer.freeAllocations(this->device);
 	}
 
-	this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBins.deviceLocalBuffer);
-	this->storageBufferHeapManagerStaging.freeBufferMapping(this->lightBins.stagingBuffer);
+	if (this->lightBins.deviceLocalBuffer)
+	{
+		this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBins.deviceLocalBuffer);
+	}
+	
+	if (this->lightBins.stagingBuffer)
+	{
+		this->storageBufferHeapManagerStaging.freeBufferMapping(this->lightBins.stagingBuffer);
+	}
+	
 	this->lightBins.freeAllocations(this->device);
 
-	this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBinLightCounts.deviceLocalBuffer);
-	this->storageBufferHeapManagerStaging.freeBufferMapping(this->lightBinLightCounts.stagingBuffer);
+	if (this->lightBinLightCounts.deviceLocalBuffer)
+	{
+		this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBinLightCounts.deviceLocalBuffer);
+	}
+	
+	if (this->lightBinLightCounts.stagingBuffer)
+	{
+		this->storageBufferHeapManagerStaging.freeBufferMapping(this->lightBinLightCounts.stagingBuffer);
+	}
+	
 	this->lightBinLightCounts.freeAllocations(this->device);
 
 	for (vk::Framebuffer framebuffer : this->uiFramebuffers)
