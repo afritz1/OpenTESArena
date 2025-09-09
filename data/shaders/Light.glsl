@@ -37,7 +37,7 @@ layout(set = 1, binding = 4) uniform LightBinDimensions
 
 layout(set = 3, binding = 2) uniform LightingMode
 {
-    bool isPerPixel;
+    uint isPerPixel;
 } lightingMode;
 
 float getLightIntensity(vec3 point, Light light)
@@ -65,8 +65,8 @@ float getLightIntensity(vec3 point, Light light)
 
 uvec2 getFramebufferXY()
 {
-    uint pixelX = uint(gl_FragCoord.x) - 1;
-    uint pixelY = uint(gl_FragCoord.y) - 1;
+    uint pixelX = uint(gl_FragCoord.x);
+    uint pixelY = uint(gl_FragCoord.y);
     return uvec2(pixelX, pixelY);
 }
 
@@ -100,7 +100,7 @@ uint getLightLevel(vec3 worldPoint, float meshLightPercent, uvec2 framebufferDim
 {
     float lightIntensitySum = 0.0;
 
-    const bool isPerPixel = lightingMode.isPerPixel;
+    const bool isPerPixel = lightingMode.isPerPixel != 0;
     if (isPerPixel)
     {
         lightIntensitySum = getPerPixelLightIntensitySum(worldPoint);
