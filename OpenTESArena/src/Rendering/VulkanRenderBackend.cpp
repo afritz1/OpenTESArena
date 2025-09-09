@@ -5,6 +5,7 @@
 #include <limits>
 #include <string>
 
+#include "SDL_surface.h"
 #include "SDL_vulkan.h"
 
 #include "RenderBuffer.h"
@@ -43,7 +44,7 @@ namespace
 	constexpr vk::Format ObjectTextureFormat32Bit = vk::Format::eB8G8R8A8Unorm;
 	constexpr vk::Format UiTextureFormat = ObjectTextureFormat32Bit;
 
-	constexpr vk::ImageUsageFlags SwapchainImageUsageFlags = vk::ImageUsageFlagBits::eColorAttachment;
+	constexpr vk::ImageUsageFlags SwapchainImageUsageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eColorAttachment;
 	constexpr vk::ImageUsageFlags ColorBufferUsageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eColorAttachment;
 	constexpr vk::ImageUsageFlags DepthBufferUsageFlags = vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eDepthStencilAttachment;
 
@@ -975,6 +976,22 @@ namespace
 		bufferImageCopy.imageExtent = vk::Extent3D(imageWidth, imageHeight, 1);
 
 		commandBuffer.copyBufferToImage(sourceBuffer, destinationImage, vk::ImageLayout::eTransferDstOptimal, bufferImageCopy);
+	}
+
+	void CopyColorImageToBuffer(vk::Image srcImage, vk::Buffer dstBuffer, int imageWidth, int imageHeight, vk::CommandBuffer commandBuffer)
+	{
+		vk::BufferImageCopy bufferImageCopy;
+		bufferImageCopy.bufferOffset = 0;
+		bufferImageCopy.bufferRowLength = 0;
+		bufferImageCopy.bufferImageHeight = 0;
+		bufferImageCopy.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+		bufferImageCopy.imageSubresource.mipLevel = 0;
+		bufferImageCopy.imageSubresource.baseArrayLayer = 0;
+		bufferImageCopy.imageSubresource.layerCount = 1;
+		bufferImageCopy.imageOffset = vk::Offset3D();
+		bufferImageCopy.imageExtent = vk::Extent3D(imageWidth, imageHeight, 1);
+
+		commandBuffer.copyImageToBuffer(srcImage, vk::ImageLayout::eTransferSrcOptimal, dstBuffer, bufferImageCopy);
 	}
 
 	void CopyColorImageToImage(vk::Image srcImage, vk::Image dstImage, vk::Extent2D extent, vk::CommandBuffer commandBuffer)
@@ -3955,6 +3972,8 @@ void VulkanRenderBackend::shutdown()
 			this->commandPool = nullptr;
 		}
 
+		this->prevAcquiredSwapchainImageIndex = 0;
+
 		for (vk::Framebuffer framebuffer : this->uiFramebuffers)
 		{
 			if (framebuffer)
@@ -4095,12 +4114,12 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		{
 			this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(buffer.deviceLocalBuffer);
 		}
-		
+
 		if (buffer.stagingBuffer)
 		{
 			this->storageBufferHeapManagerStaging.freeBufferMapping(buffer.stagingBuffer);
 		}
-		
+
 		buffer.freeAllocations(this->device);
 	}
 
@@ -4108,25 +4127,27 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 	{
 		this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBins.deviceLocalBuffer);
 	}
-	
+
 	if (this->lightBins.stagingBuffer)
 	{
 		this->storageBufferHeapManagerStaging.freeBufferMapping(this->lightBins.stagingBuffer);
 	}
-	
+
 	this->lightBins.freeAllocations(this->device);
 
 	if (this->lightBinLightCounts.deviceLocalBuffer)
 	{
 		this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBinLightCounts.deviceLocalBuffer);
 	}
-	
+
 	if (this->lightBinLightCounts.stagingBuffer)
 	{
 		this->storageBufferHeapManagerStaging.freeBufferMapping(this->lightBinLightCounts.stagingBuffer);
 	}
-	
+
 	this->lightBinLightCounts.freeAllocations(this->device);
+
+	this->prevAcquiredSwapchainImageIndex = 0;
 
 	for (vk::Framebuffer framebuffer : this->uiFramebuffers)
 	{
@@ -4369,6 +4390,8 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		}
 	}
 
+	this->prevAcquiredSwapchainImageIndex = 0;
+
 	const int lightBinWidth = GetLightBinWidth(internalWidth);
 	const int lightBinHeight = GetLightBinHeight(internalHeight);
 	const int lightBinCountX = GetLightBinCountX(internalWidth, lightBinWidth);
@@ -4446,8 +4469,139 @@ RendererProfilerData3D VulkanRenderBackend::getProfilerData3D() const
 
 Surface VulkanRenderBackend::getScreenshot() const
 {
-	DebugLogWarning("Not implemented: VulkanRenderBackend::getScreenshot");
-	return Surface();
+	if (this->swapchainImages.empty())
+	{
+		DebugLogError("No swapchain images for screenshot.");
+		return Surface();
+	}
+
+	const vk::Image swapchainImage = this->swapchainImages[this->prevAcquiredSwapchainImageIndex];
+
+	vk::CommandBuffer screenshotCommandBuffer;
+	if (!TryCreateCommandBuffer(this->device, this->commandPool, &screenshotCommandBuffer))
+	{
+		DebugLogError("Couldn't create command buffer for screenshot.");
+		return Surface();
+	}
+
+	vk::CommandBufferBeginInfo commandBufferBeginInfo;
+	commandBufferBeginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+
+	const vk::Result commandBufferBeginResult = screenshotCommandBuffer.begin(commandBufferBeginInfo);
+	if (commandBufferBeginResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't begin command buffer for screenshot (%d).", commandBufferBeginResult);
+		return Surface();
+	}
+
+	const int screenshotBufferWidth = this->swapchainExtent.width;
+	const int screenshotBufferHeight = this->swapchainExtent.height;
+	const int screenshotBufferBytesPerPixel = sizeof(uint32_t);
+	const int screenshotBufferByteCount = (screenshotBufferWidth * screenshotBufferHeight) * screenshotBufferBytesPerPixel;
+	constexpr vk::BufferUsageFlags screenshotUsageFlags = vk::BufferUsageFlagBits::eTransferDst;
+	vk::Buffer screenshotBuffer;
+	if (!TryCreateBuffer(this->device, screenshotBufferByteCount, screenshotUsageFlags, this->graphicsQueueFamilyIndex, &screenshotBuffer))
+	{
+		DebugLogError("Couldn't create buffer for screenshot.");
+		return Surface();
+	}
+
+	const vk::MemoryRequirements memoryRequirements = this->device.getBufferMemoryRequirements(screenshotBuffer);
+	const vk::MemoryAllocateInfo memoryAllocateInfo = CreateBufferMemoryAllocateInfo(this->device, memoryRequirements.size, screenshotUsageFlags, true, this->physicalDevice);
+
+	vk::DeviceMemory screenshotDeviceMemory;
+	if (!TryAllocateMemory(this->device, memoryAllocateInfo, &screenshotDeviceMemory))
+	{
+		DebugLogError("Couldn't allocate memory for screenshot.");
+		return Surface();
+	}
+
+	if (!TryBindBufferToMemory(this->device, screenshotBuffer, screenshotDeviceMemory, 0))
+	{
+		DebugLogError("Couldn't bind buffer to memory for screenshot.");
+		return Surface();
+	}
+
+	Span<std::byte> hostMappedBytes;
+	if (!TryMapMemory(this->device, screenshotDeviceMemory, 0, memoryRequirements.size, &hostMappedBytes))
+	{
+		DebugLogError("Couldn't map memory for screenshot.");
+		return Surface();
+	}
+
+	ApplyColorImageLayoutTransition(
+		swapchainImage,
+		vk::ImageLayout::ePresentSrcKHR,
+		vk::ImageLayout::eTransferSrcOptimal,
+		vk::PipelineStageFlagBits::eTopOfPipe,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::AccessFlagBits::eMemoryRead,
+		vk::AccessFlagBits::eTransferWrite,
+		screenshotCommandBuffer);
+
+	CopyColorImageToBuffer(swapchainImage, screenshotBuffer, this->swapchainExtent.width, this->swapchainExtent.height, screenshotCommandBuffer);
+
+	ApplyColorImageLayoutTransition(
+		swapchainImage,
+		vk::ImageLayout::eTransferSrcOptimal,
+		vk::ImageLayout::ePresentSrcKHR,
+		vk::PipelineStageFlagBits::eTransfer,
+		vk::PipelineStageFlagBits::eBottomOfPipe,
+		vk::AccessFlagBits::eTransferWrite,
+		vk::AccessFlagBits::eNone,
+		screenshotCommandBuffer);
+
+	const vk::Result commandBufferEndResult = screenshotCommandBuffer.end();
+	if (commandBufferEndResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't end command buffer for screenshot (%d).", commandBufferEndResult);
+		return Surface();
+	}
+
+	vk::SubmitInfo submitInfo;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &screenshotCommandBuffer;
+
+	const vk::Result graphicsQueueSubmitResult = this->graphicsQueue.submit(submitInfo);
+	if (graphicsQueueSubmitResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't submit graphics queue for screenshot (%d).", graphicsQueueSubmitResult);
+		return Surface();
+	}
+
+	const vk::Result waitForCompletionResult = this->graphicsQueue.waitIdle();
+	if (waitForCompletionResult != vk::Result::eSuccess)
+	{
+		DebugLogErrorFormat("Couldn't wait idle for screenshot completion (%d).", waitForCompletionResult);
+		return Surface();
+	}
+
+	const int screenshotPitch = screenshotBufferWidth * screenshotBufferBytesPerPixel;
+	Surface screenshotSurface = Surface::createWithFormatFrom(hostMappedBytes.begin(), screenshotBufferWidth, screenshotBufferHeight,
+		RendererUtils::DEFAULT_BPP, screenshotPitch, RendererUtils::DEFAULT_PIXELFORMAT);
+	SDL_Surface *screenshotSurfaceSDL = screenshotSurface.get();
+
+	Span2D<uint32_t> screenshotPixels = screenshotSurface.getPixels();
+	uint32_t *pixelsBegin = screenshotPixels.begin();
+	uint32_t *pixelsEnd = screenshotPixels.end();
+
+	// Fix alpha channel so it doesn't show as black.
+	const uint32_t alphaClearMask = ~screenshotSurfaceSDL->format->Amask;
+	const uint32_t alphaMaxValue = 0xFF << screenshotSurfaceSDL->format->Ashift;
+
+	for (uint32_t *pixelPtr = pixelsBegin; pixelPtr != pixelsEnd; pixelPtr++)
+	{
+		uint32_t pixel = *pixelPtr;
+		pixel &= alphaClearMask;
+		pixel |= alphaMaxValue;
+		*pixelPtr = pixel;
+	}
+
+	this->device.unmapMemory(screenshotDeviceMemory);
+	this->device.freeMemory(screenshotDeviceMemory);
+	this->device.destroyBuffer(screenshotBuffer);
+	this->device.freeCommandBuffers(this->commandPool, screenshotCommandBuffer);
+	return screenshotSurface;
 }
 
 int VulkanRenderBackend::getBytesPerFloat() const
@@ -5955,4 +6109,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		this->freeCommands.clear();
 	}
+
+	this->prevAcquiredSwapchainImageIndex = acquiredSwapchainImageIndex;
 }

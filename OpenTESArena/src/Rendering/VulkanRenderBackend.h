@@ -280,6 +280,7 @@ private:
 	vk::RenderPass uiRenderPass;
 	vk::Framebuffer sceneFramebuffers[MAX_SCENE_FRAMEBUFFERS];
 	Buffer<vk::Framebuffer> uiFramebuffers;
+	uint32_t prevAcquiredSwapchainImageIndex;
 
 	vk::CommandPool commandPool;
 	vk::CommandBuffer commandBuffer;
