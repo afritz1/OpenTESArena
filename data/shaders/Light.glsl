@@ -1,31 +1,4 @@
-#define MAX_LIGHTS 256
-#define MAX_LIGHTS_PER_BIN 32
-#define LIGHT_LEVEL_COUNT 13
-#define LIGHT_LEVEL_COUNT_REAL float(LIGHT_LEVEL_COUNT)
-#define LAST_LIGHT_LEVEL (LIGHT_LEVEL_COUNT - 1)
-
-#define DITHER_MODE_NONE 0
-#define DITHER_MODE_CLASSIC 1
-#define DITHER_MODE_MODERN 2
-
-#define DITHERING_MODERN_MASK_COUNT 4
-
-struct Light
-{
-    float pointX;
-    float pointY;
-    float pointZ;
-    float startRadius;
-    float startRadiusSqr;
-    float endRadius;
-    float endRadiusSqr;
-    float radiusDiffRecip;
-};
-
-struct LightBin
-{
-    uint indices[MAX_LIGHTS_PER_BIN];
-};
+#include "LightTypes.glsl"
 
 layout(set = 0, binding = 1) uniform AmbientLight
 {
@@ -37,17 +10,17 @@ layout(set = 1, binding = 0) uniform Lights
     Light lights[MAX_LIGHTS];
 } lights;
 
-layout(set = 1, binding = 1) buffer LightBins
+layout(set = 1, binding = 1) readonly buffer LightBins
 {
     LightBin bins[];
 } lightBins;
 
-layout(set = 1, binding = 2) buffer LightBinLightCounts
+layout(set = 1, binding = 2) readonly buffer LightBinLightCounts
 {
     uint counts[];
 } lightBinLightCounts;
 
-layout(set = 1, binding = 3) buffer DitherBuffer
+layout(set = 1, binding = 3) readonly buffer DitherBuffer
 {
     uint isPixelDithered[];
 } dither;
@@ -58,6 +31,7 @@ layout(set = 1, binding = 4) uniform LightBinDimensions
     uint pixelHeight;
     uint binCountX;
     uint binCountY;
+    uint visibleLightCount;
     uint ditherMode;
 } lightBinDims;
 

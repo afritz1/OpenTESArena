@@ -288,6 +288,7 @@ private:
 
 	Buffer<VulkanVertexShader> vertexShaders;
 	Buffer<VulkanFragmentShader> fragmentShaders;
+	vk::ShaderModule lightBinningComputeShader;
 	vk::ShaderModule conversionShader;
 
 	vk::DescriptorPool globalDescriptorPool;
@@ -297,15 +298,19 @@ private:
 	vk::DescriptorSetLayout lightDescriptorSetLayout;
 	vk::DescriptorSetLayout transformDescriptorSetLayout;
 	vk::DescriptorSetLayout materialDescriptorSetLayout;
+	vk::DescriptorSetLayout lightBinningDescriptorSetLayout;
 	vk::DescriptorSetLayout conversionDescriptorSetLayout;
 	vk::DescriptorSetLayout uiMaterialDescriptorSetLayout;
 	vk::DescriptorSet globalDescriptorSets[MAX_SCENE_FRAMEBUFFERS]; // Two for ping-ponging sampled framebuffer.
 	vk::DescriptorSet lightDescriptorSet;
+	vk::DescriptorSet lightBinningDescriptorSet;
 	vk::DescriptorSet conversionDescriptorSet;
 	FlatMap<UiTextureID, vk::DescriptorSet> uiTextureDescriptorSets; // Avoids UI material support since UI is simplistic.
 
 	Buffer<vk::PipelineLayout> pipelineLayouts;
+	vk::PipelineLayout lightBinningPipelineLayout;
 	Buffer<VulkanPipeline> graphicsPipelines;
+	vk::Pipeline lightBinningPipeline;
 	vk::Pipeline conversionPipeline;
 
 	vk::Semaphore imageIsAvailableSemaphore;

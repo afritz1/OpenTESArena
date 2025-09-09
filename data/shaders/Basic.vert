@@ -3,6 +3,13 @@
 layout(set = 0, binding = 0) uniform Camera
 {
     mat4 viewProjection;
+    vec4 point;
+    vec4 forward;
+    vec4 forwardScaled;
+    vec4 right;
+    vec4 rightScaled;
+    vec4 up;
+    vec4 upScaledRecip;
 } camera;
 
 layout(set = 2, binding = 0) uniform Transform

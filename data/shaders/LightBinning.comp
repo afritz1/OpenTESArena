@@ -1,0 +1,226 @@
+#version 450
+#include "LightTypes.glsl"
+
+struct BoundingBox
+{
+	vec3 min;
+	vec3 max;
+	float width;
+	float height;
+	float depth;
+};
+
+struct LightBinFrustum
+{
+	// Directions out of camera eye along each frustum plane.
+	vec3 directionLeft;
+	vec3 directionRight;
+	vec3 directionBottom;
+	vec3 directionTop;
+
+	// Normals pointing toward inside of frustum.
+	vec3 normalLeft;
+	vec3 normalRight;
+	vec3 normalBottom;
+	vec3 normalTop;
+};
+
+layout(set = 0, binding = 0) uniform Camera
+{
+	mat4 viewProjection;
+	vec4 point;
+	vec4 forward;
+	vec4 forwardScaled;
+	vec4 right;
+	vec4 rightScaled;
+	vec4 up;
+	vec4 upScaledRecip;
+} camera;
+
+layout(set = 0, binding = 1) uniform FramebufferDimensions
+{
+    uint width;
+    uint height;
+    float widthReal;
+    float heightReal;
+} framebuffer;
+
+layout(set = 0, binding = 2) uniform Lights
+{
+    Light lights[MAX_LIGHTS];
+} lights;
+
+layout(set = 0, binding = 3) buffer LightBins
+{
+    LightBin bins[];
+} lightBins;
+
+layout(set = 0, binding = 4) buffer LightBinLightCounts
+{
+    uint counts[];
+} lightBinLightCounts;
+
+layout(set = 0, binding = 5) uniform LightBinDimensions
+{
+    uint pixelWidth;
+    uint pixelHeight;
+    uint binCountX;
+    uint binCountY;
+	uint visibleLightCount;
+    uint ditherMode;
+} lightBinDims;
+
+layout(local_size_x = 1, local_size_y = 1) in;
+
+uint binPixelToFramebufferPixel(uint bin, uint binPixel, uint binDimension)
+{
+	return (bin * binDimension) + binPixel;
+}
+
+LightBinFrustum createLightBinFrustum(float startXPercent, float endXPercent, float startYPercent, float endYPercent)
+{
+	vec3 baseVectorX = (camera.forwardScaled - camera.rightScaled).xyz;
+	vec3 baseVectorY = (camera.forwardScaled + camera.upScaledRecip).xyz;
+	vec3 frustumBeginRightComponent = (camera.rightScaled * (2.0 * startXPercent)).xyz;
+	vec3 frustumEndRightComponent = (camera.rightScaled * (2.0 * endXPercent)).xyz;
+	vec3 frustumBeginUpComponent = (camera.upScaledRecip * (2.0 * startYPercent)).xyz;
+	vec3 frustumEndUpComponent = (camera.upScaledRecip * (2.0 * endYPercent)).xyz;
+
+	vec3 cameraRight = camera.right.xyz;
+	vec3 cameraUp = camera.up.xyz;
+	vec3 frustumDirectionLeft = normalize(baseVectorX + frustumBeginRightComponent);
+	vec3 frustumDirectionRight = normalize(baseVectorX + frustumEndRightComponent);
+	vec3 frustumDirectionBottom = normalize(baseVectorY - frustumEndUpComponent);
+	vec3 frustumDirectionTop = normalize(baseVectorY - frustumBeginUpComponent);
+
+	LightBinFrustum frustum;
+	frustum.directionLeft = frustumDirectionLeft;
+	frustum.directionRight = frustumDirectionRight;
+	frustum.directionBottom = frustumDirectionBottom;
+	frustum.directionTop = frustumDirectionTop;
+	frustum.normalLeft = normalize(cross(frustumDirectionLeft, cameraUp));
+	frustum.normalRight = normalize(cross(cameraUp, frustumDirectionRight));
+	frustum.normalBottom = normalize(cross(cameraRight, frustumDirectionBottom));
+	frustum.normalTop = normalize(cross(frustumDirectionTop, cameraRight));
+	return frustum;
+}
+
+float distanceToPlane(vec3 point, vec3 planePoint, vec3 planeNormal)
+{
+	return dot(point, planeNormal) - dot(planePoint, planeNormal);
+}
+
+bool bboxFrustumIntersect(BoundingBox bbox, vec3 frustumPoint, vec3 frustumForward, vec3 frustumNormalLeft, vec3 frustumNormalRight, vec3 frustumNormalBottom, vec3 frustumNormalTop)
+{
+	// Each plane to test the bounding box against.
+	vec3 frustumNormals[] =
+	{
+		frustumForward,
+		frustumNormalLeft,
+		frustumNormalRight,
+		frustumNormalBottom,
+		frustumNormalTop
+	};
+
+	vec3 bboxCorners[] =
+	{
+		bbox.min,
+		bbox.min + vec3(bbox.width, 0.0, 0.0),
+		bbox.min + vec3(0.0, bbox.height, 0.0),
+		bbox.min + vec3(bbox.width, bbox.height, 0.0),
+		bbox.min + vec3(0.0, 0.0, bbox.depth),
+		bbox.min + vec3(bbox.width, 0.0, bbox.depth),
+		bbox.min + vec3(0.0, bbox.height, bbox.depth),
+		bbox.max
+	};
+
+	bool isCompletelyInvisible = false;
+	for (int frustumNormalIndex = 0; frustumNormalIndex < frustumNormals.length(); frustumNormalIndex++)
+	{
+		vec3 frustumNormal = frustumNormals[frustumNormalIndex];
+		uint insidePoints = 0;
+		uint outsidePoints = 0;
+
+		for (int bboxCornerIndex = 0; bboxCornerIndex < bboxCorners.length(); bboxCornerIndex++)
+		{
+			vec3 bboxCornerPoint = bboxCorners[bboxCornerIndex];
+			float dist = distanceToPlane(bboxCornerPoint, frustumPoint, frustumNormal);
+
+			if (dist >= 0.0)
+			{
+				insidePoints++;
+			}
+			else
+			{
+				outsidePoints++;
+			}
+		}
+
+		if (outsidePoints == bboxCorners.length())
+		{
+			isCompletelyInvisible = true;
+			break;
+		}
+	}
+
+	return !isCompletelyInvisible;
+}
+
+void main()
+{
+	// Each execution is one bin.
+	uint binX = gl_GlobalInvocationID.x;
+	uint binY = gl_GlobalInvocationID.y;
+
+	uint binCountX = lightBinDims.binCountX;
+	uint binCountY = lightBinDims.binCountY;
+	uint binIndex = binX + (binY * binCountX);
+	
+	uint binPixelWidth = lightBinDims.pixelWidth;
+	uint binPixelHeight = lightBinDims.pixelHeight;
+
+	uint binStartFrameBufferPixelX = binPixelToFramebufferPixel(binX, 0, binPixelWidth);
+	uint binEndFrameBufferPixelX = binPixelToFramebufferPixel(binX, binPixelWidth, binPixelWidth);
+	float binStartFrameBufferPercentX = float(binStartFrameBufferPixelX) / framebuffer.widthReal;
+	float binEndFrameBufferPercentX = float(binEndFrameBufferPixelX) / framebuffer.widthReal;
+
+	uint binStartFrameBufferPixelY = binPixelToFramebufferPixel(binY, 0, binPixelHeight);
+	uint binEndFrameBufferPixelY = binPixelToFramebufferPixel(binY, binPixelHeight, binPixelHeight);
+	float binStartFrameBufferPercentY = float(binStartFrameBufferPixelY) / framebuffer.heightReal;
+	float binEndFrameBufferPercentY = float(binEndFrameBufferPixelY) / framebuffer.heightReal;
+
+	LightBinFrustum frustum = createLightBinFrustum(binStartFrameBufferPercentX, binEndFrameBufferPercentX, binStartFrameBufferPercentY, binEndFrameBufferPercentY);
+
+	uint visibleLightCount = lightBinDims.visibleLightCount;
+	for (uint visibleLightIndex = 0; visibleLightIndex < visibleLightCount; visibleLightIndex++)
+	{
+		Light light = lights.lights[visibleLightIndex];
+		vec3 lightPosition = vec3(light.pointX, light.pointY, light.pointZ);
+		float lightWidth = light.endRadius * 2.0;
+		float lightHeight = lightWidth;
+		float lightDepth = lightWidth;
+		vec3 halfLightExtent = vec3(lightWidth * 0.50, lightHeight * 0.50, lightDepth * 0.50);
+
+		BoundingBox lightBBox;
+		lightBBox.min = lightPosition - halfLightExtent;
+		lightBBox.max = lightPosition + halfLightExtent;
+		lightBBox.width = lightWidth;
+		lightBBox.height = lightHeight;
+		lightBBox.depth = lightDepth;
+
+		bool isLightVisibleInBin = bboxFrustumIntersect(lightBBox, camera.point.xyz, camera.forward.xyz, frustum.normalLeft, frustum.normalRight, frustum.normalBottom, frustum.normalTop);
+		if (!isLightVisibleInBin)
+		{
+			continue;
+		}
+
+		uint lightBinLightCount = lightBinLightCounts.counts[binIndex];
+		if (lightBinLightCount >= MAX_LIGHTS_PER_BIN)
+		{
+			continue;
+		}
+
+		lightBins.bins[binIndex].indices[lightBinLightCount] = visibleLightIndex;
+		lightBinLightCounts.counts[binIndex]++;
+	}
+}
