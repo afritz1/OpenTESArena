@@ -1,6 +1,6 @@
 #include "LightTypes.glsl"
 
-layout(set = 0, binding = 1) uniform AmbientLight
+layout(set = 0, binding = 2) uniform AmbientLight
 {
     float percent;
 } ambient;
