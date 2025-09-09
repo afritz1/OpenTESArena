@@ -3549,7 +3549,7 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	constexpr int lightModeByteCount = sizeof(int); // Bool must be 4 bytes for GLSL.
+	constexpr int lightModeByteCount = sizeof(VkBool32); // Bool must be 4 bytes for GLSL.
 	if (!TryCreateBufferStagingAndDevice(this->device, this->perPixelLightMode, lightModeByteCount, vk::BufferUsageFlagBits::eUniformBuffer,
 		this->graphicsQueueFamilyIndex, this->uniformBufferHeapManagerDeviceLocal, this->uniformBufferHeapManagerStaging))
 	{
@@ -3566,10 +3566,10 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 
 	auto lightingModeCopyCommand = [this, lightModeByteCount]()
 	{
-		int *perPixelLightModeValues = reinterpret_cast<int*>(this->perPixelLightMode.stagingHostMappedBytes.begin());
+		VkBool32 *perPixelLightModeValues = reinterpret_cast<VkBool32*>(this->perPixelLightMode.stagingHostMappedBytes.begin());
 		perPixelLightModeValues[0] = 1;
 
-		int *perMeshLightModeValues = reinterpret_cast<int*>(this->perMeshLightMode.stagingHostMappedBytes.begin());
+		VkBool32 *perMeshLightModeValues = reinterpret_cast<VkBool32*>(this->perMeshLightMode.stagingHostMappedBytes.begin());
 		perMeshLightModeValues[0] = 0;
 
 		CopyBufferToBuffer(this->perPixelLightMode.stagingBuffer, this->perPixelLightMode.deviceLocalBuffer, 0, lightModeByteCount, this->commandBuffer);
