@@ -54,6 +54,8 @@ struct RendererProfilerData3D
 class RenderBackend
 {
 public:
+	virtual ~RenderBackend() = default;
+
 	virtual bool initContext(const RenderContextSettings &contextSettings) = 0;
 	virtual bool initRendering(const RenderInitSettings &initSettings) = 0;
 	virtual void shutdown() = 0;
