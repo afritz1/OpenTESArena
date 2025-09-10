@@ -119,6 +119,10 @@ cd ..
 ./run.sh
 ```
 
+#### Common issues
+- Vulkan renderer crash on startup
+  - You might be missing Vulkan drivers: `sudo apt-get install mesa-vulkan-drivers`
+
 </details>
 
 <details>
@@ -160,12 +164,25 @@ cd ..
 #### Install third-party tools and libraries
 - [Git](https://git-scm.com/downloads)
 - [CMake](https://cmake.org/download/)
-- [OpenAL Soft 1.19.1](https://openal-soft.org/#download)
 - [SDL 2.0.10](https://github.com/libsdl-org/SDL/releases)
+- [OpenAL Soft 1.19.1](https://openal-soft.org/#download)
+- [Vulkan 1.3.280](https://vulkan.lunarg.com/)
 - [WildMIDI 0.4.4](https://github.com/Mindwerks/wildmidi/releases) (required for music)
+
+<details>
+<summary>Linux (Debian-based)</summary>
 ```bash
-sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libwildmidi-dev
+sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libvulkan-dev libwildmidi-dev
 ```
+
+</details>
+
+<details>
+<summary>macOS</summary>
+
+The [Vulkan SDK](https://vulkan.lunarg.com/) from the LunarG website provides MoltenVK which is necessary for running Vulkan on macOS. Make sure to check `System Global Installation` in the SDK installer. If you try running without MoltenVK, you may get a VK_KHR_surface error on startup.
+
+</details>
 
 #### Download source code
 ```bash
@@ -186,11 +203,13 @@ cd OpenTESArena
   - `Debug`
   - `ReleaseGenericNoLTO` - typical development/testing
   - `ReleaseGeneric` - release build for general audience, uses your CPU architecture (x86-64, ARM64)
+  - `ReleaseNativeNoLTO` - ReleaseGenericNoLTO with better CPU instructions
   - `ReleaseNative` - max performance compatible only with your exact CPU (equivalent to `-march=native`)
 - **Warning**: Jolt Physics enables CPU features which may cause illegal instruction errors. You can set these `OFF` in CMake ([more information](https://github.com/jrouwe/JoltPhysics/blob/20eedf47c4bf064e740c9de2f638a8c1d57ce2ed/Build/README.md#illegal-instruction-error))
     ```bash
     -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
     ```
+- If your CPU supports AVX-512, you may provide `-DUSE_AVX512=ON` to CMake for improved performance
 
 ### Run OpenTESArena
 - Navigate to the directory where the executable was built. When using an IDE like Visual Studio, this is a folder in your build directory named after your `CMAKE_BUILD_TYPE`
