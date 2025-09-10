@@ -164,7 +164,7 @@ cd ..
 #### Install third-party tools and libraries
 - [Git](https://git-scm.com/downloads)
 - [CMake](https://cmake.org/download/)
-- [SDL 2.0.10](https://github.com/libsdl-org/SDL/releases)
+- [SDL 2.0.12](https://github.com/libsdl-org/SDL/releases)
 - [OpenAL Soft 1.19.1](https://openal-soft.org/#download)
 - [Vulkan 1.3.280](https://vulkan.lunarg.com/)
 - [WildMIDI 0.4.4](https://github.com/Mindwerks/wildmidi/releases) (required for music)
