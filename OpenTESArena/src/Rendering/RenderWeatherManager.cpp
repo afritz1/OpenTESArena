@@ -16,7 +16,8 @@ namespace
 	constexpr int RainTextureHeight = ArenaRenderUtils::RAINDROP_TEXTURE_HEIGHT;
 	constexpr int BytesPerTexel = 1;
 
-	constexpr double ParticleArbitraryZ = RendererUtils::NEAR_PLANE + Constants::Epsilon; // Close to camera but in front of near plane. @todo: use shader w/ no depth test
+	constexpr double ParticleZDistance = 1.0; // Arbitrary distance from camera, depth is ignored.
+	static_assert(ParticleZDistance > RendererUtils::NEAR_PLANE);
 
 	int GetSnowTextureWidth(int index)
 	{
@@ -31,9 +32,9 @@ namespace
 	Matrix4d MakeParticleTranslationMatrix(const RenderCamera &camera, double xPercent, double yPercent)
 	{
 		const Double3 basePosition = camera.worldPoint;
-		const Double3 centerDir = camera.forwardScaled * ParticleArbitraryZ;
-		const Double3 rightDir = camera.rightScaled * ParticleArbitraryZ;
-		const Double3 upDir = camera.upScaled * ParticleArbitraryZ;
+		const Double3 centerDir = camera.forwardScaled * ParticleZDistance;
+		const Double3 rightDir = camera.rightScaled * ParticleZDistance;
+		const Double3 upDir = camera.upScaled * ParticleZDistance;
 		const Double3 topLeftPoint = basePosition + centerDir - rightDir + upDir;
 		const Double3 position = topLeftPoint + (rightDir * (2.0 * xPercent)) - (upDir * (2.0 * yPercent));
 		return Matrix4d::translation(position.x, position.y, position.z);
@@ -52,8 +53,8 @@ namespace
 	{
 		const double baseWidth = static_cast<double>(textureWidth) / 100.0;
 		const double baseHeight = static_cast<double>(textureHeight) / 100.0;
-		const double scaledWidth = baseWidth * ParticleArbitraryZ;
-		const double scaledHeight = baseHeight * ParticleArbitraryZ;
+		const double scaledWidth = baseWidth * ParticleZDistance;
+		const double scaledHeight = baseHeight * ParticleZDistance;
 		return Matrix4d::scale(1.0, scaledHeight, scaledWidth);
 	}
 }
