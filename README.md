@@ -171,6 +171,7 @@ cd ..
 
 <details>
 <summary>Linux (Debian-based)</summary>
+
 ```bash
 sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libvulkan-dev libwildmidi-dev
 ```
@@ -180,7 +181,8 @@ sudo apt-get install git g++ cmake libsdl2-dev libopenal-dev libvulkan-dev libwi
 <details>
 <summary>macOS</summary>
 
-The [Vulkan SDK](https://vulkan.lunarg.com/) from the LunarG website provides MoltenVK which is necessary for running Vulkan on macOS. Make sure to check `System Global Installation` in the SDK installer. If you try running without MoltenVK, you may get a VK_KHR_surface error on startup.
+#### MoltenVK
+The [Vulkan SDK](https://vulkan.lunarg.com/) from the LunarG website provides MoltenVK which is necessary for running Vulkan on macOS. Make sure to select `System Global Installation` in the SDK installer. If you try running without MoltenVK, you may get a VK_KHR_surface error on startup.
 
 </details>
 
