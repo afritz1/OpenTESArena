@@ -54,7 +54,7 @@ namespace
 	constexpr int BYTES_PER_HEAP_VERTEX_BUFFERS = 1 << 22;
 	constexpr int BYTES_PER_HEAP_INDEX_BUFFERS = BYTES_PER_HEAP_VERTEX_BUFFERS;
 	constexpr int BYTES_PER_HEAP_UNIFORM_BUFFERS = 1 << 23;
-	constexpr int BYTES_PER_HEAP_STORAGE_BUFFERS = 1 << 27;
+	constexpr int BYTES_PER_HEAP_STORAGE_BUFFERS = 1 << 24;
 	constexpr int BYTES_PER_HEAP_TEXTURES = 1 << 24;
 
 	constexpr vk::BufferUsageFlags VertexBufferStagingUsageFlags = vk::BufferUsageFlagBits::eTransferSrc;
