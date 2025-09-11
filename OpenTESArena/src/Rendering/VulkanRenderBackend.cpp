@@ -73,7 +73,7 @@ namespace
 
 	constexpr int MaxGlobalUniformBufferDescriptors = 48;
 	constexpr int MaxGlobalStorageBufferDescriptors = 16;
-	constexpr int MaxGlobalImageDescriptors = 32;
+	constexpr int MaxGlobalImageDescriptors = 48;
 	constexpr int MaxGlobalPoolDescriptorSets = MaxGlobalUniformBufferDescriptors + MaxGlobalStorageBufferDescriptors + MaxGlobalImageDescriptors;
 
 	constexpr int MaxTransformUniformBufferDynamicDescriptors = 32768; // @todo this could be reduced by doing one heap per UniformBufferID which supports 4096 entity transforms etc
@@ -1747,7 +1747,7 @@ namespace
 	}
 
 	void UpdateLightDescriptorSet(vk::Device device, vk::DescriptorSet descriptorSet, vk::Buffer lightsBuffer, vk::Buffer lightBinsBuffer, vk::Buffer lightBinLightCountsBuffer,
-		vk::Buffer lightBinDimsBuffer, vk::Buffer ditherBuffer)
+		vk::Buffer lightBinDimsBuffer, vk::ImageView ditherTextureImageView, vk::Sampler ditherTextureSampler)
 	{
 		vk::DescriptorBufferInfo lightsDescriptorBufferInfo;
 		lightsDescriptorBufferInfo.buffer = lightsBuffer;
@@ -1769,10 +1769,10 @@ namespace
 		lightBinDimsDescriptorBufferInfo.offset = 0;
 		lightBinDimsDescriptorBufferInfo.range = VK_WHOLE_SIZE;
 
-		vk::DescriptorBufferInfo ditherBufferDescriptorBufferInfo;
-		ditherBufferDescriptorBufferInfo.buffer = ditherBuffer;
-		ditherBufferDescriptorBufferInfo.offset = 0;
-		ditherBufferDescriptorBufferInfo.range = VK_WHOLE_SIZE;
+		vk::DescriptorImageInfo ditherTextureDescriptorImageInfo;
+		ditherTextureDescriptorImageInfo.sampler = ditherTextureSampler;
+		ditherTextureDescriptorImageInfo.imageView = ditherTextureImageView;
+		ditherTextureDescriptorImageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 		vk::WriteDescriptorSet lightsWriteDescriptorSet;
 		lightsWriteDescriptorSet.dstSet = descriptorSet;
@@ -1798,13 +1798,13 @@ namespace
 		lightBinLightCountsWriteDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
 		lightBinLightCountsWriteDescriptorSet.pBufferInfo = &lightBinLightCountsDescriptorBufferInfo;
 
-		vk::WriteDescriptorSet ditherBufferWriteDescriptorSet;
-		ditherBufferWriteDescriptorSet.dstSet = descriptorSet;
-		ditherBufferWriteDescriptorSet.dstBinding = 3;
-		ditherBufferWriteDescriptorSet.dstArrayElement = 0;
-		ditherBufferWriteDescriptorSet.descriptorCount = 1;
-		ditherBufferWriteDescriptorSet.descriptorType = vk::DescriptorType::eStorageBuffer;
-		ditherBufferWriteDescriptorSet.pBufferInfo = &ditherBufferDescriptorBufferInfo;
+		vk::WriteDescriptorSet ditherTextureWriteDescriptorSet;
+		ditherTextureWriteDescriptorSet.dstSet = descriptorSet;
+		ditherTextureWriteDescriptorSet.dstBinding = 3;
+		ditherTextureWriteDescriptorSet.dstArrayElement = 0;
+		ditherTextureWriteDescriptorSet.descriptorCount = 1;
+		ditherTextureWriteDescriptorSet.descriptorType = vk::DescriptorType::eCombinedImageSampler;
+		ditherTextureWriteDescriptorSet.pImageInfo = &ditherTextureDescriptorImageInfo;
 
 		vk::WriteDescriptorSet lightBinDimsWriteDescriptorSet;
 		lightBinDimsWriteDescriptorSet.dstSet = descriptorSet;
@@ -1819,7 +1819,7 @@ namespace
 			lightsWriteDescriptorSet,
 			lightBinsWriteDescriptorSet,
 			lightBinLightCountsWriteDescriptorSet,
-			ditherBufferWriteDescriptorSet,
+			ditherTextureWriteDescriptorSet,
 			lightBinDimsWriteDescriptorSet
 		};
 
@@ -2366,52 +2366,6 @@ namespace
 			optimizedVisibleLightValues[6] = inputVisibleLightEndRadius * inputVisibleLightEndRadius;
 			optimizedVisibleLightValues[7] = 1.0 / (inputVisibleLightEndRadius - inputVisibleLightStartRadius);
 		}
-	}
-
-	bool TryCreateDitherBuffers(Span<VulkanBuffer> ditherBuffers, vk::Device device, vk::Extent2D framebufferExtent, uint32_t queueFamilyIndex,
-		VulkanHeapManager &deviceLocalHeapManager, VulkanHeapManager &stagingHeapManager, vk::CommandBuffer commandBuffer, VulkanPendingCommands &copyCommands)
-	{
-		for (int i = 0; i < ditherBuffers.getCount(); i++)
-		{
-			const DitheringMode ditheringMode = static_cast<DitheringMode>(i);
-			const int ditherBufferPixelCount = framebufferExtent.width * framebufferExtent.height;
-
-			int ditherBufferByteCount = sizeof(int); // Dummy value for None.
-			if (ditheringMode == DitheringMode::Classic)
-			{
-				ditherBufferByteCount = ditherBufferPixelCount * sizeof(int);
-			}
-			else if (ditheringMode == DitheringMode::Modern)
-			{
-				ditherBufferByteCount = (ditherBufferPixelCount * DITHERING_MODERN_MASK_COUNT) * sizeof(int);
-			}
-
-			VulkanBuffer &ditherBuffer = ditherBuffers[i];
-			if (!TryCreateBufferStagingAndDevice(device, ditherBuffer, ditherBufferByteCount, vk::BufferUsageFlagBits::eStorageBuffer, queueFamilyIndex, deviceLocalHeapManager, stagingHeapManager))
-			{
-				DebugLogErrorFormat("Couldn't create dither buffer for dithering mode %d.", ditheringMode);
-				return false;
-			}
-
-			Buffer3D<bool> ditherBufferBools;
-			RendererUtils::initDitherBuffer(ditherBufferBools, framebufferExtent.width, framebufferExtent.height, ditheringMode);
-
-			int *ditherBufferValues = reinterpret_cast<int*>(ditherBuffer.stagingHostMappedBytes.begin());
-			std::transform(ditherBufferBools.begin(), ditherBufferBools.end(), ditherBufferValues,
-				[](bool isPixelDithered)
-			{
-				return static_cast<int>(isPixelDithered);
-			});
-
-			auto ditherBufferCopyCommand = [ditherBufferByteCount, &ditherBuffer, commandBuffer]()
-			{
-				CopyBufferToBuffer(ditherBuffer.stagingBuffer, ditherBuffer.deviceLocalBuffer, 0, ditherBufferByteCount, commandBuffer);
-			};
-
-			copyCommands.emplace_back(std::move(ditherBufferCopyCommand));
-		}
-
-		return true;
 	}
 }
 
@@ -3164,8 +3118,8 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		CreateDescriptorSetLayoutBinding(1, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eFragment),
 		// Light count per bin (depends on framebuffer size)
 		CreateDescriptorSetLayoutBinding(2, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eFragment),
-		// Dither buffer
-		CreateDescriptorSetLayoutBinding(3, vk::DescriptorType::eStorageBuffer, vk::ShaderStageFlagBits::eFragment),
+		// Dither texture
+		CreateDescriptorSetLayoutBinding(3, vk::DescriptorType::eCombinedImageSampler, vk::ShaderStageFlagBits::eFragment),
 		// Light bin dimensions
 		CreateDescriptorSetLayoutBinding(4, vk::DescriptorType::eUniformBuffer, vk::ShaderStageFlagBits::eFragment)
 	};
@@ -3595,13 +3549,6 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 
 	this->copyCommands.emplace_back(std::move(lightingModeCopyCommand));
 
-	if (!TryCreateDitherBuffers(this->ditherBuffers, this->device, this->internalExtent, this->graphicsQueueFamilyIndex,
-		this->storageBufferHeapManagerDeviceLocal, this->storageBufferHeapManagerStaging, this->commandBuffer, this->copyCommands))
-	{
-		DebugLogError("Couldn't create dither buffers.");
-		return false;
-	}
-
 	constexpr int UiRectangleVertexCount = 6; // Two triangles, no indices.
 	constexpr int UiPositionComponentsPerVertex = 2;
 	this->uiVertexPositionBufferID = this->createVertexPositionBuffer(UiRectangleVertexCount, UiPositionComponentsPerVertex, sizeof(float));
@@ -3687,11 +3634,6 @@ void VulkanRenderBackend::shutdown()
 
 		this->uiVertexAttributeBufferID = -1;
 		this->uiVertexPositionBufferID = -1;
-
-		for (VulkanBuffer &buffer : this->ditherBuffers)
-		{
-			buffer.freeAllocations(this->device);
-		}
 
 		this->perMeshLightMode.freeAllocations(this->device);
 		this->perPixelLightMode.freeAllocations(this->device);
@@ -4108,21 +4050,6 @@ void VulkanRenderBackend::shutdown()
 
 void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneViewWidth, int sceneViewHeight, int internalWidth, int internalHeight)
 {
-	for (VulkanBuffer &buffer : this->ditherBuffers)
-	{
-		if (buffer.deviceLocalBuffer)
-		{
-			this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(buffer.deviceLocalBuffer);
-		}
-
-		if (buffer.stagingBuffer)
-		{
-			this->storageBufferHeapManagerStaging.freeBufferMapping(buffer.stagingBuffer);
-		}
-
-		buffer.freeAllocations(this->device);
-	}
-
 	if (this->lightBins.deviceLocalBuffer)
 	{
 		this->storageBufferHeapManagerDeviceLocal.freeBufferMapping(this->lightBins.deviceLocalBuffer);
@@ -4410,13 +4337,6 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		this->graphicsQueueFamilyIndex, this->storageBufferHeapManagerDeviceLocal, this->storageBufferHeapManagerStaging))
 	{
 		DebugLogErrorFormat("Couldn't create light bin light counts buffer for resize to %dx%d.", windowWidth, windowHeight);
-		return;
-	}
-
-	if (!TryCreateDitherBuffers(this->ditherBuffers, this->device, this->internalExtent, this->graphicsQueueFamilyIndex,
-		this->storageBufferHeapManagerDeviceLocal, this->storageBufferHeapManagerStaging, this->commandBuffer, this->copyCommands))
-	{
-		DebugLogErrorFormat("Couldn't create dither buffers for resize to %dx%d.", windowWidth, windowHeight);
 		return;
 	}
 }
@@ -5543,11 +5463,9 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		PopulateLightGlobals(inputVisibleLightsBuffer, clampedVisibleLightCount, camera, this->internalExtent.width, this->internalExtent.height,
 			this->optimizedVisibleLights, this->lightBins, this->lightBinLightCounts);
 
-		const int ditherBufferIndex = static_cast<int>(frameSettings.ditheringMode);
-		DebugAssertIndex(this->ditherBuffers, ditherBufferIndex);
-		const VulkanBuffer &ditherBuffer = this->ditherBuffers[ditherBufferIndex];
+		const VulkanTexture &ditherTexture = this->objectTexturePool.get(frameSettings.ditherTextureID);
 		UpdateLightDescriptorSet(this->device, this->lightDescriptorSet, this->optimizedVisibleLights.deviceLocalBuffer, this->lightBins.deviceLocalBuffer,
-			this->lightBinLightCounts.deviceLocalBuffer, this->lightBinDims.stagingBuffer, ditherBuffer.deviceLocalBuffer);
+			this->lightBinLightCounts.deviceLocalBuffer, this->lightBinDims.stagingBuffer, ditherTexture.imageView, ditherTexture.sampler);
 
 		UpdateLightBinningDescriptorSet(this->device, this->lightBinningDescriptorSet, this->camera.stagingBuffer, this->framebufferDims.stagingBuffer, this->optimizedVisibleLights.deviceLocalBuffer,
 			this->lightBins.deviceLocalBuffer, this->lightBinLightCounts.deviceLocalBuffer, this->lightBinDims.stagingBuffer);
@@ -5558,7 +5476,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		lightBinDimsValues[2] = lightBinCountX;
 		lightBinDimsValues[3] = lightBinCountY;
 		lightBinDimsValues[4] = clampedVisibleLightCount;
-		lightBinDimsValues[5] = ditherBufferIndex;
+		lightBinDimsValues[5] = static_cast<int>(frameSettings.ditheringMode);
 
 		auto copyCommand = [this]()
 		{

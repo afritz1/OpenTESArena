@@ -58,6 +58,11 @@ struct SceneManager
 	ScopedObjectTextureRef normalLightTableNightTextureRef;
 	ScopedObjectTextureRef fogLightTableTextureRef;
 
+	// Dither textures, depends on current dithering mode.
+	ScopedObjectTextureRef noneDitherTextureRef;
+	ScopedObjectTextureRef classicDitherTextureRef;
+	ScopedObjectTextureRef modernDitherTextureRef;
+
 	SceneManager();
 
 	void init(TextureManager &textureManager, Renderer &renderer);

@@ -18,7 +18,7 @@ struct RenderFrameSettings
 	UniformBufferID visibleLightsBufferID;
 	int visibleLightCount;
 	double screenSpaceAnimPercent;
-	ObjectTextureID paletteTextureID, lightTableTextureID, skyBgTextureID;
+	ObjectTextureID paletteTextureID, lightTableTextureID, ditherTextureID, skyBgTextureID;
 	int renderThreadsMode;
 	DitheringMode ditheringMode;
 
@@ -26,7 +26,7 @@ struct RenderFrameSettings
 
 	void init(Color clearColor, double ambientPercent, UniformBufferID visibleLightsBufferID, int visibleLightCount, 
 		double screenSpaceAnimPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
-		ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
+		ObjectTextureID ditherTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 };
 
 #endif

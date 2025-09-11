@@ -3,6 +3,7 @@
 
 #include "SDL_pixels.h"
 
+#include "RenderTextureUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -12,6 +13,8 @@
 #include "../Voxels/VoxelUtils.h"
 
 #include "components/utilities/Buffer3D.h"
+
+class Renderer;
 
 enum class DitheringMode;
 
@@ -86,7 +89,7 @@ namespace RendererUtils
 
 	Matrix4f matrix4DoubleToFloat(const Matrix4d &matrix);
 
-	void initDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode);
+	ObjectTextureID allocDitherTexture(DitheringMode ditheringMode, Renderer &renderer);
 }
 
 #endif

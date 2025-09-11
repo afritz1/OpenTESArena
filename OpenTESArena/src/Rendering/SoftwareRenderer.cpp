@@ -1010,17 +1010,14 @@ namespace
 	double g_frameBufferHeightReal;
 	double g_frameBufferWidthRealRecip;
 	double g_frameBufferHeightRealRecip;
-	int g_ditherBufferDepth;
 	DitheringMode g_ditheringMode;
 	uint8_t *g_paletteIndexBuffer;
 	double *g_depthBuffer;
-	const bool *g_ditherBuffer;
 	uint32_t *g_colorBuffer;
 	SoftwareObjectTexturePool *g_objectTextures;
 
 	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
-		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, uint32_t *colorBuffer,
-		SoftwareObjectTexturePool *objectTextures)
+		DitheringMode ditheringMode, uint32_t *colorBuffer, SoftwareObjectTexturePool *objectTextures)
 	{
 		g_frameBufferWidth = frameBufferWidth;
 		g_frameBufferHeight = frameBufferHeight;
@@ -1029,11 +1026,9 @@ namespace
 		g_frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 		g_frameBufferWidthRealRecip = 1.0 / g_frameBufferWidthReal;
 		g_frameBufferHeightRealRecip = 1.0 / g_frameBufferHeightReal;
-		g_ditherBufferDepth = ditherBufferDepth;
 		g_ditheringMode = ditheringMode;
 		g_paletteIndexBuffer = paletteIndexBuffer;
 		g_depthBuffer = depthBuffer;
-		g_ditherBuffer = ditherBuffer;
 		g_colorBuffer = colorBuffer;
 		g_objectTextures = objectTextures;
 	}
@@ -1258,6 +1253,7 @@ namespace
 	Double2 g_horizonScreenSpacePoint; // For puddle reflections.
 	const SoftwareObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
 	const SoftwareObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
+	const SoftwareObjectTexture *g_ditherTexture; // Screen-space dithering for lighting.
 	const SoftwareObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
 	void PopulateVisibleLights(const SoftwareUniformBuffer &visibleLightsBuffer, int visibleLightCount)
@@ -1346,13 +1342,15 @@ namespace
 	}
 
 	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const Double3 &horizonNdcPoint,
-		const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
+		const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &ditherTexture,
+		const SoftwareObjectTexture &skyBgTexture)
 	{
 		g_ambientPercent = ambientPercent;
 		g_screenSpaceAnimPercent = screenSpaceAnimPercent;
 		g_horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(horizonNdcPoint, g_frameBufferWidthReal, g_frameBufferHeightReal);
 		g_paletteTexture = &paletteTexture;
 		g_lightTableTexture = &lightTableTexture;
+		g_ditherTexture = &ditherTexture;
 		g_skyBgTexture = &skyBgTexture;
 	}
 }
@@ -2519,7 +2517,8 @@ namespace
 	}
 
 	template<DitheringMode ditheringMode>
-	void GetScreenSpaceDitherValue(double lightLevelReal, double lightIntensitySum, int pixelIndex, bool *__restrict outShouldDither)
+	void GetScreenSpaceDitherValue(double lightLevelReal, double lightIntensitySum, int pixelX, int pixelY, const uint8_t *ditherTexels,
+		int ditherTextureWidth, int ditherTextureHeight, bool *__restrict outShouldDither)
 	{
 		// Dither the light level in screen space.
 		if constexpr (ditheringMode == DitheringMode::None)
@@ -2528,7 +2527,10 @@ namespace
 		}
 		else if (ditheringMode == DitheringMode::Classic)
 		{
-			*outShouldDither = g_ditherBuffer[pixelIndex];
+			const int ditherTexelX = pixelX % ditherTextureWidth;
+			const int ditherTexelY = pixelY % ditherTextureHeight;
+			const int ditherTexelIndex = ditherTexelX + (ditherTexelY * ditherTextureWidth);
+			*outShouldDither = ditherTexels[ditherTexelIndex] != 0;
 		}
 		else if (ditheringMode == DitheringMode::Modern)
 		{
@@ -2537,8 +2539,15 @@ namespace
 				constexpr int maskCount = DITHERING_MODERN_MASK_COUNT;
 				const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
 				const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(maskCount) * lightLevelFraction), 0, maskCount - 1);
-				const int ditherBufferIndex = pixelIndex + (maskIndex * g_frameBufferPixelCount);
-				*outShouldDither = g_ditherBuffer[ditherBufferIndex];
+
+				// Each dither mask is square, stored vertically.
+				const int ditherTextureMaskHeight = ditherTextureWidth;
+
+				const int ditherTexelX = pixelX % ditherTextureWidth;
+				const int ditherTexelY = pixelY % ditherTextureMaskHeight;
+				const int ditherTexelZ = maskIndex;
+				const int ditherTexelIndex = ditherTexelX + (ditherTexelY * ditherTextureWidth) + (ditherTexelZ * ditherTextureWidth * ditherTextureMaskHeight);
+				*outShouldDither = ditherTexels[ditherTexelIndex] != 0;
 			}
 			else
 			{
@@ -2610,6 +2619,10 @@ namespace
 		shaderLighting.lightLevelCountReal = static_cast<double>(shaderLighting.lightLevelCount);
 		shaderLighting.lastLightLevel = shaderLighting.lightLevelCount - 1;
 		shaderLighting.texelsPerLightLevel = g_lightTableTexture->width;
+
+		const uint8_t *ditherTexels = g_ditherTexture->texels8Bit;
+		const int ditherTextureWidth = g_ditherTexture->width;
+		const int ditherTextureHeight = g_ditherTexture->height;
 
 		PixelShaderPalette shaderPalette;
 		shaderPalette.colors = g_paletteTexture->texels32Bit;
@@ -3424,7 +3437,8 @@ namespace
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal[i], lightIntensitySum[i], frameBufferPixelIndex[i], &shouldDither[i]);
+								GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal[i], lightIntensitySum[i], frameBufferPixelX[i], frameBufferPixelY[yUnrollIndex],
+									ditherTexels, ditherTextureWidth, ditherTextureHeight, &shouldDither[i]);
 							}
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -4115,7 +4129,7 @@ void SoftwareLight::init(const Double3 &point, double startRadius, double endRad
 
 SoftwareRenderer::SoftwareRenderer()
 {
-	this->ditheringMode = static_cast<DitheringMode>(-1);
+
 }
 
 SoftwareRenderer::~SoftwareRenderer()
@@ -4130,9 +4144,6 @@ bool SoftwareRenderer::init(const RenderInitSettings &initSettings)
 	this->paletteIndexBuffer.init(frameBufferWidth, frameBufferHeight);
 	this->depthBuffer.init(frameBufferWidth, frameBufferHeight);
 
-	RendererUtils::initDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, initSettings.ditheringMode);
-	this->ditheringMode = initSettings.ditheringMode;
-
 	const int workerCount = RendererUtils::getRenderThreadsFromMode(initSettings.renderThreadsMode);
 	InitializeWorkers(workerCount, frameBufferWidth, frameBufferHeight);
 
@@ -4143,8 +4154,6 @@ void SoftwareRenderer::shutdown()
 {
 	this->paletteIndexBuffer.clear();
 	this->depthBuffer.clear();
-	this->ditherBuffer.clear();
-	this->ditheringMode = static_cast<DitheringMode>(-1);
 	this->positionBuffers.clear();
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();
@@ -4165,8 +4174,6 @@ void SoftwareRenderer::resize(int width, int height)
 
 	this->depthBuffer.init(width, height);
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
-
-	RendererUtils::initDitherBuffer(this->ditherBuffer, width, height, this->ditheringMode);
 
 	for (Worker &worker : g_workers)
 	{
@@ -4460,24 +4467,20 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();
 	const int frameBufferHeight = this->paletteIndexBuffer.getHeight();
 
-	if (this->ditheringMode != settings.ditheringMode)
-	{
-		this->ditheringMode = settings.ditheringMode;
-		RendererUtils::initDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
-	}
-
 	const SoftwareUniformBuffer &visibleLights = this->uniformBuffers.get(settings.visibleLightsBufferID);
 	const SoftwareObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
 	const SoftwareObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
+	const SoftwareObjectTexture &ditherTexture = this->objectTextures.get(settings.ditherTextureID);
 	const SoftwareObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
 	PopulateCameraGlobals(camera);
 	PopulateDrawCallGlobals(totalDrawCallCount);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
-		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
+		settings.ditheringMode, outputBuffer, &this->objectTextures);
 	PopulateVisibleLights(visibleLights, settings.visibleLightCount);
 	InitLightBins(frameBufferWidth, frameBufferHeight);
-	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, camera.horizonNdcPoint, paletteTexture, lightTableTexture, skyBgTexture);
+	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, camera.horizonNdcPoint, paletteTexture,
+		lightTableTexture, ditherTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
 	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);

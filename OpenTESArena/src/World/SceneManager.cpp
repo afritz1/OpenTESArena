@@ -5,6 +5,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Rendering/RendererUtils.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ClockLibrary.h"
 
@@ -54,6 +55,13 @@ void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 
 	this->normalLightTableNightTextureRef.unlockTexels();
 	this->fogLightTableTextureRef.unlockTexels();
+
+	const ObjectTextureID noneDitherTextureID = RendererUtils::allocDitherTexture(DitheringMode::None, renderer);
+	const ObjectTextureID classicDitherTextureID = RendererUtils::allocDitherTexture(DitheringMode::Classic, renderer);
+	const ObjectTextureID modernDitherTextureID = RendererUtils::allocDitherTexture(DitheringMode::Modern, renderer);
+	this->noneDitherTextureRef.init(noneDitherTextureID, renderer);
+	this->classicDitherTextureRef.init(classicDitherTextureID, renderer);
+	this->modernDitherTextureRef.init(modernDitherTextureID, renderer);
 }
 
 void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double dayPercent, TextureManager &textureManager)

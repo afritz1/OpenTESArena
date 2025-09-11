@@ -1026,11 +1026,21 @@ void Game::loop()
 					lightTableTextureID = this->sceneManager.normalLightTableNightTextureRef.get();
 				}
 
-				const ObjectTextureID skyBgTextureID = renderSkyManager.getBgTextureID();
 				const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
+				ObjectTextureID ditherTextureID = this->sceneManager.noneDitherTextureRef.get();
+				if (ditheringMode == DitheringMode::Classic)
+				{
+					ditherTextureID = this->sceneManager.classicDitherTextureRef.get();
+				}
+				else if (ditheringMode == DitheringMode::Modern)
+				{
+					ditherTextureID = this->sceneManager.modernDitherTextureRef.get();
+				}
+
+				const ObjectTextureID skyBgTextureID = renderSkyManager.getBgTextureID();
 
 				frameSettings.init(Colors::Black, ambientPercent, visibleLightsBufferID, visibleLightCount, screenSpaceAnimPercent, paletteTextureID,
-					lightTableTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
+					lightTableTextureID, ditherTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
 			this->panel->populateCommandList(uiCommandList);

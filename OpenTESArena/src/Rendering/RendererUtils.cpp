@@ -4,6 +4,7 @@
 
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
+#include "Renderer.h"
 #include "RendererUtils.h"
 #include "../Math/BoundingBox.h"
 #include "../Math/Constants.h"
@@ -241,12 +242,23 @@ Matrix4f RendererUtils::matrix4DoubleToFloat(const Matrix4d &matrix)
 	return mat4f;
 }
 
-void RendererUtils::initDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode)
+ObjectTextureID RendererUtils::allocDitherTexture(DitheringMode ditheringMode, Renderer &renderer)
 {
-	if (ditheringMode == DitheringMode::Classic)
+	Buffer3D<bool> ditherBuffer;
+
+	if (ditheringMode == DitheringMode::None)
 	{
-		// Original game: 2x2, top left + bottom right are darkened.
-		ditherBuffer.init(width, height, 1);
+		// Placeholder texture.
+		ditherBuffer.init(1, 1, 1);
+		ditherBuffer.set(0, 0, 0, false);
+	}
+	else if (ditheringMode == DitheringMode::Classic)
+	{
+		// 2x2, top left + bottom right are darkened.
+		constexpr int width = 2;
+		constexpr int height = 2;
+		constexpr int depth = 1;
+		ditherBuffer.init(width, height, depth);
 
 		bool *ditherPixels = ditherBuffer.begin();
 		for (int y = 0; y < height; y++)
@@ -262,8 +274,12 @@ void RendererUtils::initDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, in
 	else if (ditheringMode == DitheringMode::Modern)
 	{
 		// Modern 2x2, four levels of dither depending on percent between two light levels.
-		ditherBuffer.init(width, height, DITHERING_MODERN_MASK_COUNT);
+		constexpr int width = 2;
+		constexpr int height = 2;
+		constexpr int depth = DITHERING_MODERN_MASK_COUNT;
 		static_assert(DITHERING_MODERN_MASK_COUNT == 4);
+
+		ditherBuffer.init(width, height, depth);
 
 		bool *ditherPixels = ditherBuffer.begin();
 		for (int y = 0; y < height; y++)
@@ -274,19 +290,46 @@ void RendererUtils::initDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, in
 				const bool shouldDither1 = ((x + y) & 0x1) == 0; // Top left + bottom right
 				const bool shouldDither2 = ((x % 2) == 0) && ((y % 2) == 0); // Top left
 				const bool shouldDither3 = false;
-				const int index0 = x + (y * width);
-				const int index1 = x + (y * width) + (1 * width * height);
-				const int index2 = x + (y * width) + (2 * width * height);
-				const int index3 = x + (y * width) + (3 * width * height);
-				ditherPixels[index0] = shouldDither0;
-				ditherPixels[index1] = shouldDither1;
-				ditherPixels[index2] = shouldDither2;
-				ditherPixels[index3] = shouldDither3;
+				const int mask0Index = x + (y * width);
+				const int mask1Index = x + (y * width) + (width * height);
+				const int mask2Index = x + (y * width) + (width * height * 2);
+				const int mask3Index = x + (y * width) + (width * height * 3);
+				ditherPixels[mask0Index] = shouldDither0;
+				ditherPixels[mask1Index] = shouldDither1;
+				ditherPixels[mask2Index] = shouldDither2;
+				ditherPixels[mask3Index] = shouldDither3;
 			}
 		}
 	}
 	else
 	{
-		ditherBuffer.clear();
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(ditheringMode)));
 	}
+
+	constexpr int textureBytesPerTexel = sizeof(uint8_t);
+	const int textureWidth = ditherBuffer.getWidth();
+	const int textureHeight = ditherBuffer.getHeight() * ditherBuffer.getDepth();
+	ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, textureBytesPerTexel);
+	if (textureID < 0)
+	{
+		DebugLogErrorFormat("Couldn't create dither texture with mode %d.", ditheringMode);
+		return -1;
+	}
+
+	LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock dither texture with mode %d.", ditheringMode);
+		return -1;
+	}
+
+	Span2D<uint8_t> dstTexels = lockedTexture.getTexels8();
+	std::transform(ditherBuffer.begin(), ditherBuffer.end(), dstTexels.begin(),
+		[](bool shouldDither)
+	{
+		return static_cast<uint8_t>(shouldDither);
+	});
+
+	renderer.unlockObjectTexture(textureID);
+	return textureID;
 }

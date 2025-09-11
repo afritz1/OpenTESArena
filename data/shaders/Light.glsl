@@ -20,10 +20,7 @@ layout(set = 1, binding = 2) readonly buffer LightBinLightCounts
     uint counts[];
 } lightBinLightCounts;
 
-layout(set = 1, binding = 3) readonly buffer DitherBuffer
-{
-    uint isPixelDithered[];
-} dither;
+layout(set = 1, binding = 3) uniform usampler2D ditherTexture;
 
 layout(set = 1, binding = 4) uniform LightBinDimensions
 {
@@ -115,17 +112,17 @@ uint getLightLevel(vec3 worldPoint, float meshLightPercent, uvec2 framebufferDim
 
     if (isPerPixel)
     {
-        uint ditherMode = lightBinDims.ditherMode;
-        
+        uint ditherMode = lightBinDims.ditherMode;        
         uvec2 framebufferXY = getFramebufferXY();
-        uint pixelIndex = framebufferXY.x + (framebufferXY.y * framebufferDims.x); // @todo this should just modulo into the dither texture eventually
-        uint framebufferPixelCount = framebufferDims.x * framebufferDims.y; // @todo this should be dither texture pixel count eventually
+        uvec2 ditherTextureDims = textureSize(ditherTexture, 0);
 
         bool shouldDither = false;
         if (ditherMode == DITHER_MODE_CLASSIC)
         {
-            uint ditherBufferIndex = pixelIndex;
-            shouldDither = dither.isPixelDithered[ditherBufferIndex] != 0;
+            uint ditherTexelX = framebufferXY.x % ditherTextureDims.x;
+            uint ditherTexelY = framebufferXY.y % ditherTextureDims.y;
+            uint ditherTexel = texelFetch(ditherTexture, ivec2(ditherTexelX, ditherTexelY), 0).r;
+            shouldDither = ditherTexel != 0;
         }
         else if (ditherMode == DITHER_MODE_MODERN)
         {
@@ -134,8 +131,14 @@ uint getLightLevel(vec3 worldPoint, float meshLightPercent, uvec2 framebufferDim
                 const uint modernMaskCount = DITHERING_MODERN_MASK_COUNT;
                 float lightLevelFraction = lightLevelReal - floor(lightLevelReal);
                 uint maskIndex = clamp(int(float(modernMaskCount) * lightLevelFraction), 0, modernMaskCount - 1);
-                uint ditherBufferIndex = pixelIndex + (maskIndex * framebufferPixelCount);
-                shouldDither = dither.isPixelDithered[ditherBufferIndex] != 0;
+                
+                // Each dither mask is square, stored vertically.
+                uint ditherTextureMaskHeight = ditherTextureDims.x;
+
+                uint ditherTexelX = framebufferXY.x % ditherTextureDims.x;
+                uint ditherTexelY = (framebufferXY.y % ditherTextureMaskHeight) + (maskIndex * ditherTextureMaskHeight);
+                uint ditherTexel = texelFetch(ditherTexture, ivec2(ditherTexelX, ditherTexelY), 0).r;
+                shouldDither = ditherTexel != 0;
             }
         }
 
