@@ -35,15 +35,15 @@ Player movement is nearly feature-complete - currently you can jump, climb out o
 - Inspect
   - Modern mode - left mouse button
   - Classic mode - right mouse button
-- Esc - pause menu
-- Tab - character sheet
-- V - character status
-- M - world map
-- N - local map
-- L - logbook
-- F2 - player position
-- F4 - debug display
-- PrintScreen - screenshot
+- Pause menu - Esc
+- Character sheet - Tab
+- Character status - V
+- World map - M
+- Local map - N
+- Logbook - L
+- Player position - F2
+- Debug display - F4
+- Screenshot - PrintScreen
 - (debug) Force open locked door / destroy voxel: hold G then Activate
 
 ## Playing OpenTESArena
@@ -231,3 +231,4 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to assist with d
 - [Unofficial Elder Scrolls Pages](https://en.uesp.net/wiki/Arena:Arena) - a great resource for information about Arena
 - [Various tools](https://en.uesp.net/wiki/Arena:Files#Misc_Utilities) like WinArena and BSATool for browsing Arena's assets
 - The Elder Scrolls: Arena [manual](https://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities)
+
