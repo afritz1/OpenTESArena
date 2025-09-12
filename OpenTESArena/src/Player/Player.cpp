@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cmath>
+#include <limits>
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
@@ -149,6 +150,7 @@ namespace
 PlayerGroundState::PlayerGroundState()
 {
 	this->onGround = false;
+	this->secondsSinceOnGround = std::numeric_limits<double>::infinity();
 	this->isSwimming = false;
 	this->hasSplashedInChasm = false;
 	this->canJump = false;
@@ -544,7 +546,7 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	this->setPhysicsVelocity(newVelocity);
 }
 
-void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem)
+void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &physicsSystem)
 {
 	PlayerGroundState newGroundState;
 
@@ -567,6 +569,15 @@ void Player::updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSyst
 				}
 			}
 		}
+	}
+
+	if (newGroundState.onGround)
+	{
+		newGroundState.secondsSinceOnGround = 0.0;
+	}
+	else
+	{
+		newGroundState.secondsSinceOnGround = this->groundState.secondsSinceOnGround + dt;
 	}
 
 	const double ceilingScale = game.gameState.getActiveCeilingScale();
@@ -652,12 +663,12 @@ void Player::postPhysicsStep(double dt, Game &game)
 		return;
 	}
 
-	constexpr float maxSeparationDistance = 2e-2f; // @temp this feels very high but it helps with movement sound accumulation and overcoming the end of chasm climbing
+	constexpr float maxSeparationDistance = 1e-5f;
 	this->physicsCharacter->PostSimulation(maxSeparationDistance);
 	const Double3 physicsVelocity = this->getPhysicsVelocity();
 
 	const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
-	this->updateGroundState(game, physicsSystem);
+	this->updateGroundState(dt, game, physicsSystem);
 
 	AudioManager &audioManager = game.audioManager;
 	const GameState &gameState = game.gameState;
@@ -692,21 +703,23 @@ void Player::postPhysicsStep(double dt, Game &game)
 			}
 		}
 	}
+	
+	// Insulate move sound from sporadic ghost collisions.
+	const bool recentlyOnGround = this->groundState.secondsSinceOnGround <= PlayerConstants::MAX_SECONDS_SINCE_ON_GROUND;
 
-	const bool isMovementSoundAccumulating = (this->movementType != PlayerMovementType::Climbing) && this->groundState.onGround && this->isMoving();
+	const bool isMovementSoundAccumulating = (this->movementType != PlayerMovementType::Climbing) && recentlyOnGround && this->isMoving();
 	if (isMovementSoundAccumulating)
 	{
 		const Double2 physicsVelocityXZ = physicsVelocity.getXZ();
 
-		constexpr double tempRateBias = 1.40; // @temp due to Jolt movement still being bouncy even with enhanced internal edge removal fix
 		const double clampedMoveSpeed = this->getMaxMoveSpeed() * PlayerConstants::CLAMPED_MOVE_SPEED_PERCENT;
-		const double movementSoundProgressRate = (physicsVelocityXZ.length() * tempRateBias) / clampedMoveSpeed; // ~2 steps/second
+		const double movementSoundAccumulationRate = physicsVelocityXZ.length() / clampedMoveSpeed; // ~2 steps/second
 
 		constexpr double maxMovementSoundProgress = 1.0;
 		constexpr double leftStepSoundProgress = maxMovementSoundProgress / 2.0;
 		constexpr double rightStepSoundProgress = maxMovementSoundProgress;
 		const double prevMovementSoundProgress = this->movementSoundProgress;
-		this->movementSoundProgress = std::min(this->movementSoundProgress + (movementSoundProgressRate * dt), maxMovementSoundProgress);
+		this->movementSoundProgress = std::min(this->movementSoundProgress + (movementSoundAccumulationRate * dt), maxMovementSoundProgress);
 
 		const bool isLeftStepReady = (prevMovementSoundProgress < leftStepSoundProgress) && (this->movementSoundProgress >= leftStepSoundProgress);
 		const bool isRightStepReady = (prevMovementSoundProgress < rightStepSoundProgress) && (this->movementSoundProgress >= rightStepSoundProgress);
