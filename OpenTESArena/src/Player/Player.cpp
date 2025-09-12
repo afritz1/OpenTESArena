@@ -151,6 +151,7 @@ PlayerGroundState::PlayerGroundState()
 {
 	this->onGround = false;
 	this->secondsSinceOnGround = std::numeric_limits<double>::infinity();
+	this->recentlyOnGround = false;
 	this->isSwimming = false;
 	this->hasSplashedInChasm = false;
 	this->canJump = false;
@@ -580,6 +581,8 @@ void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &
 		newGroundState.secondsSinceOnGround = this->groundState.secondsSinceOnGround + dt;
 	}
 
+	newGroundState.recentlyOnGround = newGroundState.secondsSinceOnGround <= PlayerConstants::MAX_SECONDS_SINCE_ON_GROUND;
+
 	const double ceilingScale = game.gameState.getActiveCeilingScale();
 	const WorldDouble3 playerFeetPosition = this->getFeetPosition();
 	const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
@@ -606,7 +609,7 @@ void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &
 			const bool areFeetInChasm = playerFeetPosition.y <= chasmMiddleY; // Arbitrary "deep enough"
 			const bool areFeetInWater = (playerFeetPosition.y <= chasmLowerPortionY) && chasmDef.allowsSwimming;
 
-			newGroundState.isSwimming = newGroundState.onGround && chasmDef.allowsSwimming && areFeetInWater;
+			newGroundState.isSwimming = newGroundState.recentlyOnGround && chasmDef.allowsSwimming && areFeetInWater;
 			newGroundState.hasSplashedInChasm = this->groundState.hasSplashedInChasm;
 			newGroundState.isFeetInsideChasm = areFeetInChasm;
 		}
@@ -704,10 +707,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 		}
 	}
 	
-	// Insulate move sound from sporadic ghost collisions.
-	const bool recentlyOnGround = this->groundState.secondsSinceOnGround <= PlayerConstants::MAX_SECONDS_SINCE_ON_GROUND;
-
-	const bool isMovementSoundAccumulating = (this->movementType != PlayerMovementType::Climbing) && recentlyOnGround && this->isMoving();
+	const bool isMovementSoundAccumulating = (this->movementType != PlayerMovementType::Climbing) && this->groundState.recentlyOnGround && this->isMoving();
 	if (isMovementSoundAccumulating)
 	{
 		const Double2 physicsVelocityXZ = physicsVelocity.getXZ();

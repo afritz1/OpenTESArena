@@ -59,6 +59,7 @@ struct PlayerGroundState
 {
 	bool onGround;
 	double secondsSinceOnGround;
+	bool recentlyOnGround;
 	bool isSwimming; // For swimming and splash SFXs
 	bool hasSplashedInChasm;
 	bool canJump;
