@@ -4,12 +4,13 @@
 enum class PivotType;
 enum class RenderSpace;
 
+struct Rect;
+
 namespace GuiUtils
 {
-	// Converts pixel coordinates in the given render space to vector space in the same render space.
-	void makeRenderElementPercents(int x, int y, int width, int height, int windowWidth, int windowHeight,
-		RenderSpace renderSpace, PivotType pivotType, double *outXPercent, double *outYPercent,
-		double *outWPercent, double *outHPercent);
+	// Converts pixel coordinates in the given render space to pixel coordinates for display.
+	Rect makeWindowSpaceRect(int x, int y, int width, int height, PivotType pivotType, RenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect);
+	Rect makeWindowSpaceRect(Rect rect, PivotType pivotType, RenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect);
 }
 
 #endif

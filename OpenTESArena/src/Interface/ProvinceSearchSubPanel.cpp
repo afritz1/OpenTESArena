@@ -111,7 +111,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 		if (this->mode == ProvinceSearchUiModel::Mode::List)
 		{
 			const Rect &listBoxRect = this->locationsListBox.getRect();
-			const Int2 classicPosition = game.renderer.nativeToOriginal(position);
+			const Int2 classicPosition = game.window.nativeToOriginal(position);
 			if (listBoxRect.contains(classicPosition))
 			{
 				if (type == MouseWheelScrollType::Up)

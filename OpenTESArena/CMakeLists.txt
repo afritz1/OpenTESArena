@@ -5,16 +5,28 @@ SET(OpenTESArena_VERSION "0.16.0")
 FIND_PACKAGE(SDL2 REQUIRED)
 FIND_PACKAGE(OpenAL REQUIRED)
 FIND_PACKAGE(WildMidi)
+FIND_PACKAGE(Vulkan)
 
 SET(EXTERNAL_LIBS ${OPENAL_LIBRARY} ${SDL2_LIBRARY})
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}" ${SDL2_INCLUDE_DIR} ${OPENAL_INCLUDE_DIR} ${JOLT_INCLUDE_DIR})
+
 IF(WILDMIDI_FOUND)
     SET(EXTERNAL_LIBS ${EXTERNAL_LIBS} ${WILDMIDI_LIBRARIES})
     INCLUDE_DIRECTORIES(${WILDMIDI_INCLUDE_DIRS})
     ADD_DEFINITIONS("-DHAVE_WILDMIDI=1")
 ELSE(WILDMIDI_FOUND)
-    MESSAGE(STATUS "WildMIDI not found, no MIDI support!")
+    MESSAGE(STATUS "WildMIDI not found, no MIDI support.")
 ENDIF(WILDMIDI_FOUND)
+
+IF(VULKAN_FOUND)
+    SET(EXTERNAL_LIBS ${EXTERNAL_LIBS} ${Vulkan_LIBRARY})
+    INCLUDE_DIRECTORIES(${Vulkan_INCLUDE_DIR})
+    ADD_DEFINITIONS("-DHAVE_VULKAN=1")
+    ADD_DEFINITIONS("-DVULKAN_HPP_NO_EXCEPTIONS=1")
+    ADD_DEFINITIONS("-DVULKAN_HPP_NO_SMART_HANDLE=1")
+ELSE(VULKAN_FOUND)
+    MESSAGE(STATUS "Vulkan not found, graphics backend is limited to SDL renderer.")
+ENDIF(VULKAN_FOUND)
 
 SET(SRC_ROOT ${otesa_SOURCE_DIR}/src)
 
@@ -410,21 +422,21 @@ SET(TES_PLAYER
 SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.cpp"
     "${SRC_ROOT}/Rendering/ArenaRenderUtils.h"
+    "${SRC_ROOT}/Rendering/RenderBackend.cpp"
+    "${SRC_ROOT}/Rendering/RenderBackend.h"
+    "${SRC_ROOT}/Rendering/RenderBuffer.cpp"
+    "${SRC_ROOT}/Rendering/RenderBuffer.h"
+    "${SRC_ROOT}/Rendering/RenderBackendType.h"
     "${SRC_ROOT}/Rendering/RenderCamera.cpp"
     "${SRC_ROOT}/Rendering/RenderCamera.h"
-    "${SRC_ROOT}/Rendering/RenderCommandBuffer.cpp"
-    "${SRC_ROOT}/Rendering/RenderCommandBuffer.h"
+    "${SRC_ROOT}/Rendering/RenderCommand.cpp"
+    "${SRC_ROOT}/Rendering/RenderCommand.h"
     "${SRC_ROOT}/Rendering/RenderDrawCall.cpp"
     "${SRC_ROOT}/Rendering/RenderDrawCall.h"
     "${SRC_ROOT}/Rendering/RenderEntityManager.cpp"
     "${SRC_ROOT}/Rendering/RenderEntityManager.h"
     "${SRC_ROOT}/Rendering/Renderer.cpp"
     "${SRC_ROOT}/Rendering/Renderer.h"
-    "${SRC_ROOT}/Rendering/RendererSystem2D.cpp"
-    "${SRC_ROOT}/Rendering/RendererSystem2D.h"
-    "${SRC_ROOT}/Rendering/RendererSystem3D.cpp"
-    "${SRC_ROOT}/Rendering/RendererSystem3D.h"
-    "${SRC_ROOT}/Rendering/RendererSystemType.h"
     "${SRC_ROOT}/Rendering/RendererUtils.cpp"
     "${SRC_ROOT}/Rendering/RendererUtils.h"
     "${SRC_ROOT}/Rendering/RenderFrameSettings.cpp"
@@ -435,28 +447,33 @@ SET(TES_RENDERING
     "${SRC_ROOT}/Rendering/RenderLightManager.h"
     "${SRC_ROOT}/Rendering/RenderLightUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderLightUtils.h"
+    "${SRC_ROOT}/Rendering/RenderMaterialUtils.cpp"
+    "${SRC_ROOT}/Rendering/RenderMaterialUtils.h"
     "${SRC_ROOT}/Rendering/RenderMeshInstance.cpp"
     "${SRC_ROOT}/Rendering/RenderMeshInstance.h"
     "${SRC_ROOT}/Rendering/RenderMeshUtils.h"
     "${SRC_ROOT}/Rendering/RenderShaderUtils.h"
     "${SRC_ROOT}/Rendering/RenderSkyManager.h"
     "${SRC_ROOT}/Rendering/RenderSkyManager.cpp"
-    "${SRC_ROOT}/Rendering/RenderTextureAllocator.h"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.cpp"
     "${SRC_ROOT}/Rendering/RenderTextureUtils.h"
-    "${SRC_ROOT}/Rendering/RenderTransform.cpp"
-    "${SRC_ROOT}/Rendering/RenderTransform.h"
     "${SRC_ROOT}/Rendering/RenderVoxelChunk.cpp"
     "${SRC_ROOT}/Rendering/RenderVoxelChunk.h"
     "${SRC_ROOT}/Rendering/RenderVoxelChunkManager.cpp"
     "${SRC_ROOT}/Rendering/RenderVoxelChunkManager.h"
     "${SRC_ROOT}/Rendering/RenderWeatherManager.h"
     "${SRC_ROOT}/Rendering/RenderWeatherManager.cpp"
+    "${SRC_ROOT}/Rendering/Sdl2DSoft3DRenderBackend.cpp"
+    "${SRC_ROOT}/Rendering/Sdl2DSoft3DRenderBackend.h"
     "${SRC_ROOT}/Rendering/SdlUiRenderer.cpp"
     "${SRC_ROOT}/Rendering/SdlUiRenderer.h"
     "${SRC_ROOT}/Rendering/SoftwareRenderer.cpp"
     "${SRC_ROOT}/Rendering/SoftwareRenderer.h"
-    "${SRC_ROOT}/Rendering/VisibilityType.h")
+    "${SRC_ROOT}/Rendering/VisibilityType.h"
+    "${SRC_ROOT}/Rendering/VulkanRenderBackend.cpp"
+    "${SRC_ROOT}/Rendering/VulkanRenderBackend.h"
+    "${SRC_ROOT}/Rendering/Window.cpp"
+    "${SRC_ROOT}/Rendering/Window.h")
 
 SET(TES_SKY
     "${SRC_ROOT}/Sky/ArenaSkyUtils.cpp"
@@ -540,8 +557,8 @@ SET(TES_UI
     "${SRC_ROOT}/UI/TextRenderUtils.h"
     "${SRC_ROOT}/UI/ToggleButton.cpp"
     "${SRC_ROOT}/UI/ToggleButton.h"
-    "${SRC_ROOT}/UI/UiCommandBuffer.cpp"
-    "${SRC_ROOT}/UI/UiCommandBuffer.h"
+    "${SRC_ROOT}/UI/UiCommand.cpp"
+    "${SRC_ROOT}/UI/UiCommand.h"
     "${SRC_ROOT}/UI/UiDrawCall.cpp"
     "${SRC_ROOT}/UI/UiDrawCall.h")
 

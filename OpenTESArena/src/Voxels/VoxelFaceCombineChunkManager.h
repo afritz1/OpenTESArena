@@ -17,6 +17,8 @@ public:
 		const VoxelChunkManager &voxelChunkManager);
 	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 		const VoxelChunkManager &voxelChunkManager, const VoxelFaceEnableChunkManager &voxelFaceEnableChunkManager);
+
+	void endFrame();
 };
 
 #endif

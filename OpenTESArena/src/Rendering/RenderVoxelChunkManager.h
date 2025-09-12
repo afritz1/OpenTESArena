@@ -6,13 +6,14 @@
 #include <vector>
 
 #include "RenderDrawCall.h"
+#include "RenderMaterialUtils.h"
 #include "RenderShaderUtils.h"
-#include "RenderTransform.h"
 #include "RenderVoxelChunk.h"
 #include "../Voxels/VoxelChasmDefinition.h"
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/FlatMap.h"
 #include "components/utilities/Span.h"
 #include "components/utilities/Span3D.h"
 
@@ -23,7 +24,7 @@ class VoxelFaceCombineChunkManager;
 class VoxelFrustumCullingChunkManager;
 
 struct RenderCamera;
-struct RenderCommandBuffer;
+struct RenderCommandList;
 struct VoxelFrustumCullingChunk;
 
 struct RenderVoxelLoadedTexture
@@ -77,12 +78,11 @@ struct RenderVoxelCombinedFaceVertexBuffer
 class RenderVoxelChunkManager final : public SpecializedChunkManager<RenderVoxelChunk>
 {
 private:
-	// Buffer for all raising doors' translation to push/pop during vertex shading so they scale towards the ceiling.
-	// Updated on scene change.
-	UniformBufferID raisingDoorPreScaleTranslationBufferID;
-
 	// For combined voxel faces.
 	IndexBufferID defaultQuadIndexBufferID;
+
+	// Shared by all lava chasm draw calls.
+	RenderMaterialInstanceID lavaChasmMaterialInstID;
 
 	std::vector<RenderVoxelLoadedTexture> textures; // Includes chasm walls.
 	std::vector<RenderVoxelLoadedChasmFloorTexture> chasmFloorTextures;
@@ -90,6 +90,8 @@ private:
 
 	// For reusing model space vertex buffers between chunks.
 	std::vector<RenderVoxelCombinedFaceVertexBuffer> combinedFaceVertexBuffers;
+
+	std::vector<RenderMaterial> materials;
 
 	// All accumulated draw calls from scene components each frame. This is sent to the renderer.
 	std::vector<RenderDrawCall> drawCallsCache;
@@ -100,16 +102,16 @@ private:
 
 	void loadChunkTextures(const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer);
 	void loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
-	void loadTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
+	void loadChunkNonCombinedTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const VoxelFaceCombineChunk &faceCombineChunk, double ceilingScale, Renderer &renderer);
 
 	void updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
 		const VoxelFaceCombineChunk &faceCombineChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent, Renderer &renderer);
 	void updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const VoxelChunkManager &voxelChunkManager, double ceilingScale);
+		const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer);
 	void updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const VoxelChunkManager &voxelChunkManager, double ceilingScale);
+		const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer);
 
-	void clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, Renderer &renderer);
+	void clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelFaceCombineResultID> dirtyFaceCombineResultIDs, Renderer &renderer);
 	void clearChunkNonCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions);
 
 	void rebuildDrawCallsList(const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager);
@@ -119,7 +121,7 @@ public:
 	void init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	void populateCommandBuffer(RenderCommandBuffer &commandBuffer) const;
+	void populateCommandList(RenderCommandList &commandList) const;
 
 	// Chunk allocating/freeing update function, called before voxel resources are updated.
 	void updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,

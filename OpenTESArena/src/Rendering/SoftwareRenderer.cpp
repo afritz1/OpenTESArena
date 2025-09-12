@@ -9,13 +9,14 @@
 #include <thread>
 
 #include "ArenaRenderUtils.h"
+#include "RenderBackend.h"
+#include "RenderBuffer.h"
 #include "RenderCamera.h"
-#include "RenderCommandBuffer.h"
+#include "RenderCommand.h"
 #include "RenderDrawCall.h"
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
-#include "RenderTransform.h"
 #include "SoftwareRenderer.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Math/BoundingBox.h"
@@ -616,6 +617,7 @@ namespace
 // Camera globals.
 namespace
 {
+	RenderCamera g_camera;
 	Matrix4d g_viewMatrix;
 	Matrix4d g_projMatrix;
 
@@ -675,6 +677,7 @@ namespace
 
 	void PopulateCameraGlobals(const RenderCamera &camera)
 	{
+		g_camera = camera;
 		g_viewMatrix = camera.viewMatrix;
 		g_projMatrix = camera.projectionMatrix;
 		g_viewProjMatrix = camera.projectionMatrix * camera.viewMatrix;
@@ -760,54 +763,22 @@ namespace
 	// Transform for the mesh to be processed with.
 	struct TransformCache
 	{
-		double translationMatrixXX;
-		double translationMatrixXY;
-		double translationMatrixXZ;
-		double translationMatrixXW;
-		double translationMatrixYX;
-		double translationMatrixYY;
-		double translationMatrixYZ;
-		double translationMatrixYW;
-		double translationMatrixZX;
-		double translationMatrixZY;
-		double translationMatrixZZ;
-		double translationMatrixZW;
-		double translationMatrixWX;
-		double translationMatrixWY;
-		double translationMatrixWZ;
-		double translationMatrixWW;
-		double rotationMatrixXX;
-		double rotationMatrixXY;
-		double rotationMatrixXZ;
-		double rotationMatrixXW;
-		double rotationMatrixYX;
-		double rotationMatrixYY;
-		double rotationMatrixYZ;
-		double rotationMatrixYW;
-		double rotationMatrixZX;
-		double rotationMatrixZY;
-		double rotationMatrixZZ;
-		double rotationMatrixZW;
-		double rotationMatrixWX;
-		double rotationMatrixWY;
-		double rotationMatrixWZ;
-		double rotationMatrixWW;
-		double scaleMatrixXX;
-		double scaleMatrixXY;
-		double scaleMatrixXZ;
-		double scaleMatrixXW;
-		double scaleMatrixYX;
-		double scaleMatrixYY;
-		double scaleMatrixYZ;
-		double scaleMatrixYW;
-		double scaleMatrixZX;
-		double scaleMatrixZY;
-		double scaleMatrixZZ;
-		double scaleMatrixZW;
-		double scaleMatrixWX;
-		double scaleMatrixWY;
-		double scaleMatrixWZ;
-		double scaleMatrixWW;
+		double modelMatrixXX;
+		double modelMatrixXY;
+		double modelMatrixXZ;
+		double modelMatrixXW;
+		double modelMatrixYX;
+		double modelMatrixYY;
+		double modelMatrixYZ;
+		double modelMatrixYW;
+		double modelMatrixZX;
+		double modelMatrixZY;
+		double modelMatrixZZ;
+		double modelMatrixZW;
+		double modelMatrixWX;
+		double modelMatrixWY;
+		double modelMatrixWZ;
+		double modelMatrixWW;
 		double modelViewProjMatrixXX;
 		double modelViewProjMatrixXY;
 		double modelViewProjMatrixXZ;
@@ -824,9 +795,6 @@ namespace
 		double modelViewProjMatrixWY;
 		double modelViewProjMatrixWZ;
 		double modelViewProjMatrixWW;
-		double preScaleTranslationX;
-		double preScaleTranslationY;
-		double preScaleTranslationZ;
 	};
 
 	int g_totalDrawCallCount = 0;
@@ -836,56 +804,24 @@ namespace
 		g_totalDrawCallCount = totalDrawCallCount;
 	}
 
-	void PopulateMeshTransform(TransformCache &cache, const RenderTransform &transform)
+	void PopulateMeshTransform(TransformCache &cache, const Matrix4d &modelMatrix)
 	{
-		cache.translationMatrixXX = transform.translation.x.x;
-		cache.translationMatrixXY = transform.translation.x.y;
-		cache.translationMatrixXZ = transform.translation.x.z;
-		cache.translationMatrixXW = transform.translation.x.w;
-		cache.translationMatrixYX = transform.translation.y.x;
-		cache.translationMatrixYY = transform.translation.y.y;
-		cache.translationMatrixYZ = transform.translation.y.z;
-		cache.translationMatrixYW = transform.translation.y.w;
-		cache.translationMatrixZX = transform.translation.z.x;
-		cache.translationMatrixZY = transform.translation.z.y;
-		cache.translationMatrixZZ = transform.translation.z.z;
-		cache.translationMatrixZW = transform.translation.z.w;
-		cache.translationMatrixWX = transform.translation.w.x;
-		cache.translationMatrixWY = transform.translation.w.y;
-		cache.translationMatrixWZ = transform.translation.w.z;
-		cache.translationMatrixWW = transform.translation.w.w;
-		cache.rotationMatrixXX = transform.rotation.x.x;
-		cache.rotationMatrixXY = transform.rotation.x.y;
-		cache.rotationMatrixXZ = transform.rotation.x.z;
-		cache.rotationMatrixXW = transform.rotation.x.w;
-		cache.rotationMatrixYX = transform.rotation.y.x;
-		cache.rotationMatrixYY = transform.rotation.y.y;
-		cache.rotationMatrixYZ = transform.rotation.y.z;
-		cache.rotationMatrixYW = transform.rotation.y.w;
-		cache.rotationMatrixZX = transform.rotation.z.x;
-		cache.rotationMatrixZY = transform.rotation.z.y;
-		cache.rotationMatrixZZ = transform.rotation.z.z;
-		cache.rotationMatrixZW = transform.rotation.z.w;
-		cache.rotationMatrixWX = transform.rotation.w.x;
-		cache.rotationMatrixWY = transform.rotation.w.y;
-		cache.rotationMatrixWZ = transform.rotation.w.z;
-		cache.rotationMatrixWW = transform.rotation.w.w;
-		cache.scaleMatrixXX = transform.scale.x.x;
-		cache.scaleMatrixXY = transform.scale.x.y;
-		cache.scaleMatrixXZ = transform.scale.x.z;
-		cache.scaleMatrixXW = transform.scale.x.w;
-		cache.scaleMatrixYX = transform.scale.y.x;
-		cache.scaleMatrixYY = transform.scale.y.y;
-		cache.scaleMatrixYZ = transform.scale.y.z;
-		cache.scaleMatrixYW = transform.scale.y.w;
-		cache.scaleMatrixZX = transform.scale.z.x;
-		cache.scaleMatrixZY = transform.scale.z.y;
-		cache.scaleMatrixZZ = transform.scale.z.z;
-		cache.scaleMatrixZW = transform.scale.z.w;
-		cache.scaleMatrixWX = transform.scale.w.x;
-		cache.scaleMatrixWY = transform.scale.w.y;
-		cache.scaleMatrixWZ = transform.scale.w.z;
-		cache.scaleMatrixWW = transform.scale.w.w;
+		cache.modelMatrixXX = modelMatrix.x.x;
+		cache.modelMatrixXY = modelMatrix.x.y;
+		cache.modelMatrixXZ = modelMatrix.x.z;
+		cache.modelMatrixXW = modelMatrix.x.w;
+		cache.modelMatrixYX = modelMatrix.y.x;
+		cache.modelMatrixYY = modelMatrix.y.y;
+		cache.modelMatrixYZ = modelMatrix.y.z;
+		cache.modelMatrixYW = modelMatrix.y.w;
+		cache.modelMatrixZX = modelMatrix.z.x;
+		cache.modelMatrixZY = modelMatrix.z.y;
+		cache.modelMatrixZZ = modelMatrix.z.z;
+		cache.modelMatrixZW = modelMatrix.z.w;
+		cache.modelMatrixWX = modelMatrix.w.x;
+		cache.modelMatrixWY = modelMatrix.w.y;
+		cache.modelMatrixWZ = modelMatrix.w.z;
+		cache.modelMatrixWW = modelMatrix.w.w;
 		// Do model-view-projection matrix in the bulk processing loop.
 	}
 }
@@ -987,7 +923,7 @@ namespace
 // Lighting utils.
 namespace
 {
-	static constexpr int MAX_LIGHTS_IN_FRUSTUM = 256; // Total allowed in frustum each frame, sorted by distance to camera.
+	static constexpr int MAX_LIGHTS_IN_FRUSTUM = 256; // Total allowed in frustum each frame, already sorted by distance to camera.
 	static constexpr int MAX_LIGHTS_PER_LIGHT_BIN = 32; // Fraction of max frustum lights for a light bin.
 
 	struct LightBin
@@ -996,8 +932,8 @@ namespace
 		int lightCount;
 	};
 
-	constexpr int LIGHT_BIN_MIN_WIDTH = RASTERIZER_BIN_MIN_WIDTH / 2;
-	constexpr int LIGHT_BIN_MAX_WIDTH = RASTERIZER_BIN_MAX_WIDTH / 2;
+	constexpr int LIGHT_BIN_MIN_WIDTH = 16;
+	constexpr int LIGHT_BIN_MAX_WIDTH = 64;
 	constexpr int LIGHT_BIN_MIN_HEIGHT = LIGHT_BIN_MIN_WIDTH;
 	constexpr int LIGHT_BIN_MAX_HEIGHT = LIGHT_BIN_MAX_WIDTH;
 	constexpr int LIGHT_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH = RASTERIZER_TYPICAL_BINS_PER_FRAME_BUFFER_WIDTH * 2;
@@ -1074,17 +1010,14 @@ namespace
 	double g_frameBufferHeightReal;
 	double g_frameBufferWidthRealRecip;
 	double g_frameBufferHeightRealRecip;
-	int g_ditherBufferDepth;
 	DitheringMode g_ditheringMode;
 	uint8_t *g_paletteIndexBuffer;
 	double *g_depthBuffer;
-	const bool *g_ditherBuffer;
 	uint32_t *g_colorBuffer;
 	SoftwareObjectTexturePool *g_objectTextures;
 
 	void PopulateRasterizerGlobals(int frameBufferWidth, int frameBufferHeight, uint8_t *paletteIndexBuffer, double *depthBuffer,
-		const bool *ditherBuffer, int ditherBufferDepth, DitheringMode ditheringMode, uint32_t *colorBuffer,
-		SoftwareObjectTexturePool *objectTextures)
+		DitheringMode ditheringMode, uint32_t *colorBuffer, SoftwareObjectTexturePool *objectTextures)
 	{
 		g_frameBufferWidth = frameBufferWidth;
 		g_frameBufferHeight = frameBufferHeight;
@@ -1093,11 +1026,9 @@ namespace
 		g_frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 		g_frameBufferWidthRealRecip = 1.0 / g_frameBufferWidthReal;
 		g_frameBufferHeightRealRecip = 1.0 / g_frameBufferHeightReal;
-		g_ditherBufferDepth = ditherBufferDepth;
 		g_ditheringMode = ditheringMode;
 		g_paletteIndexBuffer = paletteIndexBuffer;
 		g_depthBuffer = depthBuffer;
-		g_ditherBuffer = ditherBuffer;
 		g_colorBuffer = colorBuffer;
 		g_objectTextures = objectTextures;
 	}
@@ -1112,56 +1043,6 @@ namespace
 		g_totalCoverageTests = 0;
 		g_totalDepthTests = 0;
 		g_totalColorWrites = 0;
-	}
-
-	void CreateDitherBuffer(Buffer3D<bool> &ditherBuffer, int width, int height, DitheringMode ditheringMode)
-	{
-		if (ditheringMode == DitheringMode::Classic)
-		{
-			// Original game: 2x2, top left + bottom right are darkened.
-			ditherBuffer.init(width, height, 1);
-
-			bool *ditherPixels = ditherBuffer.begin();
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					const bool shouldDither = ((x + y) & 0x1) == 0;
-					const int index = x + (y * width);
-					ditherPixels[index] = shouldDither;
-				}
-			}
-		}
-		else if (ditheringMode == DitheringMode::Modern)
-		{
-			// Modern 2x2, four levels of dither depending on percent between two light levels.
-			ditherBuffer.init(width, height, DITHERING_MODERN_MASK_COUNT);
-			static_assert(DITHERING_MODERN_MASK_COUNT == 4);
-
-			bool *ditherPixels = ditherBuffer.begin();
-			for (int y = 0; y < height; y++)
-			{
-				for (int x = 0; x < width; x++)
-				{
-					const bool shouldDither0 = (((x + y) & 0x1) == 0) || (((x % 2) == 1) && ((y % 2) == 0)); // Top left, bottom right, top right
-					const bool shouldDither1 = ((x + y) & 0x1) == 0; // Top left + bottom right
-					const bool shouldDither2 = ((x % 2) == 0) && ((y % 2) == 0); // Top left
-					const bool shouldDither3 = false;
-					const int index0 = x + (y * width);
-					const int index1 = x + (y * width) + (1 * width * height);
-					const int index2 = x + (y * width) + (2 * width * height);
-					const int index3 = x + (y * width) + (3 * width * height);
-					ditherPixels[index0] = shouldDither0;
-					ditherPixels[index1] = shouldDither1;
-					ditherPixels[index2] = shouldDither2;
-					ditherPixels[index3] = shouldDither3;
-				}
-			}
-		}
-		else
-		{
-			ditherBuffer.clear();
-		}
 	}
 }
 
@@ -1218,187 +1099,6 @@ namespace
 			modelViewProjMatrixZXs, modelViewProjMatrixZYs, modelViewProjMatrixZZs, modelViewProjMatrixZWs,
 			modelViewProjMatrixWXs, modelViewProjMatrixWYs, modelViewProjMatrixWZs, modelViewProjMatrixWWs,
 			vertexXs, vertexYs, vertexZs, vertexWs,
-			outVertexXs, outVertexYs, outVertexZs, outVertexWs);
-	}
-
-	template<int N>
-	void VertexShader_RaisingDoorN(const TransformCache &__restrict transformCache, const double *__restrict vertexXs, const double *__restrict vertexYs,
-		const double *__restrict vertexZs, const double *__restrict vertexWs, double *__restrict outVertexXs, double *__restrict outVertexYs,
-		double *__restrict outVertexZs, double *__restrict outVertexWs)
-	{
-		// Read in each mesh's transforms.
-		double preScaleTranslationXs[N];
-		double preScaleTranslationYs[N];
-		double preScaleTranslationZs[N];
-		double translationMatrixXXs[N];
-		double translationMatrixXYs[N];
-		double translationMatrixXZs[N];
-		double translationMatrixXWs[N];
-		double translationMatrixYXs[N];
-		double translationMatrixYYs[N];
-		double translationMatrixYZs[N];
-		double translationMatrixYWs[N];
-		double translationMatrixZXs[N];
-		double translationMatrixZYs[N];
-		double translationMatrixZZs[N];
-		double translationMatrixZWs[N];
-		double translationMatrixWXs[N];
-		double translationMatrixWYs[N];
-		double translationMatrixWZs[N];
-		double translationMatrixWWs[N];
-		double rotationMatrixXXs[N];
-		double rotationMatrixXYs[N];
-		double rotationMatrixXZs[N];
-		double rotationMatrixXWs[N];
-		double rotationMatrixYXs[N];
-		double rotationMatrixYYs[N];
-		double rotationMatrixYZs[N];
-		double rotationMatrixYWs[N];
-		double rotationMatrixZXs[N];
-		double rotationMatrixZYs[N];
-		double rotationMatrixZZs[N];
-		double rotationMatrixZWs[N];
-		double rotationMatrixWXs[N];
-		double rotationMatrixWYs[N];
-		double rotationMatrixWZs[N];
-		double rotationMatrixWWs[N];
-		double scaleMatrixXXs[N];
-		double scaleMatrixXYs[N];
-		double scaleMatrixXZs[N];
-		double scaleMatrixXWs[N];
-		double scaleMatrixYXs[N];
-		double scaleMatrixYYs[N];
-		double scaleMatrixYZs[N];
-		double scaleMatrixYWs[N];
-		double scaleMatrixZXs[N];
-		double scaleMatrixZYs[N];
-		double scaleMatrixZZs[N];
-		double scaleMatrixZWs[N];
-		double scaleMatrixWXs[N];
-		double scaleMatrixWYs[N];
-		double scaleMatrixWZs[N];
-		double scaleMatrixWWs[N];
-		for (int i = 0; i < N; i++)
-		{
-			// @todo: this isn't taking meshIndex anymore
-			preScaleTranslationXs[i] = transformCache.preScaleTranslationX;
-			preScaleTranslationYs[i] = transformCache.preScaleTranslationY;
-			preScaleTranslationZs[i] = transformCache.preScaleTranslationZ;
-			translationMatrixXXs[i] = transformCache.translationMatrixXX;
-			translationMatrixXYs[i] = transformCache.translationMatrixXY;
-			translationMatrixXZs[i] = transformCache.translationMatrixXZ;
-			translationMatrixXWs[i] = transformCache.translationMatrixXW;
-			translationMatrixYXs[i] = transformCache.translationMatrixYX;
-			translationMatrixYYs[i] = transformCache.translationMatrixYY;
-			translationMatrixYZs[i] = transformCache.translationMatrixYZ;
-			translationMatrixYWs[i] = transformCache.translationMatrixYW;
-			translationMatrixZXs[i] = transformCache.translationMatrixZX;
-			translationMatrixZYs[i] = transformCache.translationMatrixZY;
-			translationMatrixZZs[i] = transformCache.translationMatrixZZ;
-			translationMatrixZWs[i] = transformCache.translationMatrixZW;
-			translationMatrixWXs[i] = transformCache.translationMatrixWX;
-			translationMatrixWYs[i] = transformCache.translationMatrixWY;
-			translationMatrixWZs[i] = transformCache.translationMatrixWZ;
-			translationMatrixWWs[i] = transformCache.translationMatrixWW;
-			rotationMatrixXXs[i] = transformCache.rotationMatrixXX;
-			rotationMatrixXYs[i] = transformCache.rotationMatrixXY;
-			rotationMatrixXZs[i] = transformCache.rotationMatrixXZ;
-			rotationMatrixXWs[i] = transformCache.rotationMatrixXW;
-			rotationMatrixYXs[i] = transformCache.rotationMatrixYX;
-			rotationMatrixYYs[i] = transformCache.rotationMatrixYY;
-			rotationMatrixYZs[i] = transformCache.rotationMatrixYZ;
-			rotationMatrixYWs[i] = transformCache.rotationMatrixYW;
-			rotationMatrixZXs[i] = transformCache.rotationMatrixZX;
-			rotationMatrixZYs[i] = transformCache.rotationMatrixZY;
-			rotationMatrixZZs[i] = transformCache.rotationMatrixZZ;
-			rotationMatrixZWs[i] = transformCache.rotationMatrixZW;
-			rotationMatrixWXs[i] = transformCache.rotationMatrixWX;
-			rotationMatrixWYs[i] = transformCache.rotationMatrixWY;
-			rotationMatrixWZs[i] = transformCache.rotationMatrixWZ;
-			rotationMatrixWWs[i] = transformCache.rotationMatrixWW;
-			scaleMatrixXXs[i] = transformCache.scaleMatrixXX;
-			scaleMatrixXYs[i] = transformCache.scaleMatrixXY;
-			scaleMatrixXZs[i] = transformCache.scaleMatrixXZ;
-			scaleMatrixXWs[i] = transformCache.scaleMatrixXW;
-			scaleMatrixYXs[i] = transformCache.scaleMatrixYX;
-			scaleMatrixYYs[i] = transformCache.scaleMatrixYY;
-			scaleMatrixYZs[i] = transformCache.scaleMatrixYZ;
-			scaleMatrixYWs[i] = transformCache.scaleMatrixYW;
-			scaleMatrixZXs[i] = transformCache.scaleMatrixZX;
-			scaleMatrixZYs[i] = transformCache.scaleMatrixZY;
-			scaleMatrixZZs[i] = transformCache.scaleMatrixZZ;
-			scaleMatrixZWs[i] = transformCache.scaleMatrixZW;
-			scaleMatrixWXs[i] = transformCache.scaleMatrixWX;
-			scaleMatrixWYs[i] = transformCache.scaleMatrixWY;
-			scaleMatrixWZs[i] = transformCache.scaleMatrixWZ;
-			scaleMatrixWWs[i] = transformCache.scaleMatrixWW;
-		}
-
-		// Translate down so floor vertices go underground and ceiling is at y=0.
-		const double preScaleTranslationWs[N] = { 0.0 };
-		double vertexWithPreScaleTranslationXs[N];
-		double vertexWithPreScaleTranslationYs[N];
-		double vertexWithPreScaleTranslationZs[N];
-		double vertexWithPreScaleTranslationWs[N];
-		Double4_AddN<N>(vertexXs, vertexYs, vertexZs, vertexWs,
-			preScaleTranslationXs, preScaleTranslationYs, preScaleTranslationZs, preScaleTranslationWs,
-			vertexWithPreScaleTranslationXs, vertexWithPreScaleTranslationYs, vertexWithPreScaleTranslationZs, vertexWithPreScaleTranslationWs);
-
-		// Shrink towards y=0 depending on anim percent and door min visible amount.
-		double scaledVertexXs[N] = { 0.0 };
-		double scaledVertexYs[N] = { 0.0 };
-		double scaledVertexZs[N] = { 0.0 };
-		double scaledVertexWs[N] = { 0.0 };
-		Matrix4_MultiplyVectorN<N>(
-			scaleMatrixXXs, scaleMatrixXYs, scaleMatrixXZs, scaleMatrixXWs,
-			scaleMatrixYXs, scaleMatrixYYs, scaleMatrixYZs, scaleMatrixYWs,
-			scaleMatrixZXs, scaleMatrixZYs, scaleMatrixZZs, scaleMatrixZWs,
-			scaleMatrixWXs, scaleMatrixWYs, scaleMatrixWZs, scaleMatrixWWs,
-			vertexWithPreScaleTranslationXs, vertexWithPreScaleTranslationYs, vertexWithPreScaleTranslationZs, vertexWithPreScaleTranslationWs,
-			scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs);
-
-		// Translate up to new model space Y position.
-		double resultVertexXs[N];
-		double resultVertexYs[N];
-		double resultVertexZs[N];
-		double resultVertexWs[N];
-		Double4_SubtractN<N>(scaledVertexXs, scaledVertexYs, scaledVertexZs, scaledVertexWs,
-			preScaleTranslationXs, preScaleTranslationYs, preScaleTranslationZs, preScaleTranslationWs,
-			resultVertexXs, resultVertexYs, resultVertexZs, resultVertexWs);
-
-		// Apply rotation matrix.
-		double rotatedResultVertexXs[N] = { 0.0 };
-		double rotatedResultVertexYs[N] = { 0.0 };
-		double rotatedResultVertexZs[N] = { 0.0 };
-		double rotatedResultVertexWs[N] = { 0.0 };
-		Matrix4_MultiplyVectorN<N>(
-			rotationMatrixXXs, rotationMatrixXYs, rotationMatrixXZs, rotationMatrixXWs,
-			rotationMatrixYXs, rotationMatrixYYs, rotationMatrixYZs, rotationMatrixYWs,
-			rotationMatrixZXs, rotationMatrixZYs, rotationMatrixZZs, rotationMatrixZWs,
-			rotationMatrixWXs, rotationMatrixWYs, rotationMatrixWZs, rotationMatrixWWs,
-			resultVertexXs, resultVertexYs, resultVertexZs, resultVertexWs,
-			rotatedResultVertexXs, rotatedResultVertexYs, rotatedResultVertexZs, rotatedResultVertexWs);
-
-		// Apply translation matrix.
-		double translatedResultVertexXs[N] = { 0.0 };
-		double translatedResultVertexYs[N] = { 0.0 };
-		double translatedResultVertexZs[N] = { 0.0 };
-		double translatedResultVertexWs[N] = { 0.0 };
-		Matrix4_MultiplyVectorN<N>(
-			translationMatrixXXs, translationMatrixXYs, translationMatrixXZs, translationMatrixXWs,
-			translationMatrixYXs, translationMatrixYYs, translationMatrixYZs, translationMatrixYWs,
-			translationMatrixZXs, translationMatrixZYs, translationMatrixZZs, translationMatrixZWs,
-			translationMatrixWXs, translationMatrixWYs, translationMatrixWZs, translationMatrixWWs,
-			rotatedResultVertexXs, rotatedResultVertexYs, rotatedResultVertexZs, rotatedResultVertexWs,
-			translatedResultVertexXs, translatedResultVertexYs, translatedResultVertexZs, translatedResultVertexWs);
-
-		// Apply view-projection matrix.
-		Matrix4_MultiplyVectorN<N>(
-			g_viewProjMatrixXX, g_viewProjMatrixXY, g_viewProjMatrixXZ, g_viewProjMatrixXW,
-			g_viewProjMatrixYX, g_viewProjMatrixYY, g_viewProjMatrixYZ, g_viewProjMatrixYW,
-			g_viewProjMatrixZX, g_viewProjMatrixZY, g_viewProjMatrixZZ, g_viewProjMatrixZW,
-			g_viewProjMatrixWX, g_viewProjMatrixWY, g_viewProjMatrixWZ, g_viewProjMatrixWW,
-			translatedResultVertexXs, translatedResultVertexYs, translatedResultVertexZs, translatedResultVertexWs,
 			outVertexXs, outVertexYs, outVertexZs, outVertexWs);
 	}
 
@@ -1540,11 +1240,11 @@ namespace
 
 		PixelShaderUniforms()
 		{
-			screenSpaceAnimPercent = 0.0;
+			this->screenSpaceAnimPercent = 0.0;
 		}
 	};
 
-	const SoftwareLight *g_visibleLights[MAX_LIGHTS_IN_FRUSTUM];
+	SoftwareLight g_visibleLights[MAX_LIGHTS_IN_FRUSTUM];
 	int g_visibleLightCount;
 	Buffer2D<LightBin> g_lightBins; // Populated each frame, shared by all workers.
 
@@ -1553,18 +1253,30 @@ namespace
 	Double2 g_horizonScreenSpacePoint; // For puddle reflections.
 	const SoftwareObjectTexture *g_paletteTexture; // 8-bit -> 32-bit color conversion palette.
 	const SoftwareObjectTexture *g_lightTableTexture; // Shading/transparency look-ups.
+	const SoftwareObjectTexture *g_ditherTexture; // Screen-space dithering for lighting.
 	const SoftwareObjectTexture *g_skyBgTexture; // Fallback sky texture for horizon reflection shader.
 
-	void PopulateLightGlobals(Span<const RenderLightID> visibleLightIDs, const SoftwareLightPool &lightPool, const RenderCamera &camera,
-		int frameBufferWidth, int frameBufferHeight)
+	void PopulateVisibleLights(const SoftwareUniformBuffer &visibleLightsBuffer, int visibleLightCount)
 	{
-		std::fill(std::begin(g_visibleLights), std::end(g_visibleLights), nullptr);
-		g_visibleLightCount = std::min<int>(visibleLightIDs.getCount(), std::size(g_visibleLights));
+		std::fill(std::begin(g_visibleLights), std::end(g_visibleLights), SoftwareLight());
+		g_visibleLightCount = std::min(visibleLightCount, MAX_LIGHTS_IN_FRUSTUM);
+
+		// Read visible lights from uniform buffer and cache values to reduce shading work.
+		const std::byte *visibleLightsBytes = visibleLightsBuffer.begin();
 		for (int i = 0; i < g_visibleLightCount; i++)
 		{
-			g_visibleLights[i] = &lightPool.get(visibleLightIDs[i]);
-		}
+			const double *currentVisibleLightValues = reinterpret_cast<const double*>(visibleLightsBytes + (visibleLightsBuffer.bytesPerElement * i));
+			const Double3 currentVisibleLightPosition(currentVisibleLightValues[0], currentVisibleLightValues[1], currentVisibleLightValues[2]);
+			const double currentVisibleLightStartRadius = currentVisibleLightValues[3];
+			const double currentVisibleLightEndRadius = currentVisibleLightValues[4];
 
+			SoftwareLight &optimizedVisibleLight = g_visibleLights[i];
+			optimizedVisibleLight.init(currentVisibleLightPosition, currentVisibleLightStartRadius, currentVisibleLightEndRadius);
+		}
+	}
+
+	void InitLightBins(int frameBufferWidth, int frameBufferHeight)
+	{
 		const int lightBinWidth = GetLightBinWidth(frameBufferWidth);
 		const int lightBinHeight = GetLightBinHeight(frameBufferHeight);
 		const int lightBinCountX = GetLightBinCountX(frameBufferWidth, lightBinWidth);
@@ -1573,70 +1285,72 @@ namespace
 		{
 			g_lightBins.init(lightBinCountX, lightBinCountY);
 		}
+	}
 
+	void PopulateLightBin(int binX, int binY, const RenderCamera &camera, int frameBufferWidth, int frameBufferHeight)
+	{
 		const double frameBufferWidthReal = static_cast<double>(frameBufferWidth);
 		const double frameBufferHeightReal = static_cast<double>(frameBufferHeight);
 
-		for (int binY = 0; binY < g_lightBins.getHeight(); binY++)
+		const int lightBinWidth = GetLightBinWidth(frameBufferWidth);
+		const int lightBinHeight = GetLightBinHeight(frameBufferHeight);
+
+		const int binStartFrameBufferPixelX = BinPixelToFrameBufferPixel(binX, 0, lightBinWidth);
+		const int binEndFrameBufferPixelX = BinPixelToFrameBufferPixel(binX, lightBinWidth, lightBinWidth);
+		const double binStartFrameBufferPercentX = static_cast<double>(binStartFrameBufferPixelX) / frameBufferWidthReal;
+		const double binEndFrameBufferPercentX = static_cast<double>(binEndFrameBufferPixelX) / frameBufferWidthReal;
+
+		const int binStartFrameBufferPixelY = BinPixelToFrameBufferPixel(binY, 0, lightBinHeight);
+		const int binEndFrameBufferPixelY = BinPixelToFrameBufferPixel(binY, lightBinHeight, lightBinHeight);
+		const double binStartFrameBufferPercentY = static_cast<double>(binStartFrameBufferPixelY) / frameBufferHeightReal;
+		const double binEndFrameBufferPercentY = static_cast<double>(binEndFrameBufferPixelY) / frameBufferHeightReal;
+
+		LightBin &lightBin = g_lightBins.get(binX, binY);
+		lightBin.lightCount = 0;
+
+		Double3 frustumDirLeft, frustumDirRight, frustumDirBottom, frustumDirTop;
+		Double3 frustumNormalLeft, frustumNormalRight, frustumNormalBottom, frustumNormalTop;
+		camera.createFrustumVectors(binStartFrameBufferPercentX, binEndFrameBufferPercentX, binStartFrameBufferPercentY, binEndFrameBufferPercentY,
+			&frustumDirLeft, &frustumDirRight, &frustumDirBottom, &frustumDirTop, &frustumNormalLeft, &frustumNormalRight, &frustumNormalBottom, &frustumNormalTop);
+
+		for (int visibleLightIndex = 0; visibleLightIndex < g_visibleLightCount; visibleLightIndex++)
 		{
-			const int binStartFrameBufferPixelY = BinPixelToFrameBufferPixel(binY, 0, lightBinHeight);
-			const int binEndFrameBufferPixelY = BinPixelToFrameBufferPixel(binY, lightBinHeight, lightBinHeight);
-			const double binStartFrameBufferPercentY = static_cast<double>(binStartFrameBufferPixelY) / frameBufferHeightReal;
-			const double binEndFrameBufferPercentY = static_cast<double>(binEndFrameBufferPixelY) / frameBufferHeightReal;
+			const SoftwareLight &light = g_visibleLights[visibleLightIndex];
+			const Double3 lightPosition(light.pointX, light.pointY, light.pointZ);
+			const double lightWidth = light.endRadius * 2.0;
+			const double lightHeight = lightWidth;
+			const double lightDepth = lightWidth;
+			BoundingBox3D lightBBox;
+			lightBBox.init(lightPosition, lightWidth, lightHeight, lightDepth);
 
-			for (int binX = 0; binX < g_lightBins.getWidth(); binX++)
+			bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
+			RendererUtils::getBBoxVisibilityInFrustum(lightBBox, camera.worldPoint, camera.forward, frustumNormalLeft, frustumNormalRight,
+				frustumNormalBottom, frustumNormalTop, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
+			if (isBBoxCompletelyInvisible)
 			{
-				const int binStartFrameBufferPixelX = BinPixelToFrameBufferPixel(binX, 0, lightBinWidth);
-				const int binEndFrameBufferPixelX = BinPixelToFrameBufferPixel(binX, lightBinWidth, lightBinWidth);
-				const double binStartFrameBufferPercentX = static_cast<double>(binStartFrameBufferPixelX) / frameBufferWidthReal;
-				const double binEndFrameBufferPercentX = static_cast<double>(binEndFrameBufferPixelX) / frameBufferWidthReal;
-
-				LightBin &lightBin = g_lightBins.get(binX, binY);
-				lightBin.lightCount = 0;
-
-				Double3 frustumDirLeft, frustumDirRight, frustumDirBottom, frustumDirTop;
-				Double3 frustumNormalLeft, frustumNormalRight, frustumNormalBottom, frustumNormalTop;
-				camera.createFrustumVectors(binStartFrameBufferPercentX, binEndFrameBufferPercentX, binStartFrameBufferPercentY, binEndFrameBufferPercentY,
-					&frustumDirLeft, &frustumDirRight, &frustumDirBottom, &frustumDirTop, &frustumNormalLeft, &frustumNormalRight, &frustumNormalBottom, &frustumNormalTop);
-
-				for (int visibleLightIndex = 0; visibleLightIndex < g_visibleLightCount; visibleLightIndex++)
-				{
-					const SoftwareLight &light = *g_visibleLights[visibleLightIndex];
-					const Double3 lightPosition(light.worldPointX, light.worldPointY, light.worldPointZ);
-					const double lightWidth = light.endRadius * 2.0;
-					const double lightHeight = lightWidth;
-					const double lightDepth = lightWidth;
-					BoundingBox3D lightBBox;
-					lightBBox.init(lightPosition, lightWidth, lightHeight, lightDepth);
-
-					bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
-					RendererUtils::getBBoxVisibilityInFrustum(lightBBox, camera.worldPoint, camera.forward, frustumNormalLeft, frustumNormalRight,
-						frustumNormalBottom, frustumNormalTop, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
-					if (isBBoxCompletelyInvisible)
-					{
-						continue;
-					}
-
-					if (lightBin.lightCount >= MAX_LIGHTS_PER_LIGHT_BIN)
-					{
-						continue;
-					}
-
-					lightBin.lightIndices[lightBin.lightCount] = visibleLightIndex;
-					lightBin.lightCount++;
-				}
+				continue;
 			}
+
+			if (lightBin.lightCount >= MAX_LIGHTS_PER_LIGHT_BIN)
+			{
+				continue;
+			}
+
+			lightBin.lightIndices[lightBin.lightCount] = visibleLightIndex;
+			lightBin.lightCount++;
 		}
 	}
 
 	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const Double3 &horizonNdcPoint,
-		const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &skyBgTexture)
+		const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &ditherTexture,
+		const SoftwareObjectTexture &skyBgTexture)
 	{
 		g_ambientPercent = ambientPercent;
 		g_screenSpaceAnimPercent = screenSpaceAnimPercent;
 		g_horizonScreenSpacePoint = RendererUtils::ndcToScreenSpace(horizonNdcPoint, g_frameBufferWidthReal, g_frameBufferHeightReal);
 		g_paletteTexture = &paletteTexture;
 		g_lightTableTexture = &lightTableTexture;
+		g_ditherTexture = &ditherTexture;
 		g_skyBgTexture = &skyBgTexture;
 	}
 }
@@ -1770,55 +1484,15 @@ namespace
 
 	void CalculateVertexShaderTransforms(TransformCache &transformCache)
 	{
-		double rotationScaleMatrixXX, rotationScaleMatrixXY, rotationScaleMatrixXZ, rotationScaleMatrixXW;
-		double rotationScaleMatrixYX, rotationScaleMatrixYY, rotationScaleMatrixYZ, rotationScaleMatrixYW;
-		double rotationScaleMatrixZX, rotationScaleMatrixZY, rotationScaleMatrixZZ, rotationScaleMatrixZW;
-		double rotationScaleMatrixWX, rotationScaleMatrixWY, rotationScaleMatrixWZ, rotationScaleMatrixWW;
-		double modelMatrixXX, modelMatrixXY, modelMatrixXZ, modelMatrixXW;
-		double modelMatrixYX, modelMatrixYY, modelMatrixYZ, modelMatrixYW;
-		double modelMatrixZX, modelMatrixZY, modelMatrixZZ, modelMatrixZW;
-		double modelMatrixWX, modelMatrixWY, modelMatrixWZ, modelMatrixWW;
-
-		// Rotation-scale matrix
-		Matrix4_MultiplyMatrixN<1>(
-			&transformCache.rotationMatrixXX, &transformCache.rotationMatrixXY, &transformCache.rotationMatrixXZ, &transformCache.rotationMatrixXW,
-			&transformCache.rotationMatrixYX, &transformCache.rotationMatrixYY, &transformCache.rotationMatrixYZ, &transformCache.rotationMatrixYW,
-			&transformCache.rotationMatrixZX, &transformCache.rotationMatrixZY, &transformCache.rotationMatrixZZ, &transformCache.rotationMatrixZW,
-			&transformCache.rotationMatrixWX, &transformCache.rotationMatrixWY, &transformCache.rotationMatrixWZ, &transformCache.rotationMatrixWW,
-			&transformCache.scaleMatrixXX, &transformCache.scaleMatrixXY, &transformCache.scaleMatrixXZ, &transformCache.scaleMatrixXW,
-			&transformCache.scaleMatrixYX, &transformCache.scaleMatrixYY, &transformCache.scaleMatrixYZ, &transformCache.scaleMatrixYW,
-			&transformCache.scaleMatrixZX, &transformCache.scaleMatrixZY, &transformCache.scaleMatrixZZ, &transformCache.scaleMatrixZW,
-			&transformCache.scaleMatrixWX, &transformCache.scaleMatrixWY, &transformCache.scaleMatrixWZ, &transformCache.scaleMatrixWW,
-			&rotationScaleMatrixXX, &rotationScaleMatrixXY, &rotationScaleMatrixXZ, &rotationScaleMatrixXW,
-			&rotationScaleMatrixYX, &rotationScaleMatrixYY, &rotationScaleMatrixYZ, &rotationScaleMatrixYW,
-			&rotationScaleMatrixZX, &rotationScaleMatrixZY, &rotationScaleMatrixZZ, &rotationScaleMatrixZW,
-			&rotationScaleMatrixWX, &rotationScaleMatrixWY, &rotationScaleMatrixWZ, &rotationScaleMatrixWW);
-
-		// Model matrix
-		Matrix4_MultiplyMatrixN<1>(
-			&transformCache.translationMatrixXX, &transformCache.translationMatrixXY, &transformCache.translationMatrixXZ, &transformCache.translationMatrixXW,
-			&transformCache.translationMatrixYX, &transformCache.translationMatrixYY, &transformCache.translationMatrixYZ, &transformCache.translationMatrixYW,
-			&transformCache.translationMatrixZX, &transformCache.translationMatrixZY, &transformCache.translationMatrixZZ, &transformCache.translationMatrixZW,
-			&transformCache.translationMatrixWX, &transformCache.translationMatrixWY, &transformCache.translationMatrixWZ, &transformCache.translationMatrixWW,
-			&rotationScaleMatrixXX, &rotationScaleMatrixXY, &rotationScaleMatrixXZ, &rotationScaleMatrixXW,
-			&rotationScaleMatrixYX, &rotationScaleMatrixYY, &rotationScaleMatrixYZ, &rotationScaleMatrixYW,
-			&rotationScaleMatrixZX, &rotationScaleMatrixZY, &rotationScaleMatrixZZ, &rotationScaleMatrixZW,
-			&rotationScaleMatrixWX, &rotationScaleMatrixWY, &rotationScaleMatrixWZ, &rotationScaleMatrixWW,
-			&modelMatrixXX, &modelMatrixXY, &modelMatrixXZ, &modelMatrixXW,
-			&modelMatrixYX, &modelMatrixYY, &modelMatrixYZ, &modelMatrixYW,
-			&modelMatrixZX, &modelMatrixZY, &modelMatrixZZ, &modelMatrixZW,
-			&modelMatrixWX, &modelMatrixWY, &modelMatrixWZ, &modelMatrixWW);
-
-		// Model-view-projection matrix
 		Matrix4_MultiplyMatrixN<1>(
 			g_viewProjMatrixXX, g_viewProjMatrixXY, g_viewProjMatrixXZ, g_viewProjMatrixXW,
 			g_viewProjMatrixYX, g_viewProjMatrixYY, g_viewProjMatrixYZ, g_viewProjMatrixYW,
 			g_viewProjMatrixZX, g_viewProjMatrixZY, g_viewProjMatrixZZ, g_viewProjMatrixZW,
 			g_viewProjMatrixWX, g_viewProjMatrixWY, g_viewProjMatrixWZ, g_viewProjMatrixWW,
-			&modelMatrixXX, &modelMatrixXY, &modelMatrixXZ, &modelMatrixXW,
-			&modelMatrixYX, &modelMatrixYY, &modelMatrixYZ, &modelMatrixYW,
-			&modelMatrixZX, &modelMatrixZY, &modelMatrixZZ, &modelMatrixZW,
-			&modelMatrixWX, &modelMatrixWY, &modelMatrixWZ, &modelMatrixWW,
+			&transformCache.modelMatrixXX, &transformCache.modelMatrixXY, &transformCache.modelMatrixXZ, &transformCache.modelMatrixXW,
+			&transformCache.modelMatrixYX, &transformCache.modelMatrixYY, &transformCache.modelMatrixYZ, &transformCache.modelMatrixYW,
+			&transformCache.modelMatrixZX, &transformCache.modelMatrixZY, &transformCache.modelMatrixZZ, &transformCache.modelMatrixZW,
+			&transformCache.modelMatrixWX, &transformCache.modelMatrixWY, &transformCache.modelMatrixWZ, &transformCache.modelMatrixWW,
 			&transformCache.modelViewProjMatrixXX, &transformCache.modelViewProjMatrixXY, &transformCache.modelViewProjMatrixXZ, &transformCache.modelViewProjMatrixXW,
 			&transformCache.modelViewProjMatrixYX, &transformCache.modelViewProjMatrixYY, &transformCache.modelViewProjMatrixYZ, &transformCache.modelViewProjMatrixYW,
 			&transformCache.modelViewProjMatrixZX, &transformCache.modelViewProjMatrixZY, &transformCache.modelViewProjMatrixZZ, &transformCache.modelViewProjMatrixZW,
@@ -1867,12 +1541,6 @@ namespace
 				VertexShader_BasicN<1>(transformCache, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
 				VertexShader_BasicN<1>(transformCache, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
 				VertexShader_BasicN<1>(transformCache, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
-			}
-			else if (vertexShaderType == VertexShaderType::RaisingDoor)
-			{
-				VertexShader_RaisingDoorN<1>(transformCache, unshadedV0Xs, unshadedV0Ys, unshadedV0Zs, unshadedV0Ws, shadedV0Xs, shadedV0Ys, shadedV0Zs, shadedV0Ws);
-				VertexShader_RaisingDoorN<1>(transformCache, unshadedV1Xs, unshadedV1Ys, unshadedV1Zs, unshadedV1Ws, shadedV1Xs, shadedV1Ys, shadedV1Zs, shadedV1Ws);
-				VertexShader_RaisingDoorN<1>(transformCache, unshadedV2Xs, unshadedV2Ys, unshadedV2Zs, unshadedV2Ws, shadedV2Xs, shadedV2Ys, shadedV2Zs, shadedV2Ws);
 			}
 			else if (vertexShaderType == VertexShaderType::Entity)
 			{
@@ -1923,9 +1591,6 @@ namespace
 		{
 		case VertexShaderType::Basic:
 			ProcessVertexShadersInternal<VertexShaderType::Basic>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
-			break;
-		case VertexShaderType::RaisingDoor:
-			ProcessVertexShadersInternal<VertexShaderType::RaisingDoor>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
 			break;
 		case VertexShaderType::Entity:
 			ProcessVertexShadersInternal<VertexShaderType::Entity>(transformCache, vertexShaderInputCache, vertexShaderOutputCache);
@@ -2831,9 +2496,9 @@ namespace
 	void GetWorldSpaceLightIntensityValue(double pointX, double pointY, double pointZ, const SoftwareLight &__restrict light,
 		double *__restrict outLightIntensity)
 	{
-		const double lightPointDiffX = light.worldPointX - pointX;
-		const double lightPointDiffY = light.worldPointY - pointY;
-		const double lightPointDiffZ = light.worldPointZ - pointZ;
+		const double lightPointDiffX = light.pointX - pointX;
+		const double lightPointDiffY = light.pointY - pointY;
+		const double lightPointDiffZ = light.pointZ - pointZ;
 		const double lightDistanceSqr = (lightPointDiffX * lightPointDiffX) + (lightPointDiffY * lightPointDiffY) + (lightPointDiffZ * lightPointDiffZ);
 		if (lightDistanceSqr <= light.startRadiusSqr)
 		{
@@ -2846,13 +2511,14 @@ namespace
 		else
 		{
 			const double lightDistance = std::sqrt(lightDistanceSqr);
-			const double lightDistancePercent = (lightDistance - light.startRadius) * light.startEndRadiusDiffRecip;
+			const double lightDistancePercent = (lightDistance - light.startRadius) * light.radiusDiffRecip;
 			*outLightIntensity = std::clamp(1.0 - lightDistancePercent, 0.0, 1.0);
 		}
 	}
 
 	template<DitheringMode ditheringMode>
-	void GetScreenSpaceDitherValue(double lightLevelReal, double lightIntensitySum, int pixelIndex, bool *__restrict outShouldDither)
+	void GetScreenSpaceDitherValue(double lightLevelReal, double lightIntensitySum, int pixelX, int pixelY, const uint8_t *ditherTexels,
+		int ditherTextureWidth, int ditherTextureHeight, bool *__restrict outShouldDither)
 	{
 		// Dither the light level in screen space.
 		if constexpr (ditheringMode == DitheringMode::None)
@@ -2861,7 +2527,10 @@ namespace
 		}
 		else if (ditheringMode == DitheringMode::Classic)
 		{
-			*outShouldDither = g_ditherBuffer[pixelIndex];
+			const int ditherTexelX = pixelX % ditherTextureWidth;
+			const int ditherTexelY = pixelY % ditherTextureHeight;
+			const int ditherTexelIndex = ditherTexelX + (ditherTexelY * ditherTextureWidth);
+			*outShouldDither = ditherTexels[ditherTexelIndex] != 0;
 		}
 		else if (ditheringMode == DitheringMode::Modern)
 		{
@@ -2870,8 +2539,15 @@ namespace
 				constexpr int maskCount = DITHERING_MODERN_MASK_COUNT;
 				const double lightLevelFraction = lightLevelReal - std::floor(lightLevelReal);
 				const int maskIndex = std::clamp(static_cast<int>(static_cast<double>(maskCount) * lightLevelFraction), 0, maskCount - 1);
-				const int ditherBufferIndex = pixelIndex + (maskIndex * g_frameBufferPixelCount);
-				*outShouldDither = g_ditherBuffer[ditherBufferIndex];
+
+				// Each dither mask is square, stored vertically.
+				const int ditherTextureMaskHeight = ditherTextureWidth;
+
+				const int ditherTexelX = pixelX % ditherTextureWidth;
+				const int ditherTexelY = pixelY % ditherTextureMaskHeight;
+				const int ditherTexelZ = maskIndex;
+				const int ditherTexelIndex = ditherTexelX + (ditherTexelY * ditherTextureWidth) + (ditherTexelZ * ditherTextureWidth * ditherTextureMaskHeight);
+				*outShouldDither = ditherTexels[ditherTexelIndex] != 0;
 			}
 			else
 			{
@@ -2894,7 +2570,6 @@ namespace
 			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelColor) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit) ||
 			(pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass);
@@ -2944,6 +2619,10 @@ namespace
 		shaderLighting.lightLevelCountReal = static_cast<double>(shaderLighting.lightLevelCount);
 		shaderLighting.lastLightLevel = shaderLighting.lightLevelCount - 1;
 		shaderLighting.texelsPerLightLevel = g_lightTableTexture->width;
+
+		const uint8_t *ditherTexels = g_ditherTexture->texels8Bit;
+		const int ditherTextureWidth = g_ditherTexture->width;
+		const int ditherTextureHeight = g_ditherTexture->height;
 
 		PixelShaderPalette shaderPalette;
 		shaderPalette.colors = g_paletteTexture->texels32Bit;
@@ -3717,7 +3396,7 @@ namespace
 								for (int lightIndex = 0; lightIndex < lightBin.lightCount; lightIndex++)
 								{
 									const int lightBinLightIndex = lightBin.lightIndices[lightIndex];
-									const SoftwareLight &light = *g_visibleLights[lightBinLightIndex];
+									const SoftwareLight &light = g_visibleLights[lightBinLightIndex];
 									double lightIntensity = 0.0;
 									GetWorldSpaceLightIntensityValue(shaderWorldSpacePointX[i], shaderWorldSpacePointY[i], shaderWorldSpacePointZ[i], light, &lightIntensity);
 									lightIntensitySum[i] += lightIntensity;
@@ -3758,7 +3437,8 @@ namespace
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
-								GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal[i], lightIntensitySum[i], frameBufferPixelIndex[i], &shouldDither[i]);
+								GetScreenSpaceDitherValue<ditheringMode>(lightLevelReal[i], lightIntensitySum[i], frameBufferPixelX[i], frameBufferPixelY[yUnrollIndex],
+									ditherTexels, ditherTextureWidth, ditherTextureHeight, &shouldDither[i]);
 							}
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
@@ -3971,7 +3651,7 @@ namespace
 	void RasterizeMeshDispatchPixelShaderType(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
-		static_assert(PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass == PIXEL_SHADER_TYPE_MAX);
+		static_assert(PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass == OBJECT_PIXEL_SHADER_TYPE_MAX);
 		const PixelShaderType pixelShaderType = drawCallCache.pixelShaderType;
 
 		switch (pixelShaderType)
@@ -3999,9 +3679,6 @@ namespace
 			break;
 		case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
-			break;
-		case PixelShaderType::AlphaTestedWithLightLevelColor:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelColor>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		case PixelShaderType::AlphaTestedWithLightLevelOpacity:
 			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
@@ -4108,6 +3785,19 @@ namespace
 				double *depthBufferClearStart = g_depthBuffer + (frameBufferClearStartY * g_frameBufferWidth);
 				double *depthBufferClearEnd = depthBufferClearStart + (frameBufferClearRowCount * g_frameBufferWidth);
 				std::fill(depthBufferClearStart, depthBufferClearEnd, std::numeric_limits<double>::infinity());
+			}
+
+			// Populate light bins associated with this worker.
+			const int lightBinCountX = g_lightBins.getWidth();
+			const int lightBinCountY = g_lightBins.getHeight();
+			const int lightBinCount = lightBinCountX * lightBinCountY;
+			const int firstLightBinIndex = workerIndex;
+			const int lightBinIndexDelta = g_workers.getCount();
+			for (int lightBinIndex = firstLightBinIndex; lightBinIndex < lightBinCount; lightBinIndex += lightBinIndexDelta)
+			{
+				const int lightBinX = lightBinIndex % lightBinCountX;
+				const int lightBinY = lightBinIndex / lightBinCountX;
+				PopulateLightBin(lightBinX, lightBinY, g_camera, g_frameBufferWidth, g_frameBufferHeight);
 			}
 
 			workerLock.lock();
@@ -4308,23 +3998,23 @@ void SoftwareIndexBuffer::init(int indexCount)
 SoftwareUniformBuffer::SoftwareUniformBuffer()
 {
 	this->elementCount = 0;
-	this->sizeOfElement = 0;
+	this->bytesPerElement = 0;
 	this->alignmentOfElement = 0;
 }
 
-void SoftwareUniformBuffer::init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
+void SoftwareUniformBuffer::init(int elementCount, int bytesPerElement, int alignmentOfElement)
 {
 	DebugAssert(elementCount >= 0);
-	DebugAssert(sizeOfElement > 0);
+	DebugAssert(bytesPerElement > 0);
 	DebugAssert(alignmentOfElement > 0);
 
 	this->elementCount = elementCount;
-	this->sizeOfElement = sizeOfElement;
+	this->bytesPerElement = bytesPerElement;
 	this->alignmentOfElement = alignmentOfElement;
 
-	const size_t padding = this->alignmentOfElement - 1; // Add padding in case of alignment.
-	const size_t byteCount = (elementCount * this->sizeOfElement) + padding;
-	this->bytes.init(static_cast<int>(byteCount));
+	const int padding = this->alignmentOfElement - 1; // Add padding in case of alignment.
+	const int byteCount = (elementCount * this->bytesPerElement) + padding;
+	this->bytes.init(byteCount);
 }
 
 std::byte *SoftwareUniformBuffer::begin()
@@ -4359,7 +4049,7 @@ std::byte *SoftwareUniformBuffer::end()
 		return nullptr;
 	}
 
-	return beginPtr + (this->elementCount * this->sizeOfElement);
+	return beginPtr + (this->elementCount * this->bytesPerElement);
 }
 
 const std::byte *SoftwareUniformBuffer::end() const
@@ -4370,7 +4060,7 @@ const std::byte *SoftwareUniformBuffer::end() const
 		return nullptr;
 	}
 
-	return beginPtr + (this->elementCount * this->sizeOfElement);
+	return beginPtr + (this->elementCount * this->bytesPerElement);
 }
 
 int SoftwareUniformBuffer::getValidByteCount() const
@@ -4378,111 +4068,71 @@ int SoftwareUniformBuffer::getValidByteCount() const
 	return static_cast<int>(this->end() - this->begin());
 }
 
+SoftwareMaterial::SoftwareMaterial()
+{
+	this->vertexShaderType = static_cast<VertexShaderType>(-1);
+	this->pixelShaderType = static_cast<PixelShaderType>(-1);
+
+	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
+	this->textureCount = 0;
+
+	this->lightingType = static_cast<RenderLightingType>(-1);
+
+	this->enableBackFaceCulling = false;
+	this->enableDepthRead = false;
+	this->enableDepthWrite = false;
+}
+
+void SoftwareMaterial::init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
+	RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite)
+{
+	this->vertexShaderType = vertexShaderType;
+	this->pixelShaderType = pixelShaderType;
+
+	DebugAssert(textureIDs.getCount() <= std::size(this->textureIDs));
+	std::copy(textureIDs.begin(), textureIDs.end(), std::begin(this->textureIDs));
+	this->textureCount = textureIDs.getCount();
+
+	this->lightingType = lightingType;
+
+	this->enableBackFaceCulling = enableBackFaceCulling;
+	this->enableDepthRead = enableDepthRead;
+	this->enableDepthWrite = enableDepthWrite;
+}
+
+SoftwareMaterialInstance::SoftwareMaterialInstance()
+{
+	this->meshLightPercent = 0.0;
+	this->pixelShaderParam0 = 0.0;
+}
+
 SoftwareLight::SoftwareLight()
 {
-	this->worldPointX = 0.0;
-	this->worldPointY = 0.0;
-	this->worldPointZ = 0.0;
+	this->pointX = 0.0;
+	this->pointY = 0.0;
+	this->pointZ = 0.0;
 	this->startRadius = 0.0;
 	this->startRadiusSqr = 0.0;
 	this->endRadius = 0.0;
 	this->endRadiusSqr = 0.0;
-	this->startEndRadiusDiff = 0.0;
-	this->startEndRadiusDiffRecip = 0.0;
+	this->radiusDiffRecip = 0.0;
 }
 
-void SoftwareLight::init(const Double3 &worldPoint, double startRadius, double endRadius)
+void SoftwareLight::init(const Double3 &point, double startRadius, double endRadius)
 {
-	this->worldPointX = worldPoint.x;
-	this->worldPointY = worldPoint.y;
-	this->worldPointZ = worldPoint.z;
+	this->pointX = point.x;
+	this->pointY = point.y;
+	this->pointZ = point.z;
 	this->startRadius = startRadius;
 	this->startRadiusSqr = startRadius * startRadius;
 	this->endRadius = endRadius;
 	this->endRadiusSqr = endRadius * endRadius;
-	this->startEndRadiusDiff = endRadius - startRadius;
-	this->startEndRadiusDiffRecip = 1.0 / this->startEndRadiusDiff;
-}
-
-SoftwareObjectTextureAllocator::SoftwareObjectTextureAllocator()
-{
-	this->pool = nullptr;
-}
-
-void SoftwareObjectTextureAllocator::init(SoftwareObjectTexturePool *pool)
-{
-	this->pool = pool;
-}
-
-ObjectTextureID SoftwareObjectTextureAllocator::create(int width, int height, int bytesPerTexel)
-{
-	const ObjectTextureID textureID = this->pool->alloc();
-	if (textureID < 0)
-	{
-		DebugLogErrorFormat("Couldn't allocate software object texture with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
-		return -1;
-	}
-
-	SoftwareObjectTexture &texture = this->pool->get(textureID);
-	texture.init(width, height, bytesPerTexel);
-	return textureID;
-}
-
-ObjectTextureID SoftwareObjectTextureAllocator::create(const TextureBuilder &textureBuilder)
-{
-	const int width = textureBuilder.width;
-	const int height = textureBuilder.height;
-	const int bytesPerTexel = textureBuilder.bytesPerTexel;
-
-	const ObjectTextureID textureID = this->create(width, height, bytesPerTexel);
-	if (textureID < 0)
-	{
-		DebugLogErrorFormat("Couldn't allocate software object texture from texture builder with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
-		return -1;
-	}
-
-	SoftwareObjectTexture &texture = this->pool->get(textureID);
-
-	if (bytesPerTexel == 1)
-	{
-		Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
-		uint8_t *dstTexels = reinterpret_cast<uint8_t*>(texture.texels.begin());
-		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
-	}
-	else if (bytesPerTexel == 4)
-	{
-		Span2D<const uint32_t> srcTexels = textureBuilder.getTexels32();
-		uint32_t *dstTexels = reinterpret_cast<uint32_t*>(texture.texels.begin());
-		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels);
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(bool, std::to_string(bytesPerTexel));
-	}
-
-	return textureID;
-}
-
-void SoftwareObjectTextureAllocator::free(ObjectTextureID textureID)
-{
-	this->pool->free(textureID);
-}
-
-LockedTexture SoftwareObjectTextureAllocator::lock(ObjectTextureID textureID)
-{
-	SoftwareObjectTexture &texture = this->pool->get(textureID);
-	return LockedTexture(Span2D<std::byte>(static_cast<std::byte*>(texture.texels.begin()), texture.width, texture.height), texture.bytesPerTexel);
-}
-
-void SoftwareObjectTextureAllocator::unlock(ObjectTextureID textureID)
-{
-	// Do nothing; any writes are already in RAM.
-	static_cast<void>(textureID);
+	this->radiusDiffRecip = 1.0 / (endRadius - startRadius);
 }
 
 SoftwareRenderer::SoftwareRenderer()
 {
-	this->ditheringMode = static_cast<DitheringMode>(-1);
+
 }
 
 SoftwareRenderer::~SoftwareRenderer()
@@ -4490,34 +4140,30 @@ SoftwareRenderer::~SoftwareRenderer()
 
 }
 
-void SoftwareRenderer::init(const RenderInitSettings &settings)
+bool SoftwareRenderer::init(const RenderInitSettings &initSettings)
 {
-	const int frameBufferWidth = settings.width;
-	const int frameBufferHeight = settings.height;
+	const int frameBufferWidth = initSettings.internalWidth;
+	const int frameBufferHeight = initSettings.internalHeight;
 	this->paletteIndexBuffer.init(frameBufferWidth, frameBufferHeight);
 	this->depthBuffer.init(frameBufferWidth, frameBufferHeight);
 
-	CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
-	this->ditheringMode = settings.ditheringMode;
-
-	this->textureAllocator.init(&this->objectTextures);
-
-	const int workerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
+	const int workerCount = RendererUtils::getRenderThreadsFromMode(initSettings.renderThreadsMode);
 	InitializeWorkers(workerCount, frameBufferWidth, frameBufferHeight);
+
+	return true;
 }
 
 void SoftwareRenderer::shutdown()
 {
 	this->paletteIndexBuffer.clear();
 	this->depthBuffer.clear();
-	this->ditherBuffer.clear();
-	this->ditheringMode = static_cast<DitheringMode>(-1);
 	this->positionBuffers.clear();
 	this->attributeBuffers.clear();
 	this->indexBuffers.clear();
 	this->uniformBuffers.clear();
 	this->objectTextures.clear();
-	this->lights.clear();
+	this->materials.clear();
+	this->materialInsts.clear();
 	ShutdownWorkers();
 }
 
@@ -4534,18 +4180,46 @@ void SoftwareRenderer::resize(int width, int height)
 	this->depthBuffer.init(width, height);
 	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
 
-	CreateDitherBuffer(this->ditherBuffer, width, height, this->ditheringMode);
-
 	for (Worker &worker : g_workers)
 	{
 		worker.rasterizerInputCache.createBins(width, height);
 	}
 }
 
-VertexPositionBufferID SoftwareRenderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
+RendererProfilerData3D SoftwareRenderer::getProfilerData() const
+{
+	RendererProfilerData3D profilerData;
+	profilerData.width = this->paletteIndexBuffer.getWidth();
+	profilerData.height = this->paletteIndexBuffer.getHeight();
+	profilerData.threadCount = g_workers.getCount();
+	profilerData.drawCallCount = g_totalDrawCallCount;
+	profilerData.presentedTriangleCount = g_totalPresentedTriangleCount;
+	profilerData.objectTextureCount = this->objectTextures.getCount();
+
+	for (const SoftwareObjectTexture &texture : this->objectTextures.values)
+	{
+		profilerData.objectTextureByteCount += texture.texels.getCount();
+	}
+
+	profilerData.materialCount = static_cast<int>(this->materials.values.size());
+	profilerData.totalLightCount = g_visibleLightCount;
+	profilerData.totalCoverageTests = g_totalCoverageTests;
+	profilerData.totalDepthTests = g_totalDepthTests;
+	profilerData.totalColorWrites = g_totalColorWrites;
+
+	return profilerData;
+}
+
+int SoftwareRenderer::getBytesPerFloat() const
+{
+	return sizeof(double);
+}
+
+VertexPositionBufferID SoftwareRenderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent)
 {
 	DebugAssert(vertexCount > 0);
 	DebugAssert(componentsPerVertex >= 2);
+	DebugAssert(bytesPerComponent == sizeof(double));
 
 	const VertexPositionBufferID id = this->positionBuffers.alloc();
 	if (id < 0)
@@ -4559,10 +4233,31 @@ VertexPositionBufferID SoftwareRenderer::createVertexPositionBuffer(int vertexCo
 	return id;
 }
 
-VertexAttributeBufferID SoftwareRenderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
+void SoftwareRenderer::freeVertexPositionBuffer(VertexPositionBufferID id)
+{
+	this->positionBuffers.free(id);
+}
+
+LockedBuffer SoftwareRenderer::lockVertexPositionBuffer(VertexPositionBufferID id)
+{
+	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(id);
+	const int elementCount = buffer.positions.getCount();
+	const int bytesPerElement = sizeof(double);
+	const int byteCount = elementCount * bytesPerElement;
+	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.positions.begin()), byteCount), elementCount, bytesPerElement, bytesPerElement);
+}
+
+void SoftwareRenderer::unlockVertexPositionBuffer(VertexPositionBufferID id)
+{
+	// Do nothing, writes are already in RAM.
+	static_cast<void>(id);
+}
+
+VertexAttributeBufferID SoftwareRenderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent)
 {
 	DebugAssert(vertexCount > 0);
 	DebugAssert(componentsPerVertex >= 2);
+	DebugAssert(bytesPerComponent == sizeof(double));
 
 	const VertexAttributeBufferID id = this->attributeBuffers.alloc();
 	if (id < 0)
@@ -4576,10 +4271,31 @@ VertexAttributeBufferID SoftwareRenderer::createVertexAttributeBuffer(int vertex
 	return id;
 }
 
-IndexBufferID SoftwareRenderer::createIndexBuffer(int indexCount)
+void SoftwareRenderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
+{
+	this->attributeBuffers.free(id);
+}
+
+LockedBuffer SoftwareRenderer::lockVertexAttributeBuffer(VertexAttributeBufferID id)
+{
+	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(id);
+	const int elementCount = buffer.attributes.getCount();
+	const int bytesPerElement = sizeof(double);
+	const int byteCount = elementCount * bytesPerElement;
+	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.attributes.begin()), byteCount), elementCount, bytesPerElement, bytesPerElement);
+}
+
+void SoftwareRenderer::unlockVertexAttributeBuffer(VertexAttributeBufferID id)
+{
+	// Do nothing, writes are already in RAM.
+	static_cast<void>(id);
+}
+
+IndexBufferID SoftwareRenderer::createIndexBuffer(int indexCount, int bytesPerIndex)
 {
 	DebugAssert(indexCount > 0);
 	DebugAssert((indexCount % 3) == 0);
+	DebugAssert(bytesPerIndex == sizeof(int32_t));
 
 	const IndexBufferID id = this->indexBuffers.alloc();
 	if (id < 0)
@@ -4593,129 +4309,42 @@ IndexBufferID SoftwareRenderer::createIndexBuffer(int indexCount)
 	return id;
 }
 
-void SoftwareRenderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
-{
-	SoftwareVertexPositionBuffer &buffer = this->positionBuffers.get(id);
-	const int srcCount = positions.getCount();
-	const int dstCount = buffer.positions.getCount();
-	if (srcCount != dstCount)
-	{
-		DebugLogErrorFormat("Mismatched vertex position buffer sizes for ID %d: %d != %d", id, srcCount, dstCount);
-		return;
-	}
-
-	const auto srcBegin = positions.begin();
-	const auto srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.positions.begin());
-}
-
-void SoftwareRenderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
-{
-	SoftwareVertexAttributeBuffer &buffer = this->attributeBuffers.get(id);
-	const int srcCount = attributes.getCount();
-	const int dstCount = buffer.attributes.getCount();
-	if (srcCount != dstCount)
-	{
-		DebugLogErrorFormat("Mismatched vertex attribute buffer sizes for ID %d: %d != %d", id, srcCount, dstCount);
-		return;
-	}
-
-	const auto srcBegin = attributes.begin();
-	const auto srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.attributes.begin());
-}
-
-void SoftwareRenderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
-{
-	SoftwareIndexBuffer &buffer = this->indexBuffers.get(id);
-	const int srcCount = indices.getCount();
-	const int dstCount = buffer.indices.getCount();
-	if (srcCount != dstCount)
-	{
-		DebugLogErrorFormat("Mismatched index buffer sizes for ID %d: %d != %d", id, srcCount, dstCount);
-		return;
-	}
-
-	const auto srcBegin = indices.begin();
-	const auto srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.indices.begin());
-}
-
-void SoftwareRenderer::freeVertexPositionBuffer(VertexPositionBufferID id)
-{
-	this->positionBuffers.free(id);
-}
-
-void SoftwareRenderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
-{
-	this->attributeBuffers.free(id);
-}
-
 void SoftwareRenderer::freeIndexBuffer(IndexBufferID id)
 {
 	this->indexBuffers.free(id);
 }
 
-ObjectTextureAllocator *SoftwareRenderer::getTextureAllocator()
+LockedBuffer SoftwareRenderer::lockIndexBuffer(IndexBufferID id)
 {
-	return &this->textureAllocator;
+	SoftwareIndexBuffer &buffer = this->indexBuffers.get(id);
+	const int elementCount = buffer.indices.getCount();
+	const int bytesPerElement = sizeof(int32_t);
+	const int byteCount = elementCount * bytesPerElement;
+	return LockedBuffer(Span<std::byte>(reinterpret_cast<std::byte*>(buffer.indices.begin()), byteCount), elementCount, bytesPerElement, bytesPerElement);
 }
 
-std::optional<Int2> SoftwareRenderer::tryGetObjectTextureDims(ObjectTextureID id) const
+void SoftwareRenderer::unlockIndexBuffer(IndexBufferID id)
 {
-	const SoftwareObjectTexture &texture = this->objectTextures.get(id);
-	return Int2(texture.width, texture.height);
+	// Do nothing, writes are already in RAM.
+	static_cast<void>(id);
 }
 
-UniformBufferID SoftwareRenderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
+UniformBufferID SoftwareRenderer::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
 {
-	DebugAssert(elementCount >= 0);
-	DebugAssert(sizeOfElement > 0);
+	DebugAssert(elementCount > 0);
+	DebugAssert(bytesPerElement > 0);
 	DebugAssert(alignmentOfElement > 0);
 
 	const UniformBufferID id = this->uniformBuffers.alloc();
 	if (id < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, sizeOfElement, alignmentOfElement);
+		DebugLogErrorFormat("Couldn't allocate uniform buffer (elements: %d, sizeof: %d, alignment: %d).", elementCount, bytesPerElement, alignmentOfElement);
 		return -1;
 	}
 
 	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
-	buffer.init(elementCount, sizeOfElement, alignmentOfElement);
+	buffer.init(elementCount, bytesPerElement, alignmentOfElement);
 	return id;
-}
-
-void SoftwareRenderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
-{
-	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
-	const int srcCount = data.getCount();
-	const int dstCount = buffer.getValidByteCount();
-	if (srcCount != dstCount)
-	{
-		DebugLogErrorFormat("Mismatched uniform buffer sizes for ID %d: %d != %d", id, srcCount, dstCount);
-		return;
-	}
-
-	const std::byte *srcBegin = data.begin();
-	const std::byte *srcEnd = srcBegin + srcCount;
-	std::copy(srcBegin, srcEnd, buffer.begin());
-}
-
-void SoftwareRenderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
-{
-	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
-	const int srcByteCount = uniformData.getCount();
-	const int dstByteCount = static_cast<int>(buffer.sizeOfElement);
-	if (srcByteCount != dstByteCount)
-	{
-		DebugLogErrorFormat("Mismatched uniform size for uniform buffer ID %d index %d: %d != %d", id, uniformIndex, srcByteCount, dstByteCount);
-		return;
-	}
-
-	const std::byte *srcBegin = uniformData.begin();
-	const std::byte *srcEnd = srcBegin + srcByteCount;
-	std::byte *dstBegin = buffer.begin() + (dstByteCount * uniformIndex);
-	std::copy(srcBegin, srcEnd, dstBegin);
 }
 
 void SoftwareRenderer::freeUniformBuffer(UniformBufferID id)
@@ -4723,91 +4352,157 @@ void SoftwareRenderer::freeUniformBuffer(UniformBufferID id)
 	this->uniformBuffers.free(id);
 }
 
-RenderLightID SoftwareRenderer::createLight()
+LockedBuffer SoftwareRenderer::lockUniformBuffer(UniformBufferID id)
 {
-	const RenderLightID id = this->lights.alloc();
-	if (id < 0)
+	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
+	const int elementCount = buffer.elementCount;
+	const int bytesPerElement = buffer.bytesPerElement;
+	const int byteCount = buffer.getValidByteCount();
+	return LockedBuffer(Span<std::byte>(buffer.begin(), byteCount), elementCount, bytesPerElement, bytesPerElement);
+}
+
+LockedBuffer SoftwareRenderer::lockUniformBufferIndex(UniformBufferID id, int index)
+{
+	SoftwareUniformBuffer &buffer = this->uniformBuffers.get(id);
+	const int elementCount = 1;
+	const int bytesPerElement = buffer.bytesPerElement;
+	const int byteCount = bytesPerElement;
+	const int byteOffset = index * bytesPerElement;
+	return LockedBuffer(Span<std::byte>(buffer.begin() + byteOffset, byteCount), elementCount, bytesPerElement, bytesPerElement);
+}
+
+void SoftwareRenderer::unlockUniformBuffer(UniformBufferID id)
+{
+	// Do nothing, writes are already in RAM.
+	static_cast<void>(id);
+}
+
+void SoftwareRenderer::unlockUniformBufferIndex(UniformBufferID id, int index)
+{
+	// Do nothing, writes are already in RAM.
+	static_cast<void>(id);
+	static_cast<void>(index);
+}
+
+ObjectTextureID SoftwareRenderer::createTexture(int width, int height, int bytesPerTexel)
+{
+	const ObjectTextureID textureID = this->objectTextures.alloc();
+	if (textureID < 0)
 	{
-		DebugLogError("Couldn't allocate render light ID.");
+		DebugLogErrorFormat("Couldn't allocate software object texture with dims %dx%d and %d bytes per texel.", width, height, bytesPerTexel);
 		return -1;
 	}
 
-	return id;
+	SoftwareObjectTexture &texture = this->objectTextures.get(textureID);
+	texture.init(width, height, bytesPerTexel);
+	return textureID;
 }
 
-void SoftwareRenderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
+void SoftwareRenderer::freeTexture(ObjectTextureID textureID)
 {
-	SoftwareLight &light = this->lights.get(id);
-	light.worldPointX = worldPoint.x;
-	light.worldPointY = worldPoint.y;
-	light.worldPointZ = worldPoint.z;
+	this->objectTextures.free(textureID);
 }
 
-void SoftwareRenderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)
+std::optional<Int2> SoftwareRenderer::tryGetTextureDims(ObjectTextureID id) const
 {
-	DebugAssert(startRadius >= 0.0);
-	DebugAssert(endRadius >= startRadius);
-	SoftwareLight &light = this->lights.get(id);
-	light.startRadius = startRadius;
-	light.startRadiusSqr = startRadius * startRadius;
-	light.endRadius = endRadius;
-	light.endRadiusSqr = endRadius * endRadius;
-	light.startEndRadiusDiff = endRadius - startRadius;
-	light.startEndRadiusDiffRecip = 1.0 / light.startEndRadiusDiff;
+	const SoftwareObjectTexture &texture = this->objectTextures.get(id);
+	return Int2(texture.width, texture.height);
 }
 
-void SoftwareRenderer::freeLight(RenderLightID id)
+LockedTexture SoftwareRenderer::lockTexture(ObjectTextureID textureID)
 {
-	this->lights.free(id);
+	SoftwareObjectTexture &texture = this->objectTextures.get(textureID);
+	const int byteCount = texture.width * texture.height * texture.bytesPerTexel;
+	return LockedTexture(Span<std::byte>(texture.texels.begin(), byteCount), texture.width, texture.height, texture.bytesPerTexel);
 }
 
-Renderer3DProfilerData SoftwareRenderer::getProfilerData() const
+void SoftwareRenderer::unlockTexture(ObjectTextureID textureID)
 {
-	const int renderWidth = this->paletteIndexBuffer.getWidth();
-	const int renderHeight = this->paletteIndexBuffer.getHeight();
-	const int threadCount = g_workers.getCount();
-	const int drawCallCount = g_totalDrawCallCount;
-	const int presentedTriangleCount = g_totalPresentedTriangleCount;
+	// Do nothing; any writes are already in RAM.
+	static_cast<void>(textureID);
+}
 
-	const int textureCount = this->objectTextures.getCount();
-	int64_t textureByteCount = 0;
-	for (const SoftwareObjectTexture &texture : this->objectTextures.values)
+RenderMaterialID SoftwareRenderer::createMaterial(RenderMaterialKey key)
+{
+	const RenderMaterialID materialID = this->materials.alloc();
+	if (materialID < 0)
 	{
-		textureByteCount += texture.texels.getCount();
+		DebugLogErrorFormat("Couldn't allocate software material with vertex shader %d and pixel shader %d.", key.vertexShaderType, key.pixelShaderType);
+		return -1;
 	}
 
-	const int totalLightCount = this->lights.getCount();
-	const int64_t totalCoverageTests = g_totalCoverageTests;
-	const int64_t totalDepthTests = g_totalDepthTests;
-	const int64_t totalColorWrites = g_totalColorWrites;
-
-	return Renderer3DProfilerData(renderWidth, renderHeight, threadCount, drawCallCount, presentedTriangleCount,
-		textureCount, textureByteCount, totalLightCount, totalCoverageTests, totalDepthTests, totalColorWrites);
+	SoftwareMaterial &material = this->materials.get(materialID);
+	material.init(key.vertexShaderType, key.pixelShaderType, Span<const ObjectTextureID>(key.textureIDs, key.textureCount), key.lightingType, key.enableBackFaceCulling, key.enableDepthRead, key.enableDepthWrite);
+	return materialID;
 }
 
-void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
-	const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer)
+void SoftwareRenderer::freeMaterial(RenderMaterialID id)
 {
-	const int totalDrawCallCount = commandBuffer.getTotalDrawCallCount();
+	this->materials.free(id);
+}
+
+RenderMaterialInstanceID SoftwareRenderer::createMaterialInstance()
+{
+	const RenderMaterialInstanceID instID = this->materialInsts.alloc();
+	if (instID < 0)
+	{
+		DebugLogError("Couldn't allocate software material instance.");
+		return -1;
+	}
+
+	return instID;
+}
+
+void SoftwareRenderer::freeMaterialInstance(RenderMaterialInstanceID id)
+{
+	this->materialInsts.free(id);
+}
+
+void SoftwareRenderer::setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value)
+{
+	SoftwareMaterialInstance *inst = this->materialInsts.tryGet(id);
+	if (inst == nullptr)
+	{
+		DebugLogErrorFormat("Missing material instance %d for updating mesh lighting percent to %.2f.", id, value);
+		return;
+	}
+
+	inst->meshLightPercent = value;
+}
+
+void SoftwareRenderer::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+{
+	SoftwareMaterialInstance *inst = this->materialInsts.tryGet(id);
+	if (inst == nullptr)
+	{
+		DebugLogErrorFormat("Missing material instance %d for updating pixel shader param to %.2f.", id, value);
+		return;
+	}
+
+	inst->pixelShaderParam0 = value;
+}
+
+void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
+	const RenderFrameSettings &settings, uint32_t *outputBuffer)
+{
+	const int totalDrawCallCount = commandList.getTotalDrawCallCount();
 	const int frameBufferWidth = this->paletteIndexBuffer.getWidth();
 	const int frameBufferHeight = this->paletteIndexBuffer.getHeight();
 
-	if (this->ditheringMode != settings.ditheringMode)
-	{
-		this->ditheringMode = settings.ditheringMode;
-		CreateDitherBuffer(this->ditherBuffer, frameBufferWidth, frameBufferHeight, settings.ditheringMode);
-	}
-
+	const SoftwareUniformBuffer &visibleLights = this->uniformBuffers.get(settings.visibleLightsBufferID);
 	const SoftwareObjectTexture &paletteTexture = this->objectTextures.get(settings.paletteTextureID);
 	const SoftwareObjectTexture &lightTableTexture = this->objectTextures.get(settings.lightTableTextureID);
+	const SoftwareObjectTexture &ditherTexture = this->objectTextures.get(settings.ditherTextureID);
 	const SoftwareObjectTexture &skyBgTexture = this->objectTextures.get(settings.skyBgTextureID);
 
 	PopulateCameraGlobals(camera);
 	PopulateDrawCallGlobals(totalDrawCallCount);
 	PopulateRasterizerGlobals(frameBufferWidth, frameBufferHeight, this->paletteIndexBuffer.begin(), this->depthBuffer.begin(),
-		this->ditherBuffer.begin(), this->ditherBuffer.getDepth(), this->ditheringMode, outputBuffer, &this->objectTextures);
-	PopulateLightGlobals(settings.visibleLightIDs, this->lights, camera, frameBufferWidth, frameBufferHeight);
-	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, camera.horizonNdcPoint, paletteTexture, lightTableTexture, skyBgTexture);
+		settings.ditheringMode, outputBuffer, &this->objectTextures);
+	PopulateVisibleLights(visibleLights, settings.visibleLightCount);
+	InitLightBins(frameBufferWidth, frameBufferHeight);
+	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, camera.horizonNdcPoint, paletteTexture,
+		lightTableTexture, ditherTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
 	InitializeWorkers(totalWorkerCount, frameBufferWidth, frameBufferHeight);
@@ -4818,9 +4513,9 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 	bool shouldWorkersClearFrameBuffer = true; // Once per frame.
 	std::unique_lock<std::mutex> lock(g_mutex);
 
-	for (int commandIndex = 0; commandIndex < commandBuffer.entryCount; commandIndex++)
+	for (int commandIndex = 0; commandIndex < commandList.entryCount; commandIndex++)
 	{
-		const Span<const RenderDrawCall> drawCalls = commandBuffer.entries[commandIndex];
+		const Span<const RenderDrawCall> drawCalls = commandList.entries[commandIndex];
 		int startDrawCallIndex = 0;
 		int remainingDrawCallCount = drawCalls.getCount();
 		constexpr int maxDrawCallsPerLoop = 8192;
@@ -4862,9 +4557,6 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					DebugAssertIndex(worker.drawCallCaches, workerDrawCallIndex);
 					DrawCallCache &workerDrawCallCache = worker.drawCallCaches[workerDrawCallIndex];
 					TransformCache &workerTransformCache = worker.transformCaches[workerDrawCallIndex];
-					auto &transformCachePreScaleTranslationX = workerTransformCache.preScaleTranslationX;
-					auto &transformCachePreScaleTranslationY = workerTransformCache.preScaleTranslationY;
-					auto &transformCachePreScaleTranslationZ = workerTransformCache.preScaleTranslationZ;
 					auto &drawCallCachePositionBuffer = workerDrawCallCache.positionBuffer;
 					auto &drawCallCacheTexCoordBuffer = workerDrawCallCache.texCoordBuffer;
 					auto &drawCallCacheIndexBuffer = workerDrawCallCache.indexBuffer;
@@ -4880,34 +4572,31 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 					auto &drawCallCacheEnableDepthWrite = workerDrawCallCache.enableDepthWrite;
 
 					const SoftwareUniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
-					const RenderTransform &transform = transformBuffer.get<RenderTransform>(drawCall.transformIndex);
-					PopulateMeshTransform(workerTransformCache, transform);
-
-					transformCachePreScaleTranslationX = 0.0;
-					transformCachePreScaleTranslationY = 0.0;
-					transformCachePreScaleTranslationZ = 0.0;
-					if (drawCall.preScaleTranslationBufferID >= 0)
-					{
-						const SoftwareUniformBuffer &preScaleTranslationBuffer = this->uniformBuffers.get(drawCall.preScaleTranslationBufferID);
-						const Double3 &preScaleTranslation = preScaleTranslationBuffer.get<Double3>(0);
-						transformCachePreScaleTranslationX = preScaleTranslation.x;
-						transformCachePreScaleTranslationY = preScaleTranslation.y;
-						transformCachePreScaleTranslationZ = preScaleTranslation.z;
-					}
+					const Matrix4d &modelMatrix = transformBuffer.get<Matrix4d>(drawCall.transformIndex);
+					PopulateMeshTransform(workerTransformCache, modelMatrix);
 
 					drawCallCachePositionBuffer = &this->positionBuffers.get(drawCall.positionBufferID);
 					drawCallCacheTexCoordBuffer = &this->attributeBuffers.get(drawCall.texCoordBufferID);
 					drawCallCacheIndexBuffer = &this->indexBuffers.get(drawCall.indexBufferID);
-					drawCallCacheTextureID0 = drawCall.textureIDs[0];
-					drawCallCacheTextureID1 = drawCall.textureIDs[1];
-					drawCallCacheLightingType = drawCall.lightingType;
-					drawCallCacheMeshLightPercent = drawCall.lightPercent;
-					drawCallCacheVertexShaderType = drawCall.vertexShaderType;
-					drawCallCachePixelShaderType = drawCall.pixelShaderType;
-					drawCallCachePixelShaderParam0 = drawCall.pixelShaderParam0;
-					drawCallCacheEnableBackFaceCulling = drawCall.enableBackFaceCulling;
-					drawCallCacheEnableDepthRead = drawCall.enableDepthRead;
-					drawCallCacheEnableDepthWrite = drawCall.enableDepthWrite;
+
+					const SoftwareMaterial &material = this->materials.get(drawCall.materialID);
+					drawCallCacheTextureID0 = material.textureIDs[0];
+					drawCallCacheTextureID1 = material.textureIDs[1];
+					drawCallCacheLightingType = material.lightingType;
+					drawCallCacheMeshLightPercent = 0.0;
+					drawCallCacheVertexShaderType = material.vertexShaderType;
+					drawCallCachePixelShaderType = material.pixelShaderType;
+					drawCallCachePixelShaderParam0 = 0.0;
+					drawCallCacheEnableBackFaceCulling = material.enableBackFaceCulling;
+					drawCallCacheEnableDepthRead = material.enableDepthRead;
+					drawCallCacheEnableDepthWrite = material.enableDepthWrite;
+
+					if (drawCall.materialInstID >= 0)
+					{
+						const SoftwareMaterialInstance &materialInst = this->materialInsts.get(drawCall.materialInstID);
+						drawCallCacheMeshLightPercent = materialInst.meshLightPercent;
+						drawCallCachePixelShaderParam0 = materialInst.pixelShaderParam0;
+					}
 				}
 			}
 
@@ -4955,9 +4644,4 @@ void SoftwareRenderer::submitFrame(const RenderCamera &camera, const RenderFrame
 			remainingDrawCallCount -= drawCallsToConsume;
 		}
 	}
-}
-
-void SoftwareRenderer::present()
-{
-	// Do nothing for now, might change later.
 }

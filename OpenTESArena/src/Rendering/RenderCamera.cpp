@@ -4,6 +4,16 @@
 
 #include "components/debug/Debug.h"
 
+RenderCamera::RenderCamera()
+{
+	this->yaw = 0.0;
+	this->pitch = 0.0;
+	this->fovX = 0.0;
+	this->fovY = 0.0;
+	this->zoom = 0.0;
+	this->aspectRatio = 0.0;
+}
+
 void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, double tallPixelRatio)
 {
 	this->worldPoint = worldPoint;

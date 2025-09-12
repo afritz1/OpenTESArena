@@ -5,48 +5,48 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <string_view>
-#include <vector>
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Renderer/DebugRendererSimple.h"
 #include "SDL.h"
 
-#include "RendererSystem2D.h"
-#include "RendererSystem3D.h"
-#include "RendererSystemType.h"
+#include "RenderMaterialUtils.h"
+#include "RenderMeshUtils.h"
 #include "RenderLightUtils.h"
+#include "RenderTextureUtils.h"
+#include "Window.h"
 #include "../Assets/TextureUtils.h"
+#include "../Math/Matrix4.h"
+#include "../Math/Rect.h"
+#include "../Math/Vector3.h"
+#include "../Utilities/Palette.h"
 
 #include "components/utilities/Span.h"
+#include "components/utilities/Span2D.h"
 
+class RenderBackend;
 class Surface;
 class TextureManager;
 
 enum class CursorAlignment;
+enum class RenderBackendType;
 
-struct Color;
-struct Rect;
-struct SDL_Rect;
-struct SDL_Renderer;
-struct SDL_Surface;
-struct SDL_Texture;
-struct SDL_Window;
+struct RenderCamera;
+struct RenderCommandList;
+struct RenderFrameSettings;
+struct RenderLight;
 struct TextureBuilder;
-struct UiCommandBuffer;
+struct UiCommandList;
+struct Window;
 
-struct RenderDisplayMode
+struct RenderElement2D
 {
-	int width, height, refreshRate;
+	UiTextureID id;
+	Rect rect; // In window space.
+	Rect clipRect; // In window space, non-empty if valid.
 
-	RenderDisplayMode(int width, int height, int refreshRate);
-};
-
-enum class RenderWindowMode
-{
-	Window,
-	BorderlessFullscreen,
-	ExclusiveFullscreen
+	RenderElement2D(UiTextureID id, Rect rect, Rect clipRect = Rect());
+	RenderElement2D();
 };
 
 // Profiler information from the most recently rendered frame.
@@ -65,6 +65,11 @@ struct RendererProfilerData
 	// Textures.
 	int objectTextureCount;
 	int64_t objectTextureByteCount;
+	int uiTextureCount;
+	int64_t uiTextureByteCount;
+
+	// Materials.
+	int materialCount;
 
 	// Lights.
 	int totalLightCount;
@@ -75,66 +80,31 @@ struct RendererProfilerData
 	int64_t totalColorWrites;
 
 	double renderTime;
-	double presentTime;
 
 	RendererProfilerData();
 
-	void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount,
-		int64_t objectTextureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests, int64_t totalColorWrites,
-		double renderTime, double presentTime);
+	void init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount, int64_t objectTextureByteCount,
+		int uiTextureCount, int64_t uiTextureByteCount, int materialCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
+		int64_t totalColorWrites, double renderTime);
 };
 
 using RenderResolutionScaleFunc = std::function<double()>;
 
 // Manages the active window and 2D and 3D rendering operations.
-class Renderer : public JPH::DebugRendererSimple
+class Renderer //: public JPH::DebugRendererSimple
 {
 private:
-	std::unique_ptr<RendererSystem2D> renderer2D;
-	std::unique_ptr<RendererSystem3D> renderer3D;
-	std::vector<RenderDisplayMode> displayModes;
-	SDL_Window *window;
-	SDL_Renderer *renderer;
-	SDL_Texture *nativeTexture, *gameWorldTexture; // Frame buffers.
+	const Window *window;
+	std::unique_ptr<RenderBackend> backend;
 	RendererProfilerData profilerData;
 	RenderResolutionScaleFunc resolutionScaleFunc; // Gets an up-to-date resolution scale value from the game options.
-	int letterboxMode; // Determines aspect ratio of the original UI (16:10, 4:3, etc.).
-	bool fullGameWindow; // Determines height of 3D frame buffer.
 public:
 	// Only defined so members are initialized for Game ctor exception handling.
 	Renderer();
 	~Renderer();
 
-	// Default bits per pixel.
-	static constexpr int DEFAULT_BPP = 32;
-
-	// The default pixel format for all software surfaces, ARGB8888.
-	static constexpr uint32_t DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_ARGB8888;
-
-	// Gets the letterbox aspect associated with the current letterbox mode.
-	double getLetterboxAspect() const;
-
-	// Gets the width and height of the active window.
-	Int2 getWindowDimensions() const;
-
-	// Gets the aspect ratio of the active window.
-	double getWindowAspect() const;
-
-	// Gets a list of supported fullscreen display modes.
-	Span<const RenderDisplayMode> getDisplayModes() const;
-
-	// Gets the active window's pixels-per-inch scale divided by platform DPI.
-	double getDpiScale() const;
-
-	// The "view height" is the height in pixels for the visible game world. This 
-	// depends on whether the whole screen is rendered or just the portion above 
-	// the interface. The game interface is 53 pixels tall in 320x200.
-	Int2 getViewDimensions() const;
-	double getViewAspect() const;
-
-	// This is for the "letterbox" part of the screen, scaled to fit the window 
-	// using the given letterbox aspect.
-	SDL_Rect getLetterboxDimensions() const;
+	bool init(const Window *window, RenderBackendType backendType, const RenderResolutionScaleFunc &resolutionScaleFunc,
+		int renderThreadsMode, DitheringMode ditheringMode, bool enableValidationLayers, const std::string &dataFolderPath);
 
 	// Gets a screenshot of the current window.
 	Surface getScreenshot() const;
@@ -142,146 +112,79 @@ public:
 	// Gets profiler data (timings, renderer properties, etc.).
 	const RendererProfilerData &getProfilerData() const;
 
-	// Transforms a native window (i.e., 1920x1080) point or rectangle to an original 
-	// (320x200) point or rectangle. Points outside the letterbox will either be negative 
-	// or outside the 320x200 limit when returned.
-	Int2 nativeToOriginal(const Int2 &nativePoint) const;
-	Rect nativeToOriginal(const Rect &nativeRect) const;
-
-	// Does the opposite of nativeToOriginal().
-	Int2 originalToNative(const Int2 &originalPoint) const;
-	Rect originalToNative(const Rect &originalRect) const;
-
-	// Returns true if the letterbox contains a native point.
-	bool letterboxContains(const Int2 &nativePoint) const;
-
-	bool init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
-		const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D,
-		RendererSystemType3D systemType3D, int renderThreadsMode, DitheringMode ditheringMode);
-
 	// Resizes the renderer dimensions.
-	void resize(int width, int height, double resolutionScale, bool fullGameWindow);
+	void resize(int windowWidth, int windowHeight);
 
 	// Handles resetting render target textures when switching in and out of exclusive fullscreen.
 	void handleRenderTargetsReset();
 
-	// Sets the letterbox mode.
-	void setLetterboxMode(int letterboxMode);
-
-	// Sets whether the program is windowed, fullscreen, etc..
-	void setWindowMode(RenderWindowMode mode);
-
-	// Sets the window icon to be the given surface.
-	void setWindowIcon(const Surface &icon);
-
-	// Sets the window title.
-	void setWindowTitle(const char *title);
-
-	// Teleports the mouse to a location in the window.
-	void warpMouse(int x, int y);
-
-	// Sets the clip rectangle of the renderer so that pixels outside the specified area
-	// will not be rendered. If rect is null, then clipping is disabled.
-	void setClipRect(const SDL_Rect *rect);
-
-	// Geometry management functions.
+	// Buffer management functions.
 	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex);
-	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex);
-	IndexBufferID createIndexBuffer(int indexCount);
-	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions);
-	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes);
-	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices);
 	void freeVertexPositionBuffer(VertexPositionBufferID id);
+	bool populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions);
+
+	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex);
 	void freeVertexAttributeBuffer(VertexAttributeBufferID id);
+	bool populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes);
+
+	IndexBufferID createIndexBuffer(int indexCount);
 	void freeIndexBuffer(IndexBufferID id);
+	bool populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices);
 
-	// Texture handle allocation functions.
-	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);
-	ObjectTextureID createObjectTexture(const TextureBuilder &textureBuilder);
-	UiTextureID createUiTexture(int width, int height);
-	UiTextureID createUiTexture(Span2D<const uint32_t> texels);
-	UiTextureID createUiTexture(Span2D<const uint8_t> texels, const Palette &palette);
-	UiTextureID createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager);
-
-	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const;
-	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;
-
-	// Allows for updating all texels in the given texture. Must be unlocked to flush the changes.
-	LockedTexture lockObjectTexture(ObjectTextureID id);
-	LockedTexture lockUiTexture(UiTextureID id);
-	void unlockObjectTexture(ObjectTextureID id);
-	void unlockUiTexture(UiTextureID id);
-
-	// Texture handle freeing functions.
-	void freeObjectTexture(ObjectTextureID id);
-	void freeUiTexture(UiTextureID id);
-
-	// Shading management functions.
-	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
-	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data);
-
-	template<typename T>
-	void populateUniformBuffer(UniformBufferID id, const T &value)
-	{
-		Span<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
-		this->populateUniformBuffer(id, valueAsBytes);
-	}
-
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData);
-
-	template<typename T>
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, const T &value)
-	{
-		Span<const std::byte> valueAsBytes(reinterpret_cast<const std::byte*>(&value), sizeof(value));
-		this->populateUniformAtIndex(id, uniformIndex, valueAsBytes);
-	}
-
+	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
+	UniformBufferID createUniformBufferVector3s(int elementCount);
+	UniformBufferID createUniformBufferMatrix4s(int elementCount);
+	UniformBufferID createUniformBufferLights(int elementCount);
 	void freeUniformBuffer(UniformBufferID id);
-	RenderLightID createLight();
-	void setLightPosition(RenderLightID id, const Double3 &worldPoint);
-	void setLightRadius(RenderLightID id, double startRadius, double endRadius);
-	void freeLight(RenderLightID id);
+	bool populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes);
+	bool populateUniformBufferVector3s(UniformBufferID id, Span<const Double3> values);
+	bool populateUniformBufferMatrix4s(UniformBufferID id, Span<const Matrix4d> values);
+	bool populateUniformBufferLights(UniformBufferID id, Span<const RenderLight> lights);
+	bool populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes);
+	bool populateUniformBufferIndexMatrix4(UniformBufferID id, int uniformIndex, const Matrix4d &matrix);
 
-	// Fills the native frame buffer with the draw color, or default black/transparent.
-	void clear(const Color &color);
-	void clear();
-	void clearOriginal(const Color &color);
-	void clearOriginal();
+	// Texture management functions.
+	ObjectTextureID createObjectTexture(int width, int height, int bytesPerTexel);
+	void freeObjectTexture(ObjectTextureID id);
+	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const;
+	LockedTexture lockObjectTexture(ObjectTextureID id);
+	void unlockObjectTexture(ObjectTextureID id);
+	bool populateObjectTexture(ObjectTextureID id, Span<const std::byte> texels);
+	bool populateObjectTexture8Bit(ObjectTextureID id, Span<const uint8_t> texels);
+
+	UiTextureID createUiTexture(int width, int height);
+	void freeUiTexture(UiTextureID id);
+	std::optional<Int2> tryGetUiTextureDims(UiTextureID id) const;
+	LockedTexture lockUiTexture(UiTextureID id);
+	void unlockUiTexture(UiTextureID id);
+	bool populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette = nullptr);
+	bool populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t> texels);
+
+	// Material management functions.
+	RenderMaterialID createMaterial(RenderMaterialKey key);
+	void freeMaterial(RenderMaterialID id);
+
+	RenderMaterialInstanceID createMaterialInstance();
+	void freeMaterialInstance(RenderMaterialInstanceID id);
+	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value);
+	void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value);
 
 	// Wrapper methods for some SDL draw functions.
-	void drawPixel(const Color &color, int x, int y);
-	void drawLine(const Color &color, int x1, int y1, int x2, int y2);
-	void drawRect(const Color &color, int x, int y, int w, int h);
+	//void drawPixel(const Color &color, int x, int y);
+	//void drawLine(const Color &color, int x1, int y1, int x2, int y2);
+	//void drawRect(const Color &color, int x, int y, int w, int h);
 
 	// Wrapper methods for some SDL fill functions.
-	void fillRect(const Color &color, int x, int y, int w, int h);
-	void fillOriginalRect(const Color &color, int x, int y, int w, int h);
+	//void fillRect(const Color &color, int x, int y, int w, int h);
 
 	// Jolt Physics debugging.
-	void DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color) override;
-	void DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3, JPH::ColorArg color, ECastShadow castShadow) override;
-	void DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height) override;
+	//void DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color) override;
+	//void DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3, JPH::ColorArg color, ECastShadow castShadow) override;
+	//void DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height) override;
 
-	// Runs the 3D renderer which draws the world onto the native frame buffer.
-	void submitSceneCommands(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
-		Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
-		ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
-
-	// Draws UI onto the screen.
-	void submitUiCommands(const UiCommandBuffer &commandBuffer);
-
-	// Draw methods for the native and original frame buffers.
-	void draw(SDL_Texture *texture, int x, int y, int w, int h);
-	void draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace);
-
-	// Causes all draw operations to render to a framebuffer that eventually is presented to the screen.
-	void setRenderTargetToFrameBuffer();
-
-	// Causes draw operations to render directly to the output window texture.
-	void setRenderTargetToOutput();
-
-	// Refreshes the displayed frame buffer.
-	void present();
+	// Runs the 3D renderer which draws the world onto the native frame buffer then runs the 2D renderer for UI.
+	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+		const RenderCamera &camera, const RenderFrameSettings &frameSettings);
 };
 
 #endif

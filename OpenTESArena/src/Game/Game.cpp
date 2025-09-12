@@ -43,17 +43,19 @@
 #include "../Player/PlayerInterface.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
+#include "../Rendering/RenderBackendType.h"
 #include "../Rendering/RenderCamera.h"
-#include "../Rendering/RenderCommandBuffer.h"
+#include "../Rendering/RenderCommand.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Rendering/RenderFrameSettings.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/CharacterRaceLibrary.h"
 #include "../Time/ClockLibrary.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommandBuffer.h"
+#include "../UI/UiCommand.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
@@ -72,19 +74,17 @@ namespace
 {
 	struct FrameTimer
 	{
-		std::chrono::nanoseconds maximumTime; // Longest allowed frame time before engine will run in slow motion.
-		std::chrono::nanoseconds minimumTime; // Shortest allowed frame time if not enough work is happening.
-		std::chrono::time_point<std::chrono::high_resolution_clock> previousTime, currentTime;
-		std::chrono::nanoseconds sleepBias; // Thread sleeping takes longer than it should on some platforms.
+		std::chrono::nanoseconds maximumFrameDuration; // Longest allowed frame time before engine will run in slow motion.
+		std::chrono::nanoseconds minimumFrameDuration; // Shortest allowed frame time if not enough work is happening.
+		std::chrono::time_point<std::chrono::high_resolution_clock> previousTimePoint, currentTimePoint;
 		double deltaTime; // Difference between frame times in seconds.
 		double clampedDeltaTime; // For game logic calculations that become imprecise or break at low FPS.
 		int physicsSteps; // 1 unless the engine has to do more steps this frame to keep numeric accuracy.
 
 		FrameTimer()
 		{
-			this->maximumTime = std::chrono::nanoseconds(0);
-			this->minimumTime = std::chrono::nanoseconds(0);
-			this->sleepBias = std::chrono::nanoseconds(0);
+			this->maximumFrameDuration = std::chrono::nanoseconds(0);
+			this->minimumFrameDuration = std::chrono::nanoseconds(0);
 			this->deltaTime = 0.0;
 			this->clampedDeltaTime = 0.0;
 			this->physicsSteps = 0;
@@ -92,36 +92,43 @@ namespace
 
 		void init()
 		{
-			this->maximumTime = std::chrono::nanoseconds(std::nano::den / Options::MIN_FPS);
-			this->currentTime = std::chrono::high_resolution_clock::now();
-			this->sleepBias = std::chrono::nanoseconds::zero();
+			this->maximumFrameDuration = std::chrono::nanoseconds(std::nano::den / Options::MIN_FPS);
+			this->currentTimePoint = std::chrono::high_resolution_clock::now();
 		}
 
 		void startFrame(int targetFPS)
 		{
 			DebugAssert(targetFPS > 0);
-			this->minimumTime = std::chrono::nanoseconds(std::nano::den / targetFPS);
-			this->previousTime = this->currentTime;
-			this->currentTime = std::chrono::high_resolution_clock::now();
+			this->minimumFrameDuration = std::chrono::nanoseconds(std::nano::den / targetFPS);
+			this->previousTimePoint = this->currentTimePoint;
+			this->currentTimePoint = std::chrono::high_resolution_clock::now();
 
-			auto previousFrameDuration = this->currentTime - this->previousTime;
-			if (previousFrameDuration < this->minimumTime)
+			auto previousFrameDuration = this->currentTimePoint - this->previousTimePoint;
+			if (previousFrameDuration < this->minimumFrameDuration)
 			{
-				const auto sleepDuration = this->minimumTime - previousFrameDuration + this->sleepBias;
-				std::this_thread::sleep_for(sleepDuration);
+				const auto sleepBias = previousFrameDuration / 1000; // Keep slightly above target FPS instead of slightly below.
+				const auto sleepDuration = this->minimumFrameDuration - previousFrameDuration - sleepBias;
+				const auto reducedSleepDuration = (sleepDuration * 5) / 10; // Sleep less to prevent oversleeping, busy wait the rest.
+				std::this_thread::sleep_for(reducedSleepDuration);
 
-				const auto currentTimeAfterSleeping = std::chrono::high_resolution_clock::now();
-				const auto sleptDuration = currentTimeAfterSleeping - this->currentTime;
-				const auto oversleptDuration = sleptDuration - sleepDuration;
+				while (true)
+				{
+					const auto timePointWhileBusyWaiting = std::chrono::high_resolution_clock::now();
+					if (timePointWhileBusyWaiting - this->currentTimePoint > sleepDuration)
+					{
+						break;
+					}
 
-				this->sleepBias = -oversleptDuration;
-				this->currentTime = currentTimeAfterSleeping;
-				previousFrameDuration = this->currentTime - this->previousTime;
+					std::this_thread::yield();
+				}
+
+				this->currentTimePoint = std::chrono::high_resolution_clock::now();
+				previousFrameDuration = this->currentTimePoint - this->previousTimePoint;
 			}
 
 			constexpr double timeUnitsReal = static_cast<double>(std::nano::den);
 			this->deltaTime = static_cast<double>(previousFrameDuration.count()) / timeUnitsReal;
-			this->clampedDeltaTime = std::fmin(previousFrameDuration.count(), this->maximumTime.count()) / timeUnitsReal;
+			this->clampedDeltaTime = std::fmin(previousFrameDuration.count(), this->maximumFrameDuration.count()) / timeUnitsReal;
 			this->physicsSteps = static_cast<int>(std::ceil(this->clampedDeltaTime / Physics::DeltaTime));
 		}
 	};
@@ -234,15 +241,18 @@ Game::~Game()
 		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
 
+	this->debugQuadtreeState.free(this->renderer);
+
 	this->sceneManager.renderVoxelChunkManager.shutdown(this->renderer);
 	this->sceneManager.renderEntityManager.shutdown(this->renderer);
 	this->sceneManager.renderSkyManager.shutdown(this->renderer);
 	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
+	this->sceneManager.renderLightManager.shutdown(this->renderer);
 }
 
 bool Game::init()
 {
-	DebugLog("Initializing (Platform: " + Platform::getPlatform() + ").");
+	DebugLogFormat("Initializing (Platform: %s).", Platform::getPlatform().c_str());
 
 	// Current working directory (in most cases). This is most relevant for platforms like macOS, where
 	// the base path might be in the app's Resources folder.
@@ -267,7 +277,6 @@ bool Game::init()
 
 	VFS::Manager::get().initialize(std::string(arenaPath));
 
-	// Initialize audio manager.
 	const bool midiPathIsRelative = Path::isRelative(this->options.getAudio_MidiConfig().c_str());
 	const std::string midiFilePath = (midiPathIsRelative ? basePath : "") + this->options.getAudio_MidiConfig();
 	const std::string audioDataPath = dataFolderPath + "audio/";
@@ -275,26 +284,32 @@ bool Game::init()
 		this->options.getAudio_SoundChannels(), this->options.getAudio_SoundResampling(),
 		this->options.getAudio_Is3DAudio(), midiFilePath, audioDataPath);
 
-	// Initialize the renderer and window with the given settings.
+	const RenderBackendType renderBackendType = static_cast<RenderBackendType>(this->options.getGraphics_GraphicsAPI());
+	const uint32_t windowAdditionalFlags = (renderBackendType == RenderBackendType::Vulkan) ? SDL_WINDOW_VULKAN : 0;
+	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(), 
+		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), windowAdditionalFlags, this->options.getGraphics_LetterboxMode(),
+		this->options.getGraphics_ModernInterface()))
+	{
+		DebugLogErrorFormat("Couldn't init window.");
+		return false;
+	}
+
 	auto resolutionScaleFunc = [this]()
 	{
 		return this->options.getGraphics_ResolutionScale();
 	};
 
-	constexpr RendererSystemType2D rendererSystemType2D = RendererSystemType2D::SDL2;
-	constexpr RendererSystemType3D rendererSystemType3D = RendererSystemType3D::SoftwareClassic;
+	const int renderThreadsMode = this->options.getGraphics_RenderThreadsMode();
 	const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
-	if (!this->renderer.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
-		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), this->options.getGraphics_LetterboxMode(),
-		this->options.getGraphics_ModernInterface(), resolutionScaleFunc, rendererSystemType2D, rendererSystemType3D,
-		this->options.getGraphics_RenderThreadsMode(), ditheringMode))
+	const bool enableValidationLayers = this->options.getMisc_EnableValidationLayers();
+	if (!this->renderer.init(&this->window, renderBackendType, resolutionScaleFunc, renderThreadsMode, ditheringMode, enableValidationLayers, dataFolderPath))
 	{
-		DebugLogError("Couldn't init renderer (2D: " + std::to_string(static_cast<int>(rendererSystemType2D)) +
-			", 3D: " + std::to_string(static_cast<int>(rendererSystemType3D)) + ").");
+		DebugLogErrorFormat("Couldn't init renderer.");
 		return false;
 	}
 
-	this->inputManager.init();
+	const double logicalToPixelScale = this->window.getLogicalToPixelScale();
+	this->inputManager.init(logicalToPixelScale);
 
 	// Add application-level input event handlers.
 	this->applicationExitListenerID = this->inputManager.addApplicationExitListener(
@@ -404,9 +419,15 @@ bool Game::init()
 		return false;
 	}
 
+	if (!this->sceneManager.renderLightManager.init(this->renderer))
+	{
+		DebugLogError("Couldn't init render light manager.");
+		return false;
+	}
+
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";
-	const Surface windowIconSurface = Surface::loadBMP(windowIconPath.c_str(), Renderer::DEFAULT_PIXELFORMAT);
+	const Surface windowIconSurface = Surface::loadBMP(windowIconPath.c_str(), RendererUtils::DEFAULT_PIXELFORMAT);
 	if (windowIconSurface.get() == nullptr)
 	{
 		DebugLogError("Couldn't load window icon with path \"" + windowIconPath + "\".");
@@ -415,10 +436,10 @@ bool Game::init()
 
 	const uint32_t windowIconColorKey = windowIconSurface.mapRGBA(0, 0, 0, 255);
 	SDL_SetColorKey(windowIconSurface.get(), SDL_TRUE, windowIconColorKey);
-	this->renderer.setWindowIcon(windowIconSurface);
+	this->window.setIcon(windowIconSurface);
 
 	// Initialize click regions for player movement in classic interface mode.
-	const Int2 windowDims = this->renderer.getWindowDimensions();
+	const Int2 windowDims = this->window.getPixelDimensions();
 	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
 
 	// Random seed.
@@ -431,6 +452,8 @@ bool Game::init()
 		DebugLogError("Couldn't init debug info text box.");
 		return false;
 	}
+
+	this->debugQuadtreeState = GameWorldUiView::allocDebugVoxelVisibilityQuadtreeState(this->renderer);
 
 	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
@@ -546,8 +569,7 @@ void Game::initOptions(const std::string &basePath, const std::string &optionsPa
 void Game::resizeWindow(int windowWidth, int windowHeight)
 {
 	// Resize the window, and the 3D renderer if initialized.
-	const bool fullGameWindow = this->options.getGraphics_ModernInterface();
-	this->renderer.resize(windowWidth, windowHeight, this->options.getGraphics_ResolutionScale(), fullGameWindow);
+	this->renderer.resize(windowWidth, windowHeight);
 
 	// Update where the mouse can click for player movement in the classic interface.
 	this->updateNativeCursorRegions(windowWidth, windowHeight);
@@ -556,8 +578,11 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
 		const WorldDouble3 playerPosition = this->player.getEyePosition();
-		const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY,
-			this->options.getGraphics_VerticalFOV(), this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
+		const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
+		
+		RenderCamera renderCamera;
+		renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, this->options.getGraphics_VerticalFOV(), this->window.getSceneViewAspectRatio(), tallPixelRatio);
+
 		this->gameState.tickVisibility(renderCamera, *this);
 		this->gameState.tickRendering(renderCamera, *this);
 	}
@@ -683,13 +708,9 @@ void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
 	GameWorldUiModel::updateNativeCursorRegions(this->nativeCursorRegions, windowWidth, windowHeight);
 }
 
-void Game::renderDebugInfo()
+void Game::updateDebugInfoText()
 {
 	const int profilerLevel = this->options.getMisc_ProfilerLevel();
-	if (profilerLevel == Options::MIN_PROFILER_LEVEL)
-	{
-		return;
-	}
 
 	std::string debugText;
 	if (profilerLevel >= 1)
@@ -705,17 +726,16 @@ void Game::renderDebugInfo()
 		const std::string averageFrameTimeText = String::fixedPrecision(averageFrameTimeMS, 1);
 		const std::string lowestFrameTimeText = String::fixedPrecision(lowestFrameTimeMS, 1);
 		const std::string highestFrameTimeText = String::fixedPrecision(highestFrameTimeMS, 1);
-		debugText.append("FPS: " + averageFpsText + " (" + averageFrameTimeText + "ms " + lowestFrameTimeText +
-			"ms " + highestFrameTimeText + "ms)");
+		debugText.append("FPS: " + averageFpsText + " (" + averageFrameTimeText + "ms " + lowestFrameTimeText + "ms " + highestFrameTimeText + "ms)");
 	}
 
-	const Int2 windowDims = this->renderer.getWindowDimensions();
+	const Int2 windowDims = this->window.getPixelDimensions();
 	if (profilerLevel >= 2)
 	{
 		// Renderer details (window res, render res, threads, frame times, etc.).
 		const std::string windowWidth = std::to_string(windowDims.x);
 		const std::string windowHeight = std::to_string(windowDims.y);
-		debugText.append("\nScreen: " + windowWidth + "x" + windowHeight);
+		debugText.append("\nWindow: " + windowWidth + "x" + windowHeight);
 
 		const RendererProfilerData &profilerData = this->renderer.getProfilerData();
 		const Int2 renderDims(profilerData.width, profilerData.height);
@@ -725,20 +745,20 @@ void Game::renderDebugInfo()
 			const double resolutionScale = this->options.getGraphics_ResolutionScale();
 			const std::string renderWidth = std::to_string(renderDims.x);
 			const std::string renderHeight = std::to_string(renderDims.y);
-			const std::string renderResScale = String::fixedPrecision(resolutionScale, 2);
+			const std::string renderResScale = String::fixedPrecision(resolutionScale * 100.0, 0) + "%";
 			const std::string renderThreadCount = std::to_string(profilerData.threadCount);
 			const std::string renderTime = String::fixedPrecision(profilerData.renderTime * 1000.0, 2);
-			const std::string presentTime = String::fixedPrecision(profilerData.presentTime * 1000.0, 2);
 			const std::string renderDrawCallCount = std::to_string(profilerData.drawCallCount);
 			const std::string renderCoverageTestRatio = String::fixedPrecision(static_cast<double>(profilerData.totalCoverageTests) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string renderDepthTestRatio = String::fixedPrecision(static_cast<double>(profilerData.totalDepthTests) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string renderColorOverdrawRatio = String::fixedPrecision(static_cast<double>(profilerData.totalColorWrites) / static_cast<double>(profilerData.pixelCount), 2);
 			const std::string objectTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.objectTextureByteCount) / (1024.0 * 1024.0), 2);
-			debugText.append("\nRender: " + renderWidth + "x" + renderHeight + " (" + renderResScale + "), " +
-				renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
-				"3D render: " + renderTime + "ms" + '\n' +
-				"Present: " + presentTime + "ms" + '\n' +
-				"Textures: " + std::to_string(profilerData.objectTextureCount) + " (" + objectTextureMbCount + "MB)" + '\n' +
+			const std::string uiTextureMbCount = String::fixedPrecision(static_cast<double>(profilerData.uiTextureByteCount) / (1024.0 * 1024.0), 2);
+			debugText.append("\nScene: " + renderWidth + "x" + renderHeight + " (" + renderResScale + ")" + '\n' +
+				"Render: " + renderTime + "ms, " + renderThreadCount + " thread" + ((profilerData.threadCount > 1) ? "s" : "") + '\n' +
+				"Object textures: " + std::to_string(profilerData.objectTextureCount) + " (" + objectTextureMbCount + "MB)" + '\n' +
+				"UI textures: " + std::to_string(profilerData.uiTextureCount) + " (" + uiTextureMbCount + "MB)" + '\n' +
+				"Materials: " + std::to_string(profilerData.materialCount) + '\n' +
 				"Draw calls: " + renderDrawCallCount + '\n' +
 				"Rendered Tris: " + std::to_string(profilerData.presentedTriangleCount) + '\n' +
 				"Lights: " + std::to_string(profilerData.totalLightCount) + '\n' +
@@ -773,31 +793,15 @@ void Game::renderDebugInfo()
 		if (this->shouldRenderScene)
 		{
 			// Set Jolt Physics camera position for LOD.
-			const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerCoord);
+			/*const WorldDouble3 playerWorldPos = VoxelUtils::coordToWorldPoint(playerCoord);
 			this->renderer.SetCameraPos(JPH::RVec3Arg(static_cast<float>(playerWorldPos.x), static_cast<float>(playerWorldPos.y), static_cast<float>(playerWorldPos.z)));
 
 			JPH::BodyManager::DrawSettings drawSettings;
-			this->physicsSystem.DrawBodies(drawSettings, &this->renderer);
-		}		
-
-		GameWorldUiView::DEBUG_DrawVoxelVisibilityQuadtree(*this);
+			this->physicsSystem.DrawBodies(drawSettings, &this->renderer);*/
+		}
 	}
 
 	this->debugInfoTextBox.setText(debugText);
-
-	const UiTextureID textureID = this->debugInfoTextBox.getTextureID();
-	const Rect &debugInfoRect = this->debugInfoTextBox.getRect();
-	const Int2 position = debugInfoRect.getTopLeft();
-	const Int2 size = debugInfoRect.getSize();
-	constexpr PivotType pivotType = PivotType::TopLeft;
-	constexpr RenderSpace renderSpace = RenderSpace::Classic;
-
-	double xPercent, yPercent, wPercent, hPercent;
-	GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-		renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-	const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
-	this->renderer.draw(&renderElement, 1, renderSpace);
 }
 
 void Game::loop()
@@ -939,8 +943,9 @@ void Game::loop()
 				const WorldDouble3 newPlayerPosition = this->player.getEyePosition();
 				const Degrees newPlayerYaw = this->player.angleX;
 				const Degrees newPlayerPitch = this->player.angleY;
-				const RenderCamera renderCamera = RendererUtils::makeCamera(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(),
-					this->renderer.getViewAspect(), this->options.getGraphics_TallPixelCorrection());
+				const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
+				RenderCamera renderCamera;
+				renderCamera.init(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(), this->window.getSceneViewAspectRatio(), tallPixelRatio);
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(renderCamera, *this);
@@ -974,33 +979,36 @@ void Game::loop()
 		// Render.
 		try
 		{
-			this->renderer.setRenderTargetToFrameBuffer();
-			this->renderer.clear();
+			RenderCommandList renderCommandList;
+			UiCommandList uiCommandList;
+			RenderCamera renderCamera;
+			RenderFrameSettings frameSettings;
 
 			if (this->shouldRenderScene)
 			{
-				RenderCommandBuffer renderCommandBuffer;
-
 				const RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-				renderSkyManager.populateCommandBuffer(renderCommandBuffer);
+				renderSkyManager.populateCommandList(renderCommandList);
 
-				this->sceneManager.renderVoxelChunkManager.populateCommandBuffer(renderCommandBuffer);
-				this->sceneManager.renderEntityManager.populateCommandBuffer(renderCommandBuffer);
+				this->sceneManager.renderVoxelChunkManager.populateCommandList(renderCommandList);
+				this->sceneManager.renderEntityManager.populateCommandList(renderCommandList);
 
 				const WeatherInstance &activeWeatherInst = this->gameState.getWeatherInstance();
 				const bool isFoggy = this->gameState.isFogActive();
-				this->sceneManager.renderWeatherManager.populateCommandBuffer(renderCommandBuffer, activeWeatherInst, isFoggy);
+				this->sceneManager.renderWeatherManager.populateCommandList(renderCommandList, activeWeatherInst, isFoggy);
 
 				const MapDefinition &activeMapDef = this->gameState.getActiveMapDef();
 				const MapType activeMapType = activeMapDef.getMapType();
 				const double ambientPercent = ArenaRenderUtils::getAmbientPercent(this->gameState.getClock(), activeMapType, isFoggy);
-				const Span<const RenderLightID> visibleLightIDs = this->sceneManager.renderLightManager.getVisibleLightIDs();
-				const double chasmAnimPercent = this->gameState.getChasmAnimPercent();
+				const UniformBufferID visibleLightsBufferID = this->sceneManager.renderLightManager.getVisibleLightsBufferID();
+				const int visibleLightCount = this->sceneManager.renderLightManager.getVisibleLightCount();
+				const double screenSpaceAnimPercent = this->gameState.getChasmAnimPercent();
 
 				const WorldDouble3 playerPosition = this->player.getEyePosition();
 				const Degrees fovY = this->options.getGraphics_VerticalFOV();
-				const double viewAspectRatio = this->renderer.getViewAspect();
-				const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, this->player.angleX, this->player.angleY, fovY, viewAspectRatio, this->options.getGraphics_TallPixelCorrection());
+				const double viewAspectRatio = this->window.getSceneViewAspectRatio();
+				const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
+				renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, fovY, viewAspectRatio, tallPixelRatio);
+
 				const ObjectTextureID paletteTextureID = this->sceneManager.gameWorldPaletteTextureRef.get();
 
 				const bool isInterior = this->gameState.getActiveMapType() == MapType::Interior;
@@ -1018,28 +1026,54 @@ void Game::loop()
 					lightTableTextureID = this->sceneManager.normalLightTableNightTextureRef.get();
 				}
 
-				const ObjectTextureID skyBgTextureID = renderSkyManager.getBgTextureID();
 				const DitheringMode ditheringMode = static_cast<DitheringMode>(this->options.getGraphics_DitheringMode());
+				ObjectTextureID ditherTextureID = this->sceneManager.noneDitherTextureRef.get();
+				if (ditheringMode == DitheringMode::Classic)
+				{
+					ditherTextureID = this->sceneManager.classicDitherTextureRef.get();
+				}
+				else if (ditheringMode == DitheringMode::Modern)
+				{
+					ditherTextureID = this->sceneManager.modernDitherTextureRef.get();
+				}
 
-				// Draw game world onto the native frame buffer. The game world buffer might not completely fill
-				// up the native buffer (bottom corners), so clearing the native buffer beforehand is still necessary.
-				this->renderer.submitSceneCommands(renderCamera, renderCommandBuffer, ambientPercent, visibleLightIDs, chasmAnimPercent, paletteTextureID,
-					lightTableTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
+				const ObjectTextureID skyBgTextureID = renderSkyManager.getBgTextureID();
+
+				frameSettings.init(Colors::Black, ambientPercent, visibleLightsBufferID, visibleLightCount, screenSpaceAnimPercent, paletteTextureID,
+					lightTableTextureID, ditherTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
-			// Get UI draw calls from each panel/sub-panel and determine what to draw.
-			UiCommandBuffer uiCommandBuffer;
-			this->panel->populateCommandBuffer(uiCommandBuffer);
+			this->panel->populateCommandList(uiCommandList);
 
 			for (const std::unique_ptr<Panel> &subPanel : this->subPanels)
 			{
-				subPanel->populateCommandBuffer(uiCommandBuffer);
+				subPanel->populateCommandList(uiCommandList);
 			}
 
-			this->renderer.submitUiCommands(uiCommandBuffer);
+			const int profilerLevel = this->options.getMisc_ProfilerLevel();
 
-			this->renderDebugInfo();
-			this->renderer.present();
+			RenderElement2D debugInfoRenderElement;
+			if (profilerLevel > Options::MIN_PROFILER_LEVEL)
+			{
+				this->updateDebugInfoText();
+
+				const Int2 windowDims = this->window.getPixelDimensions();
+				const Rect debugInfoTextBoxRect = this->debugInfoTextBox.getRect();
+				const Rect debugInfoPresentRect = GuiUtils::makeWindowSpaceRect(debugInfoTextBoxRect.x, debugInfoTextBoxRect.y, debugInfoTextBoxRect.width, debugInfoTextBoxRect.height,
+					PivotType::TopLeft, RenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());
+
+				debugInfoRenderElement.id = this->debugInfoTextBox.getTextureID();
+				debugInfoRenderElement.rect = debugInfoPresentRect;
+
+				uiCommandList.addElements(Span<const RenderElement2D>(&debugInfoRenderElement, 1));
+
+				if (profilerLevel >= 3)
+				{
+					this->debugQuadtreeState.populateCommandList(*this, uiCommandList);
+				}
+			}
+
+			this->renderer.submitFrame(renderCommandList, uiCommandList, renderCamera, frameSettings);
 		}
 		catch (const std::exception &e)
 		{

@@ -696,7 +696,7 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 
 		if (isTurning)
 		{
-			const Int2 dimensions = game.renderer.getWindowDimensions();
+			const Int2 dimensions = game.window.getPixelDimensions();
 
 			// Get the smaller of the two dimensions, so the look sensitivity is relative
 			// to a square instead of a rectangle. This keeps the camera look independent
@@ -787,6 +787,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 	AudioManager &audioManager = game.audioManager;
+	const Window &window = game.window;
 	Renderer &renderer = game.renderer;
 	Random &random = game.random;
 	SceneManager &sceneManager = game.sceneManager;
@@ -801,7 +802,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
 	{
-		const Int2 windowDims = renderer.getWindowDimensions();
+		const Int2 windowDims = window.getPixelDimensions();
 
 		CardinalDirectionName meleeSwingDirection = static_cast<CardinalDirectionName>(-1);
 		bool hasSelectedMeleeSwingDirection = false;
@@ -981,7 +982,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 			const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
 			const int gameWorldInterfaceHeight = metadata.getHeight(0);
-			const int originalCursorY = renderer.nativeToOriginal(inputManager.getMousePosition()).y;
+			const int originalCursorY = window.nativeToOriginal(inputManager.getMousePosition()).y;
 			isAttack = isAttackMouseButtonDown && (originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight));
 		}
 

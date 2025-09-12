@@ -6,6 +6,7 @@
 
 #include "RenderShaderUtils.h"
 
+#include "components/utilities/Span.h"
 #include "components/utilities/Span2D.h"
 
 // Handles to allocated textures in internal renderer format.
@@ -16,11 +17,13 @@ class Renderer;
 
 struct LockedTexture
 {
-	Span2D<std::byte> texels;
+	Span<std::byte> texels;
+	int width;
+	int height;
 	int bytesPerTexel;
 
 	LockedTexture();
-	LockedTexture(Span2D<std::byte> texels, int bytesPerTexel);
+	LockedTexture(Span<std::byte> texels, int width, int height, int bytesPerTexel);
 
 	bool isValid();
 

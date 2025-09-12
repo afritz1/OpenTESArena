@@ -14,6 +14,7 @@
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer3D.h"
+#include "components/utilities/RecyclablePool.h"
 
 class Renderer;
 
@@ -32,15 +33,12 @@ using RenderVoxelDrawCallRangeID = int;
 struct RenderVoxelDrawCallHeap
 {
 	static constexpr int MAX_DRAW_CALLS = 8192;
-	static constexpr int MAX_DRAW_CALL_RANGES = (7 * MAX_DRAW_CALLS) / 8; // Arbitrary, most ranges will be 1 draw call.
 
 	RenderDrawCall drawCalls[MAX_DRAW_CALLS];
 	std::vector<int> freedDrawCalls;
 	int nextDrawCall;
 
-	RenderVoxelDrawCallRange drawCallRanges[MAX_DRAW_CALL_RANGES];
-	std::vector<RenderVoxelDrawCallRangeID> freedIDs;
-	RenderVoxelDrawCallRangeID nextID;
+	RecyclablePool<RenderVoxelDrawCallRangeID, RenderVoxelDrawCallRange> drawCallRangesPool;
 
 	RenderVoxelDrawCallHeap();
 
@@ -51,44 +49,38 @@ struct RenderVoxelDrawCallHeap
 	void clear();
 };
 
-struct RenderVoxelCombinedFaceTransformKey
-{
-	VoxelInt3 minVoxel, maxVoxel;
-	VoxelFacing3D facing;
-
-	RenderVoxelCombinedFaceTransformKey();
-
-	bool operator==(const RenderVoxelCombinedFaceTransformKey &other) const;
-};
-
 struct RenderVoxelCombinedFaceDrawCallEntry
 {
 	RenderVoxelDrawCallRangeID rangeID; // One draw call.
+	UniformBufferID transformBufferID; // One transform buffer for this face.
 	VoxelInt3 min, max;
 
 	RenderVoxelCombinedFaceDrawCallEntry();
 };
 
-namespace std
+struct RenderVoxelNonCombinedTransformEntry
 {
-	// For fast lookup of a mesh instance's transform in this chunk.
-	template<>
-	struct hash<RenderVoxelCombinedFaceTransformKey>
-	{
-		size_t operator()(const RenderVoxelCombinedFaceTransformKey &key) const
-		{
-			const size_t minVoxelHash = key.minVoxel.toHash();
-			const size_t maxVoxelHash = key.maxVoxel.toHash();
-			const size_t facingHash = static_cast<size_t>(key.facing);
+	VoxelInt3 voxel;
+	UniformBufferID transformBufferID;
 
-			size_t hash = 0;
-			hash = MathUtils::hashCombine(hash, minVoxelHash);
-			hash = MathUtils::hashCombine(hash, maxVoxelHash);
-			hash = MathUtils::hashCombine(hash, facingHash);
-			return hash;
-		}
-	};
-}
+	RenderVoxelNonCombinedTransformEntry();
+};
+
+struct RenderVoxelDoorTransformsEntry
+{
+	VoxelInt3 voxel;
+	UniformBufferID transformBufferIDs[4]; // One per face.
+
+	RenderVoxelDoorTransformsEntry();
+};
+
+struct RenderVoxelMaterialInstanceEntry
+{
+	VoxelInt3 voxel;
+	RenderMaterialInstanceID materialInstID; // Allocated for whatever temporary effect is occurring (fading animation, door animation).
+
+	RenderVoxelMaterialInstanceEntry();
+};
 
 struct RenderVoxelChunk final : public Chunk
 {
@@ -97,18 +89,25 @@ struct RenderVoxelChunk final : public Chunk
 	std::vector<RenderMeshInstance> meshInsts;
 	std::unordered_map<VoxelShapeDefID, RenderMeshInstID> meshInstMappings;
 
-	std::vector<RenderVoxelCombinedFaceDrawCallEntry> combinedFaceDrawCallEntries;
-	std::unordered_map<RenderVoxelCombinedFaceTransformKey, UniformBufferID> combinedFaceTransforms; // Allocated transforms for static positions in space, doesn't need freeing when dirty.
+	// Mappings of combined face IDs to their draw call and transform.
+	// @todo ideally this'd be a RecyclablePool for faster iteration but RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls() would want an emplace(key, value) function which RecyclablePool doesn't have, it has alloc() which doesn't let us use the VoxelFaceCombineResultID from the loop
+	// - RecyclablePool::emplace() would check that the given key is not used
+	std::unordered_map<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> combinedFaceDrawCallEntries;
 
-	UniformBufferID transformBufferID; // One RenderTransform buffer for all voxels, though doors are handled separately. Owned by this chunk.
-	std::unordered_map<VoxelInt3, UniformBufferID> doorTransformBuffers; // Unique transform buffer per door instance, owned by this chunk. Four RenderTransforms (one per door face) per buffer.
+	std::vector<RenderVoxelNonCombinedTransformEntry> nonCombinedTransformEntries; // One transform per non-combined voxel. Owned by this chunk.
+	std::vector<RenderVoxelDoorTransformsEntry> doorTransformEntries; // Transforms for door voxel, owned by this chunk.
+
+	std::vector<RenderVoxelMaterialInstanceEntry> doorMaterialInstEntries;
+	std::vector<RenderVoxelMaterialInstanceEntry> fadeMaterialInstEntries;
 
 	RenderVoxelDrawCallHeap drawCallHeap;
-	Buffer3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs; // Most voxel geometry (walls, floors, etc.).
+	Buffer3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs; // Non-combined voxel geometry (diagonals, doors).
 
 	void init(const ChunkInt2 &position, int height);
 	RenderMeshInstID addMeshInst(RenderMeshInstance &&meshInst);
 	void freeDrawCalls(SNInt x, int y, WEInt z);
+	void freeDoorMaterial(SNInt x, int y, WEInt z, Renderer &renderer);
+	void freeFadeMaterial(SNInt x, int y, WEInt z, Renderer &renderer);
 	void freeBuffers(Renderer &renderer);
 	void clear();
 };

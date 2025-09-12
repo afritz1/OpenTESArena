@@ -1,17 +1,18 @@
 #ifndef FILE_H
 #define FILE_H
 
+#include <cstddef>
 #include <string>
+
+#include "Buffer.h"
 
 namespace File
 {
-	// Reads all of a file's text into a string.
 	std::string readAllText(const char *filename);
+	Buffer<std::byte> readAllBytes(const char *filename);
 
-	// Checks that a file exists.
 	bool exists(const char *filename);
 
-	// Copies a file to a destination file.
 	void copy(const char *srcFilename, const char *dstFilename);
 }
 

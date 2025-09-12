@@ -41,6 +41,7 @@ namespace PlayerConstants
 	constexpr double CLIMBING_RAISED_PLATFORM_GATHER_DISTANCE = COLLIDER_RADIUS * 1.15; // Raised platforms affect final climbing height.
 	constexpr double GHOST_MODE_SPEED = 15.0; // When ghost mode option is enabled.
 	constexpr double JUMP_SPEED = 3.0; // Instantaneous change in Y velocity when jumping.
+	constexpr double MAX_SECONDS_SINCE_ON_GROUND = 0.1; // Insulates move sound accumulation from ghost collisions.
 
 	constexpr double FRICTION = 0.30; // Slows down when on ground.
 
@@ -57,6 +58,7 @@ enum class PlayerMovementType
 struct PlayerGroundState
 {
 	bool onGround;
+	double secondsSinceOnGround;
 	bool isSwimming; // For swimming and splash SFXs
 	bool hasSplashedInChasm;
 	bool canJump;
@@ -170,7 +172,7 @@ struct Player
 	// Changes the velocity instantly. Intended for instantaneous acceleration like jumping.
 	void accelerateInstant(const Double3 &direction, double magnitude); // @todo: CharacterVirtual should treat this like a jump
 
-	void updateGroundState(Game &game, const JPH::PhysicsSystem &physicsSystem);
+	void updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &physicsSystem);
 	void prePhysicsStep(double dt, Game &game);
 	void postPhysicsStep(double dt, Game &game);
 };

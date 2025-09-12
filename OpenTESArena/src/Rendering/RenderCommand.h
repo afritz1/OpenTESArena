@@ -1,11 +1,11 @@
-#ifndef RENDER_COMMAND_BUFFER_H
-#define RENDER_COMMAND_BUFFER_H
+#ifndef RENDER_COMMAND_H
+#define RENDER_COMMAND_H
 
 #include "components/utilities/Span.h"
 
 struct RenderDrawCall;
 
-struct RenderCommandBuffer
+struct RenderCommandList
 {
 	static constexpr int MAX_ENTRIES = 16;
 
@@ -15,12 +15,11 @@ struct RenderCommandBuffer
 	Span<const RenderDrawCall> entries[MAX_ENTRIES];
 	int entryCount;
 
-	RenderCommandBuffer();
+	RenderCommandList();
 
 	int getTotalDrawCallCount() const;
 
 	void addDrawCalls(Span<const RenderDrawCall> drawCalls);
-	void clear();
 };
 
 #endif

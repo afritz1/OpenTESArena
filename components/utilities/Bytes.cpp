@@ -18,7 +18,12 @@ uint32_t Bytes::getLE32(const uint8_t *buf)
 int Bytes::getBytesToNextAlignment(uintptr_t address, size_t alignment)
 {
 	const size_t modulo = address % alignment;
-	return (modulo != 0) ? static_cast<int>(alignment - modulo) : 0;
+	if (modulo == 0)
+	{
+		return 0;
+	}
+
+	return static_cast<int>(alignment - modulo);
 }
 
 uintptr_t Bytes::getAlignedAddress(uintptr_t address, size_t alignment)

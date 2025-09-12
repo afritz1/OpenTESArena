@@ -39,7 +39,7 @@ bool WorldMapPanel::init()
 	{
 		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
+		const Int2 classicPosition = game.window.nativeToOriginal(mousePosition);
 
 		for (int i = 0; i < WorldMapUiModel::MASK_COUNT; i++)
 		{

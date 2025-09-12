@@ -141,6 +141,19 @@ VoxelFacesEntry::VoxelFacesEntry()
 	this->clear();
 }
 
+bool VoxelFacesEntry::anyCombinedFaces() const
+{
+	for (const VoxelFaceCombineResultID id : this->combinedFacesIDs)
+	{
+		if (id >= 0)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void VoxelFacesEntry::clear()
 {
 	std::fill(std::begin(this->combinedFacesIDs), std::end(this->combinedFacesIDs), -1);
@@ -190,8 +203,8 @@ void VoxelFaceCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxe
 		for (int faceIndex = 0; faceIndex < VoxelUtils::FACE_COUNT; faceIndex++)
 		{
 			const VoxelFacing3D facing = VoxelUtils::getFaceIndexFacing(faceIndex);
-
 			const VoxelFaceCombineResultID faceCombineResultID = facesEntry.combinedFacesIDs[faceIndex];
+
 			if (faceCombineResultID >= 0)
 			{
 				VoxelFaceCombineResult &faceCombineResult = this->combinedFacesPool.get(faceCombineResultID);
@@ -218,9 +231,15 @@ void VoxelFaceCombineChunk::update(Span<const VoxelInt3> dirtyVoxels, const Voxe
 				}
 
 				this->combinedFacesPool.free(faceCombineResultID);
+				this->dirtyIDs.emplace_back(faceCombineResultID); // May get duplicates from multiple calls to this update().
 			}
 		}
 	}
+
+	// Sort dirty IDs and remove duplicates in case of multiple calls to update().
+	std::sort(this->dirtyIDs.begin(), this->dirtyIDs.end());
+	const auto uniqueDirtyIdsEnd = std::unique(this->dirtyIDs.begin(), this->dirtyIDs.end());
+	this->dirtyIDs.erase(uniqueDirtyIdsEnd, this->dirtyIDs.end());
 
 	// Sort dirty positions lexicographically to remove duplicates.
 	std::sort(this->dirtyEntryPositions.begin(), this->dirtyEntryPositions.end(),
@@ -374,4 +393,5 @@ void VoxelFaceCombineChunk::clear()
 	this->dirtyEntryPositions.clear();
 	this->combinedFacesPool.clear();
 	this->entries.clear();
+	this->dirtyIDs.clear();
 }

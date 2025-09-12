@@ -239,39 +239,28 @@ int ArenaLevelUtils::getWildernessServiceSaveFileNumber(int wildX, int wildY)
 	return (wildY << 16) + wildX;
 }
 
-ObjectTextureID ArenaLevelUtils::allocGameWorldPaletteTexture(const std::string &filename, TextureManager &textureManager, Renderer &renderer)
+PaletteID ArenaLevelUtils::getGameWorldPaletteID(const std::string &filename, TextureManager &textureManager)
 {
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(filename.c_str());
 	if (!paletteID.has_value())
 	{
-		DebugLogError("Couldn't get palette ID from \"" + filename + "\".");
+		DebugLogErrorFormat("Couldn't get palette ID from \"%s\".", filename.c_str());
 		return -1;
 	}
 
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+	return *paletteID;
+}
+
+ObjectTextureID ArenaLevelUtils::allocGameWorldPaletteTexture(PaletteID paletteID, TextureManager &textureManager, Renderer &renderer)
+{
+	const Palette &palette = textureManager.getPaletteHandle(paletteID);
 	const ObjectTextureID paletteTextureID = renderer.createObjectTexture(static_cast<int>(palette.size()), 1, 4);
 	if (paletteTextureID < 0)
 	{
-		DebugLogError("Couldn't create palette texture \"" + filename + "\".");
+		DebugLogErrorFormat("Couldn't create game world palette texture from palette handle %d.", paletteID);
 		return -1;
 	}
 
-	LockedTexture lockedTexture = renderer.lockObjectTexture(paletteTextureID);
-	if (!lockedTexture.isValid())
-	{
-		DebugLogError("Couldn't lock palette texture \"" + filename + "\" for writing.");
-		return -1;
-	}
-
-	DebugAssert(lockedTexture.bytesPerTexel == 4);
-	uint32_t *paletteTexels = reinterpret_cast<uint32_t*>(lockedTexture.texels.begin());
-	std::transform(palette.begin(), palette.end(), paletteTexels,
-		[](const Color &paletteColor)
-	{
-		return paletteColor.toARGB();
-	});
-
-	renderer.unlockObjectTexture(paletteTextureID);
 	return paletteTextureID;
 }
 
@@ -280,16 +269,21 @@ ObjectTextureID ArenaLevelUtils::allocLightTableTexture(const std::string &filen
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
 	if (!textureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get light table texture builder ID from \"" + filename + "\".");
+		DebugLogErrorFormat("Couldn't get light table texture builder ID from \"%s\".", filename.c_str());
 		return -1;
 	}
 
 	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder);
+	const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
 	if (textureID < 0)
 	{
-		DebugLogError("Couldn't create light table texture \"" + filename + "\".");
+		DebugLogErrorFormat("Couldn't create light table texture \"%s\".", filename.c_str());
 		return -1;
+	}
+
+	if (!renderer.populateObjectTexture(textureID, textureBuilder.bytes))
+	{
+		DebugLogErrorFormat("Couldn't populate light table texture \"%s\".", filename.c_str());
 	}
 
 	return textureID;

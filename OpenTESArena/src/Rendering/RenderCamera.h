@@ -45,6 +45,8 @@ struct RenderCamera
 	double zoom; // Function of vertical FOV (90 degrees = 1 zoom).
 	double aspectRatio;
 
+	RenderCamera();
+
 	void init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, double tallPixelRatio);
 
 	// Generates a 3D ray from an XY position on-screen.

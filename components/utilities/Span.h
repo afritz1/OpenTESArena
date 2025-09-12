@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "Buffer.h"
+#include "StaticVector.h"
 #include "../debug/Debug.h"
 
 // Simple non-owning view of a 1D range of data. Useful when separating a container from the usage
@@ -45,6 +46,18 @@ public:
 	Span(const Buffer<U> &buffer)
 	{
 		this->init(static_cast<T*>(buffer.begin()), buffer.getCount());
+	}
+
+	template<typename U, int N>
+	Span(StaticVector<U, N> &vec)
+	{
+		this->init(static_cast<T*>(vec.begin()), vec.size());
+	}
+
+	template<typename U, int N>
+	Span(const StaticVector<U, N> &vec)
+	{
+		this->init(static_cast<T*>(vec.begin()), vec.size());
 	}
 
 	template<typename U>

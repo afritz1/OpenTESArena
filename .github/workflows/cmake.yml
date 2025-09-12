@@ -29,11 +29,11 @@ jobs:
     
     - name: Install Dependencies (Linux)
       if: matrix.os == 'ubuntu-latest'
-      run: sudo apt-get install libsdl2-dev libopenal-dev libwildmidi-dev
+      run: sudo apt-get install libsdl2-dev libopenal-dev libwildmidi-dev libvulkan-dev
       
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
-      run: brew install sdl2 openal-soft wildmidi
+      run: brew install sdl2 openal-soft wildmidi vulkan-headers vulkan-loader
       
     - name: Install Dependencies - MSYS2 (Windows)
       if: matrix.os == 'windows-latest'
@@ -46,6 +46,8 @@ jobs:
           mingw-w64-x86_64-cmake
           mingw-w64-x86_64-SDL2
           mingw-w64-x86_64-openal
+          mingw-w64-x86_64-vulkan-headers
+          mingw-w64-x86_64-vulkan-loader
         update: true
     - name: Install WildMIDI - MSYS2 (Windows)
       if: matrix.os == 'windows-latest'

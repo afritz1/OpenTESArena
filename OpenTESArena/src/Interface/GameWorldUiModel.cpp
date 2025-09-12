@@ -169,10 +169,10 @@ std::optional<GameWorldUiModel::ButtonType> GameWorldUiModel::getHoveredButtonTy
 		return std::nullopt;
 	}
 
-	const auto &renderer = game.renderer;
+	const Window &window = game.window;
 	const auto &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 classicPosition = renderer.nativeToOriginal(mousePosition);
+	const Int2 classicPosition = window.nativeToOriginal(mousePosition);
 	for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
 	{
 		const ButtonType buttonType = static_cast<ButtonType>(i);
@@ -233,25 +233,27 @@ void GameWorldUiModel::setFreeLookActive(Game &game, bool active)
 {
 	// Set relative mouse mode. When enabled, this freezes the hardware cursor in place but relative motion
 	// events are still recorded.
-	auto &inputManager = game.inputManager;
+	InputManager &inputManager = game.inputManager;
 	inputManager.setRelativeMouseMode(active);
 
-	auto &renderer = game.renderer;
-	const Int2 windowDims = renderer.getWindowDimensions();
-	renderer.warpMouse(windowDims.x / 2, windowDims.y / 2);
+	Window &window = game.window;
+	const Int2 logicalDims = window.getLogicalDimensions();
+	window.warpMouse(logicalDims.x / 2, logicalDims.y / 2);
 }
 
 VoxelDouble3 GameWorldUiModel::screenToWorldRayDirection(Game &game, const Int2 &windowPoint)
 {
-	const auto &options = game.options;
-	const auto &renderer = game.renderer;
+	const Options &options = game.options;
+	const Window &window = game.window;
 	const Player &player = game.player;
 	const WorldDouble3 playerPosition = player.getEyePosition();
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY,
-		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
+
+	RenderCamera renderCamera;
+	renderCamera.init(playerPosition, player.angleX, player.angleY, options.getGraphics_VerticalFOV(), window.getSceneViewAspectRatio(), tallPixelRatio);
 
 	// Mouse position percents across the screen. Add 0.50 to sample at the center of the pixel.
-	const Int2 viewDims = renderer.getViewDimensions();
+	const Int2 viewDims = window.getSceneViewDimensions();
 	const double screenXPercent = (static_cast<double>(windowPoint.x) + 0.50) / static_cast<double>(viewDims.x);
 	const double screenYPercent = (static_cast<double>(windowPoint.y) + 0.50) / static_cast<double>(viewDims.y);
 

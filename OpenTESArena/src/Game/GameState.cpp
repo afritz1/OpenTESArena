@@ -666,6 +666,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	player.setPhysicsVelocity(Double3::Zero);
 
 	TextureManager &textureManager = game.textureManager;
+	const Window &window = game.window;
 	Renderer &renderer = game.renderer;
 	SceneManager &sceneManager = game.sceneManager;
 
@@ -709,8 +710,9 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.random, textureManager);
 
-	const RenderCamera renderCamera = RendererUtils::makeCamera(playerPosition, player.angleX, player.angleY,
-		options.getGraphics_VerticalFOV(), renderer.getViewAspect(), options.getGraphics_TallPixelCorrection());
+	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
+	RenderCamera renderCamera;
+	renderCamera.init(playerPosition, player.angleX, player.angleY, options.getGraphics_VerticalFOV(), window.getSceneViewAspectRatio(), tallPixelRatio);
 
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
@@ -848,9 +850,9 @@ void GameState::tickSky(double dt, Game &game)
 
 void GameState::tickWeather(double dt, Game &game)
 {
-	const Renderer &renderer = game.renderer;
-	const double windowAspect = renderer.getWindowAspect();
-	this->weatherInst.update(dt, this->clock, windowAspect, game.random, game.audioManager);
+	const Window &window = game.window;
+	const double windowAspectRatio = window.getAspectRatio();
+	this->weatherInst.update(dt, this->clock, windowAspectRatio, game.random, game.audioManager);
 }
 
 void GameState::tickUiMessages(double dt)

@@ -33,6 +33,8 @@ struct VoxelFacesEntry
 
 	VoxelFacesEntry();
 
+	bool anyCombinedFaces() const;
+
 	void clear();
 };
 
@@ -52,6 +54,7 @@ private:
 public:
 	RecyclablePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> combinedFacesPool;
 	Buffer3D<VoxelFacesEntry> entries;
+	std::vector<VoxelFaceCombineResultID> dirtyIDs; // Combined faces freed this frame (potentially pointing to a different shape now) that dependent systems must refresh.
 
 	void init(const ChunkInt2 &position, int height);
 

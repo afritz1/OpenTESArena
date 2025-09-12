@@ -120,10 +120,10 @@ bool ChooseClassPanel::init()
 	auto updateHoveredClassIndex = [this, &game]()
 	{
 		// Draw tooltip if over a valid element in the list box.
-		auto &renderer = game.renderer;
-		const auto &inputManager = game.inputManager;
+		const Window &window = game.window;
+		const InputManager &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPoint = renderer.nativeToOriginal(mousePosition);
+		const Int2 originalPoint = window.nativeToOriginal(mousePosition);
 
 		const Rect classListRect = ChooseClassUiView::getListRect(game);
 		if (classListRect.contains(originalPoint))
@@ -154,7 +154,7 @@ bool ChooseClassPanel::init()
 
 	this->addMouseScrollChangedListener([this, updateHoveredClassIndex](Game &game, MouseWheelScrollType type, const Int2 &position)
 	{
-		const Int2 classicPoint = game.renderer.nativeToOriginal(position);
+		const Int2 classicPoint = game.window.nativeToOriginal(position);
 		const Rect classListRect = ChooseClassUiView::getListRect(game);
 		if (classListRect.contains(classicPoint))
 		{

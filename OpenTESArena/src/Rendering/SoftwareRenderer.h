@@ -4,9 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "RendererSystem3D.h"
 #include "RenderLightUtils.h"
-#include "RenderTextureAllocator.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
 #include "../Math/Vector2.h"
@@ -22,20 +20,7 @@
 #include "components/utilities/Span2D.h"
 #include "components/utilities/Span3D.h"
 
-struct SoftwareObjectTexture
-{
-	Buffer<std::byte> texels;
-	const uint8_t *texels8Bit;
-	const uint32_t *texels32Bit;
-	int width, height, texelCount;
-	double widthReal, heightReal;
-	int bytesPerTexel;
-
-	SoftwareObjectTexture();
-
-	void init(int width, int height, int bytesPerTexel);
-	void clear();
-};
+struct RendererProfilerData3D;
 
 struct SoftwareVertexPositionBuffer
 {
@@ -63,12 +48,12 @@ struct SoftwareUniformBuffer
 {
 	Buffer<std::byte> bytes;
 	int elementCount;
-	size_t sizeOfElement;
-	size_t alignmentOfElement;
+	int bytesPerElement;
+	int alignmentOfElement;
 
 	SoftwareUniformBuffer();
 
-	void init(int elementCount, size_t sizeOfElement, size_t alignmentOfElement);
+	void init(int elementCount, int bytesPerElement, int alignmentOfElement);
 
 	std::byte *begin();
 	const std::byte *begin() const;
@@ -78,7 +63,7 @@ struct SoftwareUniformBuffer
 	template<typename T>
 	T &get(int index)
 	{
-		DebugAssert(sizeof(T) == this->sizeOfElement);
+		DebugAssert(sizeof(T) == this->bytesPerElement);
 		DebugAssert(alignof(T) == this->alignmentOfElement);
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->elementCount);
@@ -89,7 +74,7 @@ struct SoftwareUniformBuffer
 	template<typename T>
 	const T &get(int index) const
 	{
-		DebugAssert(sizeof(T) == this->sizeOfElement);
+		DebugAssert(sizeof(T) == this->bytesPerElement);
 		DebugAssert(alignof(T) == this->alignmentOfElement);
 		DebugAssert(index >= 0);
 		DebugAssert(index < this->elementCount);
@@ -101,18 +86,61 @@ struct SoftwareUniformBuffer
 	int getValidByteCount() const;
 };
 
+struct SoftwareObjectTexture
+{
+	Buffer<std::byte> texels;
+	const uint8_t *texels8Bit;
+	const uint32_t *texels32Bit;
+	int width, height, texelCount;
+	double widthReal, heightReal;
+	int bytesPerTexel;
+
+	SoftwareObjectTexture();
+
+	void init(int width, int height, int bytesPerTexel);
+	void clear();
+};
+
+struct SoftwareMaterial
+{
+	VertexShaderType vertexShaderType;
+	PixelShaderType pixelShaderType;
+
+	ObjectTextureID textureIDs[RenderMaterialKey::MAX_TEXTURE_COUNT];
+	int textureCount;
+
+	RenderLightingType lightingType;
+
+	bool enableBackFaceCulling;
+	bool enableDepthRead;
+	bool enableDepthWrite;
+
+	SoftwareMaterial();
+
+	void init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
+		RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite);
+};
+
+struct SoftwareMaterialInstance
+{
+	double meshLightPercent;
+	double pixelShaderParam0;
+
+	SoftwareMaterialInstance();
+};
+
 struct SoftwareLight
 {
-	double worldPointX;
-	double worldPointY;
-	double worldPointZ;
+	double pointX;
+	double pointY;
+	double pointZ;
 	double startRadius, startRadiusSqr;
 	double endRadius, endRadiusSqr;
-	double startEndRadiusDiff, startEndRadiusDiffRecip;
+	double radiusDiffRecip;
 
 	SoftwareLight();
 
-	void init(const Double3 &worldPoint, double startRadius, double endRadius);
+	void init(const Double3 &point, double startRadius, double endRadius);
 };
 
 using SoftwareVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, SoftwareVertexPositionBuffer>;
@@ -120,79 +148,74 @@ using SoftwareVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID
 using SoftwareIndexBufferPool = RecyclablePool<IndexBufferID, SoftwareIndexBuffer>;
 using SoftwareUniformBufferPool = RecyclablePool<UniformBufferID, SoftwareUniformBuffer>;
 using SoftwareObjectTexturePool = RecyclablePool<ObjectTextureID, SoftwareObjectTexture>;
-using SoftwareLightPool = RecyclablePool<RenderLightID, SoftwareLight>;
+using SoftwareMaterialPool = RecyclablePool<RenderMaterialID, SoftwareMaterial>;
+using SoftwareMaterialInstancePool = RecyclablePool<RenderMaterialID, SoftwareMaterialInstance>;
 
-struct SoftwareObjectTextureAllocator final : public ObjectTextureAllocator
-{
-	SoftwareObjectTexturePool *pool;
-
-	SoftwareObjectTextureAllocator();
-
-	void init(SoftwareObjectTexturePool *pool);
-
-	ObjectTextureID create(int width, int height, int bytesPerTexel) override;
-	ObjectTextureID create(const TextureBuilder &textureBuilder) override;
-
-	void free(ObjectTextureID textureID) override;
-
-	LockedTexture lock(ObjectTextureID textureID) override;
-	void unlock(ObjectTextureID textureID) override;
-};
-
-class SoftwareRenderer final : public RendererSystem3D
+class SoftwareRenderer
 {
 private:
 	Buffer2D<uint8_t> paletteIndexBuffer; // Intermediate buffer to support back-to-front transparencies.
 	Buffer2D<double> depthBuffer;
-	Buffer3D<bool> ditherBuffer; // Stores N layers of pre-computed patterns depending on the option.
-	DitheringMode ditheringMode;
 
 	SoftwareVertexPositionBufferPool positionBuffers;
 	SoftwareVertexAttributeBufferPool attributeBuffers;
 	SoftwareIndexBufferPool indexBuffers;
 	SoftwareUniformBufferPool uniformBuffers;
 	SoftwareObjectTexturePool objectTextures;
-	SoftwareLightPool lights;
-
-	SoftwareObjectTextureAllocator textureAllocator;
+	SoftwareMaterialPool materials;
+	SoftwareMaterialInstancePool materialInsts;
 public:
 	SoftwareRenderer();
-	~SoftwareRenderer() override;
+	~SoftwareRenderer();
 
-	void init(const RenderInitSettings &settings) override;
-	void shutdown() override;
-	bool isInited() const override;
+	bool init(const RenderInitSettings &initSettings);
+	void shutdown();
+	bool isInited() const;
 
-	void resize(int width, int height) override;
+	void resize(int width, int height);
 
-	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex) override;
-	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex) override;
-	IndexBufferID createIndexBuffer(int indexCount) override;
-	void populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions) override;
-	void populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes) override;
-	void populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices) override;
-	void freeVertexPositionBuffer(VertexPositionBufferID id) override;
-	void freeVertexAttributeBuffer(VertexAttributeBufferID id) override;
-	void freeIndexBuffer(IndexBufferID id) override;
+	RendererProfilerData3D getProfilerData() const;
 
-	ObjectTextureAllocator *getTextureAllocator() override;
-	std::optional<Int2> tryGetObjectTextureDims(ObjectTextureID id) const override;
+	int getBytesPerFloat() const;
 
-	UniformBufferID createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement) override;
-	void populateUniformBuffer(UniformBufferID id, Span<const std::byte> data) override;
-	void populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData) override;
-	void freeUniformBuffer(UniformBufferID id) override;
+	VertexPositionBufferID createVertexPositionBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent);
+	void freeVertexPositionBuffer(VertexPositionBufferID id);
+	LockedBuffer lockVertexPositionBuffer(VertexPositionBufferID id);
+	void unlockVertexPositionBuffer(VertexPositionBufferID id);
 
-	RenderLightID createLight() override;
-	void setLightPosition(RenderLightID id, const Double3 &worldPoint) override;
-	void setLightRadius(RenderLightID id, double startRadius, double endRadius) override;
-	void freeLight(RenderLightID id) override;
+	VertexAttributeBufferID createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent);
+	void freeVertexAttributeBuffer(VertexAttributeBufferID id);
+	LockedBuffer lockVertexAttributeBuffer(VertexAttributeBufferID id);
+	void unlockVertexAttributeBuffer(VertexAttributeBufferID id);
 
-	Renderer3DProfilerData getProfilerData() const override;
+	IndexBufferID createIndexBuffer(int indexCount, int bytesPerIndex);
+	void freeIndexBuffer(IndexBufferID id);
+	LockedBuffer lockIndexBuffer(IndexBufferID id);
+	void unlockIndexBuffer(IndexBufferID id);
 
-	void submitFrame(const RenderCamera &camera, const RenderFrameSettings &settings,
-		const RenderCommandBuffer &commandBuffer, uint32_t *outputBuffer) override;
-	void present() override;
+	UniformBufferID createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement);
+	void freeUniformBuffer(UniformBufferID id);
+	LockedBuffer lockUniformBuffer(UniformBufferID id);
+	LockedBuffer lockUniformBufferIndex(UniformBufferID id, int index);
+	void unlockUniformBuffer(UniformBufferID id);
+	void unlockUniformBufferIndex(UniformBufferID id, int index);
+
+	ObjectTextureID createTexture(int width, int height, int bytesPerTexel);
+	void freeTexture(ObjectTextureID id);
+	std::optional<Int2> tryGetTextureDims(ObjectTextureID id) const;
+	LockedTexture lockTexture(ObjectTextureID id);
+	void unlockTexture(ObjectTextureID id);
+
+	RenderMaterialID createMaterial(RenderMaterialKey key);
+	void freeMaterial(RenderMaterialID id);
+	
+	RenderMaterialInstanceID createMaterialInstance();
+	void freeMaterialInstance(RenderMaterialInstanceID id);
+	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value);
+	void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value);
+
+	void submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
+		const RenderFrameSettings &settings, uint32_t *outputBuffer);
 };
 
 #endif

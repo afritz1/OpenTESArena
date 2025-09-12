@@ -19,7 +19,7 @@ struct RecyclablePool
 
 	std::vector<KeyT> keys; // Dense list, all slots are always valid. Equal length with values list.
 	std::vector<ValueT> values; // Dense list, all slots are always valid.
-	std::vector<int> valueIndices; // Maps KeyT to index into elements or -1 if freed.
+	std::vector<int> valueIndices; // Maps KeyT to index of ValueT or -1 if freed. Length never shrinks.
 	std::vector<KeyT> freedKeys;
 
 	int getCount() const

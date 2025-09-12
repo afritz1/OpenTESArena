@@ -14,9 +14,11 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Input/InputManager.h"
+#include "../Interface/GameWorldUiView.h"
 #include "../Interface/Panel.h"
 #include "../Player/CharacterCreationState.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/Window.h"
 #include "../UI/TextBox.h"
 #include "../World/ChunkManager.h"
 #include "../World/SceneManager.h"
@@ -35,6 +37,7 @@ public:
 	InputManager inputManager;
 	std::unique_ptr<CharacterCreationState> charCreationState;
 	Options options;
+	Window window;
 	Renderer renderer;
 	TextureManager textureManager; // The texture manager object for loading images from file.
 	JPH::PhysicsSystem physicsSystem; // The Jolt physics system for the scene.
@@ -53,6 +56,7 @@ public:
 
 	// Displayed with varying profiler levels.
 	TextBox debugInfoTextBox;
+	DebugVoxelVisibilityQuadtreeState debugQuadtreeState;
 
 	Random random; // A modern random, use when accuracy to the original is not needed.
 	ArenaRandom arenaRandom; // Replicates the original game's randomness.
@@ -100,8 +104,7 @@ private:
 	void handleWindowResized(int width, int height);
 	void updateNativeCursorRegions(int windowWidth, int windowHeight);
 
-	// Optionally displays debug profiler info on-screen.
-	void renderDebugInfo();
+	void updateDebugInfoText();
 public:
 	Game();
 	Game(const Game&) = delete;

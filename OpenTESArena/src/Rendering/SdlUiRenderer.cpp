@@ -1,10 +1,14 @@
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <type_traits>
 
 #include "SDL_render.h"
 
 #include "ArenaRenderUtils.h"
+#include "RenderBackend.h"
+#include "Renderer.h"
+#include "RendererUtils.h"
 #include "SdlUiRenderer.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
@@ -18,28 +22,28 @@ namespace
 {
 	using TexelsInitFunc = std::function<void(Span2D<uint32_t>)>;
 
-	UiTextureID CreateUiTexture(int width, int height, const TexelsInitFunc &initFunc, SdlUiTexturePool *pool, SDL_Renderer *renderer)
+	UiTextureID CreateUiTexture(int width, int height, const TexelsInitFunc &initFunc, SdlUiTexturePool &pool, SDL_Renderer *renderer)
 	{
-		const UiTextureID textureID = pool->alloc();
+		const UiTextureID textureID = pool.alloc();
 		if (textureID < 0)
 		{
 			DebugLogErrorFormat("Couldn't allocate texture ID from pool for SDL_Texture with dims %dx%d.", width, height);
 			return -1;
 		}
 
-		SDL_Texture *&texture = pool->get(textureID);
-		texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, width, height);
+		SDL_Texture *&texture = pool.get(textureID);
+		texture = SDL_CreateTexture(renderer, RendererUtils::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, width, height);
 		if (texture == nullptr)
 		{
 			DebugLogErrorFormat("Couldn't allocate SDL_Texture with dims %dx%d (%s).", width, height, SDL_GetError());
-			pool->free(textureID);
+			pool.free(textureID);
 			return -1;
 		}
 
 		if (SDL_SetTextureBlendMode(texture, SDL_BLENDMODE_BLEND) != 0)
 		{
 			DebugLogErrorFormat("Couldn't set SDL_Texture blend mode with dims %dx%d (%s).", width, height, SDL_GetError());
-			pool->free(textureID);
+			pool.free(textureID);
 			return -1;
 		}
 
@@ -48,7 +52,7 @@ namespace
 		if (SDL_LockTexture(texture, nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
 		{
 			DebugLogErrorFormat("Couldn't lock SDL_Texture for writing with dims %dx%d (%s).", width, height, SDL_GetError());
-			pool->free(textureID);
+			pool.free(textureID);
 			return -1;
 		}
 
@@ -58,124 +62,6 @@ namespace
 
 		return textureID;
 	}
-}
-
-SdlUiTextureAllocator::SdlUiTextureAllocator()
-{
-	this->pool = nullptr;
-	this->renderer = nullptr;
-}
-
-void SdlUiTextureAllocator::init(SdlUiTexturePool *pool, SDL_Renderer *renderer)
-{
-	this->pool = pool;
-	this->renderer = renderer;
-}
-
-UiTextureID SdlUiTextureAllocator::create(int width, int height)
-{
-	TexelsInitFunc initFunc = [](Span2D<uint32_t> dstTexels)
-	{
-		dstTexels.fill(Colors::MagentaARGB);
-	};
-
-	return CreateUiTexture(width, height, initFunc, this->pool, this->renderer);
-}
-
-UiTextureID SdlUiTextureAllocator::create(Span2D<const uint32_t> texels)
-{
-	TexelsInitFunc initFunc = [&texels](Span2D<uint32_t> dstTexels)
-	{
-		std::copy(texels.begin(), texels.end(), dstTexels.begin());
-	};
-
-	return CreateUiTexture(texels.getWidth(), texels.getHeight(), initFunc, this->pool, this->renderer);
-}
-
-UiTextureID SdlUiTextureAllocator::create(Span2D<const uint8_t> texels, const Palette &palette)
-{
-	TexelsInitFunc initFunc = [&texels, &palette](Span2D<uint32_t> dstTexels)
-	{
-		std::transform(texels.begin(), texels.end(), dstTexels.begin(),
-			[&palette](uint8_t texel)
-		{
-			return palette[texel].toARGB();
-		});
-	};
-
-	return CreateUiTexture(texels.getWidth(), texels.getHeight(), initFunc, this->pool, this->renderer);
-}
-
-UiTextureID SdlUiTextureAllocator::create(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
-{
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-	if (textureBuilder.bytesPerTexel == 1)
-	{
-		Span2D<const uint8_t> texels = textureBuilder.getTexels8();
-		const Palette &palette = textureManager.getPaletteHandle(paletteID);
-		return this->create(texels, palette);
-	}
-	else if (textureBuilder.bytesPerTexel == 4)
-	{
-		Span2D<const uint32_t> texels = textureBuilder.getTexels32();
-		return this->create(texels);
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(bool, std::to_string(textureBuilder.bytesPerTexel));
-	}
-}
-
-void SdlUiTextureAllocator::free(UiTextureID textureID)
-{
-	SDL_Texture **texture = this->pool->tryGet(textureID);
-	if (texture == nullptr)
-	{
-		DebugLogWarningFormat("No SDL_Texture to free at ID %d.", textureID);
-		return;
-	}
-
-	SDL_DestroyTexture(*texture);
-	this->pool->free(textureID);
-}
-
-LockedTexture SdlUiTextureAllocator::lock(UiTextureID textureID)
-{
-	SDL_Texture **texture = this->pool->tryGet(textureID);
-	if (texture == nullptr)
-	{
-		DebugLogWarningFormat("No SDL_Texture to lock at ID %d.", textureID);
-		return LockedTexture();
-	}
-
-	int width, height;
-	if (SDL_QueryTexture(*texture, nullptr, nullptr, &width, &height) != 0)
-	{
-		DebugLogErrorFormat("Couldn't query SDL_Texture dimensions for ID %d (%s).", textureID, SDL_GetError());
-		return LockedTexture();
-	}
-
-	uint32_t *dstTexels;
-	int pitch;
-	if (SDL_LockTexture(*texture, nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
-	{
-		DebugLogErrorFormat("Couldn't lock SDL_Texture for updating (ID %d, dims %dx%d, %s).", textureID, width, height, SDL_GetError());
-		return LockedTexture();
-	}
-
-	return LockedTexture(Span2D<std::byte>(reinterpret_cast<std::byte*>(dstTexels), width, height), sizeof(*dstTexels));
-}
-
-void SdlUiTextureAllocator::unlock(UiTextureID textureID)
-{
-	SDL_Texture **texture = this->pool->tryGet(textureID);
-	if (texture == nullptr)
-	{
-		DebugLogWarningFormat("No SDL_Texture to unlock at ID %d.", textureID);
-		return;
-	}
-
-	SDL_UnlockTexture(*texture);
 }
 
 SdlUiRenderer::SdlUiRenderer()
@@ -192,7 +78,6 @@ bool SdlUiRenderer::init(SDL_Window *window)
 		return false;
 	}
 
-	this->textureAllocator.init(&this->texturePool, this->renderer);
 	return true;
 }
 
@@ -207,9 +92,49 @@ void SdlUiRenderer::shutdown()
 	this->renderer = nullptr;
 }
 
-UiTextureAllocator *SdlUiRenderer::getTextureAllocator()
+RendererProfilerData2D SdlUiRenderer::getProfilerData() const
 {
-	return &this->textureAllocator;
+	RendererProfilerData2D profilerData;
+	profilerData.drawCallCount = 0;
+	profilerData.uiTextureCount = static_cast<int>(this->texturePool.values.size());
+	for (SDL_Texture *texture : this->texturePool.values)
+	{
+		constexpr int bytesPerTexel = 4;
+
+		int width, height;
+		const int result = SDL_QueryTexture(texture, nullptr, nullptr, &width, &height);
+		if (result != 0)
+		{
+			continue;
+		}
+
+		profilerData.uiTextureByteCount += width * height * bytesPerTexel;
+	}
+
+	return profilerData;
+}
+
+UiTextureID SdlUiRenderer::createTexture(int width, int height)
+{
+	TexelsInitFunc initFunc = [](Span2D<uint32_t> dstTexels)
+	{
+		dstTexels.fill(Colors::MagentaARGB);
+	};
+
+	return CreateUiTexture(width, height, initFunc, this->texturePool, this->renderer);
+}
+
+void SdlUiRenderer::freeTexture(UiTextureID textureID)
+{
+	SDL_Texture **texture = this->texturePool.tryGet(textureID);
+	if (texture == nullptr)
+	{
+		DebugLogWarningFormat("No SDL_Texture to free at ID %d.", textureID);
+		return;
+	}
+
+	SDL_DestroyTexture(*texture);
+	this->texturePool.free(textureID);
 }
 
 std::optional<Int2> SdlUiRenderer::tryGetTextureDims(UiTextureID textureID) const
@@ -232,81 +157,71 @@ std::optional<Int2> SdlUiRenderer::tryGetTextureDims(UiTextureID textureID) cons
 	return Int2(width, height);
 }
 
-void SdlUiRenderer::draw(const RenderElement *elements, int count, RenderSpace renderSpace, const Rect &letterboxRect)
+LockedTexture SdlUiRenderer::lockTexture(UiTextureID textureID)
 {
-	auto originalPointToNative = [&letterboxRect](const Int2 &point)
+	SDL_Texture **texture = this->texturePool.tryGet(textureID);
+	if (texture == nullptr)
 	{
-		const double originalXPercent = static_cast<double>(point.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
-		const double originalYPercent = static_cast<double>(point.y) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
-
-		const double letterboxWidthReal = static_cast<double>(letterboxRect.width);
-		const double letterboxHeightReal = static_cast<double>(letterboxRect.height);
-		const Int2 letterboxPoint(
-			static_cast<int>(std::round(letterboxWidthReal * originalXPercent)),
-			static_cast<int>(std::round(letterboxHeightReal * originalYPercent)));
-		const Int2 nativePoint(
-			letterboxPoint.x + letterboxRect.getLeft(),
-			letterboxPoint.y + letterboxRect.getTop());
-		return nativePoint;
-	};
-
-	auto originalRectToNative = [&originalPointToNative](const SDL_Rect &rect)
-	{
-		const Int2 oldTopLeft(rect.x, rect.y);
-		const Int2 oldBottomRight(rect.x + rect.w, rect.y + rect.h);
-		const Int2 newTopLeft = originalPointToNative(oldTopLeft);
-		const Int2 newBottomRight = originalPointToNative(oldBottomRight);
-
-		SDL_Rect newRect;
-		newRect.x = newTopLeft.x;
-		newRect.y = newTopLeft.y;
-		newRect.w = newBottomRight.x - newTopLeft.x;
-		newRect.h = newBottomRight.y - newTopLeft.y;
-		return newRect;
-	};
-
-	int renderWidth, renderHeight;
-	if (SDL_GetRendererOutputSize(this->renderer, &renderWidth, &renderHeight) != 0)
-	{
-		DebugCrash("Couldn't get renderer output size.");
+		DebugLogWarningFormat("No SDL_Texture to lock at ID %d.", textureID);
+		return LockedTexture();
 	}
 
-	const double renderWidthReal = static_cast<double>(renderWidth);
-	const double renderHeightReal = static_cast<double>(renderHeight);
-
-	for (int i = 0; i < count; i++)
+	int width, height;
+	if (SDL_QueryTexture(*texture, nullptr, nullptr, &width, &height) != 0)
 	{
-		const RenderElement &element = elements[i];
+		DebugLogErrorFormat("Couldn't query SDL_Texture dimensions for ID %d (%s).", textureID, SDL_GetError());
+		return LockedTexture();
+	}
+
+	uint32_t *dstTexels;
+	int pitch;
+	if (SDL_LockTexture(*texture, nullptr, reinterpret_cast<void**>(&dstTexels), &pitch) != 0)
+	{
+		DebugLogErrorFormat("Couldn't lock SDL_Texture for updating (ID %d, dims %dx%d, %s).", textureID, width, height, SDL_GetError());
+		return LockedTexture();
+	}
+
+	const int bytesPerElement = sizeof(*dstTexels);
+	const int byteCount = width * height * bytesPerElement;
+	return LockedTexture(Span<std::byte>(reinterpret_cast<std::byte*>(dstTexels), byteCount), width, height, bytesPerElement);
+}
+
+void SdlUiRenderer::unlockTexture(UiTextureID textureID)
+{
+	SDL_Texture **texture = this->texturePool.tryGet(textureID);
+	if (texture == nullptr)
+	{
+		DebugLogWarningFormat("No SDL_Texture to unlock at ID %d.", textureID);
+		return;
+	}
+
+	SDL_UnlockTexture(*texture);
+}
+
+void SdlUiRenderer::draw(Span<const RenderElement2D> elements)
+{
+	for (const RenderElement2D &element : elements)
+	{
+		const Rect clipRect = element.clipRect;
+		if (!clipRect.isEmpty())
+		{
+			const SDL_Rect sdlClipRect = clipRect.getSdlRect();
+			SDL_RenderSetClipRect(this->renderer, &sdlClipRect);
+		}
+
 		SDL_Texture *texture = this->texturePool.get(element.id);
 
-		SDL_Rect nativeRect;
-		if (renderSpace == RenderSpace::Classic)
-		{
-			constexpr double screenWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
-			constexpr double screenHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
+		SDL_Rect rect;
+		rect.x = element.rect.x;
+		rect.y = element.rect.y;
+		rect.w = element.rect.width;
+		rect.h = element.rect.height;
 
-			// Rect in classic 320x200 space.
-			// @todo I wonder if the tiny cracks between things is because we round + truncate, then round + truncate again above?
-			SDL_Rect classicRect;
-			classicRect.x = static_cast<int>(std::round(static_cast<double>(element.x) * screenWidthReal));
-			classicRect.y = static_cast<int>(std::round(static_cast<double>(element.y) * screenHeightReal));
-			classicRect.w = static_cast<int>(std::round(static_cast<double>(element.width) * screenWidthReal)); // @todo: dimensions should honor pixel centers, right?
-			classicRect.h = static_cast<int>(std::round(static_cast<double>(element.height) * screenHeightReal));
+		SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
 
-			nativeRect = originalRectToNative(classicRect);
-		}
-		else if (renderSpace == RenderSpace::Native)
+		if (!clipRect.isEmpty())
 		{
-			nativeRect.x = static_cast<int>(std::round(static_cast<double>(element.x) * renderWidthReal));
-			nativeRect.y = static_cast<int>(std::round(static_cast<double>(element.y) * renderHeightReal));
-			nativeRect.w = static_cast<int>(std::round(static_cast<double>(element.width) * renderWidthReal)); // @todo: dimensions should honor pixel centers, right?
-			nativeRect.h = static_cast<int>(std::round(static_cast<double>(element.height) * renderHeightReal));
+			SDL_RenderSetClipRect(this->renderer, nullptr);
 		}
-		else
-		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(renderSpace)));
-		}
-
-		SDL_RenderCopy(this->renderer, texture, nullptr, &nativeRect);
 	}
 }

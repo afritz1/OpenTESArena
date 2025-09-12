@@ -8,6 +8,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Math/Rect.h"
 #include "../Rendering/Renderer.h"
+#include "../Rendering/RendererUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
@@ -15,11 +16,10 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 
-Surface TextureUtils::generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager,
-	Renderer &renderer)
+Surface TextureUtils::generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager, Renderer &renderer)
 {
 	// Initialize the scratch surface to transparent.
-	Surface surface = Surface::createWithFormat(width, height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+	Surface surface = Surface::createWithFormat(width, height, RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
 	const uint32_t clearColor = surface.mapRGBA(0, 0, 0, 0);
 	surface.fill(clearColor);
 
@@ -50,7 +50,7 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 		auto makeSurface = [&textureManager, tilesPaletteID](TextureBuilderID textureBuilderID)
 		{
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(textureBuilderID);
-			Surface surface = Surface::createWithFormat(textureBuilder.width, textureBuilder.height, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+			Surface surface = Surface::createWithFormat(textureBuilder.width, textureBuilder.height, RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
 
 			// Parchment tiles should all be 8-bit for now.
 			Span2D<const uint8_t> srcTexels = textureBuilder.getTexels8();
@@ -244,7 +244,7 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 	constexpr int padding = 4;
 
 	Surface surface = Surface::createWithFormat(textureGenInfo.width + padding, textureGenInfo.height + padding,
-		Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
+		RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
 
 	constexpr Color backColor(32, 32, 32, 192);
 	surface.fill(backColor.r, backColor.g, backColor.b, backColor.a);
@@ -292,22 +292,29 @@ bool TextureUtils::tryAllocUiTexture(const TextureAsset &textureAsset, const Tex
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteTextureAsset);
 	if (!paletteID.has_value())
 	{
-		DebugLogError("Couldn't get palette ID for \"" + paletteTextureAsset.filename + "\".");
+		DebugLogErrorFormat("Couldn't get palette ID for \"%s\".", paletteTextureAsset.filename.c_str());
 		return false;
 	}
 
+	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 	if (!textureBuilderID.has_value())
 	{
-		DebugLogError("Couldn't get texture builder ID for \"" + textureAsset.filename + "\".");
+		DebugLogErrorFormat("Couldn't get texture builder ID for \"%s\".", textureAsset.filename.c_str());
 		return false;
 	}
 
-	const UiTextureID textureID = renderer.createUiTexture(*textureBuilderID, *paletteID, textureManager);
+	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
+	const UiTextureID textureID = renderer.createUiTexture(textureBuilder.width, textureBuilder.height);
 	if (textureID < 0)
 	{
-		DebugLogError("Couldn't create UI texture for \"" + textureAsset.filename + "\".");
+		DebugLogErrorFormat("Couldn't create UI texture for \"%s\".", textureAsset.filename.c_str());
 		return false;
+	}
+
+	if (!renderer.populateUiTexture(textureID, textureBuilder.bytes, &palette))
+	{
+		DebugLogErrorFormat("Couldn't populate UI texture for \"%s\".", textureAsset.filename.c_str());
 	}
 
 	*outID = textureID;
@@ -328,16 +335,11 @@ bool TextureUtils::tryAllocUiTextureFromSurface(const Surface &surface, TextureM
 		return false;
 	}
 
-	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
-	if (!lockedTexture.isValid())
+	if (!renderer.populateUiTextureNoPalette(textureID, srcTexels))
 	{
-		DebugLogError("Couldn't lock UI texels for writing from surface.");
-		return false;
+		DebugLogError("Couldn't populate UI texture from surface.");
 	}
 
-	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
-	std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
-	renderer.unlockUiTexture(textureID);
 	*outID = textureID;
 	return true;
 }

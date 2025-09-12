@@ -1,7 +1,6 @@
 #include <algorithm>
 
 #include "Renderer.h"
-#include "RendererSystem3D.h"
 #include "RenderVoxelChunk.h"
 #include "../World/ChunkUtils.h"
 
@@ -19,14 +18,11 @@ void RenderVoxelDrawCallRange::clear()
 RenderVoxelDrawCallHeap::RenderVoxelDrawCallHeap()
 {
 	this->nextDrawCall = 0;
-	this->nextID = 0;
 }
 
 Span<RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id)
 {
-	DebugAssertIndex(this->drawCallRanges, id);
-	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
-
+	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRangesPool.get(id);
 	RenderDrawCall *rangeBegin = std::begin(this->drawCalls) + drawCallRange.index;
 	DebugAssert((rangeBegin + drawCallRange.count) <= std::end(this->drawCalls));
 	return Span<RenderDrawCall>(rangeBegin, drawCallRange.count);
@@ -34,9 +30,7 @@ Span<RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id)
 
 Span<const RenderDrawCall> RenderVoxelDrawCallHeap::get(RenderVoxelDrawCallRangeID id) const
 {
-	DebugAssertIndex(this->drawCallRanges, id);
-	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
-
+	const RenderVoxelDrawCallRange &drawCallRange = this->drawCallRangesPool.get(id);
 	const RenderDrawCall *rangeBegin = std::begin(this->drawCalls) + drawCallRange.index;
 	DebugAssert((rangeBegin + drawCallRange.count) <= std::end(this->drawCalls));
 	return Span<const RenderDrawCall>(rangeBegin, drawCallRange.count);
@@ -46,26 +40,14 @@ RenderVoxelDrawCallRangeID RenderVoxelDrawCallHeap::alloc(int drawCallCount)
 {
 	DebugAssert(drawCallCount > 0);
 
-	RenderVoxelDrawCallRangeID rangeID;
-	if (!this->freedIDs.empty())
+	const RenderVoxelDrawCallRangeID rangeID = this->drawCallRangesPool.alloc();
+	if (rangeID < 0)
 	{
-		rangeID = this->freedIDs.back();
-		this->freedIDs.pop_back();
-	}
-	else
-	{
-		if (this->nextID == MAX_DRAW_CALL_RANGES)
-		{
-			DebugLogError("No more draw call range IDs available.");
-			return -1;
-		}
-
-		rangeID = this->nextID;
-		this->nextID++;
+		DebugLogError("Couldn't allocate draw call range ID.");
+		return -1;
 	}
 
-	DebugAssertIndex(this->drawCallRanges, rangeID);
-	RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[rangeID];
+	RenderVoxelDrawCallRange &drawCallRange = this->drawCallRangesPool.get(rangeID);
 	if (!this->freedDrawCalls.empty())
 	{
 		// Find a suitable sequence of free draw call slots.
@@ -122,16 +104,13 @@ void RenderVoxelDrawCallHeap::free(RenderVoxelDrawCallRangeID id)
 {
 	DebugAssert(id >= 0);
 
-	const auto freedIdIter = std::find(this->freedIDs.begin(), this->freedIDs.end(), id);
-	if (freedIdIter != this->freedIDs.end())
+	if (this->drawCallRangesPool.isFreedKey(id))
 	{
 		DebugLogWarning("Already freed draw call range ID " + std::to_string(id) + ".");
 		return;
 	}
 
-	// Free the draw call slots.
-	DebugAssertIndex(this->drawCallRanges, id);
-	RenderVoxelDrawCallRange &drawCallRange = this->drawCallRanges[id];
+	RenderVoxelDrawCallRange &drawCallRange = this->drawCallRangesPool.get(id);
 	for (int i = 0; i < drawCallRange.count; i++)
 	{
 		const int drawCallIndexToFree = drawCallRange.index + i;
@@ -145,9 +124,7 @@ void RenderVoxelDrawCallHeap::free(RenderVoxelDrawCallRangeID id)
 		this->freedDrawCalls.insert(insertIter, drawCallIndexToFree);
 	}
 
-	// Free the draw call range slot.
-	drawCallRange.clear();
-	this->freedIDs.push_back(id);
+	this->drawCallRangesPool.free(id);
 }
 
 void RenderVoxelDrawCallHeap::clear()
@@ -160,48 +137,23 @@ void RenderVoxelDrawCallHeap::clear()
 	this->freedDrawCalls.clear();
 	this->nextDrawCall = 0;
 
-	for (RenderVoxelDrawCallRange &drawCallRange : this->drawCallRanges)
-	{
-		drawCallRange.clear();
-	}
-
-	this->freedIDs.clear();
-	this->nextID = 0;
-}
-
-RenderVoxelCombinedFaceTransformKey::RenderVoxelCombinedFaceTransformKey()
-{
-	this->facing = static_cast<VoxelFacing3D>(-1);
+	this->drawCallRangesPool.clear();
 }
 
 RenderVoxelCombinedFaceDrawCallEntry::RenderVoxelCombinedFaceDrawCallEntry()
 {
 	this->rangeID = -1;
+	this->transformBufferID = -1;
 }
 
-bool RenderVoxelCombinedFaceTransformKey::operator==(const RenderVoxelCombinedFaceTransformKey &other) const
+RenderVoxelNonCombinedTransformEntry::RenderVoxelNonCombinedTransformEntry()
 {
-	if (this == &other)
-	{
-		return true;
-	}
+	this->transformBufferID = -1;
+}
 
-	if (this->minVoxel != other.minVoxel)
-	{
-		return false;
-	}
-
-	if (this->maxVoxel != other.maxVoxel)
-	{
-		return false;
-	}
-
-	if (this->facing != other.facing)
-	{
-		return false;
-	}
-
-	return true;
+RenderVoxelDoorTransformsEntry::RenderVoxelDoorTransformsEntry()
+{
+	std::fill(std::begin(this->transformBufferIDs), std::end(this->transformBufferIDs), -1);
 }
 
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
@@ -209,8 +161,6 @@ void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 	Chunk::init(position, height);
 
 	this->meshInstMappings.emplace(VoxelChunk::AIR_SHAPE_DEF_ID, RenderVoxelChunk::AIR_MESH_INST_ID);
-
-	this->transformBufferID = -1;
 	
 	this->drawCallRangeIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->drawCallRangeIDs.fill(-1);
@@ -236,6 +186,38 @@ void RenderVoxelChunk::freeDrawCalls(SNInt x, int y, WEInt z)
 	}
 }
 
+void RenderVoxelChunk::freeDoorMaterial(SNInt x, int y, WEInt z, Renderer &renderer)
+{
+	const VoxelInt3 voxel(x, y, z);
+
+	for (int i = 0; i < static_cast<int>(this->doorMaterialInstEntries.size()); i++)
+	{
+		const RenderVoxelMaterialInstanceEntry &entry = this->doorMaterialInstEntries[i];
+		if (entry.voxel == voxel)
+		{
+			renderer.freeMaterialInstance(entry.materialInstID);
+			this->doorMaterialInstEntries.erase(this->doorMaterialInstEntries.begin() + i);
+			break;
+		}
+	}
+}
+
+void RenderVoxelChunk::freeFadeMaterial(SNInt x, int y, WEInt z, Renderer &renderer)
+{
+	const VoxelInt3 voxel(x, y, z);
+
+	for (int i = 0; i < static_cast<int>(this->fadeMaterialInstEntries.size()); i++)
+	{
+		const RenderVoxelMaterialInstanceEntry &entry = this->fadeMaterialInstEntries[i];
+		if (entry.voxel == voxel)
+		{
+			renderer.freeMaterialInstance(entry.materialInstID);
+			this->fadeMaterialInstEntries.erase(this->fadeMaterialInstEntries.begin() + i);
+			break;
+		}
+	}
+}
+
 void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 {
 	for (RenderMeshInstance &meshInst : this->meshInsts)
@@ -243,26 +225,41 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		meshInst.freeBuffers(renderer);
 	}
 
-	for (auto &pair : this->combinedFaceTransforms)
+	for (std::pair<const VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &pair : this->combinedFaceDrawCallEntries)
 	{
-		UniformBufferID &transformBufferID = pair.second;
+		RenderVoxelCombinedFaceDrawCallEntry &drawCallEntry = pair.second;
+		if (drawCallEntry.transformBufferID >= 0)
+		{
+			renderer.freeUniformBuffer(drawCallEntry.transformBufferID);
+			drawCallEntry.transformBufferID = -1;
+		}
+	}
 
-		if (transformBufferID >= 0)
+	for (RenderVoxelNonCombinedTransformEntry &entry : this->nonCombinedTransformEntries)
+	{
+		renderer.freeUniformBuffer(entry.transformBufferID);
+		entry.transformBufferID = -1;
+	}
+
+	for (RenderVoxelDoorTransformsEntry &entry : this->doorTransformEntries)
+	{
+		for (UniformBufferID &transformBufferID : entry.transformBufferIDs)
 		{
 			renderer.freeUniformBuffer(transformBufferID);
 			transformBufferID = -1;
 		}
 	}
 
-	if (this->transformBufferID >= 0)
+	for (RenderVoxelMaterialInstanceEntry &entry : this->doorMaterialInstEntries)
 	{
-		renderer.freeUniformBuffer(this->transformBufferID);
-		this->transformBufferID = -1;
+		renderer.freeMaterialInstance(entry.materialInstID);
+		entry.materialInstID = -1;
 	}
 
-	for (const auto &pair : this->doorTransformBuffers)
+	for (RenderVoxelMaterialInstanceEntry &entry : this->fadeMaterialInstEntries)
 	{
-		renderer.freeUniformBuffer(pair.second);
+		renderer.freeMaterialInstance(entry.materialInstID);
+		entry.materialInstID = -1;
 	}
 }
 
@@ -272,9 +269,10 @@ void RenderVoxelChunk::clear()
 	this->meshInsts.clear();
 	this->meshInstMappings.clear();
 	this->combinedFaceDrawCallEntries.clear();
-	this->combinedFaceTransforms.clear();
-	this->transformBufferID = -1;
-	this->doorTransformBuffers.clear();
+	this->nonCombinedTransformEntries.clear();
+	this->doorTransformEntries.clear();
+	this->doorMaterialInstEntries.clear();
+	this->fadeMaterialInstEntries.clear();
 	this->drawCallHeap.clear();
 	this->drawCallRangeIDs.clear();
 }

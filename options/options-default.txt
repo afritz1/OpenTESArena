@@ -15,6 +15,10 @@ ScreenHeight=720
 # 0: window, 1: borderless fullscreen, 2: exclusive fullscreen
 WindowMode=0
 
+# Selects the 3D renderer to use.
+# 0: software, 1: Vulkan
+GraphicsAPI=0
+
 TargetFPS=60
 
 # Resolution scale is the percent of the screen resolution used to
@@ -106,3 +110,6 @@ StarDensity=0
 
 # Whether the player has a light attached like in the original game.
 PlayerHasLight=true
+
+# Whether to enable Vulkan API call debugging.
+EnableValidationLayers=false

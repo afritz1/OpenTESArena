@@ -2,6 +2,7 @@
 #define RENDER_WEATHER_MANAGER_H
 
 #include "RenderDrawCall.h"
+#include "RenderMaterialUtils.h"
 #include "RenderTextureUtils.h"
 
 #include "components/utilities/Buffer.h"
@@ -10,7 +11,7 @@
 class WeatherInstance;
 
 struct RenderCamera;
-struct RenderCommandBuffer;
+struct RenderCommandList;
 
 class RenderWeatherManager
 {
@@ -22,10 +23,12 @@ private:
 
 	UniformBufferID rainTransformBufferID; // Contains render transforms for each raindrop.
 	ObjectTextureID rainTextureID;
+	RenderMaterialID rainMaterialID;
 	Buffer<RenderDrawCall> rainDrawCalls;
 
 	UniformBufferID snowTransformBufferID; // Contains render transforms for each snowflake. 
 	ObjectTextureID snowTextureIDs[3]; // Each snowflake size has its own texture.
+	RenderMaterialID snowMaterialIDs[3];
 	Buffer<RenderDrawCall> snowDrawCalls;
 
 	VertexPositionBufferID fogPositionBufferID;
@@ -34,11 +37,15 @@ private:
 	IndexBufferID fogIndexBufferID;
 	UniformBufferID fogTransformBufferID;
 	ObjectTextureID fogTextureID;
+	RenderMaterialID fogMaterialID;
 	RenderDrawCall fogDrawCall;
+
+	RenderMaterialInstanceID materialInstID; // Shared by all weather particles for mesh lighting.
 
 	bool initMeshes(Renderer &renderer);
 	bool initUniforms(Renderer &renderer);
 	bool initTextures(Renderer &renderer);
+	bool initMaterials(Renderer &renderer);
 
 	void freeParticleBuffers(Renderer &renderer);
 	void freeFogBuffers(Renderer &renderer);
@@ -48,7 +55,7 @@ public:
 	bool init(Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	void populateCommandBuffer(RenderCommandBuffer &commandBuffer, const WeatherInstance &weatherInst, bool isFoggy) const;
+	void populateCommandList(RenderCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const;
 
 	void loadScene();
 	void update(const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer);

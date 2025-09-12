@@ -15,7 +15,7 @@ namespace OptionsUiModel
 	enum class Tab { Graphics, Audio, Input, Misc, Dev };
 
 	constexpr int TAB_COUNT = 5;
-	constexpr int OPTION_COUNT = 10; // @todo: support list box somehow
+	constexpr int OPTION_COUNT = 11; // @todo: support list box somehow
 
 	const std::string BackButtonText = "Return";
 
@@ -28,6 +28,7 @@ namespace OptionsUiModel
 	const std::string CURSOR_SCALE_NAME = "Cursor Scale";
 	const std::string FPS_LIMIT_NAME = "FPS Limit";
 	const std::string WINDOW_MODE_NAME = "Window Mode";
+	const std::string GRAPHICS_API_NAME = "Graphics API";
 	const std::string LETTERBOX_MODE_NAME = "Letterbox Mode";
 	const std::string MODERN_INTERFACE_NAME = "Modern Interface";
 	const std::string RENDER_THREADS_MODE_NAME = "Render Threads Mode";
@@ -57,6 +58,7 @@ namespace OptionsUiModel
 	// Dev.
 	const std::string GHOST_MODE_NAME = "Ghost Mode";
 	const std::string PROFILER_LEVEL_NAME = "Profiler Level";
+	const std::string ENABLE_VALIDATION_LAYERS_NAME = "Enable Validation Layers";
 
 	enum class OptionType { Bool, Int, Double, String };
 
@@ -165,43 +167,10 @@ namespace OptionsUiModel
 		void set(std::string &&value);
 	};
 
-	// Graphics options.
-	std::unique_ptr<OptionsUiModel::IntOption> makeWindowModeOption(Game &game);
-	std::unique_ptr<OptionsUiModel::IntOption> makeFpsLimitOption(Game &game);
-	std::unique_ptr<OptionsUiModel::DoubleOption> makeResolutionScaleOption(Game &game);
-	std::unique_ptr<OptionsUiModel::DoubleOption> makeVerticalFovOption(Game &game);
-	std::unique_ptr<OptionsUiModel::IntOption> makeLetterboxModeOption(Game &game);
-	std::unique_ptr<OptionsUiModel::DoubleOption> makeCursorScaleOption(Game &game);
-	std::unique_ptr<OptionsUiModel::BoolOption> makeModernInterfaceOption(Game &game);
-	std::unique_ptr<OptionsUiModel::BoolOption> makeTallPixelCorrectionOption(Game &game);
-	std::unique_ptr<OptionsUiModel::IntOption> makeRenderThreadsModeOption(Game &game);
-	std::unique_ptr<OptionsUiModel::IntOption> makeDitheringOption(Game &game);
 	OptionGroup makeGraphicsOptionGroup(Game &game);
-
-	// Audio options.
-	std::unique_ptr<OptionsUiModel::IntOption> makeSoundChannelsOption(Game &game);
-	std::unique_ptr<OptionsUiModel::IntOption> makeSoundResamplingOption(Game &game);
-	std::unique_ptr<OptionsUiModel::BoolOption> makeIs3dAudioOption(Game &game);
 	OptionGroup makeAudioOptionGroup(Game &game);
-
-	// Input options.
-	std::unique_ptr<OptionsUiModel::DoubleOption> makeHorizontalSensitivityOption(Game &game);
-	std::unique_ptr<OptionsUiModel::DoubleOption> makeVerticalSensitivityOption(Game &game);
-	std::unique_ptr<OptionsUiModel::BoolOption> makeInvertVerticalAxisOption(Game &game);
-	std::unique_ptr<OptionsUiModel::DoubleOption> makeCameraPitchLimitOption(Game &game);
 	OptionGroup makeInputOptionGroup(Game &game);
-
-	// Miscellaneous options.
-	std::unique_ptr<OptionsUiModel::BoolOption> makeShowCompassOption(Game &game);
-	std::unique_ptr<OptionsUiModel::BoolOption> makeShowIntroOption(Game &game);
-	std::unique_ptr<OptionsUiModel::IntOption> makeChunkDistanceOption(Game &game);
-	std::unique_ptr<OptionsUiModel::IntOption> makeStarDensityOption(Game &game);
-	std::unique_ptr<OptionsUiModel::BoolOption> makePlayerHasLightOption(Game &game);
 	OptionGroup makeMiscOptionGroup(Game &game);
-
-	// Developer options.
-	std::unique_ptr<OptionsUiModel::BoolOption> makeGhostModeOption(Game &game);
-	std::unique_ptr<OptionsUiModel::IntOption> makeProfilerLevelOption(Game &game);
 	OptionGroup makeDevOptionGroup(Game &game);
 
 	// Convenience function for iteration.

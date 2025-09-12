@@ -14,10 +14,11 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
-#include "../UI/UiCommandBuffer.h"
+#include "../UI/UiCommand.h"
 #include "../Utilities/Color.h"
 
 #include "components/vfs/manager.hpp"
@@ -69,9 +70,43 @@ Span<const ButtonProxy> Panel::getButtonProxies() const
 	return Span<const ButtonProxy>(this->buttonProxies);
 }
 
-void Panel::populateCommandBuffer(UiCommandBuffer &commandBuffer)
+void Panel::populateCommandList(UiCommandList &commandList)
 {
-	commandBuffer.addDrawCalls(this->drawCalls);
+	this->renderElementsCache.clear();
+
+	const Window &window = this->game.window;
+	const Int2 windowDims = window.getPixelDimensions();
+	const Rect letterboxRect = window.getLetterboxRect();
+
+	for (const UiDrawCall &drawCall : this->drawCalls)
+	{
+		if (!drawCall.activeFunc())
+		{
+			continue;
+		}
+
+		const UiTextureID textureID = drawCall.textureFunc();
+		const Int2 position = drawCall.positionFunc();
+		const Int2 size = drawCall.sizeFunc();
+		const PivotType pivotType = drawCall.pivotFunc();
+		const RenderSpace renderSpace = drawCall.renderSpace;
+		const std::optional<Rect> &clipRect = drawCall.clipRect;
+
+		const Rect presentRect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
+
+		Rect presentClipRect;
+		if (clipRect.has_value())
+		{
+			presentClipRect = GuiUtils::makeWindowSpaceRect(*clipRect, PivotType::TopLeft, renderSpace, windowDims.x, windowDims.y, letterboxRect);
+		}
+
+		this->renderElementsCache.emplace_back(RenderElement2D(textureID, presentRect, presentClipRect));
+	}
+
+	if (!this->renderElementsCache.empty())
+	{
+		commandList.addElements(this->renderElementsCache);
+	}
 }
 
 void Panel::onPauseChanged(bool paused)

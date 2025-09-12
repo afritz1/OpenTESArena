@@ -78,7 +78,7 @@ void GameWorldUiController::onActivateInputAction(const InputActionCallbackValue
 		const auto &options = game.options;
 		if (options.getGraphics_ModernInterface())
 		{
-			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.renderer);
+			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.window);
 			GameWorldUiController::onActivate(game, screenPoint, actionText);
 		}
 	}
@@ -99,7 +99,7 @@ void GameWorldUiController::onInspectInputAction(const InputActionCallbackValues
 		const auto &options = game.options;
 		if (options.getGraphics_ModernInterface())
 		{
-			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.renderer);
+			const Int2 screenPoint = GameWorldUiView::getNativeWindowCenter(game.window);
 			GameWorldUiController::onInspect(game, screenPoint, actionText);
 		}
 	}

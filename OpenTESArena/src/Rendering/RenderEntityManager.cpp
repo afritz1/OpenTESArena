@@ -1,9 +1,8 @@
 #include <algorithm>
 
-#include "RenderCommandBuffer.h"
+#include "RenderCommand.h"
 #include "RenderEntityManager.h"
 #include "Renderer.h"
-#include "RenderTransform.h"
 #include "../Assets/TextureManager.h"
 #include "../Entities/EntityChunkManager.h"
 #include "../Entities/EntityDefinitionLibrary.h"
@@ -82,7 +81,7 @@ namespace
 		return textureRefs;
 	}
 
-	ScopedObjectTextureRef MakeEntityPaletteIndicesTextureRef(const PaletteIndices &paletteIndices, Renderer &renderer)
+	ObjectTextureID CreateEntityPaletteIndicesTextureID(const PaletteIndices &paletteIndices, Renderer &renderer)
 	{
 		const int textureWidth = static_cast<int>(paletteIndices.size());
 		constexpr int textureHeight = 1;
@@ -91,21 +90,73 @@ namespace
 		const ObjectTextureID textureID = renderer.createObjectTexture(textureWidth, textureHeight, bytesPerTexel);
 		if (textureID < 0)
 		{
-			DebugCrash("Couldn't create entity palette indices texture.");
+			DebugLogError("Couldn't create entity palette indices texture.");
+			return -1;
 		}
 
-		LockedTexture lockedTexture = renderer.lockObjectTexture(textureID);
-		uint8_t *dstTexels = lockedTexture.getTexels8().begin();
-		std::copy(paletteIndices.begin(), paletteIndices.end(), dstTexels);
-		renderer.unlockObjectTexture(textureID);
-		return ScopedObjectTextureRef(textureID, renderer);
+		if (!renderer.populateObjectTexture8Bit(textureID, paletteIndices))
+		{
+			DebugLogError("Couldn't populate entity palette indices texture.");
+		}
+
+		return textureID;
 	}
+
+	PixelShaderType GetEntityPixelShaderType(const EntityDefinition &entityDef)
+	{
+		PixelShaderType pixelShaderType;
+		if (EntityUtils::isGhost(entityDef))
+		{
+			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
+		}
+		else if (EntityUtils::isPuddle(entityDef))
+		{
+			pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass;
+		}
+		else if (entityDef.type == EntityDefinitionType::Citizen)
+		{
+			pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndexLookup;
+		}
+		else
+		{
+			pixelShaderType = PixelShaderType::AlphaTested;
+		}
+
+		return pixelShaderType;
+	}
+
+	RenderMaterialKey MakeEntityRenderMaterialKey(PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs)
+	{
+		RenderMaterialKey materialKey;
+		materialKey.init(VertexShaderType::Entity, pixelShaderType, textureIDs, RenderLightingType::PerPixel, true, true, true);
+		return materialKey;
+	}
+
+	RenderMaterialKey MakePuddleSecondPassMaterialKey(ObjectTextureID textureID)
+	{
+		constexpr RenderLightingType lightingType = RenderLightingType::PerMesh; // Don't spend effort lighting reflection, value is unused.
+
+		RenderMaterialKey materialKey;
+		materialKey.init(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, Span<const ObjectTextureID>(&textureID, 1), lightingType, true, true, true);
+		return materialKey;
+	}
+}
+
+RenderEntityLoadedAnimation::RenderEntityLoadedAnimation()
+{
+	this->defID = -1;
 }
 
 void RenderEntityLoadedAnimation::init(EntityDefID defID, Buffer<ScopedObjectTextureRef> &&textureRefs)
 {
 	this->defID = defID;
 	this->textureRefs = std::move(textureRefs);
+}
+
+RenderEntityPaletteIndicesEntry::RenderEntityPaletteIndicesEntry()
+{
+	this->paletteIndicesInstanceID = -1;
+	this->textureID = -1;
 }
 
 RenderEntityManager::RenderEntityManager()
@@ -193,34 +244,13 @@ void RenderEntityManager::shutdown(Renderer &renderer)
 {
 	this->anims.clear();
 	this->meshInst.freeBuffers(renderer);
-	this->paletteIndicesTextureRefs.clear();
+	this->paletteIndicesEntries.clear();
 	this->drawCallsCache.clear();
+	this->ghostDrawCallsCache.clear();
+	this->puddleSecondPassDrawCallsCache.clear();
 }
 
-ObjectTextureID RenderEntityManager::getTextureID(EntityInstanceID entityInstID, const WorldDouble3 &cameraPosition,
-	const EntityChunkManager &entityChunkManager) const
-{
-	const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-	const EntityDefID entityDefID = entityInst.defID;
-	const auto defIter = std::find_if(this->anims.begin(), this->anims.end(),
-		[entityDefID](const RenderEntityLoadedAnimation &loadedAnim)
-	{
-		return loadedAnim.defID == entityDefID;
-	});
-
-	DebugAssertMsg(defIter != this->anims.end(), "Expected loaded entity animation for def ID " + std::to_string(entityDefID) + ".");
-
-	EntityObservedResult observedResult;
-	entityChunkManager.getEntityObservedResult(entityInstID, cameraPosition, observedResult);
-
-	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
-	const EntityAnimationDefinition &animDef = entityDef.animDef;
-	const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
-	Span<const ScopedObjectTextureRef> textureRefs = defIter->textureRefs;
-	return textureRefs[linearizedKeyframeIndex].get();
-}
-
-void RenderEntityManager::loadTexturesForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
+void RenderEntityManager::loadMaterialsForChunkEntities(const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager,
 	TextureManager &textureManager, Renderer &renderer)
 {
 	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
@@ -228,75 +258,159 @@ void RenderEntityManager::loadTexturesForChunkEntities(const EntityChunk &entity
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const EntityDefID entityDefID = entityInst.defID;
 
-		const auto animIter = std::find_if(this->anims.begin(), this->anims.end(),
-			[entityDefID](const RenderEntityLoadedAnimation &loadedAnim)
+		const RenderEntityLoadedAnimation *loadedAnim = nullptr;
+		for (const RenderEntityLoadedAnimation &currentLoadedAnim : this->anims)
 		{
-			return loadedAnim.defID == entityDefID;
-		});
+			if (currentLoadedAnim.defID == entityDefID)
+			{
+				loadedAnim = &currentLoadedAnim;
+				break;
+			}
+		}
 
-		if (animIter == this->anims.end())
+		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
+		const PixelShaderType pixelShaderType = GetEntityPixelShaderType(entityDef);
+
+		if (loadedAnim == nullptr)
 		{
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 			const EntityAnimationDefinition &animDef = entityDef.animDef;
 			Buffer<ScopedObjectTextureRef> textureRefs = MakeEntityAnimationTextures(animDef, textureManager, renderer);
 
-			RenderEntityLoadedAnimation loadedEntityAnim;
-			loadedEntityAnim.init(entityDefID, std::move(textureRefs));
-			this->anims.emplace_back(std::move(loadedEntityAnim));
+			RenderEntityLoadedAnimation &newLoadedAnim = this->anims.emplace_back(RenderEntityLoadedAnimation());
+			newLoadedAnim.init(entityDefID, std::move(textureRefs));
+
+			loadedAnim = &newLoadedAnim;
 		}
 
 		if (entityInst.isCitizen())
 		{
 			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
-			const auto paletteIndicesIter = this->paletteIndicesTextureRefs.find(paletteIndicesInstID);
-			if (paletteIndicesIter == this->paletteIndicesTextureRefs.end())
+			const auto paletteIndicesIter = std::find_if(this->paletteIndicesEntries.begin(), this->paletteIndicesEntries.end(),
+				[paletteIndicesInstID](const RenderEntityPaletteIndicesEntry &entry)
+			{
+				return entry.paletteIndicesInstanceID == paletteIndicesInstID;
+			});
+
+			if (paletteIndicesIter == this->paletteIndicesEntries.end())
 			{
 				const PaletteIndices &paletteIndices = entityChunkManager.getEntityPaletteIndices(paletteIndicesInstID);
-				ScopedObjectTextureRef paletteIndicesTextureRef = MakeEntityPaletteIndicesTextureRef(paletteIndices, renderer);
-				this->paletteIndicesTextureRefs.emplace(paletteIndicesInstID, std::move(paletteIndicesTextureRef));
+				const ObjectTextureID paletteIndicesTextureID = CreateEntityPaletteIndicesTextureID(paletteIndices, renderer);
+
+				Span<const ScopedObjectTextureRef> loadedAnimTextureRefs = loadedAnim->textureRefs;
+
+				RenderEntityPaletteIndicesEntry newEntry;
+				newEntry.paletteIndicesInstanceID = paletteIndicesInstID;
+				newEntry.textureID = paletteIndicesTextureID;
+				newEntry.materialIDs.init(loadedAnimTextureRefs.getCount());
+				for (int i = 0; i < loadedAnimTextureRefs.getCount(); i++)
+				{
+					const ObjectTextureID materialTextureIDs[] = { loadedAnimTextureRefs[i].get(), paletteIndicesTextureID };
+					RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(PixelShaderType::AlphaTestedWithPaletteIndexLookup, materialTextureIDs);
+					newEntry.materialIDs[i] = renderer.createMaterial(materialKey);
+				}
+
+				this->paletteIndicesEntries.emplace_back(std::move(newEntry));
+			}
+		}
+		else
+		{
+			auto addMaterialIfUnique = [this, &renderer](RenderMaterialKey materialKey)
+			{
+				const auto materialIter = std::find_if(this->materials.begin(), this->materials.end(),
+					[materialKey](const RenderMaterial &material)
+				{
+					return material.key == materialKey;
+				});
+
+				if (materialIter == this->materials.end())
+				{
+					RenderMaterial material;
+					material.key = materialKey;
+					material.id = renderer.createMaterial(material.key);
+
+					this->materials.emplace_back(std::move(material));
+				}
+			};
+
+			for (int i = 0; i < loadedAnim->textureRefs.getCount(); i++)
+			{
+				const ObjectTextureID materialTextureIDs[] = { loadedAnim->textureRefs[i].get() };
+				const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(pixelShaderType, materialTextureIDs);
+				addMaterialIfUnique(materialKey);
+			}
+
+			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
+			{
+				for (int i = 0; i < loadedAnim->textureRefs.getCount(); i++)
+				{
+					const RenderMaterialKey puddleSecondPassMaterialKey = MakePuddleSecondPassMaterialKey(loadedAnim->textureRefs[i].get());
+					addMaterialIfUnique(puddleSecondPassMaterialKey);
+				}
 			}
 		}
 	}
 }
 
-void RenderEntityManager::loadTexturesForEntity(EntityDefID entityDefID, TextureManager &textureManager, Renderer &renderer)
+void RenderEntityManager::loadMaterialsForEntity(EntityDefID entityDefID, TextureManager &textureManager, Renderer &renderer)
 {
-	const auto animIter = std::find_if(this->anims.begin(), this->anims.end(),
+	const auto existingAnimIter = std::find_if(this->anims.begin(), this->anims.end(),
 		[entityDefID](const RenderEntityLoadedAnimation &loadedAnim)
 	{
 		return loadedAnim.defID == entityDefID;
 	});
 
-	if (animIter == this->anims.end())
+	if (existingAnimIter != this->anims.end())
 	{
-		const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
-		const EntityAnimationDefinition &animDef = entityDef.animDef;
-		Buffer<ScopedObjectTextureRef> textureRefs = MakeEntityAnimationTextures(animDef, textureManager, renderer);
+		return;
+	}
 
-		RenderEntityLoadedAnimation loadedEntityAnim;
-		loadedEntityAnim.init(entityDefID, std::move(textureRefs));
-		this->anims.emplace_back(std::move(loadedEntityAnim));
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
+	DebugAssert(entityDef.type != EntityDefinitionType::Citizen);
+
+	const EntityAnimationDefinition &animDef = entityDef.animDef;
+	Buffer<ScopedObjectTextureRef> textureRefs = MakeEntityAnimationTextures(animDef, textureManager, renderer);
+
+	RenderEntityLoadedAnimation &loadedAnim = this->anims.emplace_back(RenderEntityLoadedAnimation());
+	loadedAnim.init(entityDefID, std::move(textureRefs));
+
+	const PixelShaderType pixelShaderType = GetEntityPixelShaderType(entityDef);
+
+	for (int i = 0; i < loadedAnim.textureRefs.getCount(); i++)
+	{
+		const ObjectTextureID materialTextureIDs[] = { loadedAnim.textureRefs[i].get() };
+		const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(pixelShaderType, materialTextureIDs);
+
+		RenderMaterial material;
+		material.key = materialKey;
+		material.id = renderer.createMaterial(material.key);
+
+		this->materials.emplace_back(std::move(material));
 	}
 }
 
-void RenderEntityManager::populateCommandBuffer(RenderCommandBuffer &commandBuffer) const
+void RenderEntityManager::populateCommandList(RenderCommandList &commandList) const
 {
 	if (!this->drawCallsCache.empty())
 	{
-		commandBuffer.addDrawCalls(this->drawCallsCache);
+		commandList.addDrawCalls(this->drawCallsCache);
+	}
+
+	if (!this->ghostDrawCallsCache.empty())
+	{
+		commandList.addDrawCalls(this->ghostDrawCallsCache);
 	}
 
 	if (!this->puddleSecondPassDrawCallsCache.empty())
 	{
 		// Puddles require two passes to avoid race conditions when rasterizing.
-		commandBuffer.addDrawCalls(this->puddleSecondPassDrawCallsCache);
+		commandList.addDrawCalls(this->puddleSecondPassDrawCallsCache);
 	}
 }
 
 void RenderEntityManager::loadScene(TextureManager &textureManager, Renderer &renderer)
 {
-	// Load global VFX textures.
+	// Load global VFX materials.
 	// @todo load these one time in SceneManager::init() and use some sort of ResourceLifetimeType to prevent them from unloading in here
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 	for (int i = 0; i < entityDefLibrary.getDefinitionCount(); i++)
@@ -305,7 +419,7 @@ void RenderEntityManager::loadScene(TextureManager &textureManager, Renderer &re
 		const EntityDefinition &entityDef = entityDefLibrary.getDefinition(entityDefID);
 		if (!EntityUtils::isSceneManagedResource(entityDef.type))
 		{
-			this->loadTexturesForEntity(entityDefID, textureManager, renderer);
+			this->loadMaterialsForEntity(entityDefID, textureManager, renderer);
 		}
 	}
 }
@@ -314,16 +428,30 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	const WorldDouble3 &cameraPosition, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const EntityChunkManager &entityChunkManager,
 	const EntityVisibilityChunkManager &entityVisChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
+	// Free destroyed entity palettes + materials.
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
 	{
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		if (entityInst.isCitizen())
 		{
 			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
-			const auto paletteIndicesIter = this->paletteIndicesTextureRefs.find(paletteIndicesInstID);
-			if (paletteIndicesIter != this->paletteIndicesTextureRefs.end())
+
+			for (int i = 0; i < static_cast<int>(this->paletteIndicesEntries.size()); i++)
 			{
-				this->paletteIndicesTextureRefs.erase(paletteIndicesIter);
+				RenderEntityPaletteIndicesEntry &paletteIndicesEntry = this->paletteIndicesEntries[i];
+
+				if (paletteIndicesEntry.paletteIndicesInstanceID == paletteIndicesInstID)
+				{
+					renderer.freeObjectTexture(paletteIndicesEntry.textureID);
+
+					for (RenderMaterialID paletteIndicesMaterialID : paletteIndicesEntry.materialIDs)
+					{
+						renderer.freeMaterial(paletteIndicesMaterialID);
+					}
+
+					this->paletteIndicesEntries.erase(this->paletteIndicesEntries.begin() + i);
+					break;
+				}
 			}
 		}
 	}
@@ -331,7 +459,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	for (const ChunkInt2 chunkPos : newChunkPositions)
 	{
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-		this->loadTexturesForChunkEntities(entityChunk, entityChunkManager, textureManager, renderer);
+		this->loadMaterialsForChunkEntities(entityChunk, entityChunkManager, textureManager, renderer);
 	}
 
 	// The rotation all entities share for facing the camera.
@@ -339,6 +467,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
 
 	this->drawCallsCache.clear();
+	this->ghostDrawCallsCache.clear();
 	this->puddleSecondPassDrawCallsCache.clear();
 
 	for (const ChunkInt2 chunkPos : activeChunkPositions)
@@ -361,11 +490,10 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
 
 			const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
-			RenderTransform entityRenderTransform;
-			entityRenderTransform.translation = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
-			entityRenderTransform.rotation = allEntitiesRotationMatrix;
-			entityRenderTransform.scale = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
-			renderer.populateUniformBuffer(transformBufferID, entityRenderTransform);
+			const Matrix4d entityTranslationMatrix = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
+			const Matrix4d entityScaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
+			const Matrix4d entityModelMatrix = entityTranslationMatrix * (allEntitiesRotationMatrix * entityScaleMatrix);
+			renderer.populateUniformBufferMatrix4s(transformBufferID, Span<const Matrix4d>(&entityModelMatrix, 1));
 		}
 
 		const EntityVisibilityChunk &entityVisChunk = entityVisChunkManager.getChunkAtPosition(chunkPos);
@@ -376,31 +504,50 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const EntityInstanceID entityInstID = visibleEntity.id;
 			const WorldDouble3 entityPosition = visibleEntity.position;
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			const EntityDefID entityDefID = entityInst.defID;
+			const auto animDefIter = std::find_if(this->anims.begin(), this->anims.end(),
+				[entityDefID](const RenderEntityLoadedAnimation &loadedAnim)
+			{
+				return loadedAnim.defID == entityDefID;
+			});
 
-			const ObjectTextureID textureID0 = this->getTextureID(entityInstID, cameraPosition, entityChunkManager);
-			std::optional<ObjectTextureID> textureID1 = std::nullopt;
-			PixelShaderType pixelShaderType = PixelShaderType::AlphaTested;
+			DebugAssertMsgFormat(animDefIter != this->anims.end(), "Expected loaded entity animation for def ID %d.", entityDefID);
 
-			const bool isCitizen = entityInst.isCitizen();
-			const bool isGhost = EntityUtils::isGhost(entityDef);
-			const bool isPuddle = EntityUtils::isPuddle(entityDef);
-			if (isCitizen)
+			EntityObservedResult observedResult;
+			entityChunkManager.getEntityObservedResult(entityInstID, cameraPosition, observedResult);
+			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
+			const PixelShaderType pixelShaderType = GetEntityPixelShaderType(entityDef);
+			const ObjectTextureID observedTextureIDs[] = { animDefIter->textureRefs[linearizedKeyframeIndex].get() };
+
+			RenderMaterialID materialID = -1;
+			if (entityInst.isCitizen())
 			{
-				const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
-				const auto paletteIndicesIter = this->paletteIndicesTextureRefs.find(paletteIndicesInstID);
-				DebugAssertMsgFormat(paletteIndicesIter != this->paletteIndicesTextureRefs.end(), "Expected entity palette indices texture at ID %d for entity %d.", paletteIndicesInstID, entityInstID);
-				textureID1 = paletteIndicesIter->second.get();
-				pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndexLookup;
+				for (const RenderEntityPaletteIndicesEntry &paletteIndicesEntry : this->paletteIndicesEntries)
+				{
+					if (paletteIndicesEntry.paletteIndicesInstanceID == entityInst.paletteIndicesInstID)
+					{
+						materialID = paletteIndicesEntry.materialIDs[linearizedKeyframeIndex];
+						break;
+					}
+				}
 			}
-			else if (isGhost)
+			else
 			{
-				pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
+				const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(pixelShaderType, observedTextureIDs);
+
+				for (const RenderMaterial &material : this->materials)
+				{
+					if (material.key == materialKey)
+					{
+						materialID = material.id;
+						break;
+					}
+				}
 			}
-			else if (isPuddle)
-			{
-				pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass;
-			}
+
+			DebugAssert(materialID >= 0);
 
 			const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
 			const int entityTransformIndex = 0; // Each entity has their own transform buffer for now.
@@ -408,33 +555,46 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			RenderDrawCall drawCall;
 			drawCall.transformBufferID = transformBufferID;
 			drawCall.transformIndex = entityTransformIndex;
-			drawCall.preScaleTranslationBufferID = -1;
 			drawCall.positionBufferID = this->meshInst.positionBufferID;
 			drawCall.normalBufferID = this->meshInst.normalBufferID;
 			drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
 			drawCall.indexBufferID = this->meshInst.indexBufferID;
-			drawCall.textureIDs[0] = textureID0;
-			drawCall.textureIDs[1] = textureID1.has_value() ? *textureID1 : -1;
-			drawCall.lightingType = RenderLightingType::PerPixel;
-			drawCall.lightPercent = 0.0;
-			drawCall.vertexShaderType = VertexShaderType::Entity;
-			drawCall.pixelShaderType = pixelShaderType;
-			drawCall.pixelShaderParam0 = 0.0;
-			drawCall.enableBackFaceCulling = true;
-			drawCall.enableDepthRead = true;
-			drawCall.enableDepthWrite = true;
+			drawCall.materialID = materialID;
+			drawCall.materialInstID = -1;
 
-			if (drawCall.pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
+			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
 			{
+				const RenderMaterialKey puddleSecondPassMaterialKey = MakePuddleSecondPassMaterialKey(observedTextureIDs[0]);
+
+				RenderMaterialID puddleSecondPassMaterialID = -1;
+				for (const RenderMaterial &material : this->materials)
+				{
+					if (material.key == puddleSecondPassMaterialKey)
+					{
+						puddleSecondPassMaterialID = material.id;
+						break;
+					}
+				}
+
+				DebugAssert(puddleSecondPassMaterialID >= 0);
+
 				RenderDrawCall puddleSecondPassDrawCall = drawCall;
-				puddleSecondPassDrawCall.pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
-				puddleSecondPassDrawCall.lightingType = RenderLightingType::PerMesh; // Don't spend effort lighting reflection, value is unused.
-				puddleSecondPassDrawCall.lightPercent = 0.0;
+				puddleSecondPassDrawCall.materialID = puddleSecondPassMaterialID;
+				puddleSecondPassDrawCall.multipassType = RenderMultipassType::Puddles;
 
 				this->puddleSecondPassDrawCallsCache.emplace_back(std::move(puddleSecondPassDrawCall));
 			}
 
-			this->drawCallsCache.emplace_back(std::move(drawCall));
+			if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
+			{
+				drawCall.multipassType = RenderMultipassType::Ghosts;
+				this->ghostDrawCallsCache.emplace_back(std::move(drawCall));
+			}
+			else
+			{
+				drawCall.multipassType = RenderMultipassType::None;
+				this->drawCallsCache.emplace_back(std::move(drawCall));
+			}
 		}
 	}
 
@@ -460,7 +620,36 @@ void RenderEntityManager::endFrame()
 void RenderEntityManager::unloadScene(Renderer &renderer)
 {
 	this->anims.clear();
-	this->paletteIndicesTextureRefs.clear();
+
+	for (RenderEntityPaletteIndicesEntry &entry : this->paletteIndicesEntries)
+	{
+		if (entry.textureID >= 0)
+		{
+			renderer.freeObjectTexture(entry.textureID);
+			entry.textureID = -1;
+		}
+
+		for (RenderMaterialID materialID : entry.materialIDs)
+		{
+			if (materialID >= 0)
+			{
+				renderer.freeMaterial(materialID);
+			}
+		}
+	}
+
+	this->paletteIndicesEntries.clear();
+
+	for (RenderMaterial &material : this->materials)
+	{
+		if (material.id >= 0)
+		{
+			renderer.freeMaterial(material.id);
+		}
+	}
+
+	this->materials.clear();
 	this->drawCallsCache.clear();
+	this->ghostDrawCallsCache.clear();
 	this->puddleSecondPassDrawCallsCache.clear();
 }

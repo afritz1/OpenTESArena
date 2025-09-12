@@ -1,22 +1,35 @@
 #ifndef RENDER_INIT_SETTINGS_H
 #define RENDER_INIT_SETTINGS_H
 
+#include <string>
+
 #include "RenderShaderUtils.h"
+
+struct Window;
+
+struct RenderContextSettings
+{
+	const Window *window;
+	bool enableValidationLayers;
+	
+	RenderContextSettings();
+	
+	void init(const Window *window, bool enableValidationLayers);
+};
 
 struct RenderInitSettings
 {
-	// @todo: rarely modified values
-	// - i.e. max render width/height of window, aspect ratio, max thread count of hardware.
-	// - note that it's _max_ thread count; the render frame settings can say what fraction to use
-	//   and the renderer will just limit its for loop to giving work to that fraction.
+	const Window *window;
+	std::string dataFolderPath;
 
-	// @todo: might also contain SDL window handle for use with present().
-
-	int width, height;
+	int internalWidth, internalHeight;
 	int renderThreadsMode;
 	DitheringMode ditheringMode;
+	
+	RenderInitSettings();
 
-	void init(int width, int height, int renderThreadsMode, DitheringMode ditheringMode);
+	void init(const Window *window, const std::string &dataFolderPath, int internalWidth, int internalHeight, int renderThreadsMode,
+		DitheringMode ditheringMode);
 };
 
 #endif

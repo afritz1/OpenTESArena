@@ -72,6 +72,8 @@ public:
 	static constexpr double MAX_CURSOR_SCALE = 12.0;
 	static constexpr int MIN_LETTERBOX_MODE = 0;
 	static constexpr int MAX_LETTERBOX_MODE = 2;
+	static constexpr int MIN_GRAPHICS_API = 0;
+	static constexpr int MAX_GRAPHICS_API = 1;
 	static constexpr int MIN_RENDER_THREADS_MODE = 0;
 	static constexpr int MAX_RENDER_THREADS_MODE = 5;
 	static constexpr int MIN_DITHERING_MODE = 0;
@@ -157,6 +159,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Graphics, ScreenWidth, 1, std::numeric_limits<int>::max())
 	OPTION_INT(Graphics, ScreenHeight, 1, std::numeric_limits<int>::max())
 	OPTION_INT(Graphics, WindowMode, MIN_WINDOW_MODE, MAX_WINDOW_MODE)
+	OPTION_INT(Graphics, GraphicsAPI, MIN_GRAPHICS_API, MAX_GRAPHICS_API)
 	OPTION_INT(Graphics, TargetFPS, MIN_FPS, std::numeric_limits<int>::max())
 	OPTION_DOUBLE(Graphics, ResolutionScale, MIN_RESOLUTION_SCALE, MAX_RESOLUTION_SCALE)
 	OPTION_DOUBLE(Graphics, VerticalFOV, MIN_VERTICAL_FOV, MAX_VERTICAL_FOV)
@@ -188,6 +191,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Misc, ChunkDistance, MIN_CHUNK_DISTANCE, std::numeric_limits<int>::max())
 	OPTION_INT(Misc, StarDensity, MIN_STAR_DENSITY_MODE, MAX_STAR_DENSITY_MODE)
 	OPTION_BOOL(Misc, PlayerHasLight)
+	OPTION_BOOL(Misc, EnableValidationLayers)
 
 	// Reads all the key-values pairs from the given absolute path into the default members.
 	void loadDefaults(const std::string &filename);

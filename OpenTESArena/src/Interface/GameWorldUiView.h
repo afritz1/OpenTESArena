@@ -8,6 +8,7 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
+#include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/ListBox.h"
@@ -15,9 +16,28 @@
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
 #include "../Utilities/Color.h"
+#include "../Voxels/VoxelFrustumCullingChunk.h"
 
 class FontLibrary;
 class Game;
+
+struct UiCommandList;
+struct Window;
+
+struct DebugVoxelVisibilityQuadtreeState
+{
+	static constexpr int TEXTURE_COUNT = VoxelFrustumCullingChunk::TREE_LEVEL_COUNT;
+
+	UiTextureID textureIDs[TEXTURE_COUNT];
+	Int2 textureDimsList[TEXTURE_COUNT];
+	int drawPositionYs[TEXTURE_COUNT];
+	RenderElement2D renderElements[TEXTURE_COUNT];
+
+	DebugVoxelVisibilityQuadtreeState();
+
+	void populateCommandList(Game &game, UiCommandList &commandList);
+	void free(Renderer &renderer);
+};
 
 namespace GameWorldUiView
 {
@@ -53,7 +73,7 @@ namespace GameWorldUiView
 	Rect scaleClassicCursorRectToNative(int rectIndex, double xScale, double yScale);
 
 	// Game world interface UI area.
-	constexpr Rect UiBottomRegion(0, 147, 320, 53);
+	constexpr Rect UiBottomRegion(0, ArenaRenderUtils::SCREEN_HEIGHT - ArenaRenderUtils::SCENE_UI_HEIGHT, ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCENE_UI_HEIGHT);
 
 	// Arrow cursor pivots. These offset the drawn cursor relative to the mouse position so the cursor's
 	// click area is closer to the tip of each arrow.
@@ -174,7 +194,7 @@ namespace GameWorldUiView
 	Int2 getInterfaceCenter(Game &game);
 
 	// Gets the pixel coordinate of the center of the window. Does not handle classic vs. modern mode.
-	Int2 getNativeWindowCenter(const Renderer &renderer);
+	Int2 getNativeWindowCenter(const Window &window);
 
 	// Helper functions for various UI textures.
 	TextureAsset getPaletteTextureAsset();
@@ -207,7 +227,8 @@ namespace GameWorldUiView
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);
-	void DEBUG_DrawVoxelVisibilityQuadtree(Game &game);
+
+	DebugVoxelVisibilityQuadtreeState allocDebugVoxelVisibilityQuadtreeState(Renderer &renderer);
 }
 
 #endif

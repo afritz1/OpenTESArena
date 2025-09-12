@@ -56,6 +56,8 @@ public:
 	const Palette &getPaletteHandle(PaletteID id) const;
 	const TextureBuilder &getTextureBuilderHandle(TextureBuilderID id) const;
 	const TextureFileMetadata &getMetadataHandle(TextureFileMetadataID id) const;
+
+	int getTotalBytes() const;
 };
 
 #endif

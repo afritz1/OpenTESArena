@@ -84,7 +84,7 @@ bool ProvinceMapPanel::init(int provinceID)
 	{
 		const auto &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
+		const Int2 classicPosition = game.window.nativeToOriginal(mousePosition);
 
 		if (this->searchButton.contains(classicPosition))
 		{
@@ -117,10 +117,10 @@ bool ProvinceMapPanel::init(int provinceID)
 
 	this->addMouseMotionListener([this](Game &game, int dx, int dy)
 	{
-		const auto &renderer = game.renderer;
-		const auto &inputManager = game.inputManager;
+		const Window &window = game.window;
+		const InputManager &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
+		const Int2 originalPosition = window.nativeToOriginal(mousePosition);
 		this->updateHoveredLocationID(originalPosition);
 	});
 
@@ -184,9 +184,10 @@ bool ProvinceMapPanel::init(int provinceID)
 	this->provinceID = provinceID;
 	this->hoveredLocationID = -1;
 
-	const auto &inputManager = game.inputManager;
+	const Window &window = game.window;
+	const InputManager &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
+	const Int2 originalPosition = window.nativeToOriginal(mousePosition);
 	this->updateHoveredLocationID(originalPosition);
 
 	return true;
@@ -573,11 +574,11 @@ void ProvinceMapPanel::onPauseChanged(bool paused)
 	{
 		// Make sure the hovered location matches where the pointer is now since mouse motion events
 		// aren't processed while this panel is paused.
-		auto &game = this->getGame();
-		const auto &renderer = game.renderer;
-		const auto &inputManager = game.inputManager;
+		const Game &game = this->getGame();
+		const Window &window = game.window;
+		const InputManager &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
-		const Int2 originalPosition = renderer.nativeToOriginal(mousePosition);
+		const Int2 originalPosition = window.nativeToOriginal(mousePosition);
 		this->updateHoveredLocationID(originalPosition);
 	}
 }

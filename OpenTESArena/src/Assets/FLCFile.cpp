@@ -440,7 +440,7 @@ Buffer2D<uint8_t> FLCFile::decodeDeltaFrame(const uint8_t *chunkData,
 	const uint8_t *srcPixels = initialFrame.begin();
 	Buffer2D<uint8_t> image(this->width, this->height);
 	std::copy(srcPixels, srcPixels + (initialFrame.getWidth() * initialFrame.getHeight()), image.begin());
-	return std::move(image);
+	return image;
 }
 
 int FLCFile::getFrameCount() const

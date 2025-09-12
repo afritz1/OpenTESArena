@@ -3,23 +3,24 @@
 #include <cmath>
 #include <string>
 
-#include "ArenaRenderUtils.h"
+#include "RenderBackendType.h"
+#include "RenderBuffer.h"
 #include "RenderCamera.h"
+#include "RenderLightManager.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
-#include "SdlUiRenderer.h"
-#include "SoftwareRenderer.h"
+#include "Sdl2DSoft3DRenderBackend.h"
+#include "VulkanRenderBackend.h"
 #include "../Assets/TextureManager.h"
-#include "../Math/Constants.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Rect.h"
 #include "../UI/CursorAlignment.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/RenderSpace.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommandBuffer.h"
+#include "../UI/UiCommand.h"
 #include "../UI/UiDrawCall.h"
 #include "../Utilities/Color.h"
 #include "../Utilities/Platform.h"
@@ -29,140 +30,8 @@
 
 namespace
 {
-	RenderCamera g_physicsDebugCamera; // Cached every frame for Jolt Physics debug renderer.
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE = 4.0;
 	constexpr double PHYSICS_DEBUG_MAX_DISTANCE_SQR = PHYSICS_DEBUG_MAX_DISTANCE * PHYSICS_DEBUG_MAX_DISTANCE;
-
-	int GetSdlWindowPosition(RenderWindowMode windowMode)
-	{
-		switch (windowMode)
-		{
-		case RenderWindowMode::Window:
-			return SDL_WINDOWPOS_CENTERED;
-		case RenderWindowMode::BorderlessFullscreen:
-		case RenderWindowMode::ExclusiveFullscreen:
-			return SDL_WINDOWPOS_UNDEFINED;
-		default:
-			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(windowMode)));
-		}
-	}
-
-	uint32_t GetSdlWindowFlags(RenderWindowMode windowMode)
-	{
-		uint32_t flags = SDL_WINDOW_ALLOW_HIGHDPI;
-		if (windowMode == RenderWindowMode::Window)
-		{
-			flags |= SDL_WINDOW_RESIZABLE;
-		}
-		else if (windowMode == RenderWindowMode::BorderlessFullscreen)
-		{
-			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-		}
-		else if (windowMode == RenderWindowMode::ExclusiveFullscreen)
-		{
-			flags |= SDL_WINDOW_FULLSCREEN;
-		}
-
-		return flags;
-	}
-
-	const char *GetSdlWindowTitle()
-	{
-		return "OpenTESArena";
-	}
-
-	const char *GetSdlRenderScaleQuality()
-	{
-		return "nearest";
-	}
-
-	Int2 GetWindowDimsForMode(RenderWindowMode windowMode, int fallbackWidth, int fallbackHeight)
-	{
-		if (windowMode == RenderWindowMode::ExclusiveFullscreen)
-		{
-			// Use desktop resolution of the primary display device. In the future, the display index could be
-			// an option in the options menu.
-			constexpr int displayIndex = 0;
-			SDL_DisplayMode displayMode;
-			const int result = SDL_GetDesktopDisplayMode(displayIndex, &displayMode);
-			if (result == 0)
-			{
-				return Int2(displayMode.w, displayMode.h);
-			}
-			else
-			{
-				DebugLogErrorFormat("Couldn't get desktop %d display mode, using given window dimensions \"%dx%d\" (%s).", displayIndex, fallbackWidth, fallbackHeight, SDL_GetError());
-			}
-		}
-
-		return Int2(fallbackWidth, fallbackHeight);
-	}
-
-	// Helper method for making a renderer context.
-	SDL_Renderer *CreateSdlRendererForWindow(SDL_Window *window)
-	{
-		// Automatically choose the best driver.
-		constexpr int bestDriver = -1;
-
-		SDL_Renderer *rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_ACCELERATED);
-		if (rendererContext == nullptr)
-		{
-			DebugLogErrorFormat("Couldn't create SDL_Renderer with default driver (%s).", SDL_GetError());
-			return nullptr;
-		}
-
-		SDL_RendererInfo rendererInfo;
-		if (SDL_GetRendererInfo(rendererContext, &rendererInfo) < 0)
-		{
-			DebugLogErrorFormat("Couldn't get SDL_RendererInfo (%s).", SDL_GetError());
-			return nullptr;
-		}
-
-		DebugLogFormat("Created renderer \"%s\" (flags: 0x%X).", rendererInfo.name, rendererInfo.flags);
-
-		// Set pixel interpolation hint.
-		const SDL_bool status = SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, GetSdlRenderScaleQuality());
-		if (status != SDL_TRUE)
-		{
-			DebugLogWarningFormat("Couldn't set SDL rendering interpolation hint (%s).", SDL_GetError());
-		}
-
-		int windowWidth, windowHeight;
-		SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-
-		auto isValidWindowSize = [](int width, int height)
-		{
-			return (width > 0) && (height > 0);
-		};
-
-		// Set the size of the render texture to be the size of the whole screen (it automatically scales otherwise).
-		// If this fails, the OS might not support hardware accelerated renderers for some reason (such as with Linux),
-		// so retry with software.
-		if (!isValidWindowSize(windowWidth, windowHeight))
-		{
-			DebugLogWarningFormat("Failed to init accelerated SDL_Renderer, trying software fallback (%s).", SDL_GetError());
-			SDL_DestroyRenderer(rendererContext);
-
-			rendererContext = SDL_CreateRenderer(window, bestDriver, SDL_RENDERER_SOFTWARE);
-			if (rendererContext == nullptr)
-			{
-				DebugLogErrorFormat("Couldn't create software fallback SDL_Renderer (%s).", SDL_GetError());
-				return nullptr;
-			}
-
-			SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-			if (!isValidWindowSize(windowWidth, windowHeight))
-			{
-				DebugLogErrorFormat("Couldn't get software fallback SDL_Window dimensions (%s).", SDL_GetError());
-				return nullptr;
-			}
-		}
-
-		// Set the device-independent resolution for rendering (i.e., the "behind-the-scenes" resolution).
-		SDL_RenderSetLogicalSize(rendererContext, windowWidth, windowHeight);
-
-		return rendererContext;
-	}
 
 	Int2 MakeInternalRendererDimensions(const Int2 &dimensions, double resolutionScale)
 	{
@@ -182,7 +51,40 @@ namespace
 
 		return Int2(alignedWidth, alignedHeight);
 	}
+
+	void WriteMatrix4Float32(const Matrix4d &matrix, std::byte *dstBytes)
+	{
+		const Matrix4f matrixF = RendererUtils::matrix4DoubleToFloat(matrix);
+		Span<const std::byte> srcBytes(reinterpret_cast<const std::byte*>(&matrixF), sizeof(Matrix4f));
+		std::copy(srcBytes.begin(), srcBytes.end(), dstBytes);
+	}
+
+	void WriteRenderLightFloat32(const RenderLight &light, std::byte *dstBytes)
+	{
+		const Float3 positionF(static_cast<float>(light.position.x), static_cast<float>(light.position.y), static_cast<float>(light.position.z));
+		const float startRadiusF = static_cast<float>(light.startRadius);
+		const float endRadiusF = static_cast<float>(light.endRadius);
+
+		Span<const std::byte> srcPositionBytes(reinterpret_cast<const std::byte*>(&positionF), sizeof(Float3));
+		Span<const std::byte> srcStartRadiusBytes(reinterpret_cast<const std::byte*>(&startRadiusF), sizeof(float));
+		Span<const std::byte> srcEndRadiusBytes(reinterpret_cast<const std::byte*>(&endRadiusF), sizeof(float));
+		Span<std::byte> dstPositionBytes(dstBytes, srcPositionBytes.getCount());
+		Span<std::byte> dstStartRadiusBytes(dstPositionBytes.end(), srcStartRadiusBytes.getCount());
+		Span<std::byte> dstEndRadiusBytes(dstStartRadiusBytes.end(), srcEndRadiusBytes.getCount());
+		std::copy(srcPositionBytes.begin(), srcPositionBytes.end(), dstPositionBytes.begin());
+		std::copy(srcStartRadiusBytes.begin(), srcStartRadiusBytes.end(), dstStartRadiusBytes.begin());
+		std::copy(srcEndRadiusBytes.begin(), srcEndRadiusBytes.end(), dstEndRadiusBytes.begin());
+	}
 }
+
+RenderElement2D::RenderElement2D(UiTextureID id, Rect rect, Rect clipRect)
+	: rect(rect), clipRect(clipRect)
+{
+	this->id = id;
+}
+
+RenderElement2D::RenderElement2D()
+	: RenderElement2D(-1, Rect(), Rect()) { }
 
 RenderDisplayMode::RenderDisplayMode(int width, int height, int refreshRate)
 {
@@ -201,17 +103,19 @@ RendererProfilerData::RendererProfilerData()
 	this->presentedTriangleCount = -1;
 	this->objectTextureCount = -1;
 	this->objectTextureByteCount = -1;
+	this->uiTextureCount = -1;
+	this->uiTextureByteCount = -1;
+	this->materialCount = -1;
 	this->totalLightCount = -1;
 	this->totalCoverageTests = -1;
 	this->totalDepthTests = -1;
 	this->totalColorWrites = -1;
 	this->renderTime = 0.0;
-	this->presentTime = 0.0;
 }
 
-void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount,
-	int objectTextureCount, int64_t objectTextureByteCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
-	int64_t totalColorWrites, double renderTime, double presentTime)
+void RendererProfilerData::init(int width, int height, int threadCount, int drawCallCount, int presentedTriangleCount, int objectTextureCount, int64_t objectTextureByteCount,
+	int uiTextureCount, int64_t uiTextureByteCount, int materialCount, int totalLightCount, int64_t totalCoverageTests, int64_t totalDepthTests,
+	int64_t totalColorWrites, double renderTime)
 {
 	this->width = width;
 	this->height = height;
@@ -221,183 +125,89 @@ void RendererProfilerData::init(int width, int height, int threadCount, int draw
 	this->presentedTriangleCount = presentedTriangleCount;
 	this->objectTextureCount = objectTextureCount;
 	this->objectTextureByteCount = objectTextureByteCount;
+	this->uiTextureCount = uiTextureCount;
+	this->uiTextureByteCount = uiTextureByteCount;
+	this->materialCount = materialCount;
 	this->totalLightCount = totalLightCount;
 	this->totalCoverageTests = totalCoverageTests;
 	this->totalDepthTests = totalDepthTests;
 	this->totalColorWrites = totalColorWrites;
 	this->renderTime = renderTime;
-	this->presentTime = presentTime;
 }
 
 Renderer::Renderer()
 {
 	this->window = nullptr;
-	this->renderer = nullptr;
-	this->nativeTexture = nullptr;
-	this->gameWorldTexture = nullptr;
-	this->letterboxMode = 0;
-	this->fullGameWindow = false;
 }
 
 Renderer::~Renderer()
 {
 	DebugLog("Closing.");
 
-	if (this->renderer2D)
+	if (this->backend != nullptr)
 	{
-		this->renderer2D->shutdown();
+		this->backend->shutdown();
+		this->backend = nullptr;
 	}
 
-	if (this->renderer3D)
-	{
-		this->renderer3D->shutdown();
-	}
-
-	SDL_DestroyWindow(this->window);
-
-	// This also destroys the frame buffer textures.
-	SDL_DestroyRenderer(this->renderer);
-
-	this->nativeTexture = nullptr;
-	this->gameWorldTexture = nullptr;
-
-	SDL_Quit();
+	this->window = nullptr;
 }
 
-double Renderer::getLetterboxAspect() const
+bool Renderer::init(const Window *window, RenderBackendType backendType, const RenderResolutionScaleFunc &resolutionScaleFunc,
+	int renderThreadsMode, DitheringMode ditheringMode, bool enableValidationLayers, const std::string &dataFolderPath)
 {
-	if (this->letterboxMode == 0)
+	DebugLog("Initializing.");
+
+	this->window = window;
+	this->resolutionScaleFunc = resolutionScaleFunc;
+
+	switch (backendType)
 	{
-		// 16:10.
-		return 16.0 / 10.0;
+	case RenderBackendType::Sdl2DSoft3D:
+		this->backend = std::make_unique<Sdl2DSoft3DRenderBackend>();
+		break;
+	case RenderBackendType::Vulkan:
+		this->backend = std::make_unique<VulkanRenderBackend>();
+		break;
+	default:
+		DebugLogErrorFormat("Unrecognized render backend %d.", backendType);
+		return false;
 	}
-	else if (this->letterboxMode == 1)
+	
+	// Initialize the backend's context first so we can query the physical pixel dimensions of the window.
+	// @todo SDL_GetWindowSizeInPixels() in newer SDL2 versions will allow these two inits to combine again
+	RenderContextSettings contextSettings;
+	contextSettings.init(window, enableValidationLayers);
+	
+	if (!this->backend->initContext(contextSettings))
 	{
-		// 4:3.
-		return 4.0 / 3.0;
+		DebugLogErrorFormat("Couldn't init render backend %d context.", backendType);
+		this->backend->shutdown();
+		this->backend = nullptr;
+		return false;
 	}
-	else if (this->letterboxMode == 2)
+
+	const Int2 viewDims = window->getSceneViewDimensions();
+	const double resolutionScale = resolutionScaleFunc();
+	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
+
+	RenderInitSettings initSettings;
+	initSettings.init(window, dataFolderPath, internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
+	
+	if (!this->backend->initRendering(initSettings))
 	{
-		// Stretch to fill.
-		const Int2 windowDims = this->getWindowDimensions();
-		return static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
+		DebugLogErrorFormat("Couldn't init render backend %d rendering.", backendType);
+		this->backend->shutdown();
+		this->backend = nullptr;
+		return false;
 	}
-	else
-	{
-		DebugUnhandledReturnMsg(double, std::to_string(this->letterboxMode));
-	}
-}
 
-Int2 Renderer::getWindowDimensions() const
-{
-	int windowWidth, windowHeight;
-	SDL_GetWindowSize(this->window, &windowWidth, &windowHeight);
-	return Int2(windowWidth, windowHeight);
-}
-
-double Renderer::getWindowAspect() const
-{
-	const Int2 dims = this->getWindowDimensions();
-	return static_cast<double>(dims.x) / static_cast<double>(dims.y);
-}
-
-Span<const RenderDisplayMode> Renderer::getDisplayModes() const
-{
-	return this->displayModes;
-}
-
-double Renderer::getDpiScale() const
-{
-	const double platformDpi = Platform::getDefaultDPI();
-	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
-
-	float hdpi;
-	if (SDL_GetDisplayDPI(displayIndex, nullptr, &hdpi, nullptr) == 0)
-	{
-		return static_cast<double>(hdpi) / platformDpi;
-	}
-	else
-	{
-		DebugLogWarningFormat("Couldn't get DPI of display %d (%s).", displayIndex, SDL_GetError());
-		return 1.0;
-	}
-}
-
-Int2 Renderer::getViewDimensions() const
-{
-	const Int2 windowDims = this->getWindowDimensions();
-	const int screenHeight = windowDims.y;
-
-	// Ratio of the view height and window height in 320x200.
-	const double viewWindowRatio = static_cast<double>(ArenaRenderUtils::SCREEN_HEIGHT - 53) /
-		ArenaRenderUtils::SCREEN_HEIGHT_REAL;
-
-	// Actual view height to use.
-	const int viewHeight = this->fullGameWindow ? screenHeight :
-		static_cast<int>(std::ceil(screenHeight * viewWindowRatio));
-
-	return Int2(windowDims.x, viewHeight);
-}
-
-double Renderer::getViewAspect() const
-{
-	const Int2 viewDims = this->getViewDimensions();
-	return static_cast<double>(viewDims.x) / static_cast<double>(viewDims.y);
-}
-
-SDL_Rect Renderer::getLetterboxDimensions() const
-{
-	const Int2 windowDims = this->getWindowDimensions();
-	const double nativeAspect = static_cast<double>(windowDims.x) / static_cast<double>(windowDims.y);
-	const double letterboxAspect = this->getLetterboxAspect();
-
-	// Compare the two aspects to decide what the letterbox dimensions are.
-	if (std::abs(nativeAspect - letterboxAspect) < Constants::Epsilon)
-	{
-		// Equal aspects. The letterbox is equal to the screen size.
-		SDL_Rect rect;
-		rect.x = 0;
-		rect.y = 0;
-		rect.w = windowDims.x;
-		rect.h = windowDims.y;
-		return rect;
-	}
-	else if (nativeAspect > letterboxAspect)
-	{
-		// Native window is wider = empty left and right.
-		const int subWidth = static_cast<int>(std::ceil(static_cast<double>(windowDims.y) * letterboxAspect));
-		SDL_Rect rect;
-		rect.x = (windowDims.x - subWidth) / 2;
-		rect.y = 0;
-		rect.w = subWidth;
-		rect.h = windowDims.y;
-		return rect;
-	}
-	else
-	{
-		// Native window is taller = empty top and bottom.
-		const int subHeight = static_cast<int>(std::ceil(static_cast<double>(windowDims.x) / letterboxAspect));
-		SDL_Rect rect;
-		rect.x = 0;
-		rect.y = (windowDims.y - subHeight) / 2;
-		rect.w = windowDims.x;
-		rect.h = subHeight;
-		return rect;
-	}
+	return true;
 }
 
 Surface Renderer::getScreenshot() const
 {
-	const Int2 dimensions = this->getWindowDimensions();
-	Surface screenshot = Surface::createWithFormat(dimensions.x, dimensions.y, Renderer::DEFAULT_BPP, Renderer::DEFAULT_PIXELFORMAT);
-	const int status = SDL_RenderReadPixels(this->renderer, nullptr, screenshot.get()->format->format, screenshot.get()->pixels, screenshot.get()->pitch);
-
-	if (status != 0)
-	{
-		DebugCrashFormat("Couldn't take screenshot (%s).", SDL_GetError());
-	}
-
-	return screenshot;
+	return this->backend->getScreenshot();
 }
 
 const RendererProfilerData &Renderer::getProfilerData() const
@@ -405,585 +215,502 @@ const RendererProfilerData &Renderer::getProfilerData() const
 	return this->profilerData;
 }
 
-Int2 Renderer::nativeToOriginal(const Int2 &nativePoint) const
+void Renderer::resize(int windowWidth, int windowHeight)
 {
-	// From native point to letterbox point.
-	const Int2 windowDimensions = this->getWindowDimensions();
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
-
-	const Int2 letterboxPoint(
-		nativePoint.x - letterbox.x,
-		nativePoint.y - letterbox.y);
-
-	// Then from letterbox point to original point.
-	const double letterboxXPercent = static_cast<double>(letterboxPoint.x) / static_cast<double>(letterbox.w);
-	const double letterboxYPercent = static_cast<double>(letterboxPoint.y) / static_cast<double>(letterbox.h);
-
-	const double originalWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
-	const double originalHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
-
-	const Int2 originalPoint(
-		static_cast<int>(originalWidthReal * letterboxXPercent),
-		static_cast<int>(originalHeightReal * letterboxYPercent));
-
-	return originalPoint;
-}
-
-Rect Renderer::nativeToOriginal(const Rect &nativeRect) const
-{
-	const Int2 newTopLeft = this->nativeToOriginal(nativeRect.getTopLeft());
-	const Int2 newBottomRight = this->nativeToOriginal(nativeRect.getBottomRight());
-	return Rect(
-		newTopLeft.x,
-		newTopLeft.y,
-		newBottomRight.x - newTopLeft.x,
-		newBottomRight.y - newTopLeft.y);
-}
-
-Int2 Renderer::originalToNative(const Int2 &originalPoint) const
-{
-	// From original point to letterbox point.
-	const double originalXPercent = static_cast<double>(originalPoint.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
-	const double originalYPercent = static_cast<double>(originalPoint.y) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
-
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
-	const double letterboxWidthReal = static_cast<double>(letterbox.w);
-	const double letterboxHeightReal = static_cast<double>(letterbox.h);
-
-	// Convert to letterbox point. Round to avoid off-by-one errors.
-	const Int2 letterboxPoint(
-		static_cast<int>(std::round(letterboxWidthReal * originalXPercent)),
-		static_cast<int>(std::round(letterboxHeightReal * originalYPercent)));
-
-	// Then from letterbox point to native point.
-	const Int2 nativePoint(
-		letterboxPoint.x + letterbox.x,
-		letterboxPoint.y + letterbox.y);
-
-	return nativePoint;
-}
-
-Rect Renderer::originalToNative(const Rect &originalRect) const
-{
-	const Int2 newTopLeft = this->originalToNative(originalRect.getTopLeft());
-	const Int2 newBottomRight = this->originalToNative(originalRect.getBottomRight());
-	return Rect(
-		newTopLeft.x,
-		newTopLeft.y,
-		newBottomRight.x - newTopLeft.x,
-		newBottomRight.y - newTopLeft.y);
-}
-
-bool Renderer::letterboxContains(const Int2 &nativePoint) const
-{
-	const SDL_Rect letterbox = this->getLetterboxDimensions();
-	const Rect rectangle(letterbox.x, letterbox.y, letterbox.w, letterbox.h);
-	return rectangle.contains(nativePoint);
-}
-
-bool Renderer::init(int width, int height, RenderWindowMode windowMode, int letterboxMode, bool fullGameWindow,
-	const RenderResolutionScaleFunc &resolutionScaleFunc, RendererSystemType2D systemType2D, RendererSystemType3D systemType3D,
-	int renderThreadsMode, DitheringMode ditheringMode)
-{
-	DebugLog("Initializing.");
-	const int result = SDL_Init(SDL_INIT_VIDEO); // Required for SDL_GetDesktopDisplayMode() to work for exclusive fullscreen.
-	if (result != 0)
-	{
-		DebugLogErrorFormat("Couldn't init SDL video subsystem (result: %d, %s).", result, SDL_GetError());
-		return false;
-	}
-
-	if ((width <= 0) || (height <= 0))
-	{
-		DebugLogErrorFormat("Invalid renderer dimensions %dx%d.", width, height);
-		return false;
-	}
-
-	this->letterboxMode = letterboxMode;
-	this->fullGameWindow = fullGameWindow;
-	this->resolutionScaleFunc = resolutionScaleFunc;
-
-	// Initialize SDL window.
-	const char *windowTitle = GetSdlWindowTitle();
-	const int windowPosition = GetSdlWindowPosition(windowMode);
-	const uint32_t windowFlags = GetSdlWindowFlags(windowMode);
-	const Int2 windowDims = GetWindowDimsForMode(windowMode, width, height);
-	this->window = SDL_CreateWindow(windowTitle, windowPosition, windowPosition, windowDims.x, windowDims.y, windowFlags);
-	if (this->window == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't create SDL_Window (dimensions: %dx%d, window mode: %d, %s).", width, height, windowMode, SDL_GetError());
-		return false;
-	}
-
-	// Initialize SDL renderer context.
-	this->renderer = CreateSdlRendererForWindow(this->window);
-	if (this->renderer == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't create SDL_Renderer (%s).", SDL_GetError());
-		return false;
-	}
-
-	// Initialize display modes list for the current window.
-	// @todo: these display modes will only work on the display device the window was initialized on
-	const int displayIndex = SDL_GetWindowDisplayIndex(this->window);
-	const int displayModeCount = SDL_GetNumDisplayModes(displayIndex);
-	for (int i = 0; i < displayModeCount; i++)
-	{
-		// Convert SDL display mode to our display mode.
-		SDL_DisplayMode mode;
-		if (SDL_GetDisplayMode(displayIndex, i, &mode) == 0)
-		{
-			// Filter away non-24-bit displays. Perhaps this could be handled better, but I don't
-			// know how to do that for all possible displays out there.
-			if (mode.format == SDL_PIXELFORMAT_RGB888)
-			{
-				this->displayModes.emplace_back(RenderDisplayMode(mode.w, mode.h, mode.refresh_rate));
-			}
-		}
-	}
-
-	// Use window dimensions, just in case it's fullscreen and the given width and
-	// height are ignored.
-	const Int2 windowDimensions = this->getWindowDimensions();
-
-	// Initialize native frame buffer.
-	this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDimensions.x, windowDimensions.y);
-	if (this->nativeTexture == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't create SDL_Texture frame buffer (%s).", SDL_GetError());
-		return false;
-	}
-
-	// Initialize 2D renderer.
-	this->renderer2D = [systemType2D]() -> std::unique_ptr<RendererSystem2D>
-	{
-		if (systemType2D == RendererSystemType2D::SDL2)
-		{
-			return std::make_unique<SdlUiRenderer>();
-		}
-		else
-		{
-			DebugLogErrorFormat("Unrecognized 2D renderer system type \"%d\".", systemType2D);
-			return nullptr;
-		}
-	}();
-
-	if (!this->renderer2D->init(this->window))
-	{
-		DebugCrash("Couldn't init 2D renderer.");
-	}
-
-	// Initialize 3D renderer.
-	this->renderer3D = [systemType3D]() -> std::unique_ptr<RendererSystem3D>
-	{
-		if (systemType3D == RendererSystemType3D::SoftwareClassic)
-		{
-			return std::make_unique<SoftwareRenderer>();
-		}
-		else
-		{
-			DebugLogErrorFormat("Unrecognized 3D renderer system type \"%d\".", systemType3D);
-			return nullptr;
-		}
-	}();
-
-	const Int2 viewDims = this->getViewDimensions();
-	const double resolutionScale = resolutionScaleFunc();
-	const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
-
-	// Initialize game world destination frame buffer.
-	this->gameWorldTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
-	if (this->gameWorldTexture == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't create game world texture with dimensions %dx%d (%s).", internalRenderDims.x, internalRenderDims.y, SDL_GetError());
-	}
-
-	RenderInitSettings initSettings;
-	initSettings.init(internalRenderDims.x, internalRenderDims.y, renderThreadsMode, ditheringMode);
-	this->renderer3D->init(initSettings);
-
-	return true;
-}
-
-void Renderer::resize(int width, int height, double resolutionScale, bool fullGameWindow)
-{
-	// The window's dimensions are resized automatically by SDL. The renderer's are not.
-	const Int2 windowDims = this->getWindowDimensions();
-	DebugAssertMsg(windowDims.x == width, "Mismatched resize widths.");
-	DebugAssertMsg(windowDims.y == height, "Mismatched resize heights.");
-
-	SDL_RenderSetLogicalSize(this->renderer, width, height);
-
-	// Reinitialize native frame buffer.
-	if (this->nativeTexture != nullptr)
-	{
-		SDL_DestroyTexture(this->nativeTexture);
-	}
-
-	this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, width, height);
-	if (this->nativeTexture == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't recreate native frame buffer for resize to %dx%d (%s).", width, height, SDL_GetError());
-	}
-
-	this->fullGameWindow = fullGameWindow;
-
-	// Rebuild the 3D renderer if initialized.
-	if (this->renderer3D->isInited())
-	{
-		const Int2 viewDims = this->getViewDimensions();
-		const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
-
-		// Reinitialize the game world frame buffer.
-		if (this->gameWorldTexture != nullptr)
-		{
-			SDL_DestroyTexture(this->gameWorldTexture);
-		}
-
-		this->gameWorldTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
-		if (this->gameWorldTexture == nullptr)
-		{
-			DebugLogErrorFormat("Couldn't recreate game world texture for resize to %dx%d (%s).", internalRenderDims.x, internalRenderDims.y, SDL_GetError());
-		}
-
-		this->renderer3D->resize(internalRenderDims.x, internalRenderDims.y);
-	}
+	const Int2 windowDims = this->window->getPixelDimensions();
+	const Int2 viewDims = this->window->getSceneViewDimensions();
+	const double resolutionScale = this->resolutionScaleFunc();
+	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
+	this->backend->resize(windowDims.x, windowDims.y, viewDims.x, viewDims.y, internalDims.x, internalDims.y);
 }
 
 void Renderer::handleRenderTargetsReset()
 {
-	if (this->window == nullptr)
-	{
-		DebugLogError("Missing SDL_Window for render targets reset.");
-		return;
-	}
-
-	if (this->renderer == nullptr)
-	{
-		DebugLogError("Missing SDL_Renderer for render targets reset.");
-		return;
-	}
-
-	if (this->nativeTexture != nullptr)
-	{
-		SDL_DestroyTexture(this->nativeTexture);
-	}
-
-	const Int2 windowDims = this->getWindowDimensions();
-	this->nativeTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_TARGET, windowDims.x, windowDims.y);
-	if (this->nativeTexture == nullptr)
-	{
-		DebugLogErrorFormat("Couldn't recreate native frame buffer for render targets reset to %dx%d (%s).", windowDims.x, windowDims.y, SDL_GetError());
-	}
-
-	if (this->renderer3D->isInited())
-	{
-		const Int2 viewDims = this->getViewDimensions();
-		const double resolutionScale = this->resolutionScaleFunc();
-		const Int2 internalRenderDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
-
-		if (this->gameWorldTexture != nullptr)
-		{
-			SDL_DestroyTexture(this->gameWorldTexture);
-		}
-
-		this->gameWorldTexture = SDL_CreateTexture(this->renderer, Renderer::DEFAULT_PIXELFORMAT, SDL_TEXTUREACCESS_STREAMING, internalRenderDims.x, internalRenderDims.y);
-		if (this->gameWorldTexture == nullptr)
-		{
-			DebugLogErrorFormat("Couldn't recreate game world texture for render targets reset to %dx%d (%s).", internalRenderDims.x, internalRenderDims.y, SDL_GetError());
-		}
-
-		this->renderer3D->resize(internalRenderDims.x, internalRenderDims.y);
-	}
-}
-
-void Renderer::setLetterboxMode(int letterboxMode)
-{
-	this->letterboxMode = letterboxMode;
-}
-
-void Renderer::setWindowMode(RenderWindowMode mode)
-{
-	int result = 0;
-	if (mode == RenderWindowMode::ExclusiveFullscreen)
-	{
-		SDL_DisplayMode displayMode; // @todo: may consider changing this to some GetDisplayModeForWindowMode()
-		result = SDL_GetDesktopDisplayMode(0, &displayMode);
-		if (result != 0)
-		{
-			DebugLogErrorFormat("Couldn't get desktop display mode for exclusive fullscreen (%s).", SDL_GetError());
-			return;
-		}
-
-		result = SDL_SetWindowDisplayMode(this->window, &displayMode);
-		if (result != 0)
-		{
-			DebugLogErrorFormat("Couldn't set window display mode to %dx%d %dHz for exclusive fullscreen (%s).", displayMode.w, displayMode.h, displayMode.refresh_rate, SDL_GetError());
-			return;
-		}
-	}
-
-	const uint32_t flags = GetSdlWindowFlags(mode);
-	result = SDL_SetWindowFullscreen(this->window, flags);
-	if (result != 0)
-	{
-		DebugLogErrorFormat("Couldn't set window fullscreen flags to 0x%X (%s).", flags, SDL_GetError());
-		return;
-	}
-
-	const Int2 windowDims = this->getWindowDimensions();
+	const Int2 windowDims = this->window->getPixelDimensions();
+	const Int2 viewDims = this->window->getSceneViewDimensions();
 	const double resolutionScale = this->resolutionScaleFunc();
-	this->resize(windowDims.x, windowDims.y, resolutionScale, this->fullGameWindow);
-
-	// Reset the cursor to the center of the screen for consistency.
-	this->warpMouse(windowDims.x / 2, windowDims.y / 2);
-}
-
-void Renderer::setWindowIcon(const Surface &icon)
-{
-	SDL_SetWindowIcon(this->window, icon.get());
-}
-
-void Renderer::setWindowTitle(const char *title)
-{
-	SDL_SetWindowTitle(this->window, title);
-}
-
-void Renderer::warpMouse(int x, int y)
-{
-	SDL_WarpMouseInWindow(this->window, x, y);
-}
-
-void Renderer::setClipRect(const SDL_Rect *rect)
-{
-	if (rect != nullptr)
-	{
-		// @temp: assume in classic space
-		const Rect nativeRect = this->originalToNative(Rect(rect->x, rect->y, rect->w, rect->h));
-		const SDL_Rect nativeRectSdl = nativeRect.getSdlRect();
-		SDL_RenderSetClipRect(this->renderer, &nativeRectSdl);
-	}
-	else
-	{
-		SDL_RenderSetClipRect(this->renderer, nullptr);
-	}
+	const Int2 internalDims = MakeInternalRendererDimensions(viewDims, resolutionScale);
+	this->backend->handleRenderTargetsReset(windowDims.x, windowDims.y, viewDims.x, viewDims.y, internalDims.x, internalDims.y);
 }
 
 VertexPositionBufferID Renderer::createVertexPositionBuffer(int vertexCount, int componentsPerVertex)
 {
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->createVertexPositionBuffer(vertexCount, componentsPerVertex);
-}
-
-VertexAttributeBufferID Renderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
-{
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->createVertexAttributeBuffer(vertexCount, componentsPerVertex);
-}
-
-IndexBufferID Renderer::createIndexBuffer(int indexCount)
-{
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->createIndexBuffer(indexCount);
-}
-
-void Renderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->populateVertexPositionBuffer(id, positions);
-}
-
-void Renderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->populateVertexAttributeBuffer(id, attributes);
-}
-
-void Renderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->populateIndexBuffer(id, indices);
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	return this->backend->createVertexPositionBuffer(vertexCount, componentsPerVertex, bytesPerFloat);
 }
 
 void Renderer::freeVertexPositionBuffer(VertexPositionBufferID id)
 {
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freeVertexPositionBuffer(id);
+	this->backend->freeVertexPositionBuffer(id);
+}
+
+bool Renderer::populateVertexPositionBuffer(VertexPositionBufferID id, Span<const double> positions)
+{
+	LockedBuffer lockedBuffer = this->backend->lockVertexPositionBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock vertex position buffer %d.", id);
+		return false;
+	}
+
+	const int elementCount = positions.getCount();
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		Span<double> dstDoubles = lockedBuffer.getDoubles();
+		DebugAssert(elementCount == dstDoubles.getCount());
+		std::copy(positions.begin(), positions.end(), dstDoubles.begin());
+	}
+	else
+	{
+		Span<float> dstFloats = lockedBuffer.getFloats();
+		DebugAssert(elementCount == dstFloats.getCount());
+		std::transform(positions.begin(), positions.end(), dstFloats.begin(),
+			[](double value)
+		{
+			return static_cast<float>(value);
+		});
+	}
+
+	this->backend->unlockVertexPositionBuffer(id);
+	return true;
+}
+
+VertexAttributeBufferID Renderer::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex)
+{
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	return this->backend->createVertexAttributeBuffer(vertexCount, componentsPerVertex, bytesPerFloat);
 }
 
 void Renderer::freeVertexAttributeBuffer(VertexAttributeBufferID id)
 {
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freeVertexAttributeBuffer(id);
+	return this->backend->freeVertexAttributeBuffer(id);
+}
+
+bool Renderer::populateVertexAttributeBuffer(VertexAttributeBufferID id, Span<const double> attributes)
+{
+	LockedBuffer lockedBuffer = this->backend->lockVertexAttributeBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock vertex attribute buffer %d.", id);
+		return false;
+	}
+
+	const int elementCount = attributes.getCount();
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		Span<double> dstDoubles = lockedBuffer.getDoubles();
+		DebugAssert(elementCount == dstDoubles.getCount());
+		std::copy(attributes.begin(), attributes.end(), dstDoubles.begin());
+	}
+	else
+	{
+		Span<float> dstFloats = lockedBuffer.getFloats();
+		DebugAssert(elementCount == dstFloats.getCount());
+		std::transform(attributes.begin(), attributes.end(), dstFloats.begin(),
+			[](double value)
+		{
+			return static_cast<float>(value);
+		});
+	}
+
+	this->backend->unlockVertexAttributeBuffer(id);
+	return true;
+}
+
+IndexBufferID Renderer::createIndexBuffer(int indexCount)
+{
+	constexpr int bytesPerIndex = sizeof(int32_t);
+	return this->backend->createIndexBuffer(indexCount, bytesPerIndex);
 }
 
 void Renderer::freeIndexBuffer(IndexBufferID id)
 {
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freeIndexBuffer(id);
+	this->backend->freeIndexBuffer(id);
 }
 
-ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)
+bool Renderer::populateIndexBuffer(IndexBufferID id, Span<const int32_t> indices)
 {
-	DebugAssert(this->renderer3D->isInited());
-	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
-	return allocator->create(width, height, bytesPerTexel);
+	LockedBuffer lockedBuffer = this->backend->lockIndexBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock index buffer %d.", id);
+		return false;
+	}
+
+	Span<int32_t> dstIndices = lockedBuffer.getInts();
+
+	DebugAssert(indices.getCount() == dstIndices.getCount());
+	std::copy(indices.begin(), indices.end(), dstIndices.begin());
+	this->backend->unlockIndexBuffer(id);
+	return true;
 }
 
-ObjectTextureID Renderer::createObjectTexture(const TextureBuilder &textureBuilder)
+UniformBufferID Renderer::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
 {
-	DebugAssert(this->renderer3D->isInited());
-	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
-	return allocator->create(textureBuilder);
+	return this->backend->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
-UiTextureID Renderer::createUiTexture(int width, int height)
+UniformBufferID Renderer::createUniformBufferVector3s(int elementCount)
 {
-	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
-	return allocator->create(width, height);
+	static_assert(sizeof(Double3) == (sizeof(Float3) * 2));
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	int bytesPerElement = sizeof(Double3);
+	int alignmentOfElement = alignof(Double3);
+	if (bytesPerFloat == 4)
+	{
+		bytesPerElement = sizeof(Float3);
+		alignmentOfElement = alignof(Float3);
+	}
+
+	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
-UiTextureID Renderer::createUiTexture(Span2D<const uint32_t> texels)
+UniformBufferID Renderer::createUniformBufferMatrix4s(int elementCount)
 {
-	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
-	return allocator->create(texels);
+	static_assert(sizeof(Matrix4d) == (sizeof(Matrix4f) * 2));
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	int bytesPerElement = sizeof(Matrix4d);
+	int alignmentOfElement = alignof(Matrix4d);
+	if (bytesPerFloat == 4)
+	{
+		bytesPerElement = sizeof(Matrix4f);
+		alignmentOfElement = alignof(Matrix4f);
+	}
+
+	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
-UiTextureID Renderer::createUiTexture(Span2D<const uint8_t> texels, const Palette &palette)
+UniformBufferID Renderer::createUniformBufferLights(int elementCount)
 {
-	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
-	return allocator->create(texels, palette);
-}
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	int bytesPerElement = sizeof(double) * 5;
+	int alignmentOfElement = sizeof(double);
+	if (bytesPerFloat == 4)
+	{
+		bytesPerElement /= 2;
+		alignmentOfElement /= 2;
+	}
 
-UiTextureID Renderer::createUiTexture(TextureBuilderID textureBuilderID, PaletteID paletteID, const TextureManager &textureManager)
-{
-	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
-	return allocator->create(textureBuilderID, paletteID, textureManager);
-}
-
-std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
-{
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->tryGetObjectTextureDims(id);
-}
-
-std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
-{
-	return this->renderer2D->tryGetTextureDims(id);
-}
-
-LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
-{
-	DebugAssert(this->renderer3D->isInited());
-	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
-	return allocator->lock(id);
-}
-
-LockedTexture Renderer::lockUiTexture(UiTextureID textureID)
-{
-	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
-	return allocator->lock(textureID);
-}
-
-void Renderer::unlockObjectTexture(ObjectTextureID id)
-{
-	DebugAssert(this->renderer3D->isInited());
-	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
-	allocator->unlock(id);
-}
-
-void Renderer::unlockUiTexture(UiTextureID textureID)
-{
-	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
-	allocator->unlock(textureID);
-}
-
-void Renderer::freeObjectTexture(ObjectTextureID id)
-{
-	DebugAssert(this->renderer3D->isInited());
-	ObjectTextureAllocator *allocator = this->renderer3D->getTextureAllocator();
-	allocator->free(id);
-}
-
-void Renderer::freeUiTexture(UiTextureID id)
-{
-	UiTextureAllocator *allocator = this->renderer2D->getTextureAllocator();
-	allocator->free(id);
-}
-
-UniformBufferID Renderer::createUniformBuffer(int elementCount, size_t sizeOfElement, size_t alignmentOfElement)
-{
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->createUniformBuffer(elementCount, sizeOfElement, alignmentOfElement);
-}
-
-void Renderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> data)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->populateUniformBuffer(id, data);
-}
-
-void Renderer::populateUniformAtIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformData)
-{
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->populateUniformAtIndex(id, uniformIndex, uniformData);
+	return this->createUniformBuffer(elementCount, bytesPerElement, alignmentOfElement);
 }
 
 void Renderer::freeUniformBuffer(UniformBufferID id)
 {
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freeUniformBuffer(id);
+	this->backend->freeUniformBuffer(id);
 }
 
-RenderLightID Renderer::createLight()
+bool Renderer::populateUniformBuffer(UniformBufferID id, Span<const std::byte> bytes)
 {
-	DebugAssert(this->renderer3D->isInited());
-	return this->renderer3D->createLight();
+	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d.", id);
+		return false;
+	}
+
+	DebugAssert(lockedBuffer.isContiguous());
+	DebugAssert(bytes.getCount() == (lockedBuffer.elementCount * lockedBuffer.bytesPerElement));
+	DebugAssert(bytes.getCount() <= lockedBuffer.bytes.getCount());
+	std::copy(bytes.begin(), bytes.end(), lockedBuffer.bytes.begin());
+	this->backend->unlockUniformBuffer(id);
+	return true;
 }
 
-void Renderer::setLightPosition(RenderLightID id, const Double3 &worldPoint)
+bool Renderer::populateUniformBufferVector3s(UniformBufferID id, Span<const Double3> values)
 {
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setLightPosition(id, worldPoint);
+	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d.", id);
+		return false;
+	}
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		DebugAssert(lockedBuffer.isContiguous());
+
+		Span<const std::byte> valueBytes(reinterpret_cast<const std::byte*>(values.begin()), values.getCount() * sizeof(Double3));
+		DebugAssert(valueBytes.getCount() == (lockedBuffer.elementCount * lockedBuffer.bytesPerElement));
+		DebugAssert(valueBytes.getCount() <= lockedBuffer.bytes.getCount());
+		std::copy(valueBytes.begin(), valueBytes.end(), lockedBuffer.bytes.begin());
+	}
+	else
+	{
+		auto double3ToFloat3 = [](Double3 value)
+		{
+			return Float3(static_cast<float>(value.x), static_cast<float>(value.y), static_cast<float>(value.z));
+		};
+
+		if (lockedBuffer.isContiguous())
+		{
+			Float3 *dstFloats = reinterpret_cast<Float3*>(lockedBuffer.bytes.begin());
+			std::transform(values.begin(), values.end(), dstFloats, double3ToFloat3);
+		}
+		else
+		{
+			for (int i = 0; i < lockedBuffer.elementCount; i++)
+			{
+				const int byteOffset = i * lockedBuffer.bytesPerStride;
+				const Double3 &srcValue = values[i];
+				Float3 &dstValue = *reinterpret_cast<Float3*>(lockedBuffer.bytes.begin() + byteOffset);
+				dstValue = double3ToFloat3(srcValue);
+			}
+		}
+	}
+
+	this->backend->unlockUniformBuffer(id);
+	return true;
 }
 
-void Renderer::setLightRadius(RenderLightID id, double startRadius, double endRadius)
+bool Renderer::populateUniformBufferMatrix4s(UniformBufferID id, Span<const Matrix4d> values)
 {
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->setLightRadius(id, startRadius, endRadius);
+	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d.", id);
+		return false;
+	}
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		DebugAssert(lockedBuffer.isContiguous());
+
+		Span<const std::byte> matrixBytes(reinterpret_cast<const std::byte*>(values.begin()), values.getCount() * sizeof(Matrix4d));
+		DebugAssert(matrixBytes.getCount() == lockedBuffer.bytes.getCount());
+		std::copy(matrixBytes.begin(), matrixBytes.end(), lockedBuffer.bytes.begin());
+	}
+	else
+	{
+		for (int i = 0; i < values.getCount(); i++)
+		{
+			const Matrix4d &matrix = values[i];
+			WriteMatrix4Float32(matrix, lockedBuffer.bytes.begin() + (i * lockedBuffer.bytesPerStride));
+		}
+	}
+
+	this->backend->unlockUniformBuffer(id);
+	return true;
 }
 
-void Renderer::freeLight(RenderLightID id)
+bool Renderer::populateUniformBufferLights(UniformBufferID id, Span<const RenderLight> lights)
 {
-	DebugAssert(this->renderer3D->isInited());
-	this->renderer3D->freeLight(id);
+	LockedBuffer lockedBuffer = this->backend->lockUniformBuffer(id);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d.", id);
+		return false;
+	}
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		DebugAssert(lockedBuffer.isContiguous());
+
+		Span<const std::byte> lightBytes(reinterpret_cast<const std::byte*>(lights.begin()), lights.getCount() * sizeof(RenderLight));
+		DebugAssert(lightBytes.getCount() <= lockedBuffer.bytes.getCount());
+		std::copy(lightBytes.begin(), lightBytes.end(), lockedBuffer.bytes.begin());
+	}
+	else
+	{
+		for (int i = 0; i < lights.getCount(); i++)
+		{
+			const RenderLight &light = lights[i];
+			WriteRenderLightFloat32(light, lockedBuffer.bytes.begin() + (i * lockedBuffer.bytesPerStride));
+		}
+	}
+
+	this->backend->unlockUniformBuffer(id);
+	return true;
 }
 
-void Renderer::clear(const Color &color)
+bool Renderer::populateUniformBufferIndex(UniformBufferID id, int uniformIndex, Span<const std::byte> uniformBytes)
 {
-	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
-	SDL_RenderClear(this->renderer);
+	LockedBuffer lockedBuffer = this->backend->lockUniformBufferIndex(id, uniformIndex);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d index %d.", id, uniformIndex);
+		return false;
+	}
+
+	DebugAssert(uniformBytes.getCount() == lockedBuffer.bytesPerElement);
+	DebugAssert(uniformBytes.getCount() <= lockedBuffer.bytes.getCount());
+	std::copy(uniformBytes.begin(), uniformBytes.end(), lockedBuffer.bytes.begin());
+	this->backend->unlockUniformBufferIndex(id, uniformIndex);
+	return true;
 }
 
-void Renderer::clear()
+bool Renderer::populateUniformBufferIndexMatrix4(UniformBufferID id, int uniformIndex, const Matrix4d &matrix)
 {
-	this->clear(Colors::Black);
+	LockedBuffer lockedBuffer = this->backend->lockUniformBufferIndex(id, uniformIndex);
+	if (!lockedBuffer.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock uniform buffer %d at index %d.", id, uniformIndex);
+		return false;
+	}
+
+	const int bytesPerFloat = this->backend->getBytesPerFloat();
+	if (bytesPerFloat == sizeof(double))
+	{
+		Span<const std::byte> matrixBytes(reinterpret_cast<const std::byte*>(&matrix), sizeof(Matrix4d));
+		DebugAssert(matrixBytes.getCount() == lockedBuffer.bytes.getCount());
+		std::copy(matrixBytes.begin(), matrixBytes.end(), lockedBuffer.bytes.begin());
+	}
+	else
+	{
+		WriteMatrix4Float32(matrix, lockedBuffer.bytes.begin());
+	}
+
+	this->backend->unlockUniformBufferIndex(id, uniformIndex);
+	return true;
 }
 
-void Renderer::clearOriginal(const Color &color)
+ObjectTextureID Renderer::createObjectTexture(int width, int height, int bytesPerTexel)
 {
-	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
-
-	const SDL_Rect rect = this->getLetterboxDimensions();
-	SDL_RenderFillRect(this->renderer, &rect);
+	return this->backend->createObjectTexture(width, height, bytesPerTexel);
 }
 
-void Renderer::clearOriginal()
+void Renderer::freeObjectTexture(ObjectTextureID id)
 {
-	this->clearOriginal(Colors::Black);
+	this->backend->freeObjectTexture(id);
 }
 
-void Renderer::drawPixel(const Color &color, int x, int y)
+std::optional<Int2> Renderer::tryGetObjectTextureDims(ObjectTextureID id) const
+{
+	return this->backend->tryGetObjectTextureDims(id);
+}
+
+LockedTexture Renderer::lockObjectTexture(ObjectTextureID id)
+{
+	return this->backend->lockObjectTexture(id);
+}
+
+void Renderer::unlockObjectTexture(ObjectTextureID id)
+{
+	this->backend->unlockObjectTexture(id);
+}
+
+bool Renderer::populateObjectTexture(ObjectTextureID id, Span<const std::byte> texels)
+{
+	LockedTexture lockedTexture = this->backend->lockObjectTexture(id);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock object texture %d.", id);
+		return false;
+	}
+
+	DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
+	std::copy(texels.begin(), texels.end(), lockedTexture.texels.begin());
+
+	this->backend->unlockObjectTexture(id);
+	return true;
+}
+
+bool Renderer::populateObjectTexture8Bit(ObjectTextureID id, Span<const uint8_t> texels)
+{
+	Span<const std::byte> texelBytes(reinterpret_cast<const std::byte*>(texels.begin()), texels.getCount());
+	return this->populateObjectTexture(id, texelBytes);
+}
+
+UiTextureID Renderer::createUiTexture(int width, int height)
+{
+	return this->backend->createUiTexture(width, height);
+}
+
+void Renderer::freeUiTexture(UiTextureID id)
+{
+	this->backend->freeUiTexture(id);
+}
+
+std::optional<Int2> Renderer::tryGetUiTextureDims(UiTextureID id) const
+{
+	return this->backend->tryGetUiTextureDims(id);
+}
+
+LockedTexture Renderer::lockUiTexture(UiTextureID id)
+{
+	return this->backend->lockUiTexture(id);
+}
+
+void Renderer::unlockUiTexture(UiTextureID id)
+{
+	this->backend->unlockUiTexture(id);
+}
+
+bool Renderer::populateUiTexture(UiTextureID id, Span<const std::byte> texels, const Palette *palette)
+{
+	LockedTexture lockedTexture = this->backend->lockUiTexture(id);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogErrorFormat("Couldn't lock UI texture %d.", id);
+		return false;
+	}
+
+	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
+
+	if (palette == nullptr)
+	{
+		DebugAssert(texels.getCount() == lockedTexture.texels.getCount());
+		Span<const uint32_t> srcTexels(reinterpret_cast<const uint32_t*>(texels.begin()), texels.getCount() / sizeof(uint32_t));
+		std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
+	}
+	else
+	{
+		DebugAssert(texels.getCount() == (lockedTexture.texels.getCount() / lockedTexture.bytesPerTexel));
+		Span<const uint8_t> srcTexels(reinterpret_cast<const uint8_t*>(texels.begin()), texels.getCount());
+		std::transform(srcTexels.begin(), srcTexels.end(), dstTexels.begin(),
+			[palette](uint8_t texel)
+		{
+			return (*palette)[texel].toARGB();
+		});
+	}
+
+	this->backend->unlockUiTexture(id);
+	return true;
+}
+
+bool Renderer::populateUiTextureNoPalette(UiTextureID id, Span2D<const uint32_t> texels)
+{
+	Span<const std::byte> texelBytes(reinterpret_cast<const std::byte*>(texels.begin()), texels.getWidth() * texels.getHeight() * sizeof(uint32_t));
+	return this->populateUiTexture(id, texelBytes);
+}
+
+RenderMaterialID Renderer::createMaterial(RenderMaterialKey key)
+{
+	return this->backend->createMaterial(key);
+}
+
+void Renderer::freeMaterial(RenderMaterialID id)
+{
+	this->backend->freeMaterial(id);
+}
+
+RenderMaterialInstanceID Renderer::createMaterialInstance()
+{
+	return this->backend->createMaterialInstance();
+}
+
+void Renderer::freeMaterialInstance(RenderMaterialInstanceID id)
+{
+	this->backend->freeMaterialInstance(id);
+}
+
+void Renderer::setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value)
+{
+	this->backend->setMaterialInstanceMeshLightPercent(id, value);
+}
+
+void Renderer::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+{
+	this->backend->setMaterialInstancePixelShaderParam(id, value);
+}
+
+/*void Renderer::drawPixel(const Color &color, int x, int y)
 {
 	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
 	SDL_RenderDrawPoint(this->renderer, x, y);
@@ -1019,18 +746,9 @@ void Renderer::fillRect(const Color &color, int x, int y, int w, int h)
 	rect.h = h;
 
 	SDL_RenderFillRect(this->renderer, &rect);
-}
+}*/
 
-void Renderer::fillOriginalRect(const Color &color, int x, int y, int w, int h)
-{
-	SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
-
-	const Rect rect = this->originalToNative(Rect(x, y, w, h));
-	const SDL_Rect rectSdl = rect.getSdlRect();
-	SDL_RenderFillRect(this->renderer, &rectSdl);
-}
-
-void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color)
+/*void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg color)
 {
 	const RenderCamera &camera = g_physicsDebugCamera;
 	const Double3 worldPoint0(static_cast<double>(src.GetX()), static_cast<double>(src.GetY()), static_cast<double>(src.GetZ()));
@@ -1049,7 +767,7 @@ void Renderer::DrawLine(JPH::RVec3Arg src, JPH::RVec3Arg dst, JPH::ColorArg colo
 		return;
 	}
 
-	const Int2 viewDims = this->getViewDimensions();
+	const Int2 viewDims = this->window->getViewDimensions();
 	const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clipPoint0);
 	const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clipPoint1);
 	const Double2 screenSpace0 = RendererUtils::ndcToScreenSpace(ndc0, viewDims.x, viewDims.y);
@@ -1086,7 +804,7 @@ void Renderer::DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3
 		return;
 	}
 
-	const Int2 viewDims = this->getViewDimensions();
+	const Int2 viewDims = this->window->getViewDimensions();
 	const Double3 ndc0 = RendererUtils::clipSpaceToNDC(clipPoint0);
 	const Double3 ndc1 = RendererUtils::clipSpaceToNDC(clipPoint1);
 	const Double3 ndc2 = RendererUtils::clipSpaceToNDC(clipPoint2);
@@ -1115,135 +833,21 @@ void Renderer::DrawTriangle(JPH::RVec3Arg v1, JPH::RVec3Arg v2, JPH::RVec3Arg v3
 void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height)
 {
 	// Do nothing.
-}
+}*/
 
-void Renderer::submitSceneCommands(const RenderCamera &camera, const RenderCommandBuffer &commandBuffer, double ambientPercent,
-	Span<const RenderLightID> visibleLightIDs, double screenSpaceAnimPercent, ObjectTextureID paletteTextureID,
-	ObjectTextureID lightTableTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode)
+void Renderer::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
-	DebugAssert(this->renderer3D->isInited());
-
-	g_physicsDebugCamera = camera;
-
-	int gameWorldTextureWidth, gameWorldTextureHeight;
-	int status = SDL_QueryTexture(this->gameWorldTexture, nullptr, nullptr, &gameWorldTextureWidth, &gameWorldTextureHeight);
-	if (status != 0)
-	{
-		DebugLogErrorFormat("Couldn't query game world texture dimensions for scene rendering (%s).", SDL_GetError());
-		return;
-	}
-
-	RenderFrameSettings renderFrameSettings;
-	renderFrameSettings.init(ambientPercent, visibleLightIDs, screenSpaceAnimPercent, paletteTextureID, lightTableTextureID, skyBgTextureID,
-		gameWorldTextureWidth, gameWorldTextureHeight, renderThreadsMode, ditheringMode);
-
-	uint32_t *outputBuffer;
-	int gameWorldPitch;
-	status = SDL_LockTexture(this->gameWorldTexture, nullptr, reinterpret_cast<void**>(&outputBuffer), &gameWorldPitch);
-	if (status != 0)
-	{
-		DebugLogErrorFormat("Couldn't lock game world texture for scene rendering (%s).", SDL_GetError());
-		return;
-	}
-
-	// Render the game world (no UI).
 	const auto renderStartTime = std::chrono::high_resolution_clock::now();
-	this->renderer3D->submitFrame(camera, renderFrameSettings, commandBuffer, outputBuffer);
+	this->backend->submitFrame(renderCommandList, uiCommandList, camera, frameSettings);
 	const auto renderEndTime = std::chrono::high_resolution_clock::now();
 	const double renderTotalTime = static_cast<double>((renderEndTime - renderStartTime).count()) / static_cast<double>(std::nano::den);
 
-	// Update the game world texture with the new pixels and copy to the native frame buffer (stretching if needed).
-	const auto presentStartTime = std::chrono::high_resolution_clock::now();
-	SDL_UnlockTexture(this->gameWorldTexture);
-
-	const Int2 viewDims = this->getViewDimensions();
-	this->draw(this->gameWorldTexture, 0, 0, viewDims.x, viewDims.y);
-	const auto presentEndTime = std::chrono::high_resolution_clock::now();
-	const double presentTotalTime = static_cast<double>((presentEndTime - presentStartTime).count()) / static_cast<double>(std::nano::den);
-
 	// Update profiler stats.
-	const Renderer3DProfilerData swProfilerData = this->renderer3D->getProfilerData();
-	this->profilerData.init(swProfilerData.width, swProfilerData.height, swProfilerData.threadCount,
-		swProfilerData.drawCallCount, swProfilerData.presentedTriangleCount, swProfilerData.textureCount,
-		swProfilerData.textureByteCount, swProfilerData.totalLightCount, swProfilerData.totalCoverageTests,
-		swProfilerData.totalDepthTests, swProfilerData.totalColorWrites, renderTotalTime, presentTotalTime);
-}
-
-void Renderer::submitUiCommands(const UiCommandBuffer &commandBuffer)
-{
-	const Int2 windowDims = this->getWindowDimensions();
-
-	for (int entryIndex = 0; entryIndex < commandBuffer.entryCount; entryIndex++)
-	{
-		Span<const UiDrawCall> uiDrawCalls = commandBuffer.entries[entryIndex];
-
-		for (const UiDrawCall &drawCall : uiDrawCalls)
-		{
-			if (!drawCall.activeFunc())
-			{
-				continue;
-			}
-
-			const std::optional<Rect> &optClipRect = drawCall.clipRect;
-			if (optClipRect.has_value())
-			{
-				const SDL_Rect clipRect = optClipRect->getSdlRect();
-				this->setClipRect(&clipRect);
-			}
-
-			const UiTextureID textureID = drawCall.textureFunc();
-			const Int2 position = drawCall.positionFunc();
-			const Int2 size = drawCall.sizeFunc();
-			const PivotType pivotType = drawCall.pivotFunc();
-			const RenderSpace renderSpace = drawCall.renderSpace;
-
-			double xPercent, yPercent, wPercent, hPercent;
-			GuiUtils::makeRenderElementPercents(position.x, position.y, size.x, size.y, windowDims.x, windowDims.y,
-				renderSpace, pivotType, &xPercent, &yPercent, &wPercent, &hPercent);
-
-			const RendererSystem2D::RenderElement renderElement(textureID, xPercent, yPercent, wPercent, hPercent);
-			this->draw(&renderElement, 1, renderSpace);
-
-			if (optClipRect.has_value())
-			{
-				this->setClipRect(nullptr);
-			}
-		}
-	}
-}
-
-void Renderer::draw(SDL_Texture *texture, int x, int y, int w, int h)
-{
-	SDL_Rect rect;
-	rect.x = x;
-	rect.y = y;
-	rect.w = w;
-	rect.h = h;
-
-	SDL_RenderCopy(this->renderer, texture, nullptr, &rect);
-}
-
-void Renderer::draw(const RendererSystem2D::RenderElement *renderElements, int count, RenderSpace renderSpace)
-{
-	const SDL_Rect letterboxRect = this->getLetterboxDimensions();
-	this->renderer2D->draw(renderElements, count, renderSpace, Rect(letterboxRect.x, letterboxRect.y, letterboxRect.w, letterboxRect.h));
-}
-
-void Renderer::setRenderTargetToFrameBuffer()
-{
-	SDL_SetRenderTarget(this->renderer, this->nativeTexture);
-}
-
-void Renderer::setRenderTargetToOutput()
-{
-	SDL_SetRenderTarget(this->renderer, nullptr);
-}
-
-void Renderer::present()
-{
-	this->renderer3D->present(); // @todo: maybe this call will do the below at some point? Not sure
-
-	this->setRenderTargetToOutput();
-	SDL_RenderCopy(this->renderer, this->nativeTexture, nullptr, nullptr);
-	SDL_RenderPresent(this->renderer);
+	const RendererProfilerData2D profilerData2D = this->backend->getProfilerData2D();
+	const RendererProfilerData3D profilerData3D = this->backend->getProfilerData3D();
+	this->profilerData.init(profilerData3D.width, profilerData3D.height, profilerData3D.threadCount, profilerData3D.drawCallCount,
+		profilerData3D.presentedTriangleCount, profilerData3D.objectTextureCount, profilerData3D.objectTextureByteCount, profilerData2D.uiTextureCount,
+		profilerData2D.uiTextureByteCount, profilerData3D.materialCount, profilerData3D.totalLightCount, profilerData3D.totalCoverageTests,
+		profilerData3D.totalDepthTests, profilerData3D.totalColorWrites, renderTotalTime);
 }

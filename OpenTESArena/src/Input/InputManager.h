@@ -161,6 +161,7 @@ private:
 	InputListenerID nextListenerID;
 	std::vector<InputListenerID> freedListenerIDs;
 
+	double logicalToPixelScale; // For correcting SDL_Window logical point to physical pixel.
 	Int2 mouseDelta;
 	
 	// Frame-rate independent weapon swings.
@@ -181,7 +182,7 @@ private:
 public:
 	InputManager();
 
-	void init();
+	void init(double logicalToPixelScale);
 
 	bool isKeyEvent(const SDL_Event &e) const;
 	bool keyPressed(const SDL_Event &e, SDL_Keycode keycode) const;

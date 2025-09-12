@@ -1,6 +1,9 @@
 #ifndef RENDERER_UTILS_H
 #define RENDERER_UTILS_H
 
+#include "SDL_pixels.h"
+
+#include "RenderTextureUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -9,19 +12,31 @@
 #include "../Utilities/Palette.h"
 #include "../Voxels/VoxelUtils.h"
 
+#include "components/utilities/Buffer3D.h"
+
+class Renderer;
+
+enum class DitheringMode;
+
 struct BoundingBox3D;
 struct RenderCamera;
 
 namespace RendererUtils
 {
-	constexpr double NEAR_PLANE = 0.02;
-	constexpr double FAR_PLANE = 1500.0;
+	// Default bits per pixel.
+	static constexpr int DEFAULT_BPP = 32;
+
+	// The default pixel format for all textures. Note that the 8888 types are memory layouts, not channel orders.
+	static constexpr uint32_t DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_BGRA32;
+
+	constexpr double NEAR_PLANE = 0.05;
+	constexpr double FAR_PLANE = 1000.0;
 
 	// Internal resolution must be a multiple of this. Intended for SIMD-friendliness.
 	constexpr int RESOLUTION_ALIGNMENT = 8;
 	static_assert(MathUtils::isPowerOf2(RESOLUTION_ALIGNMENT));
 
-	RenderCamera makeCamera(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, bool tallPixelCorrection);
+	double getTallPixelRatio(bool useTallPixelCorrection);
 
 	// Gets the number of render threads to use based on the given mode.
 	int getRenderThreadsFromMode(int mode);
@@ -71,6 +86,10 @@ namespace RendererUtils
 		const Double3 &frustumNormalLeft, const Double3 &frustumNormalRight, const Double3 &frustumNormalBottom, const Double3 &frustumNormalTop,
 		bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible);
 	void getBBoxVisibilityInFrustum(const BoundingBox3D &bbox, const RenderCamera &camera, bool *outIsCompletelyVisible, bool *outIsCompletelyInvisible);
+
+	Matrix4f matrix4DoubleToFloat(const Matrix4d &matrix);
+
+	ObjectTextureID allocDitherTexture(DitheringMode ditheringMode, Renderer &renderer);
 }
 
 #endif

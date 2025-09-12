@@ -21,7 +21,6 @@
 #include "../Player/Player.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/Renderer.h"
-#include "../Rendering/RenderTransform.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/CardinalDirection.h"
@@ -92,16 +91,21 @@ namespace
 			const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(textureAsset);
 			if (!textureBuilderID.has_value())
 			{
-				DebugLogWarning("Couldn't load entity anim texture \"" + textureAsset.filename + "\".");
+				DebugLogWarningFormat("Couldn't load entity anim texture \"%s\".", textureAsset.filename.c_str());
 				continue;
 			}
 
 			const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder);
+			const ObjectTextureID textureID = renderer.createObjectTexture(textureBuilder.width, textureBuilder.height, textureBuilder.bytesPerTexel);
 			if (textureID < 0)
 			{
-				DebugLogWarning("Couldn't create entity anim texture \"" + textureAsset.filename + "\".");
+				DebugLogWarningFormat("Couldn't create entity anim texture \"%s\".", textureAsset.filename.c_str());
 				continue;
+			}
+
+			if (!renderer.populateObjectTexture(textureID, textureBuilder.bytes))
+			{
+				DebugLogWarningFormat("Couldn't populate entity anim texture \"%s\".", textureAsset.filename.c_str());
 			}
 
 			ScopedObjectTextureRef textureRef(textureID, renderer);
@@ -218,7 +222,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
 	}
 
-	const UniformBufferID renderTransformBufferID = renderer.createUniformBuffer(1, sizeof(RenderTransform), alignof(RenderTransform));
+	const UniformBufferID renderTransformBufferID = renderer.createUniformBufferMatrix4s(1);
 	if (renderTransformBufferID < 0)
 	{
 		DebugLogError("Couldn't create uniform buffer for entity transform.");

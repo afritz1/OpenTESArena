@@ -228,16 +228,16 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 		map1.set(z, x, voxel);
 	};
 
+	enum class SearchResultSide { None, North, South, East, West };
+
 	struct SearchResult
 	{
-		enum class Side { None, North, South, East, West };
-
-		Side side;
+		SearchResultSide side;
 
 		// Distance from the associated origin dimension, where (0, 0) is at the top right.
 		int offset;
 
-		SearchResult(Side side, int offset)
+		SearchResult(SearchResultSide side, int offset)
 		{
 			this->side = side;
 			this->offset = offset;
@@ -262,11 +262,11 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 			const SNInt southX = gridWidth - 1;
 			if (isPalaceBlock(northX, z))
 			{
-				return SearchResult(SearchResult::Side::North, z);
+				return SearchResult(SearchResultSide::North, z);
 			}
 			else if (isPalaceBlock(southX, z))
 			{
-				return SearchResult(SearchResult::Side::South, z);
+				return SearchResult(SearchResultSide::South, z);
 			}
 		}
 
@@ -277,21 +277,21 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 			const WEInt westZ = gridDepth - 1;
 			if (isPalaceBlock(x, eastZ))
 			{
-				return SearchResult(SearchResult::Side::East, x);
+				return SearchResult(SearchResultSide::East, x);
 			}
 			else if (isPalaceBlock(x, westZ))
 			{
-				return SearchResult(SearchResult::Side::West, x);
+				return SearchResult(SearchResultSide::West, x);
 			}
 		}
 
 		// No palace gate found. This should never happen because every city/town/village
 		// in the original game has a palace gate somewhere.
-		return SearchResult(SearchResult::Side::None, 0);
+		return SearchResult(SearchResultSide::None, 0);
 	}();
 
 	// Decide how to extrapolate the search results.
-	if (result.side != SearchResult::Side::None)
+	if (result.side != SearchResultSide::None)
 	{
 		// The direction to step from a palace voxel to the other palace voxel.
 		const WorldInt2 northSouthPalaceStep = VoxelUtils::West;
@@ -327,7 +327,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 		WorldInt2 firstPalaceVoxel, secondPalaceVoxel, firstGateVoxel, secondGateVoxel;
 		ArenaVoxelID firstPalaceVoxelID, secondPalaceVoxelID, gateVoxelID;
 		int gateDist;
-		if (result.side == SearchResult::Side::North)
+		if (result.side == SearchResultSide::North)
 		{
 			firstPalaceVoxel = WorldInt2(0, result.offset);
 			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
@@ -339,7 +339,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 			secondPalaceVoxelID = 0xA5B5;
 			gateVoxelID = 0xA1B3;
 		}
-		else if (result.side == SearchResult::Side::South)
+		else if (result.side == SearchResultSide::South)
 		{
 			firstPalaceVoxel = WorldInt2(gridWidth - 1, result.offset);
 			secondPalaceVoxel = firstPalaceVoxel + northSouthPalaceStep;
@@ -351,7 +351,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 			secondPalaceVoxelID = 0xA534;
 			gateVoxelID = 0xA133;
 		}
-		else if (result.side == SearchResult::Side::East)
+		else if (result.side == SearchResultSide::East)
 		{
 			firstPalaceVoxel = WorldInt2(result.offset, 0);
 			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
@@ -363,7 +363,7 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 			secondPalaceVoxelID = 0xA574;
 			gateVoxelID = 0xA173;
 		}
-		else if (result.side == SearchResult::Side::West)
+		else if (result.side == SearchResultSide::West)
 		{
 			firstPalaceVoxel = WorldInt2(result.offset, gridDepth - 1);
 			secondPalaceVoxel = firstPalaceVoxel + eastWestPalaceStep;
@@ -374,6 +374,10 @@ void ArenaCityUtils::revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1,
 			firstPalaceVoxelID = 0xA5F4;
 			secondPalaceVoxelID = 0xA5F5;
 			gateVoxelID = 0xA1F3;
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(result.side)));
 		}
 
 		// Set the voxel IDs to their new values.

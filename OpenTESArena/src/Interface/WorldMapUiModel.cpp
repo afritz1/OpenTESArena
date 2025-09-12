@@ -35,7 +35,7 @@ const WorldMapMask &WorldMapUiModel::getMask(const Game &game, int maskID)
 std::optional<int> WorldMapUiModel::getMaskID(Game &game, const Int2 &mousePosition, bool ignoreCenterProvince,
 	bool ignoreExitButton)
 {
-	const Int2 classicPosition = game.renderer.nativeToOriginal(mousePosition);
+	const Int2 classicPosition = game.window.nativeToOriginal(mousePosition);
 	const auto &worldMapMasks = BinaryAssetLibrary::getInstance().getWorldMapMasks();
 	const int maskCount = static_cast<int>(worldMapMasks.size());
 	for (int maskID = 0; maskID < maskCount; maskID++)
