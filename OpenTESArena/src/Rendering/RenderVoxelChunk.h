@@ -74,6 +74,14 @@ struct RenderVoxelDoorTransformsEntry
 	RenderVoxelDoorTransformsEntry();
 };
 
+struct RenderVoxelMaterialInstanceEntry
+{
+	VoxelInt3 voxel;
+	RenderMaterialInstanceID materialInstID; // Allocated for whatever temporary effect is occurring (fading animation, door animation).
+
+	RenderVoxelMaterialInstanceEntry();
+};
+
 struct RenderVoxelChunk final : public Chunk
 {
 	static constexpr RenderMeshInstID AIR_MESH_INST_ID = 0;
@@ -89,12 +97,17 @@ struct RenderVoxelChunk final : public Chunk
 	std::vector<RenderVoxelNonCombinedTransformEntry> nonCombinedTransformEntries; // One transform per non-combined voxel. Owned by this chunk.
 	std::vector<RenderVoxelDoorTransformsEntry> doorTransformEntries; // Transforms for door voxel, owned by this chunk.
 
+	std::vector<RenderVoxelMaterialInstanceEntry> doorMaterialInstEntries;
+	std::vector<RenderVoxelMaterialInstanceEntry> fadeMaterialInstEntries;
+
 	RenderVoxelDrawCallHeap drawCallHeap;
 	Buffer3D<RenderVoxelDrawCallRangeID> drawCallRangeIDs; // Non-combined voxel geometry (diagonals, doors).
 
 	void init(const ChunkInt2 &position, int height);
 	RenderMeshInstID addMeshInst(RenderMeshInstance &&meshInst);
 	void freeDrawCalls(SNInt x, int y, WEInt z);
+	void freeDoorMaterial(SNInt x, int y, WEInt z, Renderer &renderer);
+	void freeFadeMaterial(SNInt x, int y, WEInt z, Renderer &renderer);
 	void freeBuffers(Renderer &renderer);
 	void clear();
 };

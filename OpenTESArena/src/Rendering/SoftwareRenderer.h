@@ -115,13 +115,18 @@ struct SoftwareMaterial
 	bool enableDepthRead;
 	bool enableDepthWrite;
 
-	double meshLightPercent;
-	double pixelShaderParam0;
-
 	SoftwareMaterial();
 
 	void init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
 		RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite);
+};
+
+struct SoftwareMaterialInstance
+{
+	double meshLightPercent;
+	double pixelShaderParam0;
+
+	SoftwareMaterialInstance();
 };
 
 struct SoftwareLight
@@ -144,6 +149,7 @@ using SoftwareIndexBufferPool = RecyclablePool<IndexBufferID, SoftwareIndexBuffe
 using SoftwareUniformBufferPool = RecyclablePool<UniformBufferID, SoftwareUniformBuffer>;
 using SoftwareObjectTexturePool = RecyclablePool<ObjectTextureID, SoftwareObjectTexture>;
 using SoftwareMaterialPool = RecyclablePool<RenderMaterialID, SoftwareMaterial>;
+using SoftwareMaterialInstancePool = RecyclablePool<RenderMaterialID, SoftwareMaterialInstance>;
 
 class SoftwareRenderer
 {
@@ -157,6 +163,7 @@ private:
 	SoftwareUniformBufferPool uniformBuffers;
 	SoftwareObjectTexturePool objectTextures;
 	SoftwareMaterialPool materials;
+	SoftwareMaterialInstancePool materialInsts;
 public:
 	SoftwareRenderer();
 	~SoftwareRenderer();
@@ -201,8 +208,11 @@ public:
 
 	RenderMaterialID createMaterial(RenderMaterialKey key);
 	void freeMaterial(RenderMaterialID id);
-	void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value);
-	void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value);
+	
+	RenderMaterialInstanceID createMaterialInstance();
+	void freeMaterialInstance(RenderMaterialInstanceID id);
+	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value);
+	void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value);
 
 	void submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer);

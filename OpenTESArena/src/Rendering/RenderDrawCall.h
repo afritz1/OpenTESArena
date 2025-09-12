@@ -8,7 +8,7 @@
 
 struct RenderDrawCall
 {
-	UniformBufferID transformBufferID; // Translation/rotation/scale of this model
+	UniformBufferID transformBufferID; // Translation/rotation/scale of this model.
 	int transformIndex;
 
 	VertexPositionBufferID positionBufferID;
@@ -16,6 +16,7 @@ struct RenderDrawCall
 	IndexBufferID indexBufferID;
 
 	RenderMaterialID materialID;
+	RenderMaterialInstanceID materialInstID;
 
 	RenderMultipassType multipassType;
 

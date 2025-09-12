@@ -186,6 +186,38 @@ void RenderVoxelChunk::freeDrawCalls(SNInt x, int y, WEInt z)
 	}
 }
 
+void RenderVoxelChunk::freeDoorMaterial(SNInt x, int y, WEInt z, Renderer &renderer)
+{
+	const VoxelInt3 voxel(x, y, z);
+
+	for (int i = 0; i < static_cast<int>(this->doorMaterialInstEntries.size()); i++)
+	{
+		const RenderVoxelMaterialInstanceEntry &entry = this->doorMaterialInstEntries[i];
+		if (entry.voxel == voxel)
+		{
+			renderer.freeMaterialInstance(entry.materialInstID);
+			this->doorMaterialInstEntries.erase(this->doorMaterialInstEntries.begin() + i);
+			break;
+		}
+	}
+}
+
+void RenderVoxelChunk::freeFadeMaterial(SNInt x, int y, WEInt z, Renderer &renderer)
+{
+	const VoxelInt3 voxel(x, y, z);
+
+	for (int i = 0; i < static_cast<int>(this->fadeMaterialInstEntries.size()); i++)
+	{
+		const RenderVoxelMaterialInstanceEntry &entry = this->fadeMaterialInstEntries[i];
+		if (entry.voxel == voxel)
+		{
+			renderer.freeMaterialInstance(entry.materialInstID);
+			this->fadeMaterialInstEntries.erase(this->fadeMaterialInstEntries.begin() + i);
+			break;
+		}
+	}
+}
+
 void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 {
 	for (RenderMeshInstance &meshInst : this->meshInsts)
@@ -217,6 +249,18 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 			transformBufferID = -1;
 		}
 	}
+
+	for (RenderVoxelMaterialInstanceEntry &entry : this->doorMaterialInstEntries)
+	{
+		renderer.freeMaterialInstance(entry.materialInstID);
+		entry.materialInstID = -1;
+	}
+
+	for (RenderVoxelMaterialInstanceEntry &entry : this->fadeMaterialInstEntries)
+	{
+		renderer.freeMaterialInstance(entry.materialInstID);
+		entry.materialInstID = -1;
+	}
 }
 
 void RenderVoxelChunk::clear()
@@ -227,6 +271,8 @@ void RenderVoxelChunk::clear()
 	this->combinedFaceDrawCallEntries.clear();
 	this->nonCombinedTransformEntries.clear();
 	this->doorTransformEntries.clear();
+	this->doorMaterialInstEntries.clear();
+	this->fadeMaterialInstEntries.clear();
 	this->drawCallHeap.clear();
 	this->drawCallRangeIDs.clear();
 }

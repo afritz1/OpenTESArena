@@ -2483,8 +2483,6 @@ void VulkanTexture::freeAllocations(vk::Device device)
 
 VulkanMaterial::VulkanMaterial()
 {
-	this->meshLightPercent = 0.0f;
-	this->pixelShaderParam0 = 0.0f;
 	std::fill(std::begin(this->pushConstantTypes), std::end(this->pushConstantTypes), VulkanMaterialPushConstantType::None);
 }
 
@@ -2493,6 +2491,12 @@ void VulkanMaterial::init(vk::Pipeline pipeline, vk::PipelineLayout pipelineLayo
 	this->pipeline = pipeline;
 	this->pipelineLayout = pipelineLayout;
 	this->descriptorSet = descriptorSet;
+}
+
+VulkanMaterialInstance::VulkanMaterialInstance()
+{
+	this->meshLightPercent = 0.0f;
+	this->pixelShaderParam = 0.0f;
 }
 
 VulkanHeapMapping::VulkanHeapMapping()
@@ -3682,6 +3686,8 @@ void VulkanRenderBackend::shutdown()
 
 		this->vertexBufferHeapManagerDeviceLocal.freeAllocations();
 		this->vertexBufferHeapManagerDeviceLocal.clear();
+
+		this->materialInstPool.clear();
 
 		for (VulkanMaterial &material : this->materialPool.values)
 		{
@@ -5321,28 +5327,45 @@ void VulkanRenderBackend::freeMaterial(RenderMaterialID id)
 	this->freeCommands.emplace_back(std::move(commandBufferFunc));
 }
 
-void VulkanRenderBackend::setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value)
+RenderMaterialInstanceID VulkanRenderBackend::createMaterialInstance()
 {
-	VulkanMaterial *material = this->materialPool.tryGet(id);
-	if (material == nullptr)
+	const RenderMaterialInstanceID instID = this->materialInstPool.alloc();
+	if (instID < 0)
 	{
-		DebugLogErrorFormat("Missing material %d for updating mesh lighting percent to %.2f.", id, value);
-		return;
+		DebugLogError("Couldn't allocate material instance ID.");
+		return -1;
 	}
 
-	material->meshLightPercent = static_cast<float>(value);
+	return instID;
 }
 
-void VulkanRenderBackend::setMaterialParameterPixelShaderParam(RenderMaterialID id, double value)
+void VulkanRenderBackend::freeMaterialInstance(RenderMaterialInstanceID id)
 {
-	VulkanMaterial *material = this->materialPool.tryGet(id);
-	if (material == nullptr)
+	this->materialInstPool.free(id);
+}
+
+void VulkanRenderBackend::setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value)
+{
+	VulkanMaterialInstance *inst = this->materialInstPool.tryGet(id);
+	if (inst == nullptr)
 	{
-		DebugLogErrorFormat("Missing material %d for updating pixel shader param to %.2f.", id, value);
+		DebugLogErrorFormat("Missing material instance %d for updating mesh lighting percent to %.2f.", id, value);
 		return;
 	}
 
-	material->pixelShaderParam0 = static_cast<float>(value);
+	inst->meshLightPercent = static_cast<float>(value);
+}
+
+void VulkanRenderBackend::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+{
+	VulkanMaterialInstance *inst = this->materialInstPool.tryGet(id);
+	if (inst == nullptr)
+	{
+		DebugLogErrorFormat("Missing material instance %d for updating pixel shader param to %.2f.", id, value);
+		return;
+	}
+
+	inst->pixelShaderParam = static_cast<float>(value);
 }
 
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
@@ -5782,18 +5805,32 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				this->commandBuffer.bindDescriptorSets(graphicsPipelineBindPoint, pipelineLayout, TransformDescriptorSetLayoutIndex, transformBufferInfo.descriptorSet, transformBufferDynamicOffset);
 				this->commandBuffer.bindDescriptorSets(graphicsPipelineBindPoint, pipelineLayout, MaterialDescriptorSetLayoutIndex, material.descriptorSet, vk::ArrayProxy<const uint32_t>());
 
+				float meshLightPercent = 0.0f;
+				float pixelShaderParam = 0.0f;
+				if (drawCall.materialInstID >= 0)
+				{
+					const VulkanMaterialInstance &materialInst = this->materialInstPool.get(drawCall.materialInstID);
+					meshLightPercent = materialInst.meshLightPercent;
+					pixelShaderParam = materialInst.pixelShaderParam;
+				}
+
 				uint32_t pushConstantOffset = 0;
 				for (VulkanMaterialPushConstantType materialPushConstantType : material.pushConstantTypes)
 				{
 					switch (materialPushConstantType)
 					{
+					case VulkanMaterialPushConstantType::None:
+						break;
 					case VulkanMaterialPushConstantType::MeshLightPercent:
-						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, material.meshLightPercent);
+						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, meshLightPercent);
 						pushConstantOffset += sizeof(float);
 						break;
 					case VulkanMaterialPushConstantType::PixelShaderParam:
-						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, material.pixelShaderParam0);
+						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, pixelShaderParam);
 						pushConstantOffset += sizeof(float);
+						break;
+					default:
+						DebugNotImplementedMsg(std::to_string(static_cast<int>(materialPushConstantType)));
 						break;
 					}
 				}

@@ -4081,9 +4081,6 @@ SoftwareMaterial::SoftwareMaterial()
 	this->enableBackFaceCulling = false;
 	this->enableDepthRead = false;
 	this->enableDepthWrite = false;
-
-	this->meshLightPercent = 0.0;
-	this->pixelShaderParam0 = 0.0;
 }
 
 void SoftwareMaterial::init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
@@ -4101,6 +4098,12 @@ void SoftwareMaterial::init(VertexShaderType vertexShaderType, PixelShaderType p
 	this->enableBackFaceCulling = enableBackFaceCulling;
 	this->enableDepthRead = enableDepthRead;
 	this->enableDepthWrite = enableDepthWrite;
+}
+
+SoftwareMaterialInstance::SoftwareMaterialInstance()
+{
+	this->meshLightPercent = 0.0;
+	this->pixelShaderParam0 = 0.0;
 }
 
 SoftwareLight::SoftwareLight()
@@ -4159,6 +4162,8 @@ void SoftwareRenderer::shutdown()
 	this->indexBuffers.clear();
 	this->uniformBuffers.clear();
 	this->objectTextures.clear();
+	this->materials.clear();
+	this->materialInsts.clear();
 	ShutdownWorkers();
 }
 
@@ -4436,28 +4441,45 @@ void SoftwareRenderer::freeMaterial(RenderMaterialID id)
 	this->materials.free(id);
 }
 
-void SoftwareRenderer::setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value)
+RenderMaterialInstanceID SoftwareRenderer::createMaterialInstance()
 {
-	SoftwareMaterial *material = this->materials.tryGet(id);
-	if (material == nullptr)
+	const RenderMaterialInstanceID instID = this->materialInsts.alloc();
+	if (instID < 0)
 	{
-		DebugLogErrorFormat("Missing material %d for updating mesh lighting percent to %.2f.", id, value);
-		return;
+		DebugLogError("Couldn't allocate software material instance.");
+		return -1;
 	}
 
-	material->meshLightPercent = value;
+	return instID;
 }
 
-void SoftwareRenderer::setMaterialParameterPixelShaderParam(RenderMaterialID id, double value)
+void SoftwareRenderer::freeMaterialInstance(RenderMaterialInstanceID id)
 {
-	SoftwareMaterial *material = this->materials.tryGet(id);
-	if (material == nullptr)
+	this->materialInsts.free(id);
+}
+
+void SoftwareRenderer::setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value)
+{
+	SoftwareMaterialInstance *inst = this->materialInsts.tryGet(id);
+	if (inst == nullptr)
 	{
-		DebugLogErrorFormat("Missing material %d for updating pixel shader param to %.2f.", id, value);
+		DebugLogErrorFormat("Missing material instance %d for updating mesh lighting percent to %.2f.", id, value);
 		return;
 	}
 
-	material->pixelShaderParam0 = value;
+	inst->meshLightPercent = value;
+}
+
+void SoftwareRenderer::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+{
+	SoftwareMaterialInstance *inst = this->materialInsts.tryGet(id);
+	if (inst == nullptr)
+	{
+		DebugLogErrorFormat("Missing material instance %d for updating pixel shader param to %.2f.", id, value);
+		return;
+	}
+
+	inst->pixelShaderParam0 = value;
 }
 
 void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
@@ -4561,13 +4583,20 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					drawCallCacheTextureID0 = material.textureIDs[0];
 					drawCallCacheTextureID1 = material.textureIDs[1];
 					drawCallCacheLightingType = material.lightingType;
-					drawCallCacheMeshLightPercent = material.meshLightPercent;
+					drawCallCacheMeshLightPercent = 0.0;
 					drawCallCacheVertexShaderType = material.vertexShaderType;
 					drawCallCachePixelShaderType = material.pixelShaderType;
-					drawCallCachePixelShaderParam0 = material.pixelShaderParam0;
+					drawCallCachePixelShaderParam0 = 0.0;
 					drawCallCacheEnableBackFaceCulling = material.enableBackFaceCulling;
 					drawCallCacheEnableDepthRead = material.enableDepthRead;
 					drawCallCacheEnableDepthWrite = material.enableDepthWrite;
+
+					if (drawCall.materialInstID >= 0)
+					{
+						const SoftwareMaterialInstance &materialInst = this->materialInsts.get(drawCall.materialInstID);
+						drawCallCacheMeshLightPercent = materialInst.meshLightPercent;
+						drawCallCachePixelShaderParam0 = materialInst.pixelShaderParam0;
+					}
 				}
 			}
 

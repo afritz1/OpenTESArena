@@ -401,14 +401,24 @@ void Sdl2DSoft3DRenderBackend::freeMaterial(RenderMaterialID id)
 	this->renderer3D.freeMaterial(id);
 }
 
-void Sdl2DSoft3DRenderBackend::setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value)
+RenderMaterialInstanceID Sdl2DSoft3DRenderBackend::createMaterialInstance()
 {
-	this->renderer3D.setMaterialParameterMeshLightingPercent(id, value);
+	return this->renderer3D.createMaterialInstance();
 }
 
-void Sdl2DSoft3DRenderBackend::setMaterialParameterPixelShaderParam(RenderMaterialID id, double value)
+void Sdl2DSoft3DRenderBackend::freeMaterialInstance(RenderMaterialInstanceID id)
 {
-	this->renderer3D.setMaterialParameterPixelShaderParam(id, value);
+	this->renderer3D.freeMaterialInstance(id);
+}
+
+void Sdl2DSoft3DRenderBackend::setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value)
+{
+	return this->renderer3D.setMaterialInstanceMeshLightPercent(id, value);
+}
+
+void Sdl2DSoft3DRenderBackend::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+{
+	return this->renderer3D.setMaterialInstancePixelShaderParam(id, value);
 }
 
 void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

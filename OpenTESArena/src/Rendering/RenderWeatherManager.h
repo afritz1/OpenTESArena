@@ -40,6 +40,8 @@ private:
 	RenderMaterialID fogMaterialID;
 	RenderDrawCall fogDrawCall;
 
+	RenderMaterialInstanceID materialInstID; // Shared by all weather particles for mesh lighting.
+
 	bool initMeshes(Renderer &renderer);
 	bool initUniforms(Renderer &renderer);
 	bool initTextures(Renderer &renderer);

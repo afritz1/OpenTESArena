@@ -38,6 +38,9 @@ private:
 		void init(uint8_t paletteIndex, ScopedObjectTextureRef &&objectTextureRef);
 	};
 
+	RenderMaterialInstanceID fullBrightMaterialInstID;
+	RenderMaterialInstanceID distantAmbientMaterialInstID;
+
 	// All the possible sky color textures to choose from, dependent on the active weather. These are used by
 	// the renderer to look up palette colors.
 	ScopedObjectTextureRef skyGradientAMTextureRef;

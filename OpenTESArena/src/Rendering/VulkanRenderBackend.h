@@ -109,14 +109,19 @@ struct VulkanMaterial
 	vk::Pipeline pipeline;
 	vk::PipelineLayout pipelineLayout;
 	vk::DescriptorSet descriptorSet;
-
-	float meshLightPercent;
-	float pixelShaderParam0;
 	VulkanMaterialPushConstantType pushConstantTypes[2];
 
 	VulkanMaterial();
 
 	void init(vk::Pipeline pipeline, vk::PipelineLayout pipelineLayout, vk::DescriptorSet descriptorSet);
+};
+
+struct VulkanMaterialInstance
+{
+	float meshLightPercent;
+	float pixelShaderParam;
+
+	VulkanMaterialInstance();
 };
 
 using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanBuffer>;
@@ -126,6 +131,7 @@ using VulkanUniformBufferPool = RecyclablePool<UniformBufferID, VulkanBuffer>;
 using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
 using VulkanMaterialPool = RecyclablePool<RenderMaterialID, VulkanMaterial>;
+using VulkanMaterialInstancePool = RecyclablePool<RenderMaterialID, VulkanMaterialInstance>;
 
 enum class VulkanHeapType
 {
@@ -324,6 +330,7 @@ private:
 	VulkanObjectTexturePool objectTexturePool;
 	VulkanUiTexturePool uiTexturePool;
 	VulkanMaterialPool materialPool;
+	VulkanMaterialInstancePool materialInstPool;
 
 	VulkanHeapManager vertexBufferHeapManagerDeviceLocal;
 	VulkanHeapManager vertexBufferHeapManagerStaging;
@@ -404,8 +411,11 @@ public:
 
 	RenderMaterialID createMaterial(RenderMaterialKey key) override;
 	void freeMaterial(RenderMaterialID id) override;
-	void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value) override;
-	void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value) override;
+
+	RenderMaterialInstanceID createMaterialInstance() override;
+	void freeMaterialInstance(RenderMaterialInstanceID id) override;
+	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value) override;
+	void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value) override;
 
 	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;

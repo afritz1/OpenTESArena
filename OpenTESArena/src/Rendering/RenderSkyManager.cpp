@@ -34,6 +34,9 @@ void RenderSkyManager::LoadedSmallStarTextureEntry::init(uint8_t paletteIndex, S
 
 RenderSkyManager::RenderSkyManager()
 {
+	this->fullBrightMaterialInstID = -1;
+	this->distantAmbientMaterialInstID = -1;
+
 	this->skyGradientAMMaterialID = -1;
 	this->skyGradientPMMaterialID = -1;
 	this->skyFogMaterialID = -1;
@@ -166,7 +169,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		bgIndices.emplace_back(aboveHorizonIndex);
 		bgIndices.emplace_back(horizonIndex);
 		bgIndices.emplace_back(nextHorizonIndex);
-		
+
 		bgIndices.emplace_back(nextHorizonIndex);
 		bgIndices.emplace_back(nextAboveHorizonIndex);
 		bgIndices.emplace_back(aboveHorizonIndex);
@@ -332,17 +335,14 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	RenderMaterialKey skyGradientAMMaterialKey;
 	skyGradientAMMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyGradientAMTextureID, 1), skyLightingType, false, false, false);
 	this->skyGradientAMMaterialID = renderer.createMaterial(skyGradientAMMaterialKey);
-	renderer.setMaterialParameterMeshLightingPercent(this->skyGradientAMMaterialID, 1.0);
 
 	RenderMaterialKey skyGradientPMMaterialKey;
 	skyGradientPMMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyGradientPMTextureID, 1), skyLightingType, false, false, false);
 	this->skyGradientPMMaterialID = renderer.createMaterial(skyGradientPMMaterialKey);
-	renderer.setMaterialParameterMeshLightingPercent(this->skyGradientPMMaterialID, 1.0);
 
 	RenderMaterialKey skyFogMaterialKey;
 	skyFogMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyFogTextureID, 1), skyLightingType, false, false, false);
 	this->skyFogMaterialID = renderer.createMaterial(skyFogMaterialKey);
-	renderer.setMaterialParameterMeshLightingPercent(this->skyFogMaterialID, 1.0);
 
 	this->skyThunderstormMaterialIDs.init(this->skyThunderstormTextureRefs.getCount());
 	for (int i = 0; i < this->skyThunderstormTextureRefs.getCount(); i++)
@@ -353,13 +353,17 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 		skyThunderstormMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyThunderstormTextureID, 1), skyLightingType, false, false, false);
 
 		this->skyThunderstormMaterialIDs[i] = renderer.createMaterial(skyThunderstormMaterialKey);
-		renderer.setMaterialParameterMeshLightingPercent(this->skyThunderstormMaterialIDs[i], 1.0);
 	}
 
 	RenderMaterialKey skyInteriorMaterialKey;
 	skyInteriorMaterialKey.init(skyVertexShaderType, skyPixelShaderType, Span<const ObjectTextureID>(&skyInteriorTextureID, 1), skyLightingType, false, false, false);
 	this->skyInteriorMaterialID = renderer.createMaterial(skyInteriorMaterialKey);
-	renderer.setMaterialParameterMeshLightingPercent(this->skyInteriorMaterialID, 1.0);
+
+	this->fullBrightMaterialInstID = renderer.createMaterialInstance();
+	renderer.setMaterialInstanceMeshLightPercent(this->fullBrightMaterialInstID, 1.0);
+
+	this->distantAmbientMaterialInstID = renderer.createMaterialInstance();
+	renderer.setMaterialInstanceMeshLightPercent(this->distantAmbientMaterialInstID, 0.0);
 
 	this->bgDrawCall.transformBufferID = this->bgTransformBufferID;
 	this->bgDrawCall.transformIndex = 0;
@@ -368,6 +372,7 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 	this->bgDrawCall.texCoordBufferID = this->bgTexCoordBufferID;
 	this->bgDrawCall.indexBufferID = this->bgIndexBufferID;
 	this->bgDrawCall.materialID = this->skyGradientAMMaterialID;
+	this->bgDrawCall.materialInstID = this->fullBrightMaterialInstID;
 	this->bgDrawCall.multipassType = RenderMultipassType::None;
 
 	// Initialize sky object mesh buffers shared with all sky objects.
@@ -443,6 +448,18 @@ void RenderSkyManager::init(const ExeData &exeData, TextureManager &textureManag
 
 void RenderSkyManager::shutdown(Renderer &renderer)
 {
+	if (this->fullBrightMaterialInstID >= 0)
+	{
+		renderer.freeMaterialInstance(this->fullBrightMaterialInstID);
+		this->fullBrightMaterialInstID = -1;
+	}
+
+	if (this->distantAmbientMaterialInstID >= 0)
+	{
+		renderer.freeMaterialInstance(this->distantAmbientMaterialInstID);
+		this->distantAmbientMaterialInstID = -1;
+	}
+
 	if (this->skyGradientAMMaterialID >= 0)
 	{
 		renderer.freeMaterial(this->skyGradientAMMaterialID);
@@ -755,14 +772,16 @@ void RenderSkyManager::populateCommandList(RenderCommandList &commandList) const
 }
 
 void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,
-	const CoordDouble3 &cameraCoord, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent,
-	Renderer &renderer)
+	const CoordDouble3 &cameraCoord, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer)
 {
 	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
 
 	// Keep background centered on the player.
 	const Matrix4d bgModelMatrix = Matrix4d::translation(cameraPos.x, cameraPos.y, cameraPos.z);
 	renderer.populateUniformBufferMatrix4s(this->bgTransformBufferID, Span<const Matrix4d>(&bgModelMatrix, 1));
+
+	// Update distant land brightness.
+	renderer.setMaterialInstanceMeshLightPercent(this->distantAmbientMaterialInstID, distantAmbientPercent);
 
 	// Update background texture ID based on active weather.
 	std::optional<double> thunderstormFlashPercent;
@@ -816,8 +835,6 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 	constexpr double sunDistance = 1.0;
 	constexpr double starDistance = 1.0;
 
-	constexpr double fullBrightLightPercent = 1.0;
-
 	auto updateRenderTransform = [this, &renderer, &cameraPos](const Double3 &direction, int transformIndex,
 		double width, double height, double arbitraryDistance)
 	{
@@ -838,7 +855,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		renderer.populateUniformBufferIndexMatrix4(this->objectTransformBufferID, transformIndex, modelMatrix);
 	};
 
-	auto addDrawCall = [this, &renderer](int transformIndex, ObjectTextureID textureID, double meshLightPercent, PixelShaderType pixelShaderType)
+	auto addDrawCall = [this, &renderer](int transformIndex, ObjectTextureID textureID, RenderMaterialInstanceID materialInstID, PixelShaderType pixelShaderType)
 	{
 		RenderMaterialKey materialKey;
 		materialKey.init(VertexShaderType::Basic, pixelShaderType, Span<const ObjectTextureID>(&textureID, 1), RenderLightingType::PerMesh, false, false, false);
@@ -863,8 +880,6 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 			this->objectMaterials.emplace_back(std::move(material));
 		}
 
-		renderer.setMaterialParameterMeshLightingPercent(materialID, meshLightPercent);
-
 		RenderDrawCall drawCall;
 		drawCall.transformBufferID = this->objectTransformBufferID;
 		drawCall.transformIndex = transformIndex;
@@ -873,6 +888,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		drawCall.texCoordBufferID = this->objectTexCoordBufferID;
 		drawCall.indexBufferID = this->objectIndexBufferID;
 		drawCall.materialID = materialID;
+		drawCall.materialInstID = materialInstID;
 
 		if (pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit)
 		{
@@ -882,7 +898,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		{
 			drawCall.multipassType = RenderMultipassType::None;
 		}
-		
+
 		this->objectDrawCalls.emplace_back(std::move(drawCall));
 	};
 
@@ -927,7 +943,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		}
 
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, starDistance);
-		addDrawCall(i, textureID, fullBrightLightPercent, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit);
+		addDrawCall(i, textureID, this->fullBrightMaterialInstID, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit);
 	}
 
 	for (int i = skyInst.sunStart; i < skyInst.sunEnd; i++)
@@ -946,7 +962,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, sunDistance);
-		addDrawCall(i, textureID, fullBrightLightPercent, PixelShaderType::AlphaTested);
+		addDrawCall(i, textureID, this->fullBrightMaterialInstID, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.moonStart; i < skyInst.moonEnd; i++)
@@ -965,7 +981,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, moonDistance);
-		addDrawCall(i, textureID, fullBrightLightPercent, PixelShaderType::AlphaTested);
+		addDrawCall(i, textureID, this->fullBrightMaterialInstID, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.airStart; i < skyInst.airEnd; i++)
@@ -984,7 +1000,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, airDistance);
-		addDrawCall(i, textureID, distantAmbientPercent, PixelShaderType::AlphaTested);
+		addDrawCall(i, textureID, this->distantAmbientMaterialInstID, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.landStart; i < skyInst.landEnd; i++)
@@ -1014,9 +1030,9 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 
 		const TextureAsset &textureAsset = textureAssets[textureAssetIndex];
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
-		const double meshLightPercent = skyObjectInst.emissive ? fullBrightLightPercent : distantAmbientPercent;
+		const RenderMaterialInstanceID materialInstID = skyObjectInst.emissive ? this->fullBrightMaterialInstID : this->distantAmbientMaterialInstID;
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, landDistance);
-		addDrawCall(i, textureID, meshLightPercent, PixelShaderType::AlphaTested);
+		addDrawCall(i, textureID, materialInstID, PixelShaderType::AlphaTested);
 	}
 
 	for (int i = skyInst.lightningStart; i < skyInst.lightningEnd; i++)
@@ -1041,7 +1057,6 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 
 		int textureAssetIndex = 0;
 		const int animIndex = skyObjectInst.animIndex;
-		double meshLightPercent = fullBrightLightPercent;
 		const bool hasAnimation = animIndex >= 0;
 		DebugAssert(hasAnimation);
 
@@ -1052,7 +1067,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		const TextureAsset &textureAsset = textureAssets[textureAssetIndex];
 		const ObjectTextureID textureID = this->getGeneralSkyObjectTextureID(textureAsset);
 		updateRenderTransform(skyObjectInst.transformedDirection, i, skyObjectInst.width, skyObjectInst.height, lightningDistance);
-		addDrawCall(i, textureID, meshLightPercent, PixelShaderType::AlphaTested);
+		addDrawCall(i, textureID, this->fullBrightMaterialInstID, PixelShaderType::AlphaTested);
 	}
 }
 

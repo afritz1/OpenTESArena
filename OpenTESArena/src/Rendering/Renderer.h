@@ -163,8 +163,11 @@ public:
 	// Material management functions.
 	RenderMaterialID createMaterial(RenderMaterialKey key);
 	void freeMaterial(RenderMaterialID id);
-	void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value);
-	void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value);
+
+	RenderMaterialInstanceID createMaterialInstance();
+	void freeMaterialInstance(RenderMaterialInstanceID id);
+	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value);
+	void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value);
 
 	// Wrapper methods for some SDL draw functions.
 	//void drawPixel(const Color &color, int x, int y);

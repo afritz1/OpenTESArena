@@ -690,14 +690,24 @@ void Renderer::freeMaterial(RenderMaterialID id)
 	this->backend->freeMaterial(id);
 }
 
-void Renderer::setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value)
+RenderMaterialInstanceID Renderer::createMaterialInstance()
 {
-	this->backend->setMaterialParameterMeshLightingPercent(id, value);
+	return this->backend->createMaterialInstance();
 }
 
-void Renderer::setMaterialParameterPixelShaderParam(RenderMaterialID id, double value)
+void Renderer::freeMaterialInstance(RenderMaterialInstanceID id)
 {
-	this->backend->setMaterialParameterPixelShaderParam(id, value);
+	this->backend->freeMaterialInstance(id);
+}
+
+void Renderer::setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value)
+{
+	this->backend->setMaterialInstanceMeshLightPercent(id, value);
+}
+
+void Renderer::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+{
+	this->backend->setMaterialInstancePixelShaderParam(id, value);
 }
 
 /*void Renderer::drawPixel(const Color &color, int x, int y)

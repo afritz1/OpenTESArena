@@ -88,6 +88,8 @@ RenderWeatherManager::RenderWeatherManager()
 	this->fogTransformBufferID = -1;
 	this->fogTextureID = -1;
 	this->fogMaterialID = -1;
+
+	this->materialInstID = -1;
 }
 
 bool RenderWeatherManager::initMeshes(Renderer &renderer)
@@ -434,20 +436,20 @@ bool RenderWeatherManager::initMaterials(Renderer &renderer)
 	RenderMaterialKey rainMaterialKey;
 	rainMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTested, Span<const ObjectTextureID>(&this->rainTextureID, 1), lightingType, false, false, false);
 	this->rainMaterialID = renderer.createMaterial(rainMaterialKey);
-	renderer.setMaterialParameterMeshLightingPercent(this->rainMaterialID, 1.0);
 
 	for (int i = 0; i < static_cast<int>(std::size(this->snowMaterialIDs)); i++)
 	{
 		RenderMaterialKey snowMaterialKey;
 		snowMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTested, Span<const ObjectTextureID>(&this->snowTextureIDs[i], 1), lightingType, false, false, false);
 		this->snowMaterialIDs[i] = renderer.createMaterial(snowMaterialKey);
-		renderer.setMaterialParameterMeshLightingPercent(this->snowMaterialIDs[i], 1.0);
 	}
 
 	RenderMaterialKey fogMaterialKey;
 	fogMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTestedWithLightLevelOpacity, Span<const ObjectTextureID>(&this->fogTextureID, 1), lightingType, false, false, false);
 	this->fogMaterialID = renderer.createMaterial(fogMaterialKey);
-	renderer.setMaterialParameterMeshLightingPercent(this->fogMaterialID, 1.0);
+
+	this->materialInstID = renderer.createMaterialInstance();
+	renderer.setMaterialInstanceMeshLightPercent(this->materialInstID, 1.0);
 
 	return true;
 }
@@ -489,6 +491,12 @@ void RenderWeatherManager::shutdown(Renderer &renderer)
 
 	this->freeFogBuffers(renderer);
 	this->fogDrawCall.clear();
+
+	if (this->materialInstID >= 0)
+	{
+		renderer.freeMaterialInstance(this->materialInstID);
+		this->materialInstID = -1;
+	}
 }
 
 void RenderWeatherManager::populateCommandList(RenderCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const
@@ -638,6 +646,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		drawCall.texCoordBufferID = this->particleTexCoordBufferID;
 		drawCall.indexBufferID = this->particleIndexBufferID;
 		drawCall.materialID = materialID;
+		drawCall.materialInstID = this->materialInstID;
 		drawCall.multipassType = RenderMultipassType::None;
 	};
 
@@ -745,6 +754,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 		this->fogDrawCall.texCoordBufferID = this->fogTexCoordBufferID;
 		this->fogDrawCall.indexBufferID = this->fogIndexBufferID;
 		this->fogDrawCall.materialID = this->fogMaterialID;
+		this->fogDrawCall.materialInstID = this->materialInstID;
 		this->fogDrawCall.multipassType = RenderMultipassType::Ghosts;
 	}
 }

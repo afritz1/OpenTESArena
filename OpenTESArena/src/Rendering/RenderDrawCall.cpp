@@ -14,5 +14,6 @@ void RenderDrawCall::clear()
 	this->texCoordBufferID = -1;
 	this->indexBufferID = -1;
 	this->materialID = -1;
+	this->materialInstID = -1;
 	this->multipassType = RenderMultipassType::None;
 }

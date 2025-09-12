@@ -13,6 +13,7 @@
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
+#include "components/utilities/FlatMap.h"
 #include "components/utilities/Span.h"
 #include "components/utilities/Span3D.h"
 
@@ -79,6 +80,9 @@ class RenderVoxelChunkManager final : public SpecializedChunkManager<RenderVoxel
 private:
 	// For combined voxel faces.
 	IndexBufferID defaultQuadIndexBufferID;
+
+	// Shared by all lava chasm draw calls.
+	RenderMaterialInstanceID lavaChasmMaterialInstID;
 
 	std::vector<RenderVoxelLoadedTexture> textures; // Includes chasm walls.
 	std::vector<RenderVoxelLoadedChasmFloorTexture> chasmFloorTextures;

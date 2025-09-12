@@ -43,4 +43,7 @@ struct RenderMaterial
 	void init(RenderMaterialKey key, RenderMaterialID id);
 };
 
+// Supplementary shading values for a material.
+using RenderMaterialInstanceID = int;
+
 #endif

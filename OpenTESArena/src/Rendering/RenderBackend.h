@@ -110,8 +110,11 @@ public:
 	// Material management functions.
 	virtual RenderMaterialID createMaterial(RenderMaterialKey key) = 0;
 	virtual void freeMaterial(RenderMaterialID id) = 0;
-	virtual void setMaterialParameterMeshLightingPercent(RenderMaterialID id, double value) = 0;
-	virtual void setMaterialParameterPixelShaderParam(RenderMaterialID id, double value) = 0;
+
+	virtual RenderMaterialInstanceID createMaterialInstance() = 0;
+	virtual void freeMaterialInstance(RenderMaterialInstanceID id) = 0;
+	virtual void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value) = 0;
+	virtual void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value) = 0;
 
 	// Renders a frame to the target window. Currently this is blocking and should be safe to present the frame upon returning.
 	virtual void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

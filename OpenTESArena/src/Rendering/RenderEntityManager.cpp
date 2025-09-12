@@ -560,6 +560,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
 			drawCall.indexBufferID = this->meshInst.indexBufferID;
 			drawCall.materialID = materialID;
+			drawCall.materialInstID = -1;
 
 			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
 			{
