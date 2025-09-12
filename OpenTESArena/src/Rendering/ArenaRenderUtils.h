@@ -118,7 +118,7 @@ namespace ArenaRenderUtils
 	};
 
 	constexpr double PLAYER_LIGHT_START_RADIUS = 150.0 / MIFUtils::ARENA_UNITS;
-	constexpr double PLAYER_LIGHT_END_RADIUS = 275.0 / MIFUtils::ARENA_UNITS;
+	constexpr double PLAYER_LIGHT_END_RADIUS = 320.0 / MIFUtils::ARENA_UNITS;
 	constexpr double PLAYER_FOG_LIGHT_START_RADIUS = 250.0 / MIFUtils::ARENA_UNITS;
 	constexpr double PLAYER_FOG_LIGHT_END_RADIUS = 575.0 / MIFUtils::ARENA_UNITS;
 	constexpr double STREETLIGHT_LIGHT_RADIUS = 3.0 * (MIFUtils::ARENA_UNITS / 100.0);
