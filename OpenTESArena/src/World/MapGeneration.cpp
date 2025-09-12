@@ -901,9 +901,9 @@ namespace MapGeneration
 		*outVoxelType = voxelType;
 		outShapeInitCache->initDefaultBoxValues(voxelType);
 
-		// @todo: get ceiling from .INFs without *CEILING (like START.INF). Maybe hardcoding index 1 is enough?
+		// If no *CEILING is found, fall back to a default texture index.
 		const INFCeiling &ceiling = inf.getCeiling();
-		const int textureIndex = ceiling.textureIndex.value_or(1);
+		const int textureIndex = ceiling.textureIndex.value_or(0);
 
 		const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
 		*outTextureAsset = TextureAsset(
