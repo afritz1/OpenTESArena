@@ -1,6 +1,8 @@
 #ifndef VULKAN_RENDER_BACKEND_H
 #define VULKAN_RENDER_BACKEND_H
 
+#ifdef HAVE_VULKAN
+
 #include <cstdint>
 #include <functional>
 #include <vector>
@@ -420,5 +422,7 @@ public:
 	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;
 };
+
+#endif
 
 #endif

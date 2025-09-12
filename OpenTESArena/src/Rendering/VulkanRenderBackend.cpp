@@ -30,6 +30,8 @@
 #include "components/utilities/File.h"
 #include "components/utilities/StringView.h"
 
+#ifdef HAVE_VULKAN
+
 namespace
 {
 	constexpr uint32_t INVALID_UINT32 = std::numeric_limits<uint32_t>::max();
@@ -6067,3 +6069,5 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 	this->prevAcquiredSwapchainImageIndex = acquiredSwapchainImageIndex;
 }
+
+#endif
