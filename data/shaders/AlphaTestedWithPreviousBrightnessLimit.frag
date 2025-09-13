@@ -30,10 +30,12 @@ void main()
     if (isDarkEnough)
     {
         uint textureTexel = texture(textureSampler, fragInTexCoord).r;
-        if (textureTexel != 0)
+        if (textureTexel == 0)
         {
-            texel = textureTexel;
+            discard;
         }
+
+        texel = textureTexel;
     }
 
     fragOutColor = texel;

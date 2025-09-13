@@ -913,8 +913,7 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 		return;
 	}
 
-	// Order draw calls back to front.
-	for (int i = skyInst.starEnd - 1; i >= skyInst.starStart; i--)
+	for (int i = skyInst.starStart; i < skyInst.starEnd; i++)
 	{
 		if (!skyVisManager.isObjectInFrustum(i))
 		{

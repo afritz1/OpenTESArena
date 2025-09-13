@@ -322,18 +322,18 @@ namespace SkyGeneration
 		ArenaLargeStarMappingCache largeStarCache;
 
 		// Convert stars to modern representation.
-		for (const auto &star : stars)
+		for (const Star &star : stars)
 		{
 			const Double3 direction = Double3(
 				static_cast<double>(star.x),
 				static_cast<double>(star.y),
 				static_cast<double>(star.z)).normalized();
 
-			const bool isSmallStar = star.type == -1;
+			const bool isSmallStar = star.type == NO_STAR_TYPE;
 			if (isSmallStar)
 			{
 				// Group of small stars around the primary direction.
-				for (const auto &subStar : star.subList)
+				for (const SubStar &subStar : star.subList)
 				{
 					const uint8_t paletteIndex = subStar.color;
 
