@@ -4,6 +4,7 @@
 #include <functional>
 #include <limits>
 #include <string>
+#include <unordered_set>
 
 #include "SDL_surface.h"
 #include "SDL_vulkan.h"
@@ -2800,6 +2801,12 @@ VulkanPipelineKey::VulkanPipelineKey()
 	this->alphaBlend = false;
 }
 
+VulkanBufferTransferCommand::VulkanBufferTransferCommand()
+{
+	this->byteOffset = 0;
+	this->byteCount = 0;
+}
+
 bool VulkanRenderBackend::initContext(const RenderContextSettings &contextSettings)
 {
 	if (!TryCreateVulkanInstance(contextSettings.window->window, contextSettings.enableValidationLayers, &this->instance))
@@ -3540,19 +3547,36 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	auto lightingModeCopyCommand = [this, lightModeByteCount]()
+	VulkanBufferTransferCommand perPixelLightModeTransferCommand;
+	perPixelLightModeTransferCommand.buffer = this->perPixelLightMode.deviceLocalBuffer;
+	perPixelLightModeTransferCommand.dstStageFlags = vk::PipelineStageFlagBits::eFragmentShader;
+	perPixelLightModeTransferCommand.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	perPixelLightModeTransferCommand.byteOffset = 0;
+	perPixelLightModeTransferCommand.byteCount = lightModeByteCount;
+	perPixelLightModeTransferCommand.transferFunc = [this, lightModeByteCount]()
 	{
 		VkBool32 *perPixelLightModeValues = reinterpret_cast<VkBool32*>(this->perPixelLightMode.stagingHostMappedBytes.begin());
 		perPixelLightModeValues[0] = 1;
 
+		CopyBufferToBuffer(this->perPixelLightMode.stagingBuffer, this->perPixelLightMode.deviceLocalBuffer, 0, lightModeByteCount, this->commandBuffer);
+	};
+
+	VulkanBufferTransferCommand perMeshLightModeTransferCommand;
+	perMeshLightModeTransferCommand.buffer = this->perMeshLightMode.deviceLocalBuffer;
+	perMeshLightModeTransferCommand.dstStageFlags = perPixelLightModeTransferCommand.dstStageFlags;
+	perMeshLightModeTransferCommand.dstAccessMask = perPixelLightModeTransferCommand.dstAccessMask;
+	perMeshLightModeTransferCommand.byteOffset = 0;
+	perMeshLightModeTransferCommand.byteCount = lightModeByteCount;
+	perMeshLightModeTransferCommand.transferFunc = [this, lightModeByteCount]()
+	{
 		VkBool32 *perMeshLightModeValues = reinterpret_cast<VkBool32*>(this->perMeshLightMode.stagingHostMappedBytes.begin());
 		perMeshLightModeValues[0] = 0;
-
-		CopyBufferToBuffer(this->perPixelLightMode.stagingBuffer, this->perPixelLightMode.deviceLocalBuffer, 0, lightModeByteCount, this->commandBuffer);
+		
 		CopyBufferToBuffer(this->perMeshLightMode.stagingBuffer, this->perMeshLightMode.deviceLocalBuffer, 0, lightModeByteCount, this->commandBuffer);
 	};
 
-	this->copyCommands.emplace_back(std::move(lightingModeCopyCommand));
+	this->bufferTransferCommands.emplace_back(std::move(perPixelLightModeTransferCommand));
+	this->bufferTransferCommands.emplace_back(std::move(perMeshLightModeTransferCommand));
 
 	constexpr int UiRectangleVertexCount = 6; // Two triangles, no indices.
 	constexpr int UiPositionComponentsPerVertex = 2;
@@ -3913,7 +3937,8 @@ void VulkanRenderBackend::shutdown()
 		this->vertexShaders.clear();
 
 		this->freeCommands.clear();
-		this->copyCommands.clear();
+		this->imageTransferCommands.clear();
+		this->bufferTransferCommands.clear();
 
 		if (this->commandBuffer)
 		{
@@ -4611,16 +4636,23 @@ LockedBuffer VulkanRenderBackend::lockVertexPositionBuffer(VertexPositionBufferI
 
 void VulkanRenderBackend::unlockVertexPositionBuffer(VertexPositionBufferID id)
 {
-	auto commandBufferFunc = [this, id]()
+	const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
+	vk::Buffer deviceLocalBuffer = vertexPositionBuffer.deviceLocalBuffer;
+	vk::Buffer stagingBuffer = vertexPositionBuffer.stagingBuffer;
+	const int byteCount = vertexPositionBuffer.stagingHostMappedBytes.getCount();
+
+	VulkanBufferTransferCommand transferCommand;
+	transferCommand.buffer = deviceLocalBuffer;
+	transferCommand.dstStageFlags = vk::PipelineStageFlagBits::eVertexInput;
+	transferCommand.dstAccessMask = vk::AccessFlagBits::eVertexAttributeRead;
+	transferCommand.byteOffset = 0;
+	transferCommand.byteCount = byteCount;
+	transferCommand.transferFunc = [this, deviceLocalBuffer, stagingBuffer, byteCount]()
 	{
-		const VulkanBuffer &vertexPositionBuffer = this->vertexPositionBufferPool.get(id);
-		vk::Buffer deviceLocalBuffer = vertexPositionBuffer.deviceLocalBuffer;
-		vk::Buffer stagingBuffer = vertexPositionBuffer.stagingBuffer;
-		const int byteCount = vertexPositionBuffer.stagingHostMappedBytes.getCount();
 		CopyBufferToBuffer(stagingBuffer, deviceLocalBuffer, 0, byteCount, this->commandBuffer);
 	};
 
-	this->copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->bufferTransferCommands.emplace_back(std::move(transferCommand));
 }
 
 VertexAttributeBufferID VulkanRenderBackend::createVertexAttributeBuffer(int vertexCount, int componentsPerVertex, int bytesPerComponent)
@@ -4692,16 +4724,23 @@ LockedBuffer VulkanRenderBackend::lockVertexAttributeBuffer(VertexAttributeBuffe
 
 void VulkanRenderBackend::unlockVertexAttributeBuffer(VertexAttributeBufferID id)
 {
-	auto commandBufferFunc = [this, id]()
+	const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
+	vk::Buffer deviceLocalBuffer = vertexAttributeBuffer.deviceLocalBuffer;
+	vk::Buffer stagingBuffer = vertexAttributeBuffer.stagingBuffer;
+	const int byteCount = vertexAttributeBuffer.stagingHostMappedBytes.getCount();
+
+	VulkanBufferTransferCommand transferCommand;
+	transferCommand.buffer = deviceLocalBuffer;
+	transferCommand.dstStageFlags = vk::PipelineStageFlagBits::eVertexInput;
+	transferCommand.dstAccessMask = vk::AccessFlagBits::eVertexAttributeRead;
+	transferCommand.byteOffset = 0;
+	transferCommand.byteCount = byteCount;
+	transferCommand.transferFunc = [this, deviceLocalBuffer, stagingBuffer, byteCount]()
 	{
-		const VulkanBuffer &vertexAttributeBuffer = this->vertexAttributeBufferPool.get(id);
-		vk::Buffer deviceLocalBuffer = vertexAttributeBuffer.deviceLocalBuffer;
-		vk::Buffer stagingBuffer = vertexAttributeBuffer.stagingBuffer;
-		const int byteCount = vertexAttributeBuffer.stagingHostMappedBytes.getCount();
 		CopyBufferToBuffer(stagingBuffer, deviceLocalBuffer, 0, byteCount, this->commandBuffer);
 	};
 
-	this->copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->bufferTransferCommands.emplace_back(std::move(transferCommand));
 }
 
 IndexBufferID VulkanRenderBackend::createIndexBuffer(int indexCount, int bytesPerIndex)
@@ -4772,16 +4811,23 @@ LockedBuffer VulkanRenderBackend::lockIndexBuffer(IndexBufferID id)
 
 void VulkanRenderBackend::unlockIndexBuffer(IndexBufferID id)
 {
-	auto commandBufferFunc = [this, id]()
+	const VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
+	vk::Buffer deviceLocalBuffer = indexBuffer.deviceLocalBuffer;
+	vk::Buffer stagingBuffer = indexBuffer.stagingBuffer;
+	const int byteCount = indexBuffer.stagingHostMappedBytes.getCount();
+
+	VulkanBufferTransferCommand transferCommand;
+	transferCommand.buffer = deviceLocalBuffer;
+	transferCommand.dstStageFlags = vk::PipelineStageFlagBits::eVertexInput;
+	transferCommand.dstAccessMask = vk::AccessFlagBits::eIndexRead;
+	transferCommand.byteOffset = 0;
+	transferCommand.byteCount = byteCount;
+	transferCommand.transferFunc = [this, deviceLocalBuffer, stagingBuffer, byteCount]()
 	{
-		const VulkanBuffer &indexBuffer = this->indexBufferPool.get(id);
-		vk::Buffer deviceLocalBuffer = indexBuffer.deviceLocalBuffer;
-		vk::Buffer stagingBuffer = indexBuffer.stagingBuffer;
-		const int byteCount = indexBuffer.stagingHostMappedBytes.getCount();
 		CopyBufferToBuffer(stagingBuffer, deviceLocalBuffer, 0, byteCount, this->commandBuffer);
 	};
 
-	this->copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->bufferTransferCommands.emplace_back(std::move(transferCommand));
 }
 
 UniformBufferID VulkanRenderBackend::createUniformBuffer(int elementCount, int bytesPerElement, int alignmentOfElement)
@@ -4881,32 +4927,46 @@ LockedBuffer VulkanRenderBackend::lockUniformBufferIndex(UniformBufferID id, int
 
 void VulkanRenderBackend::unlockUniformBuffer(UniformBufferID id)
 {
-	auto commandBufferFunc = [this, id]()
-	{
-		const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-		vk::Buffer deviceLocalBuffer = uniformBuffer.deviceLocalBuffer;
-		vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
-		const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
+	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	vk::Buffer deviceLocalBuffer = uniformBuffer.deviceLocalBuffer;
+	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
+	const int byteCount = uniformBuffer.stagingHostMappedBytes.getCount();
+
+	VulkanBufferTransferCommand transferCommand;
+	transferCommand.buffer = deviceLocalBuffer;
+	transferCommand.dstStageFlags = vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eComputeShader;
+	transferCommand.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	transferCommand.byteOffset = 0;
+	transferCommand.byteCount = byteCount;
+	transferCommand.transferFunc = [this, deviceLocalBuffer, stagingBuffer, byteCount]()
+	{		
 		CopyBufferToBuffer(stagingBuffer, deviceLocalBuffer, 0, byteCount, this->commandBuffer);
 	};
 
-	this->copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->bufferTransferCommands.emplace_back(std::move(transferCommand));
 }
 
 void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index)
 {
-	auto commandBufferFunc = [this, id, index]()
-	{
-		const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
-		vk::Buffer deviceLocalBuffer = uniformBuffer.deviceLocalBuffer;
-		vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
-		const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-		const int byteOffset = index * uniformInfo.bytesPerStride;
-		const int byteCount = uniformInfo.bytesPerElement;
+	const VulkanBuffer &uniformBuffer = this->uniformBufferPool.get(id);
+	vk::Buffer deviceLocalBuffer = uniformBuffer.deviceLocalBuffer;
+	vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
+	const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
+	const int byteOffset = index * uniformInfo.bytesPerStride;
+	const int byteCount = uniformInfo.bytesPerElement;
+
+	VulkanBufferTransferCommand transferCommand;
+	transferCommand.buffer = deviceLocalBuffer;
+	transferCommand.dstStageFlags = vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eComputeShader;
+	transferCommand.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+	transferCommand.byteOffset = byteOffset;
+	transferCommand.byteCount = byteCount;
+	transferCommand.transferFunc = [this, deviceLocalBuffer, stagingBuffer, byteOffset, byteCount]()
+	{		
 		CopyBufferToBuffer(stagingBuffer, deviceLocalBuffer, byteOffset, byteCount, this->commandBuffer);
 	};
 
-	this->copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->bufferTransferCommands.emplace_back(std::move(transferCommand));
 }
 
 ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, int bytesPerTexel)
@@ -5007,39 +5067,21 @@ LockedTexture VulkanRenderBackend::lockObjectTexture(ObjectTextureID id)
 
 void VulkanRenderBackend::unlockObjectTexture(ObjectTextureID id)
 {
-	auto commandBufferFunc = [this, id]()
+	const VulkanTexture &texture = this->objectTexturePool.get(id);
+	const int width = texture.width;
+	const int height = texture.height;
+	const int bytesPerTexel = texture.bytesPerTexel;
+	vk::Image image = texture.image;
+	vk::Buffer stagingBuffer = texture.stagingBuffer;
+
+	VulkanImageTransferCommand transferCommand;
+	transferCommand.image = image;
+	transferCommand.transferFunc = [this, width, height, image, stagingBuffer]()
 	{
-		VulkanTexture &texture = this->objectTexturePool.get(id);
-		const int width = texture.width;
-		const int height = texture.height;
-		const int bytesPerTexel = texture.bytesPerTexel;
-		vk::Image image = texture.image;
-		vk::Buffer stagingBuffer = texture.stagingBuffer;
-
-		ApplyColorImageLayoutTransition(
-			image,
-			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eTransferDstOptimal,
-			vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::AccessFlagBits::eNone,
-			vk::AccessFlagBits::eTransferWrite,
-			this->commandBuffer);
-
 		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
-
-		ApplyColorImageLayoutTransition(
-			image,
-			vk::ImageLayout::eTransferDstOptimal,
-			vk::ImageLayout::eShaderReadOnlyOptimal,
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eFragmentShader,
-			vk::AccessFlagBits::eTransferWrite,
-			vk::AccessFlagBits::eShaderRead,
-			this->commandBuffer);
 	};
 
-	this->copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->imageTransferCommands.emplace_back(std::move(transferCommand));
 }
 
 UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
@@ -5163,39 +5205,21 @@ LockedTexture VulkanRenderBackend::lockUiTexture(UiTextureID id)
 
 void VulkanRenderBackend::unlockUiTexture(UiTextureID id)
 {
-	auto commandBufferFunc = [this, id]()
+	VulkanTexture &texture = this->uiTexturePool.get(id);
+	const int width = texture.width;
+	const int height = texture.height;
+	DebugAssert(texture.bytesPerTexel == 4);
+	vk::Image image = texture.image;
+	vk::Buffer stagingBuffer = texture.stagingBuffer;
+
+	VulkanImageTransferCommand transferCommand;
+	transferCommand.image = image;
+	transferCommand.transferFunc = [this, width, height, image, stagingBuffer]()
 	{
-		VulkanTexture &texture = this->uiTexturePool.get(id);
-		const int width = texture.width;
-		const int height = texture.height;
-		DebugAssert(texture.bytesPerTexel == 4);
-		vk::Image image = texture.image;
-		vk::Buffer stagingBuffer = texture.stagingBuffer;
-
-		ApplyColorImageLayoutTransition(
-			image,
-			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eTransferDstOptimal,
-			vk::PipelineStageFlagBits::eTopOfPipe,
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::AccessFlagBits::eNone,
-			vk::AccessFlagBits::eTransferWrite,
-			this->commandBuffer);
-
 		CopyBufferToImage(stagingBuffer, image, width, height, this->commandBuffer);
-
-		ApplyColorImageLayoutTransition(
-			image,
-			vk::ImageLayout::eTransferDstOptimal,
-			vk::ImageLayout::eShaderReadOnlyOptimal,
-			vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eFragmentShader,
-			vk::AccessFlagBits::eTransferWrite,
-			vk::AccessFlagBits::eShaderRead,
-			this->commandBuffer);
 	};
 
-	this->copyCommands.emplace_back(std::move(commandBufferFunc));
+	this->imageTransferCommands.emplace_back(std::move(transferCommand));
 }
 
 RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
@@ -5473,19 +5497,46 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		lightBinDimsValues[4] = clampedVisibleLightCount;
 		lightBinDimsValues[5] = static_cast<int>(frameSettings.ditheringMode);
 
-		auto copyCommand = [this]()
+		const int optimizedLightsByteCount = this->optimizedVisibleLights.stagingHostMappedBytes.getCount();
+		const int lightBinsByteCount = this->lightBins.stagingHostMappedBytes.getCount();
+		const int lightBinLightCountsByteCount = this->lightBinLightCounts.stagingHostMappedBytes.getCount();
+
+		VulkanBufferTransferCommand optimizedLightsTransferCommand;
+		optimizedLightsTransferCommand.buffer = this->optimizedVisibleLights.deviceLocalBuffer;
+		optimizedLightsTransferCommand.dstStageFlags = vk::PipelineStageFlagBits::eComputeShader | vk::PipelineStageFlagBits::eFragmentShader;
+		optimizedLightsTransferCommand.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		optimizedLightsTransferCommand.byteOffset = 0;
+		optimizedLightsTransferCommand.byteCount = optimizedLightsByteCount;
+		optimizedLightsTransferCommand.transferFunc = [this, optimizedLightsByteCount]()
 		{
-			const int optimizedLightsByteCount = this->optimizedVisibleLights.stagingHostMappedBytes.getCount();
 			CopyBufferToBuffer(this->optimizedVisibleLights.stagingBuffer, this->optimizedVisibleLights.deviceLocalBuffer, 0, optimizedLightsByteCount, this->commandBuffer);
+		};
 
-			const int lightBinsByteCount = this->lightBins.stagingHostMappedBytes.getCount();
+		VulkanBufferTransferCommand lightBinsTransferCommand;
+		lightBinsTransferCommand.buffer = this->lightBins.deviceLocalBuffer;
+		lightBinsTransferCommand.dstStageFlags = optimizedLightsTransferCommand.dstStageFlags;
+		lightBinsTransferCommand.dstAccessMask = optimizedLightsTransferCommand.dstAccessMask | vk::AccessFlagBits::eShaderWrite;
+		lightBinsTransferCommand.byteOffset = 0;
+		lightBinsTransferCommand.byteCount = lightBinsByteCount;
+		lightBinsTransferCommand.transferFunc = [this, lightBinsByteCount]()
+		{
 			CopyBufferToBuffer(this->lightBins.stagingBuffer, this->lightBins.deviceLocalBuffer, 0, lightBinsByteCount, this->commandBuffer);
+		};
 
-			const int lightBinLightCountsByteCount = this->lightBinLightCounts.stagingHostMappedBytes.getCount();
+		VulkanBufferTransferCommand lightBinLightCountsTransferCommand;
+		lightBinLightCountsTransferCommand.buffer = this->lightBinLightCounts.deviceLocalBuffer;
+		lightBinLightCountsTransferCommand.dstStageFlags = lightBinsTransferCommand.dstStageFlags;
+		lightBinLightCountsTransferCommand.dstAccessMask = lightBinsTransferCommand.dstAccessMask;
+		lightBinLightCountsTransferCommand.byteOffset = 0;
+		lightBinLightCountsTransferCommand.byteCount = lightBinLightCountsByteCount;
+		lightBinLightCountsTransferCommand.transferFunc = [this, lightBinLightCountsByteCount]()
+		{
 			CopyBufferToBuffer(this->lightBinLightCounts.stagingBuffer, this->lightBinLightCounts.deviceLocalBuffer, 0, lightBinLightCountsByteCount, this->commandBuffer);
 		};
 
-		this->copyCommands.emplace_back(std::move(copyCommand));
+		this->bufferTransferCommands.emplace_back(std::move(optimizedLightsTransferCommand));
+		this->bufferTransferCommands.emplace_back(std::move(lightBinsTransferCommand));
+		this->bufferTransferCommands.emplace_back(std::move(lightBinLightCountsTransferCommand));
 
 		vk::MemoryBarrier hostCoherentMemoryBarrier;
 		hostCoherentMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eHostWrite;
@@ -5500,26 +5551,116 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 			vk::ArrayProxy<const vk::ImageMemoryBarrier>());
 	}
 
-	if (!this->copyCommands.empty())
+	if (!this->bufferTransferCommands.empty())
 	{
-		for (const std::function<void()> &copyCommand : this->copyCommands)
+		vk::PipelineStageFlags dstStageFlags;
+		std::vector<vk::BufferMemoryBarrier> postBufferTransferMemoryBarriers;
+		postBufferTransferMemoryBarriers.reserve(this->bufferTransferCommands.size());
+
+		for (const VulkanBufferTransferCommand &command : this->bufferTransferCommands)
 		{
-			copyCommand();
+			command.transferFunc();
+
+			dstStageFlags |= command.dstStageFlags;
+
+			vk::BufferMemoryBarrier bufferMemoryBarrier;
+			bufferMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+			bufferMemoryBarrier.dstAccessMask = command.dstAccessMask;
+			bufferMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			bufferMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			bufferMemoryBarrier.buffer = command.buffer;
+			bufferMemoryBarrier.offset = command.byteOffset;
+			bufferMemoryBarrier.size = command.byteCount;
+			postBufferTransferMemoryBarriers.emplace_back(std::move(bufferMemoryBarrier));
 		}
-
-		this->copyCommands.clear();
-
-		vk::MemoryBarrier copyMemoryBarrier;
-		copyMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
-		copyMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eIndexRead | vk::AccessFlagBits::eVertexAttributeRead | vk::AccessFlagBits::eShaderRead;
 
 		this->commandBuffer.pipelineBarrier(
 			vk::PipelineStageFlagBits::eTransfer,
-			vk::PipelineStageFlagBits::eVertexInput | vk::PipelineStageFlagBits::eVertexShader | vk::PipelineStageFlagBits::eFragmentShader | vk::PipelineStageFlagBits::eComputeShader,
+			dstStageFlags,
 			vk::DependencyFlags(),
-			copyMemoryBarrier,
-			vk::ArrayProxy<vk::BufferMemoryBarrier>(),
+			vk::ArrayProxy<vk::MemoryBarrier>(),
+			postBufferTransferMemoryBarriers,
 			vk::ArrayProxy<vk::ImageMemoryBarrier>());
+
+		this->bufferTransferCommands.clear();
+	}
+
+	if (!this->imageTransferCommands.empty())
+	{
+		// Allow multiple transfers to the same image but not duplicate barriers due to layout validation.
+		std::unordered_set<VkImage> queuedPreTransferBarrierImages;
+		std::vector<vk::ImageMemoryBarrier> preImageTransferMemoryBarriers;
+		preImageTransferMemoryBarriers.reserve(this->imageTransferCommands.size());
+
+		for (const VulkanImageTransferCommand &command : this->imageTransferCommands)
+		{
+			if (!queuedPreTransferBarrierImages.contains(command.image))
+			{
+				vk::ImageMemoryBarrier imageMemoryBarrier;
+				imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
+				imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+				imageMemoryBarrier.oldLayout = vk::ImageLayout::eUndefined;
+				imageMemoryBarrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+				imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				imageMemoryBarrier.image = command.image;
+				imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+				imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+				imageMemoryBarrier.subresourceRange.levelCount = 1;
+				imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+				imageMemoryBarrier.subresourceRange.layerCount = 1;
+				preImageTransferMemoryBarriers.emplace_back(std::move(imageMemoryBarrier));
+
+				queuedPreTransferBarrierImages.emplace(command.image);
+			}
+		}
+
+		this->commandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTopOfPipe,
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::DependencyFlags(),
+			vk::ArrayProxy<vk::MemoryBarrier>(),
+			vk::ArrayProxy<vk::BufferMemoryBarrier>(),
+			preImageTransferMemoryBarriers);
+
+		std::unordered_set<VkImage> queuedPostTransferBarrierImages;
+		std::vector<vk::ImageMemoryBarrier> postImageTransferMemoryBarriers;
+		postImageTransferMemoryBarriers.reserve(this->imageTransferCommands.size());
+
+		for (const VulkanImageTransferCommand &command : this->imageTransferCommands)
+		{
+			command.transferFunc();
+
+			if (!queuedPostTransferBarrierImages.contains(command.image))
+			{
+				vk::ImageMemoryBarrier imageMemoryBarrier;
+				imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+				imageMemoryBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+				imageMemoryBarrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+				imageMemoryBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				imageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				imageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+				imageMemoryBarrier.image = command.image;
+				imageMemoryBarrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+				imageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+				imageMemoryBarrier.subresourceRange.levelCount = 1;
+				imageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+				imageMemoryBarrier.subresourceRange.layerCount = 1;
+				postImageTransferMemoryBarriers.emplace_back(std::move(imageMemoryBarrier));
+
+				queuedPostTransferBarrierImages.emplace(command.image);
+			}
+		}
+
+		this->commandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			vk::DependencyFlags(),
+			vk::ArrayProxy<vk::MemoryBarrier>(),
+			vk::ArrayProxy<vk::BufferMemoryBarrier>(),
+			postImageTransferMemoryBarriers);
+
+		this->imageTransferCommands.clear();
 	}
 
 	if (anySceneDrawCalls)

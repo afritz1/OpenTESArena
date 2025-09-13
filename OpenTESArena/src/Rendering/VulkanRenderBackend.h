@@ -252,7 +252,27 @@ struct VulkanPipeline
 	vk::Pipeline pipeline;
 };
 
-using VulkanPendingCommands = std::vector<std::function<void()>>;
+struct VulkanBufferTransferCommand
+{
+	vk::Buffer buffer; // For memory barrier.
+	vk::PipelineStageFlags dstStageFlags;
+	vk::AccessFlags dstAccessMask;
+	int byteOffset;
+	int byteCount;
+	std::function<void()> transferFunc;
+
+	VulkanBufferTransferCommand();
+};
+
+struct VulkanImageTransferCommand
+{
+	vk::Image image; // For memory barrier.
+	std::function<void()> transferFunc; // Expects pre- and post-layout barriers.
+};
+
+using VulkanBufferTransferCommands = std::vector<VulkanBufferTransferCommand>;
+using VulkanImageTransferCommands = std::vector<VulkanImageTransferCommand>;
+using VulkanCommands = std::vector<std::function<void()>>;
 
 class VulkanRenderBackend final : public RenderBackend
 {
@@ -291,8 +311,9 @@ private:
 
 	vk::CommandPool commandPool;
 	vk::CommandBuffer commandBuffer;
-	VulkanPendingCommands copyCommands;
-	VulkanPendingCommands freeCommands;
+	VulkanBufferTransferCommands bufferTransferCommands;
+	VulkanImageTransferCommands imageTransferCommands;
+	VulkanCommands freeCommands;
 
 	Buffer<VulkanVertexShader> vertexShaders;
 	Buffer<VulkanFragmentShader> fragmentShaders;
