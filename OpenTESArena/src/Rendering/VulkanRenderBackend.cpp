@@ -2439,7 +2439,7 @@ VulkanTexture::VulkanTexture()
 	this->bytesPerTexel = 0;
 }
 
-void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
+void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes)
 {
 	DebugAssert(width > 0);
 	DebugAssert(height > 0);
@@ -2449,7 +2449,6 @@ void VulkanTexture::init(int width, int height, int bytesPerTexel, vk::Image ima
 	this->bytesPerTexel = bytesPerTexel;
 	this->image = image;
 	this->imageView = imageView;
-	this->sampler = sampler;
 	this->stagingBuffer = stagingBuffer;
 	this->stagingHostMappedBytes = stagingHostMappedBytes;
 }
@@ -2462,12 +2461,6 @@ void VulkanTexture::freeAllocations(vk::Device device)
 	{
 		device.destroyBuffer(this->stagingBuffer);
 		this->stagingBuffer = nullptr;
-	}
-
-	if (this->sampler)
-	{
-		device.destroySampler(this->sampler);
-		this->sampler = nullptr;
 	}
 
 	if (this->imageView)
@@ -3346,6 +3339,12 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
+	if (!TryCreateSampler(this->device, &this->textureSampler))
+	{
+		DebugLogError("Couldn't create texture sampler.");
+		return false;
+	}
+
 	if (!TryCreateSemaphore(this->device, &this->imageIsAvailableSemaphore))
 	{
 		DebugLogError("Couldn't create image-is-available semaphore.");
@@ -3753,6 +3752,12 @@ void VulkanRenderBackend::shutdown()
 		{
 			this->device.destroySemaphore(this->imageIsAvailableSemaphore);
 			this->imageIsAvailableSemaphore = nullptr;
+		}
+
+		if (this->textureSampler)
+		{
+			this->device.destroySampler(this->textureSampler);
+			this->textureSampler = nullptr;
 		}
 
 		if (this->conversionPipeline)
@@ -4934,23 +4939,11 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 		return -1;
 	}
 
-	vk::Sampler sampler;
-	if (!TryCreateSampler(this->device, &sampler))
-	{
-		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
-		this->device.destroyImageView(imageView);
-		this->objectTextureHeapManagerDeviceLocal.freeImageMapping(image);
-		this->device.destroyImage(image);
-		this->objectTexturePool.free(textureID);
-		return -1;
-	}
-
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, ObjectTextureStagingUsageFlags, this->graphicsQueueFamilyIndex, this->objectTextureHeapManagerStaging, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create buffer and map memory for object texture with dims %dx%d.", width, height);
-		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
 		this->objectTextureHeapManagerDeviceLocal.freeImageMapping(image);
 		this->device.destroyImage(image);
@@ -4959,7 +4952,7 @@ ObjectTextureID VulkanRenderBackend::createObjectTexture(int width, int height, 
 	}
 
 	VulkanTexture &texture = this->objectTexturePool.get(textureID);
-	texture.init(width, height, bytesPerTexel, image, imageView, sampler, stagingBuffer, stagingHostMappedBytes);
+	texture.init(width, height, bytesPerTexel, image, imageView, stagingBuffer, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -4975,11 +4968,6 @@ void VulkanRenderBackend::freeObjectTexture(ObjectTextureID id)
 			{
 				this->objectTextureHeapManagerStaging.freeBufferMapping(texture->stagingBuffer);
 				this->device.destroyBuffer(texture->stagingBuffer);
-			}
-
-			if (texture->sampler)
-			{
-				this->device.destroySampler(texture->sampler);
 			}
 
 			if (texture->imageView)
@@ -5085,23 +5073,11 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 		return -1;
 	}
 
-	vk::Sampler sampler;
-	if (!TryCreateSampler(this->device, &sampler))
-	{
-		DebugLogErrorFormat("Couldn't create sampler for image with dims %dx%d.", width, height);
-		this->device.destroyImageView(imageView);
-		this->uiTextureHeapManagerDeviceLocal.freeImageMapping(image);
-		this->device.destroyImage(image);
-		this->uiTexturePool.free(textureID);
-		return -1;
-	}
-
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 	if (!TryCreateBufferAndBindWithHeap(this->device, byteCount, UiTextureStagingUsageFlags, this->graphicsQueueFamilyIndex, this->uiTextureHeapManagerStaging, &stagingBuffer, &stagingHostMappedBytes))
 	{
 		DebugLogErrorFormat("Couldn't create buffer and bind memory for UI texture with dims %dx%d.", width, height);
-		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
 		this->uiTextureHeapManagerDeviceLocal.freeImageMapping(image);
 		this->device.destroyImage(image);
@@ -5114,7 +5090,6 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 	{
 		DebugLogErrorFormat("Couldn't create descriptor set for UI texture with dims %dx%d.", width, height);
 		this->device.destroyBuffer(stagingBuffer);
-		this->device.destroySampler(sampler);
 		this->device.destroyImageView(imageView);
 		this->uiTextureHeapManagerDeviceLocal.freeImageMapping(image);
 		this->device.destroyImage(image);
@@ -5122,11 +5097,11 @@ UiTextureID VulkanRenderBackend::createUiTexture(int width, int height)
 		return -1;
 	}
 
-	UpdateUiMaterialDescriptorSet(this->device, descriptorSet, imageView, sampler);
+	UpdateUiMaterialDescriptorSet(this->device, descriptorSet, imageView, this->textureSampler);
 	this->uiTextureDescriptorSets.emplace(textureID, descriptorSet);
 
 	VulkanTexture &texture = this->uiTexturePool.get(textureID);
-	texture.init(width, height, bytesPerTexel, image, imageView, sampler, stagingBuffer, stagingHostMappedBytes);
+	texture.init(width, height, bytesPerTexel, image, imageView, stagingBuffer, stagingHostMappedBytes);
 
 	return textureID;
 }
@@ -5142,11 +5117,6 @@ void VulkanRenderBackend::freeUiTexture(UiTextureID id)
 			{
 				this->uiTextureHeapManagerStaging.freeBufferMapping(texture->stagingBuffer);
 				this->device.destroyBuffer(texture->stagingBuffer);
-			}
-
-			if (texture->sampler)
-			{
-				this->device.destroySampler(texture->sampler);
 			}
 
 			if (texture->imageView)
@@ -5289,7 +5259,7 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 		lightingModeBuffer = this->perMeshLightMode.deviceLocalBuffer;
 	}
 
-	UpdateMaterialDescriptorSet(this->device, descriptorSet, texture0ImageView, texture1ImageView, texture0.sampler, lightingModeBuffer);
+	UpdateMaterialDescriptorSet(this->device, descriptorSet, texture0ImageView, texture1ImageView, this->textureSampler, lightingModeBuffer);
 
 	VulkanMaterial &material = this->materialPool.get(materialID);
 	material.init(pipeline.pipeline, pipelineLayout, descriptorSet);
@@ -5478,8 +5448,8 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		for (int i = 0; i < VulkanRenderBackend::MAX_SCENE_FRAMEBUFFERS; i++)
 		{
 			UpdateGlobalDescriptorSet(this->device, this->globalDescriptorSets[i], this->camera.stagingBuffer, this->framebufferDims.stagingBuffer, this->ambientLight.stagingBuffer,
-				this->screenSpaceAnim.stagingBuffer, this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler, lightTableTexture.imageView,
-				lightTableTexture.sampler, skyBgTexture.imageView, skyBgTexture.sampler, this->horizonMirror.stagingBuffer);
+				this->screenSpaceAnim.stagingBuffer, this->colorImageViews[i], this->colorSampler, paletteTexture->imageView, this->textureSampler, lightTableTexture.imageView,
+				this->textureSampler, skyBgTexture.imageView, this->textureSampler, this->horizonMirror.stagingBuffer);
 		}
 
 		// Update visible lights.
@@ -5490,7 +5460,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		const VulkanTexture &ditherTexture = this->objectTexturePool.get(frameSettings.ditherTextureID);
 		UpdateLightDescriptorSet(this->device, this->lightDescriptorSet, this->optimizedVisibleLights.deviceLocalBuffer, this->lightBins.deviceLocalBuffer,
-			this->lightBinLightCounts.deviceLocalBuffer, this->lightBinDims.stagingBuffer, ditherTexture.imageView, ditherTexture.sampler);
+			this->lightBinLightCounts.deviceLocalBuffer, this->lightBinDims.stagingBuffer, ditherTexture.imageView, this->textureSampler);
 
 		UpdateLightBinningDescriptorSet(this->device, this->lightBinningDescriptorSet, this->camera.stagingBuffer, this->framebufferDims.stagingBuffer, this->optimizedVisibleLights.deviceLocalBuffer,
 			this->lightBins.deviceLocalBuffer, this->lightBinLightCounts.deviceLocalBuffer, this->lightBinDims.stagingBuffer);
@@ -5919,7 +5889,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		this->commandBuffer.bindPipeline(graphicsPipelineBindPoint, this->conversionPipeline);
 
-		UpdateConversionDescriptorSet(this->device, this->conversionDescriptorSet, this->colorImageViews[targetFramebufferIndex], this->colorSampler, paletteTexture->imageView, paletteTexture->sampler);
+		UpdateConversionDescriptorSet(this->device, this->conversionDescriptorSet, this->colorImageViews[targetFramebufferIndex], this->colorSampler, paletteTexture->imageView, this->textureSampler);
 		this->commandBuffer.bindDescriptorSets(graphicsPipelineBindPoint, uiPipelineLayout, ConversionDescriptorSetLayoutIndex, this->conversionDescriptorSet, vk::ArrayProxy<const uint32_t>());
 
 		// Fullscreen quad for scene view.

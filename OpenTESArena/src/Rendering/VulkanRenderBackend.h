@@ -88,13 +88,12 @@ struct VulkanTexture
 	int bytesPerTexel;
 	vk::Image image;
 	vk::ImageView imageView;
-	vk::Sampler sampler;
 	vk::Buffer stagingBuffer;
 	Span<std::byte> stagingHostMappedBytes;
 
 	VulkanTexture();
 
-	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Sampler sampler, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
+	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 
 	void freeAllocations(vk::Device device);
 };
@@ -321,6 +320,8 @@ private:
 	Buffer<VulkanPipeline> graphicsPipelines;
 	vk::Pipeline lightBinningPipeline;
 	vk::Pipeline conversionPipeline;
+
+	vk::Sampler textureSampler;
 
 	vk::Semaphore imageIsAvailableSemaphore;
 	vk::Semaphore renderIsFinishedSemaphore;
