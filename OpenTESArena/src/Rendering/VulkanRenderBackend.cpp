@@ -4901,7 +4901,7 @@ void VulkanRenderBackend::unlockUniformBufferIndex(UniformBufferID id, int index
 		vk::Buffer deviceLocalBuffer = uniformBuffer.deviceLocalBuffer;
 		vk::Buffer stagingBuffer = uniformBuffer.stagingBuffer;
 		const VulkanBufferUniformInfo &uniformInfo = uniformBuffer.uniform;
-		const int byteOffset = index * uniformInfo.bytesPerElement;
+		const int byteOffset = index * uniformInfo.bytesPerStride;
 		const int byteCount = uniformInfo.bytesPerElement;
 		CopyBufferToBuffer(stagingBuffer, deviceLocalBuffer, byteOffset, byteCount, this->commandBuffer);
 	};
