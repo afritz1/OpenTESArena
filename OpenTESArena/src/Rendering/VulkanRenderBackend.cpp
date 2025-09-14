@@ -4386,43 +4386,12 @@ void VulkanRenderBackend::handleRenderTargetsReset(int windowWidth, int windowHe
 
 RendererProfilerData2D VulkanRenderBackend::getProfilerData2D() const
 {
-	RendererProfilerData2D profilerData;
-	profilerData.drawCallCount = 0;
-	profilerData.uiTextureCount = static_cast<int>(this->uiTexturePool.values.size());
-	for (const VulkanTexture &texture : this->uiTexturePool.values)
-	{
-		// Don't worry about staging buffers, we mostly care about in VRAM for profiling.
-		const int estimatedDeviceLocalByteCount = texture.width * texture.height * texture.bytesPerTexel;
-		profilerData.uiTextureByteCount += estimatedDeviceLocalByteCount;
-	}
-
-	return profilerData;
+	return this->profilerData2D;
 }
 
 RendererProfilerData3D VulkanRenderBackend::getProfilerData3D() const
 {
-	// @todo maybe revise this listing of data to better suit a general render backend
-	// - # of vertex buffers... index buffers... object textures... ui textures... materials...
-
-	RendererProfilerData3D profilerData;
-	profilerData.width = this->internalExtent.width;
-	profilerData.height = this->internalExtent.height;
-	profilerData.threadCount = 1;
-	profilerData.drawCallCount = 0;
-	profilerData.presentedTriangleCount = 0;
-	profilerData.objectTextureCount = static_cast<int>(this->objectTexturePool.values.size());
-	for (const VulkanTexture &texture : this->objectTexturePool.values)
-	{
-		profilerData.objectTextureByteCount += texture.width * texture.height * texture.bytesPerTexel;
-	}
-
-	profilerData.materialCount = static_cast<int>(this->materialPool.values.size());
-	profilerData.totalLightCount = 0;
-	profilerData.totalCoverageTests = 0;
-	profilerData.totalDepthTests = 0;
-	profilerData.totalColorWrites = 0;
-
-	return profilerData;
+	return this->profilerData3D;
 }
 
 Surface VulkanRenderBackend::getScreenshot() const
@@ -5412,6 +5381,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	const int lightBinHeight = GetLightBinHeight(this->internalExtent.height);
 	const int lightBinCountX = GetLightBinCountX(this->internalExtent.width, lightBinWidth);
 	const int lightBinCountY = GetLightBinCountY(this->internalExtent.height, lightBinHeight);
+	const int clampedVisibleLightCount = std::min(frameSettings.visibleLightCount, MAX_LIGHTS_IN_FRUSTUM);
 
 	const bool anySceneDrawCalls = renderCommandList.entryCount > 0;
 	if (anySceneDrawCalls)
@@ -5477,7 +5447,6 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		}
 
 		// Update visible lights.
-		const int clampedVisibleLightCount = std::min(frameSettings.visibleLightCount, MAX_LIGHTS_IN_FRUSTUM);
 		const VulkanBuffer &inputVisibleLightsBuffer = this->uniformBufferPool.get(frameSettings.visibleLightsBufferID);
 		PopulateLightGlobals(inputVisibleLightsBuffer, clampedVisibleLightCount, camera, this->internalExtent.width, this->internalExtent.height,
 			this->optimizedVisibleLights, this->lightBins, this->lightBinLightCounts);
@@ -5756,6 +5725,9 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	int targetFramebufferIndex = 0; // Ping-pong depending on current scene render pass.
 	int inputFramebufferIndex = targetFramebufferIndex ^ 1;
 
+	int totalSceneDrawCallCount = 0;
+	int totalPresentedTriangleCount = 0;
+
 	if (anySceneDrawCalls)
 	{
 		vk::Viewport sceneViewport;
@@ -5952,7 +5924,11 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 				constexpr uint32_t meshInstanceCount = 1;
 				this->commandBuffer.drawIndexed(currentIndexBufferIndexCount, meshInstanceCount, 0, 0, 0);
+
+				totalPresentedTriangleCount += currentIndexBufferIndexCount / MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 			}
+
+			totalSceneDrawCallCount += renderCommandList.entries[i].getCount();
 		}
 
 		this->commandBuffer.endRenderPass();
@@ -6181,6 +6157,36 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 	}
 
 	this->prevAcquiredSwapchainImageIndex = acquiredSwapchainImageIndex;
+
+	this->profilerData2D.drawCallCount = 0;
+	this->profilerData2D.uiTextureCount = static_cast<int>(this->uiTexturePool.values.size());
+	this->profilerData2D.uiTextureByteCount = 0;
+	for (const VulkanTexture &texture : this->uiTexturePool.values)
+	{
+		// Don't worry about staging buffers, we mostly care about in VRAM for profiling.
+		const int estimatedDeviceLocalByteCount = texture.width * texture.height * texture.bytesPerTexel;
+		this->profilerData2D.uiTextureByteCount += estimatedDeviceLocalByteCount;
+	}
+
+	// @todo maybe revise this listing of data to better suit a general render backend
+	// - # of vertex buffers... index buffers... object textures... ui textures... materials...
+	this->profilerData3D.width = this->internalExtent.width;
+	this->profilerData3D.height = this->internalExtent.height;
+	this->profilerData3D.threadCount = 1;
+	this->profilerData3D.drawCallCount = totalSceneDrawCallCount;
+	this->profilerData3D.presentedTriangleCount = totalPresentedTriangleCount;
+	this->profilerData3D.objectTextureCount = static_cast<int>(this->objectTexturePool.values.size());
+	this->profilerData3D.objectTextureByteCount = 0;
+	for (const VulkanTexture &texture : this->objectTexturePool.values)
+	{
+		this->profilerData3D.objectTextureByteCount += texture.width * texture.height * texture.bytesPerTexel;
+	}
+
+	this->profilerData3D.materialCount = static_cast<int>(this->materialPool.values.size());
+	this->profilerData3D.totalLightCount = clampedVisibleLightCount;
+	this->profilerData3D.totalCoverageTests = 0;
+	this->profilerData3D.totalDepthTests = 0;
+	this->profilerData3D.totalColorWrites = 0;
 }
 
 #endif

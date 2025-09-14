@@ -384,6 +384,9 @@ private:
 	VertexAttributeBufferID uiVertexAttributeBufferID;
 	vk::Image dummyImage;
 	vk::ImageView dummyImageView;
+
+	RendererProfilerData2D profilerData2D;
+	RendererProfilerData3D profilerData3D;
 public:
 	bool initContext(const RenderContextSettings &contextSettings) override;
 	bool initRendering(const RenderInitSettings &initSettings) override;
