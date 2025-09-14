@@ -5594,7 +5594,8 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 
 		for (const VulkanImageTransferCommand &command : this->imageTransferCommands)
 		{
-			if (!queuedPreTransferBarrierImages.contains(command.image))
+			VkImage imagePtr = static_cast<VkImage>(command.image);
+			if (!queuedPreTransferBarrierImages.contains(imagePtr))
 			{
 				vk::ImageMemoryBarrier imageMemoryBarrier;
 				imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eNone;
@@ -5611,7 +5612,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				imageMemoryBarrier.subresourceRange.layerCount = 1;
 				preImageTransferMemoryBarriers.emplace_back(std::move(imageMemoryBarrier));
 
-				queuedPreTransferBarrierImages.emplace(command.image);
+				queuedPreTransferBarrierImages.emplace(imagePtr);
 			}
 		}
 
@@ -5631,7 +5632,8 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		{
 			command.transferFunc();
 
-			if (!queuedPostTransferBarrierImages.contains(command.image))
+			VkImage imagePtr = static_cast<VkImage>(command.image);
+			if (!queuedPostTransferBarrierImages.contains(imagePtr))
 			{
 				vk::ImageMemoryBarrier imageMemoryBarrier;
 				imageMemoryBarrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
@@ -5648,7 +5650,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				imageMemoryBarrier.subresourceRange.layerCount = 1;
 				postImageTransferMemoryBarriers.emplace_back(std::move(imageMemoryBarrier));
 
-				queuedPostTransferBarrierImages.emplace(command.image);
+				queuedPostTransferBarrierImages.emplace(imagePtr);
 			}
 		}
 
