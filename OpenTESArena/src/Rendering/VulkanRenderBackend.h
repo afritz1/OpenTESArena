@@ -254,20 +254,28 @@ struct VulkanPipeline
 
 struct VulkanBufferTransferCommand
 {
-	vk::Buffer buffer; // For memory barrier.
+	vk::Buffer srcBuffer;
+	vk::Buffer dstBuffer;
 	vk::PipelineStageFlags dstStageFlags;
 	vk::AccessFlags dstAccessMask;
 	int byteOffset;
 	int byteCount;
-	std::function<void()> transferFunc;
 
 	VulkanBufferTransferCommand();
+
+	void init(vk::Buffer srcBuffer, vk::Buffer dstBuffer, vk::PipelineStageFlags dstStageFlags, vk::AccessFlags dstAccessMask, int byteOffset, int byteCount);
 };
 
 struct VulkanImageTransferCommand
 {
-	vk::Image image; // For memory barrier.
-	std::function<void()> transferFunc; // Expects pre- and post-layout barriers.
+	vk::Buffer buffer;
+	vk::Image image;
+	int width;
+	int height;
+
+	VulkanImageTransferCommand();
+
+	void init(vk::Buffer buffer, vk::Image image, int width, int height);
 };
 
 using VulkanBufferTransferCommands = std::vector<VulkanBufferTransferCommand>;
