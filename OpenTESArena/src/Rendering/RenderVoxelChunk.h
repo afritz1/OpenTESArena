@@ -8,6 +8,7 @@
 #include "RenderMeshInstance.h"
 #include "RenderMeshUtils.h"
 #include "RenderShaderUtils.h"
+#include "../Math/Matrix4.h"
 #include "../Voxels/VoxelChunk.h"
 #include "../Voxels/VoxelFaceCombineChunk.h"
 #include "../Voxels/VoxelUtils.h"
@@ -49,10 +50,27 @@ struct RenderVoxelDrawCallHeap
 	void clear();
 };
 
+// One per uniform buffer.
+struct RenderVoxelTransformHeap
+{
+	static constexpr int MAX_TRANSFORMS = 8192;
+
+	UniformBufferID uniformBufferID;
+	Matrix4d modelMatrices[MAX_TRANSFORMS]; // Copied into uniform buffer every frame.
+	std::vector<int> freedMatrices;
+	int nextMatrix;
+
+	RenderVoxelTransformHeap();
+
+	int alloc();
+	void free(int transformIndex);
+	void clear();
+};
+
 struct RenderVoxelCombinedFaceDrawCallEntry
 {
 	RenderVoxelDrawCallRangeID rangeID; // One draw call.
-	UniformBufferID transformBufferID; // One transform buffer for this face.
+	int transformIndex; // Points into transform heap matrices.
 	VoxelInt3 min, max;
 
 	RenderVoxelCombinedFaceDrawCallEntry();
@@ -61,7 +79,8 @@ struct RenderVoxelCombinedFaceDrawCallEntry
 struct RenderVoxelNonCombinedTransformEntry
 {
 	VoxelInt3 voxel;
-	UniformBufferID transformBufferID;
+	UniformBufferID transformBufferID; // One model matrix.
+	// @todo transform index allocated from transform heap
 
 	RenderVoxelNonCombinedTransformEntry();
 };
@@ -69,7 +88,8 @@ struct RenderVoxelNonCombinedTransformEntry
 struct RenderVoxelDoorTransformsEntry
 {
 	VoxelInt3 voxel;
-	UniformBufferID transformBufferIDs[4]; // One per face.
+	UniformBufferID transformBufferID; // Four model matrices, one per face.
+	// @todo 4 transform indices allocated from transform heap (don't have to be sequential)
 
 	RenderVoxelDoorTransformsEntry();
 };
@@ -96,6 +116,8 @@ struct RenderVoxelChunk final : public Chunk
 
 	std::vector<RenderVoxelNonCombinedTransformEntry> nonCombinedTransformEntries; // One transform per non-combined voxel. Owned by this chunk.
 	std::vector<RenderVoxelDoorTransformsEntry> doorTransformEntries; // Transforms for door voxel, owned by this chunk.
+	
+	RenderVoxelTransformHeap transformHeap;
 
 	std::vector<RenderVoxelMaterialInstanceEntry> doorMaterialInstEntries;
 	std::vector<RenderVoxelMaterialInstanceEntry> fadeMaterialInstEntries;

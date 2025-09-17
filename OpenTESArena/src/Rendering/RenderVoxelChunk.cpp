@@ -84,7 +84,7 @@ RenderVoxelDrawCallRangeID RenderVoxelDrawCallHeap::alloc(int drawCallCount)
 	}
 
 	// Allocate from the end of the draw calls list if the freed list didn't have a suitable sequence.
-	if (drawCallRange.count == 0) 
+	if (drawCallRange.count == 0)
 	{
 		if ((this->nextDrawCall + drawCallCount) > MAX_DRAW_CALLS)
 		{
@@ -140,10 +140,58 @@ void RenderVoxelDrawCallHeap::clear()
 	this->drawCallRangesPool.clear();
 }
 
+RenderVoxelTransformHeap::RenderVoxelTransformHeap()
+{
+	this->uniformBufferID = -1;
+	this->nextMatrix = 0;
+}
+
+int RenderVoxelTransformHeap::alloc()
+{
+	int matrixIndex = -1;
+
+	if (!this->freedMatrices.empty())
+	{
+		matrixIndex = this->freedMatrices.back();
+		this->freedMatrices.pop_back();
+	}
+	else
+	{
+		if (this->nextMatrix < RenderVoxelTransformHeap::MAX_TRANSFORMS)
+		{
+			matrixIndex = this->nextMatrix;
+			this->nextMatrix++;
+		}
+		else
+		{
+			DebugLogError("Can't allocate any more matrices in transform heap.");
+		}
+	}
+
+	return matrixIndex;
+}
+
+void RenderVoxelTransformHeap::free(int transformIndex)
+{
+	DebugAssert(transformIndex >= 0);
+	DebugAssert(transformIndex < RenderVoxelTransformHeap::MAX_TRANSFORMS);
+
+	this->modelMatrices[transformIndex] = Matrix4d();
+	this->freedMatrices.emplace_back(transformIndex);
+}
+
+void RenderVoxelTransformHeap::clear()
+{
+	this->uniformBufferID = -1;
+	std::fill(std::begin(this->modelMatrices), std::end(this->modelMatrices), Matrix4d());
+	this->freedMatrices.clear();
+	this->nextMatrix = 0;
+}
+
 RenderVoxelCombinedFaceDrawCallEntry::RenderVoxelCombinedFaceDrawCallEntry()
 {
 	this->rangeID = -1;
-	this->transformBufferID = -1;
+	this->transformIndex = -1;
 }
 
 RenderVoxelNonCombinedTransformEntry::RenderVoxelNonCombinedTransformEntry()
@@ -153,7 +201,7 @@ RenderVoxelNonCombinedTransformEntry::RenderVoxelNonCombinedTransformEntry()
 
 RenderVoxelDoorTransformsEntry::RenderVoxelDoorTransformsEntry()
 {
-	std::fill(std::begin(this->transformBufferIDs), std::end(this->transformBufferIDs), -1);
+	this->transformBufferID = -1;
 }
 
 void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
@@ -161,7 +209,7 @@ void RenderVoxelChunk::init(const ChunkInt2 &position, int height)
 	Chunk::init(position, height);
 
 	this->meshInstMappings.emplace(VoxelChunk::AIR_SHAPE_DEF_ID, RenderVoxelChunk::AIR_MESH_INST_ID);
-	
+
 	this->drawCallRangeIDs.init(ChunkUtils::CHUNK_DIM, height, ChunkUtils::CHUNK_DIM);
 	this->drawCallRangeIDs.fill(-1);
 
@@ -225,16 +273,6 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 		meshInst.freeBuffers(renderer);
 	}
 
-	for (std::pair<const VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &pair : this->combinedFaceDrawCallEntries)
-	{
-		RenderVoxelCombinedFaceDrawCallEntry &drawCallEntry = pair.second;
-		if (drawCallEntry.transformBufferID >= 0)
-		{
-			renderer.freeUniformBuffer(drawCallEntry.transformBufferID);
-			drawCallEntry.transformBufferID = -1;
-		}
-	}
-
 	for (RenderVoxelNonCombinedTransformEntry &entry : this->nonCombinedTransformEntries)
 	{
 		renderer.freeUniformBuffer(entry.transformBufferID);
@@ -243,11 +281,14 @@ void RenderVoxelChunk::freeBuffers(Renderer &renderer)
 
 	for (RenderVoxelDoorTransformsEntry &entry : this->doorTransformEntries)
 	{
-		for (UniformBufferID &transformBufferID : entry.transformBufferIDs)
-		{
-			renderer.freeUniformBuffer(transformBufferID);
-			transformBufferID = -1;
-		}
+		renderer.freeUniformBuffer(entry.transformBufferID);
+		entry.transformBufferID = -1;
+	}
+
+	if (this->transformHeap.uniformBufferID >= 0)
+	{
+		renderer.freeUniformBuffer(this->transformHeap.uniformBufferID);
+		this->transformHeap.uniformBufferID = -1;
 	}
 
 	for (RenderVoxelMaterialInstanceEntry &entry : this->doorMaterialInstEntries)
@@ -275,4 +316,5 @@ void RenderVoxelChunk::clear()
 	this->fadeMaterialInstEntries.clear();
 	this->drawCallHeap.clear();
 	this->drawCallRangeIDs.clear();
+	this->transformHeap.clear();
 }
