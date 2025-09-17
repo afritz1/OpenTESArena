@@ -573,105 +573,12 @@ void RenderVoxelChunkManager::loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelCh
 	}
 }
 
-void RenderVoxelChunkManager::loadChunkNonCombinedTransforms(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, const VoxelFaceCombineChunk &faceCombineChunk,
-	double ceilingScale, Renderer &renderer)
-{
-	const int chunkHeight = voxelChunk.height;
-
-	std::vector<RenderVoxelNonCombinedTransformEntry> &nonCombinedTransformEntries = renderChunk.nonCombinedTransformEntries;
-	std::vector<RenderVoxelDoorTransformsEntry> &doorTransformsEntries = renderChunk.doorTransformEntries;
-
-	for (WEInt z = 0; z < Chunk::DEPTH; z++)
-	{
-		for (int y = 0; y < chunkHeight; y++)
-		{
-			for (SNInt x = 0; x < Chunk::WIDTH; x++)
-			{
-				const VoxelFacesEntry &facesEntry = faceCombineChunk.entries.get(x, y, z);
-				if (facesEntry.anyCombinedFaces())
-				{
-					continue;
-				}
-
-				const VoxelInt3 voxel(x, y, z);
-				const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, voxel, ceilingScale);
-
-				VoxelDoorDefID doorDefID = -1;
-				const bool isDoor = voxelChunk.tryGetDoorDefID(x, y, z, &doorDefID);
-
-				const VoxelShapeDefID shapeDefID = voxelChunk.shapeDefIDs.get(x, y, z);
-				DebugAssertIndex(voxelChunk.shapeDefs, shapeDefID);
-				const VoxelShapeDefinition &shapeDef = voxelChunk.shapeDefs[shapeDefID];
-				const bool isAir = shapeDef.mesh.isEmpty();
-				const bool allowsFaceCombining = shapeDef.allowsAdjacentFaceCombining;
-
-				if (isDoor)
-				{
-					// Door transform uniform buffers. These are separate because each voxel has a RenderTransform per door face.
-					const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
-					const ArenaDoorType doorType = doorDef.type;
-
-					const auto existingTransformIter = std::find_if(doorTransformsEntries.begin(), doorTransformsEntries.end(),
-						[voxel](const RenderVoxelDoorTransformsEntry &entry)
-					{
-						return entry.voxel == voxel;
-					});
-
-					DebugAssert(existingTransformIter == doorTransformsEntries.end());
-
-					const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(voxel.x, voxel.y, voxel.z, voxelChunk);
-
-					RenderVoxelDoorTransformsEntry doorTransformsEntry;
-					doorTransformsEntry.voxel = voxel;
-					doorTransformsEntry.transformBufferID = renderer.createUniformBufferMatrix4s(VoxelDoorUtils::FACE_COUNT);
-					if (doorTransformsEntry.transformBufferID < 0)
-					{
-						DebugLogErrorFormat("Couldn't create uniform buffer for door transforms at voxel (%s).", voxel.toString().c_str());
-						continue;
-					}
-
-					// Initialize to default appearance. Dirty door animations trigger an update.
-					const Matrix4d doorFaceModelMatrices[] =
-					{
-						MakeDoorFaceModelMatrix(doorType, 0, worldPosition, ceilingScale, doorAnimPercent),
-						MakeDoorFaceModelMatrix(doorType, 1, worldPosition, ceilingScale, doorAnimPercent),
-						MakeDoorFaceModelMatrix(doorType, 2, worldPosition, ceilingScale, doorAnimPercent),
-						MakeDoorFaceModelMatrix(doorType, 3, worldPosition, ceilingScale, doorAnimPercent)
-					};
-
-					renderer.populateUniformBufferMatrix4s(doorTransformsEntry.transformBufferID, doorFaceModelMatrices);
-
-					doorTransformsEntries.emplace_back(std::move(doorTransformsEntry));
-				}
-				else if (!isAir && !allowsFaceCombining)
-				{
-					const UniformBufferID transformBufferID = renderer.createUniformBufferMatrix4s(1);
-					if (transformBufferID < 0)
-					{
-						DebugLogErrorFormat("Couldn't create uniform buffer for transform at voxel (%s).", voxel.toString().c_str());
-						continue;
-					}
-
-					const Matrix4d modelMatrix = Matrix4d::translation(worldPosition.x, worldPosition.y, worldPosition.z);
-					renderer.populateUniformBufferMatrix4s(transformBufferID, Span<const Matrix4d>(&modelMatrix, 1));
-
-					RenderVoxelNonCombinedTransformEntry transformEntry;
-					transformEntry.voxel = voxel;
-					transformEntry.transformBufferID = transformBufferID;
-					nonCombinedTransformEntries.emplace_back(std::move(transformEntry));
-				}
-			}
-		}
-	}
-}
-
 void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions,
 	const VoxelChunk &voxelChunk, const VoxelFaceCombineChunk &faceCombineChunk, const VoxelChunkManager &voxelChunkManager,
 	double ceilingScale, double chasmAnimPercent, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = renderChunk.position;
 	std::unordered_map<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &combinedFaceDrawCallEntries = renderChunk.combinedFaceDrawCallEntries;
-	RenderVoxelDrawCallHeap &chunkDrawCallHeap = renderChunk.drawCallHeap;
 	const UniformBufferID transformBufferID = renderChunk.transformHeap.uniformBufferID;
 
 	// @todo the VoxelFaceCombineResultID should've been freed from this pool when the floor became a chasm, it's trying to use the old Top face of the floor for the chasm mesh indicesList lookup
@@ -702,7 +609,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			static_cast<double>(worldMinVoxel.y) * ceilingScale,
 			static_cast<WEDouble>(worldMinVoxel.z));
 
-		Matrix4d &modelMatrix = renderChunk.transformHeap.modelMatrices[transformIndex];
+		Matrix4d &modelMatrix = renderChunk.transformHeap.pool.values[transformIndex];
 		modelMatrix = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
 
 		const VoxelTraitsDefID traitsDefID = voxelChunk.traitsDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
@@ -924,18 +831,12 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			}
 		}
 
-		constexpr int drawCallCount = 1;
-		const RenderVoxelDrawCallRangeID drawCallRangeID = chunkDrawCallHeap.alloc(drawCallCount);
-
 		RenderVoxelCombinedFaceDrawCallEntry combinedFaceDrawCallEntry;
-		combinedFaceDrawCallEntry.rangeID = drawCallRangeID;
-		combinedFaceDrawCallEntry.transformIndex = transformIndex;
 		combinedFaceDrawCallEntry.min = minVoxel;
 		combinedFaceDrawCallEntry.max = maxVoxel;
-		combinedFaceDrawCallEntries.emplace(faceCombineResultID, std::move(combinedFaceDrawCallEntry));
+		combinedFaceDrawCallEntry.transformIndex = transformIndex;
 
-		Span<RenderDrawCall> drawCalls = chunkDrawCallHeap.get(drawCallRangeID);
-		RenderDrawCall &drawCall = drawCalls[0];
+		RenderDrawCall &drawCall = combinedFaceDrawCallEntry.drawCall;
 		drawCall.transformBufferID = transformBufferID;
 		drawCall.transformIndex = transformIndex;
 		drawCall.positionBufferID = combinedFaceVertexBuffer->positionBufferID;
@@ -945,17 +846,18 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		drawCall.materialID = materialID;
 		drawCall.materialInstID = materialInstID;
 		drawCall.multipassType = RenderMultipassType::None;
+
+		combinedFaceDrawCallEntries.emplace(faceCombineResultID, std::move(combinedFaceDrawCallEntry));
 	}
 }
 
 void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions,
 	const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer)
 {
-	// Diagonals are treated separately since they can't use the face combining algorithm.
 	const ChunkInt2 chunkPos = renderChunk.position;
-	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
 	// Regenerate all draw calls in the given dirty voxels.
+	// Diagonals are treated separately since they can't use the face combining algorithm.
 	for (const VoxelInt3 voxel : dirtyVoxelPositions)
 	{
 		const VoxelTraitsDefID voxelTraitsDefID = voxelChunk.traitsDefIDs.get(voxel.x, voxel.y, voxel.z);
@@ -964,8 +866,6 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		{
 			continue;
 		}
-
-		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
 
 		const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const VoxelTextureDefID voxelTextureDefID = voxelChunk.textureDefIDs.get(voxel.x, voxel.y, voxel.z);
@@ -990,18 +890,39 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 			isFading = !fadeAnimInst->isDoneFading();
 		}
 
-		Span<const RenderVoxelNonCombinedTransformEntry> nonCombinedTransformEntries = renderChunk.nonCombinedTransformEntries;
-		const auto transformIter = std::find_if(nonCombinedTransformEntries.begin(), nonCombinedTransformEntries.end(),
-			[voxel](const RenderVoxelNonCombinedTransformEntry &entry)
+		Span<RenderVoxelNonCombinedDrawCallEntry> nonCombinedDrawCallEntries = renderChunk.nonCombinedDrawCallEntries;
+		int drawCallIndex = nonCombinedDrawCallEntries.findIndex(
+			[voxel](const RenderVoxelNonCombinedDrawCallEntry &entry)
 		{
 			return entry.voxel == voxel;
 		});
 
-		DebugAssert(transformIter != nonCombinedTransformEntries.end());
+		if (drawCallIndex < 0)
+		{
+			const UniformBufferID transformBufferID = renderer.createUniformBufferMatrix4s(1);
+			if (transformBufferID < 0)
+			{
+				DebugLogErrorFormat("Couldn't create uniform buffer for transform at voxel (%s).", voxel.toString().c_str());
+				continue;
+			}
+
+			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(chunkPos, voxel, ceilingScale);
+			const Matrix4d modelMatrix = Matrix4d::translation(worldPosition.x, worldPosition.y, worldPosition.z);
+			renderer.populateUniformBufferMatrix4s(transformBufferID, Span<const Matrix4d>(&modelMatrix, 1));
+
+			RenderVoxelNonCombinedDrawCallEntry newDrawCallEntry;
+			newDrawCallEntry.voxel = voxel;
+			newDrawCallEntry.transformBufferID = transformBufferID;
+
+			drawCallIndex = static_cast<int>(renderChunk.nonCombinedDrawCallEntries.size());
+			renderChunk.nonCombinedDrawCallEntries.emplace_back(std::move(newDrawCallEntry));
+		}
+
+		RenderVoxelNonCombinedDrawCallEntry &drawCallEntry = renderChunk.nonCombinedDrawCallEntries[drawCallIndex];
 
 		// Populate various init infos to be used for generating draw calls.
 		DrawCallTransformInitInfo transformInitInfo;
-		transformInitInfo.id = transformIter->transformBufferID;
+		transformInitInfo.id = drawCallEntry.transformBufferID;
 		transformInitInfo.index = 0;
 
 		DrawCallMeshInitInfo meshInitInfo;
@@ -1083,11 +1004,7 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 			}
 		}
 
-		DebugAssert(renderChunk.drawCallRangeIDs.get(voxel.x, voxel.y, voxel.z) == -1);
-		const RenderVoxelDrawCallRangeID drawCallRangeID = drawCallHeap.alloc(1);
-		renderChunk.drawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, drawCallRangeID);
-
-		RenderDrawCall &drawCall = drawCallHeap.get(drawCallRangeID)[0];
+		RenderDrawCall &drawCall = drawCallEntry.drawCall;
 		drawCall.transformBufferID = transformInitInfo.id;
 		drawCall.transformIndex = transformInitInfo.index;
 		drawCall.positionBufferID = meshInitInfo.positionBufferID;
@@ -1104,7 +1021,6 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 	const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = renderChunk.position;
-	RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
 	// Regenerate all draw calls in the given dirty voxels.
 	for (const VoxelInt3 voxel : dirtyVoxelPositions)
@@ -1115,9 +1031,9 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 			continue;
 		}
 
-		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
-
 		const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
+		const ArenaDoorType doorType = doorDef.type;
+
 		const VoxelShapeDefID voxelShapeDefID = voxelChunk.shapeDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const VoxelTextureDefID voxelTextureDefID = voxelChunk.textureDefIDs.get(voxel.x, voxel.y, voxel.z);
 		const VoxelShadingDefID voxelShadingDefID = voxelChunk.shadingDefIDs.get(voxel.x, voxel.y, voxel.z);
@@ -1144,19 +1060,48 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		constexpr int doorTransformCount = VoxelDoorUtils::FACE_COUNT;
 		DrawCallTransformInitInfo transformInitInfos[doorTransformCount];
 
-		Span<const RenderVoxelDoorTransformsEntry> doorTransformsEntries = renderChunk.doorTransformEntries;
-		const auto transformIter = std::find_if(doorTransformsEntries.begin(), doorTransformsEntries.end(),
-			[voxel](const RenderVoxelDoorTransformsEntry &entry)
+		Span<RenderVoxelDoorDrawCallsEntry> doorDrawCallsEntries = renderChunk.doorDrawCallsEntries;
+		int drawCallsEntryIndex = doorDrawCallsEntries.findIndex(
+			[voxel](const RenderVoxelDoorDrawCallsEntry &entry)
 		{
 			return entry.voxel == voxel;
 		});
 
-		DebugAssert(transformIter != doorTransformsEntries.end());
+		if (drawCallsEntryIndex < 0)
+		{
+			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, voxel, ceilingScale);
+			const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(voxel.x, voxel.y, voxel.z, voxelChunk);
+
+			RenderVoxelDoorDrawCallsEntry newDoorDrawCallsEntry;
+			newDoorDrawCallsEntry.voxel = voxel;
+			newDoorDrawCallsEntry.transformBufferID = renderer.createUniformBufferMatrix4s(VoxelDoorUtils::FACE_COUNT);
+			if (newDoorDrawCallsEntry.transformBufferID < 0)
+			{
+				DebugLogErrorFormat("Couldn't create uniform buffer for door transforms at voxel (%s).", voxel.toString().c_str());
+				continue;
+			}
+
+			// Initialize to default appearance. Dirty door animations trigger an update.
+			const Matrix4d doorFaceModelMatrices[] =
+			{
+				MakeDoorFaceModelMatrix(doorType, 0, worldPosition, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 1, worldPosition, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 2, worldPosition, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 3, worldPosition, ceilingScale, doorAnimPercent)
+			};
+
+			renderer.populateUniformBufferMatrix4s(newDoorDrawCallsEntry.transformBufferID, doorFaceModelMatrices);
+
+			drawCallsEntryIndex = static_cast<int>(renderChunk.doorDrawCallsEntries.size());
+			renderChunk.doorDrawCallsEntries.emplace_back(std::move(newDoorDrawCallsEntry));
+		}
+
+		RenderVoxelDoorDrawCallsEntry &doorDrawCallsEntry = renderChunk.doorDrawCallsEntries[drawCallsEntryIndex];
 
 		for (int i = 0; i < doorTransformCount; i++)
 		{
 			DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
-			doorTransformInitInfo.id = transformIter->transformBufferID;
+			doorTransformInitInfo.id = doorDrawCallsEntry.transformBufferID;
 			doorTransformInitInfo.index = i;
 		}
 
@@ -1175,7 +1120,6 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		shadingInitInfo.vertexShaderType = voxelShadingDef.vertexShaderType;
 		shadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[0];
 
-		const ArenaDoorType doorType = doorDef.type;
 		switch (doorType)
 		{
 		case ArenaDoorType::Swinging:
@@ -1287,11 +1231,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 			continue;
 		}
 
-		DebugAssert(renderChunk.drawCallRangeIDs.get(voxel.x, voxel.y, voxel.z) == -1);
-		const RenderVoxelDrawCallRangeID drawCallRangeID = drawCallHeap.alloc(drawCallCount);
-		renderChunk.drawCallRangeIDs.set(voxel.x, voxel.y, voxel.z, drawCallRangeID);
-		Span<RenderDrawCall> drawCalls = drawCallHeap.get(drawCallRangeID);
-
+		doorDrawCallsEntry.drawCallCount = drawCallCount;
 		DebugAssert(doorTransformCount == VoxelDoorUtils::FACE_COUNT);
 
 		int doorDrawCallWriteIndex = 0;
@@ -1304,7 +1244,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 
 			const DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
 
-			RenderDrawCall &doorDrawCall = drawCalls[doorDrawCallWriteIndex];
+			RenderDrawCall &doorDrawCall = doorDrawCallsEntry.drawCalls[doorDrawCallWriteIndex];
 			doorDrawCall.transformBufferID = doorTransformInitInfo.id;
 			doorDrawCall.transformIndex = doorTransformInitInfo.index;
 			doorDrawCall.positionBufferID = meshInitInfo.positionBufferID;
@@ -1320,7 +1260,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 	}
 }
 
-void RenderVoxelChunkManager::clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelFaceCombineResultID> dirtyFaceCombineResultIDs, Renderer &renderer)
+void RenderVoxelChunkManager::clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelFaceCombineResultID> dirtyFaceCombineResultIDs)
 {
 	std::unordered_map<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &drawCallEntriesPool = renderChunk.combinedFaceDrawCallEntries;
 
@@ -1335,18 +1275,35 @@ void RenderVoxelChunkManager::clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk 
 		}
 
 		RenderVoxelCombinedFaceDrawCallEntry &drawCallEntry = iter->second;
-		renderChunk.drawCallHeap.free(drawCallEntry.rangeID);
 		renderChunk.transformHeap.free(drawCallEntry.transformIndex);
 
 		drawCallEntriesPool.erase(iter);
 	}
 }
 
-void RenderVoxelChunkManager::clearChunkNonCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions)
+void RenderVoxelChunkManager::clearChunkNonCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, Renderer &renderer)
 {
-	for (const VoxelInt3 &voxel : dirtyVoxelPositions)
+	for (const VoxelInt3 voxel : dirtyVoxelPositions)
 	{
-		renderChunk.freeDrawCalls(voxel.x, voxel.y, voxel.z);
+		for (int i = static_cast<int>(renderChunk.nonCombinedDrawCallEntries.size()) - 1; i >= 0; i--)
+		{
+			RenderVoxelNonCombinedDrawCallEntry &drawCallEntry = renderChunk.nonCombinedDrawCallEntries[i];
+			if (drawCallEntry.voxel == voxel)
+			{
+				renderer.freeUniformBuffer(drawCallEntry.transformBufferID);
+				renderChunk.nonCombinedDrawCallEntries.erase(renderChunk.nonCombinedDrawCallEntries.begin() + i);
+			}
+		}
+
+		for (int i = static_cast<int>(renderChunk.doorDrawCallsEntries.size()) - 1; i >= 0; i--)
+		{
+			RenderVoxelDoorDrawCallsEntry &drawCallsEntry = renderChunk.doorDrawCallsEntries[i];
+			if (drawCallsEntry.voxel == voxel)
+			{
+				renderer.freeUniformBuffer(drawCallsEntry.transformBufferID);
+				renderChunk.doorDrawCallsEntries.erase(renderChunk.doorDrawCallsEntries.begin() + i);
+			}
+		}
 	}
 }
 
@@ -1365,8 +1322,6 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 		{
 			continue;
 		}
-
-		const RenderVoxelDrawCallHeap &drawCallHeap = renderChunk.drawCallHeap;
 
 		// Add draw calls that are at least partially in the camera frustum.
 		for (const std::pair<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &pair : renderChunk.combinedFaceDrawCallEntries)
@@ -1396,31 +1351,37 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 
 			if (isCombinedFaceVisible)
 			{
-				const Span<const RenderDrawCall> combinedFaceDrawCalls = drawCallHeap.get(combinedFaceDrawCallEntry.rangeID);
-				DebugAssert(combinedFaceDrawCalls.getCount() == 1);
-				this->drawCallsCache.emplace_back(combinedFaceDrawCalls[0]);
+				this->drawCallsCache.emplace_back(combinedFaceDrawCallEntry.drawCall);
 			}
 		}
 
-		Span3D<const RenderVoxelDrawCallRangeID> nonCombinedRangeIDs = renderChunk.drawCallRangeIDs;
-		for (WEInt z = 0; z < nonCombinedRangeIDs.getDepth(); z++)
+		for (const RenderVoxelNonCombinedDrawCallEntry &drawCallEntry : renderChunk.nonCombinedDrawCallEntries)
 		{
-			for (SNInt x = 0; x < nonCombinedRangeIDs.getWidth(); x++)
+			const VoxelInt3 voxel = drawCallEntry.voxel;
+
+			const int visibilityLeafNodeIndex = voxel.x + (voxel.z * Chunk::WIDTH);
+			DebugAssertIndex(voxelFrustumCullingChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
+			const bool isVoxelColumnVisible = voxelFrustumCullingChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
+
+			if (isVoxelColumnVisible)
 			{
-				const int visibilityLeafNodeIndex = x + (z * Chunk::WIDTH);
-				DebugAssertIndex(voxelFrustumCullingChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
-				const bool isVoxelColumnVisible = voxelFrustumCullingChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
-				if (isVoxelColumnVisible)
+				this->drawCallsCache.emplace_back(drawCallEntry.drawCall);
+			}
+		}
+
+		for (const RenderVoxelDoorDrawCallsEntry &drawCallsEntry : renderChunk.doorDrawCallsEntries)
+		{
+			const VoxelInt3 voxel = drawCallsEntry.voxel;
+
+			const int visibilityLeafNodeIndex = voxel.x + (voxel.z * Chunk::WIDTH);
+			DebugAssertIndex(voxelFrustumCullingChunk.leafNodeFrustumTests, visibilityLeafNodeIndex);
+			const bool isVoxelColumnVisible = voxelFrustumCullingChunk.leafNodeFrustumTests[visibilityLeafNodeIndex];
+
+			if (isVoxelColumnVisible)
+			{
+				for (int i = 0; i < drawCallsEntry.drawCallCount; i++)
 				{
-					for (int y = 0; y < nonCombinedRangeIDs.getHeight(); y++)
-					{
-						const RenderVoxelDrawCallRangeID rangeID = nonCombinedRangeIDs.get(x, y, z);
-						if (rangeID >= 0)
-						{
-							const Span<const RenderDrawCall> nonCombinedDrawCalls = drawCallHeap.get(rangeID);
-							this->drawCallsCache.insert(this->drawCallsCache.end(), nonCombinedDrawCalls.begin(), nonCombinedDrawCalls.end());
-						}
-					}
+					this->drawCallsCache.emplace_back(drawCallsEntry.drawCalls[i]);
 				}
 			}
 		}
@@ -1471,9 +1432,8 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		const VoxelFaceCombineChunk &faceCombineChunk = voxelFaceCombineChunkManager.getChunkAtPosition(chunkPos);
 		this->loadChunkNonCombinedVoxelMeshBuffers(renderChunk, voxelChunk, ceilingScale, renderer);
 		this->loadChunkTextures(voxelChunk, voxelChunkManager, textureManager, renderer);
-		this->loadChunkNonCombinedTransforms(renderChunk, voxelChunk, faceCombineChunk, ceilingScale, renderer);
 
-		renderChunk.transformHeap.uniformBufferID = renderer.createUniformBufferMatrix4s(RenderVoxelTransformHeap::MAX_TRANSFORMS);
+		renderChunk.transformHeap.uniformBufferID = renderer.createUniformBufferMatrix4s(RenderTransformHeap::MAX_TRANSFORMS);
 		if (renderChunk.transformHeap.uniformBufferID < 0)
 		{
 			DebugLogErrorFormat("Couldn't create model matrix uniform buffer ID for chunk (%s).", chunkPos.toString().c_str());
@@ -1511,16 +1471,15 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, doorVoxel, ceilingScale);
 			const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
 
-			Span<const RenderVoxelDoorTransformsEntry> doorTransformsEntries = renderChunk.doorTransformEntries;
-			const auto doorTransformsIter = std::find_if(doorTransformsEntries.begin(), doorTransformsEntries.end(),
-				[doorVoxel](const RenderVoxelDoorTransformsEntry &entry)
+			Span<const RenderVoxelDoorDrawCallsEntry> doorDrawCallsEntries = renderChunk.doorDrawCallsEntries;
+			int doorDrawCallsEntryIndex = doorDrawCallsEntries.findIndex(
+				[doorVoxel](const RenderVoxelDoorDrawCallsEntry &entry)
 			{
 				return entry.voxel == doorVoxel;
 			});
 
-			DebugAssert(doorTransformsIter != doorTransformsEntries.end());
-
-			const UniformBufferID doorTransformBufferID = doorTransformsIter->transformBufferID;
+			const RenderVoxelDoorDrawCallsEntry &doorDrawCallsEntry = doorDrawCallsEntries[doorDrawCallsEntryIndex];
+			const UniformBufferID doorTransformBufferID = doorDrawCallsEntry.transformBufferID;
 			const Matrix4d doorFaceModelMatrices[] =
 			{
 				MakeDoorFaceModelMatrix(doorType, 0, worldPosition, ceilingScale, doorAnimPercent),
@@ -1544,13 +1503,13 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 
 		// @todo all these dirty lists should be one list of DirtyVoxelFlags instead
 
-		this->clearChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceCombineResultIDs, renderer);
+		this->clearChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceCombineResultIDs);
 
-		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels);
-		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels);
-		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels);
-		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels);
-		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels);
+		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, renderer);
+		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, renderer);
+		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, renderer);
+		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, renderer);
+		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, renderer);
 
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
@@ -1566,7 +1525,8 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
 		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
 
-		renderer.populateUniformBufferMatrix4s(renderChunk.transformHeap.uniformBufferID, renderChunk.transformHeap.modelMatrices);
+		Span<const Matrix4d> chunkModelMatrices = renderChunk.transformHeap.pool.values;
+		renderer.populateUniformBufferMatrix4s(renderChunk.transformHeap.uniformBufferID, chunkModelMatrices);
 	}
 
 	this->rebuildDrawCallsList(voxelFrustumCullingChunkManager);
