@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <array>
-#include <functional>
 #include <vector>
 
 #include "Buffer.h"
@@ -241,7 +240,8 @@ public:
 		std::fill(this->begin(), this->end(), value);
 	}
 
-	int findIndex(const std::function<bool(const T&)> &predicate)
+	template<typename PredicateT>
+	int findIndex(const PredicateT &predicate)
 	{
 		if (!this->isValid())
 		{
