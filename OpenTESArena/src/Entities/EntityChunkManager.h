@@ -13,6 +13,7 @@
 #include "EntityUtils.h"
 #include "../Items/ItemInventory.h"
 #include "../Math/BoundingBox.h"
+#include "../Rendering/RenderMeshUtils.h"
 #include "../Utilities/Palette.h"
 #include "../World/SpecializedChunkManager.h"
 
@@ -128,6 +129,9 @@ private:
 	// @todo: separate EntityAnimationDefinition from EntityDefinition?
 	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
+	// One uniform buffer of model matrices per heap. Each entity tracks which heap its transform belongs to.
+	std::vector<RenderTransformHeap> transformHeaps;
+
 	// Entities that should have their instance resources freed, either because the chunk they were in
 	// was unloaded, or they were otherwise despawned. Cleared at end-of-frame.
 	std::vector<EntityInstanceID> destroyedEntityIDs;
@@ -137,6 +141,8 @@ private:
 
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
 	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);
+
+	int getAvailableTransformHeapIndex() const;
 
 	void initializeEntity(EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
 		const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem,
@@ -181,6 +187,9 @@ public:
 	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
 	// simulated or rendered.
 	Span<const EntityInstanceID> getQueuedDestroyEntityIDs() const;
+
+	// For determining which uniform buffers to use with entity draw calls, and for populating renderer matrices.
+	Span<const RenderTransformHeap> getTransformHeaps() const;
 
 	// Gets all entities who moved between chunks this frame. Cleared at end of frame.
 	Span<const EntityTransferResult> getEntityTransferResults() const;

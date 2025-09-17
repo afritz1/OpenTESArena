@@ -462,40 +462,15 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 		this->loadMaterialsForChunkEntities(entityChunk, entityChunkManager, textureManager, renderer);
 	}
 
-	// The rotation all entities share for facing the camera.
-	const Radians allEntitiesRotationRadians = -MathUtils::fullAtan2(cameraDirXZ) - Constants::HalfPi;
-	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
-
 	this->drawCallsCache.clear();
 	this->ghostDrawCallsCache.clear();
 	this->puddleSecondPassDrawCallsCache.clear();
 
+	Span<const RenderTransformHeap> transformHeaps = entityChunkManager.getTransformHeaps();
+
 	for (const ChunkInt2 chunkPos : activeChunkPositions)
 	{
 		const EntityChunk &entityChunk = entityChunkManager.getChunkAtPosition(chunkPos);
-
-		// Update entity render transforms.
-		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
-		{
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
-			const EntityAnimationDefinition &animDef = entityDef.animDef;
-			const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
-
-			EntityObservedResult observedResult;
-			entityChunkManager.getEntityObservedResult(entityInstID, cameraPosition, observedResult);
-
-			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
-			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
-			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
-
-			const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
-			const Matrix4d entityTranslationMatrix = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
-			const Matrix4d entityScaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
-			const Matrix4d entityModelMatrix = entityTranslationMatrix * (allEntitiesRotationMatrix * entityScaleMatrix);
-			renderer.populateUniformBufferMatrix4s(transformBufferID, Span<const Matrix4d>(&entityModelMatrix, 1));
-		}
-
 		const EntityVisibilityChunk &entityVisChunk = entityVisChunkManager.getChunkAtPosition(chunkPos);
 
 		// Generate draw calls from visible entity chunks.
@@ -549,12 +524,11 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 
 			DebugAssert(materialID >= 0);
 
-			const UniformBufferID transformBufferID = entityInst.renderTransformBufferID;
-			const int entityTransformIndex = 0; // Each entity has their own transform buffer for now.
+			const RenderTransformHeap &transformHeap = transformHeaps[entityInst.transformHeapIndex];
 
 			RenderDrawCall drawCall;
-			drawCall.transformBufferID = transformBufferID;
-			drawCall.transformIndex = entityTransformIndex;
+			drawCall.transformBufferID = transformHeap.uniformBufferID;
+			drawCall.transformIndex = entityInst.transformIndex;
 			drawCall.positionBufferID = this->meshInst.positionBufferID;
 			drawCall.normalBufferID = this->meshInst.normalBufferID;
 			drawCall.texCoordBufferID = this->meshInst.texCoordBufferID;
@@ -599,7 +573,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	}
 
 	// Update normals buffer.
-	const VoxelDouble2 entityDir = -cameraDirXZ;
+	const Double2 entityDir = -cameraDirXZ;
 	constexpr int entityMeshVertexCount = 4;
 	const double entityNormals[entityMeshVertexCount * MeshUtils::NORMAL_COMPONENTS_PER_VERTEX] =
 	{
@@ -610,6 +584,16 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	};
 
 	renderer.populateVertexAttributeBuffer(this->meshInst.normalBufferID, entityNormals);
+
+	// Send model matrices to renderer in bulk.
+	for (const RenderTransformHeap &transformHeap : transformHeaps)
+	{
+		if (transformHeap.pool.getUsedCount() > 0)
+		{
+			Span<const Matrix4d> modelMatrices(transformHeap.pool.values.get(), transformHeap.pool.capacity);
+			renderer.populateUniformBufferMatrix4s(transformHeap.uniformBufferID, modelMatrices);
+		}
+	}
 }
 
 void RenderEntityManager::endFrame()

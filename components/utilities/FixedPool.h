@@ -2,6 +2,7 @@
 #define FIXED_POOL_H
 
 #include <algorithm>
+#include <memory>
 
 #include "../debug/Debug.h"
 
@@ -9,7 +10,8 @@
 template<typename T, int Count>
 struct FixedPool
 {
-	T values[Count]; // Might contain freed slots.
+	std::unique_ptr<T[]> values; // Might contain freed slots. On heap to avoid stack overflow.
+	const int capacity = Count;
 	int nextValueIndex;
 
 	int freedIndices[Count];
@@ -17,12 +19,20 @@ struct FixedPool
 
 	FixedPool()
 	{
-		this->clear();
+		this->values = std::make_unique<T[]>(Count);
+		this->nextValueIndex = 0;
+		std::fill(std::begin(this->freedIndices), std::end(this->freedIndices), -1);
+		this->freedIndexCount = 0;
 	}
 
 	int getUsedCount() const
 	{
 		return this->nextValueIndex - this->freedIndexCount;
+	}
+
+	bool canAlloc() const
+	{
+		return (this->nextValueIndex < Count) || (this->freedIndexCount > 0);
 	}
 
 	int alloc()

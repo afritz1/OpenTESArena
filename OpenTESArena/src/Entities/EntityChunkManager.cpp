@@ -207,6 +207,23 @@ EntityDefID EntityChunkManager::getOrAddEntityDefID(const EntityDefinition &def,
 	return this->addEntityDef(EntityDefinition(def), defLibrary);
 }
 
+int EntityChunkManager::getAvailableTransformHeapIndex() const
+{
+	int heapIndex = -1;
+
+	for (int i = 0; i < static_cast<int>(this->transformHeaps.size()); i++)
+	{
+		const RenderTransformHeap &heap = this->transformHeaps[i];
+		if (heap.pool.canAlloc())
+		{
+			heapIndex = i;
+			break;
+		}
+	}
+
+	return heapIndex;
+}
+
 void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
 	const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
@@ -222,14 +239,25 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
 	}
 
-	const UniformBufferID renderTransformBufferID = renderer.createUniformBufferMatrix4s(1);
-	if (renderTransformBufferID < 0)
+	int transformHeapIndex = this->getAvailableTransformHeapIndex();
+	if (transformHeapIndex < 0)
 	{
-		DebugLogError("Couldn't create uniform buffer for entity transform.");
+		transformHeapIndex = static_cast<int>(this->transformHeaps.size());
+
+		RenderTransformHeap &newTransformHeap = this->transformHeaps.emplace_back(RenderTransformHeap());
+		newTransformHeap.uniformBufferID = renderer.createUniformBufferMatrix4s(RenderTransformHeap::MAX_TRANSFORMS);
+		if (newTransformHeap.uniformBufferID < 0)
+		{
+			DebugLogError("Couldn't create uniform buffer for entity transforms.");
+		}
 	}
 
+	RenderTransformHeap &transformHeap = this->transformHeaps[transformHeapIndex];
+	int transformIndex = transformHeap.alloc();
+	DebugAssert(transformIndex >= 0);
+
 	const EntityDefID defID = initInfo.defID;
-	entityInst.init(instID, defID, positionID, bboxID, renderTransformBufferID);
+	entityInst.init(instID, defID, positionID, bboxID, transformHeapIndex, transformIndex);
 
 	WorldDouble3 &entityPosition = this->positions.get(positionID);
 	entityPosition = initInfo.feetPosition;
@@ -413,7 +441,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		const LevelVoxelEntityDefID levelEntityDefID = placementDef.id;
 		const EntityDefinition &entityDef = levelInfoDefinition.getEntityDef(levelEntityDefID);
 		const EntityDefinitionType entityDefType = entityDef.type;
-		
+
 		const int entityDefArenaYOffset = EntityUtils::getYOffset(entityDef);
 		const double entityDefYOffset = static_cast<double>(-entityDefArenaYOffset) / MIFUtils::ARENA_UNITS;
 
@@ -425,7 +453,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 		{
 			initialAnimStateName = EntityAnimationUtils::STATE_ACTIVATED.c_str();
 		}
-		
+
 		const std::optional<int> initialAnimStateIndex = animDef.findStateIndex(initialAnimStateName);
 		DebugAssert(initialAnimStateIndex.has_value());
 
@@ -500,7 +528,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				const VoxelTraitsDefID groundVoxelTraitsDefID = voxelChunk.traitsDefIDs.get(spawnVoxel.x, 0, spawnVoxel.y);
 				const VoxelTraitsDefinition &voxelTraitsDef = voxelChunk.traitsDefs[voxelTraitsDefID];
 				const VoxelTraitsDefinition &groundVoxelTraitsDef = voxelChunk.traitsDefs[groundVoxelTraitsDefID];
-				const bool isValidSpawnVoxel = (voxelTraitsDef.type == ArenaVoxelType::None) && (groundVoxelTraitsDef.type == ArenaVoxelType::Floor);				
+				const bool isValidSpawnVoxel = (voxelTraitsDef.type == ArenaVoxelType::None) && (groundVoxelTraitsDef.type == ArenaVoxelType::Floor);
 				if (isValidSpawnVoxel)
 				{
 					return spawnVoxel;
@@ -527,7 +555,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			DebugAssertIndex(citizenCountsToSpawn, citizenGenderIndex);
 			const int citizensToSpawn = citizenCountsToSpawn[citizenGenderIndex];
 			const EntityDefID citizenEntityDefID = citizenDefIDs[citizenGenderIndex];
-			const EntityDefinition &citizenDef = *citizenDefs[citizenGenderIndex];			
+			const EntityDefinition &citizenDef = *citizenDefs[citizenGenderIndex];
 			const EntityAnimationDefinition &citizenAnimDef = citizenDef.animDef;
 
 			const std::optional<int> initialCitizenAnimStateIndex = citizenAnimDef.findStateIndex(citizenAnimDef.initialStateName);
@@ -553,7 +581,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 				const std::string citizenNameStr = textAssetLibrary.generateNpcName(citizenRaceID, isMale, arenaRandom);
 				citizenInitInfo.citizenName = EntityCitizenName(citizenNameStr.c_str());
-				
+
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);
 				citizenInitInfo.citizenColorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
 				citizenInitInfo.raceID = citizenRaceID;
@@ -577,7 +605,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 }
 
 void EntityChunkManager::populateChunk(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
-	const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef, 
+	const LevelDefinition &levelDef, const LevelInfoDefinition &levelInfoDef, const MapSubDefinition &mapSubDef,
 	const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
 	double ceilingScale, Random &random, const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem,
 	TextureManager &textureManager, Renderer &renderer)
@@ -960,7 +988,7 @@ int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) 
 	}
 
 	const EntityChunk &chunk = this->getChunkAtIndex(chunkIndex);
-	
+
 	int count = 0;
 	for (const EntityInstanceID entityInstID : chunk.entityIDs)
 	{
@@ -1025,6 +1053,11 @@ int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chu
 Span<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs() const
 {
 	return this->destroyedEntityIDs;
+}
+
+Span<const RenderTransformHeap> EntityChunkManager::getTransformHeaps() const
+{
+	return this->transformHeaps;
 }
 
 Span<const EntityTransferResult> EntityChunkManager::getEntityTransferResults() const
@@ -1228,13 +1261,13 @@ void EntityChunkManager::updateEnemyDeathStates(JPH::PhysicsSystem &physicsSyste
 			if (!combatState.isDying)
 			{
 				combatState.isDying = true;
-				
+
 				if (EntityUtils::leavesCorpse(entityDef))
 				{
 					const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 					audioManager.playSound(ArenaSoundName::BodyFall, entityPosition);
 				}
-			}			
+			}
 		}
 	}
 }
@@ -1270,7 +1303,7 @@ EntityInstanceID EntityChunkManager::createEntity(const EntityInitInfo &initInfo
 	}
 
 	EntityInstance &entityInst = this->entities.get(entityInstID);
-	
+
 	// Register with chunk if possible.
 	// @todo: not all entities should need registering, like vfx
 	const ChunkInt2 chunkPos = VoxelUtils::worldPointToChunk(initInfo.feetPosition);
@@ -1282,18 +1315,16 @@ EntityInstanceID EntityChunkManager::createEntity(const EntityInitInfo &initInfo
 
 	const EntityDefinition &entityDef = this->getEntityDef(initInfo.defID);
 	this->initializeEntity(entityInst, entityInstID, entityDef, entityDef.animDef, initInfo, random, physicsSystem, renderer);
-	
+
 	return entityInstID;
 }
 
-void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPositions,
-	Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
-	const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
-	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
-	Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs,
-	const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
-	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
-	JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
+void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
+	Span<const ChunkInt2> freedChunkPositions, const Player &player, const LevelDefinition *activeLevelDef,
+	const LevelInfoDefinition *activeLevelInfoDef, const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
+	Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs, const EntityGenInfo &entityGenInfo,
+	const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager,
+	AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
 {
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
@@ -1369,6 +1400,39 @@ void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPosi
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateEnemyDeathStates(physicsSystem, audioManager);
 	this->updateVfx();
+
+	// The rotation all entities share for facing the camera.
+	const Double2 playerDirXZ = player.getGroundDirectionXZ();
+	const Radians allEntitiesRotationRadians = -MathUtils::fullAtan2(playerDirXZ) - Constants::HalfPi;
+	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
+
+	// Update entity render transforms.
+	for (const ChunkInt2 chunkPos : activeChunkPositions)
+	{
+		EntityChunk &entityChunk = this->getChunkAtPosition(chunkPos);
+
+		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
+		{
+			const EntityInstance &entityInst = this->getEntity(entityInstID);
+			const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+			const EntityAnimationDefinition &animDef = entityDef.animDef;
+			const WorldDouble3 entityPosition = this->getEntityPosition(entityInst.positionID);
+
+			EntityObservedResult observedResult;
+			this->getEntityObservedResult(entityInstID, playerPosition, observedResult);
+
+			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
+			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
+
+			const Matrix4d entityTranslationMatrix = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
+			const Matrix4d entityScaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
+
+			RenderTransformHeap &transformHeap = transformHeaps[entityInst.transformHeapIndex];
+			Matrix4d &entityModelMatrix = transformHeap.pool.values[entityInst.transformIndex];
+			entityModelMatrix = entityTranslationMatrix * (allEntitiesRotationMatrix * entityScaleMatrix);
+		}
+	}
 }
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)
@@ -1391,7 +1455,7 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk)
 {
 	const ChunkInt2 *chunkToNotify = nullptr;
-	
+
 	ChunkInt2 chunkPos;
 	if (notifyChunk)
 	{
@@ -1400,7 +1464,7 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, bool 
 		chunkPos = VoxelUtils::worldPointToChunk(entityPosition);
 		chunkToNotify = &chunkPos;
 	}
-	
+
 	this->queueEntityDestroy(entityInstID, chunkToNotify);
 }
 
@@ -1411,7 +1475,7 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 	for (const EntityInstanceID entityInstID : this->destroyedEntityIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		
+
 		if (entityInst.positionID >= 0)
 		{
 			this->positions.free(entityInst.positionID);
@@ -1474,11 +1538,12 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 			bodyInterface.DestroyBody(physicsBodyID);
 		}
 
-		if (entityInst.renderTransformBufferID >= 0)
+		if (entityInst.transformIndex >= 0)
 		{
-			renderer.freeUniformBuffer(entityInst.renderTransformBufferID);
+			RenderTransformHeap &transformHeap = this->transformHeaps[entityInst.transformHeapIndex];
+			transformHeap.free(entityInst.transformIndex);
 		}
-		
+
 		this->entities.free(entityInstID);
 	}
 
@@ -1497,5 +1562,13 @@ void EntityChunkManager::clear(JPH::PhysicsSystem &physicsSystem, Renderer &rend
 	}
 
 	this->endFrame(physicsSystem, renderer);
+
+	for (RenderTransformHeap &transformHeap : this->transformHeaps)
+	{
+		renderer.freeUniformBuffer(transformHeap.uniformBufferID);
+	}
+
+	this->transformHeaps.clear();
+
 	this->recycleAllChunks();
 }
