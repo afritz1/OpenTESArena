@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <array>
+#include <functional>
 #include <vector>
 
 #include "Buffer.h"
@@ -238,6 +239,25 @@ public:
 	void fill(const T &value)
 	{
 		std::fill(this->begin(), this->end(), value);
+	}
+
+	int findIndex(const std::function<bool(const T&)> &predicate)
+	{
+		if (!this->isValid())
+		{
+			return -1;
+		}
+
+		for (int i = 0; i < this->count; i++)
+		{
+			const T &value = *(this->data + i);
+			if (predicate(value))
+			{
+				return i;
+			}
+		}
+
+		return -1;
 	}
 
 	void reset()
