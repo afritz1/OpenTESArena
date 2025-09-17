@@ -24,6 +24,7 @@ SET(COMP_UTILITIES
 	"utilities/Directory.h"
 	"utilities/File.cpp"
 	"utilities/File.h"
+	"utilities/FixedPool.h"
 	"utilities/FlatMap.h"
 	"utilities/FPSCounter.cpp"
 	"utilities/FPSCounter.h"
