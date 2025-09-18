@@ -102,7 +102,7 @@ enum class VulkanMaterialPushConstantType
 {
 	None,
 	MeshLightPercent,
-	PixelShaderParam
+	TexCoordAnimPercent
 };
 
 struct VulkanMaterial
@@ -120,7 +120,7 @@ struct VulkanMaterial
 struct VulkanMaterialInstance
 {
 	float meshLightPercent;
-	float pixelShaderParam;
+	float texCoordAnimPercent;
 
 	VulkanMaterialInstance();
 };
@@ -450,7 +450,7 @@ public:
 	RenderMaterialInstanceID createMaterialInstance() override;
 	void freeMaterialInstance(RenderMaterialInstanceID id) override;
 	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value) override;
-	void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value) override;
+	void setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value) override;
 
 	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;

@@ -2074,14 +2074,14 @@ namespace
 		if (RenderShaderUtils::requiresMeshLightPercent(fragmentShaderType))
 		{
 			int byteCount = sizeof(float);
-			if (RenderShaderUtils::requiresPixelShaderParam(fragmentShaderType))
+			if (RenderShaderUtils::requiresTexCoordAnimPercent(fragmentShaderType))
 			{
 				byteCount += sizeof(float);
 			}
 
 			addPushConstantRange(vk::ShaderStageFlagBits::eFragment, byteCount);
 		}
-		else if (RenderShaderUtils::requiresPixelShaderParam(fragmentShaderType))
+		else if (RenderShaderUtils::requiresTexCoordAnimPercent(fragmentShaderType))
 		{
 			addPushConstantRange(vk::ShaderStageFlagBits::eFragment, sizeof(float));
 		}
@@ -2492,7 +2492,7 @@ void VulkanMaterial::init(vk::Pipeline pipeline, vk::PipelineLayout pipelineLayo
 VulkanMaterialInstance::VulkanMaterialInstance()
 {
 	this->meshLightPercent = 0.0f;
-	this->pixelShaderParam = 0.0f;
+	this->texCoordAnimPercent = 0.0f;
 }
 
 VulkanHeapMapping::VulkanHeapMapping()
@@ -5219,9 +5219,9 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 		typeIndex++;
 	}
 
-	if (RenderShaderUtils::requiresPixelShaderParam(fragmentShaderType))
+	if (RenderShaderUtils::requiresTexCoordAnimPercent(fragmentShaderType))
 	{
-		material.pushConstantTypes[typeIndex] = VulkanMaterialPushConstantType::PixelShaderParam;
+		material.pushConstantTypes[typeIndex] = VulkanMaterialPushConstantType::TexCoordAnimPercent;
 		typeIndex++;
 	}
 
@@ -5276,7 +5276,7 @@ void VulkanRenderBackend::setMaterialInstanceMeshLightPercent(RenderMaterialInst
 	inst->meshLightPercent = static_cast<float>(value);
 }
 
-void VulkanRenderBackend::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+void VulkanRenderBackend::setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value)
 {
 	VulkanMaterialInstance *inst = this->materialInstPool.tryGet(id);
 	if (inst == nullptr)
@@ -5285,7 +5285,7 @@ void VulkanRenderBackend::setMaterialInstancePixelShaderParam(RenderMaterialInst
 		return;
 	}
 
-	inst->pixelShaderParam = static_cast<float>(value);
+	inst->texCoordAnimPercent = static_cast<float>(value);
 }
 
 void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
@@ -5827,12 +5827,12 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 				this->commandBuffer.bindDescriptorSets(graphicsPipelineBindPoint, pipelineLayout, MaterialDescriptorSetLayoutIndex, material.descriptorSet, vk::ArrayProxy<const uint32_t>());
 
 				float meshLightPercent = 0.0f;
-				float pixelShaderParam = 0.0f;
+				float texCoordAnimPercent = 0.0f;
 				if (drawCall.materialInstID >= 0)
 				{
 					const VulkanMaterialInstance &materialInst = this->materialInstPool.get(drawCall.materialInstID);
 					meshLightPercent = materialInst.meshLightPercent;
-					pixelShaderParam = materialInst.pixelShaderParam;
+					texCoordAnimPercent = materialInst.texCoordAnimPercent;
 				}
 
 				uint32_t pushConstantOffset = 0;
@@ -5846,8 +5846,8 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, meshLightPercent);
 						pushConstantOffset += sizeof(float);
 						break;
-					case VulkanMaterialPushConstantType::PixelShaderParam:
-						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, pixelShaderParam);
+					case VulkanMaterialPushConstantType::TexCoordAnimPercent:
+						this->commandBuffer.pushConstants<float>(pipelineLayout, vk::ShaderStageFlagBits::eFragment, pushConstantOffset, texCoordAnimPercent);
 						pushConstantOffset += sizeof(float);
 						break;
 					default:

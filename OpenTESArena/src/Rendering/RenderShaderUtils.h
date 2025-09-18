@@ -76,7 +76,7 @@ namespace RenderShaderUtils
 			(type == PixelShaderType::AlphaTested);
 	}
 
-	constexpr bool requiresPixelShaderParam(PixelShaderType type)
+	constexpr bool requiresTexCoordAnimPercent(PixelShaderType type)
 	{
 		return (type == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
 			(type == PixelShaderType::AlphaTestedWithVariableTexCoordVMin);

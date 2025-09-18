@@ -754,7 +754,7 @@ namespace
 		double meshLightPercent;
 		VertexShaderType vertexShaderType;
 		PixelShaderType pixelShaderType;
-		double pixelShaderParam0;
+		double texCoordAnimPercent;
 		bool enableBackFaceCulling;
 		bool enableDepthRead;
 		bool enableDepthWrite;
@@ -2611,7 +2611,7 @@ namespace
 		constexpr bool requiresLightTableLighting = pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity;
 
 		const double meshLightPercent = drawCallCache.meshLightPercent;
-		const double pixelShaderParam0 = drawCallCache.pixelShaderParam0;
+		const double texCoordAnimPercent = drawCallCache.texCoordAnimPercent;
 
 		PixelShaderLighting shaderLighting;
 		shaderLighting.lightTableTexels = g_lightTableTexture->texels8Bit;
@@ -3141,7 +3141,7 @@ namespace
 
 						if constexpr (requiresVariableTexCoordUMin)
 						{
-							const double uMin = pixelShaderParam0;
+							const double uMin = texCoordAnimPercent;
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
@@ -3150,7 +3150,7 @@ namespace
 						}
 						else if (requiresVariableTexCoordVMin)
 						{
-							const double vMin = pixelShaderParam0;
+							const double vMin = texCoordAnimPercent;
 
 							for (int i = 0; i < TYPICAL_LOOP_UNROLL; i++)
 							{
@@ -4103,7 +4103,7 @@ void SoftwareMaterial::init(VertexShaderType vertexShaderType, PixelShaderType p
 SoftwareMaterialInstance::SoftwareMaterialInstance()
 {
 	this->meshLightPercent = 0.0;
-	this->pixelShaderParam0 = 0.0;
+	this->texCoordAnimPercent = 0.0;
 }
 
 SoftwareLight::SoftwareLight()
@@ -4470,7 +4470,7 @@ void SoftwareRenderer::setMaterialInstanceMeshLightPercent(RenderMaterialInstanc
 	inst->meshLightPercent = value;
 }
 
-void SoftwareRenderer::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+void SoftwareRenderer::setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value)
 {
 	SoftwareMaterialInstance *inst = this->materialInsts.tryGet(id);
 	if (inst == nullptr)
@@ -4479,7 +4479,7 @@ void SoftwareRenderer::setMaterialInstancePixelShaderParam(RenderMaterialInstanc
 		return;
 	}
 
-	inst->pixelShaderParam0 = value;
+	inst->texCoordAnimPercent = value;
 }
 
 void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
@@ -4560,16 +4560,16 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					auto &drawCallCachePositionBuffer = workerDrawCallCache.positionBuffer;
 					auto &drawCallCacheTexCoordBuffer = workerDrawCallCache.texCoordBuffer;
 					auto &drawCallCacheIndexBuffer = workerDrawCallCache.indexBuffer;
-					auto &drawCallCacheTextureID0 = workerDrawCallCache.textureID0;
-					auto &drawCallCacheTextureID1 = workerDrawCallCache.textureID1;
-					auto &drawCallCacheLightingType = workerDrawCallCache.lightingType;
-					auto &drawCallCacheMeshLightPercent = workerDrawCallCache.meshLightPercent;
-					auto &drawCallCacheVertexShaderType = workerDrawCallCache.vertexShaderType;
-					auto &drawCallCachePixelShaderType = workerDrawCallCache.pixelShaderType;
-					auto &drawCallCachePixelShaderParam0 = workerDrawCallCache.pixelShaderParam0;
-					auto &drawCallCacheEnableBackFaceCulling = workerDrawCallCache.enableBackFaceCulling;
-					auto &drawCallCacheEnableDepthRead = workerDrawCallCache.enableDepthRead;
-					auto &drawCallCacheEnableDepthWrite = workerDrawCallCache.enableDepthWrite;
+					ObjectTextureID &drawCallCacheTextureID0 = workerDrawCallCache.textureID0;
+					ObjectTextureID &drawCallCacheTextureID1 = workerDrawCallCache.textureID1;
+					RenderLightingType &drawCallCacheLightingType = workerDrawCallCache.lightingType;
+					double &drawCallCacheMeshLightPercent = workerDrawCallCache.meshLightPercent;
+					VertexShaderType &drawCallCacheVertexShaderType = workerDrawCallCache.vertexShaderType;
+					PixelShaderType &drawCallCachePixelShaderType = workerDrawCallCache.pixelShaderType;
+					double &drawCallCacheTexCoordAnimPercent = workerDrawCallCache.texCoordAnimPercent;
+					bool &drawCallCacheEnableBackFaceCulling = workerDrawCallCache.enableBackFaceCulling;
+					bool &drawCallCacheEnableDepthRead = workerDrawCallCache.enableDepthRead;
+					bool &drawCallCacheEnableDepthWrite = workerDrawCallCache.enableDepthWrite;
 
 					const SoftwareUniformBuffer &transformBuffer = this->uniformBuffers.get(drawCall.transformBufferID);
 					const Matrix4d &modelMatrix = transformBuffer.get<Matrix4d>(drawCall.transformIndex);
@@ -4586,7 +4586,7 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					drawCallCacheMeshLightPercent = 0.0;
 					drawCallCacheVertexShaderType = material.vertexShaderType;
 					drawCallCachePixelShaderType = material.pixelShaderType;
-					drawCallCachePixelShaderParam0 = 0.0;
+					drawCallCacheTexCoordAnimPercent = 0.0;
 					drawCallCacheEnableBackFaceCulling = material.enableBackFaceCulling;
 					drawCallCacheEnableDepthRead = material.enableDepthRead;
 					drawCallCacheEnableDepthWrite = material.enableDepthWrite;
@@ -4595,7 +4595,7 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					{
 						const SoftwareMaterialInstance &materialInst = this->materialInsts.get(drawCall.materialInstID);
 						drawCallCacheMeshLightPercent = materialInst.meshLightPercent;
-						drawCallCachePixelShaderParam0 = materialInst.pixelShaderParam0;
+						drawCallCacheTexCoordAnimPercent = materialInst.texCoordAnimPercent;
 					}
 				}
 			}

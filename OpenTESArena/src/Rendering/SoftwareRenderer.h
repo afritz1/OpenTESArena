@@ -124,7 +124,7 @@ struct SoftwareMaterial
 struct SoftwareMaterialInstance
 {
 	double meshLightPercent;
-	double pixelShaderParam0;
+	double texCoordAnimPercent;
 
 	SoftwareMaterialInstance();
 };
@@ -212,7 +212,7 @@ public:
 	RenderMaterialInstanceID createMaterialInstance();
 	void freeMaterialInstance(RenderMaterialInstanceID id);
 	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value);
-	void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value);
+	void setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value);
 
 	void submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer);

@@ -416,9 +416,9 @@ void Sdl2DSoft3DRenderBackend::setMaterialInstanceMeshLightPercent(RenderMateria
 	return this->renderer3D.setMaterialInstanceMeshLightPercent(id, value);
 }
 
-void Sdl2DSoft3DRenderBackend::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+void Sdl2DSoft3DRenderBackend::setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value)
 {
-	return this->renderer3D.setMaterialInstancePixelShaderParam(id, value);
+	return this->renderer3D.setMaterialInstanceTexCoordAnimPercent(id, value);
 }
 
 void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,

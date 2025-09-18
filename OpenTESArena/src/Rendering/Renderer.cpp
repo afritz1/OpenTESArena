@@ -710,9 +710,9 @@ void Renderer::setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, 
 	this->backend->setMaterialInstanceMeshLightPercent(id, value);
 }
 
-void Renderer::setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value)
+void Renderer::setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value)
 {
-	this->backend->setMaterialInstancePixelShaderParam(id, value);
+	this->backend->setMaterialInstanceTexCoordAnimPercent(id, value);
 }
 
 /*void Renderer::drawPixel(const Color &color, int x, int y)

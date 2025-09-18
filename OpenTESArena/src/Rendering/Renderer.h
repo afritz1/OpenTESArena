@@ -167,7 +167,7 @@ public:
 	RenderMaterialInstanceID createMaterialInstance();
 	void freeMaterialInstance(RenderMaterialInstanceID id);
 	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value);
-	void setMaterialInstancePixelShaderParam(RenderMaterialInstanceID id, double value);
+	void setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value);
 
 	// Wrapper methods for some SDL draw functions.
 	//void drawPixel(const Color &color, int x, int y);

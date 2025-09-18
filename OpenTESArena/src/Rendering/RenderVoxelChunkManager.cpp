@@ -41,7 +41,7 @@ namespace
 	{
 		VertexShaderType vertexShaderType;
 		PixelShaderType pixelShaderType;
-		double pixelShaderParam; // For specialized values like texture coordinate manipulation.
+		double texCoordAnimPercent;
 	};
 
 	struct DrawCallLightingInitInfo
@@ -752,7 +752,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
 		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
 		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
-		constexpr double pixelShaderParam = 0.0;
+		constexpr double texCoordAnimPercent = 0.0;
 
 		DrawCallLightingInitInfo lightingInitInfo;
 		lightingInitInfo.type = RenderLightingType::PerPixel;
@@ -821,7 +821,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		}
 
 		const bool requiresMeshLightPercent = lightingInitInfo.type == RenderLightingType::PerMesh;
-		constexpr bool requiresPixelShaderParam = false; // Combined voxels cannot be raising/sliding doors.
+		constexpr bool requiresTexCoordAnimPercent = false; // Combined voxels cannot be raising/sliding doors.
 
 		if (requiresMeshLightPercent)
 		{
@@ -942,7 +942,7 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		const int textureSlotIndex = voxelMeshDef.textureSlotIndices[0];
 		DebugAssertIndex(voxelShadingDef.pixelShaderTypes, textureSlotIndex);
 		shadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[textureSlotIndex];
-		shadingInitInfo.pixelShaderParam = 0.0;
+		shadingInitInfo.texCoordAnimPercent = 0.0;
 
 		DrawCallLightingInitInfo lightingInitInfo;
 		lightingInitInfo.type = RenderLightingType::PerPixel;
@@ -1123,16 +1123,16 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		switch (doorType)
 		{
 		case ArenaDoorType::Swinging:
-			shadingInitInfo.pixelShaderParam = 0.0;
+			shadingInitInfo.texCoordAnimPercent = 0.0;
 			break;
 		case ArenaDoorType::Sliding:
-			shadingInitInfo.pixelShaderParam = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+			shadingInitInfo.texCoordAnimPercent = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 			break;
 		case ArenaDoorType::Raising:
-			shadingInitInfo.pixelShaderParam = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+			shadingInitInfo.texCoordAnimPercent = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 			break;
 		case ArenaDoorType::Splitting:
-			shadingInitInfo.pixelShaderParam = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
+			shadingInitInfo.texCoordAnimPercent = VoxelDoorUtils::getAnimatedTexCoordPercent(doorAnimPercent);
 			break;
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(doorType)));
@@ -1145,7 +1145,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 
 		RenderMaterialInstanceID materialInstID = -1;
 
-		if (shadingInitInfo.pixelShaderParam > 0.0)
+		if (shadingInitInfo.texCoordAnimPercent > 0.0)
 		{
 			auto doorMaterialIter = std::find_if(renderChunk.doorMaterialInstEntries.begin(), renderChunk.doorMaterialInstEntries.end(),
 				[voxel](const RenderVoxelMaterialInstanceEntry &entry)
@@ -1187,12 +1187,12 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 			this->materials.emplace_back(std::move(material));
 		}
 
-		const bool requiresPixelShaderParam = doorType != ArenaDoorType::Swinging;
-		if (requiresPixelShaderParam)
+		const bool requiresTexCoordAnimPercent = doorType != ArenaDoorType::Swinging;
+		if (requiresTexCoordAnimPercent)
 		{
 			if (materialInstID >= 0)
 			{
-				renderer.setMaterialInstancePixelShaderParam(materialInstID, shadingInitInfo.pixelShaderParam);
+				renderer.setMaterialInstanceTexCoordAnimPercent(materialInstID, shadingInitInfo.texCoordAnimPercent);
 			}
 		}
 
