@@ -15,7 +15,7 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/FlatMap.h"
 #include "components/utilities/Heap.h"
-#include "components/utilities/RecyclablePool.h"
+#include "components/utilities/KeyValuePool.h"
 
 struct VulkanBufferVertexPositionInfo
 {
@@ -125,14 +125,14 @@ struct VulkanMaterialInstance
 	VulkanMaterialInstance();
 };
 
-using VulkanVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, VulkanBuffer>;
-using VulkanVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID, VulkanBuffer>;
-using VulkanIndexBufferPool = RecyclablePool<IndexBufferID, VulkanBuffer>;
-using VulkanUniformBufferPool = RecyclablePool<UniformBufferID, VulkanBuffer>;
-using VulkanObjectTexturePool = RecyclablePool<ObjectTextureID, VulkanTexture>;
-using VulkanUiTexturePool = RecyclablePool<UiTextureID, VulkanTexture>;
-using VulkanMaterialPool = RecyclablePool<RenderMaterialID, VulkanMaterial>;
-using VulkanMaterialInstancePool = RecyclablePool<RenderMaterialID, VulkanMaterialInstance>;
+using VulkanVertexPositionBufferPool = KeyValuePool<VertexPositionBufferID, VulkanBuffer>;
+using VulkanVertexAttributeBufferPool = KeyValuePool<VertexAttributeBufferID, VulkanBuffer>;
+using VulkanIndexBufferPool = KeyValuePool<IndexBufferID, VulkanBuffer>;
+using VulkanUniformBufferPool = KeyValuePool<UniformBufferID, VulkanBuffer>;
+using VulkanObjectTexturePool = KeyValuePool<ObjectTextureID, VulkanTexture>;
+using VulkanUiTexturePool = KeyValuePool<UiTextureID, VulkanTexture>;
+using VulkanMaterialPool = KeyValuePool<RenderMaterialID, VulkanMaterial>;
+using VulkanMaterialInstancePool = KeyValuePool<RenderMaterialID, VulkanMaterialInstance>;
 
 enum class VulkanHeapType
 {

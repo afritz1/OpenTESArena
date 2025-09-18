@@ -18,7 +18,7 @@
 #include "../World/SpecializedChunkManager.h"
 
 #include "components/utilities/Buffer.h"
-#include "components/utilities/RecyclablePool.h"
+#include "components/utilities/KeyValuePool.h"
 #include "components/utilities/Span.h"
 
 class AudioManager;
@@ -93,18 +93,18 @@ struct EntityTransferResult
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 private:
-	using EntityPool = RecyclablePool<EntityInstanceID, EntityInstance>;
-	using EntityPositionPool = RecyclablePool<EntityPositionID, WorldDouble3>;
-	using EntityBoundingBoxPool = RecyclablePool<EntityBoundingBoxID, BoundingBox3D>;
-	using EntityDirectionPool = RecyclablePool<EntityDirectionID, Double2>;
-	using EntityAnimationInstancePool = RecyclablePool<EntityAnimationInstanceID, EntityAnimationInstance>;
-	using EntityCombatStatePool = RecyclablePool<EntityCombatStateID, EntityCombatState>;
-	using EntityCreatureSoundPool = RecyclablePool<EntityCreatureSoundInstanceID, double>;
-	using EntityCitizenDirectionIndexPool = RecyclablePool<EntityCitizenDirectionIndexID, int8_t>;
-	using EntityCitizenNamePool = RecyclablePool<EntityCitizenNameID, EntityCitizenName>;
-	using EntityPaletteIndicesInstancePool = RecyclablePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
-	using EntityItemInventoryInstancePool = RecyclablePool<EntityItemInventoryInstanceID, ItemInventory>;
-	using EntityLockStatePool = RecyclablePool<EntityLockStateID, EntityLockState>;
+	using EntityPool = KeyValuePool<EntityInstanceID, EntityInstance>;
+	using EntityPositionPool = KeyValuePool<EntityPositionID, WorldDouble3>;
+	using EntityBoundingBoxPool = KeyValuePool<EntityBoundingBoxID, BoundingBox3D>;
+	using EntityDirectionPool = KeyValuePool<EntityDirectionID, Double2>;
+	using EntityAnimationInstancePool = KeyValuePool<EntityAnimationInstanceID, EntityAnimationInstance>;
+	using EntityCombatStatePool = KeyValuePool<EntityCombatStateID, EntityCombatState>;
+	using EntityCreatureSoundPool = KeyValuePool<EntityCreatureSoundInstanceID, double>;
+	using EntityCitizenDirectionIndexPool = KeyValuePool<EntityCitizenDirectionIndexID, int8_t>;
+	using EntityCitizenNamePool = KeyValuePool<EntityCitizenNameID, EntityCitizenName>;
+	using EntityPaletteIndicesInstancePool = KeyValuePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
+	using EntityItemInventoryInstancePool = KeyValuePool<EntityItemInventoryInstanceID, ItemInventory>;
+	using EntityLockStatePool = KeyValuePool<EntityLockStateID, EntityLockState>;
 
 	EntityPool entities;
 	EntityPositionPool positions;

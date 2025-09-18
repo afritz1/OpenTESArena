@@ -583,7 +583,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 	// @todo the VoxelFaceCombineResultID should've been freed from this pool when the floor became a chasm, it's trying to use the old Top face of the floor for the chasm mesh indicesList lookup
 
-	const RecyclablePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> &combinedFacesPool = faceCombineChunk.combinedFacesPool;
+	const KeyValuePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> &combinedFacesPool = faceCombineChunk.combinedFacesPool;
 	for (const VoxelFaceCombineResultID faceCombineResultID : combinedFacesPool.keys)
 	{
 		bool shouldAllocateDrawCall = !combinedFaceDrawCallEntries.contains(faceCombineResultID);

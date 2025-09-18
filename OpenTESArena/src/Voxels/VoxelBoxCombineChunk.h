@@ -7,7 +7,7 @@
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer3D.h"
-#include "components/utilities/RecyclablePool.h"
+#include "components/utilities/KeyValuePool.h"
 #include "components/utilities/Span.h"
 
 struct VoxelChunk;
@@ -30,7 +30,7 @@ private:
 	Buffer3D<bool> dirtyEntries; // Boxes marked for rebuilding this frame.
 	std::vector<VoxelInt3> dirtyEntryPositions; // Voxels that need dirty entry updating this frame. Cleared at start of each update.
 public:
-	RecyclablePool<VoxelBoxCombineResultID, VoxelBoxCombineResult> combinedBoxesPool;
+	KeyValuePool<VoxelBoxCombineResultID, VoxelBoxCombineResult> combinedBoxesPool;
 	Buffer3D<VoxelBoxCombineResultID> entryIDs;
 
 	void init(const ChunkInt2 &position, int height);

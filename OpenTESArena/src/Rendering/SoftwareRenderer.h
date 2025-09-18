@@ -15,7 +15,7 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/Buffer3D.h"
-#include "components/utilities/RecyclablePool.h"
+#include "components/utilities/KeyValuePool.h"
 #include "components/utilities/Span.h"
 #include "components/utilities/Span2D.h"
 #include "components/utilities/Span3D.h"
@@ -143,13 +143,13 @@ struct SoftwareLight
 	void init(const Double3 &point, double startRadius, double endRadius);
 };
 
-using SoftwareVertexPositionBufferPool = RecyclablePool<VertexPositionBufferID, SoftwareVertexPositionBuffer>;
-using SoftwareVertexAttributeBufferPool = RecyclablePool<VertexAttributeBufferID, SoftwareVertexAttributeBuffer>;
-using SoftwareIndexBufferPool = RecyclablePool<IndexBufferID, SoftwareIndexBuffer>;
-using SoftwareUniformBufferPool = RecyclablePool<UniformBufferID, SoftwareUniformBuffer>;
-using SoftwareObjectTexturePool = RecyclablePool<ObjectTextureID, SoftwareObjectTexture>;
-using SoftwareMaterialPool = RecyclablePool<RenderMaterialID, SoftwareMaterial>;
-using SoftwareMaterialInstancePool = RecyclablePool<RenderMaterialID, SoftwareMaterialInstance>;
+using SoftwareVertexPositionBufferPool = KeyValuePool<VertexPositionBufferID, SoftwareVertexPositionBuffer>;
+using SoftwareVertexAttributeBufferPool = KeyValuePool<VertexAttributeBufferID, SoftwareVertexAttributeBuffer>;
+using SoftwareIndexBufferPool = KeyValuePool<IndexBufferID, SoftwareIndexBuffer>;
+using SoftwareUniformBufferPool = KeyValuePool<UniformBufferID, SoftwareUniformBuffer>;
+using SoftwareObjectTexturePool = KeyValuePool<ObjectTextureID, SoftwareObjectTexture>;
+using SoftwareMaterialPool = KeyValuePool<RenderMaterialID, SoftwareMaterial>;
+using SoftwareMaterialInstancePool = KeyValuePool<RenderMaterialID, SoftwareMaterialInstance>;
 
 class SoftwareRenderer
 {

@@ -1,5 +1,5 @@
-#ifndef RECYCLABLE_POOL_H
-#define RECYCLABLE_POOL_H
+#ifndef KEY_VALUE_POOL_H
+#define KEY_VALUE_POOL_H
 
 #include <algorithm>
 #include <type_traits>
@@ -7,10 +7,9 @@
 
 #include "../debug/Debug.h"
 
-// Contiguous pool that allows elements to be freed and their position reused by future elements
-// without affecting other elements.
+// Dense unsorted key-value pool with unlimited size that allows elements to be freed and reused.
 template<typename KeyT, typename ValueT>
-struct RecyclablePool
+struct KeyValuePool
 {
 	static_assert(std::is_integral_v<KeyT>);
 	static_assert(std::is_default_constructible_v<ValueT>);

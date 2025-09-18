@@ -7,7 +7,7 @@
 #include "../World/Chunk.h"
 
 #include "components/utilities/Buffer3D.h"
-#include "components/utilities/RecyclablePool.h"
+#include "components/utilities/KeyValuePool.h"
 #include "components/utilities/Span.h"
 
 struct VoxelChunk;
@@ -52,7 +52,7 @@ private:
 	Buffer3D<VoxelFaceCombineDirtyEntry> dirtyEntries;
 	std::vector<VoxelInt3> dirtyEntryPositions; // Voxels that need dirty entry updating this frame. Cleared at start of each update.
 public:
-	RecyclablePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> combinedFacesPool;
+	KeyValuePool<VoxelFaceCombineResultID, VoxelFaceCombineResult> combinedFacesPool;
 	Buffer3D<VoxelFacesEntry> entries;
 	std::vector<VoxelFaceCombineResultID> dirtyIDs; // Combined faces freed this frame (potentially pointing to a different shape now) that dependent systems must refresh.
 

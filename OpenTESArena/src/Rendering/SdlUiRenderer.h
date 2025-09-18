@@ -3,7 +3,7 @@
 
 #include <optional>
 
-#include "components/utilities/RecyclablePool.h"
+#include "components/utilities/KeyValuePool.h"
 #include "components/utilities/Span.h"
 #include "components/utilities/Span2D.h"
 
@@ -15,7 +15,7 @@ struct RendererProfilerData2D;
 struct SDL_Renderer;
 struct SDL_Texture;
 
-using SdlUiTexturePool = RecyclablePool<UiTextureID, SDL_Texture*>;
+using SdlUiTexturePool = KeyValuePool<UiTextureID, SDL_Texture*>;
 
 class SdlUiRenderer
 {

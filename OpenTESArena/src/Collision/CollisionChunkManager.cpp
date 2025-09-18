@@ -70,7 +70,7 @@ namespace
 
 		std::vector<JPH::Ref<JPH::BoxShapeSettings>> boxShapeSettingsList; // Freed at end of scope
 
-		const RecyclablePool<VoxelBoxCombineResultID, VoxelBoxCombineResult> &combinedBoxesPool = boxCombineChunk.combinedBoxesPool;
+		const KeyValuePool<VoxelBoxCombineResultID, VoxelBoxCombineResult> &combinedBoxesPool = boxCombineChunk.combinedBoxesPool;
 		for (const VoxelBoxCombineResult &combinedBoxResult : combinedBoxesPool.values)
 		{
 			const VoxelInt3 combinedBoxMin = combinedBoxResult.min;
