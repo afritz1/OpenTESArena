@@ -24,6 +24,7 @@
 #include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Utilities/Color.h"
+#include "../Utilities/Endian.h"
 #include "../Utilities/Palette.h"
 #include "../World/ChunkUtils.h"
 
@@ -2979,9 +2980,9 @@ namespace
 							{
 								constexpr int brightnessLimit = 0x3F; // Highest value each RGB component can be.
 								constexpr uint8_t brightnessMask = ~brightnessLimit;
-								constexpr uint32_t brightnessMaskR = brightnessMask << 16;
-								constexpr uint32_t brightnessMaskG = brightnessMask << 8;
-								constexpr uint32_t brightnessMaskB = brightnessMask;
+								constexpr uint32_t brightnessMaskR = brightnessMask << Endian::RGBA_RedShift;
+								constexpr uint32_t brightnessMaskG = brightnessMask << Endian::RGBA_GreenShift;
+								constexpr uint32_t brightnessMaskB = brightnessMask << Endian::RGBA_BlueShift;
 								constexpr uint32_t brightnessMaskRGB = brightnessMaskR | brightnessMaskG | brightnessMaskB;
 
 								isPixelCenterDarkEnough[i] = (prevFrameBufferColor[i] & brightnessMaskRGB) == 0;

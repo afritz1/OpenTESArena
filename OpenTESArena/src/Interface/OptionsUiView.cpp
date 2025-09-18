@@ -151,7 +151,7 @@ UiTextureID OptionsUiView::allocBackgroundTexture(Renderer &renderer)
 	}
 
 	Span2D<uint32_t> texels = lockedTexture.getTexels32();
-	const uint32_t color = OptionsUiView::BackgroundColor.toARGB();
+	const uint32_t color = OptionsUiView::BackgroundColor.toRGBA();
 	texels.fill(color);
 	renderer.unlockUiTexture(textureID);
 
@@ -206,7 +206,7 @@ UiTextureID OptionsUiView::allocHighlightTexture(Renderer &renderer)
 	}
 
 	Span2D<uint32_t> texels = lockedTexture.getTexels32();
-	const uint32_t color = OptionsUiView::HighlightColor.toARGB();
+	const uint32_t color = OptionsUiView::HighlightColor.toRGBA();
 	texels.fill(color);
 	renderer.unlockUiTexture(textureID);
 

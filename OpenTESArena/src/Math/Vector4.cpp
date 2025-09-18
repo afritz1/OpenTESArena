@@ -2,6 +2,7 @@
 #include <cstdio>
 
 #include "Vector4.h"
+#include "../Utilities/Endian.h"
 
 // -- Vector4i --
 
@@ -78,26 +79,12 @@ std::string Vector4i<T>::toString() const
 // -- Vector4f --
 
 template<typename T>
-Vector4f<T> Vector4f<T>::fromARGB(uint32_t argb)
-{
-	const uint8_t r = static_cast<uint8_t>(argb >> 16);
-	const uint8_t g = static_cast<uint8_t>(argb >> 8);
-	const uint8_t b = static_cast<uint8_t>(argb);
-	const uint8_t a = static_cast<uint8_t>(argb >> 24);
-	return Vector4f<T>(
-		static_cast<T>(r / 255.0),
-		static_cast<T>(g / 255.0),
-		static_cast<T>(b / 255.0),
-		static_cast<T>(a / 255.0));
-}
-
-template<typename T>
 Vector4f<T> Vector4f<T>::fromRGBA(uint32_t rgba)
 {
-	const uint8_t r = static_cast<uint8_t>(rgba >> 24);
-	const uint8_t g = static_cast<uint8_t>(rgba >> 16);
-	const uint8_t b = static_cast<uint8_t>(rgba >> 8);
-	const uint8_t a = static_cast<uint8_t>(rgba);
+	const uint8_t r = static_cast<uint8_t>(rgba >> Endian::RGBA_RedShift);
+	const uint8_t g = static_cast<uint8_t>(rgba >> Endian::RGBA_GreenShift);
+	const uint8_t b = static_cast<uint8_t>(rgba >> Endian::RGBA_BlueShift);
+	const uint8_t a = static_cast<uint8_t>(rgba >> Endian::RGBA_AlphaShift);
 	return Vector4f<T>(
 		static_cast<T>(r / 255.0),
 		static_cast<T>(g / 255.0),
@@ -180,23 +167,17 @@ std::string Vector4f<T>::toString() const
 }
 
 template<typename T>
-uint32_t Vector4f<T>::toARGB() const
-{
-	const uint8_t r = static_cast<uint8_t>(this->x * 255.0);
-	const uint8_t g = static_cast<uint8_t>(this->y * 255.0);
-	const uint8_t b = static_cast<uint8_t>(this->z * 255.0);
-	const uint8_t a = static_cast<uint8_t>(this->w * 255.0);
-	return static_cast<uint32_t>((r << 16) | (g << 8) | b | (a << 24));
-}
-
-template<typename T>
 uint32_t Vector4f<T>::toRGBA() const
 {
 	const uint8_t r = static_cast<uint8_t>(this->x * 255.0);
 	const uint8_t g = static_cast<uint8_t>(this->y * 255.0);
 	const uint8_t b = static_cast<uint8_t>(this->z * 255.0);
 	const uint8_t a = static_cast<uint8_t>(this->w * 255.0);
-	return static_cast<uint32_t>((r << 24) | (g << 16) | (b << 8) | a);
+	return static_cast<uint32_t>(
+		(r << Endian::RGBA_RedShift) |
+		(g << Endian::RGBA_GreenShift) |
+		(b << Endian::RGBA_BlueShift) |
+		(a << Endian::RGBA_AlphaShift));
 }
 
 template<typename T>

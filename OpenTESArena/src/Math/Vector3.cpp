@@ -5,6 +5,7 @@
 #include "MathUtils.h"
 #include "Random.h"
 #include "Vector3.h"
+#include "../Utilities/Endian.h"
 
 // -- Vector3i --
 
@@ -134,12 +135,15 @@ Vector3f<T> Vector3f<T>::randomPointInCuboid(const Vector3f<T> &center, T width,
 }
 
 template<typename T>
-Vector3f<T> Vector3f<T>::fromRGB(uint32_t rgb)
+Vector3f<T> Vector3f<T>::fromRGBx(uint32_t rgbx)
 {
+	const uint8_t r = static_cast<uint8_t>(rgbx >> Endian::RGBA_RedShift);
+	const uint8_t g = static_cast<uint8_t>(rgbx >> Endian::RGBA_GreenShift);
+	const uint8_t b = static_cast<uint8_t>(rgbx >> Endian::RGBA_BlueShift);
 	return Vector3f<T>(
-		static_cast<T>(static_cast<uint8_t>(rgb >> 16) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(rgb >> 8) / 255.0),
-		static_cast<T>(static_cast<uint8_t>(rgb) / 255.0));
+		static_cast<T>(r) / 255.0,
+		static_cast<T>(g) / 255.0,
+		static_cast<T>(b) / 255.0);
 }
 
 template<typename T>
@@ -235,12 +239,17 @@ std::string Vector3f<T>::toString() const
 }
 
 template<typename T>
-uint32_t Vector3f<T>::toRGB() const
+uint32_t Vector3f<T>::toRGBA() const
 {
 	const uint8_t r = static_cast<uint8_t>(this->x * 255.0);
 	const uint8_t g = static_cast<uint8_t>(this->y * 255.0);
 	const uint8_t b = static_cast<uint8_t>(this->z * 255.0);
-	return static_cast<uint32_t>((r << 16) | (g << 8) | b);
+	constexpr uint8_t a = 255;
+	return static_cast<uint32_t>(
+		(r << Endian::RGBA_RedShift) |
+		(g << Endian::RGBA_GreenShift) |
+		(b << Endian::RGBA_BlueShift) |
+		(a << Endian::RGBA_AlphaShift));
 }
 
 template<typename T>

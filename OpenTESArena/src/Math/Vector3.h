@@ -5,7 +5,6 @@
 #include <cstdint>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 
 #include "Vector2.h"
 
@@ -93,7 +92,7 @@ struct Vector3f
 	static Vector3f<T> randomDirection(Random &random);
 	static Vector3f<T> randomPointInSphere(const Vector3f<T> &center, T radius, Random &random);
 	static Vector3f<T> randomPointInCuboid(const Vector3f<T> &center, T width, T height, T depth, Random &random);
-	static Vector3f<T> fromRGB(uint32_t rgb);
+	static Vector3f<T> fromRGBx(uint32_t rgbx);
 
 	T &operator[](size_t index);
 	const T &operator[](size_t index) const;
@@ -112,7 +111,7 @@ struct Vector3f
 	Vector2f<T> getYZ() const;
 
 	std::string toString() const;
-	uint32_t toRGB() const;
+	uint32_t toRGBA() const;
 	double getYAngleRadians() const;
 	T lengthSquared() const;
 	T length() const;
@@ -160,7 +159,6 @@ using Uint3 = Vector3i<unsigned int>;
 using Float3 = Vector3f<float>;
 using Double3 = Vector3f<double>;
 
-// Hash definition for unordered_map.
 namespace std
 {
 	template<>

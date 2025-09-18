@@ -671,7 +671,7 @@ bool Renderer::populateUiTexture(UiTextureID id, Span<const std::byte> texels, c
 		std::transform(srcTexels.begin(), srcTexels.end(), dstTexels.begin(),
 			[palette](uint8_t texel)
 		{
-			return (*palette)[texel].toARGB();
+			return (*palette)[texel].toRGBA();
 		});
 	}
 

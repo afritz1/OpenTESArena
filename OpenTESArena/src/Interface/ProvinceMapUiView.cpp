@@ -287,7 +287,7 @@ UiTextureID ProvinceMapUiView::allocStaffDungeonIconTexture(int provinceID, High
 	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
 	uint32_t *dstTexelsPtr = dstTexels.begin();
 	const uint8_t highlightColorIndex = (highlightType == HighlightType::PlayerLocation) ? ProvinceMapUiView::YellowPaletteIndex : ProvinceMapUiView::RedPaletteIndex;
-	const uint32_t highlightColor = palette[highlightColorIndex].toARGB();
+	const uint32_t highlightColor = palette[highlightColorIndex].toRGBA();
 
 	const int texelCount = textureBuilder.width * textureBuilder.height;
 	for (int i = 0; i < texelCount; i++)

@@ -45,8 +45,8 @@ namespace
 		}
 
 		Span2D<uint32_t> texelsView(reinterpret_cast<uint32_t*>(lockedTexture.texels.begin()), width, height);
-		const uint32_t texelARGB = color.toARGB();
-		texelsView.fill(texelARGB);
+		const uint32_t texelRGBA = color.toRGBA();
+		texelsView.fill(texelRGBA);
 		renderer.unlockUiTexture(textureID);
 
 		return textureID;
@@ -73,10 +73,10 @@ void DebugVoxelVisibilityQuadtreeState::populateCommandList(Game &game, UiComman
 	}
 
 	constexpr uint8_t alpha = 192;
-	constexpr uint32_t visibleColor = Color(0, 255, 0, alpha).toARGB();
-	constexpr uint32_t partiallyVisibleColor = Color(255, 255, 0, alpha).toARGB();
-	constexpr uint32_t invisibleColor = Color(255, 0, 0, alpha).toARGB();
-	constexpr uint32_t playerColor = Color(255, 255, 255, alpha).toARGB();
+	constexpr uint32_t visibleColor = Color(0, 255, 0, alpha).toRGBA();
+	constexpr uint32_t partiallyVisibleColor = Color(255, 255, 0, alpha).toRGBA();
+	constexpr uint32_t invisibleColor = Color(255, 0, 0, alpha).toRGBA();
+	constexpr uint32_t playerColor = Color(255, 255, 255, alpha).toRGBA();
 
 	Renderer &renderer = game.renderer;
 
@@ -769,25 +769,25 @@ UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textu
 	Span2D<uint32_t> texelsView = lockedTexture.getTexels32();
 
 	constexpr Color cursorBgColor(0, 0, 0, 0);
-	const uint32_t cursorBgARGB = cursorBgColor.toARGB();
-	texelsView.fill(cursorBgARGB);
+	const uint32_t cursorBgRGBA = cursorBgColor.toRGBA();
+	texelsView.fill(cursorBgRGBA);
 
 	constexpr Color cursorColor(255, 255, 255, 160);
-	const uint32_t cursorColorARGB = cursorColor.toARGB();
+	const uint32_t cursorColorRGBA = cursorColor.toRGBA();
 
 	constexpr int middleX = width / 2;
 	constexpr int middleY = height / 2;
 
 	for (int x = 0; x < (middleX - 1); x++)
 	{
-		texelsView.set(x, middleY, cursorColorARGB);
-		texelsView.set(width - x - 1, middleY, cursorColorARGB);
+		texelsView.set(x, middleY, cursorColorRGBA);
+		texelsView.set(width - x - 1, middleY, cursorColorRGBA);
 	}
 
 	for (int y = 0; y < (middleY - 1); y++)
 	{
-		texelsView.set(middleX, y, cursorColorARGB);
-		texelsView.set(middleX, height - y - 1, cursorColorARGB);
+		texelsView.set(middleX, y, cursorColorRGBA);
+		texelsView.set(middleX, height - y - 1, cursorColorRGBA);
 	}
 
 	renderer.unlockUiTexture(textureID);

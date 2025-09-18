@@ -118,7 +118,7 @@ UiTextureID SdlUiRenderer::createTexture(int width, int height)
 {
 	TexelsInitFunc initFunc = [](Span2D<uint32_t> dstTexels)
 	{
-		dstTexels.fill(Colors::MagentaARGB);
+		dstTexels.fill(Colors::MagentaRGBA);
 	};
 
 	return CreateUiTexture(width, height, initFunc, this->texturePool, this->renderer);

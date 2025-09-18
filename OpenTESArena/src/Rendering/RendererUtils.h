@@ -26,8 +26,8 @@ namespace RendererUtils
 	// Default bits per pixel.
 	static constexpr int DEFAULT_BPP = 32;
 
-	// The default pixel format for all textures. Note that the 8888 types are memory layouts, not channel orders.
-	static constexpr uint32_t DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_BGRA32;
+	// The default pixel format for all textures. Note that the 8888 types are physical byte order in memory.
+	static constexpr uint32_t DEFAULT_PIXELFORMAT = SDL_PIXELFORMAT_RGBA32;
 
 	constexpr double NEAR_PLANE = 0.05;
 	constexpr double FAR_PLANE = 1000.0;

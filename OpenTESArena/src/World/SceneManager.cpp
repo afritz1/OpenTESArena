@@ -81,7 +81,7 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	std::transform(gameWorldPalette.begin(), gameWorldPalette.end(), gameWorldTexels.begin(),
 		[](const Color &paletteColor)
 	{
-		return paletteColor.toARGB();
+		return paletteColor.toRGBA();
 	});
 
 	// Update sky gradient. Write to palette indices 1-8 using one of the three palettes.
@@ -115,7 +115,7 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 	for (int i = 0; i < skyGradientColorCount; i++)
 	{
 		const int srcIndex = (srcTexelsIndexStart + i) % paletteLength;
-		gameWorldSkyGradientTexels[i] = skyGradientPaletteTexels[srcIndex].toARGB();
+		gameWorldSkyGradientTexels[i] = skyGradientPaletteTexels[srcIndex].toRGBA();
 	}
 
 	// Update window color in the palette.
@@ -147,9 +147,9 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
-		const Span<const uint8_t> windowColorBytes = exeData.light.windowTwilightColors;
+		Span<const uint8_t> windowColorBytes = exeData.light.windowTwilightColors;
 
-		auto getWindowRGBForTransitionPercent = [&windowColorBytes](double percent)
+		auto getWindowRGBForTransitionPercent = [windowColorBytes](double percent)
 		{
 			constexpr int bytesPerWindowColor = 3;
 			const int totalWindowColors = windowColorBytes.getCount() / bytesPerWindowColor;
@@ -161,11 +161,10 @@ void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherTy
 			const uint8_t windowR = windowColorBytes[windowColorByteOffset];
 			const uint8_t windowG = windowColorBytes[windowColorByteOffset + 1];
 			const uint8_t windowB = windowColorBytes[windowColorByteOffset + 2];
-			const uint8_t windowRCorrected = windowR * componentMultiplier;
-			const uint8_t windowGCorrected = windowG * componentMultiplier;
-			const uint8_t windowBCorrected = windowB * componentMultiplier;
-			const uint32_t windowRGBCorrected = (windowRCorrected << 16) | (windowGCorrected << 8) | windowBCorrected;
-			return windowRGBCorrected;
+			const uint8_t windowRScaled = windowR * componentMultiplier;
+			const uint8_t windowGScaled = windowG * componentMultiplier;
+			const uint8_t windowBScaled = windowB * componentMultiplier;
+			return Color(windowRScaled, windowGScaled, windowBScaled).toRGBA();
 		};
 
 		if (isDuringSunrise)

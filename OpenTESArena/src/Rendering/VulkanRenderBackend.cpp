@@ -40,11 +40,11 @@ namespace
 
 	constexpr vk::Format MaxCompatibilityImageFormat8888Unorm = vk::Format::eR8G8B8A8Unorm;
 	constexpr vk::Format MaxCompatibilityImageFormat32Uint = vk::Format::eR32Uint;
-	constexpr vk::Format SwapchainImageFormat = vk::Format::eB8G8R8A8Unorm; // 0xAARRGGBB in little endian, note that vkFormats are memory layouts, not channel orders.
+	constexpr vk::Format SwapchainImageFormat = MaxCompatibilityImageFormat8888Unorm;
 	constexpr vk::Format ColorBufferFormat = vk::Format::eR8Uint;
 	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
 	constexpr vk::Format ObjectTextureFormat8Bit = vk::Format::eR8Uint;
-	constexpr vk::Format ObjectTextureFormat32Bit = vk::Format::eB8G8R8A8Unorm;
+	constexpr vk::Format ObjectTextureFormat32Bit = MaxCompatibilityImageFormat8888Unorm;
 	constexpr vk::Format UiTextureFormat = ObjectTextureFormat32Bit;
 
 	constexpr vk::ImageUsageFlags SwapchainImageUsageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eColorAttachment;

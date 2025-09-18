@@ -565,6 +565,7 @@ SET(TES_UI
 SET(TES_UTILITIES
     "${SRC_ROOT}/Utilities/Color.cpp"
     "${SRC_ROOT}/Utilities/Color.h"
+    "${SRC_ROOT}/Utilities/Endian.h"
     "${SRC_ROOT}/Utilities/Palette.h"
     "${SRC_ROOT}/Utilities/Platform.cpp"
     "${SRC_ROOT}/Utilities/Platform.h"

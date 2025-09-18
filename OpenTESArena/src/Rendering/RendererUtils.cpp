@@ -135,13 +135,13 @@ Matrix4d RendererUtils::getTimeOfDayRotation(double dayPercent)
 
 int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette &palette)
 {
-	const Double3 colorRGB = Double3::fromRGB(color.toRGB());
+	const Double3 colorRGB = Double3::fromRGBx(color.toRGBA());
 
 	std::optional<int> nearestIndex;
 	for (int i = 0; i < static_cast<int>(palette.size()); i++)
 	{
 		const Color &paletteColor = palette[i];
-		const Double3 paletteColorRGB = Double3::fromRGB(paletteColor.toRGB());
+		const Double3 paletteColorRGB = Double3::fromRGBx(paletteColor.toRGBA());
 
 		if (!nearestIndex.has_value())
 		{
@@ -150,7 +150,7 @@ int RendererUtils::getNearestPaletteColorIndex(const Color &color, const Palette
 		else
 		{
 			const Color &currentNearestColor = palette[*nearestIndex];
-			const Double3 currentNearestColorRGB = Double3::fromRGB(currentNearestColor.toRGB());
+			const Double3 currentNearestColorRGB = Double3::fromRGBx(currentNearestColor.toRGBA());
 
 			if ((colorRGB - paletteColorRGB).length() < (colorRGB - currentNearestColorRGB).length())
 			{

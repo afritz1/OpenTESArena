@@ -60,7 +60,7 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 			std::transform(srcTexels.begin(), srcTexels.end(), dstPixels,
 				[&palette](const uint8_t srcTexel)
 			{
-				return palette[srcTexel].toARGB();
+				return palette[srcTexel].toRGBA();
 			});
 
 			return surface;

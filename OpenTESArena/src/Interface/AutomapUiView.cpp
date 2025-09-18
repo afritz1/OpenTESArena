@@ -302,7 +302,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 
 	// Fill with transparent color first (used by floor voxels).
 	const Color &floorColor = AutomapUiView::ColorFloor;
-	dstBuffer.fill(floorColor.toARGB());
+	dstBuffer.fill(floorColor.toRGBA());
 
 	const ChunkInt2 playerChunk = playerCoord.chunk;
 	ChunkInt2 minChunk, maxChunk;
@@ -320,7 +320,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 		const int surfaceWidth = dstBuffer.getWidth();
 		const int xOffset = automapX * AutomapUiView::PixelSize;
 		const int yOffset = automapY * AutomapUiView::PixelSize;
-		const uint32_t colorARGB = color.toARGB();
+		const uint32_t colorRGBA = color.toRGBA();
 		uint32_t *pixels = dstBuffer.begin();
 
 		for (int h = 0; h < AutomapUiView::PixelSize; h++)
@@ -330,7 +330,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 			{
 				const int xCoord = xOffset + w;
 				const int index = (surfaceWidth - xCoord - 1) + (yCoord * surfaceWidth);
-				pixels[index] = colorARGB;
+				pixels[index] = colorRGBA;
 			}
 		}
 	};
@@ -403,7 +403,7 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 		for (const Int2 &offset : offsets)
 		{
 			const int index = (surfaceX + offset.x) + ((surfaceY + offset.y) * dstBuffer.getWidth());
-			pixels[index] = AutomapUiView::ColorPlayer.toARGB();
+			pixels[index] = AutomapUiView::ColorPlayer.toRGBA();
 		}
 	};
 

@@ -315,7 +315,7 @@ void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int ds
 				const bool srcPixelIsColored = fontChar.get(srcX, srcY);
 				if (srcPixelIsColored)
 				{
-					const uint32_t dstPixel = textColor.toARGB();
+					const uint32_t dstPixel = textColor.toRGBA();
 					outBuffer.set(x, y, dstPixel);
 				}
 			}

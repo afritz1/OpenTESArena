@@ -96,7 +96,6 @@ struct Vector4f
 	static const Vector4f<T> UnitZ;
 	static const Vector4f<T> UnitW;
 
-	static Vector4f<T> fromARGB(uint32_t argb);
 	static Vector4f<T> fromRGBA(uint32_t rgba);
 
 	T &operator[](size_t index);
@@ -112,7 +111,6 @@ struct Vector4f
 	Vector4f<T> operator/(const Vector4f<T> &v) const;
 
 	std::string toString() const;
-	uint32_t toARGB() const;
 	uint32_t toRGBA() const;
 	T lengthSquared() const;
 	T length() const;
