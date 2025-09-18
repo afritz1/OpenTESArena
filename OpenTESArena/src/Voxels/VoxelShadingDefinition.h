@@ -5,18 +5,18 @@
 
 struct VoxelShadingDefinition
 {
-	static constexpr int MAX_PIXEL_SHADERS = 3; // For top/middle/bottom of some voxels like raised platforms.
+	static constexpr int MAX_FRAGMENT_SHADERS = 3; // For top/middle/bottom of some voxels like raised platforms.
 
 	VertexShaderType vertexShaderType;
-	PixelShaderType pixelShaderTypes[MAX_PIXEL_SHADERS];
-	int pixelShaderCount;
+	FragmentShaderType fragmentShaderTypes[MAX_FRAGMENT_SHADERS];
+	int fragmentShaderCount;
 
 	VoxelShadingDefinition();
 
-	void init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType);
+	void init(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType);
 	void init(VertexShaderType vertexShaderType);
 
-	void addPixelShaderType(PixelShaderType pixelShaderType);
+	void addFragmentShaderType(FragmentShaderType fragmentShaderType);
 };
 
 #endif

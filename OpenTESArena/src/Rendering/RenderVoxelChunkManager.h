@@ -36,7 +36,7 @@ struct RenderVoxelLoadedTexture
 };
 
 // Chasm walls are multi-textured. They use the chasm animation and a separate wall texture.
-// The draw call and pixel shader need two textures in order to support chasm wall rendering.
+// The draw call and fragment shader need two textures in order to support chasm wall rendering.
 struct RenderVoxelLoadedChasmFloorTexture
 {
 	VoxelChasmAnimationType animType;

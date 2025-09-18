@@ -434,18 +434,18 @@ bool RenderWeatherManager::initMaterials(Renderer &renderer)
 	constexpr RenderLightingType lightingType = RenderLightingType::PerMesh;
 
 	RenderMaterialKey rainMaterialKey;
-	rainMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTested, Span<const ObjectTextureID>(&this->rainTextureID, 1), lightingType, false, false, false);
+	rainMaterialKey.init(vertexShaderType, FragmentShaderType::AlphaTested, Span<const ObjectTextureID>(&this->rainTextureID, 1), lightingType, false, false, false);
 	this->rainMaterialID = renderer.createMaterial(rainMaterialKey);
 
 	for (int i = 0; i < static_cast<int>(std::size(this->snowMaterialIDs)); i++)
 	{
 		RenderMaterialKey snowMaterialKey;
-		snowMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTested, Span<const ObjectTextureID>(&this->snowTextureIDs[i], 1), lightingType, false, false, false);
+		snowMaterialKey.init(vertexShaderType, FragmentShaderType::AlphaTested, Span<const ObjectTextureID>(&this->snowTextureIDs[i], 1), lightingType, false, false, false);
 		this->snowMaterialIDs[i] = renderer.createMaterial(snowMaterialKey);
 	}
 
 	RenderMaterialKey fogMaterialKey;
-	fogMaterialKey.init(vertexShaderType, PixelShaderType::AlphaTestedWithLightLevelOpacity, Span<const ObjectTextureID>(&this->fogTextureID, 1), lightingType, false, false, false);
+	fogMaterialKey.init(vertexShaderType, FragmentShaderType::AlphaTestedWithLightLevelOpacity, Span<const ObjectTextureID>(&this->fogTextureID, 1), lightingType, false, false, false);
 	this->fogMaterialID = renderer.createMaterial(fogMaterialKey);
 
 	this->materialInstID = renderer.createMaterialInstance();

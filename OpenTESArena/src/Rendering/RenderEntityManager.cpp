@@ -102,33 +102,33 @@ namespace
 		return textureID;
 	}
 
-	PixelShaderType GetEntityPixelShaderType(const EntityDefinition &entityDef)
+	FragmentShaderType GetEntityFragmentShaderType(const EntityDefinition &entityDef)
 	{
-		PixelShaderType pixelShaderType;
+		FragmentShaderType fragmentShaderType;
 		if (EntityUtils::isGhost(entityDef))
 		{
-			pixelShaderType = PixelShaderType::AlphaTestedWithLightLevelOpacity;
+			fragmentShaderType = FragmentShaderType::AlphaTestedWithLightLevelOpacity;
 		}
 		else if (EntityUtils::isPuddle(entityDef))
 		{
-			pixelShaderType = PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass;
+			fragmentShaderType = FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass;
 		}
 		else if (entityDef.type == EntityDefinitionType::Citizen)
 		{
-			pixelShaderType = PixelShaderType::AlphaTestedWithPaletteIndexLookup;
+			fragmentShaderType = FragmentShaderType::AlphaTestedWithPaletteIndexLookup;
 		}
 		else
 		{
-			pixelShaderType = PixelShaderType::AlphaTested;
+			fragmentShaderType = FragmentShaderType::AlphaTested;
 		}
 
-		return pixelShaderType;
+		return fragmentShaderType;
 	}
 
-	RenderMaterialKey MakeEntityRenderMaterialKey(PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs)
+	RenderMaterialKey MakeEntityRenderMaterialKey(FragmentShaderType fragmentShaderType, Span<const ObjectTextureID> textureIDs)
 	{
 		RenderMaterialKey materialKey;
-		materialKey.init(VertexShaderType::Entity, pixelShaderType, textureIDs, RenderLightingType::PerPixel, true, true, true);
+		materialKey.init(VertexShaderType::Entity, fragmentShaderType, textureIDs, RenderLightingType::PerPixel, true, true, true);
 		return materialKey;
 	}
 
@@ -137,7 +137,7 @@ namespace
 		constexpr RenderLightingType lightingType = RenderLightingType::PerMesh; // Don't spend effort lighting reflection, value is unused.
 
 		RenderMaterialKey materialKey;
-		materialKey.init(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, Span<const ObjectTextureID>(&textureID, 1), lightingType, true, true, true);
+		materialKey.init(VertexShaderType::Entity, FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass, Span<const ObjectTextureID>(&textureID, 1), lightingType, true, true, true);
 		return materialKey;
 	}
 }
@@ -269,7 +269,7 @@ void RenderEntityManager::loadMaterialsForChunkEntities(const EntityChunk &entit
 		}
 
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
-		const PixelShaderType pixelShaderType = GetEntityPixelShaderType(entityDef);
+		const FragmentShaderType fragmentShaderType = GetEntityFragmentShaderType(entityDef);
 
 		if (loadedAnim == nullptr)
 		{
@@ -305,7 +305,7 @@ void RenderEntityManager::loadMaterialsForChunkEntities(const EntityChunk &entit
 				for (int i = 0; i < loadedAnimTextureRefs.getCount(); i++)
 				{
 					const ObjectTextureID materialTextureIDs[] = { loadedAnimTextureRefs[i].get(), paletteIndicesTextureID };
-					RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(PixelShaderType::AlphaTestedWithPaletteIndexLookup, materialTextureIDs);
+					RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(FragmentShaderType::AlphaTestedWithPaletteIndexLookup, materialTextureIDs);
 					newEntry.materialIDs[i] = renderer.createMaterial(materialKey);
 				}
 
@@ -335,11 +335,11 @@ void RenderEntityManager::loadMaterialsForChunkEntities(const EntityChunk &entit
 			for (int i = 0; i < loadedAnim->textureRefs.getCount(); i++)
 			{
 				const ObjectTextureID materialTextureIDs[] = { loadedAnim->textureRefs[i].get() };
-				const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(pixelShaderType, materialTextureIDs);
+				const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(fragmentShaderType, materialTextureIDs);
 				addMaterialIfUnique(materialKey);
 			}
 
-			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
+			if (fragmentShaderType == FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass)
 			{
 				for (int i = 0; i < loadedAnim->textureRefs.getCount(); i++)
 				{
@@ -374,12 +374,12 @@ void RenderEntityManager::loadMaterialsForEntity(EntityDefID entityDefID, Textur
 	RenderEntityLoadedAnimation &loadedAnim = this->anims.emplace_back(RenderEntityLoadedAnimation());
 	loadedAnim.init(entityDefID, std::move(textureRefs));
 
-	const PixelShaderType pixelShaderType = GetEntityPixelShaderType(entityDef);
+	const FragmentShaderType fragmentShaderType = GetEntityFragmentShaderType(entityDef);
 
 	for (int i = 0; i < loadedAnim.textureRefs.getCount(); i++)
 	{
 		const ObjectTextureID materialTextureIDs[] = { loadedAnim.textureRefs[i].get() };
-		const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(pixelShaderType, materialTextureIDs);
+		const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(fragmentShaderType, materialTextureIDs);
 
 		RenderMaterial material;
 		material.key = materialKey;
@@ -493,7 +493,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
 
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
-			const PixelShaderType pixelShaderType = GetEntityPixelShaderType(entityDef);
+			const FragmentShaderType fragmentShaderType = GetEntityFragmentShaderType(entityDef);
 			const ObjectTextureID observedTextureIDs[] = { animDefIter->textureRefs[linearizedKeyframeIndex].get() };
 
 			RenderMaterialID materialID = -1;
@@ -510,7 +510,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			}
 			else
 			{
-				const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(pixelShaderType, observedTextureIDs);
+				const RenderMaterialKey materialKey = MakeEntityRenderMaterialKey(fragmentShaderType, observedTextureIDs);
 
 				for (const RenderMaterial &material : this->materials)
 				{
@@ -536,7 +536,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			drawCall.materialID = materialID;
 			drawCall.materialInstID = -1;
 
-			if (pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass)
+			if (fragmentShaderType == FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass)
 			{
 				const RenderMaterialKey puddleSecondPassMaterialKey = MakePuddleSecondPassMaterialKey(observedTextureIDs[0]);
 
@@ -559,7 +559,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 				this->puddleSecondPassDrawCallsCache.emplace_back(std::move(puddleSecondPassDrawCall));
 			}
 
-			if (pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity)
+			if (fragmentShaderType == FragmentShaderType::AlphaTestedWithLightLevelOpacity)
 			{
 				drawCall.multipassType = RenderMultipassType::Ghosts;
 				this->ghostDrawCallsCache.emplace_back(std::move(drawCall));

@@ -304,7 +304,7 @@ namespace MapGeneration
 
 	void writeVoxelInfoForFLOR(ArenaVoxelID florVoxel, MapType mapType, const INFFile &inf, ArenaVoxelType *outVoxelType,
 		ArenaShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset, VertexShaderType *outVertexShaderType,
-		Span<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsChasm, bool *outIsWildWallColored,
+		Span<FragmentShaderType> outFragmentShaderTypes, int *outFragmentShaderCount, bool *outIsChasm, bool *outIsWildWallColored,
 		ArenaChasmType *outChasmType)
 	{
 		const int textureID = (florVoxel & 0xFF00) >> 8;
@@ -322,8 +322,8 @@ namespace MapGeneration
 				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			*outVertexShaderType = VertexShaderType::Basic;
-			outPixelShaderTypes[0] = PixelShaderType::Opaque;
-			*outPixelShaderCount = 1;
+			outFragmentShaderTypes[0] = FragmentShaderType::Opaque;
+			*outFragmentShaderCount = 1;
 			*outIsWildWallColored = ArenaVoxelUtils::isFloorWildWallColored(textureID, mapType);
 			*outChasmType = static_cast<ArenaChasmType>(-1);
 		}
@@ -332,8 +332,8 @@ namespace MapGeneration
 			*outVoxelType = ArenaVoxelType::Chasm;
 
 			int chasmID;
-			PixelShaderType chasmFloorPixelShaderType;
-			PixelShaderType chasmWallPixelShaderType;
+			FragmentShaderType chasmFloorFragmentShaderType;
+			FragmentShaderType chasmWallFragmentShaderType;
 			if (textureID == MIFUtils::DRY_CHASM)
 			{
 				const std::optional<int> &dryChasmIndex = inf.getDryChasmIndex();
@@ -348,8 +348,8 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaChasmType::Dry;
-				chasmFloorPixelShaderType = PixelShaderType::Opaque;
-				chasmWallPixelShaderType = PixelShaderType::OpaqueWithAlphaTestLayer;
+				chasmFloorFragmentShaderType = FragmentShaderType::Opaque;
+				chasmWallFragmentShaderType = FragmentShaderType::OpaqueWithAlphaTestLayer;
 			}
 			else if (textureID == MIFUtils::LAVA_CHASM)
 			{
@@ -365,8 +365,8 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaChasmType::Lava;
-				chasmFloorPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimation;
-				chasmWallPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
+				chasmFloorFragmentShaderType = FragmentShaderType::OpaqueScreenSpaceAnimation;
+				chasmWallFragmentShaderType = FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			}
 			else if (textureID == MIFUtils::WET_CHASM)
 			{
@@ -382,8 +382,8 @@ namespace MapGeneration
 				}
 
 				*outChasmType = ArenaChasmType::Wet;
-				chasmFloorPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimation;
-				chasmWallPixelShaderType = PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
+				chasmFloorFragmentShaderType = FragmentShaderType::OpaqueScreenSpaceAnimation;
+				chasmWallFragmentShaderType = FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer;
 			}
 			else
 			{
@@ -398,9 +398,9 @@ namespace MapGeneration
 				ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 				ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 			*outVertexShaderType = VertexShaderType::Basic;
-			outPixelShaderTypes[0] = chasmFloorPixelShaderType;
-			outPixelShaderTypes[1] = chasmWallPixelShaderType;
-			*outPixelShaderCount = 2;
+			outFragmentShaderTypes[0] = chasmFloorFragmentShaderType;
+			outFragmentShaderTypes[1] = chasmWallFragmentShaderType;
+			*outFragmentShaderCount = 2;
 			*outIsWildWallColored = false;
 		}
 	}
@@ -412,12 +412,12 @@ namespace MapGeneration
 		ArenaShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
 		VertexShaderType vertexShaderType;
-		PixelShaderType pixelShaderTypes[VoxelShadingDefinition::MAX_PIXEL_SHADERS];
-		int pixelShaderCount;
+		FragmentShaderType fragmentShaderTypes[VoxelShadingDefinition::MAX_FRAGMENT_SHADERS];
+		int fragmentShaderCount;
 		bool isChasm;
 		bool isWildWallColored;
 		ArenaChasmType chasmType;
-		MapGeneration::writeVoxelInfoForFLOR(florVoxel, mapType, inf, &voxelType, &shapeInitCache, &textureAsset, &vertexShaderType, pixelShaderTypes, &pixelShaderCount,
+		MapGeneration::writeVoxelInfoForFLOR(florVoxel, mapType, inf, &voxelType, &shapeInitCache, &textureAsset, &vertexShaderType, fragmentShaderTypes, &fragmentShaderCount,
 			&isChasm, &isWildWallColored, &chasmType);
 
 		VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
@@ -431,9 +431,9 @@ namespace MapGeneration
 		outTextureDef->addTextureAsset(std::move(textureAsset));
 		
 		outShadingDef->init(vertexShaderType);
-		for (int i = 0; i < pixelShaderCount; i++)
+		for (int i = 0; i < fragmentShaderCount; i++)
 		{
-			outShadingDef->addPixelShaderType(pixelShaderTypes[i]);
+			outShadingDef->addFragmentShaderType(fragmentShaderTypes[i]);
 		}
 
 		switch (voxelType)
@@ -483,8 +483,8 @@ namespace MapGeneration
 		outTextureDef->addTextureAsset(TextureAsset(textureAsset));
 		
 		outShadingDef->init(VertexShaderType::Basic);
-		outShadingDef->addPixelShaderType(PixelShaderType::OpaqueScreenSpaceAnimation);
-		outShadingDef->addPixelShaderType(PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
+		outShadingDef->addFragmentShaderType(FragmentShaderType::OpaqueScreenSpaceAnimation);
+		outShadingDef->addFragmentShaderType(FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 
 		outTraitsDef->initChasm(chasmType);
 		outChasmDef->initClassic(chasmType, textureAsset, textureManager);
@@ -493,7 +493,7 @@ namespace MapGeneration
 	void writeVoxelInfoForMAP1(ArenaVoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf,
 		const ExeData &exeData, ArenaVoxelType *outVoxelType, ArenaShapeInitCache *outShapeInitCache,
 		TextureAsset *outTextureAsset0, TextureAsset *outTextureAsset1, TextureAsset *outTextureAsset2, VertexShaderType *outVertexShaderType,
-		Span<PixelShaderType> outPixelShaderTypes, int *outPixelShaderCount, bool *outIsCollider, VoxelFacing2D *outFacing)
+		Span<FragmentShaderType> outFragmentShaderTypes, int *outFragmentShaderCount, bool *outIsCollider, VoxelFacing2D *outFacing)
 	{
 		DebugAssert(map1Voxel != 0);
 		DebugAssert(mostSigNibble != 0x8);
@@ -519,10 +519,10 @@ namespace MapGeneration
 				*outTextureAsset1 = *outTextureAsset0;
 				*outTextureAsset2 = *outTextureAsset0;
 				*outVertexShaderType = VertexShaderType::Basic;
-				outPixelShaderTypes[0] = PixelShaderType::Opaque;
-				outPixelShaderTypes[1] = PixelShaderType::Opaque;
-				outPixelShaderTypes[2] = PixelShaderType::Opaque;
-				*outPixelShaderCount = 3;
+				outFragmentShaderTypes[0] = FragmentShaderType::Opaque;
+				outFragmentShaderTypes[1] = FragmentShaderType::Opaque;
+				outFragmentShaderTypes[2] = FragmentShaderType::Opaque;
+				*outFragmentShaderCount = 3;
 			}
 			else
 			{
@@ -630,10 +630,10 @@ namespace MapGeneration
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedCeilingID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedCeilingID, inf));
 				*outVertexShaderType = VertexShaderType::Basic;
-				outPixelShaderTypes[0] = PixelShaderType::AlphaTested;
-				outPixelShaderTypes[1] = PixelShaderType::Opaque;
-				outPixelShaderTypes[2] = PixelShaderType::Opaque;
-				*outPixelShaderCount = 3;
+				outFragmentShaderTypes[0] = FragmentShaderType::AlphaTested;
+				outFragmentShaderTypes[1] = FragmentShaderType::Opaque;
+				outFragmentShaderTypes[2] = FragmentShaderType::Opaque;
+				*outFragmentShaderCount = 3;
 			}
 		}
 		else
@@ -652,8 +652,8 @@ namespace MapGeneration
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 				*outVertexShaderType = VertexShaderType::Basic;
-				outPixelShaderTypes[0] = PixelShaderType::AlphaTested;
-				*outPixelShaderCount = 1;
+				outFragmentShaderTypes[0] = FragmentShaderType::AlphaTested;
+				*outFragmentShaderCount = 1;
 				*outIsCollider = (map1Voxel & 0x0100) == 0;
 			}
 			else if (mostSigNibble == 0xA)
@@ -717,8 +717,8 @@ namespace MapGeneration
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 				*outVertexShaderType = VertexShaderType::Basic;
-				outPixelShaderTypes[0] = PixelShaderType::AlphaTested;
-				*outPixelShaderCount = 1;
+				outFragmentShaderTypes[0] = FragmentShaderType::AlphaTested;
+				*outFragmentShaderCount = 1;
 				*outIsCollider = collider;
 				*outFacing = facing;
 			}
@@ -732,25 +732,25 @@ namespace MapGeneration
 
 				ArenaDoorType doorType;
 				VertexShaderType doorVertexShaderType;
-				PixelShaderType doorPixelShaderType;
+				FragmentShaderType doorFragmentShaderType;
 				const int type = (map1Voxel & 0x00C0) >> 4;
 				if (type == 0x0)
 				{
 					doorType = ArenaDoorType::Swinging;
 					doorVertexShaderType = VertexShaderType::Basic;
-					doorPixelShaderType = PixelShaderType::AlphaTested;
+					doorFragmentShaderType = FragmentShaderType::AlphaTested;
 				}
 				else if (type == 0x4)
 				{
 					doorType = ArenaDoorType::Sliding;
 					doorVertexShaderType = VertexShaderType::Basic;
-					doorPixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordUMin;
+					doorFragmentShaderType = FragmentShaderType::AlphaTestedWithVariableTexCoordUMin;
 				}
 				else if (type == 0x8)
 				{
 					doorType = ArenaDoorType::Raising;
 					doorVertexShaderType = VertexShaderType::Basic;
-					doorPixelShaderType = PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
+					doorFragmentShaderType = FragmentShaderType::AlphaTestedWithVariableTexCoordVMin;
 				}
 				else
 				{
@@ -758,7 +758,7 @@ namespace MapGeneration
 					DebugLogWarningFormat("Unrecognized door type \"%d\", treating as splitting.", type);
 					doorType = ArenaDoorType::Splitting;
 					doorVertexShaderType = VertexShaderType::Basic;
-					doorPixelShaderType = PixelShaderType::AlphaTested;
+					doorFragmentShaderType = FragmentShaderType::AlphaTested;
 				}
 
 				outShapeInitCache->initDefaultBoxValues(voxelType);
@@ -768,8 +768,8 @@ namespace MapGeneration
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 				*outVertexShaderType = doorVertexShaderType;
-				outPixelShaderTypes[0] = doorPixelShaderType;
-				*outPixelShaderCount = 1;
+				outFragmentShaderTypes[0] = doorFragmentShaderType;
+				*outFragmentShaderCount = 1;
 			}
 			else if (mostSigNibble == 0xC)
 			{
@@ -791,8 +791,8 @@ namespace MapGeneration
 					ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf),
 					ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 				*outVertexShaderType = VertexShaderType::Basic;
-				outPixelShaderTypes[0] = PixelShaderType::Opaque;
-				*outPixelShaderCount = 1;
+				outFragmentShaderTypes[0] = FragmentShaderType::Opaque;
+				*outFragmentShaderCount = 1;
 			}
 			else
 			{
@@ -808,12 +808,12 @@ namespace MapGeneration
 		ArenaShapeInitCache shapeInitCache;
 		TextureAsset textureAsset0, textureAsset1, textureAsset2;
 		VertexShaderType vertexShaderType;
-		PixelShaderType pixelShaderTypes[VoxelShadingDefinition::MAX_PIXEL_SHADERS];
-		int pixelShaderCount;
+		FragmentShaderType fragmentShaderTypes[VoxelShadingDefinition::MAX_FRAGMENT_SHADERS];
+		int fragmentShaderCount;
 		bool isCollider;
 		VoxelFacing2D facing;
 		MapGeneration::writeVoxelInfoForMAP1(map1Voxel, mostSigNibble, mapType, inf, exeData, &voxelType, &shapeInitCache,
-			&textureAsset0, &textureAsset1, &textureAsset2, &vertexShaderType, pixelShaderTypes, &pixelShaderCount,
+			&textureAsset0, &textureAsset1, &textureAsset2, &vertexShaderType, fragmentShaderTypes, &fragmentShaderCount,
 			&isCollider, &facing);
 
 		VoxelShapeScaleType scaleType = VoxelShapeScaleType::ScaledFromMin;
@@ -835,9 +835,9 @@ namespace MapGeneration
 		}
 
 		outShadingDef->init(vertexShaderType);
-		for (int i = 0; i < pixelShaderCount; i++)
+		for (int i = 0; i < fragmentShaderCount; i++)
 		{
-			outShadingDef->addPixelShaderType(pixelShaderTypes[i]);
+			outShadingDef->addFragmentShaderType(fragmentShaderTypes[i]);
 		}
 
 		switch (voxelType)
@@ -889,7 +889,7 @@ namespace MapGeneration
 		outShadingDef->init(VertexShaderType::Basic);
 		for (int i = 0; i < 3; i++)
 		{
-			outShadingDef->addPixelShaderType(PixelShaderType::Opaque);
+			outShadingDef->addFragmentShaderType(FragmentShaderType::Opaque);
 		}
 
 		outTraitsDef->initGeneral(voxelType);
@@ -923,7 +923,7 @@ namespace MapGeneration
 		const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(inf.getCeiling().height);
 		outShapeDef->initBoxFromClassic(shapeInitCache, scaleType, ceilingScale);
 		outTextureDef->addTextureAsset(std::move(textureAsset));
-		outShadingDef->init(VertexShaderType::Basic, PixelShaderType::Opaque);
+		outShadingDef->init(VertexShaderType::Basic, FragmentShaderType::Opaque);
 		outTraitsDef->initGeneral(voxelType);
 	}
 

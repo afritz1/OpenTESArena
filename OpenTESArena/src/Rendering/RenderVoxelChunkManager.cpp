@@ -40,7 +40,7 @@ namespace
 	struct DrawCallShadingInitInfo
 	{
 		VertexShaderType vertexShaderType;
-		PixelShaderType pixelShaderType;
+		FragmentShaderType fragmentShaderType;
 		double texCoordAnimPercent;
 	};
 
@@ -749,9 +749,9 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 
 		const VoxelShadingDefID shadingDefID = voxelChunk.shadingDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelShadingDefinition &shadingDef = voxelChunk.shadingDefs[shadingDefID];
-		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
-		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
-		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
+		DebugAssertIndex(shadingDef.fragmentShaderTypes, textureSlotIndex);
+		DebugAssert(textureSlotIndex < shadingDef.fragmentShaderCount);
+		const FragmentShaderType fragmentShaderType = shadingDef.fragmentShaderTypes[textureSlotIndex];
 		constexpr double texCoordAnimPercent = 0.0;
 
 		DrawCallLightingInitInfo lightingInitInfo;
@@ -798,7 +798,7 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 		}
 
 		RenderMaterialKey materialKey;
-		materialKey.init(shadingDef.vertexShaderType, pixelShaderType, textureIDs, lightingInitInfo.type, !shapeDef.allowsBackFaces, true, true);
+		materialKey.init(shadingDef.vertexShaderType, fragmentShaderType, textureIDs, lightingInitInfo.type, !shapeDef.allowsBackFaces, true, true);
 
 		RenderMaterialID materialID = -1;
 		for (const RenderMaterial &material : this->materials)
@@ -940,8 +940,8 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		shadingInitInfo.vertexShaderType = voxelShadingDef.vertexShaderType;
 
 		const int textureSlotIndex = voxelMeshDef.textureSlotIndices[0];
-		DebugAssertIndex(voxelShadingDef.pixelShaderTypes, textureSlotIndex);
-		shadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[textureSlotIndex];
+		DebugAssertIndex(voxelShadingDef.fragmentShaderTypes, textureSlotIndex);
+		shadingInitInfo.fragmentShaderType = voxelShadingDef.fragmentShaderTypes[textureSlotIndex];
 		shadingInitInfo.texCoordAnimPercent = 0.0;
 
 		DrawCallLightingInitInfo lightingInitInfo;
@@ -973,7 +973,7 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 		}
 
 		RenderMaterialKey materialKey;
-		materialKey.init(shadingInitInfo.vertexShaderType, shadingInitInfo.pixelShaderType, Span<const ObjectTextureID>(&textureInitInfo.id0, 1), lightingInitInfo.type, !voxelShapeDef.allowsBackFaces, true, true);
+		materialKey.init(shadingInitInfo.vertexShaderType, shadingInitInfo.fragmentShaderType, Span<const ObjectTextureID>(&textureInitInfo.id0, 1), lightingInitInfo.type, !voxelShapeDef.allowsBackFaces, true, true);
 
 		RenderMaterialID materialID = -1;
 		for (const RenderMaterial &material : this->materials)
@@ -1116,9 +1116,9 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		textureInitInfo.id1 = -1;
 
 		DrawCallShadingInitInfo shadingInitInfo;
-		DebugAssert(voxelShadingDef.pixelShaderCount == 1);
+		DebugAssert(voxelShadingDef.fragmentShaderCount == 1);
 		shadingInitInfo.vertexShaderType = voxelShadingDef.vertexShaderType;
-		shadingInitInfo.pixelShaderType = voxelShadingDef.pixelShaderTypes[0];
+		shadingInitInfo.fragmentShaderType = voxelShadingDef.fragmentShaderTypes[0];
 
 		switch (doorType)
 		{
@@ -1165,7 +1165,7 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 		}
 
 		RenderMaterialKey materialKey;
-		materialKey.init(shadingInitInfo.vertexShaderType, shadingInitInfo.pixelShaderType, Span<const ObjectTextureID>(&textureInitInfo.id0, 1), lightingInitInfo.type, true, true, true);
+		materialKey.init(shadingInitInfo.vertexShaderType, shadingInitInfo.fragmentShaderType, Span<const ObjectTextureID>(&textureInitInfo.id0, 1), lightingInitInfo.type, true, true, true);
 
 		RenderMaterialID materialID = -1;
 		for (const RenderMaterial &material : this->materials)

@@ -104,7 +104,7 @@ struct SoftwareObjectTexture
 struct SoftwareMaterial
 {
 	VertexShaderType vertexShaderType;
-	PixelShaderType pixelShaderType;
+	FragmentShaderType fragmentShaderType;
 
 	ObjectTextureID textureIDs[RenderMaterialKey::MAX_TEXTURE_COUNT];
 	int textureCount;
@@ -117,7 +117,7 @@ struct SoftwareMaterial
 
 	SoftwareMaterial();
 
-	void init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
+	void init(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType, Span<const ObjectTextureID> textureIDs,
 		RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite);
 };
 

@@ -11,7 +11,7 @@ enum class VertexShaderType
 static constexpr VertexShaderType VERTEX_SHADER_TYPE_MAX = VertexShaderType::Entity;
 static constexpr int VERTEX_SHADER_TYPE_COUNT = static_cast<int>(VERTEX_SHADER_TYPE_MAX) + 1;
 
-enum class PixelShaderType
+enum class FragmentShaderType
 {
 	// Object textures
 	Opaque, // Most walls/floors/ceilings.
@@ -31,11 +31,11 @@ enum class PixelShaderType
 	UiTexture
 };
 
-static constexpr PixelShaderType OBJECT_PIXEL_SHADER_TYPE_MAX = PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
-static constexpr int OBJECT_PIXEL_SHADER_TYPE_COUNT = static_cast<int>(OBJECT_PIXEL_SHADER_TYPE_MAX) + 1;
-static constexpr PixelShaderType UI_PIXEL_SHADER_TYPE_MAX = PixelShaderType::UiTexture;
-static constexpr int UI_PIXEL_SHADER_TYPE_COUNT = static_cast<int>(UI_PIXEL_SHADER_TYPE_MAX) + 1 - OBJECT_PIXEL_SHADER_TYPE_COUNT;
-static constexpr int TOTAL_PIXEL_SHADER_TYPE_COUNT = OBJECT_PIXEL_SHADER_TYPE_COUNT + UI_PIXEL_SHADER_TYPE_COUNT;
+static constexpr FragmentShaderType OBJECT_FRAGMENT_SHADER_TYPE_MAX = FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass;
+static constexpr int OBJECT_FRAGMENT_SHADER_TYPE_COUNT = static_cast<int>(OBJECT_FRAGMENT_SHADER_TYPE_MAX) + 1;
+static constexpr FragmentShaderType UI_FRAGMENT_SHADER_TYPE_MAX = FragmentShaderType::UiTexture;
+static constexpr int UI_FRAGMENT_SHADER_TYPE_COUNT = static_cast<int>(UI_FRAGMENT_SHADER_TYPE_MAX) + 1 - OBJECT_FRAGMENT_SHADER_TYPE_COUNT;
+static constexpr int TOTAL_FRAGMENT_SHADER_TYPE_COUNT = OBJECT_FRAGMENT_SHADER_TYPE_COUNT + UI_FRAGMENT_SHADER_TYPE_COUNT;
 
 enum class DitheringMode
 {
@@ -60,26 +60,26 @@ enum class RenderMultipassType
 
 namespace RenderShaderUtils
 {
-	constexpr bool isOpaque(PixelShaderType type)
+	constexpr bool isOpaque(FragmentShaderType type)
 	{
-		return (type == PixelShaderType::Opaque) ||
-			(type == PixelShaderType::OpaqueWithAlphaTestLayer) ||
-			(type == PixelShaderType::OpaqueScreenSpaceAnimation) ||
-			(type == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
+		return (type == FragmentShaderType::Opaque) ||
+			(type == FragmentShaderType::OpaqueWithAlphaTestLayer) ||
+			(type == FragmentShaderType::OpaqueScreenSpaceAnimation) ||
+			(type == FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 	}
 
-	constexpr bool requiresMeshLightPercent(PixelShaderType type)
+	constexpr bool requiresMeshLightPercent(FragmentShaderType type)
 	{
-		return (type == PixelShaderType::Opaque) ||
-			(type == PixelShaderType::OpaqueScreenSpaceAnimation) ||
-			(type == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) ||
-			(type == PixelShaderType::AlphaTested);
+		return (type == FragmentShaderType::Opaque) ||
+			(type == FragmentShaderType::OpaqueScreenSpaceAnimation) ||
+			(type == FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) ||
+			(type == FragmentShaderType::AlphaTested);
 	}
 
-	constexpr bool requiresTexCoordAnimPercent(PixelShaderType type)
+	constexpr bool requiresTexCoordAnimPercent(FragmentShaderType type)
 	{
-		return (type == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
-			(type == PixelShaderType::AlphaTestedWithVariableTexCoordVMin);
+		return (type == FragmentShaderType::AlphaTestedWithVariableTexCoordUMin) ||
+			(type == FragmentShaderType::AlphaTestedWithVariableTexCoordVMin);
 	}
 }
 

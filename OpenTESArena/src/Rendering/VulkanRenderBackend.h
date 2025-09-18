@@ -209,7 +209,7 @@ struct VulkanVertexShader
 
 struct VulkanFragmentShader
 {
-	PixelShaderType type;
+	FragmentShaderType type;
 	vk::ShaderModule module;
 
 	VulkanFragmentShader();
@@ -220,7 +220,7 @@ using VulkanPipelineKeyCode = uint16_t;
 struct VulkanPipelineKey
 {
 	VertexShaderType vertexShaderType;
-	PixelShaderType fragmentShaderType;
+	FragmentShaderType fragmentShaderType;
 	bool depthRead;
 	bool depthWrite;
 	bool backFaceCulling;
@@ -228,7 +228,7 @@ struct VulkanPipelineKey
 
 	VulkanPipelineKey();
 
-	constexpr VulkanPipelineKey(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
+	constexpr VulkanPipelineKey(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
 	{
 		this->vertexShaderType = vertexShaderType;
 		this->fragmentShaderType = fragmentShaderType;

@@ -753,7 +753,7 @@ namespace
 		RenderLightingType lightingType;
 		double meshLightPercent;
 		VertexShaderType vertexShaderType;
-		PixelShaderType pixelShaderType;
+		FragmentShaderType fragmentShaderType;
 		double texCoordAnimPercent;
 		bool enableBackFaceCulling;
 		bool enableDepthRead;
@@ -1155,17 +1155,17 @@ namespace
 	}
 }
 
-// Pixel shaders.
+// Fragment shaders.
 namespace
 {
-	struct PixelShaderTexture
+	struct FragmentShaderTexture
 	{
 		const uint8_t *texels;
 		int width, height;
 		int widthMinusOne, heightMinusOne;
 		double widthReal, heightReal;
 
-		PixelShaderTexture()
+		FragmentShaderTexture()
 		{
 			this->texels = nullptr;
 			this->width = 0;
@@ -1188,19 +1188,19 @@ namespace
 		}
 	};
 
-	struct PixelShaderPalette
+	struct FragmentShaderPalette
 	{
 		const uint32_t *colors;
 		int count;
 
-		PixelShaderPalette()
+		FragmentShaderPalette()
 		{
 			this->colors = nullptr;
 			this->count = 0;
 		}
 	};
 
-	struct PixelShaderLighting
+	struct FragmentShaderLighting
 	{
 		const uint8_t *lightTableTexels;
 		int lightLevelCount; // # of shades from light to dark.
@@ -1208,7 +1208,7 @@ namespace
 		int lastLightLevel;
 		int texelsPerLightLevel; // Should be 256 for 8-bit colors.
 
-		PixelShaderLighting()
+		FragmentShaderLighting()
 		{
 			this->lightTableTexels = nullptr;
 			this->lightLevelCount = 0;
@@ -1218,7 +1218,7 @@ namespace
 		}
 	};
 
-	struct PixelShaderHorizonMirror
+	struct FragmentShaderHorizonMirror
 	{
 		// Based on camera forward direction as XZ vector.
 		double horizonScreenSpacePointX;
@@ -1226,7 +1226,7 @@ namespace
 
 		uint8_t fallbackSkyColor;
 
-		PixelShaderHorizonMirror()
+		FragmentShaderHorizonMirror()
 		{
 			this->horizonScreenSpacePointX = 0.0;
 			this->horizonScreenSpacePointY = 0.0;
@@ -1234,11 +1234,11 @@ namespace
 		}
 	};
 
-	struct PixelShaderUniforms
+	struct FragmentShaderUniforms
 	{
 		double screenSpaceAnimPercent;
 
-		PixelShaderUniforms()
+		FragmentShaderUniforms()
 		{
 			this->screenSpaceAnimPercent = 0.0;
 		}
@@ -1341,7 +1341,7 @@ namespace
 		}
 	}
 
-	void PopulatePixelShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const Double3 &horizonNdcPoint,
+	void PopulateFragmentShaderGlobals(double ambientPercent, double screenSpaceAnimPercent, const Double3 &horizonNdcPoint,
 		const SoftwareObjectTexture &paletteTexture, const SoftwareObjectTexture &lightTableTexture, const SoftwareObjectTexture &ditherTexture,
 		const SoftwareObjectTexture &skyBgTexture)
 	{
@@ -2101,7 +2101,7 @@ struct RasterizerBin
 	}
 };
 
-// Rasterizer, pixel shader execution.
+// Rasterizer, fragment shader execution.
 namespace
 {
 	struct RasterizerInputCache
@@ -2417,7 +2417,7 @@ namespace
 	}
 
 	template<int N>
-	void GetPerspectiveTexel_N(const PixelShaderTexture &__restrict texture, const double *__restrict perspectiveTexCoordU, const double *__restrict perspectiveTexCoordV,
+	void GetPerspectiveTexel_N(const FragmentShaderTexture &__restrict texture, const double *__restrict perspectiveTexCoordU, const double *__restrict perspectiveTexCoordV,
 		uint8_t *__restrict outTexel)
 	{
 		double uFract[N];
@@ -2459,7 +2459,7 @@ namespace
 	}
 
 	template<int N>
-	void GetScreenSpaceAnimationTexel_N(const PixelShaderTexture &__restrict texture, double animPercent, const double *__restrict frameBufferPercentX, double frameBufferPercentY,
+	void GetScreenSpaceAnimationTexel_N(const FragmentShaderTexture &__restrict texture, double animPercent, const double *__restrict frameBufferPercentX, double frameBufferPercentY,
 		uint8_t *__restrict outTexel)
 	{
 		// @todo chasms: determine how many pixels the original texture should cover, based on what percentage the original texture height is over the original screen height.
@@ -2560,60 +2560,60 @@ namespace
 		}
 	}
 
-	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
+	template<RenderLightingType lightingType, FragmentShaderType fragmentShaderType, bool enableDepthRead, bool enableDepthWrite, DitheringMode ditheringMode>
 	void RasterizeMeshInternal(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
 		// Early-out conditions.
 		constexpr bool requiresMainAlphaTest =
-			(pixelShaderType == PixelShaderType::AlphaTested) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass);
+			(fragmentShaderType == FragmentShaderType::AlphaTested) ||
+			(fragmentShaderType == FragmentShaderType::AlphaTestedWithVariableTexCoordUMin) ||
+			(fragmentShaderType == FragmentShaderType::AlphaTestedWithVariableTexCoordVMin) ||
+			(fragmentShaderType == FragmentShaderType::AlphaTestedWithPaletteIndexLookup) ||
+			(fragmentShaderType == FragmentShaderType::AlphaTestedWithLightLevelOpacity) ||
+			(fragmentShaderType == FragmentShaderType::AlphaTestedWithPreviousBrightnessLimit) ||
+			(fragmentShaderType == FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass);
 		constexpr bool requiresLayerAlphaTest =
-			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
-			(pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
+			(fragmentShaderType == FragmentShaderType::OpaqueWithAlphaTestLayer) ||
+			(fragmentShaderType == FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 		constexpr bool requiresPreviousBrightnessTest =
-			pixelShaderType == PixelShaderType::AlphaTestedWithPreviousBrightnessLimit;
+			fragmentShaderType == FragmentShaderType::AlphaTestedWithPreviousBrightnessLimit;
 		constexpr bool requiresNotReflectiveTest =
-			pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass;
+			fragmentShaderType == FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass;
 		constexpr bool requiresReflectiveTest =
-			pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass;
+			fragmentShaderType == FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass;
 
 		// Texturing conditions.
 		constexpr bool requiresTwoTextures =
-			(pixelShaderType == PixelShaderType::OpaqueWithAlphaTestLayer) ||
-			(pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) ||
-			(pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup);
+			(fragmentShaderType == FragmentShaderType::OpaqueWithAlphaTestLayer) ||
+			(fragmentShaderType == FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer) ||
+			(fragmentShaderType == FragmentShaderType::AlphaTestedWithPaletteIndexLookup);
 		constexpr bool requiresPerspectiveTexelMain =
-			(pixelShaderType != PixelShaderType::OpaqueScreenSpaceAnimation) &&
-			(pixelShaderType != PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
+			(fragmentShaderType != FragmentShaderType::OpaqueScreenSpaceAnimation) &&
+			(fragmentShaderType != FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 		constexpr bool requiresScreenSpaceAnimationTexelMain =
-			(pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimation) ||
-			(pixelShaderType == PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
+			(fragmentShaderType == FragmentShaderType::OpaqueScreenSpaceAnimation) ||
+			(fragmentShaderType == FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
 		constexpr bool requiresPerspectiveTexelLayer = requiresLayerAlphaTest;
 		constexpr bool requiresVariableTexCoordUMin =
-			pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordUMin;
+			fragmentShaderType == FragmentShaderType::AlphaTestedWithVariableTexCoordUMin;
 		constexpr bool requiresVariableTexCoordVMin =
-			pixelShaderType == PixelShaderType::AlphaTestedWithVariableTexCoordVMin;
+			fragmentShaderType == FragmentShaderType::AlphaTestedWithVariableTexCoordVMin;
 		constexpr bool requiresMainPaletteLookup =
-			pixelShaderType == PixelShaderType::AlphaTestedWithPaletteIndexLookup;
+			fragmentShaderType == FragmentShaderType::AlphaTestedWithPaletteIndexLookup;
 		constexpr bool requiresHorizonMirrorReflection =
-			(pixelShaderType == PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass);
+			(fragmentShaderType == FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass);
 
 		// Lighting conditions.
 		constexpr bool requiresPerPixelLightIntensity = lightingType == RenderLightingType::PerPixel;
 		constexpr bool requiresPerMeshLightIntensity = lightingType == RenderLightingType::PerMesh;
-		constexpr bool requiresLightLevelLighting = pixelShaderType != PixelShaderType::AlphaTestedWithLightLevelOpacity;
-		constexpr bool requiresLightTableLighting = pixelShaderType == PixelShaderType::AlphaTestedWithLightLevelOpacity;
+		constexpr bool requiresLightLevelLighting = fragmentShaderType != FragmentShaderType::AlphaTestedWithLightLevelOpacity;
+		constexpr bool requiresLightTableLighting = fragmentShaderType == FragmentShaderType::AlphaTestedWithLightLevelOpacity;
 
 		const double meshLightPercent = drawCallCache.meshLightPercent;
 		const double texCoordAnimPercent = drawCallCache.texCoordAnimPercent;
 
-		PixelShaderLighting shaderLighting;
+		FragmentShaderLighting shaderLighting;
 		shaderLighting.lightTableTexels = g_lightTableTexture->texels8Bit;
 		shaderLighting.lightLevelCount = g_lightTableTexture->height;
 		shaderLighting.lightLevelCountReal = static_cast<double>(shaderLighting.lightLevelCount);
@@ -2624,11 +2624,11 @@ namespace
 		const int ditherTextureWidth = g_ditherTexture->width;
 		const int ditherTextureHeight = g_ditherTexture->height;
 
-		PixelShaderPalette shaderPalette;
+		FragmentShaderPalette shaderPalette;
 		shaderPalette.colors = g_paletteTexture->texels32Bit;
 		shaderPalette.count = g_paletteTexture->texelCount;
 
-		PixelShaderHorizonMirror shaderHorizonMirror;
+		FragmentShaderHorizonMirror shaderHorizonMirror;
 		if constexpr (requiresHorizonMirrorReflection)
 		{
 			shaderHorizonMirror.horizonScreenSpacePointX = g_horizonScreenSpacePoint.x;
@@ -2642,17 +2642,17 @@ namespace
 		const ObjectTextureID textureID1 = drawCallCache.textureID1;
 
 		const SoftwareObjectTexture &texture0 = g_objectTextures->get(textureID0);
-		PixelShaderTexture shaderTexture0;
+		FragmentShaderTexture shaderTexture0;
 		shaderTexture0.init(texture0.texels8Bit, texture0.width, texture0.height);
 
-		PixelShaderTexture shaderTexture1;
+		FragmentShaderTexture shaderTexture1;
 		if constexpr (requiresTwoTextures)
 		{
 			const SoftwareObjectTexture &texture1 = g_objectTextures->get(textureID1);
 			shaderTexture1.init(texture1.texels8Bit, texture1.width, texture1.height);
 		}
 
-		PixelShaderUniforms shaderUniforms;
+		FragmentShaderUniforms shaderUniforms;
 		shaderUniforms.screenSpaceAnimPercent = g_screenSpaceAnimPercent;
 
 		const int lightBinWidth = GetLightBinWidth(g_frameBufferWidth);
@@ -3598,25 +3598,25 @@ namespace
 		g_totalColorWrites += totalColorWrites;
 	}
 
-	template<RenderLightingType lightingType, PixelShaderType pixelShaderType, bool enableDepthRead, bool enableDepthWrite>
+	template<RenderLightingType lightingType, FragmentShaderType fragmentShaderType, bool enableDepthRead, bool enableDepthWrite>
 	void RasterizeMeshDispatchDitheringMode(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
 		switch (g_ditheringMode)
 		{
 		case DitheringMode::None:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, fragmentShaderType, enableDepthRead, enableDepthWrite, DitheringMode::None>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		case DitheringMode::Classic:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, fragmentShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Classic>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		case DitheringMode::Modern:
-			RasterizeMeshInternal<lightingType, pixelShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			RasterizeMeshInternal<lightingType, fragmentShaderType, enableDepthRead, enableDepthWrite, DitheringMode::Modern>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		}
 	}
 
-	template<RenderLightingType lightingType, PixelShaderType pixelShaderType>
+	template<RenderLightingType lightingType, FragmentShaderType fragmentShaderType>
 	void RasterizeMeshDispatchDepthToggles(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
@@ -3627,70 +3627,70 @@ namespace
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, true>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, fragmentShaderType, true, true>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, true, false>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, fragmentShaderType, true, false>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			}
 		}
 		else
 		{
 			if (enableDepthWrite)
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, true>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, fragmentShaderType, false, true>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			}
 			else
 			{
-				RasterizeMeshDispatchDitheringMode<lightingType, pixelShaderType, false, false>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+				RasterizeMeshDispatchDitheringMode<lightingType, fragmentShaderType, false, false>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			}
 		}
 	}
 
 	template<RenderLightingType lightingType>
-	void RasterizeMeshDispatchPixelShaderType(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
+	void RasterizeMeshDispatchFragmentShaderType(const DrawCallCache &drawCallCache, const RasterizerInputCache &rasterizerInputCache, const RasterizerBin &bin,
 		const RasterizerBinEntry &binEntry, int binX, int binY, int binIndex)
 	{
-		static_assert(PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass == OBJECT_PIXEL_SHADER_TYPE_MAX);
-		const PixelShaderType pixelShaderType = drawCallCache.pixelShaderType;
+		static_assert(FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass == OBJECT_FRAGMENT_SHADER_TYPE_MAX);
+		const FragmentShaderType fragmentShaderType = drawCallCache.fragmentShaderType;
 
-		switch (pixelShaderType)
+		switch (fragmentShaderType)
 		{
-		case PixelShaderType::Opaque:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::Opaque>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::Opaque:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::Opaque>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::OpaqueWithAlphaTestLayer:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueWithAlphaTestLayer>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::OpaqueWithAlphaTestLayer:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::OpaqueWithAlphaTestLayer>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::OpaqueScreenSpaceAnimation:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueScreenSpaceAnimation>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::OpaqueScreenSpaceAnimation:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::OpaqueScreenSpaceAnimation>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTested:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTested>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::AlphaTested:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::AlphaTested>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTestedWithVariableTexCoordUMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordUMin>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::AlphaTestedWithVariableTexCoordUMin:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::AlphaTestedWithVariableTexCoordUMin>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTestedWithVariableTexCoordVMin:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithVariableTexCoordVMin>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::AlphaTestedWithVariableTexCoordVMin:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::AlphaTestedWithVariableTexCoordVMin>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTestedWithPaletteIndexLookup:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPaletteIndexLookup>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::AlphaTestedWithPaletteIndexLookup:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::AlphaTestedWithPaletteIndexLookup>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTestedWithLightLevelOpacity:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithLightLevelOpacity>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::AlphaTestedWithLightLevelOpacity:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::AlphaTestedWithLightLevelOpacity>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTestedWithPreviousBrightnessLimit:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::AlphaTestedWithPreviousBrightnessLimit:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::AlphaTestedWithPreviousBrightnessLimit>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
-		case PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass:
-			RasterizeMeshDispatchDepthToggles<lightingType, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+		case FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass:
+			RasterizeMeshDispatchDepthToggles<lightingType, FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		}
 	}
@@ -3705,10 +3705,10 @@ namespace
 		switch (lightingType)
 		{
 		case RenderLightingType::PerMesh:
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerMesh>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			RasterizeMeshDispatchFragmentShaderType<RenderLightingType::PerMesh>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		case RenderLightingType::PerPixel:
-			RasterizeMeshDispatchPixelShaderType<RenderLightingType::PerPixel>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
+			RasterizeMeshDispatchFragmentShaderType<RenderLightingType::PerPixel>(drawCallCache, rasterizerInputCache, bin, binEntry, binX, binY, binIndex);
 			break;
 		}
 	}
@@ -4071,7 +4071,7 @@ int SoftwareUniformBuffer::getValidByteCount() const
 SoftwareMaterial::SoftwareMaterial()
 {
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
-	this->pixelShaderType = static_cast<PixelShaderType>(-1);
+	this->fragmentShaderType = static_cast<FragmentShaderType>(-1);
 
 	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
 	this->textureCount = 0;
@@ -4083,11 +4083,11 @@ SoftwareMaterial::SoftwareMaterial()
 	this->enableDepthWrite = false;
 }
 
-void SoftwareMaterial::init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
+void SoftwareMaterial::init(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType, Span<const ObjectTextureID> textureIDs,
 	RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite)
 {
 	this->vertexShaderType = vertexShaderType;
-	this->pixelShaderType = pixelShaderType;
+	this->fragmentShaderType = fragmentShaderType;
 
 	DebugAssert(textureIDs.getCount() <= std::size(this->textureIDs));
 	std::copy(textureIDs.begin(), textureIDs.end(), std::begin(this->textureIDs));
@@ -4427,12 +4427,12 @@ RenderMaterialID SoftwareRenderer::createMaterial(RenderMaterialKey key)
 	const RenderMaterialID materialID = this->materials.alloc();
 	if (materialID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate software material with vertex shader %d and pixel shader %d.", key.vertexShaderType, key.pixelShaderType);
+		DebugLogErrorFormat("Couldn't allocate software material with vertex shader %d and fragment shader %d.", key.vertexShaderType, key.fragmentShaderType);
 		return -1;
 	}
 
 	SoftwareMaterial &material = this->materials.get(materialID);
-	material.init(key.vertexShaderType, key.pixelShaderType, Span<const ObjectTextureID>(key.textureIDs, key.textureCount), key.lightingType, key.enableBackFaceCulling, key.enableDepthRead, key.enableDepthWrite);
+	material.init(key.vertexShaderType, key.fragmentShaderType, Span<const ObjectTextureID>(key.textureIDs, key.textureCount), key.lightingType, key.enableBackFaceCulling, key.enableDepthRead, key.enableDepthWrite);
 	return materialID;
 }
 
@@ -4475,7 +4475,7 @@ void SoftwareRenderer::setMaterialInstanceTexCoordAnimPercent(RenderMaterialInst
 	SoftwareMaterialInstance *inst = this->materialInsts.tryGet(id);
 	if (inst == nullptr)
 	{
-		DebugLogErrorFormat("Missing material instance %d for updating pixel shader param to %.2f.", id, value);
+		DebugLogErrorFormat("Missing material instance %d for updating tex coord anim percent to %.2f.", id, value);
 		return;
 	}
 
@@ -4501,7 +4501,7 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 		settings.ditheringMode, outputBuffer, &this->objectTextures);
 	PopulateVisibleLights(visibleLights, settings.visibleLightCount);
 	InitLightBins(frameBufferWidth, frameBufferHeight);
-	PopulatePixelShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, camera.horizonNdcPoint, paletteTexture,
+	PopulateFragmentShaderGlobals(settings.ambientPercent, settings.screenSpaceAnimPercent, camera.horizonNdcPoint, paletteTexture,
 		lightTableTexture, ditherTexture, skyBgTexture);
 
 	const int totalWorkerCount = RendererUtils::getRenderThreadsFromMode(settings.renderThreadsMode);
@@ -4565,7 +4565,7 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					RenderLightingType &drawCallCacheLightingType = workerDrawCallCache.lightingType;
 					double &drawCallCacheMeshLightPercent = workerDrawCallCache.meshLightPercent;
 					VertexShaderType &drawCallCacheVertexShaderType = workerDrawCallCache.vertexShaderType;
-					PixelShaderType &drawCallCachePixelShaderType = workerDrawCallCache.pixelShaderType;
+					FragmentShaderType &drawCallCacheFragmentShaderType = workerDrawCallCache.fragmentShaderType;
 					double &drawCallCacheTexCoordAnimPercent = workerDrawCallCache.texCoordAnimPercent;
 					bool &drawCallCacheEnableBackFaceCulling = workerDrawCallCache.enableBackFaceCulling;
 					bool &drawCallCacheEnableDepthRead = workerDrawCallCache.enableDepthRead;
@@ -4585,7 +4585,7 @@ void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const R
 					drawCallCacheLightingType = material.lightingType;
 					drawCallCacheMeshLightPercent = 0.0;
 					drawCallCacheVertexShaderType = material.vertexShaderType;
-					drawCallCachePixelShaderType = material.pixelShaderType;
+					drawCallCacheFragmentShaderType = material.fragmentShaderType;
 					drawCallCacheTexCoordAnimPercent = 0.0;
 					drawCallCacheEnableBackFaceCulling = material.enableBackFaceCulling;
 					drawCallCacheEnableDepthRead = material.enableDepthRead;

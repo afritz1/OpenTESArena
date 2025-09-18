@@ -106,31 +106,31 @@ namespace
 		{ VertexShaderType::UI, "UI" }
 	};
 
-	constexpr std::pair<PixelShaderType, const char*> FragmentShaderTypeFilenames[] =
+	constexpr std::pair<FragmentShaderType, const char*> FragmentShaderTypeFilenames[] =
 	{
-		{ PixelShaderType::Opaque, "Opaque" },
-		{ PixelShaderType::OpaqueWithAlphaTestLayer, "OpaqueWithAlphaTestLayer" },
-		{ PixelShaderType::OpaqueScreenSpaceAnimation, "OpaqueScreenSpaceAnimation" },
-		{ PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, "OpaqueScreenSpaceAnimationWithAlphaTestLayer" },
-		{ PixelShaderType::AlphaTested, "AlphaTested" },
-		{ PixelShaderType::AlphaTestedWithVariableTexCoordUMin, "AlphaTestedWithVariableTexCoordUMin" },
-		{ PixelShaderType::AlphaTestedWithVariableTexCoordVMin, "AlphaTestedWithVariableTexCoordVMin" },
-		{ PixelShaderType::AlphaTestedWithPaletteIndexLookup, "AlphaTestedWithPaletteIndexLookup" },
-		{ PixelShaderType::AlphaTestedWithLightLevelOpacity, "AlphaTestedWithLightLevelOpacity" },
-		{ PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, "AlphaTestedWithPreviousBrightnessLimit" },
-		{ PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, "AlphaTestedWithHorizonMirrorFirstPass" },
-		{ PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, "AlphaTestedWithHorizonMirrorSecondPass" },
-		{ PixelShaderType::UiTexture, "UiTexture" }
+		{ FragmentShaderType::Opaque, "Opaque" },
+		{ FragmentShaderType::OpaqueWithAlphaTestLayer, "OpaqueWithAlphaTestLayer" },
+		{ FragmentShaderType::OpaqueScreenSpaceAnimation, "OpaqueScreenSpaceAnimation" },
+		{ FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, "OpaqueScreenSpaceAnimationWithAlphaTestLayer" },
+		{ FragmentShaderType::AlphaTested, "AlphaTested" },
+		{ FragmentShaderType::AlphaTestedWithVariableTexCoordUMin, "AlphaTestedWithVariableTexCoordUMin" },
+		{ FragmentShaderType::AlphaTestedWithVariableTexCoordVMin, "AlphaTestedWithVariableTexCoordVMin" },
+		{ FragmentShaderType::AlphaTestedWithPaletteIndexLookup, "AlphaTestedWithPaletteIndexLookup" },
+		{ FragmentShaderType::AlphaTestedWithLightLevelOpacity, "AlphaTestedWithLightLevelOpacity" },
+		{ FragmentShaderType::AlphaTestedWithPreviousBrightnessLimit, "AlphaTestedWithPreviousBrightnessLimit" },
+		{ FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass, "AlphaTestedWithHorizonMirrorFirstPass" },
+		{ FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass, "AlphaTestedWithHorizonMirrorSecondPass" },
+		{ FragmentShaderType::UiTexture, "UiTexture" }
 	};
 
 	constexpr const char *LightBinningComputeShaderFilename = "LightBinning";
 
 	constexpr const char *ConversionFragmentShaderFilename = "ColorBufferToSwapchainImage";
 
-	VulkanPipelineKeyCode MakePipelineKeyCode(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
+	VulkanPipelineKeyCode MakePipelineKeyCode(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
 	{
 		constexpr int vertexShaderTypeRequiredBits = Bytes::getRequiredBitCount(VERTEX_SHADER_TYPE_COUNT);
-		constexpr int fragmentShaderTypeRequiredBits = Bytes::getRequiredBitCount(TOTAL_PIXEL_SHADER_TYPE_COUNT);
+		constexpr int fragmentShaderTypeRequiredBits = Bytes::getRequiredBitCount(TOTAL_FRAGMENT_SHADER_TYPE_COUNT);
 		constexpr int depthReadRequiredBits = 1;
 		constexpr int depthWriteRequiredBits = 1;
 		constexpr int backFaceCullingRequiredBits = 1;
@@ -158,30 +158,30 @@ namespace
 
 	constexpr VulkanPipelineKey RequiredPipelines[] =
 	{
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, false, false, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::Opaque, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueWithAlphaTestLayer, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimation, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, false, false, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTested, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordUMin, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithVariableTexCoordVMin, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithLightLevelOpacity, false, false, false, false),
-		VulkanPipelineKey(VertexShaderType::Basic, PixelShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::Opaque, false, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::Opaque, true, true, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::Opaque, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::OpaqueWithAlphaTestLayer, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::OpaqueScreenSpaceAnimation, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::AlphaTested, false, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::AlphaTested, true, true, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::AlphaTested, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::AlphaTestedWithVariableTexCoordUMin, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::AlphaTestedWithVariableTexCoordVMin, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::AlphaTestedWithLightLevelOpacity, false, false, false, false),
+		VulkanPipelineKey(VertexShaderType::Basic, FragmentShaderType::AlphaTestedWithPreviousBrightnessLimit, false, false, false, false),
 
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTested, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithPaletteIndexLookup, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithLightLevelOpacity, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorFirstPass, true, true, true, false),
-		VulkanPipelineKey(VertexShaderType::Entity, PixelShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, FragmentShaderType::AlphaTested, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, FragmentShaderType::AlphaTestedWithPaletteIndexLookup, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, FragmentShaderType::AlphaTestedWithLightLevelOpacity, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, FragmentShaderType::AlphaTestedWithHorizonMirrorFirstPass, true, true, true, false),
+		VulkanPipelineKey(VertexShaderType::Entity, FragmentShaderType::AlphaTestedWithHorizonMirrorSecondPass, true, true, true, false),
 
-		VulkanPipelineKey(VertexShaderType::UI, PixelShaderType::UiTexture, false, false, false, true)
+		VulkanPipelineKey(VertexShaderType::UI, FragmentShaderType::UiTexture, false, false, false, true)
 	};
 
-	constexpr int GetPipelineKeyIndex(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
+	constexpr int GetPipelineKeyIndex(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType, bool depthRead, bool depthWrite, bool backFaceCulling, bool alphaBlend)
 	{
 		for (int i = 0; i < static_cast<int>(std::size(RequiredPipelines)); i++)
 		{
@@ -197,7 +197,7 @@ namespace
 		return -1;
 	}
 
-	constexpr int UiPipelineKeyIndex = GetPipelineKeyIndex(VertexShaderType::UI, PixelShaderType::UiTexture, false, false, false, true);
+	constexpr int UiPipelineKeyIndex = GetPipelineKeyIndex(VertexShaderType::UI, FragmentShaderType::UiTexture, false, false, false, true);
 }
 
 // Vulkan application
@@ -2049,7 +2049,7 @@ namespace
 // Vulkan pipelines
 namespace
 {
-	std::vector<vk::PushConstantRange> MakePipelineLayoutPushConstantRanges(VertexShaderType vertexShaderType, PixelShaderType fragmentShaderType)
+	std::vector<vk::PushConstantRange> MakePipelineLayoutPushConstantRanges(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType)
 	{
 		std::vector<vk::PushConstantRange> pushConstantRanges;
 		uint32_t offset = 0;
@@ -2788,13 +2788,13 @@ VulkanVertexShader::VulkanVertexShader()
 
 VulkanFragmentShader::VulkanFragmentShader()
 {
-	this->type = static_cast<PixelShaderType>(-1);
+	this->type = static_cast<FragmentShaderType>(-1);
 }
 
 VulkanPipelineKey::VulkanPipelineKey()
 {
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
-	this->fragmentShaderType = static_cast<PixelShaderType>(-1);
+	this->fragmentShaderType = static_cast<FragmentShaderType>(-1);
 	this->depthRead = false;
 	this->depthWrite = false;
 	this->backFaceCulling = false;
@@ -3056,7 +3056,7 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 	{
 		VulkanFragmentShader &shader = this->fragmentShaders[i];
 
-		const std::pair<PixelShaderType, const char*> &pair = FragmentShaderTypeFilenames[i];
+		const std::pair<FragmentShaderType, const char*> &pair = FragmentShaderTypeFilenames[i];
 		shader.type = pair.first;
 
 		const char *fragmentShaderName = pair.second;
@@ -3291,12 +3291,12 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		VulkanPipeline &pipeline = this->graphicsPipelines[i];
 
 		const VertexShaderType vertexShaderType = requiredPipelineKey.vertexShaderType;
-		const PixelShaderType fragmentShaderType = requiredPipelineKey.fragmentShaderType;
+		const FragmentShaderType fragmentShaderType = requiredPipelineKey.fragmentShaderType;
 
 		int positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX;
 		vk::RenderPass renderPass = this->sceneRenderPass;
 		Span<const vk::DescriptorSetLayout> descriptorSetLayouts = sceneDescriptorSetLayouts;
-		if (fragmentShaderType == PixelShaderType::UiTexture)
+		if (fragmentShaderType == FragmentShaderType::UiTexture)
 		{
 			positionComponentsPerVertex = MeshUtils::POSITION_COMPONENTS_PER_VERTEX_2D;
 			renderPass = this->uiRenderPass;
@@ -5152,12 +5152,12 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 	if (materialID < 0)
 	{
 		DebugLogErrorFormat("Couldn't allocate material ID for key (vertex shader %d, fragment shader %d, depth read %d, depth write %d, back-face culling %d).",
-			key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+			key.vertexShaderType, key.fragmentShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
 		return -1;
 	}
 
 	const VertexShaderType vertexShaderType = key.vertexShaderType;
-	const PixelShaderType fragmentShaderType = key.pixelShaderType;
+	const FragmentShaderType fragmentShaderType = key.fragmentShaderType;
 	constexpr bool enableAlphaBlend = false; // Materials don't need alpha blend, only UI does (and just for the reticle).
 	const VulkanPipelineKeyCode pipelineKeyCode = MakePipelineKeyCode(vertexShaderType, fragmentShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling, enableAlphaBlend);
 	int pipelineIndex = -1;
@@ -5174,7 +5174,7 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 	if (pipelineIndex < 0)
 	{
 		DebugLogErrorFormat("Couldn't find pipeline for material key (vertex shader %d, fragment shader %d, depth read %d, depth write %d, back-face culling %d).",
-			key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+			key.vertexShaderType, key.fragmentShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
 		return -1;
 	}
 
@@ -5185,7 +5185,7 @@ RenderMaterialID VulkanRenderBackend::createMaterial(RenderMaterialKey key)
 	if (!TryCreateDescriptorSet(this->device, this->materialDescriptorSetLayout, this->materialDescriptorPool, &descriptorSet))
 	{
 		DebugLogErrorFormat("Couldn't create descriptor set for material key (vertex shader %d, fragment shader %d, depth read %d, depth write %d, back-face culling %d).",
-			key.vertexShaderType, key.pixelShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
+			key.vertexShaderType, key.fragmentShaderType, key.enableDepthRead, key.enableDepthWrite, key.enableBackFaceCulling);
 		return -1;
 	}
 
@@ -5281,7 +5281,7 @@ void VulkanRenderBackend::setMaterialInstanceTexCoordAnimPercent(RenderMaterialI
 	VulkanMaterialInstance *inst = this->materialInstPool.tryGet(id);
 	if (inst == nullptr)
 	{
-		DebugLogErrorFormat("Missing material instance %d for updating pixel shader param to %.2f.", id, value);
+		DebugLogErrorFormat("Missing material instance %d for updating tex coord anim percent to %.2f.", id, value);
 		return;
 	}
 

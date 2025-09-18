@@ -25,10 +25,10 @@ namespace
 			return false;
 		}
 
-		DebugAssert(textureSlotIndex < shadingDef.pixelShaderCount);
-		DebugAssertIndex(shadingDef.pixelShaderTypes, textureSlotIndex);
-		const PixelShaderType pixelShaderType = shadingDef.pixelShaderTypes[textureSlotIndex];
-		return RenderShaderUtils::isOpaque(pixelShaderType);
+		DebugAssert(textureSlotIndex < shadingDef.fragmentShaderCount);
+		DebugAssertIndex(shadingDef.fragmentShaderTypes, textureSlotIndex);
+		const FragmentShaderType fragmentShaderType = shadingDef.fragmentShaderTypes[textureSlotIndex];
+		return RenderShaderUtils::isOpaque(fragmentShaderType);
 	}
 }
 

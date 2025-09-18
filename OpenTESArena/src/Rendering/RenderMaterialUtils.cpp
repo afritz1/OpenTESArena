@@ -7,7 +7,7 @@
 RenderMaterialKey::RenderMaterialKey()
 {
 	this->vertexShaderType = static_cast<VertexShaderType>(-1);
-	this->pixelShaderType = static_cast<PixelShaderType>(-1);
+	this->fragmentShaderType = static_cast<FragmentShaderType>(-1);
 
 	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
 	this->textureCount = 0;
@@ -31,7 +31,7 @@ bool RenderMaterialKey::operator==(const RenderMaterialKey &other) const
 		return false;
 	}
 
-	if (this->pixelShaderType != other.pixelShaderType)
+	if (this->fragmentShaderType != other.fragmentShaderType)
 	{
 		return false;
 	}
@@ -72,11 +72,11 @@ bool RenderMaterialKey::operator==(const RenderMaterialKey &other) const
 	return true;
 }
 
-void RenderMaterialKey::init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
+void RenderMaterialKey::init(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType, Span<const ObjectTextureID> textureIDs,
 	RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite)
 {
 	this->vertexShaderType = vertexShaderType;
-	this->pixelShaderType = pixelShaderType;
+	this->fragmentShaderType = fragmentShaderType;
 
 	DebugAssert(textureIDs.getCount() <= RenderMaterialKey::MAX_TEXTURE_COUNT);
 	std::copy(textureIDs.begin(), textureIDs.end(), std::begin(this->textureIDs));

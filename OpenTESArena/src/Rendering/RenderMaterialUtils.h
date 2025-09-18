@@ -14,7 +14,7 @@ struct RenderMaterialKey
 	static constexpr int MAX_TEXTURE_COUNT = 2;
 
 	VertexShaderType vertexShaderType;
-	PixelShaderType pixelShaderType;
+	FragmentShaderType fragmentShaderType;
 
 	ObjectTextureID textureIDs[MAX_TEXTURE_COUNT];
 	int textureCount;
@@ -29,7 +29,7 @@ struct RenderMaterialKey
 
 	bool operator==(const RenderMaterialKey &other) const;
 
-	void init(VertexShaderType vertexShaderType, PixelShaderType pixelShaderType, Span<const ObjectTextureID> textureIDs,
+	void init(VertexShaderType vertexShaderType, FragmentShaderType fragmentShaderType, Span<const ObjectTextureID> textureIDs,
 		RenderLightingType lightingType, bool enableBackFaceCulling, bool enableDepthRead, bool enableDepthWrite);
 };
 

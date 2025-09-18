@@ -61,7 +61,7 @@ namespace RendererUtils
 	Double3 clipSpaceToNDC(const Double4 &point);
 
 	// Converts a point in normalized device coordinates to screen space (pixel coordinates with fractions in
-	// the decimals; the space expected by pixel shading).
+	// the decimals; the space expected by fragment shading).
 	Double2 ndcToScreenSpace(const Double3 &point, double frameWidth, double frameHeight);
 
 	// Gets the pixel coordinate with the nearest available pixel center based on the projected
