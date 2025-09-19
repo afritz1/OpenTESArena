@@ -207,7 +207,7 @@ EntityDefID EntityChunkManager::getOrAddEntityDefID(const EntityDefinition &def,
 	return this->addEntityDef(EntityDefinition(def), defLibrary);
 }
 
-int EntityChunkManager::getAvailableTransformHeapIndex() const
+int EntityChunkManager::findAvailableTransformHeapIndex() const
 {
 	int heapIndex = -1;
 
@@ -239,7 +239,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		DebugLogError("Couldn't allocate EntityBoundingBoxID.");
 	}
 
-	int transformHeapIndex = this->getAvailableTransformHeapIndex();
+	int transformHeapIndex = this->findAvailableTransformHeapIndex();
 	if (transformHeapIndex < 0)
 	{
 		transformHeapIndex = static_cast<int>(this->transformHeaps.size());
