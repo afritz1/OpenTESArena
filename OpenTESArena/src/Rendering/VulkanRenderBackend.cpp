@@ -884,22 +884,18 @@ namespace
 	bool TryCreateImageView(vk::Device device, vk::Format format, vk::ImageAspectFlags imageAspectFlags, vk::Image image, vk::ImageView *outImageView)
 	{
 		vk::ImageViewCreateInfo imageViewCreateInfo;
+		imageViewCreateInfo.image = image;
 		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
 		imageViewCreateInfo.format = format;
+		imageViewCreateInfo.components.r = vk::ComponentSwizzle::eIdentity;
+		imageViewCreateInfo.components.g = vk::ComponentSwizzle::eIdentity;
+		imageViewCreateInfo.components.b = vk::ComponentSwizzle::eIdentity;
+		imageViewCreateInfo.components.a = vk::ComponentSwizzle::eIdentity;
 		imageViewCreateInfo.subresourceRange.aspectMask = imageAspectFlags;
 		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 		imageViewCreateInfo.subresourceRange.levelCount = 1;
 		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		imageViewCreateInfo.subresourceRange.layerCount = 1;
-		imageViewCreateInfo.image = image;
-
-		if (format == SwapchainImageFormatBGRA)
-		{
-			imageViewCreateInfo.components.r = vk::ComponentSwizzle::eB;
-			imageViewCreateInfo.components.g = vk::ComponentSwizzle::eG;
-			imageViewCreateInfo.components.b = vk::ComponentSwizzle::eR;
-			imageViewCreateInfo.components.a = vk::ComponentSwizzle::eA;
-		}
 
 		vk::ResultValue<vk::ImageView> imageViewCreateResult = device.createImageView(imageViewCreateInfo);
 		if (imageViewCreateResult.result != vk::Result::eSuccess)
