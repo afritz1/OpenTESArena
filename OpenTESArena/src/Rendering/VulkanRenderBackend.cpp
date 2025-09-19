@@ -43,6 +43,7 @@ namespace
 	constexpr uint32_t VendorID_Intel = 0x8086;
 	constexpr uint32_t VendorID_AppleMSeries = 0x106B;
 	constexpr uint32_t VendorID_Broadcom = 0x14E4;
+	constexpr uint32_t VendorID_Mesa = 0x10005;
 
 	constexpr vk::Format MaxCompatibilityImageFormat8888Unorm = vk::Format::eR8G8B8A8Unorm;
 	constexpr vk::Format MaxCompatibilityImageFormat32Uint = vk::Format::eR32Uint;
@@ -1091,13 +1092,29 @@ namespace
 // Vulkan swapchain
 namespace
 {
-	// Raspberry Pi V3DV driver likes B8G8R8A8Unorm but renders overbright with R8G8B8A8Unorm.
+	// Some drivers silently replace R8G8B8A8Unorm with R8G8B8A8Srgb which causes overbright rendering.
 	bool IsBgraSwapchainImageRequired(vk::PhysicalDevice physicalDevice)
 	{
 		const vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
 		const std::string deviceName = physicalDeviceProperties.deviceName;
-		const bool isBroadcom = physicalDeviceProperties.vendorID == VendorID_Broadcom;
-		return isBroadcom && (deviceName.find("V3D") != std::string::npos);
+
+		constexpr const char *bgraRequiredDevicePrefixes[] =
+		{
+			"V3D",
+			"llvmpipe",
+			"RADV",
+			"ANV"
+		};
+
+		for (const char *prefix : bgraRequiredDevicePrefixes)
+		{
+			if (deviceName.find(prefix) != std::string::npos)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	vk::Format GetSwapchainImageFormat(vk::PhysicalDevice physicalDevice)
