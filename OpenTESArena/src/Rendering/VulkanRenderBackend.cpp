@@ -45,14 +45,14 @@ namespace
 	constexpr uint32_t VendorID_Broadcom = 0x14E4;
 	constexpr uint32_t VendorID_Mesa = 0x10005;
 
-	constexpr vk::Format MaxCompatibilityImageFormat8888Unorm = vk::Format::eR8G8B8A8Unorm;
-	constexpr vk::Format MaxCompatibilityImageFormat32Uint = vk::Format::eR32Uint;
-	constexpr vk::Format SwapchainImageFormatRGBA = MaxCompatibilityImageFormat8888Unorm;
-	constexpr vk::Format SwapchainImageFormatBGRA = vk::Format::eB8G8R8A8Unorm;
+	// Max compatibility image formats across all drivers:
+	// - Swapchain images: B8G8R8A8Unorm
+	// - Textures: R8G8B8A8Unorm
+	constexpr vk::Format SwapchainImageFormat = vk::Format::eB8G8R8A8Unorm;
 	constexpr vk::Format ColorBufferFormat = vk::Format::eR8Uint;
 	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
 	constexpr vk::Format ObjectTextureFormat8Bit = vk::Format::eR8Uint;
-	constexpr vk::Format ObjectTextureFormat32Bit = MaxCompatibilityImageFormat8888Unorm;
+	constexpr vk::Format ObjectTextureFormat32Bit = vk::Format::eR8G8B8A8Unorm;
 	constexpr vk::Format UiTextureFormat = ObjectTextureFormat32Bit;
 
 	constexpr vk::ImageUsageFlags SwapchainImageUsageFlags = vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eColorAttachment;
@@ -1088,43 +1088,6 @@ namespace
 // Vulkan swapchain
 namespace
 {
-	// Some drivers silently replace R8G8B8A8Unorm with R8G8B8A8Srgb which causes overbright rendering.
-	bool IsBgraSwapchainImageRequired(vk::PhysicalDevice physicalDevice)
-	{
-		const vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
-		const std::string deviceName = physicalDeviceProperties.deviceName;
-
-		constexpr const char *bgraRequiredDevicePrefixes[] =
-		{
-			"V3D",
-			"llvmpipe",
-			"RADV",
-			"ANV"
-		};
-
-		for (const char *prefix : bgraRequiredDevicePrefixes)
-		{
-			if (deviceName.find(prefix) != std::string::npos)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	vk::Format GetSwapchainImageFormat(vk::PhysicalDevice physicalDevice)
-	{
-		if (IsBgraSwapchainImageRequired(physicalDevice))
-		{
-			return SwapchainImageFormatBGRA;
-		}
-		else
-		{
-			return SwapchainImageFormatRGBA;
-		}
-	}
-
 	// If better present modes are unavailable then FIFO is always a valid fallback on all platforms.
 	vk::PresentModeKHR GetBestSwapchainPresentMode(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface)
 	{
@@ -2580,7 +2543,7 @@ bool VulkanHeapManager::initImageManager(vk::Device device, int byteCount, vk::I
 {
 	this->type = VulkanHeapType::Image;
 	this->device = device;
-	this->memoryAllocateInfo = CreateImageMemoryAllocateInfo(device, 1, 1, MaxCompatibilityImageFormat8888Unorm, usageFlags, physicalDevice);
+	this->memoryAllocateInfo = CreateImageMemoryAllocateInfo(device, 1, 1, ObjectTextureFormat32Bit, usageFlags, physicalDevice);
 	this->memoryAllocateInfo.allocationSize = byteCount;
 	this->isHostVisible = false;
 
@@ -2936,10 +2899,8 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 	this->graphicsQueue = this->device.getQueue(this->graphicsQueueFamilyIndex, 0);
 	this->presentQueue = this->device.getQueue(this->presentQueueFamilyIndex, 0);
 
-	const vk::Format swapchainImageFormat = GetSwapchainImageFormat(this->physicalDevice);
-
 	vk::SurfaceFormatKHR surfaceFormat;
-	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, swapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, SwapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
 	{
 		DebugLogError("Couldn't get surface format for swapchain.");
 		return false;
@@ -4301,10 +4262,8 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 	this->sceneViewExtent = vk::Extent2D(sceneViewWidth, sceneViewHeight);
 	this->internalExtent = vk::Extent2D(internalWidth, internalHeight);
 
-	const vk::Format swapchainImageFormat = GetSwapchainImageFormat(this->physicalDevice);
-
 	vk::SurfaceFormatKHR surfaceFormat;
-	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, swapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, SwapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
 	{
 		DebugLogErrorFormat("Couldn't get surface format for resize to %dx%d.", windowWidth, windowHeight);
 		return;
@@ -4578,14 +4537,24 @@ Surface VulkanRenderBackend::getScreenshot() const
 	const uint32_t alphaClearMask = ~screenshotSurfaceSDL->format->Amask;
 	const uint32_t alphaMaxValue = 0xFF << screenshotSurfaceSDL->format->Ashift;
 
+	// Swap BGRA to RGBA.
+	SDL_PixelFormat *bgraFormat = SDL_AllocFormat(SDL_PIXELFORMAT_BGRA32);
+	const uint32_t bgraRedBlueClearMask = ~(bgraFormat->Rmask | bgraFormat->Bmask);
+
 	for (uint32_t *pixelPtr = pixelsBegin; pixelPtr != pixelsEnd; pixelPtr++)
 	{
 		uint32_t pixel = *pixelPtr;
 		pixel &= alphaClearMask;
 		pixel |= alphaMaxValue;
+
+		const uint32_t bgraBlueValue = pixel & bgraFormat->Bmask;
+		const uint32_t bgraRedValue = pixel & bgraFormat->Rmask;
+		pixel = (pixel & bgraRedBlueClearMask) | (bgraBlueValue << bgraFormat->Rshift) | (bgraRedValue >> bgraFormat->Rshift);
+
 		*pixelPtr = pixel;
 	}
 
+	SDL_FreeFormat(bgraFormat);
 	this->device.unmapMemory(screenshotDeviceMemory);
 	this->device.freeMemory(screenshotDeviceMemory);
 	this->device.destroyBuffer(screenshotBuffer);
