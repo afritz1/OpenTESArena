@@ -4445,7 +4445,8 @@ Surface VulkanRenderBackend::getScreenshot() const
 	const int screenshotBufferWidth = this->swapchainExtent.width;
 	const int screenshotBufferHeight = this->swapchainExtent.height;
 	const int screenshotBufferBytesPerPixel = sizeof(uint32_t);
-	const int screenshotBufferByteCount = (screenshotBufferWidth * screenshotBufferHeight) * screenshotBufferBytesPerPixel;
+	const int screenshotPixelCount = screenshotBufferWidth * screenshotBufferHeight;
+	const int screenshotBufferByteCount = screenshotPixelCount * screenshotBufferBytesPerPixel;
 	constexpr vk::BufferUsageFlags screenshotUsageFlags = vk::BufferUsageFlagBits::eTransferDst;
 	vk::Buffer screenshotBuffer;
 	if (!TryCreateBuffer(this->device, screenshotBufferByteCount, screenshotUsageFlags, this->graphicsQueueFamilyIndex, &screenshotBuffer))
@@ -4524,42 +4525,35 @@ Surface VulkanRenderBackend::getScreenshot() const
 		return Surface();
 	}
 
-	const int screenshotPitch = screenshotBufferWidth * screenshotBufferBytesPerPixel;
-	Surface screenshotSurface = Surface::createWithFormatFrom(hostMappedBytes.begin(), screenshotBufferWidth, screenshotBufferHeight,
-		RendererUtils::DEFAULT_BPP, screenshotPitch, RendererUtils::DEFAULT_PIXELFORMAT);
-	SDL_Surface *screenshotSurfaceSDL = screenshotSurface.get();
+	const uint32_t *srcPixels = reinterpret_cast<const uint32_t*>(hostMappedBytes.begin());
+	SDL_PixelFormat *srcFormat = SDL_AllocFormat(SDL_PIXELFORMAT_BGRA32);
 
-	Span2D<uint32_t> screenshotPixels = screenshotSurface.getPixels();
-	uint32_t *pixelsBegin = screenshotPixels.begin();
-	uint32_t *pixelsEnd = screenshotPixels.end();
+	Surface dstSurface = Surface::createWithFormat(screenshotBufferWidth, screenshotBufferHeight, RendererUtils::DEFAULT_BPP, RendererUtils::DEFAULT_PIXELFORMAT);
+	uint32_t *dstPixels = dstSurface.getPixels().begin();
+	const SDL_PixelFormat *dstFormat = dstSurface.get()->format;
 
-	// Fix alpha channel so it doesn't show as black.
-	const uint32_t alphaClearMask = ~screenshotSurfaceSDL->format->Amask;
-	const uint32_t alphaMaxValue = 0xFF << screenshotSurfaceSDL->format->Ashift;
-
-	// Swap BGRA to RGBA.
-	SDL_PixelFormat *bgraFormat = SDL_AllocFormat(SDL_PIXELFORMAT_BGRA32);
-	const uint32_t bgraRedBlueClearMask = ~(bgraFormat->Rmask | bgraFormat->Bmask);
-
-	for (uint32_t *pixelPtr = pixelsBegin; pixelPtr != pixelsEnd; pixelPtr++)
+	for (int i = 0; i < screenshotPixelCount; i++)
 	{
-		uint32_t pixel = *pixelPtr;
-		pixel &= alphaClearMask;
-		pixel |= alphaMaxValue;
+		const uint32_t srcPixel = srcPixels[i];
+		const uint8_t srcR = static_cast<uint8_t>((srcPixel & srcFormat->Rmask) >> srcFormat->Rshift);
+		const uint8_t srcG = static_cast<uint8_t>((srcPixel & srcFormat->Gmask) >> srcFormat->Gshift);
+		const uint8_t srcB = static_cast<uint8_t>((srcPixel & srcFormat->Bmask) >> srcFormat->Bshift);
+		constexpr uint8_t srcA = 0xFF;
 
-		const uint32_t bgraBlueValue = pixel & bgraFormat->Bmask;
-		const uint32_t bgraRedValue = pixel & bgraFormat->Rmask;
-		pixel = (pixel & bgraRedBlueClearMask) | (bgraBlueValue << bgraFormat->Rshift) | (bgraRedValue >> bgraFormat->Rshift);
-
-		*pixelPtr = pixel;
+		uint32_t &dstPixel = dstPixels[i];
+		dstPixel = 0;
+		dstPixel |= static_cast<uint32_t>(srcR << dstFormat->Rshift) & dstFormat->Rmask;
+		dstPixel |= static_cast<uint32_t>(srcG << dstFormat->Gshift) & dstFormat->Gmask;
+		dstPixel |= static_cast<uint32_t>(srcB << dstFormat->Bshift) & dstFormat->Bmask;
+		dstPixel |= static_cast<uint32_t>(srcA << dstFormat->Ashift) & dstFormat->Amask;
 	}
 
-	SDL_FreeFormat(bgraFormat);
+	SDL_FreeFormat(srcFormat);
 	this->device.unmapMemory(screenshotDeviceMemory);
 	this->device.freeMemory(screenshotDeviceMemory);
 	this->device.destroyBuffer(screenshotBuffer);
 	this->device.freeCommandBuffers(this->commandPool, screenshotCommandBuffer);
-	return screenshotSurface;
+	return dstSurface;
 }
 
 int VulkanRenderBackend::getBytesPerFloat() const
