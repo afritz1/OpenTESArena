@@ -38,9 +38,16 @@ namespace
 	constexpr uint32_t INVALID_UINT32 = std::numeric_limits<uint32_t>::max();
 	constexpr uint64_t TIMEOUT_UNLIMITED = std::numeric_limits<uint64_t>::max();
 
+	constexpr uint32_t VendorID_AMD = 0x1002;
+	constexpr uint32_t VendorID_Nvidia = 0x10DE;
+	constexpr uint32_t VendorID_Intel = 0x8086;
+	constexpr uint32_t VendorID_AppleMSeries = 0x106B;
+	constexpr uint32_t VendorID_Broadcom = 0x14E4;
+
 	constexpr vk::Format MaxCompatibilityImageFormat8888Unorm = vk::Format::eR8G8B8A8Unorm;
 	constexpr vk::Format MaxCompatibilityImageFormat32Uint = vk::Format::eR32Uint;
-	constexpr vk::Format SwapchainImageFormat = MaxCompatibilityImageFormat8888Unorm;
+	constexpr vk::Format SwapchainImageFormatRGBA = MaxCompatibilityImageFormat8888Unorm;
+	constexpr vk::Format SwapchainImageFormatBGRA = vk::Format::eB8G8R8A8Unorm;
 	constexpr vk::Format ColorBufferFormat = vk::Format::eR8Uint;
 	constexpr vk::Format DepthBufferFormat = vk::Format::eD32Sfloat;
 	constexpr vk::Format ObjectTextureFormat8Bit = vk::Format::eR8Uint;
@@ -381,11 +388,11 @@ namespace
 
 			constexpr uint32_t recognizedHardwareVendorIDs[] =
 			{
-				0x1002, // AMD
-				0x10DE, // Nvidia
-				0x8086, // Intel
-				0x106B, // Apple M-series
-				0x14E4 // Raspberry Pi
+				VendorID_AMD,
+				VendorID_Nvidia,
+				VendorID_Intel,
+				VendorID_AppleMSeries,
+				VendorID_Broadcom
 			};
 
 			bool isRecognizedHardwareVendor = false;
@@ -878,13 +885,20 @@ namespace
 		vk::ImageViewCreateInfo imageViewCreateInfo;
 		imageViewCreateInfo.viewType = vk::ImageViewType::e2D;
 		imageViewCreateInfo.format = format;
-		imageViewCreateInfo.components = { vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity, vk::ComponentSwizzle::eIdentity };
 		imageViewCreateInfo.subresourceRange.aspectMask = imageAspectFlags;
 		imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
 		imageViewCreateInfo.subresourceRange.levelCount = 1;
 		imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
 		imageViewCreateInfo.subresourceRange.layerCount = 1;
 		imageViewCreateInfo.image = image;
+
+		if (format == SwapchainImageFormatBGRA)
+		{
+			imageViewCreateInfo.components.r = vk::ComponentSwizzle::eB;
+			imageViewCreateInfo.components.g = vk::ComponentSwizzle::eG;
+			imageViewCreateInfo.components.b = vk::ComponentSwizzle::eR;
+			imageViewCreateInfo.components.a = vk::ComponentSwizzle::eA;
+		}
 
 		vk::ResultValue<vk::ImageView> imageViewCreateResult = device.createImageView(imageViewCreateInfo);
 		if (imageViewCreateResult.result != vk::Result::eSuccess)
@@ -1077,6 +1091,27 @@ namespace
 // Vulkan swapchain
 namespace
 {
+	// Raspberry Pi V3DV driver likes B8G8R8A8Unorm but renders overbright with R8G8B8A8Unorm.
+	bool IsBgraSwapchainImageRequired(vk::PhysicalDevice physicalDevice)
+	{
+		const vk::PhysicalDeviceProperties physicalDeviceProperties = physicalDevice.getProperties();
+		const std::string deviceName = physicalDeviceProperties.deviceName;
+		const bool isBroadcom = physicalDeviceProperties.vendorID == VendorID_Broadcom;
+		return isBroadcom && (deviceName.find("V3D") != std::string::npos);
+	}
+
+	vk::Format GetSwapchainImageFormat(vk::PhysicalDevice physicalDevice)
+	{
+		if (IsBgraSwapchainImageRequired(physicalDevice))
+		{
+			return SwapchainImageFormatBGRA;
+		}
+		else
+		{
+			return SwapchainImageFormatRGBA;
+		}
+	}
+
 	// If better present modes are unavailable then FIFO is always a valid fallback on all platforms.
 	vk::PresentModeKHR GetBestSwapchainPresentMode(vk::PhysicalDevice physicalDevice, vk::SurfaceKHR surface)
 	{
@@ -1350,10 +1385,10 @@ namespace
 		return true;
 	}
 
-	bool TryCreateUiRenderPass(vk::Device device, vk::RenderPass *outRenderPass)
+	bool TryCreateUiRenderPass(vk::Device device, vk::Format format, vk::RenderPass *outRenderPass)
 	{
 		vk::AttachmentDescription colorAttachmentDescription;
-		colorAttachmentDescription.format = SwapchainImageFormat;
+		colorAttachmentDescription.format = format;
 		colorAttachmentDescription.samples = vk::SampleCountFlagBits::e1;
 		colorAttachmentDescription.loadOp = vk::AttachmentLoadOp::eDontCare; // Conditionally cleared based on scene view.
 		colorAttachmentDescription.storeOp = vk::AttachmentStoreOp::eStore;
@@ -2888,8 +2923,10 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 	this->graphicsQueue = this->device.getQueue(this->graphicsQueueFamilyIndex, 0);
 	this->presentQueue = this->device.getQueue(this->presentQueueFamilyIndex, 0);
 
+	const vk::Format swapchainImageFormat = GetSwapchainImageFormat(this->physicalDevice);
+
 	vk::SurfaceFormatKHR surfaceFormat;
-	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, SwapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, swapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
 	{
 		DebugLogError("Couldn't get surface format for swapchain.");
 		return false;
@@ -2995,7 +3032,7 @@ bool VulkanRenderBackend::initRendering(const RenderInitSettings &initSettings)
 		return false;
 	}
 
-	if (!TryCreateUiRenderPass(this->device, &this->uiRenderPass))
+	if (!TryCreateUiRenderPass(this->device, surfaceFormat.format, &this->uiRenderPass))
 	{
 		DebugLogError("Couldn't create UI render pass.");
 		return false;
@@ -4251,8 +4288,10 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 	this->sceneViewExtent = vk::Extent2D(sceneViewWidth, sceneViewHeight);
 	this->internalExtent = vk::Extent2D(internalWidth, internalHeight);
 
+	const vk::Format swapchainImageFormat = GetSwapchainImageFormat(this->physicalDevice);
+
 	vk::SurfaceFormatKHR surfaceFormat;
-	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, SwapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
+	if (!TryGetSurfaceFormat(this->physicalDevice, this->surface, swapchainImageFormat, SwapchainColorSpace, &surfaceFormat))
 	{
 		DebugLogErrorFormat("Couldn't get surface format for resize to %dx%d.", windowWidth, windowHeight);
 		return;
@@ -4340,7 +4379,7 @@ void VulkanRenderBackend::resize(int windowWidth, int windowHeight, int sceneVie
 		return;
 	}
 
-	if (!TryCreateUiRenderPass(this->device, &this->uiRenderPass))
+	if (!TryCreateUiRenderPass(this->device, surfaceFormat.format, &this->uiRenderPass))
 	{
 		DebugLogErrorFormat("Couldn't create UI render pass for resize to %dx%d.", windowWidth, windowHeight);
 		return;
