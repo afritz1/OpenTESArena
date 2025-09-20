@@ -39,6 +39,8 @@ struct RenderVoxelNonCombinedDrawCallEntry
 struct RenderVoxelDoorDrawCallsEntry
 {
 	VoxelInt3 voxel;
+	ArenaDoorType doorType;
+	int doorFaceIndices[VoxelDoorUtils::FACE_COUNT];
 	UniformBufferID transformBufferID; // Four model matrices, one per face.
 	// @todo 4 transform indices allocated from transform heap (don't have to be sequential)
 	RenderDrawCall drawCalls[VoxelDoorUtils::FACE_COUNT];

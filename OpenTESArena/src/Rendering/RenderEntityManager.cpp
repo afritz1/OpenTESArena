@@ -1,5 +1,6 @@
 #include <algorithm>
 
+#include "RenderCamera.h"
 #include "RenderCommand.h"
 #include "RenderEntityManager.h"
 #include "Renderer.h"
@@ -425,8 +426,9 @@ void RenderEntityManager::loadScene(TextureManager &textureManager, Renderer &re
 }
 
 void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
-	const WorldDouble3 &cameraPosition, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const EntityChunkManager &entityChunkManager,
-	const EntityVisibilityChunkManager &entityVisChunkManager, TextureManager &textureManager, Renderer &renderer)
+	const RenderCamera &camera, const VoxelDouble2 &cameraDirXZ, double ceilingScale, const EntityChunkManager &entityChunkManager,
+	const EntityVisibilityChunkManager &entityVisChunkManager, Span<RenderTransformHeap> transformHeaps, TextureManager &textureManager,
+	Renderer &renderer)
 {
 	// Free destroyed entity palettes + materials.
 	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
@@ -466,7 +468,9 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	this->ghostDrawCallsCache.clear();
 	this->puddleSecondPassDrawCallsCache.clear();
 
-	Span<const RenderTransformHeap> transformHeaps = entityChunkManager.getTransformHeaps();
+	// The rotation all entities share for facing the camera.
+	const Radians allEntitiesRotationRadians = -MathUtils::fullAtan2(cameraDirXZ) - Constants::HalfPi;
+	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
 
 	for (const ChunkInt2 chunkPos : activeChunkPositions)
 	{
@@ -480,6 +484,8 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const WorldDouble3 entityPosition = visibleEntity.position;
 			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 			const EntityDefID entityDefID = entityInst.defID;
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
+			const EntityAnimationDefinition &animDef = entityDef.animDef;
 			const auto animDefIter = std::find_if(this->anims.begin(), this->anims.end(),
 				[entityDefID](const RenderEntityLoadedAnimation &loadedAnim)
 			{
@@ -489,10 +495,11 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			DebugAssertMsgFormat(animDefIter != this->anims.end(), "Expected loaded entity animation for def ID %d.", entityDefID);
 
 			EntityObservedResult observedResult;
-			entityChunkManager.getEntityObservedResult(entityInstID, cameraPosition, observedResult);
+			entityChunkManager.getEntityObservedResult(entityInstID, camera.worldPoint, observedResult);
 			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
+			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
+			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
 
-			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 			const FragmentShaderType fragmentShaderType = GetEntityFragmentShaderType(entityDef);
 			const ObjectTextureID observedTextureIDs[] = { animDefIter->textureRefs[linearizedKeyframeIndex].get() };
 
@@ -524,7 +531,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 
 			DebugAssert(materialID >= 0);
 
-			const RenderTransformHeap &transformHeap = transformHeaps[entityInst.transformHeapIndex];
+			RenderTransformHeap &transformHeap = transformHeaps[entityInst.transformHeapIndex];
 
 			RenderDrawCall drawCall;
 			drawCall.transformBufferID = transformHeap.uniformBufferID;
@@ -569,6 +576,14 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 				drawCall.multipassType = RenderMultipassType::None;
 				this->drawCallsCache.emplace_back(std::move(drawCall));
 			}
+
+			// Update render transform after physics update so the floating origin is correct.
+			const WorldDouble3 floatingEntityPosition = entityPosition - camera.floatingOriginPoint;
+			const Matrix4d entityTranslationMatrix = Matrix4d::translation(floatingEntityPosition.x, floatingEntityPosition.y, floatingEntityPosition.z);
+			const Matrix4d entityScaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
+
+			Matrix4d &entityModelMatrix = transformHeap.pool.values[entityInst.transformIndex];
+			entityModelMatrix = entityTranslationMatrix * (allEntitiesRotationMatrix * entityScaleMatrix);
 		}
 	}
 
@@ -585,7 +600,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 
 	renderer.populateVertexAttributeBuffer(this->meshInst.normalBufferID, entityNormals);
 
-	// Send model matrices to renderer in bulk.
+	// Update model matrix buffers in bulk.
 	for (const RenderTransformHeap &transformHeap : transformHeaps)
 	{
 		if (transformHeap.pool.getUsedCount() > 0)

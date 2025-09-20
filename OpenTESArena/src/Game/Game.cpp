@@ -583,8 +583,10 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 		RenderCamera renderCamera;
 		renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, this->options.getGraphics_VerticalFOV(), this->window.getSceneViewAspectRatio(), tallPixelRatio);
 
+		constexpr bool isFloatingOriginChanged = false;
+
 		this->gameState.tickVisibility(renderCamera, *this);
-		this->gameState.tickRendering(renderCamera, *this);
+		this->gameState.tickRendering(renderCamera, isFloatingOriginChanged, *this);
 	}
 }
 
@@ -913,10 +915,11 @@ void Game::loop()
 
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				const CoordDouble3 oldPlayerCoord = this->player.getEyeCoord();
+				const WorldDouble3 oldPlayerPosition = this->player.getEyePosition();
+				const ChunkInt2 oldPlayerChunk = VoxelUtils::worldPointToChunk(oldPlayerPosition);
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
 				ChunkManager &chunkManager = this->sceneManager.chunkManager;
-				chunkManager.update(oldPlayerCoord.chunk, chunkDistance);
+				chunkManager.update(oldPlayerChunk, chunkDistance);
 
 				this->gameState.tickGameClock(clampedDeltaTime, *this);
 				this->gameState.tickChasmAnimation(clampedDeltaTime);
@@ -941,14 +944,22 @@ void Game::loop()
 				}
 
 				const WorldDouble3 newPlayerPosition = this->player.getEyePosition();
+				const ChunkInt2 newPlayerChunk = VoxelUtils::worldPointToChunk(newPlayerPosition);
 				const Degrees newPlayerYaw = this->player.angleX;
 				const Degrees newPlayerPitch = this->player.angleY;
 				const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
 				RenderCamera renderCamera;
 				renderCamera.init(newPlayerPosition, newPlayerYaw, newPlayerPitch, this->options.getGraphics_VerticalFOV(), this->window.getSceneViewAspectRatio(), tallPixelRatio);
 
+				bool isFloatingOriginChanged = newPlayerChunk != oldPlayerChunk;
+				if (this->options.getMisc_GhostMode())
+				{
+					// @temp hack due to how ghost mode skips character post-simulation (causing PhysicsSystem::Update() to not affect player).
+					isFloatingOriginChanged = true;
+				}
+
 				this->gameState.tickVisibility(renderCamera, *this);
-				this->gameState.tickRendering(renderCamera, *this);
+				this->gameState.tickRendering(renderCamera, isFloatingOriginChanged, *this);
 
 				// Update audio listener orientation.
 				const AudioListenerState listenerState(newPlayerPosition, this->player.forward, this->player.up);

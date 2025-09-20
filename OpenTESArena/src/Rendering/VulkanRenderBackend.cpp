@@ -5365,7 +5365,7 @@ void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList
 		Matrix4d projectionMatrix = camera.projectionMatrix;
 		projectionMatrix.y.y = -projectionMatrix.y.y; // Flip Y so world is not upside down.
 		const Matrix4f viewProjection = RendererUtils::matrix4DoubleToFloat(projectionMatrix * camera.viewMatrix);
-		const Float4 cameraPoint = double3ToFloat4(camera.worldPoint, 1.0);
+		const Float4 cameraPoint = double3ToFloat4(camera.floatingWorldPoint, 1.0);
 		const Float4 cameraForward = double3ToFloat4(camera.forward, 0.0);
 		const Float4 cameraForwardScaled = double3ToFloat4(camera.forwardScaled, 0.0);
 		const Float4 cameraRight = double3ToFloat4(camera.right, 0.0);

@@ -17,10 +17,9 @@ RenderCamera::RenderCamera()
 void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, double tallPixelRatio)
 {
 	this->worldPoint = worldPoint;
-
-	const CoordDouble3 coord = VoxelUtils::worldPointToCoord(worldPoint);
-	this->chunk = coord.chunk;
-	this->chunkPoint = coord.point;
+	this->chunk = VoxelUtils::worldPointToChunk(worldPoint);
+	this->floatingOriginPoint = VoxelUtils::chunkPointToWorldPoint(this->chunk, VoxelDouble3::Zero);
+	this->floatingWorldPoint = worldPoint - this->floatingOriginPoint;
 
 	this->yaw = yaw;
 	this->pitch = pitch;
@@ -34,7 +33,7 @@ void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pit
 	this->upScaled = this->up * tallPixelRatio;
 	this->upScaledRecip = this->up / tallPixelRatio;
 
-	this->viewMatrix = Matrix4d::view(this->worldPoint, this->forward, this->right, this->upScaled); // Adjust for tall pixels.
+	this->viewMatrix = Matrix4d::view(this->floatingWorldPoint, this->forward, this->right, this->upScaled); // Adjust for tall pixels.
 	this->projectionMatrix = Matrix4d::perspective(fovY, aspectRatio, RendererUtils::NEAR_PLANE, RendererUtils::FAR_PLANE);
 	this->viewProjMatrix = this->projectionMatrix * this->viewMatrix;
 	this->inverseViewMatrix = Matrix4d::inverse(this->viewMatrix);
@@ -47,7 +46,7 @@ void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pit
 	this->horizonNormal = Double3::UnitY;
 
 	// @todo: this doesn't support roll. will need something like a vector projection later.
-	this->horizonWorldPoint = this->worldPoint + this->horizonDir;
+	this->horizonWorldPoint = this->floatingWorldPoint + this->horizonDir;
 	this->horizonCameraPoint = RendererUtils::worldSpaceToCameraSpace(Double4(this->horizonWorldPoint, 1.0), this->viewMatrix);
 	this->horizonClipPoint = RendererUtils::cameraSpaceToClipSpace(this->horizonCameraPoint, this->projectionMatrix);
 	this->horizonNdcPoint = RendererUtils::clipSpaceToNDC(this->horizonClipPoint);

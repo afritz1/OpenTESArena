@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "ArenaRenderUtils.h"
+#include "RenderCamera.h"
 #include "RenderCommand.h"
 #include "Renderer.h"
 #include "RenderSkyManager.h"
@@ -772,12 +773,11 @@ void RenderSkyManager::populateCommandList(RenderCommandList &commandList) const
 }
 
 void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,
-	const CoordDouble3 &cameraCoord, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer)
+	const RenderCamera &camera, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer)
 {
-	const WorldDouble3 cameraPos = VoxelUtils::coordToWorldPoint(cameraCoord);
-
 	// Keep background centered on the player.
-	const Matrix4d bgModelMatrix = Matrix4d::translation(cameraPos.x, cameraPos.y, cameraPos.z);
+	const WorldDouble3 bgPosition = camera.floatingWorldPoint;
+	const Matrix4d bgModelMatrix = Matrix4d::translation(bgPosition.x, bgPosition.y, bgPosition.z);
 	renderer.populateUniformBufferMatrix4s(this->bgTransformBufferID, Span<const Matrix4d>(&bgModelMatrix, 1));
 
 	// Update distant land brightness.
@@ -835,10 +835,10 @@ void RenderSkyManager::update(const SkyInstance &skyInst, const SkyVisibilityMan
 	constexpr double sunDistance = 1.0;
 	constexpr double starDistance = 1.0;
 
-	auto updateRenderTransform = [this, &renderer, &cameraPos](const Double3 &direction, int transformIndex,
+	auto updateRenderTransform = [this, &camera, &renderer](const Double3 &direction, int transformIndex,
 		double width, double height, double arbitraryDistance)
 	{
-		const WorldDouble3 position = cameraPos + (direction * arbitraryDistance);
+		const WorldDouble3 position = camera.floatingWorldPoint + (direction * arbitraryDistance);
 		const Matrix4d translationMatrix = Matrix4d::translation(position.x, position.y, position.z);
 
 		const Radians pitchRadians = direction.getYAngleRadians();

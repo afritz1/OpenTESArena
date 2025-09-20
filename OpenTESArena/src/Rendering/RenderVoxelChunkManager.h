@@ -103,12 +103,13 @@ private:
 	void loadChunkTextures(const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, TextureManager &textureManager, Renderer &renderer);
 	void loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelChunk &renderChunk, const VoxelChunk &voxelChunk, double ceilingScale, Renderer &renderer);
 
-	void updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const VoxelFaceCombineChunk &faceCombineChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent, Renderer &renderer);
-	void updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer);
-	void updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const VoxelChunk &voxelChunk,
-		const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer);
+	void updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const WorldDouble3 &floatingOriginPoint,
+		const VoxelChunk &voxelChunk, const VoxelFaceCombineChunk &faceCombineChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale,
+		double chasmAnimPercent, Renderer &renderer);
+	void updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const WorldDouble3 &floatingOriginPoint,
+		const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer);
+	void updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, const WorldDouble3 &floatingOriginPoint,
+		const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer);
 
 	void clearChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelFaceCombineResultID> dirtyFaceCombineResultIDs);
 	void clearChunkNonCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions, Renderer &renderer);
@@ -127,7 +128,8 @@ public:
 		const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
 
 	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
-		double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager,
+		double ceilingScale, double chasmAnimPercent, const WorldDouble3 &floatingOriginPoint, bool isFloatingOriginChanged,
+		const VoxelChunkManager &voxelChunkManager, const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager,
 		const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager, TextureManager &textureManager, Renderer &renderer);
 
 	// End of frame clean-up.

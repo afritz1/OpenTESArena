@@ -31,7 +31,7 @@ namespace
 
 	Matrix4d MakeParticleTranslationMatrix(const RenderCamera &camera, double xPercent, double yPercent)
 	{
-		const Double3 basePosition = camera.worldPoint;
+		const Double3 basePosition = camera.floatingWorldPoint;
 		const Double3 centerDir = camera.forwardScaled * ParticleZDistance;
 		const Double3 rightDir = camera.rightScaled * ParticleZDistance;
 		const Double3 upDir = camera.upScaled * ParticleZDistance;
@@ -744,7 +744,7 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 
 	if (weatherInst.hasFog())
 	{
-		const Matrix4d fogModelMatrix = Matrix4d::translation(camera.worldPoint.x, camera.worldPoint.y, camera.worldPoint.z);
+		const Matrix4d fogModelMatrix = Matrix4d::translation(camera.floatingWorldPoint.x, camera.floatingWorldPoint.y, camera.floatingWorldPoint.z);
 		renderer.populateUniformBufferMatrix4s(this->fogTransformBufferID, Span<const Matrix4d>(&fogModelMatrix, 1));
 
 		this->fogDrawCall.transformBufferID = this->fogTransformBufferID;

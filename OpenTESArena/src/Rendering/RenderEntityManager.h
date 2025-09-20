@@ -19,6 +19,7 @@ class TextureManager;
 
 struct EntityChunk;
 struct RenderCommandList;
+struct RenderTransformHeap;
 
 struct RenderEntityLoadedAnimation
 {
@@ -67,9 +68,10 @@ public:
 
 	void loadScene(TextureManager &textureManager, Renderer &renderer);
 
-	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions, const WorldDouble3 &cameraPosition,
-		const VoxelDouble2 &cameraDirXZ, double ceilingScale, const EntityChunkManager &entityChunkManager, const EntityVisibilityChunkManager &entityVisChunkManager,
-		TextureManager &textureManager, Renderer &renderer);
+	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions, const RenderCamera &camera,
+		const VoxelDouble2 &cameraDirXZ, double ceilingScale, const EntityChunkManager &entityChunkManager,
+		const EntityVisibilityChunkManager &entityVisChunkManager, Span<RenderTransformHeap> transformHeaps, TextureManager &textureManager,
+		Renderer &renderer);
 
 	// End of frame clean-up.
 	void endFrame();

@@ -12,7 +12,8 @@ struct RenderCamera
 {
 	WorldDouble3 worldPoint; // 3D position relative to world origin.
 	ChunkInt2 chunk;
-	Double3 chunkPoint; // 3D position relative to chunk origin.
+	WorldDouble3 floatingOriginPoint; // This chunk's origin, all model matrices in the scene should subtract this.
+	WorldDouble3 floatingWorldPoint; // 3D position relative to this chunk's origin.
 
 	Degrees yaw, pitch;
 	Double3 forward, right, up;

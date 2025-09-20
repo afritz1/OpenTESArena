@@ -1055,7 +1055,7 @@ Span<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs() con
 	return this->destroyedEntityIDs;
 }
 
-Span<const RenderTransformHeap> EntityChunkManager::getTransformHeaps() const
+Span<RenderTransformHeap> EntityChunkManager::getTransformHeaps()
 {
 	return this->transformHeaps;
 }
@@ -1400,39 +1400,6 @@ void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPosi
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateEnemyDeathStates(physicsSystem, audioManager);
 	this->updateVfx();
-
-	// The rotation all entities share for facing the camera.
-	const Double2 playerDirXZ = player.getGroundDirectionXZ();
-	const Radians allEntitiesRotationRadians = -MathUtils::fullAtan2(playerDirXZ) - Constants::HalfPi;
-	const Matrix4d allEntitiesRotationMatrix = Matrix4d::yRotation(allEntitiesRotationRadians);
-
-	// Update entity render transforms.
-	for (const ChunkInt2 chunkPos : activeChunkPositions)
-	{
-		EntityChunk &entityChunk = this->getChunkAtPosition(chunkPos);
-
-		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
-		{
-			const EntityInstance &entityInst = this->getEntity(entityInstID);
-			const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-			const EntityAnimationDefinition &animDef = entityDef.animDef;
-			const WorldDouble3 entityPosition = this->getEntityPosition(entityInst.positionID);
-
-			EntityObservedResult observedResult;
-			this->getEntityObservedResult(entityInstID, playerPosition, observedResult);
-
-			const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
-			DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
-			const EntityAnimationDefinitionKeyframe &keyframe = animDef.keyframes[linearizedKeyframeIndex];
-
-			const Matrix4d entityTranslationMatrix = Matrix4d::translation(entityPosition.x, entityPosition.y, entityPosition.z);
-			const Matrix4d entityScaleMatrix = Matrix4d::scale(1.0, keyframe.height, keyframe.width);
-
-			RenderTransformHeap &transformHeap = transformHeaps[entityInst.transformHeapIndex];
-			Matrix4d &entityModelMatrix = transformHeap.pool.values[entityInst.transformIndex];
-			entityModelMatrix = entityTranslationMatrix * (allEntitiesRotationMatrix * entityScaleMatrix);
-		}
-	}
 }
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)

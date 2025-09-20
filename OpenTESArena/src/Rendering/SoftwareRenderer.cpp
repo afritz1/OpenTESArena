@@ -1325,7 +1325,7 @@ namespace
 			lightBBox.init(lightPosition, lightWidth, lightHeight, lightDepth);
 
 			bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
-			RendererUtils::getBBoxVisibilityInFrustum(lightBBox, camera.worldPoint, camera.forward, frustumNormalLeft, frustumNormalRight,
+			RendererUtils::getBBoxVisibilityInFrustum(lightBBox, camera.floatingWorldPoint, camera.forward, frustumNormalLeft, frustumNormalRight,
 				frustumNormalBottom, frustumNormalTop, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
 			if (isBBoxCompletelyInvisible)
 			{

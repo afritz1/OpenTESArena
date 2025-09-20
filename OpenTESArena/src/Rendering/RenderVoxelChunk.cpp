@@ -16,6 +16,8 @@ RenderVoxelNonCombinedDrawCallEntry::RenderVoxelNonCombinedDrawCallEntry()
 
 RenderVoxelDoorDrawCallsEntry::RenderVoxelDoorDrawCallsEntry()
 {
+	this->doorType = static_cast<ArenaDoorType>(-1);
+	std::fill(std::begin(this->doorFaceIndices), std::end(this->doorFaceIndices), -1);
 	this->transformBufferID = -1;
 	this->drawCallCount = 0;
 }

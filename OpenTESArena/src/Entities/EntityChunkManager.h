@@ -189,7 +189,7 @@ public:
 	Span<const EntityInstanceID> getQueuedDestroyEntityIDs() const;
 
 	// For determining which uniform buffers to use with entity draw calls, and for populating renderer matrices.
-	Span<const RenderTransformHeap> getTransformHeaps() const;
+	Span<RenderTransformHeap> getTransformHeaps();
 
 	// Gets all entities who moved between chunks this frame. Cleared at end of frame.
 	Span<const EntityTransferResult> getEntityTransferResults() const;

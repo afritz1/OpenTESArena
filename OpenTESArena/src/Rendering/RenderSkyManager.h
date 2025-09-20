@@ -7,6 +7,7 @@
 #include "RenderTextureUtils.h"
 #include "../Assets/TextureAsset.h"
 
+class RenderCamera;
 class Renderer;
 class SkyInfoDefinition;
 class SkyInstance;
@@ -91,7 +92,7 @@ public:
 
 	void loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
 	void update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,
-		const CoordDouble3 &cameraCoord, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer);
+		const RenderCamera &camera, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
 

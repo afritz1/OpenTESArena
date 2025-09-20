@@ -714,12 +714,14 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	RenderCamera renderCamera;
 	renderCamera.init(playerPosition, player.angleX, player.angleY, options.getGraphics_VerticalFOV(), window.getSceneViewAspectRatio(), tallPixelRatio);
 
+	constexpr bool isFloatingOriginChanged = false; // Don't need special handling when everything is already dirty.
+
 	this->tickVoxels(0.0, game);
 	this->tickEntities(0.0, game);
 	this->tickCollision(0.0, physicsSystem, game);
 	this->tickSky(0.0, game);
 	this->tickVisibility(renderCamera, game);
-	this->tickRendering(renderCamera, game);
+	this->tickRendering(renderCamera, isFloatingOriginChanged, game);
 
 	if (this->nextMusicFunc)
 	{
@@ -1059,7 +1061,7 @@ void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)
 	skyVisManager.update(renderCamera, skyInst);
 }
 
-void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
+void GameState::tickRendering(const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
@@ -1068,7 +1070,7 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const Span<const ChunkInt2> freedChunkPositions = chunkManager.getFreedChunkPositions();
 
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 	const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager = sceneManager.voxelFaceCombineChunkManager;
 	const SkyInstance &skyInst = sceneManager.skyInstance;
 
@@ -1076,8 +1078,6 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const double chasmAnimPercent = this->getChasmAnimPercent();
 
 	const Player &player = game.player;
-	const WorldDouble3 playerPosition = player.getEyePosition();
-	const CoordDouble3 playerCoord = player.getEyeCoord();
 	const Double2 playerDirXZ = player.getGroundDirectionXZ();
 
 	TextureManager &textureManager = game.textureManager;
@@ -1090,13 +1090,14 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager = sceneManager.voxelFrustumCullingChunkManager;
 	RenderVoxelChunkManager &renderVoxelChunkManager = sceneManager.renderVoxelChunkManager;
 	renderVoxelChunkManager.updateActiveChunks(newChunkPositions, freedChunkPositions, voxelChunkManager, renderer);
-	renderVoxelChunkManager.update(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent,
-		voxelChunkManager, voxelFaceCombineChunkManager, voxelFrustumCullingChunkManager, textureManager, renderer);
+	renderVoxelChunkManager.update(activeChunkPositions, newChunkPositions, ceilingScale, chasmAnimPercent, renderCamera.floatingOriginPoint,
+		isFloatingOriginChanged, voxelChunkManager, voxelFaceCombineChunkManager, voxelFrustumCullingChunkManager, textureManager, renderer);
 
 	const EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
+	Span<RenderTransformHeap> entityTransformHeaps = entityChunkManager.getTransformHeaps();
 	RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
-	renderEntityManager.update(activeChunkPositions, newChunkPositions, playerPosition, playerDirXZ, ceilingScale,
-		entityChunkManager, entityVisChunkManager, textureManager, renderer);
+	renderEntityManager.update(activeChunkPositions, newChunkPositions, renderCamera, playerDirXZ, ceilingScale,
+		entityChunkManager, entityVisChunkManager, entityTransformHeaps, textureManager, renderer);
 
 	RenderLightManager &renderLightManager = sceneManager.renderLightManager;
 	renderLightManager.update(renderCamera, nightLightsAreActive, isFoggy, options.getMisc_PlayerHasLight(), entityChunkManager, renderer);
@@ -1109,7 +1110,7 @@ void GameState::tickRendering(const RenderCamera &renderCamera, Game &game)
 	const SkyVisibilityManager &skyVisManager = sceneManager.skyVisManager;
 	const double distantAmbientPercent = ArenaRenderUtils::getDistantAmbientPercent(this->clock);
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
-	renderSkyManager.update(skyInst, skyVisManager, this->weatherInst, playerCoord, isInterior, dayPercent, isFoggy, distantAmbientPercent, renderer);
+	renderSkyManager.update(skyInst, skyVisManager, this->weatherInst, renderCamera, isInterior, dayPercent, isFoggy, distantAmbientPercent, renderer);
 
 	const WeatherInstance &weatherInst = game.gameState.getWeatherInstance();
 	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;

@@ -123,7 +123,7 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 
 	if (playerHasLight)
 	{
-		this->playerLight.position = camera.worldPoint;
+		this->playerLight.position = camera.floatingWorldPoint;
 
 		if (isFogActive)
 		{
@@ -147,7 +147,8 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
 		const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
 		const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
-		entityLight.light.position = GetLightPositionInEntity(entityPosition, entityBBox);
+		const WorldDouble3 lightPosition = GetLightPositionInEntity(entityPosition, entityBBox);
+		entityLight.light.position = lightPosition - camera.floatingOriginPoint;
 
 		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 		entityLight.enabled = !EntityUtils::isStreetlight(entityDef) || nightLightsAreActive;
@@ -160,7 +161,7 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 		const double entityLightHeight = entityLightWidth;
 		const double entityLightDepth = entityLightWidth;
 		BoundingBox3D entityLightBBox;
-		entityLightBBox.init(entityLight.light.position, entityLightWidth, entityLightHeight, entityLightDepth);
+		entityLightBBox.init(lightPosition, entityLightWidth, entityLightHeight, entityLightDepth);
 
 		bool isBBoxCompletelyVisible, isBBoxCompletelyInvisible;
 		RendererUtils::getBBoxVisibilityInFrustum(entityLightBBox, camera, &isBBoxCompletelyVisible, &isBBoxCompletelyInvisible);
@@ -175,8 +176,8 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 	std::sort(visibleLights.begin(), visibleLights.end(),
 		[&camera](const RenderLight &a, const RenderLight &b)
 	{
-		const double aDistSqr = (a.position - camera.worldPoint).lengthSquared();
-		const double bDistSqr = (b.position - camera.worldPoint).lengthSquared();
+		const double aDistSqr = (a.position - camera.floatingWorldPoint).lengthSquared();
+		const double bDistSqr = (b.position - camera.floatingWorldPoint).lengthSquared();
 		return aDistSqr < bDistSqr;
 	});
 

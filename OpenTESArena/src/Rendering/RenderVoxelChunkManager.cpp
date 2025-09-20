@@ -271,7 +271,7 @@ namespace
 		chasmTextureKeys.emplace_back(std::move(key));
 	}
 
-	WorldDouble3 MakeVoxelWorldPosition(const ChunkInt2 &chunkPos, const VoxelInt3 &voxel, double ceilingScale)
+	WorldDouble3 MakeVoxelMeshPosition(ChunkInt2 chunkPos, VoxelInt3 voxel, double ceilingScale)
 	{
 		const WorldInt3 worldVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, voxel);
 		return WorldDouble3(
@@ -280,13 +280,12 @@ namespace
 			static_cast<WEDouble>(worldVoxel.z));
 	}
 
-	Matrix4d MakeDoorFaceModelMatrix(ArenaDoorType doorType, int doorFaceIndex, const WorldDouble3 &worldPosition,
+	Matrix4d MakeDoorFaceModelMatrix(ArenaDoorType doorType, int doorFaceIndex, WorldDouble3 meshPosition, WorldDouble3 floatingOriginPoint,
 		double ceilingScale, double animPercent)
 	{
 		const Radians faceBaseRadians = VoxelDoorUtils::BaseAngles[doorFaceIndex];
 		const Double3 hingeOffset = VoxelDoorUtils::SwingingHingeOffsets[doorFaceIndex];
-		const Double3 hingePosition = worldPosition + hingeOffset;
-
+		const Double3 hingePosition = (meshPosition - floatingOriginPoint) + hingeOffset;
 
 		Matrix4d translationMatrix;
 		Matrix4d rotationMatrix;
@@ -574,8 +573,8 @@ void RenderVoxelChunkManager::loadChunkNonCombinedVoxelMeshBuffers(RenderVoxelCh
 }
 
 void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions,
-	const VoxelChunk &voxelChunk, const VoxelFaceCombineChunk &faceCombineChunk, const VoxelChunkManager &voxelChunkManager,
-	double ceilingScale, double chasmAnimPercent, Renderer &renderer)
+	const WorldDouble3 &floatingOriginPoint, const VoxelChunk &voxelChunk, const VoxelFaceCombineChunk &faceCombineChunk,
+	const VoxelChunkManager &voxelChunkManager, double ceilingScale, double chasmAnimPercent, Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = renderChunk.position;
 	std::unordered_map<VoxelFaceCombineResultID, RenderVoxelCombinedFaceDrawCallEntry> &combinedFaceDrawCallEntries = renderChunk.combinedFaceDrawCallEntries;
@@ -603,14 +602,10 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 			DebugLogErrorFormat("Couldn't allocate combined face transform starting at (%s) in chunk (%s).", minVoxel.toString().c_str(), chunkPos.toString().c_str());
 		}
 
-		const WorldInt3 worldMinVoxel = VoxelUtils::chunkVoxelToWorldVoxel(chunkPos, minVoxel);
-		const WorldDouble3 meshPosition(
-			static_cast<SNDouble>(worldMinVoxel.x),
-			static_cast<double>(worldMinVoxel.y) * ceilingScale,
-			static_cast<WEDouble>(worldMinVoxel.z));
-
+		const WorldDouble3 meshPosition = MakeVoxelMeshPosition(chunkPos, minVoxel, ceilingScale);
+		const WorldDouble3 floatingMeshPosition = meshPosition - floatingOriginPoint;
 		Matrix4d &modelMatrix = renderChunk.transformHeap.pool.values[transformIndex];
-		modelMatrix = Matrix4d::translation(meshPosition.x, meshPosition.y, meshPosition.z);
+		modelMatrix = Matrix4d::translation(floatingMeshPosition.x, floatingMeshPosition.y, floatingMeshPosition.z);
 
 		const VoxelTraitsDefID traitsDefID = voxelChunk.traitsDefIDs.get(minVoxel.x, minVoxel.y, minVoxel.z);
 		const VoxelTraitsDefinition &traitsDef = voxelChunk.traitsDefs[traitsDefID];
@@ -852,7 +847,8 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 }
 
 void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions,
-	const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer)
+	const WorldDouble3 &floatingOriginPoint, const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale,
+	Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = renderChunk.position;
 
@@ -906,8 +902,9 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 				continue;
 			}
 
-			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(chunkPos, voxel, ceilingScale);
-			const Matrix4d modelMatrix = Matrix4d::translation(worldPosition.x, worldPosition.y, worldPosition.z);
+			const WorldDouble3 meshPosition = MakeVoxelMeshPosition(chunkPos, voxel, ceilingScale);
+			const WorldDouble3 floatingMeshPosition = meshPosition - floatingOriginPoint;
+			const Matrix4d modelMatrix = Matrix4d::translation(floatingMeshPosition.x, floatingMeshPosition.y, floatingMeshPosition.z);
 			renderer.populateUniformBufferMatrix4s(transformBufferID, Span<const Matrix4d>(&modelMatrix, 1));
 
 			RenderVoxelNonCombinedDrawCallEntry newDrawCallEntry;
@@ -1018,7 +1015,8 @@ void RenderVoxelChunkManager::updateChunkDiagonalVoxelDrawCalls(RenderVoxelChunk
 }
 
 void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &renderChunk, Span<const VoxelInt3> dirtyVoxelPositions,
-	const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale, Renderer &renderer)
+	const WorldDouble3 &floatingOriginPoint, const VoxelChunk &voxelChunk, const VoxelChunkManager &voxelChunkManager, double ceilingScale,
+	Renderer &renderer)
 {
 	const ChunkInt2 chunkPos = renderChunk.position;
 
@@ -1069,11 +1067,12 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 
 		if (drawCallsEntryIndex < 0)
 		{
-			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, voxel, ceilingScale);
+			const WorldDouble3 meshPosition = MakeVoxelMeshPosition(voxelChunk.position, voxel, ceilingScale);
 			const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(voxel.x, voxel.y, voxel.z, voxelChunk);
 
 			RenderVoxelDoorDrawCallsEntry newDoorDrawCallsEntry;
 			newDoorDrawCallsEntry.voxel = voxel;
+			newDoorDrawCallsEntry.doorType = doorType;
 			newDoorDrawCallsEntry.transformBufferID = renderer.createUniformBufferMatrix4s(VoxelDoorUtils::FACE_COUNT);
 			if (newDoorDrawCallsEntry.transformBufferID < 0)
 			{
@@ -1084,10 +1083,10 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 			// Initialize to default appearance. Dirty door animations trigger an update.
 			const Matrix4d doorFaceModelMatrices[] =
 			{
-				MakeDoorFaceModelMatrix(doorType, 0, worldPosition, ceilingScale, doorAnimPercent),
-				MakeDoorFaceModelMatrix(doorType, 1, worldPosition, ceilingScale, doorAnimPercent),
-				MakeDoorFaceModelMatrix(doorType, 2, worldPosition, ceilingScale, doorAnimPercent),
-				MakeDoorFaceModelMatrix(doorType, 3, worldPosition, ceilingScale, doorAnimPercent)
+				MakeDoorFaceModelMatrix(doorType, 0, meshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 1, meshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 2, meshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 3, meshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent)
 			};
 
 			renderer.populateUniformBufferMatrix4s(newDoorDrawCallsEntry.transformBufferID, doorFaceModelMatrices);
@@ -1242,8 +1241,9 @@ void RenderVoxelChunkManager::updateChunkDoorVoxelDrawCalls(RenderVoxelChunk &re
 				continue;
 			}
 
-			const DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
+			doorDrawCallsEntry.doorFaceIndices[doorDrawCallWriteIndex] = i;
 
+			const DrawCallTransformInitInfo &doorTransformInitInfo = transformInitInfos[i];
 			RenderDrawCall &doorDrawCall = doorDrawCallsEntry.drawCalls[doorDrawCallWriteIndex];
 			doorDrawCall.transformBufferID = doorTransformInitInfo.id;
 			doorDrawCall.transformIndex = doorTransformInitInfo.index;
@@ -1422,7 +1422,8 @@ void RenderVoxelChunkManager::updateActiveChunks(Span<const ChunkInt2> newChunkP
 }
 
 void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
-	double ceilingScale, double chasmAnimPercent, const VoxelChunkManager &voxelChunkManager, const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager,
+	double ceilingScale, double chasmAnimPercent, const WorldDouble3 &floatingOriginPoint, bool isFloatingOriginChanged,
+	const VoxelChunkManager &voxelChunkManager, const VoxelFaceCombineChunkManager &voxelFaceCombineChunkManager,
 	const VoxelFrustumCullingChunkManager &voxelFrustumCullingChunkManager, TextureManager &textureManager, Renderer &renderer)
 {
 	for (const ChunkInt2 chunkPos : newChunkPositions)
@@ -1444,6 +1445,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 	{
 		RenderVoxelChunk &renderChunk = this->getChunkAtPosition(chunkPos);
 		const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(chunkPos);
+		RenderTransformHeap &transformHeap = renderChunk.transformHeap;
 
 		for (const VoxelInt3 voxel : voxelChunk.destroyedDoorAnimInsts)
 		{
@@ -1455,7 +1457,46 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 			renderChunk.freeFadeMaterial(voxel.x, voxel.y, voxel.z, renderer);
 		}
 
-		// Update door render transforms (swing angle, etc.).
+		if (isFloatingOriginChanged)
+		{
+			// Need to refresh all voxel transforms when floating origin changes.
+			for (const auto &pair : renderChunk.combinedFaceDrawCallEntries)
+			{
+				const RenderVoxelCombinedFaceDrawCallEntry &entry = pair.second;
+				const WorldDouble3 meshPosition = MakeVoxelMeshPosition(chunkPos, entry.min, ceilingScale);
+				const WorldDouble3 floatingMeshPosition = meshPosition - floatingOriginPoint;
+				Matrix4d &modelMatrix = transformHeap.pool.values[entry.transformIndex];
+				modelMatrix = Matrix4d::translation(floatingMeshPosition.x, floatingMeshPosition.y, floatingMeshPosition.z);
+			}
+
+			for (const RenderVoxelNonCombinedDrawCallEntry &entry : renderChunk.nonCombinedDrawCallEntries)
+			{
+				const WorldDouble3 meshPosition = MakeVoxelMeshPosition(chunkPos, entry.voxel, ceilingScale);
+				const WorldDouble3 floatingMeshPosition = meshPosition - floatingOriginPoint;
+				const Matrix4d modelMatrix = Matrix4d::translation(floatingMeshPosition.x, floatingMeshPosition.y, floatingMeshPosition.z);
+				renderer.populateUniformBufferMatrix4s(entry.transformBufferID, Span<const Matrix4d>(&modelMatrix, 1));
+			}
+
+			for (const RenderVoxelDoorDrawCallsEntry &entry : renderChunk.doorDrawCallsEntries)
+			{
+				Matrix4d doorModelMatrices[VoxelDoorUtils::FACE_COUNT];
+
+				const ArenaDoorType doorType = entry.doorType;
+				for (int i = 0; i < entry.drawCallCount; i++)
+				{
+					const VoxelInt3 doorVoxel = entry.voxel;
+					const int doorFaceIndex = entry.doorFaceIndices[i];
+					const WorldDouble3 doorMeshPosition = MakeVoxelMeshPosition(chunkPos, entry.voxel, ceilingScale);
+					const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
+					doorModelMatrices[i] = MakeDoorFaceModelMatrix(doorType, doorFaceIndex, doorMeshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent);
+				}
+
+				renderer.populateUniformBufferMatrix4s(entry.transformBufferID, doorModelMatrices);
+			}
+		}
+
+		// Update animating doors.
+		// @todo can we get rid of this and just rely on the dirty draw call updating below?
 		Span<const VoxelInt3> dirtyDoorAnimInstVoxels = voxelChunk.dirtyDoorAnimInstPositions;
 		for (const VoxelInt3 doorVoxel : dirtyDoorAnimInstVoxels)
 		{
@@ -1468,7 +1509,7 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 
 			const VoxelDoorDefinition &doorDef = voxelChunk.doorDefs[doorDefID];
 			const ArenaDoorType doorType = doorDef.type;
-			const WorldDouble3 worldPosition = MakeVoxelWorldPosition(voxelChunk.position, doorVoxel, ceilingScale);
+			const WorldDouble3 doorMeshPosition = MakeVoxelMeshPosition(voxelChunk.position, doorVoxel, ceilingScale);
 			const double doorAnimPercent = VoxelDoorUtils::getAnimPercentOrZero(doorVoxel.x, doorVoxel.y, doorVoxel.z, voxelChunk);
 
 			Span<const RenderVoxelDoorDrawCallsEntry> doorDrawCallsEntries = renderChunk.doorDrawCallsEntries;
@@ -1482,10 +1523,10 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 			const UniformBufferID doorTransformBufferID = doorDrawCallsEntry.transformBufferID;
 			const Matrix4d doorFaceModelMatrices[] =
 			{
-				MakeDoorFaceModelMatrix(doorType, 0, worldPosition, ceilingScale, doorAnimPercent),
-				MakeDoorFaceModelMatrix(doorType, 1, worldPosition, ceilingScale, doorAnimPercent),
-				MakeDoorFaceModelMatrix(doorType, 2, worldPosition, ceilingScale, doorAnimPercent),
-				MakeDoorFaceModelMatrix(doorType, 3, worldPosition, ceilingScale, doorAnimPercent)
+				MakeDoorFaceModelMatrix(doorType, 0, doorMeshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 1, doorMeshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 2, doorMeshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent),
+				MakeDoorFaceModelMatrix(doorType, 3, doorMeshPosition, floatingOriginPoint, ceilingScale, doorAnimPercent)
 			};
 
 			renderer.populateUniformBufferMatrix4s(doorTransformBufferID, doorFaceModelMatrices);
@@ -1511,22 +1552,22 @@ void RenderVoxelChunkManager::update(Span<const ChunkInt2> activeChunkPositions,
 		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, renderer);
 		this->clearChunkNonCombinedVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, renderer);
 
-		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
-		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
-		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
-		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
-		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
+		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, floatingOriginPoint, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
+		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, floatingOriginPoint, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
+		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, floatingOriginPoint, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
+		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, floatingOriginPoint, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
+		this->updateChunkCombinedVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, floatingOriginPoint, voxelChunk, faceCombineChunk, voxelChunkManager, ceilingScale, chasmAnimPercent, renderer);
 
-		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
-		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
-		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, floatingOriginPoint, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyFaceActivationVoxels, floatingOriginPoint, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDiagonalVoxelDrawCalls(renderChunk, dirtyFadeAnimInstVoxels, floatingOriginPoint, voxelChunk, voxelChunkManager, ceilingScale, renderer);
 
-		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
-		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
-		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyShapeDefVoxels, floatingOriginPoint, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorAnimInstVoxels, floatingOriginPoint, voxelChunk, voxelChunkManager, ceilingScale, renderer);
+		this->updateChunkDoorVoxelDrawCalls(renderChunk, dirtyDoorVisInstVoxels, floatingOriginPoint, voxelChunk, voxelChunkManager, ceilingScale, renderer);
 
-		Span<const Matrix4d> chunkModelMatrices(renderChunk.transformHeap.pool.values.get(), renderChunk.transformHeap.pool.capacity);
-		renderer.populateUniformBufferMatrix4s(renderChunk.transformHeap.uniformBufferID, chunkModelMatrices);
+		Span<const Matrix4d> chunkModelMatrices(transformHeap.pool.values.get(), transformHeap.pool.capacity);
+		renderer.populateUniformBufferMatrix4s(transformHeap.uniformBufferID, chunkModelMatrices);
 	}
 
 	this->rebuildDrawCallsList(voxelFrustumCullingChunkManager);
