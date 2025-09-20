@@ -26,7 +26,7 @@ namespace Physics
 	constexpr int BodyMutexCount = 0; // Use default settings.
 	constexpr int MaxBodyPairs = 65536;
 	constexpr int MaxContactConstraints = 16384;
-	constexpr double DeltaTime = 1.0 / 60.0; // Determines # of steps to run inside PhysicsSystem::update().
+	constexpr double DeltaTime = 1.0 / 240.0; // Very high # of updates per frame to help prevent bumpy road feeling at lower FPS.
 
 	// Shape creation tweaks.
 	constexpr double BoxConvexRadius = 0.020;
