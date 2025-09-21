@@ -15,6 +15,7 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Span.h"
 
+enum class MapType;
 enum class VoxelFacing2D;
 enum class VoxelFacing3D;
 
@@ -64,7 +65,7 @@ struct ArenaShapeInitCache
 	void initDefaultBoxValues(ArenaVoxelType voxelType);
 	void initRaisedBoxValues(double yOffset, double ySize, double vTop, double vBottom);
 	void initEdgeBoxValues(double yOffset, VoxelFacing2D facing, bool flippedTexCoords);
-	void initChasmBoxValues(bool isDryChasm);
+	void initChasmBoxValues(bool isDryChasm, MapType mapType);
 	void initDiagonalBoxValues(bool isRightDiagonal);
 };
 

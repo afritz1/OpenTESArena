@@ -391,7 +391,7 @@ namespace MapGeneration
 			}
 
 			const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(*outChasmType);
-			outShapeInitCache->initChasmBoxValues(isDryChasm);
+			outShapeInitCache->initChasmBoxValues(isDryChasm, mapType);
 
 			const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(chasmID);
 			*outTextureAsset = TextureAsset(
@@ -449,11 +449,11 @@ namespace MapGeneration
 		}
 	}
 
-	void writeVoxelInfoForFloorReplacement(const INFFile &inf, ArenaChasmType chasmType,
+	void writeVoxelInfoForFloorReplacement(const INFFile &inf, ArenaChasmType chasmType, MapType mapType,
 		ArenaShapeInitCache *outShapeInitCache, TextureAsset *outTextureAsset)
 	{
 		const bool isDryChasm = !ArenaChasmUtils::allowsSwimming(chasmType);
-		outShapeInitCache->initChasmBoxValues(isDryChasm);
+		outShapeInitCache->initChasmBoxValues(isDryChasm, mapType);
 
 		std::optional<int> textureIndex = inf.getWetChasmIndex();
 		if (!textureIndex.has_value())
@@ -468,14 +468,14 @@ namespace MapGeneration
 			ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf));
 	}
 
-	void writeDefsForFloorReplacement(const INFFile &inf, TextureManager &textureManager, VoxelShapeDefinition *outShapeDef,
+	void writeDefsForFloorReplacement(const INFFile &inf, MapType mapType, TextureManager &textureManager, VoxelShapeDefinition *outShapeDef,
 		VoxelTextureDefinition *outTextureDef, VoxelShadingDefinition *outShadingDef, VoxelTraitsDefinition *outTraitsDef, VoxelChasmDefinition *outChasmDef)
 	{
 		constexpr ArenaChasmType chasmType = ArenaChasmType::Wet;
 
 		ArenaShapeInitCache shapeInitCache;
 		TextureAsset textureAsset;
-		MapGeneration::writeVoxelInfoForFloorReplacement(inf, chasmType, &shapeInitCache, &textureAsset);
+		MapGeneration::writeVoxelInfoForFloorReplacement(inf, chasmType, mapType, &shapeInitCache, &textureAsset);
 
 		constexpr VoxelShapeScaleType scaleType = VoxelShapeScaleType::UnscaledFromMax;
 		const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(inf.getCeiling().height);
@@ -1376,8 +1376,8 @@ namespace MapGeneration
 		VoxelShadingDefinition floorReplacementShadingDef;
 		VoxelTraitsDefinition floorReplacementTraitsDef;
 		VoxelChasmDefinition floorReplacementChasmDef;
-		MapGeneration::writeDefsForFloorReplacement(inf, textureManager, &floorReplacementShapeDef, &floorReplacementTextureDef, &floorReplacementShadingDef,
-			&floorReplacementTraitsDef, &floorReplacementChasmDef);
+		MapGeneration::writeDefsForFloorReplacement(inf, mapType, textureManager, &floorReplacementShapeDef, &floorReplacementTextureDef,
+			&floorReplacementShadingDef, &floorReplacementTraitsDef, &floorReplacementChasmDef);
 
 		const LevelVoxelShapeDefID floorReplacementVoxelShapeDefID = outLevelInfoDef->addVoxelShapeDef(std::move(floorReplacementShapeDef));
 		const LevelVoxelTextureDefID floorReplacementVoxelTextureDefID = outLevelInfoDef->addVoxelTextureDef(std::move(floorReplacementTextureDef));

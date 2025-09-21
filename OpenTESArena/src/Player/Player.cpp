@@ -588,6 +588,7 @@ void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &
 	const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
 	const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point, ceilingScale));
 	const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
+	const VoxelInt3 clampedPlayerFeetVoxel(playerFeetVoxel.x, std::max(playerFeetVoxel.y, 0), playerFeetVoxel.z);
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 
 	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
@@ -595,15 +596,15 @@ void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &
 	if (voxelChunk != nullptr)
 	{
 		VoxelChasmDefID chasmDefID;
-		if (voxelChunk->tryGetChasmDefID(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
+		if (voxelChunk->tryGetChasmDefID(playerFeetVoxel.x, clampedPlayerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
 		{
 			const VoxelChasmDefinition &chasmDef = voxelChunkManager.getChasmDef(chasmDefID);
-			const VoxelShapeDefID chasmFloorShapeDefID = voxelChunk->shapeDefIDs.get(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z);
+			const VoxelShapeDefID chasmFloorShapeDefID = voxelChunk->shapeDefIDs.get(playerFeetVoxel.x, clampedPlayerFeetVoxel.y, playerFeetVoxel.z);
 			const VoxelShapeDefinition &chasmFloorShapeDef = voxelChunk->shapeDefs[chasmFloorShapeDefID];
 			DebugAssert(chasmFloorShapeDef.type == VoxelShapeType::Box);
 			const double chasmFloorShapeYPos = chasmFloorShapeDef.box.yOffset + chasmFloorShapeDef.box.height;
-			const double chasmBottomY = static_cast<double>(playerFeetVoxel.y) + MeshUtils::getScaledVertexY(chasmFloorShapeYPos, chasmFloorShapeDef.scaleType, ceilingScale);
-			const double chasmTopY = static_cast<double>(playerFeetVoxel.y + 1) * ceilingScale;
+			const double chasmBottomY = static_cast<double>(clampedPlayerFeetVoxel.y) + MeshUtils::getScaledVertexY(chasmFloorShapeYPos, chasmFloorShapeDef.scaleType, ceilingScale);
+			const double chasmTopY = static_cast<double>(clampedPlayerFeetVoxel.y + 1) * ceilingScale;
 			const double chasmMiddleY = chasmBottomY + ((chasmTopY - chasmBottomY) * 0.50);
 			const double chasmLowerPortionY = chasmBottomY + ((chasmMiddleY - chasmBottomY) * 0.50);
 			const bool areFeetInChasm = playerFeetPosition.y <= chasmMiddleY; // Arbitrary "deep enough"

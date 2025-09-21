@@ -8,6 +8,9 @@ struct DerivedAttributes;
 
 namespace ArenaPlayerUtils
 {
+	constexpr int EyeHeight = 60;
+	constexpr int TopOfHeadHeight = EyeHeight + 1;
+
 	int getBaseSpeed(int speedAttribute, int encumbranceMod);
 	int getMoveSpeed(int baseSpeed);
 	int getTurnSpeed(int baseSpeed);

@@ -1,6 +1,8 @@
 #include "ArenaMeshUtils.h"
 #include "MeshLibrary.h"
+#include "MapType.h"
 #include "../Math/Constants.h"
+#include "../Player/ArenaPlayerUtils.h"
 #include "../Voxels/VoxelFacing.h"
 
 ArenaShapeRaisedInitInfo::ArenaShapeRaisedInitInfo()
@@ -66,19 +68,39 @@ void ArenaShapeInitCache::initEdgeBoxValues(double yOffset, VoxelFacing2D facing
 	this->edge.flippedTexCoords = flippedTexCoords;
 }
 
-void ArenaShapeInitCache::initChasmBoxValues(bool isDryChasm)
+void ArenaShapeInitCache::initChasmBoxValues(bool isDryChasm, MapType mapType)
 {
-	// Offset below the chasm floor so the collider isn't infinitely thin.
-	// @todo: this doesn't seem right for wet chasms
 	this->boxWidth = 1.0;
-	this->boxHeight = 0.10;
+	this->boxHeight = 1.0;
+	this->boxDepth = 1.0;
+	
+	this->boxYOffset = -1.0;
 	if (!isDryChasm)
 	{
-		this->boxHeight += 1.0 - ArenaChasmUtils::DEFAULT_HEIGHT;
+		// @todo this was a guess-and-checked value that looks good enough
+		// - probably some mix of INFCeiling::DEFAULT_HEIGHT, MIFUtils::ARENA_UNITS, and ArenaPlayerUtils::EyeHeight
+		constexpr int unknownOffset = -85;
+
+		int cameraOffset = unknownOffset;
+		switch (mapType)
+		{
+		case MapType::Interior:
+			cameraOffset += ArenaPlayerUtils::ChasmHeightSwimmingInterior;
+			break;
+		case MapType::City:
+			cameraOffset += ArenaPlayerUtils::ChasmHeightSwimmingCity;
+			break;
+		case MapType::Wilderness:
+			cameraOffset += ArenaPlayerUtils::ChasmHeightSwimmingWild;
+			break;
+		default:
+			DebugNotImplemented();
+			break;
+		}
+
+		this->boxYOffset = static_cast<double>(cameraOffset) / MIFUtils::ARENA_UNITS;
 	}
 
-	this->boxDepth = 1.0;
-	this->boxYOffset = -0.10;
 	this->boxYRotation = 0.0;
 	this->voxelType = ArenaVoxelType::Chasm;
 }
