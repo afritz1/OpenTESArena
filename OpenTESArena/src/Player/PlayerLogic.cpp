@@ -5,7 +5,6 @@
 #include "../Collision/ArenaSelectionUtils.h"
 #include "../Collision/Physics.h"
 #include "../Collision/RayCastTypes.h"
-#include "../Collision/SelectionUtils.h"
 #include "../Combat/CombatLogic.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
@@ -330,11 +329,13 @@ namespace PlayerLogic
 
 		if (isPrimaryInteraction)
 		{
-			if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
+			const bool passesVoxelDistanceTest = hit.t <= ArenaSelectionUtils::VOXEL_MAX_DISTANCE;
+
+			if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
 			{
-				if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
+				if (!debugDestroyVoxel)
 				{
-					if (!debugDestroyVoxel)
+					if (passesVoxelDistanceTest)
 					{
 						const bool isWall = voxelType == ArenaVoxelType::Wall;
 
@@ -354,19 +355,22 @@ namespace PlayerLogic
 							}
 						}
 					}
-					else
+				}
+				else
+				{
+					// @temp: add to fading voxels if it doesn't already exist.
+					int fadeAnimInstIndex;
+					if (!voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
 					{
-						// @temp: add to fading voxels if it doesn't already exist.
-						int fadeAnimInstIndex;
-						if (!voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
-						{
-							VoxelFadeAnimationInstance fadeAnimInst;
-							fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-							voxelChunk.fadeAnimInsts.emplace_back(std::move(fadeAnimInst));
-						}
+						VoxelFadeAnimationInstance fadeAnimInst;
+						fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
+						voxelChunk.fadeAnimInsts.emplace_back(std::move(fadeAnimInst));
 					}
 				}
-				else if (voxelType == ArenaVoxelType::Door)
+			}
+			else if (voxelType == ArenaVoxelType::Door)
+			{
+				if (passesVoxelDistanceTest)
 				{
 					// If the door is closed, try to open it.
 					int doorAnimInstIndex;
@@ -467,9 +471,9 @@ namespace PlayerLogic
 					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef, actionTextBox);
 				}
 
-				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
+				if (combatState.isDead)
 				{
-					if (combatState.isDead)
+					if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE)
 					{
 						if (!combatState.hasBeenLootedBefore)
 						{
@@ -486,14 +490,14 @@ namespace PlayerLogic
 				break;
 			}
 			case EntityDefinitionType::Citizen:
-				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
+				if (hit.t <= ArenaSelectionUtils::CITIZEN_MAX_DISTANCE)
 				{
 					GameWorldUiController::onCitizenInteracted(game, entityInst);
 				}
 				break;
 			case EntityDefinitionType::Item:
 			{
-				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
+				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE)
 				{
 					const ItemEntityDefinition &itemDef = entityDef.item;
 					const ItemEntityDefinitionType itemDefType = itemDef.type;
@@ -535,7 +539,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Container:
 			{
-				if (hit.t <= SelectionUtils::MAX_PRIMARY_INTERACTION_DISTANCE)
+				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE)
 				{
 					const ContainerEntityDefinition &containerDef = entityDef.container;
 					const ContainerEntityDefinitionType containerDefType = containerDef.type;
