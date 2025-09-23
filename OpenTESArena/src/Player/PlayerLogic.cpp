@@ -495,6 +495,12 @@ namespace PlayerLogic
 					GameWorldUiController::onCitizenInteracted(game, entityInst);
 				}
 				break;
+			case EntityDefinitionType::StaticNPC:
+			{
+				const StaticNpcEntityDefinition &staticNpcDef = entityDef.staticNpc;
+				GameWorldUiController::onStaticNpcInteracted(game, staticNpcDef.personalityType);
+				break;
+			}
 			case EntityDefinitionType::Item:
 			{
 				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE)

@@ -18,6 +18,7 @@ class CharacterClassLibrary;
 class TextureManager;
 
 enum class MapType;
+enum class StaticNpcPersonalityType;
 
 struct ExeData;
 
@@ -88,6 +89,24 @@ namespace ArenaAnimUtils
 
 	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
 	bool isHumanEnemyIndex(ArenaItemIndex itemIndex);
+
+	// Blacksmith/bartender/wizard/priest in their respective interior.
+	bool isNpcShopkeeper(ArenaItemIndex itemIndex);
+
+	bool isNpcBeggar(ArenaItemIndex itemIndex);
+	bool isNpcFirebreather(ArenaItemIndex itemIndex);
+	bool isNpcProstitute(ArenaItemIndex itemIndex);
+	bool isNpcJester(ArenaItemIndex itemIndex);
+	bool isNpcStreetVendor(ArenaItemIndex itemIndex);
+	bool isNpcMusician(ArenaItemIndex itemIndex);
+	bool isNpcPriest(ArenaItemIndex itemIndex);
+	bool isNpcThief(ArenaItemIndex itemIndex);
+	bool isNpcSnakeCharmer(ArenaItemIndex itemIndex);
+	bool isNpcStreetVendorAlchemist(ArenaItemIndex itemIndex);
+	bool isNpcWizard(ArenaItemIndex itemIndex);
+	bool isNpcTavernPatron(ArenaItemIndex itemIndex);
+
+	std::optional<StaticNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex);
 
 	constexpr ArenaItemIndex LockedChestItemIndex = 7;
 	constexpr ArenaItemIndex UnlockedChestItemIndex = 8;

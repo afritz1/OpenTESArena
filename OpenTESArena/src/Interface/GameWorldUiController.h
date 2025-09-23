@@ -55,6 +55,8 @@ namespace GameWorldUiController
 	void onCitizenInteracted(Game &game, const EntityInstance &entityInst);
 	void onCitizenKilled(Game &game);
 
+	void onStaticNpcInteracted(Game &game, StaticNpcPersonalityType personalityType);
+
 	void onShowPlayerDeathCinematic(Game &game);
 	void onHealthDepleted(Game &game);
 	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);

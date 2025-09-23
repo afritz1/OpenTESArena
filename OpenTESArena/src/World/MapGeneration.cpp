@@ -203,6 +203,7 @@ namespace MapGeneration
 		bool isCreature = false;
 		bool isCreatureFinalBoss = false;
 		bool isHumanEnemy = false;
+		std::optional<StaticNpcPersonalityType> staticNpcPersonalityType;
 		bool isPileContainer = false;
 		bool isLockedHolderContainer = false;
 		bool isUnlockedHolderContainer = false;
@@ -212,6 +213,7 @@ namespace MapGeneration
 		{
 			isCreature = ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isCreatureFinalBoss);
 			isHumanEnemy = ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
+			staticNpcPersonalityType = ArenaAnimUtils::tryGetStaticNpcPersonalityType(*optItemIndex);
 			isPileContainer = ArenaAnimUtils::isTreasurePileContainerIndex(*optItemIndex);
 			isLockedHolderContainer = ArenaAnimUtils::isLockedHolderContainerIndex(*optItemIndex);
 			isUnlockedHolderContainer = ArenaAnimUtils::isUnlockedHolderContainerIndex(*optItemIndex);
@@ -268,6 +270,10 @@ namespace MapGeneration
 			const bool male = true; // Always male from map data.
 			const int charClassID = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
 			outDef->initEnemyHuman(male, charClassID, std::move(entityAnimDef));
+		}
+		else if (staticNpcPersonalityType.has_value())
+		{
+			outDef->initStaticNpc(*staticNpcPersonalityType, std::move(entityAnimDef));
 		}
 		else if (isPileContainer)
 		{

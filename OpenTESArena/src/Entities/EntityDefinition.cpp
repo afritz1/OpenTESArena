@@ -236,45 +236,14 @@ bool CitizenEntityDefinition::operator==(const CitizenEntityDefinition &other) c
 	return true;
 }
 
-void StaticNpcEntityDefinition::ShopkeeperDefinition::init(ShopkeeperDefinition::Type type)
-{
-	this->type = type;
-}
-
-bool StaticNpcEntityDefinition::ShopkeeperDefinition::operator==(const ShopkeeperDefinition &other) const
-{
-	if (this == &other)
-	{
-		return true;
-	}
-
-	return this->type == other.type;
-}
-
-bool StaticNpcEntityDefinition::PersonDefinition::operator==(const PersonDefinition &other) const
-{
-	if (this == &other)
-	{
-		return true;
-	}
-
-	return true;
-}
-
 StaticNpcEntityDefinition::StaticNpcEntityDefinition()
 {
-	this->type = static_cast<StaticNpcEntityDefinitionType>(-1);
+	this->personalityType = static_cast<StaticNpcPersonalityType>(-1);
 }
 
-void StaticNpcEntityDefinition::initShopkeeper(ShopkeeperDefinition::Type type)
+void StaticNpcEntityDefinition::init(StaticNpcPersonalityType personalityType)
 {
-	this->type = StaticNpcEntityDefinitionType::Shopkeeper;
-	this->shopkeeper.init(type);
-}
-
-void StaticNpcEntityDefinition::initPerson()
-{
-	this->type = StaticNpcEntityDefinitionType::Person;
+	this->personalityType = personalityType;
 }
 
 bool StaticNpcEntityDefinition::operator==(const StaticNpcEntityDefinition &other) const
@@ -284,20 +253,12 @@ bool StaticNpcEntityDefinition::operator==(const StaticNpcEntityDefinition &othe
 		return true;
 	}
 
-	if (this->type != other.type)
+	if (this->personalityType != other.personalityType)
 	{
 		return false;
 	}
 
-	switch (this->type)
-	{
-	case StaticNpcEntityDefinitionType::Shopkeeper:
-		return this->shopkeeper == other.shopkeeper;
-	case StaticNpcEntityDefinitionType::Person:
-		return this->person == other.person;
-	default:
-		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
-	}
+	return true;
 }
 
 bool ItemEntityDefinition::QuestItemDefinition::operator==(const QuestItemDefinition &other) const
@@ -624,16 +585,10 @@ void EntityDefinition::initCitizen(bool male, ArenaClimateType climateType,
 	this->citizen.init(male, climateType);
 }
 
-void EntityDefinition::initStaticNpcShopkeeper(StaticNpcEntityDefinition::ShopkeeperDefinition::Type type, EntityAnimationDefinition &&animDef)
+void EntityDefinition::initStaticNpc(StaticNpcPersonalityType personalityType, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
-	this->staticNpc.initShopkeeper(type);
-}
-
-void EntityDefinition::initStaticNpcPerson(EntityAnimationDefinition &&animDef)
-{
-	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
-	this->staticNpc.initPerson();
+	this->staticNpc.init(personalityType);
 }
 
 void EntityDefinition::initItemKey(EntityAnimationDefinition &&animDef)

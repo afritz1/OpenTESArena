@@ -6,6 +6,7 @@
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
+#include "../Entities/EntityDefinition.h"
 #include "../Stats/CharacterClassDefinition.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../World/MapType.h"
@@ -387,7 +388,7 @@ namespace ArenaAnimUtils
 			TextureAsset textureAsset(std::string(textureFileMetadata.getFilename()), frameIndex);
 			outAnimDef->addKeyframe(keyframeListIndex, std::move(textureAsset), width, height);
 		}
-		
+
 		EntityAnimationDefinitionState &animDefState = outAnimDef->states[stateIndex];
 		const int firstKeyframeListIndex = animDefState.keyframeListsIndex;
 		const EntityAnimationDefinitionKeyframeList &firstKeyframeList = outAnimDef->keyframeLists[firstKeyframeListIndex];
@@ -444,7 +445,7 @@ namespace ArenaAnimUtils
 		}
 
 		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-		
+
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_ATTACK.c_str(), 0.0, HumanAttackLoop);
 		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
@@ -529,7 +530,7 @@ namespace ArenaAnimUtils
 		}
 
 		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-		
+
 		// Add empty state that will have its duration calculated later.
 		const int stateIndex = outAnimDef->addState(EntityAnimationUtils::STATE_DEATH.c_str(), 0.0, HumanDeathLoop);
 		const int keyframeListIndex = outAnimDef->addKeyframeList(stateIndex, isMirrored);
@@ -643,6 +644,133 @@ bool ArenaAnimUtils::isHumanEnemyIndex(ArenaItemIndex itemIndex)
 	return itemIndex >= 55 && itemIndex <= 72;
 }
 
+bool ArenaAnimUtils::isNpcShopkeeper(ArenaItemIndex itemIndex)
+{
+	return itemIndex == 15;
+}
+
+bool ArenaAnimUtils::isNpcBeggar(ArenaItemIndex itemIndex)
+{
+	return itemIndex == 16;
+}
+
+bool ArenaAnimUtils::isNpcFirebreather(ArenaItemIndex itemIndex)
+{
+	return itemIndex == 17;
+}
+
+bool ArenaAnimUtils::isNpcProstitute(ArenaItemIndex itemIndex)
+{
+	return (itemIndex >= 18) && (itemIndex <= 20);
+}
+
+bool ArenaAnimUtils::isNpcJester(ArenaItemIndex itemIndex)
+{
+	return itemIndex == 21;
+}
+
+bool ArenaAnimUtils::isNpcStreetVendor(ArenaItemIndex itemIndex)
+{
+	return (itemIndex == 22) || (itemIndex == 23);
+}
+
+bool ArenaAnimUtils::isNpcMusician(ArenaItemIndex itemIndex)
+{
+	return (itemIndex == 24) || (itemIndex == 25);
+}
+
+bool ArenaAnimUtils::isNpcPriest(ArenaItemIndex itemIndex)
+{
+	return (itemIndex == 26) || (itemIndex == 27);
+}
+
+bool ArenaAnimUtils::isNpcThief(ArenaItemIndex itemIndex)
+{
+	return itemIndex == 28;
+}
+
+bool ArenaAnimUtils::isNpcSnakeCharmer(ArenaItemIndex itemIndex)
+{
+	return itemIndex == 29;
+}
+
+bool ArenaAnimUtils::isNpcStreetVendorAlchemist(ArenaItemIndex itemIndex)
+{
+	return itemIndex == 30;
+}
+
+bool ArenaAnimUtils::isNpcWizard(ArenaItemIndex itemIndex)
+{
+	return itemIndex == 31;
+}
+
+bool ArenaAnimUtils::isNpcTavernPatron(ArenaItemIndex itemIndex)
+{
+	const bool isTavernPatronMan = (itemIndex >= 83) && (itemIndex <= 86);
+	const bool isTavernPatronWoman = (itemIndex >= 87) && (itemIndex <= 90);
+	return isTavernPatronMan || isTavernPatronWoman;
+}
+
+std::optional<StaticNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex)
+{
+	if (ArenaAnimUtils::isNpcShopkeeper(itemIndex))
+	{
+		return StaticNpcPersonalityType::Shopkeeper;
+	}
+	else if (ArenaAnimUtils::isNpcBeggar(itemIndex))
+	{
+		return StaticNpcPersonalityType::Beggar;
+	}
+	else if (ArenaAnimUtils::isNpcFirebreather(itemIndex))
+	{
+		return StaticNpcPersonalityType::Firebreather;
+	}
+	else if (ArenaAnimUtils::isNpcProstitute(itemIndex))
+	{
+		return StaticNpcPersonalityType::Prostitute;
+	}
+	else if (ArenaAnimUtils::isNpcJester(itemIndex))
+	{
+		return StaticNpcPersonalityType::Jester;
+	}
+	else if (ArenaAnimUtils::isNpcStreetVendor(itemIndex))
+	{
+		return StaticNpcPersonalityType::StreetVendor;
+	}
+	else if (ArenaAnimUtils::isNpcMusician(itemIndex))
+	{
+		return StaticNpcPersonalityType::Musician;
+	}
+	else if (ArenaAnimUtils::isNpcPriest(itemIndex))
+	{
+		return StaticNpcPersonalityType::Priest;
+	}
+	else if (ArenaAnimUtils::isNpcThief(itemIndex))
+	{
+		return StaticNpcPersonalityType::Thief;
+	}
+	else if (ArenaAnimUtils::isNpcSnakeCharmer(itemIndex))
+	{
+		return StaticNpcPersonalityType::SnakeCharmer;
+	}
+	else if (ArenaAnimUtils::isNpcStreetVendorAlchemist(itemIndex))
+	{
+		return StaticNpcPersonalityType::StreetVendorAlchemist;
+	}
+	else if (ArenaAnimUtils::isNpcWizard(itemIndex))
+	{
+		return StaticNpcPersonalityType::Wizard;
+	}
+	else if (ArenaAnimUtils::isNpcTavernPatron(itemIndex))
+	{
+		return StaticNpcPersonalityType::TavernPatron;
+	}
+	else
+	{
+		return std::nullopt;
+	}
+}
+
 bool ArenaAnimUtils::isLockedHolderContainerIndex(ArenaItemIndex itemIndex)
 {
 	return itemIndex == ArenaAnimUtils::LockedChestItemIndex;
@@ -684,7 +812,7 @@ bool ArenaAnimUtils::isDynamicEntity(ArenaFlatIndex flatIndex, const INFFile &in
 	{
 		return false;
 	}
-	
+
 	const ArenaItemIndex itemIndex = optItemIndex.value();
 
 	// Creature *ITEM values are between 32 and 54. Other dynamic entities (like humans)
@@ -1043,7 +1171,7 @@ bool ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(int creatureID, const Exe
 	return true;
 }
 
-bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary, 
+bool ArenaAnimUtils::tryMakeDynamicEntityHumanAnims(int charClassIndex, bool isMale, const CharacterClassLibrary &charClassLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, EntityAnimationDefinition *outAnimDef)
 {
 	outAnimDef->init(EntityAnimationUtils::STATE_IDLE.c_str());

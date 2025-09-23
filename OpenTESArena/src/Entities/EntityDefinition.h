@@ -97,50 +97,30 @@ struct CitizenEntityDefinition
 	bool operator==(const CitizenEntityDefinition &other) const;
 };
 
-enum class StaticNpcEntityDefinitionType
+enum class StaticNpcPersonalityType
 {
 	Shopkeeper,
-	Person
+	Beggar,
+	Firebreather,
+	Prostitute,
+	Jester,
+	StreetVendor,
+	Musician,
+	Priest,
+	Thief,
+	SnakeCharmer,
+	StreetVendorAlchemist,
+	Wizard,
+	TavernPatron
 };
 
 struct StaticNpcEntityDefinition
 {
-	struct ShopkeeperDefinition
-	{
-		enum class Type
-		{
-			Blacksmith,
-			Bartender,
-			Wizard
-		};
-
-		ShopkeeperDefinition::Type type;
-
-		void init(ShopkeeperDefinition::Type type);
-
-		bool operator==(const ShopkeeperDefinition &other) const;
-	};
-
-	struct PersonDefinition
-	{
-		// Personality, isRuler, etc..
-		// @todo: probably want like a personality ID into personality library.
-
-		bool operator==(const PersonDefinition &other) const;
-	};
-
-	StaticNpcEntityDefinitionType type;
-
-	union
-	{
-		ShopkeeperDefinition shopkeeper;
-		PersonDefinition person;
-	};
+	StaticNpcPersonalityType personalityType;
 
 	StaticNpcEntityDefinition();
 
-	void initShopkeeper(ShopkeeperDefinition::Type type);
-	void initPerson();
+	void init(StaticNpcPersonalityType personalityType);
 
 	bool operator==(const StaticNpcEntityDefinition &other) const;
 };
@@ -318,8 +298,7 @@ struct EntityDefinition
 
 	void initCitizen(bool male, ArenaClimateType climateType, EntityAnimationDefinition &&animDef);
 
-	void initStaticNpcShopkeeper(StaticNpcEntityDefinition::ShopkeeperDefinition::Type type, EntityAnimationDefinition &&animDef);
-	void initStaticNpcPerson(EntityAnimationDefinition &&animDef);
+	void initStaticNpc(StaticNpcPersonalityType type, EntityAnimationDefinition &&animDef);
 
 	void initItemKey(EntityAnimationDefinition &&animDef);
 	void initItemQuestItem(int yOffset, EntityAnimationDefinition &&animDef);

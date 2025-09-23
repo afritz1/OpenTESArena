@@ -522,6 +522,37 @@ void GameWorldUiController::onCitizenKilled(Game &game)
 	game.gameState.setActionTextDuration(text);
 }
 
+void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonalityType personalityType)
+{
+	constexpr const char *personalityTypeNames[] =
+	{
+		"Shopkeeper",
+		"Beggar",
+		"Firebreather",
+		"Prostitute",
+		"Jester",
+		"Street Vendor",
+		"Musician",
+		"Priest",
+		"Thief",
+		"Snake Charmer",
+		"Street Vendor Alchemist",
+		"Wizard",
+		"Tavern Patron"
+	};
+
+	const int personalityTypeIndex = static_cast<int>(personalityType);
+	const std::string text = std::string(personalityTypeNames[personalityTypeIndex]) + "\n(dialogue not implemented)";
+
+	Int2 center;
+	TextBoxInitInfo textBoxInitInfo;
+	UiTextureID textureID;
+	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
+
+	ScopedUiTextureRef textureRef(textureID, game.renderer);
+	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
+}
+
 void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
 {
 	// Death cinematic then main menu.
