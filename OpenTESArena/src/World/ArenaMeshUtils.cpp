@@ -79,7 +79,7 @@ void ArenaShapeInitCache::initChasmBoxValues(bool isDryChasm, MapType mapType)
 	{
 		// @todo this was a guess-and-checked value that looks good enough
 		// - probably some mix of INFCeiling::DEFAULT_HEIGHT, MIFUtils::ARENA_UNITS, and ArenaPlayerUtils::EyeHeight
-		constexpr int unknownOffset = -85;
+		constexpr int unknownOffset = -83;
 
 		int cameraOffset = unknownOffset;
 		switch (mapType)
