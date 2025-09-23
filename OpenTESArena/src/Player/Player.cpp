@@ -112,7 +112,7 @@ namespace
 		DebugAssert(characterBodyLock.Succeeded());
 		JPH::Body &characterBody = characterBodyLock.GetBody();
 		characterBody.SetAllowSleeping(false); // Don't refire contact added when waking up inside sensor colliders
-		
+
 		constexpr uint64_t characterVirtualUserData = 0;
 		*outCharacterVirtual = new JPH::CharacterVirtual(&characterVirtualSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterVirtualUserData, &physicsSystem);
 		(*outCharacterVirtual)->SetCharacterVsCharacterCollision(outCharVsCharCollision);
@@ -126,7 +126,7 @@ namespace
 	{
 		Buffer<std::string> nameTokens = String::split(fullName);
 		return nameTokens[0];
-	}	
+	}
 
 	void InitWeaponAnimationInstance(WeaponAnimationInstance &animInst, int weaponID)
 	{
@@ -224,7 +224,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->inventory.clear();
 	this->gold = gold;
 	this->clearKeyInventory();
-	
+
 	if (!TryCreatePhysicsCharacters(physicsSystem, isGhostModeActive, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
 		DebugCrash("Couldn't create player physics collider.");
@@ -534,7 +534,7 @@ void Player::accelerate(const Double3 &direction, double magnitude, double dt)
 	else
 	{
 		DebugNotImplemented();
-	}	
+	}
 }
 
 void Player::accelerateInstant(const Double3 &direction, double magnitude)
@@ -554,21 +554,20 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 
 void Player::setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem)
 {
-	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
-
 	JPH::ObjectLayer objectLayer;
 	if (active)
+	{
+		objectLayer = GHOST_MODE_LAYER;
+	}
+	else
 	{
 		objectLayer = DEFAULT_PLAYER_LAYER;
 
 		// Prevent leftover momentum.
 		this->setPhysicsVelocity(Double3::Zero);
 	}
-	else
-	{
-		objectLayer = GHOST_MODE_LAYER;
-	}
 
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 	bodyInterface.SetObjectLayer(this->physicsCharacter->GetBodyID(), objectLayer);
 }
 
@@ -725,7 +724,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 			}
 		}
 	}
-	
+
 	const bool isMovementSoundAccumulating = (this->movementType != PlayerMovementType::Climbing) && this->groundState.recentlyOnGround && this->isMoving();
 	if (isMovementSoundAccumulating)
 	{
@@ -892,7 +891,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 
 				const Double3 finalPushVelocity = groundDirection * PlayerConstants::CLIMBING_FINAL_PUSH_SPEED;
 				newVelocity = finalPushVelocity;
-			}			
+			}
 		}
 		else
 		{
