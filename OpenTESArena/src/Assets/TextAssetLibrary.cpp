@@ -426,6 +426,12 @@ bool ArenaTemplateDat::init()
 		entry.letter = letter;
 
 		Buffer<std::string> trimmedValueTokens = String::split(trimmedValue, '&');
+		for (std::string &token : trimmedValueTokens)
+		{
+			String::trimFrontInPlace(token);
+			String::trimBackInPlace(token);
+		}
+
 		entry.values = std::vector<std::string>(trimmedValueTokens.getCount());
 		std::move(trimmedValueTokens.begin(), trimmedValueTokens.end(), entry.values.begin());
 
