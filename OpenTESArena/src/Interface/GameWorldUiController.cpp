@@ -11,6 +11,7 @@
 #include "TextSubPanel.h"
 #include "WorldMapPanel.h"
 #include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicUtils.h"
 #include "../Entities/ArenaCitizenUtils.h"
 #include "../Entities/ArenaEntityUtils.h"
@@ -21,12 +22,14 @@
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
+#include "../Stats/CharacterRaceLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ArenaDateUtils.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -379,7 +382,7 @@ void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityI
 		if (enemyDef.type == EnemyEntityDefinitionType::Creature)
 		{
 			creatureLevel = enemyDef.creature.level;
-		}		
+		}
 	}
 
 	Random &random = game.random;
@@ -541,13 +544,77 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		"Tavern Patron"
 	};
 
-	const int personalityTypeIndex = static_cast<int>(personalityType);
-	const std::string text = std::string(personalityTypeNames[personalityTypeIndex]) + "\n(dialogue not implemented)";
+	std::string text;
+	TextAlignment textAlignment = TextAlignment::MiddleCenter;
 
-	Int2 center;
-	TextBoxInitInfo textBoxInitInfo;
+	if (personalityType == StaticNpcPersonalityType::TavernPatron)
+	{
+		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+		const ArenaTemplateDatEntry &patronDialoguesEntry = textAssetLibrary.templateDat.getEntry(1430);
+
+		Random &random = game.random;
+		const int patronDialoguesRandomIndex = random.next(patronDialoguesEntry.values.size());
+		text = patronDialoguesEntry.values[patronDialoguesRandomIndex];
+
+		const Player &player = game.player;
+		const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
+		const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(player.raceID);
+
+		const GameState &gameState = game.gameState;
+		const LocationDefinition &locationDef = gameState.getLocationDefinition();
+		const std::string &locationName = locationDef.getName();
+
+		const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
+		const std::string &provinceName = provinceDef.getName();
+		const int provinceID = provinceDef.getRaceID();
+		const int oathsProvinceID = (provinceID != ArenaLocationUtils::CENTER_PROVINCE_ID) ? provinceID : random.next(ArenaLocationUtils::CENTER_PROVINCE_ID);
+		const int oathsID = 364 + oathsProvinceID;
+		const ArenaTemplateDatEntry &oathsEntry = textAssetLibrary.templateDat.getEntry(oathsID);
+		const int oathsRandomIndex = random.next(oathsEntry.values.size());
+		const std::string &oathString = oathsEntry.values[oathsRandomIndex];
+
+		// @todo move this into a global dialogue processor, see "Dialog" wiki
+		text = String::replace(text, "%ra", charRaceDef.singularName);
+		text = String::replace(text, "%cn", locationName);
+		text = String::replace(text, "%lp", provinceName);
+		text = String::replace(text, "%oth", oathString);
+		// @todo %nt tavern name, probably needs to be provided to MapDefinitionInterior
+		text = String::distributeNewlines(text, 65);
+
+		textAlignment = TextAlignment::TopLeft;
+	}
+	else
+	{
+		const int personalityTypeIndex = static_cast<int>(personalityType);
+		text = std::string(personalityTypeNames[personalityTypeIndex]) + "\n(dialogue not implemented)";
+	}
+
+	const Int2 center = GameWorldUiView::getStatusPopUpTextCenterPoint(game);
+	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
+		text,
+		center,
+		GameWorldUiView::StatusPopUpFontName,
+		GameWorldUiView::StatusPopUpTextColor,
+		textAlignment,
+		std::nullopt,
+		GameWorldUiView::StatusPopUpTextLineSpacing,
+		FontLibrary::getInstance());
+
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	Surface surface = TextureUtils::generate(
+		GameWorldUiView::StatusPopUpTexturePatternType,
+		GameWorldUiView::getStatusPopUpTextureWidth(textBoxInitInfo.rect.width),
+		GameWorldUiView::getStatusPopUpTextureHeight(textBoxInitInfo.rect.height),
+		textureManager,
+		renderer);
+
 	UiTextureID textureID;
-	GetDefaultStatusPopUpInitValues(game, text, &center, &textBoxInitInfo, &textureID);
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugLogError("Couldn't create pop-up texture for static NPC conversation.");
+		return;
+	}
 
 	ScopedUiTextureRef textureRef(textureID, game.renderer);
 	game.pushSubPanel<TextSubPanel>(textBoxInitInfo, text, GameWorldUiController::onStatusPopUpSelected, std::move(textureRef), center);
