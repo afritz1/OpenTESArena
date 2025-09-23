@@ -35,8 +35,11 @@
 
 namespace
 {
-	bool TryCreatePhysicsCharacters(JPH::PhysicsSystem &physicsSystem, JPH::Character **outCharacter, JPH::CharacterVirtual **outCharacterVirtual,
-		JPH::CharacterVsCharacterCollisionSimple *outCharVsCharCollision)
+	static constexpr JPH::ObjectLayer DEFAULT_PLAYER_LAYER = PhysicsLayers::MOVING;
+	static constexpr JPH::ObjectLayer GHOST_MODE_LAYER = PhysicsLayers::SENSOR; // Hacky but mostly works
+
+	bool TryCreatePhysicsCharacters(JPH::PhysicsSystem &physicsSystem, bool isGhostModeActive, JPH::Character **outCharacter,
+		JPH::CharacterVirtual **outCharacterVirtual, JPH::CharacterVsCharacterCollisionSimple *outCharVsCharCollision)
 	{
 		if (*outCharacter != nullptr)
 		{
@@ -70,6 +73,7 @@ namespace
 		constexpr float mass = 1.0f;
 		constexpr float maxSlopeAngle = MathUtilsF::degToRad(45.0f); // Game world doesn't have slopes so this is unimportant
 		const JPH::Plane supportingVolume(JPH::Vec3::sAxisY(), -1.0e10f); // Half space of the character that accepts collisions, we want 100% of them
+		const JPH::ObjectLayer objectLayer = !isGhostModeActive ? DEFAULT_PLAYER_LAYER : GHOST_MODE_LAYER;
 
 		// Jolt says "pair a CharacterVirtual with a Character that has no gravity and moves with the CharacterVirtual so other objects collide with it".
 		// I just need a capsule that runs into things, jumps, and steps on stairs.
@@ -79,7 +83,7 @@ namespace
 		characterSettings.mFriction = static_cast<float>(PlayerConstants::FRICTION);
 		characterSettings.mGravityFactor = 0.0f; // Do gravity manually when paired w/ CharacterVirtual.
 		characterSettings.mShape = capsuleShapeResult.Get();
-		characterSettings.mLayer = PhysicsLayers::MOVING;
+		characterSettings.mLayer = objectLayer;
 		characterSettings.mMaxSlopeAngle = maxSlopeAngle;
 		characterSettings.mSupportingVolume = supportingVolume;
 
@@ -97,7 +101,7 @@ namespace
 		characterVirtualSettings.mSupportingVolume = supportingVolume;
 		characterVirtualSettings.mEnhancedInternalEdgeRemoval = false;
 		characterVirtualSettings.mInnerBodyShape = nullptr;
-		characterVirtualSettings.mInnerBodyLayer = PhysicsLayers::MOVING;
+		characterVirtualSettings.mInnerBodyLayer = objectLayer;
 
 		constexpr uint64_t characterUserData = 0;
 		*outCharacter = new JPH::Character(&characterSettings, JPH::Vec3Arg::sZero(), JPH::QuatArg::sIdentity(), characterUserData, &physicsSystem);
@@ -196,7 +200,8 @@ Player::~Player()
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID, const PrimaryAttributes &primaryAttributes,
-	int maxHealth, int maxStamina, int maxSpellPoints, int gold, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
+	int maxHealth, int maxStamina, int maxSpellPoints, int gold, int weaponID, bool isGhostModeActive, const ExeData &exeData,
+	JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
@@ -220,7 +225,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->gold = gold;
 	this->clearKeyInventory();
 	
-	if (!TryCreatePhysicsCharacters(physicsSystem, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
+	if (!TryCreatePhysicsCharacters(physicsSystem, isGhostModeActive, &this->physicsCharacter, &this->physicsCharacterVirtual, &this->physicsCharVsCharCollision))
 	{
 		DebugCrash("Couldn't create player physics collider.");
 	}
@@ -547,6 +552,26 @@ void Player::accelerateInstant(const Double3 &direction, double magnitude)
 	this->setPhysicsVelocity(newVelocity);
 }
 
+void Player::setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
+	JPH::ObjectLayer objectLayer;
+	if (active)
+	{
+		objectLayer = DEFAULT_PLAYER_LAYER;
+
+		// Prevent leftover momentum.
+		this->setPhysicsVelocity(Double3::Zero);
+	}
+	else
+	{
+		objectLayer = GHOST_MODE_LAYER;
+	}
+
+	bodyInterface.SetObjectLayer(this->physicsCharacter->GetBodyID(), objectLayer);
+}
+
 void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &physicsSystem)
 {
 	PlayerGroundState newGroundState;
@@ -626,8 +651,6 @@ void Player::prePhysicsStep(double dt, Game &game)
 {
 	if (game.options.getMisc_GhostMode())
 	{
-		// Prevent leftover momentum when switching cheat modes.
-		this->setPhysicsVelocity(Double3::Zero);
 		return;
 	}
 
@@ -662,11 +685,6 @@ void Player::prePhysicsStep(double dt, Game &game)
 
 void Player::postPhysicsStep(double dt, Game &game)
 {
-	if (game.options.getMisc_GhostMode())
-	{
-		return;
-	}
-
 	constexpr float maxSeparationDistance = 1e-5f;
 	this->physicsCharacter->PostSimulation(maxSeparationDistance);
 	const Double3 physicsVelocity = this->getPhysicsVelocity();

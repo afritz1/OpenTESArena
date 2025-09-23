@@ -166,7 +166,8 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 	Player &player = game.player;
 	player.init(testPlayerName, testIsMale, testRaceID, testCharClassDefID, testPortraitID, testPrimaryAttributes,
-		testMaxHealth, testMaxStamina, testMaxSpellPoints, testGold, testWeaponID, exeData, game.physicsSystem);
+		testMaxHealth, testMaxStamina, testMaxSpellPoints, testGold, testWeaponID, game.options.getMisc_GhostMode(),
+		exeData, game.physicsSystem);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;

@@ -577,6 +577,9 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeDevOptionGroup(Game &game)
 	{
 		auto &options = game.options;
 		options.setMisc_GhostMode(value);
+
+		Player &player = game.player;
+		player.setGhostModeActive(!value, game.physicsSystem);
 	});
 
 	auto profilerLevelOption = std::make_unique<OptionsUiModel::IntOption>(

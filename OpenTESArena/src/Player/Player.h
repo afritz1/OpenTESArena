@@ -126,7 +126,8 @@ struct Player
 	~Player();
 
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID, const PrimaryAttributes &primaryAttributes,
-		int maxHealth, int maxStamina, int maxSpellPoints, int gold, int weaponID, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
+		int maxHealth, int maxStamina, int maxSpellPoints, int gold, int weaponID, bool isGhostModeActive, const ExeData &exeData,
+		JPH::PhysicsSystem &physicsSystem);
 
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 
@@ -173,6 +174,8 @@ struct Player
 
 	// Changes the velocity instantly. Intended for instantaneous acceleration like jumping.
 	void accelerateInstant(const Double3 &direction, double magnitude); // @todo: CharacterVirtual should treat this like a jump
+
+	void setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem);
 
 	void updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &physicsSystem);
 	void prePhysicsStep(double dt, Game &game);
