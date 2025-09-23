@@ -200,14 +200,8 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 			}
 		}();
 
+		// Trigger a window resize event.
 		window.setMode(mode);
-
-		const Int2 newWindowDims = window.getPixelDimensions();
-		renderer.resize(newWindowDims.x, newWindowDims.y);
-
-		// Reset the cursor to the center of the screen for consistency.
-		const Int2 newLogicalDims = window.getLogicalDimensions();
-		window.warpMouse(newLogicalDims.x / 2, newLogicalDims.y / 2);
 	});
 
 	auto graphicsApiOption = std::make_unique<OptionsUiModel::IntOption>(

@@ -343,7 +343,7 @@ void Window::setMode(RenderWindowMode mode)
 	int result = 0;
 	if (mode == RenderWindowMode::ExclusiveFullscreen)
 	{
-		SDL_DisplayMode displayMode; // @todo: may consider changing this to some GetDisplayModeForWindowMode()
+		SDL_DisplayMode displayMode;
 		result = SDL_GetDesktopDisplayMode(0, &displayMode);
 		if (result != 0)
 		{
