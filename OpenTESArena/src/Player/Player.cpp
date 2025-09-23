@@ -562,13 +562,13 @@ void Player::setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem)
 	else
 	{
 		objectLayer = DEFAULT_PLAYER_LAYER;
-
-		// Prevent leftover momentum.
-		this->setPhysicsVelocity(Double3::Zero);
 	}
 
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 	bodyInterface.SetObjectLayer(this->physicsCharacter->GetBodyID(), objectLayer);
+
+	// Prevent leftover momentum.
+	this->setPhysicsVelocity(Double3::Zero);
 }
 
 void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &physicsSystem)
