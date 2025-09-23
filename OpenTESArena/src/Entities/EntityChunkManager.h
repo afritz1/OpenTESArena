@@ -170,7 +170,7 @@ public:
 	const EntityInstance &getEntity(EntityInstanceID id) const;
 	const WorldDouble3 &getEntityPosition(EntityPositionID id) const;
 	const BoundingBox3D &getEntityBoundingBox(EntityBoundingBoxID id) const;
-	const VoxelDouble2 &getEntityDirection(EntityDirectionID id) const;
+	const Double2 &getEntityDirection(EntityDirectionID id) const;
 	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
 	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
 	EntityCombatState &getEntityCombatState(EntityCombatStateID id);

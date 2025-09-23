@@ -904,7 +904,7 @@ const BoundingBox3D &EntityChunkManager::getEntityBoundingBox(EntityBoundingBoxI
 	return this->boundingBoxes.get(id);
 }
 
-const VoxelDouble2 &EntityChunkManager::getEntityDirection(EntityDirectionID id) const
+const Double2 &EntityChunkManager::getEntityDirection(EntityDirectionID id) const
 {
 	return this->directions.get(id);
 }

@@ -838,7 +838,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			constexpr double playerMeleeSwingRange = PlayerConstants::MELEE_HIT_RANGE;
 			constexpr double playerHitSearchRadius = PlayerConstants::MELEE_HIT_SEARCH_RADIUS;
 			constexpr double playerHalfHeight = PlayerConstants::TOP_OF_HEAD_HEIGHT / 2.0;
-			const WorldDouble3 hitSearchCenterPoint = player.getFeetPosition() + WorldDouble3(0.0, playerHalfHeight, 0.0) + (player.getGroundDirection() * playerMeleeSwingRange);
+			const WorldDouble3 playerFeetPosition = player.getFeetPosition();
+			const WorldDouble3 hitSearchCenterPoint = playerFeetPosition + WorldDouble3(0.0, playerHalfHeight, 0.0) + (player.getGroundDirection() * playerMeleeSwingRange);
 			CombatHitSearchResult hitSearchResult;
 			CombatLogic::getHitSearchResult(hitSearchCenterPoint, playerHitSearchRadius, ceilingScale, voxelChunkManager, entityChunkManager, &hitSearchResult);
 
@@ -941,10 +942,17 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 							GameWorldUiController::onCitizenKilled(game);
 						}
 
+						// Arbitrary height where the swing is hitting.
+						const double hitVfxHeightBias = std::min(PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.60, hitEntityBBox.halfHeight);
+
+						// Avoid z-fighting with entity.
+						const Double2 hitVfxPositionBias = -player.getGroundDirectionXZ() * Constants::Epsilon;
+
 						const WorldDouble3 hitVfxPosition(
-							hitEntityPosition.x,
-							hitEntityPosition.y + std::min(PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.60, hitEntityBBox.halfHeight), // Arbitrary
-							hitEntityPosition.z);
+							hitEntityPosition.x + hitVfxPositionBias.x,
+							hitEntityPosition.y + hitVfxHeightBias,
+							hitEntityPosition.z + hitVfxPositionBias.y);
+
 						CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, renderer);
 
 						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
@@ -993,7 +1001,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
 			const int gameWorldInterfaceHeight = metadata.getHeight(0);
 			const int originalCursorY = window.nativeToOriginal(inputManager.getMousePosition()).y;
-			isAttack = isAttackMouseButtonDown && (originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight));
+			const bool isCursorInSceneView = originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight);
+			isAttack = isAttackMouseButtonDown && isCursorInSceneView;
 		}
 
 		if (isAttack)
