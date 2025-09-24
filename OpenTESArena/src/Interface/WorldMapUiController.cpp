@@ -231,9 +231,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = travelLocationDef.getMainQuestDungeonDefinition();
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
+		const std::string interiorDisplayName; // Unused.
 
 		MapGenerationInteriorInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(mainQuestDungeonDef.mapFilename, ArenaInteriorType::Dungeon, rulerIsMale);
+		interiorGenInfo.initPrefab(mainQuestDungeonDef.mapFilename, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName);
 
 		const std::optional<VoxelInt2> playerStartOffset; // Unused for main quest dungeon.
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(targetProvinceID, targetLocationID);

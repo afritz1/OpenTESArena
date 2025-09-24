@@ -94,8 +94,7 @@ std::string ArenaLevelUtils::getDoorVoxelMifName(WEInt x, SNInt y, int menuID, u
 
 	// Check special case first: if it's a palace block in the center province's city,
 	// the .MIF name is hardcoded.
-	const bool isFinalDungeonEntrance = palaceIsMainQuestDungeon &&
-		(menuType == ArenaMenuType::Palace);
+	const bool isFinalDungeonEntrance = palaceIsMainQuestDungeon && (menuType == ArenaMenuType::Palace);
 
 	if (isFinalDungeonEntrance)
 	{

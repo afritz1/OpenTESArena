@@ -85,6 +85,9 @@ public:
 	LevelVoxelDoorDefID addDoorDef(VoxelDoorDefinition &&def);
 	LevelVoxelChasmDefID addChasmDef(VoxelChasmDefinition &&def);
 
+	// Applied after transition and building name generation due to circular dependency. Used with dialogue.
+	void setTransitionInteriorDisplayName(LevelVoxelTransitionDefID id, std::string &&name);
+
 	// Handles some special cases in main quest cities.
 	void setBuildingNameOverride(LevelVoxelBuildingNameID id, std::string &&name);
 };

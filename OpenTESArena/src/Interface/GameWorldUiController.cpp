@@ -29,6 +29,7 @@
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../World/MapType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"
@@ -567,18 +568,27 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		const ProvinceDefinition &provinceDef = gameState.getProvinceDefinition();
 		const std::string &provinceName = provinceDef.getName();
 		const int provinceID = provinceDef.getRaceID();
+
 		const int oathsProvinceID = (provinceID != ArenaLocationUtils::CENTER_PROVINCE_ID) ? provinceID : random.next(ArenaLocationUtils::CENTER_PROVINCE_ID);
 		const int oathsID = 364 + oathsProvinceID;
 		const ArenaTemplateDatEntry &oathsEntry = textAssetLibrary.templateDat.getEntry(oathsID);
 		const int oathsRandomIndex = random.next(oathsEntry.values.size());
 		const std::string &oathString = oathsEntry.values[oathsRandomIndex];
 
+		std::string interiorDisplayName;
+		const MapDefinition &mapDef = gameState.getActiveMapDef();
+		if (mapDef.getMapType() == MapType::Interior)
+		{
+			const MapDefinitionInterior &mapDefInterior = mapDef.getSubDefinition().interior;
+			interiorDisplayName = mapDefInterior.displayName;
+		}
+
 		// @todo move this into a global dialogue processor, see "Dialog" wiki
 		text = String::replace(text, "%ra", charRaceDef.singularName);
 		text = String::replace(text, "%cn", locationName);
 		text = String::replace(text, "%lp", provinceName);
 		text = String::replace(text, "%oth", oathString);
-		// @todo %nt tavern name, probably needs to be provided to MapDefinitionInterior
+		text = String::replace(text, "%nt", interiorDisplayName);
 		text = String::distributeNewlines(text, 65);
 
 		textAlignment = TextAlignment::TopLeft;

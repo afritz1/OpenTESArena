@@ -29,9 +29,10 @@ MapDefinitionInterior::MapDefinitionInterior()
 	this->interiorType = static_cast<ArenaInteriorType>(-1);
 }
 
-void MapDefinitionInterior::init(ArenaInteriorType interiorType)
+void MapDefinitionInterior::init(ArenaInteriorType interiorType, const std::string &displayName)
 {
 	this->interiorType = interiorType;
+	this->displayName = displayName;
 }
 
 void MapDefinitionInterior::clear()
@@ -106,7 +107,7 @@ void MapDefinition::init(MapType mapType)
 }
 
 bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaInteriorType interiorType,
-	const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale,
+	const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale, const std::string &displayName,
 	const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
 	const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager)
 {
@@ -191,7 +192,7 @@ bool MapDefinition::initInteriorLevels(const MIFFile &mif, ArenaInteriorType int
 		this->skyInfoMappings.set(i, i);
 	}
 
-	this->subDefinition.interior.init(interiorType);
+	this->subDefinition.interior.init(interiorType, displayName);
 
 	return true;
 }
@@ -272,7 +273,8 @@ bool MapDefinition::initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNI
 		this->skyInfoMappings.set(i, i);
 	}
 
-	this->subDefinition.interior.init(interiorType);
+	std::string displayName; // Unused for dungeons.
+	this->subDefinition.interior.init(interiorType, displayName);
 
 	return true;
 }
@@ -440,7 +442,7 @@ bool MapDefinition::initInterior(const MapGenerationInteriorInfo &generationInfo
 		}
 
 		constexpr std::optional<uint32_t> rulerSeed; // Not necessary for interiors.
-		this->initInteriorLevels(mif, prefabGenInfo.interiorType, rulerSeed, prefabGenInfo.rulerIsMale,
+		this->initInteriorLevels(mif, prefabGenInfo.interiorType, rulerSeed, prefabGenInfo.rulerIsMale, prefabGenInfo.displayName,
 			charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager);
 		this->initStartPoints(mif);
 		this->startLevelIndex = mif.getStartingLevelIndex();

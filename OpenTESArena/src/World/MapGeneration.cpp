@@ -162,20 +162,24 @@ namespace MapGeneration
 		}
 	}
 
-	MapGenerationInteriorInfo makePrefabInteriorGenInfo(ArenaInteriorType interiorType,
-		const WorldInt3 &position, int menuID, uint32_t rulerSeed, const std::optional<bool> &rulerIsMale,
-		bool palaceIsMainQuestDungeon, ArenaCityType cityType, MapType mapType, const ExeData &exeData)
+	MapGenerationInteriorInfo makePrefabInteriorGenInfo(ArenaInteriorType interiorType, const WorldInt3 &position, int menuID,
+		uint32_t rulerSeed, const std::optional<bool> &rulerIsMale, bool palaceIsMainQuestDungeon, ArenaCityType cityType,
+		MapType mapType, const ExeData &exeData)
 	{
 		const OriginalInt2 originalPos = VoxelUtils::worldVoxelToOriginalVoxel(WorldInt2(position.x, position.z));
 		std::string mifName = ArenaLevelUtils::getDoorVoxelMifName(originalPos.x, originalPos.y, menuID,
 			rulerSeed, palaceIsMainQuestDungeon, cityType, mapType, exeData);
 
-		const ArenaInteriorType revisedInteriorType =
-			(palaceIsMainQuestDungeon && interiorType == ArenaInteriorType::Palace) ?
-			ArenaInteriorType::Dungeon : interiorType;
+		ArenaInteriorType revisedInteriorType = interiorType;
+		if (palaceIsMainQuestDungeon && interiorType == ArenaInteriorType::Palace)
+		{
+			revisedInteriorType = ArenaInteriorType::Dungeon;
+		}
+
+		const std::string interiorDisplayName; // Provided later in generation due to circular dependency between transitions and building names :/
 
 		MapGenerationInteriorInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(mifName, revisedInteriorType, rulerIsMale);
+		interiorGenInfo.initPrefab(mifName, revisedInteriorType, rulerIsMale, interiorDisplayName);
 		return interiorGenInfo;
 	}
 
@@ -281,7 +285,7 @@ namespace MapGeneration
 		}
 		else if (isLockedHolderContainer || isUnlockedHolderContainer)
 		{
-			outDef->initContainerHolder(isLockedHolderContainer,  std::move(entityAnimDef));
+			outDef->initContainerHolder(isLockedHolderContainer, std::move(entityAnimDef));
 		}
 		else if (isKey)
 		{
@@ -435,7 +439,7 @@ namespace MapGeneration
 		const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(inf.getCeiling().height);
 		outShapeDef->initBoxFromClassic(shapeInitCache, scaleType, ceilingScale);
 		outTextureDef->addTextureAsset(std::move(textureAsset));
-		
+
 		outShadingDef->init(vertexShaderType);
 		for (int i = 0; i < fragmentShaderCount; i++)
 		{
@@ -487,7 +491,7 @@ namespace MapGeneration
 		const double ceilingScale = ArenaLevelUtils::convertCeilingHeightToScale(inf.getCeiling().height);
 		outShapeDef->initBoxFromClassic(shapeInitCache, scaleType, ceilingScale);
 		outTextureDef->addTextureAsset(TextureAsset(textureAsset));
-		
+
 		outShadingDef->init(VertexShaderType::Basic);
 		outShadingDef->addFragmentShaderType(FragmentShaderType::OpaqueScreenSpaceAnimation);
 		outShadingDef->addFragmentShaderType(FragmentShaderType::OpaqueScreenSpaceAnimationWithAlphaTestLayer);
@@ -891,7 +895,7 @@ namespace MapGeneration
 		outTextureDef->addTextureAsset(std::move(textureAsset0));
 		outTextureDef->addTextureAsset(std::move(textureAsset1));
 		outTextureDef->addTextureAsset(std::move(textureAsset2));
-		
+
 		outShadingDef->init(VertexShaderType::Basic);
 		for (int i = 0; i < 3; i++)
 		{
@@ -983,8 +987,7 @@ namespace MapGeneration
 		return triggerDef;
 	}
 
-	std::optional<MapGenerationTransitionInfo> tryMakeVoxelTransitionDefGenInfo(
-		ArenaVoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf)
+	std::optional<MapGenerationTransitionInfo> tryMakeVoxelTransitionDefGenInfo(ArenaVoxelID map1Voxel, uint8_t mostSigNibble, MapType mapType, const INFFile &inf)
 	{
 		const uint8_t mostSigByte = ArenaLevelUtils::getVoxelMostSigByte(map1Voxel);
 		const uint8_t leastSigByte = ArenaLevelUtils::getVoxelLeastSigByte(map1Voxel);
@@ -1086,14 +1089,12 @@ namespace MapGeneration
 		}
 		else
 		{
-			DebugUnhandledReturnMsg(std::optional<MapGenerationTransitionInfo>,
-				std::to_string(static_cast<int>(mapType)));
+			DebugUnhandledReturnMsg(std::optional<MapGenerationTransitionInfo>, std::to_string(static_cast<int>(mapType)));
 		}
 	}
 
 	// Returns transition gen info if the MAP1 flat index is a transition entity for the given world type.
-	std::optional<MapGenerationTransitionInfo> tryMakeEntityTransitionGenInfo(
-		ArenaFlatIndex flatIndex, MapType mapType)
+	std::optional<MapGenerationTransitionInfo> tryMakeEntityTransitionGenInfo(ArenaFlatIndex flatIndex, MapType mapType)
 	{
 		// Only wild dens are entities with transition data.
 		if (mapType != MapType::Wilderness)
@@ -1108,8 +1109,7 @@ namespace MapGeneration
 		}
 
 		MapGenerationTransitionInfo transitionDefGenInfo;
-		transitionDefGenInfo.init(TransitionType::EnterInterior, ArenaInteriorType::Dungeon,
-			std::nullopt, std::nullopt);
+		transitionDefGenInfo.init(TransitionType::EnterInterior, ArenaInteriorType::Dungeon, std::nullopt, std::nullopt);
 		return transitionDefGenInfo;
 	}
 
@@ -1130,8 +1130,7 @@ namespace MapGeneration
 			DebugAssert(transitionDefGenInfo.interiorType.has_value());
 			const ArenaInteriorType interiorType = *transitionDefGenInfo.interiorType;
 			MapGenerationInteriorInfo interiorGenInfo = [&position, menuID, rulerSeed, &rulerIsMale,
-				palaceIsMainQuestDungeon, cityType, dungeonDef, &isArtifactDungeon, mapType,
-				&exeData, interiorType]()
+				palaceIsMainQuestDungeon, cityType, dungeonDef, &isArtifactDungeon, mapType, &exeData, interiorType]()
 			{
 				if (ArenaInteriorUtils::isPrefabInterior(interiorType))
 				{
@@ -1150,8 +1149,7 @@ namespace MapGeneration
 				}
 				else
 				{
-					DebugUnhandledReturnMsg(MapGenerationInteriorInfo,
-						std::to_string(static_cast<int>(interiorType)));
+					DebugUnhandledReturnMsg(MapGenerationInteriorInfo, std::to_string(static_cast<int>(interiorType)));
 				}
 			}();
 
@@ -1168,8 +1166,7 @@ namespace MapGeneration
 		}
 		else
 		{
-			DebugNotImplementedMsg(std::to_string(
-				static_cast<int>(transitionDefGenInfo.transitionType)));
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(transitionDefGenInfo.transitionType)));
 		}
 
 		return transitionDef;
@@ -1896,12 +1893,10 @@ namespace MapGeneration
 
 		// Lambda for looping through main-floor voxels and generating names for *MENU blocks that
 		// match the given menu type.
-		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride,
-			&random, &textAssetLibrary, outLevelDef, outLevelInfoDef, &exeData, &localCityPoint,
-			&tryGetInteriorType](ArenaInteriorType interiorType)
+		auto generateNames = [&citySeed, raceID, coastal, &cityTypeName, mainQuestTempleOverride, &random, &textAssetLibrary,
+			outLevelDef, outLevelInfoDef, &exeData, &localCityPoint, &tryGetInteriorType](ArenaInteriorType interiorType)
 		{
-			if ((interiorType == ArenaInteriorType::Equipment) ||
-				(interiorType == ArenaInteriorType::Temple))
+			if ((interiorType == ArenaInteriorType::Equipment) || (interiorType == ArenaInteriorType::Temple))
 			{
 				citySeed = (localCityPoint.x << 16) + localCityPoint.y;
 				random.srand(citySeed);
@@ -2009,8 +2004,7 @@ namespace MapGeneration
 				&seen, &hashInSeen, &createTavernName, &createEquipmentName, &createTempleName](SNInt x, WEInt z)
 			{
 				// See if the current voxel is a *MENU block and matches the target menu type.
-				const bool matchesTargetType = [x, z, interiorType, outLevelDef, outLevelInfoDef,
-					&tryGetInteriorType]()
+				const bool matchesTargetType = [x, z, interiorType, outLevelDef, outLevelInfoDef, &tryGetInteriorType]()
 				{
 					const std::optional<ArenaInteriorType> curInteriorType = tryGetInteriorType(x, z);
 					return curInteriorType.has_value() && (*curInteriorType == interiorType);
@@ -2242,13 +2236,70 @@ namespace MapGeneration
 		tryGenerateBuildingNameForChunk(ArenaInteriorType::Tavern);
 		tryGenerateBuildingNameForChunk(ArenaInteriorType::Temple);
 	}
+
+	// Populates interior names for dialogue. Not done during MAP1 reading due to transition/building name circular dependency.
+	void populateInteriorDisplayNames(const LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef)
+	{
+		for (int i = 0; i < outLevelDef->getTransitionPlacementDefCount(); i++)
+		{
+			const LevelTransitionPlacementDefinition &transitionPlacementDef = outLevelDef->getTransitionPlacementDef(i);
+			const LevelVoxelTransitionDefID transitionDefID = transitionPlacementDef.id;
+			const TransitionDefinition &transitionDef = outLevelInfoDef->getTransitionDef(transitionDefID);
+			if (transitionDef.type != TransitionType::EnterInterior)
+			{
+				continue;
+			}
+
+			const MapGenerationInteriorInfo &mapGenInteriorInfo = transitionDef.interiorEntrance.interiorGenInfo;
+			if (mapGenInteriorInfo.type != MapGenerationInteriorType::Prefab)
+			{
+				continue;
+			}
+
+			// Find the building name (if any) that goes with this transition.
+			std::string interiorDisplayName;
+			for (const WorldInt3 transitionPosition : transitionPlacementDef.positions)
+			{
+				for (int j = 0; j < outLevelDef->getBuildingNamePlacementDefCount(); j++)
+				{
+					const LevelBuildingNamePlacementDefinition &buildingNamePlacementDef = outLevelDef->getBuildingNamePlacementDef(j);
+					for (const WorldInt3 buildingNamePosition : buildingNamePlacementDef.positions)
+					{
+						if (buildingNamePosition == transitionPosition)
+						{
+							const LevelVoxelBuildingNameID buildingNameID = buildingNamePlacementDef.id;
+							interiorDisplayName = outLevelInfoDef->getBuildingName(buildingNameID);
+							break;
+						}
+					}
+
+					if (!interiorDisplayName.empty())
+					{
+						break;
+					}
+				}
+
+				if (!interiorDisplayName.empty())
+				{
+					break;
+				}
+			}
+
+			if (!interiorDisplayName.empty())
+			{
+				outLevelInfoDef->setTransitionInteriorDisplayName(transitionDefID, std::move(interiorDisplayName));
+			}
+		}
+	}
 }
 
-void MapGenerationInteriorPrefabInfo::init(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale)
+void MapGenerationInteriorPrefabInfo::init(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale,
+	const std::string &displayName)
 {
 	this->mifName = mifName;
 	this->interiorType = interiorType;
 	this->rulerIsMale = rulerIsMale;
+	this->displayName = displayName;
 }
 
 void MapGenerationInteriorDungeonInfo::init(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
@@ -2263,11 +2314,12 @@ MapGenerationInteriorInfo::MapGenerationInteriorInfo()
 	this->interiorType = static_cast<ArenaInteriorType>(-1);
 }
 
-void MapGenerationInteriorInfo::initPrefab(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale)
+void MapGenerationInteriorInfo::initPrefab(const std::string &mifName, ArenaInteriorType interiorType, const std::optional<bool> &rulerIsMale,
+	const std::string &displayName)
 {
 	this->type = MapGenerationInteriorType::Prefab;
 	this->interiorType = interiorType;
-	this->prefab.init(mifName, interiorType, rulerIsMale);
+	this->prefab.init(mifName, interiorType, rulerIsMale, displayName);
 }
 
 void MapGenerationInteriorInfo::initDungeon(const LocationDungeonDefinition &dungeonDef, bool isArtifactDungeon)
@@ -2555,9 +2607,9 @@ void MapGeneration::generateMifCity(const MIFFile &mif, uint32_t citySeed, uint3
 		entityDefLibrary, binaryAssetLibrary, textureManager, outLevelDef, outLevelInfoDef, &map1Mappings,
 		&entityMappings, &transitionMappings, &doorMappings);
 	MapGeneration::readArenaMAP2(tempMap2ConstView, inf, outLevelDef, outLevelInfoDef, &map2Mappings);
-	MapGeneration::generateArenaCityBuildingNames(citySeed, raceID, coastal, cityTypeName,
-		mainQuestTempleOverride, random, binaryAssetLibrary, textAssetLibrary, outLevelDef,
-		outLevelInfoDef);
+	MapGeneration::generateArenaCityBuildingNames(citySeed, raceID, coastal, cityTypeName, mainQuestTempleOverride,
+		random, binaryAssetLibrary, textAssetLibrary, outLevelDef, outLevelInfoDef);
+	MapGeneration::populateInteriorDisplayNames(outLevelDef, outLevelInfoDef);
 }
 
 void MapGeneration::generateRmdWilderness(Span<const ArenaWildBlockID> uniqueWildBlockIDs,

@@ -229,6 +229,26 @@ LevelVoxelChasmDefID LevelInfoDefinition::addChasmDef(VoxelChasmDefinition &&def
 	return id;
 }
 
+void LevelInfoDefinition::setTransitionInteriorDisplayName(LevelVoxelTransitionDefID id, std::string &&name)
+{
+	DebugAssertIndex(this->transitionDefs, id);
+	TransitionDefinition &transitionDef = this->transitionDefs[id];
+	if (transitionDef.type != TransitionType::EnterInterior)
+	{
+		DebugLogErrorFormat("Transition definition %d does not allow interior display names.", id);
+		return;
+	}
+
+	MapGenerationInteriorInfo &interiorInfo = transitionDef.interiorEntrance.interiorGenInfo;
+	if (interiorInfo.type != MapGenerationInteriorType::Prefab)
+	{
+		DebugLogErrorFormat("Transition definition %d interior info must be a prefab for interior display name.", id);
+		return;
+	}
+
+	interiorInfo.prefab.displayName = std::move(name);
+}
+
 void LevelInfoDefinition::setBuildingNameOverride(LevelVoxelBuildingNameID id, std::string &&name)
 {
 	const auto iter = this->buildingNameOverrides.find(id);

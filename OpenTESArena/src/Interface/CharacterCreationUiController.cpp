@@ -524,9 +524,10 @@ void ChooseAttributesUiController::onSavedDoneButtonSelected(Game &game)
 		const std::string mifName = mainQuestDungeonDef.mapFilename;
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.
+		const std::string interiorDisplayName; // Unused.
 
 		MapGenerationInteriorInfo interiorGenInfo;
-		interiorGenInfo.initPrefab(mifName, ArenaInteriorType::Dungeon, rulerIsMale);
+		interiorGenInfo.initPrefab(mifName, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName);
 
 		const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
 

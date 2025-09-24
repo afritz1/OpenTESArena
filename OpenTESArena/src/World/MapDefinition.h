@@ -33,10 +33,11 @@ struct MapDefinitionInterior
 	ArenaInteriorType interiorType;
 	// - InteriorDefinition?
 	// - probably store the music filename here, or make it retrievable by the interior type
+	std::string displayName;
 
 	MapDefinitionInterior();
 
-	void init(ArenaInteriorType interiorType);
+	void init(ArenaInteriorType interiorType, const std::string &displayName);
 
 	void clear();
 };
@@ -91,8 +92,8 @@ private:
 
 	void init(MapType mapType);
 	bool initInteriorLevels(const MIFFile &mif, ArenaInteriorType interiorType, const std::optional<uint32_t> &rulerSeed,
-		const std::optional<bool> &rulerIsMale, const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
-		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
+		const std::optional<bool> &rulerIsMale, const std::string &displayName, const CharacterClassLibrary &charClassLibrary,
+		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager);
 	bool initDungeonLevels(const MIFFile &mif, WEInt widthChunks, SNInt depthChunks, bool isArtifactDungeon, ArenaRandom &random,
 		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, WorldInt2 *outStartPoint);
