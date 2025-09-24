@@ -33,7 +33,7 @@ jobs:
       
     - name: Install Dependencies (macOS)
       if: matrix.os == 'macos-latest'
-      run: brew install sdl2 openal-soft wildmidi vulkan-headers vulkan-loader
+      run: brew install sdl2 openal-soft wildmidi vulkan-headers vulkan-loader molten-vk
       
     - name: Install Dependencies - MSYS2 (Windows)
       if: matrix.os == 'windows-latest'
