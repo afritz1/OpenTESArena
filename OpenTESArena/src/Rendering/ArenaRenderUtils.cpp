@@ -276,6 +276,7 @@ namespace
 
 				//Store the value to the sample buffer and move the pointer to the buffer forward 2 bytes to prepare for the next iteration
 				fogTxtSamples[fogTxtSampleIndex] = AX;
+				fogTxtSampleIndex++;
 
 				//Get CF for ADC instruction
 				bool carry = false;
