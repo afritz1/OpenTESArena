@@ -264,7 +264,7 @@ namespace
 					intValue2 &= 0x7f;
 
 					intValue += intValue2;
-					intValue <<= 1;
+					//intValue <<= 1; // Convert texel index to byte index.
 
 					AX = fogState.fogTxt[intValue]; // Get 2-byte value from data read from FOG.TXT
 				}
