@@ -86,6 +86,7 @@ struct VulkanTexture
 	int width;
 	int height;
 	int bytesPerTexel;
+	uint32_t mipLevelCount;
 	vk::Image image;
 	vk::ImageView imageView;
 	vk::Buffer stagingBuffer;
@@ -93,7 +94,7 @@ struct VulkanTexture
 
 	VulkanTexture();
 
-	void init(int width, int height, int bytesPerTexel, vk::Image image, vk::ImageView imageView, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
+	void init(int width, int height, int bytesPerTexel, uint32_t mipLevelCount, vk::Image image, vk::ImageView imageView, vk::Buffer stagingBuffer, Span<std::byte> stagingHostMappedBytes);
 
 	void freeAllocations(vk::Device device);
 };
@@ -272,14 +273,29 @@ struct VulkanImageTransferCommand
 	vk::Image image;
 	int width;
 	int height;
+	uint32_t mipLevelCount;
 
 	VulkanImageTransferCommand();
 
-	void init(vk::Buffer buffer, vk::Image image, int width, int height);
+	void init(vk::Buffer buffer, vk::Image image, int width, int height, uint32_t mipLevelCount);
+};
+
+struct VulkanImageBuildMipmapsCommand
+{
+	vk::Buffer buffer;
+	vk::Image image;
+	int width;
+	int height;
+	uint32_t mipLevelCount;
+
+	VulkanImageBuildMipmapsCommand();
+
+	void init(vk::Buffer buffer, vk::Image image, int width, int height, uint32_t mipLevelCount);
 };
 
 using VulkanBufferTransferCommands = std::vector<VulkanBufferTransferCommand>;
 using VulkanImageTransferCommands = std::vector<VulkanImageTransferCommand>;
+using VulkanImageBuildMipmapsCommands = std::vector<VulkanImageBuildMipmapsCommand>;
 using VulkanCommands = std::vector<std::function<void()>>;
 
 class VulkanRenderBackend final : public RenderBackend
@@ -321,6 +337,7 @@ private:
 	vk::CommandBuffer commandBuffer;
 	VulkanBufferTransferCommands bufferTransferCommands;
 	VulkanImageTransferCommands imageTransferCommands;
+	VulkanImageBuildMipmapsCommands imageBuildMipmapsCommands;
 	VulkanCommands freeCommands;
 
 	Buffer<VulkanVertexShader> vertexShaders;
