@@ -313,8 +313,9 @@ namespace
 		constexpr short WORD_4b80_81ae = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
 		constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called
 		
-		char ESArray[320]; // Unknown, but presumably for the 320 columns of pixels on the screen
-		std::fill(std::begin(ESArray), std::end(ESArray), 0);
+		uint8_t ESArr[320]; // Unknown, but presumably for the 320 columns of pixels on the screen
+		std::fill(std::begin(ESArr), std::end(ESArr), 0);
+		Span<uint8_t> ESArray = ESArr;
 
 		short AX = 0;
 		short BX = 0;
