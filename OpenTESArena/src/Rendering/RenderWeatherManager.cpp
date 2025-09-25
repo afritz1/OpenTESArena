@@ -626,7 +626,7 @@ void RenderWeatherManager::loadScene()
 	// @todo: load draw calls here instead of update() for optimization. take weatherdef/weatherinst parameter so we know what to enable
 }
 
-void RenderWeatherManager::update(double dt, const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer)
+void RenderWeatherManager::update(double dt, const WeatherInstance &weatherInst, const RenderCamera &camera, const Double2 &playerDirXZ, MapType mapType, Renderer &renderer)
 {
 	this->rainDrawCalls.clear();
 	this->snowDrawCalls.clear();
@@ -740,7 +740,7 @@ void RenderWeatherManager::update(double dt, const WeatherInstance &weatherInst,
 
 	if (weatherInst.hasFog())
 	{
-		this->fogState.update(dt);
+		this->fogState.update(dt, camera.worldPoint, playerDirXZ, mapType);
 
 		LockedTexture lockedFogTexture = renderer.lockObjectTexture(this->fogTextureID);
 		if (!lockedFogTexture.isValid())

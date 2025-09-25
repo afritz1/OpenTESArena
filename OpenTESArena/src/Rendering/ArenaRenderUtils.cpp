@@ -6,6 +6,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
+#include "../Interface/GameWorldUiModel.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Math/Vector4.h"
@@ -452,8 +453,27 @@ void ArenaFogState::init(TextureManager &textureManager)
 	std::copy(srcFogLgtTexels.begin(), srcFogLgtTexels.end(), this->fogLgt.begin());
 }
 
-void ArenaFogState::update(double dt)
+void ArenaFogState::update(double dt, const WorldDouble3 &playerPos, const Double2 &playerDir, MapType mapType)
 {
+	const OriginalInt2 originalPlayerPos = GameWorldUiModel::getOriginalPlayerPosition(playerPos, mapType);
+	this->PlayerX = originalPlayerPos.x;
+	this->PlayerY = originalPlayerPos.y;
+
+	// 0 at due south
+	// 0x80 (128) at due west
+	// 0x100 (256) at due north
+	// 0x180 (384) at due east
+	// The maximum value it can hold is 0x1FF (511).
+	auto getOriginalAngle = [](double x, double y)
+	{
+		const Radians baseAngleRadians = MathUtils::fullAtan2(y, x);
+		const Radians transformedAngleRadians = std::fmod(-baseAngleRadians + (7.0 * Constants::Pi / 2.0), Constants::TwoPi); // Ugly but works
+		const double anglePercent = transformedAngleRadians / Constants::TwoPi;
+		return std::clamp<short>(static_cast<short>(anglePercent * 512.0), 0, 511);
+	};	
+
+	this->PlayerAngle = getOriginalAngle(-playerDir.y, -playerDir.x);
+
 	constexpr double FOG_SECONDS_PER_FRAME = 1.0 / 25.0;
 
 	this->currentSeconds += dt;

@@ -1112,7 +1112,8 @@ void GameState::tickRendering(double dt, const RenderCamera &renderCamera, bool 
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	renderSkyManager.update(skyInst, skyVisManager, this->weatherInst, renderCamera, isInterior, dayPercent, isFoggy, distantAmbientPercent, renderer);
 
+	const MapType mapType = this->getActiveMapType();
 	const WeatherInstance &weatherInst = game.gameState.getWeatherInstance();
 	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
-	renderWeatherManager.update(dt, weatherInst, renderCamera, renderer);
+	renderWeatherManager.update(dt, weatherInst, renderCamera, playerDirXZ, mapType, renderer);
 }

@@ -61,7 +61,7 @@ public:
 	void populateCommandList(RenderCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const;
 
 	void loadScene();
-	void update(double dt, const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer);
+	void update(double dt, const WeatherInstance &weatherInst, const RenderCamera &camera, const Double2 &playerDirXZ, MapType mapType, Renderer &renderer);
 	void unloadScene();
 };
 

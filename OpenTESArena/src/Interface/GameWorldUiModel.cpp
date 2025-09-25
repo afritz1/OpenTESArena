@@ -118,36 +118,34 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 	return baseText + effectText;
 }
 
-std::string GameWorldUiModel::getPlayerPositionText(Game &game)
+OriginalInt2 GameWorldUiModel::getOriginalPlayerPosition(const WorldDouble3 &playerPos, MapType mapType)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	GameState &gameState = game.gameState;
-	const MapDefinition &mapDef = gameState.getActiveMapDef();
-	const Player &player = game.player;
+	const WorldInt2 absolutePlayerVoxelXZ = VoxelUtils::pointToVoxel(playerPos.getXZ());
+	const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(absolutePlayerVoxelXZ);
 
-	const MapType mapType = mapDef.getMapType();
-	const OriginalInt2 displayedCoords = [&player, mapType]()
+	// The displayed coordinates in the wilderness behave differently in the original
+	// game due to how the 128x128 grid shifts to keep the player roughly centered.
+	if (mapType != MapType::Wilderness)
 	{
-		const WorldDouble3 absolutePlayerPosition = player.getEyePosition();
-		const WorldInt2 absolutePlayerVoxelXZ = VoxelUtils::pointToVoxel(absolutePlayerPosition.getXZ());
-		const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(absolutePlayerVoxelXZ);
+		return originalVoxel;
+	}
+	else
+	{
+		const int halfWidth = RMDFile::WIDTH / 2;
+		const int halfDepth = RMDFile::DEPTH / 2;
+		return OriginalInt2(
+			halfWidth + ((originalVoxel.x + halfWidth) % RMDFile::WIDTH),
+			halfDepth + ((originalVoxel.y + halfDepth) % RMDFile::DEPTH));
+	}
+}
 
-		// The displayed coordinates in the wilderness behave differently in the original
-		// game due to how the 128x128 grid shifts to keep the player roughly centered.
-		if (mapType != MapType::Wilderness)
-		{
-			return originalVoxel;
-		}
-		else
-		{
-			const int halfWidth = RMDFile::WIDTH / 2;
-			const int halfDepth = RMDFile::DEPTH / 2;
-			return OriginalInt2(
-				halfWidth + ((originalVoxel.x + halfWidth) % RMDFile::WIDTH),
-				halfDepth + ((originalVoxel.y + halfDepth) % RMDFile::DEPTH));
-		}
-	}();
+std::string GameWorldUiModel::getPlayerPositionText(Game &game)
+{	
+	const Player &player = game.player;
+	const GameState &gameState = game.gameState;
+	const OriginalInt2 displayedCoords = GameWorldUiModel::getOriginalPlayerPosition(player.getEyePosition(), gameState.getActiveMapType());
 
+	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string str = exeData.ui.currentWorldPosition;
 
 	// Replace first %d with X, second %d with Y.

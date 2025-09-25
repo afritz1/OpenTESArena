@@ -16,6 +16,7 @@ enum class MapType;
 
 struct Clock;
 struct ExeDataWeather;
+struct RenderCamera;
 
 struct ArenaFogState
 {
@@ -34,7 +35,7 @@ struct ArenaFogState
 
 	void init(TextureManager &textureManager);
 
-	void update(double dt);
+	void update(double dt, const WorldDouble3 &playerPos, const Double2 &playerDir, MapType mapType);
 };
 
 namespace ArenaRenderUtils
