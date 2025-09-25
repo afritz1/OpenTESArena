@@ -1003,8 +1003,12 @@ bool ExeDataWeather::init(Span<const std::byte> exeBytes, const KeyValueFile &ke
 		return false;
 	}
 
+	const int fogAngleMultipliersOffset = GetExeAddress(*section, "FogAngleMultipliers");
+	const int fogTxtSampleHelperOffset = GetExeAddress(*section, "FogTxtSampleHelper");
 	const int thunderstormFlashColorsOffset = GetExeAddress(*section, "ThunderstormFlashColors");
 	
+	initInt16Array(this->fogAngleMultipliers, exeBytes, fogAngleMultipliersOffset);
+	initInt16Array(this->fogTxtSampleHelper, exeBytes, fogTxtSampleHelperOffset);
 	initInt8Array(this->thunderstormFlashColors, exeBytes, thunderstormFlashColorsOffset);
 
 	return true;

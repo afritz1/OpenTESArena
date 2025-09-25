@@ -558,6 +558,8 @@ struct ExeDataUI
 
 struct ExeDataWeather
 {
+	int16_t fogAngleMultipliers[641];
+	int16_t fogTxtSampleHelper[24];
 	uint8_t thunderstormFlashColors[3];
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
