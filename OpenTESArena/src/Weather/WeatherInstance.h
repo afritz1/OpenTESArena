@@ -4,12 +4,13 @@
 #include <optional>
 
 #include "../Math/MathUtils.h"
-#include "../Rendering/ArenaRenderUtils.h"
+//#include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/utilities/Buffer.h"
 
 class AudioManager;
 class Random;
+class TextureManager;
 
 struct Clock;
 struct ExeData;
@@ -26,7 +27,7 @@ struct WeatherParticle
 
 struct WeatherFogInstance
 {
-	ArenaRenderUtils::FogMatrix fogMatrix; // Used for drawing fog.
+	//ArenaRenderUtils::FogMatrix fogMatrix; // Used for drawing fog.
 	// @todo: other fog state values (position changing over time, etc.)
 
 	void init(Random &random, TextureManager &textureManager);

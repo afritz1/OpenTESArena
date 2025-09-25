@@ -2,6 +2,8 @@
 #include <optional>
 
 #include "ArenaRenderUtils.h"
+#include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/ExeData.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
@@ -13,6 +15,453 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Bytes.h"
+
+namespace
+{
+	void FogRotateVector(int angle, short &x, short &y, const ExeDataWeather &exeDataWeather)
+	{
+		const Span<const int16_t> angleMultipliers = exeDataWeather.fogAngleMultipliers;
+		const int cosAngleMultiplier = angleMultipliers[angle];
+		const int sinAngleMultiplier = angleMultipliers[angle + 128];
+
+		const int doubledX = x * 2;
+		const int doubledY = y * 2;
+
+		int negCosAngleMultipler = -cosAngleMultiplier;
+		if (negCosAngleMultipler >= 0)
+		{
+			negCosAngleMultipler--;
+		}
+
+		const int imulRes1 = doubledX * sinAngleMultiplier;
+		const int imulRes2 = doubledY * negCosAngleMultipler;
+		const int imulRes3 = doubledX * cosAngleMultiplier;
+		const int imulRes4 = doubledY * sinAngleMultiplier;
+
+		const int highRes1 = static_cast<uint32_t>(imulRes1) >> 16;
+		const int highRes2 = static_cast<uint32_t>(imulRes2) >> 16;
+		const int highRes3 = static_cast<uint32_t>(imulRes3) >> 16;
+		const int highRes4 = static_cast<uint32_t>(imulRes4) >> 16;
+
+		x = highRes2 + highRes1;
+		y = highRes3 + highRes4;
+	}
+
+	void SampleFOGTXT(const ArenaFogState &fogState, Span<uint16_t> fogTxtSamples, const ExeDataWeather &exeDataWeather)
+	{
+		short WORD_ARRAY_4b80_81d8[24]; // @47708. Both read from and written to.
+		std::copy(std::begin(exeDataWeather.fogTxtSampleHelper), std::end(exeDataWeather.fogTxtSampleHelper), std::begin(WORD_ARRAY_4b80_81d8));
+
+		int DWORD_4b80_819e = 0;
+		int DWORD_4b80_81a2 = 0;
+		constexpr int DWORD_4b80_81a6 = 0x6906904; // Constant value. @476D6.
+
+		short WORD_4b80_81ae = 0;
+		short WORD_4b80_81b0 = 0;
+		short WORD_4b80_81b2 = 0;
+		short WORD_4b80_81b4 = 0;
+		short WORD_4b80_81b6 = 0;
+		short WORD_4b80_81b8 = 0;
+		short WORD_4b80_81c6 = 0;
+		short WORD_4b80_81c8 = 0;
+		short WORD_4b80_81ca = 0;
+		constexpr short WORD_4b80_81d4 = 0xFC00; // Constant value. @47704.
+		short WORD_4b80_8208 = 0; // Aaron: Likely current tile row (Y value)
+
+		constexpr short WORD_4b80_a784 = 0x92; // Variable value, but might always be 0x92 when this function is called.
+		int DWORD_VALUE1;
+		int DWORD_VALUE2;
+		int DWORD_VALUE3;
+		int DWORD_VALUE4;
+		int DWORD_VALUE5;
+
+		short AX;
+		short BX;
+		short CX;
+		short DI;
+		short DX;
+		short BP;
+
+		int intValue; // Used here for 32-bit operations
+		int intValue2 = 0; // Used here for 32-bit operations  @todo this was uninitialized in Allofich's code
+		int intValue3; // Used here for 32-bit operations
+		long long longValue; // Used here for 64-bit operations
+		int index;
+
+		int loopCount = 4;
+		index = 0;
+
+		do
+		{
+			AX = WORD_ARRAY_4b80_81d8[index];
+			CX = WORD_ARRAY_4b80_81d8[index + 2];
+			DI = 511;
+			DI -= fogState.PlayerAngle; // PlayerAngle is never greater than 511
+
+			FogRotateVector(DI, AX, CX, exeDataWeather);
+
+			BX = WORD_ARRAY_4b80_81d8[index + 1];
+			WORD_ARRAY_4b80_81d8[index + 3] = AX;
+
+			WORD_ARRAY_4b80_81d8[index + 4] = BX;
+			WORD_ARRAY_4b80_81d8[index + 5] = CX;
+			index += 6;
+			loopCount--;
+		} while (loopCount != 0);
+
+		constexpr int DWORD_4b80_819a = 0xD0300000; // Original game does a few calculations here to get the value, but it will always be this result
+		constexpr int DWORD_4b80_81aa = 0xDD5D5D5E; // Original game does a few calculations here to get the value, but it will always be this result
+		WORD_4b80_8208 = 0;
+
+		int fogTxtSampleIndex = 0;
+
+		do
+		{
+			BP = WORD_4b80_a784;
+			BP >>= 3;
+
+			AX = WORD_ARRAY_4b80_81d8[15];
+			AX -= WORD_ARRAY_4b80_81d8[3];
+
+			intValue = AX * WORD_4b80_8208;
+			AX = intValue;
+			DX = intValue >> 16;
+
+			intValue = AX / BP;
+			DX = intValue >> 16;
+
+			AX += WORD_ARRAY_4b80_81d8[3];
+			WORD_4b80_81b0 = AX;
+
+			AX = WORD_ARRAY_4b80_81d8[16];
+			AX -= WORD_ARRAY_4b80_81d8[4];
+
+			intValue = AX * WORD_4b80_8208;
+			AX = intValue;
+			DX = intValue >> 16;
+
+			intValue = AX / BP;
+			DX = intValue >> 16;
+
+			AX += WORD_ARRAY_4b80_81d8[4];
+			WORD_4b80_81b4 = AX;
+
+			AX = WORD_ARRAY_4b80_81d8[17];
+			AX -= WORD_ARRAY_4b80_81d8[5];
+
+			intValue = AX * WORD_4b80_8208;
+			AX = intValue;
+			DX = intValue >> 16;
+
+			AX += WORD_ARRAY_4b80_81d8[5];
+			WORD_4b80_81b8 = AX;
+
+			WORD_4b80_81ae = 0;
+			WORD_4b80_81b2 = 0;
+			WORD_4b80_81b6 = 0;
+
+			AX = WORD_ARRAY_4b80_81d8[21];
+			AX -= WORD_ARRAY_4b80_81d8[9];
+
+			intValue = AX * WORD_4b80_8208;
+			AX = intValue;
+
+			AX += WORD_ARRAY_4b80_81d8[9];
+			WORD_4b80_81c6 = AX;
+
+			AX = WORD_ARRAY_4b80_81d8[22];
+			AX -= WORD_ARRAY_4b80_81d8[10];
+
+			intValue = AX * WORD_4b80_8208;
+			AX = intValue;
+
+			AX += WORD_ARRAY_4b80_81d8[10];
+			WORD_4b80_81c8 = AX;
+
+			AX = WORD_ARRAY_4b80_81d8[23];
+			AX -= WORD_ARRAY_4b80_81d8[11];
+
+			intValue = AX * WORD_4b80_8208;
+			AX = intValue;
+
+			AX += WORD_ARRAY_4b80_81d8[11];
+			WORD_4b80_81ca = AX;
+
+			BP = 39;
+
+			AX = WORD_4b80_81c6;
+			AX -= WORD_4b80_81b0;
+			longValue = AX << 0x10;
+			longValue /= BP;
+			DWORD_VALUE3 = longValue;
+
+			AX = WORD_4b80_81c8;
+			AX -= WORD_4b80_81b4;
+			longValue = AX << 0x10;
+			longValue /= BP;
+			DWORD_VALUE4 = longValue;
+
+			AX = WORD_4b80_81ca;
+			AX -= WORD_4b80_81b8;
+			longValue = AX << 0x10;
+			longValue /= BP;
+			DWORD_VALUE5 = longValue;
+
+			intValue = WORD_4b80_81b4 * WORD_4b80_81d4;
+
+			DWORD_4b80_819e = intValue2;
+
+			AX = WORD_4b80_81c8;
+			intValue = AX * WORD_4b80_81d4;
+			intValue2 -= intValue;
+
+			longValue = intValue2 * DWORD_4b80_81a6;
+
+			intValue = longValue;
+			intValue2 = longValue >> 32;
+
+			DWORD_VALUE1 = intValue;
+			DWORD_VALUE2 = intValue2;
+			DWORD_4b80_81a2 = 0;
+
+			loopCount = 40; // Columns
+
+			do
+			{
+				longValue = DWORD_4b80_819a;
+				intValue = DWORD_4b80_819e;
+				if (intValue != 0)
+				{
+					longValue /= intValue;
+					intValue = longValue;
+					if (intValue < 0)
+					{
+						// untested
+						intValue *= DWORD_4b80_81aa;
+						intValue2 = ((unsigned int)intValue2 >> 31) | ((unsigned int)intValue << 1);
+					}
+
+					intValue3 = intValue; // Store for using below
+
+					longValue = intValue * (long long)intValue * (long long)((unsigned short)WORD_4b80_81ae | ((unsigned short)WORD_4b80_81b0 << 16));
+					intValue = longValue;
+					intValue2 = longValue >> 32;
+					intValue = ((unsigned int)intValue >> 24) | ((unsigned int)intValue2 << 8);
+					intValue += fogState.PlayerX + fogState.WORD_4b80_191b;
+					intValue = (unsigned int)intValue >> 6;
+
+					longValue = (long long)intValue3 * (long long)((unsigned short)WORD_4b80_81b6 | ((unsigned short)WORD_4b80_81b8 << 16));
+					intValue2 = longValue;
+					intValue3 = longValue >> 32;
+					intValue2 = ((unsigned int)intValue2 >> 24) | ((unsigned int)intValue3 << 8);
+
+					intValue2 += fogState.PlayerY + fogState.WORD_4b80_191d;
+					intValue2 = (unsigned int)intValue2 >> 6;
+
+					intValue &= 0x7f;
+					intValue <<= 7;
+
+					intValue2 &= 0x7f;
+
+					intValue += intValue2;
+					intValue <<= 1;
+
+					AX = fogState.fogTxt[intValue]; // Get 2-byte value from data read from FOG.TXT
+				}
+				else
+				{
+					// untested
+					AX = 0x0C00;
+				}
+
+				//Store the value to the sample buffer and move the pointer to the buffer forward 2 bytes to prepare for the next iteration
+				fogTxtSamples[fogTxtSampleIndex] = AX;
+
+				//Get CF for ADC instruction
+				bool carry = false;
+				uint32_t temp = static_cast<uint32_t>(DWORD_4b80_81a2) + static_cast<uint32_t>(DWORD_VALUE1);
+				if (temp < DWORD_4b80_81a2)
+				{
+					carry = true; // overflow occurred
+				}
+
+				DWORD_4b80_81a2 = temp;   // Store the result back
+
+				DWORD_4b80_819e += DWORD_VALUE2;
+				if (carry)
+				{
+					DWORD_4b80_819e++;  // ADC instruction, so add carry flag
+				}
+
+				WORD_4b80_81ae += (DWORD_VALUE3 & 0x0000FFFF);
+				WORD_4b80_81b0 += (DWORD_VALUE3 & 0xFFFF0000) >> 16;
+				WORD_4b80_81b2 += (DWORD_VALUE4 & 0x0000FFFF);
+				WORD_4b80_81b4 += (DWORD_VALUE4 & 0xFFFF0000) >> 16;
+				WORD_4b80_81b6 += (DWORD_VALUE5 & 0x0000FFFF);
+				WORD_4b80_81b8 += (DWORD_VALUE5 & 0xFFFF0000) >> 16;
+
+				loopCount--;
+			} while (loopCount != 0);
+
+			WORD_4b80_8208++;
+		} while (WORD_4b80_8208 != 25); // Rows
+	}
+
+#define ApplyNewData() \
+    do { \
+        BX += DX; \
+        CX = (CX & 0xFF) | ((BX & 0xFF) << 8); \
+        BX = (BX & 0xFF00) | ESArray[DI]; \
+        AX = fogLgt[BX]; \
+        BX = (CX & 0xFF00) >> 8; \
+        DX += BP; \
+        BX += DX; \
+        CX = (CX & 0xFF) | ((BX & 0xFF) << 8); \
+        BX = (BX & 0xFF00) | ESArray[DI + 1]; \
+        AX = (AX & 0xFF) | (fogLgt[BX] << 8); \
+        ESArray[DI] = AX & 0xFF00; \
+        ESArray[DI + 1] = AX & 0xFF; \
+        DI += 2; \
+        BX = (CX & 0xFF00) >> 8;\
+        DX += BP; \
+    } while (false)
+
+#define IterateOverData() \
+    do { \
+        ApplyNewData(); \
+        ApplyNewData(); \
+        ApplyNewData(); \
+        ApplyNewData(); \
+        SI++; \
+        DX = fogTxtSamples[SI]; \
+        BP = fogTxtSamples[SI + 1]; \
+        BP -= DX; \
+        BP >>= 3; \
+        fogTxtSamples[SI] = DX + fogTxtSamples[SI - 45]; \
+    } while (false)
+
+	void ApplySampledFogData(Span<uint16_t> fogTxtSamples, Span<const uint8_t> fogLgt)
+	{
+		constexpr short WORD_4b80_81ae = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
+		constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called
+		char ESArray[320]; // Unknown, but presumably for the 320 columns of pixels on the screen
+
+		short AX;
+		short BX;
+		short CX;
+		short DI;
+		short DX;
+		short BP;
+		short SI;
+		short DS;
+		short ES;
+
+		// Aaron: is this zeroing the horizon line?
+		for (int i = 0; i < 40; i++)
+		{
+			fogTxtSamples[405 + i] = 0;
+		}
+
+		fogTxtSamples[28] = WORD_4b80_81ae;
+		fogTxtSamples[25] = (WORD_4b80_a784 + 7) >> 3;
+		fogTxtSamples[26] = 170;
+		fogTxtSamples[27] = 0;
+
+		do
+		{
+			for (int i = 0; i < 40; i++)
+			{
+				fogTxtSamples[i] = (fogTxtSamples[85 + i] - fogTxtSamples[45 + i]) >> 3;
+			}
+
+			DS = fogTxtSamples[42];
+			ES = fogTxtSamples[43]; // 0x533C in testing, used for location of ESArray
+			CX = 8;
+
+			if (fogTxtSamples[40] == 1)
+			{
+				CX -= 6;
+			}
+
+			do
+			{
+				SI = fogTxtSamples[41] - 80;
+				DI = 0;
+				DX = fogTxtSamples[SI / 2];
+				BP = (fogTxtSamples[(SI + 2) / 2] - DX) >> 3;
+				fogTxtSamples[SI / 2] = DX + fogTxtSamples[0];
+
+				for (int i = 0; i < 39; i++)
+				{
+					IterateOverData();
+				}
+
+				ApplyNewData();
+				SI++;
+				CX--;
+			} while (CX != 0);
+
+			fogTxtSamples[42] = DI;
+			fogTxtSamples[40]--;
+		} while (fogTxtSamples[40] != 0);
+	}
+}
+
+ArenaFogState::ArenaFogState()
+{
+	this->PlayerX = 0;
+	this->PlayerY = 0;
+	this->PlayerAngle = 0;
+	this->WORD_4b80_191b = 4;
+	this->WORD_4b80_191d = 4;
+	this->currentSeconds = 0.0;
+}
+
+void ArenaFogState::init(TextureManager &textureManager)
+{
+	constexpr const char fogTxtFilename[] = "FOG.TXT";
+	const std::optional<TextureBuilderID> fogTxtTextureBuilderID = textureManager.tryGetTextureBuilderID(fogTxtFilename);
+	if (!fogTxtTextureBuilderID.has_value())
+	{
+		DebugLogErrorFormat("Couldn't get fog texture builder ID for \"%s\".", fogTxtFilename);
+		return;
+	}
+
+	const TextureBuilder &fogTxtTextureBuilder = textureManager.getTextureBuilderHandle(*fogTxtTextureBuilderID);
+	const Span2D<const uint16_t> srcFogTxtTexels = fogTxtTextureBuilder.getTexels16();
+
+	const int fogTxtTexelCount = srcFogTxtTexels.getWidth() * srcFogTxtTexels.getHeight();
+	this->fogTxt.init(fogTxtTexelCount);
+	std::copy(srcFogTxtTexels.begin(), srcFogTxtTexels.end(), this->fogTxt.begin());
+
+	constexpr const char fogLgtFilename[] = "FOG.LGT";
+	const std::optional<TextureBuilderID> fogLgtTextureBuilderID = textureManager.tryGetTextureBuilderID(fogLgtFilename);
+	if (!fogLgtTextureBuilderID.has_value())
+	{
+		DebugLogErrorFormat("Couldn't get fog light texture builder ID for \"%s\".", fogLgtFilename);
+		return;
+	}
+
+	const TextureBuilder &fogLgtTextureBuilder = textureManager.getTextureBuilderHandle(*fogLgtTextureBuilderID);
+	const Span2D<const uint8_t> srcFogLgtTexels = fogLgtTextureBuilder.getTexels8();
+
+	const int fogLgtTexelCount = srcFogLgtTexels.getWidth() * srcFogLgtTexels.getHeight();
+	this->fogLgt.init(fogLgtTexelCount);
+	std::copy(srcFogLgtTexels.begin(), srcFogLgtTexels.end(), this->fogLgt.begin());
+}
+
+void ArenaFogState::update(double dt)
+{
+	constexpr double FOG_SECONDS_PER_FRAME = 1.0 / 25.0;
+
+	this->currentSeconds += dt;
+	if (this->currentSeconds >= FOG_SECONDS_PER_FRAME)
+	{
+		this->currentSeconds = std::fmod(this->currentSeconds, FOG_SECONDS_PER_FRAME);
+		this->WORD_4b80_191b += 4;
+		this->WORD_4b80_191d += 4;
+	}
+}
 
 double ArenaRenderUtils::getAmbientPercent(const Clock &clock, MapType mapType, bool isFoggy)
 {
@@ -88,162 +537,36 @@ double ArenaRenderUtils::getDistantAmbientPercent(const Clock &clock)
 
 bool ArenaRenderUtils::isLightLevelTexel(uint8_t texel)
 {
-	return (texel >= ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST) &&
-		(texel <= ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_HIGHEST);
+	return (texel >= ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_LOWEST) && (texel <= ArenaRenderUtils::PALETTE_INDEX_LIGHT_LEVEL_HIGHEST);
 }
 
 bool ArenaRenderUtils::isPuddleTexel(uint8_t texel)
 {
-	return (texel == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW) ||
-		(texel == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_ODD_ROW);
+	return (texel == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_EVEN_ROW) || (texel == ArenaRenderUtils::PALETTE_INDEX_PUDDLE_ODD_ROW);
 }
 
-bool ArenaRenderUtils::tryMakeFogMatrix(int zeroedRow, Random &random, TextureManager &textureManager,
-	FogMatrix *outMatrix)
+void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<uint8_t> outPixels)
 {
-	DebugAssert(zeroedRow >= 0);
-	DebugAssert(zeroedRow < ArenaRenderUtils::FOG_MATRIX_HEIGHT);
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 
-	const std::string filename = "FOG.TXT";
-	const std::optional<TextureBuilderID> textureBuilderID = textureManager.tryGetTextureBuilderID(filename.c_str());
-	if (!textureBuilderID.has_value())
+	constexpr int fogColumns = 40;
+	constexpr int fogRows = 25;
+	uint16_t fogTxtSamples[fogColumns * fogRows];
+	std::fill(std::begin(fogTxtSamples), std::end(fogTxtSamples), 0);
+
+	SampleFOGTXT(fogState, fogTxtSamples, exeData.weather);
+	ApplySampledFogData(fogTxtSamples, fogState.fogLgt);
+
+	for (int y = 0; y < 200; y++)
 	{
-		DebugLogError("Couldn't get texture builder ID for \"" + filename + "\".");
-		return false;
-	}
-
-	// The fog texture is 16 bits per pixel but it's expanded to 32-bit so the engine doesn't have to support
-	// another texture builder format only used here.
-	const TextureBuilder &textureBuilder = textureManager.getTextureBuilderHandle(*textureBuilderID);
-	const Span2D<const uint32_t> texels = textureBuilder.getTexels32();
-	const uint32_t *pixelMaxPtr = std::max_element(texels.begin(), texels.end());
-	const uint8_t pixelMax = static_cast<uint8_t>((*pixelMaxPtr) >> 8);
-
-	// Generate random pixel values based on the max.
-	const int pixelCount = ArenaRenderUtils::FOG_MATRIX_WIDTH * ArenaRenderUtils::FOG_MATRIX_HEIGHT;
-	for (int i = 0; i < pixelCount; i++)
-	{
-		const uint16_t texel = Bytes::getLE16(reinterpret_cast<const uint8_t*>(texels.begin() + i));
-		const uint8_t highByte = (texel >> 8) & 0xFF;
-		const uint8_t lowByte = texel & 0xFF;
-
-		const uint8_t paletteIndex = static_cast<uint8_t>(random.next(pixelMax)); // Not using FOG.TXT yet.
-		(*outMatrix)[i] = paletteIndex;
-	}
-
-	// Zero out one of the rows.
-	constexpr int matrixWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH;
-	for (int x = 0; x < matrixWidth; x++)
-	{
-		const int y = zeroedRow;
-		const int index = x + (y * matrixWidth);
-		(*outMatrix)[index] = 0;
-	}
-
-	return true;
-}
-
-void ArenaRenderUtils::drawFog(const FogMatrix &fogMatrix, Random &random, uint8_t *outPixels)
-{
-	constexpr int matrixSurfaceWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH * ArenaRenderUtils::FOG_MATRIX_SCALE;
-	constexpr int matrixSurfaceHeight = ArenaRenderUtils::FOG_MATRIX_HEIGHT * ArenaRenderUtils::FOG_MATRIX_SCALE;
-	constexpr int textureWidth = ArenaRenderUtils::FOG_MATRIX_WIDTH;
-	constexpr int textureHeight = ArenaRenderUtils::FOG_MATRIX_HEIGHT;
-	constexpr double textureWidthReal = static_cast<double>(textureWidth);
-	constexpr double textureHeightReal = static_cast<double>(textureHeight);
-
-	// Linear texture-filtered sample in fog matrix.
-	auto sampleFogMatrixTexture = [&fogMatrix, textureWidth, textureHeight, textureWidthReal,
-		textureHeightReal](double u, double v)
-	{
-		const double texelWidth = 1.0 / textureWidthReal;
-		const double texelHeight = 1.0 / textureHeightReal;
-		const double halfTexelWidth = texelWidth * 0.50;
-		const double halfTexelHeight = texelHeight * 0.50;
-
-		// Neighboring percents that might land in an adjacent texel.
-		const double uLow = std::max(u - halfTexelWidth, 0.0);
-		const double uHigh = std::min(u + halfTexelWidth, Constants::JustBelowOne);
-		const double vLow = std::max(v - halfTexelHeight, 0.0);
-		const double vHigh = std::min(v + halfTexelHeight, Constants::JustBelowOne);
-
-		const double uLowWidth = uLow * textureWidthReal;
-		const double vLowHeight = vLow * textureHeightReal;
-		const double uLowPercent = 1.0 - (uLowWidth - std::floor(uLowWidth));
-		const double uHighPercent = 1.0 - uLowPercent;
-		const double vLowPercent = 1.0 - (vLowHeight - std::floor(vLowHeight));
-		const double vHighPercent = 1.0 - vLowPercent;
-		const double tlPercent = uLowPercent * vLowPercent;
-		const double trPercent = uHighPercent * vLowPercent;
-		const double blPercent = uLowPercent * vHighPercent;
-		const double brPercent = uHighPercent * vHighPercent;
-		const int textureXL = static_cast<int>(uLow * textureWidthReal);
-		const int textureXR = static_cast<int>(uHigh * textureWidthReal);
-		const int textureYT = static_cast<int>(vLow * textureHeightReal);
-		const int textureYB = static_cast<int>(vHigh * textureHeightReal);
-		const int textureIndexTL = textureXL + (textureYT * textureWidth);
-		const int textureIndexTR = textureXR + (textureYT * textureWidth);
-		const int textureIndexBL = textureXL + (textureYB * textureWidth);
-		const int textureIndexBR = textureXR + (textureYB * textureWidth);
-
-		const uint8_t texelTL = fogMatrix[textureIndexTL];
-		const uint8_t texelTR = fogMatrix[textureIndexTR];
-		const uint8_t texelBL = fogMatrix[textureIndexBL];
-		const uint8_t texelBR = fogMatrix[textureIndexBR];
-
-		constexpr int percentMultiplier = 100;
-		constexpr double percentMultiplierReal = static_cast<double>(percentMultiplier);
-		const uint16_t tlPercentInteger = static_cast<uint16_t>(tlPercent * percentMultiplierReal);
-		const uint16_t trPercentInteger = static_cast<uint16_t>(trPercent * percentMultiplierReal);
-		const uint16_t blPercentInteger = static_cast<uint16_t>(blPercent * percentMultiplierReal);
-		const uint16_t brPercentInteger = static_cast<uint16_t>(brPercent * percentMultiplierReal);
-
-		const uint16_t texelTLScaled = texelTL * tlPercentInteger;
-		const uint16_t texelTRScaled = texelTR * trPercentInteger;
-		const uint16_t texelBLScaled = texelBL * blPercentInteger;
-		const uint16_t texelBRScaled = texelBR * brPercentInteger;
-
-		const uint16_t texelSumScaled = texelTLScaled + texelTRScaled + texelBLScaled + texelBRScaled;
-		return static_cast<uint8_t>(texelSumScaled / percentMultiplier);
-	};
-
-	for (int y = 0; y < textureHeight; y++)
-	{
-		const int yOffset = y * ArenaRenderUtils::FOG_MATRIX_SCALE;
-
-		for (int x = 0; x < textureWidth; x++)
+		for (int x = 0; x < 320; x++)
 		{
-			const int xOffset = x * ArenaRenderUtils::FOG_MATRIX_SCALE;
-
-			for (int i = 0; i < ArenaRenderUtils::FOG_MATRIX_SCALE; i++)
-			{
-				for (int j = 0; j < ArenaRenderUtils::FOG_MATRIX_SCALE; j++)
-				{
-					int textureX, textureY;
-					if (((i + j) & 1) != 0)
-					{
-						textureX = x;
-						textureY = y;
-					}
-					else
-					{
-						textureX = random.next(textureWidth);
-						textureY = random.next(textureHeight);
-					}
-
-					const double uTexture = static_cast<double>(textureX) +
-						((static_cast<double>(i) + 0.50) / static_cast<double>(ArenaRenderUtils::FOG_MATRIX_SCALE));
-					const double vTexture = static_cast<double>(textureY) +
-						((static_cast<double>(j) + 0.50) / static_cast<double>(ArenaRenderUtils::FOG_MATRIX_SCALE));
-
-					const double u = std::clamp(uTexture / textureWidthReal, 0.0, Constants::JustBelowOne);
-					const double v = std::clamp(vTexture / textureHeightReal, 0.0, Constants::JustBelowOne);
-					const uint8_t paletteIndex = sampleFogMatrixTexture(u, v);
-
-					const int dstIndex = (xOffset + i) + ((yOffset + j) * matrixSurfaceWidth);
-					outPixels[dstIndex] = paletteIndex;
-				}
-			}
+			const int srcIndex = (x / 8) + ((y / 8) * 40);
+			//const int dstIndex = x + (y * 320);
+			const uint16_t srcPixel = fogTxtSamples[srcIndex];
+			const uint8_t dstPixel = static_cast<uint8_t>(srcPixel);
+			outPixels.set(x, y, dstPixel);
 		}
 	}
 }

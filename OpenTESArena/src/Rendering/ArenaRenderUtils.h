@@ -1,11 +1,13 @@
 #ifndef ARENA_RENDER_UTILS_H
 #define ARENA_RENDER_UTILS_H
 
-#include <array>
 #include <cstdint>
 #include <string>
 
 #include "../Assets/MIFUtils.h"
+
+#include "components/utilities/Buffer.h"
+#include "components/utilities/Span2D.h"
 
 class Random;
 class TextureManager;
@@ -13,6 +15,27 @@ class TextureManager;
 enum class MapType;
 
 struct Clock;
+struct ExeDataWeather;
+
+struct ArenaFogState
+{
+	Buffer<uint16_t> fogTxt;
+	Buffer<uint8_t> fogLgt;
+
+	short PlayerX;
+	short PlayerY;
+	short PlayerAngle;
+	short WORD_4b80_191b; // Initially 0, it will be 4 by the first call of this function, and +4 every time after (every game update).
+	short WORD_4b80_191d; // Initially 0, it will be 4 by the first call of this function, and +4 every time after (every game update).
+
+	double currentSeconds;
+
+	ArenaFogState();
+
+	void init(TextureManager &textureManager);
+
+	void update(double dt);
+};
 
 namespace ArenaRenderUtils
 {
@@ -137,19 +160,8 @@ namespace ArenaRenderUtils
 
 	bool isPuddleTexel(uint8_t texel);
 
-	// Values for screen-space fog.
-	constexpr int FOG_MATRIX_WIDTH = 40;
-	constexpr int FOG_MATRIX_HEIGHT = 25;
-	constexpr int FOG_MATRIX_ZEROED_ROW = 8; // 9th row is zeroed out.
-	constexpr int FOG_MATRIX_SCALE = 8; // Each pixel expands to 8x8 with linear gradient.
-	using FogMatrix = std::array<uint8_t, FOG_MATRIX_WIDTH * FOG_MATRIX_HEIGHT>;
-
-	// Fog matrix for fog light levels.
-	// @todo: maybe pass zeroed row as a parameter to support modern interface mode.
-	bool tryMakeFogMatrix(int zeroedRow, Random &random, TextureManager &textureManager, FogMatrix *outMatrix);
-
-	// Draws to an 8-bit 320x200 color buffer.
-	void drawFog(const FogMatrix &fogMatrix, Random &random, uint8_t *outPixels);
+	// Draws to an 8-bit 320x200 paletted texture.
+	void populateFogTexture(const ArenaFogState &fogState, Span2D<uint8_t> outPixels);
 }
 
 #endif

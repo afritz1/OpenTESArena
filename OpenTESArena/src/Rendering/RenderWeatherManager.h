@@ -1,6 +1,7 @@
 #ifndef RENDER_WEATHER_MANAGER_H
 #define RENDER_WEATHER_MANAGER_H
 
+#include "ArenaRenderUtils.h"
 #include "RenderDrawCall.h"
 #include "RenderMaterialUtils.h"
 #include "RenderTextureUtils.h"
@@ -42,9 +43,11 @@ private:
 
 	RenderMaterialInstanceID materialInstID; // Shared by all weather particles for mesh lighting.
 
+	ArenaFogState fogState;
+
 	bool initMeshes(Renderer &renderer);
 	bool initUniforms(Renderer &renderer);
-	bool initTextures(Renderer &renderer);
+	bool initTextures(TextureManager &textureManager, Renderer &renderer);
 	bool initMaterials(Renderer &renderer);
 
 	void freeParticleBuffers(Renderer &renderer);
@@ -52,13 +55,13 @@ private:
 public:
 	RenderWeatherManager();
 
-	bool init(Renderer &renderer);
+	bool init(TextureManager &textureManager, Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
 	void populateCommandList(RenderCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const;
 
 	void loadScene();
-	void update(const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer);
+	void update(double dt, const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer);
 	void unloadScene();
 };
 

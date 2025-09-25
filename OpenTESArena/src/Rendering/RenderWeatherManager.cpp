@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "RendererUtils.h"
 #include "RenderWeatherManager.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Math/Constants.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../Weather/WeatherInstance.h"
@@ -370,7 +371,7 @@ bool RenderWeatherManager::initUniforms(Renderer &renderer)
 	return true;
 }
 
-bool RenderWeatherManager::initTextures(Renderer &renderer)
+bool RenderWeatherManager::initTextures(TextureManager &textureManager, Renderer &renderer)
 {
 	// Init rain texture.
 	this->rainTextureID = renderer.createObjectTexture(RainTextureWidth, RainTextureHeight, BytesPerTexel);
@@ -408,21 +409,16 @@ bool RenderWeatherManager::initTextures(Renderer &renderer)
 		}
 	}
 
-	// Init fog texture (currently temp, not understood).
-	constexpr int fogTextureWidth = 2;// ArenaRenderUtils::FOG_MATRIX_WIDTH;
-	constexpr int fogTextureHeight = 2;// ArenaRenderUtils::FOG_MATRIX_HEIGHT;
-	constexpr int fogTexelCount = fogTextureWidth * fogTextureHeight;
+	this->fogState.init(textureManager);
+
+	// Init fog texture.
+	constexpr int fogTextureWidth = ArenaRenderUtils::SCREEN_WIDTH;
+	constexpr int fogTextureHeight = ArenaRenderUtils::SCREEN_HEIGHT;
 	this->fogTextureID = renderer.createObjectTexture(fogTextureWidth, fogTextureHeight, BytesPerTexel);
 	if (this->fogTextureID < 0)
 	{
 		DebugLogError("Couldn't create fog object texture.");
 		return false;
-	}
-
-	constexpr uint8_t tempFogTexelColors[] = { 5, 6, 7, 8 };
-	if (!renderer.populateObjectTexture8Bit(this->fogTextureID, tempFogTexelColors))
-	{
-		DebugLogError("Couldn't populate fog object texture.");
 	}
 
 	return true;
@@ -454,7 +450,7 @@ bool RenderWeatherManager::initMaterials(Renderer &renderer)
 	return true;
 }
 
-bool RenderWeatherManager::init(Renderer &renderer)
+bool RenderWeatherManager::init(TextureManager &textureManager, Renderer &renderer)
 {
 	if (!this->initMeshes(renderer))
 	{
@@ -468,7 +464,7 @@ bool RenderWeatherManager::init(Renderer &renderer)
 		return false;
 	}
 
-	if (!this->initTextures(renderer))
+	if (!this->initTextures(textureManager, renderer))
 	{
 		DebugLogError("Couldn't init all weather textures.");
 		return false;
@@ -630,7 +626,7 @@ void RenderWeatherManager::loadScene()
 	// @todo: load draw calls here instead of update() for optimization. take weatherdef/weatherinst parameter so we know what to enable
 }
 
-void RenderWeatherManager::update(const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer)
+void RenderWeatherManager::update(double dt, const WeatherInstance &weatherInst, const RenderCamera &camera, Renderer &renderer)
 {
 	this->rainDrawCalls.clear();
 	this->snowDrawCalls.clear();
@@ -744,6 +740,19 @@ void RenderWeatherManager::update(const WeatherInstance &weatherInst, const Rend
 
 	if (weatherInst.hasFog())
 	{
+		this->fogState.update(dt);
+
+		LockedTexture lockedFogTexture = renderer.lockObjectTexture(this->fogTextureID);
+		if (!lockedFogTexture.isValid())
+		{
+			DebugLogError("Couldn't lock fog texture for updating.");
+		}
+
+		Span2D<uint8_t> dstFogTexels = lockedFogTexture.getTexels8();
+		ArenaRenderUtils::populateFogTexture(this->fogState, dstFogTexels);
+
+		renderer.unlockObjectTexture(this->fogTextureID);
+
 		const Matrix4d fogModelMatrix = Matrix4d::translation(camera.floatingWorldPoint.x, camera.floatingWorldPoint.y, camera.floatingWorldPoint.z);
 		renderer.populateUniformBufferMatrix4s(this->fogTransformBufferID, Span<const Matrix4d>(&fogModelMatrix, 1));
 
