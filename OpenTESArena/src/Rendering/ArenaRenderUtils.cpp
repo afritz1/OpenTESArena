@@ -338,7 +338,7 @@ namespace
 			CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
 			BX = (BX & 0xFF00) | ESArray[DI + 1];
 			AX = (AX & 0xFF) | (fogLgt[BX] << 8);
-			ESArray[DI] = AX & 0xFF00;
+			ESArray[DI] = (AX >> 8) & 0xFF;
 			ESArray[DI + 1] = AX & 0xFF;
 			DI += 2;
 			BX = (CX & 0xFF00) >> 8;
