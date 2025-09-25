@@ -307,39 +307,6 @@ namespace
 		} while (WORD_4b80_8208 != 25); // Rows
 	}
 
-#define ApplyNewData() \
-    do { \
-        BX += DX; \
-        CX = (CX & 0xFF) | ((BX & 0xFF) << 8); \
-        BX = (BX & 0xFF00) | ESArray[DI]; \
-        AX = fogLgt[BX]; \
-        BX = (CX & 0xFF00) >> 8; \
-        DX += BP; \
-        BX += DX; \
-        CX = (CX & 0xFF) | ((BX & 0xFF) << 8); \
-        BX = (BX & 0xFF00) | ESArray[DI + 1]; \
-        AX = (AX & 0xFF) | (fogLgt[BX] << 8); \
-        ESArray[DI] = AX & 0xFF00; \
-        ESArray[DI + 1] = AX & 0xFF; \
-        DI += 2; \
-        BX = (CX & 0xFF00) >> 8;\
-        DX += BP; \
-    } while (false)
-
-#define IterateOverData() \
-    do { \
-        ApplyNewData(); \
-        ApplyNewData(); \
-        ApplyNewData(); \
-        ApplyNewData(); \
-        SI++; \
-        DX = fogTxtSamples[SI]; \
-        BP = fogTxtSamples[SI + 1]; \
-        BP -= DX; \
-        BP >>= 3; \
-        fogTxtSamples[SI] = DX + fogTxtSamples[SI - 45]; \
-    } while (false)
-
 	void ApplySampledFogData(Span<uint16_t> fogTxtSamples, Span<const uint8_t> fogLgt)
 	{
 		constexpr short WORD_4b80_81ae = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
@@ -355,6 +322,39 @@ namespace
 		short SI;
 		short DS;
 		short ES;
+
+		auto ApplyNewData = [&]()
+		{
+			BX += DX;
+			CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+			BX = (BX & 0xFF00) | ESArray[DI];
+			AX = fogLgt[BX];
+			BX = (CX & 0xFF00) >> 8;
+			DX += BP;
+			BX += DX;
+			CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+			BX = (BX & 0xFF00) | ESArray[DI + 1];
+			AX = (AX & 0xFF) | (fogLgt[BX] << 8);
+			ESArray[DI] = AX & 0xFF00;
+			ESArray[DI + 1] = AX & 0xFF;
+			DI += 2;
+			BX = (CX & 0xFF00) >> 8;
+			DX += BP;
+		};
+
+		auto IterateOverData = [&]()
+		{
+			ApplyNewData();
+			ApplyNewData();
+			ApplyNewData();
+			ApplyNewData();
+			SI++;
+			DX = fogTxtSamples[SI];
+			BP = fogTxtSamples[SI + 1];
+			BP -= DX;
+			BP >>= 3;
+			fogTxtSamples[SI] = DX + fogTxtSamples[SI - 45];
+		};
 
 		// Aaron: is this zeroing the horizon line?
 		for (int i = 0; i < 40; i++)
