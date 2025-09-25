@@ -191,19 +191,19 @@ namespace
 
 			AX = WORD_4b80_81c6;
 			AX -= WORD_4b80_81b0;
-			longValue = AX << 0x10;
+			longValue = static_cast<long long>(AX) << 16;
 			longValue /= BP;
 			DWORD_VALUE3 = longValue;
 
 			AX = WORD_4b80_81c8;
 			AX -= WORD_4b80_81b4;
-			longValue = AX << 0x10;
+			longValue = static_cast<long long>(AX) << 16;
 			longValue /= BP;
 			DWORD_VALUE4 = longValue;
 
 			AX = WORD_4b80_81ca;
 			AX -= WORD_4b80_81b8;
-			longValue = AX << 0x10;
+			longValue = static_cast<long long>(AX) << 16;
 			longValue /= BP;
 			DWORD_VALUE5 = longValue;
 
