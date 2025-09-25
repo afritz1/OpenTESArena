@@ -70,27 +70,26 @@ namespace
 		short WORD_4b80_8208 = 0; // Aaron: Likely current tile row (Y value)
 
 		constexpr short WORD_4b80_a784 = 0x92; // Variable value, but might always be 0x92 when this function is called.
-		int DWORD_VALUE1;
-		int DWORD_VALUE2;
-		int DWORD_VALUE3;
-		int DWORD_VALUE4;
-		int DWORD_VALUE5;
+		int DWORD_VALUE1 = 0;
+		int DWORD_VALUE2 = 0;
+		int DWORD_VALUE3 = 0;
+		int DWORD_VALUE4 = 0;
+		int DWORD_VALUE5 = 0;
 
-		short AX;
-		short BX;
-		short CX;
-		short DI;
-		short DX;
-		short BP;
+		short AX = 0;
+		short BX = 0;
+		short CX = 0;
+		short DI = 0;
+		short DX = 0;
+		short BP = 0;
 
-		int intValue; // Used here for 32-bit operations
+		int intValue = 0; // Used here for 32-bit operations
 		int intValue2 = 0; // Used here for 32-bit operations  @todo this was uninitialized in Allofich's code
-		int intValue3; // Used here for 32-bit operations
-		long long longValue; // Used here for 64-bit operations
-		int index;
+		int intValue3 = 0; // Used here for 32-bit operations
+		long long longValue = 0; // Used here for 64-bit operations
 
 		int loopCount = 4;
-		index = 0;
+		int index = 0;
 
 		do
 		{
@@ -316,15 +315,15 @@ namespace
 		char ESArray[320]; // Unknown, but presumably for the 320 columns of pixels on the screen
 		std::fill(std::begin(ESArray), std::end(ESArray), 0);
 
-		short AX;
-		short BX;
-		short CX;
-		short DI;
-		short DX;
-		short BP;
-		short SI;
-		short DS;
-		short ES;
+		short AX = 0;
+		short BX = 0;
+		short CX = 0;
+		short DI = 0;
+		short DX = 0;
+		short BP = 0;
+		short SI = 0;
+		short DS = 0;
+		short ES = 0;
 
 		auto ApplyNewData = [&]()
 		{
