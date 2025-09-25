@@ -21,9 +21,9 @@ namespace
 {
 	void FogRotateVector(int angle, short &x, short &y, const ExeDataWeather &exeDataWeather)
 	{
-		const Span<const int16_t> angleMultipliers = exeDataWeather.fogAngleMultipliers;
-		const int cosAngleMultiplier = angleMultipliers[angle];
-		const int sinAngleMultiplier = angleMultipliers[angle + 128];
+		const Span<const int16_t> cosineTable = exeDataWeather.fogCosineTable;
+		const int cosAngleMultiplier = cosineTable[angle];
+		const int sinAngleMultiplier = cosineTable[angle + 128];
 
 		const int doubledX = x * 2;
 		const int doubledY = y * 2;

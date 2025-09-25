@@ -558,7 +558,7 @@ struct ExeDataUI
 
 struct ExeDataWeather
 {
-	int16_t fogAngleMultipliers[641];
+	int16_t fogCosineTable[641];
 	int16_t fogTxtSampleHelper[24];
 	uint8_t thunderstormFlashColors[3];
 

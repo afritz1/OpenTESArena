@@ -264,8 +264,8 @@ CurrentWorldPosition=0x44103
 InspectedEntityName=0x43ED4
 
 [Weather]
-FogAngleMultipliers=0x46A3B
-FogTxtSampleHelper=0x43D6D
+FogCosineTable=0x46A3C
+FogTxtSampleHelper=0x43D7C
 ThunderstormFlashColors=0x3FC0C
 
 [Wilderness]
