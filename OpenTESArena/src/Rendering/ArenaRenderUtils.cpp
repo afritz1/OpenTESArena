@@ -309,13 +309,12 @@ namespace
 	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
 	short g_ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels (moved here to avoid stack warning).
 
-	void ApplySampledFogData(Span<uint16_t> fogTxtSamples, Span<const uint8_t> fogLgt)
+	void ApplySampledFogData(Span<uint16_t> fogTxtSamples, Span<const uint8_t> fogLgt, Span<short> ESArray)
 	{
+		ESArray.fill(0);
+
 		constexpr short WORD_4b80_81ae = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
 		constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called
-
-		Span<short> ESArray = g_ESArray;
-		ESArray.fill(0);
 
 		short AX = 0;
 		short BX = 0;
@@ -584,9 +583,27 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 	Span<uint16_t> fogTxtSampleRange(fogTxtSamples + fogTxtSampleExtraCount, fogColumns * fogRows);
 	SampleFOGTXT(fogState, fogTxtSampleRange, exeData);
 
-	ApplySampledFogData(fogTxtSamples, fogState.fogLgt);
+	Span<short> ESArray = g_ESArray;
+	ApplySampledFogData(fogTxtSamples, fogState.fogLgt, ESArray);
 
-	for (int row = 0; row < fogRows; row++)
+	outPixels.fill(0);
+
+	for (int y = 0; y < ESHeight; y++)
+	{
+		for (int x = 0; x < ESWidth; x++)
+		{
+			const int srcIndex = x + (y * ESWidth);
+			const uint16_t sample = ESArray[srcIndex];
+			const uint8_t lightLevel = static_cast<uint8_t>(sample >> 8);
+			const uint8_t dither = static_cast<uint8_t>(sample);
+
+			const bool shouldDither = dither != 0;
+			const uint8_t calculatedLightLevel = lightLevel + (shouldDither ? 1 : 0);
+			outPixels.set(x, y, calculatedLightLevel);
+		}
+	}
+
+	/*for (int row = 0; row < fogRows; row++)
 	{
 		for (int column = 0; column < fogColumns; column++)
 		{
@@ -609,5 +626,5 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 				}
 			}
 		}
-	}
+	}*/
 }
