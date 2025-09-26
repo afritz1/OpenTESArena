@@ -582,14 +582,28 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 
 	ApplySampledFogData(fogTxtSamples, fogState.fogLgt);
 
-	for (int y = 0; y < 200; y++)
+	for (int row = 0; row < fogRows; row++)
 	{
-		for (int x = 0; x < 320; x++)
+		for (int column = 0; column < fogColumns; column++)
 		{
-			const int srcIndex = (x / 8) + ((y / 8) * fogColumns) + fogTxtSampleExtraCount;
-			const uint16_t srcPixel = fogTxtSamples[srcIndex];
-			const uint8_t dstPixel = static_cast<uint8_t>(srcPixel >> 8);
-			outPixels.set(x, y, dstPixel);
+			const int srcIndex = column + (row * fogColumns) + fogTxtSampleExtraCount;
+			const uint16_t sample = fogTxtSamples[srcIndex];
+			const uint8_t lightLevel = static_cast<uint8_t>(sample >> 8);
+			const uint8_t dither = static_cast<uint8_t>(sample);
+
+			constexpr int tileDimension = 8;
+			for (int j = 0; j < tileDimension; j++)
+			{
+				for (int i = 0; i < tileDimension; i++)
+				{
+					const int x = (column * tileDimension) + i;
+					const int y = (row * tileDimension) + j;
+
+					const bool shouldDither = (dither & (1 << i)) != 0;
+					const uint8_t calculatedLightLevel = lightLevel + (shouldDither ? 1 : 0);
+					outPixels.set(x, y, calculatedLightLevel);
+				}
+			}
 		}
 	}
 }
