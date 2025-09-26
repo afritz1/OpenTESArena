@@ -571,18 +571,21 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 
 	constexpr int fogColumns = 40;
 	constexpr int fogRows = 25;
-	uint16_t fogTxtSamples[fogColumns * fogRows];
+	constexpr int fogTxtSampleExtraCount = 45;
+	constexpr int fogTxtSampleCount = (fogColumns * fogRows) + fogTxtSampleExtraCount;
+	uint16_t fogTxtSamples[fogTxtSampleCount];
 	std::fill(std::begin(fogTxtSamples), std::end(fogTxtSamples), 0);
 
-	SampleFOGTXT(fogState, fogTxtSamples, exeData);
+	Span<uint16_t> fogTxtSampleRange(fogTxtSamples + fogTxtSampleExtraCount, fogColumns * fogRows);
+	SampleFOGTXT(fogState, fogTxtSampleRange, exeData);
+
 	ApplySampledFogData(fogTxtSamples, fogState.fogLgt);
 
 	for (int y = 0; y < 200; y++)
 	{
 		for (int x = 0; x < 320; x++)
 		{
-			const int srcIndex = (x / 8) + ((y / 8) * 40);
-			//const int dstIndex = x + (y * 320);
+			const int srcIndex = (x / 8) + ((y / 8) * fogColumns) + fogTxtSampleExtraCount;
 			const uint16_t srcPixel = fogTxtSamples[srcIndex];
 			const uint8_t dstPixel = static_cast<uint8_t>(srcPixel >> 8);
 			outPixels.set(x, y, dstPixel);
