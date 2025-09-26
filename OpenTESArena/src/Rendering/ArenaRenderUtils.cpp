@@ -304,14 +304,18 @@ namespace
 		} while (WORD_4b80_8208 != 25); // Rows
 	}
 
+	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
+	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
+	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
+	short g_ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels (moved here to avoid stack warning).
+
 	void ApplySampledFogData(Span<uint16_t> fogTxtSamples, Span<const uint8_t> fogLgt)
 	{
 		constexpr short WORD_4b80_81ae = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
 		constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called
 
-		uint8_t ESArr[320]; // Unknown, but presumably for the 320 columns of pixels on the screen
-		std::fill(std::begin(ESArr), std::end(ESArr), 0);
-		Span<uint8_t> ESArray = ESArr;
+		Span<short> ESArray = g_ESArray;
+		ESArray.fill(0);
 
 		short AX = 0;
 		short BX = 0;
@@ -327,16 +331,15 @@ namespace
 		{
 			BX += DX;
 			CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-			BX = (BX & 0xFF00) | ESArray[DI];
-			AX = fogLgt[BX];
+			BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+			AX = (AX & 0xFF00) | fogLgt[BX];
 			BX = (CX & 0xFF00) >> 8;
 			DX += BP;
 			BX += DX;
 			CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-			BX = (BX & 0xFF00) | ESArray[DI + 1];
+			BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00);
 			AX = (AX & 0xFF) | (fogLgt[BX] << 8);
-			ESArray[DI] = (AX >> 8) & 0xFF;
-			ESArray[DI + 1] = AX & 0xFF;
+			ESArray[DI / 2] = AX;
 			DI += 2;
 			BX = (CX & 0xFF00) >> 8;
 			DX += BP;
@@ -349,11 +352,12 @@ namespace
 			ApplyNewData();
 			ApplyNewData();
 			SI++;
-			DX = fogTxtSamples[SI];
-			BP = fogTxtSamples[SI + 1];
+			SI++;
+			DX = fogTxtSamples[SI / 2];
+			BP = fogTxtSamples[(SI + 2) / 2];
 			BP -= DX;
 			BP >>= 3;
-			fogTxtSamples[SI] = DX + fogTxtSamples[SI - 45];
+			fogTxtSamples[SI / 2] = DX + fogTxtSamples[(SI - 90) / 2];
 		};
 
 		// Aaron: is this zeroing the horizon line?
