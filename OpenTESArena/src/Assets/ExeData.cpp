@@ -736,6 +736,23 @@ bool ExeDataLogbook::init(Span<const std::byte> exeBytes, const KeyValueFile &ke
 	return true;
 }
 
+bool ExeDataMath::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Math";
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
+		return false;
+	}
+
+	const int cosineTableOffset = GetExeAddress(*section, "CosineTable");
+
+	initInt16Array(this->cosineTable, exeBytes, cosineTableOffset);
+
+	return true;
+}
+
 bool ExeDataMeta::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Meta";
@@ -1003,11 +1020,9 @@ bool ExeDataWeather::init(Span<const std::byte> exeBytes, const KeyValueFile &ke
 		return false;
 	}
 
-	const int fogCosineTableOffset = GetExeAddress(*section, "FogCosineTable");
 	const int fogTxtSampleHelperOffset = GetExeAddress(*section, "FogTxtSampleHelper");
 	const int thunderstormFlashColorsOffset = GetExeAddress(*section, "ThunderstormFlashColors");
 
-	initInt16Array(this->fogCosineTable, exeBytes, fogCosineTableOffset);
 	initInt16Array(this->fogTxtSampleHelper, exeBytes, fogTxtSampleHelperOffset);
 	initInt8Array(this->thunderstormFlashColors, exeBytes, thunderstormFlashColorsOffset);
 
@@ -1092,6 +1107,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->light.init(exeBytes, keyValueFile);
 	success &= this->locations.init(exeBytes, keyValueFile);
 	success &= this->logbook.init(exeBytes, keyValueFile);
+	success &= this->math.init(exeBytes, keyValueFile);
 	success &= this->meta.init(exeBytes, keyValueFile);
 	success &= this->quests.init(exeBytes, keyValueFile);
 	success &= this->races.init(exeBytes, keyValueFile);

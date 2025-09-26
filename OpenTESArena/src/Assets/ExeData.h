@@ -381,6 +381,13 @@ struct ExeDataLogbook
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
+struct ExeDataMath
+{
+	int16_t cosineTable[641];
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataMeta
 {
 	// The data segment offset is used to find certain data, like allowed shields and
@@ -558,7 +565,6 @@ struct ExeDataUI
 
 struct ExeDataWeather
 {
-	int16_t fogCosineTable[641];
 	int16_t fogTxtSampleHelper[24];
 	uint8_t thunderstormFlashColors[3];
 
@@ -593,6 +599,7 @@ struct ExeData
 	ExeDataLight light;
 	ExeDataLocations locations;
 	ExeDataLogbook logbook;
+	ExeDataMath math;
 	ExeDataMeta meta;
 	ExeDataQuests quests;
 	ExeDataRaces races;

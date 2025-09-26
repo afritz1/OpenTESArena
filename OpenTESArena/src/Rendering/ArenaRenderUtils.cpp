@@ -19,9 +19,9 @@
 
 namespace
 {
-	void FogRotateVector(int angle, short &x, short &y, const ExeDataWeather &exeDataWeather)
+	void FogRotateVector(int angle, short &x, short &y, const ExeDataMath &exeDataMath)
 	{
-		const Span<const int16_t> cosineTable = exeDataWeather.fogCosineTable;
+		const Span<const int16_t> cosineTable = exeDataMath.cosineTable;
 		const short cosAngleMultiplier = cosineTable[angle];
 		const short sinAngleMultiplier = cosineTable[angle + 128];
 
@@ -48,8 +48,9 @@ namespace
 		y = highRes3 + highRes4;
 	}
 
-	void SampleFOGTXT(const ArenaFogState &fogState, Span<uint16_t> fogTxtSamples, const ExeDataWeather &exeDataWeather)
+	void SampleFOGTXT(const ArenaFogState &fogState, Span<uint16_t> fogTxtSamples, const ExeData &exeData)
 	{
+		const ExeDataWeather &exeDataWeather = exeData.weather;
 		short WORD_ARRAY_4b80_81d8[24]; // @47708. Both read from and written to.
 		std::copy(std::begin(exeDataWeather.fogTxtSampleHelper), std::end(exeDataWeather.fogTxtSampleHelper), std::begin(WORD_ARRAY_4b80_81d8));
 
@@ -98,7 +99,7 @@ namespace
 			DI = 511;
 			DI -= fogState.PlayerAngle; // PlayerAngle is never greater than 511
 
-			FogRotateVector(DI, AX, CX, exeDataWeather);
+			FogRotateVector(DI, AX, CX, exeData.math);
 
 			BX = WORD_ARRAY_4b80_81d8[index + 1];
 			WORD_ARRAY_4b80_81d8[index + 3] = AX;
@@ -312,7 +313,7 @@ namespace
 	{
 		constexpr short WORD_4b80_81ae = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
 		constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called
-		
+
 		uint8_t ESArr[320]; // Unknown, but presumably for the 320 columns of pixels on the screen
 		std::fill(std::begin(ESArr), std::end(ESArr), 0);
 		Span<uint8_t> ESArray = ESArr;
@@ -471,7 +472,7 @@ void ArenaFogState::update(double dt, const WorldDouble3 &playerPos, const Doubl
 		const Radians transformedAngleRadians = std::fmod(-baseAngleRadians + (7.0 * Constants::Pi / 2.0), Constants::TwoPi); // Ugly but works
 		const double anglePercent = transformedAngleRadians / Constants::TwoPi;
 		return std::clamp<short>(static_cast<short>(anglePercent * 512.0), 0, 511);
-	};	
+	};
 
 	this->PlayerAngle = getOriginalAngle(-playerDir.y, -playerDir.x);
 
@@ -578,7 +579,7 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 	uint16_t fogTxtSamples[fogColumns * fogRows];
 	std::fill(std::begin(fogTxtSamples), std::end(fogTxtSamples), 0);
 
-	SampleFOGTXT(fogState, fogTxtSamples, exeData.weather);
+	SampleFOGTXT(fogState, fogTxtSamples, exeData);
 	ApplySampledFogData(fogTxtSamples, fogState.fogLgt);
 
 	for (int y = 0; y < 200; y++)
