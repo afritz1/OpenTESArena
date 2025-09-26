@@ -22,13 +22,13 @@ namespace
 	void FogRotateVector(int angle, short &x, short &y, const ExeDataWeather &exeDataWeather)
 	{
 		const Span<const int16_t> cosineTable = exeDataWeather.fogCosineTable;
-		const int cosAngleMultiplier = cosineTable[angle];
-		const int sinAngleMultiplier = cosineTable[angle + 128];
+		const short cosAngleMultiplier = cosineTable[angle];
+		const short sinAngleMultiplier = cosineTable[angle + 128];
 
-		const int doubledX = x * 2;
-		const int doubledY = y * 2;
+		const short doubledX = x * 2;
+		const short doubledY = y * 2;
 
-		int negCosAngleMultipler = -cosAngleMultiplier;
+		short negCosAngleMultipler = -cosAngleMultiplier;
 		if (negCosAngleMultipler >= 0)
 		{
 			negCosAngleMultipler--;
@@ -39,10 +39,10 @@ namespace
 		const int imulRes3 = doubledX * cosAngleMultiplier;
 		const int imulRes4 = doubledY * sinAngleMultiplier;
 
-		const int highRes1 = static_cast<uint32_t>(imulRes1) >> 16;
-		const int highRes2 = static_cast<uint32_t>(imulRes2) >> 16;
-		const int highRes3 = static_cast<uint32_t>(imulRes3) >> 16;
-		const int highRes4 = static_cast<uint32_t>(imulRes4) >> 16;
+		const short highRes1 = static_cast<uint32_t>(imulRes1) >> 16;
+		const short highRes2 = static_cast<uint32_t>(imulRes2) >> 16;
+		const short highRes3 = static_cast<uint32_t>(imulRes3) >> 16;
+		const short highRes4 = static_cast<uint32_t>(imulRes4) >> 16;
 
 		x = highRes2 + highRes1;
 		y = highRes3 + highRes4;
