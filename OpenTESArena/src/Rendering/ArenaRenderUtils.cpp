@@ -19,6 +19,18 @@
 
 namespace
 {
+	constexpr int FogColumns = 40;
+	constexpr int FogRows = 25;
+	constexpr int FogTxtSampleBaseCount = FogColumns * FogRows;
+	constexpr int FogTxtSampleExtraCount = 45;
+	constexpr int FogTxtSampleTotalCount = FogTxtSampleBaseCount + FogTxtSampleExtraCount;
+	uint16_t g_fogTxtSamples[FogTxtSampleTotalCount];
+
+	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
+	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
+	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
+	short g_ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels (moved here to avoid stack warning).
+
 	void FogRotateVector(int angle, short &x, short &y, const ExeDataMath &exeDataMath)
 	{
 		const Span<const int16_t> cosineTable = exeDataMath.cosineTable;
@@ -48,8 +60,10 @@ namespace
 		y = highRes3 + highRes4;
 	}
 
-	void SampleFOGTXT(const ArenaFogState &fogState, Span<uint16_t> fogTxtSamples, const ExeData &exeData)
+	void SampleFOGTXT(const ArenaFogState &fogState, const ExeData &exeData)
 	{
+		std::fill(std::begin(g_fogTxtSamples), std::end(g_fogTxtSamples), 0);
+
 		const ExeDataWeather &exeDataWeather = exeData.weather;
 		short WORD_ARRAY_4b80_81d8[24]; // @47708. Both read from and written to.
 		std::copy(std::begin(exeDataWeather.fogTxtSampleHelper), std::end(exeDataWeather.fogTxtSampleHelper), std::begin(WORD_ARRAY_4b80_81d8));
@@ -116,7 +130,7 @@ namespace
 		constexpr int DWORD_4b80_81aa = 0xDD5D5D5E; // Original game does a few calculations here to get the value, but it will always be this result
 		WORD_4b80_8208 = 0;
 
-		int fogTxtSampleIndex = 0;
+		int fogTxtSampleIndex = FogTxtSampleExtraCount;
 
 		do
 		{
@@ -257,7 +271,7 @@ namespace
 				}
 
 				// Write the value to the sample buffer FOGTXTSample, a short value array, at FOGTXTSampleIndex, which should initialized to 45 (decimal) at the start of SampleFOGTXT.
-				fogTxtSamples[fogTxtSampleIndex] = AX; // Write the calculated value 05D9
+				g_fogTxtSamples[fogTxtSampleIndex] = AX; // Write the calculated value 05D9
 				fogTxtSampleIndex++;
 
 				// Next is, in assembly:
@@ -304,12 +318,7 @@ namespace
 		} while (WORD_4b80_8208 != 25); // Rows
 	}
 
-	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
-	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
-	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
-	short g_ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels (moved here to avoid stack warning).
-
-	void ApplySampledFogData(Span<uint16_t> fogTxtSamples, Span<const uint8_t> fogLgt, Span<short> ESArray)
+	void ApplySampledFogData(Span<const uint8_t> fogLgt, Span<short> ESArray)
 	{
 		ESArray.fill(0);
 
@@ -352,47 +361,47 @@ namespace
 			ApplyNewData();
 			SI++;
 			SI++;
-			DX = fogTxtSamples[SI / 2];
-			BP = fogTxtSamples[(SI + 2) / 2];
+			DX = g_fogTxtSamples[SI / 2];
+			BP = g_fogTxtSamples[(SI + 2) / 2];
 			BP -= DX;
 			BP >>= 3;
-			fogTxtSamples[SI / 2] = DX + fogTxtSamples[(SI - 90) / 2];
+			g_fogTxtSamples[SI / 2] = DX + g_fogTxtSamples[(SI - 90) / 2];
 		};
 
 		// Aaron: is this zeroing the horizon line?
 		for (int i = 0; i < 40; i++)
 		{
-			fogTxtSamples[405 + i] = 0;
+			g_fogTxtSamples[405 + i] = 0;
 		}
 
-		fogTxtSamples[43] = WORD_4b80_81ae;
-		fogTxtSamples[40] = (WORD_4b80_a784 + 7) >> 3;
-		fogTxtSamples[41] = 170;
-		fogTxtSamples[42] = 0;
+		g_fogTxtSamples[43] = WORD_4b80_81ae;
+		g_fogTxtSamples[40] = (WORD_4b80_a784 + 7) >> 3;
+		g_fogTxtSamples[41] = 170;
+		g_fogTxtSamples[42] = 0;
 
 		do
 		{
 			for (int i = 0; i < 40; i++)
 			{
-				fogTxtSamples[i] = (fogTxtSamples[85 + i] - fogTxtSamples[45 + i]) >> 3;
+				g_fogTxtSamples[i] = (g_fogTxtSamples[85 + i] - g_fogTxtSamples[45 + i]) >> 3;
 			}
 
-			DI = fogTxtSamples[42];
-			ES = fogTxtSamples[43]; // 0x533C in testing, used for location of ESArray
+			DI = g_fogTxtSamples[42];
+			ES = g_fogTxtSamples[43]; // 0x533C in testing, used for location of ESArray
 			CX = 8;
 
-			if (fogTxtSamples[40] == 1)
+			if (g_fogTxtSamples[40] == 1)
 			{
 				CX -= 6;
 			}
 
 			do
 			{
-				SI = fogTxtSamples[41] - 80;
+				SI = g_fogTxtSamples[41] - 80;
 				BX = 0;
-				DX = fogTxtSamples[SI / 2];
-				BP = (fogTxtSamples[(SI + 2) / 2] - DX) >> 3;
-				fogTxtSamples[SI / 2] = DX + fogTxtSamples[0];
+				DX = g_fogTxtSamples[SI / 2];
+				BP = (g_fogTxtSamples[(SI + 2) / 2] - DX) >> 3;
+				g_fogTxtSamples[SI / 2] = DX + g_fogTxtSamples[0];
 
 				for (int i = 0; i < 39; i++)
 				{
@@ -404,9 +413,9 @@ namespace
 				CX--;
 			} while (CX != 0);
 
-			fogTxtSamples[42] = DI;
-			fogTxtSamples[40]--;
-		} while (fogTxtSamples[40] != 0);
+			g_fogTxtSamples[42] = DI;
+			g_fogTxtSamples[40]--;
+		} while (g_fogTxtSamples[40] != 0);
 	}
 }
 
@@ -572,19 +581,11 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
-
-	constexpr int fogColumns = 40;
-	constexpr int fogRows = 25;
-	constexpr int fogTxtSampleExtraCount = 45;
-	constexpr int fogTxtSampleCount = (fogColumns * fogRows) + fogTxtSampleExtraCount;
-	uint16_t fogTxtSamples[fogTxtSampleCount];
-	std::fill(std::begin(fogTxtSamples), std::end(fogTxtSamples), 0);
-
-	Span<uint16_t> fogTxtSampleRange(fogTxtSamples + fogTxtSampleExtraCount, fogColumns * fogRows);
-	SampleFOGTXT(fogState, fogTxtSampleRange, exeData);
+	
+	SampleFOGTXT(fogState, exeData);
 
 	Span<short> ESArray = g_ESArray;
-	ApplySampledFogData(fogTxtSamples, fogState.fogLgt, ESArray);
+	ApplySampledFogData(fogState.fogLgt, ESArray);
 
 	outPixels.fill(0);
 
