@@ -362,10 +362,10 @@ namespace
 			fogTxtSamples[405 + i] = 0;
 		}
 
-		fogTxtSamples[28] = WORD_4b80_81ae;
-		fogTxtSamples[25] = (WORD_4b80_a784 + 7) >> 3;
-		fogTxtSamples[26] = 170;
-		fogTxtSamples[27] = 0;
+		fogTxtSamples[43] = WORD_4b80_81ae;
+		fogTxtSamples[40] = (WORD_4b80_a784 + 7) >> 3;
+		fogTxtSamples[41] = 170;
+		fogTxtSamples[42] = 0;
 
 		do
 		{
@@ -374,7 +374,7 @@ namespace
 				fogTxtSamples[i] = (fogTxtSamples[85 + i] - fogTxtSamples[45 + i]) >> 3;
 			}
 
-			DS = fogTxtSamples[42];
+			DI = fogTxtSamples[42];
 			ES = fogTxtSamples[43]; // 0x533C in testing, used for location of ESArray
 			CX = 8;
 
@@ -386,7 +386,7 @@ namespace
 			do
 			{
 				SI = fogTxtSamples[41] - 80;
-				DI = 0;
+				BX = 0;
 				DX = fogTxtSamples[SI / 2];
 				BP = (fogTxtSamples[(SI + 2) / 2] - DX) >> 3;
 				fogTxtSamples[SI / 2] = DX + fogTxtSamples[0];
