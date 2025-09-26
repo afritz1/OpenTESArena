@@ -24,7 +24,7 @@ struct ArenaFogState
 	Buffer<uint8_t> fogLgt;
 
 	short PlayerX;
-	short PlayerY;
+	short PlayerZ;
 	short PlayerAngle;
 	short WORD_4b80_191b; // Initially 0, it will be 4 by the first call of this function, and +4 every time after (every game update).
 	short WORD_4b80_191d; // Initially 0, it will be 4 by the first call of this function, and +4 every time after (every game update).
