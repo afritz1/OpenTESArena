@@ -749,12 +749,12 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 		}
 	}
 
-	/*for (int row = 0; row < fogRows; row++)
+	/*for (int row = 0; row < FogRows; row++)
 	{
-		for (int column = 0; column < fogColumns; column++)
+		for (int column = 0; column < FogColumns; column++)
 		{
-			const int srcIndex = column + (row * fogColumns) + fogTxtSampleExtraCount;
-			const uint16_t sample = fogTxtSamples[srcIndex];
+			const int srcIndex = column + (row * FogColumns) + FogTxtSampleExtraCount;
+			const uint16_t sample = FOGTXTSample[srcIndex];
 			const uint8_t lightLevel = static_cast<uint8_t>(sample >> 8);
 			const uint8_t dither = static_cast<uint8_t>(sample);
 
@@ -766,7 +766,7 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 					const int x = (column * tileDimension) + i;
 					const int y = (row * tileDimension) + j;
 
-					const bool shouldDither = (dither & (1 << i)) != 0;
+					const bool shouldDither = false;// (dither & (1 << i)) != 0;
 					const uint8_t calculatedLightLevel = lightLevel + (shouldDither ? 1 : 0);
 					outPixels.set(x, y, calculatedLightLevel);
 				}
