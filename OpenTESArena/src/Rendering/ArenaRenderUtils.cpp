@@ -739,13 +739,11 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 		for (int x = 0; x < ESWidth; x++)
 		{
 			const int srcIndex = x + (y * ESWidth);
-			const uint16_t sample = ESArray[srcIndex];
-			const uint8_t lightLevel = static_cast<uint8_t>(sample >> 8);
-			const uint8_t dither = static_cast<uint8_t>(sample);
-
-			const bool shouldDither = dither != 0;
-			const uint8_t calculatedLightLevel = lightLevel + (shouldDither ? 1 : 0);
-			outPixels.set(x, y, calculatedLightLevel);
+			DebugAssert(srcIndex < (ESWidth * ESHeight));
+			const uint8_t *ESArrayPtr = reinterpret_cast<const uint8_t*>(ESArray);
+			const uint8_t sample = ESArrayPtr[srcIndex];
+			const uint8_t lightLevel = sample;
+			outPixels.set(x, y, lightLevel);
 		}
 	}
 
