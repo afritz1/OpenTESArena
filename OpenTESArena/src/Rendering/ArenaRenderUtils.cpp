@@ -24,7 +24,7 @@ namespace
 	constexpr int FogTxtSampleBaseCount = FogColumns * FogRows;
 	constexpr int FogTxtSampleExtraCount = 45;
 	constexpr int FogTxtSampleTotalCount = FogTxtSampleBaseCount + FogTxtSampleExtraCount;
-	uint16_t g_fogTxtSamples[FogTxtSampleTotalCount];
+	uint16_t FOGTXTSample[FogTxtSampleTotalCount];
 
 	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
 	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
@@ -60,8 +60,8 @@ namespace
 	short AX = 0;
 	short BX = 0;
 	short CX = 0;
-	short DI = 0;
 	short DX = 0;
+	unsigned short DI = 0;
 	short BP = 0;
 	short SI = 0;
 	short ES = 0;
@@ -105,7 +105,7 @@ namespace
 
 	void SampleFOGTXT(const ArenaFogState &fogState, const ExeData &exeData)
 	{
-		std::fill(std::begin(g_fogTxtSamples), std::end(g_fogTxtSamples), 0);
+		std::fill(std::begin(FOGTXTSample), std::end(FOGTXTSample), 0);
 
 		int loopCount = 4;
 		int index = 0;
@@ -336,7 +336,7 @@ namespace
 				}
 
 				// Write the value to the sample buffer FOGTXTSample, a short value array, at FOGTXTSampleIndex.
-				g_fogTxtSamples[fogTxtSampleIndex] = AX; // Write the calculated value
+				FOGTXTSample[fogTxtSampleIndex] = AX; // Write the calculated value
 				fogTxtSampleIndex++;
 
 				// Next is, in assembly:
@@ -383,89 +383,182 @@ namespace
 		} while (WORD_4b80_8208 != 25); // Rows
 	}
 
-	void ApplySampledFogData(Span<const uint8_t> fogLgt)
+	void ApplySampledFogData(Span<const uint8_t> FOGLGT)
 	{
-		auto ApplyNewData = [&]()
-		{
-			BX += DX;
-			CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-			BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-			AX = (AX & 0xFF00) | fogLgt[BX];
-			BX = (CX & 0xFF00) >> 8;
-			DX += BP;
-			BX += DX;
-			CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-			BX = (BX & 0xFF00) | ((ESArray[DI / 2] & 0xFF00) >> 8);
-			AX = (AX & 0xFF) | (fogLgt[BX] << 8);
-			ESArray[DI / 2] = AX;
-			DI += 2;
-			BX = (CX & 0xFF00) >> 8;
-			DX += BP;
-		};
-
-		auto IterateOverData = [&]()
-		{
-			ApplyNewData();
-			ApplyNewData();
-			ApplyNewData();
-			ApplyNewData();
-			SI++;
-			SI++;
-			DX = g_fogTxtSamples[SI / 2];
-			BP = g_fogTxtSamples[(SI + 2) / 2];
-			BP -= DX;
-			BP >>= 3;
-			g_fogTxtSamples[SI / 2] = DX + g_fogTxtSamples[(SI - 90) / 2];
-		};
-
 		// Aaron: is this zeroing the horizon line?
 		for (int i = 0; i < 40; i++)
 		{
-			g_fogTxtSamples[405 + i] = 0;
+			FOGTXTSample[405 + i] = 0;
 		}
 
-		g_fogTxtSamples[43] = WORD_4b80_a76a;
-		g_fogTxtSamples[40] = (WORD_4b80_a784 + 7) >> 3;
-		g_fogTxtSamples[41] = 170;
-		g_fogTxtSamples[42] = 0;
+		FOGTXTSample[43] = WORD_4b80_a76a;
+		FOGTXTSample[40] = (WORD_4b80_a784 + 7) >> 3;
+		FOGTXTSample[41] = 170;
+		FOGTXTSample[42] = 0;
 
 		do
 		{
 			for (int i = 0; i < 40; i++)
 			{
-				g_fogTxtSamples[i] = (g_fogTxtSamples[85 + i] - g_fogTxtSamples[45 + i]) >> 3;
+				FOGTXTSample[i] = (FOGTXTSample[85 + i] - FOGTXTSample[45 + i]) >> 3;
 			}
 
-			DI = g_fogTxtSamples[42];
-			ES = g_fogTxtSamples[43]; // 0x533C in testing, used for location of ESArray
+			DI = FOGTXTSample[42];
+			ES = FOGTXTSample[43]; // 0x533C in testing, used for location of ESArray
 			CX = 8;
 
-			if (g_fogTxtSamples[40] == 1)
+			if (FOGTXTSample[40] == 1)
 			{
 				CX -= 6;
 			}
 
 			do
 			{
-				SI = g_fogTxtSamples[41] - 80;
+				SI = FOGTXTSample[41] - 80;
 				BX = 0;
-				DX = g_fogTxtSamples[SI / 2];
-				BP = (g_fogTxtSamples[(SI + 2) / 2] - DX) >> 3;
-				g_fogTxtSamples[SI / 2] = DX + g_fogTxtSamples[0];
+				DX = FOGTXTSample[SI / 2];
+				BP = (FOGTXTSample[(SI + 2) / 2] - DX) >> 3;
+				FOGTXTSample[SI / 2] = DX + FOGTXTSample[0];
 
 				for (int i = 0; i < 39; i++)
 				{
-					IterateOverData();
+					BX += DX;
+					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+					AX = (AX & 0xFF00) | FOGLGT[BX];
+					BX = (CX & 0xFF00) >> 8;
+					DX += BP;
+					BX += DX;
+					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+					AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
+					ESArray[DI / 2] = AX;
+					DI += 2;
+					BX = (CX & 0xFF00) >> 8;
+					DX += BP;
+
+					BX += DX;
+					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+					AX = (AX & 0xFF00) | FOGLGT[BX];
+					BX = (CX & 0xFF00) >> 8;
+					DX += BP;
+					BX += DX;
+					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+					AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
+					ESArray[DI / 2] = AX;
+					DI += 2;
+					BX = (CX & 0xFF00) >> 8;
+					DX += BP;
+
+					BX += DX;
+					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+					AX = (AX & 0xFF00) | FOGLGT[BX];
+					BX = (CX & 0xFF00) >> 8;
+					DX += BP;
+					BX += DX;
+					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+					AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
+					ESArray[DI / 2] = AX;
+					DI += 2;
+					BX = (CX & 0xFF00) >> 8;
+					DX += BP;
+
+					BX += DX;
+					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+					AX = (AX & 0xFF00) | FOGLGT[BX];
+					BX = (CX & 0xFF00) >> 8;
+					DX += BP;
+					BX += DX;
+					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+					AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
+					ESArray[DI / 2] = AX;
+					DI += 2;
+					BX = (CX & 0xFF00) >> 8;
+					DX += BP;
+
+					SI++;
+					SI++;
+					DX = FOGTXTSample[SI / 2];
+					BP = FOGTXTSample[(SI + 2) / 2];
+					BP -= DX;
+					BP >>= 3;
+					FOGTXTSample[SI / 2] = DX + FOGTXTSample[(SI - 90) / 2];
 				}
 
-				ApplyNewData();
+				BX += DX;
+				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+				AX = (AX & 0xFF00) | FOGLGT[BX];
+				BX = (CX & 0xFF00) >> 8;
+				DX += BP;
+				BX += DX;
+				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+				AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
+				ESArray[DI / 2] = AX;
+				DI += 2;
+				BX = (CX & 0xFF00) >> 8;
+				DX += BP;
+
+				BX += DX;
+				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+				AX = (AX & 0xFF00) | FOGLGT[BX];
+				BX = (CX & 0xFF00) >> 8;
+				DX += BP;
+				BX += DX;
+				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+				AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
+				ESArray[DI / 2] = AX;
+				DI += 2;
+				BX = (CX & 0xFF00) >> 8;
+				DX += BP;
+
+				BX += DX;
+				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+				AX = (AX & 0xFF00) | FOGLGT[BX];
+				BX = (CX & 0xFF00) >> 8;
+				DX += BP;
+				BX += DX;
+				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+				AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
+				ESArray[DI / 2] = AX;
+				DI += 2;
+				BX = (CX & 0xFF00) >> 8;
+				DX += BP;
+
+				BX += DX;
+				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+				AX = (AX & 0xFF00) | FOGLGT[BX];
+				BX = (CX & 0xFF00) >> 8;
+				DX += BP;
+				BX += DX;
+				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
+				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+				AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
+				ESArray[DI / 2] = AX;
+				DI += 2;
+				BX = (CX & 0xFF00) >> 8;
+				DX += BP;
+
+				SI++;
 				SI++;
 				CX--;
-			} while (CX != 0);
+			} while ((CX & 0xFF) != 0);
 
-			g_fogTxtSamples[42] = DI;
-			g_fogTxtSamples[40]--;
-		} while (g_fogTxtSamples[40] != 0);
+			FOGTXTSample[42] = DI;
+			FOGTXTSample[40]--;
+		} while (FOGTXTSample[40] != 0);
 	}
 }
 
