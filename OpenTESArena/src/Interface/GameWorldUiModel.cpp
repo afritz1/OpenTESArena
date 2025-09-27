@@ -139,6 +139,31 @@ OriginalInt2 GameWorldUiModel::getOriginalPlayerPosition(const WorldDouble3 &pla
 	}
 }
 
+OriginalInt2 GameWorldUiModel::getOriginalPlayerPositionArenaUnits(const WorldDouble3 &playerPos, MapType mapType)
+{
+	const OriginalInt2 originalPosArenaUnits(
+		static_cast<WEInt>(playerPos.x * MIFUtils::ARENA_UNITS),
+		static_cast<SNInt>(playerPos.z * MIFUtils::ARENA_UNITS));
+
+	// The displayed coordinates in the wilderness behave differently in the original
+	// game due to how the 128x128 grid shifts to keep the player roughly centered.
+	if (mapType != MapType::Wilderness)
+	{
+		return originalPosArenaUnits;
+	}
+	else
+	{
+		constexpr int ArenaUnitsInteger = static_cast<int>(MIFUtils::ARENA_UNITS);
+		constexpr int rmdWidthArenaUnits = RMDFile::WIDTH * ArenaUnitsInteger;
+		constexpr int rmdDepthArenaUnits = RMDFile::DEPTH * ArenaUnitsInteger;
+		const int halfWidthArenaUnits = rmdWidthArenaUnits / 2;
+		const int halfDepthArenaUnits = rmdDepthArenaUnits / 2;
+		return OriginalInt2(
+			halfWidthArenaUnits + ((originalPosArenaUnits.x + halfWidthArenaUnits) % rmdWidthArenaUnits),
+			halfDepthArenaUnits + ((originalPosArenaUnits.y + halfDepthArenaUnits) % rmdDepthArenaUnits));
+	}
+}
+
 std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 {	
 	const Player &player = game.player;

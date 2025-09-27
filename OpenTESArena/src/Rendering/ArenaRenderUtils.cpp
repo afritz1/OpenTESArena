@@ -465,9 +465,9 @@ void ArenaFogState::init(TextureManager &textureManager)
 void ArenaFogState::update(double dt, const WorldDouble3 &playerPos, const Double2 &playerDir, MapType mapType)
 {
 	constexpr int ArenaUnitsInteger = static_cast<int>(MIFUtils::ARENA_UNITS);
-	const OriginalInt2 originalPlayerPos = GameWorldUiModel::getOriginalPlayerPosition(playerPos, mapType);
-	this->PlayerX = originalPlayerPos.x * ArenaUnitsInteger;
-	this->PlayerZ = originalPlayerPos.y * ArenaUnitsInteger;
+	const OriginalInt2 originalPlayerPos = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerPos, mapType);
+	this->PlayerX = originalPlayerPos.x;
+	this->PlayerZ = originalPlayerPos.y;
 
 	// 0 at due south
 	// 0x80 (128) at due west
