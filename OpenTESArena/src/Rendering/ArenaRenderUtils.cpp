@@ -31,6 +31,48 @@ namespace
 	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
 	short g_ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels (moved here to avoid stack warning).
 
+	constexpr int DWORD_4b80_819a = 0xD0300000; // Original game does a few calculations here to get the value, but it will always be this result
+	int DWORD_4b80_819e = 0;
+	int DWORD_4b80_81a2 = 0;
+	constexpr int DWORD_4b80_81a6 = 0x6906904; // Constant value. @476D6.
+	constexpr int DWORD_4b80_81aa = 0xDD5D5D5E; // Original game does a few calculations here to get the value, but it will always be this result
+	short WORD_4b80_81ae = 0;
+	short WORD_4b80_81b0 = 0;
+	short WORD_4b80_81b2 = 0;
+	short WORD_4b80_81b4 = 0;
+	short WORD_4b80_81b6 = 0;
+	short WORD_4b80_81b8 = 0;
+	short WORD_4b80_81c6 = 0;
+	short WORD_4b80_81c8 = 0;
+	short WORD_4b80_81ca = 0;
+	constexpr short WORD_4b80_81d4 = 0xFC00; // Constant value. @47704.
+	short WORD_ARRAY_4b80_81d8[24]; // @47708. Both read from and written to.
+	short WORD_4b80_8208 = 0; // Aaron: Likely current tile row (Y value)
+
+	constexpr short WORD_4b80_a784 = 0x92; // Variable value, but might always be 0x92 when this function is called.
+	int DWORD_VALUE1 = 0;
+	int DWORD_VALUE2 = 0;
+	int DWORD_VALUE3 = 0;
+	int DWORD_VALUE4 = 0;
+	int DWORD_VALUE5 = 0;
+
+	short AX = 0;
+	short BX = 0;
+	short CX = 0;
+	short DI = 0;
+	short DX = 0;
+	short BP = 0;
+	short SI = 0;
+	short ES = 0;
+
+	int EAX = 0;
+	int EBX = 0;
+	int ECX = 0;
+	int EDX = 0;
+	int EBP = 0;
+
+	int64_t EAXEDX = 0;
+
 	void FogRotateVector(int angle, short &x, short &y, const ExeDataMath &exeDataMath)
 	{
 		const Span<const int16_t> cosineTable = exeDataMath.cosineTable;
@@ -64,47 +106,6 @@ namespace
 	{
 		std::fill(std::begin(g_fogTxtSamples), std::end(g_fogTxtSamples), 0);
 
-		const ExeDataWeather &exeDataWeather = exeData.weather;
-		short WORD_ARRAY_4b80_81d8[24]; // @47708. Both read from and written to.
-		std::copy(std::begin(exeDataWeather.fogTxtSampleHelper), std::end(exeDataWeather.fogTxtSampleHelper), std::begin(WORD_ARRAY_4b80_81d8));
-
-		int DWORD_4b80_819e = 0;
-		int DWORD_4b80_81a2 = 0;
-		constexpr int DWORD_4b80_81a6 = 0x6906904; // Constant value. @476D6.
-
-		short WORD_4b80_81ae = 0;
-		short WORD_4b80_81b0 = 0;
-		short WORD_4b80_81b2 = 0;
-		short WORD_4b80_81b4 = 0;
-		short WORD_4b80_81b6 = 0;
-		short WORD_4b80_81b8 = 0;
-		short WORD_4b80_81c6 = 0;
-		short WORD_4b80_81c8 = 0;
-		short WORD_4b80_81ca = 0;
-		constexpr short WORD_4b80_81d4 = 0xFC00; // Constant value. @47704.
-		short WORD_4b80_8208 = 0; // Aaron: Likely current tile row (Y value)
-
-		constexpr short WORD_4b80_a784 = 0x92; // Variable value, but might always be 0x92 when this function is called.
-		int DWORD_VALUE1 = 0;
-		int DWORD_VALUE2 = 0;
-		int DWORD_VALUE3 = 0;
-		int DWORD_VALUE4 = 0;
-		int DWORD_VALUE5 = 0;
-
-		short AX = 0;
-		short BX = 0;
-		short CX = 0;
-		short DI = 0;
-		short DX = 0;
-		short BP = 0;
-
-		int EAX = 0;
-		int EBX = 0;
-		int ECX = 0;
-		int EDX = 0;
-		int EBP = 0;
-		int64_t EAXEDX = 0;
-
 		int loopCount = 4;
 		int index = 0;
 
@@ -126,8 +127,6 @@ namespace
 			loopCount--;
 		} while (loopCount != 0);
 
-		constexpr int DWORD_4b80_819a = 0xD0300000; // Original game does a few calculations here to get the value, but it will always be this result
-		constexpr int DWORD_4b80_81aa = 0xDD5D5D5E; // Original game does a few calculations here to get the value, but it will always be this result
 		WORD_4b80_8208 = 0;
 
 		int fogTxtSampleIndex = FogTxtSampleExtraCount;
@@ -135,143 +134,208 @@ namespace
 		do
 		{
 			BP = WORD_4b80_a784; // Seems to always be 0092 when this function is called
-			BP >>= 3; // 0012
+			BP >>= 3;
 
-			AX = WORD_ARRAY_4b80_81d8[15]; // 03F8
-			AX -= WORD_ARRAY_4b80_81d8[3]; // Sub 03F8, get 0
-			AX *= WORD_4b80_8208; // 0
-			AX /= BP; // 0    
-			AX += WORD_ARRAY_4b80_81d8[3]; // Add 03F8, get 03F8
-			WORD_4b80_81b0 = AX; // 03F8
+			AX = WORD_ARRAY_4b80_81d8[15];
+			AX -= WORD_ARRAY_4b80_81d8[3];
 
-			AX = WORD_ARRAY_4b80_81d8[16]; // FBFA
-			AX -= WORD_ARRAY_4b80_81d8[4]; // Sub 0406, get F7F4
-			AX *= WORD_4b80_8208; // 0    
-			AX /= BP; // 0   
-			AX += WORD_ARRAY_4b80_81d8[4]; // Add 0406, get 0406
-			WORD_4b80_81b4 = AX; // 0406
+			int product = AX * WORD_4b80_8208;
+			AX = (product & 0xFFFF);      // low 16 bits
+			DX = (product >> 16);          // high 16 bits
 
-			AX = WORD_ARRAY_4b80_81d8[17]; // FC0B
-			AX -= WORD_ARRAY_4b80_81d8[5]; // Sub FC0B, get 0 
-			AX *= WORD_4b80_8208; // 0
-			AX /= BP; // 0 
-			AX += WORD_ARRAY_4b80_81d8[5]; // Add FC0B, get FC0B
-			WORD_4b80_81b8 = AX; // FC0B
+			int dividend = ((int)DX << 16) | (unsigned short)AX;
+			short divisor = BP;
+
+			AX = (short)(dividend / divisor);
+			DX = (short)(dividend % divisor);
+
+			AX += WORD_ARRAY_4b80_81d8[3];
+			WORD_4b80_81b0 = AX;
+
+			AX = WORD_ARRAY_4b80_81d8[16];
+			AX -= WORD_ARRAY_4b80_81d8[4];
+
+			product = AX * WORD_4b80_8208;
+			AX = (product & 0xFFFF);      // low 16 bits
+			DX = (product >> 16);          // high 16 bits
+
+			dividend = ((int)DX << 16) | (unsigned short)AX;
+			divisor = BP;
+
+			AX = (short)(dividend / divisor);
+			DX = (short)(dividend % divisor);
+
+			AX += WORD_ARRAY_4b80_81d8[4];
+			WORD_4b80_81b4 = AX;
+
+			AX = WORD_ARRAY_4b80_81d8[17];
+			AX -= WORD_ARRAY_4b80_81d8[5];
+
+			product = AX * WORD_4b80_8208;
+			AX = (product & 0xFFFF);      // low 16 bits
+			DX = (product >> 16);          // high 16 bits
+
+			dividend = ((int)DX << 16) | (unsigned short)AX;
+			divisor = BP;
+
+			AX += WORD_ARRAY_4b80_81d8[5];
+			WORD_4b80_81b8 = AX;
 
 			WORD_4b80_81ae = 0;
 			WORD_4b80_81b2 = 0;
 			WORD_4b80_81b6 = 0;
 
-			AX = WORD_ARRAY_4b80_81d8[21]; // FBED
-			AX -= WORD_ARRAY_4b80_81d8[9]; // Sub FBED, get 0
-			AX *= WORD_4b80_8208; // 0
-			AX /= BP; // 0
-			AX += WORD_ARRAY_4b80_81d8[9]; // Add FBED, get FBED
-			WORD_4b80_81c6 = AX; // FBED
+			AX = WORD_ARRAY_4b80_81d8[21];
+			AX -= WORD_ARRAY_4b80_81d8[9];
 
-			AX = WORD_ARRAY_4b80_81d8[22]; // FBFA
-			AX -= WORD_ARRAY_4b80_81d8[10]; // Sub 0406, get F7F4  
-			AX *= WORD_4b80_8208; // 0
-			AX /= BP; // 0 
-			AX += WORD_ARRAY_4b80_81d8[10]; // Add 0406, get 0406
-			WORD_4b80_81c8 = AX; // 0406
+			product = AX * WORD_4b80_8208;
+			AX = (product & 0xFFFF);      // low 16 bits
+			DX = (product >> 16);          // high 16 bits
 
-			AX = WORD_ARRAY_4b80_81d8[23]; // FC24
-			AX -= WORD_ARRAY_4b80_81d8[11]; // Sub FC24, get 0
-			AX *= WORD_4b80_8208; // 0
-			AX /= BP; // 0
-			AX += WORD_ARRAY_4b80_81d8[11]; // Add FC24, get FC24
-			WORD_4b80_81ca = AX; // FC24
+			dividend = ((int)DX << 16) | (unsigned short)AX;
+			divisor = BP;
 
-			BP = 39; // 0027 (hexadecimal)
+			AX += WORD_ARRAY_4b80_81d8[9];
+			WORD_4b80_81c6 = AX;
 
-			AX = WORD_4b80_81c6; // FBED
-			AX -= WORD_4b80_81b0; // Sub 03F8, get F7F5
-			EAX = AX << 16; // F7F50000
-			EAX /= BP; // Div by 0027, get FFCB3484
-			DWORD_VALUE3 = EAX; // FFCB3484
+			AX = WORD_ARRAY_4b80_81d8[22];
+			AX -= WORD_ARRAY_4b80_81d8[10];
 
-			AX = WORD_4b80_81c8; // 0406
-			AX -= WORD_4b80_81b4; // Sub 0406, get 0
-			EAX = AX << 16; // 0
-			EAX /= BP; // 0
-			DWORD_VALUE4 = EAX; // 0
+			product = AX * WORD_4b80_8208;
+			AX = (product & 0xFFFF);      // low 16 bits
+			DX = (product >> 16);          // high 16 bits
 
-			AX = WORD_4b80_81ca; // FC24
-			AX -= WORD_4b80_81b8; // Sub FC0B, get 0019
-			EAX = AX << 16; // 00190000
-			EAX /= BP; // Div by 0027, get 0000A41A
-			DWORD_VALUE5 = EAX; // 0000A41A
+			dividend = ((int)DX << 16) | (unsigned short)AX;
+			divisor = BP;
 
-			ECX = WORD_4b80_81b4 * WORD_4b80_81d4; // 0406 * FC00, get FFEFE800
-			DWORD_4b80_819e = ECX; // FFEFE800
+			AX += WORD_ARRAY_4b80_81d8[10];
+			WORD_4b80_81c8 = AX;
 
-			EAX = WORD_4b80_81c8 * WORD_4b80_81d4; // 0406 * FC00, get FFEFE800
-			EAX -= ECX; // Sub FFEFE800 from FFEFE800, get 0
+			AX = WORD_ARRAY_4b80_81d8[23];
+			AX -= WORD_ARRAY_4b80_81d8[11];
 
-			EAXEDX = EAX * DWORD_4b80_81a6; // Mul by constant value 6906904, get 0
+			product = AX * WORD_4b80_8208;
+			AX = (product & 0xFFFF);      // low 16 bits
+			DX = (product >> 16);          // high 16 bits
 
-			EAX = (int)EAXEDX; // 0
-			EDX = EAXEDX >> 32; // 0
+			dividend = ((int)DX << 16) | (unsigned short)AX;
+			divisor = BP;
 
-			DWORD_VALUE1 = EAX; // 0
-			DWORD_VALUE2 = EDX; // 0
+			AX += WORD_ARRAY_4b80_81d8[11];
+			WORD_4b80_81ca = AX;
+
+			BP = 39;
+
+			AX = WORD_4b80_81c6;
+			AX -= WORD_4b80_81b0;
+			EAX = AX << 16;
+
+			int64_t dividend2 = (int64_t)(int32_t)EAX;
+			int32_t divisor2 = (int32_t)BP;
+
+			EAX = (int32_t)(dividend2 / divisor2);
+			EDX = (int32_t)(dividend2 % divisor2);
+
+			DWORD_VALUE3 = EAX;
+
+			AX = WORD_4b80_81c8;
+			AX -= WORD_4b80_81b4;
+			EAX = AX << 16;
+
+			dividend2 = (int64_t)(int32_t)EAX;
+			divisor2 = (int32_t)BP;
+
+			EAX = (int32_t)(dividend2 / divisor2);
+			EDX = (int32_t)(dividend2 % divisor2);
+
+			DWORD_VALUE4 = EAX;
+
+			AX = WORD_4b80_81ca;
+			AX -= WORD_4b80_81b8;
+			EAX = AX << 16;
+
+			dividend2 = (int64_t)(int32_t)EAX;
+			divisor2 = (int32_t)BP;
+
+			EAX = (int32_t)(dividend2 / divisor2);
+			EDX = (int32_t)(dividend2 % divisor2);
+
+			DWORD_VALUE5 = EAX;
+
+			ECX = WORD_4b80_81b4 * WORD_4b80_81d4;
+			DWORD_4b80_819e = ECX;
+
+			EAX = WORD_4b80_81c8 * WORD_4b80_81d4;
+			EAX -= ECX;
+
+			EAXEDX = EAX * DWORD_4b80_81a6;
+
+			EAX = (int)EAXEDX;
+			EDX = EAXEDX >> 32;
+
+			DWORD_VALUE1 = EAX;
+			DWORD_VALUE2 = EDX;
 			DWORD_4b80_81a2 = 0;
 
 			loopCount = 40; // 0028 in hexadecimal
 
 			do
 			{
-				EAX = DWORD_4b80_819a; // D0300000
-				EBP = DWORD_4b80_819e; // FFEFE800
+				EAX = DWORD_4b80_819a;
+				EBP = DWORD_4b80_819e;
 				if (EBP != 0)
-				{ // true
-					EAX /= EBP; // Div by FFEFE800, get 000002F8
+				{
+
+					dividend2 = (int64_t)(int32_t)EAX;
+					divisor2 = (int32_t)EBP;
+
+					EAX = (int32_t)(dividend2 / divisor2);
+					EDX = (int32_t)(dividend2 % divisor2);
+
 					if (EAX < 0)
-					{ // false
+					{
 						EAXEDX = (long long)EAX * (long long)DWORD_4b80_81aa;
 						EAX = EAXEDX;
 						EDX = EAXEDX >> 32;
 						EAX = ((unsigned int)EAX >> 31) | (EDX << 1);
 					}
 
-					EBX = EAX; // 000002F8
-					EBP = ((WORD_4b80_81ae & 0xFFFF) | ((WORD_4b80_81b0 & 0xFFFF) << 16)); // WORD_4b80_81ae is 0000, WORD_4b80_81b0 is 03F8. Combine and get 03F80000
-					EAXEDX = (long long)EAX * (long long)EBP; // Mul 000002F8 by 03F80000, get 0000000BC8400000
-					EAX = EAXEDX; // C8400000
-					EDX = EAXEDX >> 32; // 0000000B
-					EAX = ((unsigned int)EAX >> 24) | (EDX << 8); // 00000BC8
-					EAX += fogState.PlayerX + fogState.WORD_4b80_191b; // PlayerX is 3205 for my test case. WORD_4b80_191b is 0004 on first call to fog function, +4 for every subsequent call to it. 00000BC8 + 3205 + 0004 to get 00003DD1
-					EAX = EAX >> 6; // 000000F7
-					std::swap(EAX, EBX); // EAX = 000002F8, EBX = 000000F7
+					EBX = EAX;
+					EBP = ((WORD_4b80_81ae & 0xFFFF) | ((WORD_4b80_81b0 & 0xFFFF) << 16));
+					EAXEDX = (long long)EAX * (long long)EBP;
+					EAX = EAXEDX;
+					EDX = EAXEDX >> 32;
+					EAX = ((unsigned int)EAX >> 24) | (EDX << 8);
+					EAX += fogState.PlayerX + fogState.WORD_4b80_191b;
+					EAX = EAX >> 6;
+					std::swap(EAX, EBX);
 
-					EBP = ((WORD_4b80_81b6 & 0xFFFF) | ((WORD_4b80_81b8 & 0xFFFF) << 16)); // WORD_4b80_81b6 is 0000, WORD_4b80_81b8 is FC0B. Combine and get FC0B0000
-					EAXEDX = (long long)EAX * (long long)EBP; // Mul 000002F8 by FC0B0000, get FFFFFFF440A80000
-					EAX = EAXEDX; // 40A80000
-					EDX = EAXEDX >> 32; // FFFFFFF4
-					EAX = ((unsigned int)EAX >> 24) | (EDX << 8); // FFFFF440        
-					EAX += fogState.PlayerZ + fogState.WORD_4b80_191d; // PlayerZ is 01E7 for my test case. WORD_4b80_191d is 0004 on first call to fog function, +4 for every subsequent call to it, the same as WORD_4b80_191b. FFFFF440 + 01E7 + 0004 to get FFFFF62B
-					EAX = EAX >> 6; // FFFFFFD8
+					EBP = ((WORD_4b80_81b6 & 0xFFFF) | ((WORD_4b80_81b8 & 0xFFFF) << 16));
+					EAXEDX = (long long)EAX * (long long)EBP;
+					EAX = EAXEDX;
+					EDX = EAXEDX >> 32;
+					EAX = ((unsigned int)EAX >> 24) | (EDX << 8);
+					EAX += fogState.PlayerZ + fogState.WORD_4b80_191b;
+					EAX = EAX >> 6;
 
-					BX = EBX; // 00F7
-					BX &= 0x7F; // 0077
-					BX <<= 7; // 3B80
+					BX = EBX;
+					BX &= 0x7F;
+					BX <<= 7;
 
-					AX = EAX; // FFD8
-					AX &= 0x7F; // 0058
+					AX = EAX;
+					AX &= 0x7F;
 
-					BX += AX; // 3BD8
-					//BX <<= 1; // 77B0 // Aaron: don't convert texel index to byte index.
+					BX += AX;
 
-					AX = fogState.fogTxt[BX]; // 05D9
+					AX = fogState.fogTxt[BX];
 				}
 				else
 				{
 					AX = (EAX & 0x00FF) | 0x0C00;
 				}
 
-				// Write the value to the sample buffer FOGTXTSample, a short value array, at FOGTXTSampleIndex, which should initialized to 45 (decimal) at the start of SampleFOGTXT.
-				g_fogTxtSamples[fogTxtSampleIndex] = AX; // Write the calculated value 05D9
+				// Write the value to the sample buffer FOGTXTSample, a short value array, at FOGTXTSampleIndex.
+				g_fogTxtSamples[fogTxtSampleIndex] = AX; // Write the calculated value
 				fogTxtSampleIndex++;
 
 				// Next is, in assembly:
@@ -283,16 +347,16 @@ namespace
 
 				// The ADC instruction adds any carry from the preceding ADD instruction, so we need to get the carry
 				bool carry = false;
-				uint32_t before = DWORD_4b80_81a2; // 00000000
-				DWORD_4b80_81a2 += DWORD_VALUE1; // Add 0, get 0
+				uint32_t before = DWORD_4b80_81a2;
+				DWORD_4b80_81a2 += DWORD_VALUE1;
 				if (DWORD_4b80_81a2 < before)
-				{ // false
+				{
 					carry = true; // overflow occurred
 				}
 
-				DWORD_4b80_819e += DWORD_VALUE2; // DWORD_4b80_819e is FFEFE800, add 0
+				DWORD_4b80_819e += DWORD_VALUE2;
 				if (carry)
-				{ // false
+				{
 					DWORD_4b80_819e++;
 				}
 
@@ -320,20 +384,10 @@ namespace
 
 	void ApplySampledFogData(Span<const uint8_t> fogLgt, Span<short> ESArray)
 	{
-		ESArray.fill(0);
+		ESArray.fill(0x2566);
 
 		constexpr short WORD_4b80_a76a = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
 		constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called
-
-		short AX = 0;
-		short BX = 0;
-		short CX = 0;
-		short DI = 0;
-		short DX = 0;
-		short BP = 0;
-		short SI = 0;
-		short DS = 0;
-		short ES = 0;
 
 		auto ApplyNewData = [&]()
 		{
@@ -581,6 +635,9 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
+
+	const ExeDataWeather &exeDataWeather = exeData.weather;
+	std::copy(std::begin(exeDataWeather.fogTxtSampleHelper), std::end(exeDataWeather.fogTxtSampleHelper), std::begin(WORD_ARRAY_4b80_81d8));
 	
 	SampleFOGTXT(fogState, exeData);
 
