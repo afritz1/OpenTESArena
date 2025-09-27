@@ -29,7 +29,7 @@ namespace
 	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
 	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
 	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
-	short g_ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels (moved here to avoid stack warning).
+	short ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels.
 
 	constexpr int DWORD_4b80_819a = 0xD0300000; // Original game does a few calculations here to get the value, but it will always be this result
 	int DWORD_4b80_819e = 0;
@@ -49,7 +49,8 @@ namespace
 	short WORD_ARRAY_4b80_81d8[24]; // @47708. Both read from and written to.
 	short WORD_4b80_8208 = 0; // Aaron: Likely current tile row (Y value)
 
-	constexpr short WORD_4b80_a784 = 0x92; // Variable value, but might always be 0x92 when this function is called.
+	constexpr short WORD_4b80_a76a = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
+	constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called.
 	int DWORD_VALUE1 = 0;
 	int DWORD_VALUE2 = 0;
 	int DWORD_VALUE3 = 0;
@@ -382,13 +383,8 @@ namespace
 		} while (WORD_4b80_8208 != 25); // Rows
 	}
 
-	void ApplySampledFogData(Span<const uint8_t> fogLgt, Span<short> ESArray)
+	void ApplySampledFogData(Span<const uint8_t> fogLgt)
 	{
-		ESArray.fill(0x2566);
-
-		constexpr short WORD_4b80_a76a = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
-		constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called
-
 		auto ApplyNewData = [&]()
 		{
 			BX += DX;
@@ -635,14 +631,13 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
-
 	const ExeDataWeather &exeDataWeather = exeData.weather;
+
 	std::copy(std::begin(exeDataWeather.fogTxtSampleHelper), std::end(exeDataWeather.fogTxtSampleHelper), std::begin(WORD_ARRAY_4b80_81d8));
+	std::fill(std::begin(ESArray), std::end(ESArray), 0x2566);
 	
 	SampleFOGTXT(fogState, exeData);
-
-	Span<short> ESArray = g_ESArray;
-	ApplySampledFogData(fogState.fogLgt, ESArray);
+	ApplySampledFogData(fogState.fogLgt);
 
 	outPixels.fill(0);
 
