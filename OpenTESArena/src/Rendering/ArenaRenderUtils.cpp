@@ -236,7 +236,7 @@ namespace
 					}
 
 					EBX = EAX; // 000002F8
-					EBP = (WORD_4b80_81ae | (WORD_4b80_81b0 << 16)); // WORD_4b80_81ae is 0000, WORD_4b80_81b0 is 03F8. Combine and get 03F80000
+					EBP = ((WORD_4b80_81ae & 0xFFFF) | ((WORD_4b80_81b0 & 0xFFFF) << 16)); // WORD_4b80_81ae is 0000, WORD_4b80_81b0 is 03F8. Combine and get 03F80000
 					EAXEDX = (long long)EAX * (long long)EBP; // Mul 000002F8 by 03F80000, get 0000000BC8400000
 					EAX = EAXEDX; // C8400000
 					EDX = EAXEDX >> 32; // 0000000B
@@ -245,7 +245,7 @@ namespace
 					EAX = EAX >> 6; // 000000F7
 					std::swap(EAX, EBX); // EAX = 000002F8, EBX = 000000F7
 
-					EBP = (WORD_4b80_81b6 | (WORD_4b80_81b8 << 16)); // WORD_4b80_81b6 is 0000, WORD_4b80_81b8 is FC0B. Combine and get FC0B0000
+					EBP = ((WORD_4b80_81b6 & 0xFFFF) | ((WORD_4b80_81b8 & 0xFFFF) << 16)); // WORD_4b80_81b6 is 0000, WORD_4b80_81b8 is FC0B. Combine and get FC0B0000
 					EAXEDX = (long long)EAX * (long long)EBP; // Mul 000002F8 by FC0B0000, get FFFFFFF440A80000
 					EAX = EAXEDX; // 40A80000
 					EDX = EAXEDX >> 32; // FFFFFFF4
@@ -267,7 +267,7 @@ namespace
 				}
 				else
 				{
-					AX = (AX & 0x00FF) | 0x0C00;
+					AX = (EAX & 0x00FF) | 0x0C00;
 				}
 
 				// Write the value to the sample buffer FOGTXTSample, a short value array, at FOGTXTSampleIndex, which should initialized to 45 (decimal) at the start of SampleFOGTXT.
@@ -296,20 +296,20 @@ namespace
 					DWORD_4b80_819e++;
 				}
 
-				// WORD_4b80_81ae is 0000. WORD_4b80_81b0 is 03F8. DWORD_VALUE3 is FFCB3484.
-				// WORD_4b80_81ae becomes 3484. WORD_4b80_81b0 becomes 03C3.
-				WORD_4b80_81ae += (DWORD_VALUE3 & 0x0000FFFF);
-				WORD_4b80_81b0 += (DWORD_VALUE3 & 0xFFFF0000) >> 16;
+				int sum = (WORD_4b80_81ae & 0xFFFF | ((WORD_4b80_81b0 & 0xFFFF) << 16));
+				sum += DWORD_VALUE3;
+				WORD_4b80_81ae = sum;
+				WORD_4b80_81b0 = sum >> 16;
 
-				// WORD_4b80_81b2 is 0000. WORD_4b80_81b4 is 0406. DWORD_VALUE4 is 00000000.
-				// WORD_4b80_81b2 and WORD_4b80_81b4 are unchanged.
-				WORD_4b80_81b2 += (DWORD_VALUE4 & 0x0000FFFF);
-				WORD_4b80_81b4 += (DWORD_VALUE4 & 0xFFFF0000) >> 16;
+				sum = (WORD_4b80_81b2 & 0xFFFF | ((WORD_4b80_81b4 & 0xFFFF) << 16));
+				sum += DWORD_VALUE4;
+				WORD_4b80_81b2 = sum;
+				WORD_4b80_81b4 = sum >> 16;
 
-				// WORD_4b80_81b6 is 0000. WORD_4b80_81b8 is FC0B. DWORD_VALUE5 is 0000A41A.
-				// WORD_4b80_81b6 becomes A41A. WORD_4b80_81b8 remains FC0B.
-				WORD_4b80_81b6 += (DWORD_VALUE5 & 0x0000FFFF);
-				WORD_4b80_81b8 += (DWORD_VALUE5 & 0xFFFF0000) >> 16;
+				sum = (WORD_4b80_81b6 & 0xFFFF | ((WORD_4b80_81b8 & 0xFFFF) << 16));
+				sum += DWORD_VALUE5;
+				WORD_4b80_81b6 = sum;
+				WORD_4b80_81b8 = sum >> 16;
 
 				loopCount--;
 			} while (loopCount != 0);
@@ -322,7 +322,7 @@ namespace
 	{
 		ESArray.fill(0);
 
-		constexpr short WORD_4b80_81ae = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
+		constexpr short WORD_4b80_a76a = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
 		constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called
 
 		short AX = 0;
@@ -374,7 +374,7 @@ namespace
 			g_fogTxtSamples[405 + i] = 0;
 		}
 
-		g_fogTxtSamples[43] = WORD_4b80_81ae;
+		g_fogTxtSamples[43] = WORD_4b80_a76a;
 		g_fogTxtSamples[40] = (WORD_4b80_a784 + 7) >> 3;
 		g_fogTxtSamples[41] = 170;
 		g_fogTxtSamples[42] = 0;
