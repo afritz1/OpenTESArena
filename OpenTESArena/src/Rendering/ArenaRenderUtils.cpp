@@ -140,9 +140,9 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[15];
 			AX -= WORD_ARRAY_4b80_81d8[3];
 
-			int product = AX * WORD_4b80_8208;
-			AX = (product & 0xFFFF);      // low 16 bits
-			DX = (product >> 16);          // high 16 bits
+			int product = (int)AX * (int)WORD_4b80_8208;
+			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
+			DX = (int16_t)(product >> 16);          // high 16 bits
 
 			int dividend = ((int)DX << 16) | (unsigned short)AX;
 			short divisor = BP;
@@ -156,9 +156,9 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[16];
 			AX -= WORD_ARRAY_4b80_81d8[4];
 
-			product = AX * WORD_4b80_8208;
-			AX = (product & 0xFFFF);      // low 16 bits
-			DX = (product >> 16);          // high 16 bits
+			product = (int)AX * (int)WORD_4b80_8208;
+			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
+			DX = (int16_t)(product >> 16);          // high 16 bits
 
 			dividend = ((int)DX << 16) | (unsigned short)AX;
 			divisor = BP;
@@ -172,12 +172,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[17];
 			AX -= WORD_ARRAY_4b80_81d8[5];
 
-			product = AX * WORD_4b80_8208;
-			AX = (product & 0xFFFF);      // low 16 bits
-			DX = (product >> 16);          // high 16 bits
+			product = (int)AX * (int)WORD_4b80_8208;
+			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
+			DX = (int16_t)(product >> 16);          // high 16 bits
 
 			dividend = ((int)DX << 16) | (unsigned short)AX;
 			divisor = BP;
+
+			AX = (short)(dividend / divisor);
+			DX = (short)(dividend % divisor);
 
 			AX += WORD_ARRAY_4b80_81d8[5];
 			WORD_4b80_81b8 = AX;
@@ -189,12 +192,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[21];
 			AX -= WORD_ARRAY_4b80_81d8[9];
 
-			product = AX * WORD_4b80_8208;
+			product = (int)AX * (int)WORD_4b80_8208;
 			AX = (product & 0xFFFF);      // low 16 bits
 			DX = (product >> 16);          // high 16 bits
 
 			dividend = ((int)DX << 16) | (unsigned short)AX;
 			divisor = BP;
+
+			AX = (short)(dividend / divisor);
+			DX = (short)(dividend % divisor);
 
 			AX += WORD_ARRAY_4b80_81d8[9];
 			WORD_4b80_81c6 = AX;
@@ -202,12 +208,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[22];
 			AX -= WORD_ARRAY_4b80_81d8[10];
 
-			product = AX * WORD_4b80_8208;
-			AX = (product & 0xFFFF);      // low 16 bits
-			DX = (product >> 16);          // high 16 bits
+			product = (int)AX * (int)WORD_4b80_8208;
+			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
+			DX = (int16_t)(product >> 16);          // high 16 bits
 
 			dividend = ((int)DX << 16) | (unsigned short)AX;
 			divisor = BP;
+
+			AX = (short)(dividend / divisor);
+			DX = (short)(dividend % divisor);
 
 			AX += WORD_ARRAY_4b80_81d8[10];
 			WORD_4b80_81c8 = AX;
@@ -215,12 +224,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[23];
 			AX -= WORD_ARRAY_4b80_81d8[11];
 
-			product = AX * WORD_4b80_8208;
-			AX = (product & 0xFFFF);      // low 16 bits
-			DX = (product >> 16);          // high 16 bits
+			product = (int)AX * (int)WORD_4b80_8208;
+			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
+			DX = (int16_t)(product >> 16);          // high 16 bits
 
 			dividend = ((int)DX << 16) | (unsigned short)AX;
 			divisor = BP;
+
+			AX = (short)(dividend / divisor);
+			DX = (short)(dividend % divisor);
 
 			AX += WORD_ARRAY_4b80_81d8[11];
 			WORD_4b80_81ca = AX;
@@ -269,10 +281,9 @@ namespace
 			EAX = WORD_4b80_81c8 * WORD_4b80_81d4;
 			EAX -= ECX;
 
-			EAXEDX = EAX * DWORD_4b80_81a6;
-
-			EAX = (int)EAXEDX;
-			EDX = EAXEDX >> 32;
+			int64_t product2 = (int64_t)EAX * (int64_t)DWORD_4b80_81a6;
+			EAX = (uint32_t)(product2 & 0xFFFFFFFF);      // low 16 bits
+			EDX = (int32_t)(product2 >> 32);          // high 16 bits
 
 			DWORD_VALUE1 = EAX;
 			DWORD_VALUE2 = EDX;
@@ -295,26 +306,30 @@ namespace
 
 					if (EAX < 0)
 					{
-						EAXEDX = (long long)EAX * (long long)DWORD_4b80_81aa;
-						EAX = EAXEDX;
-						EDX = EAXEDX >> 32;
+						product2 = (int64_t)EAX * (int64_t)DWORD_4b80_81aa;
+						EAX = (uint32_t)(product2 & 0xFFFFFFFF);      // low 16 bits
+						EDX = (int32_t)(product2 >> 32);          // high 16 bits
 						EAX = ((unsigned int)EAX >> 31) | (EDX << 1);
 					}
 
 					EBX = EAX;
 					EBP = ((WORD_4b80_81ae & 0xFFFF) | ((WORD_4b80_81b0 & 0xFFFF) << 16));
-					EAXEDX = (long long)EAX * (long long)EBP;
-					EAX = EAXEDX;
-					EDX = EAXEDX >> 32;
+
+					product2 = (int64_t)EAX * (int64_t)EBP;
+					EAX = (uint32_t)(product2 & 0xFFFFFFFF);      // low 16 bits
+					EDX = (int32_t)(product2 >> 32);          // high 16 bits
+
 					EAX = ((unsigned int)EAX >> 24) | (EDX << 8);
 					EAX += fogState.PlayerX + fogState.WORD_4b80_191b;
 					EAX = EAX >> 6;
 					std::swap(EAX, EBX);
 
 					EBP = ((WORD_4b80_81b6 & 0xFFFF) | ((WORD_4b80_81b8 & 0xFFFF) << 16));
-					EAXEDX = (long long)EAX * (long long)EBP;
-					EAX = EAXEDX;
-					EDX = EAXEDX >> 32;
+
+					product2 = (int64_t)EAX * (int64_t)EBP;
+					EAX = (uint32_t)(product2 & 0xFFFFFFFF);      // low 16 bits
+					EDX = (int32_t)(product2 >> 32);          // high 16 bits
+
 					EAX = ((unsigned int)EAX >> 24) | (EDX << 8);
 					EAX += fogState.PlayerZ + fogState.WORD_4b80_191b;
 					EAX = EAX >> 6;
