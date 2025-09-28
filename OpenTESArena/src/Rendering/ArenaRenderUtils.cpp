@@ -28,7 +28,7 @@ namespace
 	constexpr int FogTxtSampleBaseCount = FogColumns * FogRows;
 	constexpr int FogTxtSampleExtraCount = 45;
 	constexpr int FogTxtSampleTotalCount = FogTxtSampleBaseCount + FogTxtSampleExtraCount;
-	uint16_t FOGTXTSample[FogTxtSampleTotalCount];
+	int16_t FOGTXTSample[FogTxtSampleTotalCount];
 
 	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
 	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
@@ -666,7 +666,7 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 		for (int column = 0; column < FogColumns; column++)
 		{
 			const int srcIndex = column + (row * FogColumns) + FogTxtSampleExtraCount;
-			const uint16_t sample = FOGTXTSample[srcIndex];
+			const int16_t sample = FOGTXTSample[srcIndex];
 			const uint8_t lightLevel = static_cast<uint8_t>(sample >> 8);
 			const uint8_t dither = static_cast<uint8_t>(sample);
 
