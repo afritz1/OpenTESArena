@@ -19,6 +19,9 @@
 
 namespace
 {
+	Span<const int8_t> FOGLGT;
+	Span<const int16_t> FOGTXT;
+
 	constexpr int FogColumns = 40;
 	constexpr int FogRows = 25;
 	constexpr int FogTxtSampleBaseCount = FogColumns * FogRows;
@@ -29,93 +32,103 @@ namespace
 	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
 	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
 	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
-	short ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels.
+	int16_t ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels.
 
-	constexpr int DWORD_4b80_819a = 0xD0300000; // Original game does a few calculations here to get the value, but it will always be this result
-	int DWORD_4b80_819e = 0;
-	int DWORD_4b80_81a2 = 0;
-	constexpr int DWORD_4b80_81a6 = 0x6906904; // Constant value. @476D6.
-	constexpr int DWORD_4b80_81aa = 0xDD5D5D5E; // Original game does a few calculations here to get the value, but it will always be this result
-	short WORD_4b80_81ae = 0;
-	short WORD_4b80_81b0 = 0;
-	short WORD_4b80_81b2 = 0;
-	short WORD_4b80_81b4 = 0;
-	short WORD_4b80_81b6 = 0;
-	short WORD_4b80_81b8 = 0;
-	short WORD_4b80_81c6 = 0;
-	short WORD_4b80_81c8 = 0;
-	short WORD_4b80_81ca = 0;
-	constexpr short WORD_4b80_81d4 = 0xFC00; // Constant value. @47704.
-	short WORD_ARRAY_4b80_81d8[24]; // @47708. Both read from and written to.
-	short WORD_4b80_8208 = 0; // Aaron: Likely current tile row (Y value)
+	int16_t PlayerX = 0;
+	int16_t PlayerZ = 0;
+	int16_t PlayerAngle = 0;
 
-	constexpr short WORD_4b80_a76a = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
-	constexpr short WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called.
-	int DWORD_VALUE1 = 0;
-	int DWORD_VALUE2 = 0;
-	int DWORD_VALUE3 = 0;
-	int DWORD_VALUE4 = 0;
-	int DWORD_VALUE5 = 0;
+	uint16_t WORD_4b80_191b; // Increases +4 every animation tick.
+	uint16_t WORD_4b80_191d; // Increases +4 every animation tick.
 
-	short AX = 0;
-	short BX = 0;
-	short CX = 0;
-	short DX = 0;
-	unsigned short DI = 0;
-	short BP = 0;
-	short SI = 0;
-	short ES = 0;
+	constexpr int32_t DWORD_4b80_819a = 0xD0300000; // Original game does a few calculations here to get the value, but it will always be this result
+	int32_t DWORD_4b80_819e = 0;
+	int32_t DWORD_4b80_81a2 = 0;
+	constexpr int32_t DWORD_4b80_81a6 = 0x6906904; // Constant value. @476D6.
+	constexpr int32_t DWORD_4b80_81aa = 0xDD5D5D5E; // Original game does a few calculations here to get the value, but it will always be this result
+	uint16_t WORD_4b80_81ae = 0;
+	uint16_t WORD_4b80_81b0 = 0;
+	int16_t WORD_4b80_81b2 = 0;
+	int16_t WORD_4b80_81b4 = 0;
+	uint16_t WORD_4b80_81b6 = 0;
+	uint16_t WORD_4b80_81b8 = 0;
+	int16_t WORD_4b80_81c6 = 0;
+	int16_t WORD_4b80_81c8 = 0;
+	int16_t WORD_4b80_81ca = 0;
+	constexpr int16_t WORD_4b80_81d4 = 0xFC00; // Constant value. @47704.
+	int16_t WORD_ARRAY_4b80_81d8[24]; // @47708. Both read from and written to.
+	int16_t WORD_4b80_8208 = 0; // Aaron: Likely current tile row (Y value)
 
-	int EAX = 0;
-	int EBX = 0;
-	int ECX = 0;
-	int EDX = 0;
-	int EBP = 0;
+	constexpr int16_t WORD_4b80_a76a = 0x533C; // This is variable, but in testing it was 0x533C, which matched the location (533C:0000) put in ES and represented here as  "ESArray". It might always be that when this function is called.
+	constexpr int16_t WORD_4b80_a784 = 0x92; // Variable, but might always be 0x92 when fog functions called.
+	int32_t DWORD_VALUE1 = 0;
+	int32_t DWORD_VALUE2 = 0;
+	int32_t DWORD_VALUE3 = 0;
+	int32_t DWORD_VALUE4 = 0;
+	int32_t DWORD_VALUE5 = 0;
+
+	int8_t CL = 0;
+
+	int16_t AX = 0;
+	int16_t BX = 0;
+	int16_t CX = 0;
+	int16_t DX = 0;
+	uint16_t DI = 0;
+	int16_t BP = 0;
+	int16_t SI = 0;
+	int16_t ES = 0;
+
+	int32_t EAX = 0;
+	int32_t EBX = 0;
+	int32_t ECX = 0;
+	int32_t EDX = 0;
+	int32_t EBP = 0;
 
 	int64_t EAXEDX = 0;
 
-	void FogRotateVector(int angle, short &x, short &y, const ExeDataMath &exeDataMath)
+	void FogRotateVector(int32_t angle, int16_t &x, int16_t &y, const ExeDataMath &exeDataMath)
 	{
 		const Span<const int16_t> cosineTable = exeDataMath.cosineTable;
-		const short cosAngleMultiplier = cosineTable[angle];
-		const short sinAngleMultiplier = cosineTable[angle + 128];
+		const int16_t cosAngleMultiplier = cosineTable[angle];
+		const int16_t sinAngleMultiplier = cosineTable[angle + 128];
 
-		const short doubledX = x * 2;
-		const short doubledY = y * 2;
+		const int16_t doubledX = x * 2;
+		const int16_t doubledY = y * 2;
 
-		short negCosAngleMultipler = -cosAngleMultiplier;
+		int16_t negCosAngleMultipler = -cosAngleMultiplier;
 		if (negCosAngleMultipler >= 0)
 		{
 			negCosAngleMultipler--;
 		}
 
-		const int imulRes1 = doubledX * sinAngleMultiplier;
-		const int imulRes2 = doubledY * negCosAngleMultipler;
-		const int imulRes3 = doubledX * cosAngleMultiplier;
-		const int imulRes4 = doubledY * sinAngleMultiplier;
+		const int32_t imulRes1 = doubledX * sinAngleMultiplier;
+		const int32_t imulRes2 = doubledY * negCosAngleMultipler;
+		const int32_t imulRes3 = doubledX * cosAngleMultiplier;
+		const int32_t imulRes4 = doubledY * sinAngleMultiplier;
 
-		const short highRes1 = static_cast<uint32_t>(imulRes1) >> 16;
-		const short highRes2 = static_cast<uint32_t>(imulRes2) >> 16;
-		const short highRes3 = static_cast<uint32_t>(imulRes3) >> 16;
-		const short highRes4 = static_cast<uint32_t>(imulRes4) >> 16;
+		const int16_t highRes1 = static_cast<uint32_t>(imulRes1) >> 16;
+		const int16_t highRes2 = static_cast<uint32_t>(imulRes2) >> 16;
+		const int16_t highRes3 = static_cast<uint32_t>(imulRes3) >> 16;
+		const int16_t highRes4 = static_cast<uint32_t>(imulRes4) >> 16;
 
 		x = highRes2 + highRes1;
 		y = highRes3 + highRes4;
 	}
 
-	void SampleFOGTXT(const ArenaFogState &fogState, const ExeData &exeData)
+	void SampleFOGTXT(const ExeData &exeData)
 	{
 		std::fill(std::begin(FOGTXTSample), std::end(FOGTXTSample), 0);
 
-		int loopCount = 4;
-		int index = 0;
+		int32_t index = 0;
+		int32_t loopCount = 4;
+		int32_t FOGTXTSampleIndex = 45;
 
 		do
 		{
 			AX = WORD_ARRAY_4b80_81d8[index];
 			CX = WORD_ARRAY_4b80_81d8[index + 2];
 			DI = 511;
-			DI -= fogState.PlayerAngle; // PlayerAngle is never greater than 511
+			DI -= PlayerAngle; // PlayerAngle is never greater than 511
 
 			FogRotateVector(DI, AX, CX, exeData.math);
 
@@ -130,8 +143,6 @@ namespace
 
 		WORD_4b80_8208 = 0;
 
-		int fogTxtSampleIndex = FogTxtSampleExtraCount;
-
 		do
 		{
 			BP = WORD_4b80_a784; // Seems to always be 0092 when this function is called
@@ -140,15 +151,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[15];
 			AX -= WORD_ARRAY_4b80_81d8[3];
 
-			int product = (int)AX * (int)WORD_4b80_8208;
-			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
-			DX = (int16_t)(product >> 16);          // high 16 bits
+			int32_t product = AX * WORD_4b80_8208;
+			AX = static_cast<int16_t>(product);
+			DX = product >> 16;
 
-			int dividend = ((int)DX << 16) | (unsigned short)AX;
-			short divisor = BP;
+			int32_t dividend = (DX << 16) | AX;
+			int16_t divisor = BP;
 
-			AX = (short)(dividend / divisor);
-			DX = (short)(dividend % divisor);
+			AX = static_cast<int16_t>(dividend / divisor);
+			DX = dividend % divisor;
 
 			AX += WORD_ARRAY_4b80_81d8[3];
 			WORD_4b80_81b0 = AX;
@@ -156,15 +167,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[16];
 			AX -= WORD_ARRAY_4b80_81d8[4];
 
-			product = (int)AX * (int)WORD_4b80_8208;
-			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
-			DX = (int16_t)(product >> 16);          // high 16 bits
+			product = AX * WORD_4b80_8208;
+			AX = static_cast<int16_t>(product);
+			DX = product >> 16;
 
-			dividend = ((int)DX << 16) | (unsigned short)AX;
+			dividend = (DX << 16) | AX;
 			divisor = BP;
 
-			AX = (short)(dividend / divisor);
-			DX = (short)(dividend % divisor);
+			AX = static_cast<int16_t>(dividend / divisor);
+			DX = dividend % divisor;
 
 			AX += WORD_ARRAY_4b80_81d8[4];
 			WORD_4b80_81b4 = AX;
@@ -172,15 +183,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[17];
 			AX -= WORD_ARRAY_4b80_81d8[5];
 
-			product = (int)AX * (int)WORD_4b80_8208;
-			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
-			DX = (int16_t)(product >> 16);          // high 16 bits
+			product = AX * WORD_4b80_8208;
+			AX = static_cast<int16_t>(product);
+			DX = product >> 16;
 
-			dividend = ((int)DX << 16) | (unsigned short)AX;
+			dividend = (DX << 16) | AX;
 			divisor = BP;
 
-			AX = (short)(dividend / divisor);
-			DX = (short)(dividend % divisor);
+			AX = static_cast<int16_t>(dividend / divisor);
+			DX = dividend % divisor;
 
 			AX += WORD_ARRAY_4b80_81d8[5];
 			WORD_4b80_81b8 = AX;
@@ -192,15 +203,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[21];
 			AX -= WORD_ARRAY_4b80_81d8[9];
 
-			product = (int)AX * (int)WORD_4b80_8208;
-			AX = (product & 0xFFFF);      // low 16 bits
-			DX = (product >> 16);          // high 16 bits
+			product = AX * WORD_4b80_8208;
+			AX = static_cast<int16_t>(product);
+			DX = product >> 16;
 
-			dividend = ((int)DX << 16) | (unsigned short)AX;
+			dividend = (DX << 16) | AX;
 			divisor = BP;
 
-			AX = (short)(dividend / divisor);
-			DX = (short)(dividend % divisor);
+			AX = static_cast<int16_t>(dividend / divisor);
+			DX = dividend % divisor;
 
 			AX += WORD_ARRAY_4b80_81d8[9];
 			WORD_4b80_81c6 = AX;
@@ -208,15 +219,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[22];
 			AX -= WORD_ARRAY_4b80_81d8[10];
 
-			product = (int)AX * (int)WORD_4b80_8208;
-			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
-			DX = (int16_t)(product >> 16);          // high 16 bits
+			product = AX * WORD_4b80_8208;
+			AX = static_cast<int16_t>(product);
+			DX = product >> 16;
 
-			dividend = ((int)DX << 16) | (unsigned short)AX;
+			dividend = (DX << 16) | AX;
 			divisor = BP;
 
-			AX = (short)(dividend / divisor);
-			DX = (short)(dividend % divisor);
+			AX = static_cast<int16_t>(dividend / divisor);
+			DX = dividend % divisor;
 
 			AX += WORD_ARRAY_4b80_81d8[10];
 			WORD_4b80_81c8 = AX;
@@ -224,15 +235,15 @@ namespace
 			AX = WORD_ARRAY_4b80_81d8[23];
 			AX -= WORD_ARRAY_4b80_81d8[11];
 
-			product = (int)AX * (int)WORD_4b80_8208;
-			AX = (uint16_t)(product & 0xFFFF);      // low 16 bits
-			DX = (int16_t)(product >> 16);          // high 16 bits
+			product = AX * WORD_4b80_8208;
+			AX = static_cast<int16_t>(product);
+			DX = product >> 16;
 
-			dividend = ((int)DX << 16) | (unsigned short)AX;
+			dividend = (DX << 16) | AX;
 			divisor = BP;
 
-			AX = (short)(dividend / divisor);
-			DX = (short)(dividend % divisor);
+			AX = static_cast<int16_t>(dividend / divisor);
+			DX = dividend % divisor;
 
 			AX += WORD_ARRAY_4b80_81d8[11];
 			WORD_4b80_81ca = AX;
@@ -243,11 +254,11 @@ namespace
 			AX -= WORD_4b80_81b0;
 			EAX = AX << 16;
 
-			int64_t dividend2 = (int64_t)(int32_t)EAX;
-			int32_t divisor2 = (int32_t)BP;
+			int64_t dividend2 = EAX;
+			int32_t divisor2 = BP;
 
-			EAX = (int32_t)(dividend2 / divisor2);
-			EDX = (int32_t)(dividend2 % divisor2);
+			EAX = static_cast<int32_t>(dividend2 / divisor2);
+			EDX = static_cast<int32_t>(dividend2 % divisor2);
 
 			DWORD_VALUE3 = EAX;
 
@@ -255,11 +266,11 @@ namespace
 			AX -= WORD_4b80_81b4;
 			EAX = AX << 16;
 
-			dividend2 = (int64_t)(int32_t)EAX;
-			divisor2 = (int32_t)BP;
+			dividend2 = EAX;
+			divisor2 = BP;
 
-			EAX = (int32_t)(dividend2 / divisor2);
-			EDX = (int32_t)(dividend2 % divisor2);
+			EAX = static_cast<int32_t>(dividend2 / divisor2);
+			EDX = static_cast<int32_t>(dividend2 % divisor2);
 
 			DWORD_VALUE4 = EAX;
 
@@ -267,11 +278,11 @@ namespace
 			AX -= WORD_4b80_81b8;
 			EAX = AX << 16;
 
-			dividend2 = (int64_t)(int32_t)EAX;
-			divisor2 = (int32_t)BP;
+			dividend2 = EAX;
+			divisor2 = BP;
 
-			EAX = (int32_t)(dividend2 / divisor2);
-			EDX = (int32_t)(dividend2 % divisor2);
+			EAX = static_cast<int32_t>(dividend2 / divisor2);
+			EDX = static_cast<int32_t>(dividend2 % divisor2);
 
 			DWORD_VALUE5 = EAX;
 
@@ -281,15 +292,15 @@ namespace
 			EAX = WORD_4b80_81c8 * WORD_4b80_81d4;
 			EAX -= ECX;
 
-			int64_t product2 = (int64_t)EAX * (int64_t)DWORD_4b80_81a6;
-			EAX = (uint32_t)(product2 & 0xFFFFFFFF);      // low 16 bits
-			EDX = (int32_t)(product2 >> 32);          // high 16 bits
+			int64_t product2 = static_cast<int64_t>(EAX) * static_cast<int64_t>(DWORD_4b80_81a6);
+			EAX = static_cast<int32_t>(product2);
+			EDX = product2 >> 32;
 
 			DWORD_VALUE1 = EAX;
 			DWORD_VALUE2 = EDX;
 			DWORD_4b80_81a2 = 0;
 
-			loopCount = 40; // 0028 in hexadecimal
+			loopCount = 40;
 
 			do
 			{
@@ -298,52 +309,52 @@ namespace
 				if (EBP != 0)
 				{
 
-					dividend2 = (int64_t)(int32_t)EAX;
-					divisor2 = (int32_t)EBP;
+					dividend2 = EAX;
+					divisor2 = EBP;
 
-					EAX = (int32_t)(dividend2 / divisor2);
-					EDX = (int32_t)(dividend2 % divisor2);
+					EAX = static_cast<int32_t>(dividend2 / divisor2);
+					EDX = dividend2 % divisor2;
 
 					if (EAX < 0)
 					{
-						product2 = (int64_t)EAX * (int64_t)DWORD_4b80_81aa;
-						EAX = (uint32_t)(product2 & 0xFFFFFFFF);      // low 16 bits
-						EDX = (int32_t)(product2 >> 32);          // high 16 bits
-						EAX = ((unsigned int)EAX >> 31) | (EDX << 1);
+						product2 = static_cast<int64_t>(EAX) * static_cast<int64_t>(DWORD_4b80_81aa);
+						EAX = static_cast<int32_t>(product2);
+						EDX = product2 >> 32;
+						EAX = (static_cast<uint32_t>(EAX) >> 31) | (EDX << 1);
 					}
 
 					EBX = EAX;
-					EBP = ((WORD_4b80_81ae & 0xFFFF) | ((WORD_4b80_81b0 & 0xFFFF) << 16));
+					EBP = WORD_4b80_81ae | (WORD_4b80_81b0 << 16);
 
-					product2 = (int64_t)EAX * (int64_t)EBP;
-					EAX = (uint32_t)(product2 & 0xFFFFFFFF);      // low 16 bits
-					EDX = (int32_t)(product2 >> 32);          // high 16 bits
+					product2 = static_cast<int64_t>(EAX) * static_cast<int64_t>(EBP);
+					EAX = static_cast<int32_t>(product2);
+					EDX = product2 >> 32;
 
-					EAX = ((unsigned int)EAX >> 24) | (EDX << 8);
-					EAX += fogState.PlayerX + fogState.WORD_4b80_191b;
-					EAX = EAX >> 6;
+					EAX = (static_cast<uint32_t>(EAX) >> 24) | (EDX << 8);
+					EAX += PlayerX + WORD_4b80_191b;
+					EAX >>= 6;
 					std::swap(EAX, EBX);
 
-					EBP = ((WORD_4b80_81b6 & 0xFFFF) | ((WORD_4b80_81b8 & 0xFFFF) << 16));
+					EBP = WORD_4b80_81b6 | (WORD_4b80_81b8 << 16);
 
-					product2 = (int64_t)EAX * (int64_t)EBP;
-					EAX = (uint32_t)(product2 & 0xFFFFFFFF);      // low 16 bits
-					EDX = (int32_t)(product2 >> 32);          // high 16 bits
+					product2 = static_cast<int64_t>(EAX) * static_cast<int64_t>(EBP);
+					EAX = static_cast<int32_t>(product2);
+					EDX = product2 >> 32;
 
-					EAX = ((unsigned int)EAX >> 24) | (EDX << 8);
-					EAX += fogState.PlayerZ + fogState.WORD_4b80_191b;
-					EAX = EAX >> 6;
+					EAX = (static_cast<uint32_t>(EAX) >> 24) | (EDX << 8);
+					EAX += PlayerZ + WORD_4b80_191b;
+					EAX >>= 6;
 
-					BX = EBX;
+					BX = static_cast<int16_t>(EBX);
 					BX &= 0x7F;
 					BX <<= 7;
 
-					AX = EAX;
+					AX = static_cast<int16_t>(EAX);
 					AX &= 0x7F;
 
 					BX += AX;
 
-					AX = fogState.fogTxt[BX];
+					AX = FOGTXT[BX];
 				}
 				else
 				{
@@ -351,8 +362,8 @@ namespace
 				}
 
 				// Write the value to the sample buffer FOGTXTSample, a short value array, at FOGTXTSampleIndex.
-				FOGTXTSample[fogTxtSampleIndex] = AX; // Write the calculated value
-				fogTxtSampleIndex++;
+				FOGTXTSample[FOGTXTSampleIndex] = AX; // Write the calculated value
+				FOGTXTSampleIndex++;
 
 				// Next is, in assembly:
 				// ADD dword[81a2], DWORD_VALUE1
@@ -378,30 +389,57 @@ namespace
 
 				int sum = (WORD_4b80_81ae & 0xFFFF | ((WORD_4b80_81b0 & 0xFFFF) << 16));
 				sum += DWORD_VALUE3;
-				WORD_4b80_81ae = sum;
+				WORD_4b80_81ae = static_cast<int16_t>(sum);
 				WORD_4b80_81b0 = sum >> 16;
 
 				sum = (WORD_4b80_81b2 & 0xFFFF | ((WORD_4b80_81b4 & 0xFFFF) << 16));
 				sum += DWORD_VALUE4;
-				WORD_4b80_81b2 = sum;
+				WORD_4b80_81b2 = static_cast<int16_t>(sum);
 				WORD_4b80_81b4 = sum >> 16;
 
 				sum = (WORD_4b80_81b6 & 0xFFFF | ((WORD_4b80_81b8 & 0xFFFF) << 16));
 				sum += DWORD_VALUE5;
-				WORD_4b80_81b6 = sum;
+				WORD_4b80_81b6 = static_cast<int16_t>(sum);
 				WORD_4b80_81b8 = sum >> 16;
 
 				loopCount--;
 			} while (loopCount != 0);
 
 			WORD_4b80_8208++;
-		} while (WORD_4b80_8208 != 25); // Rows
+		} while (WORD_4b80_8208 != 25);
+	}
+	
+	inline void ApplyNewData()
+	{
+		BX += DX;
+		CX = static_cast<int16_t>((CX & 0xFF) | ((BX & 0xFF) << 8));
+		BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+		AX = static_cast<int16_t>((AX & 0xFF00) | FOGLGT[BX]);
+		BX = (CX & 0xFF00) >> 8;
+		DX += BP;
+		BX += DX;
+		CX = static_cast<int16_t>((CX & 0xFF) | ((BX & 0xFF) << 8));
+		BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+		AX = static_cast<int16_t>((AX & 0xFF) | (FOGLGT[BX] << 8));
+		ESArray[DI / 2] = AX;
+		DI += 2;
+		BX = (CX & 0xFF00) >> 8;
+		DX += BP;
+	}
+	
+	inline void IterateOverData()
+	{
+		ApplyNewData();
+		ApplyNewData();
+		ApplyNewData();
+		ApplyNewData();
+		SI++;
+		SI++;
 	}
 
-	void ApplySampledFogData(Span<const uint8_t> FOGLGT)
+	void ApplySampledFogData()
 	{
-		// Aaron: is this zeroing the horizon line?
-		for (int i = 0; i < 40; i++)
+		for (int32_t i = 0; i < 40; i++)
 		{
 			FOGTXTSample[405 + i] = 0;
 		}
@@ -413,15 +451,14 @@ namespace
 
 		do
 		{
-			for (int i = 0; i < 40; i++)
+			for (int32_t i = 0; i < 40; i++)
 			{
-				FOGTXTSample[i] = (FOGTXTSample[85 + i] - FOGTXTSample[45 + i]) >> 3;
+				FOGTXTSample[0 + i] = (FOGTXTSample[85 + i] - FOGTXTSample[45 + i]) >> 3;
 			}
 
 			DI = FOGTXTSample[42];
 			ES = FOGTXTSample[43]; // 0x533C in testing, used for location of ESArray
 			CX = 8;
-
 			if (FOGTXTSample[40] == 1)
 			{
 				CX -= 6;
@@ -435,70 +472,9 @@ namespace
 				BP = (FOGTXTSample[(SI + 2) / 2] - DX) >> 3;
 				FOGTXTSample[SI / 2] = DX + FOGTXTSample[0];
 
-				for (int i = 0; i < 39; i++)
+				for (int32_t i = 0; i < 39; i++)
 				{
-					BX += DX;
-					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-					AX = (AX & 0xFF00) | FOGLGT[BX];
-					BX = (CX & 0xFF00) >> 8;
-					DX += BP;
-					BX += DX;
-					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-					AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
-					ESArray[DI / 2] = AX;
-					DI += 2;
-					BX = (CX & 0xFF00) >> 8;
-					DX += BP;
-
-					BX += DX;
-					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-					AX = (AX & 0xFF00) | FOGLGT[BX];
-					BX = (CX & 0xFF00) >> 8;
-					DX += BP;
-					BX += DX;
-					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-					AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
-					ESArray[DI / 2] = AX;
-					DI += 2;
-					BX = (CX & 0xFF00) >> 8;
-					DX += BP;
-
-					BX += DX;
-					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-					AX = (AX & 0xFF00) | FOGLGT[BX];
-					BX = (CX & 0xFF00) >> 8;
-					DX += BP;
-					BX += DX;
-					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-					AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
-					ESArray[DI / 2] = AX;
-					DI += 2;
-					BX = (CX & 0xFF00) >> 8;
-					DX += BP;
-
-					BX += DX;
-					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-					AX = (AX & 0xFF00) | FOGLGT[BX];
-					BX = (CX & 0xFF00) >> 8;
-					DX += BP;
-					BX += DX;
-					CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-					BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-					AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
-					ESArray[DI / 2] = AX;
-					DI += 2;
-					BX = (CX & 0xFF00) >> 8;
-					DX += BP;
-
-					SI++;
-					SI++;
+					IterateOverData();
 					DX = FOGTXTSample[SI / 2];
 					BP = FOGTXTSample[(SI + 2) / 2];
 					BP -= DX;
@@ -506,70 +482,12 @@ namespace
 					FOGTXTSample[SI / 2] = DX + FOGTXTSample[(SI - 90) / 2];
 				}
 
-				BX += DX;
-				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-				AX = (AX & 0xFF00) | FOGLGT[BX];
-				BX = (CX & 0xFF00) >> 8;
-				DX += BP;
-				BX += DX;
-				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-				AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
-				ESArray[DI / 2] = AX;
-				DI += 2;
-				BX = (CX & 0xFF00) >> 8;
-				DX += BP;
+				IterateOverData();
 
-				BX += DX;
-				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-				AX = (AX & 0xFF00) | FOGLGT[BX];
-				BX = (CX & 0xFF00) >> 8;
-				DX += BP;
-				BX += DX;
-				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-				AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
-				ESArray[DI / 2] = AX;
-				DI += 2;
-				BX = (CX & 0xFF00) >> 8;
-				DX += BP;
-
-				BX += DX;
-				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-				AX = (AX & 0xFF00) | FOGLGT[BX];
-				BX = (CX & 0xFF00) >> 8;
-				DX += BP;
-				BX += DX;
-				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-				AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
-				ESArray[DI / 2] = AX;
-				DI += 2;
-				BX = (CX & 0xFF00) >> 8;
-				DX += BP;
-
-				BX += DX;
-				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-				AX = (AX & 0xFF00) | FOGLGT[BX];
-				BX = (CX & 0xFF00) >> 8;
-				DX += BP;
-				BX += DX;
-				CX = (CX & 0xFF) | ((BX & 0xFF) << 8);
-				BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-				AX = (AX & 0xFF) | (FOGLGT[BX] << 8);
-				ESArray[DI / 2] = AX;
-				DI += 2;
-				BX = (CX & 0xFF00) >> 8;
-				DX += BP;
-
-				SI++;
-				SI++;
-				CX--;
-			} while ((CX & 0xFF) != 0);
+				CL = (CX & 0xFF);
+				CL--;
+				CX = static_cast<int16_t>((CX & 0xFF00) | CL);
+			} while (CL != 0);
 
 			FOGTXTSample[42] = DI;
 			FOGTXTSample[40]--;
@@ -579,11 +497,10 @@ namespace
 
 ArenaFogState::ArenaFogState()
 {
-	this->PlayerX = 0;
-	this->PlayerZ = 0;
-	this->PlayerAngle = 0;
-	this->WORD_4b80_191b = 4;
-	this->WORD_4b80_191d = 4;
+	this->playerX = 0;
+	this->playerZ = 0;
+	this->playerAngle = 0;
+	this->animOffset = 4;
 	this->currentSeconds = 0.0;
 }
 
@@ -624,8 +541,8 @@ void ArenaFogState::update(double dt, const WorldDouble3 &playerPos, const Doubl
 {
 	constexpr int ArenaUnitsInteger = static_cast<int>(MIFUtils::ARENA_UNITS);
 	const OriginalInt2 originalPlayerPos = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerPos, mapType);
-	this->PlayerX = originalPlayerPos.x;
-	this->PlayerZ = originalPlayerPos.y;
+	this->playerX = originalPlayerPos.x;
+	this->playerZ = originalPlayerPos.y;
 
 	// 0 at due south
 	// 0x80 (128) at due west
@@ -640,7 +557,7 @@ void ArenaFogState::update(double dt, const WorldDouble3 &playerPos, const Doubl
 		return std::clamp<short>(static_cast<short>(anglePercent * 512.0), 0, 511);
 	};
 
-	this->PlayerAngle = getOriginalAngle(-playerDir.y, -playerDir.x);
+	this->playerAngle = getOriginalAngle(-playerDir.y, -playerDir.x);
 
 	constexpr double FOG_SECONDS_PER_FRAME = 1.0 / 25.0;
 
@@ -648,8 +565,7 @@ void ArenaFogState::update(double dt, const WorldDouble3 &playerPos, const Doubl
 	if (this->currentSeconds >= FOG_SECONDS_PER_FRAME)
 	{
 		this->currentSeconds = std::fmod(this->currentSeconds, FOG_SECONDS_PER_FRAME);
-		this->WORD_4b80_191b += 4;
-		this->WORD_4b80_191d += 4;
+		this->animOffset += 4;
 	}
 }
 
@@ -741,11 +657,21 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const ExeDataWeather &exeDataWeather = exeData.weather;
 
+	FOGLGT = Span<const int8_t>(reinterpret_cast<const int8_t*>(fogState.fogLgt.begin()), fogState.fogLgt.getCount());
+	FOGTXT = Span<const int16_t>(reinterpret_cast<const int16_t*>(fogState.fogTxt.begin()), fogState.fogTxt.getCount());
+
 	std::copy(std::begin(exeDataWeather.fogTxtSampleHelper), std::end(exeDataWeather.fogTxtSampleHelper), std::begin(WORD_ARRAY_4b80_81d8));
 	std::fill(std::begin(ESArray), std::end(ESArray), 0x2566);
-	
-	SampleFOGTXT(fogState, exeData);
-	ApplySampledFogData(fogState.fogLgt);
+	//std::fill(std::begin(ESArray), std::end(ESArray), 0);
+
+	PlayerX = fogState.playerX;
+	PlayerZ = fogState.playerZ;
+	PlayerAngle = fogState.playerAngle;
+	WORD_4b80_191b = fogState.animOffset;
+	WORD_4b80_191d = fogState.animOffset;
+
+	SampleFOGTXT(exeData);
+	ApplySampledFogData();
 
 	outPixels.fill(0);
 
