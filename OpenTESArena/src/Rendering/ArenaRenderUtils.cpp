@@ -314,7 +314,7 @@ namespace
 					EDX = product2 >> 32;
 
 					EAX = (static_cast<uint32_t>(EAX) >> 24) | (EDX << 8);
-					EAX += PlayerZ + WORD_4b80_191b;
+					EAX += PlayerZ + WORD_4b80_191d;
 					EAX >>= 6;
 
 					BX = static_cast<int16_t>(EBX);
