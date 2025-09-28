@@ -7,6 +7,7 @@
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
 #include "../Interface/GameWorldUiModel.h"
+#include "../Math/ArenaMathUtils.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"
 #include "../Math/Vector4.h"
@@ -86,36 +87,7 @@ namespace
 
 	int64_t EAXEDX = 0;
 
-	void FogRotateVector(int32_t angle, int16_t &x, int16_t &y, const ExeDataMath &exeDataMath)
-	{
-		const Span<const int16_t> cosineTable = exeDataMath.cosineTable;
-		const int16_t cosAngleMultiplier = cosineTable[angle];
-		const int16_t sinAngleMultiplier = cosineTable[angle + 128];
-
-		const int16_t doubledX = x * 2;
-		const int16_t doubledY = y * 2;
-
-		int16_t negCosAngleMultipler = -cosAngleMultiplier;
-		if (negCosAngleMultipler >= 0)
-		{
-			negCosAngleMultipler--;
-		}
-
-		const int32_t imulRes1 = doubledX * sinAngleMultiplier;
-		const int32_t imulRes2 = doubledY * negCosAngleMultipler;
-		const int32_t imulRes3 = doubledX * cosAngleMultiplier;
-		const int32_t imulRes4 = doubledY * sinAngleMultiplier;
-
-		const int16_t highRes1 = static_cast<uint32_t>(imulRes1) >> 16;
-		const int16_t highRes2 = static_cast<uint32_t>(imulRes2) >> 16;
-		const int16_t highRes3 = static_cast<uint32_t>(imulRes3) >> 16;
-		const int16_t highRes4 = static_cast<uint32_t>(imulRes4) >> 16;
-
-		x = highRes2 + highRes1;
-		y = highRes3 + highRes4;
-	}
-
-	void SampleFOGTXT(const ExeData &exeData)
+	void SampleFOGTXT(Span<const int16_t> cosineTable)
 	{
 		std::fill(std::begin(FOGTXTSample), std::end(FOGTXTSample), 0);
 
@@ -130,7 +102,7 @@ namespace
 			DI = 511;
 			DI -= PlayerAngle; // PlayerAngle is never greater than 511
 
-			FogRotateVector(DI, AX, CX, exeData.math);
+			ArenaMathUtils::rotatePoint(DI, AX, CX, cosineTable);
 
 			BX = WORD_ARRAY_4b80_81d8[index + 1];
 			WORD_ARRAY_4b80_81d8[index + 3] = AX;
@@ -656,6 +628,7 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const ExeDataWeather &exeDataWeather = exeData.weather;
+	Span<const int16_t> cosineTable = exeData.math.cosineTable;
 
 	FOGLGT = Span<const int8_t>(reinterpret_cast<const int8_t*>(fogState.fogLgt.begin()), fogState.fogLgt.getCount());
 	FOGTXT = Span<const int16_t>(reinterpret_cast<const int16_t*>(fogState.fogTxt.begin()), fogState.fogTxt.getCount());
@@ -670,7 +643,7 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 	WORD_4b80_191b = fogState.animOffset;
 	WORD_4b80_191d = fogState.animOffset;
 
-	SampleFOGTXT(exeData);
+	SampleFOGTXT(cosineTable);
 	ApplySampledFogData();
 
 	outPixels.fill(0);

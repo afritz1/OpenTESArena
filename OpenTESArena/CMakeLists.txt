@@ -375,6 +375,8 @@ SET(TES_ITEMS
     "${SRC_ROOT}/Items/ItemMaterialLibrary.h")
 
 SET(TES_MATH
+    "${SRC_ROOT}/Math/ArenaMathUtils.cpp"
+    "${SRC_ROOT}/Math/ArenaMathUtils.h"
     "${SRC_ROOT}/Math/BoundingBox.cpp"
     "${SRC_ROOT}/Math/BoundingBox.h"
     "${SRC_ROOT}/Math/Constants.h"
