@@ -519,8 +519,8 @@ void ArenaFogState::update(double dt, const WorldDouble3 &playerPos, const Doubl
 {
 	constexpr int ArenaUnitsInteger = static_cast<int>(MIFUtils::ARENA_UNITS);
 	const OriginalInt2 originalPlayerPos = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerPos, mapType);
-	this->playerX = originalPlayerPos.x;
-	this->playerZ = originalPlayerPos.y;
+	this->playerX = originalPlayerPos.y;
+	this->playerZ = originalPlayerPos.x;
 
 	// 0 at due south
 	// 0x80 (128) at due west
