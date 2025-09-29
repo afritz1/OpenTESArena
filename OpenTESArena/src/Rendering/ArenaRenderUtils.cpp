@@ -32,9 +32,9 @@ namespace
 
 	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
 	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
-	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
-	int16_t ESArray[ESElementCount]; // 320 columns x 146 rows of screen pixels. The previous framebuffer in original game.
-	int8_t ESArrayLightLevels[ESWidth * ESHeight]; // Resulting light levels per pixel, used as the final texture.
+	constexpr int ESArrayPixelCount = ESWidth * ESHeight;
+	int8_t ESArray[ESArrayPixelCount]; // 320 columns x 146 rows of screen pixels. The previous framebuffer in original game.
+	int8_t ESArrayLightLevels[ESArrayPixelCount]; // Resulting light levels per pixel, used as the final texture.
 
 	int16_t PlayerX = 0;
 	int16_t PlayerZ = 0;
@@ -394,17 +394,18 @@ namespace
 	{
 		BX += DX;
 		CX = static_cast<int16_t>((CX & 0xFF) | ((BX & 0xFF) << 8));
-		BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+		BX = (BX & 0xFF00) | (ESArray[DI] & 0xFF);
 		ESArrayLightLevels[DI] = (BX & 0xFF00) >> 8;
 		AX = static_cast<int16_t>((AX & 0xFF00) | GetLightTableValue(BX));
 		BX = (CX & 0xFF00) >> 8;
 		DX += BP;
 		BX += DX;
 		CX = static_cast<int16_t>((CX & 0xFF) | ((BX & 0xFF) << 8));
-		BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+		BX = (BX & 0xFF00) | (ESArray[DI + 1] & 0xFF);
 		ESArrayLightLevels[DI + 1] = (BX & 0xFF00) >> 8;
 		AX = static_cast<int16_t>((AX & 0xFF) | (GetLightTableValue(BX) << 8));
-		ESArray[DI / 2] = AX;
+		ESArray[DI] = AX & 0xFF;
+		ESArray[DI + 1] = (AX >> 8) & 0xFF;
 		DI += 2;
 		BX = (CX & 0xFF00) >> 8;
 		DX += BP;
@@ -646,7 +647,7 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 
 	// Arbitrary fill value. Anything works for creating the separate transparency texture, but
 	// can't be zero if we care about displaying ESArray itself.
-	std::fill(std::begin(ESArray), std::end(ESArray), 0xAAAA);
+	std::fill(std::begin(ESArray), std::end(ESArray), 0x66);
 
 	PlayerX = fogState.playerX;
 	PlayerZ = fogState.playerZ;
@@ -665,7 +666,7 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 		{
 			const int srcIndex = x + (y * ESWidth);
 			const uint8_t lightLevel = ESArrayLightLevels[srcIndex];
-			const uint8_t adjustedLightLevel = lightLevel + 1; // [0, 12] -> [1, 13]
+			const uint8_t adjustedLightLevel = lightLevel + PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
 			outPixels.set(x, y, adjustedLightLevel);
 		}
 	}
