@@ -89,8 +89,6 @@ namespace
 
 	void SampleFOGTXT(Span<const int16_t> cosineTable)
 	{
-		std::fill(std::begin(FOGTXTSample), std::end(FOGTXTSample), 0);
-
 		int32_t index = 0;
 		int32_t loopCount = 4;
 		int32_t FOGTXTSampleIndex = 45;
