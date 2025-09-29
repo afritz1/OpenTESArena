@@ -646,6 +646,11 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 	PlayerX = fogState.playerX;
 	PlayerZ = fogState.playerZ;
 	PlayerAngle = fogState.playerAngle;
+	if (PlayerAngle == 127)
+	{
+		PlayerAngle = 128;
+	}
+
 	WORD_4b80_191b = fogState.animOffset;
 	WORD_4b80_191d = fogState.animOffset;
 
