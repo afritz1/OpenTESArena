@@ -9,7 +9,8 @@ void ArenaMathUtils::rotatePoint(int32_t angle, int16_t &x, int16_t &y, Span<con
 	const int16_t doubledY = y * 2;
 
 	int16_t negCosAngleMultipler = -cosAngleMultiplier;
-	if (negCosAngleMultipler >= 0)
+	const bool isOverflow = cosAngleMultiplier == SHRT_MIN;
+	if (isOverflow)
 	{
 		negCosAngleMultipler--;
 	}
