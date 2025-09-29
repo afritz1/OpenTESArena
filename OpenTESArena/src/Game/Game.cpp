@@ -413,7 +413,7 @@ bool Game::init()
 	this->sceneManager.renderEntityManager.init(this->renderer);
 	this->sceneManager.renderSkyManager.init(exeData, this->textureManager, this->renderer);
 
-	if (!this->sceneManager.renderWeatherManager.init(this->renderer))
+	if (!this->sceneManager.renderWeatherManager.init(this->textureManager, this->renderer))
 	{
 		DebugLogError("Couldn't init render weather manager.");
 		return false;
@@ -586,7 +586,7 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 		constexpr bool isFloatingOriginChanged = false;
 
 		this->gameState.tickVisibility(renderCamera, *this);
-		this->gameState.tickRendering(renderCamera, isFloatingOriginChanged, *this);
+		this->gameState.tickRendering(0.0, renderCamera, isFloatingOriginChanged, *this);
 	}
 }
 
@@ -959,7 +959,7 @@ void Game::loop()
 				}
 
 				this->gameState.tickVisibility(renderCamera, *this);
-				this->gameState.tickRendering(renderCamera, isFloatingOriginChanged, *this);
+				this->gameState.tickRendering(clampedDeltaTime, renderCamera, isFloatingOriginChanged, *this);
 
 				// Update audio listener orientation.
 				const AudioListenerState listenerState(newPlayerPosition, this->player.forward, this->player.up);

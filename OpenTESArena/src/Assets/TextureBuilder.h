@@ -18,9 +18,11 @@ struct TextureBuilder
 	TextureBuilder();
 
 	void initPaletted(int width, int height, const uint8_t *texels);
+	void initHighColor(int width, int height, const uint16_t *texels);
 	void initTrueColor(int width, int height, const uint32_t *texels);
 
 	Span2D<const uint8_t> getTexels8() const;
+	Span2D<const uint16_t> getTexels16() const;
 	Span2D<const uint32_t> getTexels32() const;
 };
 

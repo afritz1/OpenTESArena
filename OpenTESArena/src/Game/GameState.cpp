@@ -721,7 +721,7 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	this->tickCollision(0.0, physicsSystem, game);
 	this->tickSky(0.0, game);
 	this->tickVisibility(renderCamera, game);
-	this->tickRendering(renderCamera, isFloatingOriginChanged, game);
+	this->tickRendering(0.0, renderCamera, isFloatingOriginChanged, game);
 
 	if (this->nextMusicFunc)
 	{
@@ -1061,7 +1061,7 @@ void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)
 	skyVisManager.update(renderCamera, skyInst);
 }
 
-void GameState::tickRendering(const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game)
+void GameState::tickRendering(double dt, const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
@@ -1112,7 +1112,8 @@ void GameState::tickRendering(const RenderCamera &renderCamera, bool isFloatingO
 	RenderSkyManager &renderSkyManager = sceneManager.renderSkyManager;
 	renderSkyManager.update(skyInst, skyVisManager, this->weatherInst, renderCamera, isInterior, dayPercent, isFoggy, distantAmbientPercent, renderer);
 
+	const MapType mapType = this->getActiveMapType();
 	const WeatherInstance &weatherInst = game.gameState.getWeatherInstance();
 	RenderWeatherManager &renderWeatherManager = sceneManager.renderWeatherManager;
-	renderWeatherManager.update(weatherInst, renderCamera, renderer);
+	renderWeatherManager.update(dt, weatherInst, renderCamera, playerDirXZ, mapType, renderer);
 }

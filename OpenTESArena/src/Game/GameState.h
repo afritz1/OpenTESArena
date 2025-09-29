@@ -195,7 +195,7 @@ public:
 	void tickEntities(double dt, Game &game);
 	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
-	void tickRendering(const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game);
+	void tickRendering(double dt, const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game);
 };
 
 #endif

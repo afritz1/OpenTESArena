@@ -189,6 +189,9 @@ StarFilename=0x48F02
 [Logbook]
 IsEmpty=0x42F45
 
+[Math]
+CosineTable=0x466A6
+
 [Meta]
 DataSegmentOffset=0x32560
 
@@ -264,6 +267,7 @@ CurrentWorldPosition=0x43D5F
 InspectedEntityName=0x43B30
 
 [Weather]
+FogTxtSampleHelper=0x439D8
 ThunderstormFlashColors=0x3F8D2
 
 [Wilderness]

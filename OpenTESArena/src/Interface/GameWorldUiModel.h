@@ -11,6 +11,8 @@
 
 class Game;
 
+enum class MapType;
+
 struct ExeData;
 struct Rect;
 
@@ -33,6 +35,9 @@ namespace GameWorldUiModel
 
 	std::string getPlayerNameText(Game &game);
 	std::string getStatusButtonText(Game &game);
+
+	OriginalInt2 getOriginalPlayerPosition(const WorldDouble3 &playerPos, MapType mapType);
+	OriginalInt2 getOriginalPlayerPositionArenaUnits(const WorldDouble3 &playerPos, MapType mapType);
 	std::string getPlayerPositionText(Game &game);
 
 	std::optional<ButtonType> getHoveredButtonType(Game &game);
