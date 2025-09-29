@@ -33,7 +33,8 @@ namespace
 	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
 	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
 	constexpr int ESElementCount = (ESWidth * ESHeight) / 2;
-	int16_t ESArray[ESElementCount]; // For 320 columns x 146 rows of screen pixels.
+	int16_t ESArray[ESElementCount]; // 320 columns x 146 rows of screen pixels. The previous framebuffer in original game.
+	int8_t ESArrayLightLevels[ESWidth * ESHeight]; // Resulting light levels per pixel, used as the final texture.
 
 	int16_t PlayerX = 0;
 	int16_t PlayerZ = 0;
@@ -394,12 +395,14 @@ namespace
 		BX += DX;
 		CX = static_cast<int16_t>((CX & 0xFF) | ((BX & 0xFF) << 8));
 		BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
+		ESArrayLightLevels[DI] = (BX & 0xFF00) >> 8;
 		AX = static_cast<int16_t>((AX & 0xFF00) | GetLightTableValue(BX));
 		BX = (CX & 0xFF00) >> 8;
 		DX += BP;
 		BX += DX;
 		CX = static_cast<int16_t>((CX & 0xFF) | ((BX & 0xFF) << 8));
 		BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
+		ESArrayLightLevels[DI + 1] = (BX & 0xFF00) >> 8;
 		AX = static_cast<int16_t>((AX & 0xFF) | (GetLightTableValue(BX) << 8));
 		ESArray[DI / 2] = AX;
 		DI += 2;
@@ -640,8 +643,10 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 	FOGTXT = Span<const int16_t>(reinterpret_cast<const int16_t*>(fogState.fogTxt.begin()), fogState.fogTxt.getCount());
 
 	std::copy(std::begin(exeDataWeather.fogTxtSampleHelper), std::end(exeDataWeather.fogTxtSampleHelper), std::begin(WORD_ARRAY_4b80_81d8));
-	std::fill(std::begin(ESArray), std::end(ESArray), 0x2566);
-	//std::fill(std::begin(ESArray), std::end(ESArray), 0);
+
+	// Arbitrary fill value. Anything works for creating the separate transparency texture, but
+	// can't be zero if we care about displaying ESArray itself.
+	std::fill(std::begin(ESArray), std::end(ESArray), 0xAAAA);
 
 	PlayerX = fogState.playerX;
 	PlayerZ = fogState.playerZ;
@@ -659,36 +664,9 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 		for (int x = 0; x < ESWidth; x++)
 		{
 			const int srcIndex = x + (y * ESWidth);
-			DebugAssert(srcIndex < (ESWidth * ESHeight));
-			const uint8_t *ESArrayPtr = reinterpret_cast<const uint8_t*>(ESArray);
-			const uint8_t sample = ESArrayPtr[srcIndex];
-			const uint8_t lightLevel = sample;
-			outPixels.set(x, y, lightLevel);
+			const uint8_t lightLevel = ESArrayLightLevels[srcIndex];
+			const uint8_t adjustedLightLevel = lightLevel + 1; // [0, 12] -> [1, 13]
+			outPixels.set(x, y, adjustedLightLevel);
 		}
 	}
-
-	/*for (int row = 0; row < FogRows; row++)
-	{
-		for (int column = 0; column < FogColumns; column++)
-		{
-			const int srcIndex = column + (row * FogColumns) + FogTxtSampleExtraCount;
-			const int16_t sample = FOGTXTSample[srcIndex];
-			const uint8_t lightLevel = static_cast<uint8_t>(sample >> 8);
-			const uint8_t dither = static_cast<uint8_t>(sample);
-
-			constexpr int tileDimension = 8;
-			for (int j = 0; j < tileDimension; j++)
-			{
-				for (int i = 0; i < tileDimension; i++)
-				{
-					const int x = (column * tileDimension) + i;
-					const int y = (row * tileDimension) + j;
-
-					const bool shouldDither = false;// (dither & (1 << i)) != 0;
-					const uint8_t calculatedLightLevel = lightLevel + (shouldDither ? 1 : 0);
-					outPixels.set(x, y, calculatedLightLevel);
-				}
-			}
-		}
-	}*/
 }
