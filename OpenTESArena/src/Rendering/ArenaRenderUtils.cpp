@@ -378,25 +378,35 @@ namespace
 			WORD_4b80_8208++;
 		} while (WORD_4b80_8208 != 25);
 	}
-	
+
+	inline int8_t GetLightTableValue(int16_t index)
+	{
+		if (index < 0 || index >= FOGLGT.getCount())
+		{
+			index = 0; // Causes occasional black speckles
+		}
+
+		return FOGLGT[index];
+	}
+
 	inline void ApplyNewData()
 	{
 		BX += DX;
 		CX = static_cast<int16_t>((CX & 0xFF) | ((BX & 0xFF) << 8));
 		BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF);
-		AX = static_cast<int16_t>((AX & 0xFF00) | FOGLGT[BX]);
+		AX = static_cast<int16_t>((AX & 0xFF00) | GetLightTableValue(BX));
 		BX = (CX & 0xFF00) >> 8;
 		DX += BP;
 		BX += DX;
 		CX = static_cast<int16_t>((CX & 0xFF) | ((BX & 0xFF) << 8));
 		BX = (BX & 0xFF00) | (ESArray[DI / 2] & 0xFF00) >> 8;
-		AX = static_cast<int16_t>((AX & 0xFF) | (FOGLGT[BX] << 8));
+		AX = static_cast<int16_t>((AX & 0xFF) | (GetLightTableValue(BX) << 8));
 		ESArray[DI / 2] = AX;
 		DI += 2;
 		BX = (CX & 0xFF00) >> 8;
 		DX += BP;
 	}
-	
+
 	inline void IterateOverData()
 	{
 		DX = FOGTXTSample[SI / 2];
