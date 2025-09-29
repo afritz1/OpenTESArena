@@ -401,6 +401,11 @@ namespace
 	
 	inline void IterateOverData()
 	{
+		DX = FOGTXTSample[SI / 2];
+		BP = FOGTXTSample[(SI + 2) / 2];
+		BP -= DX;
+		BP >>= 3;
+		FOGTXTSample[SI / 2] = DX + FOGTXTSample[(SI - (FOGTXTSample[41] - 80)) / 2];
 		ApplyNewData();
 		ApplyNewData();
 		ApplyNewData();
@@ -418,19 +423,22 @@ namespace
 
 		FOGTXTSample[43] = WORD_4b80_a76a;
 		FOGTXTSample[40] = (WORD_4b80_a784 + 7) >> 3;
-		FOGTXTSample[41] = 170;
+		FOGTXTSample[41] = 90;
 		FOGTXTSample[42] = 0;
 
 		do
 		{
+			SI = FOGTXTSample[41] + 80;
+			FOGTXTSample[41] = SI;
 			for (int32_t i = 0; i < 40; i++)
 			{
-				FOGTXTSample[0 + i] = (FOGTXTSample[85 + i] - FOGTXTSample[45 + i]) >> 3;
+				FOGTXTSample[0 + i] = (FOGTXTSample[(SI / 2) + i] - FOGTXTSample[(SI / 2) - 40 + i]) >> 3;
 			}
 
 			DI = FOGTXTSample[42];
 			ES = FOGTXTSample[43]; // 0x533C in testing, used for location of ESArray
 			CX = 8;
+
 			if (FOGTXTSample[40] == 1)
 			{
 				CX -= 6;
@@ -440,21 +448,11 @@ namespace
 			{
 				SI = FOGTXTSample[41] - 80;
 				BX = 0;
-				DX = FOGTXTSample[SI / 2];
-				BP = (FOGTXTSample[(SI + 2) / 2] - DX) >> 3;
-				FOGTXTSample[SI / 2] = DX + FOGTXTSample[0];
 
-				for (int32_t i = 0; i < 39; i++)
+				for (int32_t i = 0; i < 40; i++)
 				{
 					IterateOverData();
-					DX = FOGTXTSample[SI / 2];
-					BP = FOGTXTSample[(SI + 2) / 2];
-					BP -= DX;
-					BP >>= 3;
-					FOGTXTSample[SI / 2] = DX + FOGTXTSample[(SI - 90) / 2];
 				}
-
-				IterateOverData();
 
 				CL = (CX & 0xFF);
 				CL--;
