@@ -1,3 +1,5 @@
+#include <climits>
+
 #include "ArenaMathUtils.h"
 
 void ArenaMathUtils::rotatePoint(int32_t angle, int16_t &x, int16_t &y, Span<const int16_t> cosineTable)
