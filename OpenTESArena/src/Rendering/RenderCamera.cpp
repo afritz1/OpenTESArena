@@ -12,6 +12,7 @@ RenderCamera::RenderCamera()
 	this->fovY = 0.0;
 	this->zoom = 0.0;
 	this->aspectRatio = 0.0;
+	this->tallPixelRatio = 0.0;
 }
 
 void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pitch, Degrees fovY, double aspectRatio, double tallPixelRatio)
@@ -30,6 +31,7 @@ void RenderCamera::init(const WorldDouble3 &worldPoint, Degrees yaw, Degrees pit
 	this->aspectRatio = aspectRatio;
 	this->rightScaled = this->right * aspectRatio;
 
+	this->tallPixelRatio = tallPixelRatio;
 	this->upScaled = this->up * tallPixelRatio;
 	this->upScaledRecip = this->up / tallPixelRatio;
 

@@ -30,8 +30,8 @@ namespace
 	constexpr int FogTxtSampleTotalCount = FogTxtSampleBaseCount + FogTxtSampleExtraCount;
 	int16_t FOGTXTSample[FogTxtSampleTotalCount];
 
-	constexpr int ESWidth = ArenaRenderUtils::SCREEN_WIDTH;
-	constexpr int ESHeight = ArenaRenderUtils::SCENE_VIEW_HEIGHT - 1;
+	constexpr int ESWidth = ArenaRenderUtils::FOG_WIDTH;
+	constexpr int ESHeight = ArenaRenderUtils::FOG_HEIGHT;
 	constexpr int ESArrayPixelCount = ESWidth * ESHeight;
 	int8_t ESArray[ESArrayPixelCount]; // 320 columns x 146 rows of screen pixels. The previous framebuffer in original game.
 	int8_t ESArrayLightLevels[ESArrayPixelCount]; // Resulting light levels per pixel, used as the final texture.
@@ -635,6 +635,9 @@ bool ArenaRenderUtils::isPuddleTexel(uint8_t texel)
 
 void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<uint8_t> outPixels)
 {
+	DebugAssert(outPixels.getWidth() == ArenaRenderUtils::FOG_WIDTH);
+	DebugAssert(outPixels.getHeight() == ArenaRenderUtils::FOG_HEIGHT);
+
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const ExeDataWeather &exeDataWeather = exeData.weather;
@@ -658,16 +661,10 @@ void ArenaRenderUtils::populateFogTexture(const ArenaFogState &fogState, Span2D<
 	SampleFOGTXT(cosineTable);
 	ApplySampledFogData();
 
-	outPixels.fill(0);
-
-	for (int y = 0; y < ESHeight; y++)
+	std::transform(std::begin(ESArrayLightLevels), std::end(ESArrayLightLevels), outPixels.begin(),
+		[](const int8_t lightLevel) -> uint8_t
 	{
-		for (int x = 0; x < ESWidth; x++)
-		{
-			const int srcIndex = x + (y * ESWidth);
-			const uint8_t lightLevel = ESArrayLightLevels[srcIndex];
-			const uint8_t adjustedLightLevel = lightLevel + PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
-			outPixels.set(x, y, adjustedLightLevel);
-		}
-	}
+		const int8_t adjustedLightLevel = lightLevel + PALETTE_INDEX_LIGHT_LEVEL_LOWEST;
+		return adjustedLightLevel;
+	});
 }

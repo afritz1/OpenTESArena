@@ -45,6 +45,7 @@ struct RenderCamera
 	Degrees fovX, fovY;
 	double zoom; // Function of vertical FOV (90 degrees = 1 zoom).
 	double aspectRatio;
+	double tallPixelRatio;
 
 	RenderCamera();
 

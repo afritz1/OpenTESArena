@@ -18,7 +18,9 @@ namespace
 	constexpr int BytesPerTexel = 1;
 
 	constexpr double ParticleZDistance = 1.0; // Arbitrary distance from camera, depth is ignored.
+	constexpr double FogZDistance = ParticleZDistance + 1.0;
 	static_assert(ParticleZDistance > RendererUtils::NEAR_PLANE);
+	static_assert(FogZDistance > ParticleZDistance);
 
 	int GetSnowTextureWidth(int index)
 	{
@@ -56,6 +58,26 @@ namespace
 		const double baseHeight = static_cast<double>(textureHeight) / 100.0;
 		const double scaledWidth = baseWidth * ParticleZDistance;
 		const double scaledHeight = baseHeight * ParticleZDistance;
+		return Matrix4d::scale(1.0, scaledHeight, scaledWidth);
+	}
+
+	Matrix4d MakeFogTranslationMatrix(const RenderCamera &camera)
+	{
+		const Double3 basePosition = camera.floatingWorldPoint;
+		const Double3 centerDir = camera.forwardScaled * FogZDistance;
+		const Double3 rightDir = camera.rightScaled * FogZDistance;
+		const Double3 upDir = camera.upScaledRecip * FogZDistance;
+		const Double3 topLeftPoint = basePosition + centerDir - rightDir + upDir;
+		const Double3 position = topLeftPoint;
+		return Matrix4d::translation(position.x, position.y, position.z);
+	}
+
+	Matrix4d MakeFogScaleMatrix(double aspectRatio, double tallPixelRatio)
+	{
+		const double baseWidth = aspectRatio;
+		const double baseHeight = 1.0 / tallPixelRatio;
+		const double scaledWidth = baseWidth * FogZDistance;
+		const double scaledHeight = baseHeight * FogZDistance;
 		return Matrix4d::scale(1.0, scaledHeight, scaledWidth);
 	}
 }
@@ -169,106 +191,32 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 	renderer.populateVertexAttributeBuffer(this->particleTexCoordBufferID, particleTexCoords);
 	renderer.populateIndexBuffer(this->particleIndexBufferID, particleIndices);
 
-	constexpr int fogMeshVertexCount = 24; // 4 vertices per cube face
-	constexpr int fogMeshIndexCount = 36;
+	constexpr int fogMeshVertexCount = 4;
+	constexpr int fogMeshIndexCount = 6;
 
-	// Turned inward to face the camera.
+	constexpr double fogMeshLeftX = 0.0;
+	constexpr double fogMeshRightX = 2.0;
+	constexpr double fogMeshTopY = 0.0;
+	constexpr double fogMeshBottomY = -2.0;
+
 	constexpr double fogPositions[fogMeshVertexCount * positionComponentsPerVertex] =
 	{
-		// X=0
-		-0.5, 0.35, 0.5,
-		-0.5, -0.35, 0.5,
-		-0.5, -0.35, -0.5,
-		-0.5, 0.35, -0.5,
-		// X=1
-		0.5, 0.35, -0.5,
-		0.5, -0.35, -0.5,
-		0.5, -0.35, 0.5,
-		0.5, 0.35, 0.5,
-		// Y=0
-		-0.5, -0.35, 0.5,
-		0.5, -0.35, 0.5,
-		0.5, -0.35, -0.5,
-		-0.5, -0.35, -0.5,
-		// Y=1
-		-0.5, 0.35, -0.5,
-		0.5, 0.35, -0.5,
-		0.5, 0.35, 0.5,
-		-0.5, 0.35, 0.5,
-		// Z=0
-		-0.5, 0.35, -0.5,
-		-0.5, -0.35, -0.5,
-		0.5, -0.35, -0.5,
-		0.5, 0.35, -0.5,
-		// Z=1
-		0.5, 0.35, 0.5,
-		0.5, -0.35, 0.5,
-		-0.5, -0.35, 0.5,
-		-0.5, 0.35, 0.5
+		0.0, fogMeshTopY, fogMeshLeftX,
+		0.0, fogMeshBottomY, fogMeshLeftX,
+		0.0, fogMeshBottomY, fogMeshRightX,
+		0.0, fogMeshTopY, fogMeshRightX
 	};
 
 	constexpr double fogNormals[fogMeshVertexCount * normalComponentsPerVertex] =
 	{
-		// X=0
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		1.0, 0.0, 0.0,
-		// X=1
 		-1.0, 0.0, 0.0,
 		-1.0, 0.0, 0.0,
 		-1.0, 0.0, 0.0,
-		-1.0, 0.0, 0.0,
-		// Y=0
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0,
-		0.0, 1.0, 0.0,
-		// Y=1
-		0.0, -1.0, 0.0,
-		0.0, -1.0, 0.0,
-		0.0, -1.0, 0.0,
-		0.0, -1.0, 0.0,
-		// Z=0
-		0.0, 0.0, 1.0,
-		0.0, 0.0, 1.0,
-		0.0, 0.0, 1.0,
-		0.0, 0.0, 1.0,
-		// Z=1
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0,
-		0.0, 0.0, -1.0
+		-1.0, 0.0, 0.0
 	};
 
 	constexpr double fogTexCoords[fogMeshVertexCount * texCoordComponentsPerVertex] =
 	{
-		// X=0
-		0.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-		1.0, 0.0,
-		// X=1
-		0.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-		1.0, 0.0,
-		// Y=0
-		0.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-		1.0, 0.0,
-		// Y=1
-		0.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-		1.0, 0.0,
-		// Z=0
-		0.0, 0.0,
-		0.0, 1.0,
-		1.0, 1.0,
-		1.0, 0.0,
-		// Z=1
 		0.0, 0.0,
 		0.0, 1.0,
 		1.0, 1.0,
@@ -277,24 +225,8 @@ bool RenderWeatherManager::initMeshes(Renderer &renderer)
 
 	constexpr int32_t fogIndices[fogMeshIndexCount] =
 	{
-		// X=0
 		0, 1, 2,
-		2, 3, 0,
-		// X=1
-		4, 5, 6,
-		6, 7, 4,
-		// Y=0
-		8, 9, 10,
-		10, 11, 8,
-		// Y=1
-		12, 13, 14,
-		14, 15, 12,
-		// Z=0
-		16, 17, 18,
-		18, 19, 16,
-		// Z=1
-		20, 21, 22,
-		22, 23, 20
+		2, 3, 0
 	};
 
 	this->fogPositionBufferID = renderer.createVertexPositionBuffer(fogMeshVertexCount, positionComponentsPerVertex);
@@ -412,8 +344,8 @@ bool RenderWeatherManager::initTextures(TextureManager &textureManager, Renderer
 	this->fogState.init(textureManager);
 
 	// Init fog texture.
-	constexpr int fogTextureWidth = ArenaRenderUtils::SCREEN_WIDTH;
-	constexpr int fogTextureHeight = ArenaRenderUtils::SCREEN_HEIGHT;
+	constexpr int fogTextureWidth = ArenaRenderUtils::FOG_WIDTH;
+	constexpr int fogTextureHeight = ArenaRenderUtils::FOG_HEIGHT;
 	this->fogTextureID = renderer.createObjectTexture(fogTextureWidth, fogTextureHeight, BytesPerTexel);
 	if (this->fogTextureID < 0)
 	{
@@ -753,7 +685,10 @@ void RenderWeatherManager::update(double dt, const WeatherInstance &weatherInst,
 
 		renderer.unlockObjectTexture(this->fogTextureID);
 
-		const Matrix4d fogModelMatrix = Matrix4d::translation(camera.floatingWorldPoint.x, camera.floatingWorldPoint.y, camera.floatingWorldPoint.z);
+		const Matrix4d fogTranslationMatrix = MakeFogTranslationMatrix(camera);
+		const Matrix4d fogRotationMatrix = particleRotationMatrix;
+		const Matrix4d fogScaleMatrix = MakeFogScaleMatrix(camera.aspectRatio, camera.tallPixelRatio);
+		const Matrix4d fogModelMatrix = fogTranslationMatrix * (fogRotationMatrix * fogScaleMatrix);
 		renderer.populateUniformBufferMatrix4s(this->fogTransformBufferID, Span<const Matrix4d>(&fogModelMatrix, 1));
 
 		this->fogDrawCall.transformBufferID = this->fogTransformBufferID;
