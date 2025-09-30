@@ -153,6 +153,13 @@ cd ..
 
 </details>
 
+### For the best experience
+1. Navigate to options menu in pause menu
+2. Set Graphics API to Vulkan
+3. Set FPS Limit to your monitor's refresh rate
+4. Change dithering mode to Modern
+5. Restart game
+
 ### Options files
 `options-changes.txt` is created in your user prefs folder the first time OpenTESArena runs and stores values that differ from the ones in `options-default.txt`.
 - Windows: `<username>/AppData/Roaming/OpenTESArena/options/`
@@ -231,4 +238,5 @@ Check out [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to assist with d
 - [Unofficial Elder Scrolls Pages](https://en.uesp.net/wiki/Arena:Arena) - a great resource for information about Arena
 - [Various tools](https://en.uesp.net/wiki/Arena:Files#Misc_Utilities) like WinArena and BSATool for browsing Arena's assets
 - The Elder Scrolls: Arena [manual](https://en.uesp.net/wiki/Arena:Files#Official_Patches_and_Utilities)
+
 
