@@ -34,7 +34,7 @@ namespace PlayerConstants
 	constexpr double COLLIDER_RADIUS = 0.20; // Radius around the player they will collide at.
 	constexpr double COLLIDER_CYLINDER_HALF_HEIGHT = (TOP_OF_HEAD_HEIGHT / 2.0) - COLLIDER_RADIUS;
 
-	constexpr double MOVE_SPEED = 15.0;
+	constexpr double MOVE_SPEED = 12.0;
 	constexpr double SWIMMING_MOVE_SPEED = MOVE_SPEED * 0.5;
 	constexpr double CLAMPED_MOVE_SPEED_PERCENT = 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
 	constexpr double CLIMBING_SPEED = 100.0 / MIFUtils::ARENA_UNITS;
