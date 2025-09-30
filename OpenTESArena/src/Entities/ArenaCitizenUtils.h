@@ -22,7 +22,7 @@ namespace ArenaCitizenUtils
 	constexpr double IDLE_DISTANCE_REAL = static_cast<double>(IDLE_DISTANCE_UNITS) / MIFUtils::ARENA_UNITS;
 	constexpr double IDLE_DISTANCE_REAL_SQR = IDLE_DISTANCE_REAL * IDLE_DISTANCE_REAL;
 
-	constexpr int MOVE_UNITS_PER_FRAME = static_cast<int>(MIFUtils::ARENA_UNITS) / 8;
+	constexpr int MOVE_UNITS_PER_FRAME = static_cast<int>(MIFUtils::ARENA_UNITS / 10.0);
 	constexpr int MOVE_UNITS_PER_SECOND = MOVE_UNITS_PER_FRAME * ArenaRenderUtils::FRAMES_PER_SECOND;
 	constexpr double MOVE_SPEED_PER_SECOND = static_cast<double>(MOVE_UNITS_PER_SECOND) / MIFUtils::ARENA_UNITS;
 
