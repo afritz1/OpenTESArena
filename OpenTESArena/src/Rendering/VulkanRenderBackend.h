@@ -132,7 +132,7 @@ using VulkanUniformBufferPool = KeyValuePool<UniformBufferID, VulkanBuffer>;
 using VulkanObjectTexturePool = KeyValuePool<ObjectTextureID, VulkanTexture>;
 using VulkanUiTexturePool = KeyValuePool<UiTextureID, VulkanTexture>;
 using VulkanMaterialPool = KeyValuePool<RenderMaterialID, VulkanMaterial>;
-using VulkanMaterialInstancePool = KeyValuePool<RenderMaterialID, VulkanMaterialInstance>;
+using VulkanMaterialInstancePool = KeyValuePool<RenderMaterialInstanceID, VulkanMaterialInstance>;
 
 enum class VulkanHeapType
 {

@@ -149,7 +149,7 @@ using SoftwareIndexBufferPool = KeyValuePool<IndexBufferID, SoftwareIndexBuffer>
 using SoftwareUniformBufferPool = KeyValuePool<UniformBufferID, SoftwareUniformBuffer>;
 using SoftwareObjectTexturePool = KeyValuePool<ObjectTextureID, SoftwareObjectTexture>;
 using SoftwareMaterialPool = KeyValuePool<RenderMaterialID, SoftwareMaterial>;
-using SoftwareMaterialInstancePool = KeyValuePool<RenderMaterialID, SoftwareMaterialInstance>;
+using SoftwareMaterialInstancePool = KeyValuePool<RenderMaterialInstanceID, SoftwareMaterialInstance>;
 
 class SoftwareRenderer
 {
