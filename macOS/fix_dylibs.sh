@@ -38,4 +38,4 @@ install_name_tool -change "${BREW_MOLTENVK_LIB}" @loader_path/libMoltenVK.dylib 
 install_name_tool -id @loader_path/libMoltenVK.dylib ${TES_APP_BUNDLE_PATH}/Contents/Frameworks/libMoltenVK.dylib
 codesign --remove-signature ${TES_APP_BUNDLE_PATH}/Contents/Frameworks/libMoltenVK.dylib
 
-codesign -s - --deep -o linker-signed "${TES_APP_BUNDLE_PATH}"
+codesign -s - --deep -o linker-signed --force "${TES_APP_BUNDLE_PATH}"
