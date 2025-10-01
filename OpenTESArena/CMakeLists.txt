@@ -43,7 +43,6 @@ SET(TES_ASSETS
     "${SRC_ROOT}/Assets/ArenaTextureName.h"
     "${SRC_ROOT}/Assets/ArenaTypes.cpp"
     "${SRC_ROOT}/Assets/ArenaTypes.h"
-    "${SRC_ROOT}/Assets/AssetUtils.h"
     "${SRC_ROOT}/Assets/BinaryAssetLibrary.cpp"
     "${SRC_ROOT}/Assets/BinaryAssetLibrary.h"
     "${SRC_ROOT}/Assets/CFAFile.cpp"
