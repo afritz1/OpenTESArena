@@ -8,7 +8,7 @@ namespace ArenaEntityUtils
 	// For monsters
 	int getBaseSpeed(int speedAttribute);
 
-	int getCreatureCorpseGold(int creatureLevel, Random &random);
+	int getCreatureGold(int creatureLevel, int creatureLootChance, Random &random);
 	int getCreatureItemQualityLevel(int creatureLevel);
 }
 
