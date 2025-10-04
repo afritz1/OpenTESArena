@@ -52,7 +52,7 @@ struct EnemyEntityDefinition
 		int bloodIndex; // @todo this should be an EntityDefID to the vfx in EntityDefinitionLibrary, or -1
 		int diseaseChances;
 		int attributes[8];
-		int lootChances;
+		unsigned int lootChances;
 		bool ghost;
 
 		void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
