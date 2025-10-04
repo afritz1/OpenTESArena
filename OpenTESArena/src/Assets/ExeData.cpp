@@ -472,7 +472,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	initInt8Array(this->creatureBlood, exeBytes, creatureBloodOffset);
 	initInt8Array(this->creatureDiseaseChances, exeBytes, creatureDiseaseChancesOffset);
 	init2DInt8Array(this->creatureAttributes, exeBytes, creatureAttributesOffset);
-	initInt16Array(this->creatureLootChances, exeBytes, creatureLootChancesOffset);
+	initInt32Array(this->creatureLootChances, exeBytes, creatureLootChancesOffset);
 	initStringArrayNullTerminated(this->creatureAnimationFilenames, exeBytes, creatureAnimFilenamesOffset);
 	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
 	init2DInt8Array(this->raceAttributes, exeBytes, raceAttributesOffset);

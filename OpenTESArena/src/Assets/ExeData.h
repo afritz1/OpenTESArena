@@ -139,7 +139,7 @@ struct ExeDataEntities
 	uint8_t creatureBlood[24]; // Indices into effects animation list.
 	int8_t creatureDiseaseChances[24]; // Negative values have special meaning.
 	uint8_t creatureAttributes[24][8]; // 255 == 100.
-	uint16_t creatureLootChances[24];
+	uint32_t creatureLootChances[24]; // Accessed by 1-based races
 
 	// Creature animations (i.e., their .CFA filenames). These are ordered the same
 	// as creature names, and there is an extra entry at the end for the final boss.
