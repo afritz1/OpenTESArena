@@ -149,6 +149,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
 		GameWorldUiController::onDoorUnlockedWithKey(game, doorKeyID, soundFilename, soundPosition, exeData);
+		game.player.removeFromKeyInventory(doorKeyID);
 	}
 	else
 	{
