@@ -18,7 +18,7 @@ namespace
 {
 	std::string GetItemDisplayNameWithQty(const ItemDefinition &itemDef, int stackAmount)
 	{
-		std::string displayName = itemDef.getDisplayName();
+		std::string displayName = itemDef.getDisplayName(stackAmount);
 		if (itemDef.type == ItemType::Gold)
 		{
 			size_t goldCountIndex = displayName.find("%u");
@@ -115,7 +115,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-		std::string itemDisplayName = GetItemDisplayNameWithQty(itemDef, 1); // @todo implement stacking
+		std::string itemDisplayName = GetItemDisplayNameWithQty(itemDef, itemInventory.getGold());
 
 		this->listBox.add(std::move(itemDisplayName));
 
@@ -149,7 +149,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 			Player &player = game.player;
 			if (selectedItemDef.type == ItemType::Gold)
 			{
-				player.gold += 1; // @todo implement stacking
+				player.gold += itemInventory.getGold();
 			}
 			else
 			{

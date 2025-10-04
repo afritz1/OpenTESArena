@@ -26,6 +26,7 @@ public:
 
 	// For loot containers only.
 	const ItemDefinition &getGoldDefinition() const;
+	ItemDefinitionID getGoldDefinitionID() const;
 };
 
 #endif

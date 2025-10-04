@@ -1,4 +1,5 @@
 #include "ArenaEntityUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -279,4 +280,80 @@ int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeDa
 
 	const int goldAmount = 1 + random.next(50);
 	return goldAmount;
+}
+
+int ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType interiorType)
+{
+	switch (interiorType)
+	{
+	using enum ArenaInteriorType;
+	case House:
+		return 0;
+	case Palace:
+		return 1;
+	case Noble:
+		return 2;
+	case Dungeon:
+		return 3;
+	case Crypt:
+	case Tower:
+		return 4;
+	default:
+		return 0;
+	}
+}
+
+int ArenaEntityUtils::getNumberOfItemsInLoot(const int lootValuesIndex, const ExeData &exeData, Random &random)
+{
+	int itemCount = 0;
+	for (int i = 0; i < 4; i++)
+	{
+		if ((random.next(100) + 1) <= exeData.items.lootChances[lootValuesIndex * 4 + i])
+			itemCount++;
+	}
+
+	return itemCount;
+}
+
+int ArenaEntityUtils::getLootGoldAmount(const int lootValuesIndex, const ExeData &exeData, Random &random, const int cityType, const int levelIndex)
+{
+	switch (lootValuesIndex)
+	{
+	case 0:
+	{
+		int gold = random.next(9) + 2;
+		if (cityType == 2)
+		{
+			gold /= 2;
+		}
+		else
+		{
+			gold *= 2;
+		}
+		return gold;
+	}
+	case 1:
+	{
+		return exeData.items.palaceGoldValues[cityType];
+	}
+	case 2:
+	{
+		int gold = random.next(9) + 2;
+		if (cityType == 2)
+		{
+			gold /= 2;
+		}
+		else
+		{
+			gold *= 2;
+		}
+		gold *= 10;
+		return gold;
+	}
+	case 3:
+	case 4:
+		return levelIndex * levelIndex + (random.next(100) + 1);
+	default:
+		return 0;
+	}
 }

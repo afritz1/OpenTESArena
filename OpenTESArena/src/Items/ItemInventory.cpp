@@ -60,6 +60,16 @@ double ItemInventory::getWeight() const
 	return totalWeight;
 }
 
+int ItemInventory::getGold() const
+{
+	return this->gold;
+}
+
+void ItemInventory::setGold(int value)
+{
+	this->gold = value;
+}
+
 bool ItemInventory::findFirstEmptySlot(int *outIndex) const
 {
 	for (int i = 0; i < this->getTotalSlotCount(); i++)

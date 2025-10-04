@@ -301,6 +301,9 @@ struct ExeDataItems
 	std::string goldPiece;
 	std::string bagOfGoldPieces;
 
+	uint8_t lootChances[20];
+	uint16_t palaceGoldValues[3];
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

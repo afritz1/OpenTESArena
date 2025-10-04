@@ -426,23 +426,40 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		}
 		else
 		{
-			const int testItemCount = random.next(4); // Can be empty.
-			if (testItemCount > 0)
+			// Get the loot values index
+			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType::Dungeon); // @todo: Use the interior type
+			// Get the number of items
+			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+			int itemCount = ArenaEntityUtils::getNumberOfItemsInLoot(lootValuesIndex, exeData, random);
+			if (itemCount > 0)
 			{
 				// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
-				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-				const std::vector<ItemDefinitionID> testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-					[](const ItemDefinition &itemDef)
-				{
-					return itemDef.type != ItemType::Misc; // Don't want quest items.
-				});
+				const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
+				ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 
-				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
-				for (int i = 0; i < testItemCount; i++)
+				// The first item is always gold
+				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
+				itemInventory.insert(goldItemDefID);
+				itemCount--;
+
+				// Calculate the gold amount
+				itemInventory.setGold(ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random)); // @todo: Use the level index and city type
+
+				// Handle the second item onward
+				if (itemCount > 0)
 				{
-					const int randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
-					const ItemDefinitionID testItemDefID = testItemDefIDs[randomItemIndex];
-					itemInventory.insert(testItemDefID);
+					const std::vector<ItemDefinitionID> testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
+						[](const ItemDefinition& itemDef)
+						{
+							return (itemDef.type != ItemType::Misc && itemDef.type != ItemType::Gold); // Don't want quest items or gold
+						});
+
+					for (int i = 0; i < itemCount; i++)
+					{
+						const int randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
+						const ItemDefinitionID testItemDefID = testItemDefIDs[randomItemIndex];
+						itemInventory.insert(testItemDefID);
+					}
 				}
 			}
 		}

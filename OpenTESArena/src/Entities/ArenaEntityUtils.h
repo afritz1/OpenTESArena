@@ -5,6 +5,7 @@
 
 struct ExeData;
 
+enum class ArenaInteriorType;
 class Random;
 
 namespace ArenaEntityUtils
@@ -26,6 +27,10 @@ namespace ArenaEntityUtils
 	int getCreatureItemQualityLevel(int creatureLevel);
 
 	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random);
+
+	int getLootValuesIndex(ArenaInteriorType interiorType);
+	int getNumberOfItemsInLoot(const int lootValuesIndex, const ExeData &exeData, Random &random);
+	int getLootGoldAmount(const int lootValuesIndex, const ExeData &exeData, Random &random, const int cityType = 0, const int levelIndex = 0);
 }
 
 #endif

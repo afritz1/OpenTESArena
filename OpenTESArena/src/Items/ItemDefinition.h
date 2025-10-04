@@ -70,9 +70,10 @@ struct ConsumableItemDefinition
 
 struct GoldItemDefinition
 {
-	char name[64]; // Bag of ... gold (used with loot containers).
+	char nameSingular[64]; // ... gold piece (used with loot containers).
+	char namePlural[64]; // Bag of ... gold (used with loot containers).
 
-	void init(const char *name);
+	void init(const char *nameSingular, const char *namePlural);
 };
 
 struct MiscItemDefinition
@@ -163,7 +164,7 @@ struct ItemDefinition
 
 	void init(ItemType type);
 
-	std::string getDisplayName() const;
+	std::string getDisplayName(int stackAmount = 1) const;
 	double getWeight() const;
 };
 
