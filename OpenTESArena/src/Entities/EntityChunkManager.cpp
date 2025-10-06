@@ -372,11 +372,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			const EnemyEntityDefinition& enemyDef = entityDef.enemy;
 			if (enemyDef.type == EnemyEntityDefinitionType::Creature)
 			{
-				// Creatures have chances to have items added to their inventory according to their lootChances value
-				// lootChances & 0xFF = gold
-				// (lootChances & 0xFF00 >> 8) = magic item
-				// (lootChances & 0xFF0000 >> 16) = non-magic weapon or armor
-				// (lootChances & 0xFF000000 >> 24) = magic weapon or armor
+				// Creatures have chances to have items added to their inventory according to their lootChances value.
 				const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
 				std::vector<ItemDefinitionID> testItemDefIDs;
 
