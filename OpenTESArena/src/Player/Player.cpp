@@ -305,6 +305,15 @@ void Player::removeFromKeyInventory(int keyID)
 	}
 
 	this->keyInventory[removeIndex] = ArenaItemUtils::InvalidDoorKeyID;
+
+	// Shift other keys down.
+	for (int i = removeIndex; i < (static_cast<int>(std::size(this->keyInventory)) - 1); i++)
+	{
+		this->keyInventory[i] = this->keyInventory[i + 1];
+	}
+
+	const int lastIndex = static_cast<int>(std::size(this->keyInventory) - 1);
+	this->keyInventory[lastIndex] = ArenaItemUtils::InvalidDoorKeyID;
 }
 
 bool Player::isIdInKeyInventory(int keyID) const
