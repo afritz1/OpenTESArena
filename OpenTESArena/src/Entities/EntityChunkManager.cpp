@@ -369,25 +369,24 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 		if (entityDef.type == EntityDefinitionType::Enemy)
 		{
-			const EnemyEntityDefinition& enemyDef = entityDef.enemy;
+			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
 			if (enemyDef.type == EnemyEntityDefinitionType::Creature)
 			{
 				// Creatures have chances to have items added to their inventory according to their lootChances value.
-				const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 				std::vector<ItemDefinitionID> testItemDefIDs;
 
-				ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 				int randomItemIndex;
 				ItemDefinitionID testItemDefID;
 
 				if (ArenaEntityUtils::getCreatureHasMagicItem(enemyDef.creature.level, enemyDef.creature.lootChances, random))
 				{
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition& itemDef)
-						{
-							using enum ItemType;
-							return (itemDef.type == Accessory || itemDef.type == Consumable || itemDef.type == Trinket);
-						});
+						[](const ItemDefinition &itemDef)
+					{
+						return (itemDef.type == ItemType::Accessory) || (itemDef.type == ItemType::Consumable) || (itemDef.type == ItemType::Trinket);
+					});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
 					testItemDefID = testItemDefIDs[randomItemIndex];
@@ -397,11 +396,10 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				if (ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(enemyDef.creature.lootChances, random))
 				{
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition& itemDef)
-						{
-							using enum ItemType;
-							return (itemDef.type == Weapon || itemDef.type == Armor || itemDef.type == Shield);
-						});
+						[](const ItemDefinition &itemDef)
+					{
+						return (itemDef.type == ItemType::Weapon) || (itemDef.type == ItemType::Armor) || (itemDef.type == ItemType::Shield);
+					});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
 					testItemDefID = testItemDefIDs[randomItemIndex];
@@ -411,11 +409,11 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(enemyDef.creature.level, enemyDef.creature.lootChances, random))
 				{
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition& itemDef)
-						{
-							using enum ItemType;
-							return (itemDef.type == Weapon || itemDef.type == Armor || itemDef.type == Shield); // @todo Add a magic weapon or armor
-						});
+						[](const ItemDefinition &itemDef)
+					{
+						// @todo get one that's actually magic
+						return (itemDef.type == ItemType::Weapon) || (itemDef.type == ItemType::Armor) || (itemDef.type == ItemType::Shield);
+					});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
 					testItemDefID = testItemDefIDs[randomItemIndex];
@@ -429,14 +427,14 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			if (testItemCount > 0)
 			{
 				// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
-				const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 				const std::vector<ItemDefinitionID> testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-					[](const ItemDefinition& itemDef)
-					{
-						return itemDef.type != ItemType::Misc; // Don't want quest items.
-					});
+					[](const ItemDefinition &itemDef)
+				{
+					return itemDef.type != ItemType::Misc; // Don't want quest items.
+				});
 
-				ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 				for (int i = 0; i < testItemCount; i++)
 				{
 					const int randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
