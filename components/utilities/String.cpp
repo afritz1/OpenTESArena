@@ -159,20 +159,19 @@ std::string String::distributeNewlines(const std::string &str, int charLimit)
 			mostRecentSpace = i;
 		}
 
-		// Only try to add a newline if it's not the last character.
-		if ((currentLineLength == charLimit) && (i != static_cast<int>(newStr.size() - 1)))
+		if (currentLineLength == charLimit)
 		{
 			if (mostRecentSpace == NO_SPACE)
 			{
-				newStr.insert(newStr.begin() + i + 1, String::NEWLINE);
+				newStr.insert(newStr.begin() + i, String::NEWLINE);
+				currentLineLength = -1;
 			}
 			else
 			{
 				newStr[mostRecentSpace] = String::NEWLINE;
+				currentLineLength = i - mostRecentSpace - 1;
 				mostRecentSpace = NO_SPACE;
 			}
-			
-			currentLineLength = 0;
 		}
 	}
 
