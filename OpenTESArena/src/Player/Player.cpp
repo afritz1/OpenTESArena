@@ -283,6 +283,39 @@ void Player::addToKeyInventory(int keyID)
 	this->keyInventory[insertIndex] = keyID;
 }
 
+void Player::removeFromKeyInventory(int keyID)
+{
+	DebugAssert(keyID >= 0);
+
+	int removeIndex = -1;
+	for (int i = 0; i < static_cast<int>(std::size(this->keyInventory)); i++)
+	{
+		const int currentKeyID = this->keyInventory[i];
+		if (currentKeyID == keyID)
+		{
+			removeIndex = i;
+			break;
+		}
+	}
+
+	if (removeIndex < 0)
+	{
+		DebugLogWarningFormat("Key %d not found for removal.", keyID);
+		return;
+	}
+
+	this->keyInventory[removeIndex] = ArenaItemUtils::InvalidDoorKeyID;
+
+	// Shift other keys down.
+	for (int i = removeIndex; i < (static_cast<int>(std::size(this->keyInventory)) - 1); i++)
+	{
+		this->keyInventory[i] = this->keyInventory[i + 1];
+	}
+
+	const int lastIndex = static_cast<int>(std::size(this->keyInventory) - 1);
+	this->keyInventory[lastIndex] = ArenaItemUtils::InvalidDoorKeyID;
+}
+
 bool Player::isIdInKeyInventory(int keyID) const
 {
 	for (int i = 0; i < static_cast<int>(std::size(this->keyInventory)); i++)

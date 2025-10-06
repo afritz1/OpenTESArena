@@ -132,6 +132,7 @@ struct Player
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
 
 	void addToKeyInventory(int keyID);
+	void removeFromKeyInventory(int keyID);
 	bool isIdInKeyInventory(int keyID) const;
 	void clearKeyInventory();
 
