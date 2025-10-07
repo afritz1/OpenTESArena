@@ -5,9 +5,16 @@
 #include <fstream>
 #include <iostream>
 
+#include "SDL_messagebox.h"
+
 #include "Debug.h"
 #include "../utilities/Directory.h"
 #include "../utilities/String.h"
+
+// Always show error dialog when crashing; this helps on Windows in exclusive fullscreen.
+#if true //defined(__APPLE__) && defined(__MACH__)
+#define SHOW_ERROR_MESSAGE_BOX 1
+#endif
 
 namespace
 {
@@ -81,11 +88,7 @@ void Debug::shutdown()
 
 void Debug::exitApplication()
 {
-#if defined(__APPLE__) && defined(__MACH__)
-	// @todo: implement proper logging alternative to SDL message box.
-	// macOS .apps close immediately even with getchar(), so a message box is needed.
-	//SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Error", message.c_str(), nullptr);
-#else
+#ifndef SHOW_ERROR_MESSAGE_BOX
 	std::getchar();
 #endif
 
@@ -113,10 +116,22 @@ std::string Debug::getShorterPath(const char *__file__)
 	return shortPath;
 }
 
-void Debug::write(const std::string &filePath, int lineNumber, const std::string &messagePrefix, const std::string &message)
+std::string Debug::makeOutputString(const char *__file__, int lineNumber, const char *messagePrefix, const std::string &message)
 {
-	const std::string lineNumberStr = std::to_string(lineNumber);
-	const std::string outputStr = "[" + filePath + "(" + lineNumberStr + ")] " + messagePrefix + message + '\n';
-	std::cerr << outputStr;
-	Log::stream << outputStr;
+	const std::string shorterPath = Debug::getShorterPath(__file__);
+	const std::string outputString = Debug::stringFormat("[%s(%d)] %s%s\n", shorterPath.c_str(), lineNumber, messagePrefix, message.c_str());
+	return outputString;
+}
+
+void Debug::write(const char *message)
+{
+	std::cerr << message;
+	Log::stream << message;
+}
+
+void Debug::showErrorMessageBox(const char *message)
+{
+#ifdef SHOW_ERROR_MESSAGE_BOX
+	SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "OpenTESArena Error", message, nullptr);
+#endif
 }

@@ -8,9 +8,10 @@
 // Various macros/asserts that may be accompanied with messages and file logging.
 namespace Debug
 {
-	static const std::string MessagePrefixLog = "";
-	static const std::string MessagePrefixWarning = "Warning: ";
-	static const std::string MessagePrefixError = "Error: ";
+	static constexpr const char MessagePrefixLog[] = "";
+	static constexpr const char MessagePrefixWarning[] = "Warning: ";
+	static constexpr const char MessagePrefixError[] = "Error: ";
+	static constexpr const char MessagePrefixAssert[] = "Assertion failed: ";
 
 	bool init(const char *logDirectory);
 	void shutdown();
@@ -18,9 +19,13 @@ namespace Debug
 	// Shortens __FILE__ for readability.
 	std::string getShorterPath(const char *__file__);
 
+	std::string makeOutputString(const char *__file__, int lineNumber, const char *messagePrefix, const std::string &message);
+
 	[[noreturn]] void exitApplication();
 
-	void write(const std::string &filePath, int lineNumber, const std::string &messagePrefix, const std::string &message);
+	void write(const char *message);
+
+	void showErrorMessageBox(const char *message);
 
 	template<typename... Args>
 	static std::string stringFormat(const char *format, Args... args)
@@ -31,56 +36,64 @@ namespace Debug
 		return buffer;
 	}
 
-	template<typename... Args>
-	static void internalLogFormat(void (*logFunc)(const char*, int, const std::string&), const char *__file__, int lineNumber, const char *message, Args... args)
-	{
-		const std::string formattedString = Debug::stringFormat(message, args...);
-		logFunc(__file__, lineNumber, formattedString.c_str());
-	}
-
 	static void log(const char *__file__, int lineNumber, const std::string &message)
 	{
-		Debug::write(Debug::getShorterPath(__file__), lineNumber, Debug::MessagePrefixLog, message);
+		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixLog, message);
+		Debug::write(outputString.c_str());
 	}
 
 	template<typename... Args>
 	static void logFormat(const char *__file__, int lineNumber, const char *message, Args... args)
 	{
-		Debug::internalLogFormat(Debug::log, __file__, lineNumber, message, args...);
+		const std::string formattedString = Debug::stringFormat(message, args...);
+		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixLog, formattedString);
+		Debug::write(outputString.c_str());
 	}
 
 	static void logWarning(const char *__file__, int lineNumber, const std::string &message)
 	{
-		Debug::write(Debug::getShorterPath(__file__), lineNumber, Debug::MessagePrefixWarning, message);
+		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixWarning, message);
+		Debug::write(outputString.c_str());
 	}
 
 	template<typename... Args>
 	static void logWarningFormat(const char *__file__, int lineNumber, const char *message, Args... args)
 	{
-		Debug::internalLogFormat(Debug::logWarning, __file__, lineNumber, message, args...);
+		const std::string formattedString = Debug::stringFormat(message, args...);
+		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixWarning, formattedString);
+		Debug::write(outputString.c_str());
+		Debug::showErrorMessageBox(outputString.c_str());
 	}
 
 	static void logError(const char *__file__, int lineNumber, const std::string &message)
 	{
-		Debug::write(Debug::getShorterPath(__file__), lineNumber, Debug::MessagePrefixError, message);
+		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixError, message);
+		Debug::write(outputString.c_str());
 	}
 
 	template<typename... Args>
 	static void logErrorFormat(const char *__file__, int lineNumber, const char *message, Args... args)
 	{
-		Debug::internalLogFormat(Debug::logError, __file__, lineNumber, message, args...);
+		const std::string formattedString = Debug::stringFormat(message, args...);
+		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixError, formattedString);
+		Debug::write(outputString.c_str());
 	}
 
 	[[noreturn]] static void crash(const char *__file__, int lineNumber, const std::string &message)
 	{
-		Debug::logError(__file__, lineNumber, message);
+		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixError, message);
+		Debug::write(outputString.c_str());
+		Debug::showErrorMessageBox(outputString.c_str());
 		Debug::exitApplication();
 	}
 
 	template<typename... Args>
 	[[noreturn]] static void crashFormat(const char *__file__, int lineNumber, const char *message, Args... args)
 	{
-		Debug::internalLogFormat(Debug::logError, __file__, lineNumber, message, args...);
+		const std::string formattedString = Debug::stringFormat(message, args...);
+		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixError, formattedString);
+		Debug::write(outputString.c_str());
+		Debug::showErrorMessageBox(outputString.c_str());
 		Debug::exitApplication();
 	}
 };
@@ -95,9 +108,20 @@ namespace Debug
 #define DebugCrashFormat(message, ...) Debug::crashFormat(__FILE__, __LINE__, message, ##__VA_ARGS__)
 
 #define DebugAssertMsg(condition, message) \
-	do { if (!(condition)) DebugCrash("Assertion failed: " + std::string(message)); } while (false)
+	do { if (!(condition)) { \
+		const std::string outputString = Debug::makeOutputString(__FILE__, __LINE__, Debug::MessagePrefixAssert, message); \
+		Debug::write(outputString.c_str()); \
+		Debug::showErrorMessageBox(outputString.c_str()); \
+		Debug::exitApplication(); \
+	} } while (false)
 #define DebugAssertMsgFormat(condition, message, ...) \
-	do { if (!(condition)) { const std::string formattedString = Debug::stringFormat(message, ##__VA_ARGS__); Debug::logErrorFormat(__FILE__, __LINE__, "Assertion failed: %s", formattedString.c_str()); Debug::exitApplication(); } } while (false)
+	do { if (!(condition)) { \
+		const std::string formattedString = Debug::stringFormat(message, ##__VA_ARGS__); \
+		const std::string outputString = Debug::makeOutputString(__FILE__, __LINE__, Debug::MessagePrefixAssert, formattedString); \
+		Debug::write(outputString.c_str()); \
+		Debug::showErrorMessageBox(outputString.c_str()); \
+		Debug::exitApplication(); \
+	} } while (false)
 #define DebugAssert(condition) \
 	do { if (!(condition)) DebugCrashFormat("Assertion failed: %s", #condition); } while (false)
 
