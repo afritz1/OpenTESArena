@@ -22,6 +22,7 @@ SET(COMP_UTILITIES
 	"utilities/Bytes.h"
 	"utilities/Directory.cpp"
 	"utilities/Directory.h"
+	"utilities/Enum.h"
 	"utilities/File.cpp"
 	"utilities/File.h"
 	"utilities/FixedPool.h"
