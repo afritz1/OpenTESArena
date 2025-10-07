@@ -106,7 +106,7 @@ bool PauseMenuPanel::init()
 
 	UiDrawCallInitInfo bgDrawCallInitInfo;
 	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
-	bgDrawCallInitInfo.size = Int2(this->backgroundTextureRef.getWidth(), this->backgroundTextureRef.getHeight());
+	bgDrawCallInitInfo.size = this->backgroundTextureRef.getDimensions();
 	this->addDrawCall(bgDrawCallInitInfo);
 
 	const UiTextureID gameWorldInterfaceTextureID = GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
@@ -115,7 +115,7 @@ bool PauseMenuPanel::init()
 	UiDrawCallInitInfo gameWorldInterfaceDrawCallInitInfo;
 	gameWorldInterfaceDrawCallInitInfo.textureID = this->gameWorldInterfaceTextureRef.get();
 	gameWorldInterfaceDrawCallInitInfo.position = GameWorldUiView::getGameWorldInterfacePosition();
-	gameWorldInterfaceDrawCallInitInfo.size = Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight());
+	gameWorldInterfaceDrawCallInitInfo.size = this->gameWorldInterfaceTextureRef.getDimensions();
 	gameWorldInterfaceDrawCallInitInfo.pivotType = PivotType::Bottom;
 	this->addDrawCall(gameWorldInterfaceDrawCallInitInfo);
 
@@ -127,7 +127,7 @@ bool PauseMenuPanel::init()
 	UiDrawCallInitInfo statusGradientDrawCallInitInfo;
 	statusGradientDrawCallInitInfo.textureID = this->statusGradientTextureRef.get();
 	statusGradientDrawCallInitInfo.position = portraitRect.getTopLeft();
-	statusGradientDrawCallInitInfo.size = Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight());
+	statusGradientDrawCallInitInfo.size = this->statusGradientTextureRef.getDimensions();
 	this->addDrawCall(statusGradientDrawCallInitInfo);
 
 	const Player &player = game.player;
@@ -137,7 +137,7 @@ bool PauseMenuPanel::init()
 	UiDrawCallInitInfo playerPortraitDrawCallInitInfo;
 	playerPortraitDrawCallInitInfo.textureID = this->playerPortraitTextureRef.get();
 	playerPortraitDrawCallInitInfo.position = portraitRect.getTopLeft();
-	playerPortraitDrawCallInitInfo.size = Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight());
+	playerPortraitDrawCallInitInfo.size = this->playerPortraitTextureRef.getDimensions();
 	this->addDrawCall(playerPortraitDrawCallInitInfo);
 
 	const UiTextureID healthTextureID = GameWorldUiView::allocHealthBarTexture(textureManager, renderer);
@@ -198,7 +198,7 @@ bool PauseMenuPanel::init()
 		UiDrawCallInitInfo noMagicDrawCallInitInfo;
 		noMagicDrawCallInitInfo.textureID = this->noMagicTextureRef.get();
 		noMagicDrawCallInitInfo.position = GameWorldUiView::getNoMagicTexturePosition();
-		noMagicDrawCallInitInfo.size = Int2(this->noMagicTextureRef.getWidth(), this->noMagicTextureRef.getHeight());
+		noMagicDrawCallInitInfo.size = this->noMagicTextureRef.getDimensions();
 		this->addDrawCall(noMagicDrawCallInitInfo);
 	}
 

@@ -87,7 +87,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 	UiDrawCallInitInfo containerTextureDrawCallInitInfo;
 	containerTextureDrawCallInitInfo.textureID = this->textureRef.get();
 	containerTextureDrawCallInitInfo.position = Int2(56, 10);
-	containerTextureDrawCallInitInfo.size = Int2(this->textureRef.getWidth(), this->textureRef.getHeight());
+	containerTextureDrawCallInitInfo.size = this->textureRef.getDimensions();
 	this->addDrawCall(containerTextureDrawCallInitInfo);
 
 	constexpr Int2 listBoxTopLeft(85, 34);

@@ -6,6 +6,7 @@
 
 #include "RenderShaderUtils.h"
 
+#include "../Math/Vector2.h"
 #include "components/utilities/Span.h"
 #include "components/utilities/Span2D.h"
 
@@ -83,6 +84,7 @@ public:
 	UiTextureID get() const;
 	int getWidth() const;
 	int getHeight() const;
+	Int2 getDimensions() const;
 
 	// Texture updating functions. The returned pointer allows for changing any texels in the texture.
 	LockedTexture lockTexels();

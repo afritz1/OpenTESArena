@@ -247,7 +247,7 @@ void MainMenuPanel::initTestUI()
 	const Rect testWeatherUpRect = MainMenuUiView::getTestWeatherUpButtonRect();
 
 	const UiTextureID testArrowTextureID = this->testArrowsTextureRef.get();
-	const Int2 testArrowSize(this->testArrowsTextureRef.getWidth(), this->testArrowsTextureRef.getHeight());
+	const Int2 testArrowSize = this->testArrowsTextureRef.getDimensions();
 
 	UiDrawCallInitInfo testTypeArrowDrawCallInitInfo;
 	testTypeArrowDrawCallInitInfo.textureID = testArrowTextureID;

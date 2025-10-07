@@ -190,7 +190,7 @@ bool ChooseClassPanel::init()
 	UiDrawCallInitInfo popUpTextureDrawCallInitInfo;
 	popUpTextureDrawCallInitInfo.textureID = this->popUpTextureRef.get();
 	popUpTextureDrawCallInitInfo.position = Int2(ChooseClassUiView::ListTextureX, ChooseClassUiView::ListTextureY);
-	popUpTextureDrawCallInitInfo.size = Int2(this->popUpTextureRef.getWidth(), this->popUpTextureRef.getHeight());
+	popUpTextureDrawCallInitInfo.size = this->popUpTextureRef.getDimensions();
 	this->addDrawCall(popUpTextureDrawCallInitInfo);
 
 	const Rect titleTextBoxRect = this->titleTextBox.getRect();

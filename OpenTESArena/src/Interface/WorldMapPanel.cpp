@@ -97,7 +97,7 @@ bool WorldMapPanel::init()
 	UiDrawCallInitInfo highlightedTextDrawCallInitInfo;
 	highlightedTextDrawCallInitInfo.textureID = this->highlightedTextTextureRef.get();
 	highlightedTextDrawCallInitInfo.position = provinceNameOffset;
-	highlightedTextDrawCallInitInfo.size = Int2(this->highlightedTextTextureRef.getWidth(), this->highlightedTextTextureRef.getHeight());
+	highlightedTextDrawCallInitInfo.size = this->highlightedTextTextureRef.getDimensions();
 	this->addDrawCall(highlightedTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

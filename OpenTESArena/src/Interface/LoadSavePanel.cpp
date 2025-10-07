@@ -56,7 +56,7 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 
 	UiDrawCallInitInfo bgDrawCallInitInfo;
 	bgDrawCallInitInfo.textureID = this->backgroundTextureRef.get();
-	bgDrawCallInitInfo.size = Int2(this->backgroundTextureRef.getWidth(), this->backgroundTextureRef.getHeight());
+	bgDrawCallInitInfo.size = this->backgroundTextureRef.getDimensions();
 	this->addDrawCall(bgDrawCallInitInfo);
 
 	for (int i = 0; i < static_cast<int>(this->saveTextBoxes.size()); i++)

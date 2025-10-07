@@ -51,7 +51,7 @@ bool TextSubPanel::init(const TextBoxInitInfo &textBoxInitInfo, const std::strin
 	UiDrawCallInitInfo textureDrawCallInitInfo;
 	textureDrawCallInitInfo.textureID = this->textureRef.get();
 	textureDrawCallInitInfo.position = textureCenter;
-	textureDrawCallInitInfo.size = Int2(this->textureRef.getWidth(), this->textureRef.getHeight());
+	textureDrawCallInitInfo.size = this->textureRef.getDimensions();
 	textureDrawCallInitInfo.pivotType = PivotType::Middle;
 	this->addDrawCall(textureDrawCallInitInfo);
 

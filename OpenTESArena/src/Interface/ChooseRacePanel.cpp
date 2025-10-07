@@ -33,7 +33,7 @@ bool ChooseRacePanel::init()
 	UiDrawCallInitInfo noExitDrawCallInitInfo;
 	noExitDrawCallInitInfo.textureID = this->noExitTextureRef.get();
 	noExitDrawCallInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
-	noExitDrawCallInitInfo.size = Int2(this->noExitTextureRef.getWidth(), this->noExitTextureRef.getHeight());
+	noExitDrawCallInitInfo.size = this->noExitTextureRef.getDimensions();
 	noExitDrawCallInitInfo.pivotType = PivotType::BottomRight;
 	this->addDrawCall(noExitDrawCallInitInfo);
 

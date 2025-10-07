@@ -87,7 +87,7 @@ bool ChooseClassCreationPanel::init()
 
 	UiDrawCallInitInfo parchmentDrawCallInitInfo;
 	parchmentDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
-	parchmentDrawCallInitInfo.size = Int2(this->parchmentTextureRef.getWidth(), this->parchmentTextureRef.getHeight());
+	parchmentDrawCallInitInfo.size = this->parchmentTextureRef.getDimensions();
 	parchmentDrawCallInitInfo.pivotType = PivotType::Middle;
 
 	UiDrawCallInitInfo titleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;

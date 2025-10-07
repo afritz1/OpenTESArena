@@ -351,7 +351,7 @@ void GameWorldPanel::initUiDrawCalls()
 		{
 			const int keyID = getKeyIdAtIndex(i);
 			const ScopedUiTextureRef &textureRef = this->keyTextureRefs.get(keyID);
-			return Int2(textureRef.getWidth(), textureRef.getHeight());
+			return textureRef.getDimensions();
 		};
 
 		keyDrawCallInitInfo.activeFunc = [this, &game, i, getKeyIdAtIndex]()
@@ -408,7 +408,7 @@ void GameWorldPanel::initUiDrawCalls()
 			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
 			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
-			const Int2 textureDims(textureRef.getWidth(), textureRef.getHeight());
+			const Int2 textureDims = textureRef.getDimensions();
 			const Double2 texturePercents(
 				static_cast<double>(textureDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL,
 				static_cast<double>(textureDims.y) / static_cast<double>(classicViewHeight));
@@ -442,7 +442,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return sliderPosition;
 		};
 
-		compassSliderDrawCallInitInfo.size = Int2(this->compassSliderTextureRef.getWidth(), this->compassSliderTextureRef.getHeight());
+		compassSliderDrawCallInitInfo.size = this->compassSliderTextureRef.getDimensions();
 		compassSliderDrawCallInitInfo.activeFunc = [this, &game]()
 		{
 			const auto &options = game.options;
@@ -455,7 +455,7 @@ void GameWorldPanel::initUiDrawCalls()
 		UiDrawCallInitInfo compassFrameDrawCallInitInfo;
 		compassFrameDrawCallInitInfo.textureID = this->compassFrameTextureRef.get();
 		compassFrameDrawCallInitInfo.position = GameWorldUiView::getCompassFramePosition();
-		compassFrameDrawCallInitInfo.size = Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight());
+		compassFrameDrawCallInitInfo.size = this->compassFrameTextureRef.getDimensions();
 		compassFrameDrawCallInitInfo.pivotType = PivotType::Top;
 		compassFrameDrawCallInitInfo.activeFunc = compassSliderDrawCallInitInfo.activeFunc;
 		this->addDrawCall(compassFrameDrawCallInitInfo);
@@ -584,7 +584,7 @@ void GameWorldPanel::initUiDrawCalls()
 		UiDrawCallInitInfo reticleDrawCallInitInfo;
 		reticleDrawCallInitInfo.textureID = this->modernModeReticleTextureRef.get();
 		reticleDrawCallInitInfo.position = GameWorldUiView::getInterfaceCenter(game);
-		reticleDrawCallInitInfo.size = Int2(this->modernModeReticleTextureRef.getWidth(), this->modernModeReticleTextureRef.getHeight());
+		reticleDrawCallInitInfo.size = this->modernModeReticleTextureRef.getDimensions();
 		reticleDrawCallInitInfo.pivotType = PivotType::Middle;
 		this->addDrawCall(reticleDrawCallInitInfo);
 	}
@@ -618,7 +618,7 @@ void GameWorldPanel::initUiDrawCalls()
 			const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 			const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
 			const ScopedUiTextureRef &textureRef = this->weaponAnimTextureRefs.get(weaponAnimFrameIndex);
-			return Int2(textureRef.getWidth(), textureRef.getHeight());
+			return textureRef.getDimensions();
 		};
 
 		weaponDrawCallInitInfo.activeFunc = [this, &player]()
@@ -635,7 +635,7 @@ void GameWorldPanel::initUiDrawCalls()
 		UiDrawCallInitInfo gameWorldInterfaceDrawCallInitInfo;
 		gameWorldInterfaceDrawCallInitInfo.textureID = this->gameWorldInterfaceTextureRef.get();
 		gameWorldInterfaceDrawCallInitInfo.position = GameWorldUiView::getGameWorldInterfacePosition();
-		gameWorldInterfaceDrawCallInitInfo.size = Int2(this->gameWorldInterfaceTextureRef.getWidth(), this->gameWorldInterfaceTextureRef.getHeight());
+		gameWorldInterfaceDrawCallInitInfo.size = this->gameWorldInterfaceTextureRef.getDimensions();
 		gameWorldInterfaceDrawCallInitInfo.pivotType = PivotType::Bottom;
 		this->addDrawCall(gameWorldInterfaceDrawCallInitInfo);
 
@@ -644,13 +644,13 @@ void GameWorldPanel::initUiDrawCalls()
 		UiDrawCallInitInfo statusGradientDrawCallInitInfo;
 		statusGradientDrawCallInitInfo.textureID = this->statusGradientTextureRef.get();
 		statusGradientDrawCallInitInfo.position = portraitRect.getTopLeft();
-		statusGradientDrawCallInitInfo.size = Int2(this->statusGradientTextureRef.getWidth(), this->statusGradientTextureRef.getHeight());
+		statusGradientDrawCallInitInfo.size = this->statusGradientTextureRef.getDimensions();
 		this->addDrawCall(statusGradientDrawCallInitInfo);
 
 		UiDrawCallInitInfo playerPortraitDrawCallInitInfo;
 		playerPortraitDrawCallInitInfo.textureID = this->playerPortraitTextureRef.get();
 		playerPortraitDrawCallInitInfo.position = portraitRect.getTopLeft();
-		playerPortraitDrawCallInitInfo.size = Int2(this->playerPortraitTextureRef.getWidth(), this->playerPortraitTextureRef.getHeight());
+		playerPortraitDrawCallInitInfo.size = this->playerPortraitTextureRef.getDimensions();
 		this->addDrawCall(playerPortraitDrawCallInitInfo);
 
 		constexpr PivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
@@ -701,7 +701,7 @@ void GameWorldPanel::initUiDrawCalls()
 			UiDrawCallInitInfo noMagicDrawCallInitInfo;
 			noMagicDrawCallInitInfo.textureID = this->noMagicTextureRef.get();
 			noMagicDrawCallInitInfo.position = GameWorldUiView::getNoMagicTexturePosition();
-			noMagicDrawCallInitInfo.size = Int2(this->noMagicTextureRef.getWidth(), this->noMagicTextureRef.getHeight());
+			noMagicDrawCallInitInfo.size = this->noMagicTextureRef.getDimensions();
 			this->addDrawCall(noMagicDrawCallInitInfo);
 		}
 
@@ -721,7 +721,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return sliderPosition;
 		};
 
-		compassSliderDrawCallInitInfo.size = Int2(this->compassSliderTextureRef.getWidth(), this->compassSliderTextureRef.getHeight());
+		compassSliderDrawCallInitInfo.size = this->compassSliderTextureRef.getDimensions();
 		compassSliderDrawCallInitInfo.activeFunc = [this, &game]()
 		{
 			const auto &options = game.options;
@@ -734,7 +734,7 @@ void GameWorldPanel::initUiDrawCalls()
 		UiDrawCallInitInfo compassFrameDrawCallInitInfo;
 		compassFrameDrawCallInitInfo.textureID = this->compassFrameTextureRef.get();
 		compassFrameDrawCallInitInfo.position = GameWorldUiView::getCompassFramePosition();
-		compassFrameDrawCallInitInfo.size = Int2(this->compassFrameTextureRef.getWidth(), this->compassFrameTextureRef.getHeight());
+		compassFrameDrawCallInitInfo.size = this->compassFrameTextureRef.getDimensions();
 		compassFrameDrawCallInitInfo.pivotType = PivotType::Top;
 		compassFrameDrawCallInitInfo.activeFunc = compassSliderDrawCallInitInfo.activeFunc;
 		this->addDrawCall(compassFrameDrawCallInitInfo);
@@ -814,7 +814,7 @@ void GameWorldPanel::initUiDrawCalls()
 
 			const int index = static_cast<int>(*buttonType);
 			const ScopedUiTextureRef &tooltipTextureRef = this->tooltipTextureRefs.get(index);
-			return Int2(tooltipTextureRef.getWidth(), tooltipTextureRef.getHeight());
+			return tooltipTextureRef.getDimensions();
 		};
 
 		tooltipDrawCallInitInfo.pivotType = PivotType::BottomLeft;
@@ -876,11 +876,11 @@ void GameWorldPanel::initUiDrawCalls()
 			{
 				if (!index.has_value())
 				{
-					return Int2(this->defaultCursorTextureRef.getWidth(), this->defaultCursorTextureRef.getHeight());
+					return this->defaultCursorTextureRef.getDimensions();
 				}
 
 				const ScopedUiTextureRef &arrowCursorTextureRef = this->arrowCursorTextureRefs.get(*index);
-				return Int2(arrowCursorTextureRef.getWidth(), arrowCursorTextureRef.getHeight());
+				return arrowCursorTextureRef.getDimensions();
 			}();
 
 			const auto &options = game.options;

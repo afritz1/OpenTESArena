@@ -243,6 +243,11 @@ int ScopedUiTextureRef::getHeight() const
 	return this->height;
 }
 
+Int2 ScopedUiTextureRef::getDimensions() const
+{
+	return Int2(this->width, this->height);
+}
+
 LockedTexture ScopedUiTextureRef::lockTexels()
 {
 	return this->renderer->lockUiTexture(this->id);

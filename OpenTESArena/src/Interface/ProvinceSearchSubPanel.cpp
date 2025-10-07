@@ -187,7 +187,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	UiDrawCallInitInfo listBgDrawCallInitInfo;
 	listBgDrawCallInitInfo.textureID = this->listBackgroundTextureRef.get();
 	listBgDrawCallInitInfo.position = Int2(ProvinceSearchUiView::ListTextureX, ProvinceSearchUiView::ListTextureY);
-	listBgDrawCallInitInfo.size = Int2(this->listBackgroundTextureRef.getWidth(), this->listBackgroundTextureRef.getHeight());
+	listBgDrawCallInitInfo.size = this->listBackgroundTextureRef.getDimensions();
 	listBgDrawCallInitInfo.activeFunc = listActiveFunc;
 	this->addDrawCall(listBgDrawCallInitInfo);
 

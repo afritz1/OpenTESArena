@@ -262,7 +262,7 @@ bool ChooseAttributesPanel::init()
 		const auto &charCreationState = game.getCharacterCreationState();
 		const int portraitIndex = charCreationState.portraitIndex;
 		const ScopedUiTextureRef &headTextureRef = this->headTextureRefs.get(portraitIndex);
-		return Int2(headTextureRef.getWidth(), headTextureRef.getHeight());
+		return headTextureRef.getDimensions();
 	};
 
 	this->addDrawCall(headDrawCallInitInfo);
