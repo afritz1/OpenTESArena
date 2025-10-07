@@ -1,5 +1,7 @@
 #include "ArenaEntityUtils.h"
+#include "../Assets/ExeData.h"
 #include "../Math/Random.h"
+#include "../Stats/CharacterClassLibrary.h"
 
 namespace
 {
@@ -85,4 +87,22 @@ bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint3
 int ArenaEntityUtils::getCreatureItemQualityLevel(int creatureLevel)
 {
 	return creatureLevel + 1;
+}
+
+int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random)
+{
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+	
+	const auto &goldChances = exeData.entities.humanEnemyGoldChances;
+	DebugAssertIndex(goldChances, charClassDef.categoryID);
+	const int goldChance = goldChances[charClassDef.categoryID];
+	const int roll = 1 + random.next(100);
+	if (roll >= goldChance)
+	{
+		return 0;
+	}
+
+	const int goldAmount = 1 + random.next(50);
+	return goldAmount;
 }

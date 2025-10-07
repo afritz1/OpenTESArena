@@ -150,6 +150,9 @@ struct ExeDataEntities
 	// Display name of the final boss when selecting them.
 	std::string finalBossName;
 
+	// For mage/thief/warrior enemy class types.
+	uint8_t humanEnemyGoldChances[3];
+
 	// Attribute arrays for male/female races and guards. 255 is displayed as 100.
 	// The race arrays alternate male/female/male/female.
 	uint8_t raceAttributes[16][8];

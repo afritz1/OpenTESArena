@@ -84,6 +84,7 @@ CreatureAttributes=0x3608B
 CreatureLootChances=0x37405
 CreatureAnimationFilenames=0x3E4FB
 FinalBossName=0x36D03
+HumanEnemyGoldChances=0x405C9
 RaceAttributes=0x35FC3
 GuardAttributes=0x36043
 MaleCitizenAnimationFilenames=0x4186A

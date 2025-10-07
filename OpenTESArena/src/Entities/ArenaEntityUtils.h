@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+struct ExeData;
+
 class Random;
 
 namespace ArenaEntityUtils
@@ -15,6 +17,8 @@ namespace ArenaEntityUtils
 	bool getCreatureHasNonMagicWeaponOrArmor(uint32_t creatureLootChance, Random &random);
 	bool getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint32_t creatureLootChance, Random &random);
 	int getCreatureItemQualityLevel(int creatureLevel);
+
+	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random);
 }
 
 #endif
