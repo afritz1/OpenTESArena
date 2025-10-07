@@ -2,6 +2,7 @@
 #define STRING_H
 
 #include <cstdint>
+#include <cstdio>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -25,6 +26,15 @@ namespace String
 	bool caseInsensitiveEquals(const std::string &a, const std::string &b);
 
 	int compare(const std::string &a, const std::string &b);
+
+	template<typename... Args>
+	static std::string format(const char *formatStr, Args... args)
+	{
+		const int charCount = std::snprintf(nullptr, 0, formatStr, args...);
+		std::string buffer(charCount + 1, '\0');
+		std::snprintf(buffer.data(), buffer.size(), formatStr, args...);
+		return buffer;
+	}
 
 	// Splits a string on the given character.
 	Buffer<std::string> split(const std::string &str, char separator);

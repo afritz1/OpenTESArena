@@ -27,6 +27,7 @@ namespace Debug
 
 	void showErrorMessageBox(const char *message);
 
+	// Can't use String::format() due to circular dependency.
 	template<typename... Args>
 	static std::string stringFormat(const char *format, Args... args)
 	{
