@@ -62,7 +62,6 @@ namespace Debug
 		const std::string formattedString = Debug::stringFormat(message, args...);
 		const std::string outputString = Debug::makeOutputString(__file__, lineNumber, Debug::MessagePrefixWarning, formattedString);
 		Debug::write(outputString.c_str());
-		Debug::showErrorMessageBox(outputString.c_str());
 	}
 
 	static void logError(const char *__file__, int lineNumber, const std::string &message)
