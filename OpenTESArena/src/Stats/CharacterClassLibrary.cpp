@@ -180,8 +180,12 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 			}
 		}
 
+		constexpr const char *categoryNames[] = { "Mage", "Thief", "Warrior" }; // There doesn't appear to be a way to read this from game data.
+		DebugAssertIndex(categoryNames, category);
+		const char *categoryName = categoryNames[category];
+
 		CharacterClassDefinition def;
-		def.init(name.c_str(), category, preferredAttributes.c_str(), allowedArmors, allowedShields, allowedWeapons,
+		def.init(name.c_str(), category, categoryName, preferredAttributes.c_str(), allowedArmors, allowedShields, allowedWeapons,
 			mage, healthDie, spellPointsMultiplier, initialExperienceCap, lockpickPercent, criticalHit, classIndex);
 
 		this->defs.emplace_back(std::move(def));

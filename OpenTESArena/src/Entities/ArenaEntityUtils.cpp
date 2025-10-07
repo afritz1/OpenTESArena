@@ -94,9 +94,19 @@ int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeDa
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	
+	int goldChanceIndex = 2;
+	if (charClassDef.categoryID == CharacterClassDefinition::CATEGORY_ID_THIEF)
+	{
+		goldChanceIndex = 0;
+	}
+	else if (charClassDef.categoryID == CharacterClassDefinition::CATEGORY_ID_MAGE)
+	{
+		goldChanceIndex = 1;
+	}
+
 	const auto &goldChances = exeData.entities.humanEnemyGoldChances;
-	DebugAssertIndex(goldChances, charClassDef.categoryID);
-	const int goldChance = goldChances[charClassDef.categoryID];
+	DebugAssertIndex(goldChances, goldChanceIndex);
+	const int goldChance = goldChances[goldChanceIndex];
 	const int roll = 1 + random.next(100);
 	if (roll >= goldChance)
 	{

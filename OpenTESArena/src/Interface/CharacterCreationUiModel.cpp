@@ -263,24 +263,17 @@ std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinit
 
 std::string ChooseClassUiModel::getFullTooltipText(const CharacterClassDefinition &charClassDef, Game &game)
 {
-	// Doesn't look like the category name is easy to get from the original data. Potentially could attach something
-	// to the char class definition like a bool saying "the class name is also a category name".
-	constexpr std::array<const char*, 3> ClassCategoryNames =
-	{
-		"Mage", "Thief", "Warrior"
-	};
+	const char *castsMagicPrefix = charClassDef.castsMagic ? "Can" : "Cannot";
+	const std::string armorTooltipText = ChooseClassUiModel::getArmorTooltipText(charClassDef);
+	const std::string shieldTooltipText = ChooseClassUiModel::getShieldTooltipText(charClassDef);
+	const std::string weaponTooltipText = ChooseClassUiModel::getWeaponTooltipText(charClassDef, game);
 
-	const int categoryIndex = charClassDef.categoryID;
-	DebugAssertIndex(ClassCategoryNames, categoryIndex);
-	const std::string categoryName = ClassCategoryNames[categoryIndex];
-	const std::string text = std::string(charClassDef.name) + " (" + categoryName + " class)" + "\n\n" +
-		(charClassDef.castsMagic ? "Can" : "Cannot") + " cast magic" + "\n" +
-		"Health die: " + "d" + std::to_string(charClassDef.healthDie) + "\n" +
-		"Armors: " + ChooseClassUiModel::getArmorTooltipText(charClassDef) + "\n" +
-		"Shields: " + ChooseClassUiModel::getShieldTooltipText(charClassDef) + "\n" +
-		"Weapons: " + ChooseClassUiModel::getWeaponTooltipText(charClassDef, game);
+	char buffer[1024];
+	std::snprintf(buffer, sizeof(buffer), "%s (%s class)\n\n%s cast magic\nHealth die: d%d\nArmors: %s\nShields: %s\nWeapons: %s",
+		charClassDef.name, charClassDef.categoryName, castsMagicPrefix, charClassDef.healthDie,
+		armorTooltipText.c_str(), shieldTooltipText.c_str(), weaponTooltipText.c_str());
 
-	return text;
+	return std::string(buffer);
 }
 
 std::string ChooseGenderUiModel::getTitleText(Game &game)

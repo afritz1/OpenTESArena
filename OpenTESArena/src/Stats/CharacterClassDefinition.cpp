@@ -27,6 +27,7 @@ CharacterClassDefinition::CharacterClassDefinition()
 {
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
 	this->categoryID = -1;
+	std::fill(std::begin(this->categoryName), std::end(this->categoryName), '\0');
 	std::fill(std::begin(this->preferredAttributes), std::end(this->preferredAttributes), '\0');
 	this->castsMagic = false;
 	this->healthDie = -1;
@@ -36,13 +37,14 @@ CharacterClassDefinition::CharacterClassDefinition()
 	this->originalClassIndex = -1;
 }
 
-void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID categoryID, const char *preferredAttributes,
-	Span<const int> allowedArmors, Span<const int> allowedShields, Span<const int> allowedWeapons,
+void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID categoryID, const char *categoryName,
+	const char *preferredAttributes, Span<const int> allowedArmors, Span<const int> allowedShields, Span<const int> allowedWeapons,
 	bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, double lockpickPercent, bool criticalHit,
 	int originalClassIndex)
 {
 	std::snprintf(this->name, std::size(this->name), "%s", name);
 	this->categoryID = categoryID;
+	std::snprintf(this->categoryName, std::size(this->categoryName), "%s", categoryName);
 	std::snprintf(this->preferredAttributes, std::size(this->preferredAttributes), "%s", preferredAttributes);
 	
 	this->allowedArmors.resize(allowedArmors.getCount());
