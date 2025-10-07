@@ -33,6 +33,17 @@ void EnemyEntityDefinition::CreatureDefinition::init(int creatureIndex, bool isF
 	const auto &srcAttributes = entities.creatureAttributes[creatureIndex];
 	std::copy(std::begin(srcAttributes), std::end(srcAttributes), std::begin(this->attributes));
 
+	if (isFinalBoss)
+	{
+		this->lootChances = 0; // @todo Figure out how final boss is handled
+	}
+	else
+	{
+		const int lootChancesIndex = creatureIndex + 1;
+		DebugAssertIndex(entities.creatureLootChances, lootChancesIndex);
+		this->lootChances = entities.creatureLootChances[lootChancesIndex];
+	}
+
 	this->ghost = ArenaAnimUtils::isGhost(creatureIndex);
 }
 

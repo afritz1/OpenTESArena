@@ -444,6 +444,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int creatureLootChancesOffset = GetExeAddress(*section, "CreatureLootChances");
 	const int creatureAnimFilenamesOffset = GetExeAddress(*section, "CreatureAnimationFilenames");
 	const int finalBossNameOffset = GetExeAddress(*section, "FinalBossName");
+	const int humanEnemyGoldChancesOffset = GetExeAddress(*section, "HumanEnemyGoldChances");
 	const int raceAttributesOffset = GetExeAddress(*section, "RaceAttributes");
 	const int guardAttributesOffset = GetExeAddress(*section, "GuardAttributes");
 	const int maleCitizenAnimFilenamesOffset = GetExeAddress(*section, "MaleCitizenAnimationFilenames");
@@ -472,9 +473,10 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	initInt8Array(this->creatureBlood, exeBytes, creatureBloodOffset);
 	initInt8Array(this->creatureDiseaseChances, exeBytes, creatureDiseaseChancesOffset);
 	init2DInt8Array(this->creatureAttributes, exeBytes, creatureAttributesOffset);
-	initInt16Array(this->creatureLootChances, exeBytes, creatureLootChancesOffset);
+	initInt32Array(this->creatureLootChances, exeBytes, creatureLootChancesOffset);
 	initStringArrayNullTerminated(this->creatureAnimationFilenames, exeBytes, creatureAnimFilenamesOffset);
 	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
+	initInt8Array(this->humanEnemyGoldChances, exeBytes, humanEnemyGoldChancesOffset);
 	init2DInt8Array(this->raceAttributes, exeBytes, raceAttributesOffset);
 	init2DInt8Array(this->guardAttributes, exeBytes, guardAttributesOffset);
 	initStringArrayNullTerminated(this->maleCitizenAnimationFilenames, exeBytes, maleCitizenAnimFilenamesOffset);

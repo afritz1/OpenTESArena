@@ -1,6 +1,7 @@
 #ifndef ENTITY_DEFINITION_H
 #define ENTITY_DEFINITION_H
 
+#include <cstdint>
 #include <optional>
 #include <string_view>
 
@@ -52,6 +53,7 @@ struct EnemyEntityDefinition
 		int bloodIndex; // @todo this should be an EntityDefID to the vfx in EntityDefinitionLibrary, or -1
 		int diseaseChances;
 		int attributes[8];
+		uint32_t lootChances;
 		bool ghost;
 
 		void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);

@@ -374,28 +374,27 @@ void GameWorldUiController::onEnemyCorpseInteracted(Game &game, EntityInstanceID
 
 void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
 {
-	bool isCorpseAwardingGold = true;
+	Random &random = game.random;
 
-	int creatureLevel = 1;
+	int corpseGoldCount = 0;
 	if (entityDef.type == EntityDefinitionType::Enemy)
 	{
 		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+
+		int creatureLevel = 1;
 		if (enemyDef.type == EnemyEntityDefinitionType::Creature)
 		{
 			creatureLevel = enemyDef.creature.level;
 		}
+
+		corpseGoldCount = ArenaEntityUtils::getCreatureGold(creatureLevel, enemyDef.creature.lootChances, random); // @todo This should be done at creature instantiation
 	}
 
-	Random &random = game.random;
-	isCorpseAwardingGold &= random.nextBool(); // @todo figure out actual chances per enemy
-
-	if (!isCorpseAwardingGold)
+	if (corpseGoldCount == 0)
 	{
 		GameWorldUiController::onEnemyCorpseInteracted(game, entityInstID, entityDef);
 		return;
 	}
-
-	const int corpseGoldCount = ArenaEntityUtils::getCreatureCorpseGold(creatureLevel, random);
 
 	Player &player = game.player;
 	player.gold += corpseGoldCount;
