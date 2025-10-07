@@ -31,6 +31,7 @@
 #include "../World/MapDefinition.h"
 #include "../World/MapType.h"
 
+#include "components/utilities/Enum.h"
 #include "components/utilities/String.h"
 
 namespace
@@ -385,7 +386,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
 						[](const ItemDefinition &itemDef)
 					{
-						return (itemDef.type == ItemType::Accessory) || (itemDef.type == ItemType::Consumable) || (itemDef.type == ItemType::Trinket);
+						return ItemTypeFlags(itemDef.type).any(ItemType::Accessory | ItemType::Consumable | ItemType::Trinket);
 					});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
@@ -398,7 +399,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
 						[](const ItemDefinition &itemDef)
 					{
-						return (itemDef.type == ItemType::Weapon) || (itemDef.type == ItemType::Armor) || (itemDef.type == ItemType::Shield);
+						return ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
 					});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
@@ -412,7 +413,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 						[](const ItemDefinition &itemDef)
 					{
 						// @todo get one that's actually magic
-						return (itemDef.type == ItemType::Weapon) || (itemDef.type == ItemType::Armor) || (itemDef.type == ItemType::Shield);
+						return ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
 					});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));

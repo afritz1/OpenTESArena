@@ -1,6 +1,7 @@
 #ifndef ITEM_DEFINITION_H
 #define ITEM_DEFINITION_H
 
+#include "components/utilities/Enum.h"
 #include "components/utilities/Span.h"
 
 using ItemConditionDefinitionID = int;
@@ -120,17 +121,19 @@ struct ArtifactItemDefinition
 	void init(const char *flavorText, Span<const int> provinceIDs);
 };
 
-enum class ItemType
+enum class ItemType : uint32_t
 {
-	Accessory,
-	Armor,
-	Consumable,
-	Gold,
-	Misc,
-	Shield,
-	Trinket,
-	Weapon
+	Accessory = 1 << 0,
+	Armor = 1 << 1,
+	Consumable = 1 << 2,
+	Gold = 1 << 3,
+	Misc = 1 << 4,
+	Shield = 1 << 5,
+	Trinket = 1 << 6,
+	Weapon = 1 << 7
 };
+
+using ItemTypeFlags = EnumFlags<ItemType>; // For random item picking from library.
 
 using ItemDefinitionID = int;
 
