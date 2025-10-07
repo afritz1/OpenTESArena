@@ -1,6 +1,8 @@
 #ifndef ITEM_DEFINITION_H
 #define ITEM_DEFINITION_H
 
+#include <cstdint>
+
 #include "components/utilities/Enum.h"
 #include "components/utilities/Span.h"
 
