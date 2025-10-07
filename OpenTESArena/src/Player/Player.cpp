@@ -511,7 +511,10 @@ double Player::getJumpMagnitude() const
 
 double Player::getMaxMoveSpeed() const
 {
-	return !this->groundState.isSwimming ? PlayerConstants::MOVE_SPEED : PlayerConstants::SWIMMING_MOVE_SPEED;
+	if (!this->groundState.isSwimming || this->raceID == static_cast<int>(Race::Argonian))
+		return PlayerConstants::MOVE_SPEED;
+	else
+		return PlayerConstants::SWIMMING_MOVE_SPEED;
 }
 
 bool Player::isMoving() const
@@ -912,8 +915,8 @@ void Player::postPhysicsStep(double dt, Game &game)
 			else if (!isDoneClimbing)
 			{
 				constexpr double baseClimbingSpeed = PlayerConstants::CLIMBING_SPEED;
-				// @todo: race check for faster climbing
-				const Double3 climbingVelocity(0.0, baseClimbingSpeed, 0.0);
+				const double speedMultiplier = (this->charClassDefID == static_cast<int>(Class::Acrobat) || this->raceID == static_cast<int>(Race::Khajiit)) ? 4.0 : 1.0;
+				const Double3 climbingVelocity(0.0, baseClimbingSpeed * speedMultiplier, 0.0);
 				newVelocity = climbingVelocity;
 			}
 			else

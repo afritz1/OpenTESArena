@@ -56,6 +56,40 @@ enum class PlayerMovementType
 	Climbing
 };
 
+enum class Class
+{
+	Mage,
+	Spellsword,
+	Battlemage,
+	Sorceror,
+	Healer,
+	Nightblade,
+	Bard,
+	Burglar,
+	Rogue,
+	Acrobat,
+	Thief,
+	Assassin,
+	Monk,
+	Archer,
+	Ranger,
+	Barbarian,
+	Warrior,
+	Knight
+};
+
+enum class Race
+{
+	Breton,
+	Redguard,
+	Nord,
+	DarkElf,
+	HighElf,
+	WoodElf,
+	Khajiit,
+	Argonian
+};
+
 struct PlayerGroundState
 {
 	bool onGround;
