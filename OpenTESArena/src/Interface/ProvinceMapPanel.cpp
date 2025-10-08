@@ -520,14 +520,11 @@ void ProvinceMapPanel::updateHoveredLocationID(const Int2 &originalPosition)
 
 		const Int2 diff = point - originalPosition;
 		const Int2 closestDiff = *closestPosition - originalPosition;
-		// @todo: change to distance squared
-		const double distance = std::sqrt((diff.x * diff.x) + (diff.y * diff.y));
-		const double closestDistance = std::sqrt((closestDiff.x * closestDiff.x) + (closestDiff.y * closestDiff.y));
-		return distance < closestDistance;
+		const int distanceSqr = (diff.x * diff.x) + (diff.y * diff.y);
+		const int closestDistanceSqr = (closestDiff.x * closestDiff.x) + (closestDiff.y * closestDiff.y);
+		return distanceSqr < closestDistanceSqr;
 	};
 
-	// Look through all visible locations to find the one closest to the mouse.
-	std::optional<int> closestIndex;
 	auto &game = this->getGame();
 	auto &gameState = game.gameState;
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
@@ -537,6 +534,9 @@ void ProvinceMapPanel::updateHoveredLocationID(const Int2 &originalPosition)
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+
+	// Look through all visible locations to find the one closest to the mouse.
+	std::optional<int> closestIndex;
 
 	for (int i = 0; i < provinceInst.getLocationCount(); i++)
 	{
@@ -555,7 +555,11 @@ void ProvinceMapPanel::updateHoveredLocationID(const Int2 &originalPosition)
 		}
 	}
 
-	DebugAssertMsg(closestIndex.has_value(), "No closest location ID found.");
+	if (!closestIndex.has_value())
+	{
+		DebugLogErrorFormat("No closest location ID found at UI position (%d, %d).", originalPosition.x, originalPosition.y);
+		return;
+	}
 
 	if (this->hoveredLocationID != *closestIndex)
 	{
