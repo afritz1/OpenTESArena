@@ -243,12 +243,7 @@ Game::~Game()
 
 	this->debugQuadtreeState.free(this->renderer);
 
-	this->sceneManager.renderVoxelChunkManager.shutdown(this->renderer);
-	this->sceneManager.renderEntityManager.shutdown(this->renderer);
-	this->sceneManager.renderSkyManager.shutdown(this->renderer);
-	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
-	this->sceneManager.renderLightManager.shutdown(this->renderer);
-
+	this->sceneManager.shutdown(this->renderer);
 	this->uiManager.shutdown(this->renderer);
 }
 

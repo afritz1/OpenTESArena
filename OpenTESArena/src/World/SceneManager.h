@@ -66,6 +66,8 @@ struct SceneManager
 	SceneManager();
 
 	void init(TextureManager &textureManager, Renderer &renderer);
+	void shutdown(Renderer &renderer);
+
 	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double dayPercent, TextureManager &textureManager);
 	void endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 };

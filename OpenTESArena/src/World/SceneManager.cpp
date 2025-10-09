@@ -64,6 +64,15 @@ void SceneManager::init(TextureManager &textureManager, Renderer &renderer)
 	this->modernDitherTextureRef.init(modernDitherTextureID, renderer);
 }
 
+void SceneManager::shutdown(Renderer &renderer)
+{
+	this->renderVoxelChunkManager.shutdown(renderer);
+	this->renderEntityManager.shutdown(renderer);
+	this->renderSkyManager.shutdown(renderer);
+	this->renderWeatherManager.shutdown(renderer);
+	this->renderLightManager.shutdown(renderer);
+}
+
 void SceneManager::updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double dayPercent, TextureManager &textureManager)
 {
 	constexpr int paletteLength = PaletteLength;
