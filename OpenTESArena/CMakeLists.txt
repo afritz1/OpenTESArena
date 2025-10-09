@@ -560,7 +560,9 @@ SET(TES_UI
     "${SRC_ROOT}/UI/UiCommand.cpp"
     "${SRC_ROOT}/UI/UiCommand.h"
     "${SRC_ROOT}/UI/UiDrawCall.cpp"
-    "${SRC_ROOT}/UI/UiDrawCall.h")
+    "${SRC_ROOT}/UI/UiDrawCall.h"
+    "${SRC_ROOT}/UI/UiManager.cpp"
+    "${SRC_ROOT}/UI/UiManager.h")
 
 SET(TES_UTILITIES
     "${SRC_ROOT}/Utilities/Color.cpp"

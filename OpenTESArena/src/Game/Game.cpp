@@ -248,6 +248,8 @@ Game::~Game()
 	this->sceneManager.renderSkyManager.shutdown(this->renderer);
 	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
 	this->sceneManager.renderLightManager.shutdown(this->renderer);
+
+	this->uiManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -422,6 +424,13 @@ bool Game::init()
 	if (!this->sceneManager.renderLightManager.init(this->renderer))
 	{
 		DebugLogError("Couldn't init render light manager.");
+		return false;
+	}
+
+	const std::string uiFolderPath = dataFolderPath + "ui/";
+	if (!this->uiManager.init(uiFolderPath.c_str(), this->textureManager, this->renderer))
+	{
+		DebugLogError("Couldn't init UI manager.");
 		return false;
 	}
 

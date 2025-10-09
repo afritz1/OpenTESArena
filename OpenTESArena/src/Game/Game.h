@@ -20,6 +20,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Window.h"
 #include "../UI/TextBox.h"
+#include "../UI/UiManager.h"
 #include "../World/ChunkManager.h"
 #include "../World/SceneManager.h"
 
@@ -64,6 +65,7 @@ public:
 	FPSCounter fpsCounter;
 
 	SceneManager sceneManager;
+	UiManager uiManager;
 
 	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
 	GameState gameState;
