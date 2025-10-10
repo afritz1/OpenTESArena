@@ -135,6 +135,7 @@ enum class ItemType : uint32_t
 	Weapon = 1 << 7
 };
 
+AllowEnumFlags(ItemType);
 using ItemTypeFlags = EnumFlags<ItemType>; // For random item picking from library.
 
 using ItemDefinitionID = int;
