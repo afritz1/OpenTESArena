@@ -10,6 +10,8 @@ struct CharacterRaceDefinition
 	int provinceID;
 	char singularName[32];
 	char pluralName[32];
+	double swimmingMoveSpeed;
+	double climbingSpeedScale;
 	TextureAsset maleCharSheetBodyTextureAsset;
 	std::string maleCharSheetHeadsFilename;
 	std::string maleGameUiHeadsFilename;
@@ -19,7 +21,7 @@ struct CharacterRaceDefinition
 
 	CharacterRaceDefinition();
 
-	void init(int provinceID, const char *singularName, const char *pluralName,
+	void init(int provinceID, const char *singularName, const char *pluralName, double swimmingMoveSpeed, double climbingSpeedScale,
 		const TextureAsset &maleCharSheetBodyTextureAsset, const std::string &maleCharSheetHeadsFilename, const std::string &maleGameUiHeadsFilename,
 		const TextureAsset &femaleCharSheetBodyTextureAsset, const std::string &femaleCharSheetHeadsFilename, const std::string &femaleGameUiHeadsFilename);
 };

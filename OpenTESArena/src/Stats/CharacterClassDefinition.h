@@ -26,6 +26,7 @@ struct CharacterClassDefinition
 	int initialExpCap;
 	double lockpickPercent; // Lockpick effectiveness percent.
 	bool criticalHit;
+	double climbingSpeedScale;
 	int originalClassIndex; // Non-negative if derived from original game.
 
 	CharacterClassDefinition();
@@ -33,7 +34,7 @@ struct CharacterClassDefinition
 	void init(const char *name, CharacterClassCategoryID categoryID, const char *categoryName, const char *preferredAttributes,
 		Span<const int> allowedArmors, Span<const int> allowedShields, Span<const int> allowedWeapons,
 		bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, double lockpickPercent,
-		bool criticalHit, int originalClassIndex);
+		bool criticalHit, double climbingSpeedScale, int originalClassIndex);
 
 	int getAllowedArmorCount() const;
 	int getAllowedShieldCount() const;

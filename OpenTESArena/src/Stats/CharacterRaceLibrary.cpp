@@ -2,6 +2,7 @@
 #include "../Assets/ArenaPortraitUtils.h"
 #include "../Assets/CityDataFile.h"
 #include "../Assets/ExeData.h"
+#include "../Player/Player.h"
 
 #include "components/debug/Debug.h"
 
@@ -15,6 +16,19 @@ void CharacterRaceLibrary::init(const ExeData &exeData)
 		DebugAssertIndex(exeData.races.pluralNames, raceID);
 		const std::string &singularName = exeData.races.singularNames[raceID];
 		const std::string &pluralName = exeData.races.pluralNames[raceID];
+
+		double swimmingMoveSpeed = PlayerConstants::SWIMMING_MOVE_SPEED;
+		if (raceID == 7)
+		{
+			swimmingMoveSpeed = PlayerConstants::MOVE_SPEED;
+		}
+
+		double climbingSpeedScale = 1.0;
+		if (raceID == 6)
+		{
+			climbingSpeedScale = 4.0;
+		}
+
 		const TextureAsset maleCharSheetBodyTextureAsset(ArenaPortraitUtils::getBody(true, raceID));
 		const std::string maleCharSheetHeadsFilename = ArenaPortraitUtils::getHeads(true, raceID, false);
 		const std::string maleGameUiHeadsFilename = ArenaPortraitUtils::getHeads(true, raceID, true);
@@ -23,8 +37,8 @@ void CharacterRaceLibrary::init(const ExeData &exeData)
 		const std::string femaleGameUiHeadsFilename = ArenaPortraitUtils::getHeads(false, raceID, true);
 
 		CharacterRaceDefinition raceDef;
-		raceDef.init(raceID, singularName.c_str(), pluralName.c_str(), maleCharSheetBodyTextureAsset, maleCharSheetHeadsFilename, maleGameUiHeadsFilename,
-			femaleCharSheetBodyTextureAsset, femaleCharSheetHeadsFilename, femaleGameUiHeadsFilename);
+		raceDef.init(raceID, singularName.c_str(), pluralName.c_str(), swimmingMoveSpeed, climbingSpeedScale, maleCharSheetBodyTextureAsset,
+			maleCharSheetHeadsFilename, maleGameUiHeadsFilename, femaleCharSheetBodyTextureAsset, femaleCharSheetHeadsFilename, femaleGameUiHeadsFilename);
 		this->defs.emplace_back(std::move(raceDef));
 	}
 }

@@ -25,6 +25,8 @@
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassDefinition.h"
 #include "../Stats/CharacterClassLibrary.h"
+#include "../Stats/CharacterRaceDefinition.h"
+#include "../Stats/CharacterRaceLibrary.h"
 #include "../Voxels/VoxelChunkManager.h"
 #include "../World/CardinalDirection.h"
 #include "../World/MapType.h"
@@ -511,10 +513,15 @@ double Player::getJumpMagnitude() const
 
 double Player::getMaxMoveSpeed() const
 {
-	if (!this->groundState.isSwimming || this->raceID == static_cast<int>(Race::Argonian))
-		return PlayerConstants::MOVE_SPEED;
-	else
-		return PlayerConstants::SWIMMING_MOVE_SPEED;
+	if (this->groundState.isSwimming)
+	{
+		const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
+		const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(this->raceID);
+		return charRaceDef.swimmingMoveSpeed;
+	}
+
+	// @todo depend on speed attribute
+	return PlayerConstants::MOVE_SPEED;
 }
 
 bool Player::isMoving() const
@@ -914,9 +921,15 @@ void Player::postPhysicsStep(double dt, Game &game)
 			}
 			else if (!isDoneClimbing)
 			{
+				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
+
+				const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
+				const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(this->raceID);
+
 				constexpr double baseClimbingSpeed = PlayerConstants::CLIMBING_SPEED;
-				const double speedMultiplier = (this->charClassDefID == static_cast<int>(Class::Acrobat) || this->raceID == static_cast<int>(Race::Khajiit)) ? 4.0 : 1.0;
-				const Double3 climbingVelocity(0.0, baseClimbingSpeed * speedMultiplier, 0.0);
+				const double climbingSpeedScale = std::max(charClassDef.climbingSpeedScale, charRaceDef.climbingSpeedScale);
+				const Double3 climbingVelocity(0.0, baseClimbingSpeed * climbingSpeedScale, 0.0);
 				newVelocity = climbingVelocity;
 			}
 			else
