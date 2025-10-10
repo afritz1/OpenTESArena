@@ -83,19 +83,25 @@ public:
 	}
 };
 
+// Don't allow enum classes to be converted to EnumFlags by default (avoids polluting third party code, etc.).
 template<typename EnumType>
+struct EnableEnumFlags : std::false_type { };
+
+#define AllowEnumFlags(EnumType) template<> struct EnableEnumFlags<EnumType> : std::true_type { }
+
+template<typename EnumType, typename = std::enable_if_t<EnableEnumFlags<EnumType>::value>>
 constexpr EnumFlags<EnumType> operator|(EnumType a, EnumType b)
 {
 	return EnumFlags<EnumType>(a) | EnumFlags<EnumType>(b);
 }
 
-template<typename EnumType>
+template<typename EnumType, typename = std::enable_if_t<EnableEnumFlags<EnumType>::value>>
 constexpr EnumFlags<EnumType> operator&(EnumType a, EnumType b)
 {
 	return EnumFlags<EnumType>(a) & EnumFlags<EnumType>(b);
 }
 
-template<typename EnumType>
+template<typename EnumType, typename = std::enable_if_t<EnableEnumFlags<EnumType>::value>>
 constexpr EnumFlags<EnumType> operator&(EnumType a, EnumFlags<EnumType> b)
 {
 	return EnumFlags<EnumType>(a) & b;

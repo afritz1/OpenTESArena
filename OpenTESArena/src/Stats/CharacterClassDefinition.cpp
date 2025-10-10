@@ -34,13 +34,14 @@ CharacterClassDefinition::CharacterClassDefinition()
 	this->initialExpCap = -1;
 	this->lockpickPercent = 0.0;
 	this->criticalHit = false;
+	this->climbingSpeedScale = 0.0;
 	this->originalClassIndex = -1;
 }
 
 void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID categoryID, const char *categoryName,
 	const char *preferredAttributes, Span<const int> allowedArmors, Span<const int> allowedShields, Span<const int> allowedWeapons,
 	bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, double lockpickPercent, bool criticalHit,
-	int originalClassIndex)
+	double climbingSpeedScale, int originalClassIndex)
 {
 	std::snprintf(this->name, std::size(this->name), "%s", name);
 	this->categoryID = categoryID;
@@ -60,6 +61,7 @@ void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID c
 	this->initialExpCap = initialExpCap;
 	this->lockpickPercent = lockpickPercent;
 	this->criticalHit = criticalHit;
+	this->climbingSpeedScale = climbingSpeedScale;
 	this->originalClassIndex = originalClassIndex;
 }
 

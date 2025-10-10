@@ -184,9 +184,15 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 		DebugAssertIndex(categoryNames, category);
 		const char *categoryName = categoryNames[category];
 
+		double climbingSpeedScale = 1.0;
+		if (classIndex == 9)
+		{
+			climbingSpeedScale = 4.0;
+		}
+
 		CharacterClassDefinition def;
 		def.init(name.c_str(), category, categoryName, preferredAttributes.c_str(), allowedArmors, allowedShields, allowedWeapons,
-			mage, healthDie, spellPointsMultiplier, initialExperienceCap, lockpickPercent, criticalHit, classIndex);
+			mage, healthDie, spellPointsMultiplier, initialExperienceCap, lockpickPercent, criticalHit, climbingSpeedScale, classIndex);
 
 		this->defs.emplace_back(std::move(def));
 	}
