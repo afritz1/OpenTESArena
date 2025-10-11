@@ -508,6 +508,8 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int materialChancesOffset = GetExeAddress(*section, "MaterialChances");
 	const int materialPriceMultipliersOffset = GetExeAddress(*section, "MaterialPriceMultipliers");
 	const int itemConditionNamesOffset = GetExeAddress(*section, "ItemConditionNames");
+	const int itemConditionChancesOffset = GetExeAddress(*section, "ItemConditionChances");
+	const int itemConditionPercentagesOffset = GetExeAddress(*section, "ItemConditionPercentages");
 	const int armorNamesOffset = GetExeAddress(*section, "ArmorNames");
 	const int plateArmorNamesOffset = GetExeAddress(*section, "PlateArmorNames");
 	const int plateArmorQualitiesOffset = GetExeAddress(*section, "PlateArmorQualities");
@@ -566,6 +568,8 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	initInt8Array(this->materialChances, exeBytes, materialChancesOffset);
 	initInt16Array(this->materialPriceMultipliers, exeBytes, materialPriceMultipliersOffset);
 	initStringArrayNullTerminated(this->itemConditionNames, exeBytes, itemConditionNamesOffset);
+	initInt8Array(this->itemConditionChances, exeBytes, itemConditionChancesOffset);
+	initInt8Array(this->itemConditionPercentages, exeBytes, itemConditionPercentagesOffset);
 	initStringArrayNullTerminated(this->armorNames, exeBytes, armorNamesOffset);
 	initStringArrayNullTerminated(this->plateArmorNames, exeBytes, plateArmorNamesOffset);
 	initInt8Array(this->plateArmorQualities, exeBytes, plateArmorQualitiesOffset);
