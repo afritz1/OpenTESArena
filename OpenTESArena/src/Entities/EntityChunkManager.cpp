@@ -396,6 +396,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 				if (ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(enemyDef.creature.lootChances, random))
 				{
+					// @todo: Get item and condition percentage from helper functions
+
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
 						[](const ItemDefinition &itemDef)
 					{
