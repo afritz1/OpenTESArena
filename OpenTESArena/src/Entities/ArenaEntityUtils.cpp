@@ -61,7 +61,7 @@ bool ArenaEntityUtils::getCreatureHasMagicItem(int creatureLevel, uint32_t creat
 	{
 		return false;
 	}
-	
+
 	const int itemChance = GetCreatureMagicItemChance(creatureLootChance);
 	const int roll = 1 + random.next(100);
 	return roll <= itemChance;
@@ -74,7 +74,7 @@ bool ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(uint32_t creatureLoot
 	return roll <= itemChance;
 }
 
-int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData& exeData, Random& random)
+int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random)
 {
 	int itemID = -1;
 
@@ -97,7 +97,7 @@ int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const 
 		// which is interpreted as the Mage, and so they only get Mage equipment (dagger, staff or buckler),
 		// and some high-level creatures have values outside the range of class IDs, resulting in out-of-range
 		// accesses.
-		
+
 		// If a valid item was found, stop
 		if (itemID != -1)
 			break;
@@ -106,22 +106,20 @@ int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const 
 	return itemID; // @todo: Also return the base material (plate, chain or leather)
 }
 
-int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData& exeData, Random& random)
+int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, Random &random)
 {
-	const auto& itemConditionChances = exeData.equipment.itemConditionChances;
-	const auto& itemConditionPercentages = exeData.equipment.itemConditionPercentages;
+	const auto &itemConditionChances = exeData.equipment.itemConditionChances;
+	const auto &itemConditionPercentages = exeData.equipment.itemConditionPercentages;
 
 	int roll = random.next(7);
 	int condition = maxCondition;
-	for (int i = 0; i < sizeof(itemConditionChances); i++)
+	for (int i = 0; i < static_cast<int>(std::size(itemConditionChances)); i++)
 	{
 		if (itemConditionChances[i] >= roll)
 		{
 			DebugAssertIndex(itemConditionPercentages, i);
-			condition = (maxCondition / 100) * itemConditionPercentages[i];
-			if (condition == 0) {
-				condition = 1;
-			}
+			const uint8_t conditionPercent = itemConditionPercentages[i];
+			condition = std::max((maxCondition / 100) * conditionPercent, 1);
 			break;
 		}
 	}
@@ -147,13 +145,13 @@ int ArenaEntityUtils::getCreatureItemQualityLevel(int creatureLevel)
 	return creatureLevel + 1;
 }
 
-int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int specifiedItemID, const ExeData& exeData, Random& random)
+int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random)
 {
-	const auto& plateArmorQualities = exeData.equipment.plateArmorQualities;
-	const auto& chainArmorQualities = exeData.equipment.chainArmorQualities;
-	const auto& leatherArmorQualities = exeData.equipment.leatherArmorQualities;
+	const auto &plateArmorQualities = exeData.equipment.plateArmorQualities;
+	const auto &chainArmorQualities = exeData.equipment.chainArmorQualities;
+	const auto &leatherArmorQualities = exeData.equipment.leatherArmorQualities;
 
-	int initialItemID;
+	int initialItemID = -1;
 	int finalItemID = -1;
 	if (specifiedItemID != -1)
 	{
@@ -169,10 +167,15 @@ int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int sp
 	// use the result, instead overriding it with 0 (plate) when baseMaterial is -1 or using the specified
 	// material when it is not -1. It probably was supposed to use the random value for the -1 case, which
 	// is used for treasure piles and armor found on creatures.
-	if (baseMaterial == -1 || baseMaterial == 0)
+	constexpr int invalidMaterialID = -1;
+	constexpr int plateMaterialID = 0;
+	constexpr int chainMaterialID = 1;
+	constexpr int leatherMaterialID = 2;
+
+	if (baseMaterial == invalidMaterialID || baseMaterial == plateMaterialID)
 	{
 		DebugAssertIndex(plateArmorQualities, initialItemID);
-		for (int i = initialItemID; i < sizeof(plateArmorQualities); i++)
+		for (int i = initialItemID; i < static_cast<int>(std::size(plateArmorQualities)); i++)
 		{
 			if (plateArmorQualities[i] <= armorLevel)
 			{
@@ -181,10 +184,10 @@ int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int sp
 			}
 		}
 	}
-	else if (baseMaterial == 1)
+	else if (baseMaterial == chainMaterialID)
 	{
 		DebugAssertIndex(chainArmorQualities, initialItemID);
-		for (int i = initialItemID; i < sizeof(chainArmorQualities); i++)
+		for (int i = initialItemID; i < static_cast<int>(std::size(chainArmorQualities)); i++)
 		{
 			if (chainArmorQualities[i] <= armorLevel)
 			{
@@ -196,7 +199,7 @@ int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int sp
 	else
 	{
 		DebugAssertIndex(leatherArmorQualities, initialItemID);
-		for (int i = initialItemID; i < sizeof(leatherArmorQualities); i++)
+		for (int i = initialItemID; i < static_cast<int>(std::size(leatherArmorQualities)); i++)
 		{
 			if (leatherArmorQualities[i] <= armorLevel)
 			{
@@ -209,10 +212,12 @@ int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int sp
 	return finalItemID;
 }
 
-int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, const ExeData& exeData, Random& random)
+int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, const ExeData &exeData, Random &random)
 {
-	const auto& weaponQualities = exeData.equipment.weaponQualities;
-	int initialItemID;
+	const auto &weaponQualities = exeData.equipment.weaponQualities;
+	const int weaponQualityCount = static_cast<int>(std::size(weaponQualities));
+
+	int initialItemID = -1;
 	int finalItemID = -1;
 	if (specifiedItemID != -1)
 	{
@@ -221,10 +226,10 @@ int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, c
 	}
 	else
 	{
-		initialItemID = random.next(sizeof(weaponQualities));
+		initialItemID = random.next(weaponQualityCount);
 	}
 
-	for (int i = initialItemID; i < sizeof(weaponQualities); i++)
+	for (int i = initialItemID; i < weaponQualityCount; i++)
 	{
 		if (weaponQualities[i] <= weaponLevel)
 		{
@@ -240,7 +245,7 @@ int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeDa
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
-	
+
 	int goldChanceIndex = 2;
 	if (charClassDef.categoryID == CharacterClassDefinition::CATEGORY_ID_THIEF)
 	{
