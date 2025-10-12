@@ -20,7 +20,7 @@ namespace ArenaEntityUtils
 	bool getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint32_t creatureLootChance, Random &random);
 	int getCreatureItemQualityLevel(int creatureLevel);
 	int pickNonMagicArmor(int armorLevel, int baseMaterial, int specifiedSlotID, const ExeData &exeData, Random &random);
-	int pickNonMagicWeapon(int armorLevel, int specifiedSlotID, const ExeData &exeData, Random &random);
+	int pickNonMagicWeapon(int weaponLevel, int specifiedSlotID, const ExeData &exeData, Random &random);
 
 	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random);
 }
