@@ -74,59 +74,6 @@ bool ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(uint32_t creatureLoot
 	return roll <= itemChance;
 }
 
-int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random)
-{
-	int itemID = -1;
-
-	// Make up to 20 attempts to create a valid item
-	for (int i = 0; i < 20; i++)
-	{
-		if (random.next(2) == 0)
-		{
-			itemID = pickNonMagicArmor(getCreatureItemQualityLevel(creatureLevel), -1, -1, exeData, random);
-		}
-		else
-		{
-			itemID = pickNonMagicWeapon(getCreatureItemQualityLevel(creatureLevel), -1, exeData, random);
-		}
-
-		// After picking an armor or weapon the original game calls a function for checking whether a class
-		// can equip an item, using the byte value at +5 in the character data, which is the class ID for
-		// human characters but seems to be an unused spell-related value for creatures. If the function
-		// says the item can't be equipped, it is rejected. Non-spellcasting creatures have 0 for this value,
-		// which is interpreted as the Mage, and so they only get Mage equipment (dagger, staff or buckler),
-		// and some high-level creatures have values outside the range of class IDs, resulting in out-of-range
-		// accesses.
-
-		// If a valid item was found, stop
-		if (itemID != -1)
-			break;
-	}
-
-	return itemID; // @todo: Also return the base material (plate, chain or leather)
-}
-
-int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, Random &random)
-{
-	const auto &itemConditionChances = exeData.equipment.itemConditionChances;
-	const auto &itemConditionPercentages = exeData.equipment.itemConditionPercentages;
-
-	int roll = random.next(7);
-	int condition = maxCondition;
-	for (int i = 0; i < static_cast<int>(std::size(itemConditionChances)); i++)
-	{
-		if (itemConditionChances[i] >= roll)
-		{
-			DebugAssertIndex(itemConditionPercentages, i);
-			const uint8_t conditionPercent = itemConditionPercentages[i];
-			condition = std::max((maxCondition / 100) * conditionPercent, 1);
-			break;
-		}
-	}
-
-	return condition;
-}
-
 bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint32_t creatureLootChance, Random &random)
 {
 	const bool isHighEnoughLevel = creatureLevel > 6;
@@ -138,11 +85,6 @@ bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint3
 	const int itemChance = GetCreatureMagicWeaponOrArmorChance(creatureLootChance);
 	const int roll = 1 + random.next(100);
 	return roll <= itemChance;
-}
-
-int ArenaEntityUtils::getCreatureItemQualityLevel(int creatureLevel)
-{
-	return creatureLevel + 1;
 }
 
 int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random)
@@ -239,6 +181,76 @@ int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, c
 	}
 
 	return finalItemID;
+}
+
+void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor)
+{
+	int itemID = -1;
+	bool isArmor = false;
+
+	constexpr int itemCreationAttemptCount = 20;
+
+	for (int i = 0; i < itemCreationAttemptCount; i++)
+	{
+		const int itemQualityLevel = ArenaEntityUtils::getCreatureItemQualityLevel(creatureLevel);
+		const bool shouldPickArmor = random.nextBool();
+
+		if (shouldPickArmor)
+		{
+			constexpr int baseMaterial = -1;
+			constexpr int specifiedArmorID = -1;
+			itemID = ArenaEntityUtils::pickNonMagicArmor(itemQualityLevel, baseMaterial, specifiedArmorID, exeData, random);
+		}
+		else
+		{
+			constexpr int specifiedWeaponID = -1;
+			itemID = ArenaEntityUtils::pickNonMagicWeapon(itemQualityLevel, specifiedWeaponID, exeData, random);
+		}
+
+		// After picking an armor or weapon the original game calls a function for checking whether a class
+		// can equip an item, using the byte value at +5 in the character data, which is the class ID for
+		// human characters but seems to be an unused spell-related value for creatures. If the function
+		// says the item can't be equipped, it is rejected. Non-spellcasting creatures have 0 for this value,
+		// which is interpreted as the Mage, and so they only get Mage equipment (dagger, staff or buckler),
+		// and some high-level creatures have values outside the range of class IDs, resulting in out-of-range
+		// accesses.
+
+		if (itemID >= 0)
+		{
+			isArmor = shouldPickArmor;
+			break;
+		}
+	}
+
+	// @todo: Also return the base material (plate, chain or leather)
+	*outWeaponOrArmorID = itemID;
+	*outIsArmor = isArmor;
+}
+
+int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, Random &random)
+{
+	const auto &itemConditionChances = exeData.equipment.itemConditionChances;
+	const auto &itemConditionPercentages = exeData.equipment.itemConditionPercentages;
+
+	int roll = random.next(7);
+	int condition = maxCondition;
+	for (int i = 0; i < static_cast<int>(std::size(itemConditionChances)); i++)
+	{
+		if (itemConditionChances[i] >= roll)
+		{
+			DebugAssertIndex(itemConditionPercentages, i);
+			const uint8_t conditionPercent = itemConditionPercentages[i];
+			condition = std::max((maxCondition / 100) * conditionPercent, 1);
+			break;
+		}
+	}
+
+	return condition;
+}
+
+int ArenaEntityUtils::getCreatureItemQualityLevel(int creatureLevel)
+{
+	return creatureLevel + 1;
 }
 
 int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random)
