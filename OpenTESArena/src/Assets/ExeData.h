@@ -216,6 +216,8 @@ struct ExeDataEquipment
 
 	// Condition/degradation values.
 	std::string itemConditionNames[8]; // New, used, ...
+	uint8_t itemConditionChances[3];
+	uint8_t itemConditionPercentages[3];
 
 	// Plate armor values (including shields).
 	std::string armorNames[11]; // Cuirass, ..., tower shield.
