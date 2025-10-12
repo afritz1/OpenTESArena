@@ -414,8 +414,8 @@ namespace PlayerLogic
 						}
 						else
 						{
-							const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
-							const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
+							const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+							const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
 
 							const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
 							const std::string requiredDoorKeyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);

@@ -9,6 +9,12 @@
 
 #include "components/utilities/StringView.h"
 
+int ArenaPlayerUtils::scaleAttribute256To100(int attributeValue)
+{
+	const double scaledAttribute = (static_cast<double>(attributeValue) * 100.0) / 256.0;
+	return static_cast<int>(std::round(scaledAttribute));
+}
+
 int ArenaPlayerUtils::getBaseSpeed(int speedAttribute, int encumbranceMod)
 {
 	return ((((speedAttribute * 20) / 256) * (256 - encumbranceMod)) / 256) + 20;
@@ -193,22 +199,22 @@ DerivedAttributes ArenaPlayerUtils::calculateTotalDerivedBonuses(const PrimaryAt
 	return totalDerivedAttributes;
 }
 
-bool ArenaPlayerUtils::attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random)
-{
-	int thievingChance = getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
-	int roll = random.next() % 100;
-	return (thievingChance >= roll);
-}
-
 int ArenaPlayerUtils::getThievingChance(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes)
 {
 	DebugAssert(thievingDivisor > 0);
 	DebugAssert(difficultyLevel > 0);
 
-	int attributesModifier = ArenaPlayerUtils::scale256AttributeTo100Value(attributes.intelligence.maxValue + attributes.agility.maxValue);
-	int ability = ((((attributesModifier / thievingDivisor) * (playerLevel + 1)) * 100) / (difficultyLevel * 100));
-	ability = std::clamp(ability, 0, 100);
-	return ability;
+	const int attributesModifier = ArenaPlayerUtils::scaleAttribute256To100(attributes.intelligence.maxValue + attributes.agility.maxValue);
+	const int ability = ((((attributesModifier / thievingDivisor) * (playerLevel + 1)) * 100) / (difficultyLevel * 100));
+	const int clampedAbility = std::clamp(ability, 0, 100);
+	return clampedAbility;
+}
+
+bool ArenaPlayerUtils::attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random)
+{
+	const int thievingChance = ArenaPlayerUtils::getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
+	const int roll = random.next(100);
+	return thievingChance >= roll;
 }
 
 int ArenaPlayerUtils::getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData)
@@ -221,15 +227,10 @@ int ArenaPlayerUtils::getLockDifficultyMessageIndex(int difficultyLevel, int thi
 	}
 	else
 	{
-		int thievingChance = getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
+		const int thievingChance = ArenaPlayerUtils::getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
 		index = (thievingChance / 5) - 6;
 		index = std::clamp(index, 0, static_cast<int>(std::size(exeData.status.lockDifficultyMessages) - 2));
 	}
-	return index;
-}
 
-int ArenaPlayerUtils::scale256AttributeTo100Value(int attributeValue)
-{
-	double scaled = static_cast<double>(attributeValue) * 100.0 / 256.0;
-	return static_cast<int>(std::round(scaled));
+	return index;
 }

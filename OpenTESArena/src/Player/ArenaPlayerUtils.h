@@ -12,6 +12,8 @@ namespace ArenaPlayerUtils
 	constexpr int EyeHeight = 60;
 	constexpr int TopOfHeadHeight = EyeHeight + 1;
 
+	int scaleAttribute256To100(int attributeValue);
+
 	int getBaseSpeed(int speedAttribute, int encumbranceMod);
 	int getMoveSpeed(int baseSpeed);
 	int getTurnSpeed(int baseSpeed);
@@ -56,11 +58,9 @@ namespace ArenaPlayerUtils
 	DerivedAttributes calculatePersonalityDerivedBonuses(int personality);
 	DerivedAttributes calculateTotalDerivedBonuses(const PrimaryAttributes &attributes);
 
-	bool attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random);
 	int getThievingChance(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes);
+	bool attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random);
 	int getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData);
-
-	int scale256AttributeTo100Value(int attributeValue);
 }
 
 #endif
