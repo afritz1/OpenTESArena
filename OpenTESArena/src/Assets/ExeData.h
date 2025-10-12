@@ -52,7 +52,7 @@ struct ExeDataCharacterClasses
 	uint8_t classNumbersToIDs[18];
 	uint8_t healthDice[18];
 	uint16_t initialExperienceCaps[18];
-	uint8_t lockpickingDivisors[18];
+	uint8_t thievingDivisors[18];
 	std::string preferredAttributes[18];
 	uint8_t magicClassIntelligenceMultipliers[7];
 

@@ -20,7 +20,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 	const auto &initialExpCapValues = exeData.charClasses.initialExperienceCaps;
 	const auto &healthDiceValues = exeData.charClasses.healthDice;
 	const auto &spellPointMultiplierValues = exeData.charClasses.magicClassIntelligenceMultipliers;
-	const auto &lockpickingDivisorValues = exeData.charClasses.lockpickingDivisors;
+	const auto &thievingDivisorValues = exeData.charClasses.thievingDivisors;
 
 	constexpr int originalClassCount = 18;
 
@@ -132,9 +132,8 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 			}
 		}();
 
-		DebugAssertIndex(lockpickingDivisorValues, i);
-		const uint8_t lockpickingDivisor = lockpickingDivisorValues[i];		
-		const double lockpickPercent = static_cast<double>(200 / lockpickingDivisor) / 100.0;
+		DebugAssertIndex(thievingDivisorValues, i);
+		const uint8_t thievingDivisor = thievingDivisorValues[i];
 
 		DebugAssertIndex(healthDiceValues, i);
 		const int healthDie = healthDiceValues[i];
@@ -192,7 +191,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 
 		CharacterClassDefinition def;
 		def.init(name.c_str(), category, categoryName, preferredAttributes.c_str(), allowedArmors, allowedShields, allowedWeapons,
-			mage, healthDie, spellPointsMultiplier, initialExperienceCap, lockpickPercent, criticalHit, climbingSpeedScale, classIndex);
+			mage, healthDie, spellPointsMultiplier, initialExperienceCap, thievingDivisor, criticalHit, climbingSpeedScale, classIndex);
 
 		this->defs.emplace_back(std::move(def));
 	}

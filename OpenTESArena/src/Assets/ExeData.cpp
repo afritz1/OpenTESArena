@@ -282,7 +282,7 @@ bool ExeDataCharacterClasses::init(Span<const std::byte> exeBytes, const KeyValu
 	const int classNumbersToIDsOffset = GetExeAddress(*section, "ClassNumbersToIDs");
 	const int healthDiceOffset = GetExeAddress(*section, "HealthDice");
 	const int initialExpCapsOffset = GetExeAddress(*section, "InitialExperienceCaps");
-	const int lockpickingDivisorsOffset = GetExeAddress(*section, "LockpickingDivisors");
+	const int thievingDivisorsOffset = GetExeAddress(*section, "ThievingDivisors");
 	const int preferredAttributesOffset = GetExeAddress(*section, "PreferredAttributes");
 	const int magicClassIntelligenceMultipliersOffset = GetExeAddress(*section, "MagicClassIntelligenceMultipliers");
 
@@ -303,7 +303,7 @@ bool ExeDataCharacterClasses::init(Span<const std::byte> exeBytes, const KeyValu
 	initInt8Array(this->classNumbersToIDs, exeBytes, classNumbersToIDsOffset);
 	initInt8Array(this->healthDice, exeBytes, healthDiceOffset);
 	initInt16Array(this->initialExperienceCaps, exeBytes, initialExpCapsOffset);
-	initInt8Array(this->lockpickingDivisors, exeBytes, lockpickingDivisorsOffset);
+	initInt8Array(this->thievingDivisors, exeBytes, thievingDivisorsOffset);
 	initStringArrayNullTerminated(this->preferredAttributes, exeBytes, preferredAttributesOffset);
 	initInt8Array(this->magicClassIntelligenceMultipliers, exeBytes, magicClassIntelligenceMultipliersOffset);
 

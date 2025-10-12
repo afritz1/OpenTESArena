@@ -20,7 +20,7 @@ ClassNames=0x3E462
 ClassNumbersToIDs=0x3E450
 HealthDice=0x3E5D5
 InitialExperienceCaps=0x36F0E
-LockpickingDivisors=0x3E43E
+ThievingDivisors=0x3E43E
 PreferredAttributes=0x36034
 MagicClassIntelligenceMultipliers=0x388B0
 

@@ -24,7 +24,7 @@ struct CharacterClassDefinition
 	int healthDie; // d8, d20, etc..
 	double spellPointsMultiplier;
 	int initialExpCap;
-	double lockpickPercent; // Lockpick effectiveness percent.
+	int thievingDivisor;
 	bool criticalHit;
 	double climbingSpeedScale;
 	int originalClassIndex; // Non-negative if derived from original game.
@@ -33,7 +33,7 @@ struct CharacterClassDefinition
 
 	void init(const char *name, CharacterClassCategoryID categoryID, const char *categoryName, const char *preferredAttributes,
 		Span<const int> allowedArmors, Span<const int> allowedShields, Span<const int> allowedWeapons,
-		bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, double lockpickPercent,
+		bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, int thievingDivisor,
 		bool criticalHit, double climbingSpeedScale, int originalClassIndex);
 
 	int getAllowedArmorCount() const;
