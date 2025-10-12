@@ -12,6 +12,7 @@ namespace ArenaItemUtils
 	constexpr int DoorKeyCount = 12;
 	constexpr int InvalidDoorKeyID = -1;
 
+	bool isFistsWeapon(int weaponID);
 	bool isRangedWeapon(int weaponID);
 }
 

@@ -877,20 +877,25 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					{
 						const LockDefinition &lockDef = hitVoxelChunk.lockDefs[lockDefID];
 						isDoorBashable = lockDef.lockLevel >= 0; // @todo don't allow key-only doors to be bashable
-					}
-				}
 
-				if (isDoorBashable)
-				{
-					const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
-					audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
+						if (isDoorBashable)
+						{
+							const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
+							audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
 
-					if (random.nextBool())
-					{
-						constexpr bool isApplyingDoorKeyToLock = false;
-						constexpr int doorKeyID = -1;
-						constexpr bool isWeaponBashing = true;
-						MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isWeaponBashing);
+							if (ArenaItemUtils::isFistsWeapon(player.weaponAnimDefID))
+								player.currentHealth -= (ArenaPlayerUtils::getSelfDamageFromBashWithFists(random));
+
+							int damage = 6;	// @todo: Calculate damage
+
+							if (ArenaPlayerUtils::doesBashSucceed(damage, lockDef.lockLevel, player.primaryAttributes, random))
+							{
+								constexpr bool isApplyingDoorKeyToLock = false;
+								constexpr int doorKeyID = -1;
+								constexpr bool isWeaponBashing = true;
+								MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isWeaponBashing);
+							}
+						}
 					}
 				}
 			}
