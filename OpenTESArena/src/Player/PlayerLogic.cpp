@@ -380,6 +380,7 @@ namespace PlayerLogic
 						bool canDoorBeOpened = true;
 						bool isApplyingDoorKeyToLock = false;
 						int requiredDoorKeyID = -1;
+						int lockLevel = 0;
 
 						int triggerInstIndex;
 						const bool hasDoorBeenUnlocked = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
@@ -390,6 +391,7 @@ namespace PlayerLogic
 							{
 								const LockDefinition &lockDef = voxelChunk.lockDefs[lockDefID];
 								requiredDoorKeyID = lockDef.keyID;
+								lockLevel = lockDef.lockLevel;
 
 								if (requiredDoorKeyID >= 0)
 								{
@@ -412,7 +414,10 @@ namespace PlayerLogic
 						}
 						else
 						{
-							const int lockDifficultyIndex = 0; // @todo determine from thieving skill value
+							const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
+							const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
+
+							const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
 							const std::string requiredDoorKeyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
 							actionTextBox.setText(requiredDoorKeyMsg);
 							gameState.setActionTextDuration(requiredDoorKeyMsg);

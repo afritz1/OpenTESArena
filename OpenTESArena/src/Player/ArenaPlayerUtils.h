@@ -3,6 +3,7 @@
 
 class Random;
 
+struct ExeData;
 struct PrimaryAttributes;
 struct DerivedAttributes;
 
@@ -54,6 +55,12 @@ namespace ArenaPlayerUtils
 	DerivedAttributes calculateEnduranceDerivedBonuses(int endurance);
 	DerivedAttributes calculatePersonalityDerivedBonuses(int personality);
 	DerivedAttributes calculateTotalDerivedBonuses(const PrimaryAttributes &attributes);
+
+	bool attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random);
+	int getThievingChance(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes);
+	int getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData);
+
+	int scale256AttributeTo100Value(int attributeValue);
 }
 
 #endif

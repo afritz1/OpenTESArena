@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include "ArenaPlayerUtils.h"
+#include "../Assets/ExeData.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
@@ -190,4 +191,45 @@ DerivedAttributes ArenaPlayerUtils::calculateTotalDerivedBonuses(const PrimaryAt
 	addToTotalDerivedAttributes(ArenaPlayerUtils::calculatePersonalityDerivedBonuses(attributes.personality.maxValue));
 
 	return totalDerivedAttributes;
+}
+
+bool ArenaPlayerUtils::attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random)
+{
+	int thievingChance = getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
+	int roll = random.next() % 100;
+	return (thievingChance >= roll);
+}
+
+int ArenaPlayerUtils::getThievingChance(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes)
+{
+	DebugAssert(thievingDivisor > 0);
+	DebugAssert(difficultyLevel > 0);
+
+	int attributesModifier = ArenaPlayerUtils::scale256AttributeTo100Value(attributes.intelligence.maxValue + attributes.agility.maxValue);
+	int ability = ((((attributesModifier / thievingDivisor) * (playerLevel + 1)) * 100) / (difficultyLevel * 100));
+	ability = std::clamp(ability, 0, 100);
+	return ability;
+}
+
+int ArenaPlayerUtils::getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData)
+{
+	int index;
+	if (difficultyLevel >= 20)
+	{
+		// Magically-locked door. Use the last message.
+		index = static_cast<int>(std::size(exeData.status.lockDifficultyMessages)) - 1;
+	}
+	else
+	{
+		int thievingChance = getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
+		index = (thievingChance / 5) - 6;
+		index = std::clamp(index, 0, static_cast<int>(std::size(exeData.status.lockDifficultyMessages) - 2));
+	}
+	return index;
+}
+
+int ArenaPlayerUtils::scale256AttributeTo100Value(int attributeValue)
+{
+	double scaled = static_cast<double>(attributeValue) * 100.0 / 256.0;
+	return static_cast<int>(std::round(scaled));
 }
