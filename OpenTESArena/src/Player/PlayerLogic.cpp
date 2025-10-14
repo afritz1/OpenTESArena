@@ -875,7 +875,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					if (hitVoxelChunk.tryGetLockDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &lockDefID))
 					{
 						const LockDefinition &lockDef = hitVoxelChunk.lockDefs[lockDefID];
-						const bool isDoorBashable = lockDef.lockLevel >= 0; // @todo don't allow key-only doors to be bashable
+						const bool isDoorBashable = lockDef.lockLevel >= 0;
 
 						if (isDoorBashable)
 						{
