@@ -62,7 +62,9 @@ namespace ArenaPlayerUtils
 	bool attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random);
 	int getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData);
 
-	int getSelfDamageFromBashWithFists(Random& random);
-	bool doesBashSucceed(int damage, int lockLevel, const PrimaryAttributes& attributes, Random& random);
+	constexpr int DoorBashMinDamageRequired = 6;
+
+	int getSelfDamageFromDoorBashWithFists(Random &random);
+	bool isDoorBashSuccessful(int damage, int lockLevel, const PrimaryAttributes &attributes, Random &random);
 }
 #endif

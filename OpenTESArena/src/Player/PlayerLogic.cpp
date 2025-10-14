@@ -868,7 +868,6 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 				}
 
 				// Can only hit if not previously unlocked.
-				bool isDoorBashable = false;
 				int triggerInstIndex;
 				if (!hitVoxelChunk.tryGetTriggerInstIndex(hitVoxel.x, hitVoxel.y, hitVoxel.z, &triggerInstIndex))
 				{
@@ -876,7 +875,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					if (hitVoxelChunk.tryGetLockDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &lockDefID))
 					{
 						const LockDefinition &lockDef = hitVoxelChunk.lockDefs[lockDefID];
-						isDoorBashable = lockDef.lockLevel >= 0; // @todo don't allow key-only doors to be bashable
+						const bool isDoorBashable = lockDef.lockLevel >= 0; // @todo don't allow key-only doors to be bashable
 
 						if (isDoorBashable)
 						{
@@ -884,11 +883,13 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 							audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
 
 							if (ArenaItemUtils::isFistsWeapon(player.weaponAnimDefID))
-								player.currentHealth -= (ArenaPlayerUtils::getSelfDamageFromBashWithFists(random));
+							{
+								player.currentHealth -= ArenaPlayerUtils::getSelfDamageFromDoorBashWithFists(random);
+							}
 
-							int damage = 6;	// @todo: Calculate damage
+							const int doorBashDamage = ArenaPlayerUtils::DoorBashMinDamageRequired; // @todo: Calculate damage
 
-							if (ArenaPlayerUtils::doesBashSucceed(damage, lockDef.lockLevel, player.primaryAttributes, random))
+							if (ArenaPlayerUtils::isDoorBashSuccessful(doorBashDamage, lockDef.lockLevel, player.primaryAttributes, random))
 							{
 								constexpr bool isApplyingDoorKeyToLock = false;
 								constexpr int doorKeyID = -1;

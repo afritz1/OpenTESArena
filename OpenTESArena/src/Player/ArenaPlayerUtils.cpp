@@ -235,37 +235,28 @@ int ArenaPlayerUtils::getLockDifficultyMessageIndex(int difficultyLevel, int thi
 	return index;
 }
 
-int ArenaPlayerUtils::getSelfDamageFromBashWithFists(Random &random)
+int ArenaPlayerUtils::getSelfDamageFromDoorBashWithFists(Random &random)
 {
-	const int roll = random.next() % 100;
-	if (roll >= 20)
-	{
-		return 1;
-	}
-	else
+	const int roll = random.next(100);
+	const bool shouldDamagePlayer = roll >= 20;
+	if (!shouldDamagePlayer)
 	{
 		return 0;
 	}
+
+	return 1;
 }
 
-bool ArenaPlayerUtils::doesBashSucceed(int damage, int lockLevel, const PrimaryAttributes &attributes, Random &random)
+bool ArenaPlayerUtils::isDoorBashSuccessful(int damage, int lockLevel, const PrimaryAttributes &attributes, Random &random)
 {
-	const int minDamageRequired = 6;
+	constexpr int minDamageRequired = ArenaPlayerUtils::DoorBashMinDamageRequired;
 	if (damage < minDamageRequired)
 	{
 		return false;
 	}
 
-	int difficultyLevel = lockLevel * 5;
-	int roll = random.next() % 100;
-	int threshold = (attributes.strength.maxValue * 100 >> 8) - difficultyLevel;
-
-	if (threshold >= roll)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+	const int difficultyLevel = lockLevel * 5;
+	const int threshold = ((attributes.strength.maxValue * 100) >> 8) - difficultyLevel;
+	const int roll = random.next(100);
+	return threshold >= roll;
 }
