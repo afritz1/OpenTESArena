@@ -213,6 +213,9 @@ Box3A=0x48654
 Box3B=0x48664
 Box4=0x48674
 
+[Services]
+TavernRoomHealModifiers=0x3DC9D
+
 [Status]
 PopUp=0x4157B
 Date=0x40838

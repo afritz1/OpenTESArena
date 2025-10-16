@@ -4,6 +4,7 @@
 class Random;
 
 struct ExeData;
+struct Player;
 struct PrimaryAttributes;
 struct DerivedAttributes;
 
@@ -12,7 +13,8 @@ namespace ArenaPlayerUtils
 	constexpr int EyeHeight = 60;
 	constexpr int TopOfHeadHeight = EyeHeight + 1;
 
-	int scaleAttribute256To100(int attributeValue);
+	int scale256To100(int value);
+	int scale100To256(int value);
 
 	int getBaseSpeed(int speedAttribute, int encumbranceMod);
 	int getMoveSpeed(int baseSpeed);
@@ -66,5 +68,7 @@ namespace ArenaPlayerUtils
 
 	int getSelfDamageFromDoorBashWithFists(Random &random);
 	bool isDoorBashSuccessful(int damage, int lockLevel, const PrimaryAttributes &attributes, Random &random);
+
+	void restHealPlayer(Player &player, int restFactor, int roomType, const ExeData &exeData);
 }
 #endif
