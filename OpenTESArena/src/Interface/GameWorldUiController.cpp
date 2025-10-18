@@ -707,9 +707,11 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 		}
 		else
 		{
-			// Give some emergency stamina and rest for a while.
+			// Rest for a while.
 			Player &player = game.player;
-			player.currentStamina = std::max(player.maxStamina * 0.080, 15.0);
+			const auto& exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+			ArenaPlayerUtils::restHealPlayer(player, 1, 1, exeData);
 
 			constexpr double secondsPerHour = 60.0 * 60.0;
 			constexpr double realSecondsPerInGameHour = secondsPerHour / GameState::GAME_TIME_SCALE;

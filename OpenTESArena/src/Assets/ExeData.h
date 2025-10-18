@@ -489,6 +489,14 @@ struct ExeDataStatus
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
+struct ExeDataServices
+{
+	// Modifiers for the amount healed when resting
+	int8_t tavernRoomHealModifiers[7];
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataTravel
 {
 	// Location format texts when clicking on a location on a province map.
@@ -608,6 +616,7 @@ struct ExeData
 	ExeDataMeta meta;
 	ExeDataQuests quests;
 	ExeDataRaces races;
+	ExeDataServices services;
 	ExeDataStatus status;
 	ExeDataTravel travel;
 	ExeDataUI ui;
