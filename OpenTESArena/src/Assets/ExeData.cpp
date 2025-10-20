@@ -874,7 +874,7 @@ int ExeDataRaisedPlatforms::getTextureMappingValueB(int thicknessIndex, int text
 bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Services";
-	const KeyValueFileSection* section = keyValueFile.findSection(sectionName);
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
 	if (section == nullptr)
 	{
 		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());

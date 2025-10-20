@@ -504,6 +504,8 @@ SET(TES_SKY
     "${SRC_ROOT}/Sky/SkyVisibilityManager.h")
 
 SET(TES_STATS
+    "${SRC_ROOT}/Stats/ArenaStatUtils.cpp"
+    "${SRC_ROOT}/Stats/ArenaStatUtils.h"
     "${SRC_ROOT}/Stats/CharacterClassDefinition.cpp"
     "${SRC_ROOT}/Stats/CharacterClassDefinition.h"
     "${SRC_ROOT}/Stats/CharacterClassLibrary.cpp"

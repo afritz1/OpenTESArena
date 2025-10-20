@@ -5,21 +5,11 @@
 #include "../Assets/ExeData.h"
 #include "../Math/Random.h"
 #include "../Player/Player.h"
+#include "../Stats/ArenaStatUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
 #include "components/utilities/StringView.h"
-
-int ArenaPlayerUtils::scale256To100(int value)
-{
-	const double scaledValue = (static_cast<double>(value) * 100.0) / 256.0;
-	return static_cast<int>(std::round(scaledValue));
-}
-
-int ArenaPlayerUtils::scale100To256(int value)
-{
-	return (value * 256 / 100);
-}
 
 int ArenaPlayerUtils::getBaseSpeed(int speedAttribute, int encumbranceMod)
 {
@@ -123,9 +113,9 @@ int ArenaPlayerUtils::calculateBonusToHit(int agility)
 
 int ArenaPlayerUtils::calculateBonusToHealth(int endurance)
 {
-	int endurance256Base = scale100To256(endurance);
-	int result256Base = (endurance256Base - 128 + 12) / 25;
-	return scale256To100(result256Base);
+	const int endurance256Base = ArenaStatUtils::scale100To256(endurance);
+	const int result256Base = (endurance256Base - 128 + 12) / 25;
+	return ArenaStatUtils::scale256To100(result256Base);
 }
 
 int ArenaPlayerUtils::calculateStartingGold(Random &random)
@@ -254,20 +244,20 @@ bool ArenaPlayerUtils::isDoorBashSuccessful(int damage, int lockLevel, const Pri
 	}
 
 	const int difficultyLevel = lockLevel * 5;
-	const int threshold = (scale100To256(attributes.strength.maxValue) * 100 >> 8) - difficultyLevel;
+	const int threshold = (ArenaStatUtils::scale100To256(attributes.strength.maxValue) * 100 >> 8) - difficultyLevel;
 	const int roll = random.next(100);
 	return threshold >= roll;
 }
 
-void ArenaPlayerUtils::restHealPlayer(Player& player, int restFactor, int roomType, const ExeData& exeData)
+void ArenaPlayerUtils::applyRestHealing(Player &player, int restFactor, int tavernRoomType, const ExeData &exeData)
 {
 	// @todo: Attribute recovery
 
 	// Health recovery
-	int bonusHealing = calculateEnduranceDerivedBonuses(player.primaryAttributes.endurance.maxValue).healMod;
-	int healerBonus = (player.charClassDefID == 4) ? 20 : 0;
-	int multiplier = (bonusHealing * 5) + 60 + healerBonus;
-	int healAmount = ((int)player.maxHealth * restFactor * multiplier) / 1000;
+	const int bonusHealing = ArenaPlayerUtils::calculateEnduranceDerivedBonuses(player.primaryAttributes.endurance.maxValue).healMod;
+	const int healerBonus = (player.charClassDefID == 4) ? 20 : 0;
+	const int multiplier = (bonusHealing * 5) + 60 + healerBonus;
+	int healAmount = (static_cast<int>(player.maxHealth) * restFactor * multiplier) / 1000;
 
 	// The original game checks whether the player is the Barbarian class here and ANDs the healMod against
 	// itself. If the healMod is <= 0 it zeroes out an already-zero value to which roomModifier is added, having
@@ -275,33 +265,32 @@ void ArenaPlayerUtils::restHealPlayer(Player& player, int restFactor, int roomTy
 	// or 0 if the healMod was negative, added to roomModifier before multiplying it by restFactor.
 
 	const auto &tavernRoomHealModifiers = exeData.services.tavernRoomHealModifiers;
-	DebugAssertIndex(tavernRoomHealModifiers, roomType);
-
-	int roomModifier = tavernRoomHealModifiers[roomType];
-	int add = roomModifier * restFactor;
-	healAmount += add;
+	DebugAssertIndex(tavernRoomHealModifiers, tavernRoomType);
+	const int roomModifier = tavernRoomHealModifiers[tavernRoomType];
+	const int roomRestHealAmount = roomModifier * restFactor;
+	healAmount += roomRestHealAmount;
 
 	if (healAmount <= 0)
+	{
 		healAmount = 1;
+	}
 
 	player.currentHealth = std::min(player.currentHealth + healAmount, player.maxHealth);
 
 	// Stamina recovery
-	int staminaCap = calculateMaxStamina(player.primaryAttributes.strength.maxValue, player.primaryAttributes.endurance.maxValue);
-	int staminaGain = ((scale100To256(staminaCap) << 6) * restFactor) / 1000;
-	int staminaGainMultiplier = (bonusHealing * 5) + 70;
-	staminaGain = scale256To100((staminaGain * staminaGainMultiplier) >> 6);
-	double newStamina = player.currentStamina + staminaGain;
+	const int staminaCap = ArenaPlayerUtils::calculateMaxStamina(player.primaryAttributes.strength.maxValue, player.primaryAttributes.endurance.maxValue);
+	const int staminaGainMultiplier = (bonusHealing * 5) + 70;
+	const int staminaGainAmount256 = ((ArenaStatUtils::scale100To256(staminaCap) << 6) * restFactor) / 1000;
+	const int staminaGainAmount = ArenaStatUtils::scale256To100((staminaGainAmount256 * staminaGainMultiplier) >> 6);
+	player.currentStamina = std::min(player.currentStamina + staminaGainAmount256, static_cast<double>(staminaCap));
 
-	player.currentStamina = std::min(newStamina, static_cast<double>(staminaCap));
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
 
 	// Spell points recovery
-	const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
-	const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
-
-	if (charClassDef.castsMagic && player.charClassDefID != 3 && player.currentSpellPoints < player.maxSpellPoints)
+	if (charClassDef.castsMagic && (player.charClassDefID != 3) && (player.currentSpellPoints < player.maxSpellPoints))
 	{
-		int gain = (static_cast<int>(player.maxSpellPoints) * restFactor) >> 3;
-		player.currentSpellPoints = std::min(player.currentSpellPoints + gain, player.maxSpellPoints);
+		const int spellPointsGainAmount = (static_cast<int>(player.maxSpellPoints) * restFactor) >> 3;
+		player.currentSpellPoints = std::min(player.currentSpellPoints + spellPointsGainAmount, player.maxSpellPoints);
 	}
 }

@@ -13,9 +13,6 @@ namespace ArenaPlayerUtils
 	constexpr int EyeHeight = 60;
 	constexpr int TopOfHeadHeight = EyeHeight + 1;
 
-	int scale256To100(int value);
-	int scale100To256(int value);
-
 	int getBaseSpeed(int speedAttribute, int encumbranceMod);
 	int getMoveSpeed(int baseSpeed);
 	int getTurnSpeed(int baseSpeed);
@@ -69,6 +66,6 @@ namespace ArenaPlayerUtils
 	int getSelfDamageFromDoorBashWithFists(Random &random);
 	bool isDoorBashSuccessful(int damage, int lockLevel, const PrimaryAttributes &attributes, Random &random);
 
-	void restHealPlayer(Player &player, int restFactor, int roomType, const ExeData &exeData);
+	void applyRestHealing(Player &player, int restFactor, int tavernRoomType, const ExeData &exeData);
 }
 #endif
