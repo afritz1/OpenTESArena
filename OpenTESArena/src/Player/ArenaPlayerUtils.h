@@ -65,7 +65,5 @@ namespace ArenaPlayerUtils
 
 	int getSelfDamageFromDoorBashWithFists(Random &random);
 	bool isDoorBashSuccessful(int damage, int lockLevel, const PrimaryAttributes &attributes, Random &random);
-
-	void applyRestHealing(Player &player, int restFactor, int tavernRoomType, const ExeData &exeData);
 }
 #endif

@@ -23,6 +23,7 @@
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
+#include "../Stats/ArenaStatUtils.h"
 #include "../Stats/CharacterClassDefinition.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/CharacterRaceDefinition.h"
@@ -612,6 +613,52 @@ void Player::setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem)
 
 	// Prevent leftover momentum.
 	this->setPhysicsVelocity(Double3::Zero);
+}
+
+void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData &exeData)
+{
+	// @todo: Attribute recovery
+
+	// Health recovery
+	const int bonusHealing = ArenaPlayerUtils::calculateEnduranceDerivedBonuses(this->primaryAttributes.endurance.maxValue).healMod;
+	const int healerBonus = (this->charClassDefID == 4) ? 20 : 0;
+	const int multiplier = (bonusHealing * 5) + 60 + healerBonus;
+	int healAmount = (static_cast<int>(this->maxHealth) * restFactor * multiplier) / 1000;
+
+	// The original game checks whether the player is the Barbarian class here and ANDs the healMod against
+	// itself. If the healMod is <= 0 it zeroes out an already-zero value to which roomModifier is added, having
+	// no effect. Possibly the AND was supposed to be an ADD, so that the Barbarian would get 2x the healMod,
+	// or 0 if the healMod was negative, added to roomModifier before multiplying it by restFactor.
+
+	const auto &tavernRoomHealModifiers = exeData.services.tavernRoomHealModifiers;
+	DebugAssertIndex(tavernRoomHealModifiers, tavernRoomType);
+	const int roomModifier = tavernRoomHealModifiers[tavernRoomType];
+	const int roomRestHealAmount = roomModifier * restFactor;
+	healAmount += roomRestHealAmount;
+
+	if (healAmount <= 0)
+	{
+		healAmount = 1;
+	}
+
+	this->currentHealth = std::min(this->currentHealth + healAmount, this->maxHealth);
+
+	// Stamina recovery
+	const int staminaCap = ArenaPlayerUtils::calculateMaxStamina(this->primaryAttributes.strength.maxValue, this->primaryAttributes.endurance.maxValue);
+	const int staminaGainMultiplier = (bonusHealing * 5) + 70;
+	const int staminaGainAmount256 = ((ArenaStatUtils::scale100To256(staminaCap) << 6) * restFactor) / 1000;
+	const int staminaGainAmount = ArenaStatUtils::scale256To100((staminaGainAmount256 * staminaGainMultiplier) >> 6);
+	this->currentStamina = std::min(this->currentStamina + staminaGainAmount256, static_cast<double>(staminaCap));
+
+	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
+
+	// Spell points recovery
+	if (charClassDef.castsMagic && (this->charClassDefID != 3) && (this->currentSpellPoints < this->maxSpellPoints))
+	{
+		const int spellPointsGainAmount = (static_cast<int>(this->maxSpellPoints) * restFactor) >> 3;
+		this->currentSpellPoints = std::min(this->currentSpellPoints + spellPointsGainAmount, this->maxSpellPoints);
+	}
 }
 
 void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &physicsSystem)

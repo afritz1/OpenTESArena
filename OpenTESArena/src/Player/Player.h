@@ -179,6 +179,8 @@ struct Player
 
 	void setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem);
 
+	void applyRestHealing(int restFactor, int tavernRoomType, const ExeData &exeData);
+
 	void updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &physicsSystem);
 	void prePhysicsStep(double dt, Game &game);
 	void postPhysicsStep(double dt, Game &game);

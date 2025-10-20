@@ -711,7 +711,7 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 			Player &player = game.player;
 			constexpr int restFactor = 1;
 			constexpr int tavernRoomType = 1; // Hardcoded when exhausted
-			ArenaPlayerUtils::applyRestHealing(player, restFactor, tavernRoomType, exeData);
+			player.applyRestHealing(restFactor, tavernRoomType, exeData);
 
 			constexpr double secondsPerHour = 60.0 * 60.0;
 			constexpr double realSecondsPerInGameHour = secondsPerHour / GameState::GAME_TIME_SCALE;
