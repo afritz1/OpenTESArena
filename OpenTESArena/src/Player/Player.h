@@ -36,6 +36,7 @@ namespace PlayerConstants
 
 	constexpr double MOVE_SPEED = 12.0;
 	constexpr double SWIMMING_MOVE_SPEED = MOVE_SPEED * 0.5;
+	constexpr double SWIMMING_STAMINA_LOSS_MULTIPLIER = 30.0;
 	constexpr double CLAMPED_MOVE_SPEED_PERCENT = 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
 	constexpr double CLIMBING_SPEED = 100.0 / MIFUtils::ARENA_UNITS;
 	constexpr double CLIMBING_FINAL_PUSH_SPEED = 2.0;
@@ -177,6 +178,8 @@ struct Player
 	void accelerateInstant(const Double3 &direction, double magnitude); // @todo: CharacterVirtual should treat this like a jump
 
 	void setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem);
+
+	void applyRestHealing(int restFactor, int tavernRoomType, const ExeData &exeData);
 
 	void updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &physicsSystem);
 	void prePhysicsStep(double dt, Game &game);

@@ -23,6 +23,7 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Stats/CharacterRaceLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ClockLibrary.h"
 #include "../UI/TextAlignment.h"
@@ -913,19 +914,28 @@ void GameState::tickPlayerHealth(double dt, Game &game)
 
 void GameState::tickPlayerStamina(double dt, Game &game)
 {
-	constexpr double AWAKE_STAMINA_LOSS_PER_SECOND = 0.10;
-	constexpr double SWIMMING_STAMINA_LOSS_PER_SECOND = 0.30;
+	constexpr double baseStaminaLossPerMinute = 11;
+	constexpr double arenaStaminaScale = 1.0 / 64.0;
+	constexpr double secondsPerMinute = 60.0;
 
 	Player &player = game.player;
-	double staminaChange = AWAKE_STAMINA_LOSS_PER_SECOND * dt;
+
+	const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
+	const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(player.raceID);
+
+	constexpr double awakeStaminaLossPerSecond = (baseStaminaLossPerMinute * arenaStaminaScale * GameState::GAME_TIME_SCALE) / secondsPerMinute;
+	const double swimmingStaminaLossPerSecond = awakeStaminaLossPerSecond * charRaceDef.swimmingStaminaLossMultiplier;
+
+	double staminaChange = awakeStaminaLossPerSecond * dt;
 
 	const bool isSwimming = player.groundState.isSwimming;
 	if (isSwimming)
 	{
-		staminaChange += SWIMMING_STAMINA_LOSS_PER_SECOND * dt;
+		staminaChange += swimmingStaminaLossPerSecond * dt;
 	}
 
-	player.currentStamina = std::max(player.currentStamina - staminaChange, 0.0);
+	const double scaledStaminaChange = (staminaChange * 100.0) / 256.0;
+	player.currentStamina = std::max(player.currentStamina - scaledStaminaChange, 0.0);
 
 	if (player.currentStamina == 0.0)
 	{

@@ -871,6 +871,23 @@ int ExeDataRaisedPlatforms::getTextureMappingValueB(int thicknessIndex, int text
 	return maxTextureHeight - this->box4[thicknessIndex] - textureMappingValueA;
 }
 
+bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Services";
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
+		return false;
+	}
+
+	const int tavernRoomHealModifiersOffset = GetExeAddress(*section, "TavernRoomHealModifiers");
+
+	initInt8Array(this->tavernRoomHealModifiers, exeBytes, tavernRoomHealModifiersOffset);
+
+	return true;
+}
+
 bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Status";

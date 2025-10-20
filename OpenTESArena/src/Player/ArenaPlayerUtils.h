@@ -4,6 +4,7 @@
 class Random;
 
 struct ExeData;
+struct Player;
 struct PrimaryAttributes;
 struct DerivedAttributes;
 
@@ -11,8 +12,6 @@ namespace ArenaPlayerUtils
 {
 	constexpr int EyeHeight = 60;
 	constexpr int TopOfHeadHeight = EyeHeight + 1;
-
-	int scaleAttribute256To100(int attributeValue);
 
 	int getBaseSpeed(int speedAttribute, int encumbranceMod);
 	int getMoveSpeed(int baseSpeed);

@@ -4,16 +4,12 @@
 #include "ArenaPlayerUtils.h"
 #include "../Assets/ExeData.h"
 #include "../Math/Random.h"
+#include "../Player/Player.h"
+#include "../Stats/ArenaStatUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
 #include "components/utilities/StringView.h"
-
-int ArenaPlayerUtils::scaleAttribute256To100(int attributeValue)
-{
-	const double scaledAttribute = (static_cast<double>(attributeValue) * 100.0) / 256.0;
-	return static_cast<int>(std::round(scaledAttribute));
-}
 
 int ArenaPlayerUtils::getBaseSpeed(int speedAttribute, int encumbranceMod)
 {
@@ -117,17 +113,9 @@ int ArenaPlayerUtils::calculateBonusToHit(int agility)
 
 int ArenaPlayerUtils::calculateBonusToHealth(int endurance)
 {
-	if (endurance <= 34)
-	{
-		return -1;
-	}
-	else if (endurance <= 54)
-	{
-		return 0;
-	}
-
-	const int bonus = ((endurance - 55) / 10) + 1;
-	return std::min(bonus, 5);
+	const int endurance256Base = ArenaStatUtils::scale100To256(endurance);
+	const int result256Base = (endurance256Base - 128 + 12) / 25;
+	return ArenaStatUtils::scale256To100(result256Base);
 }
 
 int ArenaPlayerUtils::calculateStartingGold(Random &random)
@@ -204,7 +192,7 @@ int ArenaPlayerUtils::getThievingChance(int difficultyLevel, int thievingDivisor
 	DebugAssert(thievingDivisor > 0);
 	DebugAssert(difficultyLevel > 0);
 
-	const int attributesModifier = ArenaPlayerUtils::scaleAttribute256To100(attributes.intelligence.maxValue + attributes.agility.maxValue);
+	const int attributesModifier = attributes.intelligence.maxValue + attributes.agility.maxValue;
 	const int ability = ((((attributesModifier / thievingDivisor) * (playerLevel + 1)) * 100) / (difficultyLevel * 100));
 	const int clampedAbility = std::clamp(ability, 0, 100);
 	return clampedAbility;
@@ -256,7 +244,7 @@ bool ArenaPlayerUtils::isDoorBashSuccessful(int damage, int lockLevel, const Pri
 	}
 
 	const int difficultyLevel = lockLevel * 5;
-	const int threshold = ((attributes.strength.maxValue * 100) >> 8) - difficultyLevel;
+	const int threshold = (ArenaStatUtils::scale100To256(attributes.strength.maxValue) * 100 >> 8) - difficultyLevel;
 	const int roll = random.next(100);
 	return threshold >= roll;
 }
