@@ -195,11 +195,11 @@ void TextBox::updateTexture()
 	Span2D<uint32_t> texels = lockedTexture.getTexels32();
 	texels.fill(0);
 
-	const FontLibrary &fontLibrary = FontLibrary::getInstance();
-	const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
-
 	if (!this->text.empty())
 	{
+		const FontLibrary &fontLibrary = FontLibrary::getInstance();
+		const FontDefinition &fontDef = fontLibrary.getDefinition(this->properties.fontDefIndex);
+
 		const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(this->text);
 		const TextRenderColorOverrideInfo *colorOverrideInfoPtr = (this->colorOverrideInfo.getEntryCount() > 0) ? &this->colorOverrideInfo : nullptr;
 		const TextRenderShadowInfo *shadowInfoPtr = this->properties.shadowInfo.has_value() ? &(*this->properties.shadowInfo) : nullptr;

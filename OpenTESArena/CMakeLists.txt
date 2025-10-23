@@ -557,13 +557,23 @@ SET(TES_UI
     "${SRC_ROOT}/UI/TextRenderUtils.h"
     "${SRC_ROOT}/UI/ToggleButton.cpp"
     "${SRC_ROOT}/UI/ToggleButton.h"
+    "${SRC_ROOT}/UI/UiButton.cpp"
+    "${SRC_ROOT}/UI/UiButton.h"
     "${SRC_ROOT}/UI/UiCommand.cpp"
     "${SRC_ROOT}/UI/UiCommand.h"
     "${SRC_ROOT}/UI/UiDrawCall.cpp"
     "${SRC_ROOT}/UI/UiDrawCall.h"
+    "${SRC_ROOT}/UI/UiElement.cpp"
+    "${SRC_ROOT}/UI/UiElement.h"
+    "${SRC_ROOT}/UI/UiImage.cpp"
+    "${SRC_ROOT}/UI/UiImage.h"
     "${SRC_ROOT}/UI/UiManager.cpp"
     "${SRC_ROOT}/UI/UiManager.h"
-    "${SRC_ROOT}/UI/UiScope.h")
+    "${SRC_ROOT}/UI/UiScope.h"
+    "${SRC_ROOT}/UI/UiTextBox.cpp"
+    "${SRC_ROOT}/UI/UiTextBox.h"
+    "${SRC_ROOT}/UI/UiTransform.cpp"
+    "${SRC_ROOT}/UI/UiTransform.h")
 
 SET(TES_UTILITIES
     "${SRC_ROOT}/Utilities/Color.cpp"
