@@ -916,6 +916,7 @@ void Game::loop()
 		{
 			this->getActivePanel()->tick(clampedDeltaTime);
 			this->handlePanelChanges();
+			this->uiManager.update(clampedDeltaTime, *this);
 
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{

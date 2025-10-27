@@ -6,6 +6,7 @@ using UiButtonInstanceID = int;
 struct UiButton
 {
 	//Button<> button;
+	// @todo buttons should have optional UiTextureID to avoid requiring a separate UiImage component at the same position
 
 	UiButton();
 

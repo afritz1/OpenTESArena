@@ -43,7 +43,7 @@ struct RenderElement2D
 {
 	UiTextureID id;
 	Rect rect; // In window space.
-	Rect clipRect; // In window space, non-empty if valid.
+	Rect clipRect; // In window space. Valid if dimensions are non-empty.
 
 	RenderElement2D(UiTextureID id, Rect rect, Rect clipRect = Rect());
 	RenderElement2D();

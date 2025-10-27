@@ -43,10 +43,14 @@ public:
 	bool init(const char *folderPath, TextureManager &textureManager, Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
+	void setElementActive(UiElementInstanceID elementInstID, bool active);
+
 	UiElementInstanceID createImage(UiScope scope, UiTextureID textureID);
+	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
 
 	UiElementInstanceID createTextBox(UiScope scope); // @todo provide everything for creating the texture (dimensions, font) except text
+	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID);
 
 	UiElementInstanceID createButton(UiScope scope); // @todo provide button size + callback
@@ -54,6 +58,7 @@ public:
 
 	void beginScope(UiScope scope, Game &game);
 	void endScope(UiScope scope, Game &game);
+	bool isScopeActive(UiScope scope) const;
 
 	void populateCommandList(UiCommandList &commandList);
 

@@ -8,6 +8,7 @@ using UiImageInstanceID = int;
 struct UiImage
 {
 	UiTextureID textureID; // Owned by UI manager.
+	// @todo clip rect (valid if dims not 0)
 
 	UiImage();
 

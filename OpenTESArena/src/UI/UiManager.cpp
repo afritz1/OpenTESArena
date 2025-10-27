@@ -1,5 +1,8 @@
+#include "GuiUtils.h"
+#include "RenderSpace.h"
 #include "UiCommand.h"
 #include "UiManager.h"
+#include "../Game/Game.h"
 
 #include "components/debug/Debug.h"
 
@@ -23,6 +26,12 @@ void UiManager::shutdown(Renderer &renderer)
 	this->updateScopeCallbackLists.clear();
 	this->endScopeCallbackLists.clear();
 	this->renderElementsCache.clear();
+}
+
+void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	element.active = active;
 }
 
 UiElementInstanceID UiManager::createImage(UiScope scope, UiTextureID textureID)
@@ -58,6 +67,15 @@ UiElementInstanceID UiManager::createImage(UiScope scope, UiTextureID textureID)
 	element.initImage(scope, transformInstID, imageInstID);
 
 	return elementInstID;
+}
+
+void UiManager::setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::Image);
+	UiImage &image = this->images.get(element.imageInstID);
+	image.textureID = textureID;
 }
 
 void UiManager::freeImage(UiElementInstanceID elementInstID)
@@ -107,6 +125,16 @@ UiElementInstanceID UiManager::createTextBox(UiScope scope)
 	element.initTextBox(scope, transformInstID, textBoxInstID);
 
 	return elementInstID;
+}
+
+void UiManager::setTextBoxText(UiElementInstanceID elementInstID, const char *str)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	
+	DebugAssert(element.type == UiElementType::TextBox);
+	UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+	DebugNotImplemented();
+	//textBox.text = str;
 }
 
 void UiManager::freeTextBox(UiElementInstanceID elementInstID)
@@ -257,6 +285,12 @@ void UiManager::endScope(UiScope scope, Game &game)
 	this->activeScopes.erase(activeIter);
 }
 
+bool UiManager::isScopeActive(UiScope scope) const
+{
+	const auto iter = std::find(this->activeScopes.begin(), this->activeScopes.end(), scope);
+	return iter != this->activeScopes.end();
+}
+
 void UiManager::populateCommandList(UiCommandList &commandList)
 {
 	commandList.addElements(this->renderElementsCache);
@@ -273,6 +307,89 @@ void UiManager::update(double dt, Game &game)
 			{
 				callback(dt, game);
 			}
+		}
+	}
+
+	this->renderElementsCache.clear();
+
+	std::vector<const UiElement*> elementsToDraw;
+	for (const UiElement &element : this->elements.values)
+	{
+		if (!element.active)
+		{
+			continue;
+		}
+
+		if (element.drawOrder < 0)
+		{
+			continue;
+		}
+
+		if (!this->isScopeActive(element.scope))
+		{
+			continue;
+		}
+
+		elementsToDraw.emplace_back(&element);
+	}
+
+	std::sort(elementsToDraw.begin(), elementsToDraw.end(),
+		[](const UiElement *a, const UiElement *b)
+	{
+		return a->drawOrder < b->drawOrder;
+	});
+
+	const Renderer &renderer = game.renderer;
+	const Window &window = game.window;
+	const Int2 windowDims = window.getPixelDimensions();
+	const Rect letterboxRect = window.getLetterboxRect();
+
+	for (const UiElement *element : elementsToDraw)
+	{
+		const UiTransform &transform = this->transforms.get(element->transformInstID);
+		const Int2 position = transform.position;
+		constexpr RenderSpace renderSpace = RenderSpace::Classic; // @todo put in UiElement
+
+		int width = 0;
+		int height = 0;
+
+		RenderElement2D renderElement;
+		switch (element->type)
+		{
+		case UiElementType::Image:
+		{
+			const UiImage &image = this->images.get(element->imageInstID);
+			const UiTextureID imageTextureID = image.textureID;
+			renderElement.id = imageTextureID;
+
+			const std::optional<Int2> imageDims = renderer.tryGetUiTextureDims(imageTextureID);
+			DebugAssert(imageDims.has_value());
+			width = imageDims->x;
+			height = imageDims->y;
+			break;
+		}
+		case UiElementType::TextBox:
+		{
+			const UiTextBox &textBox = this->textBoxes.get(element->textBoxInstID);
+			// @todo text box texture
+			break;
+		}
+		case UiElementType::Button:
+		{
+			const UiButton &button = this->buttons.get(element->buttonInstID);
+			// @todo optional UiTextureID
+			break;
+		}
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(element->type)));
+			break;
+		}
+
+		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, width, height, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
+
+		if (renderElement.id >= 0)
+		{
+			this->renderElementsCache.emplace_back(std::move(renderElement));
 		}
 	}
 }

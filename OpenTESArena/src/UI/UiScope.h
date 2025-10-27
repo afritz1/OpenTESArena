@@ -10,4 +10,6 @@ enum class UiScope
 	PauseMenu
 };
 
+static constexpr int UI_SCOPE_COUNT = static_cast<int>(UiScope::PauseMenu) + 1;
+
 #endif

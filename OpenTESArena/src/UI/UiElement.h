@@ -7,6 +7,7 @@
 #include "UiTransform.h"
 
 enum class PivotType;
+enum class RenderSpace;
 enum class UiScope;
 
 // All UI elements (images, text boxes, etc.) come with a base handle.
@@ -24,6 +25,10 @@ struct UiElement
 {
 	UiScope scope;
 	UiTransformInstanceID transformInstID;
+	bool active;
+	int drawOrder;
+	RenderSpace renderSpace;
+
 	UiElementType type;
 
 	union
