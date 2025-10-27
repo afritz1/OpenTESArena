@@ -348,7 +348,7 @@ void UiManager::update(double dt, Game &game)
 	{
 		const UiTransform &transform = this->transforms.get(element->transformInstID);
 		const Int2 position = transform.position;
-		constexpr RenderSpace renderSpace = RenderSpace::Classic; // @todo put in UiElement
+		const RenderSpace renderSpace = element->renderSpace;
 
 		int width = 0;
 		int height = 0;
