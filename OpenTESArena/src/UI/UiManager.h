@@ -45,15 +45,15 @@ public:
 
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
 
-	UiElementInstanceID createImage(UiScope scope, UiTextureID textureID);
+	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
 
-	UiElementInstanceID createTextBox(UiScope scope); // @todo provide everything for creating the texture (dimensions, font) except text
+	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo); // @todo provide everything for creating the texture (dimensions, font) except text
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID);
 
-	UiElementInstanceID createButton(UiScope scope); // @todo provide button size + callback
+	UiElementInstanceID createButton(const UiElementInitInfo &initInfo); // @todo provide button size + callback
 	void freeButton(UiElementInstanceID elementInstID);
 
 	void beginScope(UiScope scope, Game &game);

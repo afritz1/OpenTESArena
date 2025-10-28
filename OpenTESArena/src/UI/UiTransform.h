@@ -10,12 +10,13 @@ using UiTransformInstanceID = int;
 struct UiTransform
 {
 	Int2 position;
+	Int2 size;
 	PivotType pivotType;
 	UiTransformInstanceID parentInstID;
 
 	UiTransform();
 
-	void init();
+	void init(Int2 position, Int2 size, PivotType pivotType);
 };
 
 #endif

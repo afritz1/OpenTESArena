@@ -20,14 +20,27 @@ enum class UiElementType
 	Button
 };
 
+struct UiElementInitInfo
+{
+	Int2 position;
+	Int2 size;
+	PivotType pivotType;
+	UiScope scope;
+	int drawOrder;
+	RenderSpace renderSpace;
+
+	UiElementInitInfo();
+};
+
 // Base instance for a drawable UI component.
 struct UiElement
 {
 	UiScope scope;
+	int drawOrder; // Higher is drawn last.
+	RenderSpace renderSpace;
+
 	UiTransformInstanceID transformInstID;
 	bool active;
-	int drawOrder;
-	RenderSpace renderSpace;
 
 	UiElementType type;
 
@@ -40,9 +53,9 @@ struct UiElement
 
 	UiElement();
 
-	void initImage(UiScope scope, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
-	void initTextBox(UiScope scope, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
-	void initButton(UiScope scope, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
+	void initImage(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
+	void initTextBox(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
+	void initButton(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
 };
 
 #endif

@@ -34,19 +34,19 @@ void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
 	element.active = active;
 }
 
-UiElementInstanceID UiManager::createImage(UiScope scope, UiTextureID textureID)
+UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for image (scope %d, texture ID %d).", scope, textureID);
+		DebugLogErrorFormat("Couldn't allocate element for image (scope %d, texture ID %d).", initInfo.scope, textureID);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for image (scope %d, texture ID %d).", scope, textureID);
+		DebugLogErrorFormat("Couldn't allocate transform for image (scope %d, texture ID %d).", initInfo.scope, textureID);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -54,7 +54,7 @@ UiElementInstanceID UiManager::createImage(UiScope scope, UiTextureID textureID)
 	const UiImageInstanceID imageInstID = this->images.alloc();
 	if (imageInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate image (scope %d, texture ID %d).", scope, textureID);
+		DebugLogErrorFormat("Couldn't allocate image (scope %d, texture ID %d).", initInfo.scope, textureID);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -63,8 +63,11 @@ UiElementInstanceID UiManager::createImage(UiScope scope, UiTextureID textureID)
 	UiImage &image = this->images.get(imageInstID);
 	image.init(textureID);
 
+	UiTransform &transform = this->transforms.get(transformInstID);
+	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
+
 	UiElement &element = this->elements.get(elementInstID);
-	element.initImage(scope, transformInstID, imageInstID);
+	element.initImage(initInfo.scope, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
 
 	return elementInstID;
 }
@@ -92,19 +95,19 @@ void UiManager::freeImage(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createTextBox(UiScope scope)
+UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for text box (scope %d).", scope);
+		DebugLogErrorFormat("Couldn't allocate element for text box (scope %d).", initInfo.scope);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for text box (scope %d).", scope);
+		DebugLogErrorFormat("Couldn't allocate transform for text box (scope %d).", initInfo.scope);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -112,7 +115,7 @@ UiElementInstanceID UiManager::createTextBox(UiScope scope)
 	const UiTextBoxInstanceID textBoxInstID = this->textBoxes.alloc();
 	if (textBoxInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate text box (scope %d).", scope);
+		DebugLogErrorFormat("Couldn't allocate text box (scope %d).", initInfo.scope);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -121,8 +124,11 @@ UiElementInstanceID UiManager::createTextBox(UiScope scope)
 	UiTextBox &textBox = this->textBoxes.get(textBoxInstID);
 	textBox.init();
 
+	UiTransform &transform = this->transforms.get(transformInstID);
+	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
+
 	UiElement &element = this->elements.get(elementInstID);
-	element.initTextBox(scope, transformInstID, textBoxInstID);
+	element.initTextBox(initInfo.scope, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
 
 	return elementInstID;
 }
@@ -151,19 +157,19 @@ void UiManager::freeTextBox(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createButton(UiScope scope)
+UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for text box (scope %d).", scope);
+		DebugLogErrorFormat("Couldn't allocate element for button (scope %d).", initInfo.scope);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for text box (scope %d).", scope);
+		DebugLogErrorFormat("Couldn't allocate transform for button (scope %d).", initInfo.scope);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -171,7 +177,7 @@ UiElementInstanceID UiManager::createButton(UiScope scope)
 	const UiButtonInstanceID buttonInstID = this->buttons.alloc();
 	if (buttonInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate button (scope %d).", scope);
+		DebugLogErrorFormat("Couldn't allocate button (scope %d).", initInfo.scope);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -180,8 +186,11 @@ UiElementInstanceID UiManager::createButton(UiScope scope)
 	UiButton &button = this->buttons.get(buttonInstID);
 	button.init();
 
+	UiTransform &transform = this->transforms.get(transformInstID);
+	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
+
 	UiElement &element = this->elements.get(elementInstID);
-	element.initButton(scope, transformInstID, buttonInstID);
+	element.initButton(initInfo.scope, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
 
 	return elementInstID;
 }
