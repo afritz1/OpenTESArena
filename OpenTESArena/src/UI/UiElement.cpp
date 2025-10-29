@@ -1,19 +1,20 @@
 #include "PivotType.h"
 #include "RenderSpace.h"
+#include "UiContext.h"
 #include "UiElement.h"
-#include "UiScope.h"
+#include "UiManager.h"
 
 UiElementInitInfo::UiElementInitInfo()
 {
 	this->pivotType = PivotType::TopLeft;
-	this->scope = UiScope::Global;
+	this->contextType = static_cast<UiContextType>(-1);
 	this->drawOrder = 0;
 	this->renderSpace = RenderSpace::Classic;
 }
 
 UiElement::UiElement()
 {
-	this->scope = static_cast<UiScope>(-1);
+	this->contextType = static_cast<UiContextType>(-1);
 	this->drawOrder = -1;
 	this->renderSpace = RenderSpace::Classic;
 	this->transformInstID = -1;
@@ -21,9 +22,9 @@ UiElement::UiElement()
 	this->type = static_cast<UiElementType>(-1);
 }
 
-void UiElement::initImage(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID)
+void UiElement::initImage(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID)
 {
-	this->scope = scope;
+	this->contextType = contextType;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;
 	this->transformInstID = transformInstID;
@@ -33,9 +34,9 @@ void UiElement::initImage(UiScope scope, int drawOrder, RenderSpace renderSpace,
 	this->imageInstID = instID;
 }
 
-void UiElement::initTextBox(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID)
+void UiElement::initTextBox(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID)
 {
-	this->scope = scope;
+	this->contextType = contextType;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;
 	this->transformInstID = transformInstID;
@@ -45,9 +46,9 @@ void UiElement::initTextBox(UiScope scope, int drawOrder, RenderSpace renderSpac
 	this->textBoxInstID = instID;
 }
 
-void UiElement::initButton(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID)
+void UiElement::initButton(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID)
 {
-	this->scope = scope;
+	this->contextType = contextType;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;
 	this->transformInstID = transformInstID;

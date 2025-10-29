@@ -1,6 +1,7 @@
 #ifndef UI_MANAGER_H
 #define UI_MANAGER_H
 
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -12,12 +13,12 @@
 class Game;
 class TextureManager;
 
-enum class UiScope;
+enum class UiContextType;
 
 struct UiCommandList;
 
-using UiScopeCallback = void(*)(Game &game);
-using UiScopeUpdateCallback = void(*)(double dt, Game &game);
+using UiContextCallback = void(*)(Game &game);
+using UiContextUpdateCallback = void(*)(double dt, Game &game);
 
 class UiManager
 {
@@ -28,22 +29,20 @@ private:
 	KeyValuePool<UiTextBoxInstanceID, UiTextBox> textBoxes;
 	KeyValuePool<UiButtonInstanceID, UiButton> buttons;
 
-	std::unordered_map<UiScope, std::vector<UiScopeCallback>> beginScopeCallbackLists;
-	std::unordered_map<UiScope, std::vector<UiScopeUpdateCallback>> updateScopeCallbackLists;
-	std::unordered_map<UiScope, std::vector<UiScopeCallback>> endScopeCallbackLists;
-	std::vector<UiScope> activeScopes;
+	std::unordered_map<UiContextType, std::vector<UiContextCallback>> beginContextCallbackLists;
+	std::unordered_map<UiContextType, std::vector<UiContextUpdateCallback>> updateContextCallbackLists;
+	std::unordered_map<UiContextType, std::vector<UiContextCallback>> endContextCallbackLists;
+	std::optional<UiContextType> activeContextType;
 
 	std::vector<RenderElement2D> renderElementsCache; // To be drawn. Updated every frame.
-
-	void addBeginScopeCallback(UiScope scope, const UiScopeCallback &callback);
-	void addUpdateScopeCallback(UiScope scope, const UiScopeUpdateCallback &callback);
-	void addEndScopeCallback(UiScope scope, const UiScopeCallback &callback);
-	void clearScopeCallbacks(UiScope scope);
 public:
 	bool init(const char *folderPath, TextureManager &textureManager, Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
+
+	void setTransformPosition(UiElementInstanceID elementInstID, Int2 position);
+	void setTransformSize(UiElementInstanceID elementInstID, Int2 size);
 
 	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
@@ -56,9 +55,14 @@ public:
 	UiElementInstanceID createButton(const UiElementInitInfo &initInfo); // @todo provide button size + callback
 	void freeButton(UiElementInstanceID elementInstID);
 
-	void beginScope(UiScope scope, Game &game);
-	void endScope(UiScope scope, Game &game);
-	bool isScopeActive(UiScope scope) const;
+	void addBeginContextCallback(UiContextType contextType, const UiContextCallback &callback);
+	void addUpdateContextCallback(UiContextType contextType, const UiContextUpdateCallback &callback);
+	void addEndContextCallback(UiContextType contextType, const UiContextCallback &callback);
+	void clearContextCallbacks(UiContextType contextType);
+
+	void beginContext(UiContextType contextType, Game &game);
+	void endContext(UiContextType contextType, Game &game);
+	bool isContextActive(UiContextType contextType) const;
 
 	void populateCommandList(UiCommandList &commandList);
 

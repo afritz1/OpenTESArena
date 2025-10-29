@@ -66,6 +66,8 @@ public:
 
 	SceneManager sceneManager;
 	UiManager uiManager;
+	UiElementInstanceID cursorImageElementInstID;
+	UiTextureID defaultCursorTextureID; // Sword cursor used by most UI.
 
 	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
 	GameState gameState;

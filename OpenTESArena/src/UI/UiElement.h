@@ -6,9 +6,11 @@
 #include "UiTextBox.h"
 #include "UiTransform.h"
 
+class UiManager;
+
 enum class PivotType;
 enum class RenderSpace;
-enum class UiScope;
+enum class UiContextType;
 
 // All UI elements (images, text boxes, etc.) come with a base handle.
 using UiElementInstanceID = int;
@@ -25,7 +27,7 @@ struct UiElementInitInfo
 	Int2 position;
 	Int2 size;
 	PivotType pivotType;
-	UiScope scope;
+	UiContextType contextType;
 	int drawOrder;
 	RenderSpace renderSpace;
 
@@ -35,7 +37,7 @@ struct UiElementInitInfo
 // Base instance for a drawable UI component.
 struct UiElement
 {
-	UiScope scope;
+	UiContextType contextType;
 	int drawOrder; // Higher is drawn last.
 	RenderSpace renderSpace;
 
@@ -53,9 +55,9 @@ struct UiElement
 
 	UiElement();
 
-	void initImage(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
-	void initTextBox(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
-	void initButton(UiScope scope, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
+	void initImage(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
+	void initTextBox(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
+	void initButton(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
 };
 
 #endif

@@ -36,6 +36,7 @@
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../Interface/IntroUiModel.h"
+#include "../Interface/MainMenuPanel.h"
 #include "../Interface/Panel.h"
 #include "../Items/ItemConditionLibrary.h"
 #include "../Items/ItemLibrary.h"
@@ -209,6 +210,8 @@ Game::Game()
 	// beginning of the next frame.
 	this->requestedSubPanelPop = false;
 
+	this->cursorImageElementInstID = -1;
+
 	this->shouldSimulateScene = false;
 	this->shouldRenderScene = false;
 	this->running = true;
@@ -241,10 +244,22 @@ Game::~Game()
 		this->inputManager.removeListener(*this->debugProfilerListenerID);
 	}
 
-	this->debugQuadtreeState.free(this->renderer);
+	if (this->defaultCursorTextureID >= 0)
+	{
+		this->renderer.freeUiTexture(this->defaultCursorTextureID);
+		this->defaultCursorTextureID = -1;
+	}
 
-	this->sceneManager.shutdown(this->renderer);
+	if (this->cursorImageElementInstID >= 0)
+	{
+		this->uiManager.freeImage(this->cursorImageElementInstID);
+		this->cursorImageElementInstID = -1;
+	}
+
 	this->uiManager.shutdown(this->renderer);
+	this->sceneManager.shutdown(this->renderer);
+
+	this->debugQuadtreeState.free(this->renderer);
 }
 
 bool Game::init()
@@ -428,6 +443,14 @@ bool Game::init()
 		DebugLogError("Couldn't init UI manager.");
 		return false;
 	}
+
+	this->defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(this->textureManager, this->renderer);
+
+	UiElementInitInfo cursorImageElementInitInfo;
+	cursorImageElementInitInfo.contextType = UiContextType::Global;
+	cursorImageElementInitInfo.drawOrder = 100;
+	cursorImageElementInitInfo.renderSpace = RenderSpace::Native;
+	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID);
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";
@@ -828,6 +851,9 @@ void Game::loop()
 
 	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
 
+	this->uiManager.addBeginContextCallback(MainMenuUI::ContextType, MainMenuUI::create);
+	this->uiManager.addEndContextCallback(MainMenuUI::ContextType, MainMenuUI::destroy);
+
 	// Initialize panel and music to default (bootstrapping the first game frame).
 	this->panel = IntroUiModel::makeStartupPanel(*this);
 
@@ -917,6 +943,9 @@ void Game::loop()
 			this->getActivePanel()->tick(clampedDeltaTime);
 			this->handlePanelChanges();
 			this->uiManager.update(clampedDeltaTime, *this);
+
+			const Int2 cursorPosition = this->inputManager.getMousePosition();
+			this->uiManager.setTransformPosition(this->cursorImageElementInstID, cursorPosition);
 
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
@@ -1059,6 +1088,7 @@ void Game::loop()
 					lightTableTextureID, ditherTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
+			this->uiManager.populateCommandList(uiCommandList);
 			this->panel->populateCommandList(uiCommandList);
 
 			for (const std::unique_ptr<Panel> &subPanel : this->subPanels)

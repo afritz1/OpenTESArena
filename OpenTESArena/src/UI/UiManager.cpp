@@ -1,6 +1,7 @@
 #include "GuiUtils.h"
 #include "RenderSpace.h"
 #include "UiCommand.h"
+#include "UiContext.h"
 #include "UiManager.h"
 #include "../Game/Game.h"
 
@@ -22,9 +23,10 @@ void UiManager::shutdown(Renderer &renderer)
 	this->images.clear();
 	this->textBoxes.clear();
 	this->buttons.clear();
-	this->beginScopeCallbackLists.clear();
-	this->updateScopeCallbackLists.clear();
-	this->endScopeCallbackLists.clear();
+	this->beginContextCallbackLists.clear();
+	this->updateContextCallbackLists.clear();
+	this->endContextCallbackLists.clear();
+	this->activeContextType = std::nullopt;
 	this->renderElementsCache.clear();
 }
 
@@ -34,19 +36,33 @@ void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
 	element.active = active;
 }
 
+void UiManager::setTransformPosition(UiElementInstanceID elementInstID, Int2 position)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	UiTransform &transform = this->transforms.get(element.transformInstID);
+	transform.position = position;
+}
+
+void UiManager::setTransformSize(UiElementInstanceID elementInstID, Int2 size)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	UiTransform &transform = this->transforms.get(element.transformInstID);
+	transform.size = size;
+}
+
 UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for image (scope %d, texture ID %d).", initInfo.scope, textureID);
+		DebugLogErrorFormat("Couldn't allocate element for image (scope %d, texture ID %d).", initInfo.contextType, textureID);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for image (scope %d, texture ID %d).", initInfo.scope, textureID);
+		DebugLogErrorFormat("Couldn't allocate transform for image (scope %d, texture ID %d).", initInfo.contextType, textureID);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -54,7 +70,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	const UiImageInstanceID imageInstID = this->images.alloc();
 	if (imageInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate image (scope %d, texture ID %d).", initInfo.scope, textureID);
+		DebugLogErrorFormat("Couldn't allocate image (scope %d, texture ID %d).", initInfo.contextType, textureID);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -67,7 +83,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initImage(initInfo.scope, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
+	element.initImage(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
 
 	return elementInstID;
 }
@@ -100,14 +116,14 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo)
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for text box (scope %d).", initInfo.scope);
+		DebugLogErrorFormat("Couldn't allocate element for text box (scope %d).", initInfo.contextType);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for text box (scope %d).", initInfo.scope);
+		DebugLogErrorFormat("Couldn't allocate transform for text box (scope %d).", initInfo.contextType);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -115,7 +131,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo)
 	const UiTextBoxInstanceID textBoxInstID = this->textBoxes.alloc();
 	if (textBoxInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate text box (scope %d).", initInfo.scope);
+		DebugLogErrorFormat("Couldn't allocate text box (scope %d).", initInfo.contextType);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -128,7 +144,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo)
 	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initTextBox(initInfo.scope, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
+	element.initTextBox(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
 
 	return elementInstID;
 }
@@ -136,7 +152,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo)
 void UiManager::setTextBoxText(UiElementInstanceID elementInstID, const char *str)
 {
 	UiElement &element = this->elements.get(elementInstID);
-	
+
 	DebugAssert(element.type == UiElementType::TextBox);
 	UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
 	DebugNotImplemented();
@@ -162,14 +178,14 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for button (scope %d).", initInfo.scope);
+		DebugLogErrorFormat("Couldn't allocate element for button (scope %d).", initInfo.contextType);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for button (scope %d).", initInfo.scope);
+		DebugLogErrorFormat("Couldn't allocate transform for button (scope %d).", initInfo.contextType);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -177,7 +193,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
 	const UiButtonInstanceID buttonInstID = this->buttons.alloc();
 	if (buttonInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate button (scope %d).", initInfo.scope);
+		DebugLogErrorFormat("Couldn't allocate button (scope %d).", initInfo.contextType);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -190,7 +206,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
 	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initButton(initInfo.scope, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
+	element.initButton(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
 
 	return elementInstID;
 }
@@ -209,95 +225,97 @@ void UiManager::freeButton(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-void UiManager::addBeginScopeCallback(UiScope scope, const UiScopeCallback &callback)
+void UiManager::addBeginContextCallback(UiContextType contextType, const UiContextCallback &callback)
 {
-	auto iter = this->beginScopeCallbackLists.find(scope);
-	if (iter == this->beginScopeCallbackLists.end())
+	auto iter = this->beginContextCallbackLists.find(contextType);
+	if (iter == this->beginContextCallbackLists.end())
 	{
-		iter = this->beginScopeCallbackLists.emplace(scope, std::vector<UiScopeCallback>()).first;
+		iter = this->beginContextCallbackLists.emplace(contextType, std::vector<UiContextCallback>()).first;
 	}
 
-	std::vector<UiScopeCallback> &callbacks = iter->second;
+	std::vector<UiContextCallback> &callbacks = iter->second;
 	callbacks.emplace_back(callback);
 }
 
-void UiManager::addUpdateScopeCallback(UiScope scope, const UiScopeUpdateCallback &callback)
+void UiManager::addUpdateContextCallback(UiContextType contextType, const UiContextUpdateCallback &callback)
 {
-	auto iter = this->updateScopeCallbackLists.find(scope);
-	if (iter == this->updateScopeCallbackLists.end())
+	auto iter = this->updateContextCallbackLists.find(contextType);
+	if (iter == this->updateContextCallbackLists.end())
 	{
-		iter = this->updateScopeCallbackLists.emplace(scope, std::vector<UiScopeUpdateCallback>()).first;
+		iter = this->updateContextCallbackLists.emplace(contextType, std::vector<UiContextUpdateCallback>()).first;
 	}
 
-	std::vector<UiScopeUpdateCallback> &callbacks = iter->second;
+	std::vector<UiContextUpdateCallback> &callbacks = iter->second;
 	callbacks.emplace_back(callback);
 }
 
-void UiManager::addEndScopeCallback(UiScope scope, const UiScopeCallback &callback)
+void UiManager::addEndContextCallback(UiContextType contextType, const UiContextCallback &callback)
 {
-	auto iter = this->endScopeCallbackLists.find(scope);
-	if (iter == this->endScopeCallbackLists.end())
+	auto iter = this->endContextCallbackLists.find(contextType);
+	if (iter == this->endContextCallbackLists.end())
 	{
-		iter = this->endScopeCallbackLists.emplace(scope, std::vector<UiScopeCallback>()).first;
+		iter = this->endContextCallbackLists.emplace(contextType, std::vector<UiContextCallback>()).first;
 	}
 
-	std::vector<UiScopeCallback> &callbacks = iter->second;
+	std::vector<UiContextCallback> &callbacks = iter->second;
 	callbacks.emplace_back(callback);
 }
 
-void UiManager::clearScopeCallbacks(UiScope scope)
+void UiManager::clearContextCallbacks(UiContextType contextType)
 {
-	this->beginScopeCallbackLists.erase(scope);
-	this->updateScopeCallbackLists.erase(scope);
-	this->endScopeCallbackLists.erase(scope);
+	this->beginContextCallbackLists.erase(contextType);
+	this->updateContextCallbackLists.erase(contextType);
+	this->endContextCallbackLists.erase(contextType);
 }
 
-void UiManager::beginScope(UiScope scope, Game &game)
+void UiManager::beginContext(UiContextType contextType, Game &game)
 {
-	const auto activeIter = std::find(this->activeScopes.begin(), this->activeScopes.end(), scope);
-	if (activeIter != this->activeScopes.end())
+	if (this->activeContextType == contextType)
 	{
-		DebugLogErrorFormat("UI scope %d already active.", scope);
+		DebugLogErrorFormat("UI context %d already active.", contextType);
 		return;
 	}
 
-	this->activeScopes.emplace_back(scope);
+	this->activeContextType = contextType;
 
-	const auto beginIter = this->beginScopeCallbackLists.find(scope);
-	if (beginIter != this->beginScopeCallbackLists.end())
+	const auto beginIter = this->beginContextCallbackLists.find(contextType);
+	if (beginIter != this->beginContextCallbackLists.end())
 	{
-		for (const UiScopeCallback &callback : beginIter->second)
+		for (const UiContextCallback &callback : beginIter->second)
 		{
 			callback(game);
 		}
 	}
 }
 
-void UiManager::endScope(UiScope scope, Game &game)
+void UiManager::endContext(UiContextType contextType, Game &game)
 {
-	const auto activeIter = std::find(this->activeScopes.begin(), this->activeScopes.end(), scope);
-	if (activeIter == this->activeScopes.end())
+	if (this->activeContextType != contextType)
 	{
-		DebugLogErrorFormat("Expected UI scope %d to be active.", scope);
+		DebugLogErrorFormat("Expected UI context %d to be active.", contextType);
 		return;
 	}
 
-	const auto endIter = this->endScopeCallbackLists.find(scope);
-	if (endIter != this->endScopeCallbackLists.end())
+	const auto endIter = this->endContextCallbackLists.find(contextType);
+	if (endIter != this->endContextCallbackLists.end())
 	{
-		for (const UiScopeCallback &callback : endIter->second)
+		for (const UiContextCallback &callback : endIter->second)
 		{
 			callback(game);
 		}
 	}
 
-	this->activeScopes.erase(activeIter);
+	this->activeContextType = std::nullopt;
 }
 
-bool UiManager::isScopeActive(UiScope scope) const
+bool UiManager::isContextActive(UiContextType contextType) const
 {
-	const auto iter = std::find(this->activeScopes.begin(), this->activeScopes.end(), scope);
-	return iter != this->activeScopes.end();
+	if (contextType == UiContextType::Global)
+	{
+		return true;
+	}
+
+	return this->activeContextType == contextType;
 }
 
 void UiManager::populateCommandList(UiCommandList &commandList)
@@ -307,12 +325,12 @@ void UiManager::populateCommandList(UiCommandList &commandList)
 
 void UiManager::update(double dt, Game &game)
 {
-	for (const UiScope scope : this->activeScopes)
+	if (this->activeContextType.has_value())
 	{
-		const auto updateIter = this->updateScopeCallbackLists.find(scope);
-		if (updateIter != this->updateScopeCallbackLists.end())
+		const auto updateIter = this->updateContextCallbackLists.find(*this->activeContextType);
+		if (updateIter != this->updateContextCallbackLists.end())
 		{
-			for (const UiScopeUpdateCallback &callback : updateIter->second)
+			for (const UiContextUpdateCallback &callback : updateIter->second)
 			{
 				callback(dt, game);
 			}
@@ -334,7 +352,7 @@ void UiManager::update(double dt, Game &game)
 			continue;
 		}
 
-		if (!this->isScopeActive(element.scope))
+		if (!this->isContextActive(element.contextType))
 		{
 			continue;
 		}
@@ -357,10 +375,8 @@ void UiManager::update(double dt, Game &game)
 	{
 		const UiTransform &transform = this->transforms.get(element->transformInstID);
 		const Int2 position = transform.position;
+		const Int2 size = transform.size;
 		const RenderSpace renderSpace = element->renderSpace;
-
-		int width = 0;
-		int height = 0;
 
 		RenderElement2D renderElement;
 		switch (element->type)
@@ -370,23 +386,20 @@ void UiManager::update(double dt, Game &game)
 			const UiImage &image = this->images.get(element->imageInstID);
 			const UiTextureID imageTextureID = image.textureID;
 			renderElement.id = imageTextureID;
-
-			const std::optional<Int2> imageDims = renderer.tryGetUiTextureDims(imageTextureID);
-			DebugAssert(imageDims.has_value());
-			width = imageDims->x;
-			height = imageDims->y;
 			break;
 		}
 		case UiElementType::TextBox:
 		{
 			const UiTextBox &textBox = this->textBoxes.get(element->textBoxInstID);
 			// @todo text box texture
+			DebugNotImplemented();
 			break;
 		}
 		case UiElementType::Button:
 		{
 			const UiButton &button = this->buttons.get(element->buttonInstID);
 			// @todo optional UiTextureID
+			DebugNotImplemented();
 			break;
 		}
 		default:
@@ -394,7 +407,7 @@ void UiManager::update(double dt, Game &game)
 			break;
 		}
 
-		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, width, height, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
+		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
 
 		if (renderElement.id >= 0)
 		{
