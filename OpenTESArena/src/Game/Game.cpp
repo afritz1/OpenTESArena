@@ -57,6 +57,7 @@
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../UI/UiCommand.h"
+#include "../UI/UiContext.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
@@ -850,9 +851,6 @@ void Game::loop()
 	this->physicsSystem.SetContactListener(&physicsContactListener);
 
 	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
-
-	this->uiManager.addBeginContextCallback(MainMenuUI::ContextType, MainMenuUI::create);
-	this->uiManager.addEndContextCallback(MainMenuUI::ContextType, MainMenuUI::destroy);
 
 	// Initialize panel and music to default (bootstrapping the first game frame).
 	this->panel = IntroUiModel::makeStartupPanel(*this);

@@ -298,6 +298,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/MainMenuUiController.h"
     "${SRC_ROOT}/Interface/MainMenuUiModel.cpp"
     "${SRC_ROOT}/Interface/MainMenuUiModel.h"
+    "${SRC_ROOT}/Interface/MainMenuUiState.cpp"
+    "${SRC_ROOT}/Interface/MainMenuUiState.h"
     "${SRC_ROOT}/Interface/MainMenuUiView.cpp"
     "${SRC_ROOT}/Interface/MainMenuUiView.h"
     "${SRC_ROOT}/Interface/MainQuestSplashPanel.cpp"

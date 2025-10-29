@@ -4,6 +4,7 @@
 #include "UiContext.h"
 #include "UiManager.h"
 #include "../Game/Game.h"
+#include "../Interface/MainMenuUiState.h"
 
 #include "components/debug/Debug.h"
 
@@ -12,6 +13,9 @@ bool UiManager::init(const char *folderPath, TextureManager &textureManager, Ren
 	// @todo eventually load UI asset txt files from folderPath
 
 	// @todo preload some global things like cursor images
+
+	this->addBeginContextCallback(MainMenuUI::ContextType, MainMenuUI::create);
+	this->addEndContextCallback(MainMenuUI::ContextType, MainMenuUI::destroy);
 
 	return true;
 }

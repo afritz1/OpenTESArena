@@ -8,8 +8,6 @@
 #include "../Assets/ArenaTypes.h"
 #include "../UI/Button.h"
 #include "../UI/TextBox.h"
-#include "../UI/UiContext.h"
-#include "../UI/UiElement.h"
 
 enum class MapType;
 
@@ -36,32 +34,5 @@ public:
 
 	bool init();
 };
-
-struct MainMenuUiState
-{
-	UiTextureID bgTextureID;
-
-	// Test option state.
-	UiTextureID testArrowsTextureID;
-	UiTextureID testButtonTextureID;
-	int testType, testIndex, testIndex2, testWeather;
-
-	UiContextElements elements;
-
-	MainMenuUiState();
-
-	void allocate(UiManager &uiManager, TextureManager &textureManager, Renderer &renderer);
-	void free(UiManager &uiManager, Renderer &renderer);
-};
-
-namespace MainMenuUI
-{
-	static constexpr UiContextType ContextType = UiContextType::MainMenu;
-
-	static MainMenuUiState state;
-
-	void create(Game &game);
-	void destroy(Game &game);
-}
 
 #endif
