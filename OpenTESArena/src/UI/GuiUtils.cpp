@@ -4,7 +4,7 @@
 
 #include "GuiUtils.h"
 #include "PivotType.h"
-#include "RenderSpace.h"
+#include "UiRenderSpace.h"
 #include "../Math/Rect.h"
 #include "../Rendering/ArenaRenderUtils.h"
 
@@ -12,16 +12,16 @@
 
 namespace
 {
-	void MakeRenderElementPercents(int x, int y, int width, int height, int windowWidth, int windowHeight, RenderSpace renderSpace, PivotType pivotType,
+	void MakeRenderElementPercents(int x, int y, int width, int height, int windowWidth, int windowHeight, UiRenderSpace renderSpace, PivotType pivotType,
 		double *outXPercent, double *outYPercent, double *outWPercent, double *outHPercent)
 	{
 		double renderSpaceWidthReal, renderSpaceHeightReal;
-		if (renderSpace == RenderSpace::Classic)
+		if (renderSpace == UiRenderSpace::Classic)
 		{
 			renderSpaceWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
 			renderSpaceHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
 		}
-		else if (renderSpace == RenderSpace::Native)
+		else if (renderSpace == UiRenderSpace::Native)
 		{
 			renderSpaceWidthReal = static_cast<double>(windowWidth);
 			renderSpaceHeightReal = static_cast<double>(windowHeight);
@@ -90,13 +90,13 @@ namespace
 	}
 }
 
-Rect GuiUtils::makeWindowSpaceRect(int x, int y, int width, int height, PivotType pivotType, RenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
+Rect GuiUtils::makeWindowSpaceRect(int x, int y, int width, int height, PivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
 {
 	double xPercent, yPercent, widthPercent, heightPercent;
 	MakeRenderElementPercents(x, y, width, height, windowWidth, windowHeight, renderSpace, pivotType, &xPercent, &yPercent, &widthPercent, &heightPercent);
 
 	Rect windowRect;
-	if (renderSpace == RenderSpace::Native)
+	if (renderSpace == UiRenderSpace::Native)
 	{
 		const double windowWidthReal = static_cast<double>(windowWidth);
 		const double windowHeightReal = static_cast<double>(windowHeight);
@@ -106,7 +106,7 @@ Rect GuiUtils::makeWindowSpaceRect(int x, int y, int width, int height, PivotTyp
 		windowRect.width = static_cast<int>(std::round(widthPercent * windowWidthReal));
 		windowRect.height = static_cast<int>(std::round(heightPercent * windowHeightReal));
 	}
-	else if (renderSpace == RenderSpace::Classic)
+	else if (renderSpace == UiRenderSpace::Classic)
 	{
 		constexpr double classicScreenWidthReal = ArenaRenderUtils::SCREEN_WIDTH_REAL;
 		constexpr double classicScreenHeightReal = ArenaRenderUtils::SCREEN_HEIGHT_REAL;
@@ -153,7 +153,7 @@ Rect GuiUtils::makeWindowSpaceRect(int x, int y, int width, int height, PivotTyp
 	return windowRect;
 }
 
-Rect GuiUtils::makeWindowSpaceRect(Rect rect, PivotType pivotType, RenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
+Rect GuiUtils::makeWindowSpaceRect(Rect rect, PivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
 {
 	return GuiUtils::makeWindowSpaceRect(rect.x, rect.y, rect.width, rect.height, pivotType, renderSpace, windowWidth, windowHeight, letterboxRect);
 }

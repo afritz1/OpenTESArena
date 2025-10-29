@@ -5,7 +5,7 @@
 #include <optional>
 
 #include "PivotType.h"
-#include "RenderSpace.h"
+#include "UiRenderSpace.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/RenderTextureUtils.h"
@@ -34,7 +34,7 @@ struct UiDrawCallInitInfo
 
 	std::optional<Rect> clipRect;
 
-	RenderSpace renderSpace;
+	UiRenderSpace renderSpace;
 
 	UiDrawCallInitInfo();
 };
@@ -47,11 +47,11 @@ struct UiDrawCall
 	UiDrawCallPivotFunc pivotFunc; // Affects how the dimensions expand from the position (for UI scaling).
 	UiDrawCallActiveFunc activeFunc; // Whether to attempt to draw.
 	std::optional<Rect> clipRect; // For drawing within a clipped area in the selected render space.
-	RenderSpace renderSpace; // Relative positioning and sizing in the application window.
+	UiRenderSpace renderSpace; // Relative positioning and sizing in the application window.
 
 	UiDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc, const UiDrawCallSizeFunc &sizeFunc,
 		const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect = std::nullopt,
-		RenderSpace renderSpace = RenderSpace::Classic);
+		UiRenderSpace renderSpace = UiRenderSpace::Classic);
 	UiDrawCall(const UiDrawCallInitInfo &initInfo);
 
 	static UiDrawCallTextureFunc makeTextureFunc(UiTextureID id);

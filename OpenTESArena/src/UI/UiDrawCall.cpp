@@ -7,11 +7,11 @@ UiDrawCallInitInfo::UiDrawCallInitInfo()
 	this->textureID = -1;
 	this->pivotType = PivotType::TopLeft;
 	this->activeFunc = UiDrawCall::defaultActiveFunc;
-	this->renderSpace = RenderSpace::Classic;
+	this->renderSpace = UiRenderSpace::Classic;
 }
 
 UiDrawCall::UiDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc, const UiDrawCallSizeFunc &sizeFunc,
-	const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect, RenderSpace renderSpace)
+	const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect, UiRenderSpace renderSpace)
 	: textureFunc(textureFunc), positionFunc(positionFunc), sizeFunc(sizeFunc), pivotFunc(pivotFunc), activeFunc(activeFunc), clipRect(clipRect)
 {
 	DebugAssert(this->textureFunc);

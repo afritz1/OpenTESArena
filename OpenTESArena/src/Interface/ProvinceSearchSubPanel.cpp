@@ -15,7 +15,6 @@
 #include "../Input/TextEvents.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"

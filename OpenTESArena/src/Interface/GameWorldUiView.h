@@ -10,7 +10,6 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
-#include "../UI/CursorAlignment.h"
 #include "../UI/ListBox.h"
 #include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"

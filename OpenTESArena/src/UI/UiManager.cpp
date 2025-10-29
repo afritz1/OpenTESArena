@@ -1,8 +1,8 @@
 #include "GuiUtils.h"
-#include "RenderSpace.h"
 #include "UiCommand.h"
 #include "UiContext.h"
 #include "UiManager.h"
+#include "UiRenderSpace.h"
 #include "../Game/Game.h"
 #include "../Interface/MainMenuUiState.h"
 
@@ -380,7 +380,7 @@ void UiManager::update(double dt, Game &game)
 		const UiTransform &transform = this->transforms.get(element->transformInstID);
 		const Int2 position = transform.position;
 		const Int2 size = transform.size;
-		const RenderSpace renderSpace = element->renderSpace;
+		const UiRenderSpace renderSpace = element->renderSpace;
 
 		RenderElement2D renderElement;
 		switch (element->type)

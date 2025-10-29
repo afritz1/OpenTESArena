@@ -7,7 +7,6 @@
 #include "../Input/InputActionName.h"
 #include "../Math/Rect.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"

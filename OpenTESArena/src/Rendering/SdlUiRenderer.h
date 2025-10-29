@@ -7,8 +7,6 @@
 #include "components/utilities/Span.h"
 #include "components/utilities/Span2D.h"
 
-enum class RenderSpace;
-
 struct Rect;
 struct RenderElement2D;
 struct RendererProfilerData2D;

@@ -430,7 +430,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return !this->isPaused() && !WeaponAnimationUtils::isSheathed(weaponAnimDefState);
 		};
 
-		weaponDrawCallInitInfo.renderSpace = RenderSpace::Native;
+		weaponDrawCallInitInfo.renderSpace = UiRenderSpace::Native;
 		this->addDrawCall(weaponDrawCallInitInfo);
 
 		UiDrawCallInitInfo compassSliderDrawCallInitInfo;
@@ -903,7 +903,7 @@ void GameWorldPanel::initUiDrawCalls()
 		};
 
 		cursorDrawCallInitInfo.activeFunc = [this]() { return !this->isPaused(); };
-		cursorDrawCallInitInfo.renderSpace = RenderSpace::Native;
+		cursorDrawCallInitInfo.renderSpace = UiRenderSpace::Native;
 		this->addDrawCall(cursorDrawCallInitInfo);
 	}
 }

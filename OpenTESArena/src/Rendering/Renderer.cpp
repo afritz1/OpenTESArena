@@ -16,12 +16,11 @@
 #include "../Assets/TextureManager.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Rect.h"
-#include "../UI/CursorAlignment.h"
 #include "../UI/GuiUtils.h"
-#include "../UI/RenderSpace.h"
 #include "../UI/Surface.h"
 #include "../UI/UiCommand.h"
 #include "../UI/UiDrawCall.h"
+#include "../UI/UiRenderSpace.h"
 #include "../Utilities/Color.h"
 #include "../Utilities/Platform.h"
 

@@ -28,7 +28,6 @@ class RenderBackend;
 class Surface;
 class TextureManager;
 
-enum class CursorAlignment;
 enum class RenderBackendType;
 
 struct RenderCamera;

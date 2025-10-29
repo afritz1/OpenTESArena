@@ -450,7 +450,7 @@ bool Game::init()
 	UiElementInitInfo cursorImageElementInitInfo;
 	cursorImageElementInitInfo.contextType = UiContextType::Global;
 	cursorImageElementInitInfo.drawOrder = 100;
-	cursorImageElementInitInfo.renderSpace = RenderSpace::Native;
+	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
 	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID);
 
 	// Initialize window icon.
@@ -1104,7 +1104,7 @@ void Game::loop()
 				const Int2 windowDims = this->window.getPixelDimensions();
 				const Rect debugInfoTextBoxRect = this->debugInfoTextBox.getRect();
 				const Rect debugInfoPresentRect = GuiUtils::makeWindowSpaceRect(debugInfoTextBoxRect.x, debugInfoTextBoxRect.y, debugInfoTextBoxRect.width, debugInfoTextBoxRect.height,
-					PivotType::TopLeft, RenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());
+					PivotType::TopLeft, UiRenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());
 
 				debugInfoRenderElement.id = this->debugInfoTextBox.getTextureID();
 				debugInfoRenderElement.rect = debugInfoPresentRect;

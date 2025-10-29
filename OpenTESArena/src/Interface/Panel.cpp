@@ -12,7 +12,6 @@
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
@@ -89,7 +88,7 @@ void Panel::populateCommandList(UiCommandList &commandList)
 		const Int2 position = drawCall.positionFunc();
 		const Int2 size = drawCall.sizeFunc();
 		const PivotType pivotType = drawCall.pivotFunc();
-		const RenderSpace renderSpace = drawCall.renderSpace;
+		const UiRenderSpace renderSpace = drawCall.renderSpace;
 		const std::optional<Rect> &clipRect = drawCall.clipRect;
 
 		const Rect presentRect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
@@ -238,7 +237,7 @@ void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const 
 
 	UiDrawCallPivotFunc pivotFunc = UiDrawCall::makePivotFunc(pivotType);
 	const std::optional<Rect> clipRect = std::nullopt;
-	constexpr RenderSpace renderSpace = RenderSpace::Native;
+	constexpr UiRenderSpace renderSpace = UiRenderSpace::Native;
 
 	this->drawCalls.emplace_back(
 		textureFunc,

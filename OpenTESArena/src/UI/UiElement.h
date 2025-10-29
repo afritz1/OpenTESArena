@@ -9,8 +9,8 @@
 class UiManager;
 
 enum class PivotType;
-enum class RenderSpace;
 enum class UiContextType;
+enum class UiRenderSpace;
 
 // All UI elements (images, text boxes, etc.) come with a base handle.
 using UiElementInstanceID = int;
@@ -29,7 +29,7 @@ struct UiElementInitInfo
 	PivotType pivotType;
 	UiContextType contextType;
 	int drawOrder;
-	RenderSpace renderSpace;
+	UiRenderSpace renderSpace;
 
 	UiElementInitInfo();
 };
@@ -39,7 +39,7 @@ struct UiElement
 {
 	UiContextType contextType;
 	int drawOrder; // Higher is drawn last.
-	RenderSpace renderSpace;
+	UiRenderSpace renderSpace;
 
 	UiTransformInstanceID transformInstID;
 	bool active;
@@ -55,9 +55,9 @@ struct UiElement
 
 	UiElement();
 
-	void initImage(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
-	void initTextBox(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
-	void initButton(UiContextType contextType, int drawOrder, RenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
+	void initImage(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
+	void initTextBox(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
+	void initButton(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
 };
 
 #endif

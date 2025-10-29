@@ -11,7 +11,6 @@
 #include "../Items/ItemLibrary.h"
 #include "../Math/Rect.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/CursorAlignment.h"
 #include "../UI/FontLibrary.h"
 
 namespace
