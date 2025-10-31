@@ -190,7 +190,7 @@ ItemDefinitionID ItemLibrary::getGoldDefinitionID() const
 	ItemDefinitionID itemDefID = -1;
 	for (int i = 0; i < this->getCount(); i++)
 	{
-		const ItemDefinition& curItemDef = this->itemDefs[i];
+		const ItemDefinition &curItemDef = this->itemDefs[i];
 		if (curItemDef.type == ItemType::Gold)
 		{
 			itemDefID = i;

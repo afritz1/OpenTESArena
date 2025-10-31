@@ -426,35 +426,39 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		}
 		else
 		{
-			// Get the loot values index
-			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType::Dungeon); // @todo: Use the interior type
-			// Get the number of items
+			const ArenaInteriorType interiorType = ArenaInteriorType::Dungeon; // @todo: Use the active interior type
+			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(interiorType);
+
+			// Decide the number of items in loot.
 			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-			int itemCount = ArenaEntityUtils::getNumberOfItemsInLoot(lootValuesIndex, exeData, random);
-			if (itemCount > 0)
+			int lootItemCount = ArenaEntityUtils::getNumberOfItemsInLoot(lootValuesIndex, exeData, random);
+
+			if (lootItemCount > 0)
 			{
 				// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
-				const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
-				ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 
 				// The first item is always gold
 				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
 				itemInventory.insert(goldItemDefID);
-				itemCount--;
+				lootItemCount--;
 
-				// Calculate the gold amount
-				itemInventory.setGold(ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random)); // @todo: Use the level index and city type
+				const ArenaCityType cityType = ArenaCityType::CityState; // @todo: Use the active city type
+				const int interiorLevelIndex = 0; // @todo: Use the active map level index
+				const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random, cityType, interiorLevelIndex);
+				itemInventory.setGold(goldAmount);
 
 				// Handle the second item onward
-				if (itemCount > 0)
+				if (lootItemCount > 0)
 				{
 					const std::vector<ItemDefinitionID> testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition& itemDef)
+						[](const ItemDefinition &itemDef)
 						{
-							return (itemDef.type != ItemType::Misc && itemDef.type != ItemType::Gold); // Don't want quest items or gold
+							return (itemDef.type != ItemType::Misc) && (itemDef.type != ItemType::Gold); // Don't want quest items or gold
 						});
 
-					for (int i = 0; i < itemCount; i++)
+					for (int i = 0; i < lootItemCount; i++)
 					{
 						const int randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
 						const ItemDefinitionID testItemDefID = testItemDefIDs[randomItemIndex];

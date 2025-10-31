@@ -3,10 +3,12 @@
 
 #include <cstdint>
 
-struct ExeData;
-
-enum class ArenaInteriorType;
 class Random;
+
+enum class ArenaCityType;
+enum class ArenaInteriorType;
+
+struct ExeData;
 
 namespace ArenaEntityUtils
 {
@@ -28,9 +30,16 @@ namespace ArenaEntityUtils
 
 	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random);
 
+	constexpr int LOOT_VALUES_INDEX_HOUSE = 0;
+	constexpr int LOOT_VALUES_INDEX_PALACE = 1;
+	constexpr int LOOT_VALUES_INDEX_NOBLE = 2;
+	constexpr int LOOT_VALUES_INDEX_DUNGEON = 3;
+	constexpr int LOOT_VALUES_INDEX_CRYPT = 4;
+	constexpr int LOOT_VALUES_INDEX_TOWER = 4;
+
 	int getLootValuesIndex(ArenaInteriorType interiorType);
-	int getNumberOfItemsInLoot(const int lootValuesIndex, const ExeData &exeData, Random &random);
-	int getLootGoldAmount(const int lootValuesIndex, const ExeData &exeData, Random &random, const int cityType = 0, const int levelIndex = 0);
+	int getNumberOfItemsInLoot(int lootValuesIndex, const ExeData &exeData, Random &random);
+	int getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex);
 }
 
 #endif
