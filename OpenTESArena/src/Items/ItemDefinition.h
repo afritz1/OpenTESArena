@@ -164,7 +164,7 @@ struct ItemDefinition
 
 	void init(ItemType type);
 
-	std::string getDisplayName(int stackAmount = 1) const;
+	std::string getDisplayName(int stackAmount) const;
 	double getWeight() const;
 };
 

@@ -7,10 +7,12 @@
 struct ItemInstance
 {
 	ItemDefinitionID defID;
+	int stackAmount;
 	bool isEquipped;
 
 	ItemInstance();
 
+	void init(ItemDefinitionID defID, int stackAmount);
 	void init(ItemDefinitionID defID);
 
 	bool isValid() const;

@@ -436,18 +436,18 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			if (lootItemCount > 0)
 			{
 				// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
-				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 
-				// The first item is always gold
-				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
-				itemInventory.insert(goldItemDefID);
-				lootItemCount--;
-
+				// The first item is always gold.
 				const ArenaCityType cityType = ArenaCityType::CityState; // @todo: Use the active city type
 				const int interiorLevelIndex = 0; // @todo: Use the active map level index
 				const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random, cityType, interiorLevelIndex);
-				itemInventory.setGold(goldAmount);
+
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
+				itemInventory.insert(goldItemDefID, goldAmount);
+
+				lootItemCount--;
 
 				// Handle the second item onward
 				if (lootItemCount > 0)

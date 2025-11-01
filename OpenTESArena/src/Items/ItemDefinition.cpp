@@ -161,9 +161,7 @@ std::string ItemDefinition::getDisplayName(int stackAmount) const
 	case ItemType::Consumable:
 		return this->consumable.name;
 	case ItemType::Gold:
-		return (stackAmount == 1)
-			? this->gold.nameSingular
-			: this->gold.namePlural;
+		return (stackAmount == 1) ? this->gold.nameSingular : this->gold.namePlural;
 	case ItemType::Misc:
 		return this->misc.name;
 	case ItemType::Shield:

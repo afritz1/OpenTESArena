@@ -10,7 +10,6 @@ class ItemInventory
 {
 private:
 	std::vector<ItemInstance> items;
-	int gold;
 public:
 	int getTotalSlotCount() const;
 	int getEmptySlotCount() const;
@@ -19,14 +18,14 @@ public:
 	const ItemInstance &getSlot(int index) const;
 
 	double getWeight() const;
-	int getGold() const;
-	void setGold(int value);
+
+	int getCountOf(ItemDefinitionID defID) const;
 
 	bool findFirstEmptySlot(int *outIndex) const;
 	bool findFirstSlot(ItemDefinitionID defID, int *outIndex) const;
 	bool findLastSlot(ItemDefinitionID defID, int *outIndex) const;
 
-	void insert(ItemDefinitionID defID); // @todo: attempt stacking if possible.
+	void insert(ItemDefinitionID defID, int stackAmount = 1);
 	void compact();
 	void clear();
 };

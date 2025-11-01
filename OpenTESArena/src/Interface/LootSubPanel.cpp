@@ -115,12 +115,13 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-		std::string itemDisplayName = GetItemDisplayNameWithQty(itemDef, itemInventory.getGold());
+		const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
+		std::string itemDisplayName = GetItemDisplayNameWithQty(itemDef, itemInventory.getCountOf(goldItemDefID));
 
 		this->listBox.add(std::move(itemDisplayName));
 
 		this->listBox.setCallback(listBoxItemIndex,
-			[this, &game, &itemInventory, &itemLibrary, listBoxItemIndex]()
+			[this, &game, &itemInventory, &itemLibrary, listBoxItemIndex, goldItemDefID]()
 		{
 			// Find which inventory item slot this list box item points to.
 			int itemMappingsIndex = -1;
@@ -149,7 +150,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 			Player &player = game.player;
 			if (selectedItemDef.type == ItemType::Gold)
 			{
-				player.gold += itemInventory.getGold();
+				player.gold += itemInventory.getCountOf(goldItemDefID);
 			}
 			else
 			{
