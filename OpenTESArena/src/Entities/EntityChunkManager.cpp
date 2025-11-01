@@ -426,7 +426,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		}
 		else
 		{
-			const ArenaInteriorType interiorType = ArenaInteriorType::Dungeon; // @todo: Use the active interior type
+			const ArenaInteriorType interiorType = initInfo.interiorType;
 			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(interiorType);
 
 			// Decide the number of items in loot.
@@ -439,9 +439,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 
 				// The first item is always gold.
-				const ArenaCityType cityType = ArenaCityType::CityState; // @todo: Use the active city type
-				const int interiorLevelIndex = 0; // @todo: Use the active map level index
-				const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random, cityType, interiorLevelIndex);
+				const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random, initInfo.cityType, initInfo.interiorLevelIndex);
 
 				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
@@ -585,6 +583,10 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				}
 			}
 
+			initInfo.cityType = entityGenInfo.cityType;
+			initInfo.interiorType = entityGenInfo.interiorType;
+			initInfo.interiorLevelIndex = entityGenInfo.interiorLevelIndex;
+
 			const EntityInstanceID entityInstID = this->entities.alloc();
 			if (entityInstID < 0)
 			{
@@ -670,6 +672,9 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.canBeKilled = true;
 				citizenInitInfo.hasInventory = false;
 				citizenInitInfo.hasCreatureSound = false;
+				citizenInitInfo.cityType = entityGenInfo.cityType;
+				citizenInitInfo.interiorType = entityGenInfo.interiorType;
+				citizenInitInfo.interiorLevelIndex = entityGenInfo.interiorLevelIndex;
 
 				const EntityInstanceID entityInstID = this->entities.alloc();
 				if (entityInstID < 0)

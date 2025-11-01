@@ -1018,12 +1018,27 @@ void GameState::tickEntities(double dt, Game &game)
 	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[levelInfoIndex];
 	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
 
-	EntityGenInfo entityGenInfo;
-	entityGenInfo.init(ArenaClockUtils::nightLightsAreActive(this->clock));
-
 	const ProvinceDefinition &provinceDef = this->getProvinceDefinition();
 	const LocationDefinition &locationDef = this->getLocationDefinition();
+	const LocationDefinitionType locationDefType = locationDef.getType();
 	const std::optional<CitizenGenInfo> citizenGenInfo = CitizenUtils::tryMakeCitizenGenInfo(mapType, provinceDef.getRaceID(), locationDef);
+
+	// For loot generation.
+	ArenaCityType lootCityType = ArenaCityType::CityState;
+	ArenaInteriorType lootInteriorType = ArenaInteriorType::Crypt;
+
+	if (locationDefType == LocationDefinitionType::City)
+	{
+		lootCityType = locationDef.getCityDefinition().type;
+	}
+
+	if (mapSubDef.type == MapType::Interior)
+	{
+		lootInteriorType = mapSubDef.interior.interiorType;
+	}
+
+	EntityGenInfo entityGenInfo;
+	entityGenInfo.init(ArenaClockUtils::nightLightsAreActive(this->clock), lootCityType, lootInteriorType, levelIndex);
 
 	const double ceilingScale = this->getActiveCeilingScale();
 

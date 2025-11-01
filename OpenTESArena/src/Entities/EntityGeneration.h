@@ -1,22 +1,21 @@
 #ifndef ENTITY_GENERATION_H
 #define ENTITY_GENERATION_H
 
-#include "EntityDefinition.h"
 #include "EntityUtils.h"
 
-class Random;
-
-struct EntityAnimationDefinition;
+enum class ArenaCityType;
+enum class ArenaInteriorType;
 
 struct EntityGenInfo
 {
 	bool nightLightsAreActive;
 
-	// @todo? (might also affect EntityAnimationDef/Inst)
-	// - optional rulerIsMale
-	// - optional interiorType
+	// For loot generation. Defaults to 0 if undefined for the active scene.
+	ArenaCityType cityType;
+	ArenaInteriorType interiorType;
+	int interiorLevelIndex;
 
-	void init(bool nightLightsAreActive);
+	void init(bool nightLightsAreActive, ArenaCityType cityType, ArenaInteriorType interiorType, int interiorLevelIndex);
 };
 
 #endif
