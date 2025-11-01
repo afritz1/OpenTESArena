@@ -426,23 +426,42 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		}
 		else
 		{
-			const int testItemCount = random.next(4); // Can be empty.
-			if (testItemCount > 0)
+			const ArenaInteriorType interiorType = initInfo.interiorType;
+			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(interiorType);
+
+			// Decide the number of items in loot.
+			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+			int lootItemCount = ArenaEntityUtils::getNumberOfItemsInLoot(lootValuesIndex, exeData, random);
+
+			if (lootItemCount > 0)
 			{
 				// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
-				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-				const std::vector<ItemDefinitionID> testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-					[](const ItemDefinition &itemDef)
-				{
-					return itemDef.type != ItemType::Misc; // Don't want quest items.
-				});
-
 				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
-				for (int i = 0; i < testItemCount; i++)
+
+				// The first item is always gold.
+				const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random, initInfo.cityType, initInfo.interiorLevelIndex);
+
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
+				itemInventory.insert(goldItemDefID, goldAmount);
+
+				lootItemCount--;
+
+				// Handle the second item onward
+				if (lootItemCount > 0)
 				{
-					const int randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
-					const ItemDefinitionID testItemDefID = testItemDefIDs[randomItemIndex];
-					itemInventory.insert(testItemDefID);
+					const std::vector<ItemDefinitionID> testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
+						[](const ItemDefinition &itemDef)
+						{
+							return (itemDef.type != ItemType::Misc) && (itemDef.type != ItemType::Gold); // Don't want quest items or gold
+						});
+
+					for (int i = 0; i < lootItemCount; i++)
+					{
+						const int randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
+						const ItemDefinitionID testItemDefID = testItemDefIDs[randomItemIndex];
+						itemInventory.insert(testItemDefID);
+					}
 				}
 			}
 		}
@@ -564,6 +583,10 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				}
 			}
 
+			initInfo.cityType = entityGenInfo.cityType;
+			initInfo.interiorType = entityGenInfo.interiorType;
+			initInfo.interiorLevelIndex = entityGenInfo.interiorLevelIndex;
+
 			const EntityInstanceID entityInstID = this->entities.alloc();
 			if (entityInstID < 0)
 			{
@@ -649,6 +672,9 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.canBeKilled = true;
 				citizenInitInfo.hasInventory = false;
 				citizenInitInfo.hasCreatureSound = false;
+				citizenInitInfo.cityType = entityGenInfo.cityType;
+				citizenInitInfo.interiorType = entityGenInfo.interiorType;
+				citizenInitInfo.interiorLevelIndex = entityGenInfo.interiorLevelIndex;
 
 				const EntityInstanceID entityInstID = this->entities.alloc();
 				if (entityInstID < 0)

@@ -19,11 +19,13 @@ public:
 
 	double getWeight() const;
 
+	int getCountOf(ItemDefinitionID defID) const;
+
 	bool findFirstEmptySlot(int *outIndex) const;
 	bool findFirstSlot(ItemDefinitionID defID, int *outIndex) const;
 	bool findLastSlot(ItemDefinitionID defID, int *outIndex) const;
 
-	void insert(ItemDefinitionID defID); // @todo: attempt stacking if possible.
+	void insert(ItemDefinitionID defID, int stackAmount = 1);
 	void compact();
 	void clear();
 };

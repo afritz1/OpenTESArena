@@ -1,4 +1,5 @@
 #include "ArenaEntityUtils.h"
+#include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -278,5 +279,99 @@ int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeDa
 	}
 
 	const int goldAmount = 1 + random.next(50);
+	return goldAmount;
+}
+
+int ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType interiorType)
+{
+	switch (interiorType)
+	{
+	case ArenaInteriorType::House:
+		return ArenaEntityUtils::LOOT_VALUES_INDEX_HOUSE;
+	case ArenaInteriorType::Palace:
+		return ArenaEntityUtils::LOOT_VALUES_INDEX_PALACE;
+	case ArenaInteriorType::Noble:
+		return ArenaEntityUtils::LOOT_VALUES_INDEX_NOBLE;
+	case ArenaInteriorType::Dungeon:
+		return ArenaEntityUtils::LOOT_VALUES_INDEX_DUNGEON;
+	case ArenaInteriorType::Crypt:
+	case ArenaInteriorType::Tower:
+		return ArenaEntityUtils::LOOT_VALUES_INDEX_CRYPT;
+	default:
+		return 0;
+	}
+}
+
+int ArenaEntityUtils::getNumberOfItemsInLoot(int lootValuesIndex, const ExeData &exeData, Random &random)
+{
+	constexpr int itemCreationAttempts = 4;
+
+	int itemCount = 0;
+	for (int i = 0; i < itemCreationAttempts; i++)
+	{
+		const int lootChanceIndex = (lootValuesIndex * 4) + i;
+		DebugAssertIndex(exeData.items.lootChances, lootChanceIndex);
+		const uint8_t lootChance = exeData.items.lootChances[lootChanceIndex];
+
+		const int roll = random.next(100) + 1;
+		if (roll <= lootChance)
+		{
+			itemCount++;
+		}
+	}
+
+	return itemCount;
+}
+
+int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex)
+{
+	int goldAmount = 0;
+
+	switch (lootValuesIndex)
+	{
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_HOUSE:
+	{
+		goldAmount = random.next(9) + 2;
+		if (cityType == ArenaCityType::Village)
+		{
+			goldAmount /= 2;
+		}
+		else
+		{
+			goldAmount *= 2;
+		}
+
+		break;
+	}
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_PALACE:
+	{
+		const int cityTypeIndex = static_cast<int>(cityType);
+		DebugAssertIndex(exeData.items.palaceGoldValues, cityTypeIndex);
+		goldAmount = exeData.items.palaceGoldValues[cityTypeIndex];
+		break;
+	}
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_NOBLE:
+	{
+		goldAmount = random.next(9) + 2;
+		if (cityType == ArenaCityType::Village)
+		{
+			goldAmount /= 2;
+		}
+		else
+		{
+			goldAmount *= 2;
+		}
+
+		goldAmount *= 10;
+		break;
+	}
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_DUNGEON:
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_CRYPT: // and TOWER
+		goldAmount = (levelIndex * levelIndex) + (random.next(100) + 1);
+		break;
+	default:
+		break;
+	}
+
 	return goldAmount;
 }

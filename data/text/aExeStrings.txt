@@ -161,6 +161,8 @@ WeaponAnimationFilenames=0x41DAC
 [Items]
 GoldPiece=0x403FC
 BagOfGoldPieces=0x4040A
+LootChances=0x40420
+PalaceGoldValues=0x402B4
 
 [Light]
 WindowTwilightColors=0x3F42A

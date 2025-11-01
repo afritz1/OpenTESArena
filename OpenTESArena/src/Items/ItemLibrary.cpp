@@ -139,7 +139,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	// Used with loot containers. Player's gold is just a character sheet value.
 	ItemDefinition goldItemDef;
 	goldItemDef.init(ItemType::Gold);
-	goldItemDef.gold.init(exeData.items.bagOfGoldPieces.c_str());
+	goldItemDef.gold.init(exeData.items.goldPiece.c_str(), exeData.items.bagOfGoldPieces.c_str());
 	this->itemDefs.emplace_back(std::move(goldItemDef));
 }
 
@@ -183,4 +183,21 @@ const ItemDefinition &ItemLibrary::getGoldDefinition() const
 
 	DebugAssertMsg(itemDef != nullptr, "Couldn't find gold item definition.");
 	return *itemDef;
+}
+
+ItemDefinitionID ItemLibrary::getGoldDefinitionID() const
+{
+	ItemDefinitionID itemDefID = -1;
+	for (int i = 0; i < this->getCount(); i++)
+	{
+		const ItemDefinition &curItemDef = this->itemDefs[i];
+		if (curItemDef.type == ItemType::Gold)
+		{
+			itemDefID = i;
+			break;
+		}
+	}
+
+	DebugAssertMsg(itemDefID != -1, "Couldn't find gold item definition ID.");
+	return itemDefID;
 }

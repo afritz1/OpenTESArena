@@ -73,9 +73,10 @@ void ConsumableItemDefinition::init(const char *name, const char *unidentifiedNa
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 }
 
-void GoldItemDefinition::init(const char *name)
+void GoldItemDefinition::init(const char *nameSingular, const char *namePlural)
 {
-	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	std::snprintf(std::begin(this->nameSingular), std::size(this->nameSingular), "%s", nameSingular);
+	std::snprintf(std::begin(this->namePlural), std::size(this->namePlural), "%s", namePlural);
 }
 
 void MiscItemDefinition::init(const char *name)
@@ -147,7 +148,7 @@ void ItemDefinition::init(ItemType type)
 	this->isArtifact = false;
 }
 
-std::string ItemDefinition::getDisplayName() const
+std::string ItemDefinition::getDisplayName(int stackAmount) const
 {
 	// @todo eventually this will need stack counts from ItemInstance, so may as well move this there sometime
 
@@ -160,7 +161,7 @@ std::string ItemDefinition::getDisplayName() const
 	case ItemType::Consumable:
 		return this->consumable.name;
 	case ItemType::Gold:
-		return this->gold.name;
+		return (stackAmount == 1) ? this->gold.nameSingular : this->gold.namePlural;
 	case ItemType::Misc:
 		return this->misc.name;
 	case ItemType::Shield:
