@@ -107,10 +107,11 @@ std::string ColorReal::toString() const
 
 uint32_t ColorReal::toRGBA() const
 {
-	const uint8_t r = static_cast<uint8_t>(this->r * 255.0);
-	const uint8_t g = static_cast<uint8_t>(this->g * 255.0);
-	const uint8_t b = static_cast<uint8_t>(this->b * 255.0);
-	const uint8_t a = static_cast<uint8_t>(this->a * 255.0);
+	const ColorReal clampedColor = this->clamped(0.0, 1.0);
+	const uint8_t r = static_cast<uint8_t>(clampedColor.r * 255.0);
+	const uint8_t g = static_cast<uint8_t>(clampedColor.g * 255.0);
+	const uint8_t b = static_cast<uint8_t>(clampedColor.b * 255.0);
+	const uint8_t a = static_cast<uint8_t>(clampedColor.a * 255.0);
 	return static_cast<uint32_t>(
 		(r << Endian::RGBA_RedShift) |
 		(g << Endian::RGBA_GreenShift) |
