@@ -11,6 +11,16 @@ enum class ArenaInteriorType;
 
 struct ExeData;
 
+// The loot generation labels these as able to house an item or not.
+struct ArenaValidLootSlots
+{
+	static constexpr int COUNT = 4;
+
+	bool slots[4];
+
+	ArenaValidLootSlots();
+};
+
 namespace ArenaEntityUtils
 {
 	// For monsters
@@ -37,10 +47,9 @@ namespace ArenaEntityUtils
 	constexpr int LOOT_VALUES_INDEX_DUNGEON = 3;
 	constexpr int LOOT_VALUES_INDEX_CRYPT = 4;
 	constexpr int LOOT_VALUES_INDEX_TOWER = 4;
-	constexpr int LootSlotCount = 4;
 
 	int getLootValuesIndex(ArenaInteriorType interiorType);
-	std::array<bool, LootSlotCount> getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random);
+	ArenaValidLootSlots getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random);
 	int getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex);
 	int getLootItemQualityValue(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex);
 	void getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor);

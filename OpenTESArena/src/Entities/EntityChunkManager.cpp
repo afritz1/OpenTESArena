@@ -368,7 +368,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
 		}
 
-		const auto& exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		if (entityDef.type == EntityDefinitionType::Enemy)
 		{
 			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
@@ -403,7 +403,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(enemyDef.creature.level, exeData, random, &weaponOrArmorID, &isArmor);
 					// @todo: Get condition percentage from helper function
 
-					if (isArmor == true)
+					if (isArmor)
 					{
 						itemName = ArenaEntityUtils::getArmorNameFromItemID(weaponOrArmorID, exeData);
 					}
@@ -411,6 +411,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					{
 						itemName = ArenaEntityUtils::getWeaponNameFromItemID(weaponOrArmorID, exeData);
 					}
+
 					testItemDefID = itemLibrary.getIDByItemName(itemName);
 					itemInventory.insert(testItemDefID);
 				}
@@ -436,18 +437,18 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(interiorType);
 
 			// Decide which loot slots are to be populated.
-			const auto lootSlots = ArenaEntityUtils::getPopulatedLootSlots(lootValuesIndex, exeData, random);
+			const ArenaValidLootSlots validLootSlots = ArenaEntityUtils::getPopulatedLootSlots(lootValuesIndex, exeData, random);
 
 			// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
-			ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
-			const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
+			ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+			const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 			std::vector<ItemDefinitionID> testItemDefIDs;
 			int randomItemIndex;
 			ItemDefinitionID testItemDefID;
 
-			for (int i = 0; i < lootSlots.size(); i++)
+			for (int i = 0; i < ArenaValidLootSlots::COUNT; i++)
 			{
-				if (lootSlots[i] == false)
+				if (!validLootSlots.slots[i])
 				{
 					continue;
 				}
@@ -464,7 +465,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					// The second possible item is a magic item
 					// @todo: Get item and condition percentage from helper functions
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition& itemDef)
+						[](const ItemDefinition &itemDef)
 						{
 							return ItemTypeFlags(itemDef.type).any(ItemType::Accessory | ItemType::Consumable | ItemType::Trinket);
 						});
@@ -482,7 +483,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					ArenaEntityUtils::getLootNonMagicWeaponOrArmor(exeData, random, &weaponOrArmorID, &isArmor);
 					// @todo: Get condition percentage from helper function
 
-					if (isArmor == true)
+					if (isArmor)
 					{
 						itemName = ArenaEntityUtils::getArmorNameFromItemID(weaponOrArmorID, exeData);
 					}
@@ -490,6 +491,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					{
 						itemName = ArenaEntityUtils::getWeaponNameFromItemID(weaponOrArmorID, exeData);
 					}
+
 					testItemDefID = itemLibrary.getIDByItemName(itemName);
 					itemInventory.insert(testItemDefID);
 				}
@@ -498,7 +500,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					// The fourth possible item is a magic weapon or armor
 					// @todo: Get item and condition percentage from helper functions
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition& itemDef)
+						[](const ItemDefinition &itemDef)
 						{
 							return ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
 						});

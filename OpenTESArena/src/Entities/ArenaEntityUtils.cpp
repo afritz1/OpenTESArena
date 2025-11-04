@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "ArenaEntityUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
@@ -25,6 +27,11 @@ namespace
 	{
 		return (lootChance >> 24) & 0xFF;
 	}
+}
+
+ArenaValidLootSlots::ArenaValidLootSlots()
+{
+	std::fill(std::begin(this->slots), std::end(this->slots), false);
 }
 
 int ArenaEntityUtils::getBaseSpeed(int speedAttribute)
@@ -167,7 +174,8 @@ int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, c
 	const int weaponQualityCount = static_cast<int>(std::size(weaponQualities));
 
 	int itemID = -1;
-	do {
+	do
+	{
 		if (specifiedItemID != -1)
 		{
 			itemID = specifiedItemID;
@@ -300,25 +308,18 @@ int ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType interiorType)
 	}
 }
 
-std::array<bool, ArenaEntityUtils::LootSlotCount> ArenaEntityUtils::getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random)
+ArenaValidLootSlots ArenaEntityUtils::getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random)
 {
-	std::array<bool, ArenaEntityUtils::LootSlotCount> lootSlots{};
+	ArenaValidLootSlots lootSlots;
 
-	for (int i = 0; i < lootSlots.size(); i++)
+	for (int i = 0; i < ArenaValidLootSlots::COUNT; i++)
 	{
 		const int lootChanceIndex = (lootValuesIndex * 4) + i;
 		DebugAssertIndex(exeData.items.lootChances, lootChanceIndex);
 		const uint8_t lootChance = exeData.items.lootChances[lootChanceIndex];
 
 		const int roll = random.next(100) + 1;
-		if (roll <= lootChance)
-		{
-			lootSlots[i] = true;
-		}
-		else
-		{
-			lootSlots[i] = false;
-		}
+		lootSlots.slots[i] = roll <= lootChance;
 	}
 
 	return lootSlots;
@@ -387,11 +388,17 @@ int ArenaEntityUtils::getLootItemQualityValue(int lootValuesIndex, Random &rando
 		break;
 	case ArenaEntityUtils::LOOT_VALUES_INDEX_PALACE:
 		if (cityType == ArenaCityType::CityState)
+		{
 			itemQualityLevel = 16;
+		}
 		else if (cityType == ArenaCityType::Town)
+		{
 			itemQualityLevel = 14;
+		}
 		else
+		{
 			itemQualityLevel = 12;
+		}
 		break;
 	case ArenaEntityUtils::LOOT_VALUES_INDEX_NOBLE:
 		itemQualityLevel = random.next(9) + 2;
@@ -443,22 +450,29 @@ void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Rand
 int ArenaEntityUtils::getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, Random &random, int itemMaxHealth)
 {
 	const auto &itemConditionPercentages = exeData.equipment.lootItemConditionPercentages;
+	const auto &itemConditionUsesFavorablePercentages = exeData.equipment.lootItemConditionUsesFavorablePercentages;
+
+	DebugAssertIndex(itemConditionUsesFavorablePercentages, lootValuesIndex);
+	const uint8_t itemConditionUsesFavorablePercentage = itemConditionUsesFavorablePercentages[lootValuesIndex];
 
 	int lootConditionsIndex;
-
-	if (exeData.equipment.lootItemConditionUsesFavorablePercentages[lootValuesIndex] != 0)
+	if (itemConditionUsesFavorablePercentage != 0)
 	{
 		lootConditionsIndex = random.next(3) + 1;
 		if (lootConditionsIndex == 3)
+		{
 			lootConditionsIndex = 2;
+		}
 	}
 	else
 	{
 		lootConditionsIndex = random.next(3);
 	}
 
+	DebugAssertIndex(itemConditionPercentages, lootConditionsIndex);
 	int condition = itemConditionPercentages[lootConditionsIndex] * itemMaxHealth / 100;
-	if (condition == 0) {
+	if (condition == 0)
+	{
 		condition = 1;
 	}
 
@@ -475,7 +489,7 @@ std::string ArenaEntityUtils::getArmorNameFromItemID(int itemID, const ExeData &
 	const std::string from = "shield";
 	const std::string to = "Shield";
 
-	std::size_t pos = name.find(from);
+	size_t pos = name.find(from);
 	if (pos != std::string::npos)
 	{
 		name.replace(pos, from.length(), to);
@@ -486,5 +500,6 @@ std::string ArenaEntityUtils::getArmorNameFromItemID(int itemID, const ExeData &
 
 std::string ArenaEntityUtils::getWeaponNameFromItemID(int itemID, const ExeData &exeData)
 {
+	DebugAssertIndex(exeData.equipment.weaponNames, itemID);
 	return exeData.equipment.weaponNames[itemID];
 }
