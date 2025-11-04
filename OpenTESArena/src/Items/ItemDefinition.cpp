@@ -139,12 +139,14 @@ void ArtifactItemDefinition::init(const char *flavorText, Span<const int> provin
 ItemDefinition::ItemDefinition()
 {
 	this->type = static_cast<ItemType>(-1);
+	this->originalItemID = -1;
 	this->isArtifact = false;
 }
 
-void ItemDefinition::init(ItemType type)
+void ItemDefinition::init(ItemType type, int originalItemID)
 {
 	this->type = type;
+	this->originalItemID = originalItemID;
 	this->isArtifact = false;
 }
 

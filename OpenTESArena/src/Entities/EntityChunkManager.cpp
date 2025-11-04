@@ -399,20 +399,27 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				{
 					int weaponOrArmorID;
 					bool isArmor;
-					std::string itemName;
 					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(enemyDef.creature.level, exeData, random, &weaponOrArmorID, &isArmor);
 					// @todo: Get condition percentage from helper function
 
 					if (isArmor)
 					{
-						itemName = ArenaEntityUtils::getArmorNameFromItemID(weaponOrArmorID, exeData);
+						// @todo currently this will always get leather, need to provide material
+						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[weaponOrArmorID](const ItemDefinition &itemDef)
+						{
+							return (itemDef.type == ItemType::Armor) && (itemDef.originalItemID == weaponOrArmorID);
+						});
 					}
 					else
 					{
-						itemName = ArenaEntityUtils::getWeaponNameFromItemID(weaponOrArmorID, exeData);
+						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[weaponOrArmorID](const ItemDefinition &itemDef)
+						{
+							return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponOrArmorID);
+						});
 					}
 
-					testItemDefID = itemLibrary.getIDByItemName(itemName);
 					itemInventory.insert(testItemDefID);
 				}
 
@@ -479,20 +486,27 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					// The third possible item is a non-magic weapon or armor
 					int weaponOrArmorID;
 					bool isArmor;
-					std::string itemName;
 					ArenaEntityUtils::getLootNonMagicWeaponOrArmor(exeData, random, &weaponOrArmorID, &isArmor);
 					// @todo: Get condition percentage from helper function
 
 					if (isArmor)
 					{
-						itemName = ArenaEntityUtils::getArmorNameFromItemID(weaponOrArmorID, exeData);
+						// @todo currently this will always get leather, need to provide material
+						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[weaponOrArmorID](const ItemDefinition &itemDef)
+						{
+							return (itemDef.type == ItemType::Armor) && (itemDef.originalItemID == weaponOrArmorID);
+						});
 					}
 					else
 					{
-						itemName = ArenaEntityUtils::getWeaponNameFromItemID(weaponOrArmorID, exeData);
+						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[weaponOrArmorID](const ItemDefinition &itemDef)
+						{
+							return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponOrArmorID);
+						});
 					}
 
-					testItemDefID = itemLibrary.getIDByItemName(itemName);
 					itemInventory.insert(testItemDefID);
 				}
 				else if (i == 3)

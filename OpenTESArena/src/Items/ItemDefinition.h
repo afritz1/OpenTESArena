@@ -157,12 +157,13 @@ struct ItemDefinition
 		WeaponItemDefinition weapon;
 	};
 
+	int originalItemID; // For the weapon/armor ID lookup the original game does.
 	bool isArtifact;
 	ArtifactItemDefinition artifact;
 
 	ItemDefinition();
 
-	void init(ItemType type);
+	void init(ItemType type, int originalItemID);
 
 	std::string getDisplayName(int stackAmount) const;
 	double getWeight() const;

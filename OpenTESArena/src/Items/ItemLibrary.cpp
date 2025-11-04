@@ -12,7 +12,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < accessoryNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Accessory);
+		itemDef.init(ItemType::Accessory, -1);
 		itemDef.accessory.init(accessoryNames[i].c_str(), -1); // @todo: for loop over all materials
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -30,33 +30,36 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < leatherArmorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Armor);
+		itemDef.init(ItemType::Armor, i);
 
+		const std::string &leatherArmorName = leatherArmorNames[i];
 		const int weightOriginal = leatherArmorWeights[i];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
-		itemDef.armor.initLeather(leatherArmorNames[i].c_str(), weightKg);
+		itemDef.armor.initLeather(leatherArmorName.c_str(), weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
 	for (int i = 0; i < chainArmorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Armor);
+		itemDef.init(ItemType::Armor, i);
 
+		const std::string &chainArmorName = chainArmorNames[i];
 		const int weightOriginal = chainArmorWeights[i];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
-		itemDef.armor.initChain(chainArmorNames[i].c_str(), weightKg);
+		itemDef.armor.initChain(chainArmorName.c_str(), weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
 	for (int i = 0; i < plateArmorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Armor);
+		itemDef.init(ItemType::Armor, i);
 
+		const std::string &plateArmorName = plateArmorNames[i];
 		const int weightOriginal = plateArmorWeights[i];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
-		itemDef.armor.initPlate(plateArmorNames[i].c_str(), weightKg, -1);
+		itemDef.armor.initPlate(plateArmorName.c_str(), weightKg, -1);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
@@ -77,7 +80,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < potionNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Consumable);
+		itemDef.init(ItemType::Consumable, -1);
 		itemDef.consumable.init(potionNames[i].c_str(), unidentifiedPotionName.c_str());
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -86,7 +89,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < mainQuestItemNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Misc);
+		itemDef.init(ItemType::Misc, -1);
 		itemDef.misc.init(mainQuestItemNames[i].c_str());
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -97,7 +100,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < shieldNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Shield);
+		itemDef.init(ItemType::Shield, armorCount + i);
 
 		const int weightOriginal = shieldWeights[i];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
@@ -109,7 +112,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < trinketNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Trinket);
+		itemDef.init(ItemType::Trinket, -1);
 		itemDef.trinket.init(trinketNames[i].c_str());
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -122,7 +125,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < weaponNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Weapon);
+		itemDef.init(ItemType::Weapon, i);
 
 		const char *weaponName = weaponNames[i].c_str();
 		const int weightOriginal = weaponWeights[i];
@@ -151,7 +154,7 @@ void ItemLibrary::init(const ExeData &exeData)
 
 	// Used with loot containers. Player's gold is just a character sheet value.
 	ItemDefinition goldItemDef;
-	goldItemDef.init(ItemType::Gold);
+	goldItemDef.init(ItemType::Gold, -1);
 	goldItemDef.gold.init(exeData.items.goldPiece.c_str(), exeData.items.bagOfGoldPieces.c_str());
 	this->itemDefs.emplace_back(std::move(goldItemDef));
 }
@@ -165,6 +168,21 @@ const ItemDefinition &ItemLibrary::getDefinition(int index) const
 {
 	DebugAssertIndex(this->itemDefs, index);
 	return this->itemDefs[index];
+}
+
+int ItemLibrary::getFirstDefinitionIndexIf(const ItemLibraryPredicate &predicate) const
+{
+	int index = -1;
+	for (int i = 0; i < this->getCount(); i++)
+	{
+		if (predicate(this->getDefinition(i)))
+		{
+			index = i;
+			break;
+		}
+	}
+
+	return index;
 }
 
 std::vector<int> ItemLibrary::getDefinitionIndicesIf(const ItemLibraryPredicate &predicate) const
@@ -212,22 +230,5 @@ ItemDefinitionID ItemLibrary::getGoldDefinitionID() const
 	}
 
 	DebugAssertMsg(itemDefID != -1, "Couldn't find gold item definition ID.");
-	return itemDefID;
-}
-
-ItemDefinitionID ItemLibrary::getIDByItemName(std::string const &name) const
-{
-	ItemDefinitionID itemDefID = -1;
-	for (int i = 0; i < this->getCount(); i++)
-	{
-		const ItemDefinition& curItemDef = this->itemDefs[i];
-		if (curItemDef.getDisplayName(1) == name)
-		{
-			itemDefID = i;
-			break;
-		}
-	}
-
-	DebugAssertMsgFormat(itemDefID != -1, "Couldn't find item with name %s.", name.c_str());
 	return itemDefID;
 }

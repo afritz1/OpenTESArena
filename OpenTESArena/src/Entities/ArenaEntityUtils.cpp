@@ -482,19 +482,8 @@ int ArenaEntityUtils::getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex,
 std::string ArenaEntityUtils::getArmorNameFromItemID(int itemID, const ExeData &exeData)
 {
 	// Currently this is just for armor in loot or on creatures, which is always plate.
+	DebugAssertIndex(exeData.equipment.plateArmorNames, itemID);
 	std::string name = exeData.equipment.plateArmorNames[itemID];
-
-	// Kite shield and tower shield have a lowercase "s" in the leather, chain and plate name arrays, but uppercase in the material plate name array.
-	// Make it uppercase as the material plate name array (armorNames) is used for the shield names in ItemLibrary
-	const std::string from = "shield";
-	const std::string to = "Shield";
-
-	size_t pos = name.find(from);
-	if (pos != std::string::npos)
-	{
-		name.replace(pos, from.length(), to);
-	}
-
 	return name;
 }
 
