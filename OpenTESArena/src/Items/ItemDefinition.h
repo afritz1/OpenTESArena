@@ -47,6 +47,8 @@ enum class ArmorMaterialType
 	Plate // Requires item material.
 };
 
+static constexpr int ARMOR_MATERIAL_TYPE_COUNT = static_cast<int>(ArmorMaterialType::Plate) + 1;
+
 struct ArmorItemDefinition
 {
 	char name[64]; // Helmet, left pauldron, etc..
