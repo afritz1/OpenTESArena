@@ -491,11 +491,24 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 					if (isArmor)
 					{
-						// @todo currently this will always get leather, need to provide material
+						// Original game hardcodes loot armor to plate.
+						constexpr ArmorMaterialType armorMaterialType = ArmorMaterialType::Plate;
+
 						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[weaponOrArmorID](const ItemDefinition &itemDef)
+							[weaponOrArmorID, armorMaterialType](const ItemDefinition &itemDef)
 						{
-							return (itemDef.type == ItemType::Armor) && (itemDef.originalItemID == weaponOrArmorID);
+							if (itemDef.type != ItemType::Armor)
+							{
+								return false;
+							}
+
+							if (itemDef.originalItemID != weaponOrArmorID)
+							{
+								return false;
+							}
+
+							const ArmorItemDefinition &armorItemDef = itemDef.armor;
+							return armorItemDef.materialType == armorMaterialType;
 						});
 					}
 					else
