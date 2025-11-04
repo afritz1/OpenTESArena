@@ -1,6 +1,9 @@
+#include <algorithm>
+
 #include "ArenaEntityUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
+#include "../Items/ItemDefinition.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
 
@@ -25,6 +28,11 @@ namespace
 	{
 		return (lootChance >> 24) & 0xFF;
 	}
+}
+
+ArenaValidLootSlots::ArenaValidLootSlots()
+{
+	std::fill(std::begin(this->slots), std::end(this->slots), false);
 }
 
 int ArenaEntityUtils::getBaseSpeed(int speedAttribute)
@@ -157,34 +165,34 @@ int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int sp
 
 int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, const ExeData &exeData, Random &random)
 {
+	DebugAssert(weaponLevel >= 1);
 	const auto &weaponQualities = exeData.equipment.weaponQualities;
+	constexpr int maximumWeaponQuality = 20;
+	for (int i = 0; i < std::size(weaponQualities); i++)
+	{
+		DebugAssert(weaponQualities[i] <= maximumWeaponQuality);
+	}
 	const int weaponQualityCount = static_cast<int>(std::size(weaponQualities));
 
-	int initialItemID = -1;
-	int finalItemID = -1;
-	if (specifiedItemID != -1)
+	int itemID = -1;
+	do
 	{
-		initialItemID = specifiedItemID;
-		weaponLevel = 20;
-	}
-	else
-	{
-		initialItemID = random.next(weaponQualityCount);
-	}
-
-	for (int i = initialItemID; i < weaponQualityCount; i++)
-	{
-		if (weaponQualities[i] <= weaponLevel)
+		if (specifiedItemID != -1)
 		{
-			finalItemID = i;
-			break;
+			itemID = specifiedItemID;
+			weaponLevel = maximumWeaponQuality; // Breaks out of the loop
 		}
-	}
+		else
+		{
+			itemID = random.next(weaponQualityCount);
+		}
+	} while (weaponLevel < weaponQualities[itemID]);
 
-	return finalItemID;
+	return itemID;
 }
 
-void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor)
+void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID,
+	bool *outIsArmor, ArmorMaterialType *outArmorMaterialType)
 {
 	int itemID = -1;
 	bool isArmor = false;
@@ -223,15 +231,15 @@ void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const
 		}
 	}
 
-	// @todo: Also return the base material (plate, chain or leather)
 	*outWeaponOrArmorID = itemID;
 	*outIsArmor = isArmor;
+	*outArmorMaterialType = ArmorMaterialType::Plate;
 }
 
 int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, Random &random)
 {
-	const auto &itemConditionChances = exeData.equipment.itemConditionChances;
-	const auto &itemConditionPercentages = exeData.equipment.itemConditionPercentages;
+	const auto &itemConditionChances = exeData.equipment.creatureItemConditionChances;
+	const auto &itemConditionPercentages = exeData.equipment.creatureItemConditionPercentages;
 
 	int roll = random.next(7);
 	int condition = maxCondition;
@@ -302,25 +310,21 @@ int ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType interiorType)
 	}
 }
 
-int ArenaEntityUtils::getNumberOfItemsInLoot(int lootValuesIndex, const ExeData &exeData, Random &random)
+ArenaValidLootSlots ArenaEntityUtils::getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random)
 {
-	constexpr int itemCreationAttempts = 4;
+	ArenaValidLootSlots lootSlots;
 
-	int itemCount = 0;
-	for (int i = 0; i < itemCreationAttempts; i++)
+	for (int i = 0; i < ArenaValidLootSlots::COUNT; i++)
 	{
 		const int lootChanceIndex = (lootValuesIndex * 4) + i;
 		DebugAssertIndex(exeData.items.lootChances, lootChanceIndex);
 		const uint8_t lootChance = exeData.items.lootChances[lootChanceIndex];
 
 		const int roll = random.next(100) + 1;
-		if (roll <= lootChance)
-		{
-			itemCount++;
-		}
+		lootSlots.slots[i] = roll <= lootChance;
 	}
 
-	return itemCount;
+	return lootSlots;
 }
 
 int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex)
@@ -374,4 +378,120 @@ int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeD
 	}
 
 	return goldAmount;
+}
+
+int ArenaEntityUtils::getLootItemQualityValue(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex)
+{
+	int itemQualityLevel = 0;
+	switch (lootValuesIndex)
+	{
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_HOUSE:
+		itemQualityLevel = random.next(5) + 1;
+		break;
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_PALACE:
+		if (cityType == ArenaCityType::CityState)
+		{
+			itemQualityLevel = 16;
+		}
+		else if (cityType == ArenaCityType::Town)
+		{
+			itemQualityLevel = 14;
+		}
+		else
+		{
+			itemQualityLevel = 12;
+		}
+		break;
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_NOBLE:
+		itemQualityLevel = random.next(9) + 2;
+		break;
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_DUNGEON:
+		itemQualityLevel = 5 * (levelIndex + 1);
+		break;
+	case ArenaEntityUtils::LOOT_VALUES_INDEX_CRYPT: // and TOWER
+		itemQualityLevel = 3 * levelIndex;
+		break;
+	default:
+		break;
+	}
+
+	return itemQualityLevel;
+}
+
+void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor,
+	ArmorMaterialType *outArmorMaterialType)
+{
+	int itemID = -1;
+	bool isArmor = false;
+
+	// The original game gets itemQualityLevel with GetLootItemQualityValue but then overwrites it with 16
+	const int itemQualityLevel = 16;
+	const bool shouldPickArmor = random.nextBool();
+
+	if (shouldPickArmor)
+	{
+		constexpr int baseMaterial = -1;
+		constexpr int specifiedArmorID = -1;
+		itemID = ArenaEntityUtils::pickNonMagicArmor(itemQualityLevel, baseMaterial, specifiedArmorID, exeData, random);
+	}
+	else
+	{
+		constexpr int specifiedWeaponID = -1;
+		itemID = ArenaEntityUtils::pickNonMagicWeapon(itemQualityLevel, specifiedWeaponID, exeData, random);
+	}
+
+	if (itemID >= 0)
+	{
+		isArmor = shouldPickArmor;
+	}
+
+	*outWeaponOrArmorID = itemID;
+	*outIsArmor = isArmor;
+	*outArmorMaterialType = ArmorMaterialType::Plate;
+}
+
+int ArenaEntityUtils::getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, Random &random, int itemMaxHealth)
+{
+	const auto &itemConditionPercentages = exeData.equipment.lootItemConditionPercentages;
+	const auto &itemConditionUsesFavorablePercentages = exeData.equipment.lootItemConditionUsesFavorablePercentages;
+
+	DebugAssertIndex(itemConditionUsesFavorablePercentages, lootValuesIndex);
+	const uint8_t itemConditionUsesFavorablePercentage = itemConditionUsesFavorablePercentages[lootValuesIndex];
+
+	int lootConditionsIndex;
+	if (itemConditionUsesFavorablePercentage != 0)
+	{
+		lootConditionsIndex = random.next(3) + 1;
+		if (lootConditionsIndex == 3)
+		{
+			lootConditionsIndex = 2;
+		}
+	}
+	else
+	{
+		lootConditionsIndex = random.next(3);
+	}
+
+	DebugAssertIndex(itemConditionPercentages, lootConditionsIndex);
+	int condition = itemConditionPercentages[lootConditionsIndex] * itemMaxHealth / 100;
+	if (condition == 0)
+	{
+		condition = 1;
+	}
+
+	return condition;
+}
+
+std::string ArenaEntityUtils::getArmorNameFromItemID(int itemID, const ExeData &exeData)
+{
+	// Currently this is just for armor in loot or on creatures, which is always plate.
+	DebugAssertIndex(exeData.equipment.plateArmorNames, itemID);
+	std::string name = exeData.equipment.plateArmorNames[itemID];
+	return name;
+}
+
+std::string ArenaEntityUtils::getWeaponNameFromItemID(int itemID, const ExeData &exeData)
+{
+	DebugAssertIndex(exeData.equipment.weaponNames, itemID);
+	return exeData.equipment.weaponNames[itemID];
 }

@@ -2,13 +2,25 @@
 #define ARENA_ENTITY_UTILS_H
 
 #include <cstdint>
+#include <string>
 
 class Random;
 
 enum class ArenaCityType;
 enum class ArenaInteriorType;
+enum class ArmorMaterialType;
 
 struct ExeData;
+
+// The loot generation labels these as able to house an item or not.
+struct ArenaValidLootSlots
+{
+	static constexpr int COUNT = 4;
+
+	bool slots[4];
+
+	ArenaValidLootSlots();
+};
 
 namespace ArenaEntityUtils
 {
@@ -24,7 +36,7 @@ namespace ArenaEntityUtils
 	int pickNonMagicArmor(int armorLevel, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random);
 	int pickNonMagicWeapon(int weaponLevel, int specifiedItemID, const ExeData &exeData, Random &random);
 
-	void getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor);
+	void getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor, ArmorMaterialType *outArmorMaterialType);
 	int getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, Random &random);
 	int getCreatureItemQualityLevel(int creatureLevel);
 
@@ -38,8 +50,14 @@ namespace ArenaEntityUtils
 	constexpr int LOOT_VALUES_INDEX_TOWER = 4;
 
 	int getLootValuesIndex(ArenaInteriorType interiorType);
-	int getNumberOfItemsInLoot(int lootValuesIndex, const ExeData &exeData, Random &random);
+	ArenaValidLootSlots getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random);
 	int getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex);
+	int getLootItemQualityValue(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex);
+	void getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor, ArmorMaterialType *outArmorMaterialType);
+	int getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, Random &random, int itemMaxHealth);
+
+	std::string getArmorNameFromItemID(int itemID, const ExeData &exeData);
+	std::string getWeaponNameFromItemID(int itemID, const ExeData &exeData);
 }
 
 #endif

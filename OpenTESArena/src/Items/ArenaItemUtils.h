@@ -1,6 +1,10 @@
 #ifndef ARENA_ITEM_UTILS_H
 #define ARENA_ITEM_UTILS_H
 
+class Random;
+
+enum class ArmorMaterialType;
+
 namespace ArenaItemUtils
 {
 	// Converts Arena weight units to kilograms.
@@ -14,6 +18,8 @@ namespace ArenaItemUtils
 
 	bool isFistsWeapon(int weaponID);
 	bool isRangedWeapon(int weaponID);
+
+	ArmorMaterialType getRandomArmorMaterialType(Random &random);
 }
 
 #endif
