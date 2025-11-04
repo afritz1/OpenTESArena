@@ -399,13 +399,12 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				{
 					int weaponOrArmorID;
 					bool isArmor;
-					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(enemyDef.creature.level, exeData, random, &weaponOrArmorID, &isArmor);
+					ArmorMaterialType armorMaterialType;
+					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(enemyDef.creature.level, exeData, random, &weaponOrArmorID, &isArmor, &armorMaterialType);
 					// @todo: Get condition percentage from helper function
 
 					if (isArmor)
 					{
-						const ArmorMaterialType armorMaterialType = ArenaItemUtils::getRandomArmorMaterialType(random);
-
 						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[weaponOrArmorID, armorMaterialType](const ItemDefinition &itemDef)
 						{
@@ -504,13 +503,12 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					// The third possible item is a non-magic weapon or armor
 					int weaponOrArmorID;
 					bool isArmor;
-					ArenaEntityUtils::getLootNonMagicWeaponOrArmor(exeData, random, &weaponOrArmorID, &isArmor);
+					ArmorMaterialType armorMaterialType;
+					ArenaEntityUtils::getLootNonMagicWeaponOrArmor(exeData, random, &weaponOrArmorID, &isArmor, &armorMaterialType);
 					// @todo: Get condition percentage from helper function
 
 					if (isArmor)
 					{
-						const ArmorMaterialType armorMaterialType = ArenaItemUtils::getRandomArmorMaterialType(random);
-
 						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[weaponOrArmorID, armorMaterialType](const ItemDefinition &itemDef)
 						{

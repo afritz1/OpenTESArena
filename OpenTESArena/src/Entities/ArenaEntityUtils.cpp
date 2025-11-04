@@ -3,6 +3,7 @@
 #include "ArenaEntityUtils.h"
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
+#include "../Items/ItemDefinition.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
 
@@ -190,7 +191,8 @@ int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, c
 	return itemID;
 }
 
-void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor)
+void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID,
+	bool *outIsArmor, ArmorMaterialType *outArmorMaterialType)
 {
 	int itemID = -1;
 	bool isArmor = false;
@@ -229,9 +231,9 @@ void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const
 		}
 	}
 
-	// @todo: Also return the base material (plate, chain or leather)
 	*outWeaponOrArmorID = itemID;
 	*outIsArmor = isArmor;
+	*outArmorMaterialType = ArmorMaterialType::Plate;
 }
 
 int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, Random &random)
@@ -416,7 +418,8 @@ int ArenaEntityUtils::getLootItemQualityValue(int lootValuesIndex, Random &rando
 	return itemQualityLevel;
 }
 
-void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor)
+void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor,
+	ArmorMaterialType *outArmorMaterialType)
 {
 	int itemID = -1;
 	bool isArmor = false;
@@ -442,9 +445,9 @@ void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Rand
 		isArmor = shouldPickArmor;
 	}
 
-	// @todo: Also return the base material (plate, chain or leather)
 	*outWeaponOrArmorID = itemID;
 	*outIsArmor = isArmor;
+	*outArmorMaterialType = ArmorMaterialType::Plate;
 }
 
 int ArenaEntityUtils::getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, Random &random, int itemMaxHealth)
