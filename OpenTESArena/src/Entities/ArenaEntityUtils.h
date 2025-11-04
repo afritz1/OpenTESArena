@@ -2,6 +2,7 @@
 #define ARENA_ENTITY_UTILS_H
 
 #include <cstdint>
+#include <string>
 
 class Random;
 
@@ -36,10 +37,17 @@ namespace ArenaEntityUtils
 	constexpr int LOOT_VALUES_INDEX_DUNGEON = 3;
 	constexpr int LOOT_VALUES_INDEX_CRYPT = 4;
 	constexpr int LOOT_VALUES_INDEX_TOWER = 4;
+	constexpr int LootSlotCount = 4;
 
 	int getLootValuesIndex(ArenaInteriorType interiorType);
-	int getNumberOfItemsInLoot(int lootValuesIndex, const ExeData &exeData, Random &random);
+	std::array<bool, LootSlotCount> getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random);
 	int getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex);
+	int getLootItemQualityValue(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex);
+	void getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor);
+	int getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, Random &random, int itemMaxHealth);
+
+	std::string getArmorNameFromItemID(int itemID, const ExeData &exeData);
+	std::string getWeaponNameFromItemID(int itemID, const ExeData &exeData);
 }
 
 #endif

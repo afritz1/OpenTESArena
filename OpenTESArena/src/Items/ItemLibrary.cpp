@@ -21,11 +21,12 @@ void ItemLibrary::init(const ExeData &exeData)
 	constexpr int armorCount = 7; // Ignores shields at end.
 	const Span<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames, armorCount);
 	const Span<const std::string> chainArmorNames(exeData.equipment.chainArmorNames, armorCount);
+	const Span<const std::string> plateArmorNames(exeData.equipment.plateArmorNames, armorCount);
 	const Span<const std::string> armorNames(exeData.equipment.armorNames, armorCount); // Requires an associated material.
 	const Span<const uint16_t> leatherArmorWeights(exeData.equipment.leatherArmorWeights, armorCount);
 	const Span<const uint16_t> chainArmorWeights(exeData.equipment.chainArmorWeights, armorCount);
 	const Span<const uint16_t> plateArmorWeights(exeData.equipment.plateArmorWeights, armorCount);
-	//const BufferView<const std::string> plateArmorNames = exeData.equipment.plateArmorNames; // Not sure 'ordinary' plate exists in-game
+
 	for (int i = 0; i < leatherArmorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
@@ -48,6 +49,18 @@ void ItemLibrary::init(const ExeData &exeData)
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
+	for (int i = 0; i < plateArmorNames.getCount(); i++)
+	{
+		ItemDefinition itemDef;
+		itemDef.init(ItemType::Armor);
+
+		const int weightOriginal = plateArmorWeights[i];
+		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
+		itemDef.armor.initPlate(plateArmorNames[i].c_str(), weightKg, -1);
+		this->itemDefs.emplace_back(std::move(itemDef));
+	}
+
+	/* @todo:These are for plate armor with a material. Commented out until those are ready.
 	for (int i = 0; i < armorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
@@ -57,7 +70,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
 		itemDef.armor.initPlate(armorNames[i].c_str(), weightKg, -1); // @todo: for loop over all materials
 		this->itemDefs.emplace_back(std::move(itemDef));
-	}
+	}*/
 
 	const Span<const std::string> potionNames = exeData.equipment.potionNames;
 	const std::string &unidentifiedPotionName = exeData.equipment.unidentifiedPotionName;
@@ -199,5 +212,22 @@ ItemDefinitionID ItemLibrary::getGoldDefinitionID() const
 	}
 
 	DebugAssertMsg(itemDefID != -1, "Couldn't find gold item definition ID.");
+	return itemDefID;
+}
+
+ItemDefinitionID ItemLibrary::getIDByItemName(std::string const &name) const
+{
+	ItemDefinitionID itemDefID = -1;
+	for (int i = 0; i < this->getCount(); i++)
+	{
+		const ItemDefinition& curItemDef = this->itemDefs[i];
+		if (curItemDef.getDisplayName(1) == name)
+		{
+			itemDefID = i;
+			break;
+		}
+	}
+
+	DebugAssertMsgFormat(itemDefID != -1, "Couldn't find item with name %s.", name.c_str());
 	return itemDefID;
 }

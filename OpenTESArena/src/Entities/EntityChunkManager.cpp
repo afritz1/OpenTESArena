@@ -368,6 +368,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			DebugCrash("Couldn't allocate EntityItemInventoryInstanceID.");
 		}
 
+		const auto& exeData = BinaryAssetLibrary::getInstance().getExeData();
 		if (entityDef.type == EntityDefinitionType::Enemy)
 		{
 			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
@@ -396,16 +397,21 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 				if (ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(enemyDef.creature.lootChances, random))
 				{
-					// @todo: Get item and condition percentage from helper functions
+					int weaponOrArmorID;
+					bool isArmor;
+					std::string itemName;
+					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(enemyDef.creature.level, exeData, random, &weaponOrArmorID, &isArmor);
+					// @todo: Get condition percentage from helper function
 
-					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition &itemDef)
+					if (isArmor == true)
 					{
-						return ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
-					});
-
-					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
-					testItemDefID = testItemDefIDs[randomItemIndex];
+						itemName = ArenaEntityUtils::getArmorNameFromItemID(weaponOrArmorID, exeData);
+					}
+					else
+					{
+						itemName = ArenaEntityUtils::getWeaponNameFromItemID(weaponOrArmorID, exeData);
+					}
+					testItemDefID = itemLibrary.getIDByItemName(itemName);
 					itemInventory.insert(testItemDefID);
 				}
 
@@ -429,39 +435,77 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			const ArenaInteriorType interiorType = initInfo.interiorType;
 			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(interiorType);
 
-			// Decide the number of items in loot.
-			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-			int lootItemCount = ArenaEntityUtils::getNumberOfItemsInLoot(lootValuesIndex, exeData, random);
+			// Decide which loot slots are to be populated.
+			const auto lootSlots = ArenaEntityUtils::getPopulatedLootSlots(lootValuesIndex, exeData, random);
 
-			if (lootItemCount > 0)
+			// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
+			ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+			const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
+			std::vector<ItemDefinitionID> testItemDefIDs;
+			int randomItemIndex;
+			ItemDefinitionID testItemDefID;
+
+			for (int i = 0; i < lootSlots.size(); i++)
 			{
-				// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
-				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
-
-				// The first item is always gold.
-				const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random, initInfo.cityType, initInfo.interiorLevelIndex);
-
-				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
-				itemInventory.insert(goldItemDefID, goldAmount);
-
-				lootItemCount--;
-
-				// Handle the second item onward
-				if (lootItemCount > 0)
+				if (lootSlots[i] == false)
 				{
-					const std::vector<ItemDefinitionID> testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition &itemDef)
+					continue;
+				}
+
+				if (i == 0)
+				{
+					// The first possible item is gold
+					const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random, initInfo.cityType, initInfo.interiorLevelIndex);
+					const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
+					itemInventory.insert(goldItemDefID, goldAmount);
+				}
+				else if (i == 1)
+				{
+					// The second possible item is a magic item
+					// @todo: Get item and condition percentage from helper functions
+					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
+						[](const ItemDefinition& itemDef)
 						{
-							return (itemDef.type != ItemType::Misc) && (itemDef.type != ItemType::Gold); // Don't want quest items or gold
+							return ItemTypeFlags(itemDef.type).any(ItemType::Accessory | ItemType::Consumable | ItemType::Trinket);
 						});
 
-					for (int i = 0; i < lootItemCount; i++)
+					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
+					testItemDefID = testItemDefIDs[randomItemIndex];
+					itemInventory.insert(testItemDefID);
+				}
+				else if (i == 2)
+				{
+					// The third possible item is a non-magic weapon or armor
+					int weaponOrArmorID;
+					bool isArmor;
+					std::string itemName;
+					ArenaEntityUtils::getLootNonMagicWeaponOrArmor(exeData, random, &weaponOrArmorID, &isArmor);
+					// @todo: Get condition percentage from helper function
+
+					if (isArmor == true)
 					{
-						const int randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
-						const ItemDefinitionID testItemDefID = testItemDefIDs[randomItemIndex];
-						itemInventory.insert(testItemDefID);
+						itemName = ArenaEntityUtils::getArmorNameFromItemID(weaponOrArmorID, exeData);
 					}
+					else
+					{
+						itemName = ArenaEntityUtils::getWeaponNameFromItemID(weaponOrArmorID, exeData);
+					}
+					testItemDefID = itemLibrary.getIDByItemName(itemName);
+					itemInventory.insert(testItemDefID);
+				}
+				else if (i == 3)
+				{
+					// The fourth possible item is a magic weapon or armor
+					// @todo: Get item and condition percentage from helper functions
+					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
+						[](const ItemDefinition& itemDef)
+						{
+							return ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
+						});
+
+					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
+					testItemDefID = testItemDefIDs[randomItemIndex];
+					itemInventory.insert(testItemDefID);
 				}
 			}
 		}
