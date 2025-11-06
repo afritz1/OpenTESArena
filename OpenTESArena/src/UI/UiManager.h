@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "TextRenderUtils.h"
 #include "UiElement.h"
 #include "../Rendering/Renderer.h"
 
@@ -48,9 +49,9 @@ public:
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
 
-	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo); // @todo provide everything for creating the texture (dimensions, font) except text
+	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, Renderer &renderer);
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
-	void freeTextBox(UiElementInstanceID elementInstID);
+	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
 	UiElementInstanceID createButton(const UiElementInitInfo &initInfo); // @todo provide button size + callback
 	void freeButton(UiElementInstanceID elementInstID);

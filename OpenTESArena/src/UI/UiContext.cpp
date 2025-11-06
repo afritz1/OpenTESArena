@@ -1,7 +1,7 @@
 #include "UiContext.h"
 #include "UiManager.h"
 
-void UiContextElements::free(UiManager &uiManager)
+void UiContextElements::free(UiManager &uiManager, Renderer &renderer)
 {
 	for (const UiElementInstanceID instID : this->imageElementInstIDs)
 	{
@@ -12,7 +12,7 @@ void UiContextElements::free(UiManager &uiManager)
 
 	for (const UiElementInstanceID instID : this->textBoxElementInstIDs)
 	{
-		uiManager.freeTextBox(instID);
+		uiManager.freeTextBox(instID, renderer);
 	}
 
 	this->textBoxElementInstIDs.clear();

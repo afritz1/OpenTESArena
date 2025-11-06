@@ -41,7 +41,7 @@ struct UiElement
 	int drawOrder; // Higher is drawn last.
 	UiRenderSpace renderSpace;
 
-	UiTransformInstanceID transformInstID;
+	UiTransformInstanceID transformInstID; // Points to transform used with position + size on-screen for rendering.
 	bool active;
 
 	UiElementType type;

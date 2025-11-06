@@ -1,4 +1,6 @@
+#include "FontLibrary.h"
 #include "GuiUtils.h"
+#include "TextRenderUtils.h"
 #include "UiCommand.h"
 #include "UiContext.h"
 #include "UiManager.h"
@@ -59,14 +61,14 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for image (scope %d, texture ID %d).", initInfo.contextType, textureID);
+		DebugLogErrorFormat("Couldn't allocate element for image (context %d, texture ID %d).", initInfo.contextType, textureID);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for image (scope %d, texture ID %d).", initInfo.contextType, textureID);
+		DebugLogErrorFormat("Couldn't allocate transform for image (context %d, texture ID %d).", initInfo.contextType, textureID);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -74,7 +76,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	const UiImageInstanceID imageInstID = this->images.alloc();
 	if (imageInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate image (scope %d, texture ID %d).", initInfo.contextType, textureID);
+		DebugLogErrorFormat("Couldn't allocate image (context %d, texture ID %d).", initInfo.contextType, textureID);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -115,19 +117,19 @@ void UiManager::freeImage(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo)
+UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, Renderer &renderer)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for text box (scope %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate element for text box (context %d).", initInfo.contextType);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for text box (scope %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate transform for text box (context %d).", initInfo.contextType);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -135,14 +137,29 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo)
 	const UiTextBoxInstanceID textBoxInstID = this->textBoxes.alloc();
 	if (textBoxInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate text box (scope %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate text box (context %d).", initInfo.contextType);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
 	}
 
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(textBoxInitInfo.fontName, &fontDefIndex))
+	{
+		DebugLogErrorFormat("Couldn't get font definition index for \"%s\".", textBoxInitInfo.fontName);
+		this->textBoxes.free(textBoxInstID);
+		this->transforms.free(transformInstID);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(textBoxInitInfo.worstCaseText, fontDef, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
+	const UiTextureID textBoxTextureID = renderer.createUiTexture(textureGenInfo.width, textureGenInfo.height);
+
 	UiTextBox &textBox = this->textBoxes.get(textBoxInstID);
-	textBox.init();
+	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.alignment, textBoxInitInfo.lineSpacing);
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
@@ -159,11 +176,11 @@ void UiManager::setTextBoxText(UiElementInstanceID elementInstID, const char *st
 
 	DebugAssert(element.type == UiElementType::TextBox);
 	UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
-	DebugNotImplemented();
-	//textBox.text = str;
+	textBox.text = str;
+	textBox.dirty = true;
 }
 
-void UiManager::freeTextBox(UiElementInstanceID elementInstID)
+void UiManager::freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer)
 {
 	UiElement *element = this->elements.tryGet(elementInstID);
 	if (element == nullptr)
@@ -172,6 +189,9 @@ void UiManager::freeTextBox(UiElementInstanceID elementInstID)
 	}
 
 	DebugAssert(element->type == UiElementType::TextBox);
+	UiTextBox &textBox = this->textBoxes.get(element->textBoxInstID);
+	textBox.free(renderer);
+
 	this->textBoxes.free(element->textBoxInstID);
 	this->transforms.free(element->transformInstID);
 	this->elements.free(elementInstID);
@@ -182,14 +202,14 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for button (scope %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate element for button (context %d).", initInfo.contextType);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for button (scope %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate transform for button (context %d).", initInfo.contextType);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -197,7 +217,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
 	const UiButtonInstanceID buttonInstID = this->buttons.alloc();
 	if (buttonInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate button (scope %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate button (context %d).", initInfo.contextType);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -394,9 +414,10 @@ void UiManager::update(double dt, Game &game)
 		}
 		case UiElementType::TextBox:
 		{
+			// @todo need to update the texture first if dirty
 			const UiTextBox &textBox = this->textBoxes.get(element->textBoxInstID);
-			// @todo text box texture
-			DebugNotImplemented();
+			const UiTextureID textBoxTextureID = textBox.textureID;
+			renderElement.id = textBoxTextureID;
 			break;
 		}
 		case UiElementType::Button:

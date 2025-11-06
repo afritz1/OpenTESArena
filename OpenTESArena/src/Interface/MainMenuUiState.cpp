@@ -2,6 +2,7 @@
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
 #include "../Rendering/Renderer.h"
+#include "../UI/ArenaFontName.h"
 
 MainMenuUiState::MainMenuUiState()
 {
@@ -23,7 +24,7 @@ void MainMenuUiState::allocate(UiManager &uiManager, TextureManager &textureMana
 
 void MainMenuUiState::free(UiManager &uiManager, Renderer &renderer)
 {
-	this->elements.free(uiManager);
+	this->elements.free(uiManager, renderer);
 
 	if (this->bgTextureID >= 0)
 	{
@@ -46,15 +47,31 @@ void MainMenuUiState::free(UiManager &uiManager, Renderer &renderer)
 
 void MainMenuUI::create(Game &game)
 {
+	Renderer &renderer = game.renderer;
 	UiManager &uiManager = game.uiManager;
 	MainMenuUiState &state = MainMenuUI::state;
-	state.allocate(uiManager, game.textureManager, game.renderer);
+	state.allocate(uiManager, game.textureManager, renderer);
 
 	UiElementInitInfo bgImageElementInitInfo;
 	bgImageElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
 	bgImageElementInitInfo.contextType = UiContextType::MainMenu;
 	const UiElementInstanceID bgImageElementInstID = uiManager.createImage(bgImageElementInitInfo, state.bgTextureID);
 	state.elements.imageElementInstIDs.emplace_back(bgImageElementInstID);
+
+	UiElementInitInfo testButtonTextBoxElementInitInfo;
+	testButtonTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
+	testButtonTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo testButtonTextBoxInitInfo;
+	testButtonTextBoxInitInfo.worstCaseText = std::string(5, TextRenderUtils::LARGEST_CHAR);
+	testButtonTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
+	testButtonTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
+	testButtonTextBoxInitInfo.alignment = MainMenuUiView::TestButtonTextAlignment;
+
+	const UiElementInstanceID testButtonTextBoxElementInstID = uiManager.createTextBox(testButtonTextBoxElementInitInfo, testButtonTextBoxInitInfo, renderer);
+	state.elements.textBoxElementInstIDs.emplace_back(testButtonTextBoxElementInstID);
+
+	// @todo: Ui buttons and text boxes from MainMenuPanel
 
 	state.testType = 0;
 	state.testIndex = 0;
@@ -63,7 +80,6 @@ void MainMenuUI::create(Game &game)
 
 	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
 
-	const Renderer &renderer = game.renderer;
 	const std::optional<Int2> dims = renderer.tryGetUiTextureDims(cursorTextureID);
 	DebugAssert(dims.has_value());
 

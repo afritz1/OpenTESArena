@@ -5,6 +5,7 @@
 
 #include <vector>
 
+class Renderer;
 class UiManager;
 
 // @todo Pop-up contexts like MessageBox will likely support an array of MessageBoxUiState for extra layers of pop-ups
@@ -42,7 +43,7 @@ struct UiContextElements
 	std::vector<UiElementInstanceID> buttonElementInstIDs;
 	std::vector<UiElementInstanceID> textBoxElementInstIDs;
 
-	void free(UiManager &uiManager);
+	void free(UiManager &uiManager, Renderer &renderer);
 };
 
 #endif
