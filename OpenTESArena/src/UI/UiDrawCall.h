@@ -4,7 +4,7 @@
 #include <functional>
 #include <optional>
 
-#include "PivotType.h"
+#include "UiPivotType.h"
 #include "UiRenderSpace.h"
 #include "../Math/Rect.h"
 #include "../Math/Vector2.h"
@@ -13,7 +13,7 @@
 using UiDrawCallTextureFunc = std::function<UiTextureID()>;
 using UiDrawCallPositionFunc = std::function<Int2()>;
 using UiDrawCallSizeFunc = std::function<Int2()>;
-using UiDrawCallPivotFunc = std::function<PivotType()>;
+using UiDrawCallPivotFunc = std::function<UiPivotType()>;
 using UiDrawCallActiveFunc = std::function<bool()>;
 
 struct UiDrawCallInitInfo
@@ -28,7 +28,7 @@ struct UiDrawCallInitInfo
 	Int2 size;
 
 	UiDrawCallPivotFunc pivotFunc;
-	PivotType pivotType;
+	UiPivotType pivotType;
 
 	UiDrawCallActiveFunc activeFunc;
 
@@ -57,7 +57,7 @@ struct UiDrawCall
 	static UiDrawCallTextureFunc makeTextureFunc(UiTextureID id);
 	static UiDrawCallPositionFunc makePositionFunc(const Int2 &position);
 	static UiDrawCallSizeFunc makeSizeFunc(const Int2 &size);
-	static UiDrawCallPivotFunc makePivotFunc(PivotType pivotType);
+	static UiDrawCallPivotFunc makePivotFunc(UiPivotType pivotType);
 	static bool defaultActiveFunc();
 };
 

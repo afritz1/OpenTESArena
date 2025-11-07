@@ -1105,7 +1105,7 @@ void Game::loop()
 				const Int2 windowDims = this->window.getPixelDimensions();
 				const Rect debugInfoTextBoxRect = this->debugInfoTextBox.getRect();
 				const Rect debugInfoPresentRect = GuiUtils::makeWindowSpaceRect(debugInfoTextBoxRect.x, debugInfoTextBoxRect.y, debugInfoTextBoxRect.width, debugInfoTextBoxRect.height,
-					PivotType::TopLeft, UiRenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());
+					UiPivotType::TopLeft, UiRenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());
 
 				debugInfoRenderElement.id = this->debugInfoTextBox.getTextureID();
 				debugInfoRenderElement.rect = debugInfoPresentRect;

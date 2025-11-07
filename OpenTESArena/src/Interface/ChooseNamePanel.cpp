@@ -79,7 +79,7 @@ bool ChooseNamePanel::init()
 	parchmentDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
 	parchmentDrawCallInitInfo.position = ChooseNameUiView::getTitleTextureCenter();
 	parchmentDrawCallInitInfo.size = this->parchmentTextureRef.getDimensions();
-	parchmentDrawCallInitInfo.pivotType = PivotType::Middle;
+	parchmentDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(parchmentDrawCallInitInfo);
 
 	const Rect titleTextBoxRect = this->titleTextBox.getRect();
@@ -87,7 +87,7 @@ bool ChooseNamePanel::init()
 	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
 	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
 	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
-	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	titleDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(titleDrawCallInitInfo);
 
 	const Rect entryTextBoxRect = this->entryTextBox.getRect();
@@ -95,7 +95,7 @@ bool ChooseNamePanel::init()
 	nameEntryDrawCallInitInfo.textureFunc = [this]() { return this->entryTextBox.getTextureID(); };
 	nameEntryDrawCallInitInfo.position = entryTextBoxRect.getCenter();
 	nameEntryDrawCallInitInfo.size = entryTextBoxRect.getSize();
-	nameEntryDrawCallInitInfo.pivotType = PivotType::Middle;
+	nameEntryDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(nameEntryDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

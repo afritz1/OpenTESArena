@@ -3,7 +3,7 @@
 
 #include "../Math/Vector2.h"
 
-enum class PivotType;
+enum class UiPivotType;
 
 // Determines logical dimensions for the layout and rendering of an element.
 enum class UiTransformSizeType
@@ -19,12 +19,12 @@ struct UiTransform
 	Int2 position;
 	Int2 size; // Only used if size type is manual.
 	UiTransformSizeType sizeType;
-	PivotType pivotType;
+	UiPivotType pivotType;
 	UiTransformInstanceID parentInstID;
 
 	UiTransform();
 
-	void init(Int2 position, Int2 size, UiTransformSizeType sizeType, PivotType pivotType);
+	void init(Int2 position, Int2 size, UiTransformSizeType sizeType, UiPivotType pivotType);
 };
 
 #endif

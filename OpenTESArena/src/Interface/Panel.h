@@ -69,8 +69,8 @@ protected:
 	void clearButtonProxies();
 
 	void addDrawCall(const UiDrawCallInitInfo &initInfo);
-	void addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCallActiveFunc &activeFunc);
-	void addCursorDrawCall(UiTextureID textureID, PivotType pivotType);
+	void addCursorDrawCall(UiTextureID textureID, UiPivotType pivotType, const UiDrawCallActiveFunc &activeFunc);
+	void addCursorDrawCall(UiTextureID textureID, UiPivotType pivotType);
 
 	void clearDrawCalls();
 public:

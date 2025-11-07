@@ -116,7 +116,7 @@ bool PauseMenuPanel::init()
 	gameWorldInterfaceDrawCallInitInfo.textureID = this->gameWorldInterfaceTextureRef.get();
 	gameWorldInterfaceDrawCallInitInfo.position = GameWorldUiView::getGameWorldInterfacePosition();
 	gameWorldInterfaceDrawCallInitInfo.size = this->gameWorldInterfaceTextureRef.getDimensions();
-	gameWorldInterfaceDrawCallInitInfo.pivotType = PivotType::Bottom;
+	gameWorldInterfaceDrawCallInitInfo.pivotType = UiPivotType::Bottom;
 	this->addDrawCall(gameWorldInterfaceDrawCallInitInfo);
 
 	constexpr GameWorldUiView::StatusGradientType gradientType = GameWorldUiView::StatusGradientType::Default;
@@ -147,7 +147,7 @@ bool PauseMenuPanel::init()
 	this->staminaBarTextureRef.init(staminaTextureID, renderer);
 	this->spellPointsBarTextureRef.init(spellPointsTextureID, renderer);
 
-	constexpr PivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
+	constexpr UiPivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
 
 	UiDrawCallInitInfo healthBarDrawCallInitInfo;
 	healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
@@ -225,7 +225,7 @@ bool PauseMenuPanel::init()
 	musicVolumeTextDrawCallInitInfo.textureFunc = [this]() { return this->musicTextBox.getTextureID(); };
 	musicVolumeTextDrawCallInitInfo.position = musicVolumeRect.getCenter();
 	musicVolumeTextDrawCallInitInfo.size = musicVolumeRect.getSize();
-	musicVolumeTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	musicVolumeTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(musicVolumeTextDrawCallInitInfo);
 
 	const Rect soundVolumeRect = this->soundTextBox.getRect();
@@ -233,7 +233,7 @@ bool PauseMenuPanel::init()
 	soundVolumeTextDrawCallInitInfo.textureFunc = [this]() { return this->soundTextBox.getTextureID(); };
 	soundVolumeTextDrawCallInitInfo.position = soundVolumeRect.getCenter();
 	soundVolumeTextDrawCallInitInfo.size = soundVolumeRect.getSize();
-	soundVolumeTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	soundVolumeTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(soundVolumeTextDrawCallInitInfo);
 
 	const Rect optionsTextRect = this->optionsTextBox.getRect();
@@ -245,7 +245,7 @@ bool PauseMenuPanel::init()
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::TopLeft);
 
 	return true;
 }

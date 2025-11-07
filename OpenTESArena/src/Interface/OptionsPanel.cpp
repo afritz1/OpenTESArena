@@ -211,7 +211,7 @@ bool OptionsPanel::init()
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::TopLeft);
 
 	// Create option groups.
 	for (int i = 0; i < OptionsUiModel::TAB_COUNT; i++)

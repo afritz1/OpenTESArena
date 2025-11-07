@@ -118,7 +118,7 @@ bool TextCinematicPanel::init(int textCinematicDefIndex, double secondsPerImage,
 	textDrawCallInitInfo.textureFunc = [this]() { return this->textBox.getTextureID(); };
 	textDrawCallInitInfo.position = textBoxRect.getCenter();
 	textDrawCallInitInfo.size = textBoxRect.getSize();
-	textDrawCallInitInfo.pivotType = PivotType::Middle;
+	textDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(textDrawCallInitInfo);
 
 	// Optionally initialize speech state if speech is available.

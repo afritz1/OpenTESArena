@@ -89,7 +89,7 @@ bool ImageSequencePanel::init(Span<const std::string> paletteNames,
 
 	drawCallInitInfo.position = Int2::Zero;
 	drawCallInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
-	drawCallInitInfo.pivotType = PivotType::TopLeft;
+	drawCallInitInfo.pivotType = UiPivotType::TopLeft;
 	this->addDrawCall(drawCallInitInfo);
 
 	this->onFinished = onFinished;

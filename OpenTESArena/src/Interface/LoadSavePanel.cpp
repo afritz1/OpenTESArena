@@ -73,13 +73,13 @@ bool LoadSavePanel::init(LoadSavePanel::Type type)
 
 		saveTextDrawCallInitInfo.position = textBoxRect.getCenter();
 		saveTextDrawCallInitInfo.size = textBoxRect.getSize();
-		saveTextDrawCallInitInfo.pivotType = PivotType::Middle;
+		saveTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 		this->addDrawCall(saveTextDrawCallInitInfo);
 	}
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::TopLeft);
 
 	this->type = type;
 	return true;

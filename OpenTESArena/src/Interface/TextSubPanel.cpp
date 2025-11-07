@@ -51,7 +51,7 @@ bool TextSubPanel::init(const TextBoxInitInfo &textBoxInitInfo, const std::strin
 	textureDrawCallInitInfo.textureID = this->textureRef.get();
 	textureDrawCallInitInfo.position = textureCenter;
 	textureDrawCallInitInfo.size = this->textureRef.getDimensions();
-	textureDrawCallInitInfo.pivotType = PivotType::Middle;
+	textureDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(textureDrawCallInitInfo);
 
 	const Rect textBoxRect = this->textBox.getRect();
@@ -59,14 +59,14 @@ bool TextSubPanel::init(const TextBoxInitInfo &textBoxInitInfo, const std::strin
 	textDrawCallInitInfo.textureID = this->textBox.getTextureID();
 	textDrawCallInitInfo.position = textBoxRect.getCenter();
 	textDrawCallInitInfo.size = textBoxRect.getSize();
-	textDrawCallInitInfo.pivotType = PivotType::Middle;
+	textDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(textDrawCallInitInfo);
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::TopLeft);
 
 	this->textureCenter = textureCenter;
 

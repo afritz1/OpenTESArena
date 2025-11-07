@@ -87,7 +87,7 @@ bool ChooseClassCreationPanel::init()
 	UiDrawCallInitInfo parchmentDrawCallInitInfo;
 	parchmentDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
 	parchmentDrawCallInitInfo.size = this->parchmentTextureRef.getDimensions();
-	parchmentDrawCallInitInfo.pivotType = PivotType::Middle;
+	parchmentDrawCallInitInfo.pivotType = UiPivotType::Middle;
 
 	UiDrawCallInitInfo titleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
 	titleParchmentDrawCallInitInfo.position = ChooseClassCreationUiView::getTitleTextureCenter();
@@ -106,7 +106,7 @@ bool ChooseClassCreationPanel::init()
 	titleTextDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
 	titleTextDrawCallInitInfo.position = titleTextBoxRect.getCenter();
 	titleTextDrawCallInitInfo.size = titleTextBoxRect.getSize();
-	titleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	titleTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(titleTextDrawCallInitInfo);
 
 	const Rect generateTextBoxRect = this->generateTextBox.getRect();
@@ -114,7 +114,7 @@ bool ChooseClassCreationPanel::init()
 	generateTextDrawCallInitInfo.textureID = this->generateTextBox.getTextureID();
 	generateTextDrawCallInitInfo.position = generateTextBoxRect.getCenter();
 	generateTextDrawCallInitInfo.size = generateTextBoxRect.getSize();
-	generateTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	generateTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(generateTextDrawCallInitInfo);
 
 	const Rect selectTextBoxRect = this->selectTextBox.getRect();
@@ -122,7 +122,7 @@ bool ChooseClassCreationPanel::init()
 	selectTextDrawCallInitInfo.textureID = this->selectTextBox.getTextureID();
 	selectTextDrawCallInitInfo.position = selectTextBoxRect.getCenter();
 	selectTextDrawCallInitInfo.size = selectTextBoxRect.getSize();
-	selectTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	selectTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(selectTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

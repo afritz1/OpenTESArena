@@ -3,7 +3,7 @@
 #include "SDL.h"
 
 #include "GuiUtils.h"
-#include "PivotType.h"
+#include "UiPivotType.h"
 #include "UiRenderSpace.h"
 #include "../Math/Rect.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -12,7 +12,7 @@
 
 namespace
 {
-	void MakeRenderElementPercents(int x, int y, int width, int height, int windowWidth, int windowHeight, UiRenderSpace renderSpace, PivotType pivotType,
+	void MakeRenderElementPercents(int x, int y, int width, int height, int windowWidth, int windowHeight, UiRenderSpace renderSpace, UiPivotType pivotType,
 		double *outXPercent, double *outYPercent, double *outWPercent, double *outHPercent)
 	{
 		double renderSpaceWidthReal, renderSpaceHeightReal;
@@ -33,21 +33,21 @@ namespace
 
 		const int xOffset = [width, pivotType]()
 		{
-			if ((pivotType == PivotType::TopLeft) ||
-				(pivotType == PivotType::MiddleLeft) ||
-				(pivotType == PivotType::BottomLeft))
+			if ((pivotType == UiPivotType::TopLeft) ||
+				(pivotType == UiPivotType::MiddleLeft) ||
+				(pivotType == UiPivotType::BottomLeft))
 			{
 				return 0;
 			}
-			else if ((pivotType == PivotType::Top) ||
-				(pivotType == PivotType::Middle) ||
-				(pivotType == PivotType::Bottom))
+			else if ((pivotType == UiPivotType::Top) ||
+				(pivotType == UiPivotType::Middle) ||
+				(pivotType == UiPivotType::Bottom))
 			{
 				return -width / 2;
 			}
-			else if ((pivotType == PivotType::TopRight) ||
-				(pivotType == PivotType::MiddleRight) ||
-				(pivotType == PivotType::BottomRight))
+			else if ((pivotType == UiPivotType::TopRight) ||
+				(pivotType == UiPivotType::MiddleRight) ||
+				(pivotType == UiPivotType::BottomRight))
 			{
 				return -width;
 			}
@@ -59,21 +59,21 @@ namespace
 
 		const int yOffset = [height, pivotType]()
 		{
-			if ((pivotType == PivotType::TopLeft) ||
-				(pivotType == PivotType::Top) ||
-				(pivotType == PivotType::TopRight))
+			if ((pivotType == UiPivotType::TopLeft) ||
+				(pivotType == UiPivotType::Top) ||
+				(pivotType == UiPivotType::TopRight))
 			{
 				return 0;
 			}
-			else if ((pivotType == PivotType::MiddleLeft) ||
-				(pivotType == PivotType::Middle) ||
-				(pivotType == PivotType::MiddleRight))
+			else if ((pivotType == UiPivotType::MiddleLeft) ||
+				(pivotType == UiPivotType::Middle) ||
+				(pivotType == UiPivotType::MiddleRight))
 			{
 				return -height / 2;
 			}
-			else if ((pivotType == PivotType::BottomLeft) ||
-				(pivotType == PivotType::Bottom) ||
-				(pivotType == PivotType::BottomRight))
+			else if ((pivotType == UiPivotType::BottomLeft) ||
+				(pivotType == UiPivotType::Bottom) ||
+				(pivotType == UiPivotType::BottomRight))
 			{
 				return -height;
 			}
@@ -90,7 +90,7 @@ namespace
 	}
 }
 
-Rect GuiUtils::makeWindowSpaceRect(int x, int y, int width, int height, PivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
+Rect GuiUtils::makeWindowSpaceRect(int x, int y, int width, int height, UiPivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
 {
 	double xPercent, yPercent, widthPercent, heightPercent;
 	MakeRenderElementPercents(x, y, width, height, windowWidth, windowHeight, renderSpace, pivotType, &xPercent, &yPercent, &widthPercent, &heightPercent);
@@ -153,7 +153,7 @@ Rect GuiUtils::makeWindowSpaceRect(int x, int y, int width, int height, PivotTyp
 	return windowRect;
 }
 
-Rect GuiUtils::makeWindowSpaceRect(Rect rect, PivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
+Rect GuiUtils::makeWindowSpaceRect(Rect rect, UiPivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
 {
 	return GuiUtils::makeWindowSpaceRect(rect.x, rect.y, rect.width, rect.height, pivotType, renderSpace, windowWidth, windowHeight, letterboxRect);
 }

@@ -64,7 +64,7 @@ bool FastTravelSubPanel::init()
 
 	drawCallInitInfo.position = FastTravelUiView::getAnimationTextureCenter();
 	drawCallInitInfo.size = Int2(textureFileMetadata.getWidth(0), textureFileMetadata.getHeight(0));
-	drawCallInitInfo.pivotType = PivotType::Middle;
+	drawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(drawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

@@ -8,8 +8,8 @@
 
 class UiManager;
 
-enum class PivotType;
 enum class UiContextType;
+enum class UiPivotType;
 enum class UiRenderSpace;
 enum class UiTransformSizeType;
 
@@ -28,7 +28,7 @@ struct UiElementInitInfo
 	Int2 position;
 	Int2 size;
 	UiTransformSizeType sizeType;
-	PivotType pivotType;
+	UiPivotType pivotType;
 	UiContextType contextType;
 	int drawOrder;
 	UiRenderSpace renderSpace;

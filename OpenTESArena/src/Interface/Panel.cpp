@@ -87,7 +87,7 @@ void Panel::populateCommandList(UiCommandList &commandList)
 		const UiTextureID textureID = drawCall.textureFunc();
 		const Int2 position = drawCall.positionFunc();
 		const Int2 size = drawCall.sizeFunc();
-		const PivotType pivotType = drawCall.pivotFunc();
+		const UiPivotType pivotType = drawCall.pivotFunc();
 		const UiRenderSpace renderSpace = drawCall.renderSpace;
 		const std::optional<Rect> &clipRect = drawCall.clipRect;
 
@@ -96,7 +96,7 @@ void Panel::populateCommandList(UiCommandList &commandList)
 		Rect presentClipRect;
 		if (clipRect.has_value())
 		{
-			presentClipRect = GuiUtils::makeWindowSpaceRect(*clipRect, PivotType::TopLeft, renderSpace, windowDims.x, windowDims.y, letterboxRect);
+			presentClipRect = GuiUtils::makeWindowSpaceRect(*clipRect, UiPivotType::TopLeft, renderSpace, windowDims.x, windowDims.y, letterboxRect);
 		}
 
 		this->renderElementsCache.emplace_back(RenderElement2D(textureID, presentRect, presentClipRect));
@@ -206,7 +206,7 @@ void Panel::addDrawCall(const UiDrawCallInitInfo &initInfo)
 	this->drawCalls.emplace_back(initInfo);
 }
 
-void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const UiDrawCallActiveFunc &activeFunc)
+void Panel::addCursorDrawCall(UiTextureID textureID, UiPivotType pivotType, const UiDrawCallActiveFunc &activeFunc)
 {
 	UiDrawCallTextureFunc textureFunc = UiDrawCall::makeTextureFunc(textureID);
 
@@ -249,7 +249,7 @@ void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType, const 
 		renderSpace);
 }
 
-void Panel::addCursorDrawCall(UiTextureID textureID, PivotType pivotType)
+void Panel::addCursorDrawCall(UiTextureID textureID, UiPivotType pivotType)
 {
 	this->addCursorDrawCall(textureID, pivotType, UiDrawCall::defaultActiveFunc);
 }

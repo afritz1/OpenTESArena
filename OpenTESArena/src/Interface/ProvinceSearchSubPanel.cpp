@@ -152,7 +152,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	parchmentTextureDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
 	parchmentTextureDrawCallInitInfo.position = Int2((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 	parchmentTextureDrawCallInitInfo.size = Int2(ProvinceSearchUiView::TextureWidth, ProvinceSearchUiView::TextureHeight);
-	parchmentTextureDrawCallInitInfo.pivotType = PivotType::Middle;
+	parchmentTextureDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	parchmentTextureDrawCallInitInfo.activeFunc = textEntryActiveFunc;
 	this->addDrawCall(parchmentTextureDrawCallInitInfo);
 
@@ -202,7 +202,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, listActiveFunc);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::TopLeft, listActiveFunc);
 
 	this->provinceMapPanel = &provinceMapPanel;
 	this->mode = ProvinceSearchUiModel::Mode::TextEntry;

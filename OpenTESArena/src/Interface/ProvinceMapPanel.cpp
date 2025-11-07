@@ -172,13 +172,13 @@ bool ProvinceMapPanel::init(int provinceID)
 	};
 
 	hoveredLocationTextDrawCallInitInfo.size = this->hoveredLocationTextBox.getRect().getSize();
-	hoveredLocationTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	hoveredLocationTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	hoveredLocationTextDrawCallInitInfo.activeFunc = [this]() { return !this->isPaused(); };
 	this->addDrawCall(hoveredLocationTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft, hoveredLocationTextDrawCallInitInfo.activeFunc);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::TopLeft, hoveredLocationTextDrawCallInitInfo.activeFunc);
 
 	this->blinkState.init(ProvinceMapUiView::BlinkPeriodSeconds, true);
 	this->provinceID = provinceID;
@@ -304,7 +304,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 
 			locationIconDrawCallInitInfo.position = Int2(locationDef.getScreenX(), locationDef.getScreenY());
 			locationIconDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(locationIconDrawCallInitInfo.textureFunc());
-			locationIconDrawCallInitInfo.pivotType = PivotType::Middle;
+			locationIconDrawCallInitInfo.pivotType = UiPivotType::Middle;
 			this->addDrawCall(locationIconDrawCallInitInfo);
 
 			UiDrawCallTextureFunc highlightIconTextureFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
@@ -406,7 +406,7 @@ void ProvinceMapPanel::initLocationIconUI(int provinceID)
 			highlightIconDrawCallInitInfo.textureFunc = highlightIconTextureFunc;
 			highlightIconDrawCallInitInfo.position = locationIconDrawCallInitInfo.position;
 			highlightIconDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(highlightIconTextureFunc());
-			highlightIconDrawCallInitInfo.pivotType = PivotType::Middle;
+			highlightIconDrawCallInitInfo.pivotType = UiPivotType::Middle;
 			highlightIconDrawCallInitInfo.activeFunc = [this, provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
 			{
 				const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);

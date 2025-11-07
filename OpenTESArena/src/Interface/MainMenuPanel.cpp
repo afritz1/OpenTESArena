@@ -297,7 +297,7 @@ void MainMenuPanel::initTestUI()
 	testButtonTextDrawCallInitInfo.textureID = this->testButtonTextBox.getTextureID();
 	testButtonTextDrawCallInitInfo.position = testButtonTextBoxRect.getCenter();
 	testButtonTextDrawCallInitInfo.size = testButtonTextBoxRect.getSize();
-	testButtonTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	testButtonTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(testButtonTextDrawCallInitInfo);
 
 	const std::string testTypeText = "Test type: " + MainMenuUiModel::getTestTypeName(this->testType);
@@ -312,7 +312,7 @@ void MainMenuPanel::initTestUI()
 	testTypeTextDrawCallInitInfo.textureFunc = [this]() { return this->testTypeTextBox.getTextureID(); };
 	testTypeTextDrawCallInitInfo.position = Int2(testTypeTextBoxRect.getRight(), testTypeTextBoxRect.getTop());
 	testTypeTextDrawCallInitInfo.size = testTypeTextBoxRect.getSize();
-	testTypeTextDrawCallInitInfo.pivotType = PivotType::MiddleRight;
+	testTypeTextDrawCallInitInfo.pivotType = UiPivotType::MiddleRight;
 	this->addDrawCall(testTypeTextDrawCallInitInfo);
 
 	const std::string testNameText = "Test location: " + MainMenuUiModel::getSelectedTestName(game, this->testType, this->testIndex, this->testIndex2);
@@ -327,7 +327,7 @@ void MainMenuPanel::initTestUI()
 	testNameTextDrawCallInitInfo.textureFunc = [this]() { return this->testNameTextBox.getTextureID(); };
 	testNameTextDrawCallInitInfo.position = Int2(testNameTextBoxRect.getRight(), testNameTextBoxRect.getTop());
 	testNameTextDrawCallInitInfo.size = testNameTextBoxRect.getSize();
-	testNameTextDrawCallInitInfo.pivotType = PivotType::MiddleRight;
+	testNameTextDrawCallInitInfo.pivotType = UiPivotType::MiddleRight;
 	this->addDrawCall(testNameTextDrawCallInitInfo);
 
 	const ArenaWeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(this->testWeather);
@@ -343,7 +343,7 @@ void MainMenuPanel::initTestUI()
 	testWeatherTextDrawCallInitInfo.textureFunc = [this]() { return this->testWeatherTextBox.getTextureID(); };
 	testWeatherTextDrawCallInitInfo.position = Int2(testWeatherTextBoxRect.getRight(), testWeatherTextBoxRect.getTop());
 	testWeatherTextDrawCallInitInfo.size = testWeatherTextBoxRect.getSize();
-	testWeatherTextDrawCallInitInfo.pivotType = PivotType::MiddleRight;
+	testWeatherTextDrawCallInitInfo.pivotType = UiPivotType::MiddleRight;
 	testWeatherTextDrawCallInitInfo.activeFunc = testWeatherArrowDrawCallInitInfo.activeFunc;
 	this->addDrawCall(testWeatherTextDrawCallInitInfo);
 }

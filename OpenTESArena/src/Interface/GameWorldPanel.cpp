@@ -456,7 +456,7 @@ void GameWorldPanel::initUiDrawCalls()
 		compassFrameDrawCallInitInfo.textureID = this->compassFrameTextureRef.get();
 		compassFrameDrawCallInitInfo.position = GameWorldUiView::getCompassFramePosition();
 		compassFrameDrawCallInitInfo.size = this->compassFrameTextureRef.getDimensions();
-		compassFrameDrawCallInitInfo.pivotType = PivotType::Top;
+		compassFrameDrawCallInitInfo.pivotType = UiPivotType::Top;
 		compassFrameDrawCallInitInfo.activeFunc = compassSliderDrawCallInitInfo.activeFunc;
 		this->addDrawCall(compassFrameDrawCallInitInfo);
 
@@ -477,7 +477,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return static_cast<int>(std::round(static_cast<double>(originalXDelta) * (scaleXRatio * aspectRatioMultiplier)));
 		};
 
-		constexpr PivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
+		constexpr UiPivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
 		const UiDrawCallActiveFunc statusBarActiveFunc = [this]() { return !this->isPaused(); };
 
 		UiDrawCallInitInfo healthBarDrawCallInitInfo;
@@ -544,7 +544,7 @@ void GameWorldPanel::initUiDrawCalls()
 		triggerTextDrawCallInitInfo.textureFunc = [this]() { return this->triggerText.getTextureID(); };
 		triggerTextDrawCallInitInfo.position = GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight());
 		triggerTextDrawCallInitInfo.size = this->triggerText.getRect().getSize();
-		triggerTextDrawCallInitInfo.pivotType = PivotType::Bottom;
+		triggerTextDrawCallInitInfo.pivotType = UiPivotType::Bottom;
 		triggerTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
@@ -557,7 +557,7 @@ void GameWorldPanel::initUiDrawCalls()
 		actionTextDrawCallInitInfo.textureFunc = [this]() { return this->actionText.getTextureID(); };
 		actionTextDrawCallInitInfo.position = GameWorldUiView::getActionTextPosition();
 		actionTextDrawCallInitInfo.size = this->actionText.getRect().getSize();
-		actionTextDrawCallInitInfo.pivotType = PivotType::Top;
+		actionTextDrawCallInitInfo.pivotType = UiPivotType::Top;
 		actionTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
@@ -585,7 +585,7 @@ void GameWorldPanel::initUiDrawCalls()
 		reticleDrawCallInitInfo.textureID = this->modernModeReticleTextureRef.get();
 		reticleDrawCallInitInfo.position = GameWorldUiView::getInterfaceCenter(game);
 		reticleDrawCallInitInfo.size = this->modernModeReticleTextureRef.getDimensions();
-		reticleDrawCallInitInfo.pivotType = PivotType::Middle;
+		reticleDrawCallInitInfo.pivotType = UiPivotType::Middle;
 		this->addDrawCall(reticleDrawCallInitInfo);
 	}
 	else
@@ -636,7 +636,7 @@ void GameWorldPanel::initUiDrawCalls()
 		gameWorldInterfaceDrawCallInitInfo.textureID = this->gameWorldInterfaceTextureRef.get();
 		gameWorldInterfaceDrawCallInitInfo.position = GameWorldUiView::getGameWorldInterfacePosition();
 		gameWorldInterfaceDrawCallInitInfo.size = this->gameWorldInterfaceTextureRef.getDimensions();
-		gameWorldInterfaceDrawCallInitInfo.pivotType = PivotType::Bottom;
+		gameWorldInterfaceDrawCallInitInfo.pivotType = UiPivotType::Bottom;
 		this->addDrawCall(gameWorldInterfaceDrawCallInitInfo);
 
 		const Rect portraitRect = GameWorldUiView::getPlayerPortraitRect();
@@ -653,7 +653,7 @@ void GameWorldPanel::initUiDrawCalls()
 		playerPortraitDrawCallInitInfo.size = this->playerPortraitTextureRef.getDimensions();
 		this->addDrawCall(playerPortraitDrawCallInitInfo);
 
-		constexpr PivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
+		constexpr UiPivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
 
 		UiDrawCallInitInfo healthBarDrawCallInitInfo;
 		healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
@@ -735,7 +735,7 @@ void GameWorldPanel::initUiDrawCalls()
 		compassFrameDrawCallInitInfo.textureID = this->compassFrameTextureRef.get();
 		compassFrameDrawCallInitInfo.position = GameWorldUiView::getCompassFramePosition();
 		compassFrameDrawCallInitInfo.size = this->compassFrameTextureRef.getDimensions();
-		compassFrameDrawCallInitInfo.pivotType = PivotType::Top;
+		compassFrameDrawCallInitInfo.pivotType = UiPivotType::Top;
 		compassFrameDrawCallInitInfo.activeFunc = compassSliderDrawCallInitInfo.activeFunc;
 		this->addDrawCall(compassFrameDrawCallInitInfo);
 
@@ -743,7 +743,7 @@ void GameWorldPanel::initUiDrawCalls()
 		triggerTextDrawCallInitInfo.textureFunc = [this]() { return this->triggerText.getTextureID(); };
 		triggerTextDrawCallInitInfo.position = GameWorldUiView::getTriggerTextPosition(game, this->gameWorldInterfaceTextureRef.getHeight());
 		triggerTextDrawCallInitInfo.size = this->triggerText.getRect().getSize();
-		triggerTextDrawCallInitInfo.pivotType = PivotType::Bottom;
+		triggerTextDrawCallInitInfo.pivotType = UiPivotType::Bottom;
 		triggerTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
@@ -756,7 +756,7 @@ void GameWorldPanel::initUiDrawCalls()
 		actionTextDrawCallInitInfo.textureFunc = [this]() { return this->actionText.getTextureID(); };
 		actionTextDrawCallInitInfo.position = GameWorldUiView::getActionTextPosition();
 		actionTextDrawCallInitInfo.size = this->actionText.getRect().getSize();
-		actionTextDrawCallInitInfo.pivotType = PivotType::Top;
+		actionTextDrawCallInitInfo.pivotType = UiPivotType::Top;
 		actionTextDrawCallInitInfo.activeFunc = [this, &game]()
 		{
 			const auto &gameState = game.gameState;
@@ -817,7 +817,7 @@ void GameWorldPanel::initUiDrawCalls()
 			return tooltipTextureRef.getDimensions();
 		};
 
-		tooltipDrawCallInitInfo.pivotType = PivotType::BottomLeft;
+		tooltipDrawCallInitInfo.pivotType = UiPivotType::BottomLeft;
 		tooltipDrawCallInitInfo.activeFunc = [this, &game]()
 		{
 			if (this->isPaused())
@@ -895,10 +895,10 @@ void GameWorldPanel::initUiDrawCalls()
 			const std::optional<int> index = getCursorRegionIndex();
 			if (!index.has_value())
 			{
-				return PivotType::TopLeft;
+				return UiPivotType::TopLeft;
 			}
 
-			Span<const PivotType> arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
+			Span<const UiPivotType> arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
 			return arrowCursorPivotTypes[*index];
 		};
 

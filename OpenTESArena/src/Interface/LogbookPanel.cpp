@@ -71,12 +71,12 @@ bool LogbookPanel::init()
 	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
 	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
 	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
-	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	titleDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(titleDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::TopLeft);
 
 	return true;
 }

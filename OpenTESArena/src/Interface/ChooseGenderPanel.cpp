@@ -72,7 +72,7 @@ bool ChooseGenderPanel::init()
 	UiDrawCallInitInfo parchmentDrawCallInitInfo;
 	parchmentDrawCallInitInfo.textureID = this->parchmentTextureRef.get();
 	parchmentDrawCallInitInfo.size = this->parchmentTextureRef.getDimensions();
-	parchmentDrawCallInitInfo.pivotType = PivotType::Middle;
+	parchmentDrawCallInitInfo.pivotType = UiPivotType::Middle;
 
 	UiDrawCallInitInfo titleParchmentDrawCallInitInfo = parchmentDrawCallInitInfo;
 	titleParchmentDrawCallInitInfo.position = ChooseGenderUiView::getTitleTextureCenter();
@@ -91,7 +91,7 @@ bool ChooseGenderPanel::init()
 	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
 	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
 	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
-	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	titleDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(titleDrawCallInitInfo);
 
 	const Rect maleTextBoxRect = this->maleTextBox.getRect();
@@ -99,7 +99,7 @@ bool ChooseGenderPanel::init()
 	maleTextDrawCallInitInfo.textureID = this->maleTextBox.getTextureID();
 	maleTextDrawCallInitInfo.position = maleTextBoxRect.getCenter();
 	maleTextDrawCallInitInfo.size = maleTextBoxRect.getSize();
-	maleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	maleTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(maleTextDrawCallInitInfo);
 
 	const Rect femaleTextBoxRect = this->femaleTextBox.getRect();
@@ -107,7 +107,7 @@ bool ChooseGenderPanel::init()
 	femaleTextDrawCallInitInfo.textureID = this->femaleTextBox.getTextureID();
 	femaleTextDrawCallInitInfo.position = femaleTextBoxRect.getCenter();
 	femaleTextDrawCallInitInfo.size = femaleTextBoxRect.getSize();
-	femaleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	femaleTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(femaleTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

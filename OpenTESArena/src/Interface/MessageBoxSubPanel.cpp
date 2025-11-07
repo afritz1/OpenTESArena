@@ -180,7 +180,7 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 	titleBgDrawCallInitInfo.textureID = this->titleBackgroundTextureRef.get();
 	titleBgDrawCallInitInfo.position = this->titleBackgroundRect.getCenter();
 	titleBgDrawCallInitInfo.size = this->titleBackgroundRect.getSize();
-	titleBgDrawCallInitInfo.pivotType = PivotType::Middle;
+	titleBgDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(titleBgDrawCallInitInfo);
 
 	for (const MessageBoxItem &item : this->items)
@@ -189,7 +189,7 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 		itemBgDrawCallInitInfo.textureID = item.backgroundTextureRef.get();
 		itemBgDrawCallInitInfo.position = item.backgroundTextureRect.getCenter();
 		itemBgDrawCallInitInfo.size = item.backgroundTextureRect.getSize();
-		itemBgDrawCallInitInfo.pivotType = PivotType::Middle;
+		itemBgDrawCallInitInfo.pivotType = UiPivotType::Middle;
 		this->addDrawCall(itemBgDrawCallInitInfo);
 	}
 
@@ -198,7 +198,7 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 	titleTextDrawCallInitInfo.textureFunc = [this]() { return this->titleTextBox.getTextureID(); };
 	titleTextDrawCallInitInfo.position = titleTextBoxRect.getCenter();
 	titleTextDrawCallInitInfo.size = titleTextBoxRect.getSize();
-	titleTextDrawCallInitInfo.pivotType = PivotType::Middle;
+	titleTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(titleTextDrawCallInitInfo);
 
 	for (int i = 0; i < this->items.getCount(); i++)
@@ -224,13 +224,13 @@ bool MessageBoxSubPanel::init(const MessageBoxBackgroundProperties &backgroundPr
 			return itemRect.getSize();
 		};
 
-		itemTextDrawCallInitInfo.pivotType = PivotType::Middle;
+		itemTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
 		this->addDrawCall(itemTextDrawCallInitInfo);
 	}
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::TopLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::TopLeft);
 
 	this->onClosed = onClosed;
 

@@ -5,9 +5,9 @@
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
-#include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../UI/UiPivotType.h"
 #include "../Utilities/Color.h"
 
 class FontLibrary;
@@ -16,7 +16,7 @@ class TextureManager;
 
 namespace CommonUiView
 {
-	constexpr PivotType DefaultCursorPivotType = PivotType::TopLeft;
+	constexpr UiPivotType DefaultCursorPivotType = UiPivotType::TopLeft;
 
 	UiTextureID allocDefaultCursorTexture(TextureManager &textureManager, Renderer &renderer);
 

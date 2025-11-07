@@ -221,7 +221,7 @@ bool LootSubPanel::init(ItemInventory &itemInventory, const OnClosedFunction &on
 	tempTextDrawCallInitInfo.textureID = this->tempTextBox.getTextureID();
 	tempTextDrawCallInitInfo.position = tempTextBoxRect.getTopLeft();
 	tempTextDrawCallInitInfo.size = tempTextBoxRect.getSize();
-	tempTextDrawCallInitInfo.pivotType = PivotType::Top;
+	tempTextDrawCallInitInfo.pivotType = UiPivotType::Top;
 	this->addDrawCall(tempTextDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

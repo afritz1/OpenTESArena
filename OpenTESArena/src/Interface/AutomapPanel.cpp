@@ -131,7 +131,7 @@ bool AutomapPanel::init(const CoordDouble3 &playerCoord, const VoxelDouble2 &pla
 
 	const UiTextureID cursorTextureID = AutomapUiView::allocCursorTexture(textureManager, renderer);
 	this->cursorTextureRef.init(cursorTextureID, renderer);
-	this->addCursorDrawCall(this->cursorTextureRef.get(), PivotType::BottomLeft);
+	this->addCursorDrawCall(this->cursorTextureRef.get(), UiPivotType::BottomLeft);
 	
 	this->automapOffset = AutomapUiModel::makeAutomapOffset(playerCoordXZ.voxel);
 	return true;

@@ -295,7 +295,7 @@ bool ChooseAttributesPanel::init()
 	};
 
 	upDownArrowDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(this->upDownTextureRef.get());
-	upDownArrowDrawCallInitInfo.pivotType = PivotType::Middle;
+	upDownArrowDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(upDownArrowDrawCallInitInfo);
 
 	const Rect playerNameTextBoxRect = this->nameTextBox.getRect();

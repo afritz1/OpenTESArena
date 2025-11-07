@@ -11,9 +11,9 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/ListBox.h"
-#include "../UI/PivotType.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/TextBox.h"
+#include "../UI/UiPivotType.h"
 #include "../Utilities/Color.h"
 #include "../Voxels/VoxelFrustumCullingChunk.h"
 
@@ -76,17 +76,17 @@ namespace GameWorldUiView
 
 	// Arrow cursor pivots. These offset the drawn cursor relative to the mouse position so the cursor's
 	// click area is closer to the tip of each arrow.
-	constexpr std::array<PivotType, ArrowCursorRegionCount> ArrowCursorPivotTypes =
+	constexpr std::array<UiPivotType, ArrowCursorRegionCount> ArrowCursorPivotTypes =
 	{
-		PivotType::TopLeft,
-		PivotType::Top,
-		PivotType::TopRight,
-		PivotType::BottomLeft,
-		PivotType::Middle,
-		PivotType::BottomRight,
-		PivotType::MiddleLeft,
-		PivotType::Bottom,
-		PivotType::MiddleRight,
+		UiPivotType::TopLeft,
+		UiPivotType::Top,
+		UiPivotType::TopRight,
+		UiPivotType::BottomLeft,
+		UiPivotType::Middle,
+		UiPivotType::BottomRight,
+		UiPivotType::MiddleLeft,
+		UiPivotType::Bottom,
+		UiPivotType::MiddleRight,
 	};
 
 	enum class StatusGradientType
@@ -135,7 +135,7 @@ namespace GameWorldUiView
 	constexpr Color StaminaBarColor(195, 0, 0);
 	constexpr Rect SpellPointsBarRect(77, 168, 4, 26);
 	constexpr Color SpellPointsBarColor(0, 0, 203);
-	constexpr PivotType StatusBarPivotType = PivotType::BottomLeft;
+	constexpr UiPivotType StatusBarPivotType = UiPivotType::BottomLeft;
 
 	// Offsets from native window bottom left corner.
 	constexpr int StatusBarModernModeXOffset = 48;

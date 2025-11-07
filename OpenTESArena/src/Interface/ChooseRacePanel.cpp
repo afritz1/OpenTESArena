@@ -34,7 +34,7 @@ bool ChooseRacePanel::init()
 	noExitDrawCallInitInfo.textureID = this->noExitTextureRef.get();
 	noExitDrawCallInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
 	noExitDrawCallInitInfo.size = this->noExitTextureRef.getDimensions();
-	noExitDrawCallInitInfo.pivotType = PivotType::BottomRight;
+	noExitDrawCallInitInfo.pivotType = UiPivotType::BottomRight;
 	this->addDrawCall(noExitDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

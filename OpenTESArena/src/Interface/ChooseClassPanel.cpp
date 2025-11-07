@@ -198,7 +198,7 @@ bool ChooseClassPanel::init()
 	titleDrawCallInitInfo.textureID = this->titleTextBox.getTextureID();
 	titleDrawCallInitInfo.position = titleTextBoxRect.getCenter();
 	titleDrawCallInitInfo.size = titleTextBoxRect.getSize();
-	titleDrawCallInitInfo.pivotType = PivotType::Middle;
+	titleDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(titleDrawCallInitInfo);
 
 	const Rect classDescTextBoxRect = this->classDescriptionTextBox.getRect();
@@ -206,7 +206,7 @@ bool ChooseClassPanel::init()
 	classDescriptionDrawCallInitInfo.textureFunc = [this]() { return this->classDescriptionTextBox.getTextureID(); };
 	classDescriptionDrawCallInitInfo.position = classDescTextBoxRect.getCenter();
 	classDescriptionDrawCallInitInfo.size = classDescTextBoxRect.getSize();
-	classDescriptionDrawCallInitInfo.pivotType = PivotType::Middle;
+	classDescriptionDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(classDescriptionDrawCallInitInfo);
 
 	const Rect listBoxRect = this->classesListBox.getRect();
@@ -214,7 +214,7 @@ bool ChooseClassPanel::init()
 	listBoxDrawCallInitInfo.textureFunc = [this]() { return this->classesListBox.getTextureID(); };
 	listBoxDrawCallInitInfo.position = listBoxRect.getCenter();
 	listBoxDrawCallInitInfo.size = listBoxRect.getSize();
-	listBoxDrawCallInitInfo.pivotType = PivotType::Middle;
+	listBoxDrawCallInitInfo.pivotType = UiPivotType::Middle;
 	this->addDrawCall(listBoxDrawCallInitInfo);
 
 	const UiTextureID cursorTextureID = CommonUiView::allocDefaultCursorTexture(textureManager, renderer);

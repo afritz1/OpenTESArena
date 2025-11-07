@@ -148,7 +148,7 @@ void DebugVoxelVisibilityQuadtreeState::populateCommandList(Game &game, UiComman
 
 		RenderElement2D &renderElement = this->renderElements[treeLevelIndex];
 		renderElement.id = this->textureIDs[treeLevelIndex];
-		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, PivotType::TopRight, UiRenderSpace::Classic, windowDims.x, windowDims.y, letterboxRect);
+		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, UiPivotType::TopRight, UiRenderSpace::Classic, windowDims.x, windowDims.y, letterboxRect);
 	}
 
 	commandList.addElements(this->renderElements);

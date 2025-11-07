@@ -1,13 +1,13 @@
-#include "PivotType.h"
 #include "UiContext.h"
 #include "UiElement.h"
 #include "UiManager.h"
+#include "UiPivotType.h"
 #include "UiRenderSpace.h"
 
 UiElementInitInfo::UiElementInitInfo()
 {
 	this->sizeType = UiTransformSizeType::Content;
-	this->pivotType = PivotType::TopLeft;
+	this->pivotType = UiPivotType::TopLeft;
 	this->contextType = static_cast<UiContextType>(-1);
 	this->drawOrder = 0;
 	this->renderSpace = UiRenderSpace::Classic;
