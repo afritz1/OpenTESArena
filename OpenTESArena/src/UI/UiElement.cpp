@@ -6,6 +6,7 @@
 
 UiElementInitInfo::UiElementInitInfo()
 {
+	this->sizeType = UiTransformSizeType::Content;
 	this->pivotType = PivotType::TopLeft;
 	this->contextType = static_cast<UiContextType>(-1);
 	this->drawOrder = 0;

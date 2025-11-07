@@ -11,6 +11,7 @@ class UiManager;
 enum class PivotType;
 enum class UiContextType;
 enum class UiRenderSpace;
+enum class UiTransformSizeType;
 
 // All UI elements (images, text boxes, etc.) come with a base handle.
 using UiElementInstanceID = int;
@@ -26,6 +27,7 @@ struct UiElementInitInfo
 {
 	Int2 position;
 	Int2 size;
+	UiTransformSizeType sizeType;
 	PivotType pivotType;
 	UiContextType contextType;
 	int drawOrder;

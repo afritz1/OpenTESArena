@@ -53,7 +53,6 @@ void MainMenuUI::create(Game &game)
 	state.allocate(uiManager, game.textureManager, renderer);
 
 	UiElementInitInfo bgImageElementInitInfo;
-	bgImageElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
 	bgImageElementInitInfo.contextType = UiContextType::MainMenu;
 	const UiElementInstanceID bgImageElementInstID = uiManager.createImage(bgImageElementInitInfo, state.bgTextureID);
 	state.elements.imageElementInstIDs.emplace_back(bgImageElementInstID);

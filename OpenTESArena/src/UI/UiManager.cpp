@@ -86,7 +86,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	image.init(textureID);
 
 	UiTransform &transform = this->transforms.get(transformInstID);
-	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
+	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
 	element.initImage(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
@@ -162,7 +162,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.alignment, textBoxInitInfo.lineSpacing);
 
 	UiTransform &transform = this->transforms.get(transformInstID);
-	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
+	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
 	element.initTextBox(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
@@ -227,7 +227,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
 	button.init();
 
 	UiTransform &transform = this->transforms.get(transformInstID);
-	transform.init(initInfo.position, initInfo.size, initInfo.pivotType);
+	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
 	element.initButton(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
@@ -361,6 +361,43 @@ void UiManager::update(double dt, Game &game)
 		}
 	}
 
+	const Renderer &renderer = game.renderer;
+
+	// Update layouts.
+	for (UiElement &element : this->elements.values)
+	{
+		UiTransform &transform = this->transforms.get(element.transformInstID);
+		if (transform.sizeType == UiTransformSizeType::Content)
+		{
+			switch (element.type)
+			{
+			case UiElementType::Image:
+			{
+				const UiImage &image = this->images.get(element.imageInstID);
+				const std::optional<Int2> imageDims = renderer.tryGetUiTextureDims(image.textureID);
+				DebugAssert(imageDims.has_value());
+				transform.size = *imageDims;
+				break;
+			}
+			case UiElementType::TextBox:
+			{
+				const UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+				transform.size = Int2(textBox.textureWidth, textBox.textureHeight);
+				break;
+			}
+			case UiElementType::Button:
+			{
+				// @todo UiButton
+				DebugNotImplemented();
+				break;
+			}
+			default:
+				DebugNotImplementedMsg(std::to_string(static_cast<int>(element.type)));
+				break;
+			}
+		}
+	}
+
 	this->renderElementsCache.clear();
 
 	std::vector<const UiElement*> elementsToDraw;
@@ -390,7 +427,6 @@ void UiManager::update(double dt, Game &game)
 		return a->drawOrder < b->drawOrder;
 	});
 
-	const Renderer &renderer = game.renderer;
 	const Window &window = game.window;
 	const Int2 windowDims = window.getPixelDimensions();
 	const Rect letterboxRect = window.getLetterboxRect();

@@ -448,6 +448,7 @@ bool Game::init()
 	this->defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(this->textureManager, this->renderer);
 
 	UiElementInitInfo cursorImageElementInitInfo;
+	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	cursorImageElementInitInfo.contextType = UiContextType::Global;
 	cursorImageElementInitInfo.drawOrder = 100;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
