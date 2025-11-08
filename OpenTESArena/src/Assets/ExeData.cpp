@@ -557,8 +557,12 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int spellcastingItemMiscSpellSpellsOffset = GetExeAddress(*section, "SpellcastingItemMiscSpellSpells");
 	const int spellcastingItemMiscSpellPricesPerChargeOffset = GetExeAddress(*section, "SpellcastingItemMiscSpellPricesPerCharge");
 	const int enhancementItemNamesOffset = GetExeAddress(*section, "EnhancementItemNames");
+	const int enhancementItemAttributeNamesOffset = GetExeAddress(*section, "EnhancementItemAttributeNames");
 	const int enhancementItemCumulativeChancesOffset = GetExeAddress(*section, "EnhancementItemCumulativeChances");
 	const int enhancementItemBasePricesOffset = GetExeAddress(*section, "EnhancementItemBasePrices");
+	const int enhancementItemAttributePricesOffset = GetExeAddress(*section, "EnhancementItemAttributePrices");
+	const int armorClassItemMaterialChancesOffset = GetExeAddress(*section, "ArmorClassItemMaterialChances");
+	const int armorClassItemMaterialPriceMultipliersOffset = GetExeAddress(*section, "ArmorClassItemMaterialPriceMultipliers");
 	const int potionNamesOffset = GetExeAddress(*section, "PotionNames");
 	const int unidentifiedPotionNameOffset = GetExeAddress(*section, "UnidentifiedPotionName");
 	const int bodyPartNamesOffset = GetExeAddress(*section, "BodyPartNames");
@@ -619,8 +623,12 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	initInt8Array(this->spellcastingItemMiscSpellSpells, exeBytes, spellcastingItemMiscSpellSpellsOffset);
 	initInt16Array(this->spellcastingItemMiscSpellPricesPerCharge, exeBytes, spellcastingItemMiscSpellPricesPerChargeOffset);
 	initStringArrayNullTerminated(this->enhancementItemNames, exeBytes, enhancementItemNamesOffset);
+	initStringArrayNullTerminated(this->enhancementItemAttributeNames, exeBytes, enhancementItemAttributeNamesOffset);
 	initInt8Array(this->enhancementItemCumulativeChances, exeBytes, enhancementItemCumulativeChancesOffset);
 	initInt16Array(this->enhancementItemBasePrices, exeBytes, enhancementItemBasePricesOffset);
+	initInt16Array(this->enhancementItemAttributePrices, exeBytes, enhancementItemAttributePricesOffset);
+	initInt8Array(this->armorClassItemMaterialChances, exeBytes, armorClassItemMaterialChancesOffset);
+	initInt16Array(this->armorClassItemMaterialPriceMultipliers, exeBytes, armorClassItemMaterialPriceMultipliersOffset);
 	initStringArrayNullTerminated(this->potionNames, exeBytes, potionNamesOffset);
 	this->unidentifiedPotionName = GetExeStringNullTerminated(exeBytes, unidentifiedPotionNameOffset);
 	initStringArrayNullTerminated(this->bodyPartNames, exeBytes, bodyPartNamesOffset);

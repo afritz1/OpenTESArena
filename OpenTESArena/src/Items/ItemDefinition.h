@@ -19,6 +19,8 @@ struct ItemConditionDefinition
 };
 
 using ItemMaterialDefinitionID = int;
+using AttributeDefinitionID = int;
+using SpellDefinitionID = int;
 
 struct ItemMaterialDefinition
 {
@@ -34,10 +36,13 @@ struct ItemMaterialDefinition
 
 struct AccessoryItemDefinition
 {
-	char name[64]; // Amulet, belt, etc..
+	char name[64]; // "<Material> amulet, belt, etc." or "Amulet, belt, etc. of <attribute>"
+	char unidentifiedName[64]; // Amulet, belt, etc..
 	ItemMaterialDefinitionID materialDefID;
+	int basePrice;
+	AttributeDefinitionID attributeID;
 
-	void init(const char *name, ItemMaterialDefinitionID materialDefID);
+	void init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, AttributeDefinitionID attributeID, int basePrice);
 };
 
 enum class ArmorMaterialType
@@ -95,9 +100,11 @@ struct ShieldItemDefinition
 
 struct TrinketItemDefinition
 {
-	char name[64]; // Crystal, mark, etc.
+	char name[64]; // "Crystal, mark, etc. of <spell>"
+	char unidentifiedName[64]; // Crystal, mark, etc.
+	SpellDefinitionID spellID;
 
-	void init(const char *name);
+	void init(const char *name, const char *unidentifiedName, SpellDefinitionID spellID);
 };
 
 struct WeaponItemDefinition

@@ -37,10 +37,13 @@ void ItemMaterialDefinition::init(const char *name, int ratingMultiplier, int co
 	this->weightMultiplier = weightMultiplier;
 }
 
-void AccessoryItemDefinition::init(const char *name, ItemMaterialDefinitionID materialDefID)
+void AccessoryItemDefinition::init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, AttributeDefinitionID attributeID, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 	this->materialDefID = materialDefID;
+	this->attributeID = attributeID;
+	this->basePrice = basePrice;
 }
 
 void ArmorItemDefinition::initLeather(const char *name, double weight)
@@ -90,9 +93,10 @@ void ShieldItemDefinition::init(const char *name, double weight)
 	this->weight = weight;
 }
 
-void TrinketItemDefinition::init(const char *name)
+void TrinketItemDefinition::init(const char *name, const char* unidentifiedName, SpellDefinitionID spellID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->spellID = spellID;
 }
 
 void WeaponItemDefinition::initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID)

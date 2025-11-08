@@ -257,6 +257,216 @@ int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition
 	return condition;
 }
 
+void ArenaEntityUtils::getCreatureMagicItem(int creatureLevel, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion, ItemMaterialDefinitionID *outMaterialID, AttributeDefinitionID *outAttributeID, SpellDefinitionID *outSpellID)
+{
+	int itemID = -1;
+	ItemMaterialDefinitionID materialID = -1;
+	AttributeDefinitionID attributeID = -1;
+	SpellDefinitionID spellID = -1;
+	bool isPotion;
+
+	if (random.nextBool())
+	{
+		isPotion = true;
+		itemID = ArenaEntityUtils::pickPotion(random);
+	}
+	else
+	{
+		isPotion = false;
+		const int quality = ArenaEntityUtils::getCreatureItemQualityLevel(creatureLevel);
+		ArenaEntityUtils::pickMagicAccessoryOrTrinket(-1, quality, exeData, random, &itemID, &materialID, &attributeID, &spellID);
+	}
+
+	*outMaterialID = materialID;
+	*outItemID = itemID;
+	*outAttributeID = attributeID;
+	*outIsPotion = isPotion;
+	*outSpellID = spellID;
+}
+
+int ArenaEntityUtils::pickPotion(Random &random)
+{
+	const int numberOfPotionTypes = 15;
+	return random.next(numberOfPotionTypes);
+}
+
+void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID, AttributeDefinitionID *outAttributeID, SpellDefinitionID *outSpellID)
+{
+	int itemID = -1;
+	ItemMaterialDefinitionID materialID = -1;
+	AttributeDefinitionID attributeID = -1;
+	SpellDefinitionID spellID = -1;
+
+	const int type = random.next(3);
+	if (type == 0)
+	{
+		ArenaEntityUtils::pickSpellCastingItem(-1, quality, exeData, random, &itemID, &spellID);
+	}
+	else if (type == 1)
+	{
+		ArenaEntityUtils::pickAttributeEnhancementItem(specifiedItemID, quality, exeData, random, &itemID, &attributeID);
+	}
+	else
+	{
+		ArenaEntityUtils::pickArmorClassItem(specifiedItemID, exeData, random, &itemID, &materialID);
+	}
+
+	*outItemID = itemID;
+	*outMaterialID = materialID;
+	*outAttributeID = attributeID;
+	*outSpellID = spellID;
+}
+
+void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, SpellDefinitionID *outSpellID) {
+	const auto &spellcastingBaseItemChances = exeData.equipment.spellcastingItemCumulativeChances;
+	const auto &spellcastingItemAttackSpellQualities = exeData.equipment.spellcastingItemAttackSpellQualities;
+	const auto &spellcastingItemAttackSpellSpells = exeData.equipment.spellcastingItemAttackSpellSpells;
+	const auto &spellcastingItemDefensiveSpellQualities = exeData.equipment.spellcastingItemDefensiveSpellQualities;
+	const auto &spellcastingItemDefensiveSpellSpells = exeData.equipment.spellcastingItemDefensiveSpellSpells;
+	const auto &spellcastingItemMiscSpellQualities = exeData.equipment.spellcastingItemMiscSpellQualities;
+	const auto &spellcastingItemMiscSpellSpells = exeData.equipment.spellcastingItemMiscSpellSpells;
+
+	int itemID = -1;
+	SpellDefinitionID spellID = -1;
+
+	if (specifiedItemID != -1)
+	{
+		itemID = specifiedItemID;
+	}
+	else
+	{
+		int roll = random.next(100);
+		for (itemID = 0; spellcastingBaseItemChances[itemID] <= roll; itemID++) {
+			DebugAssertIndex(spellcastingBaseItemChances, itemID);
+		}
+	}
+
+	const int spellType = random.next(3);
+	if (spellType == 0)
+	{
+		const int spellcastingItemAttackSpellQualitiesCount = static_cast<int>(std::size(spellcastingItemAttackSpellQualities));
+		bool validSpellExists = false;
+		for (int i = 0; i < spellcastingItemAttackSpellQualitiesCount; i++)
+		{
+			if (spellcastingItemAttackSpellQualities[i] <= quality)
+			{
+				validSpellExists = true;
+				break;
+			}
+		}
+		DebugAssert(validSpellExists);
+
+		int spellIDIndex;
+		do
+		{
+			spellIDIndex = random.next(spellcastingItemAttackSpellQualitiesCount);
+		} while (quality < (spellcastingItemAttackSpellQualities[spellIDIndex]));
+
+		spellID = spellcastingItemAttackSpellSpells[spellIDIndex];
+	}
+	else if (spellType == 1)
+	{
+		const int spellcastingItemDefensiveSpellQualitiesCount = static_cast<int>(std::size(spellcastingItemDefensiveSpellQualities));
+		bool validSpellExists = false;
+		for (int i = 0; i < spellcastingItemDefensiveSpellQualitiesCount; i++)
+		{
+			if (spellcastingItemDefensiveSpellQualities[i] <= quality)
+			{
+				validSpellExists = true;
+				break;
+			}
+		}
+		DebugAssert(validSpellExists);
+
+		int spellIDIndex;
+		do
+		{
+			spellIDIndex = random.next(spellcastingItemDefensiveSpellQualitiesCount);
+		} while (quality < (spellcastingItemDefensiveSpellQualities[spellIDIndex]));
+
+		spellID = spellcastingItemDefensiveSpellSpells[spellIDIndex];
+	}
+	else
+	{
+		const int spellcastingItemMiscSpellQualitiesCount = static_cast<int>(std::size(spellcastingItemMiscSpellQualities));
+		bool validSpellExists = false;
+		for (int i = 0; i < spellcastingItemMiscSpellQualitiesCount; i++)
+		{
+			if (spellcastingItemMiscSpellQualities[i] <= quality)
+			{
+				validSpellExists = true;
+				break;
+			}
+		}
+		DebugAssert(validSpellExists);
+
+		int spellIDIndex;
+		do
+		{
+			spellIDIndex = random.next(spellcastingItemMiscSpellQualitiesCount);
+		} while (quality < (spellcastingItemMiscSpellQualities[spellIDIndex]));
+
+		spellID = spellcastingItemMiscSpellSpells[spellIDIndex];
+	}
+
+	*outItemID = itemID;
+	*outSpellID = spellID;
+}
+
+void ArenaEntityUtils::pickAttributeEnhancementItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, AttributeDefinitionID *outAttributeID)
+{
+	const auto &enhancementBaseItemChances = exeData.equipment.enhancementItemCumulativeChances;
+	int itemID = -1;
+	AttributeDefinitionID attributeID = -1;
+	const int attributeCount = 8;
+
+	if (quality > 6)
+	{
+		if (specifiedItemID != -1)
+		{
+			itemID = specifiedItemID;
+		}
+		else
+		{
+			int roll = random.next(100);
+			for (itemID = 0; enhancementBaseItemChances[itemID] <= roll; itemID++)
+			{
+				DebugAssertIndex(enhancementBaseItemChances, itemID);
+			}
+		}
+		attributeID = random.next(attributeCount);
+	}
+
+	*outAttributeID = attributeID;
+	*outItemID = itemID;
+}
+
+void ArenaEntityUtils::pickArmorClassItem(int specifiedItemID, const ExeData &exeData, Random &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID)
+{
+	const auto &armorClassItemMaterialChances = exeData.equipment.armorClassItemMaterialChances;
+	const int numberOfItemIDs = 4;
+
+	int itemID = -1;
+	if (specifiedItemID != -1)
+	{
+		itemID = specifiedItemID;
+	}
+	else
+	{
+		itemID = random.next(numberOfItemIDs);
+	}
+
+	int roll = random.next(24) + 76;
+	ItemMaterialDefinitionID material = 0;
+	for (; armorClassItemMaterialChances[material] <= roll; material++)
+	{
+		DebugAssertIndex(armorClassItemMaterialChances, material);
+	}
+
+	*outMaterialID = material + 3; // The first 3 materials aren't used
+	*outItemID = itemID;
+}
+
 int ArenaEntityUtils::getCreatureItemQualityLevel(int creatureLevel)
 {
 	return creatureLevel + 1;
@@ -378,6 +588,36 @@ int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeD
 	}
 
 	return goldAmount;
+}
+
+void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion, ItemMaterialDefinitionID *outMaterialID, AttributeDefinitionID *outAttributeID, SpellDefinitionID *outSpellID)
+{
+	int itemID = -1;
+	ItemMaterialDefinitionID materialID = -1;
+	AttributeDefinitionID attributeID = -1;
+	bool isPotion;
+	SpellDefinitionID spellID = -1;
+
+	if (random.nextBool())
+	{
+		isPotion = true;
+		itemID = pickPotion(random);
+	}
+	else
+	{
+		isPotion = false;
+		const int quality = getLootItemQualityValue(lootValuesIndex, random, cityType, levelIndex);
+		if (quality >= 3)
+		{
+			ArenaEntityUtils::pickMagicAccessoryOrTrinket(-1, quality, exeData, random, &itemID, &materialID, &attributeID, &spellID);
+		}
+	}
+	
+	*outItemID = itemID;
+	*outMaterialID = materialID;
+	*outAttributeID = attributeID;
+	*outIsPotion = isPotion;
+	*outSpellID = spellID;
 }
 
 int ArenaEntityUtils::getLootItemQualityValue(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex)

@@ -1,6 +1,8 @@
 #ifndef ARENA_ITEM_UTILS_H
 #define ARENA_ITEM_UTILS_H
 
+#include "../Assets/ExeData.h"
+
 class Random;
 
 enum class ArmorMaterialType;
@@ -18,6 +20,9 @@ namespace ArenaItemUtils
 
 	bool isFistsWeapon(int weaponID);
 	bool isRangedWeapon(int weaponID);
+
+	int getArmorClassMagicItemBasePrice(int materialID, const ExeData &exeData);
+	int getAttributeEnhancementMagicItemBasePrice(int baseItemID, int attributeID, const ExeData &exeData);
 
 	ArmorMaterialType getRandomArmorMaterialType(Random &random);
 }
