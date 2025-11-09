@@ -229,6 +229,13 @@ LevelVoxelChasmDefID LevelInfoDefinition::addChasmDef(VoxelChasmDefinition &&def
 	return id;
 }
 
+void LevelInfoDefinition::setLockLevel(LevelVoxelLockDefID id, int lockLevel)
+{
+	DebugAssertIndex(this->lockDefs, id);
+	LockDefinition &lockDef = this->lockDefs[id];
+	lockDef.lockLevel = lockLevel;
+}
+
 void LevelInfoDefinition::setTransitionInteriorDisplayName(LevelVoxelTransitionDefID id, std::string &&name)
 {
 	DebugAssertIndex(this->transitionDefs, id);

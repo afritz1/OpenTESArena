@@ -1657,25 +1657,26 @@ namespace MapGeneration
 	void readArenaLock(const ArenaTypes::MIFLock &lock, const INFFile &inf, LevelDefinition *outLevelDef,
 		LevelInfoDefinition *outLevelInfoDef, ArenaLockMappingCache *lockMappings)
 	{
-		// Get lock def ID from cache or create a new one.
-		LevelVoxelLockDefID lockDefID;
 		const auto iter = std::find_if(lockMappings->begin(), lockMappings->end(),
 			[&lock](const std::pair<ArenaTypes::MIFLock, LevelVoxelLockDefID> &pair)
 		{
 			const ArenaTypes::MIFLock &mifLock = pair.first;
-			return (mifLock.x == lock.x) && (mifLock.y == lock.y) && (mifLock.lockLevel == lock.lockLevel);
+			return (mifLock.x == lock.x) && (mifLock.y == lock.y);
 		});
 
+		// Certain maps have duplicate locks with different lock levels, overwrite it.
 		if (iter != lockMappings->end())
 		{
-			lockDefID = iter->second;
+			const LevelVoxelLockDefID existingLockDefID = iter->second;
+			const LockDefinition &existingLockDef = outLevelInfoDef->getLockDef(existingLockDefID);
+			DebugLogWarningFormat("Existing lock found at (%d, %d), overwriting with lock level %d.", existingLockDef.x, existingLockDef.z, lock.lockLevel);
+			outLevelInfoDef->setLockLevel(existingLockDefID, lock.lockLevel);
+			return;
 		}
-		else
-		{
-			LockDefinition lockDef = MapGeneration::makeLockDefFromArenaLock(lock);
-			lockDefID = outLevelInfoDef->addLockDef(std::move(lockDef));
-			lockMappings->emplace_back(std::make_pair(lock, lockDefID));
-		}
+
+		LockDefinition newLockDef = MapGeneration::makeLockDefFromArenaLock(lock);
+		const LevelVoxelLockDefID lockDefID = outLevelInfoDef->addLockDef(std::move(newLockDef));
+		lockMappings->emplace_back(std::make_pair(lock, lockDefID));
 
 		const LockDefinition &lockDef = outLevelInfoDef->getLockDef(lockDefID);
 		const SNInt x = lockDef.x;

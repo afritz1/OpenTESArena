@@ -85,6 +85,9 @@ public:
 	LevelVoxelDoorDefID addDoorDef(VoxelDoorDefinition &&def);
 	LevelVoxelChasmDefID addChasmDef(VoxelChasmDefinition &&def);
 
+	// Handles some special cases where multiple locks are defined for the same voxel.
+	void setLockLevel(LevelVoxelLockDefID id, int lockLevel);
+
 	// Applied after transition and building name generation due to circular dependency. Used with dialogue.
 	void setTransitionInteriorDisplayName(LevelVoxelTransitionDefID id, std::string &&name);
 
