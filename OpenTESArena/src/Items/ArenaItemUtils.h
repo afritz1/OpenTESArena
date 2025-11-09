@@ -5,6 +5,8 @@ class Random;
 
 enum class ArmorMaterialType;
 
+struct ExeData;
+
 namespace ArenaItemUtils
 {
 	// Converts Arena weight units to kilograms.
@@ -18,6 +20,9 @@ namespace ArenaItemUtils
 
 	bool isFistsWeapon(int weaponID);
 	bool isRangedWeapon(int weaponID);
+
+	int getArmorClassMagicItemBasePrice(int materialID, const ExeData &exeData);
+	int getAttributeEnhancementMagicItemBasePrice(int baseItemID, int attributeID, const ExeData &exeData);
 
 	ArmorMaterialType getRandomArmorMaterialType(Random &random);
 }

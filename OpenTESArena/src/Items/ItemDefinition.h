@@ -3,6 +3,9 @@
 
 #include <cstdint>
 
+#include "../Spells/SpellDefinition.h"
+#include "../Stats/PrimaryAttribute.h"
+
 #include "components/utilities/Enum.h"
 #include "components/utilities/Span.h"
 
@@ -34,10 +37,13 @@ struct ItemMaterialDefinition
 
 struct AccessoryItemDefinition
 {
-	char name[64]; // Amulet, belt, etc..
+	char name[64]; // "<Material> amulet, belt, etc." or "Amulet, belt, etc. of <attribute>"
+	char unidentifiedName[64]; // Amulet, belt, etc..
 	ItemMaterialDefinitionID materialDefID;
+	int basePrice;
+	PrimaryAttributeID attributeID;
 
-	void init(const char *name, ItemMaterialDefinitionID materialDefID);
+	void init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice);
 };
 
 enum class ArmorMaterialType
@@ -95,9 +101,11 @@ struct ShieldItemDefinition
 
 struct TrinketItemDefinition
 {
-	char name[64]; // Crystal, mark, etc.
+	char name[64]; // "Crystal, mark, etc. of <spell>"
+	char unidentifiedName[64]; // Crystal, mark, etc.
+	SpellID spellID;
 
-	void init(const char *name);
+	void init(const char *name, const char *unidentifiedName, SpellID spellID);
 };
 
 struct WeaponItemDefinition

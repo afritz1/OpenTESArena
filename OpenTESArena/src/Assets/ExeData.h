@@ -282,8 +282,12 @@ struct ExeDataEquipment
 	uint8_t spellcastingItemMiscSpellSpells[8];
 	uint16_t spellcastingItemMiscSpellPricesPerCharge[8];
 	std::string enhancementItemNames[4];
+	std::string enhancementItemAttributeNames[8];
 	uint8_t enhancementItemCumulativeChances[4];
 	uint16_t enhancementItemBasePrices[4];
+	uint16_t enhancementItemAttributePrices[8];
+	uint8_t armorClassItemMaterialChances[5];
+	uint16_t armorClassItemMaterialPriceMultipliers[8];
 
 	// Consumables.
 	std::string potionNames[15]; // "Potion of <effect>"...

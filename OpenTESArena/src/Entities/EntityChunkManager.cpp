@@ -380,19 +380,55 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 				int randomItemIndex;
-				ItemDefinitionID testItemDefID;
+				ItemDefinitionID itemDefID = -1;
 
 				if (ArenaEntityUtils::getCreatureHasMagicItem(enemyDef.creature.level, enemyDef.creature.lootChances, random))
 				{
-					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition &itemDef)
-					{
-						return ItemTypeFlags(itemDef.type).any(ItemType::Accessory | ItemType::Consumable | ItemType::Trinket);
-					});
+					int magicItemID;
+					ItemMaterialDefinitionID materialID;
+					PrimaryAttributeID attributeID;
+					bool isPotion;
+					SpellID spellID;
+					ArenaEntityUtils::getCreatureMagicItem(enemyDef.creature.level, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
 
-					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
-					testItemDefID = testItemDefIDs[randomItemIndex];
-					itemInventory.insert(testItemDefID);
+					if (isPotion)
+					{
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[magicItemID](const ItemDefinition &itemDef)
+							{
+								return (itemDef.type == ItemType::Consumable) && (itemDef.originalItemID == magicItemID);
+							});
+					}
+					else if (spellID != -1)
+					{
+						// @todo: Get number of spell charges from helper function.
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[magicItemID, spellID](const ItemDefinition &itemDef)
+							{
+								return (itemDef.type == ItemType::Trinket) && (itemDef.originalItemID == magicItemID) && (itemDef.trinket.spellID == spellID);
+							});
+					}
+					else if (attributeID != -1)
+					{
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[magicItemID, attributeID](const ItemDefinition &itemDef)
+							{
+								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.attributeID == attributeID);
+							});
+					}
+					else if (materialID != -1)
+					{
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[magicItemID, materialID](const ItemDefinition &itemDef)
+							{
+								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.materialDefID == materialID);
+							});
+					}
+
+					if (itemDefID != -1)
+					{
+						itemInventory.insert(itemDefID);
+					}
 				}
 
 				if (ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(enemyDef.creature.lootChances, random))
@@ -405,7 +441,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 					if (isArmor)
 					{
-						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[weaponOrArmorID, armorMaterialType](const ItemDefinition &itemDef)
 						{
 							if (itemDef.originalItemID != weaponOrArmorID)
@@ -430,14 +466,17 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					}
 					else
 					{
-						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[weaponOrArmorID](const ItemDefinition &itemDef)
 						{
 							return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponOrArmorID);
 						});
 					}
 
-					itemInventory.insert(testItemDefID);
+					if (itemDefID != -1)
+					{
+						itemInventory.insert(itemDefID);
+					}
 				}
 
 				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(enemyDef.creature.level, enemyDef.creature.lootChances, random))
@@ -450,8 +489,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
-					testItemDefID = testItemDefIDs[randomItemIndex];
-					itemInventory.insert(testItemDefID);
+					itemDefID = testItemDefIDs[randomItemIndex];
+					itemInventory.insert(itemDefID);
 				}
 			}
 		}
@@ -463,15 +502,15 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			// Decide which loot slots are to be populated.
 			const ArenaValidLootSlots validLootSlots = ArenaEntityUtils::getPopulatedLootSlots(lootValuesIndex, exeData, random);
 
-			// @todo: figure out passing in ItemDefinitionIDs with initInfo once doing item tables etc
 			ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 			const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 			std::vector<ItemDefinitionID> testItemDefIDs;
 			int randomItemIndex;
-			ItemDefinitionID testItemDefID;
+			ItemDefinitionID itemDefID;
 
 			for (int i = 0; i < ArenaValidLootSlots::COUNT; i++)
 			{
+				itemDefID = -1;
 				if (!validLootSlots.slots[i])
 				{
 					continue;
@@ -487,16 +526,51 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				else if (i == 1)
 				{
 					// The second possible item is a magic item
-					// @todo: Get item and condition percentage from helper functions
-					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
-						[](const ItemDefinition &itemDef)
-						{
-							return ItemTypeFlags(itemDef.type).any(ItemType::Accessory | ItemType::Consumable | ItemType::Trinket);
-						});
+					int magicItemID;
+					bool isPotion;
+					ItemMaterialDefinitionID materialID;
+					PrimaryAttributeID attributeID;
+					SpellID spellID;
+					ArenaEntityUtils::getLootMagicItem(lootValuesIndex, initInfo.cityType, initInfo.interiorLevelIndex, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
 
-					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
-					testItemDefID = testItemDefIDs[randomItemIndex];
-					itemInventory.insert(testItemDefID);
+					if (isPotion)
+					{
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[magicItemID](const ItemDefinition &itemDef)
+							{
+								return (itemDef.type == ItemType::Consumable) && (itemDef.originalItemID == magicItemID);
+							});
+					}
+					else if (spellID != -1)
+					{
+						// @todo: Get number of spell charges from helper function.
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[magicItemID, spellID](const ItemDefinition &itemDef)
+							{
+								return (itemDef.type == ItemType::Trinket) && (itemDef.originalItemID == magicItemID) && (itemDef.trinket.spellID == spellID);
+							});
+					}
+					else if (attributeID != -1)
+					{
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[magicItemID, attributeID](const ItemDefinition &itemDef)
+							{
+								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.attributeID == attributeID);
+							});
+					}
+					else if (materialID != -1)
+					{
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[magicItemID, materialID](const ItemDefinition &itemDef)
+							{
+								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.materialDefID == materialID);
+							});
+					}
+
+					if (itemDefID != -1)
+					{
+						itemInventory.insert(itemDefID);
+					}
 				}
 				else if (i == 2)
 				{
@@ -509,7 +583,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 					if (isArmor)
 					{
-						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[weaponOrArmorID, armorMaterialType](const ItemDefinition &itemDef)
 						{
 							if (itemDef.originalItemID != weaponOrArmorID)
@@ -534,14 +608,17 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					}
 					else
 					{
-						testItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[weaponOrArmorID](const ItemDefinition &itemDef)
 						{
 							return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponOrArmorID);
 						});
 					}
 
-					itemInventory.insert(testItemDefID);
+					if (itemDefID != -1)
+					{
+						itemInventory.insert(itemDefID);
+					}
 				}
 				else if (i == 3)
 				{
@@ -554,8 +631,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 						});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
-					testItemDefID = testItemDefIDs[randomItemIndex];
-					itemInventory.insert(testItemDefID);
+					itemDefID = testItemDefIDs[randomItemIndex];
+					itemInventory.insert(itemDefID);
 				}
 			}
 		}

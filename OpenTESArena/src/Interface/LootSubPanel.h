@@ -23,7 +23,6 @@ public:
 	using OnClosedFunction = std::function<void(Game&)>; // In case entity inventory becomes empty.
 private:
 	ListBox listBox;
-	TextBox tempTextBox; // For testing
 	Button<Game&> closeButton;
 	ScopedUiTextureRef textureRef, cursorTextureRef;
 	std::vector<LootUiItemMapping> itemMappings;

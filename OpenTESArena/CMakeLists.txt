@@ -503,6 +503,9 @@ SET(TES_SKY
     "${SRC_ROOT}/Sky/SkyVisibilityManager.cpp"
     "${SRC_ROOT}/Sky/SkyVisibilityManager.h")
 
+SET(TES_SPELLS
+    "${SRC_ROOT}/Spells/SpellDefinition.h")
+
 SET(TES_STATS
     "${SRC_ROOT}/Stats/ArenaStatUtils.cpp"
     "${SRC_ROOT}/Stats/ArenaStatUtils.h"
@@ -720,6 +723,7 @@ SET(TES_SOURCES
     ${TES_PLAYER}
     ${TES_RENDERING}
     ${TES_SKY}
+    ${TES_SPELLS}
     ${TES_STATS}
     ${TES_TIME}
     ${TES_UI}

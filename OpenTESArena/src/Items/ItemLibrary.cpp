@@ -9,12 +9,30 @@
 void ItemLibrary::init(const ExeData &exeData)
 {
 	const Span<const std::string> accessoryNames = exeData.equipment.enhancementItemNames;
+	const Span<const std::string> materialNames = exeData.equipment.materialNames;
+	const Span<const std::string> attributeNames = exeData.equipment.enhancementItemAttributeNames;
+
 	for (int i = 0; i < accessoryNames.getCount(); i++)
 	{
-		ItemDefinition itemDef;
-		itemDef.init(ItemType::Accessory, -1);
-		itemDef.accessory.init(accessoryNames[i].c_str(), -1); // @todo: for loop over all materials
-		this->itemDefs.emplace_back(std::move(itemDef));
+		for (ItemMaterialDefinitionID materialID = 3; materialID < materialNames.getCount(); materialID++) // The first 3 materials aren't used
+		{
+			ItemDefinition itemDef;
+			itemDef.init(ItemType::Accessory, i);
+			const std::string fullName = materialNames[materialID] + " " + accessoryNames[i];
+			const int basePrice = ArenaItemUtils::getArmorClassMagicItemBasePrice(materialID, exeData);
+			itemDef.accessory.init(fullName.c_str(), accessoryNames[i].c_str(), materialID, -1, basePrice);
+			this->itemDefs.emplace_back(std::move(itemDef));
+		}
+
+		for (PrimaryAttributeID attributeID = 0; attributeID < attributeNames.getCount(); attributeID++)
+		{
+			ItemDefinition itemDef;
+			itemDef.init(ItemType::Accessory, i);
+			const std::string fullName = accessoryNames[i] + " " + attributeNames[attributeID];
+			const int basePrice = ArenaItemUtils::getAttributeEnhancementMagicItemBasePrice(i, attributeID, exeData);
+			itemDef.accessory.init(fullName.c_str(), accessoryNames[i].c_str(), -1, attributeID, basePrice);
+			this->itemDefs.emplace_back(std::move(itemDef));
+		}
 	}
 
 	constexpr double kgDivisor = ArenaItemUtils::KilogramsDivisor;
@@ -80,7 +98,7 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < potionNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Consumable, -1);
+		itemDef.init(ItemType::Consumable, i);
 		itemDef.consumable.init(potionNames[i].c_str(), unidentifiedPotionName.c_str());
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -109,12 +127,41 @@ void ItemLibrary::init(const ExeData &exeData)
 	}
 	
 	const Span<const std::string> trinketNames = exeData.equipment.spellcastingItemNames;
+	const Span<const std::string> attackSpellNames = exeData.equipment.spellcastingItemAttackSpellNames;
+	const Span<const std::string> defensiveSpellNames = exeData.equipment.spellcastingItemDefensiveSpellNames;
+	const Span<const std::string> miscSpellNames = exeData.equipment.spellcastingItemMiscSpellNames;
+	const auto &spellcastingItemAttackSpellSpells = exeData.equipment.spellcastingItemAttackSpellSpells;
+	const auto &spellcastingItemDefensiveSpellSpells = exeData.equipment.spellcastingItemDefensiveSpellSpells;
+	const auto &spellcastingItemMiscSpellSpells = exeData.equipment.spellcastingItemMiscSpellSpells;
+
 	for (int i = 0; i < trinketNames.getCount(); i++)
 	{
-		ItemDefinition itemDef;
-		itemDef.init(ItemType::Trinket, -1);
-		itemDef.trinket.init(trinketNames[i].c_str());
-		this->itemDefs.emplace_back(std::move(itemDef));
+		for (int spellIndex = 0; spellIndex < attackSpellNames.getCount(); spellIndex++)
+		{
+			ItemDefinition itemDef;
+			itemDef.init(ItemType::Trinket, i);
+			const std::string fullName = trinketNames[i] + " " + attackSpellNames[spellIndex];
+			itemDef.trinket.init(fullName.c_str(), trinketNames[i].c_str(), spellcastingItemAttackSpellSpells[spellIndex]);
+			this->itemDefs.emplace_back(std::move(itemDef));
+		}
+
+		for (int spellIndex = 0; spellIndex < defensiveSpellNames.getCount(); spellIndex++)
+		{
+			ItemDefinition itemDef;
+			itemDef.init(ItemType::Trinket, i);
+			const std::string fullName = trinketNames[i] + " " + defensiveSpellNames[spellIndex];
+			itemDef.trinket.init(fullName.c_str(), trinketNames[i].c_str(), spellcastingItemDefensiveSpellSpells[spellIndex]);
+			this->itemDefs.emplace_back(std::move(itemDef));
+		}
+
+		for (int spellIndex = 0; spellIndex < miscSpellNames.getCount(); spellIndex++)
+		{
+			ItemDefinition itemDef;
+			itemDef.init(ItemType::Trinket, i);
+			const std::string fullName = trinketNames[i] + " " + miscSpellNames[spellIndex];
+			itemDef.trinket.init(fullName.c_str(), trinketNames[i].c_str(), spellcastingItemMiscSpellSpells[spellIndex]);
+			this->itemDefs.emplace_back(std::move(itemDef));
+		}
 	}
 	
 	const Span<const std::string> weaponNames = exeData.equipment.weaponNames;
