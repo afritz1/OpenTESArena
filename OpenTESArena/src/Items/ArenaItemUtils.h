@@ -1,11 +1,11 @@
 #ifndef ARENA_ITEM_UTILS_H
 #define ARENA_ITEM_UTILS_H
 
-#include "../Assets/ExeData.h"
-
 class Random;
 
 enum class ArmorMaterialType;
+
+struct ExeData;
 
 namespace ArenaItemUtils
 {

@@ -3,6 +3,7 @@
 
 #include "ArenaItemUtils.h"
 #include "ItemDefinition.h"
+#include "../Assets/ExeData.h"
 #include "../Math/Random.h"
 
 bool ArenaItemUtils::isFistsWeapon(int weaponID)
