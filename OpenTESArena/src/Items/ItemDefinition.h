@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+#include "../Spells/SpellDefinition.h"
 #include "../Stats/PrimaryAttribute.h"
 
 #include "components/utilities/Enum.h"
@@ -21,7 +22,6 @@ struct ItemConditionDefinition
 };
 
 using ItemMaterialDefinitionID = int;
-using SpellDefinitionID = int;
 
 struct ItemMaterialDefinition
 {
@@ -103,9 +103,9 @@ struct TrinketItemDefinition
 {
 	char name[64]; // "Crystal, mark, etc. of <spell>"
 	char unidentifiedName[64]; // Crystal, mark, etc.
-	SpellDefinitionID spellID;
+	SpellID spellID;
 
-	void init(const char *name, const char *unidentifiedName, SpellDefinitionID spellID);
+	void init(const char *name, const char *unidentifiedName, SpellID spellID);
 };
 
 struct WeaponItemDefinition

@@ -388,13 +388,13 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					ItemMaterialDefinitionID materialID;
 					PrimaryAttributeID attributeID;
 					bool isPotion;
-					SpellDefinitionID spellID;
+					SpellID spellID;
 					ArenaEntityUtils::getCreatureMagicItem(enemyDef.creature.level, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
 
 					if (isPotion)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[magicItemID](const ItemDefinition& itemDef)
+							[magicItemID](const ItemDefinition &itemDef)
 							{
 								return (itemDef.type == ItemType::Consumable) && (itemDef.originalItemID == magicItemID);
 							});
@@ -403,7 +403,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					{
 						// @todo: Get number of spell charges from helper function.
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[magicItemID, spellID](const ItemDefinition& itemDef)
+							[magicItemID, spellID](const ItemDefinition &itemDef)
 							{
 								return (itemDef.type == ItemType::Trinket) && (itemDef.originalItemID == magicItemID) && (itemDef.trinket.spellID == spellID);
 							});
@@ -411,7 +411,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					else if (attributeID != -1)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[magicItemID, attributeID](const ItemDefinition& itemDef)
+							[magicItemID, attributeID](const ItemDefinition &itemDef)
 							{
 								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.attributeID == attributeID);
 							});
@@ -419,7 +419,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					else if (materialID != -1)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[magicItemID, materialID](const ItemDefinition& itemDef)
+							[magicItemID, materialID](const ItemDefinition &itemDef)
 							{
 								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.materialDefID == materialID);
 							});
@@ -529,14 +529,14 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					int magicItemID;
 					bool isPotion;
 					ItemMaterialDefinitionID materialID;
-					AttributeDefinitionID attributeID;
-					SpellDefinitionID spellID;
+					PrimaryAttributeID attributeID;
+					SpellID spellID;
 					ArenaEntityUtils::getLootMagicItem(lootValuesIndex, initInfo.cityType, initInfo.interiorLevelIndex, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
 
 					if (isPotion)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[magicItemID](const ItemDefinition& itemDef)
+							[magicItemID](const ItemDefinition &itemDef)
 							{
 								return (itemDef.type == ItemType::Consumable) && (itemDef.originalItemID == magicItemID);
 							});
@@ -545,7 +545,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					{
 						// @todo: Get number of spell charges from helper function.
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[magicItemID, spellID](const ItemDefinition& itemDef)
+							[magicItemID, spellID](const ItemDefinition &itemDef)
 							{
 								return (itemDef.type == ItemType::Trinket) && (itemDef.originalItemID == magicItemID) && (itemDef.trinket.spellID == spellID);
 							});
@@ -553,7 +553,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					else if (attributeID != -1)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[magicItemID, attributeID](const ItemDefinition& itemDef)
+							[magicItemID, attributeID](const ItemDefinition &itemDef)
 							{
 								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.attributeID == attributeID);
 							});
@@ -561,7 +561,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					else if (materialID != -1)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-							[magicItemID, materialID](const ItemDefinition& itemDef)
+							[magicItemID, materialID](const ItemDefinition &itemDef)
 							{
 								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.materialDefID == materialID);
 							});

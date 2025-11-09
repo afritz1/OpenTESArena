@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <string>
 
+#include "../Spells/SpellDefinition.h"
 #include "../Stats/PrimaryAttribute.h"
 
 class Random;
@@ -15,7 +16,6 @@ enum class ArmorMaterialType;
 struct ExeData;
 
 using ItemMaterialDefinitionID = int;
-using SpellDefinitionID = int;
 
 // The loot generation labels these as able to house an item or not.
 struct ArenaValidLootSlots
@@ -38,11 +38,11 @@ namespace ArenaEntityUtils
 	bool getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint32_t creatureLootChance, Random &random);
 
 	void getCreatureMagicItem(int creatureLevel, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion,
-		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID);
+		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID);
 	int pickPotion(Random &random);
 	void pickMagicAccessoryOrTrinket(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID,
-		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID);
-	void pickSpellCastingItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, SpellDefinitionID *outSpellID);
+		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID);
+	void pickSpellCastingItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, SpellID *outSpellID);
 	void pickAttributeEnhancementItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, PrimaryAttributeID *outAttributeID);
 	void pickArmorClassItem(int specifiedItemID, const ExeData &exeData, Random &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID);
 
@@ -68,7 +68,7 @@ namespace ArenaEntityUtils
 	ArenaValidLootSlots getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random);
 	int getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex);
 	void getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion,
-		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID);
+		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID);
 	int getLootItemQualityValue(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex);
 	void getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor, ArmorMaterialType *outArmorMaterialType);
 	int getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, Random &random, int itemMaxHealth);

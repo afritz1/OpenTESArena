@@ -93,7 +93,7 @@ void ShieldItemDefinition::init(const char *name, double weight)
 	this->weight = weight;
 }
 
-void TrinketItemDefinition::init(const char *name, const char* unidentifiedName, SpellDefinitionID spellID)
+void TrinketItemDefinition::init(const char *name, const char* unidentifiedName, SpellID spellID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->spellID = spellID;

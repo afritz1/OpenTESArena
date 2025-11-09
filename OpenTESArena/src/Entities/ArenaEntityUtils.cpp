@@ -258,12 +258,12 @@ int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition
 }
 
 void ArenaEntityUtils::getCreatureMagicItem(int creatureLevel, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion,
-	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID)
+	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID)
 {
 	int itemID = -1;
 	ItemMaterialDefinitionID materialID = -1;
 	PrimaryAttributeID attributeID = -1;
-	SpellDefinitionID spellID = -1;
+	SpellID spellID = -1;
 	bool isPotion;
 
 	if (random.nextBool())
@@ -292,12 +292,12 @@ int ArenaEntityUtils::pickPotion(Random &random)
 }
 
 void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID,
-	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID)
+	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID)
 {
 	int itemID = -1;
 	ItemMaterialDefinitionID materialID = -1;
 	PrimaryAttributeID attributeID = -1;
-	SpellDefinitionID spellID = -1;
+	SpellID spellID = -1;
 
 	const int type = random.next(3);
 	if (type == 0)
@@ -319,7 +319,8 @@ void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int qual
 	*outSpellID = spellID;
 }
 
-void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, SpellDefinitionID *outSpellID) {
+void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, SpellID *outSpellID)
+{
 	const auto &spellcastingBaseItemChances = exeData.equipment.spellcastingItemCumulativeChances;
 	const auto &spellcastingItemAttackSpellQualities = exeData.equipment.spellcastingItemAttackSpellQualities;
 	const auto &spellcastingItemAttackSpellSpells = exeData.equipment.spellcastingItemAttackSpellSpells;
@@ -329,7 +330,7 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 	const auto &spellcastingItemMiscSpellSpells = exeData.equipment.spellcastingItemMiscSpellSpells;
 
 	int itemID = -1;
-	SpellDefinitionID spellID = -1;
+	SpellID spellID = -1;
 
 	if (specifiedItemID != -1)
 	{
@@ -338,7 +339,8 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 	else
 	{
 		int roll = random.next(100);
-		for (itemID = 0; spellcastingBaseItemChances[itemID] <= roll; itemID++) {
+		for (itemID = 0; spellcastingBaseItemChances[itemID] <= roll; itemID++)
+		{
 			DebugAssertIndex(spellcastingBaseItemChances, itemID);
 		}
 	}
@@ -594,18 +596,18 @@ int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeD
 }
 
 void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, Random &random,
-	int *outItemID, bool *outIsPotion, ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID)
+	int *outItemID, bool *outIsPotion, ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID)
 {
 	int itemID = -1;
 	ItemMaterialDefinitionID materialID = -1;
 	PrimaryAttributeID attributeID = -1;
 	bool isPotion;
-	SpellDefinitionID spellID = -1;
+	SpellID spellID = -1;
 
 	if (random.nextBool())
 	{
 		isPotion = true;
-		itemID = pickPotion(random);
+		itemID = ArenaEntityUtils::pickPotion(random);
 	}
 	else
 	{
@@ -617,7 +619,7 @@ void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityT
 			ArenaEntityUtils::pickMagicAccessoryOrTrinket(-1, quality, exeData, random, &itemID, &materialID, &attributeID, &spellID);
 		}
 	}
-	
+
 	*outItemID = itemID;
 	*outMaterialID = materialID;
 	*outAttributeID = attributeID;
