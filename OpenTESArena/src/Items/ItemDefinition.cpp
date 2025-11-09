@@ -37,7 +37,7 @@ void ItemMaterialDefinition::init(const char *name, int ratingMultiplier, int co
 	this->weightMultiplier = weightMultiplier;
 }
 
-void AccessoryItemDefinition::init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, AttributeDefinitionID attributeID, int basePrice)
+void AccessoryItemDefinition::init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);

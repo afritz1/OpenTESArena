@@ -14,7 +14,7 @@ void ItemLibrary::init(const ExeData &exeData)
 
 	for (int i = 0; i < accessoryNames.getCount(); i++)
 	{
-		for (int materialID = 3; materialID < materialNames.getCount(); materialID++) // The first 3 materials aren't used
+		for (ItemMaterialDefinitionID materialID = 3; materialID < materialNames.getCount(); materialID++) // The first 3 materials aren't used
 		{
 			ItemDefinition itemDef;
 			itemDef.init(ItemType::Accessory, i);
@@ -24,7 +24,7 @@ void ItemLibrary::init(const ExeData &exeData)
 			this->itemDefs.emplace_back(std::move(itemDef));
 		}
 
-		for (int attributeID = 0; attributeID < attributeNames.getCount(); attributeID++)
+		for (PrimaryAttributeID attributeID = 0; attributeID < attributeNames.getCount(); attributeID++)
 		{
 			ItemDefinition itemDef;
 			itemDef.init(ItemType::Accessory, i);

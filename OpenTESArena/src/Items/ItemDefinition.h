@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include "../Stats/PrimaryAttribute.h"
+
 #include "components/utilities/Enum.h"
 #include "components/utilities/Span.h"
 
@@ -19,7 +21,6 @@ struct ItemConditionDefinition
 };
 
 using ItemMaterialDefinitionID = int;
-using AttributeDefinitionID = int;
 using SpellDefinitionID = int;
 
 struct ItemMaterialDefinition
@@ -40,9 +41,9 @@ struct AccessoryItemDefinition
 	char unidentifiedName[64]; // Amulet, belt, etc..
 	ItemMaterialDefinitionID materialDefID;
 	int basePrice;
-	AttributeDefinitionID attributeID;
+	PrimaryAttributeID attributeID;
 
-	void init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, AttributeDefinitionID attributeID, int basePrice);
+	void init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice);
 };
 
 enum class ArmorMaterialType

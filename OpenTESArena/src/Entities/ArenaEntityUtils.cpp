@@ -257,11 +257,12 @@ int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition
 	return condition;
 }
 
-void ArenaEntityUtils::getCreatureMagicItem(int creatureLevel, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion, ItemMaterialDefinitionID *outMaterialID, AttributeDefinitionID *outAttributeID, SpellDefinitionID *outSpellID)
+void ArenaEntityUtils::getCreatureMagicItem(int creatureLevel, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion,
+	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID)
 {
 	int itemID = -1;
 	ItemMaterialDefinitionID materialID = -1;
-	AttributeDefinitionID attributeID = -1;
+	PrimaryAttributeID attributeID = -1;
 	SpellDefinitionID spellID = -1;
 	bool isPotion;
 
@@ -290,11 +291,12 @@ int ArenaEntityUtils::pickPotion(Random &random)
 	return random.next(numberOfPotionTypes);
 }
 
-void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID, AttributeDefinitionID *outAttributeID, SpellDefinitionID *outSpellID)
+void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID,
+	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID)
 {
 	int itemID = -1;
 	ItemMaterialDefinitionID materialID = -1;
-	AttributeDefinitionID attributeID = -1;
+	PrimaryAttributeID attributeID = -1;
 	SpellDefinitionID spellID = -1;
 
 	const int type = random.next(3);
@@ -413,11 +415,11 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 	*outSpellID = spellID;
 }
 
-void ArenaEntityUtils::pickAttributeEnhancementItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, AttributeDefinitionID *outAttributeID)
+void ArenaEntityUtils::pickAttributeEnhancementItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, PrimaryAttributeID *outAttributeID)
 {
 	const auto &enhancementBaseItemChances = exeData.equipment.enhancementItemCumulativeChances;
 	int itemID = -1;
-	AttributeDefinitionID attributeID = -1;
+	PrimaryAttributeID attributeID = -1;
 	const int attributeCount = 8;
 
 	if (quality > 6)
@@ -428,12 +430,13 @@ void ArenaEntityUtils::pickAttributeEnhancementItem(int specifiedItemID, int qua
 		}
 		else
 		{
-			int roll = random.next(100);
+			const int roll = random.next(100);
 			for (itemID = 0; enhancementBaseItemChances[itemID] <= roll; itemID++)
 			{
 				DebugAssertIndex(enhancementBaseItemChances, itemID);
 			}
 		}
+
 		attributeID = random.next(attributeCount);
 	}
 
@@ -590,11 +593,12 @@ int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeD
 	return goldAmount;
 }
 
-void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion, ItemMaterialDefinitionID *outMaterialID, AttributeDefinitionID *outAttributeID, SpellDefinitionID *outSpellID)
+void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, Random &random,
+	int *outItemID, bool *outIsPotion, ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellDefinitionID *outSpellID)
 {
 	int itemID = -1;
 	ItemMaterialDefinitionID materialID = -1;
-	AttributeDefinitionID attributeID = -1;
+	PrimaryAttributeID attributeID = -1;
 	bool isPotion;
 	SpellDefinitionID spellID = -1;
 
@@ -606,7 +610,8 @@ void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityT
 	else
 	{
 		isPotion = false;
-		const int quality = getLootItemQualityValue(lootValuesIndex, random, cityType, levelIndex);
+
+		const int quality = ArenaEntityUtils::getLootItemQualityValue(lootValuesIndex, random, cityType, levelIndex);
 		if (quality >= 3)
 		{
 			ArenaEntityUtils::pickMagicAccessoryOrTrinket(-1, quality, exeData, random, &itemID, &materialID, &attributeID, &spellID);

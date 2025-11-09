@@ -386,7 +386,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				{
 					int magicItemID;
 					ItemMaterialDefinitionID materialID;
-					AttributeDefinitionID attributeID;
+					PrimaryAttributeID attributeID;
 					bool isPotion;
 					SpellDefinitionID spellID;
 					ArenaEntityUtils::getCreatureMagicItem(enemyDef.creature.level, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
