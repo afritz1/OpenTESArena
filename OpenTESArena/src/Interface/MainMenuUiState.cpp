@@ -58,11 +58,14 @@ void MainMenuUI::create(Game &game)
 	state.elements.imageElementInstIDs.emplace_back(bgImageElementInstID);
 
 	UiElementInitInfo testButtonTextBoxElementInitInfo;
+	testButtonTextBoxElementInitInfo.position = MainMenuUiView::getTestButtonRect().getCenter();
+	testButtonTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	testButtonTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
 	testButtonTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo testButtonTextBoxInitInfo;
 	testButtonTextBoxInitInfo.worstCaseText = std::string(5, TextRenderUtils::LARGEST_CHAR);
+	testButtonTextBoxInitInfo.text = "Test";
 	testButtonTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testButtonTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testButtonTextBoxInitInfo.alignment = MainMenuUiView::TestButtonTextAlignment;

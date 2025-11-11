@@ -160,6 +160,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 
 	UiTextBox &textBox = this->textBoxes.get(textBoxInstID);
 	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.alignment, textBoxInitInfo.lineSpacing);
+	textBox.text = textBoxInitInfo.text;
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
@@ -361,7 +362,42 @@ void UiManager::update(double dt, Game &game)
 		}
 	}
 
-	const Renderer &renderer = game.renderer;
+	Renderer &renderer = game.renderer;
+
+	// Update dirty text boxes.
+	for (UiTextBox &textBox : this->textBoxes.values)
+	{
+		if (!textBox.dirty)
+		{
+			continue;
+		}
+
+		const UiTextureID textBoxTextureID = textBox.textureID;
+		LockedTexture lockedTexture = renderer.lockUiTexture(textBoxTextureID);
+		if (!lockedTexture.isValid())
+		{
+			DebugLogError("Couldn't lock text box UI texture for updating.");
+			return;
+		}
+
+		Span2D<uint32_t> texels = lockedTexture.getTexels32();
+		texels.fill(0);
+
+		if (!textBox.text.empty())
+		{
+			const FontLibrary &fontLibrary = FontLibrary::getInstance();
+			const FontDefinition &fontDef = fontLibrary.getDefinition(textBox.fontDefIndex);
+
+			const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(textBox.text);
+			const TextRenderColorOverrideInfo *colorOverrideInfoPtr = (textBox.colorOverrideInfo.getEntryCount() > 0) ? &textBox.colorOverrideInfo : nullptr;
+			const TextRenderShadowInfo *shadowInfoPtr = textBox.shadowInfo.has_value() ? &(*textBox.shadowInfo) : nullptr;
+			TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, textBox.defaultColor, textBox.alignment, textBox.lineSpacing,
+				colorOverrideInfoPtr, shadowInfoPtr, texels);
+		}
+
+		renderer.unlockUiTexture(textBoxTextureID);
+		textBox.dirty = false;
+	}
 
 	// Update layouts.
 	for (UiElement &element : this->elements.values)
@@ -450,7 +486,6 @@ void UiManager::update(double dt, Game &game)
 		}
 		case UiElementType::TextBox:
 		{
-			// @todo need to update the texture first if dirty
 			const UiTextBox &textBox = this->textBoxes.get(element->textBoxInstID);
 			const UiTextureID textBoxTextureID = textBox.textureID;
 			renderElement.id = textBoxTextureID;

@@ -16,7 +16,8 @@ using UiTextBoxInstanceID = int;
 
 struct UiTextBoxInitInfo
 {
-	std::string worstCaseText;
+	std::string worstCaseText; // Determines texture dimensions.
+	std::string text; // Actual text for presentation.
 	const char *fontName;
 	Color defaultColor;
 	TextAlignment alignment;
