@@ -251,12 +251,7 @@ Game::~Game()
 		this->defaultCursorTextureID = -1;
 	}
 
-	if (this->cursorImageElementInstID >= 0)
-	{
-		this->uiManager.freeImage(this->cursorImageElementInstID);
-		this->cursorImageElementInstID = -1;
-	}
-
+	this->uiContextElements.free(this->uiManager, this->renderer);
 	this->uiManager.shutdown(this->renderer);
 	this->sceneManager.shutdown(this->renderer);
 
@@ -452,7 +447,7 @@ bool Game::init()
 	cursorImageElementInitInfo.contextType = UiContextType::Global;
 	cursorImageElementInitInfo.drawOrder = 100;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
-	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID);
+	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->uiContextElements);
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";

@@ -72,6 +72,9 @@ namespace TextRenderUtils
 	// Used when determining worst-case text box dimensions.
 	constexpr char LARGEST_CHAR = 'W';
 
+	// Makes a simple string of W's with no newlines.
+	std::string makeWorstCaseText(int charCount);
+
 	// Splits a string of text into lines based on newline characters.
 	Buffer<std::string_view> getTextLines(const std::string_view text);
 

@@ -56,7 +56,7 @@ void UiManager::setTransformSize(UiElementInstanceID elementInstID, Int2 size)
 	transform.size = size;
 }
 
-UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID)
+UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextElements &contextElements)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
@@ -91,6 +91,8 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	UiElement &element = this->elements.get(elementInstID);
 	element.initImage(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
 
+	contextElements.imageElementInstIDs.emplace_back(elementInstID);
+
 	return elementInstID;
 }
 
@@ -117,7 +119,7 @@ void UiManager::freeImage(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, Renderer &renderer)
+UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextElements &contextElements, Renderer &renderer)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
@@ -168,6 +170,8 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	UiElement &element = this->elements.get(elementInstID);
 	element.initTextBox(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
 
+	contextElements.textBoxElementInstIDs.emplace_back(elementInstID);
+
 	return elementInstID;
 }
 
@@ -198,7 +202,7 @@ void UiManager::freeTextBox(UiElementInstanceID elementInstID, Renderer &rendere
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
+UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, UiContextElements &contextElements)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
@@ -232,6 +236,8 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo)
 
 	UiElement &element = this->elements.get(elementInstID);
 	element.initButton(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
+
+	contextElements.buttonElementInstIDs.emplace_back(elementInstID);
 
 	return elementInstID;
 }

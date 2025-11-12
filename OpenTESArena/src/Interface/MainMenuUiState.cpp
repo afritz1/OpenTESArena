@@ -1,3 +1,4 @@
+#include "MainMenuUiModel.h"
 #include "MainMenuUiState.h"
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
@@ -52,16 +53,29 @@ void MainMenuUI::create(Game &game)
 	MainMenuUiState &state = MainMenuUI::state;
 	state.allocate(uiManager, game.textureManager, renderer);
 
+	state.testType = 0;
+	state.testIndex = 0;
+	state.testIndex2 = 1;
+	state.testWeather = 0;
+
 	UiElementInitInfo bgImageElementInitInfo;
 	bgImageElementInitInfo.contextType = UiContextType::MainMenu;
-	const UiElementInstanceID bgImageElementInstID = uiManager.createImage(bgImageElementInitInfo, state.bgTextureID);
-	state.elements.imageElementInstIDs.emplace_back(bgImageElementInstID);
+	uiManager.createImage(bgImageElementInitInfo, state.bgTextureID, state.elements);
+
+	const Rect testButtonRect = MainMenuUiView::getTestButtonRect();
+
+	UiElementInitInfo testButtonImageElementInitInfo;
+	testButtonImageElementInitInfo.position = testButtonRect.getCenter();
+	testButtonImageElementInitInfo.pivotType = UiPivotType::Middle;
+	testButtonImageElementInitInfo.contextType = UiContextType::MainMenu;
+	testButtonImageElementInitInfo.drawOrder = 1;
+	uiManager.createImage(testButtonImageElementInitInfo, state.testButtonTextureID, state.elements);
 
 	UiElementInitInfo testButtonTextBoxElementInitInfo;
-	testButtonTextBoxElementInitInfo.position = MainMenuUiView::getTestButtonRect().getCenter();
+	testButtonTextBoxElementInitInfo.position = testButtonRect.getCenter();
 	testButtonTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	testButtonTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
-	testButtonTextBoxElementInitInfo.drawOrder = 1;
+	testButtonTextBoxElementInitInfo.drawOrder = 2;
 
 	UiTextBoxInitInfo testButtonTextBoxInitInfo;
 	testButtonTextBoxInitInfo.worstCaseText = std::string(5, TextRenderUtils::LARGEST_CHAR);
@@ -69,27 +83,90 @@ void MainMenuUI::create(Game &game)
 	testButtonTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testButtonTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testButtonTextBoxInitInfo.alignment = MainMenuUiView::TestButtonTextAlignment;
+	uiManager.createTextBox(testButtonTextBoxElementInitInfo, testButtonTextBoxInitInfo, state.elements, renderer);
 
-	const UiElementInstanceID testButtonTextBoxElementInstID = uiManager.createTextBox(testButtonTextBoxElementInitInfo, testButtonTextBoxInitInfo, renderer);
-	state.elements.textBoxElementInstIDs.emplace_back(testButtonTextBoxElementInstID);
+	const Rect testTypeUpRect = MainMenuUiView::getTestTypeUpButtonRect();
+	const Rect testIndexUpRect = MainMenuUiView::getTestIndexUpButtonRect();
+	const Rect testIndex2UpRect = MainMenuUiView::getTestIndex2UpButtonRect();
+	const Rect testWeatherUpRect = MainMenuUiView::getTestWeatherUpButtonRect();
 
-	// @todo: Ui buttons and text boxes from MainMenuPanel
+	UiElementInitInfo testTypeArrowImageElementInitInfo;
+	testTypeArrowImageElementInitInfo.position = testTypeUpRect.getTopLeft();
+	testTypeArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
+	testTypeArrowImageElementInitInfo.drawOrder = 2;
+	uiManager.createImage(testTypeArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
 
-	state.testType = 0;
-	state.testIndex = 0;
-	state.testIndex2 = 1;
-	state.testWeather = 0;
+	UiElementInitInfo testIndexArrowImageElementInitInfo;
+	testIndexArrowImageElementInitInfo.position = testIndexUpRect.getTopLeft();
+	testIndexArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
+	testIndexArrowImageElementInitInfo.drawOrder = 2;
+	uiManager.createImage(testIndexArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+
+	UiElementInitInfo testIndex2ArrowImageElementInitInfo;
+	testIndex2ArrowImageElementInitInfo.position = testIndex2UpRect.getTopLeft();
+	testIndex2ArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
+	testIndex2ArrowImageElementInitInfo.drawOrder = 2;
+	uiManager.createImage(testIndex2ArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+
+	UiElementInitInfo testWeatherArrowImageElementInitInfo;
+	testWeatherArrowImageElementInitInfo.position = testWeatherUpRect.getTopLeft();
+	testWeatherArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
+	testWeatherArrowImageElementInitInfo.drawOrder = 2;
+	uiManager.createImage(testWeatherArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+
+	UiElementInitInfo testTypeTextBoxElementInitInfo;
+	testTypeTextBoxElementInitInfo.position = testTypeUpRect.getBottomLeft() - Int2(2, 0);
+	testTypeTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
+	testTypeTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
+	testTypeTextBoxElementInitInfo.drawOrder = 3;
+
+	UiTextBoxInitInfo testTypeTextBoxInitInfo;
+	testTypeTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(15);
+	testTypeTextBoxInitInfo.text = "Test type: " + MainMenuUiModel::getTestTypeName(state.testType);
+	testTypeTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
+	testTypeTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
+	testTypeTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
+	uiManager.createTextBox(testTypeTextBoxElementInitInfo, testTypeTextBoxInitInfo, state.elements, renderer);
+
+	UiElementInitInfo testNameTextBoxElementInitInfo;
+	testNameTextBoxElementInitInfo.position = testIndexUpRect.getBottomLeft() - Int2(2, 0);
+	testNameTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
+	testNameTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
+	testNameTextBoxElementInitInfo.drawOrder = 3;
+
+	UiTextBoxInitInfo testNameTextBoxInitInfo;
+	testNameTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(15);
+	testNameTextBoxInitInfo.text = "Test location: " + MainMenuUiModel::getSelectedTestName(game, state.testType, state.testIndex, state.testIndex2);
+	testNameTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
+	testNameTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
+	testNameTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
+	uiManager.createTextBox(testNameTextBoxElementInitInfo, testNameTextBoxInitInfo, state.elements, renderer);
+
+	UiElementInitInfo testWeatherTextBoxElementInitInfo;
+	testWeatherTextBoxElementInitInfo.position = testWeatherUpRect.getBottomLeft() - Int2(2, 0);
+	testWeatherTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
+	testWeatherTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
+	testWeatherTextBoxElementInitInfo.drawOrder = 3;
+
+	const ArenaWeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(state.testWeather);
+
+	UiTextBoxInitInfo testWeatherTextBoxInitInfo;
+	testWeatherTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(16);
+	testWeatherTextBoxInitInfo.text = "Test weather: " + MainMenuUiModel::WeatherTypeNames.at(testWeatherType);
+	testWeatherTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
+	testWeatherTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
+	testWeatherTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
+	uiManager.createTextBox(testWeatherTextBoxElementInitInfo, testWeatherTextBoxInitInfo, state.elements, renderer);
 
 	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
-
-	const std::optional<Int2> dims = renderer.tryGetUiTextureDims(cursorTextureID);
-	DebugAssert(dims.has_value());
+	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);
+	DebugAssert(cursorDims.has_value());
 
 	const Options &options = game.options;
-	const double scale = options.getGraphics_CursorScale();
+	const double cursorScale = options.getGraphics_CursorScale();
 	const Int2 cursorSize(
-		static_cast<int>(static_cast<double>(dims->x) * scale),
-		static_cast<int>(static_cast<double>(dims->y) * scale));
+		static_cast<int>(static_cast<double>(cursorDims->x) * cursorScale),
+		static_cast<int>(static_cast<double>(cursorDims->y) * cursorScale));
 	uiManager.setTransformSize(game.cursorImageElementInstID, cursorSize);
 	uiManager.setImageTexture(game.cursorImageElementInstID, cursorTextureID);
 }

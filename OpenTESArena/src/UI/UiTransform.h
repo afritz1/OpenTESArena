@@ -5,7 +5,7 @@
 
 enum class UiPivotType;
 
-// Determines logical dimensions for the layout and rendering of an element.
+// Determines logical dimensions for the element's layout and rendering.
 enum class UiTransformSizeType
 {
 	Content, // Driven by the element's image, text box, etc..

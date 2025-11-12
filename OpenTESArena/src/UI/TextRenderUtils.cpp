@@ -111,6 +111,11 @@ void TextRenderShadowInfo::init(int offsetX, int offsetY, const Color &color)
 	this->color = color;
 }
 
+std::string TextRenderUtils::makeWorstCaseText(int charCount)
+{
+	return std::string(charCount, TextRenderUtils::LARGEST_CHAR);
+}
+
 Buffer<std::string_view> TextRenderUtils::getTextLines(const std::string_view text)
 {
 	// @todo: might eventually handle "\r\n".

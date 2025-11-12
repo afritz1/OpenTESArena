@@ -20,6 +20,7 @@
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Window.h"
 #include "../UI/TextBox.h"
+#include "../UI/UiContext.h"
 #include "../UI/UiManager.h"
 #include "../World/ChunkManager.h"
 #include "../World/SceneManager.h"
@@ -66,6 +67,7 @@ public:
 
 	SceneManager sceneManager;
 	UiManager uiManager;
+	UiContextElements uiContextElements; // For global UI elements like cursor.
 	UiElementInstanceID cursorImageElementInstID;
 	UiTextureID defaultCursorTextureID; // Sword cursor used by most UI.
 

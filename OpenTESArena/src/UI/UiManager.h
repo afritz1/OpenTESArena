@@ -17,6 +17,7 @@ class TextureManager;
 enum class UiContextType;
 
 struct UiCommandList;
+struct UiContextElements;
 
 using UiContextCallback = void(*)(Game &game);
 using UiContextUpdateCallback = void(*)(double dt, Game &game);
@@ -45,15 +46,15 @@ public:
 	void setTransformPosition(UiElementInstanceID elementInstID, Int2 position);
 	void setTransformSize(UiElementInstanceID elementInstID, Int2 size);
 
-	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID);
+	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextElements &contextElements);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
 
-	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, Renderer &renderer);
+	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextElements &contextElements, Renderer &renderer);
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
-	UiElementInstanceID createButton(const UiElementInitInfo &initInfo); // @todo provide button size + callback
+	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, UiContextElements &contextElements); // @todo provide button init info
 	void freeButton(UiElementInstanceID elementInstID);
 
 	void addBeginContextCallback(UiContextType contextType, const UiContextCallback &callback);
