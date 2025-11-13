@@ -1,11 +1,19 @@
 #include "UiButton.h"
 
-UiButton::UiButton()
+UiButtonInitInfo::UiButtonInitInfo()
 {
-
+	this->callback = []() { };
+	this->contentElementInstID = -1;
 }
 
-void UiButton::init()
+UiButton::UiButton()
 {
+	this->callback = []() { };
+	this->contentElementInstID = -1;
+}
 
+void UiButton::init(const UiButtonCallback &callback, UiElementInstanceID contentElementInstID)
+{
+	this->callback = callback;
+	this->contentElementInstID = contentElementInstID;
 }

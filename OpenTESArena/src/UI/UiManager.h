@@ -6,7 +6,11 @@
 #include <vector>
 
 #include "TextRenderUtils.h"
+#include "UiButton.h"
 #include "UiElement.h"
+#include "UiImage.h"
+#include "UiTextBox.h"
+#include "UiTransform.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/KeyValuePool.h"
@@ -54,7 +58,7 @@ public:
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
-	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, UiContextElements &contextElements); // @todo provide button init info
+	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextElements &contextElements);
 	void freeButton(UiElementInstanceID elementInstID);
 
 	void addBeginContextCallback(UiContextType contextType, const UiContextCallback &callback);

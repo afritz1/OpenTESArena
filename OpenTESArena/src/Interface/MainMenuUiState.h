@@ -1,6 +1,7 @@
 #ifndef MAIN_MENU_UI_STATE_H
 #define MAIN_MENU_UI_STATE_H
 
+#include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 

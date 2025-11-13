@@ -1,9 +1,12 @@
+#include "MainMenuUiController.h"
 #include "MainMenuUiModel.h"
 #include "MainMenuUiState.h"
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
+#include "../UI/UiButton.h"
+#include "../UI/UiTextBox.h"
 
 MainMenuUiState::MainMenuUiState()
 {
@@ -157,6 +160,44 @@ void MainMenuUI::create(Game &game)
 	testWeatherTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testWeatherTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
 	uiManager.createTextBox(testWeatherTextBoxElementInitInfo, testWeatherTextBoxInitInfo, state.elements, renderer);
+
+	const Rect loadButtonRect = MainMenuUiView::getLoadButtonRect();
+	const Rect newGameButtonRect = MainMenuUiView::getNewGameButtonRect();
+	const Rect exitButtonRect = MainMenuUiView::getExitButtonRect();
+
+	UiElementInitInfo loadButtonElementInitInfo;
+	loadButtonElementInitInfo.position = loadButtonRect.getTopLeft();
+	loadButtonElementInitInfo.size = loadButtonRect.getSize();
+	loadButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	loadButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo loadButtonInitInfo;
+	loadButtonInitInfo.callback = [&game]() { MainMenuUiController::onLoadGameButtonSelected(game); };
+	uiManager.createButton(loadButtonElementInitInfo, loadButtonInitInfo, state.elements);
+
+	UiElementInitInfo newGameButtonElementInitInfo;
+	newGameButtonElementInitInfo.position = newGameButtonRect.getTopLeft();
+	newGameButtonElementInitInfo.size = newGameButtonRect.getSize();
+	newGameButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	newGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo newGameButtonInitInfo;
+	newGameButtonInitInfo.callback = [&game]() { MainMenuUiController::onNewGameButtonSelected(game); };
+	uiManager.createButton(newGameButtonElementInitInfo, newGameButtonInitInfo, state.elements);
+
+	UiElementInitInfo exitButtonElementInitInfo;
+	exitButtonElementInitInfo.position = exitButtonRect.getTopLeft();
+	exitButtonElementInitInfo.size = exitButtonRect.getSize();
+	exitButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	exitButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo exitButtonInitInfo;
+	exitButtonInitInfo.callback = MainMenuUiController::onExitGameButtonSelected;
+	uiManager.createButton(exitButtonElementInitInfo, exitButtonInitInfo, state.elements);
+
+	// @todo implement test buttons, update text boxes on test clicks
+	// @todo hook up UiButton to input manager, need to know if left or right click for some things (automap/world map)
+	// @todo comment out old Buttons in MainMenuPanel
 
 	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
 	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);

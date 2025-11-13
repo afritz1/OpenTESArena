@@ -12,8 +12,6 @@ class Renderer;
 
 enum class TextAlignment;
 
-using UiTextBoxInstanceID = int;
-
 struct UiTextBoxInitInfo
 {
 	std::string worstCaseText; // Determines texture dimensions.

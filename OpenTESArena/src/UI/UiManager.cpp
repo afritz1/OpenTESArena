@@ -1,10 +1,13 @@
 #include "FontLibrary.h"
 #include "GuiUtils.h"
 #include "TextRenderUtils.h"
+#include "UiButton.h"
 #include "UiCommand.h"
 #include "UiContext.h"
+#include "UiImage.h"
 #include "UiManager.h"
 #include "UiRenderSpace.h"
+#include "UiTextBox.h"
 #include "../Game/Game.h"
 #include "../Interface/MainMenuUiState.h"
 
@@ -202,7 +205,7 @@ void UiManager::freeTextBox(UiElementInstanceID elementInstID, Renderer &rendere
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, UiContextElements &contextElements)
+UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextElements &contextElements)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
@@ -229,7 +232,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, U
 	}
 
 	UiButton &button = this->buttons.get(buttonInstID);
-	button.init();
+	button.init(buttonInitInfo.callback, buttonInitInfo.contentElementInstID);
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
@@ -405,7 +408,7 @@ void UiManager::update(double dt, Game &game)
 		textBox.dirty = false;
 	}
 
-	// Update layouts.
+	// Update element sizes with no dependency.
 	for (UiElement &element : this->elements.values)
 	{
 		UiTransform &transform = this->transforms.get(element.transformInstID);
@@ -428,9 +431,32 @@ void UiManager::update(double dt, Game &game)
 				break;
 			}
 			case UiElementType::Button:
+				break;
+			default:
+				DebugNotImplementedMsg(std::to_string(static_cast<int>(element.type)));
+				break;
+			}
+		}
+	}
+
+	// Update element sizes with dependency (after independent ones).
+	for (UiElement &element : this->elements.values)
+	{
+		UiTransform &transform = this->transforms.get(element.transformInstID);
+		if (transform.sizeType == UiTransformSizeType::Content)
+		{
+			switch (element.type)
 			{
-				// @todo UiButton
-				DebugNotImplemented();
+			case UiElementType::Image:
+				break;
+			case UiElementType::TextBox:
+				break;
+			case UiElementType::Button:
+			{
+				const UiButton &button = this->buttons.get(element.buttonInstID);
+				const UiElement &contentElement = this->elements.get(button.contentElementInstID);
+				const UiTransform &contentTransform = this->transforms.get(contentElement.transformInstID);
+				transform.size = contentTransform.size;
 				break;
 			}
 			default:
@@ -498,12 +524,7 @@ void UiManager::update(double dt, Game &game)
 			break;
 		}
 		case UiElementType::Button:
-		{
-			const UiButton &button = this->buttons.get(element->buttonInstID);
-			// @todo optional UiTextureID
-			DebugNotImplemented();
 			break;
-		}
 		default:
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(element->type)));
 			break;

@@ -3,8 +3,6 @@
 
 #include "../Rendering/RenderTextureUtils.h"
 
-using UiImageInstanceID = int;
-
 struct UiImage
 {
 	UiTextureID textureID; // Owned by UI manager.

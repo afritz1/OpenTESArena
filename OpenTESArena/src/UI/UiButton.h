@@ -1,16 +1,28 @@
 #ifndef UI_BUTTON_H
 #define UI_BUTTON_H
 
-using UiButtonInstanceID = int;
+#include "UiElement.h"
+
+#include <functional>
+
+using UiButtonCallback = std::function<void()>;
+
+struct UiButtonInitInfo
+{
+	UiButtonCallback callback;
+	UiElementInstanceID contentElementInstID;
+
+	UiButtonInitInfo();
+};
 
 struct UiButton
 {
-	//Button<> button;
-	// @todo buttons should have optional UiTextureID to avoid requiring a separate UiImage component at the same position
+	UiButtonCallback callback;
+	UiElementInstanceID contentElementInstID; // Optionally points to child image/text box/etc. for transform size.
 
 	UiButton();
 
-	void init();
+	void init(const UiButtonCallback &callback, UiElementInstanceID contentElementInstID);
 };
 
 #endif

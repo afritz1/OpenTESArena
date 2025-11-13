@@ -1,9 +1,6 @@
 #ifndef UI_ELEMENT_H
 #define UI_ELEMENT_H
 
-#include "UiButton.h"
-#include "UiImage.h"
-#include "UiTextBox.h"
 #include "UiTransform.h"
 
 class UiManager;
@@ -15,6 +12,10 @@ enum class UiTransformSizeType;
 
 // All UI elements (images, text boxes, etc.) come with a base handle.
 using UiElementInstanceID = int;
+
+using UiImageInstanceID = int;
+using UiTextBoxInstanceID = int;
+using UiButtonInstanceID = int;
 
 enum class UiElementType
 {
