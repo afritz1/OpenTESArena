@@ -47,8 +47,14 @@ public:
 
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
 
+	Int2 getTransformPosition(UiElementInstanceID elementInstID) const;
+	Int2 getTransformSize(UiElementInstanceID elementInstID) const;
 	void setTransformPosition(UiElementInstanceID elementInstID, Int2 position);
 	void setTransformSize(UiElementInstanceID elementInstID, Int2 size);
+
+	const UiButtonCallback &getButtonCallback(UiElementInstanceID elementInstID) const;
+	
+	std::vector<UiElementInstanceID> getActiveButtonInstIDs() const;
 
 	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextElements &contextElements);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);

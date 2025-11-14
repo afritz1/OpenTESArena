@@ -2,13 +2,13 @@
 
 UiButtonInitInfo::UiButtonInitInfo()
 {
-	this->callback = []() { };
+	this->callback = [](MouseButtonType) { };
 	this->contentElementInstID = -1;
 }
 
 UiButton::UiButton()
 {
-	this->callback = []() { };
+	this->callback = [](MouseButtonType) { };
 	this->contentElementInstID = -1;
 }
 

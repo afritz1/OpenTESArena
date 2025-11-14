@@ -5,7 +5,9 @@
 
 #include <functional>
 
-using UiButtonCallback = std::function<void()>;
+enum class MouseButtonType;
+
+using UiButtonCallback = std::function<void(MouseButtonType mouseButtonType)>;
 
 struct UiButtonInitInfo
 {

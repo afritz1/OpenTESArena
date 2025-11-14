@@ -19,7 +19,7 @@
 
 #include "components/utilities/Span.h"
 
-struct ButtonProxy;
+struct UiManager;
 
 using InputListenerID = int;
 
@@ -231,7 +231,7 @@ public:
 	void setTextInputMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(Game &game, double dt, Span<const ButtonProxy> buttonProxies, const std::function<void()> &onFinishedProcessingEvent);
+	void update(Game &game, double dt, const UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent);
 };
 
 #endif

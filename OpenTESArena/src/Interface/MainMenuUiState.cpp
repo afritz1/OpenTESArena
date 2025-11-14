@@ -172,7 +172,7 @@ void MainMenuUI::create(Game &game)
 	loadButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo loadButtonInitInfo;
-	loadButtonInitInfo.callback = [&game]() { MainMenuUiController::onLoadGameButtonSelected(game); };
+	loadButtonInitInfo.callback = [&game](MouseButtonType) { MainMenuUiController::onLoadGameButtonSelected(game); };
 	uiManager.createButton(loadButtonElementInitInfo, loadButtonInitInfo, state.elements);
 
 	UiElementInitInfo newGameButtonElementInitInfo;
@@ -182,7 +182,7 @@ void MainMenuUI::create(Game &game)
 	newGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo newGameButtonInitInfo;
-	newGameButtonInitInfo.callback = [&game]() { MainMenuUiController::onNewGameButtonSelected(game); };
+	newGameButtonInitInfo.callback = [&game](MouseButtonType) { MainMenuUiController::onNewGameButtonSelected(game); };
 	uiManager.createButton(newGameButtonElementInitInfo, newGameButtonInitInfo, state.elements);
 
 	UiElementInitInfo exitButtonElementInitInfo;
@@ -192,7 +192,7 @@ void MainMenuUI::create(Game &game)
 	exitButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo exitButtonInitInfo;
-	exitButtonInitInfo.callback = MainMenuUiController::onExitGameButtonSelected;
+	exitButtonInitInfo.callback = [](MouseButtonType) { MainMenuUiController::onExitGameButtonSelected(); };
 	uiManager.createButton(exitButtonElementInitInfo, exitButtonInitInfo, state.elements);
 
 	// @todo implement test buttons, update text boxes on test clicks

@@ -668,8 +668,7 @@ void InputManager::handleHeldInputs(Game &game, Span<const InputActionMap*> acti
 	}
 }
 
-void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonProxies,
-	const std::function<void()> &onFinishedProcessingEvent)
+void InputManager::update(Game &game, double dt, const UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent)
 {
 	int logicalMouseDeltaX, logicalMouseDeltaY;
 	SDL_GetRelativeMouseState(&logicalMouseDeltaX, &logicalMouseDeltaY);
@@ -833,23 +832,21 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 					// Check for clicked buttons in the UI.
 					// @todo: a more "accurate" way to check button clicks might be:
 					// - if button press is in rect, then save it, and if button release is also in that rect, then click.
-					for (const ButtonProxy &buttonProxy : buttonProxies)
+					const Int2 classicMousePos = game.window.nativeToOriginal(mousePosition);
+					const std::vector<UiElementInstanceID> activeButtonInstIDs = uiManager.getActiveButtonInstIDs();
+					
+					for (const UiElementInstanceID elementInstID : activeButtonInstIDs)
 					{
-						const bool isButtonActive = !buttonProxy.isActiveFunc || buttonProxy.isActiveFunc();
-						if (isButtonActive)
+						const Int2 buttonPosition = uiManager.getTransformPosition(elementInstID);
+						const Int2 buttonSize = uiManager.getTransformSize(elementInstID);
+						const Rect buttonRect(buttonPosition, buttonSize.x, buttonSize.y);
+						const Rect buttonParentRect; // @todo get from UiButton
+						const bool isValidMouseSelection = buttonRect.contains(classicMousePos) && (buttonParentRect.isEmpty() || buttonParentRect.contains(classicMousePos));
+						if (isValidMouseSelection)
 						{
-							const Int2 classicMousePos = game.window.nativeToOriginal(mousePosition);
-
-							DebugAssert(buttonProxy.rectFunc);
-							const Rect buttonRect = buttonProxy.rectFunc();
-							const Rect buttonParentRect = buttonProxy.parentRect;
-							const bool isValidMouseSelection = buttonRect.contains(classicMousePos) && (buttonParentRect.isEmpty() || buttonParentRect.contains(classicMousePos));
-							const bool matchesButtonType = *buttonType == buttonProxy.buttonType;
-							if (isValidMouseSelection && matchesButtonType)
-							{
-								buttonProxy.callback();
-								break;
-							}
+							const UiButtonCallback &buttonCallback = uiManager.getButtonCallback(elementInstID);
+							buttonCallback(*buttonType);
+							break;
 						}
 					}
 				}

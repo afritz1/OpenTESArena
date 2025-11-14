@@ -877,13 +877,12 @@ void Game::loop()
 		// User input.
 		try
 		{
-			const Span<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
 			auto onFinishedProcessingEventFunc = [this]()
 			{
 				this->handlePanelChanges();
 			};
 
-			this->inputManager.update(*this, deltaTime, buttonProxies, onFinishedProcessingEventFunc);
+			this->inputManager.update(*this, deltaTime, this->uiManager, onFinishedProcessingEventFunc);
 
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{

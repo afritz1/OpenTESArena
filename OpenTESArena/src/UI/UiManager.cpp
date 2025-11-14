@@ -45,6 +45,21 @@ void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
 	element.active = active;
 }
 
+Int2 UiManager::getTransformPosition(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+	const UiTransform &transform = this->transforms.get(element.transformInstID);
+	// @todo parent transform calculation if any
+	return transform.position;
+}
+
+Int2 UiManager::getTransformSize(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+	const UiTransform &transform = this->transforms.get(element.transformInstID);
+	return transform.size;
+}
+
 void UiManager::setTransformPosition(UiElementInstanceID elementInstID, Int2 position)
 {
 	UiElement &element = this->elements.get(elementInstID);
@@ -57,6 +72,42 @@ void UiManager::setTransformSize(UiElementInstanceID elementInstID, Int2 size)
 	UiElement &element = this->elements.get(elementInstID);
 	UiTransform &transform = this->transforms.get(element.transformInstID);
 	transform.size = size;
+}
+
+const UiButtonCallback &UiManager::getButtonCallback(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+	DebugAssert(element.type == UiElementType::Button);
+	const UiButton &button = this->buttons.get(element.buttonInstID);
+	return button.callback;
+}
+
+std::vector<UiElementInstanceID> UiManager::getActiveButtonInstIDs() const
+{
+	std::vector<UiElementInstanceID> activeButtonInstIDs;
+
+	for (const UiElementInstanceID instID : this->elements.keys)
+	{
+		const UiElement &element = this->elements.get(instID);
+		if (!element.active)
+		{
+			continue;
+		}
+
+		if (element.type != UiElementType::Button)
+		{
+			continue;
+		}
+
+		if (!this->isContextActive(element.contextType))
+		{
+			continue;
+		}
+
+		activeButtonInstIDs.emplace_back(instID);
+	}
+
+	return activeButtonInstIDs;
 }
 
 UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextElements &contextElements)
