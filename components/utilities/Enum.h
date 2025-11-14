@@ -10,7 +10,8 @@ private:
 	using IntegralType = std::underlying_type_t<EnumType>;
 
 	static_assert(std::is_enum_v<EnumType>);
-	static_assert(std::is_unsigned_v<IntegralType>);
+	static_assert(std::is_integral_v<IntegralType>);
+	static_assert(sizeof(IntegralType) >= sizeof(int));
 	// Wish there was a enum_values_all_one_bit_t<...>
 
 	IntegralType value;

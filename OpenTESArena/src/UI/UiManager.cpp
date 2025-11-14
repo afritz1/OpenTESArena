@@ -45,19 +45,14 @@ void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
 	element.active = active;
 }
 
-Int2 UiManager::getTransformPosition(UiElementInstanceID elementInstID) const
+Rect UiManager::getTransformGlobalRect(UiElementInstanceID elementInstID) const
 {
 	const UiElement &element = this->elements.get(elementInstID);
 	const UiTransform &transform = this->transforms.get(element.transformInstID);
 	// @todo parent transform calculation if any
-	return transform.position;
-}
 
-Int2 UiManager::getTransformSize(UiElementInstanceID elementInstID) const
-{
-	const UiElement &element = this->elements.get(elementInstID);
-	const UiTransform &transform = this->transforms.get(element.transformInstID);
-	return transform.size;
+	const Rect globalRect = GuiUtils::getPivotCorrectedRect(transform.position, transform.size, transform.pivotType);
+	return globalRect;
 }
 
 void UiManager::setTransformPosition(UiElementInstanceID elementInstID, Int2 position)
@@ -80,6 +75,14 @@ const UiButtonCallback &UiManager::getButtonCallback(UiElementInstanceID element
 	DebugAssert(element.type == UiElementType::Button);
 	const UiButton &button = this->buttons.get(element.buttonInstID);
 	return button.callback;
+}
+
+bool UiManager::isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+	DebugAssert(element.type == UiElementType::Button);
+	const UiButton &button = this->buttons.get(element.buttonInstID);
+	return MouseButtonTypeFlags(mouseButtonType).any(button.mouseButtonFlags);
 }
 
 std::vector<UiElementInstanceID> UiManager::getActiveButtonInstIDs() const
@@ -283,7 +286,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, c
 	}
 
 	UiButton &button = this->buttons.get(buttonInstID);
-	button.init(buttonInitInfo.callback, buttonInitInfo.contentElementInstID);
+	button.init(buttonInitInfo.mouseButtonFlags, buttonInitInfo.callback, buttonInitInfo.contentElementInstID);
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);

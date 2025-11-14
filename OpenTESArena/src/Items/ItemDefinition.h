@@ -123,7 +123,7 @@ struct ArtifactItemDefinition
 	void init(const char *flavorText, Span<const int> provinceIDs);
 };
 
-enum class ItemType : uint32_t
+enum class ItemType
 {
 	Accessory = 1 << 0,
 	Armor = 1 << 1,

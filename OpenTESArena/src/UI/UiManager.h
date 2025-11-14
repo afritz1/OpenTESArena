@@ -47,12 +47,12 @@ public:
 
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
 
-	Int2 getTransformPosition(UiElementInstanceID elementInstID) const;
-	Int2 getTransformSize(UiElementInstanceID elementInstID) const;
+	Rect getTransformGlobalRect(UiElementInstanceID elementInstID) const; // Includes local-to-parent transform.
 	void setTransformPosition(UiElementInstanceID elementInstID, Int2 position);
 	void setTransformSize(UiElementInstanceID elementInstID, Int2 size);
 
 	const UiButtonCallback &getButtonCallback(UiElementInstanceID elementInstID) const;
+	bool isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const;
 	
 	std::vector<UiElementInstanceID> getActiveButtonInstIDs() const;
 

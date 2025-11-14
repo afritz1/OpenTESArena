@@ -837,12 +837,11 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 					
 					for (const UiElementInstanceID elementInstID : activeButtonInstIDs)
 					{
-						const Int2 buttonPosition = uiManager.getTransformPosition(elementInstID);
-						const Int2 buttonSize = uiManager.getTransformSize(elementInstID);
-						const Rect buttonRect(buttonPosition, buttonSize.x, buttonSize.y);
+						const Rect buttonRect = uiManager.getTransformGlobalRect(elementInstID);
 						const Rect buttonParentRect; // @todo get from UiButton
 						const bool isValidMouseSelection = buttonRect.contains(classicMousePos) && (buttonParentRect.isEmpty() || buttonParentRect.contains(classicMousePos));
-						if (isValidMouseSelection)
+						const bool isMouseButtonValid = uiManager.isMouseButtonValidForButton(*buttonType, elementInstID);
+						if (isValidMouseSelection && isMouseButtonValid)
 						{
 							const UiButtonCallback &buttonCallback = uiManager.getButtonCallback(elementInstID);
 							buttonCallback(*buttonType);

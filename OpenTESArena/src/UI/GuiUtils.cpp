@@ -1,7 +1,5 @@
 #include <string>
 
-#include "SDL.h"
-
 #include "GuiUtils.h"
 #include "UiPivotType.h"
 #include "UiRenderSpace.h"
@@ -12,6 +10,58 @@
 
 namespace
 {
+	int GetPivotXOffset(UiPivotType pivotType, int width)
+	{
+		if ((pivotType == UiPivotType::TopLeft) ||
+			(pivotType == UiPivotType::MiddleLeft) ||
+			(pivotType == UiPivotType::BottomLeft))
+		{
+			return 0;
+		}
+		else if ((pivotType == UiPivotType::Top) ||
+			(pivotType == UiPivotType::Middle) ||
+			(pivotType == UiPivotType::Bottom))
+		{
+			return -width / 2;
+		}
+		else if ((pivotType == UiPivotType::TopRight) ||
+			(pivotType == UiPivotType::MiddleRight) ||
+			(pivotType == UiPivotType::BottomRight))
+		{
+			return -width;
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(pivotType)));
+		}
+	}
+
+	int GetPivotYOffset(UiPivotType pivotType, int height)
+	{
+		if ((pivotType == UiPivotType::TopLeft) ||
+			(pivotType == UiPivotType::Top) ||
+			(pivotType == UiPivotType::TopRight))
+		{
+			return 0;
+		}
+		else if ((pivotType == UiPivotType::MiddleLeft) ||
+			(pivotType == UiPivotType::Middle) ||
+			(pivotType == UiPivotType::MiddleRight))
+		{
+			return -height / 2;
+		}
+		else if ((pivotType == UiPivotType::BottomLeft) ||
+			(pivotType == UiPivotType::Bottom) ||
+			(pivotType == UiPivotType::BottomRight))
+		{
+			return -height;
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(pivotType)));
+		}
+	}
+
 	void MakeRenderElementPercents(int x, int y, int width, int height, int windowWidth, int windowHeight, UiRenderSpace renderSpace, UiPivotType pivotType,
 		double *outXPercent, double *outYPercent, double *outWPercent, double *outHPercent)
 	{
@@ -31,63 +81,21 @@ namespace
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(renderSpace)));
 		}
 
-		const int xOffset = [width, pivotType]()
-		{
-			if ((pivotType == UiPivotType::TopLeft) ||
-				(pivotType == UiPivotType::MiddleLeft) ||
-				(pivotType == UiPivotType::BottomLeft))
-			{
-				return 0;
-			}
-			else if ((pivotType == UiPivotType::Top) ||
-				(pivotType == UiPivotType::Middle) ||
-				(pivotType == UiPivotType::Bottom))
-			{
-				return -width / 2;
-			}
-			else if ((pivotType == UiPivotType::TopRight) ||
-				(pivotType == UiPivotType::MiddleRight) ||
-				(pivotType == UiPivotType::BottomRight))
-			{
-				return -width;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(pivotType)));
-			}
-		}();
-
-		const int yOffset = [height, pivotType]()
-		{
-			if ((pivotType == UiPivotType::TopLeft) ||
-				(pivotType == UiPivotType::Top) ||
-				(pivotType == UiPivotType::TopRight))
-			{
-				return 0;
-			}
-			else if ((pivotType == UiPivotType::MiddleLeft) ||
-				(pivotType == UiPivotType::Middle) ||
-				(pivotType == UiPivotType::MiddleRight))
-			{
-				return -height / 2;
-			}
-			else if ((pivotType == UiPivotType::BottomLeft) ||
-				(pivotType == UiPivotType::Bottom) ||
-				(pivotType == UiPivotType::BottomRight))
-			{
-				return -height;
-			}
-			else
-			{
-				DebugUnhandledReturnMsg(int, std::to_string(static_cast<int>(pivotType)));
-			}
-		}();
+		const int xOffset = GetPivotXOffset(pivotType, width);
+		const int yOffset = GetPivotYOffset(pivotType, height);
 
 		*outXPercent = static_cast<double>(x + xOffset) / renderSpaceWidthReal;
 		*outYPercent = static_cast<double>(y + yOffset) / renderSpaceHeightReal;
 		*outWPercent = static_cast<double>(width) / renderSpaceWidthReal;
 		*outHPercent = static_cast<double>(height) / renderSpaceHeightReal;
 	}
+}
+
+Rect GuiUtils::getPivotCorrectedRect(Int2 position, Int2 size, UiPivotType pivotType)
+{
+	const int xOffset = GetPivotXOffset(pivotType, size.x);
+	const int yOffset = GetPivotYOffset(pivotType, size.y);
+	return Rect(position.x + xOffset, position.y + yOffset, size.x, size.y);
 }
 
 Rect GuiUtils::makeWindowSpaceRect(int x, int y, int width, int height, UiPivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect)
