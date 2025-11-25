@@ -8,6 +8,25 @@
 #include "../UI/UiButton.h"
 #include "../UI/UiTextBox.h"
 
+namespace
+{
+	std::string MakeTestTypeText(int testType)
+	{
+		return "Test type: " + MainMenuUiModel::getTestTypeName(testType);
+	}
+
+	std::string MakeTestLocationText(Game &game, int testType, int testIndex, int testIndex2)
+	{
+		return "Test location: " + MainMenuUiModel::getSelectedTestName(game, testType, testIndex, testIndex2);
+	}
+
+	std::string MakeTestWeatherText(int testWeather)
+	{
+		const ArenaWeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(testWeather);
+		return "Test weather: " + MainMenuUiModel::WeatherTypeNames.at(testWeatherType);
+	}
+}
+
 MainMenuUiState::MainMenuUiState()
 {
 	this->bgTextureID = -1;
@@ -17,6 +36,13 @@ MainMenuUiState::MainMenuUiState()
 	this->testIndex = -1;
 	this->testIndex2 = -1;
 	this->testWeather = -1;
+	this->testIndex2ImageElementInstID = -1;
+	this->testIndex2UpButtonElementInstID = -1;
+	this->testIndex2DownButtonElementInstID = -1;
+	this->testWeatherImageElementInstID = -1;
+	this->testWeatherTextBoxElementInstID = -1;
+	this->testWeatherUpButtonElementInstID = -1;
+	this->testWeatherDownButtonElementInstID = -1;
 }
 
 void MainMenuUiState::allocate(UiManager &uiManager, TextureManager &textureManager, Renderer &renderer)
@@ -72,7 +98,7 @@ void MainMenuUI::create(Game &game)
 	testButtonImageElementInitInfo.pivotType = UiPivotType::Middle;
 	testButtonImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testButtonImageElementInitInfo.drawOrder = 1;
-	uiManager.createImage(testButtonImageElementInitInfo, state.testButtonTextureID, state.elements);
+	const UiElementInstanceID testButtonImageElementInstID = uiManager.createImage(testButtonImageElementInitInfo, state.testButtonTextureID, state.elements);
 
 	UiElementInitInfo testButtonTextBoxElementInitInfo;
 	testButtonTextBoxElementInitInfo.position = testButtonRect.getCenter();
@@ -88,78 +114,80 @@ void MainMenuUI::create(Game &game)
 	testButtonTextBoxInitInfo.alignment = MainMenuUiView::TestButtonTextAlignment;
 	uiManager.createTextBox(testButtonTextBoxElementInitInfo, testButtonTextBoxInitInfo, state.elements, renderer);
 
-	const Rect testTypeUpRect = MainMenuUiView::getTestTypeUpButtonRect();
-	const Rect testIndexUpRect = MainMenuUiView::getTestIndexUpButtonRect();
-	const Rect testIndex2UpRect = MainMenuUiView::getTestIndex2UpButtonRect();
-	const Rect testWeatherUpRect = MainMenuUiView::getTestWeatherUpButtonRect();
+	const Rect testTypeUpButtonRect = MainMenuUiView::getTestTypeUpButtonRect();
+	const Rect testTypeDownButtonRect = MainMenuUiView::getTestTypeDownButtonRect();
+	const Rect testIndexUpButtonRect = MainMenuUiView::getTestIndexUpButtonRect();
+	const Rect testIndexDownButtonRect = MainMenuUiView::getTestIndexDownButtonRect();
+	const Rect testIndex2UpButtonRect = MainMenuUiView::getTestIndex2UpButtonRect();
+	const Rect testIndex2DownButtonRect = MainMenuUiView::getTestIndex2DownButtonRect();
+	const Rect testWeatherUpButtonRect = MainMenuUiView::getTestWeatherUpButtonRect();
+	const Rect testWeatherDownButtonRect = MainMenuUiView::getTestWeatherDownButtonRect();
 
 	UiElementInitInfo testTypeArrowImageElementInitInfo;
-	testTypeArrowImageElementInitInfo.position = testTypeUpRect.getTopLeft();
+	testTypeArrowImageElementInitInfo.position = testTypeUpButtonRect.getTopLeft();
 	testTypeArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testTypeArrowImageElementInitInfo.drawOrder = 2;
 	uiManager.createImage(testTypeArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
 
 	UiElementInitInfo testIndexArrowImageElementInitInfo;
-	testIndexArrowImageElementInitInfo.position = testIndexUpRect.getTopLeft();
+	testIndexArrowImageElementInitInfo.position = testIndexUpButtonRect.getTopLeft();
 	testIndexArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testIndexArrowImageElementInitInfo.drawOrder = 2;
 	uiManager.createImage(testIndexArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
 
 	UiElementInitInfo testIndex2ArrowImageElementInitInfo;
-	testIndex2ArrowImageElementInitInfo.position = testIndex2UpRect.getTopLeft();
+	testIndex2ArrowImageElementInitInfo.position = testIndex2UpButtonRect.getTopLeft();
 	testIndex2ArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testIndex2ArrowImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(testIndex2ArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+	state.testIndex2ImageElementInstID = uiManager.createImage(testIndex2ArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
 
 	UiElementInitInfo testWeatherArrowImageElementInitInfo;
-	testWeatherArrowImageElementInitInfo.position = testWeatherUpRect.getTopLeft();
+	testWeatherArrowImageElementInitInfo.position = testWeatherUpButtonRect.getTopLeft();
 	testWeatherArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testWeatherArrowImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(testWeatherArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+	state.testWeatherImageElementInstID = uiManager.createImage(testWeatherArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
 
 	UiElementInitInfo testTypeTextBoxElementInitInfo;
-	testTypeTextBoxElementInitInfo.position = testTypeUpRect.getBottomLeft() - Int2(2, 0);
+	testTypeTextBoxElementInitInfo.position = testTypeUpButtonRect.getBottomLeft() - Int2(2, 0);
 	testTypeTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
 	testTypeTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
 	testTypeTextBoxElementInitInfo.drawOrder = 3;
 
 	UiTextBoxInitInfo testTypeTextBoxInitInfo;
 	testTypeTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(15);
-	testTypeTextBoxInitInfo.text = "Test type: " + MainMenuUiModel::getTestTypeName(state.testType);
+	testTypeTextBoxInitInfo.text = MakeTestTypeText(state.testType);
 	testTypeTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testTypeTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testTypeTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
-	uiManager.createTextBox(testTypeTextBoxElementInitInfo, testTypeTextBoxInitInfo, state.elements, renderer);
+	const UiElementInstanceID testTypeTextBoxElementInstID = uiManager.createTextBox(testTypeTextBoxElementInitInfo, testTypeTextBoxInitInfo, state.elements, renderer);
 
 	UiElementInitInfo testNameTextBoxElementInitInfo;
-	testNameTextBoxElementInitInfo.position = testIndexUpRect.getBottomLeft() - Int2(2, 0);
+	testNameTextBoxElementInitInfo.position = testIndexUpButtonRect.getBottomLeft() - Int2(2, 0);
 	testNameTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
 	testNameTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
 	testNameTextBoxElementInitInfo.drawOrder = 3;
 
 	UiTextBoxInitInfo testNameTextBoxInitInfo;
 	testNameTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(15);
-	testNameTextBoxInitInfo.text = "Test location: " + MainMenuUiModel::getSelectedTestName(game, state.testType, state.testIndex, state.testIndex2);
+	testNameTextBoxInitInfo.text = MakeTestLocationText(game, state.testType, state.testIndex, state.testIndex2);
 	testNameTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testNameTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testNameTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
-	uiManager.createTextBox(testNameTextBoxElementInitInfo, testNameTextBoxInitInfo, state.elements, renderer);
+	const UiElementInstanceID testNameTextBoxElementInstID = uiManager.createTextBox(testNameTextBoxElementInitInfo, testNameTextBoxInitInfo, state.elements, renderer);
 
 	UiElementInitInfo testWeatherTextBoxElementInitInfo;
-	testWeatherTextBoxElementInitInfo.position = testWeatherUpRect.getBottomLeft() - Int2(2, 0);
+	testWeatherTextBoxElementInitInfo.position = testWeatherUpButtonRect.getBottomLeft() - Int2(2, 0);
 	testWeatherTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
 	testWeatherTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
 	testWeatherTextBoxElementInitInfo.drawOrder = 3;
 
-	const ArenaWeatherType testWeatherType = MainMenuUiModel::getSelectedTestWeatherType(state.testWeather);
-
 	UiTextBoxInitInfo testWeatherTextBoxInitInfo;
 	testWeatherTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(16);
-	testWeatherTextBoxInitInfo.text = "Test weather: " + MainMenuUiModel::WeatherTypeNames.at(testWeatherType);
+	testWeatherTextBoxInitInfo.text = MakeTestWeatherText(state.testWeather);
 	testWeatherTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testWeatherTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testWeatherTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
-	uiManager.createTextBox(testWeatherTextBoxElementInitInfo, testWeatherTextBoxInitInfo, state.elements, renderer);
+	state.testWeatherTextBoxElementInstID = uiManager.createTextBox(testWeatherTextBoxElementInitInfo, testWeatherTextBoxInitInfo, state.elements, renderer);
 
 	const Rect loadButtonRect = MainMenuUiView::getLoadButtonRect();
 	const Rect newGameButtonRect = MainMenuUiView::getNewGameButtonRect();
@@ -167,8 +195,8 @@ void MainMenuUI::create(Game &game)
 
 	UiElementInitInfo loadButtonElementInitInfo;
 	loadButtonElementInitInfo.position = loadButtonRect.getTopLeft();
-	loadButtonElementInitInfo.size = loadButtonRect.getSize();
 	loadButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	loadButtonElementInitInfo.size = loadButtonRect.getSize();
 	loadButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo loadButtonInitInfo;
@@ -177,8 +205,8 @@ void MainMenuUI::create(Game &game)
 
 	UiElementInitInfo newGameButtonElementInitInfo;
 	newGameButtonElementInitInfo.position = newGameButtonRect.getTopLeft();
-	newGameButtonElementInitInfo.size = newGameButtonRect.getSize();
 	newGameButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	newGameButtonElementInitInfo.size = newGameButtonRect.getSize();
 	newGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo newGameButtonInitInfo;
@@ -187,17 +215,176 @@ void MainMenuUI::create(Game &game)
 
 	UiElementInitInfo exitButtonElementInitInfo;
 	exitButtonElementInitInfo.position = exitButtonRect.getTopLeft();
-	exitButtonElementInitInfo.size = exitButtonRect.getSize();
 	exitButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	exitButtonElementInitInfo.size = exitButtonRect.getSize();
 	exitButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo exitButtonInitInfo;
 	exitButtonInitInfo.callback = [](MouseButtonType) { MainMenuUiController::onExitGameButtonSelected(); };
 	uiManager.createButton(exitButtonElementInitInfo, exitButtonInitInfo, state.elements);
 
-	// @todo implement test buttons, update text boxes on test clicks
-	// @todo hook up UiButton to input manager, need to know if left or right click for some things (automap/world map)
-	// @todo comment out old Buttons in MainMenuPanel
+	UiElementInitInfo testButtonElementInitInfo;
+	testButtonElementInitInfo.position = testButtonRect.getTopLeft();
+	testButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testButtonInitInfo;
+	testButtonInitInfo.callback = [&game, &state](MouseButtonType)
+	{
+		MainMenuUiController::onQuickStartButtonSelected(
+			game,
+			state.testType,
+			state.testIndex,
+			MainMenuUiModel::getSelectedTestName(game, state.testType, state.testIndex, state.testIndex2),
+			MainMenuUiModel::getSelectedTestInteriorType(state.testType, state.testIndex),
+			MainMenuUiModel::getSelectedTestWeatherType(state.testWeather),
+			MainMenuUiModel::getSelectedTestMapType(state.testType));
+	};
+
+	testButtonInitInfo.contentElementInstID = testButtonImageElementInstID;
+	uiManager.createButton(testButtonElementInitInfo, testButtonInitInfo, state.elements);
+
+	auto updateTypeTextBox = [&uiManager, &state, testTypeTextBoxElementInstID]()
+	{
+		// @todo lookup text box element id by hardcoded string instead
+		const std::string text = MakeTestTypeText(state.testType);
+		uiManager.setTextBoxText(testTypeTextBoxElementInstID, text.c_str());
+	};
+
+	auto updateNameTextBox = [&game, &uiManager, &state, testNameTextBoxElementInstID]()
+	{
+		// @todo lookup text box element id by hardcoded string instead
+		const std::string text = MakeTestLocationText(game, state.testType, state.testIndex, state.testIndex2);
+		uiManager.setTextBoxText(testNameTextBoxElementInstID, text.c_str());
+	};
+
+	auto updateWeatherTextBox = [&uiManager, &state]()
+	{
+		// @todo lookup text box element id by hardcoded string instead
+		const std::string text = MakeTestWeatherText(state.testWeather);
+		uiManager.setTextBoxText(state.testWeatherTextBoxElementInstID, text.c_str());
+	};
+
+	UiElementInitInfo testTypeUpButtonElementInitInfo;
+	testTypeUpButtonElementInitInfo.position = testTypeUpButtonRect.getTopLeft();
+	testTypeUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	testTypeUpButtonElementInitInfo.size = testTypeUpButtonRect.getSize();
+	testTypeUpButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testTypeUpButtonInitInfo;
+	testTypeUpButtonInitInfo.callback = [&state, updateTypeTextBox, updateNameTextBox](MouseButtonType)
+	{
+		MainMenuUiController::onTestTypeUpButtonSelected(&state.testType, &state.testIndex, &state.testIndex2, &state.testWeather);
+		updateTypeTextBox();
+		updateNameTextBox();
+	};
+
+	uiManager.createButton(testTypeUpButtonElementInitInfo, testTypeUpButtonInitInfo, state.elements);
+
+	UiElementInitInfo testTypeDownButtonElementInitInfo;
+	testTypeDownButtonElementInitInfo.position = testTypeDownButtonRect.getTopLeft();
+	testTypeDownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	testTypeDownButtonElementInitInfo.size = testTypeDownButtonRect.getSize();
+	testTypeDownButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testTypeDownButtonInitInfo;
+	testTypeDownButtonInitInfo.callback = [&state, updateTypeTextBox, updateNameTextBox](MouseButtonType)
+	{
+		MainMenuUiController::onTestTypeDownButtonSelected(&state.testType, &state.testIndex, &state.testIndex2, &state.testWeather);
+		updateTypeTextBox();
+		updateNameTextBox();
+	};
+
+	uiManager.createButton(testTypeDownButtonElementInitInfo, testTypeDownButtonInitInfo, state.elements);
+
+	UiElementInitInfo testIndexUpButtonElementInitInfo;
+	testIndexUpButtonElementInitInfo.position = testIndexUpButtonRect.getTopLeft();
+	testIndexUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	testIndexUpButtonElementInitInfo.size = testIndexUpButtonRect.getSize();
+	testIndexUpButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testIndexUpButtonInitInfo;
+	testIndexUpButtonInitInfo.callback = [&state, updateNameTextBox](MouseButtonType)
+	{
+		MainMenuUiController::onTestIndexUpButtonSelected(&state.testType, &state.testIndex, &state.testIndex2);
+		updateNameTextBox();
+	};
+
+	uiManager.createButton(testIndexUpButtonElementInitInfo, testIndexUpButtonInitInfo, state.elements);
+
+	UiElementInitInfo testIndexDownButtonElementInitInfo;
+	testIndexDownButtonElementInitInfo.position = testIndexDownButtonRect.getTopLeft();
+	testIndexDownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	testIndexDownButtonElementInitInfo.size = testIndexDownButtonRect.getSize();
+	testIndexDownButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testIndexDownButtonInitInfo;
+	testIndexDownButtonInitInfo.callback = [&state, updateNameTextBox](MouseButtonType)
+	{
+		MainMenuUiController::onTestIndexDownButtonSelected(&state.testType, &state.testIndex, &state.testIndex2);
+		updateNameTextBox();
+	};
+
+	uiManager.createButton(testIndexDownButtonElementInitInfo, testIndexDownButtonInitInfo, state.elements);
+
+	UiElementInitInfo testIndex2UpButtonElementInitInfo;
+	testIndex2UpButtonElementInitInfo.position = testIndex2UpButtonRect.getTopLeft();
+	testIndex2UpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	testIndex2UpButtonElementInitInfo.size = testIndex2UpButtonRect.getSize();
+	testIndex2UpButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testIndex2UpButtonInitInfo;
+	testIndex2UpButtonInitInfo.callback = [&state, updateNameTextBox](MouseButtonType)
+	{
+		MainMenuUiController::onTestIndex2UpButtonSelected(state.testType, state.testIndex, &state.testIndex2);
+		updateNameTextBox();
+	};
+
+	state.testIndex2UpButtonElementInstID = uiManager.createButton(testIndex2UpButtonElementInitInfo, testIndex2UpButtonInitInfo, state.elements);
+
+	UiElementInitInfo testIndex2DownButtonElementInitInfo;
+	testIndex2DownButtonElementInitInfo.position = testIndex2DownButtonRect.getTopLeft();
+	testIndex2DownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	testIndex2DownButtonElementInitInfo.size = testIndex2DownButtonRect.getSize();
+	testIndex2DownButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testIndex2DownButtonInitInfo;
+	testIndex2DownButtonInitInfo.callback = [&state, updateNameTextBox](MouseButtonType)
+	{
+		MainMenuUiController::onTestIndex2DownButtonSelected(state.testType, state.testIndex, &state.testIndex2);
+		updateNameTextBox();
+	};
+
+	state.testIndex2DownButtonElementInstID = uiManager.createButton(testIndex2DownButtonElementInitInfo, testIndex2DownButtonInitInfo, state.elements);
+
+	UiElementInitInfo testWeatherUpButtonElementInitInfo;
+	testWeatherUpButtonElementInitInfo.position = testWeatherUpButtonRect.getTopLeft();
+	testWeatherUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	testWeatherUpButtonElementInitInfo.size = testWeatherUpButtonRect.getSize();
+	testWeatherUpButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testWeatherUpButtonInitInfo;
+	testWeatherUpButtonInitInfo.callback = [&state, updateWeatherTextBox](MouseButtonType)
+	{
+		MainMenuUiController::onTestWeatherUpButtonSelected(state.testType, &state.testWeather);
+		updateWeatherTextBox();
+	};
+
+	state.testWeatherUpButtonElementInstID = uiManager.createButton(testWeatherUpButtonElementInitInfo, testWeatherUpButtonInitInfo, state.elements);
+
+	UiElementInitInfo testWeatherDownButtonElementInitInfo;
+	testWeatherDownButtonElementInitInfo.position = testWeatherDownButtonRect.getTopLeft();
+	testWeatherDownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	testWeatherDownButtonElementInitInfo.size = testWeatherDownButtonRect.getSize();
+	testWeatherDownButtonElementInitInfo.contextType = UiContextType::MainMenu;
+
+	UiButtonInitInfo testWeatherDownButtonInitInfo;
+	testWeatherDownButtonInitInfo.callback = [&state, updateWeatherTextBox](MouseButtonType)
+	{
+		MainMenuUiController::onTestWeatherDownButtonSelected(state.testType, &state.testWeather);
+		updateWeatherTextBox();
+	};
+
+	state.testWeatherDownButtonElementInstID = uiManager.createButton(testWeatherDownButtonElementInitInfo, testWeatherDownButtonInitInfo, state.elements);
 
 	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
 	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);
@@ -221,4 +408,28 @@ void MainMenuUI::destroy(Game &game)
 	state.testIndex = -1;
 	state.testIndex2 = -1;
 	state.testWeather = -1;
+	state.testIndex2ImageElementInstID = -1;
+	state.testIndex2UpButtonElementInstID = -1;
+	state.testIndex2DownButtonElementInstID = -1;
+	state.testWeatherImageElementInstID = -1;
+	state.testWeatherTextBoxElementInstID = -1;
+	state.testWeatherUpButtonElementInstID = -1;
+	state.testWeatherDownButtonElementInstID = -1;
+}
+
+void MainMenuUI::update(double dt, Game &game)
+{
+	UiManager &uiManager = game.uiManager;
+	const MainMenuUiState &state = MainMenuUI::state;
+
+	const bool currentTestIsInterior = state.testType == MainMenuUiModel::TestType_Interior;
+	uiManager.setElementActive(state.testIndex2ImageElementInstID, currentTestIsInterior);
+	uiManager.setElementActive(state.testIndex2UpButtonElementInstID, currentTestIsInterior);
+	uiManager.setElementActive(state.testIndex2DownButtonElementInstID, currentTestIsInterior);
+
+	const bool currentTestHasWeather = (state.testType == MainMenuUiModel::TestType_City) || (state.testType == MainMenuUiModel::TestType_Wilderness);
+	uiManager.setElementActive(state.testWeatherImageElementInstID, currentTestHasWeather);
+	uiManager.setElementActive(state.testWeatherTextBoxElementInstID, currentTestHasWeather);
+	uiManager.setElementActive(state.testWeatherUpButtonElementInstID, currentTestHasWeather);
+	uiManager.setElementActive(state.testWeatherDownButtonElementInstID, currentTestHasWeather);
 }

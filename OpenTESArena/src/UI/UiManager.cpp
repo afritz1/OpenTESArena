@@ -21,6 +21,7 @@ bool UiManager::init(const char *folderPath, TextureManager &textureManager, Ren
 
 	this->addBeginContextCallback(MainMenuUI::ContextType, MainMenuUI::create);
 	this->addEndContextCallback(MainMenuUI::ContextType, MainMenuUI::destroy);
+	this->addUpdateContextCallback(MainMenuUI::ContextType, MainMenuUI::update);
 
 	return true;
 }

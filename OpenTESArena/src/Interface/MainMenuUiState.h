@@ -17,6 +17,10 @@ struct MainMenuUiState
 	UiTextureID testButtonTextureID;
 	int testType, testIndex, testIndex2, testWeather;
 
+	// Conditionally enabled test elements.
+	UiElementInstanceID testIndex2ImageElementInstID, testIndex2UpButtonElementInstID, testIndex2DownButtonElementInstID;
+	UiElementInstanceID testWeatherImageElementInstID, testWeatherTextBoxElementInstID, testWeatherUpButtonElementInstID, testWeatherDownButtonElementInstID;
+
 	UiContextElements elements;
 
 	MainMenuUiState();
@@ -33,6 +37,7 @@ namespace MainMenuUI
 
 	void create(Game &game);
 	void destroy(Game &game);
+	void update(double dt, Game &game);
 }
 
 #endif

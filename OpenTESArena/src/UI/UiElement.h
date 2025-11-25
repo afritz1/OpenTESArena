@@ -27,8 +27,8 @@ enum class UiElementType
 struct UiElementInitInfo
 {
 	Int2 position;
-	Int2 size;
 	UiTransformSizeType sizeType;
+	Int2 size;
 	UiPivotType pivotType;
 	UiContextType contextType;
 	int drawOrder;
