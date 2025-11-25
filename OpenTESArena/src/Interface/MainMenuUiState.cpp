@@ -93,9 +93,10 @@ void MainMenuUI::create(Game &game)
 	state.testIndex2 = 1;
 	state.testWeather = 0;
 
+	constexpr UiContextType contextType = MainMenuUI::ContextType;
+
 	UiElementInitInfo bgImageElementInitInfo;
-	bgImageElementInitInfo.contextType = UiContextType::MainMenu;
-	uiManager.createImage(bgImageElementInitInfo, state.bgTextureID, state.elements);
+	uiManager.createImage(bgImageElementInitInfo, state.bgTextureID, contextType, state.elements);
 
 	const Rect testGameButtonRect = MainMenuUiView::getTestButtonRect();
 	const Rect testTypeUpButtonRect = MainMenuUiView::getTestTypeUpButtonRect();
@@ -110,14 +111,12 @@ void MainMenuUI::create(Game &game)
 	UiElementInitInfo testGameButtonImageElementInitInfo;
 	testGameButtonImageElementInitInfo.position = testGameButtonRect.getCenter();
 	testGameButtonImageElementInitInfo.pivotType = UiPivotType::Middle;
-	testGameButtonImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testGameButtonImageElementInitInfo.drawOrder = 1;
-	const UiElementInstanceID testGameButtonImageElementInstID = uiManager.createImage(testGameButtonImageElementInitInfo, state.testButtonTextureID, state.elements);
+	const UiElementInstanceID testGameButtonImageElementInstID = uiManager.createImage(testGameButtonImageElementInitInfo, state.testButtonTextureID, contextType, state.elements);
 
 	UiElementInitInfo testGameButtonTextBoxElementInitInfo;
 	testGameButtonTextBoxElementInitInfo.position = testGameButtonRect.getCenter();
 	testGameButtonTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
-	testGameButtonTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
 	testGameButtonTextBoxElementInitInfo.drawOrder = 2;
 
 	UiTextBoxInitInfo testGameButtonTextBoxInitInfo;
@@ -126,36 +125,31 @@ void MainMenuUI::create(Game &game)
 	testGameButtonTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testGameButtonTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testGameButtonTextBoxInitInfo.alignment = MainMenuUiView::TestButtonTextAlignment;
-	uiManager.createTextBox(testGameButtonTextBoxElementInitInfo, testGameButtonTextBoxInitInfo, state.elements, renderer);
+	uiManager.createTextBox(testGameButtonTextBoxElementInitInfo, testGameButtonTextBoxInitInfo, contextType, state.elements, renderer);
 
 	UiElementInitInfo testTypeArrowImageElementInitInfo;
 	testTypeArrowImageElementInitInfo.position = testTypeUpButtonRect.getTopLeft();
-	testTypeArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testTypeArrowImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(testTypeArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+	uiManager.createImage(testTypeArrowImageElementInitInfo, state.testArrowsTextureID, contextType, state.elements);
 
 	UiElementInitInfo testIndexArrowImageElementInitInfo;
 	testIndexArrowImageElementInitInfo.position = testIndexUpButtonRect.getTopLeft();
-	testIndexArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testIndexArrowImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(testIndexArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+	uiManager.createImage(testIndexArrowImageElementInitInfo, state.testArrowsTextureID, contextType, state.elements);
 
 	UiElementInitInfo testIndex2ArrowImageElementInitInfo;
 	testIndex2ArrowImageElementInitInfo.position = testIndex2UpButtonRect.getTopLeft();
-	testIndex2ArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testIndex2ArrowImageElementInitInfo.drawOrder = 2;
-	state.testIndex2ImageElementInstID = uiManager.createImage(testIndex2ArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+	state.testIndex2ImageElementInstID = uiManager.createImage(testIndex2ArrowImageElementInitInfo, state.testArrowsTextureID, contextType, state.elements);
 
 	UiElementInitInfo testWeatherArrowImageElementInitInfo;
 	testWeatherArrowImageElementInitInfo.position = testWeatherUpButtonRect.getTopLeft();
-	testWeatherArrowImageElementInitInfo.contextType = UiContextType::MainMenu;
 	testWeatherArrowImageElementInitInfo.drawOrder = 2;
-	state.testWeatherImageElementInstID = uiManager.createImage(testWeatherArrowImageElementInitInfo, state.testArrowsTextureID, state.elements);
+	state.testWeatherImageElementInstID = uiManager.createImage(testWeatherArrowImageElementInitInfo, state.testArrowsTextureID, contextType, state.elements);
 
 	UiElementInitInfo testTypeTextBoxElementInitInfo;
 	testTypeTextBoxElementInitInfo.position = testTypeUpButtonRect.getBottomLeft() - Int2(2, 0);
 	testTypeTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
-	testTypeTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
 	testTypeTextBoxElementInitInfo.drawOrder = 3;
 
 	UiTextBoxInitInfo testTypeTextBoxInitInfo;
@@ -164,12 +158,11 @@ void MainMenuUI::create(Game &game)
 	testTypeTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testTypeTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testTypeTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
-	const UiElementInstanceID testTypeTextBoxElementInstID = uiManager.createTextBox(testTypeTextBoxElementInitInfo, testTypeTextBoxInitInfo, state.elements, renderer);
+	const UiElementInstanceID testTypeTextBoxElementInstID = uiManager.createTextBox(testTypeTextBoxElementInitInfo, testTypeTextBoxInitInfo, contextType, state.elements, renderer);
 
 	UiElementInitInfo testNameTextBoxElementInitInfo;
 	testNameTextBoxElementInitInfo.position = testIndexUpButtonRect.getBottomLeft() - Int2(2, 0);
 	testNameTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
-	testNameTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
 	testNameTextBoxElementInitInfo.drawOrder = 3;
 
 	UiTextBoxInitInfo testNameTextBoxInitInfo;
@@ -178,12 +171,11 @@ void MainMenuUI::create(Game &game)
 	testNameTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testNameTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testNameTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
-	const UiElementInstanceID testNameTextBoxElementInstID = uiManager.createTextBox(testNameTextBoxElementInitInfo, testNameTextBoxInitInfo, state.elements, renderer);
+	const UiElementInstanceID testNameTextBoxElementInstID = uiManager.createTextBox(testNameTextBoxElementInitInfo, testNameTextBoxInitInfo, contextType, state.elements, renderer);
 
 	UiElementInitInfo testWeatherTextBoxElementInitInfo;
 	testWeatherTextBoxElementInitInfo.position = testWeatherUpButtonRect.getBottomLeft() - Int2(2, 0);
 	testWeatherTextBoxElementInitInfo.pivotType = UiPivotType::MiddleRight;
-	testWeatherTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
 	testWeatherTextBoxElementInitInfo.drawOrder = 3;
 
 	UiTextBoxInitInfo testWeatherTextBoxInitInfo;
@@ -192,7 +184,7 @@ void MainMenuUI::create(Game &game)
 	testWeatherTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
 	testWeatherTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
 	testWeatherTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
-	state.testWeatherTextBoxElementInstID = uiManager.createTextBox(testWeatherTextBoxElementInitInfo, testWeatherTextBoxInitInfo, state.elements, renderer);
+	state.testWeatherTextBoxElementInstID = uiManager.createTextBox(testWeatherTextBoxElementInitInfo, testWeatherTextBoxInitInfo, contextType, state.elements, renderer);
 
 	const Rect loadGameButtonRect = MainMenuUiView::getLoadButtonRect();
 	const Rect newGameButtonRect = MainMenuUiView::getNewGameButtonRect();
@@ -202,35 +194,31 @@ void MainMenuUI::create(Game &game)
 	loadGameButtonElementInitInfo.position = loadGameButtonRect.getTopLeft();
 	loadGameButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	loadGameButtonElementInitInfo.size = loadGameButtonRect.getSize();
-	loadGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo loadGameButtonInitInfo;
 	loadGameButtonInitInfo.callback = [&game](MouseButtonType) { MainMenuUiController::onLoadGameButtonSelected(game); };
-	state.loadGameButtonElementInstID = uiManager.createButton(loadGameButtonElementInitInfo, loadGameButtonInitInfo, state.elements);
+	state.loadGameButtonElementInstID = uiManager.createButton(loadGameButtonElementInitInfo, loadGameButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo newGameButtonElementInitInfo;
 	newGameButtonElementInitInfo.position = newGameButtonRect.getTopLeft();
 	newGameButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	newGameButtonElementInitInfo.size = newGameButtonRect.getSize();
-	newGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo newGameButtonInitInfo;
 	newGameButtonInitInfo.callback = [&game](MouseButtonType) { MainMenuUiController::onNewGameButtonSelected(game); };
-	state.newGameButtonElementInstID = uiManager.createButton(newGameButtonElementInitInfo, newGameButtonInitInfo, state.elements);
+	state.newGameButtonElementInstID = uiManager.createButton(newGameButtonElementInitInfo, newGameButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo exitGameButtonElementInitInfo;
 	exitGameButtonElementInitInfo.position = exitGameButtonRect.getTopLeft();
 	exitGameButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	exitGameButtonElementInitInfo.size = exitGameButtonRect.getSize();
-	exitGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo exitGameButtonInitInfo;
 	exitGameButtonInitInfo.callback = [](MouseButtonType) { MainMenuUiController::onExitGameButtonSelected(); };
-	state.exitGameButtonElementInstID = uiManager.createButton(exitGameButtonElementInitInfo, exitGameButtonInitInfo, state.elements);
+	state.exitGameButtonElementInstID = uiManager.createButton(exitGameButtonElementInitInfo, exitGameButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo testGameButtonElementInitInfo;
 	testGameButtonElementInitInfo.position = testGameButtonRect.getTopLeft();
-	testGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testGameButtonInitInfo;
 	testGameButtonInitInfo.callback = [&game, &state](MouseButtonType)
@@ -246,7 +234,7 @@ void MainMenuUI::create(Game &game)
 	};
 
 	testGameButtonInitInfo.contentElementInstID = testGameButtonImageElementInstID;
-	state.testGameButtonElementInstID = uiManager.createButton(testGameButtonElementInitInfo, testGameButtonInitInfo, state.elements);
+	state.testGameButtonElementInstID = uiManager.createButton(testGameButtonElementInitInfo, testGameButtonInitInfo, contextType, state.elements);
 
 	auto updateTypeTextBox = [&uiManager, &state, testTypeTextBoxElementInstID]()
 	{
@@ -273,7 +261,6 @@ void MainMenuUI::create(Game &game)
 	testTypeUpButtonElementInitInfo.position = testTypeUpButtonRect.getTopLeft();
 	testTypeUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	testTypeUpButtonElementInitInfo.size = testTypeUpButtonRect.getSize();
-	testTypeUpButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testTypeUpButtonInitInfo;
 	testTypeUpButtonInitInfo.callback = [&state, updateTypeTextBox, updateNameTextBox](MouseButtonType)
@@ -283,13 +270,12 @@ void MainMenuUI::create(Game &game)
 		updateNameTextBox();
 	};
 
-	uiManager.createButton(testTypeUpButtonElementInitInfo, testTypeUpButtonInitInfo, state.elements);
+	uiManager.createButton(testTypeUpButtonElementInitInfo, testTypeUpButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo testTypeDownButtonElementInitInfo;
 	testTypeDownButtonElementInitInfo.position = testTypeDownButtonRect.getTopLeft();
 	testTypeDownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	testTypeDownButtonElementInitInfo.size = testTypeDownButtonRect.getSize();
-	testTypeDownButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testTypeDownButtonInitInfo;
 	testTypeDownButtonInitInfo.callback = [&state, updateTypeTextBox, updateNameTextBox](MouseButtonType)
@@ -299,13 +285,12 @@ void MainMenuUI::create(Game &game)
 		updateNameTextBox();
 	};
 
-	uiManager.createButton(testTypeDownButtonElementInitInfo, testTypeDownButtonInitInfo, state.elements);
+	uiManager.createButton(testTypeDownButtonElementInitInfo, testTypeDownButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo testIndexUpButtonElementInitInfo;
 	testIndexUpButtonElementInitInfo.position = testIndexUpButtonRect.getTopLeft();
 	testIndexUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	testIndexUpButtonElementInitInfo.size = testIndexUpButtonRect.getSize();
-	testIndexUpButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testIndexUpButtonInitInfo;
 	testIndexUpButtonInitInfo.callback = [&state, updateNameTextBox](MouseButtonType)
@@ -314,13 +299,12 @@ void MainMenuUI::create(Game &game)
 		updateNameTextBox();
 	};
 
-	uiManager.createButton(testIndexUpButtonElementInitInfo, testIndexUpButtonInitInfo, state.elements);
+	uiManager.createButton(testIndexUpButtonElementInitInfo, testIndexUpButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo testIndexDownButtonElementInitInfo;
 	testIndexDownButtonElementInitInfo.position = testIndexDownButtonRect.getTopLeft();
 	testIndexDownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	testIndexDownButtonElementInitInfo.size = testIndexDownButtonRect.getSize();
-	testIndexDownButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testIndexDownButtonInitInfo;
 	testIndexDownButtonInitInfo.callback = [&state, updateNameTextBox](MouseButtonType)
@@ -329,13 +313,12 @@ void MainMenuUI::create(Game &game)
 		updateNameTextBox();
 	};
 
-	uiManager.createButton(testIndexDownButtonElementInitInfo, testIndexDownButtonInitInfo, state.elements);
+	uiManager.createButton(testIndexDownButtonElementInitInfo, testIndexDownButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo testIndex2UpButtonElementInitInfo;
 	testIndex2UpButtonElementInitInfo.position = testIndex2UpButtonRect.getTopLeft();
 	testIndex2UpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	testIndex2UpButtonElementInitInfo.size = testIndex2UpButtonRect.getSize();
-	testIndex2UpButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testIndex2UpButtonInitInfo;
 	testIndex2UpButtonInitInfo.callback = [&state, updateNameTextBox](MouseButtonType)
@@ -344,13 +327,12 @@ void MainMenuUI::create(Game &game)
 		updateNameTextBox();
 	};
 
-	state.testIndex2UpButtonElementInstID = uiManager.createButton(testIndex2UpButtonElementInitInfo, testIndex2UpButtonInitInfo, state.elements);
+	state.testIndex2UpButtonElementInstID = uiManager.createButton(testIndex2UpButtonElementInitInfo, testIndex2UpButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo testIndex2DownButtonElementInitInfo;
 	testIndex2DownButtonElementInitInfo.position = testIndex2DownButtonRect.getTopLeft();
 	testIndex2DownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	testIndex2DownButtonElementInitInfo.size = testIndex2DownButtonRect.getSize();
-	testIndex2DownButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testIndex2DownButtonInitInfo;
 	testIndex2DownButtonInitInfo.callback = [&state, updateNameTextBox](MouseButtonType)
@@ -359,13 +341,12 @@ void MainMenuUI::create(Game &game)
 		updateNameTextBox();
 	};
 
-	state.testIndex2DownButtonElementInstID = uiManager.createButton(testIndex2DownButtonElementInitInfo, testIndex2DownButtonInitInfo, state.elements);
+	state.testIndex2DownButtonElementInstID = uiManager.createButton(testIndex2DownButtonElementInitInfo, testIndex2DownButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo testWeatherUpButtonElementInitInfo;
 	testWeatherUpButtonElementInitInfo.position = testWeatherUpButtonRect.getTopLeft();
 	testWeatherUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	testWeatherUpButtonElementInitInfo.size = testWeatherUpButtonRect.getSize();
-	testWeatherUpButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testWeatherUpButtonInitInfo;
 	testWeatherUpButtonInitInfo.callback = [&state, updateWeatherTextBox](MouseButtonType)
@@ -374,13 +355,12 @@ void MainMenuUI::create(Game &game)
 		updateWeatherTextBox();
 	};
 
-	state.testWeatherUpButtonElementInstID = uiManager.createButton(testWeatherUpButtonElementInitInfo, testWeatherUpButtonInitInfo, state.elements);
+	state.testWeatherUpButtonElementInstID = uiManager.createButton(testWeatherUpButtonElementInitInfo, testWeatherUpButtonInitInfo, contextType, state.elements);
 
 	UiElementInitInfo testWeatherDownButtonElementInitInfo;
 	testWeatherDownButtonElementInitInfo.position = testWeatherDownButtonRect.getTopLeft();
 	testWeatherDownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	testWeatherDownButtonElementInitInfo.size = testWeatherDownButtonRect.getSize();
-	testWeatherDownButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
 	UiButtonInitInfo testWeatherDownButtonInitInfo;
 	testWeatherDownButtonInitInfo.callback = [&state, updateWeatherTextBox](MouseButtonType)
@@ -389,7 +369,7 @@ void MainMenuUI::create(Game &game)
 		updateWeatherTextBox();
 	};
 
-	state.testWeatherDownButtonElementInstID = uiManager.createButton(testWeatherDownButtonElementInitInfo, testWeatherDownButtonInitInfo, state.elements);
+	state.testWeatherDownButtonElementInstID = uiManager.createButton(testWeatherDownButtonElementInitInfo, testWeatherDownButtonInitInfo, contextType, state.elements);
 
 	auto loadGameInputActionCallback = [&uiManager, &state](const InputActionCallbackValues &values)
 	{

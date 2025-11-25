@@ -30,7 +30,6 @@ struct UiElementInitInfo
 	UiTransformSizeType sizeType;
 	Int2 size;
 	UiPivotType pivotType;
-	UiContextType contextType;
 	int drawOrder;
 	UiRenderSpace renderSpace;
 

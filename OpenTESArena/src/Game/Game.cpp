@@ -444,10 +444,9 @@ bool Game::init()
 
 	UiElementInitInfo cursorImageElementInitInfo;
 	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	cursorImageElementInitInfo.contextType = UiContextType::Global;
 	cursorImageElementInitInfo.drawOrder = 100;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
-	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->uiContextElements);
+	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, UiContextType::Global, this->uiContextElements);
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";

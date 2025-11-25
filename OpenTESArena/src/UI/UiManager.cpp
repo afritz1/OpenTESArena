@@ -114,19 +114,19 @@ std::vector<UiElementInstanceID> UiManager::getActiveButtonInstIDs() const
 	return activeButtonInstIDs;
 }
 
-UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextElements &contextElements)
+UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextElements &contextElements)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for image (context %d, texture ID %d).", initInfo.contextType, textureID);
+		DebugLogErrorFormat("Couldn't allocate element for image (context %d, texture ID %d).", contextType, textureID);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for image (context %d, texture ID %d).", initInfo.contextType, textureID);
+		DebugLogErrorFormat("Couldn't allocate transform for image (context %d, texture ID %d).", contextType, textureID);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -134,7 +134,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	const UiImageInstanceID imageInstID = this->images.alloc();
 	if (imageInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate image (context %d, texture ID %d).", initInfo.contextType, textureID);
+		DebugLogErrorFormat("Couldn't allocate image (context %d, texture ID %d).", contextType, textureID);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -147,7 +147,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initImage(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
+	element.initImage(contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
 
 	contextElements.imageElementInstIDs.emplace_back(elementInstID);
 
@@ -177,19 +177,19 @@ void UiManager::freeImage(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextElements &contextElements, Renderer &renderer)
+UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextType contextType, UiContextElements &contextElements, Renderer &renderer)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for text box (context %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate element for text box (context %d).", contextType);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for text box (context %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate transform for text box (context %d).", contextType);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -197,7 +197,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	const UiTextBoxInstanceID textBoxInstID = this->textBoxes.alloc();
 	if (textBoxInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate text box (context %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate text box (context %d).", contextType);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -226,7 +226,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initTextBox(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
+	element.initTextBox(contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
 
 	contextElements.textBoxElementInstIDs.emplace_back(elementInstID);
 
@@ -260,19 +260,19 @@ void UiManager::freeTextBox(UiElementInstanceID elementInstID, Renderer &rendere
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextElements &contextElements)
+UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextElements &contextElements)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate element for button (context %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate element for button (context %d).", contextType);
 		return -1;
 	}
 
 	const UiTransformInstanceID transformInstID = this->transforms.alloc();
 	if (transformInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate transform for button (context %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate transform for button (context %d).", contextType);
 		this->elements.free(elementInstID);
 		return -1;
 	}
@@ -280,7 +280,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, c
 	const UiButtonInstanceID buttonInstID = this->buttons.alloc();
 	if (buttonInstID < 0)
 	{
-		DebugLogErrorFormat("Couldn't allocate button (context %d).", initInfo.contextType);
+		DebugLogErrorFormat("Couldn't allocate button (context %d).", contextType);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
 		return -1;
@@ -293,7 +293,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, c
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initButton(initInfo.contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
+	element.initButton(contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
 
 	contextElements.buttonElementInstIDs.emplace_back(elementInstID);
 

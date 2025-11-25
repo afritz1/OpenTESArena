@@ -57,15 +57,15 @@ public:
 	
 	std::vector<UiElementInstanceID> getActiveButtonInstIDs() const;
 
-	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextElements &contextElements);
+	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextElements &contextElements);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
 
-	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextElements &contextElements, Renderer &renderer);
+	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextType contextType, UiContextElements &contextElements, Renderer &renderer);
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
-	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextElements &contextElements);
+	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextElements &contextElements);
 	void freeButton(UiElementInstanceID elementInstID);
 
 	void addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager,
