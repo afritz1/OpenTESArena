@@ -3,6 +3,7 @@
 #include "MainMenuUiState.h"
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionName.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/UiButton.h"
@@ -36,6 +37,10 @@ MainMenuUiState::MainMenuUiState()
 	this->testIndex = -1;
 	this->testIndex2 = -1;
 	this->testWeather = -1;
+	this->loadGameButtonElementInstID = -1;
+	this->newGameButtonElementInstID = -1;
+	this->exitGameButtonElementInstID = -1;
+	this->testGameButtonElementInstID = -1;
 	this->testIndex2ImageElementInstID = -1;
 	this->testIndex2UpButtonElementInstID = -1;
 	this->testIndex2DownButtonElementInstID = -1;
@@ -52,9 +57,10 @@ void MainMenuUiState::allocate(UiManager &uiManager, TextureManager &textureMana
 	this->testButtonTextureID = MainMenuUiView::allocTestButtonTexture(textureManager, renderer);
 }
 
-void MainMenuUiState::free(UiManager &uiManager, Renderer &renderer)
+void MainMenuUiState::free(UiManager &uiManager, InputManager &inputManager, Renderer &renderer)
 {
 	this->elements.free(uiManager, renderer);
+	this->inputListeners.free(inputManager);
 
 	if (this->bgTextureID >= 0)
 	{
@@ -91,29 +97,7 @@ void MainMenuUI::create(Game &game)
 	bgImageElementInitInfo.contextType = UiContextType::MainMenu;
 	uiManager.createImage(bgImageElementInitInfo, state.bgTextureID, state.elements);
 
-	const Rect testButtonRect = MainMenuUiView::getTestButtonRect();
-
-	UiElementInitInfo testButtonImageElementInitInfo;
-	testButtonImageElementInitInfo.position = testButtonRect.getCenter();
-	testButtonImageElementInitInfo.pivotType = UiPivotType::Middle;
-	testButtonImageElementInitInfo.contextType = UiContextType::MainMenu;
-	testButtonImageElementInitInfo.drawOrder = 1;
-	const UiElementInstanceID testButtonImageElementInstID = uiManager.createImage(testButtonImageElementInitInfo, state.testButtonTextureID, state.elements);
-
-	UiElementInitInfo testButtonTextBoxElementInitInfo;
-	testButtonTextBoxElementInitInfo.position = testButtonRect.getCenter();
-	testButtonTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
-	testButtonTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
-	testButtonTextBoxElementInitInfo.drawOrder = 2;
-
-	UiTextBoxInitInfo testButtonTextBoxInitInfo;
-	testButtonTextBoxInitInfo.worstCaseText = std::string(5, TextRenderUtils::LARGEST_CHAR);
-	testButtonTextBoxInitInfo.text = "Test";
-	testButtonTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
-	testButtonTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
-	testButtonTextBoxInitInfo.alignment = MainMenuUiView::TestButtonTextAlignment;
-	uiManager.createTextBox(testButtonTextBoxElementInitInfo, testButtonTextBoxInitInfo, state.elements, renderer);
-
+	const Rect testGameButtonRect = MainMenuUiView::getTestButtonRect();
 	const Rect testTypeUpButtonRect = MainMenuUiView::getTestTypeUpButtonRect();
 	const Rect testTypeDownButtonRect = MainMenuUiView::getTestTypeDownButtonRect();
 	const Rect testIndexUpButtonRect = MainMenuUiView::getTestIndexUpButtonRect();
@@ -122,6 +106,27 @@ void MainMenuUI::create(Game &game)
 	const Rect testIndex2DownButtonRect = MainMenuUiView::getTestIndex2DownButtonRect();
 	const Rect testWeatherUpButtonRect = MainMenuUiView::getTestWeatherUpButtonRect();
 	const Rect testWeatherDownButtonRect = MainMenuUiView::getTestWeatherDownButtonRect();
+
+	UiElementInitInfo testGameButtonImageElementInitInfo;
+	testGameButtonImageElementInitInfo.position = testGameButtonRect.getCenter();
+	testGameButtonImageElementInitInfo.pivotType = UiPivotType::Middle;
+	testGameButtonImageElementInitInfo.contextType = UiContextType::MainMenu;
+	testGameButtonImageElementInitInfo.drawOrder = 1;
+	const UiElementInstanceID testGameButtonImageElementInstID = uiManager.createImage(testGameButtonImageElementInitInfo, state.testButtonTextureID, state.elements);
+
+	UiElementInitInfo testGameButtonTextBoxElementInitInfo;
+	testGameButtonTextBoxElementInitInfo.position = testGameButtonRect.getCenter();
+	testGameButtonTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	testGameButtonTextBoxElementInitInfo.contextType = UiContextType::MainMenu;
+	testGameButtonTextBoxElementInitInfo.drawOrder = 2;
+
+	UiTextBoxInitInfo testGameButtonTextBoxInitInfo;
+	testGameButtonTextBoxInitInfo.worstCaseText = std::string(5, TextRenderUtils::LARGEST_CHAR);
+	testGameButtonTextBoxInitInfo.text = "Test";
+	testGameButtonTextBoxInitInfo.fontName = MainMenuUiView::TestButtonFontName.c_str();
+	testGameButtonTextBoxInitInfo.defaultColor = MainMenuUiView::getTestButtonTextColor();
+	testGameButtonTextBoxInitInfo.alignment = MainMenuUiView::TestButtonTextAlignment;
+	uiManager.createTextBox(testGameButtonTextBoxElementInitInfo, testGameButtonTextBoxInitInfo, state.elements, renderer);
 
 	UiElementInitInfo testTypeArrowImageElementInitInfo;
 	testTypeArrowImageElementInitInfo.position = testTypeUpButtonRect.getTopLeft();
@@ -189,19 +194,19 @@ void MainMenuUI::create(Game &game)
 	testWeatherTextBoxInitInfo.alignment = TextAlignment::MiddleRight;
 	state.testWeatherTextBoxElementInstID = uiManager.createTextBox(testWeatherTextBoxElementInitInfo, testWeatherTextBoxInitInfo, state.elements, renderer);
 
-	const Rect loadButtonRect = MainMenuUiView::getLoadButtonRect();
+	const Rect loadGameButtonRect = MainMenuUiView::getLoadButtonRect();
 	const Rect newGameButtonRect = MainMenuUiView::getNewGameButtonRect();
-	const Rect exitButtonRect = MainMenuUiView::getExitButtonRect();
+	const Rect exitGameButtonRect = MainMenuUiView::getExitButtonRect();
 
-	UiElementInitInfo loadButtonElementInitInfo;
-	loadButtonElementInitInfo.position = loadButtonRect.getTopLeft();
-	loadButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	loadButtonElementInitInfo.size = loadButtonRect.getSize();
-	loadButtonElementInitInfo.contextType = UiContextType::MainMenu;
+	UiElementInitInfo loadGameButtonElementInitInfo;
+	loadGameButtonElementInitInfo.position = loadGameButtonRect.getTopLeft();
+	loadGameButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	loadGameButtonElementInitInfo.size = loadGameButtonRect.getSize();
+	loadGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
-	UiButtonInitInfo loadButtonInitInfo;
-	loadButtonInitInfo.callback = [&game](MouseButtonType) { MainMenuUiController::onLoadGameButtonSelected(game); };
-	uiManager.createButton(loadButtonElementInitInfo, loadButtonInitInfo, state.elements);
+	UiButtonInitInfo loadGameButtonInitInfo;
+	loadGameButtonInitInfo.callback = [&game](MouseButtonType) { MainMenuUiController::onLoadGameButtonSelected(game); };
+	state.loadGameButtonElementInstID = uiManager.createButton(loadGameButtonElementInitInfo, loadGameButtonInitInfo, state.elements);
 
 	UiElementInitInfo newGameButtonElementInitInfo;
 	newGameButtonElementInitInfo.position = newGameButtonRect.getTopLeft();
@@ -211,24 +216,24 @@ void MainMenuUI::create(Game &game)
 
 	UiButtonInitInfo newGameButtonInitInfo;
 	newGameButtonInitInfo.callback = [&game](MouseButtonType) { MainMenuUiController::onNewGameButtonSelected(game); };
-	uiManager.createButton(newGameButtonElementInitInfo, newGameButtonInitInfo, state.elements);
+	state.newGameButtonElementInstID = uiManager.createButton(newGameButtonElementInitInfo, newGameButtonInitInfo, state.elements);
 
-	UiElementInitInfo exitButtonElementInitInfo;
-	exitButtonElementInitInfo.position = exitButtonRect.getTopLeft();
-	exitButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	exitButtonElementInitInfo.size = exitButtonRect.getSize();
-	exitButtonElementInitInfo.contextType = UiContextType::MainMenu;
+	UiElementInitInfo exitGameButtonElementInitInfo;
+	exitGameButtonElementInitInfo.position = exitGameButtonRect.getTopLeft();
+	exitGameButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	exitGameButtonElementInitInfo.size = exitGameButtonRect.getSize();
+	exitGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
-	UiButtonInitInfo exitButtonInitInfo;
-	exitButtonInitInfo.callback = [](MouseButtonType) { MainMenuUiController::onExitGameButtonSelected(); };
-	uiManager.createButton(exitButtonElementInitInfo, exitButtonInitInfo, state.elements);
+	UiButtonInitInfo exitGameButtonInitInfo;
+	exitGameButtonInitInfo.callback = [](MouseButtonType) { MainMenuUiController::onExitGameButtonSelected(); };
+	state.exitGameButtonElementInstID = uiManager.createButton(exitGameButtonElementInitInfo, exitGameButtonInitInfo, state.elements);
 
-	UiElementInitInfo testButtonElementInitInfo;
-	testButtonElementInitInfo.position = testButtonRect.getTopLeft();
-	testButtonElementInitInfo.contextType = UiContextType::MainMenu;
+	UiElementInitInfo testGameButtonElementInitInfo;
+	testGameButtonElementInitInfo.position = testGameButtonRect.getTopLeft();
+	testGameButtonElementInitInfo.contextType = UiContextType::MainMenu;
 
-	UiButtonInitInfo testButtonInitInfo;
-	testButtonInitInfo.callback = [&game, &state](MouseButtonType)
+	UiButtonInitInfo testGameButtonInitInfo;
+	testGameButtonInitInfo.callback = [&game, &state](MouseButtonType)
 	{
 		MainMenuUiController::onQuickStartButtonSelected(
 			game,
@@ -240,8 +245,8 @@ void MainMenuUI::create(Game &game)
 			MainMenuUiModel::getSelectedTestMapType(state.testType));
 	};
 
-	testButtonInitInfo.contentElementInstID = testButtonImageElementInstID;
-	uiManager.createButton(testButtonElementInitInfo, testButtonInitInfo, state.elements);
+	testGameButtonInitInfo.contentElementInstID = testGameButtonImageElementInstID;
+	state.testGameButtonElementInstID = uiManager.createButton(testGameButtonElementInitInfo, testGameButtonInitInfo, state.elements);
 
 	auto updateTypeTextBox = [&uiManager, &state, testTypeTextBoxElementInstID]()
 	{
@@ -386,28 +391,58 @@ void MainMenuUI::create(Game &game)
 
 	state.testWeatherDownButtonElementInstID = uiManager.createButton(testWeatherDownButtonElementInitInfo, testWeatherDownButtonInitInfo, state.elements);
 
-	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
-	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);
-	DebugAssert(cursorDims.has_value());
+	auto loadGameInputActionCallback = [&uiManager, &state](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			uiManager.getButtonCallback(state.loadGameButtonElementInstID)(MouseButtonType::Left);
+		}
+	};
 
-	const Options &options = game.options;
-	const double cursorScale = options.getGraphics_CursorScale();
-	const Int2 cursorSize(
-		static_cast<int>(static_cast<double>(cursorDims->x) * cursorScale),
-		static_cast<int>(static_cast<double>(cursorDims->y) * cursorScale));
-	uiManager.setTransformSize(game.cursorImageElementInstID, cursorSize);
-	uiManager.setImageTexture(game.cursorImageElementInstID, cursorTextureID);
+	auto startGameInputActionCallback = [&uiManager, &state](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			uiManager.getButtonCallback(state.newGameButtonElementInstID)(MouseButtonType::Left);
+		}
+	};
+
+	auto exitGameInputActionCallback = [&uiManager, &state](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			uiManager.getButtonCallback(state.exitGameButtonElementInstID)(MouseButtonType::Left);
+		}
+	};
+
+	auto testGameInputActionCallback = [&uiManager, &state](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			uiManager.getButtonCallback(state.testGameButtonElementInstID)(MouseButtonType::Left);
+		}
+	};
+
+	InputManager &inputManager = game.inputManager;
+	uiManager.addInputActionListener(InputActionName::LoadGame, loadGameInputActionCallback, inputManager, state.inputListeners);
+	uiManager.addInputActionListener(InputActionName::StartNewGame, startGameInputActionCallback, inputManager, state.inputListeners);
+	uiManager.addInputActionListener(InputActionName::ExitGame, exitGameInputActionCallback, inputManager, state.inputListeners);
+	uiManager.addInputActionListener(InputActionName::TestGame, testGameInputActionCallback, inputManager, state.inputListeners);
 }
 
 void MainMenuUI::destroy(Game &game)
 {
 	MainMenuUiState &state = MainMenuUI::state;
-	state.free(game.uiManager, game.renderer);
+	state.free(game.uiManager, game.inputManager, game.renderer);
 
 	state.testType = -1;
 	state.testIndex = -1;
 	state.testIndex2 = -1;
 	state.testWeather = -1;
+	state.loadGameButtonElementInstID = -1;
+	state.newGameButtonElementInstID = -1;
+	state.exitGameButtonElementInstID = -1;
+	state.testGameButtonElementInstID = -1;
 	state.testIndex2ImageElementInstID = -1;
 	state.testIndex2UpButtonElementInstID = -1;
 	state.testIndex2DownButtonElementInstID = -1;
@@ -432,4 +467,17 @@ void MainMenuUI::update(double dt, Game &game)
 	uiManager.setElementActive(state.testWeatherTextBoxElementInstID, currentTestHasWeather);
 	uiManager.setElementActive(state.testWeatherUpButtonElementInstID, currentTestHasWeather);
 	uiManager.setElementActive(state.testWeatherDownButtonElementInstID, currentTestHasWeather);
+
+	const Renderer &renderer = game.renderer;
+	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
+	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);
+	DebugAssert(cursorDims.has_value());
+
+	const Options &options = game.options;
+	const double cursorScale = options.getGraphics_CursorScale();
+	const Int2 cursorSize(
+		static_cast<int>(static_cast<double>(cursorDims->x) * cursorScale),
+		static_cast<int>(static_cast<double>(cursorDims->y) * cursorScale));
+	uiManager.setTransformSize(game.cursorImageElementInstID, cursorSize);
+	uiManager.setImageTexture(game.cursorImageElementInstID, cursorTextureID);
 }

@@ -314,6 +314,13 @@ void UiManager::freeButton(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
+void UiManager::addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager,
+	UiContextInputListeners &contextInputListeners)
+{
+	const InputListenerID listenerID = inputManager.addInputActionListener(actionName, callback);
+	contextInputListeners.inputActionListenerIDs.emplace_back(listenerID);
+}
+
 void UiManager::addBeginContextCallback(UiContextType contextType, const UiContextCallback &callback)
 {
 	auto iter = this->beginContextCallbackLists.find(contextType);

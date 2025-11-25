@@ -17,16 +17,20 @@ struct MainMenuUiState
 	UiTextureID testButtonTextureID;
 	int testType, testIndex, testIndex2, testWeather;
 
+	// Elements with hotkeys.
+	UiElementInstanceID loadGameButtonElementInstID, newGameButtonElementInstID, exitGameButtonElementInstID, testGameButtonElementInstID;
+
 	// Conditionally enabled test elements.
 	UiElementInstanceID testIndex2ImageElementInstID, testIndex2UpButtonElementInstID, testIndex2DownButtonElementInstID;
 	UiElementInstanceID testWeatherImageElementInstID, testWeatherTextBoxElementInstID, testWeatherUpButtonElementInstID, testWeatherDownButtonElementInstID;
 
 	UiContextElements elements;
+	UiContextInputListeners inputListeners;
 
 	MainMenuUiState();
 
 	void allocate(UiManager &uiManager, TextureManager &textureManager, Renderer &renderer);
-	void free(UiManager &uiManager, Renderer &renderer);
+	void free(UiManager &uiManager, InputManager &inputManager, Renderer &renderer);
 };
 
 namespace MainMenuUI

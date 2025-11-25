@@ -16,6 +16,7 @@
 #include "components/utilities/KeyValuePool.h"
 
 class Game;
+class InputManager;
 class TextureManager;
 
 enum class UiContextType;
@@ -66,6 +67,9 @@ public:
 
 	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextElements &contextElements);
 	void freeButton(UiElementInstanceID elementInstID);
+
+	void addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager,
+		UiContextInputListeners &contextInputListeners);
 
 	void addBeginContextCallback(UiContextType contextType, const UiContextCallback &callback);
 	void addUpdateContextCallback(UiContextType contextType, const UiContextUpdateCallback &callback);

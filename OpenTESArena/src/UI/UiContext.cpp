@@ -24,3 +24,13 @@ void UiContextElements::free(UiManager &uiManager, Renderer &renderer)
 
 	this->buttonElementInstIDs.clear();
 }
+
+void UiContextInputListeners::free(InputManager &inputManager)
+{
+	for (const InputListenerID listenerID : this->inputActionListenerIDs)
+	{
+		inputManager.removeListener(listenerID);
+	}
+
+	this->inputActionListenerIDs.clear();
+}

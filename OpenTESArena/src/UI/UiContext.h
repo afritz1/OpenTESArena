@@ -1,9 +1,10 @@
 #ifndef UI_CONTEXT_H
 #define UI_CONTEXT_H
 
-#include "UiElement.h"
-
 #include <vector>
+
+#include "UiElement.h"
+#include "../Input/InputManager.h"
 
 class Renderer;
 class UiManager;
@@ -44,6 +45,13 @@ struct UiContextElements
 	std::vector<UiElementInstanceID> textBoxElementInstIDs;
 
 	void free(UiManager &uiManager, Renderer &renderer);
+};
+
+struct UiContextInputListeners
+{
+	std::vector<InputListenerID> inputActionListenerIDs;
+
+	void free(InputManager &inputManager);
 };
 
 #endif
