@@ -1,0 +1,100 @@
+# @todo read in via File::readAllText() then parse with a new UiAssetFile static class
+
+# @todo will need UiTextureID management, checks already loaded texture name + palette name pairs. there will often be sharing for i.e. test arrows
+
+# @todo cursor texture function, returns UiTextureID each update()?
+# - if unset then assume { return game.defaultCursorTextureID; }
+
+# for images, if Palette field is unset, assume Palette=Texture
+
+# order should not matter for any definitions
+
+[Context]
+Type=MainMenu
+
+##################################
+
+# Background image + buttons
+
+[Image]
+Name=MainMenuBackground
+Texture=MENU.IMG
+
+# Buttons
+[Button]
+Name=MainMenuLoadGameButton
+Position=168,58
+Size=150,20
+Callback=MainMenuUI::onLoadGameButtonSelected
+
+[Button]
+Name=MainMenuNewGameButton
+Position=168,112
+Size=150,20
+Callback=MainMenuUI::onNewGameButtonSelected
+
+[Button]
+Name=MainMenuExitButton
+Position=168,158
+Size=45,20
+Callback=MainMenuUI::onExitGameButtonSelected
+
+##################################
+
+# Test game button
+
+[Image]
+Name=MainMenuTestButtonImage
+
+[TextBox]
+Name=MainMenuTestButtonTextBox
+
+[Button]
+Name=MainMenuTestButton
+
+##################################
+
+# Test type
+
+[Image]
+[TextBox]
+[Button]
+[Button]
+
+##################################
+
+# Test location
+
+[Image]
+[TextBox]
+[Button]
+[Button]
+
+##################################
+
+# Test weather
+
+[Image]
+[TextBox]
+[Button]
+[Button]
+
+##################################
+
+# Hotkeys
+
+[InputListener]
+Name=LoadGame
+Callback=MainMenuUI::onLoadGameInputAction
+
+[InputListener]
+Name=StartNewGame
+Callback=MainMenuUI::onStartNewGameInputAction
+
+[InputListener]
+Name=ExitGame
+Callback=MainMenuUI::onExitGameInputAction
+
+[InputListener]
+Name=TestGame
+Callback=MainMenuUI::onTestGameInputAction
