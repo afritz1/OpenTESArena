@@ -5,38 +5,54 @@
 
 #include "components/utilities/Singleton.h"
 
+enum class MouseButtonType;
 enum class UiContextType;
 
-// @todo UiImageAsset? UiTextBoxAsset? ... they have the init info built in
-
-struct UiImageAsset
+// @todo these defs will replace InitInfos eventually
+struct UiElementDefinition
 {
 
 };
 
-struct UiTextBoxAsset
+struct UiImageDefinition
 {
+	UiElementDefinition element;
 
+	// @todo TextureAsset
+};
+
+struct UiTextBoxDefinition
+{
+	UiElementDefinition element;
+
+};
+
+using UiButtonDefinitionCallback = void(*)(MouseButtonType);
+
+struct UiButtonDefinition
+{
+	UiElementDefinition element;
+	UiButtonDefinitionCallback callback;
+};
+
+struct UiContextDefinition
+{
+	UiContextType type;
+	std::vector<UiImageDefinition> imageDefs;
+	std::vector<UiTextBoxDefinition> textBoxDefs;
+	std::vector<UiButtonDefinition> buttonDefs;
+
+	UiContextDefinition();
 };
 
 class UiLibrary : public Singleton<UiLibrary>
 {
-public:
-	// @todo ui text assets etc
 private:
-
+	std::vector<UiContextDefinition> contextDefs; // To be instantiated by UI manager.
 public:
 	bool init(const char *folderPath);
 
-	// @todo get all ui assets of a UiContextType
-	std::vector<char> getContextAssets(UiContextType contextType) const;
+	const UiContextDefinition &getDefinition(UiContextType contextType) const;
 };
-
-// @todo UiElementInstanceID UiManager::createAsset(const UiAsset&, UiContextType)
-
-// @todo .txt format
-// - context type at top
-// - each ui component defined
-// - component type, name, position, etc
 
 #endif

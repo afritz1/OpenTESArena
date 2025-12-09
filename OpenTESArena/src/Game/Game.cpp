@@ -58,6 +58,7 @@
 #include "../UI/Surface.h"
 #include "../UI/UiCommand.h"
 #include "../UI/UiContext.h"
+#include "../UI/UiLibrary.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
@@ -401,6 +402,13 @@ bool Game::init()
 	}
 
 	CinematicLibrary::getInstance().init();
+
+	const std::string uiDataPath = dataFolderPath + "ui/";
+	if (!UiLibrary::getInstance().init(uiDataPath.c_str()))
+	{
+		DebugLogError("Couldn't init UI library.");
+		return false;
+	}
 
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	ItemConditionLibrary::getInstance().init(exeData);

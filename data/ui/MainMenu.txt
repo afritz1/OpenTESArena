@@ -10,31 +10,30 @@
 # order should not matter for any definitions
 
 [Context]
-Type=MainMenu
+ContextType=MainMenu
 
 ##################################
 
 # Background image + buttons
 
-[Image]
-Name=MainMenuBackground
+[MainMenuBackground]
+Type=Image
 Texture=MENU.IMG
 
-# Buttons
-[Button]
-Name=MainMenuLoadGameButton
+[MainMenuLoadGameButton]
+Type=Button
 Position=168,58
 Size=150,20
 Callback=MainMenuUI::onLoadGameButtonSelected
 
-[Button]
-Name=MainMenuNewGameButton
+[MainMenuNewGameButton]
+Type=Button
 Position=168,112
 Size=150,20
 Callback=MainMenuUI::onNewGameButtonSelected
 
-[Button]
-Name=MainMenuExitButton
+[MainMenuExitButton]
+Type=Button
 Position=168,158
 Size=45,20
 Callback=MainMenuUI::onExitGameButtonSelected
@@ -43,58 +42,170 @@ Callback=MainMenuUI::onExitGameButtonSelected
 
 # Test game button
 
-[Image]
-Name=MainMenuTestButtonImage
+[MainMenuTestButtonImage]
+Type=Image
+Position=150,190
+Pivot=Middle
+DrawOrder=1
+Texture=Custom1,30,14
 
-[TextBox]
-Name=MainMenuTestButtonTextBox
+[MainMenuTestButtonTextBox]
+Type=TextBox
+Position=150,190
+Pivot=Middle
+DrawOrder=2
+WorstCaseText=WWWWW
+Text=Test
+FontName=Arena
+TextColor=255,255,255,255
+TextAlignment=MiddleCenter
 
-[Button]
-Name=MainMenuTestButton
+[MainMenuTestButton]
+Type=Button
+Position=135,183
+Callback=MainMenuUI::onTestGameButtonSelectedTBD
 
 ##################################
 
 # Test type
 
-[Image]
-[TextBox]
-[Button]
-[Button]
+[TestTypeArrowsImage]
+Type=Image
+Position=312,164
+DrawOrder=2
+Texture=UPDOWN.IMG
+Palette=CHARSHT.COL
+
+[TestTypeTextBox]
+Type=TextBox
+Position=310,172
+Pivot=MiddleRight
+DrawOrder=3
+WorstCaseText=WWWWWWWWWWWWWWW
+Text=Test Type:
+FontName=Arena
+TextColor=255,255,255,255
+TextAlignment=MiddleRight
+
+[TestTypeUpButton]
+Type=Button
+Position=312,164
+Size=8,8
+Callback=MainMenuUI::onTestTypeUpButtonSelectedTBD
+
+[TestTypeDownButton]
+Type=Button
+Position=312,172
+Size=8,8
+Callback=MainMenuUI::onTestTypeDownButtonSelectedTBD
 
 ##################################
 
-# Test location
+# Test index
 
-[Image]
-[TextBox]
-[Button]
-[Button]
+[TestIndexArrowsImage]
+Type=Image
+Position=302,182
+DrawOrder=2
+Texture=UPDOWN.IMG
+Palette=CHARSHT.COL
+
+[TestIndexTextBox]
+Type=TextBox
+Position=300,190
+Pivot=MiddleRight
+DrawOrder=3
+WorstCaseText=WWWWWWWWWWWWWWW
+Text=Test Location:
+FontName=Arena
+TextColor=255,255,255,255
+TextAlignment=MiddleRight
+
+[TestIndexUpButton]
+Type=Button
+Position=302,182
+Size=8,8
+Callback=MainMenuUI::onTestIndexUpButtonSelectedTBD
+
+[TestIndexDownButton]
+Type=Button
+Position=302,190
+Size=8,8
+Callback=MainMenuUI::onTestIndexDownButtonSelectedTBD
+
+##################################
+
+# Test index 2 (interior variants)
+
+[TestIndex2ArrowsImage]
+Type=Image
+Position=312,182
+DrawOrder=2
+Texture=UPDOWN.IMG
+Palette=CHARSHT.COL
+
+[TestIndex2UpButton]
+Type=Button
+Position=312,182
+Size=8,8
+Callback=MainMenuUI::onTestIndex2UpButtonSelectedTBD
+
+[TestIndex2DownButton]
+Type=Button
+Position=312,190
+Size=8,8
+Callback=MainMenuUI::onTestIndex2DownButtonSelectedTBD
 
 ##################################
 
 # Test weather
 
-[Image]
-[TextBox]
-[Button]
-[Button]
+[TestWeatherArrowsImage]
+Type=Image
+Position=312,164
+DrawOrder=2
+Texture=UPDOWN.IMG
+Palette=CHARSHT.COL
+
+[TestWeatherTextBox]
+Type=TextBox
+Position=310,172
+Pivot=MiddleRight
+DrawOrder=3
+WorstCaseText=WWWWWWWWWWWWWWW
+Text=Test Weather:
+FontName=Arena
+TextColor=255,255,255,255
+TextAlignment=MiddleRight
+
+[TestWeatherUpButton]
+Type=Button
+Position=312,164
+Size=8,8
+Callback=MainMenuUI::onTestWeatherUpButtonSelectedTBD
+
+[TestWeatherDownButton]
+Type=Button
+Position=312,172
+Size=8,8
+Callback=MainMenuUI::onTestWeatherDownButtonSelectedTBD
 
 ##################################
 
 # Hotkeys
 
-[InputListener]
-Name=LoadGame
+[LoadGameInputListener]
+Type=InputListener
 Callback=MainMenuUI::onLoadGameInputAction
 
-[InputListener]
-Name=StartNewGame
+[StartNewGameInputListener]
+Type=InputListener
 Callback=MainMenuUI::onStartNewGameInputAction
 
-[InputListener]
-Name=ExitGame
+[ExitGameInputListener]
+Type=InputListener
 Callback=MainMenuUI::onExitGameInputAction
 
-[InputListener]
-Name=TestGame
+[TestGameInputListener]
+Type=InputListener
 Callback=MainMenuUI::onTestGameInputAction
