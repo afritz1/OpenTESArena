@@ -13,7 +13,7 @@ private:
 
 	bool tryGetValue(const std::string &key, std::string_view &value) const;
 public:
-	void init(std::string &&name);
+	void init(const std::string &name);
 
 	const std::string &getName() const;
 	int getPairCount() const;
@@ -24,7 +24,7 @@ public:
 	bool tryGetDouble(const std::string &key, double &value) const;
 	bool tryGetString(const std::string &key, std::string_view &value) const;
 
-	void add(std::string &&key, std::string &&value);
+	void addPair(std::string &&key, std::string &&value);
 	void clear();
 };
 
