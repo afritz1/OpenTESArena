@@ -1,14 +1,3 @@
-# @todo read in via File::readAllText() then parse with a new UiAssetFile static class
-
-# @todo will need UiTextureID management, checks already loaded texture name + palette name pairs. there will often be sharing for i.e. test arrows
-
-# @todo cursor texture function, returns UiTextureID each update()?
-# - if unset then assume { return game.defaultCursorTextureID; }
-
-# for images, if Palette field is unset, assume Palette=Texture
-
-# order should not matter for any definitions
-
 [Context]
 ContextType=MainMenu
 
