@@ -48,8 +48,9 @@ namespace
 	const std::string Keyword_ButtonCallback = "Callback";
 	const std::string ValidButtonKeys[] = { Keyword_ButtonMouseButtons, Keyword_ButtonCallback };
 
+	const std::string Keyword_InputListenerInputActionName = "InputActionName";
 	const std::string Keyword_InputListenerCallback = "Callback";
-	const std::string ValidInputListenerKeys[] = { Keyword_InputListenerCallback };
+	const std::string ValidInputListenerKeys[] = { Keyword_InputListenerInputActionName, Keyword_InputListenerCallback };
 
 	enum class UiParseEntryType
 	{
@@ -518,7 +519,11 @@ namespace
 			return false;
 		}
 
-		if (key == Keyword_InputListenerCallback)
+		if (key == Keyword_InputListenerInputActionName)
+		{
+			outInputListenerDef->inputActionName = value;
+		}
+		else if (key == Keyword_InputListenerCallback)
 		{
 			outInputListenerDef->callback = value;
 		}

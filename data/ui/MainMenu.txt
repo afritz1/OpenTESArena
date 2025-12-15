@@ -185,16 +185,20 @@ Callback=MainMenuUI::onTestWeatherDownButtonSelectedTBD
 
 [LoadGameInputListener]
 Type=InputListener
+InputActionName=LoadGame
 Callback=MainMenuUI::onLoadGameInputAction
 
 [StartNewGameInputListener]
 Type=InputListener
+InputActionName=StartNewGame
 Callback=MainMenuUI::onStartNewGameInputAction
 
 [ExitGameInputListener]
 Type=InputListener
+InputActionName=ExitGame
 Callback=MainMenuUI::onExitGameInputAction
 
 [TestGameInputListener]
 Type=InputListener
+InputActionName=TestGame
 Callback=MainMenuUI::onTestGameInputAction

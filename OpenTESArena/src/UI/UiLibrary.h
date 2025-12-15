@@ -75,6 +75,7 @@ using UiInputListenerDefinitionCallback = void(*)(const InputActionCallbackValue
 struct UiInputListenerDefinition
 {
 	std::string name;
+	std::string inputActionName;
 	//UiInputListenerDefinitionCallback callback;
 	std::string callback; // @todo look up function ahead of time
 
