@@ -10,19 +10,8 @@ class TextureManager;
 
 struct MainMenuUiState
 {
-	UiTextureID bgTextureID;
-
 	// Test option state.
-	UiTextureID testArrowsTextureID;
-	UiTextureID testButtonTextureID;
 	int testType, testIndex, testIndex2, testWeather;
-
-	// Elements with hotkeys.
-	UiElementInstanceID loadGameButtonElementInstID, newGameButtonElementInstID, exitGameButtonElementInstID, testGameButtonElementInstID;
-
-	// Conditionally enabled test elements.
-	UiElementInstanceID testIndex2ImageElementInstID, testIndex2UpButtonElementInstID, testIndex2DownButtonElementInstID;
-	UiElementInstanceID testWeatherImageElementInstID, testWeatherTextBoxElementInstID, testWeatherUpButtonElementInstID, testWeatherDownButtonElementInstID;
 
 	UiContextElements elements;
 	UiContextInputListeners inputListeners;

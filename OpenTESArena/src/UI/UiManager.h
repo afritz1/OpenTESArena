@@ -11,6 +11,7 @@
 #include "UiImage.h"
 #include "UiTextBox.h"
 #include "UiTransform.h"
+#include "../Assets/TextureAsset.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/utilities/KeyValuePool.h"
@@ -22,10 +23,22 @@ class TextureManager;
 enum class UiContextType;
 
 struct UiCommandList;
+struct UiContextDefinition;
 struct UiContextElements;
 
 using UiContextCallback = void(*)(Game &game);
 using UiContextUpdateCallback = void(*)(double dt, Game &game);
+
+struct LoadedUiTexture
+{
+	// @todo use context type as well so it's not taking up space forever
+	TextureAsset textureAsset;
+	TextureAsset paletteAsset;
+	// @todo support custom generated textures
+	UiTextureID textureID;
+
+	LoadedUiTexture();
+};
 
 class UiManager
 {
@@ -36,16 +49,21 @@ private:
 	KeyValuePool<UiTextBoxInstanceID, UiTextBox> textBoxes;
 	KeyValuePool<UiButtonInstanceID, UiButton> buttons;
 
+	std::vector<LoadedUiTexture> loadedTextures;
+
 	std::unordered_map<UiContextType, std::vector<UiContextCallback>> beginContextCallbackLists;
 	std::unordered_map<UiContextType, std::vector<UiContextUpdateCallback>> updateContextCallbackLists;
 	std::unordered_map<UiContextType, std::vector<UiContextCallback>> endContextCallbackLists;
 	std::optional<UiContextType> activeContextType;
 
 	std::vector<RenderElement2D> renderElementsCache; // To be drawn. Updated every frame.
+
+	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
 public:
 	bool init(const char *folderPath, TextureManager &textureManager, Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
+	UiElementInstanceID getElementByName(const char *name) const;
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
 
 	Rect getTransformGlobalRect(UiElementInstanceID elementInstID) const; // Includes local-to-parent transform.
@@ -79,6 +97,8 @@ public:
 	void beginContext(UiContextType contextType, Game &game);
 	void endContext(UiContextType contextType, Game &game);
 	bool isContextActive(UiContextType contextType) const;
+	void createContext(const UiContextDefinition &contextDef, UiContextElements &contextElements, InputManager &inputManager,
+		UiContextInputListeners &contextInputListeners, TextureManager &textureManager, Renderer &renderer);
 
 	void populateCommandList(UiCommandList &commandList);
 

@@ -6,7 +6,6 @@
 
 UiTextBoxInitInfo::UiTextBoxInitInfo()
 {
-	this->fontName = nullptr;
 	this->defaultColor = Colors::White;
 	this->alignment = TextAlignment::TopLeft;
 	this->lineSpacing = 0;

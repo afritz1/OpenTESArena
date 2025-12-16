@@ -16,7 +16,7 @@ struct UiTextBoxInitInfo
 {
 	std::string worstCaseText; // Determines texture dimensions.
 	std::string text; // Actual text for presentation.
-	const char *fontName;
+	std::string fontName;
 	Color defaultColor;
 	TextAlignment alignment;
 	std::optional<TextRenderShadowInfo> shadowInfo;

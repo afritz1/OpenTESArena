@@ -4,19 +4,17 @@ UiButtonInitInfo::UiButtonInitInfo()
 {
 	this->mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->callback = [](MouseButtonType) { };
-	this->contentElementInstID = -1;
 }
 
 UiButton::UiButton()
 {
 	this->mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->callback = [](MouseButtonType) { };
-	this->contentElementInstID = -1;
 }
 
-void UiButton::init(MouseButtonTypeFlags mouseButtonTypeFlags, const UiButtonCallback &callback, UiElementInstanceID contentElementInstID)
+void UiButton::init(MouseButtonTypeFlags mouseButtonTypeFlags, const UiButtonCallback &callback, const std::string &contentElementName)
 {
 	this->mouseButtonFlags = mouseButtonTypeFlags;
 	this->callback = callback;
-	this->contentElementInstID = contentElementInstID;
+	this->contentElementName = contentElementName;
 }

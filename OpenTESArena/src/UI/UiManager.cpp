@@ -5,6 +5,7 @@
 #include "UiCommand.h"
 #include "UiContext.h"
 #include "UiImage.h"
+#include "UiLibrary.h"
 #include "UiManager.h"
 #include "UiRenderSpace.h"
 #include "UiTextBox.h"
@@ -12,6 +13,12 @@
 #include "../Interface/MainMenuUiState.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/StringView.h"
+
+LoadedUiTexture::LoadedUiTexture()
+{
+	this->textureID = -1;
+}
 
 bool UiManager::init(const char *folderPath, TextureManager &textureManager, Renderer &renderer)
 {
@@ -33,11 +40,59 @@ void UiManager::shutdown(Renderer &renderer)
 	this->images.clear();
 	this->textBoxes.clear();
 	this->buttons.clear();
+
+	for (LoadedUiTexture &texture : this->loadedTextures)
+	{
+		renderer.freeUiTexture(texture.textureID);
+	}
+
+	this->loadedTextures.clear();
+
 	this->beginContextCallbackLists.clear();
 	this->updateContextCallbackLists.clear();
 	this->endContextCallbackLists.clear();
 	this->activeContextType = std::nullopt;
 	this->renderElementsCache.clear();
+}
+
+UiTextureID UiManager::getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer)
+{
+	for (const LoadedUiTexture &texture : this->loadedTextures)
+	{
+		if ((texture.textureAsset == textureAsset) && (texture.paletteAsset == paletteAsset))
+		{
+			return texture.textureID;
+		}
+	}
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteAsset, textureManager, renderer, &textureID))
+	{
+		DebugLogErrorFormat("Couldn't create UI texture \"%s\" with palette \"%s\".", textureAsset.filename.c_str(), paletteAsset.filename.c_str());
+		return -1;
+	}
+
+	LoadedUiTexture newLoadedTexture;
+	newLoadedTexture.textureAsset = textureAsset;
+	newLoadedTexture.paletteAsset = paletteAsset;
+	newLoadedTexture.textureID = textureID;
+	this->loadedTextures.emplace_back(std::move(newLoadedTexture));
+
+	return textureID;
+}
+
+UiElementInstanceID UiManager::getElementByName(const char *name) const
+{
+	for (const UiElementInstanceID elementInstID : this->elements.keys)
+	{
+		const UiElement &element = this->elements.get(elementInstID);
+		if (StringView::equals(element.name, name))
+		{
+			return elementInstID;
+		}
+	}
+
+	return -1;
 }
 
 void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
@@ -147,7 +202,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initImage(contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
+	element.initImage(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
 
 	contextElements.imageElementInstIDs.emplace_back(elementInstID);
 
@@ -205,9 +260,9 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(textBoxInitInfo.fontName, &fontDefIndex))
+	if (!fontLibrary.tryGetDefinitionIndex(textBoxInitInfo.fontName.c_str(), &fontDefIndex))
 	{
-		DebugLogErrorFormat("Couldn't get font definition index for \"%s\".", textBoxInitInfo.fontName);
+		DebugLogErrorFormat("Couldn't get font definition index for \"%s\".", textBoxInitInfo.fontName.c_str());
 		this->textBoxes.free(textBoxInstID);
 		this->transforms.free(transformInstID);
 		this->elements.free(elementInstID);
@@ -226,7 +281,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initTextBox(contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
+	element.initTextBox(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
 
 	contextElements.textBoxElementInstIDs.emplace_back(elementInstID);
 
@@ -287,13 +342,13 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, c
 	}
 
 	UiButton &button = this->buttons.get(buttonInstID);
-	button.init(buttonInitInfo.mouseButtonFlags, buttonInitInfo.callback, buttonInitInfo.contentElementInstID);
+	button.init(buttonInitInfo.mouseButtonFlags, buttonInitInfo.callback, buttonInitInfo.contentElementName);
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initButton(contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
+	element.initButton(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
 
 	contextElements.buttonElementInstIDs.emplace_back(elementInstID);
 
@@ -401,6 +456,8 @@ void UiManager::endContext(UiContextType contextType, Game &game)
 		}
 	}
 
+	// @todo clear loaded textures for this context
+
 	this->activeContextType = std::nullopt;
 }
 
@@ -412,6 +469,92 @@ bool UiManager::isContextActive(UiContextType contextType) const
 	}
 
 	return this->activeContextType == contextType;
+}
+
+void UiManager::createContext(const UiContextDefinition &contextDef, UiContextElements &contextElements, InputManager &inputManager,
+	UiContextInputListeners &contextInputListeners, TextureManager &textureManager, Renderer &renderer)
+{
+	auto elementDefToInitInfo = [](const UiElementDefinition &def)
+	{
+		UiElementInitInfo initInfo;
+		initInfo.name = def.name;
+		initInfo.position = def.position;
+		initInfo.sizeType = def.sizeType;
+		initInfo.size = def.size;
+		initInfo.pivotType = def.pivotType;
+		initInfo.drawOrder = def.drawOrder;
+		initInfo.renderSpace = def.renderSpace;
+		return initInfo;
+	};
+
+	auto textBoxDefToInitInfo = [](const UiTextBoxDefinition &def)
+	{
+		UiTextBoxInitInfo initInfo;
+		initInfo.worstCaseText = def.worstCaseText;
+		initInfo.text = def.text;
+		initInfo.fontName = def.fontName;
+		initInfo.defaultColor = def.defaultColor;
+		initInfo.alignment = def.alignment;
+		initInfo.shadowInfo = def.shadowInfo;
+		initInfo.lineSpacing = def.lineSpacing;
+		return initInfo;
+	};
+
+	auto buttonDefToInitInfo = [](const UiButtonDefinition &def)
+	{
+		UiButtonInitInfo initInfo;
+		initInfo.mouseButtonFlags = MouseButtonType::Left; // @todo
+		//initInfo.callback = def. // @todo
+		initInfo.callback = [](MouseButtonType)
+		{
+			DebugLogWarning("Button callback lookup not implemented.");
+		};
+
+		initInfo.contentElementName = def.contentElementName;
+		return initInfo;
+	};
+
+	const UiContextType contextType = contextDef.type;
+
+	for (const UiImageDefinition &imageDef : contextDef.imageDefs)
+	{
+		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(imageDef.element);
+
+		const bool isCustomGeneratedTexture = imageDef.palette.filename.empty();
+		if (isCustomGeneratedTexture)
+		{
+			DebugLogWarningFormat("Image element %s with custom generated texture not supported yet.", imageDef.element.name.c_str());
+			continue;
+		}
+
+		const UiTextureID textureID = this->getOrAddTexture(imageDef.texture, imageDef.palette, textureManager, renderer);
+		this->createImage(elementInitInfo, textureID, contextType, contextElements);
+	}
+
+	for (const UiTextBoxDefinition &textBoxDef : contextDef.textBoxDefs)
+	{
+		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(textBoxDef.element);
+		const UiTextBoxInitInfo textBoxInitInfo = textBoxDefToInitInfo(textBoxDef);
+		this->createTextBox(elementInitInfo, textBoxInitInfo, contextType, contextElements, renderer);
+	}
+
+	for (const UiButtonDefinition &buttonDef : contextDef.buttonDefs)
+	{
+		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(buttonDef.element);
+		const UiButtonInitInfo buttonInitInfo = buttonDefToInitInfo(buttonDef);
+		this->createButton(elementInitInfo, buttonInitInfo, contextType, contextElements);
+	}
+
+	for (const UiInputListenerDefinition &inputListenerDef : contextDef.inputListenerDefs)
+	{
+		// @todo lookup in function map
+		InputActionCallback callback = [](const InputActionCallbackValues&)
+		{
+			DebugLogWarning("Input action callback lookup not implemented.");
+		};
+
+		this->addInputActionListener(inputListenerDef.inputActionName.c_str(), callback, inputManager, contextInputListeners);
+	}
 }
 
 void UiManager::populateCommandList(UiCommandList &commandList)
@@ -510,13 +653,13 @@ void UiManager::update(double dt, Game &game)
 			switch (element.type)
 			{
 			case UiElementType::Image:
-				break;
 			case UiElementType::TextBox:
 				break;
 			case UiElementType::Button:
 			{
 				const UiButton &button = this->buttons.get(element.buttonInstID);
-				const UiElement &contentElement = this->elements.get(button.contentElementInstID);
+				const UiElementInstanceID contentElementInstID = this->getElementByName(button.contentElementName.c_str());
+				const UiElement &contentElement = this->elements.get(contentElementInstID);
 				const UiTransform &contentTransform = this->transforms.get(contentElement.transformInstID);
 				transform.size = contentTransform.size;
 				break;

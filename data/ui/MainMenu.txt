@@ -45,7 +45,7 @@ Pivot=Middle
 DrawOrder=2
 WorstCaseText=WWWWW
 Text=Test
-FontName=Arena
+FontName=ARENAFNT.DAT
 TextColor=255,255,255,255
 TextAlignment=MiddleCenter
 
@@ -53,6 +53,7 @@ TextAlignment=MiddleCenter
 Type=Button
 Position=135,183
 Callback=MainMenuUI::onTestGameButtonSelectedTBD
+ContentElementName=MainMenuTestButtonImage
 
 ##################################
 
@@ -72,7 +73,7 @@ Pivot=MiddleRight
 DrawOrder=3
 WorstCaseText=WWWWWWWWWWWWWWW
 Text=Test Type:
-FontName=Arena
+FontName=ARENAFNT.DAT
 TextColor=255,255,255,255
 TextAlignment=MiddleRight
 
@@ -106,7 +107,7 @@ Pivot=MiddleRight
 DrawOrder=3
 WorstCaseText=WWWWWWWWWWWWWWW
 Text=Test Location:
-FontName=Arena
+FontName=ARENAFNT.DAT
 TextColor=255,255,255,255
 TextAlignment=MiddleRight
 
@@ -163,7 +164,7 @@ Pivot=MiddleRight
 DrawOrder=3
 WorstCaseText=WWWWWWWWWWWWWWW
 Text=Test Weather:
-FontName=Arena
+FontName=ARENAFNT.DAT
 TextColor=255,255,255,255
 TextAlignment=MiddleRight
 

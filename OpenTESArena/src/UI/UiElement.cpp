@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "UiContext.h"
 #include "UiElement.h"
 #include "UiManager.h"
@@ -14,6 +16,7 @@ UiElementInitInfo::UiElementInitInfo()
 
 UiElement::UiElement()
 {
+	std::fill(std::begin(this->name), std::end(this->name), '\0');
 	this->contextType = static_cast<UiContextType>(-1);
 	this->drawOrder = -1;
 	this->renderSpace = UiRenderSpace::Classic;
@@ -22,8 +25,9 @@ UiElement::UiElement()
 	this->type = static_cast<UiElementType>(-1);
 }
 
-void UiElement::initImage(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID)
+void UiElement::initImage(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID)
 {
+	std::snprintf(this->name, sizeof(this->name), "%s", name);
 	this->contextType = contextType;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;
@@ -34,8 +38,9 @@ void UiElement::initImage(UiContextType contextType, int drawOrder, UiRenderSpac
 	this->imageInstID = instID;
 }
 
-void UiElement::initTextBox(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID)
+void UiElement::initTextBox(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID)
 {
+	std::snprintf(this->name, sizeof(this->name), "%s", name);
 	this->contextType = contextType;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;
@@ -46,8 +51,9 @@ void UiElement::initTextBox(UiContextType contextType, int drawOrder, UiRenderSp
 	this->textBoxInstID = instID;
 }
 
-void UiElement::initButton(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID)
+void UiElement::initButton(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID)
 {
+	std::snprintf(this->name, sizeof(this->name), "%s", name);
 	this->contextType = contextType;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;

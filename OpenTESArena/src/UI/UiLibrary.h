@@ -66,6 +66,7 @@ struct UiButtonDefinition
 	UiElementDefinition element;
 	//UiButtonDefinitionCallback callback;
 	std::string callback; // @todo look up function ahead of time
+	std::string contentElementName;
 	
 	void clear();
 };

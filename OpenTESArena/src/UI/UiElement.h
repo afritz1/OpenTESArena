@@ -26,6 +26,7 @@ enum class UiElementType
 
 struct UiElementInitInfo
 {
+	std::string name;
 	Int2 position;
 	UiTransformSizeType sizeType;
 	Int2 size;
@@ -39,6 +40,7 @@ struct UiElementInitInfo
 // Base instance for a drawable UI component.
 struct UiElement
 {
+	char name[96];
 	UiContextType contextType;
 	int drawOrder; // Higher is drawn last.
 	UiRenderSpace renderSpace;
@@ -57,9 +59,9 @@ struct UiElement
 
 	UiElement();
 
-	void initImage(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
-	void initTextBox(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
-	void initButton(UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
+	void initImage(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
+	void initTextBox(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
+	void initButton(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
 };
 
 #endif

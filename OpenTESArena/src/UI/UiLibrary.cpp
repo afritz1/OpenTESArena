@@ -46,7 +46,8 @@ namespace
 
 	const std::string Keyword_ButtonMouseButtons = "MouseButtons";
 	const std::string Keyword_ButtonCallback = "Callback";
-	const std::string ValidButtonKeys[] = { Keyword_ButtonMouseButtons, Keyword_ButtonCallback };
+	const std::string Keyword_ButtonContentElementName = "ContentElementName";
+	const std::string ValidButtonKeys[] = { Keyword_ButtonMouseButtons, Keyword_ButtonCallback, Keyword_ButtonContentElementName };
 
 	const std::string Keyword_InputListenerInputActionName = "InputActionName";
 	const std::string Keyword_InputListenerCallback = "Callback";
@@ -503,6 +504,10 @@ namespace
 		{
 			outButtonDef->callback = value;
 		}
+		else if (key == Keyword_ButtonContentElementName)
+		{
+			outButtonDef->contentElementName = value;
+		}
 		else
 		{
 			DebugLogErrorFormat("Unrecognized button key \"%s\".", key.c_str());
@@ -575,6 +580,7 @@ void UiButtonDefinition::clear()
 	this->element.clear();
 	//this->callback = nullptr;
 	this->callback.clear();
+	this->contentElementName.clear();
 }
 
 void UiInputListenerDefinition::clear()

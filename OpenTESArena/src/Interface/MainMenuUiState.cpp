@@ -7,6 +7,7 @@
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/UiButton.h"
+#include "../UI/UiLibrary.h"
 #include "../UI/UiTextBox.h"
 
 namespace
@@ -30,59 +31,27 @@ namespace
 
 MainMenuUiState::MainMenuUiState()
 {
-	this->bgTextureID = -1;
-	this->testArrowsTextureID = -1;
-	this->testButtonTextureID = -1;
 	this->testType = -1;
 	this->testIndex = -1;
 	this->testIndex2 = -1;
 	this->testWeather = -1;
-	this->loadGameButtonElementInstID = -1;
-	this->newGameButtonElementInstID = -1;
-	this->exitGameButtonElementInstID = -1;
-	this->testGameButtonElementInstID = -1;
-	this->testIndex2ImageElementInstID = -1;
-	this->testIndex2UpButtonElementInstID = -1;
-	this->testIndex2DownButtonElementInstID = -1;
-	this->testWeatherImageElementInstID = -1;
-	this->testWeatherTextBoxElementInstID = -1;
-	this->testWeatherUpButtonElementInstID = -1;
-	this->testWeatherDownButtonElementInstID = -1;
 }
 
 void MainMenuUiState::allocate(UiManager &uiManager, TextureManager &textureManager, Renderer &renderer)
 {
-	this->bgTextureID = MainMenuUiView::allocBackgroundTexture(textureManager, renderer);
-	this->testArrowsTextureID = MainMenuUiView::allocTestArrowsTexture(textureManager, renderer);
-	this->testButtonTextureID = MainMenuUiView::allocTestButtonTexture(textureManager, renderer);
+
 }
 
 void MainMenuUiState::free(UiManager &uiManager, InputManager &inputManager, Renderer &renderer)
 {
 	this->elements.free(uiManager, renderer);
 	this->inputListeners.free(inputManager);
-
-	if (this->bgTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->bgTextureID);
-		this->bgTextureID = -1;
-	}
-
-	if (this->testArrowsTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->testArrowsTextureID);
-		this->testArrowsTextureID = -1;
-	}
-
-	if (this->testButtonTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->testButtonTextureID);
-		this->testButtonTextureID = -1;
-	}
 }
 
 void MainMenuUI::create(Game &game)
 {
+	InputManager &inputManager = game.inputManager;
+	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
 	UiManager &uiManager = game.uiManager;
 	MainMenuUiState &state = MainMenuUI::state;
@@ -93,12 +62,14 @@ void MainMenuUI::create(Game &game)
 	state.testIndex2 = 1;
 	state.testWeather = 0;
 
-	constexpr UiContextType contextType = MainMenuUI::ContextType;
+	const UiLibrary &uiLibrary = UiLibrary::getInstance();
+	const UiContextDefinition &contextDef = uiLibrary.getDefinition(MainMenuUI::ContextType);
+	uiManager.createContext(contextDef, state.elements, inputManager, state.inputListeners, textureManager, renderer);
 
-	UiElementInitInfo bgImageElementInitInfo;
-	uiManager.createImage(bgImageElementInitInfo, state.bgTextureID, contextType, state.elements);
+	/*UiElementInitInfo bgImageElementInitInfo;
+	uiManager.createImage(bgImageElementInitInfo, state.bgTextureID, contextType, state.elements);*/
 
-	const Rect testGameButtonRect = MainMenuUiView::getTestButtonRect();
+	/*const Rect testGameButtonRect = MainMenuUiView::getTestButtonRect();
 	const Rect testTypeUpButtonRect = MainMenuUiView::getTestTypeUpButtonRect();
 	const Rect testTypeDownButtonRect = MainMenuUiView::getTestTypeDownButtonRect();
 	const Rect testIndexUpButtonRect = MainMenuUiView::getTestIndexUpButtonRect();
@@ -369,9 +340,9 @@ void MainMenuUI::create(Game &game)
 		updateWeatherTextBox();
 	};
 
-	state.testWeatherDownButtonElementInstID = uiManager.createButton(testWeatherDownButtonElementInitInfo, testWeatherDownButtonInitInfo, contextType, state.elements);
+	state.testWeatherDownButtonElementInstID = uiManager.createButton(testWeatherDownButtonElementInitInfo, testWeatherDownButtonInitInfo, contextType, state.elements);*/
 
-	auto loadGameInputActionCallback = [&uiManager, &state](const InputActionCallbackValues &values)
+	/*auto loadGameInputActionCallback = [&uiManager, &state](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
@@ -407,7 +378,7 @@ void MainMenuUI::create(Game &game)
 	uiManager.addInputActionListener(InputActionName::LoadGame, loadGameInputActionCallback, inputManager, state.inputListeners);
 	uiManager.addInputActionListener(InputActionName::StartNewGame, startGameInputActionCallback, inputManager, state.inputListeners);
 	uiManager.addInputActionListener(InputActionName::ExitGame, exitGameInputActionCallback, inputManager, state.inputListeners);
-	uiManager.addInputActionListener(InputActionName::TestGame, testGameInputActionCallback, inputManager, state.inputListeners);
+	uiManager.addInputActionListener(InputActionName::TestGame, testGameInputActionCallback, inputManager, state.inputListeners);*/
 }
 
 void MainMenuUI::destroy(Game &game)
@@ -419,17 +390,6 @@ void MainMenuUI::destroy(Game &game)
 	state.testIndex = -1;
 	state.testIndex2 = -1;
 	state.testWeather = -1;
-	state.loadGameButtonElementInstID = -1;
-	state.newGameButtonElementInstID = -1;
-	state.exitGameButtonElementInstID = -1;
-	state.testGameButtonElementInstID = -1;
-	state.testIndex2ImageElementInstID = -1;
-	state.testIndex2UpButtonElementInstID = -1;
-	state.testIndex2DownButtonElementInstID = -1;
-	state.testWeatherImageElementInstID = -1;
-	state.testWeatherTextBoxElementInstID = -1;
-	state.testWeatherUpButtonElementInstID = -1;
-	state.testWeatherDownButtonElementInstID = -1;
 }
 
 void MainMenuUI::update(double dt, Game &game)
@@ -437,16 +397,23 @@ void MainMenuUI::update(double dt, Game &game)
 	UiManager &uiManager = game.uiManager;
 	const MainMenuUiState &state = MainMenuUI::state;
 
+	const UiElementInstanceID testIndex2ImageElementInstID = uiManager.getElementByName("TestIndex2ArrowsImage");
+	const UiElementInstanceID testIndex2UpButtonElementInstID = uiManager.getElementByName("TestIndex2UpButton");
+	const UiElementInstanceID testIndex2DownButtonElementInstID = uiManager.getElementByName("TestIndex2DownButton");
 	const bool currentTestIsInterior = state.testType == MainMenuUiModel::TestType_Interior;
-	uiManager.setElementActive(state.testIndex2ImageElementInstID, currentTestIsInterior);
-	uiManager.setElementActive(state.testIndex2UpButtonElementInstID, currentTestIsInterior);
-	uiManager.setElementActive(state.testIndex2DownButtonElementInstID, currentTestIsInterior);
+	uiManager.setElementActive(testIndex2ImageElementInstID, currentTestIsInterior);
+	uiManager.setElementActive(testIndex2UpButtonElementInstID, currentTestIsInterior);
+	uiManager.setElementActive(testIndex2DownButtonElementInstID, currentTestIsInterior);
 
+	const UiElementInstanceID testWeatherImageElementInstID = uiManager.getElementByName("TestWeatherArrowsImage");
+	const UiElementInstanceID testWeatherTextBoxElementInstID = uiManager.getElementByName("TestWeatherTextBox");
+	const UiElementInstanceID testWeatherUpButtonElementInstID = uiManager.getElementByName("TestWeatherUpButton");
+	const UiElementInstanceID testWeatherDownButtonElementInstID = uiManager.getElementByName("TestWeatherDownButton");
 	const bool currentTestHasWeather = (state.testType == MainMenuUiModel::TestType_City) || (state.testType == MainMenuUiModel::TestType_Wilderness);
-	uiManager.setElementActive(state.testWeatherImageElementInstID, currentTestHasWeather);
-	uiManager.setElementActive(state.testWeatherTextBoxElementInstID, currentTestHasWeather);
-	uiManager.setElementActive(state.testWeatherUpButtonElementInstID, currentTestHasWeather);
-	uiManager.setElementActive(state.testWeatherDownButtonElementInstID, currentTestHasWeather);
+	uiManager.setElementActive(testWeatherImageElementInstID, currentTestHasWeather);
+	uiManager.setElementActive(testWeatherTextBoxElementInstID, currentTestHasWeather);
+	uiManager.setElementActive(testWeatherUpButtonElementInstID, currentTestHasWeather);
+	uiManager.setElementActive(testWeatherDownButtonElementInstID, currentTestHasWeather);
 
 	const Renderer &renderer = game.renderer;
 	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
