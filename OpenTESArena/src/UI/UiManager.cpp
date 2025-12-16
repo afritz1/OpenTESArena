@@ -1,5 +1,6 @@
 #include "FontLibrary.h"
 #include "GuiUtils.h"
+#include "Surface.h"
 #include "TextRenderUtils.h"
 #include "UiButton.h"
 #include "UiCommand.h"
@@ -18,6 +19,13 @@
 LoadedUiTexture::LoadedUiTexture()
 {
 	this->textureID = -1;
+}
+
+GeneratedUiTexture::GeneratedUiTexture()
+{
+	this->patternType = static_cast<UiTexturePatternType>(-1);
+	this->width = -1;
+	this->height = -1;
 }
 
 bool UiManager::init(const char *folderPath, TextureManager &textureManager, Renderer &renderer)
@@ -48,6 +56,13 @@ void UiManager::shutdown(Renderer &renderer)
 
 	this->loadedTextures.clear();
 
+	for (GeneratedUiTexture &texture : this->generatedTextures)
+	{
+		renderer.freeUiTexture(texture.textureID);
+	}
+
+	this->generatedTextures.clear();
+
 	this->beginContextCallbackLists.clear();
 	this->updateContextCallbackLists.clear();
 	this->endContextCallbackLists.clear();
@@ -72,11 +87,40 @@ UiTextureID UiManager::getOrAddTexture(const TextureAsset &textureAsset, const T
 		return -1;
 	}
 
-	LoadedUiTexture newLoadedTexture;
-	newLoadedTexture.textureAsset = textureAsset;
-	newLoadedTexture.paletteAsset = paletteAsset;
-	newLoadedTexture.textureID = textureID;
-	this->loadedTextures.emplace_back(std::move(newLoadedTexture));
+	LoadedUiTexture newTexture;
+	newTexture.textureAsset = textureAsset;
+	newTexture.paletteAsset = paletteAsset;
+	newTexture.textureID = textureID;
+	this->loadedTextures.emplace_back(std::move(newTexture));
+
+	return textureID;
+}
+
+UiTextureID UiManager::getOrAddTexture(UiTexturePatternType patternType, int width, int height, TextureManager &textureManager, Renderer &renderer)
+{
+	for (const GeneratedUiTexture &texture : this->generatedTextures)
+	{
+		if ((texture.patternType == patternType) && (texture.width == width) && (texture.height == height))
+		{
+			return texture.textureID;
+		}
+	}
+
+	const Surface surface = TextureUtils::generate(patternType, width, height, textureManager, renderer);
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
+	{
+		DebugLogErrorFormat("Couldn't generate UI texture with pattern %d and dimensions %dx%d.", patternType, width, height);
+		return -1;
+	}
+
+	GeneratedUiTexture newTexture;
+	newTexture.patternType = patternType;
+	newTexture.width = width;
+	newTexture.height = height;
+	newTexture.textureID = textureID;
+	this->generatedTextures.emplace_back(std::move(newTexture));
 
 	return textureID;
 }
@@ -520,14 +564,20 @@ void UiManager::createContext(const UiContextDefinition &contextDef, UiContextEl
 	{
 		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(imageDef.element);
 
-		const bool isCustomGeneratedTexture = imageDef.palette.filename.empty();
-		if (isCustomGeneratedTexture)
+		UiTextureID textureID = -1;
+		switch (imageDef.type)
 		{
-			DebugLogWarningFormat("Image element %s with custom generated texture not supported yet.", imageDef.element.name.c_str());
-			continue;
+		case UiImageDefinitionType::Asset:
+			textureID = this->getOrAddTexture(imageDef.texture, imageDef.palette, textureManager, renderer);
+			break;
+		case UiImageDefinitionType::Generated:
+			textureID = this->getOrAddTexture(imageDef.patternType, imageDef.generatedWidth, imageDef.generatedHeight, textureManager, renderer);
+			break;
+		default:
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(imageDef.type)));
+			break;
 		}
-
-		const UiTextureID textureID = this->getOrAddTexture(imageDef.texture, imageDef.palette, textureManager, renderer);
+		
 		this->createImage(elementInitInfo, textureID, contextType, contextElements);
 	}
 

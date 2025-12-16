@@ -5,6 +5,7 @@
 #include "UiLibrary.h"
 #include "UiPivotType.h"
 #include "UiRenderSpace.h"
+#include "../Assets/TextureUtils.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
@@ -127,6 +128,13 @@ namespace
 		{ "Classic", UiRenderSpace::Classic }
 	};
 
+	constexpr std::pair<const char*, UiTexturePatternType> TexturePatternTypeMappings[] =
+	{
+		{ "Parchment", UiTexturePatternType::Parchment },
+		{ "Dark", UiTexturePatternType::Dark },
+		{ "Custom1", UiTexturePatternType::Custom1 }
+	};
+
 	constexpr std::pair<const char*, TextAlignment> TextAlignmentMappings[] =
 	{
 		{ "TopLeft", TextAlignment::TopLeft },
@@ -194,6 +202,25 @@ namespace
 		}
 
 		*outRenderSpace = iter->second;
+		return true;
+	}
+
+	bool TryGetTexturePatternTypeMapping(const std::string &str, UiTexturePatternType *outPatternType)
+	{
+		const auto mappingsBegin = std::begin(TexturePatternTypeMappings);
+		const auto mappingsEnd = std::end(TexturePatternTypeMappings);
+		const auto iter = std::find_if(mappingsBegin, mappingsEnd,
+			[&str](const std::pair<const char*, UiTexturePatternType> &pair)
+		{
+			return pair.first == str;
+		});
+
+		if (iter == mappingsEnd)
+		{
+			return false;
+		}
+
+		*outPatternType = iter->second;
 		return true;
 	}
 
@@ -368,18 +395,51 @@ namespace
 
 		if (key == Keyword_ImageTexture)
 		{
-			// @todo generate with TextureUtils, use UiTexturePatternType enum
-			const bool isCustomGeneratedTexture = value.find(",") != std::string::npos;
-			if (isCustomGeneratedTexture)
+			// @todo support TextureAsset index optional argument (check for 1 comma)
+			const bool isGeneratedTexture = std::count(value.begin(), value.end(), ',') == 2;
+
+			if (isGeneratedTexture)
 			{
-				DebugLogWarningFormat("Custom generated texture \"%s\" not supported yet.", value.c_str());
+				std::string textureTokens[3];
+				if (!String::splitExpected<3>(value, ',', textureTokens))
+				{
+					DebugLogErrorFormat("Couldn't split generated texture value \"%s\" into PatternType,Width,Height.", value.c_str());
+					return false;
+				}
+
+				UiTexturePatternType patternType = static_cast<UiTexturePatternType>(-1);
+				if (!TryGetTexturePatternTypeMapping(textureTokens[0], &patternType))
+				{
+					DebugLogErrorFormat("Couldn't parse generated texture pattern type value \"%s\".", value.c_str());
+					return false;
+				}
+
+				int generatedWidth = 0;
+				int generatedHeight = 0;
+
+				bool success = true;
+				success &= TryParseInteger(textureTokens[1], &generatedWidth);
+				success &= TryParseInteger(textureTokens[2], &generatedHeight);
+				if (!success)
+				{
+					DebugLogErrorFormat("Couldn't parse generated texture width/height values \"%s\".", value.c_str());
+					return false;
+				}
+
+				outImageDef->type = UiImageDefinitionType::Generated;
+				outImageDef->patternType = patternType;
+				outImageDef->generatedWidth = generatedWidth;
+				outImageDef->generatedHeight = generatedHeight;
 			}
-
-			outImageDef->texture = TextureAsset(std::string(value));
-
-			if (!isCustomGeneratedTexture && outImageDef->palette.filename.empty())
+			else
 			{
-				outImageDef->palette = outImageDef->texture;
+				outImageDef->type = UiImageDefinitionType::Asset;
+				outImageDef->texture = TextureAsset(std::string(value));
+
+				if (outImageDef->palette.filename.empty())
+				{
+					outImageDef->palette = outImageDef->texture;
+				}
 			}
 		}
 		else if (key == Keyword_ImagePalette)
@@ -554,6 +614,13 @@ void UiElementDefinition::clear()
 	this->pivotType = UiPivotType::TopLeft;
 	this->drawOrder = 0;
 	this->renderSpace = UiRenderSpace::Classic;
+}
+
+UiImageDefinition::UiImageDefinition()
+{
+	this->type = static_cast<UiImageDefinitionType>(-1);
+	this->generatedWidth = -1;
+	this->generatedHeight = -1;
 }
 
 void UiImageDefinition::clear()

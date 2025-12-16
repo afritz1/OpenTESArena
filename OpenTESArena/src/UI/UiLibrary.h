@@ -16,6 +16,7 @@ enum class TextAlignment;
 enum class UiContextType;
 enum class UiPivotType;
 enum class UiRenderSpace;
+enum class UiTexturePatternType;
 enum class UiTransformSizeType;
 
 struct InputActionCallbackValues;
@@ -36,11 +37,28 @@ struct UiElementDefinition
 	void clear();
 };
 
+enum class UiImageDefinitionType
+{
+	Asset,
+	Generated
+};
+
 struct UiImageDefinition
 {
 	UiElementDefinition element;
+
+	UiImageDefinitionType type;
+
+	// Asset
 	TextureAsset texture;
 	TextureAsset palette;
+
+	// Generated
+	UiTexturePatternType patternType;
+	int generatedWidth;
+	int generatedHeight;
+
+	UiImageDefinition();
 
 	void clear();
 };

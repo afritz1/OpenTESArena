@@ -34,10 +34,20 @@ struct LoadedUiTexture
 	// @todo use context type as well so it's not taking up space forever
 	TextureAsset textureAsset;
 	TextureAsset paletteAsset;
-	// @todo support custom generated textures
 	UiTextureID textureID;
 
 	LoadedUiTexture();
+};
+
+struct GeneratedUiTexture
+{
+	// @todo use context type as well so it's not taking up space forever
+	UiTexturePatternType patternType;
+	int width;
+	int height;
+	UiTextureID textureID;
+
+	GeneratedUiTexture();
 };
 
 class UiManager
@@ -50,6 +60,7 @@ private:
 	KeyValuePool<UiButtonInstanceID, UiButton> buttons;
 
 	std::vector<LoadedUiTexture> loadedTextures;
+	std::vector<GeneratedUiTexture> generatedTextures;
 
 	std::unordered_map<UiContextType, std::vector<UiContextCallback>> beginContextCallbackLists;
 	std::unordered_map<UiContextType, std::vector<UiContextUpdateCallback>> updateContextCallbackLists;
@@ -59,6 +70,7 @@ private:
 	std::vector<RenderElement2D> renderElementsCache; // To be drawn. Updated every frame.
 
 	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID getOrAddTexture(UiTexturePatternType patternType, int width, int height, TextureManager &textureManager, Renderer &renderer);
 public:
 	bool init(const char *folderPath, TextureManager &textureManager, Renderer &renderer);
 	void shutdown(Renderer &renderer);
