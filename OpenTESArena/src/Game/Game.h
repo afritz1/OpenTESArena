@@ -67,7 +67,7 @@ public:
 
 	SceneManager sceneManager;
 	UiManager uiManager;
-	UiContextElements uiContextElements; // For global UI elements like cursor.
+	UiContextState uiContextState; // For global UI elements/listeners like cursor and screenshots.
 	UiElementInstanceID cursorImageElementInstID;
 	UiTextureID defaultCursorTextureID; // Sword cursor used by most UI.
 
@@ -84,10 +84,6 @@ public:
 	// Whether to draw the 3D game world.
 	bool shouldRenderScene;
 private:
-	// Listener IDs are optional in case of failed Game construction.
-	std::optional<InputListenerID> applicationExitListenerID, windowResizedListenerID,
-		renderTargetsResetListenerID, takeScreenshotListenerID, debugProfilerListenerID;
-
 	bool requestedSubPanelPop;
 	bool running;
 

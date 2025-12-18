@@ -59,7 +59,7 @@ void MainMenuUI::create(Game &game)
 
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
 	const UiContextDefinition &contextDef = uiLibrary.getDefinition(MainMenuUI::ContextType);
-	uiManager.createContext(contextDef, state.elements, inputManager, state.inputListeners, textureManager, renderer);
+	uiManager.createContext(contextDef, state.contextState, inputManager, textureManager, renderer);
 
 	MainMenuUI::updateTypeTextBox();
 	MainMenuUI::updateNameTextBox();
@@ -71,8 +71,7 @@ void MainMenuUI::destroy()
 	MainMenuUiState &state = MainMenuUI::state;
 	Game &game = *state.game;
 
-	state.elements.free(game.uiManager, game.renderer);
-	state.inputListeners.free(game.inputManager);
+	state.contextState.free(game.inputManager, game.uiManager, game.renderer);
 	state.testType = -1;
 	state.testIndex = -1;
 	state.testIndex2 = -1;

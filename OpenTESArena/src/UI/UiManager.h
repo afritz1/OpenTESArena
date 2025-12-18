@@ -24,7 +24,7 @@ enum class UiContextType;
 
 struct UiCommandList;
 struct UiContextDefinition;
-struct UiContextElements;
+struct UiContextState;
 
 using UiContextBeginCallback = void(*)(Game &game);
 using UiContextEndCallback = void(*)();
@@ -88,19 +88,18 @@ public:
 	
 	std::vector<UiElementInstanceID> getActiveButtonInstIDs() const;
 
-	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextElements &contextElements);
+	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextState &contextState);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
 
-	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextType contextType, UiContextElements &contextElements, Renderer &renderer);
+	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextType contextType, UiContextState &contextState, Renderer &renderer);
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
-	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextElements &contextElements);
+	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextState &contextState);
 	void freeButton(UiElementInstanceID elementInstID);
 
-	void addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager,
-		UiContextInputListeners &contextInputListeners);
+	void addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager, UiContextState &contextState);
 
 	void addBeginContextCallback(UiContextType contextType, const UiContextBeginCallback &callback);
 	void addEndContextCallback(UiContextType contextType, const UiContextEndCallback &callback);
@@ -110,8 +109,8 @@ public:
 	void beginContext(UiContextType contextType, Game &game);
 	void endContext(UiContextType contextType, Game &game);
 	bool isContextActive(UiContextType contextType) const;
-	void createContext(const UiContextDefinition &contextDef, UiContextElements &contextElements, InputManager &inputManager,
-		UiContextInputListeners &contextInputListeners, TextureManager &textureManager, Renderer &renderer);
+	void createContext(const UiContextDefinition &contextDef, UiContextState &contextState, InputManager &inputManager,
+		TextureManager &textureManager, Renderer &renderer);
 
 	void populateCommandList(UiCommandList &commandList);
 

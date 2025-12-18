@@ -219,7 +219,7 @@ std::vector<UiElementInstanceID> UiManager::getActiveButtonInstIDs() const
 	return activeButtonInstIDs;
 }
 
-UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextElements &contextElements)
+UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextState &contextState)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
@@ -254,7 +254,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	UiElement &element = this->elements.get(elementInstID);
 	element.initImage(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
 
-	contextElements.imageElementInstIDs.emplace_back(elementInstID);
+	contextState.imageElementInstIDs.emplace_back(elementInstID);
 
 	return elementInstID;
 }
@@ -282,7 +282,8 @@ void UiManager::freeImage(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextType contextType, UiContextElements &contextElements, Renderer &renderer)
+UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextType contextType,
+	UiContextState &contextState, Renderer &renderer)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
@@ -333,7 +334,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	UiElement &element = this->elements.get(elementInstID);
 	element.initTextBox(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
 
-	contextElements.textBoxElementInstIDs.emplace_back(elementInstID);
+	contextState.textBoxElementInstIDs.emplace_back(elementInstID);
 
 	return elementInstID;
 }
@@ -365,7 +366,7 @@ void UiManager::freeTextBox(UiElementInstanceID elementInstID, Renderer &rendere
 	this->elements.free(elementInstID);
 }
 
-UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextElements &contextElements)
+UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextState &contextState)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
 	if (elementInstID < 0)
@@ -400,7 +401,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, c
 	UiElement &element = this->elements.get(elementInstID);
 	element.initButton(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
 
-	contextElements.buttonElementInstIDs.emplace_back(elementInstID);
+	contextState.buttonElementInstIDs.emplace_back(elementInstID);
 
 	return elementInstID;
 }
@@ -419,11 +420,10 @@ void UiManager::freeButton(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-void UiManager::addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager,
-	UiContextInputListeners &contextInputListeners)
+void UiManager::addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager, UiContextState &contextState)
 {
 	const InputListenerID listenerID = inputManager.addInputActionListener(actionName, callback);
-	contextInputListeners.inputActionListenerIDs.emplace_back(listenerID);
+	contextState.inputActionListenerIDs.emplace_back(listenerID);
 }
 
 void UiManager::addBeginContextCallback(UiContextType contextType, const UiContextBeginCallback &callback)
@@ -521,8 +521,8 @@ bool UiManager::isContextActive(UiContextType contextType) const
 	return this->activeContextType == contextType;
 }
 
-void UiManager::createContext(const UiContextDefinition &contextDef, UiContextElements &contextElements, InputManager &inputManager,
-	UiContextInputListeners &contextInputListeners, TextureManager &textureManager, Renderer &renderer)
+void UiManager::createContext(const UiContextDefinition &contextDef, UiContextState &contextState, InputManager &inputManager,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const UiContextType contextType = contextDef.type;
 
@@ -579,28 +579,28 @@ void UiManager::createContext(const UiContextDefinition &contextDef, UiContextEl
 			break;
 		}
 		
-		this->createImage(elementInitInfo, textureID, contextType, contextElements);
+		this->createImage(elementInitInfo, textureID, contextType, contextState);
 	}
 
 	for (const UiTextBoxDefinition &textBoxDef : contextDef.textBoxDefs)
 	{
 		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(textBoxDef.element);
 		const UiTextBoxInitInfo textBoxInitInfo = textBoxDefToInitInfo(textBoxDef);
-		this->createTextBox(elementInitInfo, textBoxInitInfo, contextType, contextElements, renderer);
+		this->createTextBox(elementInitInfo, textBoxInitInfo, contextType, contextState, renderer);
 	}
 
 	for (const UiButtonDefinition &buttonDef : contextDef.buttonDefs)
 	{
 		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(buttonDef.element);
 		const UiButtonInitInfo buttonInitInfo = buttonDefToInitInfo(buttonDef);
-		this->createButton(elementInitInfo, buttonInitInfo, contextType, contextElements);
+		this->createButton(elementInitInfo, buttonInitInfo, contextType, contextState);
 	}
 
 	for (const UiInputListenerDefinition &inputListenerDef : contextDef.inputListenerDefs)
 	{
 		const char *inputActionName = inputListenerDef.inputActionName.c_str();
 		const InputActionCallback inputActionCallback = inputListenerDef.callback;
-		this->addInputActionListener(inputActionName, inputActionCallback, inputManager, contextInputListeners);
+		this->addInputActionListener(inputActionName, inputActionCallback, inputManager, contextState);
 	}
 }
 

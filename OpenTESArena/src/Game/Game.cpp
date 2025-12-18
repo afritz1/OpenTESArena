@@ -221,38 +221,13 @@ Game::Game()
 
 Game::~Game()
 {
-	if (this->applicationExitListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->applicationExitListenerID);
-	}
-
-	if (this->windowResizedListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->windowResizedListenerID);
-	}
-
-	if (this->renderTargetsResetListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->renderTargetsResetListenerID);
-	}
-
-	if (this->takeScreenshotListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->takeScreenshotListenerID);
-	}
-
-	if (this->debugProfilerListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->debugProfilerListenerID);
-	}
-
 	if (this->defaultCursorTextureID >= 0)
 	{
 		this->renderer.freeUiTexture(this->defaultCursorTextureID);
 		this->defaultCursorTextureID = -1;
 	}
 
-	this->uiContextElements.free(this->uiManager, this->renderer);
+	this->uiContextState.free(this->inputManager, this->uiManager, this->renderer);
 	this->uiManager.shutdown(this->renderer);
 	this->sceneManager.shutdown(this->renderer);
 
@@ -321,25 +296,25 @@ bool Game::init()
 	this->inputManager.init(logicalToPixelScale);
 
 	// Add application-level input event handlers.
-	this->applicationExitListenerID = this->inputManager.addApplicationExitListener(
+	const InputListenerID applicationExitListenerID = this->inputManager.addApplicationExitListener(
 		[this]()
 	{
 		this->handleApplicationExit();
 	});
 
-	this->windowResizedListenerID = this->inputManager.addWindowResizedListener(
+	const InputListenerID windowResizedListenerID = this->inputManager.addWindowResizedListener(
 		[this](int width, int height)
 	{
 		this->handleWindowResized(width, height);
 	});
 
-	this->renderTargetsResetListenerID = this->inputManager.addRenderTargetsResetListener(
+	const InputListenerID renderTargetsResetListenerID = this->inputManager.addRenderTargetsResetListener(
 		[this]()
 	{
 		this->renderer.handleRenderTargetsReset();
 	});
 
-	this->takeScreenshotListenerID = this->inputManager.addInputActionListener(InputActionName::Screenshot,
+	const InputListenerID takeScreenshotListenerID = this->inputManager.addInputActionListener(InputActionName::Screenshot,
 		[this](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
@@ -349,8 +324,13 @@ bool Game::init()
 		}
 	});
 
-	this->debugProfilerListenerID = this->inputManager.addInputActionListener(
-		InputActionName::DebugProfiler, CommonUiController::onDebugInputAction);
+	const InputListenerID debugProfilerListenerID = this->inputManager.addInputActionListener(InputActionName::DebugProfiler, CommonUiController::onDebugInputAction);
+
+	this->uiContextState.applicationExitListenerIDs.emplace_back(applicationExitListenerID);
+	this->uiContextState.windowResizedListenerIDs.emplace_back(windowResizedListenerID);
+	this->uiContextState.renderTargetsResetListenerIDs.emplace_back(renderTargetsResetListenerID);
+	this->uiContextState.inputActionListenerIDs.emplace_back(takeScreenshotListenerID);
+	this->uiContextState.inputActionListenerIDs.emplace_back(debugProfilerListenerID);
 
 	// Load various asset libraries.
 	if (!FontLibrary::getInstance().init())
@@ -454,7 +434,7 @@ bool Game::init()
 	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	cursorImageElementInitInfo.drawOrder = 100;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
-	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, UiContextType::Global, this->uiContextElements);
+	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, UiContextType::Global, this->uiContextState);
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";

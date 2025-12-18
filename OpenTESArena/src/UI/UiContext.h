@@ -49,21 +49,24 @@ void update(double dt)
 // For buttons and input actions.
 #define DECLARE_UI_FUNC(contextName, functionName) { #functionName, contextName##::functionName }
 
-// Owns UI element handles for a UI context. Copies of these handles can be kept by UI for game logic, activating/deactivating elements, etc..
-struct UiContextElements
+// Owns various handles for a UI context which can be used with game logic for activating/deactivating elements, etc..
+struct UiContextState
 {
 	std::vector<UiElementInstanceID> imageElementInstIDs;
 	std::vector<UiElementInstanceID> buttonElementInstIDs;
 	std::vector<UiElementInstanceID> textBoxElementInstIDs;
 
-	void free(UiManager &uiManager, Renderer &renderer);
-};
-
-struct UiContextInputListeners
-{
 	std::vector<InputListenerID> inputActionListenerIDs;
+	std::vector<InputListenerID> mouseButtonChangedListenerIDs;
+	std::vector<InputListenerID> mouseButtonHeldListenerIDs;
+	std::vector<InputListenerID> mouseScrollChangedListenerIDs;
+	std::vector<InputListenerID> mouseMotionListenerIDs;
+	std::vector<InputListenerID> applicationExitListenerIDs;
+	std::vector<InputListenerID> windowResizedListenerIDs;
+	std::vector<InputListenerID> renderTargetsResetListenerIDs;
+	std::vector<InputListenerID> textInputListenerIDs;
 
-	void free(InputManager &inputManager);
+	void free(InputManager &inputManager, UiManager &uiManager, Renderer &renderer);
 };
 
 #endif
