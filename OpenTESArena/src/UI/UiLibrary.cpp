@@ -6,6 +6,7 @@
 #include "UiPivotType.h"
 #include "UiRenderSpace.h"
 #include "../Assets/TextureUtils.h"
+#include "../Interface/MainMenuUiState.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
@@ -148,6 +149,11 @@ namespace
 		{ "BottomRight",  TextAlignment::BottomRight }
 	};
 
+	const std::tuple<const char*, Span<const std::pair<const char*, UiButtonDefinitionCallback>>, Span<const std::pair<const char*, UiInputListenerDefinitionCallback>>> ContextNamespaceCallbacks[] =
+	{
+		{ MainMenuUI::NamespaceString, MainMenuUI::ButtonCallbacks, MainMenuUI::InputActionCallbacks }
+	};
+
 	bool TryGetContextTypeMapping(const std::string &str, UiContextType *outContextType)
 	{
 		const auto mappingsBegin = std::begin(ContextTypeMappings);
@@ -240,6 +246,68 @@ namespace
 		}
 
 		*outAlignment = iter->second;
+		return true;
+	}
+
+	bool TryGetButtonCallback(const std::string &namespaceStr, const std::string &functionName, UiButtonDefinitionCallback *outCallback)
+	{
+		const auto mappingsBegin = std::begin(ContextNamespaceCallbacks);
+		const auto mappingsEnd = std::end(ContextNamespaceCallbacks);
+		const auto namespaceIter = std::find_if(mappingsBegin, mappingsEnd,
+			[&namespaceStr](const auto &tuple)
+		{
+			return std::get<0>(tuple) == namespaceStr;
+		});
+
+		if (namespaceIter == mappingsEnd)
+		{
+			return false;
+		}
+
+		Span<const std::pair<const char*, UiButtonDefinitionCallback>> callbackPairs = std::get<1>(*namespaceIter);
+		const auto functionIter = std::find_if(callbackPairs.begin(), callbackPairs.end(),
+			[&functionName](const std::pair<const char*, UiButtonDefinitionCallback> &pair)
+		{
+			return pair.first == functionName;
+		});
+
+		if (functionIter == callbackPairs.end())
+		{
+			return false;
+		}
+
+		*outCallback = functionIter->second;
+		return true;
+	}
+
+	bool TryGetInputActionCallback(const std::string &namespaceStr, const std::string &functionName, UiInputListenerDefinitionCallback *outCallback)
+	{
+		const auto mappingsBegin = std::begin(ContextNamespaceCallbacks);
+		const auto mappingsEnd = std::end(ContextNamespaceCallbacks);
+		const auto namespaceIter = std::find_if(mappingsBegin, mappingsEnd,
+			[&namespaceStr](const auto &tuple)
+		{
+			return std::get<0>(tuple) == namespaceStr;
+		});
+
+		if (namespaceIter == mappingsEnd)
+		{
+			return false;
+		}
+
+		Span<const std::pair<const char*, UiInputListenerDefinitionCallback>> callbackPairs = std::get<2>(*namespaceIter);
+		const auto functionIter = std::find_if(callbackPairs.begin(), callbackPairs.end(),
+			[&functionName](const std::pair<const char*, UiInputListenerDefinitionCallback> &pair)
+		{
+			return pair.first == functionName;
+		});
+
+		if (functionIter == callbackPairs.end())
+		{
+			return false;
+		}
+
+		*outCallback = functionIter->second;
 		return true;
 	}
 
@@ -562,7 +630,21 @@ namespace
 		}
 		else if (key == Keyword_ButtonCallback)
 		{
-			outButtonDef->callback = value;
+			std::string functionTokens[2];
+			if (!String::splitExpected<2>(value, '.', functionTokens))
+			{
+				DebugLogErrorFormat("Couldn't split button callback value \"%s\" into Namespace,Function.", value.c_str());
+				return false;
+			}
+
+			UiButtonDefinitionCallback callback;
+			if (!TryGetButtonCallback(functionTokens[0], functionTokens[1], &callback))
+			{
+				DebugLogErrorFormat("Couldn't parse button callback value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outButtonDef->callback = callback;
 		}
 		else if (key == Keyword_ButtonContentElementName)
 		{
@@ -590,7 +672,21 @@ namespace
 		}
 		else if (key == Keyword_InputListenerCallback)
 		{
-			outInputListenerDef->callback = value;
+			std::string functionTokens[2];
+			if (!String::splitExpected<2>(value, '.', functionTokens))
+			{
+				DebugLogErrorFormat("Couldn't split input action callback value \"%s\" into Namespace,Function.", value.c_str());
+				return false;
+			}
+
+			UiInputListenerDefinitionCallback callback;
+			if (!TryGetInputActionCallback(functionTokens[0], functionTokens[1], &callback))
+			{
+				DebugLogErrorFormat("Couldn't parse input action callback value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outInputListenerDef->callback = callback;
 		}
 		else
 		{
@@ -642,19 +738,27 @@ void UiTextBoxDefinition::clear()
 	this->lineSpacing = 0;
 }
 
+UiButtonDefinition::UiButtonDefinition()
+{
+	this->callback = nullptr;
+}
+
 void UiButtonDefinition::clear()
 {
 	this->element.clear();
-	//this->callback = nullptr;
-	this->callback.clear();
+	this->callback = nullptr;
 	this->contentElementName.clear();
+}
+
+UiInputListenerDefinition::UiInputListenerDefinition()
+{
+	this->callback = nullptr;
 }
 
 void UiInputListenerDefinition::clear()
 {
 	this->name.clear();
-	//this->callback = nullptr;
-	this->callback.clear();
+	this->callback = nullptr;
 }
 
 UiContextDefinition::UiContextDefinition()

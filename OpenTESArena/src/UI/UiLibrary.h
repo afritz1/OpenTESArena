@@ -82,9 +82,10 @@ using UiButtonDefinitionCallback = void(*)(MouseButtonType);
 struct UiButtonDefinition
 {
 	UiElementDefinition element;
-	//UiButtonDefinitionCallback callback;
-	std::string callback; // @todo look up function ahead of time
+	UiButtonDefinitionCallback callback;
 	std::string contentElementName;
+
+	UiButtonDefinition();
 	
 	void clear();
 };
@@ -95,8 +96,9 @@ struct UiInputListenerDefinition
 {
 	std::string name;
 	std::string inputActionName;
-	//UiInputListenerDefinitionCallback callback;
-	std::string callback; // @todo look up function ahead of time
+	UiInputListenerDefinitionCallback callback;
+
+	UiInputListenerDefinition();
 
 	void clear();
 };

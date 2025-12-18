@@ -13,19 +13,22 @@ Texture=MENU.IMG
 Type=Button
 Position=168,58
 Size=150,20
-Callback=MainMenuUI::onLoadGameButtonSelected
+Pivot=Middle
+Callback=MainMenuUI.onLoadGameButtonSelected
 
 [MainMenuNewGameButton]
 Type=Button
 Position=168,112
 Size=150,20
-Callback=MainMenuUI::onNewGameButtonSelected
+Pivot=Middle
+Callback=MainMenuUI.onNewGameButtonSelected
 
 [MainMenuExitButton]
 Type=Button
 Position=168,158
 Size=45,20
-Callback=MainMenuUI::onExitGameButtonSelected
+Pivot=Middle
+Callback=MainMenuUI.onExitGameButtonSelected
 
 ##################################
 
@@ -52,7 +55,7 @@ TextAlignment=MiddleCenter
 [MainMenuTestButton]
 Type=Button
 Position=135,183
-Callback=MainMenuUI::onTestGameButtonSelectedTBD
+Callback=MainMenuUI.onTestGameButtonSelected
 ContentElementName=MainMenuTestButtonImage
 
 ##################################
@@ -81,13 +84,13 @@ TextAlignment=MiddleRight
 Type=Button
 Position=312,164
 Size=8,8
-Callback=MainMenuUI::onTestTypeUpButtonSelectedTBD
+Callback=MainMenuUI.onTestTypeUpButtonSelected
 
 [TestTypeDownButton]
 Type=Button
 Position=312,172
 Size=8,8
-Callback=MainMenuUI::onTestTypeDownButtonSelectedTBD
+Callback=MainMenuUI.onTestTypeDownButtonSelected
 
 ##################################
 
@@ -115,13 +118,13 @@ TextAlignment=MiddleRight
 Type=Button
 Position=302,182
 Size=8,8
-Callback=MainMenuUI::onTestIndexUpButtonSelectedTBD
+Callback=MainMenuUI.onTestIndexUpButtonSelected
 
 [TestIndexDownButton]
 Type=Button
 Position=302,190
 Size=8,8
-Callback=MainMenuUI::onTestIndexDownButtonSelectedTBD
+Callback=MainMenuUI.onTestIndexDownButtonSelected
 
 ##################################
 
@@ -138,13 +141,13 @@ Palette=CHARSHT.COL
 Type=Button
 Position=312,182
 Size=8,8
-Callback=MainMenuUI::onTestIndex2UpButtonSelectedTBD
+Callback=MainMenuUI.onTestIndex2UpButtonSelected
 
 [TestIndex2DownButton]
 Type=Button
 Position=312,190
 Size=8,8
-Callback=MainMenuUI::onTestIndex2DownButtonSelectedTBD
+Callback=MainMenuUI.onTestIndex2DownButtonSelected
 
 ##################################
 
@@ -152,17 +155,17 @@ Callback=MainMenuUI::onTestIndex2DownButtonSelectedTBD
 
 [TestWeatherArrowsImage]
 Type=Image
-Position=312,164
+Position=312,146
 DrawOrder=2
 Texture=UPDOWN.IMG
 Palette=CHARSHT.COL
 
 [TestWeatherTextBox]
 Type=TextBox
-Position=310,172
+Position=310,154
 Pivot=MiddleRight
 DrawOrder=3
-WorstCaseText=WWWWWWWWWWWWWWW
+WorstCaseText=WWWWWWWWWWWWWWWW
 Text=Test Weather:
 FontName=ARENAFNT.DAT
 TextColor=255,255,255,255
@@ -170,15 +173,15 @@ TextAlignment=MiddleRight
 
 [TestWeatherUpButton]
 Type=Button
-Position=312,164
+Position=312,146
 Size=8,8
-Callback=MainMenuUI::onTestWeatherUpButtonSelectedTBD
+Callback=MainMenuUI.onTestWeatherUpButtonSelected
 
 [TestWeatherDownButton]
 Type=Button
-Position=312,172
+Position=312,154
 Size=8,8
-Callback=MainMenuUI::onTestWeatherDownButtonSelectedTBD
+Callback=MainMenuUI.onTestWeatherDownButtonSelected
 
 ##################################
 
@@ -187,19 +190,19 @@ Callback=MainMenuUI::onTestWeatherDownButtonSelectedTBD
 [LoadGameInputListener]
 Type=InputListener
 InputActionName=LoadGame
-Callback=MainMenuUI::onLoadGameInputAction
+Callback=MainMenuUI.onLoadGameInputAction
 
-[StartNewGameInputListener]
+[NewGameInputListener]
 Type=InputListener
-InputActionName=StartNewGame
-Callback=MainMenuUI::onStartNewGameInputAction
+InputActionName=NewGame
+Callback=MainMenuUI.onNewGameInputAction
 
 [ExitGameInputListener]
 Type=InputListener
 InputActionName=ExitGame
-Callback=MainMenuUI::onExitGameInputAction
+Callback=MainMenuUI.onExitGameInputAction
 
 [TestGameInputListener]
 Type=InputListener
 InputActionName=TestGame
-Callback=MainMenuUI::onTestGameInputAction
+Callback=MainMenuUI.onTestGameInputAction

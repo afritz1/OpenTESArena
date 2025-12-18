@@ -26,8 +26,9 @@ struct UiCommandList;
 struct UiContextDefinition;
 struct UiContextElements;
 
-using UiContextCallback = void(*)(Game &game);
-using UiContextUpdateCallback = void(*)(double dt, Game &game);
+using UiContextBeginCallback = void(*)(Game &game);
+using UiContextEndCallback = void(*)();
+using UiContextUpdateCallback = void(*)(double dt);
 
 struct LoadedUiTexture
 {
@@ -62,9 +63,9 @@ private:
 	std::vector<LoadedUiTexture> loadedTextures;
 	std::vector<GeneratedUiTexture> generatedTextures;
 
-	std::unordered_map<UiContextType, std::vector<UiContextCallback>> beginContextCallbackLists;
+	std::unordered_map<UiContextType, std::vector<UiContextBeginCallback>> beginContextCallbackLists;
 	std::unordered_map<UiContextType, std::vector<UiContextUpdateCallback>> updateContextCallbackLists;
-	std::unordered_map<UiContextType, std::vector<UiContextCallback>> endContextCallbackLists;
+	std::unordered_map<UiContextType, std::vector<UiContextEndCallback>> endContextCallbackLists;
 	std::optional<UiContextType> activeContextType;
 
 	std::vector<RenderElement2D> renderElementsCache; // To be drawn. Updated every frame.
@@ -101,9 +102,9 @@ public:
 	void addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager,
 		UiContextInputListeners &contextInputListeners);
 
-	void addBeginContextCallback(UiContextType contextType, const UiContextCallback &callback);
+	void addBeginContextCallback(UiContextType contextType, const UiContextBeginCallback &callback);
+	void addEndContextCallback(UiContextType contextType, const UiContextEndCallback &callback);
 	void addUpdateContextCallback(UiContextType contextType, const UiContextUpdateCallback &callback);
-	void addEndContextCallback(UiContextType contextType, const UiContextCallback &callback);
 	void clearContextCallbacks(UiContextType contextType);
 
 	void beginContext(UiContextType contextType, Game &game);

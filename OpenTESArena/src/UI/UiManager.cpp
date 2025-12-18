@@ -26,12 +26,11 @@ GeneratedUiTexture::GeneratedUiTexture()
 	this->patternType = static_cast<UiTexturePatternType>(-1);
 	this->width = -1;
 	this->height = -1;
+	this->textureID = -1;
 }
 
 bool UiManager::init(const char *folderPath, TextureManager &textureManager, Renderer &renderer)
 {
-	// @todo eventually load UI asset txt files from folderPath
-
 	// @todo preload some global things like cursor images
 
 	this->addBeginContextCallback(MainMenuUI::ContextType, MainMenuUI::create);
@@ -127,6 +126,12 @@ UiTextureID UiManager::getOrAddTexture(UiTexturePatternType patternType, int wid
 
 UiElementInstanceID UiManager::getElementByName(const char *name) const
 {
+	if (String::isNullOrEmpty(name))
+	{
+		DebugLogError("Can't search for element with no name.");
+		return -1;
+	}
+
 	for (const UiElementInstanceID elementInstID : this->elements.keys)
 	{
 		const UiElement &element = this->elements.get(elementInstID);
@@ -136,6 +141,7 @@ UiElementInstanceID UiManager::getElementByName(const char *name) const
 		}
 	}
 
+	DebugLogErrorFormat("Couldn't find element \"%s\".", name);
 	return -1;
 }
 
@@ -420,15 +426,27 @@ void UiManager::addInputActionListener(const char *actionName, const InputAction
 	contextInputListeners.inputActionListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addBeginContextCallback(UiContextType contextType, const UiContextCallback &callback)
+void UiManager::addBeginContextCallback(UiContextType contextType, const UiContextBeginCallback &callback)
 {
 	auto iter = this->beginContextCallbackLists.find(contextType);
 	if (iter == this->beginContextCallbackLists.end())
 	{
-		iter = this->beginContextCallbackLists.emplace(contextType, std::vector<UiContextCallback>()).first;
+		iter = this->beginContextCallbackLists.emplace(contextType, std::vector<UiContextBeginCallback>()).first;
 	}
 
-	std::vector<UiContextCallback> &callbacks = iter->second;
+	std::vector<UiContextBeginCallback> &callbacks = iter->second;
+	callbacks.emplace_back(callback);
+}
+
+void UiManager::addEndContextCallback(UiContextType contextType, const UiContextEndCallback &callback)
+{
+	auto iter = this->endContextCallbackLists.find(contextType);
+	if (iter == this->endContextCallbackLists.end())
+	{
+		iter = this->endContextCallbackLists.emplace(contextType, std::vector<UiContextEndCallback>()).first;
+	}
+
+	std::vector<UiContextEndCallback> &callbacks = iter->second;
 	callbacks.emplace_back(callback);
 }
 
@@ -441,18 +459,6 @@ void UiManager::addUpdateContextCallback(UiContextType contextType, const UiCont
 	}
 
 	std::vector<UiContextUpdateCallback> &callbacks = iter->second;
-	callbacks.emplace_back(callback);
-}
-
-void UiManager::addEndContextCallback(UiContextType contextType, const UiContextCallback &callback)
-{
-	auto iter = this->endContextCallbackLists.find(contextType);
-	if (iter == this->endContextCallbackLists.end())
-	{
-		iter = this->endContextCallbackLists.emplace(contextType, std::vector<UiContextCallback>()).first;
-	}
-
-	std::vector<UiContextCallback> &callbacks = iter->second;
 	callbacks.emplace_back(callback);
 }
 
@@ -476,7 +482,7 @@ void UiManager::beginContext(UiContextType contextType, Game &game)
 	const auto beginIter = this->beginContextCallbackLists.find(contextType);
 	if (beginIter != this->beginContextCallbackLists.end())
 	{
-		for (const UiContextCallback &callback : beginIter->second)
+		for (const UiContextBeginCallback &callback : beginIter->second)
 		{
 			callback(game);
 		}
@@ -494,9 +500,9 @@ void UiManager::endContext(UiContextType contextType, Game &game)
 	const auto endIter = this->endContextCallbackLists.find(contextType);
 	if (endIter != this->endContextCallbackLists.end())
 	{
-		for (const UiContextCallback &callback : endIter->second)
+		for (const UiContextEndCallback &callback : endIter->second)
 		{
-			callback(game);
+			callback();
 		}
 	}
 
@@ -518,6 +524,8 @@ bool UiManager::isContextActive(UiContextType contextType) const
 void UiManager::createContext(const UiContextDefinition &contextDef, UiContextElements &contextElements, InputManager &inputManager,
 	UiContextInputListeners &contextInputListeners, TextureManager &textureManager, Renderer &renderer)
 {
+	const UiContextType contextType = contextDef.type;
+
 	auto elementDefToInitInfo = [](const UiElementDefinition &def)
 	{
 		UiElementInitInfo initInfo;
@@ -544,22 +552,15 @@ void UiManager::createContext(const UiContextDefinition &contextDef, UiContextEl
 		return initInfo;
 	};
 
-	auto buttonDefToInitInfo = [](const UiButtonDefinition &def)
+	auto buttonDefToInitInfo = [this](const UiButtonDefinition &def)
 	{
 		UiButtonInitInfo initInfo;
 		initInfo.mouseButtonFlags = MouseButtonType::Left; // @todo
-		//initInfo.callback = def. // @todo
-		initInfo.callback = [](MouseButtonType)
-		{
-			DebugLogWarning("Button callback lookup not implemented.");
-		};
-
+		initInfo.callback = def.callback;
 		initInfo.contentElementName = def.contentElementName;
 		return initInfo;
 	};
-
-	const UiContextType contextType = contextDef.type;
-
+	 
 	for (const UiImageDefinition &imageDef : contextDef.imageDefs)
 	{
 		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(imageDef.element);
@@ -597,13 +598,9 @@ void UiManager::createContext(const UiContextDefinition &contextDef, UiContextEl
 
 	for (const UiInputListenerDefinition &inputListenerDef : contextDef.inputListenerDefs)
 	{
-		// @todo lookup in function map
-		InputActionCallback callback = [](const InputActionCallbackValues&)
-		{
-			DebugLogWarning("Input action callback lookup not implemented.");
-		};
-
-		this->addInputActionListener(inputListenerDef.inputActionName.c_str(), callback, inputManager, contextInputListeners);
+		const char *inputActionName = inputListenerDef.inputActionName.c_str();
+		const InputActionCallback inputActionCallback = inputListenerDef.callback;
+		this->addInputActionListener(inputActionName, inputActionCallback, inputManager, contextInputListeners);
 	}
 }
 
@@ -621,7 +618,7 @@ void UiManager::update(double dt, Game &game)
 		{
 			for (const UiContextUpdateCallback &callback : updateIter->second)
 			{
-				callback(dt, game);
+				callback(dt);
 			}
 		}
 	}

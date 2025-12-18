@@ -6,6 +6,7 @@
 #include "UiElement.h"
 #include "../Input/InputManager.h"
 
+class Game;
 class Renderer;
 class UiManager;
 
@@ -36,6 +37,17 @@ enum class UiContextType
 };
 
 static constexpr int UI_CONTEXT_COUNT = static_cast<int>(UiContextType::WorldMap) + 1;
+
+#define DECLARE_UI_CONTEXT(name) \
+static constexpr UiContextType ContextType = UiContextType::##name; \
+static constexpr const char NamespaceString[] = #name "UI"; \
+static name##UiState state; \
+void create(Game &game); \
+void destroy(); \
+void update(double dt)
+
+// For buttons and input actions.
+#define DECLARE_UI_FUNC(contextName, functionName) { #functionName, contextName##::functionName }
 
 // Owns UI element handles for a UI context. Copies of these handles can be kept by UI for game logic, activating/deactivating elements, etc..
 struct UiContextElements
