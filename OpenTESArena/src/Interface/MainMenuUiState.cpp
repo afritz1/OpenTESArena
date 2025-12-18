@@ -3,6 +3,7 @@
 #include "MainMenuUiState.h"
 #include "MainMenuUiView.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
@@ -64,6 +65,13 @@ void MainMenuUI::create(Game &game)
 	MainMenuUI::updateTypeTextBox();
 	MainMenuUI::updateNameTextBox();
 	MainMenuUI::updateWeatherTextBox();
+
+	// Unload game session in case we're returning from one.
+	SceneManager &sceneManager = game.sceneManager;
+	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
+	sceneManager.renderEntityManager.unloadScene(renderer);
+
+	inputManager.setInputActionMapActive(InputActionMapName::MainMenu, true);
 }
 
 void MainMenuUI::destroy()
@@ -76,6 +84,9 @@ void MainMenuUI::destroy()
 	state.testIndex = -1;
 	state.testIndex2 = -1;
 	state.testWeather = -1;
+
+	InputManager &inputManager = game.inputManager;
+	inputManager.setInputActionMapActive(InputActionMapName::MainMenu, false);
 }
 
 void MainMenuUI::update(double dt)
