@@ -261,7 +261,7 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initImage(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
+	element.initImage(initInfo.name.c_str(), contextType, initInfo.clipRect, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
 
 	contextState.imageElementInstIDs.emplace_back(elementInstID);
 
@@ -334,14 +334,14 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	const UiTextureID textBoxTextureID = renderer.createUiTexture(textureGenInfo.width, textureGenInfo.height);
 
 	UiTextBox &textBox = this->textBoxes.get(textBoxInstID);
-	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.alignment, textBoxInitInfo.lineSpacing);
+	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.alignment, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
 	textBox.text = textBoxInitInfo.text;
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initTextBox(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
+	element.initTextBox(initInfo.name.c_str(), contextType, initInfo.clipRect, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
 
 	contextState.textBoxElementInstIDs.emplace_back(elementInstID);
 
@@ -408,7 +408,7 @@ UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, c
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
-	element.initButton(initInfo.name.c_str(), contextType, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
+	element.initButton(initInfo.name.c_str(), contextType, initInfo.clipRect, initInfo.drawOrder, initInfo.renderSpace, transformInstID, buttonInstID);
 
 	contextState.buttonElementInstIDs.emplace_back(elementInstID);
 
@@ -765,6 +765,7 @@ void UiManager::update(double dt, Game &game)
 		const UiTransform &transform = this->transforms.get(element->transformInstID);
 		const Int2 position = transform.position;
 		const Int2 size = transform.size;
+		const Rect clipRect = element->clipRect;
 		const UiRenderSpace renderSpace = element->renderSpace;
 
 		RenderElement2D renderElement;
@@ -792,6 +793,7 @@ void UiManager::update(double dt, Game &game)
 		}
 
 		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
+		renderElement.clipRect = GuiUtils::makeWindowSpaceRect(clipRect.x, clipRect.y, clipRect.width, clipRect.height, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
 
 		if (renderElement.id >= 0)
 		{

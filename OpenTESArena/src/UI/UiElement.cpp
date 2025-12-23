@@ -25,10 +25,11 @@ UiElement::UiElement()
 	this->type = static_cast<UiElementType>(-1);
 }
 
-void UiElement::initImage(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID)
+void UiElement::initImage(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID)
 {
 	std::snprintf(this->name, sizeof(this->name), "%s", name);
 	this->contextType = contextType;
+	this->clipRect = clipRect;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;
 	this->transformInstID = transformInstID;
@@ -38,10 +39,11 @@ void UiElement::initImage(const char *name, UiContextType contextType, int drawO
 	this->imageInstID = instID;
 }
 
-void UiElement::initTextBox(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID)
+void UiElement::initTextBox(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID)
 {
 	std::snprintf(this->name, sizeof(this->name), "%s", name);
 	this->contextType = contextType;
+	this->clipRect = clipRect;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;
 	this->transformInstID = transformInstID;
@@ -51,10 +53,11 @@ void UiElement::initTextBox(const char *name, UiContextType contextType, int dra
 	this->textBoxInstID = instID;
 }
 
-void UiElement::initButton(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID)
+void UiElement::initButton(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID)
 {
 	std::snprintf(this->name, sizeof(this->name), "%s", name);
 	this->contextType = contextType;
+	this->clipRect = clipRect;
 	this->drawOrder = drawOrder;
 	this->renderSpace = renderSpace;
 	this->transformInstID = transformInstID;

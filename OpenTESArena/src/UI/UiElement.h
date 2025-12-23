@@ -2,6 +2,7 @@
 #define UI_ELEMENT_H
 
 #include "UiTransform.h"
+#include "../Math/Rect.h"
 
 class UiManager;
 
@@ -31,6 +32,7 @@ struct UiElementInitInfo
 	UiTransformSizeType sizeType;
 	Int2 size;
 	UiPivotType pivotType;
+	Rect clipRect;
 	int drawOrder;
 	UiRenderSpace renderSpace;
 
@@ -42,7 +44,8 @@ struct UiElement
 {
 	char name[96];
 	UiContextType contextType;
-	int drawOrder; // Higher is drawn last.
+	Rect clipRect; // Window area this element is visible inside of. Valid if non-empty.
+	int drawOrder; // Higher is drawn later.
 	UiRenderSpace renderSpace;
 
 	UiTransformInstanceID transformInstID; // Points to transform used with position + size on-screen for rendering.
@@ -59,9 +62,9 @@ struct UiElement
 
 	UiElement();
 
-	void initImage(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
-	void initTextBox(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
-	void initButton(const char *name, UiContextType contextType, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
+	void initImage(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
+	void initTextBox(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
+	void initButton(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
 };
 
 #endif

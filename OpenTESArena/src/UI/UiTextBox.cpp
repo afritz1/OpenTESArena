@@ -23,7 +23,7 @@ UiTextBox::UiTextBox()
 }
 
 void UiTextBox::init(UiTextureID textureID, int textureWidth, int textureHeight, int fontDefIndex, const Color &defaultColor,
-	TextAlignment alignment, int lineSpacing)
+	TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing)
 {
 	DebugAssert(textureID >= 0);
 	DebugAssert(textureWidth > 0);
@@ -38,7 +38,7 @@ void UiTextBox::init(UiTextureID textureID, int textureWidth, int textureHeight,
 	this->defaultColor = defaultColor;
 	this->colorOverrideInfo.clear();
 	this->alignment = alignment;
-	this->shadowInfo = std::nullopt;
+	this->shadowInfo = shadowInfo;
 	this->lineSpacing = lineSpacing;
 }
 

@@ -44,7 +44,7 @@ struct UiTextBox
 	UiTextBox();
 
 	void init(UiTextureID textureID, int textureWidth, int textureHeight, int fontDefIndex, const Color &defaultColor,
-		TextAlignment alignment, int lineSpacing);
+		TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing);
 
 	void free(Renderer &renderer);
 
