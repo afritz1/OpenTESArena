@@ -587,9 +587,39 @@ namespace
 		}
 		else if (key == Keyword_TextBoxShadowInfo)
 		{
+			std::string shadowTokens[6];
+			if (!String::splitExpected<6>(value, ',', shadowTokens))
+			{
+				DebugLogErrorFormat("Couldn't split shadow value \"%s\" into offsetX,offsetY,r,g,b,a.", value.c_str());
+				return false;
+			}
+
+			int offsetX = 0;
+			int offsetY = 0;
+			int r = 0;
+			int g = 0;
+			int b = 0;
+			int a = 0;
+
+			bool success = true;
+			success &= TryParseInteger(shadowTokens[0], &offsetX);
+			success &= TryParseInteger(shadowTokens[1], &offsetY);
+			success &= TryParseInteger(shadowTokens[2], &r);
+			success &= TryParseInteger(shadowTokens[3], &g);
+			success &= TryParseInteger(shadowTokens[4], &b);
+			success &= TryParseInteger(shadowTokens[5], &a);
+			if (!success)
+			{
+				DebugLogErrorFormat("Couldn't parse shadow value \"%s\".", value.c_str());
+				return false;
+			}
+
 			TextRenderShadowInfo shadowInfo;
-			// @todo offsetX, offsetY, r, g, b, a
-			DebugNotImplemented();
+			shadowInfo.offsetX = offsetX;
+			shadowInfo.offsetY = offsetY;
+			shadowInfo.color = Color(r, g, b, a);
+
+			outTextBoxDef->shadowInfo = shadowInfo;
 		}
 		else if (key == Keyword_TextBoxLineSpacing)
 		{
