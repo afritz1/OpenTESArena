@@ -212,6 +212,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/AutomapUiController.h"
     "${SRC_ROOT}/Interface/AutomapUiModel.cpp"
     "${SRC_ROOT}/Interface/AutomapUiModel.h"
+    "${SRC_ROOT}/Interface/AutomapUiState.cpp"
+    "${SRC_ROOT}/Interface/AutomapUiState.h"
     "${SRC_ROOT}/Interface/AutomapUiView.cpp"
     "${SRC_ROOT}/Interface/AutomapUiView.h"
     "${SRC_ROOT}/Interface/CharacterCreationUiController.cpp"

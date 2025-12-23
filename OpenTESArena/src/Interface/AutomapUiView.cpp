@@ -11,6 +11,7 @@
 #include "../Voxels/VoxelFacing.h"
 #include "../Voxels/VoxelTraitsDefinition.h"
 #include "../World/CardinalDirection.h"
+#include "../World/CardinalDirectionName.h"
 #include "../World/ChunkManager.h"
 #include "../World/ChunkUtils.h"
 #include "../World/MapType.h"
@@ -19,32 +20,21 @@
 
 #include "components/debug/Debug.h"
 
-TextBoxInitInfo AutomapUiView::getLocationTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary)
+namespace
 {
-	const TextRenderShadowInfo shadowInfo(
-		AutomapUiView::LocationTextBoxShadowOffsetX,
-		AutomapUiView::LocationTextBoxShadowOffsetY,
-		AutomapUiView::LocationTextBoxShadowColor);
-
-	return TextBoxInitInfo::makeWithCenter(
-		text,
-		AutomapUiView::LocationTextBoxCenterPoint,
-		AutomapUiView::LocationTextBoxFontName,
-		AutomapUiView::LocationTextBoxFontColor,
-		AutomapUiView::LocationTextBoxTextAlignment,
-		shadowInfo,
-		0,
-		fontLibrary);
-}
-
-TextureAsset AutomapUiView::getBackgroundTextureAsset()
-{
-	return TextureAsset(std::string(ArenaTextureName::Automap));
-}
-
-TextureAsset AutomapUiView::getBackgroundPaletteTextureAsset()
-{
-	return AutomapUiView::getBackgroundTextureAsset();
+	// Sets of sub-pixel coordinates for drawing each of the player's arrow directions. 
+	// These are offsets from the top-left corner of the map pixel that the player is in.
+	const std::pair<CardinalDirectionName, std::vector<Int2>> PlayerArrowPatterns[] =
+	{
+		{ CardinalDirectionName::North, { Int2(1, 0), Int2(0, 1), Int2(2, 1) } },
+		{ CardinalDirectionName::NorthEast, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(2, 1), Int2(2, 2) } },
+		{ CardinalDirectionName::East, { Int2(1, 0), Int2(2, 1), Int2(1, 2) } },
+		{ CardinalDirectionName::SouthEast, { Int2(2, 0), Int2(2, 1), Int2(0, 2), Int2(1, 2), Int2(2, 2) } },
+		{ CardinalDirectionName::South, { Int2(0, 1), Int2(2, 1), Int2(1, 2) } },
+		{ CardinalDirectionName::SouthWest, { Int2(0, 0), Int2(0, 1), Int2(0, 2), Int2(1, 2), Int2(2, 2) } },
+		{ CardinalDirectionName::West, { Int2(1, 0), Int2(0, 1), Int2(1, 2) } },
+		{ CardinalDirectionName::NorthWest, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(0, 1), Int2(0, 2) } }
+	};
 }
 
 TextureAsset AutomapUiView::getCursorTextureAsset()
@@ -54,7 +44,7 @@ TextureAsset AutomapUiView::getCursorTextureAsset()
 
 TextureAsset AutomapUiView::getCursorPaletteTextureAsset()
 {
-	return AutomapUiView::getBackgroundPaletteTextureAsset();
+	return TextureAsset(std::string(ArenaTextureName::Automap));
 }
 
 const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,
@@ -90,8 +80,7 @@ const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef,
 	}
 	else if (floorType == ArenaVoxelType::Floor)
 	{
-		// If nothing is over the floor, return transparent. Otherwise, choose from
-		// a number of cases.
+		// If nothing is over the floor, return transparent. Otherwise, choose from a number of cases.
 		if (wallType == ArenaVoxelType::None)
 		{
 			return AutomapUiView::ColorFloor;
@@ -398,9 +387,19 @@ Buffer2D<uint32_t> AutomapUiView::makeAutomap(const CoordInt2 &playerCoord, Card
 
 		uint32_t *pixels = dstBuffer.begin();
 
+		const auto arrowsBegin = std::begin(PlayerArrowPatterns);
+		const auto arrowsEnd = std::end(PlayerArrowPatterns);
+		const auto arrowsIter = std::find_if(arrowsBegin, arrowsEnd,
+			[cardinalDirection](const std::pair<CardinalDirectionName, std::vector<Int2>> &pair)
+		{
+			return pair.first == cardinalDirection;
+		});
+
+		DebugAssert(arrowsIter != arrowsEnd);
+
 		// Draw the player's arrow within the map pixel.
-		Span<const Int2> offsets = AutomapUiView::PlayerArrowPatterns.at(cardinalDirection);
-		for (const Int2 &offset : offsets)
+		Span<const Int2> offsets = arrowsIter->second;
+		for (const Int2 offset : offsets)
 		{
 			const int index = (surfaceX + offset.x) + ((surfaceY + offset.y) * dstBuffer.getWidth());
 			pixels[index] = AutomapUiView::ColorPlayer.toRGBA();
@@ -441,24 +440,10 @@ UiTextureID AutomapUiView::allocMapTexture(const GameState &gameState, const Coo
 	return textureID;
 }
 
-UiTextureID AutomapUiView::allocBgTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset paletteTextureAsset = AutomapUiView::getBackgroundPaletteTextureAsset();
-	const TextureAsset textureAsset = AutomapUiView::getBackgroundTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for automap background.");
-	}
-
-	return textureID;
-}
-
 UiTextureID AutomapUiView::allocCursorTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAsset paletteTextureAsset = AutomapUiView::getCursorPaletteTextureAsset();
 	const TextureAsset textureAsset = AutomapUiView::getCursorTextureAsset();
+	const TextureAsset paletteTextureAsset = AutomapUiView::getCursorPaletteTextureAsset();
 
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))

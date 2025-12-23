@@ -1,0 +1,52 @@
+# Map texture and compass buttons are handled in logic.
+
+[Context]
+ContextType=Automap
+
+##################################
+
+# Background
+
+[AutomapBackground]
+Type=Image
+Texture=AUTOMAP.IMG
+
+##################################
+
+# Location
+
+[AutomapLocationTextBox]
+Type=TextBox
+Position=121,29
+Pivot=Middle
+DrawOrder=2
+WorstCaseText=WWWWWWWWWWWWWWWWWWWWWW
+FontName=FONT_A.DAT
+TextColor=56,16,12,255
+Shadow=2,2,150,101,52,255
+TextAlignment=TopCenter
+
+##################################
+
+# Exit
+
+[AutomapExitButton]
+Type=Button
+Position=263,171
+Size=38,13
+Pivot=Middle
+Callback=AutomapUI.onExitButtonSelected
+
+##################################
+
+# Hotkeys
+
+[AutomapToggleInputAction]
+Type=InputListener
+InputActionName=Automap
+Callback=AutomapUI.onExitInputAction
+
+[AutomapExitInputAction]
+Type=InputListener
+InputActionName=Back
+Callback=AutomapUI.onExitInputAction

@@ -1,7 +1,6 @@
 #ifndef AUTOMAP_UI_VIEW_H
 #define AUTOMAP_UI_VIEW_H
 
-#include <unordered_map>
 #include <vector>
 
 #include "../Assets/TextureAsset.h"
@@ -14,7 +13,6 @@
 #include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../Utilities/Color.h"
-#include "../World/CardinalDirectionName.h"
 #include "../World/Coord.h"
 
 #include "components/utilities/Buffer2D.h"
@@ -65,36 +63,6 @@ namespace AutomapUiView
 	const Color ColorWildWall(109, 69, 32);
 	const Color ColorWildDoor(255, 0, 0);
 
-	const Int2 LocationTextBoxCenterPoint(121, 29);
-	const std::string LocationTextBoxFontName = ArenaFontName::A;
-	const Color LocationTextBoxFontColor(56, 16, 12);
-	constexpr TextAlignment LocationTextBoxTextAlignment = TextAlignment::TopCenter;
-	const Color LocationTextBoxShadowColor(150, 101, 52);
-	constexpr int LocationTextBoxShadowOffsetX = 2;
-	constexpr int LocationTextBoxShadowOffsetY = 2;
-
-	TextBoxInitInfo getLocationTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-
-	const Int2 BackToGameButtonCenterPoint(ArenaRenderUtils::SCREEN_WIDTH - 57, ArenaRenderUtils::SCREEN_HEIGHT - 29);
-	constexpr int BackToGameButtonWidth = 38;
-	constexpr int BackToGameButtonHeight = 13;
-
-	// Sets of sub-pixel coordinates for drawing each of the player's arrow directions. 
-	// These are offsets from the top-left corner of the map pixel that the player is in.
-	const std::unordered_map<CardinalDirectionName, std::vector<Int2>> PlayerArrowPatterns =
-	{
-		{ CardinalDirectionName::North, { Int2(1, 0), Int2(0, 1), Int2(2, 1) } },
-		{ CardinalDirectionName::NorthEast, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(2, 1), Int2(2, 2) } },
-		{ CardinalDirectionName::East, { Int2(1, 0), Int2(2, 1), Int2(1, 2) } },
-		{ CardinalDirectionName::SouthEast, { Int2(2, 0), Int2(2, 1), Int2(0, 2), Int2(1, 2), Int2(2, 2) } },
-		{ CardinalDirectionName::South, { Int2(0, 1), Int2(2, 1), Int2(1, 2) } },
-		{ CardinalDirectionName::SouthWest, { Int2(0, 0), Int2(0, 1), Int2(0, 2), Int2(1, 2), Int2(2, 2) } },
-		{ CardinalDirectionName::West, { Int2(1, 0), Int2(0, 1), Int2(1, 2) } },
-		{ CardinalDirectionName::NorthWest, { Int2(0, 0), Int2(1, 0), Int2(2, 0), Int2(0, 1), Int2(0, 2) } }
-	};
-
-	TextureAsset getBackgroundTextureAsset();
-	TextureAsset getBackgroundPaletteTextureAsset();
 	TextureAsset getCursorTextureAsset();
 	TextureAsset getCursorPaletteTextureAsset();
 
@@ -113,7 +81,6 @@ namespace AutomapUiView
 	// Texture allocation functions (must be freed when done).
 	UiTextureID allocMapTexture(const GameState &gameState, const CoordInt2 &playerCoordXZ,
 		const VoxelDouble2 &playerDirection, const VoxelChunkManager &voxelChunkManager, Renderer &renderer);
-	UiTextureID allocBgTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocCursorTexture(TextureManager &textureManager, Renderer &renderer);
 }
 

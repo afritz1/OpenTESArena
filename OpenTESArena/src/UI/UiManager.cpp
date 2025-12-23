@@ -11,10 +11,16 @@
 #include "UiRenderSpace.h"
 #include "UiTextBox.h"
 #include "../Game/Game.h"
+#include "../Interface/AutomapUiState.h"
 #include "../Interface/MainMenuUiState.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/StringView.h"
+
+#define REGISTER_SCOPE_CALLBACKS(contextName) \
+this->addBeginContextCallback(contextName::ContextType, contextName::create); \
+this->addEndContextCallback(contextName::ContextType, contextName::destroy); \
+this->addUpdateContextCallback(contextName::ContextType, contextName::update);
 
 LoadedUiTexture::LoadedUiTexture()
 {
@@ -31,12 +37,8 @@ GeneratedUiTexture::GeneratedUiTexture()
 
 bool UiManager::init(const char *folderPath, TextureManager &textureManager, Renderer &renderer)
 {
-	// @todo preload some global things like cursor images
-
-	this->addBeginContextCallback(MainMenuUI::ContextType, MainMenuUI::create);
-	this->addEndContextCallback(MainMenuUI::ContextType, MainMenuUI::destroy);
-	this->addUpdateContextCallback(MainMenuUI::ContextType, MainMenuUI::update);
-
+	REGISTER_SCOPE_CALLBACKS(AutomapUI);
+	REGISTER_SCOPE_CALLBACKS(MainMenuUI);
 	return true;
 }
 
@@ -173,6 +175,13 @@ void UiManager::setTransformSize(UiElementInstanceID elementInstID, Int2 size)
 	UiElement &element = this->elements.get(elementInstID);
 	UiTransform &transform = this->transforms.get(element.transformInstID);
 	transform.size = size;
+}
+
+void UiManager::setTransformPivot(UiElementInstanceID elementInstID, UiPivotType pivotType)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	UiTransform &transform = this->transforms.get(element.transformInstID);
+	transform.pivotType = pivotType;
 }
 
 const UiButtonCallback &UiManager::getButtonCallback(UiElementInstanceID elementInstID) const

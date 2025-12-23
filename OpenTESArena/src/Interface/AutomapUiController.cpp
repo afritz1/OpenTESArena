@@ -2,17 +2,6 @@
 #include "AutomapUiView.h"
 #include "GameWorldPanel.h"
 #include "../Game/Game.h"
-#include "../Input/InputActionName.h"
-
-std::string AutomapUiController::getInputActionName()
-{
-	return InputActionName::Automap;
-}
-
-std::string AutomapUiController::getBackToGameInputActionName()
-{
-	return InputActionName::Back;
-}
 
 void AutomapUiController::onBackToGameButtonSelected(Game &game)
 {

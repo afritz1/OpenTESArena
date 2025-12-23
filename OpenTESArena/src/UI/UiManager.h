@@ -82,6 +82,7 @@ public:
 	Rect getTransformGlobalRect(UiElementInstanceID elementInstID) const; // Includes local-to-parent transform.
 	void setTransformPosition(UiElementInstanceID elementInstID, Int2 position);
 	void setTransformSize(UiElementInstanceID elementInstID, Int2 size);
+	void setTransformPivot(UiElementInstanceID elementInstID, UiPivotType pivotType);
 
 	const UiButtonCallback &getButtonCallback(UiElementInstanceID elementInstID) const;
 	bool isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const;

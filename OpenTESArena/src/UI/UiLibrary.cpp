@@ -6,6 +6,7 @@
 #include "UiPivotType.h"
 #include "UiRenderSpace.h"
 #include "../Assets/TextureUtils.h"
+#include "../Interface/AutomapUiState.h"
 #include "../Interface/MainMenuUiState.h"
 
 #include "components/debug/Debug.h"
@@ -151,6 +152,7 @@ namespace
 
 	const std::tuple<const char*, Span<const std::pair<const char*, UiButtonDefinitionCallback>>, Span<const std::pair<const char*, UiInputListenerDefinitionCallback>>> ContextNamespaceCallbacks[] =
 	{
+		{ AutomapUI::NamespaceString, AutomapUI::ButtonCallbacks, AutomapUI::InputActionCallbacks },
 		{ MainMenuUI::NamespaceString, MainMenuUI::ButtonCallbacks, MainMenuUI::InputActionCallbacks }
 	};
 

@@ -231,25 +231,7 @@ void GameWorldUiController::onMapButtonSelected(Game &game, bool goToAutomap)
 {
 	if (goToAutomap)
 	{
-		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		auto &gameState = game.gameState;
-		const LocationDefinition &locationDef = gameState.getLocationDefinition();
-		const LocationInstance &locationInst = gameState.getLocationInstance();
-		const int activeLevelIndex = gameState.getActiveLevelIndex();
-		const SceneManager &sceneManager = game.sceneManager;
-		const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-
-		// Some places (like named/wild dungeons) do not display a name on the automap.
-		const std::string automapLocationName = [&gameState, &exeData, &locationDef, &locationInst]()
-		{
-			const std::string &locationName = locationInst.getName(locationDef);
-			const bool isCity = locationDef.getType() == LocationDefinitionType::City;
-			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinitionType::MainQuestDungeon;
-			return (isCity || isMainQuestDungeon) ? locationName : std::string();
-		}();
-
-		const auto &player = game.player;
-		game.setPanel<AutomapPanel>(player.getEyeCoord(), player.getGroundDirectionXZ(), voxelChunkManager, automapLocationName);
+		game.setPanel<AutomapPanel>();
 	}
 	else
 	{
