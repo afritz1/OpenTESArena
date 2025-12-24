@@ -92,7 +92,12 @@ namespace
 	{
 		{ "Global", UiContextType::Global },
 		{ "Automap", UiContextType::Automap },
-		{ "CharacterCreation", UiContextType::CharacterCreation },
+		{ "ChooseAttributes", UiContextType::ChooseAttributes },
+		{ "ChooseClass", UiContextType::ChooseClass },
+		{ "ChooseClassCreation", UiContextType::ChooseClassCreation },
+		{ "ChooseGender", UiContextType::ChooseGender },
+		{ "ChooseName", UiContextType::ChooseName },
+		{ "ChooseRace", UiContextType::ChooseRace },
 		{ "CharacterSheet", UiContextType::CharacterSheet },
 		{ "Cinematic", UiContextType::Cinematic },
 		{ "GameWorld", UiContextType::GameWorld },

@@ -73,7 +73,7 @@ private:
 	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID getOrAddTexture(UiTexturePatternType patternType, int width, int height, TextureManager &textureManager, Renderer &renderer);
 public:
-	bool init(const char *folderPath, TextureManager &textureManager, Renderer &renderer);
+	bool init();
 	void shutdown(Renderer &renderer);
 
 	UiElementInstanceID getElementByName(const char *name) const;

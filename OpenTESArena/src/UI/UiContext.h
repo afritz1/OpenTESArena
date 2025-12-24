@@ -17,7 +17,12 @@ enum class UiContextType
 	Global, // Always active.
 
 	Automap,
-	CharacterCreation,
+	ChooseAttributes,
+	ChooseClass,
+	ChooseClassCreation,
+	ChooseGender,
+	ChooseName,
+	ChooseRace,
 	CharacterSheet,
 	Cinematic,
 	GameWorld,

@@ -421,8 +421,7 @@ bool Game::init()
 		return false;
 	}
 
-	const std::string uiFolderPath = dataFolderPath + "ui/";
-	if (!this->uiManager.init(uiFolderPath.c_str(), this->textureManager, this->renderer))
+	if (!this->uiManager.init())
 	{
 		DebugLogError("Couldn't init UI manager.");
 		return false;

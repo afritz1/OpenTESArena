@@ -12,6 +12,12 @@
 #include "UiTextBox.h"
 #include "../Game/Game.h"
 #include "../Interface/AutomapUiState.h"
+#include "../Interface/ChooseAttributesUiState.h"
+#include "../Interface/ChooseClassUiState.h"
+#include "../Interface/ChooseClassCreationUiState.h"
+#include "../Interface/ChooseGenderUiState.h"
+#include "../Interface/ChooseNameUiState.h"
+#include "../Interface/ChooseRaceUiState.h"
 #include "../Interface/MainMenuUiState.h"
 
 #include "components/debug/Debug.h"
@@ -35,9 +41,15 @@ GeneratedUiTexture::GeneratedUiTexture()
 	this->textureID = -1;
 }
 
-bool UiManager::init(const char *folderPath, TextureManager &textureManager, Renderer &renderer)
+bool UiManager::init()
 {
 	REGISTER_SCOPE_CALLBACKS(AutomapUI);
+	REGISTER_SCOPE_CALLBACKS(ChooseAttributesUI);
+	REGISTER_SCOPE_CALLBACKS(ChooseClassUI);
+	REGISTER_SCOPE_CALLBACKS(ChooseClassCreationUI);
+	REGISTER_SCOPE_CALLBACKS(ChooseGenderUI);
+	REGISTER_SCOPE_CALLBACKS(ChooseNameUI);
+	REGISTER_SCOPE_CALLBACKS(ChooseRaceUI);
 	REGISTER_SCOPE_CALLBACKS(MainMenuUI);
 	return true;
 }

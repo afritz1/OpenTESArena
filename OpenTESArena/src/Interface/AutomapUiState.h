@@ -2,7 +2,6 @@
 #define AUTOMAP_UI_STATE_H
 
 #include "../Rendering/RenderTextureUtils.h"
-#include "../UI/UiButton.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"
