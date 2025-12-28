@@ -88,77 +88,81 @@ namespace
 		}
 	};
 
+#define DEFINE_TEXT_MAPPING(typeName, value) { #value, typeName::value }
+
 	constexpr std::pair<const char*, UiContextType> ContextTypeMappings[] =
 	{
-		{ "Global", UiContextType::Global },
-		{ "Automap", UiContextType::Automap },
-		{ "ChooseAttributes", UiContextType::ChooseAttributes },
-		{ "ChooseClass", UiContextType::ChooseClass },
-		{ "ChooseClassCreation", UiContextType::ChooseClassCreation },
-		{ "ChooseGender", UiContextType::ChooseGender },
-		{ "ChooseName", UiContextType::ChooseName },
-		{ "ChooseRace", UiContextType::ChooseRace },
-		{ "CharacterSheet", UiContextType::CharacterSheet },
-		{ "Cinematic", UiContextType::Cinematic },
-		{ "GameWorld", UiContextType::GameWorld },
-		{ "Image", UiContextType::Image },
-		{ "ImageSequence", UiContextType::ImageSequence },
-		{ "LoadSave", UiContextType::LoadSave },
-		{ "Logbook", UiContextType::Logbook },
-		{ "Loot", UiContextType::Loot },
-		{ "MainMenu", UiContextType::MainMenu },
-		{ "MainQuestSplash", UiContextType::MainQuestSplash },
-		{ "MessageBox", UiContextType::MessageBox },
-		{ "Options", UiContextType::Options },
-		{ "PauseMenu", UiContextType::PauseMenu },
-		{ "ProvinceMap", UiContextType::ProvinceMap },
-		{ "TextCinematic", UiContextType::TextCinematic },
-		{ "WorldMap", UiContextType::WorldMap }
+		DEFINE_TEXT_MAPPING(UiContextType, Global),
+		DEFINE_TEXT_MAPPING(UiContextType, Automap),
+		DEFINE_TEXT_MAPPING(UiContextType, ChooseAttributes),
+		DEFINE_TEXT_MAPPING(UiContextType, ChooseClass),
+		DEFINE_TEXT_MAPPING(UiContextType, ChooseClassCreation),
+		DEFINE_TEXT_MAPPING(UiContextType, ChooseGender),
+		DEFINE_TEXT_MAPPING(UiContextType, ChooseName),
+		DEFINE_TEXT_MAPPING(UiContextType, ChooseRace),
+		DEFINE_TEXT_MAPPING(UiContextType, CharacterSheet),
+		DEFINE_TEXT_MAPPING(UiContextType, Cinematic),
+		DEFINE_TEXT_MAPPING(UiContextType, GameWorld),
+		DEFINE_TEXT_MAPPING(UiContextType, Image),
+		DEFINE_TEXT_MAPPING(UiContextType, ImageSequence),
+		DEFINE_TEXT_MAPPING(UiContextType, LoadSave),
+		DEFINE_TEXT_MAPPING(UiContextType, Logbook),
+		DEFINE_TEXT_MAPPING(UiContextType, Loot),
+		DEFINE_TEXT_MAPPING(UiContextType, MainMenu),
+		DEFINE_TEXT_MAPPING(UiContextType, MainQuestSplash),
+		DEFINE_TEXT_MAPPING(UiContextType, MessageBox),
+		DEFINE_TEXT_MAPPING(UiContextType, Options),
+		DEFINE_TEXT_MAPPING(UiContextType, PauseMenu),
+		DEFINE_TEXT_MAPPING(UiContextType, ProvinceMap),
+		DEFINE_TEXT_MAPPING(UiContextType, TextCinematic),
+		DEFINE_TEXT_MAPPING(UiContextType, WorldMap)
 	};
 
 	constexpr std::pair<const char*, UiPivotType> PivotTypeMappings[] =
 	{
-		{ "TopLeft", UiPivotType::TopLeft },
-		{ "Top", UiPivotType::Top },
-		{ "TopRight", UiPivotType::TopRight },
-		{ "MiddleLeft", UiPivotType::MiddleLeft },
-		{ "Middle", UiPivotType::Middle },
-		{ "MiddleRight", UiPivotType::MiddleRight },
-		{ "BottomLeft", UiPivotType::BottomLeft },
-		{ "Bottom", UiPivotType::Bottom },
-		{ "BottomRight", UiPivotType::BottomRight }
+		DEFINE_TEXT_MAPPING(UiPivotType, TopLeft),
+		DEFINE_TEXT_MAPPING(UiPivotType, Top),
+		DEFINE_TEXT_MAPPING(UiPivotType, TopRight),
+		DEFINE_TEXT_MAPPING(UiPivotType, MiddleLeft),
+		DEFINE_TEXT_MAPPING(UiPivotType, Middle),
+		DEFINE_TEXT_MAPPING(UiPivotType, MiddleRight),
+		DEFINE_TEXT_MAPPING(UiPivotType, BottomLeft),
+		DEFINE_TEXT_MAPPING(UiPivotType, Bottom),
+		DEFINE_TEXT_MAPPING(UiPivotType, BottomRight)
 	};
 
 	constexpr std::pair<const char*, UiRenderSpace> RenderSpaceMappings[] =
 	{
-		{ "Native", UiRenderSpace::Native },
-		{ "Classic", UiRenderSpace::Classic }
+		DEFINE_TEXT_MAPPING(UiRenderSpace, Native),
+		DEFINE_TEXT_MAPPING(UiRenderSpace, Classic)
 	};
 
 	constexpr std::pair<const char*, UiTexturePatternType> TexturePatternTypeMappings[] =
 	{
-		{ "Parchment", UiTexturePatternType::Parchment },
-		{ "Dark", UiTexturePatternType::Dark },
-		{ "Custom1", UiTexturePatternType::Custom1 }
+		DEFINE_TEXT_MAPPING(UiTexturePatternType, Parchment),
+		DEFINE_TEXT_MAPPING(UiTexturePatternType, Dark),
+		DEFINE_TEXT_MAPPING(UiTexturePatternType, Custom1)
 	};
 
 	constexpr std::pair<const char*, TextAlignment> TextAlignmentMappings[] =
 	{
-		{ "TopLeft", TextAlignment::TopLeft },
-		{ "TopCenter", TextAlignment::TopCenter },
-		{ "TopRight", TextAlignment::TopRight },
-		{ "MiddleLeft", TextAlignment::MiddleLeft },
-		{ "MiddleCenter", TextAlignment::MiddleCenter },
-		{ "MiddleRight", TextAlignment::MiddleRight },
-		{ "BottomLeft", TextAlignment::BottomLeft },
-		{ "BottomCenter", TextAlignment::BottomCenter },
-		{ "BottomRight",  TextAlignment::BottomRight }
+		DEFINE_TEXT_MAPPING(TextAlignment, TopLeft),
+		DEFINE_TEXT_MAPPING(TextAlignment, TopCenter),
+		DEFINE_TEXT_MAPPING(TextAlignment, TopRight),
+		DEFINE_TEXT_MAPPING(TextAlignment, MiddleLeft),
+		DEFINE_TEXT_MAPPING(TextAlignment, MiddleCenter),
+		DEFINE_TEXT_MAPPING(TextAlignment, MiddleRight),
+		DEFINE_TEXT_MAPPING(TextAlignment, BottomLeft),
+		DEFINE_TEXT_MAPPING(TextAlignment, BottomCenter),
+		DEFINE_TEXT_MAPPING(TextAlignment, BottomRight)
 	};
+
+#define DEFINE_CALLBACK_TUPLE(namespaceName) { namespaceName::NamespaceString, namespaceName::ButtonCallbacks, namespaceName::InputActionCallbacks }
 
 	const std::tuple<const char*, Span<const std::pair<const char*, UiButtonDefinitionCallback>>, Span<const std::pair<const char*, UiInputListenerDefinitionCallback>>> ContextNamespaceCallbacks[] =
 	{
-		{ AutomapUI::NamespaceString, AutomapUI::ButtonCallbacks, AutomapUI::InputActionCallbacks },
-		{ MainMenuUI::NamespaceString, MainMenuUI::ButtonCallbacks, MainMenuUI::InputActionCallbacks }
+		DEFINE_CALLBACK_TUPLE(AutomapUI),
+		DEFINE_CALLBACK_TUPLE(MainMenuUI)
 	};
 
 	bool TryGetContextTypeMapping(const std::string &str, UiContextType *outContextType)
