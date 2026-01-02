@@ -68,20 +68,10 @@ std::string ChooseClassCreationUiModel::getGenerateButtonText(Game &game)
 	return exeData.charCreation.chooseClassCreationGenerate;
 }
 
-std::string ChooseClassCreationUiModel::getGenerateButtonTooltipText()
-{
-	return "Answer questions\n(not implemented)";
-}
-
 std::string ChooseClassCreationUiModel::getSelectButtonText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	return exeData.charCreation.chooseClassCreationSelect;
-}
-
-std::string ChooseClassCreationUiModel::getSelectButtonTooltipText()
-{
-	return "Choose from a list";
 }
 
 std::string ChooseClassUiModel::getTitleText(Game &game)

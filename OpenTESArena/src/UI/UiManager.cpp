@@ -581,7 +581,7 @@ void UiManager::createContext(const UiContextDefinition &contextDef, UiContextSt
 		initInfo.contentElementName = def.contentElementName;
 		return initInfo;
 	};
-	 
+
 	for (const UiImageDefinition &imageDef : contextDef.imageDefs)
 	{
 		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(imageDef.element);
@@ -599,7 +599,7 @@ void UiManager::createContext(const UiContextDefinition &contextDef, UiContextSt
 			DebugNotImplementedMsg(std::to_string(static_cast<int>(imageDef.type)));
 			break;
 		}
-		
+
 		this->createImage(elementInitInfo, textureID, contextType, contextState);
 	}
 

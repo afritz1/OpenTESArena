@@ -28,9 +28,7 @@ namespace ChooseClassCreationUiModel
 {
 	std::string getTitleText(Game &game);
 	std::string getGenerateButtonText(Game &game);
-	std::string getGenerateButtonTooltipText();
 	std::string getSelectButtonText(Game &game);
-	std::string getSelectButtonTooltipText();
 }
 
 namespace ChooseClassUiModel

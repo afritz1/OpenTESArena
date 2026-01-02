@@ -47,9 +47,7 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 		game.setPanel<MainMenuPanel>();
 
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-			MusicType::MainMenu, game.random);
-
+		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(MusicType::MainMenu, game.random);
 		if (musicDef == nullptr)
 		{
 			DebugLogWarning("Missing main menu music.");
@@ -57,6 +55,9 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 
 		AudioManager &audioManager = game.audioManager;
 		audioManager.setMusic(musicDef);
+
+		InputManager &inputManager = game.inputManager;
+		inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
 	}
 }
 

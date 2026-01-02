@@ -26,47 +26,6 @@ namespace CharacterCreationUiView
 	UiTextureID allocNightSkyTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
-namespace ChooseClassCreationUiView
-{
-	constexpr int PopUpTextureWidth = 180;
-	constexpr int PopUpTextureHeight = 40;
-	constexpr UiTexturePatternType PopUpPatternType = UiTexturePatternType::Parchment;
-
-	const Int2 TitleCenter((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 80);
-	const std::string TitleFontName = ArenaFontName::A;
-	const Color TitleColor(48, 12, 12);
-	constexpr TextAlignment TitleAlignment = TextAlignment::MiddleCenter;
-	constexpr int TitleLineSpacing = 1;
-
-	const Int2 GenerateTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
-	const std::string GenerateTextFontName = ArenaFontName::A;
-	const Color GenerateTextColor(48, 12, 12);
-	constexpr TextAlignment GenerateTextAlignment = TextAlignment::MiddleCenter;
-
-	const Int2 GenerateButtonCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 120);
-	constexpr int GenerateButtonWidth = 175;
-	constexpr int GenerateButtonHeight = 35;
-
-	const Int2 SelectTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
-	const std::string SelectTextFontName = ArenaFontName::A;
-	const Color SelectTextColor(48, 12, 12);
-	constexpr TextAlignment SelectTextAlignment = TextAlignment::MiddleCenter;
-
-	const Int2 SelectButtonCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 160);
-	constexpr int SelectButtonWidth = 175;
-	constexpr int SelectButtonHeight = 35;
-
-	Int2 getTitleTextureCenter();
-	Int2 getGenerateTextureCenter();
-	Int2 getSelectTextureCenter();
-
-	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getGenerateTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getSelectTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-
-	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
-}
-
 namespace ChooseClassUiView
 {
 	constexpr int MaxTooltipLineLength = 40;
