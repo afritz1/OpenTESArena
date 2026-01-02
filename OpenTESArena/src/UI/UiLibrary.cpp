@@ -546,13 +546,34 @@ namespace
 			return false;
 		}
 
+		auto unescapeText = [](const std::string &text)
+		{
+			std::string resultText;
+
+			for (size_t i = 0; i < text.length(); i++)
+			{
+				const char c = text[i];
+				const bool isNewline = (c == '\\') && (i < (text.length() - 1)) && (text[i + 1] == 'n');
+				if (isNewline)
+				{
+					resultText.push_back('\n');
+				}
+				else
+				{
+					resultText.push_back(c);
+				}
+			}
+
+			return resultText;
+		};
+
 		if (key == Keyword_TextBoxWorstCaseText)
 		{
-			outTextBoxDef->worstCaseText = value;
+			outTextBoxDef->worstCaseText = unescapeText(value);
 		}
 		else if (key == Keyword_TextBoxText)
 		{
-			outTextBoxDef->text = value;
+			outTextBoxDef->text = unescapeText(value);
 		}
 		else if (key == Keyword_TextBoxFontName)
 		{
