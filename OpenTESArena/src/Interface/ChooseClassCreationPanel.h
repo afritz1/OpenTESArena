@@ -3,8 +3,6 @@
 
 #include "Panel.h"
 
-class Renderer;
-
 class ChooseClassCreationPanel : public Panel
 {
 public:

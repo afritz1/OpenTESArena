@@ -1,18 +1,20 @@
 #ifndef CHOOSE_NAME_UI_STATE_H
 #define CHOOSE_NAME_UI_STATE_H
 
+#include <string>
+#include <string_view>
+
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"
 
 class Game;
 
-enum class MouseButtonType;
-
 struct ChooseNameUiState
 {
 	Game *game;
 	UiContextState contextState;
+	std::string name;
 
 	ChooseNameUiState();
 
@@ -23,19 +25,21 @@ namespace ChooseNameUI
 {
 	DECLARE_UI_CONTEXT(ChooseName);
 
-	void updateNameTextBox();
+	void onTextInput(const std::string_view text);
 
-	void on_ButtonSelected(MouseButtonType mouseButtonType);
-
+	void onAcceptInputAction(const InputActionCallbackValues &values);
+	void onBackspaceInputAction(const InputActionCallbackValues &values);
 	void onBackInputAction(const InputActionCallbackValues &values);
 
 	constexpr std::pair<const char*, UiButtonDefinitionCallback> ButtonCallbacks[] =
 	{
-		DECLARE_UI_FUNC(ChooseNameUI, on_ButtonSelected)
+		{ "", UiButtonDefinitionCallback() }
 	};
 
 	constexpr std::pair<const char*, UiInputListenerDefinitionCallback> InputActionCallbacks[] =
 	{
+		DECLARE_UI_FUNC(ChooseNameUI, onAcceptInputAction),
+		DECLARE_UI_FUNC(ChooseNameUI, onBackspaceInputAction),
 		DECLARE_UI_FUNC(ChooseNameUI, onBackInputAction)
 	};
 }
