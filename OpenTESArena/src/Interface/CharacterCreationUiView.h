@@ -93,32 +93,6 @@ namespace ChooseGenderUiView
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
-namespace ChooseNameUiView
-{
-	constexpr int TextureWidth = 300;
-	constexpr int TextureHeight = 60;
-	constexpr UiTexturePatternType TexturePatternType = UiTexturePatternType::Parchment;
-
-	constexpr int TitleTextBoxX = 26;
-	constexpr int TitleTextBoxY = 82;
-	const std::string TitleFontName = ArenaFontName::A;
-	const Color TitleColor(48, 12, 12);
-	constexpr TextAlignment TitleAlignment = TextAlignment::TopLeft;
-
-	constexpr int EntryTextBoxX = 61;
-	constexpr int EntryTextBoxY = 101;
-	const std::string EntryFontName = ArenaFontName::A;
-	const Color EntryColor(48, 12, 12);
-	constexpr TextAlignment EntryAlignment = TextAlignment::TopLeft;
-
-	Int2 getTitleTextureCenter();
-
-	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
-
-	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
-}
-
 namespace ChooseRaceUiView
 {
 	const Int2 InitialPopUpTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);

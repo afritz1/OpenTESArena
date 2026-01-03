@@ -229,63 +229,6 @@ UiTextureID ChooseGenderUiView::allocParchmentTexture(TextureManager &textureMan
 	return textureID;
 }
 
-Int2 ChooseNameUiView::getTitleTextureCenter()
-{
-	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT / 2);
-}
-
-TextBoxInitInfo ChooseNameUiView::getTitleTextBoxInitInfo(const std::string_view text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithXY(
-		text,
-		ChooseNameUiView::TitleTextBoxX,
-		ChooseNameUiView::TitleTextBoxY,
-		ChooseNameUiView::TitleFontName,
-		ChooseNameUiView::TitleColor,
-		ChooseNameUiView::TitleAlignment,
-		fontLibrary);
-}
-
-TextBoxInitInfo ChooseNameUiView::getEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
-{
-	const std::string dummyText(CharacterCreationState::MAX_NAME_LENGTH, TextRenderUtils::LARGEST_CHAR);
-
-	return TextBoxInitInfo::makeWithXY(
-		dummyText,
-		ChooseNameUiView::EntryTextBoxX,
-		ChooseNameUiView::EntryTextBoxY,
-		ChooseNameUiView::EntryFontName,
-		ChooseNameUiView::EntryColor,
-		ChooseNameUiView::EntryAlignment,
-		fontLibrary);
-}
-
-UiTextureID ChooseNameUiView::allocParchmentTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const Surface surface = TextureUtils::generate(
-		ChooseNameUiView::TexturePatternType,
-		ChooseNameUiView::TextureWidth,
-		ChooseNameUiView::TextureHeight,
-		textureManager,
-		renderer);
-
-	Span2D<const uint32_t> texels = surface.getPixels();
-	const UiTextureID textureID = renderer.createUiTexture(texels.getWidth(), texels.getHeight());
-	if (textureID < 0)
-	{
-		DebugLogError("Couldn't create UI texture for parchment.");
-		return -1;
-	}
-
-	if (!renderer.populateUiTextureNoPalette(textureID, texels))
-	{
-		DebugLogError("Couldn't populate UI texture for parchment.");
-	}
-
-	return textureID;
-}
-
 TextureAsset ChooseRaceUiView::getBackgroundTextureAsset()
 {
 	return TextureAsset(std::string(ArenaTextureName::RaceSelect));
