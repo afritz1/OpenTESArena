@@ -9,6 +9,7 @@
 #include "UiButton.h"
 #include "UiElement.h"
 #include "UiImage.h"
+#include "UiListBox.h"
 #include "UiTextBox.h"
 #include "UiTransform.h"
 #include "../Assets/TextureAsset.h"
@@ -58,6 +59,7 @@ private:
 	KeyValuePool<UiElementInstanceID, UiElement> elements;
 	KeyValuePool<UiImageInstanceID, UiImage> images;
 	KeyValuePool<UiTextBoxInstanceID, UiTextBox> textBoxes;
+	KeyValuePool<UiListBoxInstanceID, UiListBox> listBoxes;
 	KeyValuePool<UiButtonInstanceID, UiButton> buttons;
 
 	std::vector<LoadedUiTexture> loadedTextures;
@@ -87,7 +89,7 @@ public:
 	const UiButtonCallback &getButtonCallback(UiElementInstanceID elementInstID) const;
 	bool isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const;
 	
-	std::vector<UiElementInstanceID> getActiveButtonInstIDs() const;
+	std::vector<UiElementInstanceID> getActiveElementsOfType(UiElementType elementType) const;
 
 	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextState &contextState);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
@@ -96,6 +98,17 @@ public:
 	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextType contextType, UiContextState &contextState, Renderer &renderer);
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
+
+	UiElementInstanceID createListBox(const UiElementInitInfo &initInfo, const UiListBoxInitInfo &listBoxInitInfo, UiContextType contextType, UiContextState &contextState, Renderer &renderer);
+	int getListBoxItemCount(UiElementInstanceID elementInstID) const;
+	Rect getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const;
+	const UiListBoxItemCallback &getListBoxItemCallback(UiElementInstanceID elementInstID, int itemIndex) const;
+	void insertListBoxItem(UiElementInstanceID elementInstID, int index, UiListBoxItem &&item);
+	void insertBackListBoxItem(UiElementInstanceID elementInstID, UiListBoxItem &&item);
+	void eraseListBoxItem(UiElementInstanceID elementInstID, int index);
+	void scrollListBoxDown(UiElementInstanceID elementInstID);
+	void scrollListBoxUp(UiElementInstanceID elementInstID);
+	void freeListBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
 	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextState &contextState);
 	void freeButton(UiElementInstanceID elementInstID);

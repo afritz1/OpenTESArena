@@ -29,9 +29,10 @@ namespace
 	const std::string Keyword_EntryType = "Type";
 	const std::string Keyword_EntryType_Image = "Image";
 	const std::string Keyword_EntryType_TextBox = "TextBox";
+	const std::string Keyword_EntryType_ListBox = "ListBox";
 	const std::string Keyword_EntryType_Button = "Button";
 	const std::string Keyword_EntryType_InputListener = "InputListener";
-	const std::string ValidEntryTypeKeys[] = { Keyword_EntryType_Image, Keyword_EntryType_TextBox, Keyword_EntryType_Button, Keyword_EntryType_InputListener };
+	const std::string ValidEntryTypeKeys[] = { Keyword_EntryType_Image, Keyword_EntryType_TextBox, Keyword_EntryType_ListBox, Keyword_EntryType_Button, Keyword_EntryType_InputListener };
 
 	const std::string Keyword_ElementPosition = "Position";
 	const std::string Keyword_ElementSize = "Size";
@@ -53,6 +54,13 @@ namespace
 	const std::string Keyword_TextBoxLineSpacing = "LineSpacing";
 	const std::string ValidTextBoxKeys[] = { Keyword_TextBoxWorstCaseText, Keyword_TextBoxText, Keyword_TextBoxFontName, Keyword_TextBoxDefaultColor, Keyword_TextBoxAlignment, Keyword_TextBoxShadowInfo, Keyword_TextBoxLineSpacing };
 
+	const std::string Keyword_ListBoxTextureSize = "TextureSize";
+	const std::string Keyword_ListBoxItemPixelSpacing = "ItemSpacing";
+	const std::string Keyword_ListBoxFontName = "FontName";
+	const std::string Keyword_ListBoxDefaultTextColor = "TextColor";
+	const std::string Keyword_ListBoxScrollDeltaScale = "ScrollDeltaScale";
+	const std::string ValidListBoxKeys[] = { Keyword_ListBoxTextureSize, Keyword_ListBoxItemPixelSpacing, Keyword_ListBoxFontName, Keyword_ListBoxDefaultTextColor, Keyword_ListBoxScrollDeltaScale };
+
 	const std::string Keyword_ButtonMouseButtons = "MouseButtons";
 	const std::string Keyword_ButtonCallback = "Callback";
 	const std::string Keyword_ButtonContentElementName = "ContentElementName";
@@ -67,6 +75,7 @@ namespace
 		None,
 		Image,
 		TextBox,
+		ListBox,
 		Button,
 		InputListener
 	};
@@ -76,6 +85,7 @@ namespace
 		UiParseEntryType entryType;
 		UiImageDefinition imageDef;
 		UiTextBoxDefinition textBoxDef;
+		UiListBoxDefinition listBoxDef;
 		UiButtonDefinition buttonDef;
 		UiInputListenerDefinition inputListenerDef;
 
@@ -89,6 +99,7 @@ namespace
 			this->entryType = UiParseEntryType::None;
 			this->imageDef.clear();
 			this->textBoxDef.clear();
+			this->listBoxDef.clear();
 			this->buttonDef.clear();
 			this->inputListenerDef.clear();
 		}
@@ -169,7 +180,7 @@ namespace
 	{
 		DEFINE_CALLBACK_TUPLE(AutomapUI),
 		//DEFINE_CALLBACK_TUPLE(ChooseAttributesUI),
-		//DEFINE_CALLBACK_TUPLE(ChooseClassUI),
+		DEFINE_CALLBACK_TUPLE(ChooseClassUI),
 		DEFINE_CALLBACK_TUPLE(ChooseClassCreationUI),
 		DEFINE_CALLBACK_TUPLE(ChooseGenderUI),
 		DEFINE_CALLBACK_TUPLE(ChooseNameUI),
@@ -349,6 +360,11 @@ namespace
 		return std::find(std::begin(ValidTextBoxKeys), std::end(ValidTextBoxKeys), key) != std::end(ValidTextBoxKeys);
 	}
 
+	bool IsKeyValidForListBoxEntry(const std::string &key)
+	{
+		return std::find(std::begin(ValidListBoxKeys), std::end(ValidListBoxKeys), key) != std::end(ValidListBoxKeys);
+	}
+
 	bool IsKeyValidForButtonEntry(const std::string &key)
 	{
 		return std::find(std::begin(ValidButtonKeys), std::end(ValidButtonKeys), key) != std::end(ValidButtonKeys);
@@ -370,6 +386,21 @@ namespace
 		catch (std::exception)
 		{
 			DebugLogErrorFormat("Couldn't parse \"%s\" as an integer.", str.c_str());
+			return false;
+		}
+	}
+
+	bool TryParseDouble(const std::string &str, double *outValue)
+	{
+		try
+		{
+			size_t index = 0;
+			*outValue = std::stod(str, &index);
+			return index == str.size();
+		}
+		catch (std::exception)
+		{
+			DebugLogErrorFormat("Couldn't parse \"%s\" as a double.", str.c_str());
 			return false;
 		}
 	}
@@ -685,6 +716,104 @@ namespace
 		return true;
 	}
 
+	bool TryParseListBoxLine(const std::string &key, const std::string &value, UiListBoxDefinition *outListBoxDef)
+	{
+		if (TryParseElementLine(key, value, &outListBoxDef->element))
+		{
+			return true;
+		}
+
+		if (!IsKeyValidForListBoxEntry(key))
+		{
+			return false;
+		}
+
+		if (key == Keyword_ListBoxTextureSize)
+		{
+			std::string sizeTokens[2];
+			if (!String::splitExpected<2>(value, ',', sizeTokens))
+			{
+				DebugLogErrorFormat("Couldn't split texture size value \"%s\" into width,height.", value.c_str());
+				return false;
+			}
+
+			int textureWidth = 0;
+			int textureHeight = 0;
+
+			bool success = true;
+			success &= TryParseInteger(sizeTokens[0], &textureWidth);
+			success &= TryParseInteger(sizeTokens[1], &textureHeight);
+			if (!success)
+			{
+				DebugLogErrorFormat("Couldn't parse texture size value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outListBoxDef->textureWidth = textureWidth;
+			outListBoxDef->textureHeight = textureHeight;
+		}
+		else if (key == Keyword_ListBoxItemPixelSpacing)
+		{
+			int itemPixelSpacing = 0;
+			if (!TryParseInteger(value, &itemPixelSpacing))
+			{
+				DebugLogErrorFormat("Couldn't parse item pixel spacing value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outListBoxDef->itemPixelSpacing = itemPixelSpacing;
+		}
+		else if (key == Keyword_ListBoxFontName)
+		{
+			outListBoxDef->fontName = value;
+		}
+		else if (key == Keyword_ListBoxDefaultTextColor)
+		{
+			std::string colorTokens[4];
+			if (!String::splitExpected<4>(value, ',', colorTokens))
+			{
+				DebugLogErrorFormat("Couldn't split color value \"%s\" into r,g,b,a.", value.c_str());
+				return false;
+			}
+
+			int r = 0;
+			int g = 0;
+			int b = 0;
+			int a = 0;
+
+			bool success = true;
+			success &= TryParseInteger(colorTokens[0], &r);
+			success &= TryParseInteger(colorTokens[1], &g);
+			success &= TryParseInteger(colorTokens[2], &b);
+			success &= TryParseInteger(colorTokens[3], &a);
+			if (!success)
+			{
+				DebugLogErrorFormat("Couldn't parse color value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outListBoxDef->defaultTextColor = Color(r, g, b, a);
+		}
+		else if (key == Keyword_ListBoxScrollDeltaScale)
+		{
+			double scrollDeltaScale = 0.0;
+			if (!TryParseDouble(value, &scrollDeltaScale))
+			{
+				DebugLogErrorFormat("Couldn't parse scroll delta scale value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outListBoxDef->scrollDeltaScale = scrollDeltaScale;
+		}
+		else
+		{
+			DebugLogErrorFormat("Unrecognized list box key \"%s\".", key.c_str());
+			return false;
+		}
+
+		return true;
+	}
+
 	bool TryParseButtonLine(const std::string &key, const std::string &value, UiButtonDefinition *outButtonDef)
 	{
 		if (TryParseElementLine(key, value, &outButtonDef->element))
@@ -812,6 +941,25 @@ void UiTextBoxDefinition::clear()
 	this->lineSpacing = 0;
 }
 
+UiListBoxDefinition::UiListBoxDefinition()
+{
+	this->textureWidth = 0;
+	this->textureHeight = 0;
+	this->itemPixelSpacing = 0;
+	this->scrollDeltaScale = 1.0;
+}
+
+void UiListBoxDefinition::clear()
+{
+	this->element.clear();
+	this->textureWidth = 0;
+	this->textureHeight = 0;
+	this->itemPixelSpacing = 0;
+	this->fontName.clear();
+	this->defaultTextColor = Colors::Black;
+	this->scrollDeltaScale = 1.0;
+}
+
 UiButtonDefinition::UiButtonDefinition()
 {
 	this->callback = nullptr;
@@ -845,6 +993,7 @@ void UiContextDefinition::clear()
 	this->type = static_cast<UiContextType>(-1);
 	this->imageDefs.clear();
 	this->textBoxDefs.clear();
+	this->listBoxDefs.clear();
 	this->buttonDefs.clear();
 	this->inputListenerDefs.clear();
 }
@@ -922,6 +1071,10 @@ bool UiLibrary::init(const char *folderPath)
 					{
 						parseState.entryType = UiParseEntryType::TextBox;
 					}
+					else if (value == Keyword_EntryType_ListBox)
+					{
+						parseState.entryType = UiParseEntryType::ListBox;
+					}
 					else if (value == Keyword_EntryType_Button)
 					{
 						parseState.entryType = UiParseEntryType::Button;
@@ -954,6 +1107,12 @@ bool UiLibrary::init(const char *folderPath)
 							DebugLogErrorFormat("Couldn't parse \"%s\" and \"%s\" for text box entry \"%s\".", key.c_str(), value.c_str(), entryName.c_str());
 						}
 						break;
+					case UiParseEntryType::ListBox:
+						if (!TryParseListBoxLine(key, value, &parseState.listBoxDef))
+						{
+							DebugLogErrorFormat("Couldn't parse \"%s\" and \"%s\" for list box entry \"%s\".", key.c_str(), value.c_str(), entryName.c_str());
+						}
+						break;
 					case UiParseEntryType::Button:
 						if (!TryParseButtonLine(key, value, &parseState.buttonDef))
 						{
@@ -984,6 +1143,10 @@ bool UiLibrary::init(const char *folderPath)
 			case UiParseEntryType::TextBox:
 				parseState.textBoxDef.element.name = entryName;
 				contextDef.textBoxDefs.emplace_back(parseState.textBoxDef);
+				break;
+			case UiParseEntryType::ListBox:
+				parseState.listBoxDef.element.name = entryName;
+				contextDef.listBoxDefs.emplace_back(parseState.listBoxDef);
 				break;
 			case UiParseEntryType::Button:
 				parseState.buttonDef.element.name = entryName;

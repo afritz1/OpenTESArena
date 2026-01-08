@@ -60,6 +60,7 @@ void UiManager::shutdown(Renderer &renderer)
 	this->elements.clear();
 	this->images.clear();
 	this->textBoxes.clear();
+	this->listBoxes.clear();
 	this->buttons.clear();
 
 	for (LoadedUiTexture &texture : this->loadedTextures)
@@ -212,9 +213,9 @@ bool UiManager::isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiE
 	return MouseButtonTypeFlags(mouseButtonType).any(button.mouseButtonFlags);
 }
 
-std::vector<UiElementInstanceID> UiManager::getActiveButtonInstIDs() const
+std::vector<UiElementInstanceID> UiManager::getActiveElementsOfType(UiElementType elementType) const
 {
-	std::vector<UiElementInstanceID> activeButtonInstIDs;
+	std::vector<UiElementInstanceID> activeInstIDs;
 
 	for (const UiElementInstanceID instID : this->elements.keys)
 	{
@@ -224,7 +225,7 @@ std::vector<UiElementInstanceID> UiManager::getActiveButtonInstIDs() const
 			continue;
 		}
 
-		if (element.type != UiElementType::Button)
+		if (element.type != elementType)
 		{
 			continue;
 		}
@@ -234,10 +235,10 @@ std::vector<UiElementInstanceID> UiManager::getActiveButtonInstIDs() const
 			continue;
 		}
 
-		activeButtonInstIDs.emplace_back(instID);
+		activeInstIDs.emplace_back(instID);
 	}
 
-	return activeButtonInstIDs;
+	return activeInstIDs;
 }
 
 UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextState &contextState)
@@ -387,6 +388,190 @@ void UiManager::freeTextBox(UiElementInstanceID elementInstID, Renderer &rendere
 	this->elements.free(elementInstID);
 }
 
+UiElementInstanceID UiManager::createListBox(const UiElementInitInfo &initInfo, const UiListBoxInitInfo &listBoxInitInfo, UiContextType contextType,
+	UiContextState &contextState, Renderer &renderer)
+{
+	const UiElementInstanceID elementInstID = this->elements.alloc();
+	if (elementInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate element for list box (context %d).", contextType);
+		return -1;
+	}
+
+	const UiTransformInstanceID transformInstID = this->transforms.alloc();
+	if (transformInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate transform for list box (context %d).", contextType);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	const UiListBoxInstanceID listBoxInstID = this->listBoxes.alloc();
+	if (listBoxInstID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate list box (context %d).", contextType);
+		this->transforms.free(transformInstID);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(listBoxInitInfo.fontName.c_str(), &fontDefIndex))
+	{
+		DebugLogErrorFormat("Couldn't get font definition index for \"%s\".", listBoxInitInfo.fontName.c_str());
+		this->listBoxes.free(listBoxInstID);
+		this->transforms.free(transformInstID);
+		this->elements.free(elementInstID);
+		return -1;
+	}
+
+	const UiTextureID listBoxTextureID = renderer.createUiTexture(listBoxInitInfo.textureWidth, listBoxInitInfo.textureHeight);
+
+	UiListBox &listBox = this->listBoxes.get(listBoxInstID);
+	listBox.init(listBoxTextureID, listBoxInitInfo.textureWidth, listBoxInitInfo.textureHeight, listBoxInitInfo.itemPixelSpacing, fontDefIndex,
+		listBoxInitInfo.defaultTextColor, listBoxInitInfo.scrollDeltaScale);
+
+	UiTransform &transform = this->transforms.get(transformInstID);
+	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
+
+	UiElement &element = this->elements.get(elementInstID);
+	element.initListBox(initInfo.name.c_str(), contextType, initInfo.clipRect, initInfo.drawOrder, initInfo.renderSpace, transformInstID, listBoxInstID);
+
+	contextState.listBoxElementInstIDs.emplace_back(elementInstID);
+
+	return elementInstID;
+}
+
+int UiManager::getListBoxItemCount(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	return static_cast<int>(listBox.items.size());
+}
+
+Rect UiManager::getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+	const UiTransform &listBoxTransform = this->transforms.get(element.transformInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	const FontDefinition &fontDef = fontLibrary.getDefinition(listBox.fontDefIndex);
+	const int itemHeight = fontDef.getCharacterHeight();
+	const double itemCurrentLocalY = listBox.getItemCurrentLocalY(itemIndex);
+	const Rect itemLocalRect(
+		0,
+		static_cast<int>(itemCurrentLocalY),
+		listBoxTransform.size.x,
+		itemHeight);
+	const Rect itemGlobalRect(
+		listBoxTransform.position.x + itemLocalRect.getLeft(),
+		listBoxTransform.position.y + itemLocalRect.getTop(),
+		itemLocalRect.width,
+		itemLocalRect.height);
+
+	return itemGlobalRect;
+}
+
+const UiListBoxItemCallback &UiManager::getListBoxItemCallback(UiElementInstanceID elementInstID, int itemIndex) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	DebugAssertIndex(listBox.items, itemIndex);
+	return listBox.items[itemIndex].callback;
+}
+
+void UiManager::insertListBoxItem(UiElementInstanceID elementInstID, int index, UiListBoxItem &&item)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+
+	DebugAssert(index >= 0);
+	DebugAssert(index <= listBox.items.size());
+	listBox.items.emplace(listBox.items.begin() + index, std::move(item));
+	listBox.dirty = true;
+}
+
+void UiManager::insertBackListBoxItem(UiElementInstanceID elementInstID, UiListBoxItem &&item)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	listBox.items.emplace_back(std::move(item));
+	listBox.dirty = true;
+}
+
+void UiManager::eraseListBoxItem(UiElementInstanceID elementInstID, int index)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+
+	DebugAssert(index >= 0);
+	DebugAssert(index < listBox.items.size());
+	listBox.items.erase(listBox.items.begin() + index);
+	listBox.dirty = true;
+}
+
+void UiManager::scrollListBoxDown(UiElementInstanceID elementInstID)
+{
+	UiElement &element = this->elements.get(elementInstID);
+	UiTransform &listBoxTransform = this->transforms.get(element.transformInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);	
+	const int itemCount = static_cast<int>(listBox.items.size());
+
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	const FontDefinition &fontDef = fontLibrary.getDefinition(listBox.fontDefIndex);
+	const int itemHeight = fontDef.getCharacterHeight();
+
+	const int itemHeightSum = itemHeight * itemCount;
+	const int itemPaddingSum = listBox.itemPixelSpacing * std::max(0, itemCount - 1);
+	const int totalItemSizeSum = itemHeightSum + itemPaddingSum;
+	const double maxScrollPixelOffset = std::max(0.0, static_cast<double>(totalItemSizeSum - listBoxTransform.size.y));
+	listBox.scrollPixelOffset = std::min(listBox.scrollPixelOffset + listBox.getScrollDeltaPixels(), maxScrollPixelOffset);
+	listBox.dirty = true;
+}
+
+void UiManager::scrollListBoxUp(UiElementInstanceID elementInstID)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	listBox.scrollPixelOffset = std::max(0.0, listBox.scrollPixelOffset - listBox.getScrollDeltaPixels());
+	listBox.dirty = true;
+}
+
+void UiManager::freeListBox(UiElementInstanceID elementInstID, Renderer &renderer)
+{
+	UiElement *element = this->elements.tryGet(elementInstID);
+	if (element == nullptr)
+	{
+		return;
+	}
+
+	DebugAssert(element->type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element->listBoxInstID);
+	listBox.free(renderer);
+
+	this->listBoxes.free(element->listBoxInstID);
+	this->transforms.free(element->transformInstID);
+	this->elements.free(elementInstID);
+}
+
 UiElementInstanceID UiManager::createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextState &contextState)
 {
 	const UiElementInstanceID elementInstID = this->elements.alloc();
@@ -495,7 +680,7 @@ void UiManager::beginContext(UiContextType contextType, Game &game)
 	if (this->activeContextType == contextType)
 	{
 		DebugLogErrorFormat("UI context %d already active.", contextType);
-		return;
+		//return; // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
 	}
 
 	this->activeContextType = contextType;
@@ -512,10 +697,12 @@ void UiManager::beginContext(UiContextType contextType, Game &game)
 
 void UiManager::endContext(UiContextType contextType, Game &game)
 {
-	if (this->activeContextType != contextType)
+	const bool isContextActive = this->activeContextType == contextType;
+	if (!isContextActive)
 	{
-		DebugLogErrorFormat("Expected UI context %d to be active.", contextType);
-		return;
+		// @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
+		//DebugLogErrorFormat("Expected UI context %d to be active.", contextType);
+		//return;
 	}
 
 	const auto endIter = this->endContextCallbackLists.find(contextType);
@@ -529,7 +716,10 @@ void UiManager::endContext(UiContextType contextType, Game &game)
 
 	// @todo clear loaded textures for this context
 
-	this->activeContextType = std::nullopt;
+	if (isContextActive) // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one needs clearing
+	{
+		this->activeContextType = std::nullopt;
+	}
 }
 
 bool UiManager::isContextActive(UiContextType contextType) const
@@ -573,7 +763,19 @@ void UiManager::createContext(const UiContextDefinition &contextDef, UiContextSt
 		return initInfo;
 	};
 
-	auto buttonDefToInitInfo = [this](const UiButtonDefinition &def)
+	auto listBoxDefToInitInfo = [](const UiListBoxDefinition &def)
+	{
+		UiListBoxInitInfo initInfo;
+		initInfo.textureWidth = def.textureWidth;
+		initInfo.textureHeight = def.textureHeight;
+		initInfo.itemPixelSpacing = def.itemPixelSpacing;
+		initInfo.fontName = def.fontName;
+		initInfo.defaultTextColor = def.defaultTextColor;
+		initInfo.scrollDeltaScale = def.scrollDeltaScale;
+		return initInfo;
+	};
+
+	auto buttonDefToInitInfo = [](const UiButtonDefinition &def)
 	{
 		UiButtonInitInfo initInfo;
 		initInfo.mouseButtonFlags = MouseButtonType::Left; // @todo
@@ -608,6 +810,13 @@ void UiManager::createContext(const UiContextDefinition &contextDef, UiContextSt
 		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(textBoxDef.element);
 		const UiTextBoxInitInfo textBoxInitInfo = textBoxDefToInitInfo(textBoxDef);
 		this->createTextBox(elementInitInfo, textBoxInitInfo, contextType, contextState, renderer);
+	}
+
+	for (const UiListBoxDefinition &listBoxDef : contextDef.listBoxDefs)
+	{
+		const UiElementInitInfo elementInitInfo = elementDefToInitInfo(listBoxDef.element);
+		const UiListBoxInitInfo listBoxInitInfo = listBoxDefToInitInfo(listBoxDef);
+		this->createListBox(elementInitInfo, listBoxInitInfo, contextType, contextState, renderer);
 	}
 
 	for (const UiButtonDefinition &buttonDef : contextDef.buttonDefs)
@@ -681,6 +890,49 @@ void UiManager::update(double dt, Game &game)
 		textBox.dirty = false;
 	}
 
+	// Update dirty list boxes.
+	for (UiListBox &listBox : this->listBoxes.values)
+	{
+		if (!listBox.dirty)
+		{
+			continue;
+		}
+
+		const UiTextureID listBoxTextureID = listBox.textureID;
+		LockedTexture lockedTexture = renderer.lockUiTexture(listBoxTextureID);
+		if (!lockedTexture.isValid())
+		{
+			DebugLogError("Couldn't lock list box UI texture for updating.");
+			return;
+		}
+
+		Span2D<uint32_t> texels = lockedTexture.getTexels32();
+		texels.fill(0);
+
+		const FontLibrary &fontLibrary = FontLibrary::getInstance();
+		const FontDefinition &fontDef = fontLibrary.getDefinition(listBox.fontDefIndex);
+		const int itemHeight = fontDef.getCharacterHeight();
+
+		for (int i = 0; i < static_cast<int>(listBox.items.size()); i++)
+		{
+			const UiListBoxItem &item = listBox.items[i];
+			const double itemCurrentLocalY = listBox.getItemCurrentLocalY(i);
+			const Rect itemLocalRect(
+				0,
+				static_cast<int>(itemCurrentLocalY),
+				listBox.textureWidth,
+				itemHeight);
+
+			const Color itemColor = item.overrideColor.value_or(listBox.defaultTextColor);
+			constexpr TextRenderColorOverrideInfo *colorOverrideInfo = nullptr;
+			constexpr TextRenderShadowInfo *shadowInfo = nullptr;
+			TextRenderUtils::drawTextLine(item.text, fontDef, itemLocalRect.getLeft(), itemLocalRect.getTop(), itemColor, colorOverrideInfo, shadowInfo, texels);
+		}
+
+		renderer.unlockUiTexture(listBoxTextureID);
+		listBox.dirty = false;
+	}
+
 	// Update element sizes with no dependency.
 	for (UiElement &element : this->elements.values)
 	{
@@ -703,6 +955,12 @@ void UiManager::update(double dt, Game &game)
 				transform.size = Int2(textBox.textureWidth, textBox.textureHeight);
 				break;
 			}
+			case UiElementType::ListBox:
+			{
+				const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+				transform.size = Int2(listBox.textureWidth, listBox.textureHeight);
+				break;
+			}
 			case UiElementType::Button:
 				break;
 			default:
@@ -722,6 +980,7 @@ void UiManager::update(double dt, Game &game)
 			{
 			case UiElementType::Image:
 			case UiElementType::TextBox:
+			case UiElementType::ListBox:
 				break;
 			case UiElementType::Button:
 			{
@@ -795,6 +1054,13 @@ void UiManager::update(double dt, Game &game)
 			const UiTextBox &textBox = this->textBoxes.get(element->textBoxInstID);
 			const UiTextureID textBoxTextureID = textBox.textureID;
 			renderElement.id = textBoxTextureID;
+			break;
+		}
+		case UiElementType::ListBox:
+		{
+			const UiListBox &listBox = this->listBoxes.get(element->listBoxInstID);
+			const UiTextureID listBoxTextureID = listBox.textureID;
+			renderElement.id = listBoxTextureID;
 			break;
 		}
 		case UiElementType::Button:

@@ -25,7 +25,7 @@ UiElement::UiElement()
 	this->type = static_cast<UiElementType>(-1);
 }
 
-void UiElement::initImage(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID)
+void UiElement::initInternal(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID)
 {
 	std::snprintf(this->name, sizeof(this->name), "%s", name);
 	this->contextType = contextType;
@@ -34,6 +34,11 @@ void UiElement::initImage(const char *name, UiContextType contextType, Rect clip
 	this->renderSpace = renderSpace;
 	this->transformInstID = transformInstID;
 	this->active = true;
+}
+
+void UiElement::initImage(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID)
+{
+	this->initInternal(name, contextType, clipRect, drawOrder, renderSpace, transformInstID);
 
 	this->type = UiElementType::Image;
 	this->imageInstID = instID;
@@ -41,27 +46,23 @@ void UiElement::initImage(const char *name, UiContextType contextType, Rect clip
 
 void UiElement::initTextBox(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID)
 {
-	std::snprintf(this->name, sizeof(this->name), "%s", name);
-	this->contextType = contextType;
-	this->clipRect = clipRect;
-	this->drawOrder = drawOrder;
-	this->renderSpace = renderSpace;
-	this->transformInstID = transformInstID;
-	this->active = true;
+	this->initInternal(name, contextType, clipRect, drawOrder, renderSpace, transformInstID);
 
 	this->type = UiElementType::TextBox;
 	this->textBoxInstID = instID;
 }
 
+void UiElement::initListBox(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiListBoxInstanceID instID)
+{
+	this->initInternal(name, contextType, clipRect, drawOrder, renderSpace, transformInstID);
+
+	this->type = UiElementType::ListBox;
+	this->listBoxInstID = instID;
+}
+
 void UiElement::initButton(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID)
 {
-	std::snprintf(this->name, sizeof(this->name), "%s", name);
-	this->contextType = contextType;
-	this->clipRect = clipRect;
-	this->drawOrder = drawOrder;
-	this->renderSpace = renderSpace;
-	this->transformInstID = transformInstID;
-	this->active = true;
+	this->initInternal(name, contextType, clipRect, drawOrder, renderSpace, transformInstID);
 
 	this->type = UiElementType::Button;
 	this->buttonInstID = instID;

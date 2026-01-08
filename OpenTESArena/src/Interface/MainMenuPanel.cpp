@@ -12,8 +12,6 @@ MainMenuPanel::MainMenuPanel(Game &game)
 MainMenuPanel::~MainMenuPanel()
 {
 	Game &game = this->getGame();
-
-	// @todo this causes an error when exiting application because UiManager is destructed before MainMenuPanel
 	UiManager &uiManager = game.uiManager;
 	uiManager.endContext(MainMenuUI::ContextType, game);
 }

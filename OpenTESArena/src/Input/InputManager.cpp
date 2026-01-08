@@ -182,12 +182,12 @@ InputManager::InputManager()
 void InputManager::init(double logicalToPixelScale)
 {
 	DebugLog("Initializing.");
-	
+
 	// Add input action maps to be enabled/disabled as needed.
 	this->inputActionMaps = InputActionMap::loadDefaultMaps();
 
 	this->logicalToPixelScale = logicalToPixelScale;
-	
+
 	// Disable text input mode (for some reason it's on by default)?
 	this->setTextInputMode(false);
 }
@@ -312,7 +312,7 @@ Int2 InputManager::getMousePosition() const
 {
 	int logicalX, logicalY;
 	SDL_GetMouseState(&logicalX, &logicalY);
-	
+
 	const int pixelX = static_cast<int>(static_cast<double>(logicalX) * this->logicalToPixelScale);
 	const int pixelY = static_cast<int>(static_cast<double>(logicalY) * this->logicalToPixelScale);
 	return Int2(pixelX, pixelY);
@@ -830,21 +830,51 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 				if (isButtonPress)
 				{
 					// Check for clicked buttons in the UI.
-					// @todo: a more "accurate" way to check button clicks might be:
-					// - if button press is in rect, then save it, and if button release is also in that rect, then click.
-					const Int2 classicMousePos = game.window.nativeToOriginal(mousePosition);
-					const std::vector<UiElementInstanceID> activeButtonInstIDs = uiManager.getActiveButtonInstIDs();
-					
-					for (const UiElementInstanceID elementInstID : activeButtonInstIDs)
+					// @improvement: if wanting "button click capture", check if button press is in rect, then save it, and if button release is also in that rect, then click.
+					const Int2 classicMousePosition = game.window.nativeToOriginal(mousePosition);
+					const std::vector<UiElementInstanceID> activeButtonInstIDs = uiManager.getActiveElementsOfType(UiElementType::Button);
+					const std::vector<UiElementInstanceID> activeListBoxInstIDs = uiManager.getActiveElementsOfType(UiElementType::ListBox);
+
+					for (const UiElementInstanceID buttonElementInstID : activeButtonInstIDs)
 					{
-						const Rect buttonRect = uiManager.getTransformGlobalRect(elementInstID);
-						const Rect buttonParentRect; // @todo get from UiButton
-						const bool isValidMouseSelection = buttonRect.contains(classicMousePos) && (buttonParentRect.isEmpty() || buttonParentRect.contains(classicMousePos));
-						const bool isMouseButtonValid = uiManager.isMouseButtonValidForButton(*buttonType, elementInstID);
+						const Rect buttonRect = uiManager.getTransformGlobalRect(buttonElementInstID);
+						const bool isValidMouseSelection = buttonRect.contains(classicMousePosition); // Doesn't need parent rect check anymore since list boxes are handled separately.
+						const bool isMouseButtonValid = uiManager.isMouseButtonValidForButton(*buttonType, buttonElementInstID);
 						if (isValidMouseSelection && isMouseButtonValid)
 						{
-							const UiButtonCallback &buttonCallback = uiManager.getButtonCallback(elementInstID);
+							const UiButtonCallback &buttonCallback = uiManager.getButtonCallback(buttonElementInstID);
 							buttonCallback(*buttonType);
+							break;
+						}
+					}
+
+					bool isListBoxItemCallbackExecuted = false;
+					for (const UiElementInstanceID listBoxElementInstID : activeListBoxInstIDs)
+					{
+						const Rect listBoxRect = uiManager.getTransformGlobalRect(listBoxElementInstID);
+						const bool isMouseWithinListBoxRect = listBoxRect.contains(classicMousePosition);
+						if (!isMouseWithinListBoxRect)
+						{
+							continue;
+						}
+
+						const int listBoxItemCount = uiManager.getListBoxItemCount(listBoxElementInstID);
+						for (int i = 0; i < listBoxItemCount; i++)
+						{
+							const Rect listBoxItemRect = uiManager.getListBoxItemGlobalRect(listBoxElementInstID, i);
+							const bool isValidMouseSelection = listBoxItemRect.contains(classicMousePosition);
+							const bool isMouseButtonValid = buttonType == MouseButtonType::Left; // List box buttons only require left click unlike general buttons.
+							if (isValidMouseSelection && isMouseButtonValid)
+							{
+								const UiListBoxItemCallback &listBoxItemCallback = uiManager.getListBoxItemCallback(listBoxElementInstID, i);
+								listBoxItemCallback();
+								isListBoxItemCallbackExecuted = true;
+								break;
+							}
+						}
+
+						if (isListBoxItemCallbackExecuted)
+						{
 							break;
 						}
 					}

@@ -47,10 +47,6 @@ struct UiTextBox
 		TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing);
 
 	void free(Renderer &renderer);
-
-	// @todo update texture and set dirty = false
-
-	// @todo add/clear override color
 };
 
 #endif

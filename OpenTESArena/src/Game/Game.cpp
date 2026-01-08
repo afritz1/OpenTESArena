@@ -228,6 +228,9 @@ Game::~Game()
 	}
 
 	this->uiContextState.free(this->inputManager, this->uiManager, this->renderer);
+	this->panel = nullptr; // Must destroy before UiManager due to current Panel ctor/dtor design that begins/ends UiContextType
+	this->nextPanel = nullptr;
+	this->nextSubPanel = nullptr;
 	this->uiManager.shutdown(this->renderer);
 	this->sceneManager.shutdown(this->renderer);
 

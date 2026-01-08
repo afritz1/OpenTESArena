@@ -58,8 +58,9 @@ void update(double dt)
 struct UiContextState
 {
 	std::vector<UiElementInstanceID> imageElementInstIDs;
-	std::vector<UiElementInstanceID> buttonElementInstIDs;
 	std::vector<UiElementInstanceID> textBoxElementInstIDs;
+	std::vector<UiElementInstanceID> listBoxElementInstIDs;
+	std::vector<UiElementInstanceID> buttonElementInstIDs;
 
 	std::vector<InputListenerID> inputActionListenerIDs;
 	std::vector<InputListenerID> mouseButtonChangedListenerIDs;

@@ -4,8 +4,6 @@
 #include "UiTransform.h"
 #include "../Math/Rect.h"
 
-class UiManager;
-
 enum class UiContextType;
 enum class UiPivotType;
 enum class UiRenderSpace;
@@ -16,12 +14,14 @@ using UiElementInstanceID = int;
 
 using UiImageInstanceID = int;
 using UiTextBoxInstanceID = int;
+using UiListBoxInstanceID = int;
 using UiButtonInstanceID = int;
 
 enum class UiElementType
 {
 	Image,
 	TextBox,
+	ListBox,
 	Button
 };
 
@@ -44,7 +44,7 @@ struct UiElement
 {
 	char name[96];
 	UiContextType contextType;
-	Rect clipRect; // Window area this element is visible inside of. Valid if non-empty.
+	Rect clipRect; // Pixel area this element is visible inside of. Valid if non-empty.
 	int drawOrder; // Higher is drawn later.
 	UiRenderSpace renderSpace;
 
@@ -57,13 +57,17 @@ struct UiElement
 	{
 		UiImageInstanceID imageInstID;
 		UiTextBoxInstanceID textBoxInstID;
+		UiListBoxInstanceID listBoxInstID;
 		UiButtonInstanceID buttonInstID;
 	};
 
 	UiElement();
 
+	void initInternal(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID);
+
 	void initImage(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiImageInstanceID instID);
 	void initTextBox(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiTextBoxInstanceID instID);
+	void initListBox(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiListBoxInstanceID instID);
 	void initButton(const char *name, UiContextType contextType, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
 };
 

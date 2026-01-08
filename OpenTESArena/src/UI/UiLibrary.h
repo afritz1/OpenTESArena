@@ -77,6 +77,21 @@ struct UiTextBoxDefinition
 	void clear();
 };
 
+struct UiListBoxDefinition
+{
+	UiElementDefinition element;
+	int textureWidth;
+	int textureHeight;
+	int itemPixelSpacing;
+	std::string fontName;
+	Color defaultTextColor;
+	double scrollDeltaScale;
+
+	UiListBoxDefinition();
+
+	void clear();
+};
+
 using UiButtonDefinitionCallback = void(*)(MouseButtonType);
 
 struct UiButtonDefinition
@@ -108,6 +123,7 @@ struct UiContextDefinition
 	UiContextType type;
 	std::vector<UiImageDefinition> imageDefs;
 	std::vector<UiTextBoxDefinition> textBoxDefs;
+	std::vector<UiListBoxDefinition> listBoxDefs;
 	std::vector<UiButtonDefinition> buttonDefs;
 	std::vector<UiInputListenerDefinition> inputListenerDefs;
 

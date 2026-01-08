@@ -17,6 +17,13 @@ void UiContextState::free(InputManager &inputManager, UiManager &uiManager, Rend
 
 	this->textBoxElementInstIDs.clear();
 
+	for (const UiElementInstanceID instID : this->listBoxElementInstIDs)
+	{
+		uiManager.freeListBox(instID, renderer);
+	}
+
+	this->listBoxElementInstIDs.clear();
+
 	for (const UiElementInstanceID instID : this->buttonElementInstIDs)
 	{
 		uiManager.freeButton(instID);
