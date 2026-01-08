@@ -1021,6 +1021,156 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_FIRING.c_str(), &newStateIndex);
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::ArrowFire;
+
+			constexpr double playerRangedShotRange = PlayerConstants::RANGED_HIT_RANGE;
+			constexpr double playerHitSearchRadius = PlayerConstants::RANGED_HIT_SEARCH_RADIUS;
+			constexpr double playerHalfHeight = PlayerConstants::TOP_OF_HEAD_HEIGHT / 2.0;
+			const WorldDouble3 playerFeetPosition = player.getFeetPosition();
+			const WorldDouble3 hitSearchCenterPoint = playerFeetPosition + WorldDouble3(0.0, playerHalfHeight, 0.0) + (player.getGroundDirection() * playerRangedShotRange);
+			CombatHitSearchResult hitSearchResult;
+			CombatLogic::getHitSearchResult(hitSearchCenterPoint, playerHitSearchRadius, ceilingScale, voxelChunkManager, entityChunkManager, &hitSearchResult);
+
+			for (const WorldInt3 hitWorldVoxel : hitSearchResult.getVoxels())
+			{
+				const CoordInt3 hitVoxelCoord = VoxelUtils::worldVoxelToCoord(hitWorldVoxel);
+				const VoxelInt3 hitVoxel = hitVoxelCoord.voxel;
+				VoxelChunk &hitVoxelChunk = voxelChunkManager.getChunkAtPosition(hitVoxelCoord.chunk);
+
+				VoxelDoorDefID doorDefID;
+				if (!hitVoxelChunk.tryGetDoorDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &doorDefID))
+				{
+					continue;
+				}
+
+				// Can't hit if already open.
+				int doorAnimInstIndex;
+				if (hitVoxelChunk.tryGetDoorAnimInstIndex(hitVoxel.x, hitVoxel.y, hitVoxel.z, &doorAnimInstIndex))
+				{
+					continue;
+				}
+
+				// Can only hit if not previously unlocked.
+				int triggerInstIndex;
+				if (!hitVoxelChunk.tryGetTriggerInstIndex(hitVoxel.x, hitVoxel.y, hitVoxel.z, &triggerInstIndex))
+				{
+					VoxelLockDefID lockDefID;
+					if (hitVoxelChunk.tryGetLockDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &lockDefID))
+					{
+						const LockDefinition &lockDef = hitVoxelChunk.lockDefs[lockDefID];
+						const bool isDoorBashable = lockDef.lockLevel >= 0;
+
+						if (isDoorBashable)
+						{
+							const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
+							audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
+
+							if (ArenaItemUtils::isFistsWeapon(player.weaponAnimDefID))
+							{
+								player.currentHealth -= ArenaPlayerUtils::getSelfDamageFromDoorBashWithFists(random);
+							}
+
+							const int doorBashDamage = ArenaPlayerUtils::DoorBashMinDamageRequired; // @todo: Calculate damage
+
+							if (ArenaPlayerUtils::isDoorBashSuccessful(doorBashDamage, lockDef.lockLevel, player.primaryAttributes, random))
+							{
+								constexpr bool isApplyingDoorKeyToLock = false;
+								constexpr int doorKeyID = -1;
+								constexpr bool isWeaponBashing = true;
+								MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isWeaponBashing);
+							}
+						}
+					}
+				}
+			}
+
+			for (const EntityInstanceID hitEntityInstID : hitSearchResult.getEntities())
+			{
+				const EntityInstance &hitEntityInst = entityChunkManager.getEntity(hitEntityInstID);
+				const WorldDouble3 hitEntityPosition = entityChunkManager.getEntityPosition(hitEntityInst.positionID);
+				const BoundingBox3D &hitEntityBBox = entityChunkManager.getEntityBoundingBox(hitEntityInst.bboxID);
+				const WorldDouble3 hitEntityMiddlePosition(hitEntityPosition.x, hitEntityPosition.y + hitEntityBBox.halfHeight, hitEntityPosition.z);
+
+				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
+				const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
+				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
+
+				const EntityCombatState *hitEntityCombatState = nullptr;
+				bool canHitEntityBeKilled = false;
+				if (hitEntityInst.canBeKilledInCombat())
+				{
+					hitEntityCombatState = &entityChunkManager.getEntityCombatState(hitEntityInst.combatStateID);
+					canHitEntityBeKilled = !hitEntityCombatState->isInDeathState();
+				}
+
+				EntityLockState *hitEntityLockState = nullptr;
+				bool canHitEntityLockBeBroken = false;
+				if (hitEntityInst.canBeLocked())
+				{
+					hitEntityLockState = &entityChunkManager.getEntityLockState(hitEntityInst.lockStateID);
+					canHitEntityLockBeBroken = hitEntityLockState->isLocked;
+				}
+
+				if (canHitEntityBeKilled)
+				{
+					// Simulate weapon swing against them.
+					const bool canHitEntityResistDamage = hitEntityDef.type == EntityDefinitionType::Enemy; // @todo give citizens only 1 hp
+					const bool isHitEntityHpAtZero = !canHitEntityResistDamage || random.nextBool(); // @todo actual hp dmg calculation
+
+					if (isHitEntityHpAtZero)
+					{
+						const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityAnimDef);
+						const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
+
+						if (hitEntityHasDeathAnim)
+						{
+							hitEntityAnimInst.setStateIndex(*hitEntityDeathAnimStateIndex);
+						}
+						else
+						{
+							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
+						}
+
+						if (hitEntityInst.isCitizen())
+						{
+							GameWorldUiController::onCitizenKilled(game);
+						}
+
+						// Arbitrary height where the swing is hitting.
+						const double hitVfxHeightBias = std::min(PlayerConstants::TOP_OF_HEAD_HEIGHT * 0.60, hitEntityBBox.halfHeight);
+
+						// Avoid z-fighting with entity.
+						const Double2 hitVfxPositionBias = -player.getGroundDirectionXZ() * Constants::Epsilon;
+
+						const WorldDouble3 hitVfxPosition(
+							hitEntityPosition.x + hitVfxPositionBias.x,
+							hitEntityPosition.y + hitVfxHeightBias,
+							hitEntityPosition.z + hitVfxPositionBias.y);
+
+						CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, renderer);
+
+						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
+					}
+					else
+					{
+						audioManager.playSound(ArenaSoundName::Clank, hitEntityMiddlePosition);
+					}
+				}
+				else if (canHitEntityLockBeBroken)
+				{
+					const bool isLockBashSuccessful = random.nextBool(); // @todo actual lock bash calculation
+
+					if (isLockBashSuccessful)
+					{
+						hitEntityLockState->isLocked = false;
+
+						const std::optional<int> unlockedAnimDefStateIndex = hitEntityAnimDef.findStateIndex(EntityAnimationUtils::STATE_UNLOCKED.c_str());
+						DebugAssert(unlockedAnimDefStateIndex.has_value());
+						hitEntityAnimInst.setStateIndex(*unlockedAnimDefStateIndex);
+					}
+
+					audioManager.playSound(ArenaSoundName::Bash, hitEntityMiddlePosition);
+				}
+			}
 		}
 	}
 
