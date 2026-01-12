@@ -26,6 +26,7 @@ enum class UiContextType;
 struct UiCommandList;
 struct UiContextDefinition;
 struct UiContextState;
+struct Window;
 
 using UiContextBeginCallback = void(*)(Game &game);
 using UiContextEndCallback = void(*)();
@@ -103,6 +104,7 @@ public:
 	int getListBoxItemCount(UiElementInstanceID elementInstID) const;
 	Rect getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const;
 	const UiListBoxItemCallback &getListBoxItemCallback(UiElementInstanceID elementInstID, int itemIndex) const;
+	int getListBoxHoveredItemIndex(UiElementInstanceID elementInstID, const InputManager &inputManager, const Window &window) const;
 	void insertListBoxItem(UiElementInstanceID elementInstID, int index, UiListBoxItem &&item);
 	void insertBackListBoxItem(UiElementInstanceID elementInstID, UiListBoxItem &&item);
 	void eraseListBoxItem(UiElementInstanceID elementInstID, int index);

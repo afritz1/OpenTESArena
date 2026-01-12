@@ -117,37 +117,20 @@ void ChooseClassUI::updateListBoxHoveredIndex()
 	ChooseClassUiState &state = ChooseClassUI::state;
 	Game &game = *state.game;
 
-	const InputManager &inputManager = game.inputManager;
-	const Int2 mousePosition = inputManager.getMousePosition();
-	const Int2 classicMousePosition = game.window.nativeToOriginal(mousePosition);
-
 	UiManager &uiManager = game.uiManager;
 	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ListBoxElementName);
-	const Rect listBoxRect = uiManager.getTransformGlobalRect(listBoxElementInstID);
-	if (!listBoxRect.contains(classicMousePosition))
+	const int hoveredItemIndex = uiManager.getListBoxHoveredItemIndex(listBoxElementInstID, game.inputManager, game.window);
+	if (hoveredItemIndex != state.hoveredListBoxItemIndex)
 	{
-		state.hoveredListBoxItemIndex = -1;
-		return;
-	}
+		state.hoveredListBoxItemIndex = hoveredItemIndex;
 
-	const int listBoxItemCount = uiManager.getListBoxItemCount(listBoxElementInstID);
-	for (int i = 0; i < listBoxItemCount; i++)
-	{
-		const Rect itemGlobalRect = uiManager.getListBoxItemGlobalRect(listBoxElementInstID, i);
-
-		if (itemGlobalRect.contains(classicMousePosition))
+		if (hoveredItemIndex >= 0)
 		{
-			if (i != state.hoveredListBoxItemIndex)
-			{
-				state.hoveredListBoxItemIndex = i;
-
-				DebugAssertIndex(state.charClasses, i);
-				const CharacterClassDefinition &charClassDef = state.charClasses[i];
-				const std::string text = ChooseClassUiModel::getFullTooltipText(charClassDef, game);
-				const UiElementInstanceID descriptionTextBoxElementInstID = uiManager.getElementByName(ClassDescriptionElementName);
-				uiManager.setTextBoxText(descriptionTextBoxElementInstID, text.c_str());
-				break;
-			}
+			DebugAssertIndex(state.charClasses, hoveredItemIndex);
+			const CharacterClassDefinition &charClassDef = state.charClasses[hoveredItemIndex];
+			const std::string text = ChooseClassUiModel::getFullTooltipText(charClassDef, game);
+			const UiElementInstanceID descriptionTextBoxElementInstID = uiManager.getElementByName(ClassDescriptionElementName);
+			uiManager.setTextBoxText(descriptionTextBoxElementInstID, text.c_str());
 		}
 	}
 }

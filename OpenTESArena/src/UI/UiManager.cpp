@@ -19,6 +19,7 @@
 #include "../Interface/ChooseNameUiState.h"
 #include "../Interface/ChooseRaceUiState.h"
 #include "../Interface/MainMenuUiState.h"
+#include "../Rendering/Window.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/StringView.h"
@@ -486,6 +487,39 @@ const UiListBoxItemCallback &UiManager::getListBoxItemCallback(UiElementInstance
 	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
 	DebugAssertIndex(listBox.items, itemIndex);
 	return listBox.items[itemIndex].callback;
+}
+
+int UiManager::getListBoxHoveredItemIndex(UiElementInstanceID elementInstID, const InputManager &inputManager, const Window &window) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+
+	Int2 mousePosition = inputManager.getMousePosition();
+	if (element.renderSpace == UiRenderSpace::Classic)
+	{
+		const Int2 classicMousePosition = window.nativeToOriginal(mousePosition);
+		mousePosition = classicMousePosition;
+	}
+
+	const Rect listBoxRect = this->getTransformGlobalRect(elementInstID);
+	if (!listBoxRect.contains(mousePosition))
+	{
+		return -1;
+	}
+
+	const int listBoxItemCount = this->getListBoxItemCount(elementInstID);
+	for (int i = 0; i < listBoxItemCount; i++)
+	{
+		const Rect itemGlobalRect = this->getListBoxItemGlobalRect(elementInstID, i);
+		if (itemGlobalRect.contains(mousePosition))
+		{
+			return i;
+		}
+	}
+
+	return -1;
 }
 
 void UiManager::insertListBoxItem(UiElementInstanceID elementInstID, int index, UiListBoxItem &&item)
