@@ -1,4 +1,7 @@
+#include "CharacterCreationUiController.h"
+#include "CharacterCreationUiModel.h"
 #include "ChooseGenderUiState.h"
+#include "../Game/Game.h"
 
 ChooseGenderUiState::ChooseGenderUiState()
 {
@@ -12,30 +15,57 @@ void ChooseGenderUiState::init(Game &game)
 
 void ChooseGenderUI::create(Game &game)
 {
-	DebugNotImplemented();
+	ChooseGenderUiState &state = ChooseGenderUI::state;
+	state.init(game);
+
+	InputManager &inputManager = game.inputManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	UiManager &uiManager = game.uiManager;
+
+	const UiLibrary &uiLibrary = UiLibrary::getInstance();
+	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseGenderUI::ContextType);
+	uiManager.createContext(contextDef, state.contextState, inputManager, textureManager, renderer);
+
+	const std::string titleText = ChooseGenderUiModel::getTitleText(game);
+	const UiElementInstanceID titleTextBoxElementInstID = uiManager.getElementByName("ChooseGenderTitleTextBox");
+	uiManager.setTextBoxText(titleTextBoxElementInstID, titleText.c_str());
+
+	const std::string maleText = ChooseGenderUiModel::getMaleText(game);
+	const UiElementInstanceID maleTextBoxElementInstID = uiManager.getElementByName("ChooseGenderMaleTextBox");
+	uiManager.setTextBoxText(maleTextBoxElementInstID, maleText.c_str());
+
+	const std::string femaleText = ChooseGenderUiModel::getFemaleText(game);
+	const UiElementInstanceID femaleTextBoxElementInstID = uiManager.getElementByName("ChooseGenderFemaleTextBox");
+	uiManager.setTextBoxText(femaleTextBoxElementInstID, femaleText.c_str());
 }
 
 void ChooseGenderUI::destroy()
 {
-	DebugNotImplemented();
+	ChooseGenderUiState &state = ChooseGenderUI::state;
+	Game &game = *state.game;
+	state.contextState.free(game.inputManager, game.uiManager, game.renderer);
 }
 
 void ChooseGenderUI::update(double dt)
 {
-	DebugNotImplemented();
+	// Do nothing.
+	static_cast<void>(dt);
 }
 
 void ChooseGenderUI::onMaleButtonSelected(MouseButtonType mouseButtonType)
 {
-	DebugNotImplemented();
+	ChooseGenderUiState &state = ChooseGenderUI::state;
+	ChooseGenderUiController::onMaleButtonSelected(*state.game);
 }
 
 void ChooseGenderUI::onFemaleButtonSelected(MouseButtonType mouseButtonType)
 {
-	DebugNotImplemented();
+	ChooseGenderUiState &state = ChooseGenderUI::state;
+	ChooseGenderUiController::onFemaleButtonSelected(*state.game);
 }
 
 void ChooseGenderUI::onBackInputAction(const InputActionCallbackValues &values)
 {
-	DebugNotImplemented();
+	ChooseGenderUiController::onBackToChooseNameInputAction(values);
 }

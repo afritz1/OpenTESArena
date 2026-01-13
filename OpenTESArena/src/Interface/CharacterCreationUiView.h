@@ -53,46 +53,6 @@ namespace ChooseClassUiView
 	UiTextureID allocPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
-namespace ChooseGenderUiView
-{
-	constexpr int TextureWidth = 180;
-	constexpr int TextureHeight = 40;
-	constexpr UiTexturePatternType TexturePatternType = UiTexturePatternType::Parchment;
-
-	const Int2 TitleCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
-	const std::string TitleFontName = ArenaFontName::A;
-	const Color TitleColor(48, 12, 12);
-	constexpr TextAlignment TitleAlignment = TextAlignment::MiddleCenter;
-
-	const Int2 MaleTextBoxCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
-	const std::string MaleFontName = ArenaFontName::A;
-	const Color MaleColor(48, 12, 12);
-	constexpr TextAlignment MaleAlignment = TextAlignment::MiddleCenter;
-
-	const Int2 MaleButtonCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 120);
-	constexpr int MaleButtonWidth = 175;
-	constexpr int MaleButtonHeight = 35;
-
-	const Int2 FemaleTextBoxCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
-	const std::string FemaleFontName = ArenaFontName::A;
-	const Color FemaleColor(48, 12, 12);
-	constexpr TextAlignment FemaleAlignment = TextAlignment::MiddleCenter;
-
-	const Int2 FemaleButtonCenter(ArenaRenderUtils::SCREEN_WIDTH / 2, 160);
-	constexpr int FemaleButtonWidth = 175;
-	constexpr int FemaleButtonHeight = 35;
-
-	Int2 getTitleTextureCenter();
-	Int2 getMaleTextureCenter();
-	Int2 getFemaleTextureCenter();
-
-	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getMaleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getFemaleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-
-	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
-}
-
 namespace ChooseRaceUiView
 {
 	const Int2 InitialPopUpTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
