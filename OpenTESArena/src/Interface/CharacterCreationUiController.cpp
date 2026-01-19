@@ -188,20 +188,6 @@ void ChooseRaceUiController::onInitialPopUpButtonSelected(Game &game)
 	game.popSubPanel();
 }
 
-void ChooseRaceUiController::onMouseButtonChanged(Game &game, MouseButtonType buttonType,
-	const Int2 &position, bool pressed)
-{
-	// Listen for clicks on the map, checking if the mouse is over a province mask.
-	if ((buttonType == MouseButtonType::Left) && pressed)
-	{
-		const std::optional<int> provinceID = WorldMapUiModel::getMaskID(game, position, true, true);
-		if (provinceID.has_value())
-		{
-			ChooseRaceUiController::onProvinceButtonSelected(game, *provinceID);
-		}
-	}
-}
-
 void ChooseRaceUiController::onProvinceButtonSelected(Game &game, int raceID)
 {
 	auto &charCreationState = game.getCharacterCreationState();
@@ -281,10 +267,12 @@ void ChooseRaceUiController::onProvinceConfirmButtonSelected(Game &game, int rac
 void ChooseRaceUiController::onProvinceCancelButtonSelected(Game &game)
 {
 	game.popSubPanel();
+	// @todo eventually this might be uiManager.popContext() or similar
+	DebugLogErrorFormat("Not implemented: ChooseRaceUiController::onProvinceCancelButtonSelected() GetInitialSubPanel()");
 
 	// Push the initial text sub-panel.
-	std::unique_ptr<Panel> textSubPanel = ChooseRacePanel::getInitialSubPanel(game);
-	game.pushSubPanel(std::move(textSubPanel));
+	//std::unique_ptr<Panel> textSubPanel = ChooseRacePanel::getInitialSubPanel(game);
+	//game.pushSubPanel(std::move(textSubPanel));
 }
 
 void ChooseRaceUiController::onProvinceConfirmedFirstButtonSelected(Game &game)

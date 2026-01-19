@@ -47,7 +47,6 @@ namespace ChooseRaceUiController
 {
 	void onBackToChooseGenderInputAction(const InputActionCallbackValues &values);
 	void onInitialPopUpButtonSelected(Game &game);
-	void onMouseButtonChanged(Game &game, MouseButtonType buttonType, const Int2 &position, bool pressed);
 	void onProvinceButtonSelected(Game &game, int raceID);
 	void onProvinceConfirmButtonSelected(Game &game, int raceID);
 	void onProvinceCancelButtonSelected(Game &game);

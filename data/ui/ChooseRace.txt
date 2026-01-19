@@ -1,3 +1,26 @@
 [Context]
 ContextType=ChooseRace
 
+##################################
+
+# Background
+
+[ChooseRaceBackground]
+Type=Image
+Texture=TAMRIEL.MNU
+
+[ChooseRaceNoExitImage]
+Type=Image
+Position=320,200
+Pivot=BottomRight
+Texture=NOEXIT.IMG
+Palette=TAMRIEL.MNU
+
+##################################
+
+# Hotkeys
+
+[ChooseRaceBackInputListener]
+Type=InputListener
+InputActionName=Back
+Callback=ChooseRaceUI.onBackInputAction

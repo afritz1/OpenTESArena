@@ -23,13 +23,13 @@ namespace ChooseRaceUI
 {
 	DECLARE_UI_CONTEXT(ChooseRace);
 
-	void on_ButtonSelected(MouseButtonType mouseButtonType);
+	void onMouseButtonChanged(Game &game, MouseButtonType mouseButtonType, const Int2 &position, bool pressed);
 
 	void onBackInputAction(const InputActionCallbackValues &values);
 
 	constexpr std::pair<const char*, UiButtonDefinitionCallback> ButtonCallbacks[] =
 	{
-		DECLARE_UI_FUNC(ChooseRaceUI, on_ButtonSelected)
+		{ "", UiButtonDefinitionCallback() }
 	};
 
 	constexpr std::pair<const char*, UiInputListenerDefinitionCallback> InputActionCallbacks[] =
