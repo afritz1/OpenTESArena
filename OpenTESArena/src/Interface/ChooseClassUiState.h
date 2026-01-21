@@ -16,7 +16,7 @@ enum class MouseWheelScrollType;
 struct ChooseClassUiState
 {
 	Game *game;
-	UiContextState contextState;
+	UiContextInstanceID contextInstID;
 
 	std::vector<CharacterClassDefinition> charClasses;
 	int hoveredListBoxItemIndex;

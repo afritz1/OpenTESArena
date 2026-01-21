@@ -6,14 +6,14 @@ ChooseGenderPanel::ChooseGenderPanel(Game &game)
 	: Panel(game)
 {
 	UiManager &uiManager = game.uiManager;
-	uiManager.beginContext(ChooseGenderUI::ContextType, game);
+	uiManager.beginContext(ChooseGenderUI::ContextName, game);
 }
 
 ChooseGenderPanel::~ChooseGenderPanel()
 {
 	Game &game = this->getGame();
 	UiManager &uiManager = game.uiManager;
-	uiManager.endContext(ChooseGenderUI::ContextType, game);
+	uiManager.endContext(ChooseGenderUI::ContextName, game);
 }
 
 bool ChooseGenderPanel::init()

@@ -29,6 +29,7 @@ namespace
 ChooseRaceUiState::ChooseRaceUiState()
 {
 	this->game = nullptr;
+	this->contextInstID = -1;
 }
 
 void ChooseRaceUiState::init(Game &game)
@@ -41,17 +42,16 @@ void ChooseRaceUI::create(Game &game)
 	ChooseRaceUiState &state = ChooseRaceUI::state;
 	state.init(game);
 
+	UiManager &uiManager = game.uiManager;
 	InputManager &inputManager = game.inputManager;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
-	UiManager &uiManager = game.uiManager;
 
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
-	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseRaceUI::ContextType);
-	uiManager.createContext(contextDef, state.contextState, inputManager, textureManager, renderer);
+	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseRaceUI::ContextName);
+	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
-	const InputListenerID mouseButtonChangedListenerID = inputManager.addMouseButtonChangedListener(ChooseRaceUI::onMouseButtonChanged);
-	state.contextState.mouseButtonChangedListenerIDs.emplace_back(mouseButtonChangedListenerID);
+	uiManager.addMouseButtonChangedListener(ChooseRaceUI::onMouseButtonChanged, state.contextInstID, inputManager);
 
 	// @todo popup about "from where are ye from etc"
 	// - UiLayerID?
@@ -74,7 +74,13 @@ void ChooseRaceUI::destroy()
 {
 	ChooseRaceUiState &state = ChooseRaceUI::state;
 	Game &game = *state.game;
-	state.contextState.free(game.inputManager, game.uiManager, game.renderer);
+	UiManager &uiManager = game.uiManager;
+	
+	if (state.contextInstID >= 0)
+	{
+		uiManager.freeContext(state.contextInstID, game.inputManager, game.renderer);
+		state.contextInstID = -1;
+	}
 }
 
 void ChooseRaceUI::update(double dt)

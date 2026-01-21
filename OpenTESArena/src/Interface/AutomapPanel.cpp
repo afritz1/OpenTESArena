@@ -6,14 +6,14 @@ AutomapPanel::AutomapPanel(Game &game)
 	: Panel(game)
 {
 	UiManager &uiManager = game.uiManager;
-	uiManager.beginContext(AutomapUI::ContextType, game);
+	uiManager.beginContext(AutomapUI::ContextName, game);
 }
 
 AutomapPanel::~AutomapPanel()
 {
 	Game &game = this->getGame();	
 	UiManager &uiManager = game.uiManager;
-	uiManager.endContext(AutomapUI::ContextType, game);
+	uiManager.endContext(AutomapUI::ContextName, game);
 }
 
 bool AutomapPanel::init()

@@ -24,7 +24,7 @@
 namespace
 {
 	const std::string ContextSectionName = "Context";
-	const std::string Keyword_ContextType = "ContextType";
+	const std::string Keyword_ContextName = "ContextName";
 
 	const std::string Keyword_EntryType = "Type";
 	const std::string Keyword_EntryType_Image = "Image";
@@ -107,34 +107,6 @@ namespace
 
 #define DEFINE_TEXT_MAPPING(typeName, value) { #value, typeName::value }
 
-	constexpr std::pair<const char*, UiContextType> ContextTypeMappings[] =
-	{
-		DEFINE_TEXT_MAPPING(UiContextType, Global),
-		DEFINE_TEXT_MAPPING(UiContextType, Automap),
-		DEFINE_TEXT_MAPPING(UiContextType, ChooseAttributes),
-		DEFINE_TEXT_MAPPING(UiContextType, ChooseClass),
-		DEFINE_TEXT_MAPPING(UiContextType, ChooseClassCreation),
-		DEFINE_TEXT_MAPPING(UiContextType, ChooseGender),
-		DEFINE_TEXT_MAPPING(UiContextType, ChooseName),
-		DEFINE_TEXT_MAPPING(UiContextType, ChooseRace),
-		DEFINE_TEXT_MAPPING(UiContextType, CharacterSheet),
-		DEFINE_TEXT_MAPPING(UiContextType, Cinematic),
-		DEFINE_TEXT_MAPPING(UiContextType, GameWorld),
-		DEFINE_TEXT_MAPPING(UiContextType, Image),
-		DEFINE_TEXT_MAPPING(UiContextType, ImageSequence),
-		DEFINE_TEXT_MAPPING(UiContextType, LoadSave),
-		DEFINE_TEXT_MAPPING(UiContextType, Logbook),
-		DEFINE_TEXT_MAPPING(UiContextType, Loot),
-		DEFINE_TEXT_MAPPING(UiContextType, MainMenu),
-		DEFINE_TEXT_MAPPING(UiContextType, MainQuestSplash),
-		DEFINE_TEXT_MAPPING(UiContextType, MessageBox),
-		DEFINE_TEXT_MAPPING(UiContextType, Options),
-		DEFINE_TEXT_MAPPING(UiContextType, PauseMenu),
-		DEFINE_TEXT_MAPPING(UiContextType, ProvinceMap),
-		DEFINE_TEXT_MAPPING(UiContextType, TextCinematic),
-		DEFINE_TEXT_MAPPING(UiContextType, WorldMap)
-	};
-
 	constexpr std::pair<const char*, UiPivotType> PivotTypeMappings[] =
 	{
 		DEFINE_TEXT_MAPPING(UiPivotType, TopLeft),
@@ -187,25 +159,6 @@ namespace
 		DEFINE_CALLBACK_TUPLE(ChooseRaceUI),
 		DEFINE_CALLBACK_TUPLE(MainMenuUI)
 	};
-
-	bool TryGetContextTypeMapping(const std::string &str, UiContextType *outContextType)
-	{
-		const auto mappingsBegin = std::begin(ContextTypeMappings);
-		const auto mappingsEnd = std::end(ContextTypeMappings);
-		const auto iter = std::find_if(mappingsBegin, mappingsEnd,
-			[&str](const std::pair<const char*, UiContextType> &pair)
-		{
-			return pair.first == str;
-		});
-
-		if (iter == mappingsEnd)
-		{
-			return false;
-		}
-
-		*outContextType = iter->second;
-		return true;
-	}
 
 	bool TryGetPivotTypeMapping(const std::string &str, UiPivotType *outPivotType)
 	{
@@ -990,7 +943,7 @@ UiContextDefinition::UiContextDefinition()
 
 void UiContextDefinition::clear()
 {
-	this->type = static_cast<UiContextType>(-1);
+	this->name.clear();
 	this->imageDefs.clear();
 	this->textBoxDefs.clear();
 	this->listBoxDefs.clear();
@@ -1044,22 +997,21 @@ bool UiLibrary::init(const char *folderPath)
 				const std::string &key = pair.first;
 				const std::string &value = pair.second;
 
-				if (key == Keyword_ContextType)
+				if (key == Keyword_ContextName)
 				{
 					if (entryName != ContextSectionName)
 					{
-						DebugLogErrorFormat("Context types must only be under the \"%s\" entry.", ContextSectionName.c_str());
+						DebugLogErrorFormat("Context names must only be under the \"%s\" entry.", ContextSectionName.c_str());
 						continue;
 					}
 
-					UiContextType contextType;
-					if (!TryGetContextTypeMapping(value, &contextType))
+					if (value.empty())
 					{
-						DebugLogErrorFormat("Couldn't get context type from entry \"%s\".", entryName.c_str());
+						DebugLogErrorFormat("Couldn't get context name from entry \"%s\".", entryName.c_str());
 						continue;
 					}
 
-					contextDef.type = contextType;
+					contextDef.name = value;
 				}
 				else if (key == Keyword_EntryType)
 				{
@@ -1168,16 +1120,16 @@ bool UiLibrary::init(const char *folderPath)
 	return true;
 }
 
-const UiContextDefinition &UiLibrary::getDefinition(UiContextType contextType) const
+const UiContextDefinition &UiLibrary::getDefinition(const char *contextName) const
 {
 	for (const UiContextDefinition &def : this->contextDefs)
 	{
-		if (def.type == contextType)
+		if (StringView::equals(def.name, contextName))
 		{
 			return def;
 		}
 	}
 
-	DebugCrashFormat("Couldn't find context definition for type %d.", contextType);
+	DebugCrashFormat("Couldn't find context definition for type %s.", contextName);
 	return UiContextDefinition();
 }

@@ -1,12 +1,13 @@
 #ifndef UI_MANAGER_H
 #define UI_MANAGER_H
 
-#include <optional>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "TextRenderUtils.h"
 #include "UiButton.h"
+#include "UiContext.h"
 #include "UiElement.h"
 #include "UiImage.h"
 #include "UiListBox.h"
@@ -21,16 +22,9 @@ class Game;
 class InputManager;
 class TextureManager;
 
-enum class UiContextType;
-
 struct UiCommandList;
 struct UiContextDefinition;
-struct UiContextState;
 struct Window;
-
-using UiContextBeginCallback = void(*)(Game &game);
-using UiContextEndCallback = void(*)();
-using UiContextUpdateCallback = void(*)(double dt);
 
 struct LoadedUiTexture
 {
@@ -56,6 +50,7 @@ struct GeneratedUiTexture
 class UiManager
 {
 private:
+	KeyValuePool<UiContextInstanceID, UiContext> contexts;
 	KeyValuePool<UiTransformInstanceID, UiTransform> transforms;
 	KeyValuePool<UiElementInstanceID, UiElement> elements;
 	KeyValuePool<UiImageInstanceID, UiImage> images;
@@ -66,15 +61,21 @@ private:
 	std::vector<LoadedUiTexture> loadedTextures;
 	std::vector<GeneratedUiTexture> generatedTextures;
 
-	std::unordered_map<UiContextType, std::vector<UiContextBeginCallback>> beginContextCallbackLists;
-	std::unordered_map<UiContextType, std::vector<UiContextUpdateCallback>> updateContextCallbackLists;
-	std::unordered_map<UiContextType, std::vector<UiContextEndCallback>> endContextCallbackLists;
-	std::optional<UiContextType> activeContextType;
+	std::unordered_map<std::string, UiContextBeginCallback> beginContextCallbacks;
+	std::unordered_map<std::string, UiContextUpdateCallback> updateContextCallbacks;
+	std::unordered_map<std::string, UiContextEndCallback> endContextCallbacks;
+
+	std::string activeContextName;
 
 	std::vector<RenderElement2D> renderElementsCache; // To be drawn. Updated every frame.
 
 	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID getOrAddTexture(UiTexturePatternType patternType, int width, int height, TextureManager &textureManager, Renderer &renderer);
+
+	// Context callbacks are necessary for bootstrapping the begin/end context API.
+	void setBeginContextCallback(const char *contextName, const UiContextBeginCallback &callback);
+	void setEndContextCallback(const char *contextName, const UiContextEndCallback &callback);
+	void setUpdateContextCallback(const char *contextName, const UiContextUpdateCallback &callback);
 public:
 	bool init();
 	void shutdown(Renderer &renderer);
@@ -92,15 +93,15 @@ public:
 	
 	std::vector<UiElementInstanceID> getActiveElementsOfType(UiElementType elementType) const;
 
-	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextType contextType, UiContextState &contextState);
+	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
 
-	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextType contextType, UiContextState &contextState, Renderer &renderer);
+	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
-	UiElementInstanceID createListBox(const UiElementInitInfo &initInfo, const UiListBoxInitInfo &listBoxInitInfo, UiContextType contextType, UiContextState &contextState, Renderer &renderer);
+	UiElementInstanceID createListBox(const UiElementInitInfo &initInfo, const UiListBoxInitInfo &listBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);
 	int getListBoxItemCount(UiElementInstanceID elementInstID) const;
 	Rect getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const;
 	const UiListBoxItemCallback &getListBoxItemCallback(UiElementInstanceID elementInstID, int itemIndex) const;
@@ -112,21 +113,25 @@ public:
 	void scrollListBoxUp(UiElementInstanceID elementInstID);
 	void freeListBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
-	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextType contextType, UiContextState &contextState);
+	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextInstanceID contextInstID);
 	void freeButton(UiElementInstanceID elementInstID);
 
-	void addInputActionListener(const char *actionName, const InputActionCallback &callback, InputManager &inputManager, UiContextState &contextState);
-
-	void addBeginContextCallback(UiContextType contextType, const UiContextBeginCallback &callback);
-	void addEndContextCallback(UiContextType contextType, const UiContextEndCallback &callback);
-	void addUpdateContextCallback(UiContextType contextType, const UiContextUpdateCallback &callback);
-	void clearContextCallbacks(UiContextType contextType);
-
-	void beginContext(UiContextType contextType, Game &game);
-	void endContext(UiContextType contextType, Game &game);
-	bool isContextActive(UiContextType contextType) const;
-	void createContext(const UiContextDefinition &contextDef, UiContextState &contextState, InputManager &inputManager,
-		TextureManager &textureManager, Renderer &renderer);
+	void addInputActionListener(const char *actionName, const InputActionCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addMouseButtonChangedListener(const MouseButtonChangedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addMouseMotionListener(const MouseMotionCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addApplicationExitListener(const ApplicationExitCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addWindowResizedListener(const WindowResizedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addRenderTargetsResetListener(const RenderTargetsResetCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addTextInputListener(const TextInputCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	
+	UiContextInstanceID createContext(const UiContextInitInfo &initInfo);
+	UiContextInstanceID createContext(const UiContextDefinition &contextDef, InputManager &inputManager, TextureManager &textureManager, Renderer &renderer);
+	void beginContext(const char *contextName, Game &game);
+	void endContext(const char *contextName, Game &game);
+	bool isContextActive(const char *contextName) const;
+	void freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer);
 
 	void populateCommandList(UiCommandList &commandList);
 

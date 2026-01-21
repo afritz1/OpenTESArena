@@ -1,5 +1,5 @@
 [Context]
-ContextType=ChooseName
+ContextName=ChooseName
 
 ##################################
 

@@ -12,7 +12,7 @@ enum class MouseButtonType;
 struct ChooseClassCreationUiState
 {
 	Game *game;
-	UiContextState contextState;
+	UiContextInstanceID contextInstID;
 
 	ChooseClassCreationUiState();
 

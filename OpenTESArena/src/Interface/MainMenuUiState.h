@@ -13,7 +13,8 @@ enum class MouseButtonType;
 struct MainMenuUiState
 {
 	Game *game;
-	UiContextState contextState;
+	UiContextInstanceID contextInstID;
+
 	int testType, testIndex, testIndex2, testWeather;
 
 	MainMenuUiState();

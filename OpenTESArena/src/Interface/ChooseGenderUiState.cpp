@@ -6,6 +6,7 @@
 ChooseGenderUiState::ChooseGenderUiState()
 {
 	this->game = nullptr;
+	this->contextInstID = -1;
 }
 
 void ChooseGenderUiState::init(Game &game)
@@ -18,14 +19,14 @@ void ChooseGenderUI::create(Game &game)
 	ChooseGenderUiState &state = ChooseGenderUI::state;
 	state.init(game);
 
+	UiManager &uiManager = game.uiManager;
 	InputManager &inputManager = game.inputManager;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
-	UiManager &uiManager = game.uiManager;
 
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
-	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseGenderUI::ContextType);
-	uiManager.createContext(contextDef, state.contextState, inputManager, textureManager, renderer);
+	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseGenderUI::ContextName);
+	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
 	const std::string titleText = ChooseGenderUiModel::getTitleText(game);
 	const UiElementInstanceID titleTextBoxElementInstID = uiManager.getElementByName("ChooseGenderTitleTextBox");
@@ -44,7 +45,13 @@ void ChooseGenderUI::destroy()
 {
 	ChooseGenderUiState &state = ChooseGenderUI::state;
 	Game &game = *state.game;
-	state.contextState.free(game.inputManager, game.uiManager, game.renderer);
+	UiManager &uiManager = game.uiManager;
+	
+	if (state.contextInstID >= 0)
+	{
+		uiManager.freeContext(state.contextInstID, game.inputManager, game.renderer);
+		state.contextInstID = -1;
+	}
 }
 
 void ChooseGenderUI::update(double dt)

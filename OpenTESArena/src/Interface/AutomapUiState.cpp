@@ -13,6 +13,7 @@ namespace
 AutomapUiState::AutomapUiState()
 {
 	this->game = nullptr;
+	this->contextInstID = -1;
 	this->mapTextureID = -1;
 	this->cursorTextureID = -1;
 }
@@ -41,25 +42,22 @@ void AutomapUI::create(Game &game)
 	AutomapUiState &state = AutomapUI::state;
 	state.init(game);
 
+	UiManager &uiManager = game.uiManager;
 	InputManager &inputManager = game.inputManager;
-	const InputListenerID mouseButtonHeldListenerID = inputManager.addMouseButtonHeldListener(AutomapUI::onMouseButtonHeld);
-	state.contextState.mouseButtonHeldListenerIDs.emplace_back(mouseButtonHeldListenerID);
-
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
-	UiManager &uiManager = game.uiManager;
 
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
-	const UiContextDefinition &contextDef = uiLibrary.getDefinition(AutomapUI::ContextType);
-	uiManager.createContext(contextDef, state.contextState, inputManager, textureManager, renderer);
+	const UiContextDefinition &contextDef = uiLibrary.getDefinition(AutomapUI::ContextName);
+	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
+
+	uiManager.addMouseButtonHeldListener(AutomapUI::onMouseButtonHeld, state.contextInstID, inputManager);
 
 	UiElementInitInfo mapImageElementInitInfo;
 	mapImageElementInitInfo.name = AutomapTextureElementName;
 	mapImageElementInitInfo.drawOrder = 1;
 	mapImageElementInitInfo.clipRect = AutomapUiView::DrawingArea;
-
-	const UiElementInstanceID mapImageElementInstID = uiManager.createImage(mapImageElementInitInfo, state.mapTextureID, AutomapUI::ContextType, state.contextState);
-	state.contextState.imageElementInstIDs.emplace_back(mapImageElementInstID);
+	uiManager.createImage(mapImageElementInitInfo, state.mapTextureID, state.contextInstID);
 
 	GameState &gameState = game.gameState;
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
@@ -100,12 +98,16 @@ void AutomapUI::create(Game &game)
 void AutomapUI::destroy()
 {
 	AutomapUiState &state = AutomapUI::state;
-
 	Game &game = *state.game;
-	InputManager &inputManager = game.inputManager;
 	UiManager &uiManager = game.uiManager;
+	InputManager &inputManager = game.inputManager;
 	Renderer &renderer = game.renderer;
-	state.contextState.free(inputManager, uiManager, renderer);
+
+	if (state.contextInstID >= 0)
+	{
+		uiManager.freeContext(state.contextInstID, inputManager, renderer);
+		state.contextInstID = -1;
+	}
 
 	if (state.mapTextureID >= 0)
 	{

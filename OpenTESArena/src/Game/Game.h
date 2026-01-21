@@ -67,7 +67,7 @@ public:
 
 	SceneManager sceneManager;
 	UiManager uiManager;
-	UiContextState uiContextState; // For global UI elements/listeners like cursor and screenshots.
+	UiContextInstanceID globalUiContextInstID; // For global UI elements/listeners like cursor and screenshots.
 	UiElementInstanceID cursorImageElementInstID;
 	UiTextureID defaultCursorTextureID; // Sword cursor used by most UI.
 

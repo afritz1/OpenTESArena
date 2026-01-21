@@ -6,14 +6,14 @@ ChooseRacePanel::ChooseRacePanel(Game &game)
 	: Panel(game)
 {
 	UiManager &uiManager = game.uiManager;
-	uiManager.beginContext(ChooseRaceUI::ContextType, game);
+	uiManager.beginContext(ChooseRaceUI::ContextName, game);
 }
 
 ChooseRacePanel::~ChooseRacePanel()
 {
 	Game &game = this->getGame();
 	UiManager &uiManager = game.uiManager;
-	uiManager.endContext(ChooseRaceUI::ContextType, game);
+	uiManager.endContext(ChooseRaceUI::ContextName, game);
 }
 
 bool ChooseRacePanel::init()

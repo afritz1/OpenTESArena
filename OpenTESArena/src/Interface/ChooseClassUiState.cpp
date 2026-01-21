@@ -16,6 +16,7 @@ namespace
 ChooseClassUiState::ChooseClassUiState()
 {
 	this->game = nullptr;
+	this->contextInstID = -1;
 	this->hoveredListBoxItemIndex = -1;
 }
 
@@ -29,14 +30,14 @@ void ChooseClassUI::create(Game &game)
 	ChooseClassUiState &state = ChooseClassUI::state;
 	state.init(game);
 
+	UiManager &uiManager = game.uiManager;
 	InputManager &inputManager = game.inputManager;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
-	UiManager &uiManager = game.uiManager;
 
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
-	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseClassUI::ContextType);
-	uiManager.createContext(contextDef, state.contextState, inputManager, textureManager, renderer);
+	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseClassUI::ContextName);
+	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
 	const std::string titleText = ChooseClassUiModel::getTitleText(game);
 	const UiElementInstanceID titleTextBoxElementInstID = uiManager.getElementByName("ChooseClassTitleTextBox");
@@ -66,11 +67,8 @@ void ChooseClassUI::create(Game &game)
 		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 	}
 
-	const InputListenerID mouseScrollChangedListenerID = inputManager.addMouseScrollChangedListener(ChooseClassUI::onMouseScrollChanged);
-	state.contextState.mouseScrollChangedListenerIDs.emplace_back(mouseScrollChangedListenerID);
-
-	const InputListenerID mouseMotionListenerID = inputManager.addMouseMotionListener(ChooseClassUI::onMouseMotion);
-	state.contextState.mouseMotionListenerIDs.emplace_back(mouseMotionListenerID);
+	uiManager.addMouseScrollChangedListener(ChooseClassUI::onMouseScrollChanged, state.contextInstID, inputManager);
+	uiManager.addMouseMotionListener(ChooseClassUI::onMouseMotion, state.contextInstID, inputManager);
 
 	ChooseClassUI::updateListBoxHoveredIndex();
 }
@@ -79,7 +77,14 @@ void ChooseClassUI::destroy()
 {
 	ChooseClassUiState &state = ChooseClassUI::state;
 	Game &game = *state.game;
-	state.contextState.free(game.inputManager, game.uiManager, game.renderer);
+	UiManager &uiManager = game.uiManager;
+
+	if (state.contextInstID >= 0)
+	{
+		uiManager.freeContext(state.contextInstID, game.inputManager, game.renderer);
+		state.contextInstID = -1;
+	}
+
 	state.charClasses.clear();
 	state.hoveredListBoxItemIndex = -1;
 }

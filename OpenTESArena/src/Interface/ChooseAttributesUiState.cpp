@@ -3,6 +3,7 @@
 ChooseAttributesUiState::ChooseAttributesUiState()
 {
 	this->game = nullptr;
+	this->contextInstID = -1;
 }
 
 void ChooseAttributesUiState::init(Game &game)

@@ -13,7 +13,8 @@ class Game;
 struct ChooseNameUiState
 {
 	Game *game;
-	UiContextState contextState;
+	UiContextInstanceID contextInstID;
+
 	std::string name;
 
 	ChooseNameUiState();

@@ -1,7 +1,7 @@
 # Map texture and compass buttons are handled in logic.
 
 [Context]
-ContextType=Automap
+ContextName=Automap
 
 ##################################
 

@@ -11,6 +11,7 @@ namespace
 ChooseNameUiState::ChooseNameUiState()
 {
 	this->game = nullptr;
+	this->contextInstID = -1;
 }
 
 void ChooseNameUiState::init(Game &game)
@@ -23,21 +24,20 @@ void ChooseNameUI::create(Game &game)
 	ChooseNameUiState &state = ChooseNameUI::state;
 	state.init(game);
 
+	UiManager &uiManager = game.uiManager;
 	InputManager &inputManager = game.inputManager;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
-	UiManager &uiManager = game.uiManager;
 
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
-	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseNameUI::ContextType);
-	uiManager.createContext(contextDef, state.contextState, inputManager, textureManager, renderer);
+	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseNameUI::ContextName);
+	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
 	const std::string titleText = ChooseNameUiModel::getTitleText(game);
 	const UiElementInstanceID titleTextBoxElementInstID = uiManager.getElementByName("ChooseNameTitleTextBox");
 	uiManager.setTextBoxText(titleTextBoxElementInstID, titleText.c_str());
 	
-	const InputListenerID textInputListenerID = inputManager.addTextInputListener(ChooseNameUI::onTextInput);
-	state.contextState.textInputListenerIDs.emplace_back(textInputListenerID);
+	uiManager.addTextInputListener(ChooseNameUI::onTextInput, state.contextInstID, inputManager);
 
 	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
 	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);
@@ -60,10 +60,17 @@ void ChooseNameUI::destroy()
 {
 	ChooseNameUiState &state = ChooseNameUI::state;
 	Game &game = *state.game;
-	state.contextState.free(game.inputManager, game.uiManager, game.renderer);
+	UiManager &uiManager = game.uiManager;
+	InputManager &inputManager = game.inputManager;
+
+	if (state.contextInstID >= 0)
+	{
+		uiManager.freeContext(state.contextInstID, inputManager, game.renderer);
+		state.contextInstID = -1;
+	}
+	
 	state.name.clear();
 
-	InputManager &inputManager = game.inputManager;
 	inputManager.setTextInputMode(false);
 }
 

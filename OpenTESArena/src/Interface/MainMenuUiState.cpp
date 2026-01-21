@@ -33,6 +33,7 @@ namespace
 MainMenuUiState::MainMenuUiState()
 {
 	this->game = nullptr;
+	this->contextInstID = -1;
 	this->testType = -1;
 	this->testIndex = -1;
 	this->testIndex2 = -1;
@@ -53,14 +54,14 @@ void MainMenuUI::create(Game &game)
 	MainMenuUiState &state = MainMenuUI::state;
 	state.init(game);
 
-	InputManager &inputManager = game.inputManager;
 	UiManager &uiManager = game.uiManager;
+	InputManager &inputManager = game.inputManager;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
 
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
-	const UiContextDefinition &contextDef = uiLibrary.getDefinition(MainMenuUI::ContextType);
-	uiManager.createContext(contextDef, state.contextState, inputManager, textureManager, renderer);
+	const UiContextDefinition &contextDef = uiLibrary.getDefinition(MainMenuUI::ContextName);
+	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
 	MainMenuUI::updateTypeTextBox();
 	MainMenuUI::updateNameTextBox();
@@ -78,14 +79,20 @@ void MainMenuUI::destroy()
 {
 	MainMenuUiState &state = MainMenuUI::state;
 	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	InputManager &inputManager = game.inputManager;
 
-	state.contextState.free(game.inputManager, game.uiManager, game.renderer);
+	if (state.contextInstID >= 0)
+	{
+		uiManager.freeContext(state.contextInstID, inputManager, game.renderer);
+		state.contextInstID = -1;
+	}
+	
 	state.testType = -1;
 	state.testIndex = -1;
 	state.testIndex2 = -1;
 	state.testWeather = -1;
 
-	InputManager &inputManager = game.inputManager;
 	inputManager.setInputActionMapActive(InputActionMapName::MainMenu, false);
 }
 

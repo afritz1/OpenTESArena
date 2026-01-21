@@ -13,7 +13,6 @@
 
 enum class MouseButtonType;
 enum class TextAlignment;
-enum class UiContextType;
 enum class UiPivotType;
 enum class UiRenderSpace;
 enum class UiTexturePatternType;
@@ -120,7 +119,7 @@ struct UiInputListenerDefinition
 
 struct UiContextDefinition
 {
-	UiContextType type;
+	std::string name;
 	std::vector<UiImageDefinition> imageDefs;
 	std::vector<UiTextBoxDefinition> textBoxDefs;
 	std::vector<UiListBoxDefinition> listBoxDefs;
@@ -137,9 +136,11 @@ class UiLibrary : public Singleton<UiLibrary>
 private:
 	std::vector<UiContextDefinition> contextDefs; // To be instantiated by UI manager.
 public:
+	static constexpr const char GlobalContextName[] = "Global";
+
 	bool init(const char *folderPath);
 
-	const UiContextDefinition &getDefinition(UiContextType contextType) const;
+	const UiContextDefinition &getDefinition(const char *contextName) const;
 };
 
 #endif

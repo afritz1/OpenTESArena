@@ -1,5 +1,5 @@
 [Context]
-ContextType=ChooseGender
+ContextName=ChooseGender
 
 ##################################
 

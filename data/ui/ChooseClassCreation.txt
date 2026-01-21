@@ -1,5 +1,5 @@
 [Context]
-ContextType=ChooseClassCreation
+ContextName=ChooseClassCreation
 
 ##################################
 

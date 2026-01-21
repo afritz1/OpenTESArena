@@ -30,7 +30,6 @@
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CinematicLibrary.h"
-#include "../Interface/CommonUiController.h"
 #include "../Interface/CommonUiView.h"
 #include "../Interface/GameWorldPanel.h"
 #include "../Interface/GameWorldUiModel.h"
@@ -212,6 +211,7 @@ Game::Game()
 	// beginning of the next frame.
 	this->requestedSubPanelPop = false;
 
+	this->globalUiContextInstID = -1;
 	this->cursorImageElementInstID = -1;
 
 	this->shouldSimulateScene = false;
@@ -227,8 +227,14 @@ Game::~Game()
 		this->defaultCursorTextureID = -1;
 	}
 
-	this->uiContextState.free(this->inputManager, this->uiManager, this->renderer);
-	this->panel = nullptr; // Must destroy before UiManager due to current Panel ctor/dtor design that begins/ends UiContextType
+	if (this->globalUiContextInstID >= 0)
+	{
+		this->uiManager.freeContext(this->globalUiContextInstID, this->inputManager, this->renderer);
+		this->globalUiContextInstID = -1;
+		this->cursorImageElementInstID = -1;
+	}
+	
+	this->panel = nullptr; // Must destroy before UiManager due to current Panel ctor/dtor design that begins/ends the context
 	this->nextPanel = nullptr;
 	this->nextSubPanel = nullptr;
 	this->uiManager.shutdown(this->renderer);
@@ -297,43 +303,6 @@ bool Game::init()
 
 	const double logicalToPixelScale = this->window.getLogicalToPixelScale();
 	this->inputManager.init(logicalToPixelScale);
-
-	// Add application-level input event handlers.
-	const InputListenerID applicationExitListenerID = this->inputManager.addApplicationExitListener(
-		[this]()
-	{
-		this->handleApplicationExit();
-	});
-
-	const InputListenerID windowResizedListenerID = this->inputManager.addWindowResizedListener(
-		[this](int width, int height)
-	{
-		this->handleWindowResized(width, height);
-	});
-
-	const InputListenerID renderTargetsResetListenerID = this->inputManager.addRenderTargetsResetListener(
-		[this]()
-	{
-		this->renderer.handleRenderTargetsReset();
-	});
-
-	const InputListenerID takeScreenshotListenerID = this->inputManager.addInputActionListener(InputActionName::Screenshot,
-		[this](const InputActionCallbackValues &values)
-	{
-		if (values.performed)
-		{
-			const Surface screenshot = this->renderer.getScreenshot();
-			this->saveScreenshot(screenshot);
-		}
-	});
-
-	const InputListenerID debugProfilerListenerID = this->inputManager.addInputActionListener(InputActionName::DebugProfiler, CommonUiController::onDebugInputAction);
-
-	this->uiContextState.applicationExitListenerIDs.emplace_back(applicationExitListenerID);
-	this->uiContextState.windowResizedListenerIDs.emplace_back(windowResizedListenerID);
-	this->uiContextState.renderTargetsResetListenerIDs.emplace_back(renderTargetsResetListenerID);
-	this->uiContextState.inputActionListenerIDs.emplace_back(takeScreenshotListenerID);
-	this->uiContextState.inputActionListenerIDs.emplace_back(debugProfilerListenerID);
 
 	// Load various asset libraries.
 	if (!FontLibrary::getInstance().init())
@@ -432,11 +401,58 @@ bool Game::init()
 
 	this->defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(this->textureManager, this->renderer);
 
+	UiContextInitInfo globalUiContextInitInfo;
+	globalUiContextInitInfo.name = UiLibrary::GlobalContextName;
+	this->globalUiContextInstID = this->uiManager.createContext(globalUiContextInitInfo);
+
 	UiElementInitInfo cursorImageElementInitInfo;
 	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	cursorImageElementInitInfo.drawOrder = 100;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
-	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, UiContextType::Global, this->uiContextState);
+	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->globalUiContextInstID);
+
+	// Add application-level input event handlers.
+	this->uiManager.addApplicationExitListener(
+		[this]()
+	{
+		this->handleApplicationExit();
+	}, this->globalUiContextInstID, this->inputManager);
+
+	this->uiManager.addWindowResizedListener(
+		[this](int width, int height)
+	{
+		this->handleWindowResized(width, height);
+	}, this->globalUiContextInstID, this->inputManager);
+
+	this->uiManager.addRenderTargetsResetListener(
+		[this]()
+	{
+		this->renderer.handleRenderTargetsReset();
+	}, this->globalUiContextInstID, this->inputManager);
+
+	this->uiManager.addInputActionListener(InputActionName::Screenshot,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			const Surface screenshot = this->renderer.getScreenshot();
+			this->saveScreenshot(screenshot);
+		}
+	}, this->globalUiContextInstID, this->inputManager);
+
+	this->uiManager.addInputActionListener(InputActionName::DebugProfiler, 
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			Options &options = this->options;
+
+			// Increment or wrap profiler level.
+			const int oldProfilerLevel = options.getMisc_ProfilerLevel();
+			const int newProfilerLevel = (oldProfilerLevel < Options::MAX_PROFILER_LEVEL) ? (oldProfilerLevel + 1) : Options::MIN_PROFILER_LEVEL;
+			options.setMisc_ProfilerLevel(newProfilerLevel);
+		}
+	}, this->globalUiContextInstID, this->inputManager);
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";

@@ -13,7 +13,7 @@ enum class MouseButtonType;
 struct AutomapUiState
 {
 	Game *game;
-	UiContextState contextState;
+	UiContextInstanceID contextInstID;
 
 	UiTextureID mapTextureID;
 	UiTextureID cursorTextureID;

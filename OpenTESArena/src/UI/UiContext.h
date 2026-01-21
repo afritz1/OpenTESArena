@@ -10,9 +10,7 @@ class Game;
 class Renderer;
 class UiManager;
 
-// @todo Pop-up contexts like MessageBox will likely support an array of MessageBoxUiState for extra layers of pop-ups
-
-enum class UiContextType
+/*enum class UiContextType
 {
 	Global, // Always active.
 
@@ -39,12 +37,12 @@ enum class UiContextType
 	ProvinceMap,
 	TextCinematic,
 	WorldMap
-};
+};*/
 
-static constexpr int UI_CONTEXT_COUNT = static_cast<int>(UiContextType::WorldMap) + 1;
+//static constexpr int UI_CONTEXT_COUNT = static_cast<int>(UiContextType::WorldMap) + 1;
 
 #define DECLARE_UI_CONTEXT(name) \
-static constexpr UiContextType ContextType = UiContextType::##name; \
+static constexpr const char ContextName[] = #name; \
 static constexpr const char NamespaceString[] = #name "UI"; \
 static name##UiState state; \
 void create(Game &game); \
@@ -54,9 +52,22 @@ void update(double dt)
 // For buttons and input actions.
 #define DECLARE_UI_FUNC(contextName, functionName) { #functionName, contextName##::functionName }
 
-// Owns various handles for a UI context which can be used with game logic for activating/deactivating elements, etc..
-struct UiContextState
+using UiContextInstanceID = int;
+
+using UiContextBeginCallback = void(*)(Game &game);
+using UiContextEndCallback = void(*)();
+using UiContextUpdateCallback = void(*)(double dt);
+
+struct UiContextInitInfo
 {
+	std::string name;
+};
+
+// Owns various handles for a UI context which can be used with game logic for activating/deactivating elements, etc..
+struct UiContext
+{
+	std::string name;
+
 	std::vector<UiElementInstanceID> imageElementInstIDs;
 	std::vector<UiElementInstanceID> textBoxElementInstIDs;
 	std::vector<UiElementInstanceID> listBoxElementInstIDs;
@@ -71,8 +82,6 @@ struct UiContextState
 	std::vector<InputListenerID> windowResizedListenerIDs;
 	std::vector<InputListenerID> renderTargetsResetListenerIDs;
 	std::vector<InputListenerID> textInputListenerIDs;
-
-	void free(InputManager &inputManager, UiManager &uiManager, Renderer &renderer);
 };
 
 #endif

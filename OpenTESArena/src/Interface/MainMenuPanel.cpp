@@ -6,14 +6,14 @@ MainMenuPanel::MainMenuPanel(Game &game)
 	: Panel(game)
 {
 	UiManager &uiManager = game.uiManager;
-	uiManager.beginContext(MainMenuUI::ContextType, game);
+	uiManager.beginContext(MainMenuUI::ContextName, game);
 }
 
 MainMenuPanel::~MainMenuPanel()
 {
 	Game &game = this->getGame();
 	UiManager &uiManager = game.uiManager;
-	uiManager.endContext(MainMenuUI::ContextType, game);
+	uiManager.endContext(MainMenuUI::ContextName, game);
 }
 
 bool MainMenuPanel::init()
