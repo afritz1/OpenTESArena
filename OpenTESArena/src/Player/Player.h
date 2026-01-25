@@ -47,11 +47,9 @@ namespace PlayerConstants
 
 	constexpr double FRICTION = 0.30; // Slows down when on ground.
 
-	constexpr double MELEE_HIT_RANGE = 0.50;
+	constexpr double MELEE_HIT_RANGE = 0.25;
 	constexpr double MELEE_HIT_SEARCH_RADIUS = 0.40;
 
-	constexpr double RANGED_HIT_RANGE = 5;
-	constexpr double RANGED_HIT_SEARCH_RADIUS = 5;
 }
 
 enum class PlayerMovementType
