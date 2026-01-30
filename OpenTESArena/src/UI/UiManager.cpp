@@ -57,6 +57,7 @@ bool UiManager::init()
 
 void UiManager::shutdown(Renderer &renderer)
 {
+	this->contexts.clear();
 	this->transforms.clear();
 	this->elements.clear();
 	this->images.clear();
@@ -81,7 +82,6 @@ void UiManager::shutdown(Renderer &renderer)
 	this->beginContextCallbacks.clear();
 	this->updateContextCallbacks.clear();
 	this->endContextCallbacks.clear();
-	this->activeContextName.clear();
 	this->renderElementsCache.clear();
 }
 
@@ -177,6 +177,26 @@ void UiManager::setUpdateContextCallback(const char *contextName, const UiContex
 	}
 
 	this->updateContextCallbacks.emplace(contextNameStr, callback);
+}
+
+UiContextInstanceID UiManager::getContextByName(const char *name) const
+{
+	if (String::isNullOrEmpty(name))
+	{
+		DebugLogError("Can't search for context with no name.");
+		return -1;
+	}
+
+	for (const UiContextInstanceID contextInstID : this->contexts.keys)
+	{
+		const UiContext &context = this->contexts.get(contextInstID);
+		if (StringView::equals(context.name, name))
+		{
+			return contextInstID;
+		}
+	}
+
+	return -1;
 }
 
 UiElementInstanceID UiManager::getElementByName(const char *name) const
@@ -343,16 +363,14 @@ void UiManager::freeImage(UiElementInstanceID elementInstID)
 
 	DebugAssert(element->type == UiElementType::Image);
 
-	for (UiContext &context : this->contexts.values)
+	const UiContextInstanceID contextInstID = this->getContextByName(element->contextName);
+	if (contextInstID >= 0)
 	{
-		if (StringView::equals(context.name, element->contextName))
+		UiContext &context = this->contexts.get(contextInstID);
+		const auto iter = std::find(context.imageElementInstIDs.begin(), context.imageElementInstIDs.end(), elementInstID);
+		if (iter != context.imageElementInstIDs.end())
 		{
-			const auto iter = std::find(context.imageElementInstIDs.begin(), context.imageElementInstIDs.end(), elementInstID);
-			if (iter != context.imageElementInstIDs.end())
-			{
-				context.imageElementInstIDs.erase(iter);
-				break;
-			}
+			context.imageElementInstIDs.erase(iter);
 		}
 	}
 
@@ -441,16 +459,14 @@ void UiManager::freeTextBox(UiElementInstanceID elementInstID, Renderer &rendere
 
 	DebugAssert(element->type == UiElementType::TextBox);
 
-	for (UiContext &context : this->contexts.values)
+	const UiContextInstanceID contextInstID = this->getContextByName(element->contextName);
+	if (contextInstID >= 0)
 	{
-		if (StringView::equals(context.name, element->contextName))
+		UiContext &context = this->contexts.get(contextInstID);
+		const auto iter = std::find(context.textBoxElementInstIDs.begin(), context.textBoxElementInstIDs.end(), elementInstID);
+		if (iter != context.textBoxElementInstIDs.end())
 		{
-			const auto iter = std::find(context.textBoxElementInstIDs.begin(), context.textBoxElementInstIDs.end(), elementInstID);
-			if (iter != context.textBoxElementInstIDs.end())
-			{
-				context.textBoxElementInstIDs.erase(iter);
-				break;
-			}
+			context.textBoxElementInstIDs.erase(iter);
 		}
 	}
 
@@ -675,16 +691,14 @@ void UiManager::freeListBox(UiElementInstanceID elementInstID, Renderer &rendere
 
 	DebugAssert(element->type == UiElementType::ListBox);
 
-	for (UiContext &context : this->contexts.values)
+	const UiContextInstanceID contextInstID = this->getContextByName(element->contextName);
+	if (contextInstID >= 0)
 	{
-		if (StringView::equals(context.name, element->contextName))
+		UiContext &context = this->contexts.get(contextInstID);
+		const auto iter = std::find(context.listBoxElementInstIDs.begin(), context.listBoxElementInstIDs.end(), elementInstID);
+		if (iter != context.listBoxElementInstIDs.end())
 		{
-			const auto iter = std::find(context.listBoxElementInstIDs.begin(), context.listBoxElementInstIDs.end(), elementInstID);
-			if (iter != context.listBoxElementInstIDs.end())
-			{
-				context.listBoxElementInstIDs.erase(iter);
-				break;
-			}
+			context.listBoxElementInstIDs.erase(iter);
 		}
 	}
 
@@ -749,16 +763,14 @@ void UiManager::freeButton(UiElementInstanceID elementInstID)
 
 	DebugAssert(element->type == UiElementType::Button);
 
-	for (UiContext &context : this->contexts.values)
+	const UiContextInstanceID contextInstID = this->getContextByName(element->contextName);
+	if (contextInstID >= 0)
 	{
-		if (StringView::equals(context.name, element->contextName))
+		UiContext &context = this->contexts.get(contextInstID);
+		const auto iter = std::find(context.buttonElementInstIDs.begin(), context.buttonElementInstIDs.end(), elementInstID);
+		if (iter != context.buttonElementInstIDs.end())
 		{
-			const auto iter = std::find(context.buttonElementInstIDs.begin(), context.buttonElementInstIDs.end(), elementInstID);
-			if (iter != context.buttonElementInstIDs.end())
-			{
-				context.buttonElementInstIDs.erase(iter);
-				break;
-			}
+			context.buttonElementInstIDs.erase(iter);
 		}
 	}
 
@@ -838,6 +850,12 @@ UiContextInstanceID UiManager::createContext(const UiContextInitInfo &initInfo)
 		return -1;
 	}
 
+	if (initInfo.drawOrder < 0)
+	{
+		DebugLogErrorFormat("Can't create context with negative draw order %d.", initInfo.drawOrder);
+		return -1;
+	}
+
 	const UiContextInstanceID contextInstID = this->contexts.alloc();
 	if (contextInstID < 0)
 	{
@@ -847,6 +865,8 @@ UiContextInstanceID UiManager::createContext(const UiContextInitInfo &initInfo)
 
 	UiContext &context = this->contexts.get(contextInstID);
 	context.name = initInfo.name;
+	context.drawOrder = initInfo.drawOrder;
+	context.active = true;
 
 	return contextInstID;
 }
@@ -855,6 +875,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 {
 	UiContextInitInfo contextInitInfo;
 	contextInitInfo.name = contextDef.name;
+	contextInitInfo.drawOrder = 0; // Always first when coming from UI asset (no popups in assets yet).
 
 	UiContextInstanceID contextInstID = this->createContext(contextInitInfo);
 	if (contextInstID < 0)
@@ -961,82 +982,50 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 	return contextInstID;
 }
 
-void UiManager::beginContext(const char *contextName, Game &game)
-{
-	if (StringView::equals(this->activeContextName, contextName))
-	{
-		DebugLogErrorFormat("UI context %s already active.", contextName);
-		//return; // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
-	}
-
-	const std::string contextNameStr = contextName;
-	this->activeContextName = contextNameStr;
-
-	const auto callbackIter = this->beginContextCallbacks.find(contextNameStr);
-	if (callbackIter != this->beginContextCallbacks.end())
-	{
-		const UiContextBeginCallback &callback = callbackIter->second;
-		callback(game);
-	}
-}
-
-void UiManager::endContext(const char *contextName, Game &game)
-{
-	const std::string contextNameStr = contextName;
-	const bool isContextActive = StringView::equals(this->activeContextName, contextNameStr);
-	if (!isContextActive)
-	{
-		// @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
-		//DebugLogErrorFormat("Expected UI context %d to be active.", contextType);
-		//return;
-	}
-
-	const auto callbackIter = this->endContextCallbacks.find(contextNameStr);
-	if (callbackIter != this->endContextCallbacks.end())
-	{
-		const UiContextEndCallback &callback = callbackIter->second;
-		callback();
-	}
-
-	// @todo clear loaded textures for this context
-
-	if (isContextActive) // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one needs clearing
-	{
-		this->activeContextName.clear();
-	}
-}
-
 bool UiManager::isContextActive(const char *contextName) const
 {
-	if (StringView::equals(contextName, UiLibrary::GlobalContextName))
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
+	if (contextInstID < 0)
 	{
-		return true;
+		return false;
 	}
 
-	return StringView::equals(this->activeContextName, contextName);
+	const UiContext &context = this->contexts.get(contextInstID);
+	return context.active;
+}
+
+void UiManager::setContextActive(UiContextInstanceID contextInstID, bool active)
+{
+	UiContext &context = this->contexts.get(contextInstID);
+	context.active = active;
 }
 
 void UiManager::freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer)
 {
 	UiContext &context = this->contexts.get(contextInstID);
 
-	for (const UiElementInstanceID instID : context.imageElementInstIDs)
+	// Reverse iterate due to free functions modifying the ID lists.
+	for (int i = static_cast<int>(context.imageElementInstIDs.size()) - 1; i >= 0; i--)
 	{
+		const UiElementInstanceID instID = context.imageElementInstIDs[i];
 		this->freeImage(instID);
 	}
 
-	for (const UiElementInstanceID instID : context.textBoxElementInstIDs)
+	for (int i = static_cast<int>(context.textBoxElementInstIDs.size()) - 1; i >= 0; i--)
 	{
+		const UiElementInstanceID instID = context.textBoxElementInstIDs[i];
 		this->freeTextBox(instID, renderer);
 	}
 
-	for (const UiElementInstanceID instID : context.listBoxElementInstIDs)
+	for (int i = static_cast<int>(context.listBoxElementInstIDs.size()) - 1; i >= 0; i--)
 	{
+		const UiElementInstanceID instID = context.listBoxElementInstIDs[i];
 		this->freeListBox(instID, renderer);
 	}
 
-	for (const UiElementInstanceID instID : context.buttonElementInstIDs)
+	for (int i = static_cast<int>(context.buttonElementInstIDs.size()) - 1; i >= 0; i--)
 	{
+		const UiElementInstanceID instID = context.buttonElementInstIDs[i];
 		this->freeButton(instID);
 	}
 
@@ -1088,6 +1077,49 @@ void UiManager::freeContext(UiContextInstanceID contextInstID, InputManager &inp
 	this->contexts.free(contextInstID);
 }
 
+void UiManager::beginContext(const char *contextName, Game &game)
+{
+	if (this->isContextActive(contextName))
+	{
+		DebugLogErrorFormat("UI context %s already active.", contextName);
+		//return; // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
+	}
+
+	const std::string contextNameStr = contextName;
+	const auto callbackIter = this->beginContextCallbacks.find(contextNameStr);
+	if (callbackIter != this->beginContextCallbacks.end())
+	{
+		const UiContextBeginCallback &callback = callbackIter->second;
+		callback(game);
+	}
+}
+
+void UiManager::endContext(const char *contextName, Game &game)
+{
+	const bool isActive = this->isContextActive(contextName);
+	if (!isActive)
+	{
+		// @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
+		//DebugLogErrorFormat("Expected UI context %d to be active.", contextType);
+		//return;
+	}
+
+	const std::string contextNameStr = contextName;
+	const auto callbackIter = this->endContextCallbacks.find(contextNameStr);
+	if (callbackIter != this->endContextCallbacks.end())
+	{
+		const UiContextEndCallback &callback = callbackIter->second;
+		callback();
+	}
+
+	// @todo clear loaded textures for this context
+
+	if (isActive) // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one needs clearing
+	{
+		//this->activeContextName.clear();
+	}
+}
+
 void UiManager::populateCommandList(UiCommandList &commandList)
 {
 	commandList.addElements(this->renderElementsCache);
@@ -1095,9 +1127,29 @@ void UiManager::populateCommandList(UiCommandList &commandList)
 
 void UiManager::update(double dt, Game &game)
 {
-	if (!this->activeContextName.empty())
+	// Gather all visible contexts. Only the top-most context can update.
+	std::vector<UiContextInstanceID> activeContextInstIDs;
+	for (const UiContextInstanceID contextInstID : this->contexts.keys)
 	{
-		const auto updateIter = this->updateContextCallbacks.find(this->activeContextName);
+		const UiContext &context = this->contexts.get(contextInstID);
+		if (context.active)
+		{
+			activeContextInstIDs.emplace_back(contextInstID);
+		}
+	}
+
+	std::sort(activeContextInstIDs.begin(), activeContextInstIDs.end(),
+		[this](const UiContextInstanceID a, const UiContextInstanceID b)
+	{
+		const UiContext &contextA = this->contexts.get(a);
+		const UiContext &contextB = this->contexts.get(b);
+		return contextA.drawOrder < contextB.drawOrder;
+	});
+
+	if (!activeContextInstIDs.empty())
+	{
+		const UiContext &contextToUpdate = this->contexts.get(activeContextInstIDs.back());
+		const auto updateIter = this->updateContextCallbacks.find(contextToUpdate.name);
 		if (updateIter != this->updateContextCallbacks.end())
 		{
 			const UiContextUpdateCallback &updateCallback = updateIter->second;
@@ -1274,8 +1326,17 @@ void UiManager::update(double dt, Game &game)
 	}
 
 	std::sort(elementsToDraw.begin(), elementsToDraw.end(),
-		[](const UiElement *a, const UiElement *b)
+		[this](const UiElement *a, const UiElement *b)
 	{
+		const UiContextInstanceID aContextInstID = this->getContextByName(a->contextName);
+		const UiContextInstanceID bContextInstID = this->getContextByName(b->contextName);
+		const UiContext &aContext = this->contexts.get(aContextInstID);
+		const UiContext &bContext = this->contexts.get(bContextInstID);
+		if (aContext.drawOrder != bContext.drawOrder)
+		{
+			return aContext.drawOrder < bContext.drawOrder;
+		}
+
 		return a->drawOrder < b->drawOrder;
 	});
 

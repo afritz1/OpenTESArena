@@ -1,4 +1,6 @@
 #include "CharacterCreationUiController.h"
+#include "CharacterCreationUiModel.h"
+#include "CharacterCreationUiView.h"
 #include "ChooseRaceUiState.h"
 #include "WorldMapUiModel.h"
 #include "../Game/Game.h"
@@ -30,6 +32,7 @@ ChooseRaceUiState::ChooseRaceUiState()
 {
 	this->game = nullptr;
 	this->contextInstID = -1;
+	this->initialPopUpContextInstID = -1;
 }
 
 void ChooseRaceUiState::init(Game &game)
@@ -53,18 +56,19 @@ void ChooseRaceUI::create(Game &game)
 
 	uiManager.addMouseButtonChangedListener(ChooseRaceUI::onMouseButtonChanged, state.contextInstID, inputManager);
 
-	// @todo popup about "from where are ye from etc"
-	// - UiLayerID?
-	// - will "pushing a UiContextDefinition" mean picking the next UiLayerID higher?
+	// @todo create popup contexts and set active=false, only set the "from where dost thou hail" popup active=true.
+	UiContextInitInfo initialPopUpContextInitInfo;
+	initialPopUpContextInitInfo.name = "ChooseRaceInitialPopUp";
+	initialPopUpContextInitInfo.drawOrder = 1;
+	state.initialPopUpContextInstID = uiManager.createContext(initialPopUpContextInitInfo);
 
-	/*
+	//const UiTextureID initialPopUpTextureID = ChooseRaceUiView::allocInitialPopUpTexture(textureManager, renderer);
+	//const std::string initialPopUpText = ChooseRaceUiModel::getTitleText(game);
+	// @todo ui text box init info
 	
-	// Push the initial text sub-panel.
+	// @todo ui image init info
+
 	// @todo: scroll unravel animation
-	std::unique_ptr<Panel> textSubPanel = GetInitialSubPanel(game);
-	game.pushSubPanel(std::move(textSubPanel));
-	
-	*/
 
 	// @todo cancelling the selected province also needs to rerun that popup ^ in ChooseRaceUiController::onProvinceCancelButtonSelected
 	DebugLogErrorFormat("Not implemented: ChooseRaceUI::create() GetInitialSubPanel()");
@@ -80,6 +84,12 @@ void ChooseRaceUI::destroy()
 	{
 		uiManager.freeContext(state.contextInstID, game.inputManager, game.renderer);
 		state.contextInstID = -1;
+	}
+
+	if (state.initialPopUpContextInstID >= 0)
+	{
+		uiManager.freeContext(state.initialPopUpContextInstID, game.inputManager, game.renderer);
+		state.initialPopUpContextInstID = -1;
 	}
 }
 

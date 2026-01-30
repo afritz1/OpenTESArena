@@ -406,6 +406,7 @@ bool Game::init()
 	this->globalUiContextInstID = this->uiManager.createContext(globalUiContextInitInfo);
 
 	UiElementInitInfo cursorImageElementInitInfo;
+	cursorImageElementInitInfo.name = "GlobalCursor";
 	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	cursorImageElementInitInfo.drawOrder = 100;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;

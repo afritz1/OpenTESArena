@@ -65,9 +65,9 @@ private:
 	std::unordered_map<std::string, UiContextUpdateCallback> updateContextCallbacks;
 	std::unordered_map<std::string, UiContextEndCallback> endContextCallbacks;
 
-	std::string activeContextName;
-
 	std::vector<RenderElement2D> renderElementsCache; // To be drawn. Updated every frame.
+
+	UiContextInstanceID getContextByName(const char *name) const;
 
 	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID getOrAddTexture(UiTexturePatternType patternType, int width, int height, TextureManager &textureManager, Renderer &renderer);
@@ -128,10 +128,14 @@ public:
 	
 	UiContextInstanceID createContext(const UiContextInitInfo &initInfo);
 	UiContextInstanceID createContext(const UiContextDefinition &contextDef, InputManager &inputManager, TextureManager &textureManager, Renderer &renderer);
+	
+	bool isContextActive(const char *contextName) const;
+	void setContextActive(UiContextInstanceID contextInstID, bool active);
+	void freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer);
+
+	// Intended for text file contexts registered at manager startup.
 	void beginContext(const char *contextName, Game &game);
 	void endContext(const char *contextName, Game &game);
-	bool isContextActive(const char *contextName) const;
-	void freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer);
 
 	void populateCommandList(UiCommandList &commandList);
 

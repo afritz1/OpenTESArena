@@ -61,12 +61,17 @@ using UiContextUpdateCallback = void(*)(double dt);
 struct UiContextInitInfo
 {
 	std::string name;
+	int drawOrder;
+
+	UiContextInitInfo();
 };
 
 // Owns various handles for a UI context which can be used with game logic for activating/deactivating elements, etc..
 struct UiContext
 {
 	std::string name;
+	int drawOrder;
+	bool active; // Allowed to draw, and if top-most, allowed to update.
 
 	std::vector<UiElementInstanceID> imageElementInstIDs;
 	std::vector<UiElementInstanceID> textBoxElementInstIDs;
@@ -82,6 +87,8 @@ struct UiContext
 	std::vector<InputListenerID> windowResizedListenerIDs;
 	std::vector<InputListenerID> renderTargetsResetListenerIDs;
 	std::vector<InputListenerID> textInputListenerIDs;
+
+	UiContext();
 };
 
 #endif

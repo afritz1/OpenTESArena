@@ -13,6 +13,7 @@ struct ChooseRaceUiState
 {
 	Game *game;
 	UiContextInstanceID contextInstID;
+	UiContextInstanceID initialPopUpContextInstID;
 
 	ChooseRaceUiState();
 
