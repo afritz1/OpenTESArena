@@ -8,5 +8,5 @@ UiContextInitInfo::UiContextInitInfo()
 UiContext::UiContext()
 {
 	this->drawOrder = 0;
-	this->active = false;
+	this->enabled = false;
 }

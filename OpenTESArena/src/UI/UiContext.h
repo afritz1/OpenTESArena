@@ -71,7 +71,7 @@ struct UiContext
 {
 	std::string name;
 	int drawOrder;
-	bool active; // Allowed to draw, and if top-most, allowed to update.
+	bool enabled; // Allowed to draw, and if top-most, allowed to update and hear input events.
 
 	std::vector<UiElementInstanceID> imageElementInstIDs;
 	std::vector<UiElementInstanceID> textBoxElementInstIDs;

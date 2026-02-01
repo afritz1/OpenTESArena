@@ -878,7 +878,7 @@ UiContextInstanceID UiManager::createContext(const UiContextInitInfo &initInfo)
 	UiContext &context = this->contexts.get(contextInstID);
 	context.name = initInfo.name;
 	context.drawOrder = initInfo.drawOrder;
-	context.active = true;
+	context.enabled = true;
 
 	return contextInstID;
 }
@@ -994,7 +994,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 	return contextInstID;
 }
 
-bool UiManager::isContextActive(const char *contextName) const
+bool UiManager::isContextEnabled(const char *contextName) const
 {
 	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	if (contextInstID < 0)
@@ -1003,13 +1003,13 @@ bool UiManager::isContextActive(const char *contextName) const
 	}
 
 	const UiContext &context = this->contexts.get(contextInstID);
-	return context.active;
+	return context.enabled;
 }
 
-void UiManager::setContextActive(UiContextInstanceID contextInstID, bool active)
+void UiManager::setContextEnabled(UiContextInstanceID contextInstID, bool enabled)
 {
 	UiContext &context = this->contexts.get(contextInstID);
-	context.active = active;
+	context.enabled = enabled;
 }
 
 UiContextInstanceID UiManager::getTopMostActiveContext() const
@@ -1019,7 +1019,7 @@ UiContextInstanceID UiManager::getTopMostActiveContext() const
 	for (const UiContextInstanceID contextInstID : this->contexts.keys)
 	{
 		const UiContext &context = this->contexts.get(contextInstID);
-		if (!context.active)
+		if (!context.enabled)
 		{
 			continue;
 		}
@@ -1060,7 +1060,7 @@ bool UiManager::isContextTopMostActive(const char *contextName) const
 
 	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	const UiContext &context = this->contexts.get(contextInstID);
-	if (!context.active)
+	if (!context.enabled)
 	{
 		return false;
 	}
@@ -1154,9 +1154,9 @@ void UiManager::freeContext(UiContextInstanceID contextInstID, InputManager &inp
 
 void UiManager::beginContext(const char *contextName, Game &game)
 {
-	if (this->isContextActive(contextName))
+	if (this->isContextEnabled(contextName))
 	{
-		DebugLogErrorFormat("UI context %s already active.", contextName);
+		DebugLogErrorFormat("UI context %s already enabled.", contextName);
 		//return; // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
 	}
 
@@ -1171,8 +1171,8 @@ void UiManager::beginContext(const char *contextName, Game &game)
 
 void UiManager::endContext(const char *contextName, Game &game)
 {
-	const bool isActive = this->isContextActive(contextName);
-	if (!isActive)
+	const bool isEnabled = this->isContextEnabled(contextName);
+	if (!isEnabled)
 	{
 		// @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
 		//DebugLogErrorFormat("Expected UI context %d to be active.", contextType);
@@ -1189,7 +1189,7 @@ void UiManager::endContext(const char *contextName, Game &game)
 
 	// @todo clear loaded textures for this context
 
-	if (isActive) // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one needs clearing
+	if (isEnabled) // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one needs clearing
 	{
 		//this->activeContextName.clear();
 	}
@@ -1207,7 +1207,7 @@ void UiManager::update(double dt, Game &game)
 	for (const UiContextInstanceID contextInstID : this->contexts.keys)
 	{
 		const UiContext &context = this->contexts.get(contextInstID);
-		if (context.active)
+		if (context.enabled)
 		{
 			activeContextInstIDs.emplace_back(contextInstID);
 		}
@@ -1410,7 +1410,7 @@ void UiManager::update(double dt, Game &game)
 			continue;
 		}
 
-		if (!this->isContextActive(element.contextName))
+		if (!this->isContextEnabled(element.contextName))
 		{
 			continue;
 		}
