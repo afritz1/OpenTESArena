@@ -54,7 +54,7 @@ void ChooseRaceUI::create(Game &game)
 	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ChooseRaceUI::ContextName);
 	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
-	uiManager.addMouseButtonChangedListener(ChooseRaceUI::onMouseButtonChanged, state.contextInstID, inputManager);
+	uiManager.addMouseButtonChangedListener(ChooseRaceUI::onMouseButtonChanged, contextDef.name.c_str(), inputManager);
 
 	// @todo create popup contexts and set active=false, only set the "from where dost thou hail" popup active=true.
 	UiContextInitInfo initialPopUpContextInitInfo;

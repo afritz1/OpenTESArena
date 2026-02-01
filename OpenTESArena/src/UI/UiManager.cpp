@@ -782,65 +782,74 @@ void UiManager::freeButton(UiElementInstanceID elementInstID)
 	this->elements.free(elementInstID);
 }
 
-void UiManager::addInputActionListener(const char *actionName, const InputActionCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addInputActionListener(const char *actionName, const InputActionCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addInputActionListener(actionName, callback);
+	const InputListenerID listenerID = inputManager.addInputActionListener(actionName, callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.inputActionListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addMouseButtonChangedListener(callback);
+	const InputListenerID listenerID = inputManager.addMouseButtonChangedListener(callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.mouseButtonChangedListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addMouseButtonHeldListener(callback);
+	const InputListenerID listenerID = inputManager.addMouseButtonHeldListener(callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.mouseButtonHeldListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addMouseScrollChangedListener(callback);
+	const InputListenerID listenerID = inputManager.addMouseScrollChangedListener(callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.mouseScrollChangedListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addMouseMotionListener(const MouseMotionCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addMouseMotionListener(const MouseMotionCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addMouseMotionListener(callback);
+	const InputListenerID listenerID = inputManager.addMouseMotionListener(callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.mouseMotionListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addApplicationExitListener(const ApplicationExitCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addApplicationExitListener(const ApplicationExitCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addApplicationExitListener(callback);
+	const InputListenerID listenerID = inputManager.addApplicationExitListener(callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.applicationExitListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addWindowResizedListener(const WindowResizedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addWindowResizedListener(const WindowResizedCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addWindowResizedListener(callback);
+	const InputListenerID listenerID = inputManager.addWindowResizedListener(callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.windowResizedListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addRenderTargetsResetListener(const RenderTargetsResetCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addRenderTargetsResetListener(const RenderTargetsResetCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addRenderTargetsResetListener(callback);
+	const InputListenerID listenerID = inputManager.addRenderTargetsResetListener(callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.renderTargetsResetListenerIDs.emplace_back(listenerID);
 }
 
-void UiManager::addTextInputListener(const TextInputCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager)
+void UiManager::addTextInputListener(const TextInputCallback &callback, const char *contextName, InputManager &inputManager)
 {
-	const InputListenerID listenerID = inputManager.addTextInputListener(callback);
+	const InputListenerID listenerID = inputManager.addTextInputListener(callback, contextName);
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
 	UiContext &context = this->contexts.get(contextInstID);
 	context.textInputListenerIDs.emplace_back(listenerID);
 }
@@ -979,7 +988,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 	{
 		const char *inputActionName = inputListenerDef.inputActionName.c_str();
 		const InputActionCallback inputActionCallback = inputListenerDef.callback;
-		this->addInputActionListener(inputActionName, inputActionCallback, contextInstID, inputManager);
+		this->addInputActionListener(inputActionName, inputActionCallback, contextInitInfo.name.c_str(), inputManager);
 	}
 
 	return contextInstID;
@@ -1015,6 +1024,12 @@ UiContextInstanceID UiManager::getTopMostActiveContext() const
 			continue;
 		}
 
+		if (StringView::equals(context.name, UiLibrary::GlobalContextName))
+		{
+			// Global cannot block other contexts.
+			continue;
+		}
+
 		if (topMostContextInstID < 0)
 		{
 			topMostContextInstID = contextInstID;
@@ -1028,7 +1043,36 @@ UiContextInstanceID UiManager::getTopMostActiveContext() const
 		}
 	}
 
+	if (topMostContextInstID < 0)
+	{
+		topMostContextInstID = this->getContextByName(UiLibrary::GlobalContextName);
+	}
+
 	return topMostContextInstID;
+}
+
+bool UiManager::isContextTopMostActive(const char *contextName) const
+{
+	if (String::isNullOrEmpty(contextName))
+	{
+		return false;
+	}
+
+	const UiContextInstanceID contextInstID = this->getContextByName(contextName);
+	const UiContext &context = this->contexts.get(contextInstID);
+	if (!context.active)
+	{
+		return false;
+	}
+
+	// Global behaves as always top-most active but doesn't block the one below it.
+	if (context.name == UiLibrary::GlobalContextName)
+	{
+		return true;
+	}
+
+	const UiContextInstanceID topMostContextInstID = this->getTopMostActiveContext();
+	return contextInstID == topMostContextInstID;
 }
 
 void UiManager::freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer)
@@ -1158,7 +1202,7 @@ void UiManager::populateCommandList(UiCommandList &commandList)
 
 void UiManager::update(double dt, Game &game)
 {
-	// Gather all visible contexts. Only the top-most context can update.
+	// Gather all visible contexts. Only the top-most context can update (plus global context).
 	std::vector<UiContextInstanceID> activeContextInstIDs;
 	for (const UiContextInstanceID contextInstID : this->contexts.keys)
 	{
@@ -1179,12 +1223,30 @@ void UiManager::update(double dt, Game &game)
 
 	if (!activeContextInstIDs.empty())
 	{
-		const UiContext &topMostContext = this->contexts.get(activeContextInstIDs.back());
-		const auto updateIter = this->updateContextCallbacks.find(topMostContext.name);
-		if (updateIter != this->updateContextCallbacks.end())
+		// Update global context as it's always technically top-most, then update the one below it.
+		const UiContextInstanceID globalContextInstID = activeContextInstIDs.back();
+		DebugAssert(globalContextInstID == this->getContextByName(UiLibrary::GlobalContextName));
+
+		UiContextInstanceID updatableContextInstIDs[] = { globalContextInstID, -1 };
+		if (activeContextInstIDs.size() > 1)
 		{
-			const UiContextUpdateCallback &updateCallback = updateIter->second;
-			updateCallback(dt);
+			updatableContextInstIDs[1] = activeContextInstIDs[activeContextInstIDs.size() - 2];
+		}
+
+		for (const UiContextInstanceID contextInstID : updatableContextInstIDs)
+		{
+			if (contextInstID < 0)
+			{
+				continue;
+			}
+
+			const UiContext &context = this->contexts.get(contextInstID);
+			const auto updateIter = this->updateContextCallbacks.find(context.name);
+			if (updateIter != this->updateContextCallbacks.end())
+			{
+				const UiContextUpdateCallback &updateCallback = updateIter->second;
+				updateCallback(dt);
+			}
 		}
 	}
 

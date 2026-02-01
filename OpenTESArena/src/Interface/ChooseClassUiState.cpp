@@ -67,8 +67,8 @@ void ChooseClassUI::create(Game &game)
 		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
 	}
 
-	uiManager.addMouseScrollChangedListener(ChooseClassUI::onMouseScrollChanged, state.contextInstID, inputManager);
-	uiManager.addMouseMotionListener(ChooseClassUI::onMouseMotion, state.contextInstID, inputManager);
+	uiManager.addMouseScrollChangedListener(ChooseClassUI::onMouseScrollChanged, contextDef.name.c_str(), inputManager);
+	uiManager.addMouseMotionListener(ChooseClassUI::onMouseMotion, contextDef.name.c_str(), inputManager);
 
 	ChooseClassUI::updateListBoxHoveredIndex();
 }

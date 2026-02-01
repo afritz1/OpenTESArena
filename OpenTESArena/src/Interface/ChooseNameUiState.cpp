@@ -37,7 +37,7 @@ void ChooseNameUI::create(Game &game)
 	const UiElementInstanceID titleTextBoxElementInstID = uiManager.getElementByName("ChooseNameTitleTextBox");
 	uiManager.setTextBoxText(titleTextBoxElementInstID, titleText.c_str());
 	
-	uiManager.addTextInputListener(ChooseNameUI::onTextInput, state.contextInstID, inputManager);
+	uiManager.addTextInputListener(ChooseNameUI::onTextInput, contextDef.name.c_str(), inputManager);
 
 	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
 	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);

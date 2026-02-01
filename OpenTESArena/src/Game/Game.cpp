@@ -401,14 +401,16 @@ bool Game::init()
 
 	this->defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(this->textureManager, this->renderer);
 
+	const char *globalUiContextName = UiLibrary::GlobalContextName;
+
 	UiContextInitInfo globalUiContextInitInfo;
-	globalUiContextInitInfo.name = UiLibrary::GlobalContextName;
+	globalUiContextInitInfo.name = globalUiContextName;
+	globalUiContextInitInfo.drawOrder = 100;
 	this->globalUiContextInstID = this->uiManager.createContext(globalUiContextInitInfo);
 
 	UiElementInitInfo cursorImageElementInitInfo;
-	cursorImageElementInitInfo.name = "GlobalCursor";
+	cursorImageElementInitInfo.name = "MouseCursor";
 	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
-	cursorImageElementInitInfo.drawOrder = 100;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
 	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->globalUiContextInstID);
 
@@ -417,19 +419,19 @@ bool Game::init()
 		[this]()
 	{
 		this->handleApplicationExit();
-	}, this->globalUiContextInstID, this->inputManager);
+	}, globalUiContextName, this->inputManager);
 
 	this->uiManager.addWindowResizedListener(
 		[this](int width, int height)
 	{
 		this->handleWindowResized(width, height);
-	}, this->globalUiContextInstID, this->inputManager);
+	}, globalUiContextName, this->inputManager);
 
 	this->uiManager.addRenderTargetsResetListener(
 		[this]()
 	{
 		this->renderer.handleRenderTargetsReset();
-	}, this->globalUiContextInstID, this->inputManager);
+	}, globalUiContextName, this->inputManager);
 
 	this->uiManager.addInputActionListener(InputActionName::Screenshot,
 		[this](const InputActionCallbackValues &values)
@@ -439,7 +441,7 @@ bool Game::init()
 			const Surface screenshot = this->renderer.getScreenshot();
 			this->saveScreenshot(screenshot);
 		}
-	}, this->globalUiContextInstID, this->inputManager);
+	}, globalUiContextName, this->inputManager);
 
 	this->uiManager.addInputActionListener(InputActionName::DebugProfiler, 
 		[this](const InputActionCallbackValues &values)
@@ -453,7 +455,7 @@ bool Game::init()
 			const int newProfilerLevel = (oldProfilerLevel < Options::MAX_PROFILER_LEVEL) ? (oldProfilerLevel + 1) : Options::MIN_PROFILER_LEVEL;
 			options.setMisc_ProfilerLevel(newProfilerLevel);
 		}
-	}, this->globalUiContextInstID, this->inputManager);
+	}, globalUiContextName, this->inputManager);
 
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";

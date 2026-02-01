@@ -115,15 +115,15 @@ public:
 	UiElementInstanceID createButton(const UiElementInitInfo &initInfo, const UiButtonInitInfo &buttonInitInfo, UiContextInstanceID contextInstID);
 	void freeButton(UiElementInstanceID elementInstID);
 
-	void addInputActionListener(const char *actionName, const InputActionCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
-	void addMouseButtonChangedListener(const MouseButtonChangedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
-	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
-	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
-	void addMouseMotionListener(const MouseMotionCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
-	void addApplicationExitListener(const ApplicationExitCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
-	void addWindowResizedListener(const WindowResizedCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
-	void addRenderTargetsResetListener(const RenderTargetsResetCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
-	void addTextInputListener(const TextInputCallback &callback, UiContextInstanceID contextInstID, InputManager &inputManager);
+	void addInputActionListener(const char *actionName, const InputActionCallback &callback, const char *contextName, InputManager &inputManager);
+	void addMouseButtonChangedListener(const MouseButtonChangedCallback &callback, const char *contextName, InputManager &inputManager);
+	void addMouseButtonHeldListener(const MouseButtonHeldCallback &callback, const char *contextName, InputManager &inputManager);
+	void addMouseScrollChangedListener(const MouseScrollChangedCallback &callback, const char *contextName, InputManager &inputManager);
+	void addMouseMotionListener(const MouseMotionCallback &callback, const char *contextName, InputManager &inputManager);
+	void addApplicationExitListener(const ApplicationExitCallback &callback, const char *contextName, InputManager &inputManager);
+	void addWindowResizedListener(const WindowResizedCallback &callback, const char *contextName, InputManager &inputManager);
+	void addRenderTargetsResetListener(const RenderTargetsResetCallback &callback, const char *contextName, InputManager &inputManager);
+	void addTextInputListener(const TextInputCallback &callback, const char *contextName, InputManager &inputManager);
 	
 	UiContextInstanceID createContext(const UiContextInitInfo &initInfo);
 	UiContextInstanceID createContext(const UiContextDefinition &contextDef, InputManager &inputManager, TextureManager &textureManager, Renderer &renderer);
@@ -131,6 +131,7 @@ public:
 	bool isContextActive(const char *contextName) const;
 	void setContextActive(UiContextInstanceID contextInstID, bool active);
 	UiContextInstanceID getTopMostActiveContext() const;
+	bool isContextTopMostActive(const char *contextName) const;
 	void freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer);
 
 	// Intended for text file contexts registered at manager startup.

@@ -147,40 +147,40 @@ bool Panel::isPaused() const
 	return this->paused;
 }
 
-void Panel::addInputActionListener(const std::string_view actionName, const InputActionCallback &callback)
+void Panel::addInputActionListener(const std::string &actionName, const InputActionCallback &callback)
 {
 	auto &inputManager = this->game.inputManager;
-	this->inputActionListenerIDs.emplace_back(inputManager.addInputActionListener(actionName, callback));
+	this->inputActionListenerIDs.emplace_back(inputManager.addInputActionListener(actionName, callback, ""));
 }
 
 void Panel::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
 {
 	auto &inputManager = this->game.inputManager;
-	this->mouseButtonChangedListenerIDs.emplace_back(inputManager.addMouseButtonChangedListener(callback));
+	this->mouseButtonChangedListenerIDs.emplace_back(inputManager.addMouseButtonChangedListener(callback, ""));
 }
 
 void Panel::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
 {
 	auto &inputManager = this->game.inputManager;
-	this->mouseButtonHeldListenerIDs.emplace_back(inputManager.addMouseButtonHeldListener(callback));
+	this->mouseButtonHeldListenerIDs.emplace_back(inputManager.addMouseButtonHeldListener(callback, ""));
 }
 
 void Panel::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
 {
 	auto &inputManager = this->game.inputManager;
-	this->mouseScrollChangedListenerIDs.emplace_back(inputManager.addMouseScrollChangedListener(callback));
+	this->mouseScrollChangedListenerIDs.emplace_back(inputManager.addMouseScrollChangedListener(callback, ""));
 }
 
 void Panel::addMouseMotionListener(const MouseMotionCallback &callback)
 {
 	auto &inputManager = this->game.inputManager;
-	this->mouseMotionListenerIDs.emplace_back(inputManager.addMouseMotionListener(callback));
+	this->mouseMotionListenerIDs.emplace_back(inputManager.addMouseMotionListener(callback, ""));
 }
 
 void Panel::addTextInputListener(const TextInputCallback &callback)
 {
 	auto &inputManager = this->game.inputManager;
-	this->textInputListenerIDs.emplace_back(inputManager.addTextInputListener(callback));
+	this->textInputListenerIDs.emplace_back(inputManager.addTextInputListener(callback, ""));
 }
 
 void Panel::addButtonProxy(MouseButtonType buttonType, const ButtonProxy::RectFunction &rectFunc,

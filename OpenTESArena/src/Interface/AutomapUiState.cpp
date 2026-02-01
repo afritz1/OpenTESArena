@@ -51,7 +51,7 @@ void AutomapUI::create(Game &game)
 	const UiContextDefinition &contextDef = uiLibrary.getDefinition(AutomapUI::ContextName);
 	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
-	uiManager.addMouseButtonHeldListener(AutomapUI::onMouseButtonHeld, state.contextInstID, inputManager);
+	uiManager.addMouseButtonHeldListener(AutomapUI::onMouseButtonHeld, contextDef.name.c_str(), inputManager);
 
 	UiElementInitInfo mapImageElementInitInfo;
 	mapImageElementInitInfo.name = AutomapTextureElementName;
