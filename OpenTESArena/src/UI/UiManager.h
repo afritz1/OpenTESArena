@@ -82,6 +82,7 @@ public:
 
 	UiElementInstanceID getElementByName(const char *name) const;
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
+	std::vector<UiElementInstanceID> getTopMostActiveElementsOfType(UiElementType elementType) const;
 
 	Rect getTransformGlobalRect(UiElementInstanceID elementInstID) const; // Includes local-to-parent transform.
 	void setTransformPosition(UiElementInstanceID elementInstID, Int2 position);
@@ -89,9 +90,7 @@ public:
 	void setTransformPivot(UiElementInstanceID elementInstID, UiPivotType pivotType);
 
 	const UiButtonCallback &getButtonCallback(UiElementInstanceID elementInstID) const;
-	bool isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const;
-	
-	std::vector<UiElementInstanceID> getActiveElementsOfType(UiElementType elementType) const;
+	bool isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const;	
 
 	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
@@ -131,6 +130,7 @@ public:
 	
 	bool isContextActive(const char *contextName) const;
 	void setContextActive(UiContextInstanceID contextInstID, bool active);
+	UiContextInstanceID getTopMostActiveContext() const;
 	void freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer);
 
 	// Intended for text file contexts registered at manager startup.

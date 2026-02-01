@@ -226,6 +226,37 @@ void UiManager::setElementActive(UiElementInstanceID elementInstID, bool active)
 	element.active = active;
 }
 
+std::vector<UiElementInstanceID> UiManager::getTopMostActiveElementsOfType(UiElementType elementType) const
+{
+	std::vector<UiElementInstanceID> activeInstIDs;
+
+	const UiContextInstanceID topMostContextInstID = this->getTopMostActiveContext();
+
+	for (const UiElementInstanceID instID : this->elements.keys)
+	{
+		const UiElement &element = this->elements.get(instID);
+		if (!element.active)
+		{
+			continue;
+		}
+
+		if (element.type != elementType)
+		{
+			continue;
+		}
+
+		const UiContextInstanceID contextInstID = this->getContextByName(element.contextName);
+		if (contextInstID != topMostContextInstID)
+		{
+			continue;
+		}
+
+		activeInstIDs.emplace_back(instID);
+	}
+
+	return activeInstIDs;
+}
+
 Rect UiManager::getTransformGlobalRect(UiElementInstanceID elementInstID) const
 {
 	const UiElement &element = this->elements.get(elementInstID);
@@ -271,34 +302,6 @@ bool UiManager::isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiE
 	DebugAssert(element.type == UiElementType::Button);
 	const UiButton &button = this->buttons.get(element.buttonInstID);
 	return MouseButtonTypeFlags(mouseButtonType).any(button.mouseButtonFlags);
-}
-
-std::vector<UiElementInstanceID> UiManager::getActiveElementsOfType(UiElementType elementType) const
-{
-	std::vector<UiElementInstanceID> activeInstIDs;
-
-	for (const UiElementInstanceID instID : this->elements.keys)
-	{
-		const UiElement &element = this->elements.get(instID);
-		if (!element.active)
-		{
-			continue;
-		}
-
-		if (element.type != elementType)
-		{
-			continue;
-		}
-
-		if (!this->isContextActive(element.contextName))
-		{
-			continue;
-		}
-
-		activeInstIDs.emplace_back(instID);
-	}
-
-	return activeInstIDs;
 }
 
 UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID)
@@ -656,7 +659,7 @@ void UiManager::scrollListBoxDown(UiElementInstanceID elementInstID)
 	UiTransform &listBoxTransform = this->transforms.get(element.transformInstID);
 
 	DebugAssert(element.type == UiElementType::ListBox);
-	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);	
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
 	const int itemCount = static_cast<int>(listBox.items.size());
 
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
@@ -1000,6 +1003,34 @@ void UiManager::setContextActive(UiContextInstanceID contextInstID, bool active)
 	context.active = active;
 }
 
+UiContextInstanceID UiManager::getTopMostActiveContext() const
+{
+	UiContextInstanceID topMostContextInstID = -1;
+
+	for (const UiContextInstanceID contextInstID : this->contexts.keys)
+	{
+		const UiContext &context = this->contexts.get(contextInstID);
+		if (!context.active)
+		{
+			continue;
+		}
+
+		if (topMostContextInstID < 0)
+		{
+			topMostContextInstID = contextInstID;
+			continue;
+		}
+
+		const UiContext &topMostContext = this->contexts.get(topMostContextInstID);
+		if (context.drawOrder > topMostContext.drawOrder)
+		{
+			topMostContextInstID = contextInstID;
+		}
+	}
+
+	return topMostContextInstID;
+}
+
 void UiManager::freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer)
 {
 	UiContext &context = this->contexts.get(contextInstID);
@@ -1148,8 +1179,8 @@ void UiManager::update(double dt, Game &game)
 
 	if (!activeContextInstIDs.empty())
 	{
-		const UiContext &contextToUpdate = this->contexts.get(activeContextInstIDs.back());
-		const auto updateIter = this->updateContextCallbacks.find(contextToUpdate.name);
+		const UiContext &topMostContext = this->contexts.get(activeContextInstIDs.back());
+		const auto updateIter = this->updateContextCallbacks.find(topMostContext.name);
 		if (updateIter != this->updateContextCallbacks.end())
 		{
 			const UiContextUpdateCallback &updateCallback = updateIter->second;

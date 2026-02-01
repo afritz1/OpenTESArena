@@ -832,8 +832,8 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 					// Check for clicked buttons in the UI.
 					// @improvement: if wanting "button click capture", check if button press is in rect, then save it, and if button release is also in that rect, then click.
 					const Int2 classicMousePosition = game.window.nativeToOriginal(mousePosition);
-					const std::vector<UiElementInstanceID> activeButtonInstIDs = uiManager.getActiveElementsOfType(UiElementType::Button);
-					const std::vector<UiElementInstanceID> activeListBoxInstIDs = uiManager.getActiveElementsOfType(UiElementType::ListBox);
+					const std::vector<UiElementInstanceID> activeButtonInstIDs = uiManager.getTopMostActiveElementsOfType(UiElementType::Button);
+					const std::vector<UiElementInstanceID> activeListBoxInstIDs = uiManager.getTopMostActiveElementsOfType(UiElementType::ListBox);
 
 					for (const UiElementInstanceID buttonElementInstID : activeButtonInstIDs)
 					{
