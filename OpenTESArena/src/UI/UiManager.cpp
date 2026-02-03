@@ -424,7 +424,22 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	}
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(textBoxInitInfo.worstCaseText, fontDef, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
+
+	TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(textBoxInitInfo.text, fontDef, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
+	if (!textBoxInitInfo.worstCaseText.empty())
+	{
+		const TextRenderTextureGenInfo worstCaseTextureGenInfo = TextRenderUtils::makeTextureGenInfo(textBoxInitInfo.worstCaseText, fontDef, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
+
+		if ((textureGenInfo.width > worstCaseTextureGenInfo.width) || (textureGenInfo.height > worstCaseTextureGenInfo.height))
+		{
+			DebugLogWarningFormat("Text box texture %dx%d is bigger than worst case text %dx%d, worst case text should be lengthened (text: %s).",
+				textureGenInfo.width, textureGenInfo.height, worstCaseTextureGenInfo.width, worstCaseTextureGenInfo.height, textBoxInitInfo.text.c_str());
+		}
+
+		textureGenInfo.width = std::max(textureGenInfo.width, worstCaseTextureGenInfo.width);
+		textureGenInfo.height = std::max(textureGenInfo.height, worstCaseTextureGenInfo.height);
+	}
+
 	const UiTextureID textBoxTextureID = renderer.createUiTexture(textureGenInfo.width, textureGenInfo.height);
 
 	UiTextBox &textBox = this->textBoxes.get(textBoxInstID);
