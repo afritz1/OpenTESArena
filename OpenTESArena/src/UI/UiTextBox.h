@@ -14,7 +14,7 @@ enum class TextAlignment;
 
 struct UiTextBoxInitInfo
 {
-	std::string worstCaseText; // Determines texture dimensions.
+	std::string worstCaseText; // Determines texture dimensions if actual text is empty (intended for frequently modified text boxes).
 	std::string text; // Actual text for presentation.
 	std::string fontName;
 	Color defaultColor;

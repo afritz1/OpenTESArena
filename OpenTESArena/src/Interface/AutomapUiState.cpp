@@ -57,7 +57,7 @@ void AutomapUI::create(Game &game)
 	mapImageElementInitInfo.name = AutomapTextureElementName;
 	mapImageElementInitInfo.drawOrder = 1;
 	mapImageElementInitInfo.clipRect = AutomapUiView::DrawingArea;
-	uiManager.createImage(mapImageElementInitInfo, state.mapTextureID, state.contextInstID);
+	uiManager.createImage(mapImageElementInitInfo, state.mapTextureID, state.contextInstID, renderer);
 
 	GameState &gameState = game.gameState;
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();

@@ -355,47 +355,6 @@ TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
 		fontLibrary);
 }
 
-UiTextureID ChooseRaceUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = ChooseRaceUiView::getBackgroundTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, textureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for race select background.");
-	}
-
-	return textureID;
-}
-
-UiTextureID ChooseRaceUiView::allocNoExitTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset paletteTextureAsset = ChooseRaceUiView::getBackgroundTextureAsset();
-	const TextureAsset textureAsset = ChooseRaceUiView::getNoExitTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for exit cover.");
-	}
-
-	return textureID;
-}
-
-UiTextureID ChooseRaceUiView::allocInitialPopUpTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const Surface surface = TextureUtils::generate(ChooseRaceUiView::InitialPopUpPatternType,
-		ChooseRaceUiView::InitialPopUpTextureWidth, ChooseRaceUiView::InitialPopUpTextureHeight, textureManager, renderer);
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTextureFromSurface(surface, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create initial pop-up texture.");
-	}
-
-	return textureID;
-}
-
 Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseAttributesUiView::MessageBoxTitleFontName;

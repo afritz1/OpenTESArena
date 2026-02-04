@@ -69,9 +69,6 @@ private:
 
 	UiContextInstanceID getContextByName(const char *name) const;
 
-	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
-	UiTextureID getOrAddTexture(UiTexturePatternType patternType, int width, int height, TextureManager &textureManager, Renderer &renderer);
-
 	// Context callbacks are necessary for bootstrapping the begin/end context API.
 	void setBeginContextCallback(const char *contextName, const UiContextBeginCallback &callback);
 	void setEndContextCallback(const char *contextName, const UiContextEndCallback &callback);
@@ -79,6 +76,9 @@ private:
 public:
 	bool init();
 	void shutdown(Renderer &renderer);
+
+	UiTextureID getOrAddTexture(const TextureAsset &textureAsset, const TextureAsset &paletteAsset, TextureManager &textureManager, Renderer &renderer);
+	UiTextureID getOrAddTexture(UiTexturePatternType patternType, int width, int height, TextureManager &textureManager, Renderer &renderer);
 
 	UiElementInstanceID getElementByName(const char *name) const;
 	void setElementActive(UiElementInstanceID elementInstID, bool active);
@@ -92,7 +92,7 @@ public:
 	const UiButtonCallback &getButtonCallback(UiElementInstanceID elementInstID) const;
 	bool isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const;	
 
-	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID);
+	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID, const Renderer &renderer);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
 	void freeImage(UiElementInstanceID elementInstID);
 
@@ -126,12 +126,13 @@ public:
 	void addTextInputListener(const TextInputCallback &callback, const char *contextName, InputManager &inputManager);
 	
 	UiContextInstanceID createContext(const UiContextInitInfo &initInfo);
-	UiContextInstanceID createContext(const UiContextDefinition &contextDef, InputManager &inputManager, TextureManager &textureManager, Renderer &renderer);
-	
+	UiContextInstanceID createContext(const UiContextDefinition &contextDef, InputManager &inputManager, TextureManager &textureManager, Renderer &renderer);	
 	bool isContextEnabled(const char *contextName) const;
 	void setContextEnabled(UiContextInstanceID contextInstID, bool enabled);
 	UiContextInstanceID getTopMostActiveContext() const;
 	bool isContextTopMostActive(const char *contextName) const;
+	void disableTopMostContext();
+	void clearContextElements(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer);
 	void freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer);
 
 	// Intended for text file contexts registered at manager startup.

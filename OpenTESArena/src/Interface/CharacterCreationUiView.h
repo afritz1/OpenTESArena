@@ -64,47 +64,40 @@ namespace ChooseRaceUiView
 
 	constexpr int InitialPopUpTextureWidth = 240;
 	constexpr int InitialPopUpTextureHeight = 60;
-	const Int2 InitialPopUpTextureCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1,
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
+	const Int2 InitialPopUpTextureCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 
-	const Int2 ProvinceConfirmTitleCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2),
-		(ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
+	const Int2 ProvinceConfirmTitleCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2), (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 22);
 	const std::string ProvinceConfirmTitleFontName = ArenaFontName::A;
 	const Color ProvinceConfirmTitleTextColor(52, 24, 8);
+	constexpr TextAlignment ProvinceConfirmTitleAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmTitleLineSpacing = 1;
 	constexpr UiTexturePatternType ProvinceConfirmTitleTexturePatternType = UiTexturePatternType::Parchment;
 
 	const std::string ProvinceConfirmItemFontName = ProvinceConfirmTitleFontName;
 	const Color ProvinceConfirmItemTextColor = ProvinceConfirmTitleTextColor;
 
-	const Int2 ProvinceConfirmedFirstTextCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	const Int2 ProvinceConfirmedFirstTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 	const std::string ProvinceConfirmedFirstTextFontName = ArenaFontName::Arena;
 	const Color ProvinceConfirmedFirstTextColor(48, 12, 12);
 	constexpr TextAlignment ProvinceConfirmedFirstTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmedFirstTextLineSpacing = 1;
 	constexpr UiTexturePatternType ProvinceConfirmedFirstTextPatternType = UiTexturePatternType::Parchment;
 
-	const Int2 ProvinceConfirmedSecondTextCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	const Int2 ProvinceConfirmedSecondTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 	const std::string ProvinceConfirmedSecondTextFontName = ArenaFontName::Arena;
 	const Color ProvinceConfirmedSecondTextColor(48, 12, 12);
 	constexpr TextAlignment ProvinceConfirmedSecondTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmedSecondTextLineSpacing = 1;
 	constexpr UiTexturePatternType ProvinceConfirmedSecondTextPatternType = UiTexturePatternType::Parchment;
 
-	const Int2 ProvinceConfirmedThirdTextCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	const Int2 ProvinceConfirmedThirdTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 	const std::string ProvinceConfirmedThirdTextFontName = ArenaFontName::Arena;
 	const Color ProvinceConfirmedThirdTextColor(48, 12, 12);
 	constexpr TextAlignment ProvinceConfirmedThirdTextAlignment = TextAlignment::MiddleCenter;
 	constexpr int ProvinceConfirmedThirdTextLineSpacing = 1;
 	constexpr UiTexturePatternType ProvinceConfirmedThirdTextPatternType = UiTexturePatternType::Parchment;
 
-	const Int2 ProvinceConfirmedFourthTextCenterPoint(
-		(ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
+	const Int2 ProvinceConfirmedFourthTextCenterPoint((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, 98);
 	const std::string ProvinceConfirmedFourthTextFontName = ArenaFontName::Arena;
 	const Color ProvinceConfirmedFourthTextColor(48, 12, 12);
 	constexpr TextAlignment ProvinceConfirmedFourthTextAlignment = TextAlignment::MiddleCenter;
@@ -134,10 +127,6 @@ namespace ChooseRaceUiView
 	TextBoxInitInfo getProvinceConfirmedSecondTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBoxInitInfo getProvinceConfirmedThirdTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 	TextBoxInitInfo getProvinceConfirmedFourthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-
-	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocNoExitTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocInitialPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace ChooseAttributesUiView

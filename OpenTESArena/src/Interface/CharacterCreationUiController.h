@@ -43,19 +43,6 @@ namespace ChooseNameUiController
 	void onAcceptInputAction(const InputActionCallbackValues &values, const std::string &name);
 }
 
-namespace ChooseRaceUiController
-{
-	void onBackToChooseGenderInputAction(const InputActionCallbackValues &values);
-	void onInitialPopUpButtonSelected(Game &game);
-	void onProvinceButtonSelected(Game &game, int raceID);
-	void onProvinceConfirmButtonSelected(Game &game, int raceID);
-	void onProvinceCancelButtonSelected(Game &game);
-	void onProvinceConfirmedFirstButtonSelected(Game &game);
-	void onProvinceConfirmedSecondButtonSelected(Game &game);
-	void onProvinceConfirmedThirdButtonSelected(Game &game);
-	void onProvinceConfirmedFourthButtonSelected(Game &game);
-}
-
 namespace ChooseAttributesUiController
 {
 	void onBackToRaceSelectionInputAction(const InputActionCallbackValues &values);

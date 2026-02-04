@@ -412,7 +412,7 @@ bool Game::init()
 	cursorImageElementInitInfo.name = "MouseCursor";
 	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
-	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->globalUiContextInstID);
+	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->globalUiContextInstID, renderer);
 
 	// Add application-level input event handlers.
 	this->uiManager.addApplicationExitListener(

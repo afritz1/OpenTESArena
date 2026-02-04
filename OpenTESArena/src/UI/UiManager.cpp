@@ -24,6 +24,26 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/StringView.h"
 
+namespace
+{
+	Int2 GetImageContentSize(const UiImage &image, const Renderer &renderer)
+	{
+		const std::optional<Int2> size = renderer.tryGetUiTextureDims(image.textureID);
+		DebugAssert(size.has_value());
+		return *size;
+	}
+
+	Int2 GetTextBoxContentSize(const UiTextBox &textBox)
+	{
+		return Int2(textBox.textureWidth, textBox.textureHeight);
+	}
+
+	Int2 GetListBoxContentSize(const UiListBox &listBox)
+	{
+		return Int2(listBox.textureWidth, listBox.textureHeight);
+	}
+}
+
 #define REGISTER_SCOPE_CALLBACKS(contextName) \
 this->setBeginContextCallback(contextName::ContextName, contextName::create); \
 this->setEndContextCallback(contextName::ContextName, contextName::destroy); \
@@ -304,7 +324,7 @@ bool UiManager::isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiE
 	return MouseButtonTypeFlags(mouseButtonType).any(button.mouseButtonFlags);
 }
 
-UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID)
+UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID, const Renderer &renderer)
 {
 	UiContext &context = this->contexts.get(contextInstID);
 	const char *contextName = context.name.c_str();
@@ -336,8 +356,14 @@ UiElementInstanceID UiManager::createImage(const UiElementInitInfo &initInfo, Ui
 	UiImage &image = this->images.get(imageInstID);
 	image.init(textureID);
 
+	Int2 contentSize = initInfo.size;
+	if (initInfo.sizeType == UiTransformSizeType::Content)
+	{
+		contentSize = GetImageContentSize(image, renderer);
+	}
+
 	UiTransform &transform = this->transforms.get(transformInstID);
-	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
+	transform.init(initInfo.position, contentSize, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
 	element.initImage(initInfo.name.c_str(), contextName, initInfo.clipRect, initInfo.drawOrder, initInfo.renderSpace, transformInstID, imageInstID);
@@ -446,8 +472,14 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.alignment, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
 	textBox.text = textBoxInitInfo.text;
 
+	Int2 contentSize = initInfo.size;
+	if (initInfo.sizeType == UiTransformSizeType::Content)
+	{
+		contentSize = GetTextBoxContentSize(textBox);
+	}
+
 	UiTransform &transform = this->transforms.get(transformInstID);
-	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
+	transform.init(initInfo.position, contentSize, initInfo.sizeType, initInfo.pivotType);
 
 	UiElement &element = this->elements.get(elementInstID);
 	element.initTextBox(initInfo.name.c_str(), contextName, initInfo.clipRect, initInfo.drawOrder, initInfo.renderSpace, transformInstID, textBoxInstID);
@@ -542,6 +574,12 @@ UiElementInstanceID UiManager::createListBox(const UiElementInitInfo &initInfo, 
 	UiListBox &listBox = this->listBoxes.get(listBoxInstID);
 	listBox.init(listBoxTextureID, listBoxInitInfo.textureWidth, listBoxInitInfo.textureHeight, listBoxInitInfo.itemPixelSpacing, fontDefIndex,
 		listBoxInitInfo.defaultTextColor, listBoxInitInfo.scrollDeltaScale);
+
+	Int2 contentSize = initInfo.size;
+	if (initInfo.sizeType == UiTransformSizeType::Content)
+	{
+		contentSize = GetListBoxContentSize(listBox);
+	}
 
 	UiTransform &transform = this->transforms.get(transformInstID);
 	transform.init(initInfo.position, initInfo.size, initInfo.sizeType, initInfo.pivotType);
@@ -975,7 +1013,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 			break;
 		}
 
-		this->createImage(elementInitInfo, textureID, contextInstID);
+		this->createImage(elementInitInfo, textureID, contextInstID, renderer);
 	}
 
 	for (const UiTextBoxDefinition &textBoxDef : contextDef.textBoxDefs)
@@ -1090,7 +1128,19 @@ bool UiManager::isContextTopMostActive(const char *contextName) const
 	return contextInstID == topMostContextInstID;
 }
 
-void UiManager::freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer)
+void UiManager::disableTopMostContext()
+{
+	UiContextInstanceID topMostContextInstID = this->getTopMostActiveContext();
+	if (topMostContextInstID < 0)
+	{
+		DebugLogError("No top-most context to disable.");
+		return;
+	}
+
+	this->setContextEnabled(topMostContextInstID, false);
+}
+
+void UiManager::clearContextElements(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer)
 {
 	UiContext &context = this->contexts.get(contextInstID);
 
@@ -1124,46 +1174,68 @@ void UiManager::freeContext(UiContextInstanceID contextInstID, InputManager &inp
 		inputManager.removeListener(listenerID);
 	}
 
+	context.inputActionListenerIDs.clear();
+
 	for (const InputListenerID listenerID : context.mouseButtonChangedListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
+
+	context.mouseButtonChangedListenerIDs.clear();
 
 	for (const InputListenerID listenerID : context.mouseButtonHeldListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
+	context.mouseButtonHeldListenerIDs.clear();
+
 	for (const InputListenerID listenerID : context.mouseScrollChangedListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
+
+	context.mouseScrollChangedListenerIDs.clear();
 
 	for (const InputListenerID listenerID : context.mouseMotionListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
+	context.mouseMotionListenerIDs.clear();
+
 	for (const InputListenerID listenerID : context.applicationExitListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
+
+	context.applicationExitListenerIDs.clear();
 
 	for (const InputListenerID listenerID : context.windowResizedListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
+	context.windowResizedListenerIDs.clear();
+
 	for (const InputListenerID listenerID : context.renderTargetsResetListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
+
+	context.renderTargetsResetListenerIDs.clear();
 
 	for (const InputListenerID listenerID : context.textInputListenerIDs)
 	{
 		inputManager.removeListener(listenerID);
 	}
 
+	context.textInputListenerIDs.clear();
+}
+
+void UiManager::freeContext(UiContextInstanceID contextInstID, InputManager &inputManager, Renderer &renderer)
+{
+	this->clearContextElements(contextInstID, inputManager, renderer);
 	this->contexts.free(contextInstID);
 }
 
@@ -1356,21 +1428,19 @@ void UiManager::update(double dt, Game &game)
 			case UiElementType::Image:
 			{
 				const UiImage &image = this->images.get(element.imageInstID);
-				const std::optional<Int2> imageDims = renderer.tryGetUiTextureDims(image.textureID);
-				DebugAssert(imageDims.has_value());
-				transform.size = *imageDims;
+				transform.size = GetImageContentSize(image, renderer);
 				break;
 			}
 			case UiElementType::TextBox:
 			{
 				const UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
-				transform.size = Int2(textBox.textureWidth, textBox.textureHeight);
+				transform.size = GetTextBoxContentSize(textBox);
 				break;
 			}
 			case UiElementType::ListBox:
 			{
 				const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
-				transform.size = Int2(listBox.textureWidth, listBox.textureHeight);
+				transform.size = GetListBoxContentSize(listBox);
 				break;
 			}
 			case UiElementType::Button:
