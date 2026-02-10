@@ -163,16 +163,6 @@ TextureAsset ChooseRaceUiView::getNoExitTextureAsset()
 	return TextureAsset(std::string(ArenaTextureName::NoExit));
 }
 
-int ChooseRaceUiView::getNoExitTextureX(int textureWidth)
-{
-	return ArenaRenderUtils::SCREEN_WIDTH - textureWidth;
-}
-
-int ChooseRaceUiView::getNoExitTextureY(int textureHeight)
-{
-	return ArenaRenderUtils::SCREEN_HEIGHT - textureHeight;
-}
-
 Rect ChooseRaceUiView::getProvinceConfirmTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary)
 {
 	const std::string &fontName = ChooseRaceUiView::ProvinceConfirmTitleFontName;
@@ -284,75 +274,6 @@ Rect ChooseRaceUiView::getProvinceConfirmedFourthTextureRect(int textWidth, int 
 		center,
 		textWidth + 20,
 		std::max(textHeight + 8, 40));
-}
-
-TextBoxInitInfo ChooseRaceUiView::getInitialPopUpTextBoxInitInfo(const std::string_view text, Game &game)
-{
-	return TextBoxInitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::InitialPopUpTextCenterPoint,
-		ChooseRaceUiView::InitialPopUpFontName,
-		ChooseRaceUiView::InitialPopUpColor,
-		ChooseRaceUiView::InitialPopUpAlignment,
-		std::nullopt,
-		ChooseRaceUiView::InitialPopUpLineSpacing,
-		FontLibrary::getInstance());
-}
-
-TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedFirstTextBoxInitInfo(
-	const std::string_view text, const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::ProvinceConfirmedFirstTextCenterPoint,
-		ChooseRaceUiView::ProvinceConfirmedFirstTextFontName,
-		ChooseRaceUiView::ProvinceConfirmedFirstTextColor,
-		ChooseRaceUiView::ProvinceConfirmedFirstTextAlignment,
-		std::nullopt,
-		ChooseRaceUiView::ProvinceConfirmedFirstTextLineSpacing,
-		fontLibrary);
-}
-
-TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedSecondTextBoxInitInfo(
-	const std::string_view text, const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::ProvinceConfirmedSecondTextCenterPoint,
-		ChooseRaceUiView::ProvinceConfirmedSecondTextFontName,
-		ChooseRaceUiView::ProvinceConfirmedSecondTextColor,
-		ChooseRaceUiView::ProvinceConfirmedSecondTextAlignment,
-		std::nullopt,
-		ChooseRaceUiView::ProvinceConfirmedSecondTextLineSpacing,
-		fontLibrary);
-}
-
-TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedThirdTextBoxInitInfo(
-	const std::string_view text, const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::ProvinceConfirmedThirdTextCenterPoint,
-		ChooseRaceUiView::ProvinceConfirmedThirdTextFontName,
-		ChooseRaceUiView::ProvinceConfirmedThirdTextColor,
-		ChooseRaceUiView::ProvinceConfirmedThirdTextAlignment,
-		std::nullopt,
-		ChooseRaceUiView::ProvinceConfirmedThirdTextLineSpacing,
-		fontLibrary);
-}
-
-TextBoxInitInfo ChooseRaceUiView::getProvinceConfirmedFourthTextBoxInitInfo(
-	const std::string_view text, const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithCenter(
-		text,
-		ChooseRaceUiView::ProvinceConfirmedFourthTextCenterPoint,
-		ChooseRaceUiView::ProvinceConfirmedFourthTextFontName,
-		ChooseRaceUiView::ProvinceConfirmedFourthTextColor,
-		ChooseRaceUiView::ProvinceConfirmedFourthTextAlignment,
-		std::nullopt,
-		ChooseRaceUiView::ProvinceConfirmedFourthTextLineSpacing,
-		fontLibrary);
 }
 
 Rect ChooseAttributesUiView::getMessageBoxTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary)

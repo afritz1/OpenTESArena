@@ -158,7 +158,7 @@ namespace
 	const std::tuple<const char*, Span<const std::pair<const char*, UiButtonDefinitionCallback>>, Span<const std::pair<const char*, UiInputListenerDefinitionCallback>>> ContextNamespaceCallbacks[] =
 	{
 		DEFINE_CALLBACK_TUPLE(AutomapUI),
-		//DEFINE_CALLBACK_TUPLE(ChooseAttributesUI),
+		DEFINE_CALLBACK_TUPLE(ChooseAttributesUI),
 		DEFINE_CALLBACK_TUPLE(ChooseClassUI),
 		DEFINE_CALLBACK_TUPLE(ChooseClassCreationUI),
 		DEFINE_CALLBACK_TUPLE(ChooseGenderUI),

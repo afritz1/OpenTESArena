@@ -27,7 +27,7 @@ bool CharacterEquipmentPanel::init()
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
-	const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(fontLibrary);
+	/*const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(fontLibrary);
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
 	if (!this->nameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
@@ -49,7 +49,7 @@ bool CharacterEquipmentPanel::init()
 	{
 		DebugLogError("Couldn't init player class text box.");
 		return false;
-	}
+	}*/
 
 	const TextBoxInitInfo playerLevelTextBoxInitInfo = CharacterEquipmentUiView::getPlayerLevelTextBoxInitInfo(fontLibrary);
 	const std::string playerLevelText = CharacterSheetUiModel::getPlayerLevel(game);

@@ -107,9 +107,6 @@ namespace ChooseRaceUiView
 	TextureAsset getBackgroundTextureAsset();
 	TextureAsset getNoExitTextureAsset(); // Covers up the exit button since character creation doesn't use it.
 
-	int getNoExitTextureX(int textureWidth);
-	int getNoExitTextureY(int textureHeight);
-
 	Rect getProvinceConfirmTitleTextBoxRect(const std::string_view text, const FontLibrary &fontLibrary);
 
 	MessageBoxBackgroundProperties getProvinceConfirmMessageBoxBackgroundProperties();
@@ -120,13 +117,6 @@ namespace ChooseRaceUiView
 	Rect getProvinceConfirmedSecondTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedThirdTextureRect(int textWidth, int textHeight);
 	Rect getProvinceConfirmedFourthTextureRect(int textWidth, int textHeight);
-
-	TextBoxInitInfo getInitialPopUpTextBoxInitInfo(const std::string_view text, Game &game);
-
-	TextBoxInitInfo getProvinceConfirmedFirstTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getProvinceConfirmedSecondTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getProvinceConfirmedThirdTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getProvinceConfirmedFourthTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 }
 
 namespace ChooseAttributesUiView

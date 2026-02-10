@@ -45,15 +45,12 @@ namespace ChooseNameUiController
 
 namespace ChooseAttributesUiController
 {
-	void onBackToRaceSelectionInputAction(const InputActionCallbackValues &values);
-
 	void onInitialPopUpSelected(Game &game);
 	void onSaveButtonSelectedWithNoBonusPoints(Game &game);
 	void onSaveButtonSelectedWithBonusPoints(Game &game);
 	void onRerollButtonSelected(Game &game);
 	void onBonusPointsRemainingTextBoxSelected(Game &game);
 	void onAppearanceTextBoxSelected(Game &game);
-	void onPortraitButtonSelected(Game &game, bool incrementIndex);
 	void onDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved);
 	void onUnsavedDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved);
 	void onSavedDoneButtonSelected(Game &game);

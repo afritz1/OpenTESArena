@@ -26,7 +26,7 @@ bool CharacterPanel::init()
 	auto &renderer = game.renderer;
 	const auto &fontLibrary = FontLibrary::getInstance();
 
-	const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(fontLibrary);
+	/*const TextBoxInitInfo playerNameTextBoxInitInfo = CharacterSheetUiView::getPlayerNameTextBoxInitInfo(fontLibrary);
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
 	if (!this->nameTextBox.init(playerNameTextBoxInitInfo, playerNameText, renderer))
 	{
@@ -128,7 +128,7 @@ bool CharacterPanel::init()
 	{
 		DebugLogError("Couldn't init player gold text box.");
 		return false;
-	}
+	}*/
 
 	this->doneButton = Button<Game&>(
 		CharacterSheetUiView::DoneButtonCenterPoint,

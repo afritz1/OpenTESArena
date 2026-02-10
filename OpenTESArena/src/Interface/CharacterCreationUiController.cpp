@@ -174,15 +174,6 @@ void ChooseNameUiController::onAcceptInputAction(const InputActionCallbackValues
 	}
 }
 
-void ChooseAttributesUiController::onBackToRaceSelectionInputAction(const InputActionCallbackValues &values)
-{
-	if (values.performed)
-	{
-		auto &game = values.game;
-		game.setPanel<ChooseRacePanel>();
-	}
-}
-
 void ChooseAttributesUiController::onInitialPopUpSelected(Game &game)
 {
 	game.popSubPanel();
@@ -499,20 +490,6 @@ void ChooseAttributesUiController::onBonusPointsRemainingTextBoxSelected(Game &g
 void ChooseAttributesUiController::onAppearanceTextBoxSelected(Game &game)
 {
 	game.popSubPanel();
-}
-
-void ChooseAttributesUiController::onPortraitButtonSelected(Game &game, bool incrementIndex)
-{
-	constexpr int minID = 0; // @todo: de-hardcode so it relies on portraits list
-	constexpr int maxID = 9;
-
-	auto &charCreationState = game.getCharacterCreationState();
-	const int oldPortraitIndex = charCreationState.portraitIndex;
-	const int newPortraitIndex = incrementIndex ?
-		((oldPortraitIndex == maxID) ? minID : (oldPortraitIndex + 1)) :
-		((oldPortraitIndex == minID) ? maxID : (oldPortraitIndex - 1));
-
-	charCreationState.portraitIndex = newPortraitIndex;
 }
 
 void ChooseAttributesUiController::onDoneButtonSelected(Game &game, int bonusPointsRemaining, bool *attributesAreSaved)
