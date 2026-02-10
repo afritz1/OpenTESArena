@@ -146,6 +146,13 @@ namespace
 		DEFINE_TEXT_MAPPING(TextAlignment, BottomRight)
 	};
 
+	constexpr std::pair<const char*, MouseButtonTypeFlags> MouseButtonTypeFlagsMappings[] =
+	{
+		{ "Left", MouseButtonTypeFlags(MouseButtonType::Left) },
+		{ "Right", MouseButtonTypeFlags(MouseButtonType::Right) },
+		{ "Both", MouseButtonTypeFlags(MouseButtonType::Left | MouseButtonType::Right) }
+	};
+
 #define DEFINE_CALLBACK_TUPLE(namespaceName) { namespaceName::NamespaceString, namespaceName::ButtonCallbacks, namespaceName::InputActionCallbacks }
 
 	const std::tuple<const char*, Span<const std::pair<const char*, UiButtonDefinitionCallback>>, Span<const std::pair<const char*, UiInputListenerDefinitionCallback>>> ContextNamespaceCallbacks[] =
@@ -233,6 +240,25 @@ namespace
 		}
 
 		*outAlignment = iter->second;
+		return true;
+	}
+
+	bool TryGetMouseButtonTypeFlags(const std::string &str, MouseButtonTypeFlags *outFlags)
+	{
+		const auto mappingsBegin = std::begin(MouseButtonTypeFlagsMappings);
+		const auto mappingsEnd = std::end(MouseButtonTypeFlagsMappings);
+		const auto iter = std::find_if(mappingsBegin, mappingsEnd,
+			[&str](const std::pair<const char*, MouseButtonTypeFlags> &pair)
+		{
+			return pair.first == str;
+		});
+
+		if (iter == mappingsEnd)
+		{
+			return false;
+		}
+
+		*outFlags = iter->second;
 		return true;
 	}
 
@@ -781,8 +807,14 @@ namespace
 
 		if (key == Keyword_ButtonMouseButtons)
 		{
-			DebugNotImplemented();
-			// @todo button flags? is there an existing enum?
+			MouseButtonTypeFlags mouseButtonTypeFlags;
+			if (!TryGetMouseButtonTypeFlags(value, &mouseButtonTypeFlags))
+			{
+				DebugLogErrorFormat("Couldn't parse mouse button type flags value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outButtonDef->buttonFlags = mouseButtonTypeFlags;
 		}
 		else if (key == Keyword_ButtonCallback)
 		{
@@ -915,12 +947,14 @@ void UiListBoxDefinition::clear()
 
 UiButtonDefinition::UiButtonDefinition()
 {
+	this->buttonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->callback = nullptr;
 }
 
 void UiButtonDefinition::clear()
 {
 	this->element.clear();
+	this->buttonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->callback = nullptr;
 	this->contentElementName.clear();
 }

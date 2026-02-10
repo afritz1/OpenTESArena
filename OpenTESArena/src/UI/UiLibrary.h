@@ -96,6 +96,7 @@ using UiButtonDefinitionCallback = void(*)(MouseButtonType);
 struct UiButtonDefinition
 {
 	UiElementDefinition element;
+	MouseButtonTypeFlags buttonFlags;
 	UiButtonDefinitionCallback callback;
 	std::string contentElementName;
 

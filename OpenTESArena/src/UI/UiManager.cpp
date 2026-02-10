@@ -989,7 +989,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 	auto buttonDefToInitInfo = [](const UiButtonDefinition &def)
 	{
 		UiButtonInitInfo initInfo;
-		initInfo.mouseButtonFlags = MouseButtonType::Left; // @todo
+		initInfo.mouseButtonFlags = def.buttonFlags;
 		initInfo.callback = def.callback;
 		initInfo.contentElementName = def.contentElementName;
 		return initInfo;
