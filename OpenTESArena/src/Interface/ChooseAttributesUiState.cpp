@@ -5,7 +5,19 @@
 #include "CharacterSheetUiView.h"
 #include "ChooseAttributesUiState.h"
 #include "ChooseRacePanel.h"
+#include "TextCinematicPanel.h"
+#include "TextSubPanel.h"
+#include "../Assets/BinaryAssetLibrary.h"
+#include "../Audio/MusicLibrary.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
+#include "../Interface/CinematicLibrary.h"
+#include "../Stats/CharacterClassLibrary.h"
+#include "../UI/FontLibrary.h"
+#include "../UI/Surface.h"
+#include "../World/CardinalDirection.h"
+#include "../WorldMap/ArenaLocationUtils.h"
 
 namespace
 {
@@ -21,10 +33,17 @@ namespace
 		"BonusToCharisma",
 	};
 
+	constexpr char ContextName_InitialPopUp[] = "ChooseAttributesInitialPopUp";
+	constexpr char ContextName_SaveReroll[] = "ChooseAttributesSaveReroll";
+	constexpr char ContextName_RemainingPointsPopUp[] = "ChooseAttributesRemainingPointsPopUp";
+	constexpr char ContextName_PortraitPopUp[] = "ChooseAttributesPortraitPopUp";
+
 	constexpr char PlayerHealthTextBoxElementName[] = "ChooseAttributesHealthTextBox";
 	constexpr char PlayerStaminaTextBoxElementName[] = "ChooseAttributesStaminaTextBox";
 	constexpr char PlayerSpellPointsTextBoxElementName[] = "ChooseAttributesSpellPointsTextBox";
 	constexpr char BonusPointsTextBoxElementName[] = "ChooseAttributesBonusPointsTextBox";
+
+	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	std::string GetPrimaryAttributeTextBoxElementName(const char *attributeName)
 	{
@@ -63,11 +82,13 @@ namespace
 		const Int2 attributeUpDownPosition = ChooseAttributesUiView::UpDownButtonFirstTopLeftPosition + Int2(0, attributeIndex * 8);
 		uiManager.setTransformPosition(attributeUpDownImageElementInstID, attributeUpDownPosition);
 
+		const CharacterCreationState &charCreationState = *game.charCreationState;
+
 		// Set only this attribute's up/down buttons active to avoid overlapping buttons.
+		const Span<const PrimaryAttribute> primaryAttributes = charCreationState.attributes.getView();
 		for (int i = 0; i < PrimaryAttributes::COUNT; i++)
 		{
-			CharacterCreationState &charCreationState = *game.charCreationState;
-			const PrimaryAttribute &attribute = charCreationState.attributes.getView()[i];
+			const PrimaryAttribute &attribute = primaryAttributes[i];
 			const std::string attributeUpButtonElementName = GetPrimaryAttributeUpDownButtonElementName(attribute.name, true);
 			const std::string attributeDownButtonElementName = GetPrimaryAttributeUpDownButtonElementName(attribute.name, false);
 			const UiElementInstanceID attributeUpButtonElementInstID = uiManager.getElementByName(attributeUpButtonElementName.c_str());
@@ -134,7 +155,7 @@ namespace
 		const std::string newBonusPointsValueText = std::to_string(charCreationState.bonusPoints);
 		uiManager.setTextBoxText(bonusPointsTextBoxElementInstID, newBonusPointsValueText.c_str());
 
-		ChooseAttributesUI::updateDerivedAttributeValues();
+		ChooseAttributesUI::updateDerivedAttributes();
 	}
 }
 
@@ -142,6 +163,10 @@ ChooseAttributesUiState::ChooseAttributesUiState()
 {
 	this->game = nullptr;
 	this->contextInstID = -1;
+	this->initialPopUpContextInstID = -1;
+	this->saveRerollContextInstID = -1;
+	this->remainingPointsPopUpContextInstID = -1;
+	this->portraitPopUpContextInstID = -1;
 	this->selectedAttributeIndex = -1;
 	this->attributesAreSaved = false;
 }
@@ -158,19 +183,7 @@ void ChooseAttributesUI::create(Game &game)
 {
 	CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	charCreationState.portraitIndex = 0;
-	charCreationState.clearChangedPoints();
-
-	ArenaRandom &arenaRandom = game.arenaRandom;
-	ChooseAttributesUI::populateBaseAttributesRandomly(charCreationState, arenaRandom);
-
-	Random &random = game.random;
-	const PrimaryAttributes &primaryAttributes = charCreationState.attributes;
-	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(primaryAttributes);
-	charCreationState.maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charCreationState.classDefID, random);
-	charCreationState.maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
-	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, primaryAttributes.intelligence.maxValue);
-	charCreationState.gold = ArenaPlayerUtils::calculateStartingGold(random);
-	charCreationState.bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
+	ChooseAttributesUI::randomizeStats(charCreationState, game.random, game.arenaRandom);
 
 	ChooseAttributesUiState &state = ChooseAttributesUI::state;
 	state.init(game);
@@ -196,28 +209,6 @@ void ChooseAttributesUI::create(Game &game)
 	const UiElementInstanceID playerClassTextBoxElementInstID = uiManager.getElementByName("ChooseAttributesPlayerClassTextBox");
 	uiManager.setTextBoxText(playerClassTextBoxElementInstID, playerClassText.c_str());
 
-	const Span<const PrimaryAttribute> playerAttributesView = primaryAttributes.getView();
-	for (const PrimaryAttribute &attribute : playerAttributesView)
-	{
-		const std::string attributeElementName = GetPrimaryAttributeTextBoxElementName(attribute.name);
-		const UiElementInstanceID attributeTextBoxElementInstID = uiManager.getElementByName(attributeElementName.c_str());
-
-		const std::string attributeValueText = std::to_string(attribute.maxValue);
-		uiManager.setTextBoxText(attributeTextBoxElementInstID, attributeValueText.c_str());
-	}
-
-	Span<const int> playerDerivedAttributesView = charCreationState.derivedAttributes.getView();
-	for (int i = 0; i < playerDerivedAttributesView.getCount(); i++)
-	{
-		DebugAssertIndex(DerivedAttributeUiNames, i);
-		const std::string derivedAttributeElementName = GetDerivedAttributeTextBoxElementName(DerivedAttributeUiNames[i]);
-		const UiElementInstanceID derivedAttributeTextBoxElementInstID = uiManager.getElementByName(derivedAttributeElementName.c_str());
-
-		const int derivedAttributeValue = playerDerivedAttributesView[i];
-		const std::string derivedAttributeValueText = DerivedAttributes::isModifier(i) ? CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
-		uiManager.setTextBoxText(derivedAttributeTextBoxElementInstID, derivedAttributeValueText.c_str());
-	}
-
 	const std::string playerExperienceText = CharacterCreationUiModel::getPlayerExperience(game);
 	const UiElementInstanceID experienceTextBoxElementInstID = uiManager.getElementByName("ChooseAttributesExperienceTextBox");
 	uiManager.setTextBoxText(experienceTextBoxElementInstID, playerExperienceText.c_str());
@@ -226,25 +217,10 @@ void ChooseAttributesUI::create(Game &game)
 	const UiElementInstanceID levelTextBoxElementInstID = uiManager.getElementByName("ChooseAttributesLevelTextBox");
 	uiManager.setTextBoxText(levelTextBoxElementInstID, playerLevelText.c_str());
 
-	const std::string playerHealthText = ChooseAttributesUiModel::getPlayerHealth(game);
-	const UiElementInstanceID healthTextBoxElementInstID = uiManager.getElementByName(PlayerHealthTextBoxElementName);
-	uiManager.setTextBoxText(healthTextBoxElementInstID, playerHealthText.c_str());
-
-	const std::string playerStaminaText = ChooseAttributesUiModel::getPlayerStamina(game);
-	const UiElementInstanceID staminaTextBoxElementInstID = uiManager.getElementByName(PlayerStaminaTextBoxElementName);
-	uiManager.setTextBoxText(staminaTextBoxElementInstID, playerStaminaText.c_str());
-
-	const std::string playerSpellPointsText = ChooseAttributesUiModel::getPlayerSpellPoints(game);
-	const UiElementInstanceID spellPointsTextBoxElementInstID = uiManager.getElementByName(PlayerSpellPointsTextBoxElementName);
-	uiManager.setTextBoxText(spellPointsTextBoxElementInstID, playerSpellPointsText.c_str());
-
-	const std::string playerGoldText = ChooseAttributesUiModel::getPlayerGold(game);
-	const UiElementInstanceID goldTextBoxElementInstID = uiManager.getElementByName("ChooseAttributesGoldTextBox");
-	uiManager.setTextBoxText(goldTextBoxElementInstID, playerGoldText.c_str());
-
-	const std::string bonusPointsText = std::to_string(charCreationState.bonusPoints);
-	const UiElementInstanceID bonusPointsTextBoxElementInstID = uiManager.getElementByName(BonusPointsTextBoxElementName);
-	uiManager.setTextBoxText(bonusPointsTextBoxElementInstID, bonusPointsText.c_str());
+	ChooseAttributesUI::updatePrimaryAttributes();
+	ChooseAttributesUI::updateDerivedAttributes();
+	ChooseAttributesUI::updateGold();
+	ChooseAttributesUI::updateBonusPoints();
 
 	UiElementInitInfo playerBackgroundImageElementInitInfo;
 	playerBackgroundImageElementInitInfo.name = "ChooseAttributesPlayerBackground";
@@ -288,47 +264,259 @@ void ChooseAttributesUI::create(Game &game)
 	const UiTextureID shirtTextureID = uiManager.getOrAddTexture(shirtTextureAsset, bodyPaletteTextureAsset, textureManager, renderer);
 	uiManager.createImage(playerShirtImageElementInitInfo, shirtTextureID, state.contextInstID, renderer);
 
+	UiContextInitInfo initialPopUpContextInitInfo;
+	initialPopUpContextInitInfo.name = ContextName_InitialPopUp;
+	initialPopUpContextInitInfo.drawOrder = 1;
+	state.initialPopUpContextInstID = uiManager.createContext(initialPopUpContextInitInfo);
+
+	UiElementInitInfo initialPopUpTextBoxElementInitInfo;
+	initialPopUpTextBoxElementInitInfo.name = "ChooseAttributesInitialPopUpTextBox";
+	initialPopUpTextBoxElementInitInfo.position = ChooseAttributesUiView::InitialTextCenterPoint;
+	initialPopUpTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	initialPopUpTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo initialPopUpTextBoxInitInfo;
+	initialPopUpTextBoxInitInfo.text = ChooseAttributesUiModel::getInitialText(game);
+	initialPopUpTextBoxInitInfo.fontName = ChooseAttributesUiView::InitialTextFontName;
+	initialPopUpTextBoxInitInfo.defaultColor = ChooseAttributesUiView::InitialTextColor;
+	initialPopUpTextBoxInitInfo.alignment = ChooseAttributesUiView::InitialTextAlignment;
+	initialPopUpTextBoxInitInfo.lineSpacing = ChooseAttributesUiView::InitialTextLineSpacing;
+	const UiElementInstanceID initialPopUpTextBoxElementInstID = uiManager.createTextBox(initialPopUpTextBoxElementInitInfo, initialPopUpTextBoxInitInfo, state.initialPopUpContextInstID, renderer);
+	const Rect initialPopUpTextBoxRect = uiManager.getTransformGlobalRect(initialPopUpTextBoxElementInstID);
+
+	UiElementInitInfo initialPopUpImageElementInitInfo;
+	initialPopUpImageElementInitInfo.name = "ChooseAttributesInitialPopUpImage";
+	initialPopUpImageElementInitInfo.position = ChooseAttributesUiView::InitialTextureCenterPoint;
+	initialPopUpImageElementInitInfo.pivotType = UiPivotType::Middle;
+	initialPopUpImageElementInitInfo.drawOrder = 0;
+
+	const int initialPopUpImageTextureWidth = ChooseAttributesUiView::getDistributePointsTextBoxTextureWidth(initialPopUpTextBoxRect.width);
+	const int initialPopUpImageTextureHeight = ChooseAttributesUiView::getDistributePointsTextBoxTextureHeight(initialPopUpTextBoxRect.height);
+	UiTextureID initialPopUpImageTextureID = uiManager.getOrAddTexture(ChooseAttributesUiView::InitialTextPatternType, initialPopUpImageTextureWidth, initialPopUpImageTextureHeight, textureManager, renderer);
+	uiManager.createImage(initialPopUpImageElementInitInfo, initialPopUpImageTextureID, state.initialPopUpContextInstID, renderer);
+
+	UiElementInitInfo initialPopUpButtonElementInitInfo;
+	initialPopUpButtonElementInitInfo.name = "ChooseAttributesInitialPopUpButton";
+	initialPopUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	initialPopUpButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	initialPopUpButtonElementInitInfo.drawOrder = 2;
+
+	UiButtonInitInfo initialPopUpButtonInitInfo;
+	initialPopUpButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	initialPopUpButtonInitInfo.callback = ChooseAttributesUI::onInitialPopUpBackButtonSelected;
+	uiManager.createButton(initialPopUpButtonElementInitInfo, initialPopUpButtonInitInfo, state.initialPopUpContextInstID);
+
+	uiManager.addInputActionListener(InputActionName::Back, ChooseAttributesUI::onInitialPopUpBackInputAction, ContextName_InitialPopUp, inputManager);
+
+	// Save/Reroll popup.
+	const MessageBoxBackgroundProperties saveRerollBackgroundProperties = ChooseAttributesUiView::getMessageBoxBackgroundProperties();
+
+	UiContextInitInfo saveRerollContextInitInfo;
+	saveRerollContextInitInfo.name = ContextName_SaveReroll;
+	saveRerollContextInitInfo.drawOrder = 1;
+	state.saveRerollContextInstID = uiManager.createContext(saveRerollContextInitInfo);
+
+	UiElementInitInfo saveRerollTitleTextBoxElementInitInfo;
+	saveRerollTitleTextBoxElementInitInfo.name = "ChooseAttributesSaveRerollTitleTextBox";
+	saveRerollTitleTextBoxElementInitInfo.position = ChooseAttributesUiView::MessageBoxTitleCenterPoint;
+	saveRerollTitleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	saveRerollTitleTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo saveRerollTitleTextBoxInitInfo;
+	saveRerollTitleTextBoxInitInfo.text = ChooseAttributesUiModel::getMessageBoxTitleText(game);
+	saveRerollTitleTextBoxInitInfo.fontName = ChooseAttributesUiView::MessageBoxTitleFontName;
+	saveRerollTitleTextBoxInitInfo.defaultColor = ChooseAttributesUiView::MessageBoxTitleColor;
+	saveRerollTitleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	const UiElementInstanceID saveRerollTextBoxElementInstID = uiManager.createTextBox(saveRerollTitleTextBoxElementInitInfo, saveRerollTitleTextBoxInitInfo, state.saveRerollContextInstID, renderer);
+	const Rect saveRerollTitleTextBoxRect = uiManager.getTransformGlobalRect(saveRerollTextBoxElementInstID);
+
+	UiElementInitInfo saveRerollTitleImageElementInitInfo;
+	saveRerollTitleImageElementInitInfo.name = "ChooseAttributesSaveRerollTitleImage";
+	saveRerollTitleImageElementInitInfo.position = saveRerollTitleTextBoxRect.getCenter();
+	saveRerollTitleImageElementInitInfo.pivotType = UiPivotType::Middle;
+	saveRerollTitleImageElementInitInfo.drawOrder = 0;
+
+	const int saveRerollTitleImageTextureWidth = saveRerollTitleTextBoxRect.width + saveRerollBackgroundProperties.extraTitleWidth;
+	const int saveRerollTitleImageTextureHeight = *saveRerollBackgroundProperties.heightOverride;
+	UiTextureID saveRerollTitleImageTextureID = uiManager.getOrAddTexture(saveRerollBackgroundProperties.patternType, saveRerollTitleImageTextureWidth, saveRerollTitleImageTextureHeight, textureManager, renderer);
+	const UiElementInstanceID saveRerollTitleImageElementInstID = uiManager.createImage(saveRerollTitleImageElementInitInfo, saveRerollTitleImageTextureID, state.saveRerollContextInstID, renderer);
+	const Rect saveRerollTitleImageTransformRect = uiManager.getTransformGlobalRect(saveRerollTitleImageElementInstID);
+
+	UiElementInitInfo saveRerollSaveTextBoxElementInitInfo;
+	saveRerollSaveTextBoxElementInitInfo.name = "ChooseAttributesSaveRerollSaveTextBox";
+	saveRerollSaveTextBoxElementInitInfo.position = Int2(saveRerollTitleImageTransformRect.getCenter().x, saveRerollTitleImageTransformRect.getBottom() + (saveRerollBackgroundProperties.itemTextureHeight / 2));
+	saveRerollSaveTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	saveRerollSaveTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo saveRerollSaveTextBoxInitInfo;
+	saveRerollSaveTextBoxInitInfo.text = ChooseAttributesUiModel::getMessageBoxSaveText(game);
+	saveRerollSaveTextBoxInitInfo.fontName = ChooseAttributesUiView::MessageBoxItemFontName;
+	saveRerollSaveTextBoxInitInfo.defaultColor = ChooseAttributesUiView::MessageBoxItemTextColor;
+	saveRerollSaveTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	// @todo
+	/*const std::vector<TextRenderColorOverrideInfoEntry> saveTextColorOverrides = ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(game);
+	for (const TextRenderColorOverrideInfoEntry &entry : saveTextColorOverrides)
+	{
+		panel->addOverrideColor(0, entry.charIndex, entry.color);
+	}*/
+	uiManager.createTextBox(saveRerollSaveTextBoxElementInitInfo, saveRerollSaveTextBoxInitInfo, state.saveRerollContextInstID, renderer);
+
+	UiElementInitInfo saveRerollSaveImageElementInitInfo;
+	saveRerollSaveImageElementInitInfo.name = "ChooseAttributesSaveRerollSaveImage";
+	saveRerollSaveImageElementInitInfo.position = saveRerollTitleImageTransformRect.getBottomLeft();
+	saveRerollSaveImageElementInitInfo.drawOrder = 0;
+
+	const UiTextureID saveRerollSaveImageTextureID = uiManager.getOrAddTexture(saveRerollBackgroundProperties.patternType, saveRerollTitleImageTransformRect.width, saveRerollBackgroundProperties.itemTextureHeight, textureManager, renderer);
+	uiManager.createImage(saveRerollSaveImageElementInitInfo, saveRerollSaveImageTextureID, state.saveRerollContextInstID, renderer);
+
+	UiElementInitInfo saveRerollSaveButtonElementInitInfo;
+	saveRerollSaveButtonElementInitInfo.name = "ChooseAttributesSaveRerollSaveButton";
+	saveRerollSaveButtonElementInitInfo.position = saveRerollSaveImageElementInitInfo.position;
+	saveRerollSaveButtonElementInitInfo.drawOrder = 2;
+
+	UiButtonInitInfo saveRerollSaveButtonInitInfo;
+	saveRerollSaveButtonInitInfo.callback = ChooseAttributesUI::onSaveRerollSaveButtonSelected;
+	saveRerollSaveButtonInitInfo.contentElementName = saveRerollSaveImageElementInitInfo.name;
+	uiManager.createButton(saveRerollSaveButtonElementInitInfo, saveRerollSaveButtonInitInfo, state.saveRerollContextInstID);
+
+	UiElementInitInfo saveRerollRerollTextBoxElementInitInfo;
+	saveRerollRerollTextBoxElementInitInfo.name = "ChooseAttributesSaveRerollRerollTextBox";
+	saveRerollRerollTextBoxElementInitInfo.position = Int2(saveRerollTitleImageTransformRect.getCenter().x, saveRerollTitleImageTransformRect.getBottom() + ((3 * saveRerollBackgroundProperties.itemTextureHeight) / 2));
+	saveRerollRerollTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	saveRerollRerollTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo saveRerollRerollTextBoxInitInfo;
+	saveRerollRerollTextBoxInitInfo.text = ChooseAttributesUiModel::getMessageBoxRerollText(game);
+	saveRerollRerollTextBoxInitInfo.fontName = ChooseAttributesUiView::MessageBoxItemFontName;
+	saveRerollRerollTextBoxInitInfo.defaultColor = ChooseAttributesUiView::MessageBoxItemTextColor;
+	saveRerollRerollTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	// @todo
+	/*const std::vector<TextRenderColorOverrideInfoEntry> rerollTextColorOverrides = ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(game);
+	for (const TextRenderColorOverrideInfoEntry &entry : rerollTextColorOverrides)
+	{
+		panel->addOverrideColor(1, entry.charIndex, entry.color);
+	}*/
+	uiManager.createTextBox(saveRerollRerollTextBoxElementInitInfo, saveRerollRerollTextBoxInitInfo, state.saveRerollContextInstID, renderer);
+
+	UiElementInitInfo saveRerollRerollImageElementInitInfo;
+	saveRerollRerollImageElementInitInfo.name = "ChooseAttributesSaveRerollRerollImage";
+	saveRerollRerollImageElementInitInfo.position = saveRerollTitleImageTransformRect.getBottomLeft() + Int2(0, saveRerollBackgroundProperties.itemTextureHeight);
+	saveRerollRerollImageElementInitInfo.drawOrder = 0;
+
+	const UiTextureID saveRerollRerollImageTextureID = uiManager.getOrAddTexture(saveRerollBackgroundProperties.patternType, saveRerollTitleImageTransformRect.width, saveRerollBackgroundProperties.itemTextureHeight, textureManager, renderer);
+	uiManager.createImage(saveRerollRerollImageElementInitInfo, saveRerollRerollImageTextureID, state.saveRerollContextInstID, renderer);
+
+	UiElementInitInfo saveRerollRerollButtonElementInitInfo;
+	saveRerollRerollButtonElementInitInfo.name = "ChooseAttributesSaveRerollRerollButton";
+	saveRerollRerollButtonElementInitInfo.position = saveRerollRerollImageElementInitInfo.position;
+	saveRerollRerollButtonElementInitInfo.drawOrder = 2;
+
+	UiButtonInitInfo saveRerollRerollButtonInitInfo;
+	saveRerollRerollButtonInitInfo.callback = ChooseAttributesUI::onSaveRerollRerollButtonSelected;
+	saveRerollRerollButtonInitInfo.contentElementName = saveRerollRerollImageElementInitInfo.name;
+	uiManager.createButton(saveRerollRerollButtonElementInitInfo, saveRerollRerollButtonInitInfo, state.saveRerollContextInstID);
+
+	uiManager.addInputActionListener(InputActionName::SaveAttributes, ChooseAttributesUI::onSaveRerollSaveInputAction, ContextName_SaveReroll, inputManager);
+	uiManager.addInputActionListener(InputActionName::RerollAttributes, ChooseAttributesUI::onSaveRerollRerollInputAction, ContextName_SaveReroll, inputManager);
+	uiManager.addInputActionListener(InputActionName::Back, ChooseAttributesUI::onSaveRerollBackInputAction, ContextName_SaveReroll, inputManager);
+
+	// Remaining points popup.
+	UiContextInitInfo remainingPointsPopUpContextInitInfo;
+	remainingPointsPopUpContextInitInfo.name = ContextName_RemainingPointsPopUp;
+	remainingPointsPopUpContextInitInfo.drawOrder = 1;
+	state.remainingPointsPopUpContextInstID = uiManager.createContext(remainingPointsPopUpContextInitInfo);
+
+	UiElementInitInfo remainingPointsPopUpTextBoxElementInitInfo;
+	remainingPointsPopUpTextBoxElementInitInfo.name = "ChooseAttributesRemainingsPointsPopUpTextBox";
+	remainingPointsPopUpTextBoxElementInitInfo.position = ChooseAttributesUiView::AppearanceTextCenterPoint;
+	remainingPointsPopUpTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	remainingPointsPopUpTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo remainingPointsPopUpTextBoxInitInfo;
+	remainingPointsPopUpTextBoxInitInfo.text = ChooseAttributesUiModel::getBonusPointsRemainingText(game);
+	remainingPointsPopUpTextBoxInitInfo.fontName = ChooseAttributesUiView::AppearanceTextFontName;
+	remainingPointsPopUpTextBoxInitInfo.defaultColor = ChooseAttributesUiView::AppearanceTextColor;
+	remainingPointsPopUpTextBoxInitInfo.alignment = ChooseAttributesUiView::AppearanceTextAlignment;
+	remainingPointsPopUpTextBoxInitInfo.lineSpacing = ChooseAttributesUiView::AppearanceTextLineSpacing;
+	const UiElementInstanceID remainingPointsPopUpTextBoxElementInstID = uiManager.createTextBox(remainingPointsPopUpTextBoxElementInitInfo, remainingPointsPopUpTextBoxInitInfo, state.remainingPointsPopUpContextInstID, renderer);
+	const Rect remainingPointsPopUpTextBoxRect = uiManager.getTransformGlobalRect(remainingPointsPopUpTextBoxElementInstID);
+
+	UiElementInitInfo remainingPointsPopUpImageElementInitInfo;
+	remainingPointsPopUpImageElementInitInfo.name = "ChooseAttributesRemainingsPointsPopUpImage";
+	remainingPointsPopUpImageElementInitInfo.position = ChooseAttributesUiView::AppearanceTextCenterPoint;
+	remainingPointsPopUpImageElementInitInfo.pivotType = UiPivotType::Middle;
+	remainingPointsPopUpImageElementInitInfo.drawOrder = 0;
+
+	const int remainingPointsPopUpImageTextureWidth = ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(remainingPointsPopUpTextBoxRect.width);
+	const int remainingPointsPopUpImageTextureHeight = ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(remainingPointsPopUpTextBoxRect.height);
+	const UiTextureID remainingPointsPopUpImageTextureID = uiManager.getOrAddTexture(ChooseAttributesUiView::AppearanceTextPatternType, remainingPointsPopUpImageTextureWidth, remainingPointsPopUpImageTextureHeight, textureManager, renderer);
+	uiManager.createImage(remainingPointsPopUpImageElementInitInfo, remainingPointsPopUpImageTextureID, state.remainingPointsPopUpContextInstID, renderer);
+
+	UiElementInitInfo remainingPointsPopUpBackButtonElementInitInfo;
+	remainingPointsPopUpBackButtonElementInitInfo.name = "ChooseAttributesRemainingPointsPopUpBackButton";
+	remainingPointsPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	remainingPointsPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	remainingPointsPopUpBackButtonElementInitInfo.drawOrder = 2;
+
+	UiButtonInitInfo remainingPointsPopUpBackButtonInitInfo;
+	remainingPointsPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	remainingPointsPopUpBackButtonInitInfo.callback = ChooseAttributesUI::onRemainingPointsPopUpBackButtonSelected;
+	uiManager.createButton(remainingPointsPopUpBackButtonElementInitInfo, remainingPointsPopUpBackButtonInitInfo, state.remainingPointsPopUpContextInstID);
+
+	uiManager.addInputActionListener(InputActionName::Back, ChooseAttributesUI::onRemainingPointsPopUpBackInputAction, ContextName_RemainingPointsPopUp, inputManager);
+
+	// Attributes saved, portrait now available popup.
+	UiContextInitInfo portraitPopUpContextInitInfo;
+	portraitPopUpContextInitInfo.name = ContextName_PortraitPopUp;
+	portraitPopUpContextInitInfo.drawOrder = 1;
+	state.portraitPopUpContextInstID = uiManager.createContext(portraitPopUpContextInitInfo);
+
+	UiElementInitInfo portraitPopUpTextBoxElementInitInfo;
+	portraitPopUpTextBoxElementInitInfo.name = "ChooseAttributesPortraitPopUpTextBox";
+	portraitPopUpTextBoxElementInitInfo.position = ChooseAttributesUiView::AppearanceTextCenterPoint;
+	portraitPopUpTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	portraitPopUpTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo portraitPopUpTextBoxInitInfo;
+	portraitPopUpTextBoxInitInfo.text = ChooseAttributesUiModel::getAppearanceText(game);
+	portraitPopUpTextBoxInitInfo.fontName = ChooseAttributesUiView::AppearanceTextFontName;
+	portraitPopUpTextBoxInitInfo.defaultColor = ChooseAttributesUiView::AppearanceTextColor;
+	portraitPopUpTextBoxInitInfo.alignment = ChooseAttributesUiView::AppearanceTextAlignment;
+	portraitPopUpTextBoxInitInfo.lineSpacing = ChooseAttributesUiView::AppearanceTextLineSpacing;
+	const UiElementInstanceID portraitPopUpTextBoxElementInstID = uiManager.createTextBox(portraitPopUpTextBoxElementInitInfo, portraitPopUpTextBoxInitInfo, state.portraitPopUpContextInstID, renderer);
+	const Rect portraitPopUpTextBoxRect = uiManager.getTransformGlobalRect(portraitPopUpTextBoxElementInstID);
+
+	UiElementInitInfo portraitPopUpImageElementInitInfo;
+	portraitPopUpImageElementInitInfo.name = "ChooseAttributesPortraitPopUpImage";
+	portraitPopUpImageElementInitInfo.position = ChooseAttributesUiView::AppearanceTextCenterPoint;
+	portraitPopUpImageElementInitInfo.pivotType = UiPivotType::Middle;
+	portraitPopUpImageElementInitInfo.drawOrder = 0;
+
+	const int portraitPopUpImageTextureWidth = ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(portraitPopUpTextBoxRect.width);
+	const int portraitPopUpImageTextureHeight = ChooseAttributesUiView::getAppearanceTextBoxTextureWidth(portraitPopUpTextBoxRect.height);
+	const UiTextureID portraitPopUpImageTextureID = uiManager.getOrAddTexture(ChooseAttributesUiView::AppearanceTextPatternType, portraitPopUpImageTextureWidth, portraitPopUpImageTextureHeight, textureManager, renderer);
+	uiManager.createImage(portraitPopUpImageElementInitInfo, portraitPopUpImageTextureID, state.portraitPopUpContextInstID, renderer);
+
+	UiElementInitInfo portraitPopUpBackButtonElementInitInfo;
+	portraitPopUpBackButtonElementInitInfo.name = "ChooseAttributesPortraitPopUpBackButton";
+	portraitPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	portraitPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	portraitPopUpBackButtonElementInitInfo.drawOrder = 2;
+
+	UiButtonInitInfo portraitPopUpBackButtonInitInfo;
+	portraitPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	portraitPopUpBackButtonInitInfo.callback = ChooseAttributesUI::onPortraitPopUpBackButtonSelected;
+	uiManager.createButton(portraitPopUpBackButtonElementInitInfo, portraitPopUpBackButtonInitInfo, state.portraitPopUpContextInstID);
+
+	uiManager.addInputActionListener(InputActionName::Back, ChooseAttributesUI::onPortraitPopUpBackInputAction, ContextName_PortraitPopUp, inputManager);
+
+	// Only enable initial popup at start.
+	uiManager.setContextEnabled(state.saveRerollContextInstID, false);
+	uiManager.setContextEnabled(state.remainingPointsPopUpContextInstID, false);
+	uiManager.setContextEnabled(state.portraitPopUpContextInstID, false);
+
 	// Default to first attribute.
 	OnPrimaryAttributeButtonSelected(0);
-
-	// @todo initial text popup (also shows when rerolling)
-	
-	// @todo Done button functionality (Save/Reroll) when !attributesAreSaved
-	// - remember hotkeys
-	
-	// @todo Done button functionality when attributesAreSaved
-
-	/*
-	// Push the initial text pop-up onto the sub-panel stack.
-	const std::string initialPopUpText = ChooseAttributesUiModel::getInitialText(game);
-	const TextBoxInitInfo initialPopUpTextBoxInitInfo = TextBoxInitInfo::makeWithCenter(
-		initialPopUpText,
-		ChooseAttributesUiView::InitialTextCenterPoint,
-		ChooseAttributesUiView::InitialTextFontName,
-		ChooseAttributesUiView::InitialTextColor,
-		ChooseAttributesUiView::InitialTextAlignment,
-		std::nullopt,
-		ChooseAttributesUiView::InitialTextLineSpacing,
-		fontLibrary);
-
-	const Surface initialPopUpSurface = TextureUtils::generate(
-		ChooseAttributesUiView::InitialTextPatternType,
-		ChooseAttributesUiView::getDistributePointsTextBoxTextureWidth(initialPopUpTextBoxInitInfo.rect.width),
-		ChooseAttributesUiView::getDistributePointsTextBoxTextureHeight(initialPopUpTextBoxInitInfo.rect.height),
-		textureManager,
-		renderer);
-
-	UiTextureID initialPopUpTextureID;
-	if (!TextureUtils::tryAllocUiTextureFromSurface(initialPopUpSurface, textureManager, renderer, &initialPopUpTextureID))
-	{
-		DebugCrash("Couldn't create initial pop-up texture.");
-	}
-
-	ScopedUiTextureRef initialPopUpTextureRef(initialPopUpTextureID, renderer);
-	game.pushSubPanel<TextSubPanel>(initialPopUpTextBoxInitInfo, initialPopUpText,
-		ChooseAttributesUiController::onInitialPopUpSelected, std::move(initialPopUpTextureRef),
-		ChooseAttributesUiView::InitialTextureCenterPoint);
-	*/
 }
 
 void ChooseAttributesUI::destroy()
@@ -343,6 +531,30 @@ void ChooseAttributesUI::destroy()
 		state.contextInstID = -1;
 	}
 
+	if (state.initialPopUpContextInstID >= 0)
+	{
+		uiManager.freeContext(state.initialPopUpContextInstID, game.inputManager, game.renderer);
+		state.initialPopUpContextInstID = -1;
+	}
+
+	if (state.saveRerollContextInstID >= 0)
+	{
+		uiManager.freeContext(state.saveRerollContextInstID, game.inputManager, game.renderer);
+		state.saveRerollContextInstID = -1;
+	}
+
+	if (state.remainingPointsPopUpContextInstID >= 0)
+	{
+		uiManager.freeContext(state.remainingPointsPopUpContextInstID, game.inputManager, game.renderer);
+		state.remainingPointsPopUpContextInstID = -1;
+	}
+
+	if (state.portraitPopUpContextInstID >= 0)
+	{
+		uiManager.freeContext(state.portraitPopUpContextInstID, game.inputManager, game.renderer);
+		state.portraitPopUpContextInstID = -1;
+	}
+
 	state.attributesAreSaved = false;
 	state.selectedAttributeIndex = -1;
 }
@@ -353,20 +565,45 @@ void ChooseAttributesUI::update(double dt)
 	static_cast<void>(dt);
 }
 
-void ChooseAttributesUI::populateBaseAttributesRandomly(CharacterCreationState &charCreationState, ArenaRandom &random)
+void ChooseAttributesUI::randomizeStats(CharacterCreationState &charCreationState, Random &random, ArenaRandom &arenaRandom)
 {
+	charCreationState.clearChangedPoints();
 	charCreationState.populateBaseAttributes();
 
-	Span<PrimaryAttribute> attributes = charCreationState.attributes.getView();
-	for (int i = 0; i < PrimaryAttributes::COUNT; i++)
+	for (PrimaryAttribute &attribute : charCreationState.attributes.getView())
 	{
-		PrimaryAttribute &attribute = attributes[i];
-		const int addedValue = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::PrimaryAttributeRandomMax, random);
+		const int addedValue = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::PrimaryAttributeRandomMax, arenaRandom);
 		attribute.maxValue += addedValue;
+	}
+
+	const PrimaryAttributes &primaryAttributes = charCreationState.attributes;
+	charCreationState.derivedAttributes = ArenaPlayerUtils::calculateTotalDerivedBonuses(primaryAttributes);
+	charCreationState.maxHealth = ArenaPlayerUtils::calculateMaxHealthPoints(charCreationState.classDefID, random);
+	charCreationState.maxStamina = ArenaPlayerUtils::calculateMaxStamina(primaryAttributes.strength.maxValue, primaryAttributes.endurance.maxValue);
+	charCreationState.maxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(charCreationState.classDefID, primaryAttributes.intelligence.maxValue);
+	charCreationState.gold = ArenaPlayerUtils::calculateStartingGold(random);
+	charCreationState.bonusPoints = ChooseAttributesUiModel::rollClassic(ChooseAttributesUiModel::BonusPointsRandomMax, arenaRandom);
+}
+
+void ChooseAttributesUI::updatePrimaryAttributes()
+{
+	ChooseAttributesUiState &state = ChooseAttributesUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	Span<const PrimaryAttribute> playerAttributesView = charCreationState.attributes.getView();
+	for (const PrimaryAttribute &attribute : playerAttributesView)
+	{
+		const std::string attributeElementName = GetPrimaryAttributeTextBoxElementName(attribute.name);
+		const UiElementInstanceID attributeTextBoxElementInstID = uiManager.getElementByName(attributeElementName.c_str());
+
+		const std::string attributeValueText = std::to_string(attribute.maxValue);
+		uiManager.setTextBoxText(attributeTextBoxElementInstID, attributeValueText.c_str());
 	}
 }
 
-void ChooseAttributesUI::updateDerivedAttributeValues()
+void ChooseAttributesUI::updateDerivedAttributes()
 {
 	ChooseAttributesUiState &state = ChooseAttributesUI::state;
 	Game &game = *state.game;
@@ -401,6 +638,29 @@ void ChooseAttributesUI::updateDerivedAttributeValues()
 	const UiElementInstanceID spellPointsTextBoxElementInstID = uiManager.getElementByName(PlayerSpellPointsTextBoxElementName);
 	const std::string spellPointsValueText = ChooseAttributesUiModel::getPlayerSpellPoints(game);
 	uiManager.setTextBoxText(spellPointsTextBoxElementInstID, spellPointsValueText.c_str());
+}
+
+void ChooseAttributesUI::updateGold()
+{
+	ChooseAttributesUiState &state = ChooseAttributesUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const std::string playerGoldText = ChooseAttributesUiModel::getPlayerGold(game);
+	const UiElementInstanceID goldTextBoxElementInstID = uiManager.getElementByName("ChooseAttributesGoldTextBox");
+	uiManager.setTextBoxText(goldTextBoxElementInstID, playerGoldText.c_str());
+}
+
+void ChooseAttributesUI::updateBonusPoints()
+{
+	ChooseAttributesUiState &state = ChooseAttributesUI::state;
+	Game &game = *state.game;
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	UiManager &uiManager = game.uiManager;
+
+	const std::string bonusPointsText = std::to_string(charCreationState.bonusPoints);
+	const UiElementInstanceID bonusPointsTextBoxElementInstID = uiManager.getElementByName(BonusPointsTextBoxElementName);
+	uiManager.setTextBoxText(bonusPointsTextBoxElementInstID, bonusPointsText.c_str());
 }
 
 void ChooseAttributesUI::onStrengthButtonSelected(MouseButtonType mouseButtonType)
@@ -555,7 +815,161 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 	ChooseAttributesUiState &state = ChooseAttributesUI::state;
 	Game &game = *state.game;
 	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
-	ChooseAttributesUiController::onDoneButtonSelected(game, charCreationState.bonusPoints, &state.attributesAreSaved);
+
+	if (state.attributesAreSaved)
+	{
+		auto gameStateFunction = [](Game &game)
+		{
+			GameState &gameState = game.gameState;
+			gameState.init(game.arenaRandom);
+
+			// Find starting dungeon location definition.
+			constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
+			const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+			const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+			const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>
+			{
+				for (int i = 0; i < provinceDef.getLocationCount(); i++)
+				{
+					const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
+					if (locationDef.getType() == LocationDefinitionType::MainQuestDungeon)
+					{
+						const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+
+						if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Start)
+						{
+							return i;
+						}
+					}
+				}
+
+				return std::nullopt;
+			}();
+
+			DebugAssertMsg(locationIndex.has_value(), "Couldn't find start dungeon location definition.");
+
+			// Load starting dungeon.
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(*locationIndex);
+			const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+			const std::string mifName = mainQuestDungeonDef.mapFilename;
+
+			constexpr std::optional<bool> rulerIsMale; // Not needed.
+			const std::string interiorDisplayName; // Unused.
+
+			MapGenerationInteriorInfo interiorGenInfo;
+			interiorGenInfo.initPrefab(mifName, ArenaInteriorType::Dungeon, rulerIsMale, interiorDisplayName);
+
+			const GameState::WorldMapLocationIDs worldMapLocationIDs(provinceIndex, *locationIndex);
+
+			MapDefinition mapDefinition;
+			if (!mapDefinition.initInterior(interiorGenInfo, game.textureManager))
+			{
+				DebugLogError("Couldn't init MapDefinition for start dungeon \"" + mifName + "\".");
+				return;
+			}
+
+			gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true);
+
+			// Initialize player.
+			const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+			const std::string_view name = charCreationState.name;
+			const bool male = charCreationState.male;
+			const int raceIndex = charCreationState.raceIndex;
+
+			const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+			const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+			const ExeData &exeData = binaryAssetLibrary.getExeData();
+
+			const int charClassDefID = charCreationState.classDefID;
+			const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
+			const int portraitIndex = charCreationState.portraitIndex;
+
+			const PrimaryAttributes &attributes = charCreationState.attributes;
+			const int maxHealth = charCreationState.maxHealth;
+			const int maxStamina = charCreationState.maxStamina;
+			const int maxSpellPoints = charCreationState.maxSpellPoints;
+			const int gold = charCreationState.gold;
+
+			const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
+			const int weaponID = charClassDef.getAllowedWeapon(game.random.next(allowedWeaponCount));
+
+			Player &player = game.player;
+			player.init(std::string(name), male, raceIndex, charClassDefID, portraitIndex, attributes, maxHealth, maxStamina, maxSpellPoints,
+				gold, weaponID, game.options.getMisc_GhostMode(), exeData, game.physicsSystem);
+
+			// Face west so we don't start looking at a wall.
+			player.setCameraFrameFromAngles(CardinalDirection::DegreesWest, 0.0);
+		};
+
+		gameStateFunction(game);
+
+		const auto &cinematicLibrary = CinematicLibrary::getInstance();
+		int textCinematicDefIndex;
+		const TextCinematicDefinition *defPtr = nullptr;
+		const bool success = cinematicLibrary.findTextDefinitionIndexIf(
+			[&defPtr](const TextCinematicDefinition &def)
+		{
+			if (def.type == TextCinematicDefinitionType::MainQuest)
+			{
+				const MainQuestTextCinematicDefinition &mainQuestCinematicDef = def.mainQuest;
+				const bool isMainQuestStartCinematic = mainQuestCinematicDef.progress == 0;
+				if (isMainQuestStartCinematic)
+				{
+					defPtr = &def;
+					return true;
+				}
+			}
+
+			return false;
+		}, &textCinematicDefIndex);
+
+		if (!success)
+		{
+			DebugCrash("Couldn't find main quest start text cinematic definition.");
+		}
+
+		game.setCharacterCreationState(nullptr);
+
+		TextureManager &textureManager = game.textureManager;
+		const std::string &cinematicFilename = defPtr->animFilename;
+		const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(cinematicFilename.c_str());
+		if (!metadataID.has_value())
+		{
+			DebugLogError("Couldn't get texture file metadata for main quest start cinematic \"" + cinematicFilename + "\".");
+			return;
+		}
+
+		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
+		const double secondsPerFrame = metadata.getSecondsPerFrame();
+		game.setPanel<TextCinematicPanel>(textCinematicDefIndex, secondsPerFrame, ChooseAttributesUiController::onPostCharacterCreationCinematicFinished);
+
+		// Play dream music.
+		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
+		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
+			MusicType::Cinematic, game.random, [](const MusicDefinition &def)
+		{
+			DebugAssert(def.type == MusicType::Cinematic);
+			const CinematicMusicDefinition &cinematicMusicDef = def.cinematic;
+			return cinematicMusicDef.type == CinematicMusicType::DreamGood;
+		});
+
+		if (musicDef == nullptr)
+		{
+			DebugLogWarning("Missing vision music.");
+		}
+
+		AudioManager &audioManager = game.audioManager;
+		audioManager.setMusic(musicDef);
+	}
+	else
+	{
+		// Show save/reroll message box.
+		UiManager &uiManager = game.uiManager;
+		uiManager.setContextEnabled(state.saveRerollContextInstID, true);
+
+		InputManager &inputManager = game.inputManager;
+		inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, true);
+	}
 }
 
 void ChooseAttributesUI::onBackInputAction(const InputActionCallbackValues &values)
@@ -564,5 +978,122 @@ void ChooseAttributesUI::onBackInputAction(const InputActionCallbackValues &valu
 	{
 		Game &game = values.game;
 		game.setPanel<ChooseRacePanel>();
+	}
+}
+
+void ChooseAttributesUI::onInitialPopUpBackButtonSelected(MouseButtonType mouseButtonType)
+{
+	ChooseAttributesUiState &state = ChooseAttributesUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+}
+
+void ChooseAttributesUI::onInitialPopUpBackInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		ChooseAttributesUI::onInitialPopUpBackButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void ChooseAttributesUI::onSaveRerollSaveButtonSelected(MouseButtonType mouseButtonType)
+{
+	ChooseAttributesUiState &state = ChooseAttributesUI::state;
+	Game &game = *state.game;
+	const CharacterCreationState &charCreationState = game.getCharacterCreationState();
+	UiManager &uiManager = game.uiManager;
+
+	uiManager.disableTopMostContext();
+
+	if (charCreationState.bonusPoints == 0)
+	{
+		state.attributesAreSaved = true;
+
+		// Show portrait selection pop-up.
+		uiManager.setContextEnabled(state.portraitPopUpContextInstID, true);
+	}
+	else
+	{
+		// Tell the player to spend remaining points.
+		uiManager.setContextEnabled(state.remainingPointsPopUpContextInstID, true);
+	}
+
+	InputManager &inputManager = game.inputManager;
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
+}
+
+void ChooseAttributesUI::onSaveRerollSaveInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		ChooseAttributesUI::onSaveRerollSaveButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void ChooseAttributesUI::onSaveRerollRerollButtonSelected(MouseButtonType mouseButtonType)
+{
+	ChooseAttributesUiState &state = ChooseAttributesUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	CharacterCreationState &charCreationState = *game.charCreationState;
+	ChooseAttributesUI::randomizeStats(charCreationState, game.random, game.arenaRandom);
+	ChooseAttributesUI::updatePrimaryAttributes();
+	ChooseAttributesUI::updateDerivedAttributes();
+	ChooseAttributesUI::updateGold();
+	ChooseAttributesUI::updateBonusPoints();
+	uiManager.setContextEnabled(state.initialPopUpContextInstID, true);
+
+	InputManager &inputManager = game.inputManager;
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterCreation, false);
+}
+
+void ChooseAttributesUI::onSaveRerollRerollInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		ChooseAttributesUI::onSaveRerollRerollButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void ChooseAttributesUI::onSaveRerollBackInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		ChooseAttributesUI::onSaveRerollRerollButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void ChooseAttributesUI::onRemainingPointsPopUpBackButtonSelected(MouseButtonType mouseButtonType)
+{
+	ChooseAttributesUiState &state = ChooseAttributesUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+}
+
+void ChooseAttributesUI::onRemainingPointsPopUpBackInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		ChooseAttributesUI::onRemainingPointsPopUpBackButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void ChooseAttributesUI::onPortraitPopUpBackButtonSelected(MouseButtonType mouseButtonType)
+{
+	ChooseAttributesUiState &state = ChooseAttributesUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+}
+
+void ChooseAttributesUI::onPortraitPopUpBackInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		ChooseAttributesUI::onPortraitPopUpBackButtonSelected(MouseButtonType::Left);
 	}
 }

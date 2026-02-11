@@ -7,6 +7,7 @@
 
 class ArenaRandom;
 class Game;
+class Random;
 
 enum class MouseButtonType;
 
@@ -16,6 +17,10 @@ struct ChooseAttributesUiState
 {
 	Game *game;
 	UiContextInstanceID contextInstID;
+	UiContextInstanceID initialPopUpContextInstID;
+	UiContextInstanceID saveRerollContextInstID;
+	UiContextInstanceID remainingPointsPopUpContextInstID;
+	UiContextInstanceID portraitPopUpContextInstID;
 
 	Buffer<UiTextureID> headTextureIDs; // Owned by UI manager.
 	
@@ -31,8 +36,11 @@ namespace ChooseAttributesUI
 {
 	DECLARE_UI_CONTEXT(ChooseAttributes);
 
-	void populateBaseAttributesRandomly(CharacterCreationState &charCreationState, ArenaRandom &random);
-	void updateDerivedAttributeValues();
+	void randomizeStats(CharacterCreationState &charCreationState, Random &random, ArenaRandom &arenaRandom);
+	void updatePrimaryAttributes();
+	void updateDerivedAttributes();
+	void updateGold();
+	void updateBonusPoints();
 
 	void onStrengthButtonSelected(MouseButtonType mouseButtonType);
 	void onIntelligenceButtonSelected(MouseButtonType mouseButtonType);
@@ -64,6 +72,21 @@ namespace ChooseAttributesUI
 	void onDoneButtonSelected(MouseButtonType mouseButtonType);
 
 	void onBackInputAction(const InputActionCallbackValues &values);
+
+	void onInitialPopUpBackButtonSelected(MouseButtonType mouseButtonType);
+	void onInitialPopUpBackInputAction(const InputActionCallbackValues &values);
+
+	void onSaveRerollSaveButtonSelected(MouseButtonType mouseButtonType);
+	void onSaveRerollSaveInputAction(const InputActionCallbackValues &values);
+	void onSaveRerollRerollButtonSelected(MouseButtonType mouseButtonType);
+	void onSaveRerollRerollInputAction(const InputActionCallbackValues &values);
+	void onSaveRerollBackInputAction(const InputActionCallbackValues &values);
+
+	void onRemainingPointsPopUpBackButtonSelected(MouseButtonType mouseButtonType);
+	void onRemainingPointsPopUpBackInputAction(const InputActionCallbackValues &values);
+	
+	void onPortraitPopUpBackButtonSelected(MouseButtonType mouseButtonType);
+	void onPortraitPopUpBackInputAction(const InputActionCallbackValues &values);
 
 	constexpr std::pair<const char*, UiButtonDefinitionCallback> ButtonCallbacks[] =
 	{

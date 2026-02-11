@@ -10,11 +10,11 @@
 
 namespace
 {
-	constexpr char ContextName_ProvinceConfirm[] = "ProvinceConfirm";
-	constexpr char ContextName_ProvinceConfirmed1[] = "ProvinceConfirmed1";
-	constexpr char ContextName_ProvinceConfirmed2[] = "ProvinceConfirmed2";
-	constexpr char ContextName_ProvinceConfirmed3[] = "ProvinceConfirmed3";
-	constexpr char ContextName_ProvinceConfirmed4[] = "ProvinceConfirmed4";
+	constexpr char ContextName_ProvinceConfirm[] = "ChooseRaceProvinceConfirm";
+	constexpr char ContextName_ProvinceConfirmed1[] = "ChooseRaceProvinceConfirmed1";
+	constexpr char ContextName_ProvinceConfirmed2[] = "ChooseRaceProvinceConfirmed2";
+	constexpr char ContextName_ProvinceConfirmed3[] = "ChooseRaceProvinceConfirmed3";
+	constexpr char ContextName_ProvinceConfirmed4[] = "ChooseRaceProvinceConfirmed4";
 
 	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 }

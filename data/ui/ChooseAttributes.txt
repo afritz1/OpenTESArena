@@ -288,7 +288,6 @@ Size=8,8
 DrawOrder=4
 Callback=ChooseAttributesUI.onLuckDownButtonSelected
 
-
 ##################################
 
 # Derived attributes
