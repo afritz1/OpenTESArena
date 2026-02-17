@@ -18,6 +18,7 @@
 #include "../Interface/ChooseGenderUiState.h"
 #include "../Interface/ChooseNameUiState.h"
 #include "../Interface/ChooseRaceUiState.h"
+#include "../Interface/GameWorldUiState.h"
 #include "../Interface/MainMenuUiState.h"
 #include "../Rendering/Window.h"
 
@@ -71,6 +72,7 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(ChooseGenderUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseNameUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseRaceUI);
+	REGISTER_SCOPE_CALLBACKS(GameWorldUI);
 	REGISTER_SCOPE_CALLBACKS(MainMenuUI);
 	return true;
 }
@@ -956,6 +958,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		initInfo.sizeType = def.sizeType;
 		initInfo.size = def.size;
 		initInfo.pivotType = def.pivotType;
+		initInfo.clipRect = def.clipRect;
 		initInfo.drawOrder = def.drawOrder;
 		initInfo.renderSpace = def.renderSpace;
 		return initInfo;

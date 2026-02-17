@@ -28,6 +28,7 @@ struct UiElementDefinition
 	UiTransformSizeType sizeType;
 	Int2 size;
 	UiPivotType pivotType;
+	Rect clipRect;
 	int drawOrder;
 	UiRenderSpace renderSpace;
 
@@ -137,7 +138,7 @@ class UiLibrary : public Singleton<UiLibrary>
 private:
 	std::vector<UiContextDefinition> contextDefs; // To be instantiated by UI manager.
 public:
-	static constexpr const char GlobalContextName[] = "Global";
+	static constexpr char GlobalContextName[] = "Global";
 
 	bool init(const char *folderPath);
 

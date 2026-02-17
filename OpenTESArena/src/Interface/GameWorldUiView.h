@@ -105,6 +105,7 @@ namespace GameWorldUiView
 	Rect getCharacterSheetButtonRect();
 	Rect getPlayerPortraitRect();
 	Rect getWeaponSheathButtonRect();
+	Rect getMapButtonRect();
 	Rect getStealButtonRect();
 	Rect getStatusButtonRect();
 	Rect getMagicButtonRect();
@@ -113,7 +114,6 @@ namespace GameWorldUiView
 	Rect getCampButtonRect();
 	Rect getScrollUpButtonRect();
 	Rect getScrollDownButtonRect();
-	Rect getMapButtonRect();
 	Rect getButtonRect(GameWorldUiModel::ButtonType buttonType);
 	
 	const std::string StatusPopUpFontName = ArenaFontName::Arena;

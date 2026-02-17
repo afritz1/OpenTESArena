@@ -80,9 +80,9 @@ std::string GameWorldUiModel::getPlayerNameText(Game &game)
 
 std::string GameWorldUiModel::getStatusButtonText(Game &game)
 {
-	auto &gameState = game.gameState;
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
+	GameState &gameState = game.gameState;
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const LocationDefinition &locationDef = gameState.getLocationDefinition();
 	const LocationInstance &locationInst = gameState.getLocationInstance();
 	const std::string &locationName = locationInst.getName(locationDef);
@@ -114,7 +114,6 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 	baseText.replace(index, 2, std::to_string(weightCapacity));
 
 	const std::string effectText = GetStatusEffectString(exeData);
-
 	return baseText + effectText;
 }
 
@@ -173,7 +172,6 @@ std::string GameWorldUiModel::getPlayerPositionText(Game &game)
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string str = exeData.ui.currentWorldPosition;
 
-	// Replace first %d with X, second %d with Y.
 	size_t index = str.find("%d");
 	str.replace(index, 2, std::to_string(displayedCoords.x));
 

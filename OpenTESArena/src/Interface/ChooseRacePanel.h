@@ -5,7 +5,6 @@
 
 class ChooseRacePanel : public Panel
 {
-private:
 public:
 	ChooseRacePanel(Game &game);
 	~ChooseRacePanel() override;

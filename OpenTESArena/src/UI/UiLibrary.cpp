@@ -13,6 +13,7 @@
 #include "../Interface/ChooseGenderUiState.h"
 #include "../Interface/ChooseNameUiState.h"
 #include "../Interface/ChooseRaceUiState.h"
+#include "../Interface/GameWorldUiState.h"
 #include "../Interface/MainMenuUiState.h"
 
 #include "components/debug/Debug.h"
@@ -37,9 +38,10 @@ namespace
 	const std::string Keyword_ElementPosition = "Position";
 	const std::string Keyword_ElementSize = "Size";
 	const std::string Keyword_ElementPivot = "Pivot";
+	const std::string Keyword_ElementClipRect = "ClipRect";
 	const std::string Keyword_ElementDrawOrder = "DrawOrder";
 	const std::string Keyword_ElementRenderSpace = "RenderSpace";
-	const std::string ValidElementKeys[] = { Keyword_ElementPosition, Keyword_ElementSize, Keyword_ElementPivot, Keyword_ElementDrawOrder, Keyword_ElementRenderSpace };
+	const std::string ValidElementKeys[] = { Keyword_ElementPosition, Keyword_ElementSize, Keyword_ElementPivot, Keyword_ElementClipRect, Keyword_ElementDrawOrder, Keyword_ElementRenderSpace };
 
 	const std::string Keyword_ImageTexture = "Texture";
 	const std::string Keyword_ImagePalette = "Palette";
@@ -164,6 +166,7 @@ namespace
 		DEFINE_CALLBACK_TUPLE(ChooseGenderUI),
 		DEFINE_CALLBACK_TUPLE(ChooseNameUI),
 		DEFINE_CALLBACK_TUPLE(ChooseRaceUI),
+		DEFINE_CALLBACK_TUPLE(GameWorldUI),
 		DEFINE_CALLBACK_TUPLE(MainMenuUI)
 	};
 
@@ -450,6 +453,36 @@ namespace
 			}
 
 			outElementDef->pivotType = pivotType;
+		}
+		else if (key == Keyword_ElementClipRect)
+		{
+			std::string rectTokens[4];
+			if (!String::splitExpected<4>(value, ',', rectTokens))
+			{
+				DebugLogErrorFormat("Couldn't split clip rect value \"%s\" into X,Y,width,height.", value.c_str());
+				return false;
+			}
+
+			int rectX = 0;
+			int rectY = 0;
+			int rectWidth = 0;
+			int rectHeight = 0;
+
+			bool success = true;
+			success &= TryParseInteger(rectTokens[0], &rectX);
+			success &= TryParseInteger(rectTokens[1], &rectY);
+			success &= TryParseInteger(rectTokens[2], &rectWidth);
+			success &= TryParseInteger(rectTokens[3], &rectHeight);
+			if (!success)
+			{
+				DebugLogErrorFormat("Couldn't parse clip rect value \"%s\".", value.c_str());
+				return false;
+			}
+
+			outElementDef->clipRect.x = rectX;
+			outElementDef->clipRect.y = rectY;
+			outElementDef->clipRect.width = rectWidth;
+			outElementDef->clipRect.height = rectHeight;			
 		}
 		else if (key == Keyword_ElementDrawOrder)
 		{
@@ -896,6 +929,7 @@ void UiElementDefinition::clear()
 	this->name.clear();
 	this->sizeType = UiTransformSizeType::Content;
 	this->pivotType = UiPivotType::TopLeft;
+	this->clipRect = Rect();
 	this->drawOrder = 0;
 	this->renderSpace = UiRenderSpace::Classic;
 }

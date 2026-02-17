@@ -270,6 +270,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/GameWorldUiController.h"
     "${SRC_ROOT}/Interface/GameWorldUiModel.cpp"
     "${SRC_ROOT}/Interface/GameWorldUiModel.h"
+    "${SRC_ROOT}/Interface/GameWorldUiState.cpp"
+    "${SRC_ROOT}/Interface/GameWorldUiState.h"
     "${SRC_ROOT}/Interface/GameWorldUiView.cpp"
     "${SRC_ROOT}/Interface/GameWorldUiView.h"
     "${SRC_ROOT}/Interface/ImagePanel.cpp"

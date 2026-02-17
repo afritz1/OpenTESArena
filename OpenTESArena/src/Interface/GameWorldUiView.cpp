@@ -205,6 +205,11 @@ Rect GameWorldUiView::getWeaponSheathButtonRect()
 	return Rect(88, 151, 29, 22);
 }
 
+Rect GameWorldUiView::getMapButtonRect()
+{
+	return Rect(118, 151, 29, 22);
+}
+
 Rect GameWorldUiView::getStealButtonRect()
 {
 	return Rect(147, 151, 29, 22);
@@ -243,11 +248,6 @@ Rect GameWorldUiView::getScrollUpButtonRect()
 Rect GameWorldUiView::getScrollDownButtonRect()
 {
 	return Rect(208, ArenaRenderUtils::SCENE_VIEW_HEIGHT + 44, 9, 9);
-}
-
-Rect GameWorldUiView::getMapButtonRect()
-{
-	return Rect(118, 151, 29, 22);
 }
 
 Rect GameWorldUiView::getButtonRect(GameWorldUiModel::ButtonType buttonType)

@@ -75,16 +75,14 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 			static_cast<double>(otherSubShapePosition.GetY()),
 			static_cast<WEDouble>(otherSubShapePosition.GetZ())));
 		const CoordInt3 otherSubShapeVoxelCoord(otherSubShapeCoord.chunk, VoxelUtils::pointToVoxel(otherSubShapeCoord.point, ceilingScale));
-		const VoxelInt3 otherSubShapeVoxel = otherSubShapeVoxelCoord.voxel;
-
-		TextBox *triggerTextBox = game.getTriggerTextBox();
-		DebugAssert(triggerTextBox != nullptr);
-		MapLogic::handleTriggersInVoxel(game, otherSubShapeVoxelCoord, *triggerTextBox);
+		MapLogic::handleTriggersInVoxel(game, otherSubShapeVoxelCoord);
 
 		const MapType activeMapType = gameState.getActiveMapType();
 		if (activeMapType == MapType::Interior)
 		{
 			const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(otherSubShapeVoxelCoord.chunk);
+			const VoxelInt3 otherSubShapeVoxel = otherSubShapeVoxelCoord.voxel;
+
 			VoxelTransitionDefID transitionDefID;
 			if (!voxelChunk.tryGetTransitionDefID(otherSubShapeVoxel.x, otherSubShapeVoxel.y, otherSubShapeVoxel.z, &transitionDefID))
 			{
