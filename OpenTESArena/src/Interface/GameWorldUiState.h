@@ -39,6 +39,8 @@ namespace GameWorldUI
 	DECLARE_UI_CONTEXT(GameWorld);
 
 	void onScreenToWorldInteraction(Int2 windowPoint, bool isPrimaryInteraction);
+	void updateDoorKeys();
+	void onPauseChanged(bool paused);
 
 	void showTextPopUp(const char *str, const std::function<void()> &callback);
 	void showTextPopUp(const char *str);

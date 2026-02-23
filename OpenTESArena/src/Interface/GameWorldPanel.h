@@ -10,8 +10,6 @@ public:
 	~GameWorldPanel() override;
 
 	bool init();
-
-	virtual void onPauseChanged(bool paused) override;
 };
 
 #endif

@@ -20,17 +20,3 @@ bool GameWorldPanel::init()
 {
 	return true;
 }
-
-void GameWorldPanel::onPauseChanged(bool paused)
-{
-	Panel::onPauseChanged(paused);
-
-	Game &game = this->getGame();
-	const Options &options = game.options;
-	if (options.getGraphics_ModernInterface())
-	{
-		GameWorldUiModel::setFreeLookActive(game, !paused);
-	}
-
-	game.shouldSimulateScene = !paused;
-}

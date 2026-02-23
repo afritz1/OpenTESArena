@@ -24,7 +24,11 @@ namespace
 
 	constexpr char PlayerNameTextBoxElementName[] = "GameWorldPlayerNameTextBox";
 
+	constexpr char CompassSliderImageElementName[] = "GameWorldCompassSlider";
+	constexpr char CompassFrameImageElementName[] = "GameWorldCompassFrame";
+
 	constexpr char WeaponImageElementName[] = "GameWorldWeaponImage";
+	constexpr char ModernModeReticleImageElementName[] = "GameWorldModernModeReticleImage";
 
 	constexpr char TriggerTextBoxElementName[] = "GameWorldTriggerTextBox";
 	constexpr char ActionTextBoxElementName[] = "GameWorldActionTextBox";
@@ -49,6 +53,16 @@ namespace
 		char elementName[32];
 		std::snprintf(elementName, sizeof(elementName), "GameWorldKey%dImage", keyIndex);
 		return std::string(elementName);
+	}
+
+	bool IsPlayerWeaponVisible(const Player &player)
+	{
+		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+		const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
+		DebugAssertIndex(weaponAnimDef.states, weaponAnimInst.currentStateIndex);
+		const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
+		return !WeaponAnimationUtils::isSheathed(weaponAnimDefState);
 	}
 
 	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
@@ -185,7 +199,7 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 
 void GameWorldUI::create(Game &game)
 {
-	DebugLogError("@todo: put health/stam/sp into one texture. fix Panel::onPauseChanged() usage for here. travel places, enter interiors, etc.");
+	DebugLogError("@todo: put health/stam/sp into one texture. tooltips. travel places, enter interiors, etc.");
 
 	GameWorldUiState &state = GameWorldUI::state;
 	state.init(game);
@@ -227,6 +241,15 @@ void GameWorldUI::create(Game &game)
 		uiManager.createImage(keyImageElementInitInfo, keyImageTextureID, state.contextInstID, renderer);
 	}
 
+	GameWorldUI::updateDoorKeys();
+
+	UiElementInitInfo modernModeReticleImageElementInitInfo;
+	modernModeReticleImageElementInitInfo.name = ModernModeReticleImageElementName;
+	modernModeReticleImageElementInitInfo.position = GameWorldUiView::getInterfaceCenter(game);
+	modernModeReticleImageElementInitInfo.pivotType = UiPivotType::Middle;
+	modernModeReticleImageElementInitInfo.drawOrder = 1;
+	const UiElementInstanceID modernModeReticleImageElementInstID = uiManager.createImage(modernModeReticleImageElementInitInfo, state.modernModeReticleTextureID, state.contextInstID, renderer);
+
 	const UiElementInstanceID playerPortraitImageElementInstID = uiManager.getElementByName(PlayerPortraitImageElementName);
 	uiManager.setImageTexture(playerPortraitImageElementInstID, state.playerPortraitTextureID);
 
@@ -244,13 +267,6 @@ void GameWorldUI::create(Game &game)
 
 	if (isModernInterface)
 	{
-		UiElementInitInfo modernModeReticleImageElementInitInfo;
-		modernModeReticleImageElementInitInfo.name = "GameWorldModernModeReticleImage";
-		modernModeReticleImageElementInitInfo.position = GameWorldUiView::getInterfaceCenter(game);
-		modernModeReticleImageElementInitInfo.pivotType = UiPivotType::Middle;
-		modernModeReticleImageElementInitInfo.drawOrder = 1;
-		uiManager.createImage(modernModeReticleImageElementInitInfo, state.modernModeReticleTextureID, state.contextInstID, renderer);
-
 		const UiElementInstanceID interfaceImageElementInstID = uiManager.getElementByName(InterfaceImageElementName);
 		uiManager.setElementActive(interfaceImageElementInstID, false);
 
@@ -272,6 +288,10 @@ void GameWorldUI::create(Game &game)
 		uiManager.setElementActive(game.cursorImageElementInstID, false);
 
 		GameWorldUiModel::setFreeLookActive(game, true);
+	}
+	else
+	{
+		uiManager.setElementActive(modernModeReticleImageElementInstID, false);
 	}
 
 	uiManager.addMouseButtonChangedListener(GameWorldUI::onMouseButtonChanged, GameWorldUI::ContextName, inputManager);
@@ -328,54 +348,24 @@ void GameWorldUI::update(double dt)
 	const Renderer &renderer = game.renderer;
 
 	const bool isModernInterface = options.getGraphics_ModernInterface();
-	const bool isGameWorldSimulating = game.shouldSimulateScene; // @todo all the setElementActive(false) needs to happen before a popup, right? previously it was Panel::paused
 
 	// Compass
 	const Player &player = game.player;
 	const Double2 playerDirection = player.getGroundDirectionXZ();
 	const Int2 compassSliderPosition = GameWorldUiView::getCompassSliderPosition(game, playerDirection);
-	const UiElementInstanceID compassSliderImageElementInstID = uiManager.getElementByName("GameWorldCompassSlider");
-	const UiElementInstanceID compassFrameImageElementInstID = uiManager.getElementByName("GameWorldCompassFrame");
+	const UiElementInstanceID compassSliderImageElementInstID = uiManager.getElementByName(CompassSliderImageElementName);
+	const UiElementInstanceID compassFrameImageElementInstID = uiManager.getElementByName(CompassFrameImageElementName);
 	uiManager.setTransformPosition(compassSliderImageElementInstID, compassSliderPosition);
 
-	const bool isCompassVisible = isGameWorldSimulating && options.getMisc_ShowCompass();
-	uiManager.setElementActive(compassSliderImageElementInstID, isCompassVisible);
-	uiManager.setElementActive(compassFrameImageElementInstID, isCompassVisible);
-
-	// Keys
-	const Span<const int> keyInventory = player.keyInventory;
-	for (int i = 0; i < state.keyTextureIDs.getCount(); i++)
-	{
-		const std::string keyImageElementName = GetKeyImageElementName(i);
-		const UiElementInstanceID keyImageElementInstID = uiManager.getElementByName(keyImageElementName.c_str());
-
-		const int keyID = keyInventory[i];
-		const bool isKeyVisible = isGameWorldSimulating && (keyID != ArenaItemUtils::InvalidDoorKeyID);
-		uiManager.setElementActive(keyImageElementInstID, isKeyVisible);
-
-		if (isKeyVisible)
-		{
-			const UiTextureID keyTextureID = state.keyTextureIDs[keyID];
-			const std::optional<Int2> keyDimensions = renderer.tryGetUiTextureDims(keyTextureID);
-			DebugAssert(keyDimensions.has_value());
-
-			uiManager.setTransformSize(keyImageElementInstID, *keyDimensions);
-			uiManager.setImageTexture(keyImageElementInstID, keyTextureID);
-		}
-	}
-
 	// Weapon
-	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
-	const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
-	DebugAssertIndex(weaponAnimDef.states, weaponAnimInst.currentStateIndex);
-	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
-
 	const UiElementInstanceID weaponImageElementInstID = uiManager.getElementByName(WeaponImageElementName);
-	const bool isWeaponVisible = isGameWorldSimulating && !WeaponAnimationUtils::isSheathed(weaponAnimDefState);
+	const bool isWeaponVisible = IsPlayerWeaponVisible(player);
 	uiManager.setElementActive(weaponImageElementInstID, isWeaponVisible);
 	if (isWeaponVisible)
 	{
+		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
+		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+		const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 		const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
 		DebugAssertIndex(weaponAnimDef.frames, weaponAnimFrameIndex);
 		const WeaponAnimationDefinitionFrame &weaponAnimFrame = weaponAnimDef.frames[weaponAnimFrameIndex];
@@ -421,15 +411,13 @@ void GameWorldUI::update(double dt)
 
 
 	const GameState &gameState = game.gameState;
-	const bool isTriggerTextVisible = isGameWorldSimulating && gameState.triggerTextIsVisible();
+	const bool isTriggerTextVisible = gameState.triggerTextIsVisible();
 	const UiElementInstanceID triggerTextBoxElementInstID = uiManager.getElementByName(TriggerTextBoxElementName);
 	uiManager.setElementActive(triggerTextBoxElementInstID, isTriggerTextVisible);
 
-	const bool isActionTextVisible = isGameWorldSimulating && gameState.actionTextIsVisible();
+	const bool isActionTextVisible = gameState.actionTextIsVisible();
 	const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 	uiManager.setElementActive(actionTextBoxElementInstID, isActionTextVisible);
-
-	// @todo modern mode reticle
 
 
 	/*
@@ -518,18 +506,6 @@ void GameWorldUI::update(double dt)
 	else
 	{
 		const Rect portraitRect = GameWorldUiView::getPlayerPortraitRect();
-
-		UiDrawCallInitInfo statusGradientDrawCallInitInfo;
-		statusGradientDrawCallInitInfo.textureID = this->statusGradientTextureRef.get();
-		statusGradientDrawCallInitInfo.position = portraitRect.getTopLeft();
-		statusGradientDrawCallInitInfo.size = this->statusGradientTextureRef.getDimensions();
-		this->addDrawCall(statusGradientDrawCallInitInfo);
-
-		UiDrawCallInitInfo playerPortraitDrawCallInitInfo;
-		playerPortraitDrawCallInitInfo.textureID = this->playerPortraitTextureRef.get();
-		playerPortraitDrawCallInitInfo.position = portraitRect.getTopLeft();
-		playerPortraitDrawCallInitInfo.size = this->playerPortraitTextureRef.getDimensions();
-		this->addDrawCall(playerPortraitDrawCallInitInfo);
 
 		constexpr UiPivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
 
@@ -722,17 +698,82 @@ void GameWorldUI::onScreenToWorldInteraction(Int2 windowPoint, bool isPrimaryInt
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	const InputManager &inputManager = game.inputManager;
+	const bool debugFadeVoxel = isPrimaryInteraction && inputManager.keyIsDown(SDL_SCANCODE_G);
+	PlayerLogic::handleScreenToWorldInteraction(game, windowPoint, isPrimaryInteraction, debugFadeVoxel);
+}
 
-	if (isPrimaryInteraction)
+void GameWorldUI::updateDoorKeys()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	const Player &player = game.player;
+	UiManager &uiManager = game.uiManager;
+	const Renderer &renderer = game.renderer;
+
+	const Span<const int> keyInventory = player.keyInventory;
+	for (int i = 0; i < state.keyTextureIDs.getCount(); i++)
 	{
-		const InputManager &inputManager = game.inputManager;
-		const bool debugFadeVoxel = inputManager.keyIsDown(SDL_SCANCODE_G);
-		PlayerLogic::handleScreenToWorldInteraction(game, windowPoint, isPrimaryInteraction, debugFadeVoxel);
+		const std::string keyImageElementName = GetKeyImageElementName(i);
+		const UiElementInstanceID keyImageElementInstID = uiManager.getElementByName(keyImageElementName.c_str());
+
+		const int keyID = keyInventory[i];
+		const bool isKeyVisible = game.shouldSimulateScene && (keyID != ArenaItemUtils::InvalidDoorKeyID);
+		uiManager.setElementActive(keyImageElementInstID, isKeyVisible);
+
+		if (isKeyVisible)
+		{
+			const UiTextureID keyTextureID = state.keyTextureIDs[keyID];
+			const std::optional<Int2> keyDimensions = renderer.tryGetUiTextureDims(keyTextureID);
+			DebugAssert(keyDimensions.has_value());
+
+			uiManager.setTransformSize(keyImageElementInstID, *keyDimensions);
+			uiManager.setImageTexture(keyImageElementInstID, keyTextureID);
+		}
 	}
-	else
+}
+
+void GameWorldUI::onPauseChanged(bool paused)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	const Player &player = game.player;
+	UiManager &uiManager = game.uiManager;
+	const Options &options = game.options;
+	const bool isModernInterface = options.getGraphics_ModernInterface();
+
+	game.shouldSimulateScene = !paused;
+
+	const bool isWeaponVisible = !paused && IsPlayerWeaponVisible(player);
+	const UiElementInstanceID weaponImageElementInstID = uiManager.getElementByName(WeaponImageElementName);
+	uiManager.setElementActive(weaponImageElementInstID, isWeaponVisible);
+
+	const bool isCompassVisible = !paused && options.getMisc_ShowCompass();
+	const UiElementInstanceID compassSliderImageElementInstID = uiManager.getElementByName(CompassSliderImageElementName);
+	const UiElementInstanceID compassFrameImageElementInstID = uiManager.getElementByName(CompassFrameImageElementName);
+	uiManager.setElementActive(compassSliderImageElementInstID, isCompassVisible);
+	uiManager.setElementActive(compassFrameImageElementInstID, isCompassVisible);
+
+	GameWorldUI::updateDoorKeys();
+
+	const bool isModernModeReticleVisible = !paused && isModernInterface;
+	const UiElementInstanceID modernModeReticleImageElementInstID = uiManager.getElementByName(ModernModeReticleImageElementName);
+	uiManager.setElementActive(modernModeReticleImageElementInstID, isModernModeReticleVisible);
+
+	if (paused)
 	{
-		constexpr bool debugFadeVoxel = false;
-		PlayerLogic::handleScreenToWorldInteraction(game, windowPoint, isPrimaryInteraction, debugFadeVoxel);
+		const UiElementInstanceID triggerTextBoxElementInstID = uiManager.getElementByName(TriggerTextBoxElementName);
+		uiManager.setElementActive(triggerTextBoxElementInstID, false);
+
+		const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
+		uiManager.setElementActive(actionTextBoxElementInstID, false);
+
+		// @todo effect text box
+	}
+
+	if (isModernInterface)
+	{
+		GameWorldUiModel::setFreeLookActive(game, !paused);
 	}
 }
 
@@ -778,33 +819,29 @@ void GameWorldUI::showTextPopUp(const char *str, const std::function<void()> &ca
 	textPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
 	textPopUpBackButtonElementInitInfo.drawOrder = 2;
 
-	auto buttonCallback = [callback](MouseButtonType)
+	auto popUpButtonCallback = [callback](MouseButtonType)
 	{
 		callback();
-
-		DebugLogError("@todo: set everything in GameWorldUI paused = false?");
-		//game.shouldSimulateScene = true; ??
+		GameWorldUI::onPauseChanged(false);
 	};
 
 	UiButtonInitInfo textPopUpBackButtonInitInfo;
 	textPopUpBackButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
-	textPopUpBackButtonInitInfo.callback = buttonCallback;
+	textPopUpBackButtonInitInfo.callback = popUpButtonCallback;
 	uiManager.createButton(textPopUpBackButtonElementInitInfo, textPopUpBackButtonInitInfo, state.textPopUpContextInstID);
 
-	auto inputActionCallback = [buttonCallback](const InputActionCallbackValues &values)
+	auto inputActionCallback = [popUpButtonCallback](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
-			buttonCallback(MouseButtonType::Left);
+			popUpButtonCallback(MouseButtonType::Left);
 		}
 	};
 
 	uiManager.addInputActionListener(InputActionName::Back, inputActionCallback, ContextName_TextPopUp, inputManager);
-
-	DebugLogError("@todo: set everything in GameWorldUI paused = true?");
-	//game.shouldSimulateScene = false; ??
-
 	uiManager.setContextEnabled(state.textPopUpContextInstID, true);
+
+	GameWorldUI::onPauseChanged(true);
 }
 
 void GameWorldUI::showTextPopUp(const char *str)
