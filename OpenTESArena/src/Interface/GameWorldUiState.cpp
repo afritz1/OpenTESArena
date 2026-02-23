@@ -844,9 +844,6 @@ void GameWorldUI::onUseItemButtonSelected(MouseButtonType mouseButtonType)
 void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 {
 	DebugLog("Camp.");
-
-	// @todo: make this click the button eventually when not needed for testing.
-	//gameState.setIsCamping(values.performed);
 }
 
 void GameWorldUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)
@@ -961,10 +958,16 @@ void GameWorldUI::onUseItemInputAction(const InputActionCallbackValues &values)
 
 void GameWorldUI::onCampInputAction(const InputActionCallbackValues &values)
 {
-	if (values.performed)
+	// @todo: uncomment this eventually when it actually works
+	/*if (values.performed)
 	{
 		GameWorldUI::onCampButtonSelected(MouseButtonType::Left);
-	}
+	}*/
+
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	gameState.setIsCamping(values.performed);
 }
 
 void GameWorldUI::onToggleCompassInputAction(const InputActionCallbackValues &values)
