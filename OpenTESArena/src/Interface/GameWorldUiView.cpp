@@ -23,36 +23,6 @@
 
 #include "components/utilities/String.h"
 
-namespace
-{
-	UiTextureID AllocStatusBarTexture(const Rect &rect, const Color &color, Renderer &renderer)
-	{
-		const int width = rect.width;
-		const int height = rect.height;
-
-		const UiTextureID textureID = renderer.createUiTexture(width, height);
-		if (textureID < 0)
-		{
-			DebugLogErrorFormat("Couldn't create status bar texture with color (%s).", color.toString().c_str());
-			return -1;
-		}
-
-		LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
-		if (!lockedTexture.isValid())
-		{
-			DebugLogErrorFormat("Couldn't lock status bar texture with color (%s).", color.toString().c_str());
-			return textureID;
-		}
-
-		Span2D<uint32_t> texelsView(reinterpret_cast<uint32_t*>(lockedTexture.texels.begin()), width, height);
-		const uint32_t texelRGBA = color.toRGBA();
-		texelsView.fill(texelRGBA);
-		renderer.unlockUiTexture(textureID);
-
-		return textureID;
-	}
-}
-
 DebugVoxelVisibilityQuadtreeState::DebugVoxelVisibilityQuadtreeState()
 {
 	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
@@ -295,13 +265,6 @@ int GameWorldUiView::getStatusPopUpTextureHeight(int textHeight)
 Int2 GameWorldUiView::getGameWorldInterfacePosition()
 {
 	return Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
-}
-
-int GameWorldUiView::getStatusBarCurrentHeight(int maxHeight, double currentValue, double maxValue)
-{
-	const double percent = currentValue / maxValue;
-	const double currentHeightReal = std::round(static_cast<double>(maxHeight) * percent);
-	return std::clamp(static_cast<int>(currentHeightReal), 0, maxHeight);
 }
 
 Int2 GameWorldUiView::getNoMagicTexturePosition()
@@ -600,33 +563,91 @@ TextureAsset GameWorldUiView::getContainerInventoryTextureAsset()
 	return TextureAsset(std::string(ArenaTextureName::ContainerInventory));
 }
 
-UiTextureID GameWorldUiView::allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer)
+UiTextureID GameWorldUiView::allocStatusBarsTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAsset textureAsset = GameWorldUiView::getGameWorldInterfaceTextureAsset();
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
+	constexpr int textureWidth = (GameWorldUiView::SpellPointsBarRect.x + GameWorldUiView::SpellPointsBarRect.width) - GameWorldUiView::HealthBarRect.x;
+	constexpr int textureHeight = GameWorldUiView::HealthBarRect.height;
+	const UiTextureID textureID = renderer.createUiTexture(textureWidth, textureHeight);
+	if (textureID < 0)
 	{
-		DebugCrash("Couldn't create UI texture for game world interface.");
+		DebugLogError("Couldn't create status bars texture.");
+		return -1;
 	}
+
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogError("Couldn't lock status bars texture.");
+		return textureID;
+	}
+
+	Span2D<uint32_t> texelsView = lockedTexture.getTexels32();
+	texelsView.fill(Colors::TransparentRGBA);
+	renderer.unlockUiTexture(textureID);
 
 	return textureID;
 }
 
-UiTextureID GameWorldUiView::allocHealthBarTexture(TextureManager &textureManager, Renderer &renderer)
+int GameWorldUiView::getStatusBarCurrentPixelHeight(double currentValue, double maxValue)
 {
-	return AllocStatusBarTexture(GameWorldUiView::HealthBarRect, GameWorldUiView::HealthBarColor, renderer);
+	constexpr int barHeight = GameWorldUiView::HealthBarRect.height;
+	constexpr double barHeightReal = static_cast<double>(barHeight);
+
+	const double percent = currentValue / maxValue;
+	return std::clamp(static_cast<int>(std::round(barHeightReal * percent)), 0, barHeight);
 }
 
-UiTextureID GameWorldUiView::allocStaminaBarTexture(TextureManager &textureManager, Renderer &renderer)
+void GameWorldUiView::updateStatusBarsTexture(UiTextureID textureID, const Player &player, Renderer &renderer)
 {
-	return AllocStatusBarTexture(GameWorldUiView::StaminaBarRect, GameWorldUiView::StaminaBarColor, renderer);
-}
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	if (!lockedTexture.isValid())
+	{
+		DebugLogError("Couldn't lock status bars texture for updating.");
+		return;
+	}
 
-UiTextureID GameWorldUiView::allocSpellPointsBarTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	return AllocStatusBarTexture(GameWorldUiView::SpellPointsBarRect, GameWorldUiView::SpellPointsBarColor, renderer);
+	Span2D<uint32_t> texelsView = lockedTexture.getTexels32();
+	texelsView.fill(Colors::TransparentRGBA);
+
+	constexpr int barWidth = GameWorldUiView::HealthBarRect.width;
+	constexpr int barHeight = GameWorldUiView::HealthBarRect.height;
+
+	const int currentHealthBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentHealth, player.maxHealth);
+	const int currentStaminaBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentStamina, player.maxStamina);
+	const int currentSpellPointsBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentSpellPoints, player.maxSpellPoints);
+
+	constexpr uint32_t healthBarColorRGBA = GameWorldUiView::HealthBarColor.toRGBA();
+	constexpr uint32_t staminaBarColorRGBA = GameWorldUiView::StaminaBarColor.toRGBA();
+	constexpr uint32_t spellPointsBarColorRGBA = GameWorldUiView::SpellPointsBarColor.toRGBA();
+
+	constexpr int staminaBarXOffset = 10;
+	constexpr int spellPointsBarXOffset = 20;
+
+	for (int y = 0; y < currentHealthBarHeight; y++)
+	{
+		for (int x = 0; x < barWidth; x++)
+		{
+			texelsView.set(x, barHeight - 1 - y, healthBarColorRGBA);
+		}
+	}
+
+	for (int y = 0; y < currentStaminaBarHeight; y++)
+	{
+		for (int x = 0; x < barWidth; x++)
+		{
+			texelsView.set(staminaBarXOffset + x, barHeight - 1 - y, staminaBarColorRGBA);
+		}
+	}
+
+	for (int y = 0; y < currentSpellPointsBarHeight; y++)
+	{
+		for (int x = 0; x < barWidth; x++)
+		{
+			texelsView.set(spellPointsBarXOffset + x, barHeight - 1 - y, spellPointsBarColorRGBA);
+		}
+	}
+
+	renderer.unlockUiTexture(textureID);
 }
 
 UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradientType,
@@ -660,20 +681,6 @@ UiTextureID GameWorldUiView::allocPlayerPortraitTexture(bool isMale, int raceID,
 	return textureID;
 }
 
-UiTextureID GameWorldUiView::allocNoMagicTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = GameWorldUiView::getNoMagicTextureAsset();
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for no magic icon.");
-	}
-
-	return textureID;
-}
-
 UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFilename, int index,
 	TextureManager &textureManager, Renderer &renderer)
 {
@@ -685,34 +692,6 @@ UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFil
 	{
 		DebugCrash("Couldn't create UI texture for weapon animation \"" + weaponFilename +
 			"\" index " + std::to_string(index) + ".");
-	}
-
-	return textureID;
-}
-
-UiTextureID GameWorldUiView::allocCompassFrameTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = GameWorldUiView::getCompassFrameTextureAsset();
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for compass frame.");
-	}
-
-	return textureID;
-}
-
-UiTextureID GameWorldUiView::allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = GameWorldUiView::getCompassSliderTextureAsset();
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for compass frame.");
 	}
 
 	return textureID;

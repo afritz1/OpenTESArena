@@ -18,15 +18,20 @@ struct GameWorldUiState
 	UiContextInstanceID contextInstID;
 	UiContextInstanceID textPopUpContextInstID;
 
-	UiTextureID healthTextureID;
-	UiTextureID staminaTextureID;
-	UiTextureID spellPointsTextureID;
+	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
 	UiTextureID statusGradientTextureID;
 	UiTextureID playerPortraitTextureID;
 	Buffer<UiTextureID> weaponAnimTextureIDs;
 	Buffer<UiTextureID> keyTextureIDs;
 	Buffer<UiTextureID> arrowCursorTextureIDs;
 	UiTextureID modernModeReticleTextureID;
+
+	double currentHealth;
+	double maxHealth;
+	double currentStamina;
+	double maxStamina;
+	double currentSpellPoints;
+	double maxSpellPoints;
 
 	GameWorldUiState();
 

@@ -21,6 +21,7 @@ namespace
 	constexpr char NoMagicImageElementName[] = "GameWorldNoMagicImage";
 	constexpr char StatusGradientImageElementName[] = "GameWorldStatusGradientImage";
 	constexpr char PlayerPortraitImageElementName[] = "GameWorldPlayerPortraitImage";
+	constexpr char StatusBarsImageElementName[] = "GameWorldPlayerStatusBarsImage";
 
 	constexpr char PlayerNameTextBoxElementName[] = "GameWorldPlayerNameTextBox";
 
@@ -65,6 +66,13 @@ namespace
 		return !WeaponAnimationUtils::isSheathed(weaponAnimDefState);
 	}
 
+	Int2 GetStatusBarsModernModePosition(const Window &window)
+	{
+		const Int2 windowDims = window.getPixelDimensions();
+		const Int2 statusBarModernModeWindowPosition(GameWorldUiView::StatusBarModernModeXOffset, windowDims.y - GameWorldUiView::StatusBarModernModeYOffset);
+		return window.nativeToOriginal(statusBarModernModeWindowPosition);
+	}
+
 	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 }
 
@@ -73,12 +81,16 @@ GameWorldUiState::GameWorldUiState()
 	this->game = nullptr;
 	this->contextInstID = -1;
 	this->textPopUpContextInstID = -1;
-	this->healthTextureID = -1;
-	this->staminaTextureID = -1;
-	this->spellPointsTextureID = -1;
+	this->statusBarsTextureID = -1;
 	this->statusGradientTextureID = -1;
 	this->playerPortraitTextureID = -1;
 	this->modernModeReticleTextureID = -1;
+	this->currentHealth = 0.0;
+	this->maxHealth = 0.0;
+	this->currentStamina = 0.0;
+	this->maxStamina = 0.0;
+	this->currentSpellPoints = 0.0;
+	this->maxSpellPoints = 0.0;
 }
 
 void GameWorldUiState::init(Game &game)
@@ -89,9 +101,7 @@ void GameWorldUiState::init(Game &game)
 
 	this->game = &game;
 
-	this->healthTextureID = GameWorldUiView::allocHealthBarTexture(textureManager, renderer);
-	this->staminaTextureID = GameWorldUiView::allocStaminaBarTexture(textureManager, renderer);
-	this->spellPointsTextureID = GameWorldUiView::allocSpellPointsBarTexture(textureManager, renderer);
+	this->statusBarsTextureID = GameWorldUiView::allocStatusBarsTexture(textureManager, renderer);
 	this->statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(GameWorldUiView::StatusGradientType::Default, textureManager, renderer);
 	this->playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 
@@ -126,26 +136,21 @@ void GameWorldUiState::init(Game &game)
 	}
 
 	this->modernModeReticleTextureID = GameWorldUiView::allocModernModeReticleTexture(textureManager, renderer);
+	
+	this->currentHealth = player.currentHealth;
+	this->maxHealth = player.maxHealth;
+	this->currentStamina = player.currentStamina;
+	this->maxStamina = player.maxStamina;
+	this->currentSpellPoints = player.currentSpellPoints;
+	this->maxSpellPoints = player.maxSpellPoints;
 }
 
 void GameWorldUiState::freeTextures(Renderer &renderer)
 {
-	if (this->healthTextureID >= 0)
+	if (this->statusBarsTextureID >= 0)
 	{
-		renderer.freeUiTexture(this->healthTextureID);
-		this->healthTextureID = -1;
-	}
-
-	if (this->staminaTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->staminaTextureID);
-		this->staminaTextureID = -1;
-	}
-
-	if (this->spellPointsTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->spellPointsTextureID);
-		this->spellPointsTextureID = -1;
+		renderer.freeUiTexture(this->statusBarsTextureID);
+		this->statusBarsTextureID = -1;
 	}
 
 	if (this->statusGradientTextureID >= 0)
@@ -199,7 +204,7 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 
 void GameWorldUI::create(Game &game)
 {
-	DebugLogError("@todo: put health/stam/sp into one texture. tooltips. travel places, enter interiors, etc.");
+	DebugLogError("@todo: fix weapon image transform.size for Native render space. tooltips. test modern mode. travel places, enter interiors, etc.");	
 
 	GameWorldUiState &state = GameWorldUI::state;
 	state.init(game);
@@ -242,6 +247,19 @@ void GameWorldUI::create(Game &game)
 	}
 
 	GameWorldUI::updateDoorKeys();
+
+	UiElementInitInfo statusBarsImageElementInitInfo;
+	statusBarsImageElementInitInfo.name = StatusBarsImageElementName;
+	statusBarsImageElementInitInfo.position = GameWorldUiView::HealthBarRect.getBottomLeft();
+	
+	if (isModernInterface)
+	{
+		statusBarsImageElementInitInfo.position = GetStatusBarsModernModePosition(game.window);
+	}
+	
+	statusBarsImageElementInitInfo.pivotType = GameWorldUiView::StatusBarPivotType;
+	statusBarsImageElementInitInfo.drawOrder = 5;
+	uiManager.createImage(statusBarsImageElementInitInfo, state.statusBarsTextureID, state.contextInstID, renderer);
 
 	UiElementInitInfo modernModeReticleImageElementInitInfo;
 	modernModeReticleImageElementInitInfo.name = ModernModeReticleImageElementName;
@@ -294,6 +312,8 @@ void GameWorldUI::create(Game &game)
 		uiManager.setElementActive(modernModeReticleImageElementInstID, false);
 	}
 
+	GameWorldUiView::updateStatusBarsTexture(state.statusBarsTextureID, game.player, renderer);
+
 	uiManager.addMouseButtonChangedListener(GameWorldUI::onMouseButtonChanged, GameWorldUI::ContextName, inputManager);
 	uiManager.addMouseButtonHeldListener(GameWorldUI::onMouseButtonHeld, GameWorldUI::ContextName, inputManager);
 
@@ -345,7 +365,7 @@ void GameWorldUI::update(double dt)
 	UiManager &uiManager = game.uiManager;
 	TextureManager &textureManager = game.textureManager;
 	const Window &window = game.window;
-	const Renderer &renderer = game.renderer;
+	Renderer &renderer = game.renderer;
 
 	const bool isModernInterface = options.getGraphics_ModernInterface();
 
@@ -407,9 +427,37 @@ void GameWorldUI::update(double dt)
 		uiManager.setImageTexture(weaponImageElementInstID, weaponAnimTextureID);
 	}
 
-	// @todo health/stamina/spell points
+	// Status bars
+	if (isModernInterface)
+	{
+		const UiElementInstanceID statusBarsImageElementInstID = uiManager.getElementByName(StatusBarsImageElementName);
+		const Int2 statusBarsModernModePosition = GetStatusBarsModernModePosition(game.window);
+		uiManager.setTransformPosition(statusBarsImageElementInstID, statusBarsModernModePosition);
+	}	
 
+	const int previousHealthBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(state.currentHealth, state.maxHealth);
+	const int previousStaminaBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(state.currentStamina, state.maxStamina);
+	const int previousSpellPointsBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(state.currentSpellPoints, state.maxSpellPoints);
+	const int currentHealthBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentHealth, player.maxHealth);
+	const int currentStaminaBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentStamina, player.maxStamina);
+	const int currentSpellPointsBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentSpellPoints, player.maxSpellPoints);
 
+	const bool isStatusBarsTextureDirty = (previousHealthBarHeight != currentHealthBarHeight) ||
+		(previousStaminaBarHeight != currentStaminaBarHeight) ||
+		(previousSpellPointsBarHeight != currentSpellPointsBarHeight);
+
+	if (isStatusBarsTextureDirty)
+	{
+		state.currentHealth = player.currentHealth;
+		state.maxHealth = player.maxHealth;
+		state.currentStamina = player.currentStamina;
+		state.maxStamina = player.maxStamina;
+		state.currentSpellPoints = player.currentSpellPoints;
+		state.maxSpellPoints = player.maxSpellPoints;
+		GameWorldUiView::updateStatusBarsTexture(state.statusBarsTextureID, player, renderer);
+	}
+
+	// Trigger/action/effect text
 	const GameState &gameState = game.gameState;
 	const bool isTriggerTextVisible = gameState.triggerTextIsVisible();
 	const UiElementInstanceID triggerTextBoxElementInstID = uiManager.getElementByName(TriggerTextBoxElementName);
@@ -419,238 +467,7 @@ void GameWorldUI::update(double dt)
 	const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 	uiManager.setElementActive(actionTextBoxElementInstID, isActionTextVisible);
 
-
-	/*
-	if (modernInterface)
-	{
-		auto getStatusBarsModernModeOrigin = [&window]()
-		{
-			const Int2 windowDims = window.getPixelDimensions();
-			return Int2(GameWorldUiView::StatusBarModernModeXOffset, windowDims.y - GameWorldUiView::StatusBarModernModeYOffset);
-		};
-
-		auto getStatusBarScaledXDelta = [&window](const Rect &statusBarRect)
-		{
-			const int originalXDelta = statusBarRect.getLeft() - GameWorldUiView::HealthBarRect.getLeft();
-			const double originalXPercentDelta = static_cast<double>(originalXDelta) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
-
-			const Int2 windowDims = window.getPixelDimensions();
-			const double scaleXRatio = static_cast<double>(windowDims.x) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
-			const double aspectRatioMultiplier = ArenaRenderUtils::ASPECT_RATIO / window.getAspectRatio();
-			return static_cast<int>(std::round(static_cast<double>(originalXDelta) * (scaleXRatio * aspectRatioMultiplier)));
-		};
-
-		constexpr UiPivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
-		const UiDrawCallActiveFunc statusBarActiveFunc = [this]() { return !this->isPaused(); };
-
-		UiDrawCallInitInfo healthBarDrawCallInitInfo;
-		healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
-		healthBarDrawCallInitInfo.positionFunc = [&window, getStatusBarsModernModeOrigin]()
-		{
-			const Int2 windowDims = window.getPixelDimensions();
-			const Int2 nativePoint = getStatusBarsModernModeOrigin();
-			return window.nativeToOriginal(nativePoint);
-		};
-
-		healthBarDrawCallInitInfo.sizeFunc = [&game]()
-		{
-			const Player &player = game.player;
-			const Rect &barRect = GameWorldUiView::HealthBarRect;
-			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
-		};
-
-		healthBarDrawCallInitInfo.pivotType = statusBarPivotType;
-		healthBarDrawCallInitInfo.activeFunc = statusBarActiveFunc;
-		this->addDrawCall(healthBarDrawCallInitInfo);
-
-		UiDrawCallInitInfo staminaBarDrawCallInitInfo;
-		staminaBarDrawCallInitInfo.textureID = this->staminaBarTextureRef.get();
-		staminaBarDrawCallInitInfo.positionFunc = [&window, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
-		{
-			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::StaminaBarRect);
-			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
-			return window.nativeToOriginal(nativePoint);
-		};
-
-		staminaBarDrawCallInitInfo.sizeFunc = [&game]()
-		{
-			const Player &player = game.player;
-			const Rect &barRect = GameWorldUiView::StaminaBarRect;
-			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
-		};
-
-		staminaBarDrawCallInitInfo.pivotType = statusBarPivotType;
-		staminaBarDrawCallInitInfo.activeFunc = statusBarActiveFunc;
-		this->addDrawCall(staminaBarDrawCallInitInfo);
-
-		UiDrawCallInitInfo spellPointsBarDrawCallInitInfo;
-		spellPointsBarDrawCallInitInfo.textureID = this->spellPointsBarTextureRef.get();
-		spellPointsBarDrawCallInitInfo.positionFunc = [&window, getStatusBarsModernModeOrigin, getStatusBarScaledXDelta]()
-		{
-			const int scaledXDelta = getStatusBarScaledXDelta(GameWorldUiView::SpellPointsBarRect);
-			const Int2 nativePoint = getStatusBarsModernModeOrigin() + Int2(scaledXDelta, 0);
-			return window.nativeToOriginal(nativePoint);
-		};
-
-		spellPointsBarDrawCallInitInfo.sizeFunc = [&game]()
-		{
-			const Player &player = game.player;
-			const Rect &barRect = GameWorldUiView::SpellPointsBarRect;
-			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
-		};
-
-		spellPointsBarDrawCallInitInfo.pivotType = statusBarPivotType;
-		spellPointsBarDrawCallInitInfo.activeFunc = statusBarActiveFunc;
-		this->addDrawCall(spellPointsBarDrawCallInitInfo);
-	}
-	else
-	{
-		const Rect portraitRect = GameWorldUiView::getPlayerPortraitRect();
-
-		constexpr UiPivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
-
-		UiDrawCallInitInfo healthBarDrawCallInitInfo;
-		healthBarDrawCallInitInfo.textureID = this->healthBarTextureRef.get();
-		healthBarDrawCallInitInfo.position = GameWorldUiView::HealthBarRect.getBottomLeft();
-		healthBarDrawCallInitInfo.sizeFunc = [&game]()
-		{
-			const Player &player = game.player;
-			const Rect barRect = GameWorldUiView::HealthBarRect;
-			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
-		};
-
-		healthBarDrawCallInitInfo.pivotType = statusBarPivotType;
-		this->addDrawCall(healthBarDrawCallInitInfo);
-
-		UiDrawCallInitInfo staminaBarDrawCallInitInfo;
-		staminaBarDrawCallInitInfo.textureID = this->staminaBarTextureRef.get();
-		staminaBarDrawCallInitInfo.position = GameWorldUiView::StaminaBarRect.getBottomLeft();
-		staminaBarDrawCallInitInfo.sizeFunc = [&game]()
-		{
-			const Player &player = game.player;
-			const Rect barRect = GameWorldUiView::StaminaBarRect;
-			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
-		};
-
-		staminaBarDrawCallInitInfo.pivotType = statusBarPivotType;
-		this->addDrawCall(staminaBarDrawCallInitInfo);
-
-		UiDrawCallInitInfo spellPointsBarDrawCallInitInfo;
-		spellPointsBarDrawCallInitInfo.textureID = this->spellPointsBarTextureRef.get();
-		spellPointsBarDrawCallInitInfo.position = GameWorldUiView::SpellPointsBarRect.getBottomLeft();
-		spellPointsBarDrawCallInitInfo.sizeFunc = [&game]()
-		{
-			const Player &player = game.player;
-			const Rect barRect = GameWorldUiView::SpellPointsBarRect;
-			return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
-		};
-
-		spellPointsBarDrawCallInitInfo.pivotType = statusBarPivotType;
-		this->addDrawCall(spellPointsBarDrawCallInitInfo);
-
-		const FontLibrary &fontLibrary = FontLibrary::getInstance();
-		this->tooltipTextureRefs.init(GameWorldUiModel::BUTTON_COUNT);
-		for (int i = 0; i < GameWorldUiModel::BUTTON_COUNT; i++)
-		{
-			const GameWorldUiModel::ButtonType buttonType = static_cast<GameWorldUiModel::ButtonType>(i);
-			const UiTextureID tooltipTextureID = GameWorldUiView::allocTooltipTexture(buttonType, fontLibrary, renderer);
-			this->tooltipTextureRefs.set(i, ScopedUiTextureRef(tooltipTextureID, renderer));
-		}
-
-		UiDrawCallInitInfo tooltipDrawCallInitInfo;
-		tooltipDrawCallInitInfo.textureFunc = [this, &game]()
-		{
-			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
-			if (!buttonType.has_value())
-			{
-				DebugCrash("Expected tooltip texture func to only be called when actually drawing a tooltip.");
-			}
-
-			const int index = static_cast<int>(*buttonType);
-			const ScopedUiTextureRef &tooltipTextureRef = this->tooltipTextureRefs.get(index);
-			return tooltipTextureRef.get();
-		};
-
-		tooltipDrawCallInitInfo.position = GameWorldUiView::getTooltipPosition(game);
-		tooltipDrawCallInitInfo.sizeFunc = [this, &game]()
-		{
-			std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
-			if (!buttonType.has_value())
-			{
-				DebugCrash("Expected tooltip size func to only be called when actually drawing a tooltip.");
-			}
-
-			const int index = static_cast<int>(*buttonType);
-			const ScopedUiTextureRef &tooltipTextureRef = this->tooltipTextureRefs.get(index);
-			return tooltipTextureRef.getDimensions();
-		};
-
-		tooltipDrawCallInitInfo.pivotType = UiPivotType::BottomLeft;
-		tooltipDrawCallInitInfo.activeFunc = [this, &game]()
-		{
-			if (this->isPaused())
-			{
-				return false;
-			}
-
-			const std::optional<GameWorldUiModel::ButtonType> buttonType = GameWorldUiModel::getHoveredButtonType(game);
-			return buttonType.has_value() && GameWorldUiModel::isButtonTooltipAllowed(*buttonType, game);
-		};
-
-		this->addDrawCall(tooltipDrawCallInitInfo);
-
-		UiDrawCallInitInfo cursorDrawCallInitInfo;
-		cursorDrawCallInitInfo.textureFunc = [this, &game, getCursorRegionIndex]()
-		{
-			const std::optional<int> index = getCursorRegionIndex();
-			if (!index.has_value())
-			{
-				return this->defaultCursorTextureRef.get();
-			}
-
-			const ScopedUiTextureRef &arrowCursorTextureRef = this->arrowCursorTextureRefs.get(*index);
-			return arrowCursorTextureRef.get();
-		};
-
-		cursorDrawCallInitInfo.positionFunc = cursorPositionFunc;
-		cursorDrawCallInitInfo.sizeFunc = [this, &game, getCursorRegionIndex]()
-		{
-			const std::optional<int> index = getCursorRegionIndex();
-			const Int2 textureDims = [this, &index]()
-			{
-				if (!index.has_value())
-				{
-					return this->defaultCursorTextureRef.getDimensions();
-				}
-
-				const ScopedUiTextureRef &arrowCursorTextureRef = this->arrowCursorTextureRefs.get(*index);
-				return arrowCursorTextureRef.getDimensions();
-			}();
-
-			const auto &options = game.options;
-			const double cursorScale = options.getGraphics_CursorScale();
-			return Int2(
-				static_cast<int>(static_cast<double>(textureDims.x) * cursorScale),
-				static_cast<int>(static_cast<double>(textureDims.y) * cursorScale));
-		};
-
-		cursorDrawCallInitInfo.pivotFunc = [this, getCursorRegionIndex]()
-		{
-			const std::optional<int> index = getCursorRegionIndex();
-			if (!index.has_value())
-			{
-				return UiPivotType::TopLeft;
-			}
-
-			Span<const UiPivotType> arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
-			return arrowCursorPivotTypes[*index];
-		};
-
-		cursorDrawCallInitInfo.activeFunc = [this]() { return !this->isPaused(); };
-		cursorDrawCallInitInfo.renderSpace = UiRenderSpace::Native;
-		this->addDrawCall(cursorDrawCallInitInfo);
-	}
-	*/
+	// @todo effect text
 
 	if (!isModernInterface)
 	{

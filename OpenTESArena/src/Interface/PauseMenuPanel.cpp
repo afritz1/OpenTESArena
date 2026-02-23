@@ -109,8 +109,9 @@ bool PauseMenuPanel::init()
 	bgDrawCallInitInfo.size = this->backgroundTextureRef.getDimensions();
 	this->addDrawCall(bgDrawCallInitInfo);
 
-	const UiTextureID gameWorldInterfaceTextureID = GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
-	this->gameWorldInterfaceTextureRef.init(gameWorldInterfaceTextureID, renderer);
+	//const UiTextureID gameWorldInterfaceTextureID = GameWorldUiView::allocGameWorldInterfaceTexture(textureManager, renderer);
+	//this->gameWorldInterfaceTextureRef.init(gameWorldInterfaceTextureID, renderer);
+	DebugNotImplemented();
 
 	UiDrawCallInitInfo gameWorldInterfaceDrawCallInitInfo;
 	gameWorldInterfaceDrawCallInitInfo.textureID = this->gameWorldInterfaceTextureRef.get();
@@ -140,12 +141,13 @@ bool PauseMenuPanel::init()
 	playerPortraitDrawCallInitInfo.size = this->playerPortraitTextureRef.getDimensions();
 	this->addDrawCall(playerPortraitDrawCallInitInfo);
 
-	const UiTextureID healthTextureID = GameWorldUiView::allocHealthBarTexture(textureManager, renderer);
+	/*const UiTextureID healthTextureID = GameWorldUiView::allocHealthBarTexture(textureManager, renderer);
 	const UiTextureID staminaTextureID = GameWorldUiView::allocStaminaBarTexture(textureManager, renderer);
 	const UiTextureID spellPointsTextureID = GameWorldUiView::allocSpellPointsBarTexture(textureManager, renderer);
 	this->healthBarTextureRef.init(healthTextureID, renderer);
 	this->staminaBarTextureRef.init(staminaTextureID, renderer);
-	this->spellPointsBarTextureRef.init(spellPointsTextureID, renderer);
+	this->spellPointsBarTextureRef.init(spellPointsTextureID, renderer);*/
+	DebugNotImplemented();
 
 	constexpr UiPivotType statusBarPivotType = GameWorldUiView::StatusBarPivotType;
 
@@ -156,7 +158,7 @@ bool PauseMenuPanel::init()
 	{
 		const Player &player = game.player;
 		const Rect barRect = GameWorldUiView::HealthBarRect;
-		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentHealth, player.maxHealth));
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentHealth, player.maxHealth));
 	};
 
 	healthBarDrawCallInitInfo.pivotType = statusBarPivotType;
@@ -169,7 +171,7 @@ bool PauseMenuPanel::init()
 	{
 		const Player &player = game.player;
 		const Rect barRect = GameWorldUiView::StaminaBarRect;
-		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentStamina, player.maxStamina));
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentStamina, player.maxStamina));
 	};
 
 	staminaBarDrawCallInitInfo.pivotType = statusBarPivotType;
@@ -182,14 +184,15 @@ bool PauseMenuPanel::init()
 	{
 		const Player &player = game.player;
 		const Rect barRect = GameWorldUiView::SpellPointsBarRect;
-		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentHeight(barRect.height, player.currentSpellPoints, player.maxSpellPoints));
+		return Int2(barRect.width, GameWorldUiView::getStatusBarCurrentPixelHeight(player.currentSpellPoints, player.maxSpellPoints));
 	};
 
 	spellPointsBarDrawCallInitInfo.pivotType = statusBarPivotType;
 	this->addDrawCall(spellPointsBarDrawCallInitInfo);
 
-	const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
-	this->noMagicTextureRef.init(noMagicTextureID, renderer);
+	//const UiTextureID noMagicTextureID = GameWorldUiView::allocNoMagicTexture(textureManager, renderer);
+	//this->noMagicTextureRef.init(noMagicTextureID, renderer);
+	DebugNotImplemented();
 
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);

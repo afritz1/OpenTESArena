@@ -20,6 +20,7 @@
 class FontLibrary;
 class Game;
 
+struct Player;
 struct UiCommandList;
 struct Window;
 
@@ -141,8 +142,6 @@ namespace GameWorldUiView
 	constexpr int StatusBarModernModeXOffset = 48;
 	constexpr int StatusBarModernModeYOffset = 32;
 
-	int getStatusBarCurrentHeight(int maxHeight, double currentValue, double maxValue);
-
 	Int2 getNoMagicTexturePosition();
 
 	int getKeyTextureCount(TextureManager &textureManager);
@@ -208,16 +207,13 @@ namespace GameWorldUiView
 	TextureAsset getKeyTextureAsset(int keyIndex);
 	TextureAsset getContainerInventoryTextureAsset();
 
-	UiTextureID allocGameWorldInterfaceTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocHealthBarTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocStaminaBarTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocSpellPointsBarTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocStatusBarsTexture(TextureManager &textureManager, Renderer &renderer);
+	int getStatusBarCurrentPixelHeight(double currentValue, double maxValue);
+	void updateStatusBarsTexture(UiTextureID textureID, const Player &player, Renderer &renderer);
+
 	UiTextureID allocStatusGradientTexture(StatusGradientType gradientType, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID, TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocNoMagicTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocWeaponAnimTexture(const std::string &weaponFilename, int index, TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocCompassFrameTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocCompassSliderTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, const FontLibrary &fontLibrary, Renderer &renderer);
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocModernModeReticleTexture(TextureManager &textureManager, Renderer &renderer);
