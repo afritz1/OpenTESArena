@@ -204,8 +204,6 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 
 void GameWorldUI::create(Game &game)
 {
-	DebugLogError("@todo: fix weapon image transform.size for Native render space. tooltips. test modern mode. travel places, enter interiors, etc.");	
-
 	GameWorldUiState &state = GameWorldUI::state;
 	state.init(game);
 

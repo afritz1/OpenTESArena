@@ -15,6 +15,7 @@
 #include "../Interface/ChooseRaceUiState.h"
 #include "../Interface/GameWorldUiState.h"
 #include "../Interface/MainMenuUiState.h"
+#include "../Interface/PauseMenuUiState.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
@@ -167,7 +168,8 @@ namespace
 		DEFINE_CALLBACK_TUPLE(ChooseNameUI),
 		DEFINE_CALLBACK_TUPLE(ChooseRaceUI),
 		DEFINE_CALLBACK_TUPLE(GameWorldUI),
-		DEFINE_CALLBACK_TUPLE(MainMenuUI)
+		DEFINE_CALLBACK_TUPLE(MainMenuUI),
+		DEFINE_CALLBACK_TUPLE(PauseMenuUI)
 	};
 
 	bool TryGetPivotTypeMapping(const std::string &str, UiPivotType *outPivotType)

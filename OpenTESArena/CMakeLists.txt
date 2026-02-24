@@ -342,6 +342,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/PauseMenuUiController.h"
     "${SRC_ROOT}/Interface/PauseMenuUiModel.cpp"
     "${SRC_ROOT}/Interface/PauseMenuUiModel.h"
+    "${SRC_ROOT}/Interface/PauseMenuUiState.cpp"
+    "${SRC_ROOT}/Interface/PauseMenuUiState.h"
     "${SRC_ROOT}/Interface/PauseMenuUiView.cpp"
     "${SRC_ROOT}/Interface/PauseMenuUiView.h"
     "${SRC_ROOT}/Interface/ProvinceMapPanel.cpp"
