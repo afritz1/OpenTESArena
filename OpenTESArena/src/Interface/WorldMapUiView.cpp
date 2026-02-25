@@ -19,11 +19,6 @@ Int2 WorldMapUiView::getProvinceNameOffset(int provinceID, TextureManager &textu
 	return textureFileMetadata.getOffset(provinceID);
 }
 
-TextureAsset WorldMapUiView::getTextureAsset()
-{
-	return TextureAsset(std::string(ArenaTextureName::WorldMap));
-}
-
 TextureAsset WorldMapUiView::getPaletteTextureAsset()
 {
 	return TextureAsset(std::string(ArenaTextureName::WorldMap));
@@ -32,20 +27,6 @@ TextureAsset WorldMapUiView::getPaletteTextureAsset()
 std::string WorldMapUiView::getProvinceNamesFilename()
 {
 	return ArenaTextureName::ProvinceNames;
-}
-
-UiTextureID WorldMapUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = WorldMapUiView::getTextureAsset();
-	const TextureAsset paletteTextureAsset = WorldMapUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for world map background.");
-	}
-
-	return textureID;
 }
 
 UiTextureID WorldMapUiView::allocHighlightedTextTexture(int provinceID, TextureManager &textureManager, Renderer &renderer)

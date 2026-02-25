@@ -372,6 +372,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/WorldMapUiController.h"
     "${SRC_ROOT}/Interface/WorldMapUiModel.cpp"
     "${SRC_ROOT}/Interface/WorldMapUiModel.h"
+    "${SRC_ROOT}/Interface/WorldMapUiState.cpp"
+    "${SRC_ROOT}/Interface/WorldMapUiState.h"
     "${SRC_ROOT}/Interface/WorldMapUiView.cpp"
     "${SRC_ROOT}/Interface/WorldMapUiView.h")
 

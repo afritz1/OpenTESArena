@@ -6,7 +6,6 @@
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureUtils.h"
 #include "../Math/Vector2.h"
-#include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../Utilities/Color.h"
@@ -15,19 +14,11 @@ class Game;
 
 namespace WorldMapUiView
 {
-	const Int2 BackToGameButtonCenterPoint(
-		ArenaRenderUtils::SCREEN_WIDTH - 22,
-		ArenaRenderUtils::SCREEN_HEIGHT - 7);
-	constexpr int BackToGameButtonWidth = 36;
-	constexpr int BackToGameButtonHeight = 9;
-
 	Int2 getProvinceNameOffset(int provinceID, TextureManager &textureManager);
 
-	TextureAsset getTextureAsset();
 	TextureAsset getPaletteTextureAsset();
 	std::string getProvinceNamesFilename();
 
-	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocHighlightedTextTexture(int provinceID, TextureManager &textureManager, Renderer &renderer);
 }
 

@@ -1,33 +1,15 @@
 #include "FastTravelSubPanel.h"
 #include "GameWorldPanel.h"
 #include "MainQuestSplashPanel.h"
-#include "ProvinceMapPanel.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "../Assets/BinaryAssetLibrary.h"
-#include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
-#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Sky/SkyUtils.h"
-#include "../Stats/CharacterClassLibrary.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
-
-void WorldMapUiController::onBackToGameButtonSelected(Game &game)
-{
-	// Clear selected map location.
-	auto &gameState = game.gameState;
-	gameState.setTravelData(std::nullopt);
-
-	game.setPanel<GameWorldPanel>();
-}
-
-void WorldMapUiController::onProvinceButtonSelected(Game &game, int provinceID)
-{
-	game.setPanel<ProvinceMapPanel>(provinceID);
-}
 
 void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays)
 {

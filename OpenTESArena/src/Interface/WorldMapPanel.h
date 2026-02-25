@@ -7,7 +7,6 @@
 class WorldMapPanel : public Panel
 {
 private:
-	Buffer<Int2> provinceNameOffsets; // Yellow province name positions.
 	ScopedUiTextureRef backgroundTextureRef, highlightedTextTextureRef, cursorTextureRef;
 public:
 	WorldMapPanel(Game &game);

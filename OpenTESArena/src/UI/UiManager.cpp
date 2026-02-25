@@ -21,6 +21,7 @@
 #include "../Interface/GameWorldUiState.h"
 #include "../Interface/MainMenuUiState.h"
 #include "../Interface/PauseMenuUiState.h"
+#include "../Interface/WorldMapUiState.h"
 #include "../Rendering/Window.h"
 
 #include "components/debug/Debug.h"
@@ -76,6 +77,7 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(GameWorldUI);
 	REGISTER_SCOPE_CALLBACKS(MainMenuUI);
 	REGISTER_SCOPE_CALLBACKS(PauseMenuUI);
+	REGISTER_SCOPE_CALLBACKS(WorldMapUI);
 	return true;
 }
 
