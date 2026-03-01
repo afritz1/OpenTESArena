@@ -1,5 +1,6 @@
 #include "GameWorldPanel.h"
 #include "ProvinceMapPanel.h"
+#include "ProvinceMapUiState.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "WorldMapUiState.h"
@@ -116,8 +117,8 @@ void WorldMapUI::onMouseButtonChanged(Game &game, MouseButtonType type, const In
 					{
 						if (i < WorldMapUiModel::EXIT_BUTTON_MASK_ID)
 						{
-							const int provinceID = i;
-							game.setPanel<ProvinceMapPanel>(provinceID);
+							ProvinceMapUI::state.provinceID = i;
+							game.setPanel<ProvinceMapPanel>();
 						}
 						else
 						{

@@ -1,6 +1,7 @@
 #ifndef WORLD_MAP_UI_STATE_H
 #define WORLD_MAP_UI_STATE_H
 
+#include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"

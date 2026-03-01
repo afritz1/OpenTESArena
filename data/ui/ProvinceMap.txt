@@ -1,0 +1,20 @@
+[Context]
+ContextName=ProvinceMap
+
+##################################
+
+# Fullscreen button (required due to overlap with location selection and search/travel/back).
+
+[ProvinceMapFullscreenButton]
+Type=Button
+Size=320,200
+Callback=ProvinceMapUI.onFullscreenButtonSelected
+
+##################################
+
+# Hotkeys
+
+[ProvinceMapBackInputListener]
+Type=InputListener
+InputActionName=Back
+Callback=ProvinceMapUI.onBackInputAction

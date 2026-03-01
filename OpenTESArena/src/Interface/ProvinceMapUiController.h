@@ -10,10 +10,6 @@ class ProvinceSearchSubPanel;
 
 namespace ProvinceMapUiController
 {
-	void onSearchButtonSelected(Game &game, ProvinceMapPanel &panel, int provinceID);
-	void onTravelButtonSelected(Game &game, ProvinceMapPanel &panel);
-	void onBackToWorldMapButtonSelected(Game &game);
-
 	void onTextPopUpSelected(Game &game);	
 }
 

@@ -352,6 +352,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/ProvinceMapUiController.h"
     "${SRC_ROOT}/Interface/ProvinceMapUiModel.cpp"
     "${SRC_ROOT}/Interface/ProvinceMapUiModel.h"
+    "${SRC_ROOT}/Interface/ProvinceMapUiState.cpp"
+    "${SRC_ROOT}/Interface/ProvinceMapUiState.h"
     "${SRC_ROOT}/Interface/ProvinceMapUiView.cpp"
     "${SRC_ROOT}/Interface/ProvinceMapUiView.h"
     "${SRC_ROOT}/Interface/ProvinceSearchSubPanel.cpp"

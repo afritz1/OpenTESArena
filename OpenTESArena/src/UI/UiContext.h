@@ -13,7 +13,7 @@ class UiManager;
 #define DECLARE_UI_CONTEXT(name) \
 static constexpr const char ContextName[] = #name; \
 static constexpr const char NamespaceString[] = #name "UI"; \
-static name##UiState state; \
+inline name##UiState state; \
 void create(Game &game); \
 void destroy(); \
 void update(double dt)

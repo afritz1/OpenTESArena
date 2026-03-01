@@ -1,55 +1,10 @@
 #include "ProvinceMapPanel.h"
 #include "ProvinceMapUiController.h"
-#include "ProvinceMapUiModel.h"
 #include "ProvinceSearchSubPanel.h"
-#include "WorldMapPanel.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 
 #include "components/utilities/String.h"
-
-void ProvinceMapUiController::onSearchButtonSelected(Game &game, ProvinceMapPanel &panel, int provinceID)
-{
-	// Push text entry sub-panel for location searching.
-	game.pushSubPanel<ProvinceSearchSubPanel>(panel, provinceID);
-}
-
-void ProvinceMapUiController::onTravelButtonSelected(Game &game, ProvinceMapPanel &panel)
-{
-	const auto &gameState = game.gameState;
-	const bool hasTravelData = gameState.getTravelData() != nullptr;
-
-	if (hasTravelData)
-	{
-		// Fast travel to the selected destination.
-		panel.handleFastTravel();
-	}
-	else
-	{
-		// Display error message about no selected destination.
-		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		const std::string errorText = [&exeData]()
-		{
-			std::string text = exeData.travel.noDestination;
-
-			// Remove carriage return at end.
-			text.pop_back();
-
-			// Replace carriage returns with newlines.
-			text = String::replace(text, '\r', '\n');
-
-			return text;
-		}();
-
-		std::unique_ptr<Panel> textPopUp = ProvinceMapUiModel::makeTextPopUp(game, errorText);
-		game.pushSubPanel(std::move(textPopUp));
-	}
-}
-
-void ProvinceMapUiController::onBackToWorldMapButtonSelected(Game &game)
-{
-	game.setPanel<WorldMapPanel>();
-}
 
 void ProvinceMapUiController::onTextPopUpSelected(Game &game)
 {
@@ -72,7 +27,8 @@ void ProvinceSearchUiController::onTextAccepted(Game &game, ProvinceSearchSubPan
 	{
 		// The location name is an exact match. Try to select the location in the province
 		// map panel based on whether the player is already there.
-		panel.provinceMapPanel->trySelectLocation(*exactLocationIndex);
+		//panel.provinceMapPanel->trySelectLocation(*exactLocationIndex);
+		DebugNotImplemented();
 
 		// Return to the province map panel.
 		game.popSubPanel();
@@ -89,7 +45,8 @@ void ProvinceSearchUiController::onListLocationSelected(Game &game, ProvinceSear
 {
 	// Try to select the location in the province map panel based on whether the
 	// player is already there.
-	panel.provinceMapPanel->trySelectLocation(locationID);
+	//panel.provinceMapPanel->trySelectLocation(locationID);
+	DebugNotImplemented();
 
 	// Return to the province map panel.
 	game.popSubPanel();
