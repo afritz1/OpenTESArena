@@ -97,6 +97,7 @@ public:
 	void freeImage(UiElementInstanceID elementInstID);
 
 	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);
+	std::string getTextBoxText(UiElementInstanceID elementInstID) const;
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 

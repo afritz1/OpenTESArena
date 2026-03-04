@@ -114,6 +114,7 @@ namespace ProvinceSearchUiView
 
 	TextBoxInitInfo getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 
+	constexpr Int2 TextureCenter((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 	constexpr int TextureWidth = 280;
 	constexpr int TextureHeight = 40;
 	constexpr UiTexturePatternType TexturePattern = UiTexturePatternType::Parchment;
@@ -130,14 +131,12 @@ namespace ProvinceSearchUiView
 	constexpr int ListTextureY = 11;
 
 	constexpr Rect ListBoxRect(85, 34, 147, 54);
-	ListBoxProperties makeListBoxProperties(const FontLibrary &fontLibrary);
+	ListBoxProperties makeListBoxProperties();
 
 	TextureAsset getListTextureAsset();
 	TextureAsset getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID);
 
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocListBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

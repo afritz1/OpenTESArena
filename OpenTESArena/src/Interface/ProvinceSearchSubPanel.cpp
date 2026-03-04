@@ -35,8 +35,7 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	// Don't initialize the locations list box until it's reached, since its contents
 	// may depend on the search results.
 	const std::string textTitleText = ProvinceSearchUiModel::getTitleText(game);
-	const TextBoxInitInfo textTitleTextBoxInitInfo =
-		ProvinceSearchUiView::getTitleTextBoxInitInfo(textTitleText, fontLibrary);
+	const TextBoxInitInfo textTitleTextBoxInitInfo = ProvinceSearchUiView::getTitleTextBoxInitInfo(textTitleText, fontLibrary);
 	if (!this->textTitleTextBox.init(textTitleTextBoxInitInfo, textTitleText, renderer))
 	{
 		DebugLogError("Couldn't init title text box.");
@@ -175,8 +174,9 @@ bool ProvinceSearchSubPanel::init(ProvinceMapPanel &provinceMapPanel, int provin
 	// @todo: draw blinking cursor for text entry
 
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const UiTextureID listBackgroundTextureID = ProvinceSearchUiView::allocListBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
-	listBackgroundTextureRef.init(listBackgroundTextureID, renderer);
+	//const UiTextureID listBackgroundTextureID = ProvinceSearchUiView::allocListBackgroundTexture(provinceID, binaryAssetLibrary, textureManager, renderer);
+	//listBackgroundTextureRef.init(listBackgroundTextureID, renderer);
+	DebugNotImplemented();
 
 	UiDrawCallActiveFunc listActiveFunc = [this]()
 	{
@@ -226,8 +226,7 @@ void ProvinceSearchSubPanel::initLocationsList()
 	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
 	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
 
-	this->locationsListBox.init(ProvinceSearchUiView::ListBoxRect,
-		ProvinceSearchUiView::makeListBoxProperties(FontLibrary::getInstance()), game.renderer);
+	this->locationsListBox.init(ProvinceSearchUiView::ListBoxRect, ProvinceSearchUiView::makeListBoxProperties(), game.renderer);
 
 	this->clearButtonProxies();
 

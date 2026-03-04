@@ -12,6 +12,20 @@ Callback=ProvinceMapUI.onFullscreenButtonSelected
 
 ##################################
 
+# Location name
+
+[ProvinceMapLocationTextBox]
+Type=TextBox
+Pivot=Middle
+DrawOrder=2
+WorstCaseText=WWWWWWWWWWWWWWWWWWWWWWWW
+FontName=ARENAFNT.DAT
+TextAlignment=MiddleCenter
+TextColor=158,0,0,255
+Shadow=1,0,48,48,48,255
+
+##################################
+
 # Hotkeys
 
 [ProvinceMapBackInputListener]

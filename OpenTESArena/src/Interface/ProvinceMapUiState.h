@@ -25,9 +25,12 @@ struct ProvinceMapUiState
 	Game *game;
 	UiContextInstanceID contextInstID;
 	UiContextInstanceID textPopUpContextInstID;
-	UiContextInstanceID searchPopUpContextInstID;
+	UiContextInstanceID searchInputPopUpContextInstID;
+	UiContextInstanceID searchResultsPopUpContextInstID;
 
 	UiTextureID backgroundTextureID;
+
+	UiTextureID searchInputImageTextureID;
 
 	ProvinceMapLocationTextures cityStateTextures, townTextures, villageTextures, dungeonTextures, staffDungeonTextures;
 	AnimationState blinkState;
@@ -53,11 +56,23 @@ namespace ProvinceMapUI
 
 	// @todo makeDiseasedWarningPopUp() when the player is diseased
 
+	void onSearchInputTextAccepted();
+
+	void onSearchResultsListLocationSelected(int locationID);
+	void onSearchResultsListUpButtonSelected();
+	void onSearchResultsListDownButtonSelected();
+
 	void onMouseMotion(Game &game, int dx, int dy);
 
 	void onFullscreenButtonSelected(MouseButtonType mouseButtonType);
 
 	void onBackInputAction(const InputActionCallbackValues &values);
+
+	void onSearchInputAcceptInputAction(const InputActionCallbackValues &values);
+	void onSearchInputBackInputAction(const InputActionCallbackValues &values);
+	void onSearchInputBackspaceInputAction(const InputActionCallbackValues &values);
+
+	void onSearchResultsBackInputAction(const InputActionCallbackValues &values);
 
 	constexpr std::pair<const char*, UiButtonDefinitionCallback> ButtonCallbacks[] =
 	{

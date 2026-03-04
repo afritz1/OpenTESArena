@@ -349,8 +349,10 @@ TextBoxInitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLibr
 		fontLibrary);
 }
 
-ListBoxProperties ProvinceSearchUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
+ListBoxProperties ProvinceSearchUiView::makeListBoxProperties()
 {
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+
 	const char *fontName = ArenaFontName::Arena;
 	int fontDefIndex;
 	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
@@ -418,21 +420,6 @@ UiTextureID ProvinceSearchUiView::allocParchmentTexture(TextureManager &textureM
 	Span2D<uint32_t> dstTexels = lockedTexture.getTexels32();
 	std::copy(srcTexels.begin(), srcTexels.end(), dstTexels.begin());
 	renderer.unlockUiTexture(textureID);
-
-	return textureID;
-}
-
-UiTextureID ProvinceSearchUiView::allocListBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = ProvinceSearchUiView::getListTextureAsset();
-	const TextureAsset paletteTextureAsset = ProvinceSearchUiView::getListPaletteTextureAsset(binaryAssetLibrary, provinceID);
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create list background texture.");
-	}
 
 	return textureID;
 }

@@ -16,7 +16,6 @@ struct UiListBoxInitInfo
 	int textureHeight;
 	int itemPixelSpacing;
 	std::string fontName;
-	TextRenderTextureGenInfo textureGenInfo; // Texture dimensions, etc..
 	Color defaultTextColor; // Color of item text unless overridden.
 	double scrollDeltaScale; // Multiplier of item height for each scroll.
 

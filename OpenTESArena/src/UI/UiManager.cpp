@@ -497,6 +497,15 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	return elementInstID;
 }
 
+std::string UiManager::getTextBoxText(UiElementInstanceID elementInstID) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::TextBox);
+	const UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+	return textBox.text;
+}
+
 void UiManager::setTextBoxText(UiElementInstanceID elementInstID, const char *str)
 {
 	UiElement &element = this->elements.get(elementInstID);
