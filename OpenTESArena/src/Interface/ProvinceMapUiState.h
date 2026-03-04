@@ -49,6 +49,7 @@ namespace ProvinceMapUI
 
 	void initLocationIconUI(int provinceID);
 	void updateHoveredLocationID(Int2 originalPosition);
+	void updateLocationHighlights();
 	void trySelectLocation(int selectedLocationID);
 	void beginFastTravel();
 	void showTextPopUp(const char *str);

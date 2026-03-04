@@ -20,6 +20,8 @@ namespace
 	constexpr char ContextName_SearchInputPopUp[] = "ProvinceMapSearchInputPopUp";
 	constexpr char ContextName_SearchResultsPopUp[] = "ProvinceMapSearchResultsPopUp";
 
+	constexpr char ElementName_LocationTextBox[] = "ProvinceMapLocationTextBox";
+
 	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	std::string GetLocationIconImageElementName(const LocationDefinition &locationDef)
@@ -139,6 +141,8 @@ void ProvinceMapUI::create(Game &game)
 	UiElementInitInfo backgroundImageElementInitInfo;
 	backgroundImageElementInitInfo.name = "ProvinceMapBackgroundImage";
 	uiManager.createImage(backgroundImageElementInitInfo, state.backgroundTextureID, state.contextInstID, renderer);
+
+	uiManager.addMouseMotionListener(ProvinceMapUI::onMouseMotion, ProvinceMapUI::ContextName, inputManager);
 
 	UiContextInitInfo textPopUpContextInitInfo;
 	textPopUpContextInitInfo.name = ContextName_TextPopUp;
@@ -267,84 +271,38 @@ void ProvinceMapUI::update(double dt)
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
 
-	// @todo hovered text box position update
-	/*UiDrawCallInitInfo hoveredLocationTextDrawCallInitInfo;
-	hoveredLocationTextDrawCallInitInfo.textureFunc = [this]() { return this->hoveredLocationTextBox.getTextureID(); };
-	hoveredLocationTextDrawCallInitInfo.positionFunc = [this, &game]()
+	// Update hovered location text box position.
+	// Can't use the text box dimensions with clamping since it's allocated for worst-case location name now.
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	const std::string &fontName = ProvinceMapUiView::LocationFontName;
+	int fontDefIndex;
+	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
 	{
-		auto &gameState = game.gameState;
-		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(this->provinceID);
-		const LocationDefinition &locationDef = provinceDef.getLocationDef(this->hoveredLocationID);
+		DebugCrash("Couldn't get hovered location font name \"" + fontName + "\".");
+	}
 
-		const Int2 locationCenter = ProvinceMapUiView::getLocationCenterPoint(game, this->provinceID, this->hoveredLocationID);
-		const Int2 textBoxCenter = locationCenter - Int2(0, 10);
+	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	const std::string locationName = ProvinceMapUiModel::getLocationName(game, state.provinceID, state.hoveredLocationID);
+	TextRenderShadowInfo shadowInfo;
+	shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY, ProvinceMapUiView::LocationTextShadowColor);
 
-		// Can't use the text box dimensions with clamping since it's allocated for worst-case location name now.
-		const FontLibrary &fontLibrary = FontLibrary::getInstance();
-		const std::string &fontName = ProvinceMapUiView::LocationFontName;
-		int fontDefIndex;
-		if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
-		{
-			DebugCrash("Couldn't get hovered location font name \"" + fontName + "\".");
-		}
+	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
+	const Int2 locationCenter = ProvinceMapUiView::getLocationCenterPoint(game, state.provinceID, state.hoveredLocationID);
+	const Int2 locationTextBoxCenter = locationCenter - Int2(0, 10);
+	const Rect textBoxRect(locationTextBoxCenter, textureGenInfo.width, textureGenInfo.height);
+	const Int2 locationTextBoxClampedCenter = ProvinceMapUiView::getLocationTextClampedCenter(textBoxRect);
+	const UiElementInstanceID locationTextBoxElementInstID = uiManager.getElementByName(ElementName_LocationTextBox);
+	uiManager.setTransformPosition(locationTextBoxElementInstID, locationTextBoxClampedCenter);
 
-		const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
+	ProvinceMapUI::updateLocationHighlights();
 
-		const std::string locationName = ProvinceMapUiModel::getLocationName(game, this->provinceID, this->hoveredLocationID);
-		TextRenderShadowInfo shadowInfo;
-		shadowInfo.init(ProvinceMapUiView::LocationTextShadowOffsetX, ProvinceMapUiView::LocationTextShadowOffsetY, ProvinceMapUiView::LocationTextShadowColor);
-		const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(locationName, fontDef, shadowInfo);
-
-		// Clamp to screen edges, with some extra space on the left and right (note this clamped position
-		// is for the TopLeft pivot type).
-		const Rect textBoxRect(textBoxCenter, textureGenInfo.width, textureGenInfo.height);
-		const Int2 clampedCenter = ProvinceMapUiView::getLocationTextClampedCenter(textBoxRect);
-		return clampedCenter;
-	};
-
-	hoveredLocationTextDrawCallInitInfo.size = this->hoveredLocationTextBox.getRect().getSize();
-	hoveredLocationTextDrawCallInitInfo.pivotType = UiPivotType::Middle;
-	hoveredLocationTextDrawCallInitInfo.activeFunc = [this]() { return !this->isPaused(); };*/
-
-	const GameState &gameState = game.gameState;
+	GameState &gameState = game.gameState;
 	if (gameState.getTravelData() != nullptr)
 	{
 		state.blinkState.update(dt);
 	}
-
-	// @todo location icon highlight blink for all locations
-	/*highlightIconDrawCallInitInfo.activeFunc = [provinceID, &gameState, &provinceInst, &provinceDef, &playerProvinceDef, i, locationDefIndex]()
-	{
-		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-		const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
-		if (provinceDef.matches(playerProvinceDef) && locationDef.matches(playerLocationDef))
-		{
-			return true;
-		}
-		else
-		{
-			// If there is a currently-selected destination in this province, draw its blinking highlight
-			// if within the "blink on" interval.
-			const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
-			if (travelDataPtr != nullptr)
-			{
-				const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
-				if ((travelData.provinceID == provinceID) && (travelData.locationID == i))
-				{
-					// See if the blink period percent lies within the "on" percent. Use less-than to compare them
-					// so the on-state appears before the off-state.
-					if (state.blinkState.getPercent() < ProvinceMapUiView::BlinkPeriodPercentOn)
-					{
-						return true;
-					}
-				}
-			}
-		}
-
-		return false;
-	};*/
 }
 
 void ProvinceMapUI::initLocationIconUI(int provinceID)
@@ -398,159 +356,113 @@ void ProvinceMapUI::initLocationIconUI(int provinceID)
 	for (int i = 0; i < provinceInst.getLocationCount(); i++)
 	{
 		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
-		if (locationInst.isVisible())
+		if (!locationInst.isVisible())
 		{
-			const int locationDefIndex = locationInst.getLocationDefIndex();
-			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
-
-			const ProvinceMapLocationTextures *locationTexturesPtr = [&state, &locationDef]() -> const ProvinceMapLocationTextures*
-			{
-				const LocationDefinitionType locationDefType = locationDef.getType();
-				if (locationDefType == LocationDefinitionType::City)
-				{
-					const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-					const ArenaCityType cityType = cityDef.type;
-					switch (cityType)
-					{
-					case ArenaCityType::CityState:
-						return &state.cityStateTextures;
-					case ArenaCityType::Town:
-						return &state.townTextures;
-					case ArenaCityType::Village:
-						return &state.villageTextures;
-					default:
-						DebugLogErrorFormat("Unhandled city type \"%d\".", cityType);
-						return nullptr;
-					}
-				}
-				else if (locationDefType == LocationDefinitionType::Dungeon)
-				{
-					return &state.dungeonTextures;
-				}
-				else if (locationDefType == LocationDefinitionType::MainQuestDungeon)
-				{
-					const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
-					const LocationMainQuestDungeonDefinitionType mainQuestDungeonType = mainQuestDungeonDef.type;
-					switch (mainQuestDungeonType)
-					{
-					case LocationMainQuestDungeonDefinitionType::Start:
-					case LocationMainQuestDungeonDefinitionType::Map:
-						return &state.dungeonTextures;
-					case LocationMainQuestDungeonDefinitionType::Staff:
-						return &state.staffDungeonTextures;
-					default:
-						DebugLogErrorFormat("Unhandled main quest dungeon type \"%d\".", mainQuestDungeonType);
-						return nullptr;
-					}
-				}
-				else
-				{
-					DebugLogErrorFormat("Unhandled location definition type \"%d\".", locationDefType);
-					return nullptr;
-				}
-			}();
-
-			UiElementInitInfo locationIconImageElementInitInfo;
-			locationIconImageElementInitInfo.name = GetLocationIconImageElementName(locationDef);
-			locationIconImageElementInitInfo.position = Int2(locationDef.getScreenX(), locationDef.getScreenY());
-			locationIconImageElementInitInfo.pivotType = UiPivotType::Middle;
-			uiManager.createImage(locationIconImageElementInitInfo, locationTexturesPtr->textureID, state.contextInstID, renderer);
-
-			const ProvinceMapUiView::HighlightType locationIconHighlightType = [provinceID, &state, &gameState, &provinceDef, &playerProvinceDef, i, &locationDef]()
-			{
-				const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
-				if (provinceDef.matches(playerProvinceDef) && locationDef.matches(playerLocationDef))
-				{
-					return ProvinceMapUiView::HighlightType::PlayerLocation;
-				}
-				else
-				{
-					// If there is a currently-selected destination in this province, draw its blinking highlight
-					// if within the "blink on" interval.
-					const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
-					if (travelDataPtr != nullptr)
-					{
-						const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
-						if ((travelData.provinceID == provinceID) && (travelData.locationID == i))
-						{
-							return ProvinceMapUiView::HighlightType::TravelDestination;
-						}
-					}
-				}
-
-				return ProvinceMapUiView::HighlightType::None;
-			}();
-
-			const ProvinceMapLocationTextures *highlightLocationTexturesPtr = [&state, &locationDef]() -> const ProvinceMapLocationTextures*
-			{
-				const LocationDefinitionType locationDefType = locationDef.getType();
-				if (locationDefType == LocationDefinitionType::City)
-				{
-					const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
-					const ArenaCityType cityType = cityDef.type;
-					switch (cityType)
-					{
-					case ArenaCityType::CityState:
-						return &state.cityStateTextures;
-					case ArenaCityType::Town:
-						return &state.townTextures;
-					case ArenaCityType::Village:
-						return &state.villageTextures;
-					default:
-						DebugLogErrorFormat("Unhandled city type \"%d\".", cityType);
-						return nullptr;
-					}
-				}
-				else if (locationDefType == LocationDefinitionType::Dungeon)
-				{
-					return &state.dungeonTextures;
-				}
-				else if (locationDefType == LocationDefinitionType::MainQuestDungeon)
-				{
-					const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
-					const LocationMainQuestDungeonDefinitionType mainQuestDungeonType = mainQuestDungeonDef.type;
-					switch (mainQuestDungeonType)
-					{
-					case LocationMainQuestDungeonDefinitionType::Start:
-					case LocationMainQuestDungeonDefinitionType::Map:
-						return &state.dungeonTextures;
-					case LocationMainQuestDungeonDefinitionType::Staff:
-						return &state.staffDungeonTextures;
-					default:
-						DebugLogErrorFormat("Unhandled main quest dungeon type \"%d\".", mainQuestDungeonType);
-						return nullptr;
-					}
-				}
-				else
-				{
-					DebugLogErrorFormat("Unhandled location definition type \"%d\".", locationDefType);
-					return nullptr;
-				}
-			}();
-
-			DebugAssert(highlightLocationTexturesPtr != nullptr);
-
-			const UiTextureID highlightLocationTextureID = [locationIconHighlightType, highlightLocationTexturesPtr]()
-			{
-				switch (locationIconHighlightType)
-				{
-				case ProvinceMapUiView::HighlightType::None:
-					return highlightLocationTexturesPtr->textureID;
-				case ProvinceMapUiView::HighlightType::PlayerLocation:
-					return highlightLocationTexturesPtr->playerCurrentTextureID;
-				case ProvinceMapUiView::HighlightType::TravelDestination:
-					return highlightLocationTexturesPtr->travelDestinationTextureID;
-				default:
-					DebugUnhandledReturnMsg(UiTextureID, std::to_string(static_cast<int>(locationIconHighlightType)));
-				}
-			}();
-
-			UiElementInitInfo locationIconHighlightImageElementInitInfo;
-			locationIconHighlightImageElementInitInfo.name = GetLocationIconHighlightImageElementName(locationDef);
-			locationIconHighlightImageElementInitInfo.position = locationIconImageElementInitInfo.position;
-			locationIconHighlightImageElementInitInfo.pivotType = locationIconImageElementInitInfo.pivotType;
-			uiManager.createImage(locationIconHighlightImageElementInitInfo, highlightLocationTextureID, state.contextInstID, renderer);
+			continue;
 		}
+
+		const int locationDefIndex = locationInst.getLocationDefIndex();
+		const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+
+		const ProvinceMapLocationTextures *locationTexturesPtr = [&state, &locationDef]() -> const ProvinceMapLocationTextures*
+		{
+			const LocationDefinitionType locationDefType = locationDef.getType();
+			if (locationDefType == LocationDefinitionType::City)
+			{
+				const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+				const ArenaCityType cityType = cityDef.type;
+				switch (cityType)
+				{
+				case ArenaCityType::CityState:
+					return &state.cityStateTextures;
+				case ArenaCityType::Town:
+					return &state.townTextures;
+				case ArenaCityType::Village:
+					return &state.villageTextures;
+				default:
+					DebugLogErrorFormat("Unhandled city type \"%d\".", cityType);
+					return nullptr;
+				}
+			}
+			else if (locationDefType == LocationDefinitionType::Dungeon)
+			{
+				return &state.dungeonTextures;
+			}
+			else if (locationDefType == LocationDefinitionType::MainQuestDungeon)
+			{
+				const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = locationDef.getMainQuestDungeonDefinition();
+				const LocationMainQuestDungeonDefinitionType mainQuestDungeonType = mainQuestDungeonDef.type;
+				switch (mainQuestDungeonType)
+				{
+				case LocationMainQuestDungeonDefinitionType::Start:
+				case LocationMainQuestDungeonDefinitionType::Map:
+					return &state.dungeonTextures;
+				case LocationMainQuestDungeonDefinitionType::Staff:
+					return &state.staffDungeonTextures;
+				default:
+					DebugLogErrorFormat("Unhandled main quest dungeon type \"%d\".", mainQuestDungeonType);
+					return nullptr;
+				}
+			}
+			else
+			{
+				DebugLogErrorFormat("Unhandled location definition type \"%d\".", locationDefType);
+				return nullptr;
+			}
+		}();
+
+		UiElementInitInfo locationIconImageElementInitInfo;
+		locationIconImageElementInitInfo.name = GetLocationIconImageElementName(locationDef);
+		locationIconImageElementInitInfo.position = Int2(locationDef.getScreenX(), locationDef.getScreenY());
+		locationIconImageElementInitInfo.pivotType = UiPivotType::Middle;
+		locationIconImageElementInitInfo.drawOrder = 1;
+		uiManager.createImage(locationIconImageElementInitInfo, locationTexturesPtr->textureID, state.contextInstID, renderer);
+
+		const ProvinceMapUiView::HighlightType locationIconHighlightType = [provinceID, &state, &gameState, &provinceDef, &playerProvinceDef, i, &locationDef]()
+		{
+			const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
+			if (provinceDef.matches(playerProvinceDef) && locationDef.matches(playerLocationDef))
+			{
+				return ProvinceMapUiView::HighlightType::PlayerLocation;
+			}
+			else
+			{
+				// If there is a currently-selected destination in this province, draw its blinking highlight
+				// if within the "blink on" interval.
+				const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+				if (travelDataPtr != nullptr)
+				{
+					const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
+					if ((travelData.provinceID == provinceID) && (travelData.locationID == i))
+					{
+						return ProvinceMapUiView::HighlightType::TravelDestination;
+					}
+				}
+			}
+
+			return ProvinceMapUiView::HighlightType::None;
+		}();
+
+		const UiTextureID highlightLocationTextureID = [locationIconHighlightType, locationTexturesPtr]()
+		{
+			switch (locationIconHighlightType)
+			{
+			case ProvinceMapUiView::HighlightType::None:
+			case ProvinceMapUiView::HighlightType::TravelDestination:
+				return locationTexturesPtr->travelDestinationTextureID;
+			case ProvinceMapUiView::HighlightType::PlayerLocation:
+				return locationTexturesPtr->playerCurrentTextureID;
+			default:
+				DebugUnhandledReturnMsg(UiTextureID, std::to_string(static_cast<int>(locationIconHighlightType)));
+			}
+		}();
+
+		UiElementInitInfo locationIconHighlightImageElementInitInfo;
+		locationIconHighlightImageElementInitInfo.name = GetLocationIconHighlightImageElementName(locationDef);
+		locationIconHighlightImageElementInitInfo.position = locationIconImageElementInitInfo.position;
+		locationIconHighlightImageElementInitInfo.pivotType = locationIconImageElementInitInfo.pivotType;
+		locationIconHighlightImageElementInitInfo.drawOrder = 2;
+		uiManager.createImage(locationIconHighlightImageElementInitInfo, highlightLocationTextureID, state.contextInstID, renderer);
 	}
 }
 
@@ -619,6 +531,59 @@ void ProvinceMapUI::updateHoveredLocationID(Int2 originalPosition)
 	}
 }
 
+void ProvinceMapUI::updateLocationHighlights()
+{
+	ProvinceMapUiState &state = ProvinceMapUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	GameState &gameState = game.gameState;
+	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(state.provinceID);
+	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
+	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(state.provinceID);
+	for (int i = 0; i < provinceDef.getLocationCount(); i++)
+	{
+		const LocationDefinition &locationDef = provinceDef.getLocationDef(i);
+		const LocationInstance &locationInst = provinceInst.getLocationInstance(i);
+		if (!locationInst.isVisible())
+		{
+			continue;
+		}
+
+		bool isHighlightVisible = false;
+		const LocationDefinition &playerLocationDef = gameState.getLocationDefinition();
+		if (provinceDef.matches(playerProvinceDef) && locationDef.matches(playerLocationDef))
+		{
+			isHighlightVisible = true;
+		}
+		else
+		{
+			// If there is a currently-selected destination in this province, draw its blinking highlight
+			// if within the "blink on" interval.
+			const ProvinceMapUiModel::TravelData *travelDataPtr = gameState.getTravelData();
+			if (travelDataPtr != nullptr)
+			{
+				const ProvinceMapUiModel::TravelData &travelData = *travelDataPtr;
+				if ((travelData.provinceID == state.provinceID) && (travelData.locationID == i))
+				{
+					// See if the blink period percent lies within the "on" percent. Use less-than to compare them
+					// so the on-state appears before the off-state.
+					if (state.blinkState.getPercent() < ProvinceMapUiView::BlinkPeriodPercentOn)
+					{
+						isHighlightVisible = true;
+					}
+				}
+			}
+		}
+
+		const std::string locationIconHighlightImageElementName = GetLocationIconHighlightImageElementName(locationDef);
+		const UiElementInstanceID locationHighlightIconImageElementInstID = uiManager.getElementByName(locationIconHighlightImageElementName.c_str());
+		uiManager.setElementActive(locationHighlightIconImageElementInstID, isHighlightVisible);
+	}
+}
+
 void ProvinceMapUI::trySelectLocation(int selectedLocationID)
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
@@ -652,6 +617,7 @@ void ProvinceMapUI::trySelectLocation(int selectedLocationID)
 
 		gameState.setTravelData(ProvinceMapUiModel::TravelData(selectedLocationID, state.provinceID, travelDays));
 		state.blinkState.reset();
+		ProvinceMapUI::updateLocationHighlights();
 
 		const std::string travelText = ProvinceMapUiModel::makeTravelText(game, state.provinceID, currentLocationDef, currentProvinceDef, selectedLocationID);
 		ProvinceMapUI::showTextPopUp(travelText.c_str());
@@ -671,7 +637,7 @@ void ProvinceMapUI::beginFastTravel()
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
-	game.pushSubPanel<FastTravelSubPanel>();
+	game.pushSubPanel<FastTravelSubPanel>(); // @todo this should set some isFastTraveling bool in WorldMapUI
 	game.setPanel<WorldMapPanel>();
 }
 
@@ -720,7 +686,12 @@ void ProvinceMapUI::showTextPopUp(const char *str)
 
 	auto popUpButtonCallback = [](MouseButtonType)
 	{
-		//callback();
+		ProvinceMapUiState &state = ProvinceMapUI::state;
+		Game &game = *state.game;
+		InputManager &inputManager = game.inputManager;
+		UiManager &uiManager = game.uiManager;
+		uiManager.setContextEnabled(state.textPopUpContextInstID, false);
+
 		ProvinceMapUI::onPauseChanged(false);
 	};
 
@@ -745,18 +716,23 @@ void ProvinceMapUI::showTextPopUp(const char *str)
 
 void ProvinceMapUI::onPauseChanged(bool paused)
 {
+	ProvinceMapUiState &state = ProvinceMapUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
 	if (!paused)
 	{
 		// Make sure the hovered location matches where the pointer is now since mouse motion events
 		// aren't processed while this panel is paused.
-		ProvinceMapUiState &state = ProvinceMapUI::state;
-		Game &game = *state.game;
 		const Window &window = game.window;
 		const InputManager &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();
 		const Int2 originalPosition = window.nativeToOriginal(mousePosition);
 		ProvinceMapUI::updateHoveredLocationID(originalPosition);
 	}
+
+	const UiElementInstanceID locationTextBoxElementInstID = uiManager.getElementByName(ElementName_LocationTextBox);
+	uiManager.setElementActive(locationTextBoxElementInstID, !paused);
 }
 
 void ProvinceMapUI::onSearchInputTextAccepted()
@@ -819,7 +795,7 @@ void ProvinceMapUI::onFullscreenButtonSelected(MouseButtonType mouseButtonType)
 
 	if (searchButtonRect.contains(classicPosition))
 	{
-		uiManager.setContextEnabled(state.searchInputImageTextureID, true);
+		uiManager.setContextEnabled(state.searchInputPopUpContextInstID, true);
 	}
 	else if (travelButtonRect.contains(classicPosition))
 	{

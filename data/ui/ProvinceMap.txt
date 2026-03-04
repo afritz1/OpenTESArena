@@ -17,7 +17,7 @@ Callback=ProvinceMapUI.onFullscreenButtonSelected
 [ProvinceMapLocationTextBox]
 Type=TextBox
 Pivot=Middle
-DrawOrder=2
+DrawOrder=3
 WorstCaseText=WWWWWWWWWWWWWWWWWWWWWWWW
 FontName=ARENAFNT.DAT
 TextAlignment=MiddleCenter
