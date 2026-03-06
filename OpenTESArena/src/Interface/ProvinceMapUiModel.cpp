@@ -53,47 +53,6 @@ std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int 
 	return locationInst.getName(locationDef);
 }
 
-std::unique_ptr<Panel> ProvinceMapUiModel::makeTextPopUp(Game &game, const std::string &text)
-{
-	auto &renderer = game.renderer;
-	const auto &fontLibrary = FontLibrary::getInstance();
-
-	const std::string &fontName = ProvinceMapUiView::TextPopUpFontName;
-	int fontDefIndex;
-	if (!fontLibrary.tryGetDefinitionIndex(fontName.c_str(), &fontDefIndex))
-	{
-		DebugCrash("Couldn't get font definition for \"" + fontName + "\".");
-	}
-
-	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
-	constexpr int lineSpacing = ProvinceMapUiView::TextPopUpLineSpacing;
-	const TextRenderTextureGenInfo textBoxTextureGenInfo =
-		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
-	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
-		text,
-		ProvinceMapUiView::TextPopUpCenterPoint,
-		fontName,
-		ProvinceMapUiView::TextPopUpTextColor,
-		ProvinceMapUiView::TextPopUpTextAlignment,
-		std::nullopt,
-		lineSpacing,
-		fontLibrary);
-
-	auto &textureManager = game.textureManager;
-	const UiTextureID textureID = ProvinceMapUiView::allocTextPopUpTexture(
-		textBoxTextureGenInfo.width, textBoxTextureGenInfo.height, textureManager, renderer);
-	ScopedUiTextureRef textureRef(textureID, renderer);
-
-	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
-	if (!subPanel->init(textBoxInitInfo, text, ProvinceMapUiController::onTextPopUpSelected,
-		std::move(textureRef), ProvinceMapUiView::TextPopUpTextureCenterPoint))
-	{
-		DebugCrash("Couldn't init province map text sub-panel.");
-	}
-
-	return subPanel;
-}
-
 std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex, const LocationDefinition &srcLocationDef,
 	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex)
 {

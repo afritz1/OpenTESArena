@@ -104,15 +104,9 @@ namespace ProvinceSearchUiView
 	const int TitleTextBoxY = 89;
 	const std::string TitleFontName = ArenaFontName::Arena;
 	const Color TitleColor(52, 24, 8);
-	constexpr TextAlignment TitleTextAlignment = TextAlignment::TopLeft;
-
-	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
 
 	const std::string TextEntryFontName = ArenaFontName::Arena;
 	const Color TextEntryColor(52, 24, 8);
-	constexpr TextAlignment TextEntryTextAlignment = TextAlignment::TopLeft;
-
-	TextBoxInitInfo getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	constexpr Int2 TextureCenter((ArenaRenderUtils::SCREEN_WIDTH / 2) - 1, (ArenaRenderUtils::SCREEN_HEIGHT / 2) - 1);
 	constexpr int TextureWidth = 280;

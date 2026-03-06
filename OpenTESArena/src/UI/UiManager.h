@@ -109,6 +109,7 @@ public:
 	void insertListBoxItem(UiElementInstanceID elementInstID, int index, UiListBoxItem &&item);
 	void insertBackListBoxItem(UiElementInstanceID elementInstID, UiListBoxItem &&item);
 	void eraseListBoxItem(UiElementInstanceID elementInstID, int index);
+	void clearListBox(UiElementInstanceID elementInstID);
 	void scrollListBoxDown(UiElementInstanceID elementInstID);
 	void scrollListBoxUp(UiElementInstanceID elementInstID);
 	void freeListBox(UiElementInstanceID elementInstID, Renderer &renderer);

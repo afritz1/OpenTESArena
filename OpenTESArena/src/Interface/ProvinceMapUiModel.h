@@ -30,9 +30,6 @@ namespace ProvinceMapUiModel
 	std::string makeAlreadyAtLocationText(Game &game, const std::string &locationName);
 
 	std::string getLocationName(Game &game, int provinceID, int locationID);
-
-	// Generates a text sub-panel with a parchment message.
-	std::unique_ptr<Panel> makeTextPopUp(Game &game, const std::string &text);
 }
 
 namespace ProvinceSearchUiModel

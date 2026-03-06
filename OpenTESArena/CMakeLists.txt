@@ -356,8 +356,6 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/ProvinceMapUiState.h"
     "${SRC_ROOT}/Interface/ProvinceMapUiView.cpp"
     "${SRC_ROOT}/Interface/ProvinceMapUiView.h"
-    "${SRC_ROOT}/Interface/ProvinceSearchSubPanel.cpp"
-    "${SRC_ROOT}/Interface/ProvinceSearchSubPanel.h"
     "${SRC_ROOT}/Interface/TextCinematicDefinition.cpp"
     "${SRC_ROOT}/Interface/TextCinematicDefinition.h"
     "${SRC_ROOT}/Interface/TextCinematicPanel.cpp"

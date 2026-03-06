@@ -322,33 +322,6 @@ UiTextureID ProvinceMapUiView::allocTextPopUpTexture(int textWidth, int textHeig
 	return textureID;
 }
 
-TextBoxInitInfo ProvinceSearchUiView::getTitleTextBoxInitInfo(const std::string_view text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithXY(
-		text,
-		ProvinceSearchUiView::TitleTextBoxX,
-		ProvinceSearchUiView::TitleTextBoxY,
-		ProvinceSearchUiView::TitleFontName,
-		ProvinceSearchUiView::TitleColor,
-		ProvinceSearchUiView::TitleTextAlignment,
-		fontLibrary);
-}
-
-TextBoxInitInfo ProvinceSearchUiView::getTextEntryTextBoxInitInfo(const FontLibrary &fontLibrary)
-{
-	const std::string dummyText(ProvinceSearchUiModel::MaxNameLength, TextRenderUtils::LARGEST_CHAR);
-	const Int2 &origin = ProvinceSearchUiView::DefaultTextCursorPosition;
-	return TextBoxInitInfo::makeWithXY(
-		dummyText,
-		origin.x,
-		origin.y,
-		ProvinceSearchUiView::TextEntryFontName,
-		ProvinceSearchUiView::TextEntryColor,
-		ProvinceSearchUiView::TextEntryTextAlignment,
-		fontLibrary);
-}
-
 ListBoxProperties ProvinceSearchUiView::makeListBoxProperties()
 {
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();

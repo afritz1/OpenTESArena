@@ -723,6 +723,16 @@ void UiManager::eraseListBoxItem(UiElementInstanceID elementInstID, int index)
 	listBox.dirty = true;
 }
 
+void UiManager::clearListBox(UiElementInstanceID elementInstID)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	listBox.items.clear();
+	listBox.dirty = true;
+}
+
 void UiManager::scrollListBoxDown(UiElementInstanceID elementInstID)
 {
 	UiElement &element = this->elements.get(elementInstID);

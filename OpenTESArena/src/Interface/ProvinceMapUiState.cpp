@@ -10,6 +10,7 @@
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/TextEntry.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"
@@ -21,6 +22,9 @@ namespace
 	constexpr char ContextName_SearchResultsPopUp[] = "ProvinceMapSearchResultsPopUp";
 
 	constexpr char ElementName_LocationTextBox[] = "ProvinceMapLocationTextBox";
+
+	constexpr char ElementName_SearchInputTextEntryTextBox[] = "ProvinceMapSearchInputTextEntryTextBox";
+	constexpr char ElementName_SearchResultsListBox[] = "ProvinceMapSearchResultsListBox";
 
 	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
@@ -172,15 +176,17 @@ void ProvinceMapUI::create(Game &game)
 	uiManager.createTextBox(searchInputTitleTextBoxElementInitInfo, searchInputTitleTextBoxInitInfo, state.searchInputPopUpContextInstID, renderer);
 
 	UiElementInitInfo searchInputTextEntryTextBoxElementInitInfo;
-	searchInputTextEntryTextBoxElementInitInfo.name = "ProvinceMapSearchInputTextEntryTextBox";
+	searchInputTextEntryTextBoxElementInitInfo.name = ElementName_SearchInputTextEntryTextBox;
 	searchInputTextEntryTextBoxElementInitInfo.position = ProvinceSearchUiView::DefaultTextCursorPosition;
 	searchInputTextEntryTextBoxElementInitInfo.drawOrder = 2;
 
 	UiTextBoxInitInfo searchInputTextEntryTextBoxInitInfo;
 	searchInputTextEntryTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(ProvinceSearchUiModel::MaxNameLength);
-	searchInputTextEntryTextBoxInitInfo.fontName = ProvinceSearchUiView::TitleFontName;
+	searchInputTextEntryTextBoxInitInfo.fontName = ProvinceSearchUiView::TextEntryFontName;
+	searchInputTextEntryTextBoxInitInfo.defaultColor = ProvinceSearchUiView::TextEntryColor;
 	uiManager.createTextBox(searchInputTextEntryTextBoxElementInitInfo, searchInputTextEntryTextBoxInitInfo, state.searchInputPopUpContextInstID, renderer);
 
+	uiManager.addTextInputListener(ProvinceMapUI::onSearchInputTextInput, ContextName_SearchInputPopUp, inputManager);
 	uiManager.addInputActionListener(InputActionName::Accept, ProvinceMapUI::onSearchInputAcceptInputAction, ContextName_SearchInputPopUp, inputManager);
 	uiManager.addInputActionListener(InputActionName::Back, ProvinceMapUI::onSearchInputBackInputAction, ContextName_SearchInputPopUp, inputManager);
 	uiManager.addInputActionListener(InputActionName::Backspace, ProvinceMapUI::onSearchInputBackspaceInputAction, ContextName_SearchInputPopUp, inputManager);
@@ -214,6 +220,7 @@ void ProvinceMapUI::create(Game &game)
 	searchResultsListBoxInitInfo.defaultTextColor = searchResultsListBoxProperties.defaultColor;
 	uiManager.createListBox(searchResultsListBoxElementInitInfo, searchResultsListBoxInitInfo, state.searchResultsPopUpContextInstID, renderer);
 
+	uiManager.addMouseScrollChangedListener(ProvinceMapUI::onSearchResultsMouseScrollChanged, ContextName_SearchResultsPopUp, inputManager);
 	uiManager.addInputActionListener(InputActionName::Back, ProvinceMapUI::onSearchResultsBackInputAction, ContextName_SearchResultsPopUp, inputManager);
 
 	uiManager.setContextEnabled(state.textPopUpContextInstID, false);
@@ -303,6 +310,8 @@ void ProvinceMapUI::update(double dt)
 	{
 		state.blinkState.update(dt);
 	}
+
+	// @todo: draw blinking cursor for search input text entry (not sure where to put that update()).
 }
 
 void ProvinceMapUI::initLocationIconUI(int provinceID)
@@ -649,7 +658,7 @@ void ProvinceMapUI::showTextPopUp(const char *str)
 	UiManager &uiManager = game.uiManager;
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
-	
+
 	uiManager.clearContextElements(state.textPopUpContextInstID, inputManager, renderer);
 
 	UiElementInitInfo textPopUpTextBoxElementInitInfo;
@@ -735,22 +744,13 @@ void ProvinceMapUI::onPauseChanged(bool paused)
 	uiManager.setElementActive(locationTextBoxElementInstID, !paused);
 }
 
-void ProvinceMapUI::onSearchInputTextAccepted()
-{
-	ProvinceMapUiState &state = ProvinceMapUI::state;
-	Game &game = *state.game;
-	UiManager &uiManager = game.uiManager;
-	// @todo
-	DebugNotImplemented();
-}
-
 void ProvinceMapUI::onSearchResultsListLocationSelected(int locationID)
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
-	// @todo
-	DebugNotImplemented();
+	uiManager.setContextEnabled(state.searchResultsPopUpContextInstID, false);
+	ProvinceMapUI::trySelectLocation(locationID);
 }
 
 void ProvinceMapUI::onSearchResultsListUpButtonSelected()
@@ -758,8 +758,8 @@ void ProvinceMapUI::onSearchResultsListUpButtonSelected()
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
-	// @todo
-	DebugNotImplemented();
+	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_SearchResultsListBox);
+	uiManager.scrollListBoxUp(listBoxElementInstID);
 }
 
 void ProvinceMapUI::onSearchResultsListDownButtonSelected()
@@ -767,8 +767,8 @@ void ProvinceMapUI::onSearchResultsListDownButtonSelected()
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
-	// @todo
-	DebugNotImplemented();
+	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_SearchResultsListBox);
+	uiManager.scrollListBoxDown(listBoxElementInstID);
 }
 
 void ProvinceMapUI::onMouseMotion(Game &game, int dx, int dy)
@@ -784,8 +784,8 @@ void ProvinceMapUI::onFullscreenButtonSelected(MouseButtonType mouseButtonType)
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
 	UiManager &uiManager = game.uiManager;
-	const InputManager &inputManager = game.inputManager;
 	const Int2 mousePosition = inputManager.getMousePosition();
 	const Int2 classicPosition = game.window.nativeToOriginal(mousePosition);
 
@@ -796,6 +796,12 @@ void ProvinceMapUI::onFullscreenButtonSelected(MouseButtonType mouseButtonType)
 	if (searchButtonRect.contains(classicPosition))
 	{
 		uiManager.setContextEnabled(state.searchInputPopUpContextInstID, true);
+
+		const UiElementInstanceID textEntryTextBoxElementInstID = uiManager.getElementByName(ElementName_SearchInputTextEntryTextBox);
+		uiManager.setTextBoxText(textEntryTextBoxElementInstID, "");
+
+		inputManager.setTextInputMode(true);
+		ProvinceMapUI::onPauseChanged(true);
 	}
 	else if (travelButtonRect.contains(classicPosition))
 	{
@@ -809,19 +815,13 @@ void ProvinceMapUI::onFullscreenButtonSelected(MouseButtonType mouseButtonType)
 		else
 		{
 			const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-			const std::string errorText = [&exeData]()
-			{
-				std::string text = exeData.travel.noDestination;
+			std::string noDestinationText = exeData.travel.noDestination;
 
-				// Remove carriage return at end.
-				text.pop_back();
+			// Remove carriage return at end.
+			noDestinationText.pop_back();
+			noDestinationText = String::replace(noDestinationText, '\r', '\n');
 
-				text = String::replace(text, '\r', '\n');
-
-				return text;
-			}();
-
-			ProvinceMapUI::showTextPopUp(errorText.c_str());
+			ProvinceMapUI::showTextPopUp(noDestinationText.c_str());
 		}
 	}
 	else if (backButtonRect.contains(classicPosition))
@@ -846,26 +846,130 @@ void ProvinceMapUI::onBackInputAction(const InputActionCallbackValues &values)
 	}
 }
 
-void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValues &values)
+void ProvinceMapUI::onSearchInputTextInput(const std::string_view text)
 {
-	// @todo
-	DebugNotImplemented();
+	ProvinceMapUiState &state = ProvinceMapUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID textEntryTextBoxElementInstID = uiManager.getElementByName(ElementName_SearchInputTextEntryTextBox);
+	std::string searchInputText = uiManager.getTextBoxText(textEntryTextBoxElementInstID);
+	const bool textChanged = TextEntry::append(searchInputText, text, ProvinceSearchUiModel::isCharAllowed, ProvinceSearchUiModel::MaxNameLength);
+
+	if (textChanged)
+	{
+		uiManager.setTextBoxText(textEntryTextBoxElementInstID, searchInputText.c_str());
+	}
+}
+
+void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValues &values)
+{	
+	ProvinceMapUiState &state = ProvinceMapUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	uiManager.setContextEnabled(state.searchInputPopUpContextInstID, false);
+
+	const UiElementInstanceID textEntryTextBoxElementInstID = uiManager.getElementByName(ElementName_SearchInputTextEntryTextBox);
+	std::string searchInputText = uiManager.getTextBoxText(textEntryTextBoxElementInstID);
+
+	const int *exactLocationIndex = nullptr;
+	const std::vector<int> matchingLocationIndices = ProvinceSearchUiModel::getMatchingLocations(game, searchInputText, state.provinceID, &exactLocationIndex);
+	const bool isExactLocationMatch = exactLocationIndex != nullptr;
+
+	if (isExactLocationMatch)
+	{
+		ProvinceMapUI::trySelectLocation(*exactLocationIndex);
+	}
+	else
+	{
+		uiManager.setContextEnabled(state.searchResultsPopUpContextInstID, true);
+
+		GameState &gameState = game.gameState;
+		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+		const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
+		const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(state.provinceID);
+		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
+		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+
+		const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_SearchResultsListBox);
+		uiManager.clearListBox(listBoxElementInstID);
+
+		for (const int locationIndex : matchingLocationIndices)
+		{
+			const LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
+			const int locationDefIndex = locationInst.getLocationDefIndex();
+			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
+
+			UiListBoxItem listBoxItem;
+			listBoxItem.text = locationInst.getName(locationDef);
+			listBoxItem.callback = [locationIndex]()
+			{
+				ProvinceMapUI::onSearchResultsListLocationSelected(locationIndex);
+			};
+
+			uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
+		}
+	}
+
+	inputManager.setTextInputMode(false);
 }
 
 void ProvinceMapUI::onSearchInputBackInputAction(const InputActionCallbackValues &values)
 {
-	// @todo
-	DebugNotImplemented();
+	ProvinceMapUiState &state = ProvinceMapUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	uiManager.setContextEnabled(state.searchInputPopUpContextInstID, false);
+	inputManager.setTextInputMode(false);
+	ProvinceMapUI::onPauseChanged(false);
 }
 
 void ProvinceMapUI::onSearchInputBackspaceInputAction(const InputActionCallbackValues &values)
 {
-	// @todo
-	DebugNotImplemented();
+	ProvinceMapUiState &state = ProvinceMapUI::state;
+	Game &game = *state.game;
+
+	if (values.performed)
+	{
+		UiManager &uiManager = game.uiManager;
+		const UiElementInstanceID textEntryTextBoxElementInstID = uiManager.getElementByName(ElementName_SearchInputTextEntryTextBox);
+		std::string searchInputText = uiManager.getTextBoxText(textEntryTextBoxElementInstID);
+		const bool textChanged = TextEntry::backspace(searchInputText);
+
+		if (textChanged)
+		{
+			uiManager.setTextBoxText(textEntryTextBoxElementInstID, searchInputText.c_str());
+		}
+	}
+}
+
+void ProvinceMapUI::onSearchResultsMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)
+{
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_SearchResultsListBox);
+	const Rect listBoxRect = uiManager.getTransformGlobalRect(listBoxElementInstID);
+
+	const Int2 classicMousePosition = game.window.nativeToOriginal(position);
+	if (listBoxRect.contains(classicMousePosition))
+	{
+		if (type == MouseWheelScrollType::Up)
+		{
+			ProvinceMapUI::onSearchResultsListUpButtonSelected();
+		}
+		else if (type == MouseWheelScrollType::Down)
+		{
+			ProvinceMapUI::onSearchResultsListDownButtonSelected();
+		}
+	}
 }
 
 void ProvinceMapUI::onSearchResultsBackInputAction(const InputActionCallbackValues &values)
 {
-	// @todo
-	DebugNotImplemented();
+	ProvinceMapUiState &state = ProvinceMapUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	uiManager.setContextEnabled(state.searchResultsPopUpContextInstID, false);
+	ProvinceMapUI::onPauseChanged(false);
 }

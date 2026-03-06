@@ -57,8 +57,6 @@ namespace ProvinceMapUI
 
 	// @todo makeDiseasedWarningPopUp() when the player is diseased
 
-	void onSearchInputTextAccepted();
-
 	void onSearchResultsListLocationSelected(int locationID);
 	void onSearchResultsListUpButtonSelected();
 	void onSearchResultsListDownButtonSelected();
@@ -69,9 +67,12 @@ namespace ProvinceMapUI
 
 	void onBackInputAction(const InputActionCallbackValues &values);
 
+	void onSearchInputTextInput(const std::string_view text);
 	void onSearchInputAcceptInputAction(const InputActionCallbackValues &values);
 	void onSearchInputBackInputAction(const InputActionCallbackValues &values);
 	void onSearchInputBackspaceInputAction(const InputActionCallbackValues &values);
+
+	void onSearchResultsMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
 
 	void onSearchResultsBackInputAction(const InputActionCallbackValues &values);
 
