@@ -1,10 +1,10 @@
-#include "FastTravelSubPanel.h"
 #include "ProvinceMapPanel.h"
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiModel.h"
 #include "ProvinceMapUiState.h"
 #include "ProvinceMapUiView.h"
 #include "WorldMapPanel.h"
+#include "WorldMapUiState.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -668,7 +668,8 @@ void ProvinceMapUI::beginFastTravel()
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
-	game.pushSubPanel<FastTravelSubPanel>(); // @todo this should set some isFastTraveling bool in WorldMapUI
+
+	WorldMapUI::state.isFastTravelling = true;
 	game.setPanel<WorldMapPanel>();
 }
 

@@ -14,13 +14,21 @@ struct WorldMapUiState
 {
 	Game *game;
 	UiContextInstanceID contextInstID;
-	// @todo fast travel animation context
+	//UiContextInstanceID fastTravelContextInstID; // Not using a separate context due to update callback limitations
 
 	UiTextureID highlightedProvinceTextureID;
+	Buffer<UiTextureID> fastTravelAnimTextureIDs;
+
+	bool isFastTravelling;
+	double fastTravelCurrentSeconds;
+	double fastTravelTotalSeconds;
+	double fastTravelTargetSeconds;
+	int fastTravelAnimFrameIndex;
 
 	WorldMapUiState();
 
 	void init(Game &game);
+	void freeTextures(Renderer &renderer);
 };
 
 namespace WorldMapUI

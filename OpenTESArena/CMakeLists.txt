@@ -262,8 +262,6 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/CinematicPanel.h"
     "${SRC_ROOT}/Interface/CommonUiView.cpp"
     "${SRC_ROOT}/Interface/CommonUiView.h"
-    "${SRC_ROOT}/Interface/FastTravelSubPanel.cpp"
-    "${SRC_ROOT}/Interface/FastTravelSubPanel.h"
     "${SRC_ROOT}/Interface/GameWorldPanel.cpp"
     "${SRC_ROOT}/Interface/GameWorldPanel.h"
     "${SRC_ROOT}/Interface/GameWorldUiController.cpp"
