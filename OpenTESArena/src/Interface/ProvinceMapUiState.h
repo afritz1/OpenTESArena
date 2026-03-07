@@ -58,8 +58,8 @@ namespace ProvinceMapUI
 	// @todo makeDiseasedWarningPopUp() when the player is diseased
 
 	void onSearchResultsListLocationSelected(int locationID);
-	void onSearchResultsListUpButtonSelected();
-	void onSearchResultsListDownButtonSelected();
+	void onSearchResultsListUpButtonSelected(MouseButtonType mouseButtonType);
+	void onSearchResultsListDownButtonSelected(MouseButtonType mouseButtonType);
 
 	void onMouseMotion(Game &game, int dx, int dy);
 

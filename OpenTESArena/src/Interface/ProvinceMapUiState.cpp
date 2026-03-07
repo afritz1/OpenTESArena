@@ -220,6 +220,28 @@ void ProvinceMapUI::create(Game &game)
 	searchResultsListBoxInitInfo.defaultTextColor = searchResultsListBoxProperties.defaultColor;
 	uiManager.createListBox(searchResultsListBoxElementInitInfo, searchResultsListBoxInitInfo, state.searchResultsPopUpContextInstID, renderer);
 
+	UiElementInitInfo searchResultsListBoxUpButtonElementInitInfo;
+	searchResultsListBoxUpButtonElementInitInfo.name = "ProvinceMapSearchResultsListBoxUpButton";
+	searchResultsListBoxUpButtonElementInitInfo.position = ProvinceSearchUiView::ListUpButtonCenterPoint;
+	searchResultsListBoxUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	searchResultsListBoxUpButtonElementInitInfo.size = Int2(ProvinceSearchUiView::ListUpButtonWidth, ProvinceSearchUiView::ListUpButtonHeight);
+	searchResultsListBoxUpButtonElementInitInfo.pivotType = UiPivotType::Middle;
+
+	UiButtonInitInfo searchResultsListBoxUpButtonInitInfo;
+	searchResultsListBoxUpButtonInitInfo.callback = ProvinceMapUI::onSearchResultsListUpButtonSelected;
+	uiManager.createButton(searchResultsListBoxUpButtonElementInitInfo, searchResultsListBoxUpButtonInitInfo, state.searchResultsPopUpContextInstID);
+
+	UiElementInitInfo searchResultsListBoxDownButtonElementInitInfo;
+	searchResultsListBoxDownButtonElementInitInfo.name = "ProvinceMapSearchResultsListBoxDownButton";
+	searchResultsListBoxDownButtonElementInitInfo.position = ProvinceSearchUiView::ListDownButtonCenterPoint;
+	searchResultsListBoxDownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	searchResultsListBoxDownButtonElementInitInfo.size = Int2(ProvinceSearchUiView::ListDownButtonWidth, ProvinceSearchUiView::ListDownButtonHeight);
+	searchResultsListBoxDownButtonElementInitInfo.pivotType = UiPivotType::Middle;
+
+	UiButtonInitInfo searchResultsListBoxDownButtonInitInfo;
+	searchResultsListBoxUpButtonInitInfo.callback = ProvinceMapUI::onSearchResultsListDownButtonSelected;
+	uiManager.createButton(searchResultsListBoxDownButtonElementInitInfo, searchResultsListBoxUpButtonInitInfo, state.searchResultsPopUpContextInstID);
+
 	uiManager.addMouseScrollChangedListener(ProvinceMapUI::onSearchResultsMouseScrollChanged, ContextName_SearchResultsPopUp, inputManager);
 	uiManager.addInputActionListener(InputActionName::Back, ProvinceMapUI::onSearchResultsBackInputAction, ContextName_SearchResultsPopUp, inputManager);
 
@@ -753,7 +775,7 @@ void ProvinceMapUI::onSearchResultsListLocationSelected(int locationID)
 	ProvinceMapUI::trySelectLocation(locationID);
 }
 
-void ProvinceMapUI::onSearchResultsListUpButtonSelected()
+void ProvinceMapUI::onSearchResultsListUpButtonSelected(MouseButtonType mouseButtonType)
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
@@ -762,7 +784,7 @@ void ProvinceMapUI::onSearchResultsListUpButtonSelected()
 	uiManager.scrollListBoxUp(listBoxElementInstID);
 }
 
-void ProvinceMapUI::onSearchResultsListDownButtonSelected()
+void ProvinceMapUI::onSearchResultsListDownButtonSelected(MouseButtonType mouseButtonType)
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
 	Game &game = *state.game;
@@ -955,11 +977,11 @@ void ProvinceMapUI::onSearchResultsMouseScrollChanged(Game &game, MouseWheelScro
 	{
 		if (type == MouseWheelScrollType::Up)
 		{
-			ProvinceMapUI::onSearchResultsListUpButtonSelected();
+			ProvinceMapUI::onSearchResultsListUpButtonSelected(MouseButtonType::Left);
 		}
 		else if (type == MouseWheelScrollType::Down)
 		{
-			ProvinceMapUI::onSearchResultsListDownButtonSelected();
+			ProvinceMapUI::onSearchResultsListDownButtonSelected(MouseButtonType::Left);
 		}
 	}
 }
