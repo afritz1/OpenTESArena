@@ -11,21 +11,21 @@ class Game;
 
 struct Rect;
 
+struct LoadSaveUiEntry
+{
+	std::string text;
+
+	void init(const std::string &text);
+};
+
 namespace LoadSaveUiModel
 {
-	struct Entry
-	{
-		std::string displayText;
-
-		void init(std::string &&displayText);
-	};
-
 	constexpr int SlotCount = 10; // @todo: remove this limit
 
 	const std::string ArenaSaveNamesFilename = "NAMES.DAT";
 
 	std::string getSavesPath(Game &game);
-	std::vector<Entry> getSaveEntries(Game &game);
+	std::vector<LoadSaveUiEntry> getSaveEntries(Game &game);
 
 	// Gets the classic space UI rect of a save slot.
 	Rect getSlotRect(int index);

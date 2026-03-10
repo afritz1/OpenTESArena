@@ -8,6 +8,7 @@
 #include "GameWorldPanel.h"
 #include "ImageSequencePanel.h"
 #include "LoadSavePanel.h"
+#include "LoadSaveUiState.h"
 #include "MainMenuUiController.h"
 #include "MainMenuUiModel.h"
 #include "../Assets/ArenaTextureName.h"
@@ -46,7 +47,8 @@ namespace
 
 void MainMenuUiController::onLoadGameButtonSelected(Game &game)
 {
-	game.setPanel<LoadSavePanel>(LoadSavePanel::Type::Load);
+	LoadSaveUI::state.type = LoadSaveType::Load;
+	game.setPanel<LoadSavePanel>();
 }
 
 void MainMenuUiController::onNewGameButtonSelected(Game &game)

@@ -5,6 +5,7 @@
 #include "GameWorldUiView.h"
 #include "GameWorldPanel.h"
 #include "LoadSavePanel.h"
+#include "LoadSaveUiState.h"
 #include "MainMenuPanel.h"
 #include "OptionsPanel.h"
 #include "PauseMenuUiController.h"
@@ -188,15 +189,16 @@ void PauseMenuUI::onLoadGameButtonSelected(MouseButtonType mouseButtonType)
 {
 	PauseMenuUiState &state = PauseMenuUI::state;
 	Game &game = *state.game;
-	game.setPanel<LoadSavePanel>(LoadSavePanel::Type::Load);
+	LoadSaveUI::state.type = LoadSaveType::Load;
+	game.setPanel<LoadSavePanel>();
 }
 
 void PauseMenuUI::onSaveGameButtonSelected(MouseButtonType mouseButtonType)
 {
-	// @todo
-	// SaveGamePanel...
-	//auto optionsPanel = std::make_unique<OptionsPanel>(game);
-	//game.setPanel(std::move(optionsPanel));
+	PauseMenuUiState &state = PauseMenuUI::state;
+	Game &game = *state.game;
+	LoadSaveUI::state.type = LoadSaveType::Save;
+	game.setPanel<LoadSavePanel>();
 }
 
 void PauseMenuUI::onExitGameButtonSelected(MouseButtonType mouseButtonType)

@@ -292,6 +292,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/LoadSaveUiController.h"
     "${SRC_ROOT}/Interface/LoadSaveUiModel.cpp"
     "${SRC_ROOT}/Interface/LoadSaveUiModel.h"
+    "${SRC_ROOT}/Interface/LoadSaveUiState.cpp"
+    "${SRC_ROOT}/Interface/LoadSaveUiState.h"
     "${SRC_ROOT}/Interface/LoadSaveUiView.cpp"
     "${SRC_ROOT}/Interface/LoadSaveUiView.h"
     "${SRC_ROOT}/Interface/LogbookPanel.cpp"

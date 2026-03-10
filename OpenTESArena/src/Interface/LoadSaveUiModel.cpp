@@ -9,9 +9,9 @@
 #include "components/utilities/Path.h"
 #include "components/utilities/String.h"
 
-void LoadSaveUiModel::Entry::init(std::string &&displayText)
+void LoadSaveUiEntry::init(const std::string &text)
 {
-	this->displayText = std::move(displayText);
+	this->text = text;
 }
 
 std::string LoadSaveUiModel::getSavesPath(Game &game)
@@ -22,25 +22,25 @@ std::string LoadSaveUiModel::getSavesPath(Game &game)
 	return String::addTrailingSlashIfMissing(path);
 }
 
-std::vector<LoadSaveUiModel::Entry> LoadSaveUiModel::getSaveEntries(Game &game)
+std::vector<LoadSaveUiEntry> LoadSaveUiModel::getSaveEntries(Game &game)
 {
 	const std::string savesPath = LoadSaveUiModel::getSavesPath(game);
 	const std::string fullSavesPath = savesPath + LoadSaveUiModel::ArenaSaveNamesFilename;
 	if (!File::exists(fullSavesPath.c_str()))
 	{
-		DebugLogWarning("No " + LoadSaveUiModel::ArenaSaveNamesFilename + " found in \"" + savesPath + "\".");
-		return std::vector<LoadSaveUiModel::Entry>();
+		DebugLogWarningFormat("No %s found in \"%s\".", LoadSaveUiModel::ArenaSaveNamesFilename.c_str(), savesPath.c_str());
+		return std::vector<LoadSaveUiEntry>();
 	}
 
 	const auto names = ArenaSave::loadNAMES(savesPath);
-	std::vector<LoadSaveUiModel::Entry> entries;
+	std::vector<LoadSaveUiEntry> entries;
 	for (size_t i = 0; i < names->entries.size(); i++)
 	{
 		DebugAssertIndex(names->entries, i);
-		const auto &nameEntry = names->entries[i];
+		const ArenaTypes::Names::Entry &nameEntry = names->entries[i];
 
-		LoadSaveUiModel::Entry entry;
-		entry.init(std::string(nameEntry.name.data()));
+		LoadSaveUiEntry entry;
+		entry.init(nameEntry.name.data());
 		entries.emplace_back(std::move(entry));
 	}
 
