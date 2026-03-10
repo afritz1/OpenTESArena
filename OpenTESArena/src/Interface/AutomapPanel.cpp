@@ -11,7 +11,7 @@ AutomapPanel::AutomapPanel(Game &game)
 
 AutomapPanel::~AutomapPanel()
 {
-	Game &game = this->getGame();	
+	Game &game = this->getGame();
 	UiManager &uiManager = game.uiManager;
 	uiManager.endContext(AutomapUI::ContextName, game);
 }

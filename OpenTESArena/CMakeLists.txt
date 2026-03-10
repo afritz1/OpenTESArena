@@ -300,6 +300,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/LogbookUiController.h"
     "${SRC_ROOT}/Interface/LogbookUiModel.cpp"
     "${SRC_ROOT}/Interface/LogbookUiModel.h"
+    "${SRC_ROOT}/Interface/LogbookUiState.cpp"
+    "${SRC_ROOT}/Interface/LogbookUiState.h"
     "${SRC_ROOT}/Interface/LogbookUiView.cpp"
     "${SRC_ROOT}/Interface/LogbookUiView.h"
     "${SRC_ROOT}/Interface/LootSubPanel.cpp"

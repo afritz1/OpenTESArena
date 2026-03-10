@@ -7,7 +7,7 @@ class Game;
 
 namespace LogbookUiModel
 {
-	std::string getTitleText(Game &game);
+	std::string getNoEntriesText(Game &game);
 }
 
 #endif
