@@ -22,6 +22,7 @@
 #include "../Interface/LoadSaveUiState.h"
 #include "../Interface/LogbookUiState.h"
 #include "../Interface/MainMenuUiState.h"
+#include "../Interface/MainQuestSplashUiState.h"
 #include "../Interface/PauseMenuUiState.h"
 #include "../Interface/ProvinceMapUiState.h"
 #include "../Interface/WorldMapUiState.h"
@@ -81,6 +82,7 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(LoadSaveUI);
 	REGISTER_SCOPE_CALLBACKS(LogbookUI);
 	REGISTER_SCOPE_CALLBACKS(MainMenuUI);
+	REGISTER_SCOPE_CALLBACKS(MainQuestSplashUI);
 	REGISTER_SCOPE_CALLBACKS(PauseMenuUI);
 	REGISTER_SCOPE_CALLBACKS(ProvinceMapUI);
 	REGISTER_SCOPE_CALLBACKS(WorldMapUI);

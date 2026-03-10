@@ -17,6 +17,7 @@
 #include "../Interface/LoadSaveUiState.h"
 #include "../Interface/LogbookUiState.h"
 #include "../Interface/MainMenuUiState.h"
+#include "../Interface/MainQuestSplashUiState.h"
 #include "../Interface/PauseMenuUiState.h"
 #include "../Interface/ProvinceMapUiState.h"
 #include "../Interface/WorldMapUiState.h"
@@ -175,6 +176,7 @@ namespace
 		DEFINE_CALLBACK_TUPLE(LoadSaveUI),
 		DEFINE_CALLBACK_TUPLE(LogbookUI),
 		DEFINE_CALLBACK_TUPLE(MainMenuUI),
+		DEFINE_CALLBACK_TUPLE(MainQuestSplashUI),
 		DEFINE_CALLBACK_TUPLE(PauseMenuUI),
 		DEFINE_CALLBACK_TUPLE(ProvinceMapUI),
 		DEFINE_CALLBACK_TUPLE(WorldMapUI)

@@ -324,6 +324,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/MainQuestSplashUiController.h"
     "${SRC_ROOT}/Interface/MainQuestSplashUiModel.cpp"
     "${SRC_ROOT}/Interface/MainQuestSplashUiModel.h"
+    "${SRC_ROOT}/Interface/MainQuestSplashUiState.cpp"
+    "${SRC_ROOT}/Interface/MainQuestSplashUiState.h"
     "${SRC_ROOT}/Interface/MainQuestSplashUiView.cpp"
     "${SRC_ROOT}/Interface/MainQuestSplashUiView.h"
     "${SRC_ROOT}/Interface/MessageBoxSubPanel.cpp"

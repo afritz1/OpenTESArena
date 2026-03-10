@@ -1,5 +1,6 @@
 #include "GameWorldPanel.h"
 #include "MainQuestSplashPanel.h"
+#include "MainQuestSplashUiState.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "../Assets/BinaryAssetLibrary.h"
@@ -232,7 +233,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		if (mainQuestDungeonDef.type == LocationMainQuestDungeonDefinitionType::Staff)
 		{
 			// Go to staff dungeon splash image first.
-			game.setPanel<MainQuestSplashPanel>(targetProvinceID);
+			MainQuestSplashUI::state.provinceID = targetProvinceID;
+			game.setPanel<MainQuestSplashPanel>();
 		}
 		else
 		{
