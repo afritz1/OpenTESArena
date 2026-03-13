@@ -90,7 +90,7 @@ public:
 	void setTransformPivot(UiElementInstanceID elementInstID, UiPivotType pivotType);
 
 	const UiButtonCallback &getButtonCallback(UiElementInstanceID elementInstID) const;
-	bool isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const;	
+	bool isMouseButtonValidForButton(UiElementInstanceID elementInstID, MouseButtonType mouseButtonType) const;
 
 	UiElementInstanceID createImage(const UiElementInitInfo &initInfo, UiTextureID textureID, UiContextInstanceID contextInstID, const Renderer &renderer);
 	void setImageTexture(UiElementInstanceID elementInstID, UiTextureID textureID);
@@ -105,7 +105,9 @@ public:
 	int getListBoxItemCount(UiElementInstanceID elementInstID) const;
 	Rect getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const;
 	const UiListBoxItemCallback &getListBoxItemCallback(UiElementInstanceID elementInstID, int itemIndex) const;
+	void setListBoxItemText(UiElementInstanceID elementInstID, int index, const char *text);
 	int getListBoxHoveredItemIndex(UiElementInstanceID elementInstID, const InputManager &inputManager, const Window &window) const;
+	bool isMouseButtonValidForListBox(UiElementInstanceID elementInstID, MouseButtonType mouseButtonType) const;
 	void insertListBoxItem(UiElementInstanceID elementInstID, int index, UiListBoxItem &&item);
 	void insertBackListBoxItem(UiElementInstanceID elementInstID, UiListBoxItem &&item);
 	void eraseListBoxItem(UiElementInstanceID elementInstID, int index);
@@ -126,9 +128,9 @@ public:
 	void addWindowResizedListener(const WindowResizedCallback &callback, const char *contextName, InputManager &inputManager);
 	void addRenderTargetsResetListener(const RenderTargetsResetCallback &callback, const char *contextName, InputManager &inputManager);
 	void addTextInputListener(const TextInputCallback &callback, const char *contextName, InputManager &inputManager);
-	
+
 	UiContextInstanceID createContext(const UiContextInitInfo &initInfo);
-	UiContextInstanceID createContext(const UiContextDefinition &contextDef, InputManager &inputManager, TextureManager &textureManager, Renderer &renderer);	
+	UiContextInstanceID createContext(const UiContextDefinition &contextDef, InputManager &inputManager, TextureManager &textureManager, Renderer &renderer);
 	bool isContextEnabled(const char *contextName) const;
 	void setContextEnabled(UiContextInstanceID contextInstID, bool enabled);
 	UiContextInstanceID getTopMostActiveContext() const;

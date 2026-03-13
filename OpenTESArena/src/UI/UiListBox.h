@@ -7,8 +7,11 @@
 #include <vector>
 
 #include "TextRenderUtils.h"
+#include "../Input/PointerTypes.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../Utilities/Color.h"
+
+enum class MouseButtonType;
 
 struct UiListBoxInitInfo
 {
@@ -17,12 +20,13 @@ struct UiListBoxInitInfo
 	int itemPixelSpacing;
 	std::string fontName;
 	Color defaultTextColor; // Color of item text unless overridden.
+	MouseButtonTypeFlags mouseButtonFlags;
 	double scrollDeltaScale; // Multiplier of item height for each scroll.
 
 	UiListBoxInitInfo();
 };
 
-using UiListBoxItemCallback = std::function<void()>;
+using UiListBoxItemCallback = std::function<void(MouseButtonType mouseButtonType)>;
 
 struct UiListBoxItem
 {
@@ -45,6 +49,7 @@ struct UiListBox
 	double scrollDeltaScale; // Multiplier of item height for each scroll.
 
 	std::vector<UiListBoxItem> items;
+	MouseButtonTypeFlags mouseButtonFlags; // Mouse buttons allowed to trigger callback. Defaults to left mouse button only.
 	double scrollPixelOffset; // How many pixels the list box is currently scrolled down.
 
 	bool dirty;
@@ -52,7 +57,7 @@ struct UiListBox
 	UiListBox();
 
 	void init(UiTextureID textureID, int textureWidth, int textureHeight, int itemPixelSpacing, int fontDefIndex,
-		Color defaultTextColor, double scrollDeltaScale);
+		Color defaultTextColor, MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale);
 
 	void free(Renderer &renderer);
 

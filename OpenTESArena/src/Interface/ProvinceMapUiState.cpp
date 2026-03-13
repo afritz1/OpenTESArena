@@ -925,7 +925,7 @@ void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValu
 
 			UiListBoxItem listBoxItem;
 			listBoxItem.text = locationInst.getName(locationDef);
-			listBoxItem.callback = [locationIndex]()
+			listBoxItem.callback = [locationIndex](MouseButtonType)
 			{
 				ProvinceMapUI::onSearchResultsListLocationSelected(locationIndex);
 			};

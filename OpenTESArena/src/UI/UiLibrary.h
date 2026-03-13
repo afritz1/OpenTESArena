@@ -85,6 +85,7 @@ struct UiListBoxDefinition
 	int itemPixelSpacing;
 	std::string fontName;
 	Color defaultTextColor;
+	MouseButtonTypeFlags buttonFlags;
 	double scrollDeltaScale;
 
 	UiListBoxDefinition();

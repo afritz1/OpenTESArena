@@ -9,12 +9,13 @@ UiListBoxInitInfo::UiListBoxInitInfo()
 	this->textureWidth = 0;
 	this->textureHeight = 0;
 	this->itemPixelSpacing = 0;
+	this->mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->scrollDeltaScale = 1.0;
 }
 
 UiListBoxItem::UiListBoxItem()
 {
-	this->callback = []() { };
+	this->callback = [](MouseButtonType) { };
 }
 
 UiListBox::UiListBox()
@@ -24,12 +25,14 @@ UiListBox::UiListBox()
 	this->textureHeight = 0;
 	this->itemPixelSpacing = 0;
 	this->fontDefIndex = -1;
+	this->mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Left);
 	this->scrollDeltaScale = 1.0;
 	this->scrollPixelOffset = 0.0;
 	this->dirty = false;
 }
 
-void UiListBox::init(UiTextureID textureID, int textureWidth, int textureHeight, int itemPixelSpacing, int fontDefIndex, Color defaultTextColor, double scrollDeltaScale)
+void UiListBox::init(UiTextureID textureID, int textureWidth, int textureHeight, int itemPixelSpacing, int fontDefIndex, Color defaultTextColor,
+	MouseButtonTypeFlags mouseButtonTypeFlags, double scrollDeltaScale)
 {
 	DebugAssert(textureID >= 0);
 	DebugAssert(textureWidth > 0);
@@ -42,6 +45,7 @@ void UiListBox::init(UiTextureID textureID, int textureWidth, int textureHeight,
 	this->itemPixelSpacing = itemPixelSpacing;
 	this->fontDefIndex = fontDefIndex;
 	this->defaultTextColor = defaultTextColor;
+	this->mouseButtonFlags = mouseButtonTypeFlags;
 	this->scrollDeltaScale = scrollDeltaScale;
 	this->scrollPixelOffset = 0.0;
 	this->items.clear();

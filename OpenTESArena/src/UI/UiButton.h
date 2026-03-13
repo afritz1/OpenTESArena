@@ -21,7 +21,7 @@ struct UiButtonInitInfo
 
 struct UiButton
 {
-	MouseButtonTypeFlags mouseButtonFlags; // Buttons allowed to trigger callback. Defaults to left mouse button only.
+	MouseButtonTypeFlags mouseButtonFlags; // Mouse buttons allowed to trigger callback. Defaults to left mouse button only.
 	UiButtonCallback callback;
 	std::string contentElementName; // Optionally points to child image/text box/etc. for transform size.
 

@@ -862,7 +862,7 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 					{
 						const Rect buttonRect = uiManager.getTransformGlobalRect(buttonElementInstID);
 						const bool isValidMouseSelection = buttonRect.contains(classicMousePosition); // Doesn't need parent rect check anymore since list boxes are handled separately.
-						const bool isMouseButtonValid = uiManager.isMouseButtonValidForButton(*buttonType, buttonElementInstID);
+						const bool isMouseButtonValid = uiManager.isMouseButtonValidForButton(buttonElementInstID, *buttonType);
 						if (isValidMouseSelection && isMouseButtonValid)
 						{
 							const UiButtonCallback &buttonCallback = uiManager.getButtonCallback(buttonElementInstID);
@@ -886,11 +886,11 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 						{
 							const Rect listBoxItemRect = uiManager.getListBoxItemGlobalRect(listBoxElementInstID, i);
 							const bool isValidMouseSelection = listBoxItemRect.contains(classicMousePosition);
-							const bool isMouseButtonValid = buttonType == MouseButtonType::Left; // List box buttons only require left click unlike general buttons.
+							const bool isMouseButtonValid = uiManager.isMouseButtonValidForListBox(listBoxElementInstID, *buttonType);
 							if (isValidMouseSelection && isMouseButtonValid)
 							{
 								const UiListBoxItemCallback &listBoxItemCallback = uiManager.getListBoxItemCallback(listBoxElementInstID, i);
-								listBoxItemCallback();
+								listBoxItemCallback(*buttonType);
 								isListBoxItemCallbackExecuted = true;
 								break;
 							}

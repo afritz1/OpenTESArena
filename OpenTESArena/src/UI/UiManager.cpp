@@ -23,6 +23,7 @@
 #include "../Interface/LogbookUiState.h"
 #include "../Interface/MainMenuUiState.h"
 #include "../Interface/MainQuestSplashUiState.h"
+#include "../Interface/OptionsUiState.h"
 #include "../Interface/PauseMenuUiState.h"
 #include "../Interface/ProvinceMapUiState.h"
 #include "../Interface/WorldMapUiState.h"
@@ -83,6 +84,7 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(LogbookUI);
 	REGISTER_SCOPE_CALLBACKS(MainMenuUI);
 	REGISTER_SCOPE_CALLBACKS(MainQuestSplashUI);
+	REGISTER_SCOPE_CALLBACKS(OptionsUI);
 	REGISTER_SCOPE_CALLBACKS(PauseMenuUI);
 	REGISTER_SCOPE_CALLBACKS(ProvinceMapUI);
 	REGISTER_SCOPE_CALLBACKS(WorldMapUI);
@@ -330,7 +332,7 @@ const UiButtonCallback &UiManager::getButtonCallback(UiElementInstanceID element
 	return button.callback;
 }
 
-bool UiManager::isMouseButtonValidForButton(MouseButtonType mouseButtonType, UiElementInstanceID elementInstID) const
+bool UiManager::isMouseButtonValidForButton(UiElementInstanceID elementInstID, MouseButtonType mouseButtonType) const
 {
 	const UiElement &element = this->elements.get(elementInstID);
 	DebugAssert(element.type == UiElementType::Button);
@@ -596,7 +598,7 @@ UiElementInstanceID UiManager::createListBox(const UiElementInitInfo &initInfo, 
 
 	UiListBox &listBox = this->listBoxes.get(listBoxInstID);
 	listBox.init(listBoxTextureID, listBoxInitInfo.textureWidth, listBoxInitInfo.textureHeight, listBoxInitInfo.itemPixelSpacing, fontDefIndex,
-		listBoxInitInfo.defaultTextColor, listBoxInitInfo.scrollDeltaScale);
+		listBoxInitInfo.defaultTextColor, listBoxInitInfo.mouseButtonFlags, listBoxInitInfo.scrollDeltaScale);
 
 	Int2 contentSize = initInfo.size;
 	if (initInfo.sizeType == UiTransformSizeType::Content)
@@ -660,6 +662,20 @@ const UiListBoxItemCallback &UiManager::getListBoxItemCallback(UiElementInstance
 	return listBox.items[itemIndex].callback;
 }
 
+void UiManager::setListBoxItemText(UiElementInstanceID elementInstID, int index, const char *text)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+
+	DebugAssertIndex(listBox.items, index);
+	UiListBoxItem &item = listBox.items[index];
+	item.text = std::string(text);
+
+	listBox.dirty = true;
+}
+
 int UiManager::getListBoxHoveredItemIndex(UiElementInstanceID elementInstID, const InputManager &inputManager, const Window &window) const
 {
 	const UiElement &element = this->elements.get(elementInstID);
@@ -691,6 +707,14 @@ int UiManager::getListBoxHoveredItemIndex(UiElementInstanceID elementInstID, con
 	}
 
 	return -1;
+}
+
+bool UiManager::isMouseButtonValidForListBox(UiElementInstanceID elementInstID, MouseButtonType mouseButtonType) const
+{
+	const UiElement &element = this->elements.get(elementInstID);
+	DebugAssert(element.type == UiElementType::ListBox);
+	const UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+	return MouseButtonTypeFlags(mouseButtonType).any(listBox.mouseButtonFlags);
 }
 
 void UiManager::insertListBoxItem(UiElementInstanceID elementInstID, int index, UiListBoxItem &&item)
@@ -1016,6 +1040,7 @@ UiContextInstanceID UiManager::createContext(const UiContextDefinition &contextD
 		initInfo.itemPixelSpacing = def.itemPixelSpacing;
 		initInfo.fontName = def.fontName;
 		initInfo.defaultTextColor = def.defaultTextColor;
+		initInfo.mouseButtonFlags = def.buttonFlags;
 		initInfo.scrollDeltaScale = def.scrollDeltaScale;
 		return initInfo;
 	};

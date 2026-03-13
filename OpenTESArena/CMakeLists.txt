@@ -336,6 +336,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/OptionsUiController.h"
     "${SRC_ROOT}/Interface/OptionsUiModel.cpp"
     "${SRC_ROOT}/Interface/OptionsUiModel.h"
+    "${SRC_ROOT}/Interface/OptionsUiState.cpp"
+    "${SRC_ROOT}/Interface/OptionsUiState.h"
     "${SRC_ROOT}/Interface/OptionsUiView.cpp"
     "${SRC_ROOT}/Interface/OptionsUiView.h"
     "${SRC_ROOT}/Interface/Panel.cpp"
