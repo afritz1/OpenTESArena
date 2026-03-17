@@ -7,12 +7,7 @@ class ListBox;
 struct InputActionCallbackValues;
 
 namespace CharacterSheetUiController
-{
-	void onDoneButtonSelected(Game &game);
-	void onDoneInputAction(const InputActionCallbackValues &values);
-
-	void onNextPageButtonSelected(Game &game);
-	
+{	
 	void onBackToStatsButtonSelected(Game &game);
 	void onBackToStatsInputAction(const InputActionCallbackValues &values);
 

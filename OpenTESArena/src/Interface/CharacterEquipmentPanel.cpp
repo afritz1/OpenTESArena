@@ -164,12 +164,13 @@ bool CharacterEquipmentPanel::init()
 	const UiTextureID pantsTextureID = CharacterSheetUiView::allocPantsTexture(game);
 	const UiTextureID headTextureID = CharacterSheetUiView::allocHeadTexture(game);
 	const UiTextureID shirtTextureID = CharacterSheetUiView::allocShirtTexture(game);
-	const UiTextureID equipmentBgTextureID = CharacterSheetUiView::allocEquipmentBgTexture(textureManager, renderer);
+	//const UiTextureID equipmentBgTextureID = CharacterSheetUiView::allocEquipmentBgTexture(textureManager, renderer);
+	DebugNotImplemented();
 	this->bodyTextureRef.init(bodyTextureID, renderer);
 	this->pantsTextureRef.init(pantsTextureID, renderer);
 	this->headTextureRef.init(headTextureID, renderer);
 	this->shirtTextureRef.init(shirtTextureID, renderer);
-	this->equipmentBgTextureRef.init(equipmentBgTextureID, renderer);
+	//this->equipmentBgTextureRef.init(equipmentBgTextureID, renderer);
 
 	UiDrawCallInitInfo bodyDrawCallInitInfo;
 	bodyDrawCallInitInfo.textureID = bodyTextureID;
@@ -196,8 +197,8 @@ bool CharacterEquipmentPanel::init()
 	this->addDrawCall(shirtDrawCallInitInfo);
 
 	UiDrawCallInitInfo equipmentBgDrawCallInitInfo;
-	equipmentBgDrawCallInitInfo.textureID = equipmentBgTextureID;
-	equipmentBgDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(equipmentBgTextureID);
+	//equipmentBgDrawCallInitInfo.textureID = equipmentBgTextureID;
+	//equipmentBgDrawCallInitInfo.size = *renderer.tryGetUiTextureDims(equipmentBgTextureID);
 	this->addDrawCall(equipmentBgDrawCallInitInfo);
 
 	const Rect playerNameTextBoxRect = this->nameTextBox.getRect();

@@ -12,6 +12,7 @@
 #include "UiTextBox.h"
 #include "../Game/Game.h"
 #include "../Interface/AutomapUiState.h"
+#include "../Interface/CharacterUiState.h"
 #include "../Interface/ChooseAttributesUiState.h"
 #include "../Interface/ChooseClassUiState.h"
 #include "../Interface/ChooseClassCreationUiState.h"
@@ -73,6 +74,7 @@ GeneratedUiTexture::GeneratedUiTexture()
 bool UiManager::init()
 {
 	REGISTER_SCOPE_CALLBACKS(AutomapUI);
+	REGISTER_SCOPE_CALLBACKS(CharacterUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseAttributesUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseClassUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseClassCreationUI);

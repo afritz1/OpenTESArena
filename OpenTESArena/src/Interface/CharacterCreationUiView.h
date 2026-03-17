@@ -190,10 +190,6 @@ namespace ChooseAttributesUiView
 	UiTextureID allocShirtTexture(Game &game);
 	UiTextureID allocPantsTexture(Game &game);
 	UiTextureID allocHeadTexture(const TextureAsset &textureAsset, TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
-
-	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

@@ -5,24 +5,6 @@
 #include "../UI/ListBox.h"
 #include "../Game/Game.h"
 
-void CharacterSheetUiController::onDoneButtonSelected(Game &game)
-{
-	game.setPanel<GameWorldPanel>();
-}
-
-void CharacterSheetUiController::onDoneInputAction(const InputActionCallbackValues &values)
-{
-	if (values.performed)
-	{
-		CharacterSheetUiController::onDoneButtonSelected(values.game);
-	}
-}
-
-void CharacterSheetUiController::onNextPageButtonSelected(Game &game)
-{
-	game.setPanel<CharacterEquipmentPanel>();
-}
-
 void CharacterSheetUiController::onBackToStatsButtonSelected(Game &game)
 {
 	game.setPanel<CharacterPanel>();

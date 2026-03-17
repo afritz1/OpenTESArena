@@ -19,15 +19,6 @@ class Game;
 
 namespace CharacterSheetUiView
 {
-	const Int2 DoneButtonCenterPoint(25, ArenaRenderUtils::SCREEN_HEIGHT - 15);
-	constexpr int DoneButtonWidth = 21;
-	constexpr int DoneButtonHeight = 13;
-
-	constexpr int NextPageButtonX = 108;
-	constexpr int NextPageButtonY = 179;
-	constexpr int NextPageButtonWidth = 49;
-	constexpr int NextPageButtonHeight = 13;
-
 	constexpr int BackToStatsButtonX = 0;
 	constexpr int BackToStatsButtonY = 188;
 	constexpr int BackToStatsButtonWidth = 47;
@@ -56,12 +47,7 @@ namespace CharacterSheetUiView
 	Int2 getShirtOffset(Game &game);
 	Int2 getPantsOffset(Game &game);
 
-	Int2 getNextPageOffset();
-
 	TextureAsset getPaletteTextureAsset();
-	TextureAsset getStatsBackgroundTextureAsset();
-	TextureAsset getEquipmentBackgroundTextureAsset();
-	TextureAsset getNextPageButtonTextureAsset();
 	TextureAsset getBodyTextureAsset(Game &game);
 	TextureAsset getHeadTextureAsset(Game &game);
 	TextureAsset getShirtTextureAsset(Game &game);
@@ -71,11 +57,6 @@ namespace CharacterSheetUiView
 	UiTextureID allocShirtTexture(Game &game);
 	UiTextureID allocPantsTexture(Game &game);
 	UiTextureID allocHeadTexture(Game &game);
-	UiTextureID allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocNextPageTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 namespace CharacterEquipmentUiView
@@ -87,6 +68,11 @@ namespace CharacterEquipmentUiView
 	constexpr TextAlignment PlayerLevelTextBoxAlignment = TextAlignment::TopLeft;
 
 	TextBoxInitInfo getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary);
+
+	TextureAsset getEquipmentBackgroundTextureAsset();
+
+	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
+	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

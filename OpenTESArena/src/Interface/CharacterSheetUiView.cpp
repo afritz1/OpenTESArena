@@ -66,29 +66,9 @@ Int2 CharacterSheetUiView::getPantsOffset(Game &game)
 	return ArenaPortraitUtils::getPantsOffset(isMale);
 }
 
-Int2 CharacterSheetUiView::getNextPageOffset()
-{
-	return Int2(108, 179);
-}
-
 TextureAsset CharacterSheetUiView::getPaletteTextureAsset()
 {
 	return TextureAsset(std::string(ArenaPaletteName::CharSheet));
-}
-
-TextureAsset CharacterSheetUiView::getStatsBackgroundTextureAsset()
-{
-	return TextureAsset(std::string(ArenaTextureName::CharacterStats));
-}
-
-TextureAsset CharacterSheetUiView::getEquipmentBackgroundTextureAsset()
-{
-	return TextureAsset(std::string(ArenaTextureName::CharacterEquipment));
-}
-
-TextureAsset CharacterSheetUiView::getNextPageButtonTextureAsset()
-{
-	return TextureAsset(std::string(ArenaTextureName::NextPage));
 }
 
 TextureAsset CharacterSheetUiView::getBodyTextureAsset(Game &game)
@@ -215,78 +195,6 @@ UiTextureID CharacterSheetUiView::allocHeadTexture(Game &game)
 	return textureID;
 }
 
-UiTextureID CharacterSheetUiView::allocStatsBgTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
-	const TextureAsset textureAsset = CharacterSheetUiView::getStatsBackgroundTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for stats background.");
-	}
-
-	return textureID;
-}
-
-UiTextureID CharacterSheetUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
-	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
-
-	UiTextureID upDownTextureID;
-	if (!TextureUtils::tryAllocUiTexture(upDownTextureAsset, paletteTextureAsset, textureManager, renderer, &upDownTextureID))
-	{
-		DebugLogError("Couldn't get texture ID for up/down arrows.");
-		return -1;
-	}
-
-	return upDownTextureID;
-}
-
-UiTextureID CharacterSheetUiView::allocBonusPointsTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset bonusPointsTextureAsset = TextureAsset(std::string(ArenaTextureName::BonusPointsText));
-	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
-
-	UiTextureID bonusPointsTextureID;
-	if (!TextureUtils::tryAllocUiTexture(bonusPointsTextureAsset, paletteTextureAsset, textureManager, renderer, &bonusPointsTextureID))
-	{
-		DebugLogError("Couldn't get texture ID for bonus points.");
-		return -1;
-	}
-
-	return bonusPointsTextureID;
-}
-
-UiTextureID CharacterSheetUiView::allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
-	const TextureAsset textureAsset = CharacterSheetUiView::getEquipmentBackgroundTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for equipment background.");
-	}
-
-	return textureID;
-}
-
-UiTextureID CharacterSheetUiView::allocNextPageTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
-	const TextureAsset textureAsset = CharacterSheetUiView::getNextPageButtonTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for next page button.");
-	}
-
-	return textureID;
-}
-
 TextBoxInitInfo CharacterEquipmentUiView::getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary)
 {
 	return TextBoxInitInfo::makeWithXY(
@@ -297,4 +205,38 @@ TextBoxInitInfo CharacterEquipmentUiView::getPlayerLevelTextBoxInitInfo(const Fo
 		CharacterEquipmentUiView::PlayerLevelTextBoxColor,
 		CharacterEquipmentUiView::PlayerLevelTextBoxAlignment,
 		fontLibrary);
+}
+
+TextureAsset CharacterEquipmentUiView::getEquipmentBackgroundTextureAsset()
+{
+	return TextureAsset(std::string(ArenaTextureName::CharacterEquipment));
+}
+
+UiTextureID CharacterEquipmentUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
+	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(upDownTextureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
+	{
+		DebugLogError("Couldn't get texture ID for up/down arrows.");
+		return -1;
+	}
+
+	return textureID;
+}
+
+UiTextureID CharacterEquipmentUiView::allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer)
+{
+	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
+	const TextureAsset textureAsset = CharacterEquipmentUiView::getEquipmentBackgroundTextureAsset();
+
+	UiTextureID textureID;
+	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
+	{
+		DebugCrash("Couldn't create UI texture for equipment background.");
+	}
+
+	return textureID;
 }

@@ -21,18 +21,6 @@
 
 namespace
 {
-	constexpr const char *DerivedAttributeUiNames[] =
-	{
-		"BonusDamage",
-		"MaxWeight",
-		"MagicDefense",
-		"BonusToHit",
-		"BonusToDefend",
-		"BonusToHealth",
-		"HealMod",
-		"BonusToCharisma",
-	};
-
 	constexpr char ContextName_InitialPopUp[] = "ChooseAttributesInitialPopUp";
 	constexpr char ContextName_SaveReroll[] = "ChooseAttributesSaveReroll";
 	constexpr char ContextName_RemainingPointsPopUp[] = "ChooseAttributesRemainingPointsPopUp";
@@ -621,8 +609,8 @@ void ChooseAttributesUI::updateDerivedAttributes()
 		const int derivedAttributeValue = derivedAttributesView[i];
 		const std::string derivedAttributeDisplayString = DerivedAttributes::isModifier(i) ? CharacterSheetUiModel::getDerivedAttributeDisplayString(derivedAttributeValue) : std::to_string(derivedAttributeValue);
 
-		DebugAssertIndex(DerivedAttributeUiNames, i);
-		const std::string derivedAttributeElementName = GetDerivedAttributeTextBoxElementName(DerivedAttributeUiNames[i]);
+		DebugAssertIndex(CharacterSheetUiModel::DerivedAttributeUiNames, i);
+		const std::string derivedAttributeElementName = GetDerivedAttributeTextBoxElementName(CharacterSheetUiModel::DerivedAttributeUiNames[i]);
 		const UiElementInstanceID derivedAttributeTextBoxElementInstID = uiManager.getElementByName(derivedAttributeElementName.c_str());
 		uiManager.setTextBoxText(derivedAttributeTextBoxElementInstID, derivedAttributeDisplayString.c_str());
 	}

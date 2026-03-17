@@ -58,11 +58,6 @@ std::string CharacterSheetUiModel::getPlayerClassName(Game &game)
 	return charClassDef.name;
 }
 
-const PrimaryAttributes &CharacterSheetUiModel::getPlayerAttributes(Game &game)
-{
-	return game.player.primaryAttributes;
-}
-
 DerivedAttributes CharacterSheetUiModel::getPlayerDerivedAttributes(Game &game)
 {
 	return ArenaPlayerUtils::calculateTotalDerivedBonuses(game.player.primaryAttributes);
