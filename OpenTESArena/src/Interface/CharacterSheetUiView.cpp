@@ -195,23 +195,6 @@ UiTextureID CharacterSheetUiView::allocHeadTexture(Game &game)
 	return textureID;
 }
 
-TextBoxInitInfo CharacterEquipmentUiView::getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithXY(
-		std::string(6, TextRenderUtils::LARGEST_CHAR),
-		CharacterEquipmentUiView::PlayerLevelTextBoxX,
-		CharacterEquipmentUiView::PlayerLevelTextBoxY,
-		CharacterEquipmentUiView::PlayerLevelTextBoxFontName,
-		CharacterEquipmentUiView::PlayerLevelTextBoxColor,
-		CharacterEquipmentUiView::PlayerLevelTextBoxAlignment,
-		fontLibrary);
-}
-
-TextureAsset CharacterEquipmentUiView::getEquipmentBackgroundTextureAsset()
-{
-	return TextureAsset(std::string(ArenaTextureName::CharacterEquipment));
-}
-
 UiTextureID CharacterEquipmentUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
@@ -222,20 +205,6 @@ UiTextureID CharacterEquipmentUiView::allocUpDownButtonTexture(TextureManager &t
 	{
 		DebugLogError("Couldn't get texture ID for up/down arrows.");
 		return -1;
-	}
-
-	return textureID;
-}
-
-UiTextureID CharacterEquipmentUiView::allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
-	const TextureAsset textureAsset = CharacterEquipmentUiView::getEquipmentBackgroundTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for equipment background.");
 	}
 
 	return textureID;

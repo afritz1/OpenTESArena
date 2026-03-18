@@ -1,47 +1,17 @@
 #ifndef CHARACTER_SHEET_UI_VIEW_H
 #define CHARACTER_SHEET_UI_VIEW_H
 
-#include "../Assets/TextureAsset.h"
-#include "../Assets/TextureUtils.h"
-#include "../Math/Rect.h"
 #include "../Math/Vector2.h"
-#include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/RenderTextureUtils.h"
-#include "../Stats/PrimaryAttribute.h"
-#include "../UI/ArenaFontName.h"
-#include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
-#include "../Utilities/Color.h"
 
-#include "components/utilities/Span.h"
+struct TextureAsset;
 
 class Game;
+class Renderer;
+class TextureManager;
 
 namespace CharacterSheetUiView
 {
-	constexpr int BackToStatsButtonX = 0;
-	constexpr int BackToStatsButtonY = 188;
-	constexpr int BackToStatsButtonWidth = 47;
-	constexpr int BackToStatsButtonHeight = 12;
-
-	constexpr int SpellbookButtonX = 47;
-	constexpr int SpellbookButtonY = 188;
-	constexpr int SpellbookButtonWidth = 76;
-	constexpr int SpellbookButtonHeight = 12;
-
-	constexpr int DropButtonX = 123;
-	constexpr int DropButtonY = 188;
-	constexpr int DropButtonWidth = 48;
-	constexpr int DropButtonHeight = 12;
-
-	const Int2 ScrollDownButtonCenterPoint(16, 131);
-	constexpr int ScrollDownButtonWidth = 9;
-	constexpr int ScrollDownButtonHeight = 9;
-
-	const Int2 ScrollUpButtonCenterPoint(152, 131);
-	constexpr int ScrollUpButtonWidth = 9;
-	constexpr int ScrollUpButtonHeight = 9;
-
 	Int2 getBodyOffset(Game &game);
 	Int2 getHeadOffset(Game &game);
 	Int2 getShirtOffset(Game &game);
@@ -61,18 +31,7 @@ namespace CharacterSheetUiView
 
 namespace CharacterEquipmentUiView
 {
-	constexpr int PlayerLevelTextBoxX = 128;
-	constexpr int PlayerLevelTextBoxY = 23;
-	const std::string PlayerLevelTextBoxFontName = ArenaFontName::Arena;
-	constexpr Color PlayerLevelTextBoxColor(199, 199, 199);
-	constexpr TextAlignment PlayerLevelTextBoxAlignment = TextAlignment::TopLeft;
-
-	TextBoxInitInfo getPlayerLevelTextBoxInitInfo(const FontLibrary &fontLibrary);
-
-	TextureAsset getEquipmentBackgroundTextureAsset();
-
 	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocEquipmentBgTexture(TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

@@ -106,6 +106,7 @@ public:
 	Rect getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int itemIndex) const;
 	const UiListBoxItemCallback &getListBoxItemCallback(UiElementInstanceID elementInstID, int itemIndex) const;
 	void setListBoxItemText(UiElementInstanceID elementInstID, int index, const char *text);
+	void setListBoxItemColorOverride(UiElementInstanceID elementInstID, int index, const std::optional<Color> &color);
 	int getListBoxHoveredItemIndex(UiElementInstanceID elementInstID, const InputManager &inputManager, const Window &window) const;
 	bool isMouseButtonValidForListBox(UiElementInstanceID elementInstID, MouseButtonType mouseButtonType) const;
 	void insertListBoxItem(UiElementInstanceID elementInstID, int index, UiListBoxItem &&item);

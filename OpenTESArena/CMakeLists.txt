@@ -224,6 +224,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/CharacterCreationUiView.h"
     "${SRC_ROOT}/Interface/CharacterEquipmentPanel.cpp"
     "${SRC_ROOT}/Interface/CharacterEquipmentPanel.h"
+    "${SRC_ROOT}/Interface/CharacterEquipmentUiState.cpp"
+    "${SRC_ROOT}/Interface/CharacterEquipmentUiState.h"
     "${SRC_ROOT}/Interface/CharacterPanel.cpp"
     "${SRC_ROOT}/Interface/CharacterPanel.h"
     "${SRC_ROOT}/Interface/CharacterSheetUiController.cpp"

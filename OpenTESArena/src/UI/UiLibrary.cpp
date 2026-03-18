@@ -8,6 +8,7 @@
 #include "../Assets/TextureUtils.h"
 #include "../Interface/AutomapUiState.h"
 #include "../Interface/CharacterUiState.h"
+#include "../Interface/CharacterEquipmentUiState.h"
 #include "../Interface/ChooseAttributesUiState.h"
 #include "../Interface/ChooseClassUiState.h"
 #include "../Interface/ChooseClassCreationUiState.h"
@@ -170,6 +171,7 @@ namespace
 	{
 		DEFINE_CALLBACK_TUPLE(AutomapUI),
 		DEFINE_CALLBACK_TUPLE(CharacterUI),
+		DEFINE_CALLBACK_TUPLE(CharacterEquipmentUI),
 		DEFINE_CALLBACK_TUPLE(ChooseAttributesUI),
 		DEFINE_CALLBACK_TUPLE(ChooseClassUI),
 		DEFINE_CALLBACK_TUPLE(ChooseClassCreationUI),

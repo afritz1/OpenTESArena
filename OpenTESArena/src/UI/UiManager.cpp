@@ -13,6 +13,7 @@
 #include "../Game/Game.h"
 #include "../Interface/AutomapUiState.h"
 #include "../Interface/CharacterUiState.h"
+#include "../Interface/CharacterEquipmentUiState.h"
 #include "../Interface/ChooseAttributesUiState.h"
 #include "../Interface/ChooseClassUiState.h"
 #include "../Interface/ChooseClassCreationUiState.h"
@@ -75,6 +76,7 @@ bool UiManager::init()
 {
 	REGISTER_SCOPE_CALLBACKS(AutomapUI);
 	REGISTER_SCOPE_CALLBACKS(CharacterUI);
+	REGISTER_SCOPE_CALLBACKS(CharacterEquipmentUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseAttributesUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseClassUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseClassCreationUI);
@@ -674,6 +676,20 @@ void UiManager::setListBoxItemText(UiElementInstanceID elementInstID, int index,
 	DebugAssertIndex(listBox.items, index);
 	UiListBoxItem &item = listBox.items[index];
 	item.text = std::string(text);
+
+	listBox.dirty = true;
+}
+
+void UiManager::setListBoxItemColorOverride(UiElementInstanceID elementInstID, int index, const std::optional<Color> &color)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::ListBox);
+	UiListBox &listBox = this->listBoxes.get(element.listBoxInstID);
+
+	DebugAssertIndex(listBox.items, index);
+	UiListBoxItem &item = listBox.items[index];
+	item.overrideColor = color;
 
 	listBox.dirty = true;
 }
