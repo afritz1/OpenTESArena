@@ -20,6 +20,7 @@
 #include "../Interface/ChooseGenderUiState.h"
 #include "../Interface/ChooseNameUiState.h"
 #include "../Interface/ChooseRaceUiState.h"
+#include "../Interface/CinematicUiState.h"
 #include "../Interface/GameWorldUiState.h"
 #include "../Interface/LoadSaveUiState.h"
 #include "../Interface/LogbookUiState.h"
@@ -83,6 +84,7 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(ChooseGenderUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseNameUI);
 	REGISTER_SCOPE_CALLBACKS(ChooseRaceUI);
+	REGISTER_SCOPE_CALLBACKS(CinematicUI);
 	REGISTER_SCOPE_CALLBACKS(GameWorldUI);
 	REGISTER_SCOPE_CALLBACKS(LoadSaveUI);
 	REGISTER_SCOPE_CALLBACKS(LogbookUI);

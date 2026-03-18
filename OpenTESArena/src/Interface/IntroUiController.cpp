@@ -1,4 +1,5 @@
 #include "CinematicPanel.h"
+#include "CinematicUiState.h"
 #include "ImagePanel.h"
 #include "ImageSequencePanel.h"
 #include "IntroUiController.h"
@@ -37,13 +38,19 @@ void IntroUiController::onIntroQuoteFinished(Game &game)
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceFilename.c_str());
 	if (!metadataID.has_value())
 	{
-		DebugLogError("Couldn't get texture file metadata for opening scroll animation \"" + sequenceFilename + "\".");
+		DebugLogErrorFormat("Couldn't get texture file metadata for opening scroll animation \"%s\".", sequenceFilename.c_str());
 		return;
 	}
 
 	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
-	const double secondsPerFrame = metadata.getSecondsPerFrame();
-	game.setPanel<CinematicPanel>(paletteFilename, sequenceFilename, secondsPerFrame, IntroUiController::onOpeningScrollFinished);
+
+	CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
+	cinematicInitInfo.paletteName = paletteFilename;
+	cinematicInitInfo.sequenceName = sequenceFilename;
+	cinematicInitInfo.secondsPerImage = metadata.getSecondsPerFrame();
+	cinematicInitInfo.callback = [&game]() { IntroUiController::onOpeningScrollFinished(game); };
+
+	game.setPanel<CinematicPanel>();
 }
 
 void IntroUiController::onOpeningScrollFinished(Game &game)

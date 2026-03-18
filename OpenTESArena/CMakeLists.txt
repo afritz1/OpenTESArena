@@ -264,6 +264,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/CinematicLibrary.h"
     "${SRC_ROOT}/Interface/CinematicPanel.cpp"
     "${SRC_ROOT}/Interface/CinematicPanel.h"
+    "${SRC_ROOT}/Interface/CinematicUiState.cpp"
+    "${SRC_ROOT}/Interface/CinematicUiState.h"
     "${SRC_ROOT}/Interface/CommonUiView.cpp"
     "${SRC_ROOT}/Interface/CommonUiView.h"
     "${SRC_ROOT}/Interface/GameWorldPanel.cpp"
