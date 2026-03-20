@@ -6,6 +6,7 @@
 #include "ChooseAttributesUiState.h"
 #include "ChooseRacePanel.h"
 #include "TextCinematicPanel.h"
+#include "TextCinematicUiState.h"
 #include "TextSubPanel.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
@@ -928,8 +929,10 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 		}
 
 		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
-		const double secondsPerFrame = metadata.getSecondsPerFrame();
-		game.setPanel<TextCinematicPanel>(textCinematicDefIndex, secondsPerFrame, ChooseAttributesUiController::onPostCharacterCreationCinematicFinished);
+
+		TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
+		textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(game); });
+		game.setPanel<TextCinematicPanel>();
 
 		// Play dream music.
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();

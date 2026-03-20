@@ -26,6 +26,7 @@
 #include "../Interface/OptionsUiState.h"
 #include "../Interface/PauseMenuUiState.h"
 #include "../Interface/ProvinceMapUiState.h"
+#include "../Interface/TextCinematicUiState.h"
 #include "../Interface/WorldMapUiState.h"
 
 #include "components/debug/Debug.h"
@@ -192,6 +193,7 @@ namespace
 		DEFINE_CALLBACK_TUPLE(OptionsUI),
 		DEFINE_CALLBACK_TUPLE(PauseMenuUI),
 		DEFINE_CALLBACK_TUPLE(ProvinceMapUI),
+		DEFINE_CALLBACK_TUPLE(TextCinematicUI),
 		DEFINE_CALLBACK_TUPLE(WorldMapUI)
 	};
 

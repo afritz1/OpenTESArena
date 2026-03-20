@@ -378,6 +378,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/TextCinematicPanel.h"
     "${SRC_ROOT}/Interface/TextCinematicUiModel.cpp"
     "${SRC_ROOT}/Interface/TextCinematicUiModel.h"
+    "${SRC_ROOT}/Interface/TextCinematicUiState.cpp"
+    "${SRC_ROOT}/Interface/TextCinematicUiState.h"
     "${SRC_ROOT}/Interface/TextCinematicUiView.cpp"
     "${SRC_ROOT}/Interface/TextCinematicUiView.h"
     "${SRC_ROOT}/Interface/TextSubPanel.cpp"

@@ -2,6 +2,9 @@
 #include "GameWorldUiController.h"
 #include "GameWorldUiModel.h"
 #include "GameWorldUiState.h"
+#include "PauseMenuUiController.h"
+#include "TextCinematicPanel.h"
+#include "TextCinematicUiState.h"
 #include "LootSubPanel.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
@@ -9,8 +12,6 @@
 #include "../Entities/ArenaCitizenUtils.h"
 #include "../Entities/ArenaEntityUtils.h"
 #include "../Game/Game.h"
-#include "../Interface/PauseMenuUiController.h"
-#include "../Interface/TextCinematicPanel.h"
 #include "../Player/Player.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/CharacterRaceLibrary.h"
@@ -314,8 +315,10 @@ void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
 	}
 
 	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
-	const double secondsPerFrame = metadata.getSecondsPerFrame();
-	game.setPanel<TextCinematicPanel>(textCinematicDefIndex, secondsPerFrame, PauseMenuUiController::onNewGameButtonSelected);
+
+	TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
+	textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { PauseMenuUiController::onNewGameButtonSelected(game); });
+	game.setPanel<TextCinematicPanel>();
 
 	const MusicDefinition *musicDef = MusicUtils::getMainQuestCinematicGoodMusicDefinition(game.random);
 	if (musicDef == nullptr)

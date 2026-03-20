@@ -99,6 +99,7 @@ public:
 	UiElementInstanceID createTextBox(const UiElementInitInfo &initInfo, const UiTextBoxInitInfo &textBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);
 	std::string getTextBoxText(UiElementInstanceID elementInstID) const;
 	void setTextBoxText(UiElementInstanceID elementInstID, const char *str);
+	void setTextBoxColor(UiElementInstanceID elementInstID, Color color);
 	void freeTextBox(UiElementInstanceID elementInstID, Renderer &renderer);
 
 	UiElementInstanceID createListBox(const UiElementInitInfo &initInfo, const UiListBoxInitInfo &listBoxInitInfo, UiContextInstanceID contextInstID, Renderer &renderer);

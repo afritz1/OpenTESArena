@@ -10,51 +10,50 @@
 #include "components/dos/DOSUtils.h"
 #include "components/utilities/String.h"
 
-TextCinematicUiModel::SpeechState::SpeechState()
+TextCinematicSpeechState::TextCinematicSpeechState()
 {
 	this->templateDatKey = -1;
 	this->nextVoiceIndex = -1;
 }
 
-void TextCinematicUiModel::SpeechState::init(int templateDatKey)
+void TextCinematicSpeechState::init(int templateDatKey)
 {
 	this->templateDatKey = templateDatKey;
 	this->nextVoiceIndex = 0;
 }
 
-bool TextCinematicUiModel::SpeechState::isFirstVoice(int voiceIndex)
+bool TextCinematicSpeechState::isFirstVoice(int voiceIndex)
 {
 	return voiceIndex == 0;
 }
 
-bool TextCinematicUiModel::SpeechState::isBeginningOfNewPage(int voiceIndex)
+bool TextCinematicSpeechState::isBeginningOfNewPage(int voiceIndex)
 {
 	return (voiceIndex % 2) == 0;
 }
 
-int TextCinematicUiModel::SpeechState::getNextVoiceIndex() const
+int TextCinematicSpeechState::getNextVoiceIndex() const
 {
 	return this->nextVoiceIndex;
 }
 
-std::string TextCinematicUiModel::SpeechState::getVoiceFilename(int voiceIndex) const
+std::string TextCinematicSpeechState::getVoiceFilename(int voiceIndex) const
 {
 	const int index = voiceIndex / 2;
-	const char letter = SpeechState::isBeginningOfNewPage(voiceIndex) ? 'A' : 'B';
+	const char letter = TextCinematicSpeechState::isBeginningOfNewPage(voiceIndex) ? 'A' : 'B';
 
 	DOSUtils::FilenameBuffer filename;
-	std::snprintf(filename.data(), filename.size(), "%d_%02d%c.VOC",
-		this->templateDatKey, index, letter);
+	std::snprintf(filename.data(), filename.size(), "%d_%02d%c.VOC", this->templateDatKey, index, letter);
 
 	return "SPEECH/" + std::string(filename.data());
 }
 
-void TextCinematicUiModel::SpeechState::incrementVoiceIndex()
+void TextCinematicSpeechState::incrementVoiceIndex()
 {
 	this->nextVoiceIndex++;
 }
 
-void TextCinematicUiModel::SpeechState::resetVoiceIndex()
+void TextCinematicSpeechState::resetVoiceIndex()
 {
 	this->nextVoiceIndex = 0;
 }

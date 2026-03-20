@@ -1,36 +1,6 @@
 #include "TextCinematicUiView.h"
 #include "../Assets/TextureManager.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/ArenaFontName.h"
-
-std::string TextCinematicUiView::getSubtitleTextBoxFontName()
-{
-	return ArenaFontName::Arena;
-}
-
-TextBoxInitInfo TextCinematicUiView::getSubtitlesTextBoxInitInfo(const Color &fontColor, const FontLibrary &fontLibrary)
-{
-	std::string dummyText;
-	for (int i = 0; i < 3; i++)
-	{
-		if (dummyText.length() > 0)
-		{
-			dummyText += '\n';
-		}
-
-		dummyText += std::string(36, TextRenderUtils::LARGEST_CHAR);
-	}
-
-	return TextBoxInitInfo::makeWithCenter(
-		dummyText,
-		TextCinematicUiView::SubtitleTextBoxCenterPoint,
-		TextCinematicUiView::getSubtitleTextBoxFontName(),
-		fontColor,
-		TextCinematicUiView::SubtitleTextBoxTextAlignment,
-		std::nullopt,
-		TextCinematicUiView::SubtitleTextBoxLineSpacing,
-		fontLibrary);
-}
 
 Buffer<UiTextureID> TextCinematicUiView::allocAnimationTextures(const std::string &animFilename,
 	TextureManager &textureManager, Renderer &renderer)

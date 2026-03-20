@@ -3,28 +3,16 @@
 
 #include <string>
 
-#include "../Math/Vector2.h"
-#include "../Rendering/ArenaRenderUtils.h"
-#include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
+#include "../Rendering/RenderTextureUtils.h"
 
 #include "components/utilities/Buffer.h"
 
-class FontLibrary;
+class Renderer;
+class TextureManager;
 
 namespace TextCinematicUiView
 {
-	const Int2 SubtitleTextBoxCenterPoint(
-		ArenaRenderUtils::SCREEN_WIDTH / 2,
-		ArenaRenderUtils::SCREEN_HEIGHT - 16);
-	std::string getSubtitleTextBoxFontName();
-	constexpr TextAlignment SubtitleTextBoxTextAlignment = TextAlignment::MiddleCenter;
-	constexpr int SubtitleTextBoxLineSpacing = 1;
-
-	TextBoxInitInfo getSubtitlesTextBoxInitInfo(const Color &fontColor, const FontLibrary &fontLibrary);
-
-	Buffer<UiTextureID> allocAnimationTextures(const std::string &animFilename,
-		TextureManager &textureManager, Renderer &renderer);
+	Buffer<UiTextureID> allocAnimationTextures(const std::string &animFilename, TextureManager &textureManager, Renderer &renderer);
 }
 
 #endif

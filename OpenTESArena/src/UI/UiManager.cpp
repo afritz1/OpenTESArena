@@ -31,6 +31,7 @@
 #include "../Interface/OptionsUiState.h"
 #include "../Interface/PauseMenuUiState.h"
 #include "../Interface/ProvinceMapUiState.h"
+#include "../Interface/TextCinematicUiState.h"
 #include "../Interface/WorldMapUiState.h"
 #include "../Rendering/Window.h"
 
@@ -97,6 +98,7 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(OptionsUI);
 	REGISTER_SCOPE_CALLBACKS(PauseMenuUI);
 	REGISTER_SCOPE_CALLBACKS(ProvinceMapUI);
+	REGISTER_SCOPE_CALLBACKS(TextCinematicUI);
 	REGISTER_SCOPE_CALLBACKS(WorldMapUI);
 	return true;
 }
@@ -531,6 +533,16 @@ void UiManager::setTextBoxText(UiElementInstanceID elementInstID, const char *st
 	DebugAssert(element.type == UiElementType::TextBox);
 	UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
 	textBox.text = str;
+	textBox.dirty = true;
+}
+
+void UiManager::setTextBoxColor(UiElementInstanceID elementInstID, Color color)
+{
+	UiElement &element = this->elements.get(elementInstID);
+
+	DebugAssert(element.type == UiElementType::TextBox);
+	UiTextBox &textBox = this->textBoxes.get(element.textBoxInstID);
+	textBox.defaultColor = color;
 	textBox.dirty = true;
 }
 
