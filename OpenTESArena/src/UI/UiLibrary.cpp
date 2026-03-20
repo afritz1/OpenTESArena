@@ -17,6 +17,7 @@
 #include "../Interface/ChooseRaceUiState.h"
 #include "../Interface/CinematicUiState.h"
 #include "../Interface/GameWorldUiState.h"
+#include "../Interface/ImageUiState.h"
 #include "../Interface/LoadSaveUiState.h"
 #include "../Interface/LogbookUiState.h"
 #include "../Interface/MainMenuUiState.h"
@@ -181,6 +182,7 @@ namespace
 		DEFINE_CALLBACK_TUPLE(ChooseRaceUI),
 		DEFINE_CALLBACK_TUPLE(CinematicUI),
 		DEFINE_CALLBACK_TUPLE(GameWorldUI),
+		DEFINE_CALLBACK_TUPLE(ImageUI),
 		DEFINE_CALLBACK_TUPLE(LoadSaveUI),
 		DEFINE_CALLBACK_TUPLE(LogbookUI),
 		DEFINE_CALLBACK_TUPLE(MainMenuUI),

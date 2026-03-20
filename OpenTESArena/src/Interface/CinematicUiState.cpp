@@ -12,10 +12,22 @@ CinematicUiInitInfo::CinematicUiInitInfo()
 	this->callback = []() { };
 }
 
+void CinematicUiInitInfo::init(const std::string &paletteName, const std::string &sequenceName, double secondsPerImage, const CinematicFinishedCallback &callback)
+{
+	this->paletteName = paletteName;
+	this->sequenceName = sequenceName;
+	this->secondsPerImage = secondsPerImage;
+	this->callback = callback;
+}
+
 CinematicUiState::CinematicUiState()
 {
 	this->game = nullptr;
 	this->contextInstID = -1;
+	this->secondsPerImage = 0.0;
+	this->currentSeconds = 0.0;
+	this->imageIndex = -1;
+	this->callback = []() { };
 }
 
 void CinematicUiState::init(Game &game)

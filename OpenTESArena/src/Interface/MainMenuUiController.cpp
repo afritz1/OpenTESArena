@@ -5,6 +5,7 @@
 
 #include "ChooseClassCreationPanel.h"
 #include "CinematicPanel.h"
+#include "CinematicUiState.h"
 #include "GameWorldPanel.h"
 #include "ImageSequencePanel.h"
 #include "LoadSavePanel.h"
@@ -72,23 +73,23 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 		audioManager.setMusic(musicDef);
 	};
 
-	auto changeToNewGameStory = [changeToCharCreation](Game &game)
+	auto changeToNewGameStory = [&game, changeToCharCreation]()
 	{
-		std::string paletteNames[] =
+		const std::string paletteNames[] =
 		{
 			"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG",
 			"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG",
 			"SCROLL03.IMG", "SCROLL03.IMG", "SCROLL03.IMG"
 		};
 
-		std::string textureNames[] =
+		const std::string textureNames[] =
 		{
 			"INTRO01.IMG", "INTRO02.IMG", "INTRO03.IMG",
 			"INTRO04.IMG", "INTRO05.IMG", "INTRO06.IMG",
 			"INTRO07.IMG", "INTRO08.IMG", "INTRO09.IMG"
 		};
 
-		double imageDurations[] =
+		const double imageDurations[] =
 		{
 			5.0, 5.0, 5.0,
 			5.0, 5.0, 5.0,
@@ -105,13 +106,16 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 	const std::optional<TextureFileMetadataID> metadataID = textureManager.tryGetMetadataID(sequenceFilename.c_str());
 	if (!metadataID.has_value())
 	{
-		DebugLogError("Couldn't get texture file metadata for opening scroll animation \"" + sequenceFilename + "\".");
+		DebugLogErrorFormat("Couldn't get texture file metadata for opening scroll animation \"%s\".", sequenceFilename.c_str());
 		return;
 	}
 
 	const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
 	const double secondsPerFrame = metadata.getSecondsPerFrame();
-	game.setPanel<CinematicPanel>(paletteFilename, sequenceFilename, secondsPerFrame, changeToNewGameStory);
+
+	CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
+	cinematicInitInfo.init(paletteFilename, sequenceFilename, secondsPerFrame, changeToNewGameStory);
+	game.setPanel<CinematicPanel>();
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(

@@ -1,10 +1,12 @@
 #include "CinematicPanel.h"
 #include "CinematicUiState.h"
 #include "ImagePanel.h"
+#include "ImageUiState.h"
 #include "IntroUiController.h"
 #include "IntroUiModel.h"
 #include "IntroUiView.h"
 #include "MainMenuPanel.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 
@@ -23,15 +25,15 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 		return panel;
 	}
 
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const bool isFloppyVersion = exeData.isFloppyVersion;
 	if (isFloppyVersion)
 	{
-		const TextureAsset paletteTextureAsset = IntroUiView::getIntroTitlePaletteTextureAsset();
-		const TextureAsset textureAsset = IntroUiView::getIntroTitleTextureAsset();
+		ImageUiInitInfo &imageInitInfo = ImageUI::state.initInfo;
+		imageInitInfo.init(ArenaTextureName::IntroTitle, ArenaTextureName::IntroTitle, IntroUiView::IntroTitleSeconds, [&game]() { IntroUiController::onIntroTitleFinished(game); });
+
 		std::unique_ptr<ImagePanel> panel = std::make_unique<ImagePanel>(game);
-		if (!panel->init(paletteTextureAsset.filename, textureAsset.filename, IntroUiView::IntroTitleSeconds,
-			IntroUiController::onIntroTitleFinished))
+		if (!panel->init())
 		{
 			DebugLogError("Couldn't init start-up ImagePanel.");
 			return nullptr;
@@ -55,10 +57,7 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 		const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
 
 		CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
-		cinematicInitInfo.paletteName = paletteFilename;
-		cinematicInitInfo.sequenceName = sequenceFilename;
-		cinematicInitInfo.secondsPerImage = metadata.getSecondsPerFrame();
-		cinematicInitInfo.callback = [&game]() { IntroUiController::onIntroBookFinished(game); };
+		cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.getSecondsPerFrame(), [&game]() { IntroUiController::onIntroBookFinished(game); });
 
 		std::unique_ptr<CinematicPanel> panel = std::make_unique<CinematicPanel>(game);
 		if (!panel->init())
