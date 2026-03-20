@@ -284,6 +284,8 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/ImageUiState.h"
     "${SRC_ROOT}/Interface/ImageSequencePanel.cpp"
     "${SRC_ROOT}/Interface/ImageSequencePanel.h"
+    "${SRC_ROOT}/Interface/ImageSequenceUiState.cpp"
+    "${SRC_ROOT}/Interface/ImageSequenceUiState.h"
     "${SRC_ROOT}/Interface/IntroUiController.cpp"
     "${SRC_ROOT}/Interface/IntroUiController.h"
     "${SRC_ROOT}/Interface/IntroUiModel.cpp"

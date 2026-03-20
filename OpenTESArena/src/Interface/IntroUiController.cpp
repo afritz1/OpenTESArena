@@ -3,6 +3,7 @@
 #include "ImagePanel.h"
 #include "ImageUiState.h"
 #include "ImageSequencePanel.h"
+#include "ImageSequenceUiState.h"
 #include "IntroUiController.h"
 #include "IntroUiView.h"
 #include "MainMenuPanel.h"
@@ -50,11 +51,9 @@ void IntroUiController::onIntroQuoteFinished(Game &game)
 
 void IntroUiController::onOpeningScrollFinished(Game &game)
 {
-	game.setPanel<ImageSequencePanel>(
-		IntroUiView::getIntroStoryPaletteNames(),
-		IntroUiView::getIntroStoryTextureNames(),
-		IntroUiView::getIntroStoryImageDurations(),
-		IntroUiController::onIntroStoryFinished);
+	ImageSequenceUiInitInfo &imageSequenceInitInfo = ImageSequenceUI::state.initInfo;
+	imageSequenceInitInfo.init(IntroUiView::getIntroStoryPaletteNames(), IntroUiView::getIntroStoryTextureNames(), IntroUiView::getIntroStoryImageDurations(), [&game]() { IntroUiController::onIntroStoryFinished(game); });
+	game.setPanel<ImageSequencePanel>();
 }
 
 void IntroUiController::onIntroStoryFinished(Game &game)

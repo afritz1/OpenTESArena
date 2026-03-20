@@ -8,6 +8,7 @@
 #include "CinematicUiState.h"
 #include "GameWorldPanel.h"
 #include "ImageSequencePanel.h"
+#include "ImageSequenceUiState.h"
 #include "LoadSavePanel.h"
 #include "LoadSaveUiState.h"
 #include "MainMenuUiController.h"
@@ -55,15 +56,13 @@ void MainMenuUiController::onLoadGameButtonSelected(Game &game)
 void MainMenuUiController::onNewGameButtonSelected(Game &game)
 {
 	// Link together the opening scroll, intro cinematic, and character creation.
-	auto changeToCharCreation = [](Game &game)
+	auto changeToCharCreation = [&game]()
 	{
 		game.setCharacterCreationState(std::make_unique<CharacterCreationState>());
 		game.setPanel<ChooseClassCreationPanel>();
 
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(
-			MusicType::CharacterCreation, game.random);
-
+		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(MusicType::CharacterCreation, game.random);
 		if (musicDef == nullptr)
 		{
 			DebugLogWarning("Missing character creation music.");
@@ -89,14 +88,16 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 			"INTRO07.IMG", "INTRO08.IMG", "INTRO09.IMG"
 		};
 
-		const double imageDurations[] =
+		constexpr double imageDurations[] =
 		{
 			5.0, 5.0, 5.0,
 			5.0, 5.0, 5.0,
 			5.0, 5.0, 5.0
 		};
 
-		game.setPanel<ImageSequencePanel>(paletteNames, textureNames, imageDurations, changeToCharCreation);
+		ImageSequenceUiInitInfo &imageSequenceInitInfo = ImageSequenceUI::state.initInfo;
+		imageSequenceInitInfo.init(paletteNames, textureNames, imageDurations, changeToCharCreation);
+		game.setPanel<ImageSequencePanel>();
 	};
 
 	const std::string &paletteFilename = ArenaTextureSequenceName::OpeningScroll;
