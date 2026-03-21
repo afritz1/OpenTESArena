@@ -788,20 +788,6 @@ UiTextureID GameWorldUiView::allocKeyTexture(int keyIndex, TextureManager &textu
 	return textureID;
 }
 
-UiTextureID GameWorldUiView::allocContainerInventoryTexture(TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = GameWorldUiView::getContainerInventoryTextureAsset();
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for container inventory.");
-	}
-
-	return textureID;
-}
-
 // @temp: keep until 3D-DDA ray casting is fully correct (i.e. entire ground is red dots for
 // levels where ceilingScale < 1.0, and same with ceiling blue dots).
 // @todo: As of SDL 2.0.10 which introduced batching, this now behaves like the color is per frame, not per call, which isn't correct, and flushing doesn't help.

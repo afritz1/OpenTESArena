@@ -5,7 +5,6 @@
 #include "PauseMenuUiController.h"
 #include "TextCinematicPanel.h"
 #include "TextCinematicUiState.h"
-#include "LootSubPanel.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicUtils.h"
@@ -53,7 +52,7 @@ void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanc
 	// @todo: need to queue entity destroy if container is empty
 	// @todo: if closing and container is not empty, then inventory.compact(). Don't compact while removing items since that would invalidate mappings
 
-	auto callback = [entityInstID, &itemInventory, destroyEntityIfEmpty](Game &game)
+	auto callback = [&game, entityInstID, &itemInventory, destroyEntityIfEmpty]()
 	{
 		if (destroyEntityIfEmpty && (itemInventory.getOccupiedSlotCount() == 0))
 		{
@@ -64,7 +63,7 @@ void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanc
 		GameWorldUiController::onStatusPopUpSelected(game);
 	};
 
-	game.pushSubPanel<LootSubPanel>(itemInventory, callback);
+	GameWorldUI::showLootPopUp(itemInventory, callback);
 }
 
 void GameWorldUiController::onEnemyCorpseInteracted(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)

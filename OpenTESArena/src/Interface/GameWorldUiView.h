@@ -218,7 +218,6 @@ namespace GameWorldUiView
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocModernModeReticleTexture(TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocKeyTexture(int keyIndex, TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocContainerInventoryTexture(TextureManager &textureManager, Renderer &renderer);
 
 	void DEBUG_ColorRaycastPixel(Game &game);
 	void DEBUG_PhysicsRaycast(Game &game);

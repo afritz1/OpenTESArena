@@ -2,6 +2,7 @@
 #define GAME_WORLD_UI_STATE_H
 
 #include <functional>
+#include <vector>
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -11,12 +12,25 @@
 #include "components/utilities/Buffer.h"
 
 class Game;
+class ItemInventory;
+
+using GameWorldPopUpClosedCallback = std::function<void()>;
+
+// For keeping loot list box callbacks valid when removing inventory items.
+struct GameWorldLootUiItemMapping
+{
+	int inventoryItemIndex;
+	int listBoxItemIndex;
+
+	GameWorldLootUiItemMapping();
+};
 
 struct GameWorldUiState
 {
 	Game *game;
 	UiContextInstanceID contextInstID;
 	UiContextInstanceID textPopUpContextInstID;
+	UiContextInstanceID lootPopUpContextInstID;
 
 	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
 	UiTextureID statusGradientTextureID;
@@ -33,6 +47,8 @@ struct GameWorldUiState
 	double currentSpellPoints;
 	double maxSpellPoints;
 
+	std::vector<GameWorldLootUiItemMapping> lootPopUpItemMappings;
+
 	GameWorldUiState();
 
 	void init(Game &game);
@@ -47,8 +63,9 @@ namespace GameWorldUI
 	void updateDoorKeys();
 	void onPauseChanged(bool paused);
 
-	void showTextPopUp(const char *str, const std::function<void()> &callback);
+	void showTextPopUp(const char *str, const GameWorldPopUpClosedCallback &callback);
 	void showTextPopUp(const char *str);
+	void showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback);
 
 	void setTriggerText(const char *str);
 	void setActionText(const char *str);

@@ -10,12 +10,15 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
+#include "../Items/ItemLibrary.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
+#include "../UI/FontLibrary.h"
 
 namespace
 {
 	constexpr char ContextName_TextPopUp[] = "GameWorldTextPopUp";
+	constexpr char ContextName_LootPopUp[] = "GameWorldLootPopUp";
 
 	constexpr char InterfaceImageElementName[] = "GameWorldInterfaceImage";
 	constexpr char NoMagicImageElementName[] = "GameWorldNoMagicImage";
@@ -49,6 +52,8 @@ namespace
 		"GameWorldScrollDownButton",
 	};
 
+	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
+
 	std::string GetKeyImageElementName(int keyIndex)
 	{
 		char elementName[32];
@@ -73,7 +78,26 @@ namespace
 		return window.nativeToOriginal(statusBarModernModeWindowPosition);
 	}
 
-	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
+	std::string GetLootItemDisplayNameWithQty(const ItemDefinition &itemDef, int stackAmount)
+	{
+		std::string displayName = itemDef.getDisplayName();
+		if (itemDef.type == ItemType::Gold)
+		{
+			size_t goldCountIndex = displayName.find("%u");
+			if (goldCountIndex != std::string::npos)
+			{
+				displayName.replace(goldCountIndex, 2, std::to_string(stackAmount));
+			}
+		}
+
+		return displayName;
+	}
+}
+
+GameWorldLootUiItemMapping::GameWorldLootUiItemMapping()
+{
+	this->inventoryItemIndex = -1;
+	this->listBoxItemIndex = -1;
 }
 
 GameWorldUiState::GameWorldUiState()
@@ -81,6 +105,7 @@ GameWorldUiState::GameWorldUiState()
 	this->game = nullptr;
 	this->contextInstID = -1;
 	this->textPopUpContextInstID = -1;
+	this->lootPopUpContextInstID = -1;
 	this->statusBarsTextureID = -1;
 	this->statusGradientTextureID = -1;
 	this->playerPortraitTextureID = -1;
@@ -136,7 +161,7 @@ void GameWorldUiState::init(Game &game)
 	}
 
 	this->modernModeReticleTextureID = GameWorldUiView::allocModernModeReticleTexture(textureManager, renderer);
-	
+
 	this->currentHealth = player.currentHealth;
 	this->maxHealth = player.maxHealth;
 	this->currentStamina = player.currentStamina;
@@ -223,6 +248,12 @@ void GameWorldUI::create(Game &game)
 	state.textPopUpContextInstID = uiManager.createContext(textPopUpContextInitInfo);
 	uiManager.setContextEnabled(state.textPopUpContextInstID, false);
 
+	UiContextInitInfo lootPopUpContextInitInfo;
+	lootPopUpContextInitInfo.name = ContextName_LootPopUp;
+	lootPopUpContextInitInfo.drawOrder = 1;
+	state.lootPopUpContextInstID = uiManager.createContext(lootPopUpContextInitInfo);
+	uiManager.setContextEnabled(state.lootPopUpContextInstID, false);
+
 	const bool isModernInterface = options.getGraphics_ModernInterface();
 
 	UiElementInitInfo weaponAnimImageElementInitInfo;
@@ -249,12 +280,12 @@ void GameWorldUI::create(Game &game)
 	UiElementInitInfo statusBarsImageElementInitInfo;
 	statusBarsImageElementInitInfo.name = StatusBarsImageElementName;
 	statusBarsImageElementInitInfo.position = GameWorldUiView::HealthBarRect.getBottomLeft();
-	
+
 	if (isModernInterface)
 	{
 		statusBarsImageElementInitInfo.position = GetStatusBarsModernModePosition(game.window);
 	}
-	
+
 	statusBarsImageElementInitInfo.pivotType = GameWorldUiView::StatusBarPivotType;
 	statusBarsImageElementInitInfo.drawOrder = 5;
 	uiManager.createImage(statusBarsImageElementInitInfo, state.statusBarsTextureID, state.contextInstID, renderer);
@@ -341,7 +372,20 @@ void GameWorldUI::destroy()
 		state.textPopUpContextInstID = -1;
 	}
 
+	if (state.lootPopUpContextInstID >= 0)
+	{
+		uiManager.freeContext(state.lootPopUpContextInstID, inputManager, renderer);
+		state.lootPopUpContextInstID = -1;
+	}
+
 	state.freeTextures(renderer);
+	state.currentHealth = 0.0;
+	state.maxHealth = 0.0;
+	state.currentStamina = 0.0;
+	state.maxStamina = 0.0;
+	state.currentSpellPoints = 0.0;
+	state.maxSpellPoints = 0.0;
+	state.lootPopUpItemMappings.clear();
 
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, false);
 
@@ -431,7 +475,7 @@ void GameWorldUI::update(double dt)
 		const UiElementInstanceID statusBarsImageElementInstID = uiManager.getElementByName(StatusBarsImageElementName);
 		const Int2 statusBarsModernModePosition = GetStatusBarsModernModePosition(game.window);
 		uiManager.setTransformPosition(statusBarsImageElementInstID, statusBarsModernModePosition);
-	}	
+	}
 
 	const int previousHealthBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(state.currentHealth, state.maxHealth);
 	const int previousStaminaBarHeight = GameWorldUiView::getStatusBarCurrentPixelHeight(state.currentStamina, state.maxStamina);
@@ -592,7 +636,7 @@ void GameWorldUI::onPauseChanged(bool paused)
 	}
 }
 
-void GameWorldUI::showTextPopUp(const char *str, const std::function<void()> &callback)
+void GameWorldUI::showTextPopUp(const char *str, const GameWorldPopUpClosedCallback &callback)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
@@ -669,6 +713,208 @@ void GameWorldUI::showTextPopUp(const char *str)
 	};
 
 	GameWorldUI::showTextPopUp(str, callback);
+}
+
+void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.lootPopUpContextInstID, inputManager, renderer);
+
+	UiElementInitInfo lootPopUpImageElementInitInfo;
+	lootPopUpImageElementInitInfo.name = "GameWorldLootPopUpImage";
+	lootPopUpImageElementInitInfo.position = Int2(56, 10);
+
+	const TextureAsset lootPopUpTextureAsset = GameWorldUiView::getContainerInventoryTextureAsset();
+	const TextureAsset lootPopUpPaletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+	const UiTextureID lootPopUpTextureID = uiManager.getOrAddTexture(lootPopUpTextureAsset, lootPopUpPaletteTextureAsset, textureManager, renderer);
+	uiManager.createImage(lootPopUpImageElementInitInfo, lootPopUpTextureID, state.lootPopUpContextInstID, renderer);
+
+	UiElementInitInfo lootPopUpListBoxElementInitInfo;
+	lootPopUpListBoxElementInitInfo.name = "GameWorldLootPopUpListBox";
+	lootPopUpListBoxElementInitInfo.position = Int2(85, 34);
+	lootPopUpListBoxElementInitInfo.drawOrder = 1;
+
+	const ListBoxProperties listBoxProperties = GameWorldUiView::getLootListBoxProperties();
+	const FontLibrary &fontLibrary = FontLibrary::getInstance();
+	const FontDefinition &fontDef = fontLibrary.getDefinition(listBoxProperties.fontDefIndex);
+
+	UiListBoxInitInfo lootPopUpListBoxInitInfo;
+	lootPopUpListBoxInitInfo.textureWidth = listBoxProperties.textureGenInfo.width;
+	lootPopUpListBoxInitInfo.textureHeight = listBoxProperties.textureGenInfo.height;
+	lootPopUpListBoxInitInfo.itemPixelSpacing = listBoxProperties.itemSpacing;
+	lootPopUpListBoxInitInfo.fontName = fontDef.getName();
+	lootPopUpListBoxInitInfo.defaultTextColor = listBoxProperties.defaultColor;
+	const UiElementInstanceID listBoxElementInstID = uiManager.createListBox(lootPopUpListBoxElementInitInfo, lootPopUpListBoxInitInfo, state.lootPopUpContextInstID, renderer);
+
+	UiElementInitInfo lootPopUpListBoxUpButtonElementInitInfo;
+	lootPopUpListBoxUpButtonElementInitInfo.name = "GameWorldLootPopUpListBoxUpButton";
+	lootPopUpListBoxUpButtonElementInitInfo.position = Int2(65, 19);
+	lootPopUpListBoxUpButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	lootPopUpListBoxUpButtonElementInitInfo.size = Int2(9, 9);
+
+	UiButtonInitInfo lootPopUpListBoxUpButtonInitInfo;
+	lootPopUpListBoxUpButtonInitInfo.callback = [&uiManager, listBoxElementInstID](MouseButtonType) { uiManager.scrollListBoxUp(listBoxElementInstID); };
+	uiManager.createButton(lootPopUpListBoxUpButtonElementInitInfo, lootPopUpListBoxUpButtonInitInfo, state.lootPopUpContextInstID);
+
+	UiElementInitInfo lootPopUpListBoxDownButtonElementInitInfo;
+	lootPopUpListBoxDownButtonElementInitInfo.name = "GameWorldLootPopUpListBoxDownButton";
+	lootPopUpListBoxDownButtonElementInitInfo.position = Int2(65, 92);
+	lootPopUpListBoxDownButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	lootPopUpListBoxDownButtonElementInitInfo.size = Int2(9, 9);
+
+	UiButtonInitInfo lootPopUpListBoxDownButtonInitInfo;
+	lootPopUpListBoxDownButtonInitInfo.callback = [&uiManager, listBoxElementInstID](MouseButtonType) { uiManager.scrollListBoxDown(listBoxElementInstID); };
+	uiManager.createButton(lootPopUpListBoxDownButtonElementInitInfo, lootPopUpListBoxDownButtonInitInfo, state.lootPopUpContextInstID);
+
+	UiElementInitInfo lootPopUpBackButtonElementInitInfo;
+	lootPopUpBackButtonElementInitInfo.name = "GameWorldLootPopUpBackButton";
+	lootPopUpBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	lootPopUpBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+
+	auto lootPopUpBackButtonCallback = [&state, callback](MouseButtonType)
+	{
+		callback();
+		GameWorldUI::onPauseChanged(false);
+	};
+
+	UiButtonInitInfo lootPopUpBackButtonInitInfo;
+	lootPopUpBackButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
+	lootPopUpBackButtonInitInfo.callback = lootPopUpBackButtonCallback;
+	uiManager.createButton(lootPopUpBackButtonElementInitInfo, lootPopUpBackButtonInitInfo, state.lootPopUpContextInstID);
+
+	auto lootPopUpBackInputActionCallback = [lootPopUpBackButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			lootPopUpBackButtonCallback(MouseButtonType::Right);
+		}
+	};
+
+	uiManager.addInputActionListener(InputActionName::Back, lootPopUpBackInputActionCallback, ContextName_LootPopUp, inputManager);
+
+	auto lootPopUpMouseWheelScrollChangedCallback = [&uiManager, listBoxElementInstID](Game &game, MouseWheelScrollType type, const Int2 &position)
+	{
+		if (type == MouseWheelScrollType::Down)
+		{
+			uiManager.scrollListBoxDown(listBoxElementInstID);
+		}
+		else if (type == MouseWheelScrollType::Up)
+		{
+			uiManager.scrollListBoxUp(listBoxElementInstID);
+		}
+	};
+
+	uiManager.addMouseScrollChangedListener(lootPopUpMouseWheelScrollChangedCallback, ContextName_LootPopUp, inputManager);
+
+	state.lootPopUpItemMappings.clear();
+	for (int i = 0; i < itemInventory.getTotalSlotCount(); i++)
+	{
+		const ItemInstance &itemInst = itemInventory.getSlot(i);
+		if (!itemInst.isValid())
+		{
+			continue;
+		}
+
+		const int listBoxItemIndex = uiManager.getListBoxItemCount(listBoxElementInstID);
+
+		std::vector<GameWorldLootUiItemMapping> &itemMappings = state.lootPopUpItemMappings;
+		GameWorldLootUiItemMapping itemMapping;
+		itemMapping.inventoryItemIndex = i;
+		itemMapping.listBoxItemIndex = listBoxItemIndex;
+		itemMappings.emplace_back(itemMapping);
+
+		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
+		std::string itemDisplayName = GetLootItemDisplayNameWithQty(itemDef, 1); // @todo implement stacking
+
+		auto listBoxItemCallback = [&game, &itemInventory, &uiManager, &itemLibrary, listBoxElementInstID, lootPopUpBackButtonCallback, listBoxItemIndex, &itemMappings](MouseButtonType)
+		{
+			// Find which inventory item slot this list box item points to.
+			int itemMappingsIndex = -1;
+			for (int curItemMappingsIndex = 0; curItemMappingsIndex < static_cast<int>(itemMappings.size()); curItemMappingsIndex++)
+			{
+				if (itemMappings[curItemMappingsIndex].listBoxItemIndex == listBoxItemIndex)
+				{
+					itemMappingsIndex = curItemMappingsIndex;
+					break;
+				}
+			}
+
+			DebugAssert(itemMappingsIndex >= 0);
+			const int mappedInventoryItemIndex = itemMappings[itemMappingsIndex].inventoryItemIndex;
+			if (mappedInventoryItemIndex < 0)
+			{
+				// This list box item was emptied previously.
+				return;
+			}
+
+			ItemInstance &selectedItemInst = itemInventory.getSlot(mappedInventoryItemIndex);
+			const ItemDefinitionID selectedItemDefID = selectedItemInst.defID;
+			DebugAssert(selectedItemDefID >= 0);
+			const ItemDefinition &selectedItemDef = itemLibrary.getDefinition(selectedItemDefID);
+
+			Player &player = game.player;
+			if (selectedItemDef.type == ItemType::Gold)
+			{
+				player.gold += 1; // @todo implement stacking
+			}
+			else
+			{
+				ItemInventory &playerInventory = player.inventory;
+				playerInventory.insert(selectedItemDefID);
+			}
+
+			selectedItemInst.defID = -1;
+
+			if (itemInventory.getOccupiedSlotCount() == 0)
+			{
+				lootPopUpBackButtonCallback(MouseButtonType::Right);
+			}
+
+			// Shift mappings forward by one.
+			for (int curItemMappingsIndex = itemMappingsIndex; curItemMappingsIndex < static_cast<int>(itemMappings.size()); curItemMappingsIndex++)
+			{
+				GameWorldLootUiItemMapping &curItemMapping = itemMappings[curItemMappingsIndex];
+
+				const int nextItemMappingsIndex = curItemMappingsIndex + 1;
+				if (nextItemMappingsIndex < static_cast<int>(itemMappings.size()))
+				{
+					GameWorldLootUiItemMapping &nextItemMapping = itemMappings[nextItemMappingsIndex];
+					curItemMapping.inventoryItemIndex = nextItemMapping.inventoryItemIndex;
+				}
+				else
+				{
+					curItemMapping.inventoryItemIndex = -1;
+				}
+
+				std::string newListBoxItemText;
+				if (curItemMapping.inventoryItemIndex >= 0)
+				{
+					const ItemInstance &curItemInst = itemInventory.getSlot(curItemMapping.inventoryItemIndex);
+					const ItemDefinition &curItemDef = itemLibrary.getDefinition(curItemInst.defID);
+					newListBoxItemText = GetLootItemDisplayNameWithQty(curItemDef, 1); // @todo implement stacking
+				}
+
+				uiManager.setListBoxItemText(listBoxElementInstID, curItemMapping.listBoxItemIndex, newListBoxItemText.c_str());
+			}
+		};
+
+		UiListBoxItem listBoxItem;
+		listBoxItem.text = std::move(itemDisplayName);
+		listBoxItem.callback = listBoxItemCallback;
+		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
+	}
+
+	// @todo sword cursor
+
+	uiManager.setContextEnabled(state.lootPopUpContextInstID, true);
+
+	GameWorldUI::onPauseChanged(true);
 }
 
 void GameWorldUI::setTriggerText(const char *str)
