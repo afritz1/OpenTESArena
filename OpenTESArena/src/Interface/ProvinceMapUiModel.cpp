@@ -3,7 +3,6 @@
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiModel.h"
 #include "ProvinceMapUiView.h"
-#include "TextSubPanel.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../UI/FontLibrary.h"

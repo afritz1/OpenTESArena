@@ -380,8 +380,6 @@ SET(TES_INTERFACE
     "${SRC_ROOT}/Interface/TextCinematicUiState.h"
     "${SRC_ROOT}/Interface/TextCinematicUiView.cpp"
     "${SRC_ROOT}/Interface/TextCinematicUiView.h"
-    "${SRC_ROOT}/Interface/TextSubPanel.cpp"
-    "${SRC_ROOT}/Interface/TextSubPanel.h"
     "${SRC_ROOT}/Interface/WorldMapPanel.cpp"
     "${SRC_ROOT}/Interface/WorldMapPanel.h"
     "${SRC_ROOT}/Interface/WorldMapUiController.cpp"

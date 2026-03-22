@@ -6,7 +6,6 @@ class Game;
 namespace FastTravelUiController
 {
 	void onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays);
-	void onCityArrivalPopUpSelected(Game &game);
 }
 
 #endif

@@ -16,7 +16,6 @@
 #include "MainMenuPanel.h"
 #include "MessageBoxSubPanel.h"
 #include "TextCinematicPanel.h"
-#include "TextSubPanel.h"
 #include "WorldMapUiModel.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"

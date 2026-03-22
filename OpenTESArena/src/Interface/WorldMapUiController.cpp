@@ -1,4 +1,5 @@
 #include "GameWorldPanel.h"
+#include "GameWorldUiState.h"
 #include "MainQuestSplashPanel.h"
 #include "MainQuestSplashUiState.h"
 #include "WorldMapUiController.h"
@@ -154,10 +155,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		game.setPanel<GameWorldPanel>();
 
-		// Push a text sub-panel for the city arrival pop-up.
-		std::unique_ptr<Panel> arrivalPopUp = FastTravelUiModel::makeCityArrivalPopUp(
-			game, targetProvinceID, targetLocationID, travelDays);
-		game.pushSubPanel(std::move(arrivalPopUp));
+		const std::string cityArrivalMessage = FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
+		GameWorldUI::showTextPopUp(cityArrivalMessage.c_str());
 	}
 	else if (travelLocationDef.getType() == LocationDefinitionType::Dungeon)
 	{
@@ -257,9 +256,4 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	{
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(travelLocationDef.getType())));
 	}
-}
-
-void FastTravelUiController::onCityArrivalPopUpSelected(Game &game)
-{
-	game.popSubPanel();
 }

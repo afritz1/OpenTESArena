@@ -7,7 +7,6 @@
 #include "ChooseRacePanel.h"
 #include "TextCinematicPanel.h"
 #include "TextCinematicUiState.h"
-#include "TextSubPanel.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Game/Game.h"

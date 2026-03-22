@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <sstream>
 
-#include "TextSubPanel.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
 #include "WorldMapUiView.h"
@@ -301,34 +300,4 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 	fullText = String::distributeNewlines(trimmedText, 50);
 
 	return fullText;
-}
-
-std::unique_ptr<Panel> FastTravelUiModel::makeCityArrivalPopUp(Game &game, int targetProvinceID,
-	int targetLocationID, int travelDays)
-{
-	const std::string text = FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
-	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithCenter(
-		text,
-		FastTravelUiView::getCityArrivalPopUpTextCenterPoint(game),
-		FastTravelUiView::CityArrivalFontName,
-		FastTravelUiView::CityArrivalTextColor,
-		FastTravelUiView::CityArrivalTextAlignment,
-		std::nullopt,
-		FastTravelUiView::CityArrivalLineSpacing,
-		FontLibrary::getInstance());
-
-	auto &textureManager = game.textureManager;
-	auto &renderer = game.renderer;
-	const UiTextureID textureID = FastTravelUiView::allocCityArrivalPopUpTexture(
-		textBoxInitInfo.rect.width, textBoxInitInfo.rect.height, textureManager, renderer);
-	ScopedUiTextureRef textureRef(textureID, renderer);
-
-	std::unique_ptr<TextSubPanel> subPanel = std::make_unique<TextSubPanel>(game);
-	if (!subPanel->init(textBoxInitInfo, text, FastTravelUiController::onCityArrivalPopUpSelected,
-		std::move(textureRef), FastTravelUiView::getCityArrivalPopUpTextureCenterPoint(game)))
-	{
-		DebugCrash("Couldn't init city arrival sub-panel.");
-	}
-
-	return subPanel;
 }
