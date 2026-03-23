@@ -80,7 +80,7 @@ namespace
 
 	std::string GetLootItemDisplayNameWithQty(const ItemDefinition &itemDef, int stackAmount)
 	{
-		std::string displayName = itemDef.getDisplayName();
+		std::string displayName = itemDef.getDisplayName(stackAmount);
 		if (itemDef.type == ItemType::Gold)
 		{
 			size_t goldCountIndex = displayName.find("%u");
