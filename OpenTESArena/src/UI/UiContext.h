@@ -19,7 +19,7 @@ void destroy(); \
 void update(double dt)
 
 // For buttons and input actions.
-#define DECLARE_UI_FUNC(contextName, functionName) { #functionName, contextName##::functionName }
+#define DECLARE_UI_FUNC(contextName, functionName) { #functionName, contextName::functionName }
 
 using UiContextInstanceID = int;
 
