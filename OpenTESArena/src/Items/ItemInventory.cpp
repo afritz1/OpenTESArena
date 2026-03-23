@@ -60,6 +60,21 @@ double ItemInventory::getWeight() const
 	return totalWeight;
 }
 
+int ItemInventory::getCountOf(ItemDefinitionID defID) const
+{
+	int count = 0;
+	for (int i = 0; i < this->getTotalSlotCount(); i++)
+	{
+		const ItemInstance &itemInst = this->getSlot(i);
+		if (itemInst.isValid() && (itemInst.defID == defID))
+		{
+			count += itemInst.stackAmount;
+		}
+	}
+
+	return count;
+}
+
 bool ItemInventory::findFirstEmptySlot(int *outIndex) const
 {
 	for (int i = 0; i < this->getTotalSlotCount(); i++)
@@ -105,8 +120,12 @@ bool ItemInventory::findLastSlot(ItemDefinitionID defID, int *outIndex) const
 	return false;
 }
 
-void ItemInventory::insert(ItemDefinitionID defID)
+void ItemInventory::insert(ItemDefinitionID defID, int stackAmount)
 {
+	DebugAssert(stackAmount >= 1);
+
+	// @todo: attempt stacking if possible.
+
 	int insertIndex;
 	if (!this->findFirstEmptySlot(&insertIndex))
 	{
@@ -116,6 +135,7 @@ void ItemInventory::insert(ItemDefinitionID defID)
 
 	ItemInstance &itemInst = this->getSlot(insertIndex);
 	itemInst.init(defID);
+	itemInst.stackAmount = stackAmount;
 }
 
 void ItemInventory::compact()

@@ -2,7 +2,10 @@
 #include <cmath>
 
 #include "ArenaPlayerUtils.h"
+#include "../Assets/ExeData.h"
 #include "../Math/Random.h"
+#include "../Player/Player.h"
+#include "../Stats/ArenaStatUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/PrimaryAttribute.h"
 
@@ -110,17 +113,9 @@ int ArenaPlayerUtils::calculateBonusToHit(int agility)
 
 int ArenaPlayerUtils::calculateBonusToHealth(int endurance)
 {
-	if (endurance <= 34)
-	{
-		return -1;
-	}
-	else if (endurance <= 54)
-	{
-		return 0;
-	}
-
-	const int bonus = ((endurance - 55) / 10) + 1;
-	return std::min(bonus, 5);
+	const int endurance256Base = ArenaStatUtils::scale100To256(endurance);
+	const int result256Base = (endurance256Base - 128 + 12) / 25;
+	return ArenaStatUtils::scale256To100(result256Base);
 }
 
 int ArenaPlayerUtils::calculateStartingGold(Random &random)
@@ -190,4 +185,66 @@ DerivedAttributes ArenaPlayerUtils::calculateTotalDerivedBonuses(const PrimaryAt
 	addToTotalDerivedAttributes(ArenaPlayerUtils::calculatePersonalityDerivedBonuses(attributes.personality.maxValue));
 
 	return totalDerivedAttributes;
+}
+
+int ArenaPlayerUtils::getThievingChance(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes)
+{
+	DebugAssert(thievingDivisor > 0);
+	DebugAssert(difficultyLevel > 0);
+
+	const int attributesModifier = attributes.intelligence.maxValue + attributes.agility.maxValue;
+	const int ability = ((((attributesModifier / thievingDivisor) * (playerLevel + 1)) * 100) / (difficultyLevel * 100));
+	const int clampedAbility = std::clamp(ability, 0, 100);
+	return clampedAbility;
+}
+
+bool ArenaPlayerUtils::attemptThieving(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, Random &random)
+{
+	const int thievingChance = ArenaPlayerUtils::getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
+	const int roll = random.next(100);
+	return thievingChance >= roll;
+}
+
+int ArenaPlayerUtils::getLockDifficultyMessageIndex(int difficultyLevel, int thievingDivisor, int playerLevel, const PrimaryAttributes &attributes, const ExeData &exeData)
+{
+	int index;
+	if (difficultyLevel >= 20)
+	{
+		// Magically-locked door. Use the last message.
+		index = static_cast<int>(std::size(exeData.status.lockDifficultyMessages)) - 1;
+	}
+	else
+	{
+		const int thievingChance = ArenaPlayerUtils::getThievingChance(difficultyLevel, thievingDivisor, playerLevel, attributes);
+		index = (thievingChance / 5) - 6;
+		index = std::clamp(index, 0, static_cast<int>(std::size(exeData.status.lockDifficultyMessages) - 2));
+	}
+
+	return index;
+}
+
+int ArenaPlayerUtils::getSelfDamageFromDoorBashWithFists(Random &random)
+{
+	const int roll = random.next(100);
+	const bool shouldDamagePlayer = roll >= 20;
+	if (!shouldDamagePlayer)
+	{
+		return 0;
+	}
+
+	return 1;
+}
+
+bool ArenaPlayerUtils::isDoorBashSuccessful(int damage, int lockLevel, const PrimaryAttributes &attributes, Random &random)
+{
+	constexpr int minDamageRequired = ArenaPlayerUtils::DoorBashMinDamageRequired;
+	if (damage < minDamageRequired)
+	{
+		return false;
+	}
+
+	const int difficultyLevel = lockLevel * 5;
+	const int threshold = (ArenaStatUtils::scale100To256(attributes.strength.maxValue) * 100 >> 8) - difficultyLevel;
+	const int roll = random.next(100);
+	return threshold >= roll;
 }

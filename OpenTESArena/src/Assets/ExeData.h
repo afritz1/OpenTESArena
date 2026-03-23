@@ -52,7 +52,7 @@ struct ExeDataCharacterClasses
 	uint8_t classNumbersToIDs[18];
 	uint8_t healthDice[18];
 	uint16_t initialExperienceCaps[18];
-	uint8_t lockpickingDivisors[18];
+	uint8_t thievingDivisors[18];
 	std::string preferredAttributes[18];
 	uint8_t magicClassIntelligenceMultipliers[7];
 
@@ -216,6 +216,10 @@ struct ExeDataEquipment
 
 	// Condition/degradation values.
 	std::string itemConditionNames[8]; // New, used, ...
+	uint8_t creatureItemConditionChances[3];
+	uint8_t creatureItemConditionPercentages[3];
+	uint8_t lootItemConditionUsesFavorablePercentages[5];
+	uint8_t lootItemConditionPercentages[3];
 
 	// Plate armor values (including shields).
 	std::string armorNames[11]; // Cuirass, ..., tower shield.
@@ -278,8 +282,12 @@ struct ExeDataEquipment
 	uint8_t spellcastingItemMiscSpellSpells[8];
 	uint16_t spellcastingItemMiscSpellPricesPerCharge[8];
 	std::string enhancementItemNames[4];
+	std::string enhancementItemAttributeNames[8];
 	uint8_t enhancementItemCumulativeChances[4];
 	uint16_t enhancementItemBasePrices[4];
+	uint16_t enhancementItemAttributePrices[8];
+	uint8_t armorClassItemMaterialChances[5];
+	uint16_t armorClassItemMaterialPriceMultipliers[8];
 
 	// Consumables.
 	std::string potionNames[15]; // "Potion of <effect>"...
@@ -298,6 +306,9 @@ struct ExeDataItems
 	// In container inventory.
 	std::string goldPiece;
 	std::string bagOfGoldPieces;
+
+	uint8_t lootChances[20];
+	uint16_t palaceGoldValues[3];
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
@@ -487,6 +498,14 @@ struct ExeDataStatus
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
+struct ExeDataServices
+{
+	// Modifiers for the amount healed when resting
+	int8_t tavernRoomHealModifiers[7];
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataTravel
 {
 	// Location format texts when clicking on a location on a province map.
@@ -606,6 +625,7 @@ struct ExeData
 	ExeDataMeta meta;
 	ExeDataQuests quests;
 	ExeDataRaces races;
+	ExeDataServices services;
 	ExeDataStatus status;
 	ExeDataTravel travel;
 	ExeDataUI ui;

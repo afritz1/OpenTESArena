@@ -3,6 +3,9 @@
 
 #include <cstdint>
 
+#include "../Spells/SpellDefinition.h"
+#include "../Stats/PrimaryAttribute.h"
+
 #include "components/utilities/Enum.h"
 #include "components/utilities/Span.h"
 
@@ -34,10 +37,13 @@ struct ItemMaterialDefinition
 
 struct AccessoryItemDefinition
 {
-	char name[64]; // Amulet, belt, etc..
+	char name[64]; // "<Material> amulet, belt, etc." or "Amulet, belt, etc. of <attribute>"
+	char unidentifiedName[64]; // Amulet, belt, etc..
 	ItemMaterialDefinitionID materialDefID;
+	int basePrice;
+	PrimaryAttributeID attributeID;
 
-	void init(const char *name, ItemMaterialDefinitionID materialDefID);
+	void init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice);
 };
 
 enum class ArmorMaterialType
@@ -46,6 +52,8 @@ enum class ArmorMaterialType
 	Chain,
 	Plate // Requires item material.
 };
+
+static constexpr int ARMOR_MATERIAL_TYPE_COUNT = static_cast<int>(ArmorMaterialType::Plate) + 1;
 
 struct ArmorItemDefinition
 {
@@ -70,9 +78,10 @@ struct ConsumableItemDefinition
 
 struct GoldItemDefinition
 {
-	char name[64]; // Bag of ... gold (used with loot containers).
+	char nameSingular[64]; // ... gold piece (used with loot containers).
+	char namePlural[64]; // Bag of ... gold (used with loot containers).
 
-	void init(const char *name);
+	void init(const char *nameSingular, const char *namePlural);
 };
 
 struct MiscItemDefinition
@@ -92,9 +101,11 @@ struct ShieldItemDefinition
 
 struct TrinketItemDefinition
 {
-	char name[64]; // Crystal, mark, etc.
+	char name[64]; // "Crystal, mark, etc. of <spell>"
+	char unidentifiedName[64]; // Crystal, mark, etc.
+	SpellID spellID;
 
-	void init(const char *name);
+	void init(const char *name, const char *unidentifiedName, SpellID spellID);
 };
 
 struct WeaponItemDefinition
@@ -156,14 +167,15 @@ struct ItemDefinition
 		WeaponItemDefinition weapon;
 	};
 
+	int originalItemID; // For the weapon/armor ID lookup the original game does.
 	bool isArtifact;
 	ArtifactItemDefinition artifact;
 
 	ItemDefinition();
 
-	void init(ItemType type);
+	void init(ItemType type, int originalItemID);
 
-	std::string getDisplayName() const;
+	std::string getDisplayName(int stackAmount) const;
 	double getWeight() const;
 };
 

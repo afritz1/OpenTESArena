@@ -340,7 +340,7 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const std::string text = GameWorldUiModel::getStaminaExhaustedMessage(isSwimming, isInterior, isNight, exeData);
 
-	auto callback = [&game, isSwimming, isInterior, isNight]()
+	auto callback = [&game, isSwimming, isInterior, isNight, &exeData]()
 	{
 		GameWorldUiController::onStatusPopUpSelected(game);
 
@@ -351,9 +351,11 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 		}
 		else
 		{
-			// Give some emergency stamina and rest for a while.
+			// Rest for a while.
 			Player &player = game.player;
-			player.currentStamina = std::max(player.maxStamina * 0.080, 15.0);
+			constexpr int restFactor = 1;
+			constexpr int tavernRoomType = 1; // Hardcoded when exhausted
+			player.applyRestHealing(restFactor, tavernRoomType, exeData);
 
 			constexpr double secondsPerHour = 60.0 * 60.0;
 			constexpr double realSecondsPerInGameHour = secondsPerHour / GameState::GAME_TIME_SCALE;

@@ -380,6 +380,7 @@ namespace PlayerLogic
 						bool canDoorBeOpened = true;
 						bool isApplyingDoorKeyToLock = false;
 						int requiredDoorKeyID = -1;
+						int lockLevel = 0;
 
 						int triggerInstIndex;
 						const bool hasDoorBeenUnlocked = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
@@ -390,6 +391,7 @@ namespace PlayerLogic
 							{
 								const LockDefinition &lockDef = voxelChunk.lockDefs[lockDefID];
 								requiredDoorKeyID = lockDef.keyID;
+								lockLevel = lockDef.lockLevel;
 
 								if (requiredDoorKeyID >= 0)
 								{
@@ -412,7 +414,10 @@ namespace PlayerLogic
 						}
 						else
 						{
-							const int lockDifficultyIndex = 0; // @todo determine from thieving skill value
+							const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+							const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
+
+							const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
 							const std::string requiredDoorKeyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
 							GameWorldUI::setActionText(requiredDoorKeyMsg.c_str());
 						}
@@ -859,7 +864,6 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 				}
 
 				// Can only hit if not previously unlocked.
-				bool isDoorBashable = false;
 				int triggerInstIndex;
 				if (!hitVoxelChunk.tryGetTriggerInstIndex(hitVoxel.x, hitVoxel.y, hitVoxel.z, &triggerInstIndex))
 				{
@@ -867,21 +871,28 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 					if (hitVoxelChunk.tryGetLockDefID(hitVoxel.x, hitVoxel.y, hitVoxel.z, &lockDefID))
 					{
 						const LockDefinition &lockDef = hitVoxelChunk.lockDefs[lockDefID];
-						isDoorBashable = lockDef.lockLevel >= 0; // @todo don't allow key-only doors to be bashable
-					}
-				}
+						const bool isDoorBashable = lockDef.lockLevel >= 0;
 
-				if (isDoorBashable)
-				{
-					const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
-					audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
+						if (isDoorBashable)
+						{
+							const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
+							audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
 
-					if (random.nextBool())
-					{
-						constexpr bool isApplyingDoorKeyToLock = false;
-						constexpr int doorKeyID = -1;
-						constexpr bool isWeaponBashing = true;
-						MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isWeaponBashing);
+							if (ArenaItemUtils::isFistsWeapon(player.weaponAnimDefID))
+							{
+								player.currentHealth -= ArenaPlayerUtils::getSelfDamageFromDoorBashWithFists(random);
+							}
+
+							const int doorBashDamage = ArenaPlayerUtils::DoorBashMinDamageRequired; // @todo: Calculate damage
+
+							if (ArenaPlayerUtils::isDoorBashSuccessful(doorBashDamage, lockDef.lockLevel, player.primaryAttributes, random))
+							{
+								constexpr bool isApplyingDoorKeyToLock = false;
+								constexpr int doorKeyID = -1;
+								constexpr bool isWeaponBashing = true;
+								MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isWeaponBashing);
+							}
+						}
 					}
 				}
 			}

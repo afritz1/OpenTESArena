@@ -20,7 +20,7 @@ ClassNames=0x3E462
 ClassNumbersToIDs=0x3E450
 HealthDice=0x3E5D5
 InitialExperienceCaps=0x36F0E
-LockpickingDivisors=0x3E43E
+ThievingDivisors=0x3E43E
 PreferredAttributes=0x36034
 MagicClassIntelligenceMultipliers=0x388B0
 
@@ -104,6 +104,10 @@ MaterialBonuses=0x3E078
 MaterialChances=0x3E080
 MaterialPriceMultipliers=0x3E282
 ItemConditionNames=0x417F1
+CreatureItemConditionChances=0x40967
+CreatureItemConditionPercentages=0x4096A
+LootItemConditionUsesFavorablePercentages=0x407D8
+LootItemConditionPercentages=0x407DD
 ArmorNames=0x3DE24
 PlateArmorNames=0x3E08E
 PlateArmorQualities=0x3E125
@@ -149,8 +153,12 @@ SpellcastingItemMiscSpellQualities=0x3DA10
 SpellcastingItemMiscSpellSpells=0x3DA08
 SpellcastingItemMiscSpellPricesPerCharge=0x3DA18
 EnhancementItemNames=0x3DA28
+EnhancementItemAttributeNames=0x3DA52
 EnhancementItemCumulativeChances=0x3DA42
 EnhancementItemBasePrices=0x3DA4A
+EnhancementItemAttributePrices=0x3DB5B
+ArmorClassItemMaterialChances=0x3DB73
+ArmorClassItemMaterialPriceMultipliers=0x3DB78
 PotionNames=0x3E2CD
 UnidentifiedPotionName=0x41830
 BodyPartNames=0x3DE91
@@ -159,6 +167,8 @@ WeaponAnimationFilenames=0x4214E
 [Items]
 GoldPiece=0x40736
 BagOfGoldPieces=0x40744
+LootChances=0x407C4
+PalaceGoldValues=0x40658
 
 [Light]
 WindowTwilightColors=0x3F766
@@ -210,6 +220,9 @@ BoxArraysCopy=0x48604
 Box3A=0x48654
 Box3B=0x48664
 Box4=0x48674
+
+[Services]
+TavernRoomHealModifiers=0x3DC9D
 
 [Status]
 PopUp=0x4157B

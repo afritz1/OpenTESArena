@@ -37,10 +37,13 @@ void ItemMaterialDefinition::init(const char *name, int ratingMultiplier, int co
 	this->weightMultiplier = weightMultiplier;
 }
 
-void AccessoryItemDefinition::init(const char *name, ItemMaterialDefinitionID materialDefID)
+void AccessoryItemDefinition::init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 	this->materialDefID = materialDefID;
+	this->attributeID = attributeID;
+	this->basePrice = basePrice;
 }
 
 void ArmorItemDefinition::initLeather(const char *name, double weight)
@@ -73,9 +76,10 @@ void ConsumableItemDefinition::init(const char *name, const char *unidentifiedNa
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 }
 
-void GoldItemDefinition::init(const char *name)
+void GoldItemDefinition::init(const char *nameSingular, const char *namePlural)
 {
-	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	std::snprintf(std::begin(this->nameSingular), std::size(this->nameSingular), "%s", nameSingular);
+	std::snprintf(std::begin(this->namePlural), std::size(this->namePlural), "%s", namePlural);
 }
 
 void MiscItemDefinition::init(const char *name)
@@ -89,9 +93,10 @@ void ShieldItemDefinition::init(const char *name, double weight)
 	this->weight = weight;
 }
 
-void TrinketItemDefinition::init(const char *name)
+void TrinketItemDefinition::init(const char *name, const char* unidentifiedName, SpellID spellID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->spellID = spellID;
 }
 
 void WeaponItemDefinition::initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID)
@@ -138,16 +143,18 @@ void ArtifactItemDefinition::init(const char *flavorText, Span<const int> provin
 ItemDefinition::ItemDefinition()
 {
 	this->type = static_cast<ItemType>(-1);
+	this->originalItemID = -1;
 	this->isArtifact = false;
 }
 
-void ItemDefinition::init(ItemType type)
+void ItemDefinition::init(ItemType type, int originalItemID)
 {
 	this->type = type;
+	this->originalItemID = originalItemID;
 	this->isArtifact = false;
 }
 
-std::string ItemDefinition::getDisplayName() const
+std::string ItemDefinition::getDisplayName(int stackAmount) const
 {
 	// @todo eventually this will need stack counts from ItemInstance, so may as well move this there sometime
 
@@ -160,7 +167,7 @@ std::string ItemDefinition::getDisplayName() const
 	case ItemType::Consumable:
 		return this->consumable.name;
 	case ItemType::Gold:
-		return this->gold.name;
+		return (stackAmount == 1) ? this->gold.nameSingular : this->gold.namePlural;
 	case ItemType::Misc:
 		return this->misc.name;
 	case ItemType::Shield:

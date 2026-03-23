@@ -282,7 +282,7 @@ bool ExeDataCharacterClasses::init(Span<const std::byte> exeBytes, const KeyValu
 	const int classNumbersToIDsOffset = GetExeAddress(*section, "ClassNumbersToIDs");
 	const int healthDiceOffset = GetExeAddress(*section, "HealthDice");
 	const int initialExpCapsOffset = GetExeAddress(*section, "InitialExperienceCaps");
-	const int lockpickingDivisorsOffset = GetExeAddress(*section, "LockpickingDivisors");
+	const int thievingDivisorsOffset = GetExeAddress(*section, "ThievingDivisors");
 	const int preferredAttributesOffset = GetExeAddress(*section, "PreferredAttributes");
 	const int magicClassIntelligenceMultipliersOffset = GetExeAddress(*section, "MagicClassIntelligenceMultipliers");
 
@@ -303,7 +303,7 @@ bool ExeDataCharacterClasses::init(Span<const std::byte> exeBytes, const KeyValu
 	initInt8Array(this->classNumbersToIDs, exeBytes, classNumbersToIDsOffset);
 	initInt8Array(this->healthDice, exeBytes, healthDiceOffset);
 	initInt16Array(this->initialExperienceCaps, exeBytes, initialExpCapsOffset);
-	initInt8Array(this->lockpickingDivisors, exeBytes, lockpickingDivisorsOffset);
+	initInt8Array(this->thievingDivisors, exeBytes, thievingDivisorsOffset);
 	initStringArrayNullTerminated(this->preferredAttributes, exeBytes, preferredAttributesOffset);
 	initInt8Array(this->magicClassIntelligenceMultipliers, exeBytes, magicClassIntelligenceMultipliersOffset);
 
@@ -508,6 +508,10 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int materialChancesOffset = GetExeAddress(*section, "MaterialChances");
 	const int materialPriceMultipliersOffset = GetExeAddress(*section, "MaterialPriceMultipliers");
 	const int itemConditionNamesOffset = GetExeAddress(*section, "ItemConditionNames");
+	const int creatureItemConditionChancesOffset = GetExeAddress(*section, "CreatureItemConditionChances");
+	const int creatureItemConditionPercentagesOffset = GetExeAddress(*section, "CreatureItemConditionPercentages");
+	const int lootItemConditionUsesFavorablePercentagesOffset = GetExeAddress(*section, "LootItemConditionUsesFavorablePercentages");
+	const int lootItemConditionPercentagesOffset = GetExeAddress(*section, "LootItemConditionPercentages");
 	const int armorNamesOffset = GetExeAddress(*section, "ArmorNames");
 	const int plateArmorNamesOffset = GetExeAddress(*section, "PlateArmorNames");
 	const int plateArmorQualitiesOffset = GetExeAddress(*section, "PlateArmorQualities");
@@ -553,8 +557,12 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int spellcastingItemMiscSpellSpellsOffset = GetExeAddress(*section, "SpellcastingItemMiscSpellSpells");
 	const int spellcastingItemMiscSpellPricesPerChargeOffset = GetExeAddress(*section, "SpellcastingItemMiscSpellPricesPerCharge");
 	const int enhancementItemNamesOffset = GetExeAddress(*section, "EnhancementItemNames");
+	const int enhancementItemAttributeNamesOffset = GetExeAddress(*section, "EnhancementItemAttributeNames");
 	const int enhancementItemCumulativeChancesOffset = GetExeAddress(*section, "EnhancementItemCumulativeChances");
 	const int enhancementItemBasePricesOffset = GetExeAddress(*section, "EnhancementItemBasePrices");
+	const int enhancementItemAttributePricesOffset = GetExeAddress(*section, "EnhancementItemAttributePrices");
+	const int armorClassItemMaterialChancesOffset = GetExeAddress(*section, "ArmorClassItemMaterialChances");
+	const int armorClassItemMaterialPriceMultipliersOffset = GetExeAddress(*section, "ArmorClassItemMaterialPriceMultipliers");
 	const int potionNamesOffset = GetExeAddress(*section, "PotionNames");
 	const int unidentifiedPotionNameOffset = GetExeAddress(*section, "UnidentifiedPotionName");
 	const int bodyPartNamesOffset = GetExeAddress(*section, "BodyPartNames");
@@ -566,6 +574,10 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	initInt8Array(this->materialChances, exeBytes, materialChancesOffset);
 	initInt16Array(this->materialPriceMultipliers, exeBytes, materialPriceMultipliersOffset);
 	initStringArrayNullTerminated(this->itemConditionNames, exeBytes, itemConditionNamesOffset);
+	initInt8Array(this->creatureItemConditionChances, exeBytes, creatureItemConditionChancesOffset);
+	initInt8Array(this->creatureItemConditionPercentages, exeBytes, creatureItemConditionPercentagesOffset);
+	initInt8Array(this->lootItemConditionUsesFavorablePercentages, exeBytes, lootItemConditionUsesFavorablePercentagesOffset);
+	initInt8Array(this->lootItemConditionPercentages, exeBytes, lootItemConditionPercentagesOffset);
 	initStringArrayNullTerminated(this->armorNames, exeBytes, armorNamesOffset);
 	initStringArrayNullTerminated(this->plateArmorNames, exeBytes, plateArmorNamesOffset);
 	initInt8Array(this->plateArmorQualities, exeBytes, plateArmorQualitiesOffset);
@@ -611,8 +623,12 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	initInt8Array(this->spellcastingItemMiscSpellSpells, exeBytes, spellcastingItemMiscSpellSpellsOffset);
 	initInt16Array(this->spellcastingItemMiscSpellPricesPerCharge, exeBytes, spellcastingItemMiscSpellPricesPerChargeOffset);
 	initStringArrayNullTerminated(this->enhancementItemNames, exeBytes, enhancementItemNamesOffset);
+	initStringArrayNullTerminated(this->enhancementItemAttributeNames, exeBytes, enhancementItemAttributeNamesOffset);
 	initInt8Array(this->enhancementItemCumulativeChances, exeBytes, enhancementItemCumulativeChancesOffset);
 	initInt16Array(this->enhancementItemBasePrices, exeBytes, enhancementItemBasePricesOffset);
+	initInt16Array(this->enhancementItemAttributePrices, exeBytes, enhancementItemAttributePricesOffset);
+	initInt8Array(this->armorClassItemMaterialChances, exeBytes, armorClassItemMaterialChancesOffset);
+	initInt16Array(this->armorClassItemMaterialPriceMultipliers, exeBytes, armorClassItemMaterialPriceMultipliersOffset);
 	initStringArrayNullTerminated(this->potionNames, exeBytes, potionNamesOffset);
 	this->unidentifiedPotionName = GetExeStringNullTerminated(exeBytes, unidentifiedPotionNameOffset);
 	initStringArrayNullTerminated(this->bodyPartNames, exeBytes, bodyPartNamesOffset);
@@ -633,9 +649,13 @@ bool ExeDataItems::init(Span<const std::byte> exeBytes, const KeyValueFile &keyV
 
 	const int goldPieceOffset = GetExeAddress(*section, "GoldPiece");
 	const int bagOfGoldPiecesOffset = GetExeAddress(*section, "BagOfGoldPieces");
+	const int lootChancesOffset = GetExeAddress(*section, "LootChances");
+	const int palaceGoldValuesOffset = GetExeAddress(*section, "PalaceGoldValues");
 
 	this->goldPiece = GetExeStringNullTerminated(exeBytes, goldPieceOffset);
 	this->bagOfGoldPieces = GetExeStringNullTerminated(exeBytes, bagOfGoldPiecesOffset);
+	initInt8Array(this->lootChances, exeBytes, lootChancesOffset);
+	initInt16Array(this->palaceGoldValues, exeBytes, palaceGoldValuesOffset);
 
 	return true;
 }
@@ -865,6 +885,23 @@ int ExeDataRaisedPlatforms::getTextureMappingValueB(int thicknessIndex, int text
 	constexpr int maxTextureHeight = 64;
 	DebugAssertIndex(this->box4, thicknessIndex);
 	return maxTextureHeight - this->box4[thicknessIndex] - textureMappingValueA;
+}
+
+bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Services";
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
+		return false;
+	}
+
+	const int tavernRoomHealModifiersOffset = GetExeAddress(*section, "TavernRoomHealModifiers");
+
+	initInt8Array(this->tavernRoomHealModifiers, exeBytes, tavernRoomHealModifiersOffset);
+
+	return true;
 }
 
 bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)

@@ -10,15 +10,15 @@ void ArenaMathUtils::rotatePoint(int32_t angle, int16_t &x, int16_t &y, Span<con
 	const int16_t doubledX = x * 2;
 	const int16_t doubledY = y * 2;
 
-	int16_t negCosAngleMultipler = -cosAngleMultiplier;
+	int16_t negCosAngleMultiplier = -cosAngleMultiplier;
 	const bool isOverflow = cosAngleMultiplier == SHRT_MIN;
 	if (isOverflow)
 	{
-		negCosAngleMultipler--;
+		negCosAngleMultiplier--;
 	}
 
 	const int32_t imulRes1 = doubledX * sinAngleMultiplier;
-	const int32_t imulRes2 = doubledY * negCosAngleMultipler;
+	const int32_t imulRes2 = doubledY * negCosAngleMultiplier;
 	const int32_t imulRes3 = doubledX * cosAngleMultiplier;
 	const int32_t imulRes4 = doubledY * sinAngleMultiplier;
 

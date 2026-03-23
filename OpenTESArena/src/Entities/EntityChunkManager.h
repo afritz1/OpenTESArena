@@ -58,6 +58,9 @@ struct EntityInitInfo
 	bool hasInventory;
 	bool hasCreatureSound;
 	std::optional<bool> isLocked;
+	ArenaCityType cityType;
+	ArenaInteriorType interiorType;
+	int interiorLevelIndex;
 
 	EntityInitInfo();
 };

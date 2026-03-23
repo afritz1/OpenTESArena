@@ -18,9 +18,11 @@ void CharacterRaceLibrary::init(const ExeData &exeData)
 		const std::string &pluralName = exeData.races.pluralNames[raceID];
 
 		double swimmingMoveSpeed = PlayerConstants::SWIMMING_MOVE_SPEED;
+		double swimmingStaminaLossMultiplier = PlayerConstants::SWIMMING_STAMINA_LOSS_MULTIPLIER;
 		if (raceID == 7)
 		{
 			swimmingMoveSpeed = PlayerConstants::MOVE_SPEED;
+			swimmingStaminaLossMultiplier = 12.0;
 		}
 
 		double climbingSpeedScale = 1.0;
@@ -37,7 +39,7 @@ void CharacterRaceLibrary::init(const ExeData &exeData)
 		const std::string femaleGameUiHeadsFilename = ArenaPortraitUtils::getHeads(false, raceID, true);
 
 		CharacterRaceDefinition raceDef;
-		raceDef.init(raceID, singularName.c_str(), pluralName.c_str(), swimmingMoveSpeed, climbingSpeedScale, maleCharSheetBodyTextureAsset,
+		raceDef.init(raceID, singularName.c_str(), pluralName.c_str(), swimmingMoveSpeed, swimmingStaminaLossMultiplier, climbingSpeedScale, maleCharSheetBodyTextureAsset,
 			maleCharSheetHeadsFilename, maleGameUiHeadsFilename, femaleCharSheetBodyTextureAsset, femaleCharSheetHeadsFilename, femaleGameUiHeadsFilename);
 		this->defs.emplace_back(std::move(raceDef));
 	}

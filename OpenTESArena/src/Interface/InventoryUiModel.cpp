@@ -30,7 +30,7 @@ Buffer<InventoryUiModel::ItemUiDefinition> InventoryUiModel::getPlayerInventoryI
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
 
 		char itemDisplayName[64];
-		std::snprintf(std::begin(itemDisplayName), std::size(itemDisplayName), "%s (%.1fkg)", itemDef.getDisplayName().c_str(), itemDef.getWeight());
+		std::snprintf(std::begin(itemDisplayName), std::size(itemDisplayName), "%s (%.1fkg)", itemDef.getDisplayName(itemInst.stackAmount).c_str(), itemDef.getWeight());
 		const Color &itemTextColor = InventoryUiView::getItemDisplayColor(itemInst);
 
 		ItemUiDefinition itemUiDef;

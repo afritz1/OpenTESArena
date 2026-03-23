@@ -5,6 +5,8 @@
 
 struct ExeData;
 
+using PrimaryAttributeID = int;
+
 struct PrimaryAttribute
 {
 	char name[32];
