@@ -1239,5 +1239,5 @@ const UiContextDefinition &UiLibrary::getDefinition(const char *contextName) con
 	}
 
 	DebugCrashFormat("Couldn't find context definition for type %s.", contextName);
-	return UiContextDefinition();
+	return this->contextDefs[0];
 }
