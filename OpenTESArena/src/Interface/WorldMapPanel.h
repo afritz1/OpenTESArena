@@ -2,12 +2,9 @@
 #define WORLD_MAP_PANEL_H
 
 #include "Panel.h"
-#include "../Math/Vector2.h"
 
 class WorldMapPanel : public Panel
 {
-private:
-	ScopedUiTextureRef backgroundTextureRef, highlightedTextTextureRef, cursorTextureRef;
 public:
 	WorldMapPanel(Game &game);
 	~WorldMapPanel() override;

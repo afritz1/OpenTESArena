@@ -1,6 +1,7 @@
 #ifndef CHOOSE_ATTRIBUTES_UI_STATE_H
 #define CHOOSE_ATTRIBUTES_UI_STATE_H
 
+#include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
 #include "../UI/UiLibrary.h"

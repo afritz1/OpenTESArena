@@ -1,6 +1,7 @@
 #ifndef PROVINCE_MAP_UI_STATE_H
 #define PROVINCE_MAP_UI_STATE_H
 
+#include "../Rendering/RenderTextureUtils.h"
 #include "../UI/AnimationState.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"

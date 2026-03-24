@@ -58,6 +58,7 @@
 #include "../UI/UiCommand.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiLibrary.h"
+#include "../UI/UiRenderSpace.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
@@ -672,10 +673,6 @@ void Game::handleApplicationExit()
 void Game::handleWindowResized(int width, int height)
 {
 	this->resizeWindow(width, height);
-
-	// Call each panel's resize method. The panels should not be listening for resize events themselves
-	// because it's more of an application event than a panel event.
-	this->panel->resize(width, height);
 }
 
 void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
@@ -1031,7 +1028,6 @@ void Game::loop()
 			}
 
 			this->uiManager.populateCommandList(uiCommandList);
-			this->panel->populateCommandList(uiCommandList);
 
 			const int profilerLevel = this->options.getMisc_ProfilerLevel();
 

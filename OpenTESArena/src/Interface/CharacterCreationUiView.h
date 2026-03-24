@@ -1,9 +1,9 @@
 #ifndef CHARACTER_CREATION_UI_VIEW_H
 #define CHARACTER_CREATION_UI_VIEW_H
 
+#include "MessageBoxSubPanel.h"
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureUtils.h"
-#include "../Interface/MessageBoxSubPanel.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"

@@ -14,7 +14,6 @@
 #include "CinematicLibrary.h"
 #include "GameWorldPanel.h"
 #include "MainMenuPanel.h"
-#include "MessageBoxSubPanel.h"
 #include "TextCinematicPanel.h"
 #include "WorldMapUiModel.h"
 #include "../Assets/BinaryAssetLibrary.h"

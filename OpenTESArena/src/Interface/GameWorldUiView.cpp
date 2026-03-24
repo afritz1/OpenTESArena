@@ -20,6 +20,7 @@
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
 #include "../UI/UiCommand.h"
+#include "../UI/UiRenderSpace.h"
 
 #include "components/utilities/String.h"
 

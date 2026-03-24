@@ -14,6 +14,7 @@
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/UiRenderSpace.h"
 
 namespace
 {
