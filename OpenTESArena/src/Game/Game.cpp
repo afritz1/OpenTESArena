@@ -207,10 +207,6 @@ Game::Game()
 {
 	this->physicsTempAllocator = nullptr;
 
-	// Keeps us from deleting a sub-panel the same frame it's in use. The pop is delayed until the
-	// beginning of the next frame.
-	this->requestedSubPanelPop = false;
-
 	this->globalUiContextInstID = -1;
 	this->cursorImageElementInstID = -1;
 	this->defaultCursorTextureID = -1;
@@ -237,7 +233,6 @@ Game::~Game()
 	
 	this->panel = nullptr; // Must destroy before UiManager due to current Panel ctor/dtor design that begins/ends the context
 	this->nextPanel = nullptr;
-	this->nextSubPanel = nullptr;
 	this->uiManager.shutdown(this->renderer);
 	this->sceneManager.shutdown(this->renderer);
 
@@ -498,14 +493,8 @@ bool Game::init()
 	// to avoid corruption between panel events which change the panel.
 	DebugAssert(this->charCreationState == nullptr);
 	DebugAssert(this->nextPanel == nullptr);
-	DebugAssert(this->nextSubPanel == nullptr);
 
 	return true;
-}
-
-Panel *Game::getActivePanel() const
-{
-	return (this->subPanels.size() > 0) ? this->subPanels.back().get() : this->panel.get();
 }
 
 bool Game::characterCreationIsActive() const
@@ -523,24 +512,6 @@ const Rect &Game::getNativeCursorRegion(int index) const
 {
 	DebugAssertIndex(this->nativeCursorRegions, index);
 	return this->nativeCursorRegions[index];
-}
-
-void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
-{
-	this->nextSubPanel = std::move(nextSubPanel);
-}
-
-void Game::popSubPanel()
-{
-	// The active sub-panel must not pop more than one sub-panel, because it may 
-	// have unintended side effects for other panels below it.
-	DebugAssertMsg(!this->requestedSubPanelPop, "Already scheduled to pop sub-panel.");
-
-	// If there are no sub-panels, then there is only the main panel, and panels 
-	// should never have any sub-panels to pop.
-	DebugAssertMsg(this->subPanels.size() > 0, "No sub-panels to pop.");
-
-	this->requestedSubPanelPop = true;
 }
 
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
@@ -687,29 +658,9 @@ void Game::saveScreenshot(const Surface &surface)
 
 void Game::handlePanelChanges()
 {
-	// If a sub-panel pop was requested, then pop the top of the sub-panel stack.
-	if (this->requestedSubPanelPop)
-	{
-		this->subPanels.pop_back();
-		this->requestedSubPanelPop = false;
-		
-		// Unpause the panel that is now the top-most one.
-		this->getActivePanel()->onPauseChanged(false);
-	}
-
-	// If a new panel was requested, switch to it.
 	if (this->nextPanel.get() != nullptr)
 	{
 		this->panel = std::move(this->nextPanel);
-	}
-
-	// If a new sub-panel was requested, then add it to the stack.
-	if (this->nextSubPanel.get() != nullptr)
-	{
-		// Pause the top-most panel.
-		this->getActivePanel()->onPauseChanged(true);
-
-		this->subPanels.emplace_back(std::move(this->nextSubPanel));
 	}
 }
 
@@ -725,11 +676,6 @@ void Game::handleWindowResized(int width, int height)
 	// Call each panel's resize method. The panels should not be listening for resize events themselves
 	// because it's more of an application event than a panel event.
 	this->panel->resize(width, height);
-
-	for (auto &subPanel : this->subPanels)
-	{
-		subPanel->resize(width, height);
-	}
 }
 
 void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
@@ -937,7 +883,6 @@ void Game::loop()
 		// Tick game state.
 		try
 		{
-			this->getActivePanel()->tick(clampedDeltaTime);
 			this->handlePanelChanges();
 			this->uiManager.update(clampedDeltaTime, *this);
 
@@ -1087,11 +1032,6 @@ void Game::loop()
 
 			this->uiManager.populateCommandList(uiCommandList);
 			this->panel->populateCommandList(uiCommandList);
-
-			for (const std::unique_ptr<Panel> &subPanel : this->subPanels)
-			{
-				subPanel->populateCommandList(uiCommandList);
-			}
 
 			const int profilerLevel = this->options.getMisc_ProfilerLevel();
 

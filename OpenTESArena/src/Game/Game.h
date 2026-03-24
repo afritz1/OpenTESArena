@@ -47,11 +47,7 @@ public:
 
 	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
 	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).
-	std::unique_ptr<Panel> panel, nextPanel, nextSubPanel;
-
-	// A vector of sub-panels treated like a stack. The top of the stack is the back.
-	// Sub-panels are more lightweight than panels and are intended to be like pop-ups.
-	std::vector<std::unique_ptr<Panel>> subPanels;
+	std::unique_ptr<Panel> panel, nextPanel;
 
 	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
 	Rect nativeCursorRegions[9];
@@ -84,11 +80,7 @@ public:
 	// Whether to draw the 3D game world.
 	bool shouldRenderScene;
 private:
-	bool requestedSubPanelPop;
 	bool running;
-
-	// Gets the top-most sub-panel if one exists, or the main panel if no sub-panels exist.
-	Panel *getActivePanel() const;
 
 	void initOptions(const std::string &basePath, const std::string &optionsPath);
 
@@ -141,33 +133,6 @@ public:
 
 		this->nextPanel = std::move(derivedPanel);
 	}
-
-	// Adds a new sub-panel after the current SDL event has been processed (to avoid
-	// adding multiple pop-ups from the same panel or sub-panel). This uses template 
-	// parameters for convenience (to avoid writing a unique_ptr at each callsite).
-	template<class T, typename... Args>
-	void pushSubPanel(Args&&... args)
-	{
-		std::unique_ptr<T> derivedSubPanel = std::make_unique<T>(*this);
-		if (!derivedSubPanel->init(std::forward<Args>(args)...))
-		{
-			DebugCrash("Couldn't init new sub-panel.");
-		}
-
-		this->nextSubPanel = std::move(derivedSubPanel);
-	}
-
-	// Non-templated substitute for pushSubPanel(), for when the sub-panel takes considerable
-	// effort at the callsite to construct (i.e., several parameters, intermediate
-	// calculations, etc.).
-	void pushSubPanel(std::unique_ptr<Panel> nextSubPanel);
-
-	// Pops the current sub-panel off the stack after the current SDL event has been
-	// processed (to avoid popping a sub-panel while in use). This will normally be called 
-	// by a sub-panel to destroy itself. If a new sub-panel is pushed during the same event,
-	// then the old sub-panel is popped and replaced by the new sub-panel. Panels should 
-	// never call this, because if they are active, then there are no sub-panels to pop.
-	void popSubPanel();
 
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.
