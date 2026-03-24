@@ -392,6 +392,7 @@ void GameWorldUI::destroy()
 	const Options &options = game.options;
 	if (options.getGraphics_ModernInterface())
 	{
+		uiManager.setElementActive(game.cursorImageElementInstID, true);
 		GameWorldUiModel::setFreeLookActive(game, false);
 	}
 
@@ -623,6 +624,7 @@ void GameWorldUI::onPauseChanged(bool paused)
 
 	if (isModernInterface)
 	{
+		uiManager.setElementActive(game.cursorImageElementInstID, paused);
 		GameWorldUiModel::setFreeLookActive(game, !paused);
 	}
 }
