@@ -72,6 +72,8 @@ void MainMenuUI::create(Game &game)
 	sceneManager.renderVoxelChunkManager.unloadScene(renderer);
 	sceneManager.renderEntityManager.unloadScene(renderer);
 
+	game.setCursorOverride(std::nullopt);
+
 	inputManager.setInputActionMapActive(InputActionMapName::MainMenu, true);
 }
 
@@ -119,19 +121,6 @@ void MainMenuUI::update(double dt)
 	uiManager.setElementActive(testWeatherTextBoxElementInstID, currentTestHasWeather);
 	uiManager.setElementActive(testWeatherUpButtonElementInstID, currentTestHasWeather);
 	uiManager.setElementActive(testWeatherDownButtonElementInstID, currentTestHasWeather);
-
-	const Renderer &renderer = game.renderer;
-	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
-	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);
-	DebugAssert(cursorDims.has_value());
-
-	const Options &options = game.options;
-	const double cursorScale = options.getGraphics_CursorScale();
-	const Int2 cursorSize(
-		static_cast<int>(static_cast<double>(cursorDims->x) * cursorScale),
-		static_cast<int>(static_cast<double>(cursorDims->y) * cursorScale));
-	uiManager.setTransformSize(game.cursorImageElementInstID, cursorSize);
-	uiManager.setImageTexture(game.cursorImageElementInstID, cursorTextureID);
 }
 
 void MainMenuUI::updateTypeTextBox()

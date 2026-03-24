@@ -78,19 +78,9 @@ void AutomapUI::create(Game &game)
 
 	const UiElementInstanceID locationTextBoxElementInstID = uiManager.getElementByName("AutomapLocationTextBox");
 	uiManager.setTextBoxText(locationTextBoxElementInstID, automapLocationName.c_str());
-	 
-	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(state.cursorTextureID);
-	DebugAssert(cursorDims.has_value());
 
-	const Options &options = game.options;
-	const double cursorScale = options.getGraphics_CursorScale();
-	const Int2 cursorSize(
-		static_cast<int>(static_cast<double>(cursorDims->x) * cursorScale),
-		static_cast<int>(static_cast<double>(cursorDims->y) * cursorScale));
-
-	uiManager.setTransformSize(game.cursorImageElementInstID, cursorSize);
-	uiManager.setTransformPivot(game.cursorImageElementInstID, UiPivotType::BottomLeft);
-	uiManager.setImageTexture(game.cursorImageElementInstID, state.cursorTextureID);
+	const UiCursorOverrideState cursorOverrideState(state.cursorTextureID, UiPivotType::BottomLeft);
+	game.setCursorOverride(cursorOverrideState);
 
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, true);
 }
@@ -121,10 +111,7 @@ void AutomapUI::destroy()
 		state.cursorTextureID = -1;
 	}
 
-	// @todo need to pop some stack instead of assuming top left, or just have game.setCursorToDefault(), or just never do anything about the cursor on context destroy
-	uiManager.setTransformPivot(game.cursorImageElementInstID, UiPivotType::TopLeft);
-	// @todo set cursor size back to arrow cursor * cursorScale
-	uiManager.setImageTexture(game.cursorImageElementInstID, game.defaultCursorTextureID);
+	game.setCursorOverride(std::nullopt);
 
 	inputManager.setInputActionMapActive(InputActionMapName::Automap, false);
 }

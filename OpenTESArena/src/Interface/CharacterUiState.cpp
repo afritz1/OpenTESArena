@@ -169,18 +169,7 @@ void CharacterUI::create(Game &game)
 	const std::string spellPointsValueText = CharacterSheetUiModel::getPlayerSpellPoints(game);
 	uiManager.setTextBoxText(spellPointsTextBoxElementInstID, spellPointsValueText.c_str());
 
-	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(game.defaultCursorTextureID);
-	DebugAssert(cursorDims.has_value());
-
-	const Options &options = game.options;
-	const double cursorScale = options.getGraphics_CursorScale();
-	const Int2 cursorSize(
-		static_cast<int>(static_cast<double>(cursorDims->x) * cursorScale),
-		static_cast<int>(static_cast<double>(cursorDims->y) * cursorScale));
-
-	uiManager.setTransformSize(game.cursorImageElementInstID, cursorSize);
-	uiManager.setTransformPivot(game.cursorImageElementInstID, UiPivotType::TopLeft);
-	uiManager.setImageTexture(game.cursorImageElementInstID, game.defaultCursorTextureID);
+	game.setCursorOverride(std::nullopt);
 
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, true);
 }

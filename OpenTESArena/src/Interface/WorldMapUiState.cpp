@@ -154,18 +154,7 @@ void WorldMapUI::create(Game &game)
 		uiManager.setElementActive(fastTravelImageElementInstID, false);
 	}
 
-	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
-	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);
-	DebugAssert(cursorDims.has_value());
-
-	const Options &options = game.options;
-	const double cursorScale = options.getGraphics_CursorScale();
-	const Int2 cursorSize(
-		static_cast<int>(static_cast<double>(cursorDims->x) * cursorScale),
-		static_cast<int>(static_cast<double>(cursorDims->y) * cursorScale));
-	uiManager.setTransformSize(game.cursorImageElementInstID, cursorSize);
-	uiManager.setTransformPivot(game.cursorImageElementInstID, UiPivotType::TopLeft);
-	uiManager.setImageTexture(game.cursorImageElementInstID, cursorTextureID);
+	game.setCursorOverride(std::nullopt);
 
 	inputManager.setInputActionMapActive(InputActionMapName::WorldMap, true);
 }

@@ -47,6 +47,14 @@ struct GeneratedUiTexture
 	GeneratedUiTexture();
 };
 
+struct UiCursorOverrideState
+{
+	UiTextureID textureID;
+	UiPivotType pivotType;
+
+	UiCursorOverrideState(UiTextureID textureID, UiPivotType pivotType);
+};
+
 class UiManager
 {
 private:

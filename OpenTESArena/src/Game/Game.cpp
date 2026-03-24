@@ -213,6 +213,7 @@ Game::Game()
 
 	this->globalUiContextInstID = -1;
 	this->cursorImageElementInstID = -1;
+	this->defaultCursorTextureID = -1;
 
 	this->shouldSimulateScene = false;
 	this->shouldRenderScene = false;
@@ -414,6 +415,9 @@ bool Game::init()
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
 	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->globalUiContextInstID, renderer);
 
+	// Default to sword cursor.
+	this->setCursorOverride(std::nullopt);
+
 	// Add application-level input event handlers.
 	this->uiManager.addApplicationExitListener(
 		[this]()
@@ -542,6 +546,30 @@ void Game::popSubPanel()
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
 {
 	this->charCreationState = std::move(charCreationState);
+}
+
+void Game::setCursorOverride(const std::optional<UiCursorOverrideState> &state)
+{
+	UiTextureID textureID = this->defaultCursorTextureID;
+	UiPivotType pivotType = UiPivotType::TopLeft;
+	if (state.has_value())
+	{
+		textureID = state->textureID;
+		pivotType = state->pivotType;
+	}
+
+	this->uiManager.setImageTexture(this->cursorImageElementInstID, textureID);
+	this->uiManager.setTransformPivot(this->cursorImageElementInstID, pivotType);
+
+	const std::optional<Int2> textureDims = this->renderer.tryGetUiTextureDims(textureID);
+	DebugAssert(textureDims.has_value());
+
+	const double cursorScale = this->options.getGraphics_CursorScale();
+	const Int2 cursorSize(
+		static_cast<int>(static_cast<double>(textureDims->x) * cursorScale),
+		static_cast<int>(static_cast<double>(textureDims->y) * cursorScale));
+
+	this->uiManager.setTransformSize(this->cursorImageElementInstID, cursorSize);
 }
 
 void Game::initOptions(const std::string &basePath, const std::string &optionsPath)

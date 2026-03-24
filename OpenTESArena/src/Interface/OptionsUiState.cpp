@@ -111,18 +111,7 @@ void OptionsUI::create(Game &game)
 	const UiElementInstanceID highlightElementInstID = uiManager.getElementByName(ElementName_HighlightImage);
 	uiManager.setElementActive(highlightElementInstID, false);
 
-	const UiTextureID cursorTextureID = game.defaultCursorTextureID;
-	const std::optional<Int2> cursorDims = renderer.tryGetUiTextureDims(cursorTextureID);
-	DebugAssert(cursorDims.has_value());
-
-	const Options &options = game.options;
-	const double cursorScale = options.getGraphics_CursorScale();
-	const Int2 cursorSize(
-		static_cast<int>(static_cast<double>(cursorDims->x) * cursorScale),
-		static_cast<int>(static_cast<double>(cursorDims->y) * cursorScale));
-	uiManager.setTransformSize(game.cursorImageElementInstID, cursorSize);
-	uiManager.setImageTexture(game.cursorImageElementInstID, cursorTextureID);
-	uiManager.setTransformPivot(game.cursorImageElementInstID, UiPivotType::TopLeft);
+	game.setCursorOverride(std::nullopt);
 
 	// Default to graphics tab.
 	OptionsUI::onTabButtonSelected(OptionsUiModel::Tab::Graphics);

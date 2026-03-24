@@ -173,6 +173,9 @@ public:
 	// is not null.
 	void setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState);
 
+	// Sets the cursor texture + pivot, or defaults to sword cursor if no override.
+	void setCursorOverride(const std::optional<UiCursorOverrideState> &state);
+
 	// Initial method for starting the game loop. This must only be called by main().
 	void loop();
 };

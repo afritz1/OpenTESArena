@@ -76,6 +76,13 @@ GeneratedUiTexture::GeneratedUiTexture()
 	this->textureID = -1;
 }
 
+UiCursorOverrideState::UiCursorOverrideState(UiTextureID textureID, UiPivotType pivotType)
+{
+	DebugAssert(textureID >= 0);
+	this->textureID = textureID;
+	this->pivotType = pivotType;
+}
+
 bool UiManager::init()
 {
 	REGISTER_SCOPE_CALLBACKS(AutomapUI);

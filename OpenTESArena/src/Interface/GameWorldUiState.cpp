@@ -527,29 +527,18 @@ void GameWorldUI::update(double dt)
 			}
 		}
 
-		UiTextureID cursorTextureID = game.defaultCursorTextureID;
-		Int2 cursorSize = *renderer.tryGetUiTextureDims(game.defaultCursorTextureID);
-		UiPivotType cursorPivotType = UiPivotType::TopLeft;
 		if (arrowCursorRegionIndex >= 0)
 		{
-			const UiTextureID arrowCursorTextureID = state.arrowCursorTextureIDs[arrowCursorRegionIndex];
-			cursorTextureID = arrowCursorTextureID;
-			cursorSize = *renderer.tryGetUiTextureDims(arrowCursorTextureID);
+			const UiTextureID cursorTextureID = state.arrowCursorTextureIDs[arrowCursorRegionIndex];
 
 			Span<const UiPivotType> arrowCursorPivotTypes = GameWorldUiView::ArrowCursorPivotTypes;
-			cursorPivotType = arrowCursorPivotTypes[arrowCursorRegionIndex];
+			const UiPivotType cursorPivotType = arrowCursorPivotTypes[arrowCursorRegionIndex];
+			game.setCursorOverride(UiCursorOverrideState(cursorTextureID, cursorPivotType));
 		}
-
-		const double cursorScale = options.getGraphics_CursorScale();
-		const Int2 cursorSizeScaled(
-			static_cast<int>(static_cast<double>(cursorSize.x) * cursorScale),
-			static_cast<int>(static_cast<double>(cursorSize.y) * cursorScale));
-
-		const UiElementInstanceID cursorImageElementInstID = game.cursorImageElementInstID;
-		uiManager.setTransformPosition(cursorImageElementInstID, cursorPosition);
-		uiManager.setTransformSize(cursorImageElementInstID, cursorSizeScaled);
-		uiManager.setTransformPivot(cursorImageElementInstID, cursorPivotType);
-		uiManager.setImageTexture(cursorImageElementInstID, cursorTextureID);
+		else
+		{
+			game.setCursorOverride(std::nullopt);
+		}
 	}
 }
 
@@ -628,6 +617,8 @@ void GameWorldUI::onPauseChanged(bool paused)
 		uiManager.setElementActive(actionTextBoxElementInstID, false);
 
 		// @todo effect text box
+
+		game.setCursorOverride(std::nullopt);
 	}
 
 	if (isModernInterface)
