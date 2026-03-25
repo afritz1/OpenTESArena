@@ -1,4 +1,4 @@
-#include "MessageBoxSubPanel.h"
+#include "UiMessageBox.h"
 
 MessageBoxBackgroundProperties::MessageBoxBackgroundProperties(UiTexturePatternType patternType,
 	int extraTitleWidth, int extraTitleHeight, const std::optional<int> &widthOverride,

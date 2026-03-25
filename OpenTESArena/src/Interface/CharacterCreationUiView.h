@@ -1,7 +1,6 @@
 #ifndef CHARACTER_CREATION_UI_VIEW_H
 #define CHARACTER_CREATION_UI_VIEW_H
 
-#include "MessageBoxSubPanel.h"
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureUtils.h"
 #include "../Math/Rect.h"
@@ -10,6 +9,7 @@
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
 #include "../UI/UiListBox.h"
+#include "../UI/UiMessageBox.h"
 #include "../Utilities/Color.h"
 
 #include "components/utilities/Buffer.h"

@@ -1,11 +1,11 @@
-#ifndef MESSAGE_BOX_SUB_PANEL_H
-#define MESSAGE_BOX_SUB_PANEL_H
+#ifndef UI_MESSAGE_BOX_H
+#define UI_MESSAGE_BOX_H
 
 #include <optional>
 #include <string>
 
+#include "TextRenderUtils.h"
 #include "../Assets/TextureUtils.h"
-#include "../UI/TextRenderUtils.h"
 #include "../Utilities/Color.h"
 
 struct MessageBoxBackgroundProperties
@@ -40,5 +40,7 @@ struct MessageBoxItemsProperties
 	MessageBoxItemsProperties(int count, const std::string &fontName, const TextRenderTextureGenInfo &textureGenInfo,
 		const Color &textColor);
 };
+
+// @todo UiMessageBox ui element
 
 #endif
