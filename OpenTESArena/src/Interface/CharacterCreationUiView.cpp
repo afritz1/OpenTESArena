@@ -64,7 +64,7 @@ Rect ChooseClassUiView::getDownButtonRect(Game &game)
 		chooseClassListUI.buttonDown.h);
 }
 
-ListBoxProperties ChooseClassUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
+UiListBoxInitInfo ChooseClassUiView::makeListBoxProperties(const FontLibrary &fontLibrary)
 {
 	const char *fontName = ArenaFontName::A;
 	int fontDefIndex;
@@ -89,54 +89,18 @@ ListBoxProperties ChooseClassUiView::makeListBoxProperties(const FontLibrary &fo
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
-	const Color itemColor(85, 44, 20);
-	constexpr double scrollScale = 1.0;
-	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
+	UiListBoxInitInfo listBoxInitInfo;
+	listBoxInitInfo.textureWidth = textureGenInfo.width;
+	listBoxInitInfo.textureHeight = textureGenInfo.height;
+	listBoxInitInfo.itemPixelSpacing = 0;
+	listBoxInitInfo.fontName = fontName;
+	listBoxInitInfo.defaultTextColor = Color(85, 44, 20);
+	return listBoxInitInfo;
 }
 
 TextureAsset ChooseClassUiView::getListBoxTextureAsset()
 {
 	return TextureAsset(std::string(ArenaTextureName::PopUp2));
-}
-
-TextBoxInitInfo ChooseClassUiView::getTitleTextBoxInitInfo(const std::string_view text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithXY(
-		text,
-		ChooseClassUiView::TitleX,
-		ChooseClassUiView::TitleY,
-		ChooseClassUiView::TitleFontName,
-		ChooseClassUiView::TitleColor,
-		ChooseClassUiView::TitleAlignment,
-		fontLibrary);
-}
-
-TextBoxInitInfo ChooseClassUiView::getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary)
-{
-	std::string dummyText;
-	for (int i = 0; i < 10; i++)
-	{
-		if (i > 0)
-		{
-			dummyText += '\n';
-		}
-
-		dummyText += std::string(52, TextRenderUtils::LARGEST_CHAR);
-	}
-
-	TextRenderShadowInfo shadowInfo;
-	shadowInfo.init(1, 0, Colors::Black);
-
-	return TextBoxInitInfo::makeWithCenter(
-		dummyText,
-		Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT - 32),
-		ArenaFontName::D,
-		Colors::White,
-		TextAlignment::TopCenter,
-		shadowInfo,
-		0,
-		fontLibrary);
 }
 
 UiTextureID ChooseClassUiView::allocPopUpTexture(TextureManager &textureManager, Renderer &renderer)

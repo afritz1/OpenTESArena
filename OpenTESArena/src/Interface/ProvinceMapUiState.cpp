@@ -209,13 +209,7 @@ void ProvinceMapUI::create(Game &game)
 	searchResultsListBoxElementInitInfo.position = ProvinceSearchUiView::ListBoxRect.getTopLeft();
 	searchResultsListBoxElementInitInfo.drawOrder = 1;
 
-	const ListBoxProperties searchResultsListBoxProperties = ProvinceSearchUiView::makeListBoxProperties();
-	UiListBoxInitInfo searchResultsListBoxInitInfo;
-	searchResultsListBoxInitInfo.textureWidth = searchResultsListBoxProperties.textureGenInfo.width;
-	searchResultsListBoxInitInfo.textureHeight = searchResultsListBoxProperties.textureGenInfo.height;
-	searchResultsListBoxInitInfo.itemPixelSpacing = searchResultsListBoxProperties.itemSpacing;
-	searchResultsListBoxInitInfo.fontName = ArenaFontName::Arena;
-	searchResultsListBoxInitInfo.defaultTextColor = searchResultsListBoxProperties.defaultColor;
+	const UiListBoxInitInfo searchResultsListBoxInitInfo = ProvinceSearchUiView::makeListBoxProperties();
 	uiManager.createListBox(searchResultsListBoxElementInitInfo, searchResultsListBoxInitInfo, state.searchResultsPopUpContextInstID, renderer);
 
 	UiElementInitInfo searchResultsListBoxUpButtonElementInitInfo;

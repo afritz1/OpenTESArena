@@ -10,9 +10,8 @@
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../Rendering/Renderer.h"
 #include "../UI/ArenaFontName.h"
-#include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
+#include "../UI/UiListBox.h"
 #include "../UI/UiPivotType.h"
 #include "../Utilities/Color.h"
 #include "../Voxels/VoxelFrustumCullingChunk.h"
@@ -101,8 +100,6 @@ namespace GameWorldUiView
 	const Color PlayerNameTextColor(215, 121, 8);
 	constexpr TextAlignment PlayerNameTextAlignment = TextAlignment::TopLeft;
 
-	TextBoxInitInfo getPlayerNameTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-
 	Rect getCharacterSheetButtonRect();
 	Rect getPlayerPortraitRect();
 	Rect getWeaponSheathButtonRect();
@@ -173,11 +170,7 @@ namespace GameWorldUiView
 	double getActionTextSeconds(const std::string_view text);
 	double getEffectTextSeconds(const std::string_view text);
 
-	TextBoxInitInfo getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBoxInitInfo getActionTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBoxInitInfo getEffectTextBoxInitInfo(const FontLibrary &fontLibrary);
-
-	ListBoxProperties getLootListBoxProperties();
+	UiListBoxInitInfo getLootListBoxProperties();
 
 	Int2 getTooltipPosition(Game &game);
 

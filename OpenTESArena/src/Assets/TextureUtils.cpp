@@ -13,7 +13,6 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 
 Surface TextureUtils::generate(UiTexturePatternType type, int width, int height, TextureManager &textureManager, Renderer &renderer)

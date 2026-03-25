@@ -208,6 +208,7 @@ Game::Game()
 	this->globalUiContextInstID = -1;
 	this->cursorImageElementInstID = -1;
 	this->defaultCursorTextureID = -1;
+	this->debugTextBoxElementInstID = -1;
 
 	this->shouldSimulateScene = false;
 	this->shouldRenderScene = false;
@@ -227,6 +228,7 @@ Game::~Game()
 		this->uiManager.freeContext(this->globalUiContextInstID, this->inputManager, this->renderer);
 		this->globalUiContextInstID = -1;
 		this->cursorImageElementInstID = -1;
+		this->debugTextBoxElementInstID = -1;
 	}
 
 	this->nextContextName.clear();
@@ -404,6 +406,7 @@ bool Game::init()
 	UiElementInitInfo cursorImageElementInitInfo;
 	cursorImageElementInitInfo.name = "MouseCursor";
 	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	cursorImageElementInitInfo.drawOrder = 0;
 	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
 	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->globalUiContextInstID, renderer);
 
@@ -474,12 +477,29 @@ bool Game::init()
 	this->random.init();
 
 	// Initialize debug display.
-	const TextBoxInitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
-	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
+	UiElementInitInfo debugTextBoxElementInitInfo;
+	debugTextBoxElementInitInfo.name = "DebugTextBox";
+	debugTextBoxElementInitInfo.position = Int2(2, 2);
+	debugTextBoxElementInitInfo.drawOrder = 1;
+
+	std::string debugTextBoxDummyText;
+	for (int i = 0; i < 18; i++)
 	{
-		DebugLogError("Couldn't init debug info text box.");
-		return false;
+		if (debugTextBoxDummyText.length() > 0)
+		{
+			debugTextBoxDummyText += '\n';
+		}
+
+		debugTextBoxDummyText += std::string(30, TextRenderUtils::LARGEST_CHAR);
 	}
+	
+	UiTextBoxInitInfo debugTextBoxInitInfo;
+	debugTextBoxInitInfo.worstCaseText = debugTextBoxDummyText;
+	debugTextBoxInitInfo.fontName = CommonUiView::DebugInfoFontName;
+	debugTextBoxInitInfo.defaultColor = CommonUiView::getDebugInfoTextBoxColor();
+	debugTextBoxInitInfo.alignment = CommonUiView::DebugInfoTextAlignment;
+	debugTextBoxInitInfo.shadowInfo = TextRenderShadowInfo(1, 1, Colors::Black);
+	this->debugTextBoxElementInstID = uiManager.createTextBox(debugTextBoxElementInitInfo, debugTextBoxInitInfo, this->globalUiContextInstID, this->renderer);
 
 	this->debugQuadtreeState = GameWorldUiView::allocDebugVoxelVisibilityQuadtreeState(this->renderer);
 
@@ -787,7 +807,7 @@ void Game::updateDebugInfoText()
 		}
 	}
 
-	this->debugInfoTextBox.setText(debugText);
+	this->uiManager.setTextBoxText(this->debugTextBoxElementInstID, debugText.c_str());
 }
 
 void Game::loop()
@@ -1042,21 +1062,12 @@ void Game::loop()
 			this->uiManager.populateCommandList(uiCommandList);
 
 			const int profilerLevel = this->options.getMisc_ProfilerLevel();
+			const bool isDebugProfilerVisible = profilerLevel > Options::MIN_PROFILER_LEVEL;
+			this->uiManager.setElementActive(this->debugTextBoxElementInstID, isDebugProfilerVisible);
 
-			RenderElement2D debugInfoRenderElement;
-			if (profilerLevel > Options::MIN_PROFILER_LEVEL)
+			if (isDebugProfilerVisible)
 			{
 				this->updateDebugInfoText();
-
-				const Int2 windowDims = this->window.getPixelDimensions();
-				const Rect debugInfoTextBoxRect = this->debugInfoTextBox.getRect();
-				const Rect debugInfoPresentRect = GuiUtils::makeWindowSpaceRect(debugInfoTextBoxRect.x, debugInfoTextBoxRect.y, debugInfoTextBoxRect.width, debugInfoTextBoxRect.height,
-					UiPivotType::TopLeft, UiRenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());
-
-				debugInfoRenderElement.id = this->debugInfoTextBox.getTextureID();
-				debugInfoRenderElement.rect = debugInfoPresentRect;
-
-				uiCommandList.addElements(Span<const RenderElement2D>(&debugInfoRenderElement, 1));
 
 				if (profilerLevel >= 3)
 				{

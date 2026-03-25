@@ -10,7 +10,6 @@
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../Utilities/Color.h"
 #include "../World/Coord.h"

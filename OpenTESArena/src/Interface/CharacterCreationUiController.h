@@ -6,7 +6,6 @@
 #include "../Math/Vector2.h"
 
 class Game;
-class ListBox;
 
 enum class MouseButtonType;
 
@@ -23,8 +22,6 @@ namespace ChooseClassCreationUiController
 namespace ChooseClassUiController
 {
 	void onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values);
-	void onUpButtonSelected(ListBox &listBox);
-	void onDownButtonSelected(ListBox &listBox);
 	void onItemButtonSelected(Game &game, int charClassDefID);
 }
 

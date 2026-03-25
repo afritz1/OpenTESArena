@@ -16,7 +16,6 @@
 #include "../Audio/MusicUtils.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
-#include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
 
 #include "components/utilities/String.h"
@@ -61,16 +60,6 @@ void ChooseClassUiController::onBackToChooseClassCreationInputAction(const Input
 		Game &game = values.game;
 		game.setNextContext(ChooseClassCreationUI::ContextName);
 	}
-}
-
-void ChooseClassUiController::onUpButtonSelected(ListBox &listBox)
-{
-	listBox.scrollUp();
-}
-
-void ChooseClassUiController::onDownButtonSelected(ListBox &listBox)
-{
-	listBox.scrollDown();
 }
 
 void ChooseClassUiController::onItemButtonSelected(Game &game, int charClassDefID)

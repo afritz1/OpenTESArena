@@ -27,7 +27,6 @@
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ClockLibrary.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"

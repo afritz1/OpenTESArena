@@ -11,7 +11,6 @@
 #include "../Time/ArenaDateUtils.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
-#include "../UI/TextBox.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/debug/Debug.h"

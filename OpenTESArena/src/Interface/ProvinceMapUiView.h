@@ -8,9 +8,8 @@
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
-#include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
+#include "../UI/UiListBox.h"
 #include "../Utilities/Color.h"
 
 class BinaryAssetLibrary;
@@ -39,8 +38,6 @@ namespace ProvinceMapUiView
 	constexpr int LocationTextShadowOffsetX = 1;
 	constexpr int LocationTextShadowOffsetY = 0;
 	Int2 getLocationTextClampedCenter(const Rect &unclampedRect);
-
-	TextBoxInitInfo getHoveredLocationTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	const Int2 TextPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 98);
 	const std::string TextPopUpFontName = ArenaFontName::Arena;
@@ -125,7 +122,7 @@ namespace ProvinceSearchUiView
 	constexpr int ListTextureY = 11;
 
 	constexpr Rect ListBoxRect(85, 34, 147, 54);
-	ListBoxProperties makeListBoxProperties();
+	UiListBoxInitInfo makeListBoxProperties();
 
 	TextureAsset getListTextureAsset();
 	TextureAsset getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID);

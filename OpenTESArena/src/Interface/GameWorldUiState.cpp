@@ -733,16 +733,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 	lootPopUpListBoxElementInitInfo.position = Int2(85, 34);
 	lootPopUpListBoxElementInitInfo.drawOrder = 1;
 
-	const ListBoxProperties listBoxProperties = GameWorldUiView::getLootListBoxProperties();
-	const FontLibrary &fontLibrary = FontLibrary::getInstance();
-	const FontDefinition &fontDef = fontLibrary.getDefinition(listBoxProperties.fontDefIndex);
-
-	UiListBoxInitInfo lootPopUpListBoxInitInfo;
-	lootPopUpListBoxInitInfo.textureWidth = listBoxProperties.textureGenInfo.width;
-	lootPopUpListBoxInitInfo.textureHeight = listBoxProperties.textureGenInfo.height;
-	lootPopUpListBoxInitInfo.itemPixelSpacing = listBoxProperties.itemSpacing;
-	lootPopUpListBoxInitInfo.fontName = fontDef.getName();
-	lootPopUpListBoxInitInfo.defaultTextColor = listBoxProperties.defaultColor;
+	const UiListBoxInitInfo lootPopUpListBoxInitInfo = GameWorldUiView::getLootListBoxProperties();
 	const UiElementInstanceID listBoxElementInstID = uiManager.createListBox(lootPopUpListBoxElementInitInfo, lootPopUpListBoxInitInfo, state.lootPopUpContextInstID, renderer);
 
 	UiElementInitInfo lootPopUpListBoxUpButtonElementInitInfo;

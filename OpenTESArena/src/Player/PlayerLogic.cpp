@@ -15,7 +15,6 @@
 #include "../Items/ArenaItemUtils.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
-#include "../UI/TextBox.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../World/CardinalDirection.h"
 #include "../World/CardinalDirectionName.h"

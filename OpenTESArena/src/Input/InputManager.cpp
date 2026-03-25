@@ -9,7 +9,6 @@
 #include "InputStateType.h"
 #include "../Game/Game.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/Button.h"
 
 #include "components/debug/Debug.h"
 

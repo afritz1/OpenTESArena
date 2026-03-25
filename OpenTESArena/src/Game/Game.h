@@ -18,7 +18,6 @@
 #include "../Player/CharacterCreationState.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Window.h"
-#include "../UI/TextBox.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiManager.h"
 #include "../World/ChunkManager.h"
@@ -49,10 +48,6 @@ public:
 	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
 	Rect nativeCursorRegions[9];
 
-	// Displayed with varying profiler levels.
-	TextBox debugInfoTextBox;
-	DebugVoxelVisibilityQuadtreeState debugQuadtreeState;
-
 	Random random; // A modern random, use when accuracy to the original is not needed.
 	ArenaRandom arenaRandom; // Replicates the original game's randomness.
 
@@ -63,6 +58,10 @@ public:
 	UiContextInstanceID globalUiContextInstID; // For global UI elements/listeners like cursor and screenshots.
 	UiElementInstanceID cursorImageElementInstID;
 	UiTextureID defaultCursorTextureID; // Sword cursor used by most UI.
+
+	// Debug text displayed with varying profiler levels.
+	UiElementInstanceID debugTextBoxElementInstID;
+	DebugVoxelVisibilityQuadtreeState debugQuadtreeState;
 
 	// Active game session (needs to be positioned after Renderer member due to order of texture destruction).
 	GameState gameState;

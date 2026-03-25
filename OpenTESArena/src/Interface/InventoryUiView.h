@@ -2,7 +2,6 @@
 #define INVENTORY_UI_VIEW_H
 
 #include "../Math/Rect.h"
-#include "../UI/ListBox.h"
 #include "../Utilities/Color.h"
 
 struct ItemInstance;

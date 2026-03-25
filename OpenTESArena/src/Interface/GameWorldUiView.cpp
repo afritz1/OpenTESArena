@@ -147,19 +147,6 @@ Rect GameWorldUiView::scaleClassicCursorRectToNative(int rectIndex, double xScal
 		static_cast<int>(std::ceil(static_cast<double>(classicRect.height) * yScale)));
 }
 
-TextBoxInitInfo GameWorldUiView::getPlayerNameTextBoxInitInfo(const std::string_view text,
-	const FontLibrary &fontLibrary)
-{
-	return TextBoxInitInfo::makeWithXY(
-		text,
-		GameWorldUiView::PlayerNameTextBoxX,
-		GameWorldUiView::PlayerNameTextBoxY,
-		GameWorldUiView::PlayerNameFontName,
-		GameWorldUiView::PlayerNameTextColor,
-		GameWorldUiView::PlayerNameTextAlignment,
-		fontLibrary);
-}
-
 Rect GameWorldUiView::getCharacterSheetButtonRect()
 {
 	return Rect(14, 166, 40, 29);
@@ -332,65 +319,7 @@ double GameWorldUiView::getEffectTextSeconds(const std::string_view text)
 	return std::max(2.50, static_cast<double>(text.size()) * 0.050);
 }
 
-TextBoxInitInfo GameWorldUiView::getTriggerTextBoxInitInfo(const FontLibrary &fontLibrary)
-{
-	constexpr int maxNewLines = 6;
-
-	std::string dummyText;
-	for (int i = 0; i < maxNewLines; i++)
-	{
-		std::string dummyLine(40, TextRenderUtils::LARGEST_CHAR); // Arbitrary worst-case line size.
-		dummyText += dummyLine + '\n';
-	}
-
-	const TextRenderShadowInfo shadow(
-		GameWorldUiView::TriggerTextShadowOffsetX,
-		GameWorldUiView::TriggerTextShadowOffsetY,
-		GameWorldUiView::TriggerTextShadowColor);
-
-	return TextBoxInitInfo::makeWithCenter(
-		dummyText,
-		Int2::Zero, // @todo: needs to be a variable due to classic/modern mode. Maybe make two text boxes?
-		GameWorldUiView::TriggerTextFontName,
-		GameWorldUiView::TriggerTextColor,
-		GameWorldUiView::TriggerTextAlignment,
-		shadow,
-		GameWorldUiView::TriggerTextLineSpacing,
-		fontLibrary);
-}
-
-TextBoxInitInfo GameWorldUiView::getActionTextBoxInitInfo(const FontLibrary &fontLibrary)
-{
-	std::string dummyText;
-	for (int i = 0; i < 2; i++)
-	{
-		std::string dummyLine(35, TextRenderUtils::LARGEST_CHAR); // Arbitrary worst-case line size.
-		dummyText += dummyLine + '\n';
-	}
-
-	const TextRenderShadowInfo shadow(
-		GameWorldUiView::ActionTextShadowOffsetX,
-		GameWorldUiView::ActionTextShadowOffsetY,
-		GameWorldUiView::ActionTextShadowColor);
-
-	return TextBoxInitInfo::makeWithCenter(
-		dummyText,
-		Int2::Zero, // @todo: needs to be a variable due to classic/modern mode. Maybe make two text boxes?
-		GameWorldUiView::ActionTextFontName,
-		GameWorldUiView::ActionTextColor,
-		GameWorldUiView::ActionTextAlignment,
-		shadow,
-		0,
-		fontLibrary);
-}
-
-TextBoxInitInfo GameWorldUiView::getEffectTextBoxInitInfo(const FontLibrary &fontLibrary)
-{
-	DebugNotImplemented();
-	return TextBoxInitInfo();
-}
-
-ListBoxProperties GameWorldUiView::getLootListBoxProperties()
+UiListBoxInitInfo GameWorldUiView::getLootListBoxProperties()
 {
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 
@@ -417,9 +346,12 @@ ListBoxProperties GameWorldUiView::getLootListBoxProperties()
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	const TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(dummyText, fontDef);
 
-	const Color itemColor = InventoryUiView::PlayerInventoryEquipmentColor;
-	constexpr double scrollScale = 1.0;
-	return ListBoxProperties(fontDefIndex, textureGenInfo, fontDef.getCharacterHeight(), itemColor, scrollScale);
+	UiListBoxInitInfo listBoxInitInfo;
+	listBoxInitInfo.textureWidth = textureGenInfo.width;
+	listBoxInitInfo.textureHeight = textureGenInfo.height;
+	listBoxInitInfo.fontName = fontName;
+	listBoxInitInfo.defaultTextColor = InventoryUiView::PlayerInventoryEquipmentColor;
+	return listBoxInitInfo;
 }
 
 Int2 GameWorldUiView::getTooltipPosition(Game &game)
@@ -947,7 +879,8 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 
 	Renderer &renderer = game.renderer;
 
-	const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithXY(
+	DebugNotImplemented(); // Disabled for now until I need it again
+	/*const TextBoxInitInfo textBoxInitInfo = TextBoxInitInfo::makeWithXY(
 		text,
 		0,
 		0,
@@ -963,8 +896,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 	}
 
 	const int originalX = ArenaRenderUtils::SCREEN_WIDTH / 2;
-	const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;
-	DebugNotImplemented(); // Disabled for now until I need it again
+	const int originalY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) + 10;*/
 	//renderer.drawOriginal(textBox.getTextureID(), originalX, originalY);
 }
 

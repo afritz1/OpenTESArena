@@ -14,7 +14,6 @@
 #include "../Sky/SkyUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Time/ArenaClockUtils.h"
-#include "../UI/TextBox.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Voxels/VoxelFacing.h"
 

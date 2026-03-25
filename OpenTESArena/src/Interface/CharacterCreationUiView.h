@@ -4,12 +4,12 @@
 #include "MessageBoxSubPanel.h"
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureUtils.h"
+#include "../Math/Rect.h"
 #include "../Math/Vector2.h"
 #include "../Rendering/ArenaRenderUtils.h"
 #include "../UI/ArenaFontName.h"
-#include "../UI/ListBox.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
+#include "../UI/UiListBox.h"
 #include "../Utilities/Color.h"
 
 #include "components/utilities/Buffer.h"
@@ -17,7 +17,6 @@
 class Game;
 
 struct ExeData;
-struct Rect;
 
 namespace CharacterCreationUiView
 {
@@ -43,12 +42,9 @@ namespace ChooseClassUiView
 	Rect getUpButtonRect(Game &game);
 	Rect getDownButtonRect(Game &game);
 
-	ListBoxProperties makeListBoxProperties(const FontLibrary &fontLibrary);
+	UiListBoxInitInfo makeListBoxProperties(const FontLibrary &fontLibrary);
 
 	TextureAsset getListBoxTextureAsset();
-
-	TextBoxInitInfo getTitleTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getClassDescriptionTextBoxInitInfo(const FontLibrary &fontLibrary);
 	
 	UiTextureID allocPopUpTexture(TextureManager &textureManager, Renderer &renderer);
 }

@@ -11,7 +11,6 @@
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/ArenaFontName.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 #include "../Utilities/Color.h"
 
 namespace MainMenuUiView
@@ -27,11 +26,6 @@ namespace MainMenuUiView
 	constexpr TextAlignment TestButtonTextAlignment = TextAlignment::MiddleCenter;
 
 	Color getTestButtonTextColor();
-
-	TextBoxInitInfo getTestButtonTextBoxInitInfo(const std::string_view text, const FontLibrary &fontLibrary);
-	TextBoxInitInfo getTestTypeTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBoxInitInfo getTestNameTextBoxInitInfo(const FontLibrary &fontLibrary);
-	TextBoxInitInfo getTestWeatherTextBoxInitInfo(const FontLibrary &fontLibrary);
 
 	Rect getTestTypeUpButtonRect();
 	Rect getTestTypeDownButtonRect();

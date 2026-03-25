@@ -7,7 +7,6 @@
 #include "../Game/Game.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
-#include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
