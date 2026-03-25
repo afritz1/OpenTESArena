@@ -1,11 +1,11 @@
-#ifndef UI_COMMAND_H
-#define UI_COMMAND_H
+#ifndef UI_DRAW_COMMAND_H
+#define UI_DRAW_COMMAND_H
 
 #include "components/utilities/Span.h"
 
 struct RenderElement2D;
 
-struct UiCommandList
+struct UiDrawCommandList
 {
 	static constexpr int MAX_ENTRIES = 8;
 
@@ -13,7 +13,7 @@ struct UiCommandList
 	Span<const RenderElement2D> entries[MAX_ENTRIES];
 	int entryCount;
 
-	UiCommandList();
+	UiDrawCommandList();
 
 	int getTotalElementCount() const;
 

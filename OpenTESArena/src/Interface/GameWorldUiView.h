@@ -20,7 +20,7 @@ class FontLibrary;
 class Game;
 
 struct Player;
-struct UiCommandList;
+struct UiDrawCommandList;
 struct Window;
 
 struct DebugVoxelVisibilityQuadtreeState
@@ -34,7 +34,7 @@ struct DebugVoxelVisibilityQuadtreeState
 
 	DebugVoxelVisibilityQuadtreeState();
 
-	void populateCommandList(Game &game, UiCommandList &commandList);
+	void populateCommandList(Game &game, UiDrawCommandList &commandList);
 	void free(Renderer &renderer);
 };
 

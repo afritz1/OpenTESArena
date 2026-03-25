@@ -18,7 +18,7 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommand.h"
+#include "../UI/UiDrawCommand.h"
 #include "../UI/UiRenderSpace.h"
 
 #include "components/utilities/String.h"
@@ -29,7 +29,7 @@ DebugVoxelVisibilityQuadtreeState::DebugVoxelVisibilityQuadtreeState()
 	std::fill(std::begin(this->drawPositionYs), std::end(this->drawPositionYs), 0);
 }
 
-void DebugVoxelVisibilityQuadtreeState::populateCommandList(Game &game, UiCommandList &commandList)
+void DebugVoxelVisibilityQuadtreeState::populateCommandList(Game &game, UiDrawCommandList &commandList)
 {
 	const SceneManager &sceneManager = game.sceneManager;
 	const Player &player = game.player;

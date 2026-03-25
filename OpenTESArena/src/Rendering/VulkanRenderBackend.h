@@ -452,7 +452,7 @@ public:
 	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value) override;
 	void setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value) override;
 
-	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+	void submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;
 };
 

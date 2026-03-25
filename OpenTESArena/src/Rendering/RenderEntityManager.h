@@ -18,7 +18,7 @@ class Renderer;
 class TextureManager;
 
 struct EntityChunk;
-struct RenderCommandList;
+struct RenderDrawCommandList;
 struct RenderTransformHeap;
 
 struct RenderEntityLoadedAnimation
@@ -64,7 +64,7 @@ public:
 	// For entities not from the level itself (i.e. VFX).
 	void loadMaterialsForEntity(EntityDefID entityDefID, TextureManager &textureManager, Renderer &renderer);
 
-	void populateCommandList(RenderCommandList &commandList) const;
+	void populateCommandList(RenderDrawCommandList &commandList) const;
 
 	void loadScene(TextureManager &textureManager, Renderer &renderer);
 

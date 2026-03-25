@@ -17,11 +17,11 @@ class Surface;
 
 struct LockedBuffer;
 struct RenderCamera;
-struct RenderCommandList;
 struct RenderContextSettings;
+struct RenderDrawCommandList;
 struct RenderFrameSettings;
 struct RenderInitSettings;
-struct UiCommandList;
+struct UiDrawCommandList;
 
 // Profiling info gathered from internal renderer state.
 struct RendererProfilerData2D
@@ -116,8 +116,8 @@ public:
 	virtual void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value) = 0;
 	virtual void setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value) = 0;
 
-	// Renders a frame to the target window. Currently this is blocking and should be safe to present the frame upon returning.
-	virtual void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+	// Renders a frame to the target window. Currently this is blocking and is safe to present upon returning.
+	virtual void submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) = 0;
 };
 

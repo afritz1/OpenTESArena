@@ -31,11 +31,11 @@ class TextureManager;
 enum class RenderBackendType;
 
 struct RenderCamera;
-struct RenderCommandList;
+struct RenderDrawCommandList;
 struct RenderFrameSettings;
 struct RenderLight;
 struct TextureBuilder;
-struct UiCommandList;
+struct UiDrawCommandList;
 struct Window;
 
 struct RenderElement2D
@@ -182,7 +182,7 @@ public:
 	//void DrawText3D(JPH::RVec3Arg position, const std::string_view &str, JPH::ColorArg color, float height) override;
 
 	// Runs the 3D renderer which draws the world onto the native frame buffer then runs the 2D renderer for UI.
-	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+	void submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings);
 };
 

@@ -1,14 +1,14 @@
-#include "RenderCommand.h"
 #include "RenderDrawCall.h"
+#include "RenderDrawCommand.h"
 
 #include "components/debug/Debug.h"
 
-RenderCommandList::RenderCommandList()
+RenderDrawCommandList::RenderDrawCommandList()
 {
 	this->entryCount = 0;
 }
 
-int RenderCommandList::getTotalDrawCallCount() const
+int RenderDrawCommandList::getTotalDrawCallCount() const
 {
 	int count = 0;
 	for (int i = 0; i < this->entryCount; i++)
@@ -19,7 +19,7 @@ int RenderCommandList::getTotalDrawCallCount() const
 	return count;
 }
 
-void RenderCommandList::addDrawCalls(Span<const RenderDrawCall> drawCalls)
+void RenderDrawCommandList::addDrawCalls(Span<const RenderDrawCall> drawCalls)
 {
 	if (drawCalls.getCount() == 0)
 	{

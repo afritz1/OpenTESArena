@@ -42,7 +42,7 @@
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderBackendType.h"
 #include "../Rendering/RenderCamera.h"
-#include "../Rendering/RenderCommand.h"
+#include "../Rendering/RenderDrawCommand.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
 #include "../Rendering/RenderFrameSettings.h"
@@ -52,8 +52,8 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommand.h"
 #include "../UI/UiContext.h"
+#include "../UI/UiDrawCommand.h"
 #include "../UI/UiLibrary.h"
 #include "../UI/UiRenderSpace.h"
 #include "../Utilities/Platform.h"
@@ -995,22 +995,22 @@ void Game::loop()
 		// Render.
 		try
 		{
-			RenderCommandList renderCommandList;
-			UiCommandList uiCommandList;
+			RenderDrawCommandList renderDrawCommandList;
+			UiDrawCommandList uiDrawCommandList;
 			RenderCamera renderCamera;
 			RenderFrameSettings frameSettings;
 
 			if (this->shouldRenderScene)
 			{
 				const RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-				renderSkyManager.populateCommandList(renderCommandList);
+				renderSkyManager.populateCommandList(renderDrawCommandList);
 
-				this->sceneManager.renderVoxelChunkManager.populateCommandList(renderCommandList);
-				this->sceneManager.renderEntityManager.populateCommandList(renderCommandList);
+				this->sceneManager.renderVoxelChunkManager.populateCommandList(renderDrawCommandList);
+				this->sceneManager.renderEntityManager.populateCommandList(renderDrawCommandList);
 
 				const WeatherInstance &activeWeatherInst = this->gameState.getWeatherInstance();
 				const bool isFoggy = this->gameState.isFogActive();
-				this->sceneManager.renderWeatherManager.populateCommandList(renderCommandList, activeWeatherInst, isFoggy);
+				this->sceneManager.renderWeatherManager.populateCommandList(renderDrawCommandList, activeWeatherInst, isFoggy);
 
 				const MapDefinition &activeMapDef = this->gameState.getActiveMapDef();
 				const MapType activeMapType = activeMapDef.getMapType();
@@ -1059,7 +1059,7 @@ void Game::loop()
 					lightTableTextureID, ditherTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
-			this->uiManager.populateCommandList(uiCommandList);
+			this->uiManager.populateCommandList(uiDrawCommandList);
 
 			const int profilerLevel = this->options.getMisc_ProfilerLevel();
 			const bool isDebugProfilerVisible = profilerLevel > Options::MIN_PROFILER_LEVEL;
@@ -1071,11 +1071,11 @@ void Game::loop()
 
 				if (profilerLevel >= 3)
 				{
-					this->debugQuadtreeState.populateCommandList(*this, uiCommandList);
+					this->debugQuadtreeState.populateCommandList(*this, uiDrawCommandList);
 				}
 			}
 
-			this->renderer.submitFrame(renderCommandList, uiCommandList, renderCamera, frameSettings);
+			this->renderer.submitFrame(renderDrawCommandList, uiDrawCommandList, renderCamera, frameSettings);
 		}
 		catch (const std::exception &e)
 		{

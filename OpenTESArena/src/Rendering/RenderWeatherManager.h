@@ -12,7 +12,7 @@
 class WeatherInstance;
 
 struct RenderCamera;
-struct RenderCommandList;
+struct RenderDrawCommandList;
 
 class RenderWeatherManager
 {
@@ -58,7 +58,7 @@ public:
 	bool init(TextureManager &textureManager, Renderer &renderer);
 	void shutdown(Renderer &renderer);
 
-	void populateCommandList(RenderCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const;
+	void populateCommandList(RenderDrawCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const;
 
 	void loadScene();
 	void update(double dt, const WeatherInstance &weatherInst, const RenderCamera &camera, const Double2 &playerDirXZ, MapType mapType, Renderer &renderer);

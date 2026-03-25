@@ -1,14 +1,14 @@
-#include "UiCommand.h"
+#include "UiDrawCommand.h"
 #include "../Rendering/Renderer.h"
 
 #include "components/debug/Debug.h"
 
-UiCommandList::UiCommandList()
+UiDrawCommandList::UiDrawCommandList()
 {
 	this->clear();
 }
 
-int UiCommandList::getTotalElementCount() const
+int UiDrawCommandList::getTotalElementCount() const
 {
 	int count = 0;
 	for (int i = 0; i < this->entryCount; i++)
@@ -19,7 +19,7 @@ int UiCommandList::getTotalElementCount() const
 	return count;
 }
 
-void UiCommandList::addElements(Span<const RenderElement2D> elements)
+void UiDrawCommandList::addElements(Span<const RenderElement2D> elements)
 {
 	if (this->entryCount >= static_cast<int>(std::size(this->entries)))
 	{
@@ -31,7 +31,7 @@ void UiCommandList::addElements(Span<const RenderElement2D> elements)
 	this->entryCount++;
 }
 
-void UiCommandList::clear()
+void UiDrawCommandList::clear()
 {
 	this->entryCount = 0;
 }

@@ -214,7 +214,7 @@ public:
 	void setMaterialInstanceMeshLightPercent(RenderMaterialInstanceID id, double value);
 	void setMaterialInstanceTexCoordAnimPercent(RenderMaterialInstanceID id, double value);
 
-	void submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
+	void submitFrame(const RenderDrawCommandList &commandList, const RenderCamera &camera,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer);
 };
 

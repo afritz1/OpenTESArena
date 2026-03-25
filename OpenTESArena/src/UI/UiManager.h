@@ -22,8 +22,8 @@ class Game;
 class InputManager;
 class TextureManager;
 
-struct UiCommandList;
 struct UiContextDefinition;
+struct UiDrawCommandList;
 struct Window;
 
 struct LoadedUiTexture
@@ -154,7 +154,7 @@ public:
 	void beginContext(const char *contextName, Game &game);
 	void endContext(const char *contextName, Game &game);
 
-	void populateCommandList(UiCommandList &commandList);
+	void populateCommandList(UiDrawCommandList &commandList);
 
 	void update(double dt, Game &game);
 };

@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include "RenderCamera.h"
-#include "RenderCommand.h"
+#include "RenderDrawCommand.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
 #include "RenderWeatherManager.h"
@@ -427,7 +427,7 @@ void RenderWeatherManager::shutdown(Renderer &renderer)
 	}
 }
 
-void RenderWeatherManager::populateCommandList(RenderCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const
+void RenderWeatherManager::populateCommandList(RenderDrawCommandList &commandList, const WeatherInstance &weatherInst, bool isFoggy) const
 {
 	if (weatherInst.hasFog() && isFoggy)
 	{

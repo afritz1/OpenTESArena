@@ -3,7 +3,7 @@
 
 #include "ArenaRenderUtils.h"
 #include "RenderCamera.h"
-#include "RenderCommand.h"
+#include "RenderDrawCommand.h"
 #include "Renderer.h"
 #include "RenderSkyManager.h"
 #include "../Assets/ArenaPaletteName.h"
@@ -762,7 +762,7 @@ ObjectTextureID RenderSkyManager::getBgTextureID() const
 	return this->activeBgTextureID;
 }
 
-void RenderSkyManager::populateCommandList(RenderCommandList &commandList) const
+void RenderSkyManager::populateCommandList(RenderDrawCommandList &commandList) const
 {
 	commandList.addDrawCalls(Span<const RenderDrawCall>(&this->bgDrawCall, 1));
 

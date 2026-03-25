@@ -3,8 +3,8 @@
 #include "Surface.h"
 #include "TextRenderUtils.h"
 #include "UiButton.h"
-#include "UiCommand.h"
 #include "UiContext.h"
+#include "UiDrawCommand.h"
 #include "UiImage.h"
 #include "UiLibrary.h"
 #include "UiManager.h"
@@ -1390,7 +1390,7 @@ void UiManager::endContext(const char *contextName, Game &game)
 	}
 }
 
-void UiManager::populateCommandList(UiCommandList &commandList)
+void UiManager::populateCommandList(UiDrawCommandList &commandList)
 {
 	commandList.addElements(this->renderElementsCache);
 }

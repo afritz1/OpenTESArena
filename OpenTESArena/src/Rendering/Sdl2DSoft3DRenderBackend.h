@@ -77,7 +77,7 @@ public:
 
 	// Renders a frame to the target window. Currently this is blocking and should be safe to present
 	// the frame upon returning.
-	void submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+	void submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;
 };
 

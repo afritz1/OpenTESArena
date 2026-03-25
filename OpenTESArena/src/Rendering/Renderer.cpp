@@ -18,7 +18,7 @@
 #include "../Math/Rect.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommand.h"
+#include "../UI/UiDrawCommand.h"
 #include "../UI/UiDrawCall.h"
 #include "../UI/UiRenderSpace.h"
 #include "../Utilities/Color.h"
@@ -839,7 +839,7 @@ void Renderer::DrawText3D(JPH::RVec3Arg position, const std::string_view &str, J
 	// Do nothing.
 }*/
 
-void Renderer::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+void Renderer::submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
 	const auto renderStartTime = std::chrono::high_resolution_clock::now();
