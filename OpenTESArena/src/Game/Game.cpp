@@ -231,7 +231,7 @@ Game::~Game()
 		this->globalUiContextInstID = -1;
 		this->cursorImageElementInstID = -1;
 	}
-	
+
 	this->panel = nullptr; // Must destroy before UiManager due to current Panel ctor/dtor design that begins/ends the context
 	this->nextPanel = nullptr;
 	this->uiManager.shutdown(this->renderer);
@@ -276,7 +276,7 @@ bool Game::init()
 
 	const RenderBackendType renderBackendType = static_cast<RenderBackendType>(this->options.getGraphics_GraphicsAPI());
 	const uint32_t windowAdditionalFlags = (renderBackendType == RenderBackendType::Vulkan) ? SDL_WINDOW_VULKAN : 0;
-	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(), 
+	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
 		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), windowAdditionalFlags, this->options.getGraphics_LetterboxMode(),
 		this->options.getGraphics_ModernInterface()))
 	{
@@ -443,7 +443,7 @@ bool Game::init()
 		}
 	}, globalUiContextName, this->inputManager);
 
-	this->uiManager.addInputActionListener(InputActionName::DebugProfiler, 
+	this->uiManager.addInputActionListener(InputActionName::DebugProfiler,
 		[this](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
@@ -579,7 +579,7 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
 		const WorldDouble3 playerPosition = this->player.getEyePosition();
 		const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
-		
+
 		RenderCamera renderCamera;
 		renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, this->options.getGraphics_VerticalFOV(), this->window.getSceneViewAspectRatio(), tallPixelRatio);
 
@@ -597,7 +597,7 @@ void Game::saveScreenshot(const Surface &surface)
 	if (!Directory::exists(directoryNamePtr))
 	{
 		Directory::createRecursively(directoryNamePtr);
-	}	
+	}
 
 	std::error_code code;
 	const std::filesystem::directory_iterator dirIter(directoryName, code);
@@ -606,7 +606,7 @@ void Game::saveScreenshot(const Surface &surface)
 		DebugLogWarning("Couldn't create directory iterator for \"" + std::string(directoryName) + "\": " + code.message());
 		return;
 	}
-	
+
 	const std::string prefix("screenshot");
 	const std::string suffix(".bmp");
 	constexpr size_t expectedNumberDigits = 4; // 0-9999; if it reaches 10000 then that one gets overwritten.
@@ -782,10 +782,10 @@ void Game::loop()
 	// Set up physics system values.
 	JPH::TempAllocatorImpl physicsAllocator(Physics::TempAllocatorByteCount);
 	this->physicsTempAllocator = &physicsAllocator;
-	
+
 	PhysicsBroadPhaseLayerInterface physicsBroadPhaseLayerInterface;
 	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
-	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;	
+	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
 	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
 
 	PhysicsBodyActivationListener physicsBodyActivationListener;
@@ -831,6 +831,20 @@ void Game::loop()
 
 			this->inputManager.update(*this, deltaTime, this->uiManager, onFinishedProcessingEventFunc);
 
+			this->handlePanelChanges(); // Another check in case of no input events this frame.
+			this->uiManager.update(clampedDeltaTime, *this);
+
+			const Int2 cursorPosition = this->inputManager.getMousePosition();
+			this->uiManager.setTransformPosition(this->cursorImageElementInstID, cursorPosition);
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrashFormat("User input exception: %s", e.what());
+		}
+
+		// Tick game state.
+		try
+		{
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
 				const Double2 playerTurnAngleDeltas = PlayerLogic::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), this->nativeCursorRegions);
@@ -843,13 +857,13 @@ void Game::loop()
 				const Degrees pitchLimit = this->options.getInput_CameraPitchLimit();
 				this->player.rotateX(deltaDegreesX);
 				this->player.rotateY(deltaDegreesY * verticalAxisSign, pitchLimit);
-				
+
 				if (this->player.movementType == PlayerMovementType::Climbing)
 				{
 					// Have to keep pushing every frame to keep from falling.
 					this->player.climbingState.isAccelerationValidForClimbing = false;
 				}
-				
+
 				const PlayerInputAcceleration inputAcceleration = PlayerLogic::getInputAcceleration(*this, this->nativeCursorRegions);
 				if (inputAcceleration.shouldResetVelocity)
 				{
@@ -870,24 +884,7 @@ void Game::loop()
 				{
 					this->player.accelerate(inputAcceleration.direction, inputAcceleration.magnitude, clampedDeltaTime);
 				}
-			}
-		}
-		catch (const std::exception &e)
-		{
-			DebugCrash("User input exception: " + std::string(e.what()));
-		}
 
-		// Tick game state.
-		try
-		{
-			this->handlePanelChanges();
-			this->uiManager.update(clampedDeltaTime, *this);
-
-			const Int2 cursorPosition = this->inputManager.getMousePosition();
-			this->uiManager.setTransformPosition(this->cursorImageElementInstID, cursorPosition);
-
-			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
-			{
 				const WorldDouble3 oldPlayerPosition = this->player.getEyePosition();
 				const ChunkInt2 oldPlayerChunk = VoxelUtils::worldPointToChunk(oldPlayerPosition);
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
@@ -901,7 +898,7 @@ void Game::loop()
 				this->gameState.tickUiMessages(clampedDeltaTime);
 				this->gameState.tickPlayerHealth(clampedDeltaTime, *this);
 				this->gameState.tickPlayerStamina(clampedDeltaTime, *this);
-				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);				
+				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickEntities(clampedDeltaTime, *this);
 				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);
@@ -943,7 +940,7 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("Tick exception: " + std::string(e.what()));
+			DebugCrashFormat("Tick exception: %s", e.what());
 		}
 
 		// Late tick. User input, ticking the active panel, and simulating the game state all have the potential
@@ -957,7 +954,7 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("Late tick exception: " + std::string(e.what()));
+			DebugCrashFormat("Late tick exception: %s", e.what());
 		}
 
 		// Render.
@@ -1056,7 +1053,7 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("Render exception: " + std::string(e.what()));
+			DebugCrashFormat("Render exception: %s", e.what());
 		}
 
 		// End-of-frame clean up.
@@ -1066,11 +1063,11 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("Clean-up exception: " + std::string(e.what()));
+			DebugCrashFormat("Clean-up exception: %s", e.what());
 		}
 	}
 
-	// At this point, the engine has received an exit signal and is now quitting peacefully.
+	// At this point, the engine is now quitting peacefully.
 	this->player.freePhysicsBody(this->physicsSystem);
 	this->sceneManager.collisionChunkManager.clear(this->physicsSystem);
 

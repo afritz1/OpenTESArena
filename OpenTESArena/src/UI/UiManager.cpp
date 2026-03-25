@@ -1632,28 +1632,25 @@ void UiManager::update(double dt, Game &game)
 		const Rect clipRect = element->clipRect;
 		const UiRenderSpace renderSpace = element->renderSpace;
 
-		RenderElement2D renderElement;
+		UiTextureID textureID = -1;
 		switch (element->type)
 		{
 		case UiElementType::Image:
 		{
 			const UiImage &image = this->images.get(element->imageInstID);
-			const UiTextureID imageTextureID = image.textureID;
-			renderElement.id = imageTextureID;
+			textureID = image.textureID;
 			break;
 		}
 		case UiElementType::TextBox:
 		{
 			const UiTextBox &textBox = this->textBoxes.get(element->textBoxInstID);
-			const UiTextureID textBoxTextureID = textBox.textureID;
-			renderElement.id = textBoxTextureID;
+			textureID = textBox.textureID;
 			break;
 		}
 		case UiElementType::ListBox:
 		{
 			const UiListBox &listBox = this->listBoxes.get(element->listBoxInstID);
-			const UiTextureID listBoxTextureID = listBox.textureID;
-			renderElement.id = listBoxTextureID;
+			textureID = listBox.textureID;
 			break;
 		}
 		case UiElementType::Button:
@@ -1663,12 +1660,15 @@ void UiManager::update(double dt, Game &game)
 			break;
 		}
 
+		if (textureID < 0)
+		{
+			continue;
+		}
+
+		RenderElement2D renderElement;
+		renderElement.id = textureID;
 		renderElement.rect = GuiUtils::makeWindowSpaceRect(position.x, position.y, size.x, size.y, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
 		renderElement.clipRect = GuiUtils::makeWindowSpaceRect(clipRect.x, clipRect.y, clipRect.width, clipRect.height, transform.pivotType, renderSpace, windowDims.x, windowDims.y, letterboxRect);
-
-		if (renderElement.id >= 0)
-		{
-			this->renderElementsCache.emplace_back(std::move(renderElement));
-		}
+		this->renderElementsCache.emplace_back(std::move(renderElement));
 	}
 }
