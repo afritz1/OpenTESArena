@@ -151,10 +151,9 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
+		GameWorldUiInitInfo &gameWorldInitInfo = GameWorldUI::state.initInfo;
+		gameWorldInitInfo.init(FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays));
 		game.setNextContext(GameWorldUI::ContextName);
-
-		const std::string cityArrivalMessage = FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
-		GameWorldUI::showTextPopUp(cityArrivalMessage.c_str());
 	}
 	else if (travelLocationDef.getType() == LocationDefinitionType::Dungeon)
 	{

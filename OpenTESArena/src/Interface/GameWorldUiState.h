@@ -25,8 +25,17 @@ struct GameWorldLootUiItemMapping
 	GameWorldLootUiItemMapping();
 };
 
+struct GameWorldUiInitInfo
+{
+	std::string textPopUpMessage; // For city arrival.
+
+	void init(const std::string &textPopUpMessage);
+};
+
 struct GameWorldUiState
 {
+	GameWorldUiInitInfo initInfo;
+
 	Game *game;
 	UiContextInstanceID contextInstID;
 	UiContextInstanceID textPopUpContextInstID;

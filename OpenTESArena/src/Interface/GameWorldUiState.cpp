@@ -101,6 +101,11 @@ GameWorldLootUiItemMapping::GameWorldLootUiItemMapping()
 	this->listBoxItemIndex = -1;
 }
 
+void GameWorldUiInitInfo::init(const std::string &textPopUpMessage)
+{
+	this->textPopUpMessage = textPopUpMessage;
+}
+
 GameWorldUiState::GameWorldUiState()
 {
 	this->game = nullptr;
@@ -351,6 +356,11 @@ void GameWorldUI::create(Game &game)
 	game.shouldRenderScene = true;
 
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, true);
+
+	if (!state.initInfo.textPopUpMessage.empty())
+	{
+		GameWorldUI::showTextPopUp(state.initInfo.textPopUpMessage.c_str());
+	}
 }
 
 void GameWorldUI::destroy()
@@ -380,6 +390,7 @@ void GameWorldUI::destroy()
 	}
 
 	state.freeTextures(renderer);
+	state.initInfo.textPopUpMessage.clear();
 	state.currentHealth = 0.0;
 	state.maxHealth = 0.0;
 	state.currentStamina = 0.0;
