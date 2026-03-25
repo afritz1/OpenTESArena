@@ -7,12 +7,11 @@
 
 class Game;
 class LocationDefinition;
-class Panel;
 class ProvinceDefinition;
 
 namespace ProvinceMapUiModel
 {
-	// Shared between WorldMapPanel and ProvinceMapPanel for remembering the selected destination.
+	// Shared between world map and province map for remembering the selected destination.
 	struct TravelData
 	{
 		// @todo: change from 'ID' to 'index' to show it's not dependent on original game's 0-32 format.

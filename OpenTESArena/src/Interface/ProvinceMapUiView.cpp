@@ -330,7 +330,7 @@ ListBoxProperties ProvinceSearchUiView::makeListBoxProperties()
 	int fontDefIndex;
 	if (!fontLibrary.tryGetDefinitionIndex(fontName, &fontDefIndex))
 	{
-		DebugCrash("Couldn't get search sub-panel list box font \"" + std::string(fontName) + "\".");
+		DebugCrash("Couldn't get search UI list box font \"" + std::string(fontName) + "\".");
 	}
 
 	constexpr int maxDisplayedItemCount = 6;

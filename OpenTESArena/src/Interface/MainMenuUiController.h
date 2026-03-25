@@ -7,7 +7,6 @@
 #include "../Assets/ArenaTypes.h"
 
 class Game;
-class MainMenuPanel;
 
 enum class MapType;
 
@@ -18,10 +17,8 @@ namespace MainMenuUiController
 	void onExitGameButtonSelected();
 
 	void onQuickStartButtonSelected(Game &game, int testType, int testIndex, const std::string &mifName,
-		const std::optional<ArenaInteriorType> &optInteriorType, ArenaWeatherType weatherType,
-		MapType mapType);
+		const std::optional<ArenaInteriorType> &optInteriorType, ArenaWeatherType weatherType, MapType mapType);
 
-	// Takes pointers to MainMenuPanel members due to them being private.
 	void onTestTypeUpButtonSelected(int *testType, int *testIndex, int *testIndex2, int *testWeather);
 	void onTestTypeDownButtonSelected(int *testType, int *testIndex, int *testIndex2, int *testWeather);
 	void onTestIndexUpButtonSelected(int *testType, int *testIndex, int *testIndex2);

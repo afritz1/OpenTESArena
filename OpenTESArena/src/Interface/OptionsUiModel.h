@@ -11,7 +11,7 @@ class Game;
 
 namespace OptionsUiModel
 {
-	// Options panel tabs.
+	// Options menu tabs.
 	enum class Tab { Graphics, Audio, Input, Misc, Dev };
 
 	constexpr int TAB_COUNT = 5;
@@ -63,7 +63,7 @@ namespace OptionsUiModel
 	enum class OptionType { Bool, Int, Double, String };
 
 	// This is the base class for all interactive options. Each option has a write-only interface
-	// since the options panel shouldn't really store all the values itself; it's intended to be
+	// since the options UI shouldn't really store all the values itself; it's intended to be
 	// a ferry between the UI and wherever in the program the options are actually used.
 	struct Option
 	{

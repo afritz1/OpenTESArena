@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cmath>
 
-#include "GameWorldPanel.h"
 #include "GameWorldUiModel.h"
 #include "GameWorldUiView.h"
 #include "InventoryUiView.h"

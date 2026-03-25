@@ -3,7 +3,6 @@
 #include "GameWorldUiModel.h"
 #include "GameWorldUiState.h"
 #include "PauseMenuUiController.h"
-#include "TextCinematicPanel.h"
 #include "TextCinematicUiState.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/TextAssetLibrary.h"

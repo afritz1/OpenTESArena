@@ -78,7 +78,7 @@ private:
 	std::optional<ProvinceMapUiModel::TravelData> travelData; // Non-null when a destination is selected.
 
 	// Game world interface display texts have an associated time remaining. These values are stored here so
-	// they are not destroyed when switching away from the game world panel.
+	// they are not destroyed when switching away from the game world UI.
 	// - Trigger text: lore message from voxel trigger
 	// - Action text: description of the player's current action
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)

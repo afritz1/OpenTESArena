@@ -644,7 +644,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 
 	gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
-	// Initialize game world panel.
+	// Initialize game world UI.
 	game.setNextContext(GameWorldUI::ContextName);
 }
 

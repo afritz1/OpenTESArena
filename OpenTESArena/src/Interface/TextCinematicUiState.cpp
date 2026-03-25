@@ -131,6 +131,10 @@ void TextCinematicUI::destroy()
 	state.callback = []() { };
 
 	uiManager.setElementActive(game.cursorImageElementInstID, true);
+	
+	// Stop voice if still playing.
+	AudioManager &audioManager = game.audioManager;
+	audioManager.stopSound();
 }
 
 void TextCinematicUI::update(double dt)

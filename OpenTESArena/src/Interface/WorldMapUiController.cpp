@@ -1,6 +1,4 @@
-#include "GameWorldPanel.h"
 #include "GameWorldUiState.h"
-#include "MainQuestSplashPanel.h"
 #include "MainQuestSplashUiState.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
@@ -18,7 +16,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	auto &gameState = game.gameState;
 	gameState.setTravelData(std::nullopt);
 
-	// Handle fast travel behavior and decide which panel to switch to.
+	// Handle fast travel behavior and decide which UI to switch to.
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
 	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
@@ -204,7 +202,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	}
 	else if (travelLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
 	{
-		// Main quest dungeon. The staff dungeons have a splash image before going to the game world panel.
+		// Main quest dungeon. The staff dungeons have a splash image before going to the game world UI.
 		const LocationMainQuestDungeonDefinition &mainQuestDungeonDef = travelLocationDef.getMainQuestDungeonDefinition();
 
 		constexpr std::optional<bool> rulerIsMale; // Not needed.

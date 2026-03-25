@@ -7,7 +7,6 @@
 #include "../Math/Vector2.h"
 
 class Game;
-class GameWorldPanel;
 class ItemInventory;
 
 enum class MouseButtonType;

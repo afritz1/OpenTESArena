@@ -31,12 +31,9 @@
 #include "../Input/InputActionName.h"
 #include "../Interface/CinematicLibrary.h"
 #include "../Interface/CommonUiView.h"
-#include "../Interface/GameWorldPanel.h"
 #include "../Interface/GameWorldUiModel.h"
 #include "../Interface/GameWorldUiView.h"
 #include "../Interface/IntroUiModel.h"
-#include "../Interface/MainMenuPanel.h"
-#include "../Interface/Panel.h"
 #include "../Items/ItemConditionLibrary.h"
 #include "../Items/ItemLibrary.h"
 #include "../Items/ItemMaterialLibrary.h"
@@ -961,7 +958,7 @@ void Game::loop()
 			DebugCrashFormat("Tick exception: %s", e.what());
 		}
 
-		// Late tick. User input, ticking the active panel, and simulating the game state all have the potential
+		// Late tick. User input, ticking the active context, and simulating the game state all have the potential
 		// to queue a scene change which needs to be fully processed before we render.
 		try
 		{

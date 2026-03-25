@@ -1,4 +1,3 @@
-#include "CharacterEquipmentPanel.h"
 #include "CharacterEquipmentUiState.h"
 #include "CharacterSheetUiController.h"
 #include "CharacterSheetUiModel.h"
@@ -220,7 +219,7 @@ void CharacterEquipmentUI::onSpellbookButtonSelected(MouseButtonType mouseButton
 	CharacterEquipmentUiState &state = CharacterEquipmentUI::state;
 	Game &game = *state.game;
 	DebugLogError("Not implemented: spellbook");
-	// @todo open character spellbook panel once that is made
+	// @todo open character spellbook UI once that is made
 }
 
 void CharacterEquipmentUI::onDropButtonSelected(MouseButtonType mouseButtonType)

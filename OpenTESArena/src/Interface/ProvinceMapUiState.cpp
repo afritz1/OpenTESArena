@@ -1,9 +1,7 @@
-#include "ProvinceMapPanel.h"
 #include "ProvinceMapUiController.h"
 #include "ProvinceMapUiModel.h"
 #include "ProvinceMapUiState.h"
 #include "ProvinceMapUiView.h"
-#include "WorldMapPanel.h"
 #include "WorldMapUiState.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
@@ -755,7 +753,7 @@ void ProvinceMapUI::onPauseChanged(bool paused)
 	if (!paused)
 	{
 		// Make sure the hovered location matches where the pointer is now since mouse motion events
-		// aren't processed while this panel is paused.
+		// aren't processed while this UI is paused.
 		const Window &window = game.window;
 		const InputManager &inputManager = game.inputManager;
 		const Int2 mousePosition = inputManager.getMousePosition();

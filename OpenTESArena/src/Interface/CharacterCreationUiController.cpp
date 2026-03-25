@@ -46,7 +46,7 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 
 void ChooseClassCreationUiController::onGenerateButtonSelected(Game &game)
 {
-	// @todo: eventually go to a "ChooseQuestionsPanel" with "pop-up" message
+	// @todo: eventually go to a ChooseQuestionsUI with "pop-up" message
 }
 
 void ChooseClassCreationUiController::onSelectButtonSelected(Game &game)
