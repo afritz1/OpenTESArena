@@ -1,15 +1,11 @@
-#include <memory>
 #include <vector>
 
-#include "SDL.h"
+#include "SDL_events.h"
 
-#include "ChooseClassCreationPanel.h"
-#include "CinematicPanel.h"
+#include "ChooseClassCreationUiState.h"
 #include "CinematicUiState.h"
-#include "GameWorldPanel.h"
-#include "ImageSequencePanel.h"
+#include "GameWorldUiState.h"
 #include "ImageSequenceUiState.h"
-#include "LoadSavePanel.h"
 #include "LoadSaveUiState.h"
 #include "MainMenuUiController.h"
 #include "MainMenuUiModel.h"
@@ -50,7 +46,7 @@ namespace
 void MainMenuUiController::onLoadGameButtonSelected(Game &game)
 {
 	LoadSaveUI::state.type = LoadSaveType::Load;
-	game.setPanel<LoadSavePanel>();
+	game.setNextContext(LoadSaveUI::ContextName);
 }
 
 void MainMenuUiController::onNewGameButtonSelected(Game &game)
@@ -59,7 +55,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 	auto changeToCharCreation = [&game]()
 	{
 		game.setCharacterCreationState(std::make_unique<CharacterCreationState>());
-		game.setPanel<ChooseClassCreationPanel>();
+		game.setNextContext(ChooseClassCreationUI::ContextName);
 
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(MusicType::CharacterCreation, game.random);
@@ -97,7 +93,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 
 		ImageSequenceUiInitInfo &imageSequenceInitInfo = ImageSequenceUI::state.initInfo;
 		imageSequenceInitInfo.init(paletteNames, textureNames, imageDurations, changeToCharCreation);
-		game.setPanel<ImageSequencePanel>();
+		game.setNextContext(ImageSequenceUI::ContextName);
 	};
 
 	const std::string &paletteFilename = ArenaTextureSequenceName::OpeningScroll;
@@ -116,7 +112,7 @@ void MainMenuUiController::onNewGameButtonSelected(Game &game)
 
 	CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
 	cinematicInitInfo.init(paletteFilename, sequenceFilename, secondsPerFrame, changeToNewGameStory);
-	game.setPanel<CinematicPanel>();
+	game.setNextContext(CinematicUI::ContextName);
 
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
@@ -649,7 +645,7 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
 	// Initialize game world panel.
-	game.setPanel<GameWorldPanel>();
+	game.setNextContext(GameWorldUI::ContextName);
 }
 
 void MainMenuUiController::onTestTypeUpButtonSelected(int *testType, int *testIndex, int *testIndex2, int *testWeather)

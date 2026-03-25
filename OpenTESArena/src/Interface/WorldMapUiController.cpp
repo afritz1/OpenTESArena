@@ -153,7 +153,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, VoxelInt2::Zero, worldMapLocationIDs, true, overrideWeather);
 		gameState.queueMusicOnSceneChange(musicFunc, jingleMusicFunc);
 
-		game.setPanel<GameWorldPanel>();
+		game.setNextContext(GameWorldUI::ContextName);
 
 		const std::string cityArrivalMessage = FastTravelUiModel::getCityArrivalMessage(game, targetProvinceID, targetLocationID, travelDays);
 		GameWorldUI::showTextPopUp(cityArrivalMessage.c_str());
@@ -200,7 +200,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		gameState.queueMapDefChange(std::move(mapDefinition), std::nullopt, std::nullopt, playerStartOffset, worldMapLocationIDs, true, overrideWeather);
 		gameState.queueMusicOnSceneChange(musicFunc);
 
-		game.setPanel<GameWorldPanel>();
+		game.setNextContext(GameWorldUI::ContextName);
 	}
 	else if (travelLocationDef.getType() == LocationDefinitionType::MainQuestDungeon)
 	{
@@ -233,7 +233,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		{
 			// Go to staff dungeon splash image first.
 			MainQuestSplashUI::state.provinceID = targetProvinceID;
-			game.setPanel<MainQuestSplashPanel>();
+			game.setNextContext(MainQuestSplashUI::ContextName);
 		}
 		else
 		{
@@ -249,7 +249,7 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			};
 
 			gameState.queueMusicOnSceneChange(musicFunc);
-			game.setPanel<GameWorldPanel>();
+			game.setNextContext(GameWorldUI::ContextName);
 		}
 	}
 	else

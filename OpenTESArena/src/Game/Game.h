@@ -45,9 +45,7 @@ public:
 	JPH::PhysicsSystem physicsSystem; // The Jolt physics system for the scene.
 	JPH::TempAllocatorImpl *physicsTempAllocator; // Available when game loop is active.
 
-	// UI panels for the current interactivity and rendering sets. Needs to be positioned after the
-	// renderer member in this class due to UI texture order of destruction (panels first, then renderer).
-	std::unique_ptr<Panel> panel, nextPanel;
+	std::string nextContextName;
 
 	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
 	Rect nativeCursorRegions[9];
@@ -91,8 +89,8 @@ private:
 	// available index.
 	void saveScreenshot(const Surface &surface);
 
-	// Handles any changes in panels after an SDL event or game tick.
-	void handlePanelChanges();
+	// Handles any change in the active UI context after an input event or game tick.
+	void handleContextChanges();
 
 	void handleApplicationExit();
 	void handleWindowResized(int width, int height);
@@ -119,20 +117,8 @@ public:
 	// Gets a UI rectangle used with classic game world interface for player movement.
 	const Rect &getNativeCursorRegion(int index) const;
 
-	// Sets the panel after the current SDL event has been processed (to avoid 
-	// interfering with the current panel). This uses template parameters for
-	// convenience (to avoid writing a unique_ptr at each callsite).
-	template<class T, typename... Args>
-	void setPanel(Args&&... args)
-	{
-		std::unique_ptr<T> derivedPanel = std::make_unique<T>(*this);
-		if (!derivedPanel->init(std::forward<Args>(args)...))
-		{
-			DebugCrash("Couldn't init new panel.");
-		}
-
-		this->nextPanel = std::move(derivedPanel);
-	}
+	// Queues the UI context to switch to this frame. This must be one with begin/end/update callbacks registered at engine startup.
+	void setNextContext(const char *contextName);
 
 	// Sets the current character creation state. Character creation is active if the state
 	// is not null.

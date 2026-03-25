@@ -1,12 +1,9 @@
-#include "CinematicPanel.h"
 #include "CinematicUiState.h"
-#include "ImagePanel.h"
 #include "ImageUiState.h"
-#include "ImageSequencePanel.h"
 #include "ImageSequenceUiState.h"
 #include "IntroUiController.h"
 #include "IntroUiView.h"
-#include "MainMenuPanel.h"
+#include "MainMenuUiState.h"
 #include "../Game/Game.h"
 
 void IntroUiController::onIntroBookFinished(Game &game)
@@ -16,7 +13,7 @@ void IntroUiController::onIntroBookFinished(Game &game)
 
 	ImageUiInitInfo &imageInitInfo = ImageUI::state.initInfo;
 	imageInitInfo.init(paletteTextureAsset.filename, textureAsset.filename, IntroUiView::IntroTitleSeconds, [&game]() { IntroUiController::onIntroTitleFinished(game); });
-	game.setPanel<ImagePanel>();
+	game.setNextContext(ImageUI::ContextName);
 }
 
 void IntroUiController::onIntroTitleFinished(Game &game)
@@ -26,7 +23,7 @@ void IntroUiController::onIntroTitleFinished(Game &game)
 
 	ImageUiInitInfo &imageInitInfo = ImageUI::state.initInfo;
 	imageInitInfo.init(paletteTextureAsset.filename, textureAsset.filename, IntroUiView::IntroQuoteSeconds, [&game]() { IntroUiController::onIntroQuoteFinished(game); });
-	game.setPanel<ImagePanel>();
+	game.setNextContext(ImageUI::ContextName);
 }
 
 void IntroUiController::onIntroQuoteFinished(Game &game)
@@ -46,17 +43,17 @@ void IntroUiController::onIntroQuoteFinished(Game &game)
 
 	CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
 	cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.getSecondsPerFrame(), [&game]() { IntroUiController::onOpeningScrollFinished(game); });
-	game.setPanel<CinematicPanel>();
+	game.setNextContext(CinematicUI::ContextName);
 }
 
 void IntroUiController::onOpeningScrollFinished(Game &game)
 {
 	ImageSequenceUiInitInfo &imageSequenceInitInfo = ImageSequenceUI::state.initInfo;
 	imageSequenceInitInfo.init(IntroUiView::getIntroStoryPaletteNames(), IntroUiView::getIntroStoryTextureNames(), IntroUiView::getIntroStoryImageDurations(), [&game]() { IntroUiController::onIntroStoryFinished(game); });
-	game.setPanel<ImageSequencePanel>();
+	game.setNextContext(ImageSequenceUI::ContextName);
 }
 
 void IntroUiController::onIntroStoryFinished(Game &game)
 {
-	game.setPanel<MainMenuPanel>();
+	game.setNextContext(MainMenuUI::ContextName);
 }

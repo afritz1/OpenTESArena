@@ -142,6 +142,7 @@ public:
 	UiContextInstanceID createContext(const UiContextInitInfo &initInfo);
 	UiContextInstanceID createContext(const UiContextDefinition &contextDef, InputManager &inputManager, TextureManager &textureManager, Renderer &renderer);
 	bool isContextEnabled(const char *contextName) const;
+	const std::string &getContextName(UiContextInstanceID contextInstID) const;
 	void setContextEnabled(UiContextInstanceID contextInstID, bool enabled);
 	UiContextInstanceID getTopMostActiveContext() const;
 	bool isContextTopMostActive(const char *contextName) const;

@@ -1161,6 +1161,12 @@ bool UiManager::isContextEnabled(const char *contextName) const
 	return context.enabled;
 }
 
+const std::string &UiManager::getContextName(UiContextInstanceID contextInstID) const
+{
+	const UiContext &context = this->contexts.get(contextInstID);
+	return context.name;
+}
+
 void UiManager::setContextEnabled(UiContextInstanceID contextInstID, bool enabled)
 {
 	UiContext &context = this->contexts.get(contextInstID);

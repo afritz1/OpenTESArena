@@ -4,8 +4,7 @@
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "ChooseAttributesUiState.h"
-#include "ChooseRacePanel.h"
-#include "TextCinematicPanel.h"
+#include "ChooseRaceUiState.h"
 #include "TextCinematicUiState.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
@@ -931,12 +930,12 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 
 		TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
 		textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(game); });
-		game.setPanel<TextCinematicPanel>();
+		game.setNextContext(TextCinematicUI::ContextName);
 
 		// Play dream music.
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(
-			MusicType::Cinematic, game.random, [](const MusicDefinition &def)
+		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Cinematic, game.random,
+			[](const MusicDefinition &def)
 		{
 			DebugAssert(def.type == MusicType::Cinematic);
 			const CinematicMusicDefinition &cinematicMusicDef = def.cinematic;
@@ -967,7 +966,7 @@ void ChooseAttributesUI::onBackInputAction(const InputActionCallbackValues &valu
 	if (values.performed)
 	{
 		Game &game = values.game;
-		game.setPanel<ChooseRacePanel>();
+		game.setNextContext(ChooseRaceUI::ContextName);
 	}
 }
 

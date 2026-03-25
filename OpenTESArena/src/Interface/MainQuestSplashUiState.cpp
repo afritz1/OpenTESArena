@@ -1,4 +1,4 @@
-#include "GameWorldPanel.h"
+#include "GameWorldUiState.h"
 #include "MainQuestSplashUiModel.h"
 #include "MainQuestSplashUiState.h"
 #include "MainQuestSplashUiView.h"
@@ -82,7 +82,7 @@ void MainQuestSplashUI::onExitButtonSelected(MouseButtonType mouseButtonType)
 	AudioManager &audioManager = game.audioManager;
 	audioManager.setMusic(musicDef);
 
-	game.setPanel<GameWorldPanel>();
+	game.setNextContext(GameWorldUI::ContextName);
 }
 
 void MainQuestSplashUI::onBackInputAction(const InputActionCallbackValues &values)

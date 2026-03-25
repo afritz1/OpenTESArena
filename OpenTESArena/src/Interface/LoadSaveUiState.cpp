@@ -1,8 +1,8 @@
 #include "LoadSaveUiModel.h"
 #include "LoadSaveUiState.h"
 #include "LoadSaveUiView.h"
-#include "MainMenuPanel.h"
-#include "PauseMenuPanel.h"
+#include "MainMenuUiState.h"
+#include "PauseMenuUiState.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
 
@@ -198,11 +198,11 @@ void LoadSaveUI::onBackInputAction(const InputActionCallbackValues &values)
 		const GameState &gameState = game.gameState;
 		if (gameState.isActiveMapValid())
 		{
-			game.setPanel<PauseMenuPanel>();
+			game.setNextContext(PauseMenuUI::ContextName);
 		}
 		else
 		{
-			game.setPanel<MainMenuPanel>();
+			game.setNextContext(MainMenuUI::ContextName);
 		}
 	}
 }

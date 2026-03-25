@@ -1,28 +1,18 @@
-#include "CinematicPanel.h"
 #include "CinematicUiState.h"
-#include "ImagePanel.h"
 #include "ImageUiState.h"
 #include "IntroUiController.h"
 #include "IntroUiModel.h"
 #include "IntroUiView.h"
-#include "MainMenuPanel.h"
+#include "MainMenuUiState.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 
-std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
+std::string IntroUiModel::prepareStartupContext(Game &game)
 {
-	// If not showing the intro, then jump to the main menu.
 	if (!game.options.getMisc_ShowIntro())
 	{
-		std::unique_ptr<MainMenuPanel> panel = std::make_unique<MainMenuPanel>(game);
-		if (!panel->init())
-		{
-			DebugLogError("Couldn't init start-up MainMenuPanel.");
-			return nullptr;
-		}
-
-		return panel;
+		return MainMenuUI::ContextName;
 	}
 
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
@@ -31,15 +21,7 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 	{
 		ImageUiInitInfo &imageInitInfo = ImageUI::state.initInfo;
 		imageInitInfo.init(ArenaTextureName::IntroTitle, ArenaTextureName::IntroTitle, IntroUiView::IntroTitleSeconds, [&game]() { IntroUiController::onIntroTitleFinished(game); });
-
-		std::unique_ptr<ImagePanel> panel = std::make_unique<ImagePanel>(game);
-		if (!panel->init())
-		{
-			DebugLogError("Couldn't init start-up ImagePanel.");
-			return nullptr;
-		}
-
-		return panel;
+		return ImageUI::ContextName;
 	}
 	else
 	{
@@ -58,14 +40,6 @@ std::unique_ptr<Panel> IntroUiModel::makeStartupPanel(Game &game)
 
 		CinematicUiInitInfo &cinematicInitInfo = CinematicUI::state.initInfo;
 		cinematicInitInfo.init(paletteFilename, sequenceFilename, metadata.getSecondsPerFrame(), [&game]() { IntroUiController::onIntroBookFinished(game); });
-
-		std::unique_ptr<CinematicPanel> panel = std::make_unique<CinematicPanel>(game);
-		if (!panel->init())
-		{
-			DebugLogError("Couldn't init start-up CinematicPanel.");
-			return nullptr;
-		}
-
-		return panel;
+		return CinematicUI::ContextName;
 	}
 }

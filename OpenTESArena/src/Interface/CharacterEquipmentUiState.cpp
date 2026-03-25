@@ -3,7 +3,7 @@
 #include "CharacterSheetUiController.h"
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
-#include "CharacterPanel.h"
+#include "CharacterUiState.h"
 #include "InventoryUiModel.h"
 #include "InventoryUiView.h"
 #include "../Game/Game.h"
@@ -212,7 +212,7 @@ void CharacterEquipmentUI::onExitButtonSelected(MouseButtonType mouseButtonType)
 {
 	CharacterEquipmentUiState &state = CharacterEquipmentUI::state;
 	Game &game = *state.game;
-	game.setPanel<CharacterPanel>();
+	game.setNextContext(CharacterUI::ContextName);
 }
 
 void CharacterEquipmentUI::onSpellbookButtonSelected(MouseButtonType mouseButtonType)

@@ -10,7 +10,7 @@
 #include "../Game/Game.h"
 #include "../Interface/GameWorldUiController.h"
 #include "../Interface/GameWorldUiState.h"
-#include "../Interface/WorldMapPanel.h"
+#include "../Interface/WorldMapUiState.h"
 #include "../Sky/SkyUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Time/ArenaClockUtils.h"
@@ -684,7 +684,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		player.setPhysicsPositionRelativeToFeet(playerFeetDestinationPosition);
 		player.setPhysicsVelocity(Double3::Zero);
 
-		game.setPanel<WorldMapPanel>();
+		game.setNextContext(WorldMapUI::ContextName);
 	};
 
 	const int activeLevelIndex = gameState.getActiveLevelIndex();

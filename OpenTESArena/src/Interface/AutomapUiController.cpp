@@ -1,11 +1,11 @@
 #include "AutomapUiController.h"
 #include "AutomapUiView.h"
-#include "GameWorldPanel.h"
+#include "GameWorldUiState.h"
 #include "../Game/Game.h"
 
 void AutomapUiController::onBackToGameButtonSelected(Game &game)
 {
-	game.setPanel<GameWorldPanel>();
+	game.setNextContext(GameWorldUI::ContextName);
 }
 
 void AutomapUiController::onBackToGameInputAction(const InputActionCallbackValues &values)

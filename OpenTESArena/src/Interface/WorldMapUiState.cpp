@@ -1,5 +1,4 @@
-#include "GameWorldPanel.h"
-#include "ProvinceMapPanel.h"
+#include "GameWorldUiState.h"
 #include "ProvinceMapUiState.h"
 #include "WorldMapUiController.h"
 #include "WorldMapUiModel.h"
@@ -250,7 +249,7 @@ void WorldMapUI::onMouseButtonChanged(Game &game, MouseButtonType type, const In
 						if (i < WorldMapUiModel::EXIT_BUTTON_MASK_ID)
 						{
 							ProvinceMapUI::state.provinceID = i;
-							game.setPanel<ProvinceMapPanel>();
+							game.setNextContext(ProvinceMapUI::ContextName);
 						}
 						else
 						{
@@ -277,7 +276,7 @@ void WorldMapUI::onBackButtonSelected(MouseButtonType mouseButtonType)
 	GameState &gameState = game.gameState;
 	gameState.setTravelData(std::nullopt);
 
-	game.setPanel<GameWorldPanel>();
+	game.setNextContext(GameWorldUI::ContextName);
 }
 
 void WorldMapUI::onBackInputAction(const InputActionCallbackValues &values)

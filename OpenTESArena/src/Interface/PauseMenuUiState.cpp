@@ -3,11 +3,10 @@
 #include "SDL.h"
 
 #include "GameWorldUiView.h"
-#include "GameWorldPanel.h"
-#include "LoadSavePanel.h"
+#include "GameWorldUiState.h"
 #include "LoadSaveUiState.h"
-#include "MainMenuPanel.h"
-#include "OptionsPanel.h"
+#include "MainMenuUiState.h"
+#include "OptionsUiState.h"
 #include "PauseMenuUiController.h"
 #include "PauseMenuUiModel.h"
 #include "PauseMenuUiState.h"
@@ -180,7 +179,7 @@ void PauseMenuUI::onLoadGameButtonSelected(MouseButtonType mouseButtonType)
 	PauseMenuUiState &state = PauseMenuUI::state;
 	Game &game = *state.game;
 	LoadSaveUI::state.type = LoadSaveType::Load;
-	game.setPanel<LoadSavePanel>();
+	game.setNextContext(LoadSaveUI::ContextName);
 }
 
 void PauseMenuUI::onSaveGameButtonSelected(MouseButtonType mouseButtonType)
@@ -188,7 +187,7 @@ void PauseMenuUI::onSaveGameButtonSelected(MouseButtonType mouseButtonType)
 	PauseMenuUiState &state = PauseMenuUI::state;
 	Game &game = *state.game;
 	LoadSaveUI::state.type = LoadSaveType::Save;
-	game.setPanel<LoadSavePanel>();
+	game.setNextContext(LoadSaveUI::ContextName);
 }
 
 void PauseMenuUI::onExitGameButtonSelected(MouseButtonType mouseButtonType)
@@ -203,14 +202,14 @@ void PauseMenuUI::onResumeGameButtonSelected(MouseButtonType mouseButtonType)
 {
 	PauseMenuUiState &state = PauseMenuUI::state;
 	Game &game = *state.game;
-	game.setPanel<GameWorldPanel>();
+	game.setNextContext(GameWorldUI::ContextName);
 }
 
 void PauseMenuUI::onOptionsButtonSelected(MouseButtonType mouseButtonType)
 {
 	PauseMenuUiState &state = PauseMenuUI::state;
 	Game &game = *state.game;
-	game.setPanel<OptionsPanel>();
+	game.setNextContext(OptionsUI::ContextName);
 }
 
 void PauseMenuUI::onSoundUpButtonSelected(MouseButtonType mouseButtonType)

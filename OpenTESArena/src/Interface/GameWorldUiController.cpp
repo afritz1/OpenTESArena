@@ -317,7 +317,7 @@ void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
 
 	TextCinematicUiInitInfo &textCinematicInitInfo = TextCinematicUI::state.initInfo;
 	textCinematicInitInfo.init(textCinematicDefIndex, metadata.getSecondsPerFrame(), [&game]() { PauseMenuUiController::onNewGameButtonSelected(game); });
-	game.setPanel<TextCinematicPanel>();
+	game.setNextContext(TextCinematicUI::ContextName);
 
 	const MusicDefinition *musicDef = MusicUtils::getMainQuestCinematicGoodMusicDefinition(game.random);
 	if (musicDef == nullptr)

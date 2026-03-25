@@ -1,38 +1,23 @@
-#include <optional>
-
-#include "SDL.h"
-
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
-#include "ChooseAttributesPanel.h"
-#include "ChooseClassCreationPanel.h"
-#include "ChooseClassPanel.h"
-#include "ChooseGenderPanel.h"
-#include "ChooseNamePanel.h"
-#include "ChooseRacePanel.h"
+#include "ChooseAttributesUiState.h"
+#include "ChooseClassCreationUiState.h"
+#include "ChooseClassUiState.h"
+#include "ChooseGenderUiState.h"
+#include "ChooseNameUiState.h"
+#include "ChooseRaceUiState.h"
 #include "CinematicLibrary.h"
-#include "GameWorldPanel.h"
-#include "MainMenuPanel.h"
-#include "TextCinematicPanel.h"
+#include "GameWorldUiState.h"
+#include "MainMenuUiState.h"
+#include "TextCinematicUiState.h"
 #include "WorldMapUiModel.h"
-#include "../Assets/BinaryAssetLibrary.h"
-#include "../Assets/TextAssetLibrary.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Audio/MusicUtils.h"
-#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
-#include "../Input/InputActionName.h"
-#include "../Sky/SkyUtils.h"
-#include "../Stats/CharacterClassLibrary.h"
-#include "../Time/ArenaClockUtils.h"
-#include "../UI/FontLibrary.h"
-#include "../UI/Surface.h"
 #include "../UI/TextBox.h"
 #include "../UI/TextEntry.h"
-#include "../World/CardinalDirection.h"
-#include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"
 
@@ -40,9 +25,9 @@ void ChooseClassCreationUiController::onBackToMainMenuInputAction(const InputAct
 {
 	if (values.performed)
 	{
-		auto &game = values.game;
+		Game &game = values.game;
 		game.setCharacterCreationState(nullptr);
-		game.setPanel<MainMenuPanel>();
+		game.setNextContext(MainMenuUI::ContextName);
 
 		const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 		const MusicDefinition *musicDef = musicLibrary.getRandomMusicDefinition(MusicType::MainMenu, game.random);
@@ -66,15 +51,15 @@ void ChooseClassCreationUiController::onGenerateButtonSelected(Game &game)
 
 void ChooseClassCreationUiController::onSelectButtonSelected(Game &game)
 {
-	game.setPanel<ChooseClassPanel>();
+	game.setNextContext(ChooseClassUI::ContextName);
 }
 
 void ChooseClassUiController::onBackToChooseClassCreationInputAction(const InputActionCallbackValues &values)
 {
 	if (values.performed)
 	{
-		auto &game = values.game;
-		game.setPanel<ChooseClassCreationPanel>();
+		Game &game = values.game;
+		game.setNextContext(ChooseClassCreationUI::ContextName);
 	}
 }
 
@@ -90,58 +75,56 @@ void ChooseClassUiController::onDownButtonSelected(ListBox &listBox)
 
 void ChooseClassUiController::onItemButtonSelected(Game &game, int charClassDefID)
 {
-	auto &charCreationState = game.getCharacterCreationState();
+	CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	charCreationState.classDefID = charClassDefID;
 
-	game.setPanel<ChooseNamePanel>();
+	game.setNextContext(ChooseNameUI::ContextName);
 }
 
 void ChooseGenderUiController::onBackToChooseNameInputAction(const InputActionCallbackValues &values)
 {
 	if (values.performed)
 	{
-		auto &game = values.game;
-		game.setPanel<ChooseNamePanel>();
+		Game &game = values.game;
+		game.setNextContext(ChooseNameUI::ContextName);
 	}
 }
 
 void ChooseGenderUiController::onMaleButtonSelected(Game &game)
 {
-	auto &charCreationState = game.getCharacterCreationState();
+	CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	charCreationState.male = true;
 
-	game.setPanel<ChooseRacePanel>();
+	game.setNextContext(ChooseRaceUI::ContextName);
 }
 
 void ChooseGenderUiController::onFemaleButtonSelected(Game &game)
 {
-	auto &charCreationState = game.getCharacterCreationState();
+	CharacterCreationState &charCreationState = game.getCharacterCreationState();
 	charCreationState.male = false;
 
-	game.setPanel<ChooseRacePanel>();
+	game.setNextContext(ChooseRaceUI::ContextName);
 }
 
 void ChooseNameUiController::onBackToChooseClassInputAction(const InputActionCallbackValues &values)
 {
 	if (values.performed)
 	{
-		auto &game = values.game;
-		auto &inputManager = game.inputManager;
+		Game &game = values.game;
+		InputManager &inputManager = game.inputManager;
 		inputManager.setTextInputMode(false);
 
-		auto &charCreationState = game.getCharacterCreationState();
+		CharacterCreationState &charCreationState = game.getCharacterCreationState();
 		charCreationState.setName(nullptr);
 
-		game.setPanel<ChooseClassPanel>();
+		game.setNextContext(ChooseClassUI::ContextName);
 	}
 }
 
 void ChooseNameUiController::onTextInput(const std::string_view text, std::string &name, bool *outDirty)
 {
 	DebugAssert(outDirty != nullptr);
-
-	*outDirty = TextEntry::append(name, text, ChooseNameUiModel::isCharacterAccepted,
-		CharacterCreationState::MAX_NAME_LENGTH);
+	*outDirty = TextEntry::append(name, text, ChooseNameUiModel::isCharacterAccepted, CharacterCreationState::MAX_NAME_LENGTH);
 }
 
 void ChooseNameUiController::onBackspaceInputAction(const InputActionCallbackValues &values, std::string &name, bool *outDirty)
@@ -160,22 +143,21 @@ void ChooseNameUiController::onAcceptInputAction(const InputActionCallbackValues
 	{
 		if (name.size() > 0)
 		{
-			auto &game = values.game;
-			auto &inputManager = game.inputManager;
+			Game &game = values.game;
+			InputManager &inputManager = game.inputManager;
 			inputManager.setTextInputMode(false);
 
-			auto &charCreationState = game.getCharacterCreationState();
+			CharacterCreationState &charCreationState = game.getCharacterCreationState();
 			charCreationState.setName(name.c_str());
 
-			game.setPanel<ChooseGenderPanel>();
+			game.setNextContext(ChooseGenderUI::ContextName);
 		}
 	}
 }
 
 void ChooseAttributesUiController::onPostCharacterCreationCinematicFinished(Game &game)
 {
-	// Initialize the game world panel.
-	game.setPanel<GameWorldPanel>();
+	game.setNextContext(GameWorldUI::ContextName);
 
 	const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(game.random);
 	if (musicDef == nullptr)

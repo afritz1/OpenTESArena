@@ -232,8 +232,7 @@ Game::~Game()
 		this->cursorImageElementInstID = -1;
 	}
 
-	this->panel = nullptr; // Must destroy before UiManager due to current Panel ctor/dtor design that begins/ends the context
-	this->nextPanel = nullptr;
+	this->nextContextName.clear();
 	this->uiManager.shutdown(this->renderer);
 	this->sceneManager.shutdown(this->renderer);
 
@@ -490,10 +489,8 @@ bool Game::init()
 	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
 
-	// Leave some members null for now. The "next panel" is a temporary used by the game
-	// to avoid corruption between panel events which change the panel.
+	DebugAssert(this->nextContextName.empty());
 	DebugAssert(this->charCreationState == nullptr);
-	DebugAssert(this->nextPanel == nullptr);
 
 	return true;
 }
@@ -513,6 +510,11 @@ const Rect &Game::getNativeCursorRegion(int index) const
 {
 	DebugAssertIndex(this->nativeCursorRegions, index);
 	return this->nativeCursorRegions[index];
+}
+
+void Game::setNextContext(const char *contextName)
+{
+	this->nextContextName = std::string(contextName);
 }
 
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
@@ -657,11 +659,21 @@ void Game::saveScreenshot(const Surface &surface)
 	}
 }
 
-void Game::handlePanelChanges()
+void Game::handleContextChanges()
 {
-	if (this->nextPanel.get() != nullptr)
+	if (!this->nextContextName.empty())
 	{
-		this->panel = std::move(this->nextPanel);
+		const UiContextInstanceID activeContextID = this->uiManager.getTopMostActiveContext();
+		DebugAssert(activeContextID >= 0); // @todo wondering if the global context should be a secret one that is ignored in the active context search. Only then could this be -1.
+
+		if (activeContextID != this->globalUiContextInstID)
+		{
+			const std::string &activeContextName = this->uiManager.getContextName(activeContextID);
+			this->uiManager.endContext(activeContextName.c_str(), *this);
+		}
+		
+		this->uiManager.beginContext(this->nextContextName.c_str(), *this);
+		this->nextContextName.clear();
 	}
 }
 
@@ -759,9 +771,13 @@ void Game::updateDebugInfoText()
 		const std::string dirY = String::fixedPrecision(direction.y, 2);
 		const std::string dirZ = String::fixedPrecision(direction.z, 2);
 
+		const UiContextInstanceID activeContextID = this->uiManager.getTopMostActiveContext();
+		const std::string &activeContextName = this->uiManager.getContextName(activeContextID);
+
 		debugText.append("\nChunk: " + chunkStr + '\n' +
 			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
-			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
+			"Dir: " + dirX + ", " + dirY + ", " + dirZ + '\n' +
+			activeContextName);
 
 		if (this->shouldRenderScene)
 		{
@@ -795,9 +811,11 @@ void Game::loop()
 
 	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
 
-	// Initialize panel and music to default (bootstrapping the first game frame).
-	this->panel = IntroUiModel::makeStartupPanel(*this);
+	// Set startup UI to use for the first frame.
+	this->nextContextName = IntroUiModel::prepareStartupContext(*this);
+	this->handleContextChanges();
 
+	// Assume main menu music at startup for now.
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::MainMenu, this->random);
 	if (mainMenuMusicDef == nullptr)
@@ -826,12 +844,12 @@ void Game::loop()
 		{
 			auto onFinishedProcessingEventFunc = [this]()
 			{
-				this->handlePanelChanges();
+				this->handleContextChanges();
 			};
 
 			this->inputManager.update(*this, deltaTime, this->uiManager, onFinishedProcessingEventFunc);
 
-			this->handlePanelChanges(); // Another check in case of no input events this frame.
+			this->handleContextChanges(); // Another check in case of no input events this frame.
 			this->uiManager.update(clampedDeltaTime, *this);
 
 			const Int2 cursorPosition = this->inputManager.getMousePosition();

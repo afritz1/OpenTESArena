@@ -1,8 +1,8 @@
 #include "CharacterCreationUiController.h"
 #include "CharacterCreationUiModel.h"
 #include "CharacterCreationUiView.h"
-#include "ChooseAttributesPanel.h"
-#include "ChooseGenderPanel.h"
+#include "ChooseAttributesUiState.h"
+#include "ChooseGenderUiState.h"
 #include "ChooseRaceUiState.h"
 #include "WorldMapUiModel.h"
 #include "../Game/Game.h"
@@ -333,7 +333,7 @@ void ChooseRaceUI::onBackInputAction(const InputActionCallbackValues &values)
 	if (values.performed)
 	{
 		Game &game = values.game;
-		game.setPanel<ChooseGenderPanel>();
+		game.setNextContext(ChooseGenderUI::ContextName);
 	}
 }
 
@@ -593,7 +593,7 @@ void ChooseRaceUI::onProvinceConfirmed4PopUpBackButtonSelected(MouseButtonType m
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	game.setPanel<ChooseAttributesPanel>();
+	game.setNextContext(ChooseAttributesUI::ContextName);
 }
 
 void ChooseRaceUI::onProvinceConfirmed1PopUpBackInputAction(const InputActionCallbackValues &values)

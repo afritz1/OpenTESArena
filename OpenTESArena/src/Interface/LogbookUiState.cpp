@@ -1,4 +1,4 @@
-#include "GameWorldPanel.h"
+#include "GameWorldUiState.h"
 #include "LogbookUiModel.h"
 #include "LogbookUiState.h"
 #include "../Game/Game.h"
@@ -70,7 +70,7 @@ void LogbookUI::onBackButtonSelected(MouseButtonType mouseButtonType)
 {
 	LogbookUiState &state = LogbookUI::state;
 	Game &game = *state.game;
-	game.setPanel<GameWorldPanel>();
+	game.setNextContext(GameWorldUI::ContextName);
 }
 
 void LogbookUI::onBackInputAction(const InputActionCallbackValues &values)

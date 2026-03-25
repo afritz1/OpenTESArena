@@ -670,7 +670,7 @@ void ProvinceMapUI::beginFastTravel()
 	Game &game = *state.game;
 
 	WorldMapUI::state.isFastTravelling = true;
-	game.setPanel<WorldMapPanel>();
+	game.setNextContext(WorldMapUI::ContextName);
 }
 
 void ProvinceMapUI::showTextPopUp(const char *str)
@@ -849,7 +849,7 @@ void ProvinceMapUI::onFullscreenButtonSelected(MouseButtonType mouseButtonType)
 	}
 	else if (backButtonRect.contains(classicPosition))
 	{
-		game.setPanel<WorldMapPanel>();
+		game.setNextContext(WorldMapUI::ContextName);
 	}
 	else
 	{
@@ -865,7 +865,7 @@ void ProvinceMapUI::onBackInputAction(const InputActionCallbackValues &values)
 	{
 		ProvinceMapUiState &state = ProvinceMapUI::state;
 		Game &game = *state.game;
-		game.setPanel<WorldMapPanel>();
+		game.setNextContext(WorldMapUI::ContextName);
 	}
 }
 

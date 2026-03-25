@@ -1,7 +1,7 @@
 #include "OptionsUiController.h"
 #include "OptionsUiState.h"
 #include "OptionsUiView.h"
-#include "PauseMenuPanel.h"
+#include "PauseMenuUiState.h"
 #include "../Game/Game.h"
 
 namespace
@@ -269,7 +269,7 @@ void OptionsUI::onBackButtonSelected(MouseButtonType mouseButtonType)
 {
 	OptionsUiState &state = OptionsUI::state;
 	Game &game = *state.game;
-	game.setPanel<PauseMenuPanel>();
+	game.setNextContext(PauseMenuUI::ContextName);
 }
 
 void OptionsUI::onBackInputAction(const InputActionCallbackValues &values)

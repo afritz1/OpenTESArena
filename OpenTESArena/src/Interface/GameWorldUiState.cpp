@@ -1,12 +1,12 @@
-#include "AutomapPanel.h"
-#include "CharacterPanel.h"
+#include "AutomapUiState.h"
+#include "CharacterUiState.h"
 #include "GameWorldUiController.h"
 #include "GameWorldUiModel.h"
 #include "GameWorldUiState.h"
 #include "GameWorldUiView.h"
-#include "LogbookPanel.h"
-#include "PauseMenuPanel.h"
-#include "WorldMapPanel.h"
+#include "LogbookUiState.h"
+#include "PauseMenuUiState.h"
+#include "WorldMapUiState.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
@@ -997,7 +997,7 @@ void GameWorldUI::onCharacterSheetButtonSelected(MouseButtonType mouseButtonType
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
-	game.setPanel<CharacterPanel>();
+	game.setNextContext(CharacterUI::ContextName);
 }
 
 void GameWorldUI::onWeaponToggleButtonSelected(MouseButtonType mouseButtonType)
@@ -1037,11 +1037,11 @@ void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
 
 	if (mouseButtonType == MouseButtonType::Left)
 	{
-		game.setPanel<AutomapPanel>();
+		game.setNextContext(AutomapUI::ContextName);
 	}
 	else if (mouseButtonType == MouseButtonType::Right)
 	{
-		game.setPanel<WorldMapPanel>();
+		game.setNextContext(WorldMapUI::ContextName);
 	}
 	else
 	{
@@ -1071,7 +1071,7 @@ void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
-	game.setPanel<LogbookPanel>();
+	game.setNextContext(LogbookUI::ContextName);
 }
 
 void GameWorldUI::onUseItemButtonSelected(MouseButtonType mouseButtonType)
@@ -1232,6 +1232,6 @@ void GameWorldUI::onPauseMenuInputAction(const InputActionCallbackValues &values
 	if (values.performed)
 	{
 		Game &game = values.game;
-		game.setPanel<PauseMenuPanel>();
+		game.setNextContext(PauseMenuUI::ContextName);
 	}
 }

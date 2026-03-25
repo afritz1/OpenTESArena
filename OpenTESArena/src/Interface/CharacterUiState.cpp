@@ -1,9 +1,9 @@
-#include "CharacterEquipmentPanel.h"
+#include "CharacterEquipmentUiState.h"
 #include "CharacterSheetUiController.h"
 #include "CharacterSheetUiModel.h"
 #include "CharacterSheetUiView.h"
 #include "CharacterUiState.h"
-#include "GameWorldPanel.h"
+#include "GameWorldUiState.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 
@@ -202,14 +202,14 @@ void CharacterUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 {
 	CharacterUiState &state = CharacterUI::state;
 	Game &game = *state.game;
-	game.setPanel<GameWorldPanel>();
+	game.setNextContext(GameWorldUI::ContextName);
 }
 
 void CharacterUI::onNextPageButtonSelected(MouseButtonType mouseButtonType)
 {
 	CharacterUiState &state = CharacterUI::state;
 	Game &game = *state.game;
-	game.setPanel<CharacterEquipmentPanel>();
+	game.setNextContext(CharacterEquipmentUI::ContextName);
 }
 
 void CharacterUI::onBackInputAction(const InputActionCallbackValues &values)

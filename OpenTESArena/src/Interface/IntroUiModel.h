@@ -1,15 +1,14 @@
 #ifndef INTRO_UI_MODEL_H
 #define INTRO_UI_MODEL_H
 
-#include <memory>
+#include <string>
 
 class Game;
-class Panel;
 
 namespace IntroUiModel
 {
-	// Initial panel assigned at engine start.
-	std::unique_ptr<Panel> makeStartupPanel(Game &game);
+	// Decides which UI context to startup with and prepares relevant global UI values.
+	std::string prepareStartupContext(Game &game);
 }
 
 #endif
