@@ -38,7 +38,7 @@ namespace InputActionName
 	constexpr const char *WorldMap = "WorldMap";
 
 	// Main menu.
-	constexpr const char *StartNewGame = "StartNewGame";
+	constexpr const char *NewGame = "NewGame";
 	constexpr const char *LoadGame = "LoadGame";
 	constexpr const char *ExitGame = "ExitGame";
 	constexpr const char *TestGame = "TestGame";

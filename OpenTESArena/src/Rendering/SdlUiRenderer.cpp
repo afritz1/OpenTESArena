@@ -14,7 +14,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Math/Constants.h"
 #include "../Math/Rect.h"
-#include "../UI/RenderSpace.h"
+#include "../UI/UiRenderSpace.h"
 
 #include "components/debug/Debug.h"
 

@@ -12,8 +12,8 @@
 #include "RenderBackend.h"
 #include "RenderBuffer.h"
 #include "RenderCamera.h"
-#include "RenderCommand.h"
 #include "RenderDrawCall.h"
+#include "RenderDrawCommand.h"
 #include "RendererUtils.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
@@ -4483,7 +4483,7 @@ void SoftwareRenderer::setMaterialInstanceTexCoordAnimPercent(RenderMaterialInst
 	inst->texCoordAnimPercent = value;
 }
 
-void SoftwareRenderer::submitFrame(const RenderCommandList &commandList, const RenderCamera &camera,
+void SoftwareRenderer::submitFrame(const RenderDrawCommandList &commandList, const RenderCamera &camera,
 	const RenderFrameSettings &settings, uint32_t *outputBuffer)
 {
 	const int totalDrawCallCount = commandList.getTotalDrawCallCount();

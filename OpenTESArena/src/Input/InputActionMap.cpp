@@ -222,7 +222,7 @@ namespace
 		else if (StringView::equals(mapName, InputActionMapName::MainMenu))
 		{
 			defs.emplace_back(makeKeyDef(
-				InputActionName::StartNewGame,
+				InputActionName::NewGame,
 				InputStateType::BeginPerform,
 				SDLK_s));
 			defs.emplace_back(makeKeyDef(

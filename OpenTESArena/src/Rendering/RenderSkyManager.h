@@ -18,7 +18,7 @@ class WeatherInstance;
 enum class WeatherType;
 
 struct ExeData;
-struct RenderCommandList;
+struct RenderDrawCommandList;
 
 class RenderSkyManager
 {
@@ -88,7 +88,7 @@ public:
 	void shutdown(Renderer &renderer);
 
 	ObjectTextureID getBgTextureID() const;
-	void populateCommandList(RenderCommandList &commandList) const;
+	void populateCommandList(RenderDrawCommandList &commandList) const;
 
 	void loadScene(const SkyInstance &skyInst, const SkyInfoDefinition &skyInfoDef, TextureManager &textureManager, Renderer &renderer);
 	void update(const SkyInstance &skyInst, const SkyVisibilityManager &skyVisManager, const WeatherInstance &weatherInst,

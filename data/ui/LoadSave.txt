@@ -1,0 +1,18 @@
+[Context]
+ContextName=LoadSave
+
+##################################
+
+[LoadSaveBackgroundImage]
+Type=Image
+Texture=LOADSAVE.IMG
+Palette=PAL.COL
+
+##################################
+
+# Hotkeys
+
+[LoadSaveBackInputListener]
+Type=InputListener
+InputActionName=Back
+Callback=LoadSaveUI.onBackInputAction

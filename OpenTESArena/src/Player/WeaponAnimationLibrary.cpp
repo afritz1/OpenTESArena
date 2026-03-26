@@ -5,7 +5,7 @@
 #include "WeaponAnimationLibrary.h"
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
-#include "../Interface/GameWorldUiView.h"
+#include "../Interface/GameWorldUiMVC.h"
 #include "../Items/ArenaItemUtils.h"
 
 #include "components/debug/Debug.h"

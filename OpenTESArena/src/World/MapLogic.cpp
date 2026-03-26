@@ -8,12 +8,12 @@
 #include "../Collision/RayCastTypes.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
-#include "../Interface/GameWorldUiController.h"
-#include "../Interface/WorldMapPanel.h"
+#include "../Interface/GameWorldUiMVC.h"
+#include "../Interface/GameWorldUiState.h"
+#include "../Interface/WorldMapUiState.h"
 #include "../Sky/SkyUtils.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Time/ArenaClockUtils.h"
-#include "../UI/TextBox.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Voxels/VoxelFacing.h"
 
@@ -48,9 +48,8 @@ void MapLogic::handleNightLightChange(Game &game, bool active)
 	}
 }
 
-void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox)
+void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord)
 {
-	GameState &gameState = game.gameState;
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	VoxelChunk *chunkPtr = voxelChunkManager.findChunkAtPosition(coord.chunk);
@@ -90,8 +89,7 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox
 			// Ignore the newline at the end.
 			const std::string &textDefText = textDef.text;
 			const std::string text = textDefText.substr(0, textDefText.size() - 1);
-			triggerTextBox.setText(text);
-			gameState.setTriggerTextDuration(text);
+			GameWorldUI::setTriggerText(text.c_str());
 
 			// Set the text trigger as activated regardless of whether it's single-shot, just for consistency.
 			if (!hasBeenTriggered)
@@ -685,7 +683,7 @@ void MapLogic::handleInteriorLevelTransition(Game &game, const CoordInt3 &player
 		player.setPhysicsPositionRelativeToFeet(playerFeetDestinationPosition);
 		player.setPhysicsVelocity(Double3::Zero);
 
-		game.setPanel<WorldMapPanel>();
+		game.setNextContext(WorldMapUI::ContextName);
 	};
 
 	const int activeLevelIndex = gameState.getActiveLevelIndex();

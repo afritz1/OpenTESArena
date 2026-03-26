@@ -19,118 +19,127 @@
 
 #include "components/utilities/Span.h"
 
-struct ButtonProxy;
+struct UiManager;
 
 using InputListenerID = int;
+
+enum class InputListenerType
+{
+	InputAction,
+	MouseButtonChanged,
+	MouseButtonHeld,
+	MouseScrollChanged,
+	MouseMotion,
+	ApplicationExit,
+	WindowResized,
+	RenderTargetsReset,
+	TextInput
+};
+
+struct InputListenerLookupEntry
+{
+	InputListenerType type; // The array the index points into.
+	int index;
+
+	void init(InputListenerType type, int index);
+};
+
+struct InputActionListenerEntry
+{
+	std::string actionName;
+	InputActionCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const std::string &actionName, const InputActionCallback &callback, const std::string &contextName);
+	void reset();
+};
+
+// Leave these as structs in the event that callback priorities become a thing.
+struct MouseButtonChangedListenerEntry
+{
+	MouseButtonChangedCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const MouseButtonChangedCallback &callback, const std::string &contextName);
+	void reset();
+};
+
+struct MouseButtonHeldListenerEntry
+{
+	MouseButtonHeldCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const MouseButtonHeldCallback &callback, const std::string &contextName);
+	void reset();
+};
+
+struct MouseScrollChangedListenerEntry
+{
+	MouseScrollChangedCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const MouseScrollChangedCallback &callback, const std::string &contextName);
+	void reset();
+};
+
+struct MouseMotionListenerEntry
+{
+	MouseMotionCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const MouseMotionCallback &callback, const std::string &contextName);
+	void reset();
+};
+
+struct ApplicationExitListenerEntry
+{
+	ApplicationExitCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const ApplicationExitCallback &callback, const std::string &contextName);
+	void reset();
+};
+
+struct WindowResizedListenerEntry
+{
+	WindowResizedCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const WindowResizedCallback &callback, const std::string &contextName);
+	void reset();
+};
+
+struct RenderTargetsResetListenerEntry
+{
+	RenderTargetsResetCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const RenderTargetsResetCallback &callback, const std::string &contextName);
+	void reset();
+};
+
+struct TextInputListenerEntry
+{
+	TextInputCallback callback;
+	std::string contextName;
+	bool enabled;
+
+	void init(const TextInputCallback &callback, const std::string &contextName);
+	void reset();
+};
 
 // Handles active input action maps, input listeners, and pointer input events.
 class InputManager
 {
 private:
-	enum class ListenerType
-	{
-		InputAction,
-		MouseButtonChanged,
-		MouseButtonHeld,
-		MouseScrollChanged,
-		MouseMotion,
-		ApplicationExit,
-		WindowResized,
-		RenderTargetsReset,
-		TextInput
-	};
-
-	struct ListenerLookupEntry
-	{
-		ListenerType type; // The array the index points into.
-		int index;
-
-		void init(ListenerType type, int index);
-	};
-
-	struct InputActionListenerEntry
-	{
-		std::string actionName;
-		InputActionCallback callback;
-		bool enabled;
-
-		void init(const std::string_view actionName, const InputActionCallback &callback);
-		void reset();
-	};
-
-	// Leave these as structs in the event that callback priorities become a thing.
-	struct MouseButtonChangedListenerEntry
-	{
-		MouseButtonChangedCallback callback;
-		bool enabled;
-
-		void init(const MouseButtonChangedCallback &callback);
-		void reset();
-	};
-
-	struct MouseButtonHeldListenerEntry
-	{
-		MouseButtonHeldCallback callback;
-		bool enabled;
-
-		void init(const MouseButtonHeldCallback &callback);
-		void reset();
-	};
-
-	struct MouseScrollChangedListenerEntry
-	{
-		MouseScrollChangedCallback callback;
-		bool enabled;
-
-		void init(const MouseScrollChangedCallback &callback);
-		void reset();
-	};
-
-	struct MouseMotionListenerEntry
-	{
-		MouseMotionCallback callback;
-		bool enabled;
-
-		void init(const MouseMotionCallback &callback);
-		void reset();
-	};
-
-	struct ApplicationExitListenerEntry
-	{
-		ApplicationExitCallback callback;
-		bool enabled;
-
-		void init(const ApplicationExitCallback &callback);
-		void reset();
-	};
-
-	struct WindowResizedListenerEntry
-	{
-		WindowResizedCallback callback;
-		bool enabled;
-
-		void init(const WindowResizedCallback &callback);
-		void reset();
-	};
-
-	struct RenderTargetsResetListenerEntry
-	{
-		RenderTargetsResetCallback callback;
-		bool enabled;
-
-		void init(const RenderTargetsResetCallback &callback);
-		void reset();
-	};
-
-	struct TextInputListenerEntry
-	{
-		TextInputCallback callback;
-		bool enabled;
-
-		void init(const TextInputCallback &callback);
-		void reset();
-	};
-
 	std::vector<InputActionMap> inputActionMaps;
 
 	// Listener entry containers.
@@ -145,7 +154,7 @@ private:
 	std::vector<TextInputListenerEntry> textInputListeners;
 
 	// Look-up values for valid listener entries, shared by all listener containers.
-	std::unordered_map<InputListenerID, ListenerLookupEntry> listenerLookupEntries;
+	std::unordered_map<InputListenerID, InputListenerLookupEntry> listenerLookupEntries;
 
 	// Indices to listener entries that were used but can be reclaimed by a future registration.
 	std::vector<int> freedInputActionListenerIndices;
@@ -173,12 +182,13 @@ private:
 	bool isInTextEntryMode() const;
 
 	template<typename EntryType, typename CallbackType>
-	InputListenerID addListenerInternal(CallbackType &&callback, ListenerType listenerType, std::vector<EntryType> &listeners,
-		std::vector<int> &freedListenerIndices);
+	InputListenerID addListenerInternal(CallbackType &&callback, InputListenerType listenerType, const std::string &contextName,
+		std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices);
 	
 	void handleHeldInputs(Game &game, Span<const InputActionMap*> activeMaps,
-		Span<const InputActionListenerEntry*> enabledInputActionListeners, uint32_t mouseState,
-		const Int2 &mousePosition, double dt);
+		Span<const InputActionListenerEntry*> enabledInputActionListeners,
+		Span<const MouseButtonHeldListenerEntry*> enabledMouseButtonHeldListeners,
+		uint32_t mouseState, const Int2 &mousePosition, double dt);
 public:
 	InputManager();
 
@@ -209,15 +219,15 @@ public:
 
 	bool setInputActionMapActive(const std::string &name, bool active);
 
-	InputListenerID addInputActionListener(const std::string_view actionName, const InputActionCallback &callback);
-	InputListenerID addMouseButtonChangedListener(const MouseButtonChangedCallback &callback);
-	InputListenerID addMouseButtonHeldListener(const MouseButtonHeldCallback &callback);
-	InputListenerID addMouseScrollChangedListener(const MouseScrollChangedCallback &callback);
-	InputListenerID addMouseMotionListener(const MouseMotionCallback &callback);
-	InputListenerID addApplicationExitListener(const ApplicationExitCallback &callback);
-	InputListenerID addWindowResizedListener(const WindowResizedCallback &callback);
-	InputListenerID addRenderTargetsResetListener(const RenderTargetsResetCallback &callback);
-	InputListenerID addTextInputListener(const TextInputCallback &callback);
+	InputListenerID addInputActionListener(const std::string &actionName, const InputActionCallback &callback, const std::string &contextName);
+	InputListenerID addMouseButtonChangedListener(const MouseButtonChangedCallback &callback, const std::string &contextName);
+	InputListenerID addMouseButtonHeldListener(const MouseButtonHeldCallback &callback, const std::string &contextName);
+	InputListenerID addMouseScrollChangedListener(const MouseScrollChangedCallback &callback, const std::string &contextName);
+	InputListenerID addMouseMotionListener(const MouseMotionCallback &callback, const std::string &contextName);
+	InputListenerID addApplicationExitListener(const ApplicationExitCallback &callback, const std::string &contextName);
+	InputListenerID addWindowResizedListener(const WindowResizedCallback &callback, const std::string &contextName);
+	InputListenerID addRenderTargetsResetListener(const RenderTargetsResetCallback &callback, const std::string &contextName);
+	InputListenerID addTextInputListener(const TextInputCallback &callback, const std::string &contextName);
 
 	void removeListener(InputListenerID id);
 
@@ -231,7 +241,7 @@ public:
 	void setTextInputMode(bool active);
 
 	// Handle input listener callbacks, etc..
-	void update(Game &game, double dt, Span<const ButtonProxy> buttonProxies, const std::function<void()> &onFinishedProcessingEvent);
+	void update(Game &game, double dt, const UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent);
 };
 
 #endif

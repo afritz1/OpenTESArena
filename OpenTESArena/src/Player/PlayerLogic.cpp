@@ -8,13 +8,11 @@
 #include "../Combat/CombatLogic.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
-#include "../Interface/GameWorldUiController.h"
-#include "../Interface/GameWorldUiModel.h"
-#include "../Interface/GameWorldUiView.h"
+#include "../Interface/GameWorldUiMVC.h"
+#include "../Interface/GameWorldUiState.h"
 #include "../Items/ArenaItemUtils.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
-#include "../UI/TextBox.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../World/CardinalDirection.h"
 #include "../World/CardinalDirectionName.h"
@@ -309,8 +307,7 @@ namespace PlayerLogic
 		return inputAcceleration;
 	}
 
-	void handleRayCastHitVoxel(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, bool debugDestroyVoxel, double ceilingScale,
-		VoxelChunkManager &voxelChunkManager, TextBox &actionTextBox)
+	void handleRayCastHitVoxel(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, bool debugDestroyVoxel, double ceilingScale, VoxelChunkManager &voxelChunkManager)
 	{
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
@@ -419,8 +416,7 @@ namespace PlayerLogic
 
 							const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
 							const std::string requiredDoorKeyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
-							actionTextBox.setText(requiredDoorKeyMsg);
-							gameState.setActionTextDuration(requiredDoorKeyMsg);
+							GameWorldUI::setActionText(requiredDoorKeyMsg.c_str());
 						}
 					}
 				}
@@ -428,28 +424,25 @@ namespace PlayerLogic
 		}
 		else
 		{
-			// Handle secondary click (i.e. right click).
+			// Handle right click.
 			if (ArenaSelectionUtils::isVoxelSelectableAsSecondary(voxelType))
 			{
 				VoxelBuildingNameID buildingNameID;
 				if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
 				{
 					const std::string &buildingName = voxelChunk.buildingNames[buildingNameID];
-					actionTextBox.setText(buildingName);
-					gameState.setActionTextDuration(buildingName);
+					GameWorldUI::setActionText(buildingName.c_str());
 				}
 			}
 		}
 	}
 
-	void handleRayCastHitEntity(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, double ceilingScale, const VoxelChunkManager &voxelChunkManager,
-		EntityChunkManager &entityChunkManager, TextBox &actionTextBox)
+	void handleRayCastHitEntity(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, double ceilingScale, const VoxelChunkManager &voxelChunkManager, EntityChunkManager &entityChunkManager)
 	{
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
 
 		const RayCastEntityHit &entityHit = hit.entityHit;
-
 		GameState &gameState = game.gameState;
 		Player &player = game.player;
 
@@ -473,7 +466,7 @@ namespace PlayerLogic
 				EntityCombatState &combatState = entityChunkManager.getEntityCombatState(entityInst.combatStateID);
 				if (!combatState.isDying)
 				{
-					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef, actionTextBox);
+					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef);
 				}
 
 				if (combatState.isDead)
@@ -1036,8 +1029,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	}
 }
 
-void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool isPrimaryInteraction,
-	bool debugFadeVoxel, TextBox &actionTextBox)
+void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool isPrimaryInteraction, bool debugFadeVoxel)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
@@ -1061,11 +1053,11 @@ void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativeP
 	{
 		if (hit.type == RayCastHitType::Voxel)
 		{
-			handleRayCastHitVoxel(game, hit, isPrimaryInteraction, debugFadeVoxel, ceilingScale, voxelChunkManager, actionTextBox);
+			PlayerLogic::handleRayCastHitVoxel(game, hit, isPrimaryInteraction, debugFadeVoxel, ceilingScale, voxelChunkManager);
 		}
 		else if (hit.type == RayCastHitType::Entity)
 		{
-			handleRayCastHitEntity(game, hit, isPrimaryInteraction, ceilingScale, voxelChunkManager, entityChunkManager, actionTextBox);
+			PlayerLogic::handleRayCastHitEntity(game, hit, isPrimaryInteraction, ceilingScale, voxelChunkManager, entityChunkManager);
 		}
 		else
 		{

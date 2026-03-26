@@ -4,7 +4,6 @@
 #include "../World/Coord.h"
 
 class Game;
-class TextBox;
 
 struct RayCastHit;
 struct TransitionDefinition;
@@ -16,7 +15,7 @@ namespace MapLogic
 	void handleNightLightChange(Game &game, bool active);
 
 	// Sends an "on voxel enter" message for the given voxel and triggers any lore text, riddles, or sound events.
-	void handleTriggersInVoxel(Game &game, const CoordInt3 &coord, TextBox &triggerTextBox);
+	void handleTriggersInVoxel(Game &game, const CoordInt3 &coord);
 
 	// Handles the door open animation and sound.
 	void handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt3 &voxel, double ceilingScale, bool isApplyingDoorKeyToLock, int doorKeyID, bool isWeaponBashing);

@@ -15,8 +15,8 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
-#include "../Interface/GameWorldUiController.h"
-#include "../Interface/GameWorldUiView.h"
+#include "../Interface/GameWorldUiMVC.h"
+#include "../Interface/GameWorldUiState.h"
 #include "../Math/Constants.h"
 #include "../Player/Player.h"
 #include "../Player/PlayerLogic.h"
@@ -27,7 +27,6 @@
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ClockLibrary.h"
 #include "../UI/TextAlignment.h"
-#include "../UI/TextBox.h"
 #include "../UI/TextRenderUtils.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
@@ -57,9 +56,6 @@ GameState::GameState()
 
 	this->isLevelTransitionCalculationPending = false;
 
-	this->triggerTextRemainingSeconds = 0.0;
-	this->actionTextRemainingSeconds = 0.0;
-	this->effectTextRemainingSeconds = 0.0;
 	this->clearSession();
 }
 
@@ -446,21 +442,6 @@ bool GameState::isFogActive() const
 	}
 }
 
-bool GameState::triggerTextIsVisible() const
-{
-	return this->triggerTextRemainingSeconds > 0.0;
-}
-
-bool GameState::actionTextIsVisible() const
-{
-	return this->actionTextRemainingSeconds > 0.0;
-}
-
-bool GameState::effectTextIsVisible() const
-{
-	return this->effectTextRemainingSeconds > 0.0;
-}
-
 void GameState::setIsCamping(bool isCamping)
 {
 	this->isCamping = isCamping;
@@ -469,37 +450,6 @@ void GameState::setIsCamping(bool isCamping)
 void GameState::setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData)
 {
 	this->travelData = std::move(travelData);
-}
-
-void GameState::setTriggerTextDuration(const std::string_view text)
-{
-	this->triggerTextRemainingSeconds = GameWorldUiView::getTriggerTextSeconds(text);
-}
-
-void GameState::setActionTextDuration(const std::string_view text)
-{
-	this->actionTextRemainingSeconds = GameWorldUiView::getActionTextSeconds(text);
-}
-
-void GameState::setEffectTextDuration(const std::string_view text)
-{
-	// @todo
-	DebugNotImplemented();
-}
-
-void GameState::resetTriggerTextDuration()
-{
-	this->triggerTextRemainingSeconds = 0.0;
-}
-
-void GameState::resetActionTextDuration()
-{
-	this->actionTextRemainingSeconds = 0.0;
-}
-
-void GameState::resetEffectTextDuration()
-{
-	this->effectTextRemainingSeconds = 0.0;
 }
 
 void GameState::clearMaps()
@@ -860,19 +810,19 @@ void GameState::tickWeather(double dt, Game &game)
 
 void GameState::tickUiMessages(double dt)
 {
-	if (this->triggerTextIsVisible())
+	if (GameWorldUI::isTriggerTextVisible())
 	{
-		this->triggerTextRemainingSeconds -= dt;
+		GameWorldUI::state.triggerTextRemainingSeconds  -= dt;
 	}
 
-	if (this->actionTextIsVisible())
+	if (GameWorldUI::isActionTextVisible())
 	{
-		this->actionTextRemainingSeconds -= dt;
+		GameWorldUI::state.actionTextRemainingSeconds -= dt;
 	}
 
-	if (this->effectTextIsVisible())
+	if (GameWorldUI::isEffectTextVisible())
 	{
-		this->effectTextRemainingSeconds -= dt;
+		GameWorldUI::state.effectTextRemainingSeconds -= dt;
 	}
 }
 

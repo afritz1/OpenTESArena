@@ -1,0 +1,18 @@
+[Context]
+ContextName=Cinematic
+
+##################################
+
+[CinematicSkipButton]
+Type=Button
+Size=320,200
+Callback=CinematicUI.onSkipButtonSelected
+
+##################################
+
+# Hotkeys
+
+[CinematicSkipInputListener]
+Type=InputListener
+InputActionName=Skip
+Callback=CinematicUI.onSkipInputAction

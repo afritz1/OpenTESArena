@@ -8,7 +8,6 @@
 
 class Game;
 class Random;
-class TextBox;
 
 struct Rect;
 
@@ -44,8 +43,7 @@ namespace PlayerLogic
 
 	// Handles the behavior of the player clicking in the game world. "primaryInteraction" is true for left clicks,
 	// false for right clicks.
-	void handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool primaryInteraction,
-		bool debugFadeVoxel, TextBox &actionTextBox);
+	void handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool primaryInteraction, bool debugFadeVoxel);
 }
 
 #endif

@@ -9,7 +9,6 @@
 #include "InputStateType.h"
 #include "../Game/Game.h"
 #include "../Rendering/Renderer.h"
-#include "../UI/Button.h"
 
 #include "components/debug/Debug.h"
 
@@ -55,119 +54,137 @@ namespace
 	}
 }
 
-void InputManager::ListenerLookupEntry::init(ListenerType type, int index)
+void InputListenerLookupEntry::init(InputListenerType type, int index)
 {
 	this->type = type;
 	this->index = index;
 }
 
-void InputManager::InputActionListenerEntry::init(const std::string_view actionName, const InputActionCallback &callback)
+void InputActionListenerEntry::init(const std::string &actionName, const InputActionCallback &callback, const std::string &contextName)
 {
-	this->actionName = std::string(actionName);
+	this->actionName = actionName;
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::InputActionListenerEntry::reset()
+void InputActionListenerEntry::reset()
 {
 	this->actionName.clear();
 	this->callback = [](const InputActionCallbackValues&) { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
-void InputManager::MouseButtonChangedListenerEntry::init(const MouseButtonChangedCallback &callback)
+void MouseButtonChangedListenerEntry::init(const MouseButtonChangedCallback &callback, const std::string &contextName)
 {
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::MouseButtonChangedListenerEntry::reset()
+void MouseButtonChangedListenerEntry::reset()
 {
 	this->callback = [](Game&, MouseButtonType, const Int2&, bool) { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
-void InputManager::MouseButtonHeldListenerEntry::init(const MouseButtonHeldCallback &callback)
+void MouseButtonHeldListenerEntry::init(const MouseButtonHeldCallback &callback, const std::string &contextName)
 {
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::MouseButtonHeldListenerEntry::reset()
+void MouseButtonHeldListenerEntry::reset()
 {
 	this->callback = [](Game&, MouseButtonType, const Int2&, double) { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
-void InputManager::MouseScrollChangedListenerEntry::init(const MouseScrollChangedCallback &callback)
+void MouseScrollChangedListenerEntry::init(const MouseScrollChangedCallback &callback, const std::string &contextName)
 {
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::MouseScrollChangedListenerEntry::reset()
+void MouseScrollChangedListenerEntry::reset()
 {
 	this->callback = [](Game&, MouseWheelScrollType, const Int2&) { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
-void InputManager::MouseMotionListenerEntry::init(const MouseMotionCallback &callback)
+void MouseMotionListenerEntry::init(const MouseMotionCallback &callback, const std::string &contextName)
 {
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::MouseMotionListenerEntry::reset()
+void MouseMotionListenerEntry::reset()
 {
 	this->callback = [](Game&, int, int) { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
-void InputManager::ApplicationExitListenerEntry::init(const ApplicationExitCallback &callback)
+void ApplicationExitListenerEntry::init(const ApplicationExitCallback &callback, const std::string &contextName)
 {
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::ApplicationExitListenerEntry::reset()
+void ApplicationExitListenerEntry::reset()
 {
 	this->callback = []() { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
-void InputManager::WindowResizedListenerEntry::init(const WindowResizedCallback &callback)
+void WindowResizedListenerEntry::init(const WindowResizedCallback &callback, const std::string &contextName)
 {
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::WindowResizedListenerEntry::reset()
+void WindowResizedListenerEntry::reset()
 {
 	this->callback = [](int, int) { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
-void InputManager::RenderTargetsResetListenerEntry::init(const RenderTargetsResetCallback &callback)
+void RenderTargetsResetListenerEntry::init(const RenderTargetsResetCallback &callback, const std::string &contextName)
 {
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::RenderTargetsResetListenerEntry::reset()
+void RenderTargetsResetListenerEntry::reset()
 {
 	this->callback = []() { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
-void InputManager::TextInputListenerEntry::init(const TextInputCallback &callback)
+void TextInputListenerEntry::init(const TextInputCallback &callback, const std::string &contextName)
 {
 	this->callback = callback;
+	this->contextName = contextName;
 	this->enabled = true;
 }
 
-void InputManager::TextInputListenerEntry::reset()
+void TextInputListenerEntry::reset()
 {
 	this->callback = [](const std::string_view&) { };
+	this->contextName.clear();
 	this->enabled = false;
 }
 
@@ -182,12 +199,12 @@ InputManager::InputManager()
 void InputManager::init(double logicalToPixelScale)
 {
 	DebugLog("Initializing.");
-	
+
 	// Add input action maps to be enabled/disabled as needed.
 	this->inputActionMaps = InputActionMap::loadDefaultMaps();
 
 	this->logicalToPixelScale = logicalToPixelScale;
-	
+
 	// Disable text input mode (for some reason it's on by default)?
 	this->setTextInputMode(false);
 }
@@ -312,7 +329,7 @@ Int2 InputManager::getMousePosition() const
 {
 	int logicalX, logicalY;
 	SDL_GetMouseState(&logicalX, &logicalY);
-	
+
 	const int pixelX = static_cast<int>(static_cast<double>(logicalX) * this->logicalToPixelScale);
 	const int pixelY = static_cast<int>(static_cast<double>(logicalY) * this->logicalToPixelScale);
 	return Int2(pixelX, pixelY);
@@ -350,7 +367,7 @@ bool InputManager::setInputActionMapActive(const std::string &name, bool active)
 }
 
 template<typename EntryType, typename CallbackType>
-InputListenerID InputManager::addListenerInternal(CallbackType &&callback, ListenerType listenerType,
+InputListenerID InputManager::addListenerInternal(CallbackType &&callback, InputListenerType listenerType, const std::string &contextName,
 	std::vector<EntryType> &listeners, std::vector<int> &freedListenerIndices)
 {
 	int insertIndex;
@@ -367,18 +384,18 @@ InputListenerID InputManager::addListenerInternal(CallbackType &&callback, Liste
 
 	DebugAssertIndex(listeners, insertIndex);
 	EntryType &listenerEntry = listeners[insertIndex];
-	listenerEntry.init(callback);
+	listenerEntry.init(callback, contextName);
 
 	const InputListenerID listenerID = this->getNextListenerID();
 
-	ListenerLookupEntry lookupEntry;
+	InputListenerLookupEntry lookupEntry;
 	lookupEntry.init(listenerType, insertIndex);
 	this->listenerLookupEntries.emplace(listenerID, std::move(lookupEntry));
 
 	return listenerID;
 }
 
-InputListenerID InputManager::addInputActionListener(const std::string_view actionName, const InputActionCallback &callback)
+InputListenerID InputManager::addInputActionListener(const std::string &actionName, const InputActionCallback &callback, const std::string &contextName)
 {
 	int insertIndex;
 	if (!this->freedInputActionListenerIndices.empty())
@@ -394,62 +411,62 @@ InputListenerID InputManager::addInputActionListener(const std::string_view acti
 
 	DebugAssertIndex(this->inputActionListeners, insertIndex);
 	InputActionListenerEntry &listenerEntry = this->inputActionListeners[insertIndex];
-	listenerEntry.init(actionName, callback);
+	listenerEntry.init(actionName, callback, contextName);
 
 	const InputListenerID listenerID = this->getNextListenerID();
 
-	ListenerLookupEntry lookupEntry;
-	lookupEntry.init(ListenerType::InputAction, insertIndex);
+	InputListenerLookupEntry lookupEntry;
+	lookupEntry.init(InputListenerType::InputAction, insertIndex);
 	this->listenerLookupEntries.emplace(listenerID, std::move(lookupEntry));
 
 	return listenerID;
 }
 
-InputListenerID InputManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback)
+InputListenerID InputManager::addMouseButtonChangedListener(const MouseButtonChangedCallback &callback, const std::string &contextName)
 {
-	return this->addListenerInternal(callback, ListenerType::MouseButtonChanged,
+	return this->addListenerInternal(callback, InputListenerType::MouseButtonChanged, contextName,
 		this->mouseButtonChangedListeners, this->freedMouseButtonChangedListenerIndices);
 }
 
-InputListenerID InputManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback)
+InputListenerID InputManager::addMouseButtonHeldListener(const MouseButtonHeldCallback &callback, const std::string &contextName)
 {
-	return this->addListenerInternal(callback, ListenerType::MouseButtonHeld,
+	return this->addListenerInternal(callback, InputListenerType::MouseButtonHeld, contextName,
 		this->mouseButtonHeldListeners, this->freedMouseButtonHeldListenerIndices);
 }
 
-InputListenerID InputManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback)
+InputListenerID InputManager::addMouseScrollChangedListener(const MouseScrollChangedCallback &callback, const std::string &contextName)
 {
-	return this->addListenerInternal(callback, ListenerType::MouseScrollChanged,
+	return this->addListenerInternal(callback, InputListenerType::MouseScrollChanged, contextName,
 		this->mouseScrollChangedListeners, this->freedMouseScrollChangedListenerIndices);
 }
 
-InputListenerID InputManager::addMouseMotionListener(const MouseMotionCallback &callback)
+InputListenerID InputManager::addMouseMotionListener(const MouseMotionCallback &callback, const std::string &contextName)
 {
-	return this->addListenerInternal(callback, ListenerType::MouseMotion,
+	return this->addListenerInternal(callback, InputListenerType::MouseMotion, contextName,
 		this->mouseMotionListeners, this->freedMouseMotionListenerIndices);
 }
 
-InputListenerID InputManager::addApplicationExitListener(const ApplicationExitCallback &callback)
+InputListenerID InputManager::addApplicationExitListener(const ApplicationExitCallback &callback, const std::string &contextName)
 {
-	return this->addListenerInternal(callback, ListenerType::ApplicationExit,
+	return this->addListenerInternal(callback, InputListenerType::ApplicationExit, contextName,
 		this->applicationExitListeners, this->freedApplicationExitListenerIndices);
 }
 
-InputListenerID InputManager::addWindowResizedListener(const WindowResizedCallback &callback)
+InputListenerID InputManager::addWindowResizedListener(const WindowResizedCallback &callback, const std::string &contextName)
 {
-	return this->addListenerInternal(callback, ListenerType::WindowResized,
+	return this->addListenerInternal(callback, InputListenerType::WindowResized, contextName,
 		this->windowResizedListeners, this->freedWindowResizedListenerIndices);
 }
 
-InputListenerID InputManager::addRenderTargetsResetListener(const RenderTargetsResetCallback &callback)
+InputListenerID InputManager::addRenderTargetsResetListener(const RenderTargetsResetCallback &callback, const std::string &contextName)
 {
-	return this->addListenerInternal(callback, ListenerType::RenderTargetsReset,
+	return this->addListenerInternal(callback, InputListenerType::RenderTargetsReset, contextName,
 		this->renderTargetsResetListeners, this->freedRenderTargetsResetListenerIndices);
 }
 
-InputListenerID InputManager::addTextInputListener(const TextInputCallback &callback)
+InputListenerID InputManager::addTextInputListener(const TextInputCallback &callback, const std::string &contextName)
 {
-	return this->addListenerInternal(callback, ListenerType::TextInput,
+	return this->addListenerInternal(callback, InputListenerType::TextInput, contextName,
 		this->textInputListeners, this->freedTextInputListenerIndices);
 }
 
@@ -481,42 +498,42 @@ void InputManager::removeListener(InputListenerID id)
 	const auto iter = this->listenerLookupEntries.find(id);
 	if (iter != this->listenerLookupEntries.end())
 	{
-		const ListenerLookupEntry &lookupEntry = iter->second;
-		const ListenerType listenerType = lookupEntry.type;
+		const InputListenerLookupEntry &lookupEntry = iter->second;
+		const InputListenerType listenerType = lookupEntry.type;
 		const int index = lookupEntry.index;
-		if (listenerType == ListenerType::InputAction)
+		if (listenerType == InputListenerType::InputAction)
 		{
 			resetListenerEntry(this->inputActionListeners, this->freedInputActionListenerIndices, index);
 		}
-		else if (listenerType == ListenerType::MouseButtonChanged)
+		else if (listenerType == InputListenerType::MouseButtonChanged)
 		{
 			resetListenerEntry(this->mouseButtonChangedListeners, this->freedMouseButtonChangedListenerIndices, index);
 		}
-		else if (listenerType == ListenerType::MouseButtonHeld)
+		else if (listenerType == InputListenerType::MouseButtonHeld)
 		{
 			resetListenerEntry(this->mouseButtonHeldListeners, this->freedMouseButtonHeldListenerIndices, index);
 		}
-		else if (listenerType == ListenerType::MouseScrollChanged)
+		else if (listenerType == InputListenerType::MouseScrollChanged)
 		{
 			resetListenerEntry(this->mouseScrollChangedListeners, this->freedMouseScrollChangedListenerIndices, index);
 		}
-		else if (listenerType == ListenerType::MouseMotion)
+		else if (listenerType == InputListenerType::MouseMotion)
 		{
 			resetListenerEntry(this->mouseMotionListeners, this->freedMouseMotionListenerIndices, index);
 		}
-		else if (listenerType == ListenerType::ApplicationExit)
+		else if (listenerType == InputListenerType::ApplicationExit)
 		{
 			resetListenerEntry(this->applicationExitListeners, this->freedApplicationExitListenerIndices, index);
 		}
-		else if (listenerType == ListenerType::WindowResized)
+		else if (listenerType == InputListenerType::WindowResized)
 		{
 			resetListenerEntry(this->windowResizedListeners, this->freedWindowResizedListenerIndices, index);
 		}
-		else if (listenerType == ListenerType::RenderTargetsReset)
+		else if (listenerType == InputListenerType::RenderTargetsReset)
 		{
 			resetListenerEntry(this->renderTargetsResetListeners, this->freedRenderTargetsResetListenerIndices, index);
 		}
-		else if (listenerType == ListenerType::TextInput)
+		else if (listenerType == InputListenerType::TextInput)
 		{
 			resetListenerEntry(this->textInputListeners, this->freedTextInputListenerIndices, index);
 		}
@@ -551,38 +568,38 @@ void InputManager::setListenerEnabled(InputListenerID id, bool enabled)
 		vec[index].enabled = enabled;
 	};
 
-	const ListenerLookupEntry &lookupEntry = iter->second;
-	const ListenerType listenerType = lookupEntry.type;
+	const InputListenerLookupEntry &lookupEntry = iter->second;
+	const InputListenerType listenerType = lookupEntry.type;
 	const int index = lookupEntry.index;
-	if (listenerType == ListenerType::InputAction)
+	if (listenerType == InputListenerType::InputAction)
 	{
 		setEnabled(this->inputActionListeners, index);
 	}
-	else if (listenerType == ListenerType::MouseButtonChanged)
+	else if (listenerType == InputListenerType::MouseButtonChanged)
 	{
 		setEnabled(this->mouseButtonChangedListeners, index);
 	}
-	else if (listenerType == ListenerType::MouseButtonHeld)
+	else if (listenerType == InputListenerType::MouseButtonHeld)
 	{
 		setEnabled(this->mouseButtonHeldListeners, index);
 	}
-	else if (listenerType == ListenerType::MouseScrollChanged)
+	else if (listenerType == InputListenerType::MouseScrollChanged)
 	{
 		setEnabled(this->mouseScrollChangedListeners, index);
 	}
-	else if (listenerType == ListenerType::MouseMotion)
+	else if (listenerType == InputListenerType::MouseMotion)
 	{
 		setEnabled(this->mouseMotionListeners, index);
 	}
-	else if (listenerType == ListenerType::ApplicationExit)
+	else if (listenerType == InputListenerType::ApplicationExit)
 	{
 		setEnabled(this->applicationExitListeners, index);
 	}
-	else if (listenerType == ListenerType::WindowResized)
+	else if (listenerType == InputListenerType::WindowResized)
 	{
 		setEnabled(this->windowResizedListeners, index);
 	}
-	else if (listenerType == ListenerType::TextInput)
+	else if (listenerType == InputListenerType::TextInput)
 	{
 		setEnabled(this->textInputListeners, index);
 	}
@@ -605,21 +622,19 @@ bool InputManager::isInTextEntryMode() const
 }
 
 void InputManager::handleHeldInputs(Game &game, Span<const InputActionMap*> activeMaps,
-	Span<const InputActionListenerEntry*> enabledInputActionListeners,
+	Span<const InputActionListenerEntry*> enabledInputActionListeners, 
+	Span<const MouseButtonHeldListenerEntry*> enabledMouseButtonHeldListeners,
 	uint32_t mouseState, const Int2 &mousePosition, double dt)
 {
-	auto handleHeldMouseButton = [this, &game, mouseState, &mousePosition, dt](MouseButtonType buttonType)
+	auto handleHeldMouseButton = [this, &game, enabledMouseButtonHeldListeners, mouseState, &mousePosition, dt](MouseButtonType buttonType)
 	{
 		const int sdlMouseButton = GetSdlMouseButton(buttonType);
 		const bool isButtonHeld = (mouseState & SDL_BUTTON(sdlMouseButton)) != 0;
 		if (isButtonHeld)
 		{
-			for (const MouseButtonHeldListenerEntry &entry : this->mouseButtonHeldListeners)
+			for (const MouseButtonHeldListenerEntry *entry : enabledMouseButtonHeldListeners)
 			{
-				if (entry.enabled)
-				{
-					entry.callback(game, buttonType, mousePosition, dt);
-				}
+				entry->callback(game, buttonType, mousePosition, dt);
 			}
 		}
 	};
@@ -668,8 +683,7 @@ void InputManager::handleHeldInputs(Game &game, Span<const InputActionMap*> acti
 	}
 }
 
-void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonProxies,
-	const std::function<void()> &onFinishedProcessingEvent)
+void InputManager::update(Game &game, double dt, const UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent)
 {
 	int logicalMouseDeltaX, logicalMouseDeltaY;
 	SDL_GetRelativeMouseState(&logicalMouseDeltaX, &logicalMouseDeltaY);
@@ -697,7 +711,7 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 	std::vector<const InputActionListenerEntry*> enabledInputActionListeners;
 	for (const InputActionListenerEntry &entry : this->inputActionListeners)
 	{
-		if (entry.enabled)
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
 		{
 			enabledInputActionListeners.emplace_back(&entry);
 		}
@@ -706,16 +720,25 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 	std::vector<const MouseButtonChangedListenerEntry*> enabledMouseButtonChangedListeners;
 	for (const MouseButtonChangedListenerEntry &entry : this->mouseButtonChangedListeners)
 	{
-		if (entry.enabled)
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
 		{
 			enabledMouseButtonChangedListeners.emplace_back(&entry);
+		}
+	}
+
+	std::vector<const MouseButtonHeldListenerEntry*> enabledMouseButtonHeldListeners;
+	for (const MouseButtonHeldListenerEntry &entry : this->mouseButtonHeldListeners)
+	{
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
+		{
+			enabledMouseButtonHeldListeners.emplace_back(&entry);
 		}
 	}
 
 	std::vector<const MouseScrollChangedListenerEntry*> enabledMouseScrollChangedListeners;
 	for (const MouseScrollChangedListenerEntry &entry : this->mouseScrollChangedListeners)
 	{
-		if (entry.enabled)
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
 		{
 			enabledMouseScrollChangedListeners.emplace_back(&entry);
 		}
@@ -724,7 +747,7 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 	std::vector<const MouseMotionListenerEntry*> enabledMouseMotionListeners;
 	for (const MouseMotionListenerEntry &entry : this->mouseMotionListeners)
 	{
-		if (entry.enabled)
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
 		{
 			enabledMouseMotionListeners.emplace_back(&entry);
 		}
@@ -733,7 +756,7 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 	std::vector<const ApplicationExitListenerEntry*> enabledApplicationExitListeners;
 	for (const ApplicationExitListenerEntry &entry : this->applicationExitListeners)
 	{
-		if (entry.enabled)
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
 		{
 			enabledApplicationExitListeners.emplace_back(&entry);
 		}
@@ -742,7 +765,7 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 	std::vector<const WindowResizedListenerEntry*> enabledWindowResizedListeners;
 	for (const WindowResizedListenerEntry &entry : this->windowResizedListeners)
 	{
-		if (entry.enabled)
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
 		{
 			enabledWindowResizedListeners.emplace_back(&entry);
 		}
@@ -751,7 +774,7 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 	std::vector<const RenderTargetsResetListenerEntry*> enabledRenderTargetsResetListeners;
 	for (const RenderTargetsResetListenerEntry &entry : this->renderTargetsResetListeners)
 	{
-		if (entry.enabled)
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
 		{
 			enabledRenderTargetsResetListeners.emplace_back(&entry);
 		}
@@ -760,18 +783,16 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 	std::vector<const TextInputListenerEntry*> enabledTextInputListeners;
 	for (const TextInputListenerEntry &entry : this->textInputListeners)
 	{
-		if (entry.enabled)
+		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
 		{
 			enabledTextInputListeners.emplace_back(&entry);
 		}
 	}
 
 	// Handle held mouse buttons and keys.
-	const Span<const InputActionMap*> activeMapsView(activeMaps);
-	const Span<const InputActionListenerEntry*> enabledInputActionListenersView(enabledInputActionListeners);
 	const uint32_t mouseState = SDL_GetMouseState(nullptr, nullptr);
 	const Int2 mousePosition = this->getMousePosition();
-	this->handleHeldInputs(game, activeMapsView, enabledInputActionListenersView, mouseState, mousePosition, dt);
+	this->handleHeldInputs(game, activeMaps, enabledInputActionListeners, enabledMouseButtonHeldListeners, mouseState, mousePosition, dt);
 
 	// Handle SDL events.
 	// @todo: make sure to not fire duplicate callbacks for the same input action if it is registered to multiple
@@ -831,25 +852,52 @@ void InputManager::update(Game &game, double dt, Span<const ButtonProxy> buttonP
 				if (isButtonPress)
 				{
 					// Check for clicked buttons in the UI.
-					// @todo: a more "accurate" way to check button clicks might be:
-					// - if button press is in rect, then save it, and if button release is also in that rect, then click.
-					for (const ButtonProxy &buttonProxy : buttonProxies)
-					{
-						const bool isButtonActive = !buttonProxy.isActiveFunc || buttonProxy.isActiveFunc();
-						if (isButtonActive)
-						{
-							const Int2 classicMousePos = game.window.nativeToOriginal(mousePosition);
+					// @improvement: if wanting "button click capture", check if button press is in rect, then save it, and if button release is also in that rect, then click.
+					const Int2 classicMousePosition = game.window.nativeToOriginal(mousePosition);
+					const std::vector<UiElementInstanceID> activeButtonInstIDs = uiManager.getTopMostActiveElementsOfType(UiElementType::Button);
+					const std::vector<UiElementInstanceID> activeListBoxInstIDs = uiManager.getTopMostActiveElementsOfType(UiElementType::ListBox);
 
-							DebugAssert(buttonProxy.rectFunc);
-							const Rect buttonRect = buttonProxy.rectFunc();
-							const Rect buttonParentRect = buttonProxy.parentRect;
-							const bool isValidMouseSelection = buttonRect.contains(classicMousePos) && (buttonParentRect.isEmpty() || buttonParentRect.contains(classicMousePos));
-							const bool matchesButtonType = *buttonType == buttonProxy.buttonType;
-							if (isValidMouseSelection && matchesButtonType)
+					for (const UiElementInstanceID buttonElementInstID : activeButtonInstIDs)
+					{
+						const Rect buttonRect = uiManager.getTransformGlobalRect(buttonElementInstID);
+						const bool isValidMouseSelection = buttonRect.contains(classicMousePosition); // Doesn't need parent rect check anymore since list boxes are handled separately.
+						const bool isMouseButtonValid = uiManager.isMouseButtonValidForButton(buttonElementInstID, *buttonType);
+						if (isValidMouseSelection && isMouseButtonValid)
+						{
+							const UiButtonCallback &buttonCallback = uiManager.getButtonCallback(buttonElementInstID);
+							buttonCallback(*buttonType);
+							break;
+						}
+					}
+
+					bool isListBoxItemCallbackExecuted = false;
+					for (const UiElementInstanceID listBoxElementInstID : activeListBoxInstIDs)
+					{
+						const Rect listBoxRect = uiManager.getTransformGlobalRect(listBoxElementInstID);
+						const bool isMouseWithinListBoxRect = listBoxRect.contains(classicMousePosition);
+						if (!isMouseWithinListBoxRect)
+						{
+							continue;
+						}
+
+						const int listBoxItemCount = uiManager.getListBoxItemCount(listBoxElementInstID);
+						for (int i = 0; i < listBoxItemCount; i++)
+						{
+							const Rect listBoxItemRect = uiManager.getListBoxItemGlobalRect(listBoxElementInstID, i);
+							const bool isValidMouseSelection = listBoxItemRect.contains(classicMousePosition);
+							const bool isMouseButtonValid = uiManager.isMouseButtonValidForListBox(listBoxElementInstID, *buttonType);
+							if (isValidMouseSelection && isMouseButtonValid)
 							{
-								buttonProxy.callback();
+								const UiListBoxItemCallback &listBoxItemCallback = uiManager.getListBoxItemCallback(listBoxElementInstID, i);
+								listBoxItemCallback(*buttonType);
+								isListBoxItemCallbackExecuted = true;
 								break;
 							}
+						}
+
+						if (isListBoxItemCallbackExecuted)
+						{
+							break;
 						}
 					}
 				}

@@ -1,0 +1,22 @@
+[Context]
+ContextName=WorldMap
+
+##################################
+
+[WorldMapImage]
+Type=Image
+Texture=TAMRIEL.MNU
+
+##################################
+
+# Hotkeys
+
+[WorldMapBackInputListener]
+Type=InputListener
+InputActionName=Back
+Callback=WorldMapUI.onBackInputAction
+
+[WorldMapWorldMapInputListener]
+Type=InputListener
+InputActionName=WorldMap
+Callback=WorldMapUI.onBackInputAction

@@ -2,7 +2,7 @@
 #include <numeric>
 #include <optional>
 
-#include "RenderCommand.h"
+#include "RenderDrawCommand.h"
 #include "RenderVoxelChunkManager.h"
 #include "Renderer.h"
 #include "RendererUtils.h"
@@ -1388,7 +1388,7 @@ void RenderVoxelChunkManager::rebuildDrawCallsList(const VoxelFrustumCullingChun
 	}
 }
 
-void RenderVoxelChunkManager::populateCommandList(RenderCommandList &commandList) const
+void RenderVoxelChunkManager::populateCommandList(RenderDrawCommandList &commandList) const
 {
 	if (!this->drawCallsCache.empty())
 	{

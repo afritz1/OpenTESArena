@@ -5,13 +5,13 @@
 UiDrawCallInitInfo::UiDrawCallInitInfo()
 {
 	this->textureID = -1;
-	this->pivotType = PivotType::TopLeft;
+	this->pivotType = UiPivotType::TopLeft;
 	this->activeFunc = UiDrawCall::defaultActiveFunc;
-	this->renderSpace = RenderSpace::Classic;
+	this->renderSpace = UiRenderSpace::Classic;
 }
 
 UiDrawCall::UiDrawCall(const UiDrawCallTextureFunc &textureFunc, const UiDrawCallPositionFunc &positionFunc, const UiDrawCallSizeFunc &sizeFunc,
-	const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect, RenderSpace renderSpace)
+	const UiDrawCallPivotFunc &pivotFunc, const UiDrawCallActiveFunc &activeFunc, const std::optional<Rect> &clipRect, UiRenderSpace renderSpace)
 	: textureFunc(textureFunc), positionFunc(positionFunc), sizeFunc(sizeFunc), pivotFunc(pivotFunc), activeFunc(activeFunc), clipRect(clipRect)
 {
 	DebugAssert(this->textureFunc);
@@ -58,7 +58,7 @@ UiDrawCall::UiDrawCall(const UiDrawCallInitInfo &initInfo)
 
 	if (initInfo.pivotFunc)
 	{
-		DebugAssert(initInfo.pivotType == PivotType::TopLeft);
+		DebugAssert(initInfo.pivotType == UiPivotType::TopLeft);
 		this->pivotFunc = initInfo.pivotFunc;
 	}
 	else
@@ -86,7 +86,7 @@ UiDrawCallSizeFunc UiDrawCall::makeSizeFunc(const Int2 &size)
 	return [size]() { return size; };
 }
 
-UiDrawCallPivotFunc UiDrawCall::makePivotFunc(PivotType pivotType)
+UiDrawCallPivotFunc UiDrawCall::makePivotFunc(UiPivotType pivotType)
 {
 	return [pivotType]() { return pivotType; };
 }

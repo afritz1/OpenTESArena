@@ -1,7 +1,7 @@
 #include <algorithm>
 
 #include "RenderCamera.h"
-#include "RenderCommand.h"
+#include "RenderDrawCommand.h"
 #include "RenderEntityManager.h"
 #include "Renderer.h"
 #include "../Assets/TextureManager.h"
@@ -390,7 +390,7 @@ void RenderEntityManager::loadMaterialsForEntity(EntityDefID entityDefID, Textur
 	}
 }
 
-void RenderEntityManager::populateCommandList(RenderCommandList &commandList) const
+void RenderEntityManager::populateCommandList(RenderDrawCommandList &commandList) const
 {
 	if (!this->drawCallsCache.empty())
 	{

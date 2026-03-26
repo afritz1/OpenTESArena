@@ -1,0 +1,34 @@
+[Context]
+ContextName=ProvinceMap
+
+##################################
+
+# Fullscreen button (required due to overlap with location selection and search/travel/back).
+
+[ProvinceMapFullscreenButton]
+Type=Button
+Size=320,200
+Callback=ProvinceMapUI.onFullscreenButtonSelected
+
+##################################
+
+# Location name
+
+[ProvinceMapLocationTextBox]
+Type=TextBox
+Pivot=Middle
+DrawOrder=3
+WorstCaseText=WWWWWWWWWWWWWWWWWWWWWWWW
+FontName=ARENAFNT.DAT
+TextAlignment=MiddleCenter
+TextColor=158,0,0,255
+Shadow=1,0,48,48,48,255
+
+##################################
+
+# Hotkeys
+
+[ProvinceMapBackInputListener]
+Type=InputListener
+InputActionName=Back
+Callback=ProvinceMapUI.onBackInputAction

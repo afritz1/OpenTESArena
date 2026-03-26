@@ -11,7 +11,7 @@
 
 #include "RenderBuffer.h"
 #include "RenderCamera.h"
-#include "RenderCommand.h"
+#include "RenderDrawCommand.h"
 #include "RenderDrawCall.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
@@ -21,8 +21,8 @@
 #include "Window.h"
 #include "../Math/BoundingBox.h"
 #include "../Math/MathUtils.h"
-#include "../UI/UiCommand.h"
 #include "../UI/Surface.h"
+#include "../UI/UiDrawCommand.h"
 #include "../Utilities/Platform.h"
 #include "../World/MeshUtils.h"
 
@@ -5303,7 +5303,7 @@ void VulkanRenderBackend::setMaterialInstanceTexCoordAnimPercent(RenderMaterialI
 	inst->texCoordAnimPercent = static_cast<float>(value);
 }
 
-void VulkanRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+void VulkanRenderBackend::submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
 	vk::SurfaceCapabilitiesKHR surfaceCapabilities;

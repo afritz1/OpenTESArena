@@ -20,7 +20,7 @@ using PaletteID = int; // 32-bit software surface (generally 256 texels)
 using TextureBuilderID = int; // Intermediate 8/32-bit software surface.
 using TextureFileMetadataID = int; // Metadata for a texture file (texture count, dimensions, etc.).
 
-// Generated texture types. These refer to patterns used with pop-ups and buttons.
+// Generated texture types used with pop-ups and buttons.
 enum class UiTexturePatternType
 {
 	Parchment,

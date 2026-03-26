@@ -30,13 +30,9 @@
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputActionName.h"
 #include "../Interface/CinematicLibrary.h"
-#include "../Interface/CommonUiController.h"
-#include "../Interface/CommonUiView.h"
-#include "../Interface/GameWorldPanel.h"
-#include "../Interface/GameWorldUiModel.h"
-#include "../Interface/GameWorldUiView.h"
-#include "../Interface/IntroUiModel.h"
-#include "../Interface/Panel.h"
+#include "../Interface/CommonUiMVC.h"
+#include "../Interface/GameWorldUiState.h"
+#include "../Interface/IntroUiMVC.h"
 #include "../Items/ItemConditionLibrary.h"
 #include "../Items/ItemLibrary.h"
 #include "../Items/ItemMaterialLibrary.h"
@@ -45,7 +41,7 @@
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/RenderBackendType.h"
 #include "../Rendering/RenderCamera.h"
-#include "../Rendering/RenderCommand.h"
+#include "../Rendering/RenderDrawCommand.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
 #include "../Rendering/RenderFrameSettings.h"
@@ -55,7 +51,10 @@
 #include "../UI/FontLibrary.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommand.h"
+#include "../UI/UiContext.h"
+#include "../UI/UiDrawCommand.h"
+#include "../UI/UiLibrary.h"
+#include "../UI/UiRenderSpace.h"
 #include "../Utilities/Platform.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
@@ -205,9 +204,10 @@ Game::Game()
 {
 	this->physicsTempAllocator = nullptr;
 
-	// Keeps us from deleting a sub-panel the same frame it's in use. The pop is delayed until the
-	// beginning of the next frame.
-	this->requestedSubPanelPop = false;
+	this->globalUiContextInstID = -1;
+	this->cursorImageElementInstID = -1;
+	this->defaultCursorTextureID = -1;
+	this->debugTextBoxElementInstID = -1;
 
 	this->shouldSimulateScene = false;
 	this->shouldRenderScene = false;
@@ -216,38 +216,25 @@ Game::Game()
 
 Game::~Game()
 {
-	if (this->applicationExitListenerID.has_value())
+	if (this->defaultCursorTextureID >= 0)
 	{
-		this->inputManager.removeListener(*this->applicationExitListenerID);
+		this->renderer.freeUiTexture(this->defaultCursorTextureID);
+		this->defaultCursorTextureID = -1;
 	}
 
-	if (this->windowResizedListenerID.has_value())
+	if (this->globalUiContextInstID >= 0)
 	{
-		this->inputManager.removeListener(*this->windowResizedListenerID);
+		this->uiManager.freeContext(this->globalUiContextInstID, this->inputManager, this->renderer);
+		this->globalUiContextInstID = -1;
+		this->cursorImageElementInstID = -1;
+		this->debugTextBoxElementInstID = -1;
 	}
 
-	if (this->renderTargetsResetListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->renderTargetsResetListenerID);
-	}
-
-	if (this->takeScreenshotListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->takeScreenshotListenerID);
-	}
-
-	if (this->debugProfilerListenerID.has_value())
-	{
-		this->inputManager.removeListener(*this->debugProfilerListenerID);
-	}
+	this->nextContextName.clear();
+	this->uiManager.shutdown(this->renderer);
+	this->sceneManager.shutdown(this->renderer);
 
 	this->debugQuadtreeState.free(this->renderer);
-
-	this->sceneManager.renderVoxelChunkManager.shutdown(this->renderer);
-	this->sceneManager.renderEntityManager.shutdown(this->renderer);
-	this->sceneManager.renderSkyManager.shutdown(this->renderer);
-	this->sceneManager.renderWeatherManager.shutdown(this->renderer);
-	this->sceneManager.renderLightManager.shutdown(this->renderer);
 }
 
 bool Game::init()
@@ -286,7 +273,7 @@ bool Game::init()
 
 	const RenderBackendType renderBackendType = static_cast<RenderBackendType>(this->options.getGraphics_GraphicsAPI());
 	const uint32_t windowAdditionalFlags = (renderBackendType == RenderBackendType::Vulkan) ? SDL_WINDOW_VULKAN : 0;
-	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(), 
+	if (!this->window.init(this->options.getGraphics_ScreenWidth(), this->options.getGraphics_ScreenHeight(),
 		static_cast<RenderWindowMode>(this->options.getGraphics_WindowMode()), windowAdditionalFlags, this->options.getGraphics_LetterboxMode(),
 		this->options.getGraphics_ModernInterface()))
 	{
@@ -310,38 +297,6 @@ bool Game::init()
 
 	const double logicalToPixelScale = this->window.getLogicalToPixelScale();
 	this->inputManager.init(logicalToPixelScale);
-
-	// Add application-level input event handlers.
-	this->applicationExitListenerID = this->inputManager.addApplicationExitListener(
-		[this]()
-	{
-		this->handleApplicationExit();
-	});
-
-	this->windowResizedListenerID = this->inputManager.addWindowResizedListener(
-		[this](int width, int height)
-	{
-		this->handleWindowResized(width, height);
-	});
-
-	this->renderTargetsResetListenerID = this->inputManager.addRenderTargetsResetListener(
-		[this]()
-	{
-		this->renderer.handleRenderTargetsReset();
-	});
-
-	this->takeScreenshotListenerID = this->inputManager.addInputActionListener(InputActionName::Screenshot,
-		[this](const InputActionCallbackValues &values)
-	{
-		if (values.performed)
-		{
-			const Surface screenshot = this->renderer.getScreenshot();
-			this->saveScreenshot(screenshot);
-		}
-	});
-
-	this->debugProfilerListenerID = this->inputManager.addInputActionListener(
-		InputActionName::DebugProfiler, CommonUiController::onDebugInputAction);
 
 	// Load various asset libraries.
 	if (!FontLibrary::getInstance().init())
@@ -394,6 +349,13 @@ bool Game::init()
 
 	CinematicLibrary::getInstance().init();
 
+	const std::string uiDataPath = dataFolderPath + "ui/";
+	if (!UiLibrary::getInstance().init(uiDataPath.c_str()))
+	{
+		DebugLogError("Couldn't init UI library.");
+		return false;
+	}
+
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	ItemConditionLibrary::getInstance().init(exeData);
 	ItemMaterialLibrary::getInstance().init(exeData);
@@ -425,6 +387,74 @@ bool Game::init()
 		return false;
 	}
 
+	if (!this->uiManager.init())
+	{
+		DebugLogError("Couldn't init UI manager.");
+		return false;
+	}
+
+	this->defaultCursorTextureID = CommonUiView::allocDefaultCursorTexture(this->textureManager, this->renderer);
+
+	const char *globalUiContextName = UiLibrary::GlobalContextName;
+
+	UiContextInitInfo globalUiContextInitInfo;
+	globalUiContextInitInfo.name = globalUiContextName;
+	globalUiContextInitInfo.drawOrder = 100;
+	this->globalUiContextInstID = this->uiManager.createContext(globalUiContextInitInfo);
+
+	UiElementInitInfo cursorImageElementInitInfo;
+	cursorImageElementInitInfo.name = "MouseCursor";
+	cursorImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	cursorImageElementInitInfo.drawOrder = 0;
+	cursorImageElementInitInfo.renderSpace = UiRenderSpace::Native;
+	this->cursorImageElementInstID = this->uiManager.createImage(cursorImageElementInitInfo, this->defaultCursorTextureID, this->globalUiContextInstID, renderer);
+
+	// Default to sword cursor.
+	this->setCursorOverride(std::nullopt);
+
+	// Add application-level input event handlers.
+	this->uiManager.addApplicationExitListener(
+		[this]()
+	{
+		this->handleApplicationExit();
+	}, globalUiContextName, this->inputManager);
+
+	this->uiManager.addWindowResizedListener(
+		[this](int width, int height)
+	{
+		this->handleWindowResized(width, height);
+	}, globalUiContextName, this->inputManager);
+
+	this->uiManager.addRenderTargetsResetListener(
+		[this]()
+	{
+		this->renderer.handleRenderTargetsReset();
+	}, globalUiContextName, this->inputManager);
+
+	this->uiManager.addInputActionListener(InputActionName::Screenshot,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			const Surface screenshot = this->renderer.getScreenshot();
+			this->saveScreenshot(screenshot);
+		}
+	}, globalUiContextName, this->inputManager);
+
+	this->uiManager.addInputActionListener(InputActionName::DebugProfiler,
+		[this](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			Options &options = this->options;
+
+			// Increment or wrap profiler level.
+			const int oldProfilerLevel = options.getMisc_ProfilerLevel();
+			const int newProfilerLevel = (oldProfilerLevel < Options::MAX_PROFILER_LEVEL) ? (oldProfilerLevel + 1) : Options::MIN_PROFILER_LEVEL;
+			options.setMisc_ProfilerLevel(newProfilerLevel);
+		}
+	}, globalUiContextName, this->inputManager);
+
 	// Initialize window icon.
 	const std::string windowIconPath = dataFolderPath + "icon.bmp";
 	const Surface windowIconSurface = Surface::loadBMP(windowIconPath.c_str(), RendererUtils::DEFAULT_PIXELFORMAT);
@@ -438,38 +468,43 @@ bool Game::init()
 	SDL_SetColorKey(windowIconSurface.get(), SDL_TRUE, windowIconColorKey);
 	this->window.setIcon(windowIconSurface);
 
-	// Initialize click regions for player movement in classic interface mode.
-	const Int2 windowDims = this->window.getPixelDimensions();
-	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
-
 	// Random seed.
 	this->random.init();
 
 	// Initialize debug display.
-	const TextBoxInitInfo debugInfoTextBoxInitInfo = CommonUiView::getDebugInfoTextBoxInitInfo(FontLibrary::getInstance());
-	if (!this->debugInfoTextBox.init(debugInfoTextBoxInitInfo, this->renderer))
+	UiElementInitInfo debugTextBoxElementInitInfo;
+	debugTextBoxElementInitInfo.name = "DebugTextBox";
+	debugTextBoxElementInitInfo.position = Int2(2, 2);
+	debugTextBoxElementInitInfo.drawOrder = 1;
+
+	std::string debugTextBoxDummyText;
+	for (int i = 0; i < 18; i++)
 	{
-		DebugLogError("Couldn't init debug info text box.");
-		return false;
+		if (debugTextBoxDummyText.length() > 0)
+		{
+			debugTextBoxDummyText += '\n';
+		}
+
+		debugTextBoxDummyText += std::string(30, TextRenderUtils::LARGEST_CHAR);
 	}
+	
+	UiTextBoxInitInfo debugTextBoxInitInfo;
+	debugTextBoxInitInfo.worstCaseText = debugTextBoxDummyText;
+	debugTextBoxInitInfo.fontName = CommonUiView::DebugInfoFontName;
+	debugTextBoxInitInfo.defaultColor = CommonUiView::getDebugInfoTextBoxColor();
+	debugTextBoxInitInfo.alignment = CommonUiView::DebugInfoTextAlignment;
+	debugTextBoxInitInfo.shadowInfo = TextRenderShadowInfo(1, 1, Colors::Black);
+	this->debugTextBoxElementInstID = uiManager.createTextBox(debugTextBoxElementInitInfo, debugTextBoxInitInfo, this->globalUiContextInstID, this->renderer);
 
 	this->debugQuadtreeState = GameWorldUiView::allocDebugVoxelVisibilityQuadtreeState(this->renderer);
 
 	// Use an in-game texture as the cursor instead of system cursor.
 	SDL_ShowCursor(SDL_FALSE);
 
-	// Leave some members null for now. The "next panel" is a temporary used by the game
-	// to avoid corruption between panel events which change the panel.
+	DebugAssert(this->nextContextName.empty());
 	DebugAssert(this->charCreationState == nullptr);
-	DebugAssert(this->nextPanel == nullptr);
-	DebugAssert(this->nextSubPanel == nullptr);
 
 	return true;
-}
-
-Panel *Game::getActivePanel() const
-{
-	return (this->subPanels.size() > 0) ? this->subPanels.back().get() : this->panel.get();
 }
 
 bool Game::characterCreationIsActive() const
@@ -483,65 +518,38 @@ CharacterCreationState &Game::getCharacterCreationState() const
 	return *this->charCreationState.get();
 }
 
-const Rect &Game::getNativeCursorRegion(int index) const
+void Game::setNextContext(const char *contextName)
 {
-	DebugAssertIndex(this->nativeCursorRegions, index);
-	return this->nativeCursorRegions[index];
-}
-
-TextBox *Game::getTriggerTextBox()
-{
-	DebugAssert(this->shouldSimulateScene);
-	DebugAssert(this->gameState.isActiveMapValid());
-
-	Panel *panel = this->getActivePanel();
-	if (panel == nullptr)
-	{
-		DebugLogError("No active panel for trigger text box getter.");
-		return nullptr;
-	}
-
-	GameWorldPanel *gameWorldPanel = static_cast<GameWorldPanel*>(panel); // @todo: can't use dynamic_cast anymore, this isn't safe.
-	return &gameWorldPanel->getTriggerTextBox();
-}
-
-TextBox *Game::getActionTextBox()
-{
-	DebugAssert(this->shouldSimulateScene);
-	DebugAssert(this->gameState.isActiveMapValid());
-
-	Panel *panel = this->getActivePanel();
-	if (panel == nullptr)
-	{
-		DebugLogError("No active panel for trigger text box getter.");
-		return nullptr;
-	}
-
-	GameWorldPanel *gameWorldPanel = static_cast<GameWorldPanel*>(panel); // @todo: can't use dynamic_cast anymore, this isn't safe.
-	return &gameWorldPanel->getActionTextBox();
-}
-
-void Game::pushSubPanel(std::unique_ptr<Panel> nextSubPanel)
-{
-	this->nextSubPanel = std::move(nextSubPanel);
-}
-
-void Game::popSubPanel()
-{
-	// The active sub-panel must not pop more than one sub-panel, because it may 
-	// have unintended side effects for other panels below it.
-	DebugAssertMsg(!this->requestedSubPanelPop, "Already scheduled to pop sub-panel.");
-
-	// If there are no sub-panels, then there is only the main panel, and panels 
-	// should never have any sub-panels to pop.
-	DebugAssertMsg(this->subPanels.size() > 0, "No sub-panels to pop.");
-
-	this->requestedSubPanelPop = true;
+	this->nextContextName = std::string(contextName);
 }
 
 void Game::setCharacterCreationState(std::unique_ptr<CharacterCreationState> charCreationState)
 {
 	this->charCreationState = std::move(charCreationState);
+}
+
+void Game::setCursorOverride(const std::optional<UiCursorOverrideState> &state)
+{
+	UiTextureID textureID = this->defaultCursorTextureID;
+	UiPivotType pivotType = UiPivotType::TopLeft;
+	if (state.has_value())
+	{
+		textureID = state->textureID;
+		pivotType = state->pivotType;
+	}
+
+	this->uiManager.setImageTexture(this->cursorImageElementInstID, textureID);
+	this->uiManager.setTransformPivot(this->cursorImageElementInstID, pivotType);
+
+	const std::optional<Int2> textureDims = this->renderer.tryGetUiTextureDims(textureID);
+	DebugAssert(textureDims.has_value());
+
+	const double cursorScale = this->options.getGraphics_CursorScale();
+	const Int2 cursorSize(
+		static_cast<int>(static_cast<double>(textureDims->x) * cursorScale),
+		static_cast<int>(static_cast<double>(textureDims->y) * cursorScale));
+
+	this->uiManager.setTransformSize(this->cursorImageElementInstID, cursorSize);
 }
 
 void Game::initOptions(const std::string &basePath, const std::string &optionsPath)
@@ -571,15 +579,12 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 	// Resize the window, and the 3D renderer if initialized.
 	this->renderer.resize(windowWidth, windowHeight);
 
-	// Update where the mouse can click for player movement in the classic interface.
-	this->updateNativeCursorRegions(windowWidth, windowHeight);
-
 	if (this->gameState.isActiveMapValid())
 	{
 		// Update frustum culling in case the aspect ratio widens while there's a game world pop-up.
 		const WorldDouble3 playerPosition = this->player.getEyePosition();
 		const double tallPixelRatio = RendererUtils::getTallPixelRatio(this->options.getGraphics_TallPixelCorrection());
-		
+
 		RenderCamera renderCamera;
 		renderCamera.init(playerPosition, this->player.angleX, this->player.angleY, this->options.getGraphics_VerticalFOV(), this->window.getSceneViewAspectRatio(), tallPixelRatio);
 
@@ -597,7 +602,7 @@ void Game::saveScreenshot(const Surface &surface)
 	if (!Directory::exists(directoryNamePtr))
 	{
 		Directory::createRecursively(directoryNamePtr);
-	}	
+	}
 
 	std::error_code code;
 	const std::filesystem::directory_iterator dirIter(directoryName, code);
@@ -606,7 +611,7 @@ void Game::saveScreenshot(const Surface &surface)
 		DebugLogWarning("Couldn't create directory iterator for \"" + std::string(directoryName) + "\": " + code.message());
 		return;
 	}
-	
+
 	const std::string prefix("screenshot");
 	const std::string suffix(".bmp");
 	constexpr size_t expectedNumberDigits = 4; // 0-9999; if it reaches 10000 then that one gets overwritten.
@@ -657,31 +662,21 @@ void Game::saveScreenshot(const Surface &surface)
 	}
 }
 
-void Game::handlePanelChanges()
+void Game::handleContextChanges()
 {
-	// If a sub-panel pop was requested, then pop the top of the sub-panel stack.
-	if (this->requestedSubPanelPop)
+	if (!this->nextContextName.empty())
 	{
-		this->subPanels.pop_back();
-		this->requestedSubPanelPop = false;
+		const UiContextInstanceID activeContextID = this->uiManager.getTopMostActiveContext();
+		DebugAssert(activeContextID >= 0); // @todo wondering if the global context should be a secret one that is ignored in the active context search. Only then could this be -1.
+
+		if (activeContextID != this->globalUiContextInstID)
+		{
+			const std::string &activeContextName = this->uiManager.getContextName(activeContextID);
+			this->uiManager.endContext(activeContextName.c_str(), *this);
+		}
 		
-		// Unpause the panel that is now the top-most one.
-		this->getActivePanel()->onPauseChanged(false);
-	}
-
-	// If a new panel was requested, switch to it.
-	if (this->nextPanel.get() != nullptr)
-	{
-		this->panel = std::move(this->nextPanel);
-	}
-
-	// If a new sub-panel was requested, then add it to the stack.
-	if (this->nextSubPanel.get() != nullptr)
-	{
-		// Pause the top-most panel.
-		this->getActivePanel()->onPauseChanged(true);
-
-		this->subPanels.emplace_back(std::move(this->nextSubPanel));
+		this->uiManager.beginContext(this->nextContextName.c_str(), *this);
+		this->nextContextName.clear();
 	}
 }
 
@@ -693,21 +688,6 @@ void Game::handleApplicationExit()
 void Game::handleWindowResized(int width, int height)
 {
 	this->resizeWindow(width, height);
-
-	// Call each panel's resize method. The panels should not be listening for resize events themselves
-	// because it's more of an application event than a panel event.
-	this->panel->resize(width, height);
-
-	for (auto &subPanel : this->subPanels)
-	{
-		subPanel->resize(width, height);
-	}
-}
-
-void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
-{
-	// Update screen regions for classic interface player movement.
-	GameWorldUiModel::updateNativeCursorRegions(this->nativeCursorRegions, windowWidth, windowHeight);
 }
 
 void Game::updateDebugInfoText()
@@ -788,9 +768,13 @@ void Game::updateDebugInfoText()
 		const std::string dirY = String::fixedPrecision(direction.y, 2);
 		const std::string dirZ = String::fixedPrecision(direction.z, 2);
 
+		const UiContextInstanceID activeContextID = this->uiManager.getTopMostActiveContext();
+		const std::string &activeContextName = this->uiManager.getContextName(activeContextID);
+
 		debugText.append("\nChunk: " + chunkStr + '\n' +
 			"Chunk pos: " + chunkPosX + ", " + chunkPosY + ", " + chunkPosZ + '\n' +
-			"Dir: " + dirX + ", " + dirY + ", " + dirZ);
+			"Dir: " + dirX + ", " + dirY + ", " + dirZ + '\n' +
+			activeContextName);
 
 		if (this->shouldRenderScene)
 		{
@@ -803,7 +787,7 @@ void Game::updateDebugInfoText()
 		}
 	}
 
-	this->debugInfoTextBox.setText(debugText);
+	this->uiManager.setTextBoxText(this->debugTextBoxElementInstID, debugText.c_str());
 }
 
 void Game::loop()
@@ -811,10 +795,10 @@ void Game::loop()
 	// Set up physics system values.
 	JPH::TempAllocatorImpl physicsAllocator(Physics::TempAllocatorByteCount);
 	this->physicsTempAllocator = &physicsAllocator;
-	
+
 	PhysicsBroadPhaseLayerInterface physicsBroadPhaseLayerInterface;
 	PhysicsObjectVsBroadPhaseLayerFilter physicsObjectVsBroadPhaseLayerFilter;
-	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;	
+	PhysicsObjectLayerPairFilter physicsObjectLayerPairFilter;
 	this->physicsSystem.Init(Physics::MaxBodies, Physics::BodyMutexCount, Physics::MaxBodyPairs, Physics::MaxContactConstraints, physicsBroadPhaseLayerInterface, physicsObjectVsBroadPhaseLayerFilter, physicsObjectLayerPairFilter);
 
 	PhysicsBodyActivationListener physicsBodyActivationListener;
@@ -824,9 +808,11 @@ void Game::loop()
 
 	JPH::JobSystemThreadPool physicsJobThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, Physics::ThreadCount); // @todo: implement own derived JobSystem class
 
-	// Initialize panel and music to default (bootstrapping the first game frame).
-	this->panel = IntroUiModel::makeStartupPanel(*this);
+	// Set startup UI to use for the first frame.
+	this->nextContextName = IntroUiModel::prepareStartupContext(*this);
+	this->handleContextChanges();
 
+	// Assume main menu music at startup for now.
 	const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 	const MusicDefinition *mainMenuMusicDef = musicLibrary.getRandomMusicDefinition(MusicType::MainMenu, this->random);
 	if (mainMenuMusicDef == nullptr)
@@ -853,17 +839,31 @@ void Game::loop()
 		// User input.
 		try
 		{
-			const Span<const ButtonProxy> buttonProxies = this->getActivePanel()->getButtonProxies();
 			auto onFinishedProcessingEventFunc = [this]()
 			{
-				this->handlePanelChanges();
+				this->handleContextChanges();
 			};
 
-			this->inputManager.update(*this, deltaTime, buttonProxies, onFinishedProcessingEventFunc);
+			this->inputManager.update(*this, deltaTime, this->uiManager, onFinishedProcessingEventFunc);
 
+			this->handleContextChanges(); // Another check in case of no input events this frame.
+			this->uiManager.update(clampedDeltaTime, *this);
+
+			const Int2 cursorPosition = this->inputManager.getMousePosition();
+			this->uiManager.setTransformPosition(this->cursorImageElementInstID, cursorPosition);
+		}
+		catch (const std::exception &e)
+		{
+			DebugCrashFormat("User input exception: %s", e.what());
+		}
+
+		// Tick game state.
+		try
+		{
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				const Double2 playerTurnAngleDeltas = PlayerLogic::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), this->nativeCursorRegions);
+				const Span<const Rect> nativeCursorRegions = GameWorldUI::state.nativeCursorRegions;
+				const Double2 playerTurnAngleDeltas = PlayerLogic::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), nativeCursorRegions);
 
 				// Multiply by 100 so the values in options are more convenient.
 				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());
@@ -873,14 +873,14 @@ void Game::loop()
 				const Degrees pitchLimit = this->options.getInput_CameraPitchLimit();
 				this->player.rotateX(deltaDegreesX);
 				this->player.rotateY(deltaDegreesY * verticalAxisSign, pitchLimit);
-				
+
 				if (this->player.movementType == PlayerMovementType::Climbing)
 				{
 					// Have to keep pushing every frame to keep from falling.
 					this->player.climbingState.isAccelerationValidForClimbing = false;
 				}
-				
-				const PlayerInputAcceleration inputAcceleration = PlayerLogic::getInputAcceleration(*this, this->nativeCursorRegions);
+
+				const PlayerInputAcceleration inputAcceleration = PlayerLogic::getInputAcceleration(*this, nativeCursorRegions);
 				if (inputAcceleration.shouldResetVelocity)
 				{
 					this->player.setPhysicsVelocity(Double3::Zero);
@@ -900,21 +900,7 @@ void Game::loop()
 				{
 					this->player.accelerate(inputAcceleration.direction, inputAcceleration.magnitude, clampedDeltaTime);
 				}
-			}
-		}
-		catch (const std::exception &e)
-		{
-			DebugCrash("User input exception: " + std::string(e.what()));
-		}
 
-		// Tick game state.
-		try
-		{
-			this->getActivePanel()->tick(clampedDeltaTime);
-			this->handlePanelChanges();
-
-			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
-			{
 				const WorldDouble3 oldPlayerPosition = this->player.getEyePosition();
 				const ChunkInt2 oldPlayerChunk = VoxelUtils::worldPointToChunk(oldPlayerPosition);
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
@@ -928,7 +914,7 @@ void Game::loop()
 				this->gameState.tickUiMessages(clampedDeltaTime);
 				this->gameState.tickPlayerHealth(clampedDeltaTime, *this);
 				this->gameState.tickPlayerStamina(clampedDeltaTime, *this);
-				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);				
+				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
 				this->gameState.tickEntities(clampedDeltaTime, *this);
 				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);
@@ -970,10 +956,10 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("Tick exception: " + std::string(e.what()));
+			DebugCrashFormat("Tick exception: %s", e.what());
 		}
 
-		// Late tick. User input, ticking the active panel, and simulating the game state all have the potential
+		// Late tick. User input, ticking the active context, and simulating the game state all have the potential
 		// to queue a scene change which needs to be fully processed before we render.
 		try
 		{
@@ -984,28 +970,28 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("Late tick exception: " + std::string(e.what()));
+			DebugCrashFormat("Late tick exception: %s", e.what());
 		}
 
 		// Render.
 		try
 		{
-			RenderCommandList renderCommandList;
-			UiCommandList uiCommandList;
+			RenderDrawCommandList renderDrawCommandList;
+			UiDrawCommandList uiDrawCommandList;
 			RenderCamera renderCamera;
 			RenderFrameSettings frameSettings;
 
 			if (this->shouldRenderScene)
 			{
 				const RenderSkyManager &renderSkyManager = this->sceneManager.renderSkyManager;
-				renderSkyManager.populateCommandList(renderCommandList);
+				renderSkyManager.populateCommandList(renderDrawCommandList);
 
-				this->sceneManager.renderVoxelChunkManager.populateCommandList(renderCommandList);
-				this->sceneManager.renderEntityManager.populateCommandList(renderCommandList);
+				this->sceneManager.renderVoxelChunkManager.populateCommandList(renderDrawCommandList);
+				this->sceneManager.renderEntityManager.populateCommandList(renderDrawCommandList);
 
 				const WeatherInstance &activeWeatherInst = this->gameState.getWeatherInstance();
 				const bool isFoggy = this->gameState.isFogActive();
-				this->sceneManager.renderWeatherManager.populateCommandList(renderCommandList, activeWeatherInst, isFoggy);
+				this->sceneManager.renderWeatherManager.populateCommandList(renderDrawCommandList, activeWeatherInst, isFoggy);
 
 				const MapDefinition &activeMapDef = this->gameState.getActiveMapDef();
 				const MapType activeMapType = activeMapDef.getMapType();
@@ -1054,41 +1040,27 @@ void Game::loop()
 					lightTableTextureID, ditherTextureID, skyBgTextureID, this->options.getGraphics_RenderThreadsMode(), ditheringMode);
 			}
 
-			this->panel->populateCommandList(uiCommandList);
-
-			for (const std::unique_ptr<Panel> &subPanel : this->subPanels)
-			{
-				subPanel->populateCommandList(uiCommandList);
-			}
+			this->uiManager.populateCommandList(uiDrawCommandList);
 
 			const int profilerLevel = this->options.getMisc_ProfilerLevel();
+			const bool isDebugProfilerVisible = profilerLevel > Options::MIN_PROFILER_LEVEL;
+			this->uiManager.setElementActive(this->debugTextBoxElementInstID, isDebugProfilerVisible);
 
-			RenderElement2D debugInfoRenderElement;
-			if (profilerLevel > Options::MIN_PROFILER_LEVEL)
+			if (isDebugProfilerVisible)
 			{
 				this->updateDebugInfoText();
 
-				const Int2 windowDims = this->window.getPixelDimensions();
-				const Rect debugInfoTextBoxRect = this->debugInfoTextBox.getRect();
-				const Rect debugInfoPresentRect = GuiUtils::makeWindowSpaceRect(debugInfoTextBoxRect.x, debugInfoTextBoxRect.y, debugInfoTextBoxRect.width, debugInfoTextBoxRect.height,
-					PivotType::TopLeft, RenderSpace::Classic, windowDims.x, windowDims.y, this->window.getLetterboxRect());
-
-				debugInfoRenderElement.id = this->debugInfoTextBox.getTextureID();
-				debugInfoRenderElement.rect = debugInfoPresentRect;
-
-				uiCommandList.addElements(Span<const RenderElement2D>(&debugInfoRenderElement, 1));
-
 				if (profilerLevel >= 3)
 				{
-					this->debugQuadtreeState.populateCommandList(*this, uiCommandList);
+					this->debugQuadtreeState.populateCommandList(*this, uiDrawCommandList);
 				}
 			}
 
-			this->renderer.submitFrame(renderCommandList, uiCommandList, renderCamera, frameSettings);
+			this->renderer.submitFrame(renderDrawCommandList, uiDrawCommandList, renderCamera, frameSettings);
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("Render exception: " + std::string(e.what()));
+			DebugCrashFormat("Render exception: %s", e.what());
 		}
 
 		// End-of-frame clean up.
@@ -1098,11 +1070,11 @@ void Game::loop()
 		}
 		catch (const std::exception &e)
 		{
-			DebugCrash("Clean-up exception: " + std::string(e.what()));
+			DebugCrashFormat("Clean-up exception: %s", e.what());
 		}
 	}
 
-	// At this point, the engine has received an exit signal and is now quitting peacefully.
+	// At this point, the engine is now quitting peacefully.
 	this->player.freePhysicsBody(this->physicsSystem);
 	this->sceneManager.collisionChunkManager.clear(this->physicsSystem);
 

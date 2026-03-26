@@ -1,0 +1,170 @@
+#ifndef GAME_WORLD_UI_STATE_H
+#define GAME_WORLD_UI_STATE_H
+
+#include <functional>
+#include <vector>
+
+#include "../Math/Rect.h"
+#include "../Rendering/RenderTextureUtils.h"
+#include "../UI/UiContext.h"
+#include "../UI/UiElement.h"
+#include "../UI/UiLibrary.h"
+
+#include "components/utilities/Buffer.h"
+
+class Game;
+class ItemInventory;
+
+using GameWorldPopUpClosedCallback = std::function<void()>;
+
+// For keeping loot list box callbacks valid when removing inventory items.
+struct GameWorldLootUiItemMapping
+{
+	int inventoryItemIndex;
+	int listBoxItemIndex;
+
+	GameWorldLootUiItemMapping();
+};
+
+struct GameWorldUiInitInfo
+{
+	std::string textPopUpMessage; // For city arrival.
+
+	void init(const std::string &textPopUpMessage);
+};
+
+struct GameWorldUiState
+{
+	GameWorldUiInitInfo initInfo;
+
+	Game *game;
+	UiContextInstanceID contextInstID;
+	UiContextInstanceID textPopUpContextInstID;
+	UiContextInstanceID lootPopUpContextInstID;
+
+	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
+	UiTextureID statusGradientTextureID;
+	UiTextureID playerPortraitTextureID;
+	Buffer<UiTextureID> weaponAnimTextureIDs;
+	Buffer<UiTextureID> keyTextureIDs;
+	Buffer<UiTextureID> arrowCursorTextureIDs;
+	UiTextureID modernModeReticleTextureID;
+
+	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
+	Rect nativeCursorRegions[9];
+
+	double currentHealth;
+	double maxHealth;
+	double currentStamina;
+	double maxStamina;
+	double currentSpellPoints;
+	double maxSpellPoints;
+
+	// Game world interface display texts have an associated time remaining. These values are not destroyed when switching away from the game world UI.
+	// - Trigger text: lore message from voxel trigger
+	// - Action text: description of the player's current action
+	// - Effect text: effect on the player (disease, drunk, silence, etc.)
+	double triggerTextRemainingSeconds, actionTextRemainingSeconds, effectTextRemainingSeconds;
+
+	std::vector<GameWorldLootUiItemMapping> lootPopUpItemMappings;
+
+	GameWorldUiState();
+
+	void init(Game &game);
+	void freeTextures(Renderer &renderer);
+
+	void updateNativeCursorRegions(int windowWidth, int windowHeight);
+};
+
+namespace GameWorldUI
+{
+	DECLARE_UI_CONTEXT(GameWorld);
+
+	void onScreenToWorldInteraction(Int2 windowPoint, bool isPrimaryInteraction);
+	void updateDoorKeys();
+	void onPauseChanged(bool paused);
+
+	bool isTriggerTextVisible();
+	bool isActionTextVisible();
+	bool isEffectTextVisible();
+	void setTriggerText(const char *str);
+	void setActionText(const char *str);
+	void setTriggerTextDuration(const std::string_view text);
+	void setActionTextDuration(const std::string_view text);
+	void setEffectTextDuration(const std::string_view text);
+	void resetTriggerTextDuration();
+	void resetActionTextDuration();
+	void resetEffectTextDuration();
+
+	void showTextPopUp(const char *str, const GameWorldPopUpClosedCallback &callback);
+	void showTextPopUp(const char *str);
+	void showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback);
+
+	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed);
+	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt);
+	void onWindowResized(int width, int height);
+
+	void onCharacterSheetButtonSelected(MouseButtonType mouseButtonType);
+	void onWeaponToggleButtonSelected(MouseButtonType mouseButtonType);
+	void onMapButtonSelected(MouseButtonType mouseButtonType);
+	void onStealButtonSelected(MouseButtonType mouseButtonType);
+	void onStatusButtonSelected(MouseButtonType mouseButtonType);
+	void onMagicButtonSelected(MouseButtonType mouseButtonType);
+	void onLogbookButtonSelected(MouseButtonType mouseButtonType);
+	void onUseItemButtonSelected(MouseButtonType mouseButtonType);
+	void onCampButtonSelected(MouseButtonType mouseButtonType);
+	void onScrollUpButtonSelected(MouseButtonType mouseButtonType);
+	void onScrollDownButtonSelected(MouseButtonType mouseButtonType);
+
+	void onActivateInputAction(const InputActionCallbackValues &values);
+	void onInspectInputAction(const InputActionCallbackValues &values);
+	void onCharacterSheetInputAction(const InputActionCallbackValues &values);
+	void onToggleWeaponInputAction(const InputActionCallbackValues &values);
+	void onAutomapInputAction(const InputActionCallbackValues &values);
+	void onWorldMapInputAction(const InputActionCallbackValues &values);
+	void onStealInputAction(const InputActionCallbackValues &values);
+	void onStatusInputAction(const InputActionCallbackValues &values);
+	void onCastMagicInputAction(const InputActionCallbackValues &values);
+	void onLogbookInputAction(const InputActionCallbackValues &values);
+	void onUseItemInputAction(const InputActionCallbackValues &values);
+	void onCampInputAction(const InputActionCallbackValues &values);
+	void onToggleCompassInputAction(const InputActionCallbackValues &values);
+	void onPlayerPositionInputAction(const InputActionCallbackValues &values);
+	void onPauseMenuInputAction(const InputActionCallbackValues &values);
+
+	constexpr std::pair<const char*, UiButtonDefinitionCallback> ButtonCallbacks[] =
+	{
+		DECLARE_UI_FUNC(GameWorldUI, onCharacterSheetButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onWeaponToggleButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onMapButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onStealButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onStatusButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onMagicButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onLogbookButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onUseItemButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onCampButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onScrollUpButtonSelected),
+		DECLARE_UI_FUNC(GameWorldUI, onScrollDownButtonSelected)
+	};
+
+	constexpr std::pair<const char*, UiInputListenerDefinitionCallback> InputActionCallbacks[] =
+	{
+		DECLARE_UI_FUNC(GameWorldUI, onActivateInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onInspectInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onCharacterSheetInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onToggleWeaponInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onAutomapInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onWorldMapInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onStealInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onStatusInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onCastMagicInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onLogbookInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onUseItemInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onCampInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onToggleCompassInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onPlayerPositionInputAction),
+		DECLARE_UI_FUNC(GameWorldUI, onPauseMenuInputAction)
+	};
+}
+
+#endif

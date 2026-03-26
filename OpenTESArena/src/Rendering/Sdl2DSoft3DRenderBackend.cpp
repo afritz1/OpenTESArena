@@ -3,7 +3,7 @@
 
 #include "RenderBuffer.h"
 #include "RenderCamera.h"
-#include "RenderCommand.h"
+#include "RenderDrawCommand.h"
 #include "RenderFrameSettings.h"
 #include "RenderInitSettings.h"
 #include "Renderer.h"
@@ -13,7 +13,7 @@
 #include "../Math/Rect.h"
 #include "../UI/GuiUtils.h"
 #include "../UI/Surface.h"
-#include "../UI/UiCommand.h"
+#include "../UI/UiDrawCommand.h"
 #include "../UI/UiDrawCall.h"
 
 #include "components/debug/Debug.h"
@@ -421,7 +421,7 @@ void Sdl2DSoft3DRenderBackend::setMaterialInstanceTexCoordAnimPercent(RenderMate
 	return this->renderer3D.setMaterialInstanceTexCoordAnimPercent(id, value);
 }
 
-void Sdl2DSoft3DRenderBackend::submitFrame(const RenderCommandList &renderCommandList, const UiCommandList &uiCommandList,
+void Sdl2DSoft3DRenderBackend::submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 	const RenderCamera &camera, const RenderFrameSettings &frameSettings)
 {
 	g_physicsDebugCamera = camera;
