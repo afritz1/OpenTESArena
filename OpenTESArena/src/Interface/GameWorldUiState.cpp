@@ -280,6 +280,7 @@ void GameWorldUI::create(Game &game)
 
 	UiElementInitInfo weaponAnimImageElementInitInfo;
 	weaponAnimImageElementInitInfo.name = WeaponImageElementName;
+	weaponAnimImageElementInitInfo.sizeType = isModernInterface ? UiTransformSizeType::Manual : UiTransformSizeType::Content;
 	weaponAnimImageElementInitInfo.drawOrder = 0;
 	weaponAnimImageElementInitInfo.renderSpace = isModernInterface ? UiRenderSpace::Native : UiRenderSpace::Classic;
 
