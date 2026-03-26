@@ -69,10 +69,6 @@ namespace GameWorldUiModel
 
 	Radians getCompassAngle(const VoxelDouble2 &direction);
 
-	// Modifies the values in the native cursor regions array so rectangles in
-	// the current window correctly represent regions for different arrow cursors.
-	void updateNativeCursorRegions(Span<Rect> nativeCursorRegions, int width, int height);
-
 	std::string getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData);
 	std::string getEnemyCorpseGoldMessage(int goldCount, const ExeData &exeData);
 	std::string getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData);

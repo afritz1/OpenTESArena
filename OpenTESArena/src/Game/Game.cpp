@@ -31,6 +31,7 @@
 #include "../Input/InputActionName.h"
 #include "../Interface/CinematicLibrary.h"
 #include "../Interface/CommonUiMVC.h"
+#include "../Interface/GameWorldUiState.h"
 #include "../Interface/IntroUiMVC.h"
 #include "../Items/ItemConditionLibrary.h"
 #include "../Items/ItemLibrary.h"
@@ -467,10 +468,6 @@ bool Game::init()
 	SDL_SetColorKey(windowIconSurface.get(), SDL_TRUE, windowIconColorKey);
 	this->window.setIcon(windowIconSurface);
 
-	// Initialize click regions for player movement in classic interface mode.
-	const Int2 windowDims = this->window.getPixelDimensions();
-	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
-
 	// Random seed.
 	this->random.init();
 
@@ -519,12 +516,6 @@ CharacterCreationState &Game::getCharacterCreationState() const
 {
 	DebugAssert(this->characterCreationIsActive());
 	return *this->charCreationState.get();
-}
-
-const Rect &Game::getNativeCursorRegion(int index) const
-{
-	DebugAssertIndex(this->nativeCursorRegions, index);
-	return this->nativeCursorRegions[index];
 }
 
 void Game::setNextContext(const char *contextName)
@@ -587,9 +578,6 @@ void Game::resizeWindow(int windowWidth, int windowHeight)
 {
 	// Resize the window, and the 3D renderer if initialized.
 	this->renderer.resize(windowWidth, windowHeight);
-
-	// Update where the mouse can click for player movement in the classic interface.
-	this->updateNativeCursorRegions(windowWidth, windowHeight);
 
 	if (this->gameState.isActiveMapValid())
 	{
@@ -700,12 +688,6 @@ void Game::handleApplicationExit()
 void Game::handleWindowResized(int width, int height)
 {
 	this->resizeWindow(width, height);
-}
-
-void Game::updateNativeCursorRegions(int windowWidth, int windowHeight)
-{
-	// Update screen regions for classic interface player movement.
-	GameWorldUiModel::updateNativeCursorRegions(this->nativeCursorRegions, windowWidth, windowHeight);
 }
 
 void Game::updateDebugInfoText()
@@ -880,7 +862,8 @@ void Game::loop()
 		{
 			if (this->shouldSimulateScene && this->gameState.isActiveMapValid())
 			{
-				const Double2 playerTurnAngleDeltas = PlayerLogic::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), this->nativeCursorRegions);
+				const Span<const Rect> nativeCursorRegions = GameWorldUI::state.nativeCursorRegions;
+				const Double2 playerTurnAngleDeltas = PlayerLogic::makeTurningAngularValues(*this, clampedDeltaTime, this->inputManager.getMouseDelta(), nativeCursorRegions);
 
 				// Multiply by 100 so the values in options are more convenient.
 				const Degrees deltaDegreesX = playerTurnAngleDeltas.x * (100.0 * this->options.getInput_HorizontalSensitivity());
@@ -897,7 +880,7 @@ void Game::loop()
 					this->player.climbingState.isAccelerationValidForClimbing = false;
 				}
 
-				const PlayerInputAcceleration inputAcceleration = PlayerLogic::getInputAcceleration(*this, this->nativeCursorRegions);
+				const PlayerInputAcceleration inputAcceleration = PlayerLogic::getInputAcceleration(*this, nativeCursorRegions);
 				if (inputAcceleration.shouldResetVelocity)
 				{
 					this->player.setPhysicsVelocity(Double3::Zero);

@@ -166,6 +166,9 @@ void GameWorldUiState::init(Game &game)
 
 	this->modernModeReticleTextureID = GameWorldUiView::allocModernModeReticleTexture(textureManager, renderer);
 
+	const Int2 windowDims = game.window.getPixelDimensions();
+	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
+
 	this->currentHealth = player.currentHealth;
 	this->maxHealth = player.maxHealth;
 	this->currentStamina = player.currentStamina;
@@ -228,6 +231,18 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 	{
 		renderer.freeUiTexture(this->modernModeReticleTextureID);
 		this->modernModeReticleTextureID = -1;
+	}
+}
+
+void GameWorldUiState::updateNativeCursorRegions(int windowWidth, int windowHeight)
+{
+	// @todo: maybe the classic rects should be converted to vector space then scaled by the ratio of aspect ratios?
+	const double xScale = static_cast<double>(windowWidth) / ArenaRenderUtils::SCREEN_WIDTH_REAL;
+	const double yScale = static_cast<double>(windowHeight) / ArenaRenderUtils::SCREEN_HEIGHT_REAL;
+
+	for (int i = 0; i < static_cast<int>(std::size(this->nativeCursorRegions)); i++)
+	{
+		this->nativeCursorRegions[i] = GameWorldUiView::scaleClassicCursorRectToNative(i, xScale, yScale);
 	}
 }
 
@@ -349,6 +364,7 @@ void GameWorldUI::create(Game &game)
 
 	uiManager.addMouseButtonChangedListener(GameWorldUI::onMouseButtonChanged, GameWorldUI::ContextName, inputManager);
 	uiManager.addMouseButtonHeldListener(GameWorldUI::onMouseButtonHeld, GameWorldUI::ContextName, inputManager);
+	uiManager.addWindowResizedListener(GameWorldUI::onWindowResized, GameWorldUI::ContextName, inputManager);
 
 	game.shouldSimulateScene = true;
 	game.shouldRenderScene = true;
@@ -530,7 +546,7 @@ void GameWorldUI::update(double dt)
 		int arrowCursorRegionIndex = -1;
 		for (int i = 0; i < GameWorldUiView::ArrowCursorRegionCount; i++)
 		{
-			const Rect &nativeCursorRegion = game.getNativeCursorRegion(i);
+			const Rect &nativeCursorRegion = state.nativeCursorRegions[i];
 			if (nativeCursorRegion.contains(cursorPosition))
 			{
 				arrowCursorRegionIndex = i;
@@ -937,7 +953,8 @@ void GameWorldUI::setActionText(const char *str)
 
 void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed)
 {
-	const Rect &centerCursorRegion = game.getNativeCursorRegion(GameWorldUiView::CursorMiddleIndex);
+	const GameWorldUiState &state = GameWorldUI::state;
+	const Rect &centerCursorRegion = state.nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
 
 	if (pressed)
 	{
@@ -982,8 +999,9 @@ void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const I
 
 void GameWorldUI::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt)
 {
+	const GameWorldUiState &state = GameWorldUI::state;
 	const Options &options = game.options;
-	const Rect &centerCursorRegion = game.getNativeCursorRegion(GameWorldUiView::CursorMiddleIndex);
+	const Rect &centerCursorRegion = state.nativeCursorRegions[GameWorldUiView::CursorMiddleIndex];
 	if (!options.getGraphics_ModernInterface() && !centerCursorRegion.contains(position))
 	{
 		if (type == MouseButtonType::Left)
@@ -991,6 +1009,12 @@ void GameWorldUI::onMouseButtonHeld(Game &game, MouseButtonType type, const Int2
 			// @todo: move out of PlayerLogicController::handlePlayerTurning() and handlePlayerAttack()
 		}
 	}
+}
+
+void GameWorldUI::onWindowResized(int width, int height)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.updateNativeCursorRegions(width, height);
 }
 
 void GameWorldUI::onCharacterSheetButtonSelected(MouseButtonType mouseButtonType)

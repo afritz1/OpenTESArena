@@ -45,9 +45,6 @@ public:
 
 	std::string nextContextName;
 
-	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
-	Rect nativeCursorRegions[9];
-
 	Random random; // A modern random, use when accuracy to the original is not needed.
 	ArenaRandom arenaRandom; // Replicates the original game's randomness.
 
@@ -92,7 +89,6 @@ private:
 
 	void handleApplicationExit();
 	void handleWindowResized(int width, int height);
-	void updateNativeCursorRegions(int windowWidth, int windowHeight);
 
 	void updateDebugInfoText();
 public:
@@ -111,9 +107,6 @@ public:
 
 	// Gets the character creation state. Character creation must be active.
 	CharacterCreationState &getCharacterCreationState() const;
-
-	// Gets a UI rectangle used with classic game world interface for player movement.
-	const Rect &getNativeCursorRegion(int index) const;
 
 	// Queues the UI context to switch to this frame. This must be one with begin/end/update callbacks registered at engine startup.
 	void setNextContext(const char *contextName);

@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 
+#include "../Math/Rect.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
@@ -49,6 +50,9 @@ struct GameWorldUiState
 	Buffer<UiTextureID> arrowCursorTextureIDs;
 	UiTextureID modernModeReticleTextureID;
 
+	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
+	Rect nativeCursorRegions[9];
+
 	double currentHealth;
 	double maxHealth;
 	double currentStamina;
@@ -62,6 +66,8 @@ struct GameWorldUiState
 
 	void init(Game &game);
 	void freeTextures(Renderer &renderer);
+
+	void updateNativeCursorRegions(int windowWidth, int windowHeight);
 };
 
 namespace GameWorldUI
@@ -81,6 +87,7 @@ namespace GameWorldUI
 
 	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed);
 	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt);
+	void onWindowResized(int width, int height);
 
 	void onCharacterSheetButtonSelected(MouseButtonType mouseButtonType);
 	void onWeaponToggleButtonSelected(MouseButtonType mouseButtonType);
