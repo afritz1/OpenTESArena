@@ -60,6 +60,12 @@ struct GameWorldUiState
 	double currentSpellPoints;
 	double maxSpellPoints;
 
+	// Game world interface display texts have an associated time remaining. These values are not destroyed when switching away from the game world UI.
+	// - Trigger text: lore message from voxel trigger
+	// - Action text: description of the player's current action
+	// - Effect text: effect on the player (disease, drunk, silence, etc.)
+	double triggerTextRemainingSeconds, actionTextRemainingSeconds, effectTextRemainingSeconds;
+
 	std::vector<GameWorldLootUiItemMapping> lootPopUpItemMappings;
 
 	GameWorldUiState();
@@ -78,12 +84,21 @@ namespace GameWorldUI
 	void updateDoorKeys();
 	void onPauseChanged(bool paused);
 
+	bool isTriggerTextVisible();
+	bool isActionTextVisible();
+	bool isEffectTextVisible();
+	void setTriggerText(const char *str);
+	void setActionText(const char *str);
+	void setTriggerTextDuration(const std::string_view text);
+	void setActionTextDuration(const std::string_view text);
+	void setEffectTextDuration(const std::string_view text);
+	void resetTriggerTextDuration();
+	void resetActionTextDuration();
+	void resetEffectTextDuration();
+
 	void showTextPopUp(const char *str, const GameWorldPopUpClosedCallback &callback);
 	void showTextPopUp(const char *str);
 	void showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback);
-
-	void setTriggerText(const char *str);
-	void setActionText(const char *str);
 
 	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed);
 	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt);

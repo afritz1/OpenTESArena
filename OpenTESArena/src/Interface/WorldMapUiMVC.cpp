@@ -378,8 +378,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	// Update weathers.
 	gameState.updateWeatherList(game.arenaRandom, exeData);
 
-	// Clear the lore text (action text and effect text are unchanged).
-	gameState.resetTriggerTextDuration();
+	// Clear just the lore text (action text and effect text are unchanged).
+	GameWorldUI::resetTriggerTextDuration();
 
 	// Clear keys inventory in case we're leaving a main quest dungeon.
 	Player &player = game.player;

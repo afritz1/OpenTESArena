@@ -76,13 +76,6 @@ private:
 	int locationIndex;
 	std::optional<ProvinceMapUiModel::TravelData> travelData; // Non-null when a destination is selected.
 
-	// Game world interface display texts have an associated time remaining. These values are stored here so
-	// they are not destroyed when switching away from the game world UI.
-	// - Trigger text: lore message from voxel trigger
-	// - Action text: description of the player's current action
-	// - Effect text: effect on the player (disease, drunk, silence, etc.)
-	double triggerTextRemainingSeconds, actionTextRemainingSeconds, effectTextRemainingSeconds;
-
 	// One weather for each of the 36 province quadrants (updated hourly).
 	static constexpr int WORLD_MAP_WEATHER_QUADRANT_COUNT = 36;
 	ArenaWeatherType worldMapWeathers[WORLD_MAP_WEATHER_QUADRANT_COUNT];
@@ -155,26 +148,11 @@ public:
 	// Refers to fog in outdoor dungeons and daytime fog, not the heavy fog screen effect.
 	bool isFogActive() const;
 
-	// On-screen text is visible if it has remaining duration.
-	bool triggerTextIsVisible() const;
-	bool actionTextIsVisible() const;
-	bool effectTextIsVisible() const;
-
 	// Sets whether the player is camping, which influences time passing and other things.
 	void setIsCamping(bool isCamping);
 
 	// Sets the player's world map travel data when they select a destination.
 	void setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData);
-
-	// Sets on-screen text duration for various types of in-game messages.
-	void setTriggerTextDuration(const std::string_view text);
-	void setActionTextDuration(const std::string_view text);
-	void setEffectTextDuration(const std::string_view text);
-
-	// Resets on-screen text boxes to empty and hidden.
-	void resetTriggerTextDuration();
-	void resetActionTextDuration();
-	void resetEffectTextDuration();
 
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);

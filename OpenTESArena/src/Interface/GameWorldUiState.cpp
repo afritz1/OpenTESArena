@@ -120,6 +120,9 @@ GameWorldUiState::GameWorldUiState()
 	this->maxStamina = 0.0;
 	this->currentSpellPoints = 0.0;
 	this->maxSpellPoints = 0.0;
+	this->triggerTextRemainingSeconds = 0.0;
+	this->actionTextRemainingSeconds = 0.0;
+	this->effectTextRemainingSeconds = 0.0;
 }
 
 void GameWorldUiState::init(Game &game)
@@ -527,12 +530,11 @@ void GameWorldUI::update(double dt)
 	}
 
 	// Trigger/action/effect text
-	const GameState &gameState = game.gameState;
-	const bool isTriggerTextVisible = gameState.triggerTextIsVisible();
+	const bool isTriggerTextVisible = GameWorldUI::isTriggerTextVisible();
 	const UiElementInstanceID triggerTextBoxElementInstID = uiManager.getElementByName(TriggerTextBoxElementName);
 	uiManager.setElementActive(triggerTextBoxElementInstID, isTriggerTextVisible);
 
-	const bool isActionTextVisible = gameState.actionTextIsVisible();
+	const bool isActionTextVisible = GameWorldUI::isActionTextVisible();
 	const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 	uiManager.setElementActive(actionTextBoxElementInstID, isActionTextVisible);
 
@@ -927,6 +929,24 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 	GameWorldUI::onPauseChanged(true);
 }
 
+bool GameWorldUI::isTriggerTextVisible()
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	return state.triggerTextRemainingSeconds > 0.0;
+}
+
+bool GameWorldUI::isActionTextVisible()
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	return state.actionTextRemainingSeconds > 0.0;
+}
+
+bool GameWorldUI::isEffectTextVisible()
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	return state.effectTextRemainingSeconds > 0.0;
+}
+
 void GameWorldUI::setTriggerText(const char *str)
 {
 	GameWorldUiState &state = GameWorldUI::state;
@@ -935,8 +955,7 @@ void GameWorldUI::setTriggerText(const char *str)
 	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(TriggerTextBoxElementName);
 	uiManager.setTextBoxText(textBoxElementInstID, str);
 
-	GameState &gameState = game.gameState;
-	gameState.setTriggerTextDuration(str);
+	GameWorldUI::setTriggerTextDuration(str);
 }
 
 void GameWorldUI::setActionText(const char *str)
@@ -947,8 +966,43 @@ void GameWorldUI::setActionText(const char *str)
 	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 	uiManager.setTextBoxText(textBoxElementInstID, str);
 
-	GameState &gameState = game.gameState;
-	gameState.setActionTextDuration(str);
+	GameWorldUI::setActionTextDuration(str);
+}
+
+void GameWorldUI::setTriggerTextDuration(const std::string_view text)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.triggerTextRemainingSeconds = GameWorldUiView::getTriggerTextSeconds(text);
+}
+
+void GameWorldUI::setActionTextDuration(const std::string_view text)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.actionTextRemainingSeconds = GameWorldUiView::getActionTextSeconds(text);
+}
+
+void GameWorldUI::setEffectTextDuration(const std::string_view text)
+{
+	// @todo
+	DebugNotImplemented();
+}
+
+void GameWorldUI::resetTriggerTextDuration()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.triggerTextRemainingSeconds = 0.0;
+}
+
+void GameWorldUI::resetActionTextDuration()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.actionTextRemainingSeconds = 0.0;
+}
+
+void GameWorldUI::resetEffectTextDuration()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.effectTextRemainingSeconds = 0.0;
 }
 
 void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed)
