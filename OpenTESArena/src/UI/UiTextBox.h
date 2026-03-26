@@ -18,6 +18,7 @@ struct UiTextBoxInitInfo
 	std::string text; // Actual text for presentation.
 	std::string fontName;
 	Color defaultColor;
+	TextRenderColorOverrideInfo colorOverrideInfo;
 	TextAlignment alignment;
 	std::optional<TextRenderShadowInfo> shadowInfo;
 	int lineSpacing;
@@ -44,7 +45,8 @@ struct UiTextBox
 	UiTextBox();
 
 	void init(UiTextureID textureID, int textureWidth, int textureHeight, int fontDefIndex, const Color &defaultColor,
-		TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing);
+		const TextRenderColorOverrideInfo &colorOverrideInfo, TextAlignment alignment,
+		const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing);
 
 	void free(Renderer &renderer);
 };

@@ -25,12 +25,11 @@ TextRenderColorOverrideInfoEntry::TextRenderColorOverrideInfoEntry(int charIndex
 	this->charIndex = charIndex;
 }
 
-std::vector<TextRenderColorOverrideInfoEntry> TextRenderColorOverrideInfo::makeEntriesFromText(
-	const std::string_view text, const Palette &palette)
+TextRenderColorOverrideInfo TextRenderColorOverrideInfo::makeFromTabColorText(const std::string_view text, const Palette &palette)
 {
 	// Technically the original game treats these as global color mode changes, not single-character overrides,
-	// so that could be something better-handled maybe.
-	std::vector<TextRenderColorOverrideInfoEntry> entries;
+	// so that could be better handled.
+	TextRenderColorOverrideInfo colorOverrideInfo;
 
 	for (size_t i = 0; i < text.size(); i++)
 	{
@@ -38,11 +37,11 @@ std::vector<TextRenderColorOverrideInfoEntry> TextRenderColorOverrideInfo::makeE
 		{
 			const uint8_t paletteIndex = static_cast<uint8_t>(text[i + 1]);
 			const Color &paletteColor = palette[paletteIndex];
-			entries.emplace_back(TextRenderColorOverrideInfoEntry(static_cast<int>(i), paletteColor));
+			colorOverrideInfo.add(static_cast<int>(i), paletteColor);
 		}
 	}
 
-	return entries;
+	return colorOverrideInfo;
 }
 
 int TextRenderColorOverrideInfo::getEntryCount() const

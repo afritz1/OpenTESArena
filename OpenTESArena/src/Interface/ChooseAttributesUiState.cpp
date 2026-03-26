@@ -337,13 +337,8 @@ void ChooseAttributesUI::create(Game &game)
 	saveRerollSaveTextBoxInitInfo.text = ChooseAttributesUiModel::getMessageBoxSaveText(game);
 	saveRerollSaveTextBoxInitInfo.fontName = ChooseAttributesUiView::MessageBoxItemFontName;
 	saveRerollSaveTextBoxInitInfo.defaultColor = ChooseAttributesUiView::MessageBoxItemTextColor;
+	saveRerollSaveTextBoxInitInfo.colorOverrideInfo = ChooseAttributesUiModel::getMessageBoxSaveColorOverrideInfo(game);
 	saveRerollSaveTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
-	// @todo
-	/*const std::vector<TextRenderColorOverrideInfoEntry> saveTextColorOverrides = ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(game);
-	for (const TextRenderColorOverrideInfoEntry &entry : saveTextColorOverrides)
-	{
-		panel->addOverrideColor(0, entry.charIndex, entry.color);
-	}*/
 	uiManager.createTextBox(saveRerollSaveTextBoxElementInitInfo, saveRerollSaveTextBoxInitInfo, state.saveRerollContextInstID, renderer);
 
 	UiElementInitInfo saveRerollSaveImageElementInitInfo;
@@ -374,13 +369,8 @@ void ChooseAttributesUI::create(Game &game)
 	saveRerollRerollTextBoxInitInfo.text = ChooseAttributesUiModel::getMessageBoxRerollText(game);
 	saveRerollRerollTextBoxInitInfo.fontName = ChooseAttributesUiView::MessageBoxItemFontName;
 	saveRerollRerollTextBoxInitInfo.defaultColor = ChooseAttributesUiView::MessageBoxItemTextColor;
+	saveRerollRerollTextBoxInitInfo.colorOverrideInfo = ChooseAttributesUiModel::getMessageBoxRerollColorOverrideInfo(game);
 	saveRerollRerollTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
-	// @todo
-	/*const std::vector<TextRenderColorOverrideInfoEntry> rerollTextColorOverrides = ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(game);
-	for (const TextRenderColorOverrideInfoEntry &entry : rerollTextColorOverrides)
-	{
-		panel->addOverrideColor(1, entry.charIndex, entry.color);
-	}*/
 	uiManager.createTextBox(saveRerollRerollTextBoxElementInitInfo, saveRerollRerollTextBoxInitInfo, state.saveRerollContextInstID, renderer);
 
 	UiElementInitInfo saveRerollRerollImageElementInitInfo;

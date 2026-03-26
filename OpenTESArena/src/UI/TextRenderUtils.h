@@ -45,7 +45,7 @@ private:
 public:
 	// Generates a list of color override entries from text containing the "tab-color" pattern,
 	// where an 8-bit palette index follows a '\t' character.
-	static std::vector<TextRenderColorOverrideInfoEntry> makeEntriesFromText(const std::string_view text, const Palette &palette);
+	static TextRenderColorOverrideInfo makeFromTabColorText(const std::string_view text, const Palette &palette);
 
 	int getEntryCount() const;
 	std::optional<int> findEntryIndex(int charIndex) const;

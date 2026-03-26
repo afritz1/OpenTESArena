@@ -626,7 +626,7 @@ std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 	return text;
 }
 
-std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessageBoxSaveColorOverrides(Game &game)
+TextRenderColorOverrideInfo ChooseAttributesUiModel::getMessageBoxSaveColorOverrideInfo(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
@@ -636,14 +636,14 @@ std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessag
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
 	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteName + "\".");
+		DebugCrashFormat("Couldn't get palette ID for \"%s\".", paletteName.c_str());
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	return TextRenderColorOverrideInfo::makeEntriesFromText(text, palette);
+	return TextRenderColorOverrideInfo::makeFromTabColorText(text, palette);
 }
 
-std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessageBoxRerollColorOverrides(Game &game)
+TextRenderColorOverrideInfo ChooseAttributesUiModel::getMessageBoxRerollColorOverrideInfo(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
@@ -653,11 +653,11 @@ std::vector<TextRenderColorOverrideInfoEntry> ChooseAttributesUiModel::getMessag
 	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
 	if (!paletteID.has_value())
 	{
-		DebugCrash("Couldn't get palette ID for \"" + paletteName + "\".");
+		DebugCrashFormat("Couldn't get palette ID for \"%s\".", paletteName.c_str());
 	}
 
 	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	return TextRenderColorOverrideInfo::makeEntriesFromText(text, palette);
+	return TextRenderColorOverrideInfo::makeFromTabColorText(text, palette);
 }
 
 std::string ChooseAttributesUiModel::getBonusPointsRemainingText(Game &game)

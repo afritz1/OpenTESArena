@@ -504,7 +504,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	const UiTextureID textBoxTextureID = renderer.createUiTexture(textureGenInfo.width, textureGenInfo.height);
 
 	UiTextBox &textBox = this->textBoxes.get(textBoxInstID);
-	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.alignment, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
+	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.colorOverrideInfo, textBoxInitInfo.alignment, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
 	textBox.text = textBoxInitInfo.text;
 
 	Int2 contentSize = initInfo.size;
