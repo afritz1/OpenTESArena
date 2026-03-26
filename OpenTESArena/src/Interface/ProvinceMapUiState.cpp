@@ -1,7 +1,5 @@
-#include "ProvinceMapUiController.h"
-#include "ProvinceMapUiModel.h"
+#include "ProvinceMapUiMVC.h"
 #include "ProvinceMapUiState.h"
-#include "ProvinceMapUiView.h"
 #include "WorldMapUiState.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
@@ -9,6 +7,7 @@
 #include "../Input/InputActionName.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/TextEntry.h"
+#include "../UI/UiPivotType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 
 #include "components/utilities/String.h"

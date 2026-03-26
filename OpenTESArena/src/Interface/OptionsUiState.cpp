@@ -1,6 +1,5 @@
-#include "OptionsUiController.h"
+#include "OptionsUiMVC.h"
 #include "OptionsUiState.h"
-#include "OptionsUiView.h"
 #include "PauseMenuUiState.h"
 #include "../Game/Game.h"
 

@@ -1,7 +1,5 @@
 #include "CharacterEquipmentUiState.h"
-#include "CharacterSheetUiController.h"
-#include "CharacterSheetUiModel.h"
-#include "CharacterSheetUiView.h"
+#include "CharacterSheetUiMVC.h"
 #include "CharacterUiState.h"
 #include "GameWorldUiState.h"
 #include "../Game/Game.h"

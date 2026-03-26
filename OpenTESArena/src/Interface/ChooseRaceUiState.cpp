@@ -1,12 +1,11 @@
-#include "CharacterCreationUiController.h"
-#include "CharacterCreationUiModel.h"
-#include "CharacterCreationUiView.h"
+#include "CharacterCreationUiMVC.h"
 #include "ChooseAttributesUiState.h"
 #include "ChooseGenderUiState.h"
 #include "ChooseRaceUiState.h"
-#include "WorldMapUiModel.h"
+#include "WorldMapUiMVC.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionName.h"
+#include "../UI/UiPivotType.h"
 
 namespace
 {

@@ -14,7 +14,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Input/InputManager.h"
-#include "../Interface/GameWorldUiView.h"
+#include "../Interface/GameWorldUiMVC.h"
 #include "../Player/CharacterCreationState.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Window.h"

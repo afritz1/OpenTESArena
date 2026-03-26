@@ -1,16 +1,14 @@
 #include <algorithm>
 
-#include "SDL.h"
+#include "SDL_events.h"
 
-#include "GameWorldUiView.h"
+#include "GameWorldUiMVC.h"
 #include "GameWorldUiState.h"
 #include "LoadSaveUiState.h"
 #include "MainMenuUiState.h"
 #include "OptionsUiState.h"
-#include "PauseMenuUiController.h"
-#include "PauseMenuUiModel.h"
+#include "PauseMenuUiMVC.h"
 #include "PauseMenuUiState.h"
-#include "PauseMenuUiView.h"
 #include "../Audio/MusicLibrary.h"
 #include "../Game/Game.h"
 #include "../Player/Player.h"

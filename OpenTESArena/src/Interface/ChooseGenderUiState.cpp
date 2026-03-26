@@ -1,5 +1,4 @@
-#include "CharacterCreationUiController.h"
-#include "CharacterCreationUiModel.h"
+#include "CharacterCreationUiMVC.h"
 #include "ChooseGenderUiState.h"
 #include "../Game/Game.h"
 

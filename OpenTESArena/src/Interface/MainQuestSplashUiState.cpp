@@ -1,7 +1,6 @@
 #include "GameWorldUiState.h"
-#include "MainQuestSplashUiModel.h"
+#include "MainQuestSplashUiMVC.h"
 #include "MainQuestSplashUiState.h"
-#include "MainQuestSplashUiView.h"
 #include "../Audio/MusicUtils.h"
 #include "../Game/Game.h"
 

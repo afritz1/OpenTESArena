@@ -1,8 +1,5 @@
-#include "CharacterCreationUiController.h"
-#include "CharacterCreationUiModel.h"
-#include "CharacterCreationUiView.h"
-#include "CharacterSheetUiModel.h"
-#include "CharacterSheetUiView.h"
+#include "CharacterCreationUiMVC.h"
+#include "CharacterSheetUiMVC.h"
 #include "ChooseAttributesUiState.h"
 #include "ChooseRaceUiState.h"
 #include "TextCinematicUiState.h"
@@ -15,6 +12,7 @@
 #include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/Surface.h"
+#include "../UI/UiPivotType.h"
 #include "../World/CardinalDirection.h"
 #include "../WorldMap/ArenaLocationUtils.h"
 

@@ -1,7 +1,7 @@
 #ifndef OPTIONS_UI_STATE_H
 #define OPTIONS_UI_STATE_H
 
-#include "OptionsUiModel.h"
+#include "OptionsUiMVC.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"

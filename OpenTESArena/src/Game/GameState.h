@@ -1,7 +1,6 @@
 #ifndef GAME_STATE_H
 #define GAME_STATE_H
 
-#include <memory>
 #include <optional>
 #include <stack>
 #include <string>
@@ -10,7 +9,7 @@
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/PhysicsSystem.h"
 
-#include "../Interface/ProvinceMapUiModel.h"
+#include "../Interface/ProvinceMapUiMVC.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
 #include "../Player/Player.h"

@@ -1,9 +1,8 @@
-#include "AutomapUiController.h"
-#include "AutomapUiModel.h"
+#include "AutomapUiMVC.h"
 #include "AutomapUiState.h"
-#include "AutomapUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
+#include "../UI/UiPivotType.h"
 
 namespace
 {

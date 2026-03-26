@@ -1,5 +1,5 @@
 #include "GameWorldUiState.h"
-#include "LogbookUiModel.h"
+#include "LogbookUiMVC.h"
 #include "LogbookUiState.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"

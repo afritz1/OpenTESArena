@@ -2,7 +2,6 @@
 
 #include "CinematicLibrary.h"
 #include "TextCinematicUiState.h"
-#include "TextCinematicUiView.h"
 #include "../Game/Game.h"
 
 namespace

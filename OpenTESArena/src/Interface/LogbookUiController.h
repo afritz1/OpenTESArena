@@ -1,5 +1,0 @@
-#ifndef LOGBOOK_UI_CONTROLLER_H
-#define LOGBOOK_UI_CONTROLLER_H
-
-
-#endif

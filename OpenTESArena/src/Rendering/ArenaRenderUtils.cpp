@@ -6,7 +6,7 @@
 #include "../Assets/ExeData.h"
 #include "../Assets/TextureBuilder.h"
 #include "../Assets/TextureManager.h"
-#include "../Interface/GameWorldUiModel.h"
+#include "../Interface/GameWorldUiMVC.h"
 #include "../Math/ArenaMathUtils.h"
 #include "../Math/Constants.h"
 #include "../Math/Random.h"

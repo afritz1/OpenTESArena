@@ -1,7 +1,7 @@
 #ifndef TEXT_CINEMATIC_UI_STATE_H
 #define TEXT_CINEMATIC_UI_STATE_H
 
-#include "TextCinematicUiModel.h"
+#include "TextCinematicUiMVC.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"

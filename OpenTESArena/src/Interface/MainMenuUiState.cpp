@@ -1,7 +1,5 @@
-#include "MainMenuUiController.h"
-#include "MainMenuUiModel.h"
+#include "MainMenuUiMVC.h"
 #include "MainMenuUiState.h"
-#include "MainMenuUiView.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"

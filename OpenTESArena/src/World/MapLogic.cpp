@@ -8,7 +8,7 @@
 #include "../Collision/RayCastTypes.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
-#include "../Interface/GameWorldUiController.h"
+#include "../Interface/GameWorldUiMVC.h"
 #include "../Interface/GameWorldUiState.h"
 #include "../Interface/WorldMapUiState.h"
 #include "../Sky/SkyUtils.h"

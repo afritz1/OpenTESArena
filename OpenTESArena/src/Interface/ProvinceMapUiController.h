@@ -1,5 +1,0 @@
-#ifndef PROVINCE_MAP_UI_CONTROLLER_H
-#define PROVINCE_MAP_UI_CONTROLLER_H
-
-
-#endif
