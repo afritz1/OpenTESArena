@@ -1351,8 +1351,8 @@ void UiManager::beginContext(const char *contextName, Game &game)
 {
 	if (this->isContextEnabled(contextName))
 	{
-		DebugLogErrorFormat("UI context %s already enabled.", contextName);
-		//return; // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
+		DebugLogErrorFormat("UI context \"%s\" already enabled.", contextName);
+		return;
 	}
 
 	const std::string contextNameStr = contextName;
@@ -1369,9 +1369,8 @@ void UiManager::endContext(const char *contextName, Game &game)
 	const bool isEnabled = this->isContextEnabled(contextName);
 	if (!isEnabled)
 	{
-		// @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one is always right; have to play safe for now.
-		//DebugLogErrorFormat("Expected UI context %d to be active.", contextType);
-		//return;
+		DebugLogErrorFormat("Expected UI context \"%s\" to be enabled.", contextName);
+		return;
 	}
 
 	const std::string contextNameStr = contextName;
@@ -1383,11 +1382,6 @@ void UiManager::endContext(const char *contextName, Game &game)
 	}
 
 	// @todo clear loaded textures for this context
-
-	if (isEnabled) // @temp: due to Panel ctor/dtor design and queued panel change, can't assume active one needs clearing
-	{
-		//this->activeContextName.clear();
-	}
 }
 
 void UiManager::populateCommandList(UiDrawCommandList &commandList)
