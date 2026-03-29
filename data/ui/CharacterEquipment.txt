@@ -60,14 +60,14 @@ MouseButtons=Both
 
 [CharacterEquipmentInventoryListBoxUpButton]
 Type=Button
-Position=16,131
+Position=152,131
 Size=9,9
 Pivot=Middle
 Callback=CharacterEquipmentUI.onInventoryListBoxUpButtonSelected
 
 [CharacterEquipmentInventoryListBoxDownButton]
 Type=Button
-Position=152,131
+Position=16,131
 Size=9,9
 Pivot=Middle
 Callback=CharacterEquipmentUI.onInventoryListBoxDownButtonSelected
