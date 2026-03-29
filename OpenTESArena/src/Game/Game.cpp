@@ -845,12 +845,11 @@ void Game::loop()
 			};
 
 			this->inputManager.update(*this, deltaTime, this->uiManager, onFinishedProcessingEventFunc);
-
 			this->handleContextChanges(); // Another check in case of no input events this frame.
-			this->uiManager.update(clampedDeltaTime, *this);
 
 			const Int2 cursorPosition = this->inputManager.getMousePosition();
 			this->uiManager.setTransformPosition(this->cursorImageElementInstID, cursorPosition);
+			this->uiManager.update(clampedDeltaTime, *this);
 		}
 		catch (const std::exception &e)
 		{
