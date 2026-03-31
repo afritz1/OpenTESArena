@@ -246,7 +246,7 @@ bool EntityUtils::leavesCorpse(const EntityDefinition &entityDef)
 		{
 			const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
 			const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
-			return !creatureDef.hasNoCorpse;
+			return creatureDef.hasCorpse;
 		}
 		else
 		{

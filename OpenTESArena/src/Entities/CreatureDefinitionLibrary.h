@@ -24,7 +24,7 @@ struct CreatureDefinition
 	int magicEffects;
 	int scale;
 	int yOffset;
-	bool hasNoCorpse;
+	bool hasCorpse;
 	int bloodIndex; // @todo this should be an EntityDefID to the vfx in EntityDefinitionLibrary, or -1
 	int diseaseChances;
 	int attributes[8];

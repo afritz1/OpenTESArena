@@ -30,7 +30,7 @@ void CreatureDefinition::init(int creatureIndex, bool isFinalBoss, const ExeData
 	this->magicEffects = entities.creatureMagicEffects[creatureIndex];
 	this->scale = entities.creatureScales[creatureIndex];
 	this->yOffset = entities.creatureYOffsets[creatureIndex];
-	this->hasNoCorpse = entities.creatureHasNoCorpse[creatureIndex] != 0;
+	this->hasCorpse = entities.creatureHasNoCorpse[creatureIndex] == 0;
 	this->bloodIndex = entities.creatureBlood[creatureIndex];
 	this->diseaseChances = entities.creatureDiseaseChances[creatureIndex];
 
@@ -123,7 +123,7 @@ bool CreatureDefinition::operator==(const CreatureDefinition &other) const
 		return false;
 	}
 
-	if (this->hasNoCorpse != other.hasNoCorpse)
+	if (this->hasCorpse != other.hasCorpse)
 	{
 		return false;
 	}
