@@ -114,7 +114,9 @@ void CombatLogic::spawnHitVfx(const EntityDefinition &hitEntityDef, const WorldD
 	int bloodIndex = FirstBloodIndex;
 	if (hitEntityDef.type == EntityDefinitionType::Enemy && hitEntityDef.enemy.type == EnemyEntityDefinitionType::Creature)
 	{
-		bloodIndex = hitEntityDef.enemy.creature.bloodIndex;
+		const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+		const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(hitEntityDef.enemy.creatureDefID);
+		bloodIndex = creatureDef.bloodIndex;
 	}
 
 	bloodIndex -= FirstBloodIndex;

@@ -5,6 +5,7 @@
 #include <optional>
 #include <string_view>
 
+#include "CreatureDefinitionLibrary.h"
 #include "EntityAnimationDefinition.h"
 #include "EntityAnimationUtils.h"
 #include "../Assets/ArenaTypes.h"
@@ -30,58 +31,29 @@ enum class EnemyEntityDefinitionType
 	Human
 };
 
+struct EnemyEntityHumanDefinition
+{
+	bool male;
+	int charClassID;
+
+	void init(bool male, int charClassID);
+
+	bool operator==(const EnemyEntityHumanDefinition &other) const;
+};
+
 struct EnemyEntityDefinition
 {
-	// @todo: move this into a creature library so it can just be an ID instead.
-	// @todo: also it is basically an ArenaCreatureDefinition since it copy-pastes so much from ExeData.
-	struct CreatureDefinition
-	{
-		char name[64];
-		int level;
-		int minHP;
-		int maxHP;
-		int baseExp;
-		int expMultiplier;
-		int soundIndex;
-		char soundName[32];
-		int minDamage;
-		int maxDamage;
-		int magicEffects;
-		int scale;
-		int yOffset;
-		bool hasNoCorpse;
-		int bloodIndex; // @todo this should be an EntityDefID to the vfx in EntityDefinitionLibrary, or -1
-		int diseaseChances;
-		int attributes[8];
-		uint32_t lootChances;
-		bool ghost;
-
-		void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
-
-		bool operator==(const CreatureDefinition &other) const;
-	};
-
-	struct HumanDefinition
-	{
-		bool male;
-		int charClassID;
-
-		void init(bool male, int charClassID);
-
-		bool operator==(const HumanDefinition &other) const;
-	};
-
 	EnemyEntityDefinitionType type;
 
 	union
 	{
-		CreatureDefinition creature;
-		HumanDefinition human;
+		CreatureDefinitionID creatureDefID;
+		EnemyEntityHumanDefinition human;
 	};
 
 	EnemyEntityDefinition();
 
-	void initCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
+	void initCreature(CreatureDefinitionID creatureDefID);
 	void initHuman(bool male, int charClassID);
 
 	bool operator==(const EnemyEntityDefinition &other) const;
@@ -129,7 +101,8 @@ struct StaticNpcEntityDefinition
 
 enum class ItemEntityDefinitionType
 {
-	Key, QuestItem
+	Key,
+	QuestItem
 };
 
 struct ItemEntityDefinition
@@ -295,7 +268,7 @@ struct EntityDefinition
 	// Internal initializer
 	void init(EntityDefinitionType type, EntityAnimationDefinition &&animDef);
 
-	void initEnemyCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData, EntityAnimationDefinition &&animDef);
+	void initEnemyCreature(CreatureDefinitionID creatureDefID, EntityAnimationDefinition &&animDef);
 	void initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef);
 
 	void initCitizen(bool male, ArenaClimateType climateType, EntityAnimationDefinition &&animDef);

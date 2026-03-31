@@ -128,7 +128,9 @@ namespace ArenaAnimUtils
 	constexpr ArenaItemIndex QuestItemIndex = 13;
 
 	// The final boss is a special case, essentially hardcoded at the end of the creatures.
+	// Note that creature ID == creature index + 1.
 	constexpr int FinalBossCreatureID = 24;
+	constexpr int CreatureCount = FinalBossCreatureID;
 
 	// Creature IDs are 1-based (rat=1, goblin=2, etc.).
 	int getCreatureIDFromItemIndex(ArenaItemIndex itemIndex);

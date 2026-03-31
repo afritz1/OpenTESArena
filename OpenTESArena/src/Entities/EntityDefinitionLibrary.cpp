@@ -10,13 +10,12 @@
 
 bool CreatureEntityDefinitionKey::operator==(const CreatureEntityDefinitionKey &other) const
 {
-	return (this->creatureIndex == other.creatureIndex) && (this->isFinalBoss == other.isFinalBoss);
+	return this->creatureDefID == other.creatureDefID;
 }
 
-void CreatureEntityDefinitionKey::init(int creatureIndex, bool isFinalBoss)
+void CreatureEntityDefinitionKey::init(CreatureDefinitionID creatureDefID)
 {
-	this->creatureIndex = creatureIndex;
-	this->isFinalBoss = isFinalBoss;
+	this->creatureDefID = creatureDefID;
 }
 
 bool HumanEnemyEntityDefinitionKey::operator==(const HumanEnemyEntityDefinitionKey &other) const
@@ -91,10 +90,10 @@ void EntityDefinitionKey::init(EntityDefinitionKeyType type)
 	this->type = type;
 }
 
-void EntityDefinitionKey::initCreature(int creatureIndex, bool isFinalBoss)
+void EntityDefinitionKey::initCreature(CreatureDefinitionID creatureDefID)
 {
 	this->init(EntityDefinitionKeyType::Creature);
-	this->creature.init(creatureIndex, isFinalBoss);
+	this->creature.init(creatureDefID);
 }
 
 void EntityDefinitionKey::initHumanEnemy(bool male, int charClassID)
@@ -138,25 +137,24 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 	// in advance of loading any levels, and any code that relies on those definitions can
 	// assume that no others are added by a level.
 
-	auto addCreatureDef = [this, &exeData, &entityAnimLibrary](int creatureID, bool isFinalBoss)
+	auto addCreatureDef = [this, &entityAnimLibrary](CreatureDefinitionID creatureDefID)
 	{
 		CreatureEntityAnimationKey animKey;
-		animKey.init(creatureID);
+		animKey.init(creatureDefID);
 
 		const EntityAnimationDefinitionID animDefID = entityAnimLibrary.getCreatureAnimDefID(animKey);
 		EntityAnimationDefinition animDef = entityAnimLibrary.getDefinition(animDefID); // @todo: make const ref and give anim def ID to EntityDefinition instead
-		const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 
 		EntityDefinitionKey key;
-		key.initCreature(creatureIndex, isFinalBoss);
+		key.initCreature(creatureDefID);
 
 		EntityDefinition entityDef;
-		entityDef.initEnemyCreature(creatureIndex, isFinalBoss, exeData, std::move(animDef));
+		entityDef.initEnemyCreature(creatureDefID, std::move(animDef));
 
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
-	auto addHumanEnemyDef = [this, &exeData, &entityAnimLibrary](bool male, int charClassID)
+	auto addHumanEnemyDef = [this, &entityAnimLibrary](bool male, int charClassID)
 	{
 		HumanEnemyEntityAnimationKey animKey;
 		animKey.init(male, charClassID);
@@ -173,7 +171,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
-	auto addCitizenDef = [this, &exeData, &entityAnimLibrary](ArenaClimateType climateType, bool male)
+	auto addCitizenDef = [this, &entityAnimLibrary](ArenaClimateType climateType, bool male)
 	{
 		CitizenEntityAnimationKey animKey;
 		animKey.init(male, climateType);
@@ -190,7 +188,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		this->addDefinition(std::move(key), std::move(entityDef));
 	};
 
-	auto addVfxDef = [this, &exeData, &entityAnimLibrary](VfxEntityAnimationType type, int index)
+	auto addVfxDef = [this, &entityAnimLibrary](VfxEntityAnimationType type, int index)
 	{
 		VfxEntityAnimationKey animKey;
 		switch (type)
@@ -222,16 +220,10 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 	};
 
 	// Iterate all creatures + final boss.
-	const int creatureCount = static_cast<int>(std::size(exeData.entities.creatureNames));
-	for (int i = 0; i < creatureCount; i++)
+	for (int i = 0; i < ArenaAnimUtils::CreatureCount; i++)
 	{
-		const ArenaItemIndex itemIndex = ArenaAnimUtils::FirstCreatureItemIndex + i;
-		const int creatureID = ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
-		addCreatureDef(creatureID, false);
+		addCreatureDef(i);
 	}
-
-	const int finalBossID = ArenaAnimUtils::FinalBossCreatureID;
-	addCreatureDef(finalBossID, true);
 
 	// Iterate all human enemies.
 	const int charClassCount = charClassLibrary.getDefinitionCount();

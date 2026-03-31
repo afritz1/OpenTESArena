@@ -24,12 +24,11 @@ enum class EntityDefinitionKeyType
 
 struct CreatureEntityDefinitionKey
 {
-	int creatureIndex;
-	bool isFinalBoss;
+	CreatureDefinitionID creatureDefID;
 
 	bool operator==(const CreatureEntityDefinitionKey &other) const;
 
-	void init(int creatureIndex, bool isFinalBoss);
+	void init(CreatureDefinitionID creatureDefID);
 };
 
 struct HumanEnemyEntityDefinitionKey
@@ -80,7 +79,7 @@ struct EntityDefinitionKey
 
 	bool operator==(const EntityDefinitionKey &other) const;
 
-	void initCreature(int creatureIndex, bool isFinalBoss);
+	void initCreature(CreatureDefinitionID creatureDefID);
 	void initHumanEnemy(bool male, int charClassID);
 	void initCitizen(bool male, ArenaClimateType climateType);
 	void initVfx(VfxEntityAnimationType type, int index);

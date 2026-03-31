@@ -104,7 +104,9 @@ bool EntityUtils::isGhost(const EntityDefinition &entityDef)
 		return false;
 	}
 
-	return enemyDef.creature.ghost;
+	const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+	const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
+	return creatureDef.ghost;
 }
 
 bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
@@ -157,7 +159,8 @@ int EntityUtils::getYOffset(const EntityDefinition &entityDef)
 			return 0;
 		}
 
-		const EnemyEntityDefinition::CreatureDefinition &creatureDef = enemyDef.creature;
+		const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+		const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
 		return creatureDef.yOffset;
 	}
 	else if (isItem)
@@ -241,7 +244,9 @@ bool EntityUtils::leavesCorpse(const EntityDefinition &entityDef)
 		}
 		else if (enemyDefType == EnemyEntityDefinitionType::Creature)
 		{
-			return !enemyDef.creature.hasNoCorpse;
+			const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+			const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
+			return !creatureDef.hasNoCorpse;
 		}
 		else
 		{
@@ -333,13 +338,14 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const Cha
 	const EnemyEntityDefinitionType enemyType = enemyDef.type;
 	if (enemyType == EnemyEntityDefinitionType::Creature)
 	{
-		const auto &creatureDef = enemyDef.creature;
+		const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+		const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
 		*outName = creatureDef.name;
 	}
 	else if (enemyType == EnemyEntityDefinitionType::Human)
 	{
-		const auto &humanDef = enemyDef.human;
-		const auto &charClass = charClassLibrary.getDefinition(humanDef.charClassID);
+		const EnemyEntityHumanDefinition &humanDef = enemyDef.human;
+		const CharacterClassDefinition &charClass = charClassLibrary.getDefinition(humanDef.charClassID);
 		*outName = charClass.name;
 	}
 	else

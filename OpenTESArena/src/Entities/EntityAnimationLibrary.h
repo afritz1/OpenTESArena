@@ -18,11 +18,11 @@ struct ExeData;
 
 struct CreatureEntityAnimationKey
 {
-	int creatureID; // 1-based original ID (rat = 1, goblin = 2, ...)
+	CreatureDefinitionID creatureDefID;
 
 	CreatureEntityAnimationKey();
 
-	void init(int creatureID);
+	void init(CreatureDefinitionID creatureDefID);
 };
 
 struct HumanEnemyEntityAnimationKey

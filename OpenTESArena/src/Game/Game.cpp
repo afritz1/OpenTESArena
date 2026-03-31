@@ -26,6 +26,7 @@
 #include "../Collision/PhysicsBodyActivationListener.h"
 #include "../Collision/PhysicsContactListener.h"
 #include "../Collision/PhysicsLayer.h"
+#include "../Entities/CreatureDefinitionLibrary.h"
 #include "../Entities/EntityAnimationLibrary.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Input/InputActionName.h"
@@ -361,6 +362,7 @@ bool Game::init()
 	ItemMaterialLibrary::getInstance().init(exeData);
 	ItemLibrary::getInstance().init(exeData);
 	WeaponAnimationLibrary::getInstance().init(exeData, this->textureManager);
+	CreatureDefinitionLibrary::getInstance().init(exeData);
 
 	CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	charClassLibrary.init(exeData);

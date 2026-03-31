@@ -374,6 +374,9 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
 			if (enemyDef.type == EnemyEntityDefinitionType::Creature)
 			{
+				const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+				const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
+
 				// Creatures have chances to have items added to their inventory according to their lootChances value.
 				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 				std::vector<ItemDefinitionID> testItemDefIDs;
@@ -382,14 +385,14 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				int randomItemIndex;
 				ItemDefinitionID itemDefID = -1;
 
-				if (ArenaEntityUtils::getCreatureHasMagicItem(enemyDef.creature.level, enemyDef.creature.lootChances, random))
+				if (ArenaEntityUtils::getCreatureHasMagicItem(creatureDef.level, creatureDef.lootChances, random))
 				{
 					int magicItemID;
 					ItemMaterialDefinitionID materialID;
 					PrimaryAttributeID attributeID;
 					bool isPotion;
 					SpellID spellID;
-					ArenaEntityUtils::getCreatureMagicItem(enemyDef.creature.level, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
+					ArenaEntityUtils::getCreatureMagicItem(creatureDef.level, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
 
 					if (isPotion)
 					{
@@ -431,12 +434,12 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					}
 				}
 
-				if (ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(enemyDef.creature.lootChances, random))
+				if (ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(creatureDef.lootChances, random))
 				{
 					int weaponOrArmorID;
 					bool isArmor;
 					ArmorMaterialType armorMaterialType;
-					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(enemyDef.creature.level, exeData, random, &weaponOrArmorID, &isArmor, &armorMaterialType);
+					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(creatureDef.level, exeData, random, &weaponOrArmorID, &isArmor, &armorMaterialType);
 					// @todo: Get condition percentage from helper function
 
 					if (isArmor)
@@ -479,7 +482,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					}
 				}
 
-				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(enemyDef.creature.level, enemyDef.creature.lootChances, random))
+				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(creatureDef.level, creatureDef.lootChances, random))
 				{
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
 						[](const ItemDefinition &itemDef)
@@ -1142,7 +1145,8 @@ std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID
 		return std::string();
 	}
 
-	const EnemyEntityDefinition::CreatureDefinition &creatureDef = enemyDef.creature;
+	const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+	const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
 	const std::string_view creatureSoundName = creatureDef.soundName;
 	return String::toUppercase(std::string(creatureSoundName));
 }

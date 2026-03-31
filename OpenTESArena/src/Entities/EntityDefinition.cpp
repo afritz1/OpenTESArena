@@ -4,156 +4,15 @@
 
 #include "ArenaAnimUtils.h"
 #include "EntityDefinition.h"
+#include "../Assets/BinaryAssetLibrary.h"
 
-void EnemyEntityDefinition::CreatureDefinition::init(int creatureIndex, bool isFinalBoss, const ExeData &exeData)
-{
-	const auto &entities = exeData.entities;
-
-	const std::string &nameStr = isFinalBoss ? entities.finalBossName : entities.creatureNames[creatureIndex];
-	std::snprintf(std::begin(this->name), std::size(this->name), "%s", nameStr.c_str());
-
-	this->level = entities.creatureLevels[creatureIndex];
-	this->minHP = entities.creatureHitPoints[creatureIndex].first;
-	this->maxHP = entities.creatureHitPoints[creatureIndex].second;
-	this->baseExp = entities.creatureBaseExps[creatureIndex];
-	this->expMultiplier = entities.creatureExpMultipliers[creatureIndex];
-	this->soundIndex = entities.creatureSounds[creatureIndex];
-
-	std::snprintf(std::begin(this->soundName), std::size(this->soundName), "%s", entities.creatureSoundNames[this->soundIndex].c_str());
-
-	this->minDamage = entities.creatureDamages[creatureIndex].first;
-	this->maxDamage = entities.creatureDamages[creatureIndex].second;
-	this->magicEffects = entities.creatureMagicEffects[creatureIndex];
-	this->scale = entities.creatureScales[creatureIndex];
-	this->yOffset = entities.creatureYOffsets[creatureIndex];
-	this->hasNoCorpse = entities.creatureHasNoCorpse[creatureIndex] != 0;
-	this->bloodIndex = entities.creatureBlood[creatureIndex];
-	this->diseaseChances = entities.creatureDiseaseChances[creatureIndex];
-
-	const auto &srcAttributes = entities.creatureAttributes[creatureIndex];
-	std::copy(std::begin(srcAttributes), std::end(srcAttributes), std::begin(this->attributes));
-
-	if (isFinalBoss)
-	{
-		this->lootChances = 0; // @todo Figure out how final boss is handled
-	}
-	else
-	{
-		const int lootChancesIndex = creatureIndex + 1;
-		DebugAssertIndex(entities.creatureLootChances, lootChancesIndex);
-		this->lootChances = entities.creatureLootChances[lootChancesIndex];
-	}
-
-	this->ghost = ArenaAnimUtils::isGhost(creatureIndex);
-}
-
-bool EnemyEntityDefinition::CreatureDefinition::operator==(const CreatureDefinition &other) const
-{
-	if (this == &other)
-	{
-		return true;
-	}
-
-	if (std::strncmp(std::begin(this->name), std::begin(other.name), std::size(this->name)) != 0)
-	{
-		return false;
-	}
-
-	if (this->level != other.level)
-	{
-		return false;
-	}
-
-	if (this->minHP != other.minHP)
-	{
-		return false;
-	}
-
-	if (this->maxHP != other.maxHP)
-	{
-		return false;
-	}
-
-	if (this->baseExp != other.baseExp)
-	{
-		return false;
-	}
-
-	if (this->expMultiplier != other.expMultiplier)
-	{
-		return false;
-	}
-
-	if (this->soundIndex != other.soundIndex)
-	{
-		return false;
-	}
-
-	if (std::strncmp(std::begin(this->soundName), std::begin(other.soundName), std::size(this->soundName)) != 0)
-	{
-		return false;
-	}
-
-	if (this->minDamage != other.minDamage)
-	{
-		return false;
-	}
-
-	if (this->maxDamage != other.maxDamage)
-	{
-		return false;
-	}
-
-	if (this->magicEffects != other.magicEffects)
-	{
-		return false;
-	}
-
-	if (this->scale != other.scale)
-	{
-		return false;
-	}
-
-	if (this->yOffset != other.yOffset)
-	{
-		return false;
-	}
-
-	if (this->hasNoCorpse != other.hasNoCorpse)
-	{
-		return false;
-	}
-
-	if (this->bloodIndex != other.bloodIndex)
-	{
-		return false;
-	}
-
-	if (this->diseaseChances != other.diseaseChances)
-	{
-		return false;
-	}
-
-	if (std::memcmp(std::begin(this->attributes), std::begin(other.attributes), std::size(this->attributes) * sizeof(this->attributes[0])) != 0)
-	{
-		return false;
-	}
-
-	if (this->ghost != other.ghost)
-	{
-		return false;
-	}
-
-	return true;
-}
-
-void EnemyEntityDefinition::HumanDefinition::init(bool male, int charClassID)
+void EnemyEntityHumanDefinition::init(bool male, int charClassID)
 {
 	this->male = male;
 	this->charClassID = charClassID;
 }
 
-bool EnemyEntityDefinition::HumanDefinition::operator==(const HumanDefinition &other) const
+bool EnemyEntityHumanDefinition::operator==(const EnemyEntityHumanDefinition &other) const
 {
 	if (this == &other)
 	{
@@ -178,10 +37,10 @@ EnemyEntityDefinition::EnemyEntityDefinition()
 	this->type = static_cast<EnemyEntityDefinitionType>(-1);
 }
 
-void EnemyEntityDefinition::initCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData)
+void EnemyEntityDefinition::initCreature(CreatureDefinitionID creatureDefID)
 {
 	this->type = EnemyEntityDefinitionType::Creature;
-	this->creature.init(creatureIndex, isFinalBoss, exeData);
+	this->creatureDefID = creatureDefID;
 }
 
 void EnemyEntityDefinition::initHuman(bool male, int charClassID)
@@ -205,7 +64,7 @@ bool EnemyEntityDefinition::operator==(const EnemyEntityDefinition &other) const
 	switch (this->type)
 	{
 	case EnemyEntityDefinitionType::Creature:
-		return this->creature == other.creature;
+		return this->creatureDefID == other.creatureDefID;
 	case EnemyEntityDefinitionType::Human:
 		return this->human == other.human;
 	default:
@@ -492,7 +351,7 @@ bool DecorationEntityDefinition::operator==(const DecorationEntityDefinition &ot
 	{
 		return false;
 	}
-	
+
 	if (this->collider != other.collider)
 	{
 		return false;
@@ -512,7 +371,7 @@ bool DecorationEntityDefinition::operator==(const DecorationEntityDefinition &ot
 	{
 		return false;
 	}
-	
+
 	if (this->puddle != other.puddle)
 	{
 		return false;
@@ -577,10 +436,10 @@ bool EntityDefinition::operator==(const EntityDefinition &other) const
 	}
 }
 
-void EntityDefinition::initEnemyCreature(int creatureIndex, bool isFinalBoss, const ExeData &exeData, EntityAnimationDefinition &&animDef)
+void EntityDefinition::initEnemyCreature(CreatureDefinitionID creatureDefID, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Enemy, std::move(animDef));
-	this->enemy.initCreature(creatureIndex, isFinalBoss, exeData);
+	this->enemy.initCreature(creatureDefID);
 }
 
 void EntityDefinition::initEnemyHuman(bool male, int charClassID, EntityAnimationDefinition &&animDef)
@@ -589,8 +448,7 @@ void EntityDefinition::initEnemyHuman(bool male, int charClassID, EntityAnimatio
 	this->enemy.initHuman(male, charClassID);
 }
 
-void EntityDefinition::initCitizen(bool male, ArenaClimateType climateType,
-	EntityAnimationDefinition &&animDef)
+void EntityDefinition::initCitizen(bool male, ArenaClimateType climateType, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Citizen, std::move(animDef));
 	this->citizen.init(male, climateType);
@@ -638,8 +496,7 @@ void EntityDefinition::initVfx(VfxEntityAnimationType type, int index, EntityAni
 	this->vfx.init(type, index);
 }
 
-void EntityDefinition::initTransition(LevelVoxelTransitionDefID defID,
-	EntityAnimationDefinition &&animDef)
+void EntityDefinition::initTransition(LevelVoxelTransitionDefID defID, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Transition, std::move(animDef));
 	this->transition.init(defID);

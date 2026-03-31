@@ -1374,13 +1374,12 @@ void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityI
 	{
 		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
 
-		int creatureLevel = 1;
 		if (enemyDef.type == EnemyEntityDefinitionType::Creature)
 		{
-			creatureLevel = enemyDef.creature.level;
+			const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+			const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
+			corpseGoldCount = ArenaEntityUtils::getCreatureGold(creatureDef.level, creatureDef.lootChances, random); // @todo This should be done at creature instantiation
 		}
-
-		corpseGoldCount = ArenaEntityUtils::getCreatureGold(creatureLevel, enemyDef.creature.lootChances, random); // @todo This should be done at creature instantiation
 	}
 
 	if (corpseGoldCount == 0)

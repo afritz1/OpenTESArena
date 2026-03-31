@@ -151,6 +151,8 @@ SET(TES_ENTITIES
     "${SRC_ROOT}/Entities/ArenaEntityUtils.h"
     "${SRC_ROOT}/Entities/CitizenUtils.cpp"
     "${SRC_ROOT}/Entities/CitizenUtils.h"
+    "${SRC_ROOT}/Entities/CreatureDefinitionLibrary.cpp"
+    "${SRC_ROOT}/Entities/CreatureDefinitionLibrary.h"
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.cpp"
     "${SRC_ROOT}/Entities/EntityAnimationDefinition.h"
     "${SRC_ROOT}/Entities/EntityAnimationInstance.cpp"

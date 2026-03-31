@@ -50,8 +50,7 @@ namespace EntityUtils
 	void getAnimationMaxDims(const EntityAnimationDefinition &animDef, double *outMaxWidth, double *outMaxHeight);
 
 	// Returns whether the entity definition has a display name.
-	bool tryGetDisplayName(const EntityDefinition &entityDef,
-		const CharacterClassLibrary &charClassLibrary, std::string *outName);
+	bool tryGetDisplayName(const EntityDefinition &entityDef, const CharacterClassLibrary &charClassLibrary, std::string *outName);
 
 	// Arbitrary value for how far away a creature can be heard from.
 	// @todo: make this be part of the player, not creatures.

@@ -12,12 +12,12 @@
 
 CreatureEntityAnimationKey::CreatureEntityAnimationKey()
 {
-	this->creatureID = -1;
+	this->creatureDefID = -1;
 }
 
-void CreatureEntityAnimationKey::init(int creatureID)
+void CreatureEntityAnimationKey::init(CreatureDefinitionID creatureDefID)
 {
-	this->creatureID = creatureID;
+	this->creatureDefID = creatureDefID;
 }
 
 HumanEnemyEntityAnimationKey::HumanEnemyEntityAnimationKey()
@@ -80,15 +80,17 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 		EntityAnimationDefinition animDef;
 		if (!ArenaAnimUtils::tryMakeDynamicEntityCreatureAnims(creatureID, exeData, textureManager, &animDef))
 		{
-			DebugLogError("Couldn't create animation definition for creature " + std::to_string(creatureID) + ".");
+			DebugLogErrorFormat("Couldn't create animation definition for creature %d.", creatureID);
 			continue;
 		}
 
 		const EntityAnimationDefinitionID animDefID = static_cast<EntityAnimationDefinitionID>(this->defs.size());
 		this->defs.emplace_back(std::move(animDef));
+
+		const CreatureDefinitionID creatureDefID = i;
 		
 		CreatureEntityAnimationKey animKey;
-		animKey.init(creatureID);
+		animKey.init(creatureDefID);
 		this->creatureDefIDs.emplace_back(std::move(animKey), animDefID);
 	}
 
@@ -227,7 +229,7 @@ EntityAnimationDefinitionID EntityAnimationLibrary::getCreatureAnimDefID(const C
 		[&key](const auto &pair)
 	{
 		const CreatureEntityAnimationKey &animKey = pair.first;
-		return animKey.creatureID == key.creatureID;
+		return animKey.creatureDefID == key.creatureDefID;
 	});
 
 	DebugAssert(iter != this->creatureDefIDs.end());

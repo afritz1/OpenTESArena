@@ -254,16 +254,17 @@ namespace MapGeneration
 			const ArenaItemIndex itemIndex = *optItemIndex;
 			const int creatureID = isCreatureFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
+			const CreatureDefinitionID creatureDefID = creatureIndex;
 
 			// @todo: read from EntityDefinitionLibrary instead, and don't make anim def above.
 			// Currently these are just going to be duplicates of defs in the library.
 			EntityDefinitionKey entityDefKey;
-			entityDefKey.initCreature(creatureIndex, isCreatureFinalBoss);
+			entityDefKey.initCreature(creatureDefID);
 
 			EntityDefID entityDefID;
 			if (!entityDefLibrary.tryGetDefinitionID(entityDefKey, &entityDefID))
 			{
-				DebugLogWarning("Couldn't get creature definition " + std::to_string(creatureIndex) + " from library.");
+				DebugLogWarning("Couldn't get creature definition " + std::to_string(creatureDefID) + " from library.");
 				return false;
 			}
 
