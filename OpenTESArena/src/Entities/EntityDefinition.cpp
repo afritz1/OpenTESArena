@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cstdio>
-#include <cstring>
 
 #include "ArenaAnimUtils.h"
 #include "EntityDefinition.h"
