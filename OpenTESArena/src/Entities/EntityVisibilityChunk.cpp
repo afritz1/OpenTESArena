@@ -37,11 +37,11 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 	// Expand the chunk's bounding box to fit all entities in it.
 	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 	{
-		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-		const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+		const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);
 
 		// Entity's bounding box is in model space centered on them.
-		const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+		const BoundingBox3D &entityBBox = entityChunkManager.boundingBoxes.get(entityInst.bboxID);
 
 		const WorldDouble3 entityWorldBBoxMin(
 			entityPosition.x + entityBBox.min.x,
@@ -91,8 +91,8 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 		for (int i = 0; i < static_cast<int>(entityChunk.entityIDs.size()); i++)
 		{
 			const EntityInstanceID entityInstID = entityChunk.entityIDs[i];
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-			const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
+			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+			const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);
 			
 			VisibleEntityEntry &visibleEntityEntry = this->visibleEntityEntries[i];
 			visibleEntityEntry.id = entityInstID;
@@ -112,8 +112,8 @@ void EntityVisibilityChunk::update(const RenderCamera &camera, double ceilingSca
 
 			if (!isEntityBBoxCompletelyInvisible)
 			{
-				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-				const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
+				const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+				const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);
 				this->visibleEntityEntries.emplace_back(entityInstID, entityPosition);
 			}
 		}

@@ -1069,7 +1069,7 @@ void GameState::tickRendering(double dt, const RenderCamera &renderCamera, bool 
 		isFloatingOriginChanged, voxelChunkManager, voxelFaceCombineChunkManager, voxelFrustumCullingChunkManager, textureManager, renderer);
 
 	const EntityVisibilityChunkManager &entityVisChunkManager = sceneManager.entityVisChunkManager;
-	Span<RenderTransformHeap> entityTransformHeaps = entityChunkManager.getTransformHeaps();
+	Span<RenderTransformHeap> entityTransformHeaps = entityChunkManager.transformHeaps;
 	RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
 	renderEntityManager.update(activeChunkPositions, newChunkPositions, renderCamera, playerDirXZ, ceilingScale,
 		entityChunkManager, entityVisChunkManager, entityTransformHeaps, textureManager, renderer);

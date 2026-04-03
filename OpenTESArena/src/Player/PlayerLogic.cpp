@@ -449,8 +449,8 @@ namespace PlayerLogic
 		if (isPrimaryInteraction)
 		{
 			const EntityInstanceID entityInstID = entityHit.id;
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-			const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
+			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+			const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInstID);
 			const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
 			const ChunkInt2 entityChunkPos = entityCoord.chunk;
 			const VoxelInt3 entityVoxel = VoxelUtils::pointToVoxel(entityCoord.point, ceilingScale);
@@ -463,7 +463,7 @@ namespace PlayerLogic
 			case EntityDefinitionType::Enemy:
 			{
 				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-				EntityCombatState &combatState = entityChunkManager.getEntityCombatState(entityInst.combatStateID);
+				EntityCombatState &combatState = entityChunkManager.combatStates.get(entityInst.combatStateID);
 				if (!combatState.isDying)
 				{
 					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef);
@@ -551,13 +551,13 @@ namespace PlayerLogic
 					bool isContainerInventoryAccessible = true;
 					if (entityInst.canBeLocked())
 					{
-						const EntityLockState &lockState = entityChunkManager.getEntityLockState(entityInst.lockStateID);
+						const EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
 						isContainerInventoryAccessible = !lockState.isLocked;
 					}
 
 					if (isContainerInventoryAccessible)
 					{
-						ItemInventory &containerItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+						ItemInventory &containerItemInventory = entityChunkManager.itemInventories.get(entityInst.itemInventoryInstID);
 						constexpr bool destroyEntityIfEmpty = true; // Always for piles/chests.
 						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory, destroyEntityIfEmpty);
 					}
@@ -896,20 +896,20 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 			for (const EntityInstanceID hitEntityInstID : hitSearchResult.getEntities())
 			{
-				const EntityInstance &hitEntityInst = entityChunkManager.getEntity(hitEntityInstID);
-				const WorldDouble3 hitEntityPosition = entityChunkManager.getEntityPosition(hitEntityInst.positionID);
-				const BoundingBox3D &hitEntityBBox = entityChunkManager.getEntityBoundingBox(hitEntityInst.bboxID);
+				const EntityInstance &hitEntityInst = entityChunkManager.entities.get(hitEntityInstID);
+				const WorldDouble3 hitEntityPosition = entityChunkManager.positions.get(hitEntityInst.positionID);
+				const BoundingBox3D &hitEntityBBox = entityChunkManager.boundingBoxes.get(hitEntityInst.bboxID);
 				const WorldDouble3 hitEntityMiddlePosition(hitEntityPosition.x, hitEntityPosition.y + hitEntityBBox.halfHeight, hitEntityPosition.z);
 
 				const EntityDefinition &hitEntityDef = entityChunkManager.getEntityDef(hitEntityInst.defID);
 				const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
-				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.getEntityAnimationInstance(hitEntityInst.animInstID);
+				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.animInsts.get(hitEntityInst.animInstID);
 
 				const EntityCombatState *hitEntityCombatState = nullptr;
 				bool canHitEntityBeKilled = false;
 				if (hitEntityInst.canBeKilledInCombat())
 				{
-					hitEntityCombatState = &entityChunkManager.getEntityCombatState(hitEntityInst.combatStateID);
+					hitEntityCombatState = &entityChunkManager.combatStates.get(hitEntityInst.combatStateID);
 					canHitEntityBeKilled = !hitEntityCombatState->isInDeathState();
 				}
 
@@ -917,7 +917,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 				bool canHitEntityLockBeBroken = false;
 				if (hitEntityInst.canBeLocked())
 				{
-					hitEntityLockState = &entityChunkManager.getEntityLockState(hitEntityInst.lockStateID);
+					hitEntityLockState = &entityChunkManager.lockStates.get(hitEntityInst.lockStateID);
 					canHitEntityLockBeBroken = hitEntityLockState->isLocked;
 				}
 

@@ -1218,7 +1218,7 @@ void GameWorldUiView::DEBUG_PhysicsRaycast(Game &game)
 			const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 			// Try inspecting the entity (can be from any distance). If they have a display name, then show it.
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityHit.id);
+			const EntityInstance &entityInst = entityChunkManager.entities.get(entityHit.id);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			const auto &charClassLibrary = CharacterClassLibrary::getInstance();
 
@@ -1351,8 +1351,8 @@ void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanc
 void GameWorldUiController::onEnemyCorpseInteracted(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
 {
 	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-	const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-	ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+	const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+	ItemInventory &enemyItemInventory = entityChunkManager.itemInventories.get(entityInst.itemInventoryInstID);
 
 	if (enemyItemInventory.getOccupiedSlotCount() > 0)
 	{
@@ -1400,8 +1400,8 @@ void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityI
 		GameWorldUiController::onStatusPopUpSelected(game);
 
 		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-		ItemInventory &enemyItemInventory = entityChunkManager.getEntityItemInventory(entityInst.itemInventoryInstID);
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+		ItemInventory &enemyItemInventory = entityChunkManager.itemInventories.get(entityInst.itemInventoryInstID);
 
 		if (enemyItemInventory.getOccupiedSlotCount() > 0)
 		{
@@ -1459,7 +1459,7 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance &entityInst)
 {
 	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-	const EntityCitizenName &citizenName = entityChunkManager.getEntityCitizenName(entityInst.citizenNameID);
+	const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
 	const std::string citizenNameStr(citizenName.name);
 	const std::string text = citizenNameStr + "\n(dialogue not implemented)";
 	GameWorldUI::showTextPopUp(text.c_str());

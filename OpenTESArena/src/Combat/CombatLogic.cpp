@@ -75,14 +75,14 @@ void CombatLogic::getHitSearchResult(const WorldDouble3 &searchPoint, double sea
 			{
 				for (const EntityInstanceID entityInstID : entityChunk->entityIDs)
 				{
-					const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+					const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 					if (!entityInst.canAcceptCombatHits())
 					{
 						continue;
 					}
 
-					const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInst.positionID);
-					const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+					const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);
+					const BoundingBox3D &entityBBox = entityChunkManager.boundingBoxes.get(entityInst.bboxID);
 					const WorldDouble3 entityWorldBBoxMin = entityPosition + entityBBox.min;
 					const WorldDouble3 entityWorldBBoxMax = entityPosition + entityBBox.max;
 					BoundingBox3D entityWorldBBox;

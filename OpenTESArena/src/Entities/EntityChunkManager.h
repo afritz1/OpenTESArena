@@ -95,7 +95,7 @@ struct EntityTransferResult
 
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
-private:
+public:
 	using EntityPool = KeyValuePool<EntityInstanceID, EntityInstance>;
 	using EntityPositionPool = KeyValuePool<EntityPositionID, WorldDouble3>;
 	using EntityBoundingBoxPool = KeyValuePool<EntityBoundingBoxID, BoundingBox3D>;
@@ -109,6 +109,7 @@ private:
 	using EntityItemInventoryInstancePool = KeyValuePool<EntityItemInventoryInstanceID, ItemInventory>;
 	using EntityLockStatePool = KeyValuePool<EntityLockStateID, EntityLockState>;
 
+	// Containers for all currently-allocated entity data in the scene. Do not manually allocate/free these.
 	EntityPool entities;
 	EntityPositionPool positions;
 	EntityBoundingBoxPool boundingBoxes;
@@ -118,33 +119,28 @@ private:
 	EntityCreatureSoundPool creatureSoundInsts;
 	EntityCitizenDirectionIndexPool citizenDirectionIndices;
 	EntityCitizenNamePool citizenNames;
-
-	// Each citizen has a unique palette indirection in place of unique textures for memory savings. It was found
-	// that hardly any citizen instances share textures due to variations in their random palette. As a result,
-	// citizen textures will need to be 8-bit.
 	EntityPaletteIndicesInstancePool paletteIndices;
-
 	EntityItemInventoryInstancePool itemInventories;
 	EntityLockStatePool lockStates;
 
-	// Weak references to certain entity types for ease of iterating.
+	// Weak references to certain entity types for ease of iterating. Does not contain destroyed entities.
 	std::vector<EntityInstanceID> enemyEntityInstIDs;
 	std::vector<EntityInstanceID> citizenEntityInstIDs;
-	
-	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
-	// to be zero-based because these are in addition to ones in the entity definition library.
-	// @todo: separate EntityAnimationDefinition from EntityDefinition?
-	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
 	// One uniform buffer of model matrices per heap. Each entity tracks which heap its transform belongs to.
 	std::vector<RenderTransformHeap> transformHeaps;
 
-	// Entities that should have their instance resources freed, either because the chunk they were in
-	// was unloaded, or they were otherwise despawned. Cleared at end-of-frame.
+	// Entities scheduled for destruction from memory this frame. These should not be simulated or rendered.
 	std::vector<EntityInstanceID> destroyedEntityIDs;
 
-	// Entities that have moved from one chunk to another and are still in play.
+	// Entities that have moved between chunks this frame and are still in play. Necessary for chunks that
+	// track the entities inside them for faster lookups.
 	std::vector<EntityTransferResult> transferResults;
+private:
+	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
+	// to be zero-based because these are in addition to ones in the entity definition library.
+	// @todo: separate EntityAnimationDefinition from EntityDefinition?
+	std::unordered_map<EntityDefID, EntityDefinition> entityDefs;
 
 	EntityDefID addEntityDef(EntityDefinition &&def, const EntityDefinitionLibrary &defLibrary);
 	EntityDefID getOrAddEntityDefID(const EntityDefinition &def, const EntityDefinitionLibrary &defLibrary);
@@ -174,35 +170,7 @@ private:
 	void updateVfx();
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
-	const EntityInstance &getEntity(EntityInstanceID id) const;
-	const WorldDouble3 &getEntityPosition(EntityPositionID id) const;
-	const BoundingBox3D &getEntityBoundingBox(EntityBoundingBoxID id) const;
-	const Double2 &getEntityDirection(EntityDirectionID id) const;
-	EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id);
-	const EntityAnimationInstance &getEntityAnimationInstance(EntityAnimationInstanceID id) const;
-	EntityCombatState &getEntityCombatState(EntityCombatStateID id);
-	const EntityCombatState &getEntityCombatState(EntityCombatStateID id) const;
-	int8_t getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const;
-	const EntityCitizenName &getEntityCitizenName(EntityCitizenNameID id) const;
-	const PaletteIndices &getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const;
-	ItemInventory &getEntityItemInventory(EntityItemInventoryInstanceID id);
-	EntityLockState &getEntityLockState(EntityLockStateID id);
-	const EntityLockState &getEntityLockState(EntityLockStateID id) const;
-
 	EntityInstanceID getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const;
-
-	Span<const EntityInstanceID> getEnemyEntityInstIDs() const;
-	Span<const EntityInstanceID> getCitizenEntityInstIDs() const;
-
-	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
-	// simulated or rendered.
-	Span<const EntityInstanceID> getQueuedDestroyEntityIDs() const;
-
-	// For determining which uniform buffers to use with entity draw calls, and for populating renderer matrices.
-	Span<RenderTransformHeap> getTransformHeaps();
-
-	// Gets all entities who moved between chunks this frame. Cleared at end of frame.
-	Span<const EntityTransferResult> getEntityTransferResults() const;
 
 	// Count functions for specialized entities.
 	int getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const;
@@ -225,7 +193,7 @@ public:
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
 	// Prepares an entity for destruction later this frame, optionally notifying its chunk to remove its reference.
-	// Don't need to notify the chunk if it's being unloaded this frame.
+	// Don't need to notify the chunk if the chunk is being freed this frame.
 	void queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify);
 	void queueEntityDestroy(EntityInstanceID entityInstID, bool notifyChunk);
 

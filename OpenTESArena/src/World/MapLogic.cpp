@@ -29,7 +29,7 @@ void MapLogic::handleNightLightChange(Game &game, bool active)
 		EntityChunk &entityChunk = entityChunkManager.getChunkAtIndex(i);
 		for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 		{
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			if (EntityUtils::isStreetlight(entityDef))
 			{
@@ -41,7 +41,7 @@ void MapLogic::handleNightLightChange(Game &game, bool active)
 					continue;
 				}
 
-				EntityAnimationInstance &entityAnimInst = entityChunkManager.getEntityAnimationInstance(entityInst.animInstID);
+				EntityAnimationInstance &entityAnimInst = entityChunkManager.animInsts.get(entityInst.animInstID);
 				entityAnimInst.setStateIndex(*newAnimStateIndex);				
 			}
 		}

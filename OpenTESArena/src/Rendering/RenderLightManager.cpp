@@ -72,7 +72,7 @@ void RenderLightManager::loadScene(Renderer &renderer)
 void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreActive, bool isFogActive, bool playerHasLight,
 	const EntityChunkManager &entityChunkManager, Renderer &renderer)
 {
-	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
+	for (const EntityInstanceID entityInstID : entityChunkManager.destroyedEntityIDs)
 	{
 		const auto entityLightIter = this->entityLights.find(entityInstID);
 		if (entityLightIter != this->entityLights.end())
@@ -95,7 +95,7 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 				continue;
 			}
 
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			const std::optional<double> entityLightRadius = EntityUtils::tryGetLightRadius(entityDef);
 			const bool entityHasLight = entityLightRadius.has_value();
@@ -144,9 +144,9 @@ void RenderLightManager::update(const RenderCamera &camera, bool nightLightsAreA
 		const EntityInstanceID entityInstID = pair.first;
 		RenderLightEntry &entityLight = pair.second;
 
-		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
-		const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
-		const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+		const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInstID);
+		const BoundingBox3D &entityBBox = entityChunkManager.boundingBoxes.get(entityInst.bboxID);
 		const WorldDouble3 lightPosition = GetLightPositionInEntity(entityPosition, entityBBox);
 		entityLight.light.position = lightPosition - camera.floatingOriginPoint;
 

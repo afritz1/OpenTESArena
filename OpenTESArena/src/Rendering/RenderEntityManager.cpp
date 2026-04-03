@@ -256,7 +256,7 @@ void RenderEntityManager::loadMaterialsForChunkEntities(const EntityChunk &entit
 {
 	for (const EntityInstanceID entityInstID : entityChunk.entityIDs)
 	{
-		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 		const EntityDefID entityDefID = entityInst.defID;
 
 		const RenderEntityLoadedAnimation *loadedAnim = nullptr;
@@ -294,7 +294,7 @@ void RenderEntityManager::loadMaterialsForChunkEntities(const EntityChunk &entit
 
 			if (paletteIndicesIter == this->paletteIndicesEntries.end())
 			{
-				const PaletteIndices &paletteIndices = entityChunkManager.getEntityPaletteIndices(paletteIndicesInstID);
+				const PaletteIndices &paletteIndices = entityChunkManager.paletteIndices.get(paletteIndicesInstID);
 				const ObjectTextureID paletteIndicesTextureID = CreateEntityPaletteIndicesTextureID(paletteIndices, renderer);
 
 				Span<const ScopedObjectTextureRef> loadedAnimTextureRefs = loadedAnim->textureRefs;
@@ -431,9 +431,9 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	Renderer &renderer)
 {
 	// Free destroyed entity palettes + materials.
-	for (const EntityInstanceID entityInstID : entityChunkManager.getQueuedDestroyEntityIDs())
+	for (const EntityInstanceID entityInstID : entityChunkManager.destroyedEntityIDs)
 	{
-		const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 		if (entityInst.isCitizen())
 		{
 			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
@@ -482,7 +482,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 		{
 			const EntityInstanceID entityInstID = visibleEntity.id;
 			const WorldDouble3 entityPosition = visibleEntity.position;
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 			const EntityDefID entityDefID = entityInst.defID;
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityDefID);
 			const EntityAnimationDefinition &animDef = entityDef.animDef;

@@ -1152,76 +1152,6 @@ std::string EntityChunkManager::getCreatureSoundFilename(const EntityDefID defID
 	return String::toUppercase(std::string(creatureSoundName));
 }
 
-const EntityInstance &EntityChunkManager::getEntity(EntityInstanceID id) const
-{
-	return this->entities.get(id);
-}
-
-const WorldDouble3 &EntityChunkManager::getEntityPosition(EntityPositionID id) const
-{
-	return this->positions.get(id);
-}
-
-const BoundingBox3D &EntityChunkManager::getEntityBoundingBox(EntityBoundingBoxID id) const
-{
-	return this->boundingBoxes.get(id);
-}
-
-const Double2 &EntityChunkManager::getEntityDirection(EntityDirectionID id) const
-{
-	return this->directions.get(id);
-}
-
-EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(EntityAnimationInstanceID id)
-{
-	return this->animInsts.get(id);
-}
-
-const EntityAnimationInstance &EntityChunkManager::getEntityAnimationInstance(EntityAnimationInstanceID id) const
-{
-	return this->animInsts.get(id);
-}
-
-EntityCombatState &EntityChunkManager::getEntityCombatState(EntityCombatStateID id)
-{
-	return this->combatStates.get(id);
-}
-
-const EntityCombatState &EntityChunkManager::getEntityCombatState(EntityCombatStateID id) const
-{
-	return this->combatStates.get(id);
-}
-
-int8_t EntityChunkManager::getEntityCitizenDirectionIndex(EntityCitizenDirectionIndexID id) const
-{
-	return this->citizenDirectionIndices.get(id);
-}
-
-const EntityCitizenName &EntityChunkManager::getEntityCitizenName(EntityCitizenNameID id) const
-{
-	return this->citizenNames.get(id);
-}
-
-const PaletteIndices &EntityChunkManager::getEntityPaletteIndices(EntityPaletteIndicesInstanceID id) const
-{
-	return this->paletteIndices.get(id);
-}
-
-ItemInventory &EntityChunkManager::getEntityItemInventory(EntityItemInventoryInstanceID id)
-{
-	return this->itemInventories.get(id);
-}
-
-EntityLockState &EntityChunkManager::getEntityLockState(EntityLockStateID id)
-{
-	return this->lockStates.get(id);
-}
-
-const EntityLockState &EntityChunkManager::getEntityLockState(EntityLockStateID id) const
-{
-	return this->lockStates.get(id);
-}
-
 EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const
 {
 	if (bodyID.IsInvalid())
@@ -1239,16 +1169,6 @@ EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID body
 	}
 
 	return -1;
-}
-
-Span<const EntityInstanceID> EntityChunkManager::getEnemyEntityInstIDs() const
-{
-	return this->enemyEntityInstIDs;
-}
-
-Span<const EntityInstanceID> EntityChunkManager::getCitizenEntityInstIDs() const
-{
-	return this->citizenEntityInstIDs;
 }
 
 int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
@@ -1323,21 +1243,6 @@ int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chu
 	return count;
 }
 
-Span<const EntityInstanceID> EntityChunkManager::getQueuedDestroyEntityIDs() const
-{
-	return this->destroyedEntityIDs;
-}
-
-Span<RenderTransformHeap> EntityChunkManager::getTransformHeaps()
-{
-	return this->transformHeaps;
-}
-
-Span<const EntityTransferResult> EntityChunkManager::getEntityTransferResults() const
-{
-	return this->transferResults;
-}
-
 void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const WorldDouble3 &eyePosition, EntityObservedResult &result) const
 {
 	const EntityInstance &entityInst = this->entities.get(id);
@@ -1359,8 +1264,8 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 	Radians animAngle = 0.0;
 	if (entityInst.isDynamic())
 	{
-		const VoxelDouble2 &entityDir = this->getEntityDirection(entityInst.directionID);
-		const VoxelDouble2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
+		const Double2 &entityDir = this->directions.get(entityInst.directionID);
+		const Double2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
 		const Radians entityAngle = MathUtils::fullAtan2(entityDir);
 		const Radians diffAngle = MathUtils::fullAtan2(diffDir);
 		const Radians relativeAngle = Constants::TwoPi + (entityAngle - diffAngle);

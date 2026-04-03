@@ -133,15 +133,15 @@ namespace Physics
 		// Build mappings of voxels to entities.
 		for (const EntityInstanceID entityInstID : entityInstIDs)
 		{
-			const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 
 			EntityObservedResult observedResult;
 			entityChunkManager.getEntityObservedResult(entityInstID, viewPosition, observedResult);
 
 			// Iterate over the voxels the entity's bounding box touches.
-			const WorldDouble3 entityPosition = entityChunkManager.getEntityPosition(entityInstID);
+			const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInstID);
 			const CoordDouble3 entityCoord = VoxelUtils::worldPointToCoord(entityPosition);
-			const BoundingBox3D &entityBBox = entityChunkManager.getEntityBoundingBox(entityInst.bboxID);
+			const BoundingBox3D &entityBBox = entityChunkManager.boundingBoxes.get(entityInst.bboxID);
 			const WorldDouble3 entityMinWorldPoint = entityPosition - Double3(entityBBox.halfWidth, 0.0, entityBBox.halfDepth);
 			const WorldDouble3 entityMaxWorldPoint = entityPosition + Double3(entityBBox.halfWidth, entityBBox.height, entityBBox.halfDepth);
 			const WorldInt3 entityMinWorldVoxel = VoxelUtils::pointToVoxel(entityMinWorldPoint, ceilingScale);
@@ -378,7 +378,7 @@ namespace Physics
 				const EntityInstanceID entityInstID = observedResult.entityInstID;
 				const int linearizedKeyframeIndex = observedResult.linearizedKeyframeIndex;
 
-				const EntityInstance &entityInst = entityChunkManager.getEntity(entityInstID);
+				const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
 				const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 				const EntityAnimationDefinition &animDef = entityDef.animDef;
 				DebugAssertIndex(animDef.keyframes, linearizedKeyframeIndex);
