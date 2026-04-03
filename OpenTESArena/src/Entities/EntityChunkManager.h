@@ -127,6 +127,10 @@ private:
 	EntityItemInventoryInstancePool itemInventories;
 	EntityLockStatePool lockStates;
 
+	// Weak references to certain entity types for ease of iterating.
+	std::vector<EntityInstanceID> enemyEntityInstIDs;
+	std::vector<EntityInstanceID> citizenEntityInstIDs;
+	
 	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
 	// @todo: separate EntityAnimationDefinition from EntityDefinition?
@@ -186,6 +190,9 @@ public:
 	const EntityLockState &getEntityLockState(EntityLockStateID id) const;
 
 	EntityInstanceID getEntityFromPhysicsBodyID(JPH::BodyID bodyID) const;
+
+	Span<const EntityInstanceID> getEnemyEntityInstIDs() const;
+	Span<const EntityInstanceID> getCitizenEntityInstIDs() const;
 
 	// Gets the entities scheduled for destruction this frame. If they're in this list, they should no longer be
 	// simulated or rendered.

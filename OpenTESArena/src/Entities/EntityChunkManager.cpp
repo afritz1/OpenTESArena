@@ -671,6 +671,16 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		const int activeAnimDefStateIndex = *initInfo.isLocked ? *lockedAnimDefStateIndex : *unlockedAnimDefStateIndex;
 		animInst.setStateIndex(activeAnimDefStateIndex);
 	}
+
+	// Cache for faster iteration if needed for this entity type.
+	if (entityDef.type == EntityDefinitionType::Enemy)
+	{
+		this->enemyEntityInstIDs.emplace_back(entityInst.instanceID);
+	}
+	else if (entityDef.type == EntityDefinitionType::Citizen)
+	{
+		this->citizenEntityInstIDs.emplace_back(entityInst.instanceID);
+	}
 }
 
 void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
@@ -919,18 +929,9 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-	// @todo now that this entity loop isn't per-chunk, it's possible the citizen starts in a freed chunk this frame and walks to an active chunk
-	// despite already being marked for destruction. Ideally would not iterate over all entities (or even all citizens) but a list of citizens
-	// not marked for destruction.
-
-	for (const EntityInstance &entityInst : this->entities.values)
+	for (const EntityInstanceID entityInstID : this->citizenEntityInstIDs)
 	{
-		if (!entityInst.isCitizen())
-		{
-			continue;
-		}
-
-		const EntityInstanceID entityInstID = entityInst.instanceID;
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
 		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
@@ -1240,6 +1241,16 @@ EntityInstanceID EntityChunkManager::getEntityFromPhysicsBodyID(JPH::BodyID body
 	return -1;
 }
 
+Span<const EntityInstanceID> EntityChunkManager::getEnemyEntityInstIDs() const
+{
+	return this->enemyEntityInstIDs;
+}
+
+Span<const EntityInstanceID> EntityChunkManager::getCitizenEntityInstIDs() const
+{
+	return this->citizenEntityInstIDs;
+}
+
 int EntityChunkManager::getCountInChunkWithDirection(const ChunkInt2 &chunkPos) const
 {
 	const int chunkIndex = this->findChunkIndex(chunkPos);
@@ -1390,37 +1401,40 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 
 void EntityChunkManager::updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager)
 {
-	for (EntityInstance &entityInst : this->entities.values)
+	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
 	{
-		if (entityInst.creatureSoundInstID >= 0)
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		if (entityInst.creatureSoundInstID < 0)
 		{
-			const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
-			if (combatState.isInDeathState())
-			{
-				continue;
-			}
+			continue;
+		}
 
-			double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
-			secondsTillCreatureSound -= dt;
-			if (secondsTillCreatureSound <= 0.0)
+		const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		if (combatState.isInDeathState())
+		{
+			continue;
+		}
+
+		double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
+		secondsTillCreatureSound -= dt;
+		if (secondsTillCreatureSound <= 0.0)
+		{
+			const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+			const BoundingBox3D &entityBBox = this->boundingBoxes.get(entityInst.bboxID);
+			const WorldDouble3 entitySoundPosition(entityPosition.x, entityPosition.y + entityBBox.halfHeight, entityPosition.z);
+			if (EntityUtils::withinHearingDistance(playerPosition, entitySoundPosition))
 			{
-				const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-				const BoundingBox3D &entityBBox = this->boundingBoxes.get(entityInst.bboxID);
-				const WorldDouble3 entitySoundPosition(entityPosition.x, entityPosition.y + entityBBox.halfHeight, entityPosition.z);
-				if (EntityUtils::withinHearingDistance(playerPosition, entitySoundPosition))
+				// @todo: store some kind of sound def ID w/ the secondsTillCreatureSound instead of generating the sound filename here.
+				const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID);
+				if (creatureSoundFilename.empty())
 				{
-					// @todo: store some kind of sound def ID w/ the secondsTillCreatureSound instead of generating the sound filename here.
-					const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID);
-					if (creatureSoundFilename.empty())
-					{
-						continue;
-					}
-
-					// Center the sound inside the creature.
-					audioManager.playSound(creatureSoundFilename.c_str(), entitySoundPosition);
-
-					secondsTillCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
+					continue;
 				}
+
+				// Center the sound inside the creature.
+				audioManager.playSound(creatureSoundFilename.c_str(), entitySoundPosition);
+
+				secondsTillCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
 			}
 		}
 	}
@@ -1677,6 +1691,27 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const
 			const auto iter = std::find(entityChunk.entityIDs.begin(), entityChunk.entityIDs.end(), entityInstID);
 			DebugAssert(iter != entityChunk.entityIDs.end());
 			entityChunk.entityIDs.erase(iter);
+		}
+
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityDefinitionType entityDefType = entityDef.type;
+
+		std::vector<EntityInstanceID> *entityInstIDsToUpdate = nullptr;
+		if (entityDefType == EntityDefinitionType::Enemy)
+		{
+			entityInstIDsToUpdate = &this->enemyEntityInstIDs;
+		}
+		else if (entityDefType == EntityDefinitionType::Citizen)
+		{
+			entityInstIDsToUpdate = &this->citizenEntityInstIDs;
+		}
+
+		if (entityInstIDsToUpdate != nullptr)
+		{
+			const auto idIter = std::find(entityInstIDsToUpdate->begin(), entityInstIDsToUpdate->end(), entityInstID);
+			DebugAssert(idIter != entityInstIDsToUpdate->end());
+			entityInstIDsToUpdate->erase(idIter);
 		}
 	}
 }
