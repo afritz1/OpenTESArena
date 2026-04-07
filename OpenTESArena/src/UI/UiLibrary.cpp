@@ -392,7 +392,7 @@ namespace
 			*outValue = std::stoi(str, &index);
 			return index == str.size();
 		}
-		catch (std::exception)
+		catch (const std::exception&)
 		{
 			DebugLogErrorFormat("Couldn't parse \"%s\" as an integer.", str.c_str());
 			return false;
@@ -407,7 +407,7 @@ namespace
 			*outValue = std::stod(str, &index);
 			return index == str.size();
 		}
-		catch (std::exception)
+		catch (const std::exception&)
 		{
 			DebugLogErrorFormat("Couldn't parse \"%s\" as a double.", str.c_str());
 			return false;
