@@ -377,7 +377,7 @@ void GameWorldUI::create(Game &game)
 
 	if (!state.initInfo.textPopUpMessage.empty())
 	{
-		GameWorldUI::showTextPopUp(state.initInfo.textPopUpMessage.c_str());
+		GameWorldUI::showTextPopUp(state.initInfo.textPopUpMessage.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
 	}
 }
 
@@ -658,7 +658,7 @@ void GameWorldUI::onPauseChanged(bool paused)
 	}
 }
 
-void GameWorldUI::showTextPopUp(const char *str, const GameWorldPopUpClosedCallback &callback)
+void GameWorldUI::showTextPopUp(const char *str, TextAlignment alignment, const GameWorldPopUpClosedCallback &callback)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
@@ -678,7 +678,7 @@ void GameWorldUI::showTextPopUp(const char *str, const GameWorldPopUpClosedCallb
 	textPopUpTextBoxInitInfo.text = str;
 	textPopUpTextBoxInitInfo.fontName = GameWorldUiView::StatusPopUpFontName;
 	textPopUpTextBoxInitInfo.defaultColor = GameWorldUiView::StatusPopUpTextColor;
-	textPopUpTextBoxInitInfo.alignment = GameWorldUiView::StatusPopUpTextAlignment;
+	textPopUpTextBoxInitInfo.alignment = alignment;
 	textPopUpTextBoxInitInfo.lineSpacing = GameWorldUiView::StatusPopUpTextLineSpacing;
 	const UiElementInstanceID textPopUpTextBoxElementInstID = uiManager.createTextBox(textPopUpTextBoxElementInitInfo, textPopUpTextBoxInitInfo, state.textPopUpContextInstID, renderer);
 	const Rect textPopUpTextBoxRect = uiManager.getTransformGlobalRect(textPopUpTextBoxElementInstID);
@@ -725,7 +725,7 @@ void GameWorldUI::showTextPopUp(const char *str, const GameWorldPopUpClosedCallb
 	GameWorldUI::onPauseChanged(true);
 }
 
-void GameWorldUI::showTextPopUp(const char *str)
+void GameWorldUI::showTextPopUp(const char *str, TextAlignment alignment)
 {
 	auto callback = []()
 	{
@@ -734,7 +734,7 @@ void GameWorldUI::showTextPopUp(const char *str)
 		GameWorldUiController::onStatusPopUpSelected(game);
 	};
 
-	GameWorldUI::showTextPopUp(str, callback);
+	GameWorldUI::showTextPopUp(str, alignment, callback);
 }
 
 void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback)
@@ -1138,7 +1138,7 @@ void GameWorldUI::onStatusButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
 	const std::string text = GameWorldUiModel::getStatusButtonText(game);
-	GameWorldUI::showTextPopUp(text.c_str());
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
 }
 
 void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
