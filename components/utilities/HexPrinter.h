@@ -1,5 +1,4 @@
-#ifndef HEX_PRINTER_H
-#define HEX_PRINTER_H
+#pragma once
 
 #include <cstdint>
 
@@ -11,5 +10,3 @@ namespace HexPrinter
 	// Writes to stdout by default.
 	void print(const uint8_t *data, int count);
 }
-
-#endif

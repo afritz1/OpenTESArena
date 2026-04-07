@@ -1,5 +1,4 @@
-#ifndef FIXED_POOL_H
-#define FIXED_POOL_H
+#pragma once
 
 #include <algorithm>
 #include <memory>
@@ -89,5 +88,3 @@ struct FixedPool
 		this->freedIndexCount = 0;
 	}
 };
-
-#endif

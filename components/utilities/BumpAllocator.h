@@ -1,5 +1,4 @@
-#ifndef BUMP_ALLOCATOR_H
-#define BUMP_ALLOCATOR_H
+#pragma once
 
 #include <cstddef>
 #include <type_traits>
@@ -107,5 +106,3 @@ public:
 		this->index = 0;
 	}
 };
-
-#endif

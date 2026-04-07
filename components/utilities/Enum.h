@@ -1,5 +1,4 @@
-#ifndef ENUM_H
-#define ENUM_H
+#pragma once
 
 #include <type_traits>
 
@@ -107,5 +106,3 @@ constexpr EnumFlags<EnumType> operator&(EnumType a, EnumFlags<EnumType> b)
 {
 	return EnumFlags<EnumType>(a) & b;
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef OBJ_FILE_H
-#define OBJ_FILE_H
+#pragma once
 
 #include <vector>
 
@@ -21,5 +20,3 @@ struct ObjFile
 
 	bool init(const char *filename);
 };
-
-#endif

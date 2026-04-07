@@ -1,5 +1,4 @@
-#ifndef STATIC_VECTOR_H
-#define STATIC_VECTOR_H
+#pragma once
 
 #include <initializer_list>
 #include <type_traits>
@@ -166,5 +165,3 @@ public:
 		this->count = 0;
 	}
 };
-
-#endif

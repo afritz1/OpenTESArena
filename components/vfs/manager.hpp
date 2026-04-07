@@ -1,5 +1,4 @@
-#ifndef COMPONENTS_VFS_MANAGER_HPP
-#define COMPONENTS_VFS_MANAGER_HPP
+#pragma once
 
 #include <array>
 #include <cstddef>
@@ -55,5 +54,3 @@ public:
 };
 
 } // namespace VFS
-
-#endif /* COMPONENTS_VFS_MANAGER_HPP */

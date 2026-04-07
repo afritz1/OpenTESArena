@@ -1,5 +1,4 @@
-#ifndef KEY_VALUE_FILE_H
-#define KEY_VALUE_FILE_H
+#pragma once
 
 #include <string>
 #include <string_view>
@@ -48,5 +47,3 @@ public:
 	const KeyValueFileSection &getSection(int index) const;
 	const KeyValueFileSection *findSection(const std::string &name) const;
 };
-
-#endif

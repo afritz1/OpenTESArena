@@ -1,5 +1,4 @@
-#ifndef SPAN_3D_H
-#define SPAN_3D_H
+#pragma once
 
 #include <algorithm>
 
@@ -228,5 +227,3 @@ public:
 		this->isSliced = false;
 	}
 };
-
-#endif

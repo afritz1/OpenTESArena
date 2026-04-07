@@ -1,5 +1,4 @@
-#ifndef PROFILER_H
-#define PROFILER_H
+#pragma once
 
 #include <string>
 
@@ -10,5 +9,3 @@ namespace Profiler
 	void setStop(const char *sampleName, bool accumulate = false);
 	std::string getResultsString();
 }
-
-#endif

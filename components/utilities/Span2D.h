@@ -1,5 +1,4 @@
-#ifndef SPAN_2D_H
-#define SPAN_2D_H
+#pragma once
 
 #include <algorithm>
 
@@ -206,5 +205,3 @@ public:
 		this->isSliced = false;
 	}
 };
-
-#endif

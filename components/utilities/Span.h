@@ -1,5 +1,4 @@
-#ifndef SPAN_H
-#define SPAN_H
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -275,5 +274,3 @@ namespace std
 		return static_cast<size_t>(span.getCount());
 	}
 }
-
-#endif

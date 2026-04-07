@@ -1,5 +1,4 @@
-#ifndef STRING_VIEW_H
-#define STRING_VIEW_H
+#pragma once
 
 #include <cstdint>
 #include <string_view>
@@ -89,5 +88,3 @@ namespace StringView
 	// Gets the right-most extension from a string view, i.e., "txt".
 	std::string_view getExtension(std::string_view str);
 }
-
-#endif

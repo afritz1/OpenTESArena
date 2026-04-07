@@ -1,5 +1,4 @@
-#ifndef FPS_COUNTER_H
-#define FPS_COUNTER_H
+#pragma once
 
 class FPSCounter
 {
@@ -25,5 +24,3 @@ public:
 	// per frame.
 	void updateFrameTime(double dt);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef BYTES_H
-#define BYTES_H
+#pragma once
 
 #include <climits>
 #include <cstddef>
@@ -110,5 +109,3 @@ namespace Bytes
 		return Bytes::getAlignedAddress(address, alignof(T));
 	}
 }
-
-#endif

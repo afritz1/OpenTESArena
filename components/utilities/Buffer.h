@@ -1,5 +1,4 @@
-#ifndef BUFFER_H
-#define BUFFER_H
+#pragma once
 
 #include <algorithm>
 #include <initializer_list>
@@ -183,5 +182,3 @@ namespace std
 		return static_cast<size_t>(buffer.getCount());
 	}
 }
-
-#endif

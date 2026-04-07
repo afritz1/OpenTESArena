@@ -1,5 +1,4 @@
-#ifndef BUFFER3D_H
-#define BUFFER3D_H
+#pragma once
 
 #include <algorithm>
 
@@ -186,5 +185,3 @@ public:
 		this->depth = 0;
 	}
 };
-
-#endif

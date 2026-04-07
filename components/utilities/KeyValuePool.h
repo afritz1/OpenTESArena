@@ -1,5 +1,4 @@
-#ifndef KEY_VALUE_POOL_H
-#define KEY_VALUE_POOL_H
+#pragma once
 
 #include <algorithm>
 #include <type_traits>
@@ -146,5 +145,3 @@ struct KeyValuePool
 		this->freedKeys.clear();
 	}
 };
-
-#endif

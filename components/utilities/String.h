@@ -1,5 +1,4 @@
-#ifndef STRING_H
-#define STRING_H
+#pragma once
 
 #include <cstdint>
 #include <cstdio>
@@ -150,5 +149,3 @@ namespace String
 	// the entire source string was copied.
 	bool tryCopy(const char *src, char *dst, size_t dstSize);
 }
-
-#endif

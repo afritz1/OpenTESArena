@@ -1,5 +1,4 @@
-#ifndef FLAT_MAP_H
-#define FLAT_MAP_H
+#pragma once
 
 #include <algorithm>
 #include <type_traits>
@@ -161,5 +160,3 @@ struct FlatMap
 		this->values.clear();
 	}
 };
-
-#endif

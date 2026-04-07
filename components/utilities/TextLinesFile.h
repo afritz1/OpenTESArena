@@ -1,5 +1,4 @@
-#ifndef TEXT_LINES_FILE_H
-#define TEXT_LINES_FILE_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -18,5 +17,3 @@ public:
 
 	const std::string &getLine(int index) const;
 };
-
-#endif

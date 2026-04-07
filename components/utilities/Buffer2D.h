@@ -1,5 +1,4 @@
-#ifndef BUFFER2D_H
-#define BUFFER2D_H
+#pragma once
 
 #include <algorithm>
 
@@ -169,5 +168,3 @@ public:
 		this->height = 0;
 	}
 };
-
-#endif

@@ -1,10 +1,7 @@
-#ifndef PATH_H
-#define PATH_H
+#pragma once
 
 namespace Path
 {
 	bool isAbsolute(const char *path);
 	bool isRelative(const char *path);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef FILE_H
-#define FILE_H
+#pragma once
 
 #include <cstddef>
 #include <string>
@@ -15,5 +14,3 @@ namespace File
 
 	void copy(const char *srcFilename, const char *dstFilename);
 }
-
-#endif

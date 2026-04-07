@@ -1,5 +1,4 @@
-#ifndef DOS_UTILS_H
-#define DOS_UTILS_H
+#pragma once
 
 #include <array>
 
@@ -10,5 +9,3 @@ namespace DOSUtils
 
 	using FilenameBuffer = std::array<char, FILENAME_BUFFER_SIZE>;
 }
-
-#endif

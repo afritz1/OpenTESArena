@@ -1,5 +1,4 @@
-#ifndef VIRTUAL_HEAP_H
-#define VIRTUAL_HEAP_H
+#pragma once
 
 #include <cstdint>
 #include <deque>
@@ -57,5 +56,3 @@ public:
 	// Frees the given handle's virtual block.
 	void free(VirtualHeapHandle handle);
 };
-
-#endif

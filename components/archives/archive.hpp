@@ -1,5 +1,4 @@
-#ifndef COMPONENTS_ARCHIVES_ARCHIVE_HPP
-#define COMPONENTS_ARCHIVES_ARCHIVE_HPP
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -71,5 +70,3 @@ public:
 };
 
 } // namespace Archives
-
-#endif /* COMPONENTS_ARCHIVES_ARCHIVE_HPP */

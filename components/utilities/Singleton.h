@@ -1,5 +1,4 @@
-#ifndef SINGLETON_H
-#define SINGLETON_H
+#pragma once
 
 template<typename T>
 class Singleton
@@ -20,5 +19,3 @@ public:
 		return instance;
 	}
 };
-
-#endif

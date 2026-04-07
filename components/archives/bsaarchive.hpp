@@ -1,5 +1,4 @@
-#ifndef COMPONENTS_ARCHIVES_BSAARCHIVE_HPP
-#define COMPONENTS_ARCHIVES_BSAARCHIVE_HPP
+#pragma once
 
 #include <iostream>
 #include <string>
@@ -36,5 +35,3 @@ public:
 };
 
 } // namespace Archives
-
-#endif /* COMPONENTS_ARCHIVES_BSAARCHIVE_HPP */

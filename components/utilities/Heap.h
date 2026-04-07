@@ -1,5 +1,4 @@
-#ifndef HEAP_H
-#define HEAP_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -38,5 +37,3 @@ public:
 
 	void clear();
 };
-
-#endif

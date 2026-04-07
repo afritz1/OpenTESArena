@@ -1,5 +1,4 @@
-#ifndef DIRECTORY_H
-#define DIRECTORY_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -20,5 +19,3 @@ namespace Directory
 
 	void deleteOldestFile(const char *path);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef DEBUG_H
-#define DEBUG_H
+#pragma once
 
 #include <cstdio>
 #include <string>
@@ -139,5 +138,3 @@ namespace Debug
 	(std::is_integral_v<std::remove_reference_t<decltype(index)>> && ((index) >= 0) && ((index) < std::size(container)))
 #define DebugAssertIndex(container, index) \
 	do { if (!DebugIsValidIndex(container, index)) DebugCrashFormat("Index '%d' out of bounds.", index); } while (false)
-
-#endif
