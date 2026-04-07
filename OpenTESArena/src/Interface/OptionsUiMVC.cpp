@@ -451,10 +451,12 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 {
 	const Options &options = game.options;
 
+	constexpr double sensitivityDelta = 0.50;
+
 	auto horizontalSensitivityOption = std::make_unique<OptionsUiModel::DoubleOption>(
 		OptionsUiModel::HORIZONTAL_SENSITIVITY_NAME,
 		options.getInput_HorizontalSensitivity(),
-		0.10,
+		sensitivityDelta,
 		Options::MIN_HORIZONTAL_SENSITIVITY,
 		Options::MAX_HORIZONTAL_SENSITIVITY,
 		1,
@@ -468,7 +470,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeInputOptionGroup(Game &game)
 		OptionsUiModel::VERTICAL_SENSITIVITY_NAME,
 		"Only affects camera look in modern mode.",
 		options.getInput_VerticalSensitivity(),
-		0.10,
+		sensitivityDelta,
 		Options::MIN_VERTICAL_SENSITIVITY,
 		Options::MAX_VERTICAL_SENSITIVITY,
 		1,
