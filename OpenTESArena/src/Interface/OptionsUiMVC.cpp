@@ -309,6 +309,9 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 	{
 		auto &options = game.options;
 		options.setGraphics_CursorScale(value);
+
+		// Refresh draw call transform size.
+		game.setCursorOverride(std::nullopt);
 	});
 
 	auto modernInterfaceOption = std::make_unique<OptionsUiModel::BoolOption>(
