@@ -1107,9 +1107,9 @@ bool ExeDataWilderness::init(Span<const std::byte> exeBytes, const KeyValueFile 
 }
 
 const std::string ExeData::FLOPPY_VERSION_EXE_FILENAME = "A.EXE";
-const std::string ExeData::FLOPPY_VERSION_MAP_FILENAME = "data/text/aExeStrings.txt";
+const std::string ExeData::FLOPPY_VERSION_MAP_FILENAME = "data/exe/aExeStrings.txt";
 const std::string ExeData::CD_VERSION_EXE_FILENAME = "ACD.EXE";
-const std::string ExeData::CD_VERSION_MAP_FILENAME = "data/text/acdExeStrings.txt";
+const std::string ExeData::CD_VERSION_MAP_FILENAME = "data/exe/acdExeStrings.txt";
 
 ExeData::ExeData()
 {
