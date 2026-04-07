@@ -1,5 +1,4 @@
-#ifndef CHARACTER_CLASS_LIBRARY_H
-#define CHARACTER_CLASS_LIBRARY_H
+#pragma once
 
 #include <functional>
 #include <string>
@@ -25,5 +24,3 @@ public:
 	bool findDefinitionIndexIf(const Predicate &predicate, int *outIndex) const;
 	bool tryGetDefinitionIndex(const CharacterClassDefinition &def, int *outIndex) const;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ENTITY_VISIBILITY_CHUNK_MANAGER_H
-#define ENTITY_VISIBILITY_CHUNK_MANAGER_H
+#pragma once
 
 #include "EntityVisibilityChunk.h"
 #include "../World/SpecializedChunkManager.h"
@@ -18,5 +17,3 @@ public:
 		Span<const ChunkInt2> freedChunkPositions, const RenderCamera &camera, double ceilingScale,
 		const VoxelChunkManager &voxelChunkManager, const EntityChunkManager &entityChunkManager);
 };
-
-#endif

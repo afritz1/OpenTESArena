@@ -1,5 +1,4 @@
-#ifndef ARENA_CHASM_UTILS_H
-#define ARENA_CHASM_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -22,5 +21,3 @@ namespace ArenaChasmUtils
 	bool isDamaging(ArenaChasmType chasmType);
 	Buffer<TextureAsset> getTextureAssets(ArenaChasmType chasmType, TextureManager &textureManager);
 }
-
-#endif

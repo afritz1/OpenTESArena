@@ -1,5 +1,4 @@
-#ifndef EXE_DATA_H
-#define EXE_DATA_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -637,5 +636,3 @@ struct ExeData
 
 	bool init(bool floppyVersion);
 };
-
-#endif

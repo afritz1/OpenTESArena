@@ -1,5 +1,4 @@
-#ifndef VOXEL_TRIGGER_INSTANCE_H
-#define VOXEL_TRIGGER_INSTANCE_H
+#pragma once
 
 #include "../World/Coord.h"
 
@@ -14,5 +13,3 @@ struct VoxelTriggerInstance
 
 	void init(SNInt x, int y, WEInt z);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef SKY_UTILS_H
-#define SKY_UTILS_H
+#pragma once
 
 #include "../Math/MathUtils.h"
 #include "../Voxels/VoxelUtils.h"
@@ -18,5 +17,3 @@ namespace SkyUtils
 	// Gets the number of stars to generate based on the given star density (new to this engine).
 	int getStarCountFromDensity(int starDensity);
 }
-
-#endif

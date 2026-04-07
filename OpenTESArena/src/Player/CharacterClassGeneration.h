@@ -1,5 +1,4 @@
-#ifndef CHARACTER_CLASS_GENERATION_H
-#define CHARACTER_CLASS_GENERATION_H
+#pragma once
 
 #include <cstdint>
 
@@ -34,5 +33,3 @@ struct CharacterClassGeneration
 	// is the index where that A/B/C combination lives in the Choices array.
 	int getClassIndex(int a, int b, int c) const;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef SPECIALIZED_CHUNK_MANAGER_H
-#define SPECIALIZED_CHUNK_MANAGER_H
+#pragma once
 
 #include <algorithm>
 #include <memory>
@@ -219,5 +218,3 @@ public:
 		}
 	}
 };
-
-#endif

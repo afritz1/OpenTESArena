@@ -1,5 +1,4 @@
-#ifndef RMD_FILE_H
-#define RMD_FILE_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -29,5 +28,3 @@ public:
 	Span2D<const ArenaVoxelID> getMAP1() const;
 	Span2D<const ArenaVoxelID> getMAP2() const;
 };
-
-#endif

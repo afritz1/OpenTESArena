@@ -1,5 +1,4 @@
-#ifndef RENDER_FRAME_SETTINGS_H
-#define RENDER_FRAME_SETTINGS_H
+#pragma once
 
 #include <cstdint>
 
@@ -28,5 +27,3 @@ struct RenderFrameSettings
 		double screenSpaceAnimPercent, ObjectTextureID paletteTextureID, ObjectTextureID lightTableTextureID,
 		ObjectTextureID ditherTextureID, ObjectTextureID skyBgTextureID, int renderThreadsMode, DitheringMode ditheringMode);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef VISIBILITY_TYPE_H
-#define VISIBILITY_TYPE_H
+#pragma once
 
 // For testing objects against a visibility volume like a camera frustum.
 enum class VisibilityType
@@ -8,5 +7,3 @@ enum class VisibilityType
 	Inside, // Completely inside.
 	Partial // Some inside, some outside.
 };
-
-#endif

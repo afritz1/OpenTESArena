@@ -1,5 +1,4 @@
-#ifndef ARENA_ANIM_UTILS_H
-#define ARENA_ANIM_UTILS_H
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -213,5 +212,3 @@ namespace ArenaAnimUtils
 	// "pure random" and can essentially be anything.
 	PaletteIndices transformCitizenColors(int raceIndex, uint16_t seed, const ExeData &exeData);
 }
-
-#endif

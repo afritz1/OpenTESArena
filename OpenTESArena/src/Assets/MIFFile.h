@@ -1,5 +1,4 @@
-#ifndef MIF_FILE_H
-#define MIF_FILE_H
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -102,5 +101,3 @@ public:
 	int getLevelCount() const;
 	const MIFLevel &getLevel(int index) const;
 };
-
-#endif

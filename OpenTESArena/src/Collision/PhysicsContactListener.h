@@ -1,5 +1,4 @@
-#ifndef PHYSICS_CONTACT_LISTENER_H
-#define PHYSICS_CONTACT_LISTENER_H
+#pragma once
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Collision/ContactListener.h"
@@ -18,5 +17,3 @@ public:
 	void OnContactPersisted(const JPH::Body &body1, const JPH::Body &body2, const JPH::ContactManifold &manifold, JPH::ContactSettings &settings) override;
 	void OnContactRemoved(const JPH::SubShapeIDPair &subShapePair) override;
 };
-
-#endif

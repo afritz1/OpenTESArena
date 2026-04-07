@@ -1,5 +1,4 @@
-#ifndef IMG_FILE_H
-#define IMG_FILE_H
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -37,5 +36,3 @@ public:
 	// Gets a pointer to the image's pixels.
 	const uint8_t *getPixels() const;
 };
-
-#endif

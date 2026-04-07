@@ -1,5 +1,4 @@
-#ifndef COORD_H
-#define COORD_H
+#pragma once
 
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
@@ -94,5 +93,3 @@ using SNInt = int; // + south, - north
 using WEInt = int; // + west, - east
 using SNDouble = double; // + south, - north
 using WEDouble = double; // + west, - east
-
-#endif

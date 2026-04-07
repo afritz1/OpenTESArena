@@ -1,5 +1,4 @@
-#ifndef MUSIC_LIBRARY_H
-#define MUSIC_LIBRARY_H
+#pragma once
 
 #include <functional>
 #include <string_view>
@@ -32,5 +31,3 @@ public:
 	const MusicDefinition *getRandomMusicDefinition(MusicType type, Random &random) const;
 	const MusicDefinition *getRandomMusicDefinitionIf(MusicType type, Random &random, const Predicate &predicate) const;
 };
-
-#endif

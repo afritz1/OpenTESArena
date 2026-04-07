@@ -1,5 +1,4 @@
-#ifndef UI_LIST_BOX_H
-#define UI_LIST_BOX_H
+#pragma once
 
 #include <functional>
 #include <optional>
@@ -67,5 +66,3 @@ struct UiListBox
 	// Number of list box pixels one scroll up/down moves by.
 	double getScrollDeltaPixels() const;
 };
-
-#endif

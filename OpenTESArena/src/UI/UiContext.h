@@ -1,5 +1,4 @@
-#ifndef UI_CONTEXT_H
-#define UI_CONTEXT_H
+#pragma once
 
 #include <vector>
 
@@ -59,5 +58,3 @@ struct UiContext
 
 	UiContext();
 };
-
-#endif

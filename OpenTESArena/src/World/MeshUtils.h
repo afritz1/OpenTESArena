@@ -1,5 +1,4 @@
-#ifndef MESH_UTILS_H
-#define MESH_UTILS_H
+#pragma once
 
 #include <cstdint>
 
@@ -77,5 +76,3 @@ namespace MeshUtils
 	// For positioning raised platforms, etc. correctly.
 	double getScaledVertexY(double meshY, VoxelShapeScaleType scaleType, double ceilingScale);
 }
-
-#endif

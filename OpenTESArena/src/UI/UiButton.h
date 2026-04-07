@@ -1,5 +1,4 @@
-#ifndef UI_BUTTON_H
-#define UI_BUTTON_H
+#pragma once
 
 #include <string>
 
@@ -29,5 +28,3 @@ struct UiButton
 
 	void init(MouseButtonTypeFlags mouseButtonTypeFlags, const UiButtonCallback &callback, const std::string &contentElementName);
 };
-
-#endif

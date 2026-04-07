@@ -1,5 +1,4 @@
-#ifndef ANIMATION_STATE_H
-#define ANIMATION_STATE_H
+#pragma once
 
 #include <functional>
 
@@ -20,5 +19,3 @@ public:
 	void reset();
 	void update(double dt);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef PROVINCE_MAP_UI_MVC_H
-#define PROVINCE_MAP_UI_MVC_H
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -174,5 +173,3 @@ namespace ProvinceSearchUiView
 
 	UiTextureID allocParchmentTexture(TextureManager &textureManager, Renderer &renderer);
 }
-
-#endif

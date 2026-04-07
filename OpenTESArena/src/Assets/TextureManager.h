@@ -1,5 +1,4 @@
-#ifndef TEXTURE_MANAGER_H
-#define TEXTURE_MANAGER_H
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -59,5 +58,3 @@ public:
 
 	int getTotalBytes() const;
 };
-
-#endif

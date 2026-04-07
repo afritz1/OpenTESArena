@@ -1,5 +1,4 @@
-#ifndef CINEMATIC_UI_STATE_H
-#define CINEMATIC_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -62,5 +61,3 @@ namespace CinematicUI
 		DECLARE_UI_FUNC(CinematicUI, onSkipInputAction)
 	};
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef LOCATION_DEFINITION_H
-#define LOCATION_DEFINITION_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -151,5 +150,3 @@ public:
 	// Returns whether the two definitions reference the same location in a province.
 	bool matches(const LocationDefinition &other) const;
 };
-
-#endif

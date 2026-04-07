@@ -1,5 +1,4 @@
-#ifndef LEVEL_INFO_DEFINITION_H
-#define LEVEL_INFO_DEFINITION_H
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -94,5 +93,3 @@ public:
 	// Handles some special cases in main quest cities.
 	void setBuildingNameOverride(LevelVoxelBuildingNameID id, std::string &&name);
 };
-
-#endif

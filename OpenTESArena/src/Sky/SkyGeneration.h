@@ -1,5 +1,4 @@
-#ifndef SKY_GENERATION_H
-#define SKY_GENERATION_H
+#pragma once
 
 #include <cstdint>
 
@@ -41,5 +40,3 @@ namespace SkyGeneration
 	void generateExteriorSky(const SkyGenerationExteriorInfo &skyGenInfo, const BinaryAssetLibrary &binaryAssetLibrary,
 		TextureManager &textureManager, SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef);
 }
-
-#endif

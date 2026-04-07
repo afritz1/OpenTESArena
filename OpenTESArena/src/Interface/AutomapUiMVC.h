@@ -1,5 +1,4 @@
-#ifndef AUTOMAP_UI_MVC_H
-#define AUTOMAP_UI_MVC_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -101,5 +100,3 @@ namespace AutomapUiController
 
 	void onMouseButtonHeld(Game &game, MouseButtonType buttonType, const Int2 &position, double dt, Double2 *automapOffset);
 }
-
-#endif

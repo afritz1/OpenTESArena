@@ -1,5 +1,4 @@
-#ifndef INPUT_ACTION_TYPE_H
-#define INPUT_ACTION_TYPE_H
+#pragma once
 
 enum class InputActionType
 {
@@ -7,5 +6,3 @@ enum class InputActionType
 	MouseWheel,
 	Key
 };
-
-#endif

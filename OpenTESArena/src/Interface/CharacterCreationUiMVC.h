@@ -1,5 +1,4 @@
-#ifndef CHARACTER_CREATION_UI_MVC_H
-#define CHARACTER_CREATION_UI_MVC_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -309,5 +308,3 @@ namespace ChooseAttributesUiController
 	// -- Cinematic after character creation --
 	void onPostCharacterCreationCinematicFinished(Game &game);
 }
-
-#endif

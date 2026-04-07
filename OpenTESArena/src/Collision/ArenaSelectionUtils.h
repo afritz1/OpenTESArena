@@ -1,5 +1,4 @@
-#ifndef ARENA_SELECTION_UTILS_H
-#define ARENA_SELECTION_UTILS_H
+#pragma once
 
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/MIFUtils.h"
@@ -21,5 +20,3 @@ namespace ArenaSelectionUtils
 	// Can the given voxel type be selected with a right click?
 	bool isVoxelSelectableAsSecondary(ArenaVoxelType voxelType);
 }
-
-#endif

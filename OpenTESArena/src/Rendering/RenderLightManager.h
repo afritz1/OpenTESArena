@@ -1,5 +1,4 @@
-#ifndef RENDER_LIGHT_MANAGER_H
-#define RENDER_LIGHT_MANAGER_H
+#pragma once
 
 #include <unordered_map>
 #include <vector>
@@ -53,5 +52,3 @@ public:
 		const EntityChunkManager &entityChunkManager, Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
-
-#endif

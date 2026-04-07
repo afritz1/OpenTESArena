@@ -1,5 +1,4 @@
-#ifndef CHARACTER_RACE_DEFINITION_H
-#define CHARACTER_RACE_DEFINITION_H
+#pragma once
 
 #include <string>
 
@@ -26,5 +25,3 @@ struct CharacterRaceDefinition
 		const TextureAsset &maleCharSheetBodyTextureAsset, const std::string &maleCharSheetHeadsFilename, const std::string &maleGameUiHeadsFilename,
 		const TextureAsset &femaleCharSheetBodyTextureAsset, const std::string &femaleCharSheetHeadsFilename, const std::string &femaleGameUiHeadsFilename);
 };
-
-#endif

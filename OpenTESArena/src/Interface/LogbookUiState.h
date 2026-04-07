@@ -1,5 +1,4 @@
-#ifndef LOGBOOK_UI_STATE_H
-#define LOGBOOK_UI_STATE_H
+#pragma once
 
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
@@ -37,5 +36,3 @@ namespace LogbookUI
 		DECLARE_UI_FUNC(LogbookUI, onBackInputAction)
 	};
 }
-
-#endif

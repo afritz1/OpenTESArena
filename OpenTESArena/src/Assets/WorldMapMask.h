@@ -1,5 +1,4 @@
-#ifndef WORLD_MAP_MASK_H
-#define WORLD_MAP_MASK_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -29,5 +28,3 @@ public:
 	// should be absolute mouse coordinates in 320x200 space.
 	bool get(int x, int y) const;
 };
-
-#endif

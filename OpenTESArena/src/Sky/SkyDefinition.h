@@ -1,5 +1,4 @@
-#ifndef SKY_DEFINITION_H
-#define SKY_DEFINITION_H
+#pragma once
 
 #include <vector>
 
@@ -99,5 +98,3 @@ public:
 	void addSun(SunDefID id, double bonusLatitude);
 	void addMoon(MoonDefID id, const Double3 &baseDir, double orbitPercent, double bonusLatitude, int imageIndex);
 };
-
-#endif

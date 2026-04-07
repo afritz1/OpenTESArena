@@ -1,5 +1,4 @@
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#pragma once
 
 #include <limits>
 #include <string>
@@ -203,5 +202,3 @@ void set##section##_##name(const std::string &value) \
 	// Saves all key-value pairs that differ from the defaults to the changed options file.
 	void saveChanges();
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef INPUT_ACTION_DEFINITION_H
-#define INPUT_ACTION_DEFINITION_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -65,5 +64,3 @@ struct InputActionDefinition
 	void initKeyDef(const std::string &name, InputStateType stateType, SDL_Keycode keycode,
 		const std::optional<KeyDefinitionKeymod> &keymod = std::nullopt);
 };
-
-#endif

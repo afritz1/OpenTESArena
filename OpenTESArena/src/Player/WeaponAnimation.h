@@ -1,5 +1,4 @@
-#ifndef WEAPON_ANIMATION_H
-#define WEAPON_ANIMATION_H
+#pragma once
 
 #include <cstddef>
 
@@ -67,5 +66,3 @@ struct WeaponAnimationInstance
 	void clear();
 	void update(double dt);
 };
-
-#endif

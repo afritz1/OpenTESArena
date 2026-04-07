@@ -1,5 +1,4 @@
-#ifndef CHARACTER_UI_STATE_H
-#define CHARACTER_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -46,5 +45,3 @@ namespace CharacterUI
 		DECLARE_UI_FUNC(CharacterUI, onBackInputAction)
 	};
 }
-
-#endif

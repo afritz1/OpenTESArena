@@ -1,5 +1,4 @@
-#ifndef CHUNK_MANAGER_H
-#define CHUNK_MANAGER_H
+#pragma once
 
 #include <optional>
 #include <vector>
@@ -28,5 +27,3 @@ public:
 	void endFrame();
 	void clear();
 };
-
-#endif

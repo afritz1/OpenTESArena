@@ -1,5 +1,4 @@
-#ifndef RCI_FILE_H
-#define RCI_FILE_H
+#pragma once
 
 #include <cstdint>
 
@@ -27,5 +26,3 @@ public:
 	// Gets the pixel data for a 320x100 frame.
 	const uint8_t *getPixels(int index) const;
 };
-
-#endif

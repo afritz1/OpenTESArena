@@ -1,5 +1,4 @@
-#ifndef TEXT_RENDER_UTILS_H
-#define TEXT_RENDER_UTILS_H
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -123,5 +122,3 @@ namespace TextRenderUtils
 		const Color &textColor, TextAlignment alignment, int lineSpacing, const TextRenderColorOverrideInfo *colorOverrideInfo,
 		const TextRenderShadowInfo *shadow, Span2D<uint32_t> &outBuffer);
 }
-
-#endif

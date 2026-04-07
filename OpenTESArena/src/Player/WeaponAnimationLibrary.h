@@ -1,5 +1,4 @@
-#ifndef WEAPON_ANIMATION_LIBRARY_H
-#define WEAPON_ANIMATION_LIBRARY_H
+#pragma once
 
 #include <unordered_map>
 
@@ -20,5 +19,3 @@ public:
 
 	const WeaponAnimationDefinition &getDefinition(int animDefID) const;
 };
-
-#endif

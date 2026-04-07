@@ -1,5 +1,4 @@
-#ifndef ARENA_LEVEL_LIBRARY_H
-#define ARENA_LEVEL_LIBRARY_H
+#pragma once
 
 #include "MIFFile.h"
 #include "RMDFile.h"
@@ -22,5 +21,3 @@ public:
 	Span<const MIFFile> getCityBlockMifs() const;
 	Span<const RMDFile> getWildernessChunks() const;
 };
-
-#endif

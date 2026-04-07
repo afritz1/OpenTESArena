@@ -1,5 +1,4 @@
-#ifndef WORLD_MAP_UI_MVC_H
-#define WORLD_MAP_UI_MVC_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -59,5 +58,3 @@ namespace FastTravelUiController
 {
 	void onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef PROVINCE_DEFINITION_H
-#define PROVINCE_DEFINITION_H
+#pragma once
 
 #include <vector>
 
@@ -46,5 +45,3 @@ public:
 	// Attempts to get the index of the given location definition in the province.
 	bool tryGetLocationIndex(const LocationDefinition &locationDef, int *outLocationIndex) const;
 };
-
-#endif

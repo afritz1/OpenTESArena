@@ -1,5 +1,4 @@
-#ifndef INF_FILE_H
-#define INF_FILE_H
+#pragma once
 
 #include <array>
 #include <memory>
@@ -172,5 +171,3 @@ public:
 	const std::optional<int> &getWetChasmIndex() const;
 	const INFCeiling &getCeiling() const;
 };
-
-#endif

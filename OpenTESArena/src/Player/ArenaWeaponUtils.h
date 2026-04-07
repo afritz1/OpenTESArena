@@ -1,5 +1,4 @@
-#ifndef ARENA_WEAPON_UTILS_H
-#define ARENA_WEAPON_UTILS_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -81,5 +80,3 @@ namespace ArenaWeaponUtils
 		{ WeaponAnimationUtils::STATE_FIRING, { 1 }, 1.0 / 7.0 } // This frame lasts longer
 	};
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef TEXT_CINEMATIC_UI_MVC_H
-#define TEXT_CINEMATIC_UI_MVC_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -47,5 +46,3 @@ namespace TextCinematicUiView
 {
 	Buffer<UiTextureID> allocAnimationTextures(const std::string &animFilename, TextureManager &textureManager, Renderer &renderer);
 }
-
-#endif

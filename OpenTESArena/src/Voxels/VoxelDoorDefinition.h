@@ -1,5 +1,4 @@
-#ifndef DOOR_DEFINITION_H
-#define DOOR_DEFINITION_H
+#pragma once
 
 #include <string>
 
@@ -37,5 +36,3 @@ struct VoxelDoorDefinition
 
 	void init(ArenaDoorType type, const std::string &openSoundFilename, VoxelDoorCloseType closeType, const std::string &closeSoundFilename);
 };
-
-#endif

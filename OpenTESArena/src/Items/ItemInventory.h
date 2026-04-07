@@ -1,5 +1,4 @@
-#ifndef ITEM_INVENTORY_H
-#define ITEM_INVENTORY_H
+#pragma once
 
 #include <vector>
 
@@ -29,5 +28,3 @@ public:
 	void compact();
 	void clear();
 };
-
-#endif

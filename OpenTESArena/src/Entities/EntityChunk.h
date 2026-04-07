@@ -1,5 +1,4 @@
-#ifndef ENTITY_CHUNK_H
-#define ENTITY_CHUNK_H
+#pragma once
 
 #include <vector>
 
@@ -14,5 +13,3 @@ struct EntityChunk final : public Chunk
 	void init(const ChunkInt2 &position, int height);
 	void clear();
 };
-
-#endif

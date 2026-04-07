@@ -1,5 +1,4 @@
-#ifndef WEATHER_DEFINITION_H
-#define WEATHER_DEFINITION_H
+#pragma once
 
 #include "../Assets/ArenaTypes.h"
 
@@ -58,5 +57,3 @@ struct WeatherDefinition
 	void initSnow(bool overcast, bool heavyFog);
 	void initFromClassic(ArenaWeatherType weatherType, int currentDay, Random &random);
 };
-
-#endif

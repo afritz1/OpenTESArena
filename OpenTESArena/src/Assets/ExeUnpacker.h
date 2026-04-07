@@ -1,5 +1,4 @@
-#ifndef EXE_UNPACKER_H
-#define EXE_UNPACKER_H
+#pragma once
 
 #include <cstdint>
 
@@ -18,5 +17,3 @@ public:
 	// Gets the decompressed executable data.
 	Span<const uint8_t> getData() const;
 };
-
-#endif

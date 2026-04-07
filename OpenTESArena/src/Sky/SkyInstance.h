@@ -1,5 +1,4 @@
-#ifndef SKY_INSTANCE_H
-#define SKY_INSTANCE_H
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -116,5 +115,3 @@ public:
 
 	void clear();
 };
-
-#endif

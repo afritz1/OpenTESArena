@@ -1,5 +1,4 @@
-#ifndef MAP_DEFINITION_H
-#define MAP_DEFINITION_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -141,5 +140,3 @@ public:
 
 	void clear();
 };
-
-#endif

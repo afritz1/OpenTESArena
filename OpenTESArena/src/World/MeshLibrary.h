@@ -1,5 +1,4 @@
-#ifndef MESH_LIBRARY_H
-#define MESH_LIBRARY_H
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -35,5 +34,3 @@ public:
 	Span<const MeshLibraryEntry> getEntriesOfType(ArenaVoxelType voxelType) const;
 	const MeshLibraryEntry *getEntryWithTypeAndFacing(ArenaVoxelType voxelType, VoxelFacing3D facing) const;
 };
-
-#endif

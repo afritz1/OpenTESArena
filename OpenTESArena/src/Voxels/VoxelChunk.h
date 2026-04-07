@@ -1,5 +1,4 @@
-#ifndef VOXEL_CHUNK_H
-#define VOXEL_CHUNK_H
+#pragma once
 
 #include <climits>
 #include <cstdint>
@@ -177,5 +176,3 @@ struct VoxelChunk final : public Chunk
 	// Clears all chunk state.
 	void clear();
 };
-
-#endif

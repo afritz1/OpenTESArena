@@ -1,5 +1,4 @@
-#ifndef CHOOSE_GENDER_UI_STATE_H
-#define CHOOSE_GENDER_UI_STATE_H
+#pragma once
 
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
@@ -39,5 +38,3 @@ namespace ChooseGenderUI
 		DECLARE_UI_FUNC(ChooseGenderUI, onBackInputAction)
 	};
 }
-
-#endif

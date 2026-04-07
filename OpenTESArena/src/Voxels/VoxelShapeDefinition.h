@@ -1,5 +1,4 @@
-#ifndef VOXEL_SHAPE_DEFINITION_H
-#define VOXEL_SHAPE_DEFINITION_H
+#pragma once
 
 #include <vector> // @todo: Buffer<T> would be better although there were annoyances with the deleted copy constructor
 
@@ -85,5 +84,3 @@ struct VoxelShapeDefinition
 
 	void initBoxFromClassic(const ArenaShapeInitCache &shapeInitCache, VoxelShapeScaleType scaleType, double ceilingScale);
 };
-
-#endif

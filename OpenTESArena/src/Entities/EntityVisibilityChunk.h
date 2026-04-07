@@ -1,5 +1,4 @@
-#ifndef ENTITY_VISIBILITY_CHUNK_H
-#define ENTITY_VISIBILITY_CHUNK_H
+#pragma once
 
 #include <vector>
 
@@ -31,5 +30,3 @@ struct EntityVisibilityChunk final : public Chunk
 	void update(const RenderCamera &camera, double ceilingScale, const EntityChunk &entityChunk, const EntityChunkManager &entityChunkManager);
 	void clear();
 };
-
-#endif

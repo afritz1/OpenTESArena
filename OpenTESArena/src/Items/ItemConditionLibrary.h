@@ -1,5 +1,4 @@
-#ifndef ITEM_CONDITION_LIBRARY_H
-#define ITEM_CONDITION_LIBRARY_H
+#pragma once
 
 #include <functional>
 #include <vector>
@@ -24,5 +23,3 @@ public:
 	const ItemConditionDefinition &getDefinition(int index) const;
 	std::vector<int> getDefinitionIndicesIf(const ItemConditionLibraryPredicate &predicate) const;
 };
-
-#endif

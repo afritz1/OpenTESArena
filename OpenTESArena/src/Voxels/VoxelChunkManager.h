@@ -1,5 +1,4 @@
-#ifndef VOXEL_CHUNK_MANAGER_H
-#define VOXEL_CHUNK_MANAGER_H
+#pragma once
 
 #include <memory>
 #include <optional>
@@ -79,5 +78,3 @@ public:
 
 	void clear();
 };
-
-#endif

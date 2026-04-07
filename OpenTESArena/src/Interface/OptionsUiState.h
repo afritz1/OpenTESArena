@@ -1,5 +1,4 @@
-#ifndef OPTIONS_UI_STATE_H
-#define OPTIONS_UI_STATE_H
+#pragma once
 
 #include "OptionsUiMVC.h"
 #include "../Rendering/RenderTextureUtils.h"
@@ -63,5 +62,3 @@ namespace OptionsUI
 		DECLARE_UI_FUNC(OptionsUI, onBackInputAction)
 	};
 }
-
-#endif

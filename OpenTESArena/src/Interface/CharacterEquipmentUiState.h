@@ -1,5 +1,4 @@
-#ifndef CHARACTER_EQUIPMENT_UI_STATE_H
-#define CHARACTER_EQUIPMENT_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -54,5 +53,3 @@ namespace CharacterEquipmentUI
 		DECLARE_UI_FUNC(CharacterEquipmentUI, onBackInputAction)
 	};
 }
-
-#endif

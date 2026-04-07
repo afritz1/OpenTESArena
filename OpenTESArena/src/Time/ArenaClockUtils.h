@@ -1,5 +1,4 @@
-#ifndef ARENA_CLOCK_UTILS_H
-#define ARENA_CLOCK_UTILS_H
+#pragma once
 
 #include "Clock.h"
 
@@ -42,5 +41,3 @@ namespace ArenaClockUtils
 	// The original game doesn't supply nighttime colors in FOG.LGT, so it disables it.
 	bool isDaytimeFogActive(const Clock &clock);
 }
-
-#endif

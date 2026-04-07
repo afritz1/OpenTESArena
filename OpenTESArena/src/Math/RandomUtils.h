@@ -1,5 +1,4 @@
-#ifndef RANDOM_UTILS_H
-#define RANDOM_UTILS_H
+#pragma once
 
 #include <algorithm>
 #include <random>
@@ -35,5 +34,3 @@ namespace RandomUtils
 		}
 	}
 }
-
-#endif

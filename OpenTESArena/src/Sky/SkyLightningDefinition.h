@@ -1,5 +1,4 @@
-#ifndef SKY_LIGHTNING_DEFINITION_H
-#define SKY_LIGHTNING_DEFINITION_H
+#pragma once
 
 #include "../Assets/TextureAsset.h"
 
@@ -13,5 +12,3 @@ struct SkyLightningDefinition
 
 	void init(Buffer<TextureAsset> &&textureAssets, double animSeconds);
 };
-
-#endif

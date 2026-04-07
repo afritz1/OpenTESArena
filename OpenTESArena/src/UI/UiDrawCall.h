@@ -1,5 +1,4 @@
-#ifndef UI_DRAW_CALL_H
-#define UI_DRAW_CALL_H
+#pragma once
 
 #include <functional>
 #include <optional>
@@ -60,5 +59,3 @@ struct UiDrawCall
 	static UiDrawCallPivotFunc makePivotFunc(UiPivotType pivotType);
 	static bool defaultActiveFunc();
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ENTITY_ANIMATION_INSTANCE_H
-#define ENTITY_ANIMATION_INSTANCE_H
+#pragma once
 
 #include "EntityAnimationDefinition.h"
 
@@ -28,5 +27,3 @@ struct EntityAnimationInstance
 	void clear();
 	void update(double dt);
 };
-
-#endif

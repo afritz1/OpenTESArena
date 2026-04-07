@@ -1,5 +1,4 @@
-#ifndef LOAD_SAVE_UI_STATE_H
-#define LOAD_SAVE_UI_STATE_H
+#pragma once
 
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
@@ -44,5 +43,3 @@ namespace LoadSaveUI
 		DECLARE_UI_FUNC(LoadSaveUI, onBackInputAction)
 	};
 }
-
-#endif

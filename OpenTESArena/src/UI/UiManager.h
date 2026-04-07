@@ -1,5 +1,4 @@
-#ifndef UI_MANAGER_H
-#define UI_MANAGER_H
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -158,5 +157,3 @@ public:
 
 	void update(double dt, Game &game);
 };
-
-#endif

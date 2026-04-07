@@ -1,5 +1,4 @@
-#ifndef LGT_FILE_H
-#define LGT_FILE_H
+#pragma once
 
 #include <cstdint>
 
@@ -22,5 +21,3 @@ public:
 	Span<const uint8_t> getLightPalette(int index) const;
 	Span2D<const uint8_t> getAllLightPalettes() const;
 };
-
-#endif

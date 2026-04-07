@@ -1,5 +1,4 @@
-#ifndef CHARACTER_SHEET_UI_MVC_H
-#define CHARACTER_SHEET_UI_MVC_H
+#pragma once
 
 #include <string>
 
@@ -66,5 +65,3 @@ namespace CharacterEquipmentUiView
 {
 	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
 }
-
-#endif

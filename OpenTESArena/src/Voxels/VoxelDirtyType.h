@@ -1,5 +1,4 @@
-#ifndef VOXEL_DIRTY_TYPE_H
-#define VOXEL_DIRTY_TYPE_H
+#pragma once
 
 #include <cstdint>
 
@@ -11,5 +10,3 @@ enum class VoxelDirtyType : uint8_t
 	DoorVisibility = (1 << 3), // Door visible faces changed due to camera motion.
 	FadeAnimation = (1 << 4) // Fade intensity changed.
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef RENDER_ENTITY_MANAGER_H
-#define RENDER_ENTITY_MANAGER_H
+#pragma once
 
 #include <vector>
 
@@ -79,5 +78,3 @@ public:
 	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);
 };
-
-#endif

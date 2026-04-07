@@ -1,5 +1,4 @@
-#ifndef ENTITY_OBSERVED_RESULT_H
-#define ENTITY_OBSERVED_RESULT_H
+#pragma once
 
 #include "EntityInstance.h"
 
@@ -13,5 +12,3 @@ struct EntityObservedResult
 
 	void init(EntityInstanceID entityInstID, int linearizedKeyframeIndex);
 };
-
-#endif

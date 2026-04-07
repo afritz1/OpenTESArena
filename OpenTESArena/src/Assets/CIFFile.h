@@ -1,5 +1,4 @@
-#ifndef CIF_FILE_H
-#define CIF_FILE_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -36,5 +35,3 @@ public:
 	// Gets a pointer to an image's 8-bit pixels.
 	const uint8_t *getPixels(int index) const;
 };
-
-#endif

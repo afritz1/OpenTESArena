@@ -1,5 +1,4 @@
-#ifndef CITY_DATA_FILE_H
-#define CITY_DATA_FILE_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -56,5 +55,3 @@ public:
 
 	bool init(const char *filename);
 };
-
-#endif

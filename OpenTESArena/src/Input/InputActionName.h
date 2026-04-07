@@ -1,5 +1,4 @@
-#ifndef INPUT_ACTION_NAME_H
-#define INPUT_ACTION_NAME_H
+#pragma once
 
 // Pre-defined names for hotkeys that can be performed without clicking a UI button.
 namespace InputActionName
@@ -50,5 +49,3 @@ namespace InputActionName
 	// Debug.
 	constexpr const char *DebugProfiler = "DebugProfiler";
 }
-
-#endif

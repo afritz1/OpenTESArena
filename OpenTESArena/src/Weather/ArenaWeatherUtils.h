@@ -1,5 +1,4 @@
-#ifndef ARENA_WEATHER_UTILS_H
-#define ARENA_WEATHER_UTILS_H
+#pragma once
 
 #include "../Assets/ArenaTypes.h"
 #include "../Rendering/ArenaRenderUtils.h"
@@ -81,5 +80,3 @@ namespace ArenaWeatherUtils
 	// Creates a buffer of texture asset references for lightning bolts.
 	Buffer<Buffer<TextureAsset>> makeLightningBoltTextureAssets(TextureManager &textureManager);
 }
-
-#endif

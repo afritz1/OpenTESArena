@@ -1,5 +1,4 @@
-#ifndef ARENA_INTERIOR_UTILS_H
-#define ARENA_INTERIOR_UTILS_H
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -42,5 +41,3 @@ namespace ArenaInteriorUtils
 	bool isPrefabInterior(ArenaInteriorType interiorType);
 	bool isProceduralInterior(ArenaInteriorType interiorType);
 }
-
-#endif

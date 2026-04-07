@@ -1,5 +1,4 @@
-#ifndef RAY_CAST_TYPES_H
-#define RAY_CAST_TYPES_H
+#pragma once
 
 #include <limits>
 
@@ -45,5 +44,3 @@ struct RayCastHit
 	void initVoxel(double t, const WorldDouble3 &worldPoint, const CoordInt3 &voxelCoord, VoxelFacing3D facing);
 	void initEntity(double t, const WorldDouble3 &worldPoint, EntityInstanceID id);
 };
-
-#endif

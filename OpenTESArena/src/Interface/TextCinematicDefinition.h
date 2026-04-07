@@ -1,5 +1,4 @@
-#ifndef TEXT_CINEMATIC_DEFINITION_H
-#define TEXT_CINEMATIC_DEFINITION_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -50,5 +49,3 @@ struct TextCinematicDefinition
 	void initDeath(int templateDatKey, const std::string &animFilename, const Color &fontColor, DeathTextCinematicType type);
 	void initMainQuest(int templateDatKey, const std::string &animFilename, const Color &fontColor, int progress);
 };
-
-#endif

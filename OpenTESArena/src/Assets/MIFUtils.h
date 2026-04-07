@@ -1,5 +1,4 @@
-#ifndef MIF_UTILS_H
-#define MIF_UTILS_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -63,5 +62,3 @@ namespace MIFUtils
 	// Generates a random .MIF block type for use with city generation.
 	BlockType generateRandomBlockType(ArenaRandom &random);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef GAME_H
-#define GAME_H
+#pragma once
 
 #include <memory>
 #include <optional>
@@ -121,5 +120,3 @@ public:
 	// Initial method for starting the game loop. This must only be called by main().
 	void loop();
 };
-
-#endif

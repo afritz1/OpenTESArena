@@ -1,5 +1,4 @@
-#ifndef CREATURE_DEFINITION_LIBRARY_H
-#define CREATURE_DEFINITION_LIBRARY_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -49,5 +48,3 @@ public:
 
 	const CreatureDefinition &getDefinition(CreatureDefinitionID id) const;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef CHOOSE_CLASS_UI_STATE_H
-#define CHOOSE_CLASS_UI_STATE_H
+#pragma once
 
 #include <vector>
 
@@ -52,5 +51,3 @@ namespace ChooseClassUI
 		DECLARE_UI_FUNC(ChooseClassUI, onBackInputAction)
 	};
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef RENDERER_UTILS_H
-#define RENDERER_UTILS_H
+#pragma once
 
 #include "SDL_pixels.h"
 
@@ -91,5 +90,3 @@ namespace RendererUtils
 
 	ObjectTextureID allocDitherTexture(DitheringMode ditheringMode, Renderer &renderer);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef TXT_FILE_H
-#define TXT_FILE_H
+#pragma once
 
 #include <cstdint>
 
@@ -22,5 +21,3 @@ public:
 
 	const uint16_t *getPixels() const;
 };
-
-#endif

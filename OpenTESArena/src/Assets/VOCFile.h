@@ -1,5 +1,4 @@
-#ifndef VOC_FILE_H
-#define VOC_FILE_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -22,5 +21,3 @@ public:
 	Span<uint8_t> getAudioData();
 	Span<const uint8_t> getAudioData() const;
 };
-
-#endif

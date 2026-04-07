@@ -1,5 +1,4 @@
-#ifndef SKY_AIR_DEFINITION_H
-#define SKY_AIR_DEFINITION_H
+#pragma once
 
 #include "../Assets/TextureAsset.h"
 
@@ -9,5 +8,3 @@ struct SkyAirDefinition
 
 	void init(TextureAsset &&textureAsset);
 };
-
-#endif

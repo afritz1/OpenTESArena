@@ -1,5 +1,4 @@
-#ifndef FONT_LIBRARY_H
-#define FONT_LIBRARY_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -19,5 +18,3 @@ public:
 	bool tryGetDefinitionIndex(const char *name, int *outIndex) const; // @todo: change to std::optional
 	const FontDefinition &getDefinition(int index) const;
 };
-
-#endif

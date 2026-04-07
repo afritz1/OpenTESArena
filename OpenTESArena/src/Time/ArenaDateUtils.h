@@ -1,5 +1,4 @@
-#ifndef ARENA_DATE_UTILS_H
-#define ARENA_DATE_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -17,5 +16,3 @@ namespace ArenaDateUtils
 	// Makes the date string for a given date, using strings from the executable data.
 	std::string makeDateString(const Date &date, const ExeData &exeData);
 }
-
-#endif

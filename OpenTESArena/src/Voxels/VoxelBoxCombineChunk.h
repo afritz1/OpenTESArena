@@ -1,5 +1,4 @@
-#ifndef VOXEL_BOX_COMBINE_CHUNK_H
-#define VOXEL_BOX_COMBINE_CHUNK_H
+#pragma once
 
 #include <vector>
 
@@ -39,5 +38,3 @@ public:
 
 	void clear();
 };
-
-#endif

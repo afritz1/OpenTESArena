@@ -1,5 +1,4 @@
-#ifndef FLC_FILE_H
-#define FLC_FILE_H
+#pragma once
 
 #include <cstdint>
 #include <memory>
@@ -59,5 +58,3 @@ public:
 	// Gets the pixel data for some frame.
 	const uint8_t *getPixels(int index) const;
 };
-
-#endif

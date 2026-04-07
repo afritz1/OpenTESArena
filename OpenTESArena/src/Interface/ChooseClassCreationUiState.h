@@ -1,5 +1,4 @@
-#ifndef CHOOSE_CLASS_CREATION_UI_STATE_H
-#define CHOOSE_CLASS_CREATION_UI_STATE_H
+#pragma once
 
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
@@ -39,5 +38,3 @@ namespace ChooseClassCreationUI
 		DECLARE_UI_FUNC(ChooseClassCreationUI, onBackInputAction)
 	};
 }
-
-#endif

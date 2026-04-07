@@ -1,5 +1,4 @@
-#ifndef ARENA_SKY_UTILS_H
-#define ARENA_SKY_UTILS_H
+#pragma once
 
 #include "../Assets/ArenaTypes.h"
 #include "../Math/Constants.h"
@@ -35,5 +34,3 @@ namespace ArenaSkyUtils
 	// Converts an Arena angle to an actual angle in radians.
 	Radians arenaAngleToRadians(int arenaAngle);
 }
-
-#endif

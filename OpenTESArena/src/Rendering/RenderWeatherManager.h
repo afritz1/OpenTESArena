@@ -1,5 +1,4 @@
-#ifndef RENDER_WEATHER_MANAGER_H
-#define RENDER_WEATHER_MANAGER_H
+#pragma once
 
 #include "ArenaRenderUtils.h"
 #include "RenderDrawCall.h"
@@ -64,5 +63,3 @@ public:
 	void update(double dt, const WeatherInstance &weatherInst, const RenderCamera &camera, const Double2 &playerDirXZ, MapType mapType, Renderer &renderer);
 	void unloadScene();
 };
-
-#endif

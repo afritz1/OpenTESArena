@@ -1,5 +1,4 @@
-#ifndef VOXEL_FRUSTUM_CULLING_CHUNK_H
-#define VOXEL_FRUSTUM_CULLING_CHUNK_H
+#pragma once
 
 #include "../Math/BoundingBox.h"
 #include "../Rendering/VisibilityType.h"
@@ -87,5 +86,3 @@ struct VoxelFrustumCullingChunk final : public Chunk
 	void update(const RenderCamera &camera);
 	void clear();
 };
-
-#endif

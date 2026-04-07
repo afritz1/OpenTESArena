@@ -1,5 +1,4 @@
-#ifndef SKY_INFO_DEFINITION_H
-#define SKY_INFO_DEFINITION_H
+#pragma once
 
 #include <vector>
 
@@ -53,5 +52,3 @@ public:
 	SkyDefinition::MoonDefID addMoon(SkyMoonDefinition &&def);
 	void addLightning(SkyLightningDefinition &&def);
 };
-
-#endif

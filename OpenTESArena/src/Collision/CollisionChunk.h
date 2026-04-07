@@ -1,5 +1,4 @@
-#ifndef COLLISION_CHUNK_H
-#define COLLISION_CHUNK_H
+#pragma once
 
 #include <unordered_map>
 #include <vector>
@@ -38,5 +37,3 @@ struct CollisionChunk final : public Chunk
 	CollisionShapeDefID findShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID) const;
 	CollisionShapeDefID addShapeDefIdMapping(const VoxelChunk &voxelChunk, VoxelShapeDefID voxelShapeDefID);
 };
-
-#endif

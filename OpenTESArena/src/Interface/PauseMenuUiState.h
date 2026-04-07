@@ -1,5 +1,4 @@
-#ifndef PAUSE_MENU_UI_STATE_H
-#define PAUSE_MENU_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -63,5 +62,3 @@ namespace PauseMenuUI
 		DECLARE_UI_FUNC(PauseMenuUI, onBackInputAction)
 	};
 }
-
-#endif

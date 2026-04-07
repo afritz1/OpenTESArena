@@ -1,5 +1,4 @@
-#ifndef ENTITY_ANIMATION_LIBRARY_H
-#define ENTITY_ANIMATION_LIBRARY_H
+#pragma once
 
 #include <unordered_map>
 #include <vector>
@@ -77,5 +76,3 @@ public:
 	EntityAnimationDefinitionID getVfxAnimDefID(const VfxEntityAnimationKey &key) const;
 	const EntityAnimationDefinition &getDefinition(EntityAnimationDefinitionID id) const;
 };
-
-#endif

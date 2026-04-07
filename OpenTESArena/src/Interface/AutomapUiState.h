@@ -1,5 +1,4 @@
-#ifndef AUTOMAP_UI_STATE_H
-#define AUTOMAP_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -48,5 +47,3 @@ namespace AutomapUI
 		DECLARE_UI_FUNC(AutomapUI, onExitInputAction)
 	};
 }
-
-#endif

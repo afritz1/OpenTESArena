@@ -1,5 +1,4 @@
-#ifndef BINARY_ASSET_LIBRARY_H
-#define BINARY_ASSET_LIBRARY_H
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -106,5 +105,3 @@ public:
 	const std::string &getRulerTitle(int provinceID, ArenaLocationType locationType,
 		bool isMale, ArenaRandom &random) const;
 };
-
-#endif

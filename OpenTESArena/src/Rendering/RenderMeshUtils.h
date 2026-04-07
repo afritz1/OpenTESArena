@@ -1,5 +1,4 @@
-#ifndef RENDER_MESH_UTILS_H
-#define RENDER_MESH_UTILS_H
+#pragma once
 
 #include "RenderShaderUtils.h"
 #include "../Math/Matrix4.h"
@@ -29,5 +28,3 @@ struct RenderTransformHeap
 	void free(int transformIndex);
 	void clear();
 };
-
-#endif

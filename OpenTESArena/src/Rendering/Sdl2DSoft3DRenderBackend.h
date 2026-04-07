@@ -1,5 +1,4 @@
-#ifndef SDL_2D_SOFT_3D_RENDER_BACKEND_H
-#define SDL_2D_SOFT_3D_RENDER_BACKEND_H
+#pragma once
 
 #include "RenderBackend.h"
 #include "SoftwareRenderer.h"
@@ -80,5 +79,3 @@ public:
 	void submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;
 };
-
-#endif

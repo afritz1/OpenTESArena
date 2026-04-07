@@ -1,5 +1,4 @@
-#ifndef INPUT_ACTION_MAP_NAME_H
-#define INPUT_ACTION_MAP_NAME_H
+#pragma once
 
 // Names of input action maps that can be enabled/disabled throughout the game based on UI context.
 namespace InputActionMapName
@@ -29,5 +28,3 @@ namespace InputActionMapName
 		WorldMap
 	};
 }
-
-#endif

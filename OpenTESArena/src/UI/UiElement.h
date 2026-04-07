@@ -1,5 +1,4 @@
-#ifndef UI_ELEMENT_H
-#define UI_ELEMENT_H
+#pragma once
 
 #include "UiTransform.h"
 #include "../Math/Rect.h"
@@ -69,5 +68,3 @@ struct UiElement
 	void initListBox(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiListBoxInstanceID instID);
 	void initButton(const char *name, const char *contextName, Rect clipRect, int drawOrder, UiRenderSpace renderSpace, UiTransformInstanceID transformInstID, UiButtonInstanceID instID);
 };
-
-#endif

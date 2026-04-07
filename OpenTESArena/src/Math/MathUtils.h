@@ -1,5 +1,4 @@
-#ifndef MATH_UTILS_H
-#define MATH_UTILS_H
+#pragma once
 
 #include <bit>
 #include <cmath>
@@ -213,5 +212,3 @@ namespace MathUtilsF
 		return radians * (180.0f / ConstantsF::Pi);
 	}
 }
-
-#endif

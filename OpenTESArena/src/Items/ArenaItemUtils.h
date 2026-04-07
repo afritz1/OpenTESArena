@@ -1,5 +1,4 @@
-#ifndef ARENA_ITEM_UTILS_H
-#define ARENA_ITEM_UTILS_H
+#pragma once
 
 class Random;
 
@@ -26,5 +25,3 @@ namespace ArenaItemUtils
 
 	ArmorMaterialType getRandomArmorMaterialType(Random &random);
 }
-
-#endif

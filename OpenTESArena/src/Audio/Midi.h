@@ -1,5 +1,4 @@
-#ifndef MEDIA_MIDI_H
-#define MEDIA_MIDI_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -41,5 +40,3 @@ public:
     static void shutdown() { sInstance = nullptr; }
     static MidiDevice &get() { return *sInstance.get(); }
 };
-
-#endif /* MEDIA_MIDI_H */

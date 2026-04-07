@@ -1,5 +1,4 @@
-#ifndef ARENA_TYPES_H
-#define ARENA_TYPES_H
+#pragma once
 
 #include <array>
 #include <cstddef>
@@ -637,5 +636,3 @@ namespace ArenaTypes
 
 	std::string voxelTypeToString(ArenaVoxelType voxelType);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef PHYSICS_H
-#define PHYSICS_H
+#pragma once
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/BodyID.h"
@@ -54,5 +53,3 @@ namespace Physics
 	JPH::StaticCompoundShape *getStaticCompoundShapeFromBody(const JPH::Body &body, JPH::PhysicsSystem &physicsSystem);
 	JPH::StaticCompoundShape *getStaticCompoundShapeFromBodyID(JPH::BodyID bodyID, JPH::PhysicsSystem &physicsSystem);
 };
-
-#endif

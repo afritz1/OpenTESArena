@@ -1,5 +1,4 @@
-#ifndef VOXEL_BOX_COMBINE_CHUNK_MANAGER_H
-#define VOXEL_BOX_COMBINE_CHUNK_MANAGER_H
+#pragma once
 
 #include "VoxelBoxCombineChunk.h"
 #include "../World/SpecializedChunkManager.h"
@@ -15,5 +14,3 @@ public:
 	void updateActiveChunks(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions, const VoxelChunkManager &voxelChunkManager);
 	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions, const VoxelChunkManager &voxelChunkManager);
 };
-
-#endif

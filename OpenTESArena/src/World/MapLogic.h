@@ -1,5 +1,4 @@
-#ifndef MAP_LOGIC_H
-#define MAP_LOGIC_H
+#pragma once
 
 #include "../World/Coord.h"
 
@@ -31,5 +30,3 @@ namespace MapLogic
 	// the current level if it is.
 	void handleInteriorLevelTransition(Game &game, const CoordInt3 &playerCoord, const CoordInt3 &transitionCoord);
 }
-
-#endif

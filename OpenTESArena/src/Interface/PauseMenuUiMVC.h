@@ -1,5 +1,4 @@
-#ifndef PAUSE_MENU_UI_MVC_H
-#define PAUSE_MENU_UI_MVC_H
+#pragma once
 
 #include <string>
 
@@ -23,5 +22,3 @@ namespace PauseMenuUiController
 {
 	void onNewGameButtonSelected(Game &game);
 }
-
-#endif

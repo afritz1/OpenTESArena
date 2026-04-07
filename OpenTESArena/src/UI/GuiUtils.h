@@ -1,5 +1,4 @@
-#ifndef GUI_UTILS_H
-#define GUI_UTILS_H
+#pragma once
 
 #include "../Math/Vector2.h"
 
@@ -16,5 +15,3 @@ namespace GuiUtils
 	Rect makeWindowSpaceRect(int x, int y, int width, int height, UiPivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect);
 	Rect makeWindowSpaceRect(Rect rect, UiPivotType pivotType, UiRenderSpace renderSpace, int windowWidth, int windowHeight, Rect letterboxRect);
 }
-
-#endif

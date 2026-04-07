@@ -1,5 +1,4 @@
-#ifndef BOUNDING_BOX_H
-#define BOUNDING_BOX_H
+#pragma once
 
 #include "Vector3.h"
 
@@ -23,5 +22,3 @@ struct BoundingBox3D
 
 	void clear();
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef MUSIC_UTILS_H
-#define MUSIC_UTILS_H
+#pragma once
 
 #include "MusicDefinition.h"
 #include "../Assets/ArenaTypes.h"
@@ -19,5 +18,3 @@ namespace MusicUtils
 	const MusicDefinition *getRandomDungeonMusicDefinition(Random &random);
 	const MusicDefinition *getMainQuestCinematicGoodMusicDefinition(Random &random);
 }
-
-#endif

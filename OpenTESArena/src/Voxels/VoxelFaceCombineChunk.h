@@ -1,5 +1,4 @@
-#ifndef VOXEL_FACE_COMBINE_CHUNK_H
-#define VOXEL_FACE_COMBINE_CHUNK_H
+#pragma once
 
 #include <vector>
 
@@ -62,5 +61,3 @@ public:
 
 	void clear();
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef UI_MESSAGE_BOX_H
-#define UI_MESSAGE_BOX_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -42,5 +41,3 @@ struct MessageBoxItemsProperties
 };
 
 // @todo UiMessageBox ui element
-
-#endif

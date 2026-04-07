@@ -1,5 +1,4 @@
-#ifndef VECTOR2_H
-#define VECTOR2_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -147,5 +146,3 @@ namespace std
 		}
 	};
 }
-
-#endif

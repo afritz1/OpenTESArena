@@ -1,5 +1,4 @@
-#ifndef CHARACTER_CREATION_STATE_H
-#define CHARACTER_CREATION_STATE_H
+#pragma once
 
 #include "../Stats/PrimaryAttribute.h"
 
@@ -28,5 +27,3 @@ struct CharacterCreationState
 
 	void clear();
 };
-
-#endif

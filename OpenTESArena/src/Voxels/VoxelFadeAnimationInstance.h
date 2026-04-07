@@ -1,5 +1,4 @@
-#ifndef VOXEL_FADE_ANIMATION_INSTANCE_H
-#define VOXEL_FADE_ANIMATION_INSTANCE_H
+#pragma once
 
 #include "../World/Coord.h"
 
@@ -20,5 +19,3 @@ struct VoxelFadeAnimationInstance
 
 	void update(double dt);
 };
-
-#endif

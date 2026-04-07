@@ -1,5 +1,4 @@
-#ifndef MAIN_QUEST_SPLASH_UI_MVC_H
-#define MAIN_QUEST_SPLASH_UI_MVC_H
+#pragma once
 
 #include <string>
 
@@ -16,5 +15,3 @@ namespace MainQuestSplashUiView
 {
 	TextureAsset getSplashTextureAsset(int provinceID);
 }
-
-#endif

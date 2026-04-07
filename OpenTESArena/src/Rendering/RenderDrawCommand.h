@@ -1,5 +1,4 @@
-#ifndef RENDER_DRAW_COMMAND_H
-#define RENDER_DRAW_COMMAND_H
+#pragma once
 
 #include "components/utilities/Span.h"
 
@@ -21,5 +20,3 @@ struct RenderDrawCommandList
 
 	void addDrawCalls(Span<const RenderDrawCall> drawCalls);
 };
-
-#endif

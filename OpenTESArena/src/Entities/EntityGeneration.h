@@ -1,5 +1,4 @@
-#ifndef ENTITY_GENERATION_H
-#define ENTITY_GENERATION_H
+#pragma once
 
 #include "EntityUtils.h"
 
@@ -17,5 +16,3 @@ struct EntityGenInfo
 
 	void init(bool nightLightsAreActive, ArenaCityType cityType, ArenaInteriorType interiorType, int interiorLevelIndex);
 };
-
-#endif

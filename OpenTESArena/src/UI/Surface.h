@@ -1,5 +1,4 @@
-#ifndef SURFACE_H
-#define SURFACE_H
+#pragma once
 
 #include <cstdint>
 
@@ -59,5 +58,3 @@ public:
 
 	void clear();
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef VOXEL_DOOR_ANIMATION_INSTANCE_H
-#define VOXEL_DOOR_ANIMATION_INSTANCE_H
+#pragma once
 
 #include "../World/Coord.h"
 
@@ -30,5 +29,3 @@ struct VoxelDoorAnimationInstance
 	void setStateType(VoxelDoorAnimationStateType stateType);
 	void update(double dt);
 };
-
-#endif

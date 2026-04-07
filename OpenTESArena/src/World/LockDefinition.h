@@ -1,5 +1,4 @@
-#ifndef LOCK_DEFINITION_H
-#define LOCK_DEFINITION_H
+#pragma once
 
 #include "../Voxels/VoxelUtils.h"
 
@@ -16,5 +15,3 @@ struct LockDefinition
 
 	void init(SNInt x, int y, WEInt z, int lockLevel);
 };
-
-#endif

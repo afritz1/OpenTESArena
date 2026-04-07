@@ -1,5 +1,4 @@
-#ifndef ARENA_SAVE_H
-#define ARENA_SAVE_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -37,5 +36,3 @@ namespace ArenaSave
 	// @todo: save INN.0x.
 	// @todo: save wild 001, 002, 003, 004.
 }
-
-#endif

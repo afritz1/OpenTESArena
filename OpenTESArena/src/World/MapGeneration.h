@@ -1,5 +1,4 @@
-#ifndef MAP_GENERATION_H
-#define MAP_GENERATION_H
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -210,5 +209,3 @@ namespace MapGeneration
 	void readMifTriggers(Span<const MIFLevel> levels, const INFFile &inf,
 		Span<LevelDefinition> &outLevelDefs, LevelInfoDefinition *outLevelInfoDef);
 }
-
-#endif

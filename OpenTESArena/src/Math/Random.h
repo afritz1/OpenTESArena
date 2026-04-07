@@ -1,5 +1,4 @@
-#ifndef RANDOM_H
-#define RANDOM_H
+#pragma once
 
 #include <cstdint>
 #include <limits>
@@ -54,5 +53,3 @@ public:
 	int next();
 	void srand(uint32_t seed);
 };
-
-#endif

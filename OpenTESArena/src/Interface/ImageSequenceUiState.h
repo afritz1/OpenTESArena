@@ -1,5 +1,4 @@
-#ifndef IMAGE_SEQUENCE_UI_STATE_H
-#define IMAGE_SEQUENCE_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -63,5 +62,3 @@ namespace ImageSequenceUI
 		DECLARE_UI_FUNC(ImageSequenceUI, onSkipInputAction)
 	};
 }
-
-#endif

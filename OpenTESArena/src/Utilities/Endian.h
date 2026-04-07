@@ -1,5 +1,4 @@
-#ifndef ENDIAN_H
-#define ENDIAN_H
+#pragma once
 
 #include "SDL_endian.h"
 
@@ -17,5 +16,3 @@ namespace Endian
 	constexpr int RGBA_AlphaShift = 0;
 #endif
 }
-
-#endif

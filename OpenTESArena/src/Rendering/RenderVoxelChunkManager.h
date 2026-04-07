@@ -1,5 +1,4 @@
-#ifndef RENDER_VOXEL_CHUNK_MANAGER_H
-#define RENDER_VOXEL_CHUNK_MANAGER_H
+#pragma once
 
 #include <array>
 #include <optional>
@@ -138,5 +137,3 @@ public:
 	// Clears all allocated rendering resources.
 	void unloadScene(Renderer &renderer);
 };
-
-#endif

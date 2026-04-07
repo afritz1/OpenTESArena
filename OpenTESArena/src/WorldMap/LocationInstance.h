@@ -1,5 +1,4 @@
-#ifndef LOCATION_INSTANCE_H
-#define LOCATION_INSTANCE_H
+#pragma once
 
 #include <string>
 
@@ -34,5 +33,3 @@ public:
 	// must be used instead.
 	void setNameOverride(std::string &&nameOverride);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef UI_DRAW_COMMAND_H
-#define UI_DRAW_COMMAND_H
+#pragma once
 
 #include "components/utilities/Span.h"
 
@@ -20,5 +19,3 @@ struct UiDrawCommandList
 	void addElements(Span<const RenderElement2D> elements);
 	void clear();
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef CHARACTER_CLASS_DEFINITION_H
-#define CHARACTER_CLASS_DEFINITION_H
+#pragma once
 
 #include <vector>
 
@@ -44,5 +43,3 @@ struct CharacterClassDefinition
 	int getAllowedWeapon(int index) const;
 	int getExperienceCap(int level) const;
 };
-
-#endif

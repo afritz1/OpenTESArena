@@ -1,5 +1,4 @@
-#ifndef PLAYER_H
-#define PLAYER_H
+#pragma once
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Character/Character.h"
@@ -185,5 +184,3 @@ struct Player
 	void prePhysicsStep(double dt, Game &game);
 	void postPhysicsStep(double dt, Game &game);
 };
-
-#endif

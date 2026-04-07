@@ -1,5 +1,4 @@
-#ifndef COLLISION_CHUNK_MANAGER_H
-#define COLLISION_CHUNK_MANAGER_H
+#pragma once
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/PhysicsSystem.h"
@@ -29,5 +28,3 @@ public:
 
 	void clear(JPH::PhysicsSystem &physicsSystem);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ARENA_ENTITY_UTILS_H
-#define ARENA_ENTITY_UTILS_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -76,5 +75,3 @@ namespace ArenaEntityUtils
 	std::string getArmorNameFromItemID(int itemID, const ExeData &exeData);
 	std::string getWeaponNameFromItemID(int itemID, const ExeData &exeData);
 }
-
-#endif

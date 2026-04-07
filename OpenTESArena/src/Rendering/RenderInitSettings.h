@@ -1,5 +1,4 @@
-#ifndef RENDER_INIT_SETTINGS_H
-#define RENDER_INIT_SETTINGS_H
+#pragma once
 
 #include <string>
 
@@ -31,5 +30,3 @@ struct RenderInitSettings
 	void init(const Window *window, const std::string &dataFolderPath, int internalWidth, int internalHeight, int renderThreadsMode,
 		DitheringMode ditheringMode);
 };
-
-#endif

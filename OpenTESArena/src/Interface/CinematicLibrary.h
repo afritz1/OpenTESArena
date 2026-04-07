@@ -1,5 +1,4 @@
-#ifndef CINEMATIC_LIBRARY_H
-#define CINEMATIC_LIBRARY_H
+#pragma once
 
 #include <functional>
 #include <vector>
@@ -22,5 +21,3 @@ public:
 	const TextCinematicDefinition &getTextDefinition(int index) const;
 	bool findTextDefinitionIndexIf(const TextPredicate &predicate, int *outIndex) const;
 };
-
-#endif

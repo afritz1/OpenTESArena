@@ -1,5 +1,4 @@
-#ifndef VOXEL_FACING_H
-#define VOXEL_FACING_H
+#pragma once
 
 enum class VoxelFacing2D
 {
@@ -18,5 +17,3 @@ enum class VoxelFacing3D
 	PositiveZ,
 	NegativeZ
 };
-
-#endif

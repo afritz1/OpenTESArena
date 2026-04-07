@@ -1,5 +1,4 @@
-#ifndef ENTITY_UTILS_H
-#define ENTITY_UTILS_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -60,5 +59,3 @@ namespace EntityUtils
 
 	double nextCreatureSoundWaitSeconds(Random &random);
 }
-
-#endif

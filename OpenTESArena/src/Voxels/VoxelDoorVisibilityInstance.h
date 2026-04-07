@@ -1,5 +1,4 @@
-#ifndef VOXEL_DOOR_VISIBILITY_INSTANCE_H
-#define VOXEL_DOOR_VISIBILITY_INSTANCE_H
+#pragma once
 
 #include "VoxelFacing.h"
 #include "../World/Coord.h"
@@ -23,5 +22,3 @@ struct VoxelDoorVisibilityInstance
 	void update(bool isCameraNorthInclusive, bool isCameraEastInclusive, bool isNorthValid, bool isEastValid,
 		bool isSouthValid, bool isWestValid);
 };
-
-#endif

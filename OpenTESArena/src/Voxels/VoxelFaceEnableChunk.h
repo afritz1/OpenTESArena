@@ -1,5 +1,4 @@
-#ifndef VOXEL_FACE_ENABLE_CHUNK_H
-#define VOXEL_FACE_ENABLE_CHUNK_H
+#pragma once
 
 #include "VoxelUtils.h"
 #include "../World/Chunk.h"
@@ -29,5 +28,3 @@ struct VoxelFaceEnableChunk final : public Chunk
 
 	void clear();
 };
-
-#endif

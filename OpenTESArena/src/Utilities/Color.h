@@ -1,5 +1,4 @@
-#ifndef COLOR_H
-#define COLOR_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -146,5 +145,3 @@ namespace Colors
 	constexpr Color Transparent(0, 0, 0, 0);
 	constexpr uint32_t TransparentRGBA = Transparent.toRGBA();
 }
-
-#endif

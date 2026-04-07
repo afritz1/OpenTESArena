@@ -1,5 +1,4 @@
-#ifndef UI_TEXT_BOX_H
-#define UI_TEXT_BOX_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -50,5 +49,3 @@ struct UiTextBox
 
 	void free(Renderer &renderer);
 };
-
-#endif

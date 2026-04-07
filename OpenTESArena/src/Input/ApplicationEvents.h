@@ -1,5 +1,4 @@
-#ifndef APPLICATION_EVENTS_H
-#define APPLICATION_EVENTS_H
+#pragma once
 
 #include <functional>
 
@@ -11,5 +10,3 @@ using WindowResizedCallback = std::function<void(int width, int height)>;
 
 // When the application switches between desktop and exclusive fullscreen in some APIs like Direct3D.
 using RenderTargetsResetCallback = std::function<void()>;
-
-#endif

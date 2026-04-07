@@ -1,5 +1,4 @@
-#ifndef RENDER_MATERIAL_UTILS_H
-#define RENDER_MATERIAL_UTILS_H
+#pragma once
 
 #include "RenderLightUtils.h"
 #include "RenderShaderUtils.h"
@@ -45,5 +44,3 @@ struct RenderMaterial
 
 // Supplementary shading values for a material.
 using RenderMaterialInstanceID = int;
-
-#endif

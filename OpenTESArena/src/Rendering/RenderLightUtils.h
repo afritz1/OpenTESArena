@@ -1,5 +1,4 @@
-#ifndef RENDER_LIGHT_UTILS_H
-#define RENDER_LIGHT_UTILS_H
+#pragma once
 
 enum class RenderLightingType
 {
@@ -9,5 +8,3 @@ enum class RenderLightingType
 
 static constexpr RenderLightingType RENDER_LIGHTING_TYPE_MAX = RenderLightingType::PerPixel;
 static constexpr int RENDER_LIGHTING_TYPE_COUNT = static_cast<int>(RENDER_LIGHTING_TYPE_MAX) + 1;
-
-#endif

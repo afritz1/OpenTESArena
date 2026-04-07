@@ -1,5 +1,4 @@
-#ifndef COMBAT_LOGIC_H
-#define COMBAT_LOGIC_H
+#pragma once
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/PhysicsSystem.h"
@@ -39,5 +38,3 @@ namespace CombatLogic
 	void spawnHitVfx(const EntityDefinition &hitEntityDef, const WorldDouble3 &position, EntityChunkManager &entityChunkManager,
 		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef CHOOSE_NAME_UI_STATE_H
-#define CHOOSE_NAME_UI_STATE_H
+#pragma once
 
 #include <string>
 #include <string_view>
@@ -44,5 +43,3 @@ namespace ChooseNameUI
 		DECLARE_UI_FUNC(ChooseNameUI, onBackInputAction)
 	};
 }
-
-#endif

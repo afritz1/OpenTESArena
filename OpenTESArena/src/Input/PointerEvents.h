@@ -1,5 +1,4 @@
-#ifndef POINTER_EVENTS_H
-#define POINTER_EVENTS_H
+#pragma once
 
 #include <functional>
 
@@ -20,5 +19,3 @@ using MouseScrollChangedCallback = std::function<void(Game &game, MouseWheelScro
 // When the mouse cursor changes position on-screen.
 // @todo: need to clarify if this is physical mouse position delta or on-screen mouse position delta.
 using MouseMotionCallback = std::function<void(Game &game, int dx, int dy)>;
-
-#endif

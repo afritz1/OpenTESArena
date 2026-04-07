@@ -1,5 +1,4 @@
-#ifndef ARENA_ASSET_UTILS_H
-#define ARENA_ASSET_UTILS_H
+#pragma once
 
 namespace ArenaAssetUtils
 {
@@ -17,5 +16,3 @@ namespace ArenaAssetUtils
 	constexpr const char *EXTENSION_SET = "SET";
 	constexpr const char *EXTENSION_TXT = "TXT";
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef MATRIX4_H
-#define MATRIX4_H
+#pragma once
 
 #include <string>
 #include <type_traits>
@@ -45,5 +44,3 @@ struct Matrix4
 // The template instantiations are at the end of the .cpp file.
 using Matrix4f = Matrix4<float>;
 using Matrix4d = Matrix4<double>;
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef POINTER_TYPES_H
-#define POINTER_TYPES_H
+#pragma once
 
 #include "components/utilities/Enum.h"
 
@@ -17,5 +16,3 @@ enum class MouseWheelScrollType
 	Down,
 	Up
 };
-
-#endif

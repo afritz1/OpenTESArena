@@ -1,5 +1,4 @@
-#ifndef ITEM_MATERIAL_LIBRARY_H
-#define ITEM_MATERIAL_LIBRARY_H
+#pragma once
 
 #include <functional>
 #include <vector>
@@ -24,5 +23,3 @@ public:
 	const ItemMaterialDefinition &getDefinition(int index) const;
 	std::vector<int> getDefinitionIndicesIf(const ItemMaterialLibraryPredicate &predicate) const;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef SCENE_MANAGER_H
-#define SCENE_MANAGER_H
+#pragma once
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/PhysicsSystem.h"
@@ -71,5 +70,3 @@ struct SceneManager
 	void updateGameWorldPalette(bool isInterior, WeatherType weatherType, bool isFoggy, double dayPercent, TextureManager &textureManager);
 	void endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 };
-
-#endif

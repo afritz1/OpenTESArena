@@ -1,5 +1,4 @@
-#ifndef TEXT_ENTRY_H
-#define TEXT_ENTRY_H
+#pragma once
 
 #include <cstddef>
 #include <string>
@@ -23,5 +22,3 @@ namespace TextEntry
 	// Attempts to delete the backmost character. Returns whether the text changed.
 	bool backspace(std::string &text);
 }
-
-#endif

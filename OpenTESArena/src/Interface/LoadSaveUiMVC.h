@@ -1,5 +1,4 @@
-#ifndef LOAD_SAVE_UI_MVC_H
-#define LOAD_SAVE_UI_MVC_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -54,5 +53,3 @@ namespace LoadSaveUiView
 
 	UiTextureID allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer);
 }
-
-#endif

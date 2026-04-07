@@ -1,5 +1,4 @@
-#ifndef VOXEL_SHADING_DEFINITION_H
-#define VOXEL_SHADING_DEFINITION_H
+#pragma once
 
 #include "../Rendering/RenderShaderUtils.h"
 
@@ -18,5 +17,3 @@ struct VoxelShadingDefinition
 
 	void addFragmentShaderType(FragmentShaderType fragmentShaderType);
 };
-
-#endif

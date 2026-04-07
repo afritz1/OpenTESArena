@@ -1,5 +1,4 @@
-#ifndef CHARACTER_QUESTION_H
-#define CHARACTER_QUESTION_H
+#pragma once
 
 #include "../Stats/CharacterClassDefinition.h"
 
@@ -22,5 +21,3 @@ struct CharacterQuestion
 
 	void init(const char *description, const CharacterQuestionChoice &a, const CharacterQuestionChoice &b, const CharacterQuestionChoice &c);
 };
-
-#endif

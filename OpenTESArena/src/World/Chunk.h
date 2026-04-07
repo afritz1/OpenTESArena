@@ -1,5 +1,4 @@
-#ifndef CHUNK_H
-#define CHUNK_H
+#pragma once
 
 #include "ChunkUtils.h"
 #include "Coord.h"
@@ -47,5 +46,3 @@ protected:
 		*outWestID = getIdOrDefault(westVoxel);
 	}
 };
-
-#endif

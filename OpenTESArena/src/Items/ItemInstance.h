@@ -1,5 +1,4 @@
-#ifndef ITEM_INSTANCE_H
-#define ITEM_INSTANCE_H
+#pragma once
 
 #include "ItemDefinition.h"
 
@@ -19,5 +18,3 @@ struct ItemInstance
 
 	void clear();
 };
-
-#endif

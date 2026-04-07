@@ -1,5 +1,4 @@
-#ifndef CHASM_DEFINITION_H
-#define CHASM_DEFINITION_H
+#pragma once
 
 #include <cstdint>
 
@@ -54,5 +53,3 @@ struct VoxelChasmDefinition
 
 	void initClassic(ArenaChasmType chasmType, const TextureAsset &wallTextureAsset, TextureManager &textureManager);
 };
-
-#endif

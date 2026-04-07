@@ -1,5 +1,4 @@
-#ifndef WORLD_MAP_DEFINITION_H
-#define WORLD_MAP_DEFINITION_H
+#pragma once
 
 #include <vector>
 
@@ -25,5 +24,3 @@ public:
 	// Attempts to get the index of the given province definition in the world map.
 	bool tryGetProvinceIndex(const ProvinceDefinition &provinceDef, int *outProvinceIndex) const;
 };
-
-#endif

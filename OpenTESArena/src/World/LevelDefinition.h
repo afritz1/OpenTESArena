@@ -1,5 +1,4 @@
-#ifndef LEVEL_DEFINITION_H
-#define LEVEL_DEFINITION_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -152,5 +151,3 @@ public:
 	void addDoor(LevelVoxelDoorDefID id, const WorldInt3 &position);
 	void addChasm(LevelVoxelChasmDefID id, const WorldInt3 &position);
 };
-
-#endif

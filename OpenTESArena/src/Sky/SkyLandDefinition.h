@@ -1,5 +1,4 @@
-#ifndef SKY_LAND_DEFINITION_H
-#define SKY_LAND_DEFINITION_H
+#pragma once
 
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureUtils.h"
@@ -25,5 +24,3 @@ struct SkyLandDefinition
 	// Non-animated land.
 	void init(TextureAsset &&textureAsset, SkyLandShadingType shadingType);
 };
-
-#endif

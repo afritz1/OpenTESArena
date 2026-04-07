@@ -1,5 +1,4 @@
-#ifndef WORLD_MAP_UI_STATE_H
-#define WORLD_MAP_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -51,5 +50,3 @@ namespace WorldMapUI
 		DECLARE_UI_FUNC(WorldMapUI, onBackInputAction)
 	};
 }
-
-#endif

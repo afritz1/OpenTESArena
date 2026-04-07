@@ -1,5 +1,4 @@
-#ifndef COLLISION_SHAPE_DEFINITION_H
-#define COLLISION_SHAPE_DEFINITION_H
+#pragma once
 
 #include "../Math/MathUtils.h"
 
@@ -42,5 +41,3 @@ struct CollisionShapeDefinition
 	void initCapsule(double radius, double middleHeight);
 	void initCapsuleAsSphere(double radius);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef VULKAN_RENDER_BACKEND_H
-#define VULKAN_RENDER_BACKEND_H
+#pragma once
 
 #ifdef HAVE_VULKAN
 
@@ -455,7 +454,5 @@ public:
 	void submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) override;
 };
-
-#endif
 
 #endif

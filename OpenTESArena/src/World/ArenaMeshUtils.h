@@ -1,5 +1,4 @@
-#ifndef ARENA_MESH_UTILS_H
-#define ARENA_MESH_UTILS_H
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -240,5 +239,3 @@ namespace ArenaMeshUtils
 	bool isFullyCoveringFacing(const ArenaShapeInitCache &shapeInitCache, VoxelFacing3D facing);
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef CFA_FILE_H
-#define CFA_FILE_H
+#pragma once
 
 #include <cstdint>
 
@@ -44,5 +43,3 @@ public:
 	// Gets a pointer to an image's 8-bit pixels.
 	const uint8_t *getPixels(int index) const;
 };
-
-#endif

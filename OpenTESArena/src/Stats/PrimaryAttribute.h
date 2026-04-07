@@ -1,5 +1,4 @@
-#ifndef PRIMARY_ATTRIBUTE_H
-#define PRIMARY_ATTRIBUTE_H
+#pragma once
 
 #include "components/utilities/Span.h"
 
@@ -53,5 +52,3 @@ struct DerivedAttributes
 
 	void clear();
 };
-
-#endif

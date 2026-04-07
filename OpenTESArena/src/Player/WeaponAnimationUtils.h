@@ -1,5 +1,4 @@
-#ifndef WEAPON_ANIMATION_UTILS_H
-#define WEAPON_ANIMATION_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -30,5 +29,3 @@ namespace WeaponAnimationUtils
 
 	int getFrameIndex(const WeaponAnimationInstance &animInst, const WeaponAnimationDefinition &animDef);
 }
-
-#endif

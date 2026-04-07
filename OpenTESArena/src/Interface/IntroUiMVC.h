@@ -1,5 +1,4 @@
-#ifndef INTRO_UI_MVC_H
-#define INTRO_UI_MVC_H
+#pragma once
 
 #include <string>
 
@@ -44,5 +43,3 @@ namespace IntroUiController
 	void onOpeningScrollFinished(Game &game);
 	void onIntroStoryFinished(Game &game);
 }
-
-#endif

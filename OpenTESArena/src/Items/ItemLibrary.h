@@ -1,5 +1,4 @@
-#ifndef ITEM_LIBRARY_H
-#define ITEM_LIBRARY_H
+#pragma once
 
 #include <functional>
 #include <vector>
@@ -29,5 +28,3 @@ public:
 	const ItemDefinition &getGoldDefinition() const;
 	ItemDefinitionID getGoldDefinitionID() const;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef VOXEL_DOOR_UTILS_H
-#define VOXEL_DOOR_UTILS_H
+#pragma once
 
 #include "VoxelFacing.h"
 #include "../Math/Constants.h"
@@ -56,5 +55,3 @@ namespace VoxelDoorUtils
 	double getAnimatedTexCoordPercent(double animPercent);
 	double getAnimatedScaleAmount(double texCoordPercent);
 }
-
-#endif

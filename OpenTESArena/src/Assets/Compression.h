@@ -1,5 +1,4 @@
-#ifndef COMPRESSION_H
-#define COMPRESSION_H
+#pragma once
 
 #include <algorithm>
 #include <array>
@@ -287,5 +286,3 @@ namespace Compression
 		}
 	}
 }
-
-#endif

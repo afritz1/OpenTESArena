@@ -1,5 +1,4 @@
-#ifndef ENTITY_DEFINITION_H
-#define ENTITY_DEFINITION_H
+#pragma once
 
 #include <cstdint>
 #include <optional>
@@ -290,5 +289,3 @@ struct EntityDefinition
 	void initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle,
 		int lightIntensity, EntityAnimationDefinition &&animDef);
 };
-
-#endif

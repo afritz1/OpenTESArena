@@ -1,5 +1,4 @@
-#ifndef VOXEL_TEXTURE_DEFINITION_H
-#define VOXEL_TEXTURE_DEFINITION_H
+#pragma once
 
 #include "../Assets/TextureAsset.h"
 
@@ -15,5 +14,3 @@ struct VoxelTextureDefinition
 	const TextureAsset &getTextureAsset(int index) const;
 	void addTextureAsset(TextureAsset &&textureAsset);
 };
-
-#endif

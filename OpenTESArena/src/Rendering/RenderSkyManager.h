@@ -1,5 +1,4 @@
-#ifndef RENDER_SKY_MANAGER_H
-#define RENDER_SKY_MANAGER_H
+#pragma once
 
 #include "RenderDrawCall.h"
 #include "RenderMaterialUtils.h"
@@ -95,5 +94,3 @@ public:
 		const RenderCamera &camera, bool isInterior, double dayPercent, bool isFoggy, double distantAmbientPercent, Renderer &renderer);
 	void unloadScene(Renderer &renderer);
 };
-
-#endif

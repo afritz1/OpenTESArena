@@ -1,5 +1,4 @@
-#ifndef PHYSICS_LAYER_H
-#define PHYSICS_LAYER_H
+#pragma once
 
 #include <cstdint>
 
@@ -49,5 +48,3 @@ class PhysicsObjectVsBroadPhaseLayerFilter : public JPH::ObjectVsBroadPhaseLayer
 public:
 	bool ShouldCollide(JPH::ObjectLayer layer1, JPH::BroadPhaseLayer layer2) const override;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef PROVINCE_INSTANCE_H
-#define PROVINCE_INSTANCE_H
+#pragma once
 
 #include <vector>
 
@@ -24,5 +23,3 @@ public:
 	LocationInstance &getLocationInstance(int index);
 	const LocationInstance &getLocationInstance(int index) const;
 };
-
-#endif

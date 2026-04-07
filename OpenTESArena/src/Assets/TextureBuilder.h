@@ -1,5 +1,4 @@
-#ifndef TEXTURE_BUILDER_H
-#define TEXTURE_BUILDER_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -25,5 +24,3 @@ struct TextureBuilder
 	Span2D<const uint16_t> getTexels16() const;
 	Span2D<const uint32_t> getTexels32() const;
 };
-
-#endif

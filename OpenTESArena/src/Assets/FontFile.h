@@ -1,5 +1,4 @@
-#ifndef FONT_FILE_H
-#define FONT_FILE_H
+#pragma once
 
 #include <cstdint>
 
@@ -32,5 +31,3 @@ public:
 	int getHeight() const;
 	Span2D<const Pixel> getPixels(int index) const;
 };
-
-#endif

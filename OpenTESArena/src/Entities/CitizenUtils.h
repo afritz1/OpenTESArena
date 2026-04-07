@@ -1,5 +1,4 @@
-#ifndef CITIZEN_UTILS_H
-#define CITIZEN_UTILS_H
+#pragma once
 
 #include <optional>
 
@@ -50,5 +49,3 @@ namespace CitizenUtils
 	int getCitizenCountInChunk(const ChunkInt2 &chunkPos, const EntityChunkManager &entityChunkManager);
 	int getCitizenCount(const EntityChunkManager &entityChunkManager);
 }
-
-#endif

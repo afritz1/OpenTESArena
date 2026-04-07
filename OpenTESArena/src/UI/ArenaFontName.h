@@ -1,5 +1,4 @@
-#ifndef ARENA_FONT_NAME_H
-#define ARENA_FONT_NAME_H
+#pragma once
 
 namespace ArenaFontName
 {
@@ -27,5 +26,3 @@ namespace ArenaFontName
 		ArenaFontName::Teeny
 	};
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef SKY_MOON_DEFINITION_H
-#define SKY_MOON_DEFINITION_H
+#pragma once
 
 #include "../Assets/TextureAsset.h"
 
@@ -12,5 +11,3 @@ struct SkyMoonDefinition
 
 	void init(Buffer<TextureAsset> &&textureAssets);
 };
-
-#endif

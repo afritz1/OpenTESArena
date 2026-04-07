@@ -1,5 +1,4 @@
-#ifndef MUSIC_DEFINITION_H
-#define MUSIC_DEFINITION_H
+#pragma once
 
 #include <string>
 
@@ -86,5 +85,3 @@ struct MusicDefinition
 	void initSwimming(const std::string &filename);
 	void initWeather(const std::string &filename, const WeatherDefinition &weatherDef);
 };
-
-#endif

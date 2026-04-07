@@ -1,5 +1,4 @@
-#ifndef GAME_STATE_H
-#define GAME_STATE_H
+#pragma once
 
 #include <optional>
 #include <stack>
@@ -174,5 +173,3 @@ public:
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(double dt, const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game);
 };
-
-#endif

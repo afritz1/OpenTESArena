@@ -1,5 +1,4 @@
-#ifndef EXE_TYPES_H
-#define EXE_TYPES_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -33,5 +32,3 @@ namespace ExeTypes
 		void init(Span<const std::byte> exeBytes, int exeAddress);
 	};
 }
-
-#endif

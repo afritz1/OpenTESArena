@@ -1,5 +1,4 @@
-#ifndef VOXEL_TRAITS_DEFINITION_H
-#define VOXEL_TRAITS_DEFINITION_H
+#pragma once
 
 #include "../Assets/ArenaTypes.h"
 
@@ -58,5 +57,3 @@ struct VoxelTraitsDefinition
 
 	bool hasCollision() const;
 };
-
-#endif

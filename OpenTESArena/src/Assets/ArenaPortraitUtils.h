@@ -1,5 +1,4 @@
-#ifndef ARENA_PORTRAIT_UTILS_H
-#define ARENA_PORTRAIT_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -30,5 +29,3 @@ namespace ArenaPortraitUtils
 	// Gets the pixel offset for drawing a pants texture in the equipment screen.
 	Int2 getPantsOffset(bool male);
 }
-
-#endif

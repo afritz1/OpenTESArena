@@ -1,5 +1,4 @@
-#ifndef QUATERNION_H
-#define QUATERNION_H
+#pragma once
 
 #include <string>
 
@@ -26,5 +25,3 @@ struct Quaternion
 	double length() const;
 	Quaternion normalized() const;
 };
-
-#endif

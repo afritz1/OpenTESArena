@@ -1,5 +1,4 @@
-#ifndef TEXTURE_FILE_METADATA_H
-#define TEXTURE_FILE_METADATA_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -39,5 +38,3 @@ public:
 	bool isMovie() const;
 	double getSecondsPerFrame() const;
 };
-
-#endif

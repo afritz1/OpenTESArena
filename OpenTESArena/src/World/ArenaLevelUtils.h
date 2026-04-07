@@ -1,5 +1,4 @@
-#ifndef ARENA_LEVEL_UTILS_H
-#define ARENA_LEVEL_UTILS_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -76,5 +75,3 @@ namespace ArenaLevelUtils
 	ObjectTextureID allocGameWorldPaletteTexture(PaletteID paletteID, TextureManager &textureManager, Renderer &renderer);
 	ObjectTextureID allocLightTableTexture(const std::string &filename, TextureManager &textureManager, Renderer &renderer);
 }
-
-#endif

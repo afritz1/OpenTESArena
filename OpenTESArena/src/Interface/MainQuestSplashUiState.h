@@ -1,5 +1,4 @@
-#ifndef MAIN_QUEST_SPLASH_UI_STATE_H
-#define MAIN_QUEST_SPLASH_UI_STATE_H
+#pragma once
 
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
@@ -39,5 +38,3 @@ namespace MainQuestSplashUI
 		DECLARE_UI_FUNC(MainQuestSplashUI, onBackInputAction)
 	};
 }
-
-#endif

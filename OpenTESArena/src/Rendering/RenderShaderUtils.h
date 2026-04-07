@@ -1,5 +1,4 @@
-#ifndef RENDER_SHADER_UTILS_H
-#define RENDER_SHADER_UTILS_H
+#pragma once
 
 enum class VertexShaderType
 {
@@ -82,5 +81,3 @@ namespace RenderShaderUtils
 			(type == FragmentShaderType::AlphaTestedWithVariableTexCoordVMin);
 	}
 }
-
-#endif

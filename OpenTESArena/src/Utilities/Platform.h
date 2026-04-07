@@ -1,5 +1,4 @@
-#ifndef PLATFORM_H
-#define PLATFORM_H
+#pragma once
 
 #include <string>
 
@@ -41,5 +40,3 @@ namespace Platform
 	// Gets CPU support for 8-wide float vector intrinsics.
 	bool hasAVX();
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ENTITY_DEFINITION_LIBRARY_H
-#define ENTITY_DEFINITION_LIBRARY_H
+#pragma once
 
 #include <vector>
 
@@ -135,5 +134,3 @@ public:
 	EntityDefID addDefinition(EntityDefinitionKey &&key, EntityDefinition &&def);
 	void clear();
 };
-
-#endif

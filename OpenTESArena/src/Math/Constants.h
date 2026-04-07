@@ -1,5 +1,4 @@
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#pragma once
 
 namespace Constants
 {
@@ -22,5 +21,3 @@ namespace ConstantsF
 	constexpr float Sqrt2 = 1.41421356f;
 	constexpr float HalfSqrt2 = Sqrt2 / 2.0f;
 }
-
-#endif

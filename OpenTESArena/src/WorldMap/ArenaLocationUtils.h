@@ -1,5 +1,4 @@
-#ifndef ARENA_LOCATION_UTILS_H
-#define ARENA_LOCATION_UTILS_H
+#pragma once
 
 #include <array>
 #include <cstdint>
@@ -113,5 +112,3 @@ namespace ArenaLocationUtils
 	// Gets an index into the city reserved block list.
 	int getCityReservedBlockListIndex(bool isCoastal, int templateID);
 }
-
-#endif

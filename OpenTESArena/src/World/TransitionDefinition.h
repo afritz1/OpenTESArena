@@ -1,5 +1,4 @@
-#ifndef TRANSITION_DEFINITION_H
-#define TRANSITION_DEFINITION_H
+#pragma once
 
 #include "MapGeneration.h"
 #include "TransitionType.h"
@@ -32,5 +31,3 @@ struct TransitionDefinition
 	void initInteriorExit();
 	void initInteriorLevelChange(bool isLevelUp);
 };
-
-#endif

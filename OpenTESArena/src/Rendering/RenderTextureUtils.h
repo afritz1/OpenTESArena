@@ -1,5 +1,4 @@
-#ifndef RENDER_TEXTURE_UTILS_H
-#define RENDER_TEXTURE_UTILS_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -90,5 +89,3 @@ public:
 	LockedTexture lockTexels();
 	void unlockTexels();
 };
-
-#endif

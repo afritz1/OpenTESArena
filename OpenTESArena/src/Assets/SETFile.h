@@ -1,5 +1,4 @@
-#ifndef SET_FILE_H
-#define SET_FILE_H
+#pragma once
 
 #include <cstdint>
 
@@ -27,5 +26,3 @@ public:
 	// Gets the pixel data for a particular image of the .SET file.
 	const uint8_t *getPixels(int index) const;
 };
-
-#endif

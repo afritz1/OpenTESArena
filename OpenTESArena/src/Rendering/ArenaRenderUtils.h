@@ -1,5 +1,4 @@
-#ifndef ARENA_RENDER_UTILS_H
-#define ARENA_RENDER_UTILS_H
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -165,5 +164,3 @@ namespace ArenaRenderUtils
 	// Draws to an 8-bit 320x200 paletted texture.
 	void populateFogTexture(const ArenaFogState &fogState, Span2D<uint8_t> outPixels);
 }
-
-#endif

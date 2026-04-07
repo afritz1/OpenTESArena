@@ -1,5 +1,4 @@
-#ifndef WORLD_MAP_INSTANCE_H
-#define WORLD_MAP_INSTANCE_H
+#pragma once
 
 #include <vector>
 
@@ -20,5 +19,3 @@ public:
 	ProvinceInstance &getProvinceInstance(int index);
 	const ProvinceInstance &getProvinceInstance(int index) const;
 };
-
-#endif

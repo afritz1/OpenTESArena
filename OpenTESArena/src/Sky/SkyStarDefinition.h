@@ -1,5 +1,4 @@
-#ifndef SKY_STAR_DEFINITION_H
-#define SKY_STAR_DEFINITION_H
+#pragma once
 
 #include <cstdint>
 
@@ -34,5 +33,3 @@ struct SkyStarDefinition
 	void initSmall(uint8_t paletteIndex);
 	void initLarge(TextureAsset &&textureAsset);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef VOXEL_UTILS_H
-#define VOXEL_UTILS_H
+#pragma once
 
 #include <optional>
 
@@ -87,5 +86,3 @@ namespace VoxelUtils
 	VoxelFacing3D getFaceIndexFacing(int faceIndex);
 	VoxelFacing3D getOppositeFacing(VoxelFacing3D facing);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef LOGBOOK_UI_MVC_H
-#define LOGBOOK_UI_MVC_H
+#pragma once
 
 #include <string>
 
@@ -9,5 +8,3 @@ namespace LogbookUiModel
 {
 	std::string getNoEntriesText(Game &game);
 }
-
-#endif

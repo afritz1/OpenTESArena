@@ -1,5 +1,4 @@
-#ifndef FONT_DEFINITION_H
-#define FONT_DEFINITION_H
+#pragma once
 
 #include <string>
 #include <unordered_map>
@@ -41,5 +40,3 @@ public:
 
 	const Character &getCharacter(CharID id) const;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef INPUT_MANAGER_H
-#define INPUT_MANAGER_H
+#pragma once
 
 #include <cstdint>
 #include <functional>
@@ -243,5 +242,3 @@ public:
 	// Handle input listener callbacks, etc..
 	void update(Game &game, double dt, const UiManager &uiManager, const std::function<void()> &onFinishedProcessingEvent);
 };
-
-#endif

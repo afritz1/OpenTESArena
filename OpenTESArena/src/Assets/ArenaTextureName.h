@@ -1,5 +1,4 @@
-#ifndef ARENA_TEXTURE_NAME_H
-#define ARENA_TEXTURE_NAME_H
+#pragma once
 
 #include <string>
 
@@ -144,5 +143,3 @@ namespace ArenaTextureSequenceName
 	const std::string Warhaft = "WARHAFT.FLC";
 	const std::string Warrior = "WARRIOR.CEL";
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ITEM_DEFINITION_H
-#define ITEM_DEFINITION_H
+#pragma once
 
 #include <cstdint>
 
@@ -178,5 +177,3 @@ struct ItemDefinition
 	std::string getDisplayName(int stackAmount) const;
 	double getWeight() const;
 };
-
-#endif

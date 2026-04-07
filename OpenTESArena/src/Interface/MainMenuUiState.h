@@ -1,5 +1,4 @@
-#ifndef MAIN_MENU_UI_STATE_H
-#define MAIN_MENU_UI_STATE_H
+#pragma once
 
 #include "../UI/UiButton.h"
 #include "../UI/UiContext.h"
@@ -72,5 +71,3 @@ namespace MainMenuUI
 		DECLARE_UI_FUNC(MainMenuUI, onTestGameInputAction)
 	};
 }
-
-#endif

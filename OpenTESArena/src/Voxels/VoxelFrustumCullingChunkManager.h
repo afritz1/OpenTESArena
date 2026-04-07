@@ -1,5 +1,4 @@
-#ifndef VOXEL_FRUSTUM_CULLING_CHUNK_MANAGER_H
-#define VOXEL_FRUSTUM_CULLING_CHUNK_MANAGER_H
+#pragma once
 
 #include "VoxelFrustumCullingChunk.h"
 #include "../World/SpecializedChunkManager.h"
@@ -16,5 +15,3 @@ public:
 	void update(Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		const RenderCamera &camera, double ceilingScale, const VoxelChunkManager &voxelChunkManager);
 };
-
-#endif

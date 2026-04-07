@@ -1,5 +1,4 @@
-#ifndef ENTITY_ANIMATION_DEFINITION_H
-#define ENTITY_ANIMATION_DEFINITION_H
+#pragma once
 
 #include <optional>
 
@@ -70,5 +69,3 @@ struct EntityAnimationDefinition
 	int addKeyframe(int keyframeListIndex, TextureAsset &&textureAsset, double width, double height);
 	void populateLinearizedIndices();
 };
-
-#endif

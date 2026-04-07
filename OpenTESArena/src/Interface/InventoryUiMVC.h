@@ -1,5 +1,4 @@
-#ifndef INVENTORY_UI_MVC_H
-#define INVENTORY_UI_MVC_H
+#pragma once
 
 #include <string>
 
@@ -37,5 +36,3 @@ namespace InventoryUiView
 
 	const Color &getItemDisplayColor(const ItemInstance &itemInst);
 }
-
-#endif

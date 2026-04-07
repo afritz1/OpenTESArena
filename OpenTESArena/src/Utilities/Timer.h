@@ -1,5 +1,4 @@
-#ifndef TIMER_H
-#define TIMER_H
+#pragma once
 
 class Timer
 {
@@ -27,5 +26,3 @@ public:
 	// Ticks the timer by delta time.
 	void tick(double dt);
 };
-
-#endif

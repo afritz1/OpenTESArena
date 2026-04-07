@@ -1,5 +1,4 @@
-#ifndef VOXEL_FACE_COMBINE_CHUNK_MANAGER_H
-#define VOXEL_FACE_COMBINE_CHUNK_MANAGER_H
+#pragma once
 
 #include "VoxelFaceCombineChunk.h"
 #include "../World/SpecializedChunkManager.h"
@@ -20,5 +19,3 @@ public:
 
 	void endFrame();
 };
-
-#endif

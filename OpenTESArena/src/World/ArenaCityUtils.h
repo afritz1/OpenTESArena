@@ -1,5 +1,4 @@
-#ifndef ARENA_CITY_UTILS_H
-#define ARENA_CITY_UTILS_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -44,5 +43,3 @@ namespace ArenaCityUtils
 	// @todo: this should use Arena dimensions (from MAP1?), not modern dimensions
 	void revisePalaceGraphics(Buffer2D<ArenaVoxelID> &map1, SNInt gridWidth, WEInt gridDepth);
 }
-
-#endif

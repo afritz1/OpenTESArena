@@ -1,5 +1,4 @@
-#ifndef ENTITY_ANIMATION_UTILS_H
-#define ENTITY_ANIMATION_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -20,5 +19,3 @@ namespace EntityAnimationUtils
 	constexpr int SPELL_TYPE_COUNT = 12;
 	constexpr int MELEE_VFX_COUNT = 3;
 }
-
-#endif

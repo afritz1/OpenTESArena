@@ -1,5 +1,4 @@
-#ifndef VECTOR4_H
-#define VECTOR4_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -152,5 +151,3 @@ using Uint4 = Vector4i<unsigned int>;
 
 using Float4 = Vector4f<float>;
 using Double4 = Vector4f<double>;
-
-#endif

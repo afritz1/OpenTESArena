@@ -1,5 +1,4 @@
-#ifndef UI_LIBRARY_H
-#define UI_LIBRARY_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -145,5 +144,3 @@ public:
 
 	const UiContextDefinition &getDefinition(const char *contextName) const;
 };
-
-#endif

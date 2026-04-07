@@ -1,5 +1,4 @@
-#ifndef ARENA_WILD_UTILS_H
-#define ARENA_WILD_UTILS_H
+#pragma once
 
 #include <cstdint>
 
@@ -67,5 +66,3 @@ namespace ArenaWildUtils
 	// Whether a *MENU voxel appears in the wilderness automap.
 	bool menuIsDisplayedInWildAutomap(int menuIndex);
 }
-
-#endif

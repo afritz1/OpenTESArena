@@ -1,5 +1,4 @@
-#ifndef RENDER_BUFFER_H
-#define RENDER_BUFFER_H
+#pragma once
 
 #include <cstddef>
 
@@ -22,5 +21,3 @@ struct LockedBuffer
 	Span<float> getFloats();
 	Span<double> getDoubles();
 };
-
-#endif

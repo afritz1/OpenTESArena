@@ -1,5 +1,4 @@
-#ifndef AUDIO_MANAGER_H
-#define AUDIO_MANAGER_H
+#pragma once
 
 #include <deque>
 #include <memory>
@@ -156,5 +155,3 @@ public:
 	// Updates the position of the 3D listener.
 	void updateListener(const AudioListenerState &listenerState);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef GAME_WORLD_UI_MVC_H
-#define GAME_WORLD_UI_MVC_H
+#pragma once
 
 #include <functional>
 #include <optional>
@@ -298,5 +297,3 @@ namespace GameWorldUiController
 	void onHealthDepleted(Game &game);
 	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef CLOCK_LIBRARY_H
-#define CLOCK_LIBRARY_H
+#pragma once
 
 #include <string>
 
@@ -18,5 +17,3 @@ public:
 
 	const Clock &getClock(const char *name) const;
 };
-
-#endif

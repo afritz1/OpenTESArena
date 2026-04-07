@@ -1,5 +1,4 @@
-#ifndef CLOCK_H
-#define CLOCK_H
+#pragma once
 
 // General-purpose 24-hour clock.
 struct Clock
@@ -41,5 +40,3 @@ struct Clock
 	void incrementSecond();
 	void incrementTime(double dt);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef INPUT_ACTION_MAP_H
-#define INPUT_ACTION_MAP_H
+#pragma once
 
 #include <vector>
 
@@ -18,5 +17,3 @@ struct InputActionMap
 
 	static std::vector<InputActionMap> loadDefaultMaps();
 };
-
-#endif

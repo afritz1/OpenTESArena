@@ -1,5 +1,4 @@
-#ifndef RENDER_MESH_INSTANCE_H
-#define RENDER_MESH_INSTANCE_H
+#pragma once
 
 #include "RenderMeshUtils.h"
 
@@ -17,5 +16,3 @@ struct RenderMeshInstance
 
 	void freeBuffers(Renderer &renderer);
 };
-
-#endif

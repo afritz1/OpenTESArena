@@ -1,5 +1,4 @@
-#ifndef ARENA_SOUND_NAME_H
-#define ARENA_SOUND_NAME_H
+#pragma once
 
 // Various sound filenames not otherwise obtained automatically by loading the original game's data.
 namespace ArenaSoundName
@@ -43,5 +42,3 @@ namespace ArenaSoundName
 	// Weather.
 	constexpr char Thunder[] = "THUNDER.VOC";
 }
-
-#endif

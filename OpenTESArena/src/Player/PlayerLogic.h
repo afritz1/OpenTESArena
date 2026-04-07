@@ -1,5 +1,4 @@
-#ifndef PLAYER_LOGIC_H
-#define PLAYER_LOGIC_H
+#pragma once
 
 #include "../Math/Vector2.h"
 #include "../Math/Vector3.h"
@@ -45,5 +44,3 @@ namespace PlayerLogic
 	// false for right clicks.
 	void handleScreenToWorldInteraction(Game &game, const Int2 &nativePoint, bool primaryInteraction, bool debugFadeVoxel);
 }
-
-#endif

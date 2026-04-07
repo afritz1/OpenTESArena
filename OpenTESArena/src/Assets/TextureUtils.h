@@ -1,5 +1,4 @@
-#ifndef TEXTURE_UTILS_H
-#define TEXTURE_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -79,5 +78,3 @@ namespace TextureUtils
 
 using PaletteIdGroup = TextureIdSequence<PaletteID>;
 using TextureBuilderIdGroup = TextureIdSequence<TextureBuilderID>;
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef OPTIONS_UI_MVC_H
-#define OPTIONS_UI_MVC_H
+#pragma once
 
 #include <array>
 #include <functional>
@@ -185,5 +184,3 @@ namespace OptionsUiView
 	UiTextureID allocBackgroundTexture(Renderer &renderer);
 	UiTextureID allocHighlightTexture(Renderer &renderer);
 }
-
-#endif

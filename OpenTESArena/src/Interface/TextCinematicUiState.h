@@ -1,5 +1,4 @@
-#ifndef TEXT_CINEMATIC_UI_STATE_H
-#define TEXT_CINEMATIC_UI_STATE_H
+#pragma once
 
 #include "TextCinematicUiMVC.h"
 #include "../Rendering/RenderTextureUtils.h"
@@ -66,5 +65,3 @@ namespace TextCinematicUI
 		DECLARE_UI_FUNC(TextCinematicUI, onSkipInputAction)
 	};
 }
-
-#endif

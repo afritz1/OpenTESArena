@@ -1,5 +1,4 @@
-#ifndef ARENA_VOXEL_UTILS_H
-#define ARENA_VOXEL_UTILS_H
+#pragma once
 
 #include <string>
 
@@ -58,5 +57,3 @@ namespace ArenaVoxelUtils
 	bool doorHasSoundOnClosed(ArenaDoorType type);
 	bool doorHasSoundOnClosing(ArenaDoorType type);
 }
-
-#endif

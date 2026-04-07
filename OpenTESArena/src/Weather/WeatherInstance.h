@@ -1,10 +1,8 @@
-#ifndef WEATHER_INSTANCE_H
-#define WEATHER_INSTANCE_H
+#pragma once
 
 #include <optional>
 
 #include "../Math/MathUtils.h"
-//#include "../Rendering/ArenaRenderUtils.h"
 
 #include "components/utilities/Buffer.h"
 
@@ -99,5 +97,3 @@ public:
 
 	void update(double dt, const Clock &clock, double aspectRatio, Random &random, AudioManager &audioManager);
 };
-
-#endif

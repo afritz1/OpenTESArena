@@ -1,5 +1,4 @@
-#ifndef PROVINCE_MAP_UI_STATE_H
-#define PROVINCE_MAP_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/AnimationState.h"
@@ -87,5 +86,3 @@ namespace ProvinceMapUI
 		DECLARE_UI_FUNC(ProvinceMapUI, onBackInputAction)
 	};
 }
-
-#endif

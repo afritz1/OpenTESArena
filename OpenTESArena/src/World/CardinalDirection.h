@@ -1,5 +1,4 @@
-#ifndef CARDINAL_DIRECTION_H
-#define CARDINAL_DIRECTION_H
+#pragma once
 
 #include "CardinalDirectionName.h"
 #include "Coord.h"
@@ -35,5 +34,3 @@ namespace CardinalDirection
 
 	CardinalDirectionName getDirectionName(const WorldDouble2 &direction);
 }
-
-#endif

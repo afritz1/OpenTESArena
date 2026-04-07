@@ -1,5 +1,4 @@
-#ifndef TEXT_ASSET_LIBRARY_H
-#define TEXT_ASSET_LIBRARY_H
+#pragma once
 
 #include <array>
 #include <string>
@@ -113,5 +112,3 @@ public:
 	// Creates a random NPC name from the given parameters.
 	std::string generateNpcName(int raceID, bool isMale, ArenaRandom &random) const;
 };
-
-#endif

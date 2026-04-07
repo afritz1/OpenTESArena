@@ -1,5 +1,4 @@
-#ifndef VOXEL_FACE_ENABLE_MANAGER_CHUNK_H
-#define VOXEL_FACE_ENABLE_MANAGER_CHUNK_H
+#pragma once
 
 #include "VoxelFaceEnableChunk.h"
 #include "../World/SpecializedChunkManager.h"
@@ -17,5 +16,3 @@ public:
 	void update(Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 		const VoxelChunkManager &voxelChunkManager);
 };
-
-#endif

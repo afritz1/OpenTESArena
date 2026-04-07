@@ -1,5 +1,4 @@
-#ifndef COL_FILE_H
-#define COL_FILE_H
+#pragma once
 
 #include "../Utilities/Palette.h"
 
@@ -13,5 +12,3 @@ public:
 
 	const Palette &getPalette() const;
 };
-
-#endif

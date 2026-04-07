@@ -1,5 +1,4 @@
-#ifndef VOXEL_CHASM_WALL_INSTANCE_H
-#define VOXEL_CHASM_WALL_INSTANCE_H
+#pragma once
 
 #include "../World/Coord.h"
 
@@ -16,5 +15,3 @@ struct VoxelChasmWallInstance
 
 	int getFaceCount() const;
 };
-
-#endif

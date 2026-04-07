@@ -1,5 +1,4 @@
-#ifndef SKY_VISIBILITY_MANAGER_H
-#define SKY_VISIBILITY_MANAGER_H
+#pragma once
 
 #include <unordered_set>
 
@@ -17,5 +16,3 @@ public:
 	void update(const RenderCamera &renderCamera, const SkyInstance &skyInst);
 	void clear();
 };
-
-#endif

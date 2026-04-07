@@ -1,5 +1,4 @@
-#ifndef TRANSITION_TYPE_H
-#define TRANSITION_TYPE_H
+#pragma once
 
 enum class TransitionType
 {
@@ -8,5 +7,3 @@ enum class TransitionType
 	ExitInterior,
 	InteriorLevelChange
 };
-
-#endif

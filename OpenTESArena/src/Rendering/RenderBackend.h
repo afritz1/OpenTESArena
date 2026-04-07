@@ -1,5 +1,4 @@
-#ifndef RENDER_BACKEND_H
-#define RENDER_BACKEND_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -120,5 +119,3 @@ public:
 	virtual void submitFrame(const RenderDrawCommandList &renderCommandList, const UiDrawCommandList &uiCommandList,
 		const RenderCamera &camera, const RenderFrameSettings &frameSettings) = 0;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef TEXT_ALIGNMENT_H
-#define TEXT_ALIGNMENT_H
+#pragma once
 
 enum class TextAlignment
 {
@@ -13,5 +12,3 @@ enum class TextAlignment
 	BottomCenter,
 	BottomRight
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef ENTITY_INSTANCE_H
-#define ENTITY_INSTANCE_H
+#pragma once
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
@@ -60,5 +59,3 @@ struct EntityInstance
 
 	void clear();
 };
-
-#endif

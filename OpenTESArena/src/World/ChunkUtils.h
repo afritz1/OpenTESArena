@@ -1,5 +1,4 @@
-#ifndef CHUNK_UTILS_H
-#define CHUNK_UTILS_H
+#pragma once
 
 #include "../Voxels/VoxelUtils.h"
 
@@ -58,5 +57,3 @@ namespace ChunkUtils
 	VoxelInt2 MakeChunkVoxelFromLevel(const WorldInt2 &levelPosition, SNInt chunkStartX, WEInt chunkStartZ);
 	VoxelDouble2 MakeChunkPointFromLevel(const WorldDouble2 &levelPosition, SNInt chunkStartX, WEInt chunkStartZ);
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef COMMON_UI_MVC_H
-#define COMMON_UI_MVC_H
+#pragma once
 
 #include <string>
 
@@ -25,5 +24,3 @@ namespace CommonUiView
 	Color getDebugInfoTextBoxColor();
 	constexpr TextAlignment DebugInfoTextAlignment = TextAlignment::TopLeft;
 }
-
-#endif

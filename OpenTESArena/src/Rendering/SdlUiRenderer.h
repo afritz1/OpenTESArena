@@ -1,5 +1,4 @@
-#ifndef SDL_UI_RENDERER_H
-#define SDL_UI_RENDERER_H
+#pragma once
 
 #include <optional>
 
@@ -36,5 +35,3 @@ public:
 
 	void draw(Span<const RenderElement2D> elements);
 };
-
-#endif

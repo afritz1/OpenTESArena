@@ -1,5 +1,4 @@
-#ifndef ARENA_CITIZEN_UTILS_H
-#define ARENA_CITIZEN_UTILS_H
+#pragma once
 
 #include <cstdint>
 
@@ -41,5 +40,3 @@ namespace ArenaCitizenUtils
 	constexpr int DEATH_MIN_GOLD_PIECES = 1;
 	constexpr int DEATH_MAX_GOLD_PIECES = 4;
 }
-
-#endif

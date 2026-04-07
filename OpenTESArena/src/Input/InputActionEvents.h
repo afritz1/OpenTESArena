@@ -1,5 +1,4 @@
-#ifndef INPUT_ACTION_EVENTS_H
-#define INPUT_ACTION_EVENTS_H
+#pragma once
 
 #include <functional>
 
@@ -16,5 +15,3 @@ struct InputActionCallbackValues
 };
 
 using InputActionCallback = std::function<void(const InputActionCallbackValues &values)>;
-
-#endif

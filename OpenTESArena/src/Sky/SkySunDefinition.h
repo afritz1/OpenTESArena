@@ -1,5 +1,4 @@
-#ifndef SKY_SUN_DEFINITION_H
-#define SKY_SUN_DEFINITION_H
+#pragma once
 
 #include "../Assets/TextureAsset.h"
 
@@ -9,5 +8,3 @@ struct SkySunDefinition
 
 	void init(TextureAsset &&textureAsset);
 };
-
-#endif

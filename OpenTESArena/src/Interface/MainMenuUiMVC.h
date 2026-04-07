@@ -1,5 +1,4 @@
-#ifndef MAIN_MENU_UI_MVC_H
-#define MAIN_MENU_UI_MVC_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -23,15 +22,6 @@ class ProvinceDefinition;
 enum class MapType;
 
 struct ExeData;
-
-#include <optional>
-#include <string>
-
-#include "../Assets/ArenaTypes.h"
-
-class Game;
-
-enum class MapType;
 
 namespace MainMenuUiModel
 {
@@ -184,5 +174,3 @@ namespace MainMenuUiController
 	void onTestWeatherUpButtonSelected(int testType, int *testWeather);
 	void onTestWeatherDownButtonSelected(int testType, int *testWeather);
 }
-
-#endif

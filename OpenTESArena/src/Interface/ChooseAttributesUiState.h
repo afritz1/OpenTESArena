@@ -1,5 +1,4 @@
-#ifndef CHOOSE_ATTRIBUTES_UI_STATE_H
-#define CHOOSE_ATTRIBUTES_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -124,5 +123,3 @@ namespace ChooseAttributesUI
 		DECLARE_UI_FUNC(ChooseAttributesUI, onBackInputAction)
 	};
 }
-
-#endif

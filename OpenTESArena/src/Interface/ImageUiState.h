@@ -1,5 +1,4 @@
-#ifndef IMAGE_UI_STATE_H
-#define IMAGE_UI_STATE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -59,5 +58,3 @@ namespace ImageUI
 		DECLARE_UI_FUNC(ImageUI, onSkipInputAction)
 	};
 }
-
-#endif

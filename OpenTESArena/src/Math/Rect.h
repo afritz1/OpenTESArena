@@ -1,5 +1,4 @@
-#ifndef RECT_H
-#define RECT_H
+#pragma once
 
 #include "../Math/Vector2.h"
 
@@ -46,5 +45,3 @@ struct Rect
 	bool containsInclusive(const Rect &rectangle) const;
 	bool intersects(const Rect &rectangle) const;
 };
-
-#endif

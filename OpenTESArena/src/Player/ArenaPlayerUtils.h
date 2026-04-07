@@ -1,5 +1,4 @@
-#ifndef ARENA_PLAYER_UTILS_H
-#define ARENA_PLAYER_UTILS_H
+#pragma once
 
 class Random;
 
@@ -66,4 +65,3 @@ namespace ArenaPlayerUtils
 	int getSelfDamageFromDoorBashWithFists(Random &random);
 	bool isDoorBashSuccessful(int damage, int lockLevel, const PrimaryAttributes &attributes, Random &random);
 }
-#endif

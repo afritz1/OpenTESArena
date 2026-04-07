@@ -1,5 +1,4 @@
-#ifndef GAME_WORLD_UI_STATE_H
-#define GAME_WORLD_UI_STATE_H
+#pragma once
 
 #include <functional>
 #include <vector>
@@ -166,5 +165,3 @@ namespace GameWorldUI
 		DECLARE_UI_FUNC(GameWorldUI, onPauseMenuInputAction)
 	};
 }
-
-#endif

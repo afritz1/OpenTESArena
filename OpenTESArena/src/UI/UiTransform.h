@@ -1,5 +1,4 @@
-#ifndef UI_TRANSFORM_H
-#define UI_TRANSFORM_H
+#pragma once
 
 #include "../Math/Vector2.h"
 
@@ -26,5 +25,3 @@ struct UiTransform
 
 	void init(Int2 position, Int2 size, UiTransformSizeType sizeType, UiPivotType pivotType);
 };
-
-#endif

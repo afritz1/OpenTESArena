@@ -1,5 +1,4 @@
-#ifndef TEXTURE_ASSET_H
-#define TEXTURE_ASSET_H
+#pragma once
 
 #include <optional>
 #include <string>
@@ -18,5 +17,3 @@ struct TextureAsset
 	bool operator==(const TextureAsset &other) const;
 	bool operator!=(const TextureAsset &other) const;
 };
-
-#endif

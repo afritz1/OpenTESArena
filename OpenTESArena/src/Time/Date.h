@@ -1,5 +1,4 @@
-#ifndef DATE_H
-#define DATE_H
+#pragma once
 
 #include <string>
 
@@ -31,5 +30,3 @@ public:
 	void incrementMonth();
 	void incrementDay();
 };
-
-#endif

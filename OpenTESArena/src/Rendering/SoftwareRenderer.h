@@ -1,5 +1,4 @@
-#ifndef SOFTWARE_RENDERER_H
-#define SOFTWARE_RENDERER_H
+#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -217,5 +216,3 @@ public:
 	void submitFrame(const RenderDrawCommandList &commandList, const RenderCamera &camera,
 		const RenderFrameSettings &settings, uint32_t *outputBuffer);
 };
-
-#endif

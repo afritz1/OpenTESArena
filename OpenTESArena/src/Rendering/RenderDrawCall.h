@@ -1,5 +1,4 @@
-#ifndef RENDER_DRAW_CALL_H
-#define RENDER_DRAW_CALL_H
+#pragma once
 
 #include "RenderMaterialUtils.h"
 #include "RenderMeshUtils.h"
@@ -24,5 +23,3 @@ struct RenderDrawCall
 
 	void clear();
 };
-
-#endif

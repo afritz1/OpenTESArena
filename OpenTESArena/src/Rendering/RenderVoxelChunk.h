@@ -1,5 +1,4 @@
-#ifndef RENDER_VOXEL_CHUNK_H
-#define RENDER_VOXEL_CHUNK_H
+#pragma once
 
 #include <unordered_map>
 #include <vector>
@@ -84,5 +83,3 @@ struct RenderVoxelChunk final : public Chunk
 	void freeBuffers(Renderer &renderer);
 	void clear();
 };
-
-#endif

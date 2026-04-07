@@ -1,5 +1,4 @@
-#ifndef UI_IMAGE_H
-#define UI_IMAGE_H
+#pragma once
 
 #include "../Rendering/RenderTextureUtils.h"
 
@@ -12,5 +11,3 @@ struct UiImage
 
 	void init(UiTextureID textureID);
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef VOXEL_TRIGGER_DEFINITION_H
-#define VOXEL_TRIGGER_DEFINITION_H
+#pragma once
 
 #include <string>
 
@@ -54,5 +53,3 @@ struct VoxelTriggerDefinition
 	// @todo hasRiddleDef()
 	bool hasValidDefForPhysics() const;
 };
-
-#endif

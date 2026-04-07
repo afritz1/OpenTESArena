@@ -1,5 +1,4 @@
-#ifndef RENDER_CAMERA_H
-#define RENDER_CAMERA_H
+#pragma once
 
 #include "../Math/MathUtils.h"
 #include "../Math/Matrix4.h"
@@ -59,5 +58,3 @@ struct RenderCamera
 		Double3 *outFrustumDirLeft, Double3 *outFrustumDirRight, Double3 *outFrustumDirBottom, Double3 *outFrustumDirTop,
 		Double3 *outFrustumNormalLeft, Double3 *outFrustumNormalRight, Double3 *outFrustumNormalBottom, Double3 *outFrustumNormalTop) const;
 };
-
-#endif

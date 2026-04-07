@@ -1,5 +1,4 @@
-#ifndef CHOOSE_RACE_UI_STATE_H
-#define CHOOSE_RACE_UI_STATE_H
+#pragma once
 
 #include "../UI/UiContext.h"
 #include "../UI/UiElement.h"
@@ -59,5 +58,3 @@ namespace ChooseRaceUI
 		DECLARE_UI_FUNC(ChooseRaceUI, onBackInputAction)
 	};
 }
-
-#endif

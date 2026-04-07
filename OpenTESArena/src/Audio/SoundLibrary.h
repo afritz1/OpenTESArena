@@ -1,5 +1,4 @@
-#ifndef SOUND_LIBRARY_H
-#define SOUND_LIBRARY_H
+#pragma once
 
 #include <string>
 #include <vector>
@@ -17,5 +16,3 @@ public:
 	int getFilenameCount() const;
 	const char *getFilename(int index) const;
 };
-
-#endif

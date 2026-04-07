@@ -1,5 +1,4 @@
-#ifndef WINDOW_H
-#define WINDOW_H
+#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -81,5 +80,3 @@ struct Window
 	void setTitle(const char *title);
 	void warpMouse(int logicalX, int logicalY);
 };
-
-#endif
