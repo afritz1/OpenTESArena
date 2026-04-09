@@ -450,7 +450,7 @@ std::optional<PaletteID> TextureManager::tryGetPaletteID(const TextureAsset &tex
 	const std::optional<PaletteIdGroup> ids = this->tryGetPaletteIDs(textureAsset.filename.c_str());
 	if (ids.has_value())
 	{
-		const int index = textureAsset.index.has_value() ? *textureAsset.index : 0;
+		const int index = (textureAsset.index >= 0) ? textureAsset.index : 0;
 		return ids->getID(index);
 	}
 	else
@@ -510,7 +510,7 @@ std::optional<PaletteID> TextureManager::tryGetTextureBuilderID(const TextureAss
 	const std::optional<TextureBuilderIdGroup> ids = this->tryGetTextureBuilderIDs(textureAsset.filename.c_str());
 	if (ids.has_value())
 	{
-		const int index = textureAsset.index.has_value() ? *textureAsset.index : 0;
+		const int index = (textureAsset.index >= 0) ? textureAsset.index : 0;
 		return ids->getID(index);
 	}
 	else

@@ -145,8 +145,8 @@ void GameWorldUiState::init(Game &game)
 		const WeaponAnimationDefinitionFrame &weaponAnimDefFrame = weaponAnimDef.frames[i];
 		const TextureAsset &weaponAnimDefFrameTextureAsset = weaponAnimDefFrame.textureAsset;
 		const std::string &weaponAnimDefFrameTextureFilename = weaponAnimDefFrameTextureAsset.filename;
-		DebugAssert(weaponAnimDefFrameTextureAsset.index.has_value());
-		const int weaponAnimDefFrameTextureIndex = *weaponAnimDefFrameTextureAsset.index;
+		DebugAssert(weaponAnimDefFrameTextureAsset.index >= 0);
+		const int weaponAnimDefFrameTextureIndex = weaponAnimDefFrameTextureAsset.index;
 		// @todo: some WeaponAnimationDefinitionFrames are duplicates, this can cause duplicate UiTextureID allocations, maybe map TextureAsset to UiTextureID to avoid it
 		const UiTextureID weaponTextureID = GameWorldUiView::allocWeaponAnimTexture(weaponAnimDefFrameTextureFilename, weaponAnimDefFrameTextureIndex, textureManager, renderer);
 		this->weaponAnimTextureIDs.set(i, weaponTextureID);

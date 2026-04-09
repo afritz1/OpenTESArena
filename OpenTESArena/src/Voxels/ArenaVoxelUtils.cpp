@@ -164,7 +164,7 @@ std::string ArenaVoxelUtils::getVoxelTextureFilename(int id, const INFFile &inf)
 	return String::toUppercase(filename);
 }
 
-std::optional<int> ArenaVoxelUtils::getVoxelTextureSetIndex(int id, const INFFile &inf)
+int ArenaVoxelUtils::getVoxelTextureSetIndex(int id, const INFFile &inf)
 {
 	const Span<const INFVoxelTexture> voxelTextures = inf.getVoxelTextures();
 	if ((id < 0) || (id >= voxelTextures.getCount()))
@@ -174,7 +174,7 @@ std::optional<int> ArenaVoxelUtils::getVoxelTextureSetIndex(int id, const INFFil
 	}
 
 	const INFVoxelTexture &textureData = voxelTextures[id];
-	return textureData.setIndex;
+	return textureData.setIndex.value_or(-1);
 }
 
 bool ArenaVoxelUtils::isFloorWildWallColored(int floorID, MapType mapType)
