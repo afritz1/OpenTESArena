@@ -48,8 +48,8 @@ void ImageUI::create(Game &game)
 	const UiContextDefinition &contextDef = uiLibrary.getDefinition(ImageUI::ContextName);
 	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
-	const TextureAsset textureTextureAsset = TextureAsset(std::string(state.initInfo.textureName));
-	const TextureAsset paletteTextureAsset = TextureAsset(std::string(state.initInfo.paletteName));
+	const TextureAsset textureTextureAsset(state.initInfo.textureName);
+	const TextureAsset paletteTextureAsset(state.initInfo.paletteName);
 	const UiTextureID imageTextureID = uiManager.getOrAddTexture(textureTextureAsset, paletteTextureAsset, textureManager, renderer);
 
 	UiElementInitInfo imageElementInitInfo;

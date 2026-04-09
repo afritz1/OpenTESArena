@@ -73,7 +73,7 @@ namespace SkyGeneration
 		const Radians angleX = ArenaSkyUtils::arenaAngleToRadians(arenaAngle);
 
 		// The object is either a mountain or cloud.
-		TextureAsset textureAsset = TextureAsset(std::string(imageFilename)); // Most vexing parse.
+		TextureAsset textureAsset(imageFilename);
 		if (isLandObject)
 		{
 			SkyDefinition::LandDefID landDefID;
@@ -390,7 +390,7 @@ namespace SkyGeneration
 					return String::toUppercase(filename);
 				}();
 
-				TextureAsset textureAsset = TextureAsset(std::string(starFilename)); // Most vexing parse.
+				TextureAsset textureAsset(starFilename);
 				SkyDefinition::StarDefID starDefID;
 				const auto iter = largeStarCache.find(starFilename);
 				if (iter != largeStarCache.end())
@@ -413,8 +413,8 @@ namespace SkyGeneration
 	void generateArenaSun(const ExeData &exeData, TextureManager &textureManager,
 		SkyDefinition *outSkyDef, SkyInfoDefinition *outSkyInfoDef)
 	{
-		std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);
-		TextureAsset textureAsset(std::move(sunFilename));
+		const std::string sunFilename = String::toUppercase(exeData.locations.sunFilename);
+		TextureAsset textureAsset(sunFilename);
 
 		SkySunDefinition skySunDef;
 		skySunDef.init(std::move(textureAsset));

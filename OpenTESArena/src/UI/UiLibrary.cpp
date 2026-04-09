@@ -595,7 +595,7 @@ namespace
 			else
 			{
 				outImageDef->type = UiImageDefinitionType::Asset;
-				outImageDef->texture = TextureAsset(std::string(value));
+				outImageDef->texture = TextureAsset(value);
 
 				if (outImageDef->palette.filename.empty())
 				{
@@ -605,7 +605,7 @@ namespace
 		}
 		else if (key == Keyword_ImagePalette)
 		{
-			outImageDef->palette = TextureAsset(std::string(value));
+			outImageDef->palette = TextureAsset(value);
 		}
 		else
 		{

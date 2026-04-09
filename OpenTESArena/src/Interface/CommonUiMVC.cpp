@@ -9,8 +9,8 @@
 
 UiTextureID CommonUiView::allocDefaultCursorTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAsset paletteTextureAsset = TextureAsset(std::string(ArenaPaletteName::Default));
-	const TextureAsset textureAsset = TextureAsset(std::string(ArenaTextureName::SwordCursor));
+	const TextureAsset paletteTextureAsset(ArenaPaletteName::Default);
+	const TextureAsset textureAsset(ArenaTextureName::SwordCursor);
 
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))

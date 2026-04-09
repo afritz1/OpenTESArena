@@ -98,12 +98,12 @@ Int2 LoadSaveUiView::getEntryCenterPoint(int index)
 
 TextureAsset LoadSaveUiView::getPaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaPaletteName::Default));
+	return TextureAsset(ArenaPaletteName::Default);
 }
 
 TextureAsset LoadSaveUiView::getLoadSaveTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::LoadSave));
+	return TextureAsset(ArenaTextureName::LoadSave);
 }
 
 UiTextureID LoadSaveUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)

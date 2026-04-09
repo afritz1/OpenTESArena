@@ -59,12 +59,12 @@ WorldInt2 AutomapUiModel::makeRelativeWildOrigin(const WorldInt2 &voxel, SNInt g
 
 TextureAsset AutomapUiView::getCursorTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::QuillCursor));
+	return TextureAsset(ArenaTextureName::QuillCursor);
 }
 
 TextureAsset AutomapUiView::getCursorPaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::Automap));
+	return TextureAsset(ArenaTextureName::Automap);
 }
 
 const Color &AutomapUiView::getPixelColor(const VoxelTraitsDefinition &floorDef, const VoxelTraitsDefinition &wallDef,

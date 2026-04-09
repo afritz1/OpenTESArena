@@ -321,7 +321,7 @@ Int2 WorldMapUiView::getProvinceNameOffset(int provinceID, TextureManager &textu
 
 TextureAsset WorldMapUiView::getPaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::WorldMap));
+	return TextureAsset(ArenaTextureName::WorldMap);
 }
 
 std::string WorldMapUiView::getProvinceNamesFilename()
@@ -334,7 +334,7 @@ UiTextureID WorldMapUiView::allocHighlightedTextTexture(int provinceID, TextureM
 	const TextureAsset paletteTextureAsset = WorldMapUiView::getPaletteTextureAsset();
 
 	const std::string provinceNamesFilename = WorldMapUiView::getProvinceNamesFilename();
-	const TextureAsset textureAsset = TextureAsset(std::string(provinceNamesFilename), provinceID);
+	const TextureAsset textureAsset(provinceNamesFilename, provinceID);
 
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
@@ -357,7 +357,7 @@ std::string FastTravelUiView::getAnimationFilename()
 
 TextureAsset FastTravelUiView::getPaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::WorldMap));
+	return TextureAsset(ArenaTextureName::WorldMap);
 }
 
 void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceID, int targetLocationID, int travelDays)

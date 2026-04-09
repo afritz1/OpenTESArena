@@ -387,7 +387,7 @@ Rect MainMenuUiView::getTestWeatherDownButtonRect()
 
 TextureAsset MainMenuUiView::getBackgroundTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::MainMenu));
+	return TextureAsset(ArenaTextureName::MainMenu);
 }
 
 TextureAsset MainMenuUiView::getPaletteTextureAsset()
@@ -397,12 +397,12 @@ TextureAsset MainMenuUiView::getPaletteTextureAsset()
 
 TextureAsset MainMenuUiView::getTestArrowsTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::UpDown));
+	return TextureAsset(ArenaTextureName::UpDown);
 }
 
 TextureAsset MainMenuUiView::getTestArrowsPaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaPaletteName::CharSheet));
+	return TextureAsset(ArenaPaletteName::CharSheet);
 }
 
 UiTextureID MainMenuUiView::allocBackgroundTexture(TextureManager &textureManager, Renderer &renderer)

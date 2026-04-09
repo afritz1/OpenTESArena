@@ -426,15 +426,15 @@ TextureAsset ProvinceMapUiView::getCityStateIconTextureAsset(HighlightType highl
 {
 	if (highlightType == HighlightType::None)
 	{
-		return TextureAsset(std::string(ArenaTextureName::CityStateIcon));
+		return TextureAsset(ArenaTextureName::CityStateIcon);
 	}
 	else if (highlightType == HighlightType::PlayerLocation)
 	{
-		return TextureAsset(std::string(ArenaTextureName::MapIconOutlines), ProvinceMapUiView::CityStateIconHighlightIndex);
+		return TextureAsset(ArenaTextureName::MapIconOutlines, ProvinceMapUiView::CityStateIconHighlightIndex);
 	}
 	else if (highlightType == HighlightType::TravelDestination)
 	{
-		return TextureAsset(std::string(ArenaTextureName::MapIconOutlinesBlinking), ProvinceMapUiView::CityStateIconHighlightIndex);
+		return TextureAsset(ArenaTextureName::MapIconOutlinesBlinking, ProvinceMapUiView::CityStateIconHighlightIndex);
 	}
 	else
 	{
@@ -446,15 +446,15 @@ TextureAsset ProvinceMapUiView::getTownIconTextureAsset(HighlightType highlightT
 {
 	if (highlightType == HighlightType::None)
 	{
-		return TextureAsset(std::string(ArenaTextureName::TownIcon));
+		return TextureAsset(ArenaTextureName::TownIcon);
 	}
 	else if (highlightType == HighlightType::PlayerLocation)
 	{
-		return TextureAsset(std::string(ArenaTextureName::MapIconOutlines), ProvinceMapUiView::TownIconHighlightIndex);
+		return TextureAsset(ArenaTextureName::MapIconOutlines, ProvinceMapUiView::TownIconHighlightIndex);
 	}
 	else if (highlightType == HighlightType::TravelDestination)
 	{
-		return TextureAsset(std::string(ArenaTextureName::MapIconOutlinesBlinking), ProvinceMapUiView::TownIconHighlightIndex);
+		return TextureAsset(ArenaTextureName::MapIconOutlinesBlinking, ProvinceMapUiView::TownIconHighlightIndex);
 	}
 	else
 	{
@@ -466,15 +466,15 @@ TextureAsset ProvinceMapUiView::getVillageIconTextureAsset(HighlightType highlig
 {
 	if (highlightType == HighlightType::None)
 	{
-		return TextureAsset(std::string(ArenaTextureName::VillageIcon));
+		return TextureAsset(ArenaTextureName::VillageIcon);
 	}
 	else if (highlightType == HighlightType::PlayerLocation)
 	{
-		return TextureAsset(std::string(ArenaTextureName::MapIconOutlines), ProvinceMapUiView::VillageIconHighlightIndex);
+		return TextureAsset(ArenaTextureName::MapIconOutlines, ProvinceMapUiView::VillageIconHighlightIndex);
 	}
 	else if (highlightType == HighlightType::TravelDestination)
 	{
-		return TextureAsset(std::string(ArenaTextureName::MapIconOutlinesBlinking), ProvinceMapUiView::VillageIconHighlightIndex);
+		return TextureAsset(ArenaTextureName::MapIconOutlinesBlinking, ProvinceMapUiView::VillageIconHighlightIndex);
 	}
 	else
 	{
@@ -486,15 +486,15 @@ TextureAsset ProvinceMapUiView::getDungeonIconTextureAsset(HighlightType highlig
 {
 	if (highlightType == HighlightType::None)
 	{
-		return TextureAsset(std::string(ArenaTextureName::DungeonIcon));
+		return TextureAsset(ArenaTextureName::DungeonIcon);
 	}
 	else if (highlightType == HighlightType::PlayerLocation)
 	{
-		return TextureAsset(std::string(ArenaTextureName::MapIconOutlines), ProvinceMapUiView::DungeonIconHighlightIndex);
+		return TextureAsset(ArenaTextureName::MapIconOutlines, ProvinceMapUiView::DungeonIconHighlightIndex);
 	}
 	else if (highlightType == HighlightType::TravelDestination)
 	{
-		return TextureAsset(std::string(ArenaTextureName::MapIconOutlinesBlinking), ProvinceMapUiView::DungeonIconHighlightIndex);
+		return TextureAsset(ArenaTextureName::MapIconOutlinesBlinking, ProvinceMapUiView::DungeonIconHighlightIndex);
 	}
 	else
 	{
@@ -504,7 +504,7 @@ TextureAsset ProvinceMapUiView::getDungeonIconTextureAsset(HighlightType highlig
 
 TextureAsset ProvinceMapUiView::getStaffDungeonIconTextureAsset(int provinceID)
 {
-	return TextureAsset(std::string(ArenaTextureName::StaffDungeonIcons), provinceID);
+	return TextureAsset(ArenaTextureName::StaffDungeonIcons, provinceID);
 }
 
 UiTextureID ProvinceMapUiView::allocBackgroundTexture(int provinceID, const BinaryAssetLibrary &binaryAssetLibrary,
@@ -701,7 +701,7 @@ UiListBoxInitInfo ProvinceSearchUiView::makeListBoxProperties()
 
 TextureAsset ProvinceSearchUiView::getListTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::PopUp8));
+	return TextureAsset(ArenaTextureName::PopUp8);
 }
 
 TextureAsset ProvinceSearchUiView::getListPaletteTextureAsset(const BinaryAssetLibrary &binaryAssetLibrary, int provinceID)

@@ -48,13 +48,13 @@ void CinematicUiState::init(Game &game)
 	}
 
 	const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*metadataID);
-	const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
+	const TextureAsset paletteTextureAsset(paletteName);
 
 	const int videoFrameCount = textureFileMetadata.getTextureCount();
 	this->videoTextureIDs.init(videoFrameCount);
 	for (int i = 0; i < videoFrameCount; i++)
 	{
-		const TextureAsset textureAsset = TextureAsset(std::string(sequenceName), i);
+		const TextureAsset textureAsset(sequenceName, i);
 
 		UiTextureID textureID;
 		if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))

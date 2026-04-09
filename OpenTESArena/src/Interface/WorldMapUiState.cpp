@@ -35,7 +35,7 @@ namespace
 
 		for (int i = 0; i < textureCount; i++)
 		{
-			const TextureAsset textureAsset = TextureAsset(std::string(animFilename), i);
+			const TextureAsset textureAsset(animFilename, i);
 
 			UiTextureID textureID;
 			if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))

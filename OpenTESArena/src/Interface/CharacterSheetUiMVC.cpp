@@ -160,7 +160,7 @@ Int2 CharacterSheetUiView::getPantsOffset(Game &game)
 
 TextureAsset CharacterSheetUiView::getPaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaPaletteName::CharSheet));
+	return TextureAsset(ArenaPaletteName::CharSheet);
 }
 
 TextureAsset CharacterSheetUiView::getBodyTextureAsset(Game &game)
@@ -188,11 +188,11 @@ TextureAsset CharacterSheetUiView::getHeadTextureAsset(Game &game)
 
 	if (player.male)
 	{
-		return TextureAsset(std::string(characterRaceDefinition.maleCharSheetHeadsFilename), headIndex);
+		return TextureAsset(characterRaceDefinition.maleCharSheetHeadsFilename, headIndex);
 	}
 	else
 	{
-		return TextureAsset(std::string(characterRaceDefinition.femaleCharSheetHeadsFilename), headIndex);
+		return TextureAsset(characterRaceDefinition.femaleCharSheetHeadsFilename, headIndex);
 	}
 }
 
@@ -206,8 +206,8 @@ TextureAsset CharacterSheetUiView::getShirtTextureAsset(Game &game)
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
 	const bool isMagic = charClassDef.castsMagic;
 
-	std::string shirtFilename = ArenaPortraitUtils::getShirt(isMale, isMagic);
-	return TextureAsset(std::move(shirtFilename));
+	const std::string shirtFilename = ArenaPortraitUtils::getShirt(isMale, isMagic);
+	return TextureAsset(shirtFilename);
 }
 
 TextureAsset CharacterSheetUiView::getPantsTextureAsset(Game &game)
@@ -215,8 +215,8 @@ TextureAsset CharacterSheetUiView::getPantsTextureAsset(Game &game)
 	const Player &player = game.player;
 	const bool isMale = player.male;
 
-	std::string pantsFilename = ArenaPortraitUtils::getPants(isMale);
-	return TextureAsset(std::move(pantsFilename));
+	const std::string pantsFilename = ArenaPortraitUtils::getPants(isMale);
+	return TextureAsset(pantsFilename);
 }
 
 UiTextureID CharacterSheetUiView::allocBodyTexture(Game &game)
@@ -289,7 +289,7 @@ UiTextureID CharacterSheetUiView::allocHeadTexture(Game &game)
 
 UiTextureID CharacterEquipmentUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)
 {
-	const TextureAsset upDownTextureAsset = TextureAsset(std::string(ArenaTextureName::UpDown));
+	const TextureAsset upDownTextureAsset(ArenaTextureName::UpDown);
 	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
 
 	UiTextureID textureID;

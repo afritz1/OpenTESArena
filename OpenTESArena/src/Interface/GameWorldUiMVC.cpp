@@ -630,7 +630,7 @@ Int2 GameWorldUiView::getNoMagicTexturePosition()
 
 int GameWorldUiView::getKeyTextureCount(TextureManager &textureManager)
 {
-	const TextureAsset &textureAsset = GameWorldUiView::getKeyTextureAsset(0);
+	const TextureAsset textureAsset = GameWorldUiView::getKeyTextureAsset(0);
 	std::optional<TextureFileMetadataID> textureFileMetadataID = textureManager.tryGetMetadataID(textureAsset.filename.c_str());
 	if (!textureFileMetadataID.has_value())
 	{
@@ -799,18 +799,18 @@ Int2 GameWorldUiView::getNativeWindowCenter(const Window &window)
 
 TextureAsset GameWorldUiView::getPaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaPaletteName::Default));
+	return TextureAsset(ArenaPaletteName::Default);
 }
 
 TextureAsset GameWorldUiView::getGameWorldInterfaceTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::GameWorldInterface));
+	return TextureAsset(ArenaTextureName::GameWorldInterface);
 }
 
 TextureAsset GameWorldUiView::getStatusGradientTextureAsset(StatusGradientType gradientType)
 {
 	const int gradientID = static_cast<int>(gradientType);
-	return TextureAsset(std::string(ArenaTextureName::StatusGradients), gradientID);
+	return TextureAsset(ArenaTextureName::StatusGradients, gradientID);
 }
 
 TextureAsset GameWorldUiView::getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID)
@@ -820,48 +820,48 @@ TextureAsset GameWorldUiView::getPlayerPortraitTextureAsset(bool isMale, int rac
 
 	if (isMale)
 	{
-		return TextureAsset(std::string(characterRaceDefinition.maleGameUiHeadsFilename), portraitID);
+		return TextureAsset(characterRaceDefinition.maleGameUiHeadsFilename, portraitID);
 	}
 	else
 	{
-		return TextureAsset(std::string(characterRaceDefinition.femaleGameUiHeadsFilename), portraitID);
+		return TextureAsset(characterRaceDefinition.femaleGameUiHeadsFilename, portraitID);
 	}
 }
 
 TextureAsset GameWorldUiView::getNoMagicTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::NoSpell));
+	return TextureAsset(ArenaTextureName::NoSpell);
 }
 
 TextureAsset GameWorldUiView::getWeaponAnimTextureAsset(const std::string &weaponFilename, int index)
 {
 	// @todo: this is obsoleted by WeaponAnimationDefinition
-	return TextureAsset(std::string(weaponFilename), index);
+	return TextureAsset(weaponFilename, index);
 }
 
 TextureAsset GameWorldUiView::getCompassFrameTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::CompassFrame));
+	return TextureAsset(ArenaTextureName::CompassFrame);
 }
 
 TextureAsset GameWorldUiView::getCompassSliderTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::CompassSlider));
+	return TextureAsset(ArenaTextureName::CompassSlider);
 }
 
 TextureAsset GameWorldUiView::getArrowCursorTextureAsset(int cursorIndex)
 {
-	return TextureAsset(std::string(ArenaTextureName::ArrowCursors), cursorIndex);
+	return TextureAsset(ArenaTextureName::ArrowCursors, cursorIndex);
 }
 
 TextureAsset GameWorldUiView::getKeyTextureAsset(int keyIndex)
 {
-	return TextureAsset(std::string(ArenaTextureName::DoorKeys), keyIndex);
+	return TextureAsset(ArenaTextureName::DoorKeys, keyIndex);
 }
 
 TextureAsset GameWorldUiView::getContainerInventoryTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::ContainerInventory));
+	return TextureAsset(ArenaTextureName::ContainerInventory);
 }
 
 UiTextureID GameWorldUiView::allocStatusBarsTexture(TextureManager &textureManager, Renderer &renderer)

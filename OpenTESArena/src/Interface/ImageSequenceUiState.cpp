@@ -50,8 +50,8 @@ void ImageSequenceUiState::init(Game &game)
 	{
 		const std::string &textureName = this->initInfo.textureNames[i];
 		const std::string &paletteName = this->initInfo.paletteNames[i];
-		const TextureAsset textureAsset = TextureAsset(std::string(textureName));
-		const TextureAsset paletteTextureAsset = TextureAsset(std::string(paletteName));
+		const TextureAsset textureAsset(textureName);
+		const TextureAsset paletteTextureAsset(paletteName);
 
 		UiTextureID textureID;
 		if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))

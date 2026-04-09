@@ -56,22 +56,22 @@ std::string IntroUiView::getIntroBookPaletteFilename()
 
 TextureAsset IntroUiView::getIntroTitleTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::IntroTitle));
+	return TextureAsset(ArenaTextureName::IntroTitle);
 }
 
 TextureAsset IntroUiView::getIntroTitlePaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::IntroTitle));
+	return TextureAsset(ArenaTextureName::IntroTitle);
 }
 
 TextureAsset IntroUiView::getIntroQuoteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::IntroQuote));
+	return TextureAsset(ArenaTextureName::IntroQuote);
 }
 
 TextureAsset IntroUiView::getIntroQuotePaletteTextureAsset()
 {
-	return TextureAsset(std::string(ArenaTextureName::IntroQuote));
+	return TextureAsset(ArenaTextureName::IntroQuote);
 }
 
 std::string IntroUiView::getOpeningScrollSequenceFilename()
