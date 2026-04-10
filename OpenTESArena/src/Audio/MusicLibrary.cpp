@@ -77,7 +77,7 @@ namespace
 		const auto iter = std::find_if(types.begin(), types.end(),
 			[str](const std::pair<const char*, T> &pair)
 		{
-			return StringView::equals(pair.first, str);
+			return StringView::caseInsensitiveEquals(pair.first, str);
 		});
 
 		if (iter == types.end())
