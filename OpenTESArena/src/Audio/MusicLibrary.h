@@ -12,14 +12,13 @@
 
 class Random;
 
+using MusicDefinitionPredicate = std::function<bool(const MusicDefinition&)>;
+
 class MusicLibrary : public Singleton<MusicLibrary>
 {
-public:
-	using Predicate = std::function<bool(const MusicDefinition&)>;
 private:
 	std::unordered_map<MusicType, std::vector<MusicDefinition>> definitions;
 
-	static bool tryParseType(const std::string_view typeStr, MusicType *outType);
 	static bool tryParseValue(const std::string_view valueStr, MusicType type, MusicDefinition *outDefinition);
 public:
 	// Parses music definition file.
@@ -29,5 +28,5 @@ public:
 	const MusicDefinition *getMusicDefinition(MusicType type, int index) const;
 	const MusicDefinition *getFirstMusicDefinition(MusicType type) const;
 	const MusicDefinition *getRandomMusicDefinition(MusicType type, Random &random) const;
-	const MusicDefinition *getRandomMusicDefinitionIf(MusicType type, Random &random, const Predicate &predicate) const;
+	const MusicDefinition *getRandomMusicDefinitionIf(MusicType type, Random &random, const MusicDefinitionPredicate &predicate) const;
 };

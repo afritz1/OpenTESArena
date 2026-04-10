@@ -14,41 +14,95 @@
 #include "components/utilities/KeyValueFile.h"
 #include "components/utilities/StringView.h"
 
-#define MAKE_MUSIC_DEFINITION_PAIR(name) { #name, MusicType::name }
+#define MAKE_NAME_TYPE_PAIR(type, name) { #name, type::name }
 
 namespace
 {
-	constexpr std::pair<const char*, MusicType> MusicDefinitionTypes[] =
+	constexpr std::pair<const char*, MusicType> MusicTypes[] =
 	{
-		MAKE_MUSIC_DEFINITION_PAIR(CharacterCreation),
-		MAKE_MUSIC_DEFINITION_PAIR(Cinematic),
-		MAKE_MUSIC_DEFINITION_PAIR(Interior),
-		MAKE_MUSIC_DEFINITION_PAIR(Jingle),
-		MAKE_MUSIC_DEFINITION_PAIR(MainMenu),
-		MAKE_MUSIC_DEFINITION_PAIR(Night),
-		MAKE_MUSIC_DEFINITION_PAIR(Swimming),
-		MAKE_MUSIC_DEFINITION_PAIR(Weather)
+		MAKE_NAME_TYPE_PAIR(MusicType, CharacterCreation),
+		MAKE_NAME_TYPE_PAIR(MusicType, Cinematic),
+		MAKE_NAME_TYPE_PAIR(MusicType, Interior),
+		MAKE_NAME_TYPE_PAIR(MusicType, Jingle),
+		MAKE_NAME_TYPE_PAIR(MusicType, MainMenu),
+		MAKE_NAME_TYPE_PAIR(MusicType, Night),
+		MAKE_NAME_TYPE_PAIR(MusicType, Swimming),
+		MAKE_NAME_TYPE_PAIR(MusicType, Weather)
 	};
+
+	constexpr std::pair<const char*, CinematicMusicType> CinematicMusicTypes[] =
+	{
+		MAKE_NAME_TYPE_PAIR(CinematicMusicType, Intro),
+		MAKE_NAME_TYPE_PAIR(CinematicMusicType, DreamGood),
+		MAKE_NAME_TYPE_PAIR(CinematicMusicType, DreamBad),
+		MAKE_NAME_TYPE_PAIR(CinematicMusicType, Ending)
+	};
+
+	constexpr std::pair<const char*, InteriorMusicType> InteriorMusicTypes[] =
+	{
+		MAKE_NAME_TYPE_PAIR(InteriorMusicType, Dungeon),
+		MAKE_NAME_TYPE_PAIR(InteriorMusicType, Equipment),
+		MAKE_NAME_TYPE_PAIR(InteriorMusicType, House),
+		MAKE_NAME_TYPE_PAIR(InteriorMusicType, MagesGuild),
+		MAKE_NAME_TYPE_PAIR(InteriorMusicType, Palace),
+		MAKE_NAME_TYPE_PAIR(InteriorMusicType, Tavern),
+		MAKE_NAME_TYPE_PAIR(InteriorMusicType, Temple)
+	};
+
+	constexpr std::pair<const char*, ArenaCityType> JingleCityTypes[] =
+	{
+		MAKE_NAME_TYPE_PAIR(ArenaCityType, CityState),
+		MAKE_NAME_TYPE_PAIR(ArenaCityType, Town),
+		MAKE_NAME_TYPE_PAIR(ArenaCityType, Village)
+	};
+
+	constexpr std::pair<const char*, ArenaClimateType> JingleClimateTypes[] =
+	{
+		MAKE_NAME_TYPE_PAIR(ArenaClimateType, Temperate),
+		MAKE_NAME_TYPE_PAIR(ArenaClimateType, Desert),
+		MAKE_NAME_TYPE_PAIR(ArenaClimateType, Mountain)
+	};
+
+	constexpr std::pair<const char*, WeatherType> WeatherTypes[] =
+	{
+		MAKE_NAME_TYPE_PAIR(WeatherType, Clear),
+		MAKE_NAME_TYPE_PAIR(WeatherType, Overcast),
+		MAKE_NAME_TYPE_PAIR(WeatherType, Rain),
+		MAKE_NAME_TYPE_PAIR(WeatherType, Snow)
+	};
+
+	template<typename T>
+	bool TryParseTypeInternal(const std::string_view str, Span<const std::pair<const char*, T>> types, T *outType)
+	{
+		const auto iter = std::find_if(types.begin(), types.end(),
+			[str](const std::pair<const char*, T> &pair)
+		{
+			return StringView::equals(pair.first, str);
+		});
+
+		if (iter == types.end())
+		{
+			return false;
+		}
+
+		*outType = iter->second;
+		return true;
+	}
+
+	bool TryParseMusicType(const std::string_view str, MusicType *outType)
+	{
+		if (!TryParseTypeInternal<MusicType>(str, MusicTypes, outType))
+		{
+			DebugLogWarningFormat("Unrecognized music type \"%s\".", std::string(str).c_str());
+			return false;
+		}
+
+		return true;
+	}
 
 	bool TryParseCinematicType(const std::string_view str, CinematicMusicType *outCinematicType)
 	{
-		if (str == "Intro")
-		{
-			*outCinematicType = CinematicMusicType::Intro;
-		}
-		else if (str == "DreamGood")
-		{
-			*outCinematicType = CinematicMusicType::DreamGood;
-		}
-		else if (str == "DreamBad")
-		{
-			*outCinematicType = CinematicMusicType::DreamBad;
-		}
-		else if (str == "Ending")
-		{
-			*outCinematicType = CinematicMusicType::Ending;
-		}
-		else
+		if (!TryParseTypeInternal<CinematicMusicType>(str, CinematicMusicTypes, outCinematicType))
 		{
 			DebugLogWarningFormat("Unrecognized cinematic music type \"%s\".", std::string(str).c_str());
 			return false;
@@ -59,35 +113,7 @@ namespace
 
 	bool TryParseInteriorType(const std::string_view str, InteriorMusicType *outInteriorType)
 	{
-		if (str == "Dungeon")
-		{
-			*outInteriorType = InteriorMusicType::Dungeon;
-		}
-		else if (str == "Equipment")
-		{
-			*outInteriorType = InteriorMusicType::Equipment;
-		}
-		else if (str == "House")
-		{
-			*outInteriorType = InteriorMusicType::House;
-		}
-		else if (str == "MagesGuild")
-		{
-			*outInteriorType = InteriorMusicType::MagesGuild;
-		}
-		else if (str == "Palace")
-		{
-			*outInteriorType = InteriorMusicType::Palace;
-		}
-		else if (str == "Tavern")
-		{
-			*outInteriorType = InteriorMusicType::Tavern;
-		}
-		else if (str == "Temple")
-		{
-			*outInteriorType = InteriorMusicType::Temple;
-		}
-		else
+		if (!TryParseTypeInternal<InteriorMusicType>(str, InteriorMusicTypes, outInteriorType))
 		{
 			DebugLogWarningFormat("Unrecognized interior music type \"%s\".", std::string(str).c_str());
 			return false;
@@ -98,19 +124,7 @@ namespace
 
 	bool TryParseJingleCityType(const std::string_view str, ArenaCityType *outCityType)
 	{
-		if (str == "CityState")
-		{
-			*outCityType = ArenaCityType::CityState;
-		}
-		else if (str == "Town")
-		{
-			*outCityType = ArenaCityType::Town;
-		}
-		else if (str == "Village")
-		{
-			*outCityType = ArenaCityType::Village;
-		}
-		else
+		if (!TryParseTypeInternal<ArenaCityType>(str, JingleCityTypes, outCityType))
 		{
 			DebugLogWarningFormat("Unrecognized city type \"%s\".", std::string(str).c_str());
 			return false;
@@ -121,19 +135,7 @@ namespace
 
 	bool TryParseJingleClimateType(const std::string_view str, ArenaClimateType *outClimateType)
 	{
-		if (str == "Temperate")
-		{
-			*outClimateType = ArenaClimateType::Temperate;
-		}
-		else if (str == "Desert")
-		{
-			*outClimateType = ArenaClimateType::Desert;
-		}
-		else if (str == "Mountain")
-		{
-			*outClimateType = ArenaClimateType::Mountain;
-		}
-		else
+		if (!TryParseTypeInternal<ArenaClimateType>(str, JingleClimateTypes, outClimateType))
 		{
 			DebugLogWarningFormat("Unrecognized climate type \"%s\".", std::string(str).c_str());
 			return false;
@@ -144,23 +146,7 @@ namespace
 
 	bool TryParseWeatherType(const std::string_view str, WeatherType *outWeatherType)
 	{
-		if (str == "Clear")
-		{
-			*outWeatherType = WeatherType::Clear;
-		}
-		else if (str == "Overcast")
-		{
-			*outWeatherType = WeatherType::Overcast;
-		}
-		else if (str == "Rain")
-		{
-			*outWeatherType = WeatherType::Rain;
-		}
-		else if (str == "Snow")
-		{
-			*outWeatherType = WeatherType::Snow;
-		}
-		else
+		if (!TryParseTypeInternal<WeatherType>(str, WeatherTypes, outWeatherType))
 		{
 			DebugLogWarningFormat("Unrecognized weather type \"%s\".", std::string(str).c_str());
 			return false;
@@ -169,7 +155,6 @@ namespace
 		return true;
 	}
 
-	// All weather arguments (heavy fog, etc.) are bools.
 	bool TryParseWeatherBoolArg(const std::string_view str, bool *outValue)
 	{
 		if (StringView::caseInsensitiveEquals(str, "True"))
@@ -188,25 +173,6 @@ namespace
 
 		return true;
 	}
-}
-
-bool MusicLibrary::tryParseType(const std::string_view typeStr, MusicType *outType)
-{
-	const auto beginIter = std::begin(MusicDefinitionTypes);
-	const auto endIter = std::end(MusicDefinitionTypes);
-	const auto iter = std::find_if(beginIter, endIter,
-		[&typeStr](const std::pair<const char*, MusicType> &pair)
-	{
-		return StringView::equals(pair.first, typeStr);
-	});
-
-	if (iter == endIter)
-	{
-		return false;
-	}
-
-	*outType = iter->second;
-	return true;
 }
 
 bool MusicLibrary::tryParseValue(const std::string_view valueStr, MusicType type, MusicDefinition *outDefinition)
@@ -434,7 +400,7 @@ bool MusicLibrary::init(const char *filename)
 		const KeyValueFileSection &section = keyValueFile.getSection(i);
 
 		MusicType sectionType;
-		if (!MusicLibrary::tryParseType(section.getName(), &sectionType))
+		if (!TryParseMusicType(section.getName(), &sectionType))
 		{
 			DebugLogWarningFormat("Couldn't parse section type \"%s\".", section.getName().c_str());
 			continue;
@@ -509,7 +475,7 @@ const MusicDefinition *MusicLibrary::getRandomMusicDefinition(MusicType type, Ra
 	return this->getMusicDefinition(type, index);
 }
 
-const MusicDefinition *MusicLibrary::getRandomMusicDefinitionIf(MusicType type, Random &random, const Predicate &predicate) const
+const MusicDefinition *MusicLibrary::getRandomMusicDefinitionIf(MusicType type, Random &random, const MusicDefinitionPredicate &predicate) const
 {
 	Buffer<int> musicDefIndices(this->getMusicDefinitionCount(type));
 	std::iota(musicDefIndices.begin(), musicDefIndices.end(), 0);
