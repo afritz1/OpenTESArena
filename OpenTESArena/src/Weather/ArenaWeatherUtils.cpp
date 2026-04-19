@@ -118,10 +118,10 @@ Buffer<Buffer<TextureAsset>> ArenaWeatherUtils::makeLightningBoltTextureAssets(T
 
 	for (int i = 0; i < fileCount; i++)
 	{
-		DOSUtils::FilenameBuffer filename;
-		std::snprintf(filename.data(), filename.size(), "LGLIT0%d.CFA", i + 1);
+		char filename[DOSUtils::FilenameBufferSize];
+		std::snprintf(filename, sizeof(filename), "LGLIT0%d.CFA", i + 1);
 
-		Buffer<TextureAsset> textureAssets = TextureUtils::makeTextureAssets(std::string(filename.data()), textureManager);
+		Buffer<TextureAsset> textureAssets = TextureUtils::makeTextureAssets(filename, textureManager);
 		textureAssetBuffers.set(i, std::move(textureAssets));
 	}
 

@@ -8,16 +8,16 @@
 
 std::string ArenaPortraitUtils::getHeads(bool male, int raceID, bool trimmed)
 {
-	DOSUtils::FilenameBuffer filename;
-	std::snprintf(filename.data(), filename.size(), "FACES%s%d%d.CIF", male ? "" : "F", trimmed ? 0 : 1, raceID);
-	return std::string(filename.data());
+	char filename[DOSUtils::FilenameBufferSize];
+	std::snprintf(filename, sizeof(filename), "FACES%s%d%d.CIF", male ? "" : "F", trimmed ? 0 : 1, raceID);
+	return std::string(filename);
 }
 
 std::string ArenaPortraitUtils::getBody(bool male, int raceID)
 {
-	DOSUtils::FilenameBuffer filename;
-	std::snprintf(filename.data(), filename.size(), "%s0%d.IMG", male ? "CHARBK" : "CHRBKF", raceID);
-	return std::string(filename.data());
+	char filename[DOSUtils::FilenameBufferSize];
+	std::snprintf(filename, sizeof(filename), "%s0%d.IMG", male ? "CHARBK" : "CHRBKF", raceID);
+	return std::string(filename);
 }
 
 const std::string &ArenaPortraitUtils::getShirt(bool male, bool magic)

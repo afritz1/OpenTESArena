@@ -35,9 +35,9 @@ std::string MIFUtils::makeMainQuestDungeonMifName(int dungeonX, int dungeonY, in
 	uint32_t mifID = (dungeonY << 16) + dungeonX + provinceID;
 	mifID = static_cast<uint32_t>(-static_cast<int32_t>(Bytes::rol(mifID, 5)));
 
-	DOSUtils::FilenameBuffer buffer;
-	std::snprintf(buffer.data(), buffer.size(), "%d.MIF", mifID);
-	return std::string(buffer.data());
+	char buffer[DOSUtils::FilenameBufferSize];
+	std::snprintf(buffer, sizeof(buffer), "%d.MIF", mifID);
+	return std::string(buffer);
 }
 
 int MIFUtils::getCityBlockCodeCount()
@@ -73,12 +73,11 @@ const std::string &MIFUtils::getCityBlockRotation(int index)
 	return CityBlockRotations[index];
 }
 
-std::string MIFUtils::makeCityBlockMifName(const char *blockCode, int variation,
-	const char *rotation)
+std::string MIFUtils::makeCityBlockMifName(const char *blockCode, int variation, const char *rotation)
 {
-	DOSUtils::FilenameBuffer buffer;
-	std::snprintf(buffer.data(), buffer.size(), "%sBD%d%s.MIF", blockCode, variation, rotation);
-	return std::string(buffer.data());
+	char buffer[DOSUtils::FilenameBufferSize];
+	std::snprintf(buffer, sizeof(buffer), "%sBD%d%s.MIF", blockCode, variation, rotation);
+	return std::string(buffer);
 }
 
 std::string MIFUtils::makeCityBlockMifName(BlockType blockType, ArenaRandom &random)

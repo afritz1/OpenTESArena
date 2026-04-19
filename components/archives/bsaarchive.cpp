@@ -19,11 +19,11 @@ void BsaArchive::loadNamed(size_t count, std::istream& stream)
 
     for(size_t i = 0;i < count;++i)
     {
-        DOSUtils::FilenameBuffer name;
-        stream.read(name.data(), name.size()-1);
-        name.back() = '\0'; // Ensure null termination
-        std::replace(name.begin(), name.end(), '\\', '/');
-        names.emplace_back(std::string(name.data()));
+        char name[DOSUtils::FilenameBufferSize];
+        stream.read(name, sizeof(name)-1);
+        name[DOSUtils::FilenameBufferSize - 1] = '\0'; // Ensure null termination
+        std::replace(std::begin(name), std::end(name), '\\', '/');
+        names.emplace_back(std::string(name));
 
         const bool isCompressed = read_le16(stream) != 0;
         if(isCompressed)

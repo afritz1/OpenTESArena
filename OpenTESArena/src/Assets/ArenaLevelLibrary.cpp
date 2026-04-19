@@ -76,13 +76,13 @@ bool ArenaLevelLibrary::initWildernessChunks()
 	for (int i = 0; i < this->wildernessChunks.getCount(); i++)
 	{
 		const int rmdID = i + 1;
-		DOSUtils::FilenameBuffer rmdFilename;
-		std::snprintf(rmdFilename.data(), rmdFilename.size(), "WILD0%02d.RMD", rmdID);
+		char rmdFilename[DOSUtils::FilenameBufferSize];
+		std::snprintf(rmdFilename, sizeof(rmdFilename), "WILD0%02d.RMD", rmdID);
 
 		RMDFile &rmdFile = this->wildernessChunks[i];
-		if (!rmdFile.init(rmdFilename.data()))
+		if (!rmdFile.init(rmdFilename))
 		{
-			DebugLogWarning("Couldn't init .RMD file \"" + std::string(rmdFilename.data()) + "\".");
+			DebugLogWarningFormat("Couldn't init .RMD file \"%s\".", rmdFilename);
 		}
 	}
 
