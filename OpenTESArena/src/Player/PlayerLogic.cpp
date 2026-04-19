@@ -533,7 +533,7 @@ namespace PlayerLogic
 					else if (itemDefType == ItemEntityDefinitionType::QuestItem)
 					{
 						AudioManager &audioManager = game.audioManager;
-						audioManager.playSound(ArenaSoundName::Fanfare2);
+						audioManager.playSoundOneShot(ArenaSoundName::Fanfare2);
 						DebugLogFormat("Picked up quest item (entity %d).", entityInstID);
 						entityChunkManager.queueEntityDestroy(entityInstID, &entityChunkPos);
 					}
@@ -873,7 +873,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						if (isDoorBashable)
 						{
 							const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
-							audioManager.playSound(ArenaSoundName::Bash, hitWorldVoxelCenter);
+							audioManager.playSoundOneShot(ArenaSoundName::Bash, hitWorldVoxelCenter);
 
 							if (ArenaItemUtils::isFistsWeapon(player.weaponAnimDefID))
 							{
@@ -959,11 +959,11 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 						CombatLogic::spawnHitVfx(hitEntityDef, hitVfxPosition, entityChunkManager, random, game.physicsSystem, renderer);
 
-						audioManager.playSound(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
+						audioManager.playSoundOneShot(ArenaSoundName::EnemyHit, hitEntityMiddlePosition);
 					}
 					else
 					{
-						audioManager.playSound(ArenaSoundName::Clank, hitEntityMiddlePosition);
+						audioManager.playSoundOneShot(ArenaSoundName::Clank, hitEntityMiddlePosition);
 					}
 				}
 				else if (canHitEntityLockBeBroken)
@@ -979,7 +979,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						hitEntityAnimInst.setStateIndex(*unlockedAnimDefStateIndex);
 					}
 
-					audioManager.playSound(ArenaSoundName::Bash, hitEntityMiddlePosition);
+					audioManager.playSoundOneShot(ArenaSoundName::Bash, hitEntityMiddlePosition);
 				}
 			}
 		}
@@ -1024,7 +1024,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 		if (sfxFilename != nullptr)
 		{
-			audioManager.playSound(sfxFilename);
+			audioManager.playSoundOneShot(sfxFilename);
 		}
 	}
 }

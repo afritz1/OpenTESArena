@@ -133,7 +133,7 @@ void TextCinematicUI::destroy()
 	
 	// Stop voice if still playing.
 	AudioManager &audioManager = game.audioManager;
-	audioManager.stopSound();
+	audioManager.stopSounds();
 }
 
 void TextCinematicUI::update(double dt)
@@ -173,7 +173,7 @@ void TextCinematicUI::update(double dt)
 		if (!playedFirstVoice)
 		{
 			const std::string voiceFilename = state.speechState.getVoiceFilename(state.speechState.getNextVoiceIndex());
-			audioManager.playSound(voiceFilename.c_str());
+			audioManager.playSoundOneShot(voiceFilename);
 			state.speechState.incrementVoiceIndex();
 		}
 		else
@@ -182,14 +182,14 @@ void TextCinematicUI::update(double dt)
 			const std::string prevVoiceFilename = state.speechState.getVoiceFilename(prevVoiceIndex);
 
 			// Wait until previous voice is done playing.
-			if (!audioManager.isPlayingSound(prevVoiceFilename))
+			if (!audioManager.anyPlayingSounds(prevVoiceFilename))
 			{
 				const int nextVoiceIndex = state.speechState.getNextVoiceIndex();
 				const std::string nextVoiceFilename = state.speechState.getVoiceFilename(nextVoiceIndex);
 
 				if (audioManager.soundExists(nextVoiceFilename))
 				{
-					audioManager.playSound(nextVoiceFilename.c_str());
+					audioManager.playSoundOneShot(nextVoiceFilename);
 					state.speechState.incrementVoiceIndex();
 
 					if (TextCinematicSpeechState::isBeginningOfNewPage(nextVoiceIndex))

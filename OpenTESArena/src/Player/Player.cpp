@@ -792,7 +792,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 		if (!this->groundState.hasSplashedInChasm)
 		{
 			this->groundState.hasSplashedInChasm = true;
-			audioManager.playSound(ArenaSoundName::Splash);
+			audioManager.playSoundOneShot(ArenaSoundName::Splash);
 
 			if (activeMapType != MapType::Interior)
 			{
@@ -858,7 +858,7 @@ void Player::postPhysicsStep(double dt, Game &game)
 			const char *movementSoundName = movementSoundNames[movementSoundNameIndex];
 			if (!String::isNullOrEmpty(movementSoundName))
 			{
-				audioManager.playSound(movementSoundName);
+				audioManager.playSoundOneShot(movementSoundName);
 			}
 		}
 

@@ -10,13 +10,29 @@
 #include "al.h"
 
 #include "Midi.h"
-
 #include "../Math/Vector3.h"
+
+#include "components/utilities/KeyValuePool.h"
 
 class OpenALStream;
 class Options;
 
 struct MusicDefinition;
+
+using SoundInstanceID = int;
+
+struct SoundInstance
+{
+	std::string filename;
+	bool isOneShot;
+	bool is3D;
+
+	ALuint source; // Taken from free sources when playing.
+
+	SoundInstance();
+
+	void init(const std::string &filename, bool isOneShot, bool is3D);
+};
 
 // Contains data for defining the state of an audio listener.
 struct AudioListenerState
@@ -44,7 +60,7 @@ struct VocRepairEntry
 	std::vector<VocRepairSpan> spans;
 };
 
-// Manages what sounds and music are played by OpenAL Soft.
+// Manages sounds and music played by OpenAL Soft.
 class AudioManager
 {
 private:
@@ -58,12 +74,11 @@ private:
 	bool mIs3D;
 	std::string mCurrentSong, mNextSong;
 
-	// Sounds which are allowed only one active instance at a time, otherwise they would
-	// sound a bit obnoxious. This functionality is added here because the original game
-	// can only play one sound at a time, so it doesn't have this problem.
+	// Sounds which are allowed only one active instance to avoid overcrowding. This new functionality is important
+	// because the original game can only play one sound at a time, so it doesn't have this problem.
 	std::vector<std::string> mSingleInstanceSounds;
 
-	// The engine can overwrite .VOC file sample data with revised data to fix annoying pops.
+	// The engine can overwrite .VOC file samples with revised data to fix annoying pops.
 	std::vector<VocRepairEntry> mVocRepairEntries;
 
 	// Currently active song and playback stream.
@@ -73,23 +88,10 @@ private:
 	// Loaded sound buffers from .VOC files.
 	std::unordered_map<std::string, ALuint> mSoundBuffers;
 
-	// A deque of available sources to play sounds and streams with.
+	// Available sources to play sounds and streams with.
 	std::deque<ALuint> mFreeSources;
 
-	// A deque of currently used sources for sounds (the music source is owned
-	// by OpenALStream). The string is the filename and the integer is the ID.
-	// The filename is required for some sounds that can only have one instance
-	// active at a time.
-	std::deque<std::pair<std::string, ALuint>> mUsedSources;
-
-	// Use this when resetting sound sources back to their default resampling. This uses
-	// whatever setting is the default within OpenAL.
-	static ALint getDefaultResampler();
-
-	// Gets the resampling index to use, given some resampling option. The two values are not
-	// necessarily identical (depending on the resampling implementation). Causes an error
-	// if the resampling extension is unsupported.
-	static ALint getResamplingIndex(int value);
+	KeyValuePool<SoundInstanceID, SoundInstance> soundInstancesPool;
 
 	// Whether there is a music queued after the current one.
 	bool hasNextMusic() const;
@@ -98,6 +100,8 @@ private:
 	void setListenerOrientation(const Double3 &forward, const Double3 &up);
 
 	void playMusic(const std::string &filename, bool loop);
+
+	void resetSource(ALuint source);
 public:
 	AudioManager();
 	~AudioManager();
@@ -114,25 +118,18 @@ public:
 	// Returns whether the implementation supports resampling options.
 	bool hasResamplerExtension() const;
 
-	// Returns whether the given filename is playing in any sound handle.
-	bool isPlayingSound(const std::string &filename) const;
-
 	// Returns whether the given filename references an actual sound.
 	bool soundExists(const std::string &filename) const;
 
-	// Plays a sound file. All sounds should play once. If 'position' is empty then the sound
-	// is played globally.
-	void playSound(const char *filename, const std::optional<Double3> &position = std::nullopt);
+	// Returns whether the given filename is playing in any sound instance.
+	bool anyPlayingSounds(const std::string &filename) const;
 
 	// Sets the music to the given music definition, with an optional music to play first as a
 	// lead-in to the actual music. If no music definition is given, the current music is stopped.
 	void setMusic(const MusicDefinition *musicDef, const MusicDefinition *optMusicDef = nullptr);
 
-	// Stops the music.
 	void stopMusic();
-
-	// Stops all sounds.
-	void stopSound();
+	void stopSounds();
 
 	// Sets the music volume. Percent must be between 0.0 and 1.0.
 	void setMusicVolume(double percent);
@@ -154,4 +151,21 @@ public:
 
 	// Updates the position of the 3D listener.
 	void updateListener(const AudioListenerState &listenerState);
+
+	SoundInstanceID allocateSound(const std::string &filename, bool isOneShot, bool is3D);
+	SoundInstanceID allocateSound(const std::string &filename);
+	void freeSound(SoundInstanceID instID);
+
+	double getSoundTotalSeconds(const std::string &filename) const;
+	double getSoundTotalSeconds(SoundInstanceID instID) const;
+	double getSoundCurrentSeconds(SoundInstanceID instID) const;
+	bool isSoundPlaying(SoundInstanceID instID) const;
+	void setSoundPosition(SoundInstanceID instID, const Double3 &position);
+	void playSound(SoundInstanceID instID);
+	void pauseSound(SoundInstanceID instID);
+	void stopSound(SoundInstanceID instID);
+
+	// Manages creating and destroying the sound instance. This does nothing if not enough sound channels are available.
+	void playSoundOneShot(const std::string &filename, const Double3 &position);
+	void playSoundOneShot(const std::string &filename);
 };

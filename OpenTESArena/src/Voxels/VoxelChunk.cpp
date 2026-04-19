@@ -465,7 +465,7 @@ void VoxelChunk::updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord,
 					if (closeSoundDef.closeType == VoxelDoorCloseType::OnClosing)
 					{
 						const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(voxelCoord);
-						audioManager.playSound(closeSoundDef.soundFilename.c_str(), absoluteSoundPosition);
+						audioManager.playSoundOneShot(closeSoundDef.soundFilename, absoluteSoundPosition);
 					}
 				}
 			}
@@ -485,7 +485,7 @@ void VoxelChunk::updateDoorAnimInsts(double dt, const CoordDouble3 &playerCoord,
 			{
 				const CoordDouble3 soundCoord(chunkPos, VoxelUtils::getVoxelCenter(voxel, ceilingScale));
 				const WorldDouble3 absoluteSoundPosition = VoxelUtils::coordToWorldPoint(soundCoord);
-				audioManager.playSound(closeSoundDef.soundFilename.c_str(), absoluteSoundPosition);
+				audioManager.playSoundOneShot(closeSoundDef.soundFilename, absoluteSoundPosition);
 			}
 
 			this->destroyedDoorAnimInsts.emplace_back(voxel);

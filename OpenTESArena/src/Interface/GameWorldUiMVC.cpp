@@ -1450,7 +1450,7 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 		GameWorldUiController::onStatusPopUpSelected(game);
 
 		AudioManager &audioManager = game.audioManager;
-		audioManager.playSound(soundFilename.c_str(), soundPosition);
+		audioManager.playSoundOneShot(soundFilename, soundPosition);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment, callback);

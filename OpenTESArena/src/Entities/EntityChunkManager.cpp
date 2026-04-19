@@ -1337,7 +1337,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, const WorldDouble3 &pla
 				}
 
 				// Center the sound inside the creature.
-				audioManager.playSound(creatureSoundFilename.c_str(), entitySoundPosition);
+				audioManager.playSoundOneShot(creatureSoundFilename, entitySoundPosition);
 
 				secondsTillCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
 			}
@@ -1446,7 +1446,7 @@ void EntityChunkManager::updateEnemyDeathStates(JPH::PhysicsSystem &physicsSyste
 				if (EntityUtils::leavesCorpse(entityDef))
 				{
 					const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-					audioManager.playSound(ArenaSoundName::BodyFall, entityPosition);
+					audioManager.playSoundOneShot(ArenaSoundName::BodyFall, entityPosition);
 				}
 			}
 		}

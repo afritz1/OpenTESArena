@@ -71,9 +71,8 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord)
 	if (triggerDef.hasSoundDef())
 	{
 		const VoxelTriggerSoundDefinition &soundDef = triggerDef.sound;
-		const std::string &soundFilename = soundDef.filename;
-		auto &audioManager = game.audioManager;
-		audioManager.playSound(soundFilename.c_str());
+		AudioManager &audioManager = game.audioManager;
+		audioManager.playSoundOneShot(soundDef.filename);
 	}
 
 	if (triggerDef.hasLoreTextDef())
@@ -152,7 +151,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 	else
 	{
 		AudioManager &audioManager = game.audioManager;
-		audioManager.playSound(soundFilename.c_str(), soundPosition);
+		audioManager.playSoundOneShot(soundFilename, soundPosition);
 	}
 }
 

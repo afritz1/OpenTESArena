@@ -117,7 +117,7 @@ void WeatherRainInstance::Thunderstorm::update(double dt, const Clock &clock,
 			this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 			this->lightningBoltAngle = MakeLightningBoltAngle(random);
 
-			audioManager.playSound(ArenaSoundName::Thunder);
+			audioManager.playSoundOneShot(ArenaSoundName::Thunder);
 		}
 	}
 }

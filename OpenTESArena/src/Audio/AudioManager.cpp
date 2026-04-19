@@ -31,6 +31,43 @@
 
 namespace
 {
+	constexpr ALuint INVALID_SOURCE = 0;
+
+	ALint GetDefaultAudioResampler()
+	{
+		return alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
+	}
+
+	ALint GetAudioResamplingIndex(int resamplingOption)
+	{
+		const ALint resamplerCount = alGetInteger(AL_NUM_RESAMPLERS_SOFT);
+		const ALint defaultResampler = GetDefaultAudioResampler();
+
+		if (resamplingOption == 0)
+		{
+			return defaultResampler;
+		}
+		else if (resamplingOption == 1)
+		{
+			// Fastest.
+			return 0;
+		}
+		else if (resamplingOption == 2)
+		{
+			// Medium.
+			return std::min(defaultResampler + 1, resamplerCount - 1);
+		}
+		else if (resamplingOption == 3)
+		{
+			// Best.
+			return resamplerCount - 1;
+		}
+		else
+		{
+			DebugUnhandledReturnMsg(ALint, std::to_string(resamplingOption));
+		}
+	}
+
 	bool ProcessVocRepairLine(const std::string_view text, std::string *outFilename, VocRepairSpan *outSpan)
 	{
 		constexpr int expectedTokenCount = 4;
@@ -69,6 +106,21 @@ namespace
 
 		return true;
 	}
+}
+
+SoundInstance::SoundInstance()
+{
+	this->isOneShot = false;
+	this->is3D = false;
+	this->source = INVALID_SOURCE;
+}
+
+void SoundInstance::init(const std::string &filename, bool isOneShot, bool is3D)
+{
+	DebugAssert(this->source == INVALID_SOURCE);
+	this->filename = filename;
+	this->isOneShot = isOneShot;
+	this->is3D = is3D;
 }
 
 std::unique_ptr<MidiDevice> MidiDevice::sInstance;
@@ -244,7 +296,9 @@ public:
 		mSource = 0;
 		mBuffers.fill(0);
 		mBufferIdx = 0;
+		mFormat = 0;
 		mSampleRate = 0;
+		mFrameSize = 0;
 		mLoop = false;
 	}
 
@@ -379,7 +433,8 @@ AudioManager::AudioManager()
 AudioManager::~AudioManager()
 {
 	this->stopMusic();
-	this->stopSound();
+	this->stopSounds();
+	this->soundInstancesPool.clear();
 
 	MidiDevice::shutdown();
 
@@ -442,7 +497,7 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	}
 
 	mHasResamplerExtension = alIsExtensionPresent("AL_SOFT_source_resampler") != AL_FALSE;
-	mResampler = mHasResamplerExtension ? AudioManager::getResamplingIndex(resamplingOption) : AudioManager::UNSUPPORTED_EXTENSION;
+	mResampler = mHasResamplerExtension ? GetAudioResamplingIndex(resamplingOption) : AudioManager::UNSUPPORTED_EXTENSION;
 	mIs3D = is3D;
 
 	// Generate sound sources.
@@ -477,63 +532,6 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	this->setSoundVolume(soundVolume);
 	this->setListenerPosition(Double3::Zero);
 	this->setListenerOrientation(Double3::UnitX, Double3::UnitY);
-
-	// Read sound bank file and load all sounds into memory.
-	const std::string soundBankFilename = "SoundBank.txt";
-	const std::string soundBankFilePath = audioDataPath + soundBankFilename;
-	TextLinesFile soundBankFile;
-	if (!soundBankFile.init(soundBankFilePath.c_str()))
-	{
-		DebugLogErrorFormat("Missing %s in \"%s\", no sounds will be loaded.", soundBankFilePath.c_str(), audioDataPath.c_str());
-	}
-
-	for (int i = 0; i < soundBankFile.getLineCount(); i++)
-	{
-		const std::string &soundFilename = soundBankFile.getLine(i);
-
-		VOCFile voc;
-		if (!voc.init(soundFilename.c_str()))
-		{
-			DebugLogErrorFormat("Couldn't init .VOC file \"%s\".", soundFilename.c_str());
-			continue;
-		}
-
-		// Clear OpenAL error.
-		alGetError();
-
-		ALuint bufferID;
-		alGenBuffers(1, &bufferID);
-
-		const ALenum status = alGetError();
-		if (status != AL_NO_ERROR)
-		{
-			DebugLogWarningFormat("alGenBuffers() error 0x%x.", status);
-		}
-
-		Span<uint8_t> pcmSamples = voc.getAudioData();
-
-		// Find and repair any bad samples we know of. A mod should eventually do this.
-		const auto repairIter = std::find_if(mVocRepairEntries.begin(), mVocRepairEntries.end(),
-			[&soundFilename](const VocRepairEntry &entry)
-		{
-			return StringView::equals(entry.filename, soundFilename);
-		});
-
-		if (repairIter != mVocRepairEntries.end())
-		{
-			const Span<const VocRepairSpan> repairSpans = repairIter->spans;
-			for (const VocRepairSpan span : repairSpans)
-			{
-				const uint8_t *spanBegin = pcmSamples.begin() + span.startIndex;
-				const uint8_t *spanEnd = spanBegin + span.count;
-				DebugAssert(spanEnd <= pcmSamples.end());
-				std::fill(spanBegin, spanEnd, span.replacementSample);
-			}
-		}
-
-		alBufferData(bufferID, AL_FORMAT_MONO8, static_cast<const ALvoid*>(pcmSamples.begin()), static_cast<ALsizei>(pcmSamples.getCount()), static_cast<ALsizei>(voc.getSampleRate()));
-		mSoundBuffers.emplace(soundFilename, bufferID);
-	}
 
 	// Load single-instance sounds file, a new feature with this engine since the one-sound-at-a-time limit no longer exists.
 	TextLinesFile singleInstanceSoundsFile;
@@ -585,7 +583,64 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 				existingIter->spans.emplace_back(vocRepairSpan);
 			}
 		}
-	}	
+	}
+
+	// Read sound bank file and load all sounds into memory.
+	const std::string soundBankFilename = "SoundBank.txt";
+	const std::string soundBankFilePath = audioDataPath + soundBankFilename;
+	TextLinesFile soundBankFile;
+	if (!soundBankFile.init(soundBankFilePath.c_str()))
+	{
+		DebugLogErrorFormat("Missing %s in \"%s\", no sounds will be loaded.", soundBankFilePath.c_str(), audioDataPath.c_str());
+	}
+
+	for (int i = 0; i < soundBankFile.getLineCount(); i++)
+	{
+		const std::string &soundFilename = soundBankFile.getLine(i);
+
+		VOCFile voc;
+		if (!voc.init(soundFilename.c_str()))
+		{
+			DebugLogErrorFormat("Couldn't init .VOC file \"%s\".", soundFilename.c_str());
+			continue;
+		}
+
+		// Clear OpenAL error.
+		alGetError();
+
+		ALuint bufferID;
+		alGenBuffers(1, &bufferID);
+
+		const ALenum status = alGetError();
+		if (status != AL_NO_ERROR)
+		{
+			DebugLogWarningFormat("alGenBuffers() error 0x%x.", status);
+		}
+
+		Span<uint8_t> pcmSamples = voc.getAudioData();
+
+		// Find and repair any bad samples we know of. A mod should eventually do this.
+		const auto repairIter = std::find_if(mVocRepairEntries.begin(), mVocRepairEntries.end(),
+			[&soundFilename](const VocRepairEntry &entry)
+		{
+			return StringView::equals(entry.filename, soundFilename);
+		});
+
+		if (repairIter != mVocRepairEntries.end())
+		{
+			const Span<const VocRepairSpan> repairSpans = repairIter->spans;
+			for (const VocRepairSpan span : repairSpans)
+			{
+				uint8_t *spanBegin = pcmSamples.begin() + span.startIndex;
+				uint8_t *spanEnd = spanBegin + span.count;
+				DebugAssert(spanEnd <= pcmSamples.end());
+				std::fill(spanBegin, spanEnd, span.replacementSample);
+			}
+		}
+
+		alBufferData(bufferID, AL_FORMAT_MONO8, static_cast<const ALvoid*>(pcmSamples.begin()), static_cast<ALsizei>(pcmSamples.getCount()), static_cast<ALsizei>(voc.getSampleRate()));
+		mSoundBuffers.emplace(soundFilename, bufferID);
+	}
 }
 
 double AudioManager::getMusicVolume() const
@@ -603,58 +658,28 @@ bool AudioManager::hasResamplerExtension() const
 	return mHasResamplerExtension;
 }
 
-bool AudioManager::isPlayingSound(const std::string &filename) const
-{
-	// Check through used sources' filenames.
-	const auto iter = std::find_if(mUsedSources.begin(), mUsedSources.end(),
-		[&filename](const std::pair<std::string, ALuint> &pair)
-	{
-		return pair.first == filename;
-	});
-
-	return iter != mUsedSources.end();
-}
-
 bool AudioManager::soundExists(const std::string &filename) const
 {
 	return VFS::Manager::get().open(filename.c_str()) != nullptr;
 }
 
-ALint AudioManager::getDefaultResampler()
+bool AudioManager::anyPlayingSounds(const std::string &filename) const
 {
-	const ALint defaultResampler = alGetInteger(AL_DEFAULT_RESAMPLER_SOFT);
-	return defaultResampler;
-}
+	for (const SoundInstanceID soundInstID : this->soundInstancesPool.keys)
+	{
+		const SoundInstance &soundInst = this->soundInstancesPool.get(soundInstID);
+		if (soundInst.filename != filename)
+		{
+			continue;
+		}
 
-ALint AudioManager::getResamplingIndex(int resamplingOption)
-{
-	const ALint resamplerCount = alGetInteger(AL_NUM_RESAMPLERS_SOFT);
-	const ALint defaultResampler = AudioManager::getDefaultResampler();
+		if (this->isSoundPlaying(soundInstID))
+		{
+			return true;
+		}
+	}
 
-	if (resamplingOption == 0)
-	{
-		// Default.
-		return defaultResampler;
-	}
-	else if (resamplingOption == 1)
-	{
-		// Fastest.
-		return 0;
-	}
-	else if (resamplingOption == 2)
-	{
-		// Medium.
-		return std::min(defaultResampler + 1, resamplerCount - 1);
-	}
-	else if (resamplingOption == 3)
-	{
-		// Best.
-		return resamplerCount - 1;
-	}
-	else
-	{
-		DebugUnhandledReturnMsg(ALint, std::to_string(resamplingOption));
-	}
+	return false;
 }
 
 bool AudioManager::hasNextMusic() const
@@ -688,54 +713,15 @@ void AudioManager::setListenerOrientation(const Double3 &forward, const Double3 
 	alListenerfv(AL_ORIENTATION, orientation);
 }
 
-void AudioManager::playSound(const char *filename, const std::optional<Double3> &position)
+void AudioManager::resetSource(ALuint source)
 {
-	// Certain sounds should only have one live instance at a time. This is purely an arbitrary
-	// rule to avoid having long sounds overlap each other which would be very annoying or
-	// distracting for the player.
-	const bool isSingleInstance = std::find(mSingleInstanceSounds.begin(), mSingleInstanceSounds.end(), std::string(filename)) != mSingleInstanceSounds.end();
-	const bool allowedToPlay = !isSingleInstance || (isSingleInstance && !this->isPlayingSound(filename));
+	alSourceRewind(source);
+	alSourcei(source, AL_BUFFER, 0);
 
-	if (!mFreeSources.empty() && allowedToPlay)
+	if (mHasResamplerExtension)
 	{
-		auto vocIter = mSoundBuffers.find(filename);
-		if (vocIter == mSoundBuffers.end())
-		{
-			DebugLogErrorFormat("Expected .VOC file \"%s\" to be loaded.", filename);
-			return;
-		}
-
-		// Set up the sound source.
-		const ALuint source = mFreeSources.front();
-		alSourcei(source, AL_BUFFER, vocIter->second);
-
-		// Play the sound in 3D if it has a position and we are set to 3D mode.
-		// Otherwise, play it in 2D centered on the listener.
-		if (position.has_value() && mIs3D)
-		{
-			alSourcei(source, AL_SOURCE_RELATIVE, AL_FALSE);
-			const Double3 &positionValue = *position;
-			const ALfloat posX = static_cast<ALfloat>(positionValue.x);
-			const ALfloat posY = static_cast<ALfloat>(positionValue.y);
-			const ALfloat posZ = static_cast<ALfloat>(positionValue.z);
-			alSource3f(source, AL_POSITION, posX, posY, posZ);
-		}
-		else
-		{
-			alSourcei(source, AL_SOURCE_RELATIVE, AL_TRUE);
-			alSource3f(source, AL_POSITION, 0.0f, 0.0f, 0.0f);
-		}
-
-		// Set resampling if the extension is supported.
-		if (mHasResamplerExtension)
-		{
-			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
-		}
-
-		alSourcePlay(source);
-
-		mUsedSources.push_front(std::make_pair(filename, source));
-		mFreeSources.pop_front();
+		const ALint defaultResampler = GetDefaultAudioResampler();
+		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
 	}
 }
 
@@ -813,26 +799,17 @@ void AudioManager::stopMusic()
 	mSongStream = nullptr;
 }
 
-void AudioManager::stopSound()
+void AudioManager::stopSounds()
 {
-	// Reset all used sources and return them to the free sources.
-	for (const std::pair<std::string, ALuint> &pair : mUsedSources)
+	for (SoundInstance &soundInst : this->soundInstancesPool.values)
 	{
-		const ALuint source = pair.second;
-		alSourceStop(source);
-		alSourceRewind(source);
-		alSourcei(source, AL_BUFFER, 0);
-
-		if (mHasResamplerExtension)
+		if (alIsSource(soundInst.source) == AL_TRUE)
 		{
-			const ALint defaultResampler = AudioManager::getDefaultResampler();
-			alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
+			this->resetSource(soundInst.source);
+			mFreeSources.push_front(soundInst.source);
+			soundInst.source = INVALID_SOURCE;
 		}
-
-		mFreeSources.push_front(source);
 	}
-
-	mUsedSources.clear();
 }
 
 void AudioManager::setMusicVolume(double percent)
@@ -849,33 +826,36 @@ void AudioManager::setSoundVolume(double percent)
 {
 	mSfxVolume = static_cast<float>(percent);
 
-	// Set volumes of free and used sound channels.
 	for (const ALuint source : mFreeSources)
 	{
 		alSourcef(source, AL_GAIN, mSfxVolume);
 	}
 
-	for (const auto &pair : mUsedSources)
+	for (const SoundInstance &soundInst : this->soundInstancesPool.values)
 	{
-		const ALuint source = pair.second;
-		alSourcef(source, AL_GAIN, mSfxVolume);
+		if (alIsSource(soundInst.source) == AL_TRUE)
+		{
+			alSourcef(soundInst.source, AL_GAIN, mSfxVolume);
+		}
 	}
 }
 
 void AudioManager::setResamplingOption(int resamplingOption)
 {
 	DebugAssert(mHasResamplerExtension);
-	mResampler = AudioManager::getResamplingIndex(resamplingOption);
+	mResampler = GetAudioResamplingIndex(resamplingOption);
 
 	for (const ALuint source : mFreeSources)
 	{
 		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
 	}
 
-	for (const std::pair<std::string, ALuint> &pair : mUsedSources)
+	for (const SoundInstance &soundInst : this->soundInstancesPool.values)
 	{
-		const ALuint source = pair.second;
-		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
+		if (alIsSource(soundInst.source) == AL_TRUE)
+		{
+			alSourcei(soundInst.source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
+		}
 	}
 }
 
@@ -887,38 +867,44 @@ void AudioManager::set3D(bool is3D)
 
 void AudioManager::updateSources()
 {
-	for (size_t i = 0; i < mUsedSources.size(); i++)
+	// Destroy finished one-shot sound instances.
+	std::vector<SoundInstanceID> finishedOneShotSoundInsts;
+	for (const SoundInstanceID soundInstID : this->soundInstancesPool.keys)
 	{
-		const ALuint source = mUsedSources[i].second;
-
-		ALint state;
-		alGetSourcei(source, AL_SOURCE_STATE, &state);
-
-		// If a sound source is done, reset it and return the ID to the free sources.
-		if (state == AL_STOPPED)
+		const SoundInstance &soundInst = this->soundInstancesPool.get(soundInstID);
+		if (alIsSource(soundInst.source) != AL_TRUE)
 		{
-			alSourceRewind(source);
-			alSourcei(source, AL_BUFFER, 0);
-
-			if (mHasResamplerExtension)
-			{
-				const ALint defaultResampler = AudioManager::getDefaultResampler();
-				alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, defaultResampler);
-			}
-
-			mFreeSources.push_front(source);
-			mUsedSources.erase(mUsedSources.begin() + i);
+			continue;
 		}
+
+		if (!soundInst.isOneShot)
+		{
+			continue;
+		}
+
+		ALint sourceState;
+		alGetSourcei(soundInst.source, AL_SOURCE_STATE, &sourceState);
+		if (sourceState != AL_STOPPED)
+		{
+			continue;
+		}
+
+		finishedOneShotSoundInsts.emplace_back(soundInstID);
 	}
 
-	// Check if another music is staged and should start when the current one is done.
+	for (const SoundInstanceID soundInstID : finishedOneShotSoundInsts)
+	{
+		this->freeSound(soundInstID);
+	}
+
+	// Check for staged music.
 	if (this->hasNextMusic())
 	{
 		const bool canChangeToNextMusic = (mSongStream == nullptr) || !mSongStream->isPlaying();
 		if (canChangeToNextMusic)
 		{
 			// Assume that the next music always loops.
-			const bool loop = true;
+			constexpr bool loop = true;
 			this->playMusic(mNextSong, loop);
 			mNextSong.clear();
 		}
@@ -929,4 +915,188 @@ void AudioManager::updateListener(const AudioListenerState &listenerState)
 {
 	this->setListenerPosition(listenerState.position);
 	this->setListenerOrientation(listenerState.forward, listenerState.up);
+}
+
+SoundInstanceID AudioManager::allocateSound(const std::string &filename, bool isOneShot, bool is3D)
+{
+	const SoundInstanceID instID = this->soundInstancesPool.alloc();
+	if (instID < 0)
+	{
+		DebugLogErrorFormat("Couldn't allocate sound instance ID for \"%s\".", filename.c_str());
+		return -1;
+	}
+
+	SoundInstance &inst = this->soundInstancesPool.get(instID);
+	inst.init(filename, isOneShot, is3D);
+	return instID;
+}
+
+SoundInstanceID AudioManager::allocateSound(const std::string &filename)
+{
+	constexpr bool isOneShot = false;
+	constexpr bool is3D = false;
+	return this->allocateSound(filename, isOneShot, is3D);
+}
+
+void AudioManager::freeSound(SoundInstanceID instID)
+{
+	SoundInstance &inst = this->soundInstancesPool.get(instID);
+
+	if (alIsSource(inst.source) == AL_TRUE)
+	{
+		this->resetSource(inst.source);		
+		mFreeSources.push_front(inst.source);
+		inst.source = INVALID_SOURCE;
+	}
+
+	this->soundInstancesPool.free(instID);
+}
+
+double AudioManager::getSoundTotalSeconds(const std::string &filename) const
+{
+	if (alIsExtensionPresent("AL_SOFT_source_length") == AL_FALSE)
+	{
+		DebugLogWarningFormat("Missing extension for sound duration lookup.", filename.c_str());
+		return 0.0;
+	}
+
+	const auto iter = mSoundBuffers.find(filename);
+	if (iter == mSoundBuffers.end())
+	{
+		DebugLogWarningFormat("Missing sound \"%s\" for duration lookup.", filename.c_str());
+		return 0.0;
+	}
+
+	const ALuint soundSource = iter->second;
+
+	ALfloat seconds;
+	alGetSourcef(soundSource, AL_SEC_LENGTH_SOFT, &seconds);
+	return static_cast<double>(seconds);
+}
+
+double AudioManager::getSoundTotalSeconds(SoundInstanceID instID) const
+{
+	const SoundInstance &soundInst = this->soundInstancesPool.get(instID);
+
+	ALfloat seconds;
+	alGetSourcef(soundInst.source, AL_SEC_LENGTH_SOFT, &seconds);
+	return static_cast<double>(seconds);
+}
+
+double AudioManager::getSoundCurrentSeconds(SoundInstanceID instID) const
+{
+	const SoundInstance &soundInst = this->soundInstancesPool.get(instID);
+
+	ALfloat seconds;
+	alGetSourcef(soundInst.source, AL_SEC_OFFSET, &seconds);
+	return static_cast<double>(seconds);
+}
+
+bool AudioManager::isSoundPlaying(SoundInstanceID instID) const
+{
+	const SoundInstance &soundInst = this->soundInstancesPool.get(instID);
+
+	ALint state;
+	alGetSourcei(soundInst.source, AL_SOURCE_STATE, &state);
+	return state == AL_PLAYING;
+}
+
+void AudioManager::setSoundPosition(SoundInstanceID instID, const Double3 &position)
+{
+	const SoundInstance &soundInst = this->soundInstancesPool.get(instID);
+	const ALfloat posX = static_cast<ALfloat>(position.x);
+	const ALfloat posY = static_cast<ALfloat>(position.y);
+	const ALfloat posZ = static_cast<ALfloat>(position.z);
+	alSource3f(soundInst.source, AL_POSITION, posX, posY, posZ);
+}
+
+void AudioManager::playSound(SoundInstanceID instID)
+{
+	SoundInstance &soundInst = this->soundInstancesPool.get(instID);
+	const std::string &soundFilename = soundInst.filename;
+	
+	if (alIsSource(soundInst.source) != AL_TRUE)
+	{
+		if (mFreeSources.empty())
+		{
+			DebugLogWarningFormat("No free sources to play sound \"%s\".", soundFilename.c_str());
+			return;
+		}
+
+		const bool isSingleInstance = std::find(mSingleInstanceSounds.begin(), mSingleInstanceSounds.end(), soundFilename) != mSingleInstanceSounds.end();
+		const bool isAllowedToPlay = !isSingleInstance || !this->anyPlayingSounds(soundFilename);
+		if (!isAllowedToPlay)
+		{
+			return;
+		}
+
+		soundInst.source = mFreeSources.back();
+		mFreeSources.pop_back();
+
+		const auto vocIter = mSoundBuffers.find(soundFilename);
+		if (vocIter == mSoundBuffers.end())
+		{
+			DebugLogErrorFormat("Expected .VOC file \"%s\" to be loaded.", soundFilename.c_str());
+			return;
+		}
+
+		const ALuint samplesBuffer = vocIter->second;
+		alSourcei(soundInst.source, AL_BUFFER, samplesBuffer);
+
+		const ALboolean isSourceRelative = soundInst.is3D ? AL_FALSE : AL_TRUE;
+		alSourcei(soundInst.source, AL_SOURCE_RELATIVE, isSourceRelative);
+		alSource3f(soundInst.source, AL_POSITION, 0.0f, 0.0f, 0.0f);
+
+		if (mHasResamplerExtension)
+		{
+			alSourcei(soundInst.source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
+		}
+	}
+	else
+	{
+		alSourceRewind(soundInst.source);
+	}
+
+	alSourcePlay(soundInst.source);
+}
+
+void AudioManager::pauseSound(SoundInstanceID instID)
+{
+	const SoundInstance &soundInst = this->soundInstancesPool.get(instID);
+	alSourcePause(soundInst.source);
+}
+
+void AudioManager::stopSound(SoundInstanceID instID)
+{
+	const SoundInstance &soundInst = this->soundInstancesPool.get(instID);
+	alSourceStop(soundInst.source);
+}
+
+void AudioManager::playSoundOneShot(const std::string &filename, const Double3 &position)
+{
+	constexpr bool isOneShot = true;
+	constexpr bool is3D = true;
+	const SoundInstanceID instID = this->allocateSound(filename, isOneShot, is3D);
+	if (instID < 0)
+	{
+		DebugLogWarningFormat("Couldn't play one-shot sound \"%s\".", filename.c_str());
+		return;
+	}
+
+	this->playSound(instID);
+	this->setSoundPosition(instID, position);
+}
+
+void AudioManager::playSoundOneShot(const std::string &filename)
+{
+	constexpr bool isOneShot = true;
+	constexpr bool is3D = false;
+	const SoundInstanceID instID = this->allocateSound(filename, isOneShot, is3D);
+	if (instID < 0)
+	{
+		DebugLogWarningFormat("Couldn't play one-shot sound \"%s\".", filename.c_str());
+		return;
+	}
+
+	this->playSound(instID);
 }
