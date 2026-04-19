@@ -441,14 +441,11 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 		return;
 	}
 
-	// Check for sound resampling extension.
 	mHasResamplerExtension = alIsExtensionPresent("AL_SOFT_source_resampler") != AL_FALSE;
 	mResampler = mHasResamplerExtension ? AudioManager::getResamplingIndex(resamplingOption) : AudioManager::UNSUPPORTED_EXTENSION;
-
-	// Set whether the audio manager should play in 2D or 3D mode.
 	mIs3D = is3D;
 
-	// Generate the sound sources.
+	// Generate sound sources.
 	for (int i = 0; i < maxChannels; i++)
 	{
 		ALuint source;
@@ -481,8 +478,64 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	this->setListenerPosition(Double3::Zero);
 	this->setListenerOrientation(Double3::UnitX, Double3::UnitY);
 
-	// Load single-instance sounds file, a new feature with this engine since the one-sound-at-a-time limit
-	// no longer exists.
+	// Read sound bank file and load all sounds into memory.
+	const std::string soundBankFilename = "SoundBank.txt";
+	const std::string soundBankFilePath = audioDataPath + soundBankFilename;
+	TextLinesFile soundBankFile;
+	if (!soundBankFile.init(soundBankFilePath.c_str()))
+	{
+		DebugLogErrorFormat("Missing %s in \"%s\", no sounds will be loaded.", soundBankFilePath.c_str(), audioDataPath.c_str());
+	}
+
+	for (int i = 0; i < soundBankFile.getLineCount(); i++)
+	{
+		const std::string &soundFilename = soundBankFile.getLine(i);
+
+		VOCFile voc;
+		if (!voc.init(soundFilename.c_str()))
+		{
+			DebugLogErrorFormat("Couldn't init .VOC file \"%s\".", soundFilename.c_str());
+			continue;
+		}
+
+		// Clear OpenAL error.
+		alGetError();
+
+		ALuint bufferID;
+		alGenBuffers(1, &bufferID);
+
+		const ALenum status = alGetError();
+		if (status != AL_NO_ERROR)
+		{
+			DebugLogWarningFormat("alGenBuffers() error 0x%x.", status);
+		}
+
+		Span<uint8_t> pcmSamples = voc.getAudioData();
+
+		// Find and repair any bad samples we know of. A mod should eventually do this.
+		const auto repairIter = std::find_if(mVocRepairEntries.begin(), mVocRepairEntries.end(),
+			[&soundFilename](const VocRepairEntry &entry)
+		{
+			return StringView::equals(entry.filename, soundFilename);
+		});
+
+		if (repairIter != mVocRepairEntries.end())
+		{
+			const Span<const VocRepairSpan> repairSpans = repairIter->spans;
+			for (const VocRepairSpan span : repairSpans)
+			{
+				const uint8_t *spanBegin = pcmSamples.begin() + span.startIndex;
+				const uint8_t *spanEnd = spanBegin + span.count;
+				DebugAssert(spanEnd <= pcmSamples.end());
+				std::fill(spanBegin, spanEnd, span.replacementSample);
+			}
+		}
+
+		alBufferData(bufferID, AL_FORMAT_MONO8, static_cast<const ALvoid*>(pcmSamples.begin()), static_cast<ALsizei>(pcmSamples.getCount()), static_cast<ALsizei>(voc.getSampleRate()));
+		mSoundBuffers.emplace(soundFilename, bufferID);
+	}
+
+	// Load single-instance sounds file, a new feature with this engine since the one-sound-at-a-time limit no longer exists.
 	TextLinesFile singleInstanceSoundsFile;
 	const std::string singleInstanceSoundsFilename = "SingleInstanceSounds.txt";
 	const std::string singleInstanceSoundsPath = audioDataPath + singleInstanceSoundsFilename;
@@ -514,18 +567,18 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 		VocRepairSpan vocRepairSpan;
 		if (ProcessVocRepairLine(entry, &vocFilename, &vocRepairSpan))
 		{
-			const auto existingIter = std::find_if(this->mVocRepairEntries.begin(), this->mVocRepairEntries.end(),
+			const auto existingIter = std::find_if(mVocRepairEntries.begin(), mVocRepairEntries.end(),
 				[&vocFilename](const VocRepairEntry &entry)
 			{
 				return entry.filename == vocFilename;
 			});
 
-			if (existingIter == this->mVocRepairEntries.end())
+			if (existingIter == mVocRepairEntries.end())
 			{
 				VocRepairEntry newEntry;
 				newEntry.filename = vocFilename;
 				newEntry.spans.emplace_back(vocRepairSpan);
-				this->mVocRepairEntries.emplace_back(std::move(newEntry));
+				mVocRepairEntries.emplace_back(std::move(newEntry));
 			}
 			else
 			{
@@ -606,7 +659,7 @@ ALint AudioManager::getResamplingIndex(int resamplingOption)
 
 bool AudioManager::hasNextMusic() const
 {
-	return !this->mNextSong.empty();
+	return !mNextSong.empty();
 }
 
 void AudioManager::setListenerPosition(const Double3 &position)
@@ -648,52 +701,8 @@ void AudioManager::playSound(const char *filename, const std::optional<Double3> 
 		auto vocIter = mSoundBuffers.find(filename);
 		if (vocIter == mSoundBuffers.end())
 		{
-			// Load the .VOC file and give its PCM data to a new OpenAL buffer.
-			VOCFile voc;
-			if (!voc.init(filename))
-			{
-				DebugCrash("Could not init .VOC file \"" + std::string(filename) + "\".");
-			}
-
-			// Clear OpenAL error.
-			alGetError();
-
-			ALuint bufferID;
-			alGenBuffers(1, &bufferID);
-
-			const ALenum status = alGetError();
-			if (status != AL_NO_ERROR)
-			{
-				DebugLogWarning("alGenBuffers() error 0x" + String::toHexString(status));
-			}
-
-			Span<uint8_t> audioData = voc.getAudioData();
-
-			// Find and repair any bad samples we know of. A mod should eventually do this.
-			const auto repairIter = std::find_if(this->mVocRepairEntries.begin(), this->mVocRepairEntries.end(),
-				[filename](const VocRepairEntry &entry)
-			{
-				return StringView::equals(entry.filename, filename);
-			});
-
-			if (repairIter != this->mVocRepairEntries.end())
-			{
-				const Span<const VocRepairSpan> repairSpans = repairIter->spans;
-				for (const VocRepairSpan span : repairSpans)
-				{
-					const auto spanBegin = audioData.begin() + span.startIndex;
-					const auto spanEnd = spanBegin + span.count;
-					DebugAssert(spanEnd <= audioData.end());
-					std::fill(spanBegin, spanEnd, span.replacementSample);
-				}
-			}
-
-			alBufferData(bufferID, AL_FORMAT_MONO8,
-				static_cast<const ALvoid*>(audioData.begin()),
-				static_cast<ALsizei>(audioData.getCount()),
-				static_cast<ALsizei>(voc.getSampleRate()));
-
-			vocIter = mSoundBuffers.emplace(filename, bufferID).first;
+			DebugLogErrorFormat("Expected .VOC file \"%s\" to be loaded.", filename);
+			return;
 		}
 
 		// Set up the sound source.
@@ -737,7 +746,7 @@ void AudioManager::playMusic(const std::string &filename, bool loop)
 		return;
 	}
 
-	stopMusic();
+	this->stopMusic();
 
 	if (!mFreeSources.empty())
 	{
@@ -807,7 +816,7 @@ void AudioManager::stopMusic()
 void AudioManager::stopSound()
 {
 	// Reset all used sources and return them to the free sources.
-	for (const auto &pair : mUsedSources)
+	for (const std::pair<std::string, ALuint> &pair : mUsedSources)
 	{
 		const ALuint source = pair.second;
 		alSourceStop(source);
@@ -855,19 +864,15 @@ void AudioManager::setSoundVolume(double percent)
 
 void AudioManager::setResamplingOption(int resamplingOption)
 {
-	// Do not call if AL_SOFT_source_resampler is unsupported.
 	DebugAssert(mHasResamplerExtension);
-
-	// Determine which resampling index to use.
 	mResampler = AudioManager::getResamplingIndex(resamplingOption);
 
-	// Set resampling options for free and used sources.
 	for (const ALuint source : mFreeSources)
 	{
 		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
 	}
 
-	for (const auto &pair : mUsedSources)
+	for (const std::pair<std::string, ALuint> &pair : mUsedSources)
 	{
 		const ALuint source = pair.second;
 		alSourcei(source, AL_SOURCE_RESAMPLER_SOFT, mResampler);
