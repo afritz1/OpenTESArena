@@ -585,19 +585,16 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 		}
 	}
 
-	// Read sound bank file and load all sounds into memory.
-	const std::string soundBankFilename = "SoundBank.txt";
-	const std::string soundBankFilePath = audioDataPath + soundBankFilename;
-	TextLinesFile soundBankFile;
-	if (!soundBankFile.init(soundBankFilePath.c_str()))
-	{
-		DebugLogErrorFormat("Missing %s in \"%s\", no sounds will be loaded.", soundBankFilePath.c_str(), audioDataPath.c_str());
-	}
+	// Load all sounds into memory.
+	const std::vector<std::string> soundFilenames = VFS::Manager::get().list("*.voc");
+	const std::vector<std::string> voiceFilenames = VFS::Manager::get().list("SPEECH/*.voc");
+	std::vector<std::string> totalSoundFilenames;
+	totalSoundFilenames.reserve(soundFilenames.size() + voiceFilenames.size());
+	std::copy(soundFilenames.begin(), soundFilenames.end(), std::back_inserter(totalSoundFilenames));
+	std::copy(voiceFilenames.begin(), voiceFilenames.end(), std::back_inserter(totalSoundFilenames));
 
-	for (int i = 0; i < soundBankFile.getLineCount(); i++)
+	for (const std::string &soundFilename : totalSoundFilenames)
 	{
-		const std::string &soundFilename = soundBankFile.getLine(i);
-
 		VOCFile voc;
 		if (!voc.init(soundFilename.c_str()))
 		{
@@ -619,7 +616,7 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 
 		Span<uint8_t> pcmSamples = voc.getAudioData();
 
-		// Find and repair any bad samples we know of. A mod should eventually do this.
+		// Find and repair any pre-defined bad samples. A mod should eventually do this.
 		const auto repairIter = std::find_if(mVocRepairEntries.begin(), mVocRepairEntries.end(),
 			[&soundFilename](const VocRepairEntry &entry)
 		{
