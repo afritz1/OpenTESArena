@@ -31,6 +31,7 @@ CharacterClassDefinition::CharacterClassDefinition()
 	std::fill(std::begin(this->preferredAttributes), std::end(this->preferredAttributes), '\0');
 	this->castsMagic = false;
 	this->healthDie = -1;
+	this->spellPointsMultiplier = 0.0;
 	this->initialExpCap = -1;
 	this->thievingDivisor = 0;
 	this->criticalHit = false;
