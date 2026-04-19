@@ -864,17 +864,12 @@ void AudioManager::set3D(bool is3D)
 
 void AudioManager::updateSources()
 {
-	// Destroy finished one-shot sound instances.
-	std::vector<SoundInstanceID> finishedOneShotSoundInsts;
+	// Recycle sources of finished sound instances, destroying the instance if they are one-shot.
+	std::vector<SoundInstanceID> soundInstsToDestroy;
 	for (const SoundInstanceID soundInstID : this->soundInstancesPool.keys)
 	{
-		const SoundInstance &soundInst = this->soundInstancesPool.get(soundInstID);
+		SoundInstance &soundInst = this->soundInstancesPool.get(soundInstID);
 		if (alIsSource(soundInst.source) != AL_TRUE)
-		{
-			continue;
-		}
-
-		if (!soundInst.isOneShot)
 		{
 			continue;
 		}
@@ -886,12 +881,19 @@ void AudioManager::updateSources()
 			continue;
 		}
 
-		finishedOneShotSoundInsts.emplace_back(soundInstID);
+		this->resetSource(soundInst.source);
+		mFreeSources.push_front(soundInst.source);
+		soundInst.source = INVALID_SOURCE;
+
+		if (soundInst.isOneShot)
+		{
+			soundInstsToDestroy.emplace_back(soundInstID);
+		}
 	}
 
-	for (const SoundInstanceID soundInstID : finishedOneShotSoundInsts)
+	for (const SoundInstanceID soundInstID : soundInstsToDestroy)
 	{
-		this->freeSound(soundInstID);
+		this->soundInstancesPool.free(soundInstID);
 	}
 
 	// Check for staged music.
