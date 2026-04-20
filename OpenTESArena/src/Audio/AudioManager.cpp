@@ -10,6 +10,7 @@
 
 #include "al.h"
 #include "alc.h"
+#include "SDL_audio.h"
 
 #include "alext.h" // Using local copy (+ "efx.h") to guarantee existence on system.
 #include "AudioManager.h"
@@ -588,55 +589,106 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	// Load all sounds into memory.
 	const std::vector<std::string> soundFilenames = VFS::Manager::get().list("*.voc");
 	const std::vector<std::string> voiceFilenames = VFS::Manager::get().list("SPEECH/*.voc");
+	const std::vector<std::string> wavSoundFilenames = VFS::Manager::get().list("*.wav");
 	std::vector<std::string> totalSoundFilenames;
-	totalSoundFilenames.reserve(soundFilenames.size() + voiceFilenames.size());
+	totalSoundFilenames.reserve(soundFilenames.size() + voiceFilenames.size() + wavSoundFilenames.size());
 	std::copy(soundFilenames.begin(), soundFilenames.end(), std::back_inserter(totalSoundFilenames));
 	std::copy(voiceFilenames.begin(), voiceFilenames.end(), std::back_inserter(totalSoundFilenames));
+	std::copy(wavSoundFilenames.begin(), wavSoundFilenames.end(), std::back_inserter(totalSoundFilenames));
 
 	for (const std::string &soundFilename : totalSoundFilenames)
 	{
-		VOCFile voc;
-		if (!voc.init(soundFilename.c_str()))
+		auto createSoundBuffer = [this, &soundFilename](Span<uint8_t> pcmSamples, int sampleRate, ALenum format)
 		{
-			DebugLogErrorFormat("Couldn't init .VOC file \"%s\".", soundFilename.c_str());
-			continue;
-		}
+			// Clear OpenAL error.
+			alGetError();
 
-		// Clear OpenAL error.
-		alGetError();
+			ALuint bufferID;
+			alGenBuffers(1, &bufferID);
 
-		ALuint bufferID;
-		alGenBuffers(1, &bufferID);
-
-		const ALenum status = alGetError();
-		if (status != AL_NO_ERROR)
-		{
-			DebugLogWarningFormat("alGenBuffers() error 0x%x.", status);
-		}
-
-		Span<uint8_t> pcmSamples = voc.getAudioData();
-
-		// Find and repair any pre-defined bad samples. A mod should eventually do this.
-		const auto repairIter = std::find_if(mVocRepairEntries.begin(), mVocRepairEntries.end(),
-			[&soundFilename](const VocRepairEntry &entry)
-		{
-			return StringView::equals(entry.filename, soundFilename);
-		});
-
-		if (repairIter != mVocRepairEntries.end())
-		{
-			const Span<const VocRepairSpan> repairSpans = repairIter->spans;
-			for (const VocRepairSpan span : repairSpans)
+			const ALenum status = alGetError();
+			if (status != AL_NO_ERROR)
 			{
-				uint8_t *spanBegin = pcmSamples.begin() + span.startIndex;
-				uint8_t *spanEnd = spanBegin + span.count;
-				DebugAssert(spanEnd <= pcmSamples.end());
-				std::fill(spanBegin, spanEnd, span.replacementSample);
+				DebugLogWarningFormat("alGenBuffers() error 0x%x.", status);
 			}
-		}
 
-		alBufferData(bufferID, AL_FORMAT_MONO8, static_cast<const ALvoid*>(pcmSamples.begin()), static_cast<ALsizei>(pcmSamples.getCount()), static_cast<ALsizei>(voc.getSampleRate()));
-		mSoundBuffers.emplace(soundFilename, bufferID);
+			// Find and repair any pre-defined bad samples. A mod should eventually do this.
+			const auto repairIter = std::find_if(mVocRepairEntries.begin(), mVocRepairEntries.end(),
+				[&soundFilename](const VocRepairEntry &entry)
+			{
+				return StringView::equals(entry.filename, soundFilename);
+			});
+
+			if (repairIter != mVocRepairEntries.end())
+			{
+				const Span<const VocRepairSpan> repairSpans = repairIter->spans;
+				for (const VocRepairSpan span : repairSpans)
+				{
+					uint8_t *spanBegin = pcmSamples.begin() + span.startIndex;
+					uint8_t *spanEnd = spanBegin + span.count;
+					DebugAssert(spanEnd <= pcmSamples.end());
+					std::fill(spanBegin, spanEnd, span.replacementSample);
+				}
+			}
+
+			alBufferData(bufferID, format, static_cast<const ALvoid*>(pcmSamples.begin()), static_cast<ALsizei>(pcmSamples.getCount()), static_cast<ALsizei>(sampleRate));
+			mSoundBuffers.emplace(soundFilename, bufferID);
+		};
+
+		const std::string_view soundFilenameExtension = StringView::getExtension(soundFilename);
+		const bool isVOC = StringView::caseInsensitiveEquals(soundFilenameExtension, "VOC");
+		const bool isWAV = StringView::caseInsensitiveEquals(soundFilenameExtension, "WAV");
+
+		if (isVOC)
+		{
+			VOCFile voc;
+			if (!voc.init(soundFilename.c_str()))
+			{
+				DebugLogErrorFormat("Couldn't init .VOC file \"%s\".", soundFilename.c_str());
+				continue;
+			}
+
+			createSoundBuffer(voc.getAudioData(), voc.getSampleRate(), AL_FORMAT_MONO8);
+		}
+		else if (isWAV)
+		{
+			// Read into a buffer since SDL_LoadWAV() can't take a VFS path.
+			Buffer<std::byte> wavFileBytes;
+			if (!VFS::Manager::get().read(soundFilename.c_str(), &wavFileBytes))
+			{
+				DebugLogErrorFormat("Couldn't read .WAV file \"%s\".", soundFilename.c_str());
+				continue;
+			}
+
+			SDL_RWops *wavRWops = SDL_RWFromConstMem(wavFileBytes.begin(), wavFileBytes.getCount());
+			constexpr SDL_bool shouldFreeRWops = SDL_TRUE;
+			SDL_AudioSpec wavAudioSpec;
+			uint8_t *wavSamples = nullptr;
+			uint32_t wavLength = 0;
+			if (SDL_LoadWAV_RW(wavRWops, shouldFreeRWops, &wavAudioSpec, &wavSamples, &wavLength) == nullptr)
+			{
+				DebugLogErrorFormat("Couldn't load .WAV file \"%s\" (%s).", soundFilename.c_str(), SDL_GetError());
+				continue;
+			}
+
+			const int wavBitsPerSample = SDL_AUDIO_BITSIZE(wavAudioSpec.format);
+			ALenum wavFormat = 0;
+			if (wavAudioSpec.channels == 1)
+			{
+				wavFormat = (wavBitsPerSample == 8) ? AL_FORMAT_MONO8 : AL_FORMAT_MONO16;
+			}
+			else if (wavAudioSpec.channels == 2)
+			{
+				wavFormat = (wavBitsPerSample == 8) ? AL_FORMAT_STEREO8 : AL_FORMAT_STEREO16;
+			}
+			else
+			{
+				DebugLogErrorFormat("Unsupported .WAV channel count (%d) in \"%s\".", wavAudioSpec.channels, soundFilename.c_str());
+			}
+
+			createSoundBuffer(Span<uint8_t>(wavSamples, wavLength), wavAudioSpec.freq, wavFormat);
+			SDL_FreeWAV(wavSamples);
+		}
 	}
 }
 
