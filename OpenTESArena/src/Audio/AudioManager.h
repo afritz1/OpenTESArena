@@ -124,6 +124,8 @@ public:
 	// Returns whether the given filename is playing in any sound instance.
 	bool anyPlayingSounds(const std::string &filename) const;
 
+	int getTotalPlayingSoundCount() const;
+
 	// Sets the music to the given music definition, with an optional music to play first as a
 	// lead-in to the actual music. If no music definition is given, the current music is stopped.
 	void setMusic(const MusicDefinition *musicDef, const MusicDefinition *optMusicDef = nullptr);

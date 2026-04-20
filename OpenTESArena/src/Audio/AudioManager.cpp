@@ -679,6 +679,30 @@ bool AudioManager::anyPlayingSounds(const std::string &filename) const
 	return false;
 }
 
+int AudioManager::getTotalPlayingSoundCount() const
+{
+	int count = 0;
+
+	for (const SoundInstance &soundInst : this->soundInstancesPool.values)
+	{
+		if (alIsSource(soundInst.source) != AL_TRUE)
+		{
+			continue;
+		}
+
+		ALint sourceState;
+		alGetSourcei(soundInst.source, AL_SOURCE_STATE, &sourceState);
+		if (sourceState != AL_PLAYING)
+		{
+			continue;
+		}
+
+		count++;
+	}
+
+	return count;
+}
+
 bool AudioManager::hasNextMusic() const
 {
 	return !mNextSong.empty();
