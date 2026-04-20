@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <iostream>
 #include <memory>
@@ -12,17 +11,16 @@
 namespace VFS
 {
 
-typedef std::shared_ptr<std::istream> IStreamPtr;
+using IStreamPtr = std::shared_ptr<std::istream>;
 
-class Manager {
+class Manager
+{
 	Manager(const Manager&) = delete;
 	Manager& operator=(const Manager&) = delete;
 
-	static void addDir(const std::string &path, const std::string &pre, const char *pattern,
-		std::vector<std::string> &names);
+	static std::vector<std::string> getFilesWithExtensionRecursively(const std::string &directoryPath, const char *extension);
 
 	Manager();
-
 public:
 	void initialize(std::string&& rootPath = std::string());
 	void addDataPath(std::string&& path);
@@ -44,7 +42,7 @@ public:
 	bool readCaseInsensitive(const char *name, Buffer<std::byte> *dst);
 
 	bool exists(const char *name);
-	std::vector<std::string> list(const char *pattern = nullptr) const;
+	std::vector<std::string> listFilesWithExtension(const char *extension) const;
 
 	static Manager &get()
 	{

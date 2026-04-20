@@ -587,16 +587,23 @@ void AudioManager::init(double musicVolume, double soundVolume, int maxChannels,
 	}
 
 	// Load all sounds into memory.
-	const std::vector<std::string> soundFilenames = VFS::Manager::get().list("*.voc");
-	const std::vector<std::string> voiceFilenames = VFS::Manager::get().list("SPEECH/*.voc");
-	const std::vector<std::string> wavSoundFilenames = VFS::Manager::get().list("*.wav");
-	std::vector<std::string> totalSoundFilenames;
-	totalSoundFilenames.reserve(soundFilenames.size() + voiceFilenames.size() + wavSoundFilenames.size());
-	std::copy(soundFilenames.begin(), soundFilenames.end(), std::back_inserter(totalSoundFilenames));
-	std::copy(voiceFilenames.begin(), voiceFilenames.end(), std::back_inserter(totalSoundFilenames));
-	std::copy(wavSoundFilenames.begin(), wavSoundFilenames.end(), std::back_inserter(totalSoundFilenames));
+	std::vector<std::string> soundFilenames;
+	constexpr const char *soundFilenameExtensions[] = { "voc", "wav", };
+	for (const char *extension : soundFilenameExtensions)
+	{
+		VFS::Manager &manager = VFS::Manager::get();
+		std::vector<std::string> filenames = manager.listFilesWithExtension(extension);
+		if (!filenames.empty())
+		{
+			soundFilenames.insert(soundFilenames.end(), std::make_move_iterator(filenames.begin()), std::make_move_iterator(filenames.end()));
+		}
+	}
 
-	for (const std::string &soundFilename : totalSoundFilenames)
+	std::sort(soundFilenames.begin(), soundFilenames.end());
+	const auto uniqueSoundIter = std::unique(soundFilenames.begin(), soundFilenames.end());
+	soundFilenames.erase(uniqueSoundIter, soundFilenames.end());
+
+	for (const std::string &soundFilename : soundFilenames)
 	{
 		auto createSoundBuffer = [this, &soundFilename](Span<uint8_t> pcmSamples, int sampleRate, ALenum format)
 		{

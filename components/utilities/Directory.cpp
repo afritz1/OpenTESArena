@@ -21,7 +21,7 @@ bool Directory::exists(const char *path)
 		// Path doesn't point to anything.
 		return false;
 	}
-	
+
 	success = std::filesystem::is_directory(path, code);
 	if (code)
 	{
@@ -89,7 +89,7 @@ std::vector<std::string> Directory::getFilesWithExtension(const char *path, cons
 			continue;
 		}
 
-		filenames.emplace_back(dirEntryPath.string());
+		filenames.emplace_back(dirEntryPath.generic_string());
 	}
 
 	std::sort(filenames.begin(), filenames.end());

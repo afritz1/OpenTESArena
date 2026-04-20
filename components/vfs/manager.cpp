@@ -1,24 +1,17 @@
-#include "manager.hpp"
-
-#ifdef _WIN32
-#include "dirent.h"
-#include "../misc/fnmatch.h"
-#else
-#include <dirent.h>
-#include <sys/stat.h>
-#include <fnmatch.h>
-#endif
-
 #include <algorithm>
-#include <cassert> // @todo: replace with DebugAssert
 #include <cctype>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <vector>
 
+#include "manager.hpp"
 #include "../archives/bsaarchive.hpp"
 #include "../debug/Debug.h"
+#include "../utilities/Directory.h"
+#include "../utilities/Span.h"
+#include "../utilities/StringView.h"
 
 namespace
 {
@@ -26,14 +19,11 @@ namespace
 	Archives::BsaArchive gGlobalBsa;
 }
 
-namespace VFS
-{
-
-Manager::Manager()
+VFS::Manager::Manager()
 {
 }
 
-void Manager::initialize(std::string&& rootPath)
+void VFS::Manager::initialize(std::string&& rootPath)
 {
 	if (rootPath.empty())
 		rootPath += "./";
@@ -44,7 +34,7 @@ void Manager::initialize(std::string&& rootPath)
 	gRootPaths.push_back(std::move(rootPath));
 }
 
-void Manager::addDataPath(std::string&& path)
+void VFS::Manager::addDataPath(std::string&& path)
 {
 	if (path.empty())
 		path += "./";
@@ -54,40 +44,41 @@ void Manager::addDataPath(std::string&& path)
 	gRootPaths.push_back(std::move(path));
 }
 
-IStreamPtr Manager::open(const char *name, bool *inGlobalBSA)
+VFS::IStreamPtr VFS::Manager::open(const char *name, bool *inGlobalBSA)
 {
-	assert(name != nullptr);
-	assert(inGlobalBSA != nullptr);
+	DebugAssert(name != nullptr);
+	DebugAssert(inGlobalBSA != nullptr);
 
-	std::unique_ptr<std::ifstream> stream(new std::ifstream());
-
-	// Search in reverse, so newer paths take precedence.
-	const auto iter = std::find_if(gRootPaths.rbegin(), gRootPaths.rend(),
-		[name, &stream](const std::string &rootPath)
+	// Look for a root directory that contains the file, preferring newest roots.
+	for (int i = static_cast<int>(gRootPaths.size()) - 1; i >= 0; i--)
 	{
-		stream->open(rootPath + name, std::ios::binary);
-		return stream->good();
-	});
+		const std::string &rootPath = gRootPaths[i];
+		const std::string filePath = rootPath + name;
 
-	if (iter != gRootPaths.rend())
-	{
-		*inGlobalBSA = false;
-		return IStreamPtr(std::move(stream));
+		std::error_code errorCode;
+		if (std::filesystem::is_regular_file(filePath, errorCode))
+		{
+			*inGlobalBSA = false;
+
+			std::unique_ptr<std::ifstream> stream = std::make_unique<std::ifstream>();
+			stream->open(filePath, std::ios::binary);
+			return VFS::IStreamPtr(std::move(stream));
+		}
 	}
-	else
-	{
-		*inGlobalBSA = true;
-		return gGlobalBsa.open(name);
-	}
+
+	// Not a loose file, try GLOBAL.BSA instead.
+	Archives::IStreamPtr bsaStream = gGlobalBsa.open(name);
+	*inGlobalBSA = bsaStream != nullptr;
+	return bsaStream;
 }
 
-IStreamPtr Manager::open(const char *name)
+VFS::IStreamPtr VFS::Manager::open(const char *name)
 {
 	bool dummy;
 	return this->open(name, &dummy);
 }
 
-IStreamPtr Manager::openCaseInsensitive(const char *name, bool *inGlobalBSA)
+VFS::IStreamPtr VFS::Manager::openCaseInsensitive(const char *name, bool *inGlobalBSA)
 {
 	// Since the given filename is assumed to be unique in its directory, we only need to
 	// worry about filenames just like it but with different casing.
@@ -119,21 +110,21 @@ IStreamPtr Manager::openCaseInsensitive(const char *name, bool *inGlobalBSA)
 	}
 }
 
-IStreamPtr Manager::openCaseInsensitive(const char *name)
+VFS::IStreamPtr VFS::Manager::openCaseInsensitive(const char *name)
 {
 	bool dummy;
 	return this->openCaseInsensitive(name, &dummy);
 }
 
-bool Manager::read(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA)
+bool VFS::Manager::read(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA)
 {
-	assert(name != nullptr);
-	assert(dst != nullptr);
+	DebugAssert(name != nullptr);
+	DebugAssert(dst != nullptr);
 
-	IStreamPtr stream = this->open(name, inGlobalBSA);
+	VFS::IStreamPtr stream = this->open(name, inGlobalBSA);
 	if (stream == nullptr)
 	{
-		DebugLogError("Could not open \"" + std::string(name) + "\".");
+		DebugLogErrorFormat("Could not open \"%s\".", name);
 		return false;
 	}
 
@@ -144,21 +135,21 @@ bool Manager::read(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA)
 	return true;
 }
 
-bool Manager::read(const char *name, Buffer<std::byte> *dst)
+bool VFS::Manager::read(const char *name, Buffer<std::byte> *dst)
 {
 	bool dummy;
 	return this->read(name, dst, &dummy);
 }
 
-bool Manager::readCaseInsensitive(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA)
+bool VFS::Manager::readCaseInsensitive(const char *name, Buffer<std::byte> *dst, bool *inGlobalBSA)
 {
-	assert(name != nullptr);
-	assert(dst != nullptr);
+	DebugAssert(name != nullptr);
+	DebugAssert(dst != nullptr);
 
-	IStreamPtr stream = this->openCaseInsensitive(name, inGlobalBSA);
+	VFS::IStreamPtr stream = this->openCaseInsensitive(name, inGlobalBSA);
 	if (stream == nullptr)
 	{
-		DebugLogError("Could not open \"" + std::string(name) + "\".");
+		DebugLogErrorFormat("Could not open \"%s\".", name);
 		return false;
 	}
 
@@ -169,83 +160,85 @@ bool Manager::readCaseInsensitive(const char *name, Buffer<std::byte> *dst, bool
 	return true;
 }
 
-bool Manager::readCaseInsensitive(const char *name, Buffer<std::byte> *dst)
+bool VFS::Manager::readCaseInsensitive(const char *name, Buffer<std::byte> *dst)
 {
 	bool dummy;
 	return this->readCaseInsensitive(name, dst, &dummy);
 }
 
-bool Manager::exists(const char *name)
+bool VFS::Manager::exists(const char *name)
 {
-	std::ifstream file;
-	const auto iter = std::find_if(gRootPaths.begin(), gRootPaths.end(),
-		[name, &file](const std::string &rootPath)
+	for (int i = static_cast<int>(gRootPaths.size()) - 1; i >= 0; i--)
 	{
-		file.open(rootPath + name, std::ios::binary);
-		return file.is_open();
-	});
+		const std::string &rootPath = gRootPaths[i];
+		const std::string filePath = rootPath + name;
+		
+		std::error_code errorCode;
+		if (std::filesystem::exists(filePath, errorCode))
+		{
+			return true;
+		}
+	}
 
-	// If not in the root paths, then check inside GLOBAL.BSA.
-	return (iter != gRootPaths.end()) || gGlobalBsa.exists(name);
+	return gGlobalBsa.exists(name);
 }
 
-void Manager::addDir(const std::string &path, const std::string &pre, const char *pattern,
-	std::vector<std::string> &names)
+std::vector<std::string> VFS::Manager::getFilesWithExtensionRecursively(const std::string &directoryPath, const char *extension)
 {
-	DIR *dir = opendir(path.c_str());
-	if (dir == nullptr) return;
-
-	dirent *ent;
-	while ((ent = readdir(dir)) != nullptr)
+	std::vector<std::string> filenames;
+	if (!Directory::exists(directoryPath.c_str()))
 	{
-		if ((std::strcmp(ent->d_name, ".") == 0) || 
-			(std::strcmp(ent->d_name, "..") == 0))
+		return filenames;
+	}
+
+	const std::filesystem::path directoryFsPath(directoryPath);
+	for (const std::filesystem::directory_entry &dirEntry : std::filesystem::recursive_directory_iterator(directoryFsPath))
+	{
+		std::error_code errorCode;
+		if (!dirEntry.is_regular_file(errorCode))
+		{
 			continue;
+		}
 
-		if (!S_ISDIR(ent->d_type))
+		const std::filesystem::path filePath = dirEntry.path();
+		const std::string fileExtension = filePath.extension().string();
+		if (!StringView::caseInsensitiveEquals(StringView::getExtension(fileExtension), extension))
 		{
-			std::string fname = pre + ent->d_name;
-			if ((pattern == nullptr) || (fnmatch(pattern, fname.c_str(), 0) == 0))
-				names.push_back(std::move(fname));
+			continue;
 		}
-		else
-		{
-			const std::string newPath = path + '/' + ent->d_name;
-			const std::string newPre = pre + ent->d_name + '/';
-			Manager::addDir(newPath, newPre, pattern, names);
-		}
+
+		const std::filesystem::path fileRelativePath = std::filesystem::relative(filePath, directoryFsPath);
+		filenames.emplace_back(fileRelativePath.generic_string());
 	}
 
-	closedir(dir);
+	std::sort(filenames.begin(), filenames.end());
+	return filenames;
 }
 
-std::vector<std::string> Manager::list(const char *pattern) const
+std::vector<std::string> VFS::Manager::listFilesWithExtension(const char *extension) const
 {
-	std::vector<std::string> files;
-
-	std::for_each(gRootPaths.rbegin(), gRootPaths.rend(),
-		[pattern, &files](const std::string &rootPath)
+	std::vector<std::string> filenames;
+	for (int i = static_cast<int>(gRootPaths.size()) - 1; i >= 0; i--)
 	{
-		Manager::addDir(rootPath + '.', std::string(), pattern, files);
-	});
-
-	const std::vector<std::string> &bsaList = gGlobalBsa.list();
-
-	if (pattern == nullptr)
-	{
-		std::copy(bsaList.begin(), bsaList.end(), std::back_inserter(files));
-	}
-	else
-	{
-		std::copy_if(bsaList.begin(), bsaList.end(), std::back_inserter(files),
-			[pattern](const std::string &name)
+		const std::string &rootPath = gRootPaths[i];
+		std::vector<std::string> filenamesInRootPath = VFS::Manager::getFilesWithExtensionRecursively(rootPath, extension);
+		if (!filenamesInRootPath.empty())
 		{
-			const char *dirsep = std::strrchr(name.c_str(), '/');
-			return fnmatch(pattern, (dirsep != nullptr) ? dirsep : name.c_str(), 0) == 0;
-		});
+			filenames.insert(filenames.end(), filenamesInRootPath.begin(), filenamesInRootPath.end());
+		}
 	}
 
-	return files;
-}
+	Span<const std::string> bsaList = gGlobalBsa.list();
+	for (const std::string &bsaEntryFilename : bsaList)
+	{
+		const std::string_view bsaEntryFileExtension = StringView::getExtension(bsaEntryFilename);
+		if (!StringView::caseInsensitiveEquals(bsaEntryFileExtension, extension))
+		{
+			continue;
+		}
 
-} // namespace VFS
+		filenames.emplace_back(bsaEntryFilename);
+	}
+
+	return filenames;
+}

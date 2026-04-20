@@ -62,7 +62,6 @@ SET(COMP_UTILITIES
 	"utilities/VirtualHeap.h")
 
 SET(COMP_VFS
-	"vfs/dirent.h"
 	"vfs/manager.cpp"
 	"vfs/manager.hpp")
 
@@ -72,14 +71,6 @@ SET(COMP_SOURCES
 	${COMP_DOS}
 	${COMP_UTILITIES}
 	${COMP_VFS})
-
-IF (WIN32)
-	SET(COMP_WIN32_SOURCES
-		"misc/fnmatch.cpp"
-		"misc/fnmatch.h")
-
-	SET(COMP_SOURCES ${COMP_SOURCES} ${COMP_WIN32_SOURCES})
-ENDIF (WIN32)
 
 ADD_LIBRARY(components STATIC ${COMP_SOURCES})
 TARGET_LINK_LIBRARIES(components PUBLIC ${EXTERNAL_LIBS})
