@@ -45,6 +45,9 @@ private:
 	void populateWildChunkBuildingNames(VoxelChunk &chunk, const MapGenerationWildChunkBuildingNameInfo &buildingNameInfo,
 		const LevelInfoDefinition &levelInfoDefinition);
 
+	// Applies interior display names onto transitions for this chunk. Used with conversations.
+	void populateWildChunkInteriorDisplayNames(VoxelChunk &chunk);
+
 	// Adds chasm instances to the chunk that should exist at level generation time. Chasms are context-sensitive
 	// to adjacent voxels so this function also operates based on adjacent chunks (if any).
 	void populateChunkChasmInsts(VoxelChunk &chunk);

@@ -401,6 +401,37 @@ void VoxelChunkManager::populateWildChunkBuildingNames(VoxelChunk &chunk,
 	}
 }
 
+void VoxelChunkManager::populateWildChunkInteriorDisplayNames(VoxelChunk &chunk)
+{
+	for (const auto &pair : chunk.transitionDefIndices)
+	{
+		const VoxelInt3 voxel = pair.first;
+		const VoxelTransitionDefID transitionDefID = pair.second;
+		TransitionDefinition &transitionDef = chunk.transitionDefs[transitionDefID];
+		if (transitionDef.type != TransitionType::EnterInterior)
+		{
+			continue;
+		}
+
+		InteriorEntranceTransitionDefinition &interiorEntranceDef = transitionDef.interiorEntrance;
+		MapGenerationInteriorInfo &interiorGenInfo = interiorEntranceDef.interiorGenInfo;
+		if (interiorGenInfo.type != MapGenerationInteriorType::Prefab)
+		{
+			continue;
+		}
+
+		const auto buildingNameIter = chunk.buildingNameIndices.find(voxel);
+		if (buildingNameIter == chunk.buildingNameIndices.end())
+		{
+			continue;
+		}
+
+		const VoxelBuildingNameID buildingNameID = buildingNameIter->second;
+		const std::string &buildingName = chunk.buildingNames[buildingNameID];
+		interiorGenInfo.prefab.displayName = buildingName;
+	}
+}
+
 void VoxelChunkManager::populateChunkChasmInsts(VoxelChunk &chunk)
 {
 	// @todo: only iterate over chunk writing ranges
@@ -643,6 +674,7 @@ void VoxelChunkManager::populateChunk(int index, const ChunkInt2 &chunkPos, cons
 		if (buildingNameInfo != nullptr)
 		{
 			this->populateWildChunkBuildingNames(chunk, *buildingNameInfo, levelInfoDef);
+			this->populateWildChunkInteriorDisplayNames(chunk);
 		}
 
 		this->populateChunkChasmInsts(chunk);
