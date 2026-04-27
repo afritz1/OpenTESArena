@@ -64,6 +64,56 @@ struct EntityInitInfo
 	EntityInitInfo();
 };
 
+enum class EntityBehaviorStateType
+{
+	Enemy,
+	Citizen
+};
+
+enum class EntityEnemyBehaviorStateType
+{
+	Idle,
+	MovingToPlayer
+};
+
+struct EntityEnemyBehaviorState
+{
+	EntityEnemyBehaviorStateType type;
+
+	EntityEnemyBehaviorState();
+};
+
+enum class EntityCitizenBehaviorStateType
+{
+	Idle,
+	Moving,
+	TalkingToPlayer
+};
+
+struct EntityCitizenBehaviorState
+{
+	EntityCitizenBehaviorStateType type;
+	uint8_t directionIndex; // Cardinal direction, must be remembered when talking to player so they can continue afterwards.
+
+	EntityCitizenBehaviorState();
+};
+
+struct EntityBehaviorState
+{
+	EntityBehaviorStateType type;
+
+	union
+	{
+		EntityEnemyBehaviorState enemy;
+		EntityCitizenBehaviorState citizen;
+	};
+
+	EntityBehaviorState();
+
+	void initEnemy();
+	void initCitizen();
+};
+
 struct EntityCombatState
 {
 	bool isDying;
@@ -100,6 +150,7 @@ public:
 	using EntityBoundingBoxPool = KeyValuePool<EntityBoundingBoxID, BoundingBox3D>;
 	using EntityDirectionPool = KeyValuePool<EntityDirectionID, Double2>;
 	using EntityAnimationInstancePool = KeyValuePool<EntityAnimationInstanceID, EntityAnimationInstance>;
+	using EntityBehaviorStatePool = KeyValuePool<EntityBehaviorStateID, EntityBehaviorState>;
 	using EntityCombatStatePool = KeyValuePool<EntityCombatStateID, EntityCombatState>;
 	using EntityCreatureSoundPool = KeyValuePool<EntityCreatureSoundInstanceID, double>;
 	using EntityCitizenDirectionIndexPool = KeyValuePool<EntityCitizenDirectionIndexID, int8_t>;
@@ -114,6 +165,7 @@ public:
 	EntityBoundingBoxPool boundingBoxes;
 	EntityDirectionPool directions;
 	EntityAnimationInstancePool animInsts;
+	EntityBehaviorStatePool behaviorStates;
 	EntityCombatStatePool combatStates;
 	EntityCreatureSoundPool creatureSoundInsts;
 	EntityCitizenDirectionIndexPool citizenDirectionIndices;
@@ -159,8 +211,12 @@ private:
 		const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random,
 		const EntityDefinitionLibrary &entityDefLibrary, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
+	void queueEntityTransfer(EntityInstanceID entityInstID, ChunkInt2 prevChunkPos, ChunkInt2 newChunkPos);
+
 	void updateCitizenStates(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
+
+	void updateEnemyStates(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
@@ -181,6 +237,9 @@ public:
 
 	// Creates a fully-initialized entity in the scene that is immediately ready to simulate.
 	EntityInstanceID createEntity(const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
+
+	void setEnemyBehaviorState(EntityInstanceID id, EntityEnemyBehaviorStateType stateType);
+	void setCitizenBehaviorState(EntityInstanceID id, EntityCitizenBehaviorStateType stateType);
 
 	void update(double dt, Span<const ChunkInt2> activeChunkPositions,
 		Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,

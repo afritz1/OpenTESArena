@@ -10,6 +10,7 @@ using EntityPositionID = int;
 using EntityBoundingBoxID = int;
 using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
+using EntityBehaviorStateID = int;
 using EntityCombatStateID = int;
 using EntityCreatureSoundInstanceID = int;
 using EntityCitizenDirectionIndexID = int;
@@ -26,9 +27,10 @@ struct EntityInstance
 	EntityBoundingBoxID bboxID;
 	EntityDirectionID directionID;
 	EntityAnimationInstanceID animInstID;
+	EntityBehaviorStateID behaviorStateID;
 	EntityCombatStateID combatStateID;
-	EntityCreatureSoundInstanceID creatureSoundInstID;
-	EntityCitizenDirectionIndexID citizenDirectionIndexID;
+	EntityCreatureSoundInstanceID creatureSoundInstID; // @todo move to EntityEnemyBehaviorState
+	EntityCitizenDirectionIndexID citizenDirectionIndexID; // @todo move to EntityCitizenBehaviorState
 	EntityCitizenNameID citizenNameID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;

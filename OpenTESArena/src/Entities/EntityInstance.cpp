@@ -66,6 +66,7 @@ void EntityInstance::clear()
 	this->bboxID = -1;
 	this->directionID = -1;
 	this->animInstID = -1;
+	this->behaviorStateID = -1;
 	this->combatStateID = -1;
 	this->creatureSoundInstID = -1;
 	this->citizenDirectionIndexID = -1;
