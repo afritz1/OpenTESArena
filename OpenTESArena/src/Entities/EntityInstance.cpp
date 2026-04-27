@@ -43,11 +43,6 @@ bool EntityInstance::canUseElevatedPlatforms() const
 	return !this->isDynamic();
 }
 
-bool EntityInstance::isCitizen() const
-{
-	return this->citizenDirectionIndexID >= 0;
-}
-
 bool EntityInstance::hasInventory() const
 {
 	return this->itemInventoryInstID >= 0;
@@ -68,8 +63,6 @@ void EntityInstance::clear()
 	this->animInstID = -1;
 	this->behaviorStateID = -1;
 	this->combatStateID = -1;
-	this->creatureSoundInstID = -1;
-	this->citizenDirectionIndexID = -1;
 	this->citizenNameID = -1;
 	this->paletteIndicesInstID = -1;
 	this->itemInventoryInstID = -1;

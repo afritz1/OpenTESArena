@@ -79,6 +79,7 @@ enum class EntityEnemyBehaviorStateType
 struct EntityEnemyBehaviorState
 {
 	EntityEnemyBehaviorStateType type;
+	double secondsTillNextCreatureSound;
 
 	EntityEnemyBehaviorState();
 };
@@ -93,7 +94,7 @@ enum class EntityCitizenBehaviorStateType
 struct EntityCitizenBehaviorState
 {
 	EntityCitizenBehaviorStateType type;
-	uint8_t directionIndex; // Cardinal direction, must be remembered when talking to player so they can continue afterwards.
+	int8_t directionIndex; // Cardinal direction, must be remembered when talking to player so they can continue afterwards.
 
 	EntityCitizenBehaviorState();
 };
@@ -112,6 +113,10 @@ struct EntityBehaviorState
 
 	void initEnemy();
 	void initCitizen();
+
+	bool isCreature() const;
+	bool isHumanEnemy() const;
+	bool isCitizen() const;
 };
 
 struct EntityCombatState
@@ -152,8 +157,6 @@ public:
 	using EntityAnimationInstancePool = KeyValuePool<EntityAnimationInstanceID, EntityAnimationInstance>;
 	using EntityBehaviorStatePool = KeyValuePool<EntityBehaviorStateID, EntityBehaviorState>;
 	using EntityCombatStatePool = KeyValuePool<EntityCombatStateID, EntityCombatState>;
-	using EntityCreatureSoundPool = KeyValuePool<EntityCreatureSoundInstanceID, double>;
-	using EntityCitizenDirectionIndexPool = KeyValuePool<EntityCitizenDirectionIndexID, int8_t>;
 	using EntityCitizenNamePool = KeyValuePool<EntityCitizenNameID, EntityCitizenName>;
 	using EntityPaletteIndicesInstancePool = KeyValuePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
 	using EntityItemInventoryInstancePool = KeyValuePool<EntityItemInventoryInstanceID, ItemInventory>;
@@ -167,8 +170,6 @@ public:
 	EntityAnimationInstancePool animInsts;
 	EntityBehaviorStatePool behaviorStates;
 	EntityCombatStatePool combatStates;
-	EntityCreatureSoundPool creatureSoundInsts;
-	EntityCitizenDirectionIndexPool citizenDirectionIndices;
 	EntityCitizenNamePool citizenNames;
 	EntityPaletteIndicesInstancePool paletteIndices;
 	EntityItemInventoryInstancePool itemInventories;

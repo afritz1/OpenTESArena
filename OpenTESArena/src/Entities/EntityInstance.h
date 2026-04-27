@@ -12,8 +12,6 @@ using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
 using EntityBehaviorStateID = int;
 using EntityCombatStateID = int;
-using EntityCreatureSoundInstanceID = int;
-using EntityCitizenDirectionIndexID = int;
 using EntityCitizenNameID = int;
 using EntityPaletteIndicesInstanceID = int;
 using EntityItemInventoryInstanceID = int;
@@ -29,8 +27,6 @@ struct EntityInstance
 	EntityAnimationInstanceID animInstID;
 	EntityBehaviorStateID behaviorStateID;
 	EntityCombatStateID combatStateID;
-	EntityCreatureSoundInstanceID creatureSoundInstID; // @todo move to EntityEnemyBehaviorState
-	EntityCitizenDirectionIndexID citizenDirectionIndexID; // @todo move to EntityCitizenBehaviorState
 	EntityCitizenNameID citizenNameID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;
@@ -52,8 +48,6 @@ struct EntityInstance
 
 	// Whether the entity can be placed on raised platforms.
 	bool canUseElevatedPlatforms() const;
-
-	bool isCitizen() const;
 
 	bool hasInventory() const;
 

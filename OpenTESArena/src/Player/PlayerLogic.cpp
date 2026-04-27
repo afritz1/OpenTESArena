@@ -941,7 +941,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
 						}
 
-						if (hitEntityInst.isCitizen())
+						const EntityBehaviorState &hitEntityBehaviorState = entityChunkManager.behaviorStates.get(hitEntityInst.behaviorStateID);
+						if (hitEntityBehaviorState.isCitizen())
 						{
 							GameWorldUiController::onCitizenKilled(game);
 						}

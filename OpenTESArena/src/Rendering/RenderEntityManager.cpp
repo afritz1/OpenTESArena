@@ -283,7 +283,7 @@ void RenderEntityManager::loadMaterialsForChunkEntities(const EntityChunk &entit
 			loadedAnim = &newLoadedAnim;
 		}
 
-		if (entityInst.isCitizen())
+		if (entityInst.paletteIndicesInstID >= 0)
 		{
 			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
 			const auto paletteIndicesIter = std::find_if(this->paletteIndicesEntries.begin(), this->paletteIndicesEntries.end(),
@@ -434,7 +434,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 	for (const EntityInstanceID entityInstID : entityChunkManager.destroyedEntityIDs)
 	{
 		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
-		if (entityInst.isCitizen())
+		if (entityInst.paletteIndicesInstID >= 0)
 		{
 			const EntityPaletteIndicesInstanceID paletteIndicesInstID = entityInst.paletteIndicesInstID;
 
@@ -504,7 +504,7 @@ void RenderEntityManager::update(Span<const ChunkInt2> activeChunkPositions, Spa
 			const ObjectTextureID observedTextureIDs[] = { animDefIter->textureRefs[linearizedKeyframeIndex].get() };
 
 			RenderMaterialID materialID = -1;
-			if (entityInst.isCitizen())
+			if (entityInst.paletteIndicesInstID >= 0)
 			{
 				for (const RenderEntityPaletteIndicesEntry &paletteIndicesEntry : this->paletteIndicesEntries)
 				{

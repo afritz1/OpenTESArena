@@ -153,6 +153,7 @@ EntityInitInfo::EntityInitInfo()
 EntityEnemyBehaviorState::EntityEnemyBehaviorState()
 {
 	this->type = static_cast<EntityEnemyBehaviorStateType>(-1);
+	this->secondsTillNextCreatureSound = 0.0;
 }
 
 EntityCitizenBehaviorState::EntityCitizenBehaviorState()
@@ -170,6 +171,7 @@ void EntityBehaviorState::initEnemy()
 {
 	this->type = EntityBehaviorStateType::Enemy;
 	this->enemy.type = EntityEnemyBehaviorStateType::Idle;
+	this->enemy.secondsTillNextCreatureSound = std::numeric_limits<double>::infinity();
 }
 
 void EntityBehaviorState::initCitizen()
@@ -177,6 +179,21 @@ void EntityBehaviorState::initCitizen()
 	this->type = EntityBehaviorStateType::Citizen;
 	this->citizen.type = EntityCitizenBehaviorStateType::Idle;
 	this->citizen.directionIndex = 0;
+}
+
+bool EntityBehaviorState::isCreature() const
+{
+	return (this->type == EntityBehaviorStateType::Enemy) && !std::isinf(this->enemy.secondsTillNextCreatureSound);
+}
+
+bool EntityBehaviorState::isHumanEnemy() const
+{
+	return (this->type == EntityBehaviorStateType::Enemy) && std::isinf(this->enemy.secondsTillNextCreatureSound);
+}
+
+bool EntityBehaviorState::isCitizen() const
+{
+	return this->type == EntityBehaviorStateType::Citizen;
 }
 
 EntityCombatState::EntityCombatState()
@@ -336,12 +353,18 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
 		if (initInfo.citizenDirectionIndex.has_value())
 		{
-			// @todo provide direction index argument
 			behaviorState.initCitizen();
+			behaviorState.citizen.type = EntityCitizenBehaviorStateType::Moving;
+			behaviorState.citizen.directionIndex = *initInfo.citizenDirectionIndex;
 		}
 		else
 		{
 			behaviorState.initEnemy();
+
+			if (initInfo.hasCreatureSound)
+			{
+				behaviorState.enemy.secondsTillNextCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
+			}
 		}
 	}
 
@@ -368,18 +391,6 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 		const Double2 &direction = *initInfo.direction;
 		this->directions.get(entityInst.directionID) = direction;
-	}
-
-	if (initInfo.citizenDirectionIndex.has_value())
-	{
-		entityInst.citizenDirectionIndexID = this->citizenDirectionIndices.alloc();
-		if (entityInst.citizenDirectionIndexID < 0)
-		{
-			DebugLogError("Couldn't allocate EntityCitizenDirectionIndexID.");
-		}
-
-		const uint8_t citizenDirectionIndex = *initInfo.citizenDirectionIndex;
-		this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID) = citizenDirectionIndex;
 	}
 
 	if (initInfo.citizenName.has_value())
@@ -689,18 +700,6 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				}
 			}
 		}
-	}
-
-	if (initInfo.hasCreatureSound)
-	{
-		entityInst.creatureSoundInstID = this->creatureSoundInsts.alloc();
-		if (entityInst.creatureSoundInstID < 0)
-		{
-			DebugCrash("Couldn't allocate EntityCreatureSoundInstanceID.");
-		}
-
-		double &secondsTillNextCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
-		secondsTillNextCreatureSound = EntityUtils::nextCreatureSoundWaitSeconds(random);
 	}
 
 	if (initInfo.isLocked.has_value())
@@ -1021,7 +1020,7 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
 		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
 		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
-		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
+		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
@@ -1039,9 +1038,11 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 			DebugCrash("Couldn't get citizen walk state index.");
 		}
 
+		Double2 &entityDir = this->directions.get(entityInst.directionID);
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		VoxelDouble2 &entityDir = this->directions.get(entityInst.directionID);
-		int8_t &citizenDirIndex = this->citizenDirectionIndices.get(entityInst.citizenDirectionIndexID);
+		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
+		DebugAssert(behaviorState.type == EntityBehaviorStateType::Citizen);
+		int8_t &citizenDirIndex = behaviorState.citizen.directionIndex;
 		if (animInst.currentStateIndex == idleStateIndex)
 		{
 			const bool shouldChangeToWalking = !isPlayerWeaponSheathed || (distToPlayerSqr > ArenaCitizenUtils::IDLE_DISTANCE_REAL_SQR) || isPlayerMoving;
@@ -1196,7 +1197,7 @@ void EntityChunkManager::updateEnemyStates(double dt, const WorldDouble2 &player
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
 		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
 		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
-		const VoxelDouble2 dirToPlayer = playerPositionXZ - entityPositionXZ;
+		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
 
@@ -1288,10 +1289,18 @@ int EntityChunkManager::getCountInChunkWithCreatureSound(const ChunkInt2 &chunkP
 	for (const EntityInstanceID entityInstID : chunk.entityIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.creatureSoundInstID >= 0)
+		if (entityInst.behaviorStateID < 0)
 		{
-			count++;
+			continue;
 		}
+
+		const EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
+		if (!behaviorState.isCreature())
+		{
+			continue;
+		}
+
+		count++;
 	}
 
 	return count;
@@ -1312,10 +1321,18 @@ int EntityChunkManager::getCountInChunkWithCitizenDirection(const ChunkInt2 &chu
 	for (const EntityInstanceID entityInstID : chunk.entityIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.citizenDirectionIndexID >= 0)
+		if (entityInst.behaviorStateID < 0)
 		{
-			count++;
+			continue;
 		}
+
+		const EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
+		if (behaviorState.type != EntityBehaviorStateType::Citizen)
+		{
+			continue;
+		}
+
+		count++;
 	}
 
 	return count;
@@ -1387,7 +1404,8 @@ void EntityChunkManager::updateCreatureSounds(double dt, const WorldDouble3 &pla
 	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		if (entityInst.creatureSoundInstID < 0)
+		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
+		if (!behaviorState.isCreature())
 		{
 			continue;
 		}
@@ -1398,7 +1416,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, const WorldDouble3 &pla
 			continue;
 		}
 
-		double &secondsTillCreatureSound = this->creatureSoundInsts.get(entityInst.creatureSoundInstID);
+		double &secondsTillCreatureSound = behaviorState.enemy.secondsTillNextCreatureSound;
 		secondsTillCreatureSound -= dt;
 		if (secondsTillCreatureSound <= 0.0)
 		{
@@ -1801,16 +1819,6 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 		if (entityInst.combatStateID >= 0)
 		{
 			this->combatStates.free(entityInst.combatStateID);
-		}
-
-		if (entityInst.creatureSoundInstID >= 0)
-		{
-			this->creatureSoundInsts.free(entityInst.creatureSoundInstID);
-		}
-
-		if (entityInst.citizenDirectionIndexID >= 0)
-		{
-			this->citizenDirectionIndices.free(entityInst.citizenDirectionIndexID);
 		}
 
 		if (entityInst.citizenNameID >= 0)
