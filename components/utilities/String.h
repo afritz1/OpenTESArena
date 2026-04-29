@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <string>
+#include <type_traits>
 
 #include "Buffer.h"
 #include "Span.h"
@@ -83,6 +84,39 @@ namespace String
 	bool splitExpected(const std::string &str, Span<std::string> dst)
 	{
 		return String::splitExpected<T>(str, String::SPACE, dst);
+	}
+
+	template<typename T>
+	std::string join(char separator, Span<const T> values)
+	{
+		if (values.getCount() == 0)
+		{
+			return std::string();
+		}
+
+		std::string resultString;
+		if constexpr (std::is_same_v<std::decay_t<T>, std::string>)
+		{
+			resultString += values[0];
+
+			for (int i = 1; i < values.getCount(); i++)
+			{
+				resultString.push_back(separator);
+				resultString.append(values[i]);
+			}
+		}
+		else
+		{
+			resultString += std::to_string(values[0]);
+
+			for (int i = 1; i < values.getCount(); i++)
+			{
+				resultString.push_back(separator);
+				resultString.append(std::to_string(values[i]));
+			}
+		}
+
+		return resultString;
 	}
 
 	// Removes all whitespace from a string.
