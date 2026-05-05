@@ -1161,8 +1161,7 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 				}
 			}
 
-			// Integrate by delta time.
-			const VoxelDouble2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
+			const Double2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
 			const WorldDouble2 newEntityPositionXZ = entityPositionXZ + (entityVelocity * dt);
 			entityPosition.x = newEntityPositionXZ.x;
 			entityPosition.z = newEntityPositionXZ.y;
@@ -1200,9 +1199,112 @@ void EntityChunkManager::updateEnemyStates(double dt, const WorldDouble2 &player
 		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		const int currentAnimStateIndex = animInst.currentStateIndex;
 
-		// @todo simulate enemy AI and state changes
+		const std::optional<int> idleStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+		if (!idleStateIndex.has_value())
+		{
+			DebugCrash("Couldn't get enemy idle state index.");
+		}
 
+		const std::optional<int> walkStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+		if (!walkStateIndex.has_value())
+		{
+			DebugCrash("Couldn't get enemy walk state index.");
+		}
+
+		const std::optional<int> deathStateIndex = EntityUtils::tryGetDeathAnimStateIndex(animDef);
+		if (!deathStateIndex.has_value())
+		{
+			DebugCrash("Couldn't get enemy death state index.");
+		}
+
+		const bool isInDeathState = currentAnimStateIndex == *deathStateIndex; // @todo eventually this should check combatState.isInDeathState() but isDying isn't set by gameplay code yet due to existing bodyfall audio logic
+		if (isInDeathState)
+		{
+			continue;
+		}
+		
+		Double2 &entityDir = this->directions.get(entityInst.directionID);
+		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
+		DebugAssert(behaviorState.type == EntityBehaviorStateType::Enemy);
+		EntityEnemyBehaviorState &enemyBehaviorState = behaviorState.enemy;
+		const EntityEnemyBehaviorStateType prevEnemyBehaviorStateType = enemyBehaviorState.type;
+
+		constexpr double detectionDistance = 3.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
+		constexpr double attackDistance = 0.80; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
+		constexpr double detectionDistanceSqr = detectionDistance * detectionDistance;
+		constexpr double attackDistanceSqr = attackDistance * attackDistance;
+		const bool isCloseEnoughToDetectPlayer = distToPlayerSqr <= detectionDistanceSqr; // @todo add "isFarEnoughToStopDetectPlayer"
+		const bool isCloseEnoughToAttackPlayer = distToPlayerSqr <= attackDistanceSqr; // @todo add "isFarEnoughToStopAttackPlayer"
+
+		if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::Idle)
+		{
+			if (isCloseEnoughToDetectPlayer)
+			{
+				enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
+				animInst.setStateIndex(*walkStateIndex);
+			}
+		}
+		else if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::MovingToPlayer)
+		{
+			if (isCloseEnoughToDetectPlayer)
+			{
+				entityDir = dirToPlayer;
+
+				bool isNextPositionValid = true;
+
+				// @todo check if chasm. maybe don't have to check walls because the collider will just hit it?
+
+				if (isNextPositionValid)
+				{
+					if (!isCloseEnoughToAttackPlayer)
+					{
+						if (currentAnimStateIndex != *walkStateIndex)
+						{
+							animInst.setStateIndex(*walkStateIndex);
+						}
+
+						constexpr double entityMoveSpeed = 1.50;
+						const Double2 entityVelocity = entityDir * entityMoveSpeed;
+						const WorldDouble2 newEntityPositionXZ = entityPositionXZ + (entityVelocity * dt);
+						entityPosition.x = newEntityPositionXZ.x;
+						entityPosition.z = newEntityPositionXZ.y;
+						curEntityChunkPos = VoxelUtils::worldPointToChunk(newEntityPositionXZ);
+
+						const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+						DebugAssert(!physicsBodyID.IsInvalid());
+
+						// @todo ideally Jolt would not let colliders overlap. maybe have to simulate with kinematics?
+						const JPH::RVec3 oldBodyPosition = bodyInterface.GetPosition(physicsBodyID);
+						const JPH::RVec3 newBodyPosition(
+							static_cast<float>(newEntityPositionXZ.x),
+							static_cast<float>(oldBodyPosition.GetY()),
+							static_cast<float>(newEntityPositionXZ.y));
+						bodyInterface.SetPosition(physicsBodyID, newBodyPosition, JPH::EActivation::Activate);
+					}
+					else
+					{
+						if (currentAnimStateIndex != *idleStateIndex)
+						{
+							animInst.setStateIndex(*idleStateIndex);
+						}
+					}
+				}
+			}
+			else
+			{
+				enemyBehaviorState.type = EntityEnemyBehaviorStateType::Idle;
+				animInst.setStateIndex(*idleStateIndex);
+			}
+		}
+		else
+		{
+			DebugNotImplemented();
+		}
 
 		if (curEntityChunkPos != prevEntityChunkPos)
 		{
@@ -1535,6 +1637,7 @@ void EntityChunkManager::updateEnemyDeathStates(JPH::PhysicsSystem &physicsSyste
 		}
 		else
 		{
+			// @todo technically they should be set dying by gameplay code (like when the player's attack is applied). This is just audio code which maybe should rely on an animation state change trigger?
 			if (!combatState.isDying)
 			{
 				combatState.isDying = true;

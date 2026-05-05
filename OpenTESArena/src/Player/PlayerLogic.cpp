@@ -932,6 +932,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityAnimDef);
 						const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
 
+						// @todo this should set combat state isDying/isDead instead of relying on EntityChunkManager update
+
 						if (hitEntityHasDeathAnim)
 						{
 							hitEntityAnimInst.setStateIndex(*hitEntityDeathAnimStateIndex);
