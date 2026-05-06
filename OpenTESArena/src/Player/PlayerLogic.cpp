@@ -905,7 +905,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 				const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
 				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.animInsts.get(hitEntityInst.animInstID);
 
-				const EntityCombatState *hitEntityCombatState = nullptr;
+				EntityCombatState *hitEntityCombatState = nullptr;
 				bool canHitEntityBeKilled = false;
 				if (hitEntityInst.canBeKilledInCombat())
 				{
@@ -929,19 +929,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 					if (isHitEntityHpAtZero)
 					{
-						const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityAnimDef);
-						const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
-
-						// @todo this should set combat state isDying/isDead instead of relying on EntityChunkManager update
-
-						if (hitEntityHasDeathAnim)
-						{
-							hitEntityAnimInst.setStateIndex(*hitEntityDeathAnimStateIndex);
-						}
-						else
-						{
-							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
-						}
+						hitEntityCombatState->isDying = true;
 
 						const EntityBehaviorState &hitEntityBehaviorState = entityChunkManager.behaviorStates.get(hitEntityInst.behaviorStateID);
 						if (hitEntityBehaviorState.isCitizen())

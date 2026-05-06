@@ -20,6 +20,8 @@ struct EntityAnimationInstance
 
 	EntityAnimationInstance();
 
+	bool isFinished() const;
+
 	void addState(double targetSeconds, bool isLooping);
 
 	void setStateIndex(int index);

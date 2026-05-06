@@ -121,7 +121,7 @@ struct EntityBehaviorState
 
 struct EntityCombatState
 {
-	bool isDying;
+	bool isDying; // Begins their death animation (if any) and removal from play.
 	bool isDead;
 	bool hasBeenLootedBefore; // For awarding gold from creature corpse.
 
@@ -222,7 +222,7 @@ private:
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
-	void updateEnemyDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
+	void updateDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
 	void updateVfx();
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;

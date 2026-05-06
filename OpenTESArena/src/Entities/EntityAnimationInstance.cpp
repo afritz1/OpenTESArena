@@ -10,6 +10,11 @@ EntityAnimationInstance::EntityAnimationInstance()
 	this->clear();
 }
 
+bool EntityAnimationInstance::isFinished() const
+{
+	return !this->isLooping && (this->progressPercent == 1.0);
+}
+
 void EntityAnimationInstance::addState(double targetSeconds, bool isLooping)
 {
 	if (this->stateCount >= MAX_STATES)

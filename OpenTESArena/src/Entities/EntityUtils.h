@@ -39,7 +39,6 @@ namespace EntityUtils
 
 	bool hasCollision(const EntityDefinition &entityDef);
 	bool canDie(const EntityDefinition &entityDef);
-	std::optional<int> tryGetDeathAnimStateIndex(const EntityAnimationDefinition &animDef);
 	bool leavesCorpse(const EntityDefinition &entityDef);
 
 	// Returns the entity definition's light radius, if any.

@@ -1216,7 +1216,7 @@ void EntityChunkManager::updateEnemyStates(double dt, const WorldDouble2 &player
 			DebugCrash("Couldn't get enemy walk state index.");
 		}
 
-		const std::optional<int> deathStateIndex = EntityUtils::tryGetDeathAnimStateIndex(animDef);
+		const std::optional<int> deathStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
 		if (!deathStateIndex.has_value())
 		{
 			DebugCrash("Couldn't get enemy death state index.");
@@ -1580,45 +1580,63 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 	}
 }
 
-void EntityChunkManager::updateEnemyDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager)
+void EntityChunkManager::updateDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-	// @todo: just check an EntityChunkManager::dyingEntities list instead, added to when player swing kills them
-
+	// @todo citizens should actually leave a corpse but it's removed a moment afterwards when guards are called
+	// @todo maybe split this loop into citizenEntityInstIDs and enemyEntityInstIDs
+	
 	for (EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstanceID entityInstID = entityInst.instanceID;
-		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityDefinitionType entityDefType = entityDef.type;
 		if (!entityInst.canBeKilledInCombat())
 		{
 			continue;
 		}
 
-		const std::optional<int> deathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(entityDef.animDef);
+		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		if (!combatState.isDying)
+		{
+			continue;
+		}
+
+		const EntityInstanceID entityInstID = entityInst.instanceID;
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+		const std::optional<int> deathAnimStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
 		if (!deathAnimStateIndex.has_value())
 		{
+			// No death animation.
+			this->queueEntityDestroy(entityInstID, true);
 			continue;
 		}
 
+		const bool entityLeavesCorpse = EntityUtils::leavesCorpse(entityDef);
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
-		if (!isInDeathAnimState)
+		const bool inDeathAnim = animInst.currentStateIndex == *deathAnimStateIndex;
+		if (!inDeathAnim)
 		{
+			// Start death animation.
+			animInst.setStateIndex(*deathAnimStateIndex);
+
+			if (entityLeavesCorpse)
+			{
+				const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+				audioManager.playSoundOneShot(ArenaSoundName::BodyFall, entityPosition);
+			}
+
 			continue;
 		}
 
-		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
-		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
-		if (isDeathAnimComplete)
+		if (animInst.isFinished())
 		{
 			if (!combatState.isDead)
 			{
+				// Entity is now a corpse.
 				combatState.isDying = false;
 				combatState.isDead = true;
 
-				if (EntityUtils::leavesCorpse(entityDef))
+				if (entityLeavesCorpse)
 				{
 					JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 					if (!physicsBodyID.IsInvalid())
@@ -1631,21 +1649,6 @@ void EntityChunkManager::updateEnemyDeathStates(JPH::PhysicsSystem &physicsSyste
 				else
 				{
 					this->queueEntityDestroy(entityInstID, true);
-					// @todo remove from dyingEntities list once that is a thing
-				}
-			}
-		}
-		else
-		{
-			// @todo technically they should be set dying by gameplay code (like when the player's attack is applied). This is just audio code which maybe should rely on an animation state change trigger?
-			if (!combatState.isDying)
-			{
-				combatState.isDying = true;
-
-				if (EntityUtils::leavesCorpse(entityDef))
-				{
-					const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-					audioManager.playSoundOneShot(ArenaSoundName::BodyFall, entityPosition);
 				}
 			}
 		}
@@ -1665,8 +1668,7 @@ void EntityChunkManager::updateVfx()
 		}
 
 		const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		const bool isVfxAnimComplete = animInst.progressPercent == 1.0;
-		if (isVfxAnimComplete)
+		if (animInst.isFinished())
 		{
 			this->queueEntityDestroy(entityInstID, true); // @todo shouldn't need to notify chunk, it should just be a loose entity in entitychunkmanager
 		}
@@ -1828,7 +1830,7 @@ void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPosi
 	this->updateCitizenStates(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
 	this->updateEnemyStates(dt, playerPositionXZ, physicsSystem, voxelChunkManager);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
-	this->updateEnemyDeathStates(physicsSystem, audioManager);
+	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx();
 }
 
