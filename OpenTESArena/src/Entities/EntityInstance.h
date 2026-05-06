@@ -40,8 +40,8 @@ struct EntityInstance
 	// All entities at least have an instance ID, definition, position, bounding box, and render transform.
 	void init(EntityInstanceID instanceID, EntityDefID defID, EntityPositionID positionID, EntityBoundingBoxID bboxID, int transformHeapIndex, int transformIndex);
 
-	// Whether the entity is capable of moving + looking.
-	bool isDynamic() const;
+	// Whether the entity is capable of moving and looking.
+	bool isTransformStatic() const;
 
 	bool canAcceptCombatHits() const;
 	bool canBeKilledInCombat() const;

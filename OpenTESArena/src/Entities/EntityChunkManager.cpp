@@ -1453,7 +1453,7 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 
 	// Get animation angle based on relative facing to camera. Static entities always face the camera.
 	Radians animAngle = 0.0;
-	if (entityInst.isDynamic())
+	if (!entityInst.isTransformStatic())
 	{
 		const Double2 &entityDir = this->directions.get(entityInst.directionID);
 		const Double2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
