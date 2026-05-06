@@ -37,7 +37,7 @@
 
 namespace
 {
-	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isCharacter, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -54,7 +54,7 @@ namespace
 		JPH::ShapeSettings::ShapeResult capsuleShapeResult = capsuleShapeSettings.Create();
 		if (capsuleShapeResult.HasError())
 		{
-			DebugLogError("Couldn't create Jolt capsule shape settings: " + std::string(capsuleShapeResult.GetError().c_str()));
+			DebugLogErrorFormat("Couldn't create Jolt capsule shape settings: %s", capsuleShapeResult.GetError().c_str());
 			return false;
 		}
 
@@ -68,11 +68,18 @@ namespace
 		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, capsuleObjectLayer);
 		capsuleSettings.mIsSensor = isSensor;
 
+		if (isCharacter) // Enemies/citizens.
+		{
+			capsuleSettings.mAllowSleeping = false;
+			capsuleSettings.mLinearDamping = 0.0f;
+			capsuleSettings.mGravityFactor = 0.0f;
+		}
+
 		const JPH::Body *capsule = bodyInterface.CreateBody(capsuleSettings);
 		if (capsule == nullptr)
 		{
 			const uint32_t totalBodyCount = physicsSystem.GetNumBodies();
-			DebugLogError("Couldn't create Jolt body for entity (total: " + std::to_string(totalBodyCount) + ").");
+			DebugLogErrorFormat("Couldn't create Jolt body for entity (total: %d).", totalBodyCount);
 			return false;
 		}
 
@@ -337,12 +344,12 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	animInst.setStateIndex(initInfo.initialAnimStateIndex);
 
-	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+	const bool hasBehavior = initInfo.canBeKilled;
+	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, hasBehavior, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 	{
 		DebugLogError("Couldn't allocate entity Jolt physics body.");
 	}
 
-	const bool hasBehavior = initInfo.canBeKilled;
 	if (hasBehavior)
 	{
 		entityInst.behaviorStateID = this->behaviorStates.alloc();
