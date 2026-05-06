@@ -50,10 +50,6 @@ namespace EntityUtils
 	// Returns whether the entity definition has a display name.
 	bool tryGetDisplayName(const EntityDefinition &entityDef, const CharacterClassLibrary &charClassLibrary, std::string *outName);
 
-	// Arbitrary value for how far away a creature can be heard from.
-	// @todo: make this be part of the player, not creatures.
-	constexpr double HearingDistance = 6.0;
-
 	bool withinHearingDistance(const WorldDouble3 &listenerPosition, const WorldDouble3 &soundPosition);
 
 	double nextCreatureSoundWaitSeconds(Random &random);

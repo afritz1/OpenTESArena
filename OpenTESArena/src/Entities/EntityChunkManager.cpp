@@ -20,6 +20,7 @@
 #include "../Math/RandomUtils.h"
 #include "../Math/Random.h"
 #include "../Player/Player.h"
+#include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
@@ -1525,7 +1526,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, const WorldDouble3 &pla
 			const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 			const BoundingBox3D &entityBBox = this->boundingBoxes.get(entityInst.bboxID);
 			const WorldDouble3 entitySoundPosition(entityPosition.x, entityPosition.y + entityBBox.halfHeight, entityPosition.z);
-			if (EntityUtils::withinHearingDistance(playerPosition, entitySoundPosition))
+			if (PlayerLogic::canHearCreatureSound(playerPosition, entitySoundPosition))
 			{
 				// @todo: store some kind of sound def ID w/ the secondsTillCreatureSound instead of generating the sound filename here.
 				const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID);

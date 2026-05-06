@@ -350,13 +350,6 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const Cha
 	return true;
 }
 
-bool EntityUtils::withinHearingDistance(const WorldDouble3 &listenerPosition, const WorldDouble3 &soundPosition)
-{
-	const Double3 diff = soundPosition - listenerPosition;
-	constexpr double hearingDistanceSqr = EntityUtils::HearingDistance * EntityUtils::HearingDistance;
-	return diff.lengthSquared() < hearingDistanceSqr;
-}
-
 double EntityUtils::nextCreatureSoundWaitSeconds(Random &random)
 {
 	// Arbitrary amount of time.
