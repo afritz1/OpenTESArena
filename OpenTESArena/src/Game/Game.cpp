@@ -917,12 +917,13 @@ void Game::loop()
 				this->gameState.tickPlayerStamina(clampedDeltaTime, *this);
 				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
-				this->gameState.tickEntities(clampedDeltaTime, *this);
 				this->gameState.tickCollision(clampedDeltaTime, this->physicsSystem, *this);
 
 				this->player.prePhysicsStep(clampedDeltaTime, *this);
+				this->gameState.tickEntitiesPrePhysicsStep(clampedDeltaTime, *this);
 				this->physicsSystem.Update(static_cast<float>(clampedDeltaTime), frameTimer.physicsSteps, &physicsAllocator, &physicsJobThreadPool);
 				this->player.postPhysicsStep(clampedDeltaTime, *this);
+				this->gameState.tickEntitiesPostPhysicsStep(*this);
 
 				if (this->gameState.hasPendingLevelTransitionCalculation())
 				{

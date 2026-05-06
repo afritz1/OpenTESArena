@@ -1202,8 +1202,6 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
-		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
 		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
@@ -1259,6 +1257,9 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		}
 		else if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::MovingToPlayer)
 		{
+			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+			DebugAssert(!physicsBodyID.IsInvalid());
+
 			if (isCloseEnoughToDetectPlayer)
 			{
 				entityDir = dirToPlayer;
@@ -1277,28 +1278,17 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 						}
 
 						constexpr double entityMoveSpeed = 1.50;
-						const Double2 entityVelocity = entityDir * entityMoveSpeed;
-						const WorldDouble2 newEntityPositionXZ = entityPositionXZ + (entityVelocity * dt);
-						entityPosition.x = newEntityPositionXZ.x;
-						entityPosition.z = newEntityPositionXZ.y;
-						curEntityChunkPos = VoxelUtils::worldPointToChunk(newEntityPositionXZ);
+						const Double2 entityVelocity = entityDir * entityMoveSpeed;						
 
-						const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
-						DebugAssert(!physicsBodyID.IsInvalid());
-
-						// @todo ideally Jolt would not let colliders overlap. maybe have to simulate with kinematics?
-						const JPH::RVec3 oldBodyPosition = bodyInterface.GetPosition(physicsBodyID);
-						const JPH::RVec3 newBodyPosition(
-							static_cast<float>(newEntityPositionXZ.x),
-							static_cast<float>(oldBodyPosition.GetY()),
-							static_cast<float>(newEntityPositionXZ.y));
-						bodyInterface.SetPosition(physicsBodyID, newBodyPosition, JPH::EActivation::Activate);
+						const JPH::RVec3 physicsVelocity(static_cast<float>(entityVelocity.x), 0.0f, static_cast<float>(entityVelocity.y));
+						bodyInterface.SetLinearVelocity(physicsBodyID, physicsVelocity);
 					}
 					else
 					{
 						if (currentAnimStateIndex != *idleStateIndex)
 						{
 							animInst.setStateIndex(*idleStateIndex);
+							bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
 						}
 					}
 				}
@@ -1307,16 +1297,12 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 			{
 				enemyBehaviorState.type = EntityEnemyBehaviorStateType::Idle;
 				animInst.setStateIndex(*idleStateIndex);
+				bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
 			}
 		}
 		else
 		{
-			DebugNotImplemented();
-		}
-
-		if (curEntityChunkPos != prevEntityChunkPos)
-		{
-			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(prevEnemyBehaviorStateType)));
 		}
 	}
 }
@@ -1758,7 +1744,7 @@ void EntityChunkManager::setCitizenBehaviorState(EntityInstanceID id, EntityCiti
 	}
 }
 
-void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
+void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	Span<const ChunkInt2> freedChunkPositions, const Player &player, const LevelDefinition *activeLevelDef,
 	const LevelInfoDefinition *activeLevelInfoDef, const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
 	Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs, const EntityGenInfo &entityGenInfo,
@@ -1840,6 +1826,48 @@ void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPosi
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx();
+}
+
+void EntityChunkManager::updatePostPhysicsStep(JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
+	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
+	{
+		EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		if (combatState.isInDeathState())
+		{
+			continue;
+		}
+
+		const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+		const JPH::RVec3 physicsPosition = bodyInterface.GetPosition(physicsBodyID);
+		const JPH::ShapeRefC physicsShape = bodyInterface.GetShape(physicsBodyID);
+		const JPH::AABox physicsColliderBBox = physicsShape->GetLocalBounds();
+		const float physicsColliderHeight = physicsColliderBBox.GetSize().GetY();
+		const float physicsColliderCenterToFeetDistance = physicsColliderHeight * 0.50f;
+
+		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		const WorldDouble3 oldPosition = entityPosition;
+		const WorldDouble3 newPosition(
+			static_cast<SNDouble>(physicsPosition.GetX()),
+			static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
+			static_cast<WEDouble>(physicsPosition.GetZ()));
+		entityPosition = newPosition;
+
+		const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
+		const WorldDouble2 newPositionXZ = newPosition.getXZ();
+
+		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
+		const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
+		if (curEntityChunkPos != prevEntityChunkPos)
+		{
+			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
+		}
+	}
+
+	// @todo add citizens here once they are using linear velocity instead of SetPosition()
 }
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)

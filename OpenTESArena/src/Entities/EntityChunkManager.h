@@ -242,7 +242,7 @@ public:
 	void setEnemyBehaviorState(EntityInstanceID id, EntityEnemyBehaviorStateType stateType);
 	void setCitizenBehaviorState(EntityInstanceID id, EntityCitizenBehaviorStateType stateType);
 
-	void update(double dt, Span<const ChunkInt2> activeChunkPositions,
+	void updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions,
 		Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 		const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
@@ -250,6 +250,8 @@ public:
 		const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+
+	void updatePostPhysicsStep(JPH::PhysicsSystem &physicsSystem);
 
 	// Prepares an entity for destruction later this frame, optionally notifying its chunk to remove its reference.
 	// Don't need to notify the chunk if the chunk is being freed this frame.

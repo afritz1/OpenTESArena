@@ -168,7 +168,8 @@ public:
 	void tickPlayerStamina(double dt, Game &game);
 	void tickPlayerAttack(double dt, Game &game);
 	void tickVoxels(double dt, Game &game);
-	void tickEntities(double dt, Game &game);
+	void tickEntitiesPrePhysicsStep(double dt, Game &game);
+	void tickEntitiesPostPhysicsStep(Game &game);
 	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(double dt, const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game);
