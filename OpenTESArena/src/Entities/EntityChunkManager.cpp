@@ -1008,7 +1008,7 @@ void EntityChunkManager::queueEntityTransfer(EntityInstanceID entityInstID, Chun
 	}
 }
 
-void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
+void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 	Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
@@ -1185,7 +1185,7 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 	}
 }
 
-void EntityChunkManager::updateEnemyStates(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
+void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -1827,8 +1827,8 @@ void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPosi
 		animInst.update(dt);
 	}
 
-	this->updateCitizenStates(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
-	this->updateEnemyStates(dt, playerPositionXZ, physicsSystem, voxelChunkManager);
+	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
+	this->updateEnemyBehaviors(dt, playerPositionXZ, physicsSystem, voxelChunkManager);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx();

@@ -214,10 +214,10 @@ private:
 
 	void queueEntityTransfer(EntityInstanceID entityInstID, ChunkInt2 prevChunkPos, ChunkInt2 newChunkPos);
 
-	void updateCitizenStates(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
+	void updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
-	void updateEnemyStates(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
+	void updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
