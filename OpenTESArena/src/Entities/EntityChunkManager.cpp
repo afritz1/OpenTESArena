@@ -136,6 +136,12 @@ namespace
 		const double shapeYPos = voxelShapeDef.box.yOffset + voxelShapeDef.box.height;
 		return MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}
+
+	double GetEnemyNextWeaponSwingSeconds(Random &random)
+	{
+		// Arbitrary timing, tbd difficulty settings
+		return random.nextReal() * 0.75;
+	}
 }
 
 EntityCitizenName::EntityCitizenName(const char *name)
@@ -162,6 +168,7 @@ EntityEnemyBehaviorState::EntityEnemyBehaviorState()
 {
 	this->type = static_cast<EntityEnemyBehaviorStateType>(-1);
 	this->secondsTillNextCreatureSound = 0.0;
+	this->secondsTillNextAttack = 0.0;
 }
 
 EntityCitizenBehaviorState::EntityCitizenBehaviorState()
@@ -1193,7 +1200,8 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 	}
 }
 
-void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
+void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, Player &player, Random &random,
+	JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -1227,6 +1235,12 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		{
 			DebugCrash("Couldn't get enemy walk state index.");
 		}
+
+		const std::optional<int> attackStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_ATTACK.c_str());
+		if (!attackStateIndex.has_value())
+		{
+			DebugCrash("Couldn't get enemy attack state index.");
+		}
 		
 		Double2 &entityDir = this->directions.get(entityInst.directionID);
 		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
@@ -1243,11 +1257,13 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 
 		if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::Idle)
 		{
-			if (isCloseEnoughToDetectPlayer)
+			if (!isCloseEnoughToDetectPlayer)
 			{
-				enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
-				animInst.setStateIndex(*walkStateIndex);
+				continue;
 			}
+
+			enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
+			animInst.setStateIndex(*walkStateIndex);
 		}
 		else if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::MovingToPlayer)
 		{
@@ -1290,6 +1306,8 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 				continue;
 			}
 
+			// @todo they currently get stuck attempting to move into a chasm even when player is close enough to attack
+
 			if (!isCloseEnoughToAttackPlayer)
 			{
 				if (currentAnimStateIndex != *walkStateIndex)
@@ -1302,14 +1320,67 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 				continue;
 			}
 
-			if (currentAnimStateIndex != *idleStateIndex)
+			enemyBehaviorState.type = EntityEnemyBehaviorStateType::AttackPlayer;
+			enemyBehaviorState.secondsTillNextAttack = GetEnemyNextWeaponSwingSeconds(random);
+			animInst.setStateIndex(*idleStateIndex);
+			bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+		}
+		else if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::AttackPlayer)
+		{
+			entityDir = dirToPlayer;
+
+			if (currentAnimStateIndex != *attackStateIndex)
 			{
-				animInst.setStateIndex(*idleStateIndex);
-				bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+				if (!isCloseEnoughToAttackPlayer)
+				{
+					enemyBehaviorState.secondsTillNextAttack = 0.0;
+					enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
+					animInst.setStateIndex(*walkStateIndex);
+					continue;
+				}
+
+				enemyBehaviorState.secondsTillNextAttack -= dt;
+				if (enemyBehaviorState.secondsTillNextAttack > 0.0)
+				{
+					continue;
+				}
+
+				enemyBehaviorState.secondsTillNextAttack = 0.0;
+				animInst.setStateIndex(*attackStateIndex);
+				continue;
 			}
 
-			// @todo the goal of this state is to get close enough to the player to attack them
-			// @todo set random attack seconds and once that time is hit, change to attack animation
+			const bool isHitAllowed = animInst.isFinished(); // @todo check if > 0.50 progress and check !hasAttemptedHit
+			if (isHitAllowed)
+			{
+				// @todo set hasAttemptedHit = true
+
+				if (isCloseEnoughToAttackPlayer)
+				{
+					const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
+					player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
+					
+					// @todo audio trigger, maybe want to set a bool true here and do after the enemy loop? or maybe we want every hit to play (3d position of each source matters for gameplay)
+				}
+			}
+
+			const bool isSwingFinished = animInst.isFinished();
+			if (!isSwingFinished)
+			{
+				continue;
+			}
+
+			if (!isCloseEnoughToAttackPlayer)
+			{
+				enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
+				animInst.setStateIndex(*walkStateIndex);
+				continue;
+			}
+
+			enemyBehaviorState.secondsTillNextAttack = GetEnemyNextWeaponSwingSeconds(random);
+			animInst.setStateIndex(*idleStateIndex);
+
+			// @todo set hasAttemptedHit = false
 		}
 		else
 		{
@@ -1756,11 +1827,11 @@ void EntityChunkManager::setCitizenBehaviorState(EntityInstanceID id, EntityCiti
 }
 
 void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
-	Span<const ChunkInt2> freedChunkPositions, const Player &player, const LevelDefinition *activeLevelDef,
-	const LevelInfoDefinition *activeLevelInfoDef, const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
-	Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs, const EntityGenInfo &entityGenInfo,
-	const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager,
-	AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
+	Span<const ChunkInt2> freedChunkPositions, Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs, Span<const int> levelInfoDefIndices,
+	Span<const LevelInfoDefinition> levelInfoDefs, const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
+	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
@@ -1833,7 +1904,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	}
 
 	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
-	this->updateEnemyBehaviors(dt, playerPositionXZ, physicsSystem, voxelChunkManager);
+	this->updateEnemyBehaviors(dt, playerPositionXZ, player, random, physicsSystem, voxelChunkManager);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx();

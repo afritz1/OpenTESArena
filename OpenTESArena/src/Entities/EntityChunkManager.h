@@ -73,13 +73,15 @@ enum class EntityBehaviorStateType
 enum class EntityEnemyBehaviorStateType
 {
 	Idle,
-	MovingToPlayer
+	MovingToPlayer,
+	AttackPlayer
 };
 
 struct EntityEnemyBehaviorState
 {
 	EntityEnemyBehaviorStateType type;
 	double secondsTillNextCreatureSound;
+	double secondsTillNextAttack;
 
 	EntityEnemyBehaviorState();
 };
@@ -217,7 +219,7 @@ private:
 	void updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
-	void updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
+	void updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, Player &player, Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
@@ -244,7 +246,7 @@ public:
 
 	void updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions,
 		Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
-		const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+		Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 		const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
 		Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs,
 		const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,

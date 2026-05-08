@@ -956,7 +956,7 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 
-	const Player &player = game.player;
+	Player &player = game.player;
 
 	const MapDefinition &mapDef = this->getActiveMapDef();
 	const MapType mapType = mapDef.getMapType();
