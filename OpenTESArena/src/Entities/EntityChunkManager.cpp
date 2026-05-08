@@ -169,6 +169,7 @@ EntityEnemyBehaviorState::EntityEnemyBehaviorState()
 	this->type = static_cast<EntityEnemyBehaviorStateType>(-1);
 	this->secondsTillNextCreatureSound = 0.0;
 	this->secondsTillNextAttack = 0.0;
+	this->hasAttemptedHit = false;
 }
 
 EntityCitizenBehaviorState::EntityCitizenBehaviorState()
@@ -1201,7 +1202,7 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 }
 
 void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, Player &player, Random &random,
-	JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
+	JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -1346,21 +1347,31 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 				}
 
 				enemyBehaviorState.secondsTillNextAttack = 0.0;
+				enemyBehaviorState.hasAttemptedHit = false;
 				animInst.setStateIndex(*attackStateIndex);
 				continue;
 			}
 
-			const bool isHitAllowed = animInst.isFinished(); // @todo check if > 0.50 progress and check !hasAttemptedHit
+			const bool isHitAllowed = !enemyBehaviorState.hasAttemptedHit && (animInst.progressPercent >= 0.50);
 			if (isHitAllowed)
 			{
-				// @todo set hasAttemptedHit = true
+				enemyBehaviorState.hasAttemptedHit = true;
 
 				if (isCloseEnoughToAttackPlayer)
 				{
-					const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
-					player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
-					
-					// @todo audio trigger, maybe want to set a bool true here and do after the enemy loop? or maybe we want every hit to play (3d position of each source matters for gameplay)
+					const bool isPlayerHit = random.nextBool();
+
+					if (isPlayerHit)
+					{
+						const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
+						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
+
+						audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);
+					}
+					else
+					{
+						audioManager.playSoundOneShot(ArenaSoundName::Clank);
+					}
 				}
 			}
 
@@ -1373,14 +1384,14 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 			if (!isCloseEnoughToAttackPlayer)
 			{
 				enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
+				enemyBehaviorState.hasAttemptedHit = false;
 				animInst.setStateIndex(*walkStateIndex);
 				continue;
 			}
 
 			enemyBehaviorState.secondsTillNextAttack = GetEnemyNextWeaponSwingSeconds(random);
+			enemyBehaviorState.hasAttemptedHit = false;
 			animInst.setStateIndex(*idleStateIndex);
-
-			// @todo set hasAttemptedHit = false
 		}
 		else
 		{
@@ -1904,7 +1915,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	}
 
 	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
-	this->updateEnemyBehaviors(dt, playerPositionXZ, player, random, physicsSystem, voxelChunkManager);
+	this->updateEnemyBehaviors(dt, playerPositionXZ, player, random, physicsSystem, audioManager, voxelChunkManager);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx();
