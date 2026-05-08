@@ -1260,45 +1260,62 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 			DebugAssert(!physicsBodyID.IsInvalid());
 
-			if (isCloseEnoughToDetectPlayer)
-			{
-				entityDir = dirToPlayer;
-
-				bool isNextPositionValid = true;
-
-				// @todo check if chasm. maybe don't have to check walls because the collider will just hit it?
-
-				if (isNextPositionValid)
-				{
-					if (!isCloseEnoughToAttackPlayer)
-					{
-						if (currentAnimStateIndex != *walkStateIndex)
-						{
-							animInst.setStateIndex(*walkStateIndex);
-						}
-
-						constexpr double entityMoveSpeed = 1.50;
-						const Double2 entityVelocity = entityDir * entityMoveSpeed;						
-
-						const JPH::RVec3 physicsVelocity(static_cast<float>(entityVelocity.x), 0.0f, static_cast<float>(entityVelocity.y));
-						bodyInterface.SetLinearVelocity(physicsBodyID, physicsVelocity);
-					}
-					else
-					{
-						if (currentAnimStateIndex != *idleStateIndex)
-						{
-							animInst.setStateIndex(*idleStateIndex);
-							bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
-						}
-					}
-				}
-			}
-			else
+			if (!isCloseEnoughToDetectPlayer)
 			{
 				enemyBehaviorState.type = EntityEnemyBehaviorStateType::Idle;
 				animInst.setStateIndex(*idleStateIndex);
 				bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+				continue;
 			}
+
+			entityDir = dirToPlayer;
+
+			constexpr double entityMoveSpeed = 1.50;
+			const Double2 entityVelocity = entityDir * entityMoveSpeed;
+
+			const WorldDouble2 attemptedNextPosition = entityPositionXZ + (entityVelocity * dt);
+			const CoordDouble2 attemptedNextCoord = VoxelUtils::worldPointToCoord(attemptedNextPosition);
+			const VoxelChunk *attemptedNextVoxelChunk = voxelChunkManager.findChunkAtPosition(attemptedNextCoord.chunk);
+
+			bool isAttemptedNextPositionValid = false;
+			if (attemptedNextVoxelChunk != nullptr)
+			{
+				const VoxelInt2 attemptedNextVoxelXZ = VoxelUtils::pointToVoxel(attemptedNextCoord.point);
+				const VoxelInt3 attemptedNextFloorVoxel(attemptedNextVoxelXZ.x, 0, attemptedNextVoxelXZ.y);
+
+				const VoxelTraitsDefID attemptedNextFloorVoxelTraitsDefID = attemptedNextVoxelChunk->traitsDefIDs.get(attemptedNextFloorVoxel.x, attemptedNextFloorVoxel.y, attemptedNextFloorVoxel.z);
+				DebugAssertIndex(attemptedNextVoxelChunk->traitsDefs, attemptedNextFloorVoxelTraitsDefID);
+				const VoxelTraitsDefinition &attemptedNextFloorVoxelTraitsDef = attemptedNextVoxelChunk->traitsDefs[attemptedNextFloorVoxelTraitsDefID];
+				isAttemptedNextPositionValid = attemptedNextFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
+			}
+
+			if (!isAttemptedNextPositionValid)
+			{
+				// Okay to stay in walk animation if being kept from going into chasm.
+				bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+				continue;
+			}
+
+			if (!isCloseEnoughToAttackPlayer)
+			{
+				if (currentAnimStateIndex != *walkStateIndex)
+				{
+					animInst.setStateIndex(*walkStateIndex);
+				}
+
+				const JPH::RVec3 physicsVelocity(static_cast<float>(entityVelocity.x), 0.0f, static_cast<float>(entityVelocity.y));
+				bodyInterface.SetLinearVelocity(physicsBodyID, physicsVelocity);
+				continue;
+			}
+
+			if (currentAnimStateIndex != *idleStateIndex)
+			{
+				animInst.setStateIndex(*idleStateIndex);
+				bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+			}
+
+			// @todo the goal of this state is to get close enough to the player to attack them
+			// @todo set random attack seconds and once that time is hit, change to attack animation
 		}
 		else
 		{
