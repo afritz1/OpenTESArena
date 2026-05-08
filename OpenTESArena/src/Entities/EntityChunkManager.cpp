@@ -1200,6 +1200,12 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		if (combatState.isInDeathState())
+		{
+			continue;
+		}
+
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
 		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
@@ -1220,18 +1226,6 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		if (!walkStateIndex.has_value())
 		{
 			DebugCrash("Couldn't get enemy walk state index.");
-		}
-
-		const std::optional<int> deathStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
-		if (!deathStateIndex.has_value())
-		{
-			DebugCrash("Couldn't get enemy death state index.");
-		}
-
-		const bool isInDeathState = currentAnimStateIndex == *deathStateIndex; // @todo eventually this should check combatState.isInDeathState() but isDying isn't set by gameplay code yet due to existing bodyfall audio logic
-		if (isInDeathState)
-		{
-			continue;
 		}
 		
 		Double2 &entityDir = this->directions.get(entityInst.directionID);
