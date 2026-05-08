@@ -65,13 +65,15 @@ namespace
 			static_cast<float>(feetPosition.z));
 		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
 		const JPH::ObjectLayer capsuleObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::MOVING;
-		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, capsuleObjectLayer);
+		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Dynamic, capsuleObjectLayer);
 		capsuleSettings.mIsSensor = isSensor;
 
-		if (isCharacter) // Enemies/citizens.
+		if (isCharacter) // Enemies.
 		{
+			capsuleSettings.mAllowedDOFs = JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationZ; // Constant Y position.
 			capsuleSettings.mAllowSleeping = false;
-			capsuleSettings.mLinearDamping = 0.0f;
+			capsuleSettings.mFriction = 1.0f;
+			capsuleSettings.mLinearDamping = 10.0f; // Avoid sliding.
 			capsuleSettings.mGravityFactor = 0.0f;
 		}
 
