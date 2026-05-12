@@ -23,9 +23,9 @@ void EntityInstance::init(EntityInstanceID instanceID, EntityDefID defID, Entity
 	this->transformIndex = transformIndex;
 }
 
-bool EntityInstance::isDynamic() const
+bool EntityInstance::isTransformStatic() const
 {
-	return this->directionID >= 0;
+	return this->directionID < 0;
 }
 
 bool EntityInstance::canAcceptCombatHits() const
@@ -40,7 +40,7 @@ bool EntityInstance::canBeKilledInCombat() const
 
 bool EntityInstance::canUseElevatedPlatforms() const
 {
-	return !this->isDynamic();
+	return this->isTransformStatic();
 }
 
 bool EntityInstance::hasInventory() const

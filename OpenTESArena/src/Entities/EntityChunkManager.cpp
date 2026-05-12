@@ -20,6 +20,7 @@
 #include "../Math/RandomUtils.h"
 #include "../Math/Random.h"
 #include "../Player/Player.h"
+#include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Rendering/Renderer.h"
 #include "../Voxels/VoxelChunk.h"
@@ -36,7 +37,7 @@
 
 namespace
 {
-	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
+	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isCharacter, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -53,7 +54,7 @@ namespace
 		JPH::ShapeSettings::ShapeResult capsuleShapeResult = capsuleShapeSettings.Create();
 		if (capsuleShapeResult.HasError())
 		{
-			DebugLogError("Couldn't create Jolt capsule shape settings: " + std::string(capsuleShapeResult.GetError().c_str()));
+			DebugLogErrorFormat("Couldn't create Jolt capsule shape settings: %s", capsuleShapeResult.GetError().c_str());
 			return false;
 		}
 
@@ -64,14 +65,23 @@ namespace
 			static_cast<float>(feetPosition.z));
 		const JPH::Quat capsuleJoltQuat = JPH::Quat::sRotation(JPH::Vec3Arg::sAxisY(), 0.0f);
 		const JPH::ObjectLayer capsuleObjectLayer = isSensor ? PhysicsLayers::SENSOR : PhysicsLayers::MOVING;
-		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Kinematic, capsuleObjectLayer);
+		JPH::BodyCreationSettings capsuleSettings(capsuleShape, capsuleJoltPos, capsuleJoltQuat, JPH::EMotionType::Dynamic, capsuleObjectLayer);
 		capsuleSettings.mIsSensor = isSensor;
+
+		if (isCharacter) // Enemies.
+		{
+			capsuleSettings.mAllowedDOFs = JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationZ; // Constant Y position.
+			capsuleSettings.mAllowSleeping = false;
+			capsuleSettings.mFriction = 1.0f;
+			capsuleSettings.mLinearDamping = 10.0f; // Avoid sliding.
+			capsuleSettings.mGravityFactor = 0.0f;
+		}
 
 		const JPH::Body *capsule = bodyInterface.CreateBody(capsuleSettings);
 		if (capsule == nullptr)
 		{
 			const uint32_t totalBodyCount = physicsSystem.GetNumBodies();
-			DebugLogError("Couldn't create Jolt body for entity (total: " + std::to_string(totalBodyCount) + ").");
+			DebugLogErrorFormat("Couldn't create Jolt body for entity (total: %d).", totalBodyCount);
 			return false;
 		}
 
@@ -128,6 +138,12 @@ namespace
 		const double shapeYPos = voxelShapeDef.box.yOffset + voxelShapeDef.box.height;
 		return MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}
+
+	double GetEnemyNextWeaponSwingSeconds(Random &random)
+	{
+		// Arbitrary timing, tbd difficulty settings
+		return random.nextReal() * 0.75;
+	}
 }
 
 EntityCitizenName::EntityCitizenName(const char *name)
@@ -154,6 +170,8 @@ EntityEnemyBehaviorState::EntityEnemyBehaviorState()
 {
 	this->type = static_cast<EntityEnemyBehaviorStateType>(-1);
 	this->secondsTillNextCreatureSound = 0.0;
+	this->secondsTillNextAttack = 0.0;
+	this->hasAttemptedHit = false;
 }
 
 EntityCitizenBehaviorState::EntityCitizenBehaviorState()
@@ -336,12 +354,12 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 	animInst.setStateIndex(initInfo.initialAnimStateIndex);
 
-	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
+	const bool hasBehavior = initInfo.canBeKilled;
+	if (!TryCreatePhysicsCollider(entityPosition, animMaxHeight, hasBehavior, initInfo.isSensorCollider, physicsSystem, &entityInst.physicsBodyID))
 	{
 		DebugLogError("Couldn't allocate entity Jolt physics body.");
 	}
 
-	const bool hasBehavior = initInfo.canBeKilled;
 	if (hasBehavior)
 	{
 		entityInst.behaviorStateID = this->behaviorStates.alloc();
@@ -1008,7 +1026,7 @@ void EntityChunkManager::queueEntityTransfer(EntityInstanceID entityInstID, Chun
 	}
 }
 
-void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
+void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 	Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
@@ -1161,8 +1179,7 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 				}
 			}
 
-			// Integrate by delta time.
-			const VoxelDouble2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
+			const Double2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
 			const WorldDouble2 newEntityPositionXZ = entityPositionXZ + (entityVelocity * dt);
 			entityPosition.x = newEntityPositionXZ.x;
 			entityPosition.z = newEntityPositionXZ.y;
@@ -1186,27 +1203,194 @@ void EntityChunkManager::updateCitizenStates(double dt, const WorldDouble2 &play
 	}
 }
 
-void EntityChunkManager::updateEnemyStates(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager)
+void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, Player &player, Random &random,
+	JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
 	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		if (combatState.isInDeathState())
+		{
+			continue;
+		}
+
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
-		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
 		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
+		const int currentAnimStateIndex = animInst.currentStateIndex;
 
-		// @todo simulate enemy AI and state changes
-
-
-		if (curEntityChunkPos != prevEntityChunkPos)
+		const std::optional<int> idleStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+		if (!idleStateIndex.has_value())
 		{
-			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
+			DebugCrash("Couldn't get enemy idle state index.");
+		}
+
+		const std::optional<int> walkStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_WALK.c_str());
+		if (!walkStateIndex.has_value())
+		{
+			DebugCrash("Couldn't get enemy walk state index.");
+		}
+
+		const std::optional<int> attackStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_ATTACK.c_str());
+		if (!attackStateIndex.has_value())
+		{
+			DebugCrash("Couldn't get enemy attack state index.");
+		}
+		
+		Double2 &entityDir = this->directions.get(entityInst.directionID);
+		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
+		DebugAssert(behaviorState.type == EntityBehaviorStateType::Enemy);
+		EntityEnemyBehaviorState &enemyBehaviorState = behaviorState.enemy;
+		const EntityEnemyBehaviorStateType prevEnemyBehaviorStateType = enemyBehaviorState.type;
+
+		constexpr double detectionDistance = 3.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
+		constexpr double attackDistance = 0.80; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
+		constexpr double detectionDistanceSqr = detectionDistance * detectionDistance;
+		constexpr double attackDistanceSqr = attackDistance * attackDistance;
+		const bool isCloseEnoughToDetectPlayer = distToPlayerSqr <= detectionDistanceSqr; // @todo add "isFarEnoughToStopDetectPlayer"
+		const bool isCloseEnoughToAttackPlayer = distToPlayerSqr <= attackDistanceSqr; // @todo add "isFarEnoughToStopAttackPlayer"
+
+		if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::Idle)
+		{
+			if (!isCloseEnoughToDetectPlayer)
+			{
+				continue;
+			}
+
+			enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
+			animInst.setStateIndex(*walkStateIndex);
+		}
+		else if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::MovingToPlayer)
+		{
+			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+			DebugAssert(!physicsBodyID.IsInvalid());
+
+			if (!isCloseEnoughToDetectPlayer)
+			{
+				enemyBehaviorState.type = EntityEnemyBehaviorStateType::Idle;
+				animInst.setStateIndex(*idleStateIndex);
+				bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+				continue;
+			}
+
+			if (!isCloseEnoughToAttackPlayer)
+			{
+				entityDir = dirToPlayer;
+
+				constexpr double entityMoveSpeed = 1.50;
+				const Double2 entityVelocity = entityDir * entityMoveSpeed;
+
+				const WorldDouble2 attemptedNextPosition = entityPositionXZ + (entityVelocity * dt);
+				const CoordDouble2 attemptedNextCoord = VoxelUtils::worldPointToCoord(attemptedNextPosition);
+				const VoxelChunk *attemptedNextVoxelChunk = voxelChunkManager.findChunkAtPosition(attemptedNextCoord.chunk);
+
+				bool isAttemptedNextPositionValid = false;
+				if (attemptedNextVoxelChunk != nullptr)
+				{
+					const VoxelInt2 attemptedNextVoxelXZ = VoxelUtils::pointToVoxel(attemptedNextCoord.point);
+					const VoxelInt3 attemptedNextFloorVoxel(attemptedNextVoxelXZ.x, 0, attemptedNextVoxelXZ.y);
+
+					const VoxelTraitsDefID attemptedNextFloorVoxelTraitsDefID = attemptedNextVoxelChunk->traitsDefIDs.get(attemptedNextFloorVoxel.x, attemptedNextFloorVoxel.y, attemptedNextFloorVoxel.z);
+					DebugAssertIndex(attemptedNextVoxelChunk->traitsDefs, attemptedNextFloorVoxelTraitsDefID);
+					const VoxelTraitsDefinition &attemptedNextFloorVoxelTraitsDef = attemptedNextVoxelChunk->traitsDefs[attemptedNextFloorVoxelTraitsDefID];
+					isAttemptedNextPositionValid = attemptedNextFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
+				}
+
+				if (!isAttemptedNextPositionValid)
+				{
+					// Okay to stay in walk animation if being kept from going into chasm.
+					bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+					continue;
+				}
+
+				const JPH::RVec3 physicsVelocity(static_cast<float>(entityVelocity.x), 0.0f, static_cast<float>(entityVelocity.y));
+				bodyInterface.SetLinearVelocity(physicsBodyID, physicsVelocity);
+				continue;
+			}
+
+			enemyBehaviorState.type = EntityEnemyBehaviorStateType::AttackPlayer;
+			enemyBehaviorState.secondsTillNextAttack = GetEnemyNextWeaponSwingSeconds(random);
+			animInst.setStateIndex(*idleStateIndex);
+			bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+		}
+		else if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::AttackPlayer)
+		{
+			entityDir = dirToPlayer;
+
+			if (currentAnimStateIndex != *attackStateIndex)
+			{
+				if (!isCloseEnoughToAttackPlayer)
+				{
+					enemyBehaviorState.secondsTillNextAttack = 0.0;
+					enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
+					animInst.setStateIndex(*walkStateIndex);
+					continue;
+				}
+
+				enemyBehaviorState.secondsTillNextAttack -= dt;
+				if (enemyBehaviorState.secondsTillNextAttack > 0.0)
+				{
+					continue;
+				}
+
+				enemyBehaviorState.secondsTillNextAttack = 0.0;
+				enemyBehaviorState.hasAttemptedHit = false;
+				animInst.setStateIndex(*attackStateIndex);
+				continue;
+			}
+
+			const bool isHitAllowed = !enemyBehaviorState.hasAttemptedHit && (animInst.progressPercent >= 0.50);
+			if (isHitAllowed)
+			{
+				enemyBehaviorState.hasAttemptedHit = true;
+
+				if (isCloseEnoughToAttackPlayer)
+				{
+					const bool isPlayerHit = random.nextBool();
+
+					if (isPlayerHit)
+					{
+						const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
+						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
+
+						audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);
+					}
+					else
+					{
+						audioManager.playSoundOneShot(ArenaSoundName::Clank);
+					}
+				}
+			}
+
+			const bool isSwingFinished = animInst.isFinished();
+			if (!isSwingFinished)
+			{
+				continue;
+			}
+
+			if (!isCloseEnoughToAttackPlayer)
+			{
+				enemyBehaviorState.type = EntityEnemyBehaviorStateType::MovingToPlayer;
+				enemyBehaviorState.hasAttemptedHit = false;
+				animInst.setStateIndex(*walkStateIndex);
+				continue;
+			}
+
+			enemyBehaviorState.secondsTillNextAttack = GetEnemyNextWeaponSwingSeconds(random);
+			enemyBehaviorState.hasAttemptedHit = false;
+			animInst.setStateIndex(*idleStateIndex);
+		}
+		else
+		{
+			DebugNotImplementedMsg(std::to_string(static_cast<int>(prevEnemyBehaviorStateType)));
 		}
 	}
 }
@@ -1357,7 +1541,7 @@ void EntityChunkManager::getEntityObservedResult(EntityInstanceID id, const Worl
 
 	// Get animation angle based on relative facing to camera. Static entities always face the camera.
 	Radians animAngle = 0.0;
-	if (entityInst.isDynamic())
+	if (!entityInst.isTransformStatic())
 	{
 		const Double2 &entityDir = this->directions.get(entityInst.directionID);
 		const Double2 diffDir = (eyePositionXZ - entityPositionXZ).normalized();
@@ -1423,7 +1607,7 @@ void EntityChunkManager::updateCreatureSounds(double dt, const WorldDouble3 &pla
 			const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
 			const BoundingBox3D &entityBBox = this->boundingBoxes.get(entityInst.bboxID);
 			const WorldDouble3 entitySoundPosition(entityPosition.x, entityPosition.y + entityBBox.halfHeight, entityPosition.z);
-			if (EntityUtils::withinHearingDistance(playerPosition, entitySoundPosition))
+			if (PlayerLogic::canHearCreatureSound(playerPosition, entitySoundPosition))
 			{
 				// @todo: store some kind of sound def ID w/ the secondsTillCreatureSound instead of generating the sound filename here.
 				const std::string creatureSoundFilename = this->getCreatureSoundFilename(entityInst.defID);
@@ -1478,45 +1662,63 @@ void EntityChunkManager::updateFadedElevatedPlatforms(EntityChunk &entityChunk, 
 	}
 }
 
-void EntityChunkManager::updateEnemyDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager)
+void EntityChunkManager::updateDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
-	// @todo: just check an EntityChunkManager::dyingEntities list instead, added to when player swing kills them
-
+	// @todo citizens should actually leave a corpse but it's removed a moment afterwards when guards are called
+	// @todo maybe split this loop into citizenEntityInstIDs and enemyEntityInstIDs
+	
 	for (EntityInstance &entityInst : this->entities.values)
 	{
-		const EntityInstanceID entityInstID = entityInst.instanceID;
-		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityDefinitionType entityDefType = entityDef.type;
 		if (!entityInst.canBeKilledInCombat())
 		{
 			continue;
 		}
 
-		const std::optional<int> deathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(entityDef.animDef);
+		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		if (!combatState.isDying)
+		{
+			continue;
+		}
+
+		const EntityInstanceID entityInstID = entityInst.instanceID;
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		const EntityAnimationDefinition &animDef = entityDef.animDef;
+		const std::optional<int> deathAnimStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
 		if (!deathAnimStateIndex.has_value())
 		{
+			// No death animation.
+			this->queueEntityDestroy(entityInstID, true);
 			continue;
 		}
 
+		const bool entityLeavesCorpse = EntityUtils::leavesCorpse(entityDef);
 		EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		const bool isInDeathAnimState = animInst.currentStateIndex == *deathAnimStateIndex;
-		if (!isInDeathAnimState)
+		const bool inDeathAnim = animInst.currentStateIndex == *deathAnimStateIndex;
+		if (!inDeathAnim)
 		{
+			// Start death animation.
+			animInst.setStateIndex(*deathAnimStateIndex);
+
+			if (entityLeavesCorpse)
+			{
+				const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+				audioManager.playSoundOneShot(ArenaSoundName::BodyFall, entityPosition);
+			}
+
 			continue;
 		}
 
-		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
-		const bool isDeathAnimComplete = animInst.progressPercent == 1.0;
-		if (isDeathAnimComplete)
+		if (animInst.isFinished())
 		{
 			if (!combatState.isDead)
 			{
+				// Entity is now a corpse.
 				combatState.isDying = false;
 				combatState.isDead = true;
 
-				if (EntityUtils::leavesCorpse(entityDef))
+				if (entityLeavesCorpse)
 				{
 					JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 					if (!physicsBodyID.IsInvalid())
@@ -1529,20 +1731,6 @@ void EntityChunkManager::updateEnemyDeathStates(JPH::PhysicsSystem &physicsSyste
 				else
 				{
 					this->queueEntityDestroy(entityInstID, true);
-					// @todo remove from dyingEntities list once that is a thing
-				}
-			}
-		}
-		else
-		{
-			if (!combatState.isDying)
-			{
-				combatState.isDying = true;
-
-				if (EntityUtils::leavesCorpse(entityDef))
-				{
-					const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-					audioManager.playSoundOneShot(ArenaSoundName::BodyFall, entityPosition);
 				}
 			}
 		}
@@ -1562,8 +1750,7 @@ void EntityChunkManager::updateVfx()
 		}
 
 		const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
-		const bool isVfxAnimComplete = animInst.progressPercent == 1.0;
-		if (isVfxAnimComplete)
+		if (animInst.isFinished())
 		{
 			this->queueEntityDestroy(entityInstID, true); // @todo shouldn't need to notify chunk, it should just be a loose entity in entitychunkmanager
 		}
@@ -1645,12 +1832,12 @@ void EntityChunkManager::setCitizenBehaviorState(EntityInstanceID id, EntityCiti
 	}
 }
 
-void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
-	Span<const ChunkInt2> freedChunkPositions, const Player &player, const LevelDefinition *activeLevelDef,
-	const LevelInfoDefinition *activeLevelInfoDef, const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
-	Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs, const EntityGenInfo &entityGenInfo,
-	const std::optional<CitizenGenInfo> &citizenGenInfo, double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager,
-	AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer)
+void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
+	Span<const ChunkInt2> freedChunkPositions, Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs, Span<const int> levelInfoDefIndices,
+	Span<const LevelInfoDefinition> levelInfoDefs, const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
+	double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager, JPH::PhysicsSystem &physicsSystem,
+	TextureManager &textureManager, Renderer &renderer)
 {
 	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 
@@ -1722,11 +1909,76 @@ void EntityChunkManager::update(double dt, Span<const ChunkInt2> activeChunkPosi
 		animInst.update(dt);
 	}
 
-	this->updateCitizenStates(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
-	this->updateEnemyStates(dt, playerPositionXZ, physicsSystem, voxelChunkManager);
+	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
+	this->updateEnemyBehaviors(dt, playerPositionXZ, player, random, physicsSystem, audioManager, voxelChunkManager);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
-	this->updateEnemyDeathStates(physicsSystem, audioManager);
+	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx();
+}
+
+void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem)
+{
+	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+
+	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
+	{
+		EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		if (combatState.isInDeathState())
+		{
+			continue;
+		}
+
+		const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+		const JPH::RVec3 physicsPosition = bodyInterface.GetPosition(physicsBodyID);
+		const JPH::ShapeRefC physicsShape = bodyInterface.GetShape(physicsBodyID);
+		const JPH::AABox physicsColliderBBox = physicsShape->GetLocalBounds();
+		const float physicsColliderHeight = physicsColliderBBox.GetSize().GetY();
+		const float physicsColliderCenterToFeetDistance = physicsColliderHeight * 0.50f;
+
+		const CoordDouble2 physicsCoord = VoxelUtils::worldPointToCoord(WorldDouble2(physicsPosition.GetX(), physicsPosition.GetZ()));
+		const VoxelChunk *physicsVoxelChunk = voxelChunkManager.findChunkAtPosition(physicsCoord.chunk);
+
+		bool isPhysicsPositionOverChasm = false;
+		if (physicsVoxelChunk != nullptr)
+		{
+			const VoxelInt2 physicsVoxelXZ = VoxelUtils::pointToVoxel(physicsCoord.point);
+			const VoxelInt3 physicsFloorVoxel(physicsVoxelXZ.x, 0, physicsVoxelXZ.y);
+
+			const VoxelTraitsDefID physicsFloorVoxelTraitsDefID = physicsVoxelChunk->traitsDefIDs.get(physicsFloorVoxel.x, physicsFloorVoxel.y, physicsFloorVoxel.z);
+			DebugAssertIndex(physicsVoxelChunk->traitsDefs, physicsFloorVoxelTraitsDefID);
+			const VoxelTraitsDefinition &attemptedNextFloorVoxelTraitsDef = physicsVoxelChunk->traitsDefs[physicsFloorVoxelTraitsDefID];
+			isPhysicsPositionOverChasm = attemptedNextFloorVoxelTraitsDef.type == ArenaVoxelType::Chasm;
+		}
+
+		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		if (isPhysicsPositionOverChasm)
+		{
+			const JPH::RVec3 rewindedPhysicsPosition(entityPosition.x, physicsPosition.GetY(), entityPosition.z);
+			bodyInterface.SetPosition(physicsBodyID, rewindedPhysicsPosition, JPH::EActivation::Activate);
+		}
+		else
+		{
+			const WorldDouble3 oldPosition = entityPosition;
+			const WorldDouble3 newPosition(
+				static_cast<SNDouble>(physicsPosition.GetX()),
+				static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
+				static_cast<WEDouble>(physicsPosition.GetZ()));
+			entityPosition = newPosition;
+
+			const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
+			const WorldDouble2 newPositionXZ = newPosition.getXZ();
+
+			const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
+			const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
+			if (curEntityChunkPos != prevEntityChunkPos)
+			{
+				this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
+			}
+		}
+	}
+
+	// @todo add citizens here once they are using linear velocity instead of SetPosition()
 }
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)

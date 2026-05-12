@@ -73,13 +73,16 @@ enum class EntityBehaviorStateType
 enum class EntityEnemyBehaviorStateType
 {
 	Idle,
-	MovingToPlayer
+	MovingToPlayer,
+	AttackPlayer
 };
 
 struct EntityEnemyBehaviorState
 {
 	EntityEnemyBehaviorStateType type;
 	double secondsTillNextCreatureSound;
+	double secondsTillNextAttack;
+	bool hasAttemptedHit;
 
 	EntityEnemyBehaviorState();
 };
@@ -121,7 +124,7 @@ struct EntityBehaviorState
 
 struct EntityCombatState
 {
-	bool isDying;
+	bool isDying; // Begins their death animation (if any) and removal from play.
 	bool isDead;
 	bool hasBeenLootedBefore; // For awarding gold from creature corpse.
 
@@ -214,15 +217,15 @@ private:
 
 	void queueEntityTransfer(EntityInstanceID entityInstID, ChunkInt2 prevChunkPos, ChunkInt2 newChunkPos);
 
-	void updateCitizenStates(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
+	void updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
-	void updateEnemyStates(double dt, const WorldDouble2 &playerPositionXZ, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
+	void updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, Player &player, Random &random, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
 	void updateFadedElevatedPlatforms(EntityChunk &entityChunk, const VoxelChunk &voxelChunk, double ceilingScale, JPH::PhysicsSystem &physicsSystem);
-	void updateEnemyDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
+	void updateDeathStates(JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager);
 	void updateVfx();
 public:
 	const EntityDefinition &getEntityDef(EntityDefID defID) const;
@@ -242,14 +245,16 @@ public:
 	void setEnemyBehaviorState(EntityInstanceID id, EntityEnemyBehaviorStateType stateType);
 	void setCitizenBehaviorState(EntityInstanceID id, EntityCitizenBehaviorStateType stateType);
 
-	void update(double dt, Span<const ChunkInt2> activeChunkPositions,
+	void updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions,
 		Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
-		const Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
+		Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 		const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs,
 		Span<const int> levelInfoDefIndices, Span<const LevelInfoDefinition> levelInfoDefs,
 		const EntityGenInfo &entityGenInfo, const std::optional<CitizenGenInfo> &citizenGenInfo,
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
+
+	void updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem);
 
 	// Prepares an entity for destruction later this frame, optionally notifying its chunk to remove its reference.
 	// Don't need to notify the chunk if the chunk is being freed this frame.

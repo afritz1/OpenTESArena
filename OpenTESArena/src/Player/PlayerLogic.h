@@ -34,6 +34,8 @@ namespace PlayerLogic
 
 	CardinalDirectionName getRandomMeleeSwingDirection(Random &random);
 
+	bool canHearCreatureSound(const Double3 &playerPosition, const Double3 &soundPosition);
+
 	// Can fail if mouse moves too slowly.
 	bool tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta, const Int2 &windowDims, CardinalDirectionName *outDirectionName);
 

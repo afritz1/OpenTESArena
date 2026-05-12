@@ -668,7 +668,8 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 	constexpr bool isFloatingOriginChanged = false; // Don't need special handling when everything is already dirty.
 
 	this->tickVoxels(0.0, game);
-	this->tickEntities(0.0, game);
+	this->tickEntitiesPrePhysicsStep(0.0, game);
+	this->tickEntitiesPostPhysicsStep(game);
 	this->tickCollision(0.0, physicsSystem, game);
 	this->tickSky(0.0, game);
 	this->tickVisibility(renderCamera, game);
@@ -949,13 +950,13 @@ void GameState::tickVoxels(double dt, Game &game)
 	voxelFaceCombineChunkManager.update(activeChunkPositions, newChunkPositions, voxelChunkManager, voxelFaceEnableChunkManager);
 }
 
-void GameState::tickEntities(double dt, Game &game)
+void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
 	const ChunkManager &chunkManager = sceneManager.chunkManager;
 	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 
-	const Player &player = game.player;
+	Player &player = game.player;
 
 	const MapDefinition &mapDef = this->getActiveMapDef();
 	const MapType mapType = mapDef.getMapType();
@@ -993,10 +994,19 @@ void GameState::tickEntities(double dt, Game &game)
 	const double ceilingScale = this->getActiveCeilingScale();
 
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
-	entityChunkManager.update(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
+	entityChunkManager.updatePrePhysicsStep(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
 		chunkManager.getFreedChunkPositions(), player, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices,
 		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game.random, voxelChunkManager, game.audioManager,
 		game.physicsSystem, game.textureManager, game.renderer);
+}
+
+void GameState::tickEntitiesPostPhysicsStep(Game &game)
+{
+	SceneManager &sceneManager = game.sceneManager;
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+
+	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+	entityChunkManager.updatePostPhysicsStep(voxelChunkManager, game.physicsSystem);
 }
 
 void GameState::tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game)

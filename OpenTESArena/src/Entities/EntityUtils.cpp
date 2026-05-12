@@ -223,12 +223,6 @@ bool EntityUtils::canDie(const EntityDefinition &entityDef)
 	}
 }
 
-std::optional<int> EntityUtils::tryGetDeathAnimStateIndex(const EntityAnimationDefinition &animDef)
-{
-	const std::optional<int> deathStateIndex = animDef.findStateIndex(EntityAnimationUtils::STATE_DEATH.c_str());
-	return deathStateIndex;
-}
-
 bool EntityUtils::leavesCorpse(const EntityDefinition &entityDef)
 {
 	const EntityDefinitionType entityType = entityDef.type;
@@ -354,13 +348,6 @@ bool EntityUtils::tryGetDisplayName(const EntityDefinition &entityDef, const Cha
 	}
 
 	return true;
-}
-
-bool EntityUtils::withinHearingDistance(const WorldDouble3 &listenerPosition, const WorldDouble3 &soundPosition)
-{
-	const Double3 diff = soundPosition - listenerPosition;
-	constexpr double hearingDistanceSqr = EntityUtils::HearingDistance * EntityUtils::HearingDistance;
-	return diff.lengthSquared() < hearingDistanceSqr;
 }
 
 double EntityUtils::nextCreatureSoundWaitSeconds(Random &random)

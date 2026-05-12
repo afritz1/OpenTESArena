@@ -1,11 +1,11 @@
 #pragma once
 
-#include <iostream>
-#include <vector>
-#include <string>
-#include <memory>
 #include <array>
-
+#include <cstdint>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace Archives
 {

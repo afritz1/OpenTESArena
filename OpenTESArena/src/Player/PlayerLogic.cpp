@@ -757,6 +757,14 @@ CardinalDirectionName PlayerLogic::getRandomMeleeSwingDirection(Random &random)
 	return static_cast<CardinalDirectionName>(randomValue);
 }
 
+bool PlayerLogic::canHearCreatureSound(const Double3 &playerPosition, const Double3 &soundPosition)
+{
+	constexpr double maxSoundDistanceSqr = PlayerConstants::CREATURE_SOUND_MAX_DISTANCE * PlayerConstants::CREATURE_SOUND_MAX_DISTANCE;
+	const Double3 dirToSoundPosition = soundPosition - playerPosition;
+	const double soundDistanceSqr = dirToSoundPosition.lengthSquared();
+	return soundDistanceSqr <= maxSoundDistanceSqr;
+}
+
 bool PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta, const Int2 &windowDims, CardinalDirectionName *outDirectionName)
 {
 	// Get smaller screen dimension so mouse delta is relative to a square.
@@ -905,7 +913,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 				const EntityAnimationDefinition &hitEntityAnimDef = hitEntityDef.animDef;
 				EntityAnimationInstance &hitEntityAnimInst = entityChunkManager.animInsts.get(hitEntityInst.animInstID);
 
-				const EntityCombatState *hitEntityCombatState = nullptr;
+				EntityCombatState *hitEntityCombatState = nullptr;
 				bool canHitEntityBeKilled = false;
 				if (hitEntityInst.canBeKilledInCombat())
 				{
@@ -929,17 +937,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 					if (isHitEntityHpAtZero)
 					{
-						const std::optional<int> hitEntityDeathAnimStateIndex = EntityUtils::tryGetDeathAnimStateIndex(hitEntityAnimDef);
-						const bool hitEntityHasDeathAnim = hitEntityDeathAnimStateIndex.has_value();
-
-						if (hitEntityHasDeathAnim)
-						{
-							hitEntityAnimInst.setStateIndex(*hitEntityDeathAnimStateIndex);
-						}
-						else
-						{
-							entityChunkManager.queueEntityDestroy(hitEntityInstID, true);
-						}
+						hitEntityCombatState->isDying = true;
 
 						const EntityBehaviorState &hitEntityBehaviorState = entityChunkManager.behaviorStates.get(hitEntityInst.behaviorStateID);
 						if (hitEntityBehaviorState.isCitizen())
