@@ -1270,6 +1270,8 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		}
 		else if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::MovingToPlayer)
 		{
+			entityDir = dirToPlayer;
+
 			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 			DebugAssert(!physicsBodyID.IsInvalid());
 
@@ -1283,8 +1285,6 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 
 			if (!isCloseEnoughToAttackPlayer)
 			{
-				entityDir = dirToPlayer;
-
 				constexpr double entityMoveSpeed = 1.50;
 				const Double2 entityVelocity = entityDir * entityMoveSpeed;
 
