@@ -1281,41 +1281,34 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 				continue;
 			}
 
-			entityDir = dirToPlayer;
-
-			constexpr double entityMoveSpeed = 1.50;
-			const Double2 entityVelocity = entityDir * entityMoveSpeed;
-
-			const WorldDouble2 attemptedNextPosition = entityPositionXZ + (entityVelocity * dt);
-			const CoordDouble2 attemptedNextCoord = VoxelUtils::worldPointToCoord(attemptedNextPosition);
-			const VoxelChunk *attemptedNextVoxelChunk = voxelChunkManager.findChunkAtPosition(attemptedNextCoord.chunk);
-
-			bool isAttemptedNextPositionValid = false;
-			if (attemptedNextVoxelChunk != nullptr)
-			{
-				const VoxelInt2 attemptedNextVoxelXZ = VoxelUtils::pointToVoxel(attemptedNextCoord.point);
-				const VoxelInt3 attemptedNextFloorVoxel(attemptedNextVoxelXZ.x, 0, attemptedNextVoxelXZ.y);
-
-				const VoxelTraitsDefID attemptedNextFloorVoxelTraitsDefID = attemptedNextVoxelChunk->traitsDefIDs.get(attemptedNextFloorVoxel.x, attemptedNextFloorVoxel.y, attemptedNextFloorVoxel.z);
-				DebugAssertIndex(attemptedNextVoxelChunk->traitsDefs, attemptedNextFloorVoxelTraitsDefID);
-				const VoxelTraitsDefinition &attemptedNextFloorVoxelTraitsDef = attemptedNextVoxelChunk->traitsDefs[attemptedNextFloorVoxelTraitsDefID];
-				isAttemptedNextPositionValid = attemptedNextFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
-			}
-
-			if (!isAttemptedNextPositionValid)
-			{
-				// Okay to stay in walk animation if being kept from going into chasm.
-				bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
-				continue;
-			}
-
-			// @todo they currently get stuck attempting to move into a chasm even when player is close enough to attack
-
 			if (!isCloseEnoughToAttackPlayer)
 			{
-				if (currentAnimStateIndex != *walkStateIndex)
+				entityDir = dirToPlayer;
+
+				constexpr double entityMoveSpeed = 1.50;
+				const Double2 entityVelocity = entityDir * entityMoveSpeed;
+
+				const WorldDouble2 attemptedNextPosition = entityPositionXZ + (entityVelocity * dt);
+				const CoordDouble2 attemptedNextCoord = VoxelUtils::worldPointToCoord(attemptedNextPosition);
+				const VoxelChunk *attemptedNextVoxelChunk = voxelChunkManager.findChunkAtPosition(attemptedNextCoord.chunk);
+
+				bool isAttemptedNextPositionValid = false;
+				if (attemptedNextVoxelChunk != nullptr)
 				{
-					animInst.setStateIndex(*walkStateIndex);
+					const VoxelInt2 attemptedNextVoxelXZ = VoxelUtils::pointToVoxel(attemptedNextCoord.point);
+					const VoxelInt3 attemptedNextFloorVoxel(attemptedNextVoxelXZ.x, 0, attemptedNextVoxelXZ.y);
+
+					const VoxelTraitsDefID attemptedNextFloorVoxelTraitsDefID = attemptedNextVoxelChunk->traitsDefIDs.get(attemptedNextFloorVoxel.x, attemptedNextFloorVoxel.y, attemptedNextFloorVoxel.z);
+					DebugAssertIndex(attemptedNextVoxelChunk->traitsDefs, attemptedNextFloorVoxelTraitsDefID);
+					const VoxelTraitsDefinition &attemptedNextFloorVoxelTraitsDef = attemptedNextVoxelChunk->traitsDefs[attemptedNextFloorVoxelTraitsDefID];
+					isAttemptedNextPositionValid = attemptedNextFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
+				}
+
+				if (!isAttemptedNextPositionValid)
+				{
+					// Okay to stay in walk animation if being kept from going into chasm.
+					bodyInterface.SetLinearVelocity(physicsBodyID, JPH::RVec3::sZero());
+					continue;
 				}
 
 				const JPH::RVec3 physicsVelocity(static_cast<float>(entityVelocity.x), 0.0f, static_cast<float>(entityVelocity.y));
