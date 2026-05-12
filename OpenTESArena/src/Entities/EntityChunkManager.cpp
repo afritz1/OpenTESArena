@@ -1916,7 +1916,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	this->updateVfx();
 }
 
-void EntityChunkManager::updatePostPhysicsStep(JPH::PhysicsSystem &physicsSystem)
+void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
 
@@ -1936,22 +1936,45 @@ void EntityChunkManager::updatePostPhysicsStep(JPH::PhysicsSystem &physicsSystem
 		const float physicsColliderHeight = physicsColliderBBox.GetSize().GetY();
 		const float physicsColliderCenterToFeetDistance = physicsColliderHeight * 0.50f;
 
-		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
-		const WorldDouble3 oldPosition = entityPosition;
-		const WorldDouble3 newPosition(
-			static_cast<SNDouble>(physicsPosition.GetX()),
-			static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
-			static_cast<WEDouble>(physicsPosition.GetZ()));
-		entityPosition = newPosition;
+		const CoordDouble2 physicsCoord = VoxelUtils::worldPointToCoord(WorldDouble2(physicsPosition.GetX(), physicsPosition.GetZ()));
+		const VoxelChunk *physicsVoxelChunk = voxelChunkManager.findChunkAtPosition(physicsCoord.chunk);
 
-		const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
-		const WorldDouble2 newPositionXZ = newPosition.getXZ();
-
-		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
-		const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
-		if (curEntityChunkPos != prevEntityChunkPos)
+		bool isPhysicsPositionOverChasm = false;
+		if (physicsVoxelChunk != nullptr)
 		{
-			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
+			const VoxelInt2 physicsVoxelXZ = VoxelUtils::pointToVoxel(physicsCoord.point);
+			const VoxelInt3 physicsFloorVoxel(physicsVoxelXZ.x, 0, physicsVoxelXZ.y);
+
+			const VoxelTraitsDefID physicsFloorVoxelTraitsDefID = physicsVoxelChunk->traitsDefIDs.get(physicsFloorVoxel.x, physicsFloorVoxel.y, physicsFloorVoxel.z);
+			DebugAssertIndex(physicsVoxelChunk->traitsDefs, physicsFloorVoxelTraitsDefID);
+			const VoxelTraitsDefinition &attemptedNextFloorVoxelTraitsDef = physicsVoxelChunk->traitsDefs[physicsFloorVoxelTraitsDefID];
+			isPhysicsPositionOverChasm = attemptedNextFloorVoxelTraitsDef.type == ArenaVoxelType::Chasm;
+		}
+
+		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		if (isPhysicsPositionOverChasm)
+		{
+			const JPH::RVec3 rewindedPhysicsPosition(entityPosition.x, physicsPosition.GetY(), entityPosition.z);
+			bodyInterface.SetPosition(physicsBodyID, rewindedPhysicsPosition, JPH::EActivation::Activate);
+		}
+		else
+		{
+			const WorldDouble3 oldPosition = entityPosition;
+			const WorldDouble3 newPosition(
+				static_cast<SNDouble>(physicsPosition.GetX()),
+				static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
+				static_cast<WEDouble>(physicsPosition.GetZ()));
+			entityPosition = newPosition;
+
+			const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
+			const WorldDouble2 newPositionXZ = newPosition.getXZ();
+
+			const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
+			const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
+			if (curEntityChunkPos != prevEntityChunkPos)
+			{
+				this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
+			}
 		}
 	}
 

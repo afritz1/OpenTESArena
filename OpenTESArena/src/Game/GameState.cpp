@@ -1003,8 +1003,10 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 void GameState::tickEntitiesPostPhysicsStep(Game &game)
 {
 	SceneManager &sceneManager = game.sceneManager;
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
-	entityChunkManager.updatePostPhysicsStep(game.physicsSystem);
+	entityChunkManager.updatePostPhysicsStep(voxelChunkManager, game.physicsSystem);
 }
 
 void GameState::tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game)

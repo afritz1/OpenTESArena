@@ -254,7 +254,7 @@ public:
 		double ceilingScale, Random &random, const VoxelChunkManager &voxelChunkManager, AudioManager &audioManager,
 		JPH::PhysicsSystem &physicsSystem, TextureManager &textureManager, Renderer &renderer);
 
-	void updatePostPhysicsStep(JPH::PhysicsSystem &physicsSystem);
+	void updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem);
 
 	// Prepares an entity for destruction later this frame, optionally notifying its chunk to remove its reference.
 	// Don't need to notify the chunk if the chunk is being freed this frame.
