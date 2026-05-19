@@ -55,6 +55,7 @@ namespace ArenaEntityUtils
 	int getCreatureItemQualityLevel(int creatureLevel);
 
 	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random);
+	int getHumanEnemyExperience(int level, int charClassDefID, const ExeData &exeData);
 
 	constexpr int LOOT_VALUES_INDEX_HOUSE = 0;
 	constexpr int LOOT_VALUES_INDEX_PALACE = 1;

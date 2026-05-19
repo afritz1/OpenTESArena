@@ -505,6 +505,15 @@ int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeDa
 	return goldAmount;
 }
 
+int ArenaEntityUtils::getHumanEnemyExperience(int level, int charClassDefID, const ExeData &exeData)
+{
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(charClassDefID);
+	const int index = charClassDef.categoryID;
+	const Span<const uint8_t> humanoidExpMultipliers = exeData.entities.humanEnemyExpMultipliers;
+	const int experience = (level * level) * humanoidExpMultipliers[index];
+	return experience;
+}
+
 int ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType interiorType)
 {
 	switch (interiorType)

@@ -6,6 +6,7 @@
 #include "../Collision/Physics.h"
 #include "../Collision/RayCastTypes.h"
 #include "../Combat/CombatLogic.h"
+#include "../Entities/ArenaEntityUtils.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
 #include "../Interface/GameWorldUiMVC.h"
@@ -802,6 +803,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	const InputManager &inputManager = game.inputManager;
 	const GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	AudioManager &audioManager = game.audioManager;
 	const Window &window = game.window;
 	Renderer &renderer = game.renderer;
@@ -815,6 +817,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	int newStateIndex = weaponAnimIdleStateIndex;
 	int nextStateIndex = -1;
 	const char *sfxFilename = nullptr;
+
+	// @todo the CombatHitSearchResult could be manually populated with the entity an arrow collided with, so that we can use that same result for melee and ranged attacks
 
 	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
 	{
@@ -943,6 +947,24 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						if (hitEntityBehaviorState.isCitizen())
 						{
 							GameWorldUiController::onCitizenKilled(game);
+						}
+						else if (hitEntityBehaviorState.isCreature())
+						{
+							DebugAssert(hitEntityDef.enemy.type == EnemyEntityDefinitionType::Creature);
+							const CreatureDefinition &hitEntityCreatureDef = CreatureDefinitionLibrary::getInstance().getDefinition(hitEntityDef.enemy.creatureDefID);
+							const int creatureCalculatedExperience = hitEntityCreatureDef.baseExp + (hitEntityCreatureDef.maxHP * hitEntityCreatureDef.expMultiplier);
+							player.experience += creatureCalculatedExperience;
+							DebugLogFormat("%s gave %d XP.", hitEntityCreatureDef.name, creatureCalculatedExperience);
+						}
+						else if (hitEntityBehaviorState.isHumanEnemy())
+						{
+							const int hitHumanEnemyLevel = 1; // @todo get human enemy level from EntityInstance somehow
+							DebugAssert(hitEntityDef.enemy.type == EnemyEntityDefinitionType::Human);
+							const int hitHumanEnemyCharClassDefID = hitEntityDef.enemy.human.charClassID;
+							const CharacterClassDefinition &hitEntityCharClassDef = CharacterClassLibrary::getInstance().getDefinition(hitHumanEnemyCharClassDefID);
+							const int humanEnemyCalculatedExperience = ArenaEntityUtils::getHumanEnemyExperience(hitHumanEnemyLevel, hitHumanEnemyCharClassDefID, exeData);
+							player.experience += humanEnemyCalculatedExperience;
+							DebugLogFormat("%s gave %d XP.", hitEntityCharClassDef.name, humanEnemyCalculatedExperience);
 						}
 
 						// Arbitrary height where the swing is hitting.

@@ -445,6 +445,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int creatureAnimFilenamesOffset = GetExeAddress(*section, "CreatureAnimationFilenames");
 	const int finalBossNameOffset = GetExeAddress(*section, "FinalBossName");
 	const int humanEnemyGoldChancesOffset = GetExeAddress(*section, "HumanEnemyGoldChances");
+	const int humanEnemyExpMultipliersOffset = GetExeAddress(*section, "HumanEnemyExperienceMultipliers");
 	const int raceAttributesOffset = GetExeAddress(*section, "RaceAttributes");
 	const int guardAttributesOffset = GetExeAddress(*section, "GuardAttributes");
 	const int maleCitizenAnimFilenamesOffset = GetExeAddress(*section, "MaleCitizenAnimationFilenames");
@@ -477,6 +478,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	initStringArrayNullTerminated(this->creatureAnimationFilenames, exeBytes, creatureAnimFilenamesOffset);
 	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
 	initInt8Array(this->humanEnemyGoldChances, exeBytes, humanEnemyGoldChancesOffset);
+	initInt8Array(this->humanEnemyExpMultipliers, exeBytes, humanEnemyExpMultipliersOffset);
 	init2DInt8Array(this->raceAttributes, exeBytes, raceAttributesOffset);
 	init2DInt8Array(this->guardAttributes, exeBytes, guardAttributesOffset);
 	initStringArrayNullTerminated(this->maleCitizenAnimationFilenames, exeBytes, maleCitizenAnimFilenamesOffset);

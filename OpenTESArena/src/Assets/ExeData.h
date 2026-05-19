@@ -151,6 +151,7 @@ struct ExeDataEntities
 
 	// For mage/thief/warrior enemy class types.
 	uint8_t humanEnemyGoldChances[3];
+	uint8_t humanEnemyExpMultipliers[3];
 
 	// Attribute arrays for male/female races and guards. 255 is displayed as 100.
 	// The race arrays alternate male/female/male/female.
