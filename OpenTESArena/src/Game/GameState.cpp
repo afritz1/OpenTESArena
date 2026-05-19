@@ -6,6 +6,7 @@
 #include "Game.h"
 #include "GameState.h"
 #include "../Assets/ArenaPaletteName.h"
+#include "../Assets/ArenaSoundName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/ExeData.h"
@@ -23,6 +24,7 @@
 #include "../Rendering/RenderCamera.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/RendererUtils.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../Stats/CharacterRaceLibrary.h"
 #include "../Time/ArenaClockUtils.h"
 #include "../Time/ClockLibrary.h"
@@ -911,6 +913,24 @@ void GameState::tickPlayerAttack(double dt, Game &game)
 	PlayerLogic::handleAttack(game, combatMouseDelta);
 
 	player.queuedMeleeSwingDirection = -1;
+}
+
+void GameState::tickPlayerLevel(Game &game)
+{
+	Player &player = game.player;
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const int requiredExpForLevelUp = charClassDef.getExperienceCap(player.level);
+
+	if (player.experience >= requiredExpForLevelUp)
+	{
+		player.level++;
+
+		AudioManager &audioManager = game.audioManager;
+		audioManager.playSoundOneShot(ArenaSoundName::Fanfare1);
+		DebugLogFormat("Player is now level %d.", player.level);
+
+		// @todo character sheet UI context
+	}
 }
 
 void GameState::tickVoxels(double dt, Game &game)

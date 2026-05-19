@@ -167,6 +167,7 @@ public:
 	void tickPlayerHealth(double dt, Game &game);
 	void tickPlayerStamina(double dt, Game &game);
 	void tickPlayerAttack(double dt, Game &game);
+	void tickPlayerLevel(Game &game);
 	void tickVoxels(double dt, Game &game);
 	void tickEntitiesPrePhysicsStep(double dt, Game &game);
 	void tickEntitiesPostPhysicsStep(Game &game);
