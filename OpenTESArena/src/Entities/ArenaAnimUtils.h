@@ -42,7 +42,7 @@ namespace ArenaAnimUtils
 	constexpr double CreatureIdleSecondsPerFrame = 1.0 / 12.0;
 	constexpr double CreatureLookSecondsPerFrame = 1.0 / 8.0;
 	constexpr double CreatureWalkSecondsPerFrame = 1.0 / 12.0;
-	constexpr double CreatureAttackSecondsPerFrame = 1.0 / 12.0;
+	constexpr double CreatureAttackSecondsPerFrame = 1.0 / 14.0;
 	constexpr double CreatureDeathSecondsPerFrame = 1.0 / 12.0;
 	constexpr int CreatureAttackFrameIndex = 10;
 	constexpr bool CreatureIdleLoop = true;
