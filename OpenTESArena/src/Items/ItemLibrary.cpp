@@ -130,9 +130,9 @@ void ItemLibrary::init(const ExeData &exeData)
 	const Span<const std::string> attackSpellNames = exeData.equipment.spellcastingItemAttackSpellNames;
 	const Span<const std::string> defensiveSpellNames = exeData.equipment.spellcastingItemDefensiveSpellNames;
 	const Span<const std::string> miscSpellNames = exeData.equipment.spellcastingItemMiscSpellNames;
-	const auto &spellcastingItemAttackSpellSpells = exeData.equipment.spellcastingItemAttackSpellSpells;
-	const auto &spellcastingItemDefensiveSpellSpells = exeData.equipment.spellcastingItemDefensiveSpellSpells;
-	const auto &spellcastingItemMiscSpellSpells = exeData.equipment.spellcastingItemMiscSpellSpells;
+	const Span<const uint8_t> spellcastingItemAttackSpellSpells = exeData.equipment.spellcastingItemAttackSpellSpells;
+	const Span<const uint8_t> spellcastingItemDefensiveSpellSpells = exeData.equipment.spellcastingItemDefensiveSpellSpells;
+	const Span<const uint8_t> spellcastingItemMiscSpellSpells = exeData.equipment.spellcastingItemMiscSpellSpells;
 
 	for (int i = 0; i < trinketNames.getCount(); i++)
 	{
@@ -169,33 +169,42 @@ void ItemLibrary::init(const ExeData &exeData)
 	const Span<const uint8_t> weaponBasePrices = exeData.equipment.weaponBasePrices;
 	const Span<const std::pair<uint8_t, uint8_t>> weaponDamages = exeData.equipment.weaponDamages;
 	const Span<const uint8_t> weaponHandednesses = exeData.equipment.weaponHandednesses;
-	for (int i = 0; i < weaponNames.getCount(); i++)
+
+	for (const int meleeWeaponID : ArenaItemUtils::MeleeWeaponIDs)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Weapon, i);
+		itemDef.init(ItemType::Weapon, meleeWeaponID);
 
-		const char *weaponName = weaponNames[i].c_str();
-		const int weightOriginal = weaponWeights[i];
+		const char *weaponName = weaponNames[meleeWeaponID].c_str();
+		const int weightOriginal = weaponWeights[meleeWeaponID];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
-		const int basePrice = weaponBasePrices[i];
-		const int damageMin = weaponDamages[i].first;
-		const int damageMax = weaponDamages[i].second;
-		const int handCount = weaponHandednesses[i];
+		const int basePrice = weaponBasePrices[meleeWeaponID];
+		const int damageMin = weaponDamages[meleeWeaponID].first;
+		const int damageMax = weaponDamages[meleeWeaponID].second;
+		const int handCount = weaponHandednesses[meleeWeaponID];
 		const ItemMaterialDefinitionID materialDefID = -1; // @todo: for loop over all materials
+		const WeaponAnimationDefinitionID weaponAnimDefID = meleeWeaponID;
+		itemDef.weapon.initMelee(weaponName, weightKg, basePrice, damageMin, damageMax, handCount, materialDefID, weaponAnimDefID);
 
-		const auto rangedWeaponIDsBegin = std::begin(ArenaItemUtils::RangedWeaponIDs);
-		const auto rangedWeaponIDsEnd = std::end(ArenaItemUtils::RangedWeaponIDs);
-		const bool isRanged = std::find(rangedWeaponIDsBegin, rangedWeaponIDsEnd, i) != rangedWeaponIDsEnd;
+		this->itemDefs.emplace_back(std::move(itemDef));
+	}
 
-		if (!isRanged)
-		{
-			itemDef.weapon.initMelee(weaponName, weightKg, basePrice, damageMin, damageMax, handCount, materialDefID);
-		}
-		else
-		{
-			itemDef.weapon.initRanged(weaponName, weightKg, basePrice, damageMin, damageMax, materialDefID);
-		}
-		
+	for (const int rangedWeaponID : ArenaItemUtils::RangedWeaponIDs)
+	{
+		ItemDefinition itemDef;
+		itemDef.init(ItemType::Weapon, rangedWeaponID);
+
+		const char *weaponName = weaponNames[rangedWeaponID].c_str();
+		const int weightOriginal = weaponWeights[rangedWeaponID];
+		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
+		const int basePrice = weaponBasePrices[rangedWeaponID];
+		const int damageMin = weaponDamages[rangedWeaponID].first;
+		const int damageMax = weaponDamages[rangedWeaponID].second;
+		const int handCount = weaponHandednesses[rangedWeaponID];
+		const ItemMaterialDefinitionID materialDefID = -1; // @todo: for loop over all materials
+		const WeaponAnimationDefinitionID weaponAnimDefID = rangedWeaponID;
+		itemDef.weapon.initRanged(weaponName, weightKg, basePrice, damageMin, damageMax, materialDefID, weaponAnimDefID);
+
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 

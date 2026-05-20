@@ -122,6 +122,7 @@ bool ItemInventory::findLastSlot(ItemDefinitionID defID, int *outIndex) const
 
 void ItemInventory::insert(ItemDefinitionID defID, int stackAmount)
 {
+	DebugAssert(defID >= 0);
 	DebugAssert(stackAmount >= 1);
 
 	// @todo: attempt stacking if possible.

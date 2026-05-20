@@ -18,6 +18,7 @@
 #include "../Audio/MusicUtils.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Game/Game.h"
+#include "../Items/ItemLibrary.h"
 #include "../Math/RandomUtils.h"
 #include "../Player/ArenaPlayerUtils.h"
 #include "../Rendering/Renderer.h"
@@ -38,19 +39,29 @@
 
 namespace
 {
-	int GetRandomWeaponIdForClass(const CharacterClassDefinition &charClassDef, Random &random)
+	ItemDefinitionID GetRandomWeaponItemDefIdForClass(const CharacterClassDefinition &charClassDef, Random &random)
 	{
-		const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
-		Buffer<int> weapons(allowedWeaponCount + 1);
-		for (int i = 0; i < allowedWeaponCount; i++)
+		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+		const ItemLibraryPredicate allowedWeaponPredicate = [&charClassDef](const ItemDefinition &itemDef)
 		{
-			weapons.set(i, charClassDef.getAllowedWeapon(i));
+			if (itemDef.type != ItemType::Weapon)
+			{
+				return false;
+			}
+
+			const Span<const int> allowedWeapons = charClassDef.allowedWeapons;
+			const bool isAllowedWeapon = std::find(allowedWeapons.begin(), allowedWeapons.end(), itemDef.originalItemID) != allowedWeapons.end();
+			return isAllowedWeapon;
+		};
+
+		const std::vector<ItemDefinitionID> allowedWeaponItemDefIDs = itemLibrary.getDefinitionIndicesIf(allowedWeaponPredicate);
+		if (allowedWeaponItemDefIDs.empty())
+		{
+			return -1;
 		}
 
-		weapons.set(allowedWeaponCount, ArenaItemUtils::FistsWeaponID);
-
-		const int randIndex = random.next(weapons.getCount());
-		return weapons.get(randIndex);
+		const int randIndex = random.next(static_cast<int>(allowedWeaponItemDefIDs.size()));
+		return allowedWeaponItemDefIDs[randIndex];
 	}
 }
 
@@ -551,9 +562,8 @@ void MainMenuUiController::onExitGameButtonSelected()
 	SDL_PushEvent(&e);
 }
 
-void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, int testIndex,
-	const std::string &mifName, const std::optional<ArenaInteriorType> &optInteriorType,
-	ArenaWeatherType weatherType, MapType mapType)
+void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, int testIndex, const std::string &mifName,
+	const std::optional<ArenaInteriorType> &optInteriorType, ArenaWeatherType weatherType, MapType mapType)
 {
 	// Game data instance, to be initialized further by one of the loading methods below.
 	// Create a player with random data for testing.
@@ -576,12 +586,16 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	const int testMaxStamina = ArenaPlayerUtils::calculateMaxStamina(testPrimaryAttributes.strength.maxValue, testPrimaryAttributes.endurance.maxValue);
 	const int testMaxSpellPoints = ArenaPlayerUtils::calculateMaxSpellPoints(testCharClassDefID, testPrimaryAttributes.intelligence.maxValue);
 	const int testGold = ArenaPlayerUtils::calculateStartingGold(random);
-	const int testWeaponID = GetRandomWeaponIdForClass(charClassLibrary.getDefinition(testCharClassDefID), random);
 
 	Player &player = game.player;
 	player.init(testPlayerName, testIsMale, testRaceID, testCharClassDefID, testPortraitID, testPrimaryAttributes,
-		testMaxHealth, testMaxStamina, testMaxSpellPoints, testGold, testWeaponID, game.options.getMisc_GhostMode(),
-		exeData, game.physicsSystem);
+		testMaxHealth, testMaxStamina, testMaxSpellPoints, testGold, game.options.getMisc_GhostMode(), exeData, game.physicsSystem);
+
+	const ItemDefinitionID testWeaponItemDefID = GetRandomWeaponItemDefIdForClass(charClassLibrary.getDefinition(testCharClassDefID), random);
+	if (testWeaponItemDefID >= 0)
+	{
+		player.inventory.insert(testWeaponItemDefID);
+	}
 
 	auto &textureManager = game.textureManager;
 	auto &renderer = game.renderer;

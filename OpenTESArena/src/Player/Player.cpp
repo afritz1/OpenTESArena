@@ -20,6 +20,7 @@
 #include "../Game/GameState.h"
 #include "../Game/Options.h"
 #include "../Items/ArenaItemUtils.h"
+#include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/Quaternion.h"
 #include "../Math/Random.h"
@@ -131,22 +132,22 @@ namespace
 		return nameTokens[0];
 	}
 
-	void InitWeaponAnimationInstance(WeaponAnimationInstance &animInst, int weaponID)
+	void InitWeaponAnimationInstance(WeaponAnimationInstance &animInst, WeaponAnimationDefinitionID weaponAnimDefID)
 	{
 		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-		const WeaponAnimationDefinition &animDef = weaponAnimLibrary.getDefinition(weaponID);
+		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
 
 		animInst.clear();
-		for (int i = 0; i < animDef.stateCount; i++)
+		for (int i = 0; i < weaponAnimDef.stateCount; i++)
 		{
-			const WeaponAnimationDefinitionState &animDefState = animDef.states[i];
+			const WeaponAnimationDefinitionState &animDefState = weaponAnimDef.states[i];
 			animInst.addState(animDefState.seconds);
 		}
 
 		int defaultStateIndex = -1;
-		if (!animDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHED.c_str(), &defaultStateIndex))
+		if (!weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_SHEATHED.c_str(), &defaultStateIndex))
 		{
-			DebugLogError("Couldn't get sheathed state for weapon ID " + std::to_string(weaponID) + ".");
+			DebugLogErrorFormat("Couldn't get sheathed state for weapon anim def ID %s.", weaponAnimDefID);
 			return;
 		}
 
@@ -188,7 +189,6 @@ Player::Player()
 	this->currentStamina = 0.0;
 	this->maxSpellPoints = 0.0;
 	this->currentSpellPoints = 0.0;
-	this->weaponAnimDefID = ArenaItemUtils::FistsWeaponID;
 	this->queuedMeleeSwingDirection = -1;
 	this->level = 0;
 	this->experience = 0;
@@ -203,8 +203,7 @@ Player::~Player()
 }
 
 void Player::init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID, const PrimaryAttributes &primaryAttributes,
-	int maxHealth, int maxStamina, int maxSpellPoints, int gold, int weaponID, bool isGhostModeActive, const ExeData &exeData,
-	JPH::PhysicsSystem &physicsSystem)
+	int maxHealth, int maxStamina, int maxSpellPoints, int gold, bool isGhostModeActive, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem)
 {
 	this->displayName = displayName;
 	this->firstName = GetFirstName(displayName);
@@ -218,8 +217,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->currentStamina = maxStamina;
 	this->maxSpellPoints = maxSpellPoints;
 	this->currentSpellPoints = maxSpellPoints;
-	this->weaponAnimDefID = weaponID;
-	InitWeaponAnimationInstance(this->weaponAnimInst, this->weaponAnimDefID);
+	this->setWeaponAnimationFromItem(-1);
 	this->queuedMeleeSwingDirection = -1;
 	this->level = 1;
 	this->experience = 0;
@@ -255,6 +253,73 @@ void Player::freePhysicsBody(JPH::PhysicsSystem &physicsSystem)
 		this->physicsCharacterVirtual->Release();
 		this->physicsCharacterVirtual = nullptr;
 	}
+}
+
+int Player::getEquippedWeaponInventorySlotIndex() const
+{
+	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+
+	int equippedIndex = -1;
+	for (int i = 0; i < this->inventory.getTotalSlotCount(); i++)
+	{
+		const ItemInstance &itemInst = this->inventory.getSlot(i);
+		if (!itemInst.isEquipped)
+		{
+			continue;
+		}
+
+		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
+		if (itemDef.type == ItemType::Weapon)
+		{
+			equippedIndex = i;
+			break;
+		}
+	}
+
+	return equippedIndex;
+}
+
+ItemDefinitionID Player::getEquippedWeaponItemDefID() const
+{
+	const int inventorySlotIndex = this->getEquippedWeaponInventorySlotIndex();
+	if (inventorySlotIndex < 0)
+	{
+		return -1;
+	}
+
+	const ItemInstance &itemInst = this->inventory.getSlot(inventorySlotIndex);
+	return itemInst.defID;
+}
+
+WeaponAnimationDefinitionID Player::getEquippedWeaponAnimationDefID() const
+{
+	const int inventorySlotIndex = this->getEquippedWeaponInventorySlotIndex();
+	if (inventorySlotIndex < 0)
+	{
+		return ArenaItemUtils::FistsWeaponID;
+	}
+
+	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+	const ItemInstance &itemInst = this->inventory.getSlot(inventorySlotIndex);
+	const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
+	DebugAssert(itemDef.type == ItemType::Weapon);
+	const WeaponItemDefinition &weaponItemDef = itemDef.weapon;
+	return weaponItemDef.weaponAnimDefID;
+}
+
+void Player::setWeaponAnimationFromItem(ItemDefinitionID itemDefID)
+{
+	WeaponAnimationDefinitionID weaponAnimDefID = -1;
+	if (itemDefID >= 0)
+	{
+		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemDefID);
+		DebugAssert(itemDef.type == ItemType::Weapon);
+		const WeaponItemDefinition &weaponItemDef = itemDef.weapon;
+		weaponAnimDefID = weaponItemDef.weaponAnimDefID;
+	}
+	
+	InitWeaponAnimationInstance(this->weaponAnimInst, weaponAnimDefID);
 }
 
 void Player::addToKeyInventory(int keyID)

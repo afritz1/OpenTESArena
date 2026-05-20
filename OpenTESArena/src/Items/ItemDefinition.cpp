@@ -99,7 +99,8 @@ void TrinketItemDefinition::init(const char *name, const char* unidentifiedName,
 	this->spellID = spellID;
 }
 
-void WeaponItemDefinition::initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID)
+void WeaponItemDefinition::initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount,
+	ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID)
 {
 	DebugAssert((handCount == 1) || (handCount == 2));
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
@@ -110,9 +111,11 @@ void WeaponItemDefinition::initMelee(const char *name, double weight, int basePr
 	this->handCount = handCount;
 	this->isRanged = false;
 	this->materialDefID = materialDefID;
+	this->weaponAnimDefID = weaponAnimDefID;
 }
 
-void WeaponItemDefinition::initRanged(const char *name, double weight, int basePrice, int damageMin, int damageMax, ItemMaterialDefinitionID materialDefID)
+void WeaponItemDefinition::initRanged(const char *name, double weight, int basePrice, int damageMin, int damageMax,
+	ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
 	this->weight = weight;
@@ -122,6 +125,7 @@ void WeaponItemDefinition::initRanged(const char *name, double weight, int baseP
 	this->handCount = 2;
 	this->isRanged = true;
 	this->materialDefID = materialDefID;
+	this->weaponAnimDefID = weaponAnimDefID;
 }
 
 ArtifactItemDefinition::ArtifactItemDefinition()

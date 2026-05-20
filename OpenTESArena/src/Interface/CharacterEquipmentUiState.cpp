@@ -4,6 +4,7 @@
 #include "InventoryUiMVC.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
+#include "../Items/ItemLibrary.h"
 #include "../UI/FontLibrary.h"
 
 namespace
@@ -129,9 +130,20 @@ void CharacterEquipmentUI::create(Game &game)
 		{
 			if (mouseButtonType == MouseButtonType::Left)
 			{
-				ItemInventory &playerInventory = game.player.inventory;
+				Player &player = game.player;
+				ItemInventory &playerInventory = player.inventory;
 				ItemInstance &itemInst = playerInventory.getSlot(i);
 				itemInst.isEquipped = !itemInst.isEquipped;
+
+				// @todo actually enforce equipment rules like only 1 weapon at a time, etc.. Currently this will just pick the first equipped weapon in inventory
+
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+				const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
+				if (itemDef.type == ItemType::Weapon)
+				{
+					const ItemDefinitionID equippedItemDefID = player.getEquippedWeaponItemDefID();
+					player.setWeaponAnimationFromItem(equippedItemDefID); // Resets to sheathed animation state.
+				}
 
 				const Color &equipColor = InventoryUiView::getItemDisplayColor(itemInst);
 				uiManager.setListBoxItemColorOverride(inventoryListBoxElementInstID, i, equipColor);

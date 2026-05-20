@@ -332,6 +332,7 @@ SET(TES_MATH
 SET(TES_PLAYER
     "${SRC_ROOT}/Player/ArenaPlayerUtils.cpp"
     "${SRC_ROOT}/Player/ArenaPlayerUtils.h"
+    "${SRC_ROOT}/Player/ArenaWeaponUtils.cpp"
     "${SRC_ROOT}/Player/ArenaWeaponUtils.h"
     "${SRC_ROOT}/Player/CharacterClassGeneration.cpp"
     "${SRC_ROOT}/Player/CharacterClassGeneration.h"

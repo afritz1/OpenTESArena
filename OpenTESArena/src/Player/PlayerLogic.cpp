@@ -12,6 +12,7 @@
 #include "../Interface/GameWorldUiMVC.h"
 #include "../Interface/GameWorldUiState.h"
 #include "../Items/ArenaItemUtils.h"
+#include "../Items/ItemLibrary.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../Voxels/ArenaVoxelUtils.h"
@@ -791,7 +792,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	Player &player = game.player;
 	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
 	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
 	if (!WeaponAnimationUtils::isIdle(weaponAnimDefState))
 	{
@@ -812,6 +814,19 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 
+	const ItemDefinitionID equippedItemDefID = player.getEquippedWeaponItemDefID();
+	bool anyWeaponEquipped = equippedItemDefID >= 0;
+	bool isEquippedWeaponRanged = false;
+
+	if (anyWeaponEquipped)
+	{
+		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+		const ItemDefinition &equippedItemDef = itemLibrary.getDefinition(equippedItemDefID);
+		DebugAssert(equippedItemDef.type == ItemType::Weapon);
+		const WeaponItemDefinition &weaponItemDef = equippedItemDef.weapon;
+		isEquippedWeaponRanged = weaponItemDef.isRanged;
+	}
+
 	const bool isAttackMouseButtonDown = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 	const int weaponAnimIdleStateIndex = weaponAnimInst.currentStateIndex;
 	int newStateIndex = weaponAnimIdleStateIndex;
@@ -820,7 +835,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 	// @todo the CombatHitSearchResult could be manually populated with the entity an arrow collided with, so that we can use that same result for melee and ranged attacks
 
-	if (!ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
+	if (!isEquippedWeaponRanged)
 	{
 		const Int2 windowDims = window.getPixelDimensions();
 
@@ -887,7 +902,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 							const WorldDouble3 hitWorldVoxelCenter = VoxelUtils::getVoxelCenter(hitWorldVoxel, ceilingScale);
 							audioManager.playSoundOneShot(ArenaSoundName::Bash, hitWorldVoxelCenter);
 
-							if (ArenaItemUtils::isFistsWeapon(player.weaponAnimDefID))
+							if (!anyWeaponEquipped)
 							{
 								player.currentHealth -= ArenaPlayerUtils::getSelfDamageFromDoorBashWithFists(random);
 							}

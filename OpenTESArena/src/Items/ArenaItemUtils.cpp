@@ -11,6 +11,13 @@ bool ArenaItemUtils::isFistsWeapon(int weaponID)
 	return weaponID == ArenaItemUtils::FistsWeaponID;
 }
 
+bool ArenaItemUtils::isMeleeWeapon(int weaponID)
+{
+	const auto meleeWeaponsBegin = std::begin(ArenaItemUtils::MeleeWeaponIDs);
+	const auto meleeWeaponsEnd = std::end(ArenaItemUtils::MeleeWeaponIDs);
+	return std::find(meleeWeaponsBegin, meleeWeaponsEnd, weaponID) != meleeWeaponsEnd;
+}
+
 bool ArenaItemUtils::isRangedWeapon(int weaponID)
 {
 	const auto rangedWeaponsBegin = std::begin(ArenaItemUtils::RangedWeaponIDs);

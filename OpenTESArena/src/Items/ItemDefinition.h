@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "../Player/WeaponAnimation.h"
 #include "../Spells/SpellDefinition.h"
 #include "../Stats/PrimaryAttribute.h"
 
@@ -117,9 +118,10 @@ struct WeaponItemDefinition
 	int handCount;
 	bool isRanged;
 	ItemMaterialDefinitionID materialDefID;
+	WeaponAnimationDefinitionID weaponAnimDefID;
 
-	void initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID);
-	void initRanged(const char *name, double weight, int basePrice, int damageMin, int damageMax, ItemMaterialDefinitionID materialDefID);
+	void initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID);
+	void initRanged(const char *name, double weight, int basePrice, int damageMin, int damageMax, ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID);
 };
 
 struct ArtifactItemDefinition

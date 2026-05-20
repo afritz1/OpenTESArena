@@ -63,7 +63,8 @@ namespace
 	bool IsPlayerWeaponVisible(const Player &player)
 	{
 		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+		const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
+		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
 		const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 		DebugAssertIndex(weaponAnimDef.states, weaponAnimInst.currentStateIndex);
 		const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
@@ -138,7 +139,8 @@ void GameWorldUiState::init(Game &game)
 	this->playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
 	this->weaponAnimTextureIDs.init(weaponAnimDef.frameCount);
 	for (int i = 0; i < weaponAnimDef.frameCount; i++)
 	{
@@ -457,7 +459,8 @@ void GameWorldUI::update(double dt)
 	if (isWeaponVisible)
 	{
 		const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+		const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
+		const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
 		const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 		const int weaponAnimFrameIndex = WeaponAnimationUtils::getFrameIndex(weaponAnimInst, weaponAnimDef);
 		DebugAssertIndex(weaponAnimDef.frames, weaponAnimFrameIndex);
@@ -1024,11 +1027,21 @@ void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const I
 				Player &player = game.player;
 				const WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 				const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-				const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+				const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
+				const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
 				DebugAssertIndex(weaponAnimDef.states, weaponAnimInst.currentStateIndex);
 				const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
 
-				if (WeaponAnimationUtils::isIdle(weaponAnimDefState) && !ArenaItemUtils::isRangedWeapon(player.weaponAnimDefID))
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+				ItemDefinitionID weaponItemDefID = player.getEquippedWeaponItemDefID();
+				bool isRangedWeapon = false;
+				if (weaponItemDefID >= 0)
+				{
+					const ItemDefinition &weaponItemDef = itemLibrary.getDefinition(weaponItemDefID);
+					isRangedWeapon = weaponItemDef.weapon.isRanged;
+				}
+
+				if (WeaponAnimationUtils::isIdle(weaponAnimDefState) && !isRangedWeapon)
 				{
 					CardinalDirectionName randomMeleeSwingDirection = PlayerLogic::getRandomMeleeSwingDirection(game.random);
 					player.queuedMeleeSwingDirection = static_cast<int>(randomMeleeSwingDirection);
@@ -1086,7 +1099,8 @@ void GameWorldUI::onWeaponToggleButtonSelected(MouseButtonType mouseButtonType)
 	Player &player = game.player;
 	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
-	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(player.weaponAnimDefID);
+	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
+	const WeaponAnimationDefinition &weaponAnimDef = weaponAnimLibrary.getDefinition(weaponAnimDefID);
 	const WeaponAnimationDefinitionState &weaponAnimDefState = weaponAnimDef.states[weaponAnimInst.currentStateIndex];
 
 	int newStateIndex = -1;

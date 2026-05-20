@@ -112,9 +112,7 @@ struct Player
 	double maxSpellPoints;
 	double currentSpellPoints;
 
-	// Player always has a weapon animation even if it's just fists
-	int weaponAnimDefID;
-	WeaponAnimationInstance weaponAnimInst;
+	WeaponAnimationInstance weaponAnimInst; // Weapon animation is determined from inventory items, otherwise fists.
 	int queuedMeleeSwingDirection; // Non-negative if player is attempting attack this frame.
 
 	int level;
@@ -128,10 +126,14 @@ struct Player
 	~Player();
 
 	void init(const std::string &displayName, bool male, int raceID, int charClassDefID, int portraitID, const PrimaryAttributes &primaryAttributes,
-		int maxHealth, int maxStamina, int maxSpellPoints, int gold, int weaponID, bool isGhostModeActive, const ExeData &exeData,
-		JPH::PhysicsSystem &physicsSystem);
+		int maxHealth, int maxStamina, int maxSpellPoints, int gold, bool isGhostModeActive, const ExeData &exeData, JPH::PhysicsSystem &physicsSystem);
 
 	void freePhysicsBody(JPH::PhysicsSystem &physicsSystem);
+
+	int getEquippedWeaponInventorySlotIndex() const;
+	ItemDefinitionID getEquippedWeaponItemDefID() const;
+	WeaponAnimationDefinitionID getEquippedWeaponAnimationDefID() const;
+	void setWeaponAnimationFromItem(ItemDefinitionID itemDefID);
 
 	void addToKeyInventory(int keyID);
 	void removeFromKeyInventory(int keyID);

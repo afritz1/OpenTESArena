@@ -21,6 +21,8 @@ struct WeaponAnimationDefinitionFrame
 	int xOffset, yOffset;
 };
 
+using WeaponAnimationDefinitionID = int;
+
 struct WeaponAnimationDefinition
 {
 	static constexpr int MAX_STATES = 12;

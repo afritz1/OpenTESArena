@@ -865,12 +865,9 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			const int maxSpellPoints = charCreationState.maxSpellPoints;
 			const int gold = charCreationState.gold;
 
-			const int allowedWeaponCount = charClassDef.getAllowedWeaponCount();
-			const int weaponID = charClassDef.getAllowedWeapon(game.random.next(allowedWeaponCount));
-
 			Player &player = game.player;
 			player.init(std::string(name), male, raceIndex, charClassDefID, portraitIndex, attributes, maxHealth, maxStamina, maxSpellPoints,
-				gold, weaponID, game.options.getMisc_GhostMode(), exeData, game.physicsSystem);
+				gold, game.options.getMisc_GhostMode(), exeData, game.physicsSystem);
 
 			// Face west so we don't start looking at a wall.
 			player.setCameraFrameFromAngles(CardinalDirection::DegreesWest, 0.0);

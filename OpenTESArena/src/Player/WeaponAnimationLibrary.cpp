@@ -3,7 +3,6 @@
 
 #include "ArenaWeaponUtils.h"
 #include "WeaponAnimationLibrary.h"
-#include "../Assets/ExeData.h"
 #include "../Assets/TextureManager.h"
 #include "../Interface/GameWorldUiMVC.h"
 #include "../Items/ArenaItemUtils.h"
@@ -14,18 +13,19 @@
 
 namespace
 {
-	void AddAnimationStates(WeaponAnimationDefinition &animDef, const std::string &animFilename, Span<const ArenaWeaponUtils::AnimationStateInfo> animStateInfos, TextureManager &textureManager)
+	void AddWeaponAnimationStates(WeaponAnimationDefinition &animDef, const std::string &animFilename,
+		Span<const ArenaWeaponAnimationStateInfo> animStateInfos, TextureManager &textureManager)
 	{
 		const std::optional<TextureFileMetadataID> textureFileMetadataID = textureManager.tryGetMetadataID(animFilename.c_str());
 		if (!textureFileMetadataID.has_value())
 		{
-			DebugLogError("No texture metadata available for \"" + animFilename + "\".");
+			DebugLogErrorFormat("No texture metadata available for \"%s\".", animFilename.c_str());
 			return;
 		}
 
 		const TextureFileMetadata &textureFileMetadata = textureManager.getMetadataHandle(*textureFileMetadataID);
 
-		for (const ArenaWeaponUtils::AnimationStateInfo &animStateInfo : animStateInfos)
+		for (const ArenaWeaponAnimationStateInfo &animStateInfo : animStateInfos)
 		{
 			const std::string &stateName = animStateInfo.name;
 			const Span<const int> frameIndices = animStateInfo.frames;
@@ -43,57 +43,36 @@ namespace
 			}
 		}
 	}
-
-	std::string GetAnimationFilename(int weaponID, const ExeData &exeData)
-	{
-		int filenameIndex;
-		if (weaponID >= 0)
-		{
-			DebugAssertIndex(ArenaWeaponUtils::FilenameIndices, weaponID);
-			filenameIndex = ArenaWeaponUtils::FilenameIndices[weaponID];
-		}
-		else
-		{
-			filenameIndex = ArenaWeaponUtils::FistsFilenameIndex;
-		}
-
-		const auto &animFilenames = exeData.equipment.weaponAnimationFilenames;
-		DebugAssertIndex(animFilenames, filenameIndex);
-		const std::string &filename = animFilenames[filenameIndex];
-		return String::toUppercase(filename);
-	}
 }
 
 void WeaponAnimationLibrary::init(const ExeData &exeData, TextureManager &textureManager)
 {
-	const int fistsWeaponId = ArenaItemUtils::FistsWeaponID;
-	const std::string fistsAnimFilename = GetAnimationFilename(fistsWeaponId, exeData);
+	const int fistsWeaponID = ArenaItemUtils::FistsWeaponID;
+	const std::string fistsAnimFilename = ArenaWeaponUtils::getAnimationFilename(fistsWeaponID, exeData);
 	WeaponAnimationDefinition fistsAnimDef;
-	AddAnimationStates(fistsAnimDef, fistsAnimFilename, ArenaWeaponUtils::FistsAnimationStateInfos, textureManager);
-	this->animDefs.emplace(fistsWeaponId, std::move(fistsAnimDef));
+	AddWeaponAnimationStates(fistsAnimDef, fistsAnimFilename, ArenaWeaponUtils::FistsAnimationStateInfos, textureManager);
+	this->animDefs.emplace(fistsWeaponID, std::move(fistsAnimDef));
 
-	for (int i = 0; i < ArenaWeaponUtils::MeleeWeaponTypeCount; i++)
+	for (const int meleeWeaponID : ArenaItemUtils::MeleeWeaponIDs)
 	{
-		const int weaponID = i;
-		const std::string weaponAnimFilename = GetAnimationFilename(weaponID, exeData);
+		const std::string weaponAnimFilename = ArenaWeaponUtils::getAnimationFilename(meleeWeaponID, exeData);
 		WeaponAnimationDefinition animDef;
-		AddAnimationStates(animDef, weaponAnimFilename, ArenaWeaponUtils::MeleeAnimationStateInfos, textureManager);
-		this->animDefs.emplace(weaponID, animDef);
+		AddWeaponAnimationStates(animDef, weaponAnimFilename, ArenaWeaponUtils::MeleeAnimationStateInfos, textureManager);
+		this->animDefs.emplace(meleeWeaponID, animDef);
 	}
 
-	for (int i = 0; i < ArenaWeaponUtils::RangedWeaponTypeCount; i++)
+	for (const int rangedWeaponID : ArenaItemUtils::RangedWeaponIDs)
 	{
-		const int weaponID = ArenaWeaponUtils::MeleeWeaponTypeCount + i;
-		const std::string weaponAnimFilename = GetAnimationFilename(weaponID, exeData);
+		const std::string weaponAnimFilename = ArenaWeaponUtils::getAnimationFilename(rangedWeaponID, exeData);
 		WeaponAnimationDefinition animDef;
-		AddAnimationStates(animDef, weaponAnimFilename, ArenaWeaponUtils::BowAnimationStateInfos, textureManager);
-		this->animDefs.emplace(weaponID, animDef);
+		AddWeaponAnimationStates(animDef, weaponAnimFilename, ArenaWeaponUtils::BowAnimationStateInfos, textureManager);
+		this->animDefs.emplace(rangedWeaponID, animDef);
 	}
 }
 
-const WeaponAnimationDefinition &WeaponAnimationLibrary::getDefinition(int animDefID) const
+const WeaponAnimationDefinition &WeaponAnimationLibrary::getDefinition(WeaponAnimationDefinitionID weaponAnimDefID) const
 {
-	const auto iter = this->animDefs.find(animDefID);
+	const auto iter = this->animDefs.find(weaponAnimDefID);
 	DebugAssert(iter != this->animDefs.end());
 	return iter->second;
 }
