@@ -846,7 +846,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 
 		const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 		const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-		std::string itemDisplayName = GetLootItemDisplayNameWithQty(itemDef, 1); // @todo implement stacking
+		std::string itemDisplayName = GetLootItemDisplayNameWithQty(itemDef, itemInst.stackAmount);
 
 		auto listBoxItemCallback = [&game, &itemInventory, &uiManager, &itemLibrary, listBoxElementInstID, lootPopUpBackButtonCallback, listBoxItemIndex, &itemMappings](MouseButtonType)
 		{
@@ -877,7 +877,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 			Player &player = game.player;
 			if (selectedItemDef.type == ItemType::Gold)
 			{
-				player.gold += 1; // @todo implement stacking
+				player.gold += selectedItemInst.stackAmount;
 			}
 			else
 			{
@@ -913,7 +913,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 				{
 					const ItemInstance &curItemInst = itemInventory.getSlot(curItemMapping.inventoryItemIndex);
 					const ItemDefinition &curItemDef = itemLibrary.getDefinition(curItemInst.defID);
-					newListBoxItemText = GetLootItemDisplayNameWithQty(curItemDef, 1); // @todo implement stacking
+					newListBoxItemText = GetLootItemDisplayNameWithQty(curItemDef, curItemInst.stackAmount);
 				}
 
 				uiManager.setListBoxItemText(listBoxElementInstID, curItemMapping.listBoxItemIndex, newListBoxItemText.c_str());
