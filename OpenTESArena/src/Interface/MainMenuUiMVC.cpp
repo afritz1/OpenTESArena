@@ -595,6 +595,13 @@ void MainMenuUiController::onQuickStartButtonSelected(Game &game, int testType, 
 	if (testWeaponItemDefID >= 0)
 	{
 		player.inventory.insert(testWeaponItemDefID);
+
+		int testWeaponIndex;
+		player.inventory.findFirstSlot(testWeaponItemDefID, &testWeaponIndex);
+		ItemInstance &testItemInst = player.inventory.getSlot(testWeaponIndex);
+		testItemInst.isEquipped = true;
+
+		player.setWeaponAnimationFromItem(testWeaponItemDefID);
 	}
 
 	auto &textureManager = game.textureManager;
