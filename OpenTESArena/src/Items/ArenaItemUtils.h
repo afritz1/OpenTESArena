@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iterator>
+
 class Random;
 
 enum class ArmorMaterialType;
