@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <span>
 
 #include "ArenaEntityUtils.h"
 #include "../Assets/ArenaTypes.h"
@@ -96,76 +97,63 @@ bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint3
 	return roll <= itemChance;
 }
 
-int ArenaEntityUtils::pickNonMagicArmor(int armorLevel, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random)
+int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random)
 {
-	const auto &plateArmorQualities = exeData.equipment.plateArmorQualities;
-	const auto &chainArmorQualities = exeData.equipment.chainArmorQualities;
-	const auto &leatherArmorQualities = exeData.equipment.leatherArmorQualities;
-
-	int initialItemID = -1;
-	int finalItemID = -1;
-	if (specifiedItemID != -1)
-	{
-		initialItemID = specifiedItemID;
-		armorLevel = 20;
-	}
-	else
-	{
-		initialItemID = random.next(11);
-	}
-
-	// The original game picks a random value from 0 to 2 (plate, chain or leather) here, but it doesn't
-	// use the result, instead overriding it with 0 (plate) when baseMaterial is -1 or using the specified
-	// material when it is not -1. It probably was supposed to use the random value for the -1 case, which
-	// is used for treasure piles and armor found on creatures.
-	constexpr int invalidMaterialID = -1;
+	constexpr int invalidID = -1;
 	constexpr int plateMaterialID = 0;
 	constexpr int chainMaterialID = 1;
 	constexpr int leatherMaterialID = 2;
 
-	if (baseMaterial == invalidMaterialID || baseMaterial == plateMaterialID)
+	std::span<const uint8_t> qualities;
+
+	// Matches an original game bug where random armor generation always picks plate armor if no material is specified.
+	if ((baseMaterial == invalidID) || (baseMaterial == plateMaterialID))
 	{
-		DebugAssertIndex(plateArmorQualities, initialItemID);
-		for (int i = initialItemID; i < static_cast<int>(std::size(plateArmorQualities)); i++)
-		{
-			if (plateArmorQualities[i] <= armorLevel)
-			{
-				finalItemID = i;
-				break;
-			}
-		}
+		qualities = exeData.equipment.plateArmorQualities;
 	}
 	else if (baseMaterial == chainMaterialID)
 	{
-		DebugAssertIndex(chainArmorQualities, initialItemID);
-		for (int i = initialItemID; i < static_cast<int>(std::size(chainArmorQualities)); i++)
-		{
-			if (chainArmorQualities[i] <= armorLevel)
-			{
-				finalItemID = i;
-				break;
-			}
-		}
+		qualities = exeData.equipment.chainArmorQualities;
 	}
 	else
 	{
-		DebugAssertIndex(leatherArmorQualities, initialItemID);
-		for (int i = initialItemID; i < static_cast<int>(std::size(leatherArmorQualities)); i++)
+		qualities = exeData.equipment.leatherArmorQualities;
+	}
+
+	// If an armor ID is specified, the game forces the quality threshold to 20 and only does the quality check for the specified ID.
+	if (specifiedItemID != invalidID)
+	{
+		itemQualityThreshold = 20;
+
+		DebugAssertIndex(qualities, specifiedItemID);
+
+		if (qualities[specifiedItemID] <= itemQualityThreshold)
 		{
-			if (leatherArmorQualities[i] <= armorLevel)
-			{
-				finalItemID = i;
-				break;
-			}
+			return specifiedItemID;
+		}
+
+		return invalidID;
+	}
+
+	// Random generation starts from a random armor ID and scans upward until a valid item is found.
+	const int initialItemID = random.next(11);
+
+	for (int itemID = initialItemID;
+		itemID < static_cast<int>(qualities.size());
+		itemID++)
+	{
+		if (qualities[itemID] <= itemQualityThreshold)
+		{
+			return itemID;
 		}
 	}
 
-	return finalItemID;
+	return invalidID;
 }
 
-int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, const ExeData &exeData, Random &random)
+int ArenaEntityUtils::pickNonMagicWeapon(int weaponQualityThreshold, int specifiedItemID, const ExeData &exeData, Random &random)
 {
-	DebugAssert(weaponLevel >= 1);
+	DebugAssert(weaponQualityThreshold >= 1);
 	const auto &weaponQualities = exeData.equipment.weaponQualities;
 	constexpr int maximumWeaponQuality = 20;
 	for (int i = 0; i < std::size(weaponQualities); i++)
@@ -180,13 +168,13 @@ int ArenaEntityUtils::pickNonMagicWeapon(int weaponLevel, int specifiedItemID, c
 		if (specifiedItemID != -1)
 		{
 			itemID = specifiedItemID;
-			weaponLevel = maximumWeaponQuality; // Breaks out of the loop
+			weaponQualityThreshold = maximumWeaponQuality; // Breaks out of the loop
 		}
 		else
 		{
 			itemID = random.next(weaponQualityCount);
 		}
-	} while (weaponLevel < weaponQualities[itemID]);
+	} while (weaponQualityThreshold < weaponQualities[itemID]);
 
 	return itemID;
 }
@@ -201,19 +189,19 @@ void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const
 
 	for (int i = 0; i < itemCreationAttemptCount; i++)
 	{
-		const int itemQualityLevel = ArenaEntityUtils::getCreatureItemQualityLevel(creatureLevel);
+		const int itemQualityThreshold = ArenaEntityUtils::getCreatureItemQualityThreshold(creatureLevel);
 		const bool shouldPickArmor = random.nextBool();
 
 		if (shouldPickArmor)
 		{
 			constexpr int baseMaterial = -1;
 			constexpr int specifiedArmorID = -1;
-			itemID = ArenaEntityUtils::pickNonMagicArmor(itemQualityLevel, baseMaterial, specifiedArmorID, exeData, random);
+			itemID = ArenaEntityUtils::pickNonMagicArmor(itemQualityThreshold, baseMaterial, specifiedArmorID, exeData, random);
 		}
 		else
 		{
 			constexpr int specifiedWeaponID = -1;
-			itemID = ArenaEntityUtils::pickNonMagicWeapon(itemQualityLevel, specifiedWeaponID, exeData, random);
+			itemID = ArenaEntityUtils::pickNonMagicWeapon(itemQualityThreshold, specifiedWeaponID, exeData, random);
 		}
 
 		// After picking an armor or weapon the original game calls a function for checking whether a class
@@ -274,8 +262,8 @@ void ArenaEntityUtils::getCreatureMagicItem(int creatureLevel, const ExeData &ex
 	else
 	{
 		isPotion = false;
-		const int quality = ArenaEntityUtils::getCreatureItemQualityLevel(creatureLevel);
-		ArenaEntityUtils::pickMagicAccessoryOrTrinket(-1, quality, exeData, random, &itemID, &materialID, &attributeID, &spellID);
+		const int qualityThreshold = ArenaEntityUtils::getCreatureItemQualityThreshold(creatureLevel);
+		ArenaEntityUtils::pickMagicAccessoryOrTrinket(-1, qualityThreshold, exeData, random, &itemID, &materialID, &attributeID, &spellID);
 	}
 
 	*outMaterialID = materialID;
@@ -291,7 +279,7 @@ int ArenaEntityUtils::pickPotion(Random &random)
 	return random.next(numberOfPotionTypes);
 }
 
-void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID,
+void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int qualityThreshold, const ExeData &exeData, Random &random, int *outItemID,
 	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID)
 {
 	int itemID = -1;
@@ -302,11 +290,11 @@ void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int qual
 	const int type = random.next(3);
 	if (type == 0)
 	{
-		ArenaEntityUtils::pickSpellCastingItem(-1, quality, exeData, random, &itemID, &spellID);
+		ArenaEntityUtils::pickSpellCastingItem(-1, qualityThreshold, exeData, random, &itemID, &spellID);
 	}
 	else if (type == 1)
 	{
-		ArenaEntityUtils::pickAttributeEnhancementItem(specifiedItemID, quality, exeData, random, &itemID, &attributeID);
+		ArenaEntityUtils::pickAttributeEnhancementItem(specifiedItemID, qualityThreshold, exeData, random, &itemID, &attributeID);
 	}
 	else
 	{
@@ -319,7 +307,7 @@ void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int qual
 	*outSpellID = spellID;
 }
 
-void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, SpellID *outSpellID)
+void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int qualityThreshold, const ExeData &exeData, Random &random, int *outItemID, SpellID *outSpellID)
 {
 	const auto &spellcastingBaseItemChances = exeData.equipment.spellcastingItemCumulativeChances;
 	const auto &spellcastingItemAttackSpellQualities = exeData.equipment.spellcastingItemAttackSpellQualities;
@@ -352,7 +340,7 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 		bool validSpellExists = false;
 		for (int i = 0; i < spellcastingItemAttackSpellQualitiesCount; i++)
 		{
-			if (spellcastingItemAttackSpellQualities[i] <= quality)
+			if (spellcastingItemAttackSpellQualities[i] <= qualityThreshold)
 			{
 				validSpellExists = true;
 				break;
@@ -364,7 +352,7 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 		do
 		{
 			spellIDIndex = random.next(spellcastingItemAttackSpellQualitiesCount);
-		} while (quality < (spellcastingItemAttackSpellQualities[spellIDIndex]));
+		} while (qualityThreshold < (spellcastingItemAttackSpellQualities[spellIDIndex]));
 
 		spellID = spellcastingItemAttackSpellSpells[spellIDIndex];
 	}
@@ -374,7 +362,7 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 		bool validSpellExists = false;
 		for (int i = 0; i < spellcastingItemDefensiveSpellQualitiesCount; i++)
 		{
-			if (spellcastingItemDefensiveSpellQualities[i] <= quality)
+			if (spellcastingItemDefensiveSpellQualities[i] <= qualityThreshold)
 			{
 				validSpellExists = true;
 				break;
@@ -386,7 +374,7 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 		do
 		{
 			spellIDIndex = random.next(spellcastingItemDefensiveSpellQualitiesCount);
-		} while (quality < (spellcastingItemDefensiveSpellQualities[spellIDIndex]));
+		} while (qualityThreshold < (spellcastingItemDefensiveSpellQualities[spellIDIndex]));
 
 		spellID = spellcastingItemDefensiveSpellSpells[spellIDIndex];
 	}
@@ -396,7 +384,7 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 		bool validSpellExists = false;
 		for (int i = 0; i < spellcastingItemMiscSpellQualitiesCount; i++)
 		{
-			if (spellcastingItemMiscSpellQualities[i] <= quality)
+			if (spellcastingItemMiscSpellQualities[i] <= qualityThreshold)
 			{
 				validSpellExists = true;
 				break;
@@ -408,7 +396,7 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int quality, co
 		do
 		{
 			spellIDIndex = random.next(spellcastingItemMiscSpellQualitiesCount);
-		} while (quality < (spellcastingItemMiscSpellQualities[spellIDIndex]));
+		} while (qualityThreshold < (spellcastingItemMiscSpellQualities[spellIDIndex]));
 
 		spellID = spellcastingItemMiscSpellSpells[spellIDIndex];
 	}
@@ -472,7 +460,7 @@ void ArenaEntityUtils::pickArmorClassItem(int specifiedItemID, const ExeData &ex
 	*outItemID = itemID;
 }
 
-int ArenaEntityUtils::getCreatureItemQualityLevel(int creatureLevel)
+int ArenaEntityUtils::getCreatureItemQualityThreshold(int creatureLevel)
 {
 	return creatureLevel + 1;
 }
@@ -622,10 +610,10 @@ void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityT
 	{
 		isPotion = false;
 
-		const int quality = ArenaEntityUtils::getLootItemQualityValue(lootValuesIndex, random, cityType, levelIndex);
-		if (quality >= 3)
+		const int qualityThreshold = ArenaEntityUtils::getLootItemQualityThreshold(lootValuesIndex, random, cityType, levelIndex);
+		if (qualityThreshold >= 3)
 		{
-			ArenaEntityUtils::pickMagicAccessoryOrTrinket(-1, quality, exeData, random, &itemID, &materialID, &attributeID, &spellID);
+			ArenaEntityUtils::pickMagicAccessoryOrTrinket(-1, qualityThreshold, exeData, random, &itemID, &materialID, &attributeID, &spellID);
 		}
 	}
 
@@ -636,42 +624,42 @@ void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityT
 	*outSpellID = spellID;
 }
 
-int ArenaEntityUtils::getLootItemQualityValue(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex)
+int ArenaEntityUtils::getLootItemQualityThreshold(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex)
 {
-	int itemQualityLevel = 0;
+	int itemQualityThreshold = 0;
 	switch (lootValuesIndex)
 	{
 	case ArenaEntityUtils::LOOT_VALUES_INDEX_HOUSE:
-		itemQualityLevel = random.next(5) + 1;
+		itemQualityThreshold = random.next(5) + 1;
 		break;
 	case ArenaEntityUtils::LOOT_VALUES_INDEX_PALACE:
 		if (cityType == ArenaCityType::CityState)
 		{
-			itemQualityLevel = 16;
+			itemQualityThreshold = 16;
 		}
 		else if (cityType == ArenaCityType::Town)
 		{
-			itemQualityLevel = 14;
+			itemQualityThreshold = 14;
 		}
 		else
 		{
-			itemQualityLevel = 12;
+			itemQualityThreshold = 12;
 		}
 		break;
 	case ArenaEntityUtils::LOOT_VALUES_INDEX_NOBLE:
-		itemQualityLevel = random.next(9) + 2;
+		itemQualityThreshold = random.next(9) + 2;
 		break;
 	case ArenaEntityUtils::LOOT_VALUES_INDEX_DUNGEON:
-		itemQualityLevel = 5 * (levelIndex + 1);
+		itemQualityThreshold = 5 * (levelIndex + 1);
 		break;
 	case ArenaEntityUtils::LOOT_VALUES_INDEX_CRYPT: // and TOWER
-		itemQualityLevel = 3 * levelIndex;
+		itemQualityThreshold = 3 * levelIndex;
 		break;
 	default:
 		break;
 	}
 
-	return itemQualityLevel;
+	return itemQualityThreshold;
 }
 
 void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor,
@@ -680,20 +668,20 @@ void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Rand
 	int itemID = -1;
 	bool isArmor = false;
 
-	// The original game gets itemQualityLevel with GetLootItemQualityValue but then overwrites it with 16
-	const int itemQualityLevel = 16;
+	// The original game gets itemQualityThreshold with GetLootItemQualityThreshold but then overwrites it with 16
+	const int itemQualityThreshold = 16;
 	const bool shouldPickArmor = random.nextBool();
 
 	if (shouldPickArmor)
 	{
 		constexpr int baseMaterial = -1;
 		constexpr int specifiedArmorID = -1;
-		itemID = ArenaEntityUtils::pickNonMagicArmor(itemQualityLevel, baseMaterial, specifiedArmorID, exeData, random);
+		itemID = ArenaEntityUtils::pickNonMagicArmor(itemQualityThreshold, baseMaterial, specifiedArmorID, exeData, random);
 	}
 	else
 	{
 		constexpr int specifiedWeaponID = -1;
-		itemID = ArenaEntityUtils::pickNonMagicWeapon(itemQualityLevel, specifiedWeaponID, exeData, random);
+		itemID = ArenaEntityUtils::pickNonMagicWeapon(itemQualityThreshold, specifiedWeaponID, exeData, random);
 	}
 
 	if (itemID >= 0)
