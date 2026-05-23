@@ -575,6 +575,50 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					itemInventory.insert(itemDefID);
 				}
 			}
+			else // Human enemy
+			{
+				const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
+				std::vector<ItemDefinitionID> testItemDefIDs;
+
+				ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+				ItemDefinitionID itemDefID = -1;
+
+				std::array<int, 7> armorIDs;
+				armorIDs.fill(-1);
+				ArmorMaterialType armorMaterialType;
+				int level = 1; // TODO: Use enemy's level
+				ArenaEntityUtils::getHumanEnemyArmor(enemyDef.human.charClassID, level, exeData, random, armorIDs, &armorMaterialType);
+
+				for (const int armorID : armorIDs)
+				{
+					itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[armorID, armorMaterialType](const ItemDefinition& itemDef)
+						{
+							if (itemDef.originalItemID != armorID)
+							{
+								return false;
+							}
+
+							if (itemDef.type == ItemType::Armor)
+							{
+								const ArmorItemDefinition& armorItemDef = itemDef.armor;
+								return armorItemDef.materialType == armorMaterialType;
+							}
+							else if (itemDef.type == ItemType::Shield)
+							{
+								return true;
+							}
+							else
+							{
+								return false;
+							}
+						});
+					if (itemDefID != -1)
+					{
+						itemInventory.insert(itemDefID);
+					}
+				}
+			}
 		}
 		else
 		{

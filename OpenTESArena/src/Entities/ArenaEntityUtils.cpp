@@ -97,6 +97,83 @@ bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint3
 	return roll <= itemChance;
 }
 
+void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeData& exeData, Random& random, std::array<int, 7>& outArmorIDs, ArmorMaterialType* outArmorMaterialType)
+{
+	constexpr int armorForbiddenID = 3;
+
+	if (exeData.charClasses.allowedArmors[classNumber] == armorForbiddenID)
+	{
+		return;
+	}
+
+	constexpr int plateMaterialID = 0;
+	constexpr int chainMaterialID = 1;
+	constexpr int leatherMaterialID = 2;
+
+	int armorMaterial = leatherMaterialID;
+	int upgradeChance = 0;
+	int classID = exeData.charClasses.classNumbersToIDs[classNumber];
+
+	constexpr int warriorClassID = 0x10;
+	constexpr int knightClassID = 0x11;
+
+	// Warriors and Knights start at chain and can upgrade to plate.
+	if ((classID == warriorClassID) || (classID == knightClassID))
+	{
+		armorMaterial = chainMaterialID;
+		upgradeChance = level * 10;
+	}
+	else
+	{
+		// These classes start at leather and can upgrade to chain.
+		std::span<const uint8_t> chainCapableClasses = exeData.entities.humanEnemyChainCapableClasses;
+
+		const bool canUpgradeToChain = std::ranges::find(chainCapableClasses, classID) != chainCapableClasses.end();
+
+		if (canUpgradeToChain)
+		{
+			upgradeChance = level * 10;
+		}
+	}
+
+	// Off-by-one bonus chance as per original game. Roll returns 0-99. If the roll is <= upgradeChance then success,
+	// so the chance is (level * 10) + 1 percent.
+	const int roll = random.next(100);
+	if (roll <= upgradeChance)
+	{
+		armorMaterial--;
+	}
+
+	const int itemQualityThreshold = level + 1;
+	for (int i = 0; i < 4; i++)
+	{
+		// The original executable has unreachable code to instead pick a magical or named plate material armor piece
+		// if random.next(100) < 2. This also applies for the secondary slots below.
+		outArmorIDs[i] = ArenaEntityUtils::pickNonMagicArmor(itemQualityThreshold, armorMaterial, exeData.entities.humanEnemyPrimaryArmorSlots[i], exeData, random);
+	}
+
+	constexpr int minRequiredLevelForSecondaryArmor = 5;
+	constexpr int secondaryArmorRequiredLevelStep = 5;
+	int requiredLevel = minRequiredLevelForSecondaryArmor;
+	for (int i = 0; i < 3; i++)
+	{
+		if (level < requiredLevel)
+		{
+			break;
+		}
+
+		outArmorIDs[i + 4] = ArenaEntityUtils::pickNonMagicArmor(itemQualityThreshold, armorMaterial, exeData.entities.humanEnemySecondaryArmorSlots[i], exeData, random);
+		requiredLevel += secondaryArmorRequiredLevelStep;
+	}
+
+	if (armorMaterial == leatherMaterialID)
+		*outArmorMaterialType = ArmorMaterialType::Leather;
+	else if (armorMaterial == chainMaterialID)
+		*outArmorMaterialType = ArmorMaterialType::Chain;
+	else
+		*outArmorMaterialType = ArmorMaterialType::Plate;
+}
+
 int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random)
 {
 	constexpr int invalidID = -1;
