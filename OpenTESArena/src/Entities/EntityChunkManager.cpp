@@ -618,6 +618,19 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 						itemInventory.insert(itemDefID);
 					}
 				}
+				int weaponID = -1;
+				ArenaEntityUtils::getHumanEnemyWeapon(enemyDef.human.charClassID, exeData, random, &weaponID);
+
+				itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+					[weaponID](const ItemDefinition& itemDef)
+					{
+						return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
+					});
+
+				if (itemDefID != -1)
+				{
+					itemInventory.insert(itemDefID);
+				}
 			}
 		}
 		else

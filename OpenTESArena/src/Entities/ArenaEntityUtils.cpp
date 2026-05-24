@@ -97,7 +97,7 @@ bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint3
 	return roll <= itemChance;
 }
 
-void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeData& exeData, Random& random, std::array<int, 7>& outArmorIDs, ArmorMaterialType* outArmorMaterialType)
+void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, Random &random, std::array<int, 7> &outArmorIDs, ArmorMaterialType *outArmorMaterialType)
 {
 	constexpr int armorForbiddenID = 3;
 
@@ -172,6 +172,52 @@ void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeD
 		*outArmorMaterialType = ArmorMaterialType::Chain;
 	else
 		*outArmorMaterialType = ArmorMaterialType::Plate;
+}
+
+void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeData, Random &random, int *outWeaponID)
+{
+	constexpr int archerID = 13;
+	constexpr int staffWeaponID = 0;
+	constexpr int longBowWeaponID = 17;
+	constexpr int mageClassNumber = 0;
+
+	int weaponID = longBowWeaponID;
+	std::span<const int> allowedWeaponIndices = exeData.charClasses.allowedWeaponsIndices;
+	std::span<const uint16_t> allowedWeapons = exeData.charClasses.allowedWeapons;
+	std::span<const std::vector<uint8_t>> allowedWeaponLists = exeData.charClasses.allowedWeaponsLists;
+
+	while (true)
+	{
+		if (classNumber != archerID)
+		{
+			int allowedWeaponIndex = allowedWeaponIndices[classNumber];
+
+			if (allowedWeaponIndex == -1)
+				weaponID = random.next(15) + 2;
+			else
+			{
+				size_t size = allowedWeaponLists[allowedWeaponIndex].size();
+				weaponID = allowedWeaponLists[allowedWeaponIndex][random.next((int)size)];
+			}
+		}
+
+		int roll = random.next(100);
+		if (roll < 3)
+		{
+			// TODO: Pick magic/material weapon
+			roll = 3; // TODO: Remove
+		}
+		weaponID = ArenaEntityUtils::pickNonMagicWeapon(roll, weaponID, exeData, random);
+
+		// Non-mages reroll staffs.
+		if (weaponID != staffWeaponID || classNumber == mageClassNumber)
+
+		{
+			break;
+		}
+	}
+
+	*outWeaponID = weaponID;
 }
 
 int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random)
