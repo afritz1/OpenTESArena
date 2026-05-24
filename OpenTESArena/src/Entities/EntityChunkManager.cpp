@@ -604,10 +604,6 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 								const ArmorItemDefinition& armorItemDef = itemDef.armor;
 								return armorItemDef.materialType == armorMaterialType;
 							}
-							else if (itemDef.type == ItemType::Shield)
-							{
-								return true;
-							}
 							else
 							{
 								return false;
@@ -627,6 +623,30 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 						return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
 					});
 
+				if (itemDefID != -1)
+				{
+					itemInventory.insert(itemDefID);
+				}
+
+				int shieldID = -1;
+				ArenaEntityUtils::getHumanEnemyShield(enemyDef.human.charClassID, exeData, random, weaponID, &shieldID);
+				itemDefID = itemLibrary.getFirstDefinitionIndexIf(
+					[shieldID, armorMaterialType](const ItemDefinition& itemDef)
+					{
+						if (itemDef.originalItemID != shieldID)
+						{
+							return false;
+						}
+
+						if (itemDef.type == ItemType::Shield)
+						{
+							return true;
+						}
+						else
+						{
+							return false;
+						}
+					});
 				if (itemDefID != -1)
 				{
 					itemInventory.insert(itemDefID);

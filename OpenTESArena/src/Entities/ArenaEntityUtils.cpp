@@ -144,12 +144,12 @@ void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeD
 		armorMaterial--;
 	}
 
-	const int itemQualityThreshold = level + 1;
+	constexpr int dummyQualityThreshold = 1;
 	for (int i = 0; i < 4; i++)
 	{
 		// The original executable has unreachable code to instead pick a magical or named plate material armor piece
 		// if random.next(100) < 2. This also applies for the secondary slots below.
-		outArmorIDs[i] = ArenaEntityUtils::pickNonMagicArmor(itemQualityThreshold, armorMaterial, exeData.entities.humanEnemyPrimaryArmorSlots[i], exeData, random);
+		outArmorIDs[i] = ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, armorMaterial, exeData.entities.humanEnemyPrimaryArmorSlots[i], exeData, random);
 	}
 
 	constexpr int minRequiredLevelForSecondaryArmor = 5;
@@ -162,7 +162,7 @@ void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeD
 			break;
 		}
 
-		outArmorIDs[i + 4] = ArenaEntityUtils::pickNonMagicArmor(itemQualityThreshold, armorMaterial, exeData.entities.humanEnemySecondaryArmorSlots[i], exeData, random);
+		outArmorIDs[i + 4] = ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, armorMaterial, exeData.entities.humanEnemySecondaryArmorSlots[i], exeData, random);
 		requiredLevel += secondaryArmorRequiredLevelStep;
 	}
 
@@ -183,7 +183,6 @@ void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeDa
 
 	int weaponID = longBowWeaponID;
 	std::span<const int> allowedWeaponIndices = exeData.charClasses.allowedWeaponsIndices;
-	std::span<const uint16_t> allowedWeapons = exeData.charClasses.allowedWeapons;
 	std::span<const std::vector<uint8_t>> allowedWeaponLists = exeData.charClasses.allowedWeaponsLists;
 
 	while (true)
@@ -201,23 +200,49 @@ void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeDa
 			}
 		}
 
-		int roll = random.next(100);
-		if (roll < 3)
+		if (random.next(100) < 3)
 		{
 			// TODO: Pick magic/material weapon
-			roll = 3; // TODO: Remove
 		}
-		weaponID = ArenaEntityUtils::pickNonMagicWeapon(roll, weaponID, exeData, random);
+		else
+		{
+			constexpr int dummyQualityThreshold = 1;
+			weaponID = ArenaEntityUtils::pickNonMagicWeapon(dummyQualityThreshold, weaponID, exeData, random);
+		}
 
 		// Non-mages reroll staffs.
 		if (weaponID != staffWeaponID || classNumber == mageClassNumber)
-
 		{
 			break;
 		}
 	}
 
 	*outWeaponID = weaponID;
+}
+
+void ArenaEntityUtils::getHumanEnemyShield(int classNumber, const ExeData &exeData, Random &random, int weaponID, int *outShieldID)
+{
+	constexpr int invalidID = -1;
+	constexpr int plateMaterialID = 0;
+
+	int shieldID = invalidID;
+
+	if (exeData.equipment.weaponHandednesses[weaponID] != 2)
+	{
+		std::span<const int> allowedShieldsIndices = exeData.charClasses.allowedShieldsIndices;
+		std::span<const std::vector<uint8_t>> allowedShieldsLists = exeData.charClasses.allowedShieldsLists;
+
+		int allowedShieldsIndex = allowedShieldsIndices[classNumber];
+		size_t size = allowedShieldsLists[allowedShieldsIndex].size();
+		shieldID = allowedShieldsLists[allowedShieldsIndex][random.next((int)size)];
+
+		// The original executable has unreachable code to instead pick a magical or named plate material armor piece
+		// if random.next(100) < 2.
+		constexpr int dummyQualityThreshold = 1;
+		shieldID = pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, shieldID, exeData, random);
+	}
+
+	*outShieldID = shieldID;
 }
 
 int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random)
