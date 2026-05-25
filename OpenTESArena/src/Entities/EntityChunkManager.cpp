@@ -581,6 +581,12 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				std::vector<ItemDefinitionID> testItemDefIDs;
 
 				ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+
+				const int goldAmount = ArenaEntityUtils::getHumanEnemyGold(enemyDef.human.charClassID, exeData, random);
+				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
+				if (goldAmount > 0)
+					itemInventory.insert(goldItemDefID, goldAmount);
+
 				ItemDefinitionID itemDefID = -1;
 
 				std::array<int, 7> armorIDs;
