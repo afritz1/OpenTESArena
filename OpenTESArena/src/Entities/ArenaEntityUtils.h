@@ -6,6 +6,8 @@
 #include "../Spells/SpellDefinition.h"
 #include "../Stats/PrimaryAttribute.h"
 
+#include "components/utilities/Span.h"
+
 class Random;
 
 enum class ArenaCityType;
@@ -49,7 +51,7 @@ namespace ArenaEntityUtils
 	int pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random);
 	int pickNonMagicWeapon(int weaponQualityThreshold, int specifiedItemID, const ExeData &exeData, Random &random);
 
-	void getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, Random &random, std::array<int, 7> &outArmorIDs, ArmorMaterialType *outArmorMaterialType);
+	void getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, Random &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType);
 	void getHumanEnemyWeapon(int classNumber, const ExeData &exeData, Random &random, int *outWeaponID);
 	void getHumanEnemyShield(int classNumber, const ExeData &exeData, Random &random, int weaponID, int *outShieldID);
 	void getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID,

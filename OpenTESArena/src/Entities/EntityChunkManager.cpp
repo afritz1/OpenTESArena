@@ -477,34 +477,34 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[magicItemID](const ItemDefinition &itemDef)
-							{
-								return (itemDef.type == ItemType::Consumable) && (itemDef.originalItemID == magicItemID);
-							});
+						{
+							return (itemDef.type == ItemType::Consumable) && (itemDef.originalItemID == magicItemID);
+						});
 					}
 					else if (spellID != -1)
 					{
 						// @todo: Get number of spell charges from helper function.
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[magicItemID, spellID](const ItemDefinition &itemDef)
-							{
-								return (itemDef.type == ItemType::Trinket) && (itemDef.originalItemID == magicItemID) && (itemDef.trinket.spellID == spellID);
-							});
+						{
+							return (itemDef.type == ItemType::Trinket) && (itemDef.originalItemID == magicItemID) && (itemDef.trinket.spellID == spellID);
+						});
 					}
 					else if (attributeID != -1)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[magicItemID, attributeID](const ItemDefinition &itemDef)
-							{
-								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.attributeID == attributeID);
-							});
+						{
+							return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.attributeID == attributeID);
+						});
 					}
 					else if (materialID != -1)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[magicItemID, materialID](const ItemDefinition &itemDef)
-							{
-								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.materialDefID == materialID);
-							});
+						{
+							return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.materialDefID == materialID);
+						});
 					}
 
 					if (itemDefID != -1)
@@ -575,59 +575,61 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					itemInventory.insert(itemDefID);
 				}
 			}
-			else // Human enemy
+			else
 			{
-				const ItemLibrary& itemLibrary = ItemLibrary::getInstance();
+				// Human enemy
+				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 				std::vector<ItemDefinitionID> testItemDefIDs;
 
-				ItemInventory& itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+				ItemInventory &itemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
 
 				const int goldAmount = ArenaEntityUtils::getHumanEnemyGold(enemyDef.human.charClassID, exeData, random);
 				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
 				if (goldAmount > 0)
+				{
 					itemInventory.insert(goldItemDefID, goldAmount);
-
-				ItemDefinitionID itemDefID = -1;
+				}
 
 				std::array<int, 7> armorIDs;
 				armorIDs.fill(-1);
-				ArmorMaterialType armorMaterialType;
 				int level = 1; // TODO: Use enemy's level
+				ArmorMaterialType armorMaterialType;
 				ArenaEntityUtils::getHumanEnemyArmor(enemyDef.human.charClassID, level, exeData, random, armorIDs, &armorMaterialType);
 
+				ItemDefinitionID itemDefID = -1;
 				for (const int armorID : armorIDs)
 				{
 					itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-						[armorID, armorMaterialType](const ItemDefinition& itemDef)
+						[armorID, armorMaterialType](const ItemDefinition &itemDef)
+					{
+						if (itemDef.originalItemID != armorID)
 						{
-							if (itemDef.originalItemID != armorID)
-							{
-								return false;
-							}
+							return false;
+						}
 
-							if (itemDef.type == ItemType::Armor)
-							{
-								const ArmorItemDefinition& armorItemDef = itemDef.armor;
-								return armorItemDef.materialType == armorMaterialType;
-							}
-							else
-							{
-								return false;
-							}
-						});
+						if (itemDef.type != ItemType::Armor)
+						{
+							return false;
+						}
+
+						const ArmorItemDefinition &armorItemDef = itemDef.armor;
+						return armorItemDef.materialType == armorMaterialType;
+					});
+
 					if (itemDefID != -1)
 					{
 						itemInventory.insert(itemDefID);
 					}
 				}
+
 				int weaponID = -1;
 				ArenaEntityUtils::getHumanEnemyWeapon(enemyDef.human.charClassID, exeData, random, &weaponID);
 
 				itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-					[weaponID](const ItemDefinition& itemDef)
-					{
-						return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
-					});
+					[weaponID](const ItemDefinition &itemDef)
+				{
+					return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
+				});
 
 				if (itemDefID != -1)
 				{
@@ -637,22 +639,11 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				int shieldID = -1;
 				ArenaEntityUtils::getHumanEnemyShield(enemyDef.human.charClassID, exeData, random, weaponID, &shieldID);
 				itemDefID = itemLibrary.getFirstDefinitionIndexIf(
-					[shieldID, armorMaterialType](const ItemDefinition& itemDef)
-					{
-						if (itemDef.originalItemID != shieldID)
-						{
-							return false;
-						}
+					[shieldID, armorMaterialType](const ItemDefinition &itemDef)
+				{
+					return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
+				});
 
-						if (itemDef.type == ItemType::Shield)
-						{
-							return true;
-						}
-						else
-						{
-							return false;
-						}
-					});
 				if (itemDefID != -1)
 				{
 					itemInventory.insert(itemDefID);
@@ -702,34 +693,34 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[magicItemID](const ItemDefinition &itemDef)
-							{
-								return (itemDef.type == ItemType::Consumable) && (itemDef.originalItemID == magicItemID);
-							});
+						{
+							return (itemDef.type == ItemType::Consumable) && (itemDef.originalItemID == magicItemID);
+						});
 					}
 					else if (spellID != -1)
 					{
 						// @todo: Get number of spell charges from helper function.
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[magicItemID, spellID](const ItemDefinition &itemDef)
-							{
-								return (itemDef.type == ItemType::Trinket) && (itemDef.originalItemID == magicItemID) && (itemDef.trinket.spellID == spellID);
-							});
+						{
+							return (itemDef.type == ItemType::Trinket) && (itemDef.originalItemID == magicItemID) && (itemDef.trinket.spellID == spellID);
+						});
 					}
 					else if (attributeID != -1)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[magicItemID, attributeID](const ItemDefinition &itemDef)
-							{
-								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.attributeID == attributeID);
-							});
+						{
+							return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.attributeID == attributeID);
+						});
 					}
 					else if (materialID != -1)
 					{
 						itemDefID = itemLibrary.getFirstDefinitionIndexIf(
 							[magicItemID, materialID](const ItemDefinition &itemDef)
-							{
-								return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.materialDefID == materialID);
-							});
+						{
+							return (itemDef.type == ItemType::Accessory) && (itemDef.originalItemID == magicItemID) && (itemDef.accessory.materialDefID == materialID);
+						});
 					}
 
 					if (itemDefID != -1)
@@ -791,9 +782,9 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					// @todo: Get item and condition percentage from helper functions
 					testItemDefIDs = itemLibrary.getDefinitionIndicesIf(
 						[](const ItemDefinition &itemDef)
-						{
-							return ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
-						});
+					{
+						return ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
+					});
 
 					randomItemIndex = random.next(static_cast<int>(testItemDefIDs.size()));
 					itemDefID = testItemDefIDs[randomItemIndex];
@@ -1327,7 +1318,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		{
 			DebugCrash("Couldn't get enemy attack state index.");
 		}
-		
+
 		Double2 &entityDir = this->directions.get(entityInst.directionID);
 		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
 		DebugAssert(behaviorState.type == EntityBehaviorStateType::Enemy);
@@ -1751,7 +1742,7 @@ void EntityChunkManager::updateDeathStates(JPH::PhysicsSystem &physicsSystem, Au
 
 	// @todo citizens should actually leave a corpse but it's removed a moment afterwards when guards are called
 	// @todo maybe split this loop into citizenEntityInstIDs and enemyEntityInstIDs
-	
+
 	for (EntityInstance &entityInst : this->entities.values)
 	{
 		if (!entityInst.canBeKilledInCombat())
