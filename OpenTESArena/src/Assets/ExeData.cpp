@@ -446,6 +446,9 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int finalBossNameOffset = GetExeAddress(*section, "FinalBossName");
 	const int humanEnemyGoldChancesOffset = GetExeAddress(*section, "HumanEnemyGoldChances");
 	const int humanEnemyExpMultipliersOffset = GetExeAddress(*section, "HumanEnemyExperienceMultipliers");
+	const int humanEnemyChainCapableClassesOffset = GetExeAddress(*section, "HumanEnemyChainCapableClasses");
+	const int humanEnemyPrimaryArmorSlotsOffset = GetExeAddress(*section, "HumanEnemyPrimaryArmorSlots");
+	const int humanEnemySecondaryArmorSlotsOffset = GetExeAddress(*section, "HumanEnemySecondaryArmorSlots");
 	const int raceAttributesOffset = GetExeAddress(*section, "RaceAttributes");
 	const int guardAttributesOffset = GetExeAddress(*section, "GuardAttributes");
 	const int maleCitizenAnimFilenamesOffset = GetExeAddress(*section, "MaleCitizenAnimationFilenames");
@@ -479,6 +482,9 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
 	initInt8Array(this->humanEnemyGoldChances, exeBytes, humanEnemyGoldChancesOffset);
 	initInt8Array(this->humanEnemyExpMultipliers, exeBytes, humanEnemyExpMultipliersOffset);
+	initInt8Array(this->humanEnemyChainCapableClasses, exeBytes, humanEnemyChainCapableClassesOffset);
+	initInt8Array(this->humanEnemyPrimaryArmorSlots, exeBytes, humanEnemyPrimaryArmorSlotsOffset);
+	initInt8Array(this->humanEnemySecondaryArmorSlots, exeBytes, humanEnemySecondaryArmorSlotsOffset);
 	init2DInt8Array(this->raceAttributes, exeBytes, raceAttributesOffset);
 	init2DInt8Array(this->guardAttributes, exeBytes, guardAttributesOffset);
 	initStringArrayNullTerminated(this->maleCitizenAnimationFilenames, exeBytes, maleCitizenAnimFilenamesOffset);
