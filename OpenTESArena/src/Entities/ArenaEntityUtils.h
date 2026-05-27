@@ -9,6 +9,7 @@
 #include "components/utilities/Span.h"
 
 class Random;
+class ArenaRandom;
 
 enum class ArenaCityType;
 enum class ArenaInteriorType;
@@ -26,6 +27,13 @@ struct ArenaValidLootSlots
 	bool slots[4];
 
 	ArenaValidLootSlots();
+};
+
+struct SpawnPoint
+{
+	int x;
+	int z;
+	uint16_t tileIndex;
 };
 
 namespace ArenaEntityUtils
@@ -80,4 +88,17 @@ namespace ArenaEntityUtils
 
 	std::string getArmorNameFromItemID(int itemID, const ExeData &exeData);
 	std::string getWeaponNameFromItemID(int itemID, const ExeData &exeData);
+
+	bool doGuardsAppearForViolence(int playerLevel, ArenaRandom &random);
+	bool doGuardsAppearForTheft(int thievingSkill, ArenaRandom &random);
+	int getGuardType(const ExeData &exeData, ArenaRandom &random);
+	int getGuardLevel(ArenaCityType cityTypeID, int levelBonus, const ExeData &exeData, ArenaRandom &random);
+	int getNumberOfGuards(ArenaRandom &random);
+
+	SpawnPoint findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles, uint16_t playerTileIndex,*/ ArenaRandom &random);
+	bool isTileOccupied(uint16_t tileIndex, const std::array<uint16_t, 23> &occupiedTiles);
+	bool isSpawnTileValid(uint16_t tileIndex, const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold);
+
+	static int snapToTileCenter(int16_t coord);
+	static uint16_t makeTileIndex(int16_t x, int16_t z);
 }

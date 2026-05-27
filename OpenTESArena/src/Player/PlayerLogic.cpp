@@ -810,6 +810,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	const Window &window = game.window;
 	Renderer &renderer = game.renderer;
 	Random &random = game.random;
+	ArenaRandom &arenaRandom = game.arenaRandom;
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
@@ -962,6 +963,21 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						if (hitEntityBehaviorState.isCitizen())
 						{
 							GameWorldUiController::onCitizenKilled(game);
+							if (ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
+							{
+								// @todo Delay for 15 Arena updates
+								// @todo Play2DSound("halt.voc");
+								const int type = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
+								const int level = ArenaEntityUtils::getGuardLevel(game.gameState.getLocationDefinition().getCityDefinition().type, type, exeData, arenaRandom);
+								const int number = ArenaEntityUtils::getNumberOfGuards(arenaRandom);
+								const MapType mapType = game.gameState.getActiveMapType();
+								const OriginalInt2 originalPlayerPos = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
+								for (int i = 0; i < number; i++)
+								{
+									SpawnPoint spawnPoint = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer((int16_t)originalPlayerPos.x, (int16_t)originalPlayerPos.y, arenaRandom);
+									DebugLogFormat("Guard type %d, level %d would appear at x:%d, z:%d", type, level, spawnPoint.x, spawnPoint.z);
+								}
+							}
 						}
 						else if (hitEntityBehaviorState.isCreature())
 						{

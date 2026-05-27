@@ -902,3 +902,133 @@ std::string ArenaEntityUtils::getWeaponNameFromItemID(int itemID, const ExeData 
 	DebugAssertIndex(exeData.equipment.weaponNames, itemID);
 	return exeData.equipment.weaponNames[itemID];
 }
+
+bool ArenaEntityUtils::doGuardsAppearForViolence(int playerLevel, ArenaRandom &random)
+{
+	int chance = playerLevel * -10 + 100;
+	if (chance < 50) {
+		chance = 50;
+	}
+	return (random.next() % 100) < chance;
+}
+
+bool ArenaEntityUtils::doGuardsAppearForTheft(int thievingSkill, ArenaRandom &random)
+{
+	return ((random.next() % 100) < (100 - thievingSkill));
+}
+
+int ArenaEntityUtils::getGuardType(const ExeData &exeData, ArenaRandom &random)
+{
+	int roll = (random.next() % 100);
+	int guardType = 0;
+	while ((exeData.entities.guardTypeChances)[guardType] < roll)
+	{
+		guardType++;
+		DebugAssertIndex(exeData.entities.guardTypeChances, guardType);
+	}
+	return guardType;
+}
+
+int ArenaEntityUtils::getGuardLevel(ArenaCityType cityTypeID, int tierBonus, const ExeData &exeData, ArenaRandom &random)
+{
+	int minimumLevel = exeData.entities.guardLevelMinimums[(int)cityTypeID] + tierBonus;
+	return (random.next() % 3) + minimumLevel;
+}
+
+int ArenaEntityUtils::getNumberOfGuards(ArenaRandom &random)
+{
+	return (random.next() % 3) + 1;
+}
+
+SpawnPoint ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles,*/ ArenaRandom &random)
+{
+	int shift = 6;
+
+	while (true)
+	{
+		int attempts = 0;
+
+		while (attempts < 40)
+		{
+			const int16_t randomXDelta = static_cast<int16_t>(static_cast<int16_t>(random.next()) >> shift);
+			int16_t x = playerX + randomXDelta;
+			const int16_t randomZDelta = static_cast<int16_t>(static_cast<int16_t>(random.next()) >> shift);
+			int16_t z = playerZ + randomZDelta;
+
+			x = snapToTileCenter(x);
+			z = snapToTileCenter(z);
+
+			const uint16_t tileIndex = makeTileIndex(x, z);
+			const uint16_t playerTileIndex = makeTileIndex(playerX, playerZ);
+
+			bool failed = false;
+
+			if (tileIndex == playerTileIndex)
+			{
+				failed = true;
+			}/*
+			else if (ArenaEntityUtils::isTileOccupied(tileIndex, occupiedTiles))
+			{
+				failed = true;
+			}
+			else if (!ArenaEntityUtils::isSpawnTileValid(tileIndex, map1, floorMap, invalidFloorThreshold))
+			{
+				failed = true;
+			}*/
+
+			if (!failed)
+			{
+				return SpawnPoint{ x, z, tileIndex };
+			}
+
+			attempts++;
+		}
+
+		// Expand search radius
+		shift >>= 1;
+		DebugAssert(shift > 0);
+	}
+}
+
+bool ArenaEntityUtils::isTileOccupied(uint16_t tileIndex, const std::array<uint16_t, 23> &occupiedTiles)
+{
+	for (uint16_t occupied : occupiedTiles)
+	{
+		if (occupied == tileIndex)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ArenaEntityUtils::isSpawnTileValid(uint16_t tileIndex, const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold)
+{
+	// Wall/object present?
+	if (map1[tileIndex >> 1] != 0)
+	{
+		return false;
+	}
+
+	// Invalid floor tile?
+	if (floorMap[tileIndex >> 1] >= invalidFloorThreshold)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+static int ArenaEntityUtils::snapToTileCenter(int16_t coord)
+{
+	return (coord & ~127) + 64;
+}
+
+static uint16_t ArenaEntityUtils::makeTileIndex(int16_t x, int16_t z)
+{
+	const int16_t tileX = x >> 7;
+	const int16_t tileZ = z >> 7;
+
+	return static_cast<uint16_t>((tileZ << 8) + (tileX << 1));
+}
