@@ -245,13 +245,17 @@ void ArenaEntityUtils::getHumanEnemyShield(int classNumber, const ExeData &exeDa
 
 		const int allowedShieldsIndex = allowedShieldsIndices[classNumber];
 		const int allowedShieldsListSize = static_cast<int>(allowedShieldsLists[allowedShieldsIndex].size());
-		const int allowedShieldsListRandomIndex = random.next(allowedShieldsListSize);
-		shieldID = allowedShieldsLists[allowedShieldsIndex][allowedShieldsListRandomIndex];
+		const bool classHasAllowedShields = allowedShieldsListSize > 0;
+		if (classHasAllowedShields)
+		{
+			const int allowedShieldsListRandomIndex = random.next(allowedShieldsListSize);
+			shieldID = allowedShieldsLists[allowedShieldsIndex][allowedShieldsListRandomIndex];
 
-		// The original executable has unreachable code to instead pick a magical or named plate material armor piece
-		// if random.next(100) < 2.
-		constexpr int dummyQualityThreshold = 1;
-		shieldID = pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, shieldID, exeData, random);
+			// The original executable has unreachable code to instead pick a magical or named plate material armor piece
+			// if random.next(100) < 2.
+			constexpr int dummyQualityThreshold = 1;
+			shieldID = pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, shieldID, exeData, random);
+		}
 	}
 
 	*outShieldID = shieldID;
