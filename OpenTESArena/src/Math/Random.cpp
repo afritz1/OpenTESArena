@@ -69,6 +69,11 @@ int ArenaRandom::next()
 	return (this->value >> 16) & 0xFFFF;
 }
 
+int ArenaRandom::next(int exclusiveMax)
+{
+	return this->next() % exclusiveMax;
+}
+
 void ArenaRandom::srand(uint32_t seed)
 {
 	this->value = seed;
