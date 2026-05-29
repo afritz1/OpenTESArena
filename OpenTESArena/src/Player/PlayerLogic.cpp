@@ -803,7 +803,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	const Options &options = game.options;
 	const bool isModernInterface = options.getGraphics_ModernInterface();
 	const InputManager &inputManager = game.inputManager;
-	const GameState &gameState = game.gameState;
+	GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	AudioManager &audioManager = game.audioManager;
@@ -963,49 +963,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						if (hitEntityBehaviorState.isCitizen())
 						{
 							GameWorldUiController::onCitizenKilled(game);
-
-							if (ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
-							{
-								// @todo Delay for 15 Arena updates
-
-								const ArenaCityType cityType = gameState.getLocationDefinition().getCityDefinition().type;
-								const MapType mapType = gameState.getActiveMapType();
-								const WorldInt3 playerFeetVoxel = VoxelUtils::pointToVoxel(playerFeetPosition, ceilingScale);
-								const OriginalInt2 playerFeetVoxelOriginalXZ = VoxelUtils::worldVoxelToOriginalVoxel(playerFeetVoxel.getXZ());
-								const OriginalInt2 originalPlayerPositionArenaUnits = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
-								const int16_t originalPlayerPositionArenaUnitsX = static_cast<int16_t>(originalPlayerPositionArenaUnits.y);
-								const int16_t originalPlayerPositionArenaUnitsZ = static_cast<int16_t>(originalPlayerPositionArenaUnits.x);
-
-								const int spawnedGuardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
-								const int spawnedGuardLevel = ArenaEntityUtils::getGuardLevel(cityType, spawnedGuardType, exeData, arenaRandom);
-								const int spawnedGuardCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
-
-								for (int i = 0; i < spawnedGuardCount; i++)
-								{
-									// @todo use VoxelChunkManager to see if spawn location is valid
-									const ArenaEntitySpawnPoint spawnedGuardPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
-									const OriginalInt2 playerToSpawnedGuardOriginalVoxel(
-										(spawnedGuardPositionArenaUnits.x - originalPlayerPositionArenaUnitsX) / 128,
-										(spawnedGuardPositionArenaUnits.z - originalPlayerPositionArenaUnitsZ) / 128);
-									const OriginalInt2 spawnedGuardOriginalVoxel(
-										playerFeetVoxelOriginalXZ.x + playerToSpawnedGuardOriginalVoxel.x,
-										playerFeetVoxelOriginalXZ.y + playerToSpawnedGuardOriginalVoxel.y);
-									DebugLogFormat("Guard type %d, level %d would appear at (%d, %d).", spawnedGuardType, spawnedGuardLevel, spawnedGuardOriginalVoxel.x, spawnedGuardOriginalVoxel.y);
-
-									const bool isFirstSpawnedGuard = i == 0;
-									if (isFirstSpawnedGuard)
-									{
-										const WorldInt2 spawnedGuardWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnedGuardOriginalVoxel);
-										const WorldInt3 spawnedGuardWorldVoxel(spawnedGuardWorldVoxelXZ.x, 1, spawnedGuardWorldVoxelXZ.y);
-										const WorldDouble3 spawnedGuardSoundPosition = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxel, ceilingScale);
-										audioManager.playSoundOneShot(ArenaSoundName::Halt, spawnedGuardSoundPosition);
-									}
-								}
-							}
-							else
-							{
-								DebugLog("Decided not to spawn guards.");
-							}
+							gameState.queueGuardSpawn(game);
 						}
 						else if (hitEntityBehaviorState.isCreature())
 						{

@@ -15,6 +15,7 @@
 #include "../Assets/RMDFile.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Entities/ArenaEntityUtils.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Interface/GameWorldUiMVC.h"
 #include "../Interface/GameWorldUiState.h"
@@ -41,6 +42,22 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
+
+GuardSpawnState::GuardSpawnState()
+{
+	this->clearQueue();
+}
+
+bool GuardSpawnState::isQueued() const
+{
+	return !std::isinf(this->secondsTillSpawn);
+}
+
+void GuardSpawnState::clearQueue()
+{
+	this->secondsTillSpawn = std::numeric_limits<double>::infinity();
+	this->spawnFunc = []() { };
+}
 
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
 {
@@ -468,6 +485,7 @@ void GameState::clearMaps()
 	this->nextLevelIndex = -1;
 	this->nextMusicFunc = SceneChangeMusicFunc();
 	this->nextJingleMusicFunc = SceneChangeMusicFunc();
+	this->guardSpawnState.clearQueue();
 }
 
 void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
@@ -513,6 +531,68 @@ void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 		DebugAssertIndex(weatherTable, weatherTableIndex);
 		this->worldMapWeathers[i] = static_cast<ArenaWeatherType>(weatherTable[weatherTableIndex]);
 	}
+}
+
+void GameState::queueGuardSpawn(Game &game)
+{
+	if (this->guardSpawnState.isQueued())
+	{
+		return;
+	}
+
+	constexpr double originalSecondsPerFrame = 1.0 / static_cast<double>(ArenaRenderUtils::FRAMES_PER_SECOND);
+	constexpr int originalGameUpdatesTillGuardSpawn = 15;
+	constexpr double originalSecondsTillGuardSpawn = originalSecondsPerFrame * static_cast<double>(originalGameUpdatesTillGuardSpawn);
+	this->guardSpawnState.secondsTillSpawn = originalSecondsTillGuardSpawn;
+
+	this->guardSpawnState.spawnFunc = [this, &game]()
+	{
+		const Player &player = game.player;
+		ArenaRandom &arenaRandom = game.arenaRandom;
+		if (!ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
+		{
+			DebugLog("Decided not to spawn guards.");
+		}
+
+		const ArenaCityType cityType = this->getLocationDefinition().getCityDefinition().type;
+		const MapType mapType = this->getActiveMapType();
+		const double ceilingScale = this->getActiveCeilingScale();
+		const WorldDouble3 playerFeetPosition = player.getFeetPosition();
+		const WorldInt3 playerFeetVoxel = VoxelUtils::pointToVoxel(playerFeetPosition, ceilingScale);
+		const OriginalInt2 playerFeetVoxelOriginalXZ = VoxelUtils::worldVoxelToOriginalVoxel(playerFeetVoxel.getXZ());
+		const OriginalInt2 originalPlayerPositionArenaUnits = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
+		const int16_t originalPlayerPositionArenaUnitsX = static_cast<int16_t>(originalPlayerPositionArenaUnits.y);
+		const int16_t originalPlayerPositionArenaUnitsZ = static_cast<int16_t>(originalPlayerPositionArenaUnits.x);
+
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		const int spawnedGuardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
+		const int spawnedGuardLevel = ArenaEntityUtils::getGuardLevel(cityType, spawnedGuardType, exeData, arenaRandom);
+		const int spawnedGuardCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
+
+		for (int i = 0; i < spawnedGuardCount; i++)
+		{
+			// @todo use VoxelChunkManager to see if spawn location is valid
+			const ArenaEntitySpawnPoint spawnedGuardPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
+			const OriginalInt2 playerToSpawnedGuardOriginalVoxel(
+				(spawnedGuardPositionArenaUnits.x - originalPlayerPositionArenaUnitsX) / 128,
+				(spawnedGuardPositionArenaUnits.z - originalPlayerPositionArenaUnitsZ) / 128);
+			const OriginalInt2 spawnedGuardOriginalVoxel(
+				playerFeetVoxelOriginalXZ.x + playerToSpawnedGuardOriginalVoxel.x,
+				playerFeetVoxelOriginalXZ.y + playerToSpawnedGuardOriginalVoxel.y);
+			DebugLogFormat("Guard type %d, level %d would appear at (%d, %d).", spawnedGuardType, spawnedGuardLevel, spawnedGuardOriginalVoxel.x, spawnedGuardOriginalVoxel.y);
+
+			const bool isFirstSpawnedGuard = i == 0;
+			if (isFirstSpawnedGuard)
+			{
+				const WorldInt2 spawnedGuardWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnedGuardOriginalVoxel);
+				const WorldInt3 spawnedGuardWorldVoxel(spawnedGuardWorldVoxelXZ.x, 1, spawnedGuardWorldVoxelXZ.y);
+				const WorldDouble3 spawnedGuardSoundPosition = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxel, ceilingScale);
+
+				AudioManager &audioManager = game.audioManager;
+				audioManager.playSoundOneShot(ArenaSoundName::Halt, spawnedGuardSoundPosition);
+			}
+		}
+	};
 }
 
 void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt)
@@ -662,6 +742,8 @@ void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsS
 
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	this->weatherInst.init(this->weatherDef, this->clock, binaryAssetLibrary.getExeData(), game.random, textureManager);
+
+	this->guardSpawnState.clearQueue();
 
 	const double tallPixelRatio = RendererUtils::getTallPixelRatio(options.getGraphics_TallPixelCorrection());
 	RenderCamera renderCamera;
@@ -1018,6 +1100,17 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 		chunkManager.getFreedChunkPositions(), player, &levelDef, &levelInfoDef, mapSubDef, levelDefs, levelInfoDefIndices,
 		levelInfoDefs, entityGenInfo, citizenGenInfo, ceilingScale, game.random, voxelChunkManager, game.audioManager,
 		game.physicsSystem, game.textureManager, game.renderer);
+
+	if (this->guardSpawnState.isQueued())
+	{
+		this->guardSpawnState.secondsTillSpawn -= dt;
+
+		if (this->guardSpawnState.secondsTillSpawn <= 0.0)
+		{
+			this->guardSpawnState.spawnFunc();
+			this->guardSpawnState.clearQueue();
+		}
+	}
 }
 
 void GameState::tickEntitiesPostPhysicsStep(Game &game)
