@@ -554,6 +554,7 @@ void GameState::queueGuardSpawn(Game &game)
 			DebugLog("Decided not to spawn guards.");
 		}
 
+		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 		const ArenaCityType cityType = this->getLocationDefinition().getCityDefinition().type;
 		const MapType mapType = this->getActiveMapType();
 		const double ceilingScale = this->getActiveCeilingScale();
@@ -571,7 +572,6 @@ void GameState::queueGuardSpawn(Game &game)
 
 		for (int i = 0; i < spawnedGuardCount; i++)
 		{
-			// @todo use VoxelChunkManager to see if spawn location is valid
 			const ArenaEntitySpawnPoint spawnedGuardPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
 			const OriginalInt2 playerToSpawnedGuardOriginalVoxel(
 				(spawnedGuardPositionArenaUnits.x - originalPlayerPositionArenaUnitsX) / 128,
@@ -579,13 +579,31 @@ void GameState::queueGuardSpawn(Game &game)
 			const OriginalInt2 spawnedGuardOriginalVoxel(
 				playerFeetVoxelOriginalXZ.x + playerToSpawnedGuardOriginalVoxel.x,
 				playerFeetVoxelOriginalXZ.y + playerToSpawnedGuardOriginalVoxel.y);
-			DebugLogFormat("Guard type %d, level %d would appear at (%d, %d).", spawnedGuardType, spawnedGuardLevel, spawnedGuardOriginalVoxel.x, spawnedGuardOriginalVoxel.y);
+			const WorldInt2 spawnedGuardWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnedGuardOriginalVoxel);
+			const WorldInt3 spawnedGuardWorldVoxel(spawnedGuardWorldVoxelXZ.x, 1, spawnedGuardWorldVoxelXZ.y);
+			const CoordInt3 spawnedGuardVoxelCoord = VoxelUtils::worldVoxelToCoord(spawnedGuardWorldVoxel);
+			const VoxelChunk *spawnedGuardVoxelChunk = voxelChunkManager.findChunkAtPosition(spawnedGuardVoxelCoord.chunk);
+			if (spawnedGuardVoxelChunk == nullptr)
+			{
+				continue;
+			}
+
+			const VoxelInt3 spawnedGuardVoxel = spawnedGuardVoxelCoord.voxel;
+			const VoxelShapeDefID spawnedGuardVoxelShapeDefID = spawnedGuardVoxelChunk->shapeDefIDs.get(spawnedGuardVoxel.x, 1, spawnedGuardVoxel.z);
+			const VoxelTraitsDefID spawnedGuardFloorVoxelTraitsDefID = spawnedGuardVoxelChunk->traitsDefIDs.get(spawnedGuardVoxel.x, 0, spawnedGuardVoxel.z);
+			const VoxelShapeDefinition &spawnedGuardVoxelShapeDef = spawnedGuardVoxelChunk->shapeDefs[spawnedGuardVoxelShapeDefID];
+			const VoxelTraitsDefinition &spawnedGuardFloorVoxelTraitsDef = spawnedGuardVoxelChunk->traitsDefs[spawnedGuardFloorVoxelTraitsDefID];
+			const bool isSpawnVoxelValid = spawnedGuardVoxelShapeDef.mesh.isEmpty() && spawnedGuardFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
+			if (!isSpawnVoxelValid)
+			{
+				continue;
+			}
+
+			DebugLogFormat("Guard type %d, level %d would appear at (%d, %d).", spawnedGuardType, spawnedGuardLevel, spawnedGuardWorldVoxelXZ.x, spawnedGuardWorldVoxelXZ.y);
 
 			const bool isFirstSpawnedGuard = i == 0;
 			if (isFirstSpawnedGuard)
 			{
-				const WorldInt2 spawnedGuardWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnedGuardOriginalVoxel);
-				const WorldInt3 spawnedGuardWorldVoxel(spawnedGuardWorldVoxelXZ.x, 1, spawnedGuardWorldVoxelXZ.y);
 				const WorldDouble3 spawnedGuardSoundPosition = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxel, ceilingScale);
 
 				AudioManager &audioManager = game.audioManager;
