@@ -568,9 +568,10 @@ void GameState::queueGuardSpawn(Game &game)
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		const int spawnedGuardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
 		const int spawnedGuardLevel = ArenaEntityUtils::getGuardLevel(cityType, spawnedGuardType, exeData, arenaRandom);
-		const int spawnedGuardCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
+		const int spawnedGuardAttemptCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
+		int actualSpawnedGuardCount = 0;
 
-		for (int i = 0; i < spawnedGuardCount; i++)
+		for (int i = 0; i < spawnedGuardAttemptCount; i++)
 		{
 			const ArenaEntitySpawnPoint spawnedGuardPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
 			const OriginalInt2 playerToSpawnedGuardOriginalVoxel(
@@ -601,7 +602,7 @@ void GameState::queueGuardSpawn(Game &game)
 
 			DebugLogFormat("Guard type %d, level %d would appear at (%d, %d).", spawnedGuardType, spawnedGuardLevel, spawnedGuardWorldVoxelXZ.x, spawnedGuardWorldVoxelXZ.y);
 
-			const bool isFirstSpawnedGuard = i == 0;
+			const bool isFirstSpawnedGuard = actualSpawnedGuardCount == 0;
 			if (isFirstSpawnedGuard)
 			{
 				const WorldDouble3 spawnedGuardSoundPosition = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxel, ceilingScale);
@@ -609,6 +610,8 @@ void GameState::queueGuardSpawn(Game &game)
 				AudioManager &audioManager = game.audioManager;
 				audioManager.playSoundOneShot(ArenaSoundName::Halt, spawnedGuardSoundPosition);
 			}
+
+			actualSpawnedGuardCount++;
 		}
 	};
 }
