@@ -31,8 +31,10 @@ struct ArenaValidLootSlots
 
 struct ArenaEntitySpawnPoint
 {
+	// In Arena units (128 = one voxel).
 	int x;
 	int z;
+
 	uint16_t tileIndex;
 
 	ArenaEntitySpawnPoint();
@@ -102,6 +104,6 @@ namespace ArenaEntityUtils
 	bool isTileOccupied(uint16_t tileIndex, Span<const uint16_t> occupiedTiles);
 	bool isSpawnTileValid(uint16_t tileIndex, Span<const uint16_t> map1, Span<const uint16_t> flor, uint16_t invalidFloorThreshold);
 
-	static int snapToTileCenter(int16_t coord);
-	static uint16_t makeTileIndex(int16_t x, int16_t z);
+	int snapToTileCenter(int16_t coord);
+	uint16_t makeTileIndex(int16_t x, int16_t z);
 }

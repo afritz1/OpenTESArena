@@ -1005,6 +1005,8 @@ ArenaEntitySpawnPoint ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(int1
 		shift >>= 1;
 		DebugAssert(shift > 0);
 	}
+
+	DebugUnhandledReturn(ArenaEntitySpawnPoint);
 }
 
 bool ArenaEntityUtils::isTileOccupied(uint16_t tileIndex, Span<const uint16_t> occupiedTiles)
@@ -1039,12 +1041,12 @@ bool ArenaEntityUtils::isSpawnTileValid(uint16_t tileIndex, Span<const uint16_t>
 	return true;
 }
 
-static int ArenaEntityUtils::snapToTileCenter(int16_t coord)
+int ArenaEntityUtils::snapToTileCenter(int16_t coord)
 {
 	return (coord & ~127) + 64;
 }
 
-static uint16_t ArenaEntityUtils::makeTileIndex(int16_t x, int16_t z)
+uint16_t ArenaEntityUtils::makeTileIndex(int16_t x, int16_t z)
 {
 	const int16_t tileX = x >> 7;
 	const int16_t tileZ = z >> 7;
