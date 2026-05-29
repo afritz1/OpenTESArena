@@ -8,8 +8,8 @@
 
 #include "components/utilities/Span.h"
 
-class Random;
 class ArenaRandom;
+class Random;
 
 enum class ArenaCityType;
 enum class ArenaInteriorType;
@@ -29,11 +29,14 @@ struct ArenaValidLootSlots
 	ArenaValidLootSlots();
 };
 
-struct SpawnPoint
+struct ArenaEntitySpawnPoint
 {
 	int x;
 	int z;
 	uint16_t tileIndex;
+
+	ArenaEntitySpawnPoint();
+	ArenaEntitySpawnPoint(int x, int z, uint16_t tileIndex);
 };
 
 namespace ArenaEntityUtils
@@ -92,12 +95,12 @@ namespace ArenaEntityUtils
 	bool doGuardsAppearForViolence(int playerLevel, ArenaRandom &random);
 	bool doGuardsAppearForTheft(int thievingSkill, ArenaRandom &random);
 	int getGuardType(const ExeData &exeData, ArenaRandom &random);
-	int getGuardLevel(ArenaCityType cityTypeID, int levelBonus, const ExeData &exeData, ArenaRandom &random);
-	int getNumberOfGuards(ArenaRandom &random);
+	int getGuardLevel(ArenaCityType cityType, int tierBonus, const ExeData &exeData, ArenaRandom &random);
+	int getNumberOfGuardsToSpawn(ArenaRandom &random);
 
-	SpawnPoint findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles, uint16_t playerTileIndex,*/ ArenaRandom &random);
-	bool isTileOccupied(uint16_t tileIndex, const std::array<uint16_t, 23> &occupiedTiles);
-	bool isSpawnTileValid(uint16_t tileIndex, const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold);
+	ArenaEntitySpawnPoint findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles, uint16_t playerTileIndex,*/ ArenaRandom &random);
+	bool isTileOccupied(uint16_t tileIndex, Span<const uint16_t> occupiedTiles);
+	bool isSpawnTileValid(uint16_t tileIndex, Span<const uint16_t> map1, Span<const uint16_t> flor, uint16_t invalidFloorThreshold);
 
 	static int snapToTileCenter(int16_t coord);
 	static uint16_t makeTileIndex(int16_t x, int16_t z);

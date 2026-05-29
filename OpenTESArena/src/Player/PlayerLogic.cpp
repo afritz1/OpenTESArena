@@ -963,19 +963,24 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						if (hitEntityBehaviorState.isCitizen())
 						{
 							GameWorldUiController::onCitizenKilled(game);
+
 							if (ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
 							{
+								const ArenaCityType cityType = gameState.getLocationDefinition().getCityDefinition().type;
+								const MapType mapType = gameState.getActiveMapType();
+
 								// @todo Delay for 15 Arena updates
 								// @todo Play2DSound("halt.voc");
-								const int type = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
-								const int level = ArenaEntityUtils::getGuardLevel(game.gameState.getLocationDefinition().getCityDefinition().type, type, exeData, arenaRandom);
-								const int number = ArenaEntityUtils::getNumberOfGuards(arenaRandom);
-								const MapType mapType = game.gameState.getActiveMapType();
+								const int spawnedGuardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
+								const int spawnedGuardLevel = ArenaEntityUtils::getGuardLevel(cityType, spawnedGuardType, exeData, arenaRandom);
+								const int spawnedGuardCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
 								const OriginalInt2 originalPlayerPos = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
-								for (int i = 0; i < number; i++)
+								for (int i = 0; i < spawnedGuardCount; i++)
 								{
-									SpawnPoint spawnPoint = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer((int16_t)originalPlayerPos.x, (int16_t)originalPlayerPos.y, arenaRandom);
-									DebugLogFormat("Guard type %d, level %d would appear at x:%d, z:%d", type, level, spawnPoint.x, spawnPoint.z);
+									const int16_t originalPlayerX = static_cast<int16_t>(originalPlayerPos.x);
+									const int16_t originalPlayerZ = static_cast<int16_t>(originalPlayerPos.y);
+									const ArenaEntitySpawnPoint spawnedGuardPosition = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerX, originalPlayerZ, arenaRandom);
+									DebugLogFormat("Guard type %d, level %d would appear at x:%d, z:%d", spawnedGuardType, spawnedGuardLevel, spawnedGuardPosition.x, spawnedGuardPosition.z);
 								}
 							}
 						}
