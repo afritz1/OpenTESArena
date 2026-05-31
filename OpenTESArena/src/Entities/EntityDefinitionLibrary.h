@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 
 #include "EntityDefinition.h"
@@ -84,6 +85,8 @@ struct EntityDefinitionKey
 	void initVfx(VfxEntityAnimationType type, int index);
 };
 
+using EntityDefinitionPredicate = std::function<bool(const EntityDefinition &def)>;
+
 // Collection of various entity definitions. Not all definition types are supported
 // due to insufficient information for look-up/comparison and therefore the definitions
 // must be split between this library and the currently active level.
@@ -127,6 +130,8 @@ public:
 
 	// Returns raw handle to entity definition (does not protect from dangling pointers).
 	const EntityDefinition &getDefinition(EntityDefID defID) const;
+
+	EntityDefID findDefinitionIdIf(const EntityDefinitionPredicate &predicate) const;
 
 	// Attempts to get the definition ID paired with the given definition key.
 	bool tryGetDefinitionID(const EntityDefinitionKey &key, EntityDefID *outDefID) const;

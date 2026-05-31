@@ -34,6 +34,7 @@
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../Weather/WeatherUtils.h"
+#include "../World/CardinalDirection.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
 #include "../WorldMap/ArenaLocationUtils.h"
@@ -600,7 +601,50 @@ void GameState::queueGuardSpawn(Game &game)
 				continue;
 			}
 
-			DebugLogFormat("Guard type %d, level %d would appear at (%d, %d).", spawnedGuardType, spawnedGuardLevel, spawnedGuardWorldVoxelXZ.x, spawnedGuardWorldVoxelXZ.y);
+			const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();			
+			const EntityDefID spawnedGuardEntityDefID = entityDefLibrary.findDefinitionIdIf(
+				[](const EntityDefinition &entityDef)
+			{
+				if (entityDef.type != EntityDefinitionType::Enemy)
+				{
+					return false;
+				}
+
+				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+				if (enemyDef.type != EnemyEntityDefinitionType::Human)
+				{
+					return false;
+				}
+
+				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
+				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+				constexpr int originalGuardClassNumber = 16;
+				return charClassDef.originalClassIndex == originalGuardClassNumber;
+			});
+
+			const EntityDefinition &spawnedGuardEntityDef = entityDefLibrary.getDefinition(spawnedGuardEntityDefID);
+			const EntityAnimationDefinition &spawnedGuardAnimDef = spawnedGuardEntityDef.animDef;
+
+			const WorldDouble2 spawnedGuardFeetPositionXZ = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxelXZ);
+			const WorldDouble3 spawnedGuardFeetPosition(spawnedGuardFeetPositionXZ.x, ceilingScale, spawnedGuardFeetPositionXZ.y);
+
+			EntityInitInfo spawnedGuardEntityInitInfo;
+			spawnedGuardEntityInitInfo.defID = spawnedGuardEntityDefID;
+			spawnedGuardEntityInitInfo.feetPosition = spawnedGuardFeetPosition;
+			spawnedGuardEntityInitInfo.initialAnimStateIndex = *spawnedGuardAnimDef.findStateIndex(spawnedGuardAnimDef.initialStateName);
+			spawnedGuardEntityInitInfo.isSensorCollider = false;
+			spawnedGuardEntityInitInfo.canBeKilled = true;
+			spawnedGuardEntityInitInfo.direction = CardinalDirection::North;
+			spawnedGuardEntityInitInfo.hasInventory = true;
+			spawnedGuardEntityInitInfo.hasCreatureSound = false;
+
+			Renderer &renderer = game.renderer;
+			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+			entityChunkManager.createEntity(spawnedGuardEntityInitInfo, game.random, game.physicsSystem, renderer);
+
+			RenderEntityManager &renderEntityManager = game.sceneManager.renderEntityManager;
+			renderEntityManager.loadMaterialsForEntity(spawnedGuardEntityDefID, game.textureManager, renderer);
 
 			const bool isFirstSpawnedGuard = actualSpawnedGuardCount == 0;
 			if (isFirstSpawnedGuard)
@@ -613,6 +657,9 @@ void GameState::queueGuardSpawn(Game &game)
 
 			actualSpawnedGuardCount++;
 		}
+
+		// @todo for all entityChunkManager.citizens, queueEntityDestroy()
+		// ^ not in this pull request but soon
 	};
 }
 
