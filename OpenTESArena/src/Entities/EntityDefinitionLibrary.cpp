@@ -272,6 +272,20 @@ const EntityDefinition &EntityDefinitionLibrary::getDefinition(EntityDefID defID
 	return this->entries[defID].def;
 }
 
+EntityDefID EntityDefinitionLibrary::findDefinitionIdIf(const EntityDefinitionPredicate &predicate) const
+{
+	for (int i = 0; i < this->getDefinitionCount(); i++)
+	{
+		const EntityDefinition &entry = this->getDefinition(i);
+		if (predicate(entry))
+		{
+			return static_cast<EntityDefID>(i);
+		}
+	}
+
+	return -1;
+}
+
 bool EntityDefinitionLibrary::tryGetDefinitionID(const EntityDefinitionKey &key, EntityDefID *outDefID) const
 {
 	const int index = this->findDefIndex(key);

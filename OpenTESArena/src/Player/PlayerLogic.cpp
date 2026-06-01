@@ -803,13 +803,14 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	const Options &options = game.options;
 	const bool isModernInterface = options.getGraphics_ModernInterface();
 	const InputManager &inputManager = game.inputManager;
-	const GameState &gameState = game.gameState;
+	GameState &gameState = game.gameState;
 	const double ceilingScale = gameState.getActiveCeilingScale();
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	AudioManager &audioManager = game.audioManager;
 	const Window &window = game.window;
 	Renderer &renderer = game.renderer;
 	Random &random = game.random;
+	ArenaRandom &arenaRandom = game.arenaRandom;
 	SceneManager &sceneManager = game.sceneManager;
 	VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
@@ -962,6 +963,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						if (hitEntityBehaviorState.isCitizen())
 						{
 							GameWorldUiController::onCitizenKilled(game);
+							gameState.queueGuardSpawn(game);
 						}
 						else if (hitEntityBehaviorState.isCreature())
 						{

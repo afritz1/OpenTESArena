@@ -50,6 +50,11 @@ public:
 	static constexpr int MAX = std::numeric_limits<uint16_t>::max();
 
 	uint32_t getSeed() const;
+	
 	int next();
+
+	// Includes 0 to (exclusiveMax - 1).
+	int next(int exclusiveMax);
+
 	void srand(uint32_t seed);
 };

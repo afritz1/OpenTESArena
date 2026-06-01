@@ -161,6 +161,12 @@ struct ExeDataEntities
 	uint8_t raceAttributes[16][8];
 	uint8_t guardAttributes[9][8];
 
+	// Chances for the type of guard to appear
+	uint8_t guardTypeChances[3];
+
+	// Minimum guard levels per city type
+	uint8_t guardLevelMinimums[3];
+
 	// Random male citizen .CFA filenames. Replace '@' with a number from 1 to 5.
 	// - Order: Winter, Desert, Temperate.
 	std::string maleCitizenAnimationFilenames[3];

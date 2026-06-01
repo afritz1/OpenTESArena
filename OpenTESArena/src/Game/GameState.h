@@ -28,6 +28,20 @@ enum class MapType;
 struct MusicDefinition;
 struct RenderCamera;
 
+struct GuardSpawnState
+{
+	double secondsTillSpawn;
+	std::function<void()> spawnFunc;
+
+	// @todo maybe want to store spawned guard EntityInstanceIDs so we know when to add citizens back
+
+	GuardSpawnState();
+
+	bool isQueued() const;
+
+	void clearQueue();
+};
+
 // Container for currently loaded game/world data.
 class GameState
 {
@@ -86,6 +100,8 @@ private:
 
 	WeatherDefinition weatherDef;
 	WeatherInstance weatherInst;
+
+	GuardSpawnState guardSpawnState;
 
 	void clearMaps();
 public:
@@ -155,6 +171,8 @@ public:
 
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);
+
+	void queueGuardSpawn(Game &game);
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
 	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);
