@@ -578,7 +578,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					itemInventory.insert(itemDefID);
 				}
 			}
-			else if (enemyDef.type == EnemyEntityDefinitionType::Human)
+			else if (enemyDef.type == EnemyEntityDefinitionType::Human && initInfo.isGuard == false)
 			{
 				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
 				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
@@ -644,6 +644,68 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				{
 					return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
 				});
+
+				if (shieldItemDefID != -1)
+				{
+					itemInventory.insert(shieldItemDefID);
+				}
+			}
+			else if (initInfo.isGuard == true)
+			{
+				const EnemyEntityHumanDefinition& humanEnemyDef = enemyDef.human;
+				const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
+				const CharacterClassDefinition& humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+
+				std::array<int, 4> armorIDs;
+				armorIDs.fill(-1);
+				ArmorMaterialType armorMaterialType;
+				ArenaEntityUtils::getGuardArmor(initInfo.guardType, exeData, arenaRandom, armorIDs, &armorMaterialType);
+
+				for (const int armorID : armorIDs)
+				{
+					const ItemDefinitionID armorItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[armorID, armorMaterialType](const ItemDefinition& itemDef)
+						{
+							if (itemDef.originalItemID != armorID)
+							{
+								return false;
+							}
+
+							if (itemDef.type != ItemType::Armor)
+							{
+								return false;
+							}
+
+							const ArmorItemDefinition& armorItemDef = itemDef.armor;
+							return armorItemDef.materialType == armorMaterialType;
+						});
+
+					if (armorItemDefID != -1)
+					{
+						itemInventory.insert(armorItemDefID);
+					}
+				}
+
+				int weaponID = ArenaEntityUtils::getGuardWeapon(exeData, arenaRandom);
+
+				const ItemDefinitionID weaponItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+					[weaponID](const ItemDefinition& itemDef)
+					{
+						return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
+					});
+
+				if (weaponItemDefID != -1)
+				{
+					itemInventory.insert(weaponItemDefID);
+				}
+
+				int shieldID = ArenaEntityUtils::getGuardShield(initInfo.guardType, exeData, arenaRandom);
+
+				const ItemDefinitionID shieldItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+					[shieldID](const ItemDefinition& itemDef)
+					{
+						return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
+					});
 
 				if (shieldItemDefID != -1)
 				{

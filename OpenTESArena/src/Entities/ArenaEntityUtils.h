@@ -99,6 +99,9 @@ namespace ArenaEntityUtils
 	int getGuardType(const ExeData &exeData, ArenaRandom &random);
 	int getGuardLevel(ArenaCityType cityType, int tierBonus, const ExeData &exeData, ArenaRandom &random);
 	int getNumberOfGuardsToSpawn(ArenaRandom &random);
+	void getGuardArmor(int guardType, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType);
+	int getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
+	int getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
 
 	ArenaEntitySpawnPoint findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles, uint16_t playerTileIndex,*/ ArenaRandom &random);
 	bool isTileOccupied(uint16_t tileIndex, Span<const uint16_t> occupiedTiles);
