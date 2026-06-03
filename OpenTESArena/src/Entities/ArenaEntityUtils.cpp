@@ -54,7 +54,7 @@ int ArenaEntityUtils::getBaseSpeed(int speedAttribute)
 	return ((((speedAttribute * 20) / 256) * 256) / 256) + 20;
 }
 
-int ArenaEntityUtils::getCreatureGold(int creatureLevel, uint32_t creatureLootChance, Random &random)
+int ArenaEntityUtils::getCreatureGold(int creatureLevel, uint32_t creatureLootChance, ArenaRandom &random)
 {
 	const int goldChance = GetCreatureGoldChance(creatureLootChance);
 
@@ -77,7 +77,7 @@ int ArenaEntityUtils::getCreatureGold(int creatureLevel, uint32_t creatureLootCh
 	return goldAmount;
 }
 
-bool ArenaEntityUtils::getCreatureHasMagicItem(int creatureLevel, uint32_t creatureLootChance, Random &random)
+bool ArenaEntityUtils::getCreatureHasMagicItem(int creatureLevel, uint32_t creatureLootChance, ArenaRandom &random)
 {
 	const bool isHighEnoughLevel = creatureLevel > 2;
 	if (!isHighEnoughLevel)
@@ -90,14 +90,14 @@ bool ArenaEntityUtils::getCreatureHasMagicItem(int creatureLevel, uint32_t creat
 	return roll <= itemChance;
 }
 
-bool ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(uint32_t creatureLootChance, Random &random)
+bool ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(uint32_t creatureLootChance, ArenaRandom &random)
 {
 	const int itemChance = GetCreatureNonMagicWeaponOrArmorChance(creatureLootChance);
 	const int roll = 1 + random.next(100);
 	return roll <= itemChance;
 }
 
-bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint32_t creatureLootChance, Random &random)
+bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint32_t creatureLootChance, ArenaRandom &random)
 {
 	const bool isHighEnoughLevel = creatureLevel > 6;
 	if (!isHighEnoughLevel)
@@ -110,7 +110,7 @@ bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint3
 	return roll <= itemChance;
 }
 
-void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, Random &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType)
+void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType)
 {
 	DebugAssert(outArmorIDs.getCount() == 7);
 
@@ -196,7 +196,7 @@ void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeD
 	}
 }
 
-void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeData, Random &random, int *outWeaponID)
+void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeData, ArenaRandom &random, int *outWeaponID)
 {
 	constexpr int archerID = 13;
 	constexpr int staffWeaponID = 0;
@@ -245,7 +245,7 @@ void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeDa
 	*outWeaponID = weaponID;
 }
 
-void ArenaEntityUtils::getHumanEnemyShield(int classNumber, const ExeData &exeData, Random &random, int weaponID, int *outShieldID)
+void ArenaEntityUtils::getHumanEnemyShield(int classNumber, const ExeData &exeData, ArenaRandom &random, int weaponID, int *outShieldID)
 {
 	constexpr int invalidID = -1;
 	constexpr int plateMaterialID = 0;
@@ -275,7 +275,7 @@ void ArenaEntityUtils::getHumanEnemyShield(int classNumber, const ExeData &exeDa
 	*outShieldID = shieldID;
 }
 
-int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random)
+int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, ArenaRandom &random)
 {
 	constexpr int invalidID = -1;
 	constexpr int plateMaterialID = 0;
@@ -327,7 +327,7 @@ int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMateri
 	return invalidID;
 }
 
-int ArenaEntityUtils::pickNonMagicWeapon(int weaponQualityThreshold, int specifiedItemID, const ExeData &exeData, Random &random)
+int ArenaEntityUtils::pickNonMagicWeapon(int weaponQualityThreshold, int specifiedItemID, const ExeData &exeData, ArenaRandom &random)
 {
 	DebugAssert(weaponQualityThreshold >= 1);
 	constexpr int maximumWeaponQuality = 20;
@@ -356,7 +356,7 @@ int ArenaEntityUtils::pickNonMagicWeapon(int weaponQualityThreshold, int specifi
 	return itemID;
 }
 
-void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID,
+void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID,
 	bool *outIsArmor, ArmorMaterialType *outArmorMaterialType)
 {
 	int itemID = -1;
@@ -401,7 +401,7 @@ void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const
 	*outArmorMaterialType = ArmorMaterialType::Plate;
 }
 
-int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, Random &random)
+int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, ArenaRandom &random)
 {
 	const Span<const uint8_t> itemConditionChances = exeData.equipment.creatureItemConditionChances;
 	const Span<const uint8_t> itemConditionPercentages = exeData.equipment.creatureItemConditionPercentages;
@@ -422,7 +422,7 @@ int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition
 	return condition;
 }
 
-void ArenaEntityUtils::getCreatureMagicItem(int creatureLevel, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion,
+void ArenaEntityUtils::getCreatureMagicItem(int creatureLevel, const ExeData &exeData, ArenaRandom &random, int *outItemID, bool *outIsPotion,
 	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID)
 {
 	int itemID = -1;
@@ -450,13 +450,13 @@ void ArenaEntityUtils::getCreatureMagicItem(int creatureLevel, const ExeData &ex
 	*outSpellID = spellID;
 }
 
-int ArenaEntityUtils::pickPotion(Random &random)
+int ArenaEntityUtils::pickPotion(ArenaRandom &random)
 {
 	const int numberOfPotionTypes = 15;
 	return random.next(numberOfPotionTypes);
 }
 
-void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int qualityThreshold, const ExeData &exeData, Random &random, int *outItemID,
+void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int qualityThreshold, const ExeData &exeData, ArenaRandom &random, int *outItemID,
 	ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID)
 {
 	int itemID = -1;
@@ -484,7 +484,7 @@ void ArenaEntityUtils::pickMagicAccessoryOrTrinket(int specifiedItemID, int qual
 	*outSpellID = spellID;
 }
 
-void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int qualityThreshold, const ExeData &exeData, Random &random, int *outItemID, SpellID *outSpellID)
+void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int qualityThreshold, const ExeData &exeData, ArenaRandom &random, int *outItemID, SpellID *outSpellID)
 {
 	const Span<const uint8_t> spellcastingBaseItemChances = exeData.equipment.spellcastingItemCumulativeChances;
 	const Span<const uint8_t> spellcastingItemAttackSpellQualities = exeData.equipment.spellcastingItemAttackSpellQualities;
@@ -582,7 +582,7 @@ void ArenaEntityUtils::pickSpellCastingItem(int specifiedItemID, int qualityThre
 	*outSpellID = spellID;
 }
 
-void ArenaEntityUtils::pickAttributeEnhancementItem(int specifiedItemID, int quality, const ExeData &exeData, Random &random, int *outItemID, PrimaryAttributeID *outAttributeID)
+void ArenaEntityUtils::pickAttributeEnhancementItem(int specifiedItemID, int quality, const ExeData &exeData, ArenaRandom &random, int *outItemID, PrimaryAttributeID *outAttributeID)
 {
 	const Span<const uint8_t> enhancementBaseItemChances = exeData.equipment.enhancementItemCumulativeChances;
 	int itemID = -1;
@@ -611,7 +611,7 @@ void ArenaEntityUtils::pickAttributeEnhancementItem(int specifiedItemID, int qua
 	*outItemID = itemID;
 }
 
-void ArenaEntityUtils::pickArmorClassItem(int specifiedItemID, const ExeData &exeData, Random &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID)
+void ArenaEntityUtils::pickArmorClassItem(int specifiedItemID, const ExeData &exeData, ArenaRandom &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID)
 {
 	const Span<const uint8_t> armorClassItemMaterialChances = exeData.equipment.armorClassItemMaterialChances;
 	const int numberOfItemIDs = 4;
@@ -642,7 +642,7 @@ int ArenaEntityUtils::getCreatureItemQualityThreshold(int creatureLevel)
 	return creatureLevel + 1;
 }
 
-int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random)
+int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeData, ArenaRandom &random)
 {
 	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(charClassDefID);
@@ -699,7 +699,7 @@ int ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType interiorType)
 	}
 }
 
-ArenaValidLootSlots ArenaEntityUtils::getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random)
+ArenaValidLootSlots ArenaEntityUtils::getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, ArenaRandom &random)
 {
 	ArenaValidLootSlots lootSlots;
 
@@ -716,7 +716,7 @@ ArenaValidLootSlots ArenaEntityUtils::getPopulatedLootSlots(int lootValuesIndex,
 	return lootSlots;
 }
 
-int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex)
+int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, ArenaRandom &random, ArenaCityType cityType, int levelIndex)
 {
 	int goldAmount = 0;
 
@@ -769,7 +769,7 @@ int ArenaEntityUtils::getLootGoldAmount(int lootValuesIndex, const ExeData &exeD
 	return goldAmount;
 }
 
-void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, Random &random,
+void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, ArenaRandom &random,
 	int *outItemID, bool *outIsPotion, ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID)
 {
 	int itemID = -1;
@@ -801,7 +801,7 @@ void ArenaEntityUtils::getLootMagicItem(int lootValuesIndex, ArenaCityType cityT
 	*outSpellID = spellID;
 }
 
-int ArenaEntityUtils::getLootItemQualityThreshold(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex)
+int ArenaEntityUtils::getLootItemQualityThreshold(int lootValuesIndex, ArenaRandom &random, ArenaCityType cityType, int levelIndex)
 {
 	int itemQualityThreshold = 0;
 	switch (lootValuesIndex)
@@ -839,7 +839,7 @@ int ArenaEntityUtils::getLootItemQualityThreshold(int lootValuesIndex, Random &r
 	return itemQualityThreshold;
 }
 
-void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor,
+void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID, bool *outIsArmor,
 	ArmorMaterialType *outArmorMaterialType)
 {
 	int itemID = -1;
@@ -871,7 +871,7 @@ void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Rand
 	*outArmorMaterialType = ArmorMaterialType::Plate;
 }
 
-int ArenaEntityUtils::getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, Random &random, int itemMaxHealth)
+int ArenaEntityUtils::getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, ArenaRandom &random, int itemMaxHealth)
 {
 	const Span<const uint8_t> itemConditionPercentages = exeData.equipment.lootItemConditionPercentages;
 	const Span<const uint8_t> itemConditionUsesFavorablePercentages = exeData.equipment.lootItemConditionUsesFavorablePercentages;
