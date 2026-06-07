@@ -60,6 +60,7 @@ struct EntityInitInfo
 	ArenaCityType cityType;
 	ArenaInteriorType interiorType;
 	int interiorLevelIndex;
+	int guardType;
 
 	EntityInitInfo();
 };

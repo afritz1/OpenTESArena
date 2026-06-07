@@ -74,6 +74,11 @@ int ArenaRandom::next(int exclusiveMax)
 	return this->next() % exclusiveMax;
 }
 
+bool ArenaRandom::nextBool()
+{
+	return (this->next() % 2) == 0;
+}
+
 void ArenaRandom::srand(uint32_t seed)
 {
 	this->value = seed;

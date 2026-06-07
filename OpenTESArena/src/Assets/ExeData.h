@@ -167,6 +167,10 @@ struct ExeDataEntities
 	// Minimum guard levels per city type
 	uint8_t guardLevelMinimums[3];
 
+	// Guard equipment IDs
+	uint8_t guardArmorIDs[4];
+	uint8_t guardShieldIDs[3];
+
 	// Random male citizen .CFA filenames. Replace '@' with a number from 1 to 5.
 	// - Order: Winter, Desert, Temperate.
 	std::string maleCitizenAnimationFilenames[3];

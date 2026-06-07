@@ -166,6 +166,10 @@ EntityInitInfo::EntityInitInfo()
 	this->canBeKilled = false;
 	this->hasInventory = false;
 	this->hasCreatureSound = false;
+	this->cityType = static_cast<ArenaCityType>(-1);
+	this->interiorType = static_cast<ArenaInteriorType>(-1);
+	this->interiorLevelIndex = -1;
+	this->guardType = -1;
 }
 
 EntityEnemyBehaviorState::EntityEnemyBehaviorState()
@@ -295,6 +299,8 @@ int EntityChunkManager::findAvailableTransformHeapIndex() const
 void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInstanceID instID, const EntityDefinition &entityDef,
 	const EntityAnimationDefinition &animDef, const EntityInitInfo &initInfo, Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer)
 {
+	ArenaRandom arenaRandom(random.next());
+
 	const EntityPositionID positionID = this->positions.alloc();
 	if (positionID < 0)
 	{
@@ -457,20 +463,22 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		if (entityDef.type == EntityDefinitionType::Enemy)
 		{
 			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+			const bool isGuard = initInfo.guardType >= 0;
+
 			if (enemyDef.type == EnemyEntityDefinitionType::Creature)
 			{
 				const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
 				const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
 
 				// Creatures have chances to have items added to their inventory according to their lootChances value.
-				if (ArenaEntityUtils::getCreatureHasMagicItem(creatureDef.level, creatureDef.lootChances, random))
+				if (ArenaEntityUtils::getCreatureHasMagicItem(creatureDef.level, creatureDef.lootChances, arenaRandom))
 				{
 					int magicItemID;
 					ItemMaterialDefinitionID materialID;
 					PrimaryAttributeID attributeID;
 					bool isPotion;
 					SpellID spellID;
-					ArenaEntityUtils::getCreatureMagicItem(creatureDef.level, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
+					ArenaEntityUtils::getCreatureMagicItem(creatureDef.level, exeData, arenaRandom, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
 
 					ItemDefinitionID magicItemDefID = -1;
 					if (isPotion)
@@ -513,12 +521,12 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					}
 				}
 
-				if (ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(creatureDef.lootChances, random))
+				if (ArenaEntityUtils::getCreatureHasNonMagicWeaponOrArmor(creatureDef.lootChances, arenaRandom))
 				{
 					int weaponOrArmorID;
 					bool isArmor;
 					ArmorMaterialType armorMaterialType;
-					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(creatureDef.level, exeData, random, &weaponOrArmorID, &isArmor, &armorMaterialType);
+					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(creatureDef.level, exeData, arenaRandom, &weaponOrArmorID, &isArmor, &armorMaterialType);
 					// @todo: Get condition percentage from helper function
 
 					ItemDefinitionID nonMagicItemDefID = -1;
@@ -562,7 +570,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					}
 				}
 
-				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(creatureDef.level, creatureDef.lootChances, random))
+				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(creatureDef.level, creatureDef.lootChances, arenaRandom))
 				{
 					const std::vector<ItemDefinitionID> magicItemDefIDs = itemLibrary.getDefinitionIndicesIf(
 						[](const ItemDefinition &itemDef)
@@ -582,70 +590,131 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 				const CharacterClassDefinition &humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
 
-				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
-				const int goldAmount = ArenaEntityUtils::getHumanEnemyGold(humanEnemyDef.charClassID, exeData, random);
-				if (goldAmount > 0)
+				if (isGuard)
 				{
-					itemInventory.insert(goldItemDefID, goldAmount);
-				}
+					std::array<int, 4> armorIDs;
+					armorIDs.fill(-1);
+					ArmorMaterialType armorMaterialType;
+					ArenaEntityUtils::getGuardArmor(initInfo.guardType, exeData, arenaRandom, armorIDs, &armorMaterialType);
 
-				std::array<int, 7> armorIDs;
-				armorIDs.fill(-1);
-				int level = 1; // TODO: Use enemy's level
-				ArmorMaterialType armorMaterialType;
-				ArenaEntityUtils::getHumanEnemyArmor(humanEnemyCharClassDef.originalClassIndex, level, exeData, random, armorIDs, &armorMaterialType);
-
-				for (const int armorID : armorIDs)
-				{
-					const ItemDefinitionID armorItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-						[armorID, armorMaterialType](const ItemDefinition &itemDef)
+					for (const int armorID : armorIDs)
 					{
-						if (itemDef.originalItemID != armorID)
+						const ItemDefinitionID armorItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[armorID, armorMaterialType](const ItemDefinition &itemDef)
 						{
-							return false;
-						}
+							if (itemDef.originalItemID != armorID)
+							{
+								return false;
+							}
 
-						if (itemDef.type != ItemType::Armor)
+							if (itemDef.type != ItemType::Armor)
+							{
+								return false;
+							}
+
+							const ArmorItemDefinition &armorItemDef = itemDef.armor;
+							return armorItemDef.materialType == armorMaterialType;
+						});
+
+						if (armorItemDefID != -1)
 						{
-							return false;
+							itemInventory.insert(armorItemDefID);
 						}
+					}
 
-						const ArmorItemDefinition &armorItemDef = itemDef.armor;
-						return armorItemDef.materialType == armorMaterialType;
+					const int weaponID = ArenaEntityUtils::getGuardWeapon(exeData, arenaRandom);
+
+					const ItemDefinitionID weaponItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[weaponID](const ItemDefinition &itemDef)
+					{
+						return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
 					});
 
-					if (armorItemDefID != -1)
+					if (weaponItemDefID != -1)
 					{
-						itemInventory.insert(armorItemDefID);
+						itemInventory.insert(weaponItemDefID);
+					}
+
+					const int shieldID = ArenaEntityUtils::getGuardShield(initInfo.guardType, exeData, arenaRandom);
+
+					const ItemDefinitionID shieldItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[shieldID](const ItemDefinition &itemDef)
+					{
+						return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
+					});
+
+					if (shieldItemDefID != -1)
+					{
+						itemInventory.insert(shieldItemDefID);
 					}
 				}
-
-				int weaponID = -1;
-				ArenaEntityUtils::getHumanEnemyWeapon(humanEnemyCharClassDef.originalClassIndex, exeData, random, &weaponID);
-
-				const ItemDefinitionID weaponItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-					[weaponID](const ItemDefinition &itemDef)
+				else
 				{
-					return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
-				});
+					const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
+					const int goldAmount = ArenaEntityUtils::getHumanEnemyGold(humanEnemyDef.charClassID, exeData, arenaRandom);
+					if (goldAmount > 0)
+					{
+						itemInventory.insert(goldItemDefID, goldAmount);
+					}
 
-				if (weaponItemDefID != -1)
-				{
-					itemInventory.insert(weaponItemDefID);
-				}
+					std::array<int, 7> armorIDs;
+					armorIDs.fill(-1);
+					int level = 1; // TODO: Use enemy's level
+					ArmorMaterialType armorMaterialType;
+					ArenaEntityUtils::getHumanEnemyArmor(humanEnemyCharClassDef.originalClassIndex, level, exeData, arenaRandom, armorIDs, &armorMaterialType);
 
-				int shieldID = -1;
-				ArenaEntityUtils::getHumanEnemyShield(humanEnemyCharClassDef.originalClassIndex, exeData, random, weaponID, &shieldID);
+					for (const int armorID : armorIDs)
+					{
+						const ItemDefinitionID armorItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[armorID, armorMaterialType](const ItemDefinition &itemDef)
+						{
+							if (itemDef.originalItemID != armorID)
+							{
+								return false;
+							}
 
-				const ItemDefinitionID shieldItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-					[shieldID](const ItemDefinition &itemDef)
-				{
-					return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
-				});
+							if (itemDef.type != ItemType::Armor)
+							{
+								return false;
+							}
 
-				if (shieldItemDefID != -1)
-				{
-					itemInventory.insert(shieldItemDefID);
+							const ArmorItemDefinition &armorItemDef = itemDef.armor;
+							return armorItemDef.materialType == armorMaterialType;
+						});
+
+						if (armorItemDefID != -1)
+						{
+							itemInventory.insert(armorItemDefID);
+						}
+					}
+
+					int weaponID = -1;
+					ArenaEntityUtils::getHumanEnemyWeapon(humanEnemyCharClassDef.originalClassIndex, exeData, arenaRandom, &weaponID);
+
+					const ItemDefinitionID weaponItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[weaponID](const ItemDefinition &itemDef)
+					{
+						return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
+					});
+
+					if (weaponItemDefID != -1)
+					{
+						itemInventory.insert(weaponItemDefID);
+					}
+
+					int shieldID = -1;
+					ArenaEntityUtils::getHumanEnemyShield(humanEnemyCharClassDef.originalClassIndex, exeData, arenaRandom, weaponID, &shieldID);
+
+					const ItemDefinitionID shieldItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[shieldID](const ItemDefinition &itemDef)
+					{
+						return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
+					});
+
+					if (shieldItemDefID != -1)
+					{
+						itemInventory.insert(shieldItemDefID);
+					}
 				}
 			}
 			else
@@ -659,7 +728,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 			const int lootValuesIndex = ArenaEntityUtils::getLootValuesIndex(interiorType);
 
 			// Decide which loot slots are to be populated.
-			const ArenaValidLootSlots validLootSlots = ArenaEntityUtils::getPopulatedLootSlots(lootValuesIndex, exeData, random);
+			const ArenaValidLootSlots validLootSlots = ArenaEntityUtils::getPopulatedLootSlots(lootValuesIndex, exeData, arenaRandom);
 
 			for (int i = 0; i < ArenaValidLootSlots::COUNT; i++)
 			{
@@ -671,7 +740,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				if (i == 0)
 				{
 					// The first possible item is gold
-					const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, random, initInfo.cityType, initInfo.interiorLevelIndex);
+					const int goldAmount = ArenaEntityUtils::getLootGoldAmount(lootValuesIndex, exeData, arenaRandom, initInfo.cityType, initInfo.interiorLevelIndex);
 					const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
 					itemInventory.insert(goldItemDefID, goldAmount);
 				}
@@ -683,7 +752,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					ItemMaterialDefinitionID materialID;
 					PrimaryAttributeID attributeID;
 					SpellID spellID;
-					ArenaEntityUtils::getLootMagicItem(lootValuesIndex, initInfo.cityType, initInfo.interiorLevelIndex, exeData, random, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
+					ArenaEntityUtils::getLootMagicItem(lootValuesIndex, initInfo.cityType, initInfo.interiorLevelIndex, exeData, arenaRandom, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
 
 					ItemDefinitionID magicItemDefID = -1;
 					if (isPotion)
@@ -731,7 +800,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					int weaponOrArmorID;
 					bool isArmor;
 					ArmorMaterialType armorMaterialType;
-					ArenaEntityUtils::getLootNonMagicWeaponOrArmor(exeData, random, &weaponOrArmorID, &isArmor, &armorMaterialType);
+					ArenaEntityUtils::getLootNonMagicWeaponOrArmor(exeData, arenaRandom, &weaponOrArmorID, &isArmor, &armorMaterialType);
 					// @todo: Get condition percentage from helper function
 
 					ItemDefinitionID nonMagicItemDefID = -1;

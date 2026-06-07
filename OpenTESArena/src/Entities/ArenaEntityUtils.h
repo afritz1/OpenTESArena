@@ -46,33 +46,33 @@ namespace ArenaEntityUtils
 	// For monsters
 	int getBaseSpeed(int speedAttribute);
 
-	int getCreatureGold(int creatureLevel, uint32_t creatureLootChance, Random &random);
-	bool getCreatureHasMagicItem(int creatureLevel, uint32_t creatureLootChance, Random &random);
-	bool getCreatureHasNonMagicWeaponOrArmor(uint32_t creatureLootChance, Random &random);
-	bool getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint32_t creatureLootChance, Random &random);
+	int getCreatureGold(int creatureLevel, uint32_t creatureLootChance, ArenaRandom &random);
+	bool getCreatureHasMagicItem(int creatureLevel, uint32_t creatureLootChance, ArenaRandom &random);
+	bool getCreatureHasNonMagicWeaponOrArmor(uint32_t creatureLootChance, ArenaRandom &random);
+	bool getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint32_t creatureLootChance, ArenaRandom &random);
 
-	void getCreatureMagicItem(int creatureLevel, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion,
+	void getCreatureMagicItem(int creatureLevel, const ExeData &exeData, ArenaRandom &random, int *outItemID, bool *outIsPotion,
 		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID);
-	int pickPotion(Random &random);
-	void pickMagicAccessoryOrTrinket(int specifiedItemID, int qualityThreshold, const ExeData &exeData, Random &random, int *outItemID,
+	int pickPotion(ArenaRandom &random);
+	void pickMagicAccessoryOrTrinket(int specifiedItemID, int qualityThreshold, const ExeData &exeData, ArenaRandom &random, int *outItemID,
 		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID);
-	void pickSpellCastingItem(int specifiedItemID, int qualityThreshold, const ExeData &exeData, Random &random, int *outItemID, SpellID *outSpellID);
-	void pickAttributeEnhancementItem(int specifiedItemID, int qualityThreshold, const ExeData &exeData, Random &random, int *outItemID, PrimaryAttributeID *outAttributeID);
-	void pickArmorClassItem(int specifiedItemID, const ExeData &exeData, Random &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID);
+	void pickSpellCastingItem(int specifiedItemID, int qualityThreshold, const ExeData &exeData, ArenaRandom &random, int *outItemID, SpellID *outSpellID);
+	void pickAttributeEnhancementItem(int specifiedItemID, int qualityThreshold, const ExeData &exeData, ArenaRandom &random, int *outItemID, PrimaryAttributeID *outAttributeID);
+	void pickArmorClassItem(int specifiedItemID, const ExeData &exeData, ArenaRandom &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID);
 
 	// Weapon/armor ID is 0 = staff/cuirass, 1 = dagger/gauntlets, etc.
-	int pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, Random &random);
-	int pickNonMagicWeapon(int weaponQualityThreshold, int specifiedItemID, const ExeData &exeData, Random &random);
+	int pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, ArenaRandom &random);
+	int pickNonMagicWeapon(int weaponQualityThreshold, int specifiedItemID, const ExeData &exeData, ArenaRandom &random);
 
-	void getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, Random &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType);
-	void getHumanEnemyWeapon(int classNumber, const ExeData &exeData, Random &random, int *outWeaponID);
-	void getHumanEnemyShield(int classNumber, const ExeData &exeData, Random &random, int weaponID, int *outShieldID);
-	void getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, Random &random, int *outWeaponOrArmorID,
+	void getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType);
+	void getHumanEnemyWeapon(int classNumber, const ExeData &exeData, ArenaRandom &random, int *outWeaponID);
+	void getHumanEnemyShield(int classNumber, const ExeData &exeData, ArenaRandom &random, int weaponID, int *outShieldID);
+	void getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID,
 		bool *outIsArmor, ArmorMaterialType *outArmorMaterialType);
-	int getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, Random &random);
+	int getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, ArenaRandom &random);
 	int getCreatureItemQualityThreshold(int creatureLevel);
 
-	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, Random &random);
+	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, ArenaRandom &random);
 	int getHumanEnemyExperience(int level, int charClassDefID, const ExeData &exeData);
 
 	constexpr int LOOT_VALUES_INDEX_HOUSE = 0;
@@ -83,13 +83,13 @@ namespace ArenaEntityUtils
 	constexpr int LOOT_VALUES_INDEX_TOWER = 4;
 
 	int getLootValuesIndex(ArenaInteriorType interiorType);
-	ArenaValidLootSlots getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, Random &random);
-	int getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, Random &random, ArenaCityType cityType, int levelIndex);
-	void getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, Random &random, int *outItemID, bool *outIsPotion,
+	ArenaValidLootSlots getPopulatedLootSlots(int lootValuesIndex, const ExeData &exeData, ArenaRandom &random);
+	int getLootGoldAmount(int lootValuesIndex, const ExeData &exeData, ArenaRandom &random, ArenaCityType cityType, int levelIndex);
+	void getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, ArenaRandom &random, int *outItemID, bool *outIsPotion,
 		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID);
-	int getLootItemQualityThreshold(int lootValuesIndex, Random &random, ArenaCityType cityType, int levelIndex);
-	void getLootNonMagicWeaponOrArmor(const ExeData &exeData, Random &random, int *outWeaponOrArmorID, bool *outIsArmor, ArmorMaterialType *outArmorMaterialType);
-	int getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, Random &random, int itemMaxHealth);
+	int getLootItemQualityThreshold(int lootValuesIndex, ArenaRandom &random, ArenaCityType cityType, int levelIndex);
+	void getLootNonMagicWeaponOrArmor(const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID, bool *outIsArmor, ArmorMaterialType *outArmorMaterialType);
+	int getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, ArenaRandom &random, int itemMaxHealth);
 
 	std::string getArmorNameFromItemID(int itemID, const ExeData &exeData);
 	std::string getWeaponNameFromItemID(int itemID, const ExeData &exeData);
@@ -99,6 +99,9 @@ namespace ArenaEntityUtils
 	int getGuardType(const ExeData &exeData, ArenaRandom &random);
 	int getGuardLevel(ArenaCityType cityType, int tierBonus, const ExeData &exeData, ArenaRandom &random);
 	int getNumberOfGuardsToSpawn(ArenaRandom &random);
+	void getGuardArmor(int guardType, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType);
+	int getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
+	int getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
 
 	ArenaEntitySpawnPoint findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles, uint16_t playerTileIndex,*/ ArenaRandom &random);
 	bool isTileOccupied(uint16_t tileIndex, Span<const uint16_t> occupiedTiles);

@@ -638,6 +638,7 @@ void GameState::queueGuardSpawn(Game &game)
 			spawnedGuardEntityInitInfo.direction = CardinalDirection::North;
 			spawnedGuardEntityInitInfo.hasInventory = true;
 			spawnedGuardEntityInitInfo.hasCreatureSound = false;
+			spawnedGuardEntityInitInfo.guardType = spawnedGuardType;
 
 			Renderer &renderer = game.renderer;
 			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
