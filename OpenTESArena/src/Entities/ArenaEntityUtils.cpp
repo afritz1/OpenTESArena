@@ -965,10 +965,11 @@ void ArenaEntityUtils::getGuardArmor(int guardType, const ExeData &exeData, Aren
 	constexpr int chainMaterialID = 1;
 	constexpr int leatherMaterialID = 2;
 
-	constexpr int dummyQualityThreshold = 1;
-	for (int i = 0; i < 4; i++)
+	const Span<const uint8_t> guardArmorIDs = exeData.entities.guardArmorIDs;
+	for (int i = 0; i < outArmorIDs.getCount(); i++)
 	{
-		outArmorIDs[i] = ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, guardType, exeData.entities.guardArmorIDs[i], exeData, random);
+		constexpr int dummyQualityThreshold = 1;
+		outArmorIDs[i] = ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, guardType, guardArmorIDs[i], exeData, random);
 	}
 
 	if (guardType == leatherMaterialID)
@@ -987,16 +988,17 @@ void ArenaEntityUtils::getGuardArmor(int guardType, const ExeData &exeData, Aren
 
 int ArenaEntityUtils::getGuardWeapon(const ExeData &exeData, ArenaRandom &random)
 {
-	constexpr int longSwordID = 5;
 	constexpr int dummyQualityThreshold = 1;
+	constexpr int longSwordID = 5;
 	return ArenaEntityUtils::pickNonMagicWeapon(dummyQualityThreshold, longSwordID, exeData, random);
 }
 
 int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random)
 {
-	constexpr int platematerialID = 0;
 	constexpr int dummyQualityThreshold = 1;
-	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, platematerialID, exeData.entities.guardShieldIDs[guardType], exeData, random);
+	constexpr int plateMaterialID = 0;
+	const Span<const uint8_t> guardShieldIDs = exeData.entities.guardShieldIDs;
+	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
 }
 
 ArenaEntitySpawnPoint ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles,*/ ArenaRandom &random)

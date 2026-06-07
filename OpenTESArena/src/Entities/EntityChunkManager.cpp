@@ -166,6 +166,10 @@ EntityInitInfo::EntityInitInfo()
 	this->canBeKilled = false;
 	this->hasInventory = false;
 	this->hasCreatureSound = false;
+	this->cityType = static_cast<ArenaCityType>(-1);
+	this->interiorType = static_cast<ArenaInteriorType>(-1);
+	this->interiorLevelIndex = -1;
+	this->guardType = -1;
 }
 
 EntityEnemyBehaviorState::EntityEnemyBehaviorState()
@@ -459,6 +463,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		if (entityDef.type == EntityDefinitionType::Enemy)
 		{
 			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+			const bool isGuard = initInfo.guardType >= 0;
+
 			if (enemyDef.type == EnemyEntityDefinitionType::Creature)
 			{
 				const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
@@ -578,93 +584,23 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					itemInventory.insert(itemDefID);
 				}
 			}
-			else if (enemyDef.type == EnemyEntityDefinitionType::Human && initInfo.isGuard == false)
+			else if (enemyDef.type == EnemyEntityDefinitionType::Human)
 			{
 				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
 				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 				const CharacterClassDefinition &humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
 
-				const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
-				const int goldAmount = ArenaEntityUtils::getHumanEnemyGold(humanEnemyDef.charClassID, exeData, arenaRandom);
-				if (goldAmount > 0)
+				if (isGuard)
 				{
-					itemInventory.insert(goldItemDefID, goldAmount);
-				}
+					std::array<int, 4> armorIDs;
+					armorIDs.fill(-1);
+					ArmorMaterialType armorMaterialType;
+					ArenaEntityUtils::getGuardArmor(initInfo.guardType, exeData, arenaRandom, armorIDs, &armorMaterialType);
 
-				std::array<int, 7> armorIDs;
-				armorIDs.fill(-1);
-				int level = 1; // TODO: Use enemy's level
-				ArmorMaterialType armorMaterialType;
-				ArenaEntityUtils::getHumanEnemyArmor(humanEnemyCharClassDef.originalClassIndex, level, exeData, arenaRandom, armorIDs, &armorMaterialType);
-
-				for (const int armorID : armorIDs)
-				{
-					const ItemDefinitionID armorItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-						[armorID, armorMaterialType](const ItemDefinition &itemDef)
+					for (const int armorID : armorIDs)
 					{
-						if (itemDef.originalItemID != armorID)
-						{
-							return false;
-						}
-
-						if (itemDef.type != ItemType::Armor)
-						{
-							return false;
-						}
-
-						const ArmorItemDefinition &armorItemDef = itemDef.armor;
-						return armorItemDef.materialType == armorMaterialType;
-					});
-
-					if (armorItemDefID != -1)
-					{
-						itemInventory.insert(armorItemDefID);
-					}
-				}
-
-				int weaponID = -1;
-				ArenaEntityUtils::getHumanEnemyWeapon(humanEnemyCharClassDef.originalClassIndex, exeData, arenaRandom, &weaponID);
-
-				const ItemDefinitionID weaponItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-					[weaponID](const ItemDefinition &itemDef)
-				{
-					return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
-				});
-
-				if (weaponItemDefID != -1)
-				{
-					itemInventory.insert(weaponItemDefID);
-				}
-
-				int shieldID = -1;
-				ArenaEntityUtils::getHumanEnemyShield(humanEnemyCharClassDef.originalClassIndex, exeData, arenaRandom, weaponID, &shieldID);
-
-				const ItemDefinitionID shieldItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-					[shieldID](const ItemDefinition &itemDef)
-				{
-					return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
-				});
-
-				if (shieldItemDefID != -1)
-				{
-					itemInventory.insert(shieldItemDefID);
-				}
-			}
-			else if (initInfo.isGuard == true)
-			{
-				const EnemyEntityHumanDefinition& humanEnemyDef = enemyDef.human;
-				const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
-				const CharacterClassDefinition& humanEnemyCharClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
-
-				std::array<int, 4> armorIDs;
-				armorIDs.fill(-1);
-				ArmorMaterialType armorMaterialType;
-				ArenaEntityUtils::getGuardArmor(initInfo.guardType, exeData, arenaRandom, armorIDs, &armorMaterialType);
-
-				for (const int armorID : armorIDs)
-				{
-					const ItemDefinitionID armorItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-						[armorID, armorMaterialType](const ItemDefinition& itemDef)
+						const ItemDefinitionID armorItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[armorID, armorMaterialType](const ItemDefinition &itemDef)
 						{
 							if (itemDef.originalItemID != armorID)
 							{
@@ -676,40 +612,109 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 								return false;
 							}
 
-							const ArmorItemDefinition& armorItemDef = itemDef.armor;
+							const ArmorItemDefinition &armorItemDef = itemDef.armor;
 							return armorItemDef.materialType == armorMaterialType;
 						});
 
-					if (armorItemDefID != -1)
-					{
-						itemInventory.insert(armorItemDefID);
+						if (armorItemDefID != -1)
+						{
+							itemInventory.insert(armorItemDefID);
+						}
 					}
-				}
 
-				int weaponID = ArenaEntityUtils::getGuardWeapon(exeData, arenaRandom);
+					const int weaponID = ArenaEntityUtils::getGuardWeapon(exeData, arenaRandom);
 
-				const ItemDefinitionID weaponItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-					[weaponID](const ItemDefinition& itemDef)
+					const ItemDefinitionID weaponItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[weaponID](const ItemDefinition &itemDef)
 					{
 						return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
 					});
 
-				if (weaponItemDefID != -1)
-				{
-					itemInventory.insert(weaponItemDefID);
-				}
+					if (weaponItemDefID != -1)
+					{
+						itemInventory.insert(weaponItemDefID);
+					}
 
-				int shieldID = ArenaEntityUtils::getGuardShield(initInfo.guardType, exeData, arenaRandom);
+					const int shieldID = ArenaEntityUtils::getGuardShield(initInfo.guardType, exeData, arenaRandom);
 
-				const ItemDefinitionID shieldItemDefID = itemLibrary.getFirstDefinitionIndexIf(
-					[shieldID](const ItemDefinition& itemDef)
+					const ItemDefinitionID shieldItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[shieldID](const ItemDefinition &itemDef)
 					{
 						return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
 					});
 
-				if (shieldItemDefID != -1)
+					if (shieldItemDefID != -1)
+					{
+						itemInventory.insert(shieldItemDefID);
+					}
+				}
+				else
 				{
-					itemInventory.insert(shieldItemDefID);
+					const ItemDefinitionID goldItemDefID = itemLibrary.getGoldDefinitionID();
+					const int goldAmount = ArenaEntityUtils::getHumanEnemyGold(humanEnemyDef.charClassID, exeData, arenaRandom);
+					if (goldAmount > 0)
+					{
+						itemInventory.insert(goldItemDefID, goldAmount);
+					}
+
+					std::array<int, 7> armorIDs;
+					armorIDs.fill(-1);
+					int level = 1; // TODO: Use enemy's level
+					ArmorMaterialType armorMaterialType;
+					ArenaEntityUtils::getHumanEnemyArmor(humanEnemyCharClassDef.originalClassIndex, level, exeData, arenaRandom, armorIDs, &armorMaterialType);
+
+					for (const int armorID : armorIDs)
+					{
+						const ItemDefinitionID armorItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+							[armorID, armorMaterialType](const ItemDefinition &itemDef)
+						{
+							if (itemDef.originalItemID != armorID)
+							{
+								return false;
+							}
+
+							if (itemDef.type != ItemType::Armor)
+							{
+								return false;
+							}
+
+							const ArmorItemDefinition &armorItemDef = itemDef.armor;
+							return armorItemDef.materialType == armorMaterialType;
+						});
+
+						if (armorItemDefID != -1)
+						{
+							itemInventory.insert(armorItemDefID);
+						}
+					}
+
+					int weaponID = -1;
+					ArenaEntityUtils::getHumanEnemyWeapon(humanEnemyCharClassDef.originalClassIndex, exeData, arenaRandom, &weaponID);
+
+					const ItemDefinitionID weaponItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[weaponID](const ItemDefinition &itemDef)
+					{
+						return (itemDef.type == ItemType::Weapon) && (itemDef.originalItemID == weaponID);
+					});
+
+					if (weaponItemDefID != -1)
+					{
+						itemInventory.insert(weaponItemDefID);
+					}
+
+					int shieldID = -1;
+					ArenaEntityUtils::getHumanEnemyShield(humanEnemyCharClassDef.originalClassIndex, exeData, arenaRandom, weaponID, &shieldID);
+
+					const ItemDefinitionID shieldItemDefID = itemLibrary.getFirstDefinitionIndexIf(
+						[shieldID](const ItemDefinition &itemDef)
+					{
+						return (itemDef.type == ItemType::Shield) && (itemDef.originalItemID == shieldID);
+					});
+
+					if (shieldItemDefID != -1)
+					{
+						itemInventory.insert(shieldItemDefID);
+					}
 				}
 			}
 			else
