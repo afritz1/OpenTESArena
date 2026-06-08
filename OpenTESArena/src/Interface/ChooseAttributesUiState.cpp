@@ -402,7 +402,7 @@ void ChooseAttributesUI::create(Game &game)
 	state.remainingPointsPopUpContextInstID = uiManager.createContext(remainingPointsPopUpContextInitInfo);
 
 	UiElementInitInfo remainingPointsPopUpTextBoxElementInitInfo;
-	remainingPointsPopUpTextBoxElementInitInfo.name = "ChooseAttributesRemainingsPointsPopUpTextBox";
+	remainingPointsPopUpTextBoxElementInitInfo.name = "ChooseAttributesRemainingPointsPopUpTextBox";
 	remainingPointsPopUpTextBoxElementInitInfo.position = ChooseAttributesUiView::AppearanceTextCenterPoint;
 	remainingPointsPopUpTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	remainingPointsPopUpTextBoxElementInitInfo.drawOrder = 1;
@@ -417,7 +417,7 @@ void ChooseAttributesUI::create(Game &game)
 	const Rect remainingPointsPopUpTextBoxRect = uiManager.getTransformGlobalRect(remainingPointsPopUpTextBoxElementInstID);
 
 	UiElementInitInfo remainingPointsPopUpImageElementInitInfo;
-	remainingPointsPopUpImageElementInitInfo.name = "ChooseAttributesRemainingsPointsPopUpImage";
+	remainingPointsPopUpImageElementInitInfo.name = "ChooseAttributesRemainingPointsPopUpImage";
 	remainingPointsPopUpImageElementInitInfo.position = ChooseAttributesUiView::AppearanceTextCenterPoint;
 	remainingPointsPopUpImageElementInitInfo.pivotType = UiPivotType::Middle;
 	remainingPointsPopUpImageElementInitInfo.drawOrder = 0;

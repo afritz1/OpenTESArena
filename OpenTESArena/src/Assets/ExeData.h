@@ -508,6 +508,8 @@ struct ExeDataStatus
 	std::string enemyCorpseGold;
 	std::string citizenCorpseGold;
 
+	std::string readyToLevelUp;
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

@@ -3,8 +3,6 @@
 #include "CharacterCreationState.h"
 #include "../Assets/BinaryAssetLibrary.h"
 
-#include "components/debug/Debug.h"
-
 CharacterCreationState::CharacterCreationState()
 {
 	this->clear();

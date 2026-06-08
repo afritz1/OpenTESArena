@@ -24,6 +24,7 @@
 #include "../Interface/GameWorldUiState.h"
 #include "../Interface/ImageUiState.h"
 #include "../Interface/ImageSequenceUiState.h"
+#include "../Interface/LevelUpUiState.h"
 #include "../Interface/LoadSaveUiState.h"
 #include "../Interface/LogbookUiState.h"
 #include "../Interface/MainMenuUiState.h"
@@ -98,6 +99,7 @@ bool UiManager::init()
 	REGISTER_SCOPE_CALLBACKS(GameWorldUI);
 	REGISTER_SCOPE_CALLBACKS(ImageUI);
 	REGISTER_SCOPE_CALLBACKS(ImageSequenceUI);
+	REGISTER_SCOPE_CALLBACKS(LevelUpUI);
 	REGISTER_SCOPE_CALLBACKS(LoadSaveUI);
 	REGISTER_SCOPE_CALLBACKS(LogbookUI);
 	REGISTER_SCOPE_CALLBACKS(MainMenuUI);

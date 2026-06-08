@@ -946,6 +946,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int enemyCorpseEmptyInventoryOffset = GetExeAddress(*section, "EnemyCorpseEmptyInventory");
 	const int enemyCorpseGoldOffset = GetExeAddress(*section, "EnemyCorpseGold");
 	const int citizenCorpseGoldOffset = GetExeAddress(*section, "CitizenCorpseGold");
+	const int readyToLevelUpOffset = GetExeAddress(*section, "ReadyToLevelUp");
 
 	this->popUp = GetExeStringNullTerminated(exeBytes, popUpOffset);
 	this->date = GetExeStringNullTerminated(exeBytes, dateOffset);
@@ -963,6 +964,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	this->enemyCorpseEmptyInventory = GetExeStringNullTerminated(exeBytes, enemyCorpseEmptyInventoryOffset);
 	this->enemyCorpseGold = GetExeStringNullTerminated(exeBytes, enemyCorpseGoldOffset);
 	this->citizenCorpseGold = GetExeStringNullTerminated(exeBytes, citizenCorpseGoldOffset);
+	this->readyToLevelUp = GetExeStringNullTerminated(exeBytes, readyToLevelUpOffset);
 
 	return true;
 }

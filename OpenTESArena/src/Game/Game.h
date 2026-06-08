@@ -15,6 +15,7 @@
 #include "../Input/InputManager.h"
 #include "../Interface/GameWorldUiMVC.h"
 #include "../Player/CharacterCreationState.h"
+#include "../Player/CharacterLevelUpState.h"
 #include "../Rendering/Renderer.h"
 #include "../Rendering/Window.h"
 #include "../UI/UiContext.h"
@@ -35,6 +36,7 @@ public:
 	AudioManager audioManager;
 	InputManager inputManager;
 	std::unique_ptr<CharacterCreationState> charCreationState;
+	std::unique_ptr<CharacterLevelUpState> charLevelUpState;
 	Options options;
 	Window window;
 	Renderer renderer;

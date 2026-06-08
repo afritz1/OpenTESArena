@@ -668,6 +668,8 @@ void Game::handleContextChanges()
 {
 	if (!this->nextContextName.empty())
 	{
+		// @todo when setting next context inside a popup onClose callback, this will select the popup context which is undesirable. It should pick the first active context instead
+		// (i.e. the game world, not the text popup) so that callback doesn't have to do disableTopMostContext().
 		const UiContextInstanceID activeContextID = this->uiManager.getTopMostActiveContext();
 		DebugAssert(activeContextID >= 0); // @todo wondering if the global context should be a secret one that is ignored in the active context search. Only then could this be -1.
 

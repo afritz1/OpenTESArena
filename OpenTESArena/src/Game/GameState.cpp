@@ -19,6 +19,7 @@
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Interface/GameWorldUiMVC.h"
 #include "../Interface/GameWorldUiState.h"
+#include "../Interface/LevelUpUiState.h"
 #include "../Math/Constants.h"
 #include "../Player/Player.h"
 #include "../Player/PlayerLogic.h"
@@ -1070,18 +1071,46 @@ void GameState::tickPlayerLevel(Game &game)
 {
 	Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
-	const int requiredExpForLevelUp = charClassDef.getExperienceCap(player.level);
 
-	if (player.experience >= requiredExpForLevelUp)
+	// @todo early out if recently in combat
+
+	const int prevPlayerLevel = player.level;
+	while (player.experience >= charClassDef.getExperienceCap(player.level))
 	{
 		player.level++;
-
-		AudioManager &audioManager = game.audioManager;
-		audioManager.playSoundOneShot(ArenaSoundName::Fanfare1);
-		DebugLogFormat("Player is now level %d.", player.level);
-
-		// @todo character sheet UI context
 	}
+
+	const int earnedLevelUps = player.level - prevPlayerLevel;
+	const bool hasEarnedLevelUp = earnedLevelUps > 0;
+	if (!hasEarnedLevelUp)
+	{
+		return;
+	}
+
+	Random &random = game.random;
+	int bonusPoints = 0;
+	for (int i = 0; i < earnedLevelUps; i++)
+	{
+		const int extraBonusPoints = random.next((CharacterLevelUpState::BonusPointsRandomMax - CharacterLevelUpState::BonusPointsRandomMin) + 1);
+		bonusPoints += CharacterLevelUpState::BonusPointsRandomMin + extraBonusPoints;
+	}
+	
+	AudioManager &audioManager = game.audioManager;
+	audioManager.playSoundOneShot(ArenaSoundName::Fanfare1);
+	DebugLogFormat("Player is now level %d with %d points to spend.", player.level, bonusPoints);
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string &readyToLevelUpStr = exeData.status.readyToLevelUp;
+	GameWorldUI::showTextPopUp(readyToLevelUpStr.c_str(), TextAlignment::MiddleCenter,
+		[&game, bonusPoints]()
+	{
+		DebugAssert(game.charLevelUpState == nullptr);
+		game.charLevelUpState = std::make_unique<CharacterLevelUpState>();
+		game.charLevelUpState->init(game.player, bonusPoints);
+
+		game.uiManager.disableTopMostContext(); // Close pop-up so the game world becomes the top-most active context for Game::handleContextChanges().
+		game.setNextContext(LevelUpUI::ContextName);
+	});
 }
 
 void GameState::tickVoxels(double dt, Game &game)
