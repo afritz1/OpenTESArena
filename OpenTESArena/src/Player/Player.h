@@ -63,6 +63,7 @@ struct PlayerGroundState
 	bool onGround;
 	double secondsSinceOnGround;
 	bool recentlyOnGround;
+	bool onRaisedPlatform; // For avoiding enemy encounters
 	bool isSwimming; // For swimming and splash SFXs
 	bool hasSplashedInChasm;
 	bool canJump;
