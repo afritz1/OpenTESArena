@@ -36,7 +36,7 @@ namespace PlayerConstants
 	constexpr double MOVE_SPEED = 12.0;
 	constexpr double SWIMMING_MOVE_SPEED = MOVE_SPEED * 0.5;
 	constexpr double SWIMMING_STAMINA_LOSS_MULTIPLIER = 30.0;
-	constexpr double CLAMPED_MOVE_SPEED_PERCENT = 0.4; // Hack, this is less than max speed to retain snappiness of acceleration at 0
+	constexpr double CLAMPED_MOVE_SPEED_PERCENT = 0.3; // Hack, this is less than max speed to retain snappiness of acceleration at 0 velocity
 	constexpr double CLIMBING_SPEED = 100.0 / MIFUtils::ARENA_UNITS;
 	constexpr double CLIMBING_FINAL_PUSH_SPEED = 2.0;
 	constexpr double CLIMBING_RAISED_PLATFORM_GATHER_DISTANCE = COLLIDER_RADIUS * 1.15; // Raised platforms affect final climbing height.

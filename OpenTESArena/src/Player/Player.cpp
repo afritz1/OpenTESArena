@@ -586,8 +586,21 @@ double Player::getMaxMoveSpeed() const
 		return charRaceDef.swimmingMoveSpeed;
 	}
 
-	// @todo depend on speed attribute
-	return PlayerConstants::MOVE_SPEED;
+	const int speedAttribute = this->primaryAttributes.speed.maxValue; // @todo use currentValue eventually
+	const int speedAttributeAs256 = ArenaStatUtils::scale100To256(speedAttribute);
+
+	const double currentWeight = this->inventory.getWeight();
+	const int strengthAttribute = this->primaryAttributes.strength.maxValue; // @todo use currentValue eventually
+	const int maxWeight = ArenaPlayerUtils::calculateMaxWeight(strengthAttribute);
+	const double encumbrancePercent = currentWeight / static_cast<double>(maxWeight);
+	const int encumbranceMod = std::clamp(static_cast<int>(std::round(encumbrancePercent * 256.0)), 0, 256);
+
+	const int arenaUnitsPerFrame = ArenaPlayerUtils::getBaseSpeed(speedAttributeAs256, encumbranceMod);
+	const int arenaUnitsPerSecond = arenaUnitsPerFrame * ArenaRenderUtils::FRAMES_PER_SECOND;
+	const double voxelsPerSecond = static_cast<double>(arenaUnitsPerSecond) / MIFUtils::ARENA_UNITS;
+
+	constexpr double modernSpeedMultiplier = 2.0; // Added this due to modern physics/friction not being identical to classic.
+	return voxelsPerSecond * modernSpeedMultiplier;
 }
 
 bool Player::isMoving() const
