@@ -54,6 +54,7 @@ struct EntityInitInfo
 	std::optional<EntityCitizenName> citizenName;
 	std::optional<uint16_t> citizenColorSeed;
 	std::optional<int> raceID;
+	int humanEnemyLevel;
 	bool hasInventory;
 	bool hasCreatureSound;
 	std::optional<bool> isLocked;
@@ -125,6 +126,7 @@ struct EntityBehaviorState
 
 struct EntityCombatState
 {
+	int level;
 	bool isDying; // Begins their death animation (if any) and removal from play.
 	bool isDead;
 	bool hasBeenLootedBefore; // For awarding gold from creature corpse.

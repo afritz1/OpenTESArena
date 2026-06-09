@@ -164,6 +164,7 @@ EntityInitInfo::EntityInitInfo()
 	this->initialAnimStateIndex = -1;
 	this->isSensorCollider = false;
 	this->canBeKilled = false;
+	this->humanEnemyLevel = -1;
 	this->hasInventory = false;
 	this->hasCreatureSound = false;
 	this->cityType = static_cast<ArenaCityType>(-1);
@@ -222,6 +223,7 @@ bool EntityBehaviorState::isCitizen() const
 
 EntityCombatState::EntityCombatState()
 {
+	this->level = 0;
 	this->isDying = false;
 	this->isDead = false;
 	this->hasBeenLootedBefore = false;
@@ -394,6 +396,22 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		}
 	}
 
+	int combatLevel = 0;
+	if (initInfo.humanEnemyLevel > 0)
+	{
+		combatLevel = initInfo.humanEnemyLevel;
+	}
+	else if (initInfo.hasCreatureSound)
+	{
+		DebugAssert(entityDef.type == EntityDefinitionType::Enemy);
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+
+		DebugAssert(enemyDef.type == EnemyEntityDefinitionType::Creature);
+		const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+		const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
+		combatLevel = creatureDef.level;
+	}
+
 	if (initInfo.canBeKilled)
 	{
 		entityInst.combatStateID = this->combatStates.alloc();
@@ -403,8 +421,10 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		}
 
 		EntityCombatState &combatState = this->combatStates.get(entityInst.combatStateID);
+		combatState.level = combatLevel;
 		combatState.isDying = false;
 		combatState.isDead = false;
+		combatState.hasBeenLootedBefore = false;
 	}
 
 	if (initInfo.direction.has_value())
@@ -471,14 +491,14 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				const CreatureDefinition &creatureDef = creatureDefLibrary.getDefinition(enemyDef.creatureDefID);
 
 				// Creatures have chances to have items added to their inventory according to their lootChances value.
-				if (ArenaEntityUtils::getCreatureHasMagicItem(creatureDef.level, creatureDef.lootChances, arenaRandom))
+				if (ArenaEntityUtils::getCreatureHasMagicItem(combatLevel, creatureDef.lootChances, arenaRandom))
 				{
 					int magicItemID;
 					ItemMaterialDefinitionID materialID;
 					PrimaryAttributeID attributeID;
 					bool isPotion;
 					SpellID spellID;
-					ArenaEntityUtils::getCreatureMagicItem(creatureDef.level, exeData, arenaRandom, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
+					ArenaEntityUtils::getCreatureMagicItem(combatLevel, exeData, arenaRandom, &magicItemID, &isPotion, &materialID, &attributeID, &spellID);
 
 					ItemDefinitionID magicItemDefID = -1;
 					if (isPotion)
@@ -526,7 +546,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					int weaponOrArmorID;
 					bool isArmor;
 					ArmorMaterialType armorMaterialType;
-					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(creatureDef.level, exeData, arenaRandom, &weaponOrArmorID, &isArmor, &armorMaterialType);
+					ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(combatLevel, exeData, arenaRandom, &weaponOrArmorID, &isArmor, &armorMaterialType);
 					// @todo: Get condition percentage from helper function
 
 					ItemDefinitionID nonMagicItemDefID = -1;
@@ -570,7 +590,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 					}
 				}
 
-				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(creatureDef.level, creatureDef.lootChances, arenaRandom))
+				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(combatLevel, creatureDef.lootChances, arenaRandom))
 				{
 					const std::vector<ItemDefinitionID> magicItemDefIDs = itemLibrary.getDefinitionIndicesIf(
 						[](const ItemDefinition &itemDef)
@@ -659,9 +679,8 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 					std::array<int, 7> armorIDs;
 					armorIDs.fill(-1);
-					int level = 1; // TODO: Use enemy's level
 					ArmorMaterialType armorMaterialType;
-					ArenaEntityUtils::getHumanEnemyArmor(humanEnemyCharClassDef.originalClassIndex, level, exeData, arenaRandom, armorIDs, &armorMaterialType);
+					ArenaEntityUtils::getHumanEnemyArmor(humanEnemyCharClassDef.originalClassIndex, combatLevel, exeData, arenaRandom, armorIDs, &armorMaterialType);
 
 					for (const int armorID : armorIDs)
 					{
@@ -960,8 +979,20 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 			if (isDynamicEntity)
 			{
 				initInfo.direction = CardinalDirection::North;
-				initInfo.canBeKilled = entityDefType == EntityDefinitionType::Enemy;
-				initInfo.hasCreatureSound = (entityDefType == EntityDefinitionType::Enemy) && (entityDef.enemy.type == EnemyEntityDefinitionType::Creature);
+				
+				if (entityDefType == EntityDefinitionType::Enemy)
+				{
+					const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+
+					initInfo.canBeKilled = true;
+
+					if (enemyDef.type == EnemyEntityDefinitionType::Human)
+					{
+						initInfo.humanEnemyLevel = 1; // @todo decide level based on original logic
+					}
+
+					initInfo.hasCreatureSound = enemyDef.type == EnemyEntityDefinitionType::Creature;
+				}
 			}
 
 			initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);

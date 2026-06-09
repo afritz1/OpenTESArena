@@ -975,7 +975,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						}
 						else if (hitEntityBehaviorState.isHumanEnemy())
 						{
-							const int hitHumanEnemyLevel = 1; // @todo get human enemy level from EntityInstance somehow
+							const int hitHumanEnemyLevel = hitEntityCombatState->level;
 							DebugAssert(hitEntityDef.enemy.type == EnemyEntityDefinitionType::Human);
 							const int hitHumanEnemyCharClassDefID = hitEntityDef.enemy.human.charClassID;
 							const CharacterClassDefinition &hitEntityCharClassDef = CharacterClassLibrary::getInstance().getDefinition(hitHumanEnemyCharClassDefID);

@@ -112,6 +112,7 @@ bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint3
 
 void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType)
 {
+	DebugAssert(level >= 1);
 	DebugAssert(outArmorIDs.getCount() == 7);
 
 	constexpr int armorForbiddenID = 3;
@@ -672,6 +673,7 @@ int ArenaEntityUtils::getHumanEnemyGold(int charClassDefID, const ExeData &exeDa
 
 int ArenaEntityUtils::getHumanEnemyExperience(int level, int charClassDefID, const ExeData &exeData)
 {
+	DebugAssert(level >= 0);
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(charClassDefID);
 	const int index = charClassDef.categoryID;
 	const Span<const uint8_t> humanoidExpMultipliers = exeData.entities.humanEnemyExpMultipliers;

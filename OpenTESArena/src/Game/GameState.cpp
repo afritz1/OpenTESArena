@@ -637,6 +637,7 @@ void GameState::queueGuardSpawn(Game &game)
 			spawnedGuardEntityInitInfo.isSensorCollider = false;
 			spawnedGuardEntityInitInfo.canBeKilled = true;
 			spawnedGuardEntityInitInfo.direction = CardinalDirection::North;
+			spawnedGuardEntityInitInfo.humanEnemyLevel = spawnedGuardLevel;
 			spawnedGuardEntityInitInfo.hasInventory = true;
 			spawnedGuardEntityInitInfo.hasCreatureSound = false;
 			spawnedGuardEntityInitInfo.guardType = spawnedGuardType;
