@@ -1423,8 +1423,8 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		EntityEnemyBehaviorState &enemyBehaviorState = behaviorState.enemy;
 		const EntityEnemyBehaviorStateType prevEnemyBehaviorStateType = enemyBehaviorState.type;
 
-		constexpr double detectionDistance = 3.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
-		constexpr double attackDistance = 0.80; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
+		constexpr double detectionDistance = 4.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
+		constexpr double attackDistance = 0.85; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
 		constexpr double detectionDistanceSqr = detectionDistance * detectionDistance;
 		constexpr double attackDistanceSqr = attackDistance * attackDistance;
 		const bool isCloseEnoughToDetectPlayer = distToPlayerSqr <= detectionDistanceSqr; // @todo add "isFarEnoughToStopDetectPlayer"
