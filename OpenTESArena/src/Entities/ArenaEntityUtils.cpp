@@ -4,6 +4,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 #include "../Items/ItemDefinition.h"
+#include "../Math/ArenaMathUtils.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
 
@@ -999,6 +1000,64 @@ int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, Aren
 	constexpr int plateMaterialID = 0;
 	const Span<const uint8_t> guardShieldIDs = exeData.entities.guardShieldIDs;
 	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
+}
+
+int ArenaEntityUtils::rollWeightedEncounterLevel(int encounterLevel, ArenaRandom &random)
+{
+	int rolledValue = ArenaMathUtils::rollBoundedDice(encounterLevel * 2, random);
+	if (rolledValue > encounterLevel)
+	{
+		rolledValue = encounterLevel * 2 - rolledValue;
+	}
+
+	return rolledValue;
+}
+
+EnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter, ArenaRandom &random, const ExeData &exeData)
+{
+	constexpr int maxEncounterScalingLevel = 20;
+	encounterLevel++;
+	encounterLevel = std::min(encounterLevel, maxEncounterScalingLevel);
+
+	encounterLevel = encounterLevel + random.next(4);
+
+	while (true)
+	{
+		int r = ArenaEntityUtils::rollWeightedEncounterLevel(encounterLevel, random);
+
+		if (r >= encounterLevel / 2)
+		{
+			encounterLevel = std::max(r, 1);
+			break;
+		}
+
+		encounterLevel *= 2;
+	}
+
+	if (playerLevel == 0 && encounterLevel >= 2)
+	{
+		encounterLevel = random.next(3);
+	}
+
+	if (mainQuestEncounter && encounterLevel < playerLevel)
+	{
+		encounterLevel = playerLevel - random.next(3);
+	}
+
+	int matches[2] = { -1, -1 };
+	int count = 0;
+
+	for (int i = 0; i < 85 && count < 2; i++)
+	{
+		if (exeData.entities.enemyEncounterTableIndexes[encounterTableIndex][i] == encounterLevel)
+			matches[count++] = i;
+	}
+
+	DebugAssert(count == 2);
+	const int chosen = matches[random.next() & 1];
+	DebugAssert(chosen != -1);
+
+	return { exeData.entities.enemyEncounterTable[chosen][0], exeData.entities.enemyEncounterTable[chosen][1], exeData.entities.enemyEncounterTable[chosen][2] };
 }
 
 ArenaEntitySpawnPoint ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles,*/ ArenaRandom &random)

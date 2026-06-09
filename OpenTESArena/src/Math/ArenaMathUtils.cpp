@@ -30,3 +30,55 @@ void ArenaMathUtils::rotatePoint(int32_t angle, int16_t &x, int16_t &y, Span<con
 	x = highRes2 + highRes1;
 	y = highRes3 + highRes4;
 }
+
+ArenaMathUtils::DiceParameters ArenaMathUtils::getDiceParameters(int value)
+{
+	for (;;)
+	{
+		for (int divisor = 6; divisor > 4; divisor--)
+		{
+			if ((value % divisor) == 0)
+			{
+				int quotient = value / divisor;
+
+				return {
+					divisor + 1,
+					quotient
+				};
+			}
+		}
+
+		value++;
+	}
+}
+
+int ArenaMathUtils::rollDice(int exclusiveMax, int rollCount, ArenaRandom &random)
+{
+	int sum = 0;
+
+	for (int i = 0; i < rollCount; i++)
+	{
+		sum += random.next(exclusiveMax);
+	}
+
+	return sum;
+}
+
+
+int ArenaMathUtils::rollBoundedDice(int maxValue, ArenaRandom &random)
+{
+	if (maxValue <= 8)
+		return random.next(maxValue);
+
+	auto params = getDiceParameters(maxValue);
+
+	int result = rollDice(params.exclusiveMax, params.rollCount, random);
+
+	if (result > maxValue)
+	{
+		return rollBoundedDice(maxValue, random);
+	}
+
+	return result;
+}
+
