@@ -988,7 +988,7 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 
 					if (enemyDef.type == EnemyEntityDefinitionType::Human)
 					{
-						initInfo.humanEnemyLevel = 1; // @todo decide level based on original logic
+						initInfo.humanEnemyLevel = entityGenInfo.playerLevel;
 					}
 
 					initInfo.hasCreatureSound = enemyDef.type == EnemyEntityDefinitionType::Creature;
