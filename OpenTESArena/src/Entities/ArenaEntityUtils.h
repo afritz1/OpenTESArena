@@ -41,6 +41,15 @@ struct ArenaEntitySpawnPoint
 	ArenaEntitySpawnPoint(int x, int z, uint16_t tileIndex);
 };
 
+struct ArenaEnemyEncounter
+{
+	uint8_t count;
+	uint8_t id;
+	uint8_t level;
+
+	ArenaEnemyEncounter();
+};
+
 namespace ArenaEntityUtils
 {
 	// For monsters
@@ -102,6 +111,10 @@ namespace ArenaEntityUtils
 	void getGuardArmor(int guardType, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType);
 	int getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
 	int getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
+
+	void getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool isResting, int terrainType, int gameHour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex);
+	int rollWeightedEncounterLevel(int encounterLevel, ArenaRandom &random);
+	ArenaEnemyEncounter chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter, ArenaRandom &random, const ExeData &exeData);
 
 	ArenaEntitySpawnPoint findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles, uint16_t playerTileIndex,*/ ArenaRandom &random);
 	bool isTileOccupied(uint16_t tileIndex, Span<const uint16_t> occupiedTiles);

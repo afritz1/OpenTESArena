@@ -171,6 +171,11 @@ struct ExeDataEntities
 	uint8_t guardArmorIDs[4];
 	uint8_t guardShieldIDs[3];
 
+	// Enemy encounters
+	uint8_t enemyEncounterChances[13];
+	uint8_t enemyEncounterTable[85][3];
+	uint8_t enemyEncounterTableIndices[14][85];
+
 	// Random male citizen .CFA filenames. Replace '@' with a number from 1 to 5.
 	// - Order: Winter, Desert, Temperate.
 	std::string maleCitizenAnimationFilenames[3];

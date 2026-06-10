@@ -4,6 +4,7 @@
 #include "../Assets/ArenaTypes.h"
 #include "../Assets/ExeData.h"
 #include "../Items/ItemDefinition.h"
+#include "../Math/ArenaMathUtils.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
 
@@ -47,6 +48,13 @@ ArenaEntitySpawnPoint::ArenaEntitySpawnPoint(int x, int z, uint16_t tileIndex)
 	this->x = x;
 	this->z = z;
 	this->tileIndex = tileIndex;
+}
+
+ArenaEnemyEncounter::ArenaEnemyEncounter()
+{
+	this->count = 0;
+	this->id = 0;
+	this->level = 0;
 }
 
 int ArenaEntityUtils::getBaseSpeed(int speedAttribute)
@@ -1001,6 +1009,191 @@ int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, Aren
 	constexpr int plateMaterialID = 0;
 	const Span<const uint8_t> guardShieldIDs = exeData.entities.guardShieldIDs;
 	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
+}
+
+void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool playerResting,
+	int terrainType, int hour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex)
+{
+	constexpr int cityEnvironment = 0;
+	constexpr int wildernessEnvironment = 1;
+	constexpr int buildingEnvironment = 4;
+
+	constexpr int magesGuildBuilding = 7;
+	constexpr int cryptBuilding = 8;
+
+	Span<const uint8_t> enemyEncounterChances = exeData.entities.enemyEncounterChances;
+
+	int encounterChance = 0;
+	int encounterTableIndex = 7;
+	int encounterChancesIndex;
+	const bool isNightTime = (hour <= 5) || (hour >= 18);
+	bool allowNightEncounters = isNightTime;
+
+	if (currentEnvironmentType == buildingEnvironment)
+	{
+		if (currentBuildingType < cryptBuilding)
+		{
+			if (playerTrespassing)
+			{
+				if (currentBuildingType != magesGuildBuilding)
+				{
+					encounterTableIndex = 6;
+				}
+
+				allowNightEncounters = false;
+				encounterChance = 20;
+			}
+		}
+		else if (currentBuildingType == cryptBuilding)
+		{
+			if (playerResting)
+			{
+				encounterChancesIndex = 7;
+				encounterChance = enemyEncounterChances[encounterChancesIndex];
+				allowNightEncounters = false;
+			}
+		}
+		else // Tower
+		{
+			encounterChancesIndex = 3;
+			if (!playerResting)
+			{
+				encounterChance = enemyEncounterChances[encounterChancesIndex];
+			}
+			else
+			{
+				encounterChancesIndex += 5;
+				encounterChance = enemyEncounterChances[encounterChancesIndex];
+			}
+
+			allowNightEncounters = false;
+		}
+	}
+	else if (currentEnvironmentType == cityEnvironment || currentEnvironmentType == wildernessEnvironment)
+	{
+		if (currentEnvironmentType == wildernessEnvironment)
+		{
+			encounterTableIndex = terrainType;
+		}
+		else
+		{
+			encounterTableIndex = 6;
+		}
+
+		encounterChancesIndex = currentEnvironmentType;
+		if (allowNightEncounters)
+		{
+			encounterChancesIndex += 5;
+		}
+
+		encounterChance = enemyEncounterChances[encounterChancesIndex];
+
+		if (currentEnvironmentType == cityEnvironment)
+		{
+			// City environment adds 5 to the chances index at night but then turns off this bool.
+			// If it didn't, encounterTableIndex would become 13 below and no encounter would happen.
+			allowNightEncounters = false;
+		}
+	}
+	else // Main quest dungeon or random dungeon
+	{
+		encounterChancesIndex = currentEnvironmentType;
+		if (playerResting)
+		{
+			encounterChancesIndex += 5;
+		}
+
+		encounterChance = enemyEncounterChances[encounterChancesIndex];
+		allowNightEncounters = false;
+	}
+
+	if (allowNightEncounters)
+	{
+		encounterTableIndex += 7;
+	}
+
+	if (encounterTableIndex >= 13)
+	{
+		encounterChance = 0;
+	}
+
+	// Override encounterChance for night time for specific holidays.
+	// One day later than the dates in holidayDates are used.
+	constexpr int dayAfterTalesAndTallow = 243;
+	constexpr int dayAfterWitchesFestival = 283;
+
+	if (encounterChance != 0 && isNightTime && (dayOfYear == dayAfterTalesAndTallow || dayOfYear == dayAfterWitchesFestival))
+	{
+		encounterChance = 25;
+	}
+
+	*outEncounterChance = encounterChance;
+	*outEncounterTableIndex = encounterTableIndex;
+}
+
+int ArenaEntityUtils::rollWeightedEncounterLevel(int encounterLevel, ArenaRandom &random)
+{
+	int rolledValue = ArenaMathUtils::rollBoundedDice(encounterLevel * 2, random);
+	if (rolledValue > encounterLevel)
+	{
+		rolledValue = (encounterLevel * 2) - rolledValue;
+	}
+
+	return rolledValue;
+}
+
+ArenaEnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter,
+	ArenaRandom &random, const ExeData &exeData)
+{
+	constexpr int maxEncounterScalingLevel = 20;
+	encounterLevel = std::min(encounterLevel + 1, maxEncounterScalingLevel);
+	encounterLevel = encounterLevel + random.next(4);
+
+	while (true)
+	{
+		const int r = ArenaEntityUtils::rollWeightedEncounterLevel(encounterLevel, random);
+		if (r >= (encounterLevel / 2))
+		{
+			encounterLevel = std::max(r, 1);
+			break;
+		}
+
+		encounterLevel *= 2;
+	}
+
+	if (playerLevel == 0 && encounterLevel >= 2)
+	{
+		encounterLevel = random.next(3);
+	}
+
+	if (mainQuestEncounter && encounterLevel < playerLevel)
+	{
+		encounterLevel = playerLevel - random.next(3);
+	}
+
+	const Span<const uint8_t> chosenEncounterTableIndices = exeData.entities.enemyEncounterTableIndices[encounterTableIndex];
+	int matches[] = { -1, -1 };
+	int count = 0;
+	for (int i = 0; (i < 85) && (count < 2); i++)
+	{
+		if (chosenEncounterTableIndices[i] == encounterLevel)
+		{
+			matches[count] = i;
+			count++;
+		}
+	}
+
+	DebugAssert(count == 2);
+	const int chosen = matches[random.next() & 1];
+	DebugAssert(chosen != -1);
+
+	const Span<const uint8_t> chosenEncounterTable = exeData.entities.enemyEncounterTable[chosen];
+
+	ArenaEnemyEncounter chosenEnemyEncounter;
+	chosenEnemyEncounter.count = chosenEncounterTable[0];
+	chosenEnemyEncounter.id = chosenEncounterTable[1];
+	chosenEnemyEncounter.level = chosenEncounterTable[2];
+	return chosenEnemyEncounter;
 }
 
 ArenaEntitySpawnPoint ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles,*/ ArenaRandom &random)

@@ -160,6 +160,7 @@ PlayerGroundState::PlayerGroundState()
 	this->onGround = false;
 	this->secondsSinceOnGround = std::numeric_limits<double>::infinity();
 	this->recentlyOnGround = false;
+	this->onRaisedPlatform = false;
 	this->isSwimming = false;
 	this->hasSplashedInChasm = false;
 	this->canJump = false;
@@ -780,13 +781,20 @@ void Player::updateGroundState(double dt, Game &game, const JPH::PhysicsSystem &
 	const CoordDouble3 playerFeetCoord = VoxelUtils::worldPointToCoord(playerFeetPosition);
 	const CoordInt3 playerFeetVoxelCoord(playerFeetCoord.chunk, VoxelUtils::pointToVoxel(playerFeetCoord.point, ceilingScale));
 	const VoxelInt3 playerFeetVoxel = playerFeetVoxelCoord.voxel;
-	const VoxelInt3 clampedPlayerFeetVoxel(playerFeetVoxel.x, std::max(playerFeetVoxel.y, 0), playerFeetVoxel.z);
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();
 
 	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 	const VoxelChunk *voxelChunk = voxelChunkManager.findChunkAtPosition(playerFeetVoxelCoord.chunk);
 	if (voxelChunk != nullptr)
 	{
+		if (voxelChunk->isValidVoxel(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z))
+		{
+			const VoxelShapeDefID shapeDefID = voxelChunk->shapeDefIDs.get(playerFeetVoxel.x, playerFeetVoxel.y, playerFeetVoxel.z);
+			const VoxelShapeDefinition &shapeDef = voxelChunk->shapeDefs[shapeDefID];
+			newGroundState.onRaisedPlatform = newGroundState.onGround && shapeDef.isElevatedPlatform;
+		}
+
+		const VoxelInt3 clampedPlayerFeetVoxel(playerFeetVoxel.x, std::max(playerFeetVoxel.y, 0), playerFeetVoxel.z);
 		VoxelChasmDefID chasmDefID;
 		if (voxelChunk->tryGetChasmDefID(playerFeetVoxel.x, clampedPlayerFeetVoxel.y, playerFeetVoxel.z, &chasmDefID))
 		{
