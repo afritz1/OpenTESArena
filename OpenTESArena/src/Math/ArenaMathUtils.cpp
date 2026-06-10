@@ -2,6 +2,12 @@
 
 #include "ArenaMathUtils.h"
 
+ArenaDiceParameters::ArenaDiceParameters()
+{
+	this->exclusiveMax = 0;
+	this->rollCount = 0;
+}
+
 void ArenaMathUtils::rotatePoint(int32_t angle, int16_t &x, int16_t &y, Span<const int16_t> cosineTable)
 {
 	const int16_t cosAngleMultiplier = cosineTable[angle];
@@ -31,20 +37,19 @@ void ArenaMathUtils::rotatePoint(int32_t angle, int16_t &x, int16_t &y, Span<con
 	y = highRes3 + highRes4;
 }
 
-ArenaMathUtils::DiceParameters ArenaMathUtils::getDiceParameters(int value)
+ArenaDiceParameters ArenaMathUtils::getDiceParameters(int value)
 {
-	for (;;)
+	while (true)
 	{
 		for (int divisor = 6; divisor > 4; divisor--)
 		{
-			if ((value % divisor) == 0)
+			const bool isValueDivisible = (value % divisor) == 0;
+			if (isValueDivisible)
 			{
-				int quotient = value / divisor;
-
-				return {
-					divisor + 1,
-					quotient
-				};
+				ArenaDiceParameters diceParameters;
+				diceParameters.exclusiveMax = divisor + 1;
+				diceParameters.rollCount = value / divisor;
+				return diceParameters;
 			}
 		}
 
@@ -64,21 +69,24 @@ int ArenaMathUtils::rollDice(int exclusiveMax, int rollCount, ArenaRandom &rando
 	return sum;
 }
 
+int ArenaMathUtils::rollDice(const ArenaDiceParameters &diceParameters, ArenaRandom &random)
+{
+	return ArenaMathUtils::rollDice(diceParameters.exclusiveMax, diceParameters.rollCount, random);
+}
 
 int ArenaMathUtils::rollBoundedDice(int maxValue, ArenaRandom &random)
 {
 	if (maxValue <= 8)
+	{
 		return random.next(maxValue);
+	}
 
-	auto params = getDiceParameters(maxValue);
-
-	int result = rollDice(params.exclusiveMax, params.rollCount, random);
-
+	const ArenaDiceParameters diceParameters = ArenaMathUtils::getDiceParameters(maxValue);
+	const int result = ArenaMathUtils::rollDice(diceParameters, random);
 	if (result > maxValue)
 	{
-		return rollBoundedDice(maxValue, random);
+		return ArenaMathUtils::rollBoundedDice(maxValue, random);
 	}
 
 	return result;
 }
-

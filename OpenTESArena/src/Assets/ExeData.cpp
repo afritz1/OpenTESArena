@@ -457,7 +457,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int guardShieldIDsOffset = GetExeAddress(*section, "GuardShieldIDs");
 	const int enemyEncounterChancesOffset = GetExeAddress(*section, "EnemyEncounterChances");
 	const int enemyEncounterTableOffset = GetExeAddress(*section, "EnemyEncounterTable");
-	const int enemyEncounterTableIndexesOffset = GetExeAddress(*section, "EnemyEncounterTableIndexes");
+	const int enemyEncounterTableIndicesOffset = GetExeAddress(*section, "EnemyEncounterTableIndices");
 	const int maleCitizenAnimFilenamesOffset = GetExeAddress(*section, "MaleCitizenAnimationFilenames");
 	const int femaleCitizenAnimFilenamesOffset = GetExeAddress(*section, "FemaleCitizenAnimationFilenames");
 	const int humanFilenameTypesOffset = GetExeAddress(*section, "HumanFilenameTypes");
@@ -500,7 +500,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	initInt8Array(this->guardShieldIDs, exeBytes, guardShieldIDsOffset);
 	initInt8Array(this->enemyEncounterChances, exeBytes, enemyEncounterChancesOffset);
 	init2DInt8Array(this->enemyEncounterTable, exeBytes, enemyEncounterTableOffset);
-	init2DInt8Array(this->enemyEncounterTableIndexes, exeBytes, enemyEncounterTableIndexesOffset);
+	init2DInt8Array(this->enemyEncounterTableIndices, exeBytes, enemyEncounterTableIndicesOffset);
 	initStringArrayNullTerminated(this->maleCitizenAnimationFilenames, exeBytes, maleCitizenAnimFilenamesOffset);
 	initStringArrayNullTerminated(this->femaleCitizenAnimationFilenames, exeBytes, femaleCitizenAnimFilenamesOffset);
 	initStringArrayNullTerminated(this->humanFilenameTypes, exeBytes, humanFilenameTypesOffset);

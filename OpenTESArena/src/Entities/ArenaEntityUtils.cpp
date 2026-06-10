@@ -50,6 +50,13 @@ ArenaEntitySpawnPoint::ArenaEntitySpawnPoint(int x, int z, uint16_t tileIndex)
 	this->tileIndex = tileIndex;
 }
 
+ArenaEnemyEncounter::ArenaEnemyEncounter()
+{
+	this->count = 0;
+	this->id = 0;
+	this->level = 0;
+}
+
 int ArenaEntityUtils::getBaseSpeed(int speedAttribute)
 {
 	return ((((speedAttribute * 20) / 256) * 256) / 256) + 20;
@@ -1002,7 +1009,8 @@ int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, Aren
 	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
 }
 
-void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool playerResting, int terrainType, int hour, int dayOfYear, int *outEncounterChance, int *outEncounterTableIndex, const ExeData &exeData)
+void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool playerResting,
+	int terrainType, int hour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex)
 {
 	constexpr int cityEnvironment = 0;
 	constexpr int wildernessEnvironment = 1;
@@ -1011,11 +1019,13 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 	constexpr int magesGuildBuilding = 7;
 	constexpr int cryptBuilding = 8;
 
+	Span<const uint8_t> enemyEncounterChances = exeData.entities.enemyEncounterChances;
+
 	int encounterChance = 0;
 	int encounterTableIndex = 7;
 	int encounterChancesIndex;
-	const bool nightTime = (hour <= 5 || hour >= 18);
-	bool nightEncounters = nightTime;
+	const bool isNightTime = (hour <= 5) || (hour >= 18);
+	bool allowNightEncounters = isNightTime;
 
 	if (currentEnvironmentType == buildingEnvironment)
 	{
@@ -1027,7 +1037,8 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 				{
 					encounterTableIndex = 6;
 				}
-				nightEncounters = false;
+
+				allowNightEncounters = false;
 				encounterChance = 20;
 			}
 		}
@@ -1036,26 +1047,24 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 			if (playerResting)
 			{
 				encounterChancesIndex = 7;
-				DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
-				encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
-				nightEncounters = false;
+				encounterChance = enemyEncounterChances[encounterChancesIndex];
+				allowNightEncounters = false;
 			}
 		}
 		else // Tower
 		{
 			encounterChancesIndex = 3;
-			if (playerResting == false)
+			if (!playerResting)
 			{
-				DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
-				encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
+				encounterChance = enemyEncounterChances[encounterChancesIndex];
 			}
 			else
 			{
 				encounterChancesIndex += 5;
-				DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
-				encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
+				encounterChance = enemyEncounterChances[encounterChancesIndex];
 			}
-			nightEncounters = false;
+
+			allowNightEncounters = false;
 		}
 	}
 	else if (currentEnvironmentType == cityEnvironment || currentEnvironmentType == wildernessEnvironment)
@@ -1070,33 +1079,33 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 		}
 
 		encounterChancesIndex = currentEnvironmentType;
-		if (nightEncounters)
+		if (allowNightEncounters)
 		{
 			encounterChancesIndex += 5;
 		}
-		DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
-		encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
+
+		encounterChance = enemyEncounterChances[encounterChancesIndex];
 
 		if (currentEnvironmentType == cityEnvironment)
 		{
 			// City environment adds 5 to the chances index at night but then turns off this bool.
 			// If it didn't, encounterTableIndex would become 13 below and no encounter would happen.
-			nightEncounters = false;
+			allowNightEncounters = false;
 		}
 	}
-	else // Main question dungeon or random dungeon
+	else // Main quest dungeon or random dungeon
 	{
 		encounterChancesIndex = currentEnvironmentType;
 		if (playerResting)
 		{
 			encounterChancesIndex += 5;
 		}
-		DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
-		encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
-		nightEncounters = false;
+
+		encounterChance = enemyEncounterChances[encounterChancesIndex];
+		allowNightEncounters = false;
 	}
 
-	if (nightEncounters)
+	if (allowNightEncounters)
 	{
 		encounterTableIndex += 7;
 	}
@@ -1111,8 +1120,10 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 	constexpr int dayAfterTalesAndTallow = 243;
 	constexpr int dayAfterWitchesFestival = 283;
 
-	if (encounterChance != 0 && nightTime && (dayOfYear == dayAfterTalesAndTallow || dayOfYear == dayAfterWitchesFestival))
+	if (encounterChance != 0 && isNightTime && (dayOfYear == dayAfterTalesAndTallow || dayOfYear == dayAfterWitchesFestival))
+	{
 		encounterChance = 25;
+	}
 
 	*outEncounterChance = encounterChance;
 	*outEncounterTableIndex = encounterTableIndex;
@@ -1123,25 +1134,23 @@ int ArenaEntityUtils::rollWeightedEncounterLevel(int encounterLevel, ArenaRandom
 	int rolledValue = ArenaMathUtils::rollBoundedDice(encounterLevel * 2, random);
 	if (rolledValue > encounterLevel)
 	{
-		rolledValue = encounterLevel * 2 - rolledValue;
+		rolledValue = (encounterLevel * 2) - rolledValue;
 	}
 
 	return rolledValue;
 }
 
-EnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter, ArenaRandom &random, const ExeData &exeData)
+ArenaEnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter,
+	ArenaRandom &random, const ExeData &exeData)
 {
 	constexpr int maxEncounterScalingLevel = 20;
-	encounterLevel++;
-	encounterLevel = std::min(encounterLevel, maxEncounterScalingLevel);
-
+	encounterLevel = std::min(encounterLevel + 1, maxEncounterScalingLevel);
 	encounterLevel = encounterLevel + random.next(4);
 
 	while (true)
 	{
-		int r = ArenaEntityUtils::rollWeightedEncounterLevel(encounterLevel, random);
-
-		if (r >= encounterLevel / 2)
+		const int r = ArenaEntityUtils::rollWeightedEncounterLevel(encounterLevel, random);
+		if (r >= (encounterLevel / 2))
 		{
 			encounterLevel = std::max(r, 1);
 			break;
@@ -1160,20 +1169,29 @@ EnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableIndex, i
 		encounterLevel = playerLevel - random.next(3);
 	}
 
-	int matches[2] = { -1, -1 };
+	const Span<const uint8_t> chosenEncounterTableIndices = exeData.entities.enemyEncounterTableIndices[encounterTableIndex];
+	int matches[] = { -1, -1 };
 	int count = 0;
-
-	for (int i = 0; i < 85 && count < 2; i++)
+	for (int i = 0; (i < 85) && (count < 2); i++)
 	{
-		if (exeData.entities.enemyEncounterTableIndexes[encounterTableIndex][i] == encounterLevel)
-			matches[count++] = i;
+		if (chosenEncounterTableIndices[i] == encounterLevel)
+		{
+			matches[count] = i;
+			count++;
+		}
 	}
 
 	DebugAssert(count == 2);
 	const int chosen = matches[random.next() & 1];
 	DebugAssert(chosen != -1);
 
-	return { exeData.entities.enemyEncounterTable[chosen][0], exeData.entities.enemyEncounterTable[chosen][1], exeData.entities.enemyEncounterTable[chosen][2] };
+	const Span<const uint8_t> chosenEncounterTable = exeData.entities.enemyEncounterTable[chosen];
+
+	ArenaEnemyEncounter chosenEnemyEncounter;
+	chosenEnemyEncounter.count = chosenEncounterTable[0];
+	chosenEnemyEncounter.id = chosenEncounterTable[1];
+	chosenEnemyEncounter.level = chosenEncounterTable[2];
+	return chosenEnemyEncounter;
 }
 
 ArenaEntitySpawnPoint ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(int16_t playerX, int16_t playerZ, /*const uint16_t *map1, const uint16_t *floorMap, uint16_t invalidFloorThreshold, const std::array<uint16_t, 23> &occupiedTiles,*/ ArenaRandom &random)
