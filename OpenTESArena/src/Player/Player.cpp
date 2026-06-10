@@ -1,6 +1,5 @@
 #include <algorithm>
 #include <cmath>
-#include <limits>
 
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Body/Body.h"
@@ -158,7 +157,7 @@ namespace
 PlayerGroundState::PlayerGroundState()
 {
 	this->onGround = false;
-	this->secondsSinceOnGround = std::numeric_limits<double>::infinity();
+	this->secondsSinceOnGround = Constants::Infinity;
 	this->recentlyOnGround = false;
 	this->onRaisedPlatform = false;
 	this->isSwimming = false;

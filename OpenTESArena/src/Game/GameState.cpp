@@ -57,7 +57,7 @@ bool GuardSpawnState::isQueued() const
 
 void GuardSpawnState::clearQueue()
 {
-	this->secondsTillSpawn = std::numeric_limits<double>::infinity();
+	this->secondsTillSpawn = Constants::Infinity;
 	this->spawnFunc = []() { };
 }
 

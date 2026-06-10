@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <limits>
 
 #include "ArenaWeatherUtils.h"
 #include "WeatherDefinition.h"
@@ -70,7 +69,7 @@ void WeatherFogInstance::update(double dt)
 void WeatherRainInstance::Thunderstorm::init(Buffer<uint8_t> &&flashColors, bool active, Random &random)
 {
 	this->flashColors = std::move(flashColors);
-	this->secondsSincePrevLightning = std::numeric_limits<double>::infinity();
+	this->secondsSincePrevLightning = Constants::Infinity;
 	this->secondsUntilNextLightning = MakeSecondsUntilNextLightning(random);
 	this->lightningBoltAngle = 0.0;
 	this->active = active;

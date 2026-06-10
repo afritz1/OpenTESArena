@@ -450,17 +450,17 @@ namespace Physics
 		// Filter bad ray directions like direction.y == 0 (at horizon) so that axis isn't selected during stepping.
 		if (deltaDist.x < 0.0)
 		{
-			deltaDist.x = std::numeric_limits<double>::infinity();
+			deltaDist.x = Constants::Infinity;
 		}
 
 		if (deltaDist.y < 0.0)
 		{
-			deltaDist.y = std::numeric_limits<double>::infinity();
+			deltaDist.y = Constants::Infinity;
 		}
 
 		if (deltaDist.z < 0.0)
 		{
-			deltaDist.z = std::numeric_limits<double>::infinity();
+			deltaDist.z = Constants::Infinity;
 		}
 
 		// Step is the voxel delta per step (always +/- 1), also usable when updating the chunk coordinate.

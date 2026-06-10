@@ -1,8 +1,7 @@
 #pragma once
 
-#include <limits>
-
 #include "../Entities/EntityInstance.h"
+#include "../Math/Constants.h"
 #include "../Math/Vector3.h"
 #include "../Voxels/VoxelUtils.h"
 
@@ -30,7 +29,7 @@ struct RayCastEntityHit
 // Intersection data for ray casts.
 struct RayCastHit
 {
-	static constexpr double NO_HIT_DISTANCE = std::numeric_limits<double>::infinity();
+	static constexpr double NO_HIT_DISTANCE = Constants::Infinity;
 
 	double t; // Distance from ray start.
 	WorldDouble3 worldPoint; // Hit point in the scene. Don't use this to determine the hit voxel since the collision mesh might z-fight with the boundaries of its voxel.

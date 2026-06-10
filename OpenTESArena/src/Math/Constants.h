@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+
 namespace Constants
 {
 	constexpr double Epsilon = 1.0e-5;
@@ -9,6 +11,7 @@ namespace Constants
 	constexpr double JustBelowOne = 1.0 - Epsilon;
 	constexpr double Sqrt2 = 1.414213562373095;
 	constexpr double HalfSqrt2 = Sqrt2 / 2.0;
+	constexpr double Infinity = std::numeric_limits<double>::infinity();
 }
 
 namespace ConstantsF
@@ -20,4 +23,5 @@ namespace ConstantsF
 	constexpr float JustBelowOne = 1.0f - Epsilon;
 	constexpr float Sqrt2 = 1.41421356f;
 	constexpr float HalfSqrt2 = Sqrt2 / 2.0f;
+	constexpr float Infinity = std::numeric_limits<float>::infinity();
 }

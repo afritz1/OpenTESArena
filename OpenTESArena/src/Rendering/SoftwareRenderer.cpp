@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
-#include <limits>
 #include <mutex>
 #include <thread>
 
@@ -3785,7 +3784,7 @@ namespace
 				// Don't have to clear color buffer since there's always a sky mesh.
 				double *depthBufferClearStart = g_depthBuffer + (frameBufferClearStartY * g_frameBufferWidth);
 				double *depthBufferClearEnd = depthBufferClearStart + (frameBufferClearRowCount * g_frameBufferWidth);
-				std::fill(depthBufferClearStart, depthBufferClearEnd, std::numeric_limits<double>::infinity());
+				std::fill(depthBufferClearStart, depthBufferClearEnd, Constants::Infinity);
 			}
 
 			// Populate light bins associated with this worker.
@@ -4179,7 +4178,7 @@ void SoftwareRenderer::resize(int width, int height)
 	this->paletteIndexBuffer.fill(0);
 
 	this->depthBuffer.init(width, height);
-	this->depthBuffer.fill(std::numeric_limits<double>::infinity());
+	this->depthBuffer.fill(Constants::Infinity);
 
 	for (Worker &worker : g_workers)
 	{

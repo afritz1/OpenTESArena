@@ -411,7 +411,7 @@ bool MathUtils::rayBoxIntersection(const Double3 &rayStart, const Double3 &rayDi
 	};
 
 	bool anyHit = false;
-	double maxT = std::numeric_limits<double>::infinity();
+	double maxT = Constants::Infinity;
 	for (const auto &faceIndices : modelIndices)
 	{
 		const Double3 v0 = boxCenter + modelVertices[faceIndices[0]];

@@ -196,7 +196,7 @@ void EntityBehaviorState::initEnemy()
 {
 	this->type = EntityBehaviorStateType::Enemy;
 	this->enemy.type = EntityEnemyBehaviorStateType::Idle;
-	this->enemy.secondsTillNextCreatureSound = std::numeric_limits<double>::infinity();
+	this->enemy.secondsTillNextCreatureSound = Constants::Infinity;
 }
 
 void EntityBehaviorState::initCitizen()
