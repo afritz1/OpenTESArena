@@ -171,6 +171,9 @@ struct ExeDataEntities
 	uint8_t guardArmorIDs[4];
 	uint8_t guardShieldIDs[3];
 
+	// Enemy encounter chances
+	uint8_t enemyEncounterChances[13];
+
 	// Enemy encounter table
 	uint8_t enemyEncounterTable[85][3];
 

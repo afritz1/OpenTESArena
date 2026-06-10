@@ -1002,6 +1002,122 @@ int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, Aren
 	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
 }
 
+void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool playerResting, int terrainType, int hour, int dayOfYear, int *outEncounterChance, int *outEncounterTableIndex, const ExeData &exeData)
+{
+	constexpr int cityEnvironment = 0;
+	constexpr int wildernessEnvironment = 1;
+	constexpr int buildingEnvironment = 4;
+
+	constexpr int magesGuildBuilding = 7;
+	constexpr int cryptBuilding = 8;
+
+	int encounterChance = 0;
+	int encounterTableIndex = 7;
+	int encounterChancesIndex;
+	const bool nightTime = (hour <= 5 || hour >= 18);
+	bool nightEncounters = nightTime;
+
+	if (currentEnvironmentType == buildingEnvironment)
+	{
+		if (currentBuildingType < cryptBuilding)
+		{
+			if (playerTrespassing)
+			{
+				if (currentBuildingType != magesGuildBuilding)
+				{
+					encounterTableIndex = 6;
+				}
+				nightEncounters = false;
+				encounterChance = 20;
+			}
+		}
+		else if (currentBuildingType == cryptBuilding)
+		{
+			if (playerResting)
+			{
+				encounterChancesIndex = 7;
+				DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
+				encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
+				nightEncounters = false;
+			}
+		}
+		else // Tower
+		{
+			encounterChancesIndex = 3;
+			if (playerResting == false)
+			{
+				DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
+				encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
+			}
+			else
+			{
+				encounterChancesIndex += 5;
+				DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
+				encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
+			}
+			nightEncounters = false;
+		}
+	}
+	else if (currentEnvironmentType == cityEnvironment || currentEnvironmentType == wildernessEnvironment)
+	{
+		if (currentEnvironmentType == wildernessEnvironment)
+		{
+			encounterTableIndex = terrainType;
+		}
+		else
+		{
+			encounterTableIndex = 6;
+		}
+
+		encounterChancesIndex = currentEnvironmentType;
+		if (nightEncounters)
+		{
+			encounterChancesIndex += 5;
+		}
+		DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
+		encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
+
+		if (currentEnvironmentType == cityEnvironment)
+		{
+			// City environment adds 5 to the chances index at night but then turns off this bool.
+			// If it didn't, encounterTableIndex would become 13 below and no encounter would happen.
+			nightEncounters = false;
+		}
+	}
+	else // Main question dungeon or random dungeon
+	{
+		encounterChancesIndex = currentEnvironmentType;
+		if (playerResting)
+		{
+			encounterChancesIndex += 5;
+		}
+		DebugAssertIndex(exeData.entities.enemyEncounterChances, encounterChancesIndex);
+		encounterChance = exeData.entities.enemyEncounterChances[encounterChancesIndex];
+		nightEncounters = false;
+	}
+
+	if (nightEncounters)
+	{
+		encounterTableIndex += 7;
+	}
+
+	if (encounterTableIndex >= 13)
+	{
+		encounterChance = 0;
+	}
+
+	// Override encounterChance for night time for specific holidays.
+	// One day later than the dates in holidayDates are used.
+	constexpr int dayAfterTalesAndTallow = 243;
+	constexpr int dayAfterWitchesFestival = 283;
+
+	if (encounterChance != 0 && nightTime && (dayOfYear == dayAfterTalesAndTallow || dayOfYear == dayAfterWitchesFestival))
+		encounterChance = 25;
+
+	*outEncounterChance = encounterChance;
+	*outEncounterTableIndex = encounterTableIndex;
+}
+
 int ArenaEntityUtils::rollWeightedEncounterLevel(int encounterLevel, ArenaRandom &random)
 {
 	int rolledValue = ArenaMathUtils::rollBoundedDice(encounterLevel * 2, random);

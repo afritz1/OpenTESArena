@@ -110,6 +110,7 @@ namespace ArenaEntityUtils
 	int getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
 	int getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
 
+	void getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool isResting, int terrainType, int gameHour, int dayOfYear, int *outEncounterChance, int *outEncounterTableIndex, const ExeData &exeData);
 	int rollWeightedEncounterLevel(int encounterLevel, ArenaRandom &random);
 	EnemyEncounter chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter, ArenaRandom &random, const ExeData &exeData);
 

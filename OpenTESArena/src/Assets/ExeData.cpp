@@ -455,6 +455,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int guardLevelMinimumsOffset = GetExeAddress(*section, "GuardLevelMinimums");
 	const int guardArmorIDsOffset = GetExeAddress(*section, "GuardArmorIDs");
 	const int guardShieldIDsOffset = GetExeAddress(*section, "GuardShieldIDs");
+	const int enemyEncounterChancesOffset = GetExeAddress(*section, "EnemyEncounterChances");
 	const int enemyEncounterTableOffset = GetExeAddress(*section, "EnemyEncounterTable");
 	const int enemyEncounterTableIndexesOffset = GetExeAddress(*section, "EnemyEncounterTableIndexes");
 	const int maleCitizenAnimFilenamesOffset = GetExeAddress(*section, "MaleCitizenAnimationFilenames");
@@ -497,6 +498,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	initInt8Array(this->guardLevelMinimums, exeBytes, guardLevelMinimumsOffset);
 	initInt8Array(this->guardArmorIDs, exeBytes, guardArmorIDsOffset);
 	initInt8Array(this->guardShieldIDs, exeBytes, guardShieldIDsOffset);
+	initInt8Array(this->enemyEncounterChances, exeBytes, enemyEncounterChancesOffset);
 	init2DInt8Array(this->enemyEncounterTable, exeBytes, enemyEncounterTableOffset);
 	init2DInt8Array(this->enemyEncounterTableIndexes, exeBytes, enemyEncounterTableIndexesOffset);
 	initStringArrayNullTerminated(this->maleCitizenAnimationFilenames, exeBytes, maleCitizenAnimFilenamesOffset);

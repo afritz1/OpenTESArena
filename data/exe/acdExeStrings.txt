@@ -95,6 +95,7 @@ GuardTypeChances=0x3FBAD
 GuardLevelMinimums=0x3FBAA
 GuardArmorIDs=0x388C9
 GuardShieldIDs=0x388CD
+EnemyEncounterChances=0x42210
 EnemyEncounterTable=0x36CBE
 EnemyEncounterTableIndexes=0x36818
 MaleCitizenAnimationFilenames=0x41C0A
