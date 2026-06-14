@@ -174,6 +174,11 @@ public:
 
 	void queueGuardSpawn(Game &game);
 
+	int getArenaEnvironmentType() const;
+	int getArenaBuildingType() const;
+	bool getIsTrespassing(int arenaBuildingType, bool isNight);
+	void spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnCount) const;
+
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
 	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);
 
