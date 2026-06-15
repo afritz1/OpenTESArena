@@ -450,3 +450,8 @@ Callback=LevelUpUI.onDoneButtonSelected
 Type=InputListener
 InputActionName=Back
 Callback=LevelUpUI.onBackInputAction
+
+[LevelUpCharacterSheetInputListener]
+Type=InputListener
+InputActionName=CharacterSheet
+Callback=LevelUpUI.onCharacterSheetInputAction

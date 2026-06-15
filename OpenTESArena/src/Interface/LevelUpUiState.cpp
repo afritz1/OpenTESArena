@@ -4,6 +4,7 @@
 #include "LevelUpUiState.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
+#include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/UiPivotType.h"
@@ -246,6 +247,8 @@ void LevelUpUI::create(Game &game)
 
 	uiManager.addInputActionListener(InputActionName::Back, LevelUpUI::onRemainingPointsPopUpBackInputAction, ContextName_RemainingPointsPopUp, inputManager);
 
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, true);
+
 	uiManager.setContextEnabled(state.remainingPointsPopUpContextInstID, false);
 
 	// Default to first attribute.
@@ -257,20 +260,24 @@ void LevelUpUI::destroy()
 	LevelUpUiState &state = LevelUpUI::state;
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
+	InputManager &inputManager = game.inputManager;
+	Renderer &renderer = game.renderer;
 
 	if (state.contextInstID >= 0)
 	{
-		uiManager.freeContext(state.contextInstID, game.inputManager, game.renderer);
+		uiManager.freeContext(state.contextInstID, inputManager, renderer);
 		state.contextInstID = -1;
 	}
 
 	if (state.remainingPointsPopUpContextInstID >= 0)
 	{
-		uiManager.freeContext(state.remainingPointsPopUpContextInstID, game.inputManager, game.renderer);
+		uiManager.freeContext(state.remainingPointsPopUpContextInstID, inputManager, renderer);
 		state.remainingPointsPopUpContextInstID = -1;
 	}
 
 	state.selectedAttributeIndex = -1;
+
+	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, false);
 }
 
 void LevelUpUI::update(double dt)
@@ -512,6 +519,14 @@ void LevelUpUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 }
 
 void LevelUpUI::onBackInputAction(const InputActionCallbackValues &values)
+{
+	if (values.performed)
+	{
+		LevelUpUI::onDoneButtonSelected(MouseButtonType::Left);
+	}
+}
+
+void LevelUpUI::onCharacterSheetInputAction(const InputActionCallbackValues &values)
 {
 	if (values.performed)
 	{

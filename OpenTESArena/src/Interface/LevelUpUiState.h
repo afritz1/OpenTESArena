@@ -61,6 +61,7 @@ namespace LevelUpUI
 	void onDoneButtonSelected(MouseButtonType mouseButtonType);
 
 	void onBackInputAction(const InputActionCallbackValues &values);
+	void onCharacterSheetInputAction(const InputActionCallbackValues &values);
 
 	void onRemainingPointsPopUpBackButtonSelected(MouseButtonType mouseButtonType);
 	void onRemainingPointsPopUpBackInputAction(const InputActionCallbackValues &values);
@@ -96,6 +97,7 @@ namespace LevelUpUI
 
 	constexpr std::pair<const char*, UiInputListenerDefinitionCallback> InputActionCallbacks[] =
 	{
-		DECLARE_UI_FUNC(LevelUpUI, onBackInputAction)
+		DECLARE_UI_FUNC(LevelUpUI, onBackInputAction),
+		DECLARE_UI_FUNC(LevelUpUI, onCharacterSheetInputAction)
 	};
 }
