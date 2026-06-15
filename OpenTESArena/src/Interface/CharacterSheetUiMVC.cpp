@@ -15,6 +15,14 @@
 
 #include "components/debug/Debug.h"
 
+CharacterEquipmentPresentationState::CharacterEquipmentPresentationState()
+{
+	this->bodyTextureID = -1;
+	this->shirtTextureID = -1;
+	this->pantsTextureID = -1;
+	this->headTextureID = -1;
+}
+
 std::string CharacterSheetUiModel::getStatusValueCurrentAndMaxString(double currentValue, double maxValue)
 {
 	const int currentInt = static_cast<int>(std::round(currentValue));
@@ -285,6 +293,30 @@ UiTextureID CharacterSheetUiView::allocHeadTexture(Game &game)
 	}
 
 	return textureID;
+}
+
+CharacterEquipmentPresentationState CharacterSheetUiView::getEquipmentPresentationState(Game &game)
+{
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+
+	const TextureAsset paletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
+	const TextureAsset bodyTextureAsset = CharacterSheetUiView::getBodyTextureAsset(game);
+	const TextureAsset shirtTextureAsset = CharacterSheetUiView::getShirtTextureAsset(game);
+	const TextureAsset pantsTextureAsset = CharacterSheetUiView::getPantsTextureAsset(game);
+	const TextureAsset headTextureAsset = CharacterSheetUiView::getHeadTextureAsset(game);
+	
+	CharacterEquipmentPresentationState presentationState;
+	presentationState.bodyTextureID = uiManager.getOrAddTexture(bodyTextureAsset, paletteTextureAsset, textureManager, renderer);
+	presentationState.shirtTextureID = uiManager.getOrAddTexture(shirtTextureAsset, paletteTextureAsset, textureManager, renderer);
+	presentationState.pantsTextureID = uiManager.getOrAddTexture(pantsTextureAsset, paletteTextureAsset, textureManager, renderer);
+	presentationState.headTextureID = uiManager.getOrAddTexture(headTextureAsset, paletteTextureAsset, textureManager, renderer);
+	presentationState.bodyPosition = CharacterSheetUiView::getBodyOffset(game);
+	presentationState.shirtPosition = CharacterSheetUiView::getShirtOffset(game);
+	presentationState.pantsPosition = CharacterSheetUiView::getPantsOffset(game);
+	presentationState.headPosition = CharacterSheetUiView::getHeadOffset(game);
+	return presentationState;
 }
 
 UiTextureID CharacterEquipmentUiView::allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer)

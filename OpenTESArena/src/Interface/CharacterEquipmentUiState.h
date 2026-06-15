@@ -14,15 +14,9 @@ struct CharacterEquipmentUiState
 	Game *game;
 	UiContextInstanceID contextInstID;
 
-	UiTextureID bodyTextureID;
-	UiTextureID pantsTextureID;
-	UiTextureID headTextureID;
-	UiTextureID shirtTextureID;
-
 	CharacterEquipmentUiState();
 
 	void init(Game &game);
-	void freeTextures(Renderer &renderer);
 };
 
 namespace CharacterEquipmentUI

@@ -175,41 +175,31 @@ void LevelUpUI::create(Game &game)
 	LevelUpUI::updateGold();
 	LevelUpUI::updateBonusPoints();
 
+	const CharacterEquipmentPresentationState equipmentPresentationState = CharacterSheetUiView::getEquipmentPresentationState(game);
+
 	UiElementInitInfo playerBackgroundImageElementInitInfo;
 	playerBackgroundImageElementInitInfo.name = "LevelUpPlayerBackground";
+	playerBackgroundImageElementInitInfo.position = equipmentPresentationState.bodyPosition;
 	playerBackgroundImageElementInitInfo.drawOrder = 0;
-
-	const TextureAsset bodyTextureAsset = CharacterSheetUiView::getBodyTextureAsset(game);
-	const TextureAsset bodyPaletteTextureAsset = CharacterSheetUiView::getPaletteTextureAsset();
-	const UiTextureID playerBackgroundTextureID = uiManager.getOrAddTexture(bodyTextureAsset, bodyPaletteTextureAsset, textureManager, renderer);
-	uiManager.createImage(playerBackgroundImageElementInitInfo, playerBackgroundTextureID, state.contextInstID, renderer);
+	uiManager.createImage(playerBackgroundImageElementInitInfo, equipmentPresentationState.bodyTextureID, state.contextInstID, renderer);
 
 	UiElementInitInfo playerHeadImageElementInitInfo;
 	playerHeadImageElementInitInfo.name = "LevelUpPlayerHead";
-	playerHeadImageElementInitInfo.position = CharacterSheetUiView::getHeadOffset(game);
+	playerHeadImageElementInitInfo.position = equipmentPresentationState.headPosition;
 	playerHeadImageElementInitInfo.drawOrder = 1;
-
-	const TextureAsset headTextureAsset = CharacterSheetUiView::getHeadTextureAsset(game);
-	const UiTextureID headTextureID = uiManager.getOrAddTexture(headTextureAsset, bodyPaletteTextureAsset, textureManager, renderer);
-	uiManager.createImage(playerHeadImageElementInitInfo, headTextureID, state.contextInstID, renderer);
+	uiManager.createImage(playerHeadImageElementInitInfo, equipmentPresentationState.headTextureID, state.contextInstID, renderer);
 
 	UiElementInitInfo playerPantsImageElementInitInfo;
 	playerPantsImageElementInitInfo.name = "LevelUpPlayerPants";
-	playerPantsImageElementInitInfo.position = CharacterSheetUiView::getPantsOffset(game);
+	playerPantsImageElementInitInfo.position = equipmentPresentationState.pantsPosition;
 	playerPantsImageElementInitInfo.drawOrder = 2;
-
-	const TextureAsset pantsTextureAsset = CharacterSheetUiView::getPantsTextureAsset(game);
-	const UiTextureID pantsTextureID = uiManager.getOrAddTexture(pantsTextureAsset, bodyPaletteTextureAsset, textureManager, renderer);
-	uiManager.createImage(playerPantsImageElementInitInfo, pantsTextureID, state.contextInstID, renderer);
+	uiManager.createImage(playerPantsImageElementInitInfo, equipmentPresentationState.pantsTextureID, state.contextInstID, renderer);
 
 	UiElementInitInfo playerShirtImageElementInitInfo;
 	playerShirtImageElementInitInfo.name = "LevelUpPlayerShirt";
-	playerShirtImageElementInitInfo.position = CharacterSheetUiView::getShirtOffset(game);
+	playerShirtImageElementInitInfo.position = equipmentPresentationState.shirtPosition;
 	playerShirtImageElementInitInfo.drawOrder = 3;
-
-	const TextureAsset shirtTextureAsset = CharacterSheetUiView::getShirtTextureAsset(game);
-	const UiTextureID shirtTextureID = uiManager.getOrAddTexture(shirtTextureAsset, bodyPaletteTextureAsset, textureManager, renderer);
-	uiManager.createImage(playerShirtImageElementInitInfo, shirtTextureID, state.contextInstID, renderer);
+	uiManager.createImage(playerShirtImageElementInitInfo, equipmentPresentationState.shirtTextureID, state.contextInstID, renderer);
 
 	// Remaining points popup.
 	UiContextInitInfo remainingPointsPopUpContextInitInfo;

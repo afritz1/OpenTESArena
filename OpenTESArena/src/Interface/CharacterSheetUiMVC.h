@@ -12,6 +12,21 @@ class Game;
 class Renderer;
 class TextureManager;
 
+// Every texture currently required by the player's paper doll. All textures are owned by UiManager.
+struct CharacterEquipmentPresentationState
+{
+	UiTextureID bodyTextureID; // Includes race and gender.
+	UiTextureID shirtTextureID;
+	UiTextureID pantsTextureID;
+	UiTextureID headTextureID;
+	Int2 bodyPosition;
+	Int2 shirtPosition;
+	Int2 pantsPosition;
+	Int2 headPosition;
+
+	CharacterEquipmentPresentationState();
+};
+
 namespace CharacterSheetUiModel
 {
 	// For UI elements.
@@ -59,6 +74,8 @@ namespace CharacterSheetUiView
 	UiTextureID allocShirtTexture(Game &game);
 	UiTextureID allocPantsTexture(Game &game);
 	UiTextureID allocHeadTexture(Game &game);
+
+	CharacterEquipmentPresentationState getEquipmentPresentationState(Game &game);
 }
 
 namespace CharacterEquipmentUiView

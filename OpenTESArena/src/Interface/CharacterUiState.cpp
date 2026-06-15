@@ -24,49 +24,11 @@ CharacterUiState::CharacterUiState()
 {
 	this->game = nullptr;
 	this->contextInstID = -1;
-	this->bodyTextureID = -1;
-	this->pantsTextureID = -1;
-	this->headTextureID = -1;
-	this->shirtTextureID = -1;
 }
 
 void CharacterUiState::init(Game &game)
 {
 	this->game = &game;
-
-	TextureManager &textureManager = game.textureManager;
-	Renderer &renderer = game.renderer;
-	this->bodyTextureID = CharacterSheetUiView::allocBodyTexture(game);
-	this->pantsTextureID = CharacterSheetUiView::allocPantsTexture(game);
-	this->headTextureID = CharacterSheetUiView::allocHeadTexture(game);
-	this->shirtTextureID = CharacterSheetUiView::allocShirtTexture(game);
-}
-
-void CharacterUiState::freeTextures(Renderer &renderer)
-{
-	if (this->bodyTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->bodyTextureID);
-		this->bodyTextureID = -1;
-	}
-
-	if (this->pantsTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->pantsTextureID);
-		this->pantsTextureID = -1;
-	}
-
-	if (this->headTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->headTextureID);
-		this->headTextureID = -1;
-	}
-
-	if (this->shirtTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->shirtTextureID);
-		this->shirtTextureID = -1;
-	}
 }
 
 void CharacterUI::create(Game &game)
@@ -83,29 +45,31 @@ void CharacterUI::create(Game &game)
 	const UiContextDefinition &contextDef = uiLibrary.getDefinition(CharacterUI::ContextName);
 	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
 
+	const CharacterEquipmentPresentationState equipmentPresentationState = CharacterSheetUiView::getEquipmentPresentationState(game);
+
 	UiElementInitInfo bodyImageElementInitInfo;
 	bodyImageElementInitInfo.name = "CharacterBodyImage";
-	bodyImageElementInitInfo.position = CharacterSheetUiView::getBodyOffset(game);
+	bodyImageElementInitInfo.position = equipmentPresentationState.bodyPosition;
 	bodyImageElementInitInfo.drawOrder = 1;
-	uiManager.createImage(bodyImageElementInitInfo, state.bodyTextureID, state.contextInstID, renderer);
+	uiManager.createImage(bodyImageElementInitInfo, equipmentPresentationState.bodyTextureID, state.contextInstID, renderer);
 
 	UiElementInitInfo pantsImageElementInitInfo;
 	pantsImageElementInitInfo.name = "CharacterPantsImage";
-	pantsImageElementInitInfo.position = CharacterSheetUiView::getPantsOffset(game);
+	pantsImageElementInitInfo.position = equipmentPresentationState.pantsPosition;
 	pantsImageElementInitInfo.drawOrder = 2;
-	uiManager.createImage(pantsImageElementInitInfo, state.pantsTextureID, state.contextInstID, renderer);
+	uiManager.createImage(pantsImageElementInitInfo, equipmentPresentationState.pantsTextureID, state.contextInstID, renderer);
 
 	UiElementInitInfo headImageElementInitInfo;
 	headImageElementInitInfo.name = "CharacterHeadImage";
-	headImageElementInitInfo.position = CharacterSheetUiView::getHeadOffset(game);
+	headImageElementInitInfo.position = equipmentPresentationState.headPosition;
 	headImageElementInitInfo.drawOrder = 3;
-	uiManager.createImage(headImageElementInitInfo, state.headTextureID, state.contextInstID, renderer);
+	uiManager.createImage(headImageElementInitInfo, equipmentPresentationState.headTextureID, state.contextInstID, renderer);
 
 	UiElementInitInfo shirtImageElementInitInfo;
 	shirtImageElementInitInfo.name = "CharacterShirtImage";
-	shirtImageElementInitInfo.position = CharacterSheetUiView::getShirtOffset(game);
+	shirtImageElementInitInfo.position = equipmentPresentationState.shirtPosition;
 	shirtImageElementInitInfo.drawOrder = 4;
-	uiManager.createImage(shirtImageElementInitInfo, state.shirtTextureID, state.contextInstID, renderer);
+	uiManager.createImage(shirtImageElementInitInfo, equipmentPresentationState.shirtTextureID, state.contextInstID, renderer);
 
 	const std::string playerNameText = CharacterSheetUiModel::getPlayerName(game);
 	const UiElementInstanceID playerNameTextBoxElementInstID = uiManager.getElementByName("CharacterNameTextBox");
@@ -185,8 +149,6 @@ void CharacterUI::destroy()
 		uiManager.freeContext(state.contextInstID, inputManager, renderer);
 		state.contextInstID = -1;
 	}
-
-	state.freeTextures(renderer);
 
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterSheet, false);
 }
