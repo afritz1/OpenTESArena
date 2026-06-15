@@ -31,6 +31,9 @@ IF (MSVC)
     # Statically link runtime lib via /MT or /MTd.
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
+    # Set Jolt exceptions enabled (/EHsc) to avoid std::exception size differences at link time.
+    SET(CPP_EXCEPTIONS_ENABLED ON CACHE BOOL "Enable C++ exceptions for Jolt.")
+
     # Multi-processor compilation.
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 
