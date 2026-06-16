@@ -175,8 +175,6 @@ public:
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);
 
 	void queueGuardSpawn(Game &game);
-
-	bool isPlayerTrespassing(ArenaInteriorType interiorType, bool isNight) const;
 	void spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnCount) const;
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.

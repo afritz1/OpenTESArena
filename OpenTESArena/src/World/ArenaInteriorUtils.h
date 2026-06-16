@@ -40,4 +40,6 @@ namespace ArenaInteriorUtils
 
 	bool isPrefabInterior(ArenaInteriorType interiorType);
 	bool isProceduralInterior(ArenaInteriorType interiorType);
+
+	bool isPlayerTrespassing(ArenaInteriorType interiorType, bool isNight);
 }

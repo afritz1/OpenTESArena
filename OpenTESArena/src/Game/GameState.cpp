@@ -35,6 +35,7 @@
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../Weather/WeatherUtils.h"
+#include "../World/ArenaInteriorUtils.h"
 #include "../World/CardinalDirection.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
@@ -1052,7 +1053,7 @@ void GameState::tickGameClock(double dt, Game &game)
 		const ArenaInteriorType interiorType = this->getInteriorType();
 		const int interiorTypeValue = static_cast<int>(interiorType);
 		//@todo: The original game checks for trespassing at the moment of entering an interior, not every hour as done here.
-		const bool isTrespassing = this->isPlayerTrespassing(interiorType, isNightForEncounters);
+		const bool isTrespassing = ArenaInteriorUtils::isPlayerTrespassing(interiorType, isNightForEncounters);
 		const int terrainType = 0; //@todo: Pass in terrain type
 		int encounterChance;
 		int encounterChanceTableIndex;
@@ -1129,24 +1130,6 @@ void GameState::tickGameClock(double dt, Game &game)
 			audioManager.setMusic(musicDef);
 		}
 	}
-}
-
-bool GameState::isPlayerTrespassing(ArenaInteriorType interiorType, bool isNight) const
-{
-	if (interiorType == ArenaInteriorType::House || interiorType == ArenaInteriorType::Noble)
-	{
-		return true;
-	}
-
-	if (isNight)
-	{
-		if (interiorType != ArenaInteriorType::Tavern && interiorType != ArenaInteriorType::Crypt && interiorType != ArenaInteriorType::Tower)
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void GameState::tickChasmAnimation(double dt)
