@@ -336,8 +336,7 @@ double GameState::getActiveCeilingScale() const
 		return 0.0;
 	}
 
-	Span<const LevelInfoDefinition> levelInfoDefs = this->activeMapDef.getLevelInfos();
-	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[this->activeLevelIndex];
+	const LevelInfoDefinition &levelInfoDef = this->activeMapDef.getLevelInfoForLevel(this->activeLevelIndex);
 	return levelInfoDef.getCeilingScale();
 }
 

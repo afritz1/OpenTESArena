@@ -590,6 +590,12 @@ Span<const LevelInfoDefinition> MapDefinition::getLevelInfos() const
 	return this->levelInfos;
 }
 
+const LevelInfoDefinition &MapDefinition::getLevelInfoForLevel(int levelIndex) const
+{
+	const int levelInfoIndex = this->levelInfoMappings.get(levelIndex);
+	return this->levelInfos.get(levelInfoIndex);
+}
+
 int MapDefinition::getSkyIndexForLevel(int levelIndex) const
 {
 	return this->skyMappings.get(levelIndex);
