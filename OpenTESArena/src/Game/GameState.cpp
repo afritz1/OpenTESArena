@@ -714,6 +714,7 @@ void GameState::queueGuardSpawn(Game &game)
 
 void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnCount) const
 {
+	// @todo deduplicate this code by combining with queueSpawnGuard()
 	const Player &player = game.player;
 	ArenaRandom &arenaRandom = game.arenaRandom;
 
@@ -806,10 +807,7 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 		spawnedEnemyEntityInitInfo.direction = CardinalDirection::North;
 		spawnedEnemyEntityInitInfo.humanEnemyLevel = spawnLevel;
 		spawnedEnemyEntityInitInfo.hasInventory = true;
-		if (spawnId > 23)
-			spawnedEnemyEntityInitInfo.hasCreatureSound = false;
-		else
-			spawnedEnemyEntityInitInfo.hasCreatureSound = true;
+		spawnedEnemyEntityInitInfo.hasCreatureSound = spawnId <= 23;
 
 		Renderer &renderer = game.renderer;
 		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
