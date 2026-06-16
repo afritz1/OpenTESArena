@@ -72,6 +72,16 @@ enum class ArenaCityType
 	Village
 };
 
+// Used with enemy encounter logic.
+enum class ArenaEnvironmentType
+{
+	City = 0,
+	Wilderness = 1,
+	MainQuestDungeon = 2,
+	WorldMapDungeon = 3,
+	Interior = 4
+};
+
 // Each type of voxel definition. These are mostly used with rendering, but also for determining how to
 // interpret the voxel data itself. If the type is None, then the voxel is empty and there is nothing
 // to render.

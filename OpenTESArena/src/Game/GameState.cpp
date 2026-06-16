@@ -346,6 +346,52 @@ bool GameState::isActiveMapNested() const
 	return this->prevMapDef.isValid();
 }
 
+ArenaEnvironmentType GameState::getEnvironmentType() const
+{
+	ArenaEnvironmentType environmentType = ArenaEnvironmentType::City;
+
+	const MapType mapType = this->getActiveMapType();
+	if (mapType == MapType::Wilderness)
+	{
+		environmentType = ArenaEnvironmentType::Wilderness;
+	}
+	else if (mapType == MapType::Interior)
+	{
+		const LocationDefinition &locationDef = this->getLocationDefinition();
+		const LocationDefinitionType locationType = locationDef.getType();
+		if (locationType == LocationDefinitionType::MainQuestDungeon)
+		{
+			environmentType = ArenaEnvironmentType::MainQuestDungeon;
+		}
+		else if (locationType == LocationDefinitionType::Dungeon)
+		{
+			environmentType = ArenaEnvironmentType::WorldMapDungeon;
+		}
+		else if (locationType == LocationDefinitionType::City)
+		{
+			environmentType = ArenaEnvironmentType::Interior;
+		}
+	}
+
+	return environmentType;
+}
+
+ArenaInteriorType GameState::getInteriorType() const
+{
+	ArenaInteriorType interiorType = ArenaInteriorType::None;
+
+	const MapType mapType = this->getActiveMapType();
+	if (mapType == MapType::Interior)
+	{
+		const MapDefinition &mapDef = this->getActiveMapDef();
+		const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
+		const MapDefinitionInterior &interiorDef = mapSubDef.interior;
+		return interiorDef.interiorType;
+	}
+
+	return interiorType;
+}
+
 WorldMapInstance &GameState::getWorldMapInstance()
 {
 	return this->worldMapInst;
@@ -668,10 +714,10 @@ void GameState::queueGuardSpawn(Game &game)
 
 void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnCount) const
 {
-	const Player& player = game.player;
-	ArenaRandom& arenaRandom = game.arenaRandom;
+	const Player &player = game.player;
+	ArenaRandom &arenaRandom = game.arenaRandom;
 
-	const VoxelChunkManager& voxelChunkManager = game.sceneManager.voxelChunkManager;
+	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
 	const MapType mapType = this->getActiveMapType();
 	const double ceilingScale = this->getActiveCeilingScale();
 	const WorldDouble3 playerFeetPosition = player.getFeetPosition();
@@ -704,24 +750,24 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 		const VoxelInt3 spawnedEnemyVoxel = spawnedEnemyVoxelCoord.voxel;
 		const VoxelShapeDefID spawnedEnemyVoxelShapeDefID = spawnedEnemyVoxelChunk->shapeDefIDs.get(spawnedEnemyVoxel.x, 1, spawnedEnemyVoxel.z);
 		const VoxelTraitsDefID spawnedEnemyFloorVoxelTraitsDefID = spawnedEnemyVoxelChunk->traitsDefIDs.get(spawnedEnemyVoxel.x, 0, spawnedEnemyVoxel.z);
-		const VoxelShapeDefinition& spawnedEnemyVoxelShapeDef = spawnedEnemyVoxelChunk->shapeDefs[spawnedEnemyVoxelShapeDefID];
-		const VoxelTraitsDefinition& spawnedEnemyFloorVoxelTraitsDef = spawnedEnemyVoxelChunk->traitsDefs[spawnedEnemyFloorVoxelTraitsDefID];
+		const VoxelShapeDefinition &spawnedEnemyVoxelShapeDef = spawnedEnemyVoxelChunk->shapeDefs[spawnedEnemyVoxelShapeDefID];
+		const VoxelTraitsDefinition &spawnedEnemyFloorVoxelTraitsDef = spawnedEnemyVoxelChunk->traitsDefs[spawnedEnemyFloorVoxelTraitsDefID];
 		const bool isSpawnVoxelValid = spawnedEnemyVoxelShapeDef.mesh.isEmpty() && spawnedEnemyFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
 		if (!isSpawnVoxelValid)
 		{
 			continue;
 		}
 
-		const EntityDefinitionLibrary& entityDefLibrary = EntityDefinitionLibrary::getInstance();
+		const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
 		const EntityDefID spawnedEnemyEntityDefID = entityDefLibrary.findDefinitionIdIf(
-			[spawnId](const EntityDefinition& entityDef)
+			[spawnId](const EntityDefinition &entityDef)
 			{
 				if (entityDef.type != EntityDefinitionType::Enemy)
 				{
 					return false;
 				}
 
-				const EnemyEntityDefinition& enemyDef = entityDef.enemy;
+				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
 				constexpr int lastCreatureID = 23;
 				if (spawnId > lastCreatureID)
 				{
@@ -730,9 +776,9 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 						return false;
 					}
 
-					const EnemyEntityHumanDefinition& humanEnemyDef = enemyDef.human;
-					const CharacterClassLibrary& charClassLibrary = CharacterClassLibrary::getInstance();
-					const CharacterClassDefinition& charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+					const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
+					const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+					const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
 					constexpr int spawnIdToClassNumberDifference = 24;
 					const int originalEnemyClassNumber = spawnId - spawnIdToClassNumberDifference;
 					return charClassDef.originalClassIndex == originalEnemyClassNumber;
@@ -745,8 +791,8 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 				return enemyDef.creatureDefID == spawnId;
 			});
 
-		const EntityDefinition& spawnedEnemyEntityDef = entityDefLibrary.getDefinition(spawnedEnemyEntityDefID);
-		const EntityAnimationDefinition& spawnedEnemyAnimDef = spawnedEnemyEntityDef.animDef;
+		const EntityDefinition &spawnedEnemyEntityDef = entityDefLibrary.getDefinition(spawnedEnemyEntityDefID);
+		const EntityAnimationDefinition &spawnedEnemyAnimDef = spawnedEnemyEntityDef.animDef;
 
 		const WorldDouble2 spawnedEnemyFeetPositionXZ = VoxelUtils::getVoxelCenter(spawnedEnemyWorldVoxelXZ);
 		const WorldDouble3 spawnedEnemyFeetPosition(spawnedEnemyFeetPositionXZ.x, ceilingScale, spawnedEnemyFeetPositionXZ.y);
@@ -765,11 +811,11 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 		else
 			spawnedEnemyEntityInitInfo.hasCreatureSound = true;
 
-		Renderer& renderer = game.renderer;
-		EntityChunkManager& entityChunkManager = game.sceneManager.entityChunkManager;
+		Renderer &renderer = game.renderer;
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 		entityChunkManager.createEntity(spawnedEnemyEntityInitInfo, game.random, game.physicsSystem, renderer);
 
-		RenderEntityManager& renderEntityManager = game.sceneManager.renderEntityManager;
+		RenderEntityManager &renderEntityManager = game.sceneManager.renderEntityManager;
 		renderEntityManager.loadMaterialsForEntity(spawnedEnemyEntityDefID, game.textureManager, renderer);
 
 		actualSpawnedEnemyCount++;
@@ -964,36 +1010,8 @@ void GameState::tickGameClock(double dt, Game &game)
 	const Clock prevClock = this->clock;
 	const double timeScale = GameState::GAME_TIME_SCALE * (this->isCamping ? 250.0 : 1.0);
 	this->clock.incrementTime(dt * timeScale);
-
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;
-	bool isNight = (newHour < 6 || newHour > 18);
-	const Player &player = game.player;
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	if (newHour != prevHour)
-	{
-		// Update possible weathers list.
-		this->updateWeatherList(game.arenaRandom, exeData);
-
-		// Roll for random encounter
-		if ((this->isCamping || this->getActiveMapType() == MapType::Wilderness) && !player.groundState.onRaisedPlatform)
-		{
-			int encounterChance;
-			int encounterChanceTableIndex;
-			int arenaEnvironmentType = getArenaEnvironmentType();
-			int arenaBuildingType = getArenaBuildingType();
-			//@todo: The original game checks for trespassing at the moment of entering an interior, not every hour as done here.
-			bool isTrespassing = getIsTrespassing(arenaBuildingType, isNight);
-
-			//@todo: Pass in terrain type
-			ArenaEntityUtils::getEncounterParameters(arenaEnvironmentType, arenaBuildingType, isTrespassing, this->isCamping, 0, newHour, this->date.getDay(), exeData, &encounterChance, &encounterChanceTableIndex);
-			if (encounterChance > game.arenaRandom.next() % 100)
-			{
-				ArenaEnemyEncounter encounter = ArenaEntityUtils::chooseEncounterEnemy(encounterChanceTableIndex, player.level, player.level, false, game.arenaRandom, exeData);
-				spawnEnemies(game, encounter.id, encounter.level, encounter.count);
-			}
-		}
-	}
 
 	// Check if the clock hour looped back around.
 	if (newHour < prevHour)
@@ -1001,28 +1019,52 @@ void GameState::tickGameClock(double dt, Game &game)
 		this->date.incrementDay();
 	}
 
-	const int prevMinute = prevClock.minutes;
-	const int newMinute = this->clock.minutes;
-	if (newMinute != prevMinute)
-	{
-		// Roll for random encounter. In the original game, the presence of citizens in city maps prevents encounters from spawning during the day.
-		// Here this is being done through a check that it is night.
-		if (((this->getActiveMapType() == MapType::City && isNight) || (this->getActiveMapType() == MapType::Interior && !isCamping)) && !player.groundState.onRaisedPlatform)
-		{
-			int encounterChance;
-			int encounterChanceTableIndex;
+	const int currentDay = this->date.getDay();
+	const bool isNightForEncounters = (newHour < 6) || (newHour > 18);
+	const Player &player = game.player;
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	const MapType activeMapType = activeMapDef.getMapType();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	ArenaRandom &arenaRandom = game.arenaRandom;
 
-			int arenaEnvironmentType = getArenaEnvironmentType();
-			int arenaBuildingType = getArenaBuildingType();
-			//@todo: The original game checks for trespassing at the moment of entering an interior, not every minute as done here.
-			bool isTrespassing = getIsTrespassing(arenaBuildingType, isNight);
-			//@todo: Pass in terrain type.
-			ArenaEntityUtils::getEncounterParameters(arenaEnvironmentType, arenaBuildingType, isTrespassing, this->isCamping, 0, newHour, this->date.getDay(), exeData, &encounterChance, &encounterChanceTableIndex);
-			if (encounterChance > game.arenaRandom.next() % 100)
-			{
-				ArenaEnemyEncounter encounter = ArenaEntityUtils::chooseEncounterEnemy(encounterChanceTableIndex, player.level, player.level, false, game.arenaRandom, exeData);
-				spawnEnemies(game, encounter.id, encounter.level, encounter.count);
-			}
+	bool canAttemptEnemyEncounterThisHour = false;
+	if (newHour != prevHour)
+	{
+		canAttemptEnemyEncounterThisHour = (this->isCamping || activeMapType == MapType::Wilderness) && !player.groundState.onRaisedPlatform;
+
+		this->updateWeatherList(arenaRandom, exeData);
+	}
+
+	const int prevMinutes = prevClock.minutes;
+	const int newMinutes = this->clock.minutes;
+	bool canAttemptEnemyEncounterThisMinute = false;
+	if (newMinutes != prevMinutes)
+	{
+		// In the original game, the presence of citizens in city maps prevents encounters from spawning during the day.
+		// Here this is being done through a check that it is night.
+		const bool areCitizensPresent = !isNightForEncounters;
+		canAttemptEnemyEncounterThisMinute = ((activeMapType == MapType::City && !areCitizensPresent) || (activeMapType == MapType::Interior && !this->isCamping)) && !player.groundState.onRaisedPlatform;
+	}
+
+	const bool canAttemptEnemyEncounter = canAttemptEnemyEncounterThisHour || canAttemptEnemyEncounterThisMinute;
+	if (canAttemptEnemyEncounter)
+	{
+		// Roll for random encounter.
+		const ArenaEnvironmentType environmentType = this->getEnvironmentType();
+		const int environmentTypeValue = static_cast<int>(environmentType);
+		const ArenaInteriorType interiorType = this->getInteriorType();
+		const int interiorTypeValue = static_cast<int>(interiorType);
+		//@todo: The original game checks for trespassing at the moment of entering an interior, not every hour as done here.
+		const bool isTrespassing = this->isPlayerTrespassing(interiorType, isNightForEncounters);
+		const int terrainType = 0; //@todo: Pass in terrain type
+		int encounterChance;
+		int encounterChanceTableIndex;
+		ArenaEntityUtils::getEncounterParameters(environmentTypeValue, interiorTypeValue, isTrespassing, this->isCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);
+
+		if (encounterChance > arenaRandom.next(100))
+		{
+			const ArenaEnemyEncounter encounter = ArenaEntityUtils::chooseEncounterEnemy(encounterChanceTableIndex, player.level, player.level, false, arenaRandom, exeData);
+			this->spawnEnemies(game, encounter.id, encounter.level, encounter.count);
 		}
 	}
 
@@ -1048,8 +1090,6 @@ void GameState::tickGameClock(double dt, Game &game)
 	}
 
 	// Check for changes in exterior music depending on the time.
-	const MapDefinition &activeMapDef = this->getActiveMapDef();
-	const MapType activeMapType = activeMapDef.getMapType();
 	if ((activeMapType != MapType::Interior) && !player.groundState.isSwimming)
 	{
 		const Clock &dayMusicStartClock = clockLibrary.getClock(ArenaClockUtils::MusicSwitchToDay);
@@ -1094,109 +1134,19 @@ void GameState::tickGameClock(double dt, Game &game)
 	}
 }
 
-int GameState::getArenaEnvironmentType() const
+bool GameState::isPlayerTrespassing(ArenaInteriorType interiorType, bool isNight) const
 {
-	const ProvinceDefinition& provinceDef = this->worldMapDef.getProvinceDef(provinceIndex);
-	const LocationDefinition& locationDef = provinceDef.getLocationDef(locationIndex);
-
-	int arenaEnvironmentType = -1;
-	if (this->getActiveMapType() == MapType::City)
-	{
-		arenaEnvironmentType = 0;
-	}
-	if (this->getActiveMapType() == MapType::Wilderness)
-	{
-		arenaEnvironmentType = 1;
-	}
-	else if (this->getActiveMapType() == MapType::Interior)
-	{
-		LocationDefinitionType locationType = locationDef.getType();
-		if (locationType == LocationDefinitionType::MainQuestDungeon)
-		{
-			arenaEnvironmentType = 2;
-		}
-		else if (locationType == LocationDefinitionType::Dungeon)
-		{
-			arenaEnvironmentType = 3;
-		}
-		else if (locationType == LocationDefinitionType::City)
-		{
-			arenaEnvironmentType = 4;
-		}
-	}
-
-	DebugAssert(arenaEnvironmentType != -1);
-	return arenaEnvironmentType;
-}
-
-int GameState::getArenaBuildingType() const
-{
-	const MapDefinition& mapDef = this->getActiveMapDef();
-	const MapSubDefinition& mapSubDef = mapDef.getSubDefinition();
-	int arenaBuildingType = -1;
-
-	if (mapSubDef.type == MapType::Interior)
-	{
-		ArenaInteriorType lootInteriorType = mapSubDef.interior.interiorType;
-
-		switch (lootInteriorType)
-		{
-		case ArenaInteriorType::Crypt:
-		{
-			arenaBuildingType = 8;
-			break;
-		}
-		case ArenaInteriorType::Equipment:
-		{
-			arenaBuildingType = 6;
-			break;
-		}
-		case ArenaInteriorType::House:
-		{
-			arenaBuildingType = 2;
-			break;
-		}
-		case ArenaInteriorType::MagesGuild:
-		{
-			arenaBuildingType = 7;
-			break;
-		}
-		case ArenaInteriorType::Noble:
-		{
-			arenaBuildingType = 3;
-			break;
-		}
-		case ArenaInteriorType::Palace:
-		{
-			arenaBuildingType = 1;
-			break;
-		}
-		case ArenaInteriorType::Tavern:
-		{
-			arenaBuildingType = 4;
-			break;
-		}
-		case ArenaInteriorType::Temple:
-		{
-			arenaBuildingType = 5;
-			break;
-		}
-		case ArenaInteriorType::Tower:
-		{
-			arenaBuildingType = 11;
-		}
-		}
-	}
-
-	return arenaBuildingType;
-}
-
-bool GameState::getIsTrespassing(int arenaBuildingType, bool isNight)
-{
-	// The player is trespassing if they enter a common or noble house, or any building but a tavern, crypt or tower at night.
-	if (arenaBuildingType == 2 || arenaBuildingType == 3 || (isNight && (arenaBuildingType != 4 && arenaBuildingType != 8 && arenaBuildingType != 11)))
+	if (interiorType == ArenaInteriorType::House || interiorType == ArenaInteriorType::Noble)
 	{
 		return true;
+	}
+
+	if (isNight)
+	{
+		if (interiorType != ArenaInteriorType::Tavern && interiorType != ArenaInteriorType::Crypt && interiorType != ArenaInteriorType::Tower)
+		{
+			return true;
+		}
 	}
 
 	return false;

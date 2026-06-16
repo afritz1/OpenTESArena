@@ -139,6 +139,8 @@ public:
 	const MapDefinition &getActiveMapDef() const;
 	double getActiveCeilingScale() const;
 	bool isActiveMapNested() const; // True if the active interior is inside an exterior.
+	ArenaEnvironmentType getEnvironmentType() const; // For enemy encounters.
+	ArenaInteriorType getInteriorType() const;
 	const WorldMapDefinition &getWorldMapDefinition() const;
 	const ProvinceDefinition &getProvinceDefinition() const;
 	const LocationDefinition &getLocationDefinition() const;
@@ -174,9 +176,7 @@ public:
 
 	void queueGuardSpawn(Game &game);
 
-	int getArenaEnvironmentType() const;
-	int getArenaBuildingType() const;
-	bool getIsTrespassing(int arenaBuildingType, bool isNight);
+	bool isPlayerTrespassing(ArenaInteriorType interiorType, bool isNight) const;
 	void spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnCount) const;
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
