@@ -376,20 +376,43 @@ ArenaEnvironmentType GameState::getEnvironmentType() const
 	return environmentType;
 }
 
-ArenaInteriorType GameState::getInteriorType() const
+ArenaBuildingType GameState::getBuildingType() const
 {
-	ArenaInteriorType interiorType = ArenaInteriorType::None;
-
 	const MapType mapType = this->getActiveMapType();
-	if (mapType == MapType::Interior)
+	if (mapType != MapType::Interior)
 	{
-		const MapDefinition &mapDef = this->getActiveMapDef();
-		const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
-		const MapDefinitionInterior &interiorDef = mapSubDef.interior;
-		return interiorDef.interiorType;
+		return ArenaBuildingType::None;
 	}
 
-	return interiorType;
+	const MapDefinition &mapDef = this->getActiveMapDef();
+	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
+	const MapDefinitionInterior &interiorDef = mapSubDef.interior;
+	const ArenaInteriorType interiorType = interiorDef.interiorType;
+
+	constexpr std::pair<ArenaInteriorType, ArenaBuildingType> interiorTypeMappings[] =
+	{
+		{ ArenaInteriorType::Crypt, ArenaBuildingType::Crypt },
+		{ ArenaInteriorType::Dungeon, ArenaBuildingType::None },
+		{ ArenaInteriorType::Equipment, ArenaBuildingType::Equipment },
+		{ ArenaInteriorType::House, ArenaBuildingType::House },
+		{ ArenaInteriorType::MagesGuild, ArenaBuildingType::MagesGuild },
+		{ ArenaInteriorType::Noble, ArenaBuildingType::Noble },
+		{ ArenaInteriorType::Palace, ArenaBuildingType::Palace },
+		{ ArenaInteriorType::Tavern, ArenaBuildingType::Tavern },
+		{ ArenaInteriorType::Temple, ArenaBuildingType::Temple },
+		{ ArenaInteriorType::Tower, ArenaBuildingType::Tower }
+	};
+
+	const auto mappingsBegin = std::begin(interiorTypeMappings);
+	const auto mappingsEnd = std::end(interiorTypeMappings);
+	const auto iter = std::find_if(mappingsBegin, mappingsEnd,
+		[interiorType](const std::pair<ArenaInteriorType, ArenaBuildingType> &pair)
+	{
+		return pair.first == interiorType;
+	});
+
+	DebugAssert(iter != mappingsEnd);
+	return iter->second;
 }
 
 WorldMapInstance &GameState::getWorldMapInstance()
@@ -1050,14 +1073,14 @@ void GameState::tickGameClock(double dt, Game &game)
 		// Roll for random encounter.
 		const ArenaEnvironmentType environmentType = this->getEnvironmentType();
 		const int environmentTypeValue = static_cast<int>(environmentType);
-		const ArenaInteriorType interiorType = this->getInteriorType();
-		const int interiorTypeValue = static_cast<int>(interiorType);
+		const ArenaBuildingType buildingType = this->getBuildingType();
+		const int buildingTypeValue = static_cast<int>(buildingType);
 		//@todo: The original game checks for trespassing at the moment of entering an interior, not every hour as done here.
-		const bool isTrespassing = ArenaInteriorUtils::isPlayerTrespassing(interiorType, isNightForEncounters);
+		const bool isTrespassing = ArenaInteriorUtils::isPlayerTrespassing(buildingType, isNightForEncounters);
 		const int terrainType = 0; //@todo: Pass in terrain type
 		int encounterChance;
 		int encounterChanceTableIndex;
-		ArenaEntityUtils::getEncounterParameters(environmentTypeValue, interiorTypeValue, isTrespassing, this->isCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);
+		ArenaEntityUtils::getEncounterParameters(environmentTypeValue, buildingTypeValue, isTrespassing, this->isCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);
 
 		if (encounterChance > arenaRandom.next(100))
 		{

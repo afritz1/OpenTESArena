@@ -39,18 +39,33 @@ enum class ArenaMenuType
 //   rulerIsMale, etc.. Might also have a variable for loot piles when sneaking in at night.
 enum class ArenaInteriorType
 {
+	Crypt, // WCRYPT
+	Dungeon, // DUNGEON
+	Equipment, // EQUIP
+	House, // BS
+	MagesGuild, // MAGE
+	Noble, // NOBLE
+	Palace, // PALACE
+	Tavern, // TAVERN
+	Temple, // TEMPLE
+	Tower // TOWER
+};
+
+// Used with enemy encounters. TownPalace and VillagePalace are unused except for .MIF loading.
+enum class ArenaBuildingType
+{
 	None = 0,
-	Palace = 1, // PALACE
-	House = 2, // BS
-	Noble = 3, // NOBLE
-	Tavern = 4, // TAVERN
-	Temple = 5, // TEMPLE
-	Equipment = 6, // EQUIP
-	MagesGuild = 7, // MAGE
-	Crypt = 8, // WCRYPT
-	Dungeon = 9, // DUNGEON
-	Unused = 10,
-	Tower = 11, // TOWER
+	Palace = 1,
+	House = 2,
+	Noble = 3,
+	Tavern = 4,
+	Temple = 5,
+	Equipment = 6,
+	MagesGuild = 7,
+	Crypt = 8,
+	TownPalace = 9, // Unused
+	VillagePalace = 10, // Unused
+	Tower = 11
 };
 
 // Each location on a province map has a type.
