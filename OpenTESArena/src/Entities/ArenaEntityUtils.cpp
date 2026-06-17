@@ -1214,10 +1214,11 @@ ArenaEnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableInd
 		encounterLevel = playerLevel - random.next(3);
 	}
 
+	DebugAssertIndex(exeData.entities.enemyEncounterTableIndices, encounterTableIndex);
 	const Span<const uint8_t> chosenEncounterTableIndices = exeData.entities.enemyEncounterTableIndices[encounterTableIndex];
 	int matches[] = { -1, -1 };
 	int count = 0;
-	for (int i = 0; (i < 85) && (count < 2); i++)
+	for (int i = 0; (i < chosenEncounterTableIndices.getCount()) && (count < 2); i++)
 	{
 		if (chosenEncounterTableIndices[i] == encounterLevel)
 		{
@@ -1230,6 +1231,7 @@ ArenaEnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableInd
 	const int chosen = matches[random.next() & 1];
 	DebugAssert(chosen != -1);
 
+	DebugAssertIndex(exeData.entities.enemyEncounterTable, chosen);
 	const Span<const uint8_t> chosenEncounterTable = exeData.entities.enemyEncounterTable[chosen];
 
 	ArenaEnemyEncounter chosenEnemyEncounter;
