@@ -1051,7 +1051,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	bool canAttemptEnemyEncounterThisHour = false;
 	if (newHour != prevHour)
 	{
-		canAttemptEnemyEncounterThisHour = (this->isCamping || activeMapType == MapType::Wilderness) && !player.groundState.onRaisedPlatform;
+		canAttemptEnemyEncounterThisHour = ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(activeMapType, this->isCamping, player.groundState.onRaisedPlatform);
 
 		this->updateWeatherList(arenaRandom, exeData);
 	}
@@ -1064,7 +1064,7 @@ void GameState::tickGameClock(double dt, Game &game)
 		// In the original game, the presence of citizens in city maps prevents encounters from spawning during the day.
 		// Here this is being done through a check that it is night.
 		const bool areCitizensPresent = !isNightForEncounters;
-		canAttemptEnemyEncounterThisMinute = ((activeMapType == MapType::City && !areCitizensPresent) || (activeMapType == MapType::Interior && !this->isCamping)) && !player.groundState.onRaisedPlatform;
+		canAttemptEnemyEncounterThisMinute = ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(activeMapType, areCitizensPresent, this->isCamping, player.groundState.onRaisedPlatform);
 	}
 
 	const bool canAttemptEnemyEncounter = canAttemptEnemyEncounterThisHour || canAttemptEnemyEncounterThisMinute;

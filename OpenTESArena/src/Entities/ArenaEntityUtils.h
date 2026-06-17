@@ -16,6 +16,7 @@ enum class ArenaCityType;
 enum class ArenaEnvironmentType;
 enum class ArenaInteriorType;
 enum class ArmorMaterialType;
+enum class MapType;
 
 struct ExeData;
 
@@ -114,6 +115,8 @@ namespace ArenaEntityUtils
 	int getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
 	int getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
 
+	bool isEnemyEncounterAllowedOnMinuteChanged(MapType mapType, bool areCitizensPresent, bool isPlayerCamping, bool isPlayerOnRaisedPlatform);
+	bool isEnemyEncounterAllowedOnHourChanged(MapType mapType, bool isPlayerCamping, bool isPlayerOnRaisedPlatform);
 	void getEncounterParameters(ArenaEnvironmentType currentEnvironmentType, ArenaBuildingType currentBuildingType, bool playerTrespassing, bool isResting, int terrainType, int gameHour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex);
 	int rollWeightedEncounterLevel(int encounterLevel, ArenaRandom &random);
 	ArenaEnemyEncounter chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter, ArenaRandom &random, const ExeData &exeData);

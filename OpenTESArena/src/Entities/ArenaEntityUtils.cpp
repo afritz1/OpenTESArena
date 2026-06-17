@@ -7,6 +7,7 @@
 #include "../Math/ArenaMathUtils.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
+#include "../World/MapType.h"
 
 namespace
 {
@@ -1009,6 +1010,46 @@ int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, Aren
 	constexpr int plateMaterialID = 0;
 	const Span<const uint8_t> guardShieldIDs = exeData.entities.guardShieldIDs;
 	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
+}
+
+bool ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(MapType mapType, bool areCitizensPresent, bool isPlayerCamping, bool isPlayerOnRaisedPlatform)
+{
+	if (isPlayerOnRaisedPlatform)
+	{
+		return false;
+	}
+
+	if (mapType == MapType::City)
+	{
+		return !areCitizensPresent; // During night
+	}
+
+	if (mapType == MapType::Interior)
+	{
+		return !isPlayerCamping;
+	}
+
+	return false;
+}
+
+bool ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(MapType mapType, bool isPlayerCamping, bool isPlayerOnRaisedPlatform)
+{
+	if (isPlayerOnRaisedPlatform)
+	{
+		return false;
+	}
+
+	if (mapType == MapType::Wilderness)
+	{
+		return true;
+	}
+
+	if (isPlayerCamping)
+	{
+		return true;
+	}
+
+	return false;
 }
 
 void ArenaEntityUtils::getEncounterParameters(ArenaEnvironmentType currentEnvironmentType, ArenaBuildingType currentBuildingType,
