@@ -1042,6 +1042,8 @@ void GameState::tickGameClock(double dt, Game &game)
 
 	const int currentDay = this->date.getDay();
 	const bool isNightForEncounters = (newHour < 6) || (newHour > 18);
+	const ArenaEnvironmentType environmentType = this->getEnvironmentType();
+	const ArenaBuildingType buildingType = this->getBuildingType();
 	const Player &player = game.player;
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	const MapType activeMapType = activeMapDef.getMapType();
@@ -1051,7 +1053,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	bool canAttemptEnemyEncounterThisHour = false;
 	if (newHour != prevHour)
 	{
-		canAttemptEnemyEncounterThisHour = ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(activeMapType, this->isCamping, player.groundState.onRaisedPlatform);
+		canAttemptEnemyEncounterThisHour = ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(environmentType, this->isCamping, player.groundState.onRaisedPlatform);
 
 		this->updateWeatherList(arenaRandom, exeData);
 	}
@@ -1064,15 +1066,13 @@ void GameState::tickGameClock(double dt, Game &game)
 		// In the original game, the presence of citizens in city maps prevents encounters from spawning during the day.
 		// Here this is being done through a check that it is night.
 		const bool areCitizensPresent = !isNightForEncounters;
-		canAttemptEnemyEncounterThisMinute = ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(activeMapType, areCitizensPresent, this->isCamping, player.groundState.onRaisedPlatform);
+		canAttemptEnemyEncounterThisMinute = ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(environmentType, areCitizensPresent, this->isCamping, player.groundState.onRaisedPlatform);
 	}
 
 	const bool canAttemptEnemyEncounter = canAttemptEnemyEncounterThisHour || canAttemptEnemyEncounterThisMinute;
 	if (canAttemptEnemyEncounter)
 	{
 		// Roll for random encounter.
-		const ArenaEnvironmentType environmentType = this->getEnvironmentType();
-		const ArenaBuildingType buildingType = this->getBuildingType();
 		//@todo: The original game checks for trespassing at the moment of entering an interior, not every hour as done here.
 		const bool isTrespassing = ArenaInteriorUtils::isPlayerTrespassing(buildingType, isNightForEncounters);
 		const int terrainType = 0; //@todo: Pass in terrain type

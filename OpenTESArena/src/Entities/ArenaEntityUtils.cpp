@@ -1012,19 +1012,20 @@ int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, Aren
 	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
 }
 
-bool ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(MapType mapType, bool areCitizensPresent, bool isPlayerCamping, bool isPlayerOnRaisedPlatform)
+bool ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(ArenaEnvironmentType environmentType, bool areCitizensPresent,
+	bool isPlayerCamping, bool isPlayerOnRaisedPlatform)
 {
 	if (isPlayerOnRaisedPlatform)
 	{
 		return false;
 	}
 
-	if (mapType == MapType::City)
+	if (environmentType == ArenaEnvironmentType::City)
 	{
 		return !areCitizensPresent; // During night
 	}
 
-	if (mapType == MapType::Interior)
+	if (environmentType == ArenaEnvironmentType::BuildingInterior)
 	{
 		return !isPlayerCamping;
 	}
@@ -1032,14 +1033,14 @@ bool ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(MapType mapType, b
 	return false;
 }
 
-bool ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(MapType mapType, bool isPlayerCamping, bool isPlayerOnRaisedPlatform)
+bool ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(ArenaEnvironmentType environmentType, bool isPlayerCamping, bool isPlayerOnRaisedPlatform)
 {
 	if (isPlayerOnRaisedPlatform)
 	{
 		return false;
 	}
 
-	if (mapType == MapType::Wilderness)
+	if (environmentType == ArenaEnvironmentType::Wilderness)
 	{
 		return true;
 	}
