@@ -1011,15 +1011,16 @@ int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, Aren
 	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
 }
 
-void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool playerResting,
-	int terrainType, int hour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex)
+void ArenaEntityUtils::getEncounterParameters(ArenaEnvironmentType currentEnvironmentType, ArenaBuildingType currentBuildingType,
+	bool playerTrespassing, bool playerResting, int terrainType, int hour, int dayOfYear, const ExeData &exeData,
+	int *outEncounterChance, int *outEncounterTableIndex)
 {
-	constexpr int cityEnvironment = 0;
-	constexpr int wildernessEnvironment = 1;
-	constexpr int buildingEnvironment = 4;
+	constexpr ArenaEnvironmentType cityEnvironmentType = ArenaEnvironmentType::City;
+	constexpr ArenaEnvironmentType wildernessEnvironmentType = ArenaEnvironmentType::Wilderness;
+	constexpr ArenaEnvironmentType buildingEnvironmentType = ArenaEnvironmentType::BuildingInterior;
 
-	constexpr int magesGuildBuilding = 7;
-	constexpr int cryptBuilding = 8;
+	constexpr ArenaBuildingType magesGuildBuildingType = ArenaBuildingType::MagesGuild;
+	constexpr ArenaBuildingType cryptBuildingType = ArenaBuildingType::Crypt;
 
 	Span<const uint8_t> enemyEncounterChances = exeData.entities.enemyEncounterChances;
 
@@ -1029,13 +1030,13 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 	const bool isNightTime = (hour <= 5) || (hour >= 18);
 	bool allowNightEncounters = isNightTime;
 
-	if (currentEnvironmentType == buildingEnvironment)
+	if (currentEnvironmentType == buildingEnvironmentType)
 	{
-		if (currentBuildingType < cryptBuilding)
+		if (currentBuildingType < cryptBuildingType)
 		{
 			if (playerTrespassing)
 			{
-				if (currentBuildingType != magesGuildBuilding)
+				if (currentBuildingType != magesGuildBuildingType)
 				{
 					encounterTableIndex = 6;
 				}
@@ -1044,7 +1045,7 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 				encounterChance = 20;
 			}
 		}
-		else if (currentBuildingType == cryptBuilding)
+		else if (currentBuildingType == cryptBuildingType)
 		{
 			if (playerResting)
 			{
@@ -1069,9 +1070,9 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 			allowNightEncounters = false;
 		}
 	}
-	else if (currentEnvironmentType == cityEnvironment || currentEnvironmentType == wildernessEnvironment)
+	else if (currentEnvironmentType == cityEnvironmentType || currentEnvironmentType == wildernessEnvironmentType)
 	{
-		if (currentEnvironmentType == wildernessEnvironment)
+		if (currentEnvironmentType == wildernessEnvironmentType)
 		{
 			encounterTableIndex = terrainType;
 		}
@@ -1080,7 +1081,7 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 			encounterTableIndex = 6;
 		}
 
-		encounterChancesIndex = currentEnvironmentType;
+		encounterChancesIndex = static_cast<int>(currentEnvironmentType);
 		if (allowNightEncounters)
 		{
 			encounterChancesIndex += 5;
@@ -1088,7 +1089,7 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 
 		encounterChance = enemyEncounterChances[encounterChancesIndex];
 
-		if (currentEnvironmentType == cityEnvironment)
+		if (currentEnvironmentType == cityEnvironmentType)
 		{
 			// City environment adds 5 to the chances index at night but then turns off this bool.
 			// If it didn't, encounterTableIndex would become 13 below and no encounter would happen.
@@ -1097,7 +1098,7 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 	}
 	else // Main quest dungeon or random dungeon
 	{
-		encounterChancesIndex = currentEnvironmentType;
+		encounterChancesIndex = static_cast<int>(currentEnvironmentType);
 		if (playerResting)
 		{
 			encounterChancesIndex += 5;

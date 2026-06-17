@@ -11,7 +11,9 @@
 class ArenaRandom;
 class Random;
 
+enum class ArenaBuildingType;
 enum class ArenaCityType;
+enum class ArenaEnvironmentType;
 enum class ArenaInteriorType;
 enum class ArmorMaterialType;
 
@@ -112,7 +114,7 @@ namespace ArenaEntityUtils
 	int getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
 	int getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
 
-	void getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool isResting, int terrainType, int gameHour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex);
+	void getEncounterParameters(ArenaEnvironmentType currentEnvironmentType, ArenaBuildingType currentBuildingType, bool playerTrespassing, bool isResting, int terrainType, int gameHour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex);
 	int rollWeightedEncounterLevel(int encounterLevel, ArenaRandom &random);
 	ArenaEnemyEncounter chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter, ArenaRandom &random, const ExeData &exeData);
 

@@ -94,7 +94,7 @@ enum class ArenaEnvironmentType
 	Wilderness = 1,
 	MainQuestDungeon = 2,
 	WorldMapDungeon = 3,
-	Interior = 4
+	BuildingInterior = 4
 };
 
 // Each type of voxel definition. These are mostly used with rendering, but also for determining how to

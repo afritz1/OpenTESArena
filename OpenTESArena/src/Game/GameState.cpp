@@ -369,7 +369,7 @@ ArenaEnvironmentType GameState::getEnvironmentType() const
 		}
 		else if (locationType == LocationDefinitionType::City)
 		{
-			environmentType = ArenaEnvironmentType::Interior;
+			environmentType = ArenaEnvironmentType::BuildingInterior;
 		}
 	}
 
@@ -1072,15 +1072,13 @@ void GameState::tickGameClock(double dt, Game &game)
 	{
 		// Roll for random encounter.
 		const ArenaEnvironmentType environmentType = this->getEnvironmentType();
-		const int environmentTypeValue = static_cast<int>(environmentType);
 		const ArenaBuildingType buildingType = this->getBuildingType();
-		const int buildingTypeValue = static_cast<int>(buildingType);
 		//@todo: The original game checks for trespassing at the moment of entering an interior, not every hour as done here.
 		const bool isTrespassing = ArenaInteriorUtils::isPlayerTrespassing(buildingType, isNightForEncounters);
 		const int terrainType = 0; //@todo: Pass in terrain type
 		int encounterChance;
 		int encounterChanceTableIndex;
-		ArenaEntityUtils::getEncounterParameters(environmentTypeValue, buildingTypeValue, isTrespassing, this->isCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);
+		ArenaEntityUtils::getEncounterParameters(environmentType, buildingType, isTrespassing, this->isCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);
 
 		if (encounterChance > arenaRandom.next(100))
 		{
