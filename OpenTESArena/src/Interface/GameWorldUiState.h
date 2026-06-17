@@ -81,6 +81,7 @@ namespace GameWorldUI
 
 	void onScreenToWorldInteraction(Int2 windowPoint, bool isPrimaryInteraction);
 	void updateDoorKeys();
+	void setCompassVisible(bool visible);
 	void onPauseChanged(bool paused);
 
 	bool isTriggerTextVisible();

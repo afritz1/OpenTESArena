@@ -368,6 +368,8 @@ void GameWorldUI::create(Game &game)
 
 	GameWorldUiView::updateStatusBarsTexture(state.statusBarsTextureID, game.player, renderer);
 
+	GameWorldUI::setCompassVisible(options.getMisc_ShowCompass());
+
 	uiManager.addMouseButtonChangedListener(GameWorldUI::onMouseButtonChanged, GameWorldUI::ContextName, inputManager);
 	uiManager.addMouseButtonHeldListener(GameWorldUI::onMouseButtonHeld, GameWorldUI::ContextName, inputManager);
 	uiManager.addWindowResizedListener(GameWorldUI::onWindowResized, GameWorldUI::ContextName, inputManager);
@@ -614,6 +616,17 @@ void GameWorldUI::updateDoorKeys()
 	}
 }
 
+void GameWorldUI::setCompassVisible(bool visible)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID compassSliderImageElementInstID = uiManager.getElementByName(CompassSliderImageElementName);
+	const UiElementInstanceID compassFrameImageElementInstID = uiManager.getElementByName(CompassFrameImageElementName);
+	uiManager.setElementActive(compassSliderImageElementInstID, visible);
+	uiManager.setElementActive(compassFrameImageElementInstID, visible);
+}
+
 void GameWorldUI::onPauseChanged(bool paused)
 {
 	GameWorldUiState &state = GameWorldUI::state;
@@ -630,10 +643,7 @@ void GameWorldUI::onPauseChanged(bool paused)
 	uiManager.setElementActive(weaponImageElementInstID, isWeaponVisible);
 
 	const bool isCompassVisible = !paused && options.getMisc_ShowCompass();
-	const UiElementInstanceID compassSliderImageElementInstID = uiManager.getElementByName(CompassSliderImageElementName);
-	const UiElementInstanceID compassFrameImageElementInstID = uiManager.getElementByName(CompassFrameImageElementName);
-	uiManager.setElementActive(compassSliderImageElementInstID, isCompassVisible);
-	uiManager.setElementActive(compassFrameImageElementInstID, isCompassVisible);
+	GameWorldUI::setCompassVisible(isCompassVisible);
 
 	GameWorldUI::updateDoorKeys();
 
@@ -1306,7 +1316,9 @@ void GameWorldUI::onToggleCompassInputAction(const InputActionCallbackValues &va
 	if (values.performed)
 	{
 		Options &options = values.game.options;
-		options.setMisc_ShowCompass(!options.getMisc_ShowCompass());
+		const bool isCompassVisible = !options.getMisc_ShowCompass();
+		options.setMisc_ShowCompass(isCompassVisible);
+		GameWorldUI::setCompassVisible(isCompassVisible);
 	}
 }
 
