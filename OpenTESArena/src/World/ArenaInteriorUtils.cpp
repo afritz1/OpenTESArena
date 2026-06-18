@@ -85,3 +85,21 @@ bool ArenaInteriorUtils::isProceduralInterior(ArenaInteriorType interiorType)
 {
 	return interiorType == ArenaInteriorType::Dungeon;
 }
+
+bool ArenaInteriorUtils::isPlayerTrespassing(ArenaBuildingType buildingType, bool isNight)
+{
+	if (buildingType == ArenaBuildingType::House || buildingType == ArenaBuildingType::Noble)
+	{
+		return true;
+	}
+
+	if (isNight)
+	{
+		if (buildingType != ArenaBuildingType::Tavern && buildingType != ArenaBuildingType::Crypt && buildingType != ArenaBuildingType::Tower)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}

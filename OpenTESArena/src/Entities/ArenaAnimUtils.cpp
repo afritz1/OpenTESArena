@@ -6,6 +6,7 @@
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextureManager.h"
+#include "../Entities/ArenaEntityUtils.h"
 #include "../Entities/EntityDefinition.h"
 #include "../Stats/CharacterClassDefinition.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -828,7 +829,7 @@ bool ArenaAnimUtils::isGhost(int creatureIndex)
 
 int ArenaAnimUtils::getCreatureIDFromItemIndex(ArenaItemIndex itemIndex)
 {
-	return ArenaAnimUtils::isFinalBossIndex(itemIndex) ? ArenaAnimUtils::FinalBossCreatureID : (itemIndex - 31);
+	return ArenaAnimUtils::isFinalBossIndex(itemIndex) ? ArenaEntityUtils::FinalBossCreatureID : (itemIndex - 31);
 }
 
 int ArenaAnimUtils::getCreatureIndexFromID(int creatureID)

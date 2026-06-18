@@ -131,6 +131,7 @@ public:
 	// use the same level info.
 	Span<const int> getLevelInfoIndices() const;
 	Span<const LevelInfoDefinition> getLevelInfos() const;
+	const LevelInfoDefinition &getLevelInfoForLevel(int levelIndex) const;
 
 	int getSkyIndexForLevel(int levelIndex) const;
 	const SkyDefinition &getSky(int index) const;

@@ -963,7 +963,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 						if (hitEntityBehaviorState.isCitizen())
 						{
 							GameWorldUiController::onCitizenKilled(game);
-							gameState.queueGuardSpawn(game);
+							gameState.queueCityGuardEncounter(game);
 						}
 						else if (hitEntityBehaviorState.isCreature())
 						{

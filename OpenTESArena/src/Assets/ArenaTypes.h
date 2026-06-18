@@ -51,6 +51,23 @@ enum class ArenaInteriorType
 	Tower // TOWER
 };
 
+// Used with enemy encounters. TownPalace and VillagePalace are unused except for .MIF loading.
+enum class ArenaBuildingType
+{
+	None = 0,
+	Palace = 1,
+	House = 2,
+	Noble = 3,
+	Tavern = 4,
+	Temple = 5,
+	Equipment = 6,
+	MagesGuild = 7,
+	Crypt = 8,
+	TownPalace = 9, // Unused
+	VillagePalace = 10, // Unused
+	Tower = 11
+};
+
 // Each location on a province map has a type.
 enum class ArenaLocationType
 {
@@ -68,6 +85,16 @@ enum class ArenaCityType
 	CityState,
 	Town,
 	Village
+};
+
+// Used with enemy encounter logic.
+enum class ArenaEnvironmentType
+{
+	City = 0,
+	Wilderness = 1,
+	MainQuestDungeon = 2,
+	WorldMapDungeon = 3,
+	BuildingInterior = 4
 };
 
 // Each type of voxel definition. These are mostly used with rendering, but also for determining how to

@@ -35,6 +35,7 @@
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../Weather/ArenaWeatherUtils.h"
 #include "../Weather/WeatherUtils.h"
+#include "../World/ArenaInteriorUtils.h"
 #include "../World/CardinalDirection.h"
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
@@ -44,6 +45,64 @@
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
+
+namespace
+{
+	bool CityGuardEntityDefinitionPredicate(const EntityDefinition &entityDef)
+	{
+		if (entityDef.type != EntityDefinitionType::Enemy)
+		{
+			return false;
+		}
+
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+		if (enemyDef.type != EnemyEntityDefinitionType::Human)
+		{
+			return false;
+		}
+
+		const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+		constexpr int originalGuardClassNumber = 16;
+		return charClassDef.originalClassIndex == originalGuardClassNumber;
+	}
+
+	EntityDefinitionPredicate MakeOriginalSpawnEntityDefinitionPredicate(int spawnID)
+	{
+		return [spawnID](const EntityDefinition &entityDef)
+		{
+			if (entityDef.type != EntityDefinitionType::Enemy)
+			{
+				return false;
+			}
+
+			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+			if (spawnID >= ArenaEntityUtils::FinalBossCreatureID)
+			{
+				if (enemyDef.type != EnemyEntityDefinitionType::Human)
+				{
+					return false;
+				}
+
+				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
+				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+				constexpr int spawnIdToClassNumberDifference = ArenaEntityUtils::FinalBossCreatureID;
+				const int originalEnemyClassNumber = spawnID - spawnIdToClassNumberDifference;
+				return charClassDef.originalClassIndex == originalEnemyClassNumber;
+			}
+			else if (enemyDef.type != EnemyEntityDefinitionType::Creature)
+			{
+				return false;
+			}
+
+			const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+			const CreatureDefinitionID spawnCreatureDefID = creatureDefLibrary.getDefinitionIdFromOriginalID(spawnID);
+			return enemyDef.creatureDefID == spawnCreatureDefID;
+		};
+	}
+}
 
 GuardSpawnState::GuardSpawnState()
 {
@@ -59,6 +118,34 @@ void GuardSpawnState::clearQueue()
 {
 	this->secondsTillSpawn = Constants::Infinity;
 	this->spawnFunc = []() { };
+}
+
+EntityEncounterSpawnInfo::EntityEncounterSpawnInfo()
+{
+	this->guardType = -1;
+	this->level = 0;
+	this->count = 0;
+}
+
+void EntityEncounterSpawnInfo::initCreaturesOrHumans(int spawnID, int level, int count)
+{
+	this->guardType = -1;
+	this->level = level;
+	this->count = count;
+	this->entityDefPredicate = MakeOriginalSpawnEntityDefinitionPredicate(spawnID);
+}
+
+void EntityEncounterSpawnInfo::initCityGuards(int guardType, int level, int count)
+{
+	this->guardType = guardType;
+	this->level = level;
+	this->count = count;
+	this->entityDefPredicate = CityGuardEntityDefinitionPredicate;
+}
+
+bool EntityEncounterSpawnInfo::isCityGuards() const
+{
+	return this->guardType >= 0;
 }
 
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
@@ -336,14 +423,82 @@ double GameState::getActiveCeilingScale() const
 		return 0.0;
 	}
 
-	Span<const LevelInfoDefinition> levelInfoDefs = this->activeMapDef.getLevelInfos();
-	const LevelInfoDefinition &levelInfoDef = levelInfoDefs[this->activeLevelIndex];
+	const LevelInfoDefinition &levelInfoDef = this->activeMapDef.getLevelInfoForLevel(this->activeLevelIndex);
 	return levelInfoDef.getCeilingScale();
 }
 
 bool GameState::isActiveMapNested() const
 {
 	return this->prevMapDef.isValid();
+}
+
+ArenaEnvironmentType GameState::getEnvironmentType() const
+{
+	ArenaEnvironmentType environmentType = ArenaEnvironmentType::City;
+
+	const MapType mapType = this->getActiveMapType();
+	if (mapType == MapType::Wilderness)
+	{
+		environmentType = ArenaEnvironmentType::Wilderness;
+	}
+	else if (mapType == MapType::Interior)
+	{
+		const LocationDefinition &locationDef = this->getLocationDefinition();
+		const LocationDefinitionType locationType = locationDef.getType();
+		if (locationType == LocationDefinitionType::MainQuestDungeon)
+		{
+			environmentType = ArenaEnvironmentType::MainQuestDungeon;
+		}
+		else if (locationType == LocationDefinitionType::Dungeon)
+		{
+			environmentType = ArenaEnvironmentType::WorldMapDungeon;
+		}
+		else if (locationType == LocationDefinitionType::City)
+		{
+			environmentType = ArenaEnvironmentType::BuildingInterior;
+		}
+	}
+
+	return environmentType;
+}
+
+ArenaBuildingType GameState::getBuildingType() const
+{
+	const MapType mapType = this->getActiveMapType();
+	if (mapType != MapType::Interior)
+	{
+		return ArenaBuildingType::None;
+	}
+
+	const MapDefinition &mapDef = this->getActiveMapDef();
+	const MapSubDefinition &mapSubDef = mapDef.getSubDefinition();
+	const MapDefinitionInterior &interiorDef = mapSubDef.interior;
+	const ArenaInteriorType interiorType = interiorDef.interiorType;
+
+	constexpr std::pair<ArenaInteriorType, ArenaBuildingType> interiorTypeMappings[] =
+	{
+		{ ArenaInteriorType::Crypt, ArenaBuildingType::Crypt },
+		{ ArenaInteriorType::Dungeon, ArenaBuildingType::None },
+		{ ArenaInteriorType::Equipment, ArenaBuildingType::Equipment },
+		{ ArenaInteriorType::House, ArenaBuildingType::House },
+		{ ArenaInteriorType::MagesGuild, ArenaBuildingType::MagesGuild },
+		{ ArenaInteriorType::Noble, ArenaBuildingType::Noble },
+		{ ArenaInteriorType::Palace, ArenaBuildingType::Palace },
+		{ ArenaInteriorType::Tavern, ArenaBuildingType::Tavern },
+		{ ArenaInteriorType::Temple, ArenaBuildingType::Temple },
+		{ ArenaInteriorType::Tower, ArenaBuildingType::Tower }
+	};
+
+	const auto mappingsBegin = std::begin(interiorTypeMappings);
+	const auto mappingsEnd = std::end(interiorTypeMappings);
+	const auto iter = std::find_if(mappingsBegin, mappingsEnd,
+		[interiorType](const std::pair<ArenaInteriorType, ArenaBuildingType> &pair)
+	{
+		return pair.first == interiorType;
+	});
+
+	DebugAssert(iter != mappingsEnd);
+	return iter->second;
 }
 
 WorldMapInstance &GameState::getWorldMapInstance()
@@ -535,7 +690,107 @@ void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 	}
 }
 
-void GameState::queueGuardSpawn(Game &game)
+void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
+{
+	const Player &player = game.player;
+	ArenaRandom &arenaRandom = game.arenaRandom;
+	SceneManager &sceneManager = game.sceneManager;
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const MapType mapType = this->getActiveMapType();
+	const double ceilingScale = this->getActiveCeilingScale();
+	const WorldDouble3 playerFeetPosition = player.getFeetPosition();
+	const WorldInt3 playerFeetVoxel = VoxelUtils::pointToVoxel(playerFeetPosition, ceilingScale);
+	const OriginalInt2 playerFeetVoxelOriginalXZ = VoxelUtils::worldVoxelToOriginalVoxel(playerFeetVoxel.getXZ());
+	const OriginalInt2 originalPlayerPositionArenaUnits = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
+	const int16_t originalPlayerPositionArenaUnitsX = static_cast<int16_t>(originalPlayerPositionArenaUnits.y);
+	const int16_t originalPlayerPositionArenaUnitsZ = static_cast<int16_t>(originalPlayerPositionArenaUnits.x);
+
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	const EntityDefID spawnEntityDefID = entityDefLibrary.findDefinitionIdIf(spawnInfo.entityDefPredicate);
+	const EntityDefinition &spawnEntityDef = entityDefLibrary.getDefinition(spawnEntityDefID);
+	const EntityAnimationDefinition &spawnAnimDef = spawnEntityDef.animDef;
+
+	DebugAssert(spawnEntityDef.type == EntityDefinitionType::Enemy);
+	const bool isCreature = spawnEntityDef.enemy.type == EnemyEntityDefinitionType::Creature;
+
+	int actualSpawnCount = 0;
+	for (int i = 0; i < spawnInfo.count; i++)
+	{
+		const ArenaEntitySpawnPoint spawnPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
+		const OriginalInt2 playerToSpawnOriginalVoxel(
+			(spawnPositionArenaUnits.x - originalPlayerPositionArenaUnitsX) / 128,
+			(spawnPositionArenaUnits.z - originalPlayerPositionArenaUnitsZ) / 128);
+		const OriginalInt2 spawnOriginalVoxel(
+			playerFeetVoxelOriginalXZ.x + playerToSpawnOriginalVoxel.x,
+			playerFeetVoxelOriginalXZ.y + playerToSpawnOriginalVoxel.y);
+		const WorldInt2 spawnWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnOriginalVoxel);
+		const WorldInt3 spawnWorldVoxel(spawnWorldVoxelXZ.x, 1, spawnWorldVoxelXZ.y);
+		const CoordInt3 spawnVoxelCoord = VoxelUtils::worldVoxelToCoord(spawnWorldVoxel);
+		const VoxelChunk *spawnVoxelChunk = voxelChunkManager.findChunkAtPosition(spawnVoxelCoord.chunk);
+		if (spawnVoxelChunk == nullptr)
+		{
+			continue;
+		}
+
+		const VoxelInt3 spawnVoxel = spawnVoxelCoord.voxel;
+		const VoxelShapeDefID spawnVoxelShapeDefID = spawnVoxelChunk->shapeDefIDs.get(spawnVoxel.x, 1, spawnVoxel.z);
+		const VoxelTraitsDefID spawnFloorVoxelTraitsDefID = spawnVoxelChunk->traitsDefIDs.get(spawnVoxel.x, 0, spawnVoxel.z);
+		const VoxelShapeDefinition &spawnVoxelShapeDef = spawnVoxelChunk->shapeDefs[spawnVoxelShapeDefID];
+		const VoxelTraitsDefinition &spawnFloorVoxelTraitsDef = spawnVoxelChunk->traitsDefs[spawnFloorVoxelTraitsDefID];
+		const bool isSpawnVoxelValid = spawnVoxelShapeDef.mesh.isEmpty() && spawnFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
+		if (!isSpawnVoxelValid)
+		{
+			continue;
+		}
+
+		const WorldDouble2 spawnFeetPositionXZ = VoxelUtils::getVoxelCenter(spawnWorldVoxelXZ);
+		const WorldDouble3 spawnFeetPosition(spawnFeetPositionXZ.x, ceilingScale, spawnFeetPositionXZ.y);
+
+		EntityInitInfo spawnEntityInitInfo;
+		spawnEntityInitInfo.defID = spawnEntityDefID;
+		spawnEntityInitInfo.feetPosition = spawnFeetPosition;
+		spawnEntityInitInfo.initialAnimStateIndex = *spawnAnimDef.findStateIndex(spawnAnimDef.initialStateName);
+		spawnEntityInitInfo.isSensorCollider = false;
+		spawnEntityInitInfo.canBeKilled = true;
+		spawnEntityInitInfo.direction = CardinalDirection::North;
+
+		if (!isCreature)
+		{
+			spawnEntityInitInfo.humanEnemyLevel = spawnInfo.level;
+		}
+		
+		spawnEntityInitInfo.hasInventory = true;
+		spawnEntityInitInfo.hasCreatureSound = isCreature;
+
+		if (spawnInfo.isCityGuards())
+		{
+			spawnEntityInitInfo.guardType = spawnInfo.guardType;
+		}
+
+		Renderer &renderer = game.renderer;
+		EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+		entityChunkManager.createEntity(spawnEntityInitInfo, game.random, game.physicsSystem, renderer);
+
+		RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
+		renderEntityManager.loadMaterialsForEntity(spawnEntityDefID, game.textureManager, renderer);
+
+		if (spawnInfo.isCityGuards())
+		{
+			const bool isFirstSpawnedGuard = actualSpawnCount == 0;
+			if (isFirstSpawnedGuard)
+			{
+				const WorldDouble3 spawnSoundPosition = VoxelUtils::getVoxelCenter(spawnWorldVoxel, ceilingScale);
+
+				AudioManager &audioManager = game.audioManager;
+				audioManager.playSoundOneShot(ArenaSoundName::Halt, spawnSoundPosition);
+			}
+		}
+
+		actualSpawnCount++;
+	}
+}
+
+void GameState::queueCityGuardEncounter(Game &game)
 {
 	if (this->guardSpawnState.isQueued())
 	{
@@ -554,115 +809,20 @@ void GameState::queueGuardSpawn(Game &game)
 		if (!ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
 		{
 			DebugLog("Decided not to spawn guards.");
+			return;
 		}
-
-		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
-		const ArenaCityType cityType = this->getLocationDefinition().getCityDefinition().type;
-		const MapType mapType = this->getActiveMapType();
-		const double ceilingScale = this->getActiveCeilingScale();
-		const WorldDouble3 playerFeetPosition = player.getFeetPosition();
-		const WorldInt3 playerFeetVoxel = VoxelUtils::pointToVoxel(playerFeetPosition, ceilingScale);
-		const OriginalInt2 playerFeetVoxelOriginalXZ = VoxelUtils::worldVoxelToOriginalVoxel(playerFeetVoxel.getXZ());
-		const OriginalInt2 originalPlayerPositionArenaUnits = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
-		const int16_t originalPlayerPositionArenaUnitsX = static_cast<int16_t>(originalPlayerPositionArenaUnits.y);
-		const int16_t originalPlayerPositionArenaUnitsZ = static_cast<int16_t>(originalPlayerPositionArenaUnits.x);
 
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		const int spawnedGuardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
-		const int spawnedGuardLevel = ArenaEntityUtils::getGuardLevel(cityType, spawnedGuardType, exeData, arenaRandom);
-		const int spawnedGuardAttemptCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
-		int actualSpawnedGuardCount = 0;
+		const LocationDefinition &locationDef = this->getLocationDefinition();
+		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+		const ArenaCityType cityType = cityDef.type;
+		const int guardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
+		const int guardLevel = ArenaEntityUtils::getGuardLevel(cityType, guardType, exeData, arenaRandom);
+		const int guardCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
 
-		for (int i = 0; i < spawnedGuardAttemptCount; i++)
-		{
-			const ArenaEntitySpawnPoint spawnedGuardPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
-			const OriginalInt2 playerToSpawnedGuardOriginalVoxel(
-				(spawnedGuardPositionArenaUnits.x - originalPlayerPositionArenaUnitsX) / 128,
-				(spawnedGuardPositionArenaUnits.z - originalPlayerPositionArenaUnitsZ) / 128);
-			const OriginalInt2 spawnedGuardOriginalVoxel(
-				playerFeetVoxelOriginalXZ.x + playerToSpawnedGuardOriginalVoxel.x,
-				playerFeetVoxelOriginalXZ.y + playerToSpawnedGuardOriginalVoxel.y);
-			const WorldInt2 spawnedGuardWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnedGuardOriginalVoxel);
-			const WorldInt3 spawnedGuardWorldVoxel(spawnedGuardWorldVoxelXZ.x, 1, spawnedGuardWorldVoxelXZ.y);
-			const CoordInt3 spawnedGuardVoxelCoord = VoxelUtils::worldVoxelToCoord(spawnedGuardWorldVoxel);
-			const VoxelChunk *spawnedGuardVoxelChunk = voxelChunkManager.findChunkAtPosition(spawnedGuardVoxelCoord.chunk);
-			if (spawnedGuardVoxelChunk == nullptr)
-			{
-				continue;
-			}
-
-			const VoxelInt3 spawnedGuardVoxel = spawnedGuardVoxelCoord.voxel;
-			const VoxelShapeDefID spawnedGuardVoxelShapeDefID = spawnedGuardVoxelChunk->shapeDefIDs.get(spawnedGuardVoxel.x, 1, spawnedGuardVoxel.z);
-			const VoxelTraitsDefID spawnedGuardFloorVoxelTraitsDefID = spawnedGuardVoxelChunk->traitsDefIDs.get(spawnedGuardVoxel.x, 0, spawnedGuardVoxel.z);
-			const VoxelShapeDefinition &spawnedGuardVoxelShapeDef = spawnedGuardVoxelChunk->shapeDefs[spawnedGuardVoxelShapeDefID];
-			const VoxelTraitsDefinition &spawnedGuardFloorVoxelTraitsDef = spawnedGuardVoxelChunk->traitsDefs[spawnedGuardFloorVoxelTraitsDefID];
-			const bool isSpawnVoxelValid = spawnedGuardVoxelShapeDef.mesh.isEmpty() && spawnedGuardFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
-			if (!isSpawnVoxelValid)
-			{
-				continue;
-			}
-
-			const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();			
-			const EntityDefID spawnedGuardEntityDefID = entityDefLibrary.findDefinitionIdIf(
-				[](const EntityDefinition &entityDef)
-			{
-				if (entityDef.type != EntityDefinitionType::Enemy)
-				{
-					return false;
-				}
-
-				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-				if (enemyDef.type != EnemyEntityDefinitionType::Human)
-				{
-					return false;
-				}
-
-				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
-				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
-				constexpr int originalGuardClassNumber = 16;
-				return charClassDef.originalClassIndex == originalGuardClassNumber;
-			});
-
-			const EntityDefinition &spawnedGuardEntityDef = entityDefLibrary.getDefinition(spawnedGuardEntityDefID);
-			const EntityAnimationDefinition &spawnedGuardAnimDef = spawnedGuardEntityDef.animDef;
-
-			const WorldDouble2 spawnedGuardFeetPositionXZ = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxelXZ);
-			const WorldDouble3 spawnedGuardFeetPosition(spawnedGuardFeetPositionXZ.x, ceilingScale, spawnedGuardFeetPositionXZ.y);
-
-			EntityInitInfo spawnedGuardEntityInitInfo;
-			spawnedGuardEntityInitInfo.defID = spawnedGuardEntityDefID;
-			spawnedGuardEntityInitInfo.feetPosition = spawnedGuardFeetPosition;
-			spawnedGuardEntityInitInfo.initialAnimStateIndex = *spawnedGuardAnimDef.findStateIndex(spawnedGuardAnimDef.initialStateName);
-			spawnedGuardEntityInitInfo.isSensorCollider = false;
-			spawnedGuardEntityInitInfo.canBeKilled = true;
-			spawnedGuardEntityInitInfo.direction = CardinalDirection::North;
-			spawnedGuardEntityInitInfo.humanEnemyLevel = spawnedGuardLevel;
-			spawnedGuardEntityInitInfo.hasInventory = true;
-			spawnedGuardEntityInitInfo.hasCreatureSound = false;
-			spawnedGuardEntityInitInfo.guardType = spawnedGuardType;
-
-			Renderer &renderer = game.renderer;
-			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-			entityChunkManager.createEntity(spawnedGuardEntityInitInfo, game.random, game.physicsSystem, renderer);
-
-			RenderEntityManager &renderEntityManager = game.sceneManager.renderEntityManager;
-			renderEntityManager.loadMaterialsForEntity(spawnedGuardEntityDefID, game.textureManager, renderer);
-
-			const bool isFirstSpawnedGuard = actualSpawnedGuardCount == 0;
-			if (isFirstSpawnedGuard)
-			{
-				const WorldDouble3 spawnedGuardSoundPosition = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxel, ceilingScale);
-
-				AudioManager &audioManager = game.audioManager;
-				audioManager.playSoundOneShot(ArenaSoundName::Halt, spawnedGuardSoundPosition);
-			}
-
-			actualSpawnedGuardCount++;
-		}
-
-		// @todo for all entityChunkManager.citizens, queueEntityDestroy()
-		// ^ not in this pull request but soon
+		EntityEncounterSpawnInfo encounterSpawnInfo;
+		encounterSpawnInfo.initCityGuards(guardType, guardLevel, guardCount);
+		this->spawnEncounterEnemies(game, encounterSpawnInfo);
 	};
 }
 
@@ -854,20 +1014,63 @@ void GameState::tickGameClock(double dt, Game &game)
 	const Clock prevClock = this->clock;
 	const double timeScale = GameState::GAME_TIME_SCALE * (this->isCamping ? 250.0 : 1.0);
 	this->clock.incrementTime(dt * timeScale);
-
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;
-	if (newHour != prevHour)
-	{
-		// Update possible weathers list.
-		const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		this->updateWeatherList(game.arenaRandom, exeData);
-	}
 
 	// Check if the clock hour looped back around.
 	if (newHour < prevHour)
 	{
 		this->date.incrementDay();
+	}
+
+	const int currentDay = this->date.getDay();
+	const bool isNightForEncounters = (newHour < 6) || (newHour > 18);
+	const ArenaEnvironmentType environmentType = this->getEnvironmentType();
+	const ArenaBuildingType buildingType = this->getBuildingType();
+	const Player &player = game.player;
+	const MapDefinition &activeMapDef = this->getActiveMapDef();
+	const MapType activeMapType = activeMapDef.getMapType();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	ArenaRandom &arenaRandom = game.arenaRandom;
+
+	bool canAttemptEnemyEncounterThisHour = false;
+	if (newHour != prevHour)
+	{
+		canAttemptEnemyEncounterThisHour = ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(environmentType, this->isCamping, player.groundState.onRaisedPlatform);
+
+		this->updateWeatherList(arenaRandom, exeData);
+	}
+
+	const int prevMinutes = prevClock.minutes;
+	const int newMinutes = this->clock.minutes;
+	bool canAttemptEnemyEncounterThisMinute = false;
+	if (newMinutes != prevMinutes)
+	{
+		// In the original game, the presence of citizens in city maps prevents encounters from spawning during the day.
+		// Here this is being done through a check that it is night.
+		const bool areCitizensPresent = !isNightForEncounters;
+		canAttemptEnemyEncounterThisMinute = ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(environmentType, areCitizensPresent, this->isCamping, player.groundState.onRaisedPlatform);
+	}
+
+	const bool canAttemptEnemyEncounter = canAttemptEnemyEncounterThisHour || canAttemptEnemyEncounterThisMinute;
+	if (canAttemptEnemyEncounter)
+	{
+		// Roll for random encounter.
+		//@todo: The original game checks for trespassing at the moment of entering an interior, not every hour as done here.
+		const bool isTrespassing = ArenaInteriorUtils::isPlayerTrespassing(buildingType, isNightForEncounters);
+		const int terrainType = 0; //@todo: Pass in terrain type
+		int encounterChance;
+		int encounterChanceTableIndex;
+		ArenaEntityUtils::getEncounterParameters(environmentType, buildingType, isTrespassing, this->isCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);
+
+		if (encounterChance > arenaRandom.next(100))
+		{
+			const ArenaEnemyEncounter encounter = ArenaEntityUtils::chooseEncounterEnemy(encounterChanceTableIndex, player.level, player.level, false, arenaRandom, exeData);
+
+			EntityEncounterSpawnInfo encounterSpawnInfo;
+			encounterSpawnInfo.initCreaturesOrHumans(encounter.id, encounter.level, encounter.count);
+			this->spawnEncounterEnemies(game, encounterSpawnInfo);
+		}
 	}
 
 	// See if the clock passed the boundary between night and day, and vice versa.
@@ -892,9 +1095,6 @@ void GameState::tickGameClock(double dt, Game &game)
 	}
 
 	// Check for changes in exterior music depending on the time.
-	const MapDefinition &activeMapDef = this->getActiveMapDef();
-	const MapType activeMapType = activeMapDef.getMapType();
-	const Player &player = game.player;
 	if ((activeMapType != MapType::Interior) && !player.groundState.isSwimming)
 	{
 		const Clock &dayMusicStartClock = clockLibrary.getClock(ArenaClockUtils::MusicSwitchToDay);

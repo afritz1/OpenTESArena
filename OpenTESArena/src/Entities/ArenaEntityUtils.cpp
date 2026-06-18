@@ -7,6 +7,7 @@
 #include "../Math/ArenaMathUtils.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
+#include "../World/MapType.h"
 
 namespace
 {
@@ -1011,15 +1012,57 @@ int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, Aren
 	return ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, guardShieldIDs[guardType], exeData, random);
 }
 
-void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool playerResting,
-	int terrainType, int hour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex)
+bool ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(ArenaEnvironmentType environmentType, bool areCitizensPresent,
+	bool isPlayerCamping, bool isPlayerOnRaisedPlatform)
 {
-	constexpr int cityEnvironment = 0;
-	constexpr int wildernessEnvironment = 1;
-	constexpr int buildingEnvironment = 4;
+	if (isPlayerOnRaisedPlatform)
+	{
+		return false;
+	}
 
-	constexpr int magesGuildBuilding = 7;
-	constexpr int cryptBuilding = 8;
+	if (environmentType == ArenaEnvironmentType::City)
+	{
+		return !areCitizensPresent; // During night
+	}
+
+	if (environmentType == ArenaEnvironmentType::BuildingInterior)
+	{
+		return !isPlayerCamping;
+	}
+
+	return false;
+}
+
+bool ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(ArenaEnvironmentType environmentType, bool isPlayerCamping, bool isPlayerOnRaisedPlatform)
+{
+	if (isPlayerOnRaisedPlatform)
+	{
+		return false;
+	}
+
+	if (environmentType == ArenaEnvironmentType::Wilderness)
+	{
+		return true;
+	}
+
+	if (isPlayerCamping)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void ArenaEntityUtils::getEncounterParameters(ArenaEnvironmentType currentEnvironmentType, ArenaBuildingType currentBuildingType,
+	bool playerTrespassing, bool playerResting, int terrainType, int hour, int dayOfYear, const ExeData &exeData,
+	int *outEncounterChance, int *outEncounterTableIndex)
+{
+	constexpr ArenaEnvironmentType cityEnvironmentType = ArenaEnvironmentType::City;
+	constexpr ArenaEnvironmentType wildernessEnvironmentType = ArenaEnvironmentType::Wilderness;
+	constexpr ArenaEnvironmentType buildingEnvironmentType = ArenaEnvironmentType::BuildingInterior;
+
+	constexpr ArenaBuildingType magesGuildBuildingType = ArenaBuildingType::MagesGuild;
+	constexpr ArenaBuildingType cryptBuildingType = ArenaBuildingType::Crypt;
 
 	Span<const uint8_t> enemyEncounterChances = exeData.entities.enemyEncounterChances;
 
@@ -1029,13 +1072,13 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 	const bool isNightTime = (hour <= 5) || (hour >= 18);
 	bool allowNightEncounters = isNightTime;
 
-	if (currentEnvironmentType == buildingEnvironment)
+	if (currentEnvironmentType == buildingEnvironmentType)
 	{
-		if (currentBuildingType < cryptBuilding)
+		if (currentBuildingType < cryptBuildingType)
 		{
 			if (playerTrespassing)
 			{
-				if (currentBuildingType != magesGuildBuilding)
+				if (currentBuildingType != magesGuildBuildingType)
 				{
 					encounterTableIndex = 6;
 				}
@@ -1044,7 +1087,7 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 				encounterChance = 20;
 			}
 		}
-		else if (currentBuildingType == cryptBuilding)
+		else if (currentBuildingType == cryptBuildingType)
 		{
 			if (playerResting)
 			{
@@ -1069,9 +1112,9 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 			allowNightEncounters = false;
 		}
 	}
-	else if (currentEnvironmentType == cityEnvironment || currentEnvironmentType == wildernessEnvironment)
+	else if (currentEnvironmentType == cityEnvironmentType || currentEnvironmentType == wildernessEnvironmentType)
 	{
-		if (currentEnvironmentType == wildernessEnvironment)
+		if (currentEnvironmentType == wildernessEnvironmentType)
 		{
 			encounterTableIndex = terrainType;
 		}
@@ -1080,7 +1123,7 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 			encounterTableIndex = 6;
 		}
 
-		encounterChancesIndex = currentEnvironmentType;
+		encounterChancesIndex = static_cast<int>(currentEnvironmentType);
 		if (allowNightEncounters)
 		{
 			encounterChancesIndex += 5;
@@ -1088,7 +1131,7 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 
 		encounterChance = enemyEncounterChances[encounterChancesIndex];
 
-		if (currentEnvironmentType == cityEnvironment)
+		if (currentEnvironmentType == cityEnvironmentType)
 		{
 			// City environment adds 5 to the chances index at night but then turns off this bool.
 			// If it didn't, encounterTableIndex would become 13 below and no encounter would happen.
@@ -1097,7 +1140,7 @@ void ArenaEntityUtils::getEncounterParameters(int currentEnvironmentType, int cu
 	}
 	else // Main quest dungeon or random dungeon
 	{
-		encounterChancesIndex = currentEnvironmentType;
+		encounterChancesIndex = static_cast<int>(currentEnvironmentType);
 		if (playerResting)
 		{
 			encounterChancesIndex += 5;
@@ -1158,7 +1201,7 @@ ArenaEnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableInd
 			break;
 		}
 
-		encounterLevel *= 2;
+		encounterLevel = (encounterLevel >> 1) * 2;
 	}
 
 	if (playerLevel == 0 && encounterLevel >= 2)
@@ -1171,10 +1214,11 @@ ArenaEnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableInd
 		encounterLevel = playerLevel - random.next(3);
 	}
 
+	DebugAssertIndex(exeData.entities.enemyEncounterTableIndices, encounterTableIndex);
 	const Span<const uint8_t> chosenEncounterTableIndices = exeData.entities.enemyEncounterTableIndices[encounterTableIndex];
 	int matches[] = { -1, -1 };
 	int count = 0;
-	for (int i = 0; (i < 85) && (count < 2); i++)
+	for (int i = 0; (i < chosenEncounterTableIndices.getCount()) && (count < 2); i++)
 	{
 		if (chosenEncounterTableIndices[i] == encounterLevel)
 		{
@@ -1187,6 +1231,7 @@ ArenaEnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableInd
 	const int chosen = matches[random.next() & 1];
 	DebugAssert(chosen != -1);
 
+	DebugAssertIndex(exeData.entities.enemyEncounterTable, chosen);
 	const Span<const uint8_t> chosenEncounterTable = exeData.entities.enemyEncounterTable[chosen];
 
 	ArenaEnemyEncounter chosenEnemyEncounter;

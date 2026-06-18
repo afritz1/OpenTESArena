@@ -11,7 +11,9 @@
 class ArenaRandom;
 class Random;
 
+enum class ArenaBuildingType;
 enum class ArenaCityType;
+enum class ArenaEnvironmentType;
 enum class ArenaInteriorType;
 enum class ArmorMaterialType;
 
@@ -52,6 +54,11 @@ struct ArenaEnemyEncounter
 
 namespace ArenaEntityUtils
 {
+	// Note that creature ID == creature index + 1.
+	// The final boss is a special case, essentially hardcoded at the end of the creatures.
+	constexpr int FinalBossCreatureID = 24;
+	constexpr int CreatureCount = FinalBossCreatureID;
+
 	// For monsters
 	int getBaseSpeed(int speedAttribute);
 
@@ -112,7 +119,9 @@ namespace ArenaEntityUtils
 	int getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
 	int getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
 
-	void getEncounterParameters(int currentEnvironmentType, int currentBuildingType, bool playerTrespassing, bool isResting, int terrainType, int gameHour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex);
+	bool isEnemyEncounterAllowedOnMinuteChanged(ArenaEnvironmentType environmentType, bool areCitizensPresent, bool isPlayerCamping, bool isPlayerOnRaisedPlatform);
+	bool isEnemyEncounterAllowedOnHourChanged(ArenaEnvironmentType environmentType, bool isPlayerCamping, bool isPlayerOnRaisedPlatform);
+	void getEncounterParameters(ArenaEnvironmentType currentEnvironmentType, ArenaBuildingType currentBuildingType, bool playerTrespassing, bool isResting, int terrainType, int gameHour, int dayOfYear, const ExeData &exeData, int *outEncounterChance, int *outEncounterTableIndex);
 	int rollWeightedEncounterLevel(int encounterLevel, ArenaRandom &random);
 	ArenaEnemyEncounter chooseEncounterEnemy(int encounterTableIndex, int encounterLevel, int playerLevel, bool mainQuestEncounter, ArenaRandom &random, const ExeData &exeData);
 
