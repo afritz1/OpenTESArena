@@ -59,7 +59,7 @@ SoundVolume=1.0
 # Change "MidiConfig" to your desired .cfg file.
 MidiConfig=data/eawpats/timidity.cfg
 
-SoundChannels=32
+SoundChannels=64
 
 # Sound resampling. Results vary based on your audio driver.
 # 0: default, 1: fastest, 2: medium, 3: best.
