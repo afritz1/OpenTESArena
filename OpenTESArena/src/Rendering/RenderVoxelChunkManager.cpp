@@ -684,16 +684,17 @@ void RenderVoxelChunkManager::updateChunkCombinedVoxelDrawCalls(RenderVoxelChunk
 				const double sourceTexCoordU = meshDef.rendererTexCoords[sourceTexCoordComponentIndex];
 				const double sourceTexCoordV = meshDef.rendererTexCoords[sourceTexCoordComponentIndex + 1];
 
-				double uScale = quadVoxelWidth;
-				double vScale = quadVoxelHeight;
+				double texCoordUScale = static_cast<double>(quadVoxelWidth);
+				double texCoordVScale = static_cast<double>(quadVoxelHeight);
 
+				// Hack for certain meshes that need extra logic on top of their .obj vertex values.
 				if (voxelType == ArenaVoxelType::Ceiling)
 				{
-					std::swap(uScale, vScale);
+					std::swap(texCoordUScale, texCoordVScale);
 				}
 
-				quadVertexTexCoords[destinationTexCoordComponentIndex] = sourceTexCoordU * (uScale * Constants::JustBelowOne); // Keep between [0, 1)
-				quadVertexTexCoords[destinationTexCoordComponentIndex + 1] = sourceTexCoordV * (vScale * Constants::JustBelowOne);
+				quadVertexTexCoords[destinationTexCoordComponentIndex] = sourceTexCoordU * (texCoordUScale * Constants::JustBelowOne); // Keep between [0, 1)
+				quadVertexTexCoords[destinationTexCoordComponentIndex + 1] = sourceTexCoordV * (texCoordVScale * Constants::JustBelowOne);
 			}
 
 			combinedFaceVertexBuffer->voxelWidth = quadVoxelWidth;
