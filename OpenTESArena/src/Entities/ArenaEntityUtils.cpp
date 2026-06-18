@@ -1201,7 +1201,7 @@ ArenaEnemyEncounter ArenaEntityUtils::chooseEncounterEnemy(int encounterTableInd
 			break;
 		}
 
-		encounterLevel *= 2;
+		encounterLevel = (encounterLevel >> 1) * 2;
 	}
 
 	if (playerLevel == 0 && encounterLevel >= 2)
