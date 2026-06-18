@@ -61,6 +61,7 @@ public:
 
 	// Min/max/allowed values for the application.
 	static constexpr int MIN_FPS = 15;
+	static constexpr int MAX_FPS = 1000;
 	static constexpr int MIN_WINDOW_MODE = 0;
 	static constexpr int MAX_WINDOW_MODE = 2;
 	static constexpr double MIN_RESOLUTION_SCALE = 0.10;
@@ -86,9 +87,11 @@ public:
 	static constexpr double MIN_VOLUME = 0.0;
 	static constexpr double MAX_VOLUME = 1.0;
 	static constexpr int MIN_SOUND_CHANNELS = 1;
+	static constexpr int MAX_SOUND_CHANNELS = 256;
 	static constexpr int MIN_RESAMPLING_MODE = 0;
 	static constexpr int MAX_RESAMPLING_MODE = 3;
 	static constexpr int MIN_CHUNK_DISTANCE = 1;
+	static constexpr int MAX_CHUNK_DISTANCE = 32;
 	static constexpr int MIN_STAR_DENSITY_MODE = 0;
 	static constexpr int MAX_STAR_DENSITY_MODE = 2;
 	static constexpr int MIN_PROFILER_LEVEL = 0;
@@ -159,7 +162,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Graphics, ScreenHeight, 1, std::numeric_limits<int>::max())
 	OPTION_INT(Graphics, WindowMode, MIN_WINDOW_MODE, MAX_WINDOW_MODE)
 	OPTION_INT(Graphics, GraphicsAPI, MIN_GRAPHICS_API, MAX_GRAPHICS_API)
-	OPTION_INT(Graphics, TargetFPS, MIN_FPS, std::numeric_limits<int>::max())
+	OPTION_INT(Graphics, TargetFPS, MIN_FPS, MAX_FPS)
 	OPTION_DOUBLE(Graphics, ResolutionScale, MIN_RESOLUTION_SCALE, MAX_RESOLUTION_SCALE)
 	OPTION_DOUBLE(Graphics, VerticalFOV, MIN_VERTICAL_FOV, MAX_VERTICAL_FOV)
 	OPTION_INT(Graphics, LetterboxMode, MIN_LETTERBOX_MODE, MAX_LETTERBOX_MODE)
@@ -172,7 +175,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_DOUBLE(Audio, MusicVolume, MIN_VOLUME, MAX_VOLUME)
 	OPTION_DOUBLE(Audio, SoundVolume, MIN_VOLUME, MAX_VOLUME)
 	OPTION_STRING(Audio, MidiConfig)
-	OPTION_INT(Audio, SoundChannels, MIN_SOUND_CHANNELS, std::numeric_limits<int>::max())
+	OPTION_INT(Audio, SoundChannels, MIN_SOUND_CHANNELS, MAX_SOUND_CHANNELS)
 	OPTION_INT(Audio, SoundResampling, MIN_RESAMPLING_MODE, MAX_RESAMPLING_MODE)
 	OPTION_BOOL(Audio, Is3DAudio)
 
@@ -187,7 +190,7 @@ void set##section##_##name(const std::string &value) \
 	OPTION_INT(Misc, ProfilerLevel, MIN_PROFILER_LEVEL, MAX_PROFILER_LEVEL)
 	OPTION_BOOL(Misc, ShowIntro)
 	OPTION_BOOL(Misc, ShowCompass)
-	OPTION_INT(Misc, ChunkDistance, MIN_CHUNK_DISTANCE, std::numeric_limits<int>::max())
+	OPTION_INT(Misc, ChunkDistance, MIN_CHUNK_DISTANCE, MAX_CHUNK_DISTANCE)
 	OPTION_INT(Misc, StarDensity, MIN_STAR_DENSITY_MODE, MAX_STAR_DENSITY_MODE)
 	OPTION_BOOL(Misc, PlayerHasLight)
 	OPTION_BOOL(Misc, EnableValidationLayers)

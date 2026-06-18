@@ -240,7 +240,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeGraphicsOptionGroup(Game &game)
 		options.getGraphics_TargetFPS(),
 		5,
 		Options::MIN_FPS,
-		std::numeric_limits<int>::max(),
+		Options::MAX_FPS,
 		[&game](int value)
 	{
 		auto &options = game.options;
@@ -402,7 +402,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeAudioOptionGroup(Game &game)
 		options.getAudio_SoundChannels(),
 		1,
 		Options::MIN_SOUND_CHANNELS,
-		std::numeric_limits<int>::max(),
+		Options::MAX_SOUND_CHANNELS,
 		[&game](int value)
 	{
 		auto &options = game.options;
@@ -547,7 +547,7 @@ OptionsUiModel::OptionGroup OptionsUiModel::makeMiscOptionGroup(Game &game)
 		options.getMisc_ChunkDistance(),
 		1,
 		Options::MIN_CHUNK_DISTANCE,
-		std::numeric_limits<int>::max(),
+		Options::MAX_CHUNK_DISTANCE,
 		[&game](int value)
 	{
 		auto &options = game.options;
