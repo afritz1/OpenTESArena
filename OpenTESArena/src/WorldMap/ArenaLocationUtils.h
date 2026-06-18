@@ -67,7 +67,7 @@ namespace ArenaLocationUtils
 
 	// Gets the approximation of the linear distance between two global points. This value is
 	// used to display the distance in kilometers.
-	int getMapDistance(const Int2 &globalSrc, const Int2 &globalDst);
+	int getMapDistance(Int2 globalSrc, Int2 globalDst);
 
 	// Gets the number of days required to travel from one province's local point to another.
 	int getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint, int month,

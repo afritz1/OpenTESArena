@@ -1,4 +1,5 @@
 #include <climits>
+#include <cmath>
 
 #include "ArenaMathUtils.h"
 
@@ -6,6 +7,13 @@ ArenaDiceParameters::ArenaDiceParameters()
 {
 	this->exclusiveMax = 0;
 	this->rollCount = 0;
+}
+
+int ArenaMathUtils::getApproximateEuclideanDistance(Int2 pointA, Int2 pointB)
+{
+	const int dx = std::abs(pointB.x - pointA.x);
+	const int dy = std::abs(pointB.y - pointA.y);
+	return std::max(dx, dy) + (std::min(dx, dy) >> 2);
 }
 
 void ArenaMathUtils::rotatePoint(int32_t angle, int16_t &x, int16_t &y, Span<const int16_t> cosineTable)

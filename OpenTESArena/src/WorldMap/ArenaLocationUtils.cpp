@@ -3,6 +3,7 @@
 
 #include "ArenaLocationUtils.h"
 #include "../Assets/BinaryAssetLibrary.h"
+#include "../Math/ArenaMathUtils.h"
 #include "../Math/MathUtils.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
@@ -175,11 +176,9 @@ double ArenaLocationUtils::getLatitude(const Int2 &globalPoint)
 	return (100.0 - static_cast<double>(globalPoint.y)) / 100.0;
 }
 
-int ArenaLocationUtils::getMapDistance(const Int2 &globalSrc, const Int2 &globalDst)
+int ArenaLocationUtils::getMapDistance(Int2 globalSrc, Int2 globalDst)
 {
-	const int dx = std::abs(globalSrc.x - globalDst.x);
-	const int dy = std::abs(globalSrc.y - globalDst.y);
-	return std::max(dx, dy) + (std::min(dx, dy) / 4);
+	return ArenaMathUtils::getApproximateEuclideanDistance(globalSrc, globalDst);
 }
 
 int ArenaLocationUtils::getTravelDays(const Int2 &startGlobalPoint, const Int2 &endGlobalPoint,

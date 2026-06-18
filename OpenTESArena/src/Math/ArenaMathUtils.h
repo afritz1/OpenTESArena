@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "Random.h"
+#include "Vector2.h"
 
 #include "components/utilities/Span.h"
 
@@ -16,6 +17,9 @@ struct ArenaDiceParameters
 
 namespace ArenaMathUtils
 {
+	// More accurate than Manhattan Distance.
+	int getApproximateEuclideanDistance(Int2 pointA, Int2 pointB);
+
 	void rotatePoint(int32_t angle, int16_t &x, int16_t &y, Span<const int16_t> cosineTable);
 
 	ArenaDiceParameters getDiceParameters(int value);
