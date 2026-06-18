@@ -46,6 +46,64 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
+namespace
+{
+	bool CityGuardEntityDefinitionPredicate(const EntityDefinition &entityDef)
+	{
+		if (entityDef.type != EntityDefinitionType::Enemy)
+		{
+			return false;
+		}
+
+		const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+		if (enemyDef.type != EnemyEntityDefinitionType::Human)
+		{
+			return false;
+		}
+
+		const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+		constexpr int originalGuardClassNumber = 16;
+		return charClassDef.originalClassIndex == originalGuardClassNumber;
+	}
+
+	EntityDefinitionPredicate MakeOriginalSpawnEntityDefinitionPredicate(int spawnID)
+	{
+		return [spawnID](const EntityDefinition &entityDef)
+		{
+			if (entityDef.type != EntityDefinitionType::Enemy)
+			{
+				return false;
+			}
+
+			const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+			if (spawnID >= ArenaEntityUtils::FinalBossCreatureID)
+			{
+				if (enemyDef.type != EnemyEntityDefinitionType::Human)
+				{
+					return false;
+				}
+
+				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
+				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
+				constexpr int spawnIdToClassNumberDifference = ArenaEntityUtils::FinalBossCreatureID;
+				const int originalEnemyClassNumber = spawnID - spawnIdToClassNumberDifference;
+				return charClassDef.originalClassIndex == originalEnemyClassNumber;
+			}
+			else if (enemyDef.type != EnemyEntityDefinitionType::Creature)
+			{
+				return false;
+			}
+
+			const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+			const CreatureDefinitionID spawnCreatureDefID = creatureDefLibrary.getDefinitionIdFromOriginalID(spawnID);
+			return enemyDef.creatureDefID == spawnCreatureDefID;
+		};
+	}
+}
+
 GuardSpawnState::GuardSpawnState()
 {
 	this->clearQueue();
@@ -60,6 +118,34 @@ void GuardSpawnState::clearQueue()
 {
 	this->secondsTillSpawn = Constants::Infinity;
 	this->spawnFunc = []() { };
+}
+
+EntityEncounterSpawnInfo::EntityEncounterSpawnInfo()
+{
+	this->guardType = -1;
+	this->level = 0;
+	this->count = 0;
+}
+
+void EntityEncounterSpawnInfo::initCreaturesOrHumans(int spawnID, int level, int count)
+{
+	this->guardType = -1;
+	this->level = level;
+	this->count = count;
+	this->entityDefPredicate = MakeOriginalSpawnEntityDefinitionPredicate(spawnID);
+}
+
+void EntityEncounterSpawnInfo::initCityGuards(int guardType, int level, int count)
+{
+	this->guardType = guardType;
+	this->level = level;
+	this->count = count;
+	this->entityDefPredicate = CityGuardEntityDefinitionPredicate;
+}
+
+bool EntityEncounterSpawnInfo::isCityGuards() const
+{
+	return this->guardType >= 0;
 }
 
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
@@ -604,7 +690,107 @@ void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 	}
 }
 
-void GameState::queueGuardSpawn(Game &game)
+void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
+{
+	const Player &player = game.player;
+	ArenaRandom &arenaRandom = game.arenaRandom;
+	SceneManager &sceneManager = game.sceneManager;
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
+	const MapType mapType = this->getActiveMapType();
+	const double ceilingScale = this->getActiveCeilingScale();
+	const WorldDouble3 playerFeetPosition = player.getFeetPosition();
+	const WorldInt3 playerFeetVoxel = VoxelUtils::pointToVoxel(playerFeetPosition, ceilingScale);
+	const OriginalInt2 playerFeetVoxelOriginalXZ = VoxelUtils::worldVoxelToOriginalVoxel(playerFeetVoxel.getXZ());
+	const OriginalInt2 originalPlayerPositionArenaUnits = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
+	const int16_t originalPlayerPositionArenaUnitsX = static_cast<int16_t>(originalPlayerPositionArenaUnits.y);
+	const int16_t originalPlayerPositionArenaUnitsZ = static_cast<int16_t>(originalPlayerPositionArenaUnits.x);
+
+	const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+	const EntityDefID spawnEntityDefID = entityDefLibrary.findDefinitionIdIf(spawnInfo.entityDefPredicate);
+	const EntityDefinition &spawnEntityDef = entityDefLibrary.getDefinition(spawnEntityDefID);
+	const EntityAnimationDefinition &spawnAnimDef = spawnEntityDef.animDef;
+
+	DebugAssert(spawnEntityDef.type == EntityDefinitionType::Enemy);
+	const bool isCreature = spawnEntityDef.enemy.type == EnemyEntityDefinitionType::Creature;
+
+	int actualSpawnCount = 0;
+	for (int i = 0; i < spawnInfo.count; i++)
+	{
+		const ArenaEntitySpawnPoint spawnPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
+		const OriginalInt2 playerToSpawnOriginalVoxel(
+			(spawnPositionArenaUnits.x - originalPlayerPositionArenaUnitsX) / 128,
+			(spawnPositionArenaUnits.z - originalPlayerPositionArenaUnitsZ) / 128);
+		const OriginalInt2 spawnOriginalVoxel(
+			playerFeetVoxelOriginalXZ.x + playerToSpawnOriginalVoxel.x,
+			playerFeetVoxelOriginalXZ.y + playerToSpawnOriginalVoxel.y);
+		const WorldInt2 spawnWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnOriginalVoxel);
+		const WorldInt3 spawnWorldVoxel(spawnWorldVoxelXZ.x, 1, spawnWorldVoxelXZ.y);
+		const CoordInt3 spawnVoxelCoord = VoxelUtils::worldVoxelToCoord(spawnWorldVoxel);
+		const VoxelChunk *spawnVoxelChunk = voxelChunkManager.findChunkAtPosition(spawnVoxelCoord.chunk);
+		if (spawnVoxelChunk == nullptr)
+		{
+			continue;
+		}
+
+		const VoxelInt3 spawnVoxel = spawnVoxelCoord.voxel;
+		const VoxelShapeDefID spawnVoxelShapeDefID = spawnVoxelChunk->shapeDefIDs.get(spawnVoxel.x, 1, spawnVoxel.z);
+		const VoxelTraitsDefID spawnFloorVoxelTraitsDefID = spawnVoxelChunk->traitsDefIDs.get(spawnVoxel.x, 0, spawnVoxel.z);
+		const VoxelShapeDefinition &spawnVoxelShapeDef = spawnVoxelChunk->shapeDefs[spawnVoxelShapeDefID];
+		const VoxelTraitsDefinition &spawnFloorVoxelTraitsDef = spawnVoxelChunk->traitsDefs[spawnFloorVoxelTraitsDefID];
+		const bool isSpawnVoxelValid = spawnVoxelShapeDef.mesh.isEmpty() && spawnFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
+		if (!isSpawnVoxelValid)
+		{
+			continue;
+		}
+
+		const WorldDouble2 spawnFeetPositionXZ = VoxelUtils::getVoxelCenter(spawnWorldVoxelXZ);
+		const WorldDouble3 spawnFeetPosition(spawnFeetPositionXZ.x, ceilingScale, spawnFeetPositionXZ.y);
+
+		EntityInitInfo spawnEntityInitInfo;
+		spawnEntityInitInfo.defID = spawnEntityDefID;
+		spawnEntityInitInfo.feetPosition = spawnFeetPosition;
+		spawnEntityInitInfo.initialAnimStateIndex = *spawnAnimDef.findStateIndex(spawnAnimDef.initialStateName);
+		spawnEntityInitInfo.isSensorCollider = false;
+		spawnEntityInitInfo.canBeKilled = true;
+		spawnEntityInitInfo.direction = CardinalDirection::North;
+
+		if (!isCreature)
+		{
+			spawnEntityInitInfo.humanEnemyLevel = spawnInfo.level;
+		}
+		
+		spawnEntityInitInfo.hasInventory = true;
+		spawnEntityInitInfo.hasCreatureSound = isCreature;
+
+		if (spawnInfo.isCityGuards())
+		{
+			spawnEntityInitInfo.guardType = spawnInfo.guardType;
+		}
+
+		Renderer &renderer = game.renderer;
+		EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+		entityChunkManager.createEntity(spawnEntityInitInfo, game.random, game.physicsSystem, renderer);
+
+		RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
+		renderEntityManager.loadMaterialsForEntity(spawnEntityDefID, game.textureManager, renderer);
+
+		if (spawnInfo.isCityGuards())
+		{
+			const bool isFirstSpawnedGuard = actualSpawnCount == 0;
+			if (isFirstSpawnedGuard)
+			{
+				const WorldDouble3 spawnSoundPosition = VoxelUtils::getVoxelCenter(spawnWorldVoxel, ceilingScale);
+
+				AudioManager &audioManager = game.audioManager;
+				audioManager.playSoundOneShot(ArenaSoundName::Halt, spawnSoundPosition);
+			}
+		}
+
+		actualSpawnCount++;
+	}
+}
+
+void GameState::queueCityGuardEncounter(Game &game)
 {
 	if (this->guardSpawnState.isQueued())
 	{
@@ -623,226 +809,21 @@ void GameState::queueGuardSpawn(Game &game)
 		if (!ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
 		{
 			DebugLog("Decided not to spawn guards.");
+			return;
 		}
-
-		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
-		const ArenaCityType cityType = this->getLocationDefinition().getCityDefinition().type;
-		const MapType mapType = this->getActiveMapType();
-		const double ceilingScale = this->getActiveCeilingScale();
-		const WorldDouble3 playerFeetPosition = player.getFeetPosition();
-		const WorldInt3 playerFeetVoxel = VoxelUtils::pointToVoxel(playerFeetPosition, ceilingScale);
-		const OriginalInt2 playerFeetVoxelOriginalXZ = VoxelUtils::worldVoxelToOriginalVoxel(playerFeetVoxel.getXZ());
-		const OriginalInt2 originalPlayerPositionArenaUnits = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
-		const int16_t originalPlayerPositionArenaUnitsX = static_cast<int16_t>(originalPlayerPositionArenaUnits.y);
-		const int16_t originalPlayerPositionArenaUnitsZ = static_cast<int16_t>(originalPlayerPositionArenaUnits.x);
 
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-		const int spawnedGuardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
-		const int spawnedGuardLevel = ArenaEntityUtils::getGuardLevel(cityType, spawnedGuardType, exeData, arenaRandom);
-		const int spawnedGuardAttemptCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
-		int actualSpawnedGuardCount = 0;
+		const LocationDefinition &locationDef = this->getLocationDefinition();
+		const LocationCityDefinition &cityDef = locationDef.getCityDefinition();
+		const ArenaCityType cityType = cityDef.type;
+		const int guardType = ArenaEntityUtils::getGuardType(exeData, arenaRandom);
+		const int guardLevel = ArenaEntityUtils::getGuardLevel(cityType, guardType, exeData, arenaRandom);
+		const int guardCount = ArenaEntityUtils::getNumberOfGuardsToSpawn(arenaRandom);
 
-		for (int i = 0; i < spawnedGuardAttemptCount; i++)
-		{
-			const ArenaEntitySpawnPoint spawnedGuardPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
-			const OriginalInt2 playerToSpawnedGuardOriginalVoxel(
-				(spawnedGuardPositionArenaUnits.x - originalPlayerPositionArenaUnitsX) / 128,
-				(spawnedGuardPositionArenaUnits.z - originalPlayerPositionArenaUnitsZ) / 128);
-			const OriginalInt2 spawnedGuardOriginalVoxel(
-				playerFeetVoxelOriginalXZ.x + playerToSpawnedGuardOriginalVoxel.x,
-				playerFeetVoxelOriginalXZ.y + playerToSpawnedGuardOriginalVoxel.y);
-			const WorldInt2 spawnedGuardWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnedGuardOriginalVoxel);
-			const WorldInt3 spawnedGuardWorldVoxel(spawnedGuardWorldVoxelXZ.x, 1, spawnedGuardWorldVoxelXZ.y);
-			const CoordInt3 spawnedGuardVoxelCoord = VoxelUtils::worldVoxelToCoord(spawnedGuardWorldVoxel);
-			const VoxelChunk *spawnedGuardVoxelChunk = voxelChunkManager.findChunkAtPosition(spawnedGuardVoxelCoord.chunk);
-			if (spawnedGuardVoxelChunk == nullptr)
-			{
-				continue;
-			}
-
-			const VoxelInt3 spawnedGuardVoxel = spawnedGuardVoxelCoord.voxel;
-			const VoxelShapeDefID spawnedGuardVoxelShapeDefID = spawnedGuardVoxelChunk->shapeDefIDs.get(spawnedGuardVoxel.x, 1, spawnedGuardVoxel.z);
-			const VoxelTraitsDefID spawnedGuardFloorVoxelTraitsDefID = spawnedGuardVoxelChunk->traitsDefIDs.get(spawnedGuardVoxel.x, 0, spawnedGuardVoxel.z);
-			const VoxelShapeDefinition &spawnedGuardVoxelShapeDef = spawnedGuardVoxelChunk->shapeDefs[spawnedGuardVoxelShapeDefID];
-			const VoxelTraitsDefinition &spawnedGuardFloorVoxelTraitsDef = spawnedGuardVoxelChunk->traitsDefs[spawnedGuardFloorVoxelTraitsDefID];
-			const bool isSpawnVoxelValid = spawnedGuardVoxelShapeDef.mesh.isEmpty() && spawnedGuardFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
-			if (!isSpawnVoxelValid)
-			{
-				continue;
-			}
-
-			const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();			
-			const EntityDefID spawnedGuardEntityDefID = entityDefLibrary.findDefinitionIdIf(
-				[](const EntityDefinition &entityDef)
-			{
-				if (entityDef.type != EntityDefinitionType::Enemy)
-				{
-					return false;
-				}
-
-				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-				if (enemyDef.type != EnemyEntityDefinitionType::Human)
-				{
-					return false;
-				}
-
-				const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
-				const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-				const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
-				constexpr int originalGuardClassNumber = 16;
-				return charClassDef.originalClassIndex == originalGuardClassNumber;
-			});
-
-			const EntityDefinition &spawnedGuardEntityDef = entityDefLibrary.getDefinition(spawnedGuardEntityDefID);
-			const EntityAnimationDefinition &spawnedGuardAnimDef = spawnedGuardEntityDef.animDef;
-
-			const WorldDouble2 spawnedGuardFeetPositionXZ = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxelXZ);
-			const WorldDouble3 spawnedGuardFeetPosition(spawnedGuardFeetPositionXZ.x, ceilingScale, spawnedGuardFeetPositionXZ.y);
-
-			EntityInitInfo spawnedGuardEntityInitInfo;
-			spawnedGuardEntityInitInfo.defID = spawnedGuardEntityDefID;
-			spawnedGuardEntityInitInfo.feetPosition = spawnedGuardFeetPosition;
-			spawnedGuardEntityInitInfo.initialAnimStateIndex = *spawnedGuardAnimDef.findStateIndex(spawnedGuardAnimDef.initialStateName);
-			spawnedGuardEntityInitInfo.isSensorCollider = false;
-			spawnedGuardEntityInitInfo.canBeKilled = true;
-			spawnedGuardEntityInitInfo.direction = CardinalDirection::North;
-			spawnedGuardEntityInitInfo.humanEnemyLevel = spawnedGuardLevel;
-			spawnedGuardEntityInitInfo.hasInventory = true;
-			spawnedGuardEntityInitInfo.hasCreatureSound = false;
-			spawnedGuardEntityInitInfo.guardType = spawnedGuardType;
-
-			Renderer &renderer = game.renderer;
-			EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-			entityChunkManager.createEntity(spawnedGuardEntityInitInfo, game.random, game.physicsSystem, renderer);
-
-			RenderEntityManager &renderEntityManager = game.sceneManager.renderEntityManager;
-			renderEntityManager.loadMaterialsForEntity(spawnedGuardEntityDefID, game.textureManager, renderer);
-
-			const bool isFirstSpawnedGuard = actualSpawnedGuardCount == 0;
-			if (isFirstSpawnedGuard)
-			{
-				const WorldDouble3 spawnedGuardSoundPosition = VoxelUtils::getVoxelCenter(spawnedGuardWorldVoxel, ceilingScale);
-
-				AudioManager &audioManager = game.audioManager;
-				audioManager.playSoundOneShot(ArenaSoundName::Halt, spawnedGuardSoundPosition);
-			}
-
-			actualSpawnedGuardCount++;
-		}
-
-		// @todo for all entityChunkManager.citizens, queueEntityDestroy()
-		// ^ not in this pull request but soon
+		EntityEncounterSpawnInfo encounterSpawnInfo;
+		encounterSpawnInfo.initCityGuards(guardType, guardLevel, guardCount);
+		this->spawnEncounterEnemies(game, encounterSpawnInfo);
 	};
-}
-
-void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnCount) const
-{
-	// @todo deduplicate this code by combining with queueSpawnGuard()
-	const Player &player = game.player;
-	ArenaRandom &arenaRandom = game.arenaRandom;
-
-	SceneManager &sceneManager = game.sceneManager;
-	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	const MapType mapType = this->getActiveMapType();
-	const double ceilingScale = this->getActiveCeilingScale();
-	const WorldDouble3 playerFeetPosition = player.getFeetPosition();
-	const WorldInt3 playerFeetVoxel = VoxelUtils::pointToVoxel(playerFeetPosition, ceilingScale);
-	const OriginalInt2 playerFeetVoxelOriginalXZ = VoxelUtils::worldVoxelToOriginalVoxel(playerFeetVoxel.getXZ());
-	const OriginalInt2 originalPlayerPositionArenaUnits = GameWorldUiModel::getOriginalPlayerPositionArenaUnits(playerFeetPosition, mapType);
-	const int16_t originalPlayerPositionArenaUnitsX = static_cast<int16_t>(originalPlayerPositionArenaUnits.y);
-	const int16_t originalPlayerPositionArenaUnitsZ = static_cast<int16_t>(originalPlayerPositionArenaUnits.x);
-
-	int actualSpawnedEnemyCount = 0;
-
-	for (int i = 0; i < spawnCount; i++)
-	{
-		const ArenaEntitySpawnPoint spawnedEnemyPositionArenaUnits = ArenaEntityUtils::findRandomSpawnLocationAroundPlayer(originalPlayerPositionArenaUnitsX, originalPlayerPositionArenaUnitsZ, arenaRandom);
-		const OriginalInt2 playerToSpawnedEnemyOriginalVoxel(
-			(spawnedEnemyPositionArenaUnits.x - originalPlayerPositionArenaUnitsX) / 128,
-			(spawnedEnemyPositionArenaUnits.z - originalPlayerPositionArenaUnitsZ) / 128);
-		const OriginalInt2 spawnedEnemyOriginalVoxel(
-			playerFeetVoxelOriginalXZ.x + playerToSpawnedEnemyOriginalVoxel.x,
-			playerFeetVoxelOriginalXZ.y + playerToSpawnedEnemyOriginalVoxel.y);
-		const WorldInt2 spawnedEnemyWorldVoxelXZ = VoxelUtils::originalVoxelToWorldVoxel(spawnedEnemyOriginalVoxel);
-		const WorldInt3 spawnedEnemyWorldVoxel(spawnedEnemyWorldVoxelXZ.x, 1, spawnedEnemyWorldVoxelXZ.y);
-		const CoordInt3 spawnedEnemyVoxelCoord = VoxelUtils::worldVoxelToCoord(spawnedEnemyWorldVoxel);
-		const VoxelChunk* spawnedEnemyVoxelChunk = voxelChunkManager.findChunkAtPosition(spawnedEnemyVoxelCoord.chunk);
-		if (spawnedEnemyVoxelChunk == nullptr)
-		{
-			continue;
-		}
-
-		const VoxelInt3 spawnedEnemyVoxel = spawnedEnemyVoxelCoord.voxel;
-		const VoxelShapeDefID spawnedEnemyVoxelShapeDefID = spawnedEnemyVoxelChunk->shapeDefIDs.get(spawnedEnemyVoxel.x, 1, spawnedEnemyVoxel.z);
-		const VoxelTraitsDefID spawnedEnemyFloorVoxelTraitsDefID = spawnedEnemyVoxelChunk->traitsDefIDs.get(spawnedEnemyVoxel.x, 0, spawnedEnemyVoxel.z);
-		const VoxelShapeDefinition &spawnedEnemyVoxelShapeDef = spawnedEnemyVoxelChunk->shapeDefs[spawnedEnemyVoxelShapeDefID];
-		const VoxelTraitsDefinition &spawnedEnemyFloorVoxelTraitsDef = spawnedEnemyVoxelChunk->traitsDefs[spawnedEnemyFloorVoxelTraitsDefID];
-		const bool isSpawnVoxelValid = spawnedEnemyVoxelShapeDef.mesh.isEmpty() && spawnedEnemyFloorVoxelTraitsDef.type == ArenaVoxelType::Floor;
-		if (!isSpawnVoxelValid)
-		{
-			continue;
-		}
-
-		const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
-		const EntityDefID spawnedEnemyEntityDefID = entityDefLibrary.findDefinitionIdIf(
-			[spawnId](const EntityDefinition &entityDef)
-			{
-				if (entityDef.type != EntityDefinitionType::Enemy)
-				{
-					return false;
-				}
-
-				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-				if (spawnId >= ArenaEntityUtils::FinalBossCreatureID)
-				{
-					if (enemyDef.type != EnemyEntityDefinitionType::Human)
-					{
-						return false;
-					}
-
-					const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
-					const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-					const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
-					constexpr int spawnIdToClassNumberDifference = ArenaEntityUtils::FinalBossCreatureID;
-					const int originalEnemyClassNumber = spawnId - spawnIdToClassNumberDifference;
-					return charClassDef.originalClassIndex == originalEnemyClassNumber;
-				}
-				else if (enemyDef.type != EnemyEntityDefinitionType::Creature)
-				{
-					return false;
-				}
-
-				const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
-				const CreatureDefinitionID spawnCreatureDefID = creatureDefLibrary.getDefinitionIdFromOriginalID(spawnId);
-				return enemyDef.creatureDefID == spawnCreatureDefID;
-			});
-
-		const EntityDefinition &spawnedEnemyEntityDef = entityDefLibrary.getDefinition(spawnedEnemyEntityDefID);
-		const EntityAnimationDefinition &spawnedEnemyAnimDef = spawnedEnemyEntityDef.animDef;
-
-		const WorldDouble2 spawnedEnemyFeetPositionXZ = VoxelUtils::getVoxelCenter(spawnedEnemyWorldVoxelXZ);
-		const WorldDouble3 spawnedEnemyFeetPosition(spawnedEnemyFeetPositionXZ.x, ceilingScale, spawnedEnemyFeetPositionXZ.y);
-
-		EntityInitInfo spawnedEnemyEntityInitInfo;
-		spawnedEnemyEntityInitInfo.defID = spawnedEnemyEntityDefID;
-		spawnedEnemyEntityInitInfo.feetPosition = spawnedEnemyFeetPosition;
-		spawnedEnemyEntityInitInfo.initialAnimStateIndex = *spawnedEnemyAnimDef.findStateIndex(spawnedEnemyAnimDef.initialStateName);
-		spawnedEnemyEntityInitInfo.isSensorCollider = false;
-		spawnedEnemyEntityInitInfo.canBeKilled = true;
-		spawnedEnemyEntityInitInfo.direction = CardinalDirection::North;
-		spawnedEnemyEntityInitInfo.humanEnemyLevel = spawnLevel;
-		spawnedEnemyEntityInitInfo.hasInventory = true;
-		spawnedEnemyEntityInitInfo.hasCreatureSound = spawnId < ArenaEntityUtils::FinalBossCreatureID;
-
-		Renderer &renderer = game.renderer;
-		EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
-		entityChunkManager.createEntity(spawnedEnemyEntityInitInfo, game.random, game.physicsSystem, renderer);
-
-		RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
-		renderEntityManager.loadMaterialsForEntity(spawnedEnemyEntityDefID, game.textureManager, renderer);
-
-		actualSpawnedEnemyCount++;
-	}
 }
 
 void GameState::applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt)
@@ -1085,7 +1066,10 @@ void GameState::tickGameClock(double dt, Game &game)
 		if (encounterChance > arenaRandom.next(100))
 		{
 			const ArenaEnemyEncounter encounter = ArenaEntityUtils::chooseEncounterEnemy(encounterChanceTableIndex, player.level, player.level, false, arenaRandom, exeData);
-			this->spawnEnemies(game, encounter.id, encounter.level, encounter.count);
+
+			EntityEncounterSpawnInfo encounterSpawnInfo;
+			encounterSpawnInfo.initCreaturesOrHumans(encounter.id, encounter.level, encounter.count);
+			this->spawnEncounterEnemies(game, encounterSpawnInfo);
 		}
 	}
 

@@ -8,6 +8,7 @@
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/PhysicsSystem.h"
 
+#include "../Entities/EntityDefinitionLibrary.h"
 #include "../Interface/ProvinceMapUiMVC.h"
 #include "../Math/Random.h"
 #include "../Math/Vector2.h"
@@ -40,6 +41,21 @@ struct GuardSpawnState
 	bool isQueued() const;
 
 	void clearQueue();
+};
+
+struct EntityEncounterSpawnInfo
+{
+	int guardType; // Non-negative if for city guards.
+	int level;
+	int count;
+	EntityDefinitionPredicate entityDefPredicate; // Filters to matching definitions from library.
+
+	EntityEncounterSpawnInfo();
+
+	void initCreaturesOrHumans(int spawnID, int level, int count);
+	void initCityGuards(int guardType, int level, int count);
+
+	bool isCityGuards() const;
 };
 
 // Container for currently loaded game/world data.
@@ -174,8 +190,8 @@ public:
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);
 
-	void queueGuardSpawn(Game &game);
-	void spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnCount) const;
+	void spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
+	void queueCityGuardEncounter(Game &game);
 
 	// Applies any pending scene transition, setting the new level active in the game world and renderer.
 	void applyPendingSceneChange(Game &game, JPH::PhysicsSystem &physicsSystem, double dt);
