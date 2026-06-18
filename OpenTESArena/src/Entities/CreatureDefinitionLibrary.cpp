@@ -3,16 +3,18 @@
 #include <cstring>
 
 #include "ArenaAnimUtils.h"
+#include "ArenaEntityUtils.h"
 #include "CreatureDefinitionLibrary.h"
 #include "../Assets/BinaryAssetLibrary.h"
 
 #include "components/debug/Debug.h"
 
-// @todo why does this need an isFinalBoss parameter? isn't it if creatureIndex == 25? check
-
-void CreatureDefinition::init(int creatureIndex, bool isFinalBoss, const ExeData &exeData)
+void CreatureDefinition::init(int creatureIndex, const ExeData &exeData)
 {
 	const auto &entities = exeData.entities;
+
+	const int finalBossCreatureIndex = ArenaAnimUtils::getCreatureIndexFromID(ArenaEntityUtils::FinalBossCreatureID);
+	const bool isFinalBoss = creatureIndex == finalBossCreatureIndex;
 
 	const std::string &nameStr = isFinalBoss ? entities.finalBossName : entities.creatureNames[creatureIndex];
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", nameStr.c_str());
@@ -35,8 +37,8 @@ void CreatureDefinition::init(int creatureIndex, bool isFinalBoss, const ExeData
 	this->bloodIndex = entities.creatureBlood[creatureIndex];
 	this->diseaseChances = entities.creatureDiseaseChances[creatureIndex];
 
-	const auto &srcAttributes = entities.creatureAttributes[creatureIndex];
-	std::copy(std::begin(srcAttributes), std::end(srcAttributes), std::begin(this->attributes));
+	const Span<const uint8_t> srcAttributes = entities.creatureAttributes[creatureIndex];
+	std::copy(srcAttributes.begin(), srcAttributes.end(), std::begin(this->attributes));
 
 	if (isFinalBoss)
 	{
@@ -154,12 +156,10 @@ bool CreatureDefinition::operator==(const CreatureDefinition &other) const
 
 void CreatureDefinitionLibrary::init(const ExeData &exeData)
 {
-	for (int creatureIndex = 0; creatureIndex < ArenaAnimUtils::CreatureCount; creatureIndex++)
+	for (int creatureIndex = 0; creatureIndex < ArenaEntityUtils::CreatureCount; creatureIndex++)
 	{
-		const bool isFinalBoss = creatureIndex == (ArenaAnimUtils::FinalBossCreatureID - 1);
-
 		CreatureDefinition creatureDef;
-		creatureDef.init(creatureIndex, isFinalBoss, exeData);
+		creatureDef.init(creatureIndex, exeData);
 		this->entries.emplace_back(std::move(creatureDef));
 	}
 }
@@ -173,4 +173,10 @@ const CreatureDefinition &CreatureDefinitionLibrary::getDefinition(CreatureDefin
 {
 	DebugAssertIndex(this->entries, id);
 	return this->entries[id];
+}
+
+CreatureDefinitionID CreatureDefinitionLibrary::getDefinitionIdFromOriginalID(int creatureID) const
+{
+	const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
+	return static_cast<CreatureDefinitionID>(creatureIndex);
 }

@@ -20,6 +20,7 @@
 #include "../Assets/MIFUtils.h"
 #include "../Assets/TextAssetLibrary.h"
 #include "../Entities/ArenaAnimUtils.h"
+#include "../Entities/ArenaEntityUtils.h"
 #include "../Entities/EntityDefinition.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Math/Random.h"
@@ -252,7 +253,7 @@ namespace MapGeneration
 		if (isCreature)
 		{
 			const ArenaItemIndex itemIndex = *optItemIndex;
-			const int creatureID = isCreatureFinalBoss ? ArenaAnimUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
+			const int creatureID = isCreatureFinalBoss ? ArenaEntityUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
 			const int creatureIndex = ArenaAnimUtils::getCreatureIndexFromID(creatureID);
 			const CreatureDefinitionID creatureDefID = creatureIndex;
 

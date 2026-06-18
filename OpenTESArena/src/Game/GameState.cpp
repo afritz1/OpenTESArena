@@ -741,7 +741,8 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 	const Player &player = game.player;
 	ArenaRandom &arenaRandom = game.arenaRandom;
 
-	const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+	SceneManager &sceneManager = game.sceneManager;
+	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
 	const MapType mapType = this->getActiveMapType();
 	const double ceilingScale = this->getActiveCeilingScale();
 	const WorldDouble3 playerFeetPosition = player.getFeetPosition();
@@ -792,8 +793,7 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 				}
 
 				const EnemyEntityDefinition &enemyDef = entityDef.enemy;
-				constexpr int lastCreatureID = 23;
-				if (spawnId > lastCreatureID)
+				if (spawnId >= ArenaEntityUtils::FinalBossCreatureID)
 				{
 					if (enemyDef.type != EnemyEntityDefinitionType::Human)
 					{
@@ -803,7 +803,7 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 					const EnemyEntityHumanDefinition &humanEnemyDef = enemyDef.human;
 					const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
 					const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(humanEnemyDef.charClassID);
-					constexpr int spawnIdToClassNumberDifference = 24;
+					constexpr int spawnIdToClassNumberDifference = ArenaEntityUtils::FinalBossCreatureID;
 					const int originalEnemyClassNumber = spawnId - spawnIdToClassNumberDifference;
 					return charClassDef.originalClassIndex == originalEnemyClassNumber;
 				}
@@ -812,7 +812,9 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 					return false;
 				}
 
-				return enemyDef.creatureDefID == spawnId;
+				const CreatureDefinitionLibrary &creatureDefLibrary = CreatureDefinitionLibrary::getInstance();
+				const CreatureDefinitionID spawnCreatureDefID = creatureDefLibrary.getDefinitionIdFromOriginalID(spawnId);
+				return enemyDef.creatureDefID == spawnCreatureDefID;
 			});
 
 		const EntityDefinition &spawnedEnemyEntityDef = entityDefLibrary.getDefinition(spawnedEnemyEntityDefID);
@@ -830,13 +832,13 @@ void GameState::spawnEnemies(Game &game, int spawnId, int spawnLevel, int spawnC
 		spawnedEnemyEntityInitInfo.direction = CardinalDirection::North;
 		spawnedEnemyEntityInitInfo.humanEnemyLevel = spawnLevel;
 		spawnedEnemyEntityInitInfo.hasInventory = true;
-		spawnedEnemyEntityInitInfo.hasCreatureSound = spawnId <= 23;
+		spawnedEnemyEntityInitInfo.hasCreatureSound = spawnId < ArenaEntityUtils::FinalBossCreatureID;
 
 		Renderer &renderer = game.renderer;
-		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
 		entityChunkManager.createEntity(spawnedEnemyEntityInitInfo, game.random, game.physicsSystem, renderer);
 
-		RenderEntityManager &renderEntityManager = game.sceneManager.renderEntityManager;
+		RenderEntityManager &renderEntityManager = sceneManager.renderEntityManager;
 		renderEntityManager.loadMaterialsForEntity(spawnedEnemyEntityDefID, game.textureManager, renderer);
 
 		actualSpawnedEnemyCount++;

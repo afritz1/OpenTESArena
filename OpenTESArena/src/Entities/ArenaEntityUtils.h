@@ -54,6 +54,11 @@ struct ArenaEnemyEncounter
 
 namespace ArenaEntityUtils
 {
+	// Note that creature ID == creature index + 1.
+	// The final boss is a special case, essentially hardcoded at the end of the creatures.
+	constexpr int FinalBossCreatureID = 24;
+	constexpr int CreatureCount = FinalBossCreatureID;
+
 	// For monsters
 	int getBaseSpeed(int speedAttribute);
 

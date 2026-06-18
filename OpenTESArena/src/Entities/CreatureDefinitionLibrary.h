@@ -30,7 +30,7 @@ struct CreatureDefinition
 	uint32_t lootChances;
 	bool ghost;
 
-	void init(int creatureIndex, bool isFinalBoss, const ExeData &exeData);
+	void init(int creatureIndex, const ExeData &exeData);
 
 	bool operator==(const CreatureDefinition &other) const;
 };
@@ -47,4 +47,7 @@ public:
 	int getDefinitionCount() const;
 
 	const CreatureDefinition &getDefinition(CreatureDefinitionID id) const;
+
+	// From the 1-based creature ID.
+	CreatureDefinitionID getDefinitionIdFromOriginalID(int creatureID) const;
 };

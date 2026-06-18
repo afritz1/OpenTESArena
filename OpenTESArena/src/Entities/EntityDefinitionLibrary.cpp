@@ -1,4 +1,5 @@
 #include "ArenaAnimUtils.h"
+#include "ArenaEntityUtils.h"
 #include "EntityAnimationLibrary.h"
 #include "EntityDefinitionLibrary.h"
 #include "../Assets/ArenaTypes.h"
@@ -220,7 +221,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 	};
 
 	// Iterate all creatures + final boss.
-	for (int i = 0; i < ArenaAnimUtils::CreatureCount; i++)
+	for (int i = 0; i < ArenaEntityUtils::CreatureCount; i++)
 	{
 		addCreatureDef(i);
 	}
