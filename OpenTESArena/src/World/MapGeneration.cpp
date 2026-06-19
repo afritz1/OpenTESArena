@@ -192,6 +192,14 @@ namespace MapGeneration
 		return interiorGenInfo;
 	}
 
+	TextureAsset makeWallTopAndBottomTextureAsset(const INFFile &inf)
+	{
+		constexpr int textureID = 45; // Hardcoded in original game.
+		const std::string textureFilename = ArenaVoxelUtils::getVoxelTextureFilename(textureID, inf);
+		const int setIndex = ArenaVoxelUtils::getVoxelTextureSetIndex(textureID, inf);
+		return TextureAsset(textureFilename, setIndex);
+	}
+
 	// Makes a modern entity definition from the given Arena FLAT index.
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
@@ -523,13 +531,22 @@ namespace MapGeneration
 				*outVoxelType = voxelType;
 				outShapeInitCache->initDefaultBoxValues(voxelType);
 
-				const int textureIndex = mostSigByte - 1;
-				const int clampedTextureID = ArenaVoxelUtils::clampVoxelTextureID(textureIndex);
-				const std::string voxelTextureFilename = ArenaVoxelUtils::getVoxelTextureFilename(clampedTextureID, inf);
-				const int voxelTextureSetIndex = ArenaVoxelUtils::getVoxelTextureSetIndex(clampedTextureID, inf);
-				*outTextureAsset0 = TextureAsset(voxelTextureFilename, voxelTextureSetIndex);
-				*outTextureAsset1 = *outTextureAsset0;
-				*outTextureAsset2 = *outTextureAsset0;
+				const int sideTextureIndex = mostSigByte - 1;
+				const int clampedSideTextureID = ArenaVoxelUtils::clampVoxelTextureID(sideTextureIndex);
+				const std::string sideVoxelTextureFilename = ArenaVoxelUtils::getVoxelTextureFilename(clampedSideTextureID, inf);
+				const int sideVoxelTextureSetIndex = ArenaVoxelUtils::getVoxelTextureSetIndex(clampedSideTextureID, inf);
+
+				const TextureAsset sideTextureAsset(sideVoxelTextureFilename, sideVoxelTextureSetIndex);
+				TextureAsset topAndBottomTextureAsset = sideTextureAsset;
+				if (mapType == MapType::Interior)
+				{
+					// Cosmetic fix due to how original game doesn't allow player to see rooftops.
+					topAndBottomTextureAsset = MapGeneration::makeWallTopAndBottomTextureAsset(inf);
+				}
+
+				*outTextureAsset0 = sideTextureAsset;
+				*outTextureAsset1 = topAndBottomTextureAsset;
+				*outTextureAsset2 = topAndBottomTextureAsset;
 				*outVertexShaderType = VertexShaderType::Basic;
 				outFragmentShaderTypes[0] = FragmentShaderType::Opaque;
 				outFragmentShaderTypes[1] = FragmentShaderType::Opaque;
