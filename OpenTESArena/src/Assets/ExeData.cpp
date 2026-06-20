@@ -443,6 +443,10 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int creatureAttributesOffset = GetExeAddress(*section, "CreatureAttributes");
 	const int creatureLootChancesOffset = GetExeAddress(*section, "CreatureLootChances");
 	const int creatureAnimFilenamesOffset = GetExeAddress(*section, "CreatureAnimationFilenames");
+	const int diseaseGivingCreatureIDsOffset = GetExeAddress(*section, "DiseaseGivingCreatureIDs");
+	const int creatureDiseaseListsOffset = GetExeAddress(*section, "CreatureDiseaseLists");
+	const int randomHealingTimeDiseaseIDsOffset = GetExeAddress(*section, "RandomHealingTimeDiseaseIDs");
+	const int undeadCreatureIDsOffset = GetExeAddress(*section, "UndeadCreatureIDs");
 	const int finalBossNameOffset = GetExeAddress(*section, "FinalBossName");
 	const int humanEnemyGoldChancesOffset = GetExeAddress(*section, "HumanEnemyGoldChances");
 	const int humanEnemyExpMultipliersOffset = GetExeAddress(*section, "HumanEnemyExperienceMultipliers");
@@ -486,6 +490,11 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	init2DInt8Array(this->creatureAttributes, exeBytes, creatureAttributesOffset);
 	initInt32Array(this->creatureLootChances, exeBytes, creatureLootChancesOffset);
 	initStringArrayNullTerminated(this->creatureAnimationFilenames, exeBytes, creatureAnimFilenamesOffset);
+	initInt8Array(this->diseaseGivingCreatureIDs, exeBytes, diseaseGivingCreatureIDsOffset);
+	const uint8_t diseaseTerminator = 0xFF;
+	initJaggedInt8Array(this->creatureDiseaseLists, diseaseTerminator, exeBytes, creatureDiseaseListsOffset);
+	initInt8Array(this->randomHealingTimeDiseaseIDs, exeBytes, randomHealingTimeDiseaseIDsOffset);
+	initInt8Array(this->undeadCreatureIDs, exeBytes, undeadCreatureIDsOffset);
 	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
 	initInt8Array(this->humanEnemyGoldChances, exeBytes, humanEnemyGoldChancesOffset);
 	initInt8Array(this->humanEnemyExpMultipliers, exeBytes, humanEnemyExpMultipliersOffset);

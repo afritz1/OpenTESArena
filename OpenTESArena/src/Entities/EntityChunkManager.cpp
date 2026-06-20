@@ -1530,6 +1530,17 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 
 					if (isPlayerHit)
 					{
+						if (entityDef.enemy.type == EnemyEntityDefinitionType::Human)
+						{
+							//@todo: Chance for critical strike
+						}
+						else
+						{
+							ArenaRandom arenaRandom(random.next());
+							const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+							//@todo: Pass in real values for the saving throw and resistance effect
+							ArenaEntityUtils::paralysisOrDiseaseOnHit(entityDef.enemy.creatureDefID, player.raceID, player.charClassDefID, false, 90, arenaRandom, exeData);
+						}
 						const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
 						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
 

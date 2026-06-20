@@ -131,4 +131,7 @@ namespace ArenaEntityUtils
 
 	int snapToTileCenter(int16_t coord);
 	uint16_t makeTileIndex(int16_t x, int16_t z);
+
+	void paralysisOrDiseaseOnHit(int creatureID, int playerRace, int playerClass, bool playerResistantToPoisonEffectActive, int playerPoisonSavingThrow, ArenaRandom &random, const ExeData &exeData);
+	void causeDisease(int diseaseID, ArenaRandom &random, const ExeData &exeData);
 }

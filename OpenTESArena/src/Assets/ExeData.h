@@ -139,6 +139,10 @@ struct ExeDataEntities
 	int8_t creatureDiseaseChances[24]; // Negative values have special meaning.
 	uint8_t creatureAttributes[24][8]; // 255 == 100.
 	uint32_t creatureLootChances[24]; // Accessed by 1-based races
+	uint8_t diseaseGivingCreatureIDs[4];
+	std::vector<uint8_t> creatureDiseaseLists[4];
+	uint8_t randomHealingTimeDiseaseIDs[3];
+	uint8_t undeadCreatureIDs[7];
 
 	// Creature animations (i.e., their .CFA filenames). These are ordered the same
 	// as creature names, and there is an extra entry at the end for the final boss.
