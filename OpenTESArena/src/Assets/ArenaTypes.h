@@ -32,6 +32,21 @@ enum class ArenaArmorMaterialType
 	Leather = 2
 };
 
+enum class ArenaRaceType
+{
+	Breton = 0,
+	Redguard = 1,
+	Nord = 2,
+	DarkElf = 3,
+	HighElf = 4,
+	WoodElf = 5,
+	Khajiit = 6,
+	Argonian = 7,
+	ImperialProvince = 8, // Used by guards in the Imperial City
+
+	Count
+};
+
 using ArenaAccessoryTypeID = int16_t;
 using ArenaConsumableTypeID = int16_t;
 using ArenaMiscTypeID = int16_t;

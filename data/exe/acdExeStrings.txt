@@ -93,6 +93,7 @@ HumanEnemyExperienceMultipliers=0x3FB9D
 HumanEnemyChainCapableClasses=0x41778
 HumanEnemyPrimaryArmorSlots=0x40910
 HumanEnemySecondaryArmorSlots=0x40914
+HumanEnemyFemaleChance=0x191F8
 RaceAttributes=0x361C3
 GuardAttributes=0x36243
 GuardTypeChances=0x3FBAD

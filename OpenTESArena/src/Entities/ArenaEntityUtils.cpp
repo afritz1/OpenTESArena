@@ -681,6 +681,18 @@ int ArenaEntityUtils::getHumanEnemyExperience(int level, int charClassDefID, con
 	return experience;
 }
 
+bool ArenaEntityUtils::getHumanEnemyIsFemale(ArenaRandom &random, const ExeData &exeData)
+{
+	const int chance = exeData.entities.humanEnemyFemaleChance;
+	return (random.next(100) < chance);
+}
+
+ArenaRaceType ArenaEntityUtils::getHumanEnemyRace(ArenaRandom &random)
+{
+	constexpr int numberOfRaces = static_cast<int>(ArenaRaceType::Count) - 1; // Omit the Imperial Province race
+	return static_cast<ArenaRaceType>(random.next(numberOfRaces));
+}
+
 int ArenaEntityUtils::getLootValuesIndex(ArenaInteriorType interiorType)
 {
 	switch (interiorType)
@@ -952,6 +964,11 @@ int ArenaEntityUtils::getGuardLevel(ArenaCityType cityType, int tierBonus, const
 	DebugAssertIndex(exeData.entities.guardLevelMinimums, cityTypeIndex);
 	const int minimumLevel = exeData.entities.guardLevelMinimums[cityTypeIndex] + tierBonus;
 	return random.next(3) + minimumLevel;
+}
+
+ArenaRaceType ArenaEntityUtils::getGuardRace(int currentProvinceID)
+{
+	return static_cast<ArenaRaceType>(currentProvinceID);
 }
 
 int ArenaEntityUtils::getNumberOfGuardsToSpawn(ArenaRandom &random)

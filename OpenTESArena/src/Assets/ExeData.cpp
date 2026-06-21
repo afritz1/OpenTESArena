@@ -453,6 +453,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int humanEnemyChainCapableClassesOffset = GetExeAddress(*section, "HumanEnemyChainCapableClasses");
 	const int humanEnemyPrimaryArmorSlotsOffset = GetExeAddress(*section, "HumanEnemyPrimaryArmorSlots");
 	const int humanEnemySecondaryArmorSlotsOffset = GetExeAddress(*section, "HumanEnemySecondaryArmorSlots");
+	const int humanEnemyFemaleChanceOffset = GetExeAddress(*section, "HumanEnemyFemaleChance");
 	const int raceAttributesOffset = GetExeAddress(*section, "RaceAttributes");
 	const int guardAttributesOffset = GetExeAddress(*section, "GuardAttributes");
 	const int guardTypeChancesOffset = GetExeAddress(*section, "GuardTypeChances");
@@ -501,6 +502,7 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	initInt8Array(this->humanEnemyChainCapableClasses, exeBytes, humanEnemyChainCapableClassesOffset);
 	initInt8Array(this->humanEnemyPrimaryArmorSlots, exeBytes, humanEnemyPrimaryArmorSlotsOffset);
 	initInt8Array(this->humanEnemySecondaryArmorSlots, exeBytes, humanEnemySecondaryArmorSlotsOffset);
+	this->humanEnemyFemaleChance = static_cast<uint8_t>(exeBytes[humanEnemyFemaleChanceOffset]);
 	init2DInt8Array(this->raceAttributes, exeBytes, raceAttributesOffset);
 	init2DInt8Array(this->guardAttributes, exeBytes, guardAttributesOffset);
 	initInt8Array(this->guardTypeChances, exeBytes, guardTypeChancesOffset);

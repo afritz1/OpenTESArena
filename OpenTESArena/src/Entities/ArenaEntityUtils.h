@@ -90,6 +90,8 @@ namespace ArenaEntityUtils
 
 	int getHumanEnemyGold(int charClassDefID, const ExeData &exeData, ArenaRandom &random);
 	int getHumanEnemyExperience(int level, int charClassDefID, const ExeData &exeData);
+	bool getHumanEnemyIsFemale(ArenaRandom &random, const ExeData &exeData);
+	ArenaRaceType getHumanEnemyRace(ArenaRandom &random);
 
 	constexpr int LOOT_VALUES_INDEX_HOUSE = 0;
 	constexpr int LOOT_VALUES_INDEX_PALACE = 1;
@@ -114,6 +116,7 @@ namespace ArenaEntityUtils
 	bool doGuardsAppearForTheft(int thievingSkill, ArenaRandom &random);
 	int getGuardType(const ExeData &exeData, ArenaRandom &random);
 	int getGuardLevel(ArenaCityType cityType, int tierBonus, const ExeData &exeData, ArenaRandom &random);
+	ArenaRaceType getGuardRace(int currentProvinceID);
 	int getNumberOfGuardsToSpawn(ArenaRandom &random);
 	void getGuardArmor(int guardType, const ExeData &exeData, ArenaRandom &random, Span<ArenaArmorTypeID> outArmorIDs, ArenaArmorMaterialType *outArmorMaterialType);
 	ArenaWeaponTypeID getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
