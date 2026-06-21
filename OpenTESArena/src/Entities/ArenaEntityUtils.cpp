@@ -1025,9 +1025,9 @@ bool ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(ArenaEnvironmentTy
 		return !areCitizensPresent; // During night
 	}
 
-	if (environmentType == ArenaEnvironmentType::BuildingInterior)
+	if (environmentType != ArenaEnvironmentType::Wilderness)
 	{
-		return !isPlayerCamping;
+		return (!isPlayerCamping || environmentType == ArenaEnvironmentType::BuildingInterior);
 	}
 
 	return false;
