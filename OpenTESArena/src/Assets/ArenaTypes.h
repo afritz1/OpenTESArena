@@ -15,6 +15,9 @@ using ArenaFlatIndex = uint16_t;
 // *ITEM indices are used for entities; some values are reserved for creatures, humans, etc..
 using ArenaItemIndex = uint16_t;
 
+// 1-based IDs for all creatures, not human enemies.
+using ArenaCreatureID = uint16_t;
+
 // Maps one or more *MENU IDs to a type of transition voxel. Cities and the wilderness interpret
 // IDs differently.
 enum class ArenaMenuType

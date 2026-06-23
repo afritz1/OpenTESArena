@@ -1337,29 +1337,30 @@ uint16_t ArenaEntityUtils::makeTileIndex(int16_t x, int16_t z)
 	return static_cast<uint16_t>((tileZ << 8) + (tileX << 1));
 }
 
-void ArenaEntityUtils::paralysisOrDiseaseOnHit(int creatureID, int playerRace, int playerClass, bool playerResistantToPoisonEffectActive, int playerPoisonSavingThrow, ArenaRandom &random, const ExeData &exeData)
+void ArenaEntityUtils::paralysisOrDiseaseOnHit(int creatureIndex, int playerRace, int playerClass, bool isPlayerPoisonResistEffectActive,
+	int playerPoisonSavingThrow, ArenaRandom &random, const ExeData &exeData)
 {
-	constexpr int vampireID = 22;
-	constexpr int lizardmanID = 3;
-	constexpr int spiderID = 9;
-	constexpr int highElfID = 4;
-	constexpr int knightID = 17;
-	constexpr int barbarianID = 15;
+	constexpr ArenaCreatureID lizardmanID = 3;
+	constexpr ArenaCreatureID spiderID = 9;
+	constexpr ArenaCreatureID vampireID = 22;
+	constexpr int highElfRaceID = 4;
+	constexpr int barbarianClassID = 15;
+	constexpr int knightClassID = 17;
 
 	Span<const int8_t> chances = exeData.entities.creatureDiseaseChances;
 	Span<const uint8_t> diseaseGivingCreatureIDs = exeData.entities.diseaseGivingCreatureIDs;
 	Span<const std::vector<uint8_t>> creatureDiseaseLists = exeData.entities.creatureDiseaseLists;
 
-	int chance;
-	int creatureID1Based = creatureID + 1;
+	const ArenaCreatureID creatureID = creatureIndex + 1;
 
-	if (creatureID1Based == vampireID)
+	int chance;
+	if (creatureID == vampireID)
 	{
 		chance = 5;
 	}
 	else
 	{
-		chance = chances[creatureID];
+		chance = chances[creatureIndex];
 
 		if (chance <= 0)
 		{
@@ -1367,27 +1368,31 @@ void ArenaEntityUtils::paralysisOrDiseaseOnHit(int creatureID, int playerRace, i
 		}
 	}
 
-	if ((random.next() % 100) <= chance)
+	if (random.next(100) <= chance)
 	{
-		int roll = random.next() % 100;
-		if (!playerResistantToPoisonEffectActive && (playerRace != highElfID) && (playerClass != knightID)
-			&& (creatureID1Based == lizardmanID || creatureID1Based == spiderID) && (roll < playerPoisonSavingThrow))
+		const int roll = random.next(100);
+
+		const bool isPlayerImmuneToParalysis = isPlayerPoisonResistEffectActive || (playerRace == highElfRaceID) || (playerClass == knightClassID);
+		const bool isCreatureCapableOfParalysis = creatureID == lizardmanID || creatureID == spiderID;
+		if (!isPlayerImmuneToParalysis && isCreatureCapableOfParalysis && (roll < playerPoisonSavingThrow))
 		{
-			int rounds = random.next(6) + 1;
+			const int rounds = random.next(6) + 1;
 			//@todo: Inflict paralysis
-			DebugLog("Player paralyzed. (not implemented)");
+			DebugLogFormat("Player paralyzed %d round(s). (not implemented)", rounds);
 			return;
 		}
 
-		if (!playerResistantToPoisonEffectActive && (playerClass != barbarianID) && (roll < playerPoisonSavingThrow))
+		const bool isPlayerImmuneToDisease = isPlayerPoisonResistEffectActive || (playerClass == barbarianClassID);
+		if (!isPlayerImmuneToDisease && (roll < playerPoisonSavingThrow))
 		{
 			for (int i = 0; i < diseaseGivingCreatureIDs.getCount(); i++)
 			{
-				if (creatureID1Based == diseaseGivingCreatureIDs[i])
+				if (creatureID == diseaseGivingCreatureIDs[i])
 				{
-					std::vector<uint8_t> diseaseList = creatureDiseaseLists[i];
-					int diseaseID = diseaseList[random.next(diseaseList.size())];
-					causeDisease(diseaseID, random, exeData);
+					Span<const uint8_t> diseaseList = creatureDiseaseLists[i];
+					const int randomDiseaseIndex = random.next(diseaseList.getCount());
+					const int diseaseID = diseaseList[randomDiseaseIndex];
+					ArenaEntityUtils::causeDisease(diseaseID, random, exeData);
 					return;
 				}
 			}
@@ -1400,11 +1405,11 @@ void ArenaEntityUtils::causeDisease(int diseaseID, ArenaRandom &random, const Ex
 	Span<const uint8_t> randomHealingTimeDiseaseIDs = exeData.entities.randomHealingTimeDiseaseIDs;
 
 	int lengthInMinutes = 1440;
-	for (int i = 0; i < randomHealingTimeDiseaseIDs.getCount(); i++)
+	for (const uint8_t currentDiseaseID : randomHealingTimeDiseaseIDs)
 	{
-		if (randomHealingTimeDiseaseIDs[i] == diseaseID)
+		if (currentDiseaseID == diseaseID)
 		{
-			lengthInMinutes *= (random.next(15) + 3);
+			lengthInMinutes *= random.next(15) + 3;
 			break;
 		}
 	}

@@ -1530,18 +1530,26 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 
 					if (isPlayerHit)
 					{
-						if (entityDef.enemy.type == EnemyEntityDefinitionType::Human)
+						const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
+
+						const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+						if (enemyDef.type == EnemyEntityDefinitionType::Human)
 						{
 							//@todo: Chance for critical strike
 						}
 						else
 						{
+							const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
+
+							//@todo: Pass in real values for the saving throw and resistance effect
+							const bool isPlayerPoisonResistEffectActive = false;
+							const int playerPoisonSavingThrow = 90;
+
 							ArenaRandom arenaRandom(random.next());
 							const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-							//@todo: Pass in real values for the saving throw and resistance effect
-							ArenaEntityUtils::paralysisOrDiseaseOnHit(entityDef.enemy.creatureDefID, player.raceID, player.charClassDefID, false, 90, arenaRandom, exeData);
+							ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, player.charClassDefID, isPlayerPoisonResistEffectActive, playerPoisonSavingThrow, arenaRandom, exeData);
 						}
-						const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
+
 						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
 
 						audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);
