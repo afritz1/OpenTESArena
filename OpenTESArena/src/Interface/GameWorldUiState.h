@@ -42,8 +42,6 @@ struct GameWorldUiState
 	UiContextInstanceID lootPopUpContextInstID;
 
 	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
-	UiTextureID statusGradientTextureID;
-	UiTextureID playerPortraitTextureID;
 	Buffer<UiTextureID> weaponAnimTextureIDs;
 	Buffer<UiTextureID> keyTextureIDs;
 	Buffer<UiTextureID> arrowCursorTextureIDs;

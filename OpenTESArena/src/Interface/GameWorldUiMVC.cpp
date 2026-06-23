@@ -343,6 +343,16 @@ Radians GameWorldUiModel::getCompassAngle(const VoxelDouble2 &direction)
 	return std::atan2(-direction.y, -direction.x);
 }
 
+PlayerStatusGradientType GameWorldUiModel::getCurrentPlayerStatusGradientType(const Player &player)
+{
+	if (player.effectsState.isDiseased())
+	{
+		return PlayerStatusGradientType::Diseased;
+	}
+
+	return PlayerStatusGradientType::Healthy;
+}
+
 std::string GameWorldUiModel::getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData)
 {
 	std::string text = exeData.ui.inspectedEntityName;
@@ -850,7 +860,7 @@ TextureAsset GameWorldUiView::getGameWorldInterfaceTextureAsset()
 	return TextureAsset(ArenaTextureName::GameWorldInterface);
 }
 
-TextureAsset GameWorldUiView::getStatusGradientTextureAsset(StatusGradientType gradientType)
+TextureAsset GameWorldUiView::getStatusGradientTextureAsset(PlayerStatusGradientType gradientType)
 {
 	const int gradientID = static_cast<int>(gradientType);
 	return TextureAsset(ArenaTextureName::StatusGradients, gradientID);
@@ -994,37 +1004,6 @@ void GameWorldUiView::updateStatusBarsTexture(UiTextureID textureID, const Playe
 	renderer.unlockUiTexture(textureID);
 }
 
-UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradientType,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = GameWorldUiView::getStatusGradientTextureAsset(gradientType);
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for status gradient " + std::to_string(static_cast<int>(gradientType)) + ".");
-	}
-
-	return textureID;
-}
-
-UiTextureID GameWorldUiView::allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(isMale, raceID, portraitID);
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for player portrait (male: " + std::to_string(static_cast<int>(isMale)) +
-			", race: " + std::to_string(raceID) + ", portrait: " + std::to_string(portraitID) + ").");
-	}
-
-	return textureID;
-}
-
 UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFilename, int index,
 	TextureManager &textureManager, Renderer &renderer)
 {
@@ -1034,8 +1013,7 @@ UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFil
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
-		DebugCrash("Couldn't create UI texture for weapon animation \"" + weaponFilename +
-			"\" index " + std::to_string(index) + ".");
+		DebugCrash("Couldn't create UI texture for weapon animation \"" + weaponFilename + "\" index " + std::to_string(index) + ".");
 	}
 
 	return textureID;

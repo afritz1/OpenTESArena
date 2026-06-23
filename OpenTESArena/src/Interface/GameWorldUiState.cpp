@@ -113,8 +113,6 @@ GameWorldUiState::GameWorldUiState()
 	this->textPopUpContextInstID = -1;
 	this->lootPopUpContextInstID = -1;
 	this->statusBarsTextureID = -1;
-	this->statusGradientTextureID = -1;
-	this->playerPortraitTextureID = -1;
 	this->modernModeReticleTextureID = -1;
 	this->currentHealth = 0.0;
 	this->maxHealth = 0.0;
@@ -136,8 +134,6 @@ void GameWorldUiState::init(Game &game)
 	this->game = &game;
 
 	this->statusBarsTextureID = GameWorldUiView::allocStatusBarsTexture(textureManager, renderer);
-	this->statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(GameWorldUiView::StatusGradientType::Default, textureManager, renderer);
-	this->playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
@@ -189,18 +185,6 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 	{
 		renderer.freeUiTexture(this->statusBarsTextureID);
 		this->statusBarsTextureID = -1;
-	}
-
-	if (this->statusGradientTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->statusGradientTextureID);
-		this->statusGradientTextureID = -1;
-	}
-
-	if (this->playerPortraitTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->playerPortraitTextureID);
-		this->playerPortraitTextureID = -1;
 	}
 
 	if (this->weaponAnimTextureIDs.isValid())
@@ -323,8 +307,12 @@ void GameWorldUI::create(Game &game)
 	modernModeReticleImageElementInitInfo.drawOrder = 1;
 	const UiElementInstanceID modernModeReticleImageElementInstID = uiManager.createImage(modernModeReticleImageElementInitInfo, state.modernModeReticleTextureID, state.contextInstID, renderer);
 
+	const Player &player = game.player;
+	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+	const UiTextureID playerPortraitTextureID = uiManager.getOrAddTexture(playerPortraitTextureAsset, paletteTextureAsset, textureManager, renderer);
 	const UiElementInstanceID playerPortraitImageElementInstID = uiManager.getElementByName(PlayerPortraitImageElementName);
-	uiManager.setImageTexture(playerPortraitImageElementInstID, state.playerPortraitTextureID);
+	uiManager.setImageTexture(playerPortraitImageElementInstID, playerPortraitTextureID);
 
 	const UiElementInstanceID playerNameTextBoxElementInstID = uiManager.getElementByName(PlayerNameTextBoxElementName);
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
@@ -555,6 +543,13 @@ void GameWorldUI::update(double dt)
 
 	if (!isModernInterface)
 	{
+		const PlayerStatusGradientType statusGradientType = GameWorldUiModel::getCurrentPlayerStatusGradientType(player);
+		const TextureAsset statusGradientTextureAsset = GameWorldUiView::getStatusGradientTextureAsset(statusGradientType);
+		const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+		const UiTextureID statusGradientTextureID = uiManager.getOrAddTexture(statusGradientTextureAsset, paletteTextureAsset, textureManager, renderer);
+		const UiElementInstanceID statusGradientElementInstID = uiManager.getElementByName(StatusGradientImageElementName);
+		uiManager.setImageTexture(statusGradientElementInstID, statusGradientTextureID);
+
 		const InputManager &inputManager = game.inputManager;
 		const Int2 cursorPosition = inputManager.getMousePosition();
 

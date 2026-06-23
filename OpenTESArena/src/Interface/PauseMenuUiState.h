@@ -13,8 +13,6 @@ struct PauseMenuUiState
 	UiContextInstanceID contextInstID;
 
 	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
-	UiTextureID statusGradientTextureID;
-	UiTextureID playerPortraitTextureID;
 	UiTextureID optionsButtonTextureID;
 
 	PauseMenuUiState();

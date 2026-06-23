@@ -37,8 +37,6 @@ PauseMenuUiState::PauseMenuUiState()
 	this->game = nullptr;
 	this->contextInstID = -1;
 	this->statusBarsTextureID = -1;
-	this->statusGradientTextureID = -1;
-	this->playerPortraitTextureID = -1;
 	this->optionsButtonTextureID = -1;
 }
 
@@ -51,8 +49,6 @@ void PauseMenuUiState::init(Game &game)
 	this->game = &game;
 
 	this->statusBarsTextureID = GameWorldUiView::allocStatusBarsTexture(textureManager, renderer);
-	this->statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(GameWorldUiView::StatusGradientType::Default, textureManager, renderer);
-	this->playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 	this->optionsButtonTextureID = PauseMenuUiView::allocOptionsButtonTexture(textureManager, renderer);
 }
 
@@ -62,18 +58,6 @@ void PauseMenuUiState::freeTextures(Renderer &renderer)
 	{
 		renderer.freeUiTexture(this->statusBarsTextureID);
 		this->statusBarsTextureID = -1;
-	}
-
-	if (this->statusGradientTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->statusGradientTextureID);
-		this->statusGradientTextureID = -1;
-	}
-
-	if (this->playerPortraitTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->playerPortraitTextureID);
-		this->playerPortraitTextureID = -1;
 	}
 
 	if (this->optionsButtonTextureID >= 0)
@@ -105,11 +89,18 @@ void PauseMenuUI::create(Game &game)
 	statusBarsImageElementInitInfo.drawOrder = 2;
 	uiManager.createImage(statusBarsImageElementInitInfo, state.statusBarsTextureID, state.contextInstID, renderer);
 
+	const Player &player = game.player;
+	const PlayerStatusGradientType statusGradientType = GameWorldUiModel::getCurrentPlayerStatusGradientType(player);
+	const TextureAsset statusGradientTextureAsset = GameWorldUiView::getStatusGradientTextureAsset(statusGradientType);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+	const UiTextureID statusGradientTextureID = uiManager.getOrAddTexture(statusGradientTextureAsset, paletteTextureAsset, textureManager, renderer);
 	const UiElementInstanceID statusGradientImageElementInstID = uiManager.getElementByName(StatusGradientImageElementName);
-	uiManager.setImageTexture(statusGradientImageElementInstID, state.statusGradientTextureID);
+	uiManager.setImageTexture(statusGradientImageElementInstID, statusGradientTextureID);
 
+	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
+	const UiTextureID playerPortraitTextureID = uiManager.getOrAddTexture(playerPortraitTextureAsset, paletteTextureAsset, textureManager, renderer);
 	const UiElementInstanceID playerPortraitImageElementInstID = uiManager.getElementByName(PortraitImageElementName);
-	uiManager.setImageTexture(playerPortraitImageElementInstID, state.playerPortraitTextureID);
+	uiManager.setImageTexture(playerPortraitImageElementInstID, playerPortraitTextureID);
 
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
 	const UiElementInstanceID playerNameTextBoxElementInstID = uiManager.getElementByName(NameTextBoxElementName);
