@@ -102,15 +102,10 @@ namespace
 
 		if (isDiseased)
 		{
-			int diseaseID = player.effectsState.diseaseID;
 			const Span<const std::string> diseaseNames = exeData.status.diseaseNames;
-			if (diseaseID >= diseaseNames.getCount())
-			{
-				DebugLogErrorFormat("Disease %d too high for names array, defaulting to 0.", diseaseID);
-				diseaseID = 0;
-			}
+			const int diseaseNameIndex = player.effectsState.diseaseID - 10;
 
-			const std::string &diseaseValueStr = diseaseNames[diseaseID];
+			const std::string &diseaseValueStr = diseaseNames[diseaseNameIndex];
 			std::string diseaseStr = exeData.status.disease;
 			index = diseaseStr.find("%s");
 			diseaseStr.replace(index, 2, diseaseValueStr);
