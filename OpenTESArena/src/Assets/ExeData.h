@@ -514,6 +514,7 @@ struct ExeDataStatus
 	std::string staminaExhaustedRecover;
 	std::string staminaExhaustedDeath;
 	std::string staminaDrowning;
+	std::string staminaDrowningParalyzed;
 
 	std::string enemyCorpseEmptyInventory;
 	std::string enemyCorpseGold;

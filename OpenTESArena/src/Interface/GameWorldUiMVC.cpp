@@ -399,13 +399,20 @@ std::string GameWorldUiModel::getDoorUnlockWithKeyMessage(int keyID, const ExeDa
 	return doorUnlockMessage;
 }
 
-std::string GameWorldUiModel::getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData)
+std::string GameWorldUiModel::getStaminaExhaustedMessage(bool isSwimming, bool isParalyzed, bool isInterior, bool isNight, const ExeData &exeData)
 {
 	std::string text;
 
 	if (isSwimming)
 	{
-		text = exeData.status.staminaDrowning;
+		if (isParalyzed)
+		{
+			text = exeData.status.staminaDrowningParalyzed;
+		}
+		else
+		{
+			text = exeData.status.staminaDrowning;
+		}
 	}
 	else if (!isInterior && isNight)
 	{
@@ -1650,11 +1657,11 @@ void GameWorldUiController::onHealthDepleted(Game &game)
 	GameWorldUiController::onShowPlayerDeathCinematic(game);
 }
 
-void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight)
+void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool isParalyzed, bool isInterior, bool isNight)
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
-	const std::string text = GameWorldUiModel::getStaminaExhaustedMessage(isSwimming, isInterior, isNight, exeData);
+	const std::string text = GameWorldUiModel::getStaminaExhaustedMessage(isSwimming, isParalyzed, isInterior, isNight, exeData);
 
 	auto callback = [&game, isSwimming, isInterior, isNight, &exeData]()
 	{

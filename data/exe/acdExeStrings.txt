@@ -255,6 +255,7 @@ LockDifficultyMessages=0x377D4
 StaminaExhaustedRecover=0x434E0
 StaminaExhaustedDeath=0x4356A
 StaminaDrowning=0x4352F
+StaminaDrowningParalyzed=0x43327
 EnemyCorpseEmptyInventory=0x40670
 EnemyCorpseGold=0x406FA
 CitizenCorpseGold=0x42128

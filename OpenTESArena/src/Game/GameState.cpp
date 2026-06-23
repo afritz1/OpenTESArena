@@ -1243,11 +1243,12 @@ void GameState::tickPlayerStamina(double dt, Game &game)
 	const double scaledStaminaChange = (staminaChange * 100.0) / 256.0;
 	player.currentStamina = std::max(player.currentStamina - scaledStaminaChange, 0.0);
 
-	if (player.currentStamina == 0.0)
+	const bool isParalyzed = player.effectsState.isParalyzed();
+	if (player.currentStamina == 0.0 || (isSwimming && isParalyzed))
 	{
 		const bool isInterior = this->getActiveMapType() == MapType::Interior;
 		const bool isNight = ArenaClockUtils::nightLightsAreActive(this->clock);
-		GameWorldUiController::onStaminaExhausted(game, isSwimming, isInterior, isNight);
+		GameWorldUiController::onStaminaExhausted(game, isSwimming, isParalyzed, isInterior, isNight);
 	}
 }
 

@@ -960,6 +960,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int staminaExhaustedRecoverOffset = GetExeAddress(*section, "StaminaExhaustedRecover");
 	const int staminaExhaustedDeathOffset = GetExeAddress(*section, "StaminaExhaustedDeath");
 	const int staminaDrowningOffset = GetExeAddress(*section, "StaminaDrowning");
+	const int staminaDrowningParalyzedOffset = GetExeAddress(*section, "StaminaDrowningParalyzed");
 	const int enemyCorpseEmptyInventoryOffset = GetExeAddress(*section, "EnemyCorpseEmptyInventory");
 	const int enemyCorpseGoldOffset = GetExeAddress(*section, "EnemyCorpseGold");
 	const int citizenCorpseGoldOffset = GetExeAddress(*section, "CitizenCorpseGold");
@@ -980,6 +981,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	this->staminaExhaustedRecover = GetExeStringNullTerminated(exeBytes, staminaExhaustedRecoverOffset);
 	this->staminaExhaustedDeath = GetExeStringNullTerminated(exeBytes, staminaExhaustedDeathOffset);
 	this->staminaDrowning = GetExeStringNullTerminated(exeBytes, staminaDrowningOffset);
+	this->staminaDrowningParalyzed = GetExeStringNullTerminated(exeBytes, staminaDrowningParalyzedOffset);
 	this->enemyCorpseEmptyInventory = GetExeStringNullTerminated(exeBytes, enemyCorpseEmptyInventoryOffset);
 	this->enemyCorpseGold = GetExeStringNullTerminated(exeBytes, enemyCorpseGoldOffset);
 	this->citizenCorpseGold = GetExeStringNullTerminated(exeBytes, citizenCorpseGoldOffset);

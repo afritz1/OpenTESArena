@@ -77,7 +77,7 @@ namespace GameWorldUiModel
 	std::string getKeyPickUpMessage(int keyID, const ExeData &exeData);
 	std::string getDoorUnlockWithKeyMessage(int keyID, const ExeData &exeData);
 
-	std::string getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData);
+	std::string getStaminaExhaustedMessage(bool isSwimming, bool isParalyzed, bool isInterior, bool isNight, const ExeData &exeData);
 
 	std::string getEffectTextBoxMessage(const std::string &effectName, const ExeData &exeData);
 }
@@ -297,5 +297,5 @@ namespace GameWorldUiController
 
 	void onShowPlayerDeathCinematic(Game &game);
 	void onHealthDepleted(Game &game);
-	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);
+	void onStaminaExhausted(Game &game, bool isSwimming, bool isParalyzed, bool isInterior, bool isNight);
 }
