@@ -388,7 +388,15 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	Random &random = game.random;
 	if (player.effectsState.isDiseased())
 	{
-		const bool isPlayerDyingOnJourney = random.nextBool(); // @todo more balanced chances than 50/50. maybe use travelDays?
+		constexpr int minTravelDaysForDyingOnJourney = 10;
+
+		bool isPlayerDyingOnJourney = false;
+		if (travelDays >= minTravelDaysForDyingOnJourney)
+		{
+			constexpr double deathChancePerTravelDay = 0.01;
+			const double deathFromDiseaseChance = std::min(static_cast<double>(travelDays - minTravelDaysForDyingOnJourney) * deathChancePerTravelDay, 1.0);
+			isPlayerDyingOnJourney = random.nextReal() <= deathFromDiseaseChance;
+		}
 
 		if (isPlayerDyingOnJourney)
 		{
