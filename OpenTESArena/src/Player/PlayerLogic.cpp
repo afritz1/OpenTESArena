@@ -25,10 +25,10 @@
 namespace PlayerLogic
 {
 	PlayerInputAcceleration getInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
-		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, Span<const Rect> nativeCursorRegions)
+		bool isParalyzed, double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, Span<const Rect> nativeCursorRegions)
 	{
 		PlayerInputAcceleration inputAcceleration;
-		if (!isOnGround && !isClimbing)
+		if ((!isOnGround && !isClimbing) || isParalyzed)
 		{
 			return inputAcceleration;
 		}
@@ -191,7 +191,7 @@ namespace PlayerLogic
 	}
 
 	PlayerInputAcceleration getInputAccelerationModern(Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
-		double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
+		bool isParalyzed, double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
 	{
 		PlayerInputAcceleration inputAcceleration;
 
@@ -211,6 +211,11 @@ namespace PlayerLogic
 
 		if (!isGhostModeEnabled)
 		{
+			if (isParalyzed)
+			{
+				return inputAcceleration;
+			}
+
 			if (isOnGround || isClimbing)
 			{
 				if (forward || backward || left || right || jump)
@@ -623,14 +628,19 @@ PlayerInputAcceleration::PlayerInputAcceleration()
 
 Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, Span<const Rect> nativeCursorRegions)
 {
-	const auto &inputManager = game.inputManager;
+	const Player &player = game.player;
+	if (player.effectsState.isParalyzed())
+	{
+		return Double2::Zero;
+	}
 
-	const auto &options = game.options;
+	const InputManager &inputManager = game.inputManager;
+
+	const Options &options = game.options;
 	const bool modernInterface = options.getGraphics_ModernInterface();
 	if (!modernInterface)
 	{
 		// Classic interface mode.
-		auto &player = game.player;
 		const bool leftClick = inputManager.mouseButtonIsDown(SDL_BUTTON_LEFT);
 		const bool left = inputManager.keyIsDown(SDL_SCANCODE_A);
 		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
@@ -735,6 +745,8 @@ PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, Span<const
 	const bool isClimbing = player.movementType == PlayerMovementType::Climbing;
 	const double maxMoveSpeed = player.getMaxMoveSpeed();
 
+	const bool isParalyzed = player.effectsState.isParalyzed();
+
 	const Options &options = game.options;
 	const bool isGhostModeEnabled = options.getMisc_GhostMode();
 	const bool modernInterface = options.getGraphics_ModernInterface();
@@ -742,11 +754,11 @@ PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, Span<const
 	PlayerInputAcceleration inputAcceleration;
 	if (!modernInterface)
 	{
-		inputAcceleration = PlayerLogic::getInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, isClimbing, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
+		inputAcceleration = PlayerLogic::getInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, isClimbing, isParalyzed, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		inputAcceleration = PlayerLogic::getInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, isClimbing, ceilingScale, isGhostModeEnabled, inputManager);
+		inputAcceleration = PlayerLogic::getInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, isClimbing, isParalyzed, ceilingScale, isGhostModeEnabled, inputManager);
 	}
 
 	return inputAcceleration;
