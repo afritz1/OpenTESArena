@@ -1006,6 +1006,9 @@ bool ExeDataTravel::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int arrivalDatePredictionOffset = GetExeAddress(*section, "ArrivalDatePrediction");
 	const int alreadyAtDestinationOffset = GetExeAddress(*section, "AlreadyAtDestination");
 	const int noDestinationOffset = GetExeAddress(*section, "NoDestination");
+	const int diseaseRiskOfDeathOffset = GetExeAddress(*section, "DiseaseRiskOfDeath");
+	const auto diseaseRiskOfDeathYesPair = GetExeAddressAndLength(*section, "DiseaseRiskOfDeathYes");
+	const auto diseaseRiskOfDeathNoPair = GetExeAddressAndLength(*section, "DiseaseRiskOfDeathNo");
 	const int arrivalPopUpLocationOffset = GetExeAddress(*section, "ArrivalPopUpLocation");
 	const int arrivalPopUpDateOffset = GetExeAddress(*section, "ArrivalPopUpDate");
 	const int arrivalPopUpDaysOffset = GetExeAddress(*section, "ArrivalPopUpDays");
@@ -1020,6 +1023,9 @@ bool ExeDataTravel::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	this->arrivalDatePrediction = GetExeStringNullTerminated(exeBytes, arrivalDatePredictionOffset);
 	this->alreadyAtDestination = GetExeStringNullTerminated(exeBytes, alreadyAtDestinationOffset);
 	this->noDestination = GetExeStringNullTerminated(exeBytes, noDestinationOffset);
+	this->diseaseRiskOfDeath = GetExeStringNullTerminated(exeBytes, diseaseRiskOfDeathOffset);
+	this->diseaseRiskOfDeathYes = GetExeStringFixedLength(exeBytes, diseaseRiskOfDeathYesPair);
+	this->diseaseRiskOfDeathNo = GetExeStringFixedLength(exeBytes, diseaseRiskOfDeathNoPair);
 	this->arrivalPopUpLocation = GetExeStringNullTerminated(exeBytes, arrivalPopUpLocationOffset);
 	this->arrivalPopUpDate = GetExeStringNullTerminated(exeBytes, arrivalPopUpDateOffset);
 	this->arrivalPopUpDays = GetExeStringNullTerminated(exeBytes, arrivalPopUpDaysOffset);

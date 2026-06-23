@@ -558,6 +558,11 @@ struct ExeDataTravel
 	// Pop-up when no destination is selected.
 	std::string noDestination;
 
+	// Popup when trying to fast travel while diseased.
+	std::string diseaseRiskOfDeath;
+	std::string diseaseRiskOfDeathYes;
+	std::string diseaseRiskOfDeathNo;
+
 	// Location/date/days text when the player arrives at their destination.
 	std::string arrivalPopUpLocation, arrivalPopUpDate, arrivalPopUpDays;
 
