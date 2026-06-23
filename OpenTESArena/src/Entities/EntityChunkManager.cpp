@@ -1541,13 +1541,16 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 						{
 							const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
 
+							const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+							const int originalPlayerClassIndex = playerCharClassDef.originalClassIndex;
+
 							//@todo: Pass in real values for the saving throw and resistance effect
 							const bool isPlayerPoisonResistEffectActive = false;
 							const int playerPoisonSavingThrow = 90;
 
 							ArenaRandom arenaRandom(random.next());
 							const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-							ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, player.charClassDefID, isPlayerPoisonResistEffectActive, playerPoisonSavingThrow, arenaRandom, exeData);
+							ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, originalPlayerClassIndex, isPlayerPoisonResistEffectActive, playerPoisonSavingThrow, arenaRandom, exeData);
 						}
 
 						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
