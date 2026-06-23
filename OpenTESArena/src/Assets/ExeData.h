@@ -501,6 +501,7 @@ struct ExeDataStatus
 
 	std::string fortify; // With %s token.
 	std::string disease; // With %s token.
+	std::string diseaseNames[17];
 	std::string effect; // With %s token.
 	std::string effectsList[23]; // Healthy, diseased, etc..
 

@@ -80,6 +80,27 @@ struct PlayerClimbingState
 	PlayerClimbingState();
 };
 
+struct PlayerEffectsState
+{
+	int diseaseID;
+	double diseaseSecondsRemaining;
+	double paralysisSecondsRemaining;
+
+	PlayerEffectsState();
+
+	bool isDiseased() const;
+	bool isParalyzed() const;
+
+	void update(double dt);
+
+	void applyDisease(int diseaseID, double seconds);
+	void applyParalysis(double seconds);
+	void cureDisease();
+	void cureParalysis();
+
+	void clear();
+};
+
 struct Player
 {
 	// Physics state.
@@ -112,6 +133,8 @@ struct Player
 	double currentStamina;
 	double maxSpellPoints;
 	double currentSpellPoints;
+
+	PlayerEffectsState effectsState;
 
 	WeaponAnimationInstance weaponAnimInst; // Weapon animation is determined from inventory items, otherwise fists.
 	int queuedMeleeSwingDirection; // Non-negative if player is attempting attack this frame.

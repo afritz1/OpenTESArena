@@ -917,6 +917,7 @@ void Game::loop()
 				this->gameState.tickUiMessages(clampedDeltaTime);
 				this->gameState.tickPlayerHealth(clampedDeltaTime, *this);
 				this->gameState.tickPlayerStamina(clampedDeltaTime, *this);
+				this->gameState.tickPlayerEffects(clampedDeltaTime, *this);
 				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
 				this->gameState.tickPlayerLevel(*this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);

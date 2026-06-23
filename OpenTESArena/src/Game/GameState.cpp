@@ -1012,7 +1012,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	DebugAssert(dt >= 0.0);
 
 	const Clock prevClock = this->clock;
-	const double timeScale = GameState::GAME_TIME_SCALE * (this->isCamping ? 250.0 : 1.0);
+	const double timeScale = ArenaClockUtils::GameSecondsPerRealTimeSecond * (this->isCamping ? 250.0 : 1.0);
 	this->clock.incrementTime(dt * timeScale);
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;
@@ -1229,7 +1229,7 @@ void GameState::tickPlayerStamina(double dt, Game &game)
 	const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
 	const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(player.raceID);
 
-	constexpr double awakeStaminaLossPerSecond = (baseStaminaLossPerMinute * arenaStaminaScale * GameState::GAME_TIME_SCALE) / secondsPerMinute;
+	constexpr double awakeStaminaLossPerSecond = (baseStaminaLossPerMinute * arenaStaminaScale * ArenaClockUtils::GameSecondsPerRealTimeSecond) / secondsPerMinute;
 	const double swimmingStaminaLossPerSecond = awakeStaminaLossPerSecond * charRaceDef.swimmingStaminaLossMultiplier;
 
 	double staminaChange = awakeStaminaLossPerSecond * dt;
@@ -1249,6 +1249,12 @@ void GameState::tickPlayerStamina(double dt, Game &game)
 		const bool isNight = ArenaClockUtils::nightLightsAreActive(this->clock);
 		GameWorldUiController::onStaminaExhausted(game, isSwimming, isInterior, isNight);
 	}
+}
+
+void GameState::tickPlayerEffects(double dt, Game &game)
+{
+	Player &player = game.player;
+	player.effectsState.update(dt);
 }
 
 void GameState::tickPlayerAttack(double dt, Game &game)

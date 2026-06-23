@@ -1550,7 +1550,22 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 
 							ArenaRandom arenaRandom(random.next());
 							const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-							ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, originalPlayerClassIndex, isPlayerPoisonResistEffectActive, playerPoisonSavingThrow, arenaRandom, exeData);
+
+							int diseaseID;
+							double diseaseSecondsRemaining;
+							double paralysisSecondsRemaining;
+							ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, originalPlayerClassIndex, isPlayerPoisonResistEffectActive,
+								playerPoisonSavingThrow, arenaRandom, exeData, &diseaseID, &diseaseSecondsRemaining, &paralysisSecondsRemaining);
+
+							if (diseaseID >= 0)
+							{
+								player.effectsState.applyDisease(diseaseID, diseaseSecondsRemaining);
+							}
+
+							if (paralysisSecondsRemaining > 0.0)
+							{
+								player.effectsState.applyParalysis(paralysisSecondsRemaining);
+							}
 						}
 
 						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);

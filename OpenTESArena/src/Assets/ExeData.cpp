@@ -949,6 +949,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int dateOffset = GetExeAddress(*section, "Date");
 	const int fortifyOffset = GetExeAddress(*section, "Fortify");
 	const int diseaseOffset = GetExeAddress(*section, "Disease");
+	const int diseaseNamesOffset = GetExeAddress(*section, "DiseaseNames");
 	const int effectOffset = GetExeAddress(*section, "Effect");
 	const int effectsListOffset = GetExeAddress(*section, "EffectsList");
 	const int keyNamesOffset = GetExeAddress(*section, "KeyNames");
@@ -967,6 +968,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	this->date = GetExeStringNullTerminated(exeBytes, dateOffset);
 	this->fortify = GetExeStringNullTerminated(exeBytes, fortifyOffset);
 	this->disease = GetExeStringNullTerminated(exeBytes, diseaseOffset);
+	initStringArrayNullTerminated(this->diseaseNames, exeBytes, diseaseNamesOffset);
 	this->effect = GetExeStringNullTerminated(exeBytes, effectOffset);
 	initStringArrayNullTerminated(this->effectsList, exeBytes, effectsListOffset);
 	initStringArrayNullTerminated(this->keyNames, exeBytes, keyNamesOffset);

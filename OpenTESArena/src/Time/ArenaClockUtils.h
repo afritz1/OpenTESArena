@@ -4,6 +4,12 @@
 
 namespace ArenaClockUtils
 {
+	// One real second is thirteen game seconds. One game round is sixty game seconds.
+	static constexpr double GameSecondsPerRealTimeSecond = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 6646.153846153846;
+	static constexpr double GameSecondsPerRound = 60.0;
+	static constexpr double RoundsPerRealTimeSecond = GameSecondsPerRealTimeSecond / GameSecondsPerRound;
+	static constexpr double RealTimeSecondsPerRound = 1.0 / RoundsPerRealTimeSecond;
+
 	// Beginnings of each time-of-day range.
 	constexpr char Midnight[] = "Midnight";
 	constexpr char Night1[] = "Night1";

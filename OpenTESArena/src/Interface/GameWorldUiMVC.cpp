@@ -83,15 +83,50 @@ namespace
 	}
 
 	// Healthy/diseased/etc.
-	std::string GetStatusEffectString(const ExeData &exeData)
+	std::string GetStatusEffectString(const Player &player, const ExeData &exeData)
 	{
-		std::string text = exeData.status.effect;
-		text = String::replace(text, '\r', '\n');
+		const bool isDiseased = player.effectsState.isDiseased();
+		const bool isParalyzed = player.effectsState.isParalyzed();
 
-		// Replace %s with placeholder.
-		const std::string &effectStr = exeData.status.effectsList[0];
+		std::string text = exeData.status.effect;
+
+		int effectStrIndex = 0;
+		if (isDiseased)
+		{
+			effectStrIndex = 1;
+		}
+
+		const std::string &effectStr = exeData.status.effectsList[effectStrIndex];
 		size_t index = text.find("%s");
 		text.replace(index, 2, effectStr);
+
+		if (isDiseased)
+		{
+			int diseaseID = player.effectsState.diseaseID;
+			const Span<const std::string> diseaseNames = exeData.status.diseaseNames;
+			if (diseaseID >= diseaseNames.getCount())
+			{
+				DebugLogErrorFormat("Disease %d too high for names array, defaulting to 0.", diseaseID);
+				diseaseID = 0;
+			}
+
+			const std::string &diseaseValueStr = diseaseNames[diseaseID];
+			std::string diseaseStr = exeData.status.disease;
+			index = diseaseStr.find("%s");
+			diseaseStr.replace(index, 2, diseaseValueStr);
+			text += diseaseStr;
+		}
+
+		if (isParalyzed)
+		{
+			std::string paralyzedStr = exeData.status.effect;
+			const std::string &paralyzedValueStr = exeData.status.effectsList[20];
+			index = paralyzedStr.find("%s");
+			paralyzedStr.replace(index, 2, paralyzedValueStr);
+			text += paralyzedStr;
+		}
+
+		text = String::replace(text, '\r', '\n');
 
 		// Remove newline on end.
 		text.pop_back();
@@ -140,7 +175,7 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 	index = baseText.find("%d", index);
 	baseText.replace(index, 2, std::to_string(weightCapacity));
 
-	const std::string effectText = GetStatusEffectString(exeData);
+	const std::string effectText = GetStatusEffectString(player, exeData);
 	return baseText + effectText;
 }
 
@@ -1638,7 +1673,7 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 			player.applyRestHealing(restFactor, tavernRoomType, exeData);
 
 			constexpr double secondsPerHour = 60.0 * 60.0;
-			constexpr double realSecondsPerInGameHour = secondsPerHour / GameState::GAME_TIME_SCALE;
+			constexpr double realSecondsPerInGameHour = secondsPerHour / ArenaClockUtils::GameSecondsPerRealTimeSecond;
 			game.gameState.tickGameClock(realSecondsPerInGameHour, game);
 		}
 	};
