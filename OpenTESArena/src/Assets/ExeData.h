@@ -503,7 +503,8 @@ struct ExeDataStatus
 	std::string disease; // With %s token.
 	std::string diseaseNames[17];
 	std::string effect; // With %s token.
-	std::string effectsList[23]; // Healthy, diseased, etc..
+	std::string effectsList[23]; // Healthy, diseased, etc.. For status popup.
+	std::string effectNames[8]; // For effect text box. Each is capitalized.
 
 	std::string keyNames[12];
 	std::string keyPickedUp;

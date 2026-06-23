@@ -952,6 +952,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int diseaseNamesOffset = GetExeAddress(*section, "DiseaseNames");
 	const int effectOffset = GetExeAddress(*section, "Effect");
 	const int effectsListOffset = GetExeAddress(*section, "EffectsList");
+	const int effectNamesOffset = GetExeAddress(*section, "EffectNames");
 	const int keyNamesOffset = GetExeAddress(*section, "KeyNames");
 	const int keyPickedUpOffset = GetExeAddress(*section, "KeyPickedUp");
 	const int doorUnlockedWithKeyOffset = GetExeAddress(*section, "DoorUnlockedWithKey");
@@ -971,6 +972,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	initStringArrayNullTerminated(this->diseaseNames, exeBytes, diseaseNamesOffset);
 	this->effect = GetExeStringNullTerminated(exeBytes, effectOffset);
 	initStringArrayNullTerminated(this->effectsList, exeBytes, effectsListOffset);
+	initStringArrayNullTerminated(this->effectNames, exeBytes, effectNamesOffset);
 	initStringArrayNullTerminated(this->keyNames, exeBytes, keyNamesOffset);
 	this->keyPickedUp = GetExeStringNullTerminated(exeBytes, keyPickedUpOffset);
 	this->doorUnlockedWithKey = GetExeStringNullTerminated(exeBytes, doorUnlockedWithKeyOffset);

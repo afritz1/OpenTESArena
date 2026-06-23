@@ -247,6 +247,7 @@ Disease=0x41E9D
 DiseaseNames=0x36DD8
 Effect=0x41EAB
 EffectsList=0x41EB8
+EffectNames=0x36D90
 KeyNames=0x3EB27
 KeyPickedUp=0x4036B
 DoorUnlockedWithKey=0x40382
