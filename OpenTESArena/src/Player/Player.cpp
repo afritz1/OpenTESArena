@@ -280,6 +280,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->currentStamina = maxStamina;
 	this->maxSpellPoints = maxSpellPoints;
 	this->currentSpellPoints = maxSpellPoints;
+	this->effectsState.clear();
 	this->setWeaponAnimationFromItem(-1);
 	this->queuedMeleeSwingDirection = -1;
 	this->level = 1;
