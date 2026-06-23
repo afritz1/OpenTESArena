@@ -1531,6 +1531,43 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 					if (isPlayerHit)
 					{
 						const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
+
+						const EnemyEntityDefinition &enemyDef = entityDef.enemy;
+						if (enemyDef.type == EnemyEntityDefinitionType::Human)
+						{
+							//@todo: Chance for critical strike
+						}
+						else
+						{
+							const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
+
+							const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+							const int originalPlayerClassIndex = playerCharClassDef.originalClassIndex;
+
+							//@todo: Pass in real values for the saving throw and resistance effect
+							const bool isPlayerPoisonResistEffectActive = false;
+							const int playerPoisonSavingThrow = 90;
+
+							ArenaRandom arenaRandom(random.next());
+							const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+							int diseaseID;
+							double diseaseSecondsRemaining;
+							double paralysisSecondsRemaining;
+							ArenaEntityUtils::paralysisOrDiseaseOnHit(originalCreatureIndex, player.raceID, originalPlayerClassIndex, isPlayerPoisonResistEffectActive,
+								playerPoisonSavingThrow, arenaRandom, exeData, &diseaseID, &diseaseSecondsRemaining, &paralysisSecondsRemaining);
+
+							if (diseaseID >= 0)
+							{
+								player.effectsState.applyDisease(diseaseID, diseaseSecondsRemaining);
+							}
+
+							if (paralysisSecondsRemaining > 0.0)
+							{
+								player.effectsState.applyParalysis(paralysisSecondsRemaining);
+							}
+						}
+
 						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
 
 						audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);

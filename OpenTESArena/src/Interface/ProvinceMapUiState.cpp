@@ -17,6 +17,7 @@ namespace
 	constexpr char ContextName_TextPopUp[] = "ProvinceMapTextPopUp";
 	constexpr char ContextName_SearchInputPopUp[] = "ProvinceMapSearchInputPopUp";
 	constexpr char ContextName_SearchResultsPopUp[] = "ProvinceMapSearchResultsPopUp";
+	constexpr char ContextName_DiseaseWarningPopUp[] = "ProvinceMapDiseaseWarningPopUp";
 
 	constexpr char ElementName_LocationTextBox[] = "ProvinceMapLocationTextBox";
 
@@ -82,6 +83,7 @@ ProvinceMapUiState::ProvinceMapUiState()
 	this->textPopUpContextInstID = -1;
 	this->searchInputPopUpContextInstID = -1;
 	this->searchResultsPopUpContextInstID = -1;
+	this->diseaseWarningPopUpContextInstID = -1;
 	this->backgroundTextureID = -1;
 	this->searchInputImageTextureID = -1;
 	this->provinceID = -1;
@@ -154,6 +156,11 @@ void ProvinceMapUI::create(Game &game)
 	searchInputPopUpContextInitInfo.name = ContextName_SearchInputPopUp;
 	searchInputPopUpContextInitInfo.drawOrder = 1;
 	state.searchInputPopUpContextInstID = uiManager.createContext(searchInputPopUpContextInitInfo);
+
+	UiContextInitInfo diseaseWarningPopUpContextInitInfo;
+	diseaseWarningPopUpContextInitInfo.name = ContextName_DiseaseWarningPopUp;
+	diseaseWarningPopUpContextInitInfo.drawOrder = 1;
+	state.diseaseWarningPopUpContextInstID = uiManager.createContext(diseaseWarningPopUpContextInitInfo);
 
 	UiElementInitInfo searchInputImageElementInitInfo;
 	searchInputImageElementInitInfo.name = "ProvinceMapSearchInputImage";
@@ -239,6 +246,7 @@ void ProvinceMapUI::create(Game &game)
 	uiManager.setContextEnabled(state.textPopUpContextInstID, false);
 	uiManager.setContextEnabled(state.searchInputPopUpContextInstID, false);
 	uiManager.setContextEnabled(state.searchResultsPopUpContextInstID, false);
+	uiManager.setContextEnabled(state.diseaseWarningPopUpContextInstID, false);
 
 	ProvinceMapUI::initLocationIconUI(state.provinceID);
 
@@ -280,6 +288,12 @@ void ProvinceMapUI::destroy()
 	{
 		uiManager.freeContext(state.searchResultsPopUpContextInstID, inputManager, renderer);
 		state.searchResultsPopUpContextInstID = -1;
+	}
+
+	if (state.diseaseWarningPopUpContextInstID >= 0)
+	{
+		uiManager.freeContext(state.diseaseWarningPopUpContextInstID, inputManager, renderer);
+		state.diseaseWarningPopUpContextInstID = -1;
 	}
 
 	state.freeTextures(renderer);
@@ -737,6 +751,147 @@ void ProvinceMapUI::showTextPopUp(const char *str)
 	ProvinceMapUI::onPauseChanged(true);
 }
 
+void ProvinceMapUI::showDiseaseWarningPopUp()
+{
+	ProvinceMapUiState &state = ProvinceMapUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+
+	uiManager.clearContextElements(state.diseaseWarningPopUpContextInstID, inputManager, renderer);
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	UiElementInitInfo descriptionTextBoxElementInitInfo;
+	descriptionTextBoxElementInitInfo.name = "ProvinceMapDiseaseWarningPopUpDescriptionTextBox";
+	descriptionTextBoxElementInitInfo.position = ProvinceMapUiView::DiseaseWarningPopUpCenterPoint;
+	descriptionTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	descriptionTextBoxElementInitInfo.drawOrder = 1;
+
+	std::string descriptionStr = String::replace(exeData.travel.diseaseRiskOfDeath, '\r', '\n');
+	descriptionStr.pop_back(); // Remove newline
+
+	UiTextBoxInitInfo descriptionTextBoxInitInfo;
+	descriptionTextBoxInitInfo.text = descriptionStr;
+	descriptionTextBoxInitInfo.fontName = ProvinceMapUiView::TextPopUpFontName;
+	descriptionTextBoxInitInfo.defaultColor = ProvinceMapUiView::TextPopUpTextColor;
+	descriptionTextBoxInitInfo.alignment = ProvinceMapUiView::TextPopUpTextAlignment;
+	descriptionTextBoxInitInfo.lineSpacing = ProvinceMapUiView::TextPopUpLineSpacing;
+	const UiElementInstanceID descriptionTextBoxElementInstID = uiManager.createTextBox(descriptionTextBoxElementInitInfo, descriptionTextBoxInitInfo, state.diseaseWarningPopUpContextInstID, renderer);
+	const Rect descriptionTextBoxRect = uiManager.getTransformGlobalRect(descriptionTextBoxElementInstID);
+
+	UiElementInitInfo descriptionImageElementInitInfo;
+	descriptionImageElementInitInfo.name = "ProvinceMapDiseaseWarningPopUpDescriptionImage";
+	descriptionImageElementInitInfo.position = descriptionTextBoxRect.getCenter();
+	descriptionImageElementInitInfo.pivotType = UiPivotType::Middle;
+	descriptionImageElementInitInfo.drawOrder = 0;
+
+	const int descriptionImageTextureWidth = ProvinceMapUiView::getTextPopUpTextureWidth(descriptionTextBoxRect.width);
+	const int descriptionImageTextureHeight = ProvinceMapUiView::getTextPopUpTextureHeight(descriptionTextBoxRect.height);
+	const UiTextureID descriptionImageTextureID = uiManager.getOrAddTexture(ProvinceMapUiView::TextPopUpTexturePatternType, descriptionImageTextureWidth, descriptionImageTextureHeight, textureManager, renderer);
+	uiManager.createImage(descriptionImageElementInitInfo, descriptionImageTextureID, state.diseaseWarningPopUpContextInstID, renderer);
+
+	UiElementInitInfo yesTextBoxElementInitInfo;
+	yesTextBoxElementInitInfo.name = "ProvinceMapDiseaseWarningPopUpYesTextBox";
+	yesTextBoxElementInitInfo.position = descriptionTextBoxRect.getCenter() + Int2(0, descriptionImageTextureHeight);
+	yesTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	yesTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo yesTextBoxInitInfo;
+	yesTextBoxInitInfo.text = exeData.travel.diseaseRiskOfDeathYes;
+	yesTextBoxInitInfo.fontName = ProvinceMapUiView::TextPopUpFontName;
+	yesTextBoxInitInfo.defaultColor = ProvinceMapUiView::TextPopUpTextColor;
+	yesTextBoxInitInfo.alignment = ProvinceMapUiView::TextPopUpTextAlignment;
+	yesTextBoxInitInfo.lineSpacing = ProvinceMapUiView::TextPopUpLineSpacing;
+	const UiElementInstanceID yesTextBoxElementInstID = uiManager.createTextBox(yesTextBoxElementInitInfo, yesTextBoxInitInfo, state.diseaseWarningPopUpContextInstID, renderer);
+	const Rect yesTextBoxRect = uiManager.getTransformGlobalRect(yesTextBoxElementInstID);
+
+	UiElementInitInfo yesImageElementInitInfo;
+	yesImageElementInitInfo.name = "ProvinceMapDiseaseWarningPopUpYesImage";
+	yesImageElementInitInfo.position = yesTextBoxRect.getCenter();
+	yesImageElementInitInfo.pivotType = UiPivotType::Middle;
+	yesImageElementInitInfo.drawOrder = 0;
+	uiManager.createImage(yesImageElementInitInfo, descriptionImageTextureID, state.diseaseWarningPopUpContextInstID, renderer);
+
+	UiElementInitInfo yesButtonElementInitInfo;
+	yesButtonElementInitInfo.name = "ProvinceMapDiseaseWarningPopUpYesButton";
+	yesButtonElementInitInfo.position = yesTextBoxRect.getCenter();
+	yesButtonElementInitInfo.pivotType = UiPivotType::Middle;
+	yesButtonElementInitInfo.drawOrder = 2;
+
+	auto yesButtonCallback = [](MouseButtonType)
+	{
+		ProvinceMapUiState &state = ProvinceMapUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+		ProvinceMapUI::onPauseChanged(false);
+		ProvinceMapUI::beginFastTravel();
+	};
+
+	UiButtonInitInfo yesButtonInitInfo;
+	yesButtonInitInfo.callback = yesButtonCallback;
+	yesButtonInitInfo.contentElementName = yesImageElementInitInfo.name;
+	uiManager.createButton(yesButtonElementInitInfo, yesButtonInitInfo, state.diseaseWarningPopUpContextInstID);
+
+	UiElementInitInfo noTextBoxElementInitInfo;
+	noTextBoxElementInitInfo.name = "ProvinceMapDiseaseWarningPopUpNoTextBox";
+	noTextBoxElementInitInfo.position = yesTextBoxRect.getCenter() + Int2(0, descriptionImageTextureHeight);
+	noTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	noTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo noTextBoxInitInfo;
+	noTextBoxInitInfo.text = exeData.travel.diseaseRiskOfDeathNo;
+	noTextBoxInitInfo.fontName = ProvinceMapUiView::TextPopUpFontName;
+	noTextBoxInitInfo.defaultColor = ProvinceMapUiView::TextPopUpTextColor;
+	noTextBoxInitInfo.alignment = ProvinceMapUiView::TextPopUpTextAlignment;
+	noTextBoxInitInfo.lineSpacing = ProvinceMapUiView::TextPopUpLineSpacing;
+	const UiElementInstanceID noTextBoxElementInstID = uiManager.createTextBox(noTextBoxElementInitInfo, noTextBoxInitInfo, state.diseaseWarningPopUpContextInstID, renderer);
+	const Rect noTextBoxRect = uiManager.getTransformGlobalRect(noTextBoxElementInstID);
+
+	UiElementInitInfo noImageElementInitInfo;
+	noImageElementInitInfo.name = "ProvinceMapDiseaseWarningPopUpNoImage";
+	noImageElementInitInfo.position = noTextBoxRect.getCenter();
+	noImageElementInitInfo.pivotType = UiPivotType::Middle;
+	noImageElementInitInfo.drawOrder = 0;
+	uiManager.createImage(noImageElementInitInfo, descriptionImageTextureID, state.diseaseWarningPopUpContextInstID, renderer);
+
+	UiElementInitInfo noButtonElementInitInfo;
+	noButtonElementInitInfo.name = "ProvinceMapDiseaseWarningPopUpNoButton";
+	noButtonElementInitInfo.position = noTextBoxRect.getCenter();
+	noButtonElementInitInfo.pivotType = UiPivotType::Middle;
+	noButtonElementInitInfo.drawOrder = 2;
+
+	auto noButtonCallback = [](MouseButtonType)
+	{
+		ProvinceMapUiState &state = ProvinceMapUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+		ProvinceMapUI::onPauseChanged(false);
+	};
+
+	UiButtonInitInfo noButtonInitInfo;
+	noButtonInitInfo.callback = noButtonCallback;
+	noButtonInitInfo.contentElementName = noImageElementInitInfo.name;
+	uiManager.createButton(noButtonElementInitInfo, noButtonInitInfo, state.diseaseWarningPopUpContextInstID);
+
+	auto inputActionCallback = [noButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			noButtonCallback(MouseButtonType::Left);
+		}
+	};
+
+	uiManager.addInputActionListener(InputActionName::Back, inputActionCallback, ContextName_DiseaseWarningPopUp, inputManager);
+	uiManager.setContextEnabled(state.diseaseWarningPopUpContextInstID, true);
+
+	ProvinceMapUI::onPauseChanged(true);
+}
+
 void ProvinceMapUI::onPauseChanged(bool paused)
 {
 	ProvinceMapUiState &state = ProvinceMapUI::state;
@@ -824,7 +979,15 @@ void ProvinceMapUI::onFullscreenButtonSelected(MouseButtonType mouseButtonType)
 
 		if (hasTravelData)
 		{
-			ProvinceMapUI::beginFastTravel();
+			const Player &player = game.player;
+			if (player.effectsState.isDiseased())
+			{
+				ProvinceMapUI::showDiseaseWarningPopUp();
+			}
+			else
+			{
+				ProvinceMapUI::beginFastTravel();
+			}
 		}
 		else
 		{

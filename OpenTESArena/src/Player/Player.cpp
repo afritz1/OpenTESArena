@@ -172,6 +172,69 @@ PlayerClimbingState::PlayerClimbingState()
 	this->shouldStartPercent = 0.0;
 }
 
+PlayerEffectsState::PlayerEffectsState()
+{
+	this->clear();
+}
+
+bool PlayerEffectsState::isDiseased() const
+{
+	return this->diseaseID >= 0;
+}
+
+bool PlayerEffectsState::isParalyzed() const
+{
+	return this->paralysisSecondsRemaining > 0.0;
+}
+
+void PlayerEffectsState::update(double dt)
+{
+	if (this->diseaseSecondsRemaining > 0.0)
+	{
+		this->diseaseSecondsRemaining = std::max(this->diseaseSecondsRemaining - dt, 0.0);
+
+		if (this->diseaseSecondsRemaining == 0.0)
+		{
+			this->diseaseID = -1;
+		}
+	}
+
+	if (this->paralysisSecondsRemaining > 0.0)
+	{
+		this->paralysisSecondsRemaining = std::max(this->paralysisSecondsRemaining - dt, 0.0);
+	}
+}
+
+void PlayerEffectsState::applyDisease(int diseaseID, double seconds)
+{
+	DebugAssert(diseaseID >= 0);
+	this->diseaseID = diseaseID;
+	this->diseaseSecondsRemaining = seconds;
+}
+
+void PlayerEffectsState::applyParalysis(double seconds)
+{
+	this->paralysisSecondsRemaining = std::max(this->paralysisSecondsRemaining, seconds);
+}
+
+void PlayerEffectsState::cureDisease()
+{
+	this->diseaseID = -1;
+	this->diseaseSecondsRemaining = 0.0;
+}
+
+void PlayerEffectsState::cureParalysis()
+{
+	this->paralysisSecondsRemaining = 0.0;
+}
+
+void PlayerEffectsState::clear()
+{
+	this->diseaseID = -1;
+	this->diseaseSecondsRemaining = 0.0;
+	this->paralysisSecondsRemaining = 0.0;
+}
+
 Player::Player()
 {
 	this->physicsCharacter = nullptr;
@@ -217,6 +280,7 @@ void Player::init(const std::string &displayName, bool male, int raceID, int cha
 	this->currentStamina = maxStamina;
 	this->maxSpellPoints = maxSpellPoints;
 	this->currentSpellPoints = maxSpellPoints;
+	this->effectsState.clear();
 	this->setWeaponAnimationFromItem(-1);
 	this->queuedMeleeSwingDirection = -1;
 	this->level = 1;

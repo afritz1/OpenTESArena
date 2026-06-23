@@ -95,6 +95,8 @@ namespace ProvinceMapUiView
 	int getTextPopUpTextureWidth(int textWidth); // @todo: these should be merged into a plain old allocPopUpTexture()
 	int getTextPopUpTextureHeight(int textHeight);
 
+	const Int2 DiseaseWarningPopUpCenterPoint(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
+
 	constexpr UiTexturePatternType TextPopUpTexturePatternType = UiTexturePatternType::Parchment;
 
 	constexpr double BlinkPeriodSeconds = 1.0 / 5.0; // Duration of entire blink period in seconds.

@@ -1012,7 +1012,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	DebugAssert(dt >= 0.0);
 
 	const Clock prevClock = this->clock;
-	const double timeScale = GameState::GAME_TIME_SCALE * (this->isCamping ? 250.0 : 1.0);
+	const double timeScale = ArenaClockUtils::GameSecondsPerRealTimeSecond * (this->isCamping ? 250.0 : 1.0);
 	this->clock.incrementTime(dt * timeScale);
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;
@@ -1229,7 +1229,7 @@ void GameState::tickPlayerStamina(double dt, Game &game)
 	const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
 	const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(player.raceID);
 
-	constexpr double awakeStaminaLossPerSecond = (baseStaminaLossPerMinute * arenaStaminaScale * GameState::GAME_TIME_SCALE) / secondsPerMinute;
+	constexpr double awakeStaminaLossPerSecond = (baseStaminaLossPerMinute * arenaStaminaScale * ArenaClockUtils::GameSecondsPerRealTimeSecond) / secondsPerMinute;
 	const double swimmingStaminaLossPerSecond = awakeStaminaLossPerSecond * charRaceDef.swimmingStaminaLossMultiplier;
 
 	double staminaChange = awakeStaminaLossPerSecond * dt;
@@ -1243,11 +1243,39 @@ void GameState::tickPlayerStamina(double dt, Game &game)
 	const double scaledStaminaChange = (staminaChange * 100.0) / 256.0;
 	player.currentStamina = std::max(player.currentStamina - scaledStaminaChange, 0.0);
 
-	if (player.currentStamina == 0.0)
+	const bool isParalyzed = player.effectsState.isParalyzed();
+	if (player.currentStamina == 0.0 || (isSwimming && isParalyzed))
 	{
 		const bool isInterior = this->getActiveMapType() == MapType::Interior;
 		const bool isNight = ArenaClockUtils::nightLightsAreActive(this->clock);
-		GameWorldUiController::onStaminaExhausted(game, isSwimming, isInterior, isNight);
+		GameWorldUiController::onStaminaExhausted(game, isSwimming, isParalyzed, isInterior, isNight);
+	}
+}
+
+void GameState::tickPlayerEffects(double dt, Game &game)
+{
+	Player &player = game.player;
+	player.effectsState.update(dt);
+}
+
+void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffectsState, const PlayerEffectsState &prevEffectsState)
+{
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> effectNames = exeData.status.effectNames;
+
+	std::string effectText;
+	if (currentEffectsState.isDiseased() && (currentEffectsState.diseaseID != prevEffectsState.diseaseID))
+	{
+		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[0], exeData);
+	}
+	else if (currentEffectsState.isParalyzed() && !prevEffectsState.isParalyzed())
+	{
+		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[6], exeData);
+	}
+
+	if (!effectText.empty())
+	{
+		GameWorldUI::setEffectText(effectText.c_str());
 	}
 }
 

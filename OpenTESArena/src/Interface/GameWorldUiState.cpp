@@ -35,6 +35,7 @@ namespace
 
 	constexpr char TriggerTextBoxElementName[] = "GameWorldTriggerTextBox";
 	constexpr char ActionTextBoxElementName[] = "GameWorldActionTextBox";
+	constexpr char EffectTextBoxElementName[] = "GameWorldEffectTextBox";
 
 	constexpr const char *ButtonElementNames[] =
 	{
@@ -112,8 +113,6 @@ GameWorldUiState::GameWorldUiState()
 	this->textPopUpContextInstID = -1;
 	this->lootPopUpContextInstID = -1;
 	this->statusBarsTextureID = -1;
-	this->statusGradientTextureID = -1;
-	this->playerPortraitTextureID = -1;
 	this->modernModeReticleTextureID = -1;
 	this->currentHealth = 0.0;
 	this->maxHealth = 0.0;
@@ -135,8 +134,6 @@ void GameWorldUiState::init(Game &game)
 	this->game = &game;
 
 	this->statusBarsTextureID = GameWorldUiView::allocStatusBarsTexture(textureManager, renderer);
-	this->statusGradientTextureID = GameWorldUiView::allocStatusGradientTexture(GameWorldUiView::StatusGradientType::Default, textureManager, renderer);
-	this->playerPortraitTextureID = GameWorldUiView::allocPlayerPortraitTexture(player.male, player.raceID, player.portraitID, textureManager, renderer);
 
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
@@ -188,18 +185,6 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 	{
 		renderer.freeUiTexture(this->statusBarsTextureID);
 		this->statusBarsTextureID = -1;
-	}
-
-	if (this->statusGradientTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->statusGradientTextureID);
-		this->statusGradientTextureID = -1;
-	}
-
-	if (this->playerPortraitTextureID >= 0)
-	{
-		renderer.freeUiTexture(this->playerPortraitTextureID);
-		this->playerPortraitTextureID = -1;
 	}
 
 	if (this->weaponAnimTextureIDs.isValid())
@@ -322,8 +307,12 @@ void GameWorldUI::create(Game &game)
 	modernModeReticleImageElementInitInfo.drawOrder = 1;
 	const UiElementInstanceID modernModeReticleImageElementInstID = uiManager.createImage(modernModeReticleImageElementInitInfo, state.modernModeReticleTextureID, state.contextInstID, renderer);
 
+	const Player &player = game.player;
+	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
+	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+	const UiTextureID playerPortraitTextureID = uiManager.getOrAddTexture(playerPortraitTextureAsset, paletteTextureAsset, textureManager, renderer);
 	const UiElementInstanceID playerPortraitImageElementInstID = uiManager.getElementByName(PlayerPortraitImageElementName);
-	uiManager.setImageTexture(playerPortraitImageElementInstID, state.playerPortraitTextureID);
+	uiManager.setImageTexture(playerPortraitImageElementInstID, playerPortraitTextureID);
 
 	const UiElementInstanceID playerNameTextBoxElementInstID = uiManager.getElementByName(PlayerNameTextBoxElementName);
 	const std::string playerNameText = GameWorldUiModel::getPlayerNameText(game);
@@ -336,6 +325,10 @@ void GameWorldUI::create(Game &game)
 	const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 	const Int2 actionTextBoxPosition = GameWorldUiView::getActionTextPosition();
 	uiManager.setTransformPosition(actionTextBoxElementInstID, actionTextBoxPosition);
+
+	const UiElementInstanceID effectTextBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+	const Int2 effectTextBoxPosition = GameWorldUiView::getEffectTextPosition(game, ArenaRenderUtils::SCENE_UI_HEIGHT);
+	uiManager.setTransformPosition(effectTextBoxElementInstID, effectTextBoxPosition);
 
 	if (isModernInterface)
 	{
@@ -544,10 +537,19 @@ void GameWorldUI::update(double dt)
 	const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 	uiManager.setElementActive(actionTextBoxElementInstID, isActionTextVisible);
 
-	// @todo effect text
+	const bool isEffectTextVisible = GameWorldUI::isEffectTextVisible();
+	const UiElementInstanceID effectTextBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+	uiManager.setElementActive(effectTextBoxElementInstID, isEffectTextVisible);
 
 	if (!isModernInterface)
 	{
+		const PlayerStatusGradientType statusGradientType = GameWorldUiModel::getCurrentPlayerStatusGradientType(player);
+		const TextureAsset statusGradientTextureAsset = GameWorldUiView::getStatusGradientTextureAsset(statusGradientType);
+		const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+		const UiTextureID statusGradientTextureID = uiManager.getOrAddTexture(statusGradientTextureAsset, paletteTextureAsset, textureManager, renderer);
+		const UiElementInstanceID statusGradientElementInstID = uiManager.getElementByName(StatusGradientImageElementName);
+		uiManager.setImageTexture(statusGradientElementInstID, statusGradientTextureID);
+
 		const InputManager &inputManager = game.inputManager;
 		const Int2 cursorPosition = inputManager.getMousePosition();
 
@@ -659,7 +661,8 @@ void GameWorldUI::onPauseChanged(bool paused)
 		const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 		uiManager.setElementActive(actionTextBoxElementInstID, false);
 
-		// @todo effect text box
+		const UiElementInstanceID effectTextBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+		uiManager.setElementActive(effectTextBoxElementInstID, false);
 
 		game.setCursorOverride(std::nullopt);
 	}
@@ -983,6 +986,17 @@ void GameWorldUI::setActionText(const char *str)
 	GameWorldUI::setActionTextDuration(str);
 }
 
+void GameWorldUI::setEffectText(const char *str)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+	uiManager.setTextBoxText(textBoxElementInstID, str);
+
+	GameWorldUI::setEffectTextDuration(str);
+}
+
 void GameWorldUI::setTriggerTextDuration(const std::string_view text)
 {
 	GameWorldUiState &state = GameWorldUI::state;
@@ -997,8 +1011,8 @@ void GameWorldUI::setActionTextDuration(const std::string_view text)
 
 void GameWorldUI::setEffectTextDuration(const std::string_view text)
 {
-	// @todo
-	DebugNotImplemented();
+	GameWorldUiState &state = GameWorldUI::state;
+	state.effectTextRemainingSeconds = GameWorldUiView::getEffectTextSeconds(text);
 }
 
 void GameWorldUI::resetTriggerTextDuration()
@@ -1107,6 +1121,11 @@ void GameWorldUI::onWeaponToggleButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
 	Player &player = game.player;
+	if (player.effectsState.isParalyzed())
+	{
+		return;
+	}
+
 	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();

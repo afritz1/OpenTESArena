@@ -139,6 +139,10 @@ struct ExeDataEntities
 	int8_t creatureDiseaseChances[24]; // Negative values have special meaning.
 	uint8_t creatureAttributes[24][8]; // 255 == 100.
 	uint32_t creatureLootChances[24]; // Accessed by 1-based races
+	uint8_t diseaseGivingCreatureIDs[4];
+	std::vector<uint8_t> creatureDiseaseLists[4];
+	uint8_t randomHealingTimeDiseaseIDs[3];
+	uint8_t undeadCreatureIDs[7];
 
 	// Creature animations (i.e., their .CFA filenames). These are ordered the same
 	// as creature names, and there is an extra entry at the end for the final boss.
@@ -497,8 +501,10 @@ struct ExeDataStatus
 
 	std::string fortify; // With %s token.
 	std::string disease; // With %s token.
+	std::string diseaseNames[17];
 	std::string effect; // With %s token.
-	std::string effectsList[23]; // Healthy, diseased, etc..
+	std::string effectsList[23]; // Healthy, diseased, etc.. For status popup.
+	std::string effectNames[8]; // For effect text box. Each is capitalized.
 
 	std::string keyNames[12];
 	std::string keyPickedUp;
@@ -508,6 +514,7 @@ struct ExeDataStatus
 	std::string staminaExhaustedRecover;
 	std::string staminaExhaustedDeath;
 	std::string staminaDrowning;
+	std::string staminaDrowningParalyzed;
 
 	std::string enemyCorpseEmptyInventory;
 	std::string enemyCorpseGold;
@@ -550,6 +557,11 @@ struct ExeDataTravel
 
 	// Pop-up when no destination is selected.
 	std::string noDestination;
+
+	// Popup when trying to fast travel while diseased.
+	std::string diseaseRiskOfDeath;
+	std::string diseaseRiskOfDeathYes;
+	std::string diseaseRiskOfDeathNo;
 
 	// Location/date/days text when the player arrives at their destination.
 	std::string arrivalPopUpLocation, arrivalPopUpDate, arrivalPopUpDays;

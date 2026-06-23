@@ -42,8 +42,6 @@ struct GameWorldUiState
 	UiContextInstanceID lootPopUpContextInstID;
 
 	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
-	UiTextureID statusGradientTextureID;
-	UiTextureID playerPortraitTextureID;
 	Buffer<UiTextureID> weaponAnimTextureIDs;
 	Buffer<UiTextureID> keyTextureIDs;
 	Buffer<UiTextureID> arrowCursorTextureIDs;
@@ -89,6 +87,7 @@ namespace GameWorldUI
 	bool isEffectTextVisible();
 	void setTriggerText(const char *str);
 	void setActionText(const char *str);
+	void setEffectText(const char *str);
 	void setTriggerTextDuration(const std::string_view text);
 	void setActionTextDuration(const std::string_view text);
 	void setEffectTextDuration(const std::string_view text);

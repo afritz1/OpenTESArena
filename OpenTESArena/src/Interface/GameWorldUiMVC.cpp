@@ -83,15 +83,45 @@ namespace
 	}
 
 	// Healthy/diseased/etc.
-	std::string GetStatusEffectString(const ExeData &exeData)
+	std::string GetStatusEffectString(const Player &player, const ExeData &exeData)
 	{
-		std::string text = exeData.status.effect;
-		text = String::replace(text, '\r', '\n');
+		const bool isDiseased = player.effectsState.isDiseased();
+		const bool isParalyzed = player.effectsState.isParalyzed();
 
-		// Replace %s with placeholder.
-		const std::string &effectStr = exeData.status.effectsList[0];
+		std::string text = exeData.status.effect;
+
+		int effectStrIndex = 0;
+		if (isDiseased)
+		{
+			effectStrIndex = 1;
+		}
+
+		const std::string &effectStr = exeData.status.effectsList[effectStrIndex];
 		size_t index = text.find("%s");
 		text.replace(index, 2, effectStr);
+
+		if (isDiseased)
+		{
+			const Span<const std::string> diseaseNames = exeData.status.diseaseNames;
+			const int diseaseNameIndex = player.effectsState.diseaseID - 10;
+
+			const std::string &diseaseValueStr = diseaseNames[diseaseNameIndex];
+			std::string diseaseStr = exeData.status.disease;
+			index = diseaseStr.find("%s");
+			diseaseStr.replace(index, 2, diseaseValueStr);
+			text += diseaseStr;
+		}
+
+		if (isParalyzed)
+		{
+			std::string paralyzedStr = exeData.status.effect;
+			const std::string &paralyzedValueStr = exeData.status.effectsList[20];
+			index = paralyzedStr.find("%s");
+			paralyzedStr.replace(index, 2, paralyzedValueStr);
+			text += paralyzedStr;
+		}
+
+		text = String::replace(text, '\r', '\n');
 
 		// Remove newline on end.
 		text.pop_back();
@@ -140,7 +170,7 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 	index = baseText.find("%d", index);
 	baseText.replace(index, 2, std::to_string(weightCapacity));
 
-	const std::string effectText = GetStatusEffectString(exeData);
+	const std::string effectText = GetStatusEffectString(player, exeData);
 	return baseText + effectText;
 }
 
@@ -313,6 +343,16 @@ Radians GameWorldUiModel::getCompassAngle(const VoxelDouble2 &direction)
 	return std::atan2(-direction.y, -direction.x);
 }
 
+PlayerStatusGradientType GameWorldUiModel::getCurrentPlayerStatusGradientType(const Player &player)
+{
+	if (player.effectsState.isDiseased())
+	{
+		return PlayerStatusGradientType::Diseased;
+	}
+
+	return PlayerStatusGradientType::Healthy;
+}
+
 std::string GameWorldUiModel::getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData)
 {
 	std::string text = exeData.ui.inspectedEntityName;
@@ -369,13 +409,20 @@ std::string GameWorldUiModel::getDoorUnlockWithKeyMessage(int keyID, const ExeDa
 	return doorUnlockMessage;
 }
 
-std::string GameWorldUiModel::getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData)
+std::string GameWorldUiModel::getStaminaExhaustedMessage(bool isSwimming, bool isParalyzed, bool isInterior, bool isNight, const ExeData &exeData)
 {
 	std::string text;
 
 	if (isSwimming)
 	{
-		text = exeData.status.staminaDrowning;
+		if (isParalyzed)
+		{
+			text = exeData.status.staminaDrowningParalyzed;
+		}
+		else
+		{
+			text = exeData.status.staminaDrowning;
+		}
 	}
 	else if (!isInterior && isNight)
 	{
@@ -390,6 +437,13 @@ std::string GameWorldUiModel::getStaminaExhaustedMessage(bool isSwimming, bool i
 	text.erase(text.find_last_of('\n'));
 
 	return text;
+}
+
+std::string GameWorldUiModel::getEffectTextBoxMessage(const std::string &effectName, const ExeData &exeData)
+{
+	std::string str = String::replace(exeData.status.effect, "%s", effectName);
+	str.pop_back();
+	return str;
 }
 
 DebugVoxelVisibilityQuadtreeState::DebugVoxelVisibilityQuadtreeState()
@@ -667,10 +721,9 @@ Int2 GameWorldUiView::getActionTextPosition()
 	return Int2(textX, textY);
 }
 
-Int2 GameWorldUiView::getEffectTextPosition()
+Int2 GameWorldUiView::getEffectTextPosition(Game &game, int gameWorldInterfaceTextureHeight)
 {
-	// @todo
-	return Int2::Zero;
+	return GameWorldUiView::getTriggerTextPosition(game, gameWorldInterfaceTextureHeight);
 }
 
 double GameWorldUiView::getTriggerTextSeconds(const std::string_view text)
@@ -807,7 +860,7 @@ TextureAsset GameWorldUiView::getGameWorldInterfaceTextureAsset()
 	return TextureAsset(ArenaTextureName::GameWorldInterface);
 }
 
-TextureAsset GameWorldUiView::getStatusGradientTextureAsset(StatusGradientType gradientType)
+TextureAsset GameWorldUiView::getStatusGradientTextureAsset(PlayerStatusGradientType gradientType)
 {
 	const int gradientID = static_cast<int>(gradientType);
 	return TextureAsset(ArenaTextureName::StatusGradients, gradientID);
@@ -951,37 +1004,6 @@ void GameWorldUiView::updateStatusBarsTexture(UiTextureID textureID, const Playe
 	renderer.unlockUiTexture(textureID);
 }
 
-UiTextureID GameWorldUiView::allocStatusGradientTexture(StatusGradientType gradientType,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = GameWorldUiView::getStatusGradientTextureAsset(gradientType);
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for status gradient " + std::to_string(static_cast<int>(gradientType)) + ".");
-	}
-
-	return textureID;
-}
-
-UiTextureID GameWorldUiView::allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID,
-	TextureManager &textureManager, Renderer &renderer)
-{
-	const TextureAsset textureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(isMale, raceID, portraitID);
-	const TextureAsset paletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
-
-	UiTextureID textureID;
-	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
-	{
-		DebugCrash("Couldn't create UI texture for player portrait (male: " + std::to_string(static_cast<int>(isMale)) +
-			", race: " + std::to_string(raceID) + ", portrait: " + std::to_string(portraitID) + ").");
-	}
-
-	return textureID;
-}
-
 UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFilename, int index,
 	TextureManager &textureManager, Renderer &renderer)
 {
@@ -991,8 +1013,7 @@ UiTextureID GameWorldUiView::allocWeaponAnimTexture(const std::string &weaponFil
 	UiTextureID textureID;
 	if (!TextureUtils::tryAllocUiTexture(textureAsset, paletteTextureAsset, textureManager, renderer, &textureID))
 	{
-		DebugCrash("Couldn't create UI texture for weapon animation \"" + weaponFilename +
-			"\" index " + std::to_string(index) + ".");
+		DebugCrash("Couldn't create UI texture for weapon animation \"" + weaponFilename + "\" index " + std::to_string(index) + ".");
 	}
 
 	return textureID;
@@ -1614,11 +1635,11 @@ void GameWorldUiController::onHealthDepleted(Game &game)
 	GameWorldUiController::onShowPlayerDeathCinematic(game);
 }
 
-void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight)
+void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool isParalyzed, bool isInterior, bool isNight)
 {
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
-	const std::string text = GameWorldUiModel::getStaminaExhaustedMessage(isSwimming, isInterior, isNight, exeData);
+	const std::string text = GameWorldUiModel::getStaminaExhaustedMessage(isSwimming, isParalyzed, isInterior, isNight, exeData);
 
 	auto callback = [&game, isSwimming, isInterior, isNight, &exeData]()
 	{
@@ -1638,7 +1659,7 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 			player.applyRestHealing(restFactor, tavernRoomType, exeData);
 
 			constexpr double secondsPerHour = 60.0 * 60.0;
-			constexpr double realSecondsPerInGameHour = secondsPerHour / GameState::GAME_TIME_SCALE;
+			constexpr double realSecondsPerInGameHour = secondsPerHour / ArenaClockUtils::GameSecondsPerRealTimeSecond;
 			game.gameState.tickGameClock(realSecondsPerInGameHour, game);
 		}
 	};

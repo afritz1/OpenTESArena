@@ -904,6 +904,7 @@ void Game::loop()
 					this->player.accelerate(inputAcceleration.direction, inputAcceleration.magnitude, clampedDeltaTime);
 				}
 
+				const PlayerEffectsState oldPlayerEffectsState = this->player.effectsState;
 				const WorldDouble3 oldPlayerPosition = this->player.getEyePosition();
 				const ChunkInt2 oldPlayerChunk = VoxelUtils::worldPointToChunk(oldPlayerPosition);
 				const int chunkDistance = this->options.getMisc_ChunkDistance();
@@ -917,6 +918,7 @@ void Game::loop()
 				this->gameState.tickUiMessages(clampedDeltaTime);
 				this->gameState.tickPlayerHealth(clampedDeltaTime, *this);
 				this->gameState.tickPlayerStamina(clampedDeltaTime, *this);
+				this->gameState.tickPlayerEffects(clampedDeltaTime, *this);
 				this->gameState.tickPlayerAttack(clampedDeltaTime, *this);
 				this->gameState.tickPlayerLevel(*this);
 				this->gameState.tickVoxels(clampedDeltaTime, *this);
@@ -948,6 +950,9 @@ void Game::loop()
 					// @temp hack due to how ghost mode skips character post-simulation (causing PhysicsSystem::Update() to not affect player).
 					isFloatingOriginChanged = true;
 				}
+
+				const PlayerEffectsState newPlayerEffectsState = this->player.effectsState;
+				this->gameState.tickPlayerEffectChanges(newPlayerEffectsState, oldPlayerEffectsState);
 
 				this->gameState.tickVisibility(renderCamera, *this);
 				this->gameState.tickRendering(clampedDeltaTime, renderCamera, isFloatingOriginChanged, *this);

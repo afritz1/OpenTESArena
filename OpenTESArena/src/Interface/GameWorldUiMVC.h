@@ -26,6 +26,7 @@ class FontLibrary;
 class ItemInventory;
 
 enum class MapType;
+enum class PlayerStatusGradientType;
 
 struct ExeData;
 struct Player;
@@ -68,6 +69,8 @@ namespace GameWorldUiModel
 
 	Radians getCompassAngle(const VoxelDouble2 &direction);
 
+	PlayerStatusGradientType getCurrentPlayerStatusGradientType(const Player &player);
+
 	std::string getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData);
 	std::string getEnemyCorpseGoldMessage(int goldCount, const ExeData &exeData);
 	std::string getEnemyCorpseEmptyInventoryMessage(const std::string &entityName, const ExeData &exeData);
@@ -77,7 +80,9 @@ namespace GameWorldUiModel
 	std::string getKeyPickUpMessage(int keyID, const ExeData &exeData);
 	std::string getDoorUnlockWithKeyMessage(int keyID, const ExeData &exeData);
 
-	std::string getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData);
+	std::string getStaminaExhaustedMessage(bool isSwimming, bool isParalyzed, bool isInterior, bool isNight, const ExeData &exeData);
+
+	std::string getEffectTextBoxMessage(const std::string &effectName, const ExeData &exeData);
 }
 
 struct DebugVoxelVisibilityQuadtreeState
@@ -93,6 +98,12 @@ struct DebugVoxelVisibilityQuadtreeState
 
 	void populateCommandList(Game &game, UiDrawCommandList &commandList);
 	void free(Renderer &renderer);
+};
+
+enum class PlayerStatusGradientType
+{
+	Healthy,
+	Diseased
 };
 
 namespace GameWorldUiView
@@ -144,11 +155,6 @@ namespace GameWorldUiView
 		UiPivotType::MiddleLeft,
 		UiPivotType::Bottom,
 		UiPivotType::MiddleRight,
-	};
-
-	enum class StatusGradientType
-	{
-		Default
 	};
 
 	constexpr int PlayerNameTextBoxX = 17;
@@ -221,7 +227,7 @@ namespace GameWorldUiView
 
 	Int2 getTriggerTextPosition(Game &game, int gameWorldInterfaceTextureHeight);
 	Int2 getActionTextPosition();
-	Int2 getEffectTextPosition();
+	Int2 getEffectTextPosition(Game &game, int gameWorldInterfaceTextureHeight);
 
 	double getTriggerTextSeconds(const std::string_view text);
 	double getActionTextSeconds(const std::string_view text);
@@ -247,7 +253,7 @@ namespace GameWorldUiView
 	// Helper functions for various UI textures.
 	TextureAsset getPaletteTextureAsset();
 	TextureAsset getGameWorldInterfaceTextureAsset();
-	TextureAsset getStatusGradientTextureAsset(StatusGradientType gradientType);
+	TextureAsset getStatusGradientTextureAsset(PlayerStatusGradientType gradientType);
 	TextureAsset getPlayerPortraitTextureAsset(bool isMale, int raceID, int portraitID);
 	TextureAsset getNoMagicTextureAsset();
 	TextureAsset getWeaponAnimTextureAsset(const std::string &weaponFilename, int index);
@@ -261,8 +267,6 @@ namespace GameWorldUiView
 	int getStatusBarCurrentPixelHeight(double currentValue, double maxValue);
 	void updateStatusBarsTexture(UiTextureID textureID, const Player &player, Renderer &renderer);
 
-	UiTextureID allocStatusGradientTexture(StatusGradientType gradientType, TextureManager &textureManager, Renderer &renderer);
-	UiTextureID allocPlayerPortraitTexture(bool isMale, int raceID, int portraitID, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocWeaponAnimTexture(const std::string &weaponFilename, int index, TextureManager &textureManager, Renderer &renderer);
 	UiTextureID allocTooltipTexture(GameWorldUiModel::ButtonType buttonType, const FontLibrary &fontLibrary, Renderer &renderer);
 	UiTextureID allocArrowCursorTexture(int cursorIndex, TextureManager &textureManager, Renderer &renderer);
@@ -295,5 +299,5 @@ namespace GameWorldUiController
 
 	void onShowPlayerDeathCinematic(Game &game);
 	void onHealthDepleted(Game &game);
-	void onStaminaExhausted(Game &game, bool isSwimming, bool isInterior, bool isNight);
+	void onStaminaExhausted(Game &game, bool isSwimming, bool isParalyzed, bool isInterior, bool isNight);
 }

@@ -72,10 +72,6 @@ public:
 
 		WorldMapLocationIDs(int provinceID, int locationID);
 	};
-
-	// Determines length of a real-time second in-game. For the original game, one real second is about
-	// thirteen in-game seconds.
-	static constexpr double GAME_TIME_SCALE = static_cast<double>(Clock::SECONDS_IN_A_DAY) / 6646.153846153846;
 private:
 	MapDefinition activeMapDef;
 	int activeLevelIndex;
@@ -203,6 +199,8 @@ public:
 	void tickUiMessages(double dt);
 	void tickPlayerHealth(double dt, Game &game);
 	void tickPlayerStamina(double dt, Game &game);
+	void tickPlayerEffects(double dt, Game &game);
+	void tickPlayerEffectChanges(const PlayerEffectsState &currentEffectsState, const PlayerEffectsState &prevEffectsState);
 	void tickPlayerAttack(double dt, Game &game);
 	void tickPlayerLevel(Game &game);
 	void tickVoxels(double dt, Game &game);

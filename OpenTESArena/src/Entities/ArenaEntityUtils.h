@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string>
 
+#include "../Assets/ArenaTypes.h"
 #include "../Spells/SpellDefinition.h"
 #include "../Stats/PrimaryAttribute.h"
 
@@ -56,7 +57,7 @@ namespace ArenaEntityUtils
 {
 	// Note that creature ID == creature index + 1.
 	// The final boss is a special case, essentially hardcoded at the end of the creatures.
-	constexpr int FinalBossCreatureID = 24;
+	constexpr ArenaCreatureID FinalBossCreatureID = 24;
 	constexpr int CreatureCount = FinalBossCreatureID;
 
 	// For monsters
@@ -131,4 +132,7 @@ namespace ArenaEntityUtils
 
 	int snapToTileCenter(int16_t coord);
 	uint16_t makeTileIndex(int16_t x, int16_t z);
+
+	void paralysisOrDiseaseOnHit(int creatureIndex, int playerRace, int playerClass, bool isPlayerPoisonResistEffectActive, int playerPoisonSavingThrow, ArenaRandom &random, const ExeData &exeData, int *outAppliedDiseaseID, double *outAppliedDiseaseSeconds, double *outAppliedParalysisSeconds);
+	void causeDisease(int diseaseID, ArenaRandom &random, const ExeData &exeData, double *outAppliedDiseaseSeconds);
 }

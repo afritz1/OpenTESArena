@@ -443,6 +443,10 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int creatureAttributesOffset = GetExeAddress(*section, "CreatureAttributes");
 	const int creatureLootChancesOffset = GetExeAddress(*section, "CreatureLootChances");
 	const int creatureAnimFilenamesOffset = GetExeAddress(*section, "CreatureAnimationFilenames");
+	const int diseaseGivingCreatureIDsOffset = GetExeAddress(*section, "DiseaseGivingCreatureIDs");
+	const int creatureDiseaseListsOffset = GetExeAddress(*section, "CreatureDiseaseLists");
+	const int randomHealingTimeDiseaseIDsOffset = GetExeAddress(*section, "RandomHealingTimeDiseaseIDs");
+	const int undeadCreatureIDsOffset = GetExeAddress(*section, "UndeadCreatureIDs");
 	const int finalBossNameOffset = GetExeAddress(*section, "FinalBossName");
 	const int humanEnemyGoldChancesOffset = GetExeAddress(*section, "HumanEnemyGoldChances");
 	const int humanEnemyExpMultipliersOffset = GetExeAddress(*section, "HumanEnemyExperienceMultipliers");
@@ -486,6 +490,11 @@ bool ExeDataEntities::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	init2DInt8Array(this->creatureAttributes, exeBytes, creatureAttributesOffset);
 	initInt32Array(this->creatureLootChances, exeBytes, creatureLootChancesOffset);
 	initStringArrayNullTerminated(this->creatureAnimationFilenames, exeBytes, creatureAnimFilenamesOffset);
+	initInt8Array(this->diseaseGivingCreatureIDs, exeBytes, diseaseGivingCreatureIDsOffset);
+	const uint8_t diseaseTerminator = 0xFF;
+	initJaggedInt8Array(this->creatureDiseaseLists, diseaseTerminator, exeBytes, creatureDiseaseListsOffset);
+	initInt8Array(this->randomHealingTimeDiseaseIDs, exeBytes, randomHealingTimeDiseaseIDsOffset);
+	initInt8Array(this->undeadCreatureIDs, exeBytes, undeadCreatureIDsOffset);
 	this->finalBossName = GetExeStringNullTerminated(exeBytes, finalBossNameOffset);
 	initInt8Array(this->humanEnemyGoldChances, exeBytes, humanEnemyGoldChancesOffset);
 	initInt8Array(this->humanEnemyExpMultipliers, exeBytes, humanEnemyExpMultipliersOffset);
@@ -940,8 +949,10 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int dateOffset = GetExeAddress(*section, "Date");
 	const int fortifyOffset = GetExeAddress(*section, "Fortify");
 	const int diseaseOffset = GetExeAddress(*section, "Disease");
+	const int diseaseNamesOffset = GetExeAddress(*section, "DiseaseNames");
 	const int effectOffset = GetExeAddress(*section, "Effect");
 	const int effectsListOffset = GetExeAddress(*section, "EffectsList");
+	const int effectNamesOffset = GetExeAddress(*section, "EffectNames");
 	const int keyNamesOffset = GetExeAddress(*section, "KeyNames");
 	const int keyPickedUpOffset = GetExeAddress(*section, "KeyPickedUp");
 	const int doorUnlockedWithKeyOffset = GetExeAddress(*section, "DoorUnlockedWithKey");
@@ -949,6 +960,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int staminaExhaustedRecoverOffset = GetExeAddress(*section, "StaminaExhaustedRecover");
 	const int staminaExhaustedDeathOffset = GetExeAddress(*section, "StaminaExhaustedDeath");
 	const int staminaDrowningOffset = GetExeAddress(*section, "StaminaDrowning");
+	const int staminaDrowningParalyzedOffset = GetExeAddress(*section, "StaminaDrowningParalyzed");
 	const int enemyCorpseEmptyInventoryOffset = GetExeAddress(*section, "EnemyCorpseEmptyInventory");
 	const int enemyCorpseGoldOffset = GetExeAddress(*section, "EnemyCorpseGold");
 	const int citizenCorpseGoldOffset = GetExeAddress(*section, "CitizenCorpseGold");
@@ -958,8 +970,10 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	this->date = GetExeStringNullTerminated(exeBytes, dateOffset);
 	this->fortify = GetExeStringNullTerminated(exeBytes, fortifyOffset);
 	this->disease = GetExeStringNullTerminated(exeBytes, diseaseOffset);
+	initStringArrayNullTerminated(this->diseaseNames, exeBytes, diseaseNamesOffset);
 	this->effect = GetExeStringNullTerminated(exeBytes, effectOffset);
 	initStringArrayNullTerminated(this->effectsList, exeBytes, effectsListOffset);
+	initStringArrayNullTerminated(this->effectNames, exeBytes, effectNamesOffset);
 	initStringArrayNullTerminated(this->keyNames, exeBytes, keyNamesOffset);
 	this->keyPickedUp = GetExeStringNullTerminated(exeBytes, keyPickedUpOffset);
 	this->doorUnlockedWithKey = GetExeStringNullTerminated(exeBytes, doorUnlockedWithKeyOffset);
@@ -967,6 +981,7 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	this->staminaExhaustedRecover = GetExeStringNullTerminated(exeBytes, staminaExhaustedRecoverOffset);
 	this->staminaExhaustedDeath = GetExeStringNullTerminated(exeBytes, staminaExhaustedDeathOffset);
 	this->staminaDrowning = GetExeStringNullTerminated(exeBytes, staminaDrowningOffset);
+	this->staminaDrowningParalyzed = GetExeStringNullTerminated(exeBytes, staminaDrowningParalyzedOffset);
 	this->enemyCorpseEmptyInventory = GetExeStringNullTerminated(exeBytes, enemyCorpseEmptyInventoryOffset);
 	this->enemyCorpseGold = GetExeStringNullTerminated(exeBytes, enemyCorpseGoldOffset);
 	this->citizenCorpseGold = GetExeStringNullTerminated(exeBytes, citizenCorpseGoldOffset);
@@ -991,6 +1006,9 @@ bool ExeDataTravel::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int arrivalDatePredictionOffset = GetExeAddress(*section, "ArrivalDatePrediction");
 	const int alreadyAtDestinationOffset = GetExeAddress(*section, "AlreadyAtDestination");
 	const int noDestinationOffset = GetExeAddress(*section, "NoDestination");
+	const int diseaseRiskOfDeathOffset = GetExeAddress(*section, "DiseaseRiskOfDeath");
+	const auto diseaseRiskOfDeathYesPair = GetExeAddressAndLength(*section, "DiseaseRiskOfDeathYes");
+	const auto diseaseRiskOfDeathNoPair = GetExeAddressAndLength(*section, "DiseaseRiskOfDeathNo");
 	const int arrivalPopUpLocationOffset = GetExeAddress(*section, "ArrivalPopUpLocation");
 	const int arrivalPopUpDateOffset = GetExeAddress(*section, "ArrivalPopUpDate");
 	const int arrivalPopUpDaysOffset = GetExeAddress(*section, "ArrivalPopUpDays");
@@ -1005,6 +1023,9 @@ bool ExeDataTravel::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	this->arrivalDatePrediction = GetExeStringNullTerminated(exeBytes, arrivalDatePredictionOffset);
 	this->alreadyAtDestination = GetExeStringNullTerminated(exeBytes, alreadyAtDestinationOffset);
 	this->noDestination = GetExeStringNullTerminated(exeBytes, noDestinationOffset);
+	this->diseaseRiskOfDeath = GetExeStringNullTerminated(exeBytes, diseaseRiskOfDeathOffset);
+	this->diseaseRiskOfDeathYes = GetExeStringFixedLength(exeBytes, diseaseRiskOfDeathYesPair);
+	this->diseaseRiskOfDeathNo = GetExeStringFixedLength(exeBytes, diseaseRiskOfDeathNoPair);
 	this->arrivalPopUpLocation = GetExeStringNullTerminated(exeBytes, arrivalPopUpLocationOffset);
 	this->arrivalPopUpDate = GetExeStringNullTerminated(exeBytes, arrivalPopUpDateOffset);
 	this->arrivalPopUpDays = GetExeStringNullTerminated(exeBytes, arrivalPopUpDaysOffset);

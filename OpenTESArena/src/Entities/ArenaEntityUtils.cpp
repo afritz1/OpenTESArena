@@ -7,6 +7,7 @@
 #include "../Math/ArenaMathUtils.h"
 #include "../Math/Random.h"
 #include "../Stats/CharacterClassLibrary.h"
+#include "../Time/ArenaClockUtils.h"
 #include "../World/MapType.h"
 
 namespace
@@ -1335,4 +1336,95 @@ uint16_t ArenaEntityUtils::makeTileIndex(int16_t x, int16_t z)
 	const int16_t tileX = x >> 7;
 	const int16_t tileZ = z >> 7;
 	return static_cast<uint16_t>((tileZ << 8) + (tileX << 1));
+}
+
+void ArenaEntityUtils::paralysisOrDiseaseOnHit(int creatureIndex, int playerRace, int playerClass, bool isPlayerPoisonResistEffectActive,
+	int playerPoisonSavingThrow, ArenaRandom &random, const ExeData &exeData, int *outAppliedDiseaseID, double *outAppliedDiseaseSeconds,
+	double *outAppliedParalysisSeconds)
+{
+	*outAppliedDiseaseID = -1;
+	*outAppliedDiseaseSeconds = 0.0;
+	*outAppliedParalysisSeconds = 0.0;
+
+	constexpr ArenaCreatureID lizardmanID = 3;
+	constexpr ArenaCreatureID spiderID = 9;
+	constexpr ArenaCreatureID vampireID = 22;
+	constexpr int highElfRaceID = 4;
+	constexpr int barbarianClassID = 15;
+	constexpr int knightClassID = 17;
+
+	Span<const int8_t> chances = exeData.entities.creatureDiseaseChances;
+	Span<const uint8_t> diseaseGivingCreatureIDs = exeData.entities.diseaseGivingCreatureIDs;
+	Span<const std::vector<uint8_t>> creatureDiseaseLists = exeData.entities.creatureDiseaseLists;
+
+	const ArenaCreatureID creatureID = creatureIndex + 1;
+
+	int chance;
+	if (creatureID == vampireID)
+	{
+		chance = 5;
+	}
+	else
+	{
+		chance = chances[creatureIndex];
+
+		if (chance <= 0)
+		{
+			return;
+		}
+	}
+
+	if (random.next(100) <= chance)
+	{
+		const int roll = random.next(100);
+
+		const bool isPlayerImmuneToParalysis = isPlayerPoisonResistEffectActive || (playerRace == highElfRaceID) || (playerClass == knightClassID);
+		const bool isCreatureCapableOfParalysis = creatureID == lizardmanID || creatureID == spiderID;
+		if (!isPlayerImmuneToParalysis && isCreatureCapableOfParalysis && (roll < playerPoisonSavingThrow))
+		{
+			const int paralysisRounds = random.next(6) + 1;
+			const double paralysisSeconds = static_cast<double>(paralysisRounds) * ArenaClockUtils::RealTimeSecondsPerRound;
+			DebugLogFormat("Player paralyzed %.1f seconds.", paralysisSeconds);
+			*outAppliedParalysisSeconds = paralysisSeconds;
+			return;
+		}
+
+		const bool isPlayerImmuneToDisease = isPlayerPoisonResistEffectActive || (playerClass == barbarianClassID);
+		if (!isPlayerImmuneToDisease && (roll < playerPoisonSavingThrow))
+		{
+			for (int i = 0; i < diseaseGivingCreatureIDs.getCount(); i++)
+			{
+				if (creatureID == diseaseGivingCreatureIDs[i])
+				{
+					Span<const uint8_t> diseaseList = creatureDiseaseLists[i];
+					const int randomDiseaseIndex = random.next(diseaseList.getCount());
+					const int diseaseID = diseaseList[randomDiseaseIndex];
+					*outAppliedDiseaseID = diseaseID;
+					ArenaEntityUtils::causeDisease(diseaseID, random, exeData, outAppliedDiseaseSeconds);
+					return;
+				}
+			}
+		}
+	}
+}
+
+void ArenaEntityUtils::causeDisease(int diseaseID, ArenaRandom &random, const ExeData &exeData, double *outAppliedDiseaseSeconds)
+{
+	Span<const uint8_t> randomHealingTimeDiseaseIDs = exeData.entities.randomHealingTimeDiseaseIDs;
+
+	int lengthInMinutes = 1440;
+	for (const uint8_t currentDiseaseID : randomHealingTimeDiseaseIDs)
+	{
+		if (currentDiseaseID == diseaseID)
+		{
+			lengthInMinutes *= random.next(15) + 3;
+			break;
+		}
+	}
+
+	const double lengthInSeconds = static_cast<double>(lengthInMinutes) * 60.0;
+	DebugLogFormat("Player diseased %.1f seconds. (not implemented)", lengthInSeconds);
+	*outAppliedDiseaseSeconds = lengthInSeconds;
+
+	//@todo: Set up disease damage, etc.
 }

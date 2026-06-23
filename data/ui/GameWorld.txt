@@ -159,7 +159,15 @@ TextColor=195,0,0,255
 TextAlignment=TopCenter
 Shadow=-1,0,12,12,24,255
 
-# @todo effect text box
+[GameWorldEffectTextBox]
+Type=TextBox
+Pivot=Bottom
+DrawOrder=7
+WorstCaseText=WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW\nWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW\n
+FontName=ARENAFNT.DAT
+TextColor=251,239,77,255
+TextAlignment=BottomCenter
+Shadow=-1,0,190,113,0,255
 
 ##################################
 

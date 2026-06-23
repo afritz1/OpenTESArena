@@ -27,6 +27,7 @@ struct ProvinceMapUiState
 	UiContextInstanceID textPopUpContextInstID;
 	UiContextInstanceID searchInputPopUpContextInstID;
 	UiContextInstanceID searchResultsPopUpContextInstID;
+	UiContextInstanceID diseaseWarningPopUpContextInstID;
 
 	UiTextureID backgroundTextureID;
 
@@ -53,6 +54,7 @@ namespace ProvinceMapUI
 	void trySelectLocation(int selectedLocationID);
 	void beginFastTravel();
 	void showTextPopUp(const char *str);
+	void showDiseaseWarningPopUp();
 	void onPauseChanged(bool paused);
 
 	// @todo makeDiseasedWarningPopUp() when the player is diseased
