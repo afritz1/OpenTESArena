@@ -385,6 +385,19 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	Player &player = game.player;
 	player.clearKeyInventory();
 
+	Random &random = game.random;
+	if (player.effectsState.isDiseased())
+	{
+		const bool isPlayerDyingOnJourney = random.nextBool(); // @todo more balanced chances than 50/50. maybe use travelDays?
+
+		if (isPlayerDyingOnJourney)
+		{
+			DebugLog("Player died from disease while fast traveling.");
+			GameWorldUiController::onShowPlayerDeathCinematic(game);
+			return;
+		}
+	}
+
 	const auto &travelProvinceDef = worldMapDef.getProvinceDef(targetProvinceID);
 	const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
 
@@ -441,10 +454,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			cityDef.blockStartPosX, cityDef.blockStartPosY, cityDef.cityBlocksPerSide);
 
 		const int currentDay = gameState.getDate().getDay();
-		const WeatherDefinition overrideWeather = [&game, weatherType, currentDay]()
+		const WeatherDefinition overrideWeather = [&game, &random, weatherType, currentDay]()
 		{
 			WeatherDefinition weatherDef;
-			weatherDef.initFromClassic(weatherType, currentDay, game.random);
+			weatherDef.initFromClassic(weatherType, currentDay, random);
 			return weatherDef;
 		}();
 
@@ -461,12 +474,12 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return;
 		}
 
-		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
+		GameState::SceneChangeMusicFunc musicFunc = [&random](Game &game)
 		{
 			// Choose time-based music and enter the game world.
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
 			const GameState &gameState = game.gameState;
-			const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), game.random);
+			const MusicDefinition *musicDef = MusicUtils::getExteriorMusicDefinition(gameState.getWeatherDefinition(), gameState.getClock(), random);
 			if (musicDef == nullptr)
 			{
 				DebugLogWarning("Missing exterior music.");
@@ -477,11 +490,10 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 
 		const ArenaCityType cityDefType = cityDef.type;
 		const ArenaClimateType cityDefClimateType = cityDef.climateType;
-		GameState::SceneChangeMusicFunc jingleMusicFunc = [cityDefType, cityDefClimateType](Game &game)
+		GameState::SceneChangeMusicFunc jingleMusicFunc = [&random, cityDefType, cityDefClimateType](Game &game)
 		{
 			const MusicLibrary &musicLibrary = MusicLibrary::getInstance();
-			const MusicDefinition *jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(
-				MusicType::Jingle, game.random,
+			const MusicDefinition *jingleMusicDef = musicLibrary.getRandomMusicDefinitionIf(MusicType::Jingle, random,
 				[cityDefType, cityDefClimateType](const MusicDefinition &def)
 			{
 				DebugAssert(def.type == MusicType::Jingle);
@@ -529,9 +541,9 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 			return;
 		}
 
-		GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
+		GameState::SceneChangeMusicFunc musicFunc = [&random](Game &game)
 		{
-			const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(game.random);
+			const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(random);
 			if (musicDef == nullptr)
 			{
 				DebugLogWarning("Missing dungeon music.");
@@ -584,9 +596,9 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		}
 		else
 		{
-			GameState::SceneChangeMusicFunc musicFunc = [](Game &game)
+			GameState::SceneChangeMusicFunc musicFunc = [&random](Game &game)
 			{
-				const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(game.random);
+				const MusicDefinition *musicDef = MusicUtils::getRandomDungeonMusicDefinition(random);
 				if (musicDef == nullptr)
 				{
 					DebugLogWarning("Missing dungeon music.");
