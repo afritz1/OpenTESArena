@@ -422,6 +422,13 @@ std::string GameWorldUiModel::getStaminaExhaustedMessage(bool isSwimming, bool i
 	return text;
 }
 
+std::string GameWorldUiModel::getEffectTextBoxMessage(const std::string &effectName, const ExeData &exeData)
+{
+	std::string str = String::replace(exeData.status.effect, "%s", effectName);
+	str.pop_back();
+	return str;
+}
+
 DebugVoxelVisibilityQuadtreeState::DebugVoxelVisibilityQuadtreeState()
 {
 	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
@@ -697,10 +704,9 @@ Int2 GameWorldUiView::getActionTextPosition()
 	return Int2(textX, textY);
 }
 
-Int2 GameWorldUiView::getEffectTextPosition()
+Int2 GameWorldUiView::getEffectTextPosition(Game &game, int gameWorldInterfaceTextureHeight)
 {
-	// @todo
-	return Int2::Zero;
+	return GameWorldUiView::getTriggerTextPosition(game, gameWorldInterfaceTextureHeight);
 }
 
 double GameWorldUiView::getTriggerTextSeconds(const std::string_view text)

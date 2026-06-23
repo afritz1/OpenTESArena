@@ -200,6 +200,7 @@ public:
 	void tickPlayerHealth(double dt, Game &game);
 	void tickPlayerStamina(double dt, Game &game);
 	void tickPlayerEffects(double dt, Game &game);
+	void tickPlayerEffectChanges(const PlayerEffectsState &currentEffectsState, const PlayerEffectsState &prevEffectsState);
 	void tickPlayerAttack(double dt, Game &game);
 	void tickPlayerLevel(Game &game);
 	void tickVoxels(double dt, Game &game);

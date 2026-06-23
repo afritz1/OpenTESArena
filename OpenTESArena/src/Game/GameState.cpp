@@ -1257,6 +1257,27 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 	player.effectsState.update(dt);
 }
 
+void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffectsState, const PlayerEffectsState &prevEffectsState)
+{
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> effectNames = exeData.status.effectNames;
+
+	std::string effectText;
+	if (currentEffectsState.isDiseased() && (currentEffectsState.diseaseID != prevEffectsState.diseaseID))
+	{
+		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[0], exeData);
+	}
+	else if (currentEffectsState.isParalyzed() && !prevEffectsState.isParalyzed())
+	{
+		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[6], exeData);
+	}
+
+	if (!effectText.empty())
+	{
+		GameWorldUI::setEffectText(effectText.c_str());
+	}
+}
+
 void GameState::tickPlayerAttack(double dt, Game &game)
 {
 	Player &player = game.player;

@@ -35,6 +35,7 @@ namespace
 
 	constexpr char TriggerTextBoxElementName[] = "GameWorldTriggerTextBox";
 	constexpr char ActionTextBoxElementName[] = "GameWorldActionTextBox";
+	constexpr char EffectTextBoxElementName[] = "GameWorldEffectTextBox";
 
 	constexpr const char *ButtonElementNames[] =
 	{
@@ -337,6 +338,10 @@ void GameWorldUI::create(Game &game)
 	const Int2 actionTextBoxPosition = GameWorldUiView::getActionTextPosition();
 	uiManager.setTransformPosition(actionTextBoxElementInstID, actionTextBoxPosition);
 
+	const UiElementInstanceID effectTextBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+	const Int2 effectTextBoxPosition = GameWorldUiView::getEffectTextPosition(game, ArenaRenderUtils::SCENE_UI_HEIGHT);
+	uiManager.setTransformPosition(effectTextBoxElementInstID, effectTextBoxPosition);
+
 	if (isModernInterface)
 	{
 		const UiElementInstanceID interfaceImageElementInstID = uiManager.getElementByName(InterfaceImageElementName);
@@ -544,7 +549,9 @@ void GameWorldUI::update(double dt)
 	const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 	uiManager.setElementActive(actionTextBoxElementInstID, isActionTextVisible);
 
-	// @todo effect text
+	const bool isEffectTextVisible = GameWorldUI::isEffectTextVisible();
+	const UiElementInstanceID effectTextBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+	uiManager.setElementActive(effectTextBoxElementInstID, isEffectTextVisible);
 
 	if (!isModernInterface)
 	{
@@ -659,7 +666,8 @@ void GameWorldUI::onPauseChanged(bool paused)
 		const UiElementInstanceID actionTextBoxElementInstID = uiManager.getElementByName(ActionTextBoxElementName);
 		uiManager.setElementActive(actionTextBoxElementInstID, false);
 
-		// @todo effect text box
+		const UiElementInstanceID effectTextBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+		uiManager.setElementActive(effectTextBoxElementInstID, false);
 
 		game.setCursorOverride(std::nullopt);
 	}
@@ -983,6 +991,17 @@ void GameWorldUI::setActionText(const char *str)
 	GameWorldUI::setActionTextDuration(str);
 }
 
+void GameWorldUI::setEffectText(const char *str)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
+	uiManager.setTextBoxText(textBoxElementInstID, str);
+
+	GameWorldUI::setEffectTextDuration(str);
+}
+
 void GameWorldUI::setTriggerTextDuration(const std::string_view text)
 {
 	GameWorldUiState &state = GameWorldUI::state;
@@ -997,8 +1016,8 @@ void GameWorldUI::setActionTextDuration(const std::string_view text)
 
 void GameWorldUI::setEffectTextDuration(const std::string_view text)
 {
-	// @todo
-	DebugNotImplemented();
+	GameWorldUiState &state = GameWorldUI::state;
+	state.effectTextRemainingSeconds = GameWorldUiView::getEffectTextSeconds(text);
 }
 
 void GameWorldUI::resetTriggerTextDuration()

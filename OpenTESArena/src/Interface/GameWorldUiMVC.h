@@ -78,6 +78,8 @@ namespace GameWorldUiModel
 	std::string getDoorUnlockWithKeyMessage(int keyID, const ExeData &exeData);
 
 	std::string getStaminaExhaustedMessage(bool isSwimming, bool isInterior, bool isNight, const ExeData &exeData);
+
+	std::string getEffectTextBoxMessage(const std::string &effectName, const ExeData &exeData);
 }
 
 struct DebugVoxelVisibilityQuadtreeState
@@ -221,7 +223,7 @@ namespace GameWorldUiView
 
 	Int2 getTriggerTextPosition(Game &game, int gameWorldInterfaceTextureHeight);
 	Int2 getActionTextPosition();
-	Int2 getEffectTextPosition();
+	Int2 getEffectTextPosition(Game &game, int gameWorldInterfaceTextureHeight);
 
 	double getTriggerTextSeconds(const std::string_view text);
 	double getActionTextSeconds(const std::string_view text);
