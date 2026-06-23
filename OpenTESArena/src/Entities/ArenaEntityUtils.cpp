@@ -1384,7 +1384,7 @@ void ArenaEntityUtils::paralysisOrDiseaseOnHit(int creatureIndex, int playerRace
 		{
 			const int paralysisRounds = random.next(6) + 1;
 			const double paralysisSeconds = static_cast<double>(paralysisRounds) * ArenaClockUtils::RealTimeSecondsPerRound;
-			DebugLogFormat("Player paralyzed %.1f seconds. (not implemented)", paralysisSeconds);
+			DebugLogFormat("Player paralyzed %.1f seconds.", paralysisSeconds);
 			*outAppliedParalysisSeconds = paralysisSeconds;
 			return;
 		}

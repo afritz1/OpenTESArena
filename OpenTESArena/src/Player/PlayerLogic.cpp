@@ -333,6 +333,11 @@ namespace PlayerLogic
 
 		if (isPrimaryInteraction)
 		{
+			if (player.effectsState.isParalyzed())
+			{
+				return;
+			}
+
 			const bool passesVoxelDistanceTest = hit.t <= ArenaSelectionUtils::VOXEL_MAX_DISTANCE;
 
 			if (ArenaSelectionUtils::isVoxelSelectableAsPrimary(voxelType))
@@ -452,6 +457,7 @@ namespace PlayerLogic
 		const RayCastEntityHit &entityHit = hit.entityHit;
 		GameState &gameState = game.gameState;
 		Player &player = game.player;
+		const bool isPlayerParalyzed = player.effectsState.isParalyzed();
 
 		if (isPrimaryInteraction)
 		{
@@ -476,7 +482,7 @@ namespace PlayerLogic
 					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef);
 				}
 
-				if (combatState.isDead)
+				if (combatState.isDead && !isPlayerParalyzed)
 				{
 					if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE)
 					{
@@ -495,20 +501,26 @@ namespace PlayerLogic
 				break;
 			}
 			case EntityDefinitionType::Citizen:
-				if (hit.t <= ArenaSelectionUtils::CITIZEN_MAX_DISTANCE)
+			{
+				if (hit.t <= ArenaSelectionUtils::CITIZEN_MAX_DISTANCE && !isPlayerParalyzed)
 				{
 					GameWorldUiController::onCitizenInteracted(game, entityInst);
 				}
 				break;
+			}
 			case EntityDefinitionType::StaticNPC:
 			{
-				const StaticNpcEntityDefinition &staticNpcDef = entityDef.staticNpc;
-				GameWorldUiController::onStaticNpcInteracted(game, staticNpcDef.personalityType);
+				if (!isPlayerParalyzed)
+				{
+					const StaticNpcEntityDefinition &staticNpcDef = entityDef.staticNpc;
+					GameWorldUiController::onStaticNpcInteracted(game, staticNpcDef.personalityType);
+				}
+				
 				break;
 			}
 			case EntityDefinitionType::Item:
 			{
-				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE)
+				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE && !isPlayerParalyzed)
 				{
 					const ItemEntityDefinition &itemDef = entityDef.item;
 					const ItemEntityDefinitionType itemDefType = itemDef.type;
@@ -550,7 +562,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Container:
 			{
-				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE)
+				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE && !isPlayerParalyzed)
 				{
 					const ContainerEntityDefinition &containerDef = entityDef.container;
 					const ContainerEntityDefinitionType containerDefType = containerDef.type;
@@ -802,6 +814,11 @@ bool PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta
 void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 {
 	Player &player = game.player;
+	if (player.effectsState.isParalyzed())
+	{
+		return;
+	}
+
 	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
