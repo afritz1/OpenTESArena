@@ -772,7 +772,7 @@ UiListBoxInitInfo GameWorldUiView::getLootListBoxProperties()
 	listBoxInitInfo.textureWidth = textureGenInfo.width;
 	listBoxInitInfo.textureHeight = textureGenInfo.height;
 	listBoxInitInfo.fontName = fontName;
-	listBoxInitInfo.defaultTextColor = InventoryUiView::PlayerInventoryEquipmentColor;
+	listBoxInitInfo.defaultTextColor = InventoryUiView::ItemDefaultColor;
 	return listBoxInitInfo;
 }
 

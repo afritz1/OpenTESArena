@@ -71,20 +71,21 @@ int CharacterClassDefinition::getAllowedArmorCount() const
 	return static_cast<int>(this->allowedArmors.size());
 }
 
-int CharacterClassDefinition::getAllowedShieldCount() const
-{
-	return static_cast<int>(this->allowedShields.size());
-}
-
-int CharacterClassDefinition::getAllowedWeaponCount() const
-{
-	return static_cast<int>(this->allowedWeapons.size());
-}
-
 int CharacterClassDefinition::getAllowedArmor(int index) const
 {
 	DebugAssertIndex(this->allowedArmors, index);
 	return this->allowedArmors[index];
+}
+
+bool CharacterClassDefinition::isArmorAllowed(ArmorMaterialType materialType) const
+{
+	const int armorID = static_cast<int>(materialType);
+	return std::find(this->allowedArmors.begin(), this->allowedArmors.end(), armorID) != this->allowedArmors.end();
+}
+
+int CharacterClassDefinition::getAllowedShieldCount() const
+{
+	return static_cast<int>(this->allowedShields.size());
 }
 
 int CharacterClassDefinition::getAllowedShield(int index) const
@@ -93,10 +94,25 @@ int CharacterClassDefinition::getAllowedShield(int index) const
 	return this->allowedShields[index];
 }
 
+bool CharacterClassDefinition::isShieldAllowed(int shieldID) const
+{
+	return std::find(this->allowedShields.begin(), this->allowedShields.end(), shieldID) != this->allowedShields.end();
+}
+
+int CharacterClassDefinition::getAllowedWeaponCount() const
+{
+	return static_cast<int>(this->allowedWeapons.size());
+}
+
 int CharacterClassDefinition::getAllowedWeapon(int index) const
 {
 	DebugAssertIndex(this->allowedWeapons, index);
 	return this->allowedWeapons[index];
+}
+
+bool CharacterClassDefinition::isWeaponAllowed(int weaponID) const
+{
+	return std::find(this->allowedWeapons.begin(), this->allowedWeapons.end(), weaponID) != this->allowedWeapons.end();
 }
 
 int CharacterClassDefinition::getExperienceCap(int level) const

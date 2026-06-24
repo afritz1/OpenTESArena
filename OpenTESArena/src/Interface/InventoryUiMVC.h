@@ -10,6 +10,7 @@
 class Game;
 
 struct ItemInstance;
+struct Player;
 
 namespace InventoryUiModel
 {
@@ -28,11 +29,11 @@ namespace InventoryUiModel
 
 namespace InventoryUiView
 {
-	const Color PlayerInventoryEquipmentColor(211, 142, 0);
-	const Color PlayerInventoryEquipmentEquippedColor(235, 199, 52);
-	const Color PlayerInventoryMagicItemColor(69, 186, 190);
-	const Color PlayerInventoryMagicItemEquippedColor(138, 255, 255);
-	const Color PlayerInventoryUnequipableColor(199, 32, 0);
+	constexpr Color ItemDefaultColor(211, 142, 0);
+	constexpr Color ItemEquippedColor(235, 199, 52);
+	constexpr Color ItemMagicColor(69, 186, 190);
+	constexpr Color ItemMagicEquippedColor(138, 255, 255);
+	constexpr Color ItemUnequippableColor(199, 32, 0);
 
-	const Color &getItemDisplayColor(const ItemInstance &itemInst);
+	Color getItemDisplayColor(const ItemInstance &itemInst, const Player &player);
 }

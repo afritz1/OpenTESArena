@@ -4,6 +4,8 @@
 
 #include "components/utilities/Span.h"
 
+enum class ArmorMaterialType;
+
 using CharacterClassCategoryID = int; // Warrior/mage/thief
 
 struct CharacterClassDefinition
@@ -36,10 +38,16 @@ struct CharacterClassDefinition
 		bool criticalHit, double climbingSpeedScale, int originalClassIndex);
 
 	int getAllowedArmorCount() const;
-	int getAllowedShieldCount() const;
-	int getAllowedWeaponCount() const;
 	int getAllowedArmor(int index) const;
+	bool isArmorAllowed(ArmorMaterialType materialType) const;
+
+	int getAllowedShieldCount() const;
 	int getAllowedShield(int index) const;
+	bool isShieldAllowed(int shieldID) const;
+
+	int getAllowedWeaponCount() const;
 	int getAllowedWeapon(int index) const;
+	bool isWeaponAllowed(int weaponID) const;
+
 	int getExperienceCap(int level) const;
 };

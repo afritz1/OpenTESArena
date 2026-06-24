@@ -109,8 +109,8 @@ void CharacterEquipmentUI::create(Game &game)
 					player.setWeaponAnimationFromItem(equippedItemDefID); // Resets to sheathed animation state.
 				}
 
-				const Color &equipColor = InventoryUiView::getItemDisplayColor(itemInst);
-				uiManager.setListBoxItemColorOverride(inventoryListBoxElementInstID, i, equipColor);
+				const Color displayColor = InventoryUiView::getItemDisplayColor(itemInst, player);
+				uiManager.setListBoxItemColorOverride(inventoryListBoxElementInstID, i, displayColor);
 			}
 			else if (mouseButtonType == MouseButtonType::Right)
 			{
