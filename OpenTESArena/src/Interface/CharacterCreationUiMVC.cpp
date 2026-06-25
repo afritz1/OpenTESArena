@@ -107,7 +107,6 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
 	std::vector<ArenaArmorMaterialType> allowedArmors = charClassDef.allowedArmors;
-	std::sort(allowedArmors.begin(), allowedArmors.end());
 
 	// Decide what the armor string says.
 	std::string armorString;
@@ -120,9 +119,9 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 		// The original game doesn't list the armor materials by themselves... have to make up something.
 		const std::string armorMaterialStrings[] =
 		{
-			exeData.equipment.leatherArmorNames[0].substr(0, 7),
+			exeData.equipment.plateArmorNames[0].substr(0, 5),
 			exeData.equipment.chainArmorNames[0].substr(0, 5),
-			exeData.equipment.plateArmorNames[0].substr(0, 5)
+			exeData.equipment.leatherArmorNames[0].substr(0, 7)
 		};
 
 		int lengthCounter = 0;

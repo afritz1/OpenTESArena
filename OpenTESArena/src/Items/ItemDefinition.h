@@ -48,7 +48,7 @@ struct AccessoryItemDefinition
 	void init(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice);
 };
 
-static constexpr int ARMOR_MATERIAL_TYPE_COUNT = static_cast<int>(ArenaArmorMaterialType::Plate) + 1;
+static constexpr int ARMOR_MATERIAL_TYPE_COUNT = static_cast<int>(ArenaArmorMaterialType::Leather) + 1;
 
 struct ArmorItemDefinition
 {

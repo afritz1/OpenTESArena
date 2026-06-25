@@ -77,7 +77,7 @@ namespace ArenaEntityUtils
 	void pickArmorClassItem(int specifiedItemID, const ExeData &exeData, ArenaRandom &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID);
 
 	// Weapon/armor ID is 0 = staff/cuirass, 1 = dagger/gauntlets, etc.
-	ArenaArmorTypeID pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, ArenaArmorTypeID specifiedItemID, const ExeData &exeData, ArenaRandom &random);
+	ArenaArmorTypeID pickNonMagicArmor(int itemQualityThreshold, ArenaArmorMaterialType baseMaterial, ArenaArmorTypeID specifiedItemID, const ExeData &exeData, ArenaRandom &random);
 	ArenaWeaponTypeID pickNonMagicWeapon(int weaponQualityThreshold, ArenaWeaponTypeID specifiedItemID, const ExeData &exeData, ArenaRandom &random);
 
 	void getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, ArenaRandom &random, Span<ArenaArmorTypeID> outArmorIDs, ArenaArmorMaterialType *outArmorMaterialType);

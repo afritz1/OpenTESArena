@@ -26,10 +26,10 @@ using ArenaArmorTypeID = int16_t;
 
 enum class ArenaArmorMaterialType
 {
-	// @todo should plate be 0?
-	Leather,
-	Chain,
-	Plate // Requires item material.
+	None = -1,
+	Plate = 0, // Requires item material.
+	Chain = 1,
+	Leather = 2
 };
 
 using ArenaAccessoryTypeID = int16_t;
