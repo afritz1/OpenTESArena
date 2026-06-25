@@ -157,18 +157,18 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 
 void MapLogic::handleStartDungeonLevelUpVoxelEnter(Game &game)
 {
-	auto &player = game.player;
+	Player &player = game.player;
 	player.setPhysicsVelocity(Double3::Zero);
 	player.clearKeyInventory();
 
-	auto &gameState = game.gameState;
 	const int provinceID = player.raceID; // @todo: this should be more like a WorldMapDefinition::getProvinceIdForRaceId() that searches provinces
 	const int locationID = game.random.next(32); // @todo: this should not assume 32 locations per province
 
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
 
+	GameState &gameState = game.gameState;
 	const ArenaWeatherType weatherType = gameState.getWeatherForLocation(provinceID, locationID);
 
 	const int starCount = SkyUtils::getStarCountFromDensity(game.options.getMisc_StarDensity());

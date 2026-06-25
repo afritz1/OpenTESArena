@@ -384,9 +384,8 @@ void ProvinceMapUI::initLocationIconUI(int provinceID)
 	GameState &gameState = game.gameState;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
-	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
 	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
 
 	for (int i = 0; i < provinceInst.getLocationCount(); i++)
@@ -508,12 +507,12 @@ void ProvinceMapUI::updateHoveredLocationID(Int2 originalPosition)
 	Game &game = *state.game;
 	GameState &gameState = game.gameState;
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 
+	const int provinceIndex = state.provinceID;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(state.provinceID);
-	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 
 	std::optional<Int2> closestPosition;
 	auto closerThanCurrentClosest = [&originalPosition, &closestPosition](const Int2 &point)
@@ -574,8 +573,8 @@ void ProvinceMapUI::updateLocationHighlights()
 	UiManager &uiManager = game.uiManager;
 
 	GameState &gameState = game.gameState;
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(state.provinceID);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(state.provinceID);
 	const ProvinceDefinition &playerProvinceDef = gameState.getProvinceDefinition();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(state.provinceID);
@@ -627,10 +626,10 @@ void ProvinceMapUI::trySelectLocation(int selectedLocationID)
 	GameState &gameState = game.gameState;
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 	const ProvinceDefinition &currentProvinceDef = gameState.getProvinceDefinition();
 	const LocationDefinition &currentLocationDef = gameState.getLocationDefinition();
-	const ProvinceDefinition &selectedProvinceDef = worldMapDef.getProvinceDef(state.provinceID);
+	const ProvinceDefinition &selectedProvinceDef = provinceLibrary.getProvinceDef(state.provinceID);
 	const LocationDefinition &selectedLocationDef = selectedProvinceDef.getLocationDef(selectedLocationID);
 
 	const bool matchesPlayerLocation = selectedProvinceDef.matches(currentProvinceDef) && selectedLocationDef.matches(currentLocationDef);
@@ -1062,11 +1061,11 @@ void ProvinceMapUI::onSearchInputAcceptInputAction(const InputActionCallbackValu
 		uiManager.setContextEnabled(state.searchResultsPopUpContextInstID, true);
 
 		GameState &gameState = game.gameState;
-		const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+		const int provinceIndex = state.provinceID;
+		const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 		const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-		const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(state.provinceID);
-		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+		const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
+		const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 
 		const UiElementInstanceID listBoxElementInstID = uiManager.getElementByName(ElementName_SearchResultsListBox);
 		uiManager.clearListBox(listBoxElementInstID);

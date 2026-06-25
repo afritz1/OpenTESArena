@@ -800,8 +800,8 @@ void ChooseAttributesUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 
 			// Find starting dungeon location definition.
 			constexpr int provinceIndex = ArenaLocationUtils::CENTER_PROVINCE_ID;
-			const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-			const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceIndex);
+			const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+			const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 			const std::optional<int> locationIndex = [&provinceDef]() -> std::optional<int>
 			{
 				for (int i = 0; i < provinceDef.getLocationCount(); i++)

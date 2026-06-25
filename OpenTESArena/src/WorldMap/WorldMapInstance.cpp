@@ -2,22 +2,24 @@
 
 #include "components/debug/Debug.h"
 
-void WorldMapInstance::init(const WorldMapDefinition &worldMapDef)
+void WorldMapInstance::init(const ProvinceLibrary &provinceLibrary)
 {
-	this->provinces.clear();
-	for (int i = 0; i < worldMapDef.getProvinceCount(); i++)
+	const int provinceCount = provinceLibrary.getProvinceCount();
+	this->provinces.init(provinceCount);
+
+	for (int i = 0; i < provinceCount; i++)
 	{
-		const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(i);
+		const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(i);
 
 		ProvinceInstance provinceInst;
 		provinceInst.init(i, provinceDef);
-		this->provinces.emplace_back(std::move(provinceInst));
+		this->provinces.set(i, std::move(provinceInst));
 	}
 }
 
 int WorldMapInstance::getProvinceCount() const
 {
-	return static_cast<int>(this->provinces.size());
+	return this->provinces.getCount();
 }
 
 ProvinceInstance &WorldMapInstance::getProvinceInstance(int index)

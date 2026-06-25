@@ -22,7 +22,7 @@ ProvinceMapUiModel::TravelData::TravelData(int locationID, int provinceID, int t
 
 std::string ProvinceMapUiModel::makeAlreadyAtLocationText(Game &game, const std::string &locationName)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.travel.alreadyAtDestination;
 
 	// Remove carriage return at end.
@@ -40,12 +40,11 @@ std::string ProvinceMapUiModel::makeAlreadyAtLocationText(Game &game, const std:
 
 std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int locationID)
 {
-	auto &gameState = game.gameState;
+	GameState &gameState = game.gameState;
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceID);
-	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
 	const LocationInstance &locationInst = provinceInst.getLocationInstance(locationID);
 	const int locationDefIndex = locationInst.getLocationDefIndex();
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
@@ -55,16 +54,17 @@ std::string ProvinceMapUiModel::getLocationName(Game &game, int provinceID, int 
 std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex, const LocationDefinition &srcLocationDef,
 	const ProvinceDefinition &srcProvinceDef, int dstLocationIndex)
 {
-	auto &gameState = game.gameState;
-	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const auto &exeData = binaryAssetLibrary.getExeData();
+	GameState &gameState = game.gameState;
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceInstance(srcProvinceIndex);
+	const int dstProvinceIndex = srcProvinceIndex;
+	const ProvinceInstance &dstProvinceInst = worldMapInst.getProvinceInstance(dstProvinceIndex);
 	const LocationInstance &dstLocationInst = dstProvinceInst.getLocationInstance(dstLocationIndex);
 
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const int dstProvinceDefIndex = dstProvinceInst.getProvinceDefIndex();
-	const ProvinceDefinition &dstProvinceDef = worldMapDef.getProvinceDef(dstProvinceDefIndex);
+	const ProvinceDefinition &dstProvinceDef = provinceLibrary.getProvinceDef(dstProvinceIndex);
 	const int dstLocationDefIndex = dstLocationInst.getLocationDefIndex();
 	const LocationDefinition &dstLocationDef = dstProvinceDef.getLocationDef(dstLocationDefIndex);
 	const std::string &dstLocationName = dstLocationInst.getName(dstLocationDef);
@@ -235,7 +235,7 @@ std::string ProvinceMapUiModel::makeTravelText(Game &game, int srcProvinceIndex,
 		return String::replace(dayStringPrefix + dayStringBody, '\r', '\n');
 	}();
 
-	const int travelDistance = [&srcLocationDef, &srcProvinceDef, &worldMapDef, &dstProvinceDef, &dstLocationDef]()
+	const int travelDistance = [&srcLocationDef, &srcProvinceDef, &dstProvinceDef, &dstLocationDef]()
 	{
 		const Rect srcProvinceRect = srcProvinceDef.getGlobalRect();
 		const Rect dstProvinceRect = dstProvinceDef.getGlobalRect();
@@ -284,13 +284,12 @@ std::string ProvinceSearchUiModel::getTitleText(Game &game)
 std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const std::string &locationName,
 	int provinceIndex, const int **exactLocationIndex)
 {
-	auto &gameState = game.gameState;
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
+	GameState &gameState = game.gameState;
 	const WorldMapInstance &worldMapInst = gameState.getWorldMapInstance();
-
 	const ProvinceInstance &provinceInst = worldMapInst.getProvinceInstance(provinceIndex);
-	const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceDefIndex);
+
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 
 	// Iterate through all locations in the province. If any visible location's name has
 	// a match with the one entered, then add the location to the matching IDs.
@@ -377,8 +376,8 @@ std::vector<int> ProvinceSearchUiModel::getMatchingLocations(Game &game, const s
 Int2 ProvinceMapUiView::getLocationCenterPoint(Game &game, int provinceID, int locationID)
 {
 	const auto &gameState = game.gameState;
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationID);
 	return Int2(locationDef.getScreenX(), locationDef.getScreenY());
 }

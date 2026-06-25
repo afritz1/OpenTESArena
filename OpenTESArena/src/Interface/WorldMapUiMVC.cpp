@@ -108,8 +108,8 @@ std::string FastTravelUiModel::getCityArrivalMessage(Game &game, int targetProvi
 	const int provinceID = targetProvinceID;
 	const int localCityID = targetLocationID;
 
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
-	const ProvinceDefinition &provinceDef = worldMapDef.getProvinceDef(provinceID);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceID);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(localCityID);
 
 	const std::string locationString = [travelDays, &gameState, &exeData, provinceID,
@@ -369,7 +369,6 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	// Handle fast travel behavior and decide which UI to switch to.
 	const auto &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const auto &exeData = binaryAssetLibrary.getExeData();
-	const WorldMapDefinition &worldMapDef = gameState.getWorldMapDefinition();
 
 	// Update game clock.
 	// @todo: maybe move this to a WorldMapLogicController namespace
@@ -406,8 +405,9 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 		}
 	}
 
-	const auto &travelProvinceDef = worldMapDef.getProvinceDef(targetProvinceID);
-	const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &travelProvinceDef = provinceLibrary.getProvinceDef(targetProvinceID);
+	const LocationDefinition &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
 
 	TextureManager &textureManager = game.textureManager;
 
@@ -529,8 +529,8 @@ void FastTravelUiController::onAnimationFinished(Game &game, int targetProvinceI
 	{
 		// Named dungeon.
 		constexpr bool isArtifactDungeon = false;
-		const auto &travelProvinceDef = worldMapDef.getProvinceDef(targetProvinceID);
-		const auto &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
+		const ProvinceDefinition &travelProvinceDef = provinceLibrary.getProvinceDef(targetProvinceID);
+		const LocationDefinition &travelLocationDef = travelProvinceDef.getLocationDef(targetLocationID);
 		const LocationDungeonDefinition &dungeonDef = travelLocationDef.getDungeonDefinition();
 
 		MapGenerationInteriorInfo interiorGenInfo;

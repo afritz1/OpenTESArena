@@ -60,6 +60,7 @@
 #include "../World/MapLogic.h"
 #include "../World/MapType.h"
 #include "../World/MeshLibrary.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/Directory.h"
@@ -331,6 +332,9 @@ bool Game::init()
 		DebugLogError("Couldn't init text asset library.");
 		return false;
 	}
+
+	ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	provinceLibrary.init(binaryAssetLibrary);
 
 	const std::string clockLibraryPath = dataFolderPath + "Clocks.txt";
 	if (!ClockLibrary::getInstance().init(clockLibraryPath.c_str()))

@@ -2,9 +2,9 @@
 
 #include "components/debug/Debug.h"
 
-void ProvinceInstance::init(int provinceDefIndex, const ProvinceDefinition &provinceDef)
+void ProvinceInstance::init(int provinceIndex, const ProvinceDefinition &provinceDef)
 {
-	this->provinceDefIndex = provinceDefIndex;
+	this->provinceIndex = provinceIndex;
 
 	this->locations.clear();
 	for (int i = 0; i < provinceDef.getLocationCount(); i++)
@@ -17,9 +17,9 @@ void ProvinceInstance::init(int provinceDefIndex, const ProvinceDefinition &prov
 	}
 }
 
-int ProvinceInstance::getProvinceDefIndex() const
+int ProvinceInstance::getProvinceIndex() const
 {
-	return this->provinceDefIndex;
+	return this->provinceIndex;
 }
 
 int ProvinceInstance::getLocationCount() const

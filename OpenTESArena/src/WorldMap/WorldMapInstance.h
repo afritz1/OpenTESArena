@@ -1,16 +1,16 @@
 #pragma once
 
-#include <vector>
-
 #include "ProvinceInstance.h"
-#include "WorldMapDefinition.h"
+#include "ProvinceLibrary.h"
+
+#include "components/utilities/Buffer.h"
 
 class WorldMapInstance
 {
 private:
-	std::vector<ProvinceInstance> provinces;
+	Buffer<ProvinceInstance> provinces;
 public:
-	void init(const WorldMapDefinition &worldMapDef);
+	void init(const ProvinceLibrary &provinceLibrary);
 
 	// Gets the number of provinces in the world map.
 	int getProvinceCount() const;

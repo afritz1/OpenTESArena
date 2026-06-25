@@ -95,7 +95,6 @@ private:
 	bool isLevelTransitionCalculationPending;
 	
 	// Player's current world map location data.
-	WorldMapDefinition worldMapDef;
 	WorldMapInstance worldMapInst;
 	int provinceIndex;
 	int locationIndex;
@@ -153,7 +152,6 @@ public:
 	bool isActiveMapNested() const; // True if the active interior is inside an exterior.
 	ArenaEnvironmentType getEnvironmentType() const; // For enemy encounters.
 	ArenaBuildingType getBuildingType() const; // For enemy encounters.
-	const WorldMapDefinition &getWorldMapDefinition() const;
 	const ProvinceDefinition &getProvinceDefinition() const;
 	const LocationDefinition &getLocationDefinition() const;
 	WorldMapInstance &getWorldMapInstance();

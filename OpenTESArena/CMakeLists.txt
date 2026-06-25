@@ -650,8 +650,8 @@ SET(TES_WORLD_MAP
     "${SRC_ROOT}/WorldMap/ProvinceDefinition.h"
     "${SRC_ROOT}/WorldMap/ProvinceInstance.cpp"
     "${SRC_ROOT}/WorldMap/ProvinceInstance.h"
-    "${SRC_ROOT}/WorldMap/WorldMapDefinition.cpp"
-    "${SRC_ROOT}/WorldMap/WorldMapDefinition.h"
+    "${SRC_ROOT}/WorldMap/ProvinceLibrary.cpp"
+    "${SRC_ROOT}/WorldMap/ProvinceLibrary.h"
     "${SRC_ROOT}/WorldMap/WorldMapInstance.cpp"
     "${SRC_ROOT}/WorldMap/WorldMapInstance.h")
 

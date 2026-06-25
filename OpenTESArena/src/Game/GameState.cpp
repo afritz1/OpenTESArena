@@ -42,6 +42,7 @@
 #include "../WorldMap/ArenaLocationUtils.h"
 #include "../WorldMap/LocationDefinition.h"
 #include "../WorldMap/LocationInstance.h"
+#include "../WorldMap/ProvinceLibrary.h"
 
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
@@ -177,29 +178,25 @@ void GameState::init(ArenaRandom &random)
 	// @todo: might want a clearSession()? Seems weird.
 
 	// Initialize world map definition and instance to default.
-	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	this->worldMapDef.init(binaryAssetLibrary);
-	this->worldMapInst.init(this->worldMapDef);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	this->worldMapInst.init(provinceLibrary);
 
 	// @temp: set main quest dungeons visible for testing.
-	for (int i = 0; i < this->worldMapInst.getProvinceCount(); i++)
+	for (int provinceIndex = 0; provinceIndex < this->worldMapInst.getProvinceCount(); provinceIndex++)
 	{
-		ProvinceInstance &provinceInst = this->worldMapInst.getProvinceInstance(i);
-		const int provinceDefIndex = provinceInst.getProvinceDefIndex();
-		const ProvinceDefinition &provinceDef = this->worldMapDef.getProvinceDef(provinceDefIndex);
+		ProvinceInstance &provinceInst = this->worldMapInst.getProvinceInstance(provinceIndex);
+		const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 
-		for (int j = 0; j < provinceInst.getLocationCount(); j++)
+		for (int locationIndex = 0; locationIndex < provinceInst.getLocationCount(); locationIndex++)
 		{
-			LocationInstance &locationInst = provinceInst.getLocationInstance(j);
+			LocationInstance &locationInst = provinceInst.getLocationInstance(locationIndex);
 			const int locationDefIndex = locationInst.getLocationDefIndex();
 			const LocationDefinition &locationDef = provinceDef.getLocationDef(locationDefIndex);
 			const std::string &locationName = locationInst.getName(locationDef);
 
 			const bool isMainQuestDungeon = locationDef.getType() == LocationDefinitionType::MainQuestDungeon;
-			const bool isStartDungeon = isMainQuestDungeon &&
-				(locationDef.getMainQuestDungeonDefinition().type == LocationMainQuestDungeonDefinitionType::Start);
-			const bool shouldSetVisible = (locationName.size() > 0) &&
-				isMainQuestDungeon && !isStartDungeon && !locationInst.isVisible();
+			const bool isStartDungeon = isMainQuestDungeon && (locationDef.getMainQuestDungeonDefinition().type == LocationMainQuestDungeonDefinitionType::Start);
+			const bool shouldSetVisible = (locationName.size() > 0) && isMainQuestDungeon && !isStartDungeon && !locationInst.isVisible();
 
 			if (shouldSetVisible)
 			{
@@ -209,7 +206,8 @@ void GameState::init(ArenaRandom &random)
 	}
 
 	// Do initial weather update (to set each value to a valid state).
-	this->updateWeatherList(random, binaryAssetLibrary.getExeData());
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	this->updateWeatherList(random, exeData);
 
 	this->date = Date();
 	this->weatherInst = WeatherInstance();
@@ -506,14 +504,10 @@ WorldMapInstance &GameState::getWorldMapInstance()
 	return this->worldMapInst;
 }
 
-const WorldMapDefinition &GameState::getWorldMapDefinition() const
-{
-	return this->worldMapDef;
-}
-
 const ProvinceDefinition &GameState::getProvinceDefinition() const
 {
-	return this->worldMapDef.getProvinceDef(this->provinceIndex);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	return provinceLibrary.getProvinceDef(this->provinceIndex);
 }
 
 const LocationDefinition &GameState::getLocationDefinition() const
@@ -545,12 +539,14 @@ Span<const ArenaWeatherType> GameState::getWorldMapWeathers() const
 
 ArenaWeatherType GameState::getWeatherForLocation(int provinceIndex, int locationIndex) const
 {
-	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-	const ProvinceDefinition &provinceDef = this->worldMapDef.getProvinceDef(provinceIndex);
+	const ProvinceLibrary &provinceLibrary = ProvinceLibrary::getInstance();
+	const ProvinceDefinition &provinceDef = provinceLibrary.getProvinceDef(provinceIndex);
 	const LocationDefinition &locationDef = provinceDef.getLocationDef(locationIndex);
 	const Int2 localPoint(locationDef.getScreenX(), locationDef.getScreenY());
 	const Int2 globalPoint = ArenaLocationUtils::getGlobalPoint(localPoint, provinceDef.getGlobalRect());
-	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, binaryAssetLibrary.getCityDataFile());
+
+	const CityDataFile &cityDataFile = BinaryAssetLibrary::getInstance().getCityDataFile();
+	const int quarterIndex = ArenaLocationUtils::getGlobalQuarter(globalPoint, cityDataFile);
 	DebugAssertIndex(this->worldMapWeathers, quarterIndex);
 	ArenaWeatherType weatherType = this->worldMapWeathers[quarterIndex];
 
