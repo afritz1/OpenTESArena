@@ -37,42 +37,47 @@ void ItemMaterialDefinition::init(const char *name, int ratingMultiplier, int co
 	this->weightMultiplier = weightMultiplier;
 }
 
-void AccessoryItemDefinition::init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice)
+void AccessoryItemDefinition::init(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 	this->materialDefID = materialDefID;
 	this->attributeID = attributeID;
 	this->basePrice = basePrice;
 }
 
-void ArmorItemDefinition::initLeather(const char *name, double weight)
+void ArmorItemDefinition::initLeather(const char *name, ArenaArmorTypeID typeID, double weight)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
 	this->weight = weight;
-	this->materialType = ArmorMaterialType::Leather;
+	this->materialType = ArenaArmorMaterialType::Leather;
 	this->plateMaterialDefID = -1;
 }
 
-void ArmorItemDefinition::initChain(const char *name, double weight)
+void ArmorItemDefinition::initChain(const char *name, ArenaArmorTypeID typeID, double weight)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
 	this->weight = weight;
-	this->materialType = ArmorMaterialType::Chain;
+	this->materialType = ArenaArmorMaterialType::Chain;
 	this->plateMaterialDefID = -1;
 }
 
-void ArmorItemDefinition::initPlate(const char *name, double weight, ItemMaterialDefinitionID materialDefID)
+void ArmorItemDefinition::initPlate(const char *name, ArenaArmorTypeID typeID, double weight, ItemMaterialDefinitionID materialDefID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
 	this->weight = weight;
-	this->materialType = ArmorMaterialType::Plate;
+	this->materialType = ArenaArmorMaterialType::Plate;
 	this->plateMaterialDefID = materialDefID;
 }
 
-void ConsumableItemDefinition::init(const char *name, const char *unidentifiedName)
+void ConsumableItemDefinition::init(const char *name, ArenaConsumableTypeID typeID, const char *unidentifiedName)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
 	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 }
 
@@ -82,28 +87,33 @@ void GoldItemDefinition::init(const char *nameSingular, const char *namePlural)
 	std::snprintf(std::begin(this->namePlural), std::size(this->namePlural), "%s", namePlural);
 }
 
-void MiscItemDefinition::init(const char *name)
+void MiscItemDefinition::init(const char *name, ArenaMiscTypeID typeID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
 }
 
-void ShieldItemDefinition::init(const char *name, double weight)
+void ShieldItemDefinition::init(const char *name, ArenaArmorTypeID armorTypeID, double weight)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->armorTypeID = armorTypeID;
 	this->weight = weight;
 }
 
-void TrinketItemDefinition::init(const char *name, const char* unidentifiedName, SpellID spellID)
+void TrinketItemDefinition::init(const char *name, ArenaTrinketTypeID typeID, const char *unidentifiedName, SpellID spellID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
+	std::snprintf(std::begin(this->unidentifiedName), std::size(this->unidentifiedName), "%s", unidentifiedName);
 	this->spellID = spellID;
 }
 
-void WeaponItemDefinition::initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount,
-	ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID)
+void WeaponItemDefinition::initMelee(const char *name, ArenaWeaponTypeID typeID, double weight, int basePrice, int damageMin, int damageMax,
+	int handCount, ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID)
 {
 	DebugAssert((handCount == 1) || (handCount == 2));
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
 	this->weight = weight;
 	this->basePrice = basePrice;
 	this->damageMin = damageMin;
@@ -114,10 +124,11 @@ void WeaponItemDefinition::initMelee(const char *name, double weight, int basePr
 	this->weaponAnimDefID = weaponAnimDefID;
 }
 
-void WeaponItemDefinition::initRanged(const char *name, double weight, int basePrice, int damageMin, int damageMax,
+void WeaponItemDefinition::initRanged(const char *name, ArenaWeaponTypeID typeID, double weight, int basePrice, int damageMin, int damageMax,
 	ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID)
 {
 	std::snprintf(std::begin(this->name), std::size(this->name), "%s", name);
+	this->typeID = typeID;
 	this->weight = weight;
 	this->basePrice = basePrice;
 	this->damageMin = damageMin;
@@ -147,14 +158,12 @@ void ArtifactItemDefinition::init(const char *flavorText, Span<const int> provin
 ItemDefinition::ItemDefinition()
 {
 	this->type = static_cast<ItemType>(-1);
-	this->originalItemID = -1;
 	this->isArtifact = false;
 }
 
-void ItemDefinition::init(ItemType type, int originalItemID)
+void ItemDefinition::init(ItemType type)
 {
 	this->type = type;
-	this->originalItemID = originalItemID;
 	this->isArtifact = false;
 }
 

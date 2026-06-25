@@ -2,9 +2,9 @@
 
 #include <iterator>
 
-class Random;
+#include "../Assets/ArenaTypes.h"
 
-enum class ArmorMaterialType;
+class Random;
 
 struct ExeData;
 
@@ -29,5 +29,5 @@ namespace ArenaItemUtils
 	int getArmorClassMagicItemBasePrice(int materialID, const ExeData &exeData);
 	int getAttributeEnhancementMagicItemBasePrice(int baseItemID, int attributeID, const ExeData &exeData);
 
-	ArmorMaterialType getRandomArmorMaterialType(Random &random);
+	ArenaArmorMaterialType getRandomArmorMaterialType(Random &random);
 }

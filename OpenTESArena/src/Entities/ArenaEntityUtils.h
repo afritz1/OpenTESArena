@@ -16,7 +16,6 @@ enum class ArenaBuildingType;
 enum class ArenaCityType;
 enum class ArenaEnvironmentType;
 enum class ArenaInteriorType;
-enum class ArmorMaterialType;
 
 struct ExeData;
 
@@ -78,14 +77,14 @@ namespace ArenaEntityUtils
 	void pickArmorClassItem(int specifiedItemID, const ExeData &exeData, ArenaRandom &random, int *outItemID, ItemMaterialDefinitionID *outMaterialID);
 
 	// Weapon/armor ID is 0 = staff/cuirass, 1 = dagger/gauntlets, etc.
-	int pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, ArenaRandom &random);
-	int pickNonMagicWeapon(int weaponQualityThreshold, int specifiedItemID, const ExeData &exeData, ArenaRandom &random);
+	ArenaArmorTypeID pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, ArenaArmorTypeID specifiedItemID, const ExeData &exeData, ArenaRandom &random);
+	ArenaWeaponTypeID pickNonMagicWeapon(int weaponQualityThreshold, ArenaWeaponTypeID specifiedItemID, const ExeData &exeData, ArenaRandom &random);
 
-	void getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType);
-	void getHumanEnemyWeapon(int classNumber, const ExeData &exeData, ArenaRandom &random, int *outWeaponID);
-	void getHumanEnemyShield(int classNumber, const ExeData &exeData, ArenaRandom &random, int weaponID, int *outShieldID);
+	void getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, ArenaRandom &random, Span<ArenaArmorTypeID> outArmorIDs, ArenaArmorMaterialType *outArmorMaterialType);
+	void getHumanEnemyWeapon(int classNumber, const ExeData &exeData, ArenaRandom &random, ArenaWeaponTypeID *outWeaponID);
+	void getHumanEnemyShield(int classNumber, const ExeData &exeData, ArenaRandom &random, ArenaWeaponTypeID weaponID, ArenaArmorTypeID *outShieldID);
 	void getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID,
-		bool *outIsArmor, ArmorMaterialType *outArmorMaterialType);
+		bool *outIsArmor, ArenaArmorMaterialType *outArmorMaterialType);
 	int getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, ArenaRandom &random);
 	int getCreatureItemQualityThreshold(int creatureLevel);
 
@@ -105,7 +104,7 @@ namespace ArenaEntityUtils
 	void getLootMagicItem(int lootValuesIndex, ArenaCityType cityType, int levelIndex, const ExeData &exeData, ArenaRandom &random, int *outItemID, bool *outIsPotion,
 		ItemMaterialDefinitionID *outMaterialID, PrimaryAttributeID *outAttributeID, SpellID *outSpellID);
 	int getLootItemQualityThreshold(int lootValuesIndex, ArenaRandom &random, ArenaCityType cityType, int levelIndex);
-	void getLootNonMagicWeaponOrArmor(const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID, bool *outIsArmor, ArmorMaterialType *outArmorMaterialType);
+	void getLootNonMagicWeaponOrArmor(const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID, bool *outIsArmor, ArenaArmorMaterialType *outArmorMaterialType);
 	int getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, ArenaRandom &random, int itemMaxHealth);
 
 	std::string getArmorNameFromItemID(int itemID, const ExeData &exeData);
@@ -116,9 +115,9 @@ namespace ArenaEntityUtils
 	int getGuardType(const ExeData &exeData, ArenaRandom &random);
 	int getGuardLevel(ArenaCityType cityType, int tierBonus, const ExeData &exeData, ArenaRandom &random);
 	int getNumberOfGuardsToSpawn(ArenaRandom &random);
-	void getGuardArmor(int guardType, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType);
-	int getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
-	int getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
+	void getGuardArmor(int guardType, const ExeData &exeData, ArenaRandom &random, Span<ArenaArmorTypeID> outArmorIDs, ArenaArmorMaterialType *outArmorMaterialType);
+	ArenaWeaponTypeID getGuardWeapon(const ExeData &exeData, ArenaRandom &random);
+	ArenaArmorTypeID getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random);
 
 	bool isEnemyEncounterAllowedOnMinuteChanged(ArenaEnvironmentType environmentType, bool areCitizensPresent, bool isPlayerCamping, bool isPlayerOnRaisedPlatform);
 	bool isEnemyEncounterAllowedOnHourChanged(ArenaEnvironmentType environmentType, bool isPlayerCamping, bool isPlayerOnRaisedPlatform);

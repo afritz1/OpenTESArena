@@ -2,9 +2,9 @@
 
 #include <vector>
 
-#include "components/utilities/Span.h"
+#include "../Assets/ArenaTypes.h"
 
-enum class ArmorMaterialType;
+#include "components/utilities/Span.h"
 
 using CharacterClassCategoryID = int; // Warrior/mage/thief
 
@@ -18,9 +18,9 @@ struct CharacterClassDefinition
 	CharacterClassCategoryID categoryID;
 	char categoryName[64]; // Warrior/mage/thief.
 	char preferredAttributes[128]; // Description in character creation.
-	std::vector<int> allowedArmors; // 0 = leather, 1 = chain, etc..
-	std::vector<int> allowedShields; // 0 = buckler, 1 = round shield, etc..
-	std::vector<int> allowedWeapons; // 0 = staff, 1 = sword, etc..
+	std::vector<ArenaArmorMaterialType> allowedArmors;
+	std::vector<ArenaArmorTypeID> allowedShields; // 7 = buckler, 8 = round shield, etc..
+	std::vector<ArenaWeaponTypeID> allowedWeapons; // 0 = staff, 1 = sword, etc..
 	bool castsMagic;
 	int healthDie; // d8, d20, etc..
 	double spellPointsMultiplier;
@@ -33,21 +33,21 @@ struct CharacterClassDefinition
 	CharacterClassDefinition();
 
 	void init(const char *name, CharacterClassCategoryID categoryID, const char *categoryName, const char *preferredAttributes,
-		Span<const int> allowedArmors, Span<const int> allowedShields, Span<const int> allowedWeapons,
+		Span<const ArenaArmorMaterialType> allowedArmors, Span<const ArenaArmorTypeID> allowedShields, Span<const ArenaWeaponTypeID> allowedWeapons,
 		bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, int thievingDivisor,
 		bool criticalHit, double climbingSpeedScale, int originalClassIndex);
 
 	int getAllowedArmorCount() const;
-	int getAllowedArmor(int index) const;
-	bool isArmorAllowed(ArmorMaterialType materialType) const;
+	ArenaArmorMaterialType getAllowedArmor(int index) const;
+	bool isArmorMaterialAllowed(ArenaArmorMaterialType materialType) const;
 
 	int getAllowedShieldCount() const;
-	int getAllowedShield(int index) const;
-	bool isShieldAllowed(int shieldID) const;
+	ArenaArmorTypeID getAllowedShield(int index) const;
+	bool isShieldTypeAllowed(ArenaArmorTypeID typeID) const;
 
 	int getAllowedWeaponCount() const;
-	int getAllowedWeapon(int index) const;
-	bool isWeaponAllowed(int weaponID) const;
+	ArenaWeaponTypeID getAllowedWeapon(int index) const;
+	bool isWeaponTypeAllowed(ArenaWeaponTypeID typeID) const;
 
 	int getExperienceCap(int level) const;
 };

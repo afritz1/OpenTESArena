@@ -18,6 +18,25 @@ using ArenaItemIndex = uint16_t;
 // 1-based IDs for all creatures, not human enemies.
 using ArenaCreatureID = uint16_t;
 
+// For each weapon type (staff, ...), ordered how they appear in the original game.
+using ArenaWeaponTypeID = int16_t;
+
+// For each armor piece type. Includes shields.
+using ArenaArmorTypeID = int16_t;
+
+enum class ArenaArmorMaterialType
+{
+	// @todo should plate be 0?
+	Leather,
+	Chain,
+	Plate // Requires item material.
+};
+
+using ArenaAccessoryTypeID = int16_t;
+using ArenaConsumableTypeID = int16_t;
+using ArenaMiscTypeID = int16_t;
+using ArenaTrinketTypeID = int16_t;
+
 // Maps one or more *MENU IDs to a type of transition voxel. Cities and the wilderness interpret
 // IDs differently.
 enum class ArenaMenuType

@@ -9,18 +9,18 @@
 
 void CharacterClassLibrary::init(const ExeData &exeData)
 {
-	const auto &classNameStrs = exeData.charClasses.classNames;
-	const auto &allowedArmorsValues = exeData.charClasses.allowedArmors;
-	const auto &allowedShieldsLists = exeData.charClasses.allowedShieldsLists;
-	const auto &allowedShieldsIndices = exeData.charClasses.allowedShieldsIndices;
-	const auto &allowedWeaponsLists = exeData.charClasses.allowedWeaponsLists;
-	const auto &allowedWeaponsIndices = exeData.charClasses.allowedWeaponsIndices;
-	const auto &preferredAttributesStrs = exeData.charClasses.preferredAttributes;
-	const auto &classNumbersToIDsValues = exeData.charClasses.classNumbersToIDs;
-	const auto &initialExpCapValues = exeData.charClasses.initialExperienceCaps;
-	const auto &healthDiceValues = exeData.charClasses.healthDice;
-	const auto &spellPointMultiplierValues = exeData.charClasses.magicClassIntelligenceMultipliers;
-	const auto &thievingDivisorValues = exeData.charClasses.thievingDivisors;
+	const Span<const std::string> classNameStrs = exeData.charClasses.classNames;
+	const Span<const uint8_t> allowedArmorsValues = exeData.charClasses.allowedArmors;
+	const Span<const std::vector<uint8_t>> allowedShieldsLists = exeData.charClasses.allowedShieldsLists;
+	const Span<const int> allowedShieldsIndices = exeData.charClasses.allowedShieldsIndices;
+	const Span<const std::vector<uint8_t>> allowedWeaponsLists = exeData.charClasses.allowedWeaponsLists;
+	const Span<const int> allowedWeaponsIndices = exeData.charClasses.allowedWeaponsIndices;
+	const Span<const std::string> preferredAttributesStrs = exeData.charClasses.preferredAttributes;
+	const Span<const uint8_t> classNumbersToIDsValues = exeData.charClasses.classNumbersToIDs;
+	const Span<const uint16_t> initialExpCapValues = exeData.charClasses.initialExperienceCaps;
+	const Span<const uint8_t> healthDiceValues = exeData.charClasses.healthDice;
+	const Span<const uint8_t> spellPointMultiplierValues = exeData.charClasses.magicClassIntelligenceMultipliers;
+	const Span<const uint8_t> thievingDivisorValues = exeData.charClasses.thievingDivisors;
 
 	constexpr int originalClassCount = 18;
 
@@ -33,7 +33,7 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 		DebugAssertIndex(preferredAttributesStrs, i);
 		std::string preferredAttributes = preferredAttributesStrs[i];
 
-		const std::vector<int> allowedArmors = [&allowedArmorsValues, i]()
+		const std::vector<ArenaArmorMaterialType> allowedArmors = [&allowedArmorsValues, i]()
 		{
 			// Determine which armors are allowed based on a one-digit value.
 			DebugAssertIndex(allowedArmorsValues, i);
@@ -41,27 +41,27 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 
 			if (value == 0)
 			{
-				return std::vector<int> { 0, 1, 2 };
+				return std::vector<ArenaArmorMaterialType> { ArenaArmorMaterialType::Leather, ArenaArmorMaterialType::Chain, ArenaArmorMaterialType::Plate };
 			}
 			else if (value == 1)
 			{
-				return std::vector<int> { 0, 1 };
+				return std::vector<ArenaArmorMaterialType> { ArenaArmorMaterialType::Leather, ArenaArmorMaterialType::Chain };
 			}
 			else if (value == 2)
 			{
-				return std::vector<int> { 0 };
+				return std::vector<ArenaArmorMaterialType> { ArenaArmorMaterialType::Leather };
 			}
 			else if (value == 3)
 			{
-				return std::vector<int>();
+				return std::vector<ArenaArmorMaterialType>();
 			}
 			else
 			{
-				DebugUnhandledReturnMsg(std::vector<int>, std::to_string(value));
+				DebugUnhandledReturnMsg(std::vector<ArenaArmorMaterialType>, std::to_string(value));
 			}
 		}();
 
-		const std::vector<int> allowedShields = [&allowedShieldsLists, &allowedShieldsIndices, i]()
+		const std::vector<ArenaArmorTypeID> allowedShields = [&allowedShieldsLists, &allowedShieldsIndices, i]()
 		{
 			// Get the pre-calculated shield index.
 			DebugAssertIndex(allowedShieldsIndices, i);
@@ -71,32 +71,22 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 			// If the index is "null" (-1), that means all shields are allowed for this class.
 			if (shieldIndex == NO_INDEX)
 			{
-				return std::vector<int> { 0, 1, 2, 3 };
+				return std::vector<ArenaArmorTypeID> { 7, 8, 9, 10 };
 			}
-			else
+
+			DebugAssertIndex(allowedShieldsLists, shieldIndex);
+			const Span<const uint8_t> shieldsList = allowedShieldsLists[shieldIndex];
+
+			std::vector<ArenaArmorTypeID> shields;
+			for (const uint8_t armorTypeID : shieldsList)
 			{
-				// Mappings of shield IDs to shield types. The index in the array is the ID 
-				// minus 7 because shields and armors are treated as the same type in Arena,
-				// so they're in the same array, but we separate them here because that seems 
-				// more object-oriented.
-				constexpr int ShieldIDMappings[] = { 0, 1, 2, 3 };
-
-				DebugAssertIndex(allowedShieldsLists, shieldIndex);
-				const Span<const uint8_t> shieldsList = allowedShieldsLists[shieldIndex];
-
-				std::vector<int> shields;
-				for (const uint8_t shield : shieldsList)
-				{
-					const int shieldIdMappingsIndex = static_cast<int>(shield) - 7;
-					DebugAssertIndex(ShieldIDMappings, shieldIdMappingsIndex);
-					shields.emplace_back(ShieldIDMappings[shieldIdMappingsIndex]);
-				}
-
-				return shields;
+				shields.emplace_back(armorTypeID);
 			}
+
+			return shields;
 		}();
 
-		const std::vector<int> allowedWeapons = [&allowedWeaponsLists, &allowedWeaponsIndices, i]()
+		const std::vector<ArenaWeaponTypeID> allowedWeapons = [&allowedWeaponsLists, &allowedWeaponsIndices, i]()
 		{
 			// Get the pre-calculated weapon index.
 			DebugAssertIndex(allowedWeaponsIndices, i);
@@ -104,9 +94,9 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 			constexpr int NO_INDEX = -1;
 
 			// Weapon IDs as they are shown in the executable (staff, sword, ..., long bow).
-			const std::vector<int> WeaponIDs = []()
+			const std::vector<ArenaWeaponTypeID> WeaponIDs = []()
 			{
-				std::vector<int> weapons(18);
+				std::vector<ArenaWeaponTypeID> weapons(18);
 				std::iota(weapons.begin(), weapons.end(), 0);
 				return weapons;
 			}();
@@ -116,20 +106,17 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 			{
 				return WeaponIDs;
 			}
-			else
-			{
-				DebugAssertIndex(allowedWeaponsLists, weaponIndex);
-				const Span<const uint8_t> weaponsList = allowedWeaponsLists[weaponIndex];
-				
-				std::vector<int> weapons;
-				for (const uint8_t weapon : weaponsList)
-				{
-					DebugAssertIndex(WeaponIDs, weapon);
-					weapons.emplace_back(WeaponIDs[weapon]);
-				}
 
-				return weapons;
+			DebugAssertIndex(allowedWeaponsLists, weaponIndex);
+			const Span<const uint8_t> weaponsList = allowedWeaponsLists[weaponIndex];
+
+			std::vector<ArenaWeaponTypeID> weapons;
+			for (const uint8_t weaponTypeID : weaponsList)
+			{
+				weapons.emplace_back(weaponTypeID);
 			}
+
+			return weapons;
 		}();
 
 		DebugAssertIndex(thievingDivisorValues, i);

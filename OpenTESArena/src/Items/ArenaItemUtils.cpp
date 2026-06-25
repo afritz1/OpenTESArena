@@ -38,7 +38,7 @@ int ArenaItemUtils::getAttributeEnhancementMagicItemBasePrice(int baseItemID, in
 	return attributeItemBasePrices[baseItemID] + attributeEnhancementPrices[attributeID];
 }
 
-ArmorMaterialType ArenaItemUtils::getRandomArmorMaterialType(Random &random)
+ArenaArmorMaterialType ArenaItemUtils::getRandomArmorMaterialType(Random &random)
 {
-	return static_cast<ArmorMaterialType>(random.next(ARMOR_MATERIAL_TYPE_COUNT));
+	return static_cast<ArenaArmorMaterialType>(random.next(ARMOR_MATERIAL_TYPE_COUNT));
 }

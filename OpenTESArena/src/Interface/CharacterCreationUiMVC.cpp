@@ -104,45 +104,38 @@ std::string ChooseClassUiModel::getTitleText(Game &game)
 
 std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefinition &charClassDef)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
-	// The original game doesn't list the armor materials by themselves... have to make up something.
-	const std::string armorMaterialStrings[] =
-	{
-		exeData.equipment.leatherArmorNames[0].substr(0, 7),
-		exeData.equipment.chainArmorNames[0].substr(0, 5),
-		exeData.equipment.plateArmorNames[0].substr(0, 5)
-	};
-
-	std::vector<int> allowedArmors(charClassDef.getAllowedArmorCount());
-	for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
-	{
-		allowedArmors[i] = charClassDef.getAllowedArmor(i);
-	}
-
+	std::vector<ArenaArmorMaterialType> allowedArmors = charClassDef.allowedArmors;
 	std::sort(allowedArmors.begin(), allowedArmors.end());
 
-	std::string armorString;
-
 	// Decide what the armor string says.
+	std::string armorString;
 	if (allowedArmors.size() == 0)
 	{
 		armorString = "None";
 	}
 	else
 	{
+		// The original game doesn't list the armor materials by themselves... have to make up something.
+		const std::string armorMaterialStrings[] =
+		{
+			exeData.equipment.leatherArmorNames[0].substr(0, 7),
+			exeData.equipment.chainArmorNames[0].substr(0, 5),
+			exeData.equipment.plateArmorNames[0].substr(0, 5)
+		};
+
 		int lengthCounter = 0;
 
 		// Collect all allowed armor display names for the class.
 		for (int i = 0; i < static_cast<int>(allowedArmors.size()); i++)
 		{
-			const int materialType = allowedArmors[i];
-			DebugAssertIndex(armorMaterialStrings, materialType);
-			const std::string &materialString = armorMaterialStrings[materialType];
+			const int materialTypeIndex = static_cast<int>(allowedArmors[i]);
+			DebugAssertIndex(armorMaterialStrings, materialTypeIndex);
+			const std::string &materialString = armorMaterialStrings[materialTypeIndex];
 			lengthCounter += static_cast<int>(materialString.size());
 			armorString.append(materialString);
 
-			// If not the last element, add a comma.
 			if (i < (static_cast<int>(allowedArmors.size()) - 1))
 			{
 				armorString.append(", ");
@@ -163,20 +156,14 @@ std::string ChooseClassUiModel::getArmorTooltipText(const CharacterClassDefiniti
 
 std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinition &charClassDef)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const Span<const std::string> shieldStrings(exeData.equipment.armorNames + 7, 4);
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> armorNames = exeData.equipment.armorNames;
 
-	std::vector<int> allowedShields(charClassDef.getAllowedShieldCount());
-	for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
-	{
-		allowedShields[i] = charClassDef.getAllowedShield(i);
-	}
-
+	std::vector<ArenaArmorTypeID> allowedShields = charClassDef.allowedShields;
 	std::sort(allowedShields.begin(), allowedShields.end());
 
-	std::string shieldsString;
-
 	// Decide what the shield string says.
+	std::string shieldsString;
 	if (allowedShields.size() == 0)
 	{
 		shieldsString = "None";
@@ -188,8 +175,8 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 		// Collect all allowed shield display names for the class.
 		for (int i = 0; i < static_cast<int>(allowedShields.size()); i++)
 		{
-			const int shieldType = allowedShields[i];
-			const std::string &typeString = shieldStrings[shieldType];
+			const ArenaArmorTypeID armorTypeID = allowedShields[i];
+			const std::string &typeString = armorNames[armorTypeID];
 			lengthCounter += static_cast<int>(typeString.size());
 			shieldsString.append(typeString);
 
@@ -214,28 +201,22 @@ std::string ChooseClassUiModel::getShieldTooltipText(const CharacterClassDefinit
 
 std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinition &charClassDef, Game &game)
 {
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	const auto &weaponStrings = exeData.equipment.weaponNames;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const Span<const std::string> weaponNames = exeData.equipment.weaponNames;
 
-	std::vector<int> allowedWeapons(charClassDef.getAllowedWeaponCount());
-	for (int i = 0; i < static_cast<int>(allowedWeapons.size()); i++)
-	{
-		allowedWeapons[i] = charClassDef.getAllowedWeapon(i);
-	}
-
+	std::vector<ArenaWeaponTypeID> allowedWeapons = charClassDef.allowedWeapons;
 	std::sort(allowedWeapons.begin(), allowedWeapons.end(),
-		[&weaponStrings](int a, int b)
+		[&weaponNames](ArenaWeaponTypeID a, ArenaWeaponTypeID b)
 	{
-		DebugAssertIndex(weaponStrings, a);
-		DebugAssertIndex(weaponStrings, b);
-		const std::string &aStr = weaponStrings[a];
-		const std::string &bStr = weaponStrings[b];
+		DebugAssertIndex(weaponNames, a);
+		DebugAssertIndex(weaponNames, b);
+		const std::string &aStr = weaponNames[a];
+		const std::string &bStr = weaponNames[b];
 		return aStr.compare(bStr) < 0;
 	});
 
-	std::string weaponsString;
-
 	// Decide what the weapon string says.
+	std::string weaponsString;
 	if (allowedWeapons.size() == 0)
 	{
 		// If the class is allowed zero weapons, it still doesn't exclude fists, I think.
@@ -249,8 +230,8 @@ std::string ChooseClassUiModel::getWeaponTooltipText(const CharacterClassDefinit
 		for (int i = 0; i < static_cast<int>(allowedWeapons.size()); i++)
 		{
 			const int weaponID = allowedWeapons.at(i);
-			DebugAssertIndex(weaponStrings, weaponID);
-			const std::string &weaponName = weaponStrings[weaponID];
+			DebugAssertIndex(weaponNames, weaponID);
+			const std::string &weaponName = weaponNames[weaponID];
 			lengthCounter += static_cast<int>(weaponName.size());
 			weaponsString.append(weaponName);
 

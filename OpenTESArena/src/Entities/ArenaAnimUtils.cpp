@@ -963,10 +963,10 @@ void ArenaAnimUtils::getHumanEnemyProperties(int charClassIndex, const Character
 
 		for (int i = 0; i < charClassDef.getAllowedArmorCount(); i++)
 		{
-			const int allowedArmor = charClassDef.getAllowedArmor(i);
-			hasPlate |= allowedArmor == 2;
-			hasChain |= allowedArmor == 1;
-			hasLeather |= allowedArmor == 0;
+			const ArenaArmorMaterialType allowedArmor = charClassDef.getAllowedArmor(i);
+			hasPlate |= allowedArmor == ArenaArmorMaterialType::Plate;
+			hasChain |= allowedArmor == ArenaArmorMaterialType::Chain;
+			hasLeather |= allowedArmor == ArenaArmorMaterialType::Leather;
 		}
 
 		const int originalClassIndex = charClassDef.originalClassIndex;

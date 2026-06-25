@@ -14,70 +14,81 @@ void ItemLibrary::init(const ExeData &exeData)
 
 	for (int i = 0; i < accessoryNames.getCount(); i++)
 	{
+		const ArenaAccessoryTypeID accessoryTypeID = static_cast<ArenaAccessoryTypeID>(i);
+
 		for (ItemMaterialDefinitionID materialID = 3; materialID < materialNames.getCount(); materialID++) // The first 3 materials aren't used
 		{
 			ItemDefinition itemDef;
-			itemDef.init(ItemType::Accessory, i);
+			itemDef.init(ItemType::Accessory);
+
 			const std::string fullName = materialNames[materialID] + " " + accessoryNames[i];
 			const int basePrice = ArenaItemUtils::getArmorClassMagicItemBasePrice(materialID, exeData);
-			itemDef.accessory.init(fullName.c_str(), accessoryNames[i].c_str(), materialID, -1, basePrice);
+			itemDef.accessory.init(fullName.c_str(), accessoryTypeID, accessoryNames[i].c_str(), materialID, -1, basePrice);
+
 			this->itemDefs.emplace_back(std::move(itemDef));
 		}
 
 		for (PrimaryAttributeID attributeID = 0; attributeID < attributeNames.getCount(); attributeID++)
 		{
 			ItemDefinition itemDef;
-			itemDef.init(ItemType::Accessory, i);
+			itemDef.init(ItemType::Accessory);
+
 			const std::string fullName = accessoryNames[i] + " " + attributeNames[attributeID];
 			const int basePrice = ArenaItemUtils::getAttributeEnhancementMagicItemBasePrice(i, attributeID, exeData);
-			itemDef.accessory.init(fullName.c_str(), accessoryNames[i].c_str(), -1, attributeID, basePrice);
+			itemDef.accessory.init(fullName.c_str(), accessoryTypeID, accessoryNames[i].c_str(), -1, attributeID, basePrice);
+
 			this->itemDefs.emplace_back(std::move(itemDef));
 		}
 	}
 
 	constexpr double kgDivisor = ArenaItemUtils::KilogramsDivisor;
-	constexpr int armorCount = 7; // Ignores shields at end.
-	const Span<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames, armorCount);
-	const Span<const std::string> chainArmorNames(exeData.equipment.chainArmorNames, armorCount);
-	const Span<const std::string> plateArmorNames(exeData.equipment.plateArmorNames, armorCount);
-	const Span<const std::string> armorNames(exeData.equipment.armorNames, armorCount); // Requires an associated material.
-	const Span<const uint16_t> leatherArmorWeights(exeData.equipment.leatherArmorWeights, armorCount);
-	const Span<const uint16_t> chainArmorWeights(exeData.equipment.chainArmorWeights, armorCount);
-	const Span<const uint16_t> plateArmorWeights(exeData.equipment.plateArmorWeights, armorCount);
+	constexpr int armorWithShieldsCount = 11;
+	constexpr int armorWithoutShieldsCount = 7;
+	const Span<const std::string> leatherArmorNames(exeData.equipment.leatherArmorNames, armorWithoutShieldsCount);
+	const Span<const std::string> chainArmorNames(exeData.equipment.chainArmorNames, armorWithoutShieldsCount);
+	const Span<const std::string> plateArmorNames(exeData.equipment.plateArmorNames, armorWithoutShieldsCount);
+	const Span<const std::string> armorNames(exeData.equipment.armorNames, armorWithoutShieldsCount); // Requires an associated material.
+	const Span<const uint16_t> leatherArmorWeights(exeData.equipment.leatherArmorWeights, armorWithoutShieldsCount);
+	const Span<const uint16_t> chainArmorWeights(exeData.equipment.chainArmorWeights, armorWithoutShieldsCount);
+	const Span<const uint16_t> plateArmorWeights(exeData.equipment.plateArmorWeights, armorWithoutShieldsCount);
 
 	for (int i = 0; i < leatherArmorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Armor, i);
+		itemDef.init(ItemType::Armor);
 
 		const std::string &leatherArmorName = leatherArmorNames[i];
+		const ArenaArmorTypeID armorTypeID = static_cast<ArenaArmorTypeID>(i);
 		const int weightOriginal = leatherArmorWeights[i];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
-		itemDef.armor.initLeather(leatherArmorName.c_str(), weightKg);
+		itemDef.armor.initLeather(leatherArmorName.c_str(), armorTypeID, weightKg);
+
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
 	for (int i = 0; i < chainArmorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Armor, i);
+		itemDef.init(ItemType::Armor);
 
 		const std::string &chainArmorName = chainArmorNames[i];
+		const ArenaArmorTypeID armorTypeID = static_cast<ArenaArmorTypeID>(i);
 		const int weightOriginal = chainArmorWeights[i];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
-		itemDef.armor.initChain(chainArmorName.c_str(), weightKg);
+		itemDef.armor.initChain(chainArmorName.c_str(), armorTypeID, weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
 	for (int i = 0; i < plateArmorNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Armor, i);
+		itemDef.init(ItemType::Armor);
 
 		const std::string &plateArmorName = plateArmorNames[i];
+		const ArenaArmorTypeID armorTypeID = static_cast<ArenaArmorTypeID>(i);
 		const int weightOriginal = plateArmorWeights[i];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
-		itemDef.armor.initPlate(plateArmorName.c_str(), weightKg, -1);
+		itemDef.armor.initPlate(plateArmorName.c_str(), armorTypeID, weightKg, -1);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
@@ -98,8 +109,11 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < potionNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Consumable, i);
-		itemDef.consumable.init(potionNames[i].c_str(), unidentifiedPotionName.c_str());
+		itemDef.init(ItemType::Consumable);
+
+		const std::string &potionName = potionNames[i];
+		const ArenaConsumableTypeID consumableTypeID = static_cast<ArenaConsumableTypeID>(i);
+		itemDef.consumable.init(potionName.c_str(), consumableTypeID, unidentifiedPotionName.c_str());
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	
@@ -107,22 +121,27 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (int i = 0; i < mainQuestItemNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Misc, -1);
-		itemDef.misc.init(mainQuestItemNames[i].c_str());
+		itemDef.init(ItemType::Misc);
+
+		const std::string &mainQuestItemName = mainQuestItemNames[i];
+		const ArenaMiscTypeID miscTypeID = static_cast<ArenaMiscTypeID>(i);
+		itemDef.misc.init(mainQuestItemName.c_str(), miscTypeID);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	
-	constexpr int shieldCount = 4;
-	const Span<const std::string> shieldNames(exeData.equipment.armorNames + armorCount, shieldCount);
-	const Span<const uint16_t> shieldWeights(exeData.equipment.plateArmorWeights + armorCount, shieldCount);
+	constexpr int shieldCount = armorWithShieldsCount - armorWithoutShieldsCount;
+	const Span<const std::string> shieldNames(exeData.equipment.armorNames + armorWithoutShieldsCount, shieldCount);
+	const Span<const uint16_t> shieldWeights(exeData.equipment.plateArmorWeights + armorWithoutShieldsCount, shieldCount);
 	for (int i = 0; i < shieldNames.getCount(); i++)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Shield, armorCount + i);
+		itemDef.init(ItemType::Shield);
 
+		const std::string &shieldName = shieldNames[i];
+		const ArenaArmorTypeID armorTypeID = static_cast<ArenaArmorTypeID>(armorWithoutShieldsCount + i);
 		const int weightOriginal = shieldWeights[i];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
-		itemDef.shield.init(shieldNames[i].c_str(), weightKg);
+		itemDef.shield.init(shieldName.c_str(), armorTypeID, weightKg);
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 	
@@ -136,30 +155,36 @@ void ItemLibrary::init(const ExeData &exeData)
 
 	for (int i = 0; i < trinketNames.getCount(); i++)
 	{
+		const ArenaTrinketTypeID trinketTypeID = static_cast<ArenaTrinketTypeID>(i);
+		const std::string &trinketUnidentifiedName = trinketNames[i];
+
 		for (int spellIndex = 0; spellIndex < attackSpellNames.getCount(); spellIndex++)
 		{
 			ItemDefinition itemDef;
-			itemDef.init(ItemType::Trinket, i);
+			itemDef.init(ItemType::Trinket);
+
 			const std::string fullName = trinketNames[i] + " " + attackSpellNames[spellIndex];
-			itemDef.trinket.init(fullName.c_str(), trinketNames[i].c_str(), spellcastingItemAttackSpellSpells[spellIndex]);
+			itemDef.trinket.init(fullName.c_str(), trinketTypeID, trinketUnidentifiedName.c_str(), spellcastingItemAttackSpellSpells[spellIndex]);
 			this->itemDefs.emplace_back(std::move(itemDef));
 		}
 
 		for (int spellIndex = 0; spellIndex < defensiveSpellNames.getCount(); spellIndex++)
 		{
 			ItemDefinition itemDef;
-			itemDef.init(ItemType::Trinket, i);
+			itemDef.init(ItemType::Trinket);
+
 			const std::string fullName = trinketNames[i] + " " + defensiveSpellNames[spellIndex];
-			itemDef.trinket.init(fullName.c_str(), trinketNames[i].c_str(), spellcastingItemDefensiveSpellSpells[spellIndex]);
+			itemDef.trinket.init(fullName.c_str(), trinketTypeID, trinketUnidentifiedName.c_str(), spellcastingItemDefensiveSpellSpells[spellIndex]);
 			this->itemDefs.emplace_back(std::move(itemDef));
 		}
 
 		for (int spellIndex = 0; spellIndex < miscSpellNames.getCount(); spellIndex++)
 		{
 			ItemDefinition itemDef;
-			itemDef.init(ItemType::Trinket, i);
+			itemDef.init(ItemType::Trinket);
+
 			const std::string fullName = trinketNames[i] + " " + miscSpellNames[spellIndex];
-			itemDef.trinket.init(fullName.c_str(), trinketNames[i].c_str(), spellcastingItemMiscSpellSpells[spellIndex]);
+			itemDef.trinket.init(fullName.c_str(), trinketTypeID, trinketUnidentifiedName.c_str(), spellcastingItemMiscSpellSpells[spellIndex]);
 			this->itemDefs.emplace_back(std::move(itemDef));
 		}
 	}
@@ -173,9 +198,10 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (const int meleeWeaponID : ArenaItemUtils::MeleeWeaponIDs)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Weapon, meleeWeaponID);
+		itemDef.init(ItemType::Weapon);
 
 		const char *weaponName = weaponNames[meleeWeaponID].c_str();
+		const ArenaWeaponTypeID weaponTypeID = static_cast<ArenaWeaponTypeID>(meleeWeaponID);
 		const int weightOriginal = weaponWeights[meleeWeaponID];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
 		const int basePrice = weaponBasePrices[meleeWeaponID];
@@ -184,7 +210,7 @@ void ItemLibrary::init(const ExeData &exeData)
 		const int handCount = weaponHandednesses[meleeWeaponID];
 		const ItemMaterialDefinitionID materialDefID = -1; // @todo: for loop over all materials
 		const WeaponAnimationDefinitionID weaponAnimDefID = meleeWeaponID;
-		itemDef.weapon.initMelee(weaponName, weightKg, basePrice, damageMin, damageMax, handCount, materialDefID, weaponAnimDefID);
+		itemDef.weapon.initMelee(weaponName, weaponTypeID, weightKg, basePrice, damageMin, damageMax, handCount, materialDefID, weaponAnimDefID);
 
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
@@ -192,9 +218,10 @@ void ItemLibrary::init(const ExeData &exeData)
 	for (const int rangedWeaponID : ArenaItemUtils::RangedWeaponIDs)
 	{
 		ItemDefinition itemDef;
-		itemDef.init(ItemType::Weapon, rangedWeaponID);
+		itemDef.init(ItemType::Weapon);
 
 		const char *weaponName = weaponNames[rangedWeaponID].c_str();
+		const ArenaWeaponTypeID weaponTypeID = static_cast<ArenaWeaponTypeID>(rangedWeaponID);
 		const int weightOriginal = weaponWeights[rangedWeaponID];
 		const double weightKg = static_cast<double>(weightOriginal) / kgDivisor;
 		const int basePrice = weaponBasePrices[rangedWeaponID];
@@ -203,14 +230,14 @@ void ItemLibrary::init(const ExeData &exeData)
 		const int handCount = weaponHandednesses[rangedWeaponID];
 		const ItemMaterialDefinitionID materialDefID = -1; // @todo: for loop over all materials
 		const WeaponAnimationDefinitionID weaponAnimDefID = rangedWeaponID;
-		itemDef.weapon.initRanged(weaponName, weightKg, basePrice, damageMin, damageMax, materialDefID, weaponAnimDefID);
+		itemDef.weapon.initRanged(weaponName, weaponTypeID, weightKg, basePrice, damageMin, damageMax, materialDefID, weaponAnimDefID);
 
 		this->itemDefs.emplace_back(std::move(itemDef));
 	}
 
 	// Used with loot containers. Player's gold is just a character sheet value.
 	ItemDefinition goldItemDef;
-	goldItemDef.init(ItemType::Gold, -1);
+	goldItemDef.init(ItemType::Gold);
 	goldItemDef.gold.init(exeData.items.goldPiece.c_str(), exeData.items.bagOfGoldPieces.c_str());
 	this->itemDefs.emplace_back(std::move(goldItemDef));
 }

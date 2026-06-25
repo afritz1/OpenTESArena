@@ -2,6 +2,7 @@
 
 #include <cstdint>
 
+#include "../Assets/ArenaTypes.h"
 #include "../Player/WeaponAnimation.h"
 #include "../Spells/SpellDefinition.h"
 #include "../Stats/PrimaryAttribute.h"
@@ -38,42 +39,38 @@ struct ItemMaterialDefinition
 struct AccessoryItemDefinition
 {
 	char name[64]; // "<Material> amulet, belt, etc." or "Amulet, belt, etc. of <attribute>"
+	ArenaAccessoryTypeID typeID;
 	char unidentifiedName[64]; // Amulet, belt, etc..
 	ItemMaterialDefinitionID materialDefID;
 	int basePrice;
 	PrimaryAttributeID attributeID;
 
-	void init(const char *name, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice);
+	void init(const char *name, ArenaAccessoryTypeID typeID, const char *unidentifiedName, ItemMaterialDefinitionID materialDefID, PrimaryAttributeID attributeID, int basePrice);
 };
 
-enum class ArmorMaterialType
-{
-	Leather,
-	Chain,
-	Plate // Requires item material.
-};
-
-static constexpr int ARMOR_MATERIAL_TYPE_COUNT = static_cast<int>(ArmorMaterialType::Plate) + 1;
+static constexpr int ARMOR_MATERIAL_TYPE_COUNT = static_cast<int>(ArenaArmorMaterialType::Plate) + 1;
 
 struct ArmorItemDefinition
 {
 	char name[64]; // Helmet, left pauldron, etc..
+	ArenaArmorTypeID typeID;
 	double weight;
-	ArmorMaterialType materialType;
+	ArenaArmorMaterialType materialType;
 	ItemMaterialDefinitionID plateMaterialDefID;
 
-	void initLeather(const char *name, double weight);
-	void initChain(const char *name, double weight);
-	void initPlate(const char *name, double weight, ItemMaterialDefinitionID materialDefID);
+	void initLeather(const char *name, ArenaArmorTypeID typeID, double weight);
+	void initChain(const char *name, ArenaArmorTypeID typeID, double weight);
+	void initPlate(const char *name, ArenaArmorTypeID typeID, double weight, ItemMaterialDefinitionID materialDefID);
 };
 
 struct ConsumableItemDefinition
 {
 	char name[64]; // "Potion of <effect>", etc.
+	ArenaConsumableTypeID typeID;
 	char unidentifiedName[64];
 	// @todo: effect def ID?
 
-	void init(const char *name, const char *unidentifiedName);
+	void init(const char *name, ArenaConsumableTypeID typeID, const char *unidentifiedName);
 };
 
 struct GoldItemDefinition
@@ -87,30 +84,34 @@ struct GoldItemDefinition
 struct MiscItemDefinition
 {
 	char name[64]; // Book, key, staff piece, etc.
+	ArenaMiscTypeID typeID;
 
-	void init(const char *name);
+	void init(const char *name, ArenaMiscTypeID typeID);
 };
 
 struct ShieldItemDefinition
 {
 	char name[64]; // Buckler, kite, etc.
+	ArenaArmorTypeID armorTypeID; // Shield type ID + 7. The original game treats shields as armor.
 	double weight;
 
-	void init(const char *name, double weight);
+	void init(const char *name, ArenaArmorTypeID armorTypeID, double weight);
 };
 
 struct TrinketItemDefinition
 {
 	char name[64]; // "Crystal, mark, etc. of <spell>"
+	ArenaTrinketTypeID typeID;
 	char unidentifiedName[64]; // Crystal, mark, etc.
 	SpellID spellID;
 
-	void init(const char *name, const char *unidentifiedName, SpellID spellID);
+	void init(const char *name, ArenaTrinketTypeID typeID, const char *unidentifiedName, SpellID spellID);
 };
 
 struct WeaponItemDefinition
 {
 	char name[64]; // Dagger, longsword, etc.
+	ArenaWeaponTypeID typeID;
 	double weight;
 	int basePrice;
 	int damageMin;
@@ -120,8 +121,8 @@ struct WeaponItemDefinition
 	ItemMaterialDefinitionID materialDefID;
 	WeaponAnimationDefinitionID weaponAnimDefID;
 
-	void initMelee(const char *name, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID);
-	void initRanged(const char *name, double weight, int basePrice, int damageMin, int damageMax, ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID);
+	void initMelee(const char *name, ArenaWeaponTypeID typeID, double weight, int basePrice, int damageMin, int damageMax, int handCount, ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID);
+	void initRanged(const char *name, ArenaWeaponTypeID typeID, double weight, int basePrice, int damageMin, int damageMax, ItemMaterialDefinitionID materialDefID, WeaponAnimationDefinitionID weaponAnimDefID);
 };
 
 struct ArtifactItemDefinition
@@ -168,13 +169,12 @@ struct ItemDefinition
 		WeaponItemDefinition weapon;
 	};
 
-	int originalItemID; // For the weapon/armor ID lookup the original game does.
 	bool isArtifact;
 	ArtifactItemDefinition artifact;
 
 	ItemDefinition();
 
-	void init(ItemType type, int originalItemID);
+	void init(ItemType type);
 
 	std::string getDisplayName(int stackAmount) const;
 	double getWeight() const;

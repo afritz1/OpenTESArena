@@ -69,7 +69,7 @@ Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const P
 		// @todo magic color if unidentified
 
 		const ArmorItemDefinition &armorDef = itemDef.armor;
-		if (!charClassDef.isArmorAllowed(armorDef.materialType))
+		if (!charClassDef.isArmorMaterialAllowed(armorDef.materialType))
 		{
 			return unequippableColor;
 		}
@@ -87,9 +87,7 @@ Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const P
 	case ItemType::Shield:
 	{
 		// @todo magic color if unidentified
-
-		const int shieldID = itemDef.originalItemID - 7; // Convert from armor ID to shield ID.
-		if (!charClassDef.isShieldAllowed(shieldID))
+		if (!charClassDef.isShieldTypeAllowed(itemDef.shield.armorTypeID))
 		{
 			return unequippableColor;
 		}
@@ -101,7 +99,7 @@ Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const P
 	case ItemType::Weapon:
 	{
 		// @todo magic color if unidentified
-		if (!charClassDef.isWeaponAllowed(itemDef.originalItemID))
+		if (!charClassDef.isWeaponTypeAllowed(itemDef.weapon.typeID))
 		{
 			return unequippableColor;
 		}

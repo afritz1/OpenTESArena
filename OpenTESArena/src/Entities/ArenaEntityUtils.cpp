@@ -120,7 +120,7 @@ bool ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(int creatureLevel, uint3
 	return roll <= itemChance;
 }
 
-void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType)
+void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeData &exeData, ArenaRandom &random, Span<ArenaArmorTypeID> outArmorIDs, ArenaArmorMaterialType *outArmorMaterialType)
 {
 	DebugAssert(level >= 1);
 	DebugAssert(outArmorIDs.getCount() == 7);
@@ -141,8 +141,8 @@ void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeD
 	int upgradeChance = 0;
 	int classID = exeData.charClasses.classNumbersToIDs[classNumber];
 
-	constexpr int warriorClassID = 0x10;
-	constexpr int knightClassID = 0x11;
+	constexpr int warriorClassID = 16;
+	constexpr int knightClassID = 17;
 
 	// Warriors and Knights start at chain and can upgrade to plate.
 	if ((classID == warriorClassID) || (classID == knightClassID))
@@ -195,26 +195,26 @@ void ArenaEntityUtils::getHumanEnemyArmor(int classNumber, int level, const ExeD
 
 	if (armorMaterial == leatherMaterialID)
 	{
-		*outArmorMaterialType = ArmorMaterialType::Leather;
+		*outArmorMaterialType = ArenaArmorMaterialType::Leather;
 	}
 	else if (armorMaterial == chainMaterialID)
 	{
-		*outArmorMaterialType = ArmorMaterialType::Chain;
+		*outArmorMaterialType = ArenaArmorMaterialType::Chain;
 	}
 	else
 	{
-		*outArmorMaterialType = ArmorMaterialType::Plate;
+		*outArmorMaterialType = ArenaArmorMaterialType::Plate;
 	}
 }
 
-void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeData, ArenaRandom &random, int *outWeaponID)
+void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeData, ArenaRandom &random, ArenaWeaponTypeID *outWeaponID)
 {
 	constexpr int archerID = 13;
-	constexpr int staffWeaponID = 0;
-	constexpr int longBowWeaponID = 17;
+	constexpr ArenaWeaponTypeID staffWeaponID = 0;
+	constexpr ArenaWeaponTypeID longBowWeaponID = 17;
 	constexpr int mageClassNumber = 0;
 
-	int weaponID = longBowWeaponID;
+	ArenaWeaponTypeID weaponID = longBowWeaponID;
 	Span<const int> allowedWeaponIndices = exeData.charClasses.allowedWeaponsIndices;
 	Span<const std::vector<uint8_t>> allowedWeaponLists = exeData.charClasses.allowedWeaponsLists;
 
@@ -256,12 +256,12 @@ void ArenaEntityUtils::getHumanEnemyWeapon(int classNumber, const ExeData &exeDa
 	*outWeaponID = weaponID;
 }
 
-void ArenaEntityUtils::getHumanEnemyShield(int classNumber, const ExeData &exeData, ArenaRandom &random, int weaponID, int *outShieldID)
+void ArenaEntityUtils::getHumanEnemyShield(int classNumber, const ExeData &exeData, ArenaRandom &random, ArenaWeaponTypeID weaponID, ArenaArmorTypeID *outShieldID)
 {
 	constexpr int invalidID = -1;
 	constexpr int plateMaterialID = 0;
 
-	int shieldID = invalidID;
+	ArenaArmorTypeID shieldID = invalidID;
 
 	if (exeData.equipment.weaponHandednesses[weaponID] != 2)
 	{
@@ -279,14 +279,14 @@ void ArenaEntityUtils::getHumanEnemyShield(int classNumber, const ExeData &exeDa
 			// The original executable has unreachable code to instead pick a magical or named plate material armor piece
 			// if random.next(100) < 2.
 			constexpr int dummyQualityThreshold = 1;
-			shieldID = pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, shieldID, exeData, random);
+			shieldID = ArenaEntityUtils::pickNonMagicArmor(dummyQualityThreshold, plateMaterialID, shieldID, exeData, random);
 		}
 	}
 
 	*outShieldID = shieldID;
 }
 
-int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, int specifiedItemID, const ExeData &exeData, ArenaRandom &random)
+ArenaArmorTypeID ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMaterial, ArenaArmorTypeID specifiedItemID, const ExeData &exeData, ArenaRandom &random)
 {
 	constexpr int invalidID = -1;
 	constexpr int plateMaterialID = 0;
@@ -325,9 +325,9 @@ int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMateri
 	}
 
 	// Random generation starts from a random armor ID and scans upward until a valid item is found.
-	const int initialItemID = random.next(11);
+	const ArenaArmorTypeID initialItemID = random.next(11);
 
-	for (int itemID = initialItemID; itemID < qualities.getCount(); itemID++)
+	for (ArenaArmorTypeID itemID = initialItemID; itemID < qualities.getCount(); itemID++)
 	{
 		if (qualities[itemID] <= itemQualityThreshold)
 		{
@@ -338,7 +338,7 @@ int ArenaEntityUtils::pickNonMagicArmor(int itemQualityThreshold, int baseMateri
 	return invalidID;
 }
 
-int ArenaEntityUtils::pickNonMagicWeapon(int weaponQualityThreshold, int specifiedItemID, const ExeData &exeData, ArenaRandom &random)
+ArenaWeaponTypeID ArenaEntityUtils::pickNonMagicWeapon(int weaponQualityThreshold, ArenaWeaponTypeID specifiedItemID, const ExeData &exeData, ArenaRandom &random)
 {
 	DebugAssert(weaponQualityThreshold >= 1);
 	constexpr int maximumWeaponQuality = 20;
@@ -350,7 +350,7 @@ int ArenaEntityUtils::pickNonMagicWeapon(int weaponQualityThreshold, int specifi
 		DebugAssert(weaponQualities[i] <= maximumWeaponQuality);
 	}
 
-	int itemID = -1;
+	ArenaWeaponTypeID itemID = -1;
 	do
 	{
 		if (specifiedItemID != -1)
@@ -368,7 +368,7 @@ int ArenaEntityUtils::pickNonMagicWeapon(int weaponQualityThreshold, int specifi
 }
 
 void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID,
-	bool *outIsArmor, ArmorMaterialType *outArmorMaterialType)
+	bool *outIsArmor, ArenaArmorMaterialType *outArmorMaterialType)
 {
 	int itemID = -1;
 	bool isArmor = false;
@@ -409,7 +409,7 @@ void ArenaEntityUtils::getCreatureNonMagicWeaponOrArmor(int creatureLevel, const
 
 	*outWeaponOrArmorID = itemID;
 	*outIsArmor = isArmor;
-	*outArmorMaterialType = ArmorMaterialType::Plate;
+	*outArmorMaterialType = ArenaArmorMaterialType::Plate;
 }
 
 int ArenaEntityUtils::getCreatureNonMagicWeaponOrArmorCondition(int maxCondition, const ExeData &exeData, ArenaRandom &random)
@@ -852,7 +852,7 @@ int ArenaEntityUtils::getLootItemQualityThreshold(int lootValuesIndex, ArenaRand
 }
 
 void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, ArenaRandom &random, int *outWeaponOrArmorID, bool *outIsArmor,
-	ArmorMaterialType *outArmorMaterialType)
+	ArenaArmorMaterialType *outArmorMaterialType)
 {
 	int itemID = -1;
 	bool isArmor = false;
@@ -880,7 +880,7 @@ void ArenaEntityUtils::getLootNonMagicWeaponOrArmor(const ExeData &exeData, Aren
 
 	*outWeaponOrArmorID = itemID;
 	*outIsArmor = isArmor;
-	*outArmorMaterialType = ArmorMaterialType::Plate;
+	*outArmorMaterialType = ArenaArmorMaterialType::Plate;
 }
 
 int ArenaEntityUtils::getLootNonMagicWeaponOrArmorCondition(int lootValuesIndex, const ExeData &exeData, ArenaRandom &random, int itemMaxHealth)
@@ -969,7 +969,7 @@ int ArenaEntityUtils::getNumberOfGuardsToSpawn(ArenaRandom &random)
 	return random.next(3) + 1;
 }
 
-void ArenaEntityUtils::getGuardArmor(int guardType, const ExeData &exeData, ArenaRandom &random, Span<int> outArmorIDs, ArmorMaterialType *outArmorMaterialType)
+void ArenaEntityUtils::getGuardArmor(int guardType, const ExeData &exeData, ArenaRandom &random, Span<ArenaArmorTypeID> outArmorIDs, ArenaArmorMaterialType *outArmorMaterialType)
 {
 	DebugAssert(outArmorIDs.getCount() == 4);
 
@@ -986,26 +986,26 @@ void ArenaEntityUtils::getGuardArmor(int guardType, const ExeData &exeData, Aren
 
 	if (guardType == leatherMaterialID)
 	{
-		*outArmorMaterialType = ArmorMaterialType::Leather;
+		*outArmorMaterialType = ArenaArmorMaterialType::Leather;
 	}
 	else if (guardType == chainMaterialID)
 	{
-		*outArmorMaterialType = ArmorMaterialType::Chain;
+		*outArmorMaterialType = ArenaArmorMaterialType::Chain;
 	}
 	else
 	{
-		*outArmorMaterialType = ArmorMaterialType::Plate;
+		*outArmorMaterialType = ArenaArmorMaterialType::Plate;
 	}
 }
 
-int ArenaEntityUtils::getGuardWeapon(const ExeData &exeData, ArenaRandom &random)
+ArenaWeaponTypeID ArenaEntityUtils::getGuardWeapon(const ExeData &exeData, ArenaRandom &random)
 {
 	constexpr int dummyQualityThreshold = 1;
-	constexpr int longSwordID = 5;
+	constexpr ArenaWeaponTypeID longSwordID = 5;
 	return ArenaEntityUtils::pickNonMagicWeapon(dummyQualityThreshold, longSwordID, exeData, random);
 }
 
-int ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random)
+ArenaArmorTypeID ArenaEntityUtils::getGuardShield(int guardType, const ExeData &exeData, ArenaRandom &random)
 {
 	constexpr int dummyQualityThreshold = 1;
 	constexpr int plateMaterialID = 0;

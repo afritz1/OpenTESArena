@@ -49,9 +49,7 @@ namespace
 				return false;
 			}
 
-			const Span<const int> allowedWeapons = charClassDef.allowedWeapons;
-			const bool isAllowedWeapon = std::find(allowedWeapons.begin(), allowedWeapons.end(), itemDef.originalItemID) != allowedWeapons.end();
-			return isAllowedWeapon;
+			return charClassDef.isWeaponTypeAllowed(itemDef.weapon.typeID);
 		};
 
 		const std::vector<ItemDefinitionID> allowedWeaponItemDefIDs = itemLibrary.getDefinitionIndicesIf(allowedWeaponPredicate);
