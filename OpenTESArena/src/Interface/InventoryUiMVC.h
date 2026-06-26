@@ -9,6 +9,8 @@
 
 class Game;
 
+struct CharacterClassDefinition;
+struct ItemDefinition;
 struct ItemInstance;
 struct Player;
 
@@ -25,6 +27,8 @@ namespace InventoryUiModel
 	};
 
 	Buffer<ItemUiDefinition> getPlayerInventoryItems(Game &game);
+
+	bool isItemEquippableByClass(const ItemDefinition &itemDef, const CharacterClassDefinition &charClassDef);
 }
 
 namespace InventoryUiView

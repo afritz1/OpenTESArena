@@ -598,6 +598,15 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	const int unidentifiedPotionNameOffset = GetExeAddress(*section, "UnidentifiedPotionName");
 	const int bodyPartNamesOffset = GetExeAddress(*section, "BodyPartNames");
 	const int weaponAnimFilenamesOffset = GetExeAddress(*section, "WeaponAnimationFilenames");
+	const int dropItemOffset = GetExeAddress(*section, "DropItem");
+	const int dropItemPermanentOffset = GetExeAddress(*section, "DropItemPermanent");
+	const int dropItemNoRoomOffset = GetExeAddress(*section, "DropItemNoRoom");
+	const int dropItemNotDroppableOffset = GetExeAddress(*section, "DropItemNotDroppable");
+	const int dropItemRequiredByQuestOffset = GetExeAddress(*section, "DropItemRequiredByQuest");
+	const int alreadyEquippedItemOffset = GetExeAddress(*section, "AlreadyEquippedItem");
+	const int unequippableItemOffset = GetExeAddress(*section, "UnequippableItem");
+	const int classForbiddenItemOffset = GetExeAddress(*section, "ClassForbiddenItem");
+	const int staffPieceCountOffset = GetExeAddress(*section, "StaffPieceCount");
 
 	initInt8Array(this->enchantmentChances, exeBytes, enchantmentChancesOffset);
 	initStringArrayNullTerminated(this->materialNames, exeBytes, materialNamesOffset);
@@ -664,6 +673,15 @@ bool ExeDataEquipment::init(Span<const std::byte> exeBytes, const KeyValueFile &
 	this->unidentifiedPotionName = GetExeStringNullTerminated(exeBytes, unidentifiedPotionNameOffset);
 	initStringArrayNullTerminated(this->bodyPartNames, exeBytes, bodyPartNamesOffset);
 	initStringArrayNullTerminated(this->weaponAnimationFilenames, exeBytes, weaponAnimFilenamesOffset);
+	this->dropItem = GetExeStringNullTerminated(exeBytes, dropItemOffset);
+	this->dropItemPermanent = GetExeStringNullTerminated(exeBytes, dropItemPermanentOffset);
+	this->dropItemNoRoom = GetExeStringNullTerminated(exeBytes, dropItemNoRoomOffset);
+	this->dropItemNotDroppable = GetExeStringNullTerminated(exeBytes, dropItemNotDroppableOffset);
+	this->dropItemRequiredByQuest = GetExeStringNullTerminated(exeBytes, dropItemRequiredByQuestOffset);
+	this->alreadyEquippedItem = GetExeStringNullTerminated(exeBytes, alreadyEquippedItemOffset);
+	this->unequippableItem = GetExeStringNullTerminated(exeBytes, unequippableItemOffset);
+	this->classForbiddenItem = GetExeStringNullTerminated(exeBytes, classForbiddenItemOffset);
+	this->staffPieceCount = GetExeStringNullTerminated(exeBytes, staffPieceCountOffset);
 
 	return true;
 }

@@ -5,6 +5,59 @@
 
 #include "components/debug/Debug.h"
 
+namespace
+{
+	bool IsItemTypeStackable(ItemType type)
+	{
+		switch (type)
+		{
+		case ItemType::Accessory:
+			return false;
+		case ItemType::Armor:
+			return false;
+		case ItemType::Consumable:
+			return true;
+		case ItemType::Gold:
+			return true;
+		case ItemType::Misc:
+			return true;
+		case ItemType::Shield:
+			return false;
+		case ItemType::Trinket:
+			return false;
+		case ItemType::Weapon:
+			return false;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(type)));
+		}
+	}
+
+	bool IsItemTypeEquippable(ItemType type)
+	{
+		switch (type)
+		{
+		case ItemType::Accessory:
+			return true;
+		case ItemType::Armor:
+			return true;
+		case ItemType::Consumable:
+			return false;
+		case ItemType::Gold:
+			return false;
+		case ItemType::Misc:
+			return false;
+		case ItemType::Shield:
+			return true;
+		case ItemType::Trinket:
+			return true;
+		case ItemType::Weapon:
+			return true;
+		default:
+			DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(type)));
+		}
+	}
+}
+
 ItemConditionDefinition::ItemConditionDefinition()
 {
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
@@ -159,38 +212,15 @@ ItemDefinition::ItemDefinition()
 {
 	this->type = static_cast<ItemType>(-1);
 	this->isStackable = false;
+	this->isEquippable = false;
 	this->isArtifact = false;
 }
 
 void ItemDefinition::init(ItemType type)
 {
-	this->type = type;
-	
-	this->isStackable = [type]()
-	{
-		switch (type)
-		{
-			case ItemType::Accessory:
-				return false;
-			case ItemType::Armor:
-				return false;
-			case ItemType::Consumable:
-				return true;
-			case ItemType::Gold:
-				return true;
-			case ItemType::Misc:
-				return true;
-			case ItemType::Shield:
-				return false;
-			case ItemType::Trinket:
-				return false;
-			case ItemType::Weapon:
-				return false;
-			default:
-				DebugUnhandledReturn(bool);
-		}
-	}();
-
+	this->type = type;	
+	this->isStackable = IsItemTypeStackable(type);
+	this->isEquippable = IsItemTypeEquippable(type);
 	this->isArtifact = false;
 }
 

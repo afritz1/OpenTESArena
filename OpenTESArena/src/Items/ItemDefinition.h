@@ -170,6 +170,7 @@ struct ItemDefinition
 	};
 
 	bool isStackable;
+	bool isEquippable;
 	bool isArtifact;
 	ArtifactItemDefinition artifact;
 

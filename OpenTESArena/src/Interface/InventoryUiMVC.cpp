@@ -46,6 +46,36 @@ Buffer<InventoryUiModel::ItemUiDefinition> InventoryUiModel::getPlayerInventoryI
 	return buffer;
 }
 
+bool InventoryUiModel::isItemEquippableByClass(const ItemDefinition &itemDef, const CharacterClassDefinition &charClassDef)
+{
+	if (!itemDef.isEquippable)
+	{
+		return false;
+	}
+
+	switch (itemDef.type)
+	{
+	case ItemType::Accessory:
+		return true;
+	case ItemType::Armor:
+		return charClassDef.isArmorMaterialAllowed(itemDef.armor.materialType);
+	case ItemType::Consumable:
+		return false;
+	case ItemType::Gold:
+		return false;
+	case ItemType::Misc:
+		return false;
+	case ItemType::Shield:
+		return charClassDef.isShieldTypeAllowed(itemDef.shield.armorTypeID);
+	case ItemType::Trinket:
+		return true;
+	case ItemType::Weapon:
+		return charClassDef.isWeaponTypeAllowed(itemDef.weapon.typeID);
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(itemDef.type)));
+	}
+}
+
 Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const Player &player)
 {
 	constexpr Color unequippedColor = InventoryUiView::ItemDefaultColor;
@@ -56,20 +86,28 @@ Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const P
 
 	const ItemDefinition &itemDef = ItemLibrary::getInstance().getDefinition(itemInst.defID);
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool isItemEquippableByClass = InventoryUiModel::isItemEquippableByClass(itemDef, charClassDef);
+	const bool isItemIdentified = true; // @todo implement identifying
 
 	const bool isItemEquipped = itemInst.isEquipped;
 
 	switch (itemDef.type)
 	{
 	case ItemType::Accessory:
-		// @todo magic color if unidentified
+		if (!isItemIdentified)
+		{
+			return unequippedMagicColor;
+		}
+
 		return isItemEquipped ? equippedColor : unequippedColor;
 	case ItemType::Armor:
 	{
-		// @todo magic color if unidentified
+		if (!isItemIdentified)
+		{
+			return unequippedMagicColor;
+		}
 
-		const ArmorItemDefinition &armorDef = itemDef.armor;
-		if (!charClassDef.isArmorMaterialAllowed(armorDef.materialType))
+		if (!isItemEquippableByClass)
 		{
 			return unequippableColor;
 		}
@@ -78,7 +116,11 @@ Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const P
 		return isItemEquipped ? equippedColor : unequippedColor;
 	}
 	case ItemType::Consumable:
-		// @todo magic color if unidentified
+		if (!isItemIdentified)
+		{
+			return unequippedMagicColor;
+		}
+
 		return unequippableColor;
 	case ItemType::Gold:
 		return unequippableColor; // Only for display in loot UI.
@@ -86,8 +128,12 @@ Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const P
 		return unequippableColor;
 	case ItemType::Shield:
 	{
-		// @todo magic color if unidentified
-		if (!charClassDef.isShieldTypeAllowed(itemDef.shield.armorTypeID))
+		if (!isItemIdentified)
+		{
+			return unequippedMagicColor;
+		}
+
+		if (!isItemEquippableByClass)
 		{
 			return unequippableColor;
 		}
@@ -98,8 +144,12 @@ Color InventoryUiView::getItemDisplayColor(const ItemInstance &itemInst, const P
 		return isItemEquipped ? equippedMagicColor : unequippedMagicColor;
 	case ItemType::Weapon:
 	{
-		// @todo magic color if unidentified
-		if (!charClassDef.isWeaponTypeAllowed(itemDef.weapon.typeID))
+		if (!isItemIdentified)
+		{
+			return unequippedMagicColor;
+		}
+
+		if (!isItemEquippableByClass)
 		{
 			return unequippableColor;
 		}

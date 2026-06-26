@@ -320,6 +320,17 @@ struct ExeDataEquipment
 	std::string bodyPartNames[11]; // Chest, ..., general.
 	std::string weaponAnimationFilenames[11]; // staff.cif, ..., spell.img.
 
+	// Player inventory interaction.
+	std::string dropItem;
+	std::string dropItemPermanent;
+	std::string dropItemNoRoom;
+	std::string dropItemNotDroppable;
+	std::string dropItemRequiredByQuest;
+	std::string alreadyEquippedItem;
+	std::string unequippableItem;
+	std::string classForbiddenItem;
+	std::string staffPieceCount;
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

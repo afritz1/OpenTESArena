@@ -178,6 +178,15 @@ PotionNames=0x3E2CD
 UnidentifiedPotionName=0x41830
 BodyPartNames=0x3DE91
 WeaponAnimationFilenames=0x4214E
+DropItem=0x36368
+DropItemPermanent=0x38184
+DropItemNoRoom=0x381AF
+DropItemNotDroppable=0x3820E
+DropItemRequiredByQuest=0x38253
+AlreadyEquippedItem=0x381D4
+UnequippableItem=0x381F0
+ClassForbiddenItem=0x3634B
+StaffPieceCount=0x38296
 
 [Items]
 GoldPiece=0x40736

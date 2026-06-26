@@ -2,14 +2,160 @@
 #include "CharacterSheetUiMVC.h"
 #include "CharacterUiState.h"
 #include "InventoryUiMVC.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Items/ItemLibrary.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
+
+#include "components/utilities/String.h"
 
 namespace
 {
 	constexpr char ElementName_InventoryListBox[] = "CharacterEquipmentInventoryListBox";
+
+	UiListBoxItemCallback MakeInventoryListBoxItemCallback(Game &game, UiElementInstanceID listBoxElementInstID, int listBoxItemIndex)
+	{
+		return [&game, listBoxElementInstID, listBoxItemIndex](MouseButtonType mouseButtonType)
+		{
+			UiManager &uiManager = game.uiManager;
+			const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+			Player &player = game.player;
+			ItemInventory &playerInventory = player.inventory;
+			const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+
+			const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+			ItemInstance &itemInst = playerInventory.getSlot(listBoxItemIndex);
+			const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
+			const ItemType itemType = itemDef.type;
+
+			if (mouseButtonType == MouseButtonType::Left)
+			{
+				if (!itemDef.isEquippable)
+				{
+					DebugLog(exeData.equipment.unequippableItem);
+					return;
+				}
+
+				const bool isEquippableByClass = InventoryUiModel::isItemEquippableByClass(itemDef, charClassDef);
+				if (!isEquippableByClass)
+				{
+					const std::string forbiddenByClassStr = String::replace(exeData.equipment.classForbiddenItem, "%s", charClassDef.name);
+					DebugLog(forbiddenByClassStr);
+					return;
+				}
+
+				bool isSimilarItemAlreadyEquipped = false; // Only matters for jewelry
+				std::string similarItemBaseName;
+				for (int i = 0; i < playerInventory.getTotalSlotCount(); i++)
+				{
+					if (i == listBoxItemIndex)
+					{
+						continue;
+					}
+
+					ItemInstance &currentItemInst = playerInventory.getSlot(i);
+					if (currentItemInst.isValid() && currentItemInst.isEquipped)
+					{
+						const ItemDefinition &currentItemDef = itemLibrary.getDefinition(currentItemInst.defID);
+						const ItemType currentItemType = currentItemDef.type;
+						if (currentItemType == itemDef.type)
+						{
+							if (currentItemType == ItemType::Accessory)
+							{
+								const ArenaAccessoryTypeID currentAccessoryTypeID = currentItemDef.accessory.typeID;
+								if (currentAccessoryTypeID == itemDef.accessory.typeID)
+								{
+									DebugAssertIndex(exeData.equipment.enhancementItemNames, currentAccessoryTypeID);
+									similarItemBaseName = exeData.equipment.enhancementItemNames[currentAccessoryTypeID];
+								}
+							}
+							else if (currentItemType == ItemType::Trinket)
+							{
+								const ArenaTrinketTypeID currentTrinketTypeID = currentItemDef.trinket.typeID;
+								if (currentTrinketTypeID == itemDef.trinket.typeID)
+								{
+									DebugAssertIndex(exeData.equipment.spellcastingItemNames, currentTrinketTypeID);
+									similarItemBaseName = exeData.equipment.spellcastingItemNames[currentTrinketTypeID];
+								}
+							}
+
+							if (!similarItemBaseName.empty())
+							{
+								isSimilarItemAlreadyEquipped = true;
+								break;
+							}
+						}
+					}
+				}
+
+				if (isSimilarItemAlreadyEquipped)
+				{
+					const std::string alreadyEquippedStr = String::replace(exeData.equipment.alreadyEquippedItem, "%s", similarItemBaseName.c_str());
+					DebugLog(alreadyEquippedStr);
+					return;
+				}
+
+				auto unequipItemsIf = [listBoxElementInstID, &uiManager, &player, &playerInventory, &itemLibrary](const std::function<bool(const ItemDefinition&)> &predicate)
+				{
+					for (int i = 0; i < playerInventory.getTotalSlotCount(); i++)
+					{
+						ItemInstance &currentItemInst = playerInventory.getSlot(i);
+						if (currentItemInst.isValid())
+						{
+							const ItemDefinition &currentItemDef = itemLibrary.getDefinition(currentItemInst.defID);
+							if (predicate(currentItemDef))
+							{
+								currentItemInst.isEquipped = false;
+
+								const int currentListBoxItemIndex = i; // @todo verify index mapping is correct once item dropping works
+								const Color currentDisplayColor = InventoryUiView::getItemDisplayColor(currentItemInst, player);
+								uiManager.setListBoxItemColorOverride(listBoxElementInstID, currentListBoxItemIndex, currentDisplayColor);
+							}
+						}
+					}
+				};
+
+				const bool prevIsItemEquipped = itemInst.isEquipped;
+
+				switch (itemType)
+				{
+				case ItemType::Accessory:
+					break;
+				case ItemType::Armor:
+					unequipItemsIf([&itemDef](const ItemDefinition &def) { return (def.type == ItemType::Armor) && (def.armor.typeID == itemDef.armor.typeID); });
+					break;
+				case ItemType::Shield:
+					unequipItemsIf([](const ItemDefinition &def) { return def.type == ItemType::Shield; });
+					break;
+				case ItemType::Trinket:
+					break;
+				case ItemType::Weapon:
+				{
+					unequipItemsIf([](const ItemDefinition &def) { return def.type == ItemType::Weapon; });
+
+					const ItemDefinitionID equippedItemDefID = player.getEquippedWeaponItemDefID();
+					player.setWeaponAnimationFromItem(equippedItemDefID); // Resets to sheathed animation state.
+					break;
+				}
+				default:
+					DebugNotImplementedMsg(std::to_string(static_cast<int>(itemType)));
+					break;
+				}
+
+				itemInst.isEquipped = !prevIsItemEquipped;
+
+				const Color displayColor = InventoryUiView::getItemDisplayColor(itemInst, player);
+				uiManager.setListBoxItemColorOverride(listBoxElementInstID, listBoxItemIndex, displayColor);
+			}
+			else if (mouseButtonType == MouseButtonType::Right)
+			{
+				DebugLogFormat("Not implemented: inspect item %d.", listBoxItemIndex);
+			}
+		};
+	}
 }
 
 CharacterEquipmentUiState::CharacterEquipmentUiState()
@@ -90,33 +236,7 @@ void CharacterEquipmentUI::create(Game &game)
 		UiListBoxItem listBoxItem;
 		listBoxItem.text = itemUiDef.text;
 		listBoxItem.overrideColor = itemUiDef.color;
-		listBoxItem.callback = [&game, &uiManager, inventoryListBoxElementInstID, i](MouseButtonType mouseButtonType)
-		{
-			if (mouseButtonType == MouseButtonType::Left)
-			{
-				Player &player = game.player;
-				ItemInventory &playerInventory = player.inventory;
-				ItemInstance &itemInst = playerInventory.getSlot(i);
-				itemInst.isEquipped = !itemInst.isEquipped;
-
-				// @todo actually enforce equipment rules like only 1 weapon at a time, etc.. Currently this will just pick the first equipped weapon in inventory
-
-				const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
-				const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
-				if (itemDef.type == ItemType::Weapon)
-				{
-					const ItemDefinitionID equippedItemDefID = player.getEquippedWeaponItemDefID();
-					player.setWeaponAnimationFromItem(equippedItemDefID); // Resets to sheathed animation state.
-				}
-
-				const Color displayColor = InventoryUiView::getItemDisplayColor(itemInst, player);
-				uiManager.setListBoxItemColorOverride(inventoryListBoxElementInstID, i, displayColor);
-			}
-			else if (mouseButtonType == MouseButtonType::Right)
-			{
-				DebugLogFormat("Not implemented: inspect item %d.", i);
-			}
-		};
+		listBoxItem.callback = MakeInventoryListBoxItemCallback(game, inventoryListBoxElementInstID, i);
 
 		uiManager.insertBackListBoxItem(inventoryListBoxElementInstID, std::move(listBoxItem));
 	}
