@@ -205,7 +205,19 @@ std::string ItemDefinition::getDisplayName(int stackAmount) const
 	case ItemType::Armor:
 		return this->armor.name;
 	case ItemType::Consumable:
-		return this->consumable.name;
+	{
+		char displayName[64];
+		if (stackAmount == 1)
+		{
+			std::snprintf(displayName, sizeof(displayName), "%s", this->consumable.name);
+		}
+		else
+		{
+			std::snprintf(displayName, sizeof(displayName), "%s (%d)", this->consumable.name, stackAmount);
+		}
+		
+		return displayName;
+	}
 	case ItemType::Gold:
 		return (stackAmount == 1) ? this->gold.nameSingular : this->gold.namePlural;
 	case ItemType::Misc:
