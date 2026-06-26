@@ -895,7 +895,7 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 			else
 			{
 				ItemInventory &playerInventory = player.inventory;
-				playerInventory.insert(selectedItemDefID);
+				playerInventory.insert(selectedItemDefID, selectedItemInst.stackAmount);
 			}
 
 			selectedItemInst.defID = -1;

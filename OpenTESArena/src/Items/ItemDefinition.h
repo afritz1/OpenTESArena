@@ -169,6 +169,7 @@ struct ItemDefinition
 		WeaponItemDefinition weapon;
 	};
 
+	bool isStackable;
 	bool isArtifact;
 	ArtifactItemDefinition artifact;
 

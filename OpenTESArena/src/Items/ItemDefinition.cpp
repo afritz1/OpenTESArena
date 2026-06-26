@@ -158,12 +158,39 @@ void ArtifactItemDefinition::init(const char *flavorText, Span<const int> provin
 ItemDefinition::ItemDefinition()
 {
 	this->type = static_cast<ItemType>(-1);
+	this->isStackable = false;
 	this->isArtifact = false;
 }
 
 void ItemDefinition::init(ItemType type)
 {
 	this->type = type;
+	
+	this->isStackable = [type]()
+	{
+		switch (type)
+		{
+			case ItemType::Accessory:
+				return false;
+			case ItemType::Armor:
+				return false;
+			case ItemType::Consumable:
+				return true;
+			case ItemType::Gold:
+				return true;
+			case ItemType::Misc:
+				return true;
+			case ItemType::Shield:
+				return false;
+			case ItemType::Trinket:
+				return false;
+			case ItemType::Weapon:
+				return false;
+			default:
+				DebugUnhandledReturn(bool);
+		}
+	}();
+
 	this->isArtifact = false;
 }
 

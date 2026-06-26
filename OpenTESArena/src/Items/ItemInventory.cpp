@@ -87,6 +87,7 @@ bool ItemInventory::findFirstEmptySlot(int *outIndex) const
 		}
 	}
 
+	*outIndex = -1;
 	return false;
 }
 
@@ -102,6 +103,7 @@ bool ItemInventory::findFirstSlot(ItemDefinitionID defID, int *outIndex) const
 		}
 	}
 
+	*outIndex = -1;
 	return false;
 }
 
@@ -117,6 +119,7 @@ bool ItemInventory::findLastSlot(ItemDefinitionID defID, int *outIndex) const
 		}
 	}
 
+	*outIndex = -1;
 	return false;
 }
 
@@ -125,18 +128,31 @@ void ItemInventory::insert(ItemDefinitionID defID, int stackAmount)
 	DebugAssert(defID >= 0);
 	DebugAssert(stackAmount >= 1);
 
-	// @todo: attempt stacking if possible.
+	const ItemDefinition &itemDef = ItemLibrary::getInstance().getDefinition(defID);
 
-	int insertIndex;
-	if (!this->findFirstEmptySlot(&insertIndex))
+	int insertIndex = -1;
+	int totalStackAmount = stackAmount;
+	if (itemDef.isStackable)
 	{
-		insertIndex = static_cast<int>(this->items.size());
-		this->items.emplace_back(ItemInstance());
+		if (this->findFirstSlot(defID, &insertIndex))
+		{
+			ItemInstance &existingItemInst = this->getSlot(insertIndex);
+			totalStackAmount += existingItemInst.stackAmount;
+		}
+	}
+
+	if (insertIndex < 0)
+	{
+		if (!this->findFirstEmptySlot(&insertIndex))
+		{
+			insertIndex = static_cast<int>(this->items.size());
+			this->items.emplace_back(ItemInstance());
+		}
 	}
 
 	ItemInstance &itemInst = this->getSlot(insertIndex);
 	itemInst.init(defID);
-	itemInst.stackAmount = stackAmount;
+	itemInst.stackAmount = totalStackAmount;
 }
 
 void ItemInventory::compact()
