@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "ExeTypes.h"
+#include "ArenaTypes.h"
 
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Span.h"
@@ -583,18 +583,18 @@ struct ExeDataTravel
 
 struct ExeDataUI
 {
-	ExeTypes::List chooseClassList;
-	ExeTypes::List buyingWeapons; // POPUP3.
-	ExeTypes::List buyingArmor; // POPUP4.
-	ExeTypes::List spellmaker; // POPUP.
-	ExeTypes::List popUp5;
-	ExeTypes::List loadSave;
-	ExeTypes::List charClassSelection; // POPUP2.
-	ExeTypes::List buyingMagicItems; // POPUP7.
-	ExeTypes::List travelCitySelection; // POPUP8.
-	ExeTypes::List dialogue; // POPUP11.
-	ExeTypes::List roomSelectionAndCures; // NEWPOP.
-	ExeTypes::List generalLootAndSelling; // NEWPOP.
+	ArenaTypes::List chooseClassList;
+	ArenaTypes::List buyingWeapons; // POPUP3.
+	ArenaTypes::List buyingArmor; // POPUP4.
+	ArenaTypes::List spellmaker; // POPUP.
+	ArenaTypes::List popUp5;
+	ArenaTypes::List loadSave;
+	ArenaTypes::List charClassSelection; // POPUP2.
+	ArenaTypes::List buyingMagicItems; // POPUP7.
+	ArenaTypes::List travelCitySelection; // POPUP8.
+	ArenaTypes::List dialogue; // POPUP11.
+	ArenaTypes::List roomSelectionAndCures; // NEWPOP.
+	ArenaTypes::List generalLootAndSelling; // NEWPOP.
 
 	// In X, Y format.
 	uint16_t followerPortraitPositions[16];

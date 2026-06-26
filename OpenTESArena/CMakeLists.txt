@@ -59,8 +59,6 @@ SET(TES_ASSETS
     "${SRC_ROOT}/Assets/DFAFile.h"
     "${SRC_ROOT}/Assets/ExeData.cpp"
     "${SRC_ROOT}/Assets/ExeData.h"
-    "${SRC_ROOT}/Assets/ExeTypes.cpp"
-    "${SRC_ROOT}/Assets/ExeTypes.h"
     "${SRC_ROOT}/Assets/ExeUnpacker.cpp"
     "${SRC_ROOT}/Assets/ExeUnpacker.h"
     "${SRC_ROOT}/Assets/FLCFile.cpp"
