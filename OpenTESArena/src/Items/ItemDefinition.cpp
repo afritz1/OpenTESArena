@@ -237,15 +237,7 @@ std::string ItemDefinition::getDisplayName(int stackAmount) const
 	case ItemType::Consumable:
 	{
 		char displayName[64];
-		if (stackAmount == 1)
-		{
-			std::snprintf(displayName, sizeof(displayName), "%s", this->consumable.name);
-		}
-		else
-		{
-			std::snprintf(displayName, sizeof(displayName), "%s (%d)", this->consumable.name, stackAmount);
-		}
-		
+		std::snprintf(displayName, sizeof(displayName), "%s (%d)", this->consumable.name, stackAmount);		
 		return displayName;
 	}
 	case ItemType::Gold:
