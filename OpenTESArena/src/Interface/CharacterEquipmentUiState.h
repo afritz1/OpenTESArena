@@ -13,6 +13,7 @@ struct CharacterEquipmentUiState
 {
 	Game *game;
 	UiContextInstanceID contextInstID;
+	UiContextInstanceID itemDetailContextInstID;
 
 	CharacterEquipmentUiState();
 
@@ -22,6 +23,8 @@ struct CharacterEquipmentUiState
 namespace CharacterEquipmentUI
 {
 	DECLARE_UI_CONTEXT(CharacterEquipment);
+
+	void showItemDetail(const char *text, Color textColor);
 
 	void onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position);
 

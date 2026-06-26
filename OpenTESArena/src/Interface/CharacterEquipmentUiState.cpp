@@ -5,6 +5,7 @@
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
+#include "../Input/InputActionName.h"
 #include "../Items/ItemLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
@@ -13,7 +14,11 @@
 
 namespace
 {
+	constexpr char ContextName_ItemDetail[] = "CharacterEquipmentItemDetail";
+
 	constexpr char ElementName_InventoryListBox[] = "CharacterEquipmentInventoryListBox";
+
+	constexpr MouseButtonTypeFlags PopUpMouseButtonTypeFlags = MouseButtonType::Left | MouseButtonType::Right;
 
 	UiListBoxItemCallback MakeInventoryListBoxItemCallback(Game &game, UiElementInstanceID listBoxElementInstID, int listBoxItemIndex)
 	{
@@ -35,15 +40,18 @@ namespace
 			{
 				if (!itemDef.isEquippable)
 				{
-					DebugLog(exeData.equipment.unequippableItem);
+					std::string unequippableItemStr = exeData.equipment.unequippableItem;
+					unequippableItemStr.pop_back(); // Clean up newline
+					CharacterEquipmentUI::showItemDetail(unequippableItemStr.c_str(), CharacterEquipmentUiView::ItemDetailErrorTextColor);
 					return;
 				}
 
 				const bool isEquippableByClass = InventoryUiModel::isItemEquippableByClass(itemDef, charClassDef);
 				if (!isEquippableByClass)
 				{
-					const std::string forbiddenByClassStr = String::replace(exeData.equipment.classForbiddenItem, "%s", charClassDef.name);
-					DebugLog(forbiddenByClassStr);
+					std::string forbiddenByClassStr = String::replace(exeData.equipment.classForbiddenItem, "%s", charClassDef.name);
+					forbiddenByClassStr.pop_back(); // Clean up newline
+					CharacterEquipmentUI::showItemDetail(forbiddenByClassStr.c_str(), CharacterEquipmentUiView::ItemDetailErrorTextColor);
 					return;
 				}
 
@@ -93,8 +101,9 @@ namespace
 
 				if (isSimilarItemAlreadyEquipped)
 				{
-					const std::string alreadyEquippedStr = String::replace(exeData.equipment.alreadyEquippedItem, "%s", similarItemBaseName.c_str());
-					DebugLog(alreadyEquippedStr);
+					std::string alreadyEquippedStr = String::replace(exeData.equipment.alreadyEquippedItem, "%s", similarItemBaseName.c_str());
+					alreadyEquippedStr.pop_back(); // Clean up newline
+					CharacterEquipmentUI::showItemDetail(alreadyEquippedStr.c_str(), CharacterEquipmentUiView::ItemDetailErrorTextColor);
 					return;
 				}
 
@@ -162,6 +171,7 @@ CharacterEquipmentUiState::CharacterEquipmentUiState()
 {
 	this->game = nullptr;
 	this->contextInstID = -1;
+	this->itemDetailContextInstID = -1;
 }
 
 void CharacterEquipmentUiState::init(Game &game)
@@ -182,6 +192,12 @@ void CharacterEquipmentUI::create(Game &game)
 	const UiLibrary &uiLibrary = UiLibrary::getInstance();
 	const UiContextDefinition &contextDef = uiLibrary.getDefinition(CharacterEquipmentUI::ContextName);
 	state.contextInstID = uiManager.createContext(contextDef, inputManager, textureManager, renderer);
+
+	UiContextInitInfo itemDetailContextInitInfo;
+	itemDetailContextInitInfo.name = ContextName_ItemDetail;
+	itemDetailContextInitInfo.drawOrder = 1;
+	state.itemDetailContextInstID = uiManager.createContext(itemDetailContextInitInfo);
+	uiManager.setContextEnabled(state.itemDetailContextInstID, false);
 
 	const CharacterEquipmentPresentationState equipmentPresentationState = CharacterSheetUiView::getEquipmentPresentationState(game);
 
@@ -260,12 +276,74 @@ void CharacterEquipmentUI::destroy()
 		state.contextInstID = -1;
 	}
 
+	if (state.itemDetailContextInstID >= 0)
+	{
+		uiManager.freeContext(state.itemDetailContextInstID, inputManager, renderer);
+		state.itemDetailContextInstID = -1;
+	}
+
 	inputManager.setInputActionMapActive(InputActionMapName::CharacterEquipment, false);
 }
 
 void CharacterEquipmentUI::update(double dt)
 {
 	// Do nothing.
+}
+
+void CharacterEquipmentUI::showItemDetail(const char *text, Color textColor)
+{
+	CharacterEquipmentUiState &state = CharacterEquipmentUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.itemDetailContextInstID, inputManager, renderer);
+
+	UiElementInitInfo textBoxElementInitInfo;
+	textBoxElementInitInfo.name = "CharacterEquipmentItemDetailTextBox";
+	textBoxElementInitInfo.position = CharacterEquipmentUiView::ItemDetailCenterPoint;
+	textBoxElementInitInfo.pivotType = CharacterEquipmentUiView::ItemDetailPivotType;
+	textBoxElementInitInfo.drawOrder = 0;
+
+	UiTextBoxInitInfo textBoxInitInfo;
+	textBoxInitInfo.text = text;
+	textBoxInitInfo.fontName = CharacterEquipmentUiView::ItemDetailFontName;
+	textBoxInitInfo.defaultColor = textColor;
+	textBoxInitInfo.alignment = CharacterEquipmentUiView::ItemDetailTextAlignment;
+	textBoxInitInfo.lineSpacing = CharacterEquipmentUiView::ItemDetailLineSpacing;
+	const UiElementInstanceID textBoxElementInstID = uiManager.createTextBox(textBoxElementInitInfo, textBoxInitInfo, state.itemDetailContextInstID, renderer);
+	const Rect textBoxRect = uiManager.getTransformGlobalRect(textBoxElementInstID);
+
+	UiElementInitInfo backButtonElementInitInfo;
+	backButtonElementInitInfo.name = "CharacterEquipmentItemDetailBackButton";
+	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+	backButtonElementInitInfo.drawOrder = 1;
+
+	auto backButtonCallback = [](MouseButtonType)
+	{
+		CharacterEquipmentUiState &state = CharacterEquipmentUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+		uiManager.disableTopMostContext();
+	};
+
+	UiButtonInitInfo backButtonInitInfo;
+	backButtonInitInfo.mouseButtonFlags = PopUpMouseButtonTypeFlags;
+	backButtonInitInfo.callback = backButtonCallback;
+	uiManager.createButton(backButtonElementInitInfo, backButtonInitInfo, state.itemDetailContextInstID);
+
+	auto inputActionCallback = [backButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			backButtonCallback(MouseButtonType::Left);
+		}
+	};
+
+	uiManager.addInputActionListener(InputActionName::Back, inputActionCallback, ContextName_ItemDetail, inputManager);
+	uiManager.setContextEnabled(state.itemDetailContextInstID, true);
 }
 
 void CharacterEquipmentUI::onMouseScrollChanged(Game &game, MouseWheelScrollType type, const Int2 &position)

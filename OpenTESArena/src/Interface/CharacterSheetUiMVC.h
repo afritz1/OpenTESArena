@@ -5,6 +5,10 @@
 #include "../Math/Vector2.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../Stats/PrimaryAttribute.h"
+#include "../UI/ArenaFontName.h"
+#include "../UI/TextAlignment.h"
+#include "../UI/UiPivotType.h"
+#include "../Utilities/Color.h"
 
 struct TextureAsset;
 
@@ -80,5 +84,14 @@ namespace CharacterSheetUiView
 
 namespace CharacterEquipmentUiView
 {
+	constexpr Int2 ItemDetailCenterPoint(84, 164);
+	constexpr UiPivotType ItemDetailPivotType = UiPivotType::Middle;
+	constexpr TextAlignment ItemDetailTextAlignment = TextAlignment::MiddleCenter;
+
+	const std::string ItemDetailFontName = ArenaFontName::Arena;
+	constexpr Color ItemDetailDefaultTextColor(199, 199, 199);
+	constexpr Color ItemDetailErrorTextColor(199, 32, 0);
+	constexpr int ItemDetailLineSpacing = 1;
+
 	UiTextureID allocUpDownButtonTexture(TextureManager &textureManager, Renderer &renderer);
 }
