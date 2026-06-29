@@ -88,7 +88,7 @@ bool EntityUtils::isLevelDependentDef(EntityDefID defID,
 
 bool EntityUtils::isStreetlight(const EntityDefinition &entityDef)
 {
-	return (entityDef.type == EntityDefinitionType::Decoration) && entityDef.decoration.streetlight;
+	return (entityDef.type == EntityDefinitionType::Decoration) && entityDef.decoration.hasStreetlightLogic;
 }
 
 bool EntityUtils::isGhost(const EntityDefinition &entityDef)
@@ -117,7 +117,7 @@ bool EntityUtils::isPuddle(const EntityDefinition &entityDef)
 	}
 
 	const DecorationEntityDefinition &decoration = entityDef.decoration;
-	return decoration.puddle;
+	return decoration.hasPuddleShader;
 }
 
 bool EntityUtils::isSceneManagedResource(EntityDefinitionType entityDefType)
@@ -285,7 +285,7 @@ std::optional<double> EntityUtils::tryGetLightRadius(const EntityDefinition &ent
 	case EntityDefinitionType::Decoration:
 	{
 		const DecorationEntityDefinition &decorationDef = entityDef.decoration;
-		if (decorationDef.streetlight)
+		if (decorationDef.hasStreetlightLogic)
 		{
 			return ArenaRenderUtils::STREETLIGHT_LIGHT_RADIUS;
 		}

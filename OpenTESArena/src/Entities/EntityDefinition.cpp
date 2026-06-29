@@ -317,20 +317,20 @@ DecorationEntityDefinition::DecorationEntityDefinition()
 	this->collider = false;
 	this->transparent = false;
 	this->ceiling = false;
-	this->streetlight = false;
-	this->puddle = false;
+	this->hasStreetlightLogic = false;
+	this->hasPuddleShader = false;
 	this->lightIntensity = 0;
 }
 
-void DecorationEntityDefinition::init(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle, int lightIntensity)
+void DecorationEntityDefinition::init(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool hasStreetlightLogic, bool hasPuddleShader, int lightIntensity)
 {
 	this->yOffset = yOffset;
 	this->scale = scale;
 	this->collider = collider;
 	this->transparent = transparent;
 	this->ceiling = ceiling;
-	this->streetlight = streetlight;
-	this->puddle = puddle;
+	this->hasStreetlightLogic = hasStreetlightLogic;
+	this->hasPuddleShader = hasPuddleShader;
 	this->lightIntensity = lightIntensity;
 }
 
@@ -366,12 +366,12 @@ bool DecorationEntityDefinition::operator==(const DecorationEntityDefinition &ot
 		return false;
 	}
 
-	if (this->streetlight != other.streetlight)
+	if (this->hasStreetlightLogic != other.hasStreetlightLogic)
 	{
 		return false;
 	}
 
-	if (this->puddle != other.puddle)
+	if (this->hasPuddleShader != other.hasPuddleShader)
 	{
 		return false;
 	}
@@ -501,9 +501,9 @@ void EntityDefinition::initTransition(LevelVoxelTransitionDefID defID, EntityAni
 	this->transition.init(defID);
 }
 
-void EntityDefinition::initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight,
-	bool puddle, int lightIntensity, EntityAnimationDefinition &&animDef)
+void EntityDefinition::initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool hasStreetlightLogic,
+	bool hasPuddleShader, int lightIntensity, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Decoration, std::move(animDef));
-	this->decoration.init(yOffset, scale, collider, transparent, ceiling, streetlight, puddle, lightIntensity);
+	this->decoration.init(yOffset, scale, collider, transparent, ceiling, hasStreetlightLogic, hasPuddleShader, lightIntensity);
 }

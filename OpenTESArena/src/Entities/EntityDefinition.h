@@ -231,13 +231,13 @@ struct DecorationEntityDefinition
 	bool collider;
 	bool transparent;
 	bool ceiling;
-	bool streetlight;
-	bool puddle;
+	bool hasStreetlightLogic;
+	bool hasPuddleShader;
 	int lightIntensity; // Has intensity if over 0.
 
 	DecorationEntityDefinition();
 
-	void init(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle, int lightIntensity);
+	void init(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool hasStreetlightLogic, bool hasPuddleShader, int lightIntensity);
 
 	bool operator==(const DecorationEntityDefinition &other) const;
 };
@@ -286,6 +286,6 @@ struct EntityDefinition
 
 	void initTransition(LevelVoxelTransitionDefID defID, EntityAnimationDefinition &&animDef);
 
-	void initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool streetlight, bool puddle,
+	void initDecoration(int yOffset, double scale, bool collider, bool transparent, bool ceiling, bool hasStreetlightLogic, bool hasPuddleShader,
 		int lightIntensity, EntityAnimationDefinition &&animDef);
 };
