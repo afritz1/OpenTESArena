@@ -5,6 +5,7 @@
 #include "LogbookUiState.h"
 #include "PauseMenuUiState.h"
 #include "WorldMapUiState.h"
+#include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
@@ -13,6 +14,7 @@
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/UiRenderSpace.h"
+#include "../World/MapType.h"
 
 namespace
 {
@@ -1203,7 +1205,38 @@ void GameWorldUI::onUseItemButtonSelected(MouseButtonType mouseButtonType)
 
 void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 {
-	DebugLog("Camp.");
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+
+	const GameState &gameState = game.gameState;
+	const MapType mapType = gameState.getActiveMapType();
+	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	const Player &player = game.player;
+	const WorldDouble3 playerRestPosition = player.getEyePosition();
+	const bool isPlayerSafeForResting = !entityChunkManager.anyEnemiesPreventingPlayerRest(playerRestPosition);
+	const bool isPlayerAllowedToRest = (mapType != MapType::City) && player.groundState.onGround && !player.groundState.isSwimming;
+	
+	std::string text;
+	if (!isPlayerSafeForResting)
+	{
+		text = exeData.camping.enemiesNearbyBeforeResting;
+		// @todo use big font
+	}
+	else if (!isPlayerAllowedToRest)
+	{
+		text = exeData.camping.campingNotAllowed;
+		// @todo use big font
+	}
+	else
+	{
+		text = "Camping modal not implemented.";
+	}
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
+
+	// @todo gameState.setIsCamping(true/false) in modal buttons, or maybe make it a function of a GameState::remainingRestHours?
 }
 
 void GameWorldUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)
@@ -1318,16 +1351,10 @@ void GameWorldUI::onUseItemInputAction(const InputActionCallbackValues &values)
 
 void GameWorldUI::onCampInputAction(const InputActionCallbackValues &values)
 {
-	// @todo: uncomment this eventually when it actually works
-	/*if (values.performed)
+	if (values.performed)
 	{
 		GameWorldUI::onCampButtonSelected(MouseButtonType::Left);
-	}*/
-
-	GameWorldUiState &state = GameWorldUI::state;
-	Game &game = *state.game;
-	GameState &gameState = game.gameState;
-	gameState.setIsCamping(values.performed);
+	}
 }
 
 void GameWorldUI::onToggleCompassInputAction(const InputActionCallbackValues &values)

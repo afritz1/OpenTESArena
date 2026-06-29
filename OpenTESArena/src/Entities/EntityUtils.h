@@ -50,7 +50,5 @@ namespace EntityUtils
 	// Returns whether the entity definition has a display name.
 	bool tryGetDisplayName(const EntityDefinition &entityDef, const CharacterClassLibrary &charClassLibrary, std::string *outName);
 
-	bool withinHearingDistance(const WorldDouble3 &listenerPosition, const WorldDouble3 &soundPosition);
-
 	double nextCreatureSoundWaitSeconds(Random &random);
 }

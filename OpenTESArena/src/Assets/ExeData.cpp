@@ -263,6 +263,51 @@ bool ExeDataCalendar::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	return true;
 }
 
+bool ExeDataCamping::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Camping";
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
+		return false;
+	}
+
+	const int singularHourPassedOffset = GetExeAddress(*section, "SingularHourPassed");
+	const int pluralHoursPassedOffset = GetExeAddress(*section, "PluralHoursPassed");
+	const int singularHourRemainingOffset = GetExeAddress(*section, "SingularHourRemaining");
+	const int pluralHoursRemainingOffset = GetExeAddress(*section, "PluralHoursRemaining");
+	const int modalTitleOffset = GetExeAddress(*section, "ModalTitle");
+	const int modalRestManualHoursOffset = GetExeAddress(*section, "ModalRestManualHours");
+	const int modalRestUntilHealedOffset = GetExeAddress(*section, "ModalRestUntilHealed");
+	const int hoursToRestOffset = GetExeAddress(*section, "HoursToRest");
+	const int doneRestingHealedOffset = GetExeAddress(*section, "DoneRestingHealed");
+	const int doneRestingWakeUpOffset = GetExeAddress(*section, "DoneRestingWakeUp");
+	const int doneRestingTimesUpOffset = GetExeAddress(*section, "DoneRestingTimesUp");
+	const int enemiesNearbyBeforeRestingOffset = GetExeAddress(*section, "EnemiesNearbyBeforeResting");
+	const int enemiesNearbyAfterRestingOffset = GetExeAddress(*section, "EnemiesNearbyAfterResting");
+	const int alreadyFullyRestedOffset = GetExeAddress(*section, "AlreadyFullyRested");
+	const int campingNotAllowedOffset = GetExeAddress(*section, "CampingNotAllowed");
+
+	this->singularHourPassed = GetExeStringNullTerminated(exeBytes, singularHourPassedOffset);
+	this->pluralHoursPassed = GetExeStringNullTerminated(exeBytes, pluralHoursPassedOffset);
+	this->singularHourRemaining = GetExeStringNullTerminated(exeBytes, singularHourRemainingOffset);
+	this->pluralHoursRemaining = GetExeStringNullTerminated(exeBytes, pluralHoursRemainingOffset);
+	this->modalTitle = GetExeStringNullTerminated(exeBytes, modalTitleOffset);
+	this->modalRestManualHours = GetExeStringNullTerminated(exeBytes, modalRestManualHoursOffset);
+	this->modalRestUntilHealed = GetExeStringNullTerminated(exeBytes, modalRestUntilHealedOffset);
+	this->hoursToRest = GetExeStringNullTerminated(exeBytes, hoursToRestOffset);
+	this->doneRestingHealed = GetExeStringNullTerminated(exeBytes, doneRestingHealedOffset);
+	this->doneRestingWakeUp = GetExeStringNullTerminated(exeBytes, doneRestingWakeUpOffset);
+	this->doneRestingTimesUp = GetExeStringNullTerminated(exeBytes, doneRestingTimesUpOffset);
+	this->enemiesNearbyBeforeResting = GetExeStringNullTerminated(exeBytes, enemiesNearbyBeforeRestingOffset);
+	this->enemiesNearbyAfterResting = GetExeStringNullTerminated(exeBytes, enemiesNearbyAfterRestingOffset);
+	this->alreadyFullyRested = GetExeStringNullTerminated(exeBytes, alreadyFullyRestedOffset);
+	this->campingNotAllowed = GetExeStringNullTerminated(exeBytes, campingNotAllowedOffset);
+
+	return true;
+}
+
 bool ExeDataCharacterClasses::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "CharacterClasses";
@@ -1200,6 +1245,7 @@ bool ExeData::init(bool floppyVersion)
 	}
 
 	bool success = this->calendar.init(exeBytes, keyValueFile);
+	success &= this->camping.init(exeBytes, keyValueFile);
 	success &= this->charClasses.init(exeBytes, keyValueFile);
 	success &= this->charCreation.init(exeBytes, keyValueFile);
 	success &= this->cityGen.init(exeBytes, keyValueFile);

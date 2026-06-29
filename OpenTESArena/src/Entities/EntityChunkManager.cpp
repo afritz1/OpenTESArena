@@ -38,6 +38,9 @@
 
 namespace
 {
+	constexpr double EnemyToPlayerDetectionDistance = 4.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
+	constexpr double EnemyToPlayerMeleeAttackDistance = 0.85; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
+
 	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isCharacter, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
 		JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
@@ -1422,10 +1425,8 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		EntityEnemyBehaviorState &enemyBehaviorState = behaviorState.enemy;
 		const EntityEnemyBehaviorStateType prevEnemyBehaviorStateType = enemyBehaviorState.type;
 
-		constexpr double detectionDistance = 4.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
-		constexpr double attackDistance = 0.85; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
-		constexpr double detectionDistanceSqr = detectionDistance * detectionDistance;
-		constexpr double attackDistanceSqr = attackDistance * attackDistance;
+		constexpr double detectionDistanceSqr = EnemyToPlayerDetectionDistance * EnemyToPlayerDetectionDistance;
+		constexpr double attackDistanceSqr = EnemyToPlayerMeleeAttackDistance * EnemyToPlayerMeleeAttackDistance;
 		const bool isCloseEnoughToDetectPlayer = distToPlayerSqr <= detectionDistanceSqr; // @todo add "isFarEnoughToStopDetectPlayer"
 		const bool isCloseEnoughToAttackPlayer = distToPlayerSqr <= attackDistanceSqr; // @todo add "isFarEnoughToStopAttackPlayer"
 

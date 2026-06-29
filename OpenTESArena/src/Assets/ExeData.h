@@ -26,6 +26,27 @@ struct ExeDataCalendar
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
+struct ExeDataCamping
+{
+	std::string singularHourPassed;
+	std::string pluralHoursPassed;
+	std::string singularHourRemaining;
+	std::string pluralHoursRemaining;
+	std::string modalTitle;
+	std::string modalRestManualHours;
+	std::string modalRestUntilHealed;
+	std::string hoursToRest;
+	std::string doneRestingHealed;
+	std::string doneRestingWakeUp;
+	std::string doneRestingTimesUp;
+	std::string enemiesNearbyBeforeResting;
+	std::string enemiesNearbyAfterResting;
+	std::string alreadyFullyRested;
+	std::string campingNotAllowed;
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataCharacterClasses
 {
 	// The allowed shields and weapons store 16-bit offsets from the start of the
@@ -655,6 +676,7 @@ struct ExeData
 
 	bool isFloppyVersion;
 	ExeDataCalendar calendar;
+	ExeDataCamping camping;
 	ExeDataCharacterClasses charClasses;
 	ExeDataCharacterCreation charCreation;
 	ExeDataCityGeneration cityGen;

@@ -10,6 +10,23 @@ WeekdayNames=0x3EC2E
 HolidayNames=0x3EC61
 HolidayDates=0x3EDAD
 
+[Camping]
+SingularHourPassed=0x402E3
+PluralHoursPassed=0x402F6
+SingularHourRemaining=0x40309
+PluralHoursRemaining=0x4031E
+ModalTitle=0x40337
+ModalRestManualHours=0x40350
+ModalRestUntilHealed=0x40369
+HoursToRest=0x40384
+DoneRestingHealed=0x403B1
+DoneRestingWakeUp=0x403C3
+DoneRestingTimesUp=0x403D3
+EnemiesNearbyBeforeResting=0x416D2
+EnemiesNearbyAfterResting=0x403E9
+AlreadyFullyRested=0x40405
+CampingNotAllowed=0x416F8
+
 [CharacterClasses]
 AllowedArmors=0x36404
 AllowedShields=0x363D1
