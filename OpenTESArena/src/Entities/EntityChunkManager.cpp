@@ -2040,6 +2040,30 @@ void EntityChunkManager::setCitizenBehaviorState(EntityInstanceID id, EntityCiti
 	}
 }
 
+bool EntityChunkManager::anyEnemiesPreventingPlayerRest(WorldDouble3 playerPosition) const
+{
+	constexpr double distanceLimitSqr = PlayerConstants::SAFE_SLEEP_DISTANCE * PlayerConstants::SAFE_SLEEP_DISTANCE;
+
+	for (const EntityInstanceID entityInstID : this->enemyEntityInstIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityCombatState &entityCombatState = this->combatStates.get(entityInst.combatStateID);
+		if (entityCombatState.isInDeathState())
+		{
+			continue;
+		}
+
+		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+		const double distanceSqr = (entityPosition - playerPosition).lengthSquared();
+		if (distanceSqr <= distanceLimitSqr)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions, Span<const ChunkInt2> newChunkPositions,
 	Span<const ChunkInt2> freedChunkPositions, Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,
 	const MapSubDefinition &mapSubDef, Span<const LevelDefinition> levelDefs, Span<const int> levelInfoDefIndices,

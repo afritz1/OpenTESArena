@@ -259,6 +259,8 @@ public:
 	void setEnemyBehaviorState(EntityInstanceID id, EntityEnemyBehaviorStateType stateType);
 	void setCitizenBehaviorState(EntityInstanceID id, EntityCitizenBehaviorStateType stateType);
 
+	bool anyEnemiesPreventingPlayerRest(WorldDouble3 playerPosition) const;
+
 	void updatePrePhysicsStep(double dt, Span<const ChunkInt2> activeChunkPositions,
 		Span<const ChunkInt2> newChunkPositions, Span<const ChunkInt2> freedChunkPositions,
 		Player &player, const LevelDefinition *activeLevelDef, const LevelInfoDefinition *activeLevelInfoDef,

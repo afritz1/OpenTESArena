@@ -50,6 +50,8 @@ namespace PlayerConstants
 	constexpr double MELEE_HIT_SEARCH_RADIUS = 0.40;
 
 	constexpr double CREATURE_SOUND_MAX_DISTANCE = 6.0;
+
+	constexpr double SAFE_SLEEP_DISTANCE = 8.0;
 }
 
 enum class PlayerMovementType
