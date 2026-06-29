@@ -153,6 +153,14 @@ struct EntityTransferResult
 	EntityTransferResult();
 };
 
+struct EntityOccupiedVoxelState
+{
+	WorldInt2 voxel;
+	EntityInstanceID id;
+
+	EntityOccupiedVoxelState();
+};
+
 class EntityChunkManager final : public SpecializedChunkManager<EntityChunk>
 {
 public:
@@ -194,6 +202,9 @@ public:
 	// Entities that have moved between chunks this frame and are still in play. Necessary for chunks that
 	// track the entities inside them for faster lookups.
 	std::vector<EntityTransferResult> transferResults;
+
+	// Voxels treated as solid for pathfinding due to the presence of an entity.
+	std::vector<EntityOccupiedVoxelState> occupiedVoxelStates;
 private:
 	// Entity definitions for this currently-active level. Their definition IDs CANNOT be assumed
 	// to be zero-based because these are in addition to ones in the entity definition library.
