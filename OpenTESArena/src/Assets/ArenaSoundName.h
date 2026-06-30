@@ -19,6 +19,7 @@ namespace ArenaSoundName
 	// Crime.
 	constexpr char Halt[] = "HALT.VOC";
 	constexpr char StopThief[] = "STPTHIEF.VOC";
+	constexpr char Lock[] = "LOCK.VOC";
 
 	// Fanfare.
 	constexpr char Fanfare1[] = "FANFARE1.VOC";

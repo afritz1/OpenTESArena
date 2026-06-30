@@ -16,6 +16,12 @@ class ItemInventory;
 
 using GameWorldPopUpClosedCallback = std::function<void()>;
 
+enum class GameWorldInteractionType
+{
+	Default,
+	Thieving
+};
+
 // For keeping loot list box callbacks valid when removing inventory items.
 struct GameWorldLootUiItemMapping
 {
@@ -57,6 +63,8 @@ struct GameWorldUiState
 	double currentSpellPoints;
 	double maxSpellPoints;
 
+	GameWorldInteractionType interactionType;
+
 	// Game world interface display texts have an associated time remaining. These values are not destroyed when switching away from the game world UI.
 	// - Trigger text: lore message from voxel trigger
 	// - Action text: description of the player's current action
@@ -80,6 +88,7 @@ namespace GameWorldUI
 	void onScreenToWorldInteraction(Int2 windowPoint, bool isPrimaryInteraction);
 	void updateDoorKeys();
 	void setCompassVisible(bool visible);
+	void setInteractionType(GameWorldInteractionType type);
 	void onPauseChanged(bool paused);
 
 	bool isTriggerTextVisible();

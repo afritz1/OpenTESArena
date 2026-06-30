@@ -122,6 +122,7 @@ GameWorldUiState::GameWorldUiState()
 	this->maxStamina = 0.0;
 	this->currentSpellPoints = 0.0;
 	this->maxSpellPoints = 0.0;
+	this->interactionType = GameWorldInteractionType::Default;
 	this->triggerTextRemainingSeconds = 0.0;
 	this->actionTextRemainingSeconds = 0.0;
 	this->effectTextRemainingSeconds = 0.0;
@@ -179,6 +180,7 @@ void GameWorldUiState::init(Game &game)
 	this->maxStamina = player.maxStamina;
 	this->currentSpellPoints = player.currentSpellPoints;
 	this->maxSpellPoints = player.maxSpellPoints;
+	this->interactionType = GameWorldInteractionType::Default;
 }
 
 void GameWorldUiState::freeTextures(Renderer &renderer)
@@ -629,6 +631,34 @@ void GameWorldUI::setCompassVisible(bool visible)
 	const UiElementInstanceID compassFrameImageElementInstID = uiManager.getElementByName(CompassFrameImageElementName);
 	uiManager.setElementActive(compassSliderImageElementInstID, visible);
 	uiManager.setElementActive(compassFrameImageElementInstID, visible);
+}
+
+void GameWorldUI::setInteractionType(GameWorldInteractionType type)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	state.interactionType = type;
+
+	switch (type)
+	{
+	case GameWorldInteractionType::Default:
+	{
+		GameWorldUI::setActionText("");
+		state.actionTextRemainingSeconds = 0.0;
+		break;
+	}
+	case GameWorldInteractionType::Thieving:
+	{
+		GameWorldUI::setActionText(exeData.thieving.thievingInteractionType.c_str());
+		state.actionTextRemainingSeconds = Constants::Infinity;
+		break;
+	}
+	default:
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(type)));
+		break;
+	}
 }
 
 void GameWorldUI::onPauseChanged(bool paused)
@@ -1207,7 +1237,7 @@ void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
 
 void GameWorldUI::onStealButtonSelected(MouseButtonType mouseButtonType)
 {
-	DebugLog("Steal.");
+	GameWorldUI::setInteractionType(GameWorldInteractionType::Thieving);
 }
 
 void GameWorldUI::onStatusButtonSelected(MouseButtonType mouseButtonType)

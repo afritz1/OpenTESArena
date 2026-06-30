@@ -2,6 +2,7 @@
 #include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaSoundName.h"
 #include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Collision/ArenaSelectionUtils.h"
 #include "../Collision/Physics.h"
 #include "../Collision/RayCastTypes.h"
@@ -314,7 +315,8 @@ namespace PlayerLogic
 		return inputAcceleration;
 	}
 
-	void handleRayCastHitVoxel(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, bool debugDestroyVoxel, double ceilingScale, VoxelChunkManager &voxelChunkManager)
+	void handleRayCastHitVoxel(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, GameWorldInteractionType interactionType,
+		bool debugDestroyVoxel, double ceilingScale, VoxelChunkManager &voxelChunkManager)
 	{
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
@@ -359,7 +361,17 @@ namespace PlayerLogic
 								const TransitionDefinition &transitionDef = voxelChunk.transitionDefs[transitionDefID];
 								if (transitionDef.type != TransitionType::InteriorLevelChange)
 								{
-									MapLogic::handleMapTransition(game, hit, transitionDef);
+									if (interactionType == GameWorldInteractionType::Default)
+									{
+										MapLogic::handleMapTransition(game, hit, transitionDef);
+									}
+									else if (interactionType == GameWorldInteractionType::Thieving)
+									{
+										GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+
+										// @todo check for VoxelLockDefID at this voxel
+										GameWorldUI::showTextPopUp("Lockpicking not implemented.", GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+									}
 								}
 							}
 						}
@@ -367,13 +379,16 @@ namespace PlayerLogic
 				}
 				else
 				{
-					// @temp: add to fading voxels if it doesn't already exist.
-					int fadeAnimInstIndex;
-					if (!voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
+					if (interactionType == GameWorldInteractionType::Default)
 					{
-						VoxelFadeAnimationInstance fadeAnimInst;
-						fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
-						voxelChunk.fadeAnimInsts.emplace_back(std::move(fadeAnimInst));
+						// @temp: add to fading voxels if it doesn't already exist.
+						int fadeAnimInstIndex;
+						if (!voxelChunk.tryGetFadeAnimInstIndex(voxel.x, voxel.y, voxel.z, &fadeAnimInstIndex))
+						{
+							VoxelFadeAnimationInstance fadeAnimInst;
+							fadeAnimInst.init(voxel.x, voxel.y, voxel.z, ArenaVoxelUtils::FADING_VOXEL_SECONDS);
+							voxelChunk.fadeAnimInsts.emplace_back(std::move(fadeAnimInst));
+						}
 					}
 				}
 			}
@@ -402,6 +417,7 @@ namespace PlayerLogic
 								requiredDoorKeyID = lockDef.keyID;
 								lockLevel = lockDef.lockLevel;
 
+								// @todo add thieving interaction type in here
 								if (requiredDoorKeyID >= 0)
 								{
 									if (player.isIdInKeyInventory(requiredDoorKeyID))
@@ -436,20 +452,26 @@ namespace PlayerLogic
 		}
 		else
 		{
+			GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+
 			// Handle right click.
 			if (ArenaSelectionUtils::isVoxelSelectableAsSecondary(voxelType))
 			{
-				VoxelBuildingNameID buildingNameID;
-				if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
+				if (interactionType == GameWorldInteractionType::Default)
 				{
-					const std::string &buildingName = voxelChunk.buildingNames[buildingNameID];
-					GameWorldUI::setActionText(buildingName.c_str());
+					VoxelBuildingNameID buildingNameID;
+					if (voxelChunk.tryGetBuildingNameID(voxel.x, voxel.y, voxel.z, &buildingNameID))
+					{
+						const std::string &buildingName = voxelChunk.buildingNames[buildingNameID];
+						GameWorldUI::setActionText(buildingName.c_str());
+					}
 				}
 			}
 		}
 	}
 
-	void handleRayCastHitEntity(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, double ceilingScale, const VoxelChunkManager &voxelChunkManager, EntityChunkManager &entityChunkManager)
+	void handleRayCastHitEntity(Game &game, const RayCastHit &hit, bool isPrimaryInteraction, GameWorldInteractionType interactionType,
+		double ceilingScale, const VoxelChunkManager &voxelChunkManager, EntityChunkManager &entityChunkManager)
 	{
 		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 		const ExeData &exeData = binaryAssetLibrary.getExeData();
@@ -504,7 +526,18 @@ namespace PlayerLogic
 			{
 				if (hit.t <= ArenaSelectionUtils::CITIZEN_MAX_DISTANCE && !isPlayerParalyzed)
 				{
-					GameWorldUiController::onCitizenInteracted(game, entityInst);
+					if (interactionType == GameWorldInteractionType::Default)
+					{
+						GameWorldUiController::onCitizenInteracted(game, entityInst);
+					}
+					else if (interactionType == GameWorldInteractionType::Thieving)
+					{
+						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+
+						const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;						
+
+						GameWorldUI::showTextPopUp("Pickpocketing not implemented.", GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+					}
 				}
 				break;
 			}
@@ -512,8 +545,15 @@ namespace PlayerLogic
 			{
 				if (!isPlayerParalyzed)
 				{
-					const StaticNpcEntityDefinition &staticNpcDef = entityDef.staticNpc;
-					GameWorldUiController::onStaticNpcInteracted(game, staticNpcDef.personalityType);
+					if (interactionType == GameWorldInteractionType::Default)
+					{
+						const StaticNpcEntityDefinition &staticNpcDef = entityDef.staticNpc;
+						GameWorldUiController::onStaticNpcInteracted(game, staticNpcDef.personalityType);
+					}
+					else
+					{
+						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+					}
 				}
 				
 				break;
@@ -522,39 +562,46 @@ namespace PlayerLogic
 			{
 				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE && !isPlayerParalyzed)
 				{
-					const ItemEntityDefinition &itemDef = entityDef.item;
-					const ItemEntityDefinitionType itemDefType = itemDef.type;
-
-					if (itemDefType == ItemEntityDefinitionType::Key)
+					if (interactionType == GameWorldInteractionType::Default)
 					{
-						const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(entityChunkPos);
+						const ItemEntityDefinition &itemDef = entityDef.item;
+						const ItemEntityDefinitionType itemDefType = itemDef.type;
 
-						VoxelTriggerDefID triggerDefID;
-						if (voxelChunk.tryGetTriggerDefID(entityVoxel.x, entityVoxel.y, entityVoxel.z, &triggerDefID))
+						if (itemDefType == ItemEntityDefinitionType::Key)
 						{
-							const VoxelTriggerDefinition &triggerDef = voxelChunk.triggerDefs[triggerDefID];
-							if (triggerDef.hasKeyDef())
+							const VoxelChunk &voxelChunk = voxelChunkManager.getChunkAtPosition(entityChunkPos);
+
+							VoxelTriggerDefID triggerDefID;
+							if (voxelChunk.tryGetTriggerDefID(entityVoxel.x, entityVoxel.y, entityVoxel.z, &triggerDefID))
 							{
-								const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
-								const int keyID = triggerKeyDef.keyID;
-								player.addToKeyInventory(keyID);
-
-								// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityManager draw calls due to skipping scene simulation.
-								const auto callback = [&entityChunkManager, entityChunkPos, entityInstID]()
+								const VoxelTriggerDefinition &triggerDef = voxelChunk.triggerDefs[triggerDefID];
+								if (triggerDef.hasKeyDef())
 								{
-									entityChunkManager.queueEntityDestroy(entityInstID, &entityChunkPos);
-								};
+									const VoxelTriggerKeyDefinition &triggerKeyDef = triggerDef.key;
+									const int keyID = triggerKeyDef.keyID;
+									player.addToKeyInventory(keyID);
 
-								GameWorldUiController::onKeyPickedUp(game, keyID, exeData, callback);
+									// Destroy entity after popup to avoid using freed transform buffer ID in RenderEntityManager draw calls due to skipping scene simulation.
+									const auto callback = [&entityChunkManager, entityChunkPos, entityInstID]()
+									{
+										entityChunkManager.queueEntityDestroy(entityInstID, &entityChunkPos);
+									};
+
+									GameWorldUiController::onKeyPickedUp(game, keyID, exeData, callback);
+								}
 							}
 						}
+						else if (itemDefType == ItemEntityDefinitionType::QuestItem)
+						{
+							AudioManager &audioManager = game.audioManager;
+							audioManager.playSoundOneShot(ArenaSoundName::Fanfare2);
+							DebugLogFormat("Picked up quest item (entity %d).", entityInstID);
+							entityChunkManager.queueEntityDestroy(entityInstID, &entityChunkPos);
+						}
 					}
-					else if (itemDefType == ItemEntityDefinitionType::QuestItem)
+					else
 					{
-						AudioManager &audioManager = game.audioManager;
-						audioManager.playSoundOneShot(ArenaSoundName::Fanfare2);
-						DebugLogFormat("Picked up quest item (entity %d).", entityInstID);
-						entityChunkManager.queueEntityDestroy(entityInstID, &entityChunkPos);
+						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
 					}
 				}
 
@@ -567,18 +614,56 @@ namespace PlayerLogic
 					const ContainerEntityDefinition &containerDef = entityDef.container;
 					const ContainerEntityDefinitionType containerDefType = containerDef.type;
 
-					bool isContainerInventoryAccessible = true;
-					if (entityInst.canBeLocked())
+					if (interactionType == GameWorldInteractionType::Default)
 					{
-						const EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
-						isContainerInventoryAccessible = !lockState.isLocked;
-					}
+						bool isContainerInventoryAccessible = true;
+						if (entityInst.canBeLocked())
+						{
+							const EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
+							isContainerInventoryAccessible = !lockState.isLocked;
+						}
 
-					if (isContainerInventoryAccessible)
+						if (isContainerInventoryAccessible)
+						{
+							ItemInventory &containerItemInventory = entityChunkManager.itemInventories.get(entityInst.itemInventoryInstID);
+							constexpr bool destroyEntityIfEmpty = true; // Always for piles/chests.
+							GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory, destroyEntityIfEmpty);
+						}
+					}
+					else if (interactionType == GameWorldInteractionType::Thieving)
 					{
-						ItemInventory &containerItemInventory = entityChunkManager.itemInventories.get(entityInst.itemInventoryInstID);
-						constexpr bool destroyEntityIfEmpty = true; // Always for piles/chests.
-						GameWorldUiController::onContainerInventoryOpened(game, entityInstID, containerItemInventory, destroyEntityIfEmpty);
+						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+
+						if (entityInst.canBeLocked())
+						{
+							EntityLockState &lockState = entityChunkManager.lockStates.get(entityInst.lockStateID);
+							const bool canAttemptLockpicking = lockState.isLocked;
+							if (canAttemptLockpicking)
+							{
+								Random &random = game.random;
+								const bool isLockpickingSuccessful = random.nextBool(); // @todo use original chances
+								if (isLockpickingSuccessful)
+								{
+									lockState.isLocked = false;
+
+									const EntityAnimationDefinition &entityAnimDef = entityDef.animDef;
+									const std::optional<int> unlockedAnimStateIndex = entityAnimDef.findStateIndex(EntityAnimationUtils::STATE_UNLOCKED.c_str());
+									DebugAssert(unlockedAnimStateIndex.has_value());
+
+									EntityAnimationInstance &entityAnimInst = entityChunkManager.animInsts.get(entityInst.animInstID);
+									entityAnimInst.setStateIndex(*unlockedAnimStateIndex);
+
+									AudioManager &audioManager = game.audioManager;
+									audioManager.playSoundOneShot(ArenaSoundName::Lock, entityPosition);
+
+									GameWorldUI::setActionText(exeData.thieving.thievingSuccessChest.c_str());
+								}
+								else
+								{
+									GameWorldUI::setActionText(exeData.thieving.thievingFailureChest.c_str());
+								}
+							}
+						}
 					}
 				}
 
@@ -587,6 +672,11 @@ namespace PlayerLogic
 			default:
 				break;
 			}
+		}
+		else
+		{
+			// Reset interaction on right click.
+			GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
 		}
 	}
 
@@ -1116,19 +1206,27 @@ void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativeP
 		includeEntities, voxelChunkManager, entityChunkManager, collisionChunkManager,
 		EntityDefinitionLibrary::getInstance(), hit);
 
-	if (success)
+	const GameWorldInteractionType interactionType = GameWorldUI::state.interactionType;
+	if (!success)
 	{
-		if (hit.type == RayCastHitType::Voxel)
+		if (interactionType != GameWorldInteractionType::Default)
 		{
-			PlayerLogic::handleRayCastHitVoxel(game, hit, isPrimaryInteraction, debugFadeVoxel, ceilingScale, voxelChunkManager);
+			GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
 		}
-		else if (hit.type == RayCastHitType::Entity)
-		{
-			PlayerLogic::handleRayCastHitEntity(game, hit, isPrimaryInteraction, ceilingScale, voxelChunkManager, entityChunkManager);
-		}
-		else
-		{
-			DebugNotImplementedMsg(std::to_string(static_cast<int>(hit.type)));
-		}
+		
+		return;
+	}
+
+	if (hit.type == RayCastHitType::Voxel)
+	{
+		PlayerLogic::handleRayCastHitVoxel(game, hit, isPrimaryInteraction, interactionType, debugFadeVoxel, ceilingScale, voxelChunkManager);
+	}
+	else if (hit.type == RayCastHitType::Entity)
+	{
+		PlayerLogic::handleRayCastHitEntity(game, hit, isPrimaryInteraction, interactionType, ceilingScale, voxelChunkManager, entityChunkManager);
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(hit.type)));
 	}
 }
