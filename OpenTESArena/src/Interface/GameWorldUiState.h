@@ -95,8 +95,8 @@ namespace GameWorldUI
 	void resetActionTextDuration();
 	void resetEffectTextDuration();
 
-	void showTextPopUp(const char *str, TextAlignment alignment, const GameWorldPopUpClosedCallback &callback);
-	void showTextPopUp(const char *str, TextAlignment alignment);
+	void showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment, const GameWorldPopUpClosedCallback &callback);
+	void showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment);
 	void showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback);
 
 	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed);

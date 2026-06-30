@@ -1326,7 +1326,7 @@ void GameState::tickPlayerLevel(Game &game)
 
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const std::string &readyToLevelUpStr = exeData.status.readyToLevelUp;
-	GameWorldUI::showTextPopUp(readyToLevelUpStr.c_str(), TextAlignment::MiddleCenter,
+	GameWorldUI::showTextPopUp(readyToLevelUpStr.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::MiddleCenter,
 		[&game, bonusPoints]()
 	{
 		DebugAssert(game.charLevelUpState == nullptr);

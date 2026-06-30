@@ -1431,7 +1431,7 @@ void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityI
 		}
 	};
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment, callback);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, callback);
 }
 
 void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
@@ -1448,7 +1448,7 @@ void GameWorldUiController::onEnemyCorpseEmptyInventoryOpened(Game &game, Entity
 	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
 	const std::string text = GameWorldUiModel::getEnemyCorpseEmptyInventoryMessage(entityName, exeData);
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
 }
 
 void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &exeData, const std::function<void()> &postStatusPopUpCallback)
@@ -1460,7 +1460,7 @@ void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &
 		postStatusPopUpCallback();
 	};
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment, callback);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, callback);
 }
 
 void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData)
@@ -1474,7 +1474,7 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 		audioManager.playSoundOneShot(soundFilename, soundPosition);
 	};
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment, callback);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, callback);
 }
 
 void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance &entityInst)
@@ -1483,7 +1483,7 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 	const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
 	const std::string citizenNameStr(citizenName.name);
 	const std::string text = citizenNameStr + "\n(dialogue not implemented)";
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
 }
 
 void GameWorldUiController::onCitizenKilled(Game &game)
@@ -1574,7 +1574,7 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		text = std::string(personalityTypeNames[personalityTypeIndex]) + "\n(dialogue not implemented)";
 	}
 
-	GameWorldUI::showTextPopUp(text.c_str(), textAlignment);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, textAlignment);
 }
 
 void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)
@@ -1664,5 +1664,5 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 		}
 	};
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment, callback);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, callback);
 }

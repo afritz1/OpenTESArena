@@ -376,7 +376,7 @@ void GameWorldUI::create(Game &game)
 
 	if (!state.initInfo.textPopUpMessage.empty())
 	{
-		GameWorldUI::showTextPopUp(state.initInfo.textPopUpMessage.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
+		GameWorldUI::showTextPopUp(state.initInfo.textPopUpMessage.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
 	}
 }
 
@@ -676,7 +676,7 @@ void GameWorldUI::onPauseChanged(bool paused)
 	}
 }
 
-void GameWorldUI::showTextPopUp(const char *str, TextAlignment alignment, const GameWorldPopUpClosedCallback &callback)
+void GameWorldUI::showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment, const GameWorldPopUpClosedCallback &callback)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
@@ -694,7 +694,7 @@ void GameWorldUI::showTextPopUp(const char *str, TextAlignment alignment, const 
 
 	UiTextBoxInitInfo textPopUpTextBoxInitInfo;
 	textPopUpTextBoxInitInfo.text = str;
-	textPopUpTextBoxInitInfo.fontName = GameWorldUiView::StatusPopUpFontName;
+	textPopUpTextBoxInitInfo.fontName = fontName;
 	textPopUpTextBoxInitInfo.defaultColor = GameWorldUiView::StatusPopUpTextColor;
 	textPopUpTextBoxInitInfo.alignment = alignment;
 	textPopUpTextBoxInitInfo.lineSpacing = GameWorldUiView::StatusPopUpTextLineSpacing;
@@ -743,7 +743,7 @@ void GameWorldUI::showTextPopUp(const char *str, TextAlignment alignment, const 
 	GameWorldUI::onPauseChanged(true);
 }
 
-void GameWorldUI::showTextPopUp(const char *str, TextAlignment alignment)
+void GameWorldUI::showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment)
 {
 	auto callback = []()
 	{
@@ -752,7 +752,7 @@ void GameWorldUI::showTextPopUp(const char *str, TextAlignment alignment)
 		GameWorldUiController::onStatusPopUpSelected(game);
 	};
 
-	GameWorldUI::showTextPopUp(str, alignment, callback);
+	GameWorldUI::showTextPopUp(str, fontName, alignment, callback);
 }
 
 void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback)
@@ -1183,7 +1183,7 @@ void GameWorldUI::onStatusButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
 	const std::string text = GameWorldUiModel::getStatusButtonText(game);
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
 }
 
 void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
@@ -1219,15 +1219,16 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 	const bool isPlayerAllowedToRest = (mapType != MapType::City) && player.groundState.onGround && !player.groundState.isSwimming;
 	
 	std::string text;
+	std::string fontName = GameWorldUiView::StatusPopUpFontName;
 	if (!isPlayerSafeForResting)
 	{
 		text = exeData.camping.enemiesNearbyBeforeResting;
-		// @todo use big font
+		fontName = ArenaFontName::A;
 	}
 	else if (!isPlayerAllowedToRest)
 	{
 		text = exeData.camping.campingNotAllowed;
-		// @todo use big font
+		fontName = ArenaFontName::A;
 	}
 	else
 	{
@@ -1238,7 +1239,7 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 	game.gameState.tickGameClock(250.0, game);
 	text += "\n(debug: sleeping a while)";
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
+	GameWorldUI::showTextPopUp(text.c_str(), fontName, GameWorldUiView::StatusPopUpTextAlignment);
 }
 
 void GameWorldUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)
