@@ -69,8 +69,8 @@ namespace ArenaAnimUtils
 	const std::string HumanDeathFilename = "DEADBODY.IMG";
 
 	// Animation values for citizens with .CFA files.
-	constexpr double CitizenIdleSecondsPerFrame = 1.0 / 4.0;
-	constexpr double CitizenWalkSecondsPerFrame = 1.0 / 16.0;
+	constexpr double CitizenIdleSecondsPerFrame = 1.0 / 3.0;
+	constexpr double CitizenWalkSecondsPerFrame = 1.0 / 12.0;
 	const bool CitizenIdleLoop = HumanIdleLoop;
 	const bool CitizenWalkLoop = HumanWalkLoop;
 	constexpr int CitizenIdleIndices[] = { 6, 7, 8 };
