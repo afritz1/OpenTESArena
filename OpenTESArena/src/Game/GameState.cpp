@@ -1024,8 +1024,10 @@ void GameState::tickGameClock(double dt, Game &game)
 	const ArenaEnvironmentType environmentType = this->getEnvironmentType();
 	const ArenaBuildingType buildingType = this->getBuildingType();
 	const Player &player = game.player;
+	const WorldDouble3 playerPosition = player.getEyePosition();
 	const MapDefinition &activeMapDef = this->getActiveMapDef();
 	const MapType activeMapType = activeMapDef.getMapType();
+	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	ArenaRandom &arenaRandom = game.arenaRandom;
 
@@ -1042,13 +1044,11 @@ void GameState::tickGameClock(double dt, Game &game)
 	bool canAttemptEnemyEncounterThisMinute = false;
 	if (newMinutes != prevMinutes)
 	{
-		// In the original game, the presence of citizens in city maps prevents encounters from spawning during the day.
-		// Here this is being done through a check that it is night.
-		const bool areCitizensPresent = !isNightForEncounters;
+		const bool areCitizensPresent = !isNightForEncounters || entityChunkManager.anyCitizensNearby(playerPosition);
 		canAttemptEnemyEncounterThisMinute = ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(environmentType, areCitizensPresent, this->isCamping, player.groundState.onRaisedPlatform);
 	}
 
-	const bool canAttemptEnemyEncounter = canAttemptEnemyEncounterThisHour || canAttemptEnemyEncounterThisMinute;
+	const bool canAttemptEnemyEncounter = (canAttemptEnemyEncounterThisHour || canAttemptEnemyEncounterThisMinute) && !entityChunkManager.anyEnemiesNearby(playerPosition);
 	if (canAttemptEnemyEncounter)
 	{
 		// Roll for random encounter.

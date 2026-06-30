@@ -2041,7 +2041,25 @@ void EntityChunkManager::setCitizenBehaviorState(EntityInstanceID id, EntityCiti
 	}
 }
 
-bool EntityChunkManager::anyEnemiesPreventingPlayerRest(WorldDouble3 playerPosition) const
+bool EntityChunkManager::anyCitizensNearby(WorldDouble3 position) const
+{
+	constexpr double distanceLimitSqr = PlayerConstants::SAFE_SLEEP_DISTANCE * PlayerConstants::SAFE_SLEEP_DISTANCE;
+
+	for (const EntityInstanceID entityInstID : this->citizenEntityInstIDs)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+		const double distanceSqr = (entityPosition - position).lengthSquared();
+		if (distanceSqr <= distanceLimitSqr)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool EntityChunkManager::anyEnemiesNearby(WorldDouble3 position) const
 {
 	constexpr double distanceLimitSqr = PlayerConstants::SAFE_SLEEP_DISTANCE * PlayerConstants::SAFE_SLEEP_DISTANCE;
 
@@ -2055,7 +2073,7 @@ bool EntityChunkManager::anyEnemiesPreventingPlayerRest(WorldDouble3 playerPosit
 		}
 
 		const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
-		const double distanceSqr = (entityPosition - playerPosition).lengthSquared();
+		const double distanceSqr = (entityPosition - position).lengthSquared();
 		if (distanceSqr <= distanceLimitSqr)
 		{
 			return true;

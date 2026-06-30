@@ -1172,7 +1172,7 @@ void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
 
 		const Player &player = game.player;
 		const WorldDouble3 playerTravelPosition = player.getEyePosition();
-		const bool isPlayerSafeToTravel = !entityChunkManager.anyEnemiesPreventingPlayerRest(playerTravelPosition);
+		const bool isPlayerSafeToTravel = !entityChunkManager.anyEnemiesNearby(playerTravelPosition);
 		const bool isPlayerInBoat = false; // @todo vehicle support
 		const bool isPlayerAllowedToTravel = mapType != MapType::Interior;
 
@@ -1247,7 +1247,7 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 
 	const Player &player = game.player;
 	const WorldDouble3 playerRestPosition = player.getEyePosition();
-	const bool isPlayerSafeForResting = !entityChunkManager.anyEnemiesPreventingPlayerRest(playerRestPosition);
+	const bool isPlayerSafeForResting = !entityChunkManager.anyEnemiesNearby(playerRestPosition);
 	const bool isPlayerAllowedToRest = (mapType != MapType::City) && player.groundState.onGround && !player.groundState.isSwimming;
 	
 	std::string text;
