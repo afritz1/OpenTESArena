@@ -1234,9 +1234,11 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 		text = "Camping modal not implemented.";
 	}
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
+	// @todo put gameState.setIsCamping(true/false) in modal buttons, or maybe make it a function of a GameState::remainingRestHours?
+	game.gameState.tickGameClock(250.0, game);
+	text += "\n(debug: sleeping a while)";
 
-	// @todo gameState.setIsCamping(true/false) in modal buttons, or maybe make it a function of a GameState::remainingRestHours?
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpTextAlignment);
 }
 
 void GameWorldUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)

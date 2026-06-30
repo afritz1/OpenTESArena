@@ -164,10 +164,6 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_r));
 			defs.emplace_back(makeKeyDef(
-				InputActionName::Camp,
-				InputStateType::EndPerform, // @temp for testing fast forward with hotkey
-				SDLK_r));
-			defs.emplace_back(makeKeyDef(
 				InputActionName::CastMagic,
 				InputStateType::BeginPerform,
 				SDLK_c));
