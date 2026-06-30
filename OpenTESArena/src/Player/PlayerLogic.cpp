@@ -481,6 +481,8 @@ namespace PlayerLogic
 		Player &player = game.player;
 		const bool isPlayerParalyzed = player.effectsState.isParalyzed();
 
+		Random &random = game.random;
+
 		if (isPrimaryInteraction)
 		{
 			const EntityInstanceID entityInstID = entityHit.id;
@@ -534,9 +536,38 @@ namespace PlayerLogic
 					{
 						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
 
-						const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;						
+						const ArenaTemplateDat &templateDat = TextAssetLibrary::getInstance().templateDat;
 
-						GameWorldUI::showTextPopUp("Pickpocketing not implemented.", GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+						constexpr double pickpocketGoldChance = 0.20; // @todo original chances
+						constexpr double pickpocketJunkChance = 0.90;
+						const double pickpocketTypeRoll = random.nextReal();
+						const ArenaTemplateDatEntry *pickpocketResultTemplateDatEntry = nullptr;
+						if (pickpocketTypeRoll <= pickpocketGoldChance)
+						{
+							constexpr int pickpocketGoldMin = 1;
+							constexpr int pickpocketGoldMax = 5;
+							const int pickpocketGoldAmount = pickpocketGoldMin + random.next(pickpocketGoldMax);
+							pickpocketResultTemplateDatEntry = &templateDat.getEntry(1379 + (pickpocketGoldAmount - 1));
+							player.gold += pickpocketGoldAmount;
+						}
+						else if (pickpocketTypeRoll <= pickpocketJunkChance)
+						{
+							pickpocketResultTemplateDatEntry = &templateDat.getEntry(1384);
+						}
+
+						if (pickpocketResultTemplateDatEntry != nullptr)
+						{
+							const int entryVariantIndex = random.next(static_cast<int>(pickpocketResultTemplateDatEntry->values.size()));
+							DebugAssertIndex(pickpocketResultTemplateDatEntry->values, entryVariantIndex);
+							std::string pickpocketResultString = pickpocketResultTemplateDatEntry->values[entryVariantIndex];
+							pickpocketResultString = String::distributeNewlines(pickpocketResultString, 60);
+							GameWorldUI::showTextPopUp(pickpocketResultString.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
+						}
+						else
+						{
+							gameState.queueCityGuardEncounter(game);
+							GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
+						}
 					}
 				}
 				break;
@@ -640,7 +671,6 @@ namespace PlayerLogic
 							const bool canAttemptLockpicking = lockState.isLocked;
 							if (canAttemptLockpicking)
 							{
-								Random &random = game.random;
 								const bool isLockpickingSuccessful = random.nextBool(); // @todo use original chances
 								if (isLockpickingSuccessful)
 								{
