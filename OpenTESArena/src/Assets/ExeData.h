@@ -565,6 +565,19 @@ struct ExeDataServices
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 
+struct ExeDataThieving
+{
+	// When interaction is in 'thieving' mode.
+	std::string thievingInteractionType;
+
+	std::string thievingSuccess;
+	std::string thievingSuccessChest;
+	std::string thievingFailure;
+	std::string thievingFailureChest;
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataTravel
 {
 	// Location format texts when clicking on a location on a province map.
@@ -697,6 +710,7 @@ struct ExeData
 	ExeDataRaces races;
 	ExeDataServices services;
 	ExeDataStatus status;
+	ExeDataThieving thieving;
 	ExeDataTravel travel;
 	ExeDataUI ui;
 	ExeDataRaisedPlatforms raisedPlatforms;

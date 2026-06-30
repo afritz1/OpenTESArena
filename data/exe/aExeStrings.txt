@@ -287,6 +287,13 @@ EnemyCorpseGold=0x403C0
 CitizenCorpseGold=0x41D86
 ReadyToLevelUp=0x405E1
 
+[Thieving]
+ThievingInteractionType=0x411B8
+ThievingSuccess=0x4325B
+ThievingSuccessChest=0x432A1
+ThievingFailure=0x43250
+ThievingFailureChest=0x4328D
+
 [Travel]
 LocationFormatTexts=0x374AD
 DayPrediction=0x374F3

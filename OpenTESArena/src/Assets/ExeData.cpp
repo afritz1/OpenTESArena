@@ -1053,6 +1053,31 @@ bool ExeDataStatus::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	return true;
 }
 
+bool ExeDataThieving::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
+{
+	const std::string sectionName = "Thieving";
+	const KeyValueFileSection *section = keyValueFile.findSection(sectionName);
+	if (section == nullptr)
+	{
+		DebugLogWarningFormat("Couldn't find \"%s\" section in .exe strings file.", sectionName.c_str());
+		return false;
+	}
+
+	const int thievingInteractionTypeOffset = GetExeAddress(*section, "ThievingInteractionType");
+	const int thievingSuccessOffset = GetExeAddress(*section, "ThievingSuccess");
+	const int thievingSuccessChestOffset = GetExeAddress(*section, "ThievingSuccessChest");
+	const int thievingFailureOffset = GetExeAddress(*section, "ThievingFailure");
+	const int thievingFailureChestOffset = GetExeAddress(*section, "ThievingFailureChest");
+
+	this->thievingInteractionType = GetExeStringNullTerminated(exeBytes, thievingInteractionTypeOffset);
+	this->thievingSuccess = GetExeStringNullTerminated(exeBytes, thievingSuccessOffset);
+	this->thievingSuccessChest = GetExeStringNullTerminated(exeBytes, thievingSuccessChestOffset);
+	this->thievingFailure = GetExeStringNullTerminated(exeBytes, thievingFailureOffset);
+	this->thievingFailureChest = GetExeStringNullTerminated(exeBytes, thievingFailureChestOffset);
+
+	return true;
+}
+
 bool ExeDataTravel::init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile)
 {
 	const std::string sectionName = "Travel";
@@ -1266,6 +1291,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->quests.init(exeBytes, keyValueFile);
 	success &= this->races.init(exeBytes, keyValueFile);
 	success &= this->status.init(exeBytes, keyValueFile);
+	success &= this->thieving.init(exeBytes, keyValueFile);
 	success &= this->travel.init(exeBytes, keyValueFile);
 	success &= this->ui.init(exeBytes, keyValueFile);
 	success &= this->raisedPlatforms.init(exeBytes, keyValueFile);
