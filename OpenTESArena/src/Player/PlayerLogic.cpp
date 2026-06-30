@@ -503,12 +503,17 @@ namespace PlayerLogic
 				EntityCombatState &combatState = entityChunkManager.combatStates.get(entityInst.combatStateID);
 				if (!combatState.isDying)
 				{
+					if (interactionType != GameWorldInteractionType::Default)
+					{
+						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+					}
+					
 					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef);
 				}
 
-				if (combatState.isDead && !isPlayerParalyzed)
+				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE && !isPlayerParalyzed && combatState.isDead)
 				{
-					if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE)
+					if (interactionType == GameWorldInteractionType::Default)
 					{
 						if (!combatState.hasBeenLootedBefore)
 						{
@@ -519,6 +524,10 @@ namespace PlayerLogic
 						{
 							GameWorldUiController::onEnemyCorpseInteracted(game, entityInstID, entityDef);
 						}
+					}
+					else
+					{
+						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
 					}
 				}
 
