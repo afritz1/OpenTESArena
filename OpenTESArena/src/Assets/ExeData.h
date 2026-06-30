@@ -610,6 +610,11 @@ struct ExeDataTravel
 	// Province indices into the staff dungeon splash filenames.
 	uint8_t staffDungeonSplashIndices[8];
 
+	// Popup warnings when opening world map.
+	std::string notAllowedToTravel;
+	std::string notAllowedToTravelInBoat;
+	std::string notSafeToTravel;
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

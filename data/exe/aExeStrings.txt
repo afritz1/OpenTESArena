@@ -304,6 +304,9 @@ ArrivalCenterProvinceLocation=0x42298
 SearchTitleText=0x42127
 StaffDungeonSplashes=0x432CA
 StaffDungeonSplashIndices=0x432C2
+NotAllowedToTravel=0x41369
+NotAllowedToTravelInBoat=0x413B2
+NotSafeToTravel=0x41386
 
 [UI]
 ChooseClassList=0x40816

@@ -1079,6 +1079,9 @@ bool ExeDataTravel::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	const int searchTitleTextOffset = GetExeAddress(*section, "SearchTitleText");
 	const int staffDungeonSplashesOffset = GetExeAddress(*section, "StaffDungeonSplashes");
 	const int staffDungeonSplashIndicesOffset = GetExeAddress(*section, "StaffDungeonSplashIndices");
+	const int notAllowedToTravelOffset = GetExeAddress(*section, "NotAllowedToTravel");
+	const int notAllowedToTravelInBoatOffset = GetExeAddress(*section, "NotAllowedToTravelInBoat");
+	const int notSafeToTravelOffset = GetExeAddress(*section, "NotSafeToTravel");
 
 	initStringArrayNullTerminated(this->locationFormatTexts, exeBytes, locationFormatTextsOffset);
 	initStringArrayNullTerminated(this->dayPrediction, exeBytes, dayPredictionOffset);
@@ -1096,6 +1099,9 @@ bool ExeDataTravel::init(Span<const std::byte> exeBytes, const KeyValueFile &key
 	this->searchTitleText = GetExeStringNullTerminated(exeBytes, searchTitleTextOffset);
 	initStringArrayNullTerminated(this->staffDungeonSplashes, exeBytes, staffDungeonSplashesOffset);
 	initInt8Array(this->staffDungeonSplashIndices, exeBytes, staffDungeonSplashIndicesOffset);
+	this->notAllowedToTravel = GetExeStringNullTerminated(exeBytes, notAllowedToTravelOffset);
+	this->notAllowedToTravelInBoat = GetExeStringNullTerminated(exeBytes, notAllowedToTravelInBoatOffset);
+	this->notSafeToTravel = GetExeStringNullTerminated(exeBytes, notSafeToTravelOffset);
 
 	return true;
 }

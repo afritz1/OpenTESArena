@@ -1165,7 +1165,39 @@ void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
 	}
 	else if (mouseButtonType == MouseButtonType::Right)
 	{
-		game.setNextContext(WorldMapUI::ContextName);
+		const GameState &gameState = game.gameState;
+		const MapType mapType = gameState.getActiveMapType();
+		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+		const Player &player = game.player;
+		const WorldDouble3 playerTravelPosition = player.getEyePosition();
+		const bool isPlayerSafeToTravel = !entityChunkManager.anyEnemiesPreventingPlayerRest(playerTravelPosition);
+		const bool isPlayerInBoat = false; // @todo vehicle support
+		const bool isPlayerAllowedToTravel = mapType != MapType::Interior;
+
+		std::string text;
+		if (!isPlayerSafeToTravel)
+		{
+			text = exeData.travel.notSafeToTravel;
+		}
+		else if (isPlayerInBoat)
+		{
+			text = exeData.travel.notAllowedToTravelInBoat;
+		}
+		else if (!isPlayerAllowedToTravel)
+		{
+			text = exeData.travel.notAllowedToTravel;
+		}
+
+		if (!text.empty())
+		{
+			GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+		}
+		else
+		{
+			game.setNextContext(WorldMapUI::ContextName);
+		}
 	}
 	else
 	{
