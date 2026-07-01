@@ -6,6 +6,7 @@ namespace InputActionMapName
 	constexpr const char *Common = "Common"; // Accept/cancel, etc.. Globally available to all UI.
 
 	constexpr const char *Automap = "Automap";
+	constexpr const char *Camping = "Camping";
 	constexpr const char *CharacterCreation = "CharacterCreation"; // Save/reroll attributes.
 	constexpr const char *CharacterEquipment = "CharacterEquipment";
 	constexpr const char *CharacterSheet = "CharacterSheet";
@@ -19,6 +20,7 @@ namespace InputActionMapName
 		Common,
 
 		Automap,
+		Camping,
 		CharacterCreation,
 		CharacterEquipment,
 		CharacterSheet,

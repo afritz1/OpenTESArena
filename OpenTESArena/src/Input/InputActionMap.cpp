@@ -87,6 +87,17 @@ namespace
 				InputStateType::BeginPerform,
 				SDLK_n));
 		}
+		else if (StringView::equals(mapName, InputActionMapName::Camping))
+		{
+			defs.emplace_back(makeKeyDef(
+				InputActionName::CampManualHours,
+				InputStateType::BeginPerform,
+				SDLK_c));
+			defs.emplace_back(makeKeyDef(
+				InputActionName::CampUntilHealed,
+				InputStateType::BeginPerform,
+				SDLK_u));
+		}
 		else if (StringView::equals(mapName, InputActionMapName::CharacterCreation))
 		{
 			defs.emplace_back(makeKeyDef(

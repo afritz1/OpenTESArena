@@ -46,6 +46,10 @@ namespace InputActionName
 	constexpr const char *SaveAttributes = "SaveAttributes";
 	constexpr const char *RerollAttributes = "RerollAttributes";
 
+	// Camping.
+	constexpr const char *CampManualHours = "CampManualHours";
+	constexpr const char *CampUntilHealed = "CampUntilHealed";
+
 	// Debug.
 	constexpr const char *DebugProfiler = "DebugProfiler";
 }
