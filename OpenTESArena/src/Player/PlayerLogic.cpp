@@ -492,6 +492,9 @@ namespace PlayerLogic
 			const ChunkInt2 entityChunkPos = entityCoord.chunk;
 			const VoxelInt3 entityVoxel = VoxelUtils::pointToVoxel(entityCoord.point, ceilingScale);
 
+			const bool passesLootDistanceTest = hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE;
+			const bool passesCitizenDistanceTest = hit.t <= ArenaSelectionUtils::CITIZEN_MAX_DISTANCE;
+
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			const EntityDefinitionType entityType = entityDef.type;
 
@@ -511,7 +514,7 @@ namespace PlayerLogic
 					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef);
 				}
 
-				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE && !isPlayerParalyzed && combatState.isDead)
+				if (passesLootDistanceTest && !isPlayerParalyzed && combatState.isDead)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
@@ -535,7 +538,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Citizen:
 			{
-				if (hit.t <= ArenaSelectionUtils::CITIZEN_MAX_DISTANCE && !isPlayerParalyzed)
+				if (passesCitizenDistanceTest && !isPlayerParalyzed)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
@@ -600,7 +603,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Item:
 			{
-				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE && !isPlayerParalyzed)
+				if (passesLootDistanceTest && !isPlayerParalyzed)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
@@ -649,7 +652,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Container:
 			{
-				if (hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE && !isPlayerParalyzed)
+				if (passesLootDistanceTest && !isPlayerParalyzed)
 				{
 					const ContainerEntityDefinition &containerDef = entityDef.container;
 					const ContainerEntityDefinitionType containerDefType = containerDef.type;
