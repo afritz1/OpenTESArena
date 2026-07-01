@@ -6,37 +6,25 @@
 #include "components/utilities/Buffer.h"
 #include "components/utilities/Buffer2D.h"
 
-class FontDefinition
-{
-public:
-	// Mapping of UTF-8 character to unique ID.
-	using CharID = int;
+using FontDefinitionPixel = bool;
+using FontDefinitionCharacter = Buffer2D<FontDefinitionPixel>;
 
-	// If a pixel is set, it contributes to the character's appearance.
-	// @todo: if alpha-blending is desired then change bool to float.
-	using Pixel = bool;
-	using Character = Buffer2D<Pixel>;
-private:
-	Buffer<Character> characters;
-	std::unordered_map<std::string, CharID> charIDs;
+// Points to a presentable character in the font. -1 means not presentable (like a tab).
+using FontDefinitionCharacterID = int;
+
+struct FontDefinition
+{
+	Buffer<FontDefinitionCharacter> characters;
+	std::unordered_map<std::string, FontDefinitionCharacterID> charIDs;
 	std::string name;
+
+	// The height in pixels for all characters in the font. Determines the height of a row of text.
 	int characterHeight;
 
-	static bool tryMakeCharLookupString(const char *c, std::string *outString);
-public:
 	FontDefinition();
 
 	bool init(const char *filename);
 
-	// Gets the uniquely-identifying name of this font.
-	const std::string &getName() const;
-	
-	// Gets the height in pixels for all characters in the font.
-	// This can be used to determine the height of a row of text.
-	int getCharacterHeight() const;
-
-	// Attempts to get the character ID associated with the given UTF-8 character.
-	bool tryGetCharacterID(const char *c, CharID *outID) const;
-
-	const Character &getCharacter(CharID id) const;
+	const FontDefinitionCharacter &getCharacter(FontDefinitionCharacterID id) const;
+	bool tryGetCharacterID(const char *charUtf8, FontDefinitionCharacterID *outID) const;
 };

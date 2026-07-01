@@ -7,6 +7,28 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/String.h"
 
+namespace
+{
+	bool TryMakeCharLookupString(const char *charUtf8, std::string *outString)
+	{
+		if (String::isNullOrEmpty(charUtf8))
+		{
+			DebugLogWarning("Can't make look-up string from null/empty UTF-8 character.");
+			return false;
+		}
+
+		// For now, only support ASCII.
+		if (std::strlen(charUtf8) != 1)
+		{
+			DebugLogWarning("Non-ASCII character encodings not supported yet.");
+			return false;
+		}
+
+		*outString = std::string(charUtf8);
+		return true;
+	}
+}
+
 FontDefinition::FontDefinition()
 {
 	this->characterHeight = -1;
@@ -17,7 +39,7 @@ bool FontDefinition::init(const char *filename)
 	FontFile fontFile;
 	if (!fontFile.init(filename))
 	{
-		DebugLogWarning("Could not init font file \"" + std::string(filename) + "\".");
+		DebugLogWarningFormat("Could not init font file \"%s\".", filename);
 		return false;
 	}
 
@@ -27,86 +49,55 @@ bool FontDefinition::init(const char *filename)
 
 	for (int i = 0; i < this->characters.getCount(); i++)
 	{
-		Span2D<const FontFile::Pixel> srcPixels = fontFile.getPixels(i);
-		Buffer2D<Pixel> &characterPixels = this->characters.get(i);
-		characterPixels.init(srcPixels.getWidth(), characterHeight);
+		Span2D<const FontFilePixel> srcPixels = fontFile.getPixels(i);
+		Buffer2D<FontDefinitionPixel> &characterPixels = this->characters.get(i);
+		characterPixels.init(srcPixels.getWidth(), this->characterHeight);
 		std::copy(srcPixels.begin(), srcPixels.end(), characterPixels.begin());
 
 		char c;
 		if (!FontFile::tryGetChar(i, &c))
 		{
-			DebugLogWarning("Couldn't get ASCII character for index \"" + std::to_string(i) + "\".");
+			DebugLogWarningFormat("Couldn't get ASCII character at index %d.", i);
 			continue;
 		}
 
 		const std::string charUtf8(1, c);
 		std::string lookupStr;
-		if (!FontDefinition::tryMakeCharLookupString(charUtf8.c_str(), &lookupStr))
+		if (!TryMakeCharLookupString(charUtf8.c_str(), &lookupStr))
 		{
-			DebugLogWarning("Couldn't make character look-up string for \"" + charUtf8 + "\".");
+			DebugLogWarningFormat("Couldn't make character look-up string for \"%s\".", charUtf8.c_str());
 			continue;
 		}
 
-		const CharID charID = static_cast<CharID>(i);
+		const FontDefinitionCharacterID charID = static_cast<FontDefinitionCharacterID>(i);
 		this->charIDs.emplace(std::move(lookupStr), charID);
 	}
 
 	return true;
 }
 
-const std::string &FontDefinition::getName() const
-{
-	return this->name;
-}
-
-int FontDefinition::getCharacterHeight() const
-{
-	return this->characterHeight;
-}
-
-bool FontDefinition::tryMakeCharLookupString(const char *c, std::string *outString)
-{
-	if (String::isNullOrEmpty(c))
-	{
-		DebugLogWarning("Can't make look-up string from null/empty UTF-8 character.");
-		return false;
-	}
-
-	// For now, only support ASCII.
-	if (std::strlen(c) != 1)
-	{
-		DebugLogWarning("Non-ASCII character encodings not supported yet.");
-		return false;
-	}
-
-	*outString = std::string(c);
-	return true;
-}
-
-bool FontDefinition::tryGetCharacterID(const char *c, CharID *outID) const
-{
-	std::string lookupStr;
-	if (!FontDefinition::tryMakeCharLookupString(c, &lookupStr))
-	{
-		DebugLogWarning("Couldn't make character look-up string for \"" + std::string(c) + "\".");
-		return false;
-	}
-
-	const auto iter = this->charIDs.find(lookupStr);
-	if (iter != this->charIDs.end())
-	{
-		*outID = iter->second;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-const FontDefinition::Character &FontDefinition::getCharacter(CharID id) const
+const FontDefinitionCharacter &FontDefinition::getCharacter(FontDefinitionCharacterID id) const
 {
 	DebugAssert(id >= 0);
 	DebugAssert(id < this->characters.getCount());
 	return this->characters.get(id);
+}
+
+bool FontDefinition::tryGetCharacterID(const char *charUtf8, FontDefinitionCharacterID *outID) const
+{
+	std::string lookupStr;
+	if (!TryMakeCharLookupString(charUtf8, &lookupStr))
+	{
+		DebugLogWarningFormat("Couldn't make character look-up string for \"%s\".", charUtf8);
+		return false;
+	}
+
+	const auto iter = this->charIDs.find(lookupStr);
+	if (iter == this->charIDs.end())
+	{
+		return false;
+	}
+
+	*outID = iter->second;
+	return true;
 }

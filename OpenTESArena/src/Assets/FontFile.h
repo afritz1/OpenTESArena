@@ -6,17 +6,17 @@
 #include "components/utilities/Buffer2D.h"
 #include "components/utilities/Span2D.h"
 
+using FontFilePixel = bool;
+
 // This class loads a .DAT file containing font information. Each character is put
 // into its own black and white image. White pixels are part of a character, while
 // black pixels are part of the background (transparent).
 class FontFile
 {
-public:
-	using Pixel = bool;
 private:
 	// One entry per character from ASCII 32 to 127 inclusive, with space (ASCII 32)
 	// at index 0. Each letter's pixels are set (true) or unset (false).
-	Buffer<Buffer2D<Pixel>> characters;
+	Buffer<Buffer2D<FontFilePixel>> characters;
 	int characterHeight;
 public:
 	bool init(const char *filename);
@@ -29,5 +29,5 @@ public:
 
 	int getCharacterCount() const;
 	int getHeight() const;
-	Span2D<const Pixel> getPixels(int index) const;
+	Span2D<const FontFilePixel> getPixels(int index) const;
 };

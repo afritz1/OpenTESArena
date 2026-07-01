@@ -65,7 +65,7 @@ double UiListBox::getItemCurrentLocalY(int index) const
 {
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 	const FontDefinition &fontDef = fontLibrary.getDefinition(this->fontDefIndex);
-	const int itemHeight = fontDef.getCharacterHeight();
+	const int itemHeight = fontDef.characterHeight;
 	const double baseYOffset = static_cast<double>((index * (itemHeight + this->itemPixelSpacing)));
 	return baseYOffset - this->scrollPixelOffset;
 }
@@ -74,6 +74,6 @@ double UiListBox::getScrollDeltaPixels() const
 {
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 	const FontDefinition &fontDef = fontLibrary.getDefinition(this->fontDefIndex);
-	const int itemHeight = fontDef.getCharacterHeight();
+	const int itemHeight = fontDef.characterHeight;
 	return static_cast<double>(itemHeight + this->itemPixelSpacing) * this->scrollDeltaScale;
 }

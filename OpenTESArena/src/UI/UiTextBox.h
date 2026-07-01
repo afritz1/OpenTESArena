@@ -4,6 +4,7 @@
 #include <string>
 
 #include "TextRenderUtils.h"
+#include "../Assets/TextureUtils.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../Utilities/Color.h"
 
@@ -17,7 +18,7 @@ struct UiTextBoxInitInfo
 	std::string text; // Actual text for presentation.
 	std::string fontName;
 	Color defaultColor;
-	TextRenderColorOverrideInfo colorOverrideInfo;
+	PaletteID tabColorPaletteID;
 	TextAlignment alignment;
 	std::optional<TextRenderShadowInfo> shadowInfo;
 	int lineSpacing;
@@ -36,7 +37,7 @@ struct UiTextBox
 
 	int fontDefIndex; // Index in font library.
 	Color defaultColor;
-	TextRenderColorOverrideInfo colorOverrideInfo;
+	PaletteID tabColorPaletteID; // Provides a palette for tab color ('\t') lookups.
 	TextAlignment alignment;
 	std::optional<TextRenderShadowInfo> shadowInfo;
 	int lineSpacing; // Pixels between each line of text.
@@ -44,8 +45,7 @@ struct UiTextBox
 	UiTextBox();
 
 	void init(UiTextureID textureID, int textureWidth, int textureHeight, int fontDefIndex, const Color &defaultColor,
-		const TextRenderColorOverrideInfo &colorOverrideInfo, TextAlignment alignment,
-		const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing);
+		PaletteID tabColorPaletteID, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing);
 
 	void free(Renderer &renderer);
 };

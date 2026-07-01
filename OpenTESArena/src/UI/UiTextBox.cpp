@@ -7,6 +7,7 @@
 UiTextBoxInitInfo::UiTextBoxInitInfo()
 {
 	this->defaultColor = Colors::White;
+	this->tabColorPaletteID = -1;
 	this->alignment = TextAlignment::TopLeft;
 	this->lineSpacing = 0;
 }
@@ -18,13 +19,13 @@ UiTextBox::UiTextBox()
 	this->textureWidth = -1;
 	this->textureHeight = -1;
 	this->fontDefIndex = -1;
+	this->tabColorPaletteID = -1;
 	this->alignment = TextAlignment::TopLeft;
 	this->lineSpacing = -1;
 }
 
 void UiTextBox::init(UiTextureID textureID, int textureWidth, int textureHeight, int fontDefIndex, const Color &defaultColor,
-	const TextRenderColorOverrideInfo &colorOverrideInfo, TextAlignment alignment,
-	const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing)
+	PaletteID tabColorPaletteID, TextAlignment alignment, const std::optional<TextRenderShadowInfo> &shadowInfo, int lineSpacing)
 {
 	DebugAssert(textureID >= 0);
 	DebugAssert(textureWidth > 0);
@@ -37,7 +38,7 @@ void UiTextBox::init(UiTextureID textureID, int textureWidth, int textureHeight,
 	this->textureHeight = textureHeight;
 	this->fontDefIndex = fontDefIndex;
 	this->defaultColor = defaultColor;
-	this->colorOverrideInfo = colorOverrideInfo;
+	this->tabColorPaletteID = tabColorPaletteID;
 	this->alignment = alignment;
 	this->shadowInfo = shadowInfo;
 	this->lineSpacing = lineSpacing;

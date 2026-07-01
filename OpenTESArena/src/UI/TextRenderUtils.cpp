@@ -19,78 +19,7 @@ void TextRenderTextureGenInfo::init(int width, int height)
 	this->height = height;
 }
 
-TextRenderColorOverrideInfoEntry::TextRenderColorOverrideInfoEntry(int charIndex, const Color &color)
-	: color(color)
-{
-	this->charIndex = charIndex;
-}
-
-TextRenderColorOverrideInfo TextRenderColorOverrideInfo::makeFromTabColorText(const std::string_view text, const Palette &palette)
-{
-	// Technically the original game treats these as global color mode changes, not single-character overrides,
-	// so that could be better handled.
-	TextRenderColorOverrideInfo colorOverrideInfo;
-
-	for (size_t i = 0; i < text.size(); i++)
-	{
-		if ((text[i] == '\t') && (i < (text.size() - 2)))
-		{
-			const uint8_t paletteIndex = static_cast<uint8_t>(text[i + 1]);
-			const Color &paletteColor = palette[paletteIndex];
-			colorOverrideInfo.add(static_cast<int>(i), paletteColor);
-		}
-	}
-
-	return colorOverrideInfo;
-}
-
-int TextRenderColorOverrideInfo::getEntryCount() const
-{
-	return static_cast<int>(this->entries.size());
-}
-
-std::optional<int> TextRenderColorOverrideInfo::findEntryIndex(int charIndex) const
-{
-	const auto iter = std::find_if(this->entries.begin(), this->entries.end(),
-		[charIndex](const TextRenderColorOverrideInfoEntry &entry)
-	{
-		return entry.charIndex == charIndex;
-	});
-
-	if (iter != this->entries.end())
-	{
-		return static_cast<int>(std::distance(this->entries.begin(), iter));
-	}
-	else
-	{
-		return std::nullopt;
-	}
-}
-
-const Color &TextRenderColorOverrideInfo::getColor(int entryIndex) const
-{
-	DebugAssertIndex(this->entries, entryIndex);
-	return this->entries[entryIndex].color;
-}
-
-void TextRenderColorOverrideInfo::add(int charIndex, const Color &color)
-{
-	const std::optional<int> existingEntryIndex = this->findEntryIndex(charIndex);
-	if (existingEntryIndex.has_value())
-	{
-		DebugLogError("Already have color override for char index \"" + std::to_string(charIndex) + "\".");
-		return;
-	}
-
-	this->entries.emplace_back(TextRenderColorOverrideInfoEntry(charIndex, color));
-}
-
-void TextRenderColorOverrideInfo::clear()
-{
-	this->entries.clear();
-}
-
-TextRenderShadowInfo::TextRenderShadowInfo(int offsetX, int offsetY, const Color &color)
+TextRenderShadowInfo::TextRenderShadowInfo(int offsetX, int offsetY, Color color)
 	: color(color)
 {
 	this->offsetX = offsetX;
@@ -103,11 +32,16 @@ TextRenderShadowInfo::TextRenderShadowInfo()
 	this->offsetY = 0;
 }
 
-void TextRenderShadowInfo::init(int offsetX, int offsetY, const Color &color)
+void TextRenderShadowInfo::init(int offsetX, int offsetY, Color color)
 {
 	this->offsetX = offsetX;
 	this->offsetY = offsetY;
 	this->color = color;
+}
+
+TextRenderTabColorOverrideEntry::TextRenderTabColorOverrideEntry()
+{
+	this->charIdIndex = -1;
 }
 
 std::string TextRenderUtils::makeWorstCaseText(int charCount)
@@ -121,27 +55,20 @@ Buffer<std::string_view> TextRenderUtils::getTextLines(const std::string_view te
 	return StringView::split(text, '\n');
 }
 
-Buffer<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const std::string_view line, const FontDefinition &fontDef)
+Buffer<FontDefinitionCharacterID> TextRenderUtils::getLineFontCharIDs(const std::string_view line, const FontDefinition &fontDef)
 {
-	FontDefinition::CharID fallbackCharID;
-	if (!fontDef.tryGetCharacterID("?", &fallbackCharID))
-	{
-		DebugCrash("Couldn't get fallback font character ID from font \"" + fontDef.getName() + "\".");
-	}
+	const int charCount = static_cast<int>(line.size());
 
-	const int lineLength = static_cast<int>(line.size());
-
-	// @todo: support more than ASCII
-	Buffer<FontDefinition::CharID> charIDs(lineLength);
-	for (int i = 0; i < lineLength; i++)
+	Buffer<FontDefinitionCharacterID> charIDs(charCount);
+	for (int i = 0; i < charCount; i++)
 	{
-		const char c = line[i];
+		const char c = line[i]; // @todo: support more than ASCII
 		const std::string charUtf8(1, c);
-		FontDefinition::CharID charID;
+		FontDefinitionCharacterID charID;
 		if (!fontDef.tryGetCharacterID(charUtf8.c_str(), &charID))
 		{
-			DebugLogWarning("Couldn't get font character ID for \"" + charUtf8 + "\".");
-			charID = fallbackCharID;
+			//DebugLogWarningFormat("Character \"%s\" not renderable with font %s.", charUtf8.c_str(), fontDef.name.c_str());
+			charID = -1;
 		}
 
 		charIDs[i] = charID;
@@ -150,13 +77,47 @@ Buffer<FontDefinition::CharID> TextRenderUtils::getLineFontCharIDs(const std::st
 	return charIDs;
 }
 
-int TextRenderUtils::getLinePixelWidth(Span<const FontDefinition::CharID> charIDs,
-	const FontDefinition &fontDef, const std::optional<TextRenderShadowInfo> &shadow)
+std::vector<TextRenderTabColorOverrideEntry> TextRenderUtils::getLineTabColorOverrideEntries(const std::string_view line, const Palette *palette)
+{
+	const int charCount = static_cast<int>(line.size());
+
+	std::vector<TextRenderTabColorOverrideEntry> tabColorOverrideEntries;
+	for (int i = 0; i < charCount; i++)
+	{
+		const char c = line[i]; // @todo: support more than ASCII
+		const std::string charUtf8(1, c);
+		if ((charUtf8.size() == 1) && (charUtf8[0] == '\t') && (i < (charCount - 1)))
+		{
+			const uint8_t paletteIndex = static_cast<uint8_t>(line[i + 1]);
+			Color paletteColor = Colors::Magenta;
+			if (palette != nullptr)
+			{
+				paletteColor = (*palette)[paletteIndex];
+			}
+
+			TextRenderTabColorOverrideEntry entry;
+			entry.charIdIndex = i + 2;
+			entry.color = paletteColor;
+			tabColorOverrideEntries.emplace_back(std::move(entry));
+			i += 2;
+		}
+	}
+
+	return tabColorOverrideEntries;
+}
+
+int TextRenderUtils::getLinePixelWidth(Span<const FontDefinitionCharacterID> charIDs, const FontDefinition &fontDef,
+	const std::optional<TextRenderShadowInfo> &shadow)
 {
 	int width = 0;
-	for (const FontDefinition::CharID charID : charIDs)
+	for (const FontDefinitionCharacterID charID : charIDs)
 	{
-		const FontDefinition::Character &fontChar = fontDef.getCharacter(charID);
+		if (charID < 0)
+		{
+			continue;
+		}
+
+		const FontDefinitionCharacter &fontChar = fontDef.getCharacter(charID);
 		width += fontChar.getWidth();
 	}
 
@@ -171,7 +132,7 @@ int TextRenderUtils::getLinePixelWidth(Span<const FontDefinition::CharID> charID
 int TextRenderUtils::getLinePixelWidth(const std::string_view line, const FontDefinition &fontDef,
 	const std::optional<TextRenderShadowInfo> &shadow)
 {
-	const Buffer<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
+	const Buffer<FontDefinitionCharacterID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
 	return TextRenderUtils::getLinePixelWidth(charIDs, fontDef, shadow);
 }
 
@@ -192,8 +153,7 @@ int TextRenderUtils::getLinesPixelHeight(Span<const std::string_view> textLines,
 	const std::optional<TextRenderShadowInfo> &shadow, int lineSpacing)
 {
 	const int lineCount = textLines.getCount();
-	return (fontDef.getCharacterHeight() * lineCount) + (lineSpacing * std::max(0, lineCount - 1)) +
-		(shadow.has_value() ? std::abs(shadow->offsetY) : 0);
+	return (fontDef.characterHeight * lineCount) + (lineSpacing * std::max(0, lineCount - 1)) + (shadow.has_value() ? std::abs(shadow->offsetY) : 0);
 }
 
 TextRenderTextureGenInfo TextRenderUtils::makeTextureGenInfo(Span<const std::string_view> textLines,
@@ -269,7 +229,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(Span<const std::string_view> 
 		// The top text line is against the top of the texture.
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
-			offsets[i].y = (fontDef.getCharacterHeight() + lineSpacing) * i;
+			offsets[i].y = (fontDef.characterHeight + lineSpacing) * i;
 		}
 	}
 	else if ((alignment == TextAlignment::MiddleLeft) ||
@@ -281,8 +241,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(Span<const std::string_view> 
 
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
-			offsets[i].y = ((textureHeight / 2) - (totalTextHeight / 2)) +
-				((fontDef.getCharacterHeight() + lineSpacing) * i);
+			offsets[i].y = ((textureHeight / 2) - (totalTextHeight / 2)) + ((fontDef.characterHeight + lineSpacing) * i);
 		}
 	}
 	else if ((alignment == TextAlignment::BottomLeft) ||
@@ -292,8 +251,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(Span<const std::string_view> 
 		// The bottom text line is against the bottom of the texture.
 		for (int i = 0; i < textLines.getCount(); i++)
 		{
-			offsets[i].y = textureHeight - fontDef.getCharacterHeight() -
-				((fontDef.getCharacterHeight() + lineSpacing) * (textLines.getCount() - 1 - i));
+			offsets[i].y = textureHeight - fontDef.characterHeight - ((fontDef.characterHeight + lineSpacing) * (textLines.getCount() - 1 - i));
 		}
 	}
 	else
@@ -304,8 +262,7 @@ Buffer<Int2> TextRenderUtils::makeAlignmentOffsets(Span<const std::string_view> 
 	return offsets;
 }
 
-void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
-	Span2D<uint32_t> &outBuffer)
+void TextRenderUtils::drawChar(const FontDefinitionCharacter &fontChar, int dstX, int dstY, Color textColor, Span2D<uint32_t> outBuffer)
 {
 	// @todo: clip loop ranges instead of checking in loop.
 	for (int y = dstY; y < (dstY + fontChar.getHeight()); y++)
@@ -327,33 +284,40 @@ void TextRenderUtils::drawChar(const FontDefinition::Character &fontChar, int ds
 	}
 }
 
-void TextRenderUtils::drawTextLine(Span<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
-	int dstX, int dstY, const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-	Span2D<uint32_t> &outBuffer)
+void TextRenderUtils::drawTextLine(Span<const FontDefinitionCharacterID> charIDs, const FontDefinition &fontDef,
+	int dstX, int dstY, Color textColor, Span<const TextRenderTabColorOverrideEntry> tabColorOverrideEntries,
+	const TextRenderShadowInfo *shadow, Span2D<uint32_t> outBuffer)
 {
-	auto drawLine = [&charIDs, &fontDef, colorOverrideInfo, &outBuffer](
-		int x, int y, const Color &color, bool allowColorOverrides)
+	auto drawLine = [&charIDs, &fontDef, &tabColorOverrideEntries, &outBuffer](int x, int y, Color color, bool allowTabColors)
 	{
 		int currentX = 0;
+		Color currentColor = color;
+
 		for (int i = 0; i < charIDs.getCount(); i++)
 		{
-			const FontDefinition::CharID charID = charIDs[i];
-			const FontDefinition::Character &fontChar = fontDef.getCharacter(charID);
-			const Color &charColor = [colorOverrideInfo, &color, allowColorOverrides, i]() -> const Color&
+			const FontDefinitionCharacterID charID = charIDs[i];
+			if (charID < 0)
 			{
-				if (allowColorOverrides)
+				// Non-presentable character (like a tab '\t').
+				continue;
+			}
+
+			if (allowTabColors)
+			{
+				const auto tabColorIter = std::find_if(tabColorOverrideEntries.begin(), tabColorOverrideEntries.end(),
+					[i](const TextRenderTabColorOverrideEntry &entry)
 				{
-					const std::optional<int> entryIndex = colorOverrideInfo->findEntryIndex(i);
-					if (entryIndex.has_value())
-					{
-						return colorOverrideInfo->getColor(*entryIndex);
-					}
+					return entry.charIdIndex == i;
+				});
+
+				if (tabColorIter != tabColorOverrideEntries.end())
+				{
+					currentColor = tabColorIter->color;
 				}
+			}
 
-				return color;
-			}();
-
-			TextRenderUtils::drawChar(fontChar, x + currentX, y, charColor, outBuffer);
+			const FontDefinitionCharacter &fontChar = fontDef.getCharacter(charID);
+			TextRenderUtils::drawChar(fontChar, x + currentX, y, currentColor, outBuffer);
 			currentX += fontChar.getWidth();
 		}
 	};
@@ -367,26 +331,22 @@ void TextRenderUtils::drawTextLine(Span<const FontDefinition::CharID> charIDs, c
 
 		const int shadowDstX = dstX + std::max(shadow->offsetX, 0);
 		const int shadowDstY = dstY + std::max(shadow->offsetY, 0);
-		constexpr bool allowShadowColorOverrides = false;
-		drawLine(shadowDstX, shadowDstY, shadow->color, allowShadowColorOverrides);
+		drawLine(shadowDstX, shadowDstY, shadow->color, false);
 	}
 
-	const bool allowForegroundColorOverrides = colorOverrideInfo != nullptr;
-	drawLine(foregroundDstX, foregroundDstY, textColor, allowForegroundColorOverrides);
+	drawLine(foregroundDstX, foregroundDstY, textColor, true);
 }
 
 void TextRenderUtils::drawTextLine(const std::string_view line, const FontDefinition &fontDef, int dstX, int dstY,
-	const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-	Span2D<uint32_t> &outBuffer)
+	Color textColor, const Palette *tabColorPalette, const TextRenderShadowInfo *shadow, Span2D<uint32_t> outBuffer)
 {
-	const Buffer<FontDefinition::CharID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
-	const Span<const FontDefinition::CharID> charIdsView(charIDs);
-	TextRenderUtils::drawTextLine(charIdsView, fontDef, dstX, dstY, textColor, colorOverrideInfo, shadow, outBuffer);
+	const Buffer<FontDefinitionCharacterID> charIDs = TextRenderUtils::getLineFontCharIDs(line, fontDef);
+	const std::vector<TextRenderTabColorOverrideEntry> tabColorOverrideEntries = TextRenderUtils::getLineTabColorOverrideEntries(line, tabColorPalette);
+	TextRenderUtils::drawTextLine(charIDs, fontDef, dstX, dstY, textColor, tabColorOverrideEntries, shadow, outBuffer);
 }
 
-void TextRenderUtils::drawTextLines(Span<const std::string_view> textLines, const FontDefinition &fontDef,
-	int dstX, int dstY, const Color &textColor, TextAlignment alignment, int lineSpacing,
-	const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow, Span2D<uint32_t> &outBuffer)
+void TextRenderUtils::drawTextLines(Span<const std::string_view> textLines, const FontDefinition &fontDef, int dstX, int dstY,
+	Color textColor, const Palette *tabColorPalette, TextAlignment alignment, int lineSpacing, const TextRenderShadowInfo *shadow, Span2D<uint32_t> outBuffer)
 {
 	// @todo: should pass std::optional parameter instead
 	std::optional<TextRenderShadowInfo> shadowInfo;
@@ -397,8 +357,7 @@ void TextRenderUtils::drawTextLines(Span<const std::string_view> textLines, cons
 
 	const int textureWidth = outBuffer.getWidth();
 	const int textureHeight = outBuffer.getHeight();
-	const Buffer<Int2> offsets = TextRenderUtils::makeAlignmentOffsets(
-		textLines, textureWidth, textureHeight, alignment, fontDef, shadowInfo, lineSpacing);
+	const Buffer<Int2> offsets = TextRenderUtils::makeAlignmentOffsets(textLines, textureWidth, textureHeight, alignment, fontDef, shadowInfo, lineSpacing);
 	DebugAssert(offsets.getCount() == textLines.getCount());
 
 	// Draw text to texture.
@@ -406,8 +365,7 @@ void TextRenderUtils::drawTextLines(Span<const std::string_view> textLines, cons
 	for (int i = 0; i < textLines.getCount(); i++)
 	{
 		const std::string_view textLine = textLines[i];
-		const Int2 &offset = offsets[i];
-		TextRenderUtils::drawTextLine(textLine, fontDef, dstX + offset.x, dstY + offset.y, textColor,
-			colorOverrideInfo, shadow, outBuffer);
+		const Int2 offset = offsets[i];
+		TextRenderUtils::drawTextLine(textLine, fontDef, dstX + offset.x, dstY + offset.y, textColor, tabColorPalette, shadow, outBuffer);
 	}
 }

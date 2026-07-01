@@ -93,8 +93,6 @@ namespace ChooseAttributesUiModel
 	std::string getMessageBoxTitleText(Game &game);
 	std::string getMessageBoxSaveText(Game &game);
 	std::string getMessageBoxRerollText(Game &game);
-	TextRenderColorOverrideInfo getMessageBoxSaveColorOverrideInfo(Game &game);
-	TextRenderColorOverrideInfo getMessageBoxRerollColorOverrideInfo(Game &game);
 
 	std::string getBonusPointsRemainingText(Game &game);
 	std::string getAppearanceText(Game &game);
@@ -250,6 +248,8 @@ namespace ChooseAttributesUiView
 	MessageBoxBackgroundProperties getMessageBoxBackgroundProperties();
 	MessageBoxTitleProperties getMessageBoxTitleProperties(const std::string_view text, const FontLibrary &fontLibrary);
 	MessageBoxItemsProperties getMessageBoxItemsProperties(const FontLibrary &fontLibrary);
+
+	PaletteID getMessageBoxTextBoxPaletteID(TextureManager &textureManager);
 
 	int getDistributePointsTextBoxTextureWidth(int textWidth);
 	int getDistributePointsTextBoxTextureHeight(int textHeight);

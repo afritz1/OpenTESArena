@@ -29,7 +29,7 @@ bool FontFile::init(const char *filename)
 	Buffer<std::byte> src;
 	if (!VFS::Manager::get().read(filename, &src))
 	{
-		DebugLogError("Could not read \"" + std::string(filename) + "\".");
+		DebugLogErrorFormat("Could not read \"%s\".", filename);
 		return false;
 	}
 
@@ -97,10 +97,10 @@ bool FontFile::init(const char *filename)
 		// Use white for pixels and transparent for background.
 		FontElement &element = symbols[i];
 
-		Buffer2D<Pixel> &character = this->characters[i];
+		Buffer2D<FontFilePixel> &character = this->characters[i];
 		character.init(element.width, element.height);
 
-		Pixel *charPixels = character.begin();
+		FontFilePixel *charPixels = character.begin();
 		for (uint32_t cy = 0; cy < element.height; cy++)
 		{
 			uint16_t mask = 0x8000;
@@ -126,8 +126,7 @@ bool FontFile::tryGetCharacterIndex(char c, int *outIndex)
 	// Space (ASCII 32) is at index 0.
 	if ((c < 32) || (c > 127))
 	{
-		DebugLogWarning("Character value \"" + std::string(1, c) +
-			"\" out of range (must be ASCII 32-127).");
+		DebugLogWarningFormat("Character value \"%s\" out of range, must be ASCII 32-127.", std::string(1, c).c_str());
 		return false;
 	}
 
@@ -140,8 +139,7 @@ bool FontFile::tryGetChar(int index, char *outChar)
 	// Space (ASCII 32) is at index 0.
 	if ((index < 0) || (index > 95))
 	{
-		DebugLogWarning("Character index \"" + std::to_string(index) +
-			"\" out of range (must be 0-95).");
+		DebugLogWarningFormat("Character index %d out of range, must be 0-95.", index);
 		return false;
 	}
 
@@ -159,7 +157,7 @@ int FontFile::getHeight() const
 	return this->characterHeight;
 }
 
-Span2D<const FontFile::Pixel> FontFile::getPixels(int index) const
+Span2D<const FontFilePixel> FontFile::getPixels(int index) const
 {
 	DebugAssertIndex(this->characters, index);
 	return this->characters[index];

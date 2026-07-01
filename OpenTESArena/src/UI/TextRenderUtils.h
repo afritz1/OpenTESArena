@@ -28,42 +28,25 @@ struct TextRenderTextureGenInfo
 	void init(int width, int height);
 };
 
-struct TextRenderColorOverrideInfoEntry
-{
-	int charIndex; // Index of character in text.
-	Color color;
-
-	TextRenderColorOverrideInfoEntry(int charIndex, const Color &color);
-};
-
-// Data for replacing default text character colors with overrides.
-class TextRenderColorOverrideInfo
-{
-private:
-	std::vector<TextRenderColorOverrideInfoEntry> entries;
-public:
-	// Generates a list of color override entries from text containing the "tab-color" pattern,
-	// where an 8-bit palette index follows a '\t' character.
-	static TextRenderColorOverrideInfo makeFromTabColorText(const std::string_view text, const Palette &palette);
-
-	int getEntryCount() const;
-	std::optional<int> findEntryIndex(int charIndex) const;
-	const Color &getColor(int entryIndex) const;
-
-	void add(int charIndex, const Color &color);
-	void clear();
-};
-
 // Data for positioning a shadow within a text box.
 struct TextRenderShadowInfo
 {
 	int offsetX, offsetY;
 	Color color;
 
-	TextRenderShadowInfo(int offsetX, int offsetY, const Color &color);
+	TextRenderShadowInfo(int offsetX, int offsetY, Color color);
 	TextRenderShadowInfo();
 
-	void init(int offsetX, int offsetY, const Color &color);
+	void init(int offsetX, int offsetY, Color color);
+};
+
+// An index in the charIDs span that changes the current text rendering color. Internal to text rendering code.
+struct TextRenderTabColorOverrideEntry
+{
+	int charIdIndex;
+	Color color;
+
+	TextRenderTabColorOverrideEntry();
 };
 
 namespace TextRenderUtils
@@ -78,10 +61,13 @@ namespace TextRenderUtils
 	Buffer<std::string_view> getTextLines(const std::string_view text);
 
 	// Gets the font characters needed to render each character in the given line of text.
-	Buffer<FontDefinition::CharID> getLineFontCharIDs(const std::string_view line, const FontDefinition &fontDef);
+	Buffer<FontDefinitionCharacterID> getLineFontCharIDs(const std::string_view line, const FontDefinition &fontDef);
+
+	// Gets any tab color overrides from the text defined by a '\t' followed by an 8-bit palette index.
+	std::vector<TextRenderTabColorOverrideEntry> getLineTabColorOverrideEntries(const std::string_view line, const Palette *palette);
 
 	// Gets the number of pixels long a rendered line of characters would be.
-	int getLinePixelWidth(Span<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
+	int getLinePixelWidth(Span<const FontDefinitionCharacterID> charIDs, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow = std::nullopt);
 	int getLinePixelWidth(const std::string_view line, const FontDefinition &fontDef,
 		const std::optional<TextRenderShadowInfo> &shadow = std::nullopt);
@@ -110,15 +96,13 @@ namespace TextRenderUtils
 	// - allocate UI texture
 	// - draw text
 	// - render
-	void drawChar(const FontDefinition::Character &fontChar, int dstX, int dstY, const Color &textColor,
-		Span2D<uint32_t> &outBuffer);
-	void drawTextLine(Span<const FontDefinition::CharID> charIDs, const FontDefinition &fontDef,
-		int dstX, int dstY, const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-		Span2D<uint32_t> &outBuffer);
+	void drawChar(const FontDefinitionCharacter &fontChar, int dstX, int dstY, Color textColor, Span2D<uint32_t> outBuffer);
+	void drawTextLine(Span<const FontDefinitionCharacterID> charIDs, const FontDefinition &fontDef,
+		int dstX, int dstY, Color textColor, Span<const TextRenderTabColorOverrideEntry> tabColorOverrideEntries,
+		const TextRenderShadowInfo *shadow, Span2D<uint32_t> outBuffer);
 	void drawTextLine(const std::string_view line, const FontDefinition &fontDef, int dstX, int dstY,
-		const Color &textColor, const TextRenderColorOverrideInfo *colorOverrideInfo, const TextRenderShadowInfo *shadow,
-		Span2D<uint32_t> &outBuffer);
+		Color textColor, const Palette *tabColorPalette, const TextRenderShadowInfo *shadow, Span2D<uint32_t> outBuffer);
 	void drawTextLines(Span<const std::string_view> textLines, const FontDefinition &fontDef, int dstX, int dstY,
-		const Color &textColor, TextAlignment alignment, int lineSpacing, const TextRenderColorOverrideInfo *colorOverrideInfo,
-		const TextRenderShadowInfo *shadow, Span2D<uint32_t> &outBuffer);
+		Color textColor, const Palette *tabColorPalette, TextAlignment alignment, int lineSpacing, const TextRenderShadowInfo *shadow,
+		Span2D<uint32_t> outBuffer);
 }

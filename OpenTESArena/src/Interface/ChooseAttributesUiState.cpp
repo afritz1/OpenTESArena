@@ -337,7 +337,7 @@ void ChooseAttributesUI::create(Game &game)
 	saveRerollSaveTextBoxInitInfo.text = ChooseAttributesUiModel::getMessageBoxSaveText(game);
 	saveRerollSaveTextBoxInitInfo.fontName = ChooseAttributesUiView::MessageBoxItemFontName;
 	saveRerollSaveTextBoxInitInfo.defaultColor = ChooseAttributesUiView::MessageBoxItemTextColor;
-	saveRerollSaveTextBoxInitInfo.colorOverrideInfo = ChooseAttributesUiModel::getMessageBoxSaveColorOverrideInfo(game);
+	saveRerollSaveTextBoxInitInfo.tabColorPaletteID = ChooseAttributesUiView::getMessageBoxTextBoxPaletteID(textureManager);
 	saveRerollSaveTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
 	uiManager.createTextBox(saveRerollSaveTextBoxElementInitInfo, saveRerollSaveTextBoxInitInfo, state.saveRerollContextInstID, renderer);
 
@@ -369,7 +369,7 @@ void ChooseAttributesUI::create(Game &game)
 	saveRerollRerollTextBoxInitInfo.text = ChooseAttributesUiModel::getMessageBoxRerollText(game);
 	saveRerollRerollTextBoxInitInfo.fontName = ChooseAttributesUiView::MessageBoxItemFontName;
 	saveRerollRerollTextBoxInitInfo.defaultColor = ChooseAttributesUiView::MessageBoxItemTextColor;
-	saveRerollRerollTextBoxInitInfo.colorOverrideInfo = ChooseAttributesUiModel::getMessageBoxRerollColorOverrideInfo(game);
+	saveRerollRerollTextBoxInitInfo.tabColorPaletteID = saveRerollSaveTextBoxInitInfo.tabColorPaletteID;
 	saveRerollRerollTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
 	uiManager.createTextBox(saveRerollRerollTextBoxElementInitInfo, saveRerollRerollTextBoxInitInfo, state.saveRerollContextInstID, renderer);
 

@@ -506,7 +506,7 @@ UiElementInstanceID UiManager::createTextBox(const UiElementInitInfo &initInfo, 
 	const UiTextureID textBoxTextureID = renderer.createUiTexture(textureGenInfo.width, textureGenInfo.height);
 
 	UiTextBox &textBox = this->textBoxes.get(textBoxInstID);
-	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.colorOverrideInfo, textBoxInitInfo.alignment, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
+	textBox.init(textBoxTextureID, textureGenInfo.width, textureGenInfo.height, fontDefIndex, textBoxInitInfo.defaultColor, textBoxInitInfo.tabColorPaletteID, textBoxInitInfo.alignment, textBoxInitInfo.shadowInfo, textBoxInitInfo.lineSpacing);
 	textBox.text = textBoxInitInfo.text;
 
 	Int2 contentSize = initInfo.size;
@@ -667,7 +667,7 @@ Rect UiManager::getListBoxItemGlobalRect(UiElementInstanceID elementInstID, int 
 
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 	const FontDefinition &fontDef = fontLibrary.getDefinition(listBox.fontDefIndex);
-	const int itemHeight = fontDef.getCharacterHeight();
+	const int itemHeight = fontDef.characterHeight;
 	const double itemCurrentLocalY = listBox.getItemCurrentLocalY(itemIndex);
 	const Rect itemLocalRect(
 		0,
@@ -819,7 +819,7 @@ void UiManager::scrollListBoxDown(UiElementInstanceID elementInstID)
 
 	const FontLibrary &fontLibrary = FontLibrary::getInstance();
 	const FontDefinition &fontDef = fontLibrary.getDefinition(listBox.fontDefIndex);
-	const int itemHeight = fontDef.getCharacterHeight();
+	const int itemHeight = fontDef.characterHeight;
 
 	const int itemHeightSum = itemHeight * itemCount;
 	const int itemPaddingSum = listBox.itemPixelSpacing * std::max(0, itemCount - 1);
@@ -1441,6 +1441,7 @@ void UiManager::update(double dt, Game &game)
 		}
 	}
 
+	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
 
 	// Update dirty text boxes.
@@ -1468,10 +1469,9 @@ void UiManager::update(double dt, Game &game)
 			const FontDefinition &fontDef = fontLibrary.getDefinition(textBox.fontDefIndex);
 
 			const Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(textBox.text);
-			const TextRenderColorOverrideInfo *colorOverrideInfoPtr = (textBox.colorOverrideInfo.getEntryCount() > 0) ? &textBox.colorOverrideInfo : nullptr;
+			const Palette *tabColorPalette = (textBox.tabColorPaletteID >= 0) ? &textureManager.getPaletteHandle(textBox.tabColorPaletteID) : nullptr;
 			const TextRenderShadowInfo *shadowInfoPtr = textBox.shadowInfo.has_value() ? &(*textBox.shadowInfo) : nullptr;
-			TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, textBox.defaultColor, textBox.alignment, textBox.lineSpacing,
-				colorOverrideInfoPtr, shadowInfoPtr, texels);
+			TextRenderUtils::drawTextLines(textLines, fontDef, 0, 0, textBox.defaultColor, tabColorPalette, textBox.alignment, textBox.lineSpacing, shadowInfoPtr, texels);
 		}
 
 		renderer.unlockUiTexture(textBoxTextureID);
@@ -1499,7 +1499,7 @@ void UiManager::update(double dt, Game &game)
 
 		const FontLibrary &fontLibrary = FontLibrary::getInstance();
 		const FontDefinition &fontDef = fontLibrary.getDefinition(listBox.fontDefIndex);
-		const int itemHeight = fontDef.getCharacterHeight();
+		const int itemHeight = fontDef.characterHeight;
 
 		for (int i = 0; i < static_cast<int>(listBox.items.size()); i++)
 		{
@@ -1512,9 +1512,9 @@ void UiManager::update(double dt, Game &game)
 				itemHeight);
 
 			const Color itemColor = item.overrideColor.value_or(listBox.defaultTextColor);
-			constexpr TextRenderColorOverrideInfo *colorOverrideInfo = nullptr;
+			const Palette *tabColorPalette = nullptr; // No tab colors supported in list box text.
 			constexpr TextRenderShadowInfo *shadowInfo = nullptr;
-			TextRenderUtils::drawTextLine(item.text, fontDef, itemLocalRect.getLeft(), itemLocalRect.getTop(), itemColor, colorOverrideInfo, shadowInfo, texels);
+			TextRenderUtils::drawTextLine(item.text, fontDef, itemLocalRect.getLeft(), itemLocalRect.getTop(), itemColor, tabColorPalette, shadowInfo, texels);
 		}
 
 		renderer.unlockUiTexture(listBoxTextureID);

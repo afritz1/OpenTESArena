@@ -238,8 +238,7 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 
 	const FontDefinition &fontDef = fontLibrary.getDefinition(fontDefIndex);
 	constexpr int lineSpacing = 1;
-	TextRenderTextureGenInfo textureGenInfo =
-		TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
+	TextRenderTextureGenInfo textureGenInfo = TextRenderUtils::makeTextureGenInfo(text, fontDef, std::nullopt, lineSpacing);
 	constexpr int padding = 4;
 
 	Surface surface = Surface::createWithFormat(textureGenInfo.width + padding, textureGenInfo.height + padding,
@@ -257,8 +256,10 @@ Surface TextureUtils::createTooltip(const std::string &text, const FontLibrary &
 	Span2D<uint32_t> surfacePixels = surface.getPixels();
 
 	Buffer<std::string_view> textLines = TextRenderUtils::getTextLines(text);
+	const Palette *palette = nullptr; // No tab colors supported in tooltips.
 	constexpr TextAlignment alignment = TextAlignment::TopLeft;
-	TextRenderUtils::drawTextLines(textLines, fontDef, dstX, dstY, textColor, alignment, lineSpacing, nullptr, nullptr, surfacePixels);
+	const TextRenderShadowInfo *shadow = nullptr;
+	TextRenderUtils::drawTextLines(textLines, fontDef, dstX, dstY, textColor, palette, alignment, lineSpacing, shadow, surfacePixels);
 	
 	return surface;
 }

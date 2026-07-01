@@ -39,7 +39,7 @@ bool FontLibrary::tryGetDefinitionIndex(const char *name, int *outIndex) const
 	for (int i = 0; i < defCount; i++)
 	{
 		const FontDefinition &def = this->defs[i];
-		if (StringView::caseInsensitiveEquals(def.getName(), name))
+		if (StringView::caseInsensitiveEquals(def.name, name))
 		{
 			*outIndex = i;
 			return true;

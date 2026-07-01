@@ -584,12 +584,6 @@ std::string ChooseAttributesUiModel::getMessageBoxSaveText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesSave;
-
-	// Delete color override characters.
-	// @todo: maybe transform the string in a better way so it works with Arena '\t' colors and some kind of modern format.
-	text.erase(3, 2);
-	text.erase(0, 2);
-
 	return text;
 }
 
@@ -597,47 +591,7 @@ std::string ChooseAttributesUiModel::getMessageBoxRerollText(Game &game)
 {
 	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	std::string text = exeData.charCreation.chooseAttributesReroll;
-
-	// Delete color override characters.
-	// @todo: maybe transform the string in a better way so it works with Arena '\t' colors and some kind of modern format.
-	text.erase(3, 2);
-	text.erase(0, 2);
-
 	return text;
-}
-
-TextRenderColorOverrideInfo ChooseAttributesUiModel::getMessageBoxSaveColorOverrideInfo(Game &game)
-{
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	std::string text = exeData.charCreation.chooseAttributesSave;
-
-	auto &textureManager = game.textureManager;
-	const std::string &paletteName = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrashFormat("Couldn't get palette ID for \"%s\".", paletteName.c_str());
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	return TextRenderColorOverrideInfo::makeFromTabColorText(text, palette);
-}
-
-TextRenderColorOverrideInfo ChooseAttributesUiModel::getMessageBoxRerollColorOverrideInfo(Game &game)
-{
-	const auto &exeData = BinaryAssetLibrary::getInstance().getExeData();
-	std::string text = exeData.charCreation.chooseAttributesReroll;
-
-	auto &textureManager = game.textureManager;
-	const std::string &paletteName = ArenaPaletteName::Default;
-	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(paletteName.c_str());
-	if (!paletteID.has_value())
-	{
-		DebugCrashFormat("Couldn't get palette ID for \"%s\".", paletteName.c_str());
-	}
-
-	const Palette &palette = textureManager.getPaletteHandle(*paletteID);
-	return TextRenderColorOverrideInfo::makeFromTabColorText(text, palette);
 }
 
 std::string ChooseAttributesUiModel::getBonusPointsRemainingText(Game &game)
@@ -945,6 +899,13 @@ MessageBoxItemsProperties ChooseAttributesUiView::getMessageBoxItemsProperties(c
 		fontName,
 		textureGenInfo,
 		ChooseAttributesUiView::MessageBoxItemTextColor);
+}
+
+PaletteID ChooseAttributesUiView::getMessageBoxTextBoxPaletteID(TextureManager &textureManager)
+{
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(ArenaPaletteName::CharSheet.c_str());
+	DebugAssert(paletteID.has_value());
+	return *paletteID;
 }
 
 int ChooseAttributesUiView::getDistributePointsTextBoxTextureWidth(int textWidth)
