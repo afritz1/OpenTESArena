@@ -446,6 +446,27 @@ std::string GameWorldUiModel::getEffectTextBoxMessage(const std::string &effectN
 	return str;
 }
 
+std::string GameWorldUiModel::getCampModalTitleText(const ExeData &exeData)
+{
+	std::string text = exeData.camping.modalTitle;
+	text.pop_back(); // Clean up newline 
+	return text;
+}
+
+std::string GameWorldUiModel::getCampModalManualHoursText(const ExeData &exeData)
+{
+	std::string text = exeData.camping.modalRestManualHours;
+	text.pop_back(); // Clean up newline
+	return text;
+}
+
+std::string GameWorldUiModel::getCampModalUntilHealedText(const ExeData &exeData)
+{
+	std::string text = exeData.camping.modalRestUntilHealed;
+	text.pop_back(); // Clean up newline
+	return text;
+}
+
 DebugVoxelVisibilityQuadtreeState::DebugVoxelVisibilityQuadtreeState()
 {
 	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);
@@ -774,6 +795,13 @@ UiListBoxInitInfo GameWorldUiView::getLootListBoxProperties()
 	listBoxInitInfo.fontName = fontName;
 	listBoxInitInfo.defaultTextColor = InventoryUiView::ItemDefaultColor;
 	return listBoxInitInfo;
+}
+
+PaletteID GameWorldUiView::getCampModalTextBoxPaletteID(TextureManager &textureManager)
+{	
+	const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(ArenaPaletteName::Default.c_str());
+	DebugAssert(paletteID.has_value());
+	return *paletteID;
 }
 
 Int2 GameWorldUiView::getTooltipPosition(Game &game)

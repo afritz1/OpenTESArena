@@ -20,6 +20,7 @@ namespace
 {
 	constexpr char ContextName_TextPopUp[] = "GameWorldTextPopUp";
 	constexpr char ContextName_LootPopUp[] = "GameWorldLootPopUp";
+	constexpr char ContextName_CampModal[] = "GameWorldCampModal";
 
 	constexpr char InterfaceImageElementName[] = "GameWorldInterfaceImage";
 	constexpr char NoMagicImageElementName[] = "GameWorldNoMagicImage";
@@ -114,6 +115,7 @@ GameWorldUiState::GameWorldUiState()
 	this->contextInstID = -1;
 	this->textPopUpContextInstID = -1;
 	this->lootPopUpContextInstID = -1;
+	this->campModalContextInstID = -1;
 	this->statusBarsTextureID = -1;
 	this->modernModeReticleTextureID = -1;
 	this->currentHealth = 0.0;
@@ -267,6 +269,12 @@ void GameWorldUI::create(Game &game)
 	state.lootPopUpContextInstID = uiManager.createContext(lootPopUpContextInitInfo);
 	uiManager.setContextEnabled(state.lootPopUpContextInstID, false);
 
+	UiContextInitInfo campModalContextInitInfo;
+	campModalContextInitInfo.name = ContextName_CampModal;
+	campModalContextInitInfo.drawOrder = 1;
+	state.campModalContextInstID = uiManager.createContext(campModalContextInitInfo);
+	uiManager.setContextEnabled(state.campModalContextInstID, false);
+
 	const bool isModernInterface = options.getGraphics_ModernInterface();
 
 	UiElementInitInfo weaponAnimImageElementInitInfo;
@@ -406,6 +414,12 @@ void GameWorldUI::destroy()
 	{
 		uiManager.freeContext(state.lootPopUpContextInstID, inputManager, renderer);
 		state.lootPopUpContextInstID = -1;
+	}
+
+	if (state.campModalContextInstID >= 0)
+	{
+		uiManager.freeContext(state.campModalContextInstID, inputManager, renderer);
+		state.campModalContextInstID = -1;
 	}
 
 	state.freeTextures(renderer);
@@ -978,6 +992,165 @@ void GameWorldUI::showLootPopUp(ItemInventory &itemInventory, const GameWorldPop
 	GameWorldUI::onPauseChanged(true);
 }
 
+void GameWorldUI::showCampModal()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.campModalContextInstID, inputManager, renderer);
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	constexpr int campModalImageTextureWidth = 156;
+	constexpr int campModalImageTextureHeight = 24;
+	const UiTextureID campModalImageTextureID = uiManager.getOrAddTexture(UiTexturePatternType::Dark, campModalImageTextureWidth, campModalImageTextureHeight, textureManager, renderer);
+
+	constexpr Color campModalTextColor(215, 158, 4);
+
+	UiElementInitInfo campModalTitleImageElementInitInfo;
+	campModalTitleImageElementInitInfo.name = "GameWorldCampModalTitleImage";
+	campModalTitleImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 80);
+	campModalTitleImageElementInitInfo.pivotType = UiPivotType::Middle;
+	uiManager.createImage(campModalTitleImageElementInitInfo, campModalImageTextureID, state.campModalContextInstID, renderer);
+
+	UiElementInitInfo campModalTitleTextBoxElementInitInfo;
+	campModalTitleTextBoxElementInitInfo.name = "GameWorldCampModalTitleTextBox";
+	campModalTitleTextBoxElementInitInfo.position = campModalTitleImageElementInitInfo.position;
+	campModalTitleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+
+	UiTextBoxInitInfo campModalTitleTextBoxInitInfo;
+	campModalTitleTextBoxInitInfo.text = GameWorldUiModel::getCampModalTitleText(exeData);
+	campModalTitleTextBoxInitInfo.fontName = ArenaFontName::A;
+	campModalTitleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	campModalTitleTextBoxInitInfo.defaultColor = campModalTextColor;
+	campModalTitleTextBoxInitInfo.tabColorPaletteID = GameWorldUiView::getCampModalTextBoxPaletteID(textureManager);
+	uiManager.createTextBox(campModalTitleTextBoxElementInitInfo, campModalTitleTextBoxInitInfo, state.campModalContextInstID, renderer);
+
+	UiElementInitInfo campModalManualHoursImageElementInitInfo;
+	campModalManualHoursImageElementInitInfo.name = "GameWorldCampModalManualHoursImage";
+	campModalManualHoursImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, campModalTitleImageElementInitInfo.position.y + campModalImageTextureHeight);
+	campModalManualHoursImageElementInitInfo.pivotType = UiPivotType::Middle;
+	uiManager.createImage(campModalManualHoursImageElementInitInfo, campModalImageTextureID, state.campModalContextInstID, renderer);
+
+	UiElementInitInfo campModalManualHoursTextBoxElementInitInfo;
+	campModalManualHoursTextBoxElementInitInfo.name = "GameWorldCampModalManualHoursTextBox";
+	campModalManualHoursTextBoxElementInitInfo.position = campModalManualHoursImageElementInitInfo.position;
+	campModalManualHoursTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+
+	UiTextBoxInitInfo campModalManualHoursTextBoxInitInfo;
+	campModalManualHoursTextBoxInitInfo.text = GameWorldUiModel::getCampModalManualHoursText(exeData);
+	campModalManualHoursTextBoxInitInfo.fontName = ArenaFontName::A;
+	campModalManualHoursTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	campModalManualHoursTextBoxInitInfo.defaultColor = campModalTextColor;
+	campModalManualHoursTextBoxInitInfo.tabColorPaletteID = campModalTitleTextBoxInitInfo.tabColorPaletteID;
+	uiManager.createTextBox(campModalManualHoursTextBoxElementInitInfo, campModalManualHoursTextBoxInitInfo, state.campModalContextInstID, renderer); 
+
+	UiElementInitInfo campModalManualHoursButtonElementInitInfo;
+	campModalManualHoursButtonElementInitInfo.name = "GameWorldCampModalManualHoursButton";
+	campModalManualHoursButtonElementInitInfo.position = campModalManualHoursImageElementInitInfo.position;
+	campModalManualHoursButtonElementInitInfo.pivotType = UiPivotType::Middle;
+
+	auto campModalManualHoursButtonCallback = [](MouseButtonType)
+	{
+		DebugLog("Camp manual hours not implemented.");
+	};
+
+	UiButtonInitInfo campModalManualHoursButtonInitInfo;
+	campModalManualHoursButtonInitInfo.callback = campModalManualHoursButtonCallback;
+	campModalManualHoursButtonInitInfo.contentElementName = campModalManualHoursImageElementInitInfo.name;
+	uiManager.createButton(campModalManualHoursButtonElementInitInfo, campModalManualHoursButtonInitInfo, state.campModalContextInstID);
+
+	UiElementInitInfo campModalUntilHealedImageElementInitInfo;
+	campModalUntilHealedImageElementInitInfo.name = "GameWorldCampModalUntilHealedImage";
+	campModalUntilHealedImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, campModalManualHoursImageElementInitInfo.position.y + campModalImageTextureHeight);
+	campModalUntilHealedImageElementInitInfo.pivotType = UiPivotType::Middle;
+	uiManager.createImage(campModalUntilHealedImageElementInitInfo, campModalImageTextureID, state.campModalContextInstID, renderer);
+
+	UiElementInitInfo campModalUntilHealedTextBoxElementInitInfo;
+	campModalUntilHealedTextBoxElementInitInfo.name = "GameWorldCampModalUntilHealedTextBox";
+	campModalUntilHealedTextBoxElementInitInfo.position = campModalUntilHealedImageElementInitInfo.position;
+	campModalUntilHealedTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+
+	UiTextBoxInitInfo campModalUntilHealedTextBoxInitInfo;
+	campModalUntilHealedTextBoxInitInfo.text = GameWorldUiModel::getCampModalUntilHealedText(exeData);
+	campModalUntilHealedTextBoxInitInfo.fontName = ArenaFontName::A;
+	campModalUntilHealedTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	campModalUntilHealedTextBoxInitInfo.defaultColor = campModalTextColor;
+	campModalUntilHealedTextBoxInitInfo.tabColorPaletteID = campModalManualHoursTextBoxInitInfo.tabColorPaletteID;
+	uiManager.createTextBox(campModalUntilHealedTextBoxElementInitInfo, campModalUntilHealedTextBoxInitInfo, state.campModalContextInstID, renderer);
+
+	UiElementInitInfo campModalUntilHealedButtonElementInitInfo;
+	campModalUntilHealedButtonElementInitInfo.name = "GameWorldCampModalUntilHealedButton";
+	campModalUntilHealedButtonElementInitInfo.position = campModalUntilHealedImageElementInitInfo.position;
+	campModalUntilHealedButtonElementInitInfo.pivotType = UiPivotType::Middle;
+
+	auto campModalUntilHealedButtonCallback = [](MouseButtonType)
+	{
+		DebugLog("Camp until healed not implemented.");
+	};
+
+	UiButtonInitInfo campModalUntilHealedButtonInitInfo;
+	campModalUntilHealedButtonInitInfo.callback = campModalUntilHealedButtonCallback;
+	campModalUntilHealedButtonInitInfo.contentElementName = campModalUntilHealedImageElementInitInfo.name;
+	uiManager.createButton(campModalUntilHealedButtonElementInitInfo, campModalUntilHealedButtonInitInfo, state.campModalContextInstID);
+
+	UiElementInitInfo campModalBackButtonElementInitInfo;
+	campModalBackButtonElementInitInfo.name = "GameWorldCampModalBackButton";
+	campModalBackButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	campModalBackButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+
+	auto campModalBackButtonCallback = [&state](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		game.uiManager.disableTopMostContext();
+		game.inputManager.setInputActionMapActive(InputActionMapName::Camping, false);
+		GameWorldUI::onPauseChanged(false);
+	};
+
+	UiButtonInitInfo campModalBackButtonInitInfo;
+	campModalBackButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
+	campModalBackButtonInitInfo.callback = campModalBackButtonCallback;
+	uiManager.createButton(campModalBackButtonElementInitInfo, campModalBackButtonInitInfo, state.campModalContextInstID);
+
+	auto campModalBackInputActionCallback = [campModalBackButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			campModalBackButtonCallback(MouseButtonType::Right);
+		}
+	};
+
+	auto campModalManualHoursInputActionCallback = [campModalManualHoursButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			campModalManualHoursButtonCallback(MouseButtonType::Right);
+		}
+	};
+
+	auto campModalUntilHealedInputActionCallback = [campModalUntilHealedButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			campModalUntilHealedButtonCallback(MouseButtonType::Right);
+		}
+	};
+
+	uiManager.addInputActionListener(InputActionName::Back, campModalBackInputActionCallback, ContextName_CampModal, inputManager);
+	uiManager.addInputActionListener(InputActionName::CampManualHours, campModalManualHoursInputActionCallback, ContextName_CampModal, inputManager);
+	uiManager.addInputActionListener(InputActionName::CampUntilHealed, campModalUntilHealedInputActionCallback, ContextName_CampModal, inputManager);
+
+	uiManager.setContextEnabled(state.campModalContextInstID, true);
+
+	inputManager.setInputActionMapActive(InputActionMapName::Camping, true);
+
+	GameWorldUI::onPauseChanged(true);
+}
+
 bool GameWorldUI::isTriggerTextVisible()
 {
 	const GameWorldUiState &state = GameWorldUI::state;
@@ -1281,27 +1454,26 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 	const bool isPlayerAllowedToRest = (mapType != MapType::City) && player.groundState.onGround && !player.groundState.isSwimming;
 	
 	std::string text;
-	std::string fontName = GameWorldUiView::StatusPopUpFontName;
 	if (!isPlayerSafeForResting)
 	{
 		text = exeData.camping.enemiesNearbyBeforeResting;
-		fontName = ArenaFontName::A;
 	}
 	else if (!isPlayerAllowedToRest)
 	{
 		text = exeData.camping.campingNotAllowed;
-		fontName = ArenaFontName::A;
+	}
+
+	if (!text.empty())
+	{
+		// @todo put gameState.setIsCamping(true/false) in modal buttons, or maybe make it a function of a GameState::remainingRestHours?
+		game.gameState.tickGameClock(250.0, game);
+		text += "\n(debug: sleeping a while)";
+		GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
 	}
 	else
 	{
-		text = "Camping modal not implemented.";
+		GameWorldUI::showCampModal();
 	}
-
-	// @todo put gameState.setIsCamping(true/false) in modal buttons, or maybe make it a function of a GameState::remainingRestHours?
-	game.gameState.tickGameClock(250.0, game);
-	text += "\n(debug: sleeping a while)";
-
-	GameWorldUI::showTextPopUp(text.c_str(), fontName, GameWorldUiView::StatusPopUpTextAlignment);
 }
 
 void GameWorldUI::onScrollUpButtonSelected(MouseButtonType mouseButtonType)

@@ -83,6 +83,10 @@ namespace GameWorldUiModel
 	std::string getStaminaExhaustedMessage(bool isSwimming, bool isParalyzed, bool isInterior, bool isNight, const ExeData &exeData);
 
 	std::string getEffectTextBoxMessage(const std::string &effectName, const ExeData &exeData);
+
+	std::string getCampModalTitleText(const ExeData &exeData);
+	std::string getCampModalManualHoursText(const ExeData &exeData);
+	std::string getCampModalUntilHealedText(const ExeData &exeData);
 }
 
 struct DebugVoxelVisibilityQuadtreeState
@@ -234,6 +238,8 @@ namespace GameWorldUiView
 	double getEffectTextSeconds(const std::string_view text);
 
 	UiListBoxInitInfo getLootListBoxProperties();
+
+	PaletteID getCampModalTextBoxPaletteID(TextureManager &textureManager);
 
 	Int2 getTooltipPosition(Game &game);
 

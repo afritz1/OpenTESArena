@@ -46,6 +46,7 @@ struct GameWorldUiState
 	UiContextInstanceID contextInstID;
 	UiContextInstanceID textPopUpContextInstID;
 	UiContextInstanceID lootPopUpContextInstID;
+	UiContextInstanceID campModalContextInstID;
 
 	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
 	Buffer<UiTextureID> weaponAnimTextureIDs;
@@ -91,6 +92,11 @@ namespace GameWorldUI
 	void setInteractionType(GameWorldInteractionType type);
 	void onPauseChanged(bool paused);
 
+	void showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment, const GameWorldPopUpClosedCallback &callback);
+	void showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment);
+	void showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback);
+	void showCampModal();
+
 	bool isTriggerTextVisible();
 	bool isActionTextVisible();
 	bool isEffectTextVisible();
@@ -103,10 +109,6 @@ namespace GameWorldUI
 	void resetTriggerTextDuration();
 	void resetActionTextDuration();
 	void resetEffectTextDuration();
-
-	void showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment, const GameWorldPopUpClosedCallback &callback);
-	void showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment);
-	void showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback);
 
 	void onMouseButtonChanged(Game &game, MouseButtonType type, const Int2 &position, bool pressed);
 	void onMouseButtonHeld(Game &game, MouseButtonType type, const Int2 &position, double dt);
