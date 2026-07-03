@@ -1622,6 +1622,7 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 
 	const GameState &gameState = game.gameState;
 	const MapType mapType = gameState.getActiveMapType();
+	const MapSubDefinition &mapSubDef = gameState.getActiveMapDef().getSubDefinition();
 	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
@@ -1629,6 +1630,7 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 	const WorldDouble3 playerRestPosition = player.getEyePosition();
 	const bool isPlayerSafeForResting = !entityChunkManager.anyEnemiesNearby(playerRestPosition);
 	const bool isPlayerAllowedToRest = (mapType != MapType::City) && player.groundState.onGround && !player.groundState.isSwimming;
+	const bool isPlayerAttemptingRestInTavern = (mapType == MapType::Interior) && (mapSubDef.interior.interiorType == ArenaInteriorType::Tavern);
 	
 	std::string text;
 	if (!isPlayerSafeForResting)
@@ -1638,6 +1640,11 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 	else if (!isPlayerAllowedToRest)
 	{
 		text = exeData.camping.campingNotAllowed;
+	}
+	else if (isPlayerAttemptingRestInTavern)
+	{
+		// @todo actually check if a bed has been rented
+		text = exeData.camping.tavernBedNotRented;
 	}
 
 	if (!text.empty())

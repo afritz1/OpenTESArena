@@ -26,6 +26,7 @@ EnemiesNearbyBeforeResting=0x4132E
 EnemiesNearbyAfterResting=0x400AF
 AlreadyFullyRested=0x400CB
 CampingNotAllowed=0x41354
+TavernBedNotRented=0x42B35
 
 [CharacterClasses]
 AllowedArmors=0x36204

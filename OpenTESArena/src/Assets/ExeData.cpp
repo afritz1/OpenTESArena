@@ -288,6 +288,7 @@ bool ExeDataCamping::init(Span<const std::byte> exeBytes, const KeyValueFile &ke
 	const int enemiesNearbyAfterRestingOffset = GetExeAddress(*section, "EnemiesNearbyAfterResting");
 	const int alreadyFullyRestedOffset = GetExeAddress(*section, "AlreadyFullyRested");
 	const int campingNotAllowedOffset = GetExeAddress(*section, "CampingNotAllowed");
+	const int tavernBedNotRentedOffset = GetExeAddress(*section, "TavernBedNotRented");
 
 	this->singularHourPassed = GetExeStringNullTerminated(exeBytes, singularHourPassedOffset);
 	this->pluralHoursPassed = GetExeStringNullTerminated(exeBytes, pluralHoursPassedOffset);
@@ -304,6 +305,7 @@ bool ExeDataCamping::init(Span<const std::byte> exeBytes, const KeyValueFile &ke
 	this->enemiesNearbyAfterResting = GetExeStringNullTerminated(exeBytes, enemiesNearbyAfterRestingOffset);
 	this->alreadyFullyRested = GetExeStringNullTerminated(exeBytes, alreadyFullyRestedOffset);
 	this->campingNotAllowed = GetExeStringNullTerminated(exeBytes, campingNotAllowedOffset);
+	this->tavernBedNotRented = GetExeStringNullTerminated(exeBytes, tavernBedNotRentedOffset);
 
 	return true;
 }

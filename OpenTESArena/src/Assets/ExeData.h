@@ -43,6 +43,7 @@ struct ExeDataCamping
 	std::string enemiesNearbyAfterResting;
 	std::string alreadyFullyRested;
 	std::string campingNotAllowed;
+	std::string tavernBedNotRented;
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
