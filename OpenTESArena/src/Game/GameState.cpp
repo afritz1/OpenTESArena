@@ -1296,8 +1296,13 @@ void GameState::tickPlayerLevel(Game &game)
 {
 	Player &player = game.player;
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const WorldDouble3 playerPosition = player.getEyePosition();
 
-	// @todo early out if recently in combat
+	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	if (entityChunkManager.anyEnemiesNearby(playerPosition))
+	{
+		return;
+	}
 
 	const int prevPlayerLevel = player.level;
 	while (player.experience >= charClassDef.getExperienceCap(player.level))
