@@ -773,7 +773,9 @@ void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData 
 
 	// Health recovery
 	const int bonusHealing = ArenaPlayerUtils::calculateEnduranceDerivedBonuses(this->primaryAttributes.endurance.maxValue).healMod;
-	const int healerBonus = (this->charClassDefID == 4) ? 20 : 0;
+
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(this->charClassDefID);
+	const int healerBonus = (charClassDef.originalClassIndex == 4) ? 20 : 0;
 	const int multiplier = (bonusHealing * 5) + 60 + healerBonus;
 	int healAmount = (static_cast<int>(this->maxHealth) * restFactor * multiplier) / 1000;
 
@@ -782,17 +784,12 @@ void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData 
 	// no effect. Possibly the AND was supposed to be an ADD, so that the Barbarian would get 2x the healMod,
 	// or 0 if the healMod was negative, added to roomModifier before multiplying it by restFactor.
 
-	const auto &tavernRoomHealModifiers = exeData.services.tavernRoomHealModifiers;
+	const Span<const int8_t> tavernRoomHealModifiers = exeData.services.tavernRoomHealModifiers;
 	DebugAssertIndex(tavernRoomHealModifiers, tavernRoomType);
 	const int roomModifier = tavernRoomHealModifiers[tavernRoomType];
 	const int roomRestHealAmount = roomModifier * restFactor;
 	healAmount += roomRestHealAmount;
-
-	if (healAmount <= 0)
-	{
-		healAmount = 1;
-	}
-
+	healAmount = std::max(healAmount, 1);
 	this->currentHealth = std::min(this->currentHealth + healAmount, this->maxHealth);
 
 	// Stamina recovery
@@ -802,11 +799,8 @@ void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData 
 	const int staminaGainAmount = ArenaStatUtils::scale256To100((staminaGainAmount256 * staminaGainMultiplier) >> 6);
 	this->currentStamina = std::min(this->currentStamina + staminaGainAmount256, static_cast<double>(staminaCap));
 
-	const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-	const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(this->charClassDefID);
-
 	// Spell points recovery
-	if (charClassDef.castsMagic && (this->charClassDefID != 3) && (this->currentSpellPoints < this->maxSpellPoints))
+	if (charClassDef.castsMagic && (charClassDef.originalClassIndex != 3) && (this->currentSpellPoints < this->maxSpellPoints))
 	{
 		const int spellPointsGainAmount = (static_cast<int>(this->maxSpellPoints) * restFactor) >> 3;
 		this->currentSpellPoints = std::min(this->currentSpellPoints + spellPointsGainAmount, this->maxSpellPoints);
