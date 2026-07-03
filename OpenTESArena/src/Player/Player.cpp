@@ -757,6 +757,16 @@ void Player::setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem)
 	this->setPhysicsVelocity(Double3::Zero);
 }
 
+bool Player::canRestUntilHealed() const
+{
+	const bool needsHealth = this->currentHealth < this->maxHealth;
+
+	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(this->charClassDefID);
+	const bool needsSpellPoints = charClassDef.castsMagic && (this->currentSpellPoints < this->maxSpellPoints);
+
+	return needsHealth || needsSpellPoints;
+}
+
 void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData &exeData)
 {
 	// @todo: Attribute recovery

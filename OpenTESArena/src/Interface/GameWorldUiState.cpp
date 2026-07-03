@@ -1106,9 +1106,23 @@ void GameWorldUI::showCampModal()
 	campModalUntilHealedButtonElementInitInfo.position = campModalUntilHealedImageElementInitInfo.position;
 	campModalUntilHealedButtonElementInitInfo.pivotType = UiPivotType::Middle;
 
-	auto campModalUntilHealedButtonCallback = [](MouseButtonType)
+	auto campModalUntilHealedButtonCallback = [&exeData](MouseButtonType)
 	{
-		DebugLog("Camp until healed not implemented.");
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		game.uiManager.disableTopMostContext();
+		game.inputManager.setInputActionMapActive(InputActionMapName::Camping, false);
+		
+		const Player &player = game.player;
+		if (!player.canRestUntilHealed())
+		{
+			GameWorldUI::showTextPopUp(exeData.camping.alreadyFullyRested.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
+			return;
+		}
+
+		// @todo Player::applyRestHealing()
+		// @todo sleep until !player.canRestUntilHealed(), counting # of hours slept so far
+		GameWorldUI::showTextPopUp("Camping until healed not implemented.", ArenaFontName::Arena, GameWorldUiView::StatusPopUpTextAlignment);
 	};
 
 	UiButtonInitInfo campModalUntilHealedButtonInitInfo;
@@ -1278,6 +1292,7 @@ void GameWorldUI::showCampManualHoursModal()
 			if (hoursCount > 0)
 			{
 				// @todo set this in some CampingState that ticks in the game loop and prevents player input acceleration (basically paralysis)
+				// @todo Player::applyRestHealing()
 				DebugLogFormat("Not implemented: sleep for %d hours.", hoursCount);
 			}
 		}
