@@ -47,6 +47,7 @@ struct GameWorldUiState
 	UiContextInstanceID textPopUpContextInstID;
 	UiContextInstanceID lootPopUpContextInstID;
 	UiContextInstanceID campModalContextInstID;
+	UiContextInstanceID campManualHoursModalContextInstID;
 
 	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
 	Buffer<UiTextureID> weaponAnimTextureIDs;
@@ -74,6 +75,8 @@ struct GameWorldUiState
 
 	std::vector<GameWorldLootUiItemMapping> lootPopUpItemMappings;
 
+	std::string campManualHoursInputText; // Number of hours to manually rest.
+
 	GameWorldUiState();
 
 	void init(Game &game);
@@ -96,6 +99,7 @@ namespace GameWorldUI
 	void showTextPopUp(const char *str, const std::string &fontName, TextAlignment alignment);
 	void showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback);
 	void showCampModal();
+	void showCampManualHoursModal();
 
 	bool isTriggerTextVisible();
 	bool isActionTextVisible();

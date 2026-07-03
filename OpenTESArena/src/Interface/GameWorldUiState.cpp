@@ -13,6 +13,7 @@
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../UI/FontLibrary.h"
+#include "../UI/TextEntry.h"
 #include "../UI/UiRenderSpace.h"
 #include "../World/MapType.h"
 
@@ -21,6 +22,7 @@ namespace
 	constexpr char ContextName_TextPopUp[] = "GameWorldTextPopUp";
 	constexpr char ContextName_LootPopUp[] = "GameWorldLootPopUp";
 	constexpr char ContextName_CampModal[] = "GameWorldCampModal";
+	constexpr char ContextName_CampManualHoursModal[] = "GameWorldCampManualHoursModal";
 
 	constexpr char InterfaceImageElementName[] = "GameWorldInterfaceImage";
 	constexpr char NoMagicImageElementName[] = "GameWorldNoMagicImage";
@@ -116,6 +118,7 @@ GameWorldUiState::GameWorldUiState()
 	this->textPopUpContextInstID = -1;
 	this->lootPopUpContextInstID = -1;
 	this->campModalContextInstID = -1;
+	this->campManualHoursModalContextInstID = -1;
 	this->statusBarsTextureID = -1;
 	this->modernModeReticleTextureID = -1;
 	this->currentHealth = 0.0;
@@ -275,6 +278,12 @@ void GameWorldUI::create(Game &game)
 	state.campModalContextInstID = uiManager.createContext(campModalContextInitInfo);
 	uiManager.setContextEnabled(state.campModalContextInstID, false);
 
+	UiContextInitInfo campManualHoursModalContextInitInfo;
+	campManualHoursModalContextInitInfo.name = ContextName_CampManualHoursModal;
+	campManualHoursModalContextInitInfo.drawOrder = 1;
+	state.campManualHoursModalContextInstID = uiManager.createContext(campManualHoursModalContextInitInfo);
+	uiManager.setContextEnabled(state.campManualHoursModalContextInstID, false);
+
 	const bool isModernInterface = options.getGraphics_ModernInterface();
 
 	UiElementInitInfo weaponAnimImageElementInitInfo;
@@ -420,6 +429,12 @@ void GameWorldUI::destroy()
 	{
 		uiManager.freeContext(state.campModalContextInstID, inputManager, renderer);
 		state.campModalContextInstID = -1;
+	}
+
+	if (state.campManualHoursModalContextInstID >= 0)
+	{
+		uiManager.freeContext(state.campManualHoursModalContextInstID, inputManager, renderer);
+		state.campManualHoursModalContextInstID = -1;
 	}
 
 	state.freeTextures(renderer);
@@ -1055,7 +1070,11 @@ void GameWorldUI::showCampModal()
 
 	auto campModalManualHoursButtonCallback = [](MouseButtonType)
 	{
-		DebugLog("Camp manual hours not implemented.");
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		game.uiManager.disableTopMostContext();
+		game.inputManager.setInputActionMapActive(InputActionMapName::Camping, false);
+		GameWorldUI::showCampManualHoursModal();
 	};
 
 	UiButtonInitInfo campModalManualHoursButtonInitInfo;
@@ -1149,6 +1168,164 @@ void GameWorldUI::showCampModal()
 	inputManager.setInputActionMapActive(InputActionMapName::Camping, true);
 
 	GameWorldUI::onPauseChanged(true);
+}
+
+void GameWorldUI::showCampManualHoursModal()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.campManualHoursModalContextInstID, inputManager, renderer);
+	state.campManualHoursInputText.clear();
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	constexpr int imageTextureWidth = 231;
+	constexpr int imageTextureHeight = 30;
+	const UiTextureID imageTextureID = uiManager.getOrAddTexture(UiTexturePatternType::Dark, imageTextureWidth, imageTextureHeight, textureManager, renderer);
+
+	const int imageY = game.options.getGraphics_ModernInterface() ? (ArenaRenderUtils::SCREEN_HEIGHT / 2) : (ArenaRenderUtils::SCENE_VIEW_HEIGHT / 2);
+
+	UiElementInitInfo imageElementInitInfo;
+	imageElementInitInfo.name = "GameWorldCampManualHoursModalImage";
+	imageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, imageY);
+	imageElementInitInfo.pivotType = UiPivotType::Middle;
+	const UiElementInstanceID imageElementInstID = uiManager.createImage(imageElementInitInfo, imageTextureID, state.campManualHoursModalContextInstID, renderer);
+	const Rect imageGlobalRect = uiManager.getTransformGlobalRect(imageElementInstID);
+
+	UiElementInitInfo textBoxElementInitInfo;
+	textBoxElementInitInfo.name = "GameWorldCampManualHoursModalTextBox";
+	textBoxElementInitInfo.position = imageGlobalRect.getTopLeft() + Int2(13, 11);
+	textBoxElementInitInfo.pivotType = UiPivotType::TopLeft;
+
+	UiTextBoxInitInfo textBoxInitInfo;
+	textBoxInitInfo.text = GameWorldUiModel::getCampManualHoursModalText(exeData);
+	textBoxInitInfo.fontName = ArenaFontName::Arena;
+	textBoxInitInfo.defaultColor = Color(231, 215, 0);
+	const UiElementInstanceID textBoxElementInstID = uiManager.createTextBox(textBoxElementInitInfo, textBoxInitInfo, state.campManualHoursModalContextInstID, renderer);
+	const Rect textBoxGlobalRect = uiManager.getTransformGlobalRect(textBoxElementInstID);
+
+	UiElementInitInfo inputTextBoxElementInitInfo;
+	inputTextBoxElementInitInfo.name = "GameWorldCampManualHoursModalInputTextBox";
+	inputTextBoxElementInitInfo.position = textBoxGlobalRect.getTopRight();
+	inputTextBoxElementInitInfo.pivotType = UiPivotType::TopLeft;
+
+	UiTextBoxInitInfo inputTextBoxInitInfo;
+	inputTextBoxInitInfo.worstCaseText = TextRenderUtils::makeWorstCaseText(3);
+	inputTextBoxInitInfo.fontName = ArenaFontName::Arena;
+	inputTextBoxInitInfo.defaultColor = textBoxInitInfo.defaultColor;
+	const UiElementInstanceID inputTextBoxElementInstID = uiManager.createTextBox(inputTextBoxElementInitInfo, inputTextBoxInitInfo, state.campManualHoursModalContextInstID, renderer);
+
+	UiElementInitInfo backButtonElementInitInfo;
+	backButtonElementInitInfo.name = "GameWorldCampManualHoursModalBackButton";
+	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+
+	auto backButtonCallback = [&state](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		game.uiManager.disableTopMostContext();
+		game.inputManager.setTextInputMode(false);
+		GameWorldUI::onPauseChanged(false);
+	};
+
+	UiButtonInitInfo backButtonInitInfo;
+	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
+	backButtonInitInfo.callback = backButtonCallback;
+	uiManager.createButton(backButtonElementInitInfo, backButtonInitInfo, state.campManualHoursModalContextInstID);
+
+	auto backInputActionCallback = [backButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			backButtonCallback(MouseButtonType::Right);
+		}
+	};
+
+	auto acceptInputActionCallback = [backButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			backButtonCallback(MouseButtonType::Right);
+
+			GameWorldUiState &state = GameWorldUI::state;
+			Game &game = *state.game;
+			const std::string &inputText = state.campManualHoursInputText;
+			if (inputText.empty())
+			{
+				return;
+			}
+
+			int hoursCount = 0;
+			try
+			{
+				size_t index = 0;
+				hoursCount = std::stoi(inputText, &index);
+				if (index != inputText.size())
+				{
+					return;
+				}
+			}
+			catch (std::exception)
+			{
+				return;
+			}
+
+			if (hoursCount > 0)
+			{
+				// @todo set this in some CampingState that ticks in the game loop and prevents player input acceleration (basically paralysis)
+				DebugLogFormat("Not implemented: sleep for %d hours.", hoursCount);
+			}
+		}
+	};
+
+	auto textInputCallback = [inputTextBoxElementInstID](const std::string_view text)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+		UiManager &uiManager = game.uiManager;
+
+		std::string &inputText = state.campManualHoursInputText;
+		auto isCharAllowed = [](char c)
+		{
+			return (c >= '0') && (c <= '9'); // Numbers only
+		};
+
+		constexpr int maxCampHourDigits = 3;
+		if (TextEntry::append(inputText, text, isCharAllowed, maxCampHourDigits))
+		{
+			uiManager.setTextBoxText(inputTextBoxElementInstID, inputText.c_str());
+		}
+	};
+
+	auto textBackspaceCallback = [inputTextBoxElementInstID](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			GameWorldUiState &state = GameWorldUI::state;
+			Game &game = *state.game;
+			UiManager &uiManager = game.uiManager;
+
+			std::string &inputText = state.campManualHoursInputText;
+			if (TextEntry::backspace(inputText))
+			{
+				uiManager.setTextBoxText(inputTextBoxElementInstID, inputText.c_str());
+			}
+		}
+	};
+
+	uiManager.addInputActionListener(InputActionName::Back, backInputActionCallback, ContextName_CampManualHoursModal, inputManager);
+	uiManager.addInputActionListener(InputActionName::Accept, acceptInputActionCallback, ContextName_CampManualHoursModal, inputManager);
+	uiManager.addTextInputListener(textInputCallback, ContextName_CampManualHoursModal, inputManager);
+	uiManager.addInputActionListener(InputActionName::Backspace, textBackspaceCallback, ContextName_CampManualHoursModal, inputManager);
+
+	uiManager.setContextEnabled(state.campManualHoursModalContextInstID, true);
+
+	inputManager.setTextInputMode(true);
 }
 
 bool GameWorldUI::isTriggerTextVisible()

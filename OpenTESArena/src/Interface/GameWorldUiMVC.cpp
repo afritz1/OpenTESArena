@@ -467,6 +467,12 @@ std::string GameWorldUiModel::getCampModalUntilHealedText(const ExeData &exeData
 	return text;
 }
 
+std::string GameWorldUiModel::getCampManualHoursModalText(const ExeData &exeData)
+{
+	std::string text = exeData.camping.hoursToRest;
+	return text;
+}
+
 DebugVoxelVisibilityQuadtreeState::DebugVoxelVisibilityQuadtreeState()
 {
 	std::fill(std::begin(this->textureIDs), std::end(this->textureIDs), -1);

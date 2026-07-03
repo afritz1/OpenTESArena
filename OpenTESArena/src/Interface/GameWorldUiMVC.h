@@ -87,6 +87,7 @@ namespace GameWorldUiModel
 	std::string getCampModalTitleText(const ExeData &exeData);
 	std::string getCampModalManualHoursText(const ExeData &exeData);
 	std::string getCampModalUntilHealedText(const ExeData &exeData);
+	std::string getCampManualHoursModalText(const ExeData &exeData);
 }
 
 struct DebugVoxelVisibilityQuadtreeState
