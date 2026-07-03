@@ -28,14 +28,16 @@ struct CharacterClassDefinition
 	int thievingDivisor;
 	bool criticalHit;
 	double climbingSpeedScale;
+	bool canRecoverSpellPoints;
+	int restHealingBonus;
 	int originalClassIndex; // Non-negative if derived from original game.
 
 	CharacterClassDefinition();
 
 	void init(const char *name, CharacterClassCategoryID categoryID, const char *categoryName, const char *preferredAttributes,
 		Span<const ArenaArmorMaterialType> allowedArmors, Span<const ArenaArmorTypeID> allowedShields, Span<const ArenaWeaponTypeID> allowedWeapons,
-		bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, int thievingDivisor,
-		bool criticalHit, double climbingSpeedScale, int originalClassIndex);
+		bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, int thievingDivisor, bool criticalHit,
+		double climbingSpeedScale, bool canRecoverSpellPoints, int restHealingBonus, int originalClassIndex);
 
 	int getAllowedArmorCount() const;
 	ArenaArmorMaterialType getAllowedArmor(int index) const;

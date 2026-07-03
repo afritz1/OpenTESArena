@@ -36,13 +36,15 @@ CharacterClassDefinition::CharacterClassDefinition()
 	this->thievingDivisor = 0;
 	this->criticalHit = false;
 	this->climbingSpeedScale = 0.0;
+	this->canRecoverSpellPoints = false;
+	this->restHealingBonus = 0;
 	this->originalClassIndex = -1;
 }
 
 void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID categoryID, const char *categoryName, const char *preferredAttributes,
 	Span<const ArenaArmorMaterialType> allowedArmors, Span<const ArenaArmorTypeID> allowedShields, Span<const ArenaWeaponTypeID> allowedWeapons,
-	bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, int thievingDivisor,
-	bool criticalHit, double climbingSpeedScale, int originalClassIndex)
+	bool castsMagic, int healthDie, double spellPointsMultiplier, int initialExpCap, int thievingDivisor, bool criticalHit,
+	double climbingSpeedScale, bool canRecoverSpellPoints, int restHealingBonus, int originalClassIndex)
 {
 	std::snprintf(this->name, std::size(this->name), "%s", name);
 	this->categoryID = categoryID;
@@ -63,6 +65,8 @@ void CharacterClassDefinition::init(const char *name, CharacterClassCategoryID c
 	this->thievingDivisor = thievingDivisor;
 	this->criticalHit = criticalHit;
 	this->climbingSpeedScale = climbingSpeedScale;
+	this->canRecoverSpellPoints = canRecoverSpellPoints;
+	this->restHealingBonus = restHealingBonus;
 	this->originalClassIndex = originalClassIndex;
 }
 

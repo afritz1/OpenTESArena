@@ -762,7 +762,7 @@ bool Player::canRestUntilHealed() const
 	const bool needsHealth = this->currentHealth < this->maxHealth;
 
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(this->charClassDefID);
-	const bool needsSpellPoints = charClassDef.castsMagic && (this->currentSpellPoints < this->maxSpellPoints);
+	const bool needsSpellPoints = charClassDef.canRecoverSpellPoints && (this->currentSpellPoints < this->maxSpellPoints);
 
 	return needsHealth || needsSpellPoints;
 }
@@ -775,8 +775,7 @@ void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData 
 	const int bonusHealing = ArenaPlayerUtils::calculateEnduranceDerivedBonuses(this->primaryAttributes.endurance.maxValue).healMod;
 
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(this->charClassDefID);
-	const int healerBonus = (charClassDef.originalClassIndex == 4) ? 20 : 0;
-	const int multiplier = (bonusHealing * 5) + 60 + healerBonus;
+	const int multiplier = (bonusHealing * 5) + 60 + charClassDef.restHealingBonus;
 	int healAmount = (static_cast<int>(this->maxHealth) * restFactor * multiplier) / 1000;
 
 	// The original game checks whether the player is the Barbarian class here and ANDs the healMod against
@@ -800,7 +799,7 @@ void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData 
 	this->currentStamina = std::min(this->currentStamina + staminaGainAmount256, static_cast<double>(staminaCap));
 
 	// Spell points recovery
-	if (charClassDef.castsMagic && (charClassDef.originalClassIndex != 3) && (this->currentSpellPoints < this->maxSpellPoints))
+	if (charClassDef.canRecoverSpellPoints && (this->currentSpellPoints < this->maxSpellPoints))
 	{
 		const int spellPointsGainAmount = (static_cast<int>(this->maxSpellPoints) * restFactor) >> 3;
 		this->currentSpellPoints = std::min(this->currentSpellPoints + spellPointsGainAmount, this->maxSpellPoints);

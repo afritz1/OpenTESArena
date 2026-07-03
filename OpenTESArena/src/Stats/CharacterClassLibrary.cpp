@@ -176,9 +176,22 @@ void CharacterClassLibrary::init(const ExeData &exeData)
 			climbingSpeedScale = 4.0;
 		}
 
+		bool canRecoverSpellPoints = mage;
+		if (classIndex == 3)
+		{
+			canRecoverSpellPoints = false;
+		}
+
+		int restHealingBonus = 0;
+		if (classIndex == 4)
+		{
+			restHealingBonus = 20;
+		}
+
 		CharacterClassDefinition def;
 		def.init(name.c_str(), category, categoryName, preferredAttributes.c_str(), allowedArmors, allowedShields, allowedWeapons,
-			mage, healthDie, spellPointsMultiplier, initialExperienceCap, thievingDivisor, criticalHit, climbingSpeedScale, classIndex);
+			mage, healthDie, spellPointsMultiplier, initialExperienceCap, thievingDivisor, criticalHit, climbingSpeedScale, canRecoverSpellPoints,
+			restHealingBonus, classIndex);
 
 		this->defs.emplace_back(std::move(def));
 	}
