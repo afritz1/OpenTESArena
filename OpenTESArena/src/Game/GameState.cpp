@@ -151,8 +151,7 @@ bool EntityEncounterSpawnInfo::isCityGuards() const
 
 CampingState::CampingState()
 {
-	this->manualHoursRemaining = 0;
-	this->isCampingUntilHealed = false;
+	this->clear();
 }
 
 bool CampingState::isCamping() const
@@ -162,13 +161,13 @@ bool CampingState::isCamping() const
 
 void CampingState::setManualHours(int hours)
 {
+	this->clear();
 	this->manualHoursRemaining = hours;
-	this->isCampingUntilHealed = false;
 }
 
 void CampingState::setUntilHealed()
 {
-	this->manualHoursRemaining = 0;
+	this->clear();
 	this->isCampingUntilHealed = true;
 }
 
@@ -176,6 +175,7 @@ void CampingState::clear()
 {
 	this->manualHoursRemaining = 0;
 	this->isCampingUntilHealed = false;
+	this->untilHealedHoursAccumulated = 0;
 }
 
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
@@ -1078,6 +1078,24 @@ void GameState::tickGameClock(double dt, Game &game)
 		canAttemptEnemyEncounterThisHour = ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(environmentType, isPlayerCamping, player.groundState.onRaisedPlatform);
 
 		this->updateWeatherList(arenaRandom, exeData);
+
+		if (this->isCamping())
+		{
+			if (this->campingState.manualHoursRemaining > 0)
+			{
+				this->campingState.manualHoursRemaining--;
+
+				if (this->campingState.manualHoursRemaining == 0)
+				{
+					DebugLog("Player has finished resting manual hours.");
+					this->campingState.clear();
+				}
+			}
+			else if (this->campingState.isCampingUntilHealed)
+			{
+				this->campingState.untilHealedHoursAccumulated++;
+			}
+		}
 	}
 
 	const int prevMinutes = prevClock.minutes;
@@ -1221,6 +1239,11 @@ void GameState::tickUiMessages(double dt)
 
 void GameState::tickPlayerHealth(double dt, Game &game)
 {
+	if (this->isCamping())
+	{
+		return;
+	}
+
 	constexpr double LAVA_HEALTH_LOSS_PER_SECOND = 10.0;
 
 	Player &player = game.player;
@@ -1257,6 +1280,11 @@ void GameState::tickPlayerHealth(double dt, Game &game)
 
 void GameState::tickPlayerStamina(double dt, Game &game)
 {
+	if (this->isCamping())
+	{
+		return;
+	}
+
 	constexpr double baseStaminaLossPerMinute = 11;
 	constexpr double arenaStaminaScale = 1.0 / 64.0;
 	constexpr double secondsPerMinute = 60.0;
@@ -1293,6 +1321,26 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 {
 	Player &player = game.player;
 	player.effectsState.update(dt);
+
+	if (this->isCamping())
+	{
+		// @todo provide correct values
+		// @todo don't tick this every frame, need to tick only some # of times per second, like a CampingState::realTimeSecondsSinceLastRecoveryApply
+		const int restFactor = 1;
+		const int tavernRoomType = 0;
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+		player.applyRestHealing(restFactor, tavernRoomType, exeData);
+		DebugLogFormat("Applying camping healing effect (hours left: %d, hours accumulated: %d).", this->campingState.manualHoursRemaining, this->campingState.untilHealedHoursAccumulated);
+
+		if (this->campingState.isCampingUntilHealed)
+		{
+			if (!player.canRestUntilHealed())
+			{
+				DebugLog("Player has finished resting until healed.");
+				this->campingState.clear();
+			}
+		}
+	}
 }
 
 void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffectsState, const PlayerEffectsState &prevEffectsState)

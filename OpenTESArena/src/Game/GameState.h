@@ -61,7 +61,9 @@ struct EntityEncounterSpawnInfo
 struct CampingState
 {
 	int manualHoursRemaining;
+
 	bool isCampingUntilHealed;
+	int untilHealedHoursAccumulated;
 
 	CampingState();
 

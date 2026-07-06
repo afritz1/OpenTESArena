@@ -1120,9 +1120,9 @@ void GameWorldUI::showCampModal()
 			return;
 		}
 
-		// @todo Player::applyRestHealing()
-		// @todo sleep until !player.canRestUntilHealed(), counting # of hours slept so far
-		GameWorldUI::showTextPopUp("Camping until healed not implemented.", ArenaFontName::Arena, GameWorldUiView::StatusPopUpTextAlignment);
+		GameState &gameState = game.gameState;
+		gameState.setCampingUntilHealed();
+		GameWorldUI::onPauseChanged(false);
 	};
 
 	UiButtonInitInfo campModalUntilHealedButtonInitInfo;
@@ -1291,9 +1291,8 @@ void GameWorldUI::showCampManualHoursModal()
 
 			if (hoursCount > 0)
 			{
-				// @todo set this in some CampingState that ticks in the game loop and prevents player input acceleration (basically paralysis)
-				// @todo Player::applyRestHealing()
-				DebugLogFormat("Not implemented: sleep for %d hours.", hoursCount);
+				GameState &gameState = game.gameState;
+				gameState.setCampingManualHours(hoursCount);
 			}
 		}
 	};
