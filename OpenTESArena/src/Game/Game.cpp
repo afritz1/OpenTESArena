@@ -524,6 +524,11 @@ CharacterCreationState &Game::getCharacterCreationState() const
 	return *this->charCreationState.get();
 }
 
+bool Game::canPlayerMoveAndTurn() const
+{
+	return this->player.canMoveAndTurn() && !this->gameState.isCamping();
+}
+
 void Game::setNextContext(const char *contextName)
 {
 	this->nextContextName = std::string(contextName);

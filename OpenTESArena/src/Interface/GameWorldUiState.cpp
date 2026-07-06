@@ -1517,12 +1517,12 @@ void GameWorldUI::onWeaponToggleButtonSelected(MouseButtonType mouseButtonType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
-	Player &player = game.player;
-	if (player.effectsState.isParalyzed())
+	if (!game.canPlayerMoveAndTurn())
 	{
 		return;
 	}
 
+	Player &player = game.player;
 	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();

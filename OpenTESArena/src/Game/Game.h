@@ -109,6 +109,8 @@ public:
 	// Gets the character creation state. Character creation must be active.
 	CharacterCreationState &getCharacterCreationState() const;
 
+	bool canPlayerMoveAndTurn() const;
+
 	// Queues the UI context to switch to this frame. This must be one with begin/end/update callbacks registered at engine startup.
 	void setNextContext(const char *contextName);
 

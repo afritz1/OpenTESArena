@@ -26,10 +26,10 @@
 namespace PlayerLogic
 {
 	PlayerInputAcceleration getInputAccelerationClassic(const Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
-		bool isParalyzed, double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, Span<const Rect> nativeCursorRegions)
+		bool canPlayerMoveAndTurn, double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager, Span<const Rect> nativeCursorRegions)
 	{
 		PlayerInputAcceleration inputAcceleration;
-		if ((!isOnGround && !isClimbing) || isParalyzed)
+		if ((!isOnGround && !isClimbing) || !canPlayerMoveAndTurn)
 		{
 			return inputAcceleration;
 		}
@@ -192,7 +192,7 @@ namespace PlayerLogic
 	}
 
 	PlayerInputAcceleration getInputAccelerationModern(Player &player, double moveSpeed, bool isOnGround, bool canJump, bool isClimbing,
-		bool isParalyzed, double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
+		bool canPlayerMoveAndTurn, double ceilingScale, bool isGhostModeEnabled, const InputManager &inputManager)
 	{
 		PlayerInputAcceleration inputAcceleration;
 
@@ -212,7 +212,7 @@ namespace PlayerLogic
 
 		if (!isGhostModeEnabled)
 		{
-			if (isParalyzed)
+			if (!canPlayerMoveAndTurn)
 			{
 				return inputAcceleration;
 			}
@@ -335,7 +335,7 @@ namespace PlayerLogic
 
 		if (isPrimaryInteraction)
 		{
-			if (player.effectsState.isParalyzed())
+			if (!game.canPlayerMoveAndTurn())
 			{
 				return;
 			}
@@ -479,7 +479,7 @@ namespace PlayerLogic
 		const RayCastEntityHit &entityHit = hit.entityHit;
 		GameState &gameState = game.gameState;
 		Player &player = game.player;
-		const bool isPlayerParalyzed = player.effectsState.isParalyzed();
+		const bool canPlayerMoveAndTurn = game.canPlayerMoveAndTurn();
 
 		Random &random = game.random;
 
@@ -514,7 +514,7 @@ namespace PlayerLogic
 					GameWorldUiController::onEnemyAliveInspected(game, entityInstID, entityDef);
 				}
 
-				if (passesLootDistanceTest && !isPlayerParalyzed && combatState.isDead)
+				if (passesLootDistanceTest && canPlayerMoveAndTurn && combatState.isDead)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
@@ -538,7 +538,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Citizen:
 			{
-				if (passesCitizenDistanceTest && !isPlayerParalyzed)
+				if (passesCitizenDistanceTest && canPlayerMoveAndTurn)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
@@ -586,7 +586,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::StaticNPC:
 			{
-				if (!isPlayerParalyzed)
+				if (canPlayerMoveAndTurn)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
@@ -603,7 +603,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Item:
 			{
-				if (passesLootDistanceTest && !isPlayerParalyzed)
+				if (passesLootDistanceTest && canPlayerMoveAndTurn)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
@@ -652,7 +652,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Container:
 			{
-				if (passesLootDistanceTest && !isPlayerParalyzed)
+				if (passesLootDistanceTest && canPlayerMoveAndTurn)
 				{
 					const ContainerEntityDefinition &containerDef = entityDef.container;
 					const ContainerEntityDefinitionType containerDefType = containerDef.type;
@@ -772,8 +772,7 @@ PlayerInputAcceleration::PlayerInputAcceleration()
 
 Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 &mouseDelta, Span<const Rect> nativeCursorRegions)
 {
-	const Player &player = game.player;
-	if (player.effectsState.isParalyzed())
+	if (!game.canPlayerMoveAndTurn())
 	{
 		return Double2::Zero;
 	}
@@ -790,6 +789,7 @@ Double2 PlayerLogic::makeTurningAngularValues(Game &game, double dt, const Int2 
 		const bool right = inputManager.keyIsDown(SDL_SCANCODE_D);
 		const bool lCtrl = inputManager.keyIsDown(SDL_SCANCODE_LCTRL);
 
+		const Player &player = game.player;
 		const double turningScale = !player.groundState.isSwimming ? 1.0 : (2.0 / 3.0);
 
 		// Mouse takes priority over keyboard.
@@ -889,7 +889,7 @@ PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, Span<const
 	const bool isClimbing = player.movementType == PlayerMovementType::Climbing;
 	const double maxMoveSpeed = player.getMaxMoveSpeed();
 
-	const bool isParalyzed = player.effectsState.isParalyzed();
+	const bool canPlayerMoveAndTurn = game.canPlayerMoveAndTurn();
 
 	const Options &options = game.options;
 	const bool isGhostModeEnabled = options.getMisc_GhostMode();
@@ -898,11 +898,11 @@ PlayerInputAcceleration PlayerLogic::getInputAcceleration(Game &game, Span<const
 	PlayerInputAcceleration inputAcceleration;
 	if (!modernInterface)
 	{
-		inputAcceleration = PlayerLogic::getInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, isClimbing, isParalyzed, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
+		inputAcceleration = PlayerLogic::getInputAccelerationClassic(player, maxMoveSpeed, isOnGround, canJump, isClimbing, canPlayerMoveAndTurn, ceilingScale, isGhostModeEnabled, inputManager, nativeCursorRegions);
 	}
 	else
 	{
-		inputAcceleration = PlayerLogic::getInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, isClimbing, isParalyzed, ceilingScale, isGhostModeEnabled, inputManager);
+		inputAcceleration = PlayerLogic::getInputAccelerationModern(player, maxMoveSpeed, isOnGround, canJump, isClimbing, canPlayerMoveAndTurn, ceilingScale, isGhostModeEnabled, inputManager);
 	}
 
 	return inputAcceleration;
@@ -945,12 +945,12 @@ bool PlayerLogic::tryGetMeleeSwingDirectionFromMouseDelta(const Int2 &mouseDelta
 
 void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 {
-	Player &player = game.player;
-	if (player.effectsState.isParalyzed())
+	if (!game.canPlayerMoveAndTurn())
 	{
 		return;
 	}
 
+	Player &player = game.player;
 	WeaponAnimationInstance &weaponAnimInst = player.weaponAnimInst;
 	const WeaponAnimationLibrary &weaponAnimLibrary = WeaponAnimationLibrary::getInstance();
 	const WeaponAnimationDefinitionID weaponAnimDefID = player.getEquippedWeaponAnimationDefID();
