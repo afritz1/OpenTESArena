@@ -667,6 +667,11 @@ double Player::getMaxMoveSpeed() const
 	return voxelsPerSecond * modernSpeedMultiplier;
 }
 
+bool Player::canMoveAndTurn() const
+{
+	return !this->effectsState.isParalyzed();
+}
+
 bool Player::isMoving() const
 {
 	const JPH::RVec3 physicsVelocity = this->physicsCharacter->GetLinearVelocity();

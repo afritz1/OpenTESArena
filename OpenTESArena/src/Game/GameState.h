@@ -58,6 +58,21 @@ struct EntityEncounterSpawnInfo
 	bool isCityGuards() const;
 };
 
+struct CampingState
+{
+	int manualHoursRemaining;
+	bool isCampingUntilHealed;
+
+	CampingState();
+
+	bool isCamping() const;
+
+	void setManualHours(int hours);
+	void setUntilHealed();
+
+	void clear();
+};
+
 // Container for currently loaded game/world data.
 class GameState
 {
@@ -107,10 +122,11 @@ private:
 	Date date;
 	Clock clock;
 	double chasmAnimSeconds;
-	bool isCamping;
 
 	WeatherDefinition weatherDef;
 	WeatherInstance weatherInst;
+
+	CampingState campingState;
 
 	GuardSpawnState guardSpawnState;
 
@@ -175,14 +191,16 @@ public:
 	// Refers to fog in outdoor dungeons and daytime fog, not the heavy fog screen effect.
 	bool isFogActive() const;
 
-	// Sets whether the player is camping, which influences time passing and other things.
-	void setIsCamping(bool isCamping);
-
 	// Sets the player's world map travel data when they select a destination.
 	void setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData);
 
 	// Recalculates the weather for each global quarter (done hourly).
 	void updateWeatherList(ArenaRandom &random, const ExeData &exeData);
+
+	// Sets whether the player is camping, which influences time passing and other things.
+	bool isCamping() const;
+	void setCampingManualHours(int hours);
+	void setCampingUntilHealed();
 
 	void spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
 	void queueCityGuardEncounter(Game &game);

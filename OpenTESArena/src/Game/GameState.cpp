@@ -149,6 +149,35 @@ bool EntityEncounterSpawnInfo::isCityGuards() const
 	return this->guardType >= 0;
 }
 
+CampingState::CampingState()
+{
+	this->manualHoursRemaining = 0;
+	this->isCampingUntilHealed = false;
+}
+
+bool CampingState::isCamping() const
+{
+	return (this->manualHoursRemaining > 0) || this->isCampingUntilHealed;
+}
+
+void CampingState::setManualHours(int hours)
+{
+	this->manualHoursRemaining = hours;
+	this->isCampingUntilHealed = false;
+}
+
+void CampingState::setUntilHealed()
+{
+	this->manualHoursRemaining = 0;
+	this->isCampingUntilHealed = true;
+}
+
+void CampingState::clear()
+{
+	this->manualHoursRemaining = 0;
+	this->isCampingUntilHealed = false;
+}
+
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
 {
 	this->provinceID = provinceID;
@@ -223,13 +252,14 @@ void GameState::clearSession()
 	this->provinceIndex = -1;
 	this->locationIndex = -1;
 
-	this->isCamping = false;
 	this->chasmAnimSeconds = 0.0;
 
 	this->travelData = std::nullopt;
 	this->clearMaps();
 
 	this->weatherDef.initClear();
+
+	this->campingState.clear();
 }
 
 bool GameState::hasPendingLevelIndexChange() const
@@ -614,11 +644,6 @@ bool GameState::isFogActive() const
 	}
 }
 
-void GameState::setIsCamping(bool isCamping)
-{
-	this->isCamping = isCamping;
-}
-
 void GameState::setTravelData(std::optional<ProvinceMapUiModel::TravelData> travelData)
 {
 	this->travelData = std::move(travelData);
@@ -684,6 +709,21 @@ void GameState::updateWeatherList(ArenaRandom &random, const ExeData &exeData)
 		DebugAssertIndex(weatherTable, weatherTableIndex);
 		this->worldMapWeathers[i] = static_cast<ArenaWeatherType>(weatherTable[weatherTableIndex]);
 	}
+}
+
+bool GameState::isCamping() const
+{
+	return this->campingState.isCamping();
+}
+
+void GameState::setCampingManualHours(int hours)
+{
+	this->campingState.setManualHours(hours);
+}
+
+void GameState::setCampingUntilHealed()
+{
+	this->campingState.setUntilHealed();
 }
 
 void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
@@ -1008,7 +1048,8 @@ void GameState::tickGameClock(double dt, Game &game)
 	DebugAssert(dt >= 0.0);
 
 	const Clock prevClock = this->clock;
-	const double timeScale = ArenaClockUtils::GameSecondsPerRealTimeSecond * (this->isCamping ? 250.0 : 1.0);
+	const bool isPlayerCamping = this->isCamping();
+	const double timeScale = ArenaClockUtils::GameSecondsPerRealTimeSecond * (isPlayerCamping ? 250.0 : 1.0);
 	this->clock.incrementTime(dt * timeScale);
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;
@@ -1034,7 +1075,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	bool canAttemptEnemyEncounterThisHour = false;
 	if (newHour != prevHour)
 	{
-		canAttemptEnemyEncounterThisHour = ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(environmentType, this->isCamping, player.groundState.onRaisedPlatform);
+		canAttemptEnemyEncounterThisHour = ArenaEntityUtils::isEnemyEncounterAllowedOnHourChanged(environmentType, isPlayerCamping, player.groundState.onRaisedPlatform);
 
 		this->updateWeatherList(arenaRandom, exeData);
 	}
@@ -1045,7 +1086,7 @@ void GameState::tickGameClock(double dt, Game &game)
 	if (newMinutes != prevMinutes)
 	{
 		const bool areCitizensPresent = !isNightForEncounters || entityChunkManager.anyCitizensNearby(playerPosition);
-		canAttemptEnemyEncounterThisMinute = ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(environmentType, areCitizensPresent, this->isCamping, player.groundState.onRaisedPlatform);
+		canAttemptEnemyEncounterThisMinute = ArenaEntityUtils::isEnemyEncounterAllowedOnMinuteChanged(environmentType, areCitizensPresent, isPlayerCamping, player.groundState.onRaisedPlatform);
 	}
 
 	const bool canAttemptEnemyEncounter = (canAttemptEnemyEncounterThisHour || canAttemptEnemyEncounterThisMinute) && !entityChunkManager.anyEnemiesNearby(playerPosition);
@@ -1057,7 +1098,7 @@ void GameState::tickGameClock(double dt, Game &game)
 		const int terrainType = 0; //@todo: Pass in terrain type
 		int encounterChance;
 		int encounterChanceTableIndex;
-		ArenaEntityUtils::getEncounterParameters(environmentType, buildingType, isTrespassing, this->isCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);
+		ArenaEntityUtils::getEncounterParameters(environmentType, buildingType, isTrespassing, isPlayerCamping, terrainType, newHour, currentDay, exeData, &encounterChance, &encounterChanceTableIndex);
 
 		if (encounterChance > arenaRandom.next(100))
 		{
@@ -1259,12 +1300,15 @@ void GameState::tickPlayerEffectChanges(const PlayerEffectsState &currentEffects
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const Span<const std::string> effectNames = exeData.status.effectNames;
 
+	const bool isCatchingNewDisease = currentEffectsState.isDiseased() && (currentEffectsState.diseaseID != prevEffectsState.diseaseID);
+	const bool isBecomingParalyzed = currentEffectsState.isParalyzed() && !prevEffectsState.isParalyzed();
+
 	std::string effectText;
-	if (currentEffectsState.isDiseased() && (currentEffectsState.diseaseID != prevEffectsState.diseaseID))
+	if (isCatchingNewDisease)
 	{
 		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[0], exeData);
 	}
-	else if (currentEffectsState.isParalyzed() && !prevEffectsState.isParalyzed())
+	else if (isBecomingParalyzed)
 	{
 		effectText = GameWorldUiModel::getEffectTextBoxMessage(effectNames[6], exeData);
 	}

@@ -199,6 +199,7 @@ struct Player
 	double getJumpMagnitude() const;
 
 	double getMaxMoveSpeed() const;
+	bool canMoveAndTurn() const;
 	bool isMoving() const;
 	// Changes the velocity (as a force) given a normalized direction, magnitude, and delta time.
 	void accelerate(const Double3 &direction, double magnitude, double dt); // @todo: this will give CharacterVirtual a force probably?
