@@ -1684,9 +1684,6 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 
 	if (!text.empty())
 	{
-		// @todo put gameState.setIsCamping(true/false) in modal buttons, or maybe make it a function of a GameState::remainingRestHours?
-		game.gameState.tickGameClock(250.0, game);
-		text += "\n(debug: sleeping a while)";
 		GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
 	}
 	else
