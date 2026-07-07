@@ -766,10 +766,13 @@ bool Player::canRestUntilHealed() const
 {
 	const bool needsHealth = this->currentHealth < this->maxHealth;
 
+	constexpr double lostStaminaBias = 1.0; // Slight bias due to natural stamina loss over time.
+	const bool needsStamina = this->currentStamina < (this->maxStamina - lostStaminaBias);
+
 	const CharacterClassDefinition &charClassDef = CharacterClassLibrary::getInstance().getDefinition(this->charClassDefID);
 	const bool needsSpellPoints = charClassDef.canRecoverSpellPoints && (this->currentSpellPoints < this->maxSpellPoints);
 
-	return needsHealth || needsSpellPoints;
+	return needsHealth || needsStamina || needsSpellPoints;
 }
 
 void Player::applyRestHealing(int restFactor, int tavernRoomType, const ExeData &exeData)
