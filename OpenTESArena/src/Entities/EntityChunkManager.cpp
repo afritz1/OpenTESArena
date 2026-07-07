@@ -1526,21 +1526,24 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 
 				if (isCloseEnoughToAttackPlayer)
 				{
-					const bool isPlayerHit = random.nextBool();
+					const bool isPlayerHit = random.nextBool(); // @todo proper accuracy calculation
 
 					if (isPlayerHit)
 					{
-						const double damageAmount = random.nextReal() * 3.0; // @todo depend on original enemy values (entity def?)
+						double damageAmount = 0.0;
 
 						const EnemyEntityDefinition &enemyDef = entityDef.enemy;
 						if (enemyDef.type == EnemyEntityDefinitionType::Human)
 						{
+							damageAmount = 3.0 + (random.nextReal() * 10.0); // @todo proper damage calculation (based on equipped weapon?)
 							//@todo: Chance for critical strike
 						}
 						else
 						{
-							const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
+							const CreatureDefinition &creatureDef = CreatureDefinitionLibrary::getInstance().getDefinition(enemyDef.creatureDefID);
+							damageAmount = static_cast<double>(creatureDef.minDamage + random.next(creatureDef.maxDamage - creatureDef.minDamage + 1));
 
+							const int originalCreatureIndex = static_cast<int>(enemyDef.creatureDefID);
 							const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
 							const int originalPlayerClassIndex = playerCharClassDef.originalClassIndex;
 
