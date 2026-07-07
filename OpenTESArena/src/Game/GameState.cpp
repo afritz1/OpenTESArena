@@ -1055,7 +1055,7 @@ void GameState::tickGameClock(double dt, Game &game)
 
 	const Clock prevClock = this->clock;
 	const bool isPlayerCamping = this->isCamping();
-	const double timeScale = ArenaClockUtils::GameSecondsPerRealTimeSecond * (isPlayerCamping ? 250.0 : 1.0);
+	const double timeScale = ArenaClockUtils::GameSecondsPerRealTimeSecond * (isPlayerCamping ? ArenaClockUtils::CampingTimeScale : 1.0);
 	this->clock.incrementTime(dt * timeScale);
 	const int prevHour = prevClock.hours;
 	const int newHour = this->clock.hours;

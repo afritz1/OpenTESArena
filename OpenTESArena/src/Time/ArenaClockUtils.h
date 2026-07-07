@@ -9,6 +9,7 @@ namespace ArenaClockUtils
 	static constexpr double GameSecondsPerRound = 60.0;
 	static constexpr double RoundsPerRealTimeSecond = GameSecondsPerRealTimeSecond / GameSecondsPerRound;
 	static constexpr double RealTimeSecondsPerRound = 1.0 / RoundsPerRealTimeSecond;
+	static constexpr double CampingTimeScale = 600.0;
 
 	// Beginnings of each time-of-day range.
 	constexpr char Midnight[] = "Midnight";
