@@ -176,6 +176,7 @@ void CampingState::clear()
 	this->manualHoursRemaining = 0;
 	this->isCampingUntilHealed = false;
 	this->untilHealedHoursAccumulated = 0;
+	this->secondsUntilNextRecoveryTick = 0.0;
 }
 
 GameState::WorldMapLocationIDs::WorldMapLocationIDs(int provinceID, int locationID)
@@ -1324,8 +1325,15 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 
 	if (this->isCamping())
 	{
+		this->campingState.secondsUntilNextRecoveryTick -= dt;
+		if (this->campingState.secondsUntilNextRecoveryTick > 0.0)
+		{
+			return;
+		}
+
+		this->campingState.secondsUntilNextRecoveryTick += PlayerConstants::SECONDS_PER_RECOVERY_TICK;
+
 		// @todo provide correct values
-		// @todo don't tick this every frame, need to tick only some # of times per second, like a CampingState::realTimeSecondsSinceLastRecoveryApply
 		const int restFactor = 1;
 		const int tavernRoomType = 0;
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();

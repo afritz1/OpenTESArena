@@ -52,6 +52,8 @@ namespace PlayerConstants
 	constexpr double CREATURE_SOUND_MAX_DISTANCE = 6.0;
 
 	constexpr double SAFE_SLEEP_DISTANCE = 8.0;
+	
+	constexpr double SECONDS_PER_RECOVERY_TICK = 1.0 / 6.0;
 }
 
 enum class PlayerMovementType

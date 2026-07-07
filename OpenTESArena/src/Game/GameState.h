@@ -65,6 +65,8 @@ struct CampingState
 	bool isCampingUntilHealed;
 	int untilHealedHoursAccumulated;
 
+	double secondsUntilNextRecoveryTick;
+
 	CampingState();
 
 	bool isCamping() const;
