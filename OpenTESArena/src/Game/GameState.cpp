@@ -727,6 +727,11 @@ void GameState::setCampingUntilHealed()
 	this->campingState.setUntilHealed();
 }
 
+void GameState::clearCampingState()
+{
+	this->campingState.clear();
+}
+
 void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
 {
 	const Player &player = game.player;

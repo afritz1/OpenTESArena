@@ -205,6 +205,7 @@ public:
 	bool isCamping() const;
 	void setCampingManualHours(int hours);
 	void setCampingUntilHealed();
+	void clearCampingState();
 
 	void spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
 	void queueCityGuardEncounter(Game &game);

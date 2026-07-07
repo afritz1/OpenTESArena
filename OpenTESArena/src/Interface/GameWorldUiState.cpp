@@ -627,6 +627,12 @@ void GameWorldUI::onScreenToWorldInteraction(Int2 windowPoint, bool isPrimaryInt
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
 	const InputManager &inputManager = game.inputManager;
 	const bool debugFadeVoxel = isPrimaryInteraction && inputManager.keyIsDown(SDL_SCANCODE_G);
 	PlayerLogic::handleScreenToWorldInteraction(game, windowPoint, isPrimaryInteraction, debugFadeVoxel);
@@ -1464,6 +1470,12 @@ void GameWorldUI::onMouseButtonChanged(Game &game, MouseButtonType type, const I
 
 	if (pressed)
 	{
+		GameState &gameState = game.gameState;
+		if (gameState.isCamping())
+		{
+			gameState.clearCampingState();
+		}
+
 		const bool isLeftClick = type == MouseButtonType::Left;
 		const bool isRightClick = type == MouseButtonType::Right;
 
@@ -1537,6 +1549,12 @@ void GameWorldUI::onCharacterSheetButtonSelected(MouseButtonType mouseButtonType
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
 	game.setNextContext(CharacterUI::ContextName);
 }
 
@@ -1544,6 +1562,12 @@ void GameWorldUI::onWeaponToggleButtonSelected(MouseButtonType mouseButtonType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
 	if (!game.canPlayerMoveAndTurn())
 	{
 		return;
@@ -1580,6 +1604,11 @@ void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
 
 	if (mouseButtonType == MouseButtonType::Left)
 	{
@@ -1587,7 +1616,6 @@ void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
 	}
 	else if (mouseButtonType == MouseButtonType::Right)
 	{
-		const GameState &gameState = game.gameState;
 		const MapType mapType = gameState.getActiveMapType();
 		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
@@ -1629,6 +1657,14 @@ void GameWorldUI::onMapButtonSelected(MouseButtonType mouseButtonType)
 
 void GameWorldUI::onStealButtonSelected(MouseButtonType mouseButtonType)
 {
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
 	GameWorldUI::setInteractionType(GameWorldInteractionType::Thieving);
 }
 
@@ -1636,12 +1672,26 @@ void GameWorldUI::onStatusButtonSelected(MouseButtonType mouseButtonType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
 	const std::string text = GameWorldUiModel::getStatusButtonText(game);
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
 }
 
 void GameWorldUI::onMagicButtonSelected(MouseButtonType mouseButtonType)
 {
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
 	DebugLog("Magic.");
 }
 
@@ -1649,11 +1699,25 @@ void GameWorldUI::onLogbookButtonSelected(MouseButtonType mouseButtonType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
 	game.setNextContext(LogbookUI::ContextName);
 }
 
 void GameWorldUI::onUseItemButtonSelected(MouseButtonType mouseButtonType)
 {
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		return;
+	}
+
 	DebugLog("Use item.");
 }
 
@@ -1661,8 +1725,13 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	GameState &gameState = game.gameState;
+	if (gameState.isCamping())
+	{
+		gameState.clearCampingState();
+		return;
+	}
 
-	const GameState &gameState = game.gameState;
 	const MapType mapType = gameState.getActiveMapType();
 	const MapSubDefinition &mapSubDef = gameState.getActiveMapDef().getSubDefinition();
 	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
@@ -1821,10 +1890,10 @@ void GameWorldUI::onToggleCompassInputAction(const InputActionCallbackValues &va
 {
 	if (values.performed)
 	{
-		Options &options = values.game.options;
+		Game &game = values.game;
+		Options &options = game.options;
 		const bool isCompassVisible = !options.getMisc_ShowCompass();
 		options.setMisc_ShowCompass(isCompassVisible);
-		GameWorldUI::setCompassVisible(isCompassVisible);
 	}
 }
 
@@ -1833,6 +1902,12 @@ void GameWorldUI::onPlayerPositionInputAction(const InputActionCallbackValues &v
 	if (values.performed)
 	{
 		Game &game = values.game;
+		const GameState &gameState = game.gameState;
+		if (gameState.isCamping())
+		{
+			return;
+		}
+
 		const std::string text = GameWorldUiModel::getPlayerPositionText(game);
 		GameWorldUI::setActionText(text.c_str());
 	}
@@ -1843,6 +1918,13 @@ void GameWorldUI::onPauseMenuInputAction(const InputActionCallbackValues &values
 	if (values.performed)
 	{
 		Game &game = values.game;
+		GameState &gameState = game.gameState;
+		if (gameState.isCamping())
+		{
+			gameState.clearCampingState();
+			return;
+		}
+
 		game.setNextContext(PauseMenuUI::ContextName);
 	}
 }
