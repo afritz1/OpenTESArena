@@ -1088,7 +1088,7 @@ void GameState::tickGameClock(double dt, Game &game)
 
 				if (this->campingState.manualHoursRemaining == 0)
 				{
-					DebugLog("Player has finished resting manual hours.");
+					GameWorldUI::showTextPopUp(exeData.camping.doneRestingWakeUp.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
 					this->campingState.clear();
 				}
 			}
@@ -1381,7 +1381,7 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 		{
 			if (!player.canRestUntilHealed())
 			{
-				DebugLog("Player has finished resting until healed.");
+				GameWorldUI::showTextPopUp(exeData.camping.doneRestingHealed.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
 				this->campingState.clear();
 			}
 		}
