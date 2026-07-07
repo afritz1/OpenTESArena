@@ -1131,7 +1131,7 @@ void GameWorldUI::showCampModal()
 		game.uiManager.disableTopMostContext();
 		game.inputManager.setInputActionMapActive(InputActionMapName::Camping, false);
 		
-		const Player &player = game.player;
+		Player &player = game.player;
 		if (!player.canRestUntilHealed())
 		{
 			GameWorldUI::showTextPopUp(exeData.camping.alreadyFullyRested.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
@@ -1140,6 +1140,9 @@ void GameWorldUI::showCampModal()
 
 		GameState &gameState = game.gameState;
 		gameState.setCampingUntilHealed();
+
+		player.setPhysicsVelocity(Double3::Zero);
+
 		GameWorldUI::onPauseChanged(false);
 	};
 
@@ -1311,6 +1314,9 @@ void GameWorldUI::showCampManualHoursModal()
 			{
 				GameState &gameState = game.gameState;
 				gameState.setCampingManualHours(hoursCount);
+
+				Player &player = game.player;
+				player.setPhysicsVelocity(Double3::Zero);
 			}
 		}
 	};
