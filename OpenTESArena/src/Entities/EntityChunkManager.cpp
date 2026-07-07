@@ -39,7 +39,7 @@
 namespace
 {
 	constexpr double EnemyToPlayerDetectionDistance = 4.0; // @todo split into "detection inner" and "detection outer" so there is padding between state changes
-	constexpr double EnemyToPlayerMeleeAttackDistance = 0.85; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
+	constexpr double EnemyToPlayerMeleeAttackDistance = 1.0; // @todo split into "attack inner" and "attack outer" so player can't just move 1 inch away to dodge
 
 	bool TryCreatePhysicsCollider(const WorldDouble3 &feetPosition, double colliderHeight, bool isCharacter, bool isSensor, JPH::PhysicsSystem &physicsSystem, JPH::BodyID *outBodyID)
 	{
