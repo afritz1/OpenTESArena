@@ -41,6 +41,7 @@ namespace
 	constexpr char TriggerTextBoxElementName[] = "GameWorldTriggerTextBox";
 	constexpr char ActionTextBoxElementName[] = "GameWorldActionTextBox";
 	constexpr char EffectTextBoxElementName[] = "GameWorldEffectTextBox";
+	constexpr char CampingHoursTextBoxElementName[] = "GameWorldCampingHoursTextBox";
 
 	constexpr const char *ButtonElementNames[] =
 	{
@@ -573,6 +574,10 @@ void GameWorldUI::update(double dt)
 	const bool isEffectTextVisible = GameWorldUI::isEffectTextVisible();
 	const UiElementInstanceID effectTextBoxElementInstID = uiManager.getElementByName(EffectTextBoxElementName);
 	uiManager.setElementActive(effectTextBoxElementInstID, isEffectTextVisible);
+
+	const bool isCampingHoursTextVisible = GameWorldUI::isCampingHoursTextVisible();
+	const UiElementInstanceID campingHoursTextBoxElementInstID = uiManager.getElementByName(CampingHoursTextBoxElementName);
+	uiManager.setElementActive(campingHoursTextBoxElementInstID, isCampingHoursTextVisible);
 
 	if (!isModernInterface)
 	{
@@ -1360,6 +1365,13 @@ bool GameWorldUI::isEffectTextVisible()
 	return state.effectTextRemainingSeconds > 0.0;
 }
 
+bool GameWorldUI::isCampingHoursTextVisible()
+{
+	const GameWorldUiState &state = GameWorldUI::state;
+	const Game &game = *state.game;
+	return game.gameState.isCamping();
+}
+
 void GameWorldUI::setTriggerText(const char *str)
 {
 	GameWorldUiState &state = GameWorldUI::state;
@@ -1391,6 +1403,15 @@ void GameWorldUI::setEffectText(const char *str)
 	uiManager.setTextBoxText(textBoxElementInstID, str);
 
 	GameWorldUI::setEffectTextDuration(str);
+}
+
+void GameWorldUI::setCampingHoursText(const char *str)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	const UiElementInstanceID textBoxElementInstID = uiManager.getElementByName(CampingHoursTextBoxElementName);
+	uiManager.setTextBoxText(textBoxElementInstID, str);
 }
 
 void GameWorldUI::setTriggerTextDuration(const std::string_view text)

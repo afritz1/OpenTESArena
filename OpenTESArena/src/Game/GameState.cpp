@@ -1236,6 +1236,44 @@ void GameState::tickUiMessages(double dt)
 	{
 		GameWorldUI::state.effectTextRemainingSeconds -= dt;
 	}
+
+	if (GameWorldUI::isCampingHoursTextVisible())
+	{
+		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+		std::string campingHoursStr;
+		if (this->campingState.isCampingUntilHealed)
+		{
+			if (this->campingState.untilHealedHoursAccumulated == 1)
+			{
+				campingHoursStr = exeData.camping.singularHourPassed;
+			}
+			else
+			{
+				campingHoursStr = exeData.camping.pluralHoursPassed;
+			}
+
+			campingHoursStr = String::replace(campingHoursStr, "%u", std::to_string(this->campingState.untilHealedHoursAccumulated));
+		}
+		else
+		{
+			if (this->campingState.manualHoursRemaining == 1)
+			{
+				campingHoursStr = exeData.camping.singularHourRemaining;
+			}
+			else
+			{
+				campingHoursStr = exeData.camping.pluralHoursRemaining;
+			}
+
+			campingHoursStr = String::replace(campingHoursStr, "%u", std::to_string(this->campingState.manualHoursRemaining));
+		}
+
+		if (!campingHoursStr.empty())
+		{
+			GameWorldUI::setCampingHoursText(campingHoursStr.c_str());
+		}
+	}
 }
 
 void GameState::tickPlayerHealth(double dt, Game &game)
@@ -1338,7 +1376,6 @@ void GameState::tickPlayerEffects(double dt, Game &game)
 		const int tavernRoomType = 0;
 		const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 		player.applyRestHealing(restFactor, tavernRoomType, exeData);
-		DebugLogFormat("Applying camping healing effect (hours left: %d, hours accumulated: %d).", this->campingState.manualHoursRemaining, this->campingState.untilHealedHoursAccumulated);
 
 		if (this->campingState.isCampingUntilHealed)
 		{

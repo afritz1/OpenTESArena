@@ -68,6 +68,7 @@ struct GameWorldUiState
 	GameWorldInteractionType interactionType;
 
 	// Game world interface display texts have an associated time remaining. These values are not destroyed when switching away from the game world UI.
+	// Camping hours text doesn't have a duration, it's only when camping is active.
 	// - Trigger text: lore message from voxel trigger
 	// - Action text: description of the player's current action
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)
@@ -104,9 +105,11 @@ namespace GameWorldUI
 	bool isTriggerTextVisible();
 	bool isActionTextVisible();
 	bool isEffectTextVisible();
+	bool isCampingHoursTextVisible();
 	void setTriggerText(const char *str);
 	void setActionText(const char *str);
 	void setEffectText(const char *str);
+	void setCampingHoursText(const char *str);
 	void setTriggerTextDuration(const std::string_view text);
 	void setActionTextDuration(const std::string_view text);
 	void setEffectTextDuration(const std::string_view text);

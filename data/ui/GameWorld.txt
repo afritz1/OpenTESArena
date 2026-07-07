@@ -169,6 +169,16 @@ TextColor=251,239,77,255
 TextAlignment=BottomCenter
 Shadow=-1,0,190,113,0,255
 
+[GameWorldCampingHoursTextBox]
+Type=TextBox
+Position=160,20
+Pivot=Top
+DrawOrder=7
+WorstCaseText=WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+FontName=FONT_A.DAT
+TextColor=0,0,203,255
+TextAlignment=TopCenter
+
 ##################################
 
 # Hotkeys
