@@ -251,6 +251,7 @@ void GameWorldUI::create(Game &game)
 	GameWorldUiState &state = GameWorldUI::state;
 	state.init(game);
 
+	const GameState &gameState = game.gameState;
 	const Options &options = game.options;
 	UiManager &uiManager = game.uiManager;
 	InputManager &inputManager = game.inputManager;
@@ -383,7 +384,8 @@ void GameWorldUI::create(Game &game)
 
 	GameWorldUiView::updateStatusBarsTexture(state.statusBarsTextureID, game.player, renderer);
 
-	GameWorldUI::setCompassVisible(options.getMisc_ShowCompass());
+	const bool isCompassVisible = options.getMisc_ShowCompass() && !gameState.isCamping();
+	GameWorldUI::setCompassVisible(isCompassVisible);
 
 	uiManager.addMouseButtonChangedListener(GameWorldUI::onMouseButtonChanged, GameWorldUI::ContextName, inputManager);
 	uiManager.addMouseButtonHeldListener(GameWorldUI::onMouseButtonHeld, GameWorldUI::ContextName, inputManager);
@@ -465,6 +467,7 @@ void GameWorldUI::update(double dt)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	GameState &gameState = game.gameState;
 	const Options &options = game.options;
 	UiManager &uiManager = game.uiManager;
 	TextureManager &textureManager = game.textureManager;
@@ -480,6 +483,9 @@ void GameWorldUI::update(double dt)
 	const UiElementInstanceID compassSliderImageElementInstID = uiManager.getElementByName(CompassSliderImageElementName);
 	const UiElementInstanceID compassFrameImageElementInstID = uiManager.getElementByName(CompassFrameImageElementName);
 	uiManager.setTransformPosition(compassSliderImageElementInstID, compassSliderPosition);
+
+	const bool isCompassVisible = options.getMisc_ShowCompass() && !gameState.isCamping();
+	GameWorldUI::setCompassVisible(isCompassVisible);
 
 	// Weapon
 	const UiElementInstanceID weaponImageElementInstID = uiManager.getElementByName(WeaponImageElementName);
@@ -699,6 +705,7 @@ void GameWorldUI::onPauseChanged(bool paused)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
+	const GameState &gameState = game.gameState;
 	const Player &player = game.player;
 	UiManager &uiManager = game.uiManager;
 	const Options &options = game.options;
@@ -710,7 +717,7 @@ void GameWorldUI::onPauseChanged(bool paused)
 	const UiElementInstanceID weaponImageElementInstID = uiManager.getElementByName(WeaponImageElementName);
 	uiManager.setElementActive(weaponImageElementInstID, isWeaponVisible);
 
-	const bool isCompassVisible = !paused && options.getMisc_ShowCompass();
+	const bool isCompassVisible = !paused && options.getMisc_ShowCompass() && !gameState.isCamping();
 	GameWorldUI::setCompassVisible(isCompassVisible);
 
 	GameWorldUI::updateDoorKeys();
