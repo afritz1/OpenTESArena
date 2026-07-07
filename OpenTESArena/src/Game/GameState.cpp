@@ -1132,7 +1132,7 @@ void GameState::tickGameClock(double dt, Game &game)
 			encounterSpawnInfo.initCreaturesOrHumans(encounter.id, encounter.level, encounter.count);
 			this->spawnEncounterEnemies(game, encounterSpawnInfo);
 
-			if (this->isCamping())
+			if (this->isCamping() && entityChunkManager.anyEnemiesNearby(playerPosition))
 			{
 				GameWorldUI::showTextPopUp(exeData.camping.enemiesNearbyAfterResting.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment);
 				this->campingState.clear();
