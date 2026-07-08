@@ -1467,24 +1467,32 @@ void GameState::tickPlayerLevel(Game &game)
 
 	Random &random = game.random;
 	int bonusPoints = 0;
+	int maxHealthIncrease = 0;
 	for (int i = 0; i < earnedLevelUps; i++)
 	{
 		const int extraBonusPoints = random.next((CharacterLevelUpState::BonusPointsRandomMax - CharacterLevelUpState::BonusPointsRandomMin) + 1);
 		bonusPoints += CharacterLevelUpState::BonusPointsRandomMin + extraBonusPoints;
+
+		const DerivedAttributes enduranceDerivedBonuses = ArenaPlayerUtils::calculateEnduranceDerivedBonuses(player.primaryAttributes.endurance.maxValue);
+		maxHealthIncrease += enduranceDerivedBonuses.bonusToHealth + (1 + random.next(charClassDef.healthDie));
 	}
 	
 	AudioManager &audioManager = game.audioManager;
 	audioManager.playSoundOneShot(ArenaSoundName::Fanfare1);
-	DebugLogFormat("Player is now level %d with %d points to spend.", player.level, bonusPoints);
+	DebugLogFormat("Player is now level %d (+%d attribute points, +%d max health).", player.level, bonusPoints, maxHealthIncrease);
 
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 	const std::string &readyToLevelUpStr = exeData.status.readyToLevelUp;
 	GameWorldUI::showTextPopUp(readyToLevelUpStr.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::MiddleCenter,
-		[&game, bonusPoints]()
+		[&game, bonusPoints, maxHealthIncrease]()
 	{
+		Player &player = game.player;
+		player.maxHealth = std::round(player.maxHealth + maxHealthIncrease);
+		player.currentHealth = std::round(player.currentHealth + maxHealthIncrease);
+
 		DebugAssert(game.charLevelUpState == nullptr);
 		game.charLevelUpState = std::make_unique<CharacterLevelUpState>();
-		game.charLevelUpState->init(game.player, bonusPoints);
+		game.charLevelUpState->init(player, bonusPoints);
 
 		game.uiManager.disableTopMostContext(); // Close pop-up so the game world becomes the top-most active context for Game::handleContextChanges().
 		game.setNextContext(LevelUpUI::ContextName);
