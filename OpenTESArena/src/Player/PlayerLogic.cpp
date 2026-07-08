@@ -1026,7 +1026,7 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			constexpr double playerHitSearchRadius = PlayerConstants::MELEE_HIT_SEARCH_RADIUS;
 			constexpr double playerHalfHeight = PlayerConstants::TOP_OF_HEAD_HEIGHT / 2.0;
 			const WorldDouble3 playerFeetPosition = player.getFeetPosition();
-			const WorldDouble3 hitSearchCenterPoint = playerFeetPosition + WorldDouble3(0.0, playerHalfHeight, 0.0) + (player.getGroundDirection() * playerMeleeSwingRange);
+			const WorldDouble3 hitSearchCenterPoint = playerFeetPosition + WorldDouble3(0.0, playerHalfHeight, 0.0) + (player.forward * playerMeleeSwingRange);
 			CombatHitSearchResult hitSearchResult;
 			CombatLogic::getHitSearchResult(hitSearchCenterPoint, playerHitSearchRadius, ceilingScale, voxelChunkManager, entityChunkManager, &hitSearchResult);
 
