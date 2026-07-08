@@ -15,6 +15,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Collision/PhysicsLayer.h"
+#include "../Combat/CombatLogic.h"
 #include "../Interface/GameWorldUiState.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
@@ -446,6 +447,25 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 		const Double2 &direction = *initInfo.direction;
 		this->directions.get(entityInst.directionID) = direction;
+	}
+
+	if (entityDef.type == EntityDefinitionType::Vfx)
+	{
+		if (entityDef.vfx.type == VfxEntityAnimationType::BowProjectile)
+		{
+			constexpr double bowProjectileSpeed = 3.0;
+			const Double3 bowProjectileDirection(initInfo.direction->x, 0.0, initInfo.direction->y);
+			const Double3 bowProjectileVelocity = bowProjectileDirection * bowProjectileSpeed;
+			const JPH::Vec3 bowProjectilePhysicsVelocity(
+				static_cast<float>(bowProjectileVelocity.x),
+				static_cast<float>(bowProjectileVelocity.y),
+				static_cast<float>(bowProjectileVelocity.z));
+
+			JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
+			bodyInterface.SetLinearVelocity(entityInst.physicsBodyID, bowProjectilePhysicsVelocity);
+			bodyInterface.SetMotionType(entityInst.physicsBodyID, JPH::EMotionType::Dynamic, JPH::EActivation::Activate);
+			bodyInterface.SetGravityFactor(entityInst.physicsBodyID, 0.02f);
+		}
 	}
 
 	if (initInfo.citizenName.has_value())
@@ -1964,7 +1984,7 @@ void EntityChunkManager::updateDeathStates(JPH::PhysicsSystem &physicsSystem, Au
 	}
 }
 
-void EntityChunkManager::updateVfx()
+void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager &voxelChunkManager)
 {
 	for (const EntityInstance &entityInst : this->entities.values)
 	{
@@ -1980,6 +2000,89 @@ void EntityChunkManager::updateVfx()
 		if (animInst.isFinished())
 		{
 			this->queueEntityDestroy(entityInstID, true); // @todo shouldn't need to notify chunk, it should just be a loose entity in entitychunkmanager
+			continue;
+		}
+
+		const VfxEntityDefinition &vfxEntityDef = entityDef.vfx;
+		if (vfxEntityDef.type == VfxEntityAnimationType::BowProjectile)
+		{
+			const WorldDouble3 entityPosition = this->positions.get(entityInst.positionID);
+			if (entityPosition.y < 0.0)
+			{
+				// Outside play area.
+				this->queueEntityDestroy(entityInstID, true);
+				continue;
+			}
+			
+			// @todo move this entire hit search logic to a physics contact listener instead since diagonal walls etc are hard to check here
+			// - it should also be sharing the gold/exp logic of PlayerLogic::handleAttack()
+			const BoundingBox3D &entityBBox = this->boundingBoxes.get(entityInst.bboxID);
+			const double searchRadius = entityBBox.halfWidth;
+
+			CombatHitSearchResult hitSearchResult;
+			CombatLogic::getHitSearchResult(entityPosition, searchRadius, ceilingScale, voxelChunkManager, *this, &hitSearchResult);
+
+			if (hitSearchResult.voxelCount > 0)
+			{
+				bool isHittingSolidVoxel = false;
+				for (const WorldInt3 hitWorldVoxel : hitSearchResult.getVoxels())
+				{
+					const CoordInt3 hitVoxelCoord = VoxelUtils::worldVoxelToCoord(hitWorldVoxel);
+					const VoxelInt3 hitVoxel = hitVoxelCoord.voxel;
+					const VoxelChunk &hitVoxelChunk = voxelChunkManager.getChunkAtPosition(hitVoxelCoord.chunk);
+					const VoxelTraitsDefID hitVoxelTraitsDefID = hitVoxelChunk.traitsDefIDs.get(hitVoxel.x, hitVoxel.y, hitVoxel.z);
+					const VoxelTraitsDefinition &hitVoxelTraitsDef = hitVoxelChunk.traitsDefs[hitVoxelTraitsDefID];
+					if (hitVoxelTraitsDef.hasCollision())
+					{
+						isHittingSolidVoxel = true;
+						break;
+					}
+				}
+
+				if (isHittingSolidVoxel)
+				{
+					this->queueEntityDestroy(entityInstID, true);
+					continue;
+				}
+			}
+
+			if (hitSearchResult.entityCount > 0)
+			{
+				bool isHittingEntity = false;
+				for (const EntityInstanceID hitEntityInstID : hitSearchResult.getEntities())
+				{
+					const EntityInstance &hitEntityInst = this->entities.get(hitEntityInstID);
+					if (hitEntityInst.isTransformStatic())
+					{
+						this->queueEntityDestroy(entityInstID, true);
+						continue;
+					}
+
+					if (hitEntityInst.canBeKilledInCombat())
+					{
+						EntityCombatState &hitEntityCombatState = this->combatStates.get(hitEntityInst.combatStateID);
+						if (hitEntityCombatState.isInDeathState())
+						{
+							continue;
+						}
+
+						hitEntityCombatState.isDying = true;
+
+						// @todo need to make all the player melee code and this code give the same behaviors like calling guards, giving exp, etc.
+						// - need to process all combat hit search results someplace in like GameState::tickCombatResults()
+						DebugLogWarning("Not implemented: experience/gold from killing enemy with arrow.");
+
+						isHittingEntity = true;
+						break;
+					}
+				}
+
+				if (isHittingEntity)
+				{
+					this->queueEntityDestroy(entityInstID, true);
+					continue;
+				}
+			}
 		}
 	}
 }
@@ -2204,7 +2307,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	this->updateEnemyBehaviors(dt, playerPosition, player, random, physicsSystem, audioManager, voxelChunkManager);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
-	this->updateVfx();
+	this->updateVfx(ceilingScale, voxelChunkManager);
 }
 
 void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChunkManager, JPH::PhysicsSystem &physicsSystem)
@@ -2270,6 +2373,41 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 	}
 
 	// @todo add citizens here once they are using linear velocity instead of SetPosition()
+
+	for (const EntityInstanceID entityInstID : this->entities.keys)
+	{
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
+		if (entityDef.type != EntityDefinitionType::Vfx)
+		{
+			continue;
+		}
+
+		const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+		const JPH::RVec3 physicsPosition = bodyInterface.GetPosition(physicsBodyID);
+		const JPH::ShapeRefC physicsShape = bodyInterface.GetShape(physicsBodyID);
+		const JPH::AABox physicsColliderBBox = physicsShape->GetLocalBounds();
+		const float physicsColliderHeight = physicsColliderBBox.GetSize().GetY();
+		const float physicsColliderCenterToFeetDistance = physicsColliderHeight * 0.50f;
+
+		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
+		const WorldDouble3 oldPosition = entityPosition;
+		const WorldDouble3 newPosition(
+			static_cast<SNDouble>(physicsPosition.GetX()),
+			static_cast<double>(physicsPosition.GetY() - physicsColliderCenterToFeetDistance),
+			static_cast<WEDouble>(physicsPosition.GetZ()));
+		entityPosition = newPosition;
+
+		const WorldDouble2 oldPositionXZ = oldPosition.getXZ();
+		const WorldDouble2 newPositionXZ = newPosition.getXZ();
+
+		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(oldPositionXZ);
+		const ChunkInt2 curEntityChunkPos = VoxelUtils::worldPointToChunk(newPositionXZ);
+		if (curEntityChunkPos != prevEntityChunkPos)
+		{
+			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
+		}
+	}
 }
 
 void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const ChunkInt2 *chunkToNotify)

@@ -989,13 +989,16 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 		isEquippedWeaponRanged = weaponItemDef.isRanged;
 	}
 
+	constexpr double playerMeleeSwingRange = PlayerConstants::MELEE_HIT_RANGE;
+	constexpr double playerHitSearchRadius = PlayerConstants::MELEE_HIT_SEARCH_RADIUS;
+	constexpr double playerHalfHeight = PlayerConstants::TOP_OF_HEAD_HEIGHT / 2.0;
+	const WorldDouble3 playerFeetPosition = player.getFeetPosition();
+
 	const bool isAttackMouseButtonDown = inputManager.mouseButtonIsDown(SDL_BUTTON_RIGHT);
 	const int weaponAnimIdleStateIndex = weaponAnimInst.currentStateIndex;
 	int newStateIndex = weaponAnimIdleStateIndex;
 	int nextStateIndex = -1;
 	const char *sfxFilename = nullptr;
-
-	// @todo the CombatHitSearchResult could be manually populated with the entity an arrow collided with, so that we can use that same result for melee and ranged attacks
 
 	if (!isEquippedWeaponRanged)
 	{
@@ -1022,10 +1025,8 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::Swish;
 
-			constexpr double playerMeleeSwingRange = PlayerConstants::MELEE_HIT_RANGE;
-			constexpr double playerHitSearchRadius = PlayerConstants::MELEE_HIT_SEARCH_RADIUS;
-			constexpr double playerHalfHeight = PlayerConstants::TOP_OF_HEAD_HEIGHT / 2.0;
-			const WorldDouble3 playerFeetPosition = player.getFeetPosition();
+			// @todo need to somehow queue this up with arrow hit processing that happens in EntityChunkManager::update(). Maybe GameState::tickCombatResults()?
+
 			const WorldDouble3 hitSearchCenterPoint = playerFeetPosition + WorldDouble3(0.0, playerHalfHeight, 0.0) + (player.forward * playerMeleeSwingRange);
 			CombatHitSearchResult hitSearchResult;
 			CombatLogic::getHitSearchResult(hitSearchCenterPoint, playerHitSearchRadius, ceilingScale, voxelChunkManager, entityChunkManager, &hitSearchResult);
@@ -1186,9 +1187,11 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 	else
 	{
 		bool isAttack = false;
+		Double2 projectileDirection;
 		if (isModernInterface)
 		{
 			isAttack = isAttackMouseButtonDown;
+			projectileDirection = player.getGroundDirectionXZ();
 		}
 		else
 		{
@@ -1203,9 +1206,11 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 			const TextureFileMetadata &metadata = textureManager.getMetadataHandle(*metadataID);
 			const int gameWorldInterfaceHeight = metadata.getHeight(0);
-			const int originalCursorY = window.nativeToOriginal(inputManager.getMousePosition()).y;
+			const Int2 mousePosition = inputManager.getMousePosition();
+			const int originalCursorY = window.nativeToOriginal(mousePosition).y;
 			const bool isCursorInSceneView = originalCursorY < (ArenaRenderUtils::SCREEN_HEIGHT - gameWorldInterfaceHeight);
 			isAttack = isAttackMouseButtonDown && isCursorInSceneView;
+			projectileDirection = GameWorldUiModel::screenToWorldRayDirection(game, mousePosition).getXZ().normalized();
 		}
 
 		if (isAttack)
@@ -1213,6 +1218,28 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 			weaponAnimDef.tryGetStateIndex(WeaponAnimationUtils::STATE_FIRING.c_str(), &newStateIndex);
 			nextStateIndex = weaponAnimIdleStateIndex;
 			sfxFilename = ArenaSoundName::ArrowFire;
+
+			EntityDefinitionKey bowProjectileEntityDefKey;
+			bowProjectileEntityDefKey.initVfx(VfxEntityAnimationType::BowProjectile, 0);
+
+			const EntityDefinitionLibrary &entityDefLibrary = EntityDefinitionLibrary::getInstance();
+			EntityDefID bowProjectileEntityDefID;
+			if (!entityDefLibrary.tryGetDefinitionID(bowProjectileEntityDefKey, &bowProjectileEntityDefID))
+			{
+				DebugCrash("Couldn't get bow projectile entity definition ID.");
+			}
+
+			const EntityDefinition &bowProjectileEntityDef = entityDefLibrary.getDefinition(bowProjectileEntityDefID);
+			const EntityAnimationDefinition &bowProjectileAnimDef = bowProjectileEntityDef.animDef;
+
+			EntityInitInfo bowProjectileEntityInitInfo;
+			bowProjectileEntityInitInfo.defID = bowProjectileEntityDefID;
+			bowProjectileEntityInitInfo.feetPosition = player.getEyePosition() + (Double3(projectileDirection.x, 0.0, projectileDirection.y) * 0.10);
+			bowProjectileEntityInitInfo.initialAnimStateIndex = *bowProjectileAnimDef.findStateIndex(EntityAnimationUtils::STATE_IDLE.c_str());
+			bowProjectileEntityInitInfo.isSensorCollider = true;
+			bowProjectileEntityInitInfo.canBeKilled = false;
+			bowProjectileEntityInitInfo.direction = projectileDirection;
+			entityChunkManager.createEntity(bowProjectileEntityInitInfo, random, game.physicsSystem, renderer);
 		}
 	}
 
@@ -1240,7 +1267,7 @@ void PlayerLogic::handleScreenToWorldInteraction(Game &game, const Int2 &nativeP
 	const Player &player = game.player;
 	const Double3 &cameraDirection = player.forward;
 	const CoordDouble3 rayStart = player.getEyeCoord();
-	const VoxelDouble3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
+	const Double3 rayDirection = GameWorldUiModel::screenToWorldRayDirection(game, nativePoint);
 	constexpr bool includeEntities = true;
 
 	RayCastHit hit;

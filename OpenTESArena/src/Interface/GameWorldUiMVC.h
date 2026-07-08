@@ -65,7 +65,7 @@ namespace GameWorldUiModel
 	void setFreeLookActive(Game &game, bool active);
 
 	// Converts a screen point to a 3D direction in the world.
-	VoxelDouble3 screenToWorldRayDirection(Game &game, const Int2 &windowPoint);
+	Double3 screenToWorldRayDirection(Game &game, const Int2 &windowPoint);
 
 	Radians getCompassAngle(const VoxelDouble2 &direction);
 
