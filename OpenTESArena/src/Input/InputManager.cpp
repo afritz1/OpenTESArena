@@ -756,7 +756,7 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 	std::vector<const ApplicationExitListenerEntry*> enabledApplicationExitListeners;
 	for (const ApplicationExitListenerEntry &entry : this->applicationExitListeners)
 	{
-		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
+		if (entry.enabled) // Always broadcast even if context is not top-most.
 		{
 			enabledApplicationExitListeners.emplace_back(&entry);
 		}
@@ -765,7 +765,7 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 	std::vector<const WindowResizedListenerEntry*> enabledWindowResizedListeners;
 	for (const WindowResizedListenerEntry &entry : this->windowResizedListeners)
 	{
-		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
+		if (entry.enabled) // Always broadcast even if context is not top-most.
 		{
 			enabledWindowResizedListeners.emplace_back(&entry);
 		}
@@ -774,7 +774,7 @@ void InputManager::update(Game &game, double dt, const UiManager &uiManager, con
 	std::vector<const RenderTargetsResetListenerEntry*> enabledRenderTargetsResetListeners;
 	for (const RenderTargetsResetListenerEntry &entry : this->renderTargetsResetListeners)
 	{
-		if (entry.enabled && uiManager.isContextTopMostActive(entry.contextName.c_str()))
+		if (entry.enabled) // Always broadcast even if context is not top-most.
 		{
 			enabledRenderTargetsResetListeners.emplace_back(&entry);
 		}
