@@ -194,7 +194,8 @@ enum class VfxEntityAnimationType
 {
 	SpellProjectile,
 	SpellExplosion,
-	MeleeStrike
+	MeleeStrike,
+	BowProjectile
 };
 
 struct VfxEntityDefinition

@@ -68,6 +68,12 @@ void VfxEntityAnimationKey::initMeleeStrike(int bloodIndex)
 	this->index = bloodIndex;
 }
 
+void VfxEntityAnimationKey::initBowProjectile()
+{
+	this->type = VfxEntityAnimationType::BowProjectile;
+	this->index = 0;
+}
+
 void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, const CharacterClassLibrary &charClassLibrary, TextureManager &textureManager)
 {
 	const ExeData &exeData = binaryAssetLibrary.getExeData();
@@ -163,6 +169,7 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 	const Span<const std::string> spellProjectileAnimFilenames(exeData.entities.effectAnimations + spellProjectileStartIndex, spellTypeCount);
 	const Span<const std::string> spellExplosionAnimFilenames(exeData.entities.effectAnimations + spellExplosionStartIndex, spellTypeCount);
 	const Span<const std::string> meleeVfxAnimFilenames(exeData.entities.effectAnimations + meleeVfxStartIndex, meleeVfxCount); // Blood, demon, undead
+	const std::string bowProjectileAnimFilenames[] = { "ARROW02.CFA" };
 	for (int i = 0; i < spellProjectileAnimFilenames.getCount(); i++)
 	{
 		const std::string animFilename = String::toUppercase(spellProjectileAnimFilenames[i]);
@@ -214,6 +221,24 @@ void EntityAnimationLibrary::init(const BinaryAssetLibrary &binaryAssetLibrary, 
 
 		VfxEntityAnimationKey animKey;
 		animKey.initMeleeStrike(i);
+		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
+	}
+
+	for (int i = 0; i < static_cast<int>(std::size(bowProjectileAnimFilenames)); i++)
+	{
+		const std::string animFilename = String::toUppercase(bowProjectileAnimFilenames[i]);
+		EntityAnimationDefinition animDef;
+		if (!ArenaAnimUtils::tryMakeVfxAnim(animFilename, true, textureManager, &animDef))
+		{
+			DebugLogError("Couldn't create VFX animation definition for bow projectile \"" + animFilename + "\".");
+			continue;
+		}
+
+		const EntityAnimationDefinitionID animDefID = static_cast<EntityAnimationDefinitionID>(this->defs.size());
+		this->defs.emplace_back(std::move(animDef));
+
+		VfxEntityAnimationKey animKey;
+		animKey.initBowProjectile();
 		this->vfxDefIDs.emplace_back(std::move(animKey), animDefID);
 	}
 }

@@ -203,6 +203,9 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		case VfxEntityAnimationType::MeleeStrike:
 			animKey.initMeleeStrike(index);
 			break;
+		case VfxEntityAnimationType::BowProjectile:
+			animKey.initBowProjectile();
+			break;
 		default:
 			DebugNotImplemented();
 			break;
@@ -243,7 +246,7 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 		addCitizenDef(climateType, false);
 	}
 
-	// Iterate all spell effects and melee effects.
+	// Iterate all projectiles and melee effects.
 	const int spellTypeCount = EntityAnimationUtils::SPELL_TYPE_COUNT;
 	const int meleeVfxCount = EntityAnimationUtils::MELEE_VFX_COUNT;
 	for (int i = 0; i < spellTypeCount; i++)
@@ -260,6 +263,8 @@ void EntityDefinitionLibrary::init(const ExeData &exeData, const CharacterClassL
 	{
 		addVfxDef(VfxEntityAnimationType::MeleeStrike, i);
 	}
+
+	addVfxDef(VfxEntityAnimationType::BowProjectile, 0);
 }
 
 int EntityDefinitionLibrary::getDefinitionCount() const

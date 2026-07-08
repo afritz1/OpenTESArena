@@ -54,6 +54,7 @@ struct VfxEntityAnimationKey
 	void initSpellProjectile(int spellIndex);
 	void initSpellExplosion(int spellIndex);
 	void initMeleeStrike(int bloodIndex);
+	void initBowProjectile();
 };
 
 using EntityAnimationDefinitionID = int;
