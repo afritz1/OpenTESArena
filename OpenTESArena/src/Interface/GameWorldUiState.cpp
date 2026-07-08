@@ -1172,8 +1172,6 @@ void GameWorldUI::showCampModal()
 		GameState &gameState = game.gameState;
 		gameState.setCampingUntilHealed();
 
-		player.setPhysicsVelocity(Double3::Zero);
-
 		GameWorldUI::onPauseChanged(false);
 	};
 
@@ -1345,9 +1343,6 @@ void GameWorldUI::showCampManualHoursModal()
 			{
 				GameState &gameState = game.gameState;
 				gameState.setCampingManualHours(hoursCount);
-
-				Player &player = game.player;
-				player.setPhysicsVelocity(Double3::Zero);
 			}
 		}
 	};

@@ -909,6 +909,12 @@ void Player::prePhysicsStep(double dt, Game &game)
 		this->accelerate(-Double3::UnitY, Physics::GRAVITY, dt);
 	}
 
+	if (this->groundState.onGround && !game.canPlayerMoveAndTurn())
+	{
+		// Prevent leftover velocity.
+		this->setPhysicsVelocity(Double3::Zero);
+	}
+
 	// @todo: disabling ExtendedUpdate() fixes the "drift" on level start, not sure if we'll ever need
 	// CharacterVirtual. Keeping around until stairstepping is figured out.
 	/*const JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
