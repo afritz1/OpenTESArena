@@ -1377,7 +1377,7 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 	}
 }
 
-void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, Player &player, Random &random,
+void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Random &random,
 	JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager)
 {
 	JPH::BodyInterface &bodyInterface = physicsSystem.GetBodyInterface();
@@ -1393,8 +1393,20 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
-		const double distToPlayerSqr = dirToPlayer.lengthSquared();
+		const Double3 entityToPlayerDiff = playerPosition - entityPosition;
+		const Double2 entityToPlayerDiffXZ = entityToPlayerDiff.getXZ();
+		const double distToPlayerXZSqr = entityToPlayerDiffXZ.lengthSquared();
+		const double distToPlayerYSqr = entityToPlayerDiff.y * entityToPlayerDiff.y;
+		
+		Double2 dirToPlayer;
+		if (distToPlayerXZSqr >= Constants::Epsilon)
+		{
+			dirToPlayer = entityToPlayerDiff.getXZ().normalized();
+		}
+		else
+		{
+			dirToPlayer = CardinalDirection::North; // In case player is standing on top of them
+		}
 
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const EntityAnimationDefinition &animDef = entityDef.animDef;
@@ -1425,10 +1437,11 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble2 &pla
 		EntityEnemyBehaviorState &enemyBehaviorState = behaviorState.enemy;
 		const EntityEnemyBehaviorStateType prevEnemyBehaviorStateType = enemyBehaviorState.type;
 
+		// Treat XZ and Y distances separately so the enemy doesn't move closer if the player jumps.
 		constexpr double detectionDistanceSqr = EnemyToPlayerDetectionDistance * EnemyToPlayerDetectionDistance;
 		constexpr double attackDistanceSqr = EnemyToPlayerMeleeAttackDistance * EnemyToPlayerMeleeAttackDistance;
-		const bool isCloseEnoughToDetectPlayer = distToPlayerSqr <= detectionDistanceSqr; // @todo add "isFarEnoughToStopDetectPlayer"
-		const bool isCloseEnoughToAttackPlayer = distToPlayerSqr <= attackDistanceSqr; // @todo add "isFarEnoughToStopAttackPlayer"
+		const bool isCloseEnoughToDetectPlayer = (distToPlayerXZSqr <= detectionDistanceSqr) && (distToPlayerYSqr <= (detectionDistanceSqr * 2.0)); // @todo add "isFarEnoughToStopDetectPlayer"
+		const bool isCloseEnoughToAttackPlayer = (distToPlayerXZSqr <= attackDistanceSqr) && (distToPlayerYSqr <= (attackDistanceSqr * 2.0)); // @todo add "isFarEnoughToStopAttackPlayer"
 
 		if (prevEnemyBehaviorStateType == EntityEnemyBehaviorStateType::Idle)
 		{
@@ -2186,7 +2199,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	}
 
 	this->updateCitizenBehaviors(dt, playerPositionXZ, isPlayerMoving, isPlayerWeaponSheathed, random, physicsSystem, voxelChunkManager);
-	this->updateEnemyBehaviors(dt, playerPositionXZ, player, random, physicsSystem, audioManager, voxelChunkManager);
+	this->updateEnemyBehaviors(dt, playerPosition, player, random, physicsSystem, audioManager, voxelChunkManager);
 	this->updateCreatureSounds(dt, playerPosition, random, audioManager);
 	this->updateDeathStates(physicsSystem, audioManager);
 	this->updateVfx();

@@ -234,7 +234,7 @@ private:
 	void updateCitizenBehaviors(double dt, const WorldDouble2 &playerPositionXZ, bool isPlayerMoving, bool isPlayerWeaponSheathed,
 		Random &random, JPH::PhysicsSystem &physicsSystem, const VoxelChunkManager &voxelChunkManager);
 
-	void updateEnemyBehaviors(double dt, const WorldDouble2 &playerPositionXZ, Player &player, Random &random, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager);
+	void updateEnemyBehaviors(double dt, const WorldDouble3 &playerPosition, Player &player, Random &random, JPH::PhysicsSystem &physicsSystem, AudioManager &audioManager, const VoxelChunkManager &voxelChunkManager);
 
 	std::string getCreatureSoundFilename(const EntityDefID defID) const;
 	void updateCreatureSounds(double dt, const WorldDouble3 &playerPosition, Random &random, AudioManager &audioManager);
