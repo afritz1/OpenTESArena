@@ -1569,7 +1569,28 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 						const EnemyEntityDefinition &enemyDef = entityDef.enemy;
 						if (enemyDef.type == EnemyEntityDefinitionType::Human)
 						{
-							damageAmount = 3.0 + (random.nextReal() * 10.0); // @todo proper damage calculation (based on equipped weapon?)
+							DebugAssert(entityInst.hasInventory());
+							const ItemInventory &humanEnemyItemInventory = this->itemInventories.get(entityInst.itemInventoryInstID);
+							
+							int humanEnemyEquippedWeaponInventorySlotIndex;
+							const bool humanEnemyHasWeaponEquipped = humanEnemyItemInventory.findFirstSlotIf(
+								[](const ItemDefinition &itemDef)
+							{
+								return itemDef.type == ItemType::Weapon;
+							}, &humanEnemyEquippedWeaponInventorySlotIndex);
+
+							if (humanEnemyHasWeaponEquipped)
+							{
+								const ItemDefinitionID humanEnemyEquippedWeaponItemDefID = humanEnemyItemInventory.getSlot(humanEnemyEquippedWeaponInventorySlotIndex).defID;
+								const ItemDefinition &humanEnemyEquippedWeaponItemDef = ItemLibrary::getInstance().getDefinition(humanEnemyEquippedWeaponItemDefID);
+								const WeaponItemDefinition &humanEnemyEquippedWeaponDef = humanEnemyEquippedWeaponItemDef.weapon;
+								damageAmount = static_cast<double>(humanEnemyEquippedWeaponDef.damageMin + random.next(humanEnemyEquippedWeaponDef.damageMax - humanEnemyEquippedWeaponDef.damageMin + 1));
+							}
+							else
+							{
+								damageAmount = 1.0 + (random.next() * 5.0); // Arbitrary fists damage. @todo get original fists damage
+							}
+
 							//@todo: Chance for critical strike
 						}
 						else

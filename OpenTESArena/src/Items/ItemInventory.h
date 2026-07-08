@@ -1,9 +1,12 @@
 #pragma once
 
+#include <functional>
 #include <vector>
 
 #include "ItemDefinition.h"
 #include "ItemInstance.h"
+
+using ItemInventoryPredicate = std::function<bool(const ItemDefinition&)>;
 
 class ItemInventory
 {
@@ -22,6 +25,7 @@ public:
 
 	bool findFirstEmptySlot(int *outIndex) const;
 	bool findFirstSlot(ItemDefinitionID defID, int *outIndex) const;
+	bool findFirstSlotIf(const ItemInventoryPredicate &predicate, int *outIndex) const;
 	bool findLastSlot(ItemDefinitionID defID, int *outIndex) const;
 
 	void insert(ItemDefinitionID defID, int stackAmount = 1);

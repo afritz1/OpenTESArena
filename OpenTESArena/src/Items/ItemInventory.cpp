@@ -107,6 +107,28 @@ bool ItemInventory::findFirstSlot(ItemDefinitionID defID, int *outIndex) const
 	return false;
 }
 
+bool ItemInventory::findFirstSlotIf(const ItemInventoryPredicate &predicate, int *outIndex) const
+{
+	for (int i = 0; i < this->getTotalSlotCount(); i++)
+	{
+		const ItemInstance &itemInst = this->getSlot(i);
+		if (!itemInst.isValid())
+		{
+			continue;
+		}
+
+		const ItemDefinition &itemDef = ItemLibrary::getInstance().getDefinition(itemInst.defID);
+		if (predicate(itemDef))
+		{
+			*outIndex = i;
+			return true;
+		}
+	}
+
+	*outIndex = -1;
+	return false;
+}
+
 bool ItemInventory::findLastSlot(ItemDefinitionID defID, int *outIndex) const
 {
 	for (int i = this->getTotalSlotCount() - 1; i >= 0; i--)
