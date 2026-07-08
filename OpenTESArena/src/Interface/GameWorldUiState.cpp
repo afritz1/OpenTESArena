@@ -348,7 +348,8 @@ void GameWorldUI::create(Game &game)
 	playerHurtImageElementInitInfo.size = game.window.getSceneViewDimensions();
 	playerHurtImageElementInitInfo.renderSpace = UiRenderSpace::Native;
 	playerHurtImageElementInitInfo.drawOrder = 3;
-	uiManager.createImage(playerHurtImageElementInitInfo, state.playerHurtTextureID, state.contextInstID, renderer);
+	const UiElementInstanceID playerHurtImageElementInstID = uiManager.createImage(playerHurtImageElementInitInfo, state.playerHurtTextureID, state.contextInstID, renderer);
+	uiManager.setElementActive(playerHurtImageElementInstID, false);
 
 	const Player &player = game.player;
 	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
