@@ -15,6 +15,7 @@
 #include "../Assets/TextureManager.h"
 #include "../Audio/AudioManager.h"
 #include "../Collision/PhysicsLayer.h"
+#include "../Interface/GameWorldUiState.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/Constants.h"
 #include "../Math/RandomUtils.h"
@@ -1587,6 +1588,7 @@ void EntityChunkManager::updateEnemyBehaviors(double dt, const WorldDouble3 &pla
 						player.currentHealth = std::max(player.currentHealth - damageAmount, 0.0);
 
 						audioManager.playSoundOneShot(ArenaSoundName::PlayerHit);
+						GameWorldUI::showPlayerHurt();
 					}
 					else
 					{

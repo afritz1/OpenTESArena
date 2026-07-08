@@ -36,6 +36,7 @@ namespace
 	constexpr char CompassFrameImageElementName[] = "GameWorldCompassFrame";
 
 	constexpr char WeaponImageElementName[] = "GameWorldWeaponImage";
+	constexpr char PlayerHurtImageElementName[] = "GameWorldPlayerHurtImage";
 	constexpr char ModernModeReticleImageElementName[] = "GameWorldModernModeReticleImage";
 
 	constexpr char TriggerTextBoxElementName[] = "GameWorldTriggerTextBox";
@@ -121,6 +122,7 @@ GameWorldUiState::GameWorldUiState()
 	this->campModalContextInstID = -1;
 	this->campManualHoursModalContextInstID = -1;
 	this->statusBarsTextureID = -1;
+	this->playerHurtTextureID = -1;
 	this->modernModeReticleTextureID = -1;
 	this->currentHealth = 0.0;
 	this->maxHealth = 0.0;
@@ -132,6 +134,7 @@ GameWorldUiState::GameWorldUiState()
 	this->triggerTextRemainingSeconds = 0.0;
 	this->actionTextRemainingSeconds = 0.0;
 	this->effectTextRemainingSeconds = 0.0;
+	this->playerHurtRemainingSeconds = 0.0;
 }
 
 void GameWorldUiState::init(Game &game)
@@ -175,9 +178,12 @@ void GameWorldUiState::init(Game &game)
 		this->arrowCursorTextureIDs.set(i, arrowTextureID);
 	}
 
+	const Window &window = game.window;
+	this->playerHurtTextureID = GameWorldUiView::allocPlayerHurtTexture(window.getSceneViewAspectRatio(), window.fullGameWindow, renderer);
+
 	this->modernModeReticleTextureID = GameWorldUiView::allocModernModeReticleTexture(textureManager, renderer);
 
-	const Int2 windowDims = game.window.getPixelDimensions();
+	const Int2 windowDims = window.getPixelDimensions();
 	this->updateNativeCursorRegions(windowDims.x, windowDims.y);
 
 	this->currentHealth = player.currentHealth;
@@ -225,6 +231,12 @@ void GameWorldUiState::freeTextures(Renderer &renderer)
 		}
 
 		this->arrowCursorTextureIDs.clear();
+	}
+
+	if (this->playerHurtTextureID >= 0)
+	{
+		renderer.freeUiTexture(this->playerHurtTextureID);
+		this->playerHurtTextureID = -1;
 	}
 
 	if (this->modernModeReticleTextureID >= 0)
@@ -329,6 +341,14 @@ void GameWorldUI::create(Game &game)
 	modernModeReticleImageElementInitInfo.pivotType = UiPivotType::Middle;
 	modernModeReticleImageElementInitInfo.drawOrder = 1;
 	const UiElementInstanceID modernModeReticleImageElementInstID = uiManager.createImage(modernModeReticleImageElementInitInfo, state.modernModeReticleTextureID, state.contextInstID, renderer);
+
+	UiElementInitInfo playerHurtImageElementInitInfo;
+	playerHurtImageElementInitInfo.name = PlayerHurtImageElementName;
+	playerHurtImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	playerHurtImageElementInitInfo.size = game.window.getSceneViewDimensions();
+	playerHurtImageElementInitInfo.renderSpace = UiRenderSpace::Native;
+	playerHurtImageElementInitInfo.drawOrder = 3;
+	uiManager.createImage(playerHurtImageElementInitInfo, state.playerHurtTextureID, state.contextInstID, renderer);
 
 	const Player &player = game.player;
 	const TextureAsset playerPortraitTextureAsset = GameWorldUiView::getPlayerPortraitTextureAsset(player.male, player.raceID, player.portraitID);
@@ -448,6 +468,7 @@ void GameWorldUI::destroy()
 	state.maxStamina = 0.0;
 	state.currentSpellPoints = 0.0;
 	state.maxSpellPoints = 0.0;
+	state.playerHurtRemainingSeconds = 0.0;
 	state.lootPopUpItemMappings.clear();
 
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, false);
@@ -620,6 +641,16 @@ void GameWorldUI::update(double dt)
 		{
 			game.setCursorOverride(std::nullopt);
 		}
+	}
+
+	// Player hurt.
+	const bool isPlayerHurtVisible = state.playerHurtRemainingSeconds > 0.0;
+	const UiElementInstanceID playerHurtImageElementInstID = uiManager.getElementByName(PlayerHurtImageElementName);
+	uiManager.setElementActive(playerHurtImageElementInstID, isPlayerHurtVisible);
+
+	if (isPlayerHurtVisible)
+	{
+		state.playerHurtRemainingSeconds = std::max(state.playerHurtRemainingSeconds - dt, 0.0);
 	}
 }
 
@@ -1365,6 +1396,12 @@ void GameWorldUI::showCampManualHoursModal()
 	inputManager.setTextInputMode(true);
 }
 
+void GameWorldUI::showPlayerHurt()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	state.playerHurtRemainingSeconds = 1.0 / ArenaRenderUtils::FRAMES_PER_SECOND;
+}
+
 bool GameWorldUI::isTriggerTextVisible()
 {
 	const GameWorldUiState &state = GameWorldUI::state;
@@ -1548,6 +1585,19 @@ void GameWorldUI::onWindowResized(int width, int height)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	state.updateNativeCursorRegions(width, height);
+
+	Game &game = *state.game;
+	Renderer &renderer = game.renderer;
+	DebugAssert(state.playerHurtTextureID >= 0);
+	renderer.freeUiTexture(state.playerHurtTextureID);
+
+	UiManager &uiManager = game.uiManager;
+	const Window &window = game.window;
+	const UiElementInstanceID playerHurtImageElementInstID = uiManager.getElementByName(PlayerHurtImageElementName);
+	uiManager.setTransformSize(playerHurtImageElementInstID, window.getSceneViewDimensions());
+
+	state.playerHurtTextureID = GameWorldUiView::allocPlayerHurtTexture(window.getSceneViewAspectRatio(), window.fullGameWindow, renderer);
+	uiManager.setImageTexture(playerHurtImageElementInstID, state.playerHurtTextureID);
 }
 
 void GameWorldUI::onCharacterSheetButtonSelected(MouseButtonType mouseButtonType)

@@ -1089,6 +1089,44 @@ UiTextureID GameWorldUiView::allocArrowCursorTexture(int cursorIndex, TextureMan
 	return textureID;
 }
 
+UiTextureID GameWorldUiView::allocPlayerHurtTexture(double sceneViewAspectRatio, bool isFullGameWindow, Renderer &renderer)
+{
+	// Always 320 pixels wide, adjust height to fit.
+	constexpr int textureWidth = ArenaRenderUtils::SCREEN_WIDTH;
+
+	const double originalViewHeight = static_cast<double>(isFullGameWindow ? ArenaRenderUtils::SCREEN_HEIGHT : ArenaRenderUtils::SCENE_VIEW_HEIGHT);
+	const double originalAspectRatio = ArenaRenderUtils::SCREEN_WIDTH_REAL / originalViewHeight;
+	const double aspectRatioMultiplier = sceneViewAspectRatio / originalAspectRatio;	
+	const int textureHeight = static_cast<int>(originalViewHeight / aspectRatioMultiplier);
+
+	const UiTextureID textureID = renderer.createUiTexture(textureWidth, textureHeight);
+	if (textureID < 0)
+	{
+		DebugCrash("Couldn't create player hurt texture.");
+	}
+
+	LockedTexture lockedTexture = renderer.lockUiTexture(textureID);
+	Span2D<uint32_t> texelsView = lockedTexture.getTexels32();
+	uint32_t *texelsPtr = texelsView.begin();
+
+	constexpr uint32_t hurtColorRGBA = Color(125, 0, 0, 255).toRGBA();
+	constexpr uint32_t transparentColorRGBA = Colors::TransparentRGBA;
+
+	for (int y = 0; y < texelsView.getHeight(); y++)
+	{
+		for (int x = 0; x < texelsView.getWidth(); x++)
+		{
+			const int index = x + (y * texelsView.getWidth());
+			const bool isHurtColor = ((x + y) % 2) == 0;
+			texelsPtr[index] = isHurtColor ? hurtColorRGBA : transparentColorRGBA;
+		}
+	}
+
+	renderer.unlockUiTexture(textureID);
+
+	return textureID;
+}
+
 UiTextureID GameWorldUiView::allocModernModeReticleTexture(TextureManager &textureManager, Renderer &renderer)
 {
 	constexpr int width = 7;

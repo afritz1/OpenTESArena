@@ -53,6 +53,7 @@ struct GameWorldUiState
 	Buffer<UiTextureID> weaponAnimTextureIDs;
 	Buffer<UiTextureID> keyTextureIDs;
 	Buffer<UiTextureID> arrowCursorTextureIDs;
+	UiTextureID playerHurtTextureID;
 	UiTextureID modernModeReticleTextureID;
 
 	// Screen regions for classic interface movement in the game world, scaled to fit the current window.
@@ -73,6 +74,8 @@ struct GameWorldUiState
 	// - Action text: description of the player's current action
 	// - Effect text: effect on the player (disease, drunk, silence, etc.)
 	double triggerTextRemainingSeconds, actionTextRemainingSeconds, effectTextRemainingSeconds;
+
+	double playerHurtRemainingSeconds;
 
 	std::vector<GameWorldLootUiItemMapping> lootPopUpItemMappings;
 
@@ -101,6 +104,7 @@ namespace GameWorldUI
 	void showLootPopUp(ItemInventory &itemInventory, const GameWorldPopUpClosedCallback &callback);
 	void showCampModal();
 	void showCampManualHoursModal();
+	void showPlayerHurt();
 
 	bool isTriggerTextVisible();
 	bool isActionTextVisible();
