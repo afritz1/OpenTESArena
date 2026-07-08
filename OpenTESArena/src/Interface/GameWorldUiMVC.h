@@ -288,7 +288,7 @@ namespace GameWorldUiView
 
 namespace GameWorldUiController
 {
-	void onStatusPopUpSelected(Game &game);
+	void onPopUpSelected(Game &game);
 
 	void onEnemyAliveInspected(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef);
 	void onContainerInventoryOpened(Game &game, EntityInstanceID entityInstID, ItemInventory &itemInventory, bool destroyEntityIfEmpty);

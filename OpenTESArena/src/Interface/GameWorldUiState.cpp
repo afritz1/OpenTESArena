@@ -798,7 +798,6 @@ void GameWorldUI::showTextPopUp(const char *str, const std::string &fontName, Te
 	auto popUpButtonCallback = [callback](MouseButtonType)
 	{
 		callback();
-		GameWorldUI::onPauseChanged(false);
 	};
 
 	UiButtonInitInfo textPopUpBackButtonInitInfo;
@@ -826,7 +825,7 @@ void GameWorldUI::showTextPopUp(const char *str, const std::string &fontName, Te
 	{
 		GameWorldUiState &state = GameWorldUI::state;
 		Game &game = *state.game;
-		GameWorldUiController::onStatusPopUpSelected(game);
+		GameWorldUiController::onPopUpSelected(game);
 	};
 
 	GameWorldUI::showTextPopUp(str, fontName, alignment, callback);

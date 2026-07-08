@@ -1361,10 +1361,11 @@ DebugVoxelVisibilityQuadtreeState GameWorldUiView::allocDebugVoxelVisibilityQuad
 	return state;
 }
 
-void GameWorldUiController::onStatusPopUpSelected(Game &game)
+void GameWorldUiController::onPopUpSelected(Game &game)
 {
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
+	GameWorldUI::onPauseChanged(false); // Assumes there are no other popups underneath.
 }
 
 void GameWorldUiController::onEnemyAliveInspected(Game &game, EntityInstanceID entityInstID, const EntityDefinition &entityDef)
@@ -1397,7 +1398,7 @@ void GameWorldUiController::onContainerInventoryOpened(Game &game, EntityInstanc
 			entityChunkManager.queueEntityDestroy(entityInstID, true);
 		}
 
-		GameWorldUiController::onStatusPopUpSelected(game);
+		GameWorldUiController::onPopUpSelected(game);
 	};
 
 	GameWorldUI::showLootPopUp(itemInventory, callback);
@@ -1452,7 +1453,7 @@ void GameWorldUiController::onEnemyCorpseInteractedFirstTime(Game &game, EntityI
 
 	auto callback = [&game, entityInstID, entityDef]()
 	{
-		GameWorldUiController::onStatusPopUpSelected(game);
+		GameWorldUiController::onPopUpSelected(game);
 
 		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
@@ -1490,7 +1491,7 @@ void GameWorldUiController::onKeyPickedUp(Game &game, int keyID, const ExeData &
 	const std::string text = GameWorldUiModel::getKeyPickUpMessage(keyID, exeData);
 	auto callback = [&game, postStatusPopUpCallback]()
 	{
-		GameWorldUiController::onStatusPopUpSelected(game);
+		GameWorldUiController::onPopUpSelected(game);
 		postStatusPopUpCallback();
 	};
 
@@ -1502,7 +1503,7 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 	const std::string text = GameWorldUiModel::getDoorUnlockWithKeyMessage(keyID, exeData);
 	auto callback = [&game, soundFilename, soundPosition]()
 	{
-		GameWorldUiController::onStatusPopUpSelected(game);
+		GameWorldUiController::onPopUpSelected(game);
 
 		AudioManager &audioManager = game.audioManager;
 		audioManager.playSoundOneShot(soundFilename, soundPosition);
@@ -1677,7 +1678,7 @@ void GameWorldUiController::onStaminaExhausted(Game &game, bool isSwimming, bool
 
 	auto callback = [&game, isSwimming, isInterior, isNight, &exeData]()
 	{
-		GameWorldUiController::onStatusPopUpSelected(game);
+		GameWorldUiController::onPopUpSelected(game);
 
 		const bool isPlayerDying = isSwimming || (!isInterior && isNight);
 		if (isPlayerDying)
