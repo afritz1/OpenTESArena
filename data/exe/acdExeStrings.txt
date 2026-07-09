@@ -265,6 +265,7 @@ Box4=0x48674
 
 [Services]
 TavernRoomHealModifiers=0x3DC9D
+PalaceClosedAtNight=0x442D0
 
 [Status]
 PopUp=0x4157B

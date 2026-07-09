@@ -524,6 +524,16 @@ struct ExeDataRaisedPlatforms
 	int getTextureMappingValueB(int thicknessIndex, int textureMappingValueA) const;
 };
 
+struct ExeDataServices
+{
+	// Modifiers for the amount healed when resting
+	int8_t tavernRoomHealModifiers[7];
+
+	std::string palaceClosedAtNight;
+
+	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
+};
+
 struct ExeDataStatus
 {
 	// Status pop-up text (with %s/%d tokens).
@@ -554,14 +564,6 @@ struct ExeDataStatus
 	std::string citizenCorpseGold;
 
 	std::string readyToLevelUp;
-
-	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
-};
-
-struct ExeDataServices
-{
-	// Modifiers for the amount healed when resting
-	int8_t tavernRoomHealModifiers[7];
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };

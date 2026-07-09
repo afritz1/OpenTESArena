@@ -994,8 +994,10 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	}
 
 	const int tavernRoomHealModifiersOffset = GetExeAddress(*section, "TavernRoomHealModifiers");
+	const int palaceClosedAtNightOffset = GetExeAddress(*section, "PalaceClosedAtNight");
 
 	initInt8Array(this->tavernRoomHealModifiers, exeBytes, tavernRoomHealModifiersOffset);
+	this->palaceClosedAtNight = GetExeStringNullTerminated(exeBytes, palaceClosedAtNightOffset);
 
 	return true;
 }
@@ -1292,6 +1294,7 @@ bool ExeData::init(bool floppyVersion)
 	success &= this->meta.init(exeBytes, keyValueFile);
 	success &= this->quests.init(exeBytes, keyValueFile);
 	success &= this->races.init(exeBytes, keyValueFile);
+	success &= this->services.init(exeBytes, keyValueFile);
 	success &= this->status.init(exeBytes, keyValueFile);
 	success &= this->thieving.init(exeBytes, keyValueFile);
 	success &= this->travel.init(exeBytes, keyValueFile);
