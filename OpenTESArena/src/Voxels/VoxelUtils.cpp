@@ -2,7 +2,9 @@
 
 #include "VoxelFacing.h"
 #include "VoxelUtils.h"
+#include "../Assets/RMDFile.h"
 #include "../World/ChunkUtils.h"
+#include "../World/MapType.h"
 
 #include "components/debug/Debug.h"
 
@@ -14,6 +16,26 @@ WorldInt2 VoxelUtils::originalVoxelToWorldVoxel(const OriginalInt2 &voxel)
 OriginalInt2 VoxelUtils::worldVoxelToOriginalVoxel(const WorldInt2 &voxel)
 {
 	return VoxelUtils::originalVoxelToWorldVoxel(voxel);
+}
+
+OriginalInt2 VoxelUtils::worldVoxelToOriginalVoxelMapTypeAware(WorldInt2 worldVoxel, MapType mapType)
+{
+	const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(worldVoxel);
+
+	// The displayed coordinates in the wilderness behave differently in the original game due to
+	// how the 128x128 grid shifts to keep the player roughly centered in the middle 64x64.
+	if (mapType != MapType::Wilderness)
+	{
+		return originalVoxel;
+	}
+	else
+	{
+		const int halfWidth = RMDFile::WIDTH / 2;
+		const int halfDepth = RMDFile::DEPTH / 2;
+		return OriginalInt2(
+			halfWidth + ((originalVoxel.x + halfWidth) % RMDFile::WIDTH),
+			halfDepth + ((originalVoxel.y + halfDepth) % RMDFile::DEPTH));
+	}
 }
 
 Double2 VoxelUtils::getTransformedVoxel(const Double2 &voxel)

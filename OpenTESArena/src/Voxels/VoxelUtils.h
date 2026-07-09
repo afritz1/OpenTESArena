@@ -11,6 +11,8 @@
 #include "components/debug/Debug.h"
 #include "components/utilities/Span.h"
 
+enum class MapType;
+
 namespace VoxelUtils
 {
 	static constexpr int FACE_COUNT = 6; // +X, -X, +Y, -Y, +Z, -Z
@@ -25,6 +27,7 @@ namespace VoxelUtils
 	// conversion (i.e., it works both ways).
 	WorldInt2 originalVoxelToWorldVoxel(const OriginalInt2 &voxel);
 	OriginalInt2 worldVoxelToOriginalVoxel(const WorldInt2 &voxel);
+	OriginalInt2 worldVoxelToOriginalVoxelMapTypeAware(WorldInt2 worldVoxel, MapType mapType);
 	Double2 getTransformedVoxel(const Double2 &voxel);
 
 	// Gets the voxel a point is in. Requires wall height if including Y.

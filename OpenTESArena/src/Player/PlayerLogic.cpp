@@ -16,10 +16,12 @@
 #include "../Items/ItemLibrary.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
+#include "../Time/ArenaClockUtils.h"
 #include "../Voxels/ArenaVoxelUtils.h"
 #include "../World/CardinalDirection.h"
 #include "../World/CardinalDirectionName.h"
 #include "../World/MapLogic.h"
+#include "../World/MapType.h"
 
 #include "components/utilities/String.h"
 
@@ -331,7 +333,15 @@ namespace PlayerLogic
 		const ArenaVoxelType voxelType = voxelTraitsDef.type;
 
 		GameState &gameState = game.gameState;
+		const MapType mapType = gameState.getActiveMapType();
+		const Clock &clock = gameState.getClock();
+		const bool isNight = ArenaClockUtils::nightMusicIsActive(clock);
 		const Player &player = game.player;
+		Random &random = game.random;
+		ArenaRandom &arenaRandom = game.arenaRandom;
+
+		const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
+		const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
 
 		if (isPrimaryInteraction)
 		{
@@ -346,34 +356,94 @@ namespace PlayerLogic
 			{
 				if (!debugDestroyVoxel)
 				{
-					if (passesVoxelDistanceTest)
+					if (!passesVoxelDistanceTest)
 					{
-						const bool isWall = voxelType == ArenaVoxelType::Wall;
+						return;
+					}
 
-						// The only edge voxels with a transition should be should be palace entrances (with collision).
-						const bool isEdge = (voxelType == ArenaVoxelType::Edge) && voxelTraitsDef.edge.collider;
+					const bool isWall = voxelType == ArenaVoxelType::Wall;
+					const bool isEdge = (voxelType == ArenaVoxelType::Edge) && voxelTraitsDef.edge.collider; // Just palaces.
 
-						if (isWall || isEdge)
+					if (isWall || isEdge)
+					{
+						VoxelTransitionDefID transitionDefID;
+						if (!voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
 						{
-							VoxelTransitionDefID transitionDefID;
-							if (voxelChunk.tryGetTransitionDefID(voxel.x, voxel.y, voxel.z, &transitionDefID))
-							{
-								const TransitionDefinition &transitionDef = voxelChunk.transitionDefs[transitionDefID];
-								if (transitionDef.type != TransitionType::InteriorLevelChange)
-								{
-									if (interactionType == GameWorldInteractionType::Default)
-									{
-										MapLogic::handleMapTransition(game, hit, transitionDef);
-									}
-									else if (interactionType == GameWorldInteractionType::Thieving)
-									{
-										GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+							return;
+						}
 
-										// @todo check for VoxelLockDefID at this voxel
-										GameWorldUI::showTextPopUp("Lockpicking not implemented.", GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
-									}
-								}
+						const TransitionDefinition &transitionDef = voxelChunk.transitionDefs[transitionDefID];
+						const bool isTransitionVoxelSelectable = transitionDef.type != TransitionType::InteriorLevelChange;
+						if (!isTransitionVoxelSelectable)
+						{
+							return;
+						}
+
+						const InteriorEntranceTransitionDefinition &interiorEntranceTransitionDef = transitionDef.interiorEntrance;
+						const ArenaInteriorType interiorType = interiorEntranceTransitionDef.interiorGenInfo.interiorType;
+						const bool isPalace = interiorType == ArenaInteriorType::Palace;
+						if (isPalace && isNight)
+						{
+							GameWorldUI::showTextPopUp(exeData.services.palaceClosedAtNight.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+							return;
+						}
+
+						const bool canEntranceBeLocked =
+							(interiorType == ArenaInteriorType::Equipment) ||
+							(interiorType == ArenaInteriorType::House) ||
+							(interiorType == ArenaInteriorType::MagesGuild) ||
+							(interiorType == ArenaInteriorType::Noble) ||
+							(interiorType == ArenaInteriorType::Temple);
+						const WorldInt3 transitionWorldVoxel = VoxelUtils::coordToWorldVoxel(voxelHit.voxelCoord);
+
+						int lockLevel = 0;
+						if (isNight && canEntranceBeLocked)
+						{
+							const OriginalInt2 transitionOriginalVoxel = VoxelUtils::worldVoxelToOriginalVoxelMapTypeAware(transitionWorldVoxel.getXZ(), mapType);
+							lockLevel = ArenaLevelUtils::getDoorVoxelLockLevel(transitionOriginalVoxel.x, transitionOriginalVoxel.y, arenaRandom);
+						}
+
+						const bool isLocked = lockLevel > 0;
+
+						bool isQueuingMapTransition = false;
+						if (interactionType == GameWorldInteractionType::Default)
+						{
+							if (isLocked)
+							{
+								const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
+								const std::string lockDifficultyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
+								GameWorldUI::setActionText(lockDifficultyMsg.c_str());
 							}
+							else
+							{
+								isQueuingMapTransition = true;
+							}
+						}
+						else if (interactionType == GameWorldInteractionType::Thieving)
+						{
+							GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+
+							if (isLocked)
+							{
+								const bool isLockpickingSuccessful = random.nextBool(); // @todo use original chances
+								if (!isLockpickingSuccessful)
+								{
+									GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
+									gameState.queueCityGuardEncounter(game);
+									return;
+								}
+
+								AudioManager &audioManager = game.audioManager;
+								const WorldDouble3 unlockSoundPosition = VoxelUtils::getVoxelCenter(transitionWorldVoxel, ceilingScale);
+								audioManager.playSoundOneShot(ArenaSoundName::Lock, unlockSoundPosition);
+							}
+
+							isQueuingMapTransition = true;
+						}
+
+						if (isQueuingMapTransition)
+						{
+							MapLogic::handleMapTransition(game, hit, transitionDef);
 						}
 					}
 				}
@@ -439,12 +509,9 @@ namespace PlayerLogic
 						}
 						else
 						{
-							const CharacterClassLibrary &charClassLibrary = CharacterClassLibrary::getInstance();
-							const CharacterClassDefinition &charClassDef = charClassLibrary.getDefinition(player.charClassDefID);
-
 							const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
-							const std::string requiredDoorKeyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
-							GameWorldUI::setActionText(requiredDoorKeyMsg.c_str());
+							const std::string lockDifficultyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
+							GameWorldUI::setActionText(lockDifficultyMsg.c_str());
 						}
 					}
 				}

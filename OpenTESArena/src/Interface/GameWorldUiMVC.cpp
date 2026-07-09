@@ -177,22 +177,7 @@ std::string GameWorldUiModel::getStatusButtonText(Game &game)
 OriginalInt2 GameWorldUiModel::getOriginalPlayerPosition(const WorldDouble3 &playerPos, MapType mapType)
 {
 	const WorldInt2 absolutePlayerVoxelXZ = VoxelUtils::pointToVoxel(playerPos.getXZ());
-	const OriginalInt2 originalVoxel = VoxelUtils::worldVoxelToOriginalVoxel(absolutePlayerVoxelXZ);
-
-	// The displayed coordinates in the wilderness behave differently in the original
-	// game due to how the 128x128 grid shifts to keep the player roughly centered.
-	if (mapType != MapType::Wilderness)
-	{
-		return originalVoxel;
-	}
-	else
-	{
-		const int halfWidth = RMDFile::WIDTH / 2;
-		const int halfDepth = RMDFile::DEPTH / 2;
-		return OriginalInt2(
-			halfWidth + ((originalVoxel.x + halfWidth) % RMDFile::WIDTH),
-			halfDepth + ((originalVoxel.y + halfDepth) % RMDFile::DEPTH));
-	}
+	return VoxelUtils::worldVoxelToOriginalVoxelMapTypeAware(absolutePlayerVoxelXZ, mapType);
 }
 
 OriginalInt2 GameWorldUiModel::getOriginalPlayerPositionArenaUnits(const WorldDouble3 &playerPos, MapType mapType)

@@ -225,7 +225,7 @@ int ArenaLevelUtils::getDoorVoxelLockLevel(WEInt x, SNInt y, ArenaRandom &random
 	const uint16_t offset = ArenaLevelUtils::getDoorVoxelOffset(x, y);
 	const uint32_t seed = offset + (offset << 16);
 	random.srand(seed);
-	return (random.next() % 10) + 1; // 0..9 + 1.
+	return random.next(10) + 1; // 0..9 + 1.
 }
 
 int ArenaLevelUtils::getServiceSaveFileNumber(WEInt doorX, SNInt doorY)
