@@ -1223,8 +1223,6 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		WorldDouble3 &entityPosition = this->positions.get(entityInst.positionID);
 		const WorldDouble2 entityPositionXZ = entityPosition.getXZ();
-		const ChunkInt2 prevEntityChunkPos = VoxelUtils::worldPointToChunk(entityPositionXZ);
-		ChunkInt2 curEntityChunkPos = prevEntityChunkPos; // Potentially updated by entity movement.
 		const Double2 dirToPlayer = playerPositionXZ - entityPositionXZ;
 		const double distToPlayerSqr = dirToPlayer.lengthSquared();
 
@@ -1248,6 +1246,10 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 		EntityBehaviorState &behaviorState = this->behaviorStates.get(entityInst.behaviorStateID);
 		DebugAssert(behaviorState.type == EntityBehaviorStateType::Citizen);
 		int8_t &citizenDirIndex = behaviorState.citizen.directionIndex;
+
+		const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
+		DebugAssert(!physicsBodyID.IsInvalid());
+
 		if (animInst.currentStateIndex == idleStateIndex)
 		{
 			const bool shouldChangeToWalking = !isPlayerWeaponSheathed || (distToPlayerSqr > ArenaCitizenUtils::IDLE_DISTANCE_REAL_SQR) || isPlayerMoving;
@@ -1272,6 +1274,7 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 			if (shouldChangeToIdle)
 			{
 				animInst.setStateIndex(*idleStateIndex);
+				bodyInterface.SetLinearVelocity(physicsBodyID, JPH::Vec3::sZero());
 			}
 		}
 
@@ -1379,25 +1382,8 @@ void EntityChunkManager::updateCitizenBehaviors(double dt, const WorldDouble2 &p
 			}
 
 			const Double2 entityVelocity = entityDir * ArenaCitizenUtils::MOVE_SPEED_PER_SECOND;
-			const WorldDouble2 newEntityPositionXZ = entityPositionXZ + (entityVelocity * dt);
-			entityPosition.x = newEntityPositionXZ.x;
-			entityPosition.z = newEntityPositionXZ.y;
-			curEntityChunkPos = VoxelUtils::worldPointToChunk(newEntityPositionXZ);
-
-			const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
-			DebugAssert(!physicsBodyID.IsInvalid());
-
-			const JPH::RVec3 oldBodyPosition = bodyInterface.GetPosition(physicsBodyID);
-			const JPH::RVec3 newBodyPosition(
-				static_cast<float>(newEntityPositionXZ.x),
-				static_cast<float>(oldBodyPosition.GetY()),
-				static_cast<float>(newEntityPositionXZ.y));
-			bodyInterface.SetPosition(physicsBodyID, newBodyPosition, JPH::EActivation::Activate);
-		}
-
-		if (curEntityChunkPos != prevEntityChunkPos)
-		{
-			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
+			const JPH::Vec3 newEntityPhysicsVelocity(static_cast<float>(entityVelocity.x), 0.0f, static_cast<float>(entityVelocity.y));
+			bodyInterface.SetLinearVelocity(physicsBodyID, newEntityPhysicsVelocity);
 		}
 	}
 }
@@ -2397,9 +2383,7 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 		}
 	}
 
-	// @todo add citizens here once they are using linear velocity instead of SetPosition()
-
-	for (const EntityInstanceID entityInstID : this->vfxEntityInstIDs)
+	auto updateEntityPositionToPhysicsPosition = [this, &bodyInterface](EntityInstanceID entityInstID)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
@@ -2426,6 +2410,16 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 		{
 			this->queueEntityTransfer(entityInstID, prevEntityChunkPos, curEntityChunkPos);
 		}
+	};
+
+	for (const EntityInstanceID entityInstID : this->citizenEntityInstIDs)
+	{
+		updateEntityPositionToPhysicsPosition(entityInstID);
+	}
+
+	for (const EntityInstanceID entityInstID : this->vfxEntityInstIDs)
+	{
+		updateEntityPositionToPhysicsPosition(entityInstID);
 	}
 }
 
