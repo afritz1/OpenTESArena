@@ -248,26 +248,6 @@ bool ContainerEntityDefinition::operator==(const ContainerEntityDefinition &othe
 	}
 }
 
-ProjectileEntityDefinition::ProjectileEntityDefinition()
-{
-	this->hasGravity = false;
-}
-
-void ProjectileEntityDefinition::init(bool hasGravity)
-{
-	this->hasGravity = hasGravity;
-}
-
-bool ProjectileEntityDefinition::operator==(const ProjectileEntityDefinition &other) const
-{
-	if (this == &other)
-	{
-		return true;
-	}
-
-	return this->hasGravity == other.hasGravity;
-}
-
 VfxEntityDefinition::VfxEntityDefinition()
 {
 	this->type = static_cast<VfxEntityAnimationType>(-1);
@@ -424,8 +404,6 @@ bool EntityDefinition::operator==(const EntityDefinition &other) const
 		return this->item == other.item;
 	case EntityDefinitionType::Container:
 		return this->container == other.container;
-	case EntityDefinitionType::Projectile:
-		return this->projectile == other.projectile;
 	case EntityDefinitionType::Transition:
 		return this->transition == other.transition;
 	case EntityDefinitionType::Decoration:
@@ -481,12 +459,6 @@ void EntityDefinition::initContainerPile(EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::Container, std::move(animDef));
 	this->container.initPile();
-}
-
-void EntityDefinition::initProjectile(bool hasGravity, EntityAnimationDefinition &&animDef)
-{
-	this->init(EntityDefinitionType::Projectile, std::move(animDef));
-	this->projectile.init(hasGravity);
 }
 
 void EntityDefinition::initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef)

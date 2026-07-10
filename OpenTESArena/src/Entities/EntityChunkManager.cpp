@@ -2308,7 +2308,7 @@ void EntityChunkManager::updatePrePhysicsStep(double dt, Span<const ChunkInt2> a
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const bool canOccupyVoxel = (entityDef.type != EntityDefinitionType::Projectile) && (entityDef.type != EntityDefinitionType::Vfx);
+		const bool canOccupyVoxel = entityDef.type != EntityDefinitionType::Vfx;
 		if (!canOccupyVoxel)
 		{
 			continue;

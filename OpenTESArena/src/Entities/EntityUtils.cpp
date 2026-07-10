@@ -23,7 +23,6 @@ bool EntityUtils::isDynamicEntity(EntityDefinitionType defType)
 		return false;
 	case EntityDefinitionType::Enemy:
 	case EntityDefinitionType::Citizen:
-	case EntityDefinitionType::Projectile:
 	case EntityDefinitionType::Vfx:
 		return true;
 	default:
@@ -69,8 +68,6 @@ std::string EntityUtils::defTypeToString(const EntityDefinition &entityDef)
 			DebugUnhandledReturnMsg(std::string, std::to_string(static_cast<int>(itemType)));
 		}
 	}
-	case EntityDefinitionType::Projectile:
-		return "Projectile";
 	case EntityDefinitionType::StaticNPC:
 		return "StaticNPC";
 	case EntityDefinitionType::Transition:
@@ -132,7 +129,6 @@ bool EntityUtils::isSceneManagedResource(EntityDefinitionType entityDefType)
 	case EntityDefinitionType::Transition:
 	case EntityDefinitionType::Decoration:
 		return true;
-	case EntityDefinitionType::Projectile:
 	case EntityDefinitionType::Vfx:
 		return false;
 	default:
@@ -192,7 +188,6 @@ bool EntityUtils::hasCollision(const EntityDefinition &entityDef)
 	case EntityDefinitionType::Citizen:
 	case EntityDefinitionType::Container:
 	case EntityDefinitionType::Item:
-	case EntityDefinitionType::Projectile:
 	case EntityDefinitionType::Transition:
 		return false;
 	case EntityDefinitionType::Decoration:
@@ -213,7 +208,6 @@ bool EntityUtils::canDie(const EntityDefinition &entityDef)
 	case EntityDefinitionType::StaticNPC:
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Container:
-	case EntityDefinitionType::Projectile:
 	case EntityDefinitionType::Vfx:
 	case EntityDefinitionType::Transition:
 	case EntityDefinitionType::Decoration:
@@ -251,7 +245,6 @@ bool EntityUtils::leavesCorpse(const EntityDefinition &entityDef)
 	case EntityDefinitionType::StaticNPC:
 	case EntityDefinitionType::Item:
 	case EntityDefinitionType::Container:
-	case EntityDefinitionType::Projectile:
 	case EntityDefinitionType::Transition:
 	case EntityDefinitionType::Decoration:
 		return false;

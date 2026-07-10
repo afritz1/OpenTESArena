@@ -18,7 +18,6 @@ enum class EntityDefinitionType
 	StaticNPC, // Bartenders, priests, etc..
 	Item, // Keys, tablets, staff pieces, etc..
 	Container, // Chests, loot piles, etc..
-	Projectile, // Arrows
 	Vfx, // Spell projectile, explosion, or melee strike
 	Transition, // Wilderness den.
 	Decoration // Trees, chairs, streetlights, etc..
@@ -177,19 +176,6 @@ struct ContainerEntityDefinition
 	bool operator==(const ContainerEntityDefinition &other) const;
 };
 
-struct ProjectileEntityDefinition
-{
-	// @todo: may or may not want to store physical damage and spell effects in the same 'effect'.
-
-	bool hasGravity;
-
-	ProjectileEntityDefinition();
-
-	void init(bool hasGravity);
-
-	bool operator==(const ProjectileEntityDefinition &other) const;
-};
-
 enum class VfxEntityAnimationType
 {
 	SpellProjectile,
@@ -255,7 +241,6 @@ struct EntityDefinition
 		StaticNpcEntityDefinition staticNpc;
 		ItemEntityDefinition item;
 		ContainerEntityDefinition container;
-		ProjectileEntityDefinition projectile;
 		VfxEntityDefinition vfx;
 		TransitionEntityDefinition transition;
 		DecorationEntityDefinition decoration;
@@ -280,8 +265,6 @@ struct EntityDefinition
 
 	void initContainerHolder(bool locked, EntityAnimationDefinition &&animDef);
 	void initContainerPile(EntityAnimationDefinition &&animDef);
-
-	void initProjectile(bool hasGravity, EntityAnimationDefinition &&animDef);
 	
 	void initVfx(VfxEntityAnimationType type, int index, EntityAnimationDefinition &&animDef);
 
