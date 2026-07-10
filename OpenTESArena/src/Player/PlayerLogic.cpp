@@ -434,8 +434,7 @@ namespace PlayerLogic
 								}
 
 								AudioManager &audioManager = game.audioManager;
-								const WorldDouble3 unlockSoundPosition = VoxelUtils::getVoxelCenter(transitionWorldVoxel, ceilingScale);
-								audioManager.playSoundOneShot(ArenaSoundName::Lock, unlockSoundPosition);
+								audioManager.playSoundOneShot(ArenaSoundName::Lock); // Sounds better if centered on player during scene transition.
 							}
 
 							isQueuingMapTransition = true;
