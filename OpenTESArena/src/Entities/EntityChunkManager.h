@@ -190,6 +190,7 @@ public:
 	EntityLockStatePool lockStates;
 
 	// Weak references to certain entity types for ease of iterating. Does not contain destroyed entities.
+	// These containers are modified upon queuing an entity for destruction.
 	std::vector<EntityInstanceID> enemyEntityInstIDs;
 	std::vector<EntityInstanceID> citizenEntityInstIDs;
 	std::vector<EntityInstanceID> vfxEntityInstIDs;

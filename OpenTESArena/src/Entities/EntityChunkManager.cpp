@@ -2011,23 +2011,18 @@ void EntityChunkManager::updateDeathStates(JPH::PhysicsSystem &physicsSystem, Au
 
 void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager &voxelChunkManager)
 {
-	for (const EntityInstance &entityInst : this->entities.values)
+	std::vector<EntityInstanceID> vfxEntitiesToDestroy;
+	for (const EntityInstanceID entityInstID : this->vfxEntityInstIDs)
 	{
-		const EntityInstanceID entityInstID = entityInst.instanceID;
-		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		const EntityDefinitionType entityDefType = entityDef.type;
-		if (entityDefType != EntityDefinitionType::Vfx)
-		{
-			continue;
-		}
-
+		const EntityInstance &entityInst = this->entities.get(entityInstID);
 		const EntityAnimationInstance &animInst = this->animInsts.get(entityInst.animInstID);
 		if (animInst.isFinished())
 		{
-			this->queueEntityDestroy(entityInstID, true); // @todo shouldn't need to notify chunk, it should just be a loose entity in entitychunkmanager
+			vfxEntitiesToDestroy.emplace_back(entityInstID);
 			continue;
 		}
 
+		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
 		const VfxEntityDefinition &vfxEntityDef = entityDef.vfx;
 		if (vfxEntityDef.type == VfxEntityAnimationType::BowProjectile)
 		{
@@ -2035,7 +2030,7 @@ void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager 
 			if (entityPosition.y < 0.0)
 			{
 				// Outside play area.
-				this->queueEntityDestroy(entityInstID, true);
+				vfxEntitiesToDestroy.emplace_back(entityInstID);
 				continue;
 			}
 			
@@ -2066,7 +2061,7 @@ void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager 
 
 				if (isHittingSolidVoxel)
 				{
-					this->queueEntityDestroy(entityInstID, true);
+					vfxEntitiesToDestroy.emplace_back(entityInstID);
 					continue;
 				}
 			}
@@ -2079,7 +2074,7 @@ void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager 
 					const EntityInstance &hitEntityInst = this->entities.get(hitEntityInstID);
 					if (hitEntityInst.isTransformStatic())
 					{
-						this->queueEntityDestroy(entityInstID, true);
+						vfxEntitiesToDestroy.emplace_back(entityInstID);
 						continue;
 					}
 
@@ -2104,11 +2099,16 @@ void EntityChunkManager::updateVfx(double ceilingScale, const VoxelChunkManager 
 
 				if (isHittingEntity)
 				{
-					this->queueEntityDestroy(entityInstID, true);
+					vfxEntitiesToDestroy.emplace_back(entityInstID);
 					continue;
 				}
 			}
 		}
+	}
+
+	for (const EntityInstanceID entityInstID : vfxEntitiesToDestroy)
+	{
+		this->queueEntityDestroy(entityInstID, true); // @todo shouldn't need to notify chunk, it should just be a loose entity in entitychunkmanager
 	}
 }
 
