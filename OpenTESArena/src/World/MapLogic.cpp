@@ -101,7 +101,8 @@ void MapLogic::handleTriggersInVoxel(Game &game, const CoordInt3 &coord)
 	}
 }
 
-void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt3 &voxel, double ceilingScale, bool isApplyingDoorKeyToLock, int doorKeyID, bool isWeaponBashing)
+void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt3 &voxel, double ceilingScale, bool isApplyingDoorKeyToLock,
+	int doorKeyID, bool isLockpickingSuccessful, bool isWeaponBashing)
 {
 	VoxelDoorDefID doorDefID;
 	if (!voxelChunk.tryGetDoorDefID(voxel.x, voxel.y, voxel.z, &doorDefID))
@@ -129,7 +130,7 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 		VoxelLockDefID lockDefID;
 		if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
 		{
-			isDoorBecomingUnlocked = isApplyingDoorKeyToLock || isWeaponBashing;
+			isDoorBecomingUnlocked = isApplyingDoorKeyToLock || isLockpickingSuccessful || isWeaponBashing;
 		}
 	}
 
@@ -140,17 +141,23 @@ void MapLogic::handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt
 		voxelChunk.triggerInsts.emplace_back(std::move(newTriggerInst));
 	}
 
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	AudioManager &audioManager = game.audioManager;
+
 	const bool isDoorKeyUseValid = isApplyingDoorKeyToLock && isDoorBecomingUnlocked;
 	if (isDoorKeyUseValid)
 	{
-		const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
-		const ExeData &exeData = binaryAssetLibrary.getExeData();
 		GameWorldUiController::onDoorUnlockedWithKey(game, doorKeyID, soundFilename, soundPosition, exeData);
 		game.player.removeFromKeyInventory(doorKeyID);
 	}
+	else if (isLockpickingSuccessful)
+	{
+		GameWorldUI::setActionText(exeData.thieving.thievingSuccess.c_str());
+		audioManager.playSoundOneShot(soundFilename, soundPosition);
+	}
 	else
 	{
-		AudioManager &audioManager = game.audioManager;
 		audioManager.playSoundOneShot(soundFilename, soundPosition);
 	}
 }

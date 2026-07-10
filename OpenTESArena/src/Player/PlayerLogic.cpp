@@ -464,56 +464,77 @@ namespace PlayerLogic
 			}
 			else if (voxelType == ArenaVoxelType::Door)
 			{
-				if (passesVoxelDistanceTest)
+				if (!passesVoxelDistanceTest)
 				{
-					// If the door is closed, try to open it.
-					int doorAnimInstIndex;
-					const bool isDoorClosed = !voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
-					if (isDoorClosed)
+					return;
+				}
+
+				int doorAnimInstIndex;
+				const bool isDoorClosed = !voxelChunk.tryGetDoorAnimInstIndex(voxel.x, voxel.y, voxel.z, &doorAnimInstIndex);
+				if (!isDoorClosed)
+				{
+					return;
+				}
+
+				bool canDoorBeOpened = true;
+				bool isApplyingDoorKeyToLock = false;
+				int requiredDoorKeyID = -1;
+				int lockLevel = 0;
+				bool isAttemptingLockpick = false;
+				bool isLockpickingSuccessful = false;
+
+				int triggerInstIndex;
+				const bool hasDoorBeenUnlocked = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
+				if (!hasDoorBeenUnlocked)
+				{
+					VoxelLockDefID lockDefID;
+					if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
 					{
-						bool canDoorBeOpened = true;
-						bool isApplyingDoorKeyToLock = false;
-						int requiredDoorKeyID = -1;
-						int lockLevel = 0;
+						const LockDefinition &lockDef = voxelChunk.lockDefs[lockDefID];
+						requiredDoorKeyID = lockDef.keyID;
+						lockLevel = lockDef.lockLevel;
 
-						int triggerInstIndex;
-						const bool hasDoorBeenUnlocked = voxelChunk.tryGetTriggerInstIndex(voxel.x, voxel.y, voxel.z, &triggerInstIndex);
-						if (!hasDoorBeenUnlocked)
+						if (requiredDoorKeyID >= 0)
 						{
-							VoxelLockDefID lockDefID;
-							if (voxelChunk.tryGetLockDefID(voxel.x, voxel.y, voxel.z, &lockDefID))
+							if (player.isIdInKeyInventory(requiredDoorKeyID))
 							{
-								const LockDefinition &lockDef = voxelChunk.lockDefs[lockDefID];
-								requiredDoorKeyID = lockDef.keyID;
-								lockLevel = lockDef.lockLevel;
-
-								// @todo add thieving interaction type in here
-								if (requiredDoorKeyID >= 0)
-								{
-									if (player.isIdInKeyInventory(requiredDoorKeyID))
-									{
-										isApplyingDoorKeyToLock = true;
-									}
-									else
-									{
-										canDoorBeOpened = false || debugDestroyVoxel; // Can't open unless using debug input
-									}
-								}
+								isApplyingDoorKeyToLock = true;
+							}
+							else
+							{
+								canDoorBeOpened = false || debugDestroyVoxel; // Can't open unless using debug input
 							}
 						}
 
-						if (canDoorBeOpened)
+						if (!isApplyingDoorKeyToLock && interactionType == GameWorldInteractionType::Thieving)
 						{
-							constexpr bool isWeaponBashing = false;
-							MapLogic::handleDoorOpen(game, voxelChunk, voxel, ceilingScale, isApplyingDoorKeyToLock, requiredDoorKeyID, isWeaponBashing);
-						}
-						else
-						{
-							const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
-							const std::string lockDifficultyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
-							GameWorldUI::setActionText(lockDifficultyMsg.c_str());
+							isAttemptingLockpick = true;
+							isLockpickingSuccessful = random.nextBool(); // @todo original chances
+							canDoorBeOpened = isLockpickingSuccessful;
 						}
 					}
+				}
+
+				if (interactionType != GameWorldInteractionType::Default)
+				{
+					GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+				}
+
+				if (canDoorBeOpened)
+				{
+					constexpr bool isWeaponBashing = false;
+					MapLogic::handleDoorOpen(game, voxelChunk, voxel, ceilingScale, isApplyingDoorKeyToLock, requiredDoorKeyID, isLockpickingSuccessful, isWeaponBashing);
+				}
+				else if (isAttemptingLockpick)
+				{
+					DebugAssert(!isLockpickingSuccessful);
+					GameWorldUI::setActionText(exeData.thieving.thievingFailure.c_str());
+				}
+				else
+				{
+					const int lockDifficultyIndex = ArenaPlayerUtils::getLockDifficultyMessageIndex(lockLevel, charClassDef.thievingDivisor, player.level, player.primaryAttributes, exeData);
+					const std::string lockDifficultyMsg = GameWorldUiModel::getLockDifficultyMessage(lockDifficultyIndex, exeData);
+					GameWorldUI::setActionText(lockDifficultyMsg.c_str());
 				}
 			}
 		}
@@ -1143,8 +1164,9 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 							{
 								constexpr bool isApplyingDoorKeyToLock = false;
 								constexpr int doorKeyID = -1;
+								constexpr bool isLockpickingSuccessful = false;
 								constexpr bool isWeaponBashing = true;
-								MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isWeaponBashing);
+								MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isLockpickingSuccessful, isWeaponBashing);
 							}
 						}
 					}

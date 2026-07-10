@@ -17,7 +17,7 @@ namespace MapLogic
 	void handleTriggersInVoxel(Game &game, const CoordInt3 &coord);
 
 	// Handles the door open animation and sound.
-	void handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt3 &voxel, double ceilingScale, bool isApplyingDoorKeyToLock, int doorKeyID, bool isWeaponBashing);
+	void handleDoorOpen(Game &game, VoxelChunk &voxelChunk, const VoxelInt3 &voxel, double ceilingScale, bool isApplyingDoorKeyToLock, int doorKeyID, bool isLockpickingSuccessful, bool isWeaponBashing);
 
 	// Teleport the player to a random city in their race's province.
 	void handleStartDungeonLevelUpVoxelEnter(Game &game);
