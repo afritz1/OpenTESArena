@@ -919,6 +919,10 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 	{
 		this->citizenEntityInstIDs.emplace_back(entityInst.instanceID);
 	}
+	else if (entityDef.type == EntityDefinitionType::Vfx)
+	{
+		this->vfxEntityInstIDs.emplace_back(entityInst.instanceID);
+	}
 }
 
 void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const VoxelChunk &voxelChunk,
@@ -2395,15 +2399,9 @@ void EntityChunkManager::updatePostPhysicsStep(const VoxelChunkManager &voxelChu
 
 	// @todo add citizens here once they are using linear velocity instead of SetPosition()
 
-	for (const EntityInstanceID entityInstID : this->entities.keys)
+	for (const EntityInstanceID entityInstID : this->vfxEntityInstIDs)
 	{
 		const EntityInstance &entityInst = this->entities.get(entityInstID);
-		const EntityDefinition &entityDef = this->getEntityDef(entityInst.defID);
-		if (entityDef.type != EntityDefinitionType::Vfx)
-		{
-			continue;
-		}
-
 		const JPH::BodyID &physicsBodyID = entityInst.physicsBodyID;
 		const JPH::RVec3 physicsPosition = bodyInterface.GetPosition(physicsBodyID);
 		const JPH::ShapeRefC physicsShape = bodyInterface.GetShape(physicsBodyID);
@@ -2458,6 +2456,10 @@ void EntityChunkManager::queueEntityDestroy(EntityInstanceID entityInstID, const
 		else if (entityDefType == EntityDefinitionType::Citizen)
 		{
 			entityInstIDsToUpdate = &this->citizenEntityInstIDs;
+		}
+		else if (entityDefType == EntityDefinitionType::Vfx)
+		{
+			entityInstIDsToUpdate = &this->vfxEntityInstIDs;
 		}
 
 		if (entityInstIDsToUpdate != nullptr)

@@ -192,6 +192,7 @@ public:
 	// Weak references to certain entity types for ease of iterating. Does not contain destroyed entities.
 	std::vector<EntityInstanceID> enemyEntityInstIDs;
 	std::vector<EntityInstanceID> citizenEntityInstIDs;
+	std::vector<EntityInstanceID> vfxEntityInstIDs;
 
 	// One uniform buffer of model matrices per heap. Each entity tracks which heap its transform belongs to.
 	std::vector<RenderTransformHeap> transformHeaps;
