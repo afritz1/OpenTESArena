@@ -508,8 +508,7 @@ void LevelUpUI::onDoneButtonSelected(MouseButtonType mouseButtonType)
 			destinationAttributes[i].maxValue = sourceAttributes[i].maxValue;
 		}
 
-		DebugLogWarning("@todo level up logic is incomplete. Grant more max health based on endurance?");
-		player.maxHealth = charLevelUpState.maxHealth;
+		// Max health gain is applied before level up UI since it uses previous endurance value.
 		player.maxStamina = charLevelUpState.maxStamina;
 		player.maxSpellPoints = charLevelUpState.maxSpellPoints;
 		game.charLevelUpState = nullptr;
