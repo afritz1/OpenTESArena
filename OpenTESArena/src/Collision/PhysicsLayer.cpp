@@ -11,7 +11,7 @@ bool PhysicsObjectLayerPairFilter::ShouldCollide(JPH::ObjectLayer object1, JPH::
 	case PhysicsLayers::MOVING:
 		return (object2 == PhysicsLayers::NON_MOVING) || (object2 == PhysicsLayers::MOVING) || (object2 == PhysicsLayers::SENSOR);
 	case PhysicsLayers::SENSOR:
-		return (object2 == PhysicsLayers::MOVING);
+		return (object2 == PhysicsLayers::NON_MOVING) || (object2 == PhysicsLayers::MOVING) || (object2 == PhysicsLayers::SENSOR);
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(object1));
 	}
@@ -64,7 +64,7 @@ bool PhysicsObjectVsBroadPhaseLayerFilter::ShouldCollide(JPH::ObjectLayer layer1
 	case PhysicsLayers::MOVING:
 		return (layer2 == PhysicsBroadPhaseLayers::NON_MOVING) || (layer2 == PhysicsBroadPhaseLayers::MOVING) || (layer2 == PhysicsBroadPhaseLayers::SENSOR);
 	case PhysicsLayers::SENSOR:
-		return layer2 == PhysicsBroadPhaseLayers::MOVING;
+		return (layer2 == PhysicsBroadPhaseLayers::NON_MOVING) || (layer2 == PhysicsBroadPhaseLayers::MOVING) || (layer2 == PhysicsBroadPhaseLayers::SENSOR);
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(layer1));
 	}

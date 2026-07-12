@@ -58,6 +58,36 @@ struct EntityEncounterSpawnInfo
 	bool isCityGuards() const;
 };
 
+// A voxel was hit/affected by something in combat.
+struct CombatVoxelResult
+{
+	WorldInt3 voxel;
+	bool isFromWeapon; // If hit by a weapon, or by fists.
+
+	CombatVoxelResult();
+
+	void init(WorldInt3 voxel, bool isFromWeapon);
+};
+
+// An entity was hit/affected by something in combat.
+struct CombatEntityResult
+{
+	EntityInstanceID entityInstID;
+	bool isFromMeleeWeapon; // From melee, or from ranged.
+
+	CombatEntityResult();
+
+	void init(EntityInstanceID entityInstID, bool isFromMeleeWeapon);
+};
+
+struct CombatResults
+{
+	std::vector<CombatVoxelResult> voxelResults;
+	std::vector<CombatEntityResult> entityResults;
+
+	void clear();
+};
+
 struct CampingState
 {
 	int manualHoursRemaining;
@@ -131,6 +161,8 @@ private:
 	WeatherInstance weatherInst;
 
 	CampingState campingState;
+
+	CombatResults combatResults;
 
 	GuardSpawnState guardSpawnState;
 
@@ -207,6 +239,9 @@ public:
 	void setCampingUntilHealed();
 	void clearCampingState();
 
+	void addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon);
+	void addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon);
+
 	void spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const;
 	void queueCityGuardEncounter(Game &game);
 
@@ -228,6 +263,7 @@ public:
 	void tickEntitiesPrePhysicsStep(double dt, Game &game);
 	void tickEntitiesPostPhysicsStep(Game &game);
 	void tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game &game);
+	void tickCombatResults(Game &game);
 	void tickVisibility(const RenderCamera &renderCamera, Game &game);
 	void tickRendering(double dt, const RenderCamera &renderCamera, bool isFloatingOriginChanged, Game &game);
 };

@@ -939,6 +939,8 @@ void Game::loop()
 				this->player.postPhysicsStep(clampedDeltaTime, *this);
 				this->gameState.tickEntitiesPostPhysicsStep(*this);
 
+				this->gameState.tickCombatResults(*this);
+
 				if (this->gameState.hasPendingLevelTransitionCalculation())
 				{
 					MapLogic::handleInteriorLevelTransition(*this, this->gameState.getLevelTransitionCalculationPlayerCoord(), this->gameState.getLevelTransitionCalculationTransitionCoord());

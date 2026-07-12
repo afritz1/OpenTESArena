@@ -239,7 +239,7 @@ void CombatLogic::onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, bool anyWeaponEqui
 	MapLogic::handleDoorOpen(game, hitVoxelChunk, hitVoxel, ceilingScale, isApplyingDoorKeyToLock, doorKeyID, isLockpickingSuccessful, isWeaponBashing);
 }
 
-void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, Game &game)
+void CombatLogic::onEntityHitByPlayer(EntityInstanceID hitEntityInstID, bool isFromMeleeWeapon, Game &game)
 {
 	EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const EntityInstance &hitEntityInst = entityChunkManager.entities.get(hitEntityInstID);

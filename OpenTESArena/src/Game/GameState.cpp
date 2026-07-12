@@ -15,6 +15,7 @@
 #include "../Assets/RMDFile.h"
 #include "../Assets/TextureManager.h"
 #include "../Audio/MusicLibrary.h"
+#include "../Combat/CombatLogic.h"
 #include "../Entities/ArenaEntityUtils.h"
 #include "../Entities/EntityDefinitionLibrary.h"
 #include "../Interface/GameWorldUiMVC.h"
@@ -147,6 +148,35 @@ void EntityEncounterSpawnInfo::initCityGuards(int guardType, int level, int coun
 bool EntityEncounterSpawnInfo::isCityGuards() const
 {
 	return this->guardType >= 0;
+}
+
+CombatVoxelResult::CombatVoxelResult()
+{
+	this->isFromWeapon = false;
+}
+
+void CombatVoxelResult::init(WorldInt3 voxel, bool isFromWeapon)
+{
+	this->voxel = voxel;
+	this->isFromWeapon = isFromWeapon;
+}
+
+CombatEntityResult::CombatEntityResult()
+{
+	this->entityInstID = -1;
+	this->isFromMeleeWeapon = false;
+}
+
+void CombatEntityResult::init(EntityInstanceID entityInstID, bool isFromMeleeWeapon)
+{
+	this->entityInstID = entityInstID;
+	this->isFromMeleeWeapon = isFromMeleeWeapon;
+}
+
+void CombatResults::clear()
+{
+	this->voxelResults.clear();
+	this->entityResults.clear();
 }
 
 CampingState::CampingState()
@@ -664,6 +694,7 @@ void GameState::clearMaps()
 	this->nextLevelIndex = -1;
 	this->nextMusicFunc = SceneChangeMusicFunc();
 	this->nextJingleMusicFunc = SceneChangeMusicFunc();
+	this->combatResults.clear();
 	this->guardSpawnState.clearQueue();
 }
 
@@ -730,6 +761,20 @@ void GameState::setCampingUntilHealed()
 void GameState::clearCampingState()
 {
 	this->campingState.clear();
+}
+
+void GameState::addCombatVoxelResult(WorldInt3 voxel, bool isFromWeapon)
+{
+	CombatVoxelResult result;
+	result.init(voxel, isFromWeapon);
+	this->combatResults.voxelResults.emplace_back(std::move(result));
+}
+
+void GameState::addCombatEntityResult(EntityInstanceID entityInstID, bool isFromMeleeWeapon)
+{
+	CombatEntityResult result;
+	result.init(entityInstID, isFromMeleeWeapon);
+	this->combatResults.entityResults.emplace_back(std::move(result));
 }
 
 void GameState::spawnEncounterEnemies(Game &game, const EntityEncounterSpawnInfo &spawnInfo) const
@@ -1617,6 +1662,22 @@ void GameState::tickCollision(double dt, JPH::PhysicsSystem &physicsSystem, Game
 	CollisionChunkManager &collisionChunkManager = sceneManager.collisionChunkManager;
 	collisionChunkManager.update(dt, chunkManager.getActiveChunkPositions(), chunkManager.getNewChunkPositions(),
 		chunkManager.getFreedChunkPositions(), ceilingScale, voxelChunkManager, boxCombineChunkManager, physicsSystem);
+}
+
+void GameState::tickCombatResults(Game &game)
+{
+	// These are applied after physics simulation since contact added handlers may create bodies for hit VFX etc. which is disallowed.
+	for (const CombatVoxelResult &result : this->combatResults.voxelResults)
+	{
+		CombatLogic::onVoxelHitByPlayer(result.voxel, result.isFromWeapon, game);
+	}
+
+	for (const CombatEntityResult &result : this->combatResults.entityResults)
+	{
+		CombatLogic::onEntityHitByPlayer(result.entityInstID, result.isFromMeleeWeapon, game);
+	}
+
+	this->combatResults.clear();
 }
 
 void GameState::tickVisibility(const RenderCamera &renderCamera, Game &game)

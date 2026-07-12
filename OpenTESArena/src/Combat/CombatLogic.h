@@ -42,5 +42,5 @@ namespace CombatLogic
 		Random &random, JPH::PhysicsSystem &physicsSystem, Renderer &renderer);
 
 	void onVoxelHitByPlayer(WorldInt3 hitWorldVoxel, bool anyWeaponEquipped, Game &game);
-	void onEntityHitByPlayer(EntityInstanceID hitEntityInstID, Game &game);
+	void onEntityHitByPlayer(EntityInstanceID hitEntityInstID, bool isFromMeleeWeapon, Game &game);
 }

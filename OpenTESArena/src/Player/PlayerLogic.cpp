@@ -1118,12 +1118,13 @@ void PlayerLogic::handleAttack(Game &game, const Int2 &mouseDelta)
 
 			for (const WorldInt3 hitWorldVoxel : hitSearchResult.getVoxels())
 			{
-				CombatLogic::onVoxelHitByPlayer(hitWorldVoxel, anyWeaponEquipped, game);
+				gameState.addCombatVoxelResult(hitWorldVoxel, anyWeaponEquipped);
 			}
 
 			for (const EntityInstanceID hitEntityInstID : hitSearchResult.getEntities())
 			{
-				CombatLogic::onEntityHitByPlayer(hitEntityInstID, game);
+				constexpr bool isFromMeleeWeapon = true;
+				gameState.addCombatEntityResult(hitEntityInstID, isFromMeleeWeapon);
 			}
 		}
 	}

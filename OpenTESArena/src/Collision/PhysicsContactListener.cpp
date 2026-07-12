@@ -2,6 +2,7 @@
 #include "Jolt/Physics/Body/Body.h"
 
 #include "PhysicsContactListener.h"
+#include "../Combat/CombatLogic.h"
 #include "../Game/Game.h"
 #include "../Voxels/VoxelUtils.h"
 #include "../World/MapLogic.h"
@@ -9,67 +10,25 @@
 
 #include "components/debug/Debug.h"
 
-PhysicsContactListener::PhysicsContactListener(Game &game)
-	: game(game)
+namespace
 {
-	
-}
-
-JPH::ValidateResult PhysicsContactListener::OnContactValidate(const JPH::Body &body1, const JPH::Body &body2, JPH::RVec3Arg baseOffset, const JPH::CollideShapeResult &collisionResult)
-{
-	return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
-}
-
-void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::Body &body2, const JPH::ContactManifold &manifold, JPH::ContactSettings &settings)
-{
-	const Player &player = this->game.player;
-	const JPH::BodyID playerBodyID = player.physicsCharacter->GetBodyID();
-	if ((body1.GetID() != playerBodyID) && (body2.GetID() != playerBodyID))
+	void OnPlayerVsVoxelContactAdded(const JPH::Body &playerBody, const JPH::Body &voxelBody, JPH::SubShapeID voxelSubShapeID, bool isVoxelSensor, Game &game)
 	{
-		return;
-	}
+		if (!isVoxelSensor)
+		{
+			return;
+		}
 
-	const JPH::Body *playerBody = nullptr;
-	const JPH::Body *otherBody = nullptr;
-	JPH::SubShapeID otherSubShapeID;
-	if (body1.GetID() == playerBodyID)
-	{
-		playerBody = &body1;
-		otherBody = &body2;
-		otherSubShapeID = manifold.mSubShapeID2;
-	}
-	else
-	{
-		playerBody = &body2;
-		otherBody = &body1;
-		otherSubShapeID = manifold.mSubShapeID1;
-	}
-
-	if (!otherBody->IsSensor())
-	{
-		return;
-	}
-
-	const JPH::BodyID otherBodyID = otherBody->GetID();
-	const SceneManager &sceneManager = this->game.sceneManager;
-	const VoxelChunkManager &voxelChunkManager = sceneManager.voxelChunkManager;
-	const EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
-
-	const EntityInstanceID otherBodyEntityInstanceID = entityChunkManager.getEntityFromPhysicsBodyID(otherBodyID);
-	const bool isPlayerVsEntitySensorCollision = otherBodyEntityInstanceID != -1;
-	const bool isPlayerVsVoxelSensorCollision = !isPlayerVsEntitySensorCollision;
-
-	if (isPlayerVsVoxelSensorCollision)
-	{
-		JPH::PhysicsSystem &physicsSystem = this->game.physicsSystem;
-		GameState &gameState = this->game.gameState;
+		const VoxelChunkManager &voxelChunkManager = game.sceneManager.voxelChunkManager;
+		JPH::PhysicsSystem &physicsSystem = game.physicsSystem;
+		GameState &gameState = game.gameState;
 		const double ceilingScale = gameState.getActiveCeilingScale();
 
 		// Determine which sensor subshape was hit since it's in a compound shape.
 		const JPH::Vec3 otherBodyScale = JPH::Vec3::sReplicate(1.0f);
 		JPH::SubShapeID remainderSubShapeID;
-		const JPH::TransformedShape otherSubShapeTransformed = otherBody->GetShape()->GetSubShapeTransformedShape(otherSubShapeID, otherBody->GetCenterOfMassPosition(), otherBody->GetRotation(), otherBodyScale, remainderSubShapeID);
-		const JPH::RVec3 otherSubShapePosition = otherSubShapeTransformed.mShapePositionCOM;		
+		const JPH::TransformedShape otherSubShapeTransformed = voxelBody.GetShape()->GetSubShapeTransformedShape(voxelSubShapeID, voxelBody.GetCenterOfMassPosition(), voxelBody.GetRotation(), otherBodyScale, remainderSubShapeID);
+		const JPH::RVec3 otherSubShapePosition = otherSubShapeTransformed.mShapePositionCOM;
 		const CoordDouble3 otherSubShapeCoord = VoxelUtils::worldPointToCoord(WorldDouble3(
 			static_cast<SNDouble>(otherSubShapePosition.GetX()),
 			static_cast<double>(otherSubShapePosition.GetY()),
@@ -89,7 +48,7 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 				return;
 			}
 
-			const JPH::RVec3 playerBodyPosition = playerBody->GetCenterOfMassPosition();
+			const JPH::RVec3 playerBodyPosition = playerBody.GetCenterOfMassPosition();
 			const CoordDouble3 playerBodyCoord = VoxelUtils::worldPointToCoord(WorldDouble3(
 				static_cast<SNDouble>(playerBodyPosition.GetX()),
 				static_cast<double>(playerBodyPosition.GetY()),
@@ -97,16 +56,154 @@ void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::B
 			const CoordInt3 playerBodyVoxelCoord(playerBodyCoord.chunk, VoxelUtils::pointToVoxel(playerBodyCoord.point, ceilingScale));
 
 			// Have to queue for later due to possible deadlock with player position lookup if displaying world map.
-			gameState.queueLevelTransitionCalculation(playerBodyVoxelCoord, otherSubShapeVoxelCoord);			
+			gameState.queueLevelTransitionCalculation(playerBodyVoxelCoord, otherSubShapeVoxelCoord);
 		}
 	}
-	else if (isPlayerVsEntitySensorCollision)
-	{
-		const EntityInstance &entityInst = entityChunkManager.entities.get(otherBodyEntityInstanceID);
-		const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);
-		//DebugLog("Player contacted entity sensor " + std::to_string(otherBodyID.GetIndex()) + " in chunk (" + entityCoord.chunk.toString() + ") at (" + entityCoord.point.toString() + ").");
 
-		// @todo: do we actually care about player + entity sensor collisions? maybe don't need this branch?
+	// @todo will use this eventually for player getting hit by spells
+	/*void OnPlayerVsEntityContactAdded(JPH::BodyID playerBodyID, JPH::BodyID entityBodyID, EntityInstanceID entityInstID, const EntityChunkManager &entityChunkManager)
+	{
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+		const WorldDouble3 entityPosition = entityChunkManager.positions.get(entityInst.positionID);		
+	}*/
+
+	void OnBowProjectileVsVoxelContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileInstID, const JPH::Body &voxelBody, JPH::SubShapeID voxelSubShapeID, bool isVoxelSensor, EntityChunkManager &entityChunkManager)
+	{
+		if (isVoxelSensor)
+		{
+			return;
+		}
+
+		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of an arrow dying
+	}
+
+	void OnBowProjectileVsEntityContactAdded(const JPH::Body &projectileBody, EntityInstanceID projectileInstID, const JPH::Body &entityBody, EntityInstanceID entityInstID, Game &game)
+	{
+		EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+		if (entityInst.isTransformStatic())
+		{
+			// Trees, static NPCs, containers, etc..
+			return;
+		}
+
+		if (!entityInst.canBeKilledInCombat())
+		{
+			return;
+		}
+
+		EntityCombatState &entityCombatState = entityChunkManager.combatStates.get(entityInst.combatStateID);
+		if (entityCombatState.isInDeathState())
+		{
+			return;
+		}
+
+		GameState &gameState = game.gameState;
+		constexpr bool isFromMeleeWeapon = false;
+		gameState.addCombatEntityResult(entityInstID, isFromMeleeWeapon);
+
+		entityChunkManager.queueEntityDestroy(projectileInstID, true); // @todo shouldn't need to notify chunk of an arrow dying
+	}
+}
+
+PhysicsContactListener::PhysicsContactListener(Game &game)
+	: game(game)
+{
+	
+}
+
+JPH::ValidateResult PhysicsContactListener::OnContactValidate(const JPH::Body &body1, const JPH::Body &body2, JPH::RVec3Arg baseOffset, const JPH::CollideShapeResult &collisionResult)
+{
+	return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
+}
+
+void PhysicsContactListener::OnContactAdded(const JPH::Body &body1, const JPH::Body &body2, const JPH::ContactManifold &manifold, JPH::ContactSettings &settings)
+{
+	SceneManager &sceneManager = this->game.sceneManager;
+	EntityChunkManager &entityChunkManager = sceneManager.entityChunkManager;
+
+	const Player &player = this->game.player;
+	const JPH::BodyID playerBodyID = player.physicsCharacter->GetBodyID();
+
+	const JPH::Body *playerBody = nullptr;
+	const JPH::Body *bowProjectileBody = nullptr;
+	EntityInstanceID bowProjectileEntityInstID = -1;
+	const JPH::Body *otherBody = nullptr;
+	JPH::SubShapeID otherSubShapeID;
+	if (playerBodyID == body1.GetID())
+	{
+		playerBody = &body1;
+		otherBody = &body2;
+		otherSubShapeID = manifold.mSubShapeID2;
+	}
+	else if (playerBodyID == body2.GetID())
+	{
+		playerBody = &body2;
+		otherBody = &body1;
+		otherSubShapeID = manifold.mSubShapeID1;
+	}
+	else
+	{
+		for (const EntityInstanceID entityInstID : entityChunkManager.vfxEntityInstIDs)
+		{
+			const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+			if (entityDef.vfx.type != VfxEntityAnimationType::BowProjectile)
+			{
+				continue;
+			}
+
+			if (entityInst.physicsBodyID == body1.GetID())
+			{
+				bowProjectileBody = &body1;
+				bowProjectileEntityInstID = entityInstID;
+				otherBody = &body2;
+				otherSubShapeID = manifold.mSubShapeID2;
+				break;
+			}
+			else if (entityInst.physicsBodyID == body2.GetID())
+			{
+				bowProjectileBody = &body2;
+				bowProjectileEntityInstID = entityInstID;
+				otherBody = &body1;
+				otherSubShapeID = manifold.mSubShapeID1;
+				break;
+			}
+		}
+	}
+
+	if (otherBody == nullptr)
+	{
+		// Don't care about this contact pair.
+		return;
+	}
+
+	const JPH::BodyID otherBodyID = otherBody->GetID();
+	const EntityInstanceID otherBodyEntityInstanceID = entityChunkManager.getEntityFromPhysicsBodyID(otherBodyID);
+
+	const bool isPlayerVsEntityCollision = (playerBody != nullptr) && (otherBodyEntityInstanceID >= 0);
+	const bool isPlayerVsVoxelCollision = (playerBody != nullptr) && !isPlayerVsEntityCollision;
+	const bool isBowProjectileVsEntityCollision = (bowProjectileBody != nullptr) && (otherBodyEntityInstanceID >= 0);
+	const bool isBowProjectileVsVoxelCollision = (bowProjectileBody != nullptr) && !isBowProjectileVsEntityCollision;
+
+	if (isPlayerVsVoxelCollision)
+	{
+		OnPlayerVsVoxelContactAdded(*playerBody, *otherBody, otherSubShapeID, otherBody->IsSensor(), this->game);
+	}
+	else if (isPlayerVsEntityCollision)
+	{
+		/*if (otherBody->IsSensor())
+		{
+			OnPlayerVsEntitySensorContactAdded(*playerBody, *otherBody, this->game);
+		}*/
+	}
+	else if (isBowProjectileVsVoxelCollision)
+	{
+		OnBowProjectileVsVoxelContactAdded(*bowProjectileBody, bowProjectileEntityInstID, *otherBody, otherSubShapeID, otherBody->IsSensor(), entityChunkManager);
+	}
+	else if (isBowProjectileVsEntityCollision)
+	{
+		OnBowProjectileVsEntityContactAdded(*bowProjectileBody, bowProjectileEntityInstID, *otherBody, otherBodyEntityInstanceID, this->game);
 	}
 }
 
