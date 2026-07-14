@@ -64,8 +64,14 @@ Buffer<FontDefinitionCharacterID> TextRenderUtils::getLineFontCharIDs(const std:
 	{
 		const char c = line[i]; // @todo: support more than ASCII
 		const std::string charUtf8(1, c);
+		const bool isTabColor = (i > 0) && (line[i - 1] == '\t');
+
 		FontDefinitionCharacterID charID;
-		if (!fontDef.tryGetCharacterID(charUtf8.c_str(), &charID))
+		if (isTabColor)
+		{
+			charID = -1;
+		}
+		else if (!fontDef.tryGetCharacterID(charUtf8.c_str(), &charID))
 		{
 			//DebugLogWarningFormat("Character \"%s\" not renderable with font %s.", charUtf8.c_str(), fontDef.name.c_str());
 			charID = -1;
