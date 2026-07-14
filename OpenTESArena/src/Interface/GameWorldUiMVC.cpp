@@ -1540,8 +1540,8 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
 	const std::string citizenNameStr(citizenName.name);
-	const std::string text = citizenNameStr + "\n(dialogue not implemented)";
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+	// @todo assign that citizen name to some CitizenConversationState
+	GameWorldUI::showConversationModal();
 }
 
 void GameWorldUiController::onCitizenKilled(Game &game)
@@ -1561,6 +1561,16 @@ void GameWorldUiController::onCitizenKilled(Game &game)
 
 void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonalityType personalityType)
 {
+	const GameState &gameState = game.gameState;
+
+	std::string interiorDisplayName;
+	const MapDefinition &mapDef = gameState.getActiveMapDef();
+	if (mapDef.getMapType() == MapType::Interior)
+	{
+		const MapDefinitionInterior &mapDefInterior = mapDef.getSubDefinition().interior;
+		interiorDisplayName = mapDefInterior.displayName;
+	}
+
 	constexpr const char *personalityTypeNames[] =
 	{
 		"Shopkeeper",
@@ -1580,8 +1590,13 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 
 	std::string text;
 	TextAlignment textAlignment = TextAlignment::MiddleCenter;
-
-	if (personalityType == StaticNpcPersonalityType::TavernPatron)
+	
+	if (personalityType == StaticNpcPersonalityType::Shopkeeper)
+	{
+		GameWorldUI::showShopkeeperBackground(interiorDisplayName.c_str());
+		GameWorldUI::showConversationModal();
+	}
+	else if (personalityType == StaticNpcPersonalityType::TavernPatron)
 	{
 		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
 		const ArenaTemplateDatEntry &patronDialoguesEntry = textAssetLibrary.templateDat.getEntry(1430);
@@ -1594,7 +1609,6 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
 		const CharacterRaceDefinition &charRaceDef = charRaceLibrary.getDefinition(player.raceID);
 
-		const GameState &gameState = game.gameState;
 		const LocationDefinition &locationDef = gameState.getLocationDefinition();
 		const std::string &locationName = locationDef.getName();
 
@@ -1607,14 +1621,6 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		const ArenaTemplateDatEntry &oathsEntry = textAssetLibrary.templateDat.getEntry(oathsID);
 		const int oathsRandomIndex = random.next(oathsEntry.values.size());
 		const std::string &oathString = oathsEntry.values[oathsRandomIndex];
-
-		std::string interiorDisplayName;
-		const MapDefinition &mapDef = gameState.getActiveMapDef();
-		if (mapDef.getMapType() == MapType::Interior)
-		{
-			const MapDefinitionInterior &mapDefInterior = mapDef.getSubDefinition().interior;
-			interiorDisplayName = mapDefInterior.displayName;
-		}
 
 		// @todo move this into a global dialogue processor, see "Dialog" wiki
 		text = String::replace(text, "%ra", charRaceDef.singularName);
@@ -1632,7 +1638,10 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		text = std::string(personalityTypeNames[personalityTypeIndex]) + "\n(dialogue not implemented)";
 	}
 
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, textAlignment);
+	if (!text.empty())
+	{
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, textAlignment);
+	}
 }
 
 void GameWorldUiController::onShowPlayerDeathCinematic(Game &game)

@@ -24,6 +24,7 @@ enum class UiTexturePatternType
 {
 	Parchment,
 	Dark,
+	ShopkeeperTitle,
 	Custom1 // Light gray with borders.
 };
 

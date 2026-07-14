@@ -48,6 +48,8 @@ struct GameWorldUiState
 	UiContextInstanceID lootPopUpContextInstID;
 	UiContextInstanceID campModalContextInstID;
 	UiContextInstanceID campManualHoursModalContextInstID;
+	UiContextInstanceID conversationModalContextInstID;
+	UiContextInstanceID shopkeeperBgContextInstID; // Just decoration, no interaction.
 
 	UiTextureID statusBarsTextureID; // Health + stamina + spell points.
 	Buffer<UiTextureID> weaponAnimTextureIDs;
@@ -105,6 +107,8 @@ namespace GameWorldUI
 	void showCampModal();
 	void showCampManualHoursModal();
 	void showPlayerHurt();
+	void showConversationModal();
+	void showShopkeeperBackground(const char *titleText);
 
 	bool isTriggerTextVisible();
 	bool isActionTextVisible();

@@ -531,6 +531,73 @@ struct ExeDataServices
 
 	std::string palaceClosedAtNight;
 
+	std::string equipmentModalTitle;
+	std::string equipmentModalBuy;
+	std::string equipmentModalSell;
+	std::string equipmentModalRepair;
+	std::string equipmentModalSteal;
+	std::string equipmentModalExit;
+	std::string equipmentBuyModalTitle;
+	std::string equipmentBuyModalWeapons;
+	std::string equipmentBuyModalArmor;
+	std::string equipmentStealSuccess;
+	std::string equipmentItemEquippedWhenSelling;
+	std::string equipmentItemEquippedWhenSellingYes;
+	std::string equipmentItemEquippedWhenSellingNo;
+
+	std::string magesGuildModalTitle;
+	std::string magesGuildModalBuy;
+	std::string magesGuildModalDetectMagic;
+	std::string magesGuildModalSpellmaker;
+	std::string magesGuildModalSteal;
+	std::string magesGuildModalExit;
+	std::string magesGuildItemAlreadyIdentified;
+	std::string magesGuildItemIdentifyCost;
+	std::string magesGuildPickItemModalTitle;
+	std::string magesGuildPickItemModalPotions;
+	std::string magesGuildPickItemModalMagicItems;
+	std::string magesGuildPickItemModalSpells;
+
+	std::string tavernModalTitle;
+	std::string tavernModalBuyDrinks;
+	std::string tavernModalGetARoom;
+	std::string tavernModalSneakIntoARoom;
+	std::string tavernModalRumors;
+	std::string tavernModalExit;
+	std::string tavernDrinks[21];
+	std::string tavernRoomsAvailable;
+	std::string tavernSneakIntoRoomUnsuccessful;
+	std::string tavernSneakIntoRoomSuccessful;
+	std::string tavernRoomRentNumberOfDays;
+	std::string tavernRoomRented;
+	std::string tavernRoomRentalCost;
+	std::string tavernRoomRentedRemainingHours;
+	std::string tavernConsumeDrink;
+	std::string tavernFreeRoom;
+
+	std::string templeModalTitle;
+	std::string templeModalBless;
+	std::string templeModalCure;
+	std::string templeModalHeal;
+	std::string templeModalExit;
+	std::string templeReceiveBlessing;
+	std::string templeReceiveCuring;
+	std::string templeReceiveHealing;
+	std::string templePlayerIsFullHealth;
+	std::string templeDonationAmount;
+	std::string templePlayerIsNotDiseased;
+	std::string templeServiceCost;
+
+	std::string citizenModalTitle;
+	std::string citizenModalWhoAreYou;
+	std::string citizenModalWhereIs;
+	std::string citizenModalRumors;
+	std::string citizenModalExit;
+	std::string citizenRumorsModalTitle;
+	std::string citizenRumorsModalGeneral;
+	std::string citizenRumorsModalWork;
+	std::string citizenRumorsModalWorkAskOutside;
+
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };
 

@@ -5,6 +5,7 @@
 #include "LogbookUiState.h"
 #include "PauseMenuUiState.h"
 #include "WorldMapUiState.h"
+#include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
@@ -12,6 +13,7 @@
 #include "../Items/ItemLibrary.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
+#include "../Stats/CharacterClassLibrary.h"
 #include "../UI/FontLibrary.h"
 #include "../UI/TextEntry.h"
 #include "../UI/UiRenderSpace.h"
@@ -23,6 +25,8 @@ namespace
 	constexpr char ContextName_LootPopUp[] = "GameWorldLootPopUp";
 	constexpr char ContextName_CampModal[] = "GameWorldCampModal";
 	constexpr char ContextName_CampManualHoursModal[] = "GameWorldCampManualHoursModal";
+	constexpr char ContextName_ConversationModal[] = "GameWorldConversationModal";
+	constexpr char ContextName_ShopkeeperBackground[] = "GameWorldShopkeeperBackground";
 
 	constexpr char InterfaceImageElementName[] = "GameWorldInterfaceImage";
 	constexpr char NoMagicImageElementName[] = "GameWorldNoMagicImage";
@@ -298,6 +302,18 @@ void GameWorldUI::create(Game &game)
 	state.campManualHoursModalContextInstID = uiManager.createContext(campManualHoursModalContextInitInfo);
 	uiManager.setContextEnabled(state.campManualHoursModalContextInstID, false);
 
+	UiContextInitInfo conversationModalContextInitInfo;
+	conversationModalContextInitInfo.name = ContextName_ConversationModal;
+	conversationModalContextInitInfo.drawOrder = 2;
+	state.conversationModalContextInstID = uiManager.createContext(conversationModalContextInitInfo);
+	uiManager.setContextEnabled(state.conversationModalContextInstID, false);
+
+	UiContextInitInfo shopkeeperBackgroundContextInitInfo;
+	shopkeeperBackgroundContextInitInfo.name = ContextName_ShopkeeperBackground;
+	shopkeeperBackgroundContextInitInfo.drawOrder = 1;
+	state.shopkeeperBgContextInstID = uiManager.createContext(shopkeeperBackgroundContextInitInfo);
+	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
+
 	const bool isModernInterface = options.getGraphics_ModernInterface();
 
 	UiElementInitInfo weaponAnimImageElementInitInfo;
@@ -459,6 +475,18 @@ void GameWorldUI::destroy()
 	{
 		uiManager.freeContext(state.campManualHoursModalContextInstID, inputManager, renderer);
 		state.campManualHoursModalContextInstID = -1;
+	}
+
+	if (state.conversationModalContextInstID >= 0)
+	{
+		uiManager.freeContext(state.conversationModalContextInstID, inputManager, renderer);
+		state.conversationModalContextInstID = -1;
+	}
+
+	if (state.shopkeeperBgContextInstID >= 0)
+	{
+		uiManager.freeContext(state.shopkeeperBgContextInstID, inputManager, renderer);
+		state.shopkeeperBgContextInstID = -1;
 	}
 
 	state.freeTextures(renderer);
@@ -1396,6 +1424,292 @@ void GameWorldUI::showPlayerHurt()
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	state.playerHurtRemainingSeconds = 1.0 / ArenaRenderUtils::FRAMES_PER_SECOND;
+}
+
+void GameWorldUI::showConversationModal()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.conversationModalContextInstID, inputManager, renderer);
+	
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	std::string titleText;
+	int messageBoxButtonCount = 0;
+	constexpr int messageBoxMaxButtonCount = 5;
+	UiButtonCallback messageBoxButtonCallbacks[messageBoxMaxButtonCount];
+	std::string messageBoxButtonTexts[messageBoxMaxButtonCount];
+
+	const GameState &gameState = game.gameState;
+	const ArenaBuildingType buildingType = gameState.getBuildingType();
+	const Player &player = game.player;
+	const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
+	const bool canCastMagic = playerCharClassDef.castsMagic;
+
+	switch (buildingType)
+	{
+	case ArenaBuildingType::Tavern:
+	{
+		titleText = exeData.services.tavernModalTitle;
+
+		const bool isRoomRented = false; // @todo query some TavernRoomState in GameState eventually
+		if (isRoomRented)
+		{
+			messageBoxButtonCount = 3;
+			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy drinks"); };
+			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Rumors"); };
+			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Exit"); };
+			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
+			messageBoxButtonTexts[1] = exeData.services.tavernModalRumors;
+			messageBoxButtonTexts[2] = exeData.services.tavernModalExit;
+		}
+		else
+		{
+			messageBoxButtonCount = 5;
+			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy drinks"); };
+			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Get a room"); };
+			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Sneak into a room"); };
+			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Rumors"); };
+			messageBoxButtonCallbacks[4] = [](MouseButtonType) { DebugLog("Exit"); };
+			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
+			messageBoxButtonTexts[1] = exeData.services.tavernModalGetARoom;
+			messageBoxButtonTexts[2] = exeData.services.tavernModalSneakIntoARoom;
+			messageBoxButtonTexts[3] = exeData.services.tavernModalRumors;
+			messageBoxButtonTexts[4] = exeData.services.tavernModalExit;
+		}
+
+		break;
+	}
+	case ArenaBuildingType::Temple:
+		titleText = exeData.services.templeModalTitle;
+		messageBoxButtonCount = 4;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Bless"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Cure"); };
+		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Heal"); };
+		messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Exit"); };
+		messageBoxButtonTexts[0] = exeData.services.templeModalBless;
+		messageBoxButtonTexts[1] = exeData.services.templeModalCure;
+		messageBoxButtonTexts[2] = exeData.services.templeModalHeal;
+		messageBoxButtonTexts[3] = exeData.services.templeModalExit;
+		break;
+	case ArenaBuildingType::Equipment:
+		titleText = exeData.services.equipmentModalTitle;
+		messageBoxButtonCount = 5;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Sell"); };
+		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Repair"); };
+		messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Steal"); };
+		messageBoxButtonCallbacks[4] = [](MouseButtonType) { DebugLog("Exit"); };
+		messageBoxButtonTexts[0] = exeData.services.equipmentModalBuy;
+		messageBoxButtonTexts[1] = exeData.services.equipmentModalSell;
+		messageBoxButtonTexts[2] = exeData.services.equipmentModalRepair;
+		messageBoxButtonTexts[3] = exeData.services.equipmentModalSteal;
+		messageBoxButtonTexts[4] = exeData.services.equipmentModalExit;
+		break;
+	case ArenaBuildingType::MagesGuild:
+	{
+		titleText = exeData.services.magesGuildModalTitle;
+
+		if (canCastMagic)
+		{
+			messageBoxButtonCount = 5;
+			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy"); };
+			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Detect Magic"); };
+			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Spellmaker"); };
+			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Steal"); };
+			messageBoxButtonCallbacks[4] = [](MouseButtonType) { DebugLog("Exit"); };
+			messageBoxButtonTexts[0] = exeData.services.magesGuildModalBuy;
+			messageBoxButtonTexts[1] = exeData.services.magesGuildModalDetectMagic;
+			messageBoxButtonTexts[2] = exeData.services.magesGuildModalSpellmaker;
+			messageBoxButtonTexts[3] = exeData.services.magesGuildModalSteal;
+			messageBoxButtonTexts[4] = exeData.services.magesGuildModalExit;
+		}
+		else
+		{
+			messageBoxButtonCount = 4;
+			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy"); };
+			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Detect Magic"); };
+			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Steal"); };
+			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Exit"); };
+			messageBoxButtonTexts[0] = exeData.services.magesGuildModalBuy;
+			messageBoxButtonTexts[1] = exeData.services.magesGuildModalDetectMagic;
+			messageBoxButtonTexts[2] = exeData.services.magesGuildModalSteal;
+			messageBoxButtonTexts[3] = exeData.services.magesGuildModalExit;
+		}
+
+		break;
+	}
+	default:
+		// Citizen
+		titleText = exeData.services.citizenModalTitle;
+		messageBoxButtonCount = 4;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Who are you?"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Where is..."); };
+		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Rumors"); };
+		messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Exit"); };
+		messageBoxButtonTexts[0] = exeData.services.citizenModalWhoAreYou;
+		messageBoxButtonTexts[1] = exeData.services.citizenModalWhereIs;
+		messageBoxButtonTexts[2] = exeData.services.citizenModalRumors;
+		messageBoxButtonTexts[3] = exeData.services.citizenModalExit;
+		break;
+	}
+
+	const int titleImageTextureHeight = 24;
+	const int totalMessageBoxHeight = titleImageTextureHeight * (messageBoxButtonCount + 1);
+	const int titleTextBoxPositionY = (ArenaRenderUtils::SCREEN_HEIGHT / 2) - (totalMessageBoxHeight / 2) + (titleImageTextureHeight / 2);
+	const PaletteID paletteID = *textureManager.tryGetPaletteID(GameWorldUiView::getPaletteTextureAsset());
+
+	UiElementInitInfo titleTextBoxElementInitInfo;
+	titleTextBoxElementInitInfo.name = "GameWorldConversationModalTitleTextBox";
+	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, titleTextBoxPositionY);
+	titleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+	titleTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo titleTextBoxInitInfo;
+	titleTextBoxInitInfo.text = titleText;
+	titleTextBoxInitInfo.fontName = ArenaFontName::A;
+	titleTextBoxInitInfo.tabColorPaletteID = paletteID;
+	titleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	const UiElementInstanceID titleTextBoxElementInstID = uiManager.createTextBox(titleTextBoxElementInitInfo, titleTextBoxInitInfo, state.conversationModalContextInstID, renderer);
+	const Rect titleTextBoxGlobalRect = uiManager.getTransformGlobalRect(titleTextBoxElementInstID);
+
+	int widestButtonTextBoxWidth = titleTextBoxGlobalRect.width;
+	for (int i = 0; i < messageBoxButtonCount; i++)
+	{
+		UiElementInitInfo messageBoxButtonTextBoxElementInitInfo;
+		messageBoxButtonTextBoxElementInitInfo.name = "GameWorldConversationModalButton" + std::to_string(i) + "TextBox";
+		messageBoxButtonTextBoxElementInitInfo.position = titleTextBoxElementInitInfo.position + Int2(0, titleImageTextureHeight * (i + 1));
+		messageBoxButtonTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
+		messageBoxButtonTextBoxElementInitInfo.drawOrder = 1;
+
+		UiTextBoxInitInfo messageBoxButtonTextBoxInitInfo;
+		messageBoxButtonTextBoxInitInfo.text = messageBoxButtonTexts[i];
+		messageBoxButtonTextBoxInitInfo.fontName = ArenaFontName::A;
+		messageBoxButtonTextBoxInitInfo.tabColorPaletteID = paletteID;
+		messageBoxButtonTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+		const UiElementInstanceID messageBoxButtonTextBoxElementInstID = uiManager.createTextBox(messageBoxButtonTextBoxElementInitInfo, messageBoxButtonTextBoxInitInfo, state.conversationModalContextInstID, renderer);
+		const Rect messageBoxButtonTextBoxGlobalRect = uiManager.getTransformGlobalRect(messageBoxButtonTextBoxElementInstID);
+		widestButtonTextBoxWidth = std::max(widestButtonTextBoxWidth, messageBoxButtonTextBoxGlobalRect.width);
+	}
+
+	UiElementInitInfo titleImageElementInitInfo;
+	titleImageElementInitInfo.name = "GameWorldConversationModalTitleImage";
+	titleImageElementInitInfo.position = titleTextBoxElementInitInfo.position;
+	titleImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	titleImageElementInitInfo.size = Int2(widestButtonTextBoxWidth + 14, titleImageTextureHeight);
+	titleImageElementInitInfo.pivotType = UiPivotType::Middle;
+
+	const UiTextureID titleImageTextureID = uiManager.getOrAddTexture(UiTexturePatternType::Dark, titleImageElementInitInfo.size.x, titleImageElementInitInfo.size.y, textureManager, renderer);
+	uiManager.createImage(titleImageElementInitInfo, titleImageTextureID, state.conversationModalContextInstID, renderer);
+
+	for (int i = 0; i < messageBoxButtonCount; i++)
+	{
+		UiElementInitInfo messageBoxButtonImageElementInitInfo;
+		messageBoxButtonImageElementInitInfo.name = "GameWorldConversationModalButton" + std::to_string(i) + "Image";
+		messageBoxButtonImageElementInitInfo.position = titleTextBoxElementInitInfo.position + Int2(0, titleImageTextureHeight * (i + 1));
+		messageBoxButtonImageElementInitInfo.sizeType = UiTransformSizeType::Manual;
+		messageBoxButtonImageElementInitInfo.size = titleImageElementInitInfo.size;
+		messageBoxButtonImageElementInitInfo.pivotType = UiPivotType::Middle;
+		uiManager.createImage(messageBoxButtonImageElementInitInfo, titleImageTextureID, state.conversationModalContextInstID, renderer);
+
+		UiElementInitInfo messageBoxButtonElementInitInfo;
+		messageBoxButtonElementInitInfo.name = "GameWorldConversationModalButton" + std::to_string(i);
+		messageBoxButtonElementInitInfo.position = messageBoxButtonImageElementInitInfo.position;
+		messageBoxButtonElementInitInfo.pivotType = UiPivotType::Middle;
+
+		UiButtonInitInfo messageBoxButtonInitInfo;
+		messageBoxButtonInitInfo.callback = messageBoxButtonCallbacks[i];
+		messageBoxButtonInitInfo.contentElementName = messageBoxButtonImageElementInitInfo.name;
+		uiManager.createButton(messageBoxButtonElementInitInfo, messageBoxButtonInitInfo, state.conversationModalContextInstID);
+	}
+
+	UiElementInitInfo backButtonElementInitInfo;
+	backButtonElementInitInfo.name = "GameWorldConversationModalBackButton";
+	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+
+	auto backButtonCallback = [&state](MouseButtonType)
+	{
+		GameWorldUiState &state = GameWorldUI::state;
+		Game &game = *state.game;
+
+		UiManager &uiManager = game.uiManager;
+		uiManager.setContextEnabled(state.conversationModalContextInstID, false);
+		uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
+		
+		GameWorldUI::onPauseChanged(false);
+	};
+
+	UiButtonInitInfo backButtonInitInfo;
+	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
+	backButtonInitInfo.callback = backButtonCallback;
+	uiManager.createButton(backButtonElementInitInfo, backButtonInitInfo, state.conversationModalContextInstID);
+
+	auto backInputActionCallback = [backButtonCallback](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			backButtonCallback(MouseButtonType::Right);
+		}
+	};
+
+	uiManager.addInputActionListener(InputActionName::Back, backInputActionCallback, ContextName_ConversationModal, inputManager);
+
+	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
+
+	GameWorldUI::onPauseChanged(true);
+}
+
+void GameWorldUI::showShopkeeperBackground(const char *titleText)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.shopkeeperBgContextInstID, inputManager, renderer);
+
+	UiElementInitInfo titleTextBoxElementInitInfo;
+	titleTextBoxElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleTextBox";
+	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 3);
+	titleTextBoxElementInitInfo.pivotType = UiPivotType::Top;
+	titleTextBoxElementInitInfo.drawOrder = 1;
+
+	UiTextBoxInitInfo titleTextBoxInitInfo;
+	titleTextBoxInitInfo.text = titleText;
+	titleTextBoxInitInfo.fontName = ArenaFontName::C;
+	titleTextBoxInitInfo.defaultColor = Color(12, 12, 24);
+	titleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
+	const UiElementInstanceID titleTextBoxElementInstID = uiManager.createTextBox(titleTextBoxElementInitInfo, titleTextBoxInitInfo, state.shopkeeperBgContextInstID, renderer);
+	const Rect titleTextBoxGlobalRect = uiManager.getTransformGlobalRect(titleTextBoxElementInstID);
+
+	const int titleImageTextureWidth = titleTextBoxGlobalRect.width + 24;
+	constexpr int titleImageTextureHeight = 20;
+	const UiTextureID titleImageTextureID = uiManager.getOrAddTexture(UiTexturePatternType::ShopkeeperTitle, titleImageTextureWidth, titleImageTextureHeight, textureManager, renderer);
+
+	UiElementInitInfo titleImageElementInitInfo;
+	titleImageElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleImage";
+	titleImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 0);
+	titleImageElementInitInfo.pivotType = UiPivotType::Top;
+	titleImageElementInitInfo.drawOrder = 0;
+	uiManager.createImage(titleImageElementInitInfo, titleImageTextureID, state.shopkeeperBgContextInstID, renderer);
+
+	const TextureAsset barterBgTextureAsset(ArenaTextureName::BarterBackground);
+	const TextureAsset barterBgPaletteTextureAsset = GameWorldUiView::getPaletteTextureAsset();
+	const UiTextureID barterBgImageTextureID = uiManager.getOrAddTexture(barterBgTextureAsset, barterBgPaletteTextureAsset, textureManager, renderer);
+
+	UiElementInitInfo barterBgImageElementInitInfo;
+	barterBgImageElementInitInfo.name = "GameWorldShopkeeperBackgroundBarterImage";
+	barterBgImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, ArenaRenderUtils::SCREEN_HEIGHT);
+	barterBgImageElementInitInfo.pivotType = UiPivotType::Bottom;
+	uiManager.createImage(barterBgImageElementInitInfo, barterBgImageTextureID, state.shopkeeperBgContextInstID, renderer);
+
+	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, true);
 }
 
 bool GameWorldUI::isTriggerTextVisible()

@@ -26,6 +26,9 @@ namespace ArenaTextureName
 	const std::string AcceptReject = "ACCPREJT.IMG";
 	const std::string AcceptCounterReject = "NEGOTBUT.IMG";
 	const std::string AddJobStatusCancel = "NEWOLD.IMG";
+	const std::string BarterTitleLeft = "MENU_LFT.IMG";
+	const std::string BarterTitleMiddle = "MENU_CTR.IMG";
+	const std::string BarterTitleRight = "MENU_RT.IMG";
 	const std::string BarterBackground = "MENUSCRN.IMG";
 	const std::string BonusPointsText = "BONUS.IMG";
 	const std::string Brass = "BRASS.CIF";

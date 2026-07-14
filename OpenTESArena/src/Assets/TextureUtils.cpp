@@ -3,6 +3,7 @@
 #include "SDL.h"
 
 #include "TextureUtils.h"
+#include "../Assets/ArenaPaletteName.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/TextureAsset.h"
 #include "../Assets/TextureManager.h"
@@ -187,6 +188,77 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 		pixels[(surface.getWidth() - 2) + ((surface.getHeight() - 2) * surface.getWidth())] = bottomRightColor;
 		pixels[(surface.getWidth() - 2) + ((surface.getHeight() - 1) * surface.getWidth())] = bottomColor;
 		pixels[(surface.getWidth() - 1) + ((surface.getHeight() - 1) * surface.getWidth())] = bottomRightColor;
+	}
+	else if (type == UiTexturePatternType::ShopkeeperTitle)
+	{
+		DebugAssert(width >= (6 + 6));
+		DebugAssert(height == 20);
+
+		const std::optional<PaletteID> paletteID = textureManager.tryGetPaletteID(ArenaPaletteName::Default);
+		DebugAssert(paletteID.has_value());
+		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
+
+		const std::optional<TextureBuilderID> leftTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleLeft.c_str());
+		DebugAssert(leftTextureBuilderID.has_value());
+		const TextureBuilder &leftTextureBuilder = textureManager.getTextureBuilderHandle(*leftTextureBuilderID);
+
+		const std::optional<TextureBuilderID> middleTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleMiddle.c_str());
+		DebugAssert(middleTextureBuilderID.has_value());
+		const TextureBuilder &middleTextureBuilder = textureManager.getTextureBuilderHandle(*middleTextureBuilderID);
+
+		const std::optional<TextureBuilderID> rightTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleRight.c_str());
+		DebugAssert(rightTextureBuilderID.has_value());
+		const TextureBuilder &rightTextureBuilder = textureManager.getTextureBuilderHandle(*rightTextureBuilderID);
+
+		const Rect leftRect(0, 0, leftTextureBuilder.width, leftTextureBuilder.height);
+		const Rect middleRect(leftTextureBuilder.width, 0, middleTextureBuilder.width, middleTextureBuilder.height);
+		const Rect rightRect(width - rightTextureBuilder.width, 0, rightTextureBuilder.width, rightTextureBuilder.height);
+
+		Span2D<const uint8_t> leftSrcPixels = leftTextureBuilder.getTexels8();
+		Span2D<const uint8_t> middleSrcPixels = middleTextureBuilder.getTexels8();
+		Span2D<const uint8_t> rightSrcPixels = rightTextureBuilder.getTexels8();
+		Span2D<uint32_t> dstPixels = surface.getPixels();
+
+		// Left edge.
+		for (int y = 0; y < leftRect.height; y++)
+		{
+			for (int x = 0; x < leftRect.width; x++)
+			{
+				const uint8_t srcColor = leftSrcPixels.get(x, y);
+				const uint32_t srcColorRGBA = palette[srcColor].toRGBA();
+				dstPixels.set(x, y, srcColorRGBA);
+			}
+		}
+
+		// Middle.
+		int middleXOffset = middleRect.x;
+		for (int remainingWidthToFill = width - leftRect.width - rightRect.width; remainingWidthToFill > 0; remainingWidthToFill -= middleRect.width)
+		{			
+			const int currentMiddleWidth = std::min(middleRect.width, remainingWidthToFill);
+			for (int y = 0; y < middleRect.height; y++)
+			{
+				for (int x = 0; x < currentMiddleWidth; x++)
+				{
+					const uint8_t srcColor = middleSrcPixels.get(x, y);
+					const uint32_t srcColorRGBA = palette[srcColor].toRGBA();
+					dstPixels.set(middleXOffset + x, y, srcColorRGBA);
+				}
+			}
+
+			middleXOffset += middleRect.width;
+		}
+
+		// Right edge.
+		for (int y = 0; y < rightRect.height; y++)
+		{
+			for (int x = 0; x < rightRect.width; x++)
+			{
+				const uint8_t srcColor = rightSrcPixels.get(x, y);
+				const uint32_t srcColorRGBA = palette[srcColor].toRGBA();
+				dstPixels.set(rightRect.x + x, y, srcColorRGBA);
+			}
+		}
+
 	}
 	else if (type == UiTexturePatternType::Custom1)
 	{
