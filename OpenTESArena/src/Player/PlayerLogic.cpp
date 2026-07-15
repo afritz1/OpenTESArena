@@ -580,7 +580,7 @@ namespace PlayerLogic
 			const VoxelInt3 entityVoxel = VoxelUtils::pointToVoxel(entityCoord.point, ceilingScale);
 
 			const bool passesLootDistanceTest = hit.t <= ArenaSelectionUtils::LOOT_MAX_DISTANCE;
-			const bool passesCitizenDistanceTest = hit.t <= ArenaSelectionUtils::CITIZEN_MAX_DISTANCE;
+			const bool passesNpcDistanceTest = hit.t <= ArenaSelectionUtils::CITIZEN_MAX_DISTANCE;
 
 			const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 			const EntityDefinitionType entityType = entityDef.type;
@@ -625,7 +625,7 @@ namespace PlayerLogic
 			}
 			case EntityDefinitionType::Citizen:
 			{
-				if (passesCitizenDistanceTest && canPlayerMoveAndTurn)
+				if (passesNpcDistanceTest && canPlayerMoveAndTurn)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
@@ -669,11 +669,12 @@ namespace PlayerLogic
 						}
 					}
 				}
+
 				break;
 			}
 			case EntityDefinitionType::StaticNPC:
 			{
-				if (canPlayerMoveAndTurn)
+				if (passesNpcDistanceTest && canPlayerMoveAndTurn)
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
