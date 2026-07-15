@@ -133,6 +133,34 @@ namespace GameWorldUI
 	void showPlayerHurt();
 
 	void showConversationModal(ConversationMessageBoxType messageBoxType);
+	void closeConversation();
+	void onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcRumorsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcRumorsGeneralButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcRumorsWorkButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentBuyButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentSellButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentRepairButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentBuyWeaponsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcEquipmentBuyArmorButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildBuyButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildDetectMagicButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildSpellmakerButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildStealButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildBuyPotionsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildBuyMagicItemsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildBuySpellsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernBuyDrinksButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernGetARoomButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType);
 	void showShopkeeperBackground(const char *titleText);
 
 	bool isTriggerTextVisible();

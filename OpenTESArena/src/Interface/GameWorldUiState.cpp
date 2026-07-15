@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "AutomapUiState.h"
 #include "CharacterUiState.h"
 #include "GameWorldUiMVC.h"
@@ -1443,11 +1445,9 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 	const bool canCastMagic = playerCharClassDef.castsMagic;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
-	auto closeConversationCallback = [&state, &uiManager](MouseButtonType)
+	auto closeConversationCallback = [](MouseButtonType)
 	{
-		uiManager.setContextEnabled(state.conversationModalContextInstID, false);
-		uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
-		GameWorldUI::onPauseChanged(false);
+		GameWorldUI::closeConversation();
 	};
 
 	std::string messageBoxTitleText;
@@ -1461,9 +1461,9 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 	case ConversationMessageBoxType::Citizen:
 		messageBoxTitleText = exeData.services.citizenModalTitle;
 		messageBoxButtonCount = 4;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Who are you?"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Where is..."); };
-		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Rumors"); };
+		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcWhoAreYouButtonSelected;
+		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcWhereIsButtonSelected;
+		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcRumorsButtonSelected;
 		messageBoxButtonCallbacks[3] = closeConversationCallback;
 		messageBoxButtonTexts[0] = exeData.services.citizenModalWhoAreYou;
 		messageBoxButtonTexts[1] = exeData.services.citizenModalWhereIs;
@@ -1474,18 +1474,18 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 	case ConversationMessageBoxType::TavernRumors:
 		messageBoxTitleText = exeData.services.citizenRumorsModalTitle;
 		messageBoxButtonCount = 2;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("General"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Work"); };
+		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcRumorsGeneralButtonSelected;
+		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcRumorsWorkButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.citizenRumorsModalGeneral;
 		messageBoxButtonTexts[1] = exeData.services.citizenRumorsModalWork;
 		break;
 	case ConversationMessageBoxType::Equipment:
 		messageBoxTitleText = exeData.services.equipmentModalTitle;
 		messageBoxButtonCount = 5;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Sell"); };
-		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Repair"); };
-		messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Steal"); };
+		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcEquipmentBuyButtonSelected;
+		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcEquipmentSellButtonSelected;
+		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcEquipmentRepairButtonSelected;
+		messageBoxButtonCallbacks[3] = GameWorldUI::onNpcEquipmentStealButtonSelected;
 		messageBoxButtonCallbacks[4] = closeConversationCallback;
 		messageBoxButtonTexts[0] = exeData.services.equipmentModalBuy;
 		messageBoxButtonTexts[1] = exeData.services.equipmentModalSell;
@@ -1496,8 +1496,8 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 	case ConversationMessageBoxType::EquipmentBuyItem:
 		messageBoxTitleText = exeData.services.equipmentBuyModalTitle;
 		messageBoxButtonCount = 2;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Weapons"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Armor"); };
+		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcEquipmentBuyWeaponsButtonSelected;
+		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcEquipmentBuyArmorButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.equipmentBuyModalWeapons;
 		messageBoxButtonTexts[1] = exeData.services.equipmentBuyModalArmor;
 		break;
@@ -1507,10 +1507,10 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 		if (canCastMagic)
 		{
 			messageBoxButtonCount = 5;
-			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy"); };
-			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Detect Magic"); };
-			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Spellmaker"); };
-			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Steal"); };
+			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyButtonSelected;
+			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildDetectMagicButtonSelected;
+			messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildSpellmakerButtonSelected;
+			messageBoxButtonCallbacks[3] = GameWorldUI::onNpcMagesGuildStealButtonSelected;
 			messageBoxButtonCallbacks[4] = closeConversationCallback;
 			messageBoxButtonTexts[0] = exeData.services.magesGuildModalBuy;
 			messageBoxButtonTexts[1] = exeData.services.magesGuildModalDetectMagic;
@@ -1521,9 +1521,9 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 		else
 		{
 			messageBoxButtonCount = 4;
-			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy"); };
-			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Detect Magic"); };
-			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Steal"); };
+			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyButtonSelected;
+			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildDetectMagicButtonSelected;
+			messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildStealButtonSelected;
 			messageBoxButtonCallbacks[3] = closeConversationCallback;
 			messageBoxButtonTexts[0] = exeData.services.magesGuildModalBuy;
 			messageBoxButtonTexts[1] = exeData.services.magesGuildModalDetectMagic;
@@ -1535,9 +1535,9 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 	case ConversationMessageBoxType::MagesGuildBuyItem:
 		messageBoxTitleText = exeData.services.magesGuildPickItemModalTitle;
 		messageBoxButtonCount = 3;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Potion"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Magic Item"); };
-		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Spell"); };
+		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected;
+		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected;
+		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildBuySpellsButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
 		messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
 		messageBoxButtonTexts[2] = exeData.services.magesGuildPickItemModalSpells;
@@ -1545,8 +1545,8 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 	case ConversationMessageBoxType::MagesGuildSteal:
 		messageBoxTitleText = exeData.services.magesGuildPickItemModalTitle;
 		messageBoxButtonCount = 2;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Potion"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Magic Item"); };
+		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected;
+		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
 		messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
 		break;
@@ -1558,8 +1558,8 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 		if (isRoomRented)
 		{
 			messageBoxButtonCount = 3;
-			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy drinks"); };
-			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Rumors"); };
+			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcTavernBuyDrinksButtonSelected;
+			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcTavernRumorsButtonSelected;
 			messageBoxButtonCallbacks[2] = closeConversationCallback;
 			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
 			messageBoxButtonTexts[1] = exeData.services.tavernModalRumors;
@@ -1568,10 +1568,10 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 		else
 		{
 			messageBoxButtonCount = 5;
-			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy drinks"); };
-			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Get a room"); };
-			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Sneak into a room"); };
-			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Rumors"); };
+			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcTavernBuyDrinksButtonSelected;
+			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcTavernGetARoomButtonSelected;
+			messageBoxButtonCallbacks[2] = GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected;
+			messageBoxButtonCallbacks[3] = GameWorldUI::onNpcTavernRumorsButtonSelected;
 			messageBoxButtonCallbacks[4] = closeConversationCallback;
 			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
 			messageBoxButtonTexts[1] = exeData.services.tavernModalGetARoom;
@@ -1585,9 +1585,9 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 	case ConversationMessageBoxType::Temple:
 		messageBoxTitleText = exeData.services.templeModalTitle;
 		messageBoxButtonCount = 4;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Bless"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Cure"); };
-		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Heal"); };
+		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcTempleBlessButtonSelected;
+		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcTempleCureButtonSelected;
+		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcTempleHealButtonSelected;
 		messageBoxButtonCallbacks[3] = closeConversationCallback;
 		messageBoxButtonTexts[0] = exeData.services.templeModalBless;
 		messageBoxButtonTexts[1] = exeData.services.templeModalCure;
@@ -1691,6 +1691,503 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
 
 	GameWorldUI::onPauseChanged(true);
+}
+
+void GameWorldUI::closeConversation()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.setContextEnabled(state.conversationModalContextInstID, false);
+	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
+	GameWorldUI::onPauseChanged(false);
+}
+
+void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO Who am I";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Citizen);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO Where is... (list box)";
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
+}
+
+void GameWorldUI::onNpcRumorsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+	GameWorldUI::showConversationModal(ConversationMessageBoxType::CitizenRumors);
+}
+
+void GameWorldUI::onNpcRumorsGeneralButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO Rumors general";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Citizen);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcRumorsWorkButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO Rumors work";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Citizen);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcEquipmentBuyButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+	GameWorldUI::showConversationModal(ConversationMessageBoxType::EquipmentBuyItem);
+}
+
+void GameWorldUI::onNpcEquipmentSellButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO Sell items (listbox)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcEquipmentRepairButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO Repair (list box)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	Random &random = game.random;
+	const bool isStealSuccessful = random.nextBool();
+
+	std::string text;
+	GameWorldPopUpClosedCallback callback;
+	if (isStealSuccessful)
+	{
+		text = "TODO steal success";
+		callback = [&uiManager]()
+		{
+			uiManager.disableTopMostContext();
+			GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+		};
+	}
+	else
+	{
+		text = "TODO steal failure";
+		callback = [&game]()
+		{
+			UiManager &uiManager = game.uiManager;
+			uiManager.disableTopMostContext();
+			GameWorldUI::closeConversation();
+
+			GameState &gameState = game.gameState;
+			gameState.queueCityGuardEncounter(game);
+		};
+	}
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcEquipmentBuyWeaponsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO buy weapons (listbox)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcEquipmentBuyArmorButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO buy armor (listbox)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcMagesGuildBuyButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+	GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuildBuyItem);
+}
+
+void GameWorldUI::onNpcMagesGuildDetectMagicButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO detect magic";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcMagesGuildSpellmakerButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO spellmaker";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcMagesGuildStealButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+	GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuildSteal);
+}
+
+void GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO buy potions (listbox)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO buy magic items (listbox)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcMagesGuildBuySpellsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO buy spells (listbox)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	Random &random = game.random;
+	const bool isStealSuccessful = random.nextBool();
+
+	std::string text;
+	GameWorldPopUpClosedCallback callback;
+	if (isStealSuccessful)
+	{
+		text = "TODO steal potions success";
+		callback = [&uiManager]()
+		{
+			uiManager.disableTopMostContext();
+			GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+		};
+	}
+	else
+	{
+		text = "TODO steal potions failure";
+		callback = [&game]()
+		{
+			GameWorldUI::closeConversation();
+			GameState &gameState = game.gameState;
+			gameState.queueCityGuardEncounter(game);
+		};
+	}
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	Random &random = game.random;
+	const bool isStealSuccessful = random.nextBool();
+
+	std::string text;
+	GameWorldPopUpClosedCallback callback;
+	if (isStealSuccessful)
+	{
+		text = "TODO steal magic item success";
+		callback = [&uiManager]()
+		{
+			uiManager.disableTopMostContext();
+			GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+		};
+	}
+	else
+	{
+		text = "TODO steal magic item failure";
+		callback = [&game]()
+		{
+			GameWorldUI::closeConversation();
+			GameState &gameState = game.gameState;
+			gameState.queueCityGuardEncounter(game);
+		};
+	}
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcTavernBuyDrinksButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO buy drink (listbox)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcTavernGetARoomButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO rent room (listbox)";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO sneak into room";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUI::onNpcRumorsButtonSelected(mouseButtonType);
+}
+
+void GameWorldUI::onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO bless";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Temple);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO cure";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Temple);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO heal";
+
+	// @todo check if player is full health
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Temple);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
 }
 
 void GameWorldUI::showShopkeeperBackground(const char *titleText)
