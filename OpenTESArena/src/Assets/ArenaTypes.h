@@ -709,5 +709,6 @@ namespace ArenaTypes
 		void init(const uint8_t *data);
 	};
 
+	ArenaBuildingType interiorTypeToBuildingType(ArenaInteriorType interiorType);
 	std::string voxelTypeToString(ArenaVoxelType voxelType);
 }

@@ -489,6 +489,34 @@ void ArenaTypes::Names::init(const uint8_t *data)
 	}
 }
 
+ArenaBuildingType ArenaTypes::interiorTypeToBuildingType(ArenaInteriorType interiorType)
+{
+	constexpr std::pair<ArenaInteriorType, ArenaBuildingType> interiorTypeMappings[] =
+	{
+		{ ArenaInteriorType::Crypt, ArenaBuildingType::Crypt },
+		{ ArenaInteriorType::Dungeon, ArenaBuildingType::None },
+		{ ArenaInteriorType::Equipment, ArenaBuildingType::Equipment },
+		{ ArenaInteriorType::House, ArenaBuildingType::House },
+		{ ArenaInteriorType::MagesGuild, ArenaBuildingType::MagesGuild },
+		{ ArenaInteriorType::Noble, ArenaBuildingType::Noble },
+		{ ArenaInteriorType::Palace, ArenaBuildingType::Palace },
+		{ ArenaInteriorType::Tavern, ArenaBuildingType::Tavern },
+		{ ArenaInteriorType::Temple, ArenaBuildingType::Temple },
+		{ ArenaInteriorType::Tower, ArenaBuildingType::Tower }
+	};
+
+	const auto mappingsBegin = std::begin(interiorTypeMappings);
+	const auto mappingsEnd = std::end(interiorTypeMappings);
+	const auto iter = std::find_if(mappingsBegin, mappingsEnd,
+		[interiorType](const std::pair<ArenaInteriorType, ArenaBuildingType> &pair)
+	{
+		return pair.first == interiorType;
+	});
+
+	DebugAssert(iter != mappingsEnd);
+	return iter->second;
+}
+
 std::string ArenaTypes::voxelTypeToString(ArenaVoxelType voxelType)
 {
 	switch (voxelType)
