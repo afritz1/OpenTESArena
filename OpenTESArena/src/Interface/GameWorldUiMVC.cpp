@@ -1571,26 +1571,6 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		interiorDisplayName = mapDefInterior.displayName;
 	}
 
-	constexpr const char *personalityTypeNames[] =
-	{
-		"Shopkeeper",
-		"Beggar",
-		"Firebreather",
-		"Prostitute",
-		"Jester",
-		"Street Vendor",
-		"Musician",
-		"Priest",
-		"Thief",
-		"Snake Charmer",
-		"Street Vendor Alchemist",
-		"Wizard",
-		"Tavern Patron"
-	};
-
-	std::string text;
-	TextAlignment textAlignment = TextAlignment::MiddleCenter;
-	
 	if (personalityType == StaticNpcPersonalityType::Shopkeeper)
 	{
 		GameWorldUI::showShopkeeperBackground(interiorDisplayName.c_str());
@@ -1603,7 +1583,7 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 
 		Random &random = game.random;
 		const int patronDialoguesRandomIndex = random.next(patronDialoguesEntry.values.size());
-		text = patronDialoguesEntry.values[patronDialoguesRandomIndex];
+		std::string text = patronDialoguesEntry.values[patronDialoguesRandomIndex];
 
 		const Player &player = game.player;
 		const CharacterRaceLibrary &charRaceLibrary = CharacterRaceLibrary::getInstance();
@@ -1630,17 +1610,11 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		text = String::replace(text, "%nt", interiorDisplayName);
 		text = String::distributeNewlines(text, 65);
 
-		textAlignment = TextAlignment::TopLeft;
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
 	}
 	else
 	{
-		const int personalityTypeIndex = static_cast<int>(personalityType);
-		text = std::string(personalityTypeNames[personalityTypeIndex]) + "\n(dialogue not implemented)";
-	}
-
-	if (!text.empty())
-	{
-		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, textAlignment);
+		GameWorldUI::showConversationModal();		
 	}
 }
 
