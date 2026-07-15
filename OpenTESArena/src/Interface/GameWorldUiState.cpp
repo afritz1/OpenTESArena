@@ -1847,9 +1847,8 @@ void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonT
 	else
 	{
 		text = "TODO steal failure";
-		callback = [&game]()
+		callback = [&game, &uiManager]()
 		{
-			UiManager &uiManager = game.uiManager;
 			uiManager.disableTopMostContext();
 			GameWorldUI::closeConversation();
 
@@ -2029,9 +2028,11 @@ void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mous
 	else
 	{
 		text = "TODO steal potions failure";
-		callback = [&game]()
+		callback = [&game, &uiManager]()
 		{
+			uiManager.disableTopMostContext();
 			GameWorldUI::closeConversation();
+
 			GameState &gameState = game.gameState;
 			gameState.queueCityGuardEncounter(game);
 		};
@@ -2064,9 +2065,11 @@ void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType m
 	else
 	{
 		text = "TODO steal magic item failure";
-		callback = [&game]()
+		callback = [&game, &uiManager]()
 		{
+			uiManager.disableTopMostContext();
 			GameWorldUI::closeConversation();
+
 			GameState &gameState = game.gameState;
 			gameState.queueCityGuardEncounter(game);
 		};
