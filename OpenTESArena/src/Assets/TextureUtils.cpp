@@ -199,15 +199,13 @@ Surface TextureUtils::generate(UiTexturePatternType type, int width, int height,
 		const Palette &palette = textureManager.getPaletteHandle(*paletteID);
 
 		const std::optional<TextureBuilderID> leftTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleLeft.c_str());
-		DebugAssert(leftTextureBuilderID.has_value());
-		const TextureBuilder &leftTextureBuilder = textureManager.getTextureBuilderHandle(*leftTextureBuilderID);
-
 		const std::optional<TextureBuilderID> middleTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleMiddle.c_str());
-		DebugAssert(middleTextureBuilderID.has_value());
-		const TextureBuilder &middleTextureBuilder = textureManager.getTextureBuilderHandle(*middleTextureBuilderID);
-
 		const std::optional<TextureBuilderID> rightTextureBuilderID = textureManager.tryGetTextureBuilderID(ArenaTextureName::BarterTitleRight.c_str());
+		DebugAssert(leftTextureBuilderID.has_value());
+		DebugAssert(middleTextureBuilderID.has_value());
 		DebugAssert(rightTextureBuilderID.has_value());
+		const TextureBuilder &leftTextureBuilder = textureManager.getTextureBuilderHandle(*leftTextureBuilderID);
+		const TextureBuilder &middleTextureBuilder = textureManager.getTextureBuilderHandle(*middleTextureBuilderID);
 		const TextureBuilder &rightTextureBuilder = textureManager.getTextureBuilderHandle(*rightTextureBuilderID);
 
 		const Rect leftRect(0, 0, leftTextureBuilder.width, leftTextureBuilder.height);
