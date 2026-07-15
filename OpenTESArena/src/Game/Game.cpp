@@ -253,12 +253,16 @@ bool Game::init()
 	const std::string optionsPath = Platform::getOptionsPath();
 	this->initOptions(basePath, optionsPath);
 
-	// Search ArenaPaths directories for a valid Arena install.
+	// Search any auto-detected Steam library installs first, then fall back to the configured
+	// ArenaPaths directories, so a real detected install always wins over stale example paths.
 	const std::string &arenaPathsString = this->options.getMisc_ArenaPaths();
 	const Buffer<std::string> arenaPaths = String::split(arenaPathsString, ',');
+	std::vector<std::string> allArenaPaths = Platform::getSteamArenaPaths();
+	allArenaPaths.insert(allArenaPaths.end(), arenaPaths.begin(), arenaPaths.end());
+
 	std::string arenaPath;
 	bool isFloppyDiskVersion;
-	if (!TryGetArenaAssetsDirectory(arenaPaths, basePath, &arenaPath, &isFloppyDiskVersion))
+	if (!TryGetArenaAssetsDirectory(allArenaPaths, basePath, &arenaPath, &isFloppyDiskVersion))
 	{
 		DebugLogError("Couldn't find Arena executable in these directories: " + arenaPathsString);
 		return false;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 // Namespace for various platform-specific functions.
 namespace Platform
@@ -14,6 +15,9 @@ namespace Platform
 
 	// Gets the base path to the executable (mostly intended for macOS .app).
 	std::string getBasePath();
+
+	// Gets candidate Arena data folders found inside locally-installed Steam libraries, if any.
+	std::vector<std::string> getSteamArenaPaths();
 
 	// Gets the options folder path.
 	std::string getOptionsPath();

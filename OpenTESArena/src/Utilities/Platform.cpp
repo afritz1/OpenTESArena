@@ -1,10 +1,16 @@
+#include <filesystem>
 #include <thread>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #include "SDL.h"
 
 #include "Platform.h"
 
 #include "components/debug/Debug.h"
+#include "components/utilities/File.h"
 #include "components/utilities/String.h"
 
 namespace Platform
@@ -14,6 +20,10 @@ namespace Platform
 	// subdirectory appended (i.e., "./local/share").
 	const std::string XDGDataHome = "XDG_DATA_HOME";
 	const std::string XDGConfigHome = "XDG_CONFIG_HOME";
+
+	// Valve's app ID for The Elder Scrolls: Arena, used to find its manifest file inside a
+	// Steam library's "steamapps" folder.
+	const std::string SteamArenaAppID = "1812290";
 
 	// Gets the user's home environment variable ($HOME). Does not have a trailing slash.
 	std::string getHomeEnv()
@@ -54,6 +64,108 @@ namespace Platform
 
 		return Platform::getHomeEnv() + "/.config";
 	}
+
+	// Gets the local Steam client's possible root install folders. On Linux there are several,
+	// since Steam might be installed natively, via Flatpak, or via Snap.
+	std::vector<std::string> getSteamRootCandidates()
+	{
+		const std::string platform = Platform::getPlatform();
+		std::vector<std::string> candidates;
+
+		if (platform == Platform::Linux)
+		{
+			const std::string home = Platform::getHomeEnv();
+			candidates.emplace_back(home + "/.steam/steam");
+			candidates.emplace_back(home + "/.steam/root");
+			candidates.emplace_back(home + "/.local/share/Steam");
+			candidates.emplace_back(home + "/.var/app/com.valvesoftware.Steam/.local/share/Steam");
+			candidates.emplace_back(home + "/snap/steam/common/.local/share/Steam");
+		}
+		else if (platform == Platform::macOS)
+		{
+			candidates.emplace_back(Platform::getHomeEnv() + "/Library/Application Support/Steam");
+		}
+		else if (platform == Platform::Windows)
+		{
+#ifdef _WIN32
+			char steamPathBuffer[MAX_PATH];
+			DWORD steamPathSize = sizeof(steamPathBuffer);
+			const LSTATUS status = RegGetValueA(HKEY_CURRENT_USER, "Software\\Valve\\Steam", "SteamPath",
+				RRF_RT_REG_SZ, nullptr, steamPathBuffer, &steamPathSize);
+			if (status == ERROR_SUCCESS)
+			{
+				candidates.emplace_back(String::replace(std::string(steamPathBuffer), '\\', '/'));
+			}
+#endif
+			candidates.emplace_back("C:/Program Files (x86)/Steam");
+		}
+
+		return candidates;
+	}
+
+	// Scans a Valve KeyValues (.vdf) file's text for every quoted value following a "path" key.
+	// This intentionally isn't a general KeyValues parser -- libraryfolders.vdf only needs this
+	// one key read out of it.
+	std::vector<std::string> parseVdfLibraryPaths(const std::string &vdfText)
+	{
+		std::vector<std::string> paths;
+		const std::string key = "\"path\"";
+
+		size_t searchPos = 0;
+		while (true)
+		{
+			const size_t keyPos = vdfText.find(key, searchPos);
+			if (keyPos == std::string::npos)
+			{
+				break;
+			}
+
+			const size_t valueBegin = vdfText.find('"', keyPos + key.size());
+			if (valueBegin == std::string::npos)
+			{
+				break;
+			}
+
+			const size_t valueEnd = vdfText.find('"', valueBegin + 1);
+			if (valueEnd == std::string::npos)
+			{
+				break;
+			}
+
+			const std::string rawPath = vdfText.substr(valueBegin + 1, valueEnd - valueBegin - 1);
+			paths.emplace_back(String::replace(rawPath, "\\\\", "/"));
+			searchPos = valueEnd + 1;
+		}
+
+		return paths;
+	}
+
+	// Scans a Valve KeyValues (.acf) file's text for the first quoted value following the given
+	// key. Used to read a single scalar field like "installdir" out of an appmanifest file.
+	bool tryGetVdfValue(const std::string &vdfText, const std::string &key, std::string *outValue)
+	{
+		const std::string quotedKey = "\"" + key + "\"";
+		const size_t keyPos = vdfText.find(quotedKey);
+		if (keyPos == std::string::npos)
+		{
+			return false;
+		}
+
+		const size_t valueBegin = vdfText.find('"', keyPos + quotedKey.size());
+		if (valueBegin == std::string::npos)
+		{
+			return false;
+		}
+
+		const size_t valueEnd = vdfText.find('"', valueBegin + 1);
+		if (valueEnd == std::string::npos)
+		{
+			return false;
+		}
+
+		*outValue = vdfText.substr(valueBegin + 1, valueEnd - valueBegin - 1);
+		return true;
+	}
 }
 
 std::string Platform::getPlatform()
@@ -77,6 +189,50 @@ std::string Platform::getBasePath()
 
 	// Convert Windows backslashes to forward slashes.
 	return String::replace(basePathString, '\\', '/');
+}
+
+std::vector<std::string> Platform::getSteamArenaPaths()
+{
+	std::vector<std::string> arenaPaths;
+
+	for (const std::string &steamRoot : Platform::getSteamRootCandidates())
+	{
+		std::error_code dummy;
+		if (!std::filesystem::is_directory(steamRoot, dummy))
+		{
+			continue;
+		}
+
+		// The Steam root is always library "0", included here directly in case the libraries
+		// file below is missing or fails to parse.
+		std::vector<std::string> libraryPaths = { steamRoot };
+
+		const std::string vdfPath = steamRoot + "/steamapps/libraryfolders.vdf";
+		if (File::exists(vdfPath.c_str()))
+		{
+			const std::string vdfText = File::readAllText(vdfPath.c_str());
+			const std::vector<std::string> vdfLibraryPaths = Platform::parseVdfLibraryPaths(vdfText);
+			libraryPaths.insert(libraryPaths.end(), vdfLibraryPaths.begin(), vdfLibraryPaths.end());
+		}
+
+		for (const std::string &libraryPath : libraryPaths)
+		{
+			const std::string acfPath = libraryPath + "/steamapps/appmanifest_" + Platform::SteamArenaAppID + ".acf";
+			if (!File::exists(acfPath.c_str()))
+			{
+				continue;
+			}
+
+			const std::string acfText = File::readAllText(acfPath.c_str());
+			std::string installDir;
+			if (Platform::tryGetVdfValue(acfText, "installdir", &installDir))
+			{
+				arenaPaths.emplace_back(libraryPath + "/steamapps/common/" + installDir + "/ARENA");
+			}
+		}
+	}
+
+	return arenaPaths;
 }
 
 std::string Platform::getOptionsPath()
