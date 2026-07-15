@@ -1674,15 +1674,22 @@ void GameWorldUI::showShopkeeperBackground(const char *titleText)
 	Renderer &renderer = game.renderer;
 	uiManager.clearContextElements(state.shopkeeperBgContextInstID, inputManager, renderer);
 
+	const bool shouldUseSmallerFont = std::strlen(titleText) >= 32;
+	std::string fontName = ArenaFontName::C;
+	if (shouldUseSmallerFont)
+	{
+		fontName = ArenaFontName::Arena;
+	}
+
 	UiElementInitInfo titleTextBoxElementInitInfo;
 	titleTextBoxElementInitInfo.name = "GameWorldShopkeeperBackgroundTitleTextBox";
-	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 3);
-	titleTextBoxElementInitInfo.pivotType = UiPivotType::Top;
+	titleTextBoxElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, 10);
+	titleTextBoxElementInitInfo.pivotType = UiPivotType::Middle;
 	titleTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo titleTextBoxInitInfo;
 	titleTextBoxInitInfo.text = titleText;
-	titleTextBoxInitInfo.fontName = ArenaFontName::C;
+	titleTextBoxInitInfo.fontName = fontName;
 	titleTextBoxInitInfo.defaultColor = Color(12, 12, 24);
 	titleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
 	const UiElementInstanceID titleTextBoxElementInstID = uiManager.createTextBox(titleTextBoxElementInitInfo, titleTextBoxInitInfo, state.shopkeeperBgContextInstID, renderer);
