@@ -22,6 +22,30 @@ enum class GameWorldInteractionType
 	Thieving
 };
 
+enum class ConversationMessageBoxType
+{
+	Citizen,
+	CitizenRumors,
+	Equipment,
+	EquipmentBuyItem,
+	MagesGuild,
+	MagesGuildBuyItem,
+	MagesGuildSteal,
+	Tavern,
+	TavernRumors,
+	Temple
+};
+
+enum class ConversationListBoxType
+{
+	// @todo citizen where is
+	// @todo equipment sell item
+	// @todo equipment repair item
+	// @todo tavern drinks
+	// @todo tavern rooms
+
+};
+
 // For keeping loot list box callbacks valid when removing inventory items.
 struct GameWorldLootUiItemMapping
 {
@@ -107,7 +131,8 @@ namespace GameWorldUI
 	void showCampModal();
 	void showCampManualHoursModal();
 	void showPlayerHurt();
-	void showConversationModal();
+
+	void showConversationModal(ConversationMessageBoxType messageBoxType);
 	void showShopkeeperBackground(const char *titleText);
 
 	bool isTriggerTextVisible();

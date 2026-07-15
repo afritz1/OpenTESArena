@@ -1426,7 +1426,7 @@ void GameWorldUI::showPlayerHurt()
 	state.playerHurtRemainingSeconds = 1.0 / ArenaRenderUtils::FRAMES_PER_SECOND;
 }
 
-void GameWorldUI::showConversationModal()
+void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
@@ -1436,83 +1436,73 @@ void GameWorldUI::showConversationModal()
 	Renderer &renderer = game.renderer;
 	uiManager.clearContextElements(state.conversationModalContextInstID, inputManager, renderer);
 	
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-	std::string titleText;
-	int messageBoxButtonCount = 0;
-	constexpr int messageBoxMaxButtonCount = 5;
-	UiButtonCallback messageBoxButtonCallbacks[messageBoxMaxButtonCount];
-	std::string messageBoxButtonTexts[messageBoxMaxButtonCount];
-
 	const GameState &gameState = game.gameState;
 	const ArenaBuildingType buildingType = gameState.getBuildingType();
 	const Player &player = game.player;
 	const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
 	const bool canCastMagic = playerCharClassDef.castsMagic;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
 
-	switch (buildingType)
+	auto closeConversationCallback = [&state, &uiManager](MouseButtonType)
 	{
-	case ArenaBuildingType::Tavern:
+		uiManager.setContextEnabled(state.conversationModalContextInstID, false);
+		uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
+		GameWorldUI::onPauseChanged(false);
+	};
+
+	std::string messageBoxTitleText;
+	int messageBoxButtonCount = 0;
+	constexpr int messageBoxMaxButtonCount = 5;
+	UiButtonCallback messageBoxButtonCallbacks[messageBoxMaxButtonCount];
+	std::string messageBoxButtonTexts[messageBoxMaxButtonCount];
+
+	switch (messageBoxType)
 	{
-		titleText = exeData.services.tavernModalTitle;
-
-		const bool isRoomRented = false; // @todo query some TavernRoomState in GameState eventually
-		if (isRoomRented)
-		{
-			messageBoxButtonCount = 3;
-			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy drinks"); };
-			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Rumors"); };
-			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Exit"); };
-			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
-			messageBoxButtonTexts[1] = exeData.services.tavernModalRumors;
-			messageBoxButtonTexts[2] = exeData.services.tavernModalExit;
-		}
-		else
-		{
-			messageBoxButtonCount = 5;
-			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy drinks"); };
-			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Get a room"); };
-			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Sneak into a room"); };
-			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Rumors"); };
-			messageBoxButtonCallbacks[4] = [](MouseButtonType) { DebugLog("Exit"); };
-			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
-			messageBoxButtonTexts[1] = exeData.services.tavernModalGetARoom;
-			messageBoxButtonTexts[2] = exeData.services.tavernModalSneakIntoARoom;
-			messageBoxButtonTexts[3] = exeData.services.tavernModalRumors;
-			messageBoxButtonTexts[4] = exeData.services.tavernModalExit;
-		}
-
-		break;
-	}
-	case ArenaBuildingType::Temple:
-		titleText = exeData.services.templeModalTitle;
+	case ConversationMessageBoxType::Citizen:
+		messageBoxTitleText = exeData.services.citizenModalTitle;
 		messageBoxButtonCount = 4;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Bless"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Cure"); };
-		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Heal"); };
-		messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Exit"); };
-		messageBoxButtonTexts[0] = exeData.services.templeModalBless;
-		messageBoxButtonTexts[1] = exeData.services.templeModalCure;
-		messageBoxButtonTexts[2] = exeData.services.templeModalHeal;
-		messageBoxButtonTexts[3] = exeData.services.templeModalExit;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Who are you?"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Where is..."); };
+		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Rumors"); };
+		messageBoxButtonCallbacks[3] = closeConversationCallback;
+		messageBoxButtonTexts[0] = exeData.services.citizenModalWhoAreYou;
+		messageBoxButtonTexts[1] = exeData.services.citizenModalWhereIs;
+		messageBoxButtonTexts[2] = exeData.services.citizenModalRumors;
+		messageBoxButtonTexts[3] = exeData.services.citizenModalExit;
 		break;
-	case ArenaBuildingType::Equipment:
-		titleText = exeData.services.equipmentModalTitle;
+	case ConversationMessageBoxType::CitizenRumors:
+	case ConversationMessageBoxType::TavernRumors:
+		messageBoxTitleText = exeData.services.citizenRumorsModalTitle;
+		messageBoxButtonCount = 2;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("General"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Work"); };
+		messageBoxButtonTexts[0] = exeData.services.citizenRumorsModalGeneral;
+		messageBoxButtonTexts[1] = exeData.services.citizenRumorsModalWork;
+		break;
+	case ConversationMessageBoxType::Equipment:
+		messageBoxTitleText = exeData.services.equipmentModalTitle;
 		messageBoxButtonCount = 5;
 		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy"); };
 		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Sell"); };
 		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Repair"); };
 		messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Steal"); };
-		messageBoxButtonCallbacks[4] = [](MouseButtonType) { DebugLog("Exit"); };
+		messageBoxButtonCallbacks[4] = closeConversationCallback;
 		messageBoxButtonTexts[0] = exeData.services.equipmentModalBuy;
 		messageBoxButtonTexts[1] = exeData.services.equipmentModalSell;
 		messageBoxButtonTexts[2] = exeData.services.equipmentModalRepair;
 		messageBoxButtonTexts[3] = exeData.services.equipmentModalSteal;
 		messageBoxButtonTexts[4] = exeData.services.equipmentModalExit;
 		break;
-	case ArenaBuildingType::MagesGuild:
-	{
-		titleText = exeData.services.magesGuildModalTitle;
+	case ConversationMessageBoxType::EquipmentBuyItem:
+		messageBoxTitleText = exeData.services.equipmentBuyModalTitle;
+		messageBoxButtonCount = 2;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Weapons"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Armor"); };
+		messageBoxButtonTexts[0] = exeData.services.equipmentBuyModalWeapons;
+		messageBoxButtonTexts[1] = exeData.services.equipmentBuyModalArmor;
+		break;
+	case ConversationMessageBoxType::MagesGuild:
+		messageBoxTitleText = exeData.services.magesGuildModalTitle;
 
 		if (canCastMagic)
 		{
@@ -1521,7 +1511,7 @@ void GameWorldUI::showConversationModal()
 			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Detect Magic"); };
 			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Spellmaker"); };
 			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Steal"); };
-			messageBoxButtonCallbacks[4] = [](MouseButtonType) { DebugLog("Exit"); };
+			messageBoxButtonCallbacks[4] = closeConversationCallback;
 			messageBoxButtonTexts[0] = exeData.services.magesGuildModalBuy;
 			messageBoxButtonTexts[1] = exeData.services.magesGuildModalDetectMagic;
 			messageBoxButtonTexts[2] = exeData.services.magesGuildModalSpellmaker;
@@ -1534,7 +1524,7 @@ void GameWorldUI::showConversationModal()
 			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy"); };
 			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Detect Magic"); };
 			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Steal"); };
-			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Exit"); };
+			messageBoxButtonCallbacks[3] = closeConversationCallback;
 			messageBoxButtonTexts[0] = exeData.services.magesGuildModalBuy;
 			messageBoxButtonTexts[1] = exeData.services.magesGuildModalDetectMagic;
 			messageBoxButtonTexts[2] = exeData.services.magesGuildModalSteal;
@@ -1542,19 +1532,70 @@ void GameWorldUI::showConversationModal()
 		}
 
 		break;
+	case ConversationMessageBoxType::MagesGuildBuyItem:
+		messageBoxTitleText = exeData.services.magesGuildPickItemModalTitle;
+		messageBoxButtonCount = 3;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Potion"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Magic Item"); };
+		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Spell"); };
+		messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
+		messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
+		messageBoxButtonTexts[2] = exeData.services.magesGuildPickItemModalSpells;
+		break;
+	case ConversationMessageBoxType::MagesGuildSteal:
+		messageBoxTitleText = exeData.services.magesGuildPickItemModalTitle;
+		messageBoxButtonCount = 2;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Potion"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Magic Item"); };
+		messageBoxButtonTexts[0] = exeData.services.magesGuildPickItemModalPotions;
+		messageBoxButtonTexts[1] = exeData.services.magesGuildPickItemModalMagicItems;
+		break;
+	case ConversationMessageBoxType::Tavern:
+	{
+		messageBoxTitleText = exeData.services.tavernModalTitle;
+
+		const bool isRoomRented = false; // @todo query some TavernRoomState in GameState eventually
+		if (isRoomRented)
+		{
+			messageBoxButtonCount = 3;
+			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy drinks"); };
+			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Rumors"); };
+			messageBoxButtonCallbacks[2] = closeConversationCallback;
+			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
+			messageBoxButtonTexts[1] = exeData.services.tavernModalRumors;
+			messageBoxButtonTexts[2] = exeData.services.tavernModalExit;
+		}
+		else
+		{
+			messageBoxButtonCount = 5;
+			messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Buy drinks"); };
+			messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Get a room"); };
+			messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Sneak into a room"); };
+			messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Rumors"); };
+			messageBoxButtonCallbacks[4] = closeConversationCallback;
+			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
+			messageBoxButtonTexts[1] = exeData.services.tavernModalGetARoom;
+			messageBoxButtonTexts[2] = exeData.services.tavernModalSneakIntoARoom;
+			messageBoxButtonTexts[3] = exeData.services.tavernModalRumors;
+			messageBoxButtonTexts[4] = exeData.services.tavernModalExit;
+		}
+
+		break;
 	}
-	default:
-		// Citizen
-		titleText = exeData.services.citizenModalTitle;
+	case ConversationMessageBoxType::Temple:
+		messageBoxTitleText = exeData.services.templeModalTitle;
 		messageBoxButtonCount = 4;
-		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Who are you?"); };
-		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Where is..."); };
-		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Rumors"); };
-		messageBoxButtonCallbacks[3] = [](MouseButtonType) { DebugLog("Exit"); };
-		messageBoxButtonTexts[0] = exeData.services.citizenModalWhoAreYou;
-		messageBoxButtonTexts[1] = exeData.services.citizenModalWhereIs;
-		messageBoxButtonTexts[2] = exeData.services.citizenModalRumors;
-		messageBoxButtonTexts[3] = exeData.services.citizenModalExit;
+		messageBoxButtonCallbacks[0] = [](MouseButtonType) { DebugLog("Bless"); };
+		messageBoxButtonCallbacks[1] = [](MouseButtonType) { DebugLog("Cure"); };
+		messageBoxButtonCallbacks[2] = [](MouseButtonType) { DebugLog("Heal"); };
+		messageBoxButtonCallbacks[3] = closeConversationCallback;
+		messageBoxButtonTexts[0] = exeData.services.templeModalBless;
+		messageBoxButtonTexts[1] = exeData.services.templeModalCure;
+		messageBoxButtonTexts[2] = exeData.services.templeModalHeal;
+		messageBoxButtonTexts[3] = exeData.services.templeModalExit;
+		break;
+	default:
+		DebugNotImplemented();
 		break;
 	}
 
@@ -1570,7 +1611,7 @@ void GameWorldUI::showConversationModal()
 	titleTextBoxElementInitInfo.drawOrder = 1;
 
 	UiTextBoxInitInfo titleTextBoxInitInfo;
-	titleTextBoxInitInfo.text = titleText;
+	titleTextBoxInitInfo.text = messageBoxTitleText;
 	titleTextBoxInitInfo.fontName = ArenaFontName::A;
 	titleTextBoxInitInfo.tabColorPaletteID = paletteID;
 	titleTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
@@ -1632,28 +1673,16 @@ void GameWorldUI::showConversationModal()
 	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
 	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
 
-	auto backButtonCallback = [&state](MouseButtonType)
-	{
-		GameWorldUiState &state = GameWorldUI::state;
-		Game &game = *state.game;
-
-		UiManager &uiManager = game.uiManager;
-		uiManager.setContextEnabled(state.conversationModalContextInstID, false);
-		uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
-		
-		GameWorldUI::onPauseChanged(false);
-	};
-
 	UiButtonInitInfo backButtonInitInfo;
 	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
-	backButtonInitInfo.callback = backButtonCallback;
+	backButtonInitInfo.callback = closeConversationCallback;
 	uiManager.createButton(backButtonElementInitInfo, backButtonInitInfo, state.conversationModalContextInstID);
 
-	auto backInputActionCallback = [backButtonCallback](const InputActionCallbackValues &values)
+	auto backInputActionCallback = [closeConversationCallback](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
-			backButtonCallback(MouseButtonType::Right);
+			closeConversationCallback(MouseButtonType::Right);
 		}
 	};
 
