@@ -158,6 +158,8 @@ namespace GameWorldUI
 	void onNpcTavernGetARoomButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernRumorsGeneralButtonSelected(MouseButtonType mouseButtonType);
+	void onNpcTavernRumorsWorkButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType);

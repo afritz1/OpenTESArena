@@ -1471,7 +1471,6 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 		messageBoxButtonTexts[3] = exeData.services.citizenModalExit;
 		break;
 	case ConversationMessageBoxType::CitizenRumors:
-	case ConversationMessageBoxType::TavernRumors:
 		messageBoxTitleText = exeData.services.citizenRumorsModalTitle;
 		messageBoxButtonCount = 2;
 		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcRumorsGeneralButtonSelected;
@@ -1582,6 +1581,14 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 
 		break;
 	}
+	case ConversationMessageBoxType::TavernRumors:
+		messageBoxTitleText = exeData.services.citizenRumorsModalTitle;
+		messageBoxButtonCount = 2;
+		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcTavernRumorsGeneralButtonSelected;
+		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcTavernRumorsWorkButtonSelected;
+		messageBoxButtonTexts[0] = exeData.services.citizenRumorsModalGeneral;
+		messageBoxButtonTexts[1] = exeData.services.citizenRumorsModalWork;
+		break;
 	case ConversationMessageBoxType::Temple:
 		messageBoxTitleText = exeData.services.templeModalTitle;
 		messageBoxButtonCount = 4;
@@ -2134,7 +2141,47 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 
 void GameWorldUI::onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonType)
 {
-	GameWorldUI::onNpcRumorsButtonSelected(mouseButtonType);
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+	GameWorldUI::showConversationModal(ConversationMessageBoxType::TavernRumors);
+}
+
+void GameWorldUI::onNpcTavernRumorsGeneralButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO tavern rumors general";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+}
+
+void GameWorldUI::onNpcTavernRumorsWorkButtonSelected(MouseButtonType mouseButtonType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+	uiManager.disableTopMostContext();
+
+	const std::string text = "TODO tavern rumors work";
+
+	GameWorldPopUpClosedCallback callback = [&uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
 }
 
 void GameWorldUI::onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType)
