@@ -108,7 +108,10 @@ struct DebugVoxelVisibilityQuadtreeState
 enum class PlayerStatusGradientType
 {
 	Healthy,
-	Diseased
+	Diseased,
+	Poisoned,
+	NearDeath,
+	Buffed
 };
 
 namespace GameWorldUiView

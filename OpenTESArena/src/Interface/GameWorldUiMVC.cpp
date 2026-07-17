@@ -347,12 +347,26 @@ Radians GameWorldUiModel::getCompassAngle(const VoxelDouble2 &direction)
 
 PlayerStatusGradientType GameWorldUiModel::getCurrentPlayerStatusGradientType(const Player &player)
 {
-	if (player.effectsState.isDiseased())
+	if (player.isHealthCriticallyLow())
+	{
+		return PlayerStatusGradientType::NearDeath;
+	}
+	else if (false) // @todo poison
+	{
+		return PlayerStatusGradientType::Poisoned;
+	}
+	else if (player.effectsState.isDiseased())
 	{
 		return PlayerStatusGradientType::Diseased;
 	}
-
-	return PlayerStatusGradientType::Healthy;
+	else if (false) // @todo buffed/magical
+	{
+		return PlayerStatusGradientType::Buffed;
+	}
+	else
+	{
+		return PlayerStatusGradientType::Healthy;
+	}
 }
 
 std::string GameWorldUiModel::getEnemyInspectedMessage(const std::string &entityName, const ExeData &exeData)

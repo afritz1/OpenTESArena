@@ -762,6 +762,12 @@ void Player::setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem)
 	this->setPhysicsVelocity(Double3::Zero);
 }
 
+bool Player::isHealthCriticallyLow() const
+{
+	const double healthPercent = std::clamp(this->currentHealth / this->maxHealth, 0.0, 1.0);
+	return healthPercent <= 0.15;
+}
+
 bool Player::canRestUntilHealed() const
 {
 	const bool needsHealth = this->currentHealth < this->maxHealth;

@@ -211,6 +211,7 @@ struct Player
 
 	void setGhostModeActive(bool active, JPH::PhysicsSystem &physicsSystem);
 
+	bool isHealthCriticallyLow() const;
 	bool canRestUntilHealed() const;
 	void applyRestHealing(int restFactor, int tavernRoomType, const ExeData &exeData);
 
