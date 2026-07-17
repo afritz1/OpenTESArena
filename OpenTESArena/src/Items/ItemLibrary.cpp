@@ -247,10 +247,10 @@ int ItemLibrary::getCount() const
 	return static_cast<int>(this->itemDefs.size());
 }
 
-const ItemDefinition &ItemLibrary::getDefinition(int index) const
+const ItemDefinition &ItemLibrary::getDefinition(ItemDefinitionID id) const
 {
-	DebugAssertIndex(this->itemDefs, index);
-	return this->itemDefs[index];
+	DebugAssertIndex(this->itemDefs, id);
+	return this->itemDefs[id];
 }
 
 int ItemLibrary::getFirstDefinitionIndexIf(const ItemLibraryPredicate &predicate) const
@@ -268,18 +268,18 @@ int ItemLibrary::getFirstDefinitionIndexIf(const ItemLibraryPredicate &predicate
 	return index;
 }
 
-std::vector<int> ItemLibrary::getDefinitionIndicesIf(const ItemLibraryPredicate &predicate) const
+std::vector<ItemDefinitionID> ItemLibrary::getDefinitionIDsIf(const ItemLibraryPredicate &predicate) const
 {
-	std::vector<int> indices;
+	std::vector<ItemDefinitionID> ids;
 	for (int i = 0; i < this->getCount(); i++)
 	{
 		if (predicate(this->getDefinition(i)))
 		{
-			indices.emplace_back(i);
+			ids.emplace_back(i);
 		}
 	}
 
-	return indices;
+	return ids;
 }
 
 const ItemDefinition &ItemLibrary::getGoldDefinition() const

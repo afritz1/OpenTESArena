@@ -3,6 +3,7 @@
 #include <functional>
 #include <vector>
 
+#include "../Items/ItemLibrary.h"
 #include "../Math/Rect.h"
 #include "../Rendering/RenderTextureUtils.h"
 #include "../UI/UiContext.h"
@@ -170,6 +171,8 @@ namespace GameWorldUI
 	void onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType);
 	void showShopkeeperBackground(const char *titleText);
+	void onPlayerStealItemSuccess(const ItemLibraryPredicate &stealableItemsPredicate, ConversationMessageBoxType mainMessageBoxType);
+	void onPlayerStealItemFailure();
 
 	bool isTriggerTextVisible();
 	bool isActionTextVisible();

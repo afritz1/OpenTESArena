@@ -52,7 +52,7 @@ namespace
 			return charClassDef.isWeaponTypeAllowed(itemDef.weapon.typeID);
 		};
 
-		const std::vector<ItemDefinitionID> allowedWeaponItemDefIDs = itemLibrary.getDefinitionIndicesIf(allowedWeaponPredicate);
+		const std::vector<ItemDefinitionID> allowedWeaponItemDefIDs = itemLibrary.getDefinitionIDsIf(allowedWeaponPredicate);
 		if (allowedWeaponItemDefIDs.empty())
 		{
 			return -1;

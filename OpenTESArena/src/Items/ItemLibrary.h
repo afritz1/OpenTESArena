@@ -20,9 +20,9 @@ public:
 	void init(const ExeData &exeData);
 
 	int getCount() const;
-	const ItemDefinition &getDefinition(int index) const;
+	const ItemDefinition &getDefinition(ItemDefinitionID id) const;
 	int getFirstDefinitionIndexIf(const ItemLibraryPredicate &predicate) const;
-	std::vector<int> getDefinitionIndicesIf(const ItemLibraryPredicate &predicate) const;
+	std::vector<ItemDefinitionID> getDefinitionIDsIf(const ItemLibraryPredicate &predicate) const;
 
 	// For loot containers only.
 	const ItemDefinition &getGoldDefinition() const;

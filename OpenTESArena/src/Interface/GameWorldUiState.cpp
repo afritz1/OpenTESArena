@@ -12,7 +12,6 @@
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
-#include "../Items/ItemLibrary.h"
 #include "../Player/PlayerLogic.h"
 #include "../Player/WeaponAnimationLibrary.h"
 #include "../Stats/CharacterClassLibrary.h"
@@ -20,6 +19,8 @@
 #include "../UI/TextEntry.h"
 #include "../UI/UiRenderSpace.h"
 #include "../World/MapType.h"
+
+#include "components/utilities/String.h"
 
 namespace
 {
@@ -2107,41 +2108,36 @@ void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonT
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
 	Random &random = game.random;
 	const bool isStealSuccessful = random.nextBool();
-
-	std::string text;
-	std::string fontName;
-	GameWorldPopUpClosedCallback callback;
 	if (isStealSuccessful)
 	{
-		// @todo pick random weapon or armor item def ID from ItemLibrary
-
-		text = "TODO steal success";
-		fontName = GameWorldUiView::StatusPopUpFontName;
-		callback = [&uiManager]()
+		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
 		{
-			uiManager.disableTopMostContext();
-			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
+			if (itemDef.type == ItemType::Armor)
+			{
+				return true;
+			}
+			else if (itemDef.type == ItemType::Weapon)
+			{
+				return true;
+			}
+			else if (itemDef.type == ItemType::Shield)
+			{
+				return true;
+			}
+			else
+			{
+				return false;
+			}
 		};
+
+		GameWorldUI::onPlayerStealItemSuccess(stealableItemsPredicate, ConversationMessageBoxType::Equipment);
 	}
 	else
 	{
-		text = exeData.services.tavernSneakIntoRoomUnsuccessful;
-		fontName = ArenaFontName::A;
-		callback = [&game, &uiManager]()
-		{
-			uiManager.disableTopMostContext();
-			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-
-			GameState &gameState = game.gameState;
-			gameState.queueCityGuardEncounter(game);
-		};
+		GameWorldUI::onPlayerStealItemFailure();
 	}
-
-	GameWorldUI::showTextPopUp(text.c_str(), fontName, TextAlignment::TopLeft, callback);
 }
 
 void GameWorldUI::onNpcEquipmentBuyWeaponsButtonSelected(MouseButtonType mouseButtonType)
@@ -2250,39 +2246,21 @@ void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mous
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
 	Random &random = game.random;
 	const bool isStealSuccessful = random.nextBool();
-
-	std::string text;
-	std::string fontName;
-	GameWorldPopUpClosedCallback callback;
 	if (isStealSuccessful)
 	{
-		text = "TODO steal potions success";
-		fontName = GameWorldUiView::StatusPopUpFontName;
-		callback = [&uiManager]()
+		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
 		{
-			uiManager.disableTopMostContext();
-			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
+			return itemDef.type == ItemType::Consumable;
 		};
+
+		GameWorldUI::onPlayerStealItemSuccess(stealableItemsPredicate, ConversationMessageBoxType::MagesGuild);
 	}
 	else
 	{
-		text = exeData.services.tavernSneakIntoRoomUnsuccessful;
-		fontName = ArenaFontName::A;
-		callback = [&game, &uiManager]()
-		{
-			uiManager.disableTopMostContext();
-			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-
-			GameState &gameState = game.gameState;
-			gameState.queueCityGuardEncounter(game);
-		};
+		GameWorldUI::onPlayerStealItemFailure();
 	}
-
-	GameWorldUI::showTextPopUp(text.c_str(), fontName, TextAlignment::TopLeft, callback);
 }
 
 void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType mouseButtonType)
@@ -2292,39 +2270,21 @@ void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType m
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
 	Random &random = game.random;
 	const bool isStealSuccessful = random.nextBool();
-
-	std::string text;
-	std::string fontName;
-	GameWorldPopUpClosedCallback callback;
 	if (isStealSuccessful)
 	{
-		text = "TODO steal magic item success";
-		fontName = GameWorldUiView::StatusPopUpFontName;
-		callback = [&uiManager]()
+		ItemLibraryPredicate stealableItemsPredicate = [](const ItemDefinition &itemDef)
 		{
-			uiManager.disableTopMostContext();
-			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
+			return (itemDef.type == ItemType::Accessory) || (itemDef.type == ItemType::Trinket);
 		};
+
+		GameWorldUI::onPlayerStealItemSuccess(stealableItemsPredicate, ConversationMessageBoxType::MagesGuild);
 	}
 	else
 	{
-		text = exeData.services.tavernSneakIntoRoomUnsuccessful;
-		fontName = ArenaFontName::A;
-		callback = [&game, &uiManager]()
-		{
-			uiManager.disableTopMostContext();
-			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
-
-			GameState &gameState = game.gameState;
-			gameState.queueCityGuardEncounter(game);
-		};
+		GameWorldUI::onPlayerStealItemFailure();
 	}
-
-	GameWorldUI::showTextPopUp(text.c_str(), fontName, TextAlignment::TopLeft, callback);
 }
 
 void GameWorldUI::onNpcTavernBuyDrinksButtonSelected(MouseButtonType mouseButtonType)
@@ -2539,6 +2499,56 @@ void GameWorldUI::showShopkeeperBackground(const char *titleText)
 	uiManager.createImage(barterBgImageElementInitInfo, barterBgImageTextureID, state.shopkeeperBgContextInstID, renderer);
 
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, true);
+}
+
+void GameWorldUI::onPlayerStealItemSuccess(const ItemLibraryPredicate &stealableItemsPredicate, ConversationMessageBoxType mainMessageBoxType)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
+	const std::vector<ItemDefinitionID> stealableItemDefIDs = itemLibrary.getDefinitionIDsIf(stealableItemsPredicate);
+
+	Random &random = game.random;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	const int stolenItemDefIdIndex = random.next(static_cast<int>(stealableItemDefIDs.size()));
+	const ItemDefinitionID stolenItemDefID = stealableItemDefIDs[stolenItemDefIdIndex];
+	const ItemDefinition &stolenItemDef = itemLibrary.getDefinition(stolenItemDefID);
+	const std::string itemName = stolenItemDef.getDisplayName(1);
+	const std::string text = String::replace(exeData.services.equipmentStealSuccess, "%s", itemName.c_str());
+
+	Player &player = game.player;
+	player.inventory.insert(stolenItemDefID);
+
+	GameWorldPopUpClosedCallback callback = [mainMessageBoxType, &uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::showConversationMessageBox(mainMessageBoxType);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, callback);
+}
+
+void GameWorldUI::onPlayerStealItemFailure()
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	UiManager &uiManager = game.uiManager;
+
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const std::string &text = exeData.services.tavernSneakIntoRoomUnsuccessful;
+	GameWorldPopUpClosedCallback callback = [&game, &uiManager]()
+	{
+		uiManager.disableTopMostContext();
+		GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+
+		GameState &gameState = game.gameState;
+		gameState.queueCityGuardEncounter(game);
+	};
+
+	GameWorldUI::showTextPopUp(text.c_str(), ArenaFontName::A, GameWorldUiView::StatusPopUpTextAlignment, callback);
 }
 
 bool GameWorldUI::isTriggerTextVisible()

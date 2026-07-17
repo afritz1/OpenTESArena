@@ -617,7 +617,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 
 				if (ArenaEntityUtils::getCreatureHasMagicWeaponOrArmor(combatLevel, creatureDef.lootChances, arenaRandom))
 				{
-					const std::vector<ItemDefinitionID> magicItemDefIDs = itemLibrary.getDefinitionIndicesIf(
+					const std::vector<ItemDefinitionID> magicItemDefIDs = itemLibrary.getDefinitionIDsIf(
 						[](const ItemDefinition &itemDef)
 					{
 						// @todo get one that's actually magic
@@ -877,7 +877,7 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 				{
 					// The fourth possible item is a magic weapon or armor
 					// @todo: Get item and condition percentage from helper functions
-					const std::vector<ItemDefinitionID> magicItemDefIDs = itemLibrary.getDefinitionIndicesIf(
+					const std::vector<ItemDefinitionID> magicItemDefIDs = itemLibrary.getDefinitionIDsIf(
 						[](const ItemDefinition &itemDef)
 					{
 						return ItemTypeFlags(itemDef.type).any(ItemType::Weapon | ItemType::Armor | ItemType::Shield);
