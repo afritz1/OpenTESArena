@@ -1714,11 +1714,15 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 	const GameState &gameState = game.gameState;
 	const MapType mapType = gameState.getActiveMapType();
 	const Player &player = game.player;
-	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+	const BinaryAssetLibrary &binaryAssetLibrary = BinaryAssetLibrary::getInstance();
+	const ArenaTypes::Spellsg &standardSpells = binaryAssetLibrary.getStandardSpells();
+	const ExeData &exeData = binaryAssetLibrary.getExeData();
+	const ItemLibrary &itemLibrary = ItemLibrary::getInstance();
 
 	constexpr int sceneViewCenterY = ArenaRenderUtils::SCENE_VIEW_HEIGHT / 2;
+	constexpr int barterViewCenterY = 122 / 2;
 
-	int listBoxImageY = sceneViewCenterY;
+	int listBoxImageY = barterViewCenterY;
 	UiPivotType listBoxImagePivotType = UiPivotType::Middle;
 	std::string listBoxTextureName;
 	Int2 listBoxPositionOffset;
@@ -1759,7 +1763,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 			listBoxItems.emplace_back(sourceItems[i]);
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
-				DebugLogFormat("List item %d.", i);
+				DebugLogFormat("Where is %d.", i);
 				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
 			});
 		}
@@ -1767,24 +1771,65 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		break;
 	}
 	case ConversationListBoxType::EquipmentWeapons:
+	{
 		listBoxTextureName = ArenaTextureName::PopUp3;
 		listBoxPositionOffset = Int2(30, 28);
-		listBoxFontName = ArenaFontName::Arena;
+		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 275;
 		listBoxTextureHeight = 80;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
+
+		const std::vector<ItemDefinitionID> sourceItemDefIDs = itemLibrary.getDefinitionIDsIf(
+			[](const ItemDefinition &itemDef)
+		{
+			return itemDef.type == ItemType::Weapon;
+		});
+
+		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		{
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
+			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("Buy weapon.");
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
 		break;
+	}
 	case ConversationListBoxType::EquipmentArmor:
+	{
 		listBoxTextureName = ArenaTextureName::PopUp4;
 		listBoxPositionOffset = Int2(30, 28);
-		listBoxFontName = ArenaFontName::Arena;
+		listBoxFontName = ArenaFontName::Teeny;
 		listBoxTextureWidth = 275;
 		listBoxTextureHeight = 80;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
+
+		const std::vector<ItemDefinitionID> sourceItemDefIDs = itemLibrary.getDefinitionIDsIf(
+			[](const ItemDefinition &itemDef)
+		{
+			return (itemDef.type == ItemType::Armor) || (itemDef.type == ItemType::Shield);
+		});
+
+		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		{
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
+			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("Buy armor.");
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
 		break;
+	}
 	case ConversationListBoxType::EquipmentSell:
+	{
 		listBoxTextureName = ArenaTextureName::ContainerInventory;
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Teeny;
@@ -1792,8 +1837,32 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxTextureHeight = 65;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
+
+		std::vector<ItemDefinitionID> sourceItemDefIDs;
+		for (int i = 0; i < player.inventory.getTotalSlotCount(); i++)
+		{
+			const ItemInstance &itemInst = player.inventory.getSlot(i);
+			if (itemInst.isValid())
+			{
+				sourceItemDefIDs.emplace_back(itemInst.defID);
+			}
+		}
+
+		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		{
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
+			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("Sell item.");
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
 		break;
+	}
 	case ConversationListBoxType::EquipmentRepair:
+	{
 		listBoxTextureName = ArenaTextureName::ContainerInventory;
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Teeny;
@@ -1801,17 +1870,65 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxTextureHeight = 65;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
+
+		std::vector<ItemDefinitionID> sourceItemDefIDs;
+		for (int i = 0; i < player.inventory.getTotalSlotCount(); i++)
+		{
+			const ItemInstance &itemInst = player.inventory.getSlot(i);
+			if (itemInst.isValid())
+			{
+				const ItemDefinition &itemDef = itemLibrary.getDefinition(itemInst.defID);
+				if (itemDef.type == ItemType::Weapon || itemDef.type == ItemType::Armor || itemDef.type == ItemType::Shield)
+				{
+					sourceItemDefIDs.emplace_back(itemInst.defID);
+				}
+			}
+		}
+
+		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		{
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
+			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("Repair item.");
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
 		break;
+	}
 	case ConversationListBoxType::MagesGuildPotions:
+	{
 		listBoxTextureName = ArenaTextureName::ContainerInventory;
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Teeny;
-		listBoxTextureWidth = 155;
-		listBoxTextureHeight = 65;
+		listBoxTextureWidth = 150;
+		listBoxTextureHeight = 56;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
+
+		const std::vector<ItemDefinitionID> sourceItemDefIDs = itemLibrary.getDefinitionIDsIf(
+			[](const ItemDefinition &itemDef)
+		{
+			return itemDef.type == ItemType::Consumable;
+		});
+
+		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		{
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
+			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("Buy potion.");
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
 		break;
+	}
 	case ConversationListBoxType::MagesGuildMagicItems:
+	{
 		listBoxTextureName = ArenaTextureName::PopUp7;
 		listBoxPositionOffset = Int2(30, 28);
 		listBoxFontName = ArenaFontName::Teeny;
@@ -1819,16 +1936,58 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxTextureHeight = 72;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 104);
+
+		const std::vector<ItemDefinitionID> sourceItemDefIDs = itemLibrary.getDefinitionIDsIf(
+			[](const ItemDefinition &itemDef)
+		{
+			return (itemDef.type == ItemType::Accessory) || (itemDef.type == ItemType::Trinket);
+		});
+
+		for (int i = 0; i < static_cast<int>(sourceItemDefIDs.size()); i++)
+		{
+			const ItemDefinition &sourceItemDef = itemLibrary.getDefinition(sourceItemDefIDs[i]);
+			listBoxItems.emplace_back(sourceItemDef.getDisplayName(1));
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("Buy magic item.");
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
 		break;
+	}
 	case ConversationListBoxType::MagesGuildSpells:
+	{
 		listBoxTextureName = ArenaTextureName::ContainerInventory;
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Teeny;
-		listBoxTextureWidth = 262;
-		listBoxTextureHeight = 72;
+		listBoxTextureWidth = 150;
+		listBoxTextureHeight = 56;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
+
+		std::vector<std::string> spellNames;
+		for (const ArenaTypes::SpellData &spellData : standardSpells)
+		{
+			std::string spellName(spellData.name.data());
+			if (!spellName.empty())
+			{
+				spellNames.emplace_back(std::move(spellName));
+			}			
+		}
+
+		for (int i = 0; i < static_cast<int>(spellNames.size()); i++)
+		{
+			listBoxItems.emplace_back(spellNames[i]);
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("Buy spell.");
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
 		break;
+	}
 	case ConversationListBoxType::TavernDrinks:
 	{
 		listBoxTextureName = ArenaTextureName::PopUp5;
@@ -1839,14 +1998,26 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
-		Span<const std::string> sourceItems = exeData.services.tavernDrinks;
-		for (int i = 0; i < sourceItems.getCount(); i++)
+		Span<const std::string> drinkNames = exeData.services.tavernDrinks;
+		for (int i = 0; i < drinkNames.getCount(); i++)
 		{
-			listBoxItems.emplace_back(sourceItems[i]);
-			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			const std::string &drinkName = drinkNames[i];
+			listBoxItems.emplace_back(drinkName);
+			listBoxItemCallbacks.emplace_back([&uiManager, &exeData, drinkName](MouseButtonType)
 			{
-				DebugLogFormat("List item %d. TODO thankful for a safe haven...", i);
-				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+				uiManager.disableTopMostContext();
+
+				std::string consumeDrinkText = String::replace(exeData.services.tavernConsumeDrink, "%s", drinkName);
+				consumeDrinkText = String::distributeNewlines(consumeDrinkText, 60);
+
+				GameWorldPopUpClosedCallback consumeDrinkOnCloseCallback = [&uiManager]()
+				{
+					// @todo make player drunk
+					uiManager.disableTopMostContext();
+					GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
+				};
+
+				GameWorldUI::showTextPopUp(consumeDrinkText.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, consumeDrinkOnCloseCallback);
 			});
 		}
 
@@ -1858,17 +2029,17 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxPositionOffset = Int2(29, 36);
 		listBoxFontName = ArenaFontName::A;
 		listBoxTextureWidth = 146;
-		listBoxTextureHeight = 42;
+		listBoxTextureHeight = 44;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
 
-		Span<const std::string> sourceItems = exeData.services.tavernRoomTypes;
-		for (int i = 0; i < sourceItems.getCount(); i++)
+		Span<const std::string> roomTypes = exeData.services.tavernRoomTypes;
+		for (int i = 0; i < roomTypes.getCount(); i++)
 		{
-			listBoxItems.emplace_back(sourceItems[i]);
+			listBoxItems.emplace_back(roomTypes[i]);
 			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
 			{
-				DebugLogFormat("List item %d.", i);
+				DebugLogFormat("Rent room %d.", i);
 				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
 			});
 		}
@@ -1876,6 +2047,7 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		break;
 	}
 	case ConversationListBoxType::TempleCuring:
+	{
 		listBoxTextureName = ArenaTextureName::ContainerInventory;
 		listBoxPositionOffset = Int2(29, 24);
 		listBoxFontName = ArenaFontName::Arena;
@@ -1883,7 +2055,19 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxTextureHeight = 65;
 		listBoxButtonUpPositionOffset = Int2(9, 9);
 		listBoxButtonDownPositionOffset = Int2(9, 82);
+
+		if (player.effectsState.isDiseased())
+		{
+			listBoxItems.emplace_back(exeData.status.effectNames[0]);
+			listBoxItemCallbacks.emplace_back([&uiManager](MouseButtonType)
+			{
+				DebugLogFormat("Cure disease.");
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
 		break;
+	}
 	default:
 		DebugNotImplemented();
 		break;
