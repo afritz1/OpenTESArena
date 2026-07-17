@@ -707,6 +707,12 @@ TARGET_INCLUDE_DIRECTORIES(otesa PUBLIC "${JoltPhysics_SOURCE_DIR}/..")
 TARGET_LINK_LIBRARIES(otesa Jolt components ${EXTERNAL_LIBS})
 SET_TARGET_PROPERTIES(otesa PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${OpenTESArena_BINARY_DIR})
 
+IF (WIN32)
+    # Needed for RegGetValueA() in Platform.cpp (Steam install detection). MSVC links this by
+    # default but MinGW/MSYS2 toolchains require it explicitly.
+    TARGET_LINK_LIBRARIES(otesa advapi32)
+ENDIF()
+
 ADD_CUSTOM_COMMAND(TARGET otesa POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${TES_DATA_FOLDER} ${TES_EXECUTABLE_RESOURCES_FOLDER}/data
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${TES_OPTIONS_FOLDER} ${TES_EXECUTABLE_RESOURCES_FOLDER}/options)

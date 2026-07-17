@@ -58,12 +58,6 @@ Player movement is nearly feature-complete - currently you can jump, climb out o
 1. [Get latest Windows build](https://github.com/afritz1/OpenTESArena/releases)
 1. Extract the `.zip`
 
-#### Copy game assets path (skip if Steam library is default `C:\Program Files (x86)\Steam\steamapps\common\`)
-1. In your Steam library, right-click *The Elder Scrolls: Arena* then select Manage -> Browse local files
-1. Open `ARENA` folder then highlight the current directory path and copy with Ctrl+C
-1. Back in the OpenTESArena release folder, open `options/options-default.txt` and paste the game directory after `ArenaPaths=`
-   - Example: `ArenaPaths=C:\Program Files (x86)\Steam\steamapps\common\The Elder Scrolls Arena\ARENA`
-
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip)
 1. Extract the `.zip`
@@ -82,6 +76,20 @@ Player movement is nearly feature-complete - currently you can jump, climb out o
 
 <details>
 <summary>Linux (Debian-based)</summary>
+
+<details>
+<summary>Steam install</summary>
+
+#### Download [*The Elder Scrolls: Arena* on Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/)
+
+#### Download OpenTESArena
+1. [Get latest Linux build](https://github.com/afritz1/OpenTESArena/releases)
+1. Extract the `.tar.gz`
+
+</details>
+
+<details>
+<summary>Manual install</summary>
 
 #### Download packages
 ```bash
@@ -107,6 +115,8 @@ unzip ../../Arena106Setup.zip
 rar x Arena106.exe
 ```
 
+</details>
+
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
 1. Extract the `.tar.gz`
@@ -128,21 +138,37 @@ cd ..
 <details>
 <summary>macOS</summary>
 
+<details>
+<summary>Steam install</summary>
+
+#### Download [*The Elder Scrolls: Arena* on Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/)
+
+#### Install OpenTESArena
+1. [Get latest macOS build](https://github.com/afritz1/OpenTESArena/releases)
+1. Open the `.dmg` and copy `otesa.app` to the `Applications` folder or another location you prefer
+
+</details>
+
+<details>
+<summary>Manual install</summary>
+
 #### Download *The Elder Scrolls: Arena*
 1. Get the full game from the [Bethesda website](https://cdnstatic.bethsoft.com/elderscrolls.com/assets/files/tes/extras/Arena106Setup.zip)
 1. Extract `Arena106Setup.zip`
 1. `Arena106.exe` is a self-extracting RAR file. Use a tool such as [The Unarchiver](https://theunarchiver.com) to extract it into a folder of data files
 
 #### Install OpenTESArena
-1. Download the latest [macOS build](https://github.com/afritz1/OpenTESArena/releases)
+1. [Get latest macOS build](https://github.com/afritz1/OpenTESArena/releases)
 1. Open the `.dmg` and copy `otesa.app` to the `Applications` folder or another location you prefer
 1. Right-click on the .app and choose "Show Package Contents"
 1. Navigate to `Contents/Resources/data` and copy in the files for Arena that you extracted earlier
 
+</details>
+
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
 1. Extract the `.tar.gz`
-1. Copy the extracted `eawpats` folder inside the same `Contents/Resources/data` folder in `otesa.app`
+1. Copy the extracted `eawpats` folder inside the `Contents/Resources/data` folder in `otesa.app`
    - If you'd like a different sound patches library like OPL3, edit the value of `MidiConfig` in `options/options-default.txt` so it points to the MIDI `.cfg` file for that library
 
 #### Run OpenTESArena

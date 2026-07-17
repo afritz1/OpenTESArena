@@ -82,8 +82,9 @@ CameraPitchLimit=90.0
 
 [Misc]
 # Comma-separated paths the engine will use to search your computer for ACD.EXE
-# and A.EXE, preferring the CD version.
-ArenaPaths=data/ARENACD,data/ARENA,C:/Program Files (x86)/Steam/steamapps/common/The Elder Scrolls Arena/ARENA,D:/SteamLibrary/steamapps/common/The Elder Scrolls Arena/ARENA
+# and A.EXE, preferring the CD version. If these aren't found, the engine will
+# search your Steam install.
+ArenaPaths=data/ARENACD,data/ARENA
 
 # Change "ArenaSavesPath" to your classic saves folder (if any).
 ArenaSavesPath=data/ArenaSaves
