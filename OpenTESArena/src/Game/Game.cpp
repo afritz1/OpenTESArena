@@ -253,12 +253,15 @@ bool Game::init()
 	const std::string optionsPath = Platform::getOptionsPath();
 	this->initOptions(basePath, optionsPath);
 
-	// Search any auto-detected Steam library installs first, then fall back to the configured
-	// ArenaPaths directories, so a real detected install always wins over stale example paths.
+	// Collect all possible directories an Arena install could be in. In most cases the engine will select
+	// the user's Steam install, unless there is an override path for e.g. the floppy disk version.
 	const std::string &arenaPathsString = this->options.getMisc_ArenaPaths();
-	const Buffer<std::string> arenaPaths = String::split(arenaPathsString, ',');
-	std::vector<std::string> allArenaPaths = Platform::getSteamArenaPaths();
-	allArenaPaths.insert(allArenaPaths.end(), arenaPaths.begin(), arenaPaths.end());
+	const Buffer<std::string> arenaPathsFromOptions = String::split(arenaPathsString, ',');
+	const std::vector<std::string> arenaPathsFromSteam = Platform::getSteamArenaPaths();
+
+	std::vector<std::string> allArenaPaths;
+	allArenaPaths.insert(allArenaPaths.end(), arenaPathsFromOptions.begin(), arenaPathsFromOptions.end());
+	allArenaPaths.insert(allArenaPaths.end(), arenaPathsFromSteam.begin(), arenaPathsFromSteam.end());
 
 	std::string arenaPath;
 	bool isFloppyDiskVersion;
