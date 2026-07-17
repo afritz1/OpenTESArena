@@ -38,12 +38,16 @@ enum class ConversationMessageBoxType
 
 enum class ConversationListBoxType
 {
-	// @todo citizen where is
-	// @todo equipment sell item
-	// @todo equipment repair item
-	// @todo tavern drinks
-	// @todo tavern rooms
-
+	CitizenWhereIs,
+	EquipmentWeapons,
+	EquipmentArmor,
+	EquipmentRepair,
+	MagesGuildPotions,
+	MagesGuildMagicItems,
+	MagesGuildSpells,
+	TavernDrinks,
+	TavernRooms,
+	TempleCuring
 };
 
 // For keeping loot list box callbacks valid when removing inventory items.
@@ -134,7 +138,7 @@ namespace GameWorldUI
 
 	void showConversationMessageBox(ConversationMessageBoxType messageBoxType);
 	void showConversationListBox(ConversationListBoxType listBoxType);
-	void closeConversation();
+	void onCloseConversationButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcRumorsButtonSelected(MouseButtonType mouseButtonType);

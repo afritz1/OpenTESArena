@@ -298,6 +298,7 @@ TavernModalSneakIntoARoom=0x42C7F
 TavernModalRumors=0x42C96
 TavernModalExit=0x42CA2
 TavernDrinks=0x3DB12
+TavernRoomTypes=0x3E292
 TavernRoomsAvailable=0x42D51
 TavernSneakIntoRoomUnsuccessful=0x42D61
 TavernSneakIntoRoomSuccessful=0x42DC6
@@ -328,6 +329,8 @@ CitizenRumorsModalTitle=0x43F7B
 CitizenRumorsModalGeneral=0x43F92
 CitizenRumorsModalWork=0x43F9F
 CitizenRumorsModalWorkAskOutside=0x43FA9
+CitizenWhereIsOptionsCity=0x43FD3
+CitizenWhereIsOptionsWilderness=0x44035
 
 [Status]
 PopUp=0x4157B

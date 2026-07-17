@@ -1140,7 +1140,7 @@ void GameWorldUI::showCampModal()
 	campModalManualHoursTextBoxInitInfo.alignment = TextAlignment::MiddleCenter;
 	campModalManualHoursTextBoxInitInfo.defaultColor = campModalTextColor;
 	campModalManualHoursTextBoxInitInfo.tabColorPaletteID = campModalTitleTextBoxInitInfo.tabColorPaletteID;
-	uiManager.createTextBox(campModalManualHoursTextBoxElementInitInfo, campModalManualHoursTextBoxInitInfo, state.campModalContextInstID, renderer); 
+	uiManager.createTextBox(campModalManualHoursTextBoxElementInitInfo, campModalManualHoursTextBoxInitInfo, state.campModalContextInstID, renderer);
 
 	UiElementInitInfo campModalManualHoursButtonElementInitInfo;
 	campModalManualHoursButtonElementInitInfo.name = "GameWorldCampModalManualHoursButton";
@@ -1191,7 +1191,7 @@ void GameWorldUI::showCampModal()
 		Game &game = *state.game;
 		game.uiManager.disableTopMostContext();
 		game.inputManager.setInputActionMapActive(InputActionMapName::Camping, false);
-		
+
 		Player &player = game.player;
 		if (!player.canRestUntilHealed())
 		{
@@ -1437,18 +1437,12 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 	TextureManager &textureManager = game.textureManager;
 	Renderer &renderer = game.renderer;
 	uiManager.clearContextElements(state.conversationModalContextInstID, inputManager, renderer);
-	
+
 	const GameState &gameState = game.gameState;
-	const ArenaBuildingType buildingType = gameState.getBuildingType();
 	const Player &player = game.player;
 	const CharacterClassDefinition &playerCharClassDef = CharacterClassLibrary::getInstance().getDefinition(player.charClassDefID);
 	const bool canCastMagic = playerCharClassDef.castsMagic;
 	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-
-	auto closeConversationCallback = [](MouseButtonType)
-	{
-		GameWorldUI::closeConversation();
-	};
 
 	std::string messageBoxTitleText;
 	int messageBoxButtonCount = 0;
@@ -1464,7 +1458,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcWhoAreYouButtonSelected;
 		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcWhereIsButtonSelected;
 		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcRumorsButtonSelected;
-		messageBoxButtonCallbacks[3] = closeConversationCallback;
+		messageBoxButtonCallbacks[3] = GameWorldUI::onCloseConversationButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.citizenModalWhoAreYou;
 		messageBoxButtonTexts[1] = exeData.services.citizenModalWhereIs;
 		messageBoxButtonTexts[2] = exeData.services.citizenModalRumors;
@@ -1485,7 +1479,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcEquipmentSellButtonSelected;
 		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcEquipmentRepairButtonSelected;
 		messageBoxButtonCallbacks[3] = GameWorldUI::onNpcEquipmentStealButtonSelected;
-		messageBoxButtonCallbacks[4] = closeConversationCallback;
+		messageBoxButtonCallbacks[4] = GameWorldUI::onCloseConversationButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.equipmentModalBuy;
 		messageBoxButtonTexts[1] = exeData.services.equipmentModalSell;
 		messageBoxButtonTexts[2] = exeData.services.equipmentModalRepair;
@@ -1510,7 +1504,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildDetectMagicButtonSelected;
 			messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildSpellmakerButtonSelected;
 			messageBoxButtonCallbacks[3] = GameWorldUI::onNpcMagesGuildStealButtonSelected;
-			messageBoxButtonCallbacks[4] = closeConversationCallback;
+			messageBoxButtonCallbacks[4] = GameWorldUI::onCloseConversationButtonSelected;
 			messageBoxButtonTexts[0] = exeData.services.magesGuildModalBuy;
 			messageBoxButtonTexts[1] = exeData.services.magesGuildModalDetectMagic;
 			messageBoxButtonTexts[2] = exeData.services.magesGuildModalSpellmaker;
@@ -1523,7 +1517,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcMagesGuildBuyButtonSelected;
 			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcMagesGuildDetectMagicButtonSelected;
 			messageBoxButtonCallbacks[2] = GameWorldUI::onNpcMagesGuildStealButtonSelected;
-			messageBoxButtonCallbacks[3] = closeConversationCallback;
+			messageBoxButtonCallbacks[3] = GameWorldUI::onCloseConversationButtonSelected;
 			messageBoxButtonTexts[0] = exeData.services.magesGuildModalBuy;
 			messageBoxButtonTexts[1] = exeData.services.magesGuildModalDetectMagic;
 			messageBoxButtonTexts[2] = exeData.services.magesGuildModalSteal;
@@ -1559,7 +1553,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 			messageBoxButtonCount = 3;
 			messageBoxButtonCallbacks[0] = GameWorldUI::onNpcTavernBuyDrinksButtonSelected;
 			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcTavernRumorsButtonSelected;
-			messageBoxButtonCallbacks[2] = closeConversationCallback;
+			messageBoxButtonCallbacks[2] = GameWorldUI::onCloseConversationButtonSelected;
 			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
 			messageBoxButtonTexts[1] = exeData.services.tavernModalRumors;
 			messageBoxButtonTexts[2] = exeData.services.tavernModalExit;
@@ -1571,7 +1565,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 			messageBoxButtonCallbacks[1] = GameWorldUI::onNpcTavernGetARoomButtonSelected;
 			messageBoxButtonCallbacks[2] = GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected;
 			messageBoxButtonCallbacks[3] = GameWorldUI::onNpcTavernRumorsButtonSelected;
-			messageBoxButtonCallbacks[4] = closeConversationCallback;
+			messageBoxButtonCallbacks[4] = GameWorldUI::onCloseConversationButtonSelected;
 			messageBoxButtonTexts[0] = exeData.services.tavernModalBuyDrinks;
 			messageBoxButtonTexts[1] = exeData.services.tavernModalGetARoom;
 			messageBoxButtonTexts[2] = exeData.services.tavernModalSneakIntoARoom;
@@ -1595,7 +1589,7 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 		messageBoxButtonCallbacks[0] = GameWorldUI::onNpcTempleBlessButtonSelected;
 		messageBoxButtonCallbacks[1] = GameWorldUI::onNpcTempleCureButtonSelected;
 		messageBoxButtonCallbacks[2] = GameWorldUI::onNpcTempleHealButtonSelected;
-		messageBoxButtonCallbacks[3] = closeConversationCallback;
+		messageBoxButtonCallbacks[3] = GameWorldUI::onCloseConversationButtonSelected;
 		messageBoxButtonTexts[0] = exeData.services.templeModalBless;
 		messageBoxButtonTexts[1] = exeData.services.templeModalCure;
 		messageBoxButtonTexts[2] = exeData.services.templeModalHeal;
@@ -1682,14 +1676,14 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 
 	UiButtonInitInfo backButtonInitInfo;
 	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
-	backButtonInitInfo.callback = closeConversationCallback;
+	backButtonInitInfo.callback = GameWorldUI::onCloseConversationButtonSelected;
 	uiManager.createButton(backButtonElementInitInfo, backButtonInitInfo, state.conversationModalContextInstID);
 
-	auto backInputActionCallback = [closeConversationCallback](const InputActionCallbackValues &values)
+	auto backInputActionCallback = [](const InputActionCallbackValues &values)
 	{
 		if (values.performed)
 		{
-			closeConversationCallback(MouseButtonType::Right);
+			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
 		}
 	};
 
@@ -1706,10 +1700,218 @@ void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageB
 
 void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 {
-	// @todo
+	GameWorldUiState &state = GameWorldUI::state;
+	Game &game = *state.game;
+	InputManager &inputManager = game.inputManager;
+	UiManager &uiManager = game.uiManager;
+	TextureManager &textureManager = game.textureManager;
+	Renderer &renderer = game.renderer;
+	uiManager.clearContextElements(state.conversationModalContextInstID, inputManager, renderer);
+
+	const GameState &gameState = game.gameState;
+	const MapType mapType = gameState.getActiveMapType();
+	const Player &player = game.player;
+	const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+
+	constexpr int sceneViewCenterY = ArenaRenderUtils::SCENE_VIEW_HEIGHT / 2;
+
+	int listBoxImageY = sceneViewCenterY;
+	UiPivotType listBoxImagePivotType = UiPivotType::Middle;
+	std::string listBoxTextureName;
+	Int2 listBoxPositionOffset;
+	std::string listBoxFontName;
+	int listBoxTextureWidth = 0;
+	int listBoxTextureHeight = 0;
+	std::vector<std::string> listBoxItems;
+	std::vector<UiListBoxItemCallback> listBoxItemCallbacks;
+
+	switch (listBoxType)
+	{
+	case ConversationListBoxType::CitizenWhereIs:
+	{
+		listBoxImageY = 0;
+		listBoxImagePivotType = UiPivotType::Top;
+		listBoxTextureName = ArenaTextureName::PopUp11;
+		listBoxPositionOffset = Int2(28, 20);
+		listBoxFontName = ArenaFontName::Arena;
+		listBoxTextureWidth = 185;
+		listBoxTextureHeight = 82;
+
+		Span<const std::string> sourceItems;
+		if (mapType == MapType::City)
+		{
+			sourceItems = exeData.services.citizenWhereIsOptionsCity;
+		}
+		else if (mapType == MapType::Wilderness)
+		{
+			sourceItems = exeData.services.citizenWhereIsOptionsWilderness;
+		}
+
+		for (int i = 0; i < sourceItems.getCount(); i++)
+		{
+			listBoxItems.emplace_back(sourceItems[i]);
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("List item %d.", i);
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
+		break;
+	}
+	case ConversationListBoxType::EquipmentWeapons:
+		listBoxTextureName = ArenaTextureName::PopUp3;
+		listBoxPositionOffset = Int2(30, 28);
+		listBoxFontName = ArenaFontName::Arena;
+		listBoxTextureWidth = 275;
+		listBoxTextureHeight = 80;
+		break;
+	case ConversationListBoxType::EquipmentArmor:
+		listBoxTextureName = ArenaTextureName::PopUp4;
+		listBoxPositionOffset = Int2(30, 28);
+		listBoxFontName = ArenaFontName::Arena;
+		listBoxTextureWidth = 275;
+		listBoxTextureHeight = 80;
+		break;
+	case ConversationListBoxType::EquipmentRepair:
+		listBoxTextureName = ArenaTextureName::ContainerInventory;
+		listBoxPositionOffset = Int2(29, 24);
+		listBoxFontName = ArenaFontName::Teeny;
+		listBoxTextureWidth = 155;
+		listBoxTextureHeight = 65;
+		break;
+	case ConversationListBoxType::MagesGuildPotions:
+		listBoxTextureName = ArenaTextureName::ContainerInventory;
+		listBoxPositionOffset = Int2(29, 24);
+		listBoxFontName = ArenaFontName::Teeny;
+		listBoxTextureWidth = 155;
+		listBoxTextureHeight = 65;
+		break;
+	case ConversationListBoxType::MagesGuildMagicItems:
+		listBoxTextureName = ArenaTextureName::PopUp7;
+		listBoxPositionOffset = Int2(30, 28);
+		listBoxFontName = ArenaFontName::Teeny;
+		listBoxTextureWidth = 270;
+		listBoxTextureHeight = 72;
+		break;
+	case ConversationListBoxType::MagesGuildSpells:
+		listBoxTextureName = ArenaTextureName::ContainerInventory;
+		listBoxPositionOffset = Int2(29, 24);
+		listBoxFontName = ArenaFontName::Teeny;
+		listBoxTextureWidth = 262;
+		listBoxTextureHeight = 72;
+		break;
+	case ConversationListBoxType::TavernDrinks:
+	{
+		listBoxTextureName = ArenaTextureName::PopUp5;
+		listBoxPositionOffset = Int2(29, 24);
+		listBoxFontName = ArenaFontName::Arena;
+		listBoxTextureWidth = 135;
+		listBoxTextureHeight = 54;
+
+		Span<const std::string> sourceItems = exeData.services.tavernDrinks;
+		for (int i = 0; i < sourceItems.getCount(); i++)
+		{
+			listBoxItems.emplace_back(sourceItems[i]);
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("List item %d. TODO thankful for a safe haven...", i);
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
+		break;
+	}
+	case ConversationListBoxType::TavernRooms:
+	{
+		listBoxTextureName = ArenaTextureName::ContainerInventory;
+		listBoxPositionOffset = Int2(29, 36);
+		listBoxFontName = ArenaFontName::A;
+		listBoxTextureWidth = 146;
+		listBoxTextureHeight = 42;
+
+		Span<const std::string> sourceItems = exeData.services.tavernRoomTypes;
+		for (int i = 0; i < sourceItems.getCount(); i++)
+		{
+			listBoxItems.emplace_back(sourceItems[i]);
+			listBoxItemCallbacks.emplace_back([&uiManager, i](MouseButtonType)
+			{
+				DebugLogFormat("List item %d.", i);
+				GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+			});
+		}
+
+		break;
+	}
+	case ConversationListBoxType::TempleCuring:
+		listBoxTextureName = ArenaTextureName::ContainerInventory;
+		listBoxPositionOffset = Int2(29, 24);
+		listBoxFontName = ArenaFontName::Arena;
+		listBoxTextureWidth = 155;
+		listBoxTextureHeight = 65;
+		break;
+	default:
+		DebugNotImplemented();
+		break;
+	}
+
+	const TextureAsset listBoxTextureAsset(listBoxTextureName);
+	const TextureAsset listBoxPaletteAsset = GameWorldUiView::getPaletteTextureAsset();
+	const UiTextureID listBoxTextureID = uiManager.getOrAddTexture(listBoxTextureAsset, listBoxPaletteAsset, textureManager, renderer);
+
+	UiElementInitInfo listBoxImageElementInitInfo;
+	listBoxImageElementInitInfo.name = "GameWorldConversationModalListBoxImage";
+	listBoxImageElementInitInfo.position = Int2(ArenaRenderUtils::SCREEN_WIDTH / 2, listBoxImageY);
+	listBoxImageElementInitInfo.pivotType = listBoxImagePivotType;
+	const UiElementInstanceID listBoxImageElementInstID = uiManager.createImage(listBoxImageElementInitInfo, listBoxTextureID, state.conversationModalContextInstID, renderer);
+	const Rect listBoxImageGlobalRect = uiManager.getTransformGlobalRect(listBoxImageElementInstID);
+
+	UiElementInitInfo listBoxElementInitInfo;
+	listBoxElementInitInfo.name = "GameWorldConversationModalListBox";
+	listBoxElementInitInfo.position = listBoxImageGlobalRect.getTopLeft() + listBoxPositionOffset;
+	listBoxElementInitInfo.pivotType = UiPivotType::TopLeft;
+	listBoxElementInitInfo.drawOrder = 1;
+
+	UiListBoxInitInfo listBoxInitInfo;
+	listBoxInitInfo.textureWidth = listBoxTextureWidth;
+	listBoxInitInfo.textureHeight = listBoxTextureHeight;
+	listBoxInitInfo.itemPixelSpacing = 0;
+	listBoxInitInfo.fontName = listBoxFontName;
+	listBoxInitInfo.defaultTextColor = Color(190, 113, 0);
+	const UiElementInstanceID listBoxElementInstID = uiManager.createListBox(listBoxElementInitInfo, listBoxInitInfo, state.conversationModalContextInstID, renderer);
+
+	for (int i = 0; i < static_cast<int>(listBoxItems.size()); i++)
+	{
+		UiListBoxItem listBoxItem;
+		listBoxItem.text = listBoxItems[i];
+		listBoxItem.callback = listBoxItemCallbacks[i];
+		uiManager.insertBackListBoxItem(listBoxElementInstID, std::move(listBoxItem));
+	}
+
+	UiElementInitInfo backButtonElementInitInfo;
+	backButtonElementInitInfo.name = "GameWorldConversationModalBackButton";
+	backButtonElementInitInfo.sizeType = UiTransformSizeType::Manual;
+	backButtonElementInitInfo.size = Int2(ArenaRenderUtils::SCREEN_WIDTH, ArenaRenderUtils::SCREEN_HEIGHT);
+
+	UiButtonInitInfo backButtonInitInfo;
+	backButtonInitInfo.mouseButtonFlags = MouseButtonTypeFlags(MouseButtonType::Right);
+	backButtonInitInfo.callback = GameWorldUI::onCloseConversationButtonSelected;
+	uiManager.createButton(backButtonElementInitInfo, backButtonInitInfo, state.conversationModalContextInstID);
+
+	auto backInputActionCallback = [](const InputActionCallbackValues &values)
+	{
+		if (values.performed)
+		{
+			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+		}
+	};
+
+	uiManager.addInputActionListener(InputActionName::Back, backInputActionCallback, ContextName_ConversationModal, inputManager);
+
+	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
 }
 
-void GameWorldUI::closeConversation()
+void GameWorldUI::onCloseConversationButtonSelected(MouseButtonType mouseButtonType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
@@ -1743,10 +1945,7 @@ void GameWorldUI::onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType)
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-
-	const std::string text = "TODO Where is... (list box)";
-
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
+	GameWorldUI::showConversationListBox(ConversationListBoxType::CitizenWhereIs);
 }
 
 void GameWorldUI::onNpcRumorsButtonSelected(MouseButtonType mouseButtonType)
@@ -1866,7 +2065,7 @@ void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonT
 		callback = [&game, &uiManager]()
 		{
 			uiManager.disableTopMostContext();
-			GameWorldUI::closeConversation();
+			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
 
 			GameState &gameState = game.gameState;
 			gameState.queueCityGuardEncounter(game);
@@ -2047,7 +2246,7 @@ void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mous
 		callback = [&game, &uiManager]()
 		{
 			uiManager.disableTopMostContext();
-			GameWorldUI::closeConversation();
+			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
 
 			GameState &gameState = game.gameState;
 			gameState.queueCityGuardEncounter(game);
@@ -2084,7 +2283,7 @@ void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType m
 		callback = [&game, &uiManager]()
 		{
 			uiManager.disableTopMostContext();
-			GameWorldUI::closeConversation();
+			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
 
 			GameState &gameState = game.gameState;
 			gameState.queueCityGuardEncounter(game);
@@ -2100,16 +2299,7 @@ void GameWorldUI::onNpcTavernBuyDrinksButtonSelected(MouseButtonType mouseButton
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-
-	const std::string text = "TODO buy drink (listbox)";
-
-	GameWorldPopUpClosedCallback callback = [&uiManager]()
-	{
-		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
-	};
-
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+	GameWorldUI::showConversationListBox(ConversationListBoxType::TavernDrinks);
 }
 
 void GameWorldUI::onNpcTavernGetARoomButtonSelected(MouseButtonType mouseButtonType)
@@ -2118,16 +2308,7 @@ void GameWorldUI::onNpcTavernGetARoomButtonSelected(MouseButtonType mouseButtonT
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-
-	const std::string text = "TODO rent room (listbox)";
-
-	GameWorldPopUpClosedCallback callback = [&uiManager]()
-	{
-		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
-	};
-
-	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+	GameWorldUI::showConversationListBox(ConversationListBoxType::TavernRooms);
 }
 
 void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseButtonType)
@@ -2699,7 +2880,7 @@ void GameWorldUI::onCampButtonSelected(MouseButtonType mouseButtonType)
 	const bool isPlayerSafeForResting = !entityChunkManager.anyEnemiesNearby(playerRestPosition);
 	const bool isPlayerAllowedToRest = (mapType != MapType::City) && player.groundState.onGround && !player.groundState.isSwimming;
 	const bool isPlayerAttemptingRestInTavern = (mapType == MapType::Interior) && (mapSubDef.interior.interiorType == ArenaInteriorType::Tavern);
-	
+
 	std::string text;
 	if (!isPlayerSafeForResting)
 	{

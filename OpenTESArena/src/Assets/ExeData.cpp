@@ -1027,6 +1027,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int tavernModalRumorsOffset = GetExeAddress(*section, "TavernModalRumors");
 	const int tavernModalExitOffset = GetExeAddress(*section, "TavernModalExit");
 	const int tavernDrinksOffset = GetExeAddress(*section, "TavernDrinks");
+	const int tavernRoomTypesOffset = GetExeAddress(*section, "TavernRoomTypes");
 	const int tavernRoomsAvailableOffset = GetExeAddress(*section, "TavernRoomsAvailable");
 	const int tavernSneakIntoRoomUnsuccessfulOffset = GetExeAddress(*section, "TavernSneakIntoRoomUnsuccessful");
 	const int tavernSneakIntoRoomSuccessfulOffset = GetExeAddress(*section, "TavernSneakIntoRoomSuccessful");
@@ -1057,6 +1058,8 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int citizenRumorsModalGeneralOffset = GetExeAddress(*section, "CitizenRumorsModalGeneral");
 	const int citizenRumorsModalWorkOffset = GetExeAddress(*section, "CitizenRumorsModalWork");
 	const int citizenRumorsModalWorkAskOutsideOffset = GetExeAddress(*section, "CitizenRumorsModalWorkAskOutside");
+	const int citizenWhereIsOptionsCityOffset = GetExeAddress(*section, "CitizenWhereIsOptionsCity");
+	const int citizenWhereIsOptionsWildernessOffset = GetExeAddress(*section, "CitizenWhereIsOptionsWilderness");
 
 	initInt8Array(this->tavernRoomHealModifiers, exeBytes, tavernRoomHealModifiersOffset);
 	this->palaceClosedAtNight = GetExeStringNullTerminated(exeBytes, palaceClosedAtNightOffset);
@@ -1092,6 +1095,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->tavernModalRumors = GetExeStringNullTerminated(exeBytes, tavernModalRumorsOffset);
 	this->tavernModalExit = GetExeStringNullTerminated(exeBytes, tavernModalExitOffset);
 	initStringArrayNullTerminated(this->tavernDrinks, exeBytes, tavernDrinksOffset);
+	initStringArrayNullTerminated(this->tavernRoomTypes, exeBytes, tavernRoomTypesOffset);
 	this->tavernRoomsAvailable = GetExeStringNullTerminated(exeBytes, tavernRoomsAvailableOffset);
 	this->tavernSneakIntoRoomUnsuccessful = GetExeStringNullTerminated(exeBytes, tavernSneakIntoRoomUnsuccessfulOffset);
 	this->tavernSneakIntoRoomSuccessful = GetExeStringNullTerminated(exeBytes, tavernSneakIntoRoomSuccessfulOffset);
@@ -1122,6 +1126,8 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->citizenRumorsModalGeneral = GetExeStringNullTerminated(exeBytes, citizenRumorsModalGeneralOffset);
 	this->citizenRumorsModalWork = GetExeStringNullTerminated(exeBytes, citizenRumorsModalWorkOffset);
 	this->citizenRumorsModalWorkAskOutside = GetExeStringNullTerminated(exeBytes, citizenRumorsModalWorkAskOutsideOffset);
+	initStringArrayNullTerminated(this->citizenWhereIsOptionsCity, exeBytes, citizenWhereIsOptionsCityOffset);
+	initStringArrayNullTerminated(this->citizenWhereIsOptionsWilderness, exeBytes, citizenWhereIsOptionsWildernessOffset);
 
 	return true;
 }

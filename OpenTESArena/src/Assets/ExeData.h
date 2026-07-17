@@ -565,6 +565,7 @@ struct ExeDataServices
 	std::string tavernModalRumors;
 	std::string tavernModalExit;
 	std::string tavernDrinks[21];
+	std::string tavernRoomTypes[5];
 	std::string tavernRoomsAvailable;
 	std::string tavernSneakIntoRoomUnsuccessful;
 	std::string tavernSneakIntoRoomSuccessful;
@@ -597,6 +598,8 @@ struct ExeDataServices
 	std::string citizenRumorsModalGeneral;
 	std::string citizenRumorsModalWork;
 	std::string citizenRumorsModalWorkAskOutside;
+	std::string citizenWhereIsOptionsCity[9];
+	std::string citizenWhereIsOptionsWilderness[9];
 
 	bool init(Span<const std::byte> exeBytes, const KeyValueFile &keyValueFile);
 };

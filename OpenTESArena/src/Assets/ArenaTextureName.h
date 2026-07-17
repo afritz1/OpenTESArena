@@ -57,6 +57,10 @@ namespace ArenaTextureName
 	const std::string PauseBackground = "OP.IMG";
 	const std::string PopUp = "POPUP.IMG";
 	const std::string PopUp2 = "POPUP2.IMG";
+	const std::string PopUp3 = "POPUP3.IMG";
+	const std::string PopUp4 = "POPUP4.IMG";
+	const std::string PopUp5 = "POPUP5.IMG";
+	const std::string PopUp7 = "POPUP7.IMG";
 	const std::string PopUp8 = "POPUP8.IMG";
 	const std::string PopUp11 = "POPUP11.IMG";
 	const std::string RaceSelect = "TAMRIEL.MNU";
