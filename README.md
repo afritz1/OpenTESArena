@@ -58,12 +58,6 @@ Player movement is nearly feature-complete - currently you can jump, climb out o
 1. [Get latest Windows build](https://github.com/afritz1/OpenTESArena/releases)
 1. Extract the `.zip`
 
-#### Copy game assets path (skip if Steam library is default `C:\Program Files (x86)\Steam\steamapps\common\`)
-1. In your Steam library, right-click *The Elder Scrolls: Arena* then select Manage -> Browse local files
-1. Open `ARENA` folder then highlight the current directory path and copy with Ctrl+C
-1. Back in the OpenTESArena release folder, open `options/options-default.txt` and paste the game directory after `ArenaPaths=`
-   - Example: `ArenaPaths=C:\Program Files (x86)\Steam\steamapps\common\The Elder Scrolls Arena\ARENA`
-
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.zip)
 1. Extract the `.zip`
@@ -82,6 +76,28 @@ Player movement is nearly feature-complete - currently you can jump, climb out o
 
 <details>
 <summary>Linux (Debian-based)</summary>
+
+<details>
+<summary>Steam install</summary>
+
+#### Download [*The Elder Scrolls: Arena* on Steam](https://store.steampowered.com/app/1812290/The_Elder_Scrolls_Arena/)
+
+#### Download packages
+```bash
+sudo apt-get install wget
+```
+
+#### Download OpenTESArena
+Replace `<version>` with the latest build number (`#.##.#`) and `<arch>` with an architecture (`x86-64`, `rpi4`) available on the [Releases](https://github.com/afritz1/OpenTESArena/releases) page.
+```bash
+wget https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-<version>/opentesarena-<version>-linux_<arch>.tar.gz
+tar xvzf opentesarena-<version>-linux_<arch>.tar.gz
+```
+
+</details>
+
+<details>
+<summary>Manual install</summary>
 
 #### Download packages
 ```bash
@@ -106,6 +122,8 @@ cd opentesarena-<version>-linux_<arch>/data
 unzip ../../Arena106Setup.zip
 rar x Arena106.exe
 ```
+
+</details>
 
 #### Music (optional)
 1. Download [eawpats](https://github.com/afritz1/OpenTESArena/releases/download/opentesarena-0.1.0/eawpats.tar.gz)
