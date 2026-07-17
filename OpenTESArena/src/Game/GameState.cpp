@@ -873,10 +873,18 @@ void GameState::queueCityGuardEncounter(Game &game)
 	this->guardSpawnState.spawnFunc = [this, &game]()
 	{
 		const Player &player = game.player;
+		const WorldDouble3 playerPosition = player.getEyePosition();
+		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		if (entityChunkManager.anyEnemiesNearby(playerPosition))
+		{
+			DebugLog("Not spawning guards because enemies are nearby.");
+			return;
+		}
+
 		ArenaRandom &arenaRandom = game.arenaRandom;
 		if (!ArenaEntityUtils::doGuardsAppearForViolence(player.level, arenaRandom))
 		{
-			DebugLog("Decided not to spawn guards.");
+			DebugLog("Not spawning guards because of random chance.");
 			return;
 		}
 
