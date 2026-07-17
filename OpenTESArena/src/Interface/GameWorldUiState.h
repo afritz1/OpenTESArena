@@ -41,6 +41,7 @@ enum class ConversationListBoxType
 	CitizenWhereIs,
 	EquipmentWeapons,
 	EquipmentArmor,
+	EquipmentSell,
 	EquipmentRepair,
 	MagesGuildPotions,
 	MagesGuildMagicItems,
