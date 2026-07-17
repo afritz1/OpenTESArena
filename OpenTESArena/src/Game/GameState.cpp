@@ -445,7 +445,7 @@ void GameState::clearLevelTransitionCalculation()
 
 MapType GameState::getActiveMapType() const
 {
-	return this->getActiveMapDef().getMapType();
+	return this->activeMapDef.getMapType();
 }
 
 bool GameState::isActiveMapValid() const
@@ -489,6 +489,12 @@ double GameState::getActiveCeilingScale() const
 bool GameState::isActiveMapNested() const
 {
 	return this->prevMapDef.isValid();
+}
+
+MapType GameState::getExteriorMapType() const
+{
+	DebugAssert(this->isActiveMapNested());
+	return this->prevMapDef.getMapType();
 }
 
 ArenaEnvironmentType GameState::getEnvironmentType() const

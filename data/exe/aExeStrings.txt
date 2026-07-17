@@ -329,6 +329,7 @@ CitizenRumorsModalTitle=0x43BD7
 CitizenRumorsModalGeneral=0x43BEE
 CitizenRumorsModalWork=0x43BFB
 CitizenRumorsModalWorkAskOutside=0x43C05
+CitizenRumorsModalWorkAskInTown=0x43B0C
 CitizenWhereIsOptionsCity=0x43C2F
 CitizenWhereIsOptionsWilderness=0x43C91
 

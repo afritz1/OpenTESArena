@@ -202,6 +202,7 @@ public:
 	const MapDefinition &getActiveMapDef() const;
 	double getActiveCeilingScale() const;
 	bool isActiveMapNested() const; // True if the active interior is inside an exterior.
+	MapType getExteriorMapType() const; // Only works if active map is nested.
 	ArenaEnvironmentType getEnvironmentType() const; // For enemy encounters.
 	ArenaBuildingType getBuildingType() const; // For enemy encounters.
 	const ProvinceDefinition &getProvinceDefinition() const;

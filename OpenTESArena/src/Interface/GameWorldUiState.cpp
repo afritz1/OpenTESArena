@@ -1745,8 +1745,8 @@ void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
 		listBoxFontName = ArenaFontName::Arena;
 		listBoxTextureWidth = 185;
 		listBoxTextureHeight = 82;
-		listBoxButtonUpPositionOffset = Int2();
-		listBoxButtonDownPositionOffset = Int2();
+		listBoxButtonUpPositionOffset = Int2(9, 7);
+		listBoxButtonDownPositionOffset = Int2(9, 102);
 
 		Span<const std::string> sourceItems;
 		if (mapType == MapType::City)
@@ -2210,7 +2210,45 @@ void GameWorldUI::onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType)
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-	GameWorldUI::showConversationListBox(ConversationListBoxType::CitizenWhereIs);
+
+	const GameState &gameState = game.gameState;
+	const MapType mapType = gameState.getActiveMapType();
+	if (mapType == MapType::Interior)
+	{
+		if (gameState.isActiveMapNested())
+		{
+			const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
+			std::string text;
+
+			const MapType exteriorMapType = gameState.getExteriorMapType();
+			if (exteriorMapType == MapType::City)
+			{
+				text = exeData.services.citizenRumorsModalWorkAskOutside;
+			}
+			else
+			{
+				text = exeData.services.citizenRumorsModalWorkAskInTown;
+			}
+
+			GameWorldPopUpClosedCallback callback = [&uiManager]()
+			{
+				uiManager.disableTopMostContext();
+				GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
+			};
+
+			GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
+		}
+		else
+		{
+			// Only in test interiors.
+			DebugLogWarning("No exterior map type available for Where is...");
+			GameWorldUI::onCloseConversationButtonSelected(MouseButtonType::Right);
+		}
+	}
+	else
+	{
+		GameWorldUI::showConversationListBox(ConversationListBoxType::CitizenWhereIs);
+	}
 }
 
 void GameWorldUI::onNpcRumorsButtonSelected(MouseButtonType mouseButtonType)

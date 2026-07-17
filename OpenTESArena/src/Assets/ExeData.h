@@ -598,6 +598,7 @@ struct ExeDataServices
 	std::string citizenRumorsModalGeneral;
 	std::string citizenRumorsModalWork;
 	std::string citizenRumorsModalWorkAskOutside;
+	std::string citizenRumorsModalWorkAskInTown;
 	std::string citizenWhereIsOptionsCity[9];
 	std::string citizenWhereIsOptionsWilderness[9];
 

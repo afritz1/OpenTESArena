@@ -1058,6 +1058,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	const int citizenRumorsModalGeneralOffset = GetExeAddress(*section, "CitizenRumorsModalGeneral");
 	const int citizenRumorsModalWorkOffset = GetExeAddress(*section, "CitizenRumorsModalWork");
 	const int citizenRumorsModalWorkAskOutsideOffset = GetExeAddress(*section, "CitizenRumorsModalWorkAskOutside");
+	const int citizenRumorsModalWorkAskInTownOffset = GetExeAddress(*section, "CitizenRumorsModalWorkAskInTown");
 	const int citizenWhereIsOptionsCityOffset = GetExeAddress(*section, "CitizenWhereIsOptionsCity");
 	const int citizenWhereIsOptionsWildernessOffset = GetExeAddress(*section, "CitizenWhereIsOptionsWilderness");
 
@@ -1126,6 +1127,7 @@ bool ExeDataServices::init(Span<const std::byte> exeBytes, const KeyValueFile &k
 	this->citizenRumorsModalGeneral = GetExeStringNullTerminated(exeBytes, citizenRumorsModalGeneralOffset);
 	this->citizenRumorsModalWork = GetExeStringNullTerminated(exeBytes, citizenRumorsModalWorkOffset);
 	this->citizenRumorsModalWorkAskOutside = GetExeStringNullTerminated(exeBytes, citizenRumorsModalWorkAskOutsideOffset);
+	this->citizenRumorsModalWorkAskInTown = GetExeStringNullTerminated(exeBytes, citizenRumorsModalWorkAskInTownOffset);
 	initStringArrayNullTerminated(this->citizenWhereIsOptionsCity, exeBytes, citizenWhereIsOptionsCityOffset);
 	initStringArrayNullTerminated(this->citizenWhereIsOptionsWilderness, exeBytes, citizenWhereIsOptionsWildernessOffset);
 
