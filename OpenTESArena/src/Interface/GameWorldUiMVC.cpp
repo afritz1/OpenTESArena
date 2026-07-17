@@ -1558,7 +1558,7 @@ void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance
 	const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
 	const std::string citizenNameStr(citizenName.name);
 	// @todo assign that citizen name to some CitizenConversationState
-	GameWorldUI::showConversationModal(ConversationMessageBoxType::Citizen);
+	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 }
 
 void GameWorldUiController::onCitizenKilled(Game &game)
@@ -1595,7 +1595,7 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 		GameWorldUI::showShopkeeperBackground(interiorDisplayName.c_str());
 
 		const ConversationMessageBoxType messageBoxType = GetShopkeeperConversationMessageBoxType(buildingType);
-		GameWorldUI::showConversationModal(messageBoxType);
+		GameWorldUI::showConversationMessageBox(messageBoxType);
 	}
 	else if (personalityType == StaticNpcPersonalityType::TavernPatron)
 	{
@@ -1635,7 +1635,7 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 	}
 	else
 	{
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Citizen);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 	}
 }
 

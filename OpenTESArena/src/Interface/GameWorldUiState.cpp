@@ -1428,7 +1428,7 @@ void GameWorldUI::showPlayerHurt()
 	state.playerHurtRemainingSeconds = 1.0 / ArenaRenderUtils::FRAMES_PER_SECOND;
 }
 
-void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxType)
+void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageBoxType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
 	Game &game = *state.game;
@@ -1697,7 +1697,16 @@ void GameWorldUI::showConversationModal(ConversationMessageBoxType messageBoxTyp
 
 	uiManager.setContextEnabled(state.conversationModalContextInstID, true);
 
-	GameWorldUI::onPauseChanged(true);
+	const bool isPaused = !game.shouldSimulateScene;
+	if (!isPaused)
+	{
+		GameWorldUI::onPauseChanged(true);
+	}
+}
+
+void GameWorldUI::showConversationListBox(ConversationListBoxType listBoxType)
+{
+	// @todo
 }
 
 void GameWorldUI::closeConversation()
@@ -1722,7 +1731,7 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Citizen);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1746,7 +1755,7 @@ void GameWorldUI::onNpcRumorsButtonSelected(MouseButtonType mouseButtonType)
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-	GameWorldUI::showConversationModal(ConversationMessageBoxType::CitizenRumors);
+	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::CitizenRumors);
 }
 
 void GameWorldUI::onNpcRumorsGeneralButtonSelected(MouseButtonType mouseButtonType)
@@ -1761,7 +1770,7 @@ void GameWorldUI::onNpcRumorsGeneralButtonSelected(MouseButtonType mouseButtonTy
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Citizen);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1779,7 +1788,7 @@ void GameWorldUI::onNpcRumorsWorkButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Citizen);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1791,7 +1800,7 @@ void GameWorldUI::onNpcEquipmentBuyButtonSelected(MouseButtonType mouseButtonTyp
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-	GameWorldUI::showConversationModal(ConversationMessageBoxType::EquipmentBuyItem);
+	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::EquipmentBuyItem);
 }
 
 void GameWorldUI::onNpcEquipmentSellButtonSelected(MouseButtonType mouseButtonType)
@@ -1806,7 +1815,7 @@ void GameWorldUI::onNpcEquipmentSellButtonSelected(MouseButtonType mouseButtonTy
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1824,7 +1833,7 @@ void GameWorldUI::onNpcEquipmentRepairButtonSelected(MouseButtonType mouseButton
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1848,7 +1857,7 @@ void GameWorldUI::onNpcEquipmentStealButtonSelected(MouseButtonType mouseButtonT
 		callback = [&uiManager]()
 		{
 			uiManager.disableTopMostContext();
-			GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
 		};
 	}
 	else
@@ -1879,7 +1888,7 @@ void GameWorldUI::onNpcEquipmentBuyWeaponsButtonSelected(MouseButtonType mouseBu
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1897,7 +1906,7 @@ void GameWorldUI::onNpcEquipmentBuyArmorButtonSelected(MouseButtonType mouseButt
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Equipment);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Equipment);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1909,7 +1918,7 @@ void GameWorldUI::onNpcMagesGuildBuyButtonSelected(MouseButtonType mouseButtonTy
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-	GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuildBuyItem);
+	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuildBuyItem);
 }
 
 void GameWorldUI::onNpcMagesGuildDetectMagicButtonSelected(MouseButtonType mouseButtonType)
@@ -1924,7 +1933,7 @@ void GameWorldUI::onNpcMagesGuildDetectMagicButtonSelected(MouseButtonType mouse
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1942,7 +1951,7 @@ void GameWorldUI::onNpcMagesGuildSpellmakerButtonSelected(MouseButtonType mouseB
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1954,7 +1963,7 @@ void GameWorldUI::onNpcMagesGuildStealButtonSelected(MouseButtonType mouseButton
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-	GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuildSteal);
+	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuildSteal);
 }
 
 void GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected(MouseButtonType mouseButtonType)
@@ -1969,7 +1978,7 @@ void GameWorldUI::onNpcMagesGuildBuyPotionsButtonSelected(MouseButtonType mouseB
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -1987,7 +1996,7 @@ void GameWorldUI::onNpcMagesGuildBuyMagicItemsButtonSelected(MouseButtonType mou
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2005,7 +2014,7 @@ void GameWorldUI::onNpcMagesGuildBuySpellsButtonSelected(MouseButtonType mouseBu
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2029,7 +2038,7 @@ void GameWorldUI::onNpcMagesGuildStealPotionsButtonSelected(MouseButtonType mous
 		callback = [&uiManager]()
 		{
 			uiManager.disableTopMostContext();
-			GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
 		};
 	}
 	else
@@ -2066,7 +2075,7 @@ void GameWorldUI::onNpcMagesGuildStealMagicItemsButtonSelected(MouseButtonType m
 		callback = [&uiManager]()
 		{
 			uiManager.disableTopMostContext();
-			GameWorldUI::showConversationModal(ConversationMessageBoxType::MagesGuild);
+			GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::MagesGuild);
 		};
 	}
 	else
@@ -2097,7 +2106,7 @@ void GameWorldUI::onNpcTavernBuyDrinksButtonSelected(MouseButtonType mouseButton
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2115,7 +2124,7 @@ void GameWorldUI::onNpcTavernGetARoomButtonSelected(MouseButtonType mouseButtonT
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2133,7 +2142,7 @@ void GameWorldUI::onNpcTavernSneakIntoARoomButtonSelected(MouseButtonType mouseB
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2145,7 +2154,7 @@ void GameWorldUI::onNpcTavernRumorsButtonSelected(MouseButtonType mouseButtonTyp
 	Game &game = *state.game;
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
-	GameWorldUI::showConversationModal(ConversationMessageBoxType::TavernRumors);
+	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::TavernRumors);
 }
 
 void GameWorldUI::onNpcTavernRumorsGeneralButtonSelected(MouseButtonType mouseButtonType)
@@ -2160,7 +2169,7 @@ void GameWorldUI::onNpcTavernRumorsGeneralButtonSelected(MouseButtonType mouseBu
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2178,7 +2187,7 @@ void GameWorldUI::onNpcTavernRumorsWorkButtonSelected(MouseButtonType mouseButto
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Tavern);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Tavern);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2196,7 +2205,7 @@ void GameWorldUI::onNpcTempleBlessButtonSelected(MouseButtonType mouseButtonType
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Temple);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Temple);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2214,7 +2223,7 @@ void GameWorldUI::onNpcTempleCureButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Temple);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Temple);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);
@@ -2234,7 +2243,7 @@ void GameWorldUI::onNpcTempleHealButtonSelected(MouseButtonType mouseButtonType)
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
 		uiManager.disableTopMostContext();
-		GameWorldUI::showConversationModal(ConversationMessageBoxType::Temple);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Temple);
 	};
 
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft, callback);

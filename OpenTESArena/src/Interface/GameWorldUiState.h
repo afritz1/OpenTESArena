@@ -132,7 +132,8 @@ namespace GameWorldUI
 	void showCampManualHoursModal();
 	void showPlayerHurt();
 
-	void showConversationModal(ConversationMessageBoxType messageBoxType);
+	void showConversationMessageBox(ConversationMessageBoxType messageBoxType);
+	void showConversationListBox(ConversationListBoxType listBoxType);
 	void closeConversation();
 	void onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType);
 	void onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType);
