@@ -19,6 +19,9 @@ namespace Platform
 	// Gets candidate Arena data folders found inside locally-installed Steam libraries, if any.
 	std::vector<std::string> getSteamArenaPaths();
 
+	// Gets candidate Arena data folders found via a local GOG install, if any.
+	std::vector<std::string> getGogArenaPaths();
+
 	// Gets the options folder path.
 	std::string getOptionsPath();
 
