@@ -629,7 +629,7 @@ namespace PlayerLogic
 				{
 					if (interactionType == GameWorldInteractionType::Default)
 					{
-						GameWorldUiController::onCitizenInteracted(game, entityInst);
+						GameWorldUiController::onCitizenInteracted(game, entityInstID);
 					}
 					else if (interactionType == GameWorldInteractionType::Thieving)
 					{
@@ -679,7 +679,7 @@ namespace PlayerLogic
 					if (interactionType == GameWorldInteractionType::Default)
 					{
 						const StaticNpcEntityDefinition &staticNpcDef = entityDef.staticNpc;
-						GameWorldUiController::onStaticNpcInteracted(game, staticNpcDef.personalityType);
+						GameWorldUiController::onStaticNpcInteracted(game, entityInstID, staticNpcDef.personalityType);
 					}
 					else
 					{

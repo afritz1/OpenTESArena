@@ -303,10 +303,10 @@ namespace GameWorldUiController
 	void onKeyPickedUp(Game &game, int keyID, const ExeData &exeData, const std::function<void()> &postStatusPopUpCallback);
 	void onDoorUnlockedWithKey(Game &game, int keyID, const std::string &soundFilename, const WorldDouble3 &soundPosition, const ExeData &exeData);
 
-	void onCitizenInteracted(Game &game, const EntityInstance &entityInst);
+	void onCitizenInteracted(Game &game, EntityInstanceID entityInstID);
 	void onCitizenKilled(Game &game);
 
-	void onStaticNpcInteracted(Game &game, StaticNpcPersonalityType personalityType);
+	void onStaticNpcInteracted(Game &game, EntityInstanceID entityInstID, StaticNpcPersonalityType personalityType);
 
 	void onShowPlayerDeathCinematic(Game &game);
 	void onHealthDepleted(Game &game);

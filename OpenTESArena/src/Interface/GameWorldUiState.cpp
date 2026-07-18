@@ -144,6 +144,7 @@ GameWorldUiState::GameWorldUiState()
 	this->actionTextRemainingSeconds = 0.0;
 	this->effectTextRemainingSeconds = 0.0;
 	this->playerHurtRemainingSeconds = 0.0;
+	this->conversationEntityInstID = -1;
 }
 
 void GameWorldUiState::init(Game &game)
@@ -504,6 +505,7 @@ void GameWorldUI::destroy()
 	state.maxSpellPoints = 0.0;
 	state.playerHurtRemainingSeconds = 0.0;
 	state.lootPopUpItemMappings.clear();
+	state.conversationEntityInstID = -1;
 
 	inputManager.setInputActionMapActive(InputActionMapName::GameWorld, false);
 
@@ -1431,6 +1433,13 @@ void GameWorldUI::showPlayerHurt()
 	state.playerHurtRemainingSeconds = 1.0 / ArenaRenderUtils::FRAMES_PER_SECOND;
 }
 
+void GameWorldUI::setConversationEntityInstanceID(EntityInstanceID entityInstID)
+{
+	GameWorldUiState &state = GameWorldUI::state;
+	DebugAssert(state.conversationEntityInstID < 0);
+	state.conversationEntityInstID = entityInstID;
+}
+
 void GameWorldUI::showConversationMessageBox(ConversationMessageBoxType messageBoxType)
 {
 	GameWorldUiState &state = GameWorldUI::state;
@@ -2180,6 +2189,7 @@ void GameWorldUI::onCloseConversationButtonSelected(MouseButtonType mouseButtonT
 	UiManager &uiManager = game.uiManager;
 	uiManager.setContextEnabled(state.conversationModalContextInstID, false);
 	uiManager.setContextEnabled(state.shopkeeperBgContextInstID, false);
+	state.conversationEntityInstID = -1;
 	GameWorldUI::onPauseChanged(false);
 }
 
@@ -2190,10 +2200,50 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-	const std::string text = "Who am I not implemented.";
 
-	// @todo store the EntityInstanceID in GameWorldUiState somewhere
-	//const EntityDefinition &entityDef
+	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+	const EntityInstance &entityInst = entityChunkManager.entities.get(state.conversationEntityInstID);
+	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+	const EntityDefinitionType entityDefType = entityDef.type;
+
+	std::string entityDisplayName;
+	if (entityDefType == EntityDefinitionType::Citizen)
+	{
+		const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
+		entityDisplayName = citizenName.name;
+	}
+	else if (entityDefType == EntityDefinitionType::StaticNPC)
+	{
+		const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
+
+		// @todo static NPC randomly generated names, store in EntityInstance?
+		constexpr std::pair<StaticNpcPersonalityType, const char*> personalityTypeNames[] =
+		{
+			{ StaticNpcPersonalityType::Shopkeeper, "Shopkeeper" },
+			{ StaticNpcPersonalityType::Beggar, "Beggar" },
+			{ StaticNpcPersonalityType::Firebreather, "Firebreather" },
+			{ StaticNpcPersonalityType::Prostitute, "Prostitute" },
+			{ StaticNpcPersonalityType::Jester, "Jester" },
+			{ StaticNpcPersonalityType::StreetVendor, "StreetVendor" },
+			{ StaticNpcPersonalityType::Musician, "Musician" },
+			{ StaticNpcPersonalityType::Priest, "Priest" },
+			{ StaticNpcPersonalityType::Thief, "Thief" },
+			{ StaticNpcPersonalityType::SnakeCharmer, "SnakeCharmer" },
+			{ StaticNpcPersonalityType::StreetVendorAlchemist, "StreetVendorAlchemist" },
+			{ StaticNpcPersonalityType::Wizard, "Wizard" },
+			{ StaticNpcPersonalityType::TavernPatron, "TavernPatron" }
+		};
+
+		const std::string tempName = personalityTypeNames[static_cast<int>(staticNpcEntityDef.personalityType)].second;
+		entityDisplayName = "TODO " + tempName;
+	}
+	else
+	{
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
+	}
+
+	std::string text = String::replace("TODO my name is %s.", "%s", entityDisplayName);
+	text = String::distributeNewlines(text, 60);
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
@@ -2218,9 +2268,9 @@ void GameWorldUI::onNpcWhereIsButtonSelected(MouseButtonType mouseButtonType)
 		if (gameState.isActiveMapNested())
 		{
 			const ExeData &exeData = BinaryAssetLibrary::getInstance().getExeData();
-			std::string text;
-
 			const MapType exteriorMapType = gameState.getExteriorMapType();
+
+			std::string text;
 			if (exteriorMapType == MapType::City)
 			{
 				text = exeData.services.citizenRumorsModalWorkAskOutside;

@@ -3,6 +3,7 @@
 #include <functional>
 #include <vector>
 
+#include "../Entities/EntityInstance.h"
 #include "../Items/ItemLibrary.h"
 #include "../Math/Rect.h"
 #include "../Rendering/RenderTextureUtils.h"
@@ -113,6 +114,8 @@ struct GameWorldUiState
 
 	std::string campManualHoursInputText; // Number of hours to manually rest.
 
+	EntityInstanceID conversationEntityInstID;
+
 	GameWorldUiState();
 
 	void init(Game &game);
@@ -138,6 +141,7 @@ namespace GameWorldUI
 	void showCampManualHoursModal();
 	void showPlayerHurt();
 
+	void setConversationEntityInstanceID(EntityInstanceID entityInstID);
 	void showConversationMessageBox(ConversationMessageBoxType messageBoxType);
 	void showConversationListBox(ConversationListBoxType listBoxType);
 	void onCloseConversationButtonSelected(MouseButtonType mouseButtonType);

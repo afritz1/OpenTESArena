@@ -1566,12 +1566,9 @@ void GameWorldUiController::onDoorUnlockedWithKey(Game &game, int keyID, const s
 	GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment, callback);
 }
 
-void GameWorldUiController::onCitizenInteracted(Game &game, const EntityInstance &entityInst)
+void GameWorldUiController::onCitizenInteracted(Game &game, EntityInstanceID entityInstID)
 {
-	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
-	const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
-	const std::string citizenNameStr(citizenName.name);
-	// @todo assign that citizen name to some CitizenConversationState
+	GameWorldUI::setConversationEntityInstanceID(entityInstID);
 	GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 }
 
@@ -1590,7 +1587,7 @@ void GameWorldUiController::onCitizenKilled(Game &game)
 	GameWorldUI::setActionText(text.c_str());
 }
 
-void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonalityType personalityType)
+void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID entityInstID, StaticNpcPersonalityType personalityType)
 {
 	const GameState &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
@@ -1606,6 +1603,7 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 
 	if (personalityType == StaticNpcPersonalityType::Shopkeeper)
 	{
+		GameWorldUI::setConversationEntityInstanceID(entityInstID);
 		GameWorldUI::showShopkeeperBackground(interiorDisplayName.c_str());
 
 		const ConversationMessageBoxType messageBoxType = GetShopkeeperConversationMessageBoxType(buildingType);
@@ -1649,6 +1647,7 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, StaticNpcPersonali
 	}
 	else
 	{
+		GameWorldUI::setConversationEntityInstanceID(entityInstID);
 		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
 	}
 }
