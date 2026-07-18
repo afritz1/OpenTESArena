@@ -152,7 +152,8 @@ namespace
 			validArenaPaths.emplace_back(std::move(path));
 		}
 
-		// Check for CD version first.
+		// In each directory, check for CD version then floppy disk version. The provided paths should be ordered so a
+		// user-specified install path in the options can override the default Steam install.
 		for (const std::string &path : validArenaPaths)
 		{
 			const std::filesystem::path fsPath(path);
@@ -164,37 +165,23 @@ namespace
 
 			const std::string &cdExeName = ExeData::CD_VERSION_EXE_FILENAME;
 			const std::filesystem::path cdExePath = fsPath / cdExeName;
-			if (!std::filesystem::exists(cdExePath, dummy) || !std::filesystem::is_regular_file(cdExePath, dummy))
+			if (std::filesystem::exists(cdExePath, dummy) && std::filesystem::is_regular_file(cdExePath, dummy))
 			{
-				continue;
-			}
-
-			DebugLog("CD version assets found in \"" + path + "\".");
-			*outDirectory = path;
-			*outIsFloppyDiskVersion = false;
-			return true;
-		}
-
-		for (const std::string &path : validArenaPaths)
-		{
-			const std::filesystem::path fsPath(path);
-			std::error_code dummy;
-			if (!std::filesystem::exists(fsPath, dummy) || !std::filesystem::is_directory(fsPath, dummy))
-			{
-				continue;
+				DebugLogFormat("CD version assets found in \"%s\".", path.c_str());
+				*outDirectory = path;
+				*outIsFloppyDiskVersion = false;
+				return true;
 			}
 
 			const std::string &floppyDiskExeName = ExeData::FLOPPY_VERSION_EXE_FILENAME;
 			const std::filesystem::path floppyDiskExePath = fsPath / floppyDiskExeName;
-			if (!std::filesystem::exists(floppyDiskExePath, dummy) || !std::filesystem::is_regular_file(floppyDiskExePath, dummy))
+			if (std::filesystem::exists(floppyDiskExePath, dummy) && std::filesystem::is_regular_file(floppyDiskExePath, dummy))
 			{
-				continue;
+				DebugLogFormat("Floppy disk version assets found in \"%s\".", path.c_str());
+				*outDirectory = path;
+				*outIsFloppyDiskVersion = true;
+				return true;
 			}
-
-			DebugLog("Floppy disk version assets found in \"" + path + "\".");
-			*outDirectory = path;
-			*outIsFloppyDiskVersion = true;
-			return true;
 		}
 
 		// No valid Arena .exe found.
