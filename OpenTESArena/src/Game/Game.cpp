@@ -258,10 +258,12 @@ bool Game::init()
 	const std::string &arenaPathsString = this->options.getMisc_ArenaPaths();
 	const Buffer<std::string> arenaPathsFromOptions = String::split(arenaPathsString, ',');
 	const std::vector<std::string> arenaPathsFromSteam = Platform::getSteamArenaPaths();
+	const std::vector<std::string> arenaPathsFromGog = Platform::getGogArenaPaths();
 
 	std::vector<std::string> allArenaPaths;
 	allArenaPaths.insert(allArenaPaths.end(), arenaPathsFromOptions.begin(), arenaPathsFromOptions.end());
 	allArenaPaths.insert(allArenaPaths.end(), arenaPathsFromSteam.begin(), arenaPathsFromSteam.end());
+	allArenaPaths.insert(allArenaPaths.end(), arenaPathsFromGog.begin(), arenaPathsFromGog.end());
 
 	std::string arenaPath;
 	bool isFloppyDiskVersion;

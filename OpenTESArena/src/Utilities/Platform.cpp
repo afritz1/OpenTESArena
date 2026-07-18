@@ -25,6 +25,10 @@ namespace Platform
 	// Steam library's "steamapps" folder.
 	const std::string SteamArenaAppID = "1812290";
 
+	// GOG's product ID for The Elder Scrolls: Arena, used to find its install path in the
+	// Windows registry.
+	const std::string GogArenaProductID = "1435828982";
+
 	// Gets the user's home environment variable ($HOME). Does not have a trailing slash.
 	std::string getHomeEnv()
 	{
@@ -231,6 +235,43 @@ std::vector<std::string> Platform::getSteamArenaPaths()
 			}
 		}
 	}
+
+	return arenaPaths;
+}
+
+std::vector<std::string> Platform::getGogArenaPaths()
+{
+	std::vector<std::string> arenaPaths;
+
+#ifdef _WIN32
+	// GOG Arena is Windows-only and always writes its game install
+	// path under WOW6432Node (even on win64). It is checked explicitly by name
+	// first since Windows exempts direct access to it from the usual 32-bit/64-bit registry
+	// redirection, which should keep this working independently of a 32 or 64-bit build. 
+	// The non-redirected path is kept as a fallback in case that ever changes.
+	const std::string candidateSubKeys[] =
+	{
+		"SOFTWARE\\WOW6432Node\\GOG.com\\Games\\" + Platform::GogArenaProductID,
+		"SOFTWARE\\GOG.com\\Games\\" + Platform::GogArenaProductID
+	};
+
+	for (const std::string &subKey : candidateSubKeys)
+	{
+		char installPathBuffer[MAX_PATH];
+		DWORD installPathSize = sizeof(installPathBuffer);
+		const LSTATUS status = RegGetValueA(HKEY_LOCAL_MACHINE, subKey.c_str(), "path",
+			RRF_RT_REG_SZ, nullptr, installPathBuffer, &installPathSize);
+		if (status == ERROR_SUCCESS)
+		{
+			const std::string installPath = String::replace(std::string(installPathBuffer), '\\', '/');
+
+			// Unlike the Steam release, the GOG release keeps Arena's data directly in the
+			// install root (no "ARENA" subfolder).
+			arenaPaths.emplace_back(installPath);
+			break;
+		}
+	}
+#endif
 
 	return arenaPaths;
 }
