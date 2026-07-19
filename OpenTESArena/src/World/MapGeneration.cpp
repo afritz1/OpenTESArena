@@ -207,7 +207,8 @@ namespace MapGeneration
 		const std::optional<ArenaInteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
 		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, EntityDefinition *outDef)
+		TextureManager &textureManager, const std::optional<LevelVoxelTransitionDefID> &transitionDefID,
+		EntityDefinition *outDef)
 	{
 		const INFFlat &flatData = inf.getFlat(flatIndex);
 		const bool isDynamicEntity = ArenaAnimUtils::isDynamicEntity(flatIndex, inf);
@@ -258,7 +259,11 @@ namespace MapGeneration
 
 		DebugAssert(!String::isNullOrEmpty(entityAnimDef.initialStateName));
 
-		if (isCreature)
+		if (transitionDefID.has_value())
+		{
+			outDef->initTransition(*transitionDefID, std::move(entityAnimDef));
+		}
+		else if (isCreature)
 		{
 			const ArenaItemIndex itemIndex = *optItemIndex;
 			const int creatureID = isCreatureFinalBoss ? ArenaEntityUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
@@ -1343,7 +1348,7 @@ namespace MapGeneration
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, mapType,
 							interiorType, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
-							binaryAssetLibrary, textureManager, &entityDef))
+							binaryAssetLibrary, textureManager, std::nullopt, &entityDef))
 						{
 							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
 								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
@@ -1560,10 +1565,45 @@ namespace MapGeneration
 					else
 					{
 						const ArenaFlatIndex flatIndex = map1Voxel & 0x00FF;
+						const WorldInt3 levelPosition(levelX, levelY, levelZ);
+						const WorldInt2 levelPositionXZ(levelX, levelZ);
+						std::optional<LevelVoxelTransitionDefID> entityTransitionDefID;
+						const std::optional<MapGenerationTransitionInfo> transitionDefGenInfo =
+							MapGeneration::tryMakeEntityTransitionGenInfo(flatIndex, mapType);
+						if (transitionDefGenInfo.has_value())
+						{
+							// Wild dens have *ITEM 15 in their .INF entry, which normally makes a static shopkeeper. 
+							// Their flat index is the authoritative wilderness transition marker so we cerate the dungeon transition first.
+							const auto iter = std::find_if(transitionCache->begin(), transitionCache->end(),
+								[map1Voxel, levelPositionXZ](const std::pair<TransitionMappingKey, LevelVoxelTransitionDefID> &pair)
+							{
+									const TransitionMappingKey &key = pair.first;
+									return (key.voxelID == map1Voxel) && (key.levelXZ == levelPositionXZ);
+								});
+
+							if (iter != transitionCache->end())
+							{
+								entityTransitionDefID = iter->second;
+							}
+							else
+							{
+								TransitionDefinition transitionDef = MapGeneration::makeTransitionDef(
+									*transitionDefGenInfo, levelPosition, transitionDefGenInfo->menuID, rulerSeed,
+									rulerIsMale, palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon,
+									mapType, binaryAssetLibrary.getExeData());
+								entityTransitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
+
+								TransitionMappingKey transitionMappingKey;
+								transitionMappingKey.voxelID = map1Voxel;
+								transitionMappingKey.levelXZ = levelPositionXZ;
+								transitionCache->emplace_back(transitionMappingKey, *entityTransitionDefID);
+							}
+						}
+
 						EntityDefinition entityDef;
 						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, mapType,
 							interiorType, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
-							binaryAssetLibrary, textureManager, &entityDef))
+							binaryAssetLibrary, textureManager, entityTransitionDefID, &entityDef))
 						{
 							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
 								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
