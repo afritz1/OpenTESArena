@@ -645,8 +645,13 @@ bool ArenaAnimUtils::isHumanEnemyIndex(ArenaItemIndex itemIndex)
 	return itemIndex >= 55 && itemIndex <= 72;
 }
 
-bool ArenaAnimUtils::isNpcShopkeeper(ArenaItemIndex itemIndex)
+bool ArenaAnimUtils::isNpcShopkeeper(ArenaItemIndex itemIndex, MapType mapType)
 {
+	if (mapType == MapType::Wilderness)
+	{
+		return false; // Avoid wilderness den.
+	}
+
 	return itemIndex == 15;
 }
 
@@ -712,9 +717,14 @@ bool ArenaAnimUtils::isNpcTavernPatron(ArenaItemIndex itemIndex)
 	return isTavernPatronMan || isTavernPatronWoman;
 }
 
-std::optional<StaticNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex)
+bool ArenaAnimUtils::isWildernessDen(ArenaItemIndex itemIndex, MapType mapType)
 {
-	if (ArenaAnimUtils::isNpcShopkeeper(itemIndex))
+	return (itemIndex == 15) && (mapType == MapType::Wilderness);
+}
+
+std::optional<StaticNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex, MapType mapType)
+{
+	if (ArenaAnimUtils::isNpcShopkeeper(itemIndex, mapType))
 	{
 		return StaticNpcPersonalityType::Shopkeeper;
 	}

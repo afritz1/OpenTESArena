@@ -223,16 +223,18 @@ namespace MapGeneration
 		bool isUnlockedHolderContainer = false;
 		bool isKey = false;
 		bool isQuestItem = false;
+		bool isTransition = false;
 		if (optItemIndex.has_value())
 		{
 			isCreature = ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isCreatureFinalBoss);
 			isHumanEnemy = ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
-			staticNpcPersonalityType = ArenaAnimUtils::tryGetStaticNpcPersonalityType(*optItemIndex);
+			staticNpcPersonalityType = ArenaAnimUtils::tryGetStaticNpcPersonalityType(*optItemIndex, mapType);
 			isPileContainer = ArenaAnimUtils::isTreasurePileContainerIndex(*optItemIndex);
 			isLockedHolderContainer = ArenaAnimUtils::isLockedHolderContainerIndex(*optItemIndex);
 			isUnlockedHolderContainer = ArenaAnimUtils::isUnlockedHolderContainerIndex(*optItemIndex);
 			isKey = *optItemIndex == ArenaAnimUtils::KeyItemIndex;
 			isQuestItem = *optItemIndex == ArenaAnimUtils::QuestItemIndex;
+			isTransition = ArenaAnimUtils::isWildernessDen(*optItemIndex, mapType);
 		}
 
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
@@ -259,11 +261,7 @@ namespace MapGeneration
 
 		DebugAssert(!String::isNullOrEmpty(entityAnimDef.initialStateName));
 
-		if (transitionDefID.has_value())
-		{
-			outDef->initTransition(*transitionDefID, std::move(entityAnimDef));
-		}
-		else if (isCreature)
+		if (isCreature)
 		{
 			const ArenaItemIndex itemIndex = *optItemIndex;
 			const int creatureID = isCreatureFinalBoss ? ArenaEntityUtils::FinalBossCreatureID : ArenaAnimUtils::getCreatureIDFromItemIndex(itemIndex);
@@ -309,6 +307,11 @@ namespace MapGeneration
 		else if (isQuestItem)
 		{
 			outDef->initItemQuestItem(flatData.yOffset, std::move(entityAnimDef));
+		}
+		else if (isTransition)
+		{
+			DebugAssert(transitionDefID.has_value());
+			outDef->initTransition(*transitionDefID, std::move(entityAnimDef));
 		}
 		else
 		{
