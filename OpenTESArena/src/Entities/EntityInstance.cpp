@@ -63,7 +63,7 @@ void EntityInstance::clear()
 	this->animInstID = -1;
 	this->behaviorStateID = -1;
 	this->combatStateID = -1;
-	this->citizenNameID = -1;
+	this->npcNameID = -1;
 	this->paletteIndicesInstID = -1;
 	this->itemInventoryInstID = -1;
 	this->lockStateID = -1;

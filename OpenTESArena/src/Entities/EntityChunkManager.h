@@ -34,12 +34,12 @@ struct MapSubDefinition;
 struct Player;
 struct VoxelChunk;
 
-struct EntityCitizenName
+struct EntityNpcName
 {
 	char name[64];
 
-	EntityCitizenName(const char *name);
-	EntityCitizenName();
+	EntityNpcName(const char *name);
+	EntityNpcName();
 };
 
 struct EntityInitInfo
@@ -51,7 +51,7 @@ struct EntityInitInfo
 	bool canBeKilled;
 	std::optional<Double2> direction;
 	std::optional<int8_t> citizenDirectionIndex;
-	std::optional<EntityCitizenName> citizenName;
+	std::optional<EntityNpcName> npcName;
 	std::optional<uint16_t> citizenColorSeed;
 	std::optional<int> raceID;
 	int humanEnemyLevel;
@@ -171,7 +171,7 @@ public:
 	using EntityAnimationInstancePool = KeyValuePool<EntityAnimationInstanceID, EntityAnimationInstance>;
 	using EntityBehaviorStatePool = KeyValuePool<EntityBehaviorStateID, EntityBehaviorState>;
 	using EntityCombatStatePool = KeyValuePool<EntityCombatStateID, EntityCombatState>;
-	using EntityCitizenNamePool = KeyValuePool<EntityCitizenNameID, EntityCitizenName>;
+	using EntityNpcNamePool = KeyValuePool<EntityNpcNameID, EntityNpcName>;
 	using EntityPaletteIndicesInstancePool = KeyValuePool<EntityPaletteIndicesInstanceID, PaletteIndices>;
 	using EntityItemInventoryInstancePool = KeyValuePool<EntityItemInventoryInstanceID, ItemInventory>;
 	using EntityLockStatePool = KeyValuePool<EntityLockStateID, EntityLockState>;
@@ -184,7 +184,7 @@ public:
 	EntityAnimationInstancePool animInsts;
 	EntityBehaviorStatePool behaviorStates;
 	EntityCombatStatePool combatStates;
-	EntityCitizenNamePool citizenNames;
+	EntityNpcNamePool npcNames;
 	EntityPaletteIndicesInstancePool paletteIndices;
 	EntityItemInventoryInstancePool itemInventories;
 	EntityLockStatePool lockStates;

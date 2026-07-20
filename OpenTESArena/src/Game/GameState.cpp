@@ -1609,7 +1609,7 @@ void GameState::tickEntitiesPrePhysicsStep(double dt, Game &game)
 	}
 
 	EntityGenInfo entityGenInfo;
-	entityGenInfo.init(player.level, ArenaClockUtils::nightLightsAreActive(this->clock), lootCityType, lootInteriorType, levelIndex);
+	entityGenInfo.init(player.level, ArenaClockUtils::nightLightsAreActive(this->clock), lootCityType, lootInteriorType, levelIndex, this->provinceIndex);
 
 	const double ceilingScale = this->getActiveCeilingScale();
 

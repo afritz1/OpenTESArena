@@ -146,6 +146,31 @@ namespace
 		return MeshUtils::getScaledVertexY(shapeYPos, voxelShapeDef.scaleType, ceilingScale);
 	}
 
+	// For NPC name generation.
+	bool GetStaticNpcPersonalityIsMale(ArenaNpcPersonalityType personalityType)
+	{
+		DebugAssert(personalityType != ArenaNpcPersonalityType::Citizen);
+
+		switch (personalityType)
+		{
+		case ArenaNpcPersonalityType::Prostitute:
+		case ArenaNpcPersonalityType::Prostitute2:
+			return false;
+		case ArenaNpcPersonalityType::Jester:
+		case ArenaNpcPersonalityType::Firebreather:
+		case ArenaNpcPersonalityType::SnakeCharmer:
+		case ArenaNpcPersonalityType::Beggar:
+		case ArenaNpcPersonalityType::StreetVendor:
+		case ArenaNpcPersonalityType::StreetVendor2:
+		case ArenaNpcPersonalityType::Thief:
+		case ArenaNpcPersonalityType::Wizard:
+		case ArenaNpcPersonalityType::Priest:
+		case ArenaNpcPersonalityType::Musician:
+		default:
+			return true;
+		}
+	}
+
 	double GetEnemyNextWeaponSwingSeconds(Random &random)
 	{
 		// Arbitrary timing, tbd difficulty settings
@@ -153,12 +178,12 @@ namespace
 	}
 }
 
-EntityCitizenName::EntityCitizenName(const char *name)
+EntityNpcName::EntityNpcName(const char *name)
 {
 	std::snprintf(this->name, std::size(this->name), "%s", name);
 }
 
-EntityCitizenName::EntityCitizenName()
+EntityNpcName::EntityNpcName()
 {
 	std::fill(std::begin(this->name), std::end(this->name), '\0');
 }
@@ -468,16 +493,16 @@ void EntityChunkManager::initializeEntity(EntityInstance &entityInst, EntityInst
 		}
 	}
 
-	if (initInfo.citizenName.has_value())
+	if (initInfo.npcName.has_value())
 	{
-		entityInst.citizenNameID = this->citizenNames.alloc();
-		if (entityInst.citizenNameID < 0)
+		entityInst.npcNameID = this->npcNames.alloc();
+		if (entityInst.npcNameID < 0)
 		{
-			DebugLogError("Couldn't allocate EntityCitizenNameID.");
+			DebugLogError("Couldn't allocate EntityNpcNameID.");
 		}
 
-		const EntityCitizenName &citizenName = *initInfo.citizenName;
-		this->citizenNames.get(entityInst.citizenNameID) = citizenName;
+		const EntityNpcName &npcName = *initInfo.npcName;
+		this->npcNames.get(entityInst.npcNameID) = npcName;
 	}
 
 	if (initInfo.citizenColorSeed.has_value())
@@ -1010,6 +1035,21 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				}
 			}
 
+			if (entityDefType == EntityDefinitionType::StaticNPC)
+			{
+				const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
+				if (staticNpcEntityDef.type == StaticNpcEntityDefinitionType::General)
+				{
+					const StaticNpcGeneralEntityDefinition &staticNpcGeneralEntityDef = staticNpcEntityDef.general;
+
+					const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+					const bool raceID = entityGenInfo.provinceID;
+					const bool isMale = GetStaticNpcPersonalityIsMale(staticNpcGeneralEntityDef.type);
+					const std::string npcNameStr = textAssetLibrary.generateNpcName(raceID, isMale, arenaRandom);
+					initInfo.npcName = EntityNpcName(npcNameStr.c_str());
+				}
+			}
+
 			initInfo.hasInventory = (entityDefType == EntityDefinitionType::Enemy) || (entityDefType == EntityDefinitionType::Container);
 
 			if (entityDefType == EntityDefinitionType::Container)
@@ -1101,8 +1141,8 @@ void EntityChunkManager::populateChunkEntities(EntityChunk &entityChunk, const V
 				citizenInitInfo.isSensorCollider = true;
 				citizenInitInfo.citizenDirectionIndex = CitizenUtils::getRandomCitizenDirectionIndex(random);
 
-				const std::string citizenNameStr = textAssetLibrary.generateNpcName(citizenRaceID, isMale, arenaRandom);
-				citizenInitInfo.citizenName = EntityCitizenName(citizenNameStr.c_str());
+				const std::string npcNameStr = textAssetLibrary.generateNpcName(citizenRaceID, isMale, arenaRandom);
+				citizenInitInfo.npcName = EntityNpcName(npcNameStr.c_str());
 
 				citizenInitInfo.direction = CitizenUtils::getCitizenDirectionByIndex(*citizenInitInfo.citizenDirectionIndex);
 				citizenInitInfo.citizenColorSeed = static_cast<uint16_t>(random.next() % std::numeric_limits<uint16_t>::max());
@@ -2449,9 +2489,9 @@ void EntityChunkManager::endFrame(JPH::PhysicsSystem &physicsSystem, Renderer &r
 			this->combatStates.free(entityInst.combatStateID);
 		}
 
-		if (entityInst.citizenNameID >= 0)
+		if (entityInst.npcNameID >= 0)
 		{
-			this->citizenNames.free(entityInst.citizenNameID);
+			this->npcNames.free(entityInst.npcNameID);
 		}
 
 		if (entityInst.paletteIndicesInstID >= 0)

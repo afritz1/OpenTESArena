@@ -12,7 +12,7 @@ using EntityDirectionID = int;
 using EntityAnimationInstanceID = int;
 using EntityBehaviorStateID = int;
 using EntityCombatStateID = int;
-using EntityCitizenNameID = int;
+using EntityNpcNameID = int;
 using EntityPaletteIndicesInstanceID = int;
 using EntityItemInventoryInstanceID = int;
 using EntityLockStateID = int;
@@ -27,7 +27,7 @@ struct EntityInstance
 	EntityAnimationInstanceID animInstID;
 	EntityBehaviorStateID behaviorStateID;
 	EntityCombatStateID combatStateID;
-	EntityCitizenNameID citizenNameID;
+	EntityNpcNameID npcNameID;
 	EntityPaletteIndicesInstanceID paletteIndicesInstID;
 	EntityItemInventoryInstanceID itemInventoryInstID;
 	EntityLockStateID lockStateID;

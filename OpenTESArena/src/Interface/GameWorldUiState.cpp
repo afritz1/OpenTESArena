@@ -2206,13 +2206,9 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 	const EntityDefinitionType entityDefType = entityDef.type;
 
 	ArenaNpcPersonalityType personalityType;
-	std::string entityDisplayName;
 	if (entityDefType == EntityDefinitionType::Citizen)
 	{
 		personalityType = ArenaNpcPersonalityType::Citizen;
-
-		const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
-		entityDisplayName = citizenName.name;
 	}
 	else if (entityDefType == EntityDefinitionType::StaticNPC)
 	{
@@ -2220,31 +2216,14 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 		DebugAssert(staticNpcEntityDef.type == StaticNpcEntityDefinitionType::General);
 		const StaticNpcGeneralEntityDefinition &staticNpcGeneralEntityDef = staticNpcEntityDef.general;
 		personalityType = staticNpcGeneralEntityDef.type;
-
-		// @todo expand EntityCitizenName to static NPCs so they can use it here
-		constexpr std::pair<ArenaNpcPersonalityType, const char*> personalityTypeNames[] =
-		{
-			{ ArenaNpcPersonalityType::Citizen, "Citizen" },
-			{ ArenaNpcPersonalityType::Prostitute, "Prostitute" },
-			{ ArenaNpcPersonalityType::Prostitute2, "Prostitute2" },
-			{ ArenaNpcPersonalityType::Jester, "Jester" },
-			{ ArenaNpcPersonalityType::Firebreather, "Firebreather" },
-			{ ArenaNpcPersonalityType::SnakeCharmer, "SnakeCharmer" },
-			{ ArenaNpcPersonalityType::Beggar, "Beggar" },
-			{ ArenaNpcPersonalityType::StreetVendor, "StreetVendor" },
-			{ ArenaNpcPersonalityType::StreetVendor2, "StreetVendor2" },
-			{ ArenaNpcPersonalityType::Thief, "Thief" },
-			{ ArenaNpcPersonalityType::Wizard, "Wizard" },
-			{ ArenaNpcPersonalityType::Priest, "Priest" },
-			{ ArenaNpcPersonalityType::Musician, "Musician" }
-		};
-
-		entityDisplayName = personalityTypeNames[static_cast<int>(personalityType)].second;
 	}
 	else
 	{
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(entityDefType)));
 	}
+
+	const EntityNpcName &npcName = entityChunkManager.npcNames.get(entityInst.npcNameID);
+	const std::string &entityDisplayName = npcName.name;
 
 	std::string text = String::replace("TODO my name is %s.", "%s", entityDisplayName);
 	text = String::distributeNewlines(text, 60);
