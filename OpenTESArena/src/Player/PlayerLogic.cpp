@@ -799,6 +799,41 @@ namespace PlayerLogic
 
 				break;
 			}
+			case EntityDefinitionType::Transition:
+			{
+				// Wilderness dens are sprites, but entering one follows the same map transition path as a wall entrance. 
+				// Synthesize its approached voxel face for the return point.
+				if (passesNpcDistanceTest && canPlayerMoveAndTurn)
+				{
+					if (interactionType == GameWorldInteractionType::Default)
+					{
+						const TransitionEntityDefinition &transitionEntityDef = entityDef.transition;
+						const MapDefinition &mapDef = gameState.getActiveMapDef();
+						const LevelInfoDefinition &levelInfoDef = mapDef.getLevelInfoForLevel(gameState.getActiveLevelIndex());
+						const TransitionDefinition &transitionDef = levelInfoDef.getTransitionDef(transitionEntityDef.transitionDefID);
+
+						const WorldDouble3 playerPosition = player.getFeetPosition();
+						const Double2 entityToPlayerPositionXZ = (playerPosition - entityPosition).getXZ();
+						const double deltaX = entityToPlayerPositionXZ.x;
+						const double deltaZ = entityToPlayerPositionXZ.y;
+						const VoxelFacing3D facing = (std::abs(deltaX) >= std::abs(deltaZ)) ?
+							((deltaX >= 0.0) ? VoxelFacing3D::PositiveX : VoxelFacing3D::NegativeX) :
+							((deltaZ >= 0.0) ? VoxelFacing3D::PositiveZ : VoxelFacing3D::NegativeZ);
+						const CoordInt3 entityVoxelCoord(entityChunkPos, entityVoxel);
+
+						RayCastHit transitionHit;
+						transitionHit.initVoxel(hit.t, hit.worldPoint, entityVoxelCoord, facing);
+
+						MapLogic::handleMapTransition(game, transitionHit, transitionDef);
+					}
+					else
+					{
+						GameWorldUI::setInteractionType(GameWorldInteractionType::Default);
+					}
+				}
+
+				break;
+			}
 			default:
 				break;
 			}

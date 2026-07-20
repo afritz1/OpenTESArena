@@ -89,8 +89,8 @@ namespace ArenaAnimUtils
 	// *ITEM 55 to 72 are human enemies (guard, wizard, etc.).
 	bool isHumanEnemyIndex(ArenaItemIndex itemIndex);
 
-	// Blacksmith/bartender/wizard/priest in their respective interior.
-	bool isNpcShopkeeper(ArenaItemIndex itemIndex);
+	// Blacksmith/bartender/wizard/priest in their respective interior. Shares item index with wilderness den.
+	bool isNpcShopkeeper(ArenaItemIndex itemIndex, MapType mapType);
 
 	bool isNpcBeggar(ArenaItemIndex itemIndex);
 	bool isNpcFirebreather(ArenaItemIndex itemIndex);
@@ -105,7 +105,9 @@ namespace ArenaAnimUtils
 	bool isNpcWizard(ArenaItemIndex itemIndex);
 	bool isNpcTavernPatron(ArenaItemIndex itemIndex);
 
-	std::optional<StaticNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex);
+	bool isWildernessDen(ArenaItemIndex itemIndex, MapType mapType);
+
+	std::optional<StaticNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex, MapType mapType);
 
 	constexpr ArenaItemIndex LockedChestItemIndex = 7;
 	constexpr ArenaItemIndex UnlockedChestItemIndex = 8;
