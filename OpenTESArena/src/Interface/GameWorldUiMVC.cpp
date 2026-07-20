@@ -129,20 +129,20 @@ namespace
 		return text;
 	}
 
-	ConversationMessageBoxType GetShopkeeperConversationMessageBoxType(ArenaBuildingType buildingType)
+	ConversationMessageBoxType GetShopkeeperConversationMessageBoxType(ArenaShopkeeperType shopkeeperType)
 	{
-		switch (buildingType)
+		switch (shopkeeperType)
 		{
-		case ArenaBuildingType::Tavern:
-			return ConversationMessageBoxType::Tavern;
-		case ArenaBuildingType::Temple:
-			return ConversationMessageBoxType::Temple;
-		case ArenaBuildingType::Equipment:
+		case ArenaShopkeeperType::Equipment:
 			return ConversationMessageBoxType::Equipment;
-		case ArenaBuildingType::MagesGuild:
+		case ArenaShopkeeperType::MagesGuild:
 			return ConversationMessageBoxType::MagesGuild;
+		case ArenaShopkeeperType::Tavern:
+			return ConversationMessageBoxType::Tavern;
+		case ArenaShopkeeperType::Temple:
+			return ConversationMessageBoxType::Temple;
 		default:
-			DebugUnhandledReturnMsg(ConversationMessageBoxType, std::to_string(static_cast<int>(buildingType)));
+			DebugUnhandledReturnMsg(ConversationMessageBoxType, std::to_string(static_cast<int>(shopkeeperType)));
 		}
 	}
 }
@@ -1587,29 +1587,37 @@ void GameWorldUiController::onCitizenKilled(Game &game)
 	GameWorldUI::setActionText(text.c_str());
 }
 
-void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID entityInstID, StaticNpcPersonalityType personalityType)
+void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID entityInstID, StaticNpcEntityDefinitionType staticNpcEntityDefType)
 {
 	const GameState &gameState = game.gameState;
 	const MapDefinition &mapDef = gameState.getActiveMapDef();
 
 	std::string interiorDisplayName;
-	ArenaBuildingType buildingType = ArenaBuildingType::None;
 	if (mapDef.getMapType() == MapType::Interior)
 	{
 		const MapDefinitionInterior &mapDefInterior = mapDef.getSubDefinition().interior;
 		interiorDisplayName = mapDefInterior.displayName;
-		buildingType = ArenaTypes::interiorTypeToBuildingType(mapDefInterior.interiorType);
 	}
 
-	if (personalityType == StaticNpcPersonalityType::Shopkeeper)
+	if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::General)
+	{
+		GameWorldUI::setConversationEntityInstanceID(entityInstID);
+		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
+	}
+	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Shopkeeper)
 	{
 		GameWorldUI::setConversationEntityInstanceID(entityInstID);
 		GameWorldUI::showShopkeeperBackground(interiorDisplayName.c_str());
 
-		const ConversationMessageBoxType messageBoxType = GetShopkeeperConversationMessageBoxType(buildingType);
+		const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
+		const EntityInstance &entityInst = entityChunkManager.entities.get(entityInstID);
+		const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
+		DebugAssert(entityDef.type == EntityDefinitionType::StaticNPC);
+		const StaticNpcShopkeeperEntityDefinition &staticNpcShopkeeperEntityDef = entityDef.staticNpc.shopkeeper;
+		const ConversationMessageBoxType messageBoxType = GetShopkeeperConversationMessageBoxType(staticNpcShopkeeperEntityDef.type);
 		GameWorldUI::showConversationMessageBox(messageBoxType);
 	}
-	else if (personalityType == StaticNpcPersonalityType::TavernPatron)
+	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::TavernPatron)
 	{
 		const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
 		const ArenaTemplateDatEntry &patronDialoguesEntry = textAssetLibrary.templateDat.getEntry(1430);
@@ -1647,8 +1655,7 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID e
 	}
 	else
 	{
-		GameWorldUI::setConversationEntityInstanceID(entityInstID);
-		GameWorldUI::showConversationMessageBox(ConversationMessageBoxType::Citizen);
+		DebugNotImplementedMsg(std::to_string(static_cast<int>(staticNpcEntityDefType)));
 	}
 }
 

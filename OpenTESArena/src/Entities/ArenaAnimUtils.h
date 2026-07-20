@@ -16,8 +16,8 @@ class CFAFile;
 class CharacterClassLibrary;
 class TextureManager;
 
+enum class ArenaNpcPersonalityType;
 enum class MapType;
-enum class StaticNpcPersonalityType;
 
 struct ExeData;
 
@@ -95,6 +95,7 @@ namespace ArenaAnimUtils
 	bool isNpcBeggar(ArenaItemIndex itemIndex);
 	bool isNpcFirebreather(ArenaItemIndex itemIndex);
 	bool isNpcProstitute(ArenaItemIndex itemIndex);
+	bool isNpcProstitute2(ArenaItemIndex itemIndex);
 	bool isNpcJester(ArenaItemIndex itemIndex);
 	bool isNpcStreetVendor(ArenaItemIndex itemIndex);
 	bool isNpcMusician(ArenaItemIndex itemIndex);
@@ -103,11 +104,16 @@ namespace ArenaAnimUtils
 	bool isNpcSnakeCharmer(ArenaItemIndex itemIndex);
 	bool isNpcStreetVendorAlchemist(ArenaItemIndex itemIndex);
 	bool isNpcWizard(ArenaItemIndex itemIndex);
+
 	bool isNpcTavernPatron(ArenaItemIndex itemIndex);
 
 	bool isWildernessDen(ArenaItemIndex itemIndex, MapType mapType);
 
-	std::optional<StaticNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex, MapType mapType);
+	// For NPCs that can talk about themselves/directions/rumors.
+	std::optional<ArenaNpcPersonalityType> tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex);
+
+	// For NPCs that provide services.
+	std::optional<ArenaShopkeeperType> tryGetShopkeeperType(ArenaItemIndex itemIndex, ArenaInteriorType interiorType);
 
 	constexpr ArenaItemIndex LockedChestItemIndex = 7;
 	constexpr ArenaItemIndex UnlockedChestItemIndex = 8;

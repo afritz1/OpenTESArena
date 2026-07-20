@@ -216,7 +216,9 @@ namespace MapGeneration
 		bool isCreature = false;
 		bool isCreatureFinalBoss = false;
 		bool isHumanEnemy = false;
-		std::optional<StaticNpcPersonalityType> staticNpcPersonalityType;
+		std::optional<ArenaNpcPersonalityType> personalityType;
+		std::optional<ArenaShopkeeperType> shopkeeperType;
+		bool isTavernPatron = false;
 		bool isPileContainer = false;
 		bool isLockedHolderContainer = false;
 		bool isUnlockedHolderContainer = false;
@@ -227,7 +229,14 @@ namespace MapGeneration
 		{
 			isCreature = ArenaAnimUtils::isCreatureIndex(*optItemIndex, &isCreatureFinalBoss);
 			isHumanEnemy = ArenaAnimUtils::isHumanEnemyIndex(*optItemIndex);
-			staticNpcPersonalityType = ArenaAnimUtils::tryGetStaticNpcPersonalityType(*optItemIndex, mapType);
+			personalityType = ArenaAnimUtils::tryGetStaticNpcPersonalityType(*optItemIndex);
+
+			if (interiorType.has_value())
+			{
+				shopkeeperType = ArenaAnimUtils::tryGetShopkeeperType(*optItemIndex, *interiorType);
+			}
+			
+			isTavernPatron = ArenaAnimUtils::isNpcTavernPatron(*optItemIndex);
 			isPileContainer = ArenaAnimUtils::isTreasurePileContainerIndex(*optItemIndex);
 			isLockedHolderContainer = ArenaAnimUtils::isLockedHolderContainerIndex(*optItemIndex);
 			isUnlockedHolderContainer = ArenaAnimUtils::isUnlockedHolderContainerIndex(*optItemIndex);
@@ -287,9 +296,17 @@ namespace MapGeneration
 			const int charClassID = ArenaAnimUtils::getCharacterClassIndexFromItemIndex(*optItemIndex);
 			outDef->initEnemyHuman(male, charClassID, std::move(entityAnimDef));
 		}
-		else if (staticNpcPersonalityType.has_value())
+		else if (personalityType.has_value())
 		{
-			outDef->initStaticNpc(*staticNpcPersonalityType, std::move(entityAnimDef));
+			outDef->initStaticNpcGeneral(*personalityType, std::move(entityAnimDef));
+		}
+		else if (shopkeeperType.has_value())
+		{
+			outDef->initStaticNpcShopkeeper(*shopkeeperType, std::move(entityAnimDef));
+		}
+		else if (isTavernPatron)
+		{
+			outDef->initStaticNpcTavernPatron(std::move(entityAnimDef));
 		}
 		else if (isPileContainer)
 		{

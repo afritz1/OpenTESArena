@@ -105,14 +105,47 @@ bool CitizenEntityDefinition::operator==(const CitizenEntityDefinition &other) c
 	return true;
 }
 
-StaticNpcEntityDefinition::StaticNpcEntityDefinition()
+StaticNpcGeneralEntityDefinition::StaticNpcGeneralEntityDefinition()
 {
-	this->personalityType = static_cast<StaticNpcPersonalityType>(-1);
+	this->type = static_cast<ArenaNpcPersonalityType>(-1);
 }
 
-void StaticNpcEntityDefinition::init(StaticNpcPersonalityType personalityType)
+void StaticNpcGeneralEntityDefinition::init(ArenaNpcPersonalityType type)
 {
-	this->personalityType = personalityType;
+	DebugAssert(type != ArenaNpcPersonalityType::Citizen);
+	this->type = type;
+}
+
+StaticNpcShopkeeperEntityDefinition::StaticNpcShopkeeperEntityDefinition()
+{
+	this->type = static_cast<ArenaShopkeeperType>(-1);
+}
+
+void StaticNpcShopkeeperEntityDefinition::init(ArenaShopkeeperType type)
+{
+	this->type = type;
+}
+
+StaticNpcEntityDefinition::StaticNpcEntityDefinition()
+{
+	this->type = static_cast<StaticNpcEntityDefinitionType>(-1);
+}
+
+void StaticNpcEntityDefinition::initGeneral(ArenaNpcPersonalityType personalityType)
+{
+	this->type = StaticNpcEntityDefinitionType::General;
+	this->general.init(personalityType);
+}
+
+void StaticNpcEntityDefinition::initShopkeeper(ArenaShopkeeperType shopkeeperType)
+{
+	this->type = StaticNpcEntityDefinitionType::Shopkeeper;
+	this->shopkeeper.init(shopkeeperType);
+}
+
+void StaticNpcEntityDefinition::initTavernPatron()
+{
+	this->type = StaticNpcEntityDefinitionType::TavernPatron;
 }
 
 bool StaticNpcEntityDefinition::operator==(const StaticNpcEntityDefinition &other) const
@@ -122,12 +155,22 @@ bool StaticNpcEntityDefinition::operator==(const StaticNpcEntityDefinition &othe
 		return true;
 	}
 
-	if (this->personalityType != other.personalityType)
+	if (this->type != other.type)
 	{
 		return false;
 	}
 
-	return true;
+	switch (this->type)
+	{
+	case StaticNpcEntityDefinitionType::General:
+		return this->general.type == other.general.type;
+	case StaticNpcEntityDefinitionType::Shopkeeper:
+		return this->shopkeeper.type == other.shopkeeper.type;
+	case StaticNpcEntityDefinitionType::TavernPatron:
+		return true;
+	default:
+		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
+	}
 }
 
 bool ItemEntityDefinition::QuestItemDefinition::operator==(const QuestItemDefinition &other) const
@@ -431,10 +474,22 @@ void EntityDefinition::initCitizen(bool male, ArenaClimateType climateType, Enti
 	this->citizen.init(male, climateType);
 }
 
-void EntityDefinition::initStaticNpc(StaticNpcPersonalityType personalityType, EntityAnimationDefinition &&animDef)
+void EntityDefinition::initStaticNpcGeneral(ArenaNpcPersonalityType personalityType, EntityAnimationDefinition &&animDef)
 {
 	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
-	this->staticNpc.init(personalityType);
+	this->staticNpc.initGeneral(personalityType);
+}
+
+void EntityDefinition::initStaticNpcShopkeeper(ArenaShopkeeperType shopkeeperType, EntityAnimationDefinition &&animDef)
+{
+	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
+	this->staticNpc.initShopkeeper(shopkeeperType);
+}
+
+void EntityDefinition::initStaticNpcTavernPatron(EntityAnimationDefinition &&animDef)
+{
+	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
+	this->staticNpc.initTavernPatron();
 }
 
 void EntityDefinition::initItemKey(EntityAnimationDefinition &&animDef)

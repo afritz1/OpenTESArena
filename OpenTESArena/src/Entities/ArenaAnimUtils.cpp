@@ -647,12 +647,7 @@ bool ArenaAnimUtils::isHumanEnemyIndex(ArenaItemIndex itemIndex)
 
 bool ArenaAnimUtils::isNpcShopkeeper(ArenaItemIndex itemIndex, MapType mapType)
 {
-	if (mapType == MapType::Wilderness)
-	{
-		return false; // Avoid wilderness den.
-	}
-
-	return itemIndex == 15;
+	return (itemIndex == 15) && (mapType == MapType::Interior);
 }
 
 bool ArenaAnimUtils::isNpcBeggar(ArenaItemIndex itemIndex)
@@ -667,7 +662,12 @@ bool ArenaAnimUtils::isNpcFirebreather(ArenaItemIndex itemIndex)
 
 bool ArenaAnimUtils::isNpcProstitute(ArenaItemIndex itemIndex)
 {
-	return (itemIndex >= 18) && (itemIndex <= 20);
+	return itemIndex == 18;
+}
+
+bool ArenaAnimUtils::isNpcProstitute2(ArenaItemIndex itemIndex)
+{
+	return (itemIndex == 19) || (itemIndex == 20);
 }
 
 bool ArenaAnimUtils::isNpcJester(ArenaItemIndex itemIndex)
@@ -722,63 +722,87 @@ bool ArenaAnimUtils::isWildernessDen(ArenaItemIndex itemIndex, MapType mapType)
 	return (itemIndex == 15) && (mapType == MapType::Wilderness);
 }
 
-std::optional<StaticNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex, MapType mapType)
+std::optional<ArenaNpcPersonalityType> ArenaAnimUtils::tryGetStaticNpcPersonalityType(ArenaItemIndex itemIndex)
 {
-	if (ArenaAnimUtils::isNpcShopkeeper(itemIndex, mapType))
+	if (ArenaAnimUtils::isNpcBeggar(itemIndex))
 	{
-		return StaticNpcPersonalityType::Shopkeeper;
-	}
-	else if (ArenaAnimUtils::isNpcBeggar(itemIndex))
-	{
-		return StaticNpcPersonalityType::Beggar;
+		return ArenaNpcPersonalityType::Beggar;
 	}
 	else if (ArenaAnimUtils::isNpcFirebreather(itemIndex))
 	{
-		return StaticNpcPersonalityType::Firebreather;
+		return ArenaNpcPersonalityType::Firebreather;
 	}
 	else if (ArenaAnimUtils::isNpcProstitute(itemIndex))
 	{
-		return StaticNpcPersonalityType::Prostitute;
+		return ArenaNpcPersonalityType::Prostitute;
+	}
+	else if (ArenaAnimUtils::isNpcProstitute2(itemIndex))
+	{
+		return ArenaNpcPersonalityType::Prostitute2;
 	}
 	else if (ArenaAnimUtils::isNpcJester(itemIndex))
 	{
-		return StaticNpcPersonalityType::Jester;
+		return ArenaNpcPersonalityType::Jester;
 	}
 	else if (ArenaAnimUtils::isNpcStreetVendor(itemIndex))
 	{
-		return StaticNpcPersonalityType::StreetVendor;
+		return ArenaNpcPersonalityType::StreetVendor;
 	}
 	else if (ArenaAnimUtils::isNpcMusician(itemIndex))
 	{
-		return StaticNpcPersonalityType::Musician;
+		return ArenaNpcPersonalityType::Musician;
 	}
 	else if (ArenaAnimUtils::isNpcPriest(itemIndex))
 	{
-		return StaticNpcPersonalityType::Priest;
+		return ArenaNpcPersonalityType::Priest;
 	}
 	else if (ArenaAnimUtils::isNpcThief(itemIndex))
 	{
-		return StaticNpcPersonalityType::Thief;
+		return ArenaNpcPersonalityType::Thief;
 	}
 	else if (ArenaAnimUtils::isNpcSnakeCharmer(itemIndex))
 	{
-		return StaticNpcPersonalityType::SnakeCharmer;
+		return ArenaNpcPersonalityType::SnakeCharmer;
 	}
 	else if (ArenaAnimUtils::isNpcStreetVendorAlchemist(itemIndex))
 	{
-		return StaticNpcPersonalityType::StreetVendorAlchemist;
+		return ArenaNpcPersonalityType::StreetVendor2;
 	}
 	else if (ArenaAnimUtils::isNpcWizard(itemIndex))
 	{
-		return StaticNpcPersonalityType::Wizard;
-	}
-	else if (ArenaAnimUtils::isNpcTavernPatron(itemIndex))
-	{
-		return StaticNpcPersonalityType::TavernPatron;
+		return ArenaNpcPersonalityType::Wizard;
 	}
 	else
 	{
 		return std::nullopt;
+	}
+}
+
+std::optional<ArenaShopkeeperType> ArenaAnimUtils::tryGetShopkeeperType(ArenaItemIndex itemIndex, ArenaInteriorType interiorType)
+{
+	if (!ArenaAnimUtils::isNpcShopkeeper(itemIndex, MapType::Interior))
+	{
+		return std::nullopt;
+	}
+
+	switch (interiorType)
+	{
+		case ArenaInteriorType::Equipment:
+			return ArenaShopkeeperType::Equipment;
+		case ArenaInteriorType::MagesGuild:
+			return ArenaShopkeeperType::MagesGuild;
+		case ArenaInteriorType::Tavern:
+			return ArenaShopkeeperType::Tavern;
+		case ArenaInteriorType::Temple:
+			return ArenaShopkeeperType::Temple;
+		case ArenaInteriorType::Crypt:
+		case ArenaInteriorType::Dungeon:
+		case ArenaInteriorType::House:
+		case ArenaInteriorType::Noble:
+		case ArenaInteriorType::Palace:
+		case ArenaInteriorType::Tower:
+		default:
+			return std::nullopt;
 	}
 }
 

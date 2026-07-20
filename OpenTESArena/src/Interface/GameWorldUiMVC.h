@@ -306,7 +306,7 @@ namespace GameWorldUiController
 	void onCitizenInteracted(Game &game, EntityInstanceID entityInstID);
 	void onCitizenKilled(Game &game);
 
-	void onStaticNpcInteracted(Game &game, EntityInstanceID entityInstID, StaticNpcPersonalityType personalityType);
+	void onStaticNpcInteracted(Game &game, EntityInstanceID entityInstID, StaticNpcEntityDefinitionType staticNpcEntityDefType);
 
 	void onShowPlayerDeathCinematic(Game &game);
 	void onHealthDepleted(Game &game);

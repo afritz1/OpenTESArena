@@ -194,8 +194,17 @@ enum class ArenaNpcPersonalityType
 	Thief = 9,
 	Wizard = 10,
 	Priest = 11,
-	StreetCleaner = 12, // Unused
-	Slaver = 13 // Unused
+	Musician = 12,
+	StreetCleaner = 13, // Unused
+	Slaver = 14 // Unused
+};
+
+enum class ArenaShopkeeperType
+{
+	Equipment,
+	MagesGuild,
+	Tavern,
+	Temple
 };
 
 // Various types used with Arena's binary data files. Struct sizes are hardcoded to show

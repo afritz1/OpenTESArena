@@ -679,7 +679,7 @@ namespace PlayerLogic
 					if (interactionType == GameWorldInteractionType::Default)
 					{
 						const StaticNpcEntityDefinition &staticNpcDef = entityDef.staticNpc;
-						GameWorldUiController::onStaticNpcInteracted(game, entityInstID, staticNpcDef.personalityType);
+						GameWorldUiController::onStaticNpcInteracted(game, entityInstID, staticNpcDef.type);
 					}
 					else
 					{

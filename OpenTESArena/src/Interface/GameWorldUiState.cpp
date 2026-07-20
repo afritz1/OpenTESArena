@@ -2200,42 +2200,46 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 	UiManager &uiManager = game.uiManager;
 	uiManager.disableTopMostContext();
 
-
 	const EntityChunkManager &entityChunkManager = game.sceneManager.entityChunkManager;
 	const EntityInstance &entityInst = entityChunkManager.entities.get(state.conversationEntityInstID);
 	const EntityDefinition &entityDef = entityChunkManager.getEntityDef(entityInst.defID);
 	const EntityDefinitionType entityDefType = entityDef.type;
 
+	ArenaNpcPersonalityType personalityType;
 	std::string entityDisplayName;
 	if (entityDefType == EntityDefinitionType::Citizen)
 	{
+		personalityType = ArenaNpcPersonalityType::Citizen;
+
 		const EntityCitizenName &citizenName = entityChunkManager.citizenNames.get(entityInst.citizenNameID);
 		entityDisplayName = citizenName.name;
 	}
 	else if (entityDefType == EntityDefinitionType::StaticNPC)
 	{
 		const StaticNpcEntityDefinition &staticNpcEntityDef = entityDef.staticNpc;
+		DebugAssert(staticNpcEntityDef.type == StaticNpcEntityDefinitionType::General);
+		const StaticNpcGeneralEntityDefinition &staticNpcGeneralEntityDef = staticNpcEntityDef.general;
+		personalityType = staticNpcGeneralEntityDef.type;
 
-		// @todo static NPC randomly generated names, store in EntityInstance?
-		constexpr std::pair<StaticNpcPersonalityType, const char*> personalityTypeNames[] =
+		// @todo expand EntityCitizenName to static NPCs so they can use it here
+		constexpr std::pair<ArenaNpcPersonalityType, const char*> personalityTypeNames[] =
 		{
-			{ StaticNpcPersonalityType::Shopkeeper, "Shopkeeper" },
-			{ StaticNpcPersonalityType::Beggar, "Beggar" },
-			{ StaticNpcPersonalityType::Firebreather, "Firebreather" },
-			{ StaticNpcPersonalityType::Prostitute, "Prostitute" },
-			{ StaticNpcPersonalityType::Jester, "Jester" },
-			{ StaticNpcPersonalityType::StreetVendor, "StreetVendor" },
-			{ StaticNpcPersonalityType::Musician, "Musician" },
-			{ StaticNpcPersonalityType::Priest, "Priest" },
-			{ StaticNpcPersonalityType::Thief, "Thief" },
-			{ StaticNpcPersonalityType::SnakeCharmer, "SnakeCharmer" },
-			{ StaticNpcPersonalityType::StreetVendorAlchemist, "StreetVendorAlchemist" },
-			{ StaticNpcPersonalityType::Wizard, "Wizard" },
-			{ StaticNpcPersonalityType::TavernPatron, "TavernPatron" }
+			{ ArenaNpcPersonalityType::Citizen, "Citizen" },
+			{ ArenaNpcPersonalityType::Prostitute, "Prostitute" },
+			{ ArenaNpcPersonalityType::Prostitute2, "Prostitute2" },
+			{ ArenaNpcPersonalityType::Jester, "Jester" },
+			{ ArenaNpcPersonalityType::Firebreather, "Firebreather" },
+			{ ArenaNpcPersonalityType::SnakeCharmer, "SnakeCharmer" },
+			{ ArenaNpcPersonalityType::Beggar, "Beggar" },
+			{ ArenaNpcPersonalityType::StreetVendor, "StreetVendor" },
+			{ ArenaNpcPersonalityType::StreetVendor2, "StreetVendor2" },
+			{ ArenaNpcPersonalityType::Thief, "Thief" },
+			{ ArenaNpcPersonalityType::Wizard, "Wizard" },
+			{ ArenaNpcPersonalityType::Priest, "Priest" },
+			{ ArenaNpcPersonalityType::Musician, "Musician" }
 		};
 
-		const std::string tempName = personalityTypeNames[static_cast<int>(staticNpcEntityDef.personalityType)].second;
-		entityDisplayName = "TODO " + tempName;
+		entityDisplayName = personalityTypeNames[static_cast<int>(personalityType)].second;
 	}
 	else
 	{

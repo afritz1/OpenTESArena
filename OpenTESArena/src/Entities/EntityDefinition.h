@@ -69,30 +69,46 @@ struct CitizenEntityDefinition
 	bool operator==(const CitizenEntityDefinition &other) const;
 };
 
-enum class StaticNpcPersonalityType
+enum class StaticNpcEntityDefinitionType
 {
-	Shopkeeper,
-	Beggar,
-	Firebreather,
-	Prostitute,
-	Jester,
-	StreetVendor,
-	Musician,
-	Priest,
-	Thief,
-	SnakeCharmer,
-	StreetVendorAlchemist,
-	Wizard,
-	TavernPatron
+	General, // Talks about themselves, gives directions, rumors.
+	Shopkeeper, // Provides services.
+	TavernPatron // Single pop-up dialogue messages.
+};
+
+struct StaticNpcGeneralEntityDefinition
+{
+	ArenaNpcPersonalityType type;
+
+	StaticNpcGeneralEntityDefinition();
+
+	void init(ArenaNpcPersonalityType type);
+};
+
+struct StaticNpcShopkeeperEntityDefinition
+{
+	ArenaShopkeeperType type;
+
+	StaticNpcShopkeeperEntityDefinition();
+
+	void init(ArenaShopkeeperType type);
 };
 
 struct StaticNpcEntityDefinition
 {
-	StaticNpcPersonalityType personalityType;
+	StaticNpcEntityDefinitionType type;
+
+	union
+	{
+		StaticNpcGeneralEntityDefinition general;
+		StaticNpcShopkeeperEntityDefinition shopkeeper;
+	};
 
 	StaticNpcEntityDefinition();
 
-	void init(StaticNpcPersonalityType personalityType);
+	void initGeneral(ArenaNpcPersonalityType personalityType);
+	void initShopkeeper(ArenaShopkeeperType shopkeeperType);
+	void initTavernPatron();
 
 	bool operator==(const StaticNpcEntityDefinition &other) const;
 };
@@ -258,7 +274,9 @@ struct EntityDefinition
 
 	void initCitizen(bool male, ArenaClimateType climateType, EntityAnimationDefinition &&animDef);
 
-	void initStaticNpc(StaticNpcPersonalityType type, EntityAnimationDefinition &&animDef);
+	void initStaticNpcGeneral(ArenaNpcPersonalityType personalityType, EntityAnimationDefinition &&animDef);
+	void initStaticNpcShopkeeper(ArenaShopkeeperType shopkeeperType, EntityAnimationDefinition &&animDef);
+	void initStaticNpcTavernPatron(EntityAnimationDefinition &&animDef);
 
 	void initItemKey(EntityAnimationDefinition &&animDef);
 	void initItemQuestItem(int yOffset, EntityAnimationDefinition &&animDef);
