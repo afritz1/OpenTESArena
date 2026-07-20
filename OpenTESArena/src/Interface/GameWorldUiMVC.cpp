@@ -1653,6 +1653,11 @@ void GameWorldUiController::onStaticNpcInteracted(Game &game, EntityInstanceID e
 
 		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, TextAlignment::TopLeft);
 	}
+	else if (staticNpcEntityDefType == StaticNpcEntityDefinitionType::Ruler)
+	{
+		const std::string text = "Ruler not implemented.";
+		GameWorldUI::showTextPopUp(text.c_str(), GameWorldUiView::StatusPopUpFontName, GameWorldUiView::StatusPopUpTextAlignment);
+	}
 	else
 	{
 		DebugNotImplementedMsg(std::to_string(static_cast<int>(staticNpcEntityDefType)));

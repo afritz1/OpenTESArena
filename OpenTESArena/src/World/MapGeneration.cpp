@@ -219,6 +219,7 @@ namespace MapGeneration
 		std::optional<ArenaNpcPersonalityType> personalityType;
 		std::optional<ArenaShopkeeperType> shopkeeperType;
 		bool isTavernPatron = false;
+		bool isRuler = false;
 		bool isPileContainer = false;
 		bool isLockedHolderContainer = false;
 		bool isUnlockedHolderContainer = false;
@@ -245,6 +246,12 @@ namespace MapGeneration
 			isTransition = ArenaAnimUtils::isWildernessDen(*optItemIndex, mapType);
 		}
 
+		if (interiorType.has_value())
+		{
+			// Rulers apparently don't have an *ITEM index.
+			isRuler = ArenaAnimUtils::isRulerFlatIndex(flatIndex, *interiorType);
+		}
+
 		// Add entity animation data. Static entities have only idle animations (and maybe on/off
 		// state for lampposts). Dynamic entities have several animation states and directions.
 		EntityAnimationDefinition entityAnimDef;
@@ -252,7 +259,7 @@ namespace MapGeneration
 		{
 			if (!ArenaAnimUtils::tryMakeStaticEntityAnims(flatIndex, mapType, interiorType, rulerIsMale, inf, textureManager, &entityAnimDef))
 			{
-				DebugLogWarning("Couldn't make static entity anims for flat \"" + std::to_string(flatIndex) + "\".");
+				DebugLogWarningFormat("Couldn't make static entity anims for flat %d.", flatIndex);
 				return false;
 			}
 		}
@@ -262,7 +269,7 @@ namespace MapGeneration
 			const std::optional<bool> isMale = true;
 			if (!ArenaAnimUtils::tryMakeDynamicEntityAnims(flatIndex, isMale, inf, charClassLibrary, binaryAssetLibrary, textureManager, &entityAnimDef))
 			{
-				DebugLogWarning("Couldn't make dynamic entity anims for flat \"" + std::to_string(flatIndex) + "\".");
+				DebugLogWarningFormat("Couldn't make dynamic entity anims for flat %d.", flatIndex);
 				return false;
 			}
 		}
@@ -284,7 +291,7 @@ namespace MapGeneration
 			EntityDefID entityDefID;
 			if (!entityDefLibrary.tryGetDefinitionID(entityDefKey, &entityDefID))
 			{
-				DebugLogWarning("Couldn't get creature definition " + std::to_string(creatureDefID) + " from library.");
+				DebugLogWarningFormat("Couldn't get creature definition %d from library.", creatureDefID);
 				return false;
 			}
 
@@ -307,6 +314,10 @@ namespace MapGeneration
 		else if (isTavernPatron)
 		{
 			outDef->initStaticNpcTavernPatron(std::move(entityAnimDef));
+		}
+		else if (isRuler)
+		{
+			outDef->initStaticNpcRuler(std::move(entityAnimDef));
 		}
 		else if (isPileContainer)
 		{

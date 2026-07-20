@@ -73,7 +73,8 @@ enum class StaticNpcEntityDefinitionType
 {
 	General, // Talks about themselves, gives directions, rumors.
 	Shopkeeper, // Provides services.
-	TavernPatron // Single pop-up dialogue messages.
+	TavernPatron, // Single pop-up dialogue messages.
+	Ruler
 };
 
 struct StaticNpcGeneralEntityDefinition
@@ -109,6 +110,7 @@ struct StaticNpcEntityDefinition
 	void initGeneral(ArenaNpcPersonalityType personalityType);
 	void initShopkeeper(ArenaShopkeeperType shopkeeperType);
 	void initTavernPatron();
+	void initRuler();
 
 	bool operator==(const StaticNpcEntityDefinition &other) const;
 };
@@ -277,6 +279,7 @@ struct EntityDefinition
 	void initStaticNpcGeneral(ArenaNpcPersonalityType personalityType, EntityAnimationDefinition &&animDef);
 	void initStaticNpcShopkeeper(ArenaShopkeeperType shopkeeperType, EntityAnimationDefinition &&animDef);
 	void initStaticNpcTavernPatron(EntityAnimationDefinition &&animDef);
+	void initStaticNpcRuler(EntityAnimationDefinition &&animDef);
 
 	void initItemKey(EntityAnimationDefinition &&animDef);
 	void initItemQuestItem(int yOffset, EntityAnimationDefinition &&animDef);

@@ -148,6 +148,11 @@ void StaticNpcEntityDefinition::initTavernPatron()
 	this->type = StaticNpcEntityDefinitionType::TavernPatron;
 }
 
+void StaticNpcEntityDefinition::initRuler()
+{
+	this->type = StaticNpcEntityDefinitionType::Ruler;
+}
+
 bool StaticNpcEntityDefinition::operator==(const StaticNpcEntityDefinition &other) const
 {
 	if (this == &other)
@@ -490,6 +495,12 @@ void EntityDefinition::initStaticNpcTavernPatron(EntityAnimationDefinition &&ani
 {
 	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
 	this->staticNpc.initTavernPatron();
+}
+
+void EntityDefinition::initStaticNpcRuler(EntityAnimationDefinition &&animDef)
+{
+	this->init(EntityDefinitionType::StaticNPC, std::move(animDef));
+	this->staticNpc.initRuler();
 }
 
 void EntityDefinition::initItemKey(EntityAnimationDefinition &&animDef)
