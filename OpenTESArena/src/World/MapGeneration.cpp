@@ -204,11 +204,10 @@ namespace MapGeneration
 	// @todo: probably want this to be some 'LevelEntityDefinition' with no dependencies on runtime
 	// textures and animations handles, instead using texture filenames for the bulk of things.
 	bool tryMakeEntityDefFromArenaFlat(ArenaFlatIndex flatIndex, MapType mapType,
-		const std::optional<ArenaInteriorType> &interiorType, const std::optional<bool> &rulerIsMale,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
+		const std::optional<ArenaInteriorType> &interiorType, const std::optional<LevelVoxelTransitionDefID> &transitionDefID,
+		const std::optional<bool> &rulerIsMale, const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
 		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, const std::optional<LevelVoxelTransitionDefID> &transitionDefID,
-		EntityDefinition *outDef)
+		TextureManager &textureManager, EntityDefinition *outDef)
 	{
 		const INFFlat &flatData = inf.getFlat(flatIndex);
 		const bool isDynamicEntity = ArenaAnimUtils::isDynamicEntity(flatIndex, inf);
@@ -1349,12 +1348,10 @@ namespace MapGeneration
 					{
 						const ArenaFlatIndex flatIndex = floorFlatID - 1;
 						EntityDefinition entityDef;
-						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, mapType,
-							interiorType, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
-							binaryAssetLibrary, textureManager, std::nullopt, &entityDef))
+						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, mapType, interiorType, std::nullopt, rulerIsMale, inf,
+							charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &entityDef))
 						{
-							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
-								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
+							DebugLogWarningFormat("Couldn't make entity definition from FLAT %d with .INF \"%s\".", flatIndex, inf.getName());
 							continue;
 						}
 
@@ -1422,15 +1419,13 @@ namespace MapGeneration
 	}
 
 	// Converts .MIF/.RMD MAP1 voxels to modern voxel + entity format.
-	void readArenaMAP1(Span2D<const ArenaVoxelID> map1, MapType mapType,
-		const std::optional<ArenaInteriorType> &interiorType, const std::optional<uint32_t> &rulerSeed,
-		const std::optional<bool> &rulerIsMale, const std::optional<bool> &palaceIsMainQuestDungeon,
-		const std::optional<ArenaCityType> &cityType,
-		const LocationDungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon,
-		const INFFile &inf, const CharacterClassLibrary &charClassLibrary,
-		const EntityDefinitionLibrary &entityDefLibrary, const BinaryAssetLibrary &binaryAssetLibrary,
-		TextureManager &textureManager, LevelDefinition *outLevelDef, LevelInfoDefinition *outLevelInfoDef,
-		ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache,
+	void readArenaMAP1(Span2D<const ArenaVoxelID> map1, MapType mapType, const std::optional<ArenaInteriorType> &interiorType,
+		const std::optional<uint32_t> &rulerSeed, const std::optional<bool> &rulerIsMale,
+		const std::optional<bool> &palaceIsMainQuestDungeon, const std::optional<ArenaCityType> &cityType,
+		const LocationDungeonDefinition *dungeonDef, const std::optional<bool> &isArtifactDungeon, const INFFile &inf,
+		const CharacterClassLibrary &charClassLibrary, const EntityDefinitionLibrary &entityDefLibrary,
+		const BinaryAssetLibrary &binaryAssetLibrary, TextureManager &textureManager, LevelDefinition *outLevelDef,
+		LevelInfoDefinition *outLevelInfoDef, ArenaVoxelMappingCache *voxelCache, ArenaEntityMappingCache *entityCache,
 		ArenaTransitionMappingCache *transitionCache, ArenaDoorMappingCache *doorCache)
 	{
 		for (SNInt map1Z = 0; map1Z < map1.getHeight(); map1Z++)
@@ -1448,6 +1443,9 @@ namespace MapGeneration
 				const SNInt levelX = map1Z;
 				constexpr int levelY = 1;
 				const WEInt levelZ = map1X;
+
+				const WorldInt3 levelWorldVoxel(levelX, levelY, levelZ);
+				const WorldInt2 levelWorldVoxelXZ = levelWorldVoxel.getXZ();
 
 				// Determine if this MAP1 voxel is for a voxel or entity.
 				const uint8_t mostSigNibble = (map1Voxel & 0xF000) >> 12;
@@ -1493,9 +1491,6 @@ namespace MapGeneration
 					outLevelDef->setVoxelShadingID(levelX, levelY, levelZ, voxelShadingDefID);
 					outLevelDef->setVoxelTraitsID(levelX, levelY, levelZ, voxelTraitsDefID);
 
-					const WorldInt3 levelPosition(levelX, levelY, levelZ);
-					const WorldInt2 levelPositionXZ(levelX, levelZ);
-
 					// Try to make transition info if this MAP1 voxel is a transition.
 					const std::optional<MapGenerationTransitionInfo> transitionDefGenInfo =
 						MapGeneration::tryMakeVoxelTransitionDefGenInfo(map1Voxel, mostSigNibble, mapType, inf);
@@ -1506,10 +1501,10 @@ namespace MapGeneration
 						// for interior .MIF name generation so can't really reuse them.
 						LevelVoxelTransitionDefID transitionDefID;
 						const auto iter = std::find_if(transitionCache->begin(), transitionCache->end(),
-							[map1Voxel, levelPositionXZ](const std::pair<TransitionMappingKey, LevelVoxelTransitionDefID> &pair)
+							[map1Voxel, levelWorldVoxelXZ](const std::pair<TransitionMappingKey, LevelVoxelTransitionDefID> &pair)
 						{
 							const TransitionMappingKey &key = pair.first;
-							return (key.voxelID == map1Voxel) && (key.levelXZ == levelPositionXZ);
+							return (key.voxelID == map1Voxel) && (key.levelXZ == levelWorldVoxelXZ);
 						});
 
 						if (iter != transitionCache->end())
@@ -1519,23 +1514,22 @@ namespace MapGeneration
 						else
 						{
 							TransitionDefinition transitionDef = MapGeneration::makeTransitionDef(
-								*transitionDefGenInfo, levelPosition, transitionDefGenInfo->menuID, rulerSeed,
+								*transitionDefGenInfo, levelWorldVoxel, transitionDefGenInfo->menuID, rulerSeed,
 								rulerIsMale, palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon,
 								mapType, binaryAssetLibrary.getExeData());
 							transitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
 
 							TransitionMappingKey transitionMappingKey;
 							transitionMappingKey.voxelID = map1Voxel;
-							transitionMappingKey.levelXZ = levelPositionXZ;
+							transitionMappingKey.levelXZ = levelWorldVoxelXZ;
 							transitionCache->emplace_back(transitionMappingKey, transitionDefID);
 						}
 
-						outLevelDef->addTransition(transitionDefID, levelPosition);
+						outLevelDef->addTransition(transitionDefID, levelWorldVoxel);
 					}
 
 					// Try to make door info if this MAP1 voxel is a door.
-					const std::optional<MapGenerationDoorInfo> doorDefGenInfo =
-						MapGeneration::tryMakeDoorDefGenInfo(map1Voxel, mostSigNibble);
+					const std::optional<MapGenerationDoorInfo> doorDefGenInfo = MapGeneration::tryMakeDoorDefGenInfo(map1Voxel, mostSigNibble);
 
 					if (doorDefGenInfo.has_value())
 					{
@@ -1553,7 +1547,7 @@ namespace MapGeneration
 							doorCache->emplace(map1Voxel, doorDefID);
 						}
 
-						outLevelDef->addDoor(doorDefID, levelPosition);
+						outLevelDef->addDoor(doorDefID, levelWorldVoxel);
 					}
 				}
 				else
@@ -1568,21 +1562,16 @@ namespace MapGeneration
 					else
 					{
 						const ArenaFlatIndex flatIndex = map1Voxel & 0x00FF;
-						const WorldInt3 levelPosition(levelX, levelY, levelZ);
-						const WorldInt2 levelPositionXZ(levelX, levelZ);
 						std::optional<LevelVoxelTransitionDefID> entityTransitionDefID;
-						const std::optional<MapGenerationTransitionInfo> transitionDefGenInfo =
-							MapGeneration::tryMakeEntityTransitionGenInfo(flatIndex, mapType);
+						const std::optional<MapGenerationTransitionInfo> transitionDefGenInfo = MapGeneration::tryMakeEntityTransitionGenInfo(flatIndex, mapType);
 						if (transitionDefGenInfo.has_value())
 						{
-							// Wild dens have *ITEM 15 in their .INF entry, which normally makes a static shopkeeper. 
-							// Their flat index is the authoritative wilderness transition marker so we cerate the dungeon transition first.
 							const auto iter = std::find_if(transitionCache->begin(), transitionCache->end(),
-								[map1Voxel, levelPositionXZ](const std::pair<TransitionMappingKey, LevelVoxelTransitionDefID> &pair)
+								[map1Voxel, levelWorldVoxelXZ](const std::pair<TransitionMappingKey, LevelVoxelTransitionDefID> &pair)
 							{
-									const TransitionMappingKey &key = pair.first;
-									return (key.voxelID == map1Voxel) && (key.levelXZ == levelPositionXZ);
-								});
+								const TransitionMappingKey &key = pair.first;
+								return (key.voxelID == map1Voxel) && (key.levelXZ == levelWorldVoxelXZ);
+							});
 
 							if (iter != transitionCache->end())
 							{
@@ -1591,25 +1580,22 @@ namespace MapGeneration
 							else
 							{
 								TransitionDefinition transitionDef = MapGeneration::makeTransitionDef(
-									*transitionDefGenInfo, levelPosition, transitionDefGenInfo->menuID, rulerSeed,
-									rulerIsMale, palaceIsMainQuestDungeon, cityType, dungeonDef, isArtifactDungeon,
-									mapType, binaryAssetLibrary.getExeData());
+									*transitionDefGenInfo, levelWorldVoxel, transitionDefGenInfo->menuID, rulerSeed, rulerIsMale, palaceIsMainQuestDungeon,
+									cityType, dungeonDef, isArtifactDungeon, mapType, binaryAssetLibrary.getExeData());
 								entityTransitionDefID = outLevelInfoDef->addTransitionDef(std::move(transitionDef));
 
 								TransitionMappingKey transitionMappingKey;
 								transitionMappingKey.voxelID = map1Voxel;
-								transitionMappingKey.levelXZ = levelPositionXZ;
+								transitionMappingKey.levelXZ = levelWorldVoxelXZ;
 								transitionCache->emplace_back(transitionMappingKey, *entityTransitionDefID);
 							}
 						}
 
 						EntityDefinition entityDef;
-						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, mapType,
-							interiorType, rulerIsMale, inf, charClassLibrary, entityDefLibrary,
-							binaryAssetLibrary, textureManager, entityTransitionDefID, &entityDef))
+						if (!MapGeneration::tryMakeEntityDefFromArenaFlat(flatIndex, mapType, interiorType, entityTransitionDefID, rulerIsMale, inf,
+							charClassLibrary, entityDefLibrary, binaryAssetLibrary, textureManager, &entityDef))
 						{
-							DebugLogWarning("Couldn't make entity definition from FLAT \"" +
-								std::to_string(flatIndex) + "\" with .INF \"" + inf.getName() + "\".");
+							DebugLogWarningFormat("Couldn't make entity definition from FLAT %d with .INF \"%s\".", flatIndex, inf.getName());
 							continue;
 						}
 
