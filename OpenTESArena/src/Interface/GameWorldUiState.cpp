@@ -9,6 +9,7 @@
 #include "WorldMapUiState.h"
 #include "../Assets/ArenaTextureName.h"
 #include "../Assets/BinaryAssetLibrary.h"
+#include "../Assets/TextAssetLibrary.h"
 #include "../Game/Game.h"
 #include "../Input/InputActionMapName.h"
 #include "../Input/InputActionName.h"
@@ -2224,9 +2225,24 @@ void GameWorldUI::onNpcWhoAreYouButtonSelected(MouseButtonType mouseButtonType)
 
 	const EntityNpcName &npcName = entityChunkManager.npcNames.get(entityInst.npcNameID);
 	const std::string &entityDisplayName = npcName.name;
+	const std::string entityFirstName = String::split(entityDisplayName)[0];
 
-	std::string text = String::replace("TODO my name is %s.", "%s", entityDisplayName);
-	text = String::distributeNewlines(text, 60);
+	Random &random = game.random;
+	const TextAssetLibrary &textAssetLibrary = TextAssetLibrary::getInstance();
+	const ArenaTemplateDat &templateDat = textAssetLibrary.templateDat;
+	const bool hasBeenIntroducedPreviously = false; // @todo store in entity instance
+	const int hasBeenIntroducedPreviouslyEntryOffset = hasBeenIntroducedPreviously ? 15 : 0;
+	const int entryIndex = 100 + hasBeenIntroducedPreviouslyEntryOffset + static_cast<int>(personalityType);
+	const ArenaTemplateDatEntry &entry = templateDat.getEntry(entryIndex);
+	const Span<const std::string> entryValues = entry.values;
+	const int entryValuesRandomIndex = random.next(static_cast<int>(entry.values.size()));
+	const std::string &entryValue = entryValues[entryValuesRandomIndex];
+
+	// @todo move to a global dialog handling function
+	std::string text = entryValue;
+	text = String::replace(text, "%fn", entityFirstName);
+	text = String::replace(text, "%n", entityDisplayName);
+	text = String::distributeNewlines(text, 65);
 
 	GameWorldPopUpClosedCallback callback = [&uiManager]()
 	{
