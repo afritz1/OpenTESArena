@@ -173,6 +173,8 @@ bool StaticNpcEntityDefinition::operator==(const StaticNpcEntityDefinition &othe
 		return this->shopkeeper.type == other.shopkeeper.type;
 	case StaticNpcEntityDefinitionType::TavernPatron:
 		return true;
+	case StaticNpcEntityDefinitionType::Ruler:
+		return true;
 	default:
 		DebugUnhandledReturnMsg(bool, std::to_string(static_cast<int>(this->type)));
 	}
