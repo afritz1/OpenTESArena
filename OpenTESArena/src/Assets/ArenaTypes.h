@@ -179,6 +179,25 @@ enum class ArenaWeatherType
 	SnowOvercast2 // If rnd() < 16000 then with fog.
 };
 
+// NPCs that can say who they are, give directions, and talk about rumors.
+enum class ArenaNpcPersonalityType
+{
+	Citizen = 0,
+	Prostitute = 1,
+	Prostitute2 = 2,
+	Jester = 3,
+	Firebreather = 4,
+	SnakeCharmer = 5,
+	Beggar = 6,
+	StreetVendor = 7,
+	StreetVendor2 = 8,
+	Thief = 9,
+	Wizard = 10,
+	Priest = 11,
+	StreetCleaner = 12, // Unused
+	Slaver = 13 // Unused
+};
+
 // Various types used with Arena's binary data files. Struct sizes are hardcoded to show
 // intent and to avoid issues with padding since they map directly to Arena's data.
 namespace ArenaTypes
